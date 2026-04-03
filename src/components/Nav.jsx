@@ -12,7 +12,7 @@ export default function Nav({ session }) {
   return (
     <nav style={S.nav}>
       <Link to="/" style={S.brand}>
-        <img src="/RADlab_Logo_light.svg" height="34" alt="RADlab logo" style={{ display: 'block' }} />
+        <img src="/RADlab_Logo.svg" height="40" alt="RADlab logo" style={{ display: 'block' }} />
         <span style={S.wordmark}>RAD<b style={{ color: 'var(--pk)', fontWeight: 400 }}>lab</b></span>
       </Link>
 
@@ -49,7 +49,7 @@ const S = {
   },
   wordmark: {
     fontFamily: '"DM Serif Display", Georgia, serif',
-    fontSize: 28,
+    fontSize: 36,
     letterSpacing: -0.5,
     color: 'var(--tx)',
     lineHeight: 1,

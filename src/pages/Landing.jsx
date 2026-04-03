@@ -128,7 +128,7 @@ export default function Landing({ session }) {
       <footer style={S.footerOuter}>
         <Inner style={S.footerInner}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <img src="/RADlab_Logo_light.svg" height="22" alt="RADlab" />
+            <img src="/RADlab_Logo.svg" height="22" alt="RADlab" />
             <span style={S.footerTxt}>RADlab · Regulatory &amp; Affective Dynamics Lab · University of Toronto</span>
           </div>
           <span style={S.footerTxt}>Built with Supabase &amp; Vercel</span>
