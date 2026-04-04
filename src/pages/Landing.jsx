@@ -124,9 +124,10 @@ export default function Landing({ session }) {
         <div style={S.inner}>
           <h2 style={S.ctaTitle}>Your brain is waiting.</h2>
           <p style={S.ctaSub}>Five minutes. Sixty trials. Find out where you actually stand.</p>
-          <Link to="/signup" style={{ ...S.btnPrimary, fontSize: 16, padding: '13px 32px' }}>
-            Create free account →
-          </Link>
+          {session
+            ? <Link to="/dashboard" style={{ ...S.btnPrimary, fontSize: 16, padding: '13px 32px' }}>Go to dashboard →</Link>
+            : <Link to="/signup"    style={{ ...S.btnPrimary, fontSize: 16, padding: '13px 32px' }}>Create free account →</Link>
+          }
         </div>
       </div>
 
