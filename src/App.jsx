@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
-import { supabase } from './lib/supabase'
+import { supabase, savePondWatchSession } from './lib/supabase'
 
 import Landing   from './pages/Landing'
 import Login     from './pages/Login'
@@ -66,7 +66,7 @@ export default function App() {
           <Route path="/games/pond-watch" element={
             <ProtectedRoute session={session}>
               <Nav session={session} />
-              <PondWatch userId={session?.user?.id} studyId={null} onSessionComplete={() => {}} />
+              <PondWatch userId={session?.user?.id} studyId={null} onSessionComplete={savePondWatchSession} />
             </ProtectedRoute>
           } />
           <Route path="*" element={<Navigate to="/" replace />} />
