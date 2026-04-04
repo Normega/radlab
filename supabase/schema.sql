@@ -5,19 +5,6 @@
 -- ============================================================
 
 
--- ── HELPER: get current user's role (security definer bypasses RLS) ──────────
--- Used in lab-access policies to avoid circular RLS on profiles.
-create or replace function public.my_role()
-returns text
-language sql
-security definer
-stable
-set search_path = public
-as $$
-  select role from profiles where id = auth.uid()
-$$;
-
-
 -- ── PROFILES ─────────────────────────────────────────────────────────────────
 create table public.profiles (
   id                  uuid primary key references auth.users(id) on delete cascade,
@@ -29,6 +16,18 @@ create table public.profiles (
 );
 
 alter table public.profiles enable row level security;
+
+-- ── HELPER: get current user's role (security definer bypasses RLS) ──────────
+-- Must be created after profiles table exists.
+create or replace function public.my_role()
+returns text
+language sql
+security definer
+stable
+set search_path = public
+as $$
+  select role from profiles where id = auth.uid()
+$$;
 
 -- Own profile: read + update
 create policy "profiles: own read"
