@@ -7,6 +7,8 @@ import Landing   from './pages/Landing'
 import Login     from './pages/Login'
 import Signup    from './pages/Signup'
 import Dashboard from './pages/Dashboard'
+import Nav       from './components/Nav'
+import PondWatch from './games/PondWatch'
 
 const queryClient = new QueryClient()
 
@@ -61,6 +63,12 @@ export default function App() {
           <Route path="/login"  element={<PublicOnlyRoute session={session} role={role}><Login /></PublicOnlyRoute>} />
           <Route path="/signup" element={<PublicOnlyRoute session={session} role={role}><Signup /></PublicOnlyRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute session={session}><Dashboard session={session} /></ProtectedRoute>} />
+          <Route path="/games/pond-watch" element={
+            <ProtectedRoute session={session}>
+              <Nav session={session} />
+              <PondWatch userId={session?.user?.id} studyId={null} onSessionComplete={() => {}} />
+            </ProtectedRoute>
+          } />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>

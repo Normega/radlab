@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Nav from '../components/Nav'
 
@@ -37,7 +37,8 @@ export default function Dashboard({ session }) {
             title="Pond Watch"
             tag="Go / No-Go · Reaction time"
             desc="Watch a pond. Hit spacebar when a duck surfaces. Withhold for everything else. Measures reaction time, sensitivity (d′), and response bias."
-            status="coming soon"
+            status="Play now →"
+            to="/games/pond-watch"
           />
           <GameCard
             title="More games"
@@ -70,7 +71,10 @@ export default function Dashboard({ session }) {
   )
 }
 
-function GameCard({ title, tag, desc, status, muted }) {
+function GameCard({ title, tag, desc, status, to, muted }) {
+  const footer = to
+    ? <Link to={to} style={{ ...S.gameStatus, display: 'block', textDecoration: 'none' }}>{status}</Link>
+    : <div style={{ ...S.gameStatus, ...(muted ? S.gameStatusMuted : {}) }}>{status}</div>
   return (
     <div style={{ ...S.gameCard, ...(muted ? S.gameCardMuted : {}) }}>
       <div style={S.gameCardInner}>
@@ -78,9 +82,7 @@ function GameCard({ title, tag, desc, status, muted }) {
         <h2 style={{ ...S.gameTitle, ...(muted ? { color: 'var(--tx3)' } : {}) }}>{title}</h2>
         <p style={S.gameDesc}>{desc}</p>
       </div>
-      <div style={{ ...S.gameStatus, ...(muted ? S.gameStatusMuted : {}) }}>
-        {status}
-      </div>
+      {footer}
     </div>
   )
 }
