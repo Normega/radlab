@@ -797,7 +797,6 @@ const S = {
     background: BGP,
     borderColor: PK,
     color: PK,
-    fontSize: 15,
     fontWeight: 600,
   },
   primaryMetric: {
