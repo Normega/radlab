@@ -5,6 +5,18 @@
 -- ============================================================
 
 
+-- ── CLEANUP (makes this script re-runnable) ──────────────────────────────────
+drop trigger if exists on_auth_user_created on auth.users;
+drop function if exists public.handle_new_user();
+drop function if exists public.my_role();
+drop table if exists public.questionnaire_responses cascade;
+drop table if exists public.performance cascade;
+drop table if exists public.trials cascade;
+drop table if exists public.game_sessions cascade;
+drop table if exists public.studies cascade;
+drop table if exists public.profiles cascade;
+
+
 -- ── PROFILES ─────────────────────────────────────────────────────────────────
 create table public.profiles (
   id                  uuid primary key references auth.users(id) on delete cascade,
