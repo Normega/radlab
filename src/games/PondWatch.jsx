@@ -533,19 +533,19 @@ export default function PondWatch({ onSessionComplete, userId = null, studyId = 
             <h2 style={S.title} >Pond Watch</h2>
 
             {/* Primary metric */}
-            <div style={S.primaryMetric}>
-              <div>
+            <div style={S.primaryMetric} className="grid grid-cols-3 divide-x">
+              <div style={{ padding: '12px 8px', overflow: 'hidden', minWidth: 0 }}>
                 <p style={S.metricLabel}>Median RT</p>
                 <p style={S.metricBig}>
                   {results.metrics.medianRtMs ?? '—'}
                   <span style={S.metricUnit}>ms</span>
                 </p>
               </div>
-              <div>
+              <div style={{ padding: '12px 8px', overflow: 'hidden', minWidth: 0 }}>
                 <p style={S.metricLabel}>d′</p>
                 <p style={S.metricBig}>{results.metrics.dPrime}</p>
               </div>
-              <div>
+              <div style={{ padding: '12px 8px', overflow: 'hidden', minWidth: 0 }}>
                 <p style={S.metricLabel}>Accuracy</p>
                 <p style={S.metricBig}>
                   {Math.round(results.metrics.accuracy * 100)}
@@ -800,8 +800,6 @@ const S = {
     fontWeight: 600,
   },
   primaryMetric: {
-    display: 'flex',
-    gap: 0,
     borderRadius: 14,
     overflow: 'hidden',
     border: `1px solid ${BD}`,
@@ -809,7 +807,7 @@ const S = {
   },
   metricLabel: {
     fontFamily: MONO,
-    fontSize: 8,
+    fontSize: 'clamp(7px, 1.5vw, 8px)',
     letterSpacing: 2,
     textTransform: 'uppercase',
     color: TX3,
@@ -817,7 +815,7 @@ const S = {
   },
   metricBig: {
     fontFamily: MONO,
-    fontSize: 36,
+    fontSize: 'clamp(22px, 5vw, 36px)',
     fontWeight: 700,
     color: TX,
     lineHeight: 1,
