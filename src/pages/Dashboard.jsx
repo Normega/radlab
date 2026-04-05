@@ -1,10 +1,11 @@
 import { useNavigate, Link } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import Nav from '../components/Nav'
 
 export default function Dashboard({ session }) {
-  const navigate   = useNavigate()
-  const user       = session?.user
+  const navigate    = useNavigate()
+  const user        = session?.user
   const displayName = user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'researcher'
 
   async function handleSignOut() {
@@ -30,7 +31,7 @@ export default function Dashboard({ session }) {
           </div>
         </div>
 
-        {/* Coming soon game cards */}
+        {/* Game cards */}
         <p style={S.secLabel}>// Games</p>
         <div style={S.gameGrid}>
           <GameCard
@@ -66,10 +67,71 @@ export default function Dashboard({ session }) {
           <Row label="Account type" val="Public" />
           <Row label="Member since" val={new Date(user?.created_at).toLocaleDateString('en-CA', { year: 'numeric', month: 'long', day: 'numeric' })} />
         </div>
+
+        {/* Reminders */}
+        <p style={{ ...S.secLabel, marginTop: 40 }}>// Reminders</p>
+        <Reminders userId={user?.id} />
       </div>
     </div>
   )
 }
+
+// ── REMINDERS ────────────────────────────────────────────────────────────────
+
+const REMINDER_OPTIONS = [
+  { value: 'none',      label: 'No reminders' },
+  { value: 'weekly',    label: 'Weekly' },
+  { value: 'biweekly',  label: 'Every two weeks' },
+  { value: 'monthly',   label: 'Monthly' },
+]
+
+function Reminders({ userId }) {
+  const [frequency, setFrequency] = useState('none')
+  const [saved,     setSaved]     = useState(false)
+
+  useEffect(() => {
+    if (!userId) return
+    supabase.from('profiles').select('reminder_frequency').eq('id', userId).single()
+      .then(({ data }) => { if (data?.reminder_frequency) setFrequency(data.reminder_frequency) })
+  }, [userId])
+
+  async function handleSelect(value) {
+    if (value === frequency) return
+    setFrequency(value)
+
+    // TODO: reminder emails sent via Supabase Edge Function + Resend
+    // Trigger: pg_cron job queries profiles where reminder_frequency != 'none'
+    // and last session > N days ago. Runs weekly. See website.md for plan.
+    await supabase.from('profiles').update({ reminder_frequency: value }).eq('id', userId)
+
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2000)
+  }
+
+  return (
+    <div style={S.remindersCard}>
+      <p style={S.remindersDesc}>
+        Get an email nudge when you haven't played in a while. We'll never send more than one email per week.
+      </p>
+      <div style={S.reminderRow}>
+        <div style={S.btnGroup}>
+          {REMINDER_OPTIONS.map(opt => (
+            <button
+              key={opt.value}
+              style={{ ...S.reminderBtn, ...(frequency === opt.value ? S.reminderBtnActive : {}) }}
+              onClick={() => handleSelect(opt.value)}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+        {saved && <span style={S.savedLabel}>Saved</span>}
+      </div>
+    </div>
+  )
+}
+
+// ── SUB-COMPONENTS ────────────────────────────────────────────────────────────
 
 function GameCard({ title, tag, desc, status, to, muted }) {
   const footer = to
@@ -95,6 +157,8 @@ function Row({ label, val, mono }) {
     </div>
   )
 }
+
+// ── STYLES ────────────────────────────────────────────────────────────────────
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -126,4 +190,18 @@ const S = {
   row:      { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '13px 20px', borderBottom: '1px solid var(--bd)' },
   rowLabel: { fontFamily: MONO, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--tx3)' },
   rowVal:   { fontSize: 14, color: 'var(--tx)' },
+
+  remindersCard:  { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 16, padding: '20px 24px' },
+  remindersDesc:  { fontSize: 14, color: 'var(--tx2)', marginBottom: 16 },
+  reminderRow:    { display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' },
+  btnGroup:       { display: 'flex', gap: 8, flexWrap: 'wrap' },
+  reminderBtn: {
+    fontSize: 14, padding: '8px 16px', borderRadius: 9, cursor: 'pointer',
+    border: '1px solid var(--bds)', background: 'var(--bgc)', color: 'var(--tx2)',
+    fontFamily: 'inherit', transition: 'all 0.15s',
+  },
+  reminderBtnActive: {
+    background: 'var(--pk)', borderColor: 'var(--pk)', color: '#fff',
+  },
+  savedLabel: { fontFamily: MONO, fontSize: 13, color: 'var(--pk)' },
 }
