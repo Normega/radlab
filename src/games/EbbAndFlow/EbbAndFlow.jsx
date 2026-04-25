@@ -11,11 +11,12 @@ import {
   MIN_TRIALS_PER_SESSION, CONTINUE_PROMPT_INTERVAL, ITI_DURATION_MS,
   WARMUP_SYNC_THRESHOLD,
 } from './constants';
-import SessionStart  from './components/SessionStart';
-import WarmupScreen  from './components/WarmupScreen';
-import ResponseScreen from './components/ResponseScreen';
-import ContinuePrompt from './components/ContinuePrompt';
-import SessionSummary from './components/SessionSummary';
+import SessionStart   from './components/SessionStart';
+import WarmupScreen   from './components/WarmupScreen';
+import GetReadyScreen from './components/GetReadyScreen';
+import ResponseScreen  from './components/ResponseScreen';
+import ContinuePrompt  from './components/ContinuePrompt';
+import SessionSummary  from './components/SessionSummary';
 
 // ── Trial logic helpers ────────────────────────────────────────────────────
 
@@ -61,12 +62,13 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
   function setPhase(p) { phaseRef.current = p; _setPhase(p); }
 
   // ── Button held state (React state for rendering only) ───────────────
-  const [isHeld,       setIsHeld]       = useState(false);
-  const [syncScore,    setSyncScore]    = useState(0);
-  const [showHint,     setShowHint]     = useState(false);
-  const [breathIndex,  setBreathIndex]  = useState(0);
-  const [trialCount,   setTrialCount]   = useState(0);
-  const [sessionScore, setSessionScore] = useState(0);
+  const [isHeld,        setIsHeld]        = useState(false);
+  const [syncScore,     setSyncScore]     = useState(0);
+  const [showHint,      setShowHint]      = useState(false);
+  const [breathIndex,   setBreathIndex]   = useState(0);
+  const [trialCount,    setTrialCount]    = useState(0);
+  const [sessionScore,  setSessionScore]  = useState(0);
+  const [avatarPaused,  setAvatarPaused]  = useState(false);
 
   // ── Profile + avatar ──────────────────────────────────────────────────
   const [profile,    setProfile]    = useState(null);
@@ -74,6 +76,7 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
   const profileRef   = useRef(null);
 
   // ── Session tracking (refs — mutated inside async loops) ─────────────
+  const pauseTimerRef      = useRef(null);
   const sessionTrialsRef   = useRef([]);
   const sessionScoreRef    = useRef(0);
   const trialCountRef      = useRef(0);
@@ -163,7 +166,7 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
         const rolling = last4.length ? last4.reduce((a, b) => a + b, 0) / last4.length : 0;
 
         if (rolling >= WARMUP_SYNC_THRESHOLD && scores.length >= 2) {
-          if (!cancelled) setPhase('TRIAL_ITI');
+          if (!cancelled) setPhase('GET_READY');
           return;
         }
         if (warmupBreathRef.current >= 12) {
@@ -192,7 +195,14 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
     breathSyncRef.current = [];
 
     async function breathSequence() {
-      const trial    = currentTrialRef.current;
+      // Reset avatar to neutral for 1 000 ms before breath 1 begins
+      setAvatarPaused(true);
+      await new Promise(resolve => { pauseTimerRef.current = setTimeout(resolve, 1000); });
+      if (cancelled) return;
+      setAvatarPaused(false);
+      resetBreath(); // restart breath cycle from phase 0
+
+      const trial     = currentTrialRef.current;
       const durations = trial.durations;
       trialStartTimeRef.current = performance.now();
 
@@ -205,7 +215,10 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
       if (!cancelled) setPhase('RESPONSE');
     }
     breathSequence();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      if (pauseTimerRef.current) { clearTimeout(pauseTimerRef.current); pauseTimerRef.current = null; }
+    };
   }, [phase]);
 
   // ── Trial setup ───────────────────────────────────────────────────────
@@ -396,6 +409,7 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
           eyeColor={eyeColor}
           scaleAmplitude={modeConfig.scaleAmplitude}
           getPhase={getPhase}
+          avatarPaused={avatarPaused}
           isHeld={isHeld}
           onPress={handlePress}
           onRelease={handleRelease}
@@ -403,6 +417,15 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
           showHint={showHint}
           breathIndex={breathIndex}
           trialCount={trialCountRef.current}
+        />
+      )}
+
+      {phase === 'GET_READY' && (
+        <GetReadyScreen
+          skinColor={skinColor}
+          eyeColor={eyeColor}
+          scaleAmplitude={modeConfig.scaleAmplitude}
+          onBegin={() => setPhase('TRIAL_ITI')}
         />
       )}
 

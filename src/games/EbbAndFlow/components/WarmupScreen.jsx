@@ -20,6 +20,7 @@ export default function WarmupScreen({
   phase = 'warmup',
   skinColor, eyeColor, scaleAmplitude,
   getPhase,
+  avatarPaused = false,
   isHeld, onPress, onRelease,
   syncScore = 0,
   showHint = false,
@@ -54,6 +55,7 @@ export default function WarmupScreen({
           eyeColor={eyeColor}
           scaleAmplitude={scaleAmplitude}
           getPhase={getPhase}
+          paused={avatarPaused}
           size={240}
         />
       </div>

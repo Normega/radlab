@@ -44,15 +44,18 @@ export default function AvatarBreathPacer({
   eyeColor  = '#4A90D9',
   scaleAmplitude = 0.25,
   getPhase,
+  paused = false,   // when true: snap to neutral resting position and hold
   size = 240,
 }) {
   const containerRef    = useRef(null);
   const rafRef          = useRef(null);
   const elemsRef        = useRef(null);  // refs to animated SVG elements
   const scaleAmpRef     = useRef(scaleAmplitude);
+  const pausedRef       = useRef(paused);
 
-  // Keep scaleAmplitude in sync without rebuilding the SVG
+  // Keep scaleAmplitude and paused in sync without rebuilding the SVG
   useEffect(() => { scaleAmpRef.current = scaleAmplitude; }, [scaleAmplitude]);
+  useEffect(() => { pausedRef.current = paused; }, [paused]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -155,10 +158,30 @@ export default function AvatarBreathPacer({
 
     elemsRef.current = { svg, lLid, lLsh, rLid, rLsh, bL, bR, browL, browR };
 
+    // ── Neutral resting position (initial SVG values) ────────────────────
+    function applyNeutral(elems) {
+      elems.svg.style.transform = 'scale(1)';
+      elems.lLid.setAttribute('d', 'M 60 91 Q 76 94 92 91 A 17 17 0 0 0 60 91 Z');
+      elems.rLid.setAttribute('d', 'M 108 91 Q 124 94 140 91 A 17 17 0 0 0 108 91 Z');
+      elems.lLsh.setAttribute('d', 'M 60 91 Q 76 94 92 91');
+      elems.rLsh.setAttribute('d', 'M 108 91 Q 124 94 140 91');
+      elems.bL.setAttribute('opacity', '0.42');
+      elems.bR.setAttribute('opacity', '0.42');
+      elems.browL.setAttribute('transform', 'translate(0,0)');
+      elems.browR.setAttribute('transform', 'translate(0,0)');
+    }
+
     // ── RAF animation loop ───────────────────────────────────────────────
     function frame() {
       if (!elemsRef.current) return;
       const { svg, lLid, lLsh, rLid, rLsh, bL, bR, browL, browR } = elemsRef.current;
+
+      // When paused: snap to neutral on every frame (idempotent, instant)
+      if (pausedRef.current) {
+        applyNeutral(elemsRef.current);
+        rafRef.current = requestAnimationFrame(frame);
+        return;
+      }
 
       const phase = getPhase ? getPhase() : 0;
       const bT = (Math.sin(phase * Math.PI * 2 - Math.PI / 2) + 1) / 2;
