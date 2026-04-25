@@ -48,3 +48,59 @@ export async function savePondWatchSession({ userId, studyId, gameName, startedA
 
   return sessionId
 }
+
+// Save a completed Ebb & Flow session to Supabase.
+// Inserts game_sessions → trials (bulk), updates profiles ebb_flow_* columns.
+export async function saveEbbFlowSession({
+  user_id, trials, session_score, total_score, total_trials,
+  quest_state, game_mode, new_mode_unlocked, session_sync_mean,
+}) {
+  const now = new Date().toISOString()
+
+  // Insert game session record
+  const { data: gameSession, error: sessionErr } = await supabase
+    .from('game_sessions')
+    .insert({ user_id, game_name: 'ebb_flow', started_at: now, ended_at: now })
+    .select('id')
+    .single()
+
+  if (sessionErr) { console.error('saveEbbFlowSession: session insert failed', sessionErr); return null }
+
+  const sessionId = gameSession.id
+
+  // Insert per-trial rows (metrics as JSONB)
+  if (trials?.length) {
+    const { error: trialsErr } = await supabase.from('trials').insert(
+      trials.map(t => ({
+        session_id:       sessionId,
+        trial_number:     t.trial_number,
+        stimulus_type:    t.trial_type,
+        is_target:        t.trial_type !== 'catch',
+        responded:        t.response !== null,
+        reaction_time_ms: t.reaction_time_ms,
+        metrics:          t,
+      }))
+    )
+    if (trialsErr) console.error('saveEbbFlowSession: trials insert failed', trialsErr)
+  }
+
+  // Update profiles ebb_flow_* columns
+  const profileUpdate = {
+    ebb_flow_total_trials:   total_trials,
+    ebb_flow_total_score:    total_score,
+    ebb_flow_quest_state:    quest_state,
+    ebb_flow_game_mode:      game_mode,
+    ebb_flow_last_session_at: now,
+    points:                  total_score, // mirror to main points column
+  }
+  if (new_mode_unlocked === 'listener') profileUpdate.ebb_flow_listener_unlocked_at = now
+  if (new_mode_unlocked === 'empath')   profileUpdate.ebb_flow_empath_unlocked_at   = now
+
+  const { error: profileErr } = await supabase
+    .from('profiles')
+    .update(profileUpdate)
+    .eq('id', user_id)
+  if (profileErr) console.error('saveEbbFlowSession: profile update failed', profileErr)
+
+  return sessionId
+}

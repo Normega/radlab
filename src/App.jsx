@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
-import { supabase, savePondWatchSession } from './lib/supabase'
+import { supabase, savePondWatchSession, saveEbbFlowSession } from './lib/supabase'
 
 import Landing      from './pages/Landing'
 import Login        from './pages/Login'
@@ -11,6 +11,7 @@ import ProfilePage  from './pages/ProfilePage'
 import Nav          from './components/Nav'
 import PondWatch    from './games/PondWatch'
 import AvatarEditor from './components/Avatar/AvatarEditor'
+import EbbAndFlow   from './games/EbbAndFlow/EbbAndFlow'
 
 const queryClient = new QueryClient()
 
@@ -104,6 +105,12 @@ export default function App() {
             <ProtectedRoute session={session} hasAvatar={hasAvatar}>
               <Nav session={session} />
               <PondWatch userId={session?.user?.id} studyId={null} onSessionComplete={savePondWatchSession} />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/games/ebb-flow" element={
+            <ProtectedRoute session={session} hasAvatar={hasAvatar}>
+              <EbbAndFlow session={session} onSessionComplete={saveEbbFlowSession} />
             </ProtectedRoute>
           } />
 

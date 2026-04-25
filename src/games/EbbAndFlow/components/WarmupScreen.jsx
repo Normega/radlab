@@ -1,0 +1,116 @@
+import { WARMUP_SYNC_THRESHOLD } from '../constants';
+import AvatarBreathPacer from './AvatarBreathPacer';
+import PsiAmpButton from './PsiAmpButton';
+
+// ── WarmupScreen ──────────────────────────────────────────────────────────
+// Renders during WARMUP and BREATH_SEQUENCE phases.
+//
+// Props:
+//   phase          — 'warmup' | 'trial'
+//   skinColor / eyeColor / scaleAmplitude — avatar props
+//   getPhase       — () => 0–1 breath phase
+//   isHeld         — boolean, PSI-AMP button state
+//   onPress / onRelease — PSI-AMP handlers
+//   syncScore      — 0–1 rolling mean (warmup only)
+//   showHint       — boolean: show alignment hint
+//   breathIndex    — 0–3, which breath we're on (trial phase)
+//   trialCount     — current trial number (shown during trial)
+
+export default function WarmupScreen({
+  phase = 'warmup',
+  skinColor, eyeColor, scaleAmplitude,
+  getPhase,
+  isHeld, onPress, onRelease,
+  syncScore = 0,
+  showHint = false,
+  breathIndex = 0,
+  trialCount = 0,
+}) {
+  const isWarmup = phase === 'warmup';
+
+  return (
+    <div style={S.wrap}>
+
+      {/* Top label */}
+      <div style={S.topRow}>
+        {isWarmup ? (
+          <p style={S.eyebrow}>Warming up — sync your breath</p>
+        ) : (
+          <div style={S.trialHeader}>
+            <p style={S.eyebrow}>Trial {trialCount}</p>
+            <div style={S.breathDots}>
+              {[0,1,2,3].map(i => (
+                <div key={i} style={{ ...S.dot, background: i <= breathIndex ? 'var(--pk)' : 'var(--bgp)', border: i === breathIndex ? '2px solid var(--pk)' : '2px solid var(--pkb)' }} />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Avatar */}
+      <div style={S.avatarWrap}>
+        <AvatarBreathPacer
+          skinColor={skinColor}
+          eyeColor={eyeColor}
+          scaleAmplitude={scaleAmplitude}
+          getPhase={getPhase}
+          size={240}
+        />
+      </div>
+
+      {/* PSI-AMP button */}
+      <div style={S.btnWrap}>
+        <PsiAmpButton
+          onPress={onPress}
+          onRelease={onRelease}
+          isHeld={isHeld}
+          showRing={isWarmup}
+          syncScore={syncScore}
+          disabled={false}
+        />
+      </div>
+
+      {/* Warmup sync indicator */}
+      {isWarmup && (
+        <div style={S.syncBar}>
+          <div style={S.syncTrack}>
+            <div style={{ ...S.syncFill, width: `${Math.round(syncScore * 100)}%`, background: syncScore >= WARMUP_SYNC_THRESHOLD ? '#1D9E75' : syncScore >= 0.5 ? '#F0A500' : '#E05050' }} />
+            <div style={S.syncThreshMark} />
+          </div>
+          <p style={S.syncNote}>
+            {syncScore >= WARMUP_SYNC_THRESHOLD
+              ? '✓ Synced — starting now'
+              : 'Hold on inhale · release on exhale'}
+          </p>
+        </div>
+      )}
+
+      {/* Gentle hint after 12 warmup breaths */}
+      {showHint && isWarmup && (
+        <div style={S.hint}>
+          Try pressing the button right as the face begins to expand.
+        </div>
+      )}
+
+    </div>
+  );
+}
+
+const MONO = '"Space Mono", monospace';
+
+const S = {
+  wrap:       { display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '32px 24px', minHeight: '80vh', justifyContent: 'center' },
+  topRow:     { marginBottom: 16, width: '100%', maxWidth: 360, textAlign: 'center' },
+  eyebrow:    { fontFamily: MONO, fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--pk)', margin: 0 },
+  trialHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+  breathDots: { display: 'flex', gap: 6 },
+  dot:        { width: 10, height: 10, borderRadius: '50%', transition: 'background 0.2s, border-color 0.2s' },
+  avatarWrap: { marginBottom: 24, position: 'relative' },
+  btnWrap:    { marginBottom: 24 },
+  syncBar:    { width: '100%', maxWidth: 280, textAlign: 'center' },
+  syncTrack:  { height: 6, borderRadius: 999, background: 'var(--bgp)', overflow: 'hidden', position: 'relative', marginBottom: 8 },
+  syncFill:   { height: '100%', borderRadius: 999, transition: 'width 0.4s ease, background 0.4s ease' },
+  syncThreshMark: { position: 'absolute', top: 0, left: '80%', width: 2, height: '100%', background: 'rgba(0,0,0,0.2)' },
+  syncNote:   { fontFamily: MONO, fontSize: 10, letterSpacing: '0.08em', color: 'var(--tx3)', margin: 0 },
+  hint:       { marginTop: 16, padding: '10px 16px', background: 'var(--bgp)', borderRadius: 10, fontSize: 13, color: 'var(--tx2)', maxWidth: 320, textAlign: 'center' },
+};
