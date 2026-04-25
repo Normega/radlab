@@ -1,8 +1,26 @@
 import { Link, useNavigate } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
+import BaseAvatar from './Avatar/BaseAvatar'
 
 export default function Nav({ session }) {
   const navigate = useNavigate()
+  const userId   = session?.user?.id
+
+  const { data: avatarData } = useQuery({
+    queryKey: ['avatar', userId],
+    queryFn: async () => {
+      const { data } = await supabase.from('avatars').select('skin_color, eye_color').eq('user_id', userId).maybeSingle()
+      return data
+    },
+    enabled: !!userId,
+  })
+
+  const initial = (
+    session?.user?.user_metadata?.display_name?.[0] ||
+    session?.user?.email?.[0] ||
+    '?'
+  ).toUpperCase()
 
   async function handleSignOut() {
     await supabase.auth.signOut()
@@ -23,6 +41,13 @@ export default function Nav({ session }) {
           <>
             <Link to="/dashboard" style={S.link}>Dashboard</Link>
             <button style={S.btnOutline} onClick={handleSignOut}>Sign out</button>
+            <Link to="/profile" style={S.avatarCircle}>
+              {avatarData ? (
+                <BaseAvatar skinColor={avatarData.skin_color} eyeColor={avatarData.eye_color} size={36} />
+              ) : (
+                <div style={S.avatarInitial}>{initial}</div>
+              )}
+            </Link>
           </>
         ) : (
           <>
@@ -56,8 +81,8 @@ const S = {
     color: 'var(--tx)',
     lineHeight: 1,
   },
-  links: { display: 'flex', alignItems: 'center', gap: 12 },
-  link: { fontSize: 14, color: 'var(--tx2)', textDecoration: 'none' },
+  links:     { display: 'flex', alignItems: 'center', gap: 12 },
+  link:      { fontSize: 14, color: 'var(--tx2)', textDecoration: 'none' },
   btnOutline: {
     fontSize: 14, padding: '7px 18px', borderRadius: 9,
     cursor: 'pointer', fontWeight: 500,
@@ -70,5 +95,21 @@ const S = {
     background: 'var(--pk)', border: '1px solid var(--pk)',
     color: '#fff', textDecoration: 'none',
     fontFamily: 'inherit', whiteSpace: 'nowrap',
+  },
+  avatarCircle: {
+    width: 36, height: 36, borderRadius: '50%',
+    overflow: 'hidden', flexShrink: 0,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    border: '2px solid var(--pkb)',
+    textDecoration: 'none',
+    cursor: 'pointer',
+  },
+  avatarInitial: {
+    width: '100%', height: '100%',
+    background: 'var(--pk)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    color: '#fff',
+    fontFamily: '"DM Serif Display", Georgia, serif',
+    fontSize: 15, fontWeight: 700,
   },
 }
