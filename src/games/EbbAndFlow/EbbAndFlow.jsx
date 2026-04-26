@@ -70,7 +70,8 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
   const [sessionScore, setSessionScore] = useState(0);
 
   // ── Profile + avatar ──────────────────────────────────────────────────
-  const [profile,    setProfile]    = useState(null);
+  // undefined = still loading; null = loaded, no row found; object = loaded
+  const [profile,    setProfile]    = useState(undefined);
   const [avatarData, setAvatarData] = useState(null);
   const profileRef   = useRef(null);
 
@@ -112,7 +113,9 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
       supabase.from('avatars').select('skin_color, eye_color').eq('user_id', userId).maybeSingle(),
     ]).then(([{ data: p }, { data: a }]) => {
       profileRef.current = p;
-      setProfile(p);
+      // TODO: remove once cross-session persistence is confirmed working
+      console.log('[QUEST] Raw quest state from Supabase:', p?.ebb_flow_quest_state);
+      setProfile(p ?? null);
       setAvatarData(a);
     });
   }, [userId]);

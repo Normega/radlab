@@ -109,8 +109,11 @@ function getPosteriorSD(staircase) {
 export function useQuestStaircases(savedState) {
   const staircases = useRef(null);
 
-  // Initialize synchronously on first render (safe — no side effects)
-  if (!staircases.current) {
+  // Initialize once we have a definitive value for savedState.
+  // undefined = profile still loading — skip and wait for re-render.
+  // null      = profile loaded, no saved state — initialize fresh.
+  // object    = profile loaded with saved state — restore.
+  if (!staircases.current && savedState !== undefined) {
     if (savedState) {
       staircases.current = {
         faster_high: deserializeStaircase(savedState.faster_high),
