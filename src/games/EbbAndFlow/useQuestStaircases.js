@@ -170,17 +170,27 @@ export function useQuestStaircases(savedState) {
 
   // Record a response; responseKey: 'faster' | 'slower' | 'same'
   function recordResponse(staircaseKey, responseKey, log10Mag) {
-    const correctDir = staircaseKey.startsWith('faster') ? 'faster' : 'slower';
+    const correctDir    = staircaseKey.startsWith('faster') ? 'faster' : 'slower';
     const responseIndex = responseKey === correctDir ? 1 : responseKey === 'same' ? 0 : 2;
-    staircases.current[staircaseKey].update(log10Mag, responseIndex);
-    trialCounts.current[staircaseKey] += 1;
+    const staircase     = staircases.current[staircaseKey];
+
     // TODO: remove once cross-session persistence is confirmed working
-    console.log('[QUEST] update called:', {
+    console.log('[QUEST] update() args:', {
       staircaseKey,
-      responseKey,
-      correctResponse: correctDir,
+      stimArg:             log10Mag,
       responseIndex,
-      log10Mag: log10Mag?.toFixed(4),
+      correctResponse:     correctDir,
+      participantResponse: responseKey,
+      linearMag:           Math.pow(10, log10Mag).toFixed(4),
+    });
+
+    staircase.update(log10Mag, responseIndex);
+    trialCounts.current[staircaseKey] += 1;
+
+    // TODO: remove once cross-session persistence is confirmed working
+    console.log('[QUEST] posterior after update:', {
+      staircaseKey,
+      nextStim: Math.pow(10, staircase.getStimParams()).toFixed(4),
       cumulativeTrials: trialCounts.current[staircaseKey],
     });
   }
