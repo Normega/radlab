@@ -129,6 +129,7 @@ export function useQuestStaircases(savedState) {
         slower_high: deserializeStaircase(savedState.slower_high),
         slower_low:  deserializeStaircase(savedState.slower_low),
       };
+      window.__qp = staircases.current; // TODO: remove — debug handle
       // TODO: remove once cross-session persistence is confirmed working
       console.log('[QUEST] Restoring from saved state:', savedState);
       console.log('[QUEST] Trial counts on restore:', {
@@ -144,6 +145,7 @@ export function useQuestStaircases(savedState) {
         slower_high: createStaircase(),
         slower_low:  createStaircase(),
       };
+      window.__qp = staircases.current; // TODO: remove — debug handle
       // TODO: remove once cross-session persistence is confirmed working
       console.log('[QUEST] No saved state found — initializing fresh staircases');
     }
