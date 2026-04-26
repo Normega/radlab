@@ -26,15 +26,19 @@ const thresholdPrior = jsQuestPlus.gauss(
 );
 
 const slopeSamples  = [QUEST_PRIORS.slope];
+const guessSamples  = [QUEST_PRIORS.guess_rate]; // 1/3 for 3AFC
 const lapseSamples  = [QUEST_PRIORS.lapse_rate];
 
 // ── Psychometric functions (3AFC Weibull) ─────────────────────────────────
+// jsQuestPlus weibull signature: (stim, threshold, slope, guess, lapse)
+// psych_samples order must match parameter order after stim:
+//   [thresholdSamples, slopeSamples, guessSamples, lapseSamples]
 
-function pCorrect(stim, threshold, slope, lapse) {
-  return jsQuestPlus.weibull(stim, threshold, slope, 1 / 3, lapse);
+function pCorrect(stim, threshold, slope, guess, lapse) {
+  return jsQuestPlus.weibull(stim, threshold, slope, guess, lapse);
 }
-function pWrong(stim, threshold, slope, lapse) {
-  return (1 - pCorrect(stim, threshold, slope, lapse)) / 2;
+function pWrong(stim, threshold, slope, guess, lapse) {
+  return (1 - jsQuestPlus.weibull(stim, threshold, slope, guess, lapse)) / 2;
 }
 
 // Response indices: 0 = "same", 1 = correct direction, 2 = opposite direction
@@ -46,10 +50,11 @@ function createStaircase() {
   return new jsQuestPlus({
     psych_func: psychFuncs,
     stim_samples: [stimSamples],
-    psych_samples: [thresholdSamples, slopeSamples, lapseSamples],
+    psych_samples: [thresholdSamples, slopeSamples, guessSamples, lapseSamples],
     priors: jsQuestPlus.set_prior([
       thresholdPrior,
       slopeSamples.length,
+      guessSamples.length,
       lapseSamples.length,
     ]),
   });
@@ -63,8 +68,8 @@ function createStaircase() {
 // post-trial state) and copy to a plain Array for clean JSON round-trip.
 //
 // Restore: pass the saved posterior array as the threshold marginal into
-// set_prior(), alongside uniform marginals for the fixed slope and lapse
-// parameters. set_prior() then builds a valid { priors, comb_priors,
+// set_prior(), alongside uniform marginals for the fixed slope, guess, and
+// lapse parameters. set_prior() then builds a valid { priors, comb_priors,
 // normalized_priors } object from scratch — no post-hoc property injection
 // that the constructor might overwrite.
 
@@ -85,13 +90,14 @@ function deserializeStaircase(saved) {
   const restoredPrior = jsQuestPlus.set_prior([
     saved.normalized_posteriors,   // threshold marginal — restored posterior (46 values)
     slopeSamples.map(() => 1),     // slope  — uniform over single fixed value
+    guessSamples.map(() => 1),     // guess  — uniform over single fixed value
     lapseSamples.map(() => 1),     // lapse  — uniform over single fixed value
   ]);
 
   return new jsQuestPlus({
     psych_func:    psychFuncs,
     stim_samples:  [stimSamples],
-    psych_samples: [thresholdSamples, slopeSamples, lapseSamples],
+    psych_samples: [thresholdSamples, slopeSamples, guessSamples, lapseSamples],
     priors:        restoredPrior,
   });
 }
