@@ -151,7 +151,7 @@ export function useQuestStaircases(savedState) {
 
   // Next stimulus for a given staircase, in log10 units (exact — no round-trip float drift)
   function getLog10Magnitude(staircaseKey) {
-    const nextStim = staircases.current[staircaseKey].getStimParams();
+    const nextStim = staircases.current[staircaseKey].getStimParams()[0];
     // TODO: remove once cross-session persistence is confirmed working
     console.log('[QUEST] Next stimulus selected:', {
       staircaseKey,
@@ -190,7 +190,7 @@ export function useQuestStaircases(savedState) {
     // TODO: remove once cross-session persistence is confirmed working
     console.log('[QUEST] posterior after update:', {
       staircaseKey,
-      nextStim: Math.pow(10, staircase.getStimParams()).toFixed(4),
+      nextStim: Math.pow(10, staircase.getStimParams()[0]).toFixed(4),
       cumulativeTrials: trialCounts.current[staircaseKey],
     });
   }
