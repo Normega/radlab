@@ -1,257 +1,206 @@
-import { useRef } from 'react';
 import jsQuestPlus from 'jsquest-plus';
-import {
-  MAGNITUDE_MIN, MAGNITUDE_MAX, MAGNITUDE_STEPS,
-  QUEST_PRIORS, QUEST_CONVERGENCE_SD,
-} from './constants';
+import { useRef, useEffect } from 'react';
 
-// ── Stimulus / parameter grids ────────────────────────────────────────────
+// Fixed psychometric parameters
+const SLOPE = 5.70;
+const GUESS = 1 / 3;   // 3AFC
+const LAPSE = 0.02;
 
-const stimSamples = jsQuestPlus.linspace(
-  Math.log10(MAGNITUDE_MIN),
-  Math.log10(MAGNITUDE_MAX),
-  MAGNITUDE_STEPS
-);
+// Stimulus and threshold grid in log10 space
+const N_STEPS = 46;
+const LOG_MIN = Math.log10(0.05);
+const LOG_MAX = Math.log10(0.50);
 
-const thresholdSamples = jsQuestPlus.linspace(
-  Math.log10(MAGNITUDE_MIN),
-  Math.log10(MAGNITUDE_MAX),
-  MAGNITUDE_STEPS
-);
-
-const thresholdPrior = jsQuestPlus.gauss(
-  thresholdSamples,
-  Math.log10(QUEST_PRIORS.threshold_mean), // ≈ -0.699
-  QUEST_PRIORS.threshold_sd                // 0.15 in log10 units
-);
-
-// Slope, guess, and lapse are fixed — only threshold is estimated.
-// Hardcoding them in the psychometric functions keeps psych_samples 1D.
-const SLOPE = QUEST_PRIORS.slope;
-const GUESS = QUEST_PRIORS.guess_rate; // 1/3 for 3AFC
-const LAPSE = QUEST_PRIORS.lapse_rate;
-
-// ── Psychometric functions (3AFC Weibull) ─────────────────────────────────
-// Only threshold is a free parameter; slope/guess/lapse are closed over.
-
-function pCorrect(stim, threshold) {
-  return jsQuestPlus.weibull(stim, threshold, SLOPE, GUESS, LAPSE);
-}
-function pWrong(stim, threshold) {
-  return (1 - jsQuestPlus.weibull(stim, threshold, SLOPE, GUESS, LAPSE)) / 2;
+function linspace(a, b, n) {
+  return Array.from({ length: n }, (_, i) => a + (b - a) * i / (n - 1));
 }
 
-// Response indices: 0 = "same", 1 = correct direction, 2 = opposite direction
-const psychFuncs = [pWrong, pCorrect, pWrong];
+const stimSamples    = linspace(LOG_MIN, LOG_MAX, N_STEPS);
+const threshSamples  = linspace(LOG_MIN, LOG_MAX, N_STEPS);
+const slopeSamples   = [SLOPE];
+const guessSamples   = [GUESS];
+const lapseSamples   = [LAPSE];
 
-// ── Staircase factory ─────────────────────────────────────────────────────
+// Gaussian prior over threshold, centred on log10(0.20)
+const rawPrior = threshSamples.map(t =>
+  Math.exp(-0.5 * ((t - Math.log10(0.20)) / 0.15) ** 2)
+);
+const priorSum = rawPrior.reduce((a, b) => a + b, 0);
+const threshPrior = rawPrior.map(v => v / priorSum);
 
-function createStaircase() {
+// P(correct) — Weibull 3AFC
+function func_resp1(stim, threshold, slope, guess, lapse) {
+  const tmp = slope * (stim - threshold);
+  return (1 - lapse) * (guess + (1 - guess) * (1 - Math.exp(-Math.pow(10, tmp)))) + lapse * guess;
+}
+
+// P(wrong) — split equally between "same" and "opposite"
+function func_resp0(stim, threshold, slope, guess, lapse) {
+  return (1 - func_resp1(stim, threshold, slope, guess, lapse)) / 2;
+}
+
+function func_resp2(stim, threshold, slope, guess, lapse) {
+  return (1 - func_resp1(stim, threshold, slope, guess, lapse)) / 2;
+}
+
+function createStaircase(priorArray) {
+  const prior = priorArray
+    ? jsQuestPlus.set_prior([priorArray, [1], [1], [1]])
+    : jsQuestPlus.set_prior([threshPrior, [1], [1], [1]]);
+
   return new jsQuestPlus({
-    psych_func:    psychFuncs,
-    stim_samples:  [stimSamples],
-    psych_samples: [thresholdSamples],
-    priors:        jsQuestPlus.set_prior([thresholdPrior]),
+    psych_func: [func_resp0, func_resp1, func_resp2],
+    stim_samples: [stimSamples],
+    psych_samples: [threshSamples, slopeSamples, guessSamples, lapseSamples],
+    priors: prior,
   });
 }
 
-// ── Serialization ─────────────────────────────────────────────────────────
-//
-// Saved shape: { trial_count: N, normalized_posteriors: [46 values] }
-//
-// Serialize: read staircase.normalized_posteriors directly (authoritative
-// post-trial state) and copy to a plain Array for clean JSON round-trip.
-//
-// Restore: pass the saved posterior as the sole marginal into set_prior()
-// (threshold only — slope/guess/lapse are hardcoded in the psych functions).
-// set_prior() builds a valid { priors, comb_priors, normalized_priors }
-// from scratch — no post-hoc property injection the constructor might overwrite.
-
-// trial_count is passed in from trialCounts ref — jsQuestPlus does not
-// reconstruct stim_list when seeded via priors so we can't read it back.
-function serializeStaircase(staircase, trial_count) {
-  return {
-    trial_count,
-    normalized_posteriors: Array.from(staircase.normalized_posteriors),
-  };
+function getNextStim(staircase) {
+  // getStimParams() returns a scalar in this version of jsQuestPlus
+  return staircase.getStimParams();
 }
 
-function deserializeStaircase(saved) {
-  // TODO: remove once cross-session persistence is confirmed working
-  console.log('[QUEST] deserializing staircase, keys in saved:', Object.keys(saved));
-  console.log('[QUEST] saved.normalized_posteriors (first 4):', saved.normalized_posteriors?.slice(0, 4));
+function updateStaircase(staircase, staircaseKey, responseKey, log10Mag) {
+  const correctDir = staircaseKey.startsWith('faster') ? 'faster' : 'slower';
+  let responseIndex;
+  if (responseKey === correctDir)  responseIndex = 1;  // correct
+  else if (responseKey === 'same') responseIndex = 0;  // wrong: same
+  else                             responseIndex = 2;  // wrong: opposite
 
-  const restoredPrior = jsQuestPlus.set_prior([saved.normalized_posteriors]);
-
-  return new jsQuestPlus({
-    psych_func:    psychFuncs,
-    stim_samples:  [stimSamples],
-    psych_samples: [thresholdSamples],
-    priors:        restoredPrior,
-  });
+  // update() takes a plain scalar — NOT wrapped in array
+  staircase.update(log10Mag, responseIndex);
+  return responseIndex;
 }
-
-// ── Posterior SD for convergence check ───────────────────────────────────
-// Computed manually from normalized_posteriors rather than getSDs(), which
-// has bare pow/sqrt calls that throw ReferenceError in this environment.
 
 function getPosteriorSD(staircase) {
   const posterior = staircase.normalized_posteriors;
-  const mean = thresholdSamples.reduce((acc, t, i) => acc + t * posterior[i], 0);
-  const variance = thresholdSamples.reduce(
+  if (!posterior) return 0.15; // fallback to prior SD if not available
+  const mean = threshSamples.reduce((acc, t, i) => acc + t * posterior[i], 0);
+  const variance = threshSamples.reduce(
     (acc, t, i) => acc + posterior[i] * Math.pow(t - mean, 2), 0
   );
   return Math.sqrt(variance);
 }
 
-// ── Hook ─────────────────────────────────────────────────────────────────
+function serializeStaircase(staircase, trialCount) {
+  return {
+    trial_count: trialCount,
+    normalized_posteriors: staircase.normalized_posteriors,
+  };
+}
+
+function deserializeStaircase(saved) {
+  return createStaircase(saved.normalized_posteriors);
+}
 
 export function useQuestStaircases(savedState) {
-  const staircases  = useRef(null);
-  // trialCounts tracks cumulative trials across sessions — jsQuestPlus does not
-  // reconstruct stim_list when seeded via priors, so we maintain the count ourselves.
-  const trialCounts = useRef({
-    faster_high: savedState?.faster_high?.trial_count ?? 0,
-    faster_low:  savedState?.faster_low?.trial_count  ?? 0,
-    slower_high: savedState?.slower_high?.trial_count ?? 0,
-    slower_low:  savedState?.slower_low?.trial_count  ?? 0,
-  });
+  const staircases = useRef(null);
+  const trialCounts = useRef({ faster_high: 0, faster_low: 0, slower_high: 0, slower_low: 0 });
 
-  // Initialize once we have a definitive value for savedState.
-  // undefined = profile still loading — skip and wait for re-render.
-  // null      = profile loaded, no saved state — initialize fresh.
-  // object    = profile loaded with saved state — restore.
-  if (!staircases.current && savedState !== undefined) {
-    if (savedState) {
+  useEffect(() => {
+    if (savedState === undefined) return; // still loading — wait
+
+    if (savedState && Object.keys(savedState).length > 0) {
+      console.log('[QUEST] Restoring from saved state. Trial counts:', {
+        faster_high: savedState.faster_high?.trial_count,
+        faster_low:  savedState.faster_low?.trial_count,
+        slower_high: savedState.slower_high?.trial_count,
+        slower_low:  savedState.slower_low?.trial_count,
+      });
       staircases.current = {
         faster_high: deserializeStaircase(savedState.faster_high),
         faster_low:  deserializeStaircase(savedState.faster_low),
         slower_high: deserializeStaircase(savedState.slower_high),
         slower_low:  deserializeStaircase(savedState.slower_low),
       };
-      window.__qp = staircases.current; // TODO: remove — debug handle
-      // TODO: remove once cross-session persistence is confirmed working
-      console.log('[QUEST] Restoring from saved state:', savedState);
-      console.log('[QUEST] Trial counts on restore:', {
-        faster_high: savedState.faster_high?.trial_count,
-        faster_low:  savedState.faster_low?.trial_count,
-        slower_high: savedState.slower_high?.trial_count,
-        slower_low:  savedState.slower_low?.trial_count,
-      });
+      trialCounts.current = {
+        faster_high: savedState.faster_high?.trial_count ?? 0,
+        faster_low:  savedState.faster_low?.trial_count  ?? 0,
+        slower_high: savedState.slower_high?.trial_count ?? 0,
+        slower_low:  savedState.slower_low?.trial_count  ?? 0,
+      };
     } else {
+      console.log('[QUEST] No saved state — initializing fresh staircases');
       staircases.current = {
         faster_high: createStaircase(),
         faster_low:  createStaircase(),
         slower_high: createStaircase(),
         slower_low:  createStaircase(),
       };
-      window.__qp = staircases.current; // TODO: remove — debug handle
-      // TODO: remove once cross-session persistence is confirmed working
-      console.log('[QUEST] No saved state found — initializing fresh staircases');
+      trialCounts.current = { faster_high: 0, faster_low: 0, slower_high: 0, slower_low: 0 };
     }
+
+    // Expose to window for console debugging — remove before production
+    window.__qp = staircases.current;
+  }, [savedState]);
+
+  function getMostUncertainStaircase() {
+    const keys = ['faster_high', 'faster_low', 'slower_high', 'slower_low'];
+    return keys.reduce((best, key) => {
+      const sd    = getPosteriorSD(staircases.current[key]);
+      const bestSd = getPosteriorSD(staircases.current[best]);
+      return sd > bestSd ? key : best;
+    }, keys[0]);
   }
 
-  // Next stimulus for a given staircase, in log10 units (exact — no round-trip float drift)
-  function getLog10Magnitude(staircaseKey) {
-    const nextStim = staircases.current[staircaseKey].getStimParams()[0];
-    // TODO: remove once cross-session persistence is confirmed working
-    console.log('[QUEST] Next stimulus selected:', {
-      staircaseKey,
-      log10Mag:       nextStim?.toFixed(4),
-      linearMag:      Math.pow(10, nextStim).toFixed(4),
-      cumulativeTrials: trialCounts.current[staircaseKey],
-      note: 'linearMag should differ from 0.2000 on session 2+ if restore is working',
-    });
-    return nextStim;
-  }
-
-  // Next stimulus for a given staircase, in linear units
-  function getNextMagnitude(staircaseKey) {
-    return Math.pow(10, getLog10Magnitude(staircaseKey));
-  }
-
-  // Record a response; responseKey: 'faster' | 'slower' | 'same'
   function recordResponse(staircaseKey, responseKey, log10Mag) {
-    const correctDir    = staircaseKey.startsWith('faster') ? 'faster' : 'slower';
-    const responseIndex = responseKey === correctDir ? 1 : responseKey === 'same' ? 0 : 2;
-    const staircase     = staircases.current[staircaseKey];
-
-    // TODO: remove once cross-session persistence is confirmed working
-    console.log('[QUEST] update() args:', {
-      staircaseKey,
-      stimArg:             log10Mag,
-      responseIndex,
-      correctResponse:     correctDir,
-      participantResponse: responseKey,
-      linearMag:           Math.pow(10, log10Mag).toFixed(4),
-    });
-
-    staircase.update([log10Mag], responseIndex);
+    const sc = staircases.current[staircaseKey];
+    const responseIndex = updateStaircase(sc, staircaseKey, responseKey, log10Mag);
     trialCounts.current[staircaseKey] += 1;
 
-    // TODO: remove once cross-session persistence is confirmed working
-    console.log('[QUEST] posterior after update:', {
+    const nextLog10 = getNextStim(sc);
+    console.log('[QUEST] update:', {
       staircaseKey,
-      nextStim: Math.pow(10, staircase.getStimParams()[0]).toFixed(4),
-      cumulativeTrials: trialCounts.current[staircaseKey],
+      responseKey,
+      responseIndex,
+      stimUsed: Math.pow(10, log10Mag).toFixed(4),
+      nextStim: Math.pow(10, nextLog10).toFixed(4),
+      trialCount: trialCounts.current[staircaseKey],
     });
-  }
 
-  // Which staircase is most uncertain (highest posterior SD)?
-  function getMostUncertainKey() {
-    const keys = ['faster_high', 'faster_low', 'slower_high', 'slower_low'];
-    return keys.reduce((best, key) =>
-      getPosteriorSD(staircases.current[key]) > getPosteriorSD(staircases.current[best])
-        ? key : best,
-      keys[0]
-    );
+    return responseIndex;
   }
 
   function allConverged() {
     return ['faster_high', 'faster_low', 'slower_high', 'slower_low'].every(
-      key => getPosteriorSD(staircases.current[key]) < QUEST_CONVERGENCE_SD
+      key => getPosteriorSD(staircases.current[key]) < 0.04
     );
   }
 
-  function getThresholdEstimate(key) {
-    // Returns mean threshold estimate in linear units
-    const log10Est = staircases.current[key].getEstimates('mean');
-    // getEstimates returns comb_PF_params element: [threshold, slope, lapse]
-    const log10Threshold = Array.isArray(log10Est) ? log10Est[0] : log10Est;
-    return Math.pow(10, log10Threshold);
+  function serialize() {
+    const sc = staircases.current;
+    return {
+      faster_high: serializeStaircase(sc.faster_high, trialCounts.current.faster_high),
+      faster_low:  serializeStaircase(sc.faster_low,  trialCounts.current.faster_low),
+      slower_high: serializeStaircase(sc.slower_high, trialCounts.current.slower_high),
+      slower_low:  serializeStaircase(sc.slower_low,  trialCounts.current.slower_low),
+    };
+  }
+
+  function getNextStimForKey(key) {
+    return getNextStim(staircases.current[key]);
   }
 
   function getSD(key) {
     return getPosteriorSD(staircases.current[key]);
   }
 
-  function serialize() {
-    const sc = staircases.current;
-    const tc = trialCounts.current;
-    // TODO: remove once cross-session persistence is confirmed working
-    console.log('[QUEST] Saving state:', {
-      faster_high_trials: tc.faster_high,
-      faster_low_trials:  tc.faster_low,
-      slower_high_trials: tc.slower_high,
-      slower_low_trials:  tc.slower_low,
-    });
-    return {
-      faster_high: serializeStaircase(sc.faster_high, tc.faster_high),
-      faster_low:  serializeStaircase(sc.faster_low,  tc.faster_low),
-      slower_high: serializeStaircase(sc.slower_high, tc.slower_high),
-      slower_low:  serializeStaircase(sc.slower_low,  tc.slower_low),
-    };
+  function getThresholdEstimate(key) {
+    const est = staircases.current[key].getEstimates('mean');
+    const log10Threshold = Array.isArray(est) ? est[0] : est;
+    return Math.pow(10, log10Threshold);
   }
 
   return {
     staircases,
-    getLog10Magnitude,
-    getNextMagnitude,
+    getMostUncertainStaircase,
     recordResponse,
-    getMostUncertainKey,
-    allConverged,
+    getNextStimForKey,
     getThresholdEstimate,
     getSD,
+    allConverged,
     serialize,
+    trialCounts,
   };
 }

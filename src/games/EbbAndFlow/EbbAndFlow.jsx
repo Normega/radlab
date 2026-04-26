@@ -99,8 +99,8 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
   const { getPhase, startBreath, reset: resetBreath } = useBreathCycle();
   const {
     staircases,
-    getLog10Magnitude, getNextMagnitude, recordResponse,
-    getMostUncertainKey, allConverged,
+    getNextStimForKey, recordResponse,
+    getMostUncertainStaircase, allConverged,
     getThresholdEstimate, getSD, serialize,
   } = useQuestStaircases(profile?.ebb_flow_quest_state);
   const { onPress: rawPress, onRelease: rawRelease, computeBreathSyncScore } = useButtonSync(getPhase);
@@ -272,10 +272,10 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
       direction   = null;
       salience    = null;
     } else {
-      trialType   = getMostUncertainKey();
+      trialType   = getMostUncertainStaircase();
       direction   = trialType.startsWith('faster') ? 'faster' : 'slower';
       salience    = trialType.endsWith('high') ? 'high' : 'low';
-      log10Mag    = getLog10Magnitude(trialType);   // exact — no round-trip float drift
+      log10Mag    = getNextStimForKey(trialType);
       magnitude   = Math.pow(10, log10Mag);
       durations   = computeBreathDurations(BASELINE_BREATH_DURATION_MS, magnitude, direction, salience);
     }
