@@ -62,18 +62,25 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
   function setPhase(p) { phaseRef.current = p; _setPhase(p); }
 
   // ── Button held state (React state for rendering only) ───────────────
-  const [isHeld,        setIsHeld]        = useState(false);
-  const [syncScore,     setSyncScore]     = useState(0);
-  const [showHint,      setShowHint]      = useState(false);
-  const [breathIndex,   setBreathIndex]   = useState(0);
-  const [trialCount,    setTrialCount]    = useState(0);
-  const [sessionScore,  setSessionScore]  = useState(0);
-  const [avatarPaused,  setAvatarPaused]  = useState(false);
+  const [isHeld,       setIsHeld]       = useState(false);
+  const [syncScore,    setSyncScore]    = useState(0);
+  const [showHint,     setShowHint]     = useState(false);
+  const [breathIndex,  setBreathIndex]  = useState(0);
+  const [trialCount,   setTrialCount]   = useState(0);
+  const [sessionScore, setSessionScore] = useState(0);
 
   // ── Profile + avatar ──────────────────────────────────────────────────
   const [profile,    setProfile]    = useState(null);
   const [avatarData, setAvatarData] = useState(null);
   const profileRef   = useRef(null);
+
+  // ── Avatar imperative control ─────────────────────────────────────────
+  // Populated by AvatarBreathPacer via controlRef prop.
+  // resetAvatarToNeutral / resumeAvatarAnimation operate synchronously on the
+  // RAF loop — no React state update cycle in between.
+  const avatarControlRef = useRef(null);
+  function resetAvatarToNeutral()  { avatarControlRef.current?.resetToNeutral(); }
+  function resumeAvatarAnimation() { avatarControlRef.current?.resumeAnimation(); }
 
   // ── Session tracking (refs — mutated inside async loops) ─────────────
   const pauseTimerRef      = useRef(null);
@@ -154,13 +161,25 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
     setShowHint(false);
 
     async function warmupLoop() {
-      resetBreath();
+      // 1. Cancel RAF, apply neutral synchronously (child effects run before parent,
+      //    so AvatarBreathPacer's build effect and its RAF have already fired by now —
+      //    but the RAF callback hasn't fired yet since it's scheduled for the next paint)
+      resetAvatarToNeutral();
+
+      // 2. Hold neutral for 1 000 ms
+      await new Promise(resolve => { pauseTimerRef.current = setTimeout(resolve, 1000); });
+      if (cancelled) return;
+
+      // 3. Start breath cycle synchronously so getPhase() reads a fresh cycleStartRef
+      //    on the very first RAF frame, then restart the animation loop
+      let pendingBreath = startBreath(BASELINE_BREATH_DURATION_MS);
+      resumeAvatarAnimation();
+
       while (!cancelled && phaseRef.current === 'WARMUP') {
-        await startBreath(BASELINE_BREATH_DURATION_MS);
+        await pendingBreath;
         if (cancelled) break;
         warmupBreathRef.current++;
 
-        // Check rolling mean
         const scores  = warmupScoresRef.current;
         const last4   = scores.slice(-4);
         const rolling = last4.length ? last4.reduce((a, b) => a + b, 0) / last4.length : 0;
@@ -169,19 +188,25 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
           if (!cancelled) setPhase('GET_READY');
           return;
         }
-        if (warmupBreathRef.current >= 12) {
-          setShowHint(true);
-        }
+        if (warmupBreathRef.current >= 12) setShowHint(true);
+
+        pendingBreath = startBreath(BASELINE_BREATH_DURATION_MS);
       }
     }
     warmupLoop();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      if (pauseTimerRef.current) { clearTimeout(pauseTimerRef.current); pauseTimerRef.current = null; }
+    };
   }, [phase]);
 
   // ── TRIAL_ITI phase ───────────────────────────────────────────────────
   useEffect(() => {
     if (phase !== 'TRIAL_ITI') return;
     let cancelled = false;
+    // Synchronously kill the RAF and pin the avatar to neutral for the entire
+    // ITI gap — prevents any residual warmup/previous-breath animation from leaking in
+    resetAvatarToNeutral();
     const timer = setTimeout(() => {
       if (!cancelled) beginTrial();
     }, ITI_DURATION_MS);
@@ -195,18 +220,28 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
     breathSyncRef.current = [];
 
     async function breathSequence() {
-      // Reset avatar to neutral for 1 000 ms before breath 1 begins
-      setAvatarPaused(true);
-      await new Promise(resolve => { pauseTimerRef.current = setTimeout(resolve, 1000); });
-      if (cancelled) return;
-      setAvatarPaused(false);
-      resetBreath(); // restart breath cycle from phase 0
-
       const trial     = currentTrialRef.current;
       const durations = trial.durations;
-      trialStartTimeRef.current = performance.now();
 
-      for (let i = 0; i < BREATHS_PER_TRIAL; i++) {
+      // 1. Synchronously cancel RAF and pin to neutral
+      //    (ITI already did this, but this is idempotent and guards re-entry)
+      resetAvatarToNeutral();
+
+      // 2. Hold neutral for exactly 1 000 ms
+      await new Promise(resolve => { pauseTimerRef.current = setTimeout(resolve, 1000); });
+      if (cancelled) return;
+
+      // 3. Start breath 1 synchronously so getPhase() reads a fresh cycleStartRef
+      //    on the very first frame, then restart the animation loop
+      trialStartTimeRef.current = performance.now();
+      setBreathIndex(0);
+      let pendingBreath = startBreath(durations[0]);
+      resumeAvatarAnimation();
+      await pendingBreath;
+      if (cancelled) return;
+
+      // 4. Breaths 2–4
+      for (let i = 1; i < BREATHS_PER_TRIAL; i++) {
         if (cancelled) return;
         setBreathIndex(i);
         await startBreath(durations[i]);
@@ -409,7 +444,7 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
           eyeColor={eyeColor}
           scaleAmplitude={modeConfig.scaleAmplitude}
           getPhase={getPhase}
-          avatarPaused={avatarPaused}
+          avatarControlRef={avatarControlRef}
           isHeld={isHeld}
           onPress={handlePress}
           onRelease={handleRelease}

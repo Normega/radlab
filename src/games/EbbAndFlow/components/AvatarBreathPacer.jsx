@@ -26,6 +26,20 @@ function mk(tag, attrs, parent) {
   return el;
 }
 
+// ── Neutral resting position — module-level so both the RAF loop and the
+//    imperative controlRef API can call it without a closure dependency. ──────
+function applyNeutral(elems) {
+  elems.svg.style.transform = 'scale(1)';
+  elems.lLid.setAttribute('d', 'M 60 91 Q 76 94 92 91 A 17 17 0 0 0 60 91 Z');
+  elems.rLid.setAttribute('d', 'M 108 91 Q 124 94 140 91 A 17 17 0 0 0 108 91 Z');
+  elems.lLsh.setAttribute('d', 'M 60 91 Q 76 94 92 91');
+  elems.rLsh.setAttribute('d', 'M 108 91 Q 124 94 140 91');
+  elems.bL.setAttribute('opacity', '0.42');
+  elems.bR.setAttribute('opacity', '0.42');
+  elems.browL.setAttribute('transform', 'translate(0,0)');
+  elems.browR.setAttribute('transform', 'translate(0,0)');
+}
+
 // ── AvatarBreathPacer ─────────────────────────────────────────────────────
 //
 // Renders the avatar SVG imperatively and animates it via requestAnimationFrame.
@@ -37,6 +51,10 @@ function mk(tag, attrs, parent) {
 //   eyeColor       — hex string
 //   scaleAmplitude — 0.02 (empath) | 0.12 (listener) | 0.25 (beginner)
 //   getPhase       — function returning 0.0–1.0 within current breath cycle
+//   paused         — static boolean (used by GetReadyScreen); for dynamic
+//                    imperative control use controlRef instead
+//   controlRef     — optional ref; populated with { resetToNeutral(), resumeAnimation() }
+//                    both operate synchronously on the RAF loop without going through React
 //   size           — px width/height of the SVG (default 240)
 
 export default function AvatarBreathPacer({
@@ -44,16 +62,18 @@ export default function AvatarBreathPacer({
   eyeColor  = '#4A90D9',
   scaleAmplitude = 0.25,
   getPhase,
-  paused = false,   // when true: snap to neutral resting position and hold
+  paused = false,
+  controlRef,
   size = 240,
 }) {
-  const containerRef    = useRef(null);
-  const rafRef          = useRef(null);
-  const elemsRef        = useRef(null);  // refs to animated SVG elements
-  const scaleAmpRef     = useRef(scaleAmplitude);
-  const pausedRef       = useRef(paused);
+  const containerRef = useRef(null);
+  const rafRef       = useRef(null);
+  const elemsRef     = useRef(null);
+  const scaleAmpRef  = useRef(scaleAmplitude);
+  const pausedRef    = useRef(paused);
+  const frameRef     = useRef(null); // stores the current frame callback for resumeAnimation
 
-  // Keep scaleAmplitude and paused in sync without rebuilding the SVG
+  // Keep scaleAmplitude and static paused prop in sync
   useEffect(() => { scaleAmpRef.current = scaleAmplitude; }, [scaleAmplitude]);
   useEffect(() => { pausedRef.current = paused; }, [paused]);
 
@@ -158,19 +178,6 @@ export default function AvatarBreathPacer({
 
     elemsRef.current = { svg, lLid, lLsh, rLid, rLsh, bL, bR, browL, browR };
 
-    // ── Neutral resting position (initial SVG values) ────────────────────
-    function applyNeutral(elems) {
-      elems.svg.style.transform = 'scale(1)';
-      elems.lLid.setAttribute('d', 'M 60 91 Q 76 94 92 91 A 17 17 0 0 0 60 91 Z');
-      elems.rLid.setAttribute('d', 'M 108 91 Q 124 94 140 91 A 17 17 0 0 0 108 91 Z');
-      elems.lLsh.setAttribute('d', 'M 60 91 Q 76 94 92 91');
-      elems.rLsh.setAttribute('d', 'M 108 91 Q 124 94 140 91');
-      elems.bL.setAttribute('opacity', '0.42');
-      elems.bR.setAttribute('opacity', '0.42');
-      elems.browL.setAttribute('transform', 'translate(0,0)');
-      elems.browR.setAttribute('transform', 'translate(0,0)');
-    }
-
     // ── RAF animation loop ───────────────────────────────────────────────
     function frame() {
       if (!elemsRef.current) return;
@@ -210,11 +217,39 @@ export default function AvatarBreathPacer({
       rafRef.current = requestAnimationFrame(frame);
     }
 
+    // Store frame so resumeAnimation can restart it without a closure on the build effect
+    frameRef.current = frame;
+
+    // ── Imperative control API ───────────────────────────────────────────
+    // resetToNeutral: synchronously kills RAF + writes neutral attrs.
+    //   Must be called from the same synchronous task as any state change
+    //   to guarantee the RAF is dead before the next paint.
+    // resumeAnimation: clears the paused flag and restarts RAF.
+    //   Call startBreath() BEFORE this so getPhase() reads a fresh cycleStartRef
+    //   on the very first frame.
+    if (controlRef) {
+      controlRef.current = {
+        resetToNeutral() {
+          if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
+          if (elemsRef.current) applyNeutral(elemsRef.current);
+          pausedRef.current = true;
+        },
+        resumeAnimation() {
+          pausedRef.current = false;
+          if (!rafRef.current && elemsRef.current && frameRef.current) {
+            rafRef.current = requestAnimationFrame(frameRef.current);
+          }
+        },
+      };
+    }
+
     rafRef.current = requestAnimationFrame(frame);
 
     return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
       elemsRef.current = null;
+      frameRef.current = null;
+      if (controlRef) controlRef.current = null;
     };
   // Re-build if colors change (new avatar loaded)
   // eslint-disable-next-line react-hooks/exhaustive-deps

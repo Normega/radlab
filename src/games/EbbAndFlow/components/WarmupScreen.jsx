@@ -20,7 +20,7 @@ export default function WarmupScreen({
   phase = 'warmup',
   skinColor, eyeColor, scaleAmplitude,
   getPhase,
-  avatarPaused = false,
+  avatarControlRef,   // ref populated with { resetToNeutral, resumeAnimation } by AvatarBreathPacer
   isHeld, onPress, onRelease,
   syncScore = 0,
   showHint = false,
@@ -55,7 +55,7 @@ export default function WarmupScreen({
           eyeColor={eyeColor}
           scaleAmplitude={scaleAmplitude}
           getPhase={getPhase}
-          paused={avatarPaused}
+          controlRef={avatarControlRef}
           size={240}
         />
       </div>
