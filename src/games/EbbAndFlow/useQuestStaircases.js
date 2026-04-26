@@ -128,10 +128,14 @@ export function useQuestStaircases(savedState) {
     }
   }
 
+  // Next stimulus for a given staircase, in log10 units (exact — no round-trip float drift)
+  function getLog10Magnitude(key) {
+    return staircases.current[key].getStimParams();
+  }
+
   // Next stimulus for a given staircase, in linear units
   function getNextMagnitude(key) {
-    const log10Mag = staircases.current[key].getStimParams();
-    return Math.pow(10, log10Mag);
+    return Math.pow(10, getLog10Magnitude(key));
   }
 
   // Record a response; responseKey: 'faster' | 'slower' | 'same'
@@ -181,6 +185,7 @@ export function useQuestStaircases(savedState) {
 
   return {
     staircases,
+    getLog10Magnitude,
     getNextMagnitude,
     recordResponse,
     getMostUncertainKey,

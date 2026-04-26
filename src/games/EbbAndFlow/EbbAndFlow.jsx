@@ -98,7 +98,7 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
   const { getPhase, startBreath, reset: resetBreath } = useBreathCycle();
   const {
     staircases,
-    getNextMagnitude, recordResponse,
+    getLog10Magnitude, getNextMagnitude, recordResponse,
     getMostUncertainKey, allConverged,
     getThresholdEstimate, getSD, serialize,
   } = useQuestStaircases(profile?.ebb_flow_quest_state);
@@ -272,8 +272,8 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
       trialType   = getMostUncertainKey();
       direction   = trialType.startsWith('faster') ? 'faster' : 'slower';
       salience    = trialType.endsWith('high') ? 'high' : 'low';
-      magnitude   = getNextMagnitude(trialType);
-      log10Mag    = Math.log10(magnitude);
+      log10Mag    = getLog10Magnitude(trialType);   // exact — no round-trip float drift
+      magnitude   = Math.pow(10, log10Mag);
       durations   = computeBreathDurations(BASELINE_BREATH_DURATION_MS, magnitude, direction, salience);
     }
 
