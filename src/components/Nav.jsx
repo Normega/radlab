@@ -40,6 +40,7 @@ export default function Nav({ session }) {
         {session ? (
           <>
             <Link to="/dashboard" style={S.link}>Dashboard</Link>
+            <Link to="/games"     style={S.link}>Games</Link>
             <button style={S.btnOutline} onClick={handleSignOut}>Sign out</button>
             <Link to="/profile" style={S.avatarCircle}>
               {avatarData ? (

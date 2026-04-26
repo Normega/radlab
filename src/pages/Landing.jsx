@@ -48,32 +48,63 @@ export default function Landing({ session }) {
       <section style={{ ...S.sectionOuter, background: 'var(--bgc)' }}>
         <div style={S.inner}>
           <p style={S.secLabel}>// Games</p>
-          {/* Game card: stacked on mobile (illustration top), side by side on md+ */}
-          <div className="grid grid-cols-1 md:grid-cols-[1fr_200px]" style={S.gameCard}>
-            {/* Illustration — first on mobile (top), last on desktop (right) */}
-            <div
-              className="order-first md:order-last flex flex-col items-center justify-center gap-3 p-6 border-b md:border-b-0 md:border-l"
-              style={{ background: 'var(--bgp)', borderColor: 'var(--pkb)' }}
-            >
-              <PondIllustration />
-              <p style={S.pondHint}>Duck spotted!</p>
-              <span style={S.keyPill}>spacebar</span>
-            </div>
-            {/* Info — second on mobile (bottom), first on desktop (left) */}
-            <div className="order-last md:order-first" style={S.gameInfo}>
-              <span style={S.gameBadge}>Go / No-Go · Reaction time</span>
-              <h2 style={S.gameTitle}>Pond Watch</h2>
-              <p style={S.gameDesc}>
-                You're a wildlife monitor. A duck appears — hit spacebar. A heron glides
-                past — don't you dare touch it. Sounds easy. Your brain will betray you.
-              </p>
-              <div className="flex gap-6 pt-4 mb-5" style={{ borderTop: '1px solid var(--bd)' }}>
-                <MetaItem label="Trials"   val="60" />
-                <MetaItem label="Duration" val="~5 min" />
-                <MetaItem label="Measures" val="RT · d′ · bias" />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+            {/* Pond Watch */}
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_200px]" style={S.gameCard}>
+              <div
+                className="order-first md:order-last flex flex-col items-center justify-center gap-3 p-6 border-b md:border-b-0 md:border-l"
+                style={{ background: 'var(--bgp)', borderColor: 'var(--pkb)' }}
+              >
+                <PondIllustration />
+                <p style={S.pondHint}>Duck spotted!</p>
+                <span style={S.keyPill}>spacebar</span>
               </div>
-              <Link to="/signup" style={S.btnPrimary}>Coming soon — sign up to play</Link>
+              <div className="order-last md:order-first" style={S.gameInfo}>
+                <span style={S.gameBadge}>Go / No-Go · Reaction time</span>
+                <h2 style={S.gameTitle}>Pond Watch</h2>
+                <p style={S.gameDesc}>
+                  You're a wildlife monitor. A duck appears — hit spacebar. A heron glides
+                  past — don't you dare touch it. Sounds easy. Your brain will betray you.
+                </p>
+                <div className="flex gap-6 pt-4 mb-5" style={{ borderTop: '1px solid var(--bd)' }}>
+                  <MetaItem label="Trials"   val="60" />
+                  <MetaItem label="Duration" val="~5 min" />
+                  <MetaItem label="Measures" val="RT · d′ · bias" />
+                </div>
+                <Link to="/signup" style={S.btnPrimary}>Coming soon — sign up to play</Link>
+              </div>
             </div>
+
+            {/* Ebb & Flow */}
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_200px]" style={S.gameCard}>
+              <div
+                className="order-first md:order-last flex flex-col items-center justify-center gap-3 p-6 border-b md:border-b-0 md:border-l"
+                style={{ background: 'var(--bgp)', borderColor: 'var(--pkb)' }}
+              >
+                <EbbFlowIllustration />
+                <p style={S.pondHint}>hold on inhale</p>
+                <span style={S.keyPill}>breath sync</span>
+              </div>
+              <div className="order-last md:order-first" style={S.gameInfo}>
+                <span style={S.gameBadge}>Interoception · Breath sync</span>
+                <h2 style={S.gameTitle}>Ebb &amp; Flow</h2>
+                <p style={S.gameDesc}>
+                  Breathe with your avatar. Notice when something changes.
+                  A quiet game of awareness — each session takes about 5 minutes.
+                </p>
+                <div className="flex gap-6 pt-4 mb-5" style={{ borderTop: '1px solid var(--bd)' }}>
+                  <MetaItem label="Trials"   val="~15" />
+                  <MetaItem label="Duration" val="~5 min" />
+                  <MetaItem label="Measures" val="Threshold · Sync" />
+                </div>
+                {session
+                  ? <Link to="/games/ebb-flow" style={S.btnPrimary}>Play now →</Link>
+                  : <Link to="/signup"         style={S.btnPrimary}>Sign up to play →</Link>
+                }
+              </div>
+            </div>
+
           </div>
         </div>
       </section>
@@ -209,6 +240,34 @@ function PondIllustration() {
       <ellipse cx="25" cy="85" rx="8"  ry="5"  fill="#abadb0" opacity="0.2"/>
       <line    x1="18" y1="100" x2="18" y2="50" stroke="#abadb0" strokeWidth="1.3" opacity="0.35"/>
       <ellipse cx="18" cy="50" rx="3"  ry="8"  fill="#abadb0" opacity="0.3"/>
+    </svg>
+  )
+}
+
+function EbbFlowIllustration() {
+  return (
+    <svg width="130" height="120" viewBox="0 0 120 115" xmlns="http://www.w3.org/2000/svg">
+      {/* Soft background pond shape */}
+      <ellipse cx="60" cy="82" rx="50" ry="26" fill="#f5e0ee" opacity="0.55"/>
+      <ellipse cx="60" cy="82" rx="50" ry="26" fill="none" stroke="#f068a4" strokeWidth="0.8" opacity="0.28"/>
+      {/* Breath sine wave */}
+      <path d="M 10 82 Q 25 56 40 82 Q 55 108 70 82 Q 85 56 110 82"
+            fill="none" stroke="#f068a4" strokeWidth="2.2" strokeLinecap="round" opacity="0.9"/>
+      {/* Avatar face */}
+      <ellipse cx="60" cy="34" rx="20" ry="22" fill="#f068a4" opacity="0.9"/>
+      {/* Eyes — half-lidded */}
+      <ellipse cx="53" cy="32" rx="3.5" ry="3" fill="white" opacity="0.95"/>
+      <ellipse cx="67" cy="32" rx="3.5" ry="3" fill="white" opacity="0.95"/>
+      <ellipse cx="53" cy="33" rx="2" ry="2" fill="#1c1c1e"/>
+      <ellipse cx="67" cy="33" rx="2" ry="2" fill="#1c1c1e"/>
+      {/* Eyelids (half-lidded) */}
+      <path d="M 49 30 Q 53 27 57 30" fill="#f068a4" opacity="0.85"/>
+      <path d="M 63 30 Q 67 27 71 30" fill="#f068a4" opacity="0.85"/>
+      {/* Gentle smile */}
+      <path d="M 55 41 Q 60 45 65 41" fill="none" stroke="#c04a82" strokeWidth="1.3" strokeLinecap="round"/>
+      {/* Blush dots */}
+      <ellipse cx="47" cy="37" rx="5" ry="3" fill="#ff8fab" opacity="0.35"/>
+      <ellipse cx="73" cy="37" rx="5" ry="3" fill="#ff8fab" opacity="0.35"/>
     </svg>
   )
 }

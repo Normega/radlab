@@ -42,11 +42,11 @@ export default function Dashboard({ session }) {
             to="/games/pond-watch"
           />
           <GameCard
-            title="More games"
-            tag="In development"
-            desc="Additional psychophysics tasks are in development — pitch discrimination, contrast detection, and more."
-            status="in development"
-            muted
+            title="Ebb &amp; Flow"
+            tag="Interoception · Breath sync"
+            desc="Breathe with your avatar and detect subtle shifts in rhythm. Each session adapts to your sensitivity."
+            status="Play now →"
+            to="/games/ebb-flow"
           />
         </div>
 

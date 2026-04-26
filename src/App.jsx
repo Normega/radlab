@@ -7,6 +7,7 @@ import Landing      from './pages/Landing'
 import Login        from './pages/Login'
 import Signup       from './pages/Signup'
 import Dashboard    from './pages/Dashboard'
+import GamesPage    from './pages/GamesPage'
 import ProfilePage  from './pages/ProfilePage'
 import Nav          from './components/Nav'
 import PondWatch    from './games/PondWatch'
@@ -85,6 +86,12 @@ export default function App() {
           <Route path="/dashboard" element={
             <ProtectedRoute session={session} hasAvatar={hasAvatar}>
               <Dashboard session={session} />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/games" element={
+            <ProtectedRoute session={session} hasAvatar={hasAvatar}>
+              <GamesPage session={session} />
             </ProtectedRoute>
           } />
 
