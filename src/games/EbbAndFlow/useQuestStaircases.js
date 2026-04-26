@@ -56,19 +56,43 @@ function createStaircase() {
 }
 
 // ── Serialization ─────────────────────────────────────────────────────────
-// Save: store the posteriors object (includes normalized_priors = current posterior)
-// Restore: pass saved posteriors as priors to the constructor
+//
+// The authoritative post-trial state is staircase.normalized_posteriors —
+// a flat array that update() rewrites on every trial.
+// staircase.posteriors.normalized_priors is an alias to the same array
+// (assigned in update()), but going through the posteriors object introduces
+// a reference-chain that can break after a JSON/Supabase round-trip.
+//
+// Fix: read normalized_posteriors directly and copy it to a plain Array so
+// JSON.stringify produces an ordinary numeric array with no hidden state.
+//
+// Restore: jsQuestPlus requires a full { priors, comb_priors, normalized_priors }
+// object as the priors: setting.  Build one with set_prior() (same params as
+// createStaircase), then replace normalized_priors with the saved posterior so
+// the new instance starts exactly where the previous session ended.
 
 function serializeStaircase(staircase) {
-  return staircase.posteriors;
+  return {
+    normalized_posteriors: Array.from(staircase.normalized_posteriors),
+    trial_count: staircase.stim_list?.length ?? 0,
+  };
 }
 
 function deserializeStaircase(saved) {
+  // Build a well-formed priors object the constructor can validate,
+  // then inject the saved posterior as the starting normalized_priors.
+  const restoredPriors = jsQuestPlus.set_prior([
+    thresholdPrior,
+    slopeSamples.length,
+    lapseSamples.length,
+  ]);
+  restoredPriors.normalized_priors = saved.normalized_posteriors;
+
   return new jsQuestPlus({
     psych_func: psychFuncs,
     stim_samples: [stimSamples],
     psych_samples: [thresholdSamples, slopeSamples, lapseSamples],
-    priors: saved, // saved posteriors object used as the new prior
+    priors: restoredPriors,
   });
 }
 
