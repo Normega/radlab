@@ -57,42 +57,40 @@ function createStaircase() {
 
 // ── Serialization ─────────────────────────────────────────────────────────
 //
-// The authoritative post-trial state is staircase.normalized_posteriors —
-// a flat array that update() rewrites on every trial.
-// staircase.posteriors.normalized_priors is an alias to the same array
-// (assigned in update()), but going through the posteriors object introduces
-// a reference-chain that can break after a JSON/Supabase round-trip.
+// Saved shape: { trial_count: N, normalized_posteriors: [46 values] }
 //
-// Fix: read normalized_posteriors directly and copy it to a plain Array so
-// JSON.stringify produces an ordinary numeric array with no hidden state.
+// Serialize: read staircase.normalized_posteriors directly (authoritative
+// post-trial state) and copy to a plain Array for clean JSON round-trip.
 //
-// Restore: jsQuestPlus requires a full { priors, comb_priors, normalized_priors }
-// object as the priors: setting.  Build one with set_prior() (same params as
-// createStaircase), then replace normalized_priors with the saved posterior so
-// the new instance starts exactly where the previous session ended.
+// Restore: pass the saved posterior array as the threshold marginal into
+// set_prior(), alongside uniform marginals for the fixed slope and lapse
+// parameters. set_prior() then builds a valid { priors, comb_priors,
+// normalized_priors } object from scratch — no post-hoc property injection
+// that the constructor might overwrite.
 
 function serializeStaircase(staircase) {
   return {
+    trial_count:           staircase.stim_list?.length ?? 0,
     normalized_posteriors: Array.from(staircase.normalized_posteriors),
-    trial_count: staircase.stim_list?.length ?? 0,
   };
 }
 
 function deserializeStaircase(saved) {
-  // Build a well-formed priors object the constructor can validate,
-  // then inject the saved posterior as the starting normalized_priors.
-  const restoredPriors = jsQuestPlus.set_prior([
-    thresholdPrior,
-    slopeSamples.length,
-    lapseSamples.length,
+  // TODO: remove once cross-session persistence is confirmed working
+  console.log('[QUEST] deserializing staircase, keys in saved:', Object.keys(saved));
+  console.log('[QUEST] saved.normalized_posteriors (first 4):', saved.normalized_posteriors?.slice(0, 4));
+
+  const restoredPrior = jsQuestPlus.set_prior([
+    saved.normalized_posteriors,   // threshold marginal — restored posterior (46 values)
+    slopeSamples.map(() => 1),     // slope  — uniform over single fixed value
+    lapseSamples.map(() => 1),     // lapse  — uniform over single fixed value
   ]);
-  restoredPriors.normalized_priors = saved.normalized_posteriors;
 
   return new jsQuestPlus({
-    psych_func: psychFuncs,
-    stim_samples: [stimSamples],
+    psych_func:    psychFuncs,
+    stim_samples:  [stimSamples],
     psych_samples: [thresholdSamples, slopeSamples, lapseSamples],
-    priors: restoredPriors,
+    priors:        restoredPrior,
   });
 }
 
