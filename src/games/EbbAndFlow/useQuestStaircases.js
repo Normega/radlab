@@ -68,9 +68,11 @@ function createStaircase() {
 // normalized_priors } object from scratch — no post-hoc property injection
 // that the constructor might overwrite.
 
-function serializeStaircase(staircase) {
+// trial_count is passed in from trialCounts ref — jsQuestPlus does not
+// reconstruct stim_list when seeded via priors so we can't read it back.
+function serializeStaircase(staircase, trial_count) {
   return {
-    trial_count:           staircase.stim_list?.length ?? 0,
+    trial_count,
     normalized_posteriors: Array.from(staircase.normalized_posteriors),
   };
 }
@@ -105,7 +107,15 @@ function getPosteriorSD(staircase) {
 // ── Hook ─────────────────────────────────────────────────────────────────
 
 export function useQuestStaircases(savedState) {
-  const staircases = useRef(null);
+  const staircases  = useRef(null);
+  // trialCounts tracks cumulative trials across sessions — jsQuestPlus does not
+  // reconstruct stim_list when seeded via priors, so we maintain the count ourselves.
+  const trialCounts = useRef({
+    faster_high: savedState?.faster_high?.trial_count ?? 0,
+    faster_low:  savedState?.faster_low?.trial_count  ?? 0,
+    slower_high: savedState?.slower_high?.trial_count ?? 0,
+    slower_low:  savedState?.slower_low?.trial_count  ?? 0,
+  });
 
   // Initialize once we have a definitive value for savedState.
   // undefined = profile still loading — skip and wait for re-render.
@@ -122,10 +132,10 @@ export function useQuestStaircases(savedState) {
       // TODO: remove once cross-session persistence is confirmed working
       console.log('[QUEST] Restoring from saved state:', savedState);
       console.log('[QUEST] Trial counts on restore:', {
-        faster_high: staircases.current.faster_high.stim_list?.length ?? 0,
-        faster_low:  staircases.current.faster_low.stim_list?.length  ?? 0,
-        slower_high: staircases.current.slower_high.stim_list?.length ?? 0,
-        slower_low:  staircases.current.slower_low.stim_list?.length  ?? 0,
+        faster_high: savedState.faster_high?.trial_count,
+        faster_low:  savedState.faster_low?.trial_count,
+        slower_high: savedState.slower_high?.trial_count,
+        slower_low:  savedState.slower_low?.trial_count,
       });
     } else {
       staircases.current = {
@@ -146,8 +156,9 @@ export function useQuestStaircases(savedState) {
     console.log('[QUEST] Next stimulus selected:', {
       staircaseKey,
       log10Mag:       nextStim?.toFixed(4),
-      linearMag:      Math.pow(10, nextStim)?.toFixed(4),
-      stimListLength: staircases.current[staircaseKey]?.stim_list?.length,
+      linearMag:      Math.pow(10, nextStim).toFixed(4),
+      cumulativeTrials: trialCounts.current[staircaseKey],
+      note: 'linearMag should differ from 0.2000 on session 2+ if restore is working',
     });
     return nextStim;
   }
@@ -162,6 +173,7 @@ export function useQuestStaircases(savedState) {
     const correctDir = staircaseKey.startsWith('faster') ? 'faster' : 'slower';
     const responseIndex = responseKey === correctDir ? 1 : responseKey === 'same' ? 0 : 2;
     staircases.current[staircaseKey].update(log10Mag, responseIndex);
+    trialCounts.current[staircaseKey] += 1;
     // TODO: remove once cross-session persistence is confirmed working
     console.log('[QUEST] update called:', {
       staircaseKey,
@@ -169,7 +181,7 @@ export function useQuestStaircases(savedState) {
       correctResponse: correctDir,
       responseIndex,
       log10Mag: log10Mag?.toFixed(4),
-      trialCountAfter: staircases.current[staircaseKey]?.stim_list?.length ?? 0,
+      cumulativeTrials: trialCounts.current[staircaseKey],
     });
   }
 
@@ -203,18 +215,19 @@ export function useQuestStaircases(savedState) {
 
   function serialize() {
     const sc = staircases.current;
+    const tc = trialCounts.current;
     // TODO: remove once cross-session persistence is confirmed working
     console.log('[QUEST] Saving state:', {
-      faster_high_trials: sc.faster_high.stim_list?.length ?? 0,
-      faster_low_trials:  sc.faster_low.stim_list?.length  ?? 0,
-      slower_high_trials: sc.slower_high.stim_list?.length ?? 0,
-      slower_low_trials:  sc.slower_low.stim_list?.length  ?? 0,
+      faster_high_trials: tc.faster_high,
+      faster_low_trials:  tc.faster_low,
+      slower_high_trials: tc.slower_high,
+      slower_low_trials:  tc.slower_low,
     });
     return {
-      faster_high: serializeStaircase(sc.faster_high),
-      faster_low:  serializeStaircase(sc.faster_low),
-      slower_high: serializeStaircase(sc.slower_high),
-      slower_low:  serializeStaircase(sc.slower_low),
+      faster_high: serializeStaircase(sc.faster_high, tc.faster_high),
+      faster_low:  serializeStaircase(sc.faster_low,  tc.faster_low),
+      slower_high: serializeStaircase(sc.slower_high, tc.slower_high),
+      slower_low:  serializeStaircase(sc.slower_low,  tc.slower_low),
     };
   }
 
