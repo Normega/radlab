@@ -22,26 +22,14 @@ export async function savePondWatchSession({ userId, studyId, gameName, startedA
 
   const sessionId = session.id
 
-  // Get the current max cumulative trial number for this user across all games
-  const { data: maxRow } = await supabase
-    .from('trials')
-    .select('cumulative_trial_number, game_sessions!inner(user_id)')
-    .eq('game_sessions.user_id', userId)
-    .order('cumulative_trial_number', { ascending: false })
-    .limit(1)
-    .single()
-
-  const nextCumulativeTrialNumber = (maxRow?.cumulative_trial_number ?? 0) + 1
-
   const { error: trialsErr } = await supabase.from('trials').insert(
-    trials.map((t, i) => ({
-      session_id:               sessionId,
-      trial_number:             t.trialNumber,
-      cumulative_trial_number:  nextCumulativeTrialNumber + i,
-      stimulus_type:            t.stimulusType,
-      is_target:                t.isTarget,
-      responded:                t.responded,
-      reaction_time_ms:         t.reactionTime,
+    trials.map(t => ({
+      session_id:       sessionId,
+      trial_number:     t.trialNumber,
+      stimulus_type:    t.stimulusType,
+      is_target:        t.isTarget,
+      responded:        t.responded,
+      reaction_time_ms: t.reactionTime,
     }))
   )
   if (trialsErr) console.error('savePondWatchSession: trials insert failed', trialsErr)
@@ -82,27 +70,15 @@ export async function saveEbbFlowSession({
 
   // Insert per-trial rows (metrics as JSONB)
   if (trials?.length) {
-    // Get the current max cumulative trial number for this user across all games
-    const { data: maxRow } = await supabase
-      .from('trials')
-      .select('cumulative_trial_number, game_sessions!inner(user_id)')
-      .eq('game_sessions.user_id', user_id)
-      .order('cumulative_trial_number', { ascending: false })
-      .limit(1)
-      .single()
-
-    const nextCumulativeTrialNumber = (maxRow?.cumulative_trial_number ?? 0) + 1
-
     const { error: trialsErr } = await supabase.from('trials').insert(
-      trials.map((t, i) => ({
-        session_id:               sessionId,
-        trial_number:             t.trial_number,
-        cumulative_trial_number:  nextCumulativeTrialNumber + i,
-        stimulus_type:            t.trial_type,
-        is_target:                t.trial_type !== 'catch',
-        responded:                t.response !== null,
-        reaction_time_ms:         t.reaction_time_ms,
-        metrics:                  t,
+      trials.map(t => ({
+        session_id:       sessionId,
+        trial_number:     t.trial_number,
+        stimulus_type:    t.trial_type,
+        is_target:        t.trial_type !== 'catch',
+        responded:        t.response !== null,
+        reaction_time_ms: t.reaction_time_ms,
+        metrics:          t,
       }))
     )
     if (trialsErr) console.error('saveEbbFlowSession: trials insert failed', trialsErr)
