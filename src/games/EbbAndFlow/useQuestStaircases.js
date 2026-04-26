@@ -184,7 +184,7 @@ export function useQuestStaircases(savedState) {
       linearMag:           Math.pow(10, log10Mag).toFixed(4),
     });
 
-    staircase.update(log10Mag, responseIndex);
+    staircase.update([log10Mag], responseIndex);
     trialCounts.current[staircaseKey] += 1;
 
     // TODO: remove once cross-session persistence is confirmed working
