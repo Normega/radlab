@@ -25,20 +25,20 @@ const thresholdPrior = jsQuestPlus.gauss(
   QUEST_PRIORS.threshold_sd                // 0.15 in log10 units
 );
 
-const slopeSamples  = [QUEST_PRIORS.slope];
-const guessSamples  = [QUEST_PRIORS.guess_rate]; // 1/3 for 3AFC
-const lapseSamples  = [QUEST_PRIORS.lapse_rate];
+// Slope, guess, and lapse are fixed — only threshold is estimated.
+// Hardcoding them in the psychometric functions keeps psych_samples 1D.
+const SLOPE = QUEST_PRIORS.slope;
+const GUESS = QUEST_PRIORS.guess_rate; // 1/3 for 3AFC
+const LAPSE = QUEST_PRIORS.lapse_rate;
 
 // ── Psychometric functions (3AFC Weibull) ─────────────────────────────────
-// jsQuestPlus weibull signature: (stim, threshold, slope, guess, lapse)
-// psych_samples order must match parameter order after stim:
-//   [thresholdSamples, slopeSamples, guessSamples, lapseSamples]
+// Only threshold is a free parameter; slope/guess/lapse are closed over.
 
-function pCorrect(stim, threshold, slope, guess, lapse) {
-  return jsQuestPlus.weibull(stim, threshold, slope, guess, lapse);
+function pCorrect(stim, threshold) {
+  return jsQuestPlus.weibull(stim, threshold, SLOPE, GUESS, LAPSE);
 }
-function pWrong(stim, threshold, slope, guess, lapse) {
-  return (1 - jsQuestPlus.weibull(stim, threshold, slope, guess, lapse)) / 2;
+function pWrong(stim, threshold) {
+  return (1 - jsQuestPlus.weibull(stim, threshold, SLOPE, GUESS, LAPSE)) / 2;
 }
 
 // Response indices: 0 = "same", 1 = correct direction, 2 = opposite direction
@@ -48,15 +48,10 @@ const psychFuncs = [pWrong, pCorrect, pWrong];
 
 function createStaircase() {
   return new jsQuestPlus({
-    psych_func: psychFuncs,
-    stim_samples: [stimSamples],
-    psych_samples: [thresholdSamples, slopeSamples, guessSamples, lapseSamples],
-    priors: jsQuestPlus.set_prior([
-      thresholdPrior,
-      slopeSamples.length,
-      guessSamples.length,
-      lapseSamples.length,
-    ]),
+    psych_func:    psychFuncs,
+    stim_samples:  [stimSamples],
+    psych_samples: [thresholdSamples],
+    priors:        jsQuestPlus.set_prior([thresholdPrior]),
   });
 }
 
@@ -67,11 +62,10 @@ function createStaircase() {
 // Serialize: read staircase.normalized_posteriors directly (authoritative
 // post-trial state) and copy to a plain Array for clean JSON round-trip.
 //
-// Restore: pass the saved posterior array as the threshold marginal into
-// set_prior(), alongside uniform marginals for the fixed slope, guess, and
-// lapse parameters. set_prior() then builds a valid { priors, comb_priors,
-// normalized_priors } object from scratch — no post-hoc property injection
-// that the constructor might overwrite.
+// Restore: pass the saved posterior as the sole marginal into set_prior()
+// (threshold only — slope/guess/lapse are hardcoded in the psych functions).
+// set_prior() builds a valid { priors, comb_priors, normalized_priors }
+// from scratch — no post-hoc property injection the constructor might overwrite.
 
 // trial_count is passed in from trialCounts ref — jsQuestPlus does not
 // reconstruct stim_list when seeded via priors so we can't read it back.
@@ -87,17 +81,12 @@ function deserializeStaircase(saved) {
   console.log('[QUEST] deserializing staircase, keys in saved:', Object.keys(saved));
   console.log('[QUEST] saved.normalized_posteriors (first 4):', saved.normalized_posteriors?.slice(0, 4));
 
-  const restoredPrior = jsQuestPlus.set_prior([
-    saved.normalized_posteriors,   // threshold marginal — restored posterior (46 values)
-    slopeSamples.map(() => 1),     // slope  — uniform over single fixed value
-    guessSamples.map(() => 1),     // guess  — uniform over single fixed value
-    lapseSamples.map(() => 1),     // lapse  — uniform over single fixed value
-  ]);
+  const restoredPrior = jsQuestPlus.set_prior([saved.normalized_posteriors]);
 
   return new jsQuestPlus({
     psych_func:    psychFuncs,
     stim_samples:  [stimSamples],
-    psych_samples: [thresholdSamples, slopeSamples, guessSamples, lapseSamples],
+    psych_samples: [thresholdSamples],
     priors:        restoredPrior,
   });
 }
