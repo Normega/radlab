@@ -118,6 +118,14 @@ export function useQuestStaircases(savedState) {
         slower_high: deserializeStaircase(savedState.slower_high),
         slower_low:  deserializeStaircase(savedState.slower_low),
       };
+      // TODO: remove once cross-session persistence is confirmed working
+      console.log('[QUEST] Restoring from saved state:', savedState);
+      console.log('[QUEST] Trial counts on restore:', {
+        faster_high: staircases.current.faster_high.stim_list?.length ?? 0,
+        faster_low:  staircases.current.faster_low.stim_list?.length  ?? 0,
+        slower_high: staircases.current.slower_high.stim_list?.length ?? 0,
+        slower_low:  staircases.current.slower_low.stim_list?.length  ?? 0,
+      });
     } else {
       staircases.current = {
         faster_high: createStaircase(),
@@ -125,24 +133,43 @@ export function useQuestStaircases(savedState) {
         slower_high: createStaircase(),
         slower_low:  createStaircase(),
       };
+      // TODO: remove once cross-session persistence is confirmed working
+      console.log('[QUEST] No saved state found — initializing fresh staircases');
     }
   }
 
   // Next stimulus for a given staircase, in log10 units (exact — no round-trip float drift)
-  function getLog10Magnitude(key) {
-    return staircases.current[key].getStimParams();
+  function getLog10Magnitude(staircaseKey) {
+    const nextStim = staircases.current[staircaseKey].getStimParams();
+    // TODO: remove once cross-session persistence is confirmed working
+    console.log('[QUEST] Next stimulus selected:', {
+      staircaseKey,
+      log10Mag:       nextStim?.toFixed(4),
+      linearMag:      Math.pow(10, nextStim)?.toFixed(4),
+      stimListLength: staircases.current[staircaseKey]?.stim_list?.length,
+    });
+    return nextStim;
   }
 
   // Next stimulus for a given staircase, in linear units
-  function getNextMagnitude(key) {
-    return Math.pow(10, getLog10Magnitude(key));
+  function getNextMagnitude(staircaseKey) {
+    return Math.pow(10, getLog10Magnitude(staircaseKey));
   }
 
   // Record a response; responseKey: 'faster' | 'slower' | 'same'
-  function recordResponse(key, responseKey, log10Mag) {
-    const correctDir = key.startsWith('faster') ? 'faster' : 'slower';
-    const idx = responseKey === correctDir ? 1 : responseKey === 'same' ? 0 : 2;
-    staircases.current[key].update(log10Mag, idx);
+  function recordResponse(staircaseKey, responseKey, log10Mag) {
+    const correctDir = staircaseKey.startsWith('faster') ? 'faster' : 'slower';
+    const responseIndex = responseKey === correctDir ? 1 : responseKey === 'same' ? 0 : 2;
+    staircases.current[staircaseKey].update(log10Mag, responseIndex);
+    // TODO: remove once cross-session persistence is confirmed working
+    console.log('[QUEST] update called:', {
+      staircaseKey,
+      responseKey,
+      correctResponse: correctDir,
+      responseIndex,
+      log10Mag: log10Mag?.toFixed(4),
+      trialCountAfter: staircases.current[staircaseKey]?.stim_list?.length ?? 0,
+    });
   }
 
   // Which staircase is most uncertain (highest posterior SD)?
@@ -175,6 +202,13 @@ export function useQuestStaircases(savedState) {
 
   function serialize() {
     const sc = staircases.current;
+    // TODO: remove once cross-session persistence is confirmed working
+    console.log('[QUEST] Saving state:', {
+      faster_high_trials: sc.faster_high.stim_list?.length ?? 0,
+      faster_low_trials:  sc.faster_low.stim_list?.length  ?? 0,
+      slower_high_trials: sc.slower_high.stim_list?.length ?? 0,
+      slower_low_trials:  sc.slower_low.stim_list?.length  ?? 0,
+    });
     return {
       faster_high: serializeStaircase(sc.faster_high),
       faster_low:  serializeStaircase(sc.faster_low),
