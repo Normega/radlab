@@ -92,11 +92,16 @@ function deserializeStaircase(saved) {
 }
 
 // ── Posterior SD for convergence check ───────────────────────────────────
-// getSDs() returns [threshold_sd, slope_sd, lapse_sd]
-// Index 0 is threshold — what we care about for convergence
+// Computed manually from normalized_posteriors rather than getSDs(), which
+// has bare pow/sqrt calls that throw ReferenceError in this environment.
 
 function getPosteriorSD(staircase) {
-  return staircase.getSDs()[0];
+  const posterior = staircase.normalized_posteriors;
+  const mean = thresholdSamples.reduce((acc, t, i) => acc + t * posterior[i], 0);
+  const variance = thresholdSamples.reduce(
+    (acc, t, i) => acc + posterior[i] * Math.pow(t - mean, 2), 0
+  );
+  return Math.sqrt(variance);
 }
 
 // ── Hook ─────────────────────────────────────────────────────────────────
