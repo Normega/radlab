@@ -16,7 +16,7 @@ import WarmupScreen   from './components/WarmupScreen';
 import GetReadyScreen from './components/GetReadyScreen';
 import ResponseScreen  from './components/ResponseScreen';
 import ContinuePrompt  from './components/ContinuePrompt';
-import SessionSummary  from './components/SessionSummary';
+import SessionFeedback from './components/SessionFeedback';
 
 // ── Trial logic helpers ────────────────────────────────────────────────────
 
@@ -394,32 +394,29 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
     setProfile(p => ({ ...p, ebb_flow_game_mode: key }));
   }
 
-  // ── Estimates for summary ─────────────────────────────────────────────
-  const questEstimates = phase === 'SESSION_COMPLETE'
-    ? {
-        faster_high: getThresholdEstimate('faster_high'),
-        faster_low:  getThresholdEstimate('faster_low'),
-        slower_high: getThresholdEstimate('slower_high'),
-        slower_low:  getThresholdEstimate('slower_low'),
-      }
-    : {};
-  const questSDs = phase === 'SESSION_COMPLETE'
-    ? {
-        faster_high: getSD('faster_high'),
-        faster_low:  getSD('faster_low'),
-        slower_high: getSD('slower_high'),
-        slower_low:  getSD('slower_low'),
-      }
-    : {};
+  // ── Feedback props (computed once at SESSION_COMPLETE) ───────────────
+  const feedbackProps = phase === 'SESSION_COMPLETE' ? (() => {
+    const trials = sessionTrialsRef.current;
 
-  const newModeUnlocked = (() => {
-    const p = profileRef.current;
-    const prevTotal = p?.ebb_flow_total_trials ?? 0;
-    const newTotal  = prevTotal + trialCountRef.current;
-    if (prevTotal < 50 && newTotal >= 50)  return 'listener';
-    if (prevTotal < 100 && newTotal >= 100) return 'empath';
-    return null;
-  })();
+    // Excitement = mean posterior SD across faster staircases
+    const excitementSD = (getSD('faster_high') + getSD('faster_low')) / 2;
+    const calmSD       = (getSD('slower_high') + getSD('slower_low')) / 2;
+
+    // Per-trial sync means for trend chart
+    const syncScores = trials.map(t => t.trial_sync_mean ?? 0);
+
+    // Change awareness: proportion of confidence-calibrated trials
+    // calibrated = (confidence >= 5 && correct) || (confidence <= 3 && !correct)
+    const signalTrials = trials.filter(t => t.trial_type !== 'catch');
+    const calibrated   = signalTrials.filter(
+      t => (t.confidence >= 5 && t.correct) || (t.confidence <= 3 && !t.correct)
+    );
+    const changeAwareness = signalTrials.length
+      ? calibrated.length / signalTrials.length
+      : 0;
+
+    return { excitementSD, calmSD, syncScores, changeAwareness };
+  })() : null;
 
   // ── Render ─────────────────────────────────────────────────────────────
   const skinColor = avatarData?.skin_color || '#FDBCB4';
@@ -498,22 +495,17 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
         </div>
       )}
 
-      {phase === 'SESSION_COMPLETE' && (
-        <SessionSummary
+      {phase === 'SESSION_COMPLETE' && feedbackProps && (
+        <SessionFeedback
+          excitementSD={feedbackProps.excitementSD}
+          calmSD={feedbackProps.calmSD}
+          syncScores={feedbackProps.syncScores}
+          changeAwareness={feedbackProps.changeAwareness}
+          sessionTrialCount={trialCountRef.current}
+          totalTrialCount={(profile?.ebb_flow_total_trials ?? 0) + trialCountRef.current}
           sessionScore={sessionScoreRef.current}
-          totalScore={(profile?.ebb_flow_total_score ?? 0) + sessionScoreRef.current}
-          totalTrials={(profile?.ebb_flow_total_trials ?? 0) + trialCountRef.current}
-          questEstimates={questEstimates}
-          questSDs={questSDs}
-          allConverged={allConverged()}
-          newModeUnlocked={newModeUnlocked}
-          gameMode={gameMode}
-          sessionSyncMean={
-            sessionTrialsRef.current.length
-              ? sessionTrialsRef.current.reduce((a, t) => a + (t.trial_sync_mean ?? 0), 0) / sessionTrialsRef.current.length
-              : 0
-          }
-          onDone={() => navigate('/dashboard')}
+          onContinue={() => navigate('/games/ebb-flow')}
+          onBreak={() => navigate('/dashboard')}
         />
       )}
     </div>
