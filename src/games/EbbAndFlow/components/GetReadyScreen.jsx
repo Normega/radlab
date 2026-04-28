@@ -9,7 +9,7 @@ import AvatarBreathPacer from './AvatarBreathPacer';
 //   skinColor / eyeColor / scaleAmplitude — avatar appearance
 //   onBegin — () => void
 
-export default function GetReadyScreen({ skinColor, eyeColor, scaleAmplitude, onBegin }) {
+export default function GetReadyScreen({ skinColor, eyeColor, scaleAmplitude, auraIntensity = 0, onBegin }) {
   useEffect(() => {
     function onKey(e) {
       if (e.code === 'Space') { e.preventDefault(); onBegin(); }
@@ -28,6 +28,7 @@ export default function GetReadyScreen({ skinColor, eyeColor, scaleAmplitude, on
           getPhase={null}
           paused={true}
           size={240}
+          auraIntensity={auraIntensity}
         />
       </div>
       <p style={S.eyebrow}>Warmup complete</p>

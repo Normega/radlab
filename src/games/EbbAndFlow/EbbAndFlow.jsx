@@ -451,6 +451,7 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
           showHint={showHint}
           breathIndex={breathIndex}
           trialCount={trialCountRef.current}
+          auraIntensity={profile?.deeper_contact_last_sync ?? 0}
         />
       )}
 
@@ -459,6 +460,7 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
           skinColor={skinColor}
           eyeColor={eyeColor}
           scaleAmplitude={modeConfig.scaleAmplitude}
+          auraIntensity={profile?.deeper_contact_last_sync ?? 0}
           onBegin={() => setPhase('TRIAL_ITI')}
         />
       )}

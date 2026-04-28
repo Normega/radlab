@@ -13,6 +13,7 @@ import Nav          from './components/Nav'
 import PondWatch    from './games/PondWatch'
 import AvatarEditor from './components/Avatar/AvatarEditor'
 import EbbAndFlow   from './games/EbbAndFlow/EbbAndFlow'
+import FirstContact from './games/FirstContact/FirstContact'
 
 const queryClient = new QueryClient()
 
@@ -20,6 +21,15 @@ function roleToPath(role) {
   if (role === 'lab')         return '/admin'
   if (role === 'participant') return '/study'
   return '/dashboard'
+}
+
+// Guards /games/ebb-flow: redirects to /games/first-contact when not yet complete.
+// Renders nothing while firstContactComplete is still loading (undefined).
+function EbbFlowGuard({ firstContactComplete, children }) {
+  if (firstContactComplete === undefined) return null
+  if (firstContactComplete === false)
+    return <Navigate to="/games/first-contact?from=ebb-flow" replace />
+  return children
 }
 
 // Requires auth + avatar. If no avatar row exists, redirects to /profile/avatar.
@@ -45,13 +55,19 @@ function PublicOnlyRoute({ session, role, children }) {
 }
 
 export default function App() {
-  const [session,   setSession]   = useState(undefined) // undefined = loading
-  const [role,      setRole]      = useState(undefined)
-  const [hasAvatar, setHasAvatar] = useState(undefined) // undefined = not yet checked
+  const [session,              setSession]              = useState(undefined)
+  const [role,                 setRole]                 = useState(undefined)
+  const [hasAvatar,            setHasAvatar]            = useState(undefined)
+  const [firstContactComplete, setFirstContactComplete] = useState(undefined)
 
   async function fetchRole(userId) {
-    const { data } = await supabase.from('profiles').select('role').eq('id', userId).single()
+    const { data } = await supabase
+      .from('profiles')
+      .select('role, first_contact_complete')
+      .eq('id', userId)
+      .single()
     setRole(data?.role ?? 'public')
+    setFirstContactComplete(data?.first_contact_complete ?? false)
   }
 
   async function checkAvatar(userId) {
@@ -70,7 +86,7 @@ export default function App() {
       const sess = s ?? null
       setSession(sess)
       if (sess) { fetchRole(sess.user.id); checkAvatar(sess.user.id) }
-      else      { setRole(null); setHasAvatar(undefined) }
+      else      { setRole(null); setHasAvatar(undefined); setFirstContactComplete(undefined) }
     })
     return () => subscription.unsubscribe()
   }, [])
@@ -91,7 +107,7 @@ export default function App() {
 
           <Route path="/games" element={
             <ProtectedRoute session={session} hasAvatar={hasAvatar}>
-              <GamesPage session={session} />
+              <GamesPage session={session} firstContactComplete={firstContactComplete} />
             </ProtectedRoute>
           } />
 
@@ -115,9 +131,20 @@ export default function App() {
             </ProtectedRoute>
           } />
 
+          <Route path="/games/first-contact" element={
+            <ProtectedRoute session={session} hasAvatar={hasAvatar}>
+              <FirstContact
+                session={session}
+                onComplete={() => setFirstContactComplete(true)}
+              />
+            </ProtectedRoute>
+          } />
+
           <Route path="/games/ebb-flow" element={
             <ProtectedRoute session={session} hasAvatar={hasAvatar}>
-              <EbbAndFlow session={session} onSessionComplete={saveEbbFlowSession} />
+              <EbbFlowGuard firstContactComplete={firstContactComplete}>
+                <EbbAndFlow session={session} onSessionComplete={saveEbbFlowSession} />
+              </EbbFlowGuard>
             </ProtectedRoute>
           } />
 

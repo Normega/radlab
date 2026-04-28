@@ -26,6 +26,10 @@ function mk(tag, attrs, parent) {
   return el;
 }
 
+const RING_BASE_RADIUS   = 72;
+const RING_MAX_RADIUS    = 140;
+const AURA_MAX_OPACITY   = 0.35; // Ebb & Flow: subtler than First Contact's 0.60
+
 // ── Neutral resting position — module-level so both the RAF loop and the
 //    imperative controlRef API can call it without a closure dependency. ──────
 function applyNeutral(elems) {
@@ -58,24 +62,26 @@ function applyNeutral(elems) {
 //   size           — px width/height of the SVG (default 240)
 
 export default function AvatarBreathPacer({
-  skinColor = '#FDBCB4',
-  eyeColor  = '#4A90D9',
+  skinColor      = '#FDBCB4',
+  eyeColor       = '#4A90D9',
   scaleAmplitude = 0.25,
   getPhase,
-  paused = false,
+  paused         = false,
   controlRef,
-  size = 240,
+  size           = 240,
+  auraIntensity  = 0,   // 0.0–1.0 from profiles.deeper_contact_last_sync; 0 = invisible
 }) {
-  const containerRef = useRef(null);
-  const rafRef       = useRef(null);
-  const elemsRef     = useRef(null);
-  const scaleAmpRef  = useRef(scaleAmplitude);
-  const pausedRef    = useRef(paused);
-  const frameRef     = useRef(null); // stores the current frame callback for resumeAnimation
+  const containerRef    = useRef(null);
+  const rafRef          = useRef(null);
+  const elemsRef        = useRef(null);
+  const scaleAmpRef     = useRef(scaleAmplitude);
+  const pausedRef       = useRef(paused);
+  const frameRef        = useRef(null);
+  const auraIntensityRef = useRef(auraIntensity);
 
-  // Keep scaleAmplitude and static paused prop in sync
   useEffect(() => { scaleAmpRef.current = scaleAmplitude; }, [scaleAmplitude]);
   useEffect(() => { pausedRef.current = paused; }, [paused]);
+  useEffect(() => { auraIntensityRef.current = auraIntensity; }, [auraIntensity]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -134,6 +140,19 @@ export default function AvatarBreathPacer({
     const rcp = mk('clipPath', { id: `${p}rC` }, defs);
     mk('circle', { cx: '124', cy: '100', r: '17' }, rcp);
 
+    // ── Aura rings — rendered BEFORE head so they appear behind it ────────
+    // Fixed ambient effect driven by auraIntensityRef (seeded from last Deeper Contact session).
+    const rings = [0, 1, 2].map(() =>
+      mk('circle', {
+        cx: '100', cy: '105',
+        r:  String(RING_BASE_RADIUS),
+        fill: 'none',
+        stroke: '#FDBCB4',
+        'stroke-width': '1.5',
+        opacity: '0',
+      }, svg)
+    );
+
     // ── Face elements ────────────────────────────────────────────────────
     mk('ellipse', { cx: '100', cy: '105', rx: '64', ry: '68', fill: `url(#${p}hG)` }, svg);
 
@@ -176,12 +195,24 @@ export default function AvatarBreathPacer({
     containerRef.current.innerHTML = '';
     containerRef.current.appendChild(svg);
 
-    elemsRef.current = { svg, lLid, lLsh, rLid, rLsh, bL, bR, browL, browR };
+    elemsRef.current = { svg, rings, lLid, lLsh, rLid, rLsh, bL, bR, browL, browR };
 
     // ── RAF animation loop ───────────────────────────────────────────────
     function frame() {
       if (!elemsRef.current) return;
-      const { svg, lLid, lLsh, rLid, rLsh, bL, bR, browL, browR } = elemsRef.current;
+      const { svg, rings, lLid, lLsh, rLid, rLsh, bL, bR, browL, browR } = elemsRef.current;
+
+      const phase    = getPhase ? getPhase() : 0;
+      const auraInt  = auraIntensityRef.current;
+
+      // Aura rings — fixed ambient intensity, invisible if auraIntensity = 0
+      for (let i = 0; i < 3; i++) {
+        const ringPhase = (phase + i / 3) % 1.0;
+        const radius    = RING_BASE_RADIUS + ringPhase * (RING_MAX_RADIUS - RING_BASE_RADIUS);
+        const opacity   = Math.max(0, auraInt * AURA_MAX_OPACITY * (1 - ringPhase));
+        rings[i].setAttribute('r',       radius.toFixed(1));
+        rings[i].setAttribute('opacity', opacity.toFixed(3));
+      }
 
       // When paused: snap to neutral on every frame (idempotent, instant)
       if (pausedRef.current) {
@@ -190,7 +221,6 @@ export default function AvatarBreathPacer({
         return;
       }
 
-      const phase = getPhase ? getPhase() : 0;
       const bT = (Math.sin(phase * Math.PI * 2 - Math.PI / 2) + 1) / 2;
 
       // Scale — whole SVG expands on inhale

@@ -1,7 +1,16 @@
 import { Link } from 'react-router-dom'
 import Nav from '../components/Nav'
+import { COPY } from '../games/FirstContact/constants'
 
-export default function GamesPage({ session }) {
+// ── GamesPage ─────────────────────────────────────────────────────────────
+// Props:
+//   session              — auth session
+//   firstContactComplete — undefined (loading) | false | true
+
+export default function GamesPage({ session, firstContactComplete }) {
+  const loading    = firstContactComplete === undefined
+  const isComplete = firstContactComplete === true
+
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
       <Nav session={session} />
@@ -11,40 +20,80 @@ export default function GamesPage({ session }) {
         <h1 style={S.title}>What are you playing today?</h1>
 
         <div style={S.grid}>
+
+          {/* First Contact / Deeper Contact card — conditional on onboarding status */}
+          {!loading && !isComplete && (
+            <GameCard
+              title="First Contact"
+              badge="Breath sync · Required"
+              desc={COPY.games_tagline_first}
+              to="/games/first-contact"
+              featured
+            />
+          )}
+
+          {!loading && isComplete && (
+            <GameCard
+              title="Deeper Contact"
+              badge="Breath sync · Practice"
+              desc={COPY.games_tagline_deeper}
+              to="/games/first-contact"
+            />
+          )}
+
           <GameCard
             title="Pond Watch"
             badge="Go / No-Go · Reaction time"
             desc="Watch the pond. Press when you spot a duck."
             to="/games/pond-watch"
           />
+
+          {/* Ebb & Flow: locked until First Contact is complete */}
           <GameCard
             title="Ebb &amp; Flow"
             badge="Interoception · Breath sync"
             desc="Breathe with your avatar and detect subtle shifts in rhythm."
             to="/games/ebb-flow"
+            locked={!loading && !isComplete}
           />
+
         </div>
       </div>
     </div>
   )
 }
 
-// ── SUB-COMPONENTS ────────────────────────────────────────────────────────────
+// ── SUB-COMPONENTS ────────────────────────────────────────────────────────
 
-function GameCard({ title, badge, desc, to }) {
+function GameCard({ title, badge, desc, to, featured = false, locked = false }) {
   return (
-    <div style={S.card}>
+    <div style={{
+      ...S.card,
+      ...(featured ? S.cardFeatured : {}),
+    }}>
       <div style={S.cardInner}>
-        <span style={S.gameBadge}>{badge}</span>
+        <div style={S.badgeRow}>
+          <span style={S.gameBadge}>{badge}</span>
+          {locked && <span style={S.lockBadge}>🔒 Complete First Contact first</span>}
+        </div>
         <h2 style={S.gameTitle} dangerouslySetInnerHTML={{ __html: title }} />
         <p style={S.gameDesc}>{desc}</p>
       </div>
-      <Link to={to} style={S.playLink}>Play now →</Link>
+      <Link
+        to={to}
+        style={{
+          ...S.playLink,
+          ...(featured ? S.playLinkFeatured : {}),
+          ...(locked   ? S.playLinkLocked  : {}),
+        }}
+      >
+        {featured ? 'Begin →' : locked ? 'Locked' : 'Play now →'}
+      </Link>
     </div>
   )
 }
 
-// ── STYLES ────────────────────────────────────────────────────────────────────
+// ── STYLES ────────────────────────────────────────────────────────────────
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -56,22 +105,37 @@ const S = {
 
   grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 },
 
-  card:      { background: 'var(--bgc)', border: '1px solid var(--pkbs)', borderRadius: 16, overflow: 'hidden', display: 'flex', flexDirection: 'column' },
-  cardInner: { padding: '24px 24px 20px', flex: 1 },
+  card:         { background: 'var(--bgc)', border: '1px solid var(--pkbs)', borderRadius: 16, overflow: 'hidden', display: 'flex', flexDirection: 'column' },
+  cardFeatured: { border: '2px solid var(--pk)', boxShadow: '0 0 0 4px rgba(240,104,164,0.10)' },
+  cardInner:    { padding: '24px 24px 20px', flex: 1 },
+
+  badgeRow: { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 10 },
 
   gameBadge: {
     display: 'inline-block', fontFamily: MONO, fontSize: 11, letterSpacing: 1,
     textTransform: 'uppercase', padding: '3px 9px', borderRadius: 5,
     background: 'var(--bgp)', color: 'var(--pkd)', border: '1px solid var(--pkb)',
-    marginBottom: 10,
   },
-  gameTitle: { fontFamily: SERIF, fontSize: 26, color: 'var(--tx)', marginBottom: 8 },
-  gameDesc:  { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.6 },
+  lockBadge: {
+    display: 'inline-block', fontFamily: MONO, fontSize: 10, letterSpacing: 0.5,
+    padding: '3px 8px', borderRadius: 5,
+    background: '#f5f5f5', color: 'var(--tx3)', border: '1px solid var(--bd)',
+  },
+
+  gameTitle:  { fontFamily: SERIF, fontSize: 26, color: 'var(--tx)', marginBottom: 8 },
+  gameDesc:   { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.6 },
 
   playLink: {
     display: 'block', padding: '13px 24px',
     background: 'var(--bgp)', borderTop: '1px solid var(--pkb)',
     fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase',
     color: 'var(--pk)', textDecoration: 'none',
+  },
+  playLinkFeatured: {
+    background: 'var(--pk)', color: '#fff',
+    borderTop: 'none',
+  },
+  playLinkLocked: {
+    color: 'var(--tx3)', cursor: 'default', pointerEvents: 'none',
   },
 }

@@ -49,6 +49,28 @@ export async function savePondWatchSession({ userId, studyId, gameName, startedA
   return sessionId
 }
 
+// Save a completed First Contact / Deeper Contact session to Supabase.
+// Updates deeper_contact_* columns on profiles; sets first_contact_complete on first run.
+export async function saveFirstContactSession({
+  userId, rollingMean, previousBest, previousSessions, isFirstTime,
+}) {
+  const now = new Date().toISOString();
+
+  const update = {
+    deeper_contact_best_sync: Math.max(rollingMean, previousBest ?? 0),
+    deeper_contact_last_sync: rollingMean,
+    deeper_contact_sessions:  (previousSessions ?? 0) + 1,
+  };
+
+  if (isFirstTime) {
+    update.first_contact_complete    = true;
+    update.first_contact_complete_at = now;
+  }
+
+  const { error } = await supabase.from('profiles').update(update).eq('id', userId);
+  if (error) console.error('saveFirstContactSession: profile update failed', error);
+}
+
 // Save a completed Ebb & Flow session to Supabase.
 // Inserts game_sessions → trials (bulk), updates profiles ebb_flow_* columns.
 export async function saveEbbFlowSession({
