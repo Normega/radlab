@@ -33,7 +33,7 @@ export default function BreathPrompt({ getPhase, syncLevel = 0, cycleCount = 0 }
         if (promptsActive) {
           const inExpansion = phase < 0.5;
           const phaseInHalf = inExpansion ? phase : phase - 0.5;
-          const opacity     = phaseInHalf < 0.10 ? 1 - (phaseInHalf / 0.10) : 0;
+          const opacity     = phaseInHalf < 0.45 ? 1 : Math.max(0, 1 - ((phaseInHalf - 0.45) / 0.05));
           divRef.current.style.opacity  = opacity.toFixed(3);
           divRef.current.textContent    = inExpansion ? 'Press and Inhale' : 'Release and Exhale';
           divRef.current.style.color    = inExpansion ? AMBER : BLUE;
