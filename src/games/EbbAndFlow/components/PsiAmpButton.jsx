@@ -31,11 +31,15 @@ export default function PsiAmpButton({ onPress, onRelease, isHeld, showRing, syn
   }
   function handlePointerUp(e) {
     if (disabled) return;
+    e.currentTarget.releasePointerCapture(e.pointerId);
     onRelease?.();
   }
   function handlePointerLeave(e) {
     if (disabled) return;
-    if (isHeld) onRelease?.();
+    if (isHeld) {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+      onRelease?.();
+    }
   }
 
   // Spacebar equivalent
@@ -94,7 +98,6 @@ export default function PsiAmpButton({ onPress, onRelease, isHeld, showRing, syn
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerLeave}
-        disabled={disabled}
         style={{
           ...S.btn,
           background: isHeld
