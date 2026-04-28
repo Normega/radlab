@@ -19,6 +19,9 @@ function PlacementSlider({ label, leftLabel, rightLabel, value, onChange }) {
     e.currentTarget.setPointerCapture(e.pointerId);
     onChange(getValueFromPointer(e));
   }
+  function handlePointerUp(e) {
+    e.currentTarget.releasePointerCapture(e.pointerId);
+  }
   function handlePointerMove(e) {
     if (e.buttons === 0) return; // only while pressed
     onChange(getValueFromPointer(e));
@@ -37,6 +40,7 @@ function PlacementSlider({ label, leftLabel, rightLabel, value, onChange }) {
         ref={trackRef}
         style={S.track}
         onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
         onPointerMove={handlePointerMove}
       >
         {/* Fill from left to thumb (only when placed) */}
@@ -135,7 +139,6 @@ export default function ResponseScreen({ onSubmit, trialStartTime }) {
       <button
         style={{ ...S.nextBtn, opacity: submitReady ? 1 : 0.4, cursor: submitReady ? 'pointer' : 'default' }}
         onClick={handleSubmit}
-        disabled={!submitReady}
       >
         Next trial →
       </button>
