@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { SYNC_THRESHOLD, SCALE_AMPLITUDE, AURA_MAX_OPACITY_GAME } from '../constants';
+import { SYNC_THRESHOLD, SCALE_AMPLITUDE } from '../constants';
 
 // ── Color helpers ─────────────────────────────────────────────────────────
 function h2r(hex) {
@@ -128,11 +128,21 @@ export default function ContactAvatar({
         cx: '100', cy: '105',
         r:  String(RING_BASE_RADIUS),
         fill: 'none',
-        stroke: '#FDBCB4',
-        'stroke-width': '1.5',
+        stroke: '#F068A4',
+        'stroke-width': '2',
         opacity: '0',
       }, svg)
     );
+
+    // Static ring at base radius — glows steadily at sync >= 0.80
+    const staticRing = mk('circle', {
+      cx: '100', cy: '105',
+      r: String(RING_BASE_RADIUS),
+      fill: 'none',
+      stroke: '#F068A4',
+      'stroke-width': '2',
+      opacity: '0',
+    }, svg);
 
     // ── Head (always full opacity) ─────────────────────────────────────────
     mk('ellipse', { cx: '100', cy: '105', rx: '64', ry: '68', fill: `url(#${p}hG)` }, svg);
@@ -179,12 +189,12 @@ export default function ContactAvatar({
     containerRef.current.innerHTML = '';
     containerRef.current.appendChild(svg);
 
-    elemsRef.current = { svg, rings, featuresG, lLid, lLsh, rLid, rLsh, bL, bR, browL, browR };
+    elemsRef.current = { svg, rings, staticRing, featuresG, lLid, lLsh, rLid, rLsh, bL, bR, browL, browR };
 
     // ── RAF loop ──────────────────────────────────────────────────────────
     function frame() {
       if (!elemsRef.current) return;
-      const { svg, rings, featuresG, lLid, lLsh, rLid, rLsh, bL, bR, browL, browR } = elemsRef.current;
+      const { svg, rings, staticRing, featuresG, lLid, lLsh, rLid, rLsh, bL, bR, browL, browR } = elemsRef.current;
 
       const isFC    = isFirstContactRef.current;
       const isComp  = isCompleteRef.current;
@@ -197,14 +207,30 @@ export default function ContactAvatar({
         : 1.0;
       featuresG.setAttribute('opacity', featureOpacity.toFixed(3));
 
-      // Aura rings — expand outward like ripples, staggered 1/3 cycle each
+      // Tiered aura: stroke and opacity scale aggressively, pink → gold above 75%
+      const strokeW = syncLvl < 0.75
+        ? 1.5 + syncLvl * 3
+        : 3.5 + (syncLvl - 0.75) * 10;
+      const maxOp = Math.min(1, syncLvl < 0.75
+        ? syncLvl * 0.8
+        : 0.60 + (syncLvl - 0.75) * 1.6);
+      const colorT    = Math.max(0, Math.min(1, (syncLvl - 0.75) / 0.25));
+      const ringColor = mix('#F068A4', '#F0A500', colorT);
+
       for (let i = 0; i < 3; i++) {
         const ringPhase = (phase + i / 3) % 1.0;
         const radius    = RING_BASE_RADIUS + ringPhase * (RING_MAX_RADIUS - RING_BASE_RADIUS);
-        const opacity   = Math.max(0, syncLvl * AURA_MAX_OPACITY_GAME * (1 - ringPhase));
-        rings[i].setAttribute('r',       radius.toFixed(1));
-        rings[i].setAttribute('opacity', opacity.toFixed(3));
+        const opacity   = Math.max(0, maxOp * (1 - ringPhase));
+        rings[i].setAttribute('r',            radius.toFixed(1));
+        rings[i].setAttribute('opacity',      opacity.toFixed(3));
+        rings[i].setAttribute('stroke',       ringColor);
+        rings[i].setAttribute('stroke-width', strokeW.toFixed(2));
       }
+
+      // Static ring at base radius — steady glow at sync >= 0.80
+      staticRing.setAttribute('opacity',      (syncLvl >= 0.80 ? maxOp : 0).toFixed(3));
+      staticRing.setAttribute('stroke',       ringColor);
+      staticRing.setAttribute('stroke-width', strokeW.toFixed(2));
 
       if (pausedRef.current) {
         // Neutral breath position — applied every frame while paused
@@ -251,7 +277,7 @@ export default function ContactAvatar({
         resetToNeutral() {
           if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
           if (elemsRef.current) {
-            const { svg, rings, featuresG, lLid, lLsh, rLid, rLsh, bL, bR, browL, browR } = elemsRef.current;
+            const { svg, rings, staticRing, featuresG, lLid, lLsh, rLid, rLsh, bL, bR, browL, browR } = elemsRef.current;
             const fop = (isFirstContactRef.current && !isCompleteRef.current)
               ? Math.min(1, 0.08 + (syncLevelRef.current / SYNC_THRESHOLD) * (1 - 0.08))
               : 1.0;
@@ -266,6 +292,7 @@ export default function ContactAvatar({
             browR.setAttribute('transform', 'translate(0,0)');
             featuresG.setAttribute('opacity', fop.toFixed(3));
             rings.forEach(r => r.setAttribute('opacity', '0'));
+            staticRing.setAttribute('opacity', '0');
           }
           pausedRef.current = true;
         },
