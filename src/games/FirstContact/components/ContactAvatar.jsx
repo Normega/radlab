@@ -27,8 +27,9 @@ function mk(tag, attrs, parent) {
   return el;
 }
 
-const RING_BASE_RADIUS = 72;
-const RING_MAX_RADIUS  = 140;
+const HEAD_RADIUS      = 64;
+const HALO_MULTIPLIERS = [1.10, 1.15, 1.20, 1.25, 1.28, 1.31, 1.35];
+const HALO_OPACITIES   = [0.35, 0.28, 0.22, 0.17, 0.13, 0.10, 0.07];
 
 // ── ContactAvatar ─────────────────────────────────────────────────────────
 //
@@ -122,27 +123,16 @@ export default function ContactAvatar({
     const rcp = mk('clipPath', { id: `${p}rC` }, defs);
     mk('circle', { cx: '124', cy: '100', r: '17' }, rcp);
 
-    // ── Aura rings — rendered BEFORE head so they appear behind it ────────
-    const rings = [0, 1, 2].map(() =>
+    // ── Halo rings — static concentric circles rendered BEFORE head ─────────
+    // Filled with skin colour, no stroke. Scale with the SVG CSS transform.
+    const halos = HALO_MULTIPLIERS.map(mult =>
       mk('circle', {
         cx: '100', cy: '105',
-        r:  String(RING_BASE_RADIUS),
-        fill: 'none',
-        stroke: '#F068A4',
-        'stroke-width': '2',
+        r: (HEAD_RADIUS * mult).toFixed(1),
+        fill: skin,
         opacity: '0',
       }, svg)
     );
-
-    // Static ring at base radius — glows steadily at sync >= 0.80
-    const staticRing = mk('circle', {
-      cx: '100', cy: '105',
-      r: String(RING_BASE_RADIUS),
-      fill: 'none',
-      stroke: '#F068A4',
-      'stroke-width': '2',
-      opacity: '0',
-    }, svg);
 
     // ── Head (always full opacity) ─────────────────────────────────────────
     mk('ellipse', { cx: '100', cy: '105', rx: '64', ry: '68', fill: `url(#${p}hG)` }, svg);
@@ -189,12 +179,12 @@ export default function ContactAvatar({
     containerRef.current.innerHTML = '';
     containerRef.current.appendChild(svg);
 
-    elemsRef.current = { svg, rings, staticRing, featuresG, lLid, lLsh, rLid, rLsh, bL, bR, browL, browR };
+    elemsRef.current = { svg, halos, featuresG, lLid, lLsh, rLid, rLsh, bL, bR, browL, browR };
 
     // ── RAF loop ──────────────────────────────────────────────────────────
     function frame() {
       if (!elemsRef.current) return;
-      const { svg, rings, staticRing, featuresG, lLid, lLsh, rLid, rLsh, bL, bR, browL, browR } = elemsRef.current;
+      const { svg, halos, featuresG, lLid, lLsh, rLid, rLsh, bL, bR, browL, browR } = elemsRef.current;
 
       const isFC    = isFirstContactRef.current;
       const isComp  = isCompleteRef.current;
@@ -207,30 +197,11 @@ export default function ContactAvatar({
         : 1.0;
       featuresG.setAttribute('opacity', featureOpacity.toFixed(3));
 
-      // Tiered aura: stroke and opacity scale aggressively, pink → gold above 75%
-      const strokeW = syncLvl < 0.75
-        ? 1.5 + syncLvl * 3
-        : 3.5 + (syncLvl - 0.75) * 10;
-      const maxOp = Math.min(1, syncLvl < 0.75
-        ? syncLvl * 0.8
-        : 0.60 + (syncLvl - 0.75) * 1.6);
-      const colorT    = Math.max(0, Math.min(1, (syncLvl - 0.75) / 0.25));
-      const ringColor = mix('#F068A4', '#F0A500', colorT);
-
-      for (let i = 0; i < 3; i++) {
-        const ringPhase = (phase + i / 3) % 1.0;
-        const radius    = RING_BASE_RADIUS + ringPhase * (RING_MAX_RADIUS - RING_BASE_RADIUS);
-        const opacity   = Math.max(0, maxOp * (1 - ringPhase));
-        rings[i].setAttribute('r',            radius.toFixed(1));
-        rings[i].setAttribute('opacity',      opacity.toFixed(3));
-        rings[i].setAttribute('stroke',       ringColor);
-        rings[i].setAttribute('stroke-width', strokeW.toFixed(2));
+      // Halo rings — progressive appearance in 5% steps above 50% sync
+      const numRings = Math.min(7, Math.floor(Math.max(0, syncLvl - 0.50) / 0.05));
+      for (let i = 0; i < 7; i++) {
+        halos[i].setAttribute('opacity', i < numRings ? String(HALO_OPACITIES[i]) : '0');
       }
-
-      // Static ring at base radius — steady glow at sync >= 0.80
-      staticRing.setAttribute('opacity',      (syncLvl >= 0.80 ? maxOp : 0).toFixed(3));
-      staticRing.setAttribute('stroke',       ringColor);
-      staticRing.setAttribute('stroke-width', strokeW.toFixed(2));
 
       if (pausedRef.current) {
         // Neutral breath position — applied every frame while paused
@@ -277,7 +248,7 @@ export default function ContactAvatar({
         resetToNeutral() {
           if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
           if (elemsRef.current) {
-            const { svg, rings, staticRing, featuresG, lLid, lLsh, rLid, rLsh, bL, bR, browL, browR } = elemsRef.current;
+            const { svg, halos, featuresG, lLid, lLsh, rLid, rLsh, bL, bR, browL, browR } = elemsRef.current;
             const fop = (isFirstContactRef.current && !isCompleteRef.current)
               ? Math.min(1, 0.08 + (syncLevelRef.current / SYNC_THRESHOLD) * (1 - 0.08))
               : 1.0;
@@ -291,8 +262,7 @@ export default function ContactAvatar({
             browL.setAttribute('transform', 'translate(0,0)');
             browR.setAttribute('transform', 'translate(0,0)');
             featuresG.setAttribute('opacity', fop.toFixed(3));
-            rings.forEach(r => r.setAttribute('opacity', '0'));
-            staticRing.setAttribute('opacity', '0');
+            halos.forEach(h => h.setAttribute('opacity', '0'));
           }
           pausedRef.current = true;
         },
