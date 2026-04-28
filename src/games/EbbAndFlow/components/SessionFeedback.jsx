@@ -115,9 +115,9 @@ function TrendPill({ trend }) {
 
 function AwarenessPill({ pct }) {
   const cfg =
-    pct >= 65
+    pct >= 70
       ? { bg: 'rgba(24,95,165,0.12)', color: BLUE,  text: 'well calibrated' }
-      : pct >= 35
+      : pct >= 45
       ? { bg: 'var(--bgp)',            color: 'var(--tx2)', text: 'developing' }
       : { bg: 'rgba(240,104,164,0.12)', color: PINK, text: 'still learning' };
   return (
@@ -153,27 +153,30 @@ export default function SessionFeedback({
   onContinue,
   onBreak,
 }) {
-  const trend    = useMemo(() => syncTrend(syncScores), [syncScores]);
-  const syncMean = syncScores.length
-    ? syncScores.reduce((a, b) => a + b, 0) / syncScores.length
+  // Chart uses only the most recent 10 trials
+  const recentSync = useMemo(() => syncScores.slice(-10), [syncScores]);
+
+  const trend    = useMemo(() => syncTrend(recentSync), [recentSync]);
+  const syncMean = recentSync.length
+    ? recentSync.reduce((a, b) => a + b, 0) / recentSync.length
     : 0;
 
-  // Chart data: trial-by-trial + trend line overlay
-  const { slope, intercept } = useMemo(() => linearRegression(syncScores), [syncScores]);
+  // Chart data: trial-by-trial + trend line overlay (last 10 only)
+  const { slope, intercept } = useMemo(() => linearRegression(recentSync), [recentSync]);
   const chartData = useMemo(() =>
-    syncScores.map((v, i) => ({
+    recentSync.map((v, i) => ({
       i,
       sync:  v,
       trend: intercept + slope * i,
     })),
-    [syncScores, slope, intercept]
+    [recentSync, slope, intercept]
   );
 
   const awarenessPct = Math.round(changeAwareness * 100);
   const awarenessText =
-    awarenessPct >= 65 ? 'You knew when you knew.' :
-    awarenessPct >= 35 ? 'Your read is sharpening with each session.' :
-    'Keep playing — awareness builds slowly.';
+    awarenessPct >= 70 ? 'When you felt sure, you were right.' :
+    awarenessPct >= 45 ? 'Your confidence and accuracy are starting to align.' :
+    'Still learning when to trust your detections.';
 
   const showFocus = Math.abs(excitementSD - calmSD) > 0.04;
   const focusDir  = calmSD > excitementSD ? 'calm' : 'excitement';
@@ -278,8 +281,8 @@ export default function SessionFeedback({
 
       {/* ── Buttons ───────────────────────────────────────────────────── */}
       <div style={S.btnRow}>
-        <button style={S.btnSecondary} onClick={onBreak}>take a break</button>
-        <button style={S.btnPrimary}   onClick={onContinue}>continue →</button>
+        <button style={S.btnSecondary} onClick={onBreak}>Take a break</button>
+        <button style={S.btnPrimary}   onClick={onContinue}>Practice more →</button>
       </div>
 
     </div>

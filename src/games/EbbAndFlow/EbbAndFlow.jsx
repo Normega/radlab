@@ -8,14 +8,13 @@ import { useButtonSync } from './useButtonSync';
 import {
   BASELINE_BREATH_DURATION_MS, BREATHS_PER_TRIAL,
   CATCH_TRIAL_PROPORTION, GAME_MODES, POINTS,
-  MIN_TRIALS_PER_SESSION, CONTINUE_PROMPT_INTERVAL, ITI_DURATION_MS,
+  MIN_TRIALS_PER_SESSION, ITI_DURATION_MS,
   WARMUP_SYNC_THRESHOLD,
 } from './constants';
 import SessionStart   from './components/SessionStart';
 import WarmupScreen   from './components/WarmupScreen';
 import GetReadyScreen from './components/GetReadyScreen';
 import ResponseScreen  from './components/ResponseScreen';
-import ContinuePrompt  from './components/ContinuePrompt';
 import SessionFeedback from './components/SessionFeedback';
 
 // ── Trial logic helpers ────────────────────────────────────────────────────
@@ -345,7 +344,7 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
     // Decide next state
     const count = trialCountRef.current;
     if (count >= MIN_TRIALS_PER_SESSION && count % CONTINUE_PROMPT_INTERVAL === 0) {
-      setPhase('CONTINUE_PROMPT');
+      finishSession();
     } else if (allConverged()) {
       setPhase('STABILITY_COMPLETE');
     } else {
@@ -471,14 +470,6 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
         />
       )}
 
-      {phase === 'CONTINUE_PROMPT' && (
-        <ContinuePrompt
-          trialCount={trialCountRef.current}
-          sessionScore={sessionScoreRef.current}
-          onContinue={() => setPhase('TRIAL_ITI')}
-          onStop={finishSession}
-        />
-      )}
 
       {phase === 'STABILITY_COMPLETE' && (
         <div style={{ maxWidth: 420, margin: '0 auto', padding: '80px 24px', textAlign: 'center' }}>
