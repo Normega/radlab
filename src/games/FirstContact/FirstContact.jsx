@@ -239,8 +239,8 @@ export default function FirstContact({ session, onComplete }) {
           <>
             <BreathPrompt
               getPhase={getPhase}
+              syncLevel={syncLevel}
               cycleCount={cycleCount}
-              isReturning={isReturning}
             />
             <SyncMeter syncLevel={syncLevel} justUpdated={justUpdated} />
             <div style={S.btnWrap}>

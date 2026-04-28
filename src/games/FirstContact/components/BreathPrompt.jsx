@@ -1,98 +1,64 @@
 import { useEffect, useRef } from 'react';
-import { PROMPT_FADE_CYCLES } from '../constants';
 
 const AMBER = '#BA7517';
 const BLUE  = '#185FA5';
 
-// Phase fractions (relative to 4 000 ms cycle)
-const PRESS_APPEAR   = 0.000;
-const INHALE_APPEAR  = 0.125;  // +500 ms
-const EXPAND_FADE    = 0.4375; // +1 750 ms
-const RELEASE_APPEAR = 0.500;
-const EXHALE_APPEAR  = 0.625;  // 0.500 + 0.125
-const CONTRACT_FADE  = 0.9375; // 0.500 + 0.4375
-
 // ── BreathPrompt ──────────────────────────────────────────────────────────
-// Two-column instructional text driven by breath phase fractions.
-// All DOM opacity updates are imperative via refs — no React state in the hot path.
+// Single phrase that flashes at each phase transition then fades linearly
+// over the first 10% of the half-cycle (~400ms at 4s default).
+//
+// Prompts are active only when sync < 50% AND at least 1 cycle has completed.
+// This is universal — no separate paths for first-time vs returning players.
 //
 // Props:
-//   getPhase    — () => 0.0–1.0 within breath cycle
-//   cycleCount  — total cycles completed
-//   isReturning — if true, prompts fade out after PROMPT_FADE_CYCLES
+//   getPhase   — () => 0.0–1.0 within breath cycle
+//   syncLevel  — 0.0–1.0 rolling mean (prompts suppress at ≥ 0.50)
+//   cycleCount — total completed cycles this session (prompts wait for cycle 1)
 
-export default function BreathPrompt({ getPhase, cycleCount = 0, isReturning = false }) {
-  const outerRef   = useRef(null);
-  const pressRef   = useRef(null);
-  const inhaleRef  = useRef(null);
-  const releaseRef = useRef(null);
-  const exhaleRef  = useRef(null);
+export default function BreathPrompt({ getPhase, syncLevel = 0, cycleCount = 0 }) {
+  const divRef   = useRef(null);
+  const syncRef  = useRef(syncLevel);
+  const cycleRef = useRef(cycleCount);
 
-  // Outer fade for returning players — only re-runs when props change
-  useEffect(() => {
-    if (!outerRef.current) return;
-    outerRef.current.style.opacity = (!isReturning || cycleCount < PROMPT_FADE_CYCLES) ? '1' : '0';
-  }, [isReturning, cycleCount]);
+  useEffect(() => { syncRef.current  = syncLevel;  }, [syncLevel]);
+  useEffect(() => { cycleRef.current = cycleCount; }, [cycleCount]);
 
   useEffect(() => {
     let raf = null;
     function frame() {
-      const phase = getPhase ? getPhase() : 0;
-      const pv = phase >= PRESS_APPEAR   && phase < EXPAND_FADE;
-      const iv = phase >= INHALE_APPEAR  && phase < EXPAND_FADE;
-      const rv = phase >= RELEASE_APPEAR && phase < CONTRACT_FADE;
-      const ev = phase >= EXHALE_APPEAR  && phase < CONTRACT_FADE;
-      if (pressRef.current)   pressRef.current.style.opacity   = pv ? '1' : '0';
-      if (inhaleRef.current)  inhaleRef.current.style.opacity  = iv ? '1' : '0';
-      if (releaseRef.current) releaseRef.current.style.opacity = rv ? '1' : '0';
-      if (exhaleRef.current)  exhaleRef.current.style.opacity  = ev ? '1' : '0';
+      const phase         = getPhase ? getPhase() : 0;
+      const promptsActive = syncRef.current < 0.50 && cycleRef.current >= 1;
+
+      if (divRef.current) {
+        if (promptsActive) {
+          const inExpansion = phase < 0.5;
+          const phaseInHalf = inExpansion ? phase : phase - 0.5;
+          const opacity     = phaseInHalf < 0.10 ? 1 - (phaseInHalf / 0.10) : 0;
+          divRef.current.style.opacity  = opacity.toFixed(3);
+          divRef.current.textContent    = inExpansion ? 'Press and Inhale' : 'Release and Exhale';
+          divRef.current.style.color    = inExpansion ? AMBER : BLUE;
+        } else {
+          divRef.current.style.opacity = '0';
+        }
+      }
+
       raf = requestAnimationFrame(frame);
     }
     raf = requestAnimationFrame(frame);
     return () => { if (raf) cancelAnimationFrame(raf); };
   }, [getPhase]);
 
-  const initVisible = !isReturning || cycleCount < PROMPT_FADE_CYCLES;
-
   return (
     <div
-      ref={outerRef}
+      ref={divRef}
       style={{
-        display: 'flex',
-        alignItems: 'flex-end',
-        justifyContent: 'center',
-        gap: 12,
-        height: 36,
-        opacity: initVisible ? 1 : 0,
-        transition: 'opacity 0.8s ease',
+        fontFamily: '"DM Serif Display", serif',
+        fontSize: 20,
+        textAlign: 'center',
+        userSelect: 'none',
+        opacity: 0,
+        height: 28,
       }}
-    >
-      {/* Left column: press / release — bold 20px, right-aligned */}
-      <div style={{ position: 'relative', width: 90, height: 28 }}>
-        <span ref={pressRef}   style={S.press}>press</span>
-        <span ref={releaseRef} style={S.release}>release</span>
-      </div>
-      {/* Right column: inhale / exhale — regular 16px, left-aligned */}
-      <div style={{ position: 'relative', width: 64, height: 22 }}>
-        <span ref={inhaleRef} style={S.inhale}>inhale</span>
-        <span ref={exhaleRef} style={S.exhale}>exhale</span>
-      </div>
-    </div>
+    />
   );
 }
-
-const BASE = {
-  position: 'absolute',
-  bottom: 0,
-  fontFamily: '"DM Serif Display", serif',
-  userSelect: 'none',
-  transition: 'opacity 0.15s ease',
-  whiteSpace: 'nowrap',
-};
-
-const S = {
-  press:   { ...BASE, right: 0, fontSize: 20, fontWeight: '700', color: AMBER, opacity: 1  },
-  release: { ...BASE, right: 0, fontSize: 20, fontWeight: '700', color: BLUE,  opacity: 0  },
-  inhale:  { ...BASE, left:  0, fontSize: 16, fontWeight: '400', color: AMBER, opacity: 0  },
-  exhale:  { ...BASE, left:  0, fontSize: 16, fontWeight: '400', color: BLUE,  opacity: 0  },
-};
