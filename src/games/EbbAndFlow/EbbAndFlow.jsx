@@ -8,7 +8,7 @@ import { useButtonSync } from './useButtonSync';
 import {
   BASELINE_BREATH_DURATION_MS, BREATHS_PER_TRIAL,
   CATCH_TRIAL_PROPORTION, GAME_MODES, POINTS,
-  MIN_TRIALS_PER_SESSION, ITI_DURATION_MS,
+  MIN_TRIALS_PER_SESSION, CONTINUE_PROMPT_INTERVAL, ITI_DURATION_MS,
   WARMUP_SYNC_THRESHOLD,
 } from './constants';
 import SessionStart   from './components/SessionStart';
