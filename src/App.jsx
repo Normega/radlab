@@ -11,9 +11,10 @@ import GamesPage    from './pages/GamesPage'
 import ProfilePage  from './pages/ProfilePage'
 import Nav          from './components/Nav'
 import PondWatch    from './games/PondWatch'
-import AvatarEditor from './components/Avatar/AvatarEditor'
-import EbbAndFlow   from './games/EbbAndFlow/EbbAndFlow'
-import FirstContact from './games/FirstContact/FirstContact'
+import AvatarEditor  from './components/Avatar/AvatarEditor'
+import EbbAndFlow    from './games/EbbAndFlow/EbbAndFlow'
+import FirstContact  from './games/FirstContact/FirstContact'
+import AuraFilterDef from './components/AuraFilterDef'
 
 const queryClient = new QueryClient()
 
@@ -93,6 +94,7 @@ export default function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <AuraFilterDef />
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Landing session={session} />} />

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Nav from '../../components/Nav';
 import { supabase } from '../../lib/supabase';
+import { useAvatarConfig } from '../../hooks/useAvatarConfig';
 import { useQuestStaircases } from './useQuestStaircases';
 import { useBreathCycle } from './useBreathCycle';
 import { useButtonSync } from './useButtonSync';
@@ -70,9 +71,10 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
 
   // ── Profile + avatar ──────────────────────────────────────────────────
   // undefined = still loading; null = loaded, no row found; object = loaded
-  const [profile,    setProfile]    = useState(undefined);
-  const [avatarData, setAvatarData] = useState(null);
-  const profileRef   = useRef(null);
+  const [profile,  setProfile]  = useState(undefined);
+  const profileRef = useRef(null);
+
+  const { data: avatarData } = useAvatarConfig(userId);
 
   // ── Avatar imperative control ─────────────────────────────────────────
   // Populated by AvatarBreathPacer via controlRef prop.
@@ -88,6 +90,7 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
   const sessionScoreRef    = useRef(0);
   const trialCountRef      = useRef(0);
   const breathSyncRef      = useRef([]); // per-breath sync data for current trial
+  const breathScoreRef     = useRef(null); // press score for the current breath (null = not pressed)
   const trialStartTimeRef  = useRef(null);
   const currentTrialRef    = useRef(null);
   const warmupScoresRef    = useRef([]);
@@ -104,19 +107,16 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
   } = useQuestStaircases(profile?.ebb_flow_quest_state);
   const { onPress: rawPress, onRelease: rawRelease, computeBreathSyncScore } = useButtonSync(getPhase);
 
-  // ── Load profile + avatar ─────────────────────────────────────────────
+  // ── Load profile ──────────────────────────────────────────────────────
   useEffect(() => {
     if (!userId) return;
-    Promise.all([
-      supabase.from('profiles').select('*').eq('id', userId).single(),
-      supabase.from('avatars').select('skin_color, eye_color').eq('user_id', userId).maybeSingle(),
-    ]).then(([{ data: p }, { data: a }]) => {
-      profileRef.current = p;
-      // TODO: remove once cross-session persistence is confirmed working
-      console.log('[QUEST] Raw quest state from Supabase:', p?.ebb_flow_quest_state);
-      setProfile(p ?? null);
-      setAvatarData(a);
-    });
+    supabase.from('profiles').select('*').eq('id', userId).single()
+      .then(({ data: p }) => {
+        profileRef.current = p;
+        // TODO: remove once cross-session persistence is confirmed working
+        console.log('[QUEST] Raw quest state from Supabase:', p?.ebb_flow_quest_state);
+        setProfile(p ?? null);
+      });
   }, [userId]);
 
   // Derive game mode from profile
@@ -143,12 +143,15 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
     const entry = { breath_index: idx, press_phase: pressPhase, release_phase: releasePhase, sync_score: sc };
 
     if (phaseRef.current === 'WARMUP') {
+      // Warmup: update rolling mean immediately for live aura feedback
       warmupScoresRef.current.push(sc);
       const last4   = warmupScoresRef.current.slice(-4);
       const rolling = last4.reduce((a, b) => a + b, 0) / last4.length;
       syncScoreRef.current = rolling;
       setSyncScore(rolling);
     } else {
+      // Trial: record press score for this breath; rolling mean updates at breath boundary
+      breathScoreRef.current = sc;
       breathSyncRef.current.push(entry);
     }
   }, [rawRelease]);
@@ -157,9 +160,9 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
   useEffect(() => {
     if (phase !== 'WARMUP') return;
     let cancelled = false;
-    warmupScoresRef.current = [];
-    warmupBreathRef.current = 0;
-    syncScoreRef.current = 0;
+    warmupScoresRef.current  = [];
+    warmupBreathRef.current  = 0;
+    syncScoreRef.current     = 0;
     setShowHint(false);
 
     async function warmupLoop() {
@@ -219,7 +222,20 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
   useEffect(() => {
     if (phase !== 'BREATH_SEQUENCE') return;
     let cancelled = false;
-    breathSyncRef.current = [];
+    breathSyncRef.current  = [];
+    breathScoreRef.current = null;
+
+    // Called at the end of each breath: consume this breath's press score (or 0),
+    // push to the shared rolling buffer, and update the aura sync score.
+    function recordBreathSync() {
+      const score = breathScoreRef.current ?? 0;
+      breathScoreRef.current = null;
+      warmupScoresRef.current.push(score);
+      const last4   = warmupScoresRef.current.slice(-4);
+      const rolling = last4.reduce((a, b) => a + b, 0) / last4.length;
+      syncScoreRef.current = rolling;
+      setSyncScore(rolling);
+    }
 
     async function breathSequence() {
       const trial     = currentTrialRef.current;
@@ -237,17 +253,21 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
       //    on the very first frame, then restart the animation loop
       trialStartTimeRef.current = performance.now();
       setBreathIndex(0);
+      breathScoreRef.current = null;
       let pendingBreath = startBreath(durations[0]);
       resumeAvatarAnimation();
       await pendingBreath;
       if (cancelled) return;
+      recordBreathSync();
 
       // 4. Breaths 2–4
       for (let i = 1; i < BREATHS_PER_TRIAL; i++) {
         if (cancelled) return;
         setBreathIndex(i);
+        breathScoreRef.current = null;
         await startBreath(durations[i]);
         if (cancelled) return;
+        recordBreathSync();
       }
       if (!cancelled) setPhase('RESPONSE');
     }
@@ -418,8 +438,10 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
   })() : null;
 
   // ── Render ─────────────────────────────────────────────────────────────
-  const skinColor = avatarData?.skin_color || '#FDBCB4';
-  const eyeColor  = avatarData?.eye_color  || '#4A90D9';
+  const skinColor  = avatarData?.skin_color || '#FDBCB4';
+  const eyeColor   = avatarData?.eye_color  || '#4A90D9';
+  const species    = avatarData?.species    ?? 'human';
+  const auraConfig = avatarData?.aura ?? null;
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
@@ -441,6 +463,8 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
           phase={phase === 'WARMUP' ? 'warmup' : 'trial'}
           skinColor={skinColor}
           eyeColor={eyeColor}
+          species={species}
+          auraConfig={auraConfig}
           scaleAmplitude={modeConfig.scaleAmplitude}
           getPhase={getPhase}
           avatarControlRef={avatarControlRef}
@@ -451,7 +475,6 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
           showHint={showHint}
           breathIndex={breathIndex}
           trialCount={trialCountRef.current}
-          auraIntensity={profile?.deeper_contact_last_sync ?? 0}
         />
       )}
 
@@ -459,8 +482,10 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
         <GetReadyScreen
           skinColor={skinColor}
           eyeColor={eyeColor}
+          species={species}
+          auraConfig={auraConfig}
+          syncScore={syncScore}
           scaleAmplitude={modeConfig.scaleAmplitude}
-          auraIntensity={profile?.deeper_contact_last_sync ?? 0}
           onBegin={() => setPhase('TRIAL_ITI')}
         />
       )}

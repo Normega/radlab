@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { SYNC_THRESHOLD, SCALE_AMPLITUDE } from '../constants';
+import { buildSpeciesIntoSVG } from '../../../lib/buildSpeciesIntoSVG';
 
 // ── Color helpers ─────────────────────────────────────────────────────────
 function h2r(hex) {
@@ -27,9 +28,6 @@ function mk(tag, attrs, parent) {
   return el;
 }
 
-const HEAD_RADIUS      = 64;
-const HALO_MULTIPLIERS = [1.10, 1.15, 1.20, 1.25, 1.28, 1.31, 1.35];
-const HALO_OPACITIES   = [0.35, 0.28, 0.22, 0.17, 0.13, 0.10, 0.07];
 
 // ── ContactAvatar ─────────────────────────────────────────────────────────
 //
@@ -53,6 +51,7 @@ const HALO_OPACITIES   = [0.35, 0.28, 0.22, 0.17, 0.13, 0.10, 0.07];
 export default function ContactAvatar({
   skinColor      = '#FDBCB4',
   eyeColor       = '#4A90D9',
+  species        = 'human',
   getPhase,
   syncLevel      = 0,
   isFirstContact = true,
@@ -123,19 +122,10 @@ export default function ContactAvatar({
     const rcp = mk('clipPath', { id: `${p}rC` }, defs);
     mk('circle', { cx: '124', cy: '100', r: '17' }, rcp);
 
-    // ── Halo rings — static concentric circles rendered BEFORE head ─────────
-    // Filled with skin colour, no stroke. Scale with the SVG CSS transform.
-    const halos = HALO_MULTIPLIERS.map(mult =>
-      mk('circle', {
-        cx: '100', cy: '105',
-        r: (HEAD_RADIUS * mult).toFixed(1),
-        fill: skin,
-        opacity: '0',
-      }, svg)
-    );
-
     // ── Head (always full opacity) ─────────────────────────────────────────
-    mk('ellipse', { cx: '100', cy: '105', rx: '64', ry: '68', fill: `url(#${p}hG)` }, svg);
+    const headEl = mk('ellipse', { cx: '100', cy: '105', rx: '64', ry: '68', fill: `url(#${p}hG)` }, svg);
+
+    const { noseMouthEls } = buildSpeciesIntoSVG({ species, p, skin, skinLt, skinDk, mouthC, defs, headEl, svg });
 
     // ── Features group — opacity controlled for ghost reveal mode ─────────
     const featuresG = mk('g', { opacity: '0.08' }, svg);
@@ -169,8 +159,12 @@ export default function ContactAvatar({
     const rLid = mk('path', { d: 'M 108 91 Q 124 94 140 91 A 17 17 0 0 0 108 91 Z', fill: skin }, featuresG);
     const rLsh = mk('path', { d: 'M 108 91 Q 124 94 140 91', stroke: skinDk, 'stroke-width': '2.2', fill: 'none', 'stroke-linecap': 'round', opacity: '0.6' }, featuresG);
 
-    // Mouth
-    mk('path', { d: 'M 82 145 Q 100 149 118 145', stroke: mouthC, 'stroke-width': '2.2', fill: 'none', 'stroke-linecap': 'round' }, featuresG);
+    // Mouth / species nose+mouth (wolf muzzle, cat triangle+whiskers, etc.)
+    if (noseMouthEls) {
+      noseMouthEls.forEach(el => featuresG.appendChild(el));
+    } else {
+      mk('path', { d: 'M 82 145 Q 100 149 118 145', stroke: mouthC, 'stroke-width': '2.2', fill: 'none', 'stroke-linecap': 'round' }, featuresG);
+    }
 
     // Blush
     const bL = mk('ellipse', { cx: '62',  cy: '120', rx: '16', ry: '8', fill: blushC, opacity: '0.42', filter: `url(#${p}bF)` }, featuresG);
@@ -179,12 +173,12 @@ export default function ContactAvatar({
     containerRef.current.innerHTML = '';
     containerRef.current.appendChild(svg);
 
-    elemsRef.current = { svg, halos, featuresG, lLid, lLsh, rLid, rLsh, bL, bR, browL, browR };
+    elemsRef.current = { svg, featuresG, lLid, lLsh, rLid, rLsh, bL, bR, browL, browR };
 
     // ── RAF loop ──────────────────────────────────────────────────────────
     function frame() {
       if (!elemsRef.current) return;
-      const { svg, halos, featuresG, lLid, lLsh, rLid, rLsh, bL, bR, browL, browR } = elemsRef.current;
+      const { svg, featuresG, lLid, lLsh, rLid, rLsh, bL, bR, browL, browR } = elemsRef.current;
 
       const isFC    = isFirstContactRef.current;
       const isComp  = isCompleteRef.current;
@@ -196,12 +190,6 @@ export default function ContactAvatar({
         ? Math.min(1, 0.08 + (syncLvl / SYNC_THRESHOLD) * (1 - 0.08))
         : 1.0;
       featuresG.setAttribute('opacity', featureOpacity.toFixed(3));
-
-      // Halo rings — progressive appearance in 5% steps above 50% sync
-      const numRings = Math.min(7, Math.floor(Math.max(0, syncLvl - 0.50) / 0.05));
-      for (let i = 0; i < 7; i++) {
-        halos[i].setAttribute('opacity', i < numRings ? String(HALO_OPACITIES[i]) : '0');
-      }
 
       if (pausedRef.current) {
         // Neutral breath position — applied every frame while paused
@@ -248,7 +236,7 @@ export default function ContactAvatar({
         resetToNeutral() {
           if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
           if (elemsRef.current) {
-            const { svg, halos, featuresG, lLid, lLsh, rLid, rLsh, bL, bR, browL, browR } = elemsRef.current;
+            const { svg, featuresG, lLid, lLsh, rLid, rLsh, bL, bR, browL, browR } = elemsRef.current;
             const fop = (isFirstContactRef.current && !isCompleteRef.current)
               ? Math.min(1, 0.08 + (syncLevelRef.current / SYNC_THRESHOLD) * (1 - 0.08))
               : 1.0;
@@ -262,7 +250,6 @@ export default function ContactAvatar({
             browL.setAttribute('transform', 'translate(0,0)');
             browR.setAttribute('transform', 'translate(0,0)');
             featuresG.setAttribute('opacity', fop.toFixed(3));
-            halos.forEach(h => h.setAttribute('opacity', '0'));
           }
           pausedRef.current = true;
         },
@@ -284,7 +271,7 @@ export default function ContactAvatar({
       if (controlRef) controlRef.current = null;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [skinColor, eyeColor, size]);
+  }, [skinColor, eyeColor, size, species]);
 
   return (
     <div

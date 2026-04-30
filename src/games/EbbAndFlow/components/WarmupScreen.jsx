@@ -1,6 +1,8 @@
 import { WARMUP_SYNC_THRESHOLD } from '../constants';
 import AvatarBreathPacer from './AvatarBreathPacer';
 import PsiAmpButton from './PsiAmpButton';
+import SyncAura from '../../../components/SyncAura';
+import { auraParamsFromSync, AURA_DEFAULT_COLOR } from '../../../lib/auraUtils';
 
 // ── WarmupScreen ──────────────────────────────────────────────────────────
 // Renders during WARMUP and BREATH_SEQUENCE phases.
@@ -18,7 +20,7 @@ import PsiAmpButton from './PsiAmpButton';
 
 export default function WarmupScreen({
   phase = 'warmup',
-  skinColor, eyeColor, scaleAmplitude,
+  skinColor, eyeColor, species = 'human', auraConfig = null, scaleAmplitude,
   getPhase,
   avatarControlRef,
   isHeld, onPress, onRelease,
@@ -26,9 +28,13 @@ export default function WarmupScreen({
   showHint = false,
   breathIndex = 0,
   trialCount = 0,
-  auraIntensity = 0,
 }) {
   const isWarmup = phase === 'warmup';
+
+  const auraColor  = (auraConfig?.enabled !== false && auraConfig?.color) ? auraConfig.color : AURA_DEFAULT_COLOR
+  const maxInset   = auraConfig?.maxInset ?? 4
+  const rawAura    = auraParamsFromSync(syncScore)
+  const auraParams = rawAura ? { ...rawAura, inset: Math.min(rawAura.inset, maxInset) } : null
 
   return (
     <div style={S.wrap}>
@@ -51,15 +57,17 @@ export default function WarmupScreen({
 
       {/* Avatar */}
       <div style={S.avatarWrap}>
+        <SyncAura params={auraParams} color={auraColor} size={240}>
         <AvatarBreathPacer
           skinColor={skinColor}
           eyeColor={eyeColor}
+          species={species}
           scaleAmplitude={scaleAmplitude}
           getPhase={getPhase}
           controlRef={avatarControlRef}
           size={240}
-          auraIntensity={auraIntensity}
         />
+        </SyncAura>
       </div>
 
       {/* PSI-AMP button */}

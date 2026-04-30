@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { buildSpeciesIntoSVG } from '../../../lib/buildSpeciesIntoSVG';
 
 // ── Color helpers (duplicated here so this component is self-contained) ───
 function h2r(hex) {
@@ -26,9 +27,6 @@ function mk(tag, attrs, parent) {
   return el;
 }
 
-const RING_BASE_RADIUS   = 72;
-const RING_MAX_RADIUS    = 140;
-const AURA_MAX_OPACITY   = 0.35; // Ebb & Flow: subtler than First Contact's 0.60
 
 // ── Neutral resting position — module-level so both the RAF loop and the
 //    imperative controlRef API can call it without a closure dependency. ──────
@@ -64,12 +62,12 @@ function applyNeutral(elems) {
 export default function AvatarBreathPacer({
   skinColor      = '#FDBCB4',
   eyeColor       = '#4A90D9',
+  species        = 'human',
   scaleAmplitude = 0.25,
   getPhase,
   paused         = false,
   controlRef,
   size           = 240,
-  auraIntensity  = 0,   // 0.0–1.0 from profiles.deeper_contact_last_sync; 0 = invisible
 }) {
   const containerRef    = useRef(null);
   const rafRef          = useRef(null);
@@ -77,11 +75,8 @@ export default function AvatarBreathPacer({
   const scaleAmpRef     = useRef(scaleAmplitude);
   const pausedRef       = useRef(paused);
   const frameRef        = useRef(null);
-  const auraIntensityRef = useRef(auraIntensity);
-
   useEffect(() => { scaleAmpRef.current = scaleAmplitude; }, [scaleAmplitude]);
   useEffect(() => { pausedRef.current = paused; }, [paused]);
-  useEffect(() => { auraIntensityRef.current = auraIntensity; }, [auraIntensity]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -140,21 +135,10 @@ export default function AvatarBreathPacer({
     const rcp = mk('clipPath', { id: `${p}rC` }, defs);
     mk('circle', { cx: '124', cy: '100', r: '17' }, rcp);
 
-    // ── Aura rings — rendered BEFORE head so they appear behind it ────────
-    // Fixed ambient effect driven by auraIntensityRef (seeded from last Deeper Contact session).
-    const rings = [0, 1, 2].map(() =>
-      mk('circle', {
-        cx: '100', cy: '105',
-        r:  String(RING_BASE_RADIUS),
-        fill: 'none',
-        stroke: '#FDBCB4',
-        'stroke-width': '1.5',
-        opacity: '0',
-      }, svg)
-    );
-
     // ── Face elements ────────────────────────────────────────────────────
-    mk('ellipse', { cx: '100', cy: '105', rx: '64', ry: '68', fill: `url(#${p}hG)` }, svg);
+    const headEl = mk('ellipse', { cx: '100', cy: '105', rx: '64', ry: '68', fill: `url(#${p}hG)` }, svg);
+
+    const { noseMouthEls } = buildSpeciesIntoSVG({ species, p, skin, skinLt, skinDk, mouthC, defs, headEl, svg });
 
     const browL = mk('path', {
       d: 'M 60 82 Q 76 77 90 81',
@@ -185,8 +169,12 @@ export default function AvatarBreathPacer({
     const rLid = mk('path', { d: 'M 108 91 Q 124 94 140 91 A 17 17 0 0 0 108 91 Z', fill: skin }, svg);
     const rLsh = mk('path', { d: 'M 108 91 Q 124 94 140 91', stroke: skinDk, 'stroke-width': '2.2', fill: 'none', 'stroke-linecap': 'round', opacity: '0.6' }, svg);
 
-    // Mouth
-    mk('path', { d: 'M 82 145 Q 100 149 118 145', stroke: mouthC, 'stroke-width': '2.2', fill: 'none', 'stroke-linecap': 'round' }, svg);
+    // Mouth / species nose+mouth
+    if (noseMouthEls) {
+      noseMouthEls.forEach(el => svg.appendChild(el));
+    } else {
+      mk('path', { d: 'M 82 145 Q 100 149 118 145', stroke: mouthC, 'stroke-width': '2.2', fill: 'none', 'stroke-linecap': 'round' }, svg);
+    }
 
     // Blush
     const bL = mk('ellipse', { cx: '62',  cy: '120', rx: '16', ry: '8', fill: blushC, opacity: '0.42', filter: `url(#${p}bF)` }, svg);
@@ -195,24 +183,14 @@ export default function AvatarBreathPacer({
     containerRef.current.innerHTML = '';
     containerRef.current.appendChild(svg);
 
-    elemsRef.current = { svg, rings, lLid, lLsh, rLid, rLsh, bL, bR, browL, browR };
+    elemsRef.current = { svg, lLid, lLsh, rLid, rLsh, bL, bR, browL, browR };
 
     // ── RAF animation loop ───────────────────────────────────────────────
     function frame() {
       if (!elemsRef.current) return;
-      const { svg, rings, lLid, lLsh, rLid, rLsh, bL, bR, browL, browR } = elemsRef.current;
+      const { svg, lLid, lLsh, rLid, rLsh, bL, bR, browL, browR } = elemsRef.current;
 
-      const phase    = getPhase ? getPhase() : 0;
-      const auraInt  = auraIntensityRef.current;
-
-      // Aura rings — fixed ambient intensity, invisible if auraIntensity = 0
-      for (let i = 0; i < 3; i++) {
-        const ringPhase = (phase + i / 3) % 1.0;
-        const radius    = RING_BASE_RADIUS + ringPhase * (RING_MAX_RADIUS - RING_BASE_RADIUS);
-        const opacity   = Math.max(0, auraInt * AURA_MAX_OPACITY * (1 - ringPhase));
-        rings[i].setAttribute('r',       radius.toFixed(1));
-        rings[i].setAttribute('opacity', opacity.toFixed(3));
-      }
+      const phase = getPhase ? getPhase() : 0;
 
       // When paused: snap to neutral on every frame (idempotent, instant)
       if (pausedRef.current) {
@@ -247,8 +225,12 @@ export default function AvatarBreathPacer({
       rafRef.current = requestAnimationFrame(frame);
     }
 
-    // Store frame so resumeAnimation can restart it without a closure on the build effect
+    // Store frame so resumeAnimation can restart it without a closure on the build effect.
+    // Do NOT auto-start the RAF here — caller must invoke resumeAnimation() explicitly.
+    // This guarantees the avatar is frozen at neutral on mount until the warmup/trial
+    // loop is ready, preventing a stale mid-animation frame from appearing.
     frameRef.current = frame;
+    applyNeutral(elemsRef.current);
 
     // ── Imperative control API ───────────────────────────────────────────
     // resetToNeutral: synchronously kills RAF + writes neutral attrs.
@@ -273,17 +255,15 @@ export default function AvatarBreathPacer({
       };
     }
 
-    rafRef.current = requestAnimationFrame(frame);
-
     return () => {
       if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
       elemsRef.current = null;
       frameRef.current = null;
       if (controlRef) controlRef.current = null;
     };
-  // Re-build if colors change (new avatar loaded)
+  // Re-build if colors or species change (new avatar loaded)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [skinColor, eyeColor, size]);
+  }, [skinColor, eyeColor, size, species]);
 
   return (
     <div

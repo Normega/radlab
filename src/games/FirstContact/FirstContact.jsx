@@ -2,6 +2,9 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Nav from '../../components/Nav';
 import { supabase, saveFirstContactSession } from '../../lib/supabase';
+import { useAvatarConfig } from '../../hooks/useAvatarConfig';
+import SyncAura from '../../components/SyncAura';
+import { auraParamsFromSync, AURA_DEFAULT_COLOR } from '../../lib/auraUtils';
 import { useBreathCycle } from '../EbbAndFlow/useBreathCycle';
 import { useButtonSync } from '../EbbAndFlow/useButtonSync';
 import { useBreathSync } from './useBreathSync';
@@ -44,9 +47,10 @@ export default function FirstContact({ session, onComplete }) {
   const [justUpdated, setJustUpdated] = useState(false);
 
   // ── Profile (undefined = loading, null = no row) ──────────────────────
-  const [profile,    setProfile]    = useState(undefined);
-  const [avatarData, setAvatarData] = useState(null);
+  const [profile,  setProfile]  = useState(undefined);
   const profileRef = useRef(null);
+
+  const { data: avatarData } = useAvatarConfig(userId);
 
   // ── Avatar imperative control ─────────────────────────────────────────
   const avatarControlRef = useRef(null);
@@ -62,17 +66,14 @@ export default function FirstContact({ session, onComplete }) {
   const { onPress: rawPress, onRelease: rawRelease }  = useButtonSync(getPhase);
   const { addCycleSync, getRollingMean, reset: resetSync } = useBreathSync();
 
-  // ── Load profile + avatar ─────────────────────────────────────────────
+  // ── Load profile ──────────────────────────────────────────────────────
   useEffect(() => {
     if (!userId) return;
-    Promise.all([
-      supabase.from('profiles').select('*').eq('id', userId).single(),
-      supabase.from('avatars').select('skin_color, eye_color').eq('user_id', userId).maybeSingle(),
-    ]).then(([{ data: p }, { data: a }]) => {
-      profileRef.current = p;
-      setProfile(p ?? null);
-      setAvatarData(a);
-    });
+    supabase.from('profiles').select('*').eq('id', userId).single()
+      .then(({ data: p }) => {
+        profileRef.current = p;
+        setProfile(p ?? null);
+      });
   }, [userId]);
 
   const isReturning = profile?.first_contact_complete === true;
@@ -195,8 +196,15 @@ export default function FirstContact({ session, onComplete }) {
   }
 
   // ── Render ────────────────────────────────────────────────────────────
-  const skinColor = avatarData?.skin_color || '#FDBCB4';
-  const eyeColor  = avatarData?.eye_color  || '#4A90D9';
+  const skinColor  = avatarData?.skin_color || '#FDBCB4';
+  const eyeColor   = avatarData?.eye_color  || '#4A90D9';
+  const species    = avatarData?.species    ?? 'human';
+
+  const auraConfig  = avatarData?.aura
+  const auraColor   = (auraConfig?.enabled !== false && auraConfig?.color) ? auraConfig.color : AURA_DEFAULT_COLOR
+  const maxInset    = auraConfig?.maxInset ?? 4
+  const rawAura     = auraParamsFromSync(syncLevel)
+  const auraParams  = rawAura ? { ...rawAura, inset: Math.min(rawAura.inset, maxInset) } : null
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
@@ -222,16 +230,19 @@ export default function FirstContact({ session, onComplete }) {
 
         {/* Avatar — always visible across all phases */}
         <div style={S.avatarWrap}>
-          <ContactAvatar
-            skinColor={skinColor}
-            eyeColor={eyeColor}
-            getPhase={getPhase}
-            syncLevel={syncLevel}
-            isFirstContact={!isReturning && phase !== 'COMPLETE'}
-            isComplete={phase === 'COMPLETE'}
-            controlRef={avatarControlRef}
-            size={240}
-          />
+          <SyncAura params={auraParams} color={auraColor} size={240}>
+            <ContactAvatar
+              skinColor={skinColor}
+              eyeColor={eyeColor}
+              species={species}
+              getPhase={getPhase}
+              syncLevel={syncLevel}
+              isFirstContact={!isReturning && phase !== 'COMPLETE'}
+              isComplete={phase === 'COMPLETE'}
+              controlRef={avatarControlRef}
+              size={240}
+            />
+          </SyncAura>
         </div>
 
         {/* SYNCING: breath prompt + sync meter + PSI-AMP button */}

@@ -6,6 +6,8 @@ import Nav from '../Nav'
 import BaseAvatar, { SKIN_COLORS, EYE_COLORS } from './BaseAvatar'
 import { SPECIES, SPECIES_ORDER } from '../../lib/avatar-species'
 import { getUnlockedSpecies } from '../../lib/avatar-unlocks'
+import SyncAura from '../SyncAura'
+import { AURA_COLORS } from '../../lib/auraUtils'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -104,6 +106,30 @@ function SpeciesChip({ sp, active, locked, onSelect }) {
   )
 }
 
+// ── AuraColorChip ─────────────────────────────────────────────────────────
+function AuraColorChip({ color, active, onSelect }) {
+  return (
+    <button
+      title={color.label}
+      onClick={onSelect}
+      style={{
+        width: 54, padding: '7px 4px 6px',
+        borderRadius: 10,
+        border: active ? '1.5px solid var(--pk)' : '1.5px solid var(--bds)',
+        background: active ? 'var(--bgp)' : 'transparent',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+        cursor: 'pointer', flexShrink: 0,
+        transition: 'border-color 0.14s, background 0.14s',
+      }}
+    >
+      <div style={{ width: 20, height: 20, borderRadius: '50%', background: color.value, border: '1px solid rgba(0,0,0,0.15)' }} />
+      <span style={{ fontFamily: MONO, fontSize: 9, color: active ? 'var(--pk)' : 'var(--tx3)', letterSpacing: '0.04em' }}>
+        {color.label}
+      </span>
+    </button>
+  )
+}
+
 // ── AvatarEditor ──────────────────────────────────────────────────────────
 export default function AvatarEditor({ session, setHasAvatar }) {
   const navigate    = useNavigate()
@@ -119,13 +145,16 @@ export default function AvatarEditor({ session, setHasAvatar }) {
   const [saved,        setSaved]        = useState(false)
   const [bump,         setBump]         = useState(0)
   const [speciesError, setSpeciesError] = useState(null)
+  const [auraEnabled,  setAuraEnabled]  = useState(true)
+  const [auraColor,    setAuraColor]    = useState(AURA_COLORS[0])
+  const [auraMaxInset, setAuraMaxInset] = useState(4)
 
   // Fetch avatar (skin/eye/species) and profile (points) in parallel.
   // Apply palette constraints from the stored species immediately on load.
   useEffect(() => {
     if (!userId) return
     Promise.all([
-      supabase.from('avatars').select('skin_color, eye_color, species').eq('user_id', userId).maybeSingle(),
+      supabase.from('avatars').select('skin_color, eye_color, species, aura').eq('user_id', userId).maybeSingle(),
       supabase.from('profiles').select('points').eq('id', userId).maybeSingle(),
     ]).then(([{ data: avatar }, { data: prof }]) => {
       let newSkin    = SKIN_COLORS[1]
@@ -138,6 +167,12 @@ export default function AvatarEditor({ session, setHasAvatar }) {
         if (foundSkin) newSkin = foundSkin
         if (foundEye)  newEye  = foundEye
         if (avatar.species && SPECIES[avatar.species]) newSpecies = avatar.species
+        if (avatar.aura) {
+          if (typeof avatar.aura.enabled === 'boolean') setAuraEnabled(avatar.aura.enabled)
+          const savedColor = AURA_COLORS.find(c => c.value === avatar.aura.color)
+          if (savedColor) setAuraColor(savedColor)
+          if (avatar.aura.maxInset) setAuraMaxInset(avatar.aura.maxInset)
+        }
       }
 
       // Shift colors to nearest allowed if saved combo is outside the species palette
@@ -166,6 +201,7 @@ export default function AvatarEditor({ session, setHasAvatar }) {
 
   const unlockedSpecies        = getUnlockedSpecies(profile)
   const speciesFeatureUnlocked = unlockedSpecies.length > 1
+  const auraFeatureUnlocked    = (profile?.points ?? 0) >= 300
 
   function pick(setter, val) {
     setter(val)
@@ -209,8 +245,9 @@ export default function AvatarEditor({ session, setHasAvatar }) {
   async function handleSave() {
     if (!userId || saving) return
     setSaving(true)
+    const aura = { enabled: auraEnabled, color: auraColor.value, maxInset: auraMaxInset }
     const { error } = await supabase.from('avatars').upsert(
-      { user_id: userId, skin_color: skin.hex, eye_color: eye.hex, species, updated_at: new Date().toISOString() },
+      { user_id: userId, skin_color: skin.hex, eye_color: eye.hex, species, aura, updated_at: new Date().toISOString() },
       { onConflict: 'user_id' }
     )
     setSaving(false)
@@ -249,7 +286,13 @@ export default function AvatarEditor({ session, setHasAvatar }) {
           <div style={S.previewCol}>
             <div style={S.previewBox}>
               <div key={bump} style={{ animation: 'popIn 0.32s ease both' }}>
-                <BaseAvatar skinColor={skin.hex} eyeColor={eye.hex} species={species} size={200} />
+                {auraFeatureUnlocked && auraEnabled ? (
+                  <SyncAura params={{ inset: auraMaxInset, opacity: 0.60 }} color={auraColor.value} size={200}>
+                    <BaseAvatar skinColor={skin.hex} eyeColor={eye.hex} species={species} size={200} />
+                  </SyncAura>
+                ) : (
+                  <BaseAvatar skinColor={skin.hex} eyeColor={eye.hex} species={species} size={200} />
+                )}
               </div>
             </div>
 
@@ -282,13 +325,11 @@ export default function AvatarEditor({ session, setHasAvatar }) {
                 </div>
               )}
 
-              {/* Remaining always-locked feature rows */}
+              {/* Locked rows between species and aura */}
               {[
-                { icon: '👃', label: 'Nose styles',   pts: 100 },
-                { icon: '💇', label: 'Hair',           pts: 150 },
-                { icon: '😄', label: 'Mouth styles',  pts: 200 },
-                { icon: '✨', label: 'Auras & extras', pts: 300 },
-                { icon: '🔱', label: 'Scars & marks',  pts: 500 },
+                { icon: '👃', label: 'Nose styles',  pts: 100 },
+                { icon: '💇', label: 'Hair',          pts: 150 },
+                { icon: '😄', label: 'Mouth styles', pts: 200 },
               ].map(item => (
                 <div key={item.label} style={S.lockedRow}>
                   <span style={{ fontSize: 13 }}>{item.icon}</span>
@@ -296,6 +337,71 @@ export default function AvatarEditor({ session, setHasAvatar }) {
                   <span style={S.lockedPts}>{item.pts}pts</span>
                 </div>
               ))}
+
+              {/* Aura — expands when unlocked at 300pts */}
+              {auraFeatureUnlocked ? (
+                <div style={{ ...S.speciesSection, marginTop: 4 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <p style={{ ...S.speciesSectionLabel, margin: 0 }}>✨ Aura</p>
+                    <button
+                      onClick={() => { setAuraEnabled(e => !e); setSaved(false) }}
+                      style={{
+                        fontFamily: MONO, fontSize: 9, letterSpacing: '0.06em',
+                        padding: '2px 8px', borderRadius: 6, cursor: 'pointer',
+                        background: auraEnabled ? 'var(--pk)' : 'var(--bg)',
+                        color: auraEnabled ? '#fff' : 'var(--tx3)',
+                        border: `1px solid ${auraEnabled ? 'var(--pk)' : 'var(--bds)'}`,
+                        transition: 'all 0.14s',
+                      }}
+                    >
+                      {auraEnabled ? 'ON' : 'OFF'}
+                    </button>
+                  </div>
+                  {auraEnabled && (
+                    <>
+                      <div style={S.speciesRow}>
+                        {AURA_COLORS.map(c => (
+                          <AuraColorChip
+                            key={c.label}
+                            color={c}
+                            active={auraColor.value === c.value}
+                            onSelect={() => { setAuraColor(c); setSaved(false) }}
+                          />
+                        ))}
+                      </div>
+                      <div style={{ marginTop: 8 }}>
+                        <p style={{ ...S.speciesSectionLabel, margin: '0 0 4px' }}>Intensity</p>
+                        <input
+                          type="range" min="1" max="4" step="1"
+                          value={auraMaxInset}
+                          onChange={e => { setAuraMaxInset(Number(e.target.value)); setSaved(false) }}
+                          style={{ width: '100%', accentColor: 'var(--pk)' }}
+                        />
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          {[1, 2, 3, 4].map(v => (
+                            <span key={v} style={{ fontFamily: MONO, fontSize: 9, color: v === auraMaxInset ? 'var(--pk)' : 'var(--tx3)' }}>
+                              {v}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <div style={S.lockedRow}>
+                  <span style={{ fontSize: 13 }}>✨</span>
+                  <span style={S.lockedItemLabel}>Auras &amp; extras</span>
+                  <span style={S.lockedPts}>300pts</span>
+                </div>
+              )}
+
+              {/* Scars & marks — always locked */}
+              <div style={S.lockedRow}>
+                <span style={{ fontSize: 13 }}>🔱</span>
+                <span style={S.lockedItemLabel}>Scars &amp; marks</span>
+                <span style={S.lockedPts}>500pts</span>
+              </div>
             </div>
           </div>
 
