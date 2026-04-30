@@ -50,6 +50,34 @@ export default function Landing({ session }) {
           <p style={S.secLabel}>// Games</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
+            {/* First Contact */}
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_200px]" style={S.gameCard}>
+              <div
+                className="order-first md:order-last flex flex-col items-center justify-center gap-3 p-6 border-b md:border-b-0 md:border-l"
+                style={{ background: 'var(--bgp)', borderColor: 'var(--pkb)' }}
+              >
+                <ContactIllustration />
+                <p style={S.pondHint}>sync your breath</p>
+                <span style={S.keyPill}>breath · sync</span>
+              </div>
+              <div className="order-last md:order-first" style={S.gameInfo}>
+                <span style={S.gameBadge}>Breath sync · Onboarding</span>
+                <h2 style={S.gameTitle}>First Contact</h2>
+                <p style={S.gameDesc}>
+                  Meet your avatar. Breathe together. The more you sync,
+                  the more it comes alive. Required before anything else — takes about 3 minutes.
+                </p>
+                <div className="flex gap-6 pt-4 mb-5" style={{ borderTop: '1px solid var(--bd)' }}>
+                  <MetaItem label="Duration" val="~3 min" />
+                  <MetaItem label="Measures" val="Sync · Coherence" />
+                </div>
+                {session
+                  ? <Link to="/games/first-contact" style={S.btnPrimary}>Play now →</Link>
+                  : <Link to="/signup"               style={S.btnPrimary}>Sign up to play →</Link>
+                }
+              </div>
+            </div>
+
             {/* Pond Watch */}
             <div className="grid grid-cols-1 md:grid-cols-[1fr_200px]" style={S.gameCard}>
               <div
@@ -240,6 +268,35 @@ function PondIllustration() {
       <ellipse cx="25" cy="85" rx="8"  ry="5"  fill="#abadb0" opacity="0.2"/>
       <line    x1="18" y1="100" x2="18" y2="50" stroke="#abadb0" strokeWidth="1.3" opacity="0.35"/>
       <ellipse cx="18" cy="50" rx="3"  ry="8"  fill="#abadb0" opacity="0.3"/>
+    </svg>
+  )
+}
+
+function ContactIllustration() {
+  return (
+    <svg width="130" height="120" viewBox="0 0 120 115" xmlns="http://www.w3.org/2000/svg">
+      {/* Sync rings */}
+      <circle cx="60" cy="54" r="44" fill="none" stroke="#f068a4" strokeWidth="0.8" opacity="0.18"/>
+      <circle cx="60" cy="54" r="34" fill="none" stroke="#f068a4" strokeWidth="0.9" opacity="0.28"/>
+      <circle cx="60" cy="54" r="24" fill="none" stroke="#f068a4" strokeWidth="1.0" opacity="0.42"/>
+      {/* Avatar head */}
+      <ellipse cx="60" cy="54" rx="18" ry="20" fill="#f068a4" opacity="0.92"/>
+      {/* Eyes */}
+      <ellipse cx="53.5" cy="51" rx="3" ry="3.2" fill="white" opacity="0.95"/>
+      <ellipse cx="66.5" cy="51" rx="3" ry="3.2" fill="white" opacity="0.95"/>
+      <ellipse cx="53.5" cy="52" rx="1.8" ry="1.8" fill="#1c1c1e"/>
+      <ellipse cx="66.5" cy="52" rx="1.8" ry="1.8" fill="#1c1c1e"/>
+      {/* Eyelids */}
+      <path d="M 50 49 Q 53.5 46.5 57 49" fill="#f068a4" opacity="0.85"/>
+      <path d="M 63 49 Q 66.5 46.5 70 49" fill="#f068a4" opacity="0.85"/>
+      {/* Smile */}
+      <path d="M 55 61 Q 60 65 65 61" fill="none" stroke="#c04a82" strokeWidth="1.3" strokeLinecap="round"/>
+      {/* Blush */}
+      <ellipse cx="47" cy="56" rx="5" ry="3" fill="#ff8fab" opacity="0.35"/>
+      <ellipse cx="73" cy="56" rx="5" ry="3" fill="#ff8fab" opacity="0.35"/>
+      {/* Breath arc below */}
+      <path d="M 20 95 Q 40 78 60 95 Q 80 112 100 95"
+            fill="none" stroke="#f068a4" strokeWidth="1.8" strokeLinecap="round" opacity="0.55"/>
     </svg>
   )
 }
