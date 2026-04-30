@@ -1,20 +1,13 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import BaseAvatar from './Avatar/BaseAvatar'
+import { useAvatarConfig } from '../hooks/useAvatarConfig'
 
 export default function Nav({ session }) {
   const navigate = useNavigate()
   const userId   = session?.user?.id
 
-  const { data: avatarData } = useQuery({
-    queryKey: ['avatar', userId],
-    queryFn: async () => {
-      const { data } = await supabase.from('avatars').select('skin_color, eye_color').eq('user_id', userId).maybeSingle()
-      return data
-    },
-    enabled: !!userId,
-  })
+  const { data: avatarData } = useAvatarConfig(userId)
 
   const initial = (
     session?.user?.user_metadata?.display_name?.[0] ||
@@ -44,7 +37,7 @@ export default function Nav({ session }) {
             <button style={S.btnOutline} onClick={handleSignOut}>Sign out</button>
             <Link to="/profile" style={S.avatarCircle}>
               {avatarData ? (
-                <BaseAvatar skinColor={avatarData.skin_color} eyeColor={avatarData.eye_color} size={36} />
+                <BaseAvatar skinColor={avatarData.skin_color} eyeColor={avatarData.eye_color} species={avatarData.species ?? 'human'} size={36} />
               ) : (
                 <div style={S.avatarInitial}>{initial}</div>
               )}

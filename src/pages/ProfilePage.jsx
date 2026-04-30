@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import Nav from '../components/Nav'
 import BaseAvatar from '../components/Avatar/BaseAvatar'
+import { useAvatarConfig } from '../hooks/useAvatarConfig'
 
 const UNLOCK_MILESTONES = [
   { pts: 50,  label: 'Ears & species',  icon: '👂' },
@@ -23,14 +24,7 @@ export default function ProfilePage({ session }) {
   const userId      = session?.user?.id
   const emailFallback = session?.user?.email?.split('@')[0] || 'researcher'
 
-  const { data: avatarData } = useQuery({
-    queryKey: ['avatar', userId],
-    queryFn: async () => {
-      const { data } = await supabase.from('avatars').select('skin_color, eye_color').eq('user_id', userId).maybeSingle()
-      return data
-    },
-    enabled: !!userId,
-  })
+  const { data: avatarData } = useAvatarConfig(userId)
 
   const { data: profile } = useQuery({
     queryKey: ['profile', userId],
@@ -76,7 +70,7 @@ export default function ProfilePage({ session }) {
         {/* ── Avatar card ─────────────────────────────────────────── */}
         <div style={S.avatarCard}>
           <div style={S.avatarPreview}>
-            <BaseAvatar skinColor={skinColor} eyeColor={eyeColor} size={160} />
+            <BaseAvatar skinColor={skinColor} eyeColor={eyeColor} species={avatarData?.species ?? 'human'} size={160} />
           </div>
           <div style={S.avatarInfo}>
             <h1 style={S.displayName}>{displayName}</h1>
