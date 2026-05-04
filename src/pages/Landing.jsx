@@ -22,14 +22,17 @@ export default function Landing({ session }) {
 
       {/* HERO */}
       <section style={S.hero}>
+        <p style={S.eyebrow}>
+          <a href="https://www.utoronto.ca" target="_blank" rel="noopener noreferrer" style={S.eyebrowLink}>University of Toronto</a>
+          &nbsp;·&nbsp; Department of Psychology
+        </p>
         <div style={S.heroBrand}>
-          <img src="/RADlab_Logo.svg" height="56" alt="" aria-hidden="true" />
-          <p style={S.eyebrow}>University of Toronto &nbsp;·&nbsp; Department of Psychology</p>
+          <h1 style={S.h1}>
+            Regulatory &amp; Affective<br />
+            <em style={{ fontStyle: 'italic', color: 'var(--pk)' }}>Dynamics Lab</em>
+          </h1>
+          <img src="/RADlab_Logo.svg" height="80" alt="" aria-hidden="true" style={S.heroLogo} />
         </div>
-        <h1 style={S.h1}>
-          Regulatory &amp; Affective<br />
-          <em style={{ fontStyle: 'italic', color: 'var(--pk)' }}>Dynamics Lab</em>
-        </h1>
         <p style={S.sub}>
           We study how people sense, regulate, and adapt — through rigorous experiments designed to feel like play.
         </p>
@@ -145,9 +148,11 @@ const S = {
   wordmark: { fontFamily: SERIF, fontSize: 'clamp(22px, 5vw, 36px)', letterSpacing: -0.5, color: 'var(--tx)', lineHeight: 1 },
 
   hero:      { padding: '80px 52px 52px', maxWidth: 860, position: 'relative', zIndex: 1 },
-  heroBrand: { display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 },
-  eyebrow:   { fontFamily: MONO, fontSize: '0.8125rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--pk)' },
-  h1:        { fontFamily: SERIF, fontSize: 'clamp(2.6rem, 5vw, 4rem)', lineHeight: 1.08, color: 'var(--tx)', marginBottom: 22 },
+  eyebrow:   { fontFamily: MONO, fontSize: '0.8125rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--pk)', marginBottom: 20 },
+  eyebrowLink: { color: 'var(--pk)', textDecoration: 'none', borderBottom: '1px solid rgba(240,104,164,0.35)' },
+  heroBrand: { display: 'flex', alignItems: 'center', gap: 24, marginBottom: 22 },
+  heroLogo:  { flexShrink: 0, display: 'block' },
+  h1:        { fontFamily: SERIF, fontSize: 'clamp(2.6rem, 5vw, 4rem)', lineHeight: 1.08, color: 'var(--tx)', margin: 0 },
   sub:       { fontSize: '1rem', color: 'var(--gy)', lineHeight: 1.7, maxWidth: 500, fontWeight: 300 },
 
   hubSection: { padding: '40px 52px 100px', position: 'relative', zIndex: 1 },
