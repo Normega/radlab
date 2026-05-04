@@ -11,6 +11,22 @@
 
 /* Brand tokens */
 :root {
+  /*
+    FONT SIZE GUARDRAILS — never go below --fs-min in any component.
+    Space Mono reads small; prefer --fs-mono-sm or above for labels.
+      --fs-min:      12px  (absolute floor, WCAG)
+      --fs-mono-sm:  12px  (mono labels, chips, tags)
+      --fs-mono-md:  13px  (nav links, CTAs, eyebrows)
+      --fs-body-sm:  14px  (secondary sans body)
+      --fs-body:     16px  (default body)
+      --fs-body-lg:  18px  (comfortable reading)
+  */
+  --fs-min:     0.75rem;
+  --fs-mono-sm: 0.75rem;
+  --fs-mono-md: 0.8125rem;
+  --fs-body-sm: 0.875rem;
+  --fs-body:    1rem;
+  --fs-body-lg: 1.125rem;
   --bg:   #FCF0F5;
   --bgc:  #ffffff;
   --bgp:  #FBEAF3;

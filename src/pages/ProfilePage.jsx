@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+﻿import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import Nav from '../components/Nav'
@@ -6,12 +6,12 @@ import BaseAvatar from '../components/Avatar/BaseAvatar'
 import { useAvatarConfig } from '../hooks/useAvatarConfig'
 
 const UNLOCK_MILESTONES = [
-  { pts: 50,  label: 'Ears & species',  icon: '👂' },
-  { pts: 100, label: 'Nose styles',     icon: '👃' },
-  { pts: 150, label: 'Hair',            icon: '💇' },
-  { pts: 200, label: 'Mouth styles',    icon: '😄' },
-  { pts: 300, label: 'Auras & extras',  icon: '✨' },
-  { pts: 500, label: 'Scars & marks',   icon: '🔱' },
+  { pts: 50,  label: 'Ears & species',  icon: 'ðŸ‘‚' },
+  { pts: 100, label: 'Nose styles',     icon: 'ðŸ‘ƒ' },
+  { pts: 150, label: 'Hair',            icon: 'ðŸ’‡' },
+  { pts: 200, label: 'Mouth styles',    icon: 'ðŸ˜„' },
+  { pts: 300, label: 'Auras & extras',  icon: 'âœ¨' },
+  { pts: 500, label: 'Scars & marks',   icon: 'ðŸ”±' },
 ]
 
 const ROLE_META = {
@@ -67,7 +67,7 @@ export default function ProfilePage({ session }) {
       <Nav session={session} />
       <div style={S.wrap}>
 
-        {/* ── Avatar card ─────────────────────────────────────────── */}
+        {/* â”€â”€ Avatar card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         <div style={S.avatarCard}>
           <div style={S.avatarPreview}>
             <BaseAvatar skinColor={skinColor} eyeColor={eyeColor} species={avatarData?.species ?? 'human'} size={160} />
@@ -81,7 +81,7 @@ export default function ProfilePage({ session }) {
           </div>
         </div>
 
-        {/* ── Points & progress ───────────────────────────────────── */}
+        {/* â”€â”€ Points & progress â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         <p style={S.secLabel}>// Points &amp; Progress</p>
         <div style={S.card}>
           <div style={S.pointsRow}>
@@ -105,7 +105,7 @@ export default function ProfilePage({ session }) {
           )}
         </div>
 
-        {/* ── Unlock tracker ──────────────────────────────────────── */}
+        {/* â”€â”€ Unlock tracker â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         <p style={{ ...S.secLabel, marginTop: 40 }}>// Unlock Tracker</p>
         <div style={S.card}>
           {UNLOCK_MILESTONES.map((m, i) => {
@@ -132,11 +132,11 @@ export default function ProfilePage({ session }) {
           })}
         </div>
 
-        {/* ── Activity summary ────────────────────────────────────── */}
+        {/* â”€â”€ Activity summary â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         <p style={{ ...S.secLabel, marginTop: 40 }}>// Activity</p>
         <div style={S.card}>
           <div style={S.statRow}>
-            <span style={S.statNum}>{sessionCount ?? '—'}</span>
+            <span style={S.statNum}>{sessionCount ?? 'â€”'}</span>
             <span style={S.statLabel}>game sessions completed</span>
           </div>
         </div>
@@ -162,7 +162,7 @@ const S = {
   avatarInfo:    { display: 'flex', flexDirection: 'column', gap: 10 },
   displayName:   { fontFamily: SERIF, fontSize: 32, color: 'var(--tx)', margin: 0, letterSpacing: -0.5 },
   roleBadge: {
-    display: 'inline-block', fontFamily: MONO, fontSize: 11,
+    display: 'inline-block', fontFamily: MONO, fontSize: 12,
     letterSpacing: '0.08em', textTransform: 'uppercase',
     padding: '4px 10px', borderRadius: 6, alignSelf: 'flex-start',
   },
@@ -174,7 +174,7 @@ const S = {
     textDecoration: 'none', alignSelf: 'flex-start', marginTop: 4,
   },
 
-  secLabel:    { fontFamily: MONO, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--tx3)', marginBottom: 16 },
+  secLabel:    { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--tx3)', marginBottom: 16 },
   card:        { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 16, padding: '20px 24px', overflow: 'hidden' },
 
   pointsRow:   { display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 16 },
@@ -188,10 +188,10 @@ const S = {
   unlockInfo:  { flex: 1, display: 'flex', alignItems: 'center', gap: 8 },
   unlockLabel: { fontSize: 14 },
   unlockedTag: {
-    fontFamily: MONO, fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase',
+    fontFamily: MONO, fontSize: 12, letterSpacing: '0.06em', textTransform: 'uppercase',
     background: '#D1FAE5', color: '#065F46', borderRadius: 5, padding: '2px 7px',
   },
-  unlockPts:   { fontFamily: MONO, fontSize: 11, color: 'var(--tx3)', background: 'var(--bg)', borderRadius: 6, padding: '2px 8px' },
+  unlockPts:   { fontFamily: MONO, fontSize: 12, color: 'var(--tx3)', background: 'var(--bg)', borderRadius: 6, padding: '2px 8px' },
 
   statRow:     { display: 'flex', alignItems: 'baseline', gap: 10 },
   statNum:     { fontFamily: MONO, fontSize: 36, color: 'var(--tx)', lineHeight: 1 },

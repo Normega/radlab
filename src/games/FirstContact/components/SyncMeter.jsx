@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+﻿import { useEffect, useRef, useState } from 'react';
 
-// Arc path: M 10 64 A 45 45 0 0 1 100 64  (upward semicircle, length ≈ 141.4)
+// Arc path: M 10 64 A 45 45 0 0 1 100 64  (upward semicircle, length â‰ˆ 141.4)
 const ARC    = 'M 10 64 A 45 45 0 0 1 100 64';
 const ARC_LEN = 141.4;
 
@@ -10,12 +10,12 @@ function arcColor(syncLevel) {
   return '#BA7517';                         // amber
 }
 
-// ── SyncMeter ─────────────────────────────────────────────────────────────
+// â”€â”€ SyncMeter â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Arc-style sync quality indicator.
 //
 // Props:
-//   syncLevel   — 0.0–1.0 rolling mean
-//   justUpdated — true for one render cycle after a new score is added → pulse
+//   syncLevel   â€” 0.0â€“1.0 rolling mean
+//   justUpdated â€” true for one render cycle after a new score is added â†’ pulse
 
 export default function SyncMeter({ syncLevel = 0, justUpdated = false }) {
   const hasFlashedRef = useRef(false);
@@ -35,7 +35,7 @@ export default function SyncMeter({ syncLevel = 0, justUpdated = false }) {
 
   return (
     <div style={S.wrap}>
-      {/* Pulse wrapper — CSS scale transition, safe on a div */}
+      {/* Pulse wrapper â€” CSS scale transition, safe on a div */}
       <div style={{
         ...S.meterWrap,
         transform: justUpdated ? 'scale(1.03)' : 'scale(1)',
@@ -57,7 +57,7 @@ export default function SyncMeter({ syncLevel = 0, justUpdated = false }) {
           {/* Track */}
           <path d={ARC} fill="none" stroke="rgba(0,0,0,0.08)"
             strokeWidth="6" strokeLinecap="round" />
-          {/* Fill — advances from left as syncLevel rises */}
+          {/* Fill â€” advances from left as syncLevel rises */}
           <path
             d={ARC}
             fill="none"
@@ -91,7 +91,7 @@ const S = {
   meterWrap: { padding: '8px 12px', borderRadius: 12 },
   label:     {
     fontFamily: '"Space Mono", monospace',
-    fontSize: 10, letterSpacing: '0.10em',
+    fontSize: 12, letterSpacing: '0.10em',
     textTransform: 'uppercase', color: 'var(--tx3)', margin: 0,
   },
 };

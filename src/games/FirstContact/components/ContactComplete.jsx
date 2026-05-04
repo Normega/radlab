@@ -1,12 +1,12 @@
-import { COPY } from '../constants';
+﻿import { COPY } from '../constants';
 
-// ── ContactComplete ───────────────────────────────────────────────────────
+// â”€â”€ ContactComplete â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Shown below the avatar when phase = 'COMPLETE'.
 //
 // Props:
-//   syncLevel   — final rolling mean (0.0–1.0)
-//   isReturning — true = Deeper Contact mode
-//   onContinue  — () => void — navigate forward
+//   syncLevel   â€” final rolling mean (0.0â€“1.0)
+//   isReturning â€” true = Deeper Contact mode
+//   onContinue  â€” () => void â€” navigate forward
 
 export default function ContactComplete({ syncLevel = 0, isReturning = false, onContinue }) {
   const pct  = Math.round(syncLevel * 100);
@@ -35,7 +35,7 @@ const S = {
     gap: 16, paddingTop: 8,
   },
   eyebrow: {
-    fontFamily: MONO, fontSize: 11, letterSpacing: '0.14em',
+    fontFamily: MONO, fontSize: 12, letterSpacing: '0.14em',
     textTransform: 'uppercase', color: 'var(--pk)', margin: 0,
   },
   body: {

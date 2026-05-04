@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+﻿import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Nav from '../../components/Nav';
 import { supabase } from '../../lib/supabase';
@@ -18,7 +18,7 @@ import GetReadyScreen from './components/GetReadyScreen';
 import ResponseScreen  from './components/ResponseScreen';
 import SessionFeedback from './components/SessionFeedback';
 
-// ── Trial logic helpers ────────────────────────────────────────────────────
+// â”€â”€ Trial logic helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function computeBreathDurations(baseDuration, magnitude, direction, salience) {
   const totalChange = direction === 'faster' ? 1 - magnitude : 1 + magnitude;
@@ -50,18 +50,18 @@ function computeTrialScore(trialType, correct, confidence) {
   return pts;
 }
 
-// ── EbbAndFlow ─────────────────────────────────────────────────────────────
+// â”€â”€ EbbAndFlow â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export default function EbbAndFlow({ session, onSessionComplete }) {
   const navigate   = useNavigate();
   const userId     = session?.user?.id;
 
-  // ── Game phase (React state for rendering + ref for async reads) ──────
+  // â”€â”€ Game phase (React state for rendering + ref for async reads) â”€â”€â”€â”€â”€â”€
   const [phase, _setPhase] = useState('SESSION_START');
   const phaseRef           = useRef('SESSION_START');
   function setPhase(p) { phaseRef.current = p; _setPhase(p); }
 
-  // ── Button held state (React state for rendering only) ───────────────
+  // â”€â”€ Button held state (React state for rendering only) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const [isHeld,       setIsHeld]       = useState(false);
   const [syncScore,    setSyncScore]    = useState(0);
   const [showHint,     setShowHint]     = useState(false);
@@ -69,22 +69,22 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
   const [trialCount,   setTrialCount]   = useState(0);
   const [sessionScore, setSessionScore] = useState(0);
 
-  // ── Profile + avatar ──────────────────────────────────────────────────
+  // â”€â”€ Profile + avatar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // undefined = still loading; null = loaded, no row found; object = loaded
   const [profile,  setProfile]  = useState(undefined);
   const profileRef = useRef(null);
 
   const { data: avatarData } = useAvatarConfig(userId);
 
-  // ── Avatar imperative control ─────────────────────────────────────────
+  // â”€â”€ Avatar imperative control â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // Populated by AvatarBreathPacer via controlRef prop.
   // resetAvatarToNeutral / resumeAvatarAnimation operate synchronously on the
-  // RAF loop — no React state update cycle in between.
+  // RAF loop â€” no React state update cycle in between.
   const avatarControlRef = useRef(null);
   function resetAvatarToNeutral()  { avatarControlRef.current?.resetToNeutral(); }
   function resumeAvatarAnimation() { avatarControlRef.current?.resumeAnimation(); }
 
-  // ── Session tracking (refs — mutated inside async loops) ─────────────
+  // â”€â”€ Session tracking (refs â€” mutated inside async loops) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const pauseTimerRef      = useRef(null);
   const sessionTrialsRef   = useRef([]);
   const sessionScoreRef    = useRef(0);
@@ -97,7 +97,7 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
   const warmupBreathRef    = useRef(0);
   const syncScoreRef       = useRef(0);
 
-  // ── Hooks ─────────────────────────────────────────────────────────────
+  // â”€â”€ Hooks â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const { getPhase, startBreath, reset: resetBreath } = useBreathCycle();
   const {
     staircases,
@@ -107,7 +107,7 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
   } = useQuestStaircases(profile?.ebb_flow_quest_state);
   const { onPress: rawPress, onRelease: rawRelease, computeBreathSyncScore } = useButtonSync(getPhase);
 
-  // ── Load profile ──────────────────────────────────────────────────────
+  // â”€â”€ Load profile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
     if (!userId) return;
     supabase.from('profiles').select('*').eq('id', userId).single()
@@ -123,7 +123,7 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
   const gameMode = profile?.ebb_flow_game_mode || 'beginner';
   const modeConfig = GAME_MODES[gameMode];
 
-  // ── Button handlers ───────────────────────────────────────────────────
+  // â”€â”€ Button handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const handlePress = useCallback(() => {
     rawPress();
     setIsHeld(true);
@@ -156,7 +156,7 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
     }
   }, [rawRelease]);
 
-  // ── WARMUP phase ──────────────────────────────────────────────────────
+  // â”€â”€ WARMUP phase â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
     if (phase !== 'WARMUP') return;
     let cancelled = false;
@@ -167,7 +167,7 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
 
     async function warmupLoop() {
       // 1. Cancel RAF, apply neutral synchronously (child effects run before parent,
-      //    so AvatarBreathPacer's build effect and its RAF have already fired by now —
+      //    so AvatarBreathPacer's build effect and its RAF have already fired by now â€”
       //    but the RAF callback hasn't fired yet since it's scheduled for the next paint)
       resetAvatarToNeutral();
 
@@ -205,12 +205,12 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
     };
   }, [phase]);
 
-  // ── TRIAL_ITI phase ───────────────────────────────────────────────────
+  // â”€â”€ TRIAL_ITI phase â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
     if (phase !== 'TRIAL_ITI') return;
     let cancelled = false;
     // Synchronously kill the RAF and pin the avatar to neutral for the entire
-    // ITI gap — prevents any residual warmup/previous-breath animation from leaking in
+    // ITI gap â€” prevents any residual warmup/previous-breath animation from leaking in
     resetAvatarToNeutral();
     const timer = setTimeout(() => {
       if (!cancelled) beginTrial();
@@ -218,7 +218,7 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
     return () => { cancelled = true; clearTimeout(timer); };
   }, [phase]);
 
-  // ── BREATH_SEQUENCE phase ─────────────────────────────────────────────
+  // â”€â”€ BREATH_SEQUENCE phase â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
     if (phase !== 'BREATH_SEQUENCE') return;
     let cancelled = false;
@@ -260,7 +260,7 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
       if (cancelled) return;
       recordBreathSync();
 
-      // 4. Breaths 2–4
+      // 4. Breaths 2â€“4
       for (let i = 1; i < BREATHS_PER_TRIAL; i++) {
         if (cancelled) return;
         setBreathIndex(i);
@@ -278,7 +278,7 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
     };
   }, [phase]);
 
-  // ── Trial setup ───────────────────────────────────────────────────────
+  // â”€â”€ Trial setup â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   function beginTrial() {
     const isCatch = Math.random() < CATCH_TRIAL_PROPORTION;
     let trialType, durations, magnitude, log10Mag, direction, salience;
@@ -304,7 +304,7 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
     setPhase('BREATH_SEQUENCE');
   }
 
-  // ── Response submission ───────────────────────────────────────────────
+  // â”€â”€ Response submission â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   function handleResponse({ afc, confidence, arousal, reactionTimeMs }) {
     const trial = currentTrialRef.current;
     if (!trial) return;
@@ -372,7 +372,7 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
     }
   }
 
-  // ── Session completion ─────────────────────────────────────────────────
+  // â”€â”€ Session completion â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   async function finishSession() {
     const p             = profileRef.current;
     const prevTotal     = p?.ebb_flow_total_trials ?? 0;
@@ -406,14 +406,14 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
     });
   }
 
-  // ── Mode change ───────────────────────────────────────────────────────
+  // â”€â”€ Mode change â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   async function handleModeSelect(key) {
     if (!userId) return;
     await supabase.from('profiles').update({ ebb_flow_game_mode: key }).eq('id', userId);
     setProfile(p => ({ ...p, ebb_flow_game_mode: key }));
   }
 
-  // ── Feedback props (computed once at SESSION_COMPLETE) ───────────────
+  // â”€â”€ Feedback props (computed once at SESSION_COMPLETE) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const feedbackProps = phase === 'SESSION_COMPLETE' ? (() => {
     const trials = sessionTrialsRef.current;
 
@@ -437,7 +437,7 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
     return { excitementSD, calmSD, syncScores, changeAwareness };
   })() : null;
 
-  // ── Render ─────────────────────────────────────────────────────────────
+  // â”€â”€ Render â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const skinColor  = avatarData?.skin_color || '#FDBCB4';
   const eyeColor   = avatarData?.eye_color  || '#4A90D9';
   const species    = avatarData?.species    ?? 'human';
@@ -500,7 +500,7 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
 
       {phase === 'STABILITY_COMPLETE' && (
         <div style={{ maxWidth: 420, margin: '0 auto', padding: '80px 24px', textAlign: 'center' }}>
-          <p style={{ fontFamily: '"Space Mono", monospace', fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--pk)', marginBottom: 12 }}>
+          <p style={{ fontFamily: '"Space Mono", monospace', fontSize: 12, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--pk)', marginBottom: 12 }}>
             Stability reached
           </p>
           <h2 style={{ fontFamily: '"DM Serif Display", serif', fontSize: 32, color: 'var(--tx)', marginBottom: 16 }}>
@@ -509,7 +509,7 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
           <p style={{ fontSize: 15, color: 'var(--tx2)', lineHeight: 1.6, marginBottom: 32 }}>
             All four staircases have converged. You've mapped your interoceptive sensitivity across all conditions.
           </p>
-          <button style={S.primaryBtn} onClick={finishSession}>See results →</button>
+          <button style={S.primaryBtn} onClick={finishSession}>See results â†’</button>
         </div>
       )}
 

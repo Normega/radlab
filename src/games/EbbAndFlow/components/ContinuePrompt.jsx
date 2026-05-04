@@ -1,10 +1,10 @@
-// ── ContinuePrompt ────────────────────────────────────────────────────────
+﻿// â”€â”€ ContinuePrompt â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Shown every CONTINUE_PROMPT_INTERVAL trials.
 // Props:
-//   trialCount   — total trials completed so far
-//   sessionScore — points accumulated this session
-//   onContinue   — () => void
-//   onStop       — () => void
+//   trialCount   â€” total trials completed so far
+//   sessionScore â€” points accumulated this session
+//   onContinue   â€” () => void
+//   onStop       â€” () => void
 
 export default function ContinuePrompt({ trialCount, sessionScore, onContinue, onStop }) {
   return (
@@ -19,7 +19,7 @@ export default function ContinuePrompt({ trialCount, sessionScore, onContinue, o
         </p>
         <div style={S.btnRow}>
           <button style={S.continuBtn} onClick={onContinue}>
-            Yes, keep going →
+            Yes, keep going â†’
           </button>
           <button style={S.stopBtn} onClick={onStop}>
             Take a break
@@ -36,7 +36,7 @@ const SERIF = '"DM Serif Display", Georgia, serif';
 const S = {
   wrap:      { display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '80vh', padding: 24 },
   card:      { background: 'var(--bgc)', border: '1px solid var(--pkbs)', borderRadius: 20, padding: '36px 32px', maxWidth: 400, width: '100%', textAlign: 'center' },
-  eyebrow:   { fontFamily: MONO, fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--pk)', margin: '0 0 8px' },
+  eyebrow:   { fontFamily: MONO, fontSize: 12, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--pk)', margin: '0 0 8px' },
   title:     { fontFamily: SERIF, fontSize: 34, color: 'var(--tx)', margin: '0 0 12px' },
   body:      { fontSize: 15, color: 'var(--tx2)', lineHeight: 1.6, margin: '0 0 28px' },
   btnRow:    { display: 'flex', flexDirection: 'column', gap: 10 },

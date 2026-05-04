@@ -1,19 +1,19 @@
-import { GAME_MODES } from '../constants';
+﻿import { GAME_MODES } from '../constants';
 
-// ── SessionSummary ────────────────────────────────────────────────────────
+// â”€â”€ SessionSummary â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // End-of-session results screen.
 //
 // Props:
-//   sessionScore      — points earned this session
-//   totalScore        — new cumulative total
-//   totalTrials       — new cumulative trial count
-//   questEstimates    — { faster_high, faster_low, slower_high, slower_low } threshold estimates (linear)
-//   questSDs          — same keys, posterior SDs
-//   allConverged      — boolean
-//   newModeUnlocked   — null | 'listener' | 'empath'
-//   gameMode          — current mode key
-//   sessionSyncMean   — 0–1
-//   onDone            — () => void (back to dashboard / next session)
+//   sessionScore      â€” points earned this session
+//   totalScore        â€” new cumulative total
+//   totalTrials       â€” new cumulative trial count
+//   questEstimates    â€” { faster_high, faster_low, slower_high, slower_low } threshold estimates (linear)
+//   questSDs          â€” same keys, posterior SDs
+//   allConverged      â€” boolean
+//   newModeUnlocked   â€” null | 'listener' | 'empath'
+//   gameMode          â€” current mode key
+//   sessionSyncMean   â€” 0â€“1
+//   onDone            â€” () => void (back to dashboard / next session)
 
 export default function SessionSummary({
   sessionScore = 0,
@@ -29,10 +29,10 @@ export default function SessionSummary({
 }) {
   const KEYS = ['faster_high', 'faster_low', 'slower_high', 'slower_low'];
   const KEY_LABELS = {
-    faster_high: 'Faster · abrupt',
-    faster_low:  'Faster · gradual',
-    slower_high: 'Slower · abrupt',
-    slower_low:  'Slower · gradual',
+    faster_high: 'Faster Â· abrupt',
+    faster_low:  'Faster Â· gradual',
+    slower_high: 'Slower Â· abrupt',
+    slower_low:  'Slower Â· gradual',
   };
 
   return (
@@ -61,7 +61,7 @@ export default function SessionSummary({
       {/* Mode unlock celebration */}
       {newModeUnlocked && (
         <div style={S.unlockBanner}>
-          <span style={S.unlockIcon}>🔓</span>
+          <span style={S.unlockIcon}>ðŸ”“</span>
           <div>
             <p style={S.unlockTitle}>{GAME_MODES[newModeUnlocked].label} mode unlocked!</p>
             <p style={S.unlockSub}>
@@ -86,12 +86,12 @@ export default function SessionSummary({
               <div style={S.threshBar}>
                 <div style={{ ...S.threshFill, width: `${barPct}%` }} />
               </div>
-              <span style={S.threshVal}>{est != null ? est.toFixed(2) : '—'}</span>
+              <span style={S.threshVal}>{est != null ? est.toFixed(2) : 'â€”'}</span>
             </div>
           );
         })}
         {allConverged && (
-          <p style={S.convergedNote}>✓ All staircases converged — sensitivity profile complete.</p>
+          <p style={S.convergedNote}>âœ“ All staircases converged â€” sensitivity profile complete.</p>
         )}
       </div>
 
@@ -107,7 +107,7 @@ export default function SessionSummary({
       </div>
 
       <button style={S.doneBtn} onClick={onDone}>
-        Back to dashboard →
+        Back to dashboard â†’
       </button>
     </div>
   );
@@ -118,28 +118,28 @@ const SERIF = '"DM Serif Display", Georgia, serif';
 
 const S = {
   wrap:     { maxWidth: 520, margin: '0 auto', padding: '48px 24px' },
-  eyebrow:  { fontFamily: MONO, fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--pk)', margin: '0 0 8px' },
+  eyebrow:  { fontFamily: MONO, fontSize: 12, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--pk)', margin: '0 0 8px' },
   title:    { fontFamily: SERIF, fontSize: 'clamp(26px, 5vw, 38px)', color: 'var(--tx)', margin: '0 0 28px', letterSpacing: -0.5 },
 
   scoreRow:   { display: 'flex', gap: 20, marginBottom: 28, flexWrap: 'wrap' },
   scoreBox:   { display: 'flex', flexDirection: 'column', gap: 2 },
   scoreNum:   { fontFamily: MONO, fontSize: 32, color: 'var(--pk)', lineHeight: 1 },
-  scoreLabel: { fontFamily: MONO, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--tx3)' },
+  scoreLabel: { fontFamily: MONO, fontSize: 12, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--tx3)' },
 
   unlockBanner: { display: 'flex', alignItems: 'flex-start', gap: 14, background: 'var(--bgp)', border: '1px solid var(--pkb)', borderRadius: 14, padding: '16px 18px', marginBottom: 28 },
   unlockIcon:   { fontSize: 28, lineHeight: 1 },
   unlockTitle:  { fontFamily: MONO, fontSize: 13, fontWeight: 700, color: 'var(--pk)', margin: '0 0 4px', letterSpacing: 0 },
   unlockSub:    { fontSize: 13, color: 'var(--tx2)', margin: 0, lineHeight: 1.5 },
 
-  secLabel:   { fontFamily: MONO, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--tx3)', marginBottom: 12 },
+  secLabel:   { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--tx3)', marginBottom: 12 },
   card:       { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 14, padding: '16px 20px' },
 
   threshRow:  { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 },
-  threshLabel: { fontFamily: MONO, fontSize: 10, color: 'var(--tx2)', width: 130, flexShrink: 0 },
+  threshLabel: { fontFamily: MONO, fontSize: 12, color: 'var(--tx2)', width: 130, flexShrink: 0 },
   threshBar:  { flex: 1, height: 6, borderRadius: 999, background: 'var(--bgp)', overflow: 'hidden' },
   threshFill: { height: '100%', borderRadius: 999, background: 'var(--pk)' },
-  threshVal:  { fontFamily: MONO, fontSize: 11, color: 'var(--tx)', width: 32, textAlign: 'right' },
-  convergedNote: { fontFamily: MONO, fontSize: 10, color: '#1D9E75', margin: '8px 0 0', letterSpacing: '0.06em' },
+  threshVal:  { fontFamily: MONO, fontSize: 12, color: 'var(--tx)', width: 32, textAlign: 'right' },
+  convergedNote: { fontFamily: MONO, fontSize: 12, color: '#1D9E75', margin: '8px 0 0', letterSpacing: '0.06em' },
 
   syncRow:   { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
   syncLabel: { fontSize: 13, color: 'var(--tx2)' },

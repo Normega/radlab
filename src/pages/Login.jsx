@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Nav from '../components/Nav'
@@ -15,7 +15,7 @@ export default function Login() {
     setLoading(true)
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) { setError(error.message); setLoading(false) }
-    // on success: stay loading — PublicOnlyRoute in App.jsx handles the redirect
+    // on success: stay loading â€” PublicOnlyRoute in App.jsx handles the redirect
   }
 
   return (
@@ -43,11 +43,11 @@ export default function Login() {
               <input
                 type="password" required autoComplete="current-password"
                 value={password} onChange={e => setPassword(e.target.value)}
-                style={S.input} placeholder="••••••••"
+                style={S.input} placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
               />
             </div>
             <button type="submit" style={S.btnPrimary} disabled={loading}>
-              {loading ? 'Signing in…' : 'Sign in'}
+              {loading ? 'Signing inâ€¦' : 'Sign in'}
             </button>
           </form>
 
@@ -70,7 +70,7 @@ const S = {
   sub:   { fontSize: 14, color: 'var(--tx2)', textAlign: 'center', marginBottom: 28 },
   form:  { display: 'flex', flexDirection: 'column', gap: 16 },
   field: { display: 'flex', flexDirection: 'column', gap: 6 },
-  label: { fontFamily: '"Space Mono", monospace', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--tx3)' },
+  label: { fontFamily: '"Space Mono", monospace', fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--tx3)' },
   input: { padding: '10px 14px', borderRadius: 9, border: '1px solid var(--bds)', background: 'var(--bgp)', fontSize: 15, color: 'var(--tx)', outline: 'none', fontFamily: 'inherit' },
   btnPrimary: { padding: '12px 0', background: 'var(--pk)', border: 'none', borderRadius: 12, color: '#fff', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', marginTop: 4 },
   errorBox: { background: '#FCEBEB', border: '1px solid #F09595', borderRadius: 9, padding: '10px 14px', fontSize: 13, color: '#A32D2D', marginBottom: 16 },

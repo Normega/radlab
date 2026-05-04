@@ -11,10 +11,12 @@ export default function Landing({ session }) {
       <div style={S.blob} />
 
       {/* NAV */}
-      <nav style={S.nav}>
+      <nav style={S.nav} className="px-4 md:px-6">
         <Link to="/" style={S.brand}>
-          <img src="/RADlab_Logo.svg" height="34" alt="RADlab" />
-          <span style={S.wordmark}>RAD<span style={{ color: 'var(--pk)' }}>lab</span></span>
+          <div className="h-8 md:h-10" style={{ display: 'flex', alignItems: 'center' }}>
+            <img src="/RADlab_Logo.svg" style={{ height: '100%', display: 'block' }} alt="RADlab logo" />
+          </div>
+          <span style={S.wordmark}>RAD<b style={{ color: 'var(--pk)', fontWeight: 400 }}>lab</b></span>
         </Link>
       </nav>
 
@@ -134,12 +136,13 @@ const S = {
   },
 
   nav: {
-    display: 'flex', alignItems: 'center', padding: '16px 52px',
-    borderBottom: '1px solid var(--pkb)', background: 'var(--bg)',
+    display: 'flex', alignItems: 'center', padding: '12px 0',
+    borderBottom: '1px solid var(--bd)', background: 'rgba(252,240,245,0.97)',
     position: 'sticky', top: 0, zIndex: 10,
+    backdropFilter: 'blur(8px)',
   },
   brand:    { display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' },
-  wordmark: { fontFamily: SERIF, fontSize: '1.3rem', color: 'var(--tx)', letterSpacing: '0.02em' },
+  wordmark: { fontFamily: SERIF, fontSize: 'clamp(22px, 5vw, 36px)', letterSpacing: -0.5, color: 'var(--tx)', lineHeight: 1 },
 
   hero:      { padding: '80px 52px 52px', maxWidth: 860, position: 'relative', zIndex: 1 },
   heroBrand: { display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 },

@@ -1,6 +1,6 @@
-import { useState, useRef, useCallback } from 'react';
+﻿import { useState, useRef, useCallback } from 'react';
 
-// ── PlacementSlider ────────────────────────────────────────────────────────
+// â”€â”€ PlacementSlider â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Mandatory-placement pattern:
 //   UNSET: dashed ghost thumb at centre + horizontal dashed line
 //   PLACED: real thumb at exact tap/click position; draggable after placement
@@ -12,7 +12,7 @@ function PlacementSlider({ label, leftLabel, rightLabel, value, onChange }) {
   function getValueFromPointer(e) {
     const rect = trackRef.current.getBoundingClientRect();
     const x    = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
-    return Math.round(1 + (x / rect.width) * 6); // 1–7
+    return Math.round(1 + (x / rect.width) * 6); // 1â€“7
   }
 
   function handlePointerDown(e) {
@@ -70,11 +70,11 @@ function PlacementSlider({ label, leftLabel, rightLabel, value, onChange }) {
   );
 }
 
-// ── ResponseScreen ─────────────────────────────────────────────────────────
+// â”€â”€ ResponseScreen â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //
 // Props:
 //   onSubmit({ afc, confidence, arousal, reactionTimeMs }) => void
-//   trialStartTime — performance.now() at start of breath sequence (for RT)
+//   trialStartTime â€” performance.now() at start of breath sequence (for RT)
 
 export default function ResponseScreen({ onSubmit, trialStartTime }) {
   const [afc,        setAfc]        = useState(null);
@@ -140,7 +140,7 @@ export default function ResponseScreen({ onSubmit, trialStartTime }) {
         style={{ ...S.nextBtn, opacity: submitReady ? 1 : 0.4, cursor: submitReady ? 'pointer' : 'default' }}
         onClick={handleSubmit}
       >
-        Next trial →
+        Next trial â†’
       </button>
     </div>
   );
@@ -150,7 +150,7 @@ const MONO = '"Space Mono", monospace';
 
 const S = {
   wrap:       { maxWidth: 420, margin: '0 auto', padding: '40px 24px' },
-  eyebrow:    { fontFamily: MONO, fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--pk)', margin: '0 0 20px' },
+  eyebrow:    { fontFamily: MONO, fontSize: 12, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--pk)', margin: '0 0 20px' },
 
   afcRow:     { display: 'flex', gap: 10, marginBottom: 24 },
   afcBtn: {

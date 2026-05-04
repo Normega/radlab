@@ -1,11 +1,11 @@
-import { Link } from 'react-router-dom'
+﻿import { Link } from 'react-router-dom'
 import Nav from '../components/Nav'
 import { COPY } from '../games/FirstContact/constants'
 
-// ── GamesPage ─────────────────────────────────────────────────────────────
+// â”€â”€ GamesPage â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Props:
-//   session              — auth session
-//   firstContactComplete — undefined (loading) | false | true
+//   session              â€” auth session
+//   firstContactComplete â€” undefined (loading) | false | true
 
 export default function GamesPage({ session, firstContactComplete }) {
   const loading    = firstContactComplete === undefined
@@ -21,11 +21,11 @@ export default function GamesPage({ session, firstContactComplete }) {
 
         <div style={S.grid}>
 
-          {/* First Contact / Deeper Contact card — conditional on onboarding status */}
+          {/* First Contact / Deeper Contact card â€” conditional on onboarding status */}
           {!loading && !isComplete && (
             <GameCard
               title="First Contact"
-              badge="Breath sync · Required"
+              badge="Breath sync Â· Required"
               desc={COPY.games_tagline_first}
               to="/games/first-contact"
               featured
@@ -35,7 +35,7 @@ export default function GamesPage({ session, firstContactComplete }) {
           {!loading && isComplete && (
             <GameCard
               title="Deeper Contact"
-              badge="Breath sync · Practice"
+              badge="Breath sync Â· Practice"
               desc={COPY.games_tagline_deeper}
               to="/games/first-contact"
             />
@@ -43,22 +43,22 @@ export default function GamesPage({ session, firstContactComplete }) {
 
           <GameCard
             title="Pond Watch"
-            badge="Go / No-Go · Reaction time"
+            badge="Go / No-Go Â· Reaction time"
             desc="Watch the pond. Press when you spot a duck."
             to="/games/pond-watch"
           />
 
           <GameCard
             title="Owl Barn"
-            badge="Hearing · Rhythm · Strategy"
-            desc="Cross a dark barn while owls hoot overhead. Read the silence — 3 taps or 8."
+            badge="Hearing Â· Rhythm Â· Strategy"
+            desc="Cross a dark barn while owls hoot overhead. Read the silence â€” 3 taps or 8."
             to="/games/owl-barn"
           />
 
           {/* Ebb & Flow: locked until First Contact is complete */}
           <GameCard
             title="Ebb &amp; Flow"
-            badge="Interoception · Breath sync"
+            badge="Interoception Â· Breath sync"
             desc="Breathe with your avatar and detect subtle shifts in rhythm."
             to="/games/ebb-flow"
             locked={!loading && !isComplete}
@@ -70,7 +70,7 @@ export default function GamesPage({ session, firstContactComplete }) {
   )
 }
 
-// ── SUB-COMPONENTS ────────────────────────────────────────────────────────
+// â”€â”€ SUB-COMPONENTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function GameCard({ title, badge, desc, to, featured = false, locked = false }) {
   return (
@@ -81,7 +81,7 @@ function GameCard({ title, badge, desc, to, featured = false, locked = false }) 
       <div style={S.cardInner}>
         <div style={S.badgeRow}>
           <span style={S.gameBadge}>{badge}</span>
-          {locked && <span style={S.lockBadge}>🔒 Complete First Contact first</span>}
+          {locked && <span style={S.lockBadge}>ðŸ”’ Complete First Contact first</span>}
         </div>
         <h2 style={S.gameTitle} dangerouslySetInnerHTML={{ __html: title }} />
         <p style={S.gameDesc}>{desc}</p>
@@ -94,20 +94,20 @@ function GameCard({ title, badge, desc, to, featured = false, locked = false }) 
           ...(locked   ? S.playLinkLocked  : {}),
         }}
       >
-        {featured ? 'Begin →' : locked ? 'Locked' : 'Play now →'}
+        {featured ? 'Begin â†’' : locked ? 'Locked' : 'Play now â†’'}
       </Link>
     </div>
   )
 }
 
-// ── STYLES ────────────────────────────────────────────────────────────────
+// â”€â”€ STYLES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
 
 const S = {
   wrap:    { maxWidth: 900, margin: '0 auto', padding: '48px 32px' },
-  eyebrow: { fontFamily: MONO, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)', marginBottom: 8 },
+  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)', marginBottom: 8 },
   title:   { fontFamily: SERIF, fontSize: 'clamp(32px, 4vw, 48px)', color: 'var(--tx)', letterSpacing: -1, marginBottom: 36 },
 
   grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 },
@@ -119,12 +119,12 @@ const S = {
   badgeRow: { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 10 },
 
   gameBadge: {
-    display: 'inline-block', fontFamily: MONO, fontSize: 11, letterSpacing: 1,
+    display: 'inline-block', fontFamily: MONO, fontSize: 12, letterSpacing: 1,
     textTransform: 'uppercase', padding: '3px 9px', borderRadius: 5,
     background: 'var(--bgp)', color: 'var(--pkd)', border: '1px solid var(--pkb)',
   },
   lockBadge: {
-    display: 'inline-block', fontFamily: MONO, fontSize: 10, letterSpacing: 0.5,
+    display: 'inline-block', fontFamily: MONO, fontSize: 12, letterSpacing: 0.5,
     padding: '3px 8px', borderRadius: 5,
     background: '#f5f5f5', color: 'var(--tx3)', border: '1px solid var(--bd)',
   },

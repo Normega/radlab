@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
@@ -12,7 +12,7 @@ import { AURA_COLORS } from '../../lib/auraUtils'
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
 
-// ── Color distance (squared RGB) — used for nearest-palette auto-shift ────
+// â”€â”€ Color distance (squared RGB) â€” used for nearest-palette auto-shift â”€â”€â”€â”€
 function colorDist(hex1, hex2) {
   const n1 = parseInt(hex1.replace('#', ''), 16)
   const n2 = parseInt(hex2.replace('#', ''), 16)
@@ -27,7 +27,7 @@ function nearestAllowedColor(current, allowed) {
   )
 }
 
-// ── applyPaletteConstraints ───────────────────────────────────────────────
+// â”€â”€ applyPaletteConstraints â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Given a species def and current skin/eye, returns { skin, eye } that are
 // guaranteed to be within the species' allowed palette.
 // Returns the originals unchanged if no constraint applies.
@@ -47,7 +47,7 @@ function applyPaletteConstraints(speciesDef, skin, eye) {
   return { skin: newSkin, eye: newEye }
 }
 
-// ── Swatch ────────────────────────────────────────────────────────────────
+// â”€â”€ Swatch â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function Swatch({ color, label, active, onClick }) {
   return (
     <button
@@ -73,11 +73,11 @@ function Swatch({ color, label, active, onClick }) {
   )
 }
 
-// ── SpeciesChip ───────────────────────────────────────────────────────────
+// â”€â”€ SpeciesChip â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function SpeciesChip({ sp, active, locked, onSelect }) {
   return (
     <button
-      title={locked ? `${sp.label} — locked` : sp.label}
+      title={locked ? `${sp.label} â€” locked` : sp.label}
       onClick={locked ? undefined : onSelect}
       disabled={locked}
       style={{
@@ -99,14 +99,14 @@ function SpeciesChip({ sp, active, locked, onSelect }) {
       </span>
       {locked && (
         <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, borderRadius: 10 }}>
-          🔒
+          ðŸ”’
         </span>
       )}
     </button>
   )
 }
 
-// ── AuraColorChip ─────────────────────────────────────────────────────────
+// â”€â”€ AuraColorChip â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function AuraColorChip({ color, active, onSelect }) {
   return (
     <button
@@ -130,7 +130,7 @@ function AuraColorChip({ color, active, onSelect }) {
   )
 }
 
-// ── AvatarEditor ──────────────────────────────────────────────────────────
+// â”€â”€ AvatarEditor â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function AvatarEditor({ session, setHasAvatar }) {
   const navigate    = useNavigate()
   const queryClient = useQueryClient()
@@ -189,7 +189,7 @@ export default function AvatarEditor({ session, setHasAvatar }) {
     })
   }, [userId])
 
-  // ── Derived picker options (filtered by species palette) ─────────────
+  // â”€â”€ Derived picker options (filtered by species palette) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const speciesDef         = SPECIES[species] ?? SPECIES.human
   const filteredSkinColors = speciesDef.allowedSkinKeys
     ? SKIN_COLORS.filter(c => speciesDef.allowedSkinKeys.includes(c.label))
@@ -237,7 +237,7 @@ export default function AvatarEditor({ session, setHasAvatar }) {
       setSkin(prevSkin)
       setEye(prevEye)
       setBump(b => b + 1)
-      setSpeciesError('Failed to save — try again')
+      setSpeciesError('Failed to save â€” try again')
       setTimeout(() => setSpeciesError(null), 3000)
     }
   }
@@ -271,7 +271,7 @@ export default function AvatarEditor({ session, setHasAvatar }) {
       <div style={S.wrap}>
         {/* Header */}
         <div style={S.header}>
-          <p style={S.eyebrow}>Profile · Avatar</p>
+          <p style={S.eyebrow}>Profile Â· Avatar</p>
           <h1 style={S.title}>This is you.</h1>
           <p style={S.sub}>
             Start with your base avatar. As you explore and complete activities,
@@ -300,10 +300,10 @@ export default function AvatarEditor({ session, setHasAvatar }) {
             <div style={S.lockedCard}>
               <p style={S.lockedLabel}>Unlocked by exploring</p>
 
-              {/* Ears & species — expands when unlocked */}
+              {/* Ears & species â€” expands when unlocked */}
               {speciesFeatureUnlocked ? (
                 <div style={S.speciesSection}>
-                  <p style={S.speciesSectionLabel}>👂 Ears &amp; species</p>
+                  <p style={S.speciesSectionLabel}>ðŸ‘‚ Ears &amp; species</p>
                   <div style={S.speciesRow}>
                     {SPECIES_ORDER.map(id => (
                       <SpeciesChip
@@ -319,7 +319,7 @@ export default function AvatarEditor({ session, setHasAvatar }) {
                 </div>
               ) : (
                 <div style={S.lockedRow}>
-                  <span style={{ fontSize: 13 }}>👂</span>
+                  <span style={{ fontSize: 13 }}>ðŸ‘‚</span>
                   <span style={S.lockedItemLabel}>Ears &amp; species</span>
                   <span style={S.lockedPts}>50pts</span>
                 </div>
@@ -327,9 +327,9 @@ export default function AvatarEditor({ session, setHasAvatar }) {
 
               {/* Locked rows between species and aura */}
               {[
-                { icon: '👃', label: 'Nose styles',  pts: 100 },
-                { icon: '💇', label: 'Hair',          pts: 150 },
-                { icon: '😄', label: 'Mouth styles', pts: 200 },
+                { icon: 'ðŸ‘ƒ', label: 'Nose styles',  pts: 100 },
+                { icon: 'ðŸ’‡', label: 'Hair',          pts: 150 },
+                { icon: 'ðŸ˜„', label: 'Mouth styles', pts: 200 },
               ].map(item => (
                 <div key={item.label} style={S.lockedRow}>
                   <span style={{ fontSize: 13 }}>{item.icon}</span>
@@ -338,11 +338,11 @@ export default function AvatarEditor({ session, setHasAvatar }) {
                 </div>
               ))}
 
-              {/* Aura — expands when unlocked at 300pts */}
+              {/* Aura â€” expands when unlocked at 300pts */}
               {auraFeatureUnlocked ? (
                 <div style={{ ...S.speciesSection, marginTop: 4 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                    <p style={{ ...S.speciesSectionLabel, margin: 0 }}>✨ Aura</p>
+                    <p style={{ ...S.speciesSectionLabel, margin: 0 }}>âœ¨ Aura</p>
                     <button
                       onClick={() => { setAuraEnabled(e => !e); setSaved(false) }}
                       style={{
@@ -390,15 +390,15 @@ export default function AvatarEditor({ session, setHasAvatar }) {
                 </div>
               ) : (
                 <div style={S.lockedRow}>
-                  <span style={{ fontSize: 13 }}>✨</span>
+                  <span style={{ fontSize: 13 }}>âœ¨</span>
                   <span style={S.lockedItemLabel}>Auras &amp; extras</span>
                   <span style={S.lockedPts}>300pts</span>
                 </div>
               )}
 
-              {/* Scars & marks — always locked */}
+              {/* Scars & marks â€” always locked */}
               <div style={S.lockedRow}>
-                <span style={{ fontSize: 13 }}>🔱</span>
+                <span style={{ fontSize: 13 }}>ðŸ”±</span>
                 <span style={S.lockedItemLabel}>Scars &amp; marks</span>
                 <span style={S.lockedPts}>500pts</span>
               </div>
@@ -410,7 +410,7 @@ export default function AvatarEditor({ session, setHasAvatar }) {
 
             <div style={S.panel}>
               <div style={S.panelHeader}>
-                <span style={S.panelLabel}>Skin · Fur · Scales</span>
+                <span style={S.panelLabel}>Skin Â· Fur Â· Scales</span>
                 {paletteConstrained && (
                   <span style={S.paletteBadge}>{speciesDef.label} palette</span>
                 )}
@@ -423,7 +423,7 @@ export default function AvatarEditor({ session, setHasAvatar }) {
               <p style={S.selectedNote}>
                 Selected: <strong style={{ color: 'var(--tx)', fontStyle: 'normal' }}>{skin.label}</strong>
                 {['#D4B8E0','#A8D8EA','#B5EAD7','#FFD6A5','#C9B1D0','#8ECAE6','#95D5B2','#E8C1C1','#BDE0FE'].includes(skin.hex)
-                  ? ' · fantasy palette' : ' · human palette'}
+                  ? ' Â· fantasy palette' : ' Â· human palette'}
               </p>
             </div>
 
@@ -456,7 +456,7 @@ export default function AvatarEditor({ session, setHasAvatar }) {
                 opacity: saving ? 0.7 : 1,
               }}
             >
-              {saving ? 'Saving…' : saved ? '✓  Avatar saved — let\'s go!' : 'Looks good — save my avatar'}
+              {saving ? 'Savingâ€¦' : saved ? 'âœ“  Avatar saved â€” let\'s go!' : 'Looks good â€” save my avatar'}
             </button>
 
             {saved && (
@@ -482,7 +482,7 @@ export default function AvatarEditor({ session, setHasAvatar }) {
 const S = {
   wrap:       { maxWidth: 900, margin: '0 auto', padding: '48px 24px' },
   header:     { textAlign: 'center', marginBottom: 40 },
-  eyebrow:    { fontFamily: MONO, fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--pk)', margin: '0 0 8px' },
+  eyebrow:    { fontFamily: MONO, fontSize: 12, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--pk)', margin: '0 0 8px' },
   title:      { fontFamily: SERIF, fontSize: 'clamp(28px, 5vw, 42px)', color: 'var(--tx)', margin: '0 0 10px', letterSpacing: '-0.5px', lineHeight: 1.1 },
   sub:        { color: 'var(--tx2)', fontSize: 15, margin: 0, maxWidth: 400, marginInline: 'auto', lineHeight: 1.55 },
   layout:     { display: 'flex', gap: 24, alignItems: 'flex-start', flexWrap: 'wrap' },
@@ -494,18 +494,18 @@ const S = {
     display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
   },
   lockedCard:      { background: 'var(--bgc)', borderRadius: 18, padding: '14px 16px', width: 220, boxShadow: '0 3px 14px rgba(240,104,164,0.10)' },
-  lockedLabel:     { fontFamily: MONO, fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--pk)', margin: '0 0 10px' },
+  lockedLabel:     { fontFamily: MONO, fontSize: 12, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--pk)', margin: '0 0 10px' },
   lockedRow:       { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7, opacity: 0.55 },
   lockedItemLabel: { fontSize: 12, color: 'var(--tx)', flex: 1 },
-  lockedPts:       { fontFamily: MONO, fontSize: 10, color: 'var(--tx3)', background: 'var(--bg)', borderRadius: 6, padding: '1px 6px' },
+  lockedPts:       { fontFamily: MONO, fontSize: 12, color: 'var(--tx3)', background: 'var(--bg)', borderRadius: 6, padding: '1px 6px' },
   speciesSection:      { marginBottom: 8 },
-  speciesSectionLabel: { fontFamily: MONO, fontSize: 10, color: 'var(--tx2)', margin: '0 0 6px', letterSpacing: '0.04em' },
+  speciesSectionLabel: { fontFamily: MONO, fontSize: 12, color: 'var(--tx2)', margin: '0 0 6px', letterSpacing: '0.04em' },
   speciesRow:          { display: 'flex', gap: 6, overflowX: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: 2 },
   speciesError:        { fontFamily: MONO, fontSize: 9, color: '#E05050', margin: '4px 0 0', letterSpacing: '0.04em' },
   controls:     { flex: 1, minWidth: 280 },
   panel:        { background: 'var(--bgc)', borderRadius: 24, padding: '22px 24px', boxShadow: '0 4px 24px rgba(240,104,164,0.10)', marginBottom: 16 },
   panelHeader:  { display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 12 },
-  panelLabel:   { fontFamily: MONO, fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--tx3)' },
+  panelLabel:   { fontFamily: MONO, fontSize: 12, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--tx3)' },
   paletteBadge: { fontFamily: MONO, fontSize: 9, color: 'var(--pk)', background: 'var(--bgp)', borderRadius: 6, padding: '2px 7px', letterSpacing: '0.04em' },
   swatchRow:    { display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' },
   selectedNote: { marginTop: 12, marginBottom: 0, fontSize: 12, color: 'var(--tx3)', fontStyle: 'italic' },

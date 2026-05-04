@@ -1,6 +1,6 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 
-// ── Color utilities ──────────────────────────────────────────────────────
+// â”€â”€ Color utilities â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function hex2rgb(hex) {
   const n = parseInt(hex.replace("#", ""), 16);
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
@@ -21,7 +21,7 @@ function mix(a, b, t) {
   return rgb2hex(r1 + (r2 - r1) * t, g1 + (g2 - g1) * t, b1 + (b2 - b1) * t);
 }
 
-// ── Palette ──────────────────────────────────────────────────────────────
+// â”€â”€ Palette â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const SKIN_COLORS = [
   { hex: "#FFEEE8", label: "Porcelain" },
   { hex: "#FDBCB4", label: "Peach" },
@@ -61,7 +61,7 @@ const EYE_COLORS = [
   { hex: "#2E7D32", label: "Moss" },
 ];
 
-// ── Base Avatar SVG ──────────────────────────────────────────────────────
+// â”€â”€ Base Avatar SVG â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function BaseAvatar({ skinColor, eyeColor, size = 200 }) {
   const skin     = skinColor;
   const skinDark = darken(skin, 18);
@@ -109,34 +109,34 @@ function BaseAvatar({ skinColor, eyeColor, size = 200 }) {
         </clipPath>
       </defs>
 
-      {/* ── Head — rounder, more cartoony ── */}
+      {/* â”€â”€ Head â€” rounder, more cartoony â”€â”€ */}
       <ellipse cx="100" cy="105" rx="64" ry="68" fill="url(#headG)" />
 
-      {/* ── Eyebrow left ── */}
+      {/* â”€â”€ Eyebrow left â”€â”€ */}
       <path
         d="M 60 82 Q 76 77 90 81"
         stroke={skinDark} strokeWidth="3.5" fill="none"
         strokeLinecap="round" opacity="0.65"
       />
-      {/* ── Eyebrow right ── */}
+      {/* â”€â”€ Eyebrow right â”€â”€ */}
       <path
         d="M 110 81 Q 124 77 140 82"
         stroke={skinDark} strokeWidth="3.5" fill="none"
         strokeLinecap="round" opacity="0.65"
       />
 
-      {/* ── Eye left ── */}
+      {/* â”€â”€ Eye left â”€â”€ */}
       <circle cx="76" cy="100" r="17" fill="url(#scleraG)" filter="url(#eyeShadow)" />
       <circle cx="76" cy="101" r="12" fill="url(#irisG)" clipPath="url(#leftEyeClip)" />
       <circle cx="76" cy="101" r="7" fill="#0D0D0D" clipPath="url(#leftEyeClip)" />
       <circle cx="70" cy="102" r="3.5" fill="white" opacity="0.95" />
       <circle cx="79" cy="108" r="1.8" fill="white" opacity="0.65" />
-      {/* upper eyelid — top follows sclera arc, bottom edge droops into eye */}
+      {/* upper eyelid â€” top follows sclera arc, bottom edge droops into eye */}
       <path d="M 60 91 Q 76 94 92 91 A 17 17 0 0 0 60 91 Z" fill={skin} />
       {/* lash line */}
       <path d="M 60 91 Q 76 94 92 91" stroke={skinDark} strokeWidth="2.2" fill="none" strokeLinecap="round" opacity="0.6" />
 
-      {/* ── Eye right ── */}
+      {/* â”€â”€ Eye right â”€â”€ */}
       <circle cx="124" cy="100" r="17" fill="url(#scleraG)" filter="url(#eyeShadow)" />
       <circle cx="124" cy="101" r="12" fill="url(#irisG)" clipPath="url(#rightEyeClip)" />
       <circle cx="124" cy="101" r="7" fill="#0D0D0D" clipPath="url(#rightEyeClip)" />
@@ -146,7 +146,7 @@ function BaseAvatar({ skinColor, eyeColor, size = 200 }) {
       <path d="M 108 91 Q 124 94 140 91 A 17 17 0 0 0 108 91 Z" fill={skin} />
       <path d="M 108 91 Q 124 94 140 91" stroke={skinDark} strokeWidth="2.2" fill="none" strokeLinecap="round" opacity="0.6" />
 
-      {/* ── Mouth: wide, nearly flat, slight upward tilt at corners ── */}
+      {/* â”€â”€ Mouth: wide, nearly flat, slight upward tilt at corners â”€â”€ */}
       <path
         d="M 82 145 Q 100 149 118 145"
         stroke={darken(mix(skin, "#C06070", 0.5), 18)}
@@ -155,14 +155,14 @@ function BaseAvatar({ skinColor, eyeColor, size = 200 }) {
         strokeLinecap="round"
       />
 
-      {/* ── Blush ── */}
+      {/* â”€â”€ Blush â”€â”€ */}
       <ellipse cx="62"  cy="120" rx="16" ry="8" fill={blush} opacity="0.42" filter="url(#softBlur)" />
       <ellipse cx="138" cy="120" rx="16" ry="8" fill={blush} opacity="0.42" filter="url(#softBlur)" />
     </svg>
   );
 }
 
-// ── Color Swatch ─────────────────────────────────────────────────────────
+// â”€â”€ Color Swatch â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function Swatch({ color, label, active, onClick }) {
   return (
     <button
@@ -188,7 +188,7 @@ function Swatch({ color, label, active, onClick }) {
   );
 }
 
-// ── Main ─────────────────────────────────────────────────────────────────
+// â”€â”€ Main â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function BaseAvatarCreator() {
   const [skin, setSkin]     = useState(SKIN_COLORS[1]);   // Peach default
   const [eye,  setEye]      = useState(EYE_COLORS[3]);    // Sky Blue default
@@ -210,7 +210,7 @@ export default function BaseAvatarCreator() {
   };
   const labelStyle = {
     fontFamily: '"Space Mono", monospace',
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: 700,
     letterSpacing: "0.08em",
     textTransform: "uppercase",
@@ -255,12 +255,12 @@ export default function BaseAvatarCreator() {
         <div style={{ textAlign: "center", marginBottom: 32, animation: "fadeUp 0.5s ease both" }}>
           <p style={{
             fontFamily: '"Space Mono", monospace',
-            fontSize: 11, fontWeight: 700,
+            fontSize: 12, fontWeight: 700,
             letterSpacing: "0.18em",
             textTransform: "uppercase",
             color: "#f068a4",
             margin: "0 0 8px",
-          }}>Come, See · Onboarding</p>
+          }}>Come, See Â· Onboarding</p>
           <h1 style={{
             fontFamily: '"DM Serif Display", serif',
             fontSize: "clamp(28px, 5vw, 42px)",
@@ -331,19 +331,19 @@ export default function BaseAvatarCreator() {
             }}>
               <p style={{
                 fontFamily: '"Space Mono", monospace',
-                fontSize: 10, fontWeight: 700,
+                fontSize: 12, fontWeight: 700,
                 letterSpacing: "0.12em",
                 textTransform: "uppercase",
                 color: "#f068a4",
                 margin: "0 0 10px",
               }}>Unlocked by exploring</p>
               {[
-                { icon: "👂", label: "Ears & species", pts: 50 },
-                { icon: "👃", label: "Nose styles",   pts: 100 },
-                { icon: "💇", label: "Hair",           pts: 150 },
-                { icon: "😄", label: "Mouth styles",  pts: 200 },
-                { icon: "✨", label: "Auras & extras", pts: 300 },
-                { icon: "🔱", label: "Scars & marks",  pts: 500 },
+                { icon: "ðŸ‘‚", label: "Ears & species", pts: 50 },
+                { icon: "ðŸ‘ƒ", label: "Nose styles",   pts: 100 },
+                { icon: "ðŸ’‡", label: "Hair",           pts: 150 },
+                { icon: "ðŸ˜„", label: "Mouth styles",  pts: 200 },
+                { icon: "âœ¨", label: "Auras & extras", pts: 300 },
+                { icon: "ðŸ”±", label: "Scars & marks",  pts: 500 },
               ].map((item) => (
                 <div key={item.label} style={{
                   display: "flex",
@@ -356,7 +356,7 @@ export default function BaseAvatarCreator() {
                   <span style={{ fontSize: 12, color: "#555", flex: 1 }}>{item.label}</span>
                   <span style={{
                     fontFamily: '"Space Mono", monospace',
-                    fontSize: 10,
+                    fontSize: 12,
                     color: "#abadb0",
                     background: "#FCF0F5",
                     borderRadius: 6,
@@ -372,7 +372,7 @@ export default function BaseAvatarCreator() {
 
             {/* Skin color */}
             <div style={panelStyle}>
-              <span style={labelStyle}>Skin · Fur · Scales</span>
+              <span style={labelStyle}>Skin Â· Fur Â· Scales</span>
               <div style={swatchRow}>
                 {SKIN_COLORS.map((c) => (
                   <Swatch
@@ -390,7 +390,7 @@ export default function BaseAvatarCreator() {
               }}>
                 Selected: <strong style={{ color: "#2D1B35", fontStyle: "normal" }}>{skin.label}</strong>
                 {skin.hex.startsWith("#D4") || ["#A8D8EA","#B5EAD7","#FFD6A5","#C9B1D0","#8ECAE6","#95D5B2","#E8C1C1","#BDE0FE"].includes(skin.hex)
-                  ? " · fantasy palette" : " · human palette"}
+                  ? " Â· fantasy palette" : " Â· human palette"}
               </p>
             </div>
 
@@ -437,7 +437,7 @@ export default function BaseAvatarCreator() {
                   : "0 4px 20px rgba(240,104,164,0.35)",
               }}
             >
-              {saved ? "✓  Avatar saved — let's go!" : "Looks good — save my avatar"}
+              {saved ? "âœ“  Avatar saved â€” let's go!" : "Looks good â€” save my avatar"}
             </button>
 
             {saved && (
