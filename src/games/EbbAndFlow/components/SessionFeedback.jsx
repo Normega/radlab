@@ -3,7 +3,7 @@ import {
   LineChart, Line, ResponsiveContainer, Tooltip, ReferenceLine,
 } from 'recharts';
 
-// â”€â”€ Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Constants ──────────────────────────────────────────────────────────────
 
 const PRIOR_SD = 0.15;
 const MONO     = '"Space Mono", "Courier New", monospace';
@@ -14,7 +14,7 @@ const AMBER = '#BA7517';
 const BLUE  = '#185FA5';
 const PINK  = '#f068a4';
 
-// â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Helpers ────────────────────────────────────────────────────────────────
 
 function sdToPct(sd) {
   return Math.max(0, Math.min(100, Math.round((1 - sd / PRIOR_SD) * 100)));
@@ -47,7 +47,7 @@ function syncTrend(scores) {
 const ARC_LEN = 141.4;
 const ARC_PATH = 'M 10 64 A 45 45 0 0 1 100 64';
 
-// â”€â”€ Sub-components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Sub-components ─────────────────────────────────────────────────────────
 
 function ArcCard({ label, sd, color }) {
   const pct    = sdToPct(sd);
@@ -102,9 +102,9 @@ function ArcCard({ label, sd, color }) {
 
 function TrendPill({ trend }) {
   const cfg = {
-    strengthening: { bg: 'rgba(24,95,165,0.12)', color: BLUE,  text: 'strengthening â†‘' },
-    fading:        { bg: 'rgba(240,104,164,0.12)', color: PINK, text: 'fading â†“' },
-    steady:        { bg: 'var(--bgp)',             color: 'var(--tx2)', text: 'steady â†’' },
+    strengthening: { bg: 'rgba(24,95,165,0.12)', color: BLUE,  text: 'strengthening ↑' },
+    fading:        { bg: 'rgba(240,104,164,0.12)', color: PINK, text: 'fading ↓' },
+    steady:        { bg: 'var(--bgp)',             color: 'var(--tx2)', text: 'steady →' },
   }[trend];
   return (
     <span style={{ ...S.pill, background: cfg.bg, color: cfg.color }}>
@@ -140,7 +140,7 @@ function SyncTooltip({ active, payload }) {
   );
 }
 
-// â”€â”€ Main component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Main component ──────────────────────────────────────────────────────────
 
 export default function SessionFeedback({
   excitementSD   = PRIOR_SD,
@@ -181,21 +181,21 @@ export default function SessionFeedback({
   const showFocus = Math.abs(excitementSD - calmSD) > 0.04;
   const focusDir  = calmSD > excitementSD ? 'calm' : 'excitement';
   const focusText = focusDir === 'calm'
-    ? 'Your calm signal still has room to sharpen. Try noticing the exact moment your breath slows in daily life â€” the pause before it turns.'
-    : 'Your excitement signal still has room to sharpen. Try noticing the moment something catches your attention â€” that first quickening of breath.';
+    ? 'Your calm signal still has room to sharpen. Try noticing the exact moment your breath slows in daily life — the pause before it turns.'
+    : 'Your excitement signal still has room to sharpen. Try noticing the moment something catches your attention — that first quickening of breath.';
 
   const lessertain = excitementSD >= calmSD ? 'excitement' : 'calm';
 
   return (
     <div style={S.wrap}>
 
-      {/* â”€â”€ Arc cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Arc cards ──────────────────────────────────────────────── */}
       <div style={S.arcRow}>
         <ArcCard label="excitement" sd={excitementSD} color={AMBER} />
         <ArcCard label="calm"       sd={calmSD}       color={BLUE}  />
       </div>
 
-      {/* â”€â”€ Sync card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Sync card ──────────────────────────────────────────────── */}
       <div style={S.card}>
         <div style={S.cardHeader}>
           <div>
@@ -214,7 +214,7 @@ export default function SessionFeedback({
               <LineChart data={chartData} margin={{ top: 4, right: 4, left: 4, bottom: 4 }}>
                 <Tooltip content={<SyncTooltip />} />
                 <ReferenceLine y={syncMean} stroke="var(--bd)" strokeDasharray="3 3" />
-                {/* Trial-by-trial â€” faded */}
+                {/* Trial-by-trial — faded */}
                 <Line
                   type="monotone"
                   dataKey="sync"
@@ -224,7 +224,7 @@ export default function SessionFeedback({
                   strokeOpacity={0.35}
                   isAnimationActive={false}
                 />
-                {/* Trend line â€” solid */}
+                {/* Trend line — solid */}
                 <Line
                   type="monotone"
                   dataKey="trend"
@@ -243,7 +243,7 @@ export default function SessionFeedback({
         )}
       </div>
 
-      {/* â”€â”€ Change awareness card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Change awareness card ───────────────────────────────────── */}
       <div style={S.card}>
         <div style={S.cardHeader}>
           <p style={S.eyebrow}>change awareness</p>
@@ -256,7 +256,7 @@ export default function SessionFeedback({
         <p style={S.bodyText}>{awarenessText}</p>
       </div>
 
-      {/* â”€â”€ Focus card (conditional) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Focus card (conditional) ─────────────────────────────────── */}
       {showFocus && (
         <div style={{ ...S.card, borderLeft: `3px solid ${PINK}`, paddingLeft: 20 }}>
           <p style={S.eyebrow}>what to notice today</p>
@@ -264,32 +264,32 @@ export default function SessionFeedback({
         </div>
       )}
 
-      {/* â”€â”€ Next session card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Next session card ─────────────────────────────────────────── */}
       <div style={{ ...S.card, borderLeft: '3px solid var(--bd)', paddingLeft: 20 }}>
         <p style={S.eyebrow}>next session</p>
         <p style={S.bodyText}>
-          Your <strong>{lessertain}</strong> signal is the most uncertain right now â€” the next session will focus there.
+          Your <strong>{lessertain}</strong> signal is the most uncertain right now — the next session will focus there.
         </p>
       </div>
 
-      {/* â”€â”€ Stats row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Stats row ────────────────────────────────────────────────── */}
       <div style={S.statsRow}>
         <StatChip label="this session" value={sessionTrialCount + ' trials'} />
         <StatChip label="total"        value={totalTrialCount + ' trials'}   />
         <StatChip label="score"        value={'+' + sessionScore}            />
       </div>
 
-      {/* â”€â”€ Buttons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Buttons ───────────────────────────────────────────────────── */}
       <div style={S.btnRow}>
         <button style={S.btnSecondary} onClick={onBreak}>Take a break</button>
-        <button style={S.btnPrimary}   onClick={onContinue}>Practice more â†’</button>
+        <button style={S.btnPrimary}   onClick={onContinue}>Practice more →</button>
       </div>
 
     </div>
   );
 }
 
-// â”€â”€ Tiny sub-components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Tiny sub-components ────────────────────────────────────────────────────
 
 function StatChip({ label, value }) {
   return (
@@ -300,7 +300,7 @@ function StatChip({ label, value }) {
   );
 }
 
-// â”€â”€ Styles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Styles ─────────────────────────────────────────────────────────────────
 
 const S = {
   wrap: {

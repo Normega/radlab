@@ -1,21 +1,21 @@
 ﻿/**
- * PondWatch â€” Go/No-Go Reaction Time Game
- * RADlab Â· Regulatory & Affective Dynamics Lab Â· U of T
+ * PondWatch — Go/No-Go Reaction Time Game
+ * RADlab · Regulatory & Affective Dynamics Lab · U of T
  *
  * Paradigm: Simple RT + Go/No-Go
- * Target:   Duck  â†’ respond (spacebar / tap)
- * Non-targets: Heron, Frog, Fish, Ripple â†’ withhold
+ * Target:   Duck  → respond (spacebar / tap)
+ * Non-targets: Heron, Frog, Fish, Ripple → withhold
  *
  * Props:
- *   onSessionComplete(data) â€” called at end of session with full trial + metrics data
+ *   onSessionComplete(data) — called at end of session with full trial + metrics data
  *                             wire this to your Supabase push function
- *   userId  (string)        â€” passed through into session data
- *   studyId (string|null)   â€” passed through into session data
+ *   userId  (string)        — passed through into session data
+ *   studyId (string|null)   — passed through into session data
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 
-// â”€â”€â”€ CONFIG â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── CONFIG ──────────────────────────────────────────────────────────────────
 
 const CFG = {
   TRIAL_COUNT:          60,
@@ -39,7 +39,7 @@ const PHASE = {
   RESULTS:      'results',
 }
 
-// â”€â”€â”€ TRIAL GENERATION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── TRIAL GENERATION ────────────────────────────────────────────────────────
 
 function generateTrials() {
   const n        = CFG.TRIAL_COUNT
@@ -63,7 +63,7 @@ function generateTrials() {
   return trials.map((t, i) => ({ ...t, trialNumber: i + 1 }))
 }
 
-// â”€â”€â”€ METRICS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── METRICS ─────────────────────────────────────────────────────────────────
 
 // Rational approximation to the probit (inverse normal CDF)
 // Abramowitz & Stegun 26.2.17
@@ -87,7 +87,7 @@ function computeMetrics(results) {
   const fa   = nonTargets.filter(r => r.responded)
   const cr   = nonTargets.filter(r => !r.responded)
 
-  // Log-linear correction prevents Â±Infinity at 0 or 1
+  // Log-linear correction prevents ±Infinity at 0 or 1
   const pHit = (hits.length + 0.5) / (nT  + 1)
   const pFA  = (fa.length   + 0.5) / (nNT + 1)
   const zH   = probit(pHit)
@@ -116,7 +116,7 @@ function computeMetrics(results) {
   }
 }
 
-// â”€â”€â”€ SVG STIMULI â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── SVG STIMULI ─────────────────────────────────────────────────────────────
 
 const Duck = () => (
   <g>
@@ -205,7 +205,7 @@ const Ripple = () => (
 
 const StimulusComponents = { duck: Duck, heron: Heron, frog: Frog, fish: Fish, ripple: Ripple }
 
-// â”€â”€â”€ POND SCENE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── POND SCENE ──────────────────────────────────────────────────────────────
 
 const PondScene = ({ stimulusType, showStimulus }) => {
   const Animal = stimulusType ? StimulusComponents[stimulusType] : null
@@ -262,7 +262,7 @@ const PondScene = ({ stimulusType, showStimulus }) => {
   )
 }
 
-// â”€â”€â”€ FEEDBACK OVERLAY â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── FEEDBACK OVERLAY ────────────────────────────────────────────────────────
 
 const feedbackConfig = {
   hit:               { label: 'Duck!',             sub: null,              color: '#1D9E75', bg: 'rgba(29,158,117,0.1)' },
@@ -271,7 +271,7 @@ const feedbackConfig = {
   correct_rejection: { label: '',                   sub: null,              color: '#abadb0', bg: 'transparent'           },
 }
 
-// â”€â”€â”€ MAIN COMPONENT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── MAIN COMPONENT ──────────────────────────────────────────────────────────
 
 export default function PondWatch({ onSessionComplete, userId = null, studyId = null }) {
   const [phase,       setPhase]       = useState(PHASE.INSTRUCTIONS)
@@ -293,7 +293,7 @@ export default function PondWatch({ onSessionComplete, userId = null, studyId = 
   // Keep phaseRef in sync
   useEffect(() => { phaseRef.current = phase }, [phase])
 
-  // â”€â”€â”€ TIMER HELPERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── TIMER HELPERS ───────────────────────────────────────────────────────
 
   const clearTimers = useCallback(() => {
     timersRef.current.forEach(clearTimeout)
@@ -306,7 +306,7 @@ export default function PondWatch({ onSessionComplete, userId = null, studyId = 
     return id
   }, [])
 
-  // â”€â”€â”€ GAME FLOW â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── GAME FLOW ───────────────────────────────────────────────────────────
 
   const startCountdown = useCallback(() => {
     trialsRef.current   = generateTrials()
@@ -402,7 +402,7 @@ export default function PondWatch({ onSessionComplete, userId = null, studyId = 
     if (onSessionComplete) onSessionComplete(sessionData)
   }, [onSessionComplete, userId, studyId])
 
-  // â”€â”€â”€ RESPONSE HANDLER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── RESPONSE HANDLER ────────────────────────────────────────────────────
 
   const handleResponse = useCallback(() => {
     if (phaseRef.current !== PHASE.STIMULUS) return
@@ -430,7 +430,7 @@ export default function PondWatch({ onSessionComplete, userId = null, studyId = 
   // Cleanup on unmount
   useEffect(() => () => clearTimers(), [clearTimers])
 
-  // â”€â”€â”€ RENDER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── RENDER ──────────────────────────────────────────────────────────────
 
   const progress = phase === PHASE.RESULTS ? 1
     : resultsRef.current.length / CFG.TRIAL_COUNT
@@ -438,7 +438,7 @@ export default function PondWatch({ onSessionComplete, userId = null, studyId = 
   return (
     <div style={S.shell}>
 
-      {/* â”€â”€ INSTRUCTIONS â”€â”€ */}
+      {/* ── INSTRUCTIONS ── */}
       {phase === PHASE.INSTRUCTIONS && (
         <div style={S.screen}>
           <div style={S.card}>
@@ -447,7 +447,7 @@ export default function PondWatch({ onSessionComplete, userId = null, studyId = 
             <div style={S.ruleRow}>
               <svg width="60" height="60" viewBox="0 0 100 100"><Duck/></svg>
               <div>
-                <p style={S.ruleHead}>Duck â†’ respond</p>
+                <p style={S.ruleHead}>Duck → respond</p>
                 <p style={S.ruleSub}>Press <kbd style={S.kbd}>space</kbd> or tap the button</p>
               </div>
             </div>
@@ -455,11 +455,11 @@ export default function PondWatch({ onSessionComplete, userId = null, studyId = 
               <svg width="60" height="60" viewBox="0 0 100 100"><Heron/></svg>
               <svg width="60" height="60" viewBox="0 0 100 100"><Frog/></svg>
               <div>
-                <p style={S.ruleHead}>Anything else â†’ wait</p>
-                <p style={S.ruleSub}>Heron, frog, fish, or ripple â€” stay still</p>
+                <p style={S.ruleHead}>Anything else → wait</p>
+                <p style={S.ruleSub}>Heron, frog, fish, or ripple — stay still</p>
               </div>
             </div>
-            <p style={S.meta}>{CFG.TRIAL_COUNT} trials Â· about 5 minutes</p>
+            <p style={S.meta}>{CFG.TRIAL_COUNT} trials · about 5 minutes</p>
             <button style={S.btnPrimary} onClick={startCountdown}>
               Start watching
             </button>
@@ -467,17 +467,17 @@ export default function PondWatch({ onSessionComplete, userId = null, studyId = 
         </div>
       )}
 
-      {/* â”€â”€ COUNTDOWN â”€â”€ */}
+      {/* ── COUNTDOWN ── */}
       {phase === PHASE.COUNTDOWN && (
         <div style={S.screen}>
           <div style={S.countdownWrap}>
             <p style={S.countdownNum}>{countdown}</p>
-            <p style={S.countdownSub}>Get readyâ€¦</p>
+            <p style={S.countdownSub}>Get ready…</p>
           </div>
         </div>
       )}
 
-      {/* â”€â”€ GAME PHASES (ITI / STIMULUS / FEEDBACK) â”€â”€ */}
+      {/* ── GAME PHASES (ITI / STIMULUS / FEEDBACK) ── */}
       {[PHASE.ITI, PHASE.STIMULUS, PHASE.FEEDBACK].includes(phase) && (
         <div style={S.gameWrap}>
           {/* Progress */}
@@ -520,12 +520,12 @@ export default function PondWatch({ onSessionComplete, userId = null, studyId = 
             }}
             onPointerDown={handleResponse}
           >
-            {phase === PHASE.STIMULUS ? 'Tap!' : 'Â·'}
+            {phase === PHASE.STIMULUS ? 'Tap!' : '·'}
           </button>
         </div>
       )}
 
-      {/* â”€â”€ RESULTS â”€â”€ */}
+      {/* ── RESULTS ── */}
       {phase === PHASE.RESULTS && results && (
         <div style={S.screen}>
           <div style={S.resultsCard}>
@@ -537,12 +537,12 @@ export default function PondWatch({ onSessionComplete, userId = null, studyId = 
               <div style={{ padding: '12px 8px', overflow: 'hidden', minWidth: 0 }}>
                 <p style={S.metricLabel}>Median RT</p>
                 <p style={S.metricBig}>
-                  {results.metrics.medianRtMs ?? 'â€”'}
+                  {results.metrics.medianRtMs ?? '—'}
                   <span style={S.metricUnit}>ms</span>
                 </p>
               </div>
               <div style={{ padding: '12px 8px', overflow: 'hidden', minWidth: 0 }}>
-                <p style={S.metricLabel}>dâ€²</p>
+                <p style={S.metricLabel}>d′</p>
                 <p style={S.metricBig}>{results.metrics.dPrime}</p>
               </div>
               <div style={{ padding: '12px 8px', overflow: 'hidden', minWidth: 0 }}>
@@ -559,7 +559,7 @@ export default function PondWatch({ onSessionComplete, userId = null, studyId = 
               <Cell label="Hit rate"      val={`${Math.round(results.metrics.hitRate * 100)}%`}        sub={`${results.metrics.hits} / ${results.metrics.hits + results.metrics.misses}`}/>
               <Cell label="False alarms"  val={`${Math.round(results.metrics.falseAlarmRate * 100)}%`} sub={`${results.metrics.falseAlarms} responses`}/>
               <Cell label="Criterion"     val={results.metrics.criterion}                              sub="response bias"/>
-              <Cell label="RT variability" val={results.metrics.rtSdMs ? `${results.metrics.rtSdMs} ms` : 'â€”'} sub="std deviation"/>
+              <Cell label="RT variability" val={results.metrics.rtSdMs ? `${results.metrics.rtSdMs} ms` : '—'} sub="std deviation"/>
             </div>
 
             <div style={S.actions}>
@@ -580,7 +580,7 @@ export default function PondWatch({ onSessionComplete, userId = null, studyId = 
   )
 }
 
-// â”€â”€â”€ SMALL COMPONENTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── SMALL COMPONENTS ────────────────────────────────────────────────────────
 
 const Cell = ({ label, val, sub }) => (
   <div style={S.cell}>
@@ -590,7 +590,7 @@ const Cell = ({ label, val, sub }) => (
   </div>
 )
 
-// â”€â”€â”€ STYLES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── STYLES ──────────────────────────────────────────────────────────────────
 
 const MONO  = "'Space Mono', 'Courier New', monospace"
 const SERIF = "'DM Serif Display', Georgia, serif"

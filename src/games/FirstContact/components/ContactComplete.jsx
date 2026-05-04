@@ -1,12 +1,12 @@
 ﻿import { COPY } from '../constants';
 
-// â”€â”€ ContactComplete â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── ContactComplete ───────────────────────────────────────────────────────
 // Shown below the avatar when phase = 'COMPLETE'.
 //
 // Props:
-//   syncLevel   â€” final rolling mean (0.0â€“1.0)
-//   isReturning â€” true = Deeper Contact mode
-//   onContinue  â€” () => void â€” navigate forward
+//   syncLevel   — final rolling mean (0.0–1.0)
+//   isReturning — true = Deeper Contact mode
+//   onContinue  — () => void — navigate forward
 
 export default function ContactComplete({ syncLevel = 0, isReturning = false, onContinue }) {
   const pct  = Math.round(syncLevel * 100);

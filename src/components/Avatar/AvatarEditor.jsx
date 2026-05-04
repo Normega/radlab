@@ -12,7 +12,7 @@ import { AURA_COLORS } from '../../lib/auraUtils'
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
 
-// â”€â”€ Color distance (squared RGB) â€” used for nearest-palette auto-shift â”€â”€â”€â”€
+// ── Color distance (squared RGB) — used for nearest-palette auto-shift ────
 function colorDist(hex1, hex2) {
   const n1 = parseInt(hex1.replace('#', ''), 16)
   const n2 = parseInt(hex2.replace('#', ''), 16)
@@ -27,7 +27,7 @@ function nearestAllowedColor(current, allowed) {
   )
 }
 
-// â”€â”€ applyPaletteConstraints â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── applyPaletteConstraints ───────────────────────────────────────────────
 // Given a species def and current skin/eye, returns { skin, eye } that are
 // guaranteed to be within the species' allowed palette.
 // Returns the originals unchanged if no constraint applies.
@@ -47,7 +47,7 @@ function applyPaletteConstraints(speciesDef, skin, eye) {
   return { skin: newSkin, eye: newEye }
 }
 
-// â”€â”€ Swatch â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Swatch ────────────────────────────────────────────────────────────────
 function Swatch({ color, label, active, onClick }) {
   return (
     <button
@@ -73,11 +73,11 @@ function Swatch({ color, label, active, onClick }) {
   )
 }
 
-// â”€â”€ SpeciesChip â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── SpeciesChip ───────────────────────────────────────────────────────────
 function SpeciesChip({ sp, active, locked, onSelect }) {
   return (
     <button
-      title={locked ? `${sp.label} â€” locked` : sp.label}
+      title={locked ? `${sp.label} — locked` : sp.label}
       onClick={locked ? undefined : onSelect}
       disabled={locked}
       style={{
@@ -99,14 +99,14 @@ function SpeciesChip({ sp, active, locked, onSelect }) {
       </span>
       {locked && (
         <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, borderRadius: 10 }}>
-          ðŸ”’
+          🔒
         </span>
       )}
     </button>
   )
 }
 
-// â”€â”€ AuraColorChip â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── AuraColorChip ─────────────────────────────────────────────────────────
 function AuraColorChip({ color, active, onSelect }) {
   return (
     <button
@@ -130,7 +130,7 @@ function AuraColorChip({ color, active, onSelect }) {
   )
 }
 
-// â”€â”€ AvatarEditor â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── AvatarEditor ──────────────────────────────────────────────────────────
 export default function AvatarEditor({ session, setHasAvatar }) {
   const navigate    = useNavigate()
   const queryClient = useQueryClient()
@@ -189,7 +189,7 @@ export default function AvatarEditor({ session, setHasAvatar }) {
     })
   }, [userId])
 
-  // â”€â”€ Derived picker options (filtered by species palette) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Derived picker options (filtered by species palette) ─────────────
   const speciesDef         = SPECIES[species] ?? SPECIES.human
   const filteredSkinColors = speciesDef.allowedSkinKeys
     ? SKIN_COLORS.filter(c => speciesDef.allowedSkinKeys.includes(c.label))
@@ -237,7 +237,7 @@ export default function AvatarEditor({ session, setHasAvatar }) {
       setSkin(prevSkin)
       setEye(prevEye)
       setBump(b => b + 1)
-      setSpeciesError('Failed to save â€” try again')
+      setSpeciesError('Failed to save — try again')
       setTimeout(() => setSpeciesError(null), 3000)
     }
   }
@@ -271,7 +271,7 @@ export default function AvatarEditor({ session, setHasAvatar }) {
       <div style={S.wrap}>
         {/* Header */}
         <div style={S.header}>
-          <p style={S.eyebrow}>Profile Â· Avatar</p>
+          <p style={S.eyebrow}>Profile · Avatar</p>
           <h1 style={S.title}>This is you.</h1>
           <p style={S.sub}>
             Start with your base avatar. As you explore and complete activities,
@@ -300,10 +300,10 @@ export default function AvatarEditor({ session, setHasAvatar }) {
             <div style={S.lockedCard}>
               <p style={S.lockedLabel}>Unlocked by exploring</p>
 
-              {/* Ears & species â€” expands when unlocked */}
+              {/* Ears & species — expands when unlocked */}
               {speciesFeatureUnlocked ? (
                 <div style={S.speciesSection}>
-                  <p style={S.speciesSectionLabel}>ðŸ‘‚ Ears &amp; species</p>
+                  <p style={S.speciesSectionLabel}>👂 Ears &amp; species</p>
                   <div style={S.speciesRow}>
                     {SPECIES_ORDER.map(id => (
                       <SpeciesChip
@@ -319,7 +319,7 @@ export default function AvatarEditor({ session, setHasAvatar }) {
                 </div>
               ) : (
                 <div style={S.lockedRow}>
-                  <span style={{ fontSize: 13 }}>ðŸ‘‚</span>
+                  <span style={{ fontSize: 13 }}>👂</span>
                   <span style={S.lockedItemLabel}>Ears &amp; species</span>
                   <span style={S.lockedPts}>50pts</span>
                 </div>
@@ -327,9 +327,9 @@ export default function AvatarEditor({ session, setHasAvatar }) {
 
               {/* Locked rows between species and aura */}
               {[
-                { icon: 'ðŸ‘ƒ', label: 'Nose styles',  pts: 100 },
-                { icon: 'ðŸ’‡', label: 'Hair',          pts: 150 },
-                { icon: 'ðŸ˜„', label: 'Mouth styles', pts: 200 },
+                { icon: '👃', label: 'Nose styles',  pts: 100 },
+                { icon: '💇', label: 'Hair',          pts: 150 },
+                { icon: '😄', label: 'Mouth styles', pts: 200 },
               ].map(item => (
                 <div key={item.label} style={S.lockedRow}>
                   <span style={{ fontSize: 13 }}>{item.icon}</span>
@@ -338,11 +338,11 @@ export default function AvatarEditor({ session, setHasAvatar }) {
                 </div>
               ))}
 
-              {/* Aura â€” expands when unlocked at 300pts */}
+              {/* Aura — expands when unlocked at 300pts */}
               {auraFeatureUnlocked ? (
                 <div style={{ ...S.speciesSection, marginTop: 4 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                    <p style={{ ...S.speciesSectionLabel, margin: 0 }}>âœ¨ Aura</p>
+                    <p style={{ ...S.speciesSectionLabel, margin: 0 }}>✨ Aura</p>
                     <button
                       onClick={() => { setAuraEnabled(e => !e); setSaved(false) }}
                       style={{
@@ -390,15 +390,15 @@ export default function AvatarEditor({ session, setHasAvatar }) {
                 </div>
               ) : (
                 <div style={S.lockedRow}>
-                  <span style={{ fontSize: 13 }}>âœ¨</span>
+                  <span style={{ fontSize: 13 }}>✨</span>
                   <span style={S.lockedItemLabel}>Auras &amp; extras</span>
                   <span style={S.lockedPts}>300pts</span>
                 </div>
               )}
 
-              {/* Scars & marks â€” always locked */}
+              {/* Scars & marks — always locked */}
               <div style={S.lockedRow}>
-                <span style={{ fontSize: 13 }}>ðŸ”±</span>
+                <span style={{ fontSize: 13 }}>🔱</span>
                 <span style={S.lockedItemLabel}>Scars &amp; marks</span>
                 <span style={S.lockedPts}>500pts</span>
               </div>
@@ -410,7 +410,7 @@ export default function AvatarEditor({ session, setHasAvatar }) {
 
             <div style={S.panel}>
               <div style={S.panelHeader}>
-                <span style={S.panelLabel}>Skin Â· Fur Â· Scales</span>
+                <span style={S.panelLabel}>Skin · Fur · Scales</span>
                 {paletteConstrained && (
                   <span style={S.paletteBadge}>{speciesDef.label} palette</span>
                 )}
@@ -423,7 +423,7 @@ export default function AvatarEditor({ session, setHasAvatar }) {
               <p style={S.selectedNote}>
                 Selected: <strong style={{ color: 'var(--tx)', fontStyle: 'normal' }}>{skin.label}</strong>
                 {['#D4B8E0','#A8D8EA','#B5EAD7','#FFD6A5','#C9B1D0','#8ECAE6','#95D5B2','#E8C1C1','#BDE0FE'].includes(skin.hex)
-                  ? ' Â· fantasy palette' : ' Â· human palette'}
+                  ? ' · fantasy palette' : ' · human palette'}
               </p>
             </div>
 
@@ -456,7 +456,7 @@ export default function AvatarEditor({ session, setHasAvatar }) {
                 opacity: saving ? 0.7 : 1,
               }}
             >
-              {saving ? 'Savingâ€¦' : saved ? 'âœ“  Avatar saved â€” let\'s go!' : 'Looks good â€” save my avatar'}
+              {saving ? 'Saving…' : saved ? '✓  Avatar saved — let\'s go!' : 'Looks good — save my avatar'}
             </button>
 
             {saved && (

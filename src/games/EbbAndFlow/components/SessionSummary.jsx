@@ -1,19 +1,19 @@
 ﻿import { GAME_MODES } from '../constants';
 
-// â”€â”€ SessionSummary â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── SessionSummary ────────────────────────────────────────────────────────
 // End-of-session results screen.
 //
 // Props:
-//   sessionScore      â€” points earned this session
-//   totalScore        â€” new cumulative total
-//   totalTrials       â€” new cumulative trial count
-//   questEstimates    â€” { faster_high, faster_low, slower_high, slower_low } threshold estimates (linear)
-//   questSDs          â€” same keys, posterior SDs
-//   allConverged      â€” boolean
-//   newModeUnlocked   â€” null | 'listener' | 'empath'
-//   gameMode          â€” current mode key
-//   sessionSyncMean   â€” 0â€“1
-//   onDone            â€” () => void (back to dashboard / next session)
+//   sessionScore      — points earned this session
+//   totalScore        — new cumulative total
+//   totalTrials       — new cumulative trial count
+//   questEstimates    — { faster_high, faster_low, slower_high, slower_low } threshold estimates (linear)
+//   questSDs          — same keys, posterior SDs
+//   allConverged      — boolean
+//   newModeUnlocked   — null | 'listener' | 'empath'
+//   gameMode          — current mode key
+//   sessionSyncMean   — 0–1
+//   onDone            — () => void (back to dashboard / next session)
 
 export default function SessionSummary({
   sessionScore = 0,
@@ -29,10 +29,10 @@ export default function SessionSummary({
 }) {
   const KEYS = ['faster_high', 'faster_low', 'slower_high', 'slower_low'];
   const KEY_LABELS = {
-    faster_high: 'Faster Â· abrupt',
-    faster_low:  'Faster Â· gradual',
-    slower_high: 'Slower Â· abrupt',
-    slower_low:  'Slower Â· gradual',
+    faster_high: 'Faster · abrupt',
+    faster_low:  'Faster · gradual',
+    slower_high: 'Slower · abrupt',
+    slower_low:  'Slower · gradual',
   };
 
   return (
@@ -61,7 +61,7 @@ export default function SessionSummary({
       {/* Mode unlock celebration */}
       {newModeUnlocked && (
         <div style={S.unlockBanner}>
-          <span style={S.unlockIcon}>ðŸ”“</span>
+          <span style={S.unlockIcon}>🔓</span>
           <div>
             <p style={S.unlockTitle}>{GAME_MODES[newModeUnlocked].label} mode unlocked!</p>
             <p style={S.unlockSub}>
@@ -86,12 +86,12 @@ export default function SessionSummary({
               <div style={S.threshBar}>
                 <div style={{ ...S.threshFill, width: `${barPct}%` }} />
               </div>
-              <span style={S.threshVal}>{est != null ? est.toFixed(2) : 'â€”'}</span>
+              <span style={S.threshVal}>{est != null ? est.toFixed(2) : '—'}</span>
             </div>
           );
         })}
         {allConverged && (
-          <p style={S.convergedNote}>âœ“ All staircases converged â€” sensitivity profile complete.</p>
+          <p style={S.convergedNote}>✓ All staircases converged — sensitivity profile complete.</p>
         )}
       </div>
 
@@ -107,7 +107,7 @@ export default function SessionSummary({
       </div>
 
       <button style={S.doneBtn} onClick={onDone}>
-        Back to dashboard â†’
+        Back to dashboard →
       </button>
     </div>
   );

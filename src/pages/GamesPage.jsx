@@ -2,10 +2,10 @@
 import Nav from '../components/Nav'
 import { COPY } from '../games/FirstContact/constants'
 
-// â”€â”€ GamesPage â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── GamesPage ─────────────────────────────────────────────────────────────
 // Props:
-//   session              â€” auth session
-//   firstContactComplete â€” undefined (loading) | false | true
+//   session              — auth session
+//   firstContactComplete — undefined (loading) | false | true
 
 export default function GamesPage({ session, firstContactComplete }) {
   const loading    = firstContactComplete === undefined
@@ -21,11 +21,11 @@ export default function GamesPage({ session, firstContactComplete }) {
 
         <div style={S.grid}>
 
-          {/* First Contact / Deeper Contact card â€” conditional on onboarding status */}
+          {/* First Contact / Deeper Contact card — conditional on onboarding status */}
           {!loading && !isComplete && (
             <GameCard
               title="First Contact"
-              badge="Breath sync Â· Required"
+              badge="Breath sync · Required"
               desc={COPY.games_tagline_first}
               to="/games/first-contact"
               featured
@@ -35,7 +35,7 @@ export default function GamesPage({ session, firstContactComplete }) {
           {!loading && isComplete && (
             <GameCard
               title="Deeper Contact"
-              badge="Breath sync Â· Practice"
+              badge="Breath sync · Practice"
               desc={COPY.games_tagline_deeper}
               to="/games/first-contact"
             />
@@ -43,22 +43,22 @@ export default function GamesPage({ session, firstContactComplete }) {
 
           <GameCard
             title="Pond Watch"
-            badge="Go / No-Go Â· Reaction time"
+            badge="Go / No-Go · Reaction time"
             desc="Watch the pond. Press when you spot a duck."
             to="/games/pond-watch"
           />
 
           <GameCard
             title="Owl Barn"
-            badge="Hearing Â· Rhythm Â· Strategy"
-            desc="Cross a dark barn while owls hoot overhead. Read the silence â€” 3 taps or 8."
+            badge="Hearing · Rhythm · Strategy"
+            desc="Cross a dark barn while owls hoot overhead. Read the silence — 3 taps or 8."
             to="/games/owl-barn"
           />
 
           {/* Ebb & Flow: locked until First Contact is complete */}
           <GameCard
             title="Ebb &amp; Flow"
-            badge="Interoception Â· Breath sync"
+            badge="Interoception · Breath sync"
             desc="Breathe with your avatar and detect subtle shifts in rhythm."
             to="/games/ebb-flow"
             locked={!loading && !isComplete}
@@ -70,7 +70,7 @@ export default function GamesPage({ session, firstContactComplete }) {
   )
 }
 
-// â”€â”€ SUB-COMPONENTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── SUB-COMPONENTS ────────────────────────────────────────────────────────
 
 function GameCard({ title, badge, desc, to, featured = false, locked = false }) {
   return (
@@ -81,7 +81,7 @@ function GameCard({ title, badge, desc, to, featured = false, locked = false }) 
       <div style={S.cardInner}>
         <div style={S.badgeRow}>
           <span style={S.gameBadge}>{badge}</span>
-          {locked && <span style={S.lockBadge}>ðŸ”’ Complete First Contact first</span>}
+          {locked && <span style={S.lockBadge}>🔒 Complete First Contact first</span>}
         </div>
         <h2 style={S.gameTitle} dangerouslySetInnerHTML={{ __html: title }} />
         <p style={S.gameDesc}>{desc}</p>
@@ -94,13 +94,13 @@ function GameCard({ title, badge, desc, to, featured = false, locked = false }) 
           ...(locked   ? S.playLinkLocked  : {}),
         }}
       >
-        {featured ? 'Begin â†’' : locked ? 'Locked' : 'Play now â†’'}
+        {featured ? 'Begin →' : locked ? 'Locked' : 'Play now →'}
       </Link>
     </div>
   )
 }
 
-// â”€â”€ STYLES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── STYLES ────────────────────────────────────────────────────────────────
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'

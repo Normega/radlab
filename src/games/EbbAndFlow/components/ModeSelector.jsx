@@ -1,10 +1,10 @@
 ﻿import { GAME_MODES } from '../constants';
 
-// â”€â”€ ModeSelector â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── ModeSelector ──────────────────────────────────────────────────────────
 // Props:
-//   selectedMode   â€” 'beginner' | 'listener' | 'empath'
-//   totalTrials    â€” user's cumulative trial count (determines what's unlocked)
-//   onSelect       â€” (modeKey) => void
+//   selectedMode   — 'beginner' | 'listener' | 'empath'
+//   totalTrials    — user's cumulative trial count (determines what's unlocked)
+//   onSelect       — (modeKey) => void
 
 export default function ModeSelector({ selectedMode, totalTrials = 0, onSelect }) {
   return (
@@ -27,8 +27,8 @@ export default function ModeSelector({ selectedMode, totalTrials = 0, onSelect }
             >
               <span style={S.modeName}>
                 {mode.label}
-                {active && <span style={S.check}> âœ“</span>}
-                {!unlocked && <span style={S.lock}> ðŸ”’</span>}
+                {active && <span style={S.check}> ✓</span>}
+                {!unlocked && <span style={S.lock}> 🔒</span>}
               </span>
               {!unlocked && (
                 <span style={S.unlockNote}>

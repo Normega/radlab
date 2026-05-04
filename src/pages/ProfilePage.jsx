@@ -6,12 +6,12 @@ import BaseAvatar from '../components/Avatar/BaseAvatar'
 import { useAvatarConfig } from '../hooks/useAvatarConfig'
 
 const UNLOCK_MILESTONES = [
-  { pts: 50,  label: 'Ears & species',  icon: 'ðŸ‘‚' },
-  { pts: 100, label: 'Nose styles',     icon: 'ðŸ‘ƒ' },
-  { pts: 150, label: 'Hair',            icon: 'ðŸ’‡' },
-  { pts: 200, label: 'Mouth styles',    icon: 'ðŸ˜„' },
-  { pts: 300, label: 'Auras & extras',  icon: 'âœ¨' },
-  { pts: 500, label: 'Scars & marks',   icon: 'ðŸ”±' },
+  { pts: 50,  label: 'Ears & species',  icon: '👂' },
+  { pts: 100, label: 'Nose styles',     icon: '👃' },
+  { pts: 150, label: 'Hair',            icon: '💇' },
+  { pts: 200, label: 'Mouth styles',    icon: '😄' },
+  { pts: 300, label: 'Auras & extras',  icon: '✨' },
+  { pts: 500, label: 'Scars & marks',   icon: '🔱' },
 ]
 
 const ROLE_META = {
@@ -67,7 +67,7 @@ export default function ProfilePage({ session }) {
       <Nav session={session} />
       <div style={S.wrap}>
 
-        {/* â”€â”€ Avatar card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+        {/* ── Avatar card ─────────────────────────────────────────── */}
         <div style={S.avatarCard}>
           <div style={S.avatarPreview}>
             <BaseAvatar skinColor={skinColor} eyeColor={eyeColor} species={avatarData?.species ?? 'human'} size={160} />
@@ -81,7 +81,7 @@ export default function ProfilePage({ session }) {
           </div>
         </div>
 
-        {/* â”€â”€ Points & progress â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+        {/* ── Points & progress ───────────────────────────────────── */}
         <p style={S.secLabel}>// Points &amp; Progress</p>
         <div style={S.card}>
           <div style={S.pointsRow}>
@@ -105,7 +105,7 @@ export default function ProfilePage({ session }) {
           )}
         </div>
 
-        {/* â”€â”€ Unlock tracker â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+        {/* ── Unlock tracker ──────────────────────────────────────── */}
         <p style={{ ...S.secLabel, marginTop: 40 }}>// Unlock Tracker</p>
         <div style={S.card}>
           {UNLOCK_MILESTONES.map((m, i) => {
@@ -132,11 +132,11 @@ export default function ProfilePage({ session }) {
           })}
         </div>
 
-        {/* â”€â”€ Activity summary â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+        {/* ── Activity summary ────────────────────────────────────── */}
         <p style={{ ...S.secLabel, marginTop: 40 }}>// Activity</p>
         <div style={S.card}>
           <div style={S.statRow}>
-            <span style={S.statNum}>{sessionCount ?? 'â€”'}</span>
+            <span style={S.statNum}>{sessionCount ?? '—'}</span>
             <span style={S.statLabel}>game sessions completed</span>
           </div>
         </div>

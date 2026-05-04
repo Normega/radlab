@@ -1,17 +1,17 @@
 ﻿/**
- * OwlBarn â€” Sensory Safari Exhibit 2
- * RADlab Â· Regulatory & Affective Dynamics Lab Â· U of T
+ * OwlBarn — Sensory Safari Exhibit 2
+ * RADlab · Regulatory & Affective Dynamics Lab · U of T
  *
  * Red-light / green-light tap-to-move across a dark barn while owls hoot.
- *   3-tap (window expiry at count 3)  â†’ 1 step forward
- *   8-tap (immediate on 8th tap)      â†’ 2 steps forward
- *   tap during HOOT                   â†’ SWOOPED (âˆ’2 steps, lockout next hoot)
- *   window expiry at count 1,2,4â€“7   â†’ WRONG_COUNT (no penalty, lockout next hoot)
+ *   3-tap (window expiry at count 3)  → 1 step forward
+ *   8-tap (immediate on 8th tap)      → 2 steps forward
+ *   tap during HOOT                   → SWOOPED (−2 steps, lockout next hoot)
+ *   window expiry at count 1,2,4–7   → WRONG_COUNT (no penalty, lockout next hoot)
  *
  * Timing: triangle-wave from RiskFlex canonical algorithm
- *   windownum bounces 10â†’1â†’10 (one step per trial)
- *   step = round((riskyWindow + 300 âˆ’ safeWindow) / 9)
- *   currentWindow = safeWindow + (windownum âˆ’ 1) Ã— step
+ *   windownum bounces 10→1→10 (one step per trial)
+ *   step = round((riskyWindow + 300 − safeWindow) / 9)
+ *   currentWindow = safeWindow + (windownum − 1) × step
  *
  * Calibration: stubbed (safeWindow=500ms, riskyWindow=1800ms)
  * Mindfulness:  stubbed (Continue button only)
@@ -20,7 +20,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useOwlAudio } from './useOwlAudio'
 
-// â”€â”€â”€ WORLD LAYOUT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── WORLD LAYOUT ─────────────────────────────────────────────────────────────
 
 const BARN_WIDTH = 1250
 const OFFSET = 0.15   // mouse sits at 15% from left of viewport
@@ -47,7 +47,7 @@ const owlPairs = [
 
 const beams = [137, 280, 425, 568, 712, 856, 1000, 1115]
 
-// â”€â”€â”€ PHASES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── PHASES ───────────────────────────────────────────────────────────────────
 
 const PHASE = {
   IDLE:         'idle',
@@ -63,12 +63,12 @@ const PHASE = {
   RESULTS:      'results',
 }
 
-// â”€â”€â”€ CONFIG â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── CONFIG ───────────────────────────────────────────────────────────────────
 
 const CFG = {
-  // Calibration stubs â€” will be replaced by measured 3-tap / 8-tap speeds
-  SAFE_WINDOW_STUB:  500,   // ms â€” default safeWindow (3-tap speed)
-  RISKY_WINDOW_STUB: 1800,  // ms â€” default riskyWindow (8-tap speed)
+  // Calibration stubs — will be replaced by measured 3-tap / 8-tap speeds
+  SAFE_WINDOW_STUB:  500,   // ms — default safeWindow (3-tap speed)
+  RISKY_WINDOW_STUB: 1800,  // ms — default riskyWindow (8-tap speed)
   HOOT_MIN_MS:  3000,
   HOOT_MAX_MS:  5000,
   MOVE_ANIM_MS: 420,
@@ -77,7 +77,7 @@ const CFG = {
   SHRINK_MS:    2600,
 }
 
-// â”€â”€â”€ BARN OBJECTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── BARN OBJECTS ─────────────────────────────────────────────────────────────
 
 function ObjShape({ type, isCurrent }) {
   const glow = isCurrent
@@ -190,7 +190,7 @@ function ObjShape({ type, isCurrent }) {
   return null
 }
 
-// â”€â”€â”€ TAP AURA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── TAP AURA ────────────────────────────────────────────────────────────────
 
 function TapAura({ level }) {
   if (level === 0) return null
@@ -218,13 +218,13 @@ function TapAura({ level }) {
   )
 }
 
-// â”€â”€â”€ MAIN COMPONENT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── MAIN COMPONENT ──────────────────────────────────────────────────────────
 
 export default function OwlBarn({ onSessionComplete, userId = null, studyId = null }) {
 
   const audio = useOwlAudio()
 
-  // â”€â”€ UI state â”€â”€
+  // ── UI state ──
   const [phase,       setPhase]       = useState(PHASE.IDLE)
   const [step,        setStep]        = useState(0)
   const [auraLevel,   setAuraLevel]   = useState(0)
@@ -235,7 +235,7 @@ export default function OwlBarn({ onSessionComplete, userId = null, studyId = nu
 
   const viewRef = useRef(null)
 
-  // â”€â”€ Game refs â”€â”€
+  // ── Game refs ──
   const phaseRef         = useRef(PHASE.IDLE)
   const stepRef          = useRef(0)
   const tapCountRef      = useRef(0)
@@ -246,8 +246,8 @@ export default function OwlBarn({ onSessionComplete, userId = null, studyId = nu
   const safeWindowRef    = useRef(CFG.SAFE_WINDOW_STUB)   // 3-tap speed (ms)
   const riskyWindowRef   = useRef(CFG.RISKY_WINDOW_STUB)  // 8-tap speed (ms)
   const stepMsRef        = useRef(178)                    // duration step per trial
-  const winnumRef        = useRef(10)                     // current position (1â€“10)
-  const winnumDirRef     = useRef(-1)                     // âˆ’1 = decreasing, +1 = increasing
+  const winnumRef        = useRef(10)                     // current position (1–10)
+  const winnumDirRef     = useRef(-1)                     // −1 = decreasing, +1 = increasing
   // Session data
   const trialsRef        = useRef([])
   const gameStartRef     = useRef(null)
@@ -256,7 +256,7 @@ export default function OwlBarn({ onSessionComplete, userId = null, studyId = nu
 
   useEffect(() => { phaseRef.current = phase }, [phase])
 
-  // â”€â”€ Viewport resize â”€â”€
+  // ── Viewport resize ──
   useEffect(() => {
     const update = () => viewRef.current && setVw(viewRef.current.offsetWidth)
     update()
@@ -264,7 +264,7 @@ export default function OwlBarn({ onSessionComplete, userId = null, studyId = nu
     return () => window.removeEventListener('resize', update)
   }, [])
 
-  // â”€â”€ Timer helpers â”€â”€
+  // ── Timer helpers ──
   const clearTimers = useCallback(() => {
     timersRef.current.forEach(clearTimeout)
     timersRef.current = []
@@ -278,15 +278,15 @@ export default function OwlBarn({ onSessionComplete, userId = null, studyId = nu
 
   useEffect(() => () => clearTimers(), [clearTimers])
 
-  // â”€â”€ Timing helpers â”€â”€
-  // currentWindow = safeWindow + (windownum âˆ’ 1) Ã— step
+  // ── Timing helpers ──
+  // currentWindow = safeWindow + (windownum − 1) × step
   const curWindowMs = () =>
     safeWindowRef.current + (winnumRef.current - 1) * stepMsRef.current
 
-  // "Long" window: top half of triangle (windownum â‰¥ 6) â†’ 8-tap is optimal
+  // "Long" window: top half of triangle (windownum ≥ 6) → 8-tap is optimal
   const curIsLong = () => winnumRef.current >= 6
 
-  // â”€â”€ Trial recording helper â”€â”€
+  // ── Trial recording helper ──
   function recordTrial(playerChoice, outcome, stepsGained) {
     const dur   = curWindowMs()
     const wtype = curIsLong() ? 'long' : 'short'
@@ -303,11 +303,11 @@ export default function OwlBarn({ onSessionComplete, userId = null, studyId = nu
     })
   }
 
-  // â”€â”€â”€ GAME FLOW â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── GAME FLOW ────────────────────────────────────────────────────────────
   // Defined innermost-first: each function can safely forward-reference later
   // ones because all calls happen asynchronously (via timers), never inline.
 
-  // 1. advanceToNextWindow â€” advance triangle wave and start next hoot
+  // 1. advanceToNextWindow — advance triangle wave and start next hoot
   const advanceToNextWindow = useCallback((lockNext) => {
     winnumRef.current += winnumDirRef.current
     if      (winnumRef.current <= 1)  { winnumRef.current = 1;  winnumDirRef.current =  1 }
@@ -368,7 +368,7 @@ export default function OwlBarn({ onSessionComplete, userId = null, studyId = nu
 
   // 5. startSilence
   const startSilence = useCallback(() => {
-    audio.stopHoot()   // fade hoot out â†’ creates the silence moment
+    audio.stopHoot()   // fade hoot out → creates the silence moment
     const dur = curWindowMs()
     phaseRef.current = PHASE.SILENCE
     setPhase(PHASE.SILENCE)
@@ -391,7 +391,7 @@ export default function OwlBarn({ onSessionComplete, userId = null, studyId = nu
     })
   }, [after, startSilence, audio])
 
-  // 7. triggerSwoop â€” tap during hoot: âˆ’2 steps + lockout
+  // 7. triggerSwoop — tap during hoot: −2 steps + lockout
   const triggerSwoop = useCallback(() => {
     clearTimers()
     audio.playSwoop()
@@ -424,8 +424,8 @@ export default function OwlBarn({ onSessionComplete, userId = null, studyId = nu
     })
   }, [after, clearTimers, advanceToNextWindow, audio]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // 8. handleTap â€” spacebar / screen tap
-  // Uses phaseRef (not state) â€” no stale-closure risk for hoot detection
+  // 8. handleTap — spacebar / screen tap
+  // Uses phaseRef (not state) — no stale-closure risk for hoot detection
   const handleTap = useCallback(() => {
     const ph = phaseRef.current
     if (ph === PHASE.HOOT) {
@@ -449,7 +449,7 @@ export default function OwlBarn({ onSessionComplete, userId = null, studyId = nu
       recordTrial('8tap', 'success', 2)
       doAdvanceStep(2)
     }
-    // counts 1â€“7: update aura; window timer resolves
+    // counts 1–7: update aura; window timer resolves
   }, [triggerSwoop, clearTimers, doAdvanceStep, audio]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // 9. startGame
@@ -460,12 +460,12 @@ export default function OwlBarn({ onSessionComplete, userId = null, studyId = nu
     isLockedRef.current = false
     safeWindowRef.current  = CFG.SAFE_WINDOW_STUB
     riskyWindowRef.current = CFG.RISKY_WINDOW_STUB
-    // step = round((riskyWindow + 300 âˆ’ safeWindow) / 9) â€” headroom baked into formula
+    // step = round((riskyWindow + 300 − safeWindow) / 9) — headroom baked into formula
     stepMsRef.current = Math.round(
       (CFG.RISKY_WINDOW_STUB + 300 - CFG.SAFE_WINDOW_STUB) / 9
     )
     winnumRef.current    = 10   // start at longest window
-    winnumDirRef.current = -1   // decrease first: 10â†’9â†’â€¦â†’1
+    winnumDirRef.current = -1   // decrease first: 10→9→…→1
     gameStartRef.current = performance.now()
     gameEndRef.current   = null
     setSwoopActive(false); setShaking(false)
@@ -509,14 +509,14 @@ export default function OwlBarn({ onSessionComplete, userId = null, studyId = nu
     setAuraLevel(0); setSwoopActive(false); setShaking(false); setResults(null)
   }, [clearTimers])
 
-  // â”€â”€ Keyboard listener â”€â”€
+  // ── Keyboard listener ──
   useEffect(() => {
     const onKey = (e) => { if (e.code === 'Space') { e.preventDefault(); handleTap() } }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [handleTap])
 
-  // â”€â”€â”€ DERIVED RENDER VALUES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── DERIVED RENDER VALUES ────────────────────────────────────────────────
 
   const curObj  = objects[step] ?? objects[0]
   const mouseX  = step === 0 ? curObj.x + 20 : curObj.x + Math.round(curObj.w * 0.4)
@@ -537,16 +537,16 @@ export default function OwlBarn({ onSessionComplete, userId = null, studyId = nu
     PHASE.WRONG_COUNT, PHASE.SWOOPED, PHASE.BARN_CROSSED,
   ].includes(phase)
 
-  // â”€â”€â”€ RENDER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── RENDER ──────────────────────────────────────────────────────────────
 
   return (
     <div style={S.shell}>
 
-      {/* â”€â”€ IDLE â”€â”€ */}
+      {/* ── IDLE ── */}
       {phase === PHASE.IDLE && (
         <div style={S.screen}>
           <div style={S.card}>
-            <p style={S.eyebrow}>Sensory Safari Â· Exhibit 2</p>
+            <p style={S.eyebrow}>Sensory Safari · Exhibit 2</p>
             <h2 style={S.titleDark}>The Owl Barn</h2>
             <p style={S.bodyText}>
               You've shrunk to the size of a mouse. The barn is enormous.
@@ -558,7 +558,7 @@ export default function OwlBarn({ onSessionComplete, userId = null, studyId = nu
               <strong>8 taps</strong> = 2 steps.
               Tap during a hoot and you'll get swooped back.
             </p>
-            <p style={S.meta}>Spacebar Â· tap anywhere Â· 10 steps to the barn door</p>
+            <p style={S.meta}>Spacebar · tap anywhere · 10 steps to the barn door</p>
             <button style={S.btnPrimary} onClick={enterShrink}>
               Enter the barn
             </button>
@@ -566,11 +566,11 @@ export default function OwlBarn({ onSessionComplete, userId = null, studyId = nu
         </div>
       )}
 
-      {/* â”€â”€ SHRINK â”€â”€ */}
+      {/* ── SHRINK ── */}
       {phase === PHASE.SHRINK && (
         <div style={{ ...S.screen, background: '#060402', minHeight: '100vh', justifyContent: 'center' }}>
           <div style={S.shrinkCard}>
-            <div style={S.shrinkEmoji}>ðŸ­</div>
+            <div style={S.shrinkEmoji}>🐭</div>
             <p style={S.shrinkLine1}>You are now prey-sized.</p>
             <p style={S.shrinkLine2}>The owls are watching.</p>
             <p style={S.shrinkLine3}>Don't move when they hoot.</p>
@@ -578,7 +578,7 @@ export default function OwlBarn({ onSessionComplete, userId = null, studyId = nu
         </div>
       )}
 
-      {/* â”€â”€ CALIBRATION (stub) â”€â”€ */}
+      {/* ── CALIBRATION (stub) ── */}
       {phase === PHASE.CALIBRATION && (
         <div style={S.screen}>
           <div style={S.card}>
@@ -596,7 +596,7 @@ export default function OwlBarn({ onSessionComplete, userId = null, studyId = nu
               The step happens when the silence ends.
             </p>
             <p style={S.bodyText}>
-              <strong>Long silence?</strong> Tap exactly 8 times for 2 steps â€”
+              <strong>Long silence?</strong> Tap exactly 8 times for 2 steps —
               triggers immediately on the 8th tap.
             </p>
             <p style={S.meta}>Any other count = wrong move</p>
@@ -607,7 +607,7 @@ export default function OwlBarn({ onSessionComplete, userId = null, studyId = nu
         </div>
       )}
 
-      {/* â”€â”€ BARN VIEWPORT (gameplay + BARN_CROSSED) â”€â”€ */}
+      {/* ── BARN VIEWPORT (gameplay + BARN_CROSSED) ── */}
       {inGame && (
         <div style={S.gameWrap}>
 
@@ -629,12 +629,12 @@ export default function OwlBarn({ onSessionComplete, userId = null, studyId = nu
             ...S.phaseLabel,
             color: isHoot ? '#c97800' : phase === PHASE.SILENCE ? '#7fd46a' : '#d4b896',
           }}>
-            {isHoot                          && 'ðŸ¦‰  HOOT â€” STAY STILL'}
-            {phase === PHASE.SILENCE         && 'Â·  SILENCE â€” TAP NOW  Â·'}
-            {phase === PHASE.MOVING          && 'â†’'}
-            {phase === PHASE.WRONG_COUNT     && 'âœ—  WRONG COUNT'}
-            {phase === PHASE.SWOOPED         && 'âš¡  SWOOPED'}
-            {phase === PHASE.BARN_CROSSED    && 'âœ“  BARN CROSSED'}
+            {isHoot                          && '🦉  HOOT — STAY STILL'}
+            {phase === PHASE.SILENCE         && '·  SILENCE — TAP NOW  ·'}
+            {phase === PHASE.MOVING          && '→'}
+            {phase === PHASE.WRONG_COUNT     && '✗  WRONG COUNT'}
+            {phase === PHASE.SWOOPED         && '⚡  SWOOPED'}
+            {phase === PHASE.BARN_CROSSED    && '✓  BARN CROSSED'}
           </div>
 
           {/* Viewport */}
@@ -646,7 +646,7 @@ export default function OwlBarn({ onSessionComplete, userId = null, studyId = nu
             }}
             onPointerDown={handleTap}
           >
-            {/* Rafter glow â€” active during HOOT, fades on silence */}
+            {/* Rafter glow — active during HOOT, fades on silence */}
             <div style={{
               position: 'absolute', inset: 0, zIndex: 2, pointerEvents: 'none',
               background: 'radial-gradient(ellipse at 50% 0%,rgba(122,40,0,0.38) 0%,transparent 72%)',
@@ -694,7 +694,7 @@ export default function OwlBarn({ onSessionComplete, userId = null, studyId = nu
                 <div key={i} style={{ position:'absolute', top:0, left:x, width:16, height:260, background:'linear-gradient(to bottom,rgba(140,170,210,0.06),transparent)', transform:'rotate(2deg)' }} />
               ))}
 
-              {/* Owl eyes â€” visible only during HOOT; fade out when silence begins */}
+              {/* Owl eyes — visible only during HOOT; fade out when silence begins */}
               {owlPairs.map((owl, i) => (
                 <div key={i} style={{
                   position:'absolute', left:owl.x, top:owl.y, display:'flex', gap:8,
@@ -723,7 +723,7 @@ export default function OwlBarn({ onSessionComplete, userId = null, studyId = nu
               {step > 0 && Array.from({ length: step }).map((_, i) => {
                 const a = objects[i]; const b = objects[i + 1]
                 return [0.35, 0.65].map((t, j) => (
-                  <div key={`${i}-${j}`} style={{ position:'absolute', bottom:56, left:a.x + (b.x - a.x) * t, fontSize:8, opacity:0.18, color:'#d4b896' }}>ðŸ¾</div>
+                  <div key={`${i}-${j}`} style={{ position:'absolute', bottom:56, left:a.x + (b.x - a.x) * t, fontSize:8, opacity:0.18, color:'#d4b896' }}>🐾</div>
                 ))
               })}
 
@@ -754,7 +754,7 @@ export default function OwlBarn({ onSessionComplete, userId = null, studyId = nu
                       ? 'drop-shadow(0 0 6px rgba(255,80,0,0.7)) grayscale(0.3)'
                       : 'drop-shadow(0 0 7px rgba(245,200,66,0.35))',
                   }}>
-                    {phase === PHASE.SWOOPED ? 'ðŸ˜µ' : 'ðŸ­'}
+                    {phase === PHASE.SWOOPED ? '😵' : '🐭'}
                   </div>
                 </div>
               </div>
@@ -769,7 +769,7 @@ export default function OwlBarn({ onSessionComplete, userId = null, studyId = nu
                   animation: 'swoop 0.88s ease-in-out forwards',
                   filter: 'drop-shadow(0 0 14px rgba(200,100,0,0.9))',
                 }}>
-                  ðŸ¦‰
+                  🦉
                 </div>
               )}
 
@@ -789,7 +789,7 @@ export default function OwlBarn({ onSessionComplete, userId = null, studyId = nu
             {/* BARN_CROSSED overlay */}
             {phase === PHASE.BARN_CROSSED && (
               <div style={S.crossedOverlay}>
-                <div style={{ fontSize: 36 }}>ðŸ­âœ¨</div>
+                <div style={{ fontSize: 36 }}>🐭✨</div>
                 <p style={S.crossedText}>You crossed the barn!</p>
               </div>
             )}
@@ -801,7 +801,7 @@ export default function OwlBarn({ onSessionComplete, userId = null, studyId = nu
             style={{ ...S.tapBtn, ...(phase === PHASE.SILENCE ? S.tapBtnSilence : {}) }}
             onPointerDown={(e) => { e.preventDefault(); handleTap() }}
           >
-            {phase === PHASE.SILENCE ? 'TAP' : phase === PHASE.HOOT ? 'WAIT' : 'Â·'}
+            {phase === PHASE.SILENCE ? 'TAP' : phase === PHASE.HOOT ? 'WAIT' : '·'}
           </button>
 
           <div style={S.stepCounter}>{step} / 10 steps</div>
@@ -809,17 +809,17 @@ export default function OwlBarn({ onSessionComplete, userId = null, studyId = nu
         </div>
       )}
 
-      {/* â”€â”€ MINDFULNESS (stub) â”€â”€ */}
+      {/* ── MINDFULNESS (stub) ── */}
       {phase === PHASE.MINDFULNESS && (
         <div style={{ ...S.screen, background: '#060402', minHeight: '100vh', justifyContent: 'center' }}>
           <div style={S.mindCard}>
-            <p style={S.eyebrowDark}>Before you go â€”</p>
+            <p style={S.eyebrowDark}>Before you go —</p>
             <p style={S.mindText}>
-              The owls were loud. But the silence between hoots â€”<br />
+              The owls were loud. But the silence between hoots —<br />
               did you notice it had a shape? A rhythm?<br />
               Some silences longer, some shorter.<br />
               <br />
-              What did you listen to â€” the sound, or the quiet?
+              What did you listen to — the sound, or the quiet?
             </p>
             <button style={S.btnDark} onClick={onMindfulnessContinue}>
               Continue
@@ -828,7 +828,7 @@ export default function OwlBarn({ onSessionComplete, userId = null, studyId = nu
         </div>
       )}
 
-      {/* â”€â”€ RESULTS â”€â”€ */}
+      {/* ── RESULTS ── */}
       {phase === PHASE.RESULTS && results && (
         <div style={S.screen}>
           <div style={S.card}>
@@ -838,7 +838,7 @@ export default function OwlBarn({ onSessionComplete, userId = null, studyId = nu
               <span style={S.bigNum}>
                 {results.crossingTimeMs != null
                   ? (results.crossingTimeMs / 1000).toFixed(1)
-                  : 'â€”'}
+                  : '—'}
               </span>
               <span style={S.bigUnit}>seconds</span>
             </div>
@@ -852,7 +852,7 @@ export default function OwlBarn({ onSessionComplete, userId = null, studyId = nu
                     t => t.playerChoice !== 'no_input' && t.outcome !== 'swooped'
                   )
                   const got8 = attempted.filter(t => t.playerChoice === '8tap')
-                  return attempted.length ? `${got8.length}/${attempted.length}` : 'â€”'
+                  return attempted.length ? `${got8.length}/${attempted.length}` : '—'
                 })()}
               />
               <StatCell
@@ -879,7 +879,7 @@ export default function OwlBarn({ onSessionComplete, userId = null, studyId = nu
   )
 }
 
-// â”€â”€â”€ SMALL COMPONENTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── SMALL COMPONENTS ────────────────────────────────────────────────────────
 
 const StatCell = ({ label, val }) => (
   <div style={S.statCell}>
@@ -888,7 +888,7 @@ const StatCell = ({ label, val }) => (
   </div>
 )
 
-// â”€â”€â”€ STYLES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── STYLES ──────────────────────────────────────────────────────────────────
 
 const MONO  = "'Space Mono','Courier New',monospace"
 const SERIF = "'DM Serif Display',Georgia,serif"

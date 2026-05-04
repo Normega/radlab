@@ -1,10 +1,10 @@
-﻿// â”€â”€ ContinuePrompt â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+﻿// ── ContinuePrompt ────────────────────────────────────────────────────────
 // Shown every CONTINUE_PROMPT_INTERVAL trials.
 // Props:
-//   trialCount   â€” total trials completed so far
-//   sessionScore â€” points accumulated this session
-//   onContinue   â€” () => void
-//   onStop       â€” () => void
+//   trialCount   — total trials completed so far
+//   sessionScore — points accumulated this session
+//   onContinue   — () => void
+//   onStop       — () => void
 
 export default function ContinuePrompt({ trialCount, sessionScore, onContinue, onStop }) {
   return (
@@ -19,7 +19,7 @@ export default function ContinuePrompt({ trialCount, sessionScore, onContinue, o
         </p>
         <div style={S.btnRow}>
           <button style={S.continuBtn} onClick={onContinue}>
-            Yes, keep going â†’
+            Yes, keep going →
           </button>
           <button style={S.stopBtn} onClick={onStop}>
             Take a break

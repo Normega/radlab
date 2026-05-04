@@ -15,7 +15,7 @@ export default function Login() {
     setLoading(true)
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) { setError(error.message); setLoading(false) }
-    // on success: stay loading â€” PublicOnlyRoute in App.jsx handles the redirect
+    // on success: stay loading — PublicOnlyRoute in App.jsx handles the redirect
   }
 
   return (
@@ -43,11 +43,11 @@ export default function Login() {
               <input
                 type="password" required autoComplete="current-password"
                 value={password} onChange={e => setPassword(e.target.value)}
-                style={S.input} placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                style={S.input} placeholder="••••••••"
               />
             </div>
             <button type="submit" style={S.btnPrimary} disabled={loading}>
-              {loading ? 'Signing inâ€¦' : 'Sign in'}
+              {loading ? 'Signing in…' : 'Sign in'}
             </button>
           </form>
 

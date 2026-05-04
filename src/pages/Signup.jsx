@@ -58,7 +58,7 @@ export default function Signup() {
         <div style={S.card}>
           <img src="/RADlab_Logo_light.svg" height="48" alt="RADlab" style={{ display: 'block', margin: '0 auto 20px' }} />
           <h1 style={S.title}>Join RADlab</h1>
-          <p style={S.sub}>Free account Â· no credit card needed</p>
+          <p style={S.sub}>Free account · no credit card needed</p>
 
           {error && <div style={S.errorBox}>{error}</div>}
 
@@ -89,7 +89,7 @@ export default function Signup() {
               />
             </div>
             <button type="submit" style={S.btnPrimary} disabled={loading}>
-              {loading ? 'Creating accountâ€¦' : 'Create account'}
+              {loading ? 'Creating account…' : 'Create account'}
             </button>
           </form>
 

@@ -1,14 +1,14 @@
 ﻿import { GAME_MODES } from '../constants';
 import ModeSelector from './ModeSelector';
 
-// â”€â”€ SessionStart â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── SessionStart ──────────────────────────────────────────────────────────
 // Props:
-//   totalTrials    â€” cumulative trials (determines unlock state)
-//   totalScore     â€” cumulative score
-//   sessionScore   â€” points from last session (0 if first)
-//   selectedMode   â€” current mode key
-//   onSelectMode   â€” (key) => void
-//   onBegin        â€” () => void
+//   totalTrials    — cumulative trials (determines unlock state)
+//   totalScore     — cumulative score
+//   sessionScore   — points from last session (0 if first)
+//   selectedMode   — current mode key
+//   onSelectMode   — (key) => void
+//   onBegin        — () => void
 
 export default function SessionStart({ totalTrials = 0, totalScore = 0, sessionScore = 0, selectedMode = 'beginner', onSelectMode, onBegin }) {
   const mode = GAME_MODES[selectedMode];
@@ -52,19 +52,19 @@ export default function SessionStart({ totalTrials = 0, totalScore = 0, sessionS
       <div style={S.instructCard}>
         <p style={S.instructTitle}>How it works</p>
         <ol style={S.steps}>
-          <li>Your avatar will breathe â€” follow its rhythm. Let your own breath sync up.</li>
+          <li>Your avatar will breathe — follow its rhythm. Let your own breath sync up.</li>
           <li>Hold the attunement button while you inhale. Release when you exhale.</li>
           <li>On some trials the pace will shift. After each 4-breath sequence, tell us what you noticed.</li>
           <li>Rate your confidence and how activated you feel.</li>
         </ol>
         <p style={S.modeNote}>
-          <strong>{mode.label} mode</strong> â€” animation scale {Math.round(mode.scaleAmplitude * 100)}%.
+          <strong>{mode.label} mode</strong> — animation scale {Math.round(mode.scaleAmplitude * 100)}%.
           {selectedMode !== 'empath' && ' Subtler modes unlock as you practice.'}
         </p>
       </div>
 
       <button style={S.beginBtn} onClick={onBegin}>
-        Begin session â†’
+        Begin session →
       </button>
     </div>
   );

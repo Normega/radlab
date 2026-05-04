@@ -17,17 +17,17 @@ import BreathPrompt    from './components/BreathPrompt';
 import ContactComplete from './components/ContactComplete';
 import PsiAmpButton    from '../EbbAndFlow/components/PsiAmpButton';
 
-// â”€â”€ FirstContact â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── FirstContact ──────────────────────────────────────────────────────────
 //
-// State machine: INTRO â†’ SYNCING â†’ COMPLETE
+// State machine: INTRO → SYNCING → COMPLETE
 //
 // First-time mode:  profile.first_contact_complete === false
-//   Avatar in ghost reveal â€” features fade in as sync improves.
-//   On COMPLETE â†’ save profile fields, call onComplete(), navigate ebb-flow.
+//   Avatar in ghost reveal — features fade in as sync improves.
+//   On COMPLETE → save profile fields, call onComplete(), navigate ebb-flow.
 //
 // Returning mode (Deeper Contact): profile.first_contact_complete === true
 //   Avatar at full opacity + aura.
-//   On COMPLETE â†’ update sync stats, navigate /games.
+//   On COMPLETE → update sync stats, navigate /games.
 
 export default function FirstContact({ session, onComplete }) {
   const navigate        = useNavigate();
@@ -35,38 +35,38 @@ export default function FirstContact({ session, onComplete }) {
   const fromEbbFlow     = searchParams.get('from') === 'ebb-flow';
   const userId          = session?.user?.id;
 
-  // â”€â”€ Phase (React state + ref for async reads) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Phase (React state + ref for async reads) ─────────────────────────
   const [phase, _setPhase] = useState('INTRO');
   const phaseRef           = useRef('INTRO');
   function setPhase(p) { phaseRef.current = p; _setPhase(p); }
 
-  // â”€â”€ UI state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── UI state ──────────────────────────────────────────────────────────
   const [isHeld,      setIsHeld]      = useState(false);
   const [syncLevel,   setSyncLevel]   = useState(0);
   const [cycleCount,  setCycleCount]  = useState(0);
   const [justUpdated, setJustUpdated] = useState(false);
 
-  // â”€â”€ Profile (undefined = loading, null = no row) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Profile (undefined = loading, null = no row) ──────────────────────
   const [profile,  setProfile]  = useState(undefined);
   const profileRef = useRef(null);
 
   const { data: avatarData } = useAvatarConfig(userId);
 
-  // â”€â”€ Avatar imperative control â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Avatar imperative control ─────────────────────────────────────────
   const avatarControlRef = useRef(null);
 
-  // â”€â”€ Per-cycle refs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Per-cycle refs ────────────────────────────────────────────────────
   const pauseTimerRef  = useRef(null);
   const cycleScoreRef  = useRef(null);  // last press-release score this cycle
   const cycleCountRef  = useRef(0);
   const syncLevelRef   = useRef(0);
 
-  // â”€â”€ Hooks â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Hooks ─────────────────────────────────────────────────────────────
   const { getPhase, startBreath }                     = useBreathCycle();
   const { onPress: rawPress, onRelease: rawRelease }  = useButtonSync(getPhase);
   const { addCycleSync, getRollingMean, reset: resetSync } = useBreathSync();
 
-  // â”€â”€ Load profile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Load profile ──────────────────────────────────────────────────────
   useEffect(() => {
     if (!userId) return;
     supabase.from('profiles').select('*').eq('id', userId).single()
@@ -78,7 +78,7 @@ export default function FirstContact({ session, onComplete }) {
 
   const isReturning = profile?.first_contact_complete === true;
 
-  // â”€â”€ Button handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Button handlers ───────────────────────────────────────────────────
   const handlePress = useCallback(() => {
     rawPress();
     setIsHeld(true);
@@ -91,7 +91,7 @@ export default function FirstContact({ session, onComplete }) {
     cycleScoreRef.current = result.syncScore; // keep last score in this cycle
   }, [rawRelease]);
 
-  // â”€â”€ Spacebar â†’ INTRO to SYNCING â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Spacebar → INTRO to SYNCING ───────────────────────────────────────
   useEffect(() => {
     if (phase !== 'INTRO') return;
     function onKey(e) {
@@ -101,7 +101,7 @@ export default function FirstContact({ session, onComplete }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [phase]);
 
-  // â”€â”€ SYNCING loop â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── SYNCING loop ──────────────────────────────────────────────────────
   useEffect(() => {
     if (phase !== 'SYNCING') return;
     let cancelled = false;
@@ -130,7 +130,7 @@ export default function FirstContact({ session, onComplete }) {
         await pendingBreath;
         if (cancelled) break;
 
-        // End of cycle â€” record score (0 if user never pressed this cycle)
+        // End of cycle — record score (0 if user never pressed this cycle)
         const score = cycleScoreRef.current ?? 0;
         cycleScoreRef.current = null;
         addCycleSync(score);
@@ -147,7 +147,7 @@ export default function FirstContact({ session, onComplete }) {
         setJustUpdated(true);
         setTimeout(() => setJustUpdated(false), 250);
 
-        // Completion gate: rolling mean â‰¥ 80% after â‰¥ 4 complete cycles
+        // Completion gate: rolling mean ≥ 80% after ≥ 4 complete cycles
         if (mean >= SYNC_THRESHOLD && newCount >= MIN_CYCLES_BEFORE_COMPLETE) {
           if (!cancelled) doComplete(mean);
           return;
@@ -168,13 +168,13 @@ export default function FirstContact({ session, onComplete }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
 
-  // â”€â”€ Completion â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Completion ────────────────────────────────────────────────────────
   function doComplete(rollingMean) {
     setPhase('COMPLETE');
     const p          = profileRef.current;
     const isFirstTime = !p?.first_contact_complete;
 
-    // Fire-and-forget â€” don't block the UI transition
+    // Fire-and-forget — don't block the UI transition
     saveFirstContactSession({
       userId,
       rollingMean,
@@ -195,7 +195,7 @@ export default function FirstContact({ session, onComplete }) {
     }
   }
 
-  // â”€â”€ Render â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Render ────────────────────────────────────────────────────────────
   const skinColor  = avatarData?.skin_color || '#FDBCB4';
   const eyeColor   = avatarData?.eye_color  || '#4A90D9';
   const species    = avatarData?.species    ?? 'human';
@@ -223,12 +223,12 @@ export default function FirstContact({ session, onComplete }) {
         {phase === 'INTRO' && (
           <p style={S.introText}>
             {profile === undefined
-              ? 'Â '
+              ? ' '
               : isReturning ? COPY.intro_returning : COPY.intro_first}
           </p>
         )}
 
-        {/* Avatar â€” always visible across all phases */}
+        {/* Avatar — always visible across all phases */}
         <div style={S.avatarWrap}>
           <SyncAura params={auraParams} color={auraColor} size={240}>
             <ContactAvatar

@@ -4,19 +4,19 @@ import PsiAmpButton from './PsiAmpButton';
 import SyncAura from '../../../components/SyncAura';
 import { auraParamsFromSync, AURA_DEFAULT_COLOR } from '../../../lib/auraUtils';
 
-// â”€â”€ WarmupScreen â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── WarmupScreen ──────────────────────────────────────────────────────────
 // Renders during WARMUP and BREATH_SEQUENCE phases.
 //
 // Props:
-//   phase          â€” 'warmup' | 'trial'
-//   skinColor / eyeColor / scaleAmplitude â€” avatar props
-//   getPhase       â€” () => 0â€“1 breath phase
-//   isHeld         â€” boolean, PSI-AMP button state
-//   onPress / onRelease â€” PSI-AMP handlers
-//   syncScore      â€” 0â€“1 rolling mean (warmup only)
-//   showHint       â€” boolean: show alignment hint
-//   breathIndex    â€” 0â€“3, which breath we're on (trial phase)
-//   trialCount     â€” current trial number (shown during trial)
+//   phase          — 'warmup' | 'trial'
+//   skinColor / eyeColor / scaleAmplitude — avatar props
+//   getPhase       — () => 0–1 breath phase
+//   isHeld         — boolean, PSI-AMP button state
+//   onPress / onRelease — PSI-AMP handlers
+//   syncScore      — 0–1 rolling mean (warmup only)
+//   showHint       — boolean: show alignment hint
+//   breathIndex    — 0–3, which breath we're on (trial phase)
+//   trialCount     — current trial number (shown during trial)
 
 export default function WarmupScreen({
   phase = 'warmup',
@@ -42,7 +42,7 @@ export default function WarmupScreen({
       {/* Top label */}
       <div style={S.topRow}>
         {isWarmup ? (
-          <p style={S.eyebrow}>Warming up â€” sync your breath</p>
+          <p style={S.eyebrow}>Warming up — sync your breath</p>
         ) : (
           <div style={S.trialHeader}>
             <p style={S.eyebrow}>Trial {trialCount}</p>
@@ -91,8 +91,8 @@ export default function WarmupScreen({
           </div>
           <p style={S.syncNote}>
             {syncScore >= WARMUP_SYNC_THRESHOLD
-              ? 'âœ“ Synced â€” starting now'
-              : 'Hold on inhale Â· release on exhale'}
+              ? '✓ Synced — starting now'
+              : 'Hold on inhale · release on exhale'}
           </p>
         </div>
       )}

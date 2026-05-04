@@ -3,13 +3,13 @@ import AvatarBreathPacer from './AvatarBreathPacer';
 import SyncAura from '../../../components/SyncAura';
 import { auraParamsFromSync, AURA_DEFAULT_COLOR } from '../../../lib/auraUtils';
 
-// â”€â”€ GetReadyScreen â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── GetReadyScreen ─────────────────────────────────────────────────────────
 // Shown once after warmup sync threshold is reached, before the first trial.
 // Avatar is frozen at neutral. Spacebar or "Begin" button advances.
 //
 // Props:
-//   skinColor / eyeColor / scaleAmplitude â€” avatar appearance
-//   onBegin â€” () => void
+//   skinColor / eyeColor / scaleAmplitude — avatar appearance
+//   onBegin — () => void
 
 export default function GetReadyScreen({ skinColor, eyeColor, species = 'human', auraConfig = null, syncScore = 0, scaleAmplitude, onBegin }) {
   const auraColor  = (auraConfig?.enabled !== false && auraConfig?.color) ? auraConfig.color : AURA_DEFAULT_COLOR
@@ -41,7 +41,7 @@ export default function GetReadyScreen({ skinColor, eyeColor, species = 'human',
       </div>
       <p style={S.eyebrow}>Warmup complete</p>
       <h2 style={S.title}>Good. Now get ready to begin.</h2>
-      <button style={S.btn} onClick={onBegin}>Begin â†’</button>
+      <button style={S.btn} onClick={onBegin}>Begin →</button>
       <p style={S.hint}>or press Space</p>
     </div>
   );

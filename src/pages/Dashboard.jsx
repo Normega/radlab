@@ -36,16 +36,16 @@ export default function Dashboard({ session }) {
         <div style={S.gameGrid}>
           <GameCard
             title="Pond Watch"
-            tag="Go / No-Go Â· Reaction time"
-            desc="Watch a pond. Hit spacebar when a duck surfaces. Withhold for everything else. Measures reaction time, sensitivity (dâ€²), and response bias."
-            status="Play now â†’"
+            tag="Go / No-Go · Reaction time"
+            desc="Watch a pond. Hit spacebar when a duck surfaces. Withhold for everything else. Measures reaction time, sensitivity (d′), and response bias."
+            status="Play now →"
             to="/games/pond-watch"
           />
           <GameCard
             title="Ebb &amp; Flow"
-            tag="Interoception Â· Breath sync"
+            tag="Interoception · Breath sync"
             desc="Breathe with your avatar and detect subtle shifts in rhythm. Each session adapts to your sensitivity."
-            status="Play now â†’"
+            status="Play now →"
             to="/games/ebb-flow"
           />
         </div>
@@ -55,7 +55,7 @@ export default function Dashboard({ session }) {
         <div style={S.statsPlaceholder}>
           <p style={S.placeholderTitle}>No sessions yet</p>
           <p style={S.placeholderSub}>
-            Complete your first game to see your reaction time, dâ€², and accuracy here.
+            Complete your first game to see your reaction time, d′, and accuracy here.
           </p>
         </div>
 
@@ -63,7 +63,7 @@ export default function Dashboard({ session }) {
         <p style={{ ...S.secLabel, marginTop: 40 }}>// Account</p>
         <div style={S.infoCard}>
           <Row label="Email"        val={user?.email} />
-          <Row label="User ID"      val={user?.id?.slice(0, 8) + 'â€¦'} mono />
+          <Row label="User ID"      val={user?.id?.slice(0, 8) + '…'} mono />
           <Row label="Account type" val="Public" />
           <Row label="Member since" val={new Date(user?.created_at).toLocaleDateString('en-CA', { year: 'numeric', month: 'long', day: 'numeric' })} />
         </div>
@@ -76,7 +76,7 @@ export default function Dashboard({ session }) {
   )
 }
 
-// â”€â”€ REMINDERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── REMINDERS ────────────────────────────────────────────────────────────────
 
 const REMINDER_OPTIONS = [
   { value: 'none',      label: 'No reminders' },
@@ -131,7 +131,7 @@ function Reminders({ userId }) {
   )
 }
 
-// â”€â”€ SUB-COMPONENTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── SUB-COMPONENTS ────────────────────────────────────────────────────────────
 
 function GameCard({ title, tag, desc, status, to, muted }) {
   const footer = to
@@ -158,7 +158,7 @@ function Row({ label, val, mono }) {
   )
 }
 
-// â”€â”€ STYLES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── STYLES ────────────────────────────────────────────────────────────────────
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
