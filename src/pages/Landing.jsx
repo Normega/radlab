@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
 export default function Landing({ session }) {
-  const platformHref = session ? '/dashboard' : '/signup'
-  const platformCta  = session ? 'Go to dashboard →' : 'Enter the platform →'
+  const platformHref = '/platform'
+  const platformCta  = 'Enter the platform →'
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
