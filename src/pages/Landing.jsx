@@ -27,11 +27,11 @@ export default function Landing({ session }) {
           &nbsp;·&nbsp; Department of Psychology
         </p>
         <div style={S.heroBrand}>
+          <img src="/RADlab_Logo.svg" height="80" alt="" aria-hidden="true" style={S.heroLogo} />
           <h1 style={S.h1}>
             Regulatory &amp; Affective<br />
             <em style={{ fontStyle: 'italic', color: 'var(--pk)' }}>Dynamics Lab</em>
           </h1>
-          <img src="/RADlab_Logo.svg" height="80" alt="" aria-hidden="true" style={S.heroLogo} />
         </div>
         <p style={S.sub}>
           We study how people sense, regulate, and adapt — through rigorous experiments designed to feel like play.
@@ -150,7 +150,7 @@ const S = {
   hero:      { padding: '80px 52px 52px', maxWidth: 860, position: 'relative', zIndex: 1 },
   eyebrow:   { fontFamily: MONO, fontSize: '0.8125rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--pk)', marginBottom: 20 },
   eyebrowLink: { color: 'var(--pk)', textDecoration: 'none', borderBottom: '1px solid rgba(240,104,164,0.35)' },
-  heroBrand: { display: 'flex', alignItems: 'center', gap: 24, marginBottom: 22 },
+  heroBrand: { display: 'flex', alignItems: 'center', gap: 12, marginBottom: 22 },
   heroLogo:  { flexShrink: 0, display: 'block' },
   h1:        { fontFamily: SERIF, fontSize: 'clamp(2.6rem, 5vw, 4rem)', lineHeight: 1.08, color: 'var(--tx)', margin: 0 },
   sub:       { fontSize: '1rem', color: 'var(--gy)', lineHeight: 1.7, maxWidth: 500, fontWeight: 300 },
