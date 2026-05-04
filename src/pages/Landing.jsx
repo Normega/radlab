@@ -29,7 +29,7 @@ export default function Landing({ session }) {
         <div style={S.heroBrand}>
           <img src="/RADlab_Logo.svg" height="80" alt="" aria-hidden="true" style={S.heroLogo} />
           <h1 style={S.h1}>
-            Regulatory &amp; Affective<br />
+            <span style={{ whiteSpace: 'nowrap' }}>Regulatory &amp; Affective</span><br />
             <em style={{ fontStyle: 'italic', color: 'var(--pk)' }}>Dynamics Lab</em>
           </h1>
         </div>
