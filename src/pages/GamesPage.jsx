@@ -48,6 +48,13 @@ export default function GamesPage({ session, firstContactComplete }) {
             to="/games/pond-watch"
           />
 
+          <GameCard
+            title="Owl Barn"
+            badge="Hearing · Rhythm · Strategy"
+            desc="Cross a dark barn while owls hoot overhead. Read the silence — 3 taps or 8."
+            to="/games/owl-barn"
+          />
+
           {/* Ebb & Flow: locked until First Contact is complete */}
           <GameCard
             title="Ebb &amp; Flow"

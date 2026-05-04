@@ -11,6 +11,7 @@ import GamesPage    from './pages/GamesPage'
 import ProfilePage  from './pages/ProfilePage'
 import Nav          from './components/Nav'
 import PondWatch    from './games/PondWatch'
+import OwlBarn      from './games/OwlBarn'
 import AvatarEditor  from './components/Avatar/AvatarEditor'
 import EbbAndFlow    from './games/EbbAndFlow/EbbAndFlow'
 import FirstContact  from './games/FirstContact/FirstContact'
@@ -147,6 +148,13 @@ export default function App() {
               <EbbFlowGuard firstContactComplete={firstContactComplete}>
                 <EbbAndFlow session={session} onSessionComplete={saveEbbFlowSession} />
               </EbbFlowGuard>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/games/owl-barn" element={
+            <ProtectedRoute session={session} hasAvatar={hasAvatar}>
+              <Nav session={session} />
+              <OwlBarn userId={session?.user?.id} studyId={null} />
             </ProtectedRoute>
           } />
 
