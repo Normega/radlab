@@ -21,6 +21,22 @@ export default function GamesPage({ session, firstContactComplete }) {
 
         <div style={S.grid}>
 
+          {/* Still Water — emotion check-in, always available */}
+          <GameCard
+            title="Still Water"
+            badge="Emotion check-in"
+            desc="How are you arriving? Two quick questions map your mood on the feeling wheel."
+            to="/games/still-water"
+          />
+
+          {/* Face Read — expression recognition game */}
+          <GameCard
+            title="Face Read"
+            badge="Emotion recognition"
+            desc="A face animates into an expression. Can you name the feeling — and how strong it is?"
+            to="/games/face-read"
+          />
+
           {/* First Contact / Deeper Contact card — conditional on onboarding status */}
           {!loading && !isComplete && (
             <GameCard

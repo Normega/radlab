@@ -17,6 +17,8 @@ import AvatarEditor  from './components/Avatar/AvatarEditor'
 import EbbAndFlow    from './games/EbbAndFlow/EbbAndFlow'
 import FirstContact  from './games/FirstContact/FirstContact'
 import AuraFilterDef from './components/AuraFilterDef'
+import StillWater   from './games/StillWater/StillWater'
+import FaceRead     from './games/FaceRead/FaceRead'
 
 const queryClient = new QueryClient()
 
@@ -157,6 +159,18 @@ export default function App() {
             <ProtectedRoute session={session} hasAvatar={hasAvatar}>
               <Nav session={session} />
               <OwlBarn userId={session?.user?.id} studyId={null} />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/games/still-water" element={
+            <ProtectedRoute session={session} hasAvatar={hasAvatar}>
+              <StillWater session={session} />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/games/face-read" element={
+            <ProtectedRoute session={session} hasAvatar={hasAvatar}>
+              <FaceRead session={session} />
             </ProtectedRoute>
           } />
 

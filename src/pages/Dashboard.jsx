@@ -35,6 +35,20 @@ export default function Dashboard({ session }) {
         <p style={S.secLabel}>// Games</p>
         <div style={S.gameGrid}>
           <GameCard
+            title="Still Water"
+            tag="Emotion check-in"
+            desc="How are you arriving? Two quick questions map your current mood on the feeling wheel."
+            status="Check in →"
+            to="/games/still-water"
+          />
+          <GameCard
+            title="Face Read"
+            tag="Emotion recognition"
+            desc="A face shifts into an expression. Name the feeling and its intensity across 10 trials."
+            status="Play now →"
+            to="/games/face-read"
+          />
+          <GameCard
             title="Pond Watch"
             tag="Go / No-Go · Reaction time"
             desc="Watch a pond. Hit spacebar when a duck surfaces. Withhold for everything else. Measures reaction time, sensitivity (d′), and response bias."
