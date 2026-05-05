@@ -49,6 +49,13 @@ export default function Dashboard({ session }) {
             to="/games/face-read"
           />
           <GameCard
+            title="Drift"
+            tag="Time perception · Felt duration"
+            desc="A tone marks an interval. Reproduce it from felt sense. Your ratio reveals where your nervous system is."
+            status="Play now →"
+            to="/games/drift"
+          />
+          <GameCard
             title="Pond Watch"
             tag="Go / No-Go · Reaction time"
             desc="Watch a pond. Hit spacebar when a duck surfaces. Withhold for everything else. Measures reaction time, sensitivity (d′), and response bias."

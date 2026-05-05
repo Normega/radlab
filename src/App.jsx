@@ -19,6 +19,7 @@ import FirstContact  from './games/FirstContact/FirstContact'
 import AuraFilterDef from './components/AuraFilterDef'
 import StillWater   from './games/StillWater/StillWater'
 import FaceRead     from './games/FaceRead/FaceRead'
+import Drift        from './games/Drift/Drift'
 
 const queryClient = new QueryClient()
 
@@ -171,6 +172,12 @@ export default function App() {
           <Route path="/games/face-read" element={
             <ProtectedRoute session={session} hasAvatar={hasAvatar}>
               <FaceRead session={session} />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/games/drift" element={
+            <ProtectedRoute session={session} hasAvatar={hasAvatar}>
+              <Drift session={session} />
             </ProtectedRoute>
           } />
 

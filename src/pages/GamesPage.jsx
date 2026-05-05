@@ -37,6 +37,14 @@ export default function GamesPage({ session, firstContactComplete }) {
             to="/games/face-read"
           />
 
+          {/* Drift — time perception */}
+          <GameCard
+            title="Drift"
+            badge="Time perception · Felt duration"
+            desc="A tone marks an interval. A face breathes while you wait. Then you reproduce the duration from felt sense alone."
+            to="/games/drift"
+          />
+
           {/* First Contact / Deeper Contact card — conditional on onboarding status */}
           {!loading && !isComplete && (
             <GameCard
