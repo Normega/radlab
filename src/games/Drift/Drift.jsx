@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import Nav from '../../components/Nav'
 import { supabase } from '../../lib/supabase'
 import { EMOTIONS } from '../StillWater/constants'
-import ExpressiveAvatar from '../StillWater/ExpressiveAvatar'
+import ContactAvatar from '../FirstContact/components/ContactAvatar'
 
 /* ── SQL (run once in Supabase) ───────────────────────────────────────────────
 
@@ -50,7 +50,7 @@ function shuffle(arr) {
 function buildTrials() {
   return shuffle(TARGETS_MS).map(ms => {
     const e = EMOTIONS[Math.floor(Math.random() * EMOTIONS.length)]
-    return { targetMs: ms, emotionId: e.id, emotionName: e.name, zone: 0, pupilTier: e.pupilTier, glowOuter: e.outer, valence: e.valence, arousal: e.arousal }
+    return { targetMs: ms, emotionId: e.id, emotionName: e.name, zone: 0 }
   })
 }
 
@@ -170,8 +170,18 @@ function IntroScreen({ onStart }) {
   )
 }
 
-function WatchingScreen({ trial, trialIdx, totalTrials, breathIntensity, isGap }) {
-  const glow = breathIntensity > 0.1 && !isGap ? trial.glowOuter : null
+function WatchingScreen({ trialIdx, totalTrials, isGap, skinColor, eyeColor, species, getPhase }) {
+  const avatarCtrl = useRef(null)
+
+  useEffect(() => {
+    if (!avatarCtrl.current) return
+    if (isGap) {
+      avatarCtrl.current.resetToNeutral()
+    } else {
+      avatarCtrl.current.resumeAnimation()
+    }
+  }, [isGap])
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18 }}>
       <ProgressPips current={trialIdx} total={totalTrials} />
@@ -180,13 +190,11 @@ function WatchingScreen({ trial, trialIdx, totalTrials, breathIntensity, isGap }
         <h2 style={S.phase}>{isGap ? 'Now you…' : 'Listen and feel.'}</h2>
       </div>
       <div style={S.faceCard}>
-        <ExpressiveAvatar
+        <ContactAvatar
           size={160}
-          valence={isGap ? 0 : trial.valence}
-          arousal={isGap ? 0 : trial.arousal}
-          intensityT={isGap ? 0 : breathIntensity}
-          pupilTier={trial.pupilTier}
-          glowColor={glow}
+          skinColor={skinColor} eyeColor={eyeColor} species={species}
+          getPhase={getPhase}
+          controlRef={avatarCtrl}
         />
       </div>
       <p style={S.hint}>{isGap ? 'get ready…' : '● listening'}</p>
@@ -194,7 +202,7 @@ function WatchingScreen({ trial, trialIdx, totalTrials, breathIntensity, isGap }
   )
 }
 
-function ReproduceScreen({ trial, trialIdx, totalTrials, isActive, ringScale, onPress }) {
+function ReproduceScreen({ trialIdx, totalTrials, isActive, ringScale, onPress, skinColor, eyeColor, species, getPhase }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18 }}>
       <ProgressPips current={trialIdx} total={totalTrials} />
@@ -203,9 +211,13 @@ function ReproduceScreen({ trial, trialIdx, totalTrials, isActive, ringScale, on
         <h2 style={S.phase}>{isActive ? 'Feel the time…' : 'Your turn.'}</h2>
       </div>
 
-      {/* Neutral avatar */}
+      {/* Neutral avatar — ContactAvatar starts paused so it shows at rest */}
       <div style={S.faceCard}>
-        <ExpressiveAvatar size={160} valence={0} arousal={0} intensityT={0} pupilTier={1} />
+        <ContactAvatar
+          size={160}
+          skinColor={skinColor} eyeColor={eyeColor} species={species}
+          getPhase={getPhase}
+        />
       </div>
 
       {/* Tap button with pulse ring */}
@@ -357,23 +369,35 @@ export default function Drift({ session }) {
   const [phase,       setPhase]       = useState('intro')
   const [trials,      setTrials]      = useState([])
   const [trialIdx,    setTrialIdx]    = useState(0)
-  const [breathT,     setBreathT]     = useState(0)
+  const [avatar,      setAvatar]      = useState({ skinColor: '#c8a882', eyeColor: '#5a3e2b', species: 'human' })
   const [repStart,    setRepStart]    = useState(null)
   const [repDuration, setRepDuration] = useState(null)
   const [results,     setResults]     = useState([])
   const [ringScale,   setRingScale]   = useState(1)
 
-  const breathRafRef  = useRef(null)
-  const ringRafRef    = useRef(null)
-  const watchTimerRef = useRef(null)
-  const gapTimerRef   = useRef(null)
-  const sessionIdRef  = useRef(null)
-  const resultsRef    = useRef([])
+  const breathStartRef = useRef(Date.now())
+  const ringRafRef     = useRef(null)
+  const watchTimerRef  = useRef(null)
+  const gapTimerRef    = useRef(null)
+  const sessionIdRef   = useRef(null)
+  const resultsRef     = useRef([])
 
   const userId = session?.user?.id ?? null
   const trial  = trials[trialIdx] ?? null
 
-  const breathIntensity = Math.max(0, Math.sin(breathT * Math.PI)) * 0.22
+  const getPhase = useCallback(
+    () => ((Date.now() - breathStartRef.current) % BREATH_CYCLE) / BREATH_CYCLE,
+    []
+  )
+
+  // Fetch profile avatar
+  useEffect(() => {
+    if (!userId) return
+    supabase.from('avatars').select('skin_color, eye_color, species').eq('user_id', userId).maybeSingle()
+      .then(({ data }) => {
+        if (data) setAvatar({ skinColor: data.skin_color, eyeColor: data.eye_color, species: data.species })
+      })
+  }, [userId])
 
   function startGame() {
     getCtx()  // warm up AudioContext in the click handler (iOS policy)
@@ -384,33 +408,22 @@ export default function Drift({ session }) {
     setTrialIdx(0)
     setRepStart(null)
     setRepDuration(null)
+    breathStartRef.current = Date.now()
     setPhase('watching')
     startSession(userId).then(id => { sessionIdRef.current = id })
   }
 
-  // Watching: tone + breath animation + interval timer
+  // Watching: tone + interval timer (ContactAvatar drives its own breath animation)
   useEffect(() => {
     if (phase !== 'watching' || !trial) return
     playTone(220, 1.8)
 
-    const t0 = performance.now()
-    const breathTick = now => {
-      setBreathT(((now - t0) % BREATH_CYCLE) / BREATH_CYCLE)
-      breathRafRef.current = requestAnimationFrame(breathTick)
-    }
-    breathRafRef.current = requestAnimationFrame(breathTick)
-
     watchTimerRef.current = setTimeout(() => {
-      cancelAnimationFrame(breathRafRef.current)
-      setBreathT(0)
       playTone(370, 1.2)
       setPhase('gap')
     }, trial.targetMs)
 
-    return () => {
-      cancelAnimationFrame(breathRafRef.current)
-      clearTimeout(watchTimerRef.current)
-    }
+    return () => clearTimeout(watchTimerRef.current)
   }, [phase, trialIdx]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Gap: brief pause then open reproduce
@@ -469,7 +482,6 @@ export default function Drift({ session }) {
   }
 
   useEffect(() => () => {
-    cancelAnimationFrame(breathRafRef.current)
     cancelAnimationFrame(ringRafRef.current)
     clearTimeout(watchTimerRef.current)
     clearTimeout(gapTimerRef.current)
@@ -484,15 +496,19 @@ export default function Drift({ session }) {
 
         {(phase === 'watching' || phase === 'gap') && trial && (
           <WatchingScreen
-            trial={trial} trialIdx={trialIdx} totalTrials={trials.length}
-            breathIntensity={breathIntensity} isGap={phase === 'gap'}
+            trialIdx={trialIdx} totalTrials={trials.length}
+            isGap={phase === 'gap'}
+            skinColor={avatar.skinColor} eyeColor={avatar.eyeColor} species={avatar.species}
+            getPhase={getPhase}
           />
         )}
 
         {phase === 'reproducing' && trial && (
           <ReproduceScreen
-            trial={trial} trialIdx={trialIdx} totalTrials={trials.length}
+            trialIdx={trialIdx} totalTrials={trials.length}
             isActive={!!repStart} ringScale={ringScale} onPress={handleReproduce}
+            skinColor={avatar.skinColor} eyeColor={avatar.eyeColor} species={avatar.species}
+            getPhase={getPhase}
           />
         )}
 
