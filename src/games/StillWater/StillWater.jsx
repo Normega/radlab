@@ -187,6 +187,7 @@ function RevealScreen({ composite, phase1Sel, phase2Sel, animProgress, onReset }
   const { cx, cy, label, mag, sectorId, zone } = composite
   const p  = animProgress
   const em = sectorId >= 0 ? EMOTIONS[sectorId] : null
+  const zoneIntensity = zone >= 2 ? 1 : zone === 1 ? 2/3 : 1/3
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, width: '100%', maxWidth: 360 }}>
@@ -211,7 +212,7 @@ function RevealScreen({ composite, phase1Sel, phase2Sel, animProgress, onReset }
           <div style={S.faceCard}>
             <ExpressiveAvatar size={136}
               valence={(em ? em.valence : cx) * p} arousal={(em ? em.arousal : cy) * p}
-              intensityT={Math.min(1, mag * p)} pupilTier={p > 0.5 ? (em?.pupilTier ?? 1) : 1}
+              intensityT={zoneIntensity * p} pupilTier={p > 0.5 ? (em?.pupilTier ?? 1) : 1}
               glowColor={p > 0.75 && em ? em.outer : null} />
           </div>
           {p >= 1 && (
@@ -252,7 +253,11 @@ export default function StillWater({ session }) {
     const mag = Math.sqrt(cx * cx + cy * cy)
     const label = getCompositeLabel(cx, cy)
     const sectorId = LABEL_TO_ID[label] ?? -1
-    const zone = mag < 0.36 ? 0 : mag < 0.70 ? 1 : 2
+    // Zone = average of the two zone picks (0=mild,1=moderate,2=strong)
+    // Direction comes from the angle; intensity from how strong each pick was.
+    const p1Zone = p1Sel.neutral ? 0 : (p1Sel.zone ?? 0)
+    const p2Zone = p2Sel.neutral ? 0 : (p2Sel.zone ?? 0)
+    const zone   = label === 'neutral' ? 0 : Math.round((p1Zone + p2Zone) / 2)
     const ambX = Math.abs(p1Sel.x - p2Sel.x), ambY = Math.abs(p1Sel.y - p2Sel.y)
     const ambMag = Math.sqrt((p1Sel.x - p2Sel.x) ** 2 + (p1Sel.y - p2Sel.y) ** 2)
     return { cx, cy, mag, label, sectorId, zone, ambX, ambY, ambMag }
