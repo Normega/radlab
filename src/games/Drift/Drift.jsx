@@ -195,6 +195,7 @@ function WatchingScreen({ trialIdx, totalTrials, isGap, skinColor, eyeColor, spe
           skinColor={skinColor} eyeColor={eyeColor} species={species}
           getPhase={getPhase}
           controlRef={avatarCtrl}
+          isFirstContact={false}
         />
       </div>
       <p style={S.hint}>{isGap ? 'get ready…' : '● listening'}</p>
@@ -217,6 +218,7 @@ function ReproduceScreen({ trialIdx, totalTrials, isActive, ringScale, onPress, 
           size={160}
           skinColor={skinColor} eyeColor={eyeColor} species={species}
           getPhase={getPhase}
+          isFirstContact={false}
         />
       </div>
 
@@ -375,12 +377,13 @@ export default function Drift({ session }) {
   const [results,     setResults]     = useState([])
   const [ringScale,   setRingScale]   = useState(1)
 
-  const breathStartRef = useRef(Date.now())
-  const ringRafRef     = useRef(null)
-  const watchTimerRef  = useRef(null)
-  const gapTimerRef    = useRef(null)
-  const sessionIdRef   = useRef(null)
-  const resultsRef     = useRef([])
+  const breathStartRef  = useRef(Date.now())
+  const ringRafRef      = useRef(null)
+  const watchTimerRef   = useRef(null)
+  const gapTimerRef     = useRef(null)
+  const sessionIdRef    = useRef(null)
+  const resultsRef      = useRef([])
+  const keyHandlerRef   = useRef(null)
 
   const userId = session?.user?.id ?? null
   const trial  = trials[trialIdx] ?? null
@@ -480,6 +483,21 @@ export default function Drift({ session }) {
       setPhase('summary')
     }
   }
+
+  // Keep keyHandlerRef current so the listener never goes stale
+  keyHandlerRef.current = (e) => {
+    if (e.code !== 'Space') return
+    e.preventDefault()
+    if (phase === 'intro')       startGame()
+    if (phase === 'reproducing') handleReproduce()
+    if (phase === 'feedback')    advanceFromFeedback()
+  }
+
+  useEffect(() => {
+    function onKey(e) { keyHandlerRef.current?.(e) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
 
   useEffect(() => () => {
     cancelAnimationFrame(ringRafRef.current)
