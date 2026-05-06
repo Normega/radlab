@@ -170,24 +170,27 @@ function IntroScreen({ onStart }) {
   )
 }
 
-function WatchingScreen({ trialIdx, totalTrials, isGap, skinColor, eyeColor, species, getPhase }) {
+function WatchingScreen({ trialIdx, totalTrials, mode, skinColor, eyeColor, species, getPhase }) {
   const avatarCtrl = useRef(null)
 
   useEffect(() => {
     if (!avatarCtrl.current) return
-    if (isGap) {
-      avatarCtrl.current.resetToNeutral()
-    } else {
+    if (mode === 'watching') {
       avatarCtrl.current.resumeAnimation()
+    } else {
+      avatarCtrl.current.resetToNeutral()
     }
-  }, [isGap])
+  }, [mode])
+
+  const headingText = mode === 'watching' ? 'Listen and feel.' : mode === 'gap' ? 'Now you…' : ''
+  const hintText    = mode === 'watching' ? '● listening' : mode === 'gap' ? 'get ready…' : '…'
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18 }}>
       <ProgressPips current={trialIdx} total={totalTrials} />
       <div style={{ textAlign: 'center' }}>
         <p style={S.eyebrow}>Interval {trialIdx + 1} of {totalTrials}</p>
-        <h2 style={S.phase}>{isGap ? 'Now you…' : 'Listen and feel.'}</h2>
+        <h2 style={S.phase}>{headingText}</h2>
       </div>
       <div style={S.faceCard}>
         <ContactAvatar
@@ -198,7 +201,7 @@ function WatchingScreen({ trialIdx, totalTrials, isGap, skinColor, eyeColor, spe
           isFirstContact={false}
         />
       </div>
-      <p style={S.hint}>{isGap ? 'get ready…' : '● listening'}</p>
+      <p style={S.hint}>{hintText}</p>
     </div>
   )
 }
@@ -379,6 +382,7 @@ export default function Drift({ session }) {
 
   const breathStartRef  = useRef(Date.now())
   const ringRafRef      = useRef(null)
+  const readyTimerRef   = useRef(null)
   const watchTimerRef   = useRef(null)
   const gapTimerRef     = useRef(null)
   const sessionIdRef    = useRef(null)
@@ -411,15 +415,24 @@ export default function Drift({ session }) {
     setTrialIdx(0)
     setRepStart(null)
     setRepDuration(null)
-    breathStartRef.current = Date.now()
-    setPhase('watching')
+    setPhase('ready')
     startSession(userId).then(id => { sessionIdRef.current = id })
   }
 
-  // Watching: tone + interval timer (ContactAvatar drives its own breath animation)
+  // Ready: 1 s pause → start tone → begin watching
+  useEffect(() => {
+    if (phase !== 'ready') return
+    readyTimerRef.current = setTimeout(() => {
+      breathStartRef.current = Date.now()
+      playTone(220, 1.8)
+      setPhase('watching')
+    }, 1000)
+    return () => clearTimeout(readyTimerRef.current)
+  }, [phase, trialIdx]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Watching: interval timer — ContactAvatar drives its own breath animation
   useEffect(() => {
     if (phase !== 'watching' || !trial) return
-    playTone(220, 1.8)
 
     watchTimerRef.current = setTimeout(() => {
       playTone(370, 1.2)
@@ -474,7 +487,7 @@ export default function Drift({ session }) {
     setRepDuration(null)
     if (trialIdx + 1 < trials.length) {
       setTrialIdx(i => i + 1)
-      setPhase('watching')
+      setPhase('ready')
     } else {
       const all       = resultsRef.current
       const meanRatio = all.reduce((s, r) => s + r.ratio, 0) / all.length
@@ -501,6 +514,7 @@ export default function Drift({ session }) {
 
   useEffect(() => () => {
     cancelAnimationFrame(ringRafRef.current)
+    clearTimeout(readyTimerRef.current)
     clearTimeout(watchTimerRef.current)
     clearTimeout(gapTimerRef.current)
   }, [])
@@ -512,10 +526,10 @@ export default function Drift({ session }) {
 
         {phase === 'intro' && <IntroScreen onStart={startGame} />}
 
-        {(phase === 'watching' || phase === 'gap') && trial && (
+        {(phase === 'ready' || phase === 'watching' || phase === 'gap') && trial && (
           <WatchingScreen
             trialIdx={trialIdx} totalTrials={trials.length}
-            isGap={phase === 'gap'}
+            mode={phase}
             skinColor={avatar.skinColor} eyeColor={avatar.eyeColor} species={avatar.species}
             getPhase={getPhase}
           />
