@@ -33,8 +33,8 @@ export function calcExpr(valence = 0, arousal = 0, intensityT = 1, pupilTier = 1
 
   const cornerLX   = 82  - au20 * 10
   const cornerRX   = 118 + au20 * 10
-  const cornerY    = 145 - au12 * 12 + au15 * 6  + au20 * intensityT * 10
-  const mouthCtrlY = 149 + au12 * 12 - au15 * 8  - au20 * intensityT * 7
+  const cornerY    = 145 - au12 * 12 + au15 * 6  + au20 * intensityT * 6
+  const mouthCtrlY = 149 + au12 * 12 - au15 * 8  - au20 * intensityT * 4
 
   const PT = [[5.5, 5.5, 5.5], [5.5, 5.5, 7.5], [5.5, 7.5, 9.5]]
   const iz     = Math.min(2, Math.max(0, Math.round(intensityT * 3) - 1))

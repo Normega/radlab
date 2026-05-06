@@ -209,7 +209,8 @@ function RevealScreen({ composite, phase1Sel, phase2Sel, animProgress, onReset }
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: 156 }}>
           <div style={S.faceCard}>
-            <ExpressiveAvatar size={136} valence={cx * p} arousal={cy * p}
+            <ExpressiveAvatar size={136}
+              valence={(em ? em.valence : cx) * p} arousal={(em ? em.arousal : cy) * p}
               intensityT={Math.min(1, mag * p)} pupilTier={p > 0.5 ? (em?.pupilTier ?? 1) : 1}
               glowColor={p > 0.75 && em ? em.outer : null} />
           </div>
@@ -251,7 +252,7 @@ export default function StillWater({ session }) {
     const mag = Math.sqrt(cx * cx + cy * cy)
     const label = getCompositeLabel(cx, cy)
     const sectorId = LABEL_TO_ID[label] ?? -1
-    const zone = mag < 0.33 ? 0 : mag < 0.67 ? 1 : 2
+    const zone = mag < 0.36 ? 0 : mag < 0.70 ? 1 : 2
     const ambX = Math.abs(p1Sel.x - p2Sel.x), ambY = Math.abs(p1Sel.y - p2Sel.y)
     const ambMag = Math.sqrt((p1Sel.x - p2Sel.x) ** 2 + (p1Sel.y - p2Sel.y) ** 2)
     return { cx, cy, mag, label, sectorId, zone, ambX, ambY, ambMag }

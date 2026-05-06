@@ -85,8 +85,8 @@ export default function ExpressiveAvatar({
         <ellipse cx="100" cy={f(ex.cornerY + 2)} rx={f(8 + ex.au25 * 6)} ry={f(ex.au25 * 2.5)} fill={darken(mC, 15)} opacity={Math.min(0.7, ex.au25 * 0.9)} />
       )}
       {ex.au27 > 0.28 && (() => {
-        const cy2 = ex.cornerY + 4 + ex.au27 * 6
-        const rx = 8 + ex.au27 * 11, ry = 3 + ex.au27 * 12
+        const cy2 = ex.cornerY + 2 + ex.au27 * 4
+        const rx = 8 + ex.au27 * 11, ry = 3 + ex.au27 * 10
         return <>
           <ellipse cx="100" cy={cy2} rx={rx} ry={ry} fill={darken(mC, 20)} opacity={Math.min(1, ex.au27 * 1.5)} />
           <ellipse cx="100" cy={cy2} rx={rx} ry={ry} fill="none" stroke={mC} strokeWidth="1.5" opacity={Math.min(1, ex.au27 * 1.5)} />
