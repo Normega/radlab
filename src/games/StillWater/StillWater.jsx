@@ -6,30 +6,6 @@ import { EMOTIONS, INTENSITY_LABELS, computeRating, getCompositeLabel, LABEL_TO_
          CX, CY, INNER_R, d2r } from './constants'
 import WheelSVG from './WheelSVG'
 import ExpressiveAvatar from './ExpressiveAvatar'
-import ContactAvatar from '../FirstContact/components/ContactAvatar'
-
-// ─── AUDIO ────────────────────────────────────────────────────────────────────
-
-let _ctx = null
-function getCtx() {
-  if (!_ctx) _ctx = new (window.AudioContext || window.webkitAudioContext)()
-  if (_ctx.state === 'suspended') _ctx.resume()
-  return _ctx
-}
-function playTone(freq, decaySec) {
-  try {
-    const ctx  = getCtx()
-    const osc  = ctx.createOscillator()
-    const gain = ctx.createGain()
-    osc.connect(gain); gain.connect(ctx.destination)
-    osc.type = 'sine'; osc.frequency.value = freq
-    const t = ctx.currentTime
-    gain.gain.setValueAtTime(0, t)
-    gain.gain.linearRampToValueAtTime(0.10, t + 0.12)
-    gain.gain.exponentialRampToValueAtTime(0.001, t + decaySec)
-    osc.start(t); osc.stop(t + decaySec + 0.05)
-  } catch (_) {}
-}
 
 // ─── SAVE ─────────────────────────────────────────────────────────────────────
 
@@ -122,15 +98,9 @@ function IntroScreen({ onStart }) {
 
 // ─── RATING SCREEN ────────────────────────────────────────────────────────────
 
-function RatingScreen({ phase, activeIds, labels, onConfirm, skinColor, eyeColor, species, getPhase }) {
+function RatingScreen({ phase, activeIds, labels, onConfirm }) {
   const [sel, setSel] = useState(null)
   const [hov, setHov] = useState(null)
-  const avatarCtrl = useRef(null)
-
-  // Start breathing as soon as ContactAvatar has built its SVG
-  useEffect(() => {
-    if (avatarCtrl.current) avatarCtrl.current.resumeAnimation()
-  }, [])
 
   const handleZone = useCallback(({ emotion, zone }) => {
     const { rating, x, y } = computeRating(phase, emotion.id, zone)
@@ -138,6 +108,13 @@ function RatingScreen({ phase, activeIds, labels, onConfirm, skinColor, eyeColor
   }, [phase])
 
   const handleNeutral = useCallback(() => setSel({ emotionId: null, zone: null, rating: 4, x: 0, y: 0, neutral: true }), [])
+
+  const faceEmotion   = sel && sel.emotionId != null ? EMOTIONS.find(e => e.id === sel.emotionId) : null
+  const faceValence   = faceEmotion ? faceEmotion.valence  : 0
+  const faceArousal   = faceEmotion ? faceEmotion.arousal  : 0
+  const faceIntensityT = sel && !sel.neutral ? (sel.zone + 1) / 3 : 0
+  const facePupilTier = faceEmotion?.pupilTier ?? 1
+  const faceGlow      = faceEmotion?.outer ?? null
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, width: '100%', maxWidth: 520 }}>
@@ -157,16 +134,11 @@ function RatingScreen({ phase, activeIds, labels, onConfirm, skinColor, eyeColor
         <WheelSVG activeIds={activeIds} selection={sel} hovered={hov}
           onHover={setHov} onZoneClick={handleZone} onNeutral={handleNeutral} />
 
-        {/* Breathing avatar */}
+        {/* Live face */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: 156 }}>
           <div style={S.faceCard}>
-            <ContactAvatar
-              size={136}
-              skinColor={skinColor} eyeColor={eyeColor} species={species}
-              getPhase={getPhase}
-              isFirstContact={false} isComplete={true}
-              controlRef={avatarCtrl}
-            />
+            <ExpressiveAvatar size={136} valence={faceValence} arousal={faceArousal}
+              intensityT={faceIntensityT} pupilTier={facePupilTier} glowColor={faceGlow} />
             <div style={{ textAlign: 'center', minHeight: 30, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
               {sel ? (<>
                 <div style={{ fontFamily: 'DM Serif Display,serif', fontSize: 14, color: '#1c1c1e', fontWeight: 400 }}>
@@ -211,7 +183,7 @@ function RatingScreen({ phase, activeIds, labels, onConfirm, skinColor, eyeColor
 
 // ─── REVEAL SCREEN ────────────────────────────────────────────────────────────
 
-function RevealScreen({ composite, phase1Sel, phase2Sel, animProgress, onReset, skinColor, eyeColor }) {
+function RevealScreen({ composite, phase1Sel, phase2Sel, animProgress, onReset }) {
   const { cx, cy, label, mag, sectorId, zone } = composite
   const p  = animProgress
   const em = sectorId >= 0 ? EMOTIONS[sectorId] : null
@@ -239,8 +211,7 @@ function RevealScreen({ composite, phase1Sel, phase2Sel, animProgress, onReset, 
           <div style={S.faceCard}>
             <ExpressiveAvatar size={136} valence={cx * p} arousal={cy * p}
               intensityT={Math.min(1, mag * p)} pupilTier={p > 0.5 ? (em?.pupilTier ?? 1) : 1}
-              glowColor={p > 0.75 && em ? em.outer : null}
-              skinColor={skinColor} eyeColor={eyeColor} />
+              glowColor={p > 0.75 && em ? em.outer : null} />
           </div>
           {p >= 1 && (
             <div style={S.statsCard}>
@@ -270,31 +241,9 @@ export default function StillWater({ session }) {
   const [p1Sel,  setP1Sel]  = useState(null)
   const [p2Sel,  setP2Sel]  = useState(null)
   const [anim,   setAnim]   = useState(0)
-  const [avatar, setAvatar] = useState({ skinColor: '#FDBCB4', eyeColor: '#4A90D9', species: 'human' })
-  const animRef      = useRef(null)
-  const breathStart  = useRef(Date.now())
-  const getPhase     = useCallback(() => ((Date.now() - breathStart.current) % 4000) / 4000, [])
+  const animRef = useRef(null)
 
   const userId = session?.user?.id ?? null
-
-  // Fetch profile avatar colours
-  useEffect(() => {
-    if (!userId) return
-    supabase.from('avatars').select('skin_color, eye_color, species').eq('user_id', userId).maybeSingle()
-      .then(({ data }) => {
-        if (data) setAvatar({
-          skinColor: data.skin_color || '#FDBCB4',
-          eyeColor:  data.eye_color  || '#4A90D9',
-          species:   data.species    || 'human',
-        })
-      })
-  }, [userId])
-
-  // Tones: start of each rating phase, end on reveal
-  useEffect(() => {
-    if (phase === 'phase1' || phase === 'phase2') playTone(220, 1.5)
-    else if (phase === 'reveal')                  playTone(370, 1.2)
-  }, [phase])
 
   const composite = useMemo(() => {
     if (!p1Sel || !p2Sel) return null
@@ -338,23 +287,20 @@ export default function StillWater({ session }) {
     <div style={{ background: '#FCF0F5', minHeight: '100vh' }}>
       <Nav session={session} />
       <div style={{ minHeight: 'calc(100vh - 57px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 16px', userSelect: 'none' }}>
-        {phase === 'intro'   && <IntroScreen onStart={() => { getCtx(); setPhase('phase1') }} />}
+        {phase === 'intro'   && <IntroScreen onStart={() => setPhase('phase1')} />}
         {phase === 'phase1'  && (
           <RatingScreen phase={1} activeIds={[1, 5]}
             labels={{ left: 'Sad', right: 'Excited', question: 'How good or energised do you feel?' }}
-            onConfirm={s => { setP1Sel(s); setPhase('phase2') }}
-            skinColor={avatar.skinColor} eyeColor={avatar.eyeColor} species={avatar.species} getPhase={getPhase} />
+            onConfirm={s => { setP1Sel(s); setPhase('phase2') }} />
         )}
         {phase === 'phase2'  && (
           <RatingScreen phase={2} activeIds={[3, 7]}
             labels={{ left: 'Calm', right: 'Tense', question: 'How settled or on-edge do you feel?' }}
-            onConfirm={s => { setP2Sel(s); setPhase('reveal') }}
-            skinColor={avatar.skinColor} eyeColor={avatar.eyeColor} species={avatar.species} getPhase={getPhase} />
+            onConfirm={s => { setP2Sel(s); setPhase('reveal') }} />
         )}
         {phase === 'reveal' && composite && (
           <RevealScreen composite={composite} phase1Sel={p1Sel} phase2Sel={p2Sel}
-            animProgress={anim} onReset={handleReset}
-            skinColor={avatar.skinColor} eyeColor={avatar.eyeColor} />
+            animProgress={anim} onReset={handleReset} />
         )}
       </div>
     </div>
