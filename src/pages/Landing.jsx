@@ -40,7 +40,7 @@ export default function Landing({ session }) {
 
       {/* HUB CARDS */}
       <section style={S.hubSection}>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3" style={{ gap: 20, maxWidth: 1080 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 20, maxWidth: 1080 }}>
           <HubCard
             tag="Game Platform"
             title="Come, See"
@@ -66,6 +66,14 @@ export default function Landing({ session }) {
             cta="Visit the lab →"
             href="#"
           />
+          <HubCard
+            tag="Book"
+            title="Better in Every Sense"
+            desc="Neuroscientist Dr. Norman Farb and psychologist Dr. Zindel Segal reveal why we get emotionally stuck — and how the neuroscience of sensation provides the unexpected key to getting unstuck. A practical guide to Sense Foraging: escaping the House of Habit to reclaim resilience, wellbeing, and creativity."
+            cta="Read more →"
+            href="https://www.betterineverysense.com"
+            newTab
+          />
         </div>
       </section>
 
@@ -84,7 +92,7 @@ export default function Landing({ session }) {
 
 // ─── HUB CARD ────────────────────────────────────────────────────────────────
 
-function HubCard({ tag, title, desc, chips, cta, href, internal }) {
+function HubCard({ tag, title, desc, chips, cta, href, internal, newTab }) {
   const [hovered, setHovered] = useState(false)
 
   const cardStyle = {
@@ -96,7 +104,9 @@ function HubCard({ tag, title, desc, chips, cta, href, internal }) {
   }
 
   const El       = internal ? Link : 'a'
-  const linkProp = internal ? { to: href } : { href }
+  const linkProp = internal
+    ? { to: href }
+    : { href, ...(newTab ? { target: '_blank', rel: 'noopener noreferrer' } : {}) }
 
   return (
     <El {...linkProp} style={cardStyle}
@@ -106,15 +116,17 @@ function HubCard({ tag, title, desc, chips, cta, href, internal }) {
       <span style={{ ...S.cardTag,   color: hovered ? '#f4a8cb' : 'var(--pk)' }}>{tag}</span>
       <h2  style={{ ...S.cardTitle, color: hovered ? '#fff'    : 'var(--tx)' }}>{title}</h2>
       <p   style={{ ...S.cardDesc,  color: hovered ? 'rgba(255,255,255,0.48)' : 'var(--gy)' }}>{desc}</p>
-      <div style={S.chips}>
-        {chips.map(c => (
-          <span key={c} style={{
-            ...S.chip,
-            background: hovered ? 'rgba(240,104,164,0.15)' : 'var(--bgp)',
-            color:      hovered ? '#f4a8cb' : 'var(--pk)',
-          }}>{c}</span>
-        ))}
-      </div>
+      {chips?.length > 0 && (
+        <div style={S.chips}>
+          {chips.map(c => (
+            <span key={c} style={{
+              ...S.chip,
+              background: hovered ? 'rgba(240,104,164,0.15)' : 'var(--bgp)',
+              color:      hovered ? '#f4a8cb' : 'var(--pk)',
+            }}>{c}</span>
+          ))}
+        </div>
+      )}
       <p style={{ ...S.cardCta, color: hovered ? '#f4a8cb' : 'var(--pk)' }}>{cta}</p>
     </El>
   )
