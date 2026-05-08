@@ -22,15 +22,15 @@ export default function Landing({ session }) {
 
       {/* HERO */}
       <section style={S.hero}>
-        <p style={S.eyebrow}>
+        <p className="hidden md:block" style={S.eyebrow}>
           <a href="https://www.utoronto.ca" target="_blank" rel="noopener noreferrer" style={S.eyebrowLink}>University of Toronto</a>
           &nbsp;·&nbsp; Department of Psychology
         </p>
-        <div style={S.heroBrand}>
+        <div className="flex flex-col items-start md:flex-row md:items-center" style={{ gap: 12, marginBottom: 22 }}>
           <img src="/RADlab_Logo.svg" height="80" alt="" aria-hidden="true" style={S.heroLogo} />
           <h1 style={S.h1}>
             <span style={{ whiteSpace: 'nowrap' }}>Regulatory &amp; Affective</span><br />
-            <em style={{ fontStyle: 'italic', color: 'var(--pk)' }}>Dynamics Lab</em>
+            <em style={{ fontStyle: 'italic', color: 'var(--pk)' }}>Dynamics</em>
           </h1>
         </div>
         <p style={S.sub}>
@@ -162,7 +162,7 @@ const S = {
   hero:      { padding: '80px 52px 52px', maxWidth: 860, position: 'relative', zIndex: 1 },
   eyebrow:   { fontFamily: MONO, fontSize: '0.8125rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--pk)', marginBottom: 20 },
   eyebrowLink: { color: 'var(--pk)', textDecoration: 'none', borderBottom: '1px solid rgba(240,104,164,0.35)' },
-  heroBrand: { display: 'flex', alignItems: 'center', gap: 12, marginBottom: 22 },
+  heroBrand: {},
   heroLogo:  { flexShrink: 0, display: 'block' },
   h1:        { fontFamily: SERIF, fontSize: 'clamp(2.6rem, 5vw, 4rem)', lineHeight: 1.08, color: 'var(--tx)', margin: 0 },
   sub:       { fontSize: '1rem', color: 'var(--gy)', lineHeight: 1.7, maxWidth: 500, fontWeight: 300 },
