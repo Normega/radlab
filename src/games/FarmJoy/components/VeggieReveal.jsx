@@ -63,6 +63,13 @@ export default function VeggieReveal({ value, index, revealed, selected, harvest
     }
   }
 
+  // ── Dance animation: bobs when selected (independent of reveal/harvest) ────
+  const isDancing = selected && revealed && !harvesting
+  const danceTarget     = isDancing ? { y: [0, -6, 0], rotate: [-1.5, 1.5, -1.5] } : { y: 0, rotate: 0 }
+  const danceTransition = isDancing
+    ? { duration: 0.8, delay: (index % 6) * 0.13, repeat: Infinity, repeatDelay: 0.15, ease: 'easeInOut' }
+    : { duration: 0.3, ease: 'easeOut' }
+
   return (
     // Outer wrapper: positions sprite so its bottom edge sits on the mound top (static)
     <div style={{
@@ -73,57 +80,62 @@ export default function VeggieReveal({ value, index, revealed, selected, harvest
       width:     '19%',
       zIndex:    selected ? 2 : 1,
     }}>
-      {/* Inner motion.div: handles all animation, click, selection ring */}
+      {/* Reveal / harvest animation layer */}
       <motion.div
         animate={animTarget}
         transition={animTransition}
         onClick={harvesting ? undefined : onTap}
-        style={{
-          position: 'relative',
-          cursor:   harvesting ? 'default' : 'pointer',
-          // Pink selection ring via box-shadow (supports border-radius, no extra DOM)
-          boxShadow: selected
-            ? '0 0 0 3px #f068a4, 0 0 0 5px rgba(240,104,164,0.25)'
-            : 'none',
-          borderRadius: 10,
-        }}
+        style={{ cursor: harvesting ? 'default' : 'pointer' }}
       >
-        {/* Veggie sprite — the focal point, fills the cell */}
-        {value.veggie
-          ? <img
-              src={veggieUrl(value.veggie)}
-              alt={value.word}
-              style={{ width: '100%', display: 'block', objectFit: 'contain' }}
-            />
-          : <div style={{ width: '100%', paddingBottom: '100%',
-              background: 'rgba(255,255,255,0.25)', borderRadius: 8 }} />
-        }
+        {/* Dance + selection-ring layer (nested so transforms don't conflict) */}
+        <motion.div
+          animate={danceTarget}
+          transition={danceTransition}
+          style={{
+            position: 'relative',
+            boxShadow: selected
+              ? '0 0 0 3px #f068a4, 0 0 0 5px rgba(240,104,164,0.25)'
+              : 'none',
+            borderRadius: 10,
+          }}
+        >
+          {/* Veggie sprite */}
+          {value.veggie
+            ? <img
+                src={veggieUrl(value.veggie)}
+                alt={value.word}
+                style={{ width: '100%', display: 'block', objectFit: 'contain' }}
+              />
+            : <div style={{ width: '100%', paddingBottom: '100%',
+                background: 'rgba(255,255,255,0.25)', borderRadius: 8 }} />
+          }
 
-        {/* Value word: overlaid at bottom of sprite, white pill behind text only */}
-        <div style={{
-          position:  'absolute',
-          bottom:    0,
-          left:      '50%',
-          transform: 'translateX(-50%)',
-          textAlign: 'center',
-          width:     '105%',  // slightly wider than sprite so pill isn't squashed
-        }}>
-          <span style={{
-            display:     'inline-block',
-            background:  'rgba(255,255,255,0.82)',
-            borderRadius: 999,
-            padding:     '2px 7px',
-            fontFamily:  'DM Serif Display, serif',
-            fontSize:    'clamp(11px, 2.8vw, 15px)',
-            fontWeight:  600,
-            color:       '#1c1c1e',
-            lineHeight:  1.3,
-            wordBreak:   'break-word',
-            maxWidth:    '100%',
+          {/* Value word pill */}
+          <div style={{
+            position:  'absolute',
+            bottom:    0,
+            left:      '50%',
+            transform: 'translateX(-50%)',
+            textAlign: 'center',
+            width:     '105%',
           }}>
-            {value.word}
-          </span>
-        </div>
+            <span style={{
+              display:     'inline-block',
+              background:  'rgba(255,255,255,0.82)',
+              borderRadius: 999,
+              padding:     '2px 7px',
+              fontFamily:  'DM Serif Display, serif',
+              fontSize:    'clamp(11px, 2.8vw, 15px)',
+              fontWeight:  600,
+              color:       '#1c1c1e',
+              lineHeight:  1.3,
+              wordBreak:   'break-word',
+              maxWidth:    '100%',
+            }}>
+              {value.word}
+            </span>
+          </div>
+        </motion.div>
       </motion.div>
     </div>
   )

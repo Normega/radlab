@@ -414,19 +414,29 @@ function GreenhouseRound({ planted, ghSlots, onSlotsChange, onConfirm }) {
                     onClick={() => handlePotTap(idx)}
                     style={{ cursor: 'pointer' }}
                   >
-                    <div style={{ position: 'relative' }}>
-                      <img
-                        src={veggieUrl(v.veggie)} alt={v.word}
-                        style={{ width: '100%', display: 'block', objectFit: 'contain' }}
-                      />
-                      <div style={{
-                        position: 'absolute', bottom: 0, left: '50%',
-                        transform: 'translateX(-50%)',
-                        textAlign: 'center', width: '115%',
-                      }}>
-                        <span style={wordPillStyle('clamp(11px, 2.8vw, 15px)')}>{v.word}</span>
+                    {/* Dance layer — bobs while placed, pauses during wiggle */}
+                    <motion.div
+                      animate={wiggleWord === v.word
+                        ? { y: 0, rotate: 0 }
+                        : { y: [0, -6, 0], rotate: [-1.5, 1.5, -1.5] }}
+                      transition={wiggleWord === v.word
+                        ? { duration: 0.2, ease: 'easeOut' }
+                        : { duration: 0.8, repeat: Infinity, repeatDelay: 0.15, ease: 'easeInOut' }}
+                    >
+                      <div style={{ position: 'relative' }}>
+                        <img
+                          src={veggieUrl(v.veggie)} alt={v.word}
+                          style={{ width: '100%', display: 'block', objectFit: 'contain' }}
+                        />
+                        <div style={{
+                          position: 'absolute', bottom: 0, left: '50%',
+                          transform: 'translateX(-50%)',
+                          textAlign: 'center', width: '115%',
+                        }}>
+                          <span style={wordPillStyle('clamp(11px, 2.8vw, 15px)')}>{v.word}</span>
+                        </div>
                       </div>
-                    </div>
+                    </motion.div>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -679,19 +689,29 @@ function PlantingRound({ greenhouse, r3Slots, onSlotsChange, onConfirm }) {
                       ? { duration: 0.28, ease: 'easeInOut' }
                       : { type: 'spring', damping: 14, stiffness: 280 }}
                   >
-                    <div style={{ position: 'relative' }}>
-                      <img
-                        src={veggieUrl(v.veggie)} alt={v.word}
-                        style={{ width: '100%', display: 'block', objectFit: 'contain' }}
-                      />
-                      <div style={{
-                        position: 'absolute', bottom: 0, left: '50%',
-                        transform: 'translateX(-50%)',
-                        textAlign: 'center', width: '110%',
-                      }}>
-                        <span style={wordPillStyle('clamp(11px, 2.8vw, 15px)')}>{v.word}</span>
+                    {/* Dance layer — bobs while planted, pauses during wiggle */}
+                    <motion.div
+                      animate={wiggleWord === v.word
+                        ? { y: 0, rotate: 0 }
+                        : { y: [0, -6, 0], rotate: [-1.5, 1.5, -1.5] }}
+                      transition={wiggleWord === v.word
+                        ? { duration: 0.2, ease: 'easeOut' }
+                        : { duration: 0.8, repeat: Infinity, repeatDelay: 0.15, ease: 'easeInOut' }}
+                    >
+                      <div style={{ position: 'relative' }}>
+                        <img
+                          src={veggieUrl(v.veggie)} alt={v.word}
+                          style={{ width: '100%', display: 'block', objectFit: 'contain' }}
+                        />
+                        <div style={{
+                          position: 'absolute', bottom: 0, left: '50%',
+                          transform: 'translateX(-50%)',
+                          textAlign: 'center', width: '110%',
+                        }}>
+                          <span style={wordPillStyle('clamp(11px, 2.8vw, 15px)')}>{v.word}</span>
+                        </div>
                       </div>
-                    </div>
+                    </motion.div>
                   </motion.div>
                 )}
               </AnimatePresence>
