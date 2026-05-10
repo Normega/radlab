@@ -125,7 +125,7 @@ export default function VeggieReveal({ value, index, revealed, selected, harvest
               borderRadius: 999,
               padding:     '2px 7px',
               fontFamily:  'DM Serif Display, serif',
-              fontSize:    'clamp(11px, 2.8vw, 15px)',
+              fontSize:    'clamp(9px, 2.4vw, 12px)',
               fontWeight:  600,
               color:       '#1c1c1e',
               lineHeight:  1.3,

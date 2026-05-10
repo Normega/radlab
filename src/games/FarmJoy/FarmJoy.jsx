@@ -433,7 +433,7 @@ function GreenhouseRound({ planted, ghSlots, onSlotsChange, onConfirm }) {
                           transform: 'translateX(-50%)',
                           textAlign: 'center', width: '115%',
                         }}>
-                          <span style={wordPillStyle('clamp(11px, 2.8vw, 15px)')}>{v.word}</span>
+                          <span style={wordPillStyle('clamp(9px, 2.4vw, 12px)')}>{v.word}</span>
                         </div>
                       </div>
                     </motion.div>
@@ -631,7 +631,7 @@ function PlantingRound({ greenhouse, r3Slots, onSlotsChange, onConfirm }) {
                       transform: 'translateX(-50%)',
                       textAlign: 'center', width: '110%',
                     }}>
-                      <span style={wordPillStyle('clamp(11px, 2.6vw, 15px)')}>{v.word}</span>
+                      <span style={wordPillStyle('clamp(9px, 2.4vw, 12px)')}>{v.word}</span>
                     </div>
                   </div>
                 )}
@@ -708,7 +708,7 @@ function PlantingRound({ greenhouse, r3Slots, onSlotsChange, onConfirm }) {
                           transform: 'translateX(-50%)',
                           textAlign: 'center', width: '110%',
                         }}>
-                          <span style={wordPillStyle('clamp(11px, 2.8vw, 15px)')}>{v.word}</span>
+                          <span style={wordPillStyle('clamp(9px, 2.4vw, 12px)')}>{v.word}</span>
                         </div>
                       </div>
                     </motion.div>
