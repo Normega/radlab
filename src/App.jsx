@@ -20,6 +20,7 @@ import AuraFilterDef from './components/AuraFilterDef'
 import StillWater   from './games/StillWater/StillWater'
 import FaceRead     from './games/FaceRead/FaceRead'
 import Drift        from './games/Drift/Drift'
+import FarmJoy      from './games/FarmJoy/FarmJoy'
 
 const queryClient = new QueryClient()
 
@@ -178,6 +179,12 @@ export default function App() {
           <Route path="/games/drift" element={
             <ProtectedRoute session={session} hasAvatar={hasAvatar}>
               <Drift session={session} />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/games/farm-joy" element={
+            <ProtectedRoute session={session} hasAvatar={hasAvatar}>
+              <FarmJoy session={session} />
             </ProtectedRoute>
           } />
 

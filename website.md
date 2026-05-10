@@ -2,7 +2,7 @@
 
 > **Regulatory and Affective Dynamics Lab**  
 > University of Toronto · PI: Professor Norman Farb, PhD  
-> Last updated: 2026-04-27 (First Contact / Deeper Contact spec added as §10.3; QUEST+ psychometric function fix documented; session feedback screen spec added; schema + routes updated)
+> Last updated: 2026-05-08 (Farm Joy values clarification game added as §19. Three round backgrounds built: FarmField, Greenhouse, FarmRow.)
 
 ---
 
@@ -66,14 +66,20 @@ Three distinct roles with different access, workflows, and UX:
 ```
 radlab/
   public/
-    RADlab_Logo.svg           ← original (white outline, dark bg only)
-    RADlab_Logo_light.svg     ← light bg variant (dark outline, use everywhere in UI)
+    RADlab_Logo.svg           ← original (white+pink outline on transparent) — use on hub page; white dissolves into #FCF0F5
+    RADlab_Logo_light.svg     ← dark #1c1c1e outline variant — use everywhere else in UI
+    images/
+      people/                 ← lab member photos (migrate from radlab.zone/images/people/)
+      veggies/                ← Farm Joy 24 veggie sprite PNGs
   src/
     components/
-      Nav.jsx                 ← shared nav, auth-aware
+      Nav.jsx                 ← games nav (auth-aware); NOT used on hub or lab pages
       Avatar/
         BaseAvatar.jsx        ← pure SVG avatar component (skinColor, eyeColor, size props)
         AvatarEditor.jsx      ← avatar editor UI with Supabase save/load
+    data/                     ← static data files (no CMS)
+      people.js               ← PI, grad students, alumni records (edit here to update people page)
+      publications.js         ← annotated bibliography (reverse chrono; annotation field nullable)
     games/
       PondWatch.jsx             ← go/no-go RT game
       EbbAndFlow/               ← interoceptive breath detection game
@@ -101,18 +107,46 @@ radlab/
           SyncMeter.jsx
           BreathPrompt.jsx
           ContactComplete.jsx
+      FarmJoy/                  ← values clarification game (§19)
+        FarmJoy.jsx
+        constants.js
+        data/
+          values.js
+          veggies.js
+        hooks/
+          useFarmJoySession.js
+        components/
+          FarmField.jsx         ← Round 1 background
+          Greenhouse.jsx        ← Round 2 background
+          FarmRow.jsx           ← Round 3 + Harvest background
+          Veggie.jsx
+          PullAnimation.jsx
+          ValueCard.jsx
+          SortBins.jsx
+          FeedbackPrompt.jsx
+          Intro.jsx
+          HarvestSummary.jsx
+    layouts/
+      LabLayout.jsx           ← wraps all /lab/* routes; renders lab nav (About/People/Research/Publications/Contact)
     lib/
       supabase.js             ← supabase client singleton
     pages/
-      Landing.jsx             ← public landing page (includes game previews)
+      Hub.jsx                 ← root splash page (/); logo + 3 cards (Come See, UTMaps, Our Lab); no nav links
+      Landing.jsx             ← games landing page (moved from / to /games)
       Login.jsx               ← auth: sign in
       Signup.jsx              ← auth: create account
       Dashboard.jsx           ← protected: post-login home
       ProfilePage.jsx         ← user profile: avatar, points, unlock progress
-      Games.jsx               ← public games listing (/games) — Pond Watch + Ebb & Flow cards
+      Games.jsx               ← public games listing (/games/list) — Pond Watch + Ebb & Flow cards
+      lab/
+        AboutPage.jsx         ← stub (content TBD)
+        PeoplePage.jsx        ← PI + grad students + collapsible alumni; reads from data/people.js
+        ResearchPage.jsx      ← stub (content TBD)
+        PublicationsPage.jsx  ← annotated bibliography; reads from data/publications.js
+        ContactPage.jsx       ← address + joining info (RA / grad / postdoc)
     App.jsx                   ← router + auth state
     main.jsx                  ← entry point
-    index.css                 ← Tailwind + brand CSS tokens
+    index.css                 ← Tailwind + brand CSS tokens + font guardrails
   .env.example                ← copy to .env.local, fill in Supabase keys
   vercel.json                 ← SPA rewrite rules
   tailwind.config.js
@@ -271,21 +305,32 @@ RLS: users can read only their own rows.
 
 | Route | Component | Access |
 |---|---|---|
-| `/` | `Landing` | Public |
+| `/` | `Hub` | Public — splash with 3 cards; no nav links |
+| `/games` | `Landing` | Public — games landing page (was `/`) |
+| `/games/list` | `Games` | Public — game listing page |
 | `/login` | `Login` | Public only (redirects to `/dashboard` if logged in) |
 | `/signup` | `Signup` | Public only |
-| `/games` | `Games` | Public — game listing page; shows First Contact prominently if not yet complete |
 | `/dashboard` | `Dashboard` | Protected (redirects to `/login` if not logged in) |
 | `/profile` | `ProfilePage` | Protected — avatar, points, unlock progress |
 | `/profile/avatar` | `AvatarEditor` | Protected — avatar editor; redirected here on first login |
 | `/games/first-contact` | `FirstContact` | Protected — mandatory onboarding sync game; also accessible as Deeper Contact standalone |
 | `/games/pond-watch` | `PondWatch` | Protected |
 | `/games/ebb-flow` | `EbbAndFlow` | Protected — redirects to `/games/first-contact` if `first_contact_complete === false` |
+| `/games/farm-joy` | `FarmJoy` | Protected |
+| `/lab` | redirect → `/lab/people` | Public |
+| `/lab/about` | `AboutPage` | Public — stub |
+| `/lab/people` | `PeoplePage` | Public — reads from `src/data/people.js` |
+| `/lab/research` | `ResearchPage` | Public — stub |
+| `/lab/publications` | `PublicationsPage` | Public — reads from `src/data/publications.js` |
+| `/lab/contact` | `ContactPage` | Public |
 | `/study` | — | Participant tier (future) |
 | `/admin` | — | Lab tier (future) |
 
-**Nav links (logged-in)**: Logo · Games (`/games`) · Dashboard · [avatar circle → `/profile`]  
-**Nav links (logged-out)**: Logo · Games (`/games`) · Log in · Join free
+**Nav behaviour — contextual by route prefix:**
+
+- **Hub (`/`)**: logo only (links home); no nav links. Logo uses original `RADlab_Logo.svg` — white fill dissolves into `#FCF0F5` background, leaving pink + gray shapes.
+- **Games (`/games/*`, `/login`, `/signup`, `/dashboard`, `/profile*`)**: `Nav.jsx` as-is — logo + Games + Dashboard + avatar circle. Logo uses `RADlab_Logo_light.svg`.
+- **Lab (`/lab/*`)**: `LabLayout.jsx` renders its own nav — logo + About · People · Research · Publications · Contact. Logo uses `RADlab_Logo_light.svg`. Logo always links back to `/` (hub).
 
 **Onboarding guard**: Any attempt to access `/games/ebb-flow` while `first_contact_complete === false` redirects to `/games/first-contact` with message: *"Complete First Contact before beginning Ebb & Flow."*
 
@@ -337,6 +382,19 @@ RLS: users can read only their own rows.
 - `"DM Sans"` — body, UI, buttons
 
 **Tone**: Warm, a little funny, encouraging. Feedback feels like a supportive coach. Leaderboard copy is playful. Errors are charming.
+
+**Font size guardrails** (defined as CSS custom properties in `index.css` — never go below `--fs-min`):
+
+| Token | rem | px | Usage |
+|---|---|---|---|
+| `--fs-min` | `0.75rem` | 12px | Absolute floor — WCAG minimum |
+| `--fs-mono-sm` | `0.75rem` | 12px | Space Mono chips, tags, small labels |
+| `--fs-mono-md` | `0.8125rem` | 13px | Space Mono nav links, CTAs, eyebrows |
+| `--fs-body-sm` | `0.875rem` | 14px | Secondary DM Sans body text |
+| `--fs-body` | `1rem` | 16px | Default body; iOS auto-zoom floor |
+| `--fs-body-lg` | `1.125rem` | 18px | Comfortable long-form reading |
+
+Space Mono reads small at any given size — prefer `--fs-mono-sm` or above for all labels.
 
 ---
 
@@ -657,6 +715,23 @@ Species are expressed by mixing ear type + nose type + tail type freely — no s
 
 ## 13. Open Next Steps
 
+**Hub + Lab pages (next Claude Code session):**
+- [ ] Create `src/pages/Hub.jsx` — use `radlab_hub_mockup.html` as the visual reference (available in project files or regenerate from claude.ai conversation). Inline the RADlab_Logo.svg paths directly as `<svg>` at two sizes (nav: 42×36, hero: 66×56).
+- [ ] Move `Landing.jsx` route from `/` to `/games` in `App.jsx`
+- [ ] Add `/` → `Hub` route in `App.jsx`
+- [ ] Create `src/layouts/LabLayout.jsx` — wraps `/lab/*` routes with lab nav (logo + About · People · Research · Publications · Contact). Logo links to `/`.
+- [ ] Add `/lab`, `/lab/about`, `/lab/people`, `/lab/research`, `/lab/publications`, `/lab/contact` routes in `App.jsx` using `LabLayout` as wrapper
+- [ ] Create `src/pages/lab/AboutPage.jsx` — stub with placeholder text
+- [ ] Create `src/pages/lab/ResearchPage.jsx` — stub with placeholder text
+- [ ] Create `src/pages/lab/PublicationsPage.jsx` — renders `src/data/publications.js`; reverse chrono; bold lab member names using `labMemberNames` array; annotation shown below citation if non-null
+- [ ] Place downloaded files: `src/data/people.js`, `src/data/publications.js`, `src/pages/lab/PeoplePage.jsx`, `src/pages/lab/ContactPage.jsx`
+- [ ] Add lab page CSS (from comment blocks in PeoplePage.jsx and ContactPage.jsx) to `index.css`
+- [ ] Update `Nav.jsx` — ensure sign-out redirect goes to `/` (hub), not `/games`
+- [ ] Migrate photos: download from `radlab.zone/images/people/` → `public/images/people/`; update photo paths in `src/data/people.js` to `/images/people/filename.jpg`
+
+**Photo migration reference** (current filenames at radlab.zone/images/people/):
+`norm2.jpg`, `thomas.jpg`, `john.jpg`, `sandy.jpg`, `liliana.jpg`, `zoey.jpg`, `geissy.png`, `phil.jpg`, `leanh.jpg`, `jordan.png`, `kyle.jpg`, `katie.jpg`, `yiyi.jpg`
+
 **First Contact / Deeper Contact (next Claude Code session):**
 - [ ] Run SQL: add First Contact columns to `profiles` (see §6)
 - [ ] Build `src/games/FirstContact/` per `first-contact-spec.md`
@@ -670,6 +745,18 @@ Species are expressed by mixing ear type + nose type + tail type freely — no s
 - [ ] Remove temporary `[QUEST]` console.log statements from `useQuestStaircases.js` and `EbbAndFlow.jsx`
 - [ ] Run several more sessions to verify posterior distributions continue narrowing toward threshold
 - [ ] Compute posterior SD from `normalized_posteriors` for convergence check — formula: `sqrt(sum(posterior[i] * (thresh[i] - mean)^2))`
+
+**Farm Joy (next Claude Code session):**
+- [ ] Run SQL: create `farm_joy_trials`, `farm_joy_performance`, `farm_joy_feedback`, `farm_joy_value_history` tables with RLS; add `farm_joy_sessions` and `farm_joy_last_core_values` columns to `profiles` (see §19)
+- [ ] Drop `FarmField.jsx`, `Greenhouse.jsx`, `FarmRow.jsx` from claude.ai outputs into `src/games/FarmJoy/components/`
+- [ ] Place 24 veggie PNGs in `public/images/veggies/` (filenames listed in §19)
+- [ ] Build `src/games/FarmJoy/FarmJoy.jsx` per §19 state machine
+- [ ] Create `src/games/FarmJoy/data/values.js` with the 38 value taxonomy
+- [ ] Create `src/games/FarmJoy/data/veggies.js` with sprite list and value→veggie mapping helper
+- [ ] Build remaining components: `Veggie.jsx`, `PullAnimation.jsx`, `ValueCard.jsx`, `SortBins.jsx`, `FeedbackPrompt.jsx`, `Intro.jsx`, `HarvestSummary.jsx`
+- [ ] Create `src/games/FarmJoy/hooks/useFarmJoySession.js` for Supabase writes
+- [ ] Add `/games/farm-joy` route in `App.jsx`
+- [ ] Update `Games.jsx` with Farm Joy card (tagline and description in §19)
 
 **Ebb & Flow — completed:**
 - [x] Built `src/games/EbbAndFlow/` per `ebb-and-flow-spec.md`
@@ -791,3 +878,560 @@ Vercel auto-deploys on every push to `main`.
 - **First Contact rolling buffer**: use a fixed-size 4-cycle buffer (`slice(-4)`) for sync scoring. Never use a cumulative mean — early poor cycles would permanently lower the score and make the 80% threshold unreachable.
 - **Aura rings in SVG**: render ring circles *before* the head ellipse in SVG draw order so they appear behind the avatar, not on top of it.
 - Platform theme is **awareness and attunement**, not water specifically. Game names should evoke noticing and change (Pond Watch, Ebb & Flow, First Contact, Deeper Contact) — contemplative and sensory rather than clinical.
+
+---
+
+## 17. Still Water — Mood Check-in Game
+
+### Overview
+
+Still Water is a two-question mood check-in that reconstructs a position in the affective circumplex (valence × arousal) from two diagonal ratings. It is both a scientific instrument and a game — participants receive visual feedback in the form of an expressive avatar face that animates to reflect their composite state.
+
+**Scientific paradigm**: Two bipolar ratings along the circumplex diagonals, decomposed into valence and arousal coordinates.
+- Phase 1: Sad ↔ Excited (positive activation diagonal: x=t, y=t)
+- Phase 2: Calm ↔ Tense (negative activation diagonal: x=−t, y=t)
+- Composite: average of the two (x, y) pairs → nearest named sector + zone
+- Ambivalence: Euclidean distance between the two rating vectors (large = emotionally mixed)
+
+**Route**: `/games/still-water`
+**Access**: Protected (logged-in users only)
+**Game name slug**: `still_water`
+
+### File structure
+
+```
+src/games/StillWater/
+  StillWater.jsx          ← main game component (intro → phase1 → phase2 → reveal)
+  expressionEngine.js     ← calcExpr() — FACS-based AU engine; exported for FaceRead reuse
+  ExpressiveAvatar.jsx    ← SVG avatar with expression props; imports calcExpr
+  WheelSVG.jsx            ← shared radial wheel; imported by StillWater and FaceRead
+  constants.js            ← EMOTIONS array, INTENSITY_LABELS, coordinate helpers
+```
+
+### Shared components (used by FaceRead too)
+
+| Export | File | Description |
+|---|---|---|
+| `calcExpr(valence, arousal, intensityT, pupilTier)` | `expressionEngine.js` | FACS AU engine — AU1/2/4/5/20/25/27/43/12/15 |
+| `ExpressiveAvatar` | `ExpressiveAvatar.jsx` | SVG face; props: skinColor, eyeColor, size, valence, arousal, intensityT, pupilTier, glowColor |
+| `WheelSVG` | `WheelSVG.jsx` | Radial wheel; props: activeIds, selection, hovered, onHover, onZoneClick, onNeutral, revealData |
+| `EMOTIONS` | `constants.js` | 8-sector array with valence, arousal, pupilTier, colors, angles |
+| `computeRating(phase, emotionId, zone)` | `constants.js` | Returns `{rating, x, y}` for a given diagonal phase + zone |
+| `getCompositeLabel(cx, cy)` | `constants.js` | Maps (x, y) coords to nearest sector name |
+
+### FACS expression engine — AU summary
+
+| AU | Muscle | Signal | Formula |
+|---|---|---|---|
+| AU1 | Frontalis medialis | Inner brow up | `neg(v) × (1 − pos(a)×1.5) + surpriseBrow` |
+| AU2 | Frontalis lateralis | Outer brow up | `pos(v) × (0.3 + pos(a)×0.7) + surpriseBrow×0.7` |
+| AU4 | Corrugator supercilii | Brow knit/lower | `neg(v)×0.35 + neg(v)×pos(a)×0.75` |
+| AU5 | Levator palpebrae | Lid raise / wide eyes | `pos(a)×0.85` |
+| AU12 | Zygomaticus major | Smile (corners up) | `pos(v)` |
+| AU15 | Depressor anguli | Frown (corners down) | `neg(v)×neg(a)×1.4` |
+| AU20 | Risorius + platysma | Lip stretch (horizontal) | `neg(v)×pos(a)×1.4` |
+| AU25 | Orbicularis oris | Lip part/gap | `neg(v)×pos(a)×1.1` |
+| AU27 | Pterygoids | Jaw drop / O-mouth | `neg(v)×pos(a)×1.3` (threshold 0.28) |
+| AU43 | Relaxed levator | Lid droop | `neg(a)×0.7` |
+
+All AUs multiplied by `intensityT` before SVG transforms. Eyelid uses fixed-top anchor geometry (top anchored at y=83; only lash line moves downward). Brows track lash lift (lashLift coupling at ×0.8).
+
+Pupil uses discrete 3×3 table (pupilTier × intensityZone), not continuous formula — pupillometry is primarily arousal-driven, not valence-driven.
+
+### Supabase table — `stillwater_responses`
+
+```sql
+CREATE TABLE stillwater_responses (
+  id              uuid        DEFAULT gen_random_uuid() PRIMARY KEY,
+  created_at      timestamptz DEFAULT now(),
+  participant_id  text,         -- from URL ?pid= or sessionStorage UUID
+  pos_rating      int,          -- 1–7 (1=strong sad, 4=neutral, 7=strong excited)
+  pos_x           float,        -- valence contribution from diagonal 1
+  pos_y           float,        -- arousal contribution from diagonal 1
+  neg_rating      int,          -- 1–7 (1=strong calm, 4=neutral, 7=strong tense)
+  neg_x           float,
+  neg_y           float,
+  composite_x     float,        -- (pos_x + neg_x) / 2
+  composite_y     float,        -- (pos_y + neg_y) / 2
+  composite_label text,         -- nearest named sector
+  ambivalence_x   float,        -- |pos_x − neg_x|
+  ambivalence_y   float,        -- |pos_y − neg_y|
+  ambivalence_mag float         -- Euclidean distance between the two rating vectors
+);
+ALTER TABLE stillwater_responses ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "anon insert" ON stillwater_responses FOR INSERT TO anon WITH CHECK (true);
+```
+
+RLS allows anonymous insert. When integrated into the platform, add `user_id` FK → `profiles` and tighten to authenticated insert only.
+
+### Game flow
+
+1. **Intro screen** — illustrated diagonal diagram + two-step explanation (gold = axis 1, purple = axis 2)
+2. **Phase 1** — Sad↔Excited sectors active only; live face updates on selection
+3. **Phase 2** — Calm↔Tense sectors active only; live face updates on selection
+4. **Reveal** — 0.6s pause → 1s ease-out animation: face transitions from neutral to composite; wheel highlights composite sector/zone; Supabase insert fires
+
+### Scoring / points
+
+Still Water is a check-in, not a scored game. Award **5 points** per completed check-in to `profiles.points`. No leaderboard. Track completion count in `profiles` (add `still_water_sessions` int column).
+
+---
+
+## 18. Face Read — Circumplex Identification Game
+
+### Overview
+
+Face Read presents a generated avatar face with a known emotional expression. The participant taps the area of the circumplex wheel that they think matches the face. Score is derived from the Euclidean distance between the tapped position and the correct position in (valence, arousal) space. Narrative framing: "A creature from the deep has surfaced. Can you read how it feels?"
+
+**Route**: `/games/face-read`
+**Access**: Protected
+**Game name slug**: `face_read`
+
+### Scientific paradigm
+
+Inverse of Still Water: participant observes a face → maps to circumplex, rather than self-reports state → sees face. Measures:
+- Circumplex reading accuracy (valence/arousal perception)
+- Systematic biases (e.g. over-attribution of arousal, valence positivity bias)
+- Learning curve across trials and sessions
+
+### File structure
+
+```
+src/games/FaceRead/
+  FaceRead.jsx            ← main game (intro → trial loop → session summary)
+  useFaceReadSession.js   ← session state, trial generation, scoring, Supabase writes
+```
+
+Imports `ExpressiveAvatar`, `WheelSVG`, `EMOTIONS`, `calcExpr` from `../StillWater/`.
+
+### Trial structure
+
+**Per trial:**
+1. Face is displayed at centre — neutral expression for 0.5s (preview)
+2. Face animates to target expression over 0.8s (same easing as Still Water reveal)
+3. Full wheel presented — all 25 zones clickable (8×3 + neutral)
+4. Participant taps a zone
+5. Feedback: correct zone glows green; tapped zone glows if different; score animates in
+6. 1s pause → next trial
+
+**Target generation:**
+- Select a random emotion from EMOTIONS array (weighted toward all 8 equally)
+- Select a random zone (0/1/2) — each weighted equally
+- `intensityT = [1/3, 2/3, 1.0][zone]`
+- Store `targetValence`, `targetArousal`, `targetIntensityT`, `targetSectorId`, `targetZone`
+
+**Scoring:**
+```js
+// Circumflex coordinates for each zone within a sector:
+// coord = emotion.valence * intensityT, emotion.arousal * intensityT
+// Neutral = (0, 0)
+// Distance: Euclidean in normalized (-1,+1) valence/arousal space
+const MAX_DIST = 2 * Math.SQRT2;  // ≈ 2.828 — max possible distance
+const dist = Math.sqrt((clickedX - targetX)**2 + (clickedY - targetY)**2);
+const score = Math.round(Math.max(0, 100 * (1 - dist / MAX_DIST)));
+```
+
+Perfect hit = 100. Adjacent zone = ~85. Adjacent sector = ~60. Opposite corner = 0.
+
+**Session length**: 10 trials. Configurable in `constants.js`.
+
+**Session score**: mean of 10 trial scores (0–100).
+
+### Feedback display
+
+After each tap, show both face and wheel simultaneously:
+- Correct zone: bright green glow `#1EA878`
+- Tapped zone (if wrong): pink glow `#f068a4`
+- Score badge animates in with the trial score
+- Text: "Spot on!" (≥90), "Close!" (≥70), "Nearly!" (≥50), "Keep reading..." (<50)
+
+### Session summary
+
+After 10 trials, show:
+- Mean accuracy score (large, prominent)
+- Personal best and session count
+- Breakdown: valence accuracy vs arousal accuracy (were they better at one dimension?)
+- Leaderboard position (if public user)
+- Points earned: `session_score / 10` rounded (max 10 points per session)
+
+### Supabase schema additions
+
+```sql
+-- Add to game_sessions: no changes needed (game_name = 'face_read')
+
+-- face_read_trials — one row per trial
+CREATE TABLE face_read_trials (
+  id                  uuid        DEFAULT gen_random_uuid() PRIMARY KEY,
+  session_id          uuid        REFERENCES game_sessions(id),
+  user_id             uuid        REFERENCES profiles(id),
+  trial_number        int,
+  target_sector_id    int,        -- 0–7, index into EMOTIONS array
+  target_sector_name  text,       -- 'Excited', 'Sad', etc.
+  target_zone         int,        -- 0=mild, 1=moderate, 2=strong
+  target_intensity_t  float,
+  target_valence      float,
+  target_arousal      float,
+  clicked_sector_id   int,        -- null if neutral clicked
+  clicked_zone        int,        -- null if neutral clicked
+  clicked_valence     float,
+  clicked_arousal     float,
+  distance            float,      -- Euclidean in normalized space
+  trial_score         int,        -- 0–100
+  response_time_ms    int,        -- ms from face reveal to tap
+  created_at          timestamptz DEFAULT now()
+);
+
+-- face_read_performance — one row per session
+CREATE TABLE face_read_performance (
+  id                  uuid        DEFAULT gen_random_uuid() PRIMARY KEY,
+  session_id          uuid        REFERENCES game_sessions(id),
+  user_id             uuid        REFERENCES profiles(id),
+  mean_score          float,      -- 0–100
+  valence_accuracy    float,      -- mean |clicked_valence - target_valence| (lower = better)
+  arousal_accuracy    float,      -- mean |clicked_arousal - target_arousal|
+  trials_completed    int,
+  created_at          timestamptz DEFAULT now()
+);
+```
+
+RLS: users can insert and read only their own rows.
+
+Add to `profiles`:
+```sql
+ALTER TABLE profiles ADD COLUMN face_read_sessions    int DEFAULT 0;
+ALTER TABLE profiles ADD COLUMN face_read_best_score  float;
+ALTER TABLE profiles ADD COLUMN face_read_total_score float DEFAULT 0;
+```
+
+### Game card copy
+
+**Name**: Face Read  
+**Tagline**: "A creature has surfaced. Can you read how it feels?"  
+**Description**: Study a face and tap where it lands on the feeling map. Train your eye for emotion.  
+**Illustration concept**: Avatar face emerging from water, wide-eyed, expression ambiguous  
+
+---
+
+### Decision
+
+The platform root (`radlab.vercel.app`) is a **hub splash page** with three equal cards linking to:
+1. **Come, See** — the games platform (`/games`)
+2. **UTMaps** — knowledge translation project (external link or `/utmaps` TBD)
+3. **Our Lab** — academic lab pages (`/lab/people`)
+
+Lab pages and games pages share the same Vite/React codebase and Vercel deployment but use separate layouts and nav.
+
+### Hub page (`src/pages/Hub.jsx`)
+
+- Route: `/`
+- No nav links — logo only in header (links back to `/`)
+- Logo: inline the RADlab_Logo.svg paths directly as `<svg>` at two sizes (nav 42×36, hero 66×56). The white fill dissolves into `#FCF0F5`, showing only pink and gray shapes. Do NOT use `RADlab_Logo_light.svg` here.
+- Three equal white cards, all light by default, flip to dark (`#1c1c1e`) on hover
+- Visual reference: `radlab_hub_mockup.html` (generated in claude.ai session 2026-05-04)
+- Sign-out from games must redirect to `/` (hub), not `/games`
+
+### Lab layout (`src/layouts/LabLayout.jsx`)
+
+Wraps all `/lab/*` routes. Renders:
+- Sticky nav: logo (links to `/`) + links: About · People · Research · Publications · Contact
+- Logo: `<img src="/RADlab_Logo_light.svg" height="34" alt="RADlab logo" />`
+- Main content area (no Supabase auth — all public)
+- Footer consistent with hub
+
+### Lab data files
+
+| File | Location | Purpose |
+|---|---|---|
+| `people.js` | `src/data/people.js` | PI, grad students, alumni — edit here to update people page |
+| `publications.js` | `src/data/publications.js` | Annotated bibliography; reverse chrono; `annotation` field nullable |
+
+### Lab pages
+
+| Page | File | Status |
+|---|---|---|
+| About | `src/pages/lab/AboutPage.jsx` | Stub — content TBD |
+| People | `src/pages/lab/PeoplePage.jsx` | Built — reads `people.js`; PI featured, grads grid, alumni collapsible |
+| Research | `src/pages/lab/ResearchPage.jsx` | Stub — content TBD |
+| Publications | `src/pages/lab/PublicationsPage.jsx` | Template built — reads `publications.js`; bold lab authors via `labMemberNames` |
+| Contact | `src/pages/lab/ContactPage.jsx` | Built — address + RA/grad/postdoc joining sections |
+
+### CSS additions for lab pages
+
+Add to `index.css` — copy from comment blocks at bottom of `PeoplePage.jsx` and `ContactPage.jsx`:
+- `.lab-page`, `.lab-section`, `.lab-section__heading` — shared layout
+- `.person-card`, `.person-grid`, `.alumni-toggle` — people page
+- `.contact-address`, `.contact-block`, `.contact-cta` — contact page
+- All font sizes reference guardrail tokens (`--fs-mono-sm`, `--fs-body-sm`, etc.) — never hardcode below 12px
+
+### Photo migration
+
+Photos currently at `radlab.zone/images/people/`. Steps:
+1. Download each from `https://www.radlab.zone/images/people/<filename>`
+2. Place in `public/images/people/<filename>`
+3. Update `photo` paths in `src/data/people.js` to `/images/people/<filename>`
+
+Filenames: `norm2.jpg` `thomas.jpg` `john.jpg` `sandy.jpg` `liliana.jpg` `zoey.jpg` `geissy.png` `phil.jpg` `leanh.jpg` `jordan.png` `kyle.jpg` `katie.jpg` `yiyi.jpg`
+
+---
+
+## 19. Farm Joy: Values Clarification Game
+
+### Overview
+
+Farm Joy is a values clarification game in which the participant pulls plants from a soil grid, sorts the revealed value words into Plant or Compost bins, then narrows down across two further rounds to identify a small set of core values. The progression is sorting → greenhouse → planting → harvest. Each visit samples a fresh subset from a 38 value taxonomy, so repeated play allows a stable signal of personal values to emerge.
+
+Narrative framing: the participant is deciding what kind of values they want to grow to bring joy to their life. They experiment with harvesting from many known sources of value to see what works best. Over time, with repeated visits, the values that matter most should emerge as a consistent signal.
+
+**Route**: `/games/farm-joy`
+**Access**: Protected
+**Game name slug**: `farm_joy`
+
+### Scientific paradigm
+
+Values clarification through forced binary choice (Plant or Compost) followed by ipsative selection (pick 6, then pick 3). Lineage: ACT (Acceptance and Commitment Therapy) values clarification, motivational interviewing, and Schwartz's hierarchical ranking work. The 38 item taxonomy combines plain language items from VIA Character Strengths, Schwartz Refined Theory, and the Rokeach Values Survey, collapsed and standardized for accessibility.
+
+Construct measured: subjective endorsement of named values, and stability of endorsement across repeated sessions. Per session output is the participant's selected hierarchy: 24 sampled → up to N planted → up to 6 in greenhouse → up to 3 final. Across sessions, the cumulative value history table tracks how often each value survives each round, building a probabilistic signal of stable personal values.
+
+### Value taxonomy (38 items, 7 categories)
+
+| Category | Count | Items |
+|---|---|---|
+| Cognitive/exploration | 3 | Curiosity, Creativity, Wisdom |
+| Character/conduct | 7 | Integrity, Courage, Self-control, Responsibility, Humility, Perseverance, Authenticity |
+| Relational | 8 | Kindness, Love, Family, Community, Friendship, Forgiveness, Gratitude, Loyalty |
+| Moral/civic | 4 | Fairness, Peace, Tolerance, Service |
+| Hedonic/openness | 7 | Freedom, Agency, Adventure, Fun, Humor, Beauty, Nature |
+| Meaning/order | 5 | Hope, Spirituality, Tradition, Security, Presence |
+| Wellbeing/self | 4 | Health, Achievement, Influence, Growth |
+
+### Per-session sampling
+
+Each session randomly samples 24 of the 38 values, stratified by category for breadth:
+
+| Category | Pool | Sample |
+|---|---|---|
+| Cognitive/exploration | 3 | 3 |
+| Character/conduct | 7 | 4 |
+| Relational | 8 | 4 |
+| Moral/civic | 4 | 3 |
+| Hedonic/openness | 7 | 4 |
+| Meaning/order | 5 | 3 |
+| Wellbeing/self | 4 | 3 |
+| **Total** | **38** | **24** |
+
+Sampling is fresh each session (no memory of recent draws). The 24 sampled words are logged so retrospective analysis can adjust for exposure imbalance.
+
+### Veggie sprites
+
+24 PNG sprites in `public/images/veggies/`. Filenames: `beet.png`, `carrot.png`, `daikon.png`, `garlic.png`, `ginger.png`, `horseradish.png`, `kohlrabi.png`, `leek.png`, `onion.png`, `other1.png`, `other2.png`, `other3.png`, `other4.png`, `other5.png`, `other6.png`, `other7.png`, `parsnip.png`, `potato.png`, `potato_boots.png`, `radish.png`, `rutabaga.png`, `sweetpotato.png`, `taro.png`, `turmeric.png`.
+
+Each session shuffles all 24 sprites and assigns one to each of the 24 sampled values — every veggie is unique per session (24 sprites for 24 values). Mapping is fixed within a session: the same value always uses the same veggie across rounds 1, 2, and 3.
+
+### File structure
+
+```
+src/games/FarmJoy/
+  FarmJoy.jsx                ← main FSM, owns session state
+  constants.js               ← CFG, PHASE enum, sampling helpers
+  data/
+    values.js                ← 38 values across 7 categories
+    veggies.js               ← 24 sprite names + value→veggie helper (1:1, no repeats)
+  hooks/
+    useFarmJoySession.js     ← Supabase writes, session lifecycle
+  components/
+    FarmField.jsx            ← Round 1 background (built; see §19 Status)
+    Greenhouse.jsx           ← Round 2 background (built)
+    FarmRow.jsx              ← Round 3 + Harvest background (built)
+    Veggie.jsx               ← single sprite renderer
+    PullAnimation.jsx        ← Mario-style yank animation overlay
+    ValueCard.jsx            ← revealed value word, flips into veggie
+    SortBins.jsx             ← Plant + Compost bins for round 1
+    FeedbackPrompt.jsx       ← yes/no + 30 char text overlay
+    Intro.jsx                ← landing screen with narrative
+    HarvestSummary.jsx       ← final core values + closing copy
+```
+
+### Game flow (state machine)
+
+```
+INTRO
+  ↓
+ROUND_1_SORTING                          // 24 mounds in 4×6 grid
+  ├── (zero plants) → ZERO_PLANT_FEEDBACK → SESSION_END
+  └── (≥1 plant)    → ROUND_2_GREENHOUSE
+ROUND_2_GREENHOUSE                       // up to 6 in 2×3 pots
+  ↓ confirm
+ROUND_3_PLANTING                         // up to 3 across 3 rows
+  ↓ confirm
+HARVEST                                  // chosen veggies multiply across rows
+  ↓
+SESSION_COMPLETE
+```
+
+Underfull feedback (Round 2 < 6, Round 3 < 3) renders as an overlay modal that pauses underlying state. Always optional, never blocks progression.
+
+### Round 1: Sorting
+
+- 24 mounds with green stalks in a 4×6 grid (FarmField component)
+- Tap mound → pull animation → ValueCard reveal → tap Plant or Compost
+- Each plant decision is a discrete trial with a recorded RT (mound tap to bin tap)
+- After all 24 sorted: if zero plants, trigger zero-plant feedback overlay; else advance to Round 2
+
+**Zero-plant feedback copy**:
+
+> Sorry, we didn't plant any seeds you value this time. Each visit to the farm only shows you some of the options. Want to share what we missed that you'd have said 'yum' to?
+
+Yes / No buttons. If Yes, single 30 char text input. Either path closes with: *"Thanks for visiting. Come back and play again soon."*
+
+### Round 2: Greenhouse
+
+- 6 terracotta pots in 2×3 grid (Greenhouse component)
+- Planted values from Round 1 are visible at the bottom of the screen as veggies
+- Tap a veggie to select; tap a pot to place. Tap a placed veggie to remove.
+- Up to 6 can be in pots simultaneously
+- If fewer than 6 plants exist from Round 1, pots autofill with all available
+- Confirm advances to Round 3
+- If pots underfull at confirm time, trigger underfull feedback overlay
+
+**Underfull feedback copy**: *"What values would fill your bowl?"* (yes/no + 30 char text mechanics, same as zero-plant)
+
+### Round 3: First Planting
+
+- 3 row spots in 3 horizontal soil bands (FarmRow component, `cropsPerRow={[1,1,1]}`)
+- Greenhouse veggies visible at top of screen
+- Tap to select, tap a row to place
+- Reset and re-pick allowed
+- Up to 3 placements
+- Confirm advances to Harvest
+- If fewer than 3 placed at confirm time, trigger underfull feedback overlay
+
+**Underfull feedback copy**: *"What values would fill your fork?"* (yes/no + 30 char text mechanics)
+
+### Harvest
+
+- FarmRow with `cropsPerRow={[6,6,6]}` (or `[6,6,0]` etc. if user only chose 1 or 2)
+- Each chosen veggie animates outward from its planting position, multiplying across the row in stagger
+- Final copy:
+
+> Amazing, here's what you have selected as your core values. We hope you can find ways of realizing them today.
+
+The chosen values are listed below the visual.
+
+### Interactions
+
+**Tap-to-confirm** throughout (no drag-and-drop). First tap selects (visual highlight), second tap places at destination. Reliable on mobile, accessible.
+
+**Pull animation** (Round 1): Framer Motion or rAF, never CSS keyframes (Safari compatibility, consistent with platform pattern).
+
+**Harvest multiplication**: Framer Motion stagger, originating veggie spawns duplicates outward across its row.
+
+### Scoring / points
+
+- 10 points for completing harvest
+- 5 points for ending early at zero-plant feedback (showed up, deserves recognition)
+
+### Supabase schema
+
+#### `farm_joy_trials` (one row per value shown)
+
+```sql
+CREATE TABLE farm_joy_trials (
+  id              uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  session_id      uuid REFERENCES game_sessions(id),
+  user_id         uuid REFERENCES profiles(id),
+  trial_number    int,             -- 1 to 24
+  value_word      text,
+  category        text,
+  veggie          text,            -- sprite assigned this session
+  round1_choice   text,            -- 'plant' | 'compost'
+  round1_rt_ms    int,             -- mound tap to bin tap
+  in_greenhouse   boolean,         -- chose for Round 2?
+  in_final        boolean,         -- chose for Round 3 final?
+  created_at      timestamptz DEFAULT now()
+);
+```
+
+#### `farm_joy_performance` (one row per session)
+
+```sql
+CREATE TABLE farm_joy_performance (
+  id                  uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  session_id          uuid REFERENCES game_sessions(id),
+  user_id             uuid REFERENCES profiles(id),
+  values_sampled      jsonb,         -- 24 word array
+  values_planted      jsonb,         -- yum list
+  values_greenhouse   jsonb,         -- up to 6
+  values_final        jsonb,         -- up to 3
+  ended_early         boolean,       -- zero plants
+  round1_duration_ms  int,
+  round2_duration_ms  int,           -- null if ended early
+  round3_duration_ms  int,           -- null if ended early
+  created_at          timestamptz DEFAULT now()
+);
+```
+
+#### `farm_joy_feedback` (one row per feedback event)
+
+```sql
+CREATE TABLE farm_joy_feedback (
+  id                 uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  session_id         uuid REFERENCES game_sessions(id),
+  user_id            uuid REFERENCES profiles(id),
+  round_triggered    int,             -- 1, 2, or 3
+  user_responded     boolean,         -- yes / no to the prompt
+  suggested_value    text,            -- max 30 chars
+  values_sampled     jsonb,           -- the 24 they saw, for taxonomy gap analysis
+  created_at         timestamptz DEFAULT now()
+);
+```
+
+#### `farm_joy_value_history` (cumulative, one row per user × value)
+
+```sql
+CREATE TABLE farm_joy_value_history (
+  id               uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id          uuid REFERENCES profiles(id),
+  value_word       text,
+  times_shown      int DEFAULT 0,
+  times_planted    int DEFAULT 0,
+  times_greenhouse int DEFAULT 0,
+  times_final      int DEFAULT 0,
+  updated_at       timestamptz DEFAULT now(),
+  UNIQUE (user_id, value_word)
+);
+```
+
+Upserted at session end with simple counter increments. Max 38 rows per user. Probabilities computed client-side: `P(plant|shown)`, `P(greenhouse|planted)`, `P(final|greenhouse)`, overall `P(final|shown)`. Future use: stable values panel on profile, smart sampling biased toward under-tested values, longitudinal trends.
+
+#### Profile additions
+
+```sql
+ALTER TABLE profiles
+  ADD COLUMN farm_joy_sessions int DEFAULT 0,
+  ADD COLUMN farm_joy_last_core_values jsonb;
+```
+
+RLS on all four tables: users can insert and read only their own rows.
+
+### Background components (already built)
+
+`FarmField.jsx`, `Greenhouse.jsx`, and `FarmRow.jsx` are pure presentation components built ahead of architecture. Each uses viewBox 680×1020 (mobile-first portrait), shares the same color palette, and renders a static SVG with depth-illusion ridge/furrow shading. All three accept tap callbacks; they emit `{row, col}` events. They take no game state, just visual config.
+
+**FarmField props**: `pulledMounds` (Set of `"row-col"` strings), `onMoundClick(row, col)`, `seed` (optional, deterministic stalk distribution), `className`. Stalk variants randomized per mount via mulberry32 PRNG. 5 stalk variants distributed across 24 mounds.
+
+**Greenhouse props**: `onPotClick(row, col)`, `className`. Fixed 2×3 layout. Pot fill state lives in parent.
+
+**FarmRow props**: `cropsPerRow` (array of 3 numbers), `onMoundClick(row, col)`, `className`. Mound x positions auto-distribute based on count via `moundXPositions()` helper. Same component handles planting state (`[1,1,1]`) and harvest (`[6,6,6]`).
+
+Source files generated in claude.ai design conversation 2026-05-08, ready to drop into `src/games/FarmJoy/components/`.
+
+### Game card copy
+
+**Name**: Farm Joy
+**Tagline**: "Plant the values that grow joy."
+**Description**: A short visit to your value garden. Sort, narrow down, and harvest the values that matter most. Each visit deepens your sense of what you want to cultivate.
+**Illustration concept**: Soil grid with green stalks, one mound mid-pull revealing a value card
+
+### Status
+
+Specced. Three background components built (FarmField, Greenhouse, FarmRow) and saved as React components. Main game FSM, value taxonomy data files, Supabase schema, and remaining components pending Claude Code handoff.

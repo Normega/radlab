@@ -53,3 +53,16 @@ body {
   0%, 100% { opacity: 1; transform: scale(1); }
   50%       { opacity: 0.35; transform: scale(0.8); }
 }
+
+/* Farm Joy game backgrounds — fills a position:absolute container */
+.absolute-fill {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.absolute-fill svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}

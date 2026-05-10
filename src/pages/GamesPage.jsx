@@ -79,6 +79,13 @@ export default function GamesPage({ session, firstContactComplete }) {
             to="/games/owl-barn"
           />
 
+          <GameCard
+            title="Farm Joy"
+            badge="Values clarification"
+            desc="Plant the values that grow joy."
+            to="/games/farm-joy"
+          />
+
           {/* Ebb & Flow: locked until First Contact is complete */}
           <GameCard
             title="Ebb &amp; Flow"
