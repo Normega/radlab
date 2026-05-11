@@ -458,6 +458,24 @@ function GreenhouseRound({ planted, ghSlots, onSlotsChange, onConfirm }) {
   return (
     <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column' }}>
 
+      {/* ── Instruction header ── */}
+      <div style={{
+        flexShrink: 0,
+        padding: '12px 24px 10px',
+        textAlign: 'center',
+        background: 'rgba(10,20,5,0.72)',
+      }}>
+        <p style={{
+          fontFamily: 'DM Serif Display, serif',
+          fontSize: 'clamp(13px, 3vw, 17px)',
+          color: 'rgba(255,255,255,0.92)',
+          margin: 0,
+          fontStyle: 'italic',
+        }}>
+          Only six pots… plant the most important six
+        </p>
+      </div>
+
       {/* ── Top 55%: greenhouse pots ── */}
       <div style={{ flex: `0 0 ${GH_TOP_PCT}%`, position: 'relative', overflow: 'hidden' }}>
         <Greenhouse preserveAspectRatio="xMidYMid slice" className="absolute-fill" />
@@ -658,6 +676,13 @@ function PlantingRound({ greenhouse, r3Slots, onSlotsChange, onConfirm }) {
 
   return (
     <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column' }}>
+
+      {/* ── Instruction header ── */}
+      <div style={{ flexShrink: 0, padding: '12px 24px 10px', textAlign: 'center', background: 'rgba(10,20,5,0.72)' }}>
+        <p style={{ fontFamily: 'DM Serif Display, serif', fontSize: 'clamp(13px, 3vw, 17px)', color: 'rgba(255,255,255,0.92)', margin: 0, fontStyle: 'italic' }}>
+          Which 3 are the most important to plant?
+        </p>
+      </div>
 
       {/* ── Main area: left cards | right rows ── */}
       <div style={{ flex: 1, minHeight: 0, display: 'flex' }}>

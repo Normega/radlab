@@ -75,6 +75,13 @@ export default function PullableVeggie({
   const isRisen = pullPhase === 'risen'
   const isDust  = pullPhase === 'rising' || pullPhase === 'risen'
 
+  // In select mode (alreadyPulled), use a SHORT clipper sized to the visible image area so
+  // the box-shadow ring wraps the sprite, not the full tall rectangle down to the mound.
+  // In pull mode the tall clipper (top:0 → anchorY) is needed for the burial animation.
+  // Before imageH is known, keep the full-height clipper (content is opacity:0 anyway).
+  const clipperTop = alreadyPulled && imageH > 0 ? Math.max(0, anchorY - imageH) : 0
+  const clipperH   = alreadyPulled && imageH > 0 ? Math.min(imageH, anchorY)     : anchorY
+
   const handleImageLoad = useCallback((e) => {
     setImageH(e.currentTarget.offsetHeight)
   }, [])
@@ -115,42 +122,49 @@ export default function PullableVeggie({
     <>
       {/* ── Clipper ──────────────────────────────────────────────────────────
           Plain div handles centering (translateX -50%). overflow:hidden clips
-          the buried portion of the veggie so only the peeking top shows. */}
+          the buried portion. box-shadow lives HERE (not on a child) so it is
+          NOT clipped by this element's own overflow:hidden. */}
       <div
         style={{
-          position:      'absolute',
-          left:          leftPx,
-          top:           0,
-          width:         imgWidthPx,
-          height:        anchorY,
-          transform:     'translateX(-50%)',
-          overflow:      'hidden',
-          pointerEvents: 'none',
-          zIndex:        4,
+          position:     'absolute',
+          left:         leftPx,
+          top:          clipperTop,
+          width:        imgWidthPx,
+          height:       clipperH,
+          transform:    'translateX(-50%)',
+          overflow:     'hidden',
+          pointerEvents:'none',
+          zIndex:       4,
+          boxShadow:    selected && isRisen
+            ? '0 0 0 3px #f068a4, 0 0 0 5px rgba(240,104,164,0.25)'
+            : 'none',
+          borderRadius: selected && isRisen ? 10 : 0,
         }}
       >
-        {/* motion.div owns y/x animation only — no transform in its style prop */}
+        {/* Rise/bury animation — no transform in style (Framer Motion owns it) */}
         <motion.div
           style={{ position: 'absolute', bottom: 0, left: 0, width: '100%' }}
           initial={false}
           animate={groupAnimate}
           transition={groupTransition}
         >
-          {/* Selection ring + image */}
-          <div style={{
-            position:  'relative',
-            boxShadow: selected
-              ? '0 0 0 3px #f068a4, 0 0 0 5px rgba(240,104,164,0.25)'
-              : 'none',
-            borderRadius: selected ? 10 : 0,
-          }}>
+          {/* Dance layer — bobs when selected, pauses otherwise */}
+          <motion.div
+            animate={selected && isRisen
+              ? { y: [0, -6, 0], rotate: [-1.5, 1.5, -1.5] }
+              : { y: 0, rotate: 0 }}
+            transition={selected && isRisen
+              ? { duration: 0.8, delay: ((value.row * 4 + value.col) % 6) * 0.13,
+                  repeat: Infinity, repeatDelay: 0.15, ease: 'easeInOut' }
+              : { duration: 0.3, ease: 'easeOut' }}
+          >
             <img
               src={veggieUrl(value.veggie)}
               alt={value.word}
               onLoad={handleImageLoad}
               style={{ width: '100%', display: 'block', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.2))' }}
             />
-          </div>
+          </motion.div>
         </motion.div>
       </div>
 
