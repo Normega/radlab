@@ -58,6 +58,7 @@ export default function FarmField({
   pulledMounds = new Set(),
   onMoundClick,
   seed = null,
+  showStalks = true,
   className = '',
 }) {
   const mounds = useMemo(() => generateStalkAssignments(seed), [seed])
@@ -160,7 +161,7 @@ export default function FarmField({
                 style={{ cursor: pulled ? 'default' : 'pointer' }}
               >
                 <use href="#ff-mound-base" />
-                {!pulled && <use href={`#ff-stalk-${variant}`} />}
+                {showStalks && !pulled && <use href={`#ff-stalk-${variant}`} />}
               </g>
             )
           })}

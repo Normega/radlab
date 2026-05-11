@@ -2,7 +2,8 @@ import { VALUE_TAXONOMY } from './data/values.js'
 
 export const PHASE = {
   INTRO:              'INTRO',
-  ROUND_1_SORTING:    'ROUND_1_SORTING',
+  ROUND_1_PULL:       'ROUND_1_PULL',
+  ROUND_1_SELECT:     'ROUND_1_SELECT',
   ROUND_2_GREENHOUSE: 'ROUND_2_GREENHOUSE',
   ROUND_3_PLANTING:   'ROUND_3_PLANTING',
   HARVEST:            'HARVEST',
@@ -10,15 +11,20 @@ export const PHASE = {
 }
 
 export const CFG = {
-  SAMPLE_TOTAL:              24,
-  GREENHOUSE_MAX:            6,
-  FINAL_MAX:                 3,
-  POINTS_HARVEST:            10,
-  POINTS_EARLY:              5,
-  COLS:                      4,
-  ROWS:                      6,
-  ROUND1_REVEAL_DELAY_MS:    1000,
+  SAMPLE_TOTAL:               24,
+  GREENHOUSE_MAX:             6,
+  FINAL_MAX:                  3,
+  POINTS_HARVEST:             10,
+  POINTS_EARLY:               5,
+  COLS:                       4,
+  ROWS:                       6,
+  ROUND1_REVEAL_DELAY_MS:     1000,
   ROUND1_REQUIRED_SELECTIONS: 12,
+  VIBRATE_MS:                 300,
+  RISE_MS:                    850,
+  DUST_DURATION_MS:           1170,
+  PILL_DELAY_MS:              380,
+  INITIAL_VISIBLE_PCT:        0.25,
 }
 
 // How many to sample from each category per session

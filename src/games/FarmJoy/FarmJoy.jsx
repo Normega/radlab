@@ -4,11 +4,11 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { PHASE, CFG, sampleValues } from './constants.js'
 import { assignVeggies, veggieUrl } from './data/veggies.js'
 import { saveFarmJoySession } from './hooks/useFarmJoySession.js'
-import FarmField    from './components/FarmField.jsx'
-import Greenhouse   from './components/Greenhouse.jsx'
-import FarmRow      from './components/FarmRow.jsx'
-import Intro        from './components/Intro.jsx'
-import VeggieReveal from './components/VeggieReveal.jsx'
+import FarmField      from './components/FarmField.jsx'
+import Greenhouse     from './components/Greenhouse.jsx'
+import FarmRow        from './components/FarmRow.jsx'
+import Intro          from './components/Intro.jsx'
+import PullableVeggie from './components/PullableVeggie.jsx'
 
 // SVG viewBox shared by all three background components
 const VB_W = 680
@@ -17,6 +17,10 @@ const VB_H = 1020
 // Coordinate tables — must match background SVG source files
 const FIELD_COL_X = [85, 255, 425, 595]
 const FIELD_ROW_Y = [85, 255, 425, 595, 765, 935]
+
+// Mound centers matching FarmField.jsx COL_X / ROW_Y (used for PullableVeggie positioning)
+const PULL_COL_X = [85, 255, 425, 595]
+const PULL_ROW_Y = [135, 305, 475, 645, 815, 985]
 
 // Greenhouse pot centers in SVG space (match Greenhouse.jsx COL_X / ROW_Y)
 const GH_COL_X = [113, 340, 567]
@@ -67,6 +71,11 @@ export default function FarmJoy({ session }) {
   const r3StartMs             = useRef(null)
   const ghChoicesRef          = useRef([])
   const finalRef              = useRef([])
+  const r1RtMapRef            = useRef({})   // word → pull rt_ms
+
+  // ── Container size (for PullableVeggie px positioning) ────────────────────
+  const containerRef  = useRef(null)
+  const [containerSize, setContainerSize] = useState({ w: 0, h: 0 })
 
   function bootstrap() {
     const seed = seedRef.current
@@ -87,12 +96,16 @@ export default function FarmJoy({ session }) {
     bootstrap()
     startedAtRef.current   = new Date().toISOString()
     sessionStartMs.current = Date.now()
-    setPhase(PHASE.ROUND_1_SORTING)
+    r1RtMapRef.current     = {}
+    setPulledIndices(new Set())
+    setSelections(new Set())
+    setHarvestTriggered(false)
+    setPhase(PHASE.ROUND_1_PULL)
   }
 
   // ── ALL state declarations up front ───────────────────────────────────────
   const [selections,       setSelections]       = useState(new Set())
-  const [revealed,         setRevealed]         = useState(false)
+  const [pulledIndices,    setPulledIndices]    = useState(new Set())
   const [harvestTriggered, setHarvestTriggered] = useState(false)
 
   const [planted,  setPlanted]  = useState([])
@@ -101,15 +114,20 @@ export default function FarmJoy({ session }) {
 
   const [feedbackModal, setFeedbackModal] = useState(null)
 
-  // ── Round 1 — reveal after delay ─────────────────────────────────────────
+  // ── Container ResizeObserver ─────────────────────────────────────────────
   useEffect(() => {
-    if (phase !== PHASE.ROUND_1_SORTING) return
-    setRevealed(false)
-    setSelections(new Set())
-    setHarvestTriggered(false)
-    const t = setTimeout(() => setRevealed(true), CFG.ROUND1_REVEAL_DELAY_MS)
-    return () => clearTimeout(t)
-  }, [phase])
+    if (!containerRef.current) return
+    const el = containerRef.current
+    // Immediate read so we don't wait for first ResizeObserver callback
+    const { width, height } = el.getBoundingClientRect()
+    if (width > 0) setContainerSize({ w: width, h: height })
+    const ro = new ResizeObserver(([entry]) => {
+      const { width: w, height: h } = entry.contentRect
+      setContainerSize({ w, h })
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
 
   // ── Round 1 callbacks ─────────────────────────────────────────────────────
   const handleVeggieToggle = useCallback((word) => {
@@ -121,16 +139,30 @@ export default function FarmJoy({ session }) {
     })
   }, [])
 
+  const handlePull = useCallback((word, rtMs) => {
+    r1RtMapRef.current[word] = rtMs
+    setPulledIndices(prev => {
+      const next = new Set(prev)
+      next.add(word)
+      if (next.size === CFG.SAMPLE_TOTAL) {
+        // All pulled — advance to select sub-phase after a brief pause
+        setTimeout(() => setPhase(PHASE.ROUND_1_SELECT), 600)
+      }
+      return next
+    })
+  }, [])
+
   const handleHarvest = useCallback(() => {
     const snap = new Set(selections)
     selectionsSnapshotRef.current = snap
     setHarvestTriggered(true)
 
     setTimeout(() => {
+      const rtMap = r1RtMapRef.current
       const all = (svRef.current ?? []).map(v => ({
         ...v,
         round1_choice: snap.has(v.word) ? 'selected' : 'not_selected',
-        round1_rt_ms:  null,
+        round1_rt_ms:  rtMap[v.word] ?? null,
       }))
       decisionsRef.current = all
 
@@ -224,13 +256,16 @@ export default function FarmJoy({ session }) {
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         overflow: 'hidden',
       }}>
-      <div style={{
-        position: 'relative',
-        height: '100%',
-        aspectRatio: `${VB_W} / ${VB_H}`,
-        maxWidth: '100%',
-        overflow: 'hidden',
-      }}>
+      <div
+        ref={containerRef}
+        style={{
+          position: 'relative',
+          height: '100%',
+          aspectRatio: `${VB_W} / ${VB_H}`,
+          maxWidth: '100%',
+          overflow: 'hidden',
+        }}
+      >
 
         {phase === PHASE.INTRO && (
           <div style={{ position: 'absolute', inset: 0,
@@ -240,18 +275,44 @@ export default function FarmJoy({ session }) {
           </div>
         )}
 
-        {phase === PHASE.ROUND_1_SORTING && (
+        {phase === PHASE.ROUND_1_PULL && containerSize.w > 0 && (
           <div style={{ position: 'absolute', inset: 0 }}>
-            <FarmField className="absolute-fill" />
-            {(svRef.current ?? []).map((v, i) => (
-              <VeggieReveal
+            <FarmField
+              className="absolute-fill"
+              showStalks={false}
+              pulledMounds={new Set((svRef.current ?? [])
+                .filter(v => pulledIndices.has(v.word))
+                .map(v => `${v.row}-${v.col}`))}
+            />
+            {(svRef.current ?? []).map((v) => (
+              <PullableVeggie
                 key={v.word}
                 value={v}
-                index={i}
-                revealed={revealed}
+                containerW={containerSize.w}
+                containerH={containerSize.h}
+                svgX={PULL_COL_X[v.col]}
+                svgY={PULL_ROW_Y[v.row]}
+                alreadyPulled={pulledIndices.has(v.word)}
+                onPulled={handlePull}
+              />
+            ))}
+          </div>
+        )}
+
+        {phase === PHASE.ROUND_1_SELECT && containerSize.w > 0 && (
+          <div style={{ position: 'absolute', inset: 0 }}>
+            <FarmField className="absolute-fill" showStalks={false} pulledMounds={new Set()} />
+            {(svRef.current ?? []).map((v) => (
+              <PullableVeggie
+                key={v.word}
+                value={v}
+                containerW={containerSize.w}
+                containerH={containerSize.h}
+                svgX={PULL_COL_X[v.col]}
+                svgY={PULL_ROW_Y[v.row]}
+                alreadyPulled={true}
                 selected={selections.has(v.word)}
-                harvesting={harvestTriggered}
-                onTap={() => handleVeggieToggle(v.word)}
+                onSelectTap={() => !harvestTriggered && handleVeggieToggle(v.word)}
               />
             ))}
           </div>
@@ -296,8 +357,27 @@ export default function FarmJoy({ session }) {
       </div>
       </div>
 
-      {/* R1 bottom bar */}
-      {phase === PHASE.ROUND_1_SORTING && (
+      {/* R1 pull phase bottom bar */}
+      {phase === PHASE.ROUND_1_PULL && (
+        <div style={{
+          flexShrink: 0, width: '100%', height: 88,
+          background: 'rgba(26,15,2,0.96)',
+          display: 'flex', alignItems: 'center',
+          justifyContent: 'center',
+          padding: '0 28px', gap: 20,
+        }}>
+          <div style={{
+            background: 'rgba(255,255,255,0.1)', borderRadius: 999,
+            padding: '6px 16px', fontFamily: 'Space Mono,monospace',
+            fontSize: 13, color: '#fff',
+          }}>
+            {pulledIndices.size} / {CFG.SAMPLE_TOTAL} pulled
+          </div>
+        </div>
+      )}
+
+      {/* R1 select phase bottom bar */}
+      {phase === PHASE.ROUND_1_SELECT && (
         <div style={{
           flexShrink: 0, width: '100%', height: 88,
           background: 'rgba(26,15,2,0.96)',

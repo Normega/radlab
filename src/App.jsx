@@ -3,7 +3,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { supabase, savePondWatchSession, saveEbbFlowSession } from './lib/supabase'
 
-import Landing      from './pages/Landing'
+import Landing        from './pages/Landing'
+import SessionEntry  from './pages/SessionEntry'
 import PlatformPage from './pages/PlatformPage'
 import Login        from './pages/Login'
 import Signup       from './pages/Signup'
@@ -187,6 +188,9 @@ export default function App() {
               <FarmJoy session={session} />
             </ProtectedRoute>
           } />
+
+          {/* Standalone participant link — no nav or auth guard */}
+          <Route path="/s/:token" element={<SessionEntry />} />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
