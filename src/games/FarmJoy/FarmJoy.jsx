@@ -324,6 +324,8 @@ export default function FarmJoy({ session }) {
             ghSlots={ghSlots}
             onSlotsChange={setGhSlots}
             onConfirm={handleR2Confirm}
+            containerW={containerSize.w}
+            containerH={containerSize.h}
           />
         )}
 
@@ -337,7 +339,11 @@ export default function FarmJoy({ session }) {
         )}
 
         {phase === PHASE.HARVEST && (
-          <HarvestPhase finalValues={finalRef.current} />
+          <HarvestPhase
+            finalValues={finalRef.current}
+            containerW={containerSize.w}
+            containerH={containerSize.h}
+          />
         )}
 
         {phase === PHASE.SESSION_COMPLETE && (
@@ -412,9 +418,21 @@ const CARD_V = {
 
 // ─── Round 2: Greenhouse ──────────────────────────────────────────────────────
 
-function GreenhouseRound({ planted, ghSlots, onSlotsChange, onConfirm }) {
+function GreenhouseRound({ planted, ghSlots, onSlotsChange, onConfirm, containerW = 0, containerH = 0 }) {
   const [wiggleWord, setWiggleWord] = useState(null)
   const [shakeWord,  setShakeWord]  = useState(null)
+
+  // Greenhouse SVG uses xMidYMid slice. On mobile the GH div is taller than the
+  // SVG's aspect-ratio would predict, so more of the SVG is visible and the pot
+  // positions need to be computed against the actual rendered SVG viewport.
+  const ghW        = containerW
+  const ghH        = GH_TOP_PCT / 100 * containerH
+  const ghSvgScale = ghW > 0 ? Math.max(ghW / 680, ghH / 1020) : 1
+  const ghOffsetX  = (ghW - 680  * ghSvgScale) / 2
+  const ghOffsetY  = (ghH - 1020 * ghSvgScale) / 2
+  const ghPotLeft  = col => ghOffsetX + GH_COL_X[col] * ghSvgScale
+  const ghPotTop   = row => ghOffsetY + (GH_ROW_Y[row] - POT_SOIL_OFFSET) * ghSvgScale
+  const ghPotW     = ghW > 0 ? 0.18 * 680 * ghSvgScale : undefined
 
   const handleBottomTap = useCallback((value) => {
     if (wiggleWord) return
@@ -491,10 +509,10 @@ function GreenhouseRound({ planted, ghSlots, onSlotsChange, onConfirm }) {
               key={idx}
               style={{
                 position:  'absolute',
-                left:      ghLeft(col),
-                top:       ghSoilY(row),
+                left:      ghPotLeft(col),
+                top:       ghPotTop(row),
                 transform: 'translate(-50%, -100%)',
-                width:     '18%',
+                width:     ghPotW,
                 zIndex:    2,
               }}
             >
@@ -854,7 +872,15 @@ function PlantingRound({ greenhouse, r3Slots, onSlotsChange, onConfirm }) {
 
 // ─── Harvest ──────────────────────────────────────────────────────────────────
 
-function HarvestPhase({ finalValues }) {
+function HarvestPhase({ finalValues, containerW = 0, containerH = 0 }) {
+  // FarmRow uses xMidYMid meet — same offset correction as Round 1 / PullableVeggie
+  const svgScale   = containerW > 0 ? Math.min(containerW / 680, containerH / 1020) : 1
+  const svgOffsetX = (containerW - 680  * svgScale) / 2
+  const svgOffsetY = (containerH - 1020 * svgScale) / 2
+  const toX        = x => svgOffsetX + x * svgScale
+  const toY        = y => svgOffsetY + y * svgScale
+  const spriteW    = containerW > 0 ? 0.14 * 680 * svgScale : undefined
+
   const cropsPerRow = [
     finalValues[0] ? 6 : 0,
     finalValues[1] ? 6 : 0,
@@ -875,10 +901,10 @@ function HarvestPhase({ finalValues }) {
               key={`${row}-${col}`}
               style={{
                 position:      'absolute',
-                left:          `${x / VB_W * 100}%`,
-                top:           `${(FR_ROW_Y[row] - HARVEST_MOUND_RY) / VB_H * 100}%`,
+                left:          toX(x),
+                top:           toY(FR_ROW_Y[row] - HARVEST_MOUND_RY),
                 transform:     'translate(-50%, -100%)',
-                width:         '14%',
+                width:         spriteW,
                 pointerEvents: 'none',
               }}
             >
