@@ -59,15 +59,17 @@ export default function PullableVeggie({
   const [pullPhase, setPullPhase] = useState(alreadyPulled ? 'risen' : 'buried')
   const [dustKey,   setDustKey]   = useState(0)
 
-  const scaleX = containerW / 680
-  const scaleY = containerH / 1020
+  // FarmField SVG uses preserveAspectRatio="xMidYMid meet" (viewBox 680×1020).
+  // On mobile the container is taller than the SVG's natural height, so the SVG
+  // renders smaller and vertically centered — leaving dead space at top/bottom.
+  // We must match that actual rendered scale and offset, not raw container dims.
+  const svgScale   = Math.min(containerW / 680, containerH / 1020)
+  const svgOffsetX = (containerW - 680  * svgScale) / 2
+  const svgOffsetY = (containerH - 1020 * svgScale) / 2
 
-  // Match VeggieReveal: width='19%' of container = 0.19 * containerW
-  const imgWidthPx = 0.19 * containerW
-
-  // Sprite bottom anchors at moundTop (matches VeggieReveal's moundTop = svgY + MOUND_OVERLAP)
-  const anchorY  = (svgY + MOUND_OVERLAP) * scaleY   // px from container top to sprite bottom
-  const leftPx   = svgX * scaleX
+  const imgWidthPx = 0.19 * 680 * svgScale
+  const anchorY    = svgOffsetY + (svgY + MOUND_OVERLAP) * svgScale
+  const leftPx     = svgOffsetX + svgX * svgScale
 
   // How far to push the veggie DOWN so only INITIAL_VISIBLE_PCT of imageH is above anchorY
   const buriedY = imageH > 0 ? imageH * (1 - CFG.INITIAL_VISIBLE_PCT) : 0
