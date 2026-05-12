@@ -12,8 +12,11 @@ export default function LabLayout() {
   return (
     <div style={{ background: '#FCF0F5', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <nav style={S.nav}>
-        <Link to="/" style={S.logoLink}>
-          <img src="/RADlab_Logo_light.svg" height="34" alt="RADlab" />
+        <Link to="/" style={S.brand}>
+          <div style={{ height: 32, display: 'flex', alignItems: 'center' }}>
+            <img src="/RADlab_Logo.svg" style={{ height: '100%', display: 'block' }} alt="RADlab logo" />
+          </div>
+          <span style={S.wordmark}>RAD<b style={{ color: '#f068a4', fontWeight: 400 }}>lab</b></span>
         </Link>
         <div style={S.links}>
           {NAV_LINKS.map(({ to, label }) => (
@@ -51,7 +54,8 @@ const S = {
     height: 56,
     gap: 16,
   },
-  logoLink: { display: 'flex', alignItems: 'center', textDecoration: 'none', flexShrink: 0 },
+  brand: { display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', flexShrink: 0 },
+  wordmark: { fontFamily: '"DM Serif Display", Georgia, serif', fontSize: 22, letterSpacing: -0.5, color: '#1c1c1e', lineHeight: 1 },
   links: { display: 'flex', gap: '1.5rem', alignItems: 'center', flexWrap: 'wrap' },
   link: {
     fontFamily: '"DM Sans", system-ui, sans-serif',
