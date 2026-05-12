@@ -56,7 +56,8 @@ export default function Landing({ session }) {
             desc="An interactive wellbeing map for students at the University of Toronto Mississauga — finding the spaces that help."
             chips={['Student Wellbeing', 'Campus']}
             cta="Explore the map →"
-            href="#"
+            href="https://utmaps.ca"
+            newTab
           />
           <HubCard
             tag="Our Lab"
@@ -64,7 +65,8 @@ export default function Landing({ session }) {
             desc="Meet the team, browse our publications, and learn about the science behind affect, perception, and adaptive regulation."
             chips={['People', 'Publications', 'Contact']}
             cta="Visit the lab →"
-            href="#"
+            href="/lab/people"
+            internal
           />
           <HubCard
             tag="Book"
