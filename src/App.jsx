@@ -22,6 +22,16 @@ import StillWater   from './games/StillWater/StillWater'
 import FaceRead     from './games/FaceRead/FaceRead'
 import Drift        from './games/Drift/Drift'
 import FarmJoy      from './games/FarmJoy/FarmJoy'
+import AdminRoute    from './components/AdminRoute'
+import AdminLayout   from './layouts/AdminLayout'
+import AdminDashboard from './pages/admin/AdminDashboard'
+import SessionLibrary from './pages/admin/SessionLibrary'
+import SessionBuilder from './pages/admin/SessionBuilder'
+import ProtocolLibrary from './pages/admin/ProtocolLibrary'
+import ProtocolBuilder from './pages/admin/ProtocolBuilder'
+import StudyLibrary  from './pages/admin/StudyLibrary'
+import StudyBuilder  from './pages/admin/StudyBuilder'
+import StudyDetail   from './pages/admin/StudyDetail'
 
 const queryClient = new QueryClient()
 
@@ -191,6 +201,22 @@ export default function App() {
 
           {/* Standalone participant link — no nav or auth guard */}
           <Route path="/s/:token" element={<SessionEntry />} />
+
+          {/* Admin section — role-gated */}
+          <Route element={<AdminRoute session={session} />}>
+            <Route element={<AdminLayout session={session} />}>
+              <Route path="/admin"                  element={<AdminDashboard />} />
+              <Route path="/admin/sessions"         element={<SessionLibrary />} />
+              <Route path="/admin/sessions/new"     element={<SessionBuilder />} />
+              <Route path="/admin/sessions/:id"     element={<SessionBuilder />} />
+              <Route path="/admin/protocols"        element={<ProtocolLibrary />} />
+              <Route path="/admin/protocols/new"    element={<ProtocolBuilder />} />
+              <Route path="/admin/protocols/:id"    element={<ProtocolBuilder />} />
+              <Route path="/admin/studies"          element={<StudyLibrary />} />
+              <Route path="/admin/studies/new"      element={<StudyBuilder />} />
+              <Route path="/admin/studies/:id"      element={<StudyDetail />} />
+            </Route>
+          </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

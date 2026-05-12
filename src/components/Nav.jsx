@@ -1,13 +1,26 @@
 import { Link, useNavigate } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import BaseAvatar from './Avatar/BaseAvatar'
 import { useAvatarConfig } from '../hooks/useAvatarConfig'
+
+function useProfile(userId) {
+  return useQuery({
+    queryKey: ['nav-profile', userId],
+    enabled: !!userId,
+    queryFn: async () => {
+      const { data } = await supabase.from('profiles').select('role, super_admin').eq('id', userId).single()
+      return data
+    },
+  })
+}
 
 export default function Nav({ session }) {
   const navigate = useNavigate()
   const userId   = session?.user?.id
 
   const { data: avatarData } = useAvatarConfig(userId)
+  const { data: profile }    = useProfile(userId)
 
   const initial = (
     session?.user?.user_metadata?.display_name?.[0] ||
@@ -34,6 +47,9 @@ export default function Nav({ session }) {
           <>
             <Link to="/dashboard" style={S.link}>Dashboard</Link>
             <Link to="/games"     style={S.link}>Games</Link>
+            {(profile?.role === 'lab' || profile?.super_admin === true) && (
+              <Link to="/admin" style={S.link}>Admin</Link>
+            )}
             <button style={S.btnOutline} onClick={handleSignOut}>Sign out</button>
             <Link to="/profile" style={S.avatarCircle}>
               {avatarData ? (
