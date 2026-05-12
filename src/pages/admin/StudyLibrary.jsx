@@ -6,27 +6,27 @@ function useStudies() {
   return useQuery({
     queryKey: ['studies-list'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('studies')
-        .select(`
-          id, name, created_at,
-          study_protocol_assignments(
-            study_protocols(id, label, protocol_type)
-          ),
-          participant_consent(id, withdrawn_at)
-        `)
-        .order('created_at', { ascending: false })
-      if (error) throw error
-      return data.map(s => {
-        const protocol = s.study_protocol_assignments?.[0]?.study_protocols
-        const enrolled = (s.participant_consent ?? []).filter(c => !c.withdrawn_at)
-        return {
-          ...s,
-          protocolLabel: protocol?.label ?? '—',
-          protocolType: protocol?.protocol_type,
-          participantCount: enrolled.length,
-        }
-      })
+      const [studiesRes, assignmentsRes, protocolsRes, consentRes] = await Promise.all([
+        supabase.from('studies').select('id, name, created_at').order('created_at', { ascending: false }),
+        supabase.from('study_protocol_assignments').select('study_id, protocol_id'),
+        supabase.from('study_protocols').select('id, label, protocol_type'),
+        supabase.from('participant_consent').select('study_id').is('withdrawn_at', null),
+      ])
+      if (studiesRes.error) throw studiesRes.error
+
+      const protocolById = Object.fromEntries((protocolsRes.data ?? []).map(p => [p.id, p]))
+      const protocolByStudy = Object.fromEntries((assignmentsRes.data ?? []).map(a => [a.study_id, protocolById[a.protocol_id]]))
+      const consentCount = (consentRes.data ?? []).reduce((acc, c) => {
+        acc[c.study_id] = (acc[c.study_id] ?? 0) + 1
+        return acc
+      }, {})
+
+      return (studiesRes.data ?? []).map(s => ({
+        ...s,
+        protocolLabel: protocolByStudy[s.id]?.label ?? '—',
+        protocolType: protocolByStudy[s.id]?.protocol_type,
+        participantCount: consentCount[s.id] ?? 0,
+      }))
     },
   })
 }
