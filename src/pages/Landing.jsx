@@ -18,6 +18,9 @@ export default function Landing({ session }) {
           </div>
           <span style={S.wordmark}>RAD<b style={{ color: 'var(--pk)', fontWeight: 400 }}>lab</b></span>
         </Link>
+        <a href="https://www.utoronto.ca/" target="_blank" rel="noopener noreferrer" style={S.uoftLink}>
+          <img src="/UofT_Logo.svg" style={{ height: 32, display: 'block' }} alt="University of Toronto" />
+        </a>
       </nav>
 
       {/* HERO */}
@@ -153,12 +156,13 @@ const S = {
   },
 
   nav: {
-    display: 'flex', alignItems: 'center', padding: '12px 0',
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0',
     borderBottom: '1px solid var(--bd)', background: 'rgba(252,240,245,0.97)',
     position: 'sticky', top: 0, zIndex: 10,
     backdropFilter: 'blur(8px)',
   },
   brand:    { display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' },
+  uoftLink: { display: 'flex', alignItems: 'center', flexShrink: 0 },
   wordmark: { fontFamily: SERIF, fontSize: 'clamp(22px, 5vw, 36px)', letterSpacing: -0.5, color: 'var(--tx)', lineHeight: 1 },
 
   hero:      { padding: '80px 52px 52px', maxWidth: 860, position: 'relative', zIndex: 1 },
