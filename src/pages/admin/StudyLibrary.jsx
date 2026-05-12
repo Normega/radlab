@@ -13,22 +13,18 @@ function useStudies() {
           study_protocol_assignments(
             study_protocols(id, label, protocol_type)
           ),
-          participant_schedule(id, status)
+          participant_consent(id, withdrawn_at)
         `)
         .order('created_at', { ascending: false })
       if (error) throw error
       return data.map(s => {
-        const schedule = s.participant_schedule ?? []
-        const total = schedule.length
-        const completed = schedule.filter(r => r.status === 'completed').length
         const protocol = s.study_protocol_assignments?.[0]?.study_protocols
+        const enrolled = (s.participant_consent ?? []).filter(c => !c.withdrawn_at)
         return {
           ...s,
           protocolLabel: protocol?.label ?? '—',
           protocolType: protocol?.protocol_type,
-          participantCount: new Set(schedule.map(r => r.participant_id)).size,
-          total,
-          completed,
+          participantCount: enrolled.length,
         }
       })
     },
@@ -61,40 +57,32 @@ export default function StudyLibrary() {
           <table style={S.table}>
             <thead>
               <tr>
-                {['Study', 'Protocol', 'Participants', 'Completion', 'Created', 'Actions'].map(h => (
+                {['Study', 'Protocol', 'Participants', 'Created', 'Actions'].map(h => (
                   <th key={h} style={S.th}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {studies.map(s => {
-                const pct = s.total > 0 ? Math.round((s.completed / s.total) * 100) : null
-                return (
-                  <tr key={s.id} style={S.tr}>
-                    <td style={S.td}>
-                      <span style={S.label}>{s.name}</span>
-                    </td>
-                    <td style={S.td}>
-                      <span style={S.proto}>{s.protocolLabel}</span>
-                      {s.protocolType && <TypeBadge type={s.protocolType} />}
-                    </td>
-                    <td style={S.td}>
-                      <Chip>{s.participantCount}</Chip>
-                    </td>
-                    <td style={S.td}>
-                      {pct !== null
-                        ? <span style={S.pct}>{pct}%</span>
-                        : <span style={S.muted}>—</span>}
-                    </td>
-                    <td style={S.td}><span style={S.mono}>{fmtDate(s.created_at)}</span></td>
-                    <td style={S.td}>
-                      <div style={S.actions}>
-                        <Link to={`/admin/studies/${s.id}`} style={S.actionBtn}>View</Link>
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
+              {studies.map(s => (
+                <tr key={s.id} style={S.tr}>
+                  <td style={S.td}>
+                    <span style={S.label}>{s.name}</span>
+                  </td>
+                  <td style={S.td}>
+                    <span style={S.proto}>{s.protocolLabel}</span>
+                    {s.protocolType && <TypeBadge type={s.protocolType} />}
+                  </td>
+                  <td style={S.td}>
+                    <Chip>{s.participantCount}</Chip>
+                  </td>
+                  <td style={S.td}><span style={S.mono}>{fmtDate(s.created_at)}</span></td>
+                  <td style={S.td}>
+                    <div style={S.actions}>
+                      <Link to={`/admin/studies/${s.id}`} style={S.actionBtn}>View</Link>
+                    </div>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
