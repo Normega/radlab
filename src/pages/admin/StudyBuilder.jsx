@@ -34,7 +34,7 @@ export default function StudyBuilder() {
 
       const { data: study, error: se } = await supabase
         .from('studies')
-        .insert({ label: label.trim(), messaging_required: messagingRequired })
+        .insert({ name: label.trim(), messaging_required: messagingRequired })
         .select('id').single()
       if (se) throw se
 

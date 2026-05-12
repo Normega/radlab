@@ -13,7 +13,7 @@ function useStudy(id) {
       const { data, error } = await supabase
         .from('studies')
         .select(`
-          id, label, created_at, messaging_required,
+          id, name, created_at, messaging_required,
           study_protocol_assignments(
             study_protocols:protocol_id(id, label, protocol_type)
           )
@@ -178,7 +178,7 @@ export default function StudyDetail() {
       <div style={S.header}>
         <div>
           <Link to="/admin/studies" style={S.backLink}>← Studies</Link>
-          <h1 style={S.h1}>{study?.label}</h1>
+          <h1 style={S.h1}>{study?.name}</h1>
           <p style={S.sub}>
             {protocol?.label ?? '—'}
             {protocol?.protocol_type && (
