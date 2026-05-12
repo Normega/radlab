@@ -11,7 +11,7 @@ function useStudies() {
         .select(`
           id, name, created_at, archived,
           study_protocol_assignments(
-            study_protocols:protocol_id(id, label, protocol_type)
+            study_protocols(id, label, protocol_type)
           ),
           participant_schedule(id, status)
         `)

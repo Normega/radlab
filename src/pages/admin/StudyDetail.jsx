@@ -15,7 +15,7 @@ function useStudy(id) {
         .select(`
           id, name, created_at, messaging_required,
           study_protocol_assignments(
-            study_protocols:protocol_id(id, label, protocol_type)
+            study_protocols(id, label, protocol_type)
           )
         `)
         .eq('id', id)
@@ -33,7 +33,7 @@ function useParticipants(studyId) {
     queryFn: async () => {
       const { data: consents, error } = await supabase
         .from('participant_consent')
-        .select('id, participant_id, consented_at, withdrawn_at, profiles:participant_id(id, email, display_name)')
+        .select('id, participant_id, consented_at, withdrawn_at, profiles(id, email, display_name)')
         .eq('study_id', studyId)
         .is('withdrawn_at', null)
         .order('consented_at')
