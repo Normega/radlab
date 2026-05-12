@@ -33,7 +33,7 @@ function useParticipants(studyId) {
     queryFn: async () => {
       const { data: consents, error } = await supabase
         .from('participant_consent')
-        .select('id, participant_id, consented_at, withdrawn_at, profiles(id, email, display_name)')
+        .select('id, participant_id, consented_at, withdrawn_at, profiles(id, display_name)')
         .eq('study_id', studyId)
         .is('withdrawn_at', null)
         .order('consented_at')
@@ -66,8 +66,7 @@ function useParticipants(studyId) {
         return {
           consentId: c.id,
           participantId: c.participant_id,
-          email: c.profiles?.email,
-          displayName: c.profiles?.display_name || c.profiles?.email?.split('@')[0] || '—',
+          displayName: c.profiles?.display_name || '—',
           enrolledAt: c.consented_at,
           total,
           completed,
@@ -116,14 +115,16 @@ export default function StudyDetail() {
 
   const addParticipant = useMutation({
     mutationFn: async (email) => {
-      const { data: profiles, error: pe } = await supabase
-        .from('profiles')
-        .select('id, email, display_name')
-        .eq('email', email.trim().toLowerCase())
-        .limit(1)
+      const { data: userId, error: pe } = await supabase
+        .rpc('get_user_id_by_email', { lookup_email: email.trim().toLowerCase() })
       if (pe) throw pe
-      if (!profiles?.length) throw new Error(`No account found for ${email}. They need to sign up first.`)
-      const profile = profiles[0]
+      if (!userId) throw new Error(`No account found for ${email}. They need to sign up first.`)
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id, display_name')
+        .eq('id', userId)
+        .single()
 
       const existing = await supabase
         .from('participant_consent')
@@ -156,7 +157,7 @@ export default function StudyDetail() {
         await issueLink(scheduleRows[0].id)
       }
 
-      return profile.display_name || email
+      return profile?.display_name || email
     },
     onSuccess: (name) => {
       qc.invalidateQueries({ queryKey: ['study-participants', id] })
@@ -252,7 +253,6 @@ export default function StudyDetail() {
                     <tr key={p.participantId} style={S.tr}>
                       <td style={S.td}>
                         <span style={S.pName}>{p.displayName}</span>
-                        <span style={S.pEmail}>{p.email}</span>
                       </td>
                       <td style={S.td}><span style={S.mono}>{fmtDate(p.enrolledAt)}</span></td>
                       <td style={S.td}>
