@@ -9,7 +9,7 @@ function useStudies() {
       const { data, error } = await supabase
         .from('studies')
         .select(`
-          id, name, created_at, archived,
+          id, name, created_at,
           study_protocol_assignments(
             study_protocols(id, label, protocol_type)
           ),
@@ -73,7 +73,6 @@ export default function StudyLibrary() {
                   <tr key={s.id} style={S.tr}>
                     <td style={S.td}>
                       <span style={S.label}>{s.name}</span>
-                      {s.archived && <span style={S.archivedBadge}>archived</span>}
                     </td>
                     <td style={S.td}>
                       <span style={S.proto}>{s.protocolLabel}</span>
