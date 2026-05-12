@@ -54,6 +54,144 @@ body {
   50%       { opacity: 0.35; transform: scale(0.8); }
 }
 
+/* ─── Lab pages ──────────────────────────────────────────────────────────── */
+
+.lab-page { max-width: 900px; margin: 0 auto; padding: 2rem 1rem; }
+.lab-section { margin-bottom: 3rem; }
+.lab-section__heading {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.5rem;
+  font-weight: 400;
+  color: #1c1c1e;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e8e0e4;
+}
+
+/* Person cards */
+.person-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.25rem; }
+
+.person-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.person-card--featured { gap: 1.5rem; }
+
+.person-card__photo-wrap { flex-shrink: 0; }
+
+.person-card__photo {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+  background: #f9d0e5;
+}
+
+.person-card__photo--featured { width: 120px; height: 120px; }
+
+.person-card__body { display: flex; flex-direction: column; gap: 0.4rem; min-width: 0; }
+
+.person-card__name {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.1rem;
+  font-weight: 400;
+  color: #1c1c1e;
+  margin: 0;
+}
+
+.person-card__role {
+  font-size: 0.75rem;
+  color: #abadb0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+  font-family: 'Space Mono', monospace;
+}
+
+.person-card__bio { font-size: 0.875rem; color: #555; line-height: 1.6; margin: 0; }
+
+.person-card__links { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.25rem; }
+
+.person-card__link {
+  font-size: 0.75rem;
+  padding: 3px 10px;
+  border-radius: 99px;
+  border: 1px solid #f068a4;
+  color: #f068a4;
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+}
+
+.person-card__link:hover { background: #f068a4; color: #fff; }
+
+/* Alumni toggle */
+.alumni-toggle {
+  background: none;
+  border: 1px solid #abadb0;
+  border-radius: 8px;
+  padding: 6px 16px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  color: #1c1c1e;
+  margin-bottom: 1rem;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  transition: border-color 0.15s, color 0.15s;
+}
+.alumni-toggle:hover { border-color: #f068a4; color: #f068a4; }
+
+/* Contact page */
+.contact-address {
+  font-style: normal;
+  font-size: 0.875rem;
+  line-height: 2;
+  color: #6b6c70;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  border-left: 3px solid #f0b8d4;
+  padding-left: 1.25rem;
+}
+
+.contact-blocks { display: flex; flex-direction: column; gap: 1.5rem; }
+
+.contact-block {
+  padding: 1.5rem 2rem;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid rgba(180,100,140,0.18);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.contact-block__title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.15rem;
+  font-weight: 400;
+  color: #1c1c1e;
+  margin: 0;
+}
+
+.contact-block__body { font-size: 0.875rem; line-height: 1.75; color: #555; margin: 0; }
+
+.contact-block__actions { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 0.25rem; }
+
+.contact-cta {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  color: #f068a4;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: opacity 0.15s;
+}
+.contact-cta:hover { opacity: 0.7; }
+
 /* Farm Joy game backgrounds — fills a position:absolute container */
 .absolute-fill {
   position: absolute;

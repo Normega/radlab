@@ -1,4 +1,11 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import Hub           from './pages/Hub'
+import LabLayout     from './layouts/LabLayout'
+import AboutPage     from './pages/lab/AboutPage'
+import PeoplePage    from './pages/lab/PeoplePage'
+import ResearchPage  from './pages/lab/ResearchPage'
+import PublicationsPage from './pages/lab/PublicationsPage'
+import ContactPage   from './pages/lab/ContactPage'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { supabase, savePondWatchSession, saveEbbFlowSession } from './lib/supabase'
@@ -114,7 +121,8 @@ export default function App() {
       <AuraFilterDef />
       <BrowserRouter>
         <Routes>
-          <Route path="/"         element={<Landing      session={session} />} />
+          <Route path="/"         element={<Hub />} />
+          <Route path="/games-landing" element={<Landing session={session} />} />
           <Route path="/platform" element={<PlatformPage session={session} />} />
           <Route path="/login"  element={<PublicOnlyRoute session={session} role={role}><Login /></PublicOnlyRoute>} />
           <Route path="/signup" element={<PublicOnlyRoute session={session} role={role}><Signup /></PublicOnlyRoute>} />
@@ -216,6 +224,16 @@ export default function App() {
               <Route path="/admin/studies/new"      element={<StudyBuilder />} />
               <Route path="/admin/studies/:id"      element={<StudyDetail />} />
             </Route>
+          </Route>
+
+          {/* Lab section — public */}
+          <Route element={<LabLayout />}>
+            <Route path="/lab" element={<Navigate to="/lab/people" replace />} />
+            <Route path="/lab/about"        element={<AboutPage />} />
+            <Route path="/lab/people"       element={<PeoplePage />} />
+            <Route path="/lab/research"     element={<ResearchPage />} />
+            <Route path="/lab/publications" element={<PublicationsPage />} />
+            <Route path="/lab/contact"      element={<ContactPage />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />
