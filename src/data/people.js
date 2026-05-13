@@ -10,6 +10,7 @@ export const pi = {
   bio: "Norm is an Associate Professor of Psychology at the University of Toronto Mississauga, where he directs the Regulatory and Affective Dynamics laboratory. He studies the psychology of wellbeing, focusing on mental habits, such as how we think about ourselves and interpret our emotions. He is particularly interested in why people differ in their resilience to stress, depression, and anxiety. His work currently explores online training to support wellbeing, as well as neuroimaging to understand how emotional reactions predict mental health over the lifespan. Hobbies include yoga, frisbee, sci-fi novels, and reality TV shows about cooking.",
   links: [
     { label: "Google Scholar", url: "https://scholar.google.com/citations?user=N3eZJd4AAAAJ" },
+    { label: "LinkedIn", url: "https://ca.linkedin.com/in/norman-farb-4a412516" },
   ],
 };
 
