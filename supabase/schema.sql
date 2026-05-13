@@ -67,7 +67,8 @@ create table public.studies (
   name       text not null,
   created_by uuid references public.profiles(id),
   protocol   jsonb not null default '[]',
-  active     bool not null default true
+  active     bool not null default true,
+  created_at timestamptz not null default now()
 );
 
 alter table public.studies enable row level security;
@@ -91,7 +92,7 @@ create policy "studies: participant read own"
 -- Add FK from profiles → studies (now that studies exists)
 alter table public.profiles
   add constraint profiles_study_id_fkey
-  foreign key (study_id) references public.studies(id);
+  foreign key (study_id) references public.studies(id) on delete set null;
 
 
 -- ── GAME SESSIONS ─────────────────────────────────────────────────────────────
@@ -99,7 +100,7 @@ create table public.game_sessions (
   id         uuid primary key default gen_random_uuid(),
   user_id    uuid not null references public.profiles(id) on delete cascade,
   game_name  text not null,
-  study_id   uuid references public.studies(id),
+  study_id   uuid references public.studies(id) on delete set null,
   is_test    bool not null default false,
   started_at timestamptz not null default now(),
   ended_at   timestamptz

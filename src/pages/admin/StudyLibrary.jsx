@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 
 function useStudies() {
@@ -31,8 +32,21 @@ function useStudies() {
   })
 }
 
+function useDeleteStudy() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (id) => {
+      const { error } = await supabase.from('studies').delete().eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['studies-list'] }),
+  })
+}
+
 export default function StudyLibrary() {
   const { data: studies, isLoading } = useStudies()
+  const deleteStudy = useDeleteStudy()
+  const [pendingDelete, setPendingDelete] = useState(null)
 
   return (
     <div>
@@ -79,12 +93,39 @@ export default function StudyLibrary() {
                   <td style={S.td}>
                     <div style={S.actions}>
                       <Link to={`/admin/studies/${s.id}`} style={S.actionBtn}>View</Link>
+                      <button onClick={() => setPendingDelete(s)} style={S.deleteBtn}>Delete</button>
                     </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {pendingDelete && (
+        <div style={S.overlay} onClick={() => setPendingDelete(null)}>
+          <div style={S.dialog} onClick={e => e.stopPropagation()}>
+            <h2 style={S.dialogTitle}>Delete study?</h2>
+            <p style={S.dialogBody}>
+              <strong>{pendingDelete.name}</strong> and all its data will be permanently removed. This cannot be undone.
+            </p>
+            <div style={S.dialogActions}>
+              <button style={S.cancelBtn} onClick={() => setPendingDelete(null)}>Cancel</button>
+              <button
+                style={S.confirmDeleteBtn}
+                disabled={deleteStudy.isPending}
+                onClick={() => {
+                  deleteStudy.mutate(pendingDelete.id, { onSuccess: () => setPendingDelete(null) })
+                }}
+              >
+                {deleteStudy.isPending ? 'Deleting…' : 'Delete'}
+              </button>
+            </div>
+            {deleteStudy.isError && (
+              <p style={S.dialogError}>{deleteStudy.error.message}</p>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -133,5 +174,14 @@ const S = {
   td: { padding: '12px 16px', verticalAlign: 'middle' },
   actions: { display: 'flex', gap: 10, alignItems: 'center' },
   actionBtn: { background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: 'var(--tx2)', padding: 0, textDecoration: 'none', fontFamily: '"DM Sans",system-ui,sans-serif' },
+  deleteBtn: { background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: '#c0392b', padding: 0, fontFamily: '"DM Sans",system-ui,sans-serif' },
   btnPrimary: { display: 'inline-block', background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 18px', fontSize: 14, fontWeight: 500, cursor: 'pointer', textDecoration: 'none', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
+  overlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 },
+  dialog: { background: '#fff', borderRadius: 14, padding: '28px 32px', maxWidth: 420, width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.18)' },
+  dialogTitle: { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 20, fontWeight: 400, color: 'var(--tx)', margin: '0 0 12px' },
+  dialogBody: { fontSize: 14, color: 'var(--tx2)', margin: '0 0 24px', lineHeight: 1.6 },
+  dialogActions: { display: 'flex', justifyContent: 'flex-end', gap: 10 },
+  cancelBtn: { background: 'none', border: '1px solid var(--bd)', borderRadius: 8, padding: '8px 18px', fontSize: 14, cursor: 'pointer', color: 'var(--tx2)', fontFamily: '"DM Sans",system-ui,sans-serif' },
+  confirmDeleteBtn: { background: '#c0392b', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 18px', fontSize: 14, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', fontWeight: 500 },
+  dialogError: { fontSize: 13, color: '#c0392b', margin: '12px 0 0', fontFamily: '"DM Sans",system-ui,sans-serif' },
 }
