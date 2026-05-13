@@ -1,5 +1,4 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import Hub           from './pages/Hub'
 import LabLayout     from './layouts/LabLayout'
 import AboutPage     from './pages/lab/AboutPage'
 import PeoplePage    from './pages/lab/PeoplePage'
