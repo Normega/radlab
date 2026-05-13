@@ -233,6 +233,18 @@ create trigger on_auth_user_created
   for each row execute procedure public.handle_new_user();
 
 
+-- ── ROLE GRANTS ──────────────────────────────────────────────────────────────
+-- Required from Supabase's May/Oct 2026 enforcement of explicit table grants.
+-- RLS policies on each table still control row-level access; these grants just
+-- allow PostgREST to attempt queries as the authenticated role.
+grant select, insert, update, delete
+  on all tables in schema public
+  to authenticated;
+
+alter default privileges in schema public
+  grant select, insert, update, delete on tables to authenticated;
+
+
 -- ── BACKFILL EXISTING USERS ───────────────────────────────────────────────────
 -- Creates profile rows for any auth users who signed up before this schema ran.
 insert into public.profiles (id, display_name, role)
