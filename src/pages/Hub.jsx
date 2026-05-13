@@ -63,7 +63,7 @@ export default function Hub() {
           gap: '1.25rem',
         }}>
           <HubCard title="Come, See" desc="Perceptual games and research tasks" to="/games" />
-          <HubCard title="Our Lab" desc="People, research, and publications" to="/lab/people" />
+          <HubCard title="Our Lab" desc="People, research, and publications" to="/lab/about" />
           <HubCard title="UTMaps" desc="Student wellbeing mapping project" href="https://utmaps.ca" />
           <div style={{
             borderRadius: 12,

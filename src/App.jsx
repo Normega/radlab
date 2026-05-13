@@ -227,7 +227,7 @@ export default function App() {
 
           {/* Lab section — public */}
           <Route element={<LabLayout />}>
-            <Route path="/lab" element={<Navigate to="/lab/people" replace />} />
+            <Route path="/lab" element={<Navigate to="/lab/about" replace />} />
             <Route path="/lab/about"        element={<AboutPage />} />
             <Route path="/lab/people"       element={<PeoplePage />} />
             <Route path="/lab/research"     element={<ResearchPage />} />
