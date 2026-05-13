@@ -5,6 +5,7 @@ import PeoplePage    from './pages/lab/PeoplePage'
 import ResearchPage  from './pages/lab/ResearchPage'
 import PublicationsPage from './pages/lab/PublicationsPage'
 import ContactPage   from './pages/lab/ContactPage'
+import MediaPage     from './pages/lab/MediaPage'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { supabase, savePondWatchSession, saveEbbFlowSession } from './lib/supabase'
@@ -231,6 +232,7 @@ export default function App() {
             <Route path="/lab/people"       element={<PeoplePage />} />
             <Route path="/lab/research"     element={<ResearchPage />} />
             <Route path="/lab/publications" element={<PublicationsPage />} />
+            <Route path="/lab/media"        element={<MediaPage />} />
             <Route path="/lab/contact"      element={<ContactPage />} />
           </Route>
 

@@ -5,6 +5,7 @@ const NAV_LINKS = [
   { to: '/lab/people', label: 'People' },
   { to: '/lab/research', label: 'Research' },
   { to: '/lab/publications', label: 'Publications' },
+  { to: '/lab/media', label: 'Media' },
   { to: '/lab/contact', label: 'Contact' },
 ]
 
