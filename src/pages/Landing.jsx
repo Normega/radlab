@@ -68,7 +68,7 @@ export default function Landing({ session }) {
             desc="Meet the team, browse our publications, and learn about the science behind affect, perception, and adaptive regulation."
             chips={['People', 'Publications', 'Contact']}
             cta="Visit the lab →"
-            href="/lab/people"
+            href="/lab/about"
             internal
           />
           <HubCard
