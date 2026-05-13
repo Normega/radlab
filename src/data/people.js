@@ -43,7 +43,10 @@ export const gradStudents = [
     role: "PhD Student",
     photo: "/images/people/liliana.jpg",
     bio: "Liliana received her B.Sc. in Psychology from the University of Toronto. She is currently a PhD student in Psychology at the University of Toronto, where her research focuses on understanding the structural and functional neural mechanisms underlying depression vulnerability. Her work aims to develop personalized, web-based micro interventions to enhance well-being among university students. Outside of her academic pursuits, Liliana is passionate about fitness, discovering healthy recipes, and binge-playing PS5 games.",
-    links: [],
+    links: [
+      { label: "LinkedIn", url: "https://www.linkedin.com/in/lilianacwu/" },
+      { label: "Google Scholar", url: "https://scholar.google.ca/citations?user=8L0pVSgAAAAJ&hl=en" },
+    ],
   },
   {
     name: "Zoey Zuo",
