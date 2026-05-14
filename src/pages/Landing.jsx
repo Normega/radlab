@@ -19,7 +19,7 @@ export default function Landing({ session }) {
           <span style={S.wordmark}>RAD<b style={{ color: 'var(--pk)', fontWeight: 400 }}>lab</b></span>
         </Link>
         <a href="https://www.utoronto.ca/" target="_blank" rel="noopener noreferrer" style={S.uoftLink}>
-          <img src="/UofT_Logo.svg" style={{ height: 48, width: 'auto', display: 'block' }} alt="University of Toronto" />
+          <img src="/UofT_Logo.svg" style={{ height: 42, width: 'auto', display: 'block' }} alt="University of Toronto" />
         </a>
       </nav>
 
