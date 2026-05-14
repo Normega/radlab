@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import LabLayout     from './layouts/LabLayout'
 import AboutPage     from './pages/lab/AboutPage'
 import PeoplePage    from './pages/lab/PeoplePage'
@@ -8,6 +8,12 @@ import ContactPage   from './pages/lab/ContactPage'
 import MediaPage     from './pages/lab/MediaPage'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
+
+function ScrollToTop() {
+  const { pathname } = useLocation()
+  useEffect(() => { window.scrollTo(0, 0) }, [pathname])
+  return null
+}
 import { supabase, savePondWatchSession, saveEbbFlowSession } from './lib/supabase'
 
 import Landing        from './pages/Landing'
@@ -120,6 +126,7 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <AuraFilterDef />
       <BrowserRouter>
+        <ScrollToTop />
         <Routes>
           <Route path="/"         element={<Landing session={session} />} />
           <Route path="/platform" element={<PlatformPage session={session} />} />
