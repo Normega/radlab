@@ -30,17 +30,6 @@ export default function AboutPage() {
       <section className="lab-section" style={S.hero}>
         <p style={S.eyebrow}>University of Toronto Mississauga · Department of Psychology</p>
         <h1 style={S.heroHeading}>Understanding how emotions unfold — and what that means for wellbeing.</h1>
-        <p style={S.heroBody}>
-          The Regulatory and Affective Dynamics (RAD) Lab is dedicated to understanding how emotions
-          and regulatory responses unfold over time to determine a person&apos;s sense of wellbeing.
-          Part of the Health, Adaptation, and Wellbeing Cluster at UTM, we bring together
-          neuroscience, clinical psychology, and digital technology to study resilience where it
-          matters most: in real people, navigating real stress.
-        </p>
-      </section>
-
-      {/* ── Hero image ── */}
-      <section className="lab-section" style={{ paddingTop: 0 }}>
         <div style={S.banner}>
           <img
             src="/images/homesite_lotus_brain_banner_3to1.png"
@@ -48,6 +37,13 @@ export default function AboutPage() {
             style={S.bannerImg}
           />
         </div>
+        <p style={S.heroBody}>
+          The Regulatory and Affective Dynamics (RAD) Lab is dedicated to understanding how emotions
+          and regulatory responses unfold over time to determine a person&apos;s sense of wellbeing.
+          Part of the Health, Adaptation, and Wellbeing Cluster at UTM, we bring together
+          neuroscience, clinical psychology, and digital technology to study resilience where it
+          matters most: in real people, navigating real stress.
+        </p>
       </section>
 
       {/* ── What we study ── */}
@@ -187,11 +183,15 @@ const S = {
     borderRadius: 16,
     overflow: 'hidden',
     width: '100%',
+    height: 360,
+    margin: '1.5rem 0',
   },
   bannerImg: {
     display: 'block',
     width: '100%',
-    height: 'auto',
+    height: '100%',
+    objectFit: 'cover',
+    objectPosition: 'center',
   },
   quickLinks: {
     display: 'flex',
