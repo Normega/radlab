@@ -32,7 +32,7 @@ export default function AboutPage() {
         <h1 style={S.heroHeading}>Understanding how emotions unfold — and what that means for wellbeing.</h1>
         <div style={S.banner}>
           <img
-            src="/images/homesite_lotus_brain_hero.png"
+            src="/images/homesite_lotus_brain_banner.png"
             alt="Lotus flower connected to a brain by golden luminous threads"
             style={S.bannerImg}
           />
@@ -183,15 +183,13 @@ const S = {
     borderRadius: 16,
     overflow: 'hidden',
     width: '100%',
-    height: 360,
+    maxWidth: 680,
     margin: '1.5rem 0',
   },
   bannerImg: {
     display: 'block',
     width: '100%',
-    height: '100%',
-    objectFit: 'cover',
-    objectPosition: 'center',
+    height: 'auto',
   },
   quickLinks: {
     display: 'flex',
