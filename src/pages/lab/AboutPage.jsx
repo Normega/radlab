@@ -39,6 +39,17 @@ export default function AboutPage() {
         </p>
       </section>
 
+      {/* ── Hero image ── */}
+      <section className="lab-section" style={{ paddingTop: 0 }}>
+        <div style={S.banner}>
+          <img
+            src="/images/homesite_lotus_brain_banner_3to1.png"
+            alt="Lotus flower connected to a brain by golden luminous threads"
+            style={S.bannerImg}
+          />
+        </div>
+      </section>
+
       {/* ── What we study ── */}
       <section className="lab-section">
         <h2 className="lab-section__heading">What we study</h2>
@@ -171,6 +182,16 @@ const S = {
     lineHeight: 1.65,
     color: '#555',
     margin: 0,
+  },
+  banner: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    width: '100%',
+  },
+  bannerImg: {
+    display: 'block',
+    width: '100%',
+    height: 'auto',
   },
   quickLinks: {
     display: 'flex',
