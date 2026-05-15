@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
@@ -291,6 +291,39 @@ function ScheduleView({ studyId, participant, onBack, qc }) {
   const { data: rows = [], isLoading } = useParticipantSchedule(studyId, participant.participantId)
   const [copied, setCopied] = useState(null)
   const [actionError, setActionError] = useState(null)
+  const [testModal, setTestModal] = useState({ open: false, scheduleId: null })
+  const [testEmail, setTestEmail] = useState('')
+  const [testSending, setTestSending] = useState(false)
+  const [toast, setToast] = useState(null)
+
+  useEffect(() => {
+    if (!toast) return
+    const t = setTimeout(() => setToast(null), 4000)
+    return () => clearTimeout(t)
+  }, [toast])
+
+  async function openTestModal(scheduleId) {
+    const { data: { user } } = await supabase.auth.getUser()
+    setTestEmail(user?.email ?? '')
+    setTestModal({ open: true, scheduleId })
+  }
+
+  async function sendTest() {
+    setTestSending(true)
+    try {
+      const { data, error } = await supabase.functions.invoke('send_message', {
+        body: { schedule_instance_id: testModal.scheduleId, test_override_email: testEmail },
+      })
+      if (error) throw error
+      if (!data?.success) throw new Error(data?.error ?? 'Send failed')
+      setToast({ msg: `Test email sent to ${testEmail}`, type: 'success' })
+    } catch (e) {
+      setToast({ msg: e.message, type: 'error' })
+    } finally {
+      setTestSending(false)
+      setTestModal({ open: false, scheduleId: null })
+    }
+  }
 
   const issueLinkMutation = useMutation({
     mutationFn: async (scheduleId) => {
@@ -398,6 +431,14 @@ function ScheduleView({ studyId, participant, onBack, qc }) {
                             {copied === link.token ? 'Copied!' : 'Copy link'}
                           </button>
                         )}
+                        {['pending', 'link_sent', 'unlocked'].includes(row.status) && (
+                          <button
+                            style={{ ...S.actionBtn, color: 'var(--pk)' }}
+                            onClick={() => openTestModal(row.id)}
+                          >
+                            Send test
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -405,6 +446,50 @@ function ScheduleView({ studyId, participant, onBack, qc }) {
               })}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Send test modal */}
+      {testModal.open && (
+        <div style={S.overlay} onClick={() => setTestModal({ open: false, scheduleId: null })}>
+          <div style={S.dialog} onClick={e => e.stopPropagation()}>
+            <h3 style={S.dialogTitle}>Send test email</h3>
+            <p style={S.dialogBody}>
+              This sends a test version of this scheduled message to your email address. It will not affect
+              the participant's schedule or consent record.
+            </p>
+            <label style={S.dialogLabel}>Send to</label>
+            <input
+              style={{ ...S.input, width: '100%', marginBottom: 20, boxSizing: 'border-box' }}
+              value={testEmail}
+              onChange={e => setTestEmail(e.target.value)}
+              placeholder="you@example.com"
+              type="email"
+            />
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button
+                style={{ ...S.actionBtn, padding: '8px 16px', border: '1px solid var(--bd)', borderRadius: 8 }}
+                onClick={() => setTestModal({ open: false, scheduleId: null })}
+                disabled={testSending}
+              >
+                Cancel
+              </button>
+              <button
+                style={{ ...S.btnPrimary, opacity: testSending ? 0.7 : 1 }}
+                onClick={sendTest}
+                disabled={testSending || !testEmail}
+              >
+                {testSending ? 'Sending…' : 'Send test'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast */}
+      {toast && (
+        <div style={{ ...S.toast, background: toast.type === 'success' ? '#22c55e' : '#ef4444' }}>
+          {toast.msg}
         </div>
       )}
     </div>
@@ -511,4 +596,10 @@ const S = {
   actions: { display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' },
   actionBtn: { background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: 'var(--tx2)', padding: 0, fontFamily: '"DM Sans",system-ui,sans-serif' },
   btnPrimary: { display: 'inline-block', background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 18px', fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
+  overlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  dialog: { background: '#fff', borderRadius: 14, padding: '28px 32px', maxWidth: 440, width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,0.18)' },
+  dialogTitle: { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 20, fontWeight: 400, color: 'var(--tx)', margin: '0 0 10px' },
+  dialogBody: { fontSize: 13, color: 'var(--tx2)', lineHeight: 1.6, margin: '0 0 18px' },
+  dialogLabel: { display: 'block', fontSize: 12, fontFamily: '"Space Mono",monospace', color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 },
+  toast: { position: 'fixed', bottom: 24, right: 24, color: '#fff', borderRadius: 10, padding: '12px 20px', fontSize: 14, fontFamily: '"DM Sans",system-ui,sans-serif', boxShadow: '0 8px 24px rgba(0,0,0,0.18)', zIndex: 100, maxWidth: 340 },
 }
