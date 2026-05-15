@@ -10,6 +10,7 @@ export function renderEmail(vars: {
   expires_hours: number
   custom_subject: string | null
   custom_body: string | null
+  unsubscribe_url: string | null
   is_test?: boolean
 }): { subject: string; html: string; text: string } {
   // {{study_day}} resolves to the integer, or "your study" for single-shot rows
@@ -43,14 +44,23 @@ export function renderEmail(vars: {
     )
     .join('\n')
 
+  // Unsubscribe footer — omitted for test sends (unsubscribe_url is null)
+  const unsubscribeHtml = vars.unsubscribe_url
+    ? `<p style="margin:8px 0 0 0;font-size:11px;color:#abadb0;"><a href="${vars.unsubscribe_url}" style="color:#abadb0;">Unsubscribe from study emails</a></p>`
+    : ''
+
   // Build full HTML email
   const html = HTML_WRAPPER
     .replace('{{email_body_html}}', bodyHtml)
     .replace(/\{\{link_url\}\}/g, vars.link_url)
     .replace(/\{\{expires_hours\}\}/g, String(vars.expires_hours))
+    .replace('{{unsubscribe_footer_html}}', unsubscribeHtml)
 
   // Plain-text fallback (Resend sends both)
-  const text = `${bodyText}\n\nBegin session: ${vars.link_url}`
+  const unsubscribeText = vars.unsubscribe_url
+    ? `\n\nTo unsubscribe from study emails: ${vars.unsubscribe_url}`
+    : ''
+  const text = `${bodyText}\n\nBegin session: ${vars.link_url}${unsubscribeText}`
 
   return { subject, html, text }
 }
@@ -71,7 +81,8 @@ University of Toronto Mississauga`
 
 // ─── HTML wrapper ─────────────────────────────────────────────────────────────
 // Table-based layout for email client compatibility.
-// {{email_body_html}}, {{link_url}}, {{expires_hours}} are replaced at render time.
+// Placeholders replaced at render time:
+//   {{email_body_html}}, {{link_url}}, {{expires_hours}}, {{unsubscribe_footer_html}}
 
 const HTML_WRAPPER = `<!DOCTYPE html>
 <html>
@@ -101,13 +112,11 @@ const HTML_WRAPPER = `<!DOCTYPE html>
               {{email_body_html}}
 
               <!-- CTA Button -->
-              <table cellpadding="0" cellspacing="0" style="margin:32px 0 0 0;">
-                <tr>
-                  <td style="background-color:#f068a4;border-radius:8px;">
-                    <a href="{{link_url}}" style="display:inline-block;padding:14px 32px;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:600;text-decoration:none;">Begin session →</a>
-                  </td>
-                </tr>
-              </table>
+              <table cellpadding="0" cellspacing="0" style="margin:32px 0 0 0;"><tr>
+                <td style="background-color:#f068a4;border-radius:8px;">
+                  <a href="{{link_url}}" style="display:inline-block;padding:14px 32px;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:600;text-decoration:none;">Begin session →</a>
+                </td>
+              </tr></table>
 
               <!-- Link fallback -->
               <p style="margin:16px 0 0 0;font-size:12px;color:#abadb0;">Or copy this link: <a href="{{link_url}}" style="color:#f068a4;word-break:break-all;">{{link_url}}</a></p>
@@ -122,6 +131,7 @@ const HTML_WRAPPER = `<!DOCTYPE html>
           <tr>
             <td style="padding:24px 0 0 0;">
               <p style="margin:0;font-size:11px;color:#abadb0;line-height:1.6;">You are receiving this because you enrolled in a study at RADlab, University of Toronto Mississauga. If you believe this was sent in error, please contact your researcher.</p>
+              {{unsubscribe_footer_html}}
             </td>
           </tr>
 

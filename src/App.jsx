@@ -45,6 +45,7 @@ import ProtocolBuilder from './pages/admin/ProtocolBuilder'
 import StudyLibrary  from './pages/admin/StudyLibrary'
 import StudyBuilder  from './pages/admin/StudyBuilder'
 import StudyDetail   from './pages/admin/StudyDetail'
+import Unsubscribe   from './pages/Unsubscribe'
 
 const queryClient = new QueryClient()
 
@@ -215,6 +216,9 @@ export default function App() {
 
           {/* Standalone participant link — no nav or auth guard */}
           <Route path="/s/:token" element={<SessionEntry />} />
+
+          {/* Unsubscribe — no auth or layout */}
+          <Route path="/unsubscribe/:token" element={<Unsubscribe />} />
 
           {/* Admin section — role-gated */}
           <Route element={<AdminRoute session={session} />}>

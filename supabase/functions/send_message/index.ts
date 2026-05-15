@@ -8,6 +8,7 @@
 import { createClient, SupabaseClient } from 'npm:@supabase/supabase-js@2'
 import { Resend } from 'npm:resend'
 import { renderEmail } from '../_shared/emailTemplate.ts'
+import { getOrCreateUnsubscribeToken } from '../_shared/unsubscribeToken.ts'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -126,15 +127,23 @@ Deno.serve(async (req) => {
     const siteUrl = Deno.env.get('SITE_URL') ?? 'https://radlab.vercel.app'
     const linkUrl = `${siteUrl}/s/${token}`
 
-    // 6. Render email (subject + HTML + plain text)
+    // 6. Generate unsubscribe URL (omitted for test sends)
+    let unsubscribeUrl: string | null = null
+    if (!isTest) {
+      const unsubToken = await getOrCreateUnsubscribeToken(db, row.participant_id, row.study_id)
+      unsubscribeUrl = `${siteUrl}/unsubscribe/${unsubToken}`
+    }
+
+    // 7. Render email (subject + HTML + plain text)
     const { subject, html, text } = renderEmail({
-      first_name:     firstName,
-      study_day:      row.study_day,
-      link_url:       linkUrl,
-      expires_hours:  expiresHours,
-      custom_subject: customSubject,
-      custom_body:    customBody,
-      is_test:        isTest,
+      first_name:      firstName,
+      study_day:       row.study_day,
+      link_url:        linkUrl,
+      expires_hours:   expiresHours,
+      custom_subject:  customSubject,
+      custom_body:     customBody,
+      unsubscribe_url: unsubscribeUrl,
+      is_test:         isTest,
     })
 
     // Warn if any template variables remain unresolved after substitution
@@ -143,7 +152,7 @@ Deno.serve(async (req) => {
       if (unresolved) console.warn(`Unresolved template variables in ${label}:`, unresolved)
     }
 
-    // 7. Send via Resend
+    // 8. Send via Resend
     const to = isTest ? test_override_email : participantEmail
     if (!to) {
       await logMessage(db, row.participant_id, 'failed', isTest, null)
@@ -163,10 +172,10 @@ Deno.serve(async (req) => {
 
     const sendStatus = sendErr ? 'failed' : 'sent'
 
-    // 8. Log the send attempt
+    // 9. Log the send attempt
     await logMessage(db, row.participant_id, sendStatus, isTest, null)
 
-    // 9. Return result
+    // 10. Return result
     if (sendErr) {
       console.error('Resend error:', sendErr)
       return json({ success: false, error: sendErr.message })

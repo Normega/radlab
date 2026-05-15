@@ -33,7 +33,7 @@ function useParticipants(studyId) {
     queryFn: async () => {
       const { data: consents, error } = await supabase
         .from('participant_consent')
-        .select('id, participant_id, consented_at, withdrawn_at, profiles(id, display_name)')
+        .select('id, participant_id, consented_at, withdrawn_at, email_reminders, profiles(id, display_name)')
         .eq('study_id', studyId)
         .is('withdrawn_at', null)
         .order('consented_at')
@@ -68,6 +68,7 @@ function useParticipants(studyId) {
           participantId: c.participant_id,
           displayName: c.profiles?.display_name || '—',
           enrolledAt: c.consented_at,
+          emailReminders: c.email_reminders,
           total,
           completed,
           lastActive,
@@ -252,7 +253,12 @@ export default function StudyDetail() {
                   {participants.map(p => (
                     <tr key={p.participantId} style={S.tr}>
                       <td style={S.td}>
-                        <span style={S.pName}>{p.displayName}</span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                          <span style={S.pName}>{p.displayName}</span>
+                          {p.emailReminders === false && (
+                            <span title="Unsubscribed from email reminders" style={S.emailOffBadge}>email off</span>
+                          )}
+                        </span>
                       </td>
                       <td style={S.td}><span style={S.mono}>{fmtDate(p.enrolledAt)}</span></td>
                       <td style={S.td}>
@@ -270,6 +276,9 @@ export default function StudyDetail() {
                           <button style={S.actionBtn} onClick={() => setSelectedParticipant(p)}>
                             View schedule
                           </button>
+                          {p.emailReminders === false && (
+                            <ReenableButton participantId={p.participantId} studyId={id} qc={qc} />
+                          )}
                           <RevokeButton participantId={p.participantId} studyId={id} qc={qc} />
                         </div>
                       </td>
@@ -535,6 +544,45 @@ function RevokeButton({ participantId, studyId, qc }) {
   )
 }
 
+// ─── Re-enable email reminders button ────────────────────────────────────────
+
+function ReenableButton({ participantId, studyId, qc }) {
+  const [confirming, setConfirming] = useState(false)
+
+  const reenable = useMutation({
+    mutationFn: async () => {
+      await supabase
+        .from('participant_consent')
+        .update({ email_reminders: true })
+        .eq('participant_id', participantId)
+        .eq('study_id', studyId)
+        .is('withdrawn_at', null)
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['study-participants', studyId] })
+      setConfirming(false)
+    },
+  })
+
+  if (!confirming) {
+    return (
+      <button style={{ ...S.actionBtn, color: 'var(--pk)' }} onClick={() => setConfirming(true)}>
+        Re-enable email
+      </button>
+    )
+  }
+
+  return (
+    <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+      <span style={{ fontSize: 12, color: 'var(--tx2)' }}>Re-enable email reminders?</span>
+      <button style={{ ...S.actionBtn, color: 'var(--pk)' }} onClick={() => reenable.mutate()} disabled={reenable.isPending}>
+        Yes
+      </button>
+      <button style={S.actionBtn} onClick={() => setConfirming(false)}>No</button>
+    </span>
+  )
+}
+
 // ─── Small components ─────────────────────────────────────────────────────────
 
 function StatusBadge({ status }) {
@@ -591,7 +639,8 @@ const S = {
   th: { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', textAlign: 'left', padding: '10px 16px', borderBottom: '1px solid var(--bd)', textTransform: 'uppercase', letterSpacing: '0.06em' },
   tr: { borderBottom: '1px solid var(--bd)' },
   td: { padding: '12px 16px', verticalAlign: 'middle' },
-  pName: { fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 14, fontWeight: 500, color: 'var(--tx)', display: 'block' },
+  pName: { fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 14, fontWeight: 500, color: 'var(--tx)' },
+  emailOffBadge: { fontFamily: '"Space Mono",monospace', fontSize: 10, background: '#f5f5f5', color: '#abadb0', borderRadius: 6, padding: '2px 7px', whiteSpace: 'nowrap' },
   pEmail: { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', display: 'block' },
   actions: { display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' },
   actionBtn: { background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: 'var(--tx2)', padding: 0, fontFamily: '"DM Sans",system-ui,sans-serif' },
