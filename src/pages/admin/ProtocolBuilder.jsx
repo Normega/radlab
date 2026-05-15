@@ -5,6 +5,75 @@ import { supabase } from '../../lib/supabase'
 
 const DAYS_OF_WEEK = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
 
+const TEMPLATE_VARS = ['{{first_name}}', '{{study_day}}', '{{link_url}}', '{{expires_hours}}']
+
+const DEFAULT_EMAIL_BODY = `Hi {{first_name}},
+
+Your session for Study Day {{study_day}} is ready.
+
+Click the button below to begin. This link is personal to you — please don't share it.
+
+This link will expire in {{expires_hours}} hours.
+
+Thanks for participating,
+The RADlab Team
+University of Toronto Mississauga`
+
+// Preview sample values
+const PREVIEW_VARS = {
+  first_name:    'Alex',
+  study_day:     '3',
+  link_url:      'https://radlab.zone/s/example-token',
+  expires_hours: '48',
+}
+
+function resolvePreviewVars(template) {
+  return template
+    .replace(/\{\{first_name\}\}/g,    PREVIEW_VARS.first_name)
+    .replace(/\{\{study_day\}\}/g,     PREVIEW_VARS.study_day)
+    .replace(/\{\{link_url\}\}/g,      PREVIEW_VARS.link_url)
+    .replace(/\{\{expires_hours\}\}/g, PREVIEW_VARS.expires_hours)
+}
+
+function buildPreviewHtml(customBody) {
+  const bodyText = resolvePreviewVars(customBody.trim() || DEFAULT_EMAIL_BODY)
+  const bodyHtml = bodyText
+    .split(/\n\n+/)
+    .map(para =>
+      `<p style="margin:0 0 16px 0;font-size:15px;color:#1c1c1e;line-height:1.6;">${para.replace(/\n/g, '<br>')}</p>`
+    )
+    .join('\n')
+
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RADlab</title></head>
+<body style="margin:0;padding:0;background-color:#FCF0F5;font-family:Arial,Helvetica,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#FCF0F5;padding:40px 20px;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+        <tr><td style="padding:0 0 24px 0;">
+          <p style="margin:0;font-family:Georgia,'Times New Roman',serif;font-size:22px;color:#1c1c1e;font-weight:normal;">RADlab</p>
+          <p style="margin:4px 0 0 0;font-size:12px;color:#abadb0;">Regulatory and Affective Dynamics Lab · University of Toronto Mississauga</p>
+        </td></tr>
+        <tr><td style="background-color:#ffffff;border-radius:12px;padding:40px;box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+          ${bodyHtml}
+          <table cellpadding="0" cellspacing="0" style="margin:32px 0 0 0;"><tr>
+            <td style="background-color:#f068a4;border-radius:8px;">
+              <a href="${PREVIEW_VARS.link_url}" style="display:inline-block;padding:14px 32px;color:#fff;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:600;text-decoration:none;">Begin session →</a>
+            </td>
+          </tr></table>
+          <p style="margin:16px 0 0 0;font-size:12px;color:#abadb0;">Or copy this link: <a href="${PREVIEW_VARS.link_url}" style="color:#f068a4;word-break:break-all;">${PREVIEW_VARS.link_url}</a></p>
+          <p style="margin:24px 0 0 0;font-size:12px;color:#abadb0;border-top:1px solid #f5f5f5;padding-top:16px;">This link expires in ${PREVIEW_VARS.expires_hours} hours and is personal to you — please don't share it.</p>
+        </td></tr>
+        <tr><td style="padding:24px 0 0 0;">
+          <p style="margin:0;font-size:11px;color:#abadb0;line-height:1.6;">You are receiving this because you enrolled in a study at RADlab, University of Toronto Mississauga. If you believe this was sent in error, please contact your researcher.</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`
+}
+
+// ─── Data hooks ───────────────────────────────────────────────────────────────
+
 function useProtocol(id) {
   return useQuery({
     queryKey: ['study-protocol', id],
@@ -15,7 +84,7 @@ function useProtocol(id) {
         .select(`
           id, label, protocol_type, allow_restart, max_attempts,
           reminders_enabled, reminder_interval_hours, reminder_max,
-          enrollment_protocol_id,
+          enrollment_protocol_id, email_subject, email_body,
           protocol_study_days(
             id, day_number, day_of_week, label,
             protocol_day_contacts(
@@ -66,6 +135,8 @@ function newDay(dayNumber) {
   return { _key: `d-${Date.now()}-${Math.random()}`, day_number: dayNumber, day_of_week: 'mon', label: '', contacts: [newContact(0)] }
 }
 
+// ─── Main component ───────────────────────────────────────────────────────────
+
 export default function ProtocolBuilder() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -85,6 +156,10 @@ export default function ProtocolBuilder() {
   const [reminderInterval, setReminderInterval] = useState(24)
   const [maxReminders, setMaxReminders] = useState(2)
   const [enrollmentProtocolId, setEnrollmentProtocolId] = useState('')
+  const [emailSubject, setEmailSubject] = useState('')
+  const [emailBody, setEmailBody] = useState('')
+  const [emailOpen, setEmailOpen] = useState(false)
+  const [previewOpen, setPreviewOpen] = useState(false)
   const [days, setDays] = useState([])
   const [error, setError] = useState(null)
 
@@ -98,6 +173,8 @@ export default function ProtocolBuilder() {
     setReminderInterval(existing.reminder_interval_hours ?? 24)
     setMaxReminders(existing.reminder_max ?? 2)
     setEnrollmentProtocolId(existing.enrollment_protocol_id ?? '')
+    setEmailSubject(existing.email_subject ?? '')
+    setEmailBody(existing.email_body ?? '')
 
     const sortedDays = [...(existing.protocol_study_days ?? [])].sort((a, b) => a.day_number - b.day_number)
     setDays(sortedDays.map(d => ({
@@ -168,6 +245,8 @@ export default function ProtocolBuilder() {
         reminder_interval_hours: remindersEnabled ? Number(reminderInterval) : null,
         reminder_max: remindersEnabled ? Number(maxReminders) : null,
         enrollment_protocol_id: enrollmentProtocolId || null,
+        email_subject: emailSubject.trim() || null,
+        email_body: emailBody.trim() || null,
       }
 
       let protocolId = id
@@ -230,6 +309,8 @@ export default function ProtocolBuilder() {
   })
 
   if (!isNew && isLoading) return <p style={S.muted}>Loading…</p>
+
+  const previewSubject = resolvePreviewVars(emailSubject.trim() || 'Your RADlab session is ready')
 
   return (
     <div>
@@ -322,6 +403,68 @@ export default function ProtocolBuilder() {
             <p style={S.hint}>Completing this protocol will automatically enroll participants in the selected one.</p>
           </div>
         </div>
+
+        {/* ── Email message (collapsible) ── */}
+        <div style={{ borderTop: '1px solid var(--bd)', paddingTop: 14 }}>
+          <button style={S.collapseToggle} onClick={() => setEmailOpen(v => !v)}>
+            <span style={S.fieldLabel}>Email message</span>
+            <span style={{ fontSize: 12, color: 'var(--tx3)', transform: emailOpen ? 'rotate(180deg)' : 'none', display: 'inline-block', transition: 'transform 0.18s' }}>▾</span>
+          </button>
+
+          {emailOpen && (
+            <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+              {/* Subject */}
+              <div style={S.fieldGroup}>
+                <label style={S.fieldLabel}>Subject line</label>
+                <input
+                  style={S.input}
+                  value={emailSubject}
+                  onChange={e => setEmailSubject(e.target.value)}
+                  placeholder="Your RADlab session is ready"
+                />
+                <p style={S.hint}>Leave blank to use the default subject.</p>
+              </div>
+
+              {/* Body */}
+              <div style={S.fieldGroup}>
+                <label style={S.fieldLabel}>Message body</label>
+                <textarea
+                  style={{ ...S.input, minHeight: 160, resize: 'vertical', lineHeight: 1.6, fontFamily: '"DM Sans",system-ui,sans-serif' }}
+                  value={emailBody}
+                  onChange={e => setEmailBody(e.target.value)}
+                  rows={6}
+                  placeholder={DEFAULT_EMAIL_BODY}
+                />
+                <p style={S.hint}>Leave blank to use the default message.</p>
+              </div>
+
+              {/* Variable pills */}
+              <div>
+                <p style={{ ...S.hint, marginBottom: 6 }}>Available variables (click to copy):</p>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {TEMPLATE_VARS.map(v => (
+                    <button
+                      key={v}
+                      style={S.varPill}
+                      onClick={() => navigator.clipboard.writeText(v)}
+                      title="Click to copy"
+                    >
+                      {v}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Preview */}
+              <div>
+                <button style={S.btnSecondary} onClick={() => setPreviewOpen(true)}>
+                  Preview email
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {protocolType === 'scheduled' && (
@@ -335,7 +478,7 @@ export default function ProtocolBuilder() {
             <p style={S.muted}>No study days yet. Add one to start building the schedule.</p>
           )}
 
-          {days.map((day, di) => (
+          {days.map((day) => (
             <div key={day._key} style={S.dayCard}>
               <div style={S.dayHeader}>
                 <span style={S.dayNum}>Day {day.day_number}</span>
@@ -351,7 +494,7 @@ export default function ProtocolBuilder() {
                 <button style={{ ...S.actionBtn, color: '#e04' }} onClick={() => removeDay(day._key)}>Remove day</button>
               </div>
 
-              {day.contacts.map((c, ci) => (
+              {day.contacts.map((c) => (
                 <div key={c._key} style={S.contactRow}>
                   <div style={S.contactField}>
                     <label style={S.fieldLabel}>Send time</label>
@@ -381,9 +524,32 @@ export default function ProtocolBuilder() {
           ))}
         </div>
       )}
+
+      {/* ── Preview modal ── */}
+      {previewOpen && (
+        <div style={S.overlay} onClick={() => setPreviewOpen(false)}>
+          <div style={S.previewDialog} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+              <div>
+                <h3 style={{ ...S.sectionTitle, fontSize: 17, margin: 0 }}>Email preview</h3>
+                <p style={{ ...S.hint, margin: '4px 0 0' }}>Subject: <em>{previewSubject}</em></p>
+              </div>
+              <button style={S.actionBtn} onClick={() => setPreviewOpen(false)}>Close</button>
+            </div>
+            <iframe
+              srcDoc={buildPreviewHtml(emailBody)}
+              style={{ width: '100%', height: 560, border: 'none', borderRadius: 8, marginTop: 12 }}
+              title="Email preview"
+              sandbox="allow-same-origin"
+            />
+          </div>
+        </div>
+      )}
     </div>
   )
 }
+
+// ─── Small components ─────────────────────────────────────────────────────────
 
 function Req() {
   return <span style={{ color: '#e04' }}> *</span>
@@ -412,6 +578,8 @@ function Toggle({ label, checked, onChange }) {
   )
 }
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
 const S = {
   header: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 24, flexWrap: 'wrap' },
   h1: { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 26, fontWeight: 400, color: 'var(--tx)', margin: '0 0 4px' },
@@ -428,6 +596,8 @@ const S = {
   toggle: { display: 'flex', gap: 0, border: '1px solid var(--bd)', borderRadius: 8, overflow: 'hidden', width: 'fit-content' },
   toggleBtn: { padding: '7px 16px', fontSize: 13, fontFamily: '"DM Sans",system-ui,sans-serif', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tx2)' },
   toggleActive: { background: 'var(--pk)', color: '#fff' },
+  collapseToggle: { display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', padding: 0, width: '100%', justifyContent: 'space-between' },
+  varPill: { fontFamily: '"Space Mono",monospace', fontSize: 11, background: '#fce7f3', color: '#f068a4', border: 'none', borderRadius: 6, padding: '4px 8px', cursor: 'pointer' },
   sectionTitle: { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 20, fontWeight: 400, color: 'var(--tx)', margin: 0 },
   dayCard: { background: '#fff', border: '1px solid var(--bd)', borderRadius: 10, padding: '16px 18px', marginBottom: 12 },
   dayHeader: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, flexWrap: 'wrap' },
@@ -438,4 +608,6 @@ const S = {
   actionBtn: { background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: 'var(--tx2)', padding: 0, fontFamily: '"DM Sans",system-ui,sans-serif' },
   btnPrimary: { display: 'inline-block', background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 18px', fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
   btnSecondary: { background: 'none', border: '1px solid var(--bds)', borderRadius: 8, padding: '7px 16px', fontSize: 13, cursor: 'pointer', color: 'var(--tx2)', fontFamily: '"DM Sans",system-ui,sans-serif' },
+  overlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  previewDialog: { background: '#fff', borderRadius: 14, padding: '24px 28px', maxWidth: 680, width: '95%', maxHeight: '90vh', overflow: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.18)' },
 }

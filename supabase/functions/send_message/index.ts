@@ -7,6 +7,7 @@
 
 import { createClient, SupabaseClient } from 'npm:@supabase/supabase-js@2'
 import { Resend } from 'npm:resend'
+import { renderEmail } from '../_shared/emailTemplate.ts'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -53,17 +54,6 @@ Deno.serve(async (req) => {
       return json({ error: 'Schedule row not found' }, 400)
     }
 
-    // Fetch session template for custom message body (optional)
-    let templateBody: string | null = null
-    if (row.session_template_id) {
-      const { data: tmpl } = await db
-        .from('session_templates')
-        .select('description')
-        .eq('id', row.session_template_id)
-        .single()
-      if (tmpl?.description?.trim()) templateBody = tmpl.description
-    }
-
     // Fetch link expiry hours from the day contact row
     let expiresHours = 48
     if (row.day_contact_id) {
@@ -73,6 +63,19 @@ Deno.serve(async (req) => {
         .eq('id', row.day_contact_id)
         .single()
       if (pdc?.link_expires_hours) expiresHours = pdc.link_expires_hours
+    }
+
+    // Fetch per-protocol custom email subject/body (nullable — null uses default template)
+    let customSubject: string | null = null
+    let customBody: string | null = null
+    if (row.protocol_id) {
+      const { data: proto } = await db
+        .from('study_protocols')
+        .select('email_subject, email_body')
+        .eq('id', row.protocol_id)
+        .single()
+      customSubject = proto?.email_subject ?? null
+      customBody    = proto?.email_body ?? null
     }
 
     // 3. Fetch participant profile and email
@@ -120,25 +123,25 @@ Deno.serve(async (req) => {
       token = await issueLinkInternal(row, expiresHours, db)
     }
 
-    const siteUrl  = Deno.env.get('SITE_URL') ?? 'https://radlab.vercel.app'
-    const linkUrl  = `${siteUrl}/s/${token}`
+    const siteUrl = Deno.env.get('SITE_URL') ?? 'https://radlab.vercel.app'
+    const linkUrl = `${siteUrl}/s/${token}`
 
-    // 6. Render message
-    const scheduledFor = row.scheduled_for
-      ? new Date(row.scheduled_for).toLocaleString('en-CA', { timeZone: 'UTC' })
-      : '—'
+    // 6. Render email (subject + HTML + plain text)
+    const { subject, html, text } = renderEmail({
+      first_name:     firstName,
+      study_day:      row.study_day,
+      link_url:       linkUrl,
+      expires_hours:  expiresHours,
+      custom_subject: customSubject,
+      custom_body:    customBody,
+      is_test:        isTest,
+    })
 
-    const subject = isTest
-      ? '[TEST] Your RADlab session is ready'
-      : 'Your RADlab session is ready'
-
-    const rawBody = templateBody ?? DEFAULT_TEMPLATE
-    const messageText = rawBody
-      .replace(/\{\{first_name\}\}/g, firstName)
-      .replace(/\{\{study_day\}\}/g, String(row.study_day ?? ''))
-      .replace(/\{\{link_url\}\}/g, linkUrl)
-      .replace(/\{\{scheduled_for\}\}/g, scheduledFor)
-      .replace(/\{\{expires_hours\}\}/g, String(expiresHours))
+    // Warn if any template variables remain unresolved after substitution
+    for (const [label, content] of [['subject', subject], ['text', text]] as const) {
+      const unresolved = content.match(/\{\{[^}]+\}\}/g)
+      if (unresolved) console.warn(`Unresolved template variables in ${label}:`, unresolved)
+    }
 
     // 7. Send via Resend
     const to = isTest ? test_override_email : participantEmail
@@ -154,7 +157,8 @@ Deno.serve(async (req) => {
       from: fromEmail,
       to,
       subject,
-      text: messageText,
+      html,
+      text,
     })
 
     const sendStatus = sendErr ? 'failed' : 'sent'
@@ -227,17 +231,3 @@ async function logMessage(
   })
   if (error) console.error('Failed to write message_log:', error.message)
 }
-
-const DEFAULT_TEMPLATE = `Hi {{first_name}},
-
-Your session for Study Day {{study_day}} is ready.
-
-Click the link below to begin. This link is personal to you — please don't share it.
-
-{{link_url}}
-
-This link will expire in {{expires_hours}} hours.
-
-Thanks for participating,
-The RADlab Team
-University of Toronto Mississauga`
