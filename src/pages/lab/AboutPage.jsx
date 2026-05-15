@@ -32,7 +32,7 @@ export default function AboutPage() {
         <h1 style={S.heroHeading}>Understanding how emotions unfold — and what that means for wellbeing.</h1>
         <div style={S.banner}>
           <img
-            src="/images/homesite_lotus_brain_banner.png"
+            src="/images/homesite_lotus_brain_hero.png"
             alt="Lotus flower connected to a brain by golden luminous threads"
             style={S.bannerImg}
           />
