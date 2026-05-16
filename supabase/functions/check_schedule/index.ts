@@ -75,7 +75,7 @@ Deno.serve(async (req) => {
 
       // 2a. Max attempts check
       if ((row.attempts ?? 0) >= protocol.max_attempts) {
-        await suppressRow(db, row.participant_id, 'max_attempts_reached')
+        await suppressRow(db, row.id, row.participant_id, 'max_attempts_reached')
         suppressed++
         continue
       }
@@ -89,7 +89,7 @@ Deno.serve(async (req) => {
         .maybeSingle()
 
       if (activeLink && activeLink.schedule_instance_id !== row.id) {
-        await suppressRow(db, row.participant_id, 'existing_active_link')
+        await suppressRow(db, row.id, row.participant_id, 'existing_active_link')
         suppressed++
         continue
       }
@@ -109,7 +109,7 @@ Deno.serve(async (req) => {
           .maybeSingle()
 
         if (imminentRow) {
-          await suppressRow(db, row.participant_id, 'new_link_imminent')
+          await suppressRow(db, row.id, row.participant_id, 'new_link_imminent')
           suppressed++
           continue
         }
@@ -130,7 +130,7 @@ Deno.serve(async (req) => {
 
         if (sendBody?.suppressed) {
           // Consent suppressed — log it
-          await suppressRow(db, row.participant_id, sendBody.reason ?? 'consent_not_given')
+          await suppressRow(db, row.id, row.participant_id, sendBody.reason ?? 'consent_not_given')
           suppressed++
         } else if (sendBody?.success) {
           // Increment attempts on success
@@ -160,14 +160,18 @@ Deno.serve(async (req) => {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-async function suppressRow(db: SupabaseClient, participantId: string, reason: string) {
-  const { error } = await db.from('message_log').insert({
-    participant_id: participantId,
-    sent_at: new Date().toISOString(),
-    channel: 'email',
-    status: 'suppressed',
-    suppressed_reason: reason,
-    is_test: false,
-  })
-  if (error) console.error('Failed to log suppression:', error.message)
+async function suppressRow(db: SupabaseClient, rowId: string, participantId: string, reason: string) {
+  const [logRes, schedRes] = await Promise.all([
+    db.from('message_log').insert({
+      participant_id: participantId,
+      sent_at: new Date().toISOString(),
+      channel: 'email',
+      status: 'suppressed',
+      suppressed_reason: reason,
+      is_test: false,
+    }),
+    db.from('participant_schedule').update({ status: 'suppressed' }).eq('id', rowId),
+  ])
+  if (logRes.error) console.error('Failed to log suppression:', logRes.error.message)
+  if (schedRes.error) console.error('Failed to update schedule status:', schedRes.error.message)
 }
