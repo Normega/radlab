@@ -215,7 +215,7 @@ export default function FirstContact({ session, onComplete }) {
         {/* Redirect banner when bounced from /games/ebb-flow */}
         {fromEbbFlow && phase === 'INTRO' && (
           <p style={S.redirectNote}>
-            Complete First Contact before beginning Ebb &amp; Flow.
+            Complete Contact before beginning Ebb &amp; Flow.
           </p>
         )}
 

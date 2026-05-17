@@ -45,23 +45,14 @@ export default function GamesPage({ session, firstContactComplete }) {
             to="/games/drift"
           />
 
-          {/* First Contact / Deeper Contact card — conditional on onboarding status */}
-          {!loading && !isComplete && (
+          {/* Contact card — same game, featured styling for first-timers */}
+          {!loading && (
             <GameCard
-              title="First Contact"
-              badge="Breath sync · Required"
-              desc={COPY.games_tagline_first}
+              title="Contact"
+              badge={isComplete ? 'Breath sync' : 'Breath sync · Required'}
+              desc={isComplete ? COPY.games_tagline_deeper : COPY.games_tagline_first}
               to="/games/first-contact"
-              featured
-            />
-          )}
-
-          {!loading && isComplete && (
-            <GameCard
-              title="Deeper Contact"
-              badge="Breath sync · Practice"
-              desc={COPY.games_tagline_deeper}
-              to="/games/first-contact"
+              featured={!isComplete}
             />
           )}
 
@@ -112,7 +103,7 @@ function GameCard({ title, badge, desc, to, featured = false, locked = false }) 
       <div style={S.cardInner}>
         <div style={S.badgeRow}>
           <span style={S.gameBadge}>{badge}</span>
-          {locked && <span style={S.lockBadge}>🔒 Complete First Contact first</span>}
+          {locked && <span style={S.lockBadge}>🔒 Complete Contact first</span>}
         </div>
         <h2 style={S.gameTitle} dangerouslySetInnerHTML={{ __html: title }} />
         <p style={S.gameDesc}>{desc}</p>

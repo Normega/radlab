@@ -2,7 +2,7 @@
 
 > **Regulatory and Affective Dynamics Lab**  
 > University of Toronto · PI: Professor Norman Farb, PhD  
-> Last updated: 2026-05-08 (Farm Joy values clarification game added as §19. Three round backgrounds built: FarmField, Greenhouse, FarmRow.)
+> Last updated: 2026-05-12 (Farm Joy §19 added. Lab pages data files complete: people.js, research.js, publications.json all ready in src/data/.)
 
 ---
 
@@ -78,8 +78,9 @@ radlab/
         BaseAvatar.jsx        ← pure SVG avatar component (skinColor, eyeColor, size props)
         AvatarEditor.jsx      ← avatar editor UI with Supabase save/load
     data/                     ← static data files (no CMS)
-      people.js               ← PI, grad students, alumni records (edit here to update people page)
-      publications.js         ← annotated bibliography (reverse chrono; annotation field nullable)
+      people.js               ← PI, grad students, alumni records — exports: pi, gradStudents, alumni
+      research.js             ← lab description + researchAreas array — exports: labDescription, researchAreas
+      publications.json       ← annotated bibliography (reverse chrono; annotation field nullable; 69 entries)
     games/
       PondWatch.jsx             ← go/no-go RT game
       EbbAndFlow/               ← interoceptive breath detection game
@@ -140,9 +141,9 @@ radlab/
       Games.jsx               ← public games listing (/games/list) — Pond Watch + Ebb & Flow cards
       lab/
         AboutPage.jsx         ← stub (content TBD)
-        PeoplePage.jsx        ← PI + grad students + collapsible alumni; reads from data/people.js
-        ResearchPage.jsx      ← stub (content TBD)
-        PublicationsPage.jsx  ← annotated bibliography; reads from data/publications.js
+        PeoplePage.jsx        ← reads people.js; PI featured card, grads grid, collapsible alumni section
+        ResearchPage.jsx      ← reads research.js; lab description intro + research area cards
+        PublicationsPage.jsx  ← reads publications.json; reverse chrono grouped by year; bold lab member names
         ContactPage.jsx       ← address + joining info (RA / grad / postdoc)
     App.jsx                   ← router + auth state
     main.jsx                  ← entry point

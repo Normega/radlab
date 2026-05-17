@@ -45,17 +45,18 @@ async function startSession(userId) {
   return data?.id ?? null
 }
 
-async function saveTrialResult({ sessionId, trialNum, targetEmoId, targetZone, clickedEmoId, clickedZone, score, responseTimeMs }) {
+async function saveTrialResult({ sessionId, userId, trialNum, targetEmoId, targetZone, clickedEmoId, clickedZone, score, responseTimeMs }) {
   if (!sessionId) return
   await supabase.from('face_read_trials').insert({
-    session_id:       sessionId,
-    trial_num:        trialNum,
-    target_emotion_id: targetEmoId,
-    target_zone:      targetZone,
-    clicked_emotion_id: clickedEmoId,
-    clicked_zone:     clickedZone,
-    score,
-    response_time_ms: responseTimeMs,
+    session_id:        sessionId,
+    user_id:           userId,
+    trial_number:      trialNum,
+    target_sector_id:  targetEmoId,
+    target_zone:       targetZone,
+    clicked_sector_id: clickedEmoId,
+    clicked_zone:      clickedZone,
+    trial_score:       score,
+    response_time_ms:  responseTimeMs,
   })
 }
 
@@ -63,10 +64,10 @@ async function saveSessionComplete({ sessionId, userId, meanScore }) {
   if (sessionId) {
     await supabase.from('game_sessions').update({ ended_at: new Date().toISOString() }).eq('id', sessionId)
     await supabase.from('face_read_performance').insert({
-      session_id:  sessionId,
-      user_id:     userId,
-      mean_score:  meanScore,
-      trial_count: TRIAL_COUNT,
+      session_id:       sessionId,
+      user_id:          userId,
+      mean_score:       meanScore,
+      trials_completed: TRIAL_COUNT,
     })
   }
   if (userId) {
@@ -351,6 +352,7 @@ export default function FaceRead({ session }) {
 
     saveTrialResult({
       sessionId:    sessionIdRef.current,
+      userId,
       trialNum,
       targetEmoId:  target.emotionId,
       targetZone:   target.zone,

@@ -18,7 +18,7 @@ export default function ContactComplete({ syncLevel = 0, isReturning = false, on
   return (
     <div style={S.wrap}>
       <p style={S.eyebrow}>
-        {isReturning ? 'Deeper Contact' : 'First Contact'}
+        Contact
       </p>
       <p style={S.body}>{text}</p>
       <button style={S.btn} onClick={onContinue}>{btn}</button>
