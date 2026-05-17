@@ -31,6 +31,15 @@ Deno.serve(async (req) => {
       auth: { persistSession: false },
     })
 
+    // 0. Auto-expire any active links whose expires_at has passed.
+    //    Prevents stale manually-issued links from blocking automated sends indefinitely.
+    await db
+      .from('participant_links')
+      .update({ status: 'expired' })
+      .eq('status', 'active')
+      .not('expires_at', 'is', null)
+      .lt('expires_at', new Date().toISOString())
+
     // 1. Fetch all due pending rows (status = pending, scheduled_for <= now, not null)
     const { data: dueRows, error: fetchErr } = await db
       .from('participant_schedule')
@@ -170,7 +179,7 @@ async function suppressRow(db: SupabaseClient, rowId: string, participantId: str
       suppressed_reason: reason,
       is_test: false,
     }),
-    db.from('participant_schedule').update({ status: 'suppressed' }).eq('id', rowId),
+    db.from('participant_schedule').update({ status: 'blocked' }).eq('id', rowId),
   ])
   if (logRes.error) console.error('Failed to log suppression:', logRes.error.message)
   if (schedRes.error) console.error('Failed to update schedule status:', schedRes.error.message)
