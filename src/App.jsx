@@ -46,6 +46,7 @@ import StudyLibrary  from './pages/admin/StudyLibrary'
 import StudyBuilder  from './pages/admin/StudyBuilder'
 import StudyDetail   from './pages/admin/StudyDetail'
 import Unsubscribe   from './pages/Unsubscribe'
+import ConsentPage   from './pages/ConsentPage'
 
 const queryClient = new QueryClient()
 
@@ -212,6 +213,13 @@ export default function App() {
             <ProtectedRoute session={session} hasAvatar={hasAvatar}>
               <FarmJoy session={session} />
             </ProtectedRoute>
+          } />
+
+          {/* Participant consent — auth required, no avatar guard */}
+          <Route path="/study/:studyId/consent" element={
+            <AuthRoute session={session}>
+              <ConsentPage session={session} />
+            </AuthRoute>
           } />
 
           {/* Standalone participant link — no nav or auth guard */}

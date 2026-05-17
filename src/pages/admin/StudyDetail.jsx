@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
@@ -14,6 +14,7 @@ function useStudy(id) {
         .from('studies')
         .select(`
           id, name, created_at, messaging_required,
+          consent_required, active_consent_form_id,
           study_protocol_assignments(
             study_protocols(id, label, protocol_type)
           )
@@ -23,6 +24,38 @@ function useStudy(id) {
       if (error) throw error
       const protocol = data.study_protocol_assignments?.[0]?.study_protocols
       return { ...data, protocol }
+    },
+  })
+}
+
+function useConsentForm(formId) {
+  return useQuery({
+    queryKey: ['consent-form', formId],
+    enabled: !!formId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('study_consent_forms')
+        .select('id, uploaded_at, docx_url, html_content')
+        .eq('id', formId)
+        .single()
+      if (error) throw error
+      return data
+    },
+  })
+}
+
+function useParticipantConsent(studyId, participantId) {
+  return useQuery({
+    queryKey: ['participant-consent', studyId, participantId],
+    enabled: !!studyId && !!participantId,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('participant_consents')
+        .select('id, consented_at, study_consent_forms(uploaded_at)')
+        .eq('study_id', studyId)
+        .eq('participant_id', participantId)
+        .maybeSingle()
+      return data
     },
   })
 }
@@ -202,7 +235,7 @@ export default function StudyDetail() {
           qc={qc}
         />
       ) : (
-        <>
+        <div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
             <h2 style={S.sectionTitle}>Participants</h2>
             <button style={S.btnPrimary} onClick={() => { setShowAddForm(v => !v); setAddError(null); setAddSuccess(null) }}>
@@ -288,7 +321,139 @@ export default function StudyDetail() {
               </table>
             </div>
           )}
-        </>
+
+          <ConsentFormSection study={study} qc={qc} />
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Consent form section ─────────────────────────────────────────────────────
+
+function ConsentFormSection({ study, qc }) {
+  const fileRef = useRef(null)
+  const [uploading, setUploading]     = useState(false)
+  const [uploadError, setUploadError] = useState(null)
+  const [previewOpen, setPreviewOpen] = useState(false)
+
+  const { data: form } = useConsentForm(study?.active_consent_form_id)
+
+  async function toggleConsentRequired(val) {
+    await supabase.from('studies').update({ consent_required: val }).eq('id', study.id)
+    qc.invalidateQueries({ queryKey: ['study-detail', study.id] })
+  }
+
+  async function handleFileChange(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadError(null)
+    setUploading(true)
+    try {
+      const arrayBuffer = await file.arrayBuffer()
+      const { convertToHtml } = await import('mammoth')
+      const { value: html } = await convertToHtml({ arrayBuffer })
+
+      const path = `${study.id}/${Date.now()}_${file.name}`
+      const { error: se } = await supabase.storage
+        .from('consent-forms')
+        .upload(path, file, { contentType: file.type })
+      if (se) throw se
+
+      const { data: { user } } = await supabase.auth.getUser()
+      const { data: formRecord, error: ie } = await supabase
+        .from('study_consent_forms')
+        .insert({ study_id: study.id, docx_url: path, html_content: html, uploaded_by: user.id })
+        .select('id')
+        .single()
+      if (ie) throw ie
+
+      const { error: ue } = await supabase
+        .from('studies')
+        .update({ active_consent_form_id: formRecord.id })
+        .eq('id', study.id)
+      if (ue) throw ue
+
+      qc.invalidateQueries({ queryKey: ['study-detail', study.id] })
+      qc.invalidateQueries({ queryKey: ['consent-form', formRecord.id] })
+    } catch (err) {
+      setUploadError(err.message)
+    } finally {
+      setUploading(false)
+      e.target.value = ''
+    }
+  }
+
+  const consentUrl = `${window.location.origin}/study/${study?.id}/consent`
+
+  return (
+    <div style={{ marginTop: 40 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+        <h2 style={S.sectionTitle}>Consent Form</h2>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', userSelect: 'none' }}>
+          <input
+            type="checkbox"
+            checked={study?.consent_required ?? true}
+            onChange={e => toggleConsentRequired(e.target.checked)}
+          />
+          <span style={{ fontSize: 13, color: 'var(--tx2)' }}>Require consent before sessions</span>
+        </label>
+      </div>
+
+      {form ? (
+        <div style={S.formCard}>
+          <p style={{ fontSize: 13, color: 'var(--tx2)', margin: 0 }}>
+            Active form — uploaded {fmtDate(form.uploaded_at)}
+          </p>
+          <div style={{ display: 'flex', gap: 10, marginTop: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+            <button style={S.actionBtn} onClick={() => setPreviewOpen(true)}>Preview</button>
+            <button style={S.actionBtn} onClick={() => navigator.clipboard.writeText(consentUrl)}>
+              Copy participant link
+            </button>
+            <input ref={fileRef} type="file" accept=".docx" style={{ display: 'none' }} onChange={handleFileChange} />
+            <button
+              style={{ ...S.btnPrimary, fontSize: 13, padding: '7px 14px', opacity: uploading ? 0.7 : 1 }}
+              onClick={() => fileRef.current?.click()}
+              disabled={uploading}
+            >
+              {uploading ? 'Uploading…' : 'Replace form'}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div style={{ padding: '4px 0' }}>
+          <p style={{ fontSize: 14, color: 'var(--tx2)', margin: '0 0 12px' }}>
+            No consent form attached. Upload a .docx file to add one.
+          </p>
+          <input ref={fileRef} type="file" accept=".docx" style={{ display: 'none' }} onChange={handleFileChange} />
+          <button
+            style={{ ...S.btnPrimary, opacity: uploading ? 0.7 : 1 }}
+            onClick={() => fileRef.current?.click()}
+            disabled={uploading}
+          >
+            {uploading ? 'Uploading…' : 'Upload consent form (.docx)'}
+          </button>
+        </div>
+      )}
+
+      {uploadError && <p style={{ ...S.errMsg, marginTop: 10 }}>{uploadError}</p>}
+
+      {previewOpen && form && (
+        <div style={S.overlay} onClick={() => setPreviewOpen(false)}>
+          <div
+            style={{ ...S.dialog, maxWidth: 700, maxHeight: '80vh', overflowY: 'auto' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <h3 style={S.dialogTitle}>Consent Form Preview</h3>
+              <button style={S.actionBtn} onClick={() => setPreviewOpen(false)}>Close ✕</button>
+            </div>
+            <div
+              style={{ fontSize: 14, lineHeight: 1.7, color: 'var(--tx)' }}
+              dangerouslySetInnerHTML={{ __html: form.html_content }}
+            />
+          </div>
+        </div>
       )}
     </div>
   )
@@ -363,11 +528,24 @@ function ScheduleView({ studyId, participant, onBack, qc }) {
     setTimeout(() => setCopied(null), 2000)
   }
 
+  const { data: consentRecord } = useParticipantConsent(studyId, participant.participantId)
+
   return (
     <div>
       <button style={S.backLinkBtn} onClick={onBack}>← Back to participants</button>
       <h2 style={S.sectionTitle} >{participant.displayName}'s Schedule</h2>
-      <p style={{ fontSize: 13, color: 'var(--tx2)', margin: '0 0 16px' }}>{participant.email}</p>
+      <p style={{ fontSize: 13, color: 'var(--tx2)', margin: '0 0 8px' }}>{participant.email}</p>
+
+      <div style={S.consentAudit}>
+        {consentRecord
+          ? <>
+              Consented {fmtDate(consentRecord.consented_at)}
+              {consentRecord.study_consent_forms?.uploaded_at
+                ? <> · form version {fmtDate(consentRecord.study_consent_forms.uploaded_at)}</>
+                : null}
+            </>
+          : 'No consent record on file'}
+      </div>
 
       {actionError && <p style={S.errMsg}>{actionError}</p>}
 
@@ -651,4 +829,6 @@ const S = {
   dialogBody: { fontSize: 13, color: 'var(--tx2)', lineHeight: 1.6, margin: '0 0 18px' },
   dialogLabel: { display: 'block', fontSize: 12, fontFamily: '"Space Mono",monospace', color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 },
   toast: { position: 'fixed', bottom: 24, right: 24, color: '#fff', borderRadius: 10, padding: '12px 20px', fontSize: 14, fontFamily: '"DM Sans",system-ui,sans-serif', boxShadow: '0 8px 24px rgba(0,0,0,0.18)', zIndex: 100, maxWidth: 340 },
+  formCard: { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 10, padding: '16px 20px' },
+  consentAudit: { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', marginBottom: 16 },
 }

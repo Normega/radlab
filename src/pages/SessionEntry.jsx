@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 
-// Resolution states: loading | not_found | revoked | completed | expired | too_early | running | session_complete
+const CONSENT_URL = (studyId) => `/study/${studyId}/consent`
+
+// Resolution states: loading | not_found | revoked | completed | expired | too_early | needs_consent | running | session_complete
 export default function SessionEntry() {
   const { token } = useParams()
   const [state,          setState]          = useState('loading')
@@ -11,6 +13,7 @@ export default function SessionEntry() {
   const [nextScheduled,  setNextScheduled]  = useState(null)
   const [activities,     setActivities]     = useState([])
   const [currentIndex,   setCurrentIndex]   = useState(0)
+  const [consentStudyId, setConsentStudyId] = useState(null)
 
   useEffect(() => { resolveToken() }, [token])
 
@@ -49,6 +52,30 @@ export default function SessionEntry() {
     if (sched?.scheduled_for && new Date(sched.scheduled_for) > new Date()) {
       setState('too_early')
       return
+    }
+
+    // Consent gate: if the study requires consent and this participant hasn't consented
+    if (sched?.study_id) {
+      const { data: study } = await supabase
+        .from('studies')
+        .select('consent_required, active_consent_form_id')
+        .eq('id', sched.study_id)
+        .single()
+
+      if (study?.consent_required && study?.active_consent_form_id) {
+        const { data: existing } = await supabase
+          .from('participant_consents')
+          .select('id')
+          .eq('participant_id', linkData.participant_id)
+          .eq('study_id', sched.study_id)
+          .maybeSingle()
+
+        if (!existing) {
+          setConsentStudyId(sched.study_id)
+          setState('needs_consent')
+          return
+        }
+      }
     }
 
     // Record first access
@@ -208,6 +235,25 @@ export default function SessionEntry() {
         <StatusCard>
           Your session opens on {scheduleRow?.scheduled_for ? fmt(scheduleRow.scheduled_for) : 'a scheduled date'}.
         </StatusCard>
+      </FullScreen>
+    )
+  }
+
+  if (state === 'needs_consent') {
+    const returnTo = encodeURIComponent(`/s/${token}`)
+    return (
+      <FullScreen>
+        <div className="max-w-md px-6 text-center">
+          <p className="text-gray-700 text-lg leading-relaxed mb-6">
+            Before beginning this study, you need to read and sign the consent form.
+          </p>
+          <a
+            href={`${CONSENT_URL(consentStudyId)}?returnTo=${returnTo}`}
+            className="inline-block py-3 px-8 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium transition-colors"
+          >
+            Review consent form →
+          </a>
+        </div>
       </FullScreen>
     )
   }
