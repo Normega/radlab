@@ -117,6 +117,13 @@ body {
 
 .person-card__bio { font-size: 0.875rem; color: #555; line-height: 1.6; margin: 0; }
 
+/* Consent form rendered HTML — adds paragraph spacing to mammoth output */
+.consent-body p  { margin-bottom: 0.9em; }
+.consent-body p:last-child { margin-bottom: 0; }
+.consent-body h1, .consent-body h2, .consent-body h3 { margin: 1.2em 0 0.4em; }
+.consent-body ul, .consent-body ol { margin: 0.5em 0 0.9em 1.4em; }
+.consent-body li { margin-bottom: 0.3em; }
+
 .person-card__links { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.25rem; }
 
 .person-card__link {

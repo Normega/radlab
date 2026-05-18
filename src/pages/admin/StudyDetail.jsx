@@ -449,6 +449,7 @@ function ConsentFormSection({ study, qc }) {
               <button style={S.actionBtn} onClick={() => setPreviewOpen(false)}>Close ✕</button>
             </div>
             <div
+              className="consent-body"
               style={{ fontSize: 14, lineHeight: 1.7, color: 'var(--tx)' }}
               dangerouslySetInnerHTML={{ __html: form.html_content }}
             />

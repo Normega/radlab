@@ -162,6 +162,7 @@ export default function ConsentPage({ session }) {
         {/* Scrollable form body */}
         <div ref={bodyRef} style={S.formBox}>
           <div
+            className="consent-body"
             style={S.formContent}
             dangerouslySetInnerHTML={{ __html: form?.html_content ?? '' }}
           />
