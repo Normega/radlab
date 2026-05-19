@@ -5,7 +5,8 @@ import { supabase } from '../../lib/supabase'
 import { EMOTIONS, INTENSITY_LABELS, computeRating, getCompositeLabel, LABEL_TO_ID,
          CX, CY, INNER_R, d2r } from './constants'
 import WheelSVG from './WheelSVG'
-import ExpressiveAvatar from './ExpressiveAvatar'
+import AURenderer from '../shared/AURenderer'
+import { EXPRESSION_TABLE, ZONE_NAMES, NEUTRAL_POS, AU_NUMERIC_KEYS } from '../shared/expressionTable'
 
 // ─── SAVE ─────────────────────────────────────────────────────────────────────
 
@@ -109,12 +110,11 @@ function RatingScreen({ phase, activeIds, labels, onConfirm }) {
 
   const handleNeutral = useCallback(() => setSel({ emotionId: null, zone: null, rating: 4, x: 0, y: 0, neutral: true }), [])
 
-  const faceEmotion   = sel && sel.emotionId != null ? EMOTIONS.find(e => e.id === sel.emotionId) : null
-  const faceValence   = faceEmotion ? faceEmotion.valence  : 0
-  const faceArousal   = faceEmotion ? faceEmotion.arousal  : 0
-  const faceIntensityT = sel && !sel.neutral ? (sel.zone + 1) / 3 : 0
-  const facePupilTier = faceEmotion?.pupilTier ?? 1
-  const faceGlow      = faceEmotion?.outer ?? null
+  const faceEmotion = sel && sel.emotionId != null ? EMOTIONS.find(e => e.id === sel.emotionId) : null
+  const faceGlow    = faceEmotion?.outer ?? null
+  const facePos     = faceEmotion && sel && !sel.neutral
+    ? (EXPRESSION_TABLE[faceEmotion.name]?.[ZONE_NAMES[sel.zone]] ?? NEUTRAL_POS)
+    : NEUTRAL_POS
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, width: '100%', maxWidth: 520 }}>
@@ -137,8 +137,7 @@ function RatingScreen({ phase, activeIds, labels, onConfirm }) {
         {/* Live face */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: 156 }}>
           <div style={S.faceCard}>
-            <ExpressiveAvatar size={136} valence={faceValence} arousal={faceArousal}
-              intensityT={faceIntensityT} pupilTier={facePupilTier} glowColor={faceGlow} />
+            <AURenderer size={136} position={facePos} glowColor={faceGlow} />
             <div style={{ textAlign: 'center', minHeight: 30, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
               {sel ? (<>
                 <div style={{ fontFamily: 'DM Serif Display,serif', fontSize: 14, color: '#1c1c1e', fontWeight: 400 }}>
@@ -187,7 +186,12 @@ function RevealScreen({ composite, phase1Sel, phase2Sel, animProgress, onReset }
   const { cx, cy, label, mag, sectorId, zone } = composite
   const p  = animProgress
   const em = sectorId >= 0 ? EMOTIONS[sectorId] : null
-  const zoneIntensity = zone >= 2 ? 1 : zone === 1 ? 2/3 : 1/3
+
+  const targetPos = em ? (EXPRESSION_TABLE[em.name]?.[ZONE_NAMES[zone]] ?? NEUTRAL_POS) : NEUTRAL_POS
+  const revealPos = {
+    ...targetPos,
+    ...Object.fromEntries(AU_NUMERIC_KEYS.map(k => [k, (targetPos[k] ?? 0) * p])),
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, width: '100%', maxWidth: 360 }}>
@@ -210,10 +214,7 @@ function RevealScreen({ composite, phase1Sel, phase2Sel, animProgress, onReset }
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: 156 }}>
           <div style={S.faceCard}>
-            <ExpressiveAvatar size={136}
-              valence={(em ? em.valence : cx) * p} arousal={(em ? em.arousal : cy) * p}
-              intensityT={zoneIntensity * p} pupilTier={p > 0.5 ? (em?.pupilTier ?? 1) : 1}
-              glowColor={p > 0.75 && em ? em.outer : null} />
+            <AURenderer size={136} position={revealPos} glowColor={p > 0.75 && em ? em.outer : null} />
           </div>
           {p >= 1 && (
             <div style={S.statsCard}>

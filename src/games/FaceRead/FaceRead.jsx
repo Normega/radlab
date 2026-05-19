@@ -4,7 +4,8 @@ import Nav from '../../components/Nav'
 import { supabase } from '../../lib/supabase'
 import { EMOTIONS } from '../StillWater/constants'
 import WheelSVG from '../StillWater/WheelSVG'
-import ExpressiveAvatar from '../StillWater/ExpressiveAvatar'
+import AURenderer from '../shared/AURenderer'
+import { EXPRESSION_TABLE, ZONE_NAMES, NEUTRAL_POS, AU_NUMERIC_KEYS } from '../shared/expressionTable'
 
 const TRIAL_COUNT  = 10
 const ANIM_MS      = 800   // avatar animate neutral → target
@@ -104,10 +105,9 @@ function IntroScreen({ onStart }) {
           const em = EMOTIONS.find(e => e.id === eid)
           return (
             <div key={eid} style={{ textAlign: 'center' }}>
-              <ExpressiveAvatar
+              <AURenderer
                 size={80}
-                valence={em.valence} arousal={em.arousal}
-                intensityT={INTENSITIES[zone]} pupilTier={em.pupilTier}
+                position={EXPRESSION_TABLE[em.name]?.[ZONE_NAMES[zone]] ?? NEUTRAL_POS}
                 glowColor={em.outer}
               />
               <div style={{ fontFamily: 'DM Sans,sans-serif', fontSize: 12, color: '#abadb0', marginTop: 4 }}>{em.name}</div>
@@ -142,10 +142,12 @@ function TrialScreen({ trialNum, target, animProgress, canClick, feedbackData, s
   const [hov, setHov] = useState(null)
   const emotion = EMOTIONS.find(e => e.id === target.emotionId)
 
-  const val   = emotion?.valence  ?? 0
-  const aro   = emotion?.arousal  ?? 0
-  const it    = target.intensityT * animProgress
-  const glow  = animProgress >= 1 && canClick && emotion ? emotion.outer : null
+  const glow = animProgress >= 1 && canClick && emotion ? emotion.outer : null
+  const targetPos = emotion ? (EXPRESSION_TABLE[emotion.name]?.[ZONE_NAMES[target.zone]] ?? NEUTRAL_POS) : NEUTRAL_POS
+  const animPos = {
+    ...targetPos,
+    ...Object.fromEntries(AU_NUMERIC_KEYS.map(k => [k, (targetPos[k] ?? 0) * animProgress])),
+  }
 
   const activeIds = canClick ? ALL_IDS : null
 
@@ -175,13 +177,7 @@ function TrialScreen({ trialNum, target, animProgress, canClick, feedbackData, s
 
         {/* Avatar panel */}
         <div style={S.faceCard}>
-          <ExpressiveAvatar
-            size={136}
-            valence={val} arousal={aro}
-            intensityT={it}
-            pupilTier={emotion?.pupilTier ?? 1}
-            glowColor={glow}
-          />
+          <AURenderer size={136} position={animPos} glowColor={glow} />
           <div style={{ textAlign: 'center', minHeight: 28, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             {feedbackData ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>

@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Circumplex Explorer</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #FCF0F5;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+    font-family: 'DM Sans', sans-serif;
+    user-select: none;
+  }
+  .eyebrow {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: #abadb0;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  .layout {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .face-col {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+    width: 170px;
+  }
+  .face-card {
+    background: white;
+    border-radius: 20px;
+    padding: 16px 14px 12px;
+    box-shadow: 0 2px 18px rgba(180,120,160,0.12);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+  }
+  .face-label {
+    text-align: center;
+    min-height: 36px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+  }
+  .emotion-name {
+    font-family: 'DM Serif Display', serif;
+    font-size: 15px;
+    color: #1c1c1e;
+  }
+  .intensity-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: #abadb0;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .tap-hint {
+    font-size: 12px;
+    color: #C8B0BC;
+    font-style: italic;
+  }
+  .stats-card {
+    background: white;
+    border-radius: 12px;
+    padding: 10px 14px;
+    box-shadow: 0 2px 18px rgba(180,120,160,0.10);
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    line-height: 2.0;
+    color: #abadb0;
+    width: 100%;
+    display: none;
+  }
+  .stats-card span { color: #d0b8c8; }
+  .wheel-path { transition: opacity 0.12s; cursor: pointer; }
+</style>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=DM+Serif+Display&family=Space+Mono&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<p class="eyebrow">RADlab · Circumplex Explorer</p>
+
+<div class="layout">
+  <svg id="wheel" viewBox="-12 -5 394 380" width="300" height="300" style="display:block;flex-shrink:0;cursor:pointer;"></svg>
+
+  <div class="face-col">
+    <div class="face-card">
+      <svg id="face-svg" viewBox="0 0 200 185" width="148" height="148" style="display:block;"></svg>
+      <div class="face-label">
+        <span id="face-name" class="tap-hint">tap the wheel</span>
+        <span id="face-intensity" class="intensity-label" style="display:none;"></span>
+      </div>
+    </div>
+    <div class="stats-card" id="stats">
+      <div><span>valence  </span><span id="stat-v">+0.00</span></div>
+      <div><span>arousal  </span><span id="stat-a">+0.00</span></div>
+      <div><span>zone     </span><span id="stat-i">—</span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Color utils ───────────────────────────────────────────────────────────────
+function h2r(h){const n=parseInt(h.replace('#',''),16);return[(n>>16)&255,(n>>8)&255,n&255];}
+function r2h(r,g,b){return'#'+[r,g,b].map(v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0')).join('');}
+function lt(h,a){const[r,g,b]=h2r(h);return r2h(r+a,g+a,b+a);}
+function dk(h,a){return lt(h,-a);}
+function mx(a,b,t){const[r1,g1,b1]=h2r(a),[r2,g2,b2]=h2r(b);return r2h(r1+(r2-r1)*t,g1+(g2-g1)*t,b1+(b2-b1)*t);}
+
+// ── Expression table (hand-authored) ─────────────────────────────────────────
+const ZONE_NAMES=['mild','moderate','strong'];
+const NEUTRAL_POS={au1:0,au2:0,au4:0,au5:0,au12:0,au15:0,au20:0,au27:0,au43:0,sb2:0,mouthType:'line',pupilTier:1,blush:0.28,it:1};
+
+
+const EXPRESSION_TABLE = {
+  Alert: {
+    mild:     { au1:0.33, au2:0.089, au4:0.273, au5:0.25,  au12:0.41,  au15:0,    au20:0.06,  au27:0.53,  au43:0,     sb2:0.383, mouthType:'alert',   pupilTier:2, blush:0.28, it:0.3   },
+    moderate: { au1:0.45, au2:0.179, au4:0.547, au5:0.93,  au12:0.42,  au15:0,    au20:0.651, au27:0.68,  au43:0,     sb2:0.383, mouthType:'alert',   pupilTier:2, blush:0.42, it:0.24  },
+    strong:   { au1:0.85, au2:0.51,  au4:0.82,  au5:1,     au12:0.58,  au15:0,    au20:0.976, au27:0.906, au43:0,     sb2:0.383, mouthType:'alert',   pupilTier:2, blush:0.6,  it:0.05  }
+  },
+  Excited: {
+    mild:     { au1:0.12, au2:0.269, au4:0,     au5:0.449, au12:0.69,  au15:0,    au20:0.3,   au27:1,     au43:0,     sb2:0,     mouthType:'excited', pupilTier:2, blush:0.474,it:0.333 },
+    moderate: { au1:0.3,  au2:0.76,  au4:0,     au5:0.598, au12:0.88,  au15:0,    au20:0.63,  au27:1,     au43:0,     sb2:0,     mouthType:'excited', pupilTier:2, blush:0.474,it:0.71  },
+    strong:   { au1:0.44, au2:1,     au4:0,     au5:0.748, au12:1,     au15:0,    au20:1,     au27:1,     au43:0,     sb2:0,     mouthType:'excited', pupilTier:2, blush:0.6,  it:1     }
+  },
+  Good: {
+    mild:     { au1:0,    au2:0.148, au4:0,     au5:0.229, au12:0.24,  au15:0,    au20:0,     au27:0,     au43:0,     sb2:0,     mouthType:'line',    pupilTier:1, blush:0.438,it:0.333 },
+    moderate: { au1:0,    au2:0.295, au4:0,     au5:0.306, au12:0.48,  au15:0,    au20:0,     au27:0,     au43:0,     sb2:0,     mouthType:'line',    pupilTier:0, blush:0.438,it:0.667 },
+    strong:   { au1:0,    au2:0.443, au4:0,     au5:0.383, au12:0.97,  au15:0,    au20:0.66,  au27:0,     au43:0,     sb2:0,     mouthType:'line',    pupilTier:1, blush:0.438,it:1     }
+  },
+  Calm: {
+    mild:     { au1:0,    au2:0.095, au4:0,     au5:0.041, au12:0.267, au15:0,    au20:0.09,  au27:0,     au43:0.2,   sb2:0,     mouthType:'line',    pupilTier:0, blush:0.456,it:0.333 },
+    moderate: { au1:0,    au2:0.19,  au4:0.29,  au5:0.054, au12:0.533, au15:0,    au20:0.25,  au27:0,     au43:0.3,   sb2:0,     mouthType:'line',    pupilTier:0, blush:0.456,it:0.667 },
+    strong:   { au1:0.19, au2:0.285, au4:0.3,   au5:0.068, au12:0.8,   au15:0,    au20:0.4,   au27:0,     au43:0.5,   sb2:0,     mouthType:'line',    pupilTier:0, blush:0.456,it:1     }
+  },
+  Still: {
+    mild:     { au1:0,    au2:0,     au4:0,     au5:0,     au12:0.03,  au15:0,    au20:0.11,  au27:0,     au43:0.438, sb2:0,     mouthType:'line',    pupilTier:0, blush:0.28, it:0.333 },
+    moderate: { au1:0.01, au2:0,     au4:0.05,  au5:0,     au12:0,     au15:0,    au20:0.22,  au27:0,     au43:0.585, sb2:0,     mouthType:'line',    pupilTier:0, blush:0.28, it:0.667 },
+    strong:   { au1:0,    au2:0,     au4:0,     au5:0,     au12:0.04,  au15:0,    au20:0.29,  au27:0,     au43:1,     sb2:0,     mouthType:'line',    pupilTier:0, blush:0.05, it:1     }
+  },
+  Sad: {
+    mild:     { au1:0.16, au2:0.14,  au4:0.033, au5:0,     au12:0,     au15:0.45, au20:0,     au27:0,     au43:0.37,  sb2:0,     mouthType:'line',    pupilTier:0, blush:0.28, it:0.333 },
+    moderate: { au1:0.61, au2:0.18,  au4:0.29,  au5:0,     au12:0,     au15:0.58, au20:0.27,  au27:0,     au43:0.52,  sb2:0,     mouthType:'line',    pupilTier:0, blush:0.28, it:0.667 },
+    strong:   { au1:0.92, au2:0,     au4:0.98,  au5:0,     au12:0,     au15:0.64, au20:0.73,  au27:0,     au43:0.77,  sb2:0,     mouthType:'line',    pupilTier:0, blush:0.28, it:1     }
+  },
+  Bad: {
+    mild:     { au1:0.02, au2:0.29,  au4:0.3,   au5:0,     au12:0,     au15:0.36, au20:0,     au27:0,     au43:0.05,  sb2:0,     mouthType:'line',    pupilTier:1, blush:0.28, it:0.07  },
+    moderate: { au1:0,    au2:0.3,   au4:0.4,   au5:0,     au12:0.02,  au15:0.53, au20:0.36,  au27:0,     au43:0.08,  sb2:0,     mouthType:'line',    pupilTier:1, blush:0.28, it:0.13  },
+    strong:   { au1:0.3,  au2:0.86,  au4:0.86,  au5:0,     au12:0.18,  au15:0.83, au20:0.69,  au27:0,     au43:0.12,  sb2:0,     mouthType:'line',    pupilTier:1, blush:0.28, it:1     }
+  },
+  Tense: {
+    mild:     { au1:0.02, au2:0.23,  au4:0.118, au5:0.26,  au12:0.28,  au15:0.33, au20:0.4,   au27:1,     au43:0,     sb2:0.112, mouthType:'tense',   pupilTier:2, blush:0.28, it:0.333 },
+    moderate: { au1:0.11, au2:0.56,  au4:0.47,  au5:0.56,  au12:0.25,  au15:0,    au20:0.83,  au27:1,     au43:0,     sb2:0.112, mouthType:'tense',   pupilTier:2, blush:0.47, it:0.667 },
+    strong:   { au1:0.09, au2:0.75,  au4:1,     au5:0.97,  au12:0.46,  au15:0.07, au20:1,     au27:1,     au43:0,     sb2:0.112, mouthType:'tense',   pupilTier:2, blush:0.6,  it:1     }
+  }
+};
+
+
+const NS='http://www.w3.org/2000/svg';
+const SK='#FDBCB4',IR='#4A90D9';
+const SKD=dk(SK,18),SKL=lt(SK,18),BL=mx(SK,'#FF8FAB',0.45),BRC=dk(SK,36);
+const MC=dk(mx(SK,'#C06070',0.5),18),IRD=dk(IR,30),IRL=lt(IR,35);
+const clamp=(v,lo=0,hi=1)=>Math.max(lo,Math.min(hi,v));
+
+function mkEl(tag,attrs,parent){
+  const e=document.createElementNS(NS,tag);
+  for(const[k,v]of Object.entries(attrs))e.setAttribute(k,String(v));
+  if(parent)parent.appendChild(e);
+  return e;
+}
+
+function clearSVG(svg){while(svg.firstChild)svg.removeChild(svg.firstChild);}
+
+function buildFace(svg,pos,glowColor){
+  clearSVG(svg);
+  const{au1,au2,au4,au5,au12,au15,au20,au27,au43,sb2,mouthType,pupilTier,blush,it}=pos;
+  const p='f'+Math.random().toString(36).slice(2,7);
+  const f=v=>Number(v).toFixed(1);
+
+  // Geometry from AU values directly
+  const ET=83,H=16;
+  const lc=clamp(8-au5*6+au43*14,1.5,28);
+  const ly=ET+lc,lr=(H*H+lc*lc)/(2*lc),lcy=ly+4;
+  const ll=Math.max(0,(ET+8)-ly);
+  const lO=[60, 82-au2*8+au4*6-sb2*20-ll*0.8];
+  const lC=[76, 77-au1*5-au2*4+au4*6-sb2*16-ll*0.8];
+  const lI=[90, 81-au1*10+au4*6-sb2*18-ll*0.8];
+  const rI=[110,81-au1*10+au4*6-sb2*18-ll*0.8];
+  const rC=[124,77-au1*5-au2*4+au4*6-sb2*16-ll*0.8];
+  const rO=[140,82-au2*8+au4*6-sb2*20-ll*0.8];
+  const cLX=82-au20*10,cRX=118+au20*10;
+  const cY=145-au12*12+au15*6+au20*it*6;
+  const mCY=149+au12*12-au15*8-au20*it*4;
+  const PT=[[5.5,5.5,5.5],[5.5,5.5,7.5],[5.5,7.5,9.5]];
+  const iz=Math.min(2,Math.max(0,Math.round(it*3)-1));
+  const pR=PT[Math.min(2,Math.max(0,pupilTier))][iz];
+  const bl=clamp(blush);
+
+  // Defs — no clipPath (circles are geometrically contained), no feDropShadow (Safari compat)
+  const defs=mkEl('defs',{},svg);
+  function rg(id,cx,cy,r,stops){
+    const g=mkEl('radialGradient',{id,cx,cy,r},defs);
+    stops.forEach(([off,col])=>mkEl('stop',{'offset':off,'stop-color':col},g));
+  }
+  rg(`${p}h`,'38%','30%','68%',[['0%',SKL],['60%',SK],['100%',SKD]]);
+  rg(`${p}i`,'35%','30%','65%',[['0%',IRL],['55%',IR],['100%',IRD]]);
+  rg(`${p}s`,'40%','30%','60%',[['0%','#fff'],['100%','#F0EBE8']]);
+  const bf=mkEl('filter',{id:`${p}b`},defs);mkEl('feGaussianBlur',{stdDeviation:'1.2'},bf);
+
+  if(glowColor)mkEl('ellipse',{cx:'100',cy:'105',rx:'69',ry:'73',fill:'none',stroke:glowColor,'stroke-width':'6',opacity:'0.22'},svg);
+  mkEl('ellipse',{cx:'100',cy:'105',rx:'64',ry:'68',fill:`url(#${p}h)`},svg);
+
+  function eye(cx,cp){
+    mkEl('circle',{cx,cy:'101',r:'18',fill:SKD,opacity:'0.13'},svg); // shadow — plain offset circle
+    mkEl('circle',{cx,cy:'100',r:'17',fill:`url(#${p}s)`},svg);
+    mkEl('circle',{cx,cy:'101',r:'12',fill:`url(#${p}i)`},svg);
+    mkEl('circle',{cx,cy:'101',r:f(pR),fill:'#0D0D0D'},svg);
+    mkEl('circle',{cx:String(cx-6),cy:'102',r:'3.5',fill:'white',opacity:'0.95'},svg);
+    mkEl('circle',{cx:String(cx+3), cy:'108',r:'1.8',fill:'white',opacity:'0.65'},svg);
+    // LID: fixed top at y=83 (socket ridge), variable lash line only
+    mkEl('path',{d:`M${cp-19} 83 Q${cx} 80 ${cp+19} 83 L${cp+19} ${f(ly)} Q${cx} ${f(lcy)} ${cp-19} ${f(ly)} Z`,fill:SK},svg);
+    mkEl('path',{d:`M${cp+19} ${f(ly)} Q${cx} ${f(lcy)} ${cp-19} ${f(ly)}`,stroke:SKD,'stroke-width':'2.2',fill:'none','stroke-linecap':'round',opacity:'0.6'},svg);
+  }
+  eye(76,76); eye(124,124);
+
+  // Mouth
+  const mD=`M${f(cLX)} ${f(cY)} Q100 ${f(mCY)} ${f(cRX)} ${f(cY)}`;
+  if(mouthType==='alert'&&au27>0){
+    const cy2=cY+2+au27*4,rx=8+au27*11,ry=3+au27*10;
+    mkEl('ellipse',{cx:'100',cy:f(cy2),rx:f(rx),ry:f(ry),fill:dk(MC,20),opacity:f(Math.min(1,au27*1.5))},svg);
+    mkEl('ellipse',{cx:'100',cy:f(cy2),rx:f(rx),ry:f(ry),fill:'none',stroke:MC,'stroke-width':'1.5',opacity:f(Math.min(1,au27*1.5))},svg);
+  } else if(mouthType==='excited'){
+    // au27 now drives the arc depth (non-zero in current table); au12 fallback for legacy
+    const eScale=au27||au12;
+    mkEl('path',{d:`M${f(cLX+4)} ${f(cY)} Q100 ${f(mCY+9*eScale)} ${f(cRX-4)} ${f(cY)}`,fill:dk(MC,8),opacity:f(Math.max(0.15,0.75*eScale))},svg);
+  } else if(mouthType==='tense'){
+    mkEl('path',{d:`M${f(cLX+4)} ${f(cY)} Q100 ${f(cY-12*au27)} ${f(cRX-4)} ${f(cY)}`,fill:dk(MC,8),opacity:f(Math.max(0.15,0.75*au27))},svg);
+  } else {
+    mkEl('path',{d:mD,stroke:MC,'stroke-width':'2.2',fill:'none','stroke-linecap':'round'},svg);
+  }
+
+  mkEl('ellipse',{cx:'62', cy:'120',rx:'16',ry:'8',fill:BL,opacity:f(bl),filter:`url(#${p}b)`},svg);
+  mkEl('ellipse',{cx:'138',cy:'120',rx:'16',ry:'8',fill:BL,opacity:f(bl),filter:`url(#${p}b)`},svg);
+  mkEl('path',{d:`M${f(lO[0])} ${f(lO[1])} Q${f(lC[0])} ${f(lC[1])} ${f(lI[0])} ${f(lI[1])}`,stroke:BRC,'stroke-width':'4',fill:'none','stroke-linecap':'round',opacity:'0.88'},svg);
+  mkEl('path',{d:`M${f(rI[0])} ${f(rI[1])} Q${f(rC[0])} ${f(rC[1])} ${f(rO[0])} ${f(rO[1])}`,stroke:BRC,'stroke-width':'4',fill:'none','stroke-linecap':'round',opacity:'0.88'},svg);
+}
+
+// ── Wheel ─────────────────────────────────────────────────────────────────────
+const CWX=185,CWY=185,INNER_R=46,OUTER_R=168,LABEL_R=116,GAP=1.4;
+const EMOTIONS=[
+  {id:0,name:'Alert',  valence:-0.85,arousal: 0.82,pupilTier:2,startAngle:247.5+GAP,endAngle:292.5-GAP,inner:'#F0D2D2',outer:'#B82222'},
+  {id:1,name:'Excited',valence: 0.88,arousal: 0.88,pupilTier:2,startAngle:292.5+GAP,endAngle:337.5-GAP,inner:'#FFF0B8',outer:'#D88000'},
+  {id:2,name:'Good',   valence: 0.72,arousal: 0.45,pupilTier:1,startAngle:337.5+GAP,endAngle: 22.5-GAP,inner:'#FEFCD0',outer:'#C4A000'},
+  {id:3,name:'Calm',   valence: 0.80,arousal: 0.08,pupilTier:0,startAngle: 22.5+GAP,endAngle: 67.5-GAP,inner:'#FFE4C0',outer:'#DC6E2E'},
+  {id:4,name:'Still',  valence: 0.00,arousal:-0.65,pupilTier:0,startAngle: 67.5+GAP,endAngle:112.5-GAP,inner:'#D4F4E8',outer:'#1EA878'},
+  {id:5,name:'Sad',    valence:-0.28,arousal:-0.88,pupilTier:0,startAngle:112.5+GAP,endAngle:157.5-GAP,inner:'#DCE8F4',outer:'#4878B8'},
+  {id:6,name:'Bad',    valence:-0.72,arousal:-0.48,pupilTier:1,startAngle:157.5+GAP,endAngle:202.5-GAP,inner:'#C8C8E0',outer:'#384070'},
+  {id:7,name:'Tense',  valence:-0.58,arousal: 0.35,pupilTier:2,startAngle:202.5+GAP,endAngle:247.5-GAP,inner:'#E0C8DC',outer:'#804080'},
+];
+const INTENSITY_LABELS=['','mild','moderate','strong'];
+const d2r=d=>d*Math.PI/180;
+
+function wedgePath(sa,ea,r1,r2){
+  const end=ea<sa?ea+360:ea,a1=d2r(sa),a2=d2r(end),lg=end-sa>180?1:0;
+  const x1s=CWX+r1*Math.cos(a1),y1s=CWY+r1*Math.sin(a1);
+  const x2s=CWX+r2*Math.cos(a1),y2s=CWY+r2*Math.sin(a1);
+  const x2e=CWX+r2*Math.cos(a2),y2e=CWY+r2*Math.sin(a2);
+  const x1e=CWX+r1*Math.cos(a2),y1e=CWY+r1*Math.sin(a2);
+  return[`M${x1s.toFixed(1)} ${y1s.toFixed(1)}`,`L${x2s.toFixed(1)} ${y2s.toFixed(1)}`,
+    `A${r2} ${r2} 0 ${lg} 1 ${x2e.toFixed(1)} ${y2e.toFixed(1)}`,
+    `L${x1e.toFixed(1)} ${y1e.toFixed(1)}`,
+    `A${r1} ${r1} 0 ${lg} 0 ${x1s.toFixed(1)} ${y1s.toFixed(1)} Z`].join(' ');
+}
+function centerAngle(e){const end=e.endAngle<e.startAngle?e.endAngle+360:e.endAngle;return(e.startAngle+end)/2;}
+
+// Build wheel
+const wheelSvg=document.getElementById('wheel');
+const ZW=(OUTER_R-INNER_R)/3;
+let selectedPath=null;
+
+// Defs
+const wDefs=mkEl('defs',{},wheelSvg);
+EMOTIONS.forEach(e=>{
+  const g=mkEl('radialGradient',{id:`wg${e.id}`,cx:CWX,cy:CWY,r:OUTER_R,gradientUnits:'userSpaceOnUse'},wDefs);
+  mkEl('stop',{offset:'0%','stop-color':'#FCF0F5'},g);
+  mkEl('stop',{offset:`${(INNER_R/OUTER_R*100).toFixed(1)}%`,'stop-color':e.inner,'stop-opacity':'0.75'},g);
+  mkEl('stop',{offset:'100%','stop-color':e.outer},g);
+});
+const wGl=mkEl('filter',{id:'wGl',x:'-30%',y:'-30%',width:'160%',height:'160%'},wDefs);
+mkEl('feGaussianBlur',{stdDeviation:'5',result:'b'},wGl);
+const wFm=mkEl('feMerge',{},wGl);
+mkEl('feMergeNode',{in:'b'},wFm);mkEl('feMergeNode',{in:'SourceGraphic'},wFm);
+
+// Wedges
+const wedgePaths=[];
+EMOTIONS.forEach(e=>{
+  [0,1,2].forEach(z=>{
+    const r1=INNER_R+z*ZW,r2=INNER_R+(z+1)*ZW;
+    const p=mkEl('path',{
+      d:wedgePath(e.startAngle,e.endAngle,r1,r2),
+      fill:`url(#wg${e.id})`,stroke:'#FCF0F5','stroke-width':'1.2',opacity:'0.82'
+    },wheelSvg);
+    p.style.cursor='pointer';
+    p.style.transition='opacity 0.12s';
+    p.addEventListener('click',()=>selectWedge(e,z,p));
+    wedgePaths.push({el:p,e,z});
+  });
+});
+
+// Zone dividers
+[1/3,2/3].forEach((t,i)=>{
+  const c=mkEl('circle',{cx:CWX,cy:CWY,r:INNER_R+(OUTER_R-INNER_R)*t,fill:'none',stroke:'white','stroke-width':'1.1',opacity:'0.55','stroke-dasharray':'3 6'},wheelSvg);
+  c.style.pointerEvents='none';
+});
+
+// Labels
+EMOTIONS.forEach(e=>{
+  const ca=centerAngle(e),lx=CWX+LABEL_R*Math.cos(d2r(ca)),ly=CWY+LABEL_R*Math.sin(d2r(ca));
+  const t=mkEl('text',{x:lx,y:ly+4,'text-anchor':'middle',fill:'#666',
+    'font-size':'13','font-weight':'400','font-family':'DM Sans,sans-serif'},wheelSvg);
+  t.textContent=e.name;
+  t.style.pointerEvents='none';
+  t.style.transition='fill 0.15s';
+  e._label=t;
+});
+
+// Neutral centre
+const neutCirc=mkEl('circle',{cx:CWX,cy:CWY,r:INNER_R,fill:'#FCF0F5',stroke:'#E8D4E0','stroke-width':'1'},wheelSvg);
+neutCirc.style.cursor='pointer';
+neutCirc.addEventListener('click',selectNeutral);
+const neutText=mkEl('text',{x:CWX,y:CWY+4,'text-anchor':'middle',fill:'#C4ACBC',
+  'font-size':'13','font-family':'DM Sans,sans-serif'},wheelSvg);
+neutText.textContent='neutral';
+neutText.style.pointerEvents='none';
+
+// ── Interaction ───────────────────────────────────────────────────────────────
+const faceSvg=document.getElementById('face-svg');
+const faceNameEl=document.getElementById('face-name');
+const faceIntEl=document.getElementById('face-intensity');
+const statsEl=document.getElementById('stats');
+const statV=document.getElementById('stat-v');
+const statA=document.getElementById('stat-a');
+const statI=document.getElementById('stat-i');
+
+function fmt(v){return(v>=0?'+':'')+v.toFixed(2);}
+
+function clearWedgeHighlights(){
+  wedgePaths.forEach(({el})=>{el.setAttribute('opacity','0.82');el.setAttribute('filter','none');});
+  EMOTIONS.forEach(e=>{e._label.setAttribute('fill','#666');e._label.setAttribute('font-size','13');e._label.setAttribute('font-weight','400');});
+  neutCirc.setAttribute('fill','#FCF0F5');neutCirc.setAttribute('stroke','#E8D4E0');neutCirc.setAttribute('stroke-width','1');
+  neutText.setAttribute('fill','#C4ACBC');
+}
+
+function selectWedge(e,z,pathEl){
+  clearWedgeHighlights();
+  pathEl.setAttribute('opacity','1.0');
+  pathEl.setAttribute('filter','url(#wGl)');
+  e._label.setAttribute('fill','#1c1c1e');e._label.setAttribute('font-size','14');e._label.setAttribute('font-weight','600');
+
+  const zoneName=ZONE_NAMES[z];
+  const pos=EXPRESSION_TABLE[e.name][zoneName];
+  buildFace(faceSvg,pos,e.outer);
+
+  faceNameEl.className='emotion-name';
+  faceNameEl.textContent=e.name;
+  faceIntEl.style.display='block';
+  faceIntEl.textContent=INTENSITY_LABELS[z+1];
+
+  statsEl.style.display='block';
+  statV.textContent=fmt(e.valence);
+  statA.textContent=fmt(e.arousal);
+  statI.textContent=zoneName;
+}
+
+function selectNeutral(){
+  clearWedgeHighlights();
+  neutCirc.setAttribute('fill','#f0d8e8');neutCirc.setAttribute('stroke','#f068a4');neutCirc.setAttribute('stroke-width','2');
+  neutText.setAttribute('fill','#f068a4');
+
+  buildFace(faceSvg,NEUTRAL_POS,null);
+  faceNameEl.className='emotion-name';
+  faceNameEl.textContent='neutral';
+  faceIntEl.style.display='none';
+  statsEl.style.display='block';
+  statV.textContent='+0.00';statA.textContent='+0.00';statI.textContent='—';
+}
+
+// Start with neutral
+buildFace(faceSvg,NEUTRAL_POS,null);
+</script>
+</body>
+</html>
