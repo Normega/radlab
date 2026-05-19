@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useAvatarConfig } from '../../hooks/useAvatarConfig'
 import { Link } from 'react-router-dom'
 import Nav from '../../components/Nav'
 import { supabase } from '../../lib/supabase'
@@ -85,7 +86,7 @@ async function saveSessionComplete({ sessionId, userId, meanScore }) {
 
 // ─── INTRO ────────────────────────────────────────────────────────────────────
 
-function IntroScreen({ onStart }) {
+function IntroScreen({ onStart, skinColor, eyeColor }) {
   const demos = [
     { eid: 1, zone: 2 },  // Excited strong
     { eid: 6, zone: 1 },  // Bad moderate
@@ -109,6 +110,7 @@ function IntroScreen({ onStart }) {
                 size={80}
                 position={EXPRESSION_TABLE[em.name]?.[ZONE_NAMES[zone]] ?? NEUTRAL_POS}
                 glowColor={em.outer}
+                skinColor={skinColor} eyeColor={eyeColor}
               />
               <div style={{ fontFamily: 'DM Sans,sans-serif', fontSize: 12, color: '#abadb0', marginTop: 4 }}>{em.name}</div>
             </div>
@@ -138,7 +140,7 @@ function IntroScreen({ onStart }) {
 
 // ─── TRIAL SCREEN ─────────────────────────────────────────────────────────────
 
-function TrialScreen({ trialNum, target, animProgress, canClick, feedbackData, score, onZoneClick }) {
+function TrialScreen({ trialNum, target, animProgress, canClick, feedbackData, score, onZoneClick, skinColor, eyeColor }) {
   const [hov, setHov] = useState(null)
   const emotion = EMOTIONS.find(e => e.id === target.emotionId)
 
@@ -177,7 +179,7 @@ function TrialScreen({ trialNum, target, animProgress, canClick, feedbackData, s
 
         {/* Avatar panel */}
         <div style={S.faceCard}>
-          <AURenderer size={136} position={animPos} glowColor={glow} />
+          <AURenderer size={136} position={animPos} glowColor={glow} skinColor={skinColor} eyeColor={eyeColor} />
           <div style={{ textAlign: 'center', minHeight: 28, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             {feedbackData ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
@@ -279,6 +281,9 @@ export default function FaceRead({ session }) {
   const trialsRef       = useRef([])
 
   const userId = session?.user?.id ?? null
+  const { data: avatar } = useAvatarConfig(userId)
+  const skinColor = avatar?.skin_color ?? '#FDBCB4'
+  const eyeColor  = avatar?.eye_color  ?? '#4A90D9'
 
   useEffect(() => {
     if (!userId) return
@@ -390,7 +395,7 @@ export default function FaceRead({ session }) {
       <Nav session={session} />
       <div style={{ minHeight: 'calc(100vh - 57px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 16px', userSelect: 'none' }}>
 
-        {phase === 'intro' && <IntroScreen onStart={startGame} />}
+        {phase === 'intro' && <IntroScreen onStart={startGame} skinColor={skinColor} eyeColor={eyeColor} />}
 
         {phase === 'playing' && target && (
           <TrialScreen
@@ -401,6 +406,7 @@ export default function FaceRead({ session }) {
             feedbackData={feedbackData}
             score={lastScore}
             onZoneClick={handleZoneClick}
+            skinColor={skinColor} eyeColor={eyeColor}
           />
         )}
 

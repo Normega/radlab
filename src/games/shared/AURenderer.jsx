@@ -2,18 +2,24 @@ import { useId } from 'react'
 import { darken, lighten, mix } from '../../lib/colorUtils'
 import { NEUTRAL_POS } from './expressionTable'
 
-const SK  = '#FDBCB4', IR  = '#4A90D9'
-const SKD = darken(SK, 18),  SKL = lighten(SK, 18)
-const BL  = mix(SK, '#FF8FAB', 0.45)
-const BRC = darken(SK, 36)
-const MC  = darken(mix(SK, '#C06070', 0.5), 18)
-const IRD = darken(IR, 30),  IRL = lighten(IR, 35)
-
 const clamp = (v, lo = 0, hi = 1) => Math.max(lo, Math.min(hi, v))
 const LID_TOP_Y = 83
 
-export default function AURenderer({ position = NEUTRAL_POS, glowColor = null, size = 148 }) {
+export default function AURenderer({
+  position  = NEUTRAL_POS,
+  glowColor = null,
+  size      = 148,
+  skinColor = '#FDBCB4',
+  eyeColor  = '#4A90D9',
+}) {
   const uid = useId().replace(/:/g, '')
+
+  const SK  = skinColor, IR = eyeColor
+  const SKD = darken(SK, 18),  SKL = lighten(SK, 18)
+  const BL  = mix(SK, '#FF8FAB', 0.45)
+  const BRC = darken(SK, 36)
+  const MC  = darken(mix(SK, '#C06070', 0.5), 18)
+  const IRD = darken(IR, 30),  IRL = lighten(IR, 35)
   const { au1, au2, au4, au5, au12, au15, au20, au27, au43, sb2, mouthType, pupilTier, blush, it } = position
   const f = v => Number(v).toFixed(1)
 

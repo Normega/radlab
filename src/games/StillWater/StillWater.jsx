@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { useAvatarConfig } from '../../hooks/useAvatarConfig'
 import { Link } from 'react-router-dom'
 import Nav from '../../components/Nav'
 import { supabase } from '../../lib/supabase'
@@ -99,7 +100,7 @@ function IntroScreen({ onStart }) {
 
 // ─── RATING SCREEN ────────────────────────────────────────────────────────────
 
-function RatingScreen({ phase, activeIds, labels, onConfirm }) {
+function RatingScreen({ phase, activeIds, labels, onConfirm, skinColor, eyeColor }) {
   const [sel, setSel] = useState(null)
   const [hov, setHov] = useState(null)
 
@@ -137,7 +138,7 @@ function RatingScreen({ phase, activeIds, labels, onConfirm }) {
         {/* Live face */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: 156 }}>
           <div style={S.faceCard}>
-            <AURenderer size={136} position={facePos} glowColor={faceGlow} />
+            <AURenderer size={136} position={facePos} glowColor={faceGlow} skinColor={skinColor} eyeColor={eyeColor} />
             <div style={{ textAlign: 'center', minHeight: 30, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
               {sel ? (<>
                 <div style={{ fontFamily: 'DM Serif Display,serif', fontSize: 14, color: '#1c1c1e', fontWeight: 400 }}>
@@ -182,7 +183,7 @@ function RatingScreen({ phase, activeIds, labels, onConfirm }) {
 
 // ─── REVEAL SCREEN ────────────────────────────────────────────────────────────
 
-function RevealScreen({ composite, phase1Sel, phase2Sel, animProgress, onReset }) {
+function RevealScreen({ composite, phase1Sel, phase2Sel, animProgress, onReset, skinColor, eyeColor }) {
   const { cx, cy, label, mag, sectorId, zone } = composite
   const p  = animProgress
   const em = sectorId >= 0 ? EMOTIONS[sectorId] : null
@@ -214,7 +215,7 @@ function RevealScreen({ composite, phase1Sel, phase2Sel, animProgress, onReset }
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: 156 }}>
           <div style={S.faceCard}>
-            <AURenderer size={136} position={revealPos} glowColor={p > 0.75 && em ? em.outer : null} />
+            <AURenderer size={136} position={revealPos} glowColor={p > 0.75 && em ? em.outer : null} skinColor={skinColor} eyeColor={eyeColor} />
           </div>
           {p >= 1 && (
             <div style={S.statsCard}>
@@ -247,6 +248,9 @@ export default function StillWater({ session }) {
   const animRef = useRef(null)
 
   const userId = session?.user?.id ?? null
+  const { data: avatar } = useAvatarConfig(userId)
+  const skinColor = avatar?.skin_color ?? '#FDBCB4'
+  const eyeColor  = avatar?.eye_color  ?? '#4A90D9'
 
   const composite = useMemo(() => {
     if (!p1Sel || !p2Sel) return null
@@ -298,16 +302,19 @@ export default function StillWater({ session }) {
         {phase === 'phase1'  && (
           <RatingScreen phase={1} activeIds={[1, 5]}
             labels={{ left: 'Sad', right: 'Excited', question: 'How good or energised do you feel?' }}
-            onConfirm={s => { setP1Sel(s); setPhase('phase2') }} />
+            onConfirm={s => { setP1Sel(s); setPhase('phase2') }}
+            skinColor={skinColor} eyeColor={eyeColor} />
         )}
         {phase === 'phase2'  && (
           <RatingScreen phase={2} activeIds={[3, 7]}
             labels={{ left: 'Calm', right: 'Tense', question: 'How settled or on-edge do you feel?' }}
-            onConfirm={s => { setP2Sel(s); setPhase('reveal') }} />
+            onConfirm={s => { setP2Sel(s); setPhase('reveal') }}
+            skinColor={skinColor} eyeColor={eyeColor} />
         )}
         {phase === 'reveal' && composite && (
           <RevealScreen composite={composite} phase1Sel={p1Sel} phase2Sel={p2Sel}
-            animProgress={anim} onReset={handleReset} />
+            animProgress={anim} onReset={handleReset}
+            skinColor={skinColor} eyeColor={eyeColor} />
         )}
       </div>
     </div>
