@@ -35,6 +35,7 @@ import StillWater   from './games/StillWater/StillWater'
 import FaceRead     from './games/FaceRead/FaceRead'
 import Drift        from './games/Drift/Drift'
 import FarmJoy      from './games/FarmJoy/FarmJoy'
+import BreathBelt   from './games/BreathBelt/BreathBelt'
 import AdminRoute    from './components/AdminRoute'
 import AdminLayout   from './layouts/AdminLayout'
 import AdminDashboard from './pages/admin/AdminDashboard'
@@ -212,6 +213,12 @@ export default function App() {
           <Route path="/games/farm-joy" element={
             <ProtectedRoute session={session} hasAvatar={hasAvatar}>
               <FarmJoy session={session} />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/games/breath-belt" element={
+            <ProtectedRoute session={session} hasAvatar={hasAvatar}>
+              <BreathBelt />
             </ProtectedRoute>
           } />
 

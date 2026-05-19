@@ -2,7 +2,7 @@
 
 > **Regulatory and Affective Dynamics Lab**  
 > University of Toronto · PI: Professor Norman Farb, PhD  
-> Last updated: 2026-05-12 (Farm Joy §19 added. Lab pages data files complete: people.js, research.js, publications.json all ready in src/data/.)
+> Last updated: 2026-05-19 (BreathBelt §20 added. Farm Joy §19 added. Lab pages data files complete: people.js, research.js, publications.json all ready in src/data/.)
 
 ---
 
@@ -108,6 +108,23 @@ radlab/
           SyncMeter.jsx
           BreathPrompt.jsx
           ContactComplete.jsx
+      BreathBelt/               ← respiratory detection thresholds (§20)
+        BreathBelt.jsx
+        constants.js
+        belt_schema.sql
+        hooks/
+          useBeltConnection.js
+          useBeltSession.js
+          useBeltQuestStaircases.js
+          useTrialRunner.js
+        components/
+          BrowserWarning.jsx
+          CalibrationScreen.jsx
+          BaselineScreen.jsx
+          FixedTrialsScreen.jsx
+          StaircaseScreen.jsx
+          BeltSyncRing.jsx
+          SessionComplete.jsx
       FarmJoy/                  ← values clarification game (§19)
         FarmJoy.jsx
         constants.js
@@ -318,6 +335,7 @@ RLS: users can read only their own rows.
 | `/games/pond-watch` | `PondWatch` | Protected |
 | `/games/ebb-flow` | `EbbAndFlow` | Protected — redirects to `/games/first-contact` if `first_contact_complete === false` |
 | `/games/farm-joy` | `FarmJoy` | Protected |
+| `/games/breath-belt` | `BreathBelt` | Protected — lab-only guard internal to component |
 | `/lab` | redirect → `/lab/people` | Public |
 | `/lab/about` | `AboutPage` | Public — stub |
 | `/lab/people` | `PeoplePage` | Public — reads from `src/data/people.js` |
@@ -1436,3 +1454,99 @@ Source files generated in claude.ai design conversation 2026-05-08, ready to dro
 ### Status
 
 Specced. Three background components built (FarmField, Greenhouse, FarmRow) and saved as React components. Main game FSM, value taxonomy data files, Supabase schema, and remaining components pending Claude Code handoff.
+
+---
+
+## 20. Breath Belt: Respiratory Interoception Thresholds
+
+### Purpose
+
+Breath Belt is a lab-only psychophysics study measuring how well participants can detect changes in their own breathing pace. It uses a Polar H10 chest belt (via Web Bluetooth) to record respiratory acceleration data, and a COM port trigger box to send synchronisation signals to the physio equipment. The study runs in Chrome/Edge only (Web Bluetooth requirement).
+
+Access is gated internally by the component: only users with `profiles.role === 'lab'` can proceed past the browser check. All other users see an "Access restricted" screen.
+
+Route: `/games/breath-belt`
+
+### Phase flow
+
+```
+BROWSER_CHECK → BT_CONNECT → COM_CONNECT
+→ CALIB_READY → CALIBRATING   (CalibrationScreen manages sub-states)
+→ BASELINE_READY → BASELINE_RECORDING → BASELINE_COMPLETE
+→ PHASE2_READY → PHASE2_RUNNING   (9 fixed trials)
+→ PHASE2_COMPLETE → PHASE3_INTRO → PHASE3_RUNNING   (dual-QUEST until converged)
+→ SESSION_COMPLETE
+```
+
+### Hardware
+
+- **Polar H10**: Bluetooth LE chest belt. Streams raw accelerometer (ACC) and heart rate (HR) data. ACC signal is used as a proxy for respiratory effort. Connected via Web Bluetooth in `useBeltConnection.js`.
+- **COM trigger box**: Serial port connected via Web Serial API. Sends 1-byte codes to the physio recording system at trial start/end. Connected separately after BT.
+
+### Calibration (Phase 1)
+
+CalibrationScreen guides the participant through two calibration phases:
+1. **Range calibration**: captures min/max of belt signal over several breath cycles.
+2. **Phase 2 acceptance**: participant confirms calibration looks reasonable, or redoes it.
+
+Calibration state is saved to `belt.calibStateRef` and persisted at session end.
+
+### Baseline (Phase 1b)
+
+A 5-minute free-breathing recording at the participant's natural rate. The mean breath period from this baseline defines `BASE_BREATH_SPEED_S` for the trial phases.
+
+### Phase 2 — Fixed trials
+
+9 trials at pre-specified breath period deviations (faster/slower/same relative to baseline). AvatarBreathPacer (from EbbAndFlow) paces the avatar. The participant follows. No response is collected — these are familiarisation trials. Trial data is recorded to Supabase.
+
+### Phase 3 — Dual-QUEST staircase
+
+Interleaved faster/slower staircases using the QUEST+ algorithm. Each trial:
+1. QUEST selects the next magnitude (log10 seconds deviation from baseline).
+2. Avatar paces at that period. Participant follows.
+3. 3AFC response: slower / same / faster.
+4. Confidence rating (1–7, ConfidenceRating component).
+5. Arousal rating (1–7, ArousalRating component).
+
+Both staircases converge independently. Session ends when both converge. Convergence thresholds and SDs are displayed on the SessionComplete screen.
+
+### Data
+
+Supabase schema in `belt_schema.sql`. Tables:
+
+| Table | Contents |
+|---|---|
+| `belt_sessions` | One row per session: user_id, calib_state JSON, quest_state JSON |
+| `belt_trials` | One row per trial: phase, trial_number, condition, breath_period_ms, log10_mag, response, correct, confidence, arousal, belt_sync_mean |
+| `belt_accel_raw` | Raw accelerometer rows (timestamps + xyz) |
+| `belt_hr_raw` | Raw HR rows |
+
+### Source layout
+
+```
+src/games/BreathBelt/
+  BreathBelt.jsx             ← main FSM
+  constants.js               ← BASE_BREATH_SPEED_S, trigger codes, QUEST params
+  belt_schema.sql            ← Supabase migration
+  hooks/
+    useBeltConnection.js     ← Web Bluetooth + Web Serial, calibration, triggers
+    useBeltSession.js        ← Supabase session lifecycle (start/recordTrial/end)
+    useBeltQuestStaircases.js ← dual-QUEST state machine
+    useTrialRunner.js        ← per-trial avatar pacing + belt sync measurement
+  components/
+    BrowserWarning.jsx       ← Chrome/Edge prompt
+    CalibrationScreen.jsx    ← 2-phase calibration UI
+    BaselineScreen.jsx       ← 5-min baseline recording
+    FixedTrialsScreen.jsx    ← Phase 2: 9 fixed trials
+    StaircaseScreen.jsx      ← Phase 3: QUEST trials + 3AFC + ratings
+    BeltSyncRing.jsx         ← real-time belt signal ring around avatar
+    SessionComplete.jsx      ← convergence summary
+```
+
+### Convergence data flow
+
+`quest.getConvergence()` is called in `StaircaseScreen` when both staircases converge and passed as the third argument to `onComplete(trials, questState, convergence)`. `BreathBelt.jsx` stores it in `convergenceRef.current` and passes it to `SessionComplete`.
+
+### Status
+
+Integrated. All source files in place at `src/games/BreathBelt/`. Route registered at `/games/breath-belt`. Supabase schema in `belt_schema.sql` — apply migration before running in lab. Requires Chrome or Edge with Web Bluetooth enabled.

@@ -1,0 +1,223 @@
+import { useState, useCallback, useRef } from 'react';
+import AvatarBreathPacer from '../../EbbAndFlow/components/AvatarBreathPacer';
+import BeltSyncRing from './BeltSyncRing';
+import { useTrialRunner } from '../hooks/useTrialRunner';
+import { useBeltQuestStaircases } from '../hooks/useBeltQuestStaircases';
+import ConfidenceRating from '../../shared/ConfidenceRating';
+import ArousalRating from '../../shared/ArousalRating';
+import { BASE_BREATH_SPEED_S } from '../constants';
+
+const BASE_MS = BASE_BREATH_SPEED_S * 1000;
+
+// ── StaircaseScreen ────────────────────────────────────────────────────────
+//
+// Runs Phase 3: interleaved dual-QUEST (faster/slower) trials.
+// Each cycle: READY → IN_PROGRESS → RESPONSE (3AFC + confidence + arousal).
+// onComplete(trials[], serialisedQuestState) fires when both staircases converge.
+
+const SC_STATES = {
+  READY:       'READY',
+  IN_PROGRESS: 'IN_PROGRESS',
+  RESPONSE:    'RESPONSE',
+};
+
+export default function StaircaseScreen({
+  avatarProps,
+  breathValueRef,
+  sendTrigger,
+  currentPhaseRef,
+  currentTrialRef,
+  recordTrial,
+  savedQuestState,
+  onComplete,
+}) {
+  const [scState,    setScState]    = useState(SC_STATES.READY);
+  const [trialCount, setTrialCount] = useState(0);
+  const trialsData = useRef([]);
+
+  // Current trial context — set before IN_PROGRESS, read during RESPONSE
+  const pendingTrialRef = useRef(null);    // { key, log10Delta, deltaSec, beltSyncMean }
+  const [response,   setResponse]   = useState(null);
+  const [confidence, setConfidence] = useState(null);
+  const [arousal,    setArousal]    = useState(null);
+
+  const quest = useBeltQuestStaircases(savedQuestState);
+
+  const { getPhase, runTrial, controlRef } = useTrialRunner({
+    breathValueRef,
+    sendTrigger,
+    currentPhaseRef,
+    currentTrialRef,
+  });
+
+  const avatarSize = 240;
+
+  // ── Start one QUEST trial ──────────────────────────────────────────────
+
+  const startTrial = useCallback(async () => {
+    const { key, log10Delta, deltaSec } = quest.getNextTrial();
+    const conditionMs = key === 'faster'
+      ? Math.max(BASE_MS - deltaSec * 1000, 500)  // floor at 0.5 s
+      : BASE_MS + deltaSec * 1000;
+
+    setScState(SC_STATES.IN_PROGRESS);
+    setResponse(null);
+    setConfidence(null);
+    setArousal(null);
+
+    const { beltSyncMean } = await runTrial('phase3', trialCount + 1, conditionMs);
+
+    pendingTrialRef.current = { key, log10Delta, deltaSec, beltSyncMean, conditionMs };
+    setScState(SC_STATES.RESPONSE);
+  }, [trialCount, quest, runTrial]);
+
+  // ── Submit response ────────────────────────────────────────────────────
+
+  const submitResponse = useCallback(() => {
+    if (!response || confidence === null || arousal === null) return;
+    const { key, log10Delta, deltaSec, beltSyncMean, conditionMs } = pendingTrialRef.current;
+
+    const responseIndex = quest.recordResponse(key, response, log10Delta);
+    const correct = responseIndex === 1;
+
+    const row = {
+      phase:           3,
+      trial_number:    trialCount + 1,
+      condition:       key,
+      breath_period_ms: conditionMs,
+      log10_mag:       log10Delta,
+      response,
+      correct,
+      confidence,
+      arousal,
+      belt_sync_mean:  beltSyncMean,
+    };
+    trialsData.current.push(row);
+    recordTrial(row);
+
+    const nextCount = trialCount + 1;
+    setTrialCount(nextCount);
+
+    if (quest.allConverged()) {
+      onComplete(trialsData.current, quest.serialise(), quest.getConvergence());
+    } else {
+      setScState(SC_STATES.READY);
+    }
+  }, [response, confidence, arousal, trialCount, quest, recordTrial, onComplete]);
+
+  // ── Render ────────────────────────────────────────────────────────────
+
+  const conv   = quest.getConvergence();
+  const canSubmit = response !== null && confidence !== null && arousal !== null;
+
+  return (
+    <div className="flex flex-col items-center gap-6 px-6 py-8" style={{ maxWidth: 480, margin: '0 auto' }}>
+
+      {/* Avatar + ring — visible during READY and IN_PROGRESS */}
+      {scState !== SC_STATES.RESPONSE && (
+        <div style={{ position: 'relative', width: avatarSize, height: avatarSize }}>
+          <BeltSyncRing breathValueRef={breathValueRef} avatarSize={avatarSize} />
+          <div style={{ position: 'relative', zIndex: 2 }}>
+            <AvatarBreathPacer
+              {...avatarProps}
+              scaleAmplitude={0.25}
+              getPhase={getPhase}
+              controlRef={controlRef}
+              paused={scState === SC_STATES.READY}
+              size={avatarSize}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Trial count + convergence status */}
+      <div className="flex gap-4" style={{ fontFamily: 'Space Mono', fontSize: 'var(--fs-mono-sm)', color: 'var(--tx3)' }}>
+        <span>Trial {trialCount + 1}</span>
+        <span>↑ {(conv.faster.sd / 0.04 * 100).toFixed(0)}%</span>
+        <span>↓ {(conv.slower.sd / 0.04 * 100).toFixed(0)}%</span>
+      </div>
+
+      {/* READY */}
+      {scState === SC_STATES.READY && (
+        <>
+          <p className="text-center" style={{ color: 'var(--tx2)', fontSize: 'var(--fs-body)' }}>
+            Breathe with the avatar. Notice if the pace changes.
+          </p>
+          <button
+            onClick={startTrial}
+            className="px-6 py-3 rounded-xl font-medium"
+            style={{ background: 'var(--pk)', color: '#fff', fontSize: 'var(--fs-body)' }}
+          >
+            Start trial
+          </button>
+        </>
+      )}
+
+      {/* IN_PROGRESS */}
+      {scState === SC_STATES.IN_PROGRESS && (
+        <p className="text-center" style={{ color: 'var(--tx2)', fontSize: 'var(--fs-body)' }}>
+          Follow the avatar…
+        </p>
+      )}
+
+      {/* RESPONSE: 3AFC + confidence + arousal */}
+      {scState === SC_STATES.RESPONSE && (
+        <div className="flex flex-col gap-6 w-full">
+          <p className="text-center font-medium" style={{ color: 'var(--tx)', fontSize: 'var(--fs-body)' }}>
+            Did the avatar's pace change?
+          </p>
+
+          {/* 3AFC */}
+          <div className="flex gap-3 justify-center">
+            {['slower', 'same', 'faster'].map(opt => (
+              <button
+                key={opt}
+                onClick={() => setResponse(opt)}
+                className="px-5 py-3 rounded-xl font-medium capitalize"
+                style={{
+                  background: response === opt ? 'var(--pk)' : 'transparent',
+                  color:      response === opt ? '#fff'       : 'var(--tx)',
+                  border:     '1px solid var(--bds)',
+                  fontSize:   'var(--fs-body)',
+                  minWidth:   80,
+                }}
+              >
+                {opt}
+              </button>
+            ))}
+          </div>
+
+          {/* Confidence */}
+          <div>
+            <p style={{ color: 'var(--tx2)', fontSize: 'var(--fs-body-sm)', marginBottom: 8, textAlign: 'center' }}>
+              How confident are you?
+            </p>
+            <ConfidenceRating value={confidence} onChange={setConfidence} />
+          </div>
+
+          {/* Arousal */}
+          <div>
+            <p style={{ color: 'var(--tx2)', fontSize: 'var(--fs-body-sm)', marginBottom: 8, textAlign: 'center' }}>
+              How activated do you feel right now?
+            </p>
+            <ArousalRating value={arousal} onChange={setArousal} />
+          </div>
+
+          <button
+            onClick={submitResponse}
+            disabled={!canSubmit}
+            className="px-6 py-3 rounded-xl font-medium w-full"
+            style={{
+              background: canSubmit ? 'var(--pk)' : 'var(--bd)',
+              color:      canSubmit ? '#fff'       : 'var(--tx3)',
+              fontSize:   'var(--fs-body)',
+              cursor:     canSubmit ? 'pointer'    : 'default',
+            }}
+          >
+            Next
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
