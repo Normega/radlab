@@ -2,7 +2,7 @@
 
 > **Regulatory and Affective Dynamics Lab**  
 > University of Toronto · PI: Professor Norman Farb, PhD  
-> Last updated: 2026-05-19 (BreathBelt §20 added. Farm Joy §19 added. Lab pages data files complete: people.js, research.js, publications.json all ready in src/data/.)
+> Last updated: 2026-05-20 (Questionnaire System §21 added. BreathBelt §20 added. Farm Joy §19 added. Lab pages data files complete: people.js, research.js, publications.json all ready in src/data/.)
 
 ---
 
@@ -1550,3 +1550,119 @@ src/games/BreathBelt/
 ### Status
 
 Integrated. All source files in place at `src/games/BreathBelt/`. Route registered at `/games/breath-belt`. Supabase schema in `belt_schema.sql` — apply migration before running in lab. Requires Chrome or Edge with Web Bluetooth enabled.
+
+---
+
+## 21. Questionnaire System
+
+### Overview
+
+A global questionnaire library accessible at `/admin/questionnaires`. Lab members upload JSON definitions, preview them interactively, and lock them to prevent accidental edits. The same `QuestionnaireRenderer` component is used for both admin preview and live study delivery.
+
+### Routes
+
+All three routes are inside the `AdminRoute` / `AdminLayout` guard — `profiles.role === 'lab'` required.
+
+| Route | Component | Purpose |
+|---|---|---|
+| `/admin/questionnaires` | `QuestionnairesPage` | Library list — all uploaded questionnaires |
+| `/admin/questionnaires/new` | `QuestionnaireUpload` | Paste or file-upload a JSON definition |
+| `/admin/questionnaires/:slug` | `QuestionnairePreview` | Full renderer preview + lock/edit controls |
+
+### File structure
+
+```
+src/
+  components/
+    questionnaire/
+      QuestionnaireRenderer.jsx   ← full player; used for preview and study delivery
+      questionnaireUtils.js       ← buildSlides(), effectiveLabels(), validateDefinition()
+      InstructionScreen.jsx       ← mandatory "Begin" screen before first item
+      LikertItem.jsx              ← single Likert item + image label support
+      ProgressLabel.jsx           ← sticky "Part N of M · Item X of Y" header
+      ScaleChangeScreen.jsx       ← auto-inserted slide when scale changes between items
+  pages/
+    admin/
+      QuestionnairesPage.jsx      ← library list
+      QuestionnaireUpload.jsx     ← JSON upload + validation
+      QuestionnairePreview.jsx    ← preview + lock/unlock + JSON editor overlay
+questionnaires_schema.sql         ← Supabase migration (run manually in SQL editor)
+```
+
+### JSON schema
+
+```json
+{
+  "slug": "panas",
+  "name": "PANAS",
+  "auto_advance": true,
+  "instructions": "Rate each word to the extent you feel this way right now.",
+  "scale_labels": [
+    { "value": 1, "label": "Very slightly or not at all", "image": null },
+    { "value": 5, "label": "Extremely", "image": null }
+  ],
+  "items": [
+    {
+      "id": "panas_1",
+      "text": "Interested",
+      "type": "likert",
+      "scale_min": 1,
+      "scale_max": 5,
+      "subscale": "positive",
+      "reverse_score": false,
+      "required": true,
+      "scale_labels_override": null
+    }
+  ],
+  "scoring": {
+    "subscales": {
+      "positive": { "items": ["panas_1"], "method": "sum" }
+    }
+  }
+}
+```
+
+**Key fields:**
+- `slug` — unique identifier; used as the URL slug and the key in `questionnaire_responses`
+- `name` — display name shown to participants
+- `auto_advance` — `true` (default): advances immediately on selection; `false`: shows a Next button
+- `instructions` — shown on the mandatory instruction screen before item 1
+- `scale_labels` — questionnaire-level default scale labels; each entry: `{ value, label, image }`
+- `items` — ordered array of Likert items
+- `scale_labels_override` per item — overrides the questionnaire-level labels for that item only; enables mixed-scale questionnaires
+- `scoring` — optional; subscale definitions with item lists and aggregation method
+
+### Image labels
+
+Set `"image"` on a scale label entry to a path relative to `/public/`, e.g. `"scale_images/vas_face_1.png"`. The `LikertItem` component renders the image at 36×36px beside the text label. If the file is not found, it falls back to a `?` placeholder — no hard failure.
+
+### Auto-generated scale-change slides
+
+`buildSlides()` in `questionnaireUtils.js` inserts a `ScaleChangeScreen` slide automatically whenever consecutive items have different effective labels (comparing by JSON string equality). This handles mixed-scale questionnaires (e.g., DERS items switching between 5-point frequency and 7-point agreement scales) without any explicit marking in the JSON.
+
+### QuestionnaireRenderer
+
+The player component. Builds a flat slide sequence (instruction → [scale_change →] item → …), manages fade transitions, back navigation (scale_change slides are skipped when going back), and response collection.
+
+**Props:**
+- `questionnaire` — full JSON definition
+- `partNumber` / `totalParts` — for the sticky progress label (e.g. "Part 2 of 3")
+- `onComplete(responses)` — called with `{ [itemId]: value }` map when all items answered
+- `onBack` — optional; called if participant presses Back on the instruction screen
+- `previewMode` — shows "Preview complete — N items answered." instead of calling `onComplete`
+
+### locked flag
+
+`locked: true` prevents the "Edit JSON" button from appearing in `QuestionnairePreview`. The lock toggle always works (a lab member can lock or unlock at any time). Locking does **not** block saves — it is a UI safety guard only, not a database constraint.
+
+### Supabase table — `questionnaires`
+
+Schema in `questionnaires_schema.sql` (project root — run manually in Supabase SQL editor).
+
+RLS policies:
+- Lab members (`profiles.role = 'lab'`): full read/write/delete
+- All authenticated users: read-only (for study delivery)
+
+### Status
+
+Integrated. All source files placed. Routes registered inside the existing `AdminRoute`/`AdminLayout` guard. SQL schema at project root for manual migration.
