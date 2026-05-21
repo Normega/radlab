@@ -9,7 +9,7 @@ import { supabase } from '../../lib/supabase';
 export default function QuestionnairesPage() {
   const navigate = useNavigate();
 
-  const { data: questionnaires, isLoading } = useQuery({
+  const { data: questionnaires, isLoading, isError, error } = useQuery({
     queryKey: ['questionnaires'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -51,7 +51,23 @@ export default function QuestionnairesPage() {
         </p>
       )}
 
-      {!isLoading && questionnaires?.length === 0 && (
+      {isError && (
+        <div
+          style={{
+            background: '#fff5f0', border: '1px solid #e67e22',
+            borderRadius: 14, padding: 24,
+          }}
+        >
+          <p style={{ fontFamily: 'Space Mono', fontSize: 'var(--fs-mono-sm)', color: '#c0392b', margin: '0 0 6px', fontWeight: 600 }}>
+            Database error
+          </p>
+          <p style={{ fontFamily: 'DM Sans', fontSize: 'var(--fs-body-sm)', color: '#8b4513', margin: 0 }}>
+            {error?.message ?? 'Could not load questionnaires.'} — run <code>questionnaires_schema.sql</code> in the Supabase SQL editor if the table does not exist yet.
+          </p>
+        </div>
+      )}
+
+      {!isLoading && !isError && questionnaires?.length === 0 && (
         <div
           style={{
             background: 'var(--bgc)', border: '1px dashed var(--bds)',
@@ -65,7 +81,7 @@ export default function QuestionnairesPage() {
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {questionnaires?.map(q => (
+        {!isError && questionnaires?.map(q => (
           <QuestionnaireCard
             key={q.id}
             questionnaire={q}

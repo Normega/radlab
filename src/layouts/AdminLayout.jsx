@@ -3,9 +3,10 @@ import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 
 const NAV_ITEMS = [
-  { to: '/admin/sessions',  label: 'Sessions'  },
-  { to: '/admin/protocols', label: 'Protocols' },
-  { to: '/admin/studies',   label: 'Studies'   },
+  { to: '/admin/sessions',        label: 'Sessions'       },
+  { to: '/admin/protocols',       label: 'Protocols'      },
+  { to: '/admin/studies',         label: 'Studies'        },
+  { to: '/admin/questionnaires',  label: 'Questionnaires' },
 ]
 
 function Sidebar({ session, onClose }) {
