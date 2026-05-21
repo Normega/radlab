@@ -119,37 +119,41 @@ export default function LikertItem({ item, labels, selectedValue, onSelect, auto
               )}
             </span>
 
-            {/* Label: image + text, or just text */}
+            {/* Label block — always shows numeral; anchor text as secondary line
+                when label is meaningfully different from the numeral string.
+                Layout:
+                  ○  0  Never       ← numeral + anchor label on second line
+                  ○  1              ← numeral only (label === "1", suppressed)
+                  ○  5  Always      ← numeral + anchor label on second line
+                Image-only labels skip the numeral and show the image instead. */}
             <span style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1 }}>
-              {opt.image && (
+              {opt.image ? (
                 <ImageLabel src={opt.image} />
-              )}
-              {opt.label && (
-                <span
-                  style={{
-                    fontFamily: 'DM Sans',
-                    fontSize:   'var(--fs-body)',
-                    color:      active ? 'var(--pkd)' : 'var(--tx)',
+              ) : (
+                <span style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  <span style={{
+                    fontFamily: 'Space Mono',
+                    fontSize:   'var(--fs-mono-sm)',
+                    color:      active ? 'var(--pk)' : 'var(--tx2)',
                     transition: `color ${ANIM_MS}ms ease`,
-                  }}
-                >
-                  {opt.label}
+                    lineHeight: 1.3,
+                  }}>
+                    {opt.value}
+                  </span>
+                  {opt.label && opt.label !== String(opt.value) && (
+                    <span style={{
+                      fontFamily: 'DM Sans',
+                      fontSize:   'var(--fs-body-sm)',
+                      color:      active ? 'var(--pkd)' : 'var(--tx)',
+                      transition: `color ${ANIM_MS}ms ease`,
+                      lineHeight: 1.3,
+                    }}>
+                      {opt.label}
+                    </span>
+                  )}
                 </span>
               )}
             </span>
-
-            {/* Numeric value chip (only when no text label) */}
-            {!opt.label && !opt.image && (
-              <span
-                style={{
-                  fontFamily: 'Space Mono',
-                  fontSize:   'var(--fs-mono-sm)',
-                  color:      active ? 'var(--pk)' : 'var(--tx3)',
-                }}
-              >
-                {opt.value}
-              </span>
-            )}
           </button>
         );
       })}
