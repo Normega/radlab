@@ -130,13 +130,12 @@ export default function LikertItem({ item, labels, selectedValue, onSelect, auto
               {opt.image ? (
                 <ImageLabel src={opt.image} />
               ) : (
-                <span style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <span style={{ display: 'flex', flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
                   <span style={{
                     fontFamily: 'Space Mono',
                     fontSize:   'var(--fs-mono-sm)',
                     color:      active ? 'var(--pk)' : 'var(--tx2)',
                     transition: `color ${ANIM_MS}ms ease`,
-                    lineHeight: 1.3,
                   }}>
                     {opt.value}
                   </span>
@@ -146,7 +145,6 @@ export default function LikertItem({ item, labels, selectedValue, onSelect, auto
                       fontSize:   'var(--fs-body-sm)',
                       color:      active ? 'var(--pkd)' : 'var(--tx)',
                       transition: `color ${ANIM_MS}ms ease`,
-                      lineHeight: 1.3,
                     }}>
                       {opt.label}
                     </span>
