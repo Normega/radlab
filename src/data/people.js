@@ -56,6 +56,13 @@ export const gradStudents = [
     bio: "Zoey received her B.S. in Cognitive Science from the University of California, Los Angeles and worked as a research coordinator at Johns Hopkins University. She is currently an MA/PhD student in the Psychological Clinical Science program at the University of Toronto Scarborough. Her research interests include using machine learning tools to characterize brain activity during different states of attention and understanding how contemplative practices promote well-being. Her hobbies include growing plants and fungi, consuming narratives in any form, and looking at ceramics, paintings, and illustrations.",
     links: [],
   },
+  {
+    name: "Jaafar Al-Tabakchali",
+    role: "Undergraduate Student",
+    photo: "/images/people/jaafar.jpg",
+    bio: "Jaafar is an undergraduate student at the University of Toronto Mississauga interested in the relationship between physiological states and psychological well-being. His broader interests are how health behaviours such as exercise, nutrition, and contemplative practices influence cognition and mental health. He is particularly interested in combining research, technology, and public communication to make evidence-based health information more accessible. Outside of research, he enjoys going to the gym, being in nature, and cooking steaks.",
+    links: [],
+  },
 ];
 
 export const alumni = [
