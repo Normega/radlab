@@ -1189,7 +1189,7 @@ Photos currently at `radlab.zone/images/people/`. Steps:
 2. Place in `public/images/people/<filename>`
 3. Update `photo` paths in `src/data/people.js` to `/images/people/<filename>`
 
-Filenames: `norm2.jpg` `thomas.jpg` `john.jpg` `sandy.jpg` `liliana.jpg` `zoey.jpg` `geissy.png` `phil.jpg` `leanh.jpg` `jordan.png` `kyle.jpg` `katie.jpg` `yiyi.jpg`
+Filenames: `norm2.jpg` `thomas.jpg` `john.jpg` `sandy.jpg` `liliana.jpg` `zoey.jpg` `geissy.png` `phil.jpg` `leanh.jpg` `jordan.png` `kyle.jpg` `katie.jpg` `yiyi.jpg` `jaafar.jpg`
 
 ---
 
