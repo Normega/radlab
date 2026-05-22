@@ -141,17 +141,6 @@ export default function ContactAvatar({
     // ── Features group — opacity controlled for ghost reveal mode ─────────
     const featuresG = mk('g', { opacity: '0.08' }, svg);
 
-    const browL = mk('path', {
-      d: 'M 60 82 Q 76 77 90 81',
-      stroke: skinDk, 'stroke-width': '3.5',
-      fill: 'none', 'stroke-linecap': 'round', opacity: '0.65',
-    }, featuresG);
-    const browR = mk('path', {
-      d: 'M 110 81 Q 124 77 140 82',
-      stroke: skinDk, 'stroke-width': '3.5',
-      fill: 'none', 'stroke-linecap': 'round', opacity: '0.65',
-    }, featuresG);
-
     // Left eye
     mk('circle', { cx: '76', cy: '100', r: '17', fill: `url(#${p}sG)`, filter: `url(#${p}eF)` }, featuresG);
     mk('circle', { cx: '76', cy: '101', r: '12', fill: `url(#${p}iG)`, 'clip-path': `url(#${p}lC)` }, featuresG);
@@ -169,6 +158,18 @@ export default function ContactAvatar({
     mk('circle', { cx: '127', cy: '108', r: '1.8', fill: 'white', opacity: '0.65' }, featuresG);
     const rLid = mk('path', { d: 'M 108 91 Q 124 94 140 91 A 17 17 0 0 0 108 91 Z', fill: skin }, featuresG);
     const rLsh = mk('path', { d: 'M 108 91 Q 124 94 140 91', stroke: skinDk, 'stroke-width': '2.2', fill: 'none', 'stroke-linecap': 'round', opacity: '0.6' }, featuresG);
+
+    // Eyebrows — appended after eyelids so they paint on top
+    const browL = mk('path', {
+      d: 'M 60 82 Q 76 77 90 81',
+      stroke: skinDk, 'stroke-width': '3.5',
+      fill: 'none', 'stroke-linecap': 'round', opacity: '0.65',
+    }, featuresG);
+    const browR = mk('path', {
+      d: 'M 110 81 Q 124 77 140 82',
+      stroke: skinDk, 'stroke-width': '3.5',
+      fill: 'none', 'stroke-linecap': 'round', opacity: '0.65',
+    }, featuresG);
 
     // Mouth / species nose+mouth (wolf muzzle, cat triangle+whiskers, etc.)
     if (noseMouthEls) {

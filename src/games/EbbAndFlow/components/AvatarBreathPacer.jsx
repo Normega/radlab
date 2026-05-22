@@ -151,17 +151,6 @@ export default function AvatarBreathPacer({
 
     const { noseMouthEls } = buildSpeciesIntoSVG({ species, p, skin, skinLt, skinDk, mouthC, defs, headEl, svg });
 
-    const browL = mk('path', {
-      d: 'M 60 82 Q 76 77 90 81',
-      stroke: skinDk, 'stroke-width': '3.5',
-      fill: 'none', 'stroke-linecap': 'round', opacity: '0.65',
-    }, svg);
-    const browR = mk('path', {
-      d: 'M 110 81 Q 124 77 140 82',
-      stroke: skinDk, 'stroke-width': '3.5',
-      fill: 'none', 'stroke-linecap': 'round', opacity: '0.65',
-    }, svg);
-
     // Left eye
     mk('circle', { cx: '76', cy: '100', r: '17', fill: `url(#${p}sG)`, filter: `url(#${p}eF)` }, svg);
     mk('circle', { cx: '76', cy: '101', r: '12', fill: `url(#${p}iG)`, clipPath: `url(#${p}lC)` }, svg);
@@ -179,6 +168,18 @@ export default function AvatarBreathPacer({
     mk('circle', { cx: '127', cy: '108', r: '1.8', fill: 'white', opacity: '0.65' }, svg);
     const rLid = mk('path', { d: 'M 108 91 Q 124 94 140 91 A 17 17 0 0 0 108 91 Z', fill: skin }, svg);
     const rLsh = mk('path', { d: 'M 108 91 Q 124 94 140 91', stroke: skinDk, 'stroke-width': '2.2', fill: 'none', 'stroke-linecap': 'round', opacity: '0.6' }, svg);
+
+    // Eyebrows — appended after eyelids so they paint on top
+    const browL = mk('path', {
+      d: 'M 60 82 Q 76 77 90 81',
+      stroke: skinDk, 'stroke-width': '3.5',
+      fill: 'none', 'stroke-linecap': 'round', opacity: '0.65',
+    }, svg);
+    const browR = mk('path', {
+      d: 'M 110 81 Q 124 77 140 82',
+      stroke: skinDk, 'stroke-width': '3.5',
+      fill: 'none', 'stroke-linecap': 'round', opacity: '0.65',
+    }, svg);
 
     // Mouth / species nose+mouth
     if (noseMouthEls) {
