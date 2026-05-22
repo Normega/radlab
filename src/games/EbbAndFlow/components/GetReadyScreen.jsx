@@ -11,7 +11,7 @@ import { auraParamsFromSync, AURA_DEFAULT_COLOR } from '../../../lib/auraUtils';
 //   skinColor / eyeColor / scaleAmplitude — avatar appearance
 //   onBegin — () => void
 
-export default function GetReadyScreen({ skinColor, eyeColor, species = 'human', auraConfig = null, syncScore = 0, scaleAmplitude, onBegin }) {
+export default function GetReadyScreen({ skinColor, eyeColor, species = 'human', hairStyle = 'none', hairColor = '#784421', auraConfig = null, syncScore = 0, scaleAmplitude, onBegin }) {
   const auraColor  = (auraConfig?.enabled !== false && auraConfig?.color) ? auraConfig.color : AURA_DEFAULT_COLOR
   const maxInset   = auraConfig?.maxInset ?? 4
   const rawAura    = auraParamsFromSync(syncScore)
@@ -32,6 +32,8 @@ export default function GetReadyScreen({ skinColor, eyeColor, species = 'human',
           skinColor={skinColor}
           eyeColor={eyeColor}
           species={species}
+          hairStyle={hairStyle}
+          hairColor={hairColor}
           scaleAmplitude={scaleAmplitude}
           getPhase={null}
           paused={true}

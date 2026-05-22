@@ -20,7 +20,7 @@ import { auraParamsFromSync, AURA_DEFAULT_COLOR } from '../../../lib/auraUtils';
 
 export default function WarmupScreen({
   phase = 'warmup',
-  skinColor, eyeColor, species = 'human', auraConfig = null, scaleAmplitude,
+  skinColor, eyeColor, species = 'human', hairStyle = 'none', hairColor = '#784421', auraConfig = null, scaleAmplitude,
   getPhase,
   avatarControlRef,
   isHeld, onPress, onRelease,
@@ -62,6 +62,8 @@ export default function WarmupScreen({
           skinColor={skinColor}
           eyeColor={eyeColor}
           species={species}
+          hairStyle={hairStyle}
+          hairColor={hairColor}
           scaleAmplitude={scaleAmplitude}
           getPhase={getPhase}
           controlRef={avatarControlRef}

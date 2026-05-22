@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { buildSpeciesIntoSVG } from '../../../lib/buildSpeciesIntoSVG';
+import { drawHairBack, drawHairFront } from '../../../assets/hair/hairDraw';
+import { HAIR_BACK_STYLES } from '../../../assets/hair/hairStyles';
 
 // ── Color helpers (duplicated here so this component is self-contained) ───
 function h2r(hex) {
@@ -63,6 +65,8 @@ export default function AvatarBreathPacer({
   skinColor      = '#FDBCB4',
   eyeColor       = '#4A90D9',
   species        = 'human',
+  hairStyle      = 'none',
+  hairColor      = '#784421',
   scaleAmplitude = 0.25,
   getPhase,
   paused         = false,
@@ -135,6 +139,13 @@ export default function AvatarBreathPacer({
     const rcp = mk('clipPath', { id: `${p}rC` }, defs);
     mk('circle', { cx: '124', cy: '100', r: '17' }, rcp);
 
+    // ── Hair back — behind head ──────────────────────────────────────────
+    if (hairStyle !== 'none' && HAIR_BACK_STYLES.includes(hairStyle)) {
+      const hairBackG = mk('g', {});
+      drawHairBack(hairBackG, hairStyle, hairColor, hairColor);
+      svg.appendChild(hairBackG);
+    }
+
     // ── Face elements ────────────────────────────────────────────────────
     const headEl = mk('ellipse', { cx: '100', cy: '105', rx: '64', ry: '68', fill: `url(#${p}hG)` }, svg);
 
@@ -179,6 +190,13 @@ export default function AvatarBreathPacer({
     // Blush
     const bL = mk('ellipse', { cx: '62',  cy: '120', rx: '16', ry: '8', fill: blushC, opacity: '0.42', filter: `url(#${p}bF)` }, svg);
     const bR = mk('ellipse', { cx: '138', cy: '120', rx: '16', ry: '8', fill: blushC, opacity: '0.42', filter: `url(#${p}bF)` }, svg);
+
+    // ── Hair front — over face ───────────────────────────────────────────
+    if (hairStyle !== 'none') {
+      const hairFrontG = mk('g', {});
+      drawHairFront(hairFrontG, hairStyle, hairColor, hairColor, 'hf' + Math.random().toString(36).slice(2, 6));
+      svg.appendChild(hairFrontG);
+    }
 
     containerRef.current.innerHTML = '';
     containerRef.current.appendChild(svg);
@@ -261,9 +279,9 @@ export default function AvatarBreathPacer({
       frameRef.current = null;
       if (controlRef) controlRef.current = null;
     };
-  // Re-build if colors or species change (new avatar loaded)
+  // Re-build if colors, species, or hair change (new avatar loaded)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [skinColor, eyeColor, size, species]);
+  }, [skinColor, eyeColor, size, species, hairStyle, hairColor]);
 
   return (
     <div

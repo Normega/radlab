@@ -59,8 +59,10 @@ export default function ProfilePage({ session }) {
     ? Math.round(((points - prevPts) / (nextMilestone.pts - prevPts)) * 100)
     : 100
 
-  const skinColor = avatarData?.skin_color || '#FDBCB4'
-  const eyeColor  = avatarData?.eye_color  || '#4A90D9'
+  const skinColor = avatarData?.skin_color  || '#FDBCB4'
+  const eyeColor  = avatarData?.eye_color   || '#4A90D9'
+  const hairStyle = avatarData?.hair_style  ?? 'none'
+  const hairColor = avatarData?.hair_color  ?? '#784421'
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
@@ -70,7 +72,7 @@ export default function ProfilePage({ session }) {
         {/* ── Avatar card ─────────────────────────────────────────── */}
         <div style={S.avatarCard}>
           <div style={S.avatarPreview}>
-            <BaseAvatar skinColor={skinColor} eyeColor={eyeColor} species={avatarData?.species ?? 'human'} size={160} />
+            <BaseAvatar skinColor={skinColor} eyeColor={eyeColor} species={avatarData?.species ?? 'human'} hairStyle={hairStyle} hairColor={hairColor} size={160} />
           </div>
           <div style={S.avatarInfo}>
             <h1 style={S.displayName}>{displayName}</h1>

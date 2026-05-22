@@ -170,7 +170,7 @@ function IntroScreen({ onStart }) {
   )
 }
 
-function WatchingScreen({ trialIdx, totalTrials, mode, skinColor, eyeColor, species, getPhase }) {
+function WatchingScreen({ trialIdx, totalTrials, mode, skinColor, eyeColor, species, hairStyle = 'none', hairColor = '#784421', getPhase }) {
   const avatarCtrl = useRef(null)
 
   useEffect(() => {
@@ -196,6 +196,7 @@ function WatchingScreen({ trialIdx, totalTrials, mode, skinColor, eyeColor, spec
         <ContactAvatar
           size={160}
           skinColor={skinColor} eyeColor={eyeColor} species={species}
+          hairStyle={hairStyle} hairColor={hairColor}
           getPhase={getPhase}
           controlRef={avatarCtrl}
           isFirstContact={false}
@@ -206,7 +207,7 @@ function WatchingScreen({ trialIdx, totalTrials, mode, skinColor, eyeColor, spec
   )
 }
 
-function ReproduceScreen({ trialIdx, totalTrials, isActive, ringScale, onPress, skinColor, eyeColor, species, getPhase }) {
+function ReproduceScreen({ trialIdx, totalTrials, isActive, ringScale, onPress, skinColor, eyeColor, species, hairStyle = 'none', hairColor = '#784421', getPhase }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18 }}>
       <ProgressPips current={trialIdx} total={totalTrials} />
@@ -220,6 +221,7 @@ function ReproduceScreen({ trialIdx, totalTrials, isActive, ringScale, onPress, 
         <ContactAvatar
           size={160}
           skinColor={skinColor} eyeColor={eyeColor} species={species}
+          hairStyle={hairStyle} hairColor={hairColor}
           getPhase={getPhase}
           isFirstContact={false}
         />
@@ -374,7 +376,7 @@ export default function Drift({ session }) {
   const [phase,       setPhase]       = useState('intro')
   const [trials,      setTrials]      = useState([])
   const [trialIdx,    setTrialIdx]    = useState(0)
-  const [avatar,      setAvatar]      = useState({ skinColor: '#c8a882', eyeColor: '#5a3e2b', species: 'human' })
+  const [avatar,      setAvatar]      = useState({ skinColor: '#c8a882', eyeColor: '#5a3e2b', species: 'human', hairStyle: 'none', hairColor: '#784421' })
   const [repStart,    setRepStart]    = useState(null)
   const [repDuration, setRepDuration] = useState(null)
   const [results,     setResults]     = useState([])
@@ -400,9 +402,9 @@ export default function Drift({ session }) {
   // Fetch profile avatar
   useEffect(() => {
     if (!userId) return
-    supabase.from('avatars').select('skin_color, eye_color, species').eq('user_id', userId).maybeSingle()
+    supabase.from('avatars').select('skin_color, eye_color, species, hair_style, hair_color').eq('user_id', userId).maybeSingle()
       .then(({ data }) => {
-        if (data) setAvatar({ skinColor: data.skin_color, eyeColor: data.eye_color, species: data.species })
+        if (data) setAvatar({ skinColor: data.skin_color, eyeColor: data.eye_color, species: data.species, hairStyle: data.hair_style ?? 'none', hairColor: data.hair_color ?? '#784421' })
       })
   }, [userId])
 
@@ -531,6 +533,7 @@ export default function Drift({ session }) {
             trialIdx={trialIdx} totalTrials={trials.length}
             mode={phase}
             skinColor={avatar.skinColor} eyeColor={avatar.eyeColor} species={avatar.species}
+            hairStyle={avatar.hairStyle} hairColor={avatar.hairColor}
             getPhase={getPhase}
           />
         )}
@@ -540,6 +543,7 @@ export default function Drift({ session }) {
             trialIdx={trialIdx} totalTrials={trials.length}
             isActive={!!repStart} ringScale={ringScale} onPress={handleReproduce}
             skinColor={avatar.skinColor} eyeColor={avatar.eyeColor} species={avatar.species}
+            hairStyle={avatar.hairStyle} hairColor={avatar.hairColor}
             getPhase={getPhase}
           />
         )}

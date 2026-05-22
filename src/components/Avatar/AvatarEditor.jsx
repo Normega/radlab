@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabase'
 import Nav from '../Nav'
 import BaseAvatar, { SKIN_COLORS, EYE_COLORS } from './BaseAvatar'
 import { SPECIES, SPECIES_ORDER } from '../../lib/avatar-species'
+import { HAIR_STYLES, HAIR_COLORS } from '../../assets/hair/hairStyles'
 import { getUnlockedSpecies } from '../../lib/avatar-unlocks'
 import SyncAura from '../SyncAura'
 import { AURA_COLORS } from '../../lib/auraUtils'
@@ -130,6 +131,27 @@ function AuraColorChip({ color, active, onSelect }) {
   )
 }
 
+// ── StyleChip ─────────────────────────────────────────────────────────────
+function StyleChip({ label, active, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        padding: '4px 10px',
+        borderRadius: 8,
+        border: active ? '1.5px solid var(--pk)' : '1.5px solid var(--bds)',
+        background: active ? 'var(--bgp)' : 'transparent',
+        fontFamily: MONO, fontSize: 9, letterSpacing: '0.04em',
+        color: active ? 'var(--pk)' : 'var(--tx3)',
+        cursor: 'pointer', flexShrink: 0,
+        transition: 'border-color 0.14s, background 0.14s, color 0.14s',
+      }}
+    >
+      {label}
+    </button>
+  )
+}
+
 // ── AvatarEditor ──────────────────────────────────────────────────────────
 export default function AvatarEditor({ session, setHasAvatar }) {
   const navigate    = useNavigate()
@@ -148,13 +170,15 @@ export default function AvatarEditor({ session, setHasAvatar }) {
   const [auraEnabled,  setAuraEnabled]  = useState(true)
   const [auraColor,    setAuraColor]    = useState(AURA_COLORS[0])
   const [auraMaxInset, setAuraMaxInset] = useState(4)
+  const [hairStyle,    setHairStyle]    = useState('none')
+  const [hairColor,    setHairColor]    = useState('#784421')
 
   // Fetch avatar (skin/eye/species) and profile (points) in parallel.
   // Apply palette constraints from the stored species immediately on load.
   useEffect(() => {
     if (!userId) return
     Promise.all([
-      supabase.from('avatars').select('skin_color, eye_color, species, aura').eq('user_id', userId).maybeSingle(),
+      supabase.from('avatars').select('skin_color, eye_color, species, aura, hair_style, hair_color').eq('user_id', userId).maybeSingle(),
       supabase.from('profiles').select('points').eq('id', userId).maybeSingle(),
     ]).then(([{ data: avatar }, { data: prof }]) => {
       let newSkin    = SKIN_COLORS[1]
@@ -167,6 +191,8 @@ export default function AvatarEditor({ session, setHasAvatar }) {
         if (foundSkin) newSkin = foundSkin
         if (foundEye)  newEye  = foundEye
         if (avatar.species && SPECIES[avatar.species]) newSpecies = avatar.species
+        if (avatar.hair_style) setHairStyle(avatar.hair_style)
+        if (avatar.hair_color) setHairColor(avatar.hair_color)
         if (avatar.aura) {
           if (typeof avatar.aura.enabled === 'boolean') setAuraEnabled(avatar.aura.enabled)
           const savedColor = AURA_COLORS.find(c => c.value === avatar.aura.color)
@@ -201,6 +227,7 @@ export default function AvatarEditor({ session, setHasAvatar }) {
 
   const unlockedSpecies        = getUnlockedSpecies(profile)
   const speciesFeatureUnlocked = unlockedSpecies.length > 1
+  const hairFeatureUnlocked    = (profile?.points ?? 0) >= 150
   const auraFeatureUnlocked    = (profile?.points ?? 0) >= 300
 
   function pick(setter, val) {
@@ -247,7 +274,7 @@ export default function AvatarEditor({ session, setHasAvatar }) {
     setSaving(true)
     const aura = { enabled: auraEnabled, color: auraColor.value, maxInset: auraMaxInset }
     const { error } = await supabase.from('avatars').upsert(
-      { user_id: userId, skin_color: skin.hex, eye_color: eye.hex, species, aura, updated_at: new Date().toISOString() },
+      { user_id: userId, skin_color: skin.hex, eye_color: eye.hex, species, aura, hair_style: hairStyle, hair_color: hairColor, updated_at: new Date().toISOString() },
       { onConflict: 'user_id' }
     )
     setSaving(false)
@@ -288,10 +315,10 @@ export default function AvatarEditor({ session, setHasAvatar }) {
               <div key={bump} style={{ animation: 'popIn 0.32s ease both' }}>
                 {auraFeatureUnlocked && auraEnabled ? (
                   <SyncAura params={{ inset: auraMaxInset, opacity: 0.60 }} color={auraColor.value} size={200}>
-                    <BaseAvatar skinColor={skin.hex} eyeColor={eye.hex} species={species} size={200} />
+                    <BaseAvatar skinColor={skin.hex} eyeColor={eye.hex} species={species} hairStyle={hairStyle} hairColor={hairColor} size={200} />
                   </SyncAura>
                 ) : (
-                  <BaseAvatar skinColor={skin.hex} eyeColor={eye.hex} species={species} size={200} />
+                  <BaseAvatar skinColor={skin.hex} eyeColor={eye.hex} species={species} hairStyle={hairStyle} hairColor={hairColor} size={200} />
                 )}
               </div>
             </div>
@@ -325,18 +352,62 @@ export default function AvatarEditor({ session, setHasAvatar }) {
                 </div>
               )}
 
-              {/* Locked rows between species and aura */}
-              {[
-                { icon: '👃', label: 'Nose styles',  pts: 100 },
-                { icon: '💇', label: 'Hair',          pts: 150 },
-                { icon: '😄', label: 'Mouth styles', pts: 200 },
-              ].map(item => (
-                <div key={item.label} style={S.lockedRow}>
-                  <span style={{ fontSize: 13 }}>{item.icon}</span>
-                  <span style={S.lockedItemLabel}>{item.label}</span>
-                  <span style={S.lockedPts}>{item.pts}pts</span>
+              {/* Nose — always locked for now */}
+              <div style={S.lockedRow}>
+                <span style={{ fontSize: 13 }}>👃</span>
+                <span style={S.lockedItemLabel}>Nose styles</span>
+                <span style={S.lockedPts}>100pts</span>
+              </div>
+
+              {/* Hair — expands at 150pts */}
+              {hairFeatureUnlocked ? (
+                <div style={S.speciesSection}>
+                  <p style={S.speciesSectionLabel}>💇 Hair style</p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 8 }}>
+                    {HAIR_STYLES.map(s => (
+                      <StyleChip
+                        key={s.id}
+                        label={s.label}
+                        active={hairStyle === s.id}
+                        onClick={() => { setHairStyle(s.id); setSaved(false); setBump(b => b + 1) }}
+                      />
+                    ))}
+                  </div>
+                  <p style={{ ...S.speciesSectionLabel, margin: '6px 0 4px' }}>Hair colour</p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {HAIR_COLORS.map(hex => (
+                      <button
+                        key={hex}
+                        title={hex}
+                        onClick={() => { setHairColor(hex); setSaved(false); setBump(b => b + 1) }}
+                        style={{
+                          width: 26, height: 26, borderRadius: '50%', background: hex,
+                          border: hairColor === hex ? '3px solid var(--pk)' : '3px solid transparent',
+                          outline: hairColor === hex ? '2px solid white' : 'none',
+                          outlineOffset: '-4px',
+                          cursor: 'pointer', padding: 0, flexShrink: 0,
+                          boxShadow: hairColor === hex ? '0 0 0 2px var(--pk)' : '0 1px 4px rgba(0,0,0,0.2)',
+                          transform: hairColor === hex ? 'scale(1.2)' : 'scale(1)',
+                          transition: 'all 0.14s ease',
+                        }}
+                      />
+                    ))}
+                  </div>
                 </div>
-              ))}
+              ) : (
+                <div style={S.lockedRow}>
+                  <span style={{ fontSize: 13 }}>💇</span>
+                  <span style={S.lockedItemLabel}>Hair</span>
+                  <span style={S.lockedPts}>150pts</span>
+                </div>
+              )}
+
+              {/* Mouth — always locked for now */}
+              <div style={S.lockedRow}>
+                <span style={{ fontSize: 13 }}>😄</span>
+                <span style={S.lockedItemLabel}>Mouth styles</span>
+                <span style={S.lockedPts}>200pts</span>
+              </div>
 
               {/* Aura — expands when unlocked at 300pts */}
               {auraFeatureUnlocked ? (

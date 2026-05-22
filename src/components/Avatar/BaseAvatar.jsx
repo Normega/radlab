@@ -1,5 +1,7 @@
 import { useId } from 'react'
 import { SPECIES } from '../../lib/avatar-species'
+import { drawHairBack, drawHairFront } from '../../assets/hair/hairDraw'
+import { HAIR_BACK_STYLES } from '../../assets/hair/hairStyles'
 
 // ── Color utilities ───────────────────────────────────────────────────────
 function hex2rgb(hex) {
@@ -72,7 +74,7 @@ export const EYE_COLORS = [
 //   defs → dc-species-behind (ears/fins) → head ellipse
 //   → dc-species-front (texture overlay + horns) → eyebrows/eyes
 //   → nose/mouth (species or generic) → blush
-export default function BaseAvatar({ skinColor = '#FDBCB4', eyeColor = '#4A90D9', size = 200, species = 'human' }) {
+export default function BaseAvatar({ skinColor = '#FDBCB4', eyeColor = '#4A90D9', size = 200, species = 'human', hairStyle = 'none', hairColor = '#784421' }) {
   const uid = useId().replace(/:/g, '')
 
   const speciesDef = SPECIES[species] ?? SPECIES.human
@@ -87,6 +89,10 @@ export default function BaseAvatar({ skinColor = '#FDBCB4', eyeColor = '#4A90D9'
   const iris     = eyeColor
   const irisDeep = darken(iris, 30)
   const irisLit  = lighten(iris, 35)
+
+  const hC = hairColor
+  const hD = hairColor
+  const needsBack = HAIR_BACK_STYLES.includes(hairStyle)
 
   const furFilterId  = `${uid}fur`
   const behindExtras = speciesDef.behind({ skin, skinLit, skinDark, furFilterId })
@@ -183,6 +189,16 @@ export default function BaseAvatar({ skinColor = '#FDBCB4', eyeColor = '#4A90D9'
         )}
       </defs>
 
+      {/* Hair back — behind head */}
+      {hairStyle !== 'none' && needsBack && (
+        <g key={`hb-${hairStyle}-${hairColor}`}
+           ref={el => {
+             if (!el) return
+             while (el.firstChild) el.removeChild(el.firstChild)
+             drawHairBack(el, hairStyle, hC, hD)
+           }} />
+      )}
+
       {/* dc-species-behind — ears / fins rendered under the head ellipse */}
       <g>
         {behindExtras.map(({ tag: Tag, key, ...attrs }) => (
@@ -262,6 +278,16 @@ export default function BaseAvatar({ skinColor = '#FDBCB4', eyeColor = '#4A90D9'
       {/* Blush */}
       <ellipse cx="62"  cy="120" rx="16" ry="8" fill={blush} opacity="0.42" filter={`url(#${uid}blur)`} />
       <ellipse cx="138" cy="120" rx="16" ry="8" fill={blush} opacity="0.42" filter={`url(#${uid}blur)`} />
+
+      {/* Hair front — over face */}
+      {hairStyle !== 'none' && (
+        <g key={`hf-${hairStyle}-${hairColor}`}
+           ref={el => {
+             if (!el) return
+             while (el.firstChild) el.removeChild(el.firstChild)
+             drawHairFront(el, hairStyle, hC, hD, `hf${el._uid || (el._uid = Math.random().toString(36).slice(2,6))}`)
+           }} />
+      )}
     </svg>
   )
 }

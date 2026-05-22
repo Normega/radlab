@@ -196,9 +196,11 @@ export default function FirstContact({ session, onComplete }) {
   }
 
   // ── Render ────────────────────────────────────────────────────────────
-  const skinColor  = avatarData?.skin_color || '#FDBCB4';
-  const eyeColor   = avatarData?.eye_color  || '#4A90D9';
-  const species    = avatarData?.species    ?? 'human';
+  const skinColor  = avatarData?.skin_color  || '#FDBCB4';
+  const eyeColor   = avatarData?.eye_color   || '#4A90D9';
+  const species    = avatarData?.species     ?? 'human';
+  const hairStyle  = avatarData?.hair_style  ?? 'none';
+  const hairColor  = avatarData?.hair_color  ?? '#784421';
 
   const auraConfig  = avatarData?.aura
   const auraColor   = (auraConfig?.enabled !== false && auraConfig?.color) ? auraConfig.color : AURA_DEFAULT_COLOR
@@ -235,6 +237,8 @@ export default function FirstContact({ session, onComplete }) {
               skinColor={skinColor}
               eyeColor={eyeColor}
               species={species}
+              hairStyle={hairStyle}
+              hairColor={hairColor}
               getPhase={getPhase}
               syncLevel={syncLevel}
               isFirstContact={!isReturning && phase !== 'COMPLETE'}

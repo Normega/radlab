@@ -11,7 +11,7 @@ export function useAvatarConfig(userId) {
     queryFn: async () => {
       const { data } = await supabase
         .from('avatars')
-        .select('skin_color, eye_color, species, aura')
+        .select('skin_color, eye_color, species, aura, hair_style, hair_color')
         .eq('user_id', userId)
         .maybeSingle()
       return data

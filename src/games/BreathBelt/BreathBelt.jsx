@@ -71,9 +71,11 @@ export default function BreathBelt() {
   });
 
   const avatarProps = {
-    skinColor: avatar?.skin_color ?? '#FDBCB4',
-    eyeColor:  avatar?.eye_color  ?? '#4A90D9',
+    skinColor: avatar?.skin_color  ?? '#FDBCB4',
+    eyeColor:  avatar?.eye_color   ?? '#4A90D9',
     species:   'human',
+    hairStyle: avatar?.hair_style  ?? 'none',
+    hairColor: avatar?.hair_color  ?? '#784421',
   };
 
   // Belt connection

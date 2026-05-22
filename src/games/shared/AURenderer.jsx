@@ -1,6 +1,8 @@
 import { useId } from 'react'
 import { darken, lighten, mix } from '../../lib/colorUtils'
 import { NEUTRAL_POS } from './expressionTable'
+import { drawHairBack, drawHairFront } from '../../assets/hair/hairDraw'
+import { HAIR_BACK_STYLES } from '../../assets/hair/hairStyles'
 
 const clamp = (v, lo = 0, hi = 1) => Math.max(lo, Math.min(hi, v))
 const LID_TOP_Y = 83
@@ -11,6 +13,8 @@ export default function AURenderer({
   size      = 148,
   skinColor = '#FDBCB4',
   eyeColor  = '#4A90D9',
+  hairStyle = 'none',
+  hairColor = '#784421',
 }) {
   const uid = useId().replace(/:/g, '')
 
@@ -100,6 +104,14 @@ export default function AURenderer({
       </defs>
 
       {glowColor && <ellipse cx="100" cy="105" rx="69" ry="73" fill="none" stroke={glowColor} strokeWidth="6" opacity="0.22" />}
+      {hairStyle !== 'none' && HAIR_BACK_STYLES.includes(hairStyle) && (
+        <g key={`hb-${hairStyle}-${hairColor}`}
+           ref={el => {
+             if (!el) return
+             while (el.firstChild) el.removeChild(el.firstChild)
+             drawHairBack(el, hairStyle, hairColor, hairColor)
+           }} />
+      )}
       <ellipse cx="100" cy="105" rx="64" ry="68" fill={`url(#${uid}h)`} />
 
       {/* Left eye — shadow circle offset by 1px for Safari-safe depth */}
@@ -131,6 +143,14 @@ export default function AURenderer({
       {/* Brows */}
       <path d={`M${f(lO[0])} ${f(lO[1])} Q${f(lC[0])} ${f(lC[1])} ${f(lI[0])} ${f(lI[1])}`} stroke={BRC} strokeWidth="4" fill="none" strokeLinecap="round" opacity="0.88" />
       <path d={`M${f(rI[0])} ${f(rI[1])} Q${f(rC[0])} ${f(rC[1])} ${f(rO[0])} ${f(rO[1])}`} stroke={BRC} strokeWidth="4" fill="none" strokeLinecap="round" opacity="0.88" />
+      {hairStyle !== 'none' && (
+        <g key={`hf-${hairStyle}-${hairColor}`}
+           ref={el => {
+             if (!el) return
+             while (el.firstChild) el.removeChild(el.firstChild)
+             drawHairFront(el, hairStyle, hairColor, hairColor, `hf${el._uid || (el._uid = Math.random().toString(36).slice(2, 6))}`)
+           }} />
+      )}
     </svg>
   )
 }

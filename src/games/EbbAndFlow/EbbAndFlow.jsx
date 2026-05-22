@@ -438,9 +438,11 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
   })() : null;
 
   // ── Render ─────────────────────────────────────────────────────────────
-  const skinColor  = avatarData?.skin_color || '#FDBCB4';
-  const eyeColor   = avatarData?.eye_color  || '#4A90D9';
-  const species    = avatarData?.species    ?? 'human';
+  const skinColor  = avatarData?.skin_color  || '#FDBCB4';
+  const eyeColor   = avatarData?.eye_color   || '#4A90D9';
+  const species    = avatarData?.species     ?? 'human';
+  const hairStyle  = avatarData?.hair_style  ?? 'none';
+  const hairColor  = avatarData?.hair_color  ?? '#784421';
   const auraConfig = avatarData?.aura ?? null;
 
   return (
@@ -464,6 +466,8 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
           skinColor={skinColor}
           eyeColor={eyeColor}
           species={species}
+          hairStyle={hairStyle}
+          hairColor={hairColor}
           auraConfig={auraConfig}
           scaleAmplitude={modeConfig.scaleAmplitude}
           getPhase={getPhase}
@@ -483,6 +487,8 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
           skinColor={skinColor}
           eyeColor={eyeColor}
           species={species}
+          hairStyle={hairStyle}
+          hairColor={hairColor}
           auraConfig={auraConfig}
           syncScore={syncScore}
           scaleAmplitude={modeConfig.scaleAmplitude}
