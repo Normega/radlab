@@ -1,82 +1,93 @@
 import { useRef } from 'react';
 import { useBreathCycle } from '../../EbbAndFlow/useBreathCycle';
+import { estimateBreathPeriodMs, meanOf } from '../breathUtils';
 import { BASE_BREATH_SPEED_S, BASELINE_BREATHS_COUNT, CONDITION_BREATHS_COUNT } from '../constants';
 
-const BASE_MS = BASE_BREATH_SPEED_S * 1000;
+const BASE_MS      = BASE_BREATH_SPEED_S * 1000;
+const SAMPLE_MS    = 40; // ~25 Hz
 
 // ── useTrialRunner ─────────────────────────────────────────────────────────
 //
 // Shared timing logic for Phase 2 and Phase 3 trials.
-// One trial = BASELINE_BREATHS_COUNT breaths at BASE + CONDITION_BREATHS_COUNT
-// breaths at conditionMs. High-salience: condition loads abruptly at breath 3.
+// Samples breathValueRef separately during baseline breaths and condition
+// breaths so period estimates can be computed for each window independently.
 //
-// Returns:
-//   getPhase      — pass to AvatarBreathPacer (live 0-1 breath cycle position)
-//   runTrial      — async (label, trialIdx, conditionMs) → { beltSyncMean }
-//   controlRef    — pass to AvatarBreathPacer for imperative reset/resume
-//   cycleDurationRef — pass to AvatarBreathPacer if needed for sync
+// runTrial returns:
+//   beltSyncMean        — mean breathValue during condition breaths (0–1)
+//   btBaselinePeriodMs  — estimated breath period from baseline window (ms | null)
+//   btConditionPeriodMs — estimated breath period from condition window (ms | null)
+//
+// null period estimates mean < 2 peaks were detected — store as null in DB,
+// do not drop the trial.
 
 export function useTrialRunner({ breathValueRef, sendTrigger, currentPhaseRef, currentTrialRef }) {
-  const { getPhase, startBreath, reset, cycleDurationRef } = useBreathCycle();
-  const controlRef        = useRef(null);
-  const syncSamplesRef    = useRef([]);
-  const sampleIntervalRef = useRef(null);
+  const { getPhase, startBreath, reset } = useBreathCycle();
+  const controlRef = useRef(null);
 
-  function startSyncing() {
-    syncSamplesRef.current = [];
-    sampleIntervalRef.current = setInterval(() => {
-      syncSamplesRef.current.push(breathValueRef.current ?? 0);
-    }, 40); // ~25 Hz sampling
+  const baselineSamplesRef  = useRef([]);
+  const conditionSamplesRef = useRef([]);
+  const intervalRef         = useRef(null);
+
+  function startSampling(target) {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    if (target === 'baseline')  baselineSamplesRef.current  = [];
+    else                        conditionSamplesRef.current = [];
+
+    intervalRef.current = setInterval(() => {
+      const v = breathValueRef.current ?? 0;
+      if (target === 'baseline')  baselineSamplesRef.current.push(v);
+      else                        conditionSamplesRef.current.push(v);
+    }, SAMPLE_MS);
   }
 
-  function stopSyncing() {
-    if (sampleIntervalRef.current) {
-      clearInterval(sampleIntervalRef.current);
-      sampleIntervalRef.current = null;
+  function stopSampling() {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
     }
   }
 
   async function runTrial(phaseLabel, trialIdx, conditionMs) {
-    // Label raw data rows with this trial
     currentPhaseRef.current = phaseLabel;
     currentTrialRef.current = trialIdx;
 
-    // Imperatively reset avatar to neutral before trial starts
     controlRef.current?.resetToNeutral?.();
-    await new Promise(r => setTimeout(r, 1000)); // 1 s hold at neutral
+    await new Promise(r => setTimeout(r, READY_DELAY_MS));
 
     // COM trigger: trial start
     await sendTrigger('1');
 
-    // Breaths 1–2: baseline pace
-    reset(); // start cycle clock
+    // Breaths 1–2: baseline pace — sample for period estimation
+    reset();
     controlRef.current?.resumeAnimation?.();
+    startSampling('baseline');
     for (let i = 0; i < BASELINE_BREATHS_COUNT; i++) {
       await startBreath(BASE_MS);
     }
+    stopSampling();
 
-    // Breaths 3–4: condition pace (high salience — abrupt change at breath 3)
-    // Start accumulating belt sync samples for condition period
-    startSyncing();
+    // Breaths 3–4: condition pace — sample for sync mean + period estimation
+    startSampling('condition');
     for (let i = 0; i < CONDITION_BREATHS_COUNT; i++) {
       await startBreath(conditionMs);
     }
-    stopSyncing();
+    stopSampling();
 
     // COM trigger: trial end
     await sendTrigger('0');
 
-    // Return to idle label
     currentPhaseRef.current = 'inter_trial';
     currentTrialRef.current = -1;
 
-    const samples     = syncSamplesRef.current;
-    const beltSyncMean = samples.length
-      ? samples.reduce((a, b) => a + b, 0) / samples.length
-      : null;
-
-    return { beltSyncMean };
+    return {
+      beltSyncMean:        meanOf(conditionSamplesRef.current),
+      btBaselinePeriodMs:  estimateBreathPeriodMs(baselineSamplesRef.current,  SAMPLE_MS),
+      btConditionPeriodMs: estimateBreathPeriodMs(conditionSamplesRef.current, SAMPLE_MS),
+    };
   }
 
-  return { getPhase, runTrial, controlRef, cycleDurationRef };
+  return { getPhase, runTrial, controlRef };
 }
+
+// Local import — avoids circular dep
+const READY_DELAY_MS = 1000;

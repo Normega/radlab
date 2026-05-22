@@ -9,8 +9,6 @@ import {
   TRIALS_PER_CONDITION,
 } from '../constants';
 
-// ── Trial list builder ─────────────────────────────────────────────────────
-
 function shuffled(arr) {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -34,18 +32,7 @@ function conditionMs(condition) {
   return BASE_BREATH_SPEED_S * 1000;
 }
 
-// ── FixedTrialsScreen ──────────────────────────────────────────────────────
-//
-// Manages the 9 fixed trials for Phase 2. Between trials shows a "ready" screen.
-// After all 9, calls onComplete(trials[]) with the per-trial data array.
-//
-// trialList is built once on mount (useState lazy init).
-
-const TRIAL_STATES = {
-  READY:       'READY',
-  IN_PROGRESS: 'IN_PROGRESS',
-  DONE:        'DONE',
-};
+const TRIAL_STATES = { READY: 'READY', IN_PROGRESS: 'IN_PROGRESS' };
 
 export default function FixedTrialsScreen({
   avatarProps,
@@ -56,41 +43,37 @@ export default function FixedTrialsScreen({
   recordTrial,
   onComplete,
 }) {
-  const [trialList]   = useState(buildTrialList);
-  const [trialIdx,    setTrialIdx]    = useState(0);
-  const [trialState,  setTrialState]  = useState(TRIAL_STATES.READY);
-  const trialsData    = useState([])[0]; // accumulates via push — no re-render needed
+  const [trialList]  = useState(buildTrialList);
+  const [trialIdx,   setTrialIdx]   = useState(0);
+  const [trialState, setTrialState] = useState(TRIAL_STATES.READY);
+  const trialsData   = useState([])[0];
+  const avatarSize   = 240;
 
   const { getPhase, runTrial, controlRef } = useTrialRunner({
-    breathValueRef,
-    sendTrigger,
-    currentPhaseRef,
-    currentTrialRef,
+    breathValueRef, sendTrigger, currentPhaseRef, currentTrialRef,
   });
-
-  const avatarSize = 240;
 
   const startTrial = useCallback(async () => {
     const condition = trialList[trialIdx];
     setTrialState(TRIAL_STATES.IN_PROGRESS);
 
-    const { beltSyncMean } = await runTrial(
-      'phase2',
-      trialIdx + 1,
-      conditionMs(condition),
+    const { beltSyncMean, btBaselinePeriodMs, btConditionPeriodMs } = await runTrial(
+      'phase2', trialIdx + 1, conditionMs(condition),
     );
 
     const row = {
-      phase:           2,
-      trial_number:    trialIdx + 1,
+      phase:                 2,
+      trial_number:          trialIdx + 1,
       condition,
-      breath_period_ms: conditionMs(condition),
-      log10_mag:       null,
-      response:        null,
-      correct:         null,
-      confidence:      null,
-      arousal:         null,
-      belt_sync_mean:  beltSyncMean,
+      breath_period_ms:      conditionMs(condition),
+      log10_mag:             null,
+      response:              null,
+      correct:               null,
+      confidence:            null,
+      arousal:               null,
+      belt_sync_mean:        beltSyncMean,
+      bt_baseline_period_ms:  btBaselinePeriodMs,
+      bt_condition_period_ms: btConditionPeriodMs,
     };
     trialsData.push(row);
     recordTrial(row);
@@ -106,8 +89,6 @@ export default function FixedTrialsScreen({
 
   return (
     <div className="flex flex-col items-center gap-6 px-6 py-8" style={{ maxWidth: 480, margin: '0 auto' }}>
-
-      {/* Avatar + ring */}
       <div style={{ position: 'relative', width: avatarSize, height: avatarSize }}>
         <BeltSyncRing breathValueRef={breathValueRef} avatarSize={avatarSize} />
         <div style={{ position: 'relative', zIndex: 2 }}>
@@ -122,7 +103,6 @@ export default function FixedTrialsScreen({
         </div>
       </div>
 
-      {/* Trial counter */}
       <p style={{ fontFamily: 'Space Mono', fontSize: 'var(--fs-mono-sm)', color: 'var(--tx3)' }}>
         Trial {trialIdx + 1} of {trialList.length}
       </p>

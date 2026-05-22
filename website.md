@@ -2,7 +2,7 @@
 
 > **Regulatory and Affective Dynamics Lab**  
 > University of Toronto · PI: Professor Norman Farb, PhD  
-> Last updated: 2026-05-20 (Questionnaire System §21 added. BreathBelt §20 added. Farm Joy §19 added. Lab pages data files complete: people.js, research.js, publications.json all ready in src/data/.)
+> Last updated: 2026-05-22 (BreathBelt §20 updated: correspondence study improvements — 120 s pre/post baselines, SESSION_SETUP state, POST_BASELINE_* FSM states, bt_baseline_period_ms + bt_condition_period_ms per trial, breathUtils.js, belt_correspondence_migration.sql.)
 
 ---
 
@@ -111,6 +111,7 @@ radlab/
       BreathBelt/               ← respiratory detection thresholds (§20)
         BreathBelt.jsx
         constants.js
+        breathUtils.js
         belt_schema.sql
         hooks/
           useBeltConnection.js
@@ -1471,19 +1472,25 @@ Route: `/games/breath-belt`
 
 ```
 BROWSER_CHECK → BT_CONNECT → COM_CONNECT
+→ SESSION_SETUP   (researcher enters session number)
 → CALIB_READY → CALIBRATING   (CalibrationScreen manages sub-states)
-→ BASELINE_READY → BASELINE_RECORDING → BASELINE_COMPLETE
+→ BASELINE_READY → BASELINE_RECORDING → BASELINE_COMPLETE   (120 s, COM triggers)
 → PHASE2_READY → PHASE2_RUNNING   (9 fixed trials)
 → PHASE2_COMPLETE → PHASE3_INTRO → PHASE3_RUNNING   (dual-QUEST until converged)
+→ POST_BASELINE_READY → POST_BASELINE_RECORDING → POST_BASELINE_COMPLETE   (120 s, COM triggers)
 → SESSION_COMPLETE
 ```
 
 ### Hardware
 
 - **Polar H10**: Bluetooth LE chest belt. Streams raw accelerometer (ACC) and heart rate (HR) data. ACC signal is used as a proxy for respiratory effort. Connected via Web Bluetooth in `useBeltConnection.js`.
-- **COM trigger box**: Serial port connected via Web Serial API. Sends 1-byte codes to the physio recording system at trial start/end. Connected separately after BT.
+- **COM trigger box**: Serial port connected via Web Serial API. Sends 1-byte codes to the physio recording system at trial start/end and at baseline start/end. Connected separately after BT.
 
-### Calibration (Phase 1)
+### Session setup (SESSION_SETUP)
+
+After COM connects, the researcher enters a session number (1-indexed, incremented per lab visit by the same participant) before calibration begins. Stored in `belt_sessions.session_number`.
+
+### Calibration
 
 CalibrationScreen guides the participant through two calibration phases:
 1. **Range calibration**: captures min/max of belt signal over several breath cycles.
@@ -1491,9 +1498,14 @@ CalibrationScreen guides the participant through two calibration phases:
 
 Calibration state is saved to `belt.calibStateRef` and persisted at session end.
 
-### Baseline (Phase 1b)
+### Baselines — pre and post (120 s each)
 
-A 5-minute free-breathing recording at the participant's natural rate. The mean breath period from this baseline defines `BASE_BREATH_SPEED_S` for the trial phases.
+Both baselines use the same `BaselineScreen` component with a generic `phase` prop (`'READY'`|`'RECORDING'`|`'COMPLETE'`). Parent FSM maps its states to this generic prop via `baselinePhaseMap()`.
+
+- **Pre-session baseline** (`BASELINE_*`): 120 s free breathing before Phase 2. COM trigger sent at start and end. `breathUtils.estimateBreathPeriodMs()` runs on the collected samples; result stored in `belt_sessions.baseline_period_ms`.
+- **Post-session baseline** (`POST_BASELINE_*`): 120 s free breathing after Phase 3. Same COM triggers and period estimate. Result stored in `belt_sessions.post_baseline_period_ms`. `endSession()` is called here — all trial and session data flushed to Supabase on post-baseline completion.
+
+Both baselines are 120 s (was 60 s) for matched pre/post comparison in the correspondence study.
 
 ### Phase 2 — Fixed trials
 
@@ -1508,48 +1520,65 @@ Interleaved faster/slower staircases using the QUEST+ algorithm. Each trial:
 4. Confidence rating (1–7, ConfidenceRating component).
 5. Arousal rating (1–7, ArousalRating component).
 
-Both staircases converge independently. Session ends when both converge. Convergence thresholds and SDs are displayed on the SessionComplete screen.
+Both staircases converge independently. Session ends when both converge. Quest state is stashed in `questStateRef` (a `useRef`) when Phase 3 completes, then written to Supabase inside the post-baseline `onComplete` handler. Convergence thresholds and SDs are displayed on the SessionComplete screen.
+
+### Belt period estimates — correspondence study
+
+`breathUtils.js` exports `estimateBreathPeriodMs(samples, intervalMs)`: 3-point smoothed peak detection returning mean inter-peak interval in ms (null if < 2 peaks detected).
+
+`useTrialRunner` now samples `breathValueRef` in two separate windows per trial:
+- **baseline window** (breaths 1–2 at BASE speed): `btBaselinePeriodMs`
+- **condition window** (breaths 3–4 at condition speed): `btConditionPeriodMs`
+
+Both are stored on `belt_trials` rows. Null is valid — do not drop the trial. These allow offline comparison of BT belt signal to the lab belt and avatar pacing.
 
 ### Data
 
-Supabase schema in `belt_schema.sql`. Tables:
+Supabase schema in `belt_schema.sql` (initial) + `belt_correspondence_migration.sql` (run second). Tables:
 
 | Table | Contents |
 |---|---|
-| `belt_sessions` | One row per session: user_id, calib_state JSON, quest_state JSON |
-| `belt_trials` | One row per trial: phase, trial_number, condition, breath_period_ms, log10_mag, response, correct, confidence, arousal, belt_sync_mean |
-| `belt_accel_raw` | Raw accelerometer rows (timestamps + xyz) |
-| `belt_hr_raw` | Raw HR rows |
+| `belt_sessions` | One row per session: user_id, calib_state JSON, quest_state JSON, **session_number**, **baseline_period_ms**, **post_baseline_period_ms** |
+| `belt_trials` | One row per trial: phase, trial_number, condition, breath_period_ms, log10_mag, response, correct, confidence, arousal, belt_sync_mean, **bt_baseline_period_ms**, **bt_condition_period_ms** |
+| `belt_accel_raw` | Raw accelerometer rows (timestamps + xyz) — stored in Supabase Storage as CSV |
+| `belt_hr_raw` | Raw HR rows — stored in Supabase Storage as CSV |
+
+Bold columns added by `belt_correspondence_migration.sql`.
 
 ### Source layout
 
 ```
 src/games/BreathBelt/
   BreathBelt.jsx             ← main FSM
-  constants.js               ← BASE_BREATH_SPEED_S, trigger codes, QUEST params
-  belt_schema.sql            ← Supabase migration
+  constants.js               ← BASE_BREATH_SPEED_S, BASELINE_DURATION_MS (120 s), POST_BASELINE_DURATION_MS (120 s), QUEST params
+  breathUtils.js             ← estimateBreathPeriodMs(samples, intervalMs), meanOf(arr)
+  belt_schema.sql            ← initial Supabase migration
   hooks/
     useBeltConnection.js     ← Web Bluetooth + Web Serial, calibration, triggers
-    useBeltSession.js        ← Supabase session lifecycle (start/recordTrial/end)
+    useBeltSession.js        ← Supabase session lifecycle (start/recordTrial/end); endSession now accepts sessionNumber, baselinePeriodMs, postBaselinePeriodMs
     useBeltQuestStaircases.js ← dual-QUEST state machine
-    useTrialRunner.js        ← per-trial avatar pacing + belt sync measurement
+    useTrialRunner.js        ← per-trial avatar pacing; samples baseline + condition windows separately for period estimation
   components/
     BrowserWarning.jsx       ← Chrome/Edge prompt
     CalibrationScreen.jsx    ← 2-phase calibration UI
-    BaselineScreen.jsx       ← 5-min baseline recording
-    FixedTrialsScreen.jsx    ← Phase 2: 9 fixed trials
-    StaircaseScreen.jsx      ← Phase 3: QUEST trials + 3AFC + ratings
+    BaselineScreen.jsx       ← reusable for pre and post baselines; props: phase ('READY'|'RECORDING'|'COMPLETE'), title, durationMs, phaseLabel, onComplete(periodMs)
+    FixedTrialsScreen.jsx    ← Phase 2: 9 fixed trials; records bt_baseline_period_ms + bt_condition_period_ms per trial
+    StaircaseScreen.jsx      ← Phase 3: QUEST trials + 3AFC + ratings; records bt_* period columns
     BeltSyncRing.jsx         ← real-time belt signal ring around avatar
-    SessionComplete.jsx      ← convergence summary
+    SessionComplete.jsx      ← shows session number, pre/post resting period, QUEST thresholds
 ```
 
 ### Convergence data flow
 
-`quest.getConvergence()` is called in `StaircaseScreen` when both staircases converge and passed as the third argument to `onComplete(trials, questState, convergence)`. `BreathBelt.jsx` stores it in `convergenceRef.current` and passes it to `SessionComplete`.
+`quest.getConvergence()` is called in `StaircaseScreen` when both staircases converge and passed as the third argument to `onComplete(trials, questState, convergence)`. `BreathBelt.jsx` stores convergence in `convergenceRef.current` and quest state in `questStateRef.current` (both `useRef`). `endSession()` is called inside the post-baseline `onComplete` callback, consuming `questStateRef.current`.
+
+### Schema migration
+
+`belt_correspondence_migration.sql` (project root) — run manually in Supabase SQL editor **after** `belt_schema.sql`. Adds `bt_baseline_period_ms` and `bt_condition_period_ms` to `belt_trials`, and `session_number`, `baseline_period_ms`, `post_baseline_period_ms` to `belt_sessions`. Safe to run on existing data (`ADD COLUMN IF NOT EXISTS`).
 
 ### Status
 
-Integrated. All source files in place at `src/games/BreathBelt/`. Route registered at `/games/breath-belt`. Supabase schema in `belt_schema.sql` — apply migration before running in lab. Requires Chrome or Edge with Web Bluetooth enabled.
+Integrated. All source files updated at `src/games/BreathBelt/`. Route registered at `/games/breath-belt`. Initial schema in `belt_schema.sql`; correspondence study migration in `belt_correspondence_migration.sql` — both require manual migration in Supabase SQL editor before running in lab. Requires Chrome or Edge with Web Bluetooth enabled.
 
 ---
 

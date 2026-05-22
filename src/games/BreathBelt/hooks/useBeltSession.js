@@ -1,16 +1,6 @@
 import { useRef, useCallback } from 'react';
 import { supabase } from '../../../lib/supabase';
 
-// ── useBeltSession ────────────────────────────────────────────────────────
-//
-// Manages game_sessions row lifecycle and belt-specific data writes.
-// Raw accel + HR rows go to Supabase Storage (belt-sessions bucket).
-// Trial rows go to belt_trials table.
-// Session metadata goes to belt_sessions table.
-//
-// Belt-sessions Storage bucket must be created in Supabase dashboard
-// before first use (private, not public).
-
 export function useBeltSession(userId) {
   const sessionIdRef = useRef(null);
   const trialsRef    = useRef([]);
@@ -27,32 +17,29 @@ export function useBeltSession(userId) {
       })
       .select('id')
       .single();
-
-    if (error) {
-      console.error('belt_session start:', error);
-      return null;
-    }
+    if (error) { console.error('belt session start:', error); return null; }
     sessionIdRef.current = data.id;
     trialsRef.current    = [];
     return data.id;
   }, [userId]);
 
-  // Call once per trial (both phase 2 and phase 3)
   const recordTrial = useCallback((trialRow) => {
     trialsRef.current.push(trialRow);
   }, []);
 
-  // Call at session end — flush everything to Supabase
   const endSession = useCallback(async ({
     calibState,
-    questState,        // serialised 2-staircase posteriors (null if no phase 3)
+    questState,
     rawAccelRows,
     rawHRRows,
+    sessionNumber,
+    baselinePeriodMs,
+    postBaselinePeriodMs,
   }) => {
     const sessionId = sessionIdRef.current;
     if (!sessionId) return;
 
-    // ── 1. Upload raw data to Storage ──────────────────────────────────
+    // 1. Upload raw data to Storage
     const csv = `=== ACCEL ===\n${buildAccelCsv(rawAccelRows)}\n\n=== HR ===\n${buildHRCsv(rawHRRows)}`;
     const storagePath = `${userId}/${sessionId}_raw.csv`;
     const { error: storageError } = await supabase.storage
@@ -60,28 +47,28 @@ export function useBeltSession(userId) {
       .upload(storagePath, new Blob([csv], { type: 'text/csv' }), { upsert: true });
     if (storageError) console.error('belt storage upload:', storageError);
 
-    // ── 2. Insert belt_sessions row ────────────────────────────────────
+    // 2. Insert belt_sessions row
     const { error: sessError } = await supabase.from('belt_sessions').insert({
-      session_id:   sessionId,
-      user_id:      userId,
-      calib_state:  calibState,
-      storage_path: storagePath,
-      quest_state:  questState ?? null,
+      session_id:            sessionId,
+      user_id:               userId,
+      calib_state:           calibState,
+      storage_path:          storagePath,
+      quest_state:           questState ?? null,
+      session_number:        sessionNumber ?? 1,
+      baseline_period_ms:    baselinePeriodMs ?? null,
+      post_baseline_period_ms: postBaselinePeriodMs ?? null,
     });
     if (sessError) console.error('belt_sessions insert:', sessError);
 
-    // ── 3. Insert belt_trials rows ─────────────────────────────────────
+    // 3. Insert belt_trials rows
     if (trialsRef.current.length) {
-      const rows = trialsRef.current.map(t => ({
-        ...t,
-        session_id: sessionId,
-        user_id:    userId,
-      }));
-      const { error: trialError } = await supabase.from('belt_trials').insert(rows);
+      const { error: trialError } = await supabase.from('belt_trials').insert(
+        trialsRef.current.map(t => ({ ...t, session_id: sessionId, user_id: userId }))
+      );
       if (trialError) console.error('belt_trials insert:', trialError);
     }
 
-    // ── 4. Close game_sessions row ─────────────────────────────────────
+    // 4. Close game_sessions row
     await supabase
       .from('game_sessions')
       .update({ ended_at: new Date().toISOString() })
@@ -90,8 +77,6 @@ export function useBeltSession(userId) {
 
   return { sessionIdRef, startSession, recordTrial, endSession };
 }
-
-// ── CSV builders ──────────────────────────────────────────────────────────
 
 function buildAccelCsv(rows) {
   const header = 'phase,trial,packet_timestamp,sample_index,x,y,z';

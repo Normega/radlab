@@ -2,90 +2,112 @@ import { useEffect, useRef, useState } from 'react';
 import AvatarBreathPacer from '../../EbbAndFlow/components/AvatarBreathPacer';
 import { useBreathCycle } from '../../EbbAndFlow/useBreathCycle';
 import BeltSyncRing from './BeltSyncRing';
-import { BASELINE_DURATION_MS } from '../constants';
+import { estimateBreathPeriodMs } from '../breathUtils';
+
+const SAMPLE_MS = 40;
 
 // ── BaselineScreen ─────────────────────────────────────────────────────────
 //
-// 60-second natural free-breathing baseline.
-// Avatar is present but NOT pacing — it freezes at neutral (paused=true).
-// BeltSyncRing shows live belt signal so researcher can monitor quality.
-// COM trigger '1' fires at recording start, '0' at recording end.
-// onComplete() fires when the 60 s timer ends.
+// Reusable for both pre-session (BASELINE_*) and post-session (POST_BASELINE_*)
+// baselines. Parent maps its FSM states to the generic phase prop.
+//
+// Props:
+//   phase       — 'READY' | 'RECORDING' | 'COMPLETE'
+//   title       — e.g. "Natural baseline" or "Post-session rest"
+//   durationMs  — recording duration in ms
+//   breathValueRef, sendTrigger, currentPhaseRef, currentTrialRef
+//   phaseLabel  — raw data phase tag (e.g. 'baseline' or 'post_baseline')
+//   onStart     — () => void
+//   onComplete  — (periodMs: number | null) => void  — period estimate from epoch
 
 export default function BaselineScreen({
-  phase,           // 'BASELINE_READY' | 'BASELINE_RECORDING' | 'BASELINE_COMPLETE'
-  avatarProps,
+  phase,
+  title,
+  durationMs,
   breathValueRef,
   sendTrigger,
   currentPhaseRef,
   currentTrialRef,
-  onStart,         // () => void — called when researcher clicks "Begin"
-  onComplete,      // () => void — called when timer ends
+  phaseLabel,
+  onStart,
+  onComplete,
 }) {
   const [elapsed, setElapsed] = useState(0);
   const timerRef    = useRef(null);
   const intervalRef = useRef(null);
-  const { getPhase } = useBreathCycle(); // unused cycle — just to satisfy AvatarBreathPacer prop
+  const sampleRef   = useRef(null);
+  const samplesRef  = useRef([]);
+  const { getPhase } = useBreathCycle();
   const avatarSize = 240;
 
   useEffect(() => {
-    if (phase !== 'BASELINE_RECORDING') return;
+    if (phase !== 'RECORDING') return;
 
     // Label raw rows
-    currentPhaseRef.current = 'baseline';
+    currentPhaseRef.current = phaseLabel;
     currentTrialRef.current = -1;
+    samplesRef.current = [];
 
-    // COM trigger: baseline start
+    // COM trigger: start
     sendTrigger('1');
+
+    // Sample breathValueRef for period estimation
+    sampleRef.current = setInterval(() => {
+      samplesRef.current.push(breathValueRef.current ?? 0);
+    }, SAMPLE_MS);
 
     // Countdown tick
     const start = Date.now();
     intervalRef.current = setInterval(() => {
-      setElapsed(Math.min(Date.now() - start, BASELINE_DURATION_MS));
+      setElapsed(Math.min(Date.now() - start, durationMs));
     }, 500);
 
     // End timer
     timerRef.current = setTimeout(async () => {
+      clearInterval(sampleRef.current);
       clearInterval(intervalRef.current);
       await sendTrigger('0');
       currentPhaseRef.current = 'idle';
-      onComplete();
-    }, BASELINE_DURATION_MS);
+      const periodMs = estimateBreathPeriodMs(samplesRef.current, SAMPLE_MS);
+      onComplete(periodMs);
+    }, durationMs);
 
     return () => {
+      clearInterval(sampleRef.current);
       clearInterval(intervalRef.current);
       clearTimeout(timerRef.current);
     };
   }, [phase]);
 
-  const secondsLeft = Math.ceil((BASELINE_DURATION_MS - elapsed) / 1000);
-  const progress    = elapsed / BASELINE_DURATION_MS;
+  const secondsLeft = Math.ceil((durationMs - elapsed) / 1000);
+  const progress    = elapsed / durationMs;
 
   return (
-    <div className="flex flex-col items-center gap-6 px-6 py-8" style={{ maxWidth: 480, margin: '0 auto' }}>
-
-      {/* Avatar + ring (ring always visible — baseline shows real belt signal) */}
+    <div
+      className="flex flex-col items-center gap-6 px-6 py-8"
+      style={{ maxWidth: 480, margin: '0 auto' }}
+    >
+      {/* Avatar frozen + ring always visible */}
       <div style={{ position: 'relative', width: avatarSize, height: avatarSize }}>
         <BeltSyncRing breathValueRef={breathValueRef} avatarSize={avatarSize} />
         <div style={{ position: 'relative', zIndex: 2 }}>
           <AvatarBreathPacer
-            {...avatarProps}
             scaleAmplitude={0.25}
             getPhase={getPhase}
-            paused={true}   // avatar frozen — participant breathes naturally
+            paused={true}
             size={avatarSize}
           />
         </div>
       </div>
 
-      {phase === 'BASELINE_READY' && (
+      {phase === 'READY' && (
         <>
           <div className="text-center">
-            <p style={{ color: 'var(--tx)', fontSize: 'var(--fs-body)', marginBottom: 8 }}>
-              <strong>Natural breathing baseline</strong>
+            <p style={{ color: 'var(--tx)', fontSize: 'var(--fs-body)', marginBottom: 8, fontWeight: 600 }}>
+              {title}
             </p>
             <p style={{ color: 'var(--tx2)', fontSize: 'var(--fs-body-sm)' }}>
-              Sit comfortably and breathe naturally for 60 seconds.
+              Sit comfortably and breathe naturally for {durationMs / 1000} seconds.
               The avatar will stay still — this is not a pacing task.
               The orange ring shows your belt signal.
             </p>
@@ -95,12 +117,12 @@ export default function BaselineScreen({
             className="px-6 py-3 rounded-xl font-medium"
             style={{ background: 'var(--pk)', color: '#fff', fontSize: 'var(--fs-body)' }}
           >
-            Begin baseline recording
+            Begin recording
           </button>
         </>
       )}
 
-      {phase === 'BASELINE_RECORDING' && (
+      {phase === 'RECORDING' && (
         <>
           <ProgressArc progress={progress} secondsLeft={secondsLeft} />
           <p className="text-center" style={{ color: 'var(--tx2)', fontSize: 'var(--fs-body-sm)' }}>
@@ -109,22 +131,21 @@ export default function BaselineScreen({
         </>
       )}
 
-      {phase === 'BASELINE_COMPLETE' && (
+      {phase === 'COMPLETE' && (
         <p className="text-center" style={{ color: 'var(--tx)', fontSize: 'var(--fs-body)' }}>
-          Baseline complete.
+          {title} complete.
         </p>
       )}
     </div>
   );
 }
 
-// Simple arc progress indicator
 function ProgressArc({ progress, secondsLeft }) {
-  const r  = 40;
-  const cx = 50;
-  const cy = 50;
+  const r             = 40;
+  const cx            = 50;
+  const cy            = 50;
   const circumference = 2 * Math.PI * r;
-  const dash = circumference * progress;
+  const dash          = circumference * progress;
 
   return (
     <div className="flex flex-col items-center gap-2">
