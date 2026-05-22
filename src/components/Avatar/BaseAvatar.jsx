@@ -241,10 +241,6 @@ export default function BaseAvatar({ skinColor = '#FDBCB4', eyeColor = '#4A90D9'
         ))}
       </g>
 
-      {/* Eyebrows */}
-      <path d="M 60 82 Q 76 77 90 81"  stroke={skinDark} strokeWidth="3.5" fill="none" strokeLinecap="round" opacity="0.65" />
-      <path d="M 110 81 Q 124 77 140 82" stroke={skinDark} strokeWidth="3.5" fill="none" strokeLinecap="round" opacity="0.65" />
-
       {/* Eye left */}
       <circle cx="76" cy="100" r="17" fill={`url(#${uid}sG)`} filter={`url(#${uid}shad)`} />
       <circle cx="76" cy="101" r="12" fill={`url(#${uid}iG)`} clipPath={`url(#${uid}lc)`} />
@@ -262,6 +258,10 @@ export default function BaseAvatar({ skinColor = '#FDBCB4', eyeColor = '#4A90D9'
       <circle cx="127" cy="108" r="1.8" fill="white" opacity="0.65" />
       <path d="M 108 91 Q 124 94 140 91 A 17 17 0 0 0 108 91 Z" fill={skin} />
       <path d="M 108 91 Q 124 94 140 91" stroke={skinDark} strokeWidth="2.2" fill="none" strokeLinecap="round" opacity="0.6" />
+
+      {/* Eyebrows — drawn after eyelids so they sit on top */}
+      <path d="M 60 82 Q 76 77 90 81"  stroke={skinDark} strokeWidth="3.5" fill="none" strokeLinecap="round" opacity="0.65" />
+      <path d="M 110 81 Q 124 77 140 82" stroke={skinDark} strokeWidth="3.5" fill="none" strokeLinecap="round" opacity="0.65" />
 
       {/* Nose / mouth — species override (wolf/cat) or generic */}
       {noseMouthItems ? (

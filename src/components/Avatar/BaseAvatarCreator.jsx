@@ -112,19 +112,6 @@ function BaseAvatar({ skinColor, eyeColor, size = 200 }) {
       {/* ── Head — rounder, more cartoony ── */}
       <ellipse cx="100" cy="105" rx="64" ry="68" fill="url(#headG)" />
 
-      {/* ── Eyebrow left ── */}
-      <path
-        d="M 60 82 Q 76 77 90 81"
-        stroke={skinDark} strokeWidth="3.5" fill="none"
-        strokeLinecap="round" opacity="0.65"
-      />
-      {/* ── Eyebrow right ── */}
-      <path
-        d="M 110 81 Q 124 77 140 82"
-        stroke={skinDark} strokeWidth="3.5" fill="none"
-        strokeLinecap="round" opacity="0.65"
-      />
-
       {/* ── Eye left ── */}
       <circle cx="76" cy="100" r="17" fill="url(#scleraG)" filter="url(#eyeShadow)" />
       <circle cx="76" cy="101" r="12" fill="url(#irisG)" clipPath="url(#leftEyeClip)" />
@@ -145,6 +132,18 @@ function BaseAvatar({ skinColor, eyeColor, size = 200 }) {
       {/* upper eyelid */}
       <path d="M 108 91 Q 124 94 140 91 A 17 17 0 0 0 108 91 Z" fill={skin} />
       <path d="M 108 91 Q 124 94 140 91" stroke={skinDark} strokeWidth="2.2" fill="none" strokeLinecap="round" opacity="0.6" />
+
+      {/* ── Eyebrows — drawn after eyelids so they sit on top ── */}
+      <path
+        d="M 60 82 Q 76 77 90 81"
+        stroke={skinDark} strokeWidth="3.5" fill="none"
+        strokeLinecap="round" opacity="0.65"
+      />
+      <path
+        d="M 110 81 Q 124 77 140 82"
+        stroke={skinDark} strokeWidth="3.5" fill="none"
+        strokeLinecap="round" opacity="0.65"
+      />
 
       {/* ── Mouth: wide, nearly flat, slight upward tilt at corners ── */}
       <path
