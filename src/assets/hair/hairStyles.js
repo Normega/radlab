@@ -27,6 +27,7 @@ export const HAIR_STYLES = [
   {id:'wavy', label:'Wavy'},
   {id:'flippedout', label:'Flipped Out'},
   {id:'puff', label:'Puff'},
+  {id:'nobangs', label:'No Bangs'},
   {id:'bunbeard',    label:'Bun+Beard'},
   {id:'doublepony',  label:'Double Pony'},
   {id:'emo',         label:'Emo'},
@@ -37,10 +38,8 @@ export const HAIR_STYLES = [
   {id:'sidepart',    label:'Side Part'},
 ];
 
-// Which styles render a back layer (behind head)
 export const HAIR_BACK_STYLES = ['buzz', 'mohawk', 'flowing', 'curly', 'backonly', 'doublepony', 'midpartwide'];
 
-// 16 hair colour swatches
 export const HAIR_COLORS = [
   '#1a0a00','#3b1f0a','#5c3317','#784421',
   '#a0522d','#c47c3e','#d4a853','#e8c97a',
