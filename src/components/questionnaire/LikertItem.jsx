@@ -88,19 +88,20 @@ export default function LikertItem({ item, labels, selectedValue, onSelect, auto
             key={opt.value}
             onClick={() => handleTap(opt.value)}
             style={{
-              display:        'flex',
-              alignItems:     'center',
-              gap:            14,
-              padding:        '14px 16px',
-              borderRadius:   12,
-              border:         `1.5px solid ${active ? 'var(--pk)' : 'var(--bd)'}`,
-              background:     active ? 'var(--pkb)' : 'var(--bgc)',
-              cursor:         'pointer',
-              textAlign:      'left',
-              width:          '100%',
-              transition:     `border-color ${ANIM_MS}ms ease, background ${ANIM_MS}ms ease,
-                               transform ${ANIM_MS * 0.4}ms ease`,
-              transform:      isPending ? 'scale(0.985)' : 'scale(1)',
+              display:         'flex',
+              alignItems:      'center',
+              justifyContent:  endpointOnly ? 'center' : 'flex-start',
+              gap:             14,
+              padding:         '14px 16px',
+              borderRadius:    12,
+              border:          `1.5px solid ${active ? 'var(--pk)' : 'var(--bd)'}`,
+              background:      active ? 'var(--pkb)' : 'var(--bgc)',
+              cursor:          'pointer',
+              textAlign:       endpointOnly ? 'center' : 'left',
+              width:           '100%',
+              transition:      `border-color ${ANIM_MS}ms ease, background ${ANIM_MS}ms ease,
+                                transform ${ANIM_MS * 0.4}ms ease`,
+              transform:       isPending ? 'scale(0.985)' : 'scale(1)',
               WebkitTapHighlightColor: 'transparent',
             }}
           >
@@ -128,7 +129,7 @@ export default function LikertItem({ item, labels, selectedValue, onSelect, auto
             </span>
 
             {/* Label block */}
-            <span style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1 }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 10, flex: endpointOnly ? 0 : 1 }}>
               {opt.image ? (
                 <ImageLabel src={opt.image} />
               ) : (
