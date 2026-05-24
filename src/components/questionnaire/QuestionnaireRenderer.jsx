@@ -3,7 +3,7 @@ import ProgressLabel from './ProgressLabel';
 import InstructionScreen from './InstructionScreen';
 import ScaleChangeScreen from './ScaleChangeScreen';
 import LikertItem from './LikertItem';
-import { buildSlides, prevNavigableIndex, effectiveLabels } from './questionnaireUtils';
+import { buildSlides, prevNavigableIndex, effectiveLabels, isEndpointOnly } from './questionnaireUtils';
 
 const FADE_MS = 150; // slide transition duration
 
@@ -160,6 +160,7 @@ export default function QuestionnaireRenderer({
             selectedValue={currentResponse}
             onSelect={(value) => handleSelect(currentSlide.item.id, value)}
             autoAdvance={autoAdvance}
+            endpointOnly={isEndpointOnly(labels)}
           />
         )}
       </div>

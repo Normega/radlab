@@ -16,7 +16,7 @@ import { useState, useRef } from 'react';
 
 const ANIM_MS = 250;
 
-export default function LikertItem({ item, labels, selectedValue, onSelect, autoAdvance }) {
+export default function LikertItem({ item, labels, selectedValue, onSelect, autoAdvance, endpointOnly }) {
   const [pendingValue, setPendingValue] = useState(null);
   const tappingRef = useRef(false);
 
@@ -64,6 +64,19 @@ export default function LikertItem({ item, labels, selectedValue, onSelect, auto
         {item.text}
       </p>
 
+      {/* Top anchor — endpoint-only scales only */}
+      {endpointOnly && (
+        <p style={{
+          fontFamily: 'DM Sans',
+          fontSize:   'var(--fs-body-sm)',
+          color:      'var(--tx2)',
+          textAlign:  'center',
+          margin:     '0 0 4px',
+        }}>
+          {labels[0].label}
+        </p>
+      )}
+
       {/* Options */}
       {labels.map((opt) => {
         const isSelected = opt.value === selectedValue;
@@ -88,44 +101,33 @@ export default function LikertItem({ item, labels, selectedValue, onSelect, auto
               transition:     `border-color ${ANIM_MS}ms ease, background ${ANIM_MS}ms ease,
                                transform ${ANIM_MS * 0.4}ms ease`,
               transform:      isPending ? 'scale(0.985)' : 'scale(1)',
-              // Prevent iOS double-tap zoom
               WebkitTapHighlightColor: 'transparent',
             }}
           >
             {/* Radio circle */}
-            <span
-              style={{
-                width:        20,
-                height:       20,
-                borderRadius: '50%',
-                border:       `2px solid ${active ? 'var(--pk)' : 'var(--gy)'}`,
-                background:   active ? 'var(--pk)' : 'transparent',
-                flexShrink:   0,
-                display:      'flex',
-                alignItems:   'center',
-                justifyContent: 'center',
-                transition:   `background ${ANIM_MS}ms ease, border-color ${ANIM_MS}ms ease`,
-              }}
-            >
+            <span style={{
+              width:          20,
+              height:         20,
+              borderRadius:   '50%',
+              border:         `2px solid ${active ? 'var(--pk)' : 'var(--gy)'}`,
+              background:     active ? 'var(--pk)' : 'transparent',
+              flexShrink:     0,
+              display:        'flex',
+              alignItems:     'center',
+              justifyContent: 'center',
+              transition:     `background ${ANIM_MS}ms ease, border-color ${ANIM_MS}ms ease`,
+            }}>
               {active && (
-                <span
-                  style={{
-                    width:        8,
-                    height:       8,
-                    borderRadius: '50%',
-                    background:   '#fff',
-                  }}
-                />
+                <span style={{
+                  width:        8,
+                  height:       8,
+                  borderRadius: '50%',
+                  background:   '#fff',
+                }} />
               )}
             </span>
 
-            {/* Label block — always shows numeral; anchor text as secondary line
-                when label is meaningfully different from the numeral string.
-                Layout:
-                  ○  0  Never       ← numeral + anchor label on second line
-                  ○  1              ← numeral only (label === "1", suppressed)
-                  ○  5  Always      ← numeral + anchor label on second line
-                Image-only labels skip the numeral and show the image instead. */}
+            {/* Label block */}
             <span style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1 }}>
               {opt.image ? (
                 <ImageLabel src={opt.image} />
@@ -139,7 +141,8 @@ export default function LikertItem({ item, labels, selectedValue, onSelect, auto
                   }}>
                     {opt.value}
                   </span>
-                  {opt.label && opt.label !== String(opt.value) && (
+                  {/* In endpoint-only mode, suppress all label text (shown as anchors instead) */}
+                  {!endpointOnly && opt.label && opt.label !== String(opt.value) && (
                     <span style={{
                       fontFamily: 'DM Sans',
                       fontSize:   'var(--fs-body-sm)',
@@ -155,6 +158,19 @@ export default function LikertItem({ item, labels, selectedValue, onSelect, auto
           </button>
         );
       })}
+
+      {/* Bottom anchor — endpoint-only scales only */}
+      {endpointOnly && (
+        <p style={{
+          fontFamily: 'DM Sans',
+          fontSize:   'var(--fs-body-sm)',
+          color:      'var(--tx2)',
+          textAlign:  'center',
+          margin:     '4px 0 0',
+        }}>
+          {labels[labels.length - 1].label}
+        </p>
+      )}
     </div>
   );
 }

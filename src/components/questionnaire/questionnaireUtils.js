@@ -29,6 +29,15 @@ export function labelsEqual(a, b) {
   return JSON.stringify(a) === JSON.stringify(b);
 }
 
+// Returns true when only the first and last labels carry meaningful text —
+// i.e. all middle entries have a label equal to String(value) or are absent.
+// Used by LikertItem to switch to bracketed-anchor rendering.
+export function isEndpointOnly(labels) {
+  if (!labels || labels.length < 3) return false;
+  const middle = labels.slice(1, -1);
+  return middle.every(l => !l.label || l.label === String(l.value));
+}
+
 // Build a flat, ordered array of slide descriptors from a questionnaire definition.
 // Types: 'instruction' | 'scale_change' | 'item'
 // scale_change slides are auto-inserted when consecutive items have different labels.
