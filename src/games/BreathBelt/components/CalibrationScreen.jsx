@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import AvatarBreathPacer from '../../EbbAndFlow/components/AvatarBreathPacer';
 import { useBreathCycle } from '../../EbbAndFlow/useBreathCycle';
 import BeltSyncRing from './BeltSyncRing';
@@ -24,11 +24,14 @@ export default function CalibrationScreen({
   acceptCalibration,
 }) {
   const { getPhase, reset } = useBreathCycle();
+  const pacerRef = useRef(null);
 
-  // Keep the breath cycle running continuously during calibration
+  // Keep the breath cycle running continuously during calibration.
+  // Child effects (AvatarBreathPacer) run before parent effects, so
+  // pacerRef.current is already populated when this effect fires.
   useEffect(() => {
     reset();
-    // No cleanup needed — CalibrationScreen unmounts when parent transitions away
+    pacerRef.current?.resumeAnimation();
   }, []);
 
   const showRing  = ['PHASE_2', 'REVIEW'].includes(calibPhase);
@@ -47,6 +50,7 @@ export default function CalibrationScreen({
             {...avatarProps}
             scaleAmplitude={0.25}
             getPhase={getPhase}
+            controlRef={pacerRef}
             size={avatarSize}
           />
         </div>
