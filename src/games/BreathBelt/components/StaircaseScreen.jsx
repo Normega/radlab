@@ -82,9 +82,9 @@ export default function StaircaseScreen({
     if (quest.allConverged()) {
       onComplete(trialsData.current, quest.serialise(), quest.getConvergence());
     } else {
-      setScState(SC_STATES.READY);
+      startTrial();
     }
-  }, [response, confidence, arousal, trialCount, quest, recordTrial, onComplete]);
+  }, [response, confidence, arousal, trialCount, quest, recordTrial, onComplete, startTrial]);
 
   const conv     = quest.getConvergence();
   const canSubmit = response !== null && confidence !== null && arousal !== null;
