@@ -19,11 +19,11 @@ CREATE TABLE IF NOT EXISTS study_debrief_forms (
 
 ALTER TABLE study_debrief_forms ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "study_debrief_forms: lab read/write"
+CREATE POLICY "lab full access"
   ON study_debrief_forms FOR ALL
   TO authenticated
-  USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('lab', 'admin')))
-  WITH CHECK (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('lab', 'admin')));
+  USING (my_role() = 'lab')
+  WITH CHECK (my_role() = 'lab');
 
 -- ─── 2. Active debrief form pointer on studies ────────────────────────────────
 
