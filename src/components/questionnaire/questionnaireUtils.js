@@ -81,6 +81,80 @@ export function prevNavigableIndex(slides, currentIndex) {
   return 0;
 }
 
+// Compute subscale scores from raw item responses.
+// Returns { [subscaleName]: number } for all subscales in the definition.
+// Handles reverse-scoring using per-item scale_min/scale_max with fallback to
+// questionnaire-level scale_min/scale_max.
+export function computeSubscaleScores(questionnaire, responses) {
+  const scores = {};
+  const subscales = questionnaire.scoring?.subscales;
+  if (!subscales) return scores;
+
+  const qMin = questionnaire.scale_min ?? 1;
+  const qMax = questionnaire.scale_max ?? 5;
+
+  for (const subscale of subscales) {
+    const values = subscale.item_ids.map((id) => {
+      const item = questionnaire.items.find(i => i.id === id);
+      let value = responses[id];
+      if (value == null) return null;
+
+      if (subscale.reverse_items?.includes(id)) {
+        const min = item?.scale_min ?? qMin;
+        const max = item?.scale_max ?? qMax;
+        value = (min + max) - value;
+      }
+      return value;
+    }).filter(v => v !== null);
+
+    if (values.length === 0) {
+      scores[subscale.name] = null;
+      continue;
+    }
+
+    scores[subscale.name] = questionnaire.scoring.method === 'mean'
+      ? values.reduce((a, b) => a + b, 0) / values.length
+      : values.reduce((a, b) => a + b, 0);
+  }
+
+  return scores;
+}
+
+// Compute derived scores (e.g. SPANE-B) from already-computed subscale scores.
+// Returns { [derivedName]: number } for all derived_scores in the definition.
+// Supported operations: 'subtract' (operands[0] - operands[1]),
+//                       'sum'      (sum of all operands),
+//                       'mean'     (mean of all operands).
+export function computeDerivedScores(questionnaire, subscaleScores) {
+  const derived = {};
+  const derivedDefs = questionnaire.scoring?.derived_scores;
+  if (!derivedDefs) return derived;
+
+  for (const def of derivedDefs) {
+    const values = def.operands.map(name => subscaleScores[name]);
+    if (values.some(v => v == null)) {
+      derived[def.name] = null;
+      continue;
+    }
+
+    switch (def.operation) {
+      case 'subtract':
+        derived[def.name] = values[0] - values[1];
+        break;
+      case 'sum':
+        derived[def.name] = values.reduce((a, b) => a + b, 0);
+        break;
+      case 'mean':
+        derived[def.name] = values.reduce((a, b) => a + b, 0) / values.length;
+        break;
+      default:
+        derived[def.name] = null;
+    }
+  }
+
+  return derived;
+}
+
 // Validate a questionnaire JSON object — returns array of error strings.
 export function validateDefinition(def) {
   const errors = [];

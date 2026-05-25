@@ -3,7 +3,8 @@ import ProgressLabel from './ProgressLabel';
 import InstructionScreen from './InstructionScreen';
 import ScaleChangeScreen from './ScaleChangeScreen';
 import LikertItem from './LikertItem';
-import { buildSlides, prevNavigableIndex, effectiveLabels, isEndpointOnly } from './questionnaireUtils';
+import { buildSlides, prevNavigableIndex, effectiveLabels, isEndpointOnly,
+         computeSubscaleScores, computeDerivedScores } from './questionnaireUtils';
 
 const FADE_MS = 150; // slide transition duration
 
@@ -16,7 +17,7 @@ const FADE_MS = 150; // slide transition duration
 //   questionnaire   — full JSON definition
 //   partNumber      — 1-based (for progress label); default 1
 //   totalParts      — total parts in session (for progress label); default 1
-//   onComplete      — (responses: { [itemId]: value }) => void
+//   onComplete      — ({ responses, subscaleScores, derivedScores }) => void
 //   onBack          — optional () => void — called if back pressed on instruction slide
 //   previewMode     — bool — shows "Preview complete" at end instead of calling onComplete
 
@@ -55,11 +56,13 @@ export default function QuestionnaireRenderer({
     if (next >= slides.length) {
       // All items answered — complete
       if (previewMode) { setDone(true); return; }
-      onComplete?.(responses);
+      const subscaleScores = computeSubscaleScores(questionnaire, responses);
+      const derivedScores  = computeDerivedScores(questionnaire, subscaleScores);
+      onComplete?.({ responses, subscaleScores, derivedScores });
     } else {
       goTo(next);
     }
-  }, [slideIdx, slides.length, responses, onComplete, previewMode, goTo]);
+  }, [slideIdx, slides.length, responses, questionnaire, onComplete, previewMode, goTo]);
 
   // ── Back navigation ────────────────────────────────────────────────────
   const goBack = useCallback(() => {
