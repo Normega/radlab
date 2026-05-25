@@ -6,22 +6,14 @@ import { estimateBreathPeriodMs } from '../breathUtils';
 
 const SAMPLE_MS = 40;
 
-// ── BaselineScreen ─────────────────────────────────────────────────────────
-//
-// Reusable for both pre-session (BASELINE_*) and post-session (POST_BASELINE_*)
-// baselines. Parent maps its FSM states to the generic phase prop.
-//
-// Props:
-//   phase       — 'READY' | 'RECORDING' | 'COMPLETE'
-//   title       — e.g. "Natural baseline" or "Post-session rest"
-//   durationMs  — recording duration in ms
-//   breathValueRef, sendTrigger, currentPhaseRef, currentTrialRef
-//   phaseLabel  — raw data phase tag (e.g. 'baseline' or 'post_baseline')
-//   onStart     — () => void
-//   onComplete  — (periodMs: number | null) => void  — period estimate from epoch
+// ── COM trigger vocabulary (baseline-level) ───────────────────────────────
+// Pre-session:  triggerStart='2'  triggerEnd='3'
+// Post-session: triggerStart='8'  triggerEnd='9'
+// Session start ('1') and end ('0') are fired from BreathBelt.jsx around
+// the pre/post baseline respectively — not from this component.
 
 export default function BaselineScreen({
-  phase,
+  phase,           // 'READY' | 'RECORDING' | 'COMPLETE'
   title,
   durationMs,
   breathValueRef,
@@ -29,8 +21,10 @@ export default function BaselineScreen({
   currentPhaseRef,
   currentTrialRef,
   phaseLabel,
+  triggerStart,    // COM code to send at recording start  (e.g. '2' or '8')
+  triggerEnd,      // COM code to send at recording end    (e.g. '3' or '9')
   onStart,
-  onComplete,
+  onComplete,      // (periodMs: number | null) => void
 }) {
   const [elapsed, setElapsed] = useState(0);
   const timerRef    = useRef(null);
@@ -38,35 +32,30 @@ export default function BaselineScreen({
   const sampleRef   = useRef(null);
   const samplesRef  = useRef([]);
   const { getPhase } = useBreathCycle();
-  const avatarSize = 240;
+  const avatarSize  = 240;
 
   useEffect(() => {
     if (phase !== 'RECORDING') return;
 
-    // Label raw rows
     currentPhaseRef.current = phaseLabel;
     currentTrialRef.current = -1;
     samplesRef.current = [];
 
-    // COM trigger: start
-    sendTrigger('1');
+    sendTrigger(triggerStart);
 
-    // Sample breathValueRef for period estimation
     sampleRef.current = setInterval(() => {
       samplesRef.current.push(breathValueRef.current ?? 0);
     }, SAMPLE_MS);
 
-    // Countdown tick
     const start = Date.now();
     intervalRef.current = setInterval(() => {
       setElapsed(Math.min(Date.now() - start, durationMs));
     }, 500);
 
-    // End timer
     timerRef.current = setTimeout(async () => {
       clearInterval(sampleRef.current);
       clearInterval(intervalRef.current);
-      await sendTrigger('0');
+      await sendTrigger(triggerEnd);
       currentPhaseRef.current = 'idle';
       const periodMs = estimateBreathPeriodMs(samplesRef.current, SAMPLE_MS);
       onComplete(periodMs);
@@ -83,11 +72,9 @@ export default function BaselineScreen({
   const progress    = elapsed / durationMs;
 
   return (
-    <div
-      className="flex flex-col items-center gap-6 px-6 py-8"
-      style={{ maxWidth: 480, margin: '0 auto' }}
-    >
-      {/* Avatar frozen + ring always visible */}
+    <div className="flex flex-col items-center gap-6 px-6 py-8"
+      style={{ maxWidth: 480, margin: '0 auto' }}>
+
       <div style={{ position: 'relative', width: avatarSize, height: avatarSize }}>
         <BeltSyncRing breathValueRef={breathValueRef} avatarSize={avatarSize} />
         <div style={{ position: 'relative', zIndex: 2 }}>
@@ -108,15 +95,11 @@ export default function BaselineScreen({
             </p>
             <p style={{ color: 'var(--tx2)', fontSize: 'var(--fs-body-sm)' }}>
               Sit comfortably and breathe naturally for {durationMs / 1000} seconds.
-              The avatar will stay still — this is not a pacing task.
-              The orange ring shows your belt signal.
+              The avatar will stay still. The orange ring shows your belt signal.
             </p>
           </div>
-          <button
-            onClick={onStart}
-            className="px-6 py-3 rounded-xl font-medium"
-            style={{ background: 'var(--pk)', color: '#fff', fontSize: 'var(--fs-body)' }}
-          >
+          <button onClick={onStart} className="px-6 py-3 rounded-xl font-medium"
+            style={{ background: 'var(--pk)', color: '#fff', fontSize: 'var(--fs-body)' }}>
             Begin recording
           </button>
         </>
@@ -141,25 +124,16 @@ export default function BaselineScreen({
 }
 
 function ProgressArc({ progress, secondsLeft }) {
-  const r             = 40;
-  const cx            = 50;
-  const cy            = 50;
+  const r = 40, cx = 50, cy = 50;
   const circumference = 2 * Math.PI * r;
-  const dash          = circumference * progress;
-
   return (
     <div className="flex flex-col items-center gap-2">
       <svg width={100} height={100} viewBox="0 0 100 100">
         <circle cx={cx} cy={cy} r={r} fill="none" stroke="var(--bd)" strokeWidth={6} />
-        <circle
-          cx={cx} cy={cy} r={r}
-          fill="none"
-          stroke="rgba(255,140,60,0.8)"
-          strokeWidth={6}
-          strokeDasharray={`${dash} ${circumference}`}
-          strokeLinecap="round"
-          transform={`rotate(-90 ${cx} ${cy})`}
-        />
+        <circle cx={cx} cy={cy} r={r} fill="none"
+          stroke="rgba(255,140,60,0.8)" strokeWidth={6}
+          strokeDasharray={`${circumference * progress} ${circumference}`}
+          strokeLinecap="round" transform={`rotate(-90 ${cx} ${cy})`} />
       </svg>
       <span style={{ fontFamily: 'Space Mono', fontSize: 'var(--fs-mono-md)', color: 'var(--tx2)' }}>
         {secondsLeft}s

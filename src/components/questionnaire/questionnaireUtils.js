@@ -6,10 +6,9 @@
 // Resolve effective scale labels for one item.
 // Priority: item.scale_labels_override > questionnaire.scale_labels > numeric fallback.
 export function effectiveLabels(item, questionnaire) {
-  const min = item.scale_min ?? 1;
-  const max = item.scale_max ?? 5;
-
   const source = item.scale_labels_override ?? questionnaire.scale_labels ?? null;
+  const min = item.scale_min ?? source?.[0]?.value ?? 1;
+  const max = item.scale_max ?? source?.[source.length - 1]?.value ?? 5;
 
   if (source) {
     // Filter to this item's range (handles mixed-scale questionnaires)

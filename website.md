@@ -2,7 +2,7 @@
 
 > **Regulatory and Affective Dynamics Lab**  
 > University of Toronto · PI: Professor Norman Farb, PhD  
-> Last updated: 2026-05-22 (BreathBelt §20 updated: correspondence study improvements — 120 s pre/post baselines, SESSION_SETUP state, POST_BASELINE_* FSM states, bt_baseline_period_ms + bt_condition_period_ms per trial, breathUtils.js, belt_correspondence_migration.sql.)
+> Last updated: 2026-05-25 (BreathBelt §20 updated: full 0–12 COM trigger vocabulary, new trial-level codes 10/11/12, code 11 marks baseline→condition boundary; BaselineScreen triggerStart/triggerEnd props; pendingQuestStateRef; role guard lab-only.)
 
 ---
 
@@ -1464,7 +1464,7 @@ Specced. Three background components built (FarmField, Greenhouse, FarmRow) and 
 
 Breath Belt is a lab-only psychophysics study measuring how well participants can detect changes in their own breathing pace. It uses a Polar H10 chest belt (via Web Bluetooth) to record respiratory acceleration data, and a COM port trigger box to send synchronisation signals to the physio equipment. The study runs in Chrome/Edge only (Web Bluetooth requirement).
 
-Access is gated internally by the component: only users with `profiles.role === 'lab'` can proceed past the browser check. All other users see an "Access restricted" screen.
+Access is gated internally by the component: only users with `profiles.role === 'lab'` can proceed past the browser check. All other users (including `admin`) see an "Access restricted" screen.
 
 Route: `/games/breath-belt`
 
@@ -1486,6 +1486,28 @@ BROWSER_CHECK → BT_CONNECT → COM_CONNECT
 - **Polar H10**: Bluetooth LE chest belt. Streams raw accelerometer (ACC) and heart rate (HR) data. ACC signal is used as a proxy for respiratory effort. Connected via Web Bluetooth in `useBeltConnection.js`.
 - **COM trigger box**: Serial port connected via Web Serial API. Sends 1-byte codes to the physio recording system at trial start/end and at baseline start/end. Connected separately after BT.
 
+### COM trigger vocabulary (codes 0–12)
+
+All codes fit in a single byte (within the 2^32 constraint). Codes 1–9 are fired from `BreathBelt.jsx` at FSM transitions; codes 10–12 are fired from `useTrialRunner.js` within each trial.
+
+| Code | Event | Fired from |
+|------|-------|------------|
+| 0 | Session end | `BreathBelt.jsx` — after `endSession()` resolves in post-baseline `onComplete` |
+| 1 | Session start | `BreathBelt.jsx` — pre-baseline `onStart`, just before code 2 |
+| 2 | Pre-baseline start | `BaselineScreen` — via `triggerStart='2'` prop on recording start |
+| 3 | Pre-baseline end | `BaselineScreen` — via `triggerEnd='3'` prop on recording end |
+| 4 | Phase 2 start | `BreathBelt.jsx` — `useEffect` watching `phase === PHASE2_RUNNING` |
+| 5 | Phase 2 end | `BreathBelt.jsx` — `FixedTrialsScreen` `onComplete` handler |
+| 6 | Phase 3 start | `BreathBelt.jsx` — `useEffect` watching `phase === PHASE3_RUNNING` |
+| 7 | Phase 3 end | `BreathBelt.jsx` — `StaircaseScreen` `onComplete` handler |
+| 8 | Post-baseline start | `BaselineScreen` — via `triggerStart='8'` prop on recording start |
+| 9 | Post-baseline end | `BaselineScreen` — via `triggerEnd='9'` prop on recording end |
+| 10 | Trial start | `useTrialRunner.js` — baseline breaths begin |
+| 11 | Condition onset | `useTrialRunner.js` — breath 3 begins (baseline→condition boundary) |
+| 12 | Trial end | `useTrialRunner.js` — after condition breaths complete |
+
+Codes 10/11/12 are reused across Phase 2 and Phase 3. The preceding phase code (4 or 6) establishes context in the lab belt signal.
+
 ### Session setup (SESSION_SETUP)
 
 After COM connects, the researcher enters a session number (1-indexed, incremented per lab visit by the same participant) before calibration begins. Stored in `belt_sessions.session_number`.
@@ -1502,8 +1524,8 @@ Calibration state is saved to `belt.calibStateRef` and persisted at session end.
 
 Both baselines use the same `BaselineScreen` component with a generic `phase` prop (`'READY'`|`'RECORDING'`|`'COMPLETE'`). Parent FSM maps its states to this generic prop via `baselinePhaseMap()`.
 
-- **Pre-session baseline** (`BASELINE_*`): 120 s free breathing before Phase 2. COM trigger sent at start and end. `breathUtils.estimateBreathPeriodMs()` runs on the collected samples; result stored in `belt_sessions.baseline_period_ms`.
-- **Post-session baseline** (`POST_BASELINE_*`): 120 s free breathing after Phase 3. Same COM triggers and period estimate. Result stored in `belt_sessions.post_baseline_period_ms`. `endSession()` is called here — all trial and session data flushed to Supabase on post-baseline completion.
+- **Pre-session baseline** (`BASELINE_*`): 120 s free breathing before Phase 2. Code 1 (session start) fires in `onStart` just before recording; codes 2/3 fire at recording start/end via `BaselineScreen`. `breathUtils.estimateBreathPeriodMs()` runs on the collected samples; result stored in `belt_sessions.baseline_period_ms`.
+- **Post-session baseline** (`POST_BASELINE_*`): 120 s free breathing after Phase 3. Codes 8/9 fire at recording start/end via `BaselineScreen`; code 0 (session end) fires after `endSession()` resolves. Result stored in `belt_sessions.post_baseline_period_ms`. `endSession()` is called here — all trial and session data flushed to Supabase on post-baseline completion.
 
 Both baselines are 120 s (was 60 s) for matched pre/post comparison in the correspondence study.
 
@@ -1561,7 +1583,7 @@ src/games/BreathBelt/
   components/
     BrowserWarning.jsx       ← Chrome/Edge prompt
     CalibrationScreen.jsx    ← 2-phase calibration UI
-    BaselineScreen.jsx       ← reusable for pre and post baselines; props: phase ('READY'|'RECORDING'|'COMPLETE'), title, durationMs, phaseLabel, onComplete(periodMs)
+    BaselineScreen.jsx       ← reusable for pre and post baselines; props: phase ('READY'|'RECORDING'|'COMPLETE'), title, durationMs, phaseLabel, triggerStart, triggerEnd, onComplete(periodMs)
     FixedTrialsScreen.jsx    ← Phase 2: 9 fixed trials; records bt_baseline_period_ms + bt_condition_period_ms per trial
     StaircaseScreen.jsx      ← Phase 3: QUEST trials + 3AFC + ratings; records bt_* period columns
     BeltSyncRing.jsx         ← real-time belt signal ring around avatar
@@ -1570,7 +1592,7 @@ src/games/BreathBelt/
 
 ### Convergence data flow
 
-`quest.getConvergence()` is called in `StaircaseScreen` when both staircases converge and passed as the third argument to `onComplete(trials, questState, convergence)`. `BreathBelt.jsx` stores convergence in `convergenceRef.current` and quest state in `questStateRef.current` (both `useRef`). `endSession()` is called inside the post-baseline `onComplete` callback, consuming `questStateRef.current`.
+`quest.getConvergence()` is called in `StaircaseScreen` when both staircases converge and passed as the third argument to `onComplete(trials, questState, convergence)`. `BreathBelt.jsx` stores convergence in `convergenceRef.current` and quest state in `pendingQuestStateRef.current` (both `useRef`). `endSession()` is called inside the post-baseline `onComplete` callback, consuming `pendingQuestStateRef.current`.
 
 ### Schema migration
 

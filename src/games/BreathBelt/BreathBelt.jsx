@@ -12,44 +12,57 @@ import StaircaseScreen from './components/StaircaseScreen';
 import SessionComplete from './components/SessionComplete';
 import { BASELINE_DURATION_MS, POST_BASELINE_DURATION_MS } from './constants';
 
-// ── FSM states ─────────────────────────────────────────────────────────────
+// ── COM trigger vocabulary ─────────────────────────────────────────────────
+// All codes 0–12, within 2^32 constraint.
+//
+//  0   session end
+//  1   session start
+//  2   pre-baseline start
+//  3   pre-baseline end
+//  4   phase 2 start
+//  5   phase 2 end
+//  6   phase 3 start
+//  7   phase 3 end
+//  8   post-baseline start
+//  9   post-baseline end
+//  10  trial start          (baseline breaths begin)   — fired from useTrialRunner
+//  11  condition onset      (breath 3 begins)          — fired from useTrialRunner
+//  12  trial end                                       — fired from useTrialRunner
+
 const S = {
-  BROWSER_CHECK:          'BROWSER_CHECK',
-  ACCESS_DENIED:          'ACCESS_DENIED',
-  BT_CONNECT:             'BT_CONNECT',
-  COM_CONNECT:            'COM_CONNECT',
-  SESSION_SETUP:          'SESSION_SETUP',         // session number entry
-  CALIB_READY:            'CALIB_READY',
-  CALIBRATING:            'CALIBRATING',
-  BASELINE_READY:         'BASELINE_READY',
-  BASELINE_RECORDING:     'BASELINE_RECORDING',
-  BASELINE_COMPLETE:      'BASELINE_COMPLETE',
-  PHASE2_READY:           'PHASE2_READY',
-  PHASE2_RUNNING:         'PHASE2_RUNNING',
-  PHASE2_COMPLETE:        'PHASE2_COMPLETE',
-  PHASE3_INTRO:           'PHASE3_INTRO',
-  PHASE3_RUNNING:         'PHASE3_RUNNING',
-  POST_BASELINE_READY:    'POST_BASELINE_READY',
-  POST_BASELINE_RECORDING:'POST_BASELINE_RECORDING',
-  POST_BASELINE_COMPLETE: 'POST_BASELINE_COMPLETE',
-  SESSION_COMPLETE:       'SESSION_COMPLETE',
+  BROWSER_CHECK:           'BROWSER_CHECK',
+  ACCESS_DENIED:           'ACCESS_DENIED',
+  BT_CONNECT:              'BT_CONNECT',
+  COM_CONNECT:             'COM_CONNECT',
+  SESSION_SETUP:           'SESSION_SETUP',
+  CALIB_READY:             'CALIB_READY',
+  CALIBRATING:             'CALIBRATING',
+  BASELINE_READY:          'BASELINE_READY',
+  BASELINE_RECORDING:      'BASELINE_RECORDING',
+  BASELINE_COMPLETE:       'BASELINE_COMPLETE',
+  PHASE2_READY:            'PHASE2_READY',
+  PHASE2_RUNNING:          'PHASE2_RUNNING',
+  PHASE2_COMPLETE:         'PHASE2_COMPLETE',
+  PHASE3_INTRO:            'PHASE3_INTRO',
+  PHASE3_RUNNING:          'PHASE3_RUNNING',
+  POST_BASELINE_READY:     'POST_BASELINE_READY',
+  POST_BASELINE_RECORDING: 'POST_BASELINE_RECORDING',
+  POST_BASELINE_COMPLETE:  'POST_BASELINE_COMPLETE',
+  SESSION_COMPLETE:        'SESSION_COMPLETE',
 };
 
 export default function BreathBelt() {
   const navigate = useNavigate();
   const [phase, setPhase] = useState(S.BROWSER_CHECK);
-
-  // Session metadata entered at SESSION_SETUP
   const [sessionNumber, setSessionNumber] = useState(1);
 
-  // Period estimates from baselines
   const preBaselinePeriodRef  = useRef(null);
   const postBaselinePeriodRef = useRef(null);
   const convergenceRef        = useRef(null);
-  const questStateRef         = useRef(null); // stashed from PHASE3 onComplete, consumed at session end
+  const pendingQuestStateRef  = useRef(null);
 
   // ── Auth + role ──────────────────────────────────────────────────────────
-  const { data: profile, isLoading: profileLoading } = useQuery({
+  const { data: profile } = useQuery({
     queryKey: ['profile'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -79,14 +92,13 @@ export default function BreathBelt() {
   const belt    = useBeltConnection();
   const session = useBeltSession(profile?.id);
 
-  // ── Browser + role check ─────────────────────────────────────────────────
+  // ── FSM transitions ──────────────────────────────────────────────────────
   useEffect(() => {
     if (phase !== S.BROWSER_CHECK) return;
-    if (!navigator.bluetooth) return; // stays on BROWSER_CHECK → renders BrowserWarning
-    if (profileLoading || profile === undefined) return; // wait for query
-    if (!['lab', 'admin'].includes(profile?.role)) { setPhase(S.ACCESS_DENIED); return; }
+    if (!navigator.bluetooth) return;
+    if (profile?.role !== 'lab') { setPhase(S.ACCESS_DENIED); return; }
     setPhase(S.BT_CONNECT);
-  }, [phase, profile, profileLoading]);
+  }, [phase, profile]);
 
   useEffect(() => {
     if (phase === S.BT_CONNECT  && belt.btState  === 'CONNECTED') setPhase(S.COM_CONNECT);
@@ -100,7 +112,17 @@ export default function BreathBelt() {
     if (phase === S.CALIBRATING && belt.calibPhase === 'COMPLETE') setPhase(S.BASELINE_READY);
   }, [belt.calibPhase, phase]);
 
-  // Start Supabase session on entering BASELINE_READY
+  // Code 4 — phase 2 start
+  useEffect(() => {
+    if (phase === S.PHASE2_RUNNING) belt.sendTrigger('4');
+  }, [phase]);
+
+  // Code 6 — phase 3 start
+  useEffect(() => {
+    if (phase === S.PHASE3_RUNNING) belt.sendTrigger('6');
+  }, [phase]);
+
+  // Start Supabase session once, at BASELINE_READY
   const sessionStartedRef = useRef(false);
   useEffect(() => {
     if (phase === S.BASELINE_READY && !sessionStartedRef.current) {
@@ -112,9 +134,7 @@ export default function BreathBelt() {
   useEffect(() => () => { belt.stopNotifications(); }, []);
 
   // ── Helpers ──────────────────────────────────────────────────────────────
-
   function baselinePhaseMap(fsm) {
-    // Maps FSM state → generic 'READY'|'RECORDING'|'COMPLETE' for BaselineScreen
     if ([S.BASELINE_READY,      S.POST_BASELINE_READY     ].includes(fsm)) return 'READY';
     if ([S.BASELINE_RECORDING,  S.POST_BASELINE_RECORDING ].includes(fsm)) return 'RECORDING';
     if ([S.BASELINE_COMPLETE,   S.POST_BASELINE_COMPLETE  ].includes(fsm)) return 'COMPLETE';
@@ -127,7 +147,7 @@ export default function BreathBelt() {
 
   if (phase === S.ACCESS_DENIED) {
     return (
-      <Screen title="Access restricted">
+      <Screen>
         <p style={{ color: 'var(--tx2)', fontSize: 'var(--fs-body)' }}>
           The Breath Belt study is only accessible to lab members.
         </p>
@@ -136,9 +156,7 @@ export default function BreathBelt() {
     );
   }
 
-  if (phase === S.BROWSER_CHECK && !profile) {
-    return <Screen title="Loading…" />;
-  }
+  if (phase === S.BROWSER_CHECK && !profile) return <Screen title="Loading…" />;
 
   // ── Hardware connect ─────────────────────────────────────────────────────
 
@@ -174,7 +192,7 @@ export default function BreathBelt() {
     );
   }
 
-  // ── Session setup — session number entry ─────────────────────────────────
+  // ── Session setup ─────────────────────────────────────────────────────────
 
   if (phase === S.SESSION_SETUP) {
     return (
@@ -185,9 +203,7 @@ export default function BreathBelt() {
               Session number
             </label>
             <input
-              type="number"
-              min={1}
-              value={sessionNumber}
+              type="number" min={1} value={sessionNumber}
               onChange={e => setSessionNumber(Math.max(1, parseInt(e.target.value) || 1))}
               style={{
                 fontFamily: 'Space Mono', fontSize: 'var(--fs-mono-md)',
@@ -200,9 +216,7 @@ export default function BreathBelt() {
               Increment for each visit by the same participant.
             </p>
           </div>
-          <Btn onClick={() => setPhase(S.CALIB_READY)}>
-            Continue to calibration
-          </Btn>
+          <Btn onClick={() => setPhase(S.CALIB_READY)}>Continue to calibration</Btn>
         </Screen>
       </Layout>
     );
@@ -226,7 +240,8 @@ export default function BreathBelt() {
     );
   }
 
-  // ── Pre-session baseline ─────────────────────────────────────────────────
+  // ── Pre-session baseline ──────────────────────────────────────────────────
+  // Codes: 1 (session start) fired just before recording; 2/3 from BaselineScreen.
 
   if ([S.BASELINE_READY, S.BASELINE_RECORDING, S.BASELINE_COMPLETE].includes(phase)) {
     return (
@@ -240,7 +255,12 @@ export default function BreathBelt() {
           currentPhaseRef={belt.currentPhaseRef}
           currentTrialRef={belt.currentTrialRef}
           phaseLabel="baseline"
-          onStart={() => setPhase(S.BASELINE_RECORDING)}
+          triggerStart="2"
+          triggerEnd="3"
+          onStart={async () => {
+            await belt.sendTrigger('1');   // code 1 — session start
+            setPhase(S.BASELINE_RECORDING);
+          }}
           onComplete={(periodMs) => {
             preBaselinePeriodRef.current = periodMs;
             setPhase(S.BASELINE_COMPLETE);
@@ -256,6 +276,8 @@ export default function BreathBelt() {
   }
 
   // ── Phase 2 ──────────────────────────────────────────────────────────────
+  // Code 4 fired on entering PHASE2_RUNNING (useEffect above).
+  // Code 5 fired in onComplete handler.
 
   if (phase === S.PHASE2_READY) {
     return (
@@ -281,7 +303,10 @@ export default function BreathBelt() {
           currentPhaseRef={belt.currentPhaseRef}
           currentTrialRef={belt.currentTrialRef}
           recordTrial={session.recordTrial}
-          onComplete={() => setPhase(S.PHASE2_COMPLETE)}
+          onComplete={async () => {
+            await belt.sendTrigger('5');  // code 5 — phase 2 end
+            setPhase(S.PHASE2_COMPLETE);
+          }}
         />
       </Layout>
     );
@@ -302,6 +327,8 @@ export default function BreathBelt() {
   }
 
   // ── Phase 3 ──────────────────────────────────────────────────────────────
+  // Code 6 fired on entering PHASE3_RUNNING (useEffect above).
+  // Code 7 fired in onComplete handler.
 
   if (phase === S.PHASE3_INTRO) {
     return (
@@ -329,11 +356,11 @@ export default function BreathBelt() {
           currentTrialRef={belt.currentTrialRef}
           recordTrial={session.recordTrial}
           savedQuestState={null}
-          onComplete={(trials, questState, convergence) => {
-            convergenceRef.current  = convergence;
-            questStateRef.current   = questState;
+          onComplete={async (trials, questState, convergence) => {
+            await belt.sendTrigger('7');  // code 7 — phase 3 end
+            convergenceRef.current     = convergence;
+            pendingQuestStateRef.current = questState;
             setPhase(S.POST_BASELINE_READY);
-            // endSession called after post-baseline completes
           }}
         />
       </Layout>
@@ -341,6 +368,7 @@ export default function BreathBelt() {
   }
 
   // ── Post-session baseline ─────────────────────────────────────────────────
+  // Codes 8/9 from BaselineScreen. Code 0 (session end) fired after endSession.
 
   if ([S.POST_BASELINE_READY, S.POST_BASELINE_RECORDING, S.POST_BASELINE_COMPLETE].includes(phase)) {
     return (
@@ -354,19 +382,21 @@ export default function BreathBelt() {
           currentPhaseRef={belt.currentPhaseRef}
           currentTrialRef={belt.currentTrialRef}
           phaseLabel="post_baseline"
+          triggerStart="8"
+          triggerEnd="9"
           onStart={() => setPhase(S.POST_BASELINE_RECORDING)}
           onComplete={async (periodMs) => {
             postBaselinePeriodRef.current = periodMs;
-            setPhase(S.POST_BASELINE_COMPLETE);
             await session.endSession({
               calibState:           belt.calibStateRef.current,
-              questState:           questStateRef.current,
+              questState:           pendingQuestStateRef.current,
               rawAccelRows:         belt.rawAccelRowsRef.current,
               rawHRRows:            belt.rawHRRowsRef.current,
               sessionNumber,
               baselinePeriodMs:     preBaselinePeriodRef.current,
               postBaselinePeriodMs: periodMs,
             });
+            await belt.sendTrigger('0');  // code 0 — session end
             belt.stopNotifications();
             setPhase(S.SESSION_COMPLETE);
           }}
@@ -397,7 +427,7 @@ export default function BreathBelt() {
   return null;
 }
 
-// ── Small layout + button helpers ─────────────────────────────────────────
+// ── Layout helpers ────────────────────────────────────────────────────────
 
 function Layout({ title, children }) {
   return (
@@ -418,9 +448,7 @@ function Screen({ title, children }) {
   return (
     <div className="flex flex-col items-center gap-6 px-6 py-12">
       {title && (
-        <h2 style={{ fontFamily: 'DM Serif Display', fontSize: 20, color: 'var(--tx)' }}>
-          {title}
-        </h2>
+        <h2 style={{ fontFamily: 'DM Serif Display', fontSize: 20, color: 'var(--tx)' }}>{title}</h2>
       )}
       {children}
     </div>
@@ -429,21 +457,13 @@ function Screen({ title, children }) {
 
 function Btn({ onClick, disabled, children }) {
   return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      style={{
-        background:   disabled ? 'var(--bd)' : 'var(--pk)',
-        color:        disabled ? 'var(--tx3)' : '#fff',
-        border:       'none',
-        borderRadius: 12,
-        padding:      '12px 28px',
-        fontFamily:   'DM Sans',
-        fontSize:     'var(--fs-body)',
-        fontWeight:   600,
-        cursor:       disabled ? 'default' : 'pointer',
-      }}
-    >
+    <button onClick={onClick} disabled={disabled} style={{
+      background:   disabled ? 'var(--bd)' : 'var(--pk)',
+      color:        disabled ? 'var(--tx3)' : '#fff',
+      border:       'none', borderRadius: 12, padding: '12px 28px',
+      fontFamily:   'DM Sans', fontSize: 'var(--fs-body)', fontWeight: 600,
+      cursor:       disabled ? 'default' : 'pointer',
+    }}>
       {children}
     </button>
   );
