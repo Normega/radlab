@@ -83,7 +83,7 @@ export default function BreathBelt() {
   useEffect(() => {
     if (phase !== S.BROWSER_CHECK) return;
     if (!navigator.bluetooth) return; // stays on BROWSER_CHECK → renders BrowserWarning
-    if (profile?.role !== 'lab') { setPhase(S.ACCESS_DENIED); return; }
+    if (!['lab', 'admin'].includes(profile?.role)) { setPhase(S.ACCESS_DENIED); return; }
     setPhase(S.BT_CONNECT);
   }, [phase, profile]);
 
