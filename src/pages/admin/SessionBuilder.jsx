@@ -10,7 +10,7 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import { supabase } from '../../lib/supabase'
 
-const CATEGORY_ORDER = ['game', 'questionnaire', 'form']
+const CATEGORY_ORDER  = ['game', 'questionnaire', 'form']
 const CATEGORY_LABELS = { game: 'Games', questionnaire: 'Questionnaires', form: 'Forms' }
 
 function useActivities() {
@@ -22,7 +22,23 @@ function useActivities() {
         .select('id, label, category, estimated_minutes')
         .order('label')
       if (error) throw error
-      return data
+      return data ?? []
+    },
+  })
+}
+
+// Uploaded questionnaires from the questionnaires table — shown alongside
+// hardcoded activity-based questionnaires in the picker.
+function useUploadedQuestionnaires() {
+  return useQuery({
+    queryKey: ['questionnaires-picker'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('questionnaires')
+        .select('id, slug, name')
+        .order('name')
+      if (error) throw error
+      return data ?? []
     },
   })
 }
@@ -36,8 +52,9 @@ function useSession(id) {
         .from('session_templates')
         .select(`
           id, label, description,
-          session_template_nodes(id, order_index, activity_id, label,
-            activities(id, label, category, estimated_minutes)
+          session_template_nodes(id, order_index, activity_id, questionnaire_id, label,
+            activities(id, label, category, estimated_minutes),
+            questionnaires(id, name, slug)
           )
         `)
         .eq('id', id)
@@ -76,29 +93,30 @@ export default function SessionBuilder() {
   const qc = useQueryClient()
   const isNew = !id
 
-  const { data: activities = [] } = useActivities()
-  const { data: existing, isLoading } = useSession(id)
+  const { data: activities = [] }            = useActivities()
+  const { data: uploadedQuestionnaires = [] } = useUploadedQuestionnaires()
+  const { data: existing, isLoading }        = useSession(id)
 
-  const [label, setLabel] = useState('')
+  const [label,       setLabel]       = useState('')
   const [description, setDescription] = useState('')
-  const [sequence, setSequence] = useState([])
-  const [error, setError] = useState(null)
+  const [sequence,    setSequence]    = useState([])
+  const [error,       setError]       = useState(null)
 
   useEffect(() => {
-    if (existing) {
-      setLabel(existing.label ?? '')
-      setDescription(existing.description ?? '')
-      const sorted = [...(existing.session_template_nodes ?? [])].sort(
-        (a, b) => a.order_index - b.order_index
-      )
-      setSequence(sorted.map((n, i) => ({
-        _key: `existing-${n.id}-${i}`,
-        activity_id: n.activity_id,
-        label: n.activities?.label ?? n.label,
-        category: n.activities?.category,
-        estimated_minutes: n.activities?.estimated_minutes,
-      })))
-    }
+    if (!existing) return
+    setLabel(existing.label ?? '')
+    setDescription(existing.description ?? '')
+    const sorted = [...(existing.session_template_nodes ?? [])].sort(
+      (a, b) => a.order_index - b.order_index
+    )
+    setSequence(sorted.map((n, i) => ({
+      _key:              `existing-${n.id}-${i}`,
+      activity_id:       n.activity_id ?? null,
+      questionnaire_id:  n.questionnaire_id ?? null,
+      label:             n.activities?.label ?? n.questionnaires?.name ?? n.label,
+      category:          n.activities?.category ?? 'questionnaire',
+      estimated_minutes: n.activities?.estimated_minutes ?? null,
+    })))
   }, [existing])
 
   const sensors = useSensors(
@@ -117,17 +135,28 @@ export default function SessionBuilder() {
     }
   }
 
-  function addActivity(act) {
-    setSequence(prev => [
-      ...prev,
-      {
-        _key: `${act.id}-${Date.now()}`,
-        activity_id: act.id,
-        label: act.label,
-        category: act.category,
+  // Handles both activities-table items and uploaded-questionnaire items.
+  // _source === 'uploaded' means the item came from the questionnaires table.
+  function addItem(act) {
+    if (act._source === 'uploaded') {
+      setSequence(prev => [...prev, {
+        _key:             `q-${act.id}-${Date.now()}`,
+        activity_id:      null,
+        questionnaire_id: act.id,
+        label:            act.label,
+        category:         'questionnaire',
+        estimated_minutes: null,
+      }])
+    } else {
+      setSequence(prev => [...prev, {
+        _key:              `${act.id}-${Date.now()}`,
+        activity_id:       act.id,
+        questionnaire_id:  null,
+        label:             act.label,
+        category:          act.category,
         estimated_minutes: act.estimated_minutes,
-      },
-    ])
+      }])
+    }
   }
 
   function removeItem(key) {
@@ -137,6 +166,15 @@ export default function SessionBuilder() {
   const save = useMutation({
     mutationFn: async () => {
       if (!label.trim()) throw new Error('Label is required.')
+      const buildNodes = (tmplId) =>
+        sequence.map((item, i) => ({
+          session_template_id: tmplId,
+          order_index:         i,
+          activity_id:         item.activity_id ?? null,
+          questionnaire_id:    item.questionnaire_id ?? null,
+          label:               item.label,
+        }))
+
       if (isNew) {
         const { data: tmpl, error: te } = await supabase
           .from('session_templates')
@@ -144,13 +182,7 @@ export default function SessionBuilder() {
           .select('id').single()
         if (te) throw te
         if (sequence.length) {
-          const nodes = sequence.map((item, i) => ({
-            session_template_id: tmpl.id,
-            order_index: i,
-            activity_id: item.activity_id,
-            label: item.label,
-          }))
-          const { error: ne } = await supabase.from('session_template_nodes').insert(nodes)
+          const { error: ne } = await supabase.from('session_template_nodes').insert(buildNodes(tmpl.id))
           if (ne) throw ne
         }
         return tmpl.id
@@ -162,13 +194,7 @@ export default function SessionBuilder() {
         if (ue) throw ue
         await supabase.from('session_template_nodes').delete().eq('session_template_id', id)
         if (sequence.length) {
-          const nodes = sequence.map((item, i) => ({
-            session_template_id: id,
-            order_index: i,
-            activity_id: item.activity_id,
-            label: item.label,
-          }))
-          const { error: ne } = await supabase.from('session_template_nodes').insert(nodes)
+          const { error: ne } = await supabase.from('session_template_nodes').insert(buildNodes(id))
           if (ne) throw ne
         }
         return id
@@ -182,15 +208,31 @@ export default function SessionBuilder() {
     onError: (e) => setError(e.message),
   })
 
+  // Build the grouped picker: activities table items + uploaded questionnaires
+  // merged under the questionnaire category with an "uploaded" badge.
   const grouped = CATEGORY_ORDER.reduce((acc, cat) => {
-    const items = activities.filter(a => a.category === cat)
-    if (items.length) acc[cat] = items
+    const actItems = activities.filter(a => a.category === cat)
+    if (cat === 'questionnaire') {
+      const uploadedItems = uploadedQuestionnaires.map(q => ({
+        _source: 'uploaded',
+        id:      q.id,
+        label:   q.name,
+        slug:    q.slug,
+        category: 'questionnaire',
+        estimated_minutes: null,
+      }))
+      const combined = [...actItems, ...uploadedItems]
+      if (combined.length) acc[cat] = combined
+    } else if (actItems.length) {
+      acc[cat] = actItems
+    }
     return acc
   }, {})
   const uncategorized = activities.filter(a => !CATEGORY_ORDER.includes(a.category))
   if (uncategorized.length) grouped['other'] = uncategorized
 
   const totalMinutes = sequence.reduce((sum, i) => sum + (i.estimated_minutes ?? 0), 0)
+  const empty = activities.length === 0 && uploadedQuestionnaires.length === 0
 
   if (!isNew && isLoading) return <p style={S.muted}>Loading…</p>
 
@@ -233,12 +275,20 @@ export default function SessionBuilder() {
         {/* Activity picker */}
         <div style={S.panel}>
           <p style={S.panelTitle}>Activities</p>
+          {empty && <p style={S.muted}>No activities in the database yet.</p>}
           {Object.entries(grouped).map(([cat, items]) => (
             <div key={cat} style={{ marginBottom: 16 }}>
               <p style={S.catLabel}>{CATEGORY_LABELS[cat] ?? cat}</p>
               {items.map(act => (
-                <button key={act.id} style={S.actBtn} onClick={() => addActivity(act)}>
+                <button
+                  key={`${act._source ?? 'act'}-${act.id}`}
+                  style={S.actBtn}
+                  onClick={() => addItem(act)}
+                >
                   <span style={S.actLabel}>{act.label}</span>
+                  {act._source === 'uploaded' && (
+                    <span style={S.uploadedTag}>uploaded</span>
+                  )}
                   {act.estimated_minutes ? (
                     <span style={S.actMin}>{act.estimated_minutes}m</span>
                   ) : null}
@@ -247,9 +297,6 @@ export default function SessionBuilder() {
               ))}
             </div>
           ))}
-          {activities.length === 0 && (
-            <p style={S.muted}>No activities in the database yet.</p>
-          )}
         </div>
 
         {/* Sequence */}
@@ -279,30 +326,31 @@ export default function SessionBuilder() {
 }
 
 const S = {
-  header: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 24, flexWrap: 'wrap' },
-  h1: { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 26, fontWeight: 400, color: 'var(--tx)', margin: '0 0 4px' },
-  sub: { fontSize: 14, color: 'var(--tx2)', margin: 0 },
-  muted: { fontSize: 14, color: 'var(--tx3)', margin: '8px 0' },
-  errMsg: { fontSize: 13, color: '#e04', background: '#fff0f0', border: '1px solid #fcc', borderRadius: 8, padding: '8px 14px', marginBottom: 16 },
-  fields: { background: '#fff', border: '1px solid var(--bd)', borderRadius: 10, padding: '18px 20px', marginBottom: 20 },
-  fieldLabel: { display: 'block', fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 },
-  input: { width: '100%', fontSize: 14, fontFamily: '"DM Sans",system-ui,sans-serif', border: '1px solid var(--bd)', borderRadius: 8, padding: '8px 12px', color: 'var(--tx)', background: '#fff', boxSizing: 'border-box' },
-  columns: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 },
-  panel: { background: '#fff', border: '1px solid var(--bd)', borderRadius: 10, padding: '18px 16px', minHeight: 200 },
-  panelTitle: { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 14px' },
-  catLabel: { fontFamily: '"Space Mono",monospace', fontSize: 10, color: 'var(--pk)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 6px' },
-  actBtn: { display: 'flex', alignItems: 'center', gap: 8, width: '100%', background: 'none', border: '1px solid var(--bd)', borderRadius: 8, padding: '7px 10px', cursor: 'pointer', marginBottom: 5, textAlign: 'left' },
-  actLabel: { flex: 1, fontSize: 13, color: 'var(--tx)', fontFamily: '"DM Sans",system-ui,sans-serif' },
-  actMin: { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)' },
-  actAdd: { fontSize: 16, color: 'var(--pk)', fontWeight: 700, lineHeight: 1 },
-  seqItem: { display: 'flex', alignItems: 'center', gap: 8, background: 'var(--pkb)', border: '1px solid var(--bd)', borderRadius: 8, padding: '7px 10px', marginBottom: 6, cursor: 'default' },
-  dragHandle: { fontSize: 16, color: 'var(--tx3)', cursor: 'grab', userSelect: 'none', flexShrink: 0 },
-  seqLabel: { fontSize: 13, color: 'var(--tx)', fontFamily: '"DM Sans",system-ui,sans-serif', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
-  seqCat: { fontSize: 11, color: 'var(--tx3)', fontFamily: '"Space Mono",monospace', display: 'block' },
-  seqMin: { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', flexShrink: 0 },
-  removeBtn: { background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--tx3)', padding: '0 2px', lineHeight: 1, flexShrink: 0 },
-  totalRow: { display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--bd)', marginTop: 12, paddingTop: 10 },
-  totalLabel: { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' },
-  totalVal: { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx)', fontWeight: 700 },
-  btnPrimary: { display: 'inline-block', background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 18px', fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
+  header:       { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 24, flexWrap: 'wrap' },
+  h1:           { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 26, fontWeight: 400, color: 'var(--tx)', margin: '0 0 4px' },
+  sub:          { fontSize: 14, color: 'var(--tx2)', margin: 0 },
+  muted:        { fontSize: 14, color: 'var(--tx3)', margin: '8px 0' },
+  errMsg:       { fontSize: 13, color: '#e04', background: '#fff0f0', border: '1px solid #fcc', borderRadius: 8, padding: '8px 14px', marginBottom: 16 },
+  fields:       { background: '#fff', border: '1px solid var(--bd)', borderRadius: 10, padding: '18px 20px', marginBottom: 20 },
+  fieldLabel:   { display: 'block', fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 },
+  input:        { width: '100%', fontSize: 14, fontFamily: '"DM Sans",system-ui,sans-serif', border: '1px solid var(--bd)', borderRadius: 8, padding: '8px 12px', color: 'var(--tx)', background: '#fff', boxSizing: 'border-box' },
+  columns:      { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 },
+  panel:        { background: '#fff', border: '1px solid var(--bd)', borderRadius: 10, padding: '18px 16px', minHeight: 200 },
+  panelTitle:   { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 14px' },
+  catLabel:     { fontFamily: '"Space Mono",monospace', fontSize: 10, color: 'var(--pk)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 6px' },
+  actBtn:       { display: 'flex', alignItems: 'center', gap: 8, width: '100%', background: 'none', border: '1px solid var(--bd)', borderRadius: 8, padding: '7px 10px', cursor: 'pointer', marginBottom: 5, textAlign: 'left' },
+  actLabel:     { flex: 1, fontSize: 13, color: 'var(--tx)', fontFamily: '"DM Sans",system-ui,sans-serif' },
+  uploadedTag:  { fontSize: 10, color: 'var(--tx3)', fontFamily: '"Space Mono",monospace', border: '1px solid var(--bd)', borderRadius: 4, padding: '1px 5px', flexShrink: 0 },
+  actMin:       { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)' },
+  actAdd:       { fontSize: 16, color: 'var(--pk)', fontWeight: 700, lineHeight: 1 },
+  seqItem:      { display: 'flex', alignItems: 'center', gap: 8, background: 'var(--pkb)', border: '1px solid var(--bd)', borderRadius: 8, padding: '7px 10px', marginBottom: 6, cursor: 'default' },
+  dragHandle:   { fontSize: 16, color: 'var(--tx3)', cursor: 'grab', userSelect: 'none', flexShrink: 0 },
+  seqLabel:     { fontSize: 13, color: 'var(--tx)', fontFamily: '"DM Sans",system-ui,sans-serif', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+  seqCat:       { fontSize: 11, color: 'var(--tx3)', fontFamily: '"Space Mono",monospace', display: 'block' },
+  seqMin:       { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', flexShrink: 0 },
+  removeBtn:    { background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--tx3)', padding: '0 2px', lineHeight: 1, flexShrink: 0 },
+  totalRow:     { display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--bd)', marginTop: 12, paddingTop: 10 },
+  totalLabel:   { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' },
+  totalVal:     { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx)', fontWeight: 700 },
+  btnPrimary:   { display: 'inline-block', background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 18px', fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
 }
