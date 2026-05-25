@@ -14,7 +14,7 @@ function useStudy(id) {
         .from('studies')
         .select(`
           id, name, created_at, messaging_required,
-          consent_required, active_consent_form_id,
+          consent_required, active_consent_form_id, active_debrief_form_id,
           study_protocol_assignments(
             study_protocols(id, label, protocol_type)
           )
@@ -35,6 +35,22 @@ function useConsentForm(formId) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('study_consent_forms')
+        .select('id, uploaded_at, docx_url, html_content')
+        .eq('id', formId)
+        .single()
+      if (error) throw error
+      return data
+    },
+  })
+}
+
+function useDebriefForm(formId) {
+  return useQuery({
+    queryKey: ['debrief-form', formId],
+    enabled: !!formId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('study_debrief_forms')
         .select('id, uploaded_at, docx_url, html_content')
         .eq('id', formId)
         .single()
@@ -323,6 +339,7 @@ export default function StudyDetail() {
           )}
 
           <ConsentFormSection study={study} qc={qc} />
+          <DebriefFormSection study={study} qc={qc} />
         </div>
       )}
     </div>
@@ -446,6 +463,119 @@ function ConsentFormSection({ study, qc }) {
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
               <h3 style={S.dialogTitle}>Consent Form Preview</h3>
+              <button style={S.actionBtn} onClick={() => setPreviewOpen(false)}>Close ✕</button>
+            </div>
+            <div
+              className="consent-body"
+              style={{ fontSize: 14, lineHeight: 1.7, color: 'var(--tx)' }}
+              dangerouslySetInnerHTML={{ __html: form.html_content }}
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Debrief form section ─────────────────────────────────────────────────────
+
+function DebriefFormSection({ study, qc }) {
+  const fileRef = useRef(null)
+  const [uploading, setUploading]     = useState(false)
+  const [uploadError, setUploadError] = useState(null)
+  const [previewOpen, setPreviewOpen] = useState(false)
+
+  const { data: form } = useDebriefForm(study?.active_debrief_form_id)
+
+  async function handleFileChange(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadError(null)
+    setUploading(true)
+    try {
+      const arrayBuffer = await file.arrayBuffer()
+      const { convertToHtml } = await import('mammoth')
+      const { value: html } = await convertToHtml({ arrayBuffer })
+
+      const path = `${study.id}/${Date.now()}_${file.name}`
+      const { error: se } = await supabase.storage
+        .from('debrief-forms')
+        .upload(path, file, { contentType: file.type })
+      if (se) throw se
+
+      const { data: { user } } = await supabase.auth.getUser()
+      const { data: formRecord, error: ie } = await supabase
+        .from('study_debrief_forms')
+        .insert({ study_id: study.id, docx_url: path, html_content: html, uploaded_by: user.id })
+        .select('id')
+        .single()
+      if (ie) throw ie
+
+      const { error: ue } = await supabase
+        .from('studies')
+        .update({ active_debrief_form_id: formRecord.id })
+        .eq('id', study.id)
+      if (ue) throw ue
+
+      qc.invalidateQueries({ queryKey: ['study-detail', study.id] })
+      qc.invalidateQueries({ queryKey: ['debrief-form', formRecord.id] })
+    } catch (err) {
+      setUploadError(err.message)
+    } finally {
+      setUploading(false)
+      e.target.value = ''
+    }
+  }
+
+  return (
+    <div style={{ marginTop: 40 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+        <h2 style={S.sectionTitle}>Debrief Form</h2>
+      </div>
+
+      {form ? (
+        <div style={S.formCard}>
+          <p style={{ fontSize: 13, color: 'var(--tx2)', margin: 0 }}>
+            Active form — uploaded {fmtDate(form.uploaded_at)}
+          </p>
+          <div style={{ display: 'flex', gap: 10, marginTop: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+            <button style={S.actionBtn} onClick={() => setPreviewOpen(true)}>Preview</button>
+            <input ref={fileRef} type="file" accept=".docx" style={{ display: 'none' }} onChange={handleFileChange} />
+            <button
+              style={{ ...S.btnPrimary, fontSize: 13, padding: '7px 14px', opacity: uploading ? 0.7 : 1 }}
+              onClick={() => fileRef.current?.click()}
+              disabled={uploading}
+            >
+              {uploading ? 'Uploading…' : 'Replace form'}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div style={{ padding: '4px 0' }}>
+          <p style={{ fontSize: 14, color: 'var(--tx2)', margin: '0 0 12px' }}>
+            No debrief form attached. Upload a .docx file to add one.
+          </p>
+          <input ref={fileRef} type="file" accept=".docx" style={{ display: 'none' }} onChange={handleFileChange} />
+          <button
+            style={{ ...S.btnPrimary, opacity: uploading ? 0.7 : 1 }}
+            onClick={() => fileRef.current?.click()}
+            disabled={uploading}
+          >
+            {uploading ? 'Uploading…' : 'Upload debrief form (.docx)'}
+          </button>
+        </div>
+      )}
+
+      {uploadError && <p style={{ ...S.errMsg, marginTop: 10 }}>{uploadError}</p>}
+
+      {previewOpen && form && (
+        <div style={S.overlay} onClick={() => setPreviewOpen(false)}>
+          <div
+            style={{ ...S.dialog, maxWidth: 700, maxHeight: '80vh', overflowY: 'auto' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <h3 style={S.dialogTitle}>Debrief Form Preview</h3>
               <button style={S.actionBtn} onClick={() => setPreviewOpen(false)}>Close ✕</button>
             </div>
             <div
