@@ -51,6 +51,7 @@ import QuestionnaireUpload  from './pages/admin/QuestionnaireUpload'
 import QuestionnairePreview from './pages/admin/QuestionnairePreview'
 import Unsubscribe   from './pages/Unsubscribe'
 import ConsentPage   from './pages/ConsentPage'
+import VideoTest     from './pages/dev/VideoTest'
 
 const queryClient = new QueryClient()
 
@@ -234,6 +235,9 @@ export default function App() {
 
           {/* Standalone participant link — no nav or auth guard */}
           <Route path="/s/:token" element={<SessionEntry />} />
+
+          {/* Dev-only test harness — component guards with import.meta.env.DEV */}
+          <Route path="/dev/video-test" element={<VideoTest />} />
 
           {/* Unsubscribe — no auth or layout */}
           <Route path="/unsubscribe/:token" element={<Unsubscribe />} />

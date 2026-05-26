@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "allowJs": true,
+    "esModuleInterop": true
+  },
+  "include": [
+    "src/vite-env.d.ts",
+    "src/lib/video.ts",
+    "src/components/video/StudyVideoPlayer.tsx",
+    "src/pages/dev/VideoTest.tsx"
+  ]
+}
