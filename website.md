@@ -1464,7 +1464,7 @@ Specced. Three background components built (FarmField, Greenhouse, FarmRow) and 
 
 Breath Belt is a lab-only psychophysics study measuring how well participants can detect changes in their own breathing pace. It uses a Polar H10 chest belt (via Web Bluetooth) to record respiratory acceleration data, and a COM port trigger box to send synchronisation signals to the physio equipment. The study runs in Chrome/Edge only (Web Bluetooth requirement).
 
-Access is gated internally by the component: only users with `profiles.role === 'lab'` can proceed past the browser check. All other users (including `admin`) see an "Access restricted" screen.
+Access is gated internally by the component: only users with `profiles.role` of `'lab'` or `'admin'` can proceed past the browser check. All other users see an "Access restricted" screen.
 
 Route: `/games/breath-belt`
 
