@@ -10,10 +10,6 @@ const STUDY_VIDEO = {
 }
 
 export default function VideoTest() {
-  if (!import.meta.env.DEV) {
-    return <p style={{ padding: '2rem', fontFamily: 'sans-serif' }}>Not found</p>
-  }
-
   return (
     <div style={{ maxWidth: 960, margin: '2rem auto', padding: '0 1rem', fontFamily: 'DM Sans, sans-serif' }}>
       <h2 style={{ marginBottom: '1rem', fontSize: '1.1rem', fontWeight: 600 }}>
