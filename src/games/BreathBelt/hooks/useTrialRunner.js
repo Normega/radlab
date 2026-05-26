@@ -1,11 +1,10 @@
 import { useRef } from 'react';
 import { useBreathCycle } from '../../EbbAndFlow/useBreathCycle';
-import { estimateBreathPeriodMs, meanOf } from '../breathUtils';
+import { estimateBreathPeriodMs, meanOf, getPacerRadiusForTrial } from '../breathUtils';
 import { BASE_BREATH_SPEED_S, BASELINE_BREATHS_COUNT, CONDITION_BREATHS_COUNT } from '../constants';
 
 const BASE_MS   = BASE_BREATH_SPEED_S * 1000;
 const SAMPLE_MS = 40; // ~25 Hz
-const READY_DELAY_MS = 1000;
 
 // ── COM trigger vocabulary (trial-level) ──────────────────────────────────
 // 10  trial start       — baseline breaths begin
@@ -16,7 +15,7 @@ const READY_DELAY_MS = 1000;
 // Reusing 10/11/12 across Phase 2 and Phase 3 is intentional — the preceding
 // phase code (4 or 6) establishes context in the lab belt signal.
 
-export function useTrialRunner({ breathValueRef, sendTrigger, currentPhaseRef, currentTrialRef }) {
+export function useTrialRunner({ breathValueRef, sendTrigger, currentPhaseRef, currentTrialRef, getPacerRadiusFnRef }) {
   const { getPhase, startBreath, reset } = useBreathCycle();
   const controlRef = useRef(null);
 
@@ -30,8 +29,9 @@ export function useTrialRunner({ breathValueRef, sendTrigger, currentPhaseRef, c
     else                        conditionSamplesRef.current = [];
     intervalRef.current = setInterval(() => {
       const v = breathValueRef.current ?? 0;
-      if (target === 'baseline')  baselineSamplesRef.current.push(v);
-      else                        conditionSamplesRef.current.push(v);
+      const sample = { t: Date.now(), value: v };
+      if (target === 'baseline')  baselineSamplesRef.current.push(sample);
+      else                        conditionSamplesRef.current.push(sample);
     }, SAMPLE_MS);
   }
 
@@ -43,11 +43,15 @@ export function useTrialRunner({ breathValueRef, sendTrigger, currentPhaseRef, c
     currentPhaseRef.current = phaseLabel;
     currentTrialRef.current = trialIdx;
 
-    controlRef.current?.resetToNeutral?.();
-    await new Promise(r => setTimeout(r, READY_DELAY_MS));
+    await new Promise(r => setTimeout(r, 500));  // brief fixation hold
 
     // Code 10 — trial start, baseline breaths begin
     await sendTrigger('10');
+
+    const trialStartMs = Date.now();
+    if (getPacerRadiusFnRef) {
+      getPacerRadiusFnRef.current = (t) => getPacerRadiusForTrial(t, trialStartMs, BASE_MS, conditionMs);
+    }
 
     reset();
     controlRef.current?.resumeAnimation?.();
@@ -68,14 +72,18 @@ export function useTrialRunner({ breathValueRef, sendTrigger, currentPhaseRef, c
 
     // Code 12 — trial end
     await sendTrigger('12');
+    controlRef.current?.resetToNeutral?.();   // freeze at neutral for next READY state
+    if (getPacerRadiusFnRef) {
+      getPacerRadiusFnRef.current = () => NaN;
+    }
 
     currentPhaseRef.current = 'inter_trial';
     currentTrialRef.current = -1;
 
     return {
-      beltSyncMean:        meanOf(conditionSamplesRef.current),
-      btBaselinePeriodMs:  estimateBreathPeriodMs(baselineSamplesRef.current,  SAMPLE_MS),
-      btConditionPeriodMs: estimateBreathPeriodMs(conditionSamplesRef.current, SAMPLE_MS),
+      beltSyncMean:        meanOf(conditionSamplesRef.current.map(s => s.value)),
+      btBaselinePeriodMs:  estimateBreathPeriodMs(baselineSamplesRef.current),
+      btConditionPeriodMs: estimateBreathPeriodMs(conditionSamplesRef.current),
     };
   }
 

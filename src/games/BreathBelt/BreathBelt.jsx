@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
@@ -10,7 +10,9 @@ import BaselineScreen from './components/BaselineScreen';
 import FixedTrialsScreen from './components/FixedTrialsScreen';
 import StaircaseScreen from './components/StaircaseScreen';
 import SessionComplete from './components/SessionComplete';
-import { BASELINE_DURATION_MS, POST_BASELINE_DURATION_MS } from './constants';
+import { BASELINE_DURATION_MS, POST_BASELINE_DURATION_MS, BASE_BREATH_SPEED_S } from './constants';
+import SynchronyBar from './components/SynchronyBar';
+import { useStreamingBackup } from './hooks/useStreamingBackup';
 
 // ── COM trigger vocabulary ─────────────────────────────────────────────────
 // All codes 0–12, within 2^32 constraint.
@@ -91,6 +93,16 @@ export default function BreathBelt() {
 
   const belt    = useBeltConnection();
   const session = useBeltSession(profile?.id);
+  const backup  = useStreamingBackup();
+  const basePeriodMs = BASE_BREATH_SPEED_S * 1000;
+
+  const recordTrialWithBackup = useCallback(async (trialRow) => {
+    session.recordTrial(trialRow);
+    await backup.flushAccel(belt.pendingAccelRef.current);
+    await backup.flushHR(belt.pendingHRRef.current);
+    belt.pendingAccelRef.current = [];
+    belt.pendingHRRef.current = [];
+  }, [session, backup, belt.pendingAccelRef, belt.pendingHRRef]);
 
   // ── FSM transitions ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -217,7 +229,7 @@ export default function BreathBelt() {
               Increment for each visit by the same participant.
             </p>
           </div>
-          <Btn onClick={() => setPhase(S.CALIB_READY)}>Continue to calibration</Btn>
+          <Btn onClick={async () => { await backup.initBackup(profile?.id); setPhase(S.CALIB_READY); }}>Continue to calibration</Btn>
         </Screen>
       </Layout>
     );
@@ -230,12 +242,13 @@ export default function BreathBelt() {
       <Layout title="Calibration">
         <CalibrationScreen
           calibPhase={belt.calibPhase}
+          calibReviewData={belt.calibReviewData}
           avatarProps={avatarProps}
-          breathValueRef={belt.breathValueRef}
+          breathPeriodMs={basePeriodMs}
           startCalibration={() => { belt.startCalibration(); setPhase(S.CALIBRATING); }}
-          redoPhase2={belt.redoPhase2}
-          resetCalibration={() => { belt.resetCalibration(); setPhase(S.CALIB_READY); }}
+          beginCalibCollection={belt.beginCalibCollection}
           acceptCalibration={belt.acceptCalibration}
+          redoCalibration={belt.redoCalibration}
         />
       </Layout>
     );
@@ -296,20 +309,24 @@ export default function BreathBelt() {
 
   if (phase === S.PHASE2_RUNNING) {
     return (
-      <Layout title="Phase 2 — Fixed trials">
-        <FixedTrialsScreen
-          avatarProps={avatarProps}
-          breathValueRef={belt.breathValueRef}
-          sendTrigger={belt.sendTrigger}
-          currentPhaseRef={belt.currentPhaseRef}
-          currentTrialRef={belt.currentTrialRef}
-          recordTrial={session.recordTrial}
-          onComplete={async () => {
-            await belt.sendTrigger('5');  // code 5 — phase 2 end
-            setPhase(S.PHASE2_COMPLETE);
-          }}
-        />
-      </Layout>
+      <>
+        <Layout title="Phase 2 — Fixed trials">
+          <FixedTrialsScreen
+            avatarProps={avatarProps}
+            breathValueRef={belt.breathValueRef}
+            sendTrigger={belt.sendTrigger}
+            currentPhaseRef={belt.currentPhaseRef}
+            currentTrialRef={belt.currentTrialRef}
+            getPacerRadiusFnRef={belt.getPacerRadiusFnRef}
+            recordTrial={recordTrialWithBackup}
+            onComplete={async () => {
+              await belt.sendTrigger('5');  // code 5 — phase 2 end
+              setPhase(S.PHASE2_COMPLETE);
+            }}
+          />
+        </Layout>
+        <SynchronyBar quality={belt.syncQuality} visible />
+      </>
     );
   }
 
@@ -348,23 +365,27 @@ export default function BreathBelt() {
 
   if (phase === S.PHASE3_RUNNING) {
     return (
-      <Layout title="Phase 3 — Detection thresholds">
-        <StaircaseScreen
-          avatarProps={avatarProps}
-          breathValueRef={belt.breathValueRef}
-          sendTrigger={belt.sendTrigger}
-          currentPhaseRef={belt.currentPhaseRef}
-          currentTrialRef={belt.currentTrialRef}
-          recordTrial={session.recordTrial}
-          savedQuestState={null}
-          onComplete={async (trials, questState, convergence) => {
-            await belt.sendTrigger('7');  // code 7 — phase 3 end
-            convergenceRef.current     = convergence;
-            pendingQuestStateRef.current = questState;
-            setPhase(S.POST_BASELINE_READY);
-          }}
-        />
-      </Layout>
+      <>
+        <Layout title="Phase 3 — Detection thresholds">
+          <StaircaseScreen
+            avatarProps={avatarProps}
+            breathValueRef={belt.breathValueRef}
+            sendTrigger={belt.sendTrigger}
+            currentPhaseRef={belt.currentPhaseRef}
+            currentTrialRef={belt.currentTrialRef}
+            getPacerRadiusFnRef={belt.getPacerRadiusFnRef}
+            recordTrial={recordTrialWithBackup}
+            savedQuestState={null}
+            onComplete={async (trials, questState, convergence) => {
+              await belt.sendTrigger('7');  // code 7 — phase 3 end
+              convergenceRef.current     = convergence;
+              pendingQuestStateRef.current = questState;
+              setPhase(S.POST_BASELINE_READY);
+            }}
+          />
+        </Layout>
+        <SynchronyBar quality={belt.syncQuality} visible />
+      </>
     );
   }
 
@@ -389,13 +410,16 @@ export default function BreathBelt() {
           onComplete={async (periodMs) => {
             postBaselinePeriodRef.current = periodMs;
             await session.endSession({
-              calibState:           belt.calibStateRef.current,
+              calibState:           belt.mlrWeightsRef.current,
               questState:           pendingQuestStateRef.current,
               rawAccelRows:         belt.rawAccelRowsRef.current,
               rawHRRows:            belt.rawHRRowsRef.current,
               sessionNumber,
               baselinePeriodMs:     preBaselinePeriodRef.current,
               postBaselinePeriodMs: periodMs,
+              calibModelLabel:      belt.mlrWeightsRef.current?.modelLabel,
+              calibFitR:            belt.mlrWeightsRef.current?.fitR,
+              calibLagMs:           belt.mlrWeightsRef.current?.lagMs,
             });
             await belt.sendTrigger('0');  // code 0 — session end
             belt.stopNotifications();

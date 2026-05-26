@@ -16,6 +16,7 @@ export default function StaircaseScreen({
   sendTrigger,
   currentPhaseRef,
   currentTrialRef,
+  getPacerRadiusFnRef,
   recordTrial,
   savedQuestState,
   onComplete,
@@ -31,7 +32,7 @@ export default function StaircaseScreen({
 
   const quest = useBeltQuestStaircases(savedQuestState);
   const { getPhase, runTrial, controlRef } = useTrialRunner({
-    breathValueRef, sendTrigger, currentPhaseRef, currentTrialRef,
+    breathValueRef, sendTrigger, currentPhaseRef, currentTrialRef, getPacerRadiusFnRef,
   });
 
   const startTrial = useCallback(async () => {

@@ -1,356 +1,382 @@
-import { useRef, useState, useCallback, useEffect } from 'react';
+import { useRef, useState, useCallback, useEffect } from 'react'
 import {
-  BASE_BREATH_SPEED_S, CALIB_CYCLES,
+  fitBestModel, processPacketMLR, initFilterState3,
+  rollingPearsonR, computeMLRPredictions,
+  getPacerRadius, medianPeakTimingError,
+} from '../breathUtils'
+import {
   PMD_SERVICE, PMD_CONTROL, PMD_DATA, HR_SERVICE, HR_MEASUREMENT,
-} from '../constants';
+} from '../constants'
 
-const BREATH_PERIOD_MS = BASE_BREATH_SPEED_S * 1000;
+// ── COM trigger vocabulary ─────────────────────────────────────────────────
+// (unchanged — 0–12 range)
 
-// ── Signal processing (ported from breathbelt-main/functions.ts) ──────────
+const LIVE_PRED_WINDOW = 60   // keep last N predictions for rolling Pearson R
 
-function processAccDataView(e) {
-  const dv = e.target?.value;
-  if (!dv) return [];
-  const step = Math.ceil(((dv.getInt8(9) + 1) * 8) / 8);
-  const out = [];
-  let offset = 10;
-  while (offset + 3 * step <= dv.byteLength) {
-    out.push([
-      dv.getInt16(offset,          true) / 100,
-      dv.getInt16(offset + step,   true) / 100,
-      dv.getInt16(offset + 2*step, true) / 100,
-    ]);
-    offset += 3 * step;
-  }
-  return out;
-}
-
-function axisAvg(samples, axis) {
-  return samples.reduce((s, r) => s + r[axis], 0) / samples.length;
-}
-
-function timeSeries(buf, axis) {
-  return buf.map(({ timestamp, samples }) => ({ timestamp, v: axisAvg(samples, axis) }));
-}
-
-function selectAxis(buf) {
-  let best = 0, bestRange = 0;
-  for (const a of [0, 1, 2]) {
-    const vs = timeSeries(buf, a).map(s => s.v);
-    const r  = Math.max(...vs) - Math.min(...vs);
-    if (r > bestRange) { bestRange = r; best = a; }
-  }
-  return best;
-}
-
-function detectPolarity(buf, axis, t0, periodMs) {
-  const s = timeSeries(buf, axis).filter(s => s.timestamp - t0 < periodMs / 2);
-  if (s.length < 4) return 1;
-  const n  = Math.max(1, Math.floor(s.length / 3));
-  const fa = s.slice(0, n).reduce((a, x) => a + x.v, 0) / n;
-  const la = s.slice(-n).reduce((a, x) => a + x.v, 0) / n;
-  return la >= fa ? 1 : -1;
-}
-
-function sortedMedian(sorted) {
-  const m = Math.floor(sorted.length / 2);
-  return sorted.length % 2 === 0 ? (sorted[m-1] + sorted[m]) / 2 : sorted[m];
-}
-
-function computeBaseline(buf, axis, t0, windowMs = 500) {
-  const vs = timeSeries(buf, axis)
-    .filter(s => s.timestamp - t0 < windowMs)
-    .map(s => s.v)
-    .sort((a, b) => a - b);
-  return vs.length ? sortedMedian(vs) : 0;
-}
-
-function normBounds(buf, axis, polarity, baseline) {
-  const vs = timeSeries(buf, axis)
-    .map(s => polarity * (s.v - baseline))
-    .sort((a, b) => a - b);
-  if (vs.length < 10) return { normFloor: 0, normCeiling: 1 };
-  return {
-    normFloor:   vs[Math.floor(vs.length * 0.1)],
-    normCeiling: vs[Math.floor(vs.length * 0.9)],
-  };
-}
-
-function runCalibration(buf, t0, periodMs) {
-  if (buf.length < 10) return null;
-  const selectedAxis = selectAxis(buf);
-  const polarity     = detectPolarity(buf, selectedAxis, t0, periodMs);
-  const baseline     = computeBaseline(buf, selectedAxis, t0);
-  const { normFloor, normCeiling } = normBounds(buf, selectedAxis, polarity, baseline);
-  if (normCeiling - normFloor < 0.005) return null;
-  return { selectedAxis, polarity, baseline, normFloor, normCeiling };
-}
-
-function computeBreathValue(samples, calib) {
-  const avg   = axisAvg(samples, calib.selectedAxis);
-  const sig   = calib.polarity * (avg - calib.baseline);
-  const range = calib.normCeiling - calib.normFloor;
-  if (range <= 0) return 0;
-  return Math.min(1, Math.max(0, (sig - calib.normFloor) / range));
-}
-
-function updateCalibSmoothed(calib, buf, alpha = 0.08) {
-  const { normFloor: nf, normCeiling: nc } =
-    normBounds(buf, calib.selectedAxis, calib.polarity, calib.baseline);
-  return {
-    ...calib,
-    normFloor:   calib.normFloor   + alpha * (nf - calib.normFloor),
-    normCeiling: calib.normCeiling + alpha * (nc - calib.normCeiling),
-  };
-}
-
-// ── Hook ──────────────────────────────────────────────────────────────────
+// ── useBeltConnection ──────────────────────────────────────────────────────
 //
-// calibPhase: 'NONE' | 'PHASE_1' | 'PHASE_2' | 'REVIEW' | 'COMPLETE' | 'FAILED'
-//   NONE      → PHASE_1  via startCalibration()
-//   PHASE_1   → PHASE_2  automatically after CALIB_CYCLES * BREATH_PERIOD_MS
-//   PHASE_1   → FAILED   if runCalibration() returns null
-//   PHASE_2   → REVIEW   automatically after CALIB_CYCLES * BREATH_PERIOD_MS
-//   REVIEW    → PHASE_2  via redoPhase2()
-//   REVIEW    → COMPLETE via acceptCalibration()
-//   any       → NONE     via resetCalibration()
+// Manages BT connection, COM port, and the full MLR calibration pipeline.
+//
+// calibPhase transitions:
+//   NONE    → FIXATION     via startCalibration()
+//   FIXATION → BREATHE     via beginCalibCollection(calibStartMs, breathPeriodMs)
+//                           called by CalibrationScreen when avatar animation begins
+//   BREATHE → FITTING      automatically after CALIB_CYCLES * breathPeriodMs
+//   FITTING → REVIEW       automatically after fitBestModel() completes
+//   FITTING → FAILED       if fitBestModel() returns null or fitR < 0.4
+//   REVIEW  → COMPLETE     via acceptCalibration()
+//   REVIEW  → FIXATION     via redoCalibration()
+//   any     → NONE         via resetCalibration()
+//
+// breathValueRef: 0–1 live belt signal from causal MLR processing
+// syncQuality:    rolling Pearson R (React state, for SynchronyBar)
+// calibReviewData: { pacerPts, beltPts, fitR, peakErrorMs, modelLabel, lagMs } after FITTING
 
 export function useBeltConnection() {
-  const [btState,    setBtState]    = useState('IDLE');   // IDLE|CONNECTING|CONNECTED|ERROR
-  const [comState,   setComState]   = useState('IDLE');   // IDLE|CONNECTING|CONNECTED|ERROR
-  const [calibPhase, setCalibPhase] = useState('NONE');
+  const [btState,    setBtState]    = useState('IDLE')   // IDLE|CONNECTING|CONNECTED|ERROR
+  const [comState,   setComState]   = useState('IDLE')
+  const [calibPhase, setCalibPhase] = useState('NONE')   // NONE|FIXATION|BREATHE|FITTING|REVIEW|COMPLETE|FAILED
+  const [syncQuality, setSyncQuality] = useState(0)      // rolling Pearson R for SynchronyBar
+  const [calibReviewData, setCalibReviewData] = useState(null)
 
-  // Hardware
-  const readAccCharRef          = useRef(null);
-  const heartRateCharRef        = useRef(null);
-  const serialPortWriterRef     = useRef(null);
-  const serialPortRef           = useRef(null);
-  const writableStreamClosedRef = useRef(null);
+  // ── Hardware refs ─────────────────────────────────────────────────────────
+  const readAccCharRef          = useRef(null)
+  const heartRateCharRef        = useRef(null)
+  const serialPortWriterRef     = useRef(null)
+  const serialPortRef           = useRef(null)
+  const writableStreamClosedRef = useRef(null)
 
-  // Calibration
-  const calibBufRef    = useRef([]);
-  const calibT0Ref     = useRef(0);
-  const calibStateRef  = useRef(null);
+  // ── Calibration refs ──────────────────────────────────────────────────────
+  const calibSamplesRef    = useRef([])     // { t, x, y, z } — collected during BREATHE
+  const calibStartMsRef    = useRef(0)
+  const calibPeriodMsRef   = useRef(0)
+  const mlrWeightsRef      = useRef(null)   // { bias, weights, modelLabel, lagMs, fitR }
+  const filterState3Ref    = useRef(initFilterState3())
 
-  // Live 0–1 signal — written by BT handler, read by rAF in BeltSyncRing
-  const breathValueRef = useRef(0);
+  // ── Live signal refs ──────────────────────────────────────────────────────
+  const breathValueRef     = useRef(0)      // 0–1 causal MLR prediction
+  const livePredBufferRef  = useRef([])     // { t, value }[] for rollingPearsonR
+  const pacerStartMsRef    = useRef(0)      // current pacer start (for sync quality)
+  const pacerPeriodMsRef   = useRef(0)      // current pacer period
 
-  // Phase/trial labels for raw row tagging
-  const currentPhaseRef = useRef('idle');
-  const currentTrialRef = useRef(-1);
+  // ── Phase/trial labelling ─────────────────────────────────────────────────
+  const currentPhaseRef    = useRef('idle')
+  const currentTrialRef    = useRef(-1)
 
-  // Raw accumulation
-  const rawAccelRowsRef = useRef([]);
-  const rawHRRowsRef    = useRef([]);
+  // ── Raw data accumulation ─────────────────────────────────────────────────
+  const rawAccelRowsRef    = useRef([])
+  const rawHRRowsRef       = useRef([])
+  const pendingAccelRef    = useRef([])
+  const pendingHRRef       = useRef([])
 
-  // ── Accel packet handler factory ─────────────────────────────────────────
-  // Returns a new handler closure for each phase/trial label change.
-  // We use useCallback with stable deps so makeAccelHandler itself is stable.
+  // Fn ref for current pacer radius — set by trial screens, read by accel handler
+  // Returns NaN when no pacer is running
+  const getPacerRadiusFnRef = useRef(() => NaN)
+
+  // ── Calibration BREATHE timer ──────────────────────────────────────────────
+  // useEffect watches calibPhase === 'BREATHE'; fires after CALIB_CYCLES * period
+
+  useEffect(() => {
+    if (calibPhase !== 'BREATHE') return
+    const periodMs = calibPeriodMsRef.current
+    const cycles   = 4  // CALIB_CYCLES from constants
+    const t = setTimeout(async () => {
+      setCalibPhase('FITTING')
+
+      // Run fitBestModel — synchronous but can take ~50ms for large buffers
+      const result = fitBestModel(calibSamplesRef.current, calibStartMsRef.current, periodMs)
+
+      if (!result || result.fitR < 0.4) {
+        setCalibPhase('FAILED')
+        return
+      }
+
+      mlrWeightsRef.current       = result
+      filterState3Ref.current     = initFilterState3()  // reset live filter state
+
+      // Build review data (offline pass over calib samples)
+      const beltRaw = computeMLRPredictions(calibSamplesRef.current, result)
+      const s = calibSamplesRef.current
+      const pacerPts = s
+        .filter((_, i) => i % 5 === 0)
+        .map(samp => ({ t: samp.t, value: getPacerRadius(samp.t, calibStartMsRef.current, periodMs) }))
+      const beltPtsAll = s.map((samp, i) => ({ t: samp.t, value: beltRaw[i] }))
+      const beltPts    = beltPtsAll.filter((_, i) => i % 5 === 0)
+      const peakErrorMs = medianPeakTimingError(beltPtsAll, pacerPts, periodMs)
+
+      setCalibReviewData({
+        pacerPts,
+        beltPts,
+        fitR:        result.fitR,
+        peakErrorMs,
+        modelLabel:  result.modelLabel,
+        lagMs:       result.lagMs,
+      })
+      setCalibPhase('REVIEW')
+    }, cycles * periodMs)
+
+    return () => clearTimeout(t)
+  }, [calibPhase])
+
+  // ── Accel handler factory ──────────────────────────────────────────────────
+  // phase/trial captured in closure. Reads getPacerRadiusFnRef for pacer logging.
 
   const makeAccelHandler = useCallback((phase, trial) => (e) => {
-    const timestamp = Date.now();
-    const samples   = processAccDataView(e);
-    if (!samples.length) return;
+    const timestamp  = Date.now()
+    const dv         = e.target?.value
+    if (!dv) return
 
-    samples.forEach((s, idx) => {
-      rawAccelRowsRef.current.push({
+    // Parse packet
+    const step       = Math.ceil(((dv.getInt8(9) + 1) * 8) / 8)
+    const measurements = []
+    let offset = 10
+    while (offset + 3 * step <= dv.byteLength) {
+      measurements.push([
+        dv.getInt16(offset,          true) / 100,
+        dv.getInt16(offset + step,   true) / 100,
+        dv.getInt16(offset + 2*step, true) / 100,
+      ])
+      offset += 3 * step
+    }
+    if (!measurements.length) return
+
+    const pacerRadius = getPacerRadiusFnRef.current()
+
+    // Log raw rows
+    measurements.forEach((s, idx) => {
+      const row = {
         phase, trial,
         packetTimestamp: timestamp, sampleIndex: idx,
         x: s[0], y: s[1], z: s[2],
-      });
-    });
+        pacerRadius,
+      }
+      rawAccelRowsRef.current.push(row)
+      pendingAccelRef.current.push(row)
+    })
 
-    if (phase === 'calib_1' || phase === 'calib_2') {
-      calibBufRef.current.push({ timestamp, samples });
+    // Accumulate CalibSamples during BREATHE phase
+    if (phase === 'calib_breathe') {
+      measurements.forEach((s, idx) => {
+        calibSamplesRef.current.push({
+          t: timestamp + idx * 5,  // ~5ms between samples at 200Hz
+          x: s[0], y: s[1], z: s[2],
+        })
+      })
     }
 
-    if (calibStateRef.current) {
-      breathValueRef.current = computeBreathValue(samples, calibStateRef.current);
-      if (phase === 'calib_2') {
-        calibStateRef.current = updateCalibSmoothed(calibStateRef.current, calibBufRef.current);
+    // Live MLR processing — only after calibration is complete
+    if (mlrWeightsRef.current) {
+      const { prediction, state } = processPacketMLR(
+        measurements, filterState3Ref.current, mlrWeightsRef.current
+      )
+      filterState3Ref.current = state
+      breathValueRef.current  = Math.max(0, Math.min(1, prediction))
+
+      // Accumulate for rolling Pearson R
+      const pred = { t: timestamp, value: breathValueRef.current }
+      livePredBufferRef.current.push(pred)
+      if (livePredBufferRef.current.length > LIVE_PRED_WINDOW) {
+        livePredBufferRef.current.shift()
+      }
+
+      // Update sync quality (only when pacer is running)
+      if (pacerStartMsRef.current > 0 && pacerPeriodMsRef.current > 0) {
+        const r = rollingPearsonR(
+          livePredBufferRef.current,
+          pacerStartMsRef.current,
+          pacerPeriodMsRef.current,
+          mlrWeightsRef.current.lagMs,
+        )
+        setSyncQuality(r)
       }
     }
-  }, []);
+  }, [])
 
-  // HR handler is persistent — reads phase/trial from mutable refs (no stale closure)
+  // HR handler
   const hrHandlerRef = useRef((e) => {
-    const hr = e.target?.value?.getInt8(1) ?? -1;
-    rawHRRowsRef.current.push({
+    const hr = e.target?.value?.getInt8(1) ?? -1
+    const row = {
       phase:     currentPhaseRef.current,
       trial:     currentTrialRef.current,
       timestamp: Date.now(),
       heartRate: hr,
-    });
-  });
+    }
+    rawHRRowsRef.current.push(row)
+    pendingHRRef.current.push(row)
+  })
 
-  // ── Calibration phase timers ─────────────────────────────────────────────
-  // Mirror the pattern from breathbelt-main/App.tsx — separate useEffects per phase.
-
-  useEffect(() => {
-    if (calibPhase !== 'PHASE_1') return;
-    const t = setTimeout(() => {
-      const calib = runCalibration(calibBufRef.current, calibT0Ref.current, BREATH_PERIOD_MS);
-      if (!calib) {
-        setCalibPhase('FAILED');
-        return;
-      }
-      calibStateRef.current  = calib;
-      breathValueRef.current = 0;
-      currentPhaseRef.current = 'calib_2';
-      if (readAccCharRef.current) {
-        readAccCharRef.current.oncharacteristicvaluechanged = makeAccelHandler('calib_2', -1);
-      }
-      setCalibPhase('PHASE_2');
-    }, CALIB_CYCLES * BREATH_PERIOD_MS);
-    return () => clearTimeout(t);
-  }, [calibPhase, makeAccelHandler]);
-
-  useEffect(() => {
-    if (calibPhase !== 'PHASE_2') return;
-    const t = setTimeout(() => setCalibPhase('REVIEW'), CALIB_CYCLES * BREATH_PERIOD_MS);
-    return () => clearTimeout(t);
-  }, [calibPhase]);
-
-  // ── BT connect ───────────────────────────────────────────────────────────
+  // ── BT connect ────────────────────────────────────────────────────────────
 
   const connect = useCallback(async () => {
-    setBtState('CONNECTING');
+    setBtState('CONNECTING')
     try {
       const device = await navigator.bluetooth.requestDevice({
         filters: [{ services: [HR_SERVICE] }],
         optionalServices: [PMD_SERVICE],
-      });
-      const server = await device.gatt.connect();
-      await new Promise(r => setTimeout(r, 1000));
+      })
+      const server = await device.gatt.connect()
+      await new Promise(r => setTimeout(r, 1000))
 
-      const pmdSvc  = await server.getPrimaryService(PMD_SERVICE);
-      const hrSvc   = await server.getPrimaryService(HR_SERVICE);
-      const control = await pmdSvc.getCharacteristic(PMD_CONTROL);
-      const data    = await pmdSvc.getCharacteristic(PMD_DATA);
-      const hrChar  = await hrSvc.getCharacteristic(HR_MEASUREMENT);
+      const pmdSvc  = await server.getPrimaryService(PMD_SERVICE)
+      const hrSvc   = await server.getPrimaryService(HR_SERVICE)
+      const control = await pmdSvc.getCharacteristic(PMD_CONTROL)
+      const data    = await pmdSvc.getCharacteristic(PMD_DATA)
+      const hrChar  = await hrSvc.getCharacteristic(HR_MEASUREMENT)
 
-      readAccCharRef.current   = data;
-      heartRateCharRef.current = hrChar;
+      readAccCharRef.current   = data
+      heartRateCharRef.current = hrChar
 
-      await new Promise(r => setTimeout(r, 1000));
-      // Polar H10: enable accelerometer stream at 25 Hz
+      await new Promise(r => setTimeout(r, 1000))
       await control.writeValue(
-        new Uint8Array([
-          0x02, 0x02, 0x00, 0x01, 0xC8, 0x00,
-          0x01, 0x01, 0x10, 0x00, 0x02, 0x01, 0x08, 0x00,
-        ]).buffer
-      );
+        new Uint8Array([0x02,0x02,0x00,0x01,0xC8,0x00,0x01,0x01,0x10,0x00,0x02,0x01,0x08,0x00]).buffer
+      )
 
-      data.oncharacteristicvaluechanged   = makeAccelHandler('idle', -1);
-      hrChar.oncharacteristicvaluechanged = hrHandlerRef.current;
-      await data.startNotifications();
-      await hrChar.startNotifications();
+      data.oncharacteristicvaluechanged   = makeAccelHandler('idle', -1)
+      hrChar.oncharacteristicvaluechanged = hrHandlerRef.current
+      await data.startNotifications()
+      await hrChar.startNotifications()
 
-      setBtState('CONNECTED');
+      setBtState('CONNECTED')
     } catch (err) {
-      console.error('BT connect:', err);
-      setBtState('ERROR');
+      console.error('BT connect:', err)
+      setBtState('ERROR')
     }
-  }, [makeAccelHandler]);
+  }, [makeAccelHandler])
 
-  // ── COM port connect ─────────────────────────────────────────────────────
+  // ── COM port ──────────────────────────────────────────────────────────────
 
   const connectCOM = useCallback(async () => {
-    setComState('CONNECTING');
+    setComState('CONNECTING')
     try {
-      const port = await navigator.serial.requestPort();
-      // Close if already open (safety)
+      const port = await navigator.serial.requestPort()
       if (port.readable || port.writable) {
-        try { await port.close(); await new Promise(r => setTimeout(r, 100)); } catch {}
+        try { await port.close(); await new Promise(r => setTimeout(r, 100)) } catch {}
       }
-      await port.open({ baudRate: 115200 });
-      const enc = new TextEncoderStream();
-      writableStreamClosedRef.current = enc.readable.pipeTo(port.writable);
-      serialPortWriterRef.current     = enc.writable.getWriter();
-      serialPortRef.current           = port;
-      setComState('CONNECTED');
+      await port.open({ baudRate: 115200 })
+      const enc = new TextEncoderStream()
+      writableStreamClosedRef.current = enc.readable.pipeTo(port.writable)
+      serialPortWriterRef.current     = enc.writable.getWriter()
+      serialPortRef.current           = port
+      setComState('CONNECTED')
     } catch (err) {
-      console.error('COM connect:', err);
-      setComState('ERROR');
+      console.error('COM connect:', err)
+      setComState('ERROR')
     }
-  }, []);
+  }, [])
 
   const sendTrigger = useCallback(async (value) => {
-    try {
-      await serialPortWriterRef.current?.write(`${value}\n`);
-    } catch (err) {
-      console.error('COM trigger error:', err);
+    try { await serialPortWriterRef.current?.write(`${value}\n`) } catch (err) {
+      console.error('COM trigger:', err)
     }
-  }, []);
+  }, [])
 
-  // ── Calibration control ──────────────────────────────────────────────────
+  // ── Calibration control ───────────────────────────────────────────────────
 
+  // Step 1: begin fixation — clear old data, freeze avatar
   const startCalibration = useCallback(() => {
-    calibBufRef.current    = [];
-    calibT0Ref.current     = Date.now();
-    calibStateRef.current  = null;
-    breathValueRef.current = 0;
-    currentPhaseRef.current = 'calib_1';
-    currentTrialRef.current = -1;
+    calibSamplesRef.current  = []
+    calibStartMsRef.current  = 0
+    calibPeriodMsRef.current = 0
+    breathValueRef.current   = 0
+    livePredBufferRef.current = []
+    setSyncQuality(0)
+    setCalibReviewData(null)
+    currentPhaseRef.current  = 'calib_fixation'
     if (readAccCharRef.current) {
-      readAccCharRef.current.oncharacteristicvaluechanged = makeAccelHandler('calib_1', -1);
+      readAccCharRef.current.oncharacteristicvaluechanged = makeAccelHandler('calib_fixation', -1)
     }
-    setCalibPhase('PHASE_1');
-  }, [makeAccelHandler]);
+    setCalibPhase('FIXATION')
+  }, [makeAccelHandler])
 
-  const redoPhase2 = useCallback(() => {
-    breathValueRef.current  = 0;
-    currentPhaseRef.current = 'calib_2';
+  // Step 2: called by CalibrationScreen exactly when avatar animation begins
+  const beginCalibCollection = useCallback((calibStartMs, breathPeriodMs) => {
+    calibSamplesRef.current  = []
+    calibStartMsRef.current  = calibStartMs
+    calibPeriodMsRef.current = breathPeriodMs
+    currentPhaseRef.current  = 'calib_breathe'
     if (readAccCharRef.current) {
-      readAccCharRef.current.oncharacteristicvaluechanged = makeAccelHandler('calib_2', -1);
+      readAccCharRef.current.oncharacteristicvaluechanged = makeAccelHandler('calib_breathe', -1)
     }
-    setCalibPhase('PHASE_2');
-  }, [makeAccelHandler]);
-
-  const resetCalibration = useCallback(() => {
-    calibBufRef.current    = [];
-    calibT0Ref.current     = 0;
-    calibStateRef.current  = null;
-    breathValueRef.current = 0;
-    currentPhaseRef.current = 'idle';
-    if (readAccCharRef.current) {
-      readAccCharRef.current.oncharacteristicvaluechanged = makeAccelHandler('idle', -1);
-    }
-    setCalibPhase('NONE');
-  }, [makeAccelHandler]);
+    setCalibPhase('BREATHE')
+  }, [makeAccelHandler])
 
   const acceptCalibration = useCallback(() => {
-    currentPhaseRef.current = 'idle';
+    currentPhaseRef.current = 'idle'
     if (readAccCharRef.current) {
-      readAccCharRef.current.oncharacteristicvaluechanged = makeAccelHandler('idle', -1);
+      readAccCharRef.current.oncharacteristicvaluechanged = makeAccelHandler('idle', -1)
     }
-    setCalibPhase('COMPLETE');
-  }, [makeAccelHandler]);
+    setCalibPhase('COMPLETE')
+  }, [makeAccelHandler])
 
-  // ── Cleanup ──────────────────────────────────────────────────────────────
+  const redoCalibration = useCallback(() => {
+    calibSamplesRef.current  = []
+    breathValueRef.current   = 0
+    livePredBufferRef.current = []
+    setCalibReviewData(null)
+    setSyncQuality(0)
+    currentPhaseRef.current  = 'calib_fixation'
+    if (readAccCharRef.current) {
+      readAccCharRef.current.oncharacteristicvaluechanged = makeAccelHandler('calib_fixation', -1)
+    }
+    setCalibPhase('FIXATION')
+  }, [makeAccelHandler])
+
+  const resetCalibration = useCallback(() => {
+    calibSamplesRef.current  = []
+    mlrWeightsRef.current    = null
+    filterState3Ref.current  = initFilterState3()
+    breathValueRef.current   = 0
+    livePredBufferRef.current = []
+    setCalibReviewData(null)
+    setSyncQuality(0)
+    currentPhaseRef.current  = 'idle'
+    if (readAccCharRef.current) {
+      readAccCharRef.current.oncharacteristicvaluechanged = makeAccelHandler('idle', -1)
+    }
+    setCalibPhase('NONE')
+  }, [makeAccelHandler])
+
+  // ── Pacer tracking (for sync quality during trials) ───────────────────────
+  const setPacerContext = useCallback((startMs, periodMs) => {
+    pacerStartMsRef.current  = startMs
+    pacerPeriodMsRef.current = periodMs
+  }, [])
+
+  const clearPacerContext = useCallback(() => {
+    pacerStartMsRef.current  = 0
+    pacerPeriodMsRef.current = 0
+  }, [])
+
+  // ── Cleanup ───────────────────────────────────────────────────────────────
 
   const stopNotifications = useCallback(async () => {
-    try { await readAccCharRef.current?.stopNotifications(); }    catch {}
-    try { await heartRateCharRef.current?.stopNotifications(); }  catch {}
+    try { await readAccCharRef.current?.stopNotifications() }    catch {}
+    try { await heartRateCharRef.current?.stopNotifications() }  catch {}
     try {
-      await serialPortWriterRef.current?.close();
-      await writableStreamClosedRef.current;
+      await serialPortWriterRef.current?.close()
+      await writableStreamClosedRef.current
     } catch {}
-    try { await serialPortRef.current?.close(); } catch {}
-  }, []);
+    try { await serialPortRef.current?.close() } catch {}
+  }, [])
 
   return {
-    // state
-    btState, comState, calibPhase,
-    // refs
-    breathValueRef, calibStateRef,
-    rawAccelRowsRef, rawHRRowsRef,
+    // State
+    btState, comState, calibPhase, syncQuality, calibReviewData,
+    // Signal refs
+    breathValueRef, mlrWeightsRef, filterState3Ref,
+    // Data refs
+    rawAccelRowsRef, rawHRRowsRef, pendingAccelRef, pendingHRRef,
     currentPhaseRef, currentTrialRef,
+    // Pacer radius fn ref — set by trial screens
+    getPacerRadiusFnRef,
     // BT / COM
     connect, connectCOM, sendTrigger,
-    // calibration
-    startCalibration, redoPhase2, resetCalibration, acceptCalibration,
-    // cleanup
+    // Calibration
+    startCalibration, beginCalibCollection,
+    acceptCalibration, redoCalibration, resetCalibration,
+    // Pacer context (for sync quality)
+    setPacerContext, clearPacerContext,
+    // Cleanup
     stopNotifications,
-  };
+  }
 }

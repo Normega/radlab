@@ -40,6 +40,7 @@ export default function FixedTrialsScreen({
   sendTrigger,
   currentPhaseRef,
   currentTrialRef,
+  getPacerRadiusFnRef,
   recordTrial,
   onComplete,
 }) {
@@ -50,7 +51,7 @@ export default function FixedTrialsScreen({
   const avatarSize   = 240;
 
   const { getPhase, runTrial, controlRef } = useTrialRunner({
-    breathValueRef, sendTrigger, currentPhaseRef, currentTrialRef,
+    breathValueRef, sendTrigger, currentPhaseRef, currentTrialRef, getPacerRadiusFnRef,
   });
 
   const startTrial = useCallback(async () => {
