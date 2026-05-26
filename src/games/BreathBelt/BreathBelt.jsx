@@ -62,7 +62,7 @@ export default function BreathBelt() {
   const pendingQuestStateRef  = useRef(null);
 
   // ── Auth + role ──────────────────────────────────────────────────────────
-  const { data: profile } = useQuery({
+  const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ['profile'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -96,9 +96,10 @@ export default function BreathBelt() {
   useEffect(() => {
     if (phase !== S.BROWSER_CHECK) return;
     if (!navigator.bluetooth) return;
+    if (profileLoading || profile === undefined) return;
     if (!['lab', 'admin'].includes(profile?.role)) { setPhase(S.ACCESS_DENIED); return; }
     setPhase(S.BT_CONNECT);
-  }, [phase, profile]);
+  }, [phase, profile, profileLoading]);
 
   useEffect(() => {
     if (phase === S.BT_CONNECT  && belt.btState  === 'CONNECTED') setPhase(S.COM_CONNECT);
