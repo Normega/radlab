@@ -4,6 +4,7 @@ export default function SessionComplete({
   preBaselinePeriodMs,
   postBaselinePeriodMs,
   onDone,
+  studyMode = false,
 }) {
   const hasConvergence = convergence?.faster && convergence?.slower;
   const hasPeriods = preBaselinePeriodMs != null || postBaselinePeriodMs != null;
@@ -51,7 +52,7 @@ export default function SessionComplete({
         <button onClick={onDone}
           className="px-6 py-3 rounded-xl font-medium w-full"
           style={{ background: 'var(--pk)', color: '#fff', fontSize: 'var(--fs-body)' }}>
-          Back to dashboard
+          {studyMode ? 'Continue' : 'Back to dashboard'}
         </button>
       </div>
     </div>

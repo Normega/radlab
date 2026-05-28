@@ -425,7 +425,10 @@ export function buildReviewEntry(samples, mlr, trialStart, basePeriodMs, changed
     .map(s => ({ t: s.t, value: getPacerRadiusForTrial(s.t, trialStart, basePeriodMs, changedPeriodMs) }))
   const beltPtsAll = samples.map((s, i) => ({ t: s.t, value: belt[i] }))
   const beltPts    = beltPtsAll.filter((_, i) => i % DS === 0)
-  const scoreMs    = medianPeakTimingError(beltPtsAll, pacerPts, basePeriodMs)
+  // Peak detection min-separation must accommodate the *faster* of the two
+  // breath periods, else faster-condition peaks get coalesced and missed.
+  const minSepMs   = Math.min(basePeriodMs, changedPeriodMs)
+  const scoreMs    = medianPeakTimingError(beltPtsAll, pacerPts, minSepMs)
   return { condition, pacerPts, beltPts, scoreMs }
 }
 

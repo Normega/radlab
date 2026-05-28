@@ -136,6 +136,7 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
 
   // Start Supabase session once, at BASELINE_READY
   const sessionStartedRef = useRef(false);
+  const sessionEndedRef   = useRef(false);
   useEffect(() => {
     if (phase === S.BASELINE_READY && !sessionStartedRef.current) {
       sessionStartedRef.current = true;
@@ -143,7 +144,17 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
     }
   }, [phase]);
 
-  useEffect(() => () => { belt.stopNotifications(); }, []);
+  // Mid-session unmount: fire code 0 so the physio equipment leaves session
+  // state. Async, fire-and-forget — chain stopNotifications after so the
+  // serial write isn't truncated by an early port close.
+  useEffect(() => () => {
+    (async () => {
+      if (sessionStartedRef.current && !sessionEndedRef.current) {
+        try { await belt.sendTrigger('0'); } catch {}
+      }
+      belt.stopNotifications();
+    })();
+  }, []);
 
   // ── Helpers ──────────────────────────────────────────────────────────────
   function baselinePhaseMap(fsm) {
@@ -228,7 +239,17 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
               Increment for each visit by the same participant.
             </p>
           </div>
-          <Btn onClick={async () => { await backup.initBackup(profile?.id); setPhase(S.CALIB_READY); }}>Continue to calibration</Btn>
+          <Btn onClick={async () => {
+            const ok = await backup.initBackup(profile?.id);
+            if (!ok && backup.isAvailable) {
+              const proceed = window.confirm(
+                'Local CSV backup is not enabled (folder picker was cancelled). ' +
+                'Continue without it? Cloud Supabase storage will still record raw data.'
+              );
+              if (!proceed) return;
+            }
+            setPhase(S.CALIB_READY);
+          }}>Continue to calibration</Btn>
         </Screen>
       </Layout>
     );
@@ -420,6 +441,7 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
               postBaselinePeriodMs: periodMs,
             });
             await belt.sendTrigger('0');  // code 0 — session end
+            sessionEndedRef.current = true;
             belt.stopNotifications();
             setPhase(S.SESSION_COMPLETE);
           }}
@@ -442,6 +464,7 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
         sessionNumber={sessionNumber}
         preBaselinePeriodMs={preBaselinePeriodRef.current}
         postBaselinePeriodMs={postBaselinePeriodRef.current}
+        studyMode={studyMode}
         onDone={studyMode && onSessionComplete ? onSessionComplete : () => navigate('/dashboard')}
       />
     );
