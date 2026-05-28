@@ -1,5 +1,8 @@
 // BaselineReviewScreen — shown after natural breathing baseline completes.
-// Plots the raw belt signal so the RA can verify data was captured throughout.
+// Plots the detrended belt signal (high-pass filtered) so the RA can verify
+// data was captured throughout without slow drift obscuring breathing cycles.
+
+import { highPassValues } from '../breathUtils'
 
 const SAMPLE_MS    = 40
 const GRAPH_H      = 160
@@ -18,12 +21,16 @@ export default function BaselineReviewScreen({ samples = [], periodMs, onContinu
     ? (samples.reduce((a, b) => a + b, 0) / samples.length).toFixed(3)
     : '—'
 
-  // Downsample to at most 800 points for the polyline
-  const pts = downsample(samples, 800)
+  // High-pass filter to remove slow drift (fc = 0.05 Hz), then shift to [0,1] display range
+  const hpValues   = samples.length >= 4 ? highPassValues(samples, 0.05, SAMPLE_MS / 1000) : samples
+  const hpShifted  = hpValues.map(v => v + 0.5)
 
-  const minY = Math.min(...pts, 0)
-  const maxY = Math.max(...pts, 0.01)
-  const yRange = maxY - minY
+  // Downsample to at most 800 points for the polyline
+  const pts = downsample(hpShifted, 800)
+
+  const minY = Math.min(...pts)
+  const maxY = Math.max(...pts)
+  const yRange = Math.max(maxY - minY, 0.01)
 
   const polyline = pts.map((v, i) => {
     const x = PAD_L + (i / (pts.length - 1)) * INNER_W
@@ -31,7 +38,7 @@ export default function BaselineReviewScreen({ samples = [], periodMs, onContinu
     return `${x.toFixed(1)},${y.toFixed(1)}`
   }).join(' ')
 
-  // Detect dead zones: runs of near-zero (< 0.02) lasting > 2 s (50 samples at 40ms)
+  // Dead zone detection uses raw samples (near-zero in original space)
   const deadZones = findDeadZones(samples, 0.02, 50)
   const hasDead   = deadZones.length > 0
 

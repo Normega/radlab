@@ -434,3 +434,25 @@ export function meanOf(arr) {
   if (!arr || arr.length === 0) return null
   return arr.reduce((a, b) => a + b, 0) / arr.length
 }
+
+// ── highPassValues ─────────────────────────────────────────────────────────
+// First-order IIR high-pass (filtfilt, zero phase) on a plain value array.
+// Removes slow drift while preserving breathing-rate oscillations.
+// fc: cutoff Hz (default 0.05 = 20 s period); dt: sample interval in seconds.
+
+export function highPassValues(values, fc = 0.05, dt = 0.04) {
+  const n = values.length
+  if (n < 4) return [...values]
+  const RC = 1 / (2 * Math.PI * fc)
+  const alpha = RC / (RC + dt)
+  // Forward pass: y[n] = α*(y[n-1] + x[n] - x[n-1])
+  const fwd = new Array(n)
+  fwd[0] = 0
+  for (let i = 1; i < n; i++) fwd[i] = alpha * (fwd[i - 1] + values[i] - values[i - 1])
+  // Reverse pass on forward output
+  const rev = [...fwd].reverse()
+  const bwd = new Array(n)
+  bwd[0] = 0
+  for (let i = 1; i < n; i++) bwd[i] = alpha * (bwd[i - 1] + rev[i] - rev[i - 1])
+  return [...bwd].reverse()
+}

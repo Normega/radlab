@@ -11,6 +11,7 @@ import FixedTrialsScreen from './components/FixedTrialsScreen';
 import StaircaseScreen from './components/StaircaseScreen';
 import SessionComplete from './components/SessionComplete';
 import BaselineReviewScreen from './components/BaselineReviewScreen';
+import Phase2ReviewScreen from './components/Phase2ReviewScreen';
 import { BASELINE_DURATION_MS, POST_BASELINE_DURATION_MS, BASE_BREATH_SPEED_S } from './constants';
 import SynchronyBar from './components/SynchronyBar';
 import { useStreamingBackup } from './hooks/useStreamingBackup';
@@ -46,6 +47,7 @@ const S = {
   BASELINE_REVIEW:         'BASELINE_REVIEW',
   PHASE2_READY:            'PHASE2_READY',
   PHASE2_RUNNING:          'PHASE2_RUNNING',
+  PHASE2_REVIEW:           'PHASE2_REVIEW',
   PHASE2_COMPLETE:         'PHASE2_COMPLETE',
   PHASE3_INTRO:            'PHASE3_INTRO',
   PHASE3_RUNNING:          'PHASE3_RUNNING',
@@ -65,6 +67,7 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
   const postBaselinePeriodRef = useRef(null);
   const convergenceRef        = useRef(null);
   const pendingQuestStateRef  = useRef(null);
+  const phase2ReviewRef       = useRef([]);
 
   // ── Auth + role ──────────────────────────────────────────────────────────
   const { data: profile, isLoading: profileLoading } = useQuery({
@@ -327,26 +330,35 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
 
   if (phase === S.PHASE2_RUNNING) {
     return (
-      <>
-        <Layout title="Phase 2 — Fixed trials">
-          <FixedTrialsScreen
-            avatarProps={avatarProps}
-            breathValueRef={belt.breathValueRef}
-            sendTrigger={belt.sendTrigger}
-            currentPhaseRef={belt.currentPhaseRef}
-            currentTrialRef={belt.currentTrialRef}
-            getPacerRadiusFnRef={belt.getPacerRadiusFnRef}
-            setPacerContext={belt.setPacerContext}
-            clearPacerContext={belt.clearPacerContext}
-            recordTrial={recordTrialWithBackup}
-            onComplete={async () => {
-              await belt.sendTrigger('5');  // code 5 — phase 2 end
-              setPhase(S.PHASE2_COMPLETE);
-            }}
-          />
-        </Layout>
-        <SynchronyBar quality={belt.syncQuality} visible />
-      </>
+      <Layout title="Phase 2 — Fixed trials">
+        <FixedTrialsScreen
+          avatarProps={avatarProps}
+          breathValueRef={belt.breathValueRef}
+          sendTrigger={belt.sendTrigger}
+          currentPhaseRef={belt.currentPhaseRef}
+          currentTrialRef={belt.currentTrialRef}
+          getPacerRadiusFnRef={belt.getPacerRadiusFnRef}
+          setPacerContext={belt.setPacerContext}
+          clearPacerContext={belt.clearPacerContext}
+          recordTrial={recordTrialWithBackup}
+          onComplete={async (_trialsData, reviewData) => {
+            await belt.sendTrigger('5');  // code 5 — phase 2 end
+            phase2ReviewRef.current = reviewData ?? [];
+            setPhase(S.PHASE2_REVIEW);
+          }}
+        />
+      </Layout>
+    );
+  }
+
+  if (phase === S.PHASE2_REVIEW) {
+    return (
+      <Layout title="Phase 2 — review">
+        <Phase2ReviewScreen
+          reviewData={phase2ReviewRef.current}
+          onContinue={() => setPhase(S.PHASE2_COMPLETE)}
+        />
+      </Layout>
     );
   }
 

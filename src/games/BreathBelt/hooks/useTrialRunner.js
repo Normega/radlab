@@ -15,7 +15,7 @@ const SAMPLE_MS = 40; // ~25 Hz
 // Reusing 10/11/12 across Phase 2 and Phase 3 is intentional — the preceding
 // phase code (4 or 6) establishes context in the lab belt signal.
 
-export function useTrialRunner({ breathValueRef, sendTrigger, currentPhaseRef, currentTrialRef, getPacerRadiusFnRef }) {
+export function useTrialRunner({ breathValueRef, sendTrigger, currentPhaseRef, currentTrialRef, getPacerRadiusFnRef, setPacerContext, clearPacerContext }) {
   const { getPhase, startBreath, reset } = useBreathCycle();
   const controlRef = useRef(null);
 
@@ -55,6 +55,7 @@ export function useTrialRunner({ breathValueRef, sendTrigger, currentPhaseRef, c
 
     reset();
     controlRef.current?.resumeAnimation?.();
+    setPacerContext?.(trialStartMs, BASE_MS);
     startSampling('baseline');
     for (let i = 0; i < BASELINE_BREATHS_COUNT; i++) {
       await startBreath(BASE_MS);
@@ -63,6 +64,7 @@ export function useTrialRunner({ breathValueRef, sendTrigger, currentPhaseRef, c
 
     // Code 11 — condition onset, breath 3 begins
     await sendTrigger('11');
+    setPacerContext?.(Date.now(), conditionMs);
 
     startSampling('condition');
     for (let i = 0; i < CONDITION_BREATHS_COUNT; i++) {
@@ -72,6 +74,7 @@ export function useTrialRunner({ breathValueRef, sendTrigger, currentPhaseRef, c
 
     // Code 12 — trial end
     await sendTrigger('12');
+    clearPacerContext?.();
     controlRef.current?.resetToNeutral?.();   // freeze at neutral for next READY state
     if (getPacerRadiusFnRef) {
       getPacerRadiusFnRef.current = () => NaN;
@@ -84,6 +87,9 @@ export function useTrialRunner({ breathValueRef, sendTrigger, currentPhaseRef, c
       beltSyncMean:        meanOf(conditionSamplesRef.current.map(s => s.value)),
       btBaselinePeriodMs:  estimateBreathPeriodMs(baselineSamplesRef.current),
       btConditionPeriodMs: estimateBreathPeriodMs(conditionSamplesRef.current),
+      conditionSamples:    [...conditionSamplesRef.current],
+      trialStartMs,
+      conditionMs,
     };
   }
 
