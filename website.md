@@ -113,14 +113,21 @@ radlab/
         constants.js
         breathUtils.js
         belt_schema.sql
+        belt_mlr_migration.sql
+        belt_sync_metrics_migration.sql
         hooks/
           useBeltConnection.js
           useBeltSession.js
           useBeltQuestStaircases.js
           useTrialRunner.js
+          useStreamingBackup.js
         components/
           BrowserWarning.jsx
           CalibrationScreen.jsx
+          CalibReviewPanel.jsx
+          SignalGraph.jsx
+          SynchronyBar.jsx
+          TrialSyncOverlay.jsx
           BaselineScreen.jsx
           FixedTrialsScreen.jsx
           StaircaseScreen.jsx
@@ -1514,24 +1521,40 @@ After COM connects, the researcher enters a session number (1-indexed, increment
 
 ### Calibration
 
-CalibrationScreen drives a 4-state flow (FIXATION → BREATHE → FITTING → REVIEW) using the MLR signal processing pipeline from `breathUtils.fitBestModel()`.
+CalibrationScreen drives a 4-state flow (FIXATION → BREATHE → FITTING → REVIEW) using the MLR signal processing pipeline from `breathUtils.fitBestModel()`. The avatar IS the pacer — no `BeltSyncRing` is shown during calibration. `beginCalibCollection(calibStartMs, breathPeriodMs)` is invoked at the exact tick the avatar animation begins, so the pacer reference timestamps align with belt samples to within a frame.
 
 The pipeline evaluates 6 model variants (MLR × {wide-band, tight-band} × {plain, LP-smoothed} + PCA × {wide, tight}) and selects the one with the highest Pearson R against the cosine pacer reference. Requires ≥100 samples and fitR ≥ 0.4 to proceed; transitions to FAILED otherwise.
 
-`useBeltConnection` now exposes:
+`useBeltConnection` exposes:
 - `mlrWeightsRef` — `{ bias, weights: [wx,wy,wz], modelLabel, lagMs, fitR }` after calibration (replaces `calibStateRef`)
 - `filterState3Ref` — causal biquad state for live `processPacketMLR()` during trials
 - `syncQuality` — rolling Pearson R (React state) between live belt predictions and current pacer, used by `SynchronyBar`
 - `calibReviewData` — `{ pacerPts, beltPts, fitR, peakErrorMs, modelLabel, lagMs }` shown in `CalibReviewPanel`
 - `beginCalibCollection(calibStartMs, breathPeriodMs)` — called by CalibrationScreen exactly when avatar animation begins (timestamp precision matters for model fitting)
 - `redoCalibration()` — resets to FIXATION from REVIEW (renamed from `redoPhase2`)
+- `getAndClearTrialSamples()` — returns the raw `{t,x,y,z}` collected during the most recent trial and clears the buffer. Called by `useTrialRunner` after code 12 to compute offline per-trial sync metrics.
 - `getPacerRadiusFnRef` — fn ref set by trial screens before code 10; read by accel handler to log pacer radius per raw accel row
 
-`BeltSyncRing` is retained for other games (Still Water etc.) where aesthetic warmth matters more than precise quantitative feedback. `SynchronyBar` (fixed bottom bar, rolling Pearson R with colour thresholds) is used during paced trials in BreathBelt.
+`BeltSyncRing` is retained for other games (Still Water etc.) where aesthetic warmth matters more than precise quantitative feedback. `SynchronyBar` (fixed bottom-centre bar, rolling Pearson R with colour thresholds — good ≥ 0.70, fair ≥ 0.40, lost < 0.40) is visible during paced trials only, in both Phase 2 and Phase 3.
 
-`useStreamingBackup` provides parallel local CSV backup via the File System Access API (`showDirectoryPicker`). Non-Chrome or permission-denied sessions degrade gracefully (returns false). Files: `{participantId}_{ts}_{accel,hr,trials,quest}.csv`. `initBackup(participantId)` opens the directory picker during SESSION_SETUP; `flushAccel/flushHR` are called after each trial alongside Supabase writes; `appendTrial/appendQuest` are available for per-row backup.
+### Per-trial sync feedback (TrialSyncOverlay)
 
-Calibration metrics (`calib_model_label`, `calib_fit_r`, `calib_lag_ms`) are stored to `belt_sessions` (added by `belt_mlr_migration.sql`). The full weight vector is stored as `calib_state` JSON (existing column).
+After each trial, `useTrialRunner` runs an offline MLR pass over the trial's raw samples and returns `syncMetrics = { trialRBaseline, trialRCondition, peakErrorMs, pacerPts, beltPts }`. The parent screens render `TrialSyncOverlay` (fixed bottom-left, above the back button at `bottom: 80px`):
+
+- **Phase 2** — `showGraph={true}`: SignalGraph (pacer blue + belt amber) + Base R + Cond R + Peak err. Full researcher QC.
+- **Phase 3** — `showGraph={false}`: metrics only, no graph. The graph would reveal condition speed and break participant blinding.
+
+The overlay clears when the next trial starts (parent sets `syncData` to null). The per-phase `BaselineReviewScreen` and `Phase2ReviewScreen` review screens have been removed — per-trial review via `TrialSyncOverlay` replaces them.
+
+### Avatar timing during trials
+
+Between trials the avatar is frozen at neutral (`controlRef.current.resetToNeutral()` is called at trial end). Each new trial begins with a **500 ms fixation hold** (no animation, no signal collection) before `sendTrigger('10')` and the first paced breath, giving a clear stimulus boundary between trials.
+
+### Streaming backup
+
+`useStreamingBackup` provides parallel local CSV backup via the File System Access API (`showDirectoryPicker`). Non-Chrome or permission-denied sessions degrade gracefully (returns false). Files: `{participantId}_{ts}_{accel,hr,trials,quest}.csv`. `initBackup(participantId)` opens the directory picker during SESSION_SETUP; `flushAccel/flushHR` are called after each trial alongside Supabase writes via the `recordTrialWithBackup` wrapper in `BreathBelt.jsx`. The trials CSV header now includes `peak_error_ms`, `trial_r_baseline`, and `trial_r_condition`; `appendTrial/appendQuest` are available for per-row backup.
+
+Calibration metrics (`calib_model_label`, `calib_fit_r`, `calib_lag_ms`) are part of the `mlrWeightsRef` JSON stored to `belt_sessions.calib_state`; the separate scalar columns added by `belt_mlr_migration.sql` are available as queryable shortcuts (currently populated from the JSON downstream).
 
 ### Baselines — pre and post (120 s each)
 
@@ -1574,40 +1597,52 @@ Supabase schema in `belt_schema.sql` (initial) + `belt_correspondence_migration.
 | Table | Contents |
 |---|---|
 | `belt_sessions` | One row per session: user_id, calib_state JSON, quest_state JSON, **session_number**, **baseline_period_ms**, **post_baseline_period_ms**, ***calib_model_label***, ***calib_fit_r***, ***calib_lag_ms*** |
-| `belt_trials` | One row per trial: phase, trial_number, condition, breath_period_ms, log10_mag, response, correct, confidence, arousal, belt_sync_mean, **bt_baseline_period_ms**, **bt_condition_period_ms** |
+| `belt_trials` | One row per trial: phase, trial_number, condition, breath_period_ms, log10_mag, response, correct, confidence, arousal, belt_sync_mean, **bt_baseline_period_ms**, **bt_condition_period_ms**, ****trial_r_baseline****, ****trial_r_condition****, ****peak_error_ms**** |
 | `belt_accel_raw` | Raw accelerometer rows (timestamps + xyz + pacer_radius) — stored in Supabase Storage as CSV |
 | `belt_hr_raw` | Raw HR rows — stored in Supabase Storage as CSV |
 
-**Bold** = added by `belt_correspondence_migration.sql`. ***Bold italic*** = added by `belt_mlr_migration.sql`.
+**Bold** = added by `belt_correspondence_migration.sql`. ***Bold italic*** = added by `belt_mlr_migration.sql`. ****Bold underline**** = added by `belt_sync_metrics_migration.sql`.
 
 ### Source layout
 
 ```
 src/games/BreathBelt/
-  BreathBelt.jsx             ← main FSM; SynchronyBar shown during paced trials; backup.initBackup at SESSION_SETUP
+  BreathBelt.jsx             ← main FSM; backup.initBackup at SESSION_SETUP;
+                               recordTrialWithBackup wraps session.recordTrial + flushAccel/HR;
+                               accepts studyMode/userId/studyId/onSessionComplete for in-study use
   constants.js               ← BASE_BREATH_SPEED_S, BASELINE_DURATION_MS (120 s), POST_BASELINE_DURATION_MS (120 s), QUEST params
   breathUtils.js             ← full MLR pipeline: fitBestModel (6 variants), processPacketMLR, initFilterState3,
                                rollingPearsonR, estimateBreathPeriodMs, buildReviewEntry,
+                               medianPeakTimingError, computeMLRPredictions, pearsonRArrays,
                                getPacerRadius, getPacerRadiusForTrial, meanOf
-  belt_schema.sql            ← initial Supabase migration
+  belt_schema.sql                    ← initial Supabase migration
+  belt_mlr_migration.sql             ← adds calib_model_label/calib_fit_r/calib_lag_ms to belt_sessions
+  belt_sync_metrics_migration.sql    ← adds trial_r_baseline/trial_r_condition/peak_error_ms to belt_trials
   hooks/
     useBeltConnection.js     ← Web Bluetooth + Web Serial, MLR calibration pipeline;
                                exposes mlrWeightsRef, filterState3Ref, syncQuality, calibReviewData,
-                               beginCalibCollection, redoCalibration, getPacerRadiusFnRef
-    useBeltSession.js        ← Supabase session lifecycle; endSession accepts calib_model_label, calib_fit_r, calib_lag_ms
+                               beginCalibCollection, redoCalibration, getAndClearTrialSamples,
+                               getPacerRadiusFnRef
+    useBeltSession.js        ← Supabase session lifecycle; calibState (= mlrWeightsRef JSON) stored to belt_sessions.calib_state
     useBeltQuestStaircases.js ← dual-QUEST state machine
-    useTrialRunner.js        ← per-trial avatar pacing; sets getPacerRadiusFnRef for pacer radius logging; { t, value }[] samples
-    useStreamingBackup.js    ← parallel local CSV backup via File System Access API (showDirectoryPicker)
+    useTrialRunner.js        ← per-trial avatar pacing: 500 ms fixation hold, resetToNeutral at trial end,
+                               returns syncMetrics { trialRBaseline, trialRCondition, peakErrorMs, pacerPts, beltPts }
+    useStreamingBackup.js    ← parallel local CSV backup via File System Access API (showDirectoryPicker);
+                               trials CSV header includes peak_error_ms, trial_r_baseline, trial_r_condition
   components/
     BrowserWarning.jsx       ← Chrome/Edge prompt
     CalibrationScreen.jsx    ← MLR 4-state calibration: FIXATION → BREATHE → FITTING → REVIEW
     CalibReviewPanel.jsx     ← calibration quality metrics + SignalGraph overlay (fit%, lag, peak timing, model)
     SignalGraph.jsx          ← SVG line chart: pacer (blue) vs belt model (amber)
-    SynchronyBar.jsx         ← fixed bottom sync quality bar during paced trials (rolling Pearson R)
+    SynchronyBar.jsx         ← fixed bottom-centre sync quality bar; visible during trials only (rolling Pearson R)
+    TrialSyncOverlay.jsx     ← fixed bottom-left post-trial overlay; Phase 2 shows SignalGraph + Base R + Cond R + peak err;
+                               Phase 3 shows metrics only (no graph — preserves condition blinding)
     BaselineScreen.jsx       ← reusable for pre and post baselines; props: phase ('READY'|'RECORDING'|'COMPLETE'), title, durationMs, phaseLabel, triggerStart, triggerEnd, onComplete(periodMs)
-    FixedTrialsScreen.jsx    ← Phase 2: 9 fixed trials; records bt_baseline_period_ms + bt_condition_period_ms per trial
-    StaircaseScreen.jsx      ← Phase 3: QUEST trials + 3AFC + ratings; records bt_* period columns
-    BeltSyncRing.jsx         ← real-time belt signal ring — retained for other games (Still Water etc.)
+    FixedTrialsScreen.jsx    ← Phase 2: 9 fixed trials; renders SynchronyBar + TrialSyncOverlay (with graph);
+                               records bt_baseline_period_ms, bt_condition_period_ms, trial_r_baseline, trial_r_condition, peak_error_ms
+    StaircaseScreen.jsx      ← Phase 3: QUEST trials + 3AFC + ratings; renders SynchronyBar + TrialSyncOverlay (no graph);
+                               records same per-trial sync columns
+    BeltSyncRing.jsx         ← real-time belt signal ring — retained for other games (Still Water etc.); not used in BreathBelt trials
     SessionComplete.jsx      ← shows session number, pre/post resting period, QUEST thresholds
 ```
 
@@ -1622,12 +1657,13 @@ Run these migrations manually in the Supabase SQL editor in order:
 1. `belt_schema.sql` — initial schema
 2. `belt_correspondence_migration.sql` — adds `bt_baseline_period_ms`, `bt_condition_period_ms` to `belt_trials`; `session_number`, `baseline_period_ms`, `post_baseline_period_ms` to `belt_sessions`
 3. `belt_mlr_migration.sql` — adds `calib_model_label`, `calib_fit_r`, `calib_lag_ms` to `belt_sessions`
+4. `belt_sync_metrics_migration.sql` — adds `trial_r_baseline`, `trial_r_condition`, `peak_error_ms` to `belt_trials`
 
 All migrations use `ADD COLUMN IF NOT EXISTS` — safe to run on existing data.
 
 ### Status
 
-Integrated. All source files updated at `src/games/BreathBelt/`. Route registered at `/games/breath-belt`. Run migrations in order: `belt_schema.sql`, `belt_correspondence_migration.sql`, `belt_mlr_migration.sql` — all require manual execution in the Supabase SQL editor before running in the lab. Requires Chrome or Edge with Web Bluetooth enabled.
+Integrated. All source files updated at `src/games/BreathBelt/`. Route registered at `/games/breath-belt`. Run migrations in order: `belt_schema.sql`, `belt_correspondence_migration.sql`, `belt_mlr_migration.sql`, `belt_sync_metrics_migration.sql` — all require manual execution in the Supabase SQL editor before running in the lab. Requires Chrome or Edge with Web Bluetooth enabled.
 
 ---
 

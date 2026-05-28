@@ -1,98 +1,163 @@
-import { useRef } from 'react';
-import { useBreathCycle } from '../../EbbAndFlow/useBreathCycle';
-import { estimateBreathPeriodMs, meanOf, getPacerRadiusForTrial } from '../breathUtils';
-import { BASE_BREATH_SPEED_S, BASELINE_BREATHS_COUNT, CONDITION_BREATHS_COUNT } from '../constants';
+import { useRef } from 'react'
+import { useBreathCycle } from '../../EbbAndFlow/useBreathCycle'
+import {
+  estimateBreathPeriodMs, meanOf,
+  buildReviewEntry, pearsonRArrays,
+  computeMLRPredictions, getPacerRadius, getPacerRadiusForTrial,
+} from '../breathUtils'
+import { BASE_BREATH_SPEED_S, BASELINE_BREATHS_COUNT, CONDITION_BREATHS_COUNT } from '../constants'
 
-const BASE_MS   = BASE_BREATH_SPEED_S * 1000;
-const SAMPLE_MS = 40; // ~25 Hz
+const BASE_MS   = BASE_BREATH_SPEED_S * 1000
+const SAMPLE_MS = 40  // ~25 Hz breathValue sampling
 
 // ── COM trigger vocabulary (trial-level) ──────────────────────────────────
 // 10  trial start       — baseline breaths begin
-// 11  condition onset   — breath 3 begins (baseline→condition boundary)
+// 11  condition onset   — breath 3 begins
 // 12  trial end
+// Phase-level codes (1–9) fired from BreathBelt.jsx.
+
+// ── useTrialRunner ────────────────────────────────────────────────────────
 //
-// Phase-level codes (1–9) are fired from BreathBelt.jsx at FSM transitions.
-// Reusing 10/11/12 across Phase 2 and Phase 3 is intentional — the preceding
-// phase code (4 or 6) establishes context in the lab belt signal.
+// Props:
+//   breathValueRef          — live 0–1 signal ref
+//   sendTrigger             — COM trigger fn
+//   currentPhaseRef         — for raw row labelling
+//   currentTrialRef
+//   getAndClearTrialSamples — retrieves raw {t,x,y,z} from useBeltConnection
+//   mlrWeightsRef           — current fitted model (null before calibration)
+//
+// Returns from runTrial:
+//   beltSyncMean            — mean breathValue during condition window
+//   btBaselinePeriodMs      — period estimate, baseline breaths (null if < 2 peaks)
+//   btConditionPeriodMs     — period estimate, condition breaths
+//   syncMetrics             — offline quality metrics (null if insufficient samples)
+//
+// syncMetrics shape:
+//   { trialRBaseline, trialRCondition, peakErrorMs, pacerPts, beltPts }
+//   pacerPts/beltPts are included for Phase 2 SignalGraph; present even for
+//   Phase 3 (TrialSyncOverlay simply doesn't render the graph there).
 
-export function useTrialRunner({ breathValueRef, sendTrigger, currentPhaseRef, currentTrialRef, getPacerRadiusFnRef, setPacerContext, clearPacerContext }) {
-  const { getPhase, startBreath, reset } = useBreathCycle();
-  const controlRef = useRef(null);
+export function useTrialRunner({
+  breathValueRef,
+  sendTrigger,
+  currentPhaseRef,
+  currentTrialRef,
+  getAndClearTrialSamples,
+  mlrWeightsRef,
+}) {
+  const { getPhase, startBreath, reset } = useBreathCycle()
+  const controlRef = useRef(null)
 
-  const baselineSamplesRef  = useRef([]);
-  const conditionSamplesRef = useRef([]);
-  const intervalRef         = useRef(null);
+  const baselineSamplesRef  = useRef([])
+  const conditionSamplesRef = useRef([])
+  const intervalRef         = useRef(null)
 
   function startSampling(target) {
-    if (intervalRef.current) clearInterval(intervalRef.current);
-    if (target === 'baseline')  baselineSamplesRef.current  = [];
-    else                        conditionSamplesRef.current = [];
+    if (intervalRef.current) clearInterval(intervalRef.current)
+    if (target === 'baseline') baselineSamplesRef.current  = []
+    else                       conditionSamplesRef.current = []
     intervalRef.current = setInterval(() => {
-      const v = breathValueRef.current ?? 0;
-      const sample = { t: Date.now(), value: v };
-      if (target === 'baseline')  baselineSamplesRef.current.push(sample);
-      else                        conditionSamplesRef.current.push(sample);
-    }, SAMPLE_MS);
+      const v = breathValueRef.current ?? 0
+      if (target === 'baseline') baselineSamplesRef.current.push(v)
+      else                       conditionSamplesRef.current.push(v)
+    }, SAMPLE_MS)
   }
 
   function stopSampling() {
-    if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
+    if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null }
   }
 
   async function runTrial(phaseLabel, trialIdx, conditionMs) {
-    currentPhaseRef.current = phaseLabel;
-    currentTrialRef.current = trialIdx;
+    currentPhaseRef.current = phaseLabel
+    currentTrialRef.current = trialIdx
 
-    await new Promise(r => setTimeout(r, 500));  // brief fixation hold
+    // ── Fixation: avatar already neutral from end of last trial ──────────
+    // 500 ms hold before animation — clear signal to participant that
+    // the trial has not started yet.
+    await new Promise(r => setTimeout(r, 500))
 
-    // Code 10 — trial start, baseline breaths begin
-    await sendTrigger('10');
+    // ── Trial start ───────────────────────────────────────────────────────
+    const trialStartMs = Date.now()
+    await sendTrigger('10')
 
-    const trialStartMs = Date.now();
-    if (getPacerRadiusFnRef) {
-      getPacerRadiusFnRef.current = (t) => getPacerRadiusForTrial(t, trialStartMs, BASE_MS, conditionMs);
+    reset()
+    controlRef.current?.resumeAnimation?.()
+
+    // Breaths 1–2: baseline pace
+    startSampling('baseline')
+    for (let i = 0; i < BASELINE_BREATHS_COUNT; i++) await startBreath(BASE_MS)
+    stopSampling()
+
+    // Breath 3 onset
+    await sendTrigger('11')
+
+    // Breaths 3–4: condition pace
+    startSampling('condition')
+    for (let i = 0; i < CONDITION_BREATHS_COUNT; i++) await startBreath(conditionMs)
+    stopSampling()
+
+    // ── Trial end ─────────────────────────────────────────────────────────
+    await sendTrigger('12')
+
+    // Freeze avatar at neutral — will be held until next trial's 500 ms fixation
+    controlRef.current?.resetToNeutral?.()
+
+    currentPhaseRef.current = 'inter_trial'
+    currentTrialRef.current = -1
+
+    // ── Live period estimates ─────────────────────────────────────────────
+    const btBaselinePeriodMs  = estimateBreathPeriodMs(
+      baselineSamplesRef.current.map((v, i) => ({ t: i * SAMPLE_MS, value: v }))
+    )
+    const btConditionPeriodMs = estimateBreathPeriodMs(
+      conditionSamplesRef.current.map((v, i) => ({ t: i * SAMPLE_MS, value: v }))
+    )
+    const beltSyncMean = meanOf(conditionSamplesRef.current)
+
+    // ── Offline sync metrics ──────────────────────────────────────────────
+    // Retrieve raw {t,x,y,z} samples collected during this trial
+    const rawSamples = getAndClearTrialSamples ? getAndClearTrialSamples() : []
+    const mlr        = mlrWeightsRef?.current
+    let syncMetrics  = null
+
+    if (rawSamples.length > 80 && mlr) {
+      const phase2StartMs    = trialStartMs + BASELINE_BREATHS_COUNT * BASE_MS
+      const baselineRaw      = rawSamples.filter(s => s.t <  phase2StartMs)
+      const conditionRaw     = rawSamples.filter(s => s.t >= phase2StartMs)
+      const lagMs            = mlr.lagMs ?? 0
+
+      let trialRBaseline  = null
+      let trialRCondition = null
+
+      if (baselineRaw.length > 20) {
+        const bPred  = computeMLRPredictions(baselineRaw, mlr)
+        const bPacer = baselineRaw.map(s => getPacerRadius(s.t, trialStartMs, BASE_MS))
+        trialRBaseline = pearsonRArrays(bPred, bPacer)
+      }
+
+      if (conditionRaw.length > 20) {
+        const cPred      = computeMLRPredictions(conditionRaw, mlr)
+        // Lag-correct: shift pacer reference back by belt lag
+        const cPacerLag  = conditionRaw.map(s =>
+          getPacerRadiusForTrial(s.t - lagMs, trialStartMs, BASE_MS, conditionMs)
+        )
+        trialRCondition = pearsonRArrays(cPred, cPacerLag)
+      }
+
+      // buildReviewEntry handles full trial: pacerPts, beltPts, peakErrorMs
+      const review = buildReviewEntry(rawSamples, mlr, trialStartMs, BASE_MS, conditionMs, phaseLabel)
+
+      syncMetrics = {
+        trialRBaseline,
+        trialRCondition,
+        peakErrorMs:  review.scoreMs,
+        pacerPts:     review.pacerPts,   // used by TrialSyncOverlay Phase 2 graph
+        beltPts:      review.beltPts,    // present but not rendered in Phase 3
+      }
     }
 
-    reset();
-    controlRef.current?.resumeAnimation?.();
-    setPacerContext?.(trialStartMs, BASE_MS);
-    startSampling('baseline');
-    for (let i = 0; i < BASELINE_BREATHS_COUNT; i++) {
-      await startBreath(BASE_MS);
-    }
-    stopSampling();
-
-    // Code 11 — condition onset, breath 3 begins
-    await sendTrigger('11');
-    setPacerContext?.(Date.now(), conditionMs);
-
-    startSampling('condition');
-    for (let i = 0; i < CONDITION_BREATHS_COUNT; i++) {
-      await startBreath(conditionMs);
-    }
-    stopSampling();
-    const trialEndMs = Date.now();
-
-    // Code 12 — trial end
-    await sendTrigger('12');
-    clearPacerContext?.();
-    controlRef.current?.resetToNeutral?.();   // freeze at neutral for next READY state
-    if (getPacerRadiusFnRef) {
-      getPacerRadiusFnRef.current = () => NaN;
-    }
-
-    currentPhaseRef.current = 'inter_trial';
-    currentTrialRef.current = -1;
-
-    return {
-      beltSyncMean:        meanOf(conditionSamplesRef.current.map(s => s.value)),
-      btBaselinePeriodMs:  estimateBreathPeriodMs(baselineSamplesRef.current),
-      btConditionPeriodMs: estimateBreathPeriodMs(conditionSamplesRef.current),
-      trialStartMs,
-      trialEndMs,
-      conditionMs,
-    };
+    return { beltSyncMean, btBaselinePeriodMs, btConditionPeriodMs, syncMetrics }
   }
 
-  return { getPhase, runTrial, controlRef };
+  return { getPhase, runTrial, controlRef }
 }

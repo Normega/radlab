@@ -35,9 +35,6 @@ export function useBeltSession(userId) {
     sessionNumber,
     baselinePeriodMs,
     postBaselinePeriodMs,
-    calibModelLabel,
-    calibFitR,
-    calibLagMs,
   }) => {
     const sessionId = sessionIdRef.current;
     if (!sessionId) return;
@@ -60,9 +57,6 @@ export function useBeltSession(userId) {
       session_number:        sessionNumber ?? 1,
       baseline_period_ms:    baselinePeriodMs ?? null,
       post_baseline_period_ms: postBaselinePeriodMs ?? null,
-      calib_model_label:     calibModelLabel ?? null,
-      calib_fit_r:           calibFitR       ?? null,
-      calib_lag_ms:          calibLagMs      ?? null,
     });
     if (sessError) console.error('belt_sessions insert:', sessError);
 

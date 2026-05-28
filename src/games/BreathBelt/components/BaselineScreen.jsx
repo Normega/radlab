@@ -58,7 +58,7 @@ export default function BaselineScreen({
       await sendTrigger(triggerEnd);
       currentPhaseRef.current = 'idle';
       const periodMs = estimateBreathPeriodMs(samplesRef.current, SAMPLE_MS);
-      onComplete(periodMs, [...samplesRef.current]);
+      onComplete(periodMs);
     }, durationMs);
 
     return () => {

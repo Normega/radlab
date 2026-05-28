@@ -1,65 +1,74 @@
-import { useState, useCallback, useRef } from 'react';
-import AvatarBreathPacer from '../../EbbAndFlow/components/AvatarBreathPacer';
-import BeltSyncRing from './BeltSyncRing';
-import { useTrialRunner } from '../hooks/useTrialRunner';
-import { useBeltQuestStaircases } from '../hooks/useBeltQuestStaircases';
-import ConfidenceRating from '../../shared/ConfidenceRating';
-import ArousalRating from '../../shared/ArousalRating';
-import { BASE_BREATH_SPEED_S } from '../constants';
+import { useState, useCallback, useRef } from 'react'
+import AvatarBreathPacer from '../../EbbAndFlow/components/AvatarBreathPacer'
+import SynchronyBar from './SynchronyBar'
+import TrialSyncOverlay from './TrialSyncOverlay'
+import { useTrialRunner } from '../hooks/useTrialRunner'
+import { useBeltQuestStaircases } from '../hooks/useBeltQuestStaircases'
+import ConfidenceRating from '../../shared/ConfidenceRating'
+import ArousalRating from '../../shared/ArousalRating'
+import { BASE_BREATH_SPEED_S } from '../constants'
 
-const BASE_MS = BASE_BREATH_SPEED_S * 1000;
-const SC_STATES = { READY: 'READY', IN_PROGRESS: 'IN_PROGRESS', RESPONSE: 'RESPONSE' };
+const BASE_MS = BASE_BREATH_SPEED_S * 1000
+const SC_STATES = { READY: 'READY', IN_PROGRESS: 'IN_PROGRESS', RESPONSE: 'RESPONSE' }
 
 export default function StaircaseScreen({
   avatarProps,
   breathValueRef,
+  syncQuality,
   sendTrigger,
   currentPhaseRef,
   currentTrialRef,
-  getPacerRadiusFnRef,
+  getAndClearTrialSamples,
+  mlrWeightsRef,
   recordTrial,
   savedQuestState,
   onComplete,
 }) {
-  const [scState,    setScState]    = useState(SC_STATES.READY);
-  const [trialCount, setTrialCount] = useState(0);
-  const [response,   setResponse]   = useState(null);
-  const [confidence, setConfidence] = useState(null);
-  const [arousal,    setArousal]    = useState(null);
-  const trialsData     = useRef([]);
-  const pendingTrialRef = useRef(null);
-  const avatarSize      = 240;
+  const [scState,    setScState]    = useState(SC_STATES.READY)
+  const [trialCount, setTrialCount] = useState(0)
+  const [response,   setResponse]   = useState(null)
+  const [confidence, setConfidence] = useState(null)
+  const [arousal,    setArousal]    = useState(null)
+  const [syncData,   setSyncData]   = useState(null)   // post-trial metrics (no graph)
+  const trialsData      = useRef([])
+  const pendingTrialRef = useRef(null)
+  const avatarSize      = 240
 
-  const quest = useBeltQuestStaircases(savedQuestState);
+  const quest = useBeltQuestStaircases(savedQuestState)
+
   const { getPhase, runTrial, controlRef } = useTrialRunner({
-    breathValueRef, sendTrigger, currentPhaseRef, currentTrialRef, getPacerRadiusFnRef,
-  });
+    breathValueRef,
+    sendTrigger,
+    currentPhaseRef,
+    currentTrialRef,
+    getAndClearTrialSamples,
+    mlrWeightsRef,
+  })
 
   const startTrial = useCallback(async () => {
-    const { key, log10Delta, deltaSec } = quest.getNextTrial();
+    const { key, log10Delta, deltaSec } = quest.getNextTrial()
     const conditionMs = key === 'faster'
       ? Math.max(BASE_MS - deltaSec * 1000, 500)
-      : BASE_MS + deltaSec * 1000;
+      : BASE_MS + deltaSec * 1000
 
-    setScState(SC_STATES.IN_PROGRESS);
-    setResponse(null); setConfidence(null); setArousal(null);
+    setSyncData(null)
+    setScState(SC_STATES.IN_PROGRESS)
+    setResponse(null); setConfidence(null); setArousal(null)
 
-    const { beltSyncMean, btBaselinePeriodMs, btConditionPeriodMs } =
-      await runTrial('phase3', trialCount + 1, conditionMs);
+    const { beltSyncMean, btBaselinePeriodMs, btConditionPeriodMs, syncMetrics } =
+      await runTrial('phase3', trialCount + 1, conditionMs)
 
-    pendingTrialRef.current = {
-      key, log10Delta, deltaSec, conditionMs,
-      beltSyncMean, btBaselinePeriodMs, btConditionPeriodMs,
-    };
-    setScState(SC_STATES.RESPONSE);
-  }, [trialCount, quest, runTrial]);
+    setSyncData(syncMetrics)                 // overlay visible during RESPONSE, no graph
+    pendingTrialRef.current = { key, log10Delta, deltaSec, conditionMs, beltSyncMean, btBaselinePeriodMs, btConditionPeriodMs, syncMetrics }
+    setScState(SC_STATES.RESPONSE)
+  }, [trialCount, quest, runTrial])
 
   const submitResponse = useCallback(() => {
-    if (!response || confidence === null || arousal === null) return;
-    const { key, log10Delta, conditionMs, beltSyncMean, btBaselinePeriodMs, btConditionPeriodMs } =
-      pendingTrialRef.current;
+    if (!response || confidence === null || arousal === null) return
+    const { key, log10Delta, conditionMs, beltSyncMean, btBaselinePeriodMs, btConditionPeriodMs, syncMetrics } =
+      pendingTrialRef.current
 
-    const responseIndex = quest.recordResponse(key, response, log10Delta);
+    const responseIndex = quest.recordResponse(key, response, log10Delta)
     const row = {
       phase:                  3,
       trial_number:           trialCount + 1,
@@ -73,28 +82,32 @@ export default function StaircaseScreen({
       belt_sync_mean:         beltSyncMean,
       bt_baseline_period_ms:  btBaselinePeriodMs,
       bt_condition_period_ms: btConditionPeriodMs,
-    };
-    trialsData.current.push(row);
-    recordTrial(row);
+      trial_r_baseline:       syncMetrics?.trialRBaseline  ?? null,
+      trial_r_condition:      syncMetrics?.trialRCondition ?? null,
+      peak_error_ms:          syncMetrics?.peakErrorMs     ?? null,
+    }
+    trialsData.current.push(row)
+    recordTrial(row)
 
-    const nextCount = trialCount + 1;
-    setTrialCount(nextCount);
+    const nextCount = trialCount + 1
+    setTrialCount(nextCount)
 
     if (quest.allConverged()) {
-      onComplete(trialsData.current, quest.serialise(), quest.getConvergence());
+      onComplete(trialsData.current, quest.serialise(), quest.getConvergence())
     } else {
-      startTrial();
+      setSyncData(null)
+      setScState(SC_STATES.READY)
     }
-  }, [response, confidence, arousal, trialCount, quest, recordTrial, onComplete, startTrial]);
+  }, [response, confidence, arousal, trialCount, quest, recordTrial, onComplete])
 
-  const conv     = quest.getConvergence();
-  const canSubmit = response !== null && confidence !== null && arousal !== null;
+  const conv     = quest.getConvergence()
+  const canSubmit = response !== null && confidence !== null && arousal !== null
 
   return (
     <div className="flex flex-col items-center gap-6 px-6 py-8" style={{ maxWidth: 480, margin: '0 auto' }}>
+
       {scState !== SC_STATES.RESPONSE && (
         <div style={{ position: 'relative', width: avatarSize, height: avatarSize }}>
-          <BeltSyncRing breathValueRef={breathValueRef} avatarSize={avatarSize} />
           <div style={{ position: 'relative', zIndex: 2 }}>
             <AvatarBreathPacer
               {...avatarProps}
@@ -110,8 +123,8 @@ export default function StaircaseScreen({
 
       <div className="flex gap-4" style={{ fontFamily: 'Space Mono', fontSize: 'var(--fs-mono-sm)', color: 'var(--tx3)' }}>
         <span>Trial {trialCount + 1}</span>
-        <span>↑ SD {conv.faster.sd.toFixed(3)}</span>
-        <span>↓ SD {conv.slower.sd.toFixed(3)}</span>
+        <span>↑ {conv.faster.sd.toFixed(3)}</span>
+        <span>↓ {conv.slower.sd.toFixed(3)}</span>
       </div>
 
       {scState === SC_STATES.READY && (
@@ -144,8 +157,7 @@ export default function StaircaseScreen({
                 style={{
                   background: response === opt ? 'var(--pk)' : 'transparent',
                   color:      response === opt ? '#fff' : 'var(--tx)',
-                  border:     '1px solid var(--bds)',
-                  fontSize:   'var(--fs-body)', minWidth: 80,
+                  border: '1px solid var(--bds)', fontSize: 'var(--fs-body)', minWidth: 80,
                 }}>
                 {opt}
               </button>
@@ -167,13 +179,23 @@ export default function StaircaseScreen({
             className="px-6 py-3 rounded-xl font-medium w-full"
             style={{
               background: canSubmit ? 'var(--pk)' : 'var(--bd)',
-              color:      canSubmit ? '#fff' : 'var(--tx3)',
-              fontSize:   'var(--fs-body)', cursor: canSubmit ? 'pointer' : 'default',
+              color: canSubmit ? '#fff' : 'var(--tx3)',
+              fontSize: 'var(--fs-body)', cursor: canSubmit ? 'pointer' : 'default',
             }}>
             Next
           </button>
         </div>
       )}
+
+      {/* Sync quality bar — during trials only */}
+      <SynchronyBar quality={syncQuality} visible={scState === SC_STATES.IN_PROGRESS} />
+
+      {/* Post-trial metrics overlay — no graph in Phase 3 */}
+      <TrialSyncOverlay
+        syncMetrics={syncData}
+        showGraph={false}
+        trialNumber={trialCount}
+      />
     </div>
-  );
+  )
 }

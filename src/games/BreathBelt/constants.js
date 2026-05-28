@@ -13,7 +13,7 @@ export const CALIB_CYCLES  = 3;
 export const READY_DELAY_MS = 1000;
 
 // ── Baselines — both 120 s for matched pre/post comparison ───────────────
-export const BASELINE_DURATION_MS      = 30_000;   // DEBUG: normally 120_000
+export const BASELINE_DURATION_MS      = 120_000;  // pre-session free breathing
 export const POST_BASELINE_DURATION_MS = 120_000;  // post-session free breathing
 
 // ── QUEST parameters ──────────────────────────────────────────────────────
