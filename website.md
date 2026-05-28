@@ -1596,12 +1596,19 @@ Supabase schema in `belt_schema.sql` (initial) + `belt_correspondence_migration.
 
 | Table | Contents |
 |---|---|
-| `belt_sessions` | One row per session: user_id, calib_state JSON, quest_state JSON, **session_number**, **baseline_period_ms**, **post_baseline_period_ms**, ***calib_model_label***, ***calib_fit_r***, ***calib_lag_ms*** |
+| `belt_sessions` | One row per session: user_id, calib_state JSON, quest_state JSON, storage_path, **session_number**, **baseline_period_ms**, **post_baseline_period_ms**, ***calib_model_label***, ***calib_fit_r***, ***calib_lag_ms*** |
 | `belt_trials` | One row per trial: phase, trial_number, condition, breath_period_ms, log10_mag, response, correct, confidence, arousal, belt_sync_mean, **bt_baseline_period_ms**, **bt_condition_period_ms**, ****trial_r_baseline****, ****trial_r_condition****, ****peak_error_ms**** |
-| `belt_accel_raw` | Raw accelerometer rows (timestamps + xyz + pacer_radius) — stored in Supabase Storage as CSV |
-| `belt_hr_raw` | Raw HR rows — stored in Supabase Storage as CSV |
 
-**Bold** = added by `belt_correspondence_migration.sql`. ***Bold italic*** = added by `belt_mlr_migration.sql`. ****Bold underline**** = added by `belt_sync_metrics_migration.sql`.
+**Bold** = added by `belt_correspondence_migration.sql`. ***Bold italic*** = added by `belt_mlr_migration.sql` (now populated by `useBeltSession.endSession` from `calibState` JSON). ****Bold underline**** = added by `belt_sync_metrics_migration.sql`.
+
+Raw signals are uploaded to the `belt-sessions` Storage bucket as two CSVs per session:
+
+| Storage key | Columns |
+|---|---|
+| `{user_id}/{session_id}_accel.csv` | `phase, trial, packet_timestamp, sample_index, x, y, z, pacer_radius` |
+| `{user_id}/{session_id}_hr.csv`    | `phase, trial, timestamp, heart_rate` |
+
+`belt_sessions.storage_path` holds the base prefix (`{user_id}/{session_id}`) — suffix with `_accel.csv` / `_hr.csv` to reach the blobs. The naming matches the local backup convention written by `useStreamingBackup` (`{participant_id}_{ts}_accel.csv` etc.).
 
 ### Source layout
 
@@ -1623,7 +1630,8 @@ src/games/BreathBelt/
                                exposes mlrWeightsRef, filterState3Ref, syncQuality, calibReviewData,
                                beginCalibCollection, redoCalibration, getAndClearTrialSamples,
                                getPacerRadiusFnRef
-    useBeltSession.js        ← Supabase session lifecycle; calibState (= mlrWeightsRef JSON) stored to belt_sessions.calib_state
+    useBeltSession.js        ← Supabase session lifecycle; uploads accel + HR as two CSVs to belt-sessions Storage;
+                               flattens calibState.modelLabel/fitR/lagMs into the scalar columns on belt_sessions
     useBeltQuestStaircases.js ← dual-QUEST state machine
     useTrialRunner.js        ← per-trial avatar pacing: 500 ms fixation hold, resetToNeutral at trial end,
                                returns syncMetrics { trialRBaseline, trialRCondition, peakErrorMs, pacerPts, beltPts }

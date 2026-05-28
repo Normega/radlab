@@ -39,24 +39,36 @@ export function useBeltSession(userId) {
     const sessionId = sessionIdRef.current;
     if (!sessionId) return;
 
-    // 1. Upload raw data to Storage
-    const csv = `=== ACCEL ===\n${buildAccelCsv(rawAccelRows)}\n\n=== HR ===\n${buildHRCsv(rawHRRows)}`;
-    const storagePath = `${userId}/${sessionId}_raw.csv`;
-    const { error: storageError } = await supabase.storage
-      .from('belt-sessions')
-      .upload(storagePath, new Blob([csv], { type: 'text/csv' }), { upsert: true });
-    if (storageError) console.error('belt storage upload:', storageError);
+    // 1. Upload accel + HR as separate CSVs, mirroring the local backup naming.
+    //    storage_path holds the base (no suffix); blobs land at base + '_accel.csv' / '_hr.csv'.
+    const basePath  = `${userId}/${sessionId}`;
+    const accelPath = `${basePath}_accel.csv`;
+    const hrPath    = `${basePath}_hr.csv`;
 
-    // 2. Insert belt_sessions row
+    const accelUpload = supabase.storage.from('belt-sessions').upload(
+      accelPath, new Blob([buildAccelCsv(rawAccelRows)], { type: 'text/csv' }), { upsert: true }
+    );
+    const hrUpload = supabase.storage.from('belt-sessions').upload(
+      hrPath, new Blob([buildHRCsv(rawHRRows)], { type: 'text/csv' }), { upsert: true }
+    );
+    const [{ error: accelErr }, { error: hrErr }] = await Promise.all([accelUpload, hrUpload]);
+    if (accelErr) console.error('belt accel storage upload:', accelErr);
+    if (hrErr)    console.error('belt hr storage upload:',    hrErr);
+
+    // 2. Insert belt_sessions row — calib metrics flattened from calibState JSON
+    //    into the scalar columns added by belt_mlr_migration.sql.
     const { error: sessError } = await supabase.from('belt_sessions').insert({
-      session_id:            sessionId,
-      user_id:               userId,
-      calib_state:           calibState,
-      storage_path:          storagePath,
-      quest_state:           questState ?? null,
-      session_number:        sessionNumber ?? 1,
-      baseline_period_ms:    baselinePeriodMs ?? null,
+      session_id:              sessionId,
+      user_id:                 userId,
+      calib_state:             calibState,
+      storage_path:            basePath,
+      quest_state:             questState ?? null,
+      session_number:          sessionNumber ?? 1,
+      baseline_period_ms:      baselinePeriodMs ?? null,
       post_baseline_period_ms: postBaselinePeriodMs ?? null,
+      calib_model_label:       calibState?.modelLabel ?? null,
+      calib_fit_r:             calibState?.fitR       ?? null,
+      calib_lag_ms:            calibState?.lagMs      ?? null,
     });
     if (sessError) console.error('belt_sessions insert:', sessError);
 
@@ -78,10 +90,15 @@ export function useBeltSession(userId) {
   return { sessionIdRef, startSession, recordTrial, endSession };
 }
 
+function fmtNum(v, digits = 4) {
+  return (v == null || Number.isNaN(v)) ? '' : Number(v).toFixed(digits);
+}
+
 function buildAccelCsv(rows) {
-  const header = 'phase,trial,packet_timestamp,sample_index,x,y,z';
+  const header = 'phase,trial,packet_timestamp,sample_index,x,y,z,pacer_radius';
   const body   = rows.map(r =>
-    [r.phase, r.trial, r.packetTimestamp, r.sampleIndex, r.x, r.y, r.z].join(',')
+    [r.phase, r.trial, r.packetTimestamp, r.sampleIndex,
+     fmtNum(r.x), fmtNum(r.y), fmtNum(r.z), fmtNum(r.pacerRadius)].join(',')
   ).join('\n');
   return `${header}\n${body}`;
 }
