@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
@@ -23,11 +23,14 @@ export default function StudySessionRunner() {
       if (error) throw error
       return data
     },
-    onSuccess: (data) => {
-      setCurrentStep(data.current_step ?? 0)
-      setPhase(data.current_step >= (data.studies?.protocol?.length ?? 0) ? PHASE.COMPLETE : PHASE.RUNNING)
-    },
   })
+
+  useEffect(() => {
+    if (!enrollment) return
+    const step = enrollment.current_step ?? 0
+    setCurrentStep(step)
+    setPhase(step >= (enrollment.studies?.protocol?.length ?? 0) ? PHASE.COMPLETE : PHASE.RUNNING)
+  }, [enrollment])
 
   const advanceStep = useMutation({
     mutationFn: async (stepData) => {
