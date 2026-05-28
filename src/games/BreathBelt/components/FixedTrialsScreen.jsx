@@ -3,7 +3,7 @@ import AvatarBreathPacer from '../../EbbAndFlow/components/AvatarBreathPacer';
 import BeltSyncRing from './BeltSyncRing';
 import SignalGraph from './SignalGraph';
 import { useTrialRunner } from '../hooks/useTrialRunner';
-import { getPacerRadius } from '../breathUtils';
+import { buildReviewEntry } from '../breathUtils';
 import {
   BASE_BREATH_SPEED_S,
   FASTER_BREATH_SPEED_S,
@@ -34,6 +34,13 @@ function conditionMs(condition) {
   return BASE_BREATH_SPEED_S * 1000;
 }
 
+// Convert rawAccelRowsRef rows in a timestamp window to {t,x,y,z}[] for MLR processing
+function sliceAccelSamples(rawAccelRows, startMs, endMs) {
+  return rawAccelRows
+    .filter(r => r.packetTimestamp >= startMs && r.packetTimestamp <= endMs)
+    .map(r => ({ t: r.packetTimestamp + r.sampleIndex * 5, x: r.x, y: r.y, z: r.z }));
+}
+
 const CONDITION_LABELS = { same: 'Same pace', faster: 'Faster', slower: 'Slower' };
 const TRIAL_STATES = { READY: 'READY', IN_PROGRESS: 'IN_PROGRESS', REVIEWING: 'REVIEWING' };
 
@@ -47,6 +54,8 @@ export default function FixedTrialsScreen({
   setPacerContext,
   clearPacerContext,
   recordTrial,
+  rawAccelRowsRef,
+  mlrWeightsRef,
   onComplete,
 }) {
   const [trialList]  = useState(buildTrialList);
@@ -68,21 +77,17 @@ export default function FixedTrialsScreen({
 
     const {
       beltSyncMean, btBaselinePeriodMs, btConditionPeriodMs,
-      conditionSamples, trialStartMs, conditionMs: trialConditionMs,
+      trialStartMs, trialEndMs, conditionMs: trialConditionMs,
     } = await runTrial('phase2', trialIdx + 1, conditionMs(condition));
 
-    // Build review graph data from condition samples
-    const conditionStartMs = conditionSamples[0]?.t ?? (trialStartMs + 2 * BASE_BREATH_SPEED_S * 1000);
-    const step = Math.max(1, Math.floor(conditionSamples.length / 80));
-    const pacerPts = conditionSamples
-      .filter((_, j) => j % step === 0)
-      .map(s => ({ t: s.t, value: getPacerRadius(s.t, conditionStartMs, trialConditionMs) }));
-    const beltPts = conditionSamples.filter((_, j) => j % step === 0);
+    // Build review entry using identical offline filtfilt algorithm as calibration
+    const accelSamples = sliceAccelSamples(rawAccelRowsRef?.current ?? [], trialStartMs, trialEndMs);
+    const mlr = mlrWeightsRef?.current;
+    const entry = (mlr && accelSamples.length >= 20)
+      ? buildReviewEntry(accelSamples, mlr, trialStartMs, BASE_BREATH_SPEED_S * 1000, trialConditionMs, condition)
+      : { condition, pacerPts: [], beltPts: [], scoreMs: Infinity };
 
-    reviewDataRef.current.push({
-      condition, conditionSamples, trialStartMs,
-      conditionMs: trialConditionMs, basePeriodMs: BASE_BREATH_SPEED_S * 1000,
-    });
+    reviewDataRef.current.push(entry);
 
     const row = {
       phase:                  2,
@@ -101,9 +106,9 @@ export default function FixedTrialsScreen({
     trialsData.push(row);
     recordTrial(row);
 
-    setLastReview({ pacerPts, beltPts, condition, trialNum: trialIdx + 1 });
+    setLastReview({ ...entry, trialNum: trialIdx + 1 });
     setTrialState(TRIAL_STATES.REVIEWING);
-  }, [trialIdx, trialList, runTrial, recordTrial, trialsData]);
+  }, [trialIdx, trialList, runTrial, recordTrial, trialsData, rawAccelRowsRef, mlrWeightsRef]);
 
   return (
     <div className="flex flex-col items-center gap-6 px-6 py-8" style={{ maxWidth: 480, margin: '0 auto' }}>
@@ -159,6 +164,7 @@ export default function FixedTrialsScreen({
             <SignalGraph
               pacerPts={lastReview.pacerPts}
               beltPts={lastReview.beltPts}
+              scoreMs={lastReview.scoreMs}
               width={400}
               height={100}
             />

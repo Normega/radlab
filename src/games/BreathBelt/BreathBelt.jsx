@@ -63,7 +63,8 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
   const [sessionNumber, setSessionNumber] = useState(1);
 
   const preBaselinePeriodRef  = useRef(null);
-  const preBaselineSamplesRef = useRef([]);
+  const baselineStartMsRef    = useRef(0);
+  const baselineEndMsRef      = useRef(0);
   const postBaselinePeriodRef = useRef(null);
   const convergenceRef        = useRef(null);
   const pendingQuestStateRef  = useRef(null);
@@ -278,12 +279,13 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
           triggerStart="2"
           triggerEnd="3"
           onStart={async () => {
+            baselineStartMsRef.current = Date.now();
             await belt.sendTrigger('1');   // code 1 — session start
             setPhase(S.BASELINE_RECORDING);
           }}
-          onComplete={(periodMs, samples) => {
-            preBaselinePeriodRef.current  = periodMs;
-            preBaselineSamplesRef.current = samples ?? [];
+          onComplete={(periodMs) => {
+            preBaselinePeriodRef.current = periodMs;
+            baselineEndMsRef.current     = Date.now();
             setPhase(S.BASELINE_COMPLETE);
           }}
         />
@@ -302,8 +304,10 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
     return (
       <Layout title="Baseline review">
         <BaselineReviewScreen
-          samples={preBaselineSamplesRef.current}
-          periodMs={preBaselinePeriodRef.current}
+          rawAccelRows={belt.rawAccelRowsRef.current}
+          mlrWeights={belt.mlrWeightsRef.current}
+          startMs={baselineStartMsRef.current}
+          endMs={baselineEndMsRef.current}
           onContinue={() => setPhase(S.PHASE2_READY)}
         />
       </Layout>
@@ -340,6 +344,8 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
           getPacerRadiusFnRef={belt.getPacerRadiusFnRef}
           setPacerContext={belt.setPacerContext}
           clearPacerContext={belt.clearPacerContext}
+          rawAccelRowsRef={belt.rawAccelRowsRef}
+          mlrWeightsRef={belt.mlrWeightsRef}
           recordTrial={recordTrialWithBackup}
           onComplete={async (_trialsData, reviewData) => {
             await belt.sendTrigger('5');  // code 5 — phase 2 end

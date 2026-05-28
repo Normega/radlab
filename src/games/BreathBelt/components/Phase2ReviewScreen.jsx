@@ -1,5 +1,4 @@
 import SignalGraph from './SignalGraph'
-import { getPacerRadius } from '../breathUtils'
 
 const CONDITION_COLORS = { same: '#888', faster: '#e67e22', slower: '#3498db' }
 const CONDITION_LABELS = { same: 'Same', faster: 'Faster ↑', slower: 'Slower ↓' }
@@ -9,7 +8,7 @@ export default function Phase2ReviewScreen({ reviewData = [], onContinue }) {
     <div style={S.wrap}>
       <h2 style={S.title}>Phase 2 — trial review</h2>
       <p style={S.sub}>
-        Blue = pacer (condition period) · Amber = belt signal. Trials are in presentation order.
+        Blue = expected pacer · Amber = observed belt signal (offline MLR, same as calibration).
       </p>
 
       <div style={S.legend}>
@@ -19,16 +18,7 @@ export default function Phase2ReviewScreen({ reviewData = [], onContinue }) {
 
       <div style={S.grid}>
         {reviewData.map((entry, i) => {
-          const { condition, conditionSamples, trialStartMs, conditionMs, basePeriodMs } = entry
-          const conditionStartMs = conditionSamples[0]?.t ?? (trialStartMs + 2 * basePeriodMs)
-          const step = Math.max(1, Math.floor(conditionSamples.length / 60))
-          const pacerPts = conditionSamples
-            .filter((_, j) => j % step === 0)
-            .map(s => ({ t: s.t, value: getPacerRadius(s.t, conditionStartMs, conditionMs) }))
-          const beltPts = conditionSamples
-            .filter((_, j) => j % step === 0)
-            .map(s => ({ t: s.t, value: s.value }))
-
+          const { condition, pacerPts, beltPts, scoreMs } = entry
           const color = CONDITION_COLORS[condition] ?? '#888'
           return (
             <div key={i} style={S.cell}>
@@ -36,7 +26,7 @@ export default function Phase2ReviewScreen({ reviewData = [], onContinue }) {
                 <span style={S.cellNum}>T{i + 1}</span>
                 <span style={{ ...S.cellCond, color }}>{CONDITION_LABELS[condition] ?? condition}</span>
               </div>
-              <SignalGraph pacerPts={pacerPts} beltPts={beltPts} width={140} height={72} />
+              <SignalGraph pacerPts={pacerPts} beltPts={beltPts} scoreMs={scoreMs} width={140} height={72} />
             </div>
           )
         })}

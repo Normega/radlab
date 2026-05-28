@@ -1,64 +1,80 @@
 // BaselineReviewScreen — shown after natural breathing baseline completes.
-// Plots the detrended belt signal (high-pass filtered) so the RA can verify
-// data was captured throughout without slow drift obscuring breathing cycles.
+// Uses the same offline filtfilt MLR algorithm as calibration review.
+// No expected signal shown (breathing is unpaced).
 
-import { highPassValues } from '../breathUtils'
+import { computeMLRPredictions, estimateBreathPeriodMs } from '../breathUtils'
 
-const SAMPLE_MS    = 40
-const GRAPH_H      = 160
-const GRAPH_W      = 560
-const PAD_L        = 40
-const PAD_R        = 16
-const PAD_T        = 16
-const PAD_B        = 28
-const INNER_W      = GRAPH_W - PAD_L - PAD_R
-const INNER_H      = GRAPH_H - PAD_T - PAD_B
+const GRAPH_H  = 160
+const GRAPH_W  = 560
+const PAD_L    = 40
+const PAD_R    = 16
+const PAD_T    = 16
+const PAD_B    = 28
+const INNER_W  = GRAPH_W - PAD_L - PAD_R
+const INNER_H  = GRAPH_H - PAD_T - PAD_B
 
-export default function BaselineReviewScreen({ samples = [], periodMs, onContinue }) {
-  const durationS   = (samples.length * SAMPLE_MS) / 1000
-  const periodS     = periodMs ? (periodMs / 1000).toFixed(1) : '—'
-  const meanVal     = samples.length
-    ? (samples.reduce((a, b) => a + b, 0) / samples.length).toFixed(3)
-    : '—'
+export default function BaselineReviewScreen({ rawAccelRows = [], mlrWeights, startMs, endMs, onContinue }) {
+  // Convert raw accel rows to {t,x,y,z}[] (same interpolation as calibration collection)
+  const accelSamples = rawAccelRows
+    .filter(r => r.packetTimestamp >= startMs && r.packetTimestamp <= endMs)
+    .map(r => ({ t: r.packetTimestamp + r.sampleIndex * 5, x: r.x, y: r.y, z: r.z }))
 
-  // High-pass filter to remove slow drift (fc = 0.05 Hz), then shift to [0,1] display range
-  const hpValues   = samples.length >= 4 ? highPassValues(samples, 0.05, SAMPLE_MS / 1000) : samples
-  const hpShifted  = hpValues.map(v => v + 0.5)
+  // Offline filtfilt MLR prediction — identical pipeline to calibration review
+  let beltPts = []
+  if (accelSamples.length >= 20 && mlrWeights) {
+    const vals = computeMLRPredictions(accelSamples, mlrWeights)
+    beltPts = accelSamples.map((s, i) => ({ t: s.t, value: vals[i] }))
+  }
 
-  // Downsample to at most 800 points for the polyline
-  const pts = downsample(hpShifted, 800)
+  const durationMs = Math.max(endMs - startMs, 1)
+  const durationS  = durationMs / 1000
 
-  const minY = Math.min(...pts)
-  const maxY = Math.max(...pts)
-  const yRange = Math.max(maxY - minY, 0.01)
+  // Estimate breathing period from the offline signal
+  const periodMs = estimateBreathPeriodMs(beltPts)
+  const periodS  = periodMs ? (periodMs / 1000).toFixed(1) : '—'
 
-  const polyline = pts.map((v, i) => {
-    const x = PAD_L + (i / (pts.length - 1)) * INNER_W
-    const y = PAD_T + INNER_H - ((v - minY) / yRange) * INNER_H
+  // Downsample to at most 800 pts for the polyline
+  const pts = downsample(beltPts, 800)
+
+  const vals    = pts.map(p => p.value)
+  const minY    = Math.min(...vals)
+  const maxY    = Math.max(...vals)
+  const yRange  = Math.max(maxY - minY, 1e-6)
+
+  const polyline = pts.map((p, i) => {
+    const x = PAD_L + ((p.t - startMs) / durationMs) * INNER_W
+    const y = PAD_T + INNER_H - ((p.value - minY) / yRange) * INNER_H
     return `${x.toFixed(1)},${y.toFixed(1)}`
   }).join(' ')
 
-  // Dead zone detection uses raw samples (near-zero in original space)
-  const deadZones = findDeadZones(samples, 0.02, 50)
+  // Dead zone detection: runs where |value| < 0.02 for > 2 s
+  const deadZones = findDeadZones(beltPts, 0.02, 50, startMs)
   const hasDead   = deadZones.length > 0
 
-  // X-axis tick every 5 s
+  // X-axis ticks every 5 s
   const xTicks = []
-  for (let s = 0; s <= durationS; s += 5) {
-    xTicks.push(s)
-  }
+  for (let s = 0; s <= durationS; s += 5) xTicks.push(s)
 
   return (
     <div style={S.wrap}>
       <h2 style={S.title}>Baseline signal review</h2>
       <p style={S.sub}>
-        Verify the belt was capturing data throughout. Signal should show clear breathing cycles.
+        Verify the belt was capturing data throughout. Signal uses the same offline MLR processing
+        as calibration — no expected trace (breathing is unpaced).
       </p>
+
+      {!mlrWeights && (
+        <div style={S.warn}>No calibration model — belt was not calibrated before this baseline.</div>
+      )}
+
+      {mlrWeights && beltPts.length === 0 && (
+        <div style={S.warn}>No accelerometer data found for the baseline window.</div>
+      )}
 
       {hasDead && (
         <div style={S.warn}>
-          Signal dropped near zero for {deadZones.map(z =>
-            `${(z.startS).toFixed(0)}–${(z.endS).toFixed(0)}s`
+          Signal dropped near zero at {deadZones.map(z =>
+            `${z.startS.toFixed(0)}–${z.endS.toFixed(0)}s`
           ).join(', ')}. Belt may have lost contact.
         </div>
       )}
@@ -92,12 +108,12 @@ export default function BaselineReviewScreen({ samples = [], periodMs, onContinu
             )
           })}
 
-          {/* Signal line */}
+          {/* Belt signal */}
           {pts.length > 1 && (
             <polyline
               points={polyline}
               fill="none"
-              stroke="#f068a4"
+              stroke="#e67e22"
               strokeWidth={1.5}
               strokeLinejoin="round"
             />
@@ -135,12 +151,12 @@ export default function BaselineReviewScreen({ samples = [], periodMs, onContinu
         </svg>
       </div>
 
-      {/* Stats row */}
+      {/* Stats */}
       <div style={S.stats}>
-        <Stat label="Duration"     value={`${durationS.toFixed(0)}s`} />
-        <Stat label="Est. period"  value={`${periodS}s`} />
-        <Stat label="Mean signal"  value={String(meanVal)} />
-        <Stat label="Samples"      value={String(samples.length)} />
+        <Stat label="Duration"    value={`${durationS.toFixed(0)}s`} />
+        <Stat label="Est. period" value={`${periodS}s`} />
+        <Stat label="Samples"     value={String(accelSamples.length)} />
+        <Stat label="Model"       value={mlrWeights?.modelLabel ?? '—'} />
       </div>
 
       <button style={S.btn} onClick={onContinue}>
@@ -159,27 +175,34 @@ function Stat({ label, value }) {
   )
 }
 
-function downsample(arr, maxPts) {
-  if (arr.length <= maxPts) return arr
-  const step = arr.length / maxPts
-  return Array.from({ length: maxPts }, (_, i) => arr[Math.round(i * step)])
+function downsample(pts, maxPts) {
+  if (pts.length <= maxPts) return pts
+  const step = pts.length / maxPts
+  return Array.from({ length: maxPts }, (_, i) => pts[Math.round(i * step)])
 }
 
-function findDeadZones(samples, threshold, minRun) {
+// Dead zones: runs where |value| < threshold for >= minRun consecutive samples
+function findDeadZones(pts, threshold, minRun, startMs) {
   const zones = []
   let runStart = null
-  for (let i = 0; i < samples.length; i++) {
-    const dead = samples[i] < threshold
+  for (let i = 0; i < pts.length; i++) {
+    const dead = Math.abs(pts[i].value) < threshold
     if (dead && runStart === null) runStart = i
     if (!dead && runStart !== null) {
       if (i - runStart >= minRun) {
-        zones.push({ startS: (runStart * SAMPLE_MS) / 1000, endS: (i * SAMPLE_MS) / 1000 })
+        zones.push({
+          startS: (pts[runStart].t - startMs) / 1000,
+          endS:   (pts[i].t       - startMs) / 1000,
+        })
       }
       runStart = null
     }
   }
-  if (runStart !== null && samples.length - runStart >= minRun) {
-    zones.push({ startS: (runStart * SAMPLE_MS) / 1000, endS: (samples.length * SAMPLE_MS) / 1000 })
+  if (runStart !== null && pts.length - runStart >= minRun) {
+    zones.push({
+      startS: (pts[runStart].t  - startMs) / 1000,
+      endS:   (pts[pts.length - 1].t - startMs) / 1000,
+    })
   }
   return zones
 }

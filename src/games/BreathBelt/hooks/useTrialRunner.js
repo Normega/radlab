@@ -71,6 +71,7 @@ export function useTrialRunner({ breathValueRef, sendTrigger, currentPhaseRef, c
       await startBreath(conditionMs);
     }
     stopSampling();
+    const trialEndMs = Date.now();
 
     // Code 12 — trial end
     await sendTrigger('12');
@@ -87,8 +88,8 @@ export function useTrialRunner({ breathValueRef, sendTrigger, currentPhaseRef, c
       beltSyncMean:        meanOf(conditionSamplesRef.current.map(s => s.value)),
       btBaselinePeriodMs:  estimateBreathPeriodMs(baselineSamplesRef.current),
       btConditionPeriodMs: estimateBreathPeriodMs(conditionSamplesRef.current),
-      conditionSamples:    [...conditionSamplesRef.current],
       trialStartMs,
+      trialEndMs,
       conditionMs,
     };
   }
