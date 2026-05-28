@@ -44,9 +44,11 @@ import SessionLibrary from './pages/admin/SessionLibrary'
 import SessionBuilder from './pages/admin/SessionBuilder'
 import ProtocolLibrary from './pages/admin/ProtocolLibrary'
 import ProtocolBuilder from './pages/admin/ProtocolBuilder'
-import StudyLibrary  from './pages/admin/StudyLibrary'
-import StudyBuilder  from './pages/admin/StudyBuilder'
-import StudyDetail   from './pages/admin/StudyDetail'
+import StudyLibrary     from './pages/admin/StudyLibrary'
+import StudyBuilder     from './pages/admin/StudyBuilder'
+import StudyDetail      from './pages/admin/StudyDetail'
+import StudyFormPage    from './pages/admin/StudyFormPage'
+import StudySessionRunner from './pages/admin/StudySessionRunner'
 import QuestionnairesPage   from './pages/admin/QuestionnairesPage'
 import QuestionnaireUpload  from './pages/admin/QuestionnaireUpload'
 import QuestionnairePreview from './pages/admin/QuestionnairePreview'
@@ -251,6 +253,9 @@ export default function App() {
 
           {/* Admin section — role-gated */}
           <Route element={<AdminRoute session={session} />}>
+            {/* Full-screen session runner — no admin chrome */}
+            <Route path="/admin/studies/:id/session/:enrollmentId" element={<StudySessionRunner />} />
+
             <Route element={<AdminLayout session={session} />}>
               <Route path="/admin"                  element={<AdminDashboard />} />
               <Route path="/admin/sessions"         element={<SessionLibrary />} />
@@ -260,7 +265,8 @@ export default function App() {
               <Route path="/admin/protocols/new"    element={<ProtocolBuilder />} />
               <Route path="/admin/protocols/:id"    element={<ProtocolBuilder />} />
               <Route path="/admin/studies"          element={<StudyLibrary />} />
-              <Route path="/admin/studies/new"      element={<StudyBuilder />} />
+              <Route path="/admin/studies/new"      element={<StudyFormPage />} />
+              <Route path="/admin/studies/:id/edit" element={<StudyFormPage />} />
               <Route path="/admin/studies/:id"      element={<StudyDetail />} />
               <Route path="/admin/questionnaires"        element={<QuestionnairesPage />} />
               <Route path="/admin/questionnaires/new"    element={<QuestionnaireUpload />} />

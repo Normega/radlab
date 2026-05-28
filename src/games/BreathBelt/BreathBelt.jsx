@@ -53,7 +53,7 @@ const S = {
   SESSION_COMPLETE:        'SESSION_COMPLETE',
 };
 
-export default function BreathBelt() {
+export default function BreathBelt({ studyMode = false, userId, studyId, onSessionComplete }) {
   const navigate = useNavigate();
   const [phase, setPhase] = useState(S.BROWSER_CHECK);
   const [sessionNumber, setSessionNumber] = useState(1);
@@ -109,7 +109,7 @@ export default function BreathBelt() {
     if (phase !== S.BROWSER_CHECK) return;
     if (!navigator.bluetooth) return;
     if (profileLoading || profile === undefined) return;
-    if (!['lab', 'admin'].includes(profile?.role)) { setPhase(S.ACCESS_DENIED); return; }
+    if (!studyMode && !['lab', 'admin'].includes(profile?.role)) { setPhase(S.ACCESS_DENIED); return; }
     setPhase(S.BT_CONNECT);
   }, [phase, profile, profileLoading]);
 
@@ -318,6 +318,8 @@ export default function BreathBelt() {
             currentPhaseRef={belt.currentPhaseRef}
             currentTrialRef={belt.currentTrialRef}
             getPacerRadiusFnRef={belt.getPacerRadiusFnRef}
+            setPacerContext={belt.setPacerContext}
+            clearPacerContext={belt.clearPacerContext}
             recordTrial={recordTrialWithBackup}
             onComplete={async () => {
               await belt.sendTrigger('5');  // code 5 — phase 2 end
@@ -374,6 +376,8 @@ export default function BreathBelt() {
             currentPhaseRef={belt.currentPhaseRef}
             currentTrialRef={belt.currentTrialRef}
             getPacerRadiusFnRef={belt.getPacerRadiusFnRef}
+            setPacerContext={belt.setPacerContext}
+            clearPacerContext={belt.clearPacerContext}
             recordTrial={recordTrialWithBackup}
             savedQuestState={null}
             onComplete={async (trials, questState, convergence) => {
@@ -444,7 +448,8 @@ export default function BreathBelt() {
         sessionNumber={sessionNumber}
         preBaselinePeriodMs={preBaselinePeriodRef.current}
         postBaselinePeriodMs={postBaselinePeriodRef.current}
-        onDone={() => navigate('/dashboard')}
+        onDone={studyMode && onSessionComplete ? onSessionComplete : () => navigate('/dashboard')}
+        studyMode={studyMode}
       />
     );
   }

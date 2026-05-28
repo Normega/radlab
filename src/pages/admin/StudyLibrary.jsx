@@ -8,7 +8,7 @@ function useStudies() {
     queryKey: ['studies-list'],
     queryFn: async () => {
       const [studiesRes, assignmentsRes, protocolsRes, consentRes] = await Promise.all([
-        supabase.from('studies').select('id, name, created_at').order('created_at', { ascending: false }),
+        supabase.from('studies').select('id, name, created_at, delivery_mode').order('created_at', { ascending: false }),
         supabase.from('study_protocol_assignments').select('study_id, protocol_id'),
         supabase.from('study_protocols').select('id, label, protocol_type'),
         supabase.from('participant_consent').select('study_id').is('withdrawn_at', null),
@@ -27,6 +27,7 @@ function useStudies() {
         protocolLabel: protocolByStudy[s.id]?.label ?? '—',
         protocolType: protocolByStudy[s.id]?.protocol_type,
         participantCount: consentCount[s.id] ?? 0,
+        deliveryMode: s.delivery_mode,
       }))
     },
   })
@@ -81,10 +82,15 @@ export default function StudyLibrary() {
                 <tr key={s.id} style={S.tr}>
                   <td style={S.td}>
                     <span style={S.label}>{s.name}</span>
+                    {s.deliveryMode === 'in_person' && (
+                      <span style={S.inPersonBadge}>in-person</span>
+                    )}
                   </td>
                   <td style={S.td}>
-                    <span style={S.proto}>{s.protocolLabel}</span>
-                    {s.protocolType && <TypeBadge type={s.protocolType} />}
+                    {s.deliveryMode === 'in_person'
+                      ? <span style={S.proto}>—</span>
+                      : <><span style={S.proto}>{s.protocolLabel}</span>{s.protocolType && <TypeBadge type={s.protocolType} />}</>
+                    }
                   </td>
                   <td style={S.td}>
                     <Chip>{s.participantCount}</Chip>
@@ -164,6 +170,7 @@ const S = {
   proto: { fontSize: 13, color: 'var(--tx2)', fontFamily: '"DM Sans",system-ui,sans-serif' },
   pct: { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx)' },
   archivedBadge: { display: 'inline-block', marginLeft: 8, fontFamily: '"Space Mono",monospace', fontSize: 10, background: '#f4f4f5', color: 'var(--tx3)', borderRadius: 6, padding: '2px 6px' },
+  inPersonBadge: { display: 'inline-block', marginLeft: 8, fontFamily: '"Space Mono",monospace', fontSize: 10, background: '#fdf2f8', color: 'var(--pk)', borderRadius: 6, padding: '2px 6px' },
   empty: { textAlign: 'center', padding: '48px 0' },
   emptyText: { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 20, color: 'var(--tx)', margin: '0 0 8px' },
   emptyHint: { fontSize: 14, color: 'var(--tx2)', margin: '0 0 24px' },

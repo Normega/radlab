@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { generateSchedule, issueLink } from '../../lib/scheduleGenerator'
+import EnrollmentPanel from '../../components/study/EnrollmentPanel'
 
 // ─── Data hooks ──────────────────────────────────────────────────────────────
 
@@ -13,7 +14,7 @@ function useStudy(id) {
       const { data, error } = await supabase
         .from('studies')
         .select(`
-          id, name, created_at, messaging_required,
+          id, name, created_at, messaging_required, delivery_mode, protocol,
           consent_required, active_consent_form_id, active_debrief_form_id,
           study_protocol_assignments(
             study_protocols(id, label, protocol_type)
@@ -22,8 +23,8 @@ function useStudy(id) {
         .eq('id', id)
         .single()
       if (error) throw error
-      const protocol = data.study_protocol_assignments?.[0]?.study_protocols
-      return { ...data, protocol }
+      const legacyProtocol = data.study_protocol_assignments?.[0]?.study_protocols
+      return { ...data, legacyProtocol }
     },
   })
 }
@@ -155,6 +156,7 @@ export default function StudyDetail() {
   const { id } = useParams()
   const qc = useQueryClient()
   const { data: study, isLoading: studyLoading } = useStudy(id)
+  const isInPerson = study?.delivery_mode === 'in_person'
   const { data: participants = [], isLoading: participantsLoading } = useParticipants(id)
 
   const [selectedParticipant, setSelectedParticipant] = useState(null)
@@ -222,7 +224,8 @@ export default function StudyDetail() {
 
   if (studyLoading) return <p style={S.muted}>Loading…</p>
 
-  const protocol = study?.protocol
+  const legacyProtocol = study?.legacyProtocol
+  const stepCount      = isInPerson ? (study?.protocol?.length ?? 0) : null
 
   return (
     <div>
@@ -231,19 +234,32 @@ export default function StudyDetail() {
           <Link to="/admin/studies" style={S.backLink}>← Studies</Link>
           <h1 style={S.h1}>{study?.name}</h1>
           <p style={S.sub}>
-            {protocol?.label ?? '—'}
-            {protocol?.protocol_type && (
-              <span style={S.typePill}>{protocol.protocol_type === 'single_shot' ? 'one-time' : 'scheduled'}</span>
+            {isInPerson
+              ? <span style={{ ...S.typePill, background: '#fdf2f8', color: 'var(--pk)' }}>in-person</span>
+              : <span style={S.typePill}>{legacyProtocol?.protocol_type === 'single_shot' ? 'one-time' : 'scheduled'}</span>
+            }
+            {isInPerson && stepCount != null && (
+              <><span style={S.sep}>·</span>{stepCount} {stepCount === 1 ? 'step' : 'steps'}</>
+            )}
+            {!isInPerson && legacyProtocol?.label && (
+              <>{legacyProtocol.label}</>
             )}
             <span style={S.sep}>·</span>
             {fmtDate(study?.created_at)}
-            <span style={S.sep}>·</span>
-            {participants.length} {participants.length === 1 ? 'participant' : 'participants'}
+            {!isInPerson && (
+              <><span style={S.sep}>·</span>
+              {participants.length} {participants.length === 1 ? 'participant' : 'participants'}</>
+            )}
           </p>
         </div>
+        <Link to={`/admin/studies/${id}/edit`} style={{ ...S.btnPrimary, textDecoration: 'none', fontSize: 13, padding: '7px 14px' }}>
+          Edit Study
+        </Link>
       </div>
 
-      {selectedParticipant ? (
+      {isInPerson ? (
+        <EnrollmentPanel study={study} />
+      ) : selectedParticipant ? (
         <ScheduleView
           studyId={id}
           participant={selectedParticipant}
