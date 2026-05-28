@@ -20,6 +20,8 @@ export default function StaircaseScreen({
   currentTrialRef,
   getAndClearTrialSamples,
   mlrWeightsRef,
+  setPacerContext,
+  clearPacerContext,
   recordTrial,
   savedQuestState,
   onComplete,
@@ -43,6 +45,8 @@ export default function StaircaseScreen({
     currentTrialRef,
     getAndClearTrialSamples,
     mlrWeightsRef,
+    setPacerContext,
+    clearPacerContext,
   })
 
   const startTrial = useCallback(async () => {

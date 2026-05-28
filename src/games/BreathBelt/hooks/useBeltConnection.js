@@ -81,9 +81,14 @@ export function useBeltConnection() {
     return () => clearTimeout(t)
   }, [calibPhase])
 
-  // ── Accel handler factory ────────────────────────────────────────────────
+  // ── Accel handler ────────────────────────────────────────────────────────
+  // Reads phase/trial dynamically from refs so updates from useTrialRunner
+  // (which sets currentPhaseRef = 'phase2'/'phase3') take effect immediately
+  // without rebinding `oncharacteristicvaluechanged`.
 
-  const makeAccelHandler = useCallback((phase, trial) => (e) => {
+  const accelHandler = useCallback((e) => {
+    const phase = currentPhaseRef.current
+    const trial = currentTrialRef.current
     const timestamp = Date.now()
     const dv = e.target?.value
     if (!dv) return
@@ -173,13 +178,13 @@ export function useBeltConnection() {
       await control.writeValue(
         new Uint8Array([0x02,0x02,0x00,0x01,0xC8,0x00,0x01,0x01,0x10,0x00,0x02,0x01,0x08,0x00]).buffer
       )
-      data.oncharacteristicvaluechanged   = makeAccelHandler('idle', -1)
+      data.oncharacteristicvaluechanged   = accelHandler
       hrChar.oncharacteristicvaluechanged = hrHandlerRef.current
       await data.startNotifications()
       await hrChar.startNotifications()
       setBtState('CONNECTED')
     } catch (err) { console.error('BT:', err); setBtState('ERROR') }
-  }, [makeAccelHandler])
+  }, [accelHandler])
 
   // ── COM port ─────────────────────────────────────────────────────────────
 
@@ -214,27 +219,21 @@ export function useBeltConnection() {
     setSyncQuality(0)
     setCalibReviewData(null)
     currentPhaseRef.current   = 'calib_fixation'
-    if (readAccCharRef.current)
-      readAccCharRef.current.oncharacteristicvaluechanged = makeAccelHandler('calib_fixation', -1)
     setCalibPhase('FIXATION')
-  }, [makeAccelHandler])
+  }, [])
 
   const beginCalibCollection = useCallback((calibStartMs, breathPeriodMs) => {
     calibSamplesRef.current  = []
     calibStartMsRef.current  = calibStartMs
     calibPeriodMsRef.current = breathPeriodMs
     currentPhaseRef.current  = 'calib_breathe'
-    if (readAccCharRef.current)
-      readAccCharRef.current.oncharacteristicvaluechanged = makeAccelHandler('calib_breathe', -1)
     setCalibPhase('BREATHE')
-  }, [makeAccelHandler])
+  }, [])
 
   const acceptCalibration = useCallback(() => {
     currentPhaseRef.current = 'idle'
-    if (readAccCharRef.current)
-      readAccCharRef.current.oncharacteristicvaluechanged = makeAccelHandler('idle', -1)
     setCalibPhase('COMPLETE')
-  }, [makeAccelHandler])
+  }, [])
 
   const redoCalibration = useCallback(() => {
     calibSamplesRef.current   = []
@@ -243,10 +242,8 @@ export function useBeltConnection() {
     setCalibReviewData(null)
     setSyncQuality(0)
     currentPhaseRef.current   = 'calib_fixation'
-    if (readAccCharRef.current)
-      readAccCharRef.current.oncharacteristicvaluechanged = makeAccelHandler('calib_fixation', -1)
     setCalibPhase('FIXATION')
-  }, [makeAccelHandler])
+  }, [])
 
   const resetCalibration = useCallback(() => {
     calibSamplesRef.current   = []
@@ -257,10 +254,8 @@ export function useBeltConnection() {
     setCalibReviewData(null)
     setSyncQuality(0)
     currentPhaseRef.current   = 'idle'
-    if (readAccCharRef.current)
-      readAccCharRef.current.oncharacteristicvaluechanged = makeAccelHandler('idle', -1)
     setCalibPhase('NONE')
-  }, [makeAccelHandler])
+  }, [])
 
   // ── Trial raw sample access ───────────────────────────────────────────────
   // Called by useTrialRunner after sendTrigger('12') to retrieve this trial's

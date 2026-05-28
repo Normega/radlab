@@ -44,6 +44,8 @@ export function useTrialRunner({
   currentTrialRef,
   getAndClearTrialSamples,
   mlrWeightsRef,
+  setPacerContext,
+  clearPacerContext,
 }) {
   const { getPhase, startBreath, reset } = useBreathCycle()
   const controlRef = useRef(null)
@@ -83,13 +85,18 @@ export function useTrialRunner({
     reset()
     controlRef.current?.resumeAnimation?.()
 
+    // Live SynchronyBar context: baseline breaths at BASE_MS
+    setPacerContext?.(trialStartMs, BASE_MS)
+
     // Breaths 1–2: baseline pace
     startSampling('baseline')
     for (let i = 0; i < BASELINE_BREATHS_COUNT; i++) await startBreath(BASE_MS)
     stopSampling()
 
-    // Breath 3 onset
+    // Breath 3 onset — switch live pacer context to condition speed
+    const conditionStartMs = Date.now()
     await sendTrigger('11')
+    setPacerContext?.(conditionStartMs, conditionMs)
 
     // Breaths 3–4: condition pace
     startSampling('condition')
@@ -98,6 +105,7 @@ export function useTrialRunner({
 
     // ── Trial end ─────────────────────────────────────────────────────────
     await sendTrigger('12')
+    clearPacerContext?.()
 
     // Freeze avatar at neutral — will be held until next trial's 500 ms fixation
     controlRef.current?.resetToNeutral?.()

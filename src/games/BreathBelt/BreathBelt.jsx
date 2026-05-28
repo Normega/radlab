@@ -318,6 +318,8 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
           currentTrialRef={belt.currentTrialRef}
           getAndClearTrialSamples={belt.getAndClearTrialSamples}
           mlrWeightsRef={belt.mlrWeightsRef}
+          setPacerContext={belt.setPacerContext}
+          clearPacerContext={belt.clearPacerContext}
           recordTrial={recordTrialWithBackup}
           onComplete={async () => {
             await belt.sendTrigger('5');  // code 5 — phase 2 end
@@ -373,6 +375,8 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
           currentTrialRef={belt.currentTrialRef}
           getAndClearTrialSamples={belt.getAndClearTrialSamples}
           mlrWeightsRef={belt.mlrWeightsRef}
+          setPacerContext={belt.setPacerContext}
+          clearPacerContext={belt.clearPacerContext}
           recordTrial={recordTrialWithBackup}
           savedQuestState={null}
           onComplete={async (trials, questState, convergence) => {

@@ -42,6 +42,8 @@ export default function FixedTrialsScreen({
   currentTrialRef,
   getAndClearTrialSamples,
   mlrWeightsRef,
+  setPacerContext,
+  clearPacerContext,
   recordTrial,
   onComplete,
 }) {
@@ -59,6 +61,8 @@ export default function FixedTrialsScreen({
     currentTrialRef,
     getAndClearTrialSamples,
     mlrWeightsRef,
+    setPacerContext,
+    clearPacerContext,
   })
 
   const startTrial = useCallback(async () => {
