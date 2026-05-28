@@ -1,6 +1,5 @@
 import { useState, useCallback, useRef } from 'react'
 import AvatarBreathPacer from '../../EbbAndFlow/components/AvatarBreathPacer'
-import SynchronyBar from './SynchronyBar'
 import TrialSyncOverlay from './TrialSyncOverlay'
 import { useTrialRunner } from '../hooks/useTrialRunner'
 import { useBeltQuestStaircases } from '../hooks/useBeltQuestStaircases'
@@ -191,10 +190,7 @@ export default function StaircaseScreen({
         </div>
       )}
 
-      {/* Sync quality bar — during trials only */}
-      <SynchronyBar quality={syncQuality} visible={scState === SC_STATES.IN_PROGRESS} />
-
-      {/* Post-trial metrics overlay — no graph in Phase 3 */}
+      {/* Post-trial metrics overlay — no graph in Phase 3 (condition blinding). Only feedback shown to participant. */}
       <TrialSyncOverlay
         syncMetrics={syncData}
         showGraph={false}

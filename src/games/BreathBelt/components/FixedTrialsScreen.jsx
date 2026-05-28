@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react'
 import AvatarBreathPacer from '../../EbbAndFlow/components/AvatarBreathPacer'
 import BeltSyncRing from './BeltSyncRing'
-import SynchronyBar from './SynchronyBar'
 import TrialSyncOverlay from './TrialSyncOverlay'
 import { useTrialRunner } from '../hooks/useTrialRunner'
 import {
@@ -146,10 +145,7 @@ export default function FixedTrialsScreen({
         </p>
       )}
 
-      {/* Sync quality bar — bottom-centre during trials */}
-      <SynchronyBar quality={syncQuality} visible={trialState === TRIAL_STATES.IN_PROGRESS} />
-
-      {/* Post-trial overlay — bottom-left, with graph */}
+      {/* Post-trial overlay — bottom-left, with graph. Only feedback shown to participant. */}
       <TrialSyncOverlay
         syncMetrics={syncData}
         showGraph={true}

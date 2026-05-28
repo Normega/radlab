@@ -1535,7 +1535,7 @@ The pipeline evaluates 6 model variants (MLR × {wide-band, tight-band} × {plai
 - `getAndClearTrialSamples()` — returns the raw `{t,x,y,z}` collected during the most recent trial and clears the buffer. Called by `useTrialRunner` after code 12 to compute offline per-trial sync metrics.
 - `getPacerRadiusFnRef` — fn ref set by trial screens before code 10; read by accel handler to log pacer radius per raw accel row
 
-`BeltSyncRing` is retained for other games (Still Water etc.) where aesthetic warmth matters more than precise quantitative feedback. `SynchronyBar` (fixed bottom-centre bar, rolling Pearson R with colour thresholds — good ≥ 0.70, fair ≥ 0.40, lost < 0.40) is visible during paced trials only, in both Phase 2 and Phase 3.
+`BeltSyncRing` is retained for other games (Still Water etc.) where aesthetic warmth matters more than precise quantitative feedback. **No live synchrony feedback is rendered to the participant during paced breathing trials.** `SynchronyBar` (a rolling Pearson R bar) exists in the component tree but is no longer mounted by BreathBelt — research protocol calls for between-trial feedback only via `TrialSyncOverlay`. The underlying `syncQuality` / `rollingPearsonR` pipeline still runs internally (the `setPacerContext` swap at code 11 is still wired) so the bar can be re-enabled later without code changes.
 
 ### Per-trial sync feedback (TrialSyncOverlay)
 
@@ -1634,13 +1634,13 @@ src/games/BreathBelt/
     CalibrationScreen.jsx    ← MLR 4-state calibration: FIXATION → BREATHE → FITTING → REVIEW
     CalibReviewPanel.jsx     ← calibration quality metrics + SignalGraph overlay (fit%, lag, peak timing, model)
     SignalGraph.jsx          ← SVG line chart: pacer (blue) vs belt model (amber)
-    SynchronyBar.jsx         ← fixed bottom-centre sync quality bar; visible during trials only (rolling Pearson R)
+    SynchronyBar.jsx         ← rolling Pearson R bar; NOT currently mounted (kept for future use)
     TrialSyncOverlay.jsx     ← fixed bottom-left post-trial overlay; Phase 2 shows SignalGraph + Base R + Cond R + peak err;
                                Phase 3 shows metrics only (no graph — preserves condition blinding)
     BaselineScreen.jsx       ← reusable for pre and post baselines; props: phase ('READY'|'RECORDING'|'COMPLETE'), title, durationMs, phaseLabel, triggerStart, triggerEnd, onComplete(periodMs)
-    FixedTrialsScreen.jsx    ← Phase 2: 9 fixed trials; renders SynchronyBar + TrialSyncOverlay (with graph);
+    FixedTrialsScreen.jsx    ← Phase 2: 9 fixed trials; renders TrialSyncOverlay (with graph) between trials only;
                                records bt_baseline_period_ms, bt_condition_period_ms, trial_r_baseline, trial_r_condition, peak_error_ms
-    StaircaseScreen.jsx      ← Phase 3: QUEST trials + 3AFC + ratings; renders SynchronyBar + TrialSyncOverlay (no graph);
+    StaircaseScreen.jsx      ← Phase 3: QUEST trials + 3AFC + ratings; renders TrialSyncOverlay (no graph) between trials only;
                                records same per-trial sync columns
     BeltSyncRing.jsx         ← real-time belt signal ring — retained for other games (Still Water etc.); not used in BreathBelt trials
     SessionComplete.jsx      ← shows session number, pre/post resting period, QUEST thresholds

@@ -44,7 +44,7 @@ export default function BaselineScreen({
     sendTrigger(triggerStart);
 
     sampleRef.current = setInterval(() => {
-      samplesRef.current.push(breathValueRef.current ?? 0);
+      samplesRef.current.push({ t: Date.now(), value: breathValueRef.current ?? 0 });
     }, SAMPLE_MS);
 
     const start = Date.now();
@@ -57,7 +57,7 @@ export default function BaselineScreen({
       clearInterval(intervalRef.current);
       await sendTrigger(triggerEnd);
       currentPhaseRef.current = 'idle';
-      const periodMs = estimateBreathPeriodMs(samplesRef.current, SAMPLE_MS);
+      const periodMs = estimateBreathPeriodMs(samplesRef.current);
       onComplete(periodMs);
     }, durationMs);
 
