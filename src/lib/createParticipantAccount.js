@@ -7,7 +7,7 @@ const secondaryClient = createClient(
 )
 
 export async function createParticipantAccount(participantId, studyId) {
-  const email    = `p-${participantId.toLowerCase().replace(/[^a-z0-9]/g, '-')}@radlab.internal`
+  const email    = `p-${participantId.toLowerCase().replace(/[^a-z0-9]/g, '-')}@participants.radlab.zone`
   const password = crypto.randomUUID()
 
   const { data, error: signUpError } = await secondaryClient.auth.signUp({
