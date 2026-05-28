@@ -3,13 +3,13 @@ import DebriefStep               from './DebriefStep'
 import QuestionnaireStepWrapper  from './QuestionnaireStepWrapper'
 import GameStepWrapper           from './GameStepWrapper'
 
-export default function StepDispatcher({ step, enrollment, stepIndex, totalSteps, onComplete }) {
+export default function StepDispatcher({ step, enrollment, stepIndex, totalSteps, onComplete, consentHtml, debriefHtml }) {
   switch (step.type) {
     case 'consent':
-      return <ConsentStep enrollment={enrollment} onComplete={onComplete} />
+      return <ConsentStep enrollment={enrollment} onComplete={onComplete} html={consentHtml} />
 
     case 'debrief':
-      return <DebriefStep enrollment={enrollment} onComplete={onComplete} />
+      return <DebriefStep enrollment={enrollment} onComplete={onComplete} html={debriefHtml} />
 
     case 'questionnaire':
       return (

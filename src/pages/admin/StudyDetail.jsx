@@ -258,7 +258,11 @@ export default function StudyDetail() {
       </div>
 
       {isInPerson ? (
-        <EnrollmentPanel study={study} />
+        <>
+          <EnrollmentPanel study={study} />
+          <ConsentFormSection study={study} qc={qc} />
+          <DebriefFormSection study={study} qc={qc} />
+        </>
       ) : selectedParticipant ? (
         <ScheduleView
           studyId={id}

@@ -1,4 +1,4 @@
-export default function DebriefStep({ enrollment, onComplete }) {
+export default function DebriefStep({ enrollment, onComplete, html }) {
   function handleComplete() {
     onComplete({ debriefed_at: new Date().toISOString() })
   }
@@ -8,29 +8,32 @@ export default function DebriefStep({ enrollment, onComplete }) {
       <h1 style={S.title}>Thank You</h1>
 
       <div style={S.body}>
-        <p><strong>About this study</strong></p>
-        <p>
-          This study examines how people experience and regulate their emotions in the context of
-          physiological feedback and cognitive tasks. Your data will help us better understand the
-          relationship between bodily signals and emotional experience.
-        </p>
-        <p><strong>What we measured</strong></p>
-        <p>
-          During the tasks, we recorded your responses to various stimuli and, where applicable,
-          physiological signals such as heart rate. All data are completely anonymous and will be
-          analysed at the group level.
-        </p>
-        <p><strong>Further information</strong></p>
-        <p>
-          If you have questions about this research after leaving, please contact the RADlab at
-          the University of Toronto Mississauga. Contact details are available at radlab.zone.
-        </p>
-        <p>
-          Thank you for your time and contribution to this research.
-        </p>
-        <p style={{ fontSize: 12, color: 'var(--tx3)', fontStyle: 'italic' }}>
-          [PLACEHOLDER — replace with approved debrief text before data collection]
-        </p>
+        {html
+          ? <div className="consent-body" dangerouslySetInnerHTML={{ __html: html }} />
+          : <>
+              <p><strong>About this study</strong></p>
+              <p>
+                This study examines how people experience and regulate their emotions in the context of
+                physiological feedback and cognitive tasks. Your data will help us better understand the
+                relationship between bodily signals and emotional experience.
+              </p>
+              <p><strong>What we measured</strong></p>
+              <p>
+                During the tasks, we recorded your responses to various stimuli and, where applicable,
+                physiological signals such as heart rate. All data are completely anonymous and will be
+                analysed at the group level.
+              </p>
+              <p><strong>Further information</strong></p>
+              <p>
+                If you have questions about this research after leaving, please contact the RADlab at
+                the University of Toronto Mississauga. Contact details are available at radlab.zone.
+              </p>
+              <p>Thank you for your time and contribution to this research.</p>
+              <p style={{ fontSize: 12, color: 'var(--tx3)', fontStyle: 'italic' }}>
+                [PLACEHOLDER — attach a debrief form to this study to replace this text]
+              </p>
+            </>
+        }
       </div>
 
       <button style={S.btn} onClick={handleComplete}>

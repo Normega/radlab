@@ -17,7 +17,14 @@ export default function StudySessionRunner() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('study_enrollments')
-        .select('*, studies(protocol, name)')
+        .select(`
+          *,
+          studies(
+            protocol, name,
+            study_consent_forms:active_consent_form_id(html_content),
+            study_debrief_forms:active_debrief_form_id(html_content)
+          )
+        `)
         .eq('id', enrollmentId)
         .single()
       if (error) throw error
@@ -78,10 +85,12 @@ export default function StudySessionRunner() {
     )
   }
 
-  const steps      = enrollment?.studies?.protocol ?? []
-  const totalSteps = steps.length
-  const studyName  = enrollment?.studies?.name ?? ''
+  const steps         = enrollment?.studies?.protocol ?? []
+  const totalSteps    = steps.length
+  const studyName     = enrollment?.studies?.name ?? ''
   const participantId = enrollment?.participant_id ?? ''
+  const consentHtml   = enrollment?.studies?.study_consent_forms?.html_content ?? null
+  const debriefHtml   = enrollment?.studies?.study_debrief_forms?.html_content ?? null
 
   if (phase === PHASE.COMPLETE) {
     return (
@@ -129,6 +138,8 @@ export default function StudySessionRunner() {
             stepIndex={currentStep}
             totalSteps={totalSteps}
             onComplete={handleStepComplete}
+            consentHtml={consentHtml}
+            debriefHtml={debriefHtml}
           />
         ) : (
           <p style={S.loadingText}>Unknown step at index {currentStep}</p>

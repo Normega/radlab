@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-export default function ConsentStep({ enrollment, onComplete }) {
+export default function ConsentStep({ enrollment, onComplete, html }) {
   const [agreed, setAgreed] = useState(false)
 
   function handleAgree() {
@@ -13,30 +13,35 @@ export default function ConsentStep({ enrollment, onComplete }) {
       <h1 style={S.title}>Before We Begin</h1>
 
       <div style={S.body}>
-        <p><strong>Purpose of this study</strong></p>
-        <p>
-          You are being invited to take part in a research study conducted by the RADlab at the
-          University of Toronto Mississauga. The purpose of this study is to understand how people
-          perceive and regulate their emotions in response to various stimuli and tasks.
-        </p>
-        <p><strong>What you will do</strong></p>
-        <p>
-          During this session you will complete one or more tasks and questionnaires. The total
-          time required is approximately 60–90 minutes. Your participation is entirely voluntary.
-        </p>
-        <p><strong>Confidentiality</strong></p>
-        <p>
-          Your responses will be kept confidential. Data will be stored securely and only accessed
-          by members of the research team. Results will be reported in aggregate form only.
-        </p>
-        <p><strong>Your rights</strong></p>
-        <p>
-          You may withdraw at any time without penalty. If you have questions about this study,
-          please speak with the researcher present in the room.
-        </p>
-        <p style={{ fontSize: 12, color: 'var(--tx3)', fontStyle: 'italic' }}>
-          [PLACEHOLDER — replace with approved consent text before data collection]
-        </p>
+        {html
+          ? <div className="consent-body" dangerouslySetInnerHTML={{ __html: html }} />
+          : <>
+              <p><strong>Purpose of this study</strong></p>
+              <p>
+                You are being invited to take part in a research study conducted by the RADlab at the
+                University of Toronto Mississauga. The purpose of this study is to understand how people
+                perceive and regulate their emotions in response to various stimuli and tasks.
+              </p>
+              <p><strong>What you will do</strong></p>
+              <p>
+                During this session you will complete one or more tasks and questionnaires. The total
+                time required is approximately 60–90 minutes. Your participation is entirely voluntary.
+              </p>
+              <p><strong>Confidentiality</strong></p>
+              <p>
+                Your responses will be kept confidential. Data will be stored securely and only accessed
+                by members of the research team. Results will be reported in aggregate form only.
+              </p>
+              <p><strong>Your rights</strong></p>
+              <p>
+                You may withdraw at any time without penalty. If you have questions about this study,
+                please speak with the researcher present in the room.
+              </p>
+              <p style={{ fontSize: 12, color: 'var(--tx3)', fontStyle: 'italic' }}>
+                [PLACEHOLDER — attach a consent form to this study to replace this text]
+              </p>
+            </>
+        }
       </div>
 
       <label style={S.checkRow}>
