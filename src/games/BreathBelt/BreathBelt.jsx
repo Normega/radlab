@@ -10,6 +10,7 @@ import BaselineScreen from './components/BaselineScreen';
 import FixedTrialsScreen from './components/FixedTrialsScreen';
 import StaircaseScreen from './components/StaircaseScreen';
 import SessionComplete from './components/SessionComplete';
+import BaselineReviewScreen from './components/BaselineReviewScreen';
 import { BASELINE_DURATION_MS, POST_BASELINE_DURATION_MS, BASE_BREATH_SPEED_S } from './constants';
 import SynchronyBar from './components/SynchronyBar';
 import { useStreamingBackup } from './hooks/useStreamingBackup';
@@ -42,6 +43,7 @@ const S = {
   BASELINE_READY:          'BASELINE_READY',
   BASELINE_RECORDING:      'BASELINE_RECORDING',
   BASELINE_COMPLETE:       'BASELINE_COMPLETE',
+  BASELINE_REVIEW:         'BASELINE_REVIEW',
   PHASE2_READY:            'PHASE2_READY',
   PHASE2_RUNNING:          'PHASE2_RUNNING',
   PHASE2_COMPLETE:         'PHASE2_COMPLETE',
@@ -59,6 +61,7 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
   const [sessionNumber, setSessionNumber] = useState(1);
 
   const preBaselinePeriodRef  = useRef(null);
+  const preBaselineSamplesRef = useRef([]);
   const postBaselinePeriodRef = useRef(null);
   const convergenceRef        = useRef(null);
   const pendingQuestStateRef  = useRef(null);
@@ -275,16 +278,31 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
             await belt.sendTrigger('1');   // code 1 — session start
             setPhase(S.BASELINE_RECORDING);
           }}
-          onComplete={(periodMs) => {
-            preBaselinePeriodRef.current = periodMs;
+          onComplete={(periodMs, samples) => {
+            preBaselinePeriodRef.current  = periodMs;
+            preBaselineSamplesRef.current = samples ?? [];
             setPhase(S.BASELINE_COMPLETE);
           }}
         />
         {phase === S.BASELINE_COMPLETE && (
           <div className="flex justify-center pb-8">
-            <Btn onClick={() => setPhase(S.PHASE2_READY)}>Continue to paced trials</Btn>
+            <Btn onClick={() => setPhase(S.BASELINE_REVIEW)}>Review signal →</Btn>
           </div>
         )}
+      </Layout>
+    );
+  }
+
+  // ── Baseline signal review ───────────────────────────────────────────────
+
+  if (phase === S.BASELINE_REVIEW) {
+    return (
+      <Layout title="Baseline review">
+        <BaselineReviewScreen
+          samples={preBaselineSamplesRef.current}
+          periodMs={preBaselinePeriodRef.current}
+          onContinue={() => setPhase(S.PHASE2_READY)}
+        />
       </Layout>
     );
   }
