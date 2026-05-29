@@ -1,0 +1,611 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RADlab — Trigger Tester</title>
+<style>
+  :root {
+    --bg: #1a1a1a;
+    --surface: #242424;
+    --surface2: #2e2e2e;
+    --border: #3a3a3a;
+    --accent: #f068a4;
+    --accent2: #8fdfff;
+    --text: #e8e8e8;
+    --text2: #888;
+    --send: #8fdfff;
+    --recv: #ffd58f;
+    --ok: #6fcf97;
+    --err: #ff8f8f;
+    font-family: 'Consolas', 'Courier New', ui-monospace, monospace;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    max-width: 820px;
+    margin: 28px auto;
+    padding: 0 18px 40px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  header { margin-bottom: 22px; }
+  header h1 {
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--accent);
+    margin-bottom: 2px;
+  }
+  header p { color: var(--text2); font-size: 12px; }
+
+  /* Profile selector */
+  .profiles { display: flex; gap: 6px; margin-bottom: 18px; }
+  .profile-btn {
+    flex: 1; padding: 9px 12px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text2); cursor: pointer;
+    font: 12px 'Consolas', ui-monospace, monospace;
+    text-align: center; transition: all 0.12s;
+  }
+  .profile-btn:hover { border-color: #555; color: var(--text); }
+  .profile-btn.active { border-color: var(--accent); color: var(--accent); background: #2a1a20; }
+  .profile-btn .pname { display: block; font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+  .profile-btn .pdesc { display: block; font-size: 10px; }
+
+  /* Panels */
+  .panel {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 13px 15px; margin-bottom: 12px;
+  }
+  .panel-title {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--text2); margin-bottom: 10px;
+  }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+  input[type="number"], input[type="text"] {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 4px;
+    color: var(--text); font: 13px 'Consolas', ui-monospace, monospace; padding: 4px 7px;
+  }
+  input[type="checkbox"] { accent-color: var(--accent); }
+  input:focus { outline: 1px solid var(--accent); }
+  label { display: inline-flex; align-items: center; gap: 6px; color: var(--text2); }
+
+  button {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 5px;
+    color: var(--text); cursor: pointer;
+    font: 13px 'Consolas', ui-monospace, monospace;
+    padding: 5px 11px; transition: all 0.1s;
+  }
+  button:hover:not(:disabled) { border-color: #666; background: #333; }
+  button:disabled { opacity: 0.38; cursor: default; }
+  button.primary { border-color: var(--accent); color: var(--accent); }
+  button.primary:hover:not(:disabled) { background: #2a1a20; }
+
+  .pill {
+    display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px;
+    background: var(--surface2); border: 1px solid var(--border); color: var(--text2);
+  }
+  .pill.ok  { border-color: var(--ok);  color: var(--ok); }
+  .pill.err { border-color: var(--err); color: var(--err); }
+
+  .addr-note {
+    font-size: 11px; color: var(--text2);
+    padding: 4px 8px; background: var(--surface2);
+    border-radius: 4px; border: 1px solid var(--border);
+  }
+
+  /* Code grid */
+  .codes { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-top: 4px; }
+  .code-btn {
+    padding: 8px 4px 6px; text-align: center;
+    font: 14px 'Consolas', ui-monospace, monospace; border-radius: 5px;
+  }
+  .code-btn .raw  { display: block; font-size: 14px; font-weight: 600; color: var(--accent2); }
+  .code-btn .sent { display: block; font-size: 10px; color: var(--text2); margin: 1px 0; }
+  .code-btn .lbl  { display: block; font-size: 9px; color: var(--text2); font-family: ui-sans-serif, system-ui, sans-serif; }
+
+  /* Log */
+  #log {
+    background: #0f0f0f; border: 1px solid var(--border); border-radius: 6px;
+    padding: 8px 10px; height: 210px; overflow-y: auto; white-space: pre-wrap; font-size: 12px;
+  }
+  .le       { display: block; }
+  .le.send  { color: var(--send); }
+  .le.recv  { color: var(--recv); }
+  .le.info  { color: var(--text2); }
+  .le.ok    { color: var(--ok); }
+  .le.err   { color: var(--err); }
+
+  code { background: var(--surface2); padding: 1px 4px; border-radius: 3px; }
+  .sep { width: 1px; height: 18px; background: var(--border); }
+
+  /* Profile visibility */
+  .parallel-only { display: none; }
+  .adi-only      { display: none; }
+
+  body.profile-right .parallel-only,
+  body.profile-left  .parallel-only { display: flex; }
+  body.profile-right .serial-only,
+  body.profile-left  .serial-only   { display: none; }
+
+  body.profile-adi .adi-only { display: flex; }
+
+  /* Sweep panel uses block not flex */
+  #sweepPanel { display: none; }
+  body.profile-adi #sweepPanel { display: block; }
+
+  .footer { color: var(--text2); font-size: 11px; margin-top: 4px; line-height: 1.8; }
+</style>
+</head>
+<body class="profile-adi">
+
+<header>
+  <h1>RADlab — Port Trigger Tester</h1>
+  <p>Verify port codes on all three acquisition computers. Select a profile, connect, and fire codes.</p>
+</header>
+
+<!-- Profile selector -->
+<div class="profiles">
+  <button class="profile-btn active" data-profile="adi" onclick="selectProfile('adi')">
+    <span class="pname">ADInstruments</span>
+    <span class="pdesc">BBTK USB-TTL · COM port</span>
+  </button>
+  <button class="profile-btn" data-profile="right" onclick="selectProfile('right')">
+    <span class="pname">BIOPAC — Right</span>
+    <span class="pdesc">Parallel port · low nibble (bits 0–3)</span>
+  </button>
+  <button class="profile-btn" data-profile="left" onclick="selectProfile('left')">
+    <span class="pname">BIOPAC — Left</span>
+    <span class="pdesc">Parallel port · high nibble (bits 4–7)</span>
+  </button>
+</div>
+
+<!-- Serial connection (ADI only) -->
+<div class="panel serial-only" id="serialPanel">
+  <div class="panel-title">Serial Connection</div>
+  <div class="row">
+    <label>Baud
+      <input id="baud" type="number" value="115200" min="300" max="1000000" style="width:88px">
+    </label>
+    <button class="primary" id="connectBtn" onclick="serialConnect()">Connect to COM port</button>
+    <button id="disconnectBtn" disabled onclick="serialDisconnect()">Disconnect</button>
+    <button id="resetBtn" disabled onclick="sendRR()">Reset (RR)</button>
+    <span id="serialStatus" class="pill">disconnected</span>
+  </div>
+</div>
+
+<!-- Send mode (ADI only) -->
+<div class="panel adi-only" id="modePanel">
+  <div class="panel-title">Send Mode</div>
+  <div class="row" style="flex-direction:column; align-items:flex-start; gap:6px;">
+    <label><input type="radio" name="mode" value="bbtk" checked>
+      BBTK hex — 2-char hex per code (10→<code>0A</code> 13→<code>0D</code>) · correct protocol
+    </label>
+    <label><input type="radio" name="mode" value="ascii">
+      ASCII decimal + <code>\n</code> (old behaviour — breaks on codes 10–13)
+    </label>
+    <label><input type="radio" name="mode" value="raw">
+      Raw byte — low-level probing only
+    </label>
+  </div>
+</div>
+
+<!-- Parallel server status (BIOPAC only) -->
+<div class="panel parallel-only" id="parallelPanel" style="flex-direction:column; gap:10px;">
+  <div class="panel-title">Parallel Port Server</div>
+  <div class="row">
+    <label>Port address
+      <input id="portAddr" type="text" value="0xCFF8" style="width:80px">
+    </label>
+    <div class="sep"></div>
+    <label>Server
+      <input id="serverUrl" type="text" value="http://localhost:8765" style="width:180px">
+    </label>
+    <button onclick="pingServer()">Check server</button>
+    <span id="serverStatus" class="pill">unknown</span>
+  </div>
+  <div style="color:var(--text2); font-size:11px; line-height:1.7;">
+    Run <code>python parallel_server.py</code> in the same folder first.
+    <code>inpout32.dll</code> / <code>inpoutx64.dll</code> must be in that folder.
+  </div>
+</div>
+
+<!-- Latch clear -->
+<div class="panel">
+  <div class="panel-title">Latch Clear</div>
+  <div class="row">
+    <label>
+      <input id="zeroFollow" type="checkbox" checked>
+      Hold for
+    </label>
+    <input id="zeroDelay" type="number" value="25" min="0" max="2000" style="width:65px">
+    <span style="color:var(--text2)">ms, then send <code>0</code> / <code>00</code> to clear</span>
+    <div class="sep"></div>
+    <span id="addrNote" class="addr-note">BBTK hex · codes 01–0D</span>
+  </div>
+</div>
+
+<!-- Code buttons -->
+<div class="panel">
+  <div class="panel-title">Event Codes &nbsp;<span style="color:var(--text2); font-weight:400; text-transform:none; letter-spacing:0;">(click to send)</span></div>
+  <div class="codes" id="codeGrid"></div>
+</div>
+
+<!-- Sweep (ADI only) -->
+<div class="panel" id="sweepPanel">
+  <div class="panel-title">Sweep — map byte → LabChart comment</div>
+  <div style="color:var(--text2); font-size:11px; margin-bottom:8px;">
+    Sends one raw byte at a time with a long gap — note which byte produces which LabChart comment.
+  </div>
+  <div class="row">
+    <label>from <input id="sweepFrom" type="number" min="0" max="255" value="1" style="width:65px"></label>
+    <label>to   <input id="sweepTo"   type="number" min="0" max="255" value="15" style="width:65px"></label>
+    <label>gap  <input id="sweepGap"  type="number" min="100" max="10000" value="1500" style="width:75px"> ms</label>
+    <label><input id="sweepPulse" type="checkbox" checked> pulse (send <code>0</code> after each)</label>
+    <button id="sendSweepBtn" onclick="sendSweep()">Sweep</button>
+    <button id="stopSweepBtn" disabled onclick="stopSweep()">Stop</button>
+  </div>
+</div>
+
+<!-- Custom / burst -->
+<div class="panel">
+  <div class="panel-title">Custom Send</div>
+  <div class="row">
+    <label>Byte (0–255)
+      <input id="customByte" type="number" min="0" max="255" value="42" style="width:72px">
+    </label>
+    <button onclick="sendCustom()">Send</button>
+    <div class="sep"></div>
+    <label>Burst
+      <input id="burstText" type="text" value="1,0,10,0,12,0,13,0" style="width:200px" placeholder="comma-separated values">
+    </label>
+    <label>gap
+      <input id="burstGap" type="number" value="20" min="0" max="1000" style="width:55px">
+    </label>
+    <span style="color:var(--text2)">ms</span>
+    <button onclick="sendBurst()">Send burst</button>
+  </div>
+</div>
+
+<!-- Log -->
+<div class="panel">
+  <div class="panel-title" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+    Log
+    <button onclick="clearLog()" style="font-size:11px; padding:3px 8px;">Clear</button>
+  </div>
+  <div id="log"></div>
+  <div class="footer" style="margin-top:8px;">
+    BBTK hex vocabulary:
+    1 sess-start <code>01</code> · 2 preBL-start <code>02</code> · 3 preBL-end <code>03</code> ·
+    4 ph2-start <code>04</code> · 5 ph2-end <code>05</code> · 6 ph3-start <code>06</code> · 7 ph3-end <code>07</code> ·
+    8 postBL-start <code>08</code> · 9 postBL-end <code>09</code> · 10 trial-start <code>0A</code> ·
+    11 cond-onset <code>0B</code> · 12 trial-end <code>0C</code> · 13 sess-end <code>0D</code> ·
+    0 / <code>00</code> = line clear (not an event).
+  </div>
+</div>
+
+<script>
+// ─── Event table ─────────────────────────────────────────────────────────────
+const EVENTS = [
+  [1,  'Sess\nStart'],  [2,  'PreBL\nStart'], [3,  'PreBL\nEnd'],
+  [4,  'Ph2\nStart'],   [5,  'Ph2\nEnd'],      [6,  'Ph3\nStart'],
+  [7,  'Ph3\nEnd'],     [8,  'PostBL\nStart'], [9,  'PostBL\nEnd'],
+  [10, 'Trial\nStart'], [11, 'Cond\nOnset'],   [12, 'Trial\nEnd'],
+  [13, 'Sess\nEnd'],
+];
+
+// ADI profile also shows a "clear (00)" button
+const EVENTS_ADI = [...EVENTS, [0, 'Clear\n(00)']];
+
+// ─── Profiles ────────────────────────────────────────────────────────────────
+const PROFILES = {
+  adi:   { label: 'ADInstruments', type: 'serial',   shift: 1  },
+  right: { label: 'BIOPAC Right',  type: 'parallel', shift: 1  },
+  left:  { label: 'BIOPAC Left',   type: 'parallel', shift: 16 },
+};
+
+let activeProfile = 'adi';
+
+const $ = id => document.getElementById(id);
+const logEl = $('log');
+
+function codeForEvent(code) { return code * PROFILES[activeProfile].shift; }
+
+function log(msg, kind = 'info') {
+  const ts = new Date().toLocaleTimeString('en-GB', { hour12: false }) +
+    '.' + String(Date.now() % 1000).padStart(3, '0');
+  const el = document.createElement('span');
+  el.className = 'le ' + kind;
+  el.textContent = `[${ts}] ${msg}\n`;
+  logEl.appendChild(el);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function clearLog() { logEl.textContent = ''; }
+
+// ─── Profile switching ───────────────────────────────────────────────────────
+function selectProfile(p) {
+  activeProfile = p;
+  document.body.className = 'profile-' + p;
+  document.querySelectorAll('.profile-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.profile === p));
+  updateAddrNote();
+  buildCodeGrid();
+  if (p !== 'adi') pingServer();
+  log(`Profile: ${PROFILES[p].label}`, 'info');
+}
+
+function getSerialMode() {
+  return document.querySelector('input[name="mode"]:checked')?.value ?? 'bbtk';
+}
+
+function updateAddrNote() {
+  const p = activeProfile;
+  if (p === 'adi') {
+    const mode = getSerialMode();
+    $('addrNote').textContent = mode === 'bbtk' ? 'BBTK hex · codes 01–0D'
+      : mode === 'ascii' ? 'ASCII decimal + \\n'
+      : 'Raw byte';
+  } else {
+    const shift = PROFILES[p].shift;
+    $('addrNote').textContent = shift === 1
+      ? 'codes 1–13 sent as-is'
+      : `codes × ${shift}  (1→${shift} … 13→${13 * shift})`;
+  }
+}
+
+// Update addr note when mode radio changes
+document.querySelectorAll('input[name="mode"]').forEach(r =>
+  r.addEventListener('change', updateAddrNote));
+
+// ─── Code grid ───────────────────────────────────────────────────────────────
+function buildCodeGrid() {
+  const grid = $('codeGrid');
+  grid.innerHTML = '';
+  const isAdi = activeProfile === 'adi';
+  const shift = PROFILES[activeProfile].shift;
+  const list  = isAdi ? EVENTS_ADI : EVENTS;
+
+  for (const [code, label] of list) {
+    const sent = code * shift;
+    const hex  = sent.toString(16).padStart(2, '0').toUpperCase();
+    const btn  = document.createElement('button');
+    btn.className = 'code-btn';
+    // ADI: show hex encoding under the code number
+    // BIOPAC left: show shifted value
+    let subline = '';
+    if (isAdi)        subline = `<span class="sent">${hex}</span>`;
+    else if (shift>1) subline = `<span class="sent">→${sent}</span>`;
+    btn.innerHTML =
+      `<span class="raw">${code}</span>` +
+      subline +
+      `<span class="lbl">${label.replace('\n', '<br>')}</span>`;
+    btn.addEventListener('click', () => fireEvent(code));
+    grid.appendChild(btn);
+  }
+}
+
+// ─── Serial (ADInstruments / BBTK) ──────────────────────────────────────────
+let serialPort   = null;
+let serialWriter = null;
+let serialReader = null;
+
+// BBTK latches output lines; re-assert interval only needed for raw/ascii modes
+const REASSERT_MS = 2;
+
+function encodeForSerial(byte, mode) {
+  if (mode === 'bbtk')  return new TextEncoder().encode((byte & 0xFF).toString(16).padStart(2, '0').toUpperCase());
+  if (mode === 'ascii') return new TextEncoder().encode(`${byte}\n`);
+  return new Uint8Array([byte & 0xFF]);
+}
+
+async function sendRR() {
+  if (!serialWriter) { log('Not connected.', 'err'); return; }
+  try {
+    await serialWriter.write(new TextEncoder().encode('RR'));
+    log('TX  "RR"  (reset / clear all BBTK output lines)', 'send');
+  } catch (err) { log('RR failed: ' + err.message, 'err'); }
+}
+
+async function serialConnect() {
+  if (!('serial' in navigator)) {
+    log('Web Serial not supported — use Chrome or Edge.', 'err'); return;
+  }
+  try {
+    serialPort = await navigator.serial.requestPort();
+    const baud = parseInt($('baud').value, 10) || 115200;
+    await serialPort.open({ baudRate: baud });
+    serialWriter = serialPort.writable.getWriter();
+    $('connectBtn').disabled = true;
+    $('disconnectBtn').disabled = false;
+    $('resetBtn').disabled = false;
+    const s = $('serialStatus');
+    s.textContent = 'connected'; s.className = 'pill ok';
+    log(`Serial opened @ ${baud} baud.`, 'ok');
+    await sendRR();
+    startSerialRead();
+  } catch (err) { log('Connect failed: ' + err.message, 'err'); }
+}
+
+async function startSerialRead() {
+  try {
+    serialReader = serialPort.readable.getReader();
+    (async () => {
+      while (true) {
+        const { value, done } = await serialReader.read();
+        if (done) break;
+        if (value?.length) {
+          const hex = Array.from(value).map(b => b.toString(16).padStart(2,'0')).join(' ');
+          log(`RX  hex=[${hex}]  dec=[${Array.from(value).join(',')}]`, 'recv');
+        }
+      }
+    })();
+  } catch {}
+}
+
+async function serialDisconnect() {
+  try {
+    if (serialReader) { await serialReader.cancel().catch(()=>{}); serialReader.releaseLock(); serialReader = null; }
+    if (serialWriter) { serialWriter.releaseLock(); serialWriter = null; }
+    if (serialPort)   { await serialPort.close(); serialPort = null; }
+    $('connectBtn').disabled = false;
+    $('disconnectBtn').disabled = true;
+    $('resetBtn').disabled = true;
+    const s = $('serialStatus');
+    s.textContent = 'disconnected'; s.className = 'pill';
+    log('Serial closed.', 'info');
+  } catch (err) { log('Disconnect error: ' + err.message, 'err'); }
+}
+
+async function sendSerialByte(byte) {
+  if (!serialWriter) { log('Not connected.', 'err'); return false; }
+  const mode = getSerialMode();
+  const buf  = encodeForSerial(byte, mode);
+  const hex  = Array.from(buf).map(b => b.toString(16).padStart(2,'0')).join(' ');
+  const holdMs = ($('zeroFollow').checked && byte !== 0)
+    ? (parseInt($('zeroDelay').value, 10) || 0) : 0;
+
+  try {
+    if (mode === 'bbtk') {
+      // BBTK latches: single write, then clear after hold
+      await serialWriter.write(buf);
+      log(`TX  bbtk  code=${byte}  "${new TextDecoder().decode(buf)}"  hex=[${hex}]`, 'send');
+      if (holdMs > 0) await new Promise(r => setTimeout(r, holdMs));
+      if ($('zeroFollow').checked && byte !== 0) {
+        const clr = new TextEncoder().encode('00');
+        await serialWriter.write(clr);
+        log(`TX  bbtk  "00"  (clear)`, 'send');
+      }
+    } else {
+      // raw/ascii: re-assert across hold window, then send zero
+      if (holdMs > 0) {
+        const start = Date.now(); let writes = 0;
+        do {
+          await serialWriter.write(buf); writes++;
+          await new Promise(r => setTimeout(r, REASSERT_MS));
+        } while (Date.now() - start < holdMs);
+        log(`TX  ${mode}  code=${byte}  held ${Date.now()-start}ms (${writes} writes), clearing`, 'send');
+        const clr = encodeForSerial(0, mode);
+        await serialWriter.write(clr);
+        log(`TX  ${mode}  code=0  (clear)`, 'send');
+      } else {
+        await serialWriter.write(buf);
+        log(`TX  ${mode}  code=${byte}  hex=[${hex}]`, 'send');
+      }
+    }
+    return true;
+  } catch (err) { log('Send failed: ' + err.message, 'err'); return false; }
+}
+
+// ─── Parallel (BIOPAC) ───────────────────────────────────────────────────────
+async function pingServer() {
+  const url = $('serverUrl').value.replace(/\/$/, '');
+  const el  = $('serverStatus');
+  try {
+    const r = await fetch(url + '/status', { signal: AbortSignal.timeout(1500) });
+    const j = await r.json();
+    el.textContent = j.dll ? 'ready' : 'no DLL';
+    el.className   = 'pill ' + (j.dll ? 'ok' : 'err');
+    if (!j.dll) log('Server running but DLL not loaded — check inpout32/inpoutx64.dll in server folder.', 'err');
+  } catch {
+    el.textContent = 'offline'; el.className = 'pill err';
+    log('Server not reachable — is parallel_server.py running?', 'err');
+  }
+}
+
+async function sendParallelByte(byte) {
+  const url     = $('serverUrl').value.replace(/\/$/, '');
+  const address = parseInt($('portAddr').value, 16);
+  try {
+    const r = await fetch(url + '/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ address, value: byte }),
+      signal: AbortSignal.timeout(1000),
+    });
+    const j = await r.json();
+    if (j.ok) {
+      log(`TX  parallel  addr=[${$('portAddr').value}]  dec=[${byte}]  hex=[${byte.toString(16).padStart(2,'0').toUpperCase()}]`, 'send');
+      return true;
+    }
+    log('Send error: ' + j.error, 'err'); return false;
+  } catch (err) { log('Send failed: ' + err.message, 'err'); return false; }
+}
+
+// ─── Unified fire ────────────────────────────────────────────────────────────
+async function fireEvent(eventCode) {
+  const sent = codeForEvent(eventCode);
+  const type = PROFILES[activeProfile].type;
+
+  if (type === 'serial') {
+    // sendSerialByte handles hold + clear internally for ADI
+    await sendSerialByte(sent);
+  } else {
+    const ok = await sendParallelByte(sent);
+    if (ok && $('zeroFollow').checked && sent !== 0) {
+      await new Promise(r => setTimeout(r, parseInt($('zeroDelay').value, 10) || 0));
+      await sendParallelByte(0);
+    }
+  }
+}
+
+async function sendCustom() {
+  const v = parseInt($('customByte').value, 10);
+  if (!Number.isFinite(v) || v < 0 || v > 255) { log('Invalid byte value.', 'err'); return; }
+  await fireEvent(v);
+}
+
+async function sendBurst() {
+  const parts = $('burstText').value
+    .split(',').map(s => parseInt(s.trim(), 10)).filter(n => Number.isFinite(n));
+  const gap = parseInt($('burstGap').value, 10) || 0;
+  for (const byte of parts) {
+    await fireEvent(byte);
+    if (gap > 0) await new Promise(r => setTimeout(r, gap));
+  }
+}
+
+// ─── Sweep (ADI only) ────────────────────────────────────────────────────────
+let sweepAbort = false;
+
+async function sendSweep() {
+  if (!serialWriter) { log('Not connected.', 'err'); return; }
+  const from  = parseInt($('sweepFrom').value, 10);
+  const to    = parseInt($('sweepTo').value, 10);
+  const gap   = Math.max(100, parseInt($('sweepGap').value, 10) || 1500);
+  const pulse = $('sweepPulse').checked;
+  if (!Number.isFinite(from) || !Number.isFinite(to)) { log('Bad sweep range.', 'err'); return; }
+  sweepAbort = false;
+  $('sendSweepBtn').disabled = true;
+  $('stopSweepBtn').disabled = false;
+  const step = to >= from ? 1 : -1;
+  log(`Sweep ${from}→${to}, ${gap}ms gap, raw bytes${pulse ? ', pulsed' : ''}.`, 'info');
+  try {
+    for (let b = from; step > 0 ? b <= to : b >= to; b += step) {
+      if (sweepAbort) { log('Sweep stopped.', 'info'); break; }
+      const byte = b & 0xFF;
+      await serialWriter.write(new Uint8Array([byte]));
+      const ch = (byte >= 32 && byte < 127) ? String.fromCharCode(byte) : '·';
+      log(`SWEEP  byte=${byte}  hex=[${byte.toString(16).padStart(2,'0').toUpperCase()}]  char='${ch}'`, 'send');
+      if (pulse) {
+        await new Promise(r => setTimeout(r, 25));
+        await serialWriter.write(new Uint8Array([0]));
+      }
+      await new Promise(r => setTimeout(r, gap));
+    }
+  } catch (err) { log('Sweep failed: ' + err.message, 'err'); }
+  $('sendSweepBtn').disabled = false;
+  $('stopSweepBtn').disabled = true;
+}
+
+function stopSweep() { sweepAbort = true; }
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+buildCodeGrid();
+log('Ready. Select a profile, then connect or check server.', 'info');
+</script>
+</body>
+</html>
