@@ -11,12 +11,12 @@ import BaselineScreen from './components/BaselineScreen';
 import FixedTrialsScreen from './components/FixedTrialsScreen';
 import StaircaseScreen from './components/StaircaseScreen';
 import SessionComplete from './components/SessionComplete';
-import { BASELINE_DURATION_MS, POST_BASELINE_DURATION_MS, BASE_BREATH_SPEED_S } from './constants';
+import {
+  BASELINE_DURATION_MS, POST_BASELINE_DURATION_MS, BASE_BREATH_SPEED_S,
+  TRIGGER_DEVICES, DEFAULT_TRIGGER_DEVICE,
+} from './constants';
 
 // ── COM trigger vocabulary ─────────────────────────────────────────────────
-// All codes 0–12, within 2^32 constraint.
-//
-//  0   session end
 //  1   session start
 //  2   pre-baseline start
 //  3   pre-baseline end
@@ -29,6 +29,10 @@ import { BASELINE_DURATION_MS, POST_BASELINE_DURATION_MS, BASE_BREATH_SPEED_S } 
 //  10  trial start          (baseline breaths begin)   — fired from useTrialRunner
 //  11  condition onset      (breath 3 begins)          — fired from useTrialRunner
 //  12  trial end                                       — fired from useTrialRunner
+//  13  session end
+//
+// NB: code 0 is NOT used as an event marker — on the AD_BBT (Black Box ToolKit)
+// device "00" is the line-clear command, so session end uses 13 to stay distinct.
 
 const S = {
   BROWSER_CHECK:           'BROWSER_CHECK',
@@ -56,6 +60,7 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
   const navigate = useNavigate();
   const [phase, setPhase] = useState(S.BROWSER_CHECK);
   const [sessionNumber, setSessionNumber] = useState(1);
+  const [triggerDevice, setTriggerDevice] = useState(DEFAULT_TRIGGER_DEVICE);
 
   const preBaselinePeriodRef  = useRef(null);
   const postBaselinePeriodRef = useRef(null);
@@ -144,13 +149,13 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
     }
   }, [phase]);
 
-  // Mid-session unmount: fire code 0 so the physio equipment leaves session
-  // state. Async, fire-and-forget — chain stopNotifications after so the
-  // serial write isn't truncated by an early port close.
+  // Mid-session unmount: fire code 13 (session end) so the physio equipment
+  // leaves session state. Async, fire-and-forget — chain stopNotifications after
+  // so the serial write isn't truncated by an early port close.
   useEffect(() => () => {
     (async () => {
       if (sessionStartedRef.current && !sessionEndedRef.current) {
-        try { await belt.sendTrigger('0'); } catch {}
+        try { await belt.sendTrigger('13'); } catch {}
       }
       belt.stopNotifications();
     })();
@@ -238,8 +243,30 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
             <p style={{ fontFamily: 'DM Sans', fontSize: 'var(--fs-body-sm)', color: 'var(--tx3)', margin: 0 }}>
               Increment for each visit by the same participant.
             </p>
+
+            <label style={{ fontFamily: 'DM Sans', fontSize: 'var(--fs-body-sm)', color: 'var(--tx2)', marginTop: 12 }}>
+              Trigger device
+            </label>
+            <select
+              value={triggerDevice}
+              onChange={e => setTriggerDevice(e.target.value)}
+              style={{
+                fontFamily: 'Space Mono', fontSize: 'var(--fs-mono-md)',
+                color: 'var(--tx)', background: 'var(--bgc)',
+                border: '1px solid var(--bd)', borderRadius: 10,
+                padding: '10px 14px', width: '100%',
+              }}
+            >
+              {TRIGGER_DEVICES.map(d => (
+                <option key={d.value} value={d.value}>{d.label}</option>
+              ))}
+            </select>
+            <p style={{ fontFamily: 'DM Sans', fontSize: 'var(--fs-body-sm)', color: 'var(--tx3)', margin: 0 }}>
+              Match the physio equipment on this testing computer.
+            </p>
           </div>
           <Btn onClick={async () => {
+            belt.setTriggerDevice(triggerDevice);
             const ok = await backup.initBackup(profile?.id);
             if (!ok && backup.isAvailable) {
               const proceed = window.confirm(
@@ -412,7 +439,7 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
   }
 
   // ── Post-session baseline ─────────────────────────────────────────────────
-  // Codes 8/9 from BaselineScreen. Code 0 (session end) fired after endSession.
+  // Codes 8/9 from BaselineScreen. Code 13 (session end) fired after endSession.
 
   if ([S.POST_BASELINE_READY, S.POST_BASELINE_RECORDING, S.POST_BASELINE_COMPLETE].includes(phase)) {
     return (
@@ -437,10 +464,11 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
               rawAccelRows:         belt.rawAccelRowsRef.current,
               rawHRRows:            belt.rawHRRowsRef.current,
               sessionNumber,
+              triggerDevice,
               baselinePeriodMs:     preBaselinePeriodRef.current,
               postBaselinePeriodMs: periodMs,
             });
-            await belt.sendTrigger('0');  // code 0 — session end
+            await belt.sendTrigger('13');  // code 13 — session end
             sessionEndedRef.current = true;
             belt.stopNotifications();
             setPhase(S.SESSION_COMPLETE);

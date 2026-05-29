@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Breath Belt — COM trigger tester</title>
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    max-width: 780px; margin: 24px auto; padding: 0 16px; line-height: 1.45;
+  }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .sub { color: #666; font-size: 13px; margin: 0 0 18px; }
+  fieldset { border: 1px solid #ccc; border-radius: 8px; padding: 12px 14px; margin: 0 0 14px; }
+  legend { font-weight: 600; padding: 0 6px; }
+  label { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; }
+  input[type="number"], input[type="text"] {
+    font: 14px ui-monospace, Consolas, monospace;
+    padding: 4px 6px; border: 1px solid #bbb; border-radius: 4px;
+  }
+  button {
+    font: 14px ui-sans-serif, system-ui, sans-serif;
+    padding: 6px 12px; border: 1px solid #888; border-radius: 6px;
+    background: #f4f4f4; cursor: pointer;
+  }
+  button:hover:not(:disabled) { background: #e8e8e8; }
+  button:disabled { opacity: 0.5; cursor: default; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .codes { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-top: 8px; }
+  .codes button {
+    font: 13px ui-monospace, Consolas, monospace;
+    padding: 8px 0; min-width: 0;
+  }
+  .codes button .lbl { display: block; font-size: 10px; color: #666; margin-top: 2px; font-family: ui-sans-serif, system-ui, sans-serif; }
+  .status {
+    font: 12px ui-monospace, Consolas, monospace;
+    padding: 2px 6px; border-radius: 3px; background: #eee;
+  }
+  .status.ok { background: #d4f5d4; }
+  .status.err { background: #f5d4d4; }
+  #log {
+    font: 12px ui-monospace, Consolas, monospace;
+    background: #111; color: #ddd;
+    padding: 8px 10px; border-radius: 6px;
+    height: 220px; overflow-y: auto; white-space: pre-wrap;
+  }
+  .log-entry { display: block; }
+  .log-entry.send { color: #8fdfff; }
+  .log-entry.recv { color: #ffd58f; }
+  .log-entry.info { color: #aaa; }
+  .log-entry.err  { color: #ff8f8f; }
+  .footer { color: #888; font-size: 12px; margin-top: 12px; }
+  code { background: #eee; padding: 1px 4px; border-radius: 3px; font: 12px ui-monospace, Consolas, monospace; }
+</style>
+</head>
+<body>
+
+<h1>Breath Belt — COM trigger tester</h1>
+<p class="sub">
+  Chrome/Edge only. Drives a Black Box ToolKit USB TTL Module over Web Serial: <code>RR</code> resets/clears all lines,
+  a 2-char hex string sets the 8 TTL output lines (e.g. <code>0A</code> = value 10), <code>00</code> clears. The module feeds
+  the ADInstruments PowerLab digital input. No build step — just open and click.
+</p>
+
+<fieldset>
+  <legend>Connection</legend>
+  <div class="row">
+    <label>Baud
+      <input id="baud" type="number" value="115200" min="300" max="1000000" style="width: 88px">
+    </label>
+    <button id="connect">Connect to COM port</button>
+    <button id="disconnect" disabled>Disconnect</button>
+    <button id="reset" disabled>Reset (RR)</button>
+    <span id="status" class="status">disconnected</span>
+  </div>
+</fieldset>
+
+<fieldset>
+  <legend>Send mode</legend>
+  <div class="row">
+    <label><input type="radio" name="mode" value="bbtk" checked> BBTK hex — 2-char hex per code (10→<code>0A</code> 11→<code>0B</code> 12→<code>0C</code>) · correct protocol</label>
+    <label><input type="radio" name="mode" value="ascii"> ASCII decimal + <code>\n</code> (old app behaviour — breaks on 10–12)</label>
+    <label><input type="radio" name="mode" value="raw"> Raw byte (low-level probing)</label>
+  </div>
+  <div class="row" style="margin-top: 8px;">
+    <label>
+      <input id="zeroFollow" type="checkbox" checked>
+      Hold for
+    </label>
+    <input id="zeroDelay" type="number" value="25" min="0" max="2000" style="width: 70px">
+    <span style="font-size: 13px; color: #666;">ms, then send <code>00</code> to clear (the BBTK pulse). Raw mode re-asserts the byte across the window.</span>
+  </div>
+</fieldset>
+
+<fieldset>
+  <legend>Codes</legend>
+  <p style="font-size: 13px; color: #666; margin: 0 0 4px;">Click any code to send it once. Watch LabChart and the log below.</p>
+  <div class="codes" id="codeButtons"></div>
+</fieldset>
+
+<fieldset>
+  <legend>Custom send</legend>
+  <div class="row">
+    <label>Byte value (0–255)
+      <input id="customByte" type="number" min="0" max="255" value="42" style="width: 80px">
+    </label>
+    <button id="sendCustom">Send</button>
+    <label style="margin-left: 14px;">
+      Burst:
+      <input id="burstText" type="text" value="10,0,12,0" style="width: 180px" placeholder="comma-separated byte values">
+    </label>
+    <button id="sendBurst">Send burst</button>
+    <label>
+      gap
+      <input id="burstGap" type="number" value="10" min="0" max="500" style="width: 60px">
+    </label>
+    <span style="font-size: 12px; color: #666;">ms</span>
+  </div>
+</fieldset>
+
+<fieldset>
+  <legend>Sweep (map byte → LabChart comment)</legend>
+  <p style="font-size: 13px; color: #666; margin: 0 0 6px;">
+    Sends one clean raw byte at a time — no hold, no auto-0 — with a gap long enough
+    to read LabChart between each. Note which byte produces which comment, then we know the exact mapping.
+  </p>
+  <div class="row">
+    <label>from <input id="sweepFrom" type="number" min="0" max="255" value="40" style="width: 70px"></label>
+    <label>to <input id="sweepTo" type="number" min="0" max="255" value="60" style="width: 70px"></label>
+    <label>gap <input id="sweepGap" type="number" min="100" max="10000" value="1500" style="width: 80px"> ms</label>
+    <label><input id="sweepPulse" type="checkbox" checked> pulse (send <code>0</code> after each byte)</label>
+    <button id="sendSweep">Sweep</button>
+    <button id="stopSweep" disabled>Stop</button>
+  </div>
+</fieldset>
+
+<fieldset>
+  <legend>Log</legend>
+  <div class="row" style="margin-bottom: 6px;">
+    <button id="clearLog">Clear</button>
+    <span style="font-size: 12px; color: #666;">Any bytes the port sends back are shown in orange.</span>
+  </div>
+  <div id="log"></div>
+</fieldset>
+
+<p class="footer">
+  Code vocabulary (from <code>BreathBelt.jsx</code>) → BBTK hex:
+  1 session start <code>01</code> · 2 pre-baseline start <code>02</code> · 3 pre-baseline end <code>03</code> ·
+  4 phase 2 start <code>04</code> · 5 phase 2 end <code>05</code> · 6 phase 3 start <code>06</code> · 7 phase 3 end <code>07</code> ·
+  8 post-baseline start <code>08</code> · 9 post-baseline end <code>09</code> · 10 trial start <code>0A</code> ·
+  11 condition onset <code>0B</code> · 12 trial end <code>0C</code> · 13 session end <code>0D</code>.
+  Code 0 / <code>00</code> is the line-clear (not an event marker).
+</p>
+
+<script>
+const CODES = [
+  [1, 'sess start'], [2, 'pre BL'], [3, 'pre BL end'], [4, 'ph2 start'],
+  [5, 'ph2 end'], [6, 'ph3 start'], [7, 'ph3 end'], [8, 'post BL'],
+  [9, 'post BL end'], [10, 'trial start'], [11, 'cond onset'], [12, 'trial end'],
+  [13, 'sess end'], [0, 'clear (00)'],
+];
+
+let port = null;
+let writer = null;
+let reader = null;
+let readLoop = null;
+
+const $ = (id) => document.getElementById(id);
+const logEl = $('log');
+const statusEl = $('status');
+
+function log(msg, kind = 'info') {
+  const ts = new Date().toLocaleTimeString('en-GB', { hour12: false }) +
+    '.' + String(Date.now() % 1000).padStart(3, '0');
+  const line = document.createElement('span');
+  line.className = 'log-entry ' + kind;
+  line.textContent = `[${ts}] ${msg}\n`;
+  logEl.appendChild(line);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function setConnected(yes) {
+  $('connect').disabled = yes;
+  $('disconnect').disabled = !yes;
+  $('reset').disabled = !yes;
+  statusEl.textContent = yes ? 'connected' : 'disconnected';
+  statusEl.className = 'status ' + (yes ? 'ok' : '');
+}
+
+// BBTK USB TTL Module: "RR" resets the module and clears all TTL output lines.
+async function sendRR() {
+  if (!writer) { log('Not connected.', 'err'); return; }
+  try {
+    await writer.write(new TextEncoder().encode('RR'));
+    log('TX  "RR"  (reset / clear all output lines)', 'send');
+  } catch (err) {
+    log('RR failed: ' + err.message, 'err');
+  }
+}
+
+async function connect() {
+  if (!('serial' in navigator)) {
+    log('Web Serial not supported. Use Chrome or Edge.', 'err');
+    return;
+  }
+  try {
+    port = await navigator.serial.requestPort();
+    const baud = parseInt($('baud').value, 10) || 115200;
+    await port.open({ baudRate: baud });
+    writer = port.writable.getWriter();
+    setConnected(true);
+    log(`Opened port @ ${baud} baud.`, 'info');
+    await sendRR();           // BBTK init: reset + clear all output lines
+    startReadLoop();
+  } catch (err) {
+    log('Connect failed: ' + err.message, 'err');
+    statusEl.textContent = 'error';
+    statusEl.className = 'status err';
+  }
+}
+
+async function startReadLoop() {
+  try {
+    reader = port.readable.getReader();
+    readLoop = (async () => {
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        if (value && value.length) {
+          const hex = Array.from(value).map(b => b.toString(16).padStart(2, '0')).join(' ');
+          const dec = Array.from(value).join(',');
+          log(`RX  ${value.length}B  hex=[${hex}]  dec=[${dec}]`, 'recv');
+        }
+      }
+    })();
+  } catch (err) {
+    log('Read loop error: ' + err.message, 'err');
+  }
+}
+
+async function disconnect() {
+  try {
+    if (reader) { try { await reader.cancel(); } catch {} reader.releaseLock(); reader = null; }
+    if (writer) { writer.releaseLock(); writer = null; }
+    if (port) { await port.close(); port = null; }
+    setConnected(false);
+    log('Closed port.', 'info');
+  } catch (err) {
+    log('Disconnect error: ' + err.message, 'err');
+  }
+}
+
+function getMode() {
+  return document.querySelector('input[name="mode"]:checked').value;
+}
+
+// Re-assert the held byte roughly this often during the hold window. Web Serial
+// has no way to "keep a line high", so we keep writing the same byte so the
+// PowerLab sees the value continuously until we drop to 0.
+const REASSERT_EVERY_MS = 2;
+
+function encodeCode(code, mode) {
+  if (mode === 'raw')  return new Uint8Array([code & 0xFF]);
+  // BBTK: two-char uppercase hex of the byte value, no terminator.
+  if (mode === 'bbtk') return new TextEncoder().encode((code & 0xFF).toString(16).padStart(2, '0').toUpperCase());
+  return new TextEncoder().encode(`${code}\n`);
+}
+
+function logTx(code, buf, mode) {
+  const hex = Array.from(buf).map(b => b.toString(16).padStart(2, '0')).join(' ');
+  const dec = Array.from(buf).join(',');
+  log(`TX  ${mode}  code=${code}  ${buf.length}B  hex=[${hex}]  dec=[${dec}]`, 'send');
+}
+
+async function sendCode(code) {
+  if (!writer) { log('Not connected.', 'err'); return; }
+  const mode = getMode();
+  const clearAfter = $('zeroFollow').checked && code !== 0;
+  const holdMs = clearAfter ? (parseInt($('zeroDelay').value, 10) || 0) : 0;
+  try {
+    const buf = encodeCode(code, mode);
+    if (mode === 'bbtk') {
+      // The module latches the output lines, so write the value once (NO re-assert —
+      // repeating would garble the 2-char framing), hold, then clear with "00".
+      await writer.write(buf);
+      logTx(code, buf, mode);
+      if (clearAfter) {
+        if (holdMs > 0) await new Promise(r => setTimeout(r, holdMs));
+        await sendZero();
+      }
+    } else if (holdMs > 0) {
+      // raw/ascii level-hold: re-assert across the window, then drop to 0.
+      const start = Date.now();
+      let writes = 0;
+      do {
+        await writer.write(buf);
+        writes++;
+        if (REASSERT_EVERY_MS > 0) await new Promise(r => setTimeout(r, REASSERT_EVERY_MS));
+      } while (Date.now() - start < holdMs);
+      const held = Date.now() - start;
+      log(`TX  ${mode}  code=${code}  held ${held}ms (${writes} writes), clearing`, 'send');
+      await sendZero();
+    } else {
+      await writer.write(buf);
+      logTx(code, buf, mode);
+    }
+  } catch (err) {
+    log('Send failed: ' + err.message, 'err');
+  }
+}
+
+async function sendZero() {
+  if (!writer) return;
+  const mode = getMode();
+  try {
+    const buf = encodeCode(0, mode);
+    await writer.write(buf);
+    const hex = Array.from(buf).map(b => b.toString(16).padStart(2, '0')).join(' ');
+    log(`TX  ${mode}  ${buf.length}B  hex=[${hex}]  (clear → ${mode === 'bbtk' ? '"00"' : '0'})`, 'send');
+  } catch (err) {
+    log('Latch-clear failed: ' + err.message, 'err');
+  }
+}
+
+async function sendBurst() {
+  const parts = $('burstText').value.split(',').map(s => parseInt(s.trim(), 10)).filter(n => Number.isFinite(n));
+  const gap = parseInt($('burstGap').value, 10) || 0;
+  for (const code of parts) {
+    await sendCode(code);
+    if (gap > 0) await new Promise(r => setTimeout(r, gap));
+  }
+}
+
+let sweepAbort = false;
+
+async function sendSweep() {
+  if (!writer) { log('Not connected.', 'err'); return; }
+  const from = parseInt($('sweepFrom').value, 10);
+  const to   = parseInt($('sweepTo').value, 10);
+  const gap  = Math.max(100, parseInt($('sweepGap').value, 10) || 1500);
+  if (!Number.isFinite(from) || !Number.isFinite(to)) { log('Bad sweep range.', 'err'); return; }
+  const step = to >= from ? 1 : -1;
+  const pulse = $('sweepPulse').checked;
+  sweepAbort = false;
+  $('sendSweep').disabled = true;
+  $('stopSweep').disabled = false;
+  log(`Sweep ${from}→${to}, ${gap}ms apart — raw bytes${pulse ? ', each pulsed to 0 after ~25ms' : ', no clear between'}.`, 'info');
+  try {
+    for (let b = from; step > 0 ? b <= to : b >= to; b += step) {
+      if (sweepAbort) { log('Sweep stopped.', 'info'); break; }
+      const byte = b & 0xFF;
+      await writer.write(new Uint8Array([byte]));
+      const ch = (byte >= 32 && byte < 127) ? String.fromCharCode(byte) : '·';
+      log(`SWEEP  byte=${byte}  hex=[${byte.toString(16).padStart(2, '0')}]  char='${ch}'`, 'send');
+      if (pulse) {
+        await new Promise(r => setTimeout(r, 25));
+        await writer.write(new Uint8Array([0]));
+      }
+      await new Promise(r => setTimeout(r, gap));
+    }
+  } catch (err) {
+    log('Sweep failed: ' + err.message, 'err');
+  } finally {
+    $('sendSweep').disabled = false;
+    $('stopSweep').disabled = true;
+  }
+}
+
+function buildCodeButtons() {
+  const container = $('codeButtons');
+  for (const [code, label] of CODES) {
+    const btn = document.createElement('button');
+    btn.innerHTML = `${code}<span class="lbl">${label}</span>`;
+    btn.addEventListener('click', () => sendCode(code));
+    container.appendChild(btn);
+  }
+}
+
+$('connect').addEventListener('click', connect);
+$('disconnect').addEventListener('click', disconnect);
+$('reset').addEventListener('click', sendRR);
+$('sendCustom').addEventListener('click', () => {
+  const v = parseInt($('customByte').value, 10);
+  if (Number.isFinite(v) && v >= 0 && v <= 255) sendCode(v);
+});
+$('sendBurst').addEventListener('click', sendBurst);
+$('sendSweep').addEventListener('click', sendSweep);
+$('stopSweep').addEventListener('click', () => { sweepAbort = true; });
+$('clearLog').addEventListener('click', () => { logEl.textContent = ''; });
+
+buildCodeButtons();
+log('Ready. Click "Connect to COM port" to begin.', 'info');
+</script>
+
+</body>
+</html>

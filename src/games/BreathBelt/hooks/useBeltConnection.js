@@ -6,6 +6,7 @@ import {
 } from '../breathUtils'
 import {
   PMD_SERVICE, PMD_CONTROL, PMD_DATA, HR_SERVICE, HR_MEASUREMENT,
+  DEFAULT_TRIGGER_DEVICE,
 } from '../constants'
 
 const LIVE_PRED_WINDOW = 60
@@ -23,6 +24,7 @@ export function useBeltConnection() {
   const serialPortWriterRef     = useRef(null)
   const serialPortRef           = useRef(null)
   const writableStreamClosedRef = useRef(null)
+  const triggerDeviceRef        = useRef(DEFAULT_TRIGGER_DEVICE)
 
   // Calibration
   const calibSamplesRef    = useRef([])
@@ -200,12 +202,39 @@ export function useBeltConnection() {
       writableStreamClosedRef.current = enc.readable.pipeTo(port.writable)
       serialPortWriterRef.current     = enc.writable.getWriter()
       serialPortRef.current           = port
+      // Black Box ToolKit USB TTL Module init: "RR" resets and clears all output lines.
+      if (triggerDeviceRef.current === 'AD_BBT') {
+        try { await serialPortWriterRef.current.write('RR') } catch {}
+      }
       setComState('CONNECTED')
     } catch (err) { console.error('COM:', err); setComState('ERROR') }
   }, [])
 
+  // Chosen at session setup (see TRIGGER_DEVICES). Determines the trigger protocol.
+  const setTriggerDevice = useCallback((device) => {
+    if (device) triggerDeviceRef.current = device
+  }, [])
+
   const sendTrigger = useCallback(async (value) => {
-    try { await serialPortWriterRef.current?.write(`${value}\n`) } catch (err) {
+    const w = serialPortWriterRef.current
+    if (!w) return
+    const device = triggerDeviceRef.current
+    try {
+      if (device === 'AD_BBT') {
+        // Black Box ToolKit USB TTL Module: a two-char uppercase hex string (no
+        // terminator) sets the 8 TTL output lines to that byte value; "00" clears.
+        // We pulse the value high for 25ms then clear so PowerLab sees a clean edge.
+        // NB: the value must be hex — sending decimal "10".."12" lands on lines 16..18.
+        const hex = (Number(value) & 0xFF).toString(16).padStart(2, '0').toUpperCase()
+        await w.write(hex)
+        await new Promise(r => setTimeout(r, 25))
+        await w.write('00')
+      } else {
+        // Biopac_Left / Biopac_Right use parallel-port cards with a different
+        // trigger setup — not yet implemented.
+        console.warn(`sendTrigger: trigger device "${device}" not yet implemented (code ${value})`)
+      }
+    } catch (err) {
       console.error('COM trigger:', err)
     }
   }, [])
@@ -294,7 +323,7 @@ export function useBeltConnection() {
     rawAccelRowsRef, rawHRRowsRef, pendingAccelRef, pendingHRRef,
     currentPhaseRef, currentTrialRef,
     getPacerRadiusFnRef,
-    connect, connectCOM, sendTrigger,
+    connect, connectCOM, sendTrigger, setTriggerDevice,
     startCalibration, beginCalibCollection,
     acceptCalibration, redoCalibration, resetCalibration,
     getAndClearTrialSamples,

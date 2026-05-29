@@ -35,6 +35,7 @@ export function useBeltSession(userId) {
     sessionNumber,
     baselinePeriodMs,
     postBaselinePeriodMs,
+    triggerDevice,
   }) => {
     const sessionId = sessionIdRef.current;
     if (!sessionId) return;
@@ -64,6 +65,7 @@ export function useBeltSession(userId) {
       storage_path:            basePath,
       quest_state:             questState ?? null,
       session_number:          sessionNumber ?? 1,
+      trigger_device:          triggerDevice ?? null,
       baseline_period_ms:      baselinePeriodMs ?? null,
       post_baseline_period_ms: postBaselinePeriodMs ?? null,
       calib_model_label:       calibState?.modelLabel ?? null,

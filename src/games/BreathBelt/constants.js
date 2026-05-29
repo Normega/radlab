@@ -27,6 +27,20 @@ export const QUEST_CONVERGENCE_SD  = 0.04;
 export const QUEST_PRIOR_MEAN_LOG  = Math.log10(0.5);
 export const QUEST_PRIOR_SD        = 0.25;
 
+// ── Trigger / event-marking hardware ──────────────────────────────────────
+// Chosen at session setup; determines how COM event triggers are emitted, since
+// each testing rig uses different physio equipment.
+//   AD_BBT       — ADInstruments PowerLab via Black Box ToolKit USB TTL Module
+//                  (Web Serial; 2-char hex per code, "RR" init, "00" clear).
+//   Biopac_Left  — Biopac via parallel-port card, left testing rig  (setup TBD).
+//   Biopac_Right — Biopac via parallel-port card, right testing rig (setup TBD).
+export const TRIGGER_DEVICES = [
+  { value: 'AD_BBT',       label: 'AD Instruments + Black Box ToolKit (AD_BBT)' },
+  { value: 'Biopac_Left',  label: 'Biopac — Left rig' },
+  { value: 'Biopac_Right', label: 'Biopac — Right rig' },
+];
+export const DEFAULT_TRIGGER_DEVICE = 'AD_BBT';
+
 // ── Polar H10 BLE UUIDs ───────────────────────────────────────────────────
 export const PMD_SERVICE    = 'fb005c80-02e7-f387-1cad-8acd2d8df0c8';
 export const PMD_CONTROL    = 'fb005c81-02e7-f387-1cad-8acd2d8df0c8';
