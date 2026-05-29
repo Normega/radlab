@@ -32,14 +32,23 @@ export const QUEST_PRIOR_SD        = 0.25;
 // each testing rig uses different physio equipment.
 //   AD_BBT       — ADInstruments PowerLab via Black Box ToolKit USB TTL Module
 //                  (Web Serial; 2-char hex per code, "RR" init, "00" clear).
-//   Biopac_Left  — Biopac via parallel-port card, left testing rig  (setup TBD).
-//   Biopac_Right — Biopac via parallel-port card, right testing rig (setup TBD).
+//   Biopac_Left  — Biopac via parallel-port card, left testing rig.  Parallel
+//                  port 0xCFF8; event codes placed on the high nibble (code * 16).
+//   Biopac_Right — Biopac via parallel-port card, right testing rig. Parallel
+//                  port 0xD030; event codes sent as-is (code * 1).
+// `address`/`shift` are present only on the Biopac entries; their presence is
+// what marks a device as parallel-port (vs. AD_BBT's Web Serial path).
 export const TRIGGER_DEVICES = [
   { value: 'AD_BBT',       label: 'AD Instruments + Black Box ToolKit (AD_BBT)' },
-  { value: 'Biopac_Left',  label: 'Biopac — Left rig' },
-  { value: 'Biopac_Right', label: 'Biopac — Right rig' },
+  { value: 'Biopac_Left',  label: 'Biopac — Left rig',  address: 0xCFF8, shift: 16 },
+  { value: 'Biopac_Right', label: 'Biopac — Right rig', address: 0xD030, shift: 1  },
 ];
 export const DEFAULT_TRIGGER_DEVICE = 'AD_BBT';
+
+// Biopac parallel-port triggers cannot be driven from the browser; they are
+// relayed through a local helper (scripts/parallel_server.py) that exposes
+// POST /send {address, value} and GET /status {ok, dll} on this origin.
+export const BIOPAC_SERVER_URL = 'http://localhost:8765';
 
 // ── Polar H10 BLE UUIDs ───────────────────────────────────────────────────
 export const PMD_SERVICE    = 'fb005c80-02e7-f387-1cad-8acd2d8df0c8';

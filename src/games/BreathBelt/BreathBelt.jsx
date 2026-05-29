@@ -205,15 +205,54 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
   }
 
   if (phase === S.COM_CONNECT) {
+    const dev      = TRIGGER_DEVICES.find(d => d.value === triggerDevice);
+    const isBiopac = !!dev && dev.address != null;
     return (
-      <Layout title="Connect COM port">
+      <Layout title={isBiopac ? 'Check parallel server' : 'Connect COM port'}>
         <Screen>
           <p className="text-center" style={{ color: 'var(--tx2)', fontSize: 'var(--fs-body)', maxWidth: 400 }}>
-            Connect to the physio equipment COM port to enable trial triggers.
+            {isBiopac
+              ? 'Confirm the local parallel-port server is running before starting triggers.'
+              : 'Connect to the physio equipment COM port to enable trial triggers.'}
           </p>
-          {belt.comState === 'ERROR' && <Err>COM port connection failed. Try again.</Err>}
-          <Btn onClick={belt.connectCOM} disabled={belt.comState === 'CONNECTING'}>
-            {belt.comState === 'CONNECTING' ? 'Connecting…' : 'Connect to COM port'}
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%', maxWidth: 280 }}>
+            <label style={{ fontFamily: 'DM Sans', fontSize: 'var(--fs-body-sm)', color: 'var(--tx2)' }}>
+              Trigger device
+            </label>
+            <select
+              value={triggerDevice}
+              onChange={e => setTriggerDevice(e.target.value)}
+              disabled={belt.comState === 'CONNECTING'}
+              style={{
+                fontFamily: 'Space Mono', fontSize: 'var(--fs-mono-md)',
+                color: 'var(--tx)', background: 'var(--bgc)',
+                border: '1px solid var(--bd)', borderRadius: 10,
+                padding: '10px 14px', width: '100%',
+              }}
+            >
+              {TRIGGER_DEVICES.map(d => (
+                <option key={d.value} value={d.value}>{d.label}</option>
+              ))}
+            </select>
+            <p style={{ fontFamily: 'DM Sans', fontSize: 'var(--fs-body-sm)', color: 'var(--tx3)', margin: 0 }}>
+              Match the physio equipment on this testing computer.
+            </p>
+          </div>
+
+          {belt.comState === 'ERROR' && (
+            <Err>{belt.comMessage || (isBiopac ? 'Parallel server check failed. Try again.' : 'COM port connection failed. Try again.')}</Err>
+          )}
+          <Btn
+            onClick={() => {
+              belt.setTriggerDevice(triggerDevice);
+              if (isBiopac) belt.connectBiopac(); else belt.connectCOM();
+            }}
+            disabled={belt.comState === 'CONNECTING'}
+          >
+            {belt.comState === 'CONNECTING'
+              ? (isBiopac ? 'Checking…' : 'Connecting…')
+              : (isBiopac ? 'Check parallel server' : 'Connect to COM port')}
           </Btn>
         </Screen>
       </Layout>
@@ -244,25 +283,10 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
               Increment for each visit by the same participant.
             </p>
 
-            <label style={{ fontFamily: 'DM Sans', fontSize: 'var(--fs-body-sm)', color: 'var(--tx2)', marginTop: 12 }}>
-              Trigger device
-            </label>
-            <select
-              value={triggerDevice}
-              onChange={e => setTriggerDevice(e.target.value)}
-              style={{
-                fontFamily: 'Space Mono', fontSize: 'var(--fs-mono-md)',
-                color: 'var(--tx)', background: 'var(--bgc)',
-                border: '1px solid var(--bd)', borderRadius: 10,
-                padding: '10px 14px', width: '100%',
-              }}
-            >
-              {TRIGGER_DEVICES.map(d => (
-                <option key={d.value} value={d.value}>{d.label}</option>
-              ))}
-            </select>
-            <p style={{ fontFamily: 'DM Sans', fontSize: 'var(--fs-body-sm)', color: 'var(--tx3)', margin: 0 }}>
-              Match the physio equipment on this testing computer.
+            <p style={{ fontFamily: 'DM Sans', fontSize: 'var(--fs-body-sm)', color: 'var(--tx3)', margin: '12px 0 0' }}>
+              Trigger device: <span style={{ fontFamily: 'Space Mono', color: 'var(--tx2)' }}>
+                {TRIGGER_DEVICES.find(d => d.value === triggerDevice)?.label ?? triggerDevice}
+              </span>
             </p>
           </div>
           <Btn onClick={async () => {

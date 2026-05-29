@@ -6,14 +6,29 @@ import {
 } from '../breathUtils'
 import {
   PMD_SERVICE, PMD_CONTROL, PMD_DATA, HR_SERVICE, HR_MEASUREMENT,
-  DEFAULT_TRIGGER_DEVICE,
+  DEFAULT_TRIGGER_DEVICE, TRIGGER_DEVICES, BIOPAC_SERVER_URL,
 } from '../constants'
 
 const LIVE_PRED_WINDOW = 60
 
+// Relay a single parallel-port write to the local Biopac helper. A missed
+// trigger must not crash the session, so failures are logged, never thrown.
+async function postParallel(address, value) {
+  try {
+    await fetch(`${BIOPAC_SERVER_URL}/send`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ address, value }),
+    })
+  } catch (err) {
+    console.error(`Biopac trigger failed (address 0x${address.toString(16)}, value ${value}):`, err)
+  }
+}
+
 export function useBeltConnection() {
   const [btState,         setBtState]         = useState('IDLE')
   const [comState,        setComState]         = useState('IDLE')
+  const [comMessage,      setComMessage]       = useState('')
   const [calibPhase,      setCalibPhase]       = useState('NONE')
   const [syncQuality,     setSyncQuality]      = useState(0)
   const [calibReviewData, setCalibReviewData]  = useState(null)
@@ -210,30 +225,65 @@ export function useBeltConnection() {
     } catch (err) { console.error('COM:', err); setComState('ERROR') }
   }, [])
 
+  // ── Biopac parallel-port server ───────────────────────────────────────────
+  // Biopac rigs aren't serial and the browser can't drive a parallel port, so
+  // there is no port picker / writer / reader. Instead we confirm the local
+  // helper is up and has loaded its parallel-port DLL. Reuses comState so the
+  // setup screen's existing status indicator works unchanged.
+
+  const connectBiopac = useCallback(async () => {
+    setComState('CONNECTING')
+    setComMessage('')
+    try {
+      const res  = await fetch(`${BIOPAC_SERVER_URL}/status`)
+      const data = await res.json().catch(() => ({}))
+      if (data?.ok && data?.dll) {
+        setComMessage('Parallel server connected.')
+        setComState('CONNECTED')
+      } else if (data?.ok) {
+        setComMessage('Parallel server reachable, but its parallel-port DLL is not loaded.')
+        setComState('ERROR')
+      } else {
+        setComMessage('Parallel server responded but is not ready.')
+        setComState('ERROR')
+      }
+    } catch (err) {
+      console.error('Biopac status:', err)
+      setComMessage('Parallel server offline — could not reach localhost:8765.')
+      setComState('ERROR')
+    }
+  }, [])
+
   // Chosen at session setup (see TRIGGER_DEVICES). Determines the trigger protocol.
   const setTriggerDevice = useCallback((device) => {
     if (device) triggerDeviceRef.current = device
   }, [])
 
   const sendTrigger = useCallback(async (value) => {
+    const device = triggerDeviceRef.current
+    const dev    = TRIGGER_DEVICES.find(d => d.value === device)
+
+    // Biopac (parallel-port) devices: send code * shift on the port's high or
+    // low nibble, hold 25ms, then clear to 0 — same pulse shape as AD_BBT.
+    if (dev && dev.address != null) {
+      const wire = Math.max(0, Math.min(255, Math.round(Number(value) * dev.shift)))
+      await postParallel(dev.address, wire)
+      await new Promise(r => setTimeout(r, 25))
+      await postParallel(dev.address, 0)
+      return
+    }
+
+    // AD_BBT (Web Serial): Black Box ToolKit USB TTL Module. A two-char
+    // uppercase hex string (no terminator) sets the 8 TTL output lines to that
+    // byte value; "00" clears. Pulse high for 25ms then clear so PowerLab sees a
+    // clean edge. NB: must be hex — decimal "10".."12" lands on lines 16..18.
     const w = serialPortWriterRef.current
     if (!w) return
-    const device = triggerDeviceRef.current
     try {
-      if (device === 'AD_BBT') {
-        // Black Box ToolKit USB TTL Module: a two-char uppercase hex string (no
-        // terminator) sets the 8 TTL output lines to that byte value; "00" clears.
-        // We pulse the value high for 25ms then clear so PowerLab sees a clean edge.
-        // NB: the value must be hex — sending decimal "10".."12" lands on lines 16..18.
-        const hex = (Number(value) & 0xFF).toString(16).padStart(2, '0').toUpperCase()
-        await w.write(hex)
-        await new Promise(r => setTimeout(r, 25))
-        await w.write('00')
-      } else {
-        // Biopac_Left / Biopac_Right use parallel-port cards with a different
-        // trigger setup — not yet implemented.
-        console.warn(`sendTrigger: trigger device "${device}" not yet implemented (code ${value})`)
-      }
+      const hex = (Number(value) & 0xFF).toString(16).padStart(2, '0').toUpperCase()
+      await w.write(hex)
+      await new Promise(r => setTimeout(r, 25))
+      await w.write('00')
     } catch (err) {
       console.error('COM trigger:', err)
     }
@@ -318,12 +368,12 @@ export function useBeltConnection() {
   }, [])
 
   return {
-    btState, comState, calibPhase, syncQuality, calibReviewData,
+    btState, comState, comMessage, calibPhase, syncQuality, calibReviewData,
     breathValueRef, mlrWeightsRef, filterState3Ref,
     rawAccelRowsRef, rawHRRowsRef, pendingAccelRef, pendingHRRef,
     currentPhaseRef, currentTrialRef,
     getPacerRadiusFnRef,
-    connect, connectCOM, sendTrigger, setTriggerDevice,
+    connect, connectCOM, connectBiopac, sendTrigger, setTriggerDevice,
     startCalibration, beginCalibCollection,
     acceptCalibration, redoCalibration, resetCalibration,
     getAndClearTrialSamples,
