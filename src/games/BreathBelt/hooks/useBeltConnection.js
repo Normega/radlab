@@ -29,6 +29,7 @@ export function useBeltConnection() {
   const [btState,         setBtState]         = useState('IDLE')
   const [comState,        setComState]         = useState('IDLE')
   const [comMessage,      setComMessage]       = useState('')
+  const [testRunning,     setTestRunning]      = useState(false)
   const [calibPhase,      setCalibPhase]       = useState('NONE')
   const [syncQuality,     setSyncQuality]      = useState(0)
   const [calibReviewData, setCalibReviewData]  = useState(null)
@@ -289,6 +290,21 @@ export function useBeltConnection() {
     }
   }, [])
 
+  // Connection check: pulse every event code 1..13 through the active device so
+  // the RA can confirm all 13 marks land in the recording. Uses sendTrigger, so
+  // it's correct for both AD_BBT (hex) and Biopac (code*shift) automatically.
+  const sendTestCascade = useCallback(async () => {
+    setTestRunning(true)
+    try {
+      for (let code = 1; code <= 13; code++) {
+        await sendTrigger(String(code))            // pulses high ~25ms then clears
+        await new Promise(r => setTimeout(r, 250)) // gap so marks are distinct
+      }
+    } finally {
+      setTestRunning(false)
+    }
+  }, [sendTrigger])
+
   // ── Calibration ──────────────────────────────────────────────────────────
 
   const startCalibration = useCallback(() => {
@@ -368,12 +384,12 @@ export function useBeltConnection() {
   }, [])
 
   return {
-    btState, comState, comMessage, calibPhase, syncQuality, calibReviewData,
+    btState, comState, comMessage, testRunning, calibPhase, syncQuality, calibReviewData,
     breathValueRef, mlrWeightsRef, filterState3Ref,
     rawAccelRowsRef, rawHRRowsRef, pendingAccelRef, pendingHRRef,
     currentPhaseRef, currentTrialRef,
     getPacerRadiusFnRef,
-    connect, connectCOM, connectBiopac, sendTrigger, setTriggerDevice,
+    connect, connectCOM, connectBiopac, sendTrigger, sendTestCascade, setTriggerDevice,
     startCalibration, beginCalibCollection,
     acceptCalibration, redoCalibration, resetCalibration,
     getAndClearTrialSamples,

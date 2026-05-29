@@ -66,6 +66,7 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
   const postBaselinePeriodRef = useRef(null);
   const convergenceRef        = useRef(null);
   const pendingQuestStateRef  = useRef(null);
+  const cascadeFiredRef       = useRef(false);
 
   // ── Auth + role ──────────────────────────────────────────────────────────
   const { data: profile, isLoading: profileLoading } = useQuery({
@@ -121,8 +122,15 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
     if (phase === S.BT_CONNECT  && belt.btState  === 'CONNECTED') setPhase(S.COM_CONNECT);
   }, [belt.btState,  phase]);
 
+  // On successful connect, auto-fire the 1–13 test cascade once so the RA can
+  // verify the marks land. We no longer auto-advance — the RA confirms the
+  // cascade and clicks Continue (or re-runs it) on the connect screen.
   useEffect(() => {
-    if (phase === S.COM_CONNECT && belt.comState === 'CONNECTED') setPhase(S.SESSION_SETUP);
+    if (belt.comState !== 'CONNECTED') { cascadeFiredRef.current = false; return; }
+    if (phase === S.COM_CONNECT && !cascadeFiredRef.current) {
+      cascadeFiredRef.current = true;
+      belt.sendTestCascade();
+    }
   }, [belt.comState, phase]);
 
   useEffect(() => {
@@ -207,6 +215,33 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
   if (phase === S.COM_CONNECT) {
     const dev      = TRIGGER_DEVICES.find(d => d.value === triggerDevice);
     const isBiopac = !!dev && dev.address != null;
+
+    // Connected — verify triggers before continuing. A 1–13 cascade fires
+    // automatically on connect; the RA confirms all 13 marks in the recording
+    // (and can re-send) before proceeding to session setup.
+    if (belt.comState === 'CONNECTED') {
+      return (
+        <Layout title={isBiopac ? 'Parallel server ready' : 'COM port ready'}>
+          <Screen>
+            <p className="text-center" style={{ color: 'var(--tx2)', fontSize: 'var(--fs-body)', maxWidth: 420 }}>
+              Connected to <strong style={{ color: 'var(--tx)' }}>{dev?.label ?? triggerDevice}</strong>.
+            </p>
+            <p className="text-center" style={{ color: 'var(--tx2)', fontSize: 'var(--fs-body)', maxWidth: 420 }}>
+              {belt.testRunning
+                ? 'Sending test cascade — watch the recording for marks 1 through 13…'
+                : 'A test cascade of codes 1–13 was sent. Confirm all 13 marks appear in the recording, then continue.'}
+            </p>
+            <Btn secondary onClick={belt.sendTestCascade} disabled={belt.testRunning}>
+              {belt.testRunning ? 'Sending 1–13…' : 'Send test cascade again'}
+            </Btn>
+            <Btn onClick={() => setPhase(S.SESSION_SETUP)} disabled={belt.testRunning}>
+              Continue to session setup
+            </Btn>
+          </Screen>
+        </Layout>
+      );
+    }
+
     return (
       <Layout title={isBiopac ? 'Check parallel server' : 'Connect COM port'}>
         <Screen>
@@ -553,18 +588,21 @@ function Screen({ title, children }) {
   );
 }
 
-function Btn({ onClick, disabled, children }) {
-  return (
-    <button onClick={onClick} disabled={disabled} style={{
-      background:   disabled ? 'var(--bd)' : 'var(--pk)',
-      color:        disabled ? 'var(--tx3)' : '#fff',
-      border:       'none', borderRadius: 12, padding: '12px 28px',
-      fontFamily:   'DM Sans', fontSize: 'var(--fs-body)', fontWeight: 600,
-      cursor:       disabled ? 'default' : 'pointer',
-    }}>
-      {children}
-    </button>
-  );
+function Btn({ onClick, disabled, secondary, children }) {
+  const base = {
+    border:     'none', borderRadius: 12, padding: '12px 28px',
+    fontFamily: 'DM Sans', fontSize: 'var(--fs-body)', fontWeight: 600,
+    cursor:     disabled ? 'default' : 'pointer',
+  };
+  const style = secondary
+    ? { ...base,
+        background: 'transparent',
+        color:      disabled ? 'var(--tx3)' : 'var(--pkd)',
+        border:     `1px solid ${disabled ? 'var(--bd)' : 'var(--pkbs)'}` }
+    : { ...base,
+        background: disabled ? 'var(--bd)' : 'var(--pk)',
+        color:      disabled ? 'var(--tx3)' : '#fff' };
+  return <button onClick={onClick} disabled={disabled} style={style}>{children}</button>;
 }
 
 function Err({ children }) {
