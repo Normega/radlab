@@ -2,7 +2,7 @@
 
 > **Regulatory and Affective Dynamics Lab**  
 > University of Toronto · PI: Professor Norman Farb, PhD  
-> Last updated: 2026-05-26 (BreathBelt §20 updated: MLR calibration pipeline replacing percentile approach; fitBestModel — 6 model variants, best by Pearson R; useBeltConnection exposes mlrWeightsRef, filterState3Ref, syncQuality, calibReviewData, beginCalibCollection, redoCalibration, getPacerRadiusFnRef; BeltSyncRing retained for other games; SynchronyBar shown during trials; useStreamingBackup adds parallel File System Access API CSV backup; belt_mlr_migration.sql adds calib_model_label, calib_fit_r, calib_lag_ms to belt_sessions.)
+> Last updated: 2026-05-29 (BreathBelt §20: Biopac parallel-port triggers implemented — Biopac_Left/Biopac_Right now relay through a local parallel_server.py helper; trigger-device selector moved onto the connect screen; connectBiopac() + sendTestCascade() added; a 1–13 test cascade auto-fires on connect with an RA verify step. Earlier 2026-05-26 update: MLR calibration pipeline replacing percentile approach; fitBestModel — 6 model variants, best by Pearson R; useBeltConnection exposes mlrWeightsRef, filterState3Ref, syncQuality, calibReviewData, beginCalibCollection, redoCalibration, getPacerRadiusFnRef; BeltSyncRing retained for other games; SynchronyBar shown during trials; useStreamingBackup adds parallel File System Access API CSV backup; belt_mlr_migration.sql adds calib_model_label, calib_fit_r, calib_lag_ms to belt_sessions.)
 
 ---
 
@@ -1491,15 +1491,14 @@ BROWSER_CHECK → BT_CONNECT → COM_CONNECT
 ### Hardware
 
 - **Polar H10**: Bluetooth LE chest belt. Streams raw accelerometer (ACC) and heart rate (HR) data. ACC signal is used as a proxy for respiratory effort. Connected via Web Bluetooth in `useBeltConnection.js`.
-- **COM trigger box**: Serial port connected via Web Serial API. Sends 1-byte codes to the physio recording system at trial start/end and at baseline start/end. Connected separately after BT.
+- **Trigger device**: sends 1-byte event codes to the physio recording system at trial start/end and at baseline start/end. Connected separately after BT. Two transports are supported (chosen per session — see *Trigger devices & transports* below): the **AD_BBT** rig uses a Web Serial COM box; the **Biopac** rigs use a parallel-port card driven through a local helper server.
 
-### COM trigger vocabulary (codes 0–12)
+### Trigger vocabulary (codes 1–13)
 
-All codes fit in a single byte (within the 2^32 constraint). Codes 1–9 are fired from `BreathBelt.jsx` at FSM transitions; codes 10–12 are fired from `useTrialRunner.js` within each trial.
+All codes fit in a single byte. Codes 1–9 are fired from `BreathBelt.jsx` at FSM transitions; codes 10–12 are fired from `useTrialRunner.js` within each trial; code 13 is session end.
 
 | Code | Event | Fired from |
 |------|-------|------------|
-| 0 | Session end | `BreathBelt.jsx` — after `endSession()` resolves in post-baseline `onComplete` |
 | 1 | Session start | `BreathBelt.jsx` — pre-baseline `onStart`, just before code 2 |
 | 2 | Pre-baseline start | `BaselineScreen` — via `triggerStart='2'` prop on recording start |
 | 3 | Pre-baseline end | `BaselineScreen` — via `triggerEnd='3'` prop on recording end |
@@ -1512,12 +1511,35 @@ All codes fit in a single byte (within the 2^32 constraint). Codes 1–9 are fir
 | 10 | Trial start | `useTrialRunner.js` — baseline breaths begin |
 | 11 | Condition onset | `useTrialRunner.js` — breath 3 begins (baseline→condition boundary) |
 | 12 | Trial end | `useTrialRunner.js` — after condition breaths complete |
+| 13 | Session end | `BreathBelt.jsx` — after `endSession()` resolves in post-baseline `onComplete`, and on mid-session unmount |
 
 Codes 10/11/12 are reused across Phase 2 and Phase 3. The preceding phase code (4 or 6) establishes context in the lab belt signal.
 
+**Code 0 is the line-clear, not an event marker.** Every trigger pulses its value high for ~25 ms then writes 0 to clear the lines (on AD_BBT, `"00"` is the Black Box ToolKit clear command, so session end uses 13 to stay a distinct marker). The same 1→13 sequence is replayed as a connection test on connect (see below).
+
+### Trigger devices & transports
+
+Each testing rig uses different physio equipment, so the RA picks a **trigger device** on the connect screen (`COM_CONNECT`) — *before* connecting, since the device determines the transport. `TRIGGER_DEVICES` (in `constants.js`); default `AD_BBT`. The choice is persisted to `belt_sessions.trigger_device`.
+
+| Device | Transport | Encoding |
+|---|---|---|
+| `AD_BBT` (default) | Web Serial COM box (Black Box ToolKit USB TTL Module) | 2-char uppercase hex per code, `"RR"` init on connect, `"00"` clear |
+| `Biopac_Right` | Parallel-port card via local helper, port `0xD030` | code sent as-is (`shift: 1`) |
+| `Biopac_Left` | Parallel-port card via local helper, port `0xCFF8` | code on the high nibble (`shift: 16`, i.e. `code × 16`) |
+
+`sendTrigger(code)` branches on the selected device: AD_BBT writes hex over the serial writer; a Biopac device computes `code × shift` (clamped 0–255) and relays it to the parallel-port server. Both pulse the value high for 25 ms then write 0 to clear. A failed Biopac relay is logged (`console.error` with address + value) but never thrown — a missed trigger must not crash the session.
+
+**Biopac parallel-port server** (`scripts/parallel_server.py`): the browser cannot drive a parallel port, so Biopac triggers go through a small local Flask helper (Windows-only; uses `inpoutx64.dll`/`inpout32.dll`). `constants.js` `BIOPAC_SERVER_URL = 'http://localhost:8765'`. Endpoints:
+- `POST /send` — body `{ address, value }`; writes `value` to the parallel `address` via `Out32`. (Also accepts an optional `zero_delay` ms to self-clear; the browser instead sends an explicit `value: 0` after 25 ms.)
+- `GET /status` — `{ ok: true, dll: <bool>, dll_name }`. `connectBiopac()` pings this and reports connected only when `ok && dll`; otherwise it surfaces a distinct message (DLL not loaded / not ready / offline) in the same `comState` status indicator used for the COM box.
+
+**Connect flow** (`COM_CONNECT`): for AD_BBT the button reads *Connect to COM port* → `connectCOM()` (Web Serial port picker); for Biopac it reads *Check parallel server* → `connectBiopac()` (no port picker / writer / reader — just the status ping). On a successful connect the screen does **not** auto-advance: it auto-fires the 1–13 test cascade once (`sendTestCascade()`, ~250 ms between marks) so the RA can confirm all 13 marks land in the recording, then offers *Send test cascade again* and *Continue to session setup*. The cascade uses `sendTrigger`, so per-device encoding is automatic.
+
+> **Mixed-content caveat:** the deployed app is https but the parallel server is `http://localhost:8765`. Opening BreathBelt from the production https URL makes the browser block the localhost call (server reads as "offline"). Run the Biopac rigs from the local dev server (`http://localhost:5173`) so the scheme matches. AD_BBT (Web Serial) is unaffected.
+
 ### Session setup (SESSION_SETUP)
 
-After COM connects, the researcher enters a session number (1-indexed, incremented per lab visit by the same participant) before calibration begins. Stored in `belt_sessions.session_number`.
+After connecting (and the trigger-test cascade), the researcher enters a session number (1-indexed, incremented per lab visit by the same participant) before calibration begins. Stored in `belt_sessions.session_number`. The trigger device chosen on the connect screen is shown here read-only.
 
 ### Calibration
 
@@ -1617,7 +1639,8 @@ src/games/BreathBelt/
   BreathBelt.jsx             ← main FSM; backup.initBackup at SESSION_SETUP;
                                recordTrialWithBackup wraps session.recordTrial + flushAccel/HR;
                                accepts studyMode/userId/studyId/onSessionComplete for in-study use
-  constants.js               ← BASE_BREATH_SPEED_S, BASELINE_DURATION_MS (120 s), POST_BASELINE_DURATION_MS (120 s), QUEST params
+  constants.js               ← BASE_BREATH_SPEED_S, BASELINE_DURATION_MS (120 s), POST_BASELINE_DURATION_MS (120 s), QUEST params,
+                               TRIGGER_DEVICES (AD_BBT + Biopac_Left/Right with address/shift), DEFAULT_TRIGGER_DEVICE, BIOPAC_SERVER_URL
   breathUtils.js             ← full MLR pipeline: fitBestModel (6 variants), processPacketMLR, initFilterState3,
                                rollingPearsonR, estimateBreathPeriodMs, buildReviewEntry,
                                medianPeakTimingError, computeMLRPredictions, pearsonRArrays,
@@ -1626,9 +1649,10 @@ src/games/BreathBelt/
   belt_mlr_migration.sql             ← adds calib_model_label/calib_fit_r/calib_lag_ms to belt_sessions
   belt_sync_metrics_migration.sql    ← adds trial_r_baseline/trial_r_condition/peak_error_ms to belt_trials
   hooks/
-    useBeltConnection.js     ← Web Bluetooth + Web Serial, MLR calibration pipeline;
-                               exposes mlrWeightsRef, filterState3Ref, syncQuality, calibReviewData,
-                               beginCalibCollection, redoCalibration, getAndClearTrialSamples,
+    useBeltConnection.js     ← Web Bluetooth + Web Serial + Biopac parallel-port server, MLR calibration pipeline;
+                               sendTrigger branches per device (AD_BBT hex / Biopac code×shift); connectCOM + connectBiopac;
+                               sendTestCascade (1–13 connect check) + testRunning; exposes mlrWeightsRef, filterState3Ref,
+                               syncQuality, calibReviewData, beginCalibCollection, redoCalibration, getAndClearTrialSamples,
                                getPacerRadiusFnRef
     useBeltSession.js        ← Supabase session lifecycle; uploads accel + HR as two CSVs to belt-sessions Storage;
                                flattens calibState.modelLabel/fitR/lagMs into the scalar columns on belt_sessions
@@ -1654,6 +1678,8 @@ src/games/BreathBelt/
     SessionComplete.jsx      ← shows session number, pre/post resting period, QUEST thresholds
 ```
 
+Outside the game tree: `scripts/parallel_server.py` — the localhost:8765 Flask helper that relays Biopac parallel-port writes (Windows-only; needs `inpoutx64.dll`/`inpout32.dll` alongside it). Run it on the Biopac rigs before a session.
+
 ### Convergence data flow
 
 `quest.getConvergence()` is called in `StaircaseScreen` when both staircases converge and passed as the third argument to `onComplete(trials, questState, convergence)`. `BreathBelt.jsx` stores convergence in `convergenceRef.current` and quest state in `pendingQuestStateRef.current` (both `useRef`). `endSession()` is called inside the post-baseline `onComplete` callback, consuming `pendingQuestStateRef.current`.
@@ -1672,6 +1698,8 @@ All migrations use `ADD COLUMN IF NOT EXISTS` — safe to run on existing data.
 ### Status
 
 Integrated. All source files updated at `src/games/BreathBelt/`. Route registered at `/games/breath-belt`. Run migrations in order: `belt_schema.sql`, `belt_correspondence_migration.sql`, `belt_mlr_migration.sql`, `belt_sync_metrics_migration.sql` — all require manual execution in the Supabase SQL editor before running in the lab. Requires Chrome or Edge with Web Bluetooth enabled.
+
+All three trigger devices are implemented: AD_BBT (Web Serial) is production-verified; Biopac_Left and Biopac_Right (parallel-port via `scripts/parallel_server.py`) have been verified on the parallel port. The Biopac rigs must run `parallel_server.py` (with its inpout DLL) and be opened from the local dev server (`http://localhost:5173`) to avoid the https mixed-content block.
 
 ---
 
