@@ -60,7 +60,7 @@ export default function AnagramBox({ hook, onInteract, disabled }) {
         {scrambled}
       </div>
 
-      <div style={{ display: 'flex', gap: '0.5rem', width: '100%' }}>
+      <div style={{ display: 'flex', gap: '0.5rem', width: '100%', marginTop: 'auto' }}>
         <input
           ref={inputRef}
           value={input}

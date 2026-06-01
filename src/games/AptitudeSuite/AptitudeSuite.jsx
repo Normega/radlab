@@ -278,13 +278,13 @@ export default function AptitudeSuite({ session }) {
           onInteract={handleInteract}
           disabled={!timer.running}
         />
-        <FluencyBox
-          hook={fluencyWithLog}
+        <WordProbeBox
+          hook={wordProbeWithLog}
           onInteract={handleInteract}
           disabled={!timer.running}
         />
-        <WordProbeBox
-          hook={wordProbeWithLog}
+        <FluencyBox
+          hook={fluencyWithLog}
           onInteract={handleInteract}
           disabled={!timer.running}
         />

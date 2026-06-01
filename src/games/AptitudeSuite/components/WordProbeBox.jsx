@@ -80,7 +80,9 @@ export default function WordProbeBox({ hook, onInteract, disabled }) {
         alignItems: 'center',
         gap: '0.75rem',
         width: 5 * CELL_SIZE + 4 * GRID_GAP,
-        margin: '0 auto',
+        marginTop: 'auto',
+        marginLeft: 'auto',
+        marginRight: 'auto',
       }}>
         {/* 6×5 grid */}
         <div style={{

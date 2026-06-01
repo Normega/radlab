@@ -62,7 +62,7 @@ export default function FluencyBox({ hook, onInteract, disabled }) {
         {categoryLabel}
       </div>
 
-      <div style={{ display: 'flex', gap: '0.5rem', width: '100%' }}>
+      <div style={{ display: 'flex', gap: '0.5rem', width: '100%', marginTop: 'auto' }}>
         <input
           ref={inputRef}
           value={input}
