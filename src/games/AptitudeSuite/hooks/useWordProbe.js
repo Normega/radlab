@@ -47,6 +47,7 @@ export function useWordProbe() {
   const [feedback, setFeedback] = useState(null); // null | 'invalid_word' | 'round_over'
   const [showReveal, setShowReveal] = useState(false);
   const [revealWord, setRevealWord] = useState('');
+  const [roundSolved, setRoundSolved] = useState(false);
 
   const poolRef = useRef(null);
   const revealTimerRef = useRef(null);
@@ -58,12 +59,14 @@ export function useWordProbe() {
     return poolRef.current;
   }
 
-  const nextRound = useCallback((currentAnswer) => {
+  const nextRound = useCallback((currentAnswer, solved) => {
     setRevealWord(currentAnswer);
+    setRoundSolved(solved);
     setShowReveal(true);
     if (revealTimerRef.current) clearTimeout(revealTimerRef.current);
     revealTimerRef.current = setTimeout(() => {
       setShowReveal(false);
+      setRoundSolved(false);
       const pool = getPool();
       const next = pool.pop();
       setAnswer(next);
@@ -91,11 +94,11 @@ export function useWordProbe() {
     if (solved) {
       const pts = 7 - newGuesses.length; // guess 1 = 6 pts, guess 6 = 1 pt
       setScore(s => s + pts);
-      nextRound(answer);
+      nextRound(answer, true);
       return 'round_solve';
     }
     if (newGuesses.length >= 6) {
-      nextRound(answer);
+      nextRound(answer, false);
       return 'round_fail';
     }
     return 'guess_valid';
@@ -108,7 +111,7 @@ export function useWordProbe() {
     guesses, input, setInput,
     answer,
     feedback,
-    showReveal, revealWord,
+    showReveal, revealWord, roundSolved,
     submit,
     guessCount: guesses.length,
   };

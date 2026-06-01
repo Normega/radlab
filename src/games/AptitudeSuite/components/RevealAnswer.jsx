@@ -1,4 +1,4 @@
-export default function RevealAnswer({ word }) {
+export default function RevealAnswer({ word, solved }) {
   return (
     <div style={{
       position: 'absolute',
@@ -14,10 +14,10 @@ export default function RevealAnswer({ word }) {
       <div style={{
         fontFamily: "'DM Sans', sans-serif",
         fontSize: '13px',
-        color: 'var(--tx2)',
+        color: solved ? 'var(--pk)' : 'var(--tx2)',
         marginBottom: '8px',
       }}>
-        The answer was
+        {solved ? 'Correct! The word was' : 'The answer was'}
       </div>
       <div style={{
         fontFamily: "'DM Serif Display', serif",
@@ -26,7 +26,7 @@ export default function RevealAnswer({ word }) {
         letterSpacing: '0.1em',
         textTransform: 'uppercase',
       }}>
-        {word}
+        {word}.
       </div>
     </div>
   );

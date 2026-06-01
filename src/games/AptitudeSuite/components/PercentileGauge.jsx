@@ -5,36 +5,43 @@ const STROKE = 10;
 const R = (SIZE - STROKE) / 2;
 const CX = SIZE / 2;
 const CY = SIZE / 2;
-// Semicircle: starts at left (180°), sweeps 180° to right (0°)
 const ARC_LENGTH = Math.PI * R;
 
+// Semicircle: starts at left (180°), sweeps 180° to right (0°)
 function describeArc(pct) {
-  // pct 0–1: fraction of semicircle to fill
   const filled = pct * ARC_LENGTH;
   return { dasharray: `${ARC_LENGTH} ${ARC_LENGTH}`, dashoffset: ARC_LENGTH - filled };
 }
 
-function lerpColor(t) {
-  // gray (#abadb0) at t=0 → pink (#f068a4) at t=1
-  const r = Math.round(171 + (240 - 171) * t);
-  const g = Math.round(173 + (104 - 173) * t);
-  const b = Math.round(176 + (164 - 176) * t);
-  return `rgb(${r},${g},${b})`;
+// 0–33: red (#e05555) → yellow (#F5C842), 34–66: yellow → green (#4caf7d), 67+: green
+function gaugeColor(value) {
+  if (value <= 33) {
+    const t = value / 33;
+    return `rgb(${Math.round(224 + (245 - 224) * t)},${Math.round(85 + (200 - 85) * t)},${Math.round(85 + (66 - 85) * t)})`;
+  }
+  if (value <= 66) {
+    const t = (value - 33) / 33;
+    return `rgb(${Math.round(245 + (76 - 245) * t)},${Math.round(200 + (175 - 200) * t)},${Math.round(66 + (125 - 66) * t)})`;
+  }
+  return '#4caf7d';
 }
+
+// viewBox starts 8px above arc top (arc top = CY - R = 5, so top = -3)
+const VIEW_TOP = -3;
+const VIEW_H = CY + 8; // down to y=68, leaving room below arc centre
 
 export default function PercentileGauge({ value = 0, label = '', size = SIZE }) {
   const pct = value / 99;
   const { dasharray, dashoffset } = useMemo(() => describeArc(pct), [pct]);
-  const arcColor = lerpColor(pct);
+  const arcColor = gaugeColor(value);
   const scale = size / SIZE;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <svg
         width={size}
-        height={size / 2 + STROKE}
-        viewBox={`0 ${CY - STROKE / 2} ${SIZE} ${SIZE / 2 + STROKE}`}
-        style={{ overflow: 'visible' }}
+        height={scale * (VIEW_H - VIEW_TOP)}
+        viewBox={`0 ${VIEW_TOP} ${SIZE} ${VIEW_H - VIEW_TOP}`}
       >
         {/* background arc */}
         <path
@@ -57,7 +64,7 @@ export default function PercentileGauge({ value = 0, label = '', size = SIZE }) 
         />
         {/* value readout */}
         <text
-          x={CX} y={CY - 4}
+          x={CX} y={CY - 8}
           textAnchor="middle"
           fontFamily="'Space Mono', monospace"
           fontWeight="700"
@@ -66,16 +73,16 @@ export default function PercentileGauge({ value = 0, label = '', size = SIZE }) 
         >
           {value}
         </text>
-        <text
-          x={CX} y={CY + 10}
-          textAnchor="middle"
-          fontFamily="'DM Sans', sans-serif"
-          fontSize="10"
-          fill="var(--tx3)"
-        >
-          percentile
-        </text>
       </svg>
+      <div style={{
+        fontFamily: "'DM Sans', sans-serif",
+        fontSize: '11px',
+        color: 'var(--tx3)',
+        marginTop: '-2px',
+        textAlign: 'center',
+      }}>
+        better than {value}% of players
+      </div>
       {label && (
         <span style={{
           fontFamily: "'DM Sans', sans-serif",

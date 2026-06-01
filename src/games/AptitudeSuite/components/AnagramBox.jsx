@@ -60,37 +60,35 @@ export default function AnagramBox({ hook, onInteract, disabled }) {
         {scrambled}
       </div>
 
-      <input
-        ref={inputRef}
-        value={input}
-        onChange={handleChange}
-        onKeyDown={handleKey}
-        disabled={disabled}
-        placeholder="Your answer…"
-        style={{
-          width: '100%',
-          padding: '0.6rem 0.9rem',
-          border: '1px solid var(--bd)',
-          borderRadius: '8px',
-          fontFamily: "'DM Sans', sans-serif",
-          fontSize: '16px',
-          color: 'var(--tx)',
-          background: 'var(--bg)',
-          outline: 'none',
-          boxSizing: 'border-box',
-        }}
-        autoComplete="off"
-        autoCapitalize="none"
-        spellCheck="false"
-      />
-
       <div style={{ display: 'flex', gap: '0.5rem', width: '100%' }}>
+        <input
+          ref={inputRef}
+          value={input}
+          onChange={handleChange}
+          onKeyDown={handleKey}
+          disabled={disabled}
+          placeholder="Your answer…"
+          style={{
+            flex: 1,
+            padding: '0.6rem 0.9rem',
+            border: '1px solid var(--bd)',
+            borderRadius: '8px',
+            fontFamily: "'DM Sans', sans-serif",
+            fontSize: '16px',
+            color: 'var(--tx)',
+            background: 'var(--bg)',
+            outline: 'none',
+            boxSizing: 'border-box',
+          }}
+          autoComplete="off"
+          autoCapitalize="none"
+          spellCheck="false"
+        />
         <button
           onClick={() => { onInteract('anagram'); submit(input); }}
           disabled={disabled || !input.trim()}
           style={{
-            flex: 1,
-            padding: '0.55rem',
+            padding: '0.6rem 1rem',
             background: 'var(--pk)',
             color: '#fff',
             border: 'none',
@@ -99,6 +97,7 @@ export default function AnagramBox({ hook, onInteract, disabled }) {
             fontSize: '14px',
             cursor: disabled ? 'not-allowed' : 'pointer',
             opacity: disabled ? 0.5 : 1,
+            whiteSpace: 'nowrap',
           }}
         >
           Submit
@@ -107,8 +106,7 @@ export default function AnagramBox({ hook, onInteract, disabled }) {
           onClick={handleSkip}
           disabled={disabled}
           style={{
-            flex: 1,
-            padding: '0.55rem',
+            padding: '0.6rem 0.75rem',
             background: 'transparent',
             color: 'var(--tx2)',
             border: '1px solid var(--bd)',
@@ -117,9 +115,10 @@ export default function AnagramBox({ hook, onInteract, disabled }) {
             fontSize: '14px',
             cursor: disabled ? 'not-allowed' : 'pointer',
             opacity: disabled ? 0.5 : 1,
+            whiteSpace: 'nowrap',
           }}
         >
-          Skip (−1)
+          Skip (&minus;1 point)
         </button>
       </div>
 

@@ -16,7 +16,7 @@ export default function GlobalAverage({ pct1, pct2, pct3 }) {
         color: 'var(--tx2)',
         marginTop: '4px',
       }}>
-        overall percentile
+        better than {avg}% of players overall
       </div>
     </div>
   );

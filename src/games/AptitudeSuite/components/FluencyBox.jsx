@@ -62,48 +62,48 @@ export default function FluencyBox({ hook, onInteract, disabled }) {
         {categoryLabel}
       </div>
 
-      <input
-        ref={inputRef}
-        value={input}
-        onChange={handleChange}
-        onKeyDown={handleKey}
-        disabled={disabled}
-        placeholder="Type a word…"
-        style={{
-          width: '100%',
-          padding: '0.6rem 0.9rem',
-          border: '1px solid var(--bd)',
-          borderRadius: '8px',
-          fontFamily: "'DM Sans', sans-serif",
-          fontSize: '16px',
-          color: 'var(--tx)',
-          background: 'var(--bg)',
-          outline: 'none',
-          boxSizing: 'border-box',
-        }}
-        autoComplete="off"
-        autoCapitalize="none"
-        spellCheck="false"
-      />
-
-      <button
-        onClick={handleSubmit}
-        disabled={disabled || !input.trim()}
-        style={{
-          width: '100%',
-          padding: '0.55rem',
-          background: 'var(--pk)',
-          color: '#fff',
-          border: 'none',
-          borderRadius: '8px',
-          fontFamily: "'DM Sans', sans-serif",
-          fontSize: '14px',
-          cursor: disabled ? 'not-allowed' : 'pointer',
-          opacity: disabled ? 0.5 : 1,
-        }}
-      >
-        Submit
-      </button>
+      <div style={{ display: 'flex', gap: '0.5rem', width: '100%' }}>
+        <input
+          ref={inputRef}
+          value={input}
+          onChange={handleChange}
+          onKeyDown={handleKey}
+          disabled={disabled}
+          placeholder="Type a word…"
+          style={{
+            flex: 1,
+            padding: '0.6rem 0.9rem',
+            border: '1px solid var(--bd)',
+            borderRadius: '8px',
+            fontFamily: "'DM Sans', sans-serif",
+            fontSize: '16px',
+            color: 'var(--tx)',
+            background: 'var(--bg)',
+            outline: 'none',
+            boxSizing: 'border-box',
+          }}
+          autoComplete="off"
+          autoCapitalize="none"
+          spellCheck="false"
+        />
+        <button
+          onClick={handleSubmit}
+          disabled={disabled || !input.trim()}
+          style={{
+            padding: '0.6rem 1rem',
+            background: 'var(--pk)',
+            color: '#fff',
+            border: 'none',
+            borderRadius: '8px',
+            fontFamily: "'DM Sans', sans-serif",
+            fontSize: '14px',
+            cursor: disabled ? 'not-allowed' : 'pointer',
+            opacity: disabled ? 0.5 : 1,
+          }}
+        >
+          Submit
+        </button>
+      </div>
 
       <div style={{
         fontFamily: "'DM Sans', sans-serif",

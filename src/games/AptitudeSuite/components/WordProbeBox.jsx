@@ -30,7 +30,7 @@ function cellStyle(status) {
 }
 
 export default function WordProbeBox({ hook, onInteract, disabled }) {
-  const { score, percentile, guesses, input, setInput, feedback, showReveal, revealWord, submit, guessCount } = hook;
+  const { score, percentile, guesses, input, setInput, feedback, showReveal, revealWord, roundSolved, submit, guessCount } = hook;
   const inputRef = useRef(null);
 
   function handleKey(e) {
@@ -61,7 +61,7 @@ export default function WordProbeBox({ hook, onInteract, disabled }) {
       gap: '1rem',
       position: 'relative',
     }}>
-      {showReveal && <RevealAnswer word={revealWord} />}
+      {showReveal && <RevealAnswer word={revealWord} solved={roundSolved} />}
 
       <PercentileGauge value={percentile} label="Word Probe" />
 
@@ -73,85 +73,95 @@ export default function WordProbeBox({ hook, onInteract, disabled }) {
         Score: {score}
       </div>
 
-      {/* 6×5 grid */}
+      {/* centred task content: grid + input row + feedback */}
       <div style={{
         display: 'flex',
         flexDirection: 'column',
-        gap: GRID_GAP,
+        alignItems: 'center',
+        gap: '0.75rem',
+        width: 5 * CELL_SIZE + 4 * GRID_GAP,
+        margin: '0 auto',
       }}>
-        {Array.from({ length: 6 }, (_, row) => {
-          const guess = guesses[row];
-          const isCurrent = row === guessCount && !showReveal;
-          return (
-            <div key={row} style={{ display: 'flex', gap: GRID_GAP }}>
-              {Array.from({ length: 5 }, (_, col) => {
-                const scored = guess?.[col];
-                const letter = scored?.letter ?? (isCurrent ? input[col] : '');
-                const status = scored?.status ?? null;
-                return (
-                  <div key={col} style={cellStyle(status)}>
-                    {letter?.toUpperCase()}
-                  </div>
-                );
-              })}
-            </div>
-          );
-        })}
-      </div>
+        {/* 6×5 grid */}
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: GRID_GAP,
+        }}>
+          {Array.from({ length: 6 }, (_, row) => {
+            const guess = guesses[row];
+            const isCurrent = row === guessCount && !showReveal;
+            return (
+              <div key={row} style={{ display: 'flex', gap: GRID_GAP }}>
+                {Array.from({ length: 5 }, (_, col) => {
+                  const scored = guess?.[col];
+                  const letter = scored?.letter ?? (isCurrent ? input[col] : '');
+                  const status = scored?.status ?? null;
+                  return (
+                    <div key={col} style={cellStyle(status)}>
+                      {letter?.toUpperCase()}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
 
-      <input
-        ref={inputRef}
-        value={input}
-        onChange={handleChange}
-        onKeyDown={handleKey}
-        disabled={disabled || showReveal || guessCount >= 6}
-        placeholder="5-letter word…"
-        maxLength={5}
-        style={{
-          width: '100%',
-          padding: '0.6rem 0.9rem',
-          border: '1px solid var(--bd)',
-          borderRadius: '8px',
-          fontFamily: "'Space Mono', monospace",
-          fontSize: '16px',
-          color: 'var(--tx)',
-          background: 'var(--bg)',
-          outline: 'none',
-          boxSizing: 'border-box',
-          letterSpacing: '0.15em',
-          textTransform: 'uppercase',
-        }}
-        autoComplete="off"
-        autoCapitalize="none"
-        spellCheck="false"
-      />
+        <div style={{ display: 'flex', gap: '0.5rem', width: '100%' }}>
+          <input
+            ref={inputRef}
+            value={input}
+            onChange={handleChange}
+            onKeyDown={handleKey}
+            disabled={disabled || showReveal || guessCount >= 6}
+            placeholder="5-letter word…"
+            maxLength={5}
+            style={{
+              flex: 1,
+              padding: '0.6rem 0.9rem',
+              border: '1px solid var(--bd)',
+              borderRadius: '8px',
+              fontFamily: "'Space Mono', monospace",
+              fontSize: '16px',
+              color: 'var(--tx)',
+              background: 'var(--bg)',
+              outline: 'none',
+              boxSizing: 'border-box',
+              letterSpacing: '0.15em',
+              textTransform: 'uppercase',
+            }}
+            autoComplete="off"
+            autoCapitalize="none"
+            spellCheck="false"
+          />
+          <button
+            onClick={() => { onInteract('wordprobe'); submit(input); }}
+            disabled={disabled || input.length !== 5 || showReveal}
+            style={{
+              padding: '0.6rem 1rem',
+              background: 'var(--pk)',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '8px',
+              fontFamily: "'DM Sans', sans-serif",
+              fontSize: '14px',
+              cursor: 'pointer',
+              opacity: (disabled || input.length !== 5 || showReveal) ? 0.5 : 1,
+            }}
+          >
+            Guess
+          </button>
+        </div>
 
-      <button
-        onClick={() => { onInteract('wordprobe'); submit(input); }}
-        disabled={disabled || input.length !== 5 || showReveal}
-        style={{
-          width: '100%',
-          padding: '0.55rem',
-          background: 'var(--pk)',
-          color: '#fff',
-          border: 'none',
-          borderRadius: '8px',
+        <div style={{
           fontFamily: "'DM Sans', sans-serif",
-          fontSize: '14px',
-          cursor: 'pointer',
-          opacity: (disabled || input.length !== 5 || showReveal) ? 0.5 : 1,
-        }}
-      >
-        Guess
-      </button>
-
-      <div style={{
-        fontFamily: "'DM Sans', sans-serif",
-        fontSize: '13px',
-        color: 'var(--tx2)',
-        minHeight: '18px',
-      }}>
-        {feedbackText}
+          fontSize: '13px',
+          color: 'var(--tx2)',
+          minHeight: '18px',
+        }}>
+          {feedbackText}
+        </div>
       </div>
     </div>
   );
