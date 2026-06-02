@@ -1,4 +1,4 @@
-export const SESSION_DURATION_MS = 10 * 60 * 1000;
+export const SESSION_DURATION_MS = 8 * 60 * 1000;
 export const REVEAL_ANSWER_DURATION_MS = 2000;
 
 export const ANAGRAM_MIDPOINT = 5;
