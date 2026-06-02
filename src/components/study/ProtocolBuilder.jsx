@@ -18,7 +18,8 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 
 const GAMES = [
-  { slug: 'breath_belt', label: 'Breath Belt' },
+  { slug: 'aptitude_suite', label: 'Aptitude Suite' },
+  { slug: 'breath_belt',    label: 'Breath Belt' },
 ]
 
 const STEP_TYPES = [

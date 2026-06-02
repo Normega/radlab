@@ -1,7 +1,9 @@
-import BreathBelt from '../../games/BreathBelt/BreathBelt'
+import AptitudeSuite from '../../games/AptitudeSuite/AptitudeSuite'
+import BreathBelt    from '../../games/BreathBelt/BreathBelt'
 
 const GAME_COMPONENTS = {
-  breath_belt: BreathBelt,
+  aptitude_suite: AptitudeSuite,
+  breath_belt:    BreathBelt,
 }
 
 export default function GameStepWrapper({ slug, enrollment, onComplete }) {
