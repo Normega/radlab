@@ -151,11 +151,11 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
   const sessionStartedRef = useRef(false);
   const sessionEndedRef   = useRef(false);
   useEffect(() => {
-    if (phase === S.BASELINE_READY && !sessionStartedRef.current) {
+    if (phase === S.BASELINE_READY && !sessionStartedRef.current && profile?.id) {
       sessionStartedRef.current = true;
       session.startSession(studyId ?? null);
     }
-  }, [phase]);
+  }, [phase, profile?.id]);
 
   // Mid-session unmount: fire code 13 (session end) so the physio equipment
   // leaves session state. Async, fire-and-forget — chain stopNotifications after
