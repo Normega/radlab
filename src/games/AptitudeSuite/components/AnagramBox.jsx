@@ -38,6 +38,7 @@ export default function AnagramBox({ hook, onInteract, disabled }) {
       flexDirection: 'column',
       alignItems: 'center',
       gap: '1rem',
+      minWidth: 0,
     }}>
       <PercentileGauge value={percentile} label="Unscramble" />
 

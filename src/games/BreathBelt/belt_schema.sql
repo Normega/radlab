@@ -26,8 +26,8 @@ CREATE TABLE belt_trials (
   log10_mag        float,                   -- log10(delta_seconds); null for Phase 2
   response         text,                    -- '3AFC response: same' | 'faster' | 'slower'; null for Phase 2
   correct          boolean,                 -- null for Phase 2
-  confidence       int,                     -- 1–7; null for Phase 2
-  arousal          int,                     -- 1–7; null for Phase 2
+  confidence       int,                     -- 1–6; null for Phase 2
+  arousal          int,                     -- 1–6; null for Phase 2
   belt_sync_mean   float,                   -- mean breathValue (0–1) during condition breaths
   created_at       timestamptz DEFAULT now()
 );

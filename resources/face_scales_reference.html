@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Face Scales Reference</title>
+<style>
+  body { font-family: 'Segoe UI', sans-serif; background: #f8f4f6; margin: 0; padding: 32px; }
+  h1 { font-size: 18px; color: #444; margin: 0 0 8px; }
+  h2 { font-size: 13px; color: #888; font-weight: 400; margin: 0 0 24px; }
+  .section { margin-bottom: 48px; }
+  .section-title { font-size: 15px; font-weight: 600; color: #555; margin-bottom: 16px; letter-spacing: 0.03em; }
+  .scale { display: flex; gap: 12px; align-items: flex-start; }
+  .face-cell { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .face-num { font-size: 11px; color: #f068a4; font-weight: 600; font-family: monospace; }
+  .face-word { font-size: 10px; color: #aaa; text-align: center; max-width: 72px; }
+  .endpoints { display: flex; justify-content: space-between; margin-top: 6px; font-size: 11px; color: #bbb; width: 100%; }
+</style>
+</head>
+<body>
+<h1>RADlab — Face Scale Reference</h1>
+<h2>Generated from AURenderer.jsx + expressionTable.js (default skin/eye colours)</h2>
+
+<div class="section">
+  <div class="section-title">Confidence Scale (ConfidenceRating.jsx)</div>
+  <div class="scale" id="confidence-scale"></div>
+</div>
+
+<div class="section">
+  <div class="section-title">Arousal Scale (ArousalRating.jsx)</div>
+  <div class="scale" id="arousal-scale"></div>
+</div>
+
+<script>
+// ── Colour utils ─────────────────────────────────────────────────────────────
+function hex2rgb(h) {
+  const n = parseInt(h.replace('#',''), 16)
+  return [(n>>16)&255, (n>>8)&255, n&255]
+}
+function rgb2hex(r,g,b) {
+  return '#' + [r,g,b].map(x => Math.max(0,Math.min(255,Math.round(x))).toString(16).padStart(2,'0')).join('')
+}
+function lighten(h,a) { const [r,g,b]=hex2rgb(h); return rgb2hex(r+a,g+a,b+a) }
+function darken(h,a)  { return lighten(h,-a) }
+function mix(a,b,t)   {
+  const [r1,g1,b1]=hex2rgb(a),[r2,g2,b2]=hex2rgb(b)
+  return rgb2hex(r1+(r2-r1)*t, g1+(g2-g1)*t, b1+(b2-b1)*t)
+}
+const clamp = (v,lo=0,hi=1) => Math.max(lo,Math.min(hi,v))
+const ep = v => Math.max(0, v)
+const en = v => Math.max(0,-v)
+
+// ── Expression table ──────────────────────────────────────────────────────────
+const EXPRESSION_TABLE = {
+  Alert: {
+    mild:     {au1:0.33,au2:0.089,au4:0.273,au5:0.25, au12:0.41, au15:0,   au20:0.06, au27:0.53, au43:0,    sb2:0.383,mouthType:'alert',  pupilTier:2,blush:0.28, it:0.3  },
+    moderate: {au1:0.45,au2:0.179,au4:0.547,au5:0.93, au12:0.42, au15:0,   au20:0.651,au27:0.68, au43:0,    sb2:0.383,mouthType:'alert',  pupilTier:2,blush:0.42, it:0.24 },
+    strong:   {au1:0.85,au2:0.51, au4:0.82, au5:1,    au12:0.58, au15:0,   au20:0.976,au27:0.906,au43:0,    sb2:0.383,mouthType:'alert',  pupilTier:2,blush:0.6,  it:0.05 }
+  },
+  Still: {
+    mild:     {au1:0,   au2:0,    au4:0,    au5:0,    au12:0.03, au15:0,   au20:0.11, au27:0,    au43:0.438,sb2:0,    mouthType:'line',   pupilTier:0,blush:0.28, it:0.333},
+    moderate: {au1:0.01,au2:0,    au4:0.05, au5:0,    au12:0,    au15:0,   au20:0.22, au27:0,    au43:0.585,sb2:0,    mouthType:'line',   pupilTier:0,blush:0.28, it:0.667},
+    strong:   {au1:0,   au2:0,    au4:0,    au5:0,    au12:0.04, au15:0,   au20:0.29, au27:0,    au43:1,    sb2:0,    mouthType:'line',   pupilTier:0,blush:0.05, it:1    }
+  }
+}
+const NEUTRAL_POS = {au1:0,au2:0,au4:0,au5:0,au12:0,au15:0,au20:0,au27:0,au43:0,sb2:0,mouthType:'line',pupilTier:1,blush:0.28,it:1}
+
+// ── calcPos (from ConfidenceRating.jsx) ───────────────────────────────────────
+function calcPos(va,ar) {
+  const sb2 = en(va)*ep(ar)*0.55
+  const raw = {
+    au1:  clamp(en(va)*(1-ep(ar)*1.5)+sb2),
+    au2:  clamp(ep(va)*(0.3+ep(ar)*0.7)+sb2*0.7),
+    au4:  clamp(en(va)*0.35+en(va)*ep(ar)*0.75),
+    au5:  clamp(ep(ar)*0.85),
+    au12: clamp(ep(va)),
+    au15: clamp(en(va)*en(ar)*1.4),
+    au20: clamp(en(va)*ep(ar)*1.4),
+    au27: clamp(en(va)*ep(ar)*1.3),
+    au43: clamp((0.3-ar)/1.3,0,1),
+    sb2,
+  }
+  const ex = Object.fromEntries(Object.entries(raw).map(([k,v])=>[k,Math.min(1,v*1.5)]))
+  return {...ex, mouthType:'line', pupilTier:1, blush:clamp(0.28+ep(va)*0.22), it:1}
+}
+
+// ── SVG face renderer ─────────────────────────────────────────────────────────
+let _uid = 0
+function renderFace(pos, size=80) {
+  const id = 'f' + (_uid++)
+  const SK='#FDBCB4', IR='#4A90D9'
+  const SKD=darken(SK,18), SKL=lighten(SK,18)
+  const BL=mix(SK,'#FF8FAB',0.45)
+  const BRC=darken(SK,36)
+  const MC=darken(mix(SK,'#C06070',0.5),18)
+  const IRD=darken(IR,30), IRL=lighten(IR,35)
+  const {au1,au2,au4,au5,au12,au15,au20,au27,au43,sb2,mouthType,pupilTier,blush,it} = pos
+  const f = v => Number(v).toFixed(1)
+  const LID_TOP_Y=83
+  const lc  = clamp(8-au5*6+au43*14,1.5,28)
+  const ly  = LID_TOP_Y+lc
+  const lcy = ly+4
+  const ll  = Math.max(0,(LID_TOP_Y+8)-ly)
+  const lO = [60,  82-au2*8 +au4*6-sb2*20-ll*0.8]
+  const lC = [76,  77-au1*5 -au2*4+au4*6-sb2*16-ll*0.8]
+  const lI = [90,  81-au1*10+au4*6-sb2*18-ll*0.8]
+  const rI = [110, 81-au1*10+au4*6-sb2*18-ll*0.8]
+  const rC = [124, 77-au1*5 -au2*4+au4*6-sb2*16-ll*0.8]
+  const rO = [140, 82-au2*8 +au4*6-sb2*20-ll*0.8]
+  const cLX=82-au20*10, cRX=118+au20*10
+  const cY=145-au12*12+au15*6+au20*it*6
+  const mCY=149+au12*12-au15*8-au20*it*4
+  const PT=[[5.5,5.5,5.5],[5.5,5.5,7.5],[5.5,7.5,9.5]]
+  const iz=Math.min(2,Math.max(0,Math.round(it*3)-1))
+  const pR=pos.pupilR ?? PT[Math.min(2,Math.max(0,pupilTier))][iz]
+  const bl=clamp(blush)
+
+  function lidPath(cp)  { return `M${cp-19} 83 Q${cp} 80 ${cp+19} 83 L${cp+19} ${f(ly)} Q${cp} ${f(lcy)} ${cp-19} ${f(ly)} Z` }
+  function lashPath(cp) { return `M${cp+19} ${f(ly)} Q${cp} ${f(lcy)} ${cp-19} ${f(ly)}` }
+
+  let mouthSVG
+  if (mouthType==='alert' && au27>0) {
+    const cy2=cY+2+au27*4, rx=8+au27*11, ry=3+au27*10, op=Math.min(1,au27*1.5).toFixed(1)
+    mouthSVG = `<ellipse cx="100" cy="${f(cy2)}" rx="${f(rx)}" ry="${f(ry)}" fill="${darken(MC,20)}" opacity="${op}"/>`+
+               `<ellipse cx="100" cy="${f(cy2)}" rx="${f(rx)}" ry="${f(ry)}" fill="none" stroke="${MC}" stroke-width="1.5" opacity="${op}"/>`
+  } else {
+    mouthSVG = `<path d="M${f(cLX)} ${f(cY)} Q100 ${f(mCY)} ${f(cRX)} ${f(cY)}" stroke="${MC}" stroke-width="2.2" fill="none" stroke-linecap="round"/>`
+  }
+
+  return `<svg viewBox="0 0 200 185" width="${size}" height="${size}" style="display:block">
+  <defs>
+    <radialGradient id="${id}h" cx="38%" cy="30%" r="68%">
+      <stop offset="0%" stop-color="${SKL}"/><stop offset="60%" stop-color="${SK}"/><stop offset="100%" stop-color="${SKD}"/>
+    </radialGradient>
+    <radialGradient id="${id}i" cx="35%" cy="30%" r="65%">
+      <stop offset="0%" stop-color="${IRL}"/><stop offset="55%" stop-color="${IR}"/><stop offset="100%" stop-color="${IRD}"/>
+    </radialGradient>
+    <radialGradient id="${id}s" cx="40%" cy="30%" r="60%">
+      <stop offset="0%" stop-color="#fff"/><stop offset="100%" stop-color="#F0EBE8"/>
+    </radialGradient>
+    <filter id="${id}b"><feGaussianBlur stdDeviation="1.2"/></filter>
+  </defs>
+  <ellipse cx="100" cy="105" rx="64" ry="68" fill="url(#${id}h)"/>
+  <circle cx="76" cy="101" r="18" fill="${SKD}" opacity="0.13"/>
+  <circle cx="76" cy="100" r="17" fill="url(#${id}s)"/>
+  <circle cx="76" cy="101" r="12" fill="url(#${id}i)"/>
+  <circle cx="76" cy="101" r="${f(pR)}" fill="#0D0D0D"/>
+  <circle cx="70" cy="102" r="3.5" fill="white" opacity="0.95"/>
+  <circle cx="79" cy="108" r="1.8" fill="white" opacity="0.65"/>
+  <path d="${lidPath(76)}" fill="${SK}"/>
+  <path d="${lashPath(76)}" stroke="${SKD}" stroke-width="2.2" fill="none" stroke-linecap="round" opacity="0.6"/>
+  <circle cx="124" cy="101" r="18" fill="${SKD}" opacity="0.13"/>
+  <circle cx="124" cy="100" r="17" fill="url(#${id}s)"/>
+  <circle cx="124" cy="101" r="12" fill="url(#${id}i)"/>
+  <circle cx="124" cy="101" r="${f(pR)}" fill="#0D0D0D"/>
+  <circle cx="118" cy="102" r="3.5" fill="white" opacity="0.95"/>
+  <circle cx="127" cy="108" r="1.8" fill="white" opacity="0.65"/>
+  <path d="${lidPath(124)}" fill="${SK}"/>
+  <path d="${lashPath(124)}" stroke="${SKD}" stroke-width="2.2" fill="none" stroke-linecap="round" opacity="0.6"/>
+  ${mouthSVG}
+  <ellipse cx="62"  cy="120" rx="16" ry="8" fill="${BL}" opacity="${f(bl)}" filter="url(#${id}b)"/>
+  <ellipse cx="138" cy="120" rx="16" ry="8" fill="${BL}" opacity="${f(bl)}" filter="url(#${id}b)"/>
+  <path d="M${f(lO[0])} ${f(lO[1])} Q${f(lC[0])} ${f(lC[1])} ${f(lI[0])} ${f(lI[1])}" stroke="${BRC}" stroke-width="4" fill="none" stroke-linecap="round" opacity="0.88"/>
+  <path d="M${f(rI[0])} ${f(rI[1])} Q${f(rC[0])} ${f(rC[1])} ${f(rO[0])} ${f(rO[1])}" stroke="${BRC}" stroke-width="4" fill="none" stroke-linecap="round" opacity="0.88"/>
+</svg>`
+}
+
+// ── Confidence scale ───────────────────────────────────────────────────────────
+const CONF_PAIRS  = [[-0.85,0.1],[-0.58,0],[-0.3,-0.1],[0.32,-0.2],[0.58,-0.27],[0.75,-0.32]]
+const CONF_WORDS  = ['guessing','unsure','leaning','fairly sure','confident','certain']
+const confEl = document.getElementById('confidence-scale')
+CONF_PAIRS.forEach(([va,ar],i) => {
+  const pos = calcPos(va,ar)
+  const cell = document.createElement('div')
+  cell.className = 'face-cell'
+  cell.innerHTML = renderFace(pos,80) +
+    `<span class="face-num">${i+1}</span>` +
+    `<span class="face-word">${CONF_WORDS[i]}</span>`
+  confEl.appendChild(cell)
+})
+
+// ── Arousal scale ─────────────────────────────────────────────────────────────
+const AROUSAL_PUPIL_R = [3.5, 4.2, 5.0, 7.0, 8.2, 9.5]
+const AROUSAL_POSITIONS = [
+  { ...EXPRESSION_TABLE.Still.strong,   pupilR: AROUSAL_PUPIL_R[0] },
+  { ...EXPRESSION_TABLE.Still.moderate, pupilR: AROUSAL_PUPIL_R[1] },
+  { ...EXPRESSION_TABLE.Still.mild,     pupilR: AROUSAL_PUPIL_R[2] },
+  { ...EXPRESSION_TABLE.Alert.mild,     pupilR: AROUSAL_PUPIL_R[3] },
+  { ...EXPRESSION_TABLE.Alert.moderate, pupilR: AROUSAL_PUPIL_R[4] },
+  { ...EXPRESSION_TABLE.Alert.strong,   pupilR: AROUSAL_PUPIL_R[5] },
+]
+const AROUSAL_WORDS = ['very still','still','slightly still','slightly activated','activated','very activated']
+const arEl = document.getElementById('arousal-scale')
+AROUSAL_POSITIONS.forEach((pos,i) => {
+  const cell = document.createElement('div')
+  cell.className = 'face-cell'
+  cell.innerHTML = renderFace(pos,80) +
+    `<span class="face-num">${i+1}</span>` +
+    `<span class="face-word">${AROUSAL_WORDS[i]}</span>`
+  arEl.appendChild(cell)
+})
+</script>
+</body>
+</html>

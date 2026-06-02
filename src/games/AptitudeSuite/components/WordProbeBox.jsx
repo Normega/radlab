@@ -60,6 +60,7 @@ export default function WordProbeBox({ hook, onInteract, disabled }) {
       alignItems: 'center',
       gap: '1rem',
       position: 'relative',
+      minWidth: 0,
     }}>
       {showReveal && <RevealAnswer word={revealWord} solved={roundSolved} />}
 

@@ -30,10 +30,10 @@ function calcPos(va, ar) {
 }
 
 // Valence/arousal diagonal: not-sure (low valence, slight arousal) → certain (high valence, low arousal)
-const PAIRS = [[-0.85, 0.1], [-0.58, 0], [-0.3, -0.1], [0, -0.12], [0.32, -0.2], [0.58, -0.27], [0.75, -0.32]]
+const PAIRS = [[-0.85, 0.1], [-0.58, 0], [-0.3, -0.1], [0.32, -0.2], [0.58, -0.27], [0.75, -0.32]]
 const POSITIONS = PAIRS.map(([va, ar]) => calcPos(va, ar))
 
-const WORDS = ['guessing', 'unsure', 'leaning', 'somewhat sure', 'fairly sure', 'confident', 'certain']
+const WORDS = ['guessing', 'unsure', 'leaning', 'fairly sure', 'confident', 'certain']
 
 export default function ConfidenceRating({ value: valueProp, onChange, skinColor, eyeColor }) {
   const [internal, setInternal] = useState(null)

@@ -2,17 +2,19 @@ import { useState } from 'react'
 import AURenderer from './AURenderer'
 import { EXPRESSION_TABLE, NEUTRAL_POS } from './expressionTable'
 
+// Pupil radii scale with arousal — smallest (constricted) at 1, largest (dilated) at 6.
+const AROUSAL_PUPIL_R = [3.5, 4.2, 5.0, 7.0, 8.2, 9.5]
+
 const POSITIONS = [
-  EXPRESSION_TABLE.Still.strong,
-  EXPRESSION_TABLE.Still.moderate,
-  EXPRESSION_TABLE.Still.mild,
-  NEUTRAL_POS,
-  EXPRESSION_TABLE.Alert.mild,
-  EXPRESSION_TABLE.Alert.moderate,
-  EXPRESSION_TABLE.Alert.strong,
+  { ...EXPRESSION_TABLE.Still.strong,   pupilR: AROUSAL_PUPIL_R[0] },
+  { ...EXPRESSION_TABLE.Still.moderate, pupilR: AROUSAL_PUPIL_R[1] },
+  { ...EXPRESSION_TABLE.Still.mild,     pupilR: AROUSAL_PUPIL_R[2] },
+  { ...EXPRESSION_TABLE.Alert.mild,     pupilR: AROUSAL_PUPIL_R[3] },
+  { ...EXPRESSION_TABLE.Alert.moderate, pupilR: AROUSAL_PUPIL_R[4] },
+  { ...EXPRESSION_TABLE.Alert.strong,   pupilR: AROUSAL_PUPIL_R[5] },
 ]
 
-const WORDS = ['very still', 'still', 'slightly still', 'neutral', 'slightly activated', 'activated', 'very activated']
+const WORDS = ['very still', 'still', 'slightly still', 'slightly activated', 'activated', 'very activated']
 
 export default function ArousalRating({ value: valueProp, onChange, skinColor, eyeColor }) {
   const [internal, setInternal] = useState(null)

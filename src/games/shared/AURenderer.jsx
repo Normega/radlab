@@ -51,7 +51,7 @@ export default function AURenderer({
   // Pupil radius from tier × intensity
   const PT = [[5.5, 5.5, 5.5], [5.5, 5.5, 7.5], [5.5, 7.5, 9.5]]
   const iz = Math.min(2, Math.max(0, Math.round(it * 3) - 1))
-  const pR = PT[Math.min(2, Math.max(0, pupilTier))][iz]
+  const pR = position.pupilR ?? PT[Math.min(2, Math.max(0, pupilTier))][iz]
 
   const bl = clamp(blush)
 

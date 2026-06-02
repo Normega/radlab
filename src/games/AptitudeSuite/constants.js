@@ -13,5 +13,6 @@ export const WORDPROBE_K = 0.12;
 export const WORDPROBE_YELLOW = '#F5C842';
 
 export function logisticPercentile(score, midpoint, k) {
+  if (score <= 0) return 0;
   return Math.min(99, Math.round(99 / (1 + Math.exp(-k * (score - midpoint)))));
 }
