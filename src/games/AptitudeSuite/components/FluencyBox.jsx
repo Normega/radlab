@@ -63,7 +63,7 @@ export default function FluencyBox({ hook, onInteract, disabled }) {
         {categoryLabel}
       </div>
 
-      <div style={{ display: 'flex', gap: '0.5rem', width: '100%', marginTop: 'auto' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', width: '100%', marginTop: 'auto' }}>
         <input
           ref={inputRef}
           value={input}
@@ -72,7 +72,7 @@ export default function FluencyBox({ hook, onInteract, disabled }) {
           disabled={disabled}
           placeholder="Type a word…"
           style={{
-            flex: 1,
+            width: '100%',
             padding: '0.6rem 0.9rem',
             border: '1px solid var(--bd)',
             borderRadius: '8px',
@@ -91,6 +91,7 @@ export default function FluencyBox({ hook, onInteract, disabled }) {
           onClick={handleSubmit}
           disabled={disabled || !input.trim()}
           style={{
+            width: '100%',
             padding: '0.6rem 1rem',
             background: 'var(--pk)',
             color: '#fff',

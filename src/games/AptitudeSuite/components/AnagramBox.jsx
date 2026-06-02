@@ -61,7 +61,7 @@ export default function AnagramBox({ hook, onInteract, disabled }) {
         {scrambled}
       </div>
 
-      <div style={{ display: 'flex', gap: '0.5rem', width: '100%', marginTop: 'auto' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', width: '100%', marginTop: 'auto' }}>
         <input
           ref={inputRef}
           value={input}
@@ -70,7 +70,7 @@ export default function AnagramBox({ hook, onInteract, disabled }) {
           disabled={disabled}
           placeholder="Your answer…"
           style={{
-            flex: 1,
+            width: '100%',
             padding: '0.6rem 0.9rem',
             border: '1px solid var(--bd)',
             borderRadius: '8px',
@@ -85,42 +85,44 @@ export default function AnagramBox({ hook, onInteract, disabled }) {
           autoCapitalize="none"
           spellCheck="false"
         />
-        <button
-          onClick={() => { onInteract('anagram'); submit(input); }}
-          disabled={disabled || !input.trim()}
-          style={{
-            padding: '0.6rem 1rem',
-            background: 'var(--pk)',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '8px',
-            fontFamily: "'DM Sans', sans-serif",
-            fontSize: '14px',
-            cursor: disabled ? 'not-allowed' : 'pointer',
-            opacity: disabled ? 0.5 : 1,
-            whiteSpace: 'nowrap',
-          }}
-        >
-          Submit
-        </button>
-        <button
-          onClick={handleSkip}
-          disabled={disabled}
-          style={{
-            padding: '0.6rem 0.75rem',
-            background: 'transparent',
-            color: 'var(--tx2)',
-            border: '1px solid var(--bd)',
-            borderRadius: '8px',
-            fontFamily: "'DM Sans', sans-serif",
-            fontSize: '14px',
-            cursor: disabled ? 'not-allowed' : 'pointer',
-            opacity: disabled ? 0.5 : 1,
-            whiteSpace: 'nowrap',
-          }}
-        >
-          Skip (&minus;1 point)
-        </button>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <button
+            onClick={() => { onInteract('anagram'); submit(input); }}
+            disabled={disabled || !input.trim()}
+            style={{
+              flex: 1,
+              padding: '0.6rem 1rem',
+              background: 'var(--pk)',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '8px',
+              fontFamily: "'DM Sans', sans-serif",
+              fontSize: '14px',
+              cursor: disabled ? 'not-allowed' : 'pointer',
+              opacity: disabled ? 0.5 : 1,
+            }}
+          >
+            Submit
+          </button>
+          <button
+            onClick={handleSkip}
+            disabled={disabled}
+            style={{
+              flex: 1,
+              padding: '0.6rem 0.75rem',
+              background: 'transparent',
+              color: 'var(--tx2)',
+              border: '1px solid var(--bd)',
+              borderRadius: '8px',
+              fontFamily: "'DM Sans', sans-serif",
+              fontSize: '14px',
+              cursor: disabled ? 'not-allowed' : 'pointer',
+              opacity: disabled ? 0.5 : 1,
+            }}
+          >
+            Skip (&minus;1 point)
+          </button>
+        </div>
       </div>
 
       <div style={{

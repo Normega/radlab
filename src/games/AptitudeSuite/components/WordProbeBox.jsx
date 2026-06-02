@@ -111,7 +111,7 @@ export default function WordProbeBox({ hook, onInteract, disabled }) {
           })}
         </div>
 
-        <div style={{ display: 'flex', gap: '0.5rem', width: '100%' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', width: '100%' }}>
           <input
             ref={inputRef}
             value={input}
@@ -121,7 +121,7 @@ export default function WordProbeBox({ hook, onInteract, disabled }) {
             placeholder="5-letter word…"
             maxLength={5}
             style={{
-              flex: 1,
+              width: '100%',
               padding: '0.6rem 0.9rem',
               border: '1px solid var(--bd)',
               borderRadius: '8px',
@@ -142,6 +142,7 @@ export default function WordProbeBox({ hook, onInteract, disabled }) {
             onClick={() => { onInteract('wordprobe'); submit(input); }}
             disabled={disabled || input.length !== 5 || showReveal}
             style={{
+              width: '100%',
               padding: '0.6rem 1rem',
               background: 'var(--pk)',
               color: '#fff',
