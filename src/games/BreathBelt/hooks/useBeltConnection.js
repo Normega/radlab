@@ -193,9 +193,12 @@ export function useBeltConnection() {
       readAccCharRef.current   = data
       heartRateCharRef.current = hrChar
       await new Promise(r => setTimeout(r, 1000))
-      await control.writeValue(
-        new Uint8Array([0x02,0x02,0x00,0x01,0xC8,0x00,0x01,0x01,0x10,0x00,0x02,0x01,0x08,0x00]).buffer
-      )
+      const pmdCmd = new Uint8Array([0x02,0x02,0x00,0x01,0xC8,0x00,0x01,0x01,0x10,0x00,0x02,0x01,0x08,0x00])
+      if (control.properties.writeWithoutResponse) {
+        await control.writeValueWithoutResponse(pmdCmd)
+      } else {
+        await control.writeValueWithResponse(pmdCmd)
+      }
       data.oncharacteristicvaluechanged   = accelHandler
       hrChar.oncharacteristicvaluechanged = hrHandlerRef.current
       await data.startNotifications()

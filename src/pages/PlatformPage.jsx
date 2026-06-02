@@ -7,7 +7,7 @@ export default function PlatformPage({ session }) {
       <Nav session={session} />
 
       {/* HERO */}
-      <section style={S.sectionOuter} className="border-b" className2="">
+      <section style={S.sectionOuter} className="border-b">
         <div style={S.inner}>
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_min(340px,35%)] gap-10 lg:gap-14 items-center">
             <div>
