@@ -33,7 +33,7 @@ export default function QuestionnaireStepWrapper({ slug, enrollment, stepIndex, 
   async function handleComplete(result) {
     const { responses } = result
     const { error } = await db.from('questionnaire_responses').insert({
-      user_id:            enrollment.user_id,
+      user_id:            enrollment.profile_id ?? enrollment.user_id,
       questionnaire_slug: slug,
       responses,
       completed_at:       new Date().toISOString(),
