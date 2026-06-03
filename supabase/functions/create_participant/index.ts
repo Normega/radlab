@@ -64,9 +64,21 @@ Deno.serve(async (req) => {
       user_metadata: { display_name: `Participant ${participantId}` },
     })
 
-    if (createErr) return json({ error: createErr.message }, 400)
-
-    const userId = created.user.id
+    let userId: string
+    if (createErr) {
+      // If email already exists, look up the existing user instead of failing
+      if (createErr.message?.includes('already been registered') || createErr.code === 'email_exists') {
+        const { data: { users }, error: listErr } = await adminClient.auth.admin.listUsers()
+        if (listErr) return json({ error: listErr.message }, 500)
+        const existing = users.find(u => u.email === email)
+        if (!existing) return json({ error: createErr.message }, 400)
+        userId = existing.id
+      } else {
+        return json({ error: createErr.message }, 400)
+      }
+    } else {
+      userId = created.user.id
+    }
 
     // Update the profile row (created by trigger) with role + study_id
     const { error: updateErr } = await adminClient

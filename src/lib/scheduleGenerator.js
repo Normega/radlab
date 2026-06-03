@@ -1,217 +1,135 @@
 import { supabase } from './supabase'
 
-// Returns the next calendar date on or after baseDate that falls on dayOfWeek.
-function nextOccurrence(baseDate, dayOfWeek) {
-  const dayMap = { sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6 }
-  const target = dayMap[dayOfWeek]
-  const date = new Date(baseDate)
-  const current = date.getDay()
-  const diff = (target - current + 7) % 7
-  date.setDate(date.getDate() + diff)
-  return date
-}
-
-function periodOfDay(sendTime) {
-  const [hours] = sendTime.split(':').map(Number)
-  if (hours < 12) return 'morning'
-  if (hours < 17) return 'afternoon'
-  return 'evening'
-}
-
 /**
- * Generate a participant schedule for a given protocol.
+ * generateSchedule(participantId, studyId, enrollmentDate)
  *
- * single_shot  → one pending row with scheduled_for = null
- * scheduled    → one row per protocol_day_contact with computed scheduled_for
- *
- * Returns the inserted participant_schedule rows.
+ * Reads study_sessions for the study, sorted by day_number asc.
+ * Creates one participant_schedule row per study_session.
+ * Day 1 row: scheduled_date = enrollmentDate (as date string).
+ * All other rows: scheduled_date = null (filled in when prior session completes).
+ * Returns array of inserted row ids.
  */
-export async function generateSchedule(participantId, protocolId, enrolledAt) {
-  const { data: protocol, error: protocolErr } = await supabase
-    .from('study_protocols')
-    .select('*')
-    .eq('id', protocolId)
-    .single()
-  if (protocolErr) throw protocolErr
+export async function generateSchedule(participantId, studyId, enrollmentDate) {
+  const { data: sessions, error } = await supabase
+    .from('study_sessions')
+    .select('id, day_number, send_time, link_expires_hours, order_index')
+    .eq('study_id', studyId)
+    .order('day_number', { ascending: true })
+  if (error) throw error
+  if (!sessions?.length) return []
 
-  if (protocol.protocol_type === 'single_shot') {
-    const { data, error } = await supabase
-      .from('participant_schedule')
-      .insert({
-        participant_id:      participantId,
-        protocol_id:         protocolId,
-        session_template_id: protocol.session_template_id ?? null,
-        scheduled_for:       null,
-        status:              'pending',
-        enrolled_at:         enrolledAt.toISOString(),
-      })
-      .select()
-    if (error) throw error
-    return data
-  }
+  const enrollDate = typeof enrollmentDate === 'string'
+    ? enrollmentDate
+    : enrollmentDate.toISOString().slice(0, 10)
 
-  // scheduled: build one row per study-day contact
-  const { data: studyDays, error: daysErr } = await supabase
-    .from('protocol_study_days')
-    .select('*, protocol_day_contacts(*)')
-    .eq('protocol_id', protocolId)
-    .order('day_number')
-  if (daysErr) throw daysErr
+  const rows = sessions.map((s, i) => ({
+    participant_id:   participantId,
+    study_id:         studyId,
+    study_session_id: s.id,
+    scheduled_date:   i === 0 ? enrollDate : null,
+    send_time:        s.send_time,
+    status:           'pending',
+  }))
 
-  const rows = []
-  for (const studyDay of studyDays) {
-    const contacts = (studyDay.protocol_day_contacts ?? [])
-      .sort((a, b) => a.contact_order - b.contact_order)
-
-    const calendarDate = nextOccurrence(enrolledAt, studyDay.day_of_week)
-    const studyWeek = Math.ceil(studyDay.day_number / 7)
-
-    for (const contact of contacts) {
-      const [hours, minutes] = contact.send_time.split(':').map(Number)
-      const scheduledFor = new Date(calendarDate)
-      scheduledFor.setHours(hours, minutes, 0, 0)
-
-      rows.push({
-        participant_id:      participantId,
-        protocol_id:         protocolId,
-        study_day_id:        studyDay.id,
-        day_contact_id:      contact.id,
-        session_template_id: contact.session_template_id ?? null,
-        study_day:           studyDay.day_number,
-        study_week:          studyWeek,
-        period_of_day:       periodOfDay(contact.send_time),
-        contact_order:       contact.contact_order,
-        condition_arm:       null,
-        scheduled_for:       scheduledFor.toISOString(),
-        status:              'pending',
-        enrolled_at:         enrolledAt.toISOString(),
-      })
-    }
-  }
-
-  const { data, error } = await supabase
+  const { data, error: insertErr } = await supabase
     .from('participant_schedule')
     .insert(rows)
-    .select()
-  if (error) throw error
-  return data
+    .select('id')
+  if (insertErr) throw insertErr
+  return data.map(r => r.id)
 }
 
 /**
- * Issue a participant link for a schedule instance.
- * Enforces the one-active-link-per-participant constraint.
- * Returns the inserted participant_links row.
+ * advanceSchedule(participantId, studyId, completedScheduleId)
+ *
+ * Called when a participant completes a session.
+ * Finds the next study_session by day_number and sets its scheduled_date
+ * based on the day offset from the just-completed session's completion date.
  */
-export async function issueLink(scheduleInstanceId) {
-  const { data: scheduleRow, error: schedErr } = await supabase
+export async function advanceSchedule(participantId, studyId, completedScheduleId) {
+  const { data: completedRow, error: rowErr } = await supabase
     .from('participant_schedule')
-    .select('participant_id, protocol_id, scheduled_for, day_contact_id')
-    .eq('id', scheduleInstanceId)
+    .select('study_session_id, completed_at')
+    .eq('id', completedScheduleId)
+    .single()
+  if (rowErr) throw rowErr
+
+  const { data: completedSession, error: sessErr } = await supabase
+    .from('study_sessions')
+    .select('day_number')
+    .eq('id', completedRow.study_session_id)
+    .single()
+  if (sessErr) throw sessErr
+
+  const { data: nextScheduleRow, error: nextRowErr } = await supabase
+    .from('participant_schedule')
+    .select('id, study_sessions(day_number)')
+    .eq('participant_id', participantId)
+    .eq('study_id', studyId)
+    .eq('status', 'pending')
+    .is('scheduled_date', null)
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .maybeSingle()
+  if (nextRowErr) throw nextRowErr
+  if (!nextScheduleRow) return
+
+  const completedAt = new Date(completedRow.completed_at)
+  const dayOffset = (nextScheduleRow.study_sessions?.day_number ?? 1) - completedSession.day_number
+  const nextDate = new Date(completedAt)
+  nextDate.setDate(nextDate.getDate() + dayOffset)
+  const scheduledDate = nextDate.toISOString().slice(0, 10)
+
+  const { error: updateErr } = await supabase
+    .from('participant_schedule')
+    .update({ scheduled_date: scheduledDate })
+    .eq('id', nextScheduleRow.id)
+  if (updateErr) throw updateErr
+}
+
+/**
+ * issueLink(scheduleRowId)
+ *
+ * Expires any existing active participant_links for this participant + study.
+ * Creates a new participant_links row.
+ * Updates participant_schedule status to 'link_sent'.
+ * Returns the new link token.
+ */
+export async function issueLink(scheduleRowId) {
+  const { data: schedRow, error: schedErr } = await supabase
+    .from('participant_schedule')
+    .select('participant_id, study_id, study_sessions(link_expires_hours)')
+    .eq('id', schedRowId)
     .single()
   if (schedErr) throw schedErr
 
-  // Compute expiry from link_expires_hours on the day contact (default 48 h)
-  let expiresAt = null
-  if (scheduleRow.scheduled_for) {
-    let expiresHours = 48
-    if (scheduleRow.day_contact_id) {
-      const { data: contact } = await supabase
-        .from('protocol_day_contacts')
-        .select('link_expires_hours')
-        .eq('id', scheduleRow.day_contact_id)
-        .single()
-      expiresHours = contact?.link_expires_hours ?? 48
-    }
-    expiresAt = new Date(
-      new Date(scheduleRow.scheduled_for).getTime() + expiresHours * 60 * 60 * 1000
-    ).toISOString()
-  }
+  const expiresHours = schedRow.study_sessions?.link_expires_hours ?? 48
+  const expiresAt = new Date(Date.now() + expiresHours * 60 * 60 * 1000).toISOString()
 
-  const token = crypto.randomUUID()
+  // Expire all existing active links for this participant + study.
+  await supabase
+    .from('participant_links')
+    .update({ status: 'expired' })
+    .eq('participant_id', schedRow.participant_id)
+    .eq('study_id', schedRow.study_id)
+    .eq('status', 'active')
 
   const { data: link, error: linkErr } = await supabase
     .from('participant_links')
     .insert({
-      token,
-      participant_id:       scheduleRow.participant_id,
-      protocol_id:          scheduleRow.protocol_id,
-      schedule_instance_id: scheduleInstanceId,
-      status:               'active',
-      expires_at:           expiresAt,
+      schedule_id:    schedRowId,
+      participant_id: schedRow.participant_id,
+      study_id:       schedRow.study_id,
+      expires_at:     expiresAt,
     })
-    .select()
+    .select('token')
     .single()
+  if (linkErr) throw linkErr
 
-  if (linkErr) {
-    if (linkErr.code === '23505') {
-      throw new Error(
-        'Participant already has an active link. Revoke it before issuing a new one.'
-      )
-    }
-    throw linkErr
-  }
-
-  const { error: updateErr } = await supabase
+  await supabase
     .from('participant_schedule')
-    .update({ link_id: link.id, status: 'link_sent' })
-    .eq('id', scheduleInstanceId)
-  if (updateErr) throw updateErr
+    .update({ status: 'link_sent' })
+    .eq('id', schedRowId)
 
-  return link
-}
-
-/**
- * Check whether a reminder message should be suppressed for a participant.
- *
- * upcomingLinkWithinHours  — if a pending slot opens within this window, suppress.
- *
- * Returns { suppress: boolean, reason?: string }
- */
-export async function shouldSuppressReminder(participantId, upcomingLinkWithinHours) {
-  // 1. Must have an active link
-  const { data: activeLink } = await supabase
-    .from('participant_links')
-    .select('id')
-    .eq('participant_id', participantId)
-    .eq('status', 'active')
-    .maybeSingle()
-
-  if (!activeLink) return { suppress: true, reason: 'no_active_link' }
-
-  // 2. A new link is imminent
-  const windowEnd = new Date(
-    Date.now() + upcomingLinkWithinHours * 60 * 60 * 1000
-  ).toISOString()
-
-  const { data: imminent } = await supabase
-    .from('participant_schedule')
-    .select('id')
-    .eq('participant_id', participantId)
-    .eq('status', 'pending')
-    .not('scheduled_for', 'is', null)
-    .gt('scheduled_for', new Date().toISOString())
-    .lte('scheduled_for', windowEnd)
-    .limit(1)
-    .maybeSingle()
-
-  if (imminent) return { suppress: true, reason: 'new_link_imminent' }
-
-  // 3. Max attempts reached on the currently-sent schedule row
-  const { data: sentRow } = await supabase
-    .from('participant_schedule')
-    .select('attempts, study_protocols(max_attempts)')
-    .eq('participant_id', participantId)
-    .eq('status', 'link_sent')
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
-
-  if (sentRow) {
-    const maxAttempts = sentRow.study_protocols?.max_attempts ?? 1
-    if (sentRow.attempts >= maxAttempts) {
-      return { suppress: true, reason: 'max_attempts_reached' }
-    }
-  }
-
-  return { suppress: false }
+  return link.token
 }

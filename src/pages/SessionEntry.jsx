@@ -1,239 +1,131 @@
-import { useEffect, useState } from 'react'
+// v3 — signs in participant via sign_in_with_link edge fn, then renders via StepDispatcher
+import { useEffect, useState, useRef } from 'react'
 import { useParams } from 'react-router-dom'
-import { supabase } from '../lib/supabase'
+import { createClient } from '@supabase/supabase-js'
+import StepDispatcher from '../components/study/StepDispatcher'
+
+// Dedicated client for participant sessions — never touches the shared lab/public client.
+function makeParticipantClient() {
+  return createClient(
+    import.meta.env.VITE_SUPABASE_URL,
+    import.meta.env.VITE_SUPABASE_ANON_KEY,
+    { auth: { persistSession: false, autoRefreshToken: true } }
+  )
+}
 
 const CONSENT_URL = (studyId) => `/study/${studyId}/consent`
 
-// Resolution states: loading | not_found | revoked | completed | expired | too_early | needs_consent | running | session_complete
 export default function SessionEntry() {
   const { token } = useParams()
   const [state,          setState]          = useState('loading')
-  const [link,           setLink]           = useState(null)
-  const [scheduleRow,    setScheduleRow]    = useState(null)
-  const [nextScheduled,  setNextScheduled]  = useState(null)
-  const [activities,     setActivities]     = useState([])
+  const [sessionData,    setSessionData]    = useState(null)
   const [currentIndex,   setCurrentIndex]   = useState(0)
   const [consentStudyId, setConsentStudyId] = useState(null)
+  // Isolated Supabase client — never modifies the global lab session.
+  const sbRef = useRef(makeParticipantClient())
+  const sb    = sbRef.current
 
   useEffect(() => { resolveToken() }, [token])
 
   async function resolveToken() {
-    const { data: linkData } = await supabase
-      .from('participant_links')
-      .select('*')
-      .eq('token', token)
-      .maybeSingle()
+    // 1. Exchange link token for a participant Supabase session
+    const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+    const resp = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sign_in_with_link`,
+      {
+        method:  'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey:          anonKey,
+          Authorization:  `Bearer ${anonKey}`,
+        },
+        body: JSON.stringify({ token }),
+      }
+    )
+    const authResult = await resp.json()
 
-    if (!linkData) { setState('not_found'); return }
-    setLink(linkData)
+    if (authResult.error === 'not_found') { setState('not_found'); return }
+    if (authResult.error === 'revoked')   { setState('revoked');   return }
+    if (authResult.error)                 { setState('not_found'); return }
 
-    if (linkData.status === 'revoked')   { setState('revoked');   return }
-    if (linkData.status === 'completed') { setState('completed'); return }
+    // 2. Set session on the isolated client only — never touches the global lab session
+    await sb.auth.setSession({
+      access_token:  authResult.access_token,
+      refresh_token: authResult.refresh_token,
+    })
 
-    if (linkData.status === 'expired') {
-      await fetchNextPendingSlot(linkData.participant_id)
-      setState('expired')
+    // 3. Load session data via RPC (now authenticated)
+    const { data, error } = await sb.rpc('get_session_by_token', { p_token: token })
+    if (error || !data || data.error) { setState('not_found'); return }
+
+    const { link, schedule, study, enrollment } = data
+
+    if (link.status === 'revoked')              { setState('revoked');   return }
+    if (link.status === 'used' || link.status === 'completed') {
+      setState('completed')
       return
     }
+    if (link.status === 'expired')              { setState('expired');   return }
 
-    // Fetch the schedule row
-    let sched = null
-    if (linkData.schedule_instance_id) {
-      const { data } = await supabase
-        .from('participant_schedule')
-        .select('*')
-        .eq('id', linkData.schedule_instance_id)
-        .single()
-      sched = data
-    }
-    setScheduleRow(sched)
-
-    // Too early check
-    if (sched?.scheduled_for && new Date(sched.scheduled_for) > new Date()) {
+    if (schedule.scheduled_date && new Date(schedule.scheduled_date) > new Date()) {
       setState('too_early')
       return
     }
 
-    // Consent gate: if the study requires consent and this participant hasn't consented
-    if (sched?.study_id) {
-      const { data: study } = await supabase
-        .from('studies')
-        .select('consent_required, active_consent_form_id')
-        .eq('id', sched.study_id)
-        .single()
-
-      if (study?.consent_required && study?.active_consent_form_id) {
-        const { data: existing } = await supabase
-          .from('participant_consents')
-          .select('id')
-          .eq('participant_id', linkData.participant_id)
-          .eq('study_id', sched.study_id)
-          .maybeSingle()
-
-        if (!existing) {
-          setConsentStudyId(sched.study_id)
-          setState('needs_consent')
-          return
-        }
-      }
+    if (study.consent_required && study.active_consent_form_id && !enrollment?.consent_date) {
+      setConsentStudyId(schedule.study_id)
+      setState('needs_consent')
+      return
     }
 
-    // Record first access
-    await recordFirstAccess(linkData, sched)
-
-    // Load session activities
-    const templateId = sched?.session_template_id
-    if (templateId) {
-      const { data: nodes } = await supabase
-        .from('session_template_nodes')
-        .select('*, activities(*)')
-        .eq('session_template_id', templateId)
-        .order('order_index')
-      setActivities(nodes ?? [])
-    }
-
+    setSessionData(data)
     setState('running')
   }
 
-  async function fetchNextPendingSlot(participantId) {
-    const { data } = await supabase
-      .from('participant_schedule')
-      .select('scheduled_for')
-      .eq('participant_id', participantId)
-      .eq('status', 'pending')
-      .not('scheduled_for', 'is', null)
-      .order('scheduled_for')
-      .limit(1)
-      .maybeSingle()
-    setNextScheduled(data?.scheduled_for ?? null)
-  }
-
-  async function recordFirstAccess(linkData, sched) {
-    const now = new Date().toISOString()
-
-    if (!linkData.used_at) {
-      await supabase
-        .from('participant_links')
-        .update({ used_at: now })
-        .eq('id', linkData.id)
-    }
-
-    if (sched && !sched.enrolled_at) {
-      await supabase
-        .from('participant_schedule')
-        .update({ enrolled_at: now, status: 'unlocked', unlocked_at: now })
-        .eq('id', sched.id)
-    }
-  }
-
-  async function handleActivityComplete() {
-    const node = activities[currentIndex]
-    const now  = new Date().toISOString()
-
-    await supabase.from('participant_activity_log').insert({
-      participant_id:       link.participant_id,
-      schedule_instance_id: scheduleRow?.id ?? null,
-      activity_id:          node.activity_id,
-      completed_at:         now,
-      order_index:          node.order_index,
-      result_table:         null,
-      result_id:            null,
-    })
-
-    if (currentIndex === activities.length - 1) {
-      await completeSession(now)
-    } else {
+  async function handleStepComplete() {
+    const nodes = sessionData?.nodes ?? []
+    if (currentIndex < nodes.length - 1) {
       setCurrentIndex(i => i + 1)
+    } else {
+      await sb.rpc('complete_session_by_token', { p_token: token })
+      setState('session_complete')
     }
   }
 
-  async function completeSession(now = new Date().toISOString()) {
-    await supabase
-      .from('participant_links')
-      .update({ status: 'completed' })
-      .eq('id', link.id)
-
-    if (scheduleRow) {
-      await supabase
-        .from('participant_schedule')
-        .update({ status: 'completed', completed_at: now })
-        .eq('id', scheduleRow.id)
-    }
-
-    // If single_shot with a downstream protocol, generate its schedule now
-    if (scheduleRow?.protocol_id) {
-      const { data: protocol } = await supabase
-        .from('study_protocols')
-        .select('protocol_type, enrollment_protocol_id')
-        .eq('id', scheduleRow.protocol_id)
-        .single()
-
-      if (protocol?.protocol_type === 'single_shot' && protocol?.enrollment_protocol_id) {
-        const { generateSchedule } = await import('../lib/scheduleGenerator')
-        await generateSchedule(
-          link.participant_id,
-          protocol.enrollment_protocol_id,
-          new Date()
-        )
-      }
-    }
-
-    setState('session_complete')
-  }
-
-  // ── Render ─────────────────────────────────────────────────────────────────
+  // ── Render ────────────────────────────────────────────────────────────────
 
   if (state === 'loading') {
-    return (
-      <FullScreen>
-        <p className="text-gray-400 text-sm">Loading…</p>
-      </FullScreen>
-    )
+    return <FullScreen><StatusCard>Loading…</StatusCard></FullScreen>
   }
 
-  if (state === 'not_found') {
-    return (
-      <FullScreen>
-        <StatusCard>This link is not valid.</StatusCard>
-      </FullScreen>
-    )
-  }
-
-  if (state === 'revoked') {
-    return (
-      <FullScreen>
-        <StatusCard>This link is no longer active. Please contact your researcher.</StatusCard>
-      </FullScreen>
-    )
-  }
-
-  if (state === 'completed' || state === 'session_complete') {
-    return (
-      <FullScreen>
-        <StatusCard>You have already completed this session.</StatusCard>
-      </FullScreen>
-    )
-  }
-
-  if (state === 'expired') {
+  if (state === 'not_found' || state === 'revoked') {
     return (
       <FullScreen>
         <StatusCard>
-          This session window has closed.{' '}
-          {nextScheduled
-            ? <>Your next check-in is scheduled for {fmt(nextScheduled)}.</>
-            : 'Please contact your researcher for more information.'
-          }
+          {state === 'revoked'
+            ? 'This link is no longer active. Please contact your researcher.'
+            : 'This link is not valid.'}
         </StatusCard>
       </FullScreen>
     )
   }
 
+  if (state === 'completed' || state === 'session_complete') {
+    return <FullScreen><StatusCard>You have completed this session. Thank you!</StatusCard></FullScreen>
+  }
+
+  if (state === 'expired') {
+    return <FullScreen><StatusCard>This session window has closed. Please contact your researcher.</StatusCard></FullScreen>
+  }
+
   if (state === 'too_early') {
+    const d = sessionData?.schedule?.scheduled_date
     return (
       <FullScreen>
         <StatusCard>
-          Your session opens on {scheduleRow?.scheduled_for ? fmt(scheduleRow.scheduled_for) : 'a scheduled date'}.
+          Your session opens on {d
+            ? new Date(d).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })
+            : 'a scheduled date'}.
         </StatusCard>
       </FullScreen>
     )
@@ -243,13 +135,13 @@ export default function SessionEntry() {
     const returnTo = encodeURIComponent(`/s/${token}`)
     return (
       <FullScreen>
-        <div className="max-w-md px-6 text-center">
-          <p className="text-gray-700 text-lg leading-relaxed mb-6">
+        <div style={{ maxWidth: 480, padding: '0 24px', textAlign: 'center' }}>
+          <p style={{ fontSize: 18, color: 'var(--tx2)', lineHeight: 1.6, marginBottom: 24 }}>
             Before beginning this study, you need to read and sign the consent form.
           </p>
           <a
             href={`${CONSENT_URL(consentStudyId)}?returnTo=${returnTo}`}
-            className="inline-block py-3 px-8 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium transition-colors"
+            style={{ display: 'inline-block', padding: '12px 32px', borderRadius: 12, background: 'var(--pk)', color: '#fff', fontFamily: '"DM Sans",system-ui,sans-serif', fontWeight: 500, textDecoration: 'none' }}
           >
             Review consent form →
           </a>
@@ -258,55 +150,59 @@ export default function SessionEntry() {
     )
   }
 
-  if (state === 'running') {
-    const node = activities[currentIndex]
+  if (state === 'running' && sessionData) {
+    const nodes       = sessionData.nodes ?? []
+    const node        = nodes[currentIndex]
+    const consentHtml = sessionData.consent_html ?? null
+    const debriefHtml = sessionData.debrief_html ?? null
 
-    if (!node) {
-      return (
-        <FullScreen>
-          <p className="text-gray-400 text-sm">No activities in this session.</p>
-        </FullScreen>
-      )
+    // Build a minimal enrollment object for StepDispatcher child components.
+    // user_id must match profile_id — GameStepWrapper passes this as userId to games.
+    const enrollment = {
+      id:         sessionData.enrollment?.id,
+      profile_id: sessionData.link?.participant_id,
+      user_id:    sessionData.link?.participant_id,
+      study_id:   sessionData.link?.study_id,
+      studies:    { id: sessionData.link?.study_id },
     }
 
-    const activityLabel = node.label ?? node.activities?.label ?? 'Activity'
-    const category      = node.activities?.category    ?? ''
-    const subcategory   = node.activities?.subcategory ?? ''
+    if (!node) {
+      return <FullScreen><StatusCard>No activities in this session.</StatusCard></FullScreen>
+    }
+
+    const totalSteps  = nodes.length
+    const progressPct = totalSteps > 0 ? (currentIndex / totalSteps) * 100 : 0
 
     return (
-      <FullScreen>
-        <div className="max-w-lg w-full mx-auto px-6 py-12">
-          <p className="text-xs font-medium uppercase tracking-widest text-gray-400 mb-2">
-            Activity {currentIndex + 1} of {activities.length}
-          </p>
-
-          <h1 className="text-2xl font-semibold text-gray-800 mb-2">{activityLabel}</h1>
-
-          {(category || subcategory) && (
-            <p className="text-sm text-gray-400 mb-10">
-              {category}{subcategory ? ` · ${subcategory}` : ''}
-            </p>
-          )}
-
-          <button
-            onClick={handleActivityComplete}
-            className="w-full py-3 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-medium transition-colors"
-          >
-            Complete
-          </button>
+      <div style={{ position: 'fixed', inset: 0, background: '#FCF0F5', display: 'flex', flexDirection: 'column', zIndex: 200, overflowY: 'auto' }}>
+        <div style={{ height: 4, background: '#e9d5e4', flexShrink: 0 }}>
+          <div style={{ height: '100%', background: 'var(--pk)', width: `${progressPct}%`, transition: 'width 0.4s ease' }} />
         </div>
-      </FullScreen>
+        <p style={{ fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', textAlign: 'center', padding: '8px 24px 0', margin: 0, flexShrink: 0 }}>
+          Step {currentIndex + 1} of {totalSteps}
+        </p>
+        <div style={{ flex: 1, overflowY: 'auto' }}>
+          <StepDispatcher
+            node={node}
+            enrollment={enrollment}
+            stepIndex={currentIndex}
+            totalSteps={totalSteps}
+            onComplete={handleStepComplete}
+            consentHtml={consentHtml}
+            debriefHtml={debriefHtml}
+            supabaseClient={sb}
+          />
+        </div>
+      </div>
     )
   }
 
   return null
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
 function FullScreen({ children }) {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
       {children}
     </div>
   )
@@ -314,15 +210,8 @@ function FullScreen({ children }) {
 
 function StatusCard({ children }) {
   return (
-    <p className="max-w-md px-6 text-gray-700 text-lg text-center leading-relaxed">
+    <p style={{ maxWidth: 480, padding: '0 24px', fontSize: 18, color: 'var(--tx2)', textAlign: 'center', lineHeight: 1.6, fontFamily: '"DM Sans",system-ui,sans-serif' }}>
       {children}
     </p>
   )
-}
-
-function fmt(ts) {
-  return new Date(ts).toLocaleString(undefined, {
-    weekday: 'short', month: 'short', day: 'numeric',
-    hour: 'numeric', minute: '2-digit',
-  })
 }

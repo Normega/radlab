@@ -7,26 +7,20 @@ function useStudies() {
   return useQuery({
     queryKey: ['studies-list'],
     queryFn: async () => {
-      const [studiesRes, assignmentsRes, protocolsRes, consentRes] = await Promise.all([
+      const [studiesRes, enrollmentsRes] = await Promise.all([
         supabase.from('studies').select('id, name, created_at, delivery_mode').order('created_at', { ascending: false }),
-        supabase.from('study_protocol_assignments').select('study_id, protocol_id'),
-        supabase.from('study_protocols').select('id, label, protocol_type'),
-        supabase.from('participant_consent').select('study_id').is('withdrawn_at', null),
+        supabase.from('study_enrollments').select('study_id').neq('status', 'withdrawn'),
       ])
       if (studiesRes.error) throw studiesRes.error
 
-      const protocolById = Object.fromEntries((protocolsRes.data ?? []).map(p => [p.id, p]))
-      const protocolByStudy = Object.fromEntries((assignmentsRes.data ?? []).map(a => [a.study_id, protocolById[a.protocol_id]]))
-      const consentCount = (consentRes.data ?? []).reduce((acc, c) => {
-        acc[c.study_id] = (acc[c.study_id] ?? 0) + 1
+      const enrollCount = (enrollmentsRes.data ?? []).reduce((acc, e) => {
+        acc[e.study_id] = (acc[e.study_id] ?? 0) + 1
         return acc
       }, {})
 
       return (studiesRes.data ?? []).map(s => ({
         ...s,
-        protocolLabel: protocolByStudy[s.id]?.label ?? '—',
-        protocolType: protocolByStudy[s.id]?.protocol_type,
-        participantCount: consentCount[s.id] ?? 0,
+        participantCount: enrollCount[s.id] ?? 0,
         deliveryMode: s.delivery_mode,
       }))
     },
@@ -72,7 +66,7 @@ export default function StudyLibrary() {
           <table style={S.table}>
             <thead>
               <tr>
-                {['Study', 'Protocol', 'Participants', 'Created', 'Actions'].map(h => (
+                {['Study', 'Type', 'Participants', 'Created', 'Actions'].map(h => (
                   <th key={h} style={S.th}>{h}</th>
                 ))}
               </tr>
@@ -82,15 +76,9 @@ export default function StudyLibrary() {
                 <tr key={s.id} style={S.tr}>
                   <td style={S.td}>
                     <span style={S.label}>{s.name}</span>
-                    {s.deliveryMode === 'in_person' && (
-                      <span style={S.inPersonBadge}>in-person</span>
-                    )}
                   </td>
                   <td style={S.td}>
-                    {s.deliveryMode === 'in_person'
-                      ? <span style={S.proto}>—</span>
-                      : <><span style={S.proto}>{s.protocolLabel}</span>{s.protocolType && <TypeBadge type={s.protocolType} />}</>
-                    }
+                    <DeliveryBadge mode={s.deliveryMode} />
                   </td>
                   <td style={S.td}>
                     <Chip>{s.participantCount}</Chip>
@@ -138,16 +126,16 @@ export default function StudyLibrary() {
   )
 }
 
-function TypeBadge({ type }) {
-  const isScheduled = type === 'scheduled'
+function DeliveryBadge({ mode }) {
+  const map = {
+    in_person:          { label: 'in-person',     bg: '#fdf2f8', color: 'var(--pk)' },
+    online_single:      { label: 'single session', bg: '#f0f4ff', color: '#5b7be8' },
+    online_longitudinal:{ label: 'longitudinal',   bg: '#f0fdf4', color: '#15803d' },
+  }
+  const c = map[mode] ?? { label: mode ?? '—', bg: '#f4f4f5', color: '#52525b' }
   return (
-    <span style={{
-      fontFamily: '"Space Mono",monospace', fontSize: 10, display: 'inline-block', marginLeft: 6,
-      background: isScheduled ? 'var(--pkb)' : '#f0f4ff',
-      color: isScheduled ? 'var(--pk)' : '#5b7be8',
-      borderRadius: 6, padding: '2px 7px', whiteSpace: 'nowrap',
-    }}>
-      {isScheduled ? 'scheduled' : 'one-time'}
+    <span style={{ fontFamily: '"Space Mono",monospace', fontSize: 10, background: c.bg, color: c.color, borderRadius: 6, padding: '2px 7px', whiteSpace: 'nowrap' }}>
+      {c.label}
     </span>
   )
 }

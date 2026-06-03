@@ -42,10 +42,7 @@ import AdminLayout   from './layouts/AdminLayout'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import SessionLibrary from './pages/admin/SessionLibrary'
 import SessionBuilder from './pages/admin/SessionBuilder'
-import ProtocolLibrary from './pages/admin/ProtocolLibrary'
-import ProtocolBuilder from './pages/admin/ProtocolBuilder'
 import StudyLibrary     from './pages/admin/StudyLibrary'
-import StudyBuilder     from './pages/admin/StudyBuilder'
 import StudyDetail      from './pages/admin/StudyDetail'
 import StudyFormPage    from './pages/admin/StudyFormPage'
 import StudySessionRunner from './pages/admin/StudySessionRunner'
@@ -254,16 +251,13 @@ export default function App() {
           {/* Admin section — role-gated */}
           <Route element={<AdminRoute session={session} />}>
             {/* Full-screen session runner — no admin chrome */}
-            <Route path="/admin/studies/:id/session/:enrollmentId" element={<StudySessionRunner />} />
+            <Route path="/admin/studies/:id/session/:enrollmentId/:studySessionId" element={<StudySessionRunner />} />
 
             <Route element={<AdminLayout session={session} />}>
               <Route path="/admin"                  element={<AdminDashboard />} />
               <Route path="/admin/sessions"         element={<SessionLibrary />} />
               <Route path="/admin/sessions/new"     element={<SessionBuilder />} />
               <Route path="/admin/sessions/:id"     element={<SessionBuilder />} />
-              <Route path="/admin/protocols"        element={<ProtocolLibrary />} />
-              <Route path="/admin/protocols/new"    element={<ProtocolBuilder />} />
-              <Route path="/admin/protocols/:id"    element={<ProtocolBuilder />} />
               <Route path="/admin/studies"          element={<StudyLibrary />} />
               <Route path="/admin/studies/new"      element={<StudyFormPage />} />
               <Route path="/admin/studies/:id/edit" element={<StudyFormPage />} />

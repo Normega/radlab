@@ -6,22 +6,20 @@ function useSummary() {
   return useQuery({
     queryKey: ['admin-summary'],
     queryFn: async () => {
-      const [sessions, protocols, activeStudies] = await Promise.all([
+      const [sessions, studies, enrollments] = await Promise.all([
         supabase.from('session_templates').select('id', { count: 'exact', head: true }),
-        supabase.from('study_protocols').select('id', { count: 'exact', head: true }),
-        supabase
-          .from('participant_schedule')
-          .select('study_id', { count: 'exact', head: false })
-          .not('study_id', 'is', null)
+        supabase.from('studies').select('id', { count: 'exact', head: true }).eq('active', true),
+        supabase.from('study_enrollments').select('study_id', { count: 'exact', head: false })
+          .eq('status', 'enrolled')
           .then(({ data }) => {
             const unique = new Set((data ?? []).map(r => r.study_id))
             return { count: unique.size }
           }),
       ])
       return {
-        sessions:     sessions.count ?? 0,
-        protocols:    protocols.count ?? 0,
-        studies:      activeStudies.count,
+        sessions:    sessions.count ?? 0,
+        studies:     studies.count ?? 0,
+        enrollments: enrollments.count,
       }
     },
   })
@@ -32,36 +30,36 @@ export default function AdminDashboard() {
 
   const cards = [
     {
+      key:   'sessions',
       label: 'Session Templates',
       count: data?.sessions,
-      to: '/admin/sessions',
+      to:    '/admin/sessions',
       empty: 'No sessions yet. Build your first one.',
-      hint: 'A session is an ordered sequence of activities delivered in one sitting.',
     },
     {
-      label: 'Protocols',
-      count: data?.protocols,
-      to: '/admin/protocols',
-      empty: 'No protocols yet. Assemble one from your sessions.',
-      hint: 'A protocol defines the schedule and session sequence for a study.',
-    },
-    {
+      key:   'studies',
       label: 'Active Studies',
       count: data?.studies,
-      to: '/admin/studies',
-      empty: 'No studies yet. Launch one using a protocol.',
-      hint: 'Studies enroll participants into a protocol.',
+      to:    '/admin/studies',
+      empty: 'No studies yet.',
+    },
+    {
+      key:   'enrollments',
+      label: 'Studies with enrolments',
+      count: data?.enrollments,
+      to:    '/admin/studies',
+      empty: 'No active enrolments.',
     },
   ]
 
   return (
     <div>
       <h1 style={S.h1}>Overview</h1>
-      <p style={S.sub}>The composition chain: sessions → protocols → studies.</p>
+      <p style={S.sub}>Sessions → studies → participants.</p>
 
       <div style={S.grid}>
         {cards.map(c => (
-          <Link key={c.to} to={c.to} style={S.card}>
+          <Link key={c.key} to={c.to} style={S.card}>
             <span style={S.countLabel}>{c.label}</span>
             {data === undefined ? (
               <span style={S.count}>—</span>

@@ -6,7 +6,7 @@ const GAME_COMPONENTS = {
   breath_belt:    BreathBelt,
 }
 
-export default function GameStepWrapper({ slug, enrollment, onComplete }) {
+export default function GameStepWrapper({ slug, enrollment, onComplete, supabaseClient }) {
   const GameComponent = GAME_COMPONENTS[slug]
 
   if (!GameComponent) {
@@ -23,6 +23,7 @@ export default function GameStepWrapper({ slug, enrollment, onComplete }) {
       userId={enrollment.user_id}
       studyId={enrollment.study_id}
       onSessionComplete={result => onComplete({ game_slug: slug, ...result })}
+      supabaseClient={supabaseClient}
     />
   )
 }
