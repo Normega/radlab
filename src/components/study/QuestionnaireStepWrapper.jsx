@@ -1,12 +1,17 @@
 import { useQuery } from '@tanstack/react-query'
-import { supabase } from '../../lib/supabase'
+import { supabase as globalSupabase } from '../../lib/supabase'
 import QuestionnaireRenderer from '../questionnaire/QuestionnaireRenderer'
 
-export default function QuestionnaireStepWrapper({ slug, enrollment, stepIndex, totalSteps, onComplete }) {
+export default function QuestionnaireStepWrapper({ slug, enrollment, stepIndex, totalSteps, onComplete, supabaseClient }) {
+  // In a participant session the caller passes the participant-authenticated
+  // client; reads/writes must use it so RLS (auth.uid() = user_id) is satisfied.
+  // Falls back to the global client for non-session contexts (e.g. preview).
+  const db = supabaseClient ?? globalSupabase
+
   const { data: q, isLoading, error } = useQuery({
     queryKey: ['questionnaire-def', slug],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from('questionnaires')
         .select('definition')
         .eq('slug', slug)
@@ -27,12 +32,13 @@ export default function QuestionnaireStepWrapper({ slug, enrollment, stepIndex, 
 
   async function handleComplete(result) {
     const { responses } = result
-    await supabase.from('questionnaire_responses').insert({
+    const { error } = await db.from('questionnaire_responses').insert({
       user_id:            enrollment.user_id,
       questionnaire_slug: slug,
       responses,
       completed_at:       new Date().toISOString(),
     })
+    if (error) console.error('questionnaire_responses insert:', error)
     onComplete({ responses_count: Object.keys(responses).length })
   }
 

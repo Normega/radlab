@@ -43,6 +43,7 @@ export default function StepDispatcher({ node, enrollment, stepIndex, totalSteps
         stepIndex={stepIndex}
         totalSteps={totalSteps}
         onComplete={onComplete}
+        supabaseClient={supabaseClient}
       />
     )
   }

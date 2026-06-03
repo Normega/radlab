@@ -12,7 +12,8 @@ const SAMPLE_MS = 40  // ~25 Hz breathValue sampling
 
 // ── COM trigger vocabulary (trial-level) ──────────────────────────────────
 // 10  trial start       — baseline breaths begin
-// 11  condition onset   — breath 3 begins
+// 11  condition onset   — breath 3 begins  (DISABLED: glitches the animation;
+//                         recover condition onset offline from logs + 10/12)
 // 12  trial end
 // Phase-level codes (1–9) fired from BreathBelt.jsx.
 
@@ -93,9 +94,13 @@ export function useTrialRunner({
     for (let i = 0; i < BASELINE_BREATHS_COUNT; i++) await startBreath(BASE_MS)
     stopSampling()
 
-    // Breath 3 onset — switch live pacer context to condition speed
+    // Breath 3 onset — switch live pacer context to condition speed.
+    // NOTE: the condition-onset trigger (code 11) is intentionally NOT emitted.
+    // Sending it mid-animation stalls the breath loop (trigger hold + HTTP
+    // round-trips on parallel-port rigs), snapping the pacer at the breath 2→3
+    // boundary. Condition onset is recoverable offline from the log files plus
+    // the trial-start (10) and trial-end (12) triggers, so we drop it here.
     const conditionStartMs = Date.now()
-    await sendTrigger('11')
     setPacerContext?.(conditionStartMs, conditionMs)
 
     // Breaths 3–4: condition pace

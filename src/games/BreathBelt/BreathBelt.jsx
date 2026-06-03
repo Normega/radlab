@@ -57,8 +57,12 @@ const S = {
   SESSION_COMPLETE:        'SESSION_COMPLETE',
 };
 
-export default function BreathBelt({ studyMode = false, userId, studyId, onSessionComplete }) {
+export default function BreathBelt({ studyMode = false, userId, studyId, onSessionComplete, supabaseClient }) {
   const navigate = useNavigate();
+  // In a participant study session the caller passes the participant-authenticated
+  // client; all data reads/writes must use it so RLS (auth.uid() = user_id) passes.
+  // Falls back to the shared global client for normal self-serve play.
+  const db = supabaseClient ?? supabase;
   const [phase, setPhase] = useState(S.BROWSER_CHECK);
   const [sessionNumber, setSessionNumber] = useState(1);
   const [triggerDevice, setTriggerDevice] = useState(DEFAULT_TRIGGER_DEVICE);
@@ -73,24 +77,28 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
 
   // ── Auth + role ──────────────────────────────────────────────────────────
   const { data: profile, isLoading: profileLoading } = useQuery({
-    queryKey: ['profile'],
+    queryKey: ['profile', userId ?? 'self'],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await db.auth.getUser();
       if (!user) return null;
-      const { data } = await supabase
+      const { data } = await db
         .from('profiles').select('role, id').eq('id', user.id).single();
       return { ...data, id: user.id };
     },
   });
 
+  // In study mode the participant id arrives as a prop; use it directly so the
+  // session can start without waiting on a getUser() round-trip.
+  const effectiveUserId = userId ?? profile?.id;
+
   const { data: avatar } = useQuery({
-    queryKey: ['avatar', profile?.id],
+    queryKey: ['avatar', effectiveUserId],
     queryFn: async () => {
-      const { data } = await supabase
-        .from('avatars').select('*').eq('user_id', profile.id).single();
+      const { data } = await db
+        .from('avatars').select('*').eq('user_id', effectiveUserId).single();
       return data;
     },
-    enabled: !!profile?.id,
+    enabled: !!effectiveUserId,
   });
 
   const avatarProps = {
@@ -100,7 +108,7 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
   };
 
   const belt    = useBeltConnection();
-  const session = useBeltSession(profile?.id);
+  const session = useBeltSession(effectiveUserId, db);
   const backup  = useStreamingBackup();
   const basePeriodMs = BASE_BREATH_SPEED_S * 1000;
 
@@ -154,11 +162,11 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
   const sessionStartedRef = useRef(false);
   const sessionEndedRef   = useRef(false);
   useEffect(() => {
-    if (phase === S.BASELINE_READY && !sessionStartedRef.current && profile?.id) {
+    if (phase === S.BASELINE_READY && !sessionStartedRef.current && effectiveUserId) {
       sessionStartedRef.current = true;
       session.startSession(studyId ?? null);
     }
-  }, [phase, profile?.id]);
+  }, [phase, effectiveUserId]);
 
   // Centralised end-of-session save, shared by the normal post-baseline
   // completion and the early-exit button. Uploads raw signal, writes
@@ -376,7 +384,7 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
           </div>
           <Btn onClick={async () => {
             belt.setTriggerDevice(triggerDevice);
-            const ok = await backup.initBackup(profile?.id);
+            const ok = await backup.initBackup(effectiveUserId);
             if (!ok && backup.isAvailable) {
               const proceed = window.confirm(
                 'Local CSV backup is not enabled (folder picker was cancelled). ' +

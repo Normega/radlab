@@ -1,13 +1,17 @@
 import { useRef, useCallback } from 'react';
-import { supabase } from '../../../lib/supabase';
+import { supabase as globalSupabase } from '../../../lib/supabase';
 
-export function useBeltSession(userId) {
+// `client` is the participant-authenticated Supabase client in a study session
+// (so RLS auth.uid() = user_id is satisfied); falls back to the global client
+// for normal self-serve play.
+export function useBeltSession(userId, client) {
+  const db = client ?? globalSupabase;
   const sessionIdRef   = useRef(null);
   const trialsRef      = useRef([]);
   const flushedCountRef = useRef(0);   // how many of trialsRef have been written to Supabase
 
   const startSession = useCallback(async (studyId = null) => {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from('game_sessions')
       .insert({
         user_id:    userId,
@@ -23,7 +27,7 @@ export function useBeltSession(userId) {
     trialsRef.current     = [];
     flushedCountRef.current = 0;
     return data.id;
-  }, [userId]);
+  }, [userId, db]);
 
   const recordTrial = useCallback((trialRow) => {
     trialsRef.current.push(trialRow);
@@ -39,12 +43,12 @@ export function useBeltSession(userId) {
     if (!sessionId) return;
     const pending = trialsRef.current.slice(flushedCountRef.current);
     if (!pending.length) return;
-    const { error } = await supabase.from('belt_trials').insert(
+    const { error } = await db.from('belt_trials').insert(
       pending.map(t => ({ ...t, session_id: sessionId, user_id: userId }))
     );
     if (error) { console.error('belt_trials flush:', error); return; }
     flushedCountRef.current += pending.length;
-  }, [userId]);
+  }, [userId, db]);
 
   const endSession = useCallback(async ({
     calibState,
@@ -65,10 +69,10 @@ export function useBeltSession(userId) {
     const accelPath = `${basePath}_accel.csv`;
     const hrPath    = `${basePath}_hr.csv`;
 
-    const accelUpload = supabase.storage.from('belt-sessions').upload(
+    const accelUpload = db.storage.from('belt-sessions').upload(
       accelPath, new Blob([buildAccelCsv(rawAccelRows)], { type: 'text/csv' }), { upsert: true }
     );
-    const hrUpload = supabase.storage.from('belt-sessions').upload(
+    const hrUpload = db.storage.from('belt-sessions').upload(
       hrPath, new Blob([buildHRCsv(rawHRRows)], { type: 'text/csv' }), { upsert: true }
     );
     const [{ error: accelErr }, { error: hrErr }] = await Promise.all([accelUpload, hrUpload]);
@@ -77,7 +81,7 @@ export function useBeltSession(userId) {
 
     // 2. Insert belt_sessions row — calib metrics flattened from calibState JSON
     //    into the scalar columns added by belt_mlr_migration.sql.
-    const { error: sessError } = await supabase.from('belt_sessions').insert({
+    const { error: sessError } = await db.from('belt_sessions').insert({
       session_id:              sessionId,
       user_id:                 userId,
       calib_state:             calibState,
@@ -96,7 +100,7 @@ export function useBeltSession(userId) {
     // 3. Insert any belt_trials not already flushed at a phase boundary.
     const remaining = trialsRef.current.slice(flushedCountRef.current);
     if (remaining.length) {
-      const { error: trialError } = await supabase.from('belt_trials').insert(
+      const { error: trialError } = await db.from('belt_trials').insert(
         remaining.map(t => ({ ...t, session_id: sessionId, user_id: userId }))
       );
       if (trialError) console.error('belt_trials insert:', trialError);
@@ -104,11 +108,11 @@ export function useBeltSession(userId) {
     }
 
     // 4. Close game_sessions row
-    await supabase
+    await db
       .from('game_sessions')
       .update({ ended_at: new Date().toISOString() })
       .eq('id', sessionId);
-  }, [userId]);
+  }, [userId, db]);
 
   return { sessionIdRef, startSession, recordTrial, flushTrials, endSession };
 }
