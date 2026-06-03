@@ -35,7 +35,6 @@ const TRIAL_STATES = { READY: 'READY', IN_PROGRESS: 'IN_PROGRESS' }
 export default function FixedTrialsScreen({
   avatarProps,
   breathValueRef,
-  syncQuality,
   sendTrigger,
   currentPhaseRef,
   currentTrialRef,

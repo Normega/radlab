@@ -477,7 +477,6 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
         <FixedTrialsScreen
           avatarProps={avatarProps}
           breathValueRef={belt.breathValueRef}
-          syncQuality={belt.syncQuality}
           sendTrigger={belt.sendTrigger}
           currentPhaseRef={belt.currentPhaseRef}
           currentTrialRef={belt.currentTrialRef}
