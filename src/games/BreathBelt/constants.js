@@ -1,7 +1,15 @@
 // ── Testing controls ──────────────────────────────────────────────────────
-// Set false for production runs. Gates the graceful early-exit button, which
-// ends the session early and writes everything buffered (trials + raw signal).
-export const SHOW_EARLY_EXIT = true;
+// Master piloting switch. Set false for production / participant-facing runs.
+// When true (piloting), the following researcher-facing surfaces are shown;
+// when false they are all hidden together:
+//   • graceful early-exit button (ends the session early, writing everything
+//     buffered — trials + raw signal)
+//   • bottom-left per-trial sync-quality overlay in Phases 2 & 3 (TrialSyncOverlay)
+//   • end-of-Phase-2 trial review screen (Phase2ReviewScreen)
+// The only feedback shown in production is the end-of-calibration review.
+// NB: hiding the sync overlay does not affect data — all metrics are still
+// computed and saved to Supabase regardless of PILOT_MODE.
+export const PILOT_MODE = true;
 
 // ── Breath timing ─────────────────────────────────────────────────────────
 export const BASE_BREATH_SPEED_S    = 4;

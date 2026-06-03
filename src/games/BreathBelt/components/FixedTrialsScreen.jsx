@@ -44,6 +44,7 @@ export default function FixedTrialsScreen({
   setPacerContext,
   clearPacerContext,
   recordTrial,
+  showSyncOverlay = true,
   onComplete,
 }) {
   const [trialList]  = useState(buildTrialList)
@@ -154,11 +155,13 @@ export default function FixedTrialsScreen({
         </p>
       )}
 
-      {/* Post-trial overlay — bottom-left, with graph. Only feedback shown to participant. */}
+      {/* Post-trial overlay — bottom-left, with graph. Researcher QC feedback,
+          shown only while piloting (showSyncOverlay). Metrics are saved regardless. */}
       <TrialSyncOverlay
         syncMetrics={syncData}
         showGraph={true}
         trialNumber={trialIdx}
+        visible={showSyncOverlay}
       />
     </div>
   )

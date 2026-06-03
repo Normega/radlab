@@ -22,6 +22,7 @@ export default function StaircaseScreen({
   setPacerContext,
   clearPacerContext,
   recordTrial,
+  showSyncOverlay = true,
   savedQuestState,
   onComplete,
 }) {
@@ -188,12 +189,14 @@ export default function StaircaseScreen({
         </div>
       )}
 
-      {/* Post-trial metrics overlay — no graph in Phase 3 (condition blinding). Only feedback shown to participant. */}
+      {/* Post-trial metrics overlay — no graph in Phase 3 (condition blinding).
+          Researcher QC feedback, shown only while piloting (showSyncOverlay). */}
       <TrialSyncOverlay
         syncMetrics={syncData}
         showGraph={false}
         trialNumber={trialCount}
         convergence={conv}
+        visible={showSyncOverlay}
       />
     </div>
   )

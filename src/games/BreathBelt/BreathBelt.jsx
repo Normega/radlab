@@ -14,7 +14,7 @@ import SessionComplete from './components/SessionComplete';
 import Phase2ReviewScreen from './components/Phase2ReviewScreen';
 import {
   BASELINE_DURATION_MS, POST_BASELINE_DURATION_MS, BASE_BREATH_SPEED_S,
-  TRIGGER_DEVICES, DEFAULT_TRIGGER_DEVICE, SHOW_EARLY_EXIT,
+  TRIGGER_DEVICES, DEFAULT_TRIGGER_DEVICE, PILOT_MODE,
 } from './constants';
 
 // ── COM trigger vocabulary ─────────────────────────────────────────────────
@@ -192,7 +192,7 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
   }, [session, belt, sessionNumber, triggerDevice]);
 
   // Testing-only graceful early exit: confirm, then save everything buffered and
-  // jump to the summary, skipping any remaining phases. Gated by SHOW_EARLY_EXIT.
+  // jump to the summary, skipping any remaining phases. Gated by PILOT_MODE.
   const handleEarlyExit = useCallback(() => {
     if (ending || sessionEndedRef.current) return;
     const ok = window.confirm(
@@ -223,7 +223,7 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
   }
 
   // Early-exit control, injected into the active-session screens' Layout.
-  const activeExit = SHOW_EARLY_EXIT
+  const activeExit = PILOT_MODE
     ? <EarlyExitButton onClick={handleEarlyExit} ending={ending} />
     : null;
 
@@ -478,11 +478,14 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
           setPacerContext={belt.setPacerContext}
           clearPacerContext={belt.clearPacerContext}
           recordTrial={recordTrialWithBackup}
+          showSyncOverlay={PILOT_MODE}
           onComplete={async (trialsData, trialGraphs) => {
             trialGraphsRef.current = trialGraphs
             await belt.sendTrigger('5')  // code 5 — phase 2 end
             await session.flushTrials()  // persist phase-2 trials before continuing
-            setPhase(S.PHASE2_REVIEW)
+            // The Phase 2 review screen is researcher feedback — skip it in
+            // production (PILOT_MODE off) and go straight to Phase 3.
+            setPhase(PILOT_MODE ? S.PHASE2_REVIEW : S.PHASE3_INTRO)
           }}
         />
       </Layout>
@@ -534,6 +537,7 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
           setPacerContext={belt.setPacerContext}
           clearPacerContext={belt.clearPacerContext}
           recordTrial={recordTrialWithBackup}
+          showSyncOverlay={PILOT_MODE}
           savedQuestState={null}
           onComplete={async (trials, questState, convergence) => {
             await belt.sendTrigger('7');  // code 7 — phase 3 end
