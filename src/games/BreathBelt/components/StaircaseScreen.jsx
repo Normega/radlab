@@ -5,7 +5,7 @@ import { useTrialRunner } from '../hooks/useTrialRunner'
 import { useBeltQuestStaircases } from '../hooks/useBeltQuestStaircases'
 import ConfidenceRating from '../../shared/ConfidenceRating'
 import ArousalRating from '../../shared/ArousalRating'
-import { BASE_BREATH_SPEED_S } from '../constants'
+import { BASE_BREATH_SPEED_S, QUEST_MAX_PHASE3_TRIALS } from '../constants'
 
 const BASE_MS = BASE_BREATH_SPEED_S * 1000
 const SC_STATES = { READY: 'READY', IN_PROGRESS: 'IN_PROGRESS', RESPONSE: 'RESPONSE' }
@@ -99,7 +99,9 @@ export default function StaircaseScreen({
     const nextCount = trialCount + 1
     setTrialCount(nextCount)
 
-    if (quest.allConverged()) {
+    // End on convergence, or at the hard trial cap so the staircase can never
+    // run indefinitely if the posterior SD never crosses the threshold.
+    if (quest.allConverged() || nextCount >= QUEST_MAX_PHASE3_TRIALS) {
       onComplete(trialsData.current, quest.serialise(), quest.getConvergence())
     } else {
       setSyncData(null)

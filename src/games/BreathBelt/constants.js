@@ -37,6 +37,8 @@ export const QUEST_SLOPE           = 3.5;
 export const QUEST_LAPSE           = 0.02;
 export const QUEST_GUESS           = 1 / 3;
 export const QUEST_CONVERGENCE_SD  = 0.10;
+export const QUEST_MIN_TRIALS_EACH = 10;   // floor: each staircase must run ≥ this many trials before it can count as converged
+export const QUEST_MAX_PHASE3_TRIALS = 60; // hard cap: Phase 3 ends at this many trials even if not converged
 export const QUEST_PRIOR_MEAN_LOG  = Math.log10(0.5);
 export const QUEST_PRIOR_SD        = 0.25;
 

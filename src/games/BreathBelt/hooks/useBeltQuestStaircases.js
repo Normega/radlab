@@ -3,7 +3,8 @@ import { useRef } from 'react'
 import {
   QUEST_LOG_MIN, QUEST_LOG_MAX, QUEST_N_STEPS,
   QUEST_SLOPE, QUEST_LAPSE, QUEST_GUESS,
-  QUEST_CONVERGENCE_SD, QUEST_PRIOR_MEAN_LOG, QUEST_PRIOR_SD,
+  QUEST_CONVERGENCE_SD, QUEST_MIN_TRIALS_EACH,
+  QUEST_PRIOR_MEAN_LOG, QUEST_PRIOR_SD,
 } from '../constants'
 
 function linspace(a, b, n) {
@@ -72,6 +73,12 @@ export function useBeltQuestStaircases(savedState) {
     scRef.current = {
       faster: createStaircase(savedState?.faster?.normalized_posteriors ?? null),
       slower: createStaircase(savedState?.slower?.normalized_posteriors ?? null),
+      // Per-staircase update counts (excludes SAME catch trials), restored from
+      // savedState so the MIN_TRIALS_EACH floor is cumulative across resumed sessions.
+      counts: {
+        faster: savedState?.faster?.trials ?? 0,
+        slower: savedState?.slower?.trials ?? 0,
+      },
     }
   }
 
@@ -109,6 +116,7 @@ export function useBeltQuestStaircases(savedState) {
     else if (responseKey === 'same') responseIndex = 0  // wrong: said same
     else                             responseIndex = 2  // wrong: opposite
     scRef.current[key].update(log10Delta, responseIndex)
+    scRef.current.counts[key] += 1
     return { correct: responseIndex === 1, responseIndex }
   }
 
@@ -122,13 +130,17 @@ export function useBeltQuestStaircases(savedState) {
 
   function allConverged() {
     const { faster, slower } = getConvergence()
+    const { faster: fCount, slower: sCount } = scRef.current.counts
+    // Floor: never declare convergence before each staircase has run
+    // QUEST_MIN_TRIALS_EACH trials, even if the posterior SD dips below threshold early.
+    if (fCount < QUEST_MIN_TRIALS_EACH || sCount < QUEST_MIN_TRIALS_EACH) return false
     return faster.sd < QUEST_CONVERGENCE_SD && slower.sd < QUEST_CONVERGENCE_SD
   }
 
   function serialise() {
     return {
-      faster: { normalized_posteriors: scRef.current.faster.normalized_posteriors },
-      slower: { normalized_posteriors: scRef.current.slower.normalized_posteriors },
+      faster: { normalized_posteriors: scRef.current.faster.normalized_posteriors, trials: scRef.current.counts.faster },
+      slower: { normalized_posteriors: scRef.current.slower.normalized_posteriors, trials: scRef.current.counts.slower },
     }
   }
 
