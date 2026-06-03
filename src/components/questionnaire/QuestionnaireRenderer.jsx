@@ -51,14 +51,17 @@ export default function QuestionnaireRenderer({
   }, []);
 
   // ── Advance to next slide ──────────────────────────────────────────────
-  const advance = useCallback(() => {
+  // responsesOverride: pass freshly-updated responses from handleSelect so we
+  // don't read a stale closure value on the very last item.
+  const advance = useCallback((responsesOverride) => {
+    const current = responsesOverride ?? responses;
     const next = slideIdx + 1;
     if (next >= slides.length) {
       // All items answered — complete
       if (previewMode) { setDone(true); return; }
-      const subscaleScores = computeSubscaleScores(questionnaire, responses);
+      const subscaleScores = computeSubscaleScores(questionnaire, current);
       const derivedScores  = computeDerivedScores(questionnaire, subscaleScores);
-      onComplete?.({ responses, subscaleScores, derivedScores });
+      onComplete?.({ responses: current, subscaleScores, derivedScores });
     } else {
       goTo(next);
     }
@@ -76,13 +79,14 @@ export default function QuestionnaireRenderer({
 
   // ── Item response handler ──────────────────────────────────────────────
   const handleSelect = useCallback((itemId, value) => {
-    setResponses(prev => ({ ...prev, [itemId]: value }));
+    const updated = { ...responses, [itemId]: value };
+    setResponses(updated);
     if (autoAdvance) {
-      // LikertItem already applied 250ms visual delay — advance immediately
-      advance();
+      // Pass updated responses directly so advance doesn't read stale state
+      advance(updated);
     }
     // Manual mode: user taps Next button (rendered below)
-  }, [autoAdvance, advance]);
+  }, [autoAdvance, advance, responses]);
 
   if (done && previewMode) {
     return (

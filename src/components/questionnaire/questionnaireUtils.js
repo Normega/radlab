@@ -89,6 +89,10 @@ export function prevNavigableIndex(slides, currentIndex) {
 // Returns { [subscaleName]: number } for all subscales in the definition.
 // Handles reverse-scoring using per-item scale_min/scale_max with fallback to
 // questionnaire-level scale_min/scale_max.
+//
+// subscales can be either:
+//   array:  [{name, item_ids, reverse_items?, method?}, ...]
+//   object: {subscaleName: {items, method, reverse_items?}, ...}
 export function computeSubscaleScores(questionnaire, responses) {
   const scores = {};
   const subscales = questionnaire.scoring?.subscales;
@@ -97,8 +101,15 @@ export function computeSubscaleScores(questionnaire, responses) {
   const qMin = questionnaire.scale_min ?? 1;
   const qMax = questionnaire.scale_max ?? 5;
 
-  for (const subscale of subscales) {
-    const values = subscale.item_ids.map((id) => {
+  const entries = Array.isArray(subscales)
+    ? subscales
+    : Object.entries(subscales).map(([name, s]) => ({ ...s, name, item_ids: s.item_ids ?? s.items }));
+
+  for (const subscale of entries) {
+    const itemIds = subscale.item_ids ?? subscale.items ?? [];
+    const method  = subscale.method ?? questionnaire.scoring?.method ?? 'mean';
+
+    const values = itemIds.map((id) => {
       const item = questionnaire.items.find(i => i.id === id);
       let value = responses[id];
       if (value == null) return null;
@@ -116,7 +127,7 @@ export function computeSubscaleScores(questionnaire, responses) {
       continue;
     }
 
-    scores[subscale.name] = questionnaire.scoring.method === 'mean'
+    scores[subscale.name] = method === 'mean'
       ? values.reduce((a, b) => a + b, 0) / values.length
       : values.reduce((a, b) => a + b, 0);
   }
