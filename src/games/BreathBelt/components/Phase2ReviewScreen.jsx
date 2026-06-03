@@ -57,7 +57,7 @@ export default function Phase2ReviewScreen({ trialGraphs, onContinue }) {
               pacerPts={g.pacerPts}
               beltPts={g.beltPts}
               scoreMs={g.peakErrorMs}
-              width={180}
+              width={150}
               height={60}
             />
           </div>
