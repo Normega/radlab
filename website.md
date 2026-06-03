@@ -1483,7 +1483,7 @@ BROWSER_CHECK → BT_CONNECT → COM_CONNECT
 → CALIB_READY → CALIBRATING   (CalibrationScreen manages sub-states)
 → BASELINE_READY → BASELINE_RECORDING → BASELINE_COMPLETE   (120 s, COM triggers)
 → PHASE2_READY → PHASE2_RUNNING   (9 fixed trials)
-→ PHASE2_COMPLETE → PHASE3_INTRO → PHASE3_RUNNING   (dual-QUEST until converged)
+→ PHASE2_REVIEW → PHASE3_INTRO → PHASE3_RUNNING   (dual-QUEST until converged)
 → POST_BASELINE_READY → POST_BASELINE_RECORDING → POST_BASELINE_COMPLETE   (120 s, COM triggers)
 → SESSION_COMPLETE
 ```
@@ -1564,9 +1564,11 @@ The pipeline evaluates 6 model variants (MLR × {wide-band, tight-band} × {plai
 After each trial, `useTrialRunner` runs an offline MLR pass over the trial's raw samples and returns `syncMetrics = { trialRBaseline, trialRCondition, peakErrorMs, pacerPts, beltPts }`. The parent screens render `TrialSyncOverlay` (fixed bottom-left, above the back button at `bottom: 80px`):
 
 - **Phase 2** — `showGraph={true}`: SignalGraph (pacer blue + belt amber) + Base R + Cond R + Peak err. Full researcher QC.
-- **Phase 3** — `showGraph={false}`: metrics only, no graph. The graph would reveal condition speed and break participant blinding.
+- **Phase 3** — `showGraph={false}`: metrics only, no graph. The graph would reveal condition speed and break participant blinding. Additionally receives `convergence` prop → shows ↑ faster SD and ↓ slower SD rows, colour-coded by convergence threshold.
 
-The overlay clears when the next trial starts (parent sets `syncData` to null). The per-phase `BaselineReviewScreen` and `Phase2ReviewScreen` review screens have been removed — per-trial review via `TrialSyncOverlay` replaces them.
+The overlay clears when the next trial starts (parent sets `syncData` to null).
+
+**Props:** `visible` (default `true`) — pass `visible={false}` from either screen to hide the overlay for participant-facing sessions. Data collection and Supabase writes continue normally; only the render is suppressed.
 
 ### Avatar timing during trials
 
@@ -1591,9 +1593,17 @@ Both baselines are 120 s (was 60 s) for matched pre/post comparison in the corre
 
 9 trials at pre-specified breath period deviations (faster/slower/same relative to baseline). AvatarBreathPacer (from EbbAndFlow) paces the avatar. The participant follows. No response is collected — these are familiarisation trials. Trial data is recorded to Supabase.
 
+After all 9 trials complete, `FixedTrialsScreen.onComplete(trialsData, trialGraphs)` is called — `trialGraphs` is an array of `{ trialNumber, condition, pacerPts, beltPts, peakErrorMs }` accumulated per trial. `BreathBelt.jsx` stores this in `trialGraphsRef.current` and transitions to `PHASE2_REVIEW`.
+
+**Phase 2 review (`PHASE2_REVIEW`):** `Phase2ReviewScreen` shows a 3×3 grid of `SignalGraph` thumbnails — one per trial, labelled by trial number and condition (colour-coded: faster blue, slower purple, same grey). The researcher can assess signal quality across all 9 trials before continuing to the staircase. Replaces the old `PHASE2_COMPLETE` interstitial screen.
+
 ### Phase 3 — Dual-QUEST staircase
 
-Interleaved faster/slower staircases using the QUEST+ algorithm. Each trial:
+Interleaved faster/slower staircases using the QUEST+ algorithm.
+
+**Block structure:** trials are generated in blocks of 5 — `[dominant×2, other×2, same×1]` shuffled. Dominant = the staircase with the higher posterior SD (highest uncertainty). SAME catch trials run at BASE speed; the staircase is not updated on SAME responses. `same_context` records which staircase was dominant when the block was built (for SDT false-alarm-by-direction analysis).
+
+Each trial:
 1. QUEST selects the next magnitude (log10 seconds deviation from baseline).
 2. Avatar paces at that period. Participant follows.
 3. 3AFC response: slower / same / faster.
@@ -1601,6 +1611,8 @@ Interleaved faster/slower staircases using the QUEST+ algorithm. Each trial:
 5. Arousal rating (1–7, ArousalRating component).
 
 Both staircases converge independently. Session ends when both converge. Quest state is stashed in `questStateRef` (a `useRef`) when Phase 3 completes, then written to Supabase inside the post-baseline `onComplete` handler. Convergence thresholds and SDs are displayed on the SessionComplete screen.
+
+**Phase 3 screen:** staircase SD values are no longer shown in the centre of the screen. They appear instead in `TrialSyncOverlay` (bottom-left) via the `convergence` prop — colour-coded green/amber/red by threshold (SD < 0.10 / 0.20 / above).
 
 ### Belt period estimates — correspondence study
 
@@ -1619,9 +1631,9 @@ Supabase schema in `belt_schema.sql` (initial) + `belt_correspondence_migration.
 | Table | Contents |
 |---|---|
 | `belt_sessions` | One row per session: user_id, calib_state JSON, quest_state JSON, storage_path, **session_number**, **baseline_period_ms**, **post_baseline_period_ms**, ***calib_model_label***, ***calib_fit_r***, ***calib_lag_ms*** |
-| `belt_trials` | One row per trial: phase, trial_number, condition, breath_period_ms, log10_mag, response, correct, confidence, arousal, belt_sync_mean, **bt_baseline_period_ms**, **bt_condition_period_ms**, ****trial_r_baseline****, ****trial_r_condition****, ****peak_error_ms**** |
+| `belt_trials` | One row per trial: phase, trial_number, condition, breath_period_ms, log10_mag, response, correct, *****same_context*****, confidence, arousal, belt_sync_mean, **bt_baseline_period_ms**, **bt_condition_period_ms**, ****trial_r_baseline****, ****trial_r_condition****, ****peak_error_ms**** |
 
-**Bold** = added by `belt_correspondence_migration.sql`. ***Bold italic*** = added by `belt_mlr_migration.sql` (now populated by `useBeltSession.endSession` from `calibState` JSON). ****Bold underline**** = added by `belt_sync_metrics_migration.sql`.
+**Bold** = added by `belt_correspondence_migration.sql`. ***Bold italic*** = added by `belt_mlr_migration.sql` (now populated by `useBeltSession.endSession` from `calibState` JSON). ****Bold underline**** = added by `belt_sync_metrics_migration.sql`. *****Bold italic underline***** = added by inline `ALTER TABLE` (same_context — for SAME catch trial SDT analysis).
 
 Raw signals are uploaded to the `belt-sessions` Storage bucket as two CSVs per session:
 
@@ -1668,12 +1680,15 @@ src/games/BreathBelt/
     SignalGraph.jsx          ← SVG line chart: pacer (blue) vs belt model (amber)
     SynchronyBar.jsx         ← rolling Pearson R bar; NOT currently mounted (kept for future use)
     TrialSyncOverlay.jsx     ← fixed bottom-left post-trial overlay; Phase 2 shows SignalGraph + Base R + Cond R + peak err;
-                               Phase 3 shows metrics only (no graph — preserves condition blinding)
+                               Phase 3 shows metrics only (no graph — preserves condition blinding) + staircase SDs via convergence prop;
+                               visible prop (default true) — pass false to hide overlay without affecting data collection
     BaselineScreen.jsx       ← reusable for pre and post baselines; props: phase ('READY'|'RECORDING'|'COMPLETE'), title, durationMs, phaseLabel, triggerStart, triggerEnd, onComplete(periodMs)
     FixedTrialsScreen.jsx    ← Phase 2: 9 fixed trials; renders TrialSyncOverlay (with graph) between trials only;
-                               records bt_baseline_period_ms, bt_condition_period_ms, trial_r_baseline, trial_r_condition, peak_error_ms
-    StaircaseScreen.jsx      ← Phase 3: QUEST trials + 3AFC + ratings; renders TrialSyncOverlay (no graph) between trials only;
-                               records same per-trial sync columns
+                               records bt_baseline_period_ms, bt_condition_period_ms, trial_r_baseline, trial_r_condition, peak_error_ms;
+                               onComplete(trialsData, trialGraphs) — trialGraphs: [{trialNumber, condition, pacerPts, beltPts, peakErrorMs}]
+    Phase2ReviewScreen.jsx   ← 3×3 grid of SignalGraph thumbnails shown after Phase 2; props: trialGraphs, onContinue
+    StaircaseScreen.jsx      ← Phase 3: QUEST trials + 3AFC + ratings; block-based SAME catch trials (1 per 5-trial block);
+                               renders TrialSyncOverlay (no graph) with convergence prop; records same_context for SAME trials
     BeltSyncRing.jsx         ← real-time belt signal ring — retained for other games (Still Water etc.); not used in BreathBelt trials
     SessionComplete.jsx      ← shows session number, pre/post resting period, QUEST thresholds
 ```
@@ -1692,6 +1707,7 @@ Run these migrations manually in the Supabase SQL editor in order:
 2. `belt_correspondence_migration.sql` — adds `bt_baseline_period_ms`, `bt_condition_period_ms` to `belt_trials`; `session_number`, `baseline_period_ms`, `post_baseline_period_ms` to `belt_sessions`
 3. `belt_mlr_migration.sql` — adds `calib_model_label`, `calib_fit_r`, `calib_lag_ms` to `belt_sessions`
 4. `belt_sync_metrics_migration.sql` — adds `trial_r_baseline`, `trial_r_condition`, `peak_error_ms` to `belt_trials`
+5. Inline — `ADD COLUMN IF NOT EXISTS same_context text` on `belt_trials` (run June 2026; adds SAME catch trial SDT context column)
 
 All migrations use `ADD COLUMN IF NOT EXISTS` — safe to run on existing data.
 

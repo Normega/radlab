@@ -11,6 +11,7 @@ import BaselineScreen from './components/BaselineScreen';
 import FixedTrialsScreen from './components/FixedTrialsScreen';
 import StaircaseScreen from './components/StaircaseScreen';
 import SessionComplete from './components/SessionComplete';
+import Phase2ReviewScreen from './components/Phase2ReviewScreen';
 import {
   BASELINE_DURATION_MS, POST_BASELINE_DURATION_MS, BASE_BREATH_SPEED_S,
   TRIGGER_DEVICES, DEFAULT_TRIGGER_DEVICE,
@@ -47,7 +48,7 @@ const S = {
   BASELINE_COMPLETE:       'BASELINE_COMPLETE',
   PHASE2_READY:            'PHASE2_READY',
   PHASE2_RUNNING:          'PHASE2_RUNNING',
-  PHASE2_COMPLETE:         'PHASE2_COMPLETE',
+  PHASE2_REVIEW:           'PHASE2_REVIEW',
   PHASE3_INTRO:            'PHASE3_INTRO',
   PHASE3_RUNNING:          'PHASE3_RUNNING',
   POST_BASELINE_READY:     'POST_BASELINE_READY',
@@ -67,6 +68,7 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
   const convergenceRef        = useRef(null);
   const pendingQuestStateRef  = useRef(null);
   const cascadeFiredRef       = useRef(false);
+  const trialGraphsRef        = useRef([]);
 
   // ── Auth + role ──────────────────────────────────────────────────────────
   const { data: profile, isLoading: profileLoading } = useQuery({
@@ -428,25 +430,23 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
           setPacerContext={belt.setPacerContext}
           clearPacerContext={belt.clearPacerContext}
           recordTrial={recordTrialWithBackup}
-          onComplete={async () => {
-            await belt.sendTrigger('5');  // code 5 — phase 2 end
-            setPhase(S.PHASE2_COMPLETE);
+          onComplete={async (trialsData, trialGraphs) => {
+            trialGraphsRef.current = trialGraphs
+            await belt.sendTrigger('5')  // code 5 — phase 2 end
+            setPhase(S.PHASE2_REVIEW)
           }}
         />
       </Layout>
     );
   }
 
-  if (phase === S.PHASE2_COMPLETE) {
+  if (phase === S.PHASE2_REVIEW) {
     return (
-      <Layout title="Phase 2 complete">
-        <Screen>
-          <p className="text-center" style={{ color: 'var(--tx2)', fontSize: 'var(--fs-body)', maxWidth: 400 }}>
-            Fixed trials complete. Phase 3 uses an adaptive staircase to find your
-            detection thresholds for faster and slower breathing.
-          </p>
-          <Btn onClick={() => setPhase(S.PHASE3_INTRO)}>Continue to staircase</Btn>
-        </Screen>
+      <Layout title="Phase 2 — Review">
+        <Phase2ReviewScreen
+          trialGraphs={trialGraphsRef.current}
+          onContinue={() => setPhase(S.PHASE3_INTRO)}
+        />
       </Layout>
     );
   }

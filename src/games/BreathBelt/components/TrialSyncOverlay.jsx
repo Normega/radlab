@@ -38,8 +38,11 @@ function fmtMs(ms) {
   return ms != null && isFinite(ms) ? `${Math.round(ms)} ms` : '—'
 }
 
-export default function TrialSyncOverlay({ syncMetrics, showGraph, trialNumber }) {
-  if (!syncMetrics) return null
+export default function TrialSyncOverlay({ syncMetrics, showGraph, trialNumber, convergence, visible = true }) {
+  // To hide this overlay during participant-facing testing, pass visible={false}
+  // from FixedTrialsScreen and StaircaseScreen. It will render nothing but
+  // all metrics continue to be computed and saved to Supabase normally.
+  if (!syncMetrics || visible === false) return null
 
   const { trialRBaseline, trialRCondition, peakErrorMs, pacerPts, beltPts } = syncMetrics
 
@@ -101,6 +104,20 @@ export default function TrialSyncOverlay({ syncMetrics, showGraph, trialNumber }
           color={peColor(peakErrorMs)}
           span
         />
+        {convergence && (
+          <>
+            <MetricRow
+              label="↑ faster SD"
+              value={convergence.faster.sd.toFixed(3)}
+              color={convergence.faster.sd < 0.10 ? '#2ecc71' : convergence.faster.sd < 0.20 ? '#f39c12' : '#e74c3c'}
+            />
+            <MetricRow
+              label="↓ slower SD"
+              value={convergence.slower.sd.toFixed(3)}
+              color={convergence.slower.sd < 0.10 ? '#2ecc71' : convergence.slower.sd < 0.20 ? '#f39c12' : '#e74c3c'}
+            />
+          </>
+        )}
       </div>
     </div>
   )

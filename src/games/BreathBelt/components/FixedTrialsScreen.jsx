@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import AvatarBreathPacer from '../../EbbAndFlow/components/AvatarBreathPacer'
 import BeltSyncRing from './BeltSyncRing'
 import TrialSyncOverlay from './TrialSyncOverlay'
@@ -51,6 +51,7 @@ export default function FixedTrialsScreen({
   const [trialState, setTrialState] = useState(TRIAL_STATES.READY)
   const [syncData,   setSyncData]   = useState(null)   // post-trial metrics overlay
   const trialsData   = useState([])[0]
+  const trialGraphsRef = useRef([])
   const avatarSize   = 240
 
   const { getPhase, runTrial, controlRef } = useTrialRunner({
@@ -74,6 +75,14 @@ export default function FixedTrialsScreen({
 
     setSyncData(syncMetrics)                   // show overlay on READY screen
 
+    trialGraphsRef.current.push({
+      trialNumber: trialIdx + 1,
+      condition,
+      pacerPts:    syncMetrics?.pacerPts   ?? [],
+      beltPts:     syncMetrics?.beltPts    ?? [],
+      peakErrorMs: syncMetrics?.peakErrorMs ?? null,
+    })
+
     const row = {
       phase:                  2,
       trial_number:           trialIdx + 1,
@@ -96,7 +105,7 @@ export default function FixedTrialsScreen({
 
     const next = trialIdx + 1
     if (next >= trialList.length) {
-      onComplete(trialsData)
+      onComplete(trialsData, trialGraphsRef.current)
     } else {
       setTrialIdx(next)
       setTrialState(TRIAL_STATES.READY)

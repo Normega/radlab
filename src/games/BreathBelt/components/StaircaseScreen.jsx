@@ -49,10 +49,12 @@ export default function StaircaseScreen({
   })
 
   const startTrial = useCallback(async () => {
-    const { key, log10Delta, deltaSec } = quest.getNextTrial()
+    const { key, log10Delta, deltaSec, sameContext } = quest.getNextTrial()
     const conditionMs = key === 'faster'
       ? Math.max(BASE_MS - deltaSec * 1000, 500)
-      : BASE_MS + deltaSec * 1000
+      : key === 'slower'
+      ? BASE_MS + deltaSec * 1000
+      : BASE_MS  // SAME catch trial
 
     setSyncData(null)
     setScState(SC_STATES.IN_PROGRESS)
@@ -62,16 +64,16 @@ export default function StaircaseScreen({
       await runTrial('phase3', trialCount + 1, conditionMs)
 
     setSyncData(syncMetrics)                 // overlay visible during RESPONSE, no graph
-    pendingTrialRef.current = { key, log10Delta, deltaSec, conditionMs, beltSyncMean, btBaselinePeriodMs, btConditionPeriodMs, syncMetrics }
+    pendingTrialRef.current = { key, log10Delta, deltaSec, conditionMs, sameContext, beltSyncMean, btBaselinePeriodMs, btConditionPeriodMs, syncMetrics }
     setScState(SC_STATES.RESPONSE)
   }, [trialCount, quest, runTrial])
 
   const submitResponse = useCallback(() => {
     if (!response || confidence === null || arousal === null) return
-    const { key, log10Delta, conditionMs, beltSyncMean, btBaselinePeriodMs, btConditionPeriodMs, syncMetrics } =
+    const { key, log10Delta, conditionMs, sameContext, beltSyncMean, btBaselinePeriodMs, btConditionPeriodMs, syncMetrics } =
       pendingTrialRef.current
 
-    const responseIndex = quest.recordResponse(key, response, log10Delta)
+    const { correct, responseIndex } = quest.recordResponse(key, response, log10Delta)
     const row = {
       phase:                  3,
       trial_number:           trialCount + 1,
@@ -79,7 +81,8 @@ export default function StaircaseScreen({
       breath_period_ms:       conditionMs,
       log10_mag:              log10Delta,
       response,
-      correct:                responseIndex === 1,
+      correct,
+      same_context:           sameContext ?? null,
       confidence,
       arousal,
       belt_sync_mean:         beltSyncMean,
@@ -124,11 +127,6 @@ export default function StaircaseScreen({
         </div>
       )}
 
-      <div className="flex gap-4" style={{ fontFamily: 'Space Mono', fontSize: 'var(--fs-mono-sm)', color: 'var(--tx3)' }}>
-        <span>Trial {trialCount + 1}</span>
-        <span>↑ {conv.faster.sd.toFixed(3)}</span>
-        <span>↓ {conv.slower.sd.toFixed(3)}</span>
-      </div>
 
       {scState === SC_STATES.READY && (
         <>
@@ -195,6 +193,7 @@ export default function StaircaseScreen({
         syncMetrics={syncData}
         showGraph={false}
         trialNumber={trialCount}
+        convergence={conv}
       />
     </div>
   )
