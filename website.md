@@ -1644,6 +1644,15 @@ Raw signals are uploaded to the `belt-sessions` Storage bucket as two CSVs per s
 
 `belt_sessions.storage_path` holds the base prefix (`{user_id}/{session_id}`) — suffix with `_accel.csv` / `_hr.csv` to reach the blobs. The naming matches the local backup convention written by `useStreamingBackup` (`{participant_id}_{ts}_accel.csv` etc.).
 
+**Storage RLS:** the `belt-sessions` bucket requires an RLS policy on `storage.objects` — without it, authenticated uploads are silently blocked. Policy applied June 2026:
+```sql
+CREATE POLICY "own belt session data" ON storage.objects
+  FOR ALL TO authenticated
+  USING (bucket_id = 'belt-sessions' AND (storage.foldername(name))[1] = auth.uid()::text)
+  WITH CHECK (bucket_id = 'belt-sessions' AND (storage.foldername(name))[1] = auth.uid()::text);
+```
+If the bucket is ever recreated or the project is migrated, this policy must be re-applied.
+
 ### Source layout
 
 ```
@@ -1668,7 +1677,8 @@ src/games/BreathBelt/
                                getPacerRadiusFnRef
     useBeltSession.js        ← Supabase session lifecycle; uploads accel + HR as two CSVs to belt-sessions Storage;
                                flattens calibState.modelLabel/fitR/lagMs into the scalar columns on belt_sessions
-    useBeltQuestStaircases.js ← dual-QUEST state machine
+    useBeltQuestStaircases.js ← dual-QUEST state machine; block-based trial generation [dominant×2, other×2, same×1];
+                               recordResponse returns {correct, responseIndex}; SAME trials skip staircase update
     useTrialRunner.js        ← per-trial avatar pacing: 500 ms fixation hold, resetToNeutral at trial end,
                                returns syncMetrics { trialRBaseline, trialRCondition, peakErrorMs, pacerPts, beltPts }
     useStreamingBackup.js    ← parallel local CSV backup via File System Access API (showDirectoryPicker);
@@ -1708,6 +1718,7 @@ Run these migrations manually in the Supabase SQL editor in order:
 3. `belt_mlr_migration.sql` — adds `calib_model_label`, `calib_fit_r`, `calib_lag_ms` to `belt_sessions`
 4. `belt_sync_metrics_migration.sql` — adds `trial_r_baseline`, `trial_r_condition`, `peak_error_ms` to `belt_trials`
 5. Inline — `ADD COLUMN IF NOT EXISTS same_context text` on `belt_trials` (run June 2026; adds SAME catch trial SDT context column)
+6. Inline — `ALTER COLUMN breath_period_ms TYPE double precision` on `belt_trials` (run June 2026; QUEST-derived periods are floats, original integer type caused insert failures)
 
 All migrations use `ADD COLUMN IF NOT EXISTS` — safe to run on existing data.
 
