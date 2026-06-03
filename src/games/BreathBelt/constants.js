@@ -36,7 +36,7 @@ export const QUEST_N_STEPS         = 46;
 export const QUEST_SLOPE           = 3.5;
 export const QUEST_LAPSE           = 0.02;
 export const QUEST_GUESS           = 1 / 3;
-export const QUEST_CONVERGENCE_SD  = 0.04;
+export const QUEST_CONVERGENCE_SD  = 0.10;
 export const QUEST_PRIOR_MEAN_LOG  = Math.log10(0.5);
 export const QUEST_PRIOR_SD        = 0.25;
 
