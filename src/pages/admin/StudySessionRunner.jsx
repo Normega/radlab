@@ -8,6 +8,25 @@ import StepDispatcher from '../../components/study/StepDispatcher'
 
 const PHASE = { LOADING: 'LOADING', RUNNING: 'RUNNING', SAVING: 'SAVING', COMPLETE: 'COMPLETE' }
 
+// Uploaded questionnaires are referenced via questionnaire_id and have no
+// activities row. StepDispatcher keys off activity.category/subcategory, so
+// synthesize an activity-shaped object from the questionnaire for those nodes.
+function normalizeNode(n) {
+  if (n.activities) return n
+  if (n.questionnaires) {
+    return {
+      ...n,
+      activities: {
+        id:          n.questionnaires.id,
+        category:    'questionnaire',
+        subcategory: n.questionnaires.slug,
+        label:       n.questionnaires.name,
+      },
+    }
+  }
+  return n
+}
+
 export default function StudySessionRunner() {
   const { id: studyId, enrollmentId, studySessionId } = useParams()
   const navigate = useNavigate()
@@ -49,11 +68,11 @@ export default function StudySessionRunner() {
 
       const { data, error } = await supabase
         .from('session_template_nodes')
-        .select('id, order_index, label, activity_id, activities!activity_id(id, category, subcategory, label)')
+        .select('id, order_index, label, activity_id, questionnaire_id, activities!activity_id(id, category, subcategory, label), questionnaires!questionnaire_id(id, slug, name)')
         .eq('session_template_id', sessionRow.session_template_id)
         .order('order_index', { ascending: true })
       if (error) throw error
-      return data ?? []
+      return (data ?? []).map(normalizeNode)
     },
   })
 
