@@ -46,11 +46,16 @@ export function buildSlides(questionnaire) {
   // Instruction screen is always first — mandatory speedbump
   slides.push({ type: 'instruction' });
 
+  // Defensive: a malformed/empty definition (no items array) must not crash the
+  // render. Return the instruction slide only; callers guard against empty
+  // questionnaires before reaching here, but this keeps buildSlides total.
+  const items = Array.isArray(questionnaire?.items) ? questionnaire.items : [];
+
   let prevLabels = null;
   let itemDisplayIndex = 0;
-  const totalItems = questionnaire.items.length;
+  const totalItems = items.length;
 
-  questionnaire.items.forEach((item) => {
+  items.forEach((item) => {
     const labels = effectiveLabels(item, questionnaire);
     if (prevLabels && !labelsEqual(prevLabels, labels)) {
       const anchorLow  = labels[0]?.label  ?? String(item.scale_min ?? 1);
