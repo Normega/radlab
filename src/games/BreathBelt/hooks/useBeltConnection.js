@@ -198,7 +198,7 @@ export function useBeltConnection() {
     try {
       const port = await navigator.serial.requestPort()
       if (port.readable || port.writable) {
-        try { await port.close(); await new Promise(r => setTimeout(r, 100)) } catch {}
+        try { await port.close(); await new Promise(r => setTimeout(r, 100)) } catch { /* best-effort: ignore if not open / already closed */ }
       }
       await port.open({ baudRate: 115200 })
       const enc = new TextEncoderStream()
@@ -207,7 +207,7 @@ export function useBeltConnection() {
       serialPortRef.current           = port
       // Black Box ToolKit USB TTL Module init: "RR" resets and clears all output lines.
       if (triggerDeviceRef.current === 'AD_BBT') {
-        try { await serialPortWriterRef.current.write('RR') } catch {}
+        try { await serialPortWriterRef.current.write('RR') } catch { /* best-effort: ignore if not open / already closed */ }
       }
       setComState('CONNECTED')
     } catch (err) { console.error('COM:', err); setComState('ERROR') }
@@ -347,10 +347,10 @@ export function useBeltConnection() {
   // ── Cleanup ───────────────────────────────────────────────────────────────
 
   const stopNotifications = useCallback(async () => {
-    try { await readAccCharRef.current?.stopNotifications() }   catch {}
-    try { await heartRateCharRef.current?.stopNotifications() } catch {}
-    try { await serialPortWriterRef.current?.close(); await writableStreamClosedRef.current } catch {}
-    try { await serialPortRef.current?.close() } catch {}
+    try { await readAccCharRef.current?.stopNotifications() }   catch { /* best-effort: ignore if not open / already closed */ }
+    try { await heartRateCharRef.current?.stopNotifications() } catch { /* best-effort: ignore if not open / already closed */ }
+    try { await serialPortWriterRef.current?.close(); await writableStreamClosedRef.current } catch { /* best-effort: ignore if not open / already closed */ }
+    try { await serialPortRef.current?.close() } catch { /* best-effort: ignore if not open / already closed */ }
   }, [])
 
   return {
