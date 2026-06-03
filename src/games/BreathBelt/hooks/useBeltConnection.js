@@ -1,15 +1,13 @@
 import { useRef, useState, useCallback, useEffect } from 'react'
 import {
   fitBestModel, processPacketMLR, initFilterState3,
-  rollingPearsonR, computeMLRPredictions,
+  computeMLRPredictions,
   getPacerRadius, medianPeakTimingError,
 } from '../breathUtils'
 import {
   PMD_SERVICE, PMD_CONTROL, PMD_DATA, HR_SERVICE, HR_MEASUREMENT,
   DEFAULT_TRIGGER_DEVICE, TRIGGER_DEVICES, BIOPAC_SERVER_URL,
 } from '../constants'
-
-const LIVE_PRED_WINDOW = 60
 
 // Relay a single parallel-port write to the local Biopac helper. A missed
 // trigger must not crash the session, so failures are logged, never thrown.
@@ -31,7 +29,6 @@ export function useBeltConnection() {
   const [comMessage,      setComMessage]       = useState('')
   const [testRunning,     setTestRunning]      = useState(false)
   const [calibPhase,      setCalibPhase]       = useState('NONE')
-  const [syncQuality,     setSyncQuality]      = useState(0)
   const [calibReviewData, setCalibReviewData]  = useState(null)
 
   // Hardware
@@ -51,7 +48,6 @@ export function useBeltConnection() {
 
   // Live signal
   const breathValueRef      = useRef(0)
-  const livePredBufferRef   = useRef([])
   const pacerStartMsRef     = useRef(0)
   const pacerPeriodMsRef    = useRef(0)
 
@@ -151,19 +147,6 @@ export function useBeltConnection() {
       const { prediction, state } = processPacketMLR(measurements, filterState3Ref.current, mlrWeightsRef.current)
       filterState3Ref.current = state
       breathValueRef.current  = Math.max(0, Math.min(1, prediction))
-
-      livePredBufferRef.current.push({ t: timestamp, value: breathValueRef.current })
-      if (livePredBufferRef.current.length > LIVE_PRED_WINDOW) livePredBufferRef.current.shift()
-
-      if (pacerStartMsRef.current > 0 && pacerPeriodMsRef.current > 0) {
-        const r = rollingPearsonR(
-          livePredBufferRef.current,
-          pacerStartMsRef.current,
-          pacerPeriodMsRef.current,
-          mlrWeightsRef.current.lagMs,
-        )
-        setSyncQuality(r)
-      }
     }
   }, [])
 
@@ -316,8 +299,6 @@ export function useBeltConnection() {
   const startCalibration = useCallback(() => {
     calibSamplesRef.current   = []
     breathValueRef.current    = 0
-    livePredBufferRef.current = []
-    setSyncQuality(0)
     setCalibReviewData(null)
     currentPhaseRef.current   = 'calib_fixation'
     setCalibPhase('FIXATION')
@@ -339,9 +320,7 @@ export function useBeltConnection() {
   const redoCalibration = useCallback(() => {
     calibSamplesRef.current   = []
     breathValueRef.current    = 0
-    livePredBufferRef.current = []
     setCalibReviewData(null)
-    setSyncQuality(0)
     currentPhaseRef.current   = 'calib_fixation'
     setCalibPhase('FIXATION')
   }, [])
@@ -351,9 +330,7 @@ export function useBeltConnection() {
     mlrWeightsRef.current     = null
     filterState3Ref.current   = initFilterState3()
     breathValueRef.current    = 0
-    livePredBufferRef.current = []
     setCalibReviewData(null)
-    setSyncQuality(0)
     currentPhaseRef.current   = 'idle'
     setCalibPhase('NONE')
   }, [])
@@ -390,7 +367,7 @@ export function useBeltConnection() {
   }, [])
 
   return {
-    btState, comState, comMessage, testRunning, calibPhase, syncQuality, calibReviewData,
+    btState, comState, comMessage, testRunning, calibPhase, calibReviewData,
     breathValueRef, mlrWeightsRef, filterState3Ref,
     rawAccelRowsRef, rawHRRowsRef, pendingAccelRef, pendingHRRef,
     currentPhaseRef, currentTrialRef,
