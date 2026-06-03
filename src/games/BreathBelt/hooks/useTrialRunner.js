@@ -45,8 +45,6 @@ export function useTrialRunner({
   currentTrialRef,
   getAndClearTrialSamples,
   mlrWeightsRef,
-  setPacerContext,
-  clearPacerContext,
 }) {
   const { getPhase, startBreath, reset } = useBreathCycle()
   const controlRef = useRef(null)
@@ -86,22 +84,16 @@ export function useTrialRunner({
     reset()
     controlRef.current?.resumeAnimation?.()
 
-    // Live SynchronyBar context: baseline breaths at BASE_MS
-    setPacerContext?.(trialStartMs, BASE_MS)
-
     // Breaths 1–2: baseline pace
     startSampling('baseline')
     for (let i = 0; i < BASELINE_BREATHS_COUNT; i++) await startBreath(BASE_MS)
     stopSampling()
 
-    // Breath 3 onset — switch live pacer context to condition speed.
-    // NOTE: the condition-onset trigger (code 11) is intentionally NOT emitted.
-    // Sending it mid-animation stalls the breath loop (trigger hold + HTTP
-    // round-trips on parallel-port rigs), snapping the pacer at the breath 2→3
-    // boundary. Condition onset is recoverable offline from the log files plus
-    // the trial-start (10) and trial-end (12) triggers, so we drop it here.
-    const conditionStartMs = Date.now()
-    setPacerContext?.(conditionStartMs, conditionMs)
+    // Breath 3 onset. NOTE: the condition-onset trigger (code 11) is
+    // intentionally NOT emitted — sending it mid-animation stalls the breath
+    // loop (trigger hold + HTTP round-trips on parallel-port rigs), snapping the
+    // pacer at the breath 2→3 boundary. Condition onset is recoverable offline
+    // from the log files plus the trial-start (10) and trial-end (12) triggers.
 
     // Breaths 3–4: condition pace
     startSampling('condition')
@@ -110,7 +102,6 @@ export function useTrialRunner({
 
     // ── Trial end ─────────────────────────────────────────────────────────
     await sendTrigger('12')
-    clearPacerContext?.()
 
     // Freeze avatar at neutral — will be held until next trial's 500 ms fixation
     controlRef.current?.resetToNeutral?.()

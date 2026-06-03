@@ -48,8 +48,6 @@ export function useBeltConnection() {
 
   // Live signal
   const breathValueRef      = useRef(0)
-  const pacerStartMsRef     = useRef(0)
-  const pacerPeriodMsRef    = useRef(0)
 
   // Per-trial raw samples for offline sync scoring
   // Accumulated whenever currentPhaseRef is 'phase2' or 'phase3'
@@ -345,17 +343,6 @@ export function useBeltConnection() {
     return samples
   }, [])
 
-  // ── Pacer context ─────────────────────────────────────────────────────────
-
-  const setPacerContext  = useCallback((startMs, periodMs) => {
-    pacerStartMsRef.current  = startMs
-    pacerPeriodMsRef.current = periodMs
-  }, [])
-
-  const clearPacerContext = useCallback(() => {
-    pacerStartMsRef.current  = 0
-    pacerPeriodMsRef.current = 0
-  }, [])
 
   // ── Cleanup ───────────────────────────────────────────────────────────────
 
@@ -376,7 +363,6 @@ export function useBeltConnection() {
     startCalibration, beginCalibCollection,
     acceptCalibration, redoCalibration, resetCalibration,
     getAndClearTrialSamples,
-    setPacerContext, clearPacerContext,
     stopNotifications,
   }
 }

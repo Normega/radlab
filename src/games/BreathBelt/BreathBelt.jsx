@@ -482,8 +482,6 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
           currentTrialRef={belt.currentTrialRef}
           getAndClearTrialSamples={belt.getAndClearTrialSamples}
           mlrWeightsRef={belt.mlrWeightsRef}
-          setPacerContext={belt.setPacerContext}
-          clearPacerContext={belt.clearPacerContext}
           recordTrial={recordTrialWithBackup}
           showSyncOverlay={PILOT_MODE}
           onComplete={async (trialsData, trialGraphs) => {
@@ -540,8 +538,6 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
           currentTrialRef={belt.currentTrialRef}
           getAndClearTrialSamples={belt.getAndClearTrialSamples}
           mlrWeightsRef={belt.mlrWeightsRef}
-          setPacerContext={belt.setPacerContext}
-          clearPacerContext={belt.clearPacerContext}
           recordTrial={recordTrialWithBackup}
           showSyncOverlay={PILOT_MODE}
           savedQuestState={null}
