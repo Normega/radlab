@@ -1,3 +1,8 @@
+// ── Testing controls ──────────────────────────────────────────────────────
+// Set false for production runs. Gates the graceful early-exit button, which
+// ends the session early and writes everything buffered (trials + raw signal).
+export const SHOW_EARLY_EXIT = true;
+
 // ── Breath timing ─────────────────────────────────────────────────────────
 export const BASE_BREATH_SPEED_S    = 4;
 export const FASTER_BREATH_SPEED_S  = 3;

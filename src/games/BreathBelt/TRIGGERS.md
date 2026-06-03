@@ -105,7 +105,7 @@ for low-level probing. Just open it in a browser — no server needed.
 
 ## Next-steps checklist
 
-- [ ] **Apply the migration** (Supabase SQL editor / MCP / CLI). Must happen
+- [X] **Apply the migration** (Supabase SQL editor / MCP / CLI). Must happen
       before the next real session or `endSession` insert fails:
       ```sql
       ALTER TABLE belt_sessions ADD COLUMN IF NOT EXISTS trigger_device text;

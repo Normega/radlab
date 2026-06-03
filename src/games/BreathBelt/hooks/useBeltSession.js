@@ -2,8 +2,9 @@ import { useRef, useCallback } from 'react';
 import { supabase } from '../../../lib/supabase';
 
 export function useBeltSession(userId) {
-  const sessionIdRef = useRef(null);
-  const trialsRef    = useRef([]);
+  const sessionIdRef   = useRef(null);
+  const trialsRef      = useRef([]);
+  const flushedCountRef = useRef(0);   // how many of trialsRef have been written to Supabase
 
   const startSession = useCallback(async (studyId = null) => {
     const { data, error } = await supabase
@@ -18,14 +19,32 @@ export function useBeltSession(userId) {
       .select('id')
       .single();
     if (error) { console.error('belt session start:', error); return null; }
-    sessionIdRef.current = data.id;
-    trialsRef.current    = [];
+    sessionIdRef.current  = data.id;
+    trialsRef.current     = [];
+    flushedCountRef.current = 0;
     return data.id;
   }, [userId]);
 
   const recordTrial = useCallback((trialRow) => {
     trialsRef.current.push(trialRow);
   }, []);
+
+  // Incrementally persist any not-yet-written trials. Call at phase boundaries
+  // so a crash or timeout mid-session still leaves completed trials in Supabase.
+  // INSERT-only (belt_trials has no UPDATE policy); the flushedCount cursor only
+  // advances on success, so a failed flush is retried at the next checkpoint /
+  // at endSession — and nothing is ever double-inserted.
+  const flushTrials = useCallback(async () => {
+    const sessionId = sessionIdRef.current;
+    if (!sessionId) return;
+    const pending = trialsRef.current.slice(flushedCountRef.current);
+    if (!pending.length) return;
+    const { error } = await supabase.from('belt_trials').insert(
+      pending.map(t => ({ ...t, session_id: sessionId, user_id: userId }))
+    );
+    if (error) { console.error('belt_trials flush:', error); return; }
+    flushedCountRef.current += pending.length;
+  }, [userId]);
 
   const endSession = useCallback(async ({
     calibState,
@@ -74,12 +93,14 @@ export function useBeltSession(userId) {
     });
     if (sessError) console.error('belt_sessions insert:', sessError);
 
-    // 3. Insert belt_trials rows
-    if (trialsRef.current.length) {
+    // 3. Insert any belt_trials not already flushed at a phase boundary.
+    const remaining = trialsRef.current.slice(flushedCountRef.current);
+    if (remaining.length) {
       const { error: trialError } = await supabase.from('belt_trials').insert(
-        trialsRef.current.map(t => ({ ...t, session_id: sessionId, user_id: userId }))
+        remaining.map(t => ({ ...t, session_id: sessionId, user_id: userId }))
       );
       if (trialError) console.error('belt_trials insert:', trialError);
+      else flushedCountRef.current += remaining.length;
     }
 
     // 4. Close game_sessions row
@@ -89,7 +110,7 @@ export function useBeltSession(userId) {
       .eq('id', sessionId);
   }, [userId]);
 
-  return { sessionIdRef, startSession, recordTrial, endSession };
+  return { sessionIdRef, startSession, recordTrial, flushTrials, endSession };
 }
 
 function fmtNum(v, digits = 4) {

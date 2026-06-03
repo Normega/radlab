@@ -14,7 +14,7 @@ import SessionComplete from './components/SessionComplete';
 import Phase2ReviewScreen from './components/Phase2ReviewScreen';
 import {
   BASELINE_DURATION_MS, POST_BASELINE_DURATION_MS, BASE_BREATH_SPEED_S,
-  TRIGGER_DEVICES, DEFAULT_TRIGGER_DEVICE,
+  TRIGGER_DEVICES, DEFAULT_TRIGGER_DEVICE, SHOW_EARLY_EXIT,
 } from './constants';
 
 // ── COM trigger vocabulary ─────────────────────────────────────────────────
@@ -62,6 +62,7 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
   const [phase, setPhase] = useState(S.BROWSER_CHECK);
   const [sessionNumber, setSessionNumber] = useState(1);
   const [triggerDevice, setTriggerDevice] = useState(DEFAULT_TRIGGER_DEVICE);
+  const [ending, setEnding] = useState(false);   // true while a session-end save is in flight
 
   const preBaselinePeriodRef  = useRef(null);
   const postBaselinePeriodRef = useRef(null);
@@ -159,6 +160,48 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
     }
   }, [phase, profile?.id]);
 
+  // Centralised end-of-session save, shared by the normal post-baseline
+  // completion and the early-exit button. Uploads raw signal, writes
+  // belt_sessions + any not-yet-flushed belt_trials, closes game_sessions, and
+  // fires code 13. Reads the current refs so it persists whatever is buffered at
+  // the moment it runs (questState / postBaseline are null on an early exit).
+  // Guarded by sessionEndedRef so it can't double-run.
+  const finishSession = useCallback(async () => {
+    if (sessionEndedRef.current) return;
+    sessionEndedRef.current = true;
+    setEnding(true);
+    try {
+      await session.endSession({
+        calibState:           belt.mlrWeightsRef.current,
+        questState:           pendingQuestStateRef.current,
+        rawAccelRows:         belt.rawAccelRowsRef.current,
+        rawHRRows:            belt.rawHRRowsRef.current,
+        sessionNumber,
+        triggerDevice,
+        baselinePeriodMs:     preBaselinePeriodRef.current,
+        postBaselinePeriodMs: postBaselinePeriodRef.current,
+      });
+      await belt.sendTrigger('13');   // code 13 — session end
+    } catch (err) {
+      console.error('finishSession:', err);
+    } finally {
+      belt.stopNotifications();
+      setEnding(false);
+      setPhase(S.SESSION_COMPLETE);
+    }
+  }, [session, belt, sessionNumber, triggerDevice]);
+
+  // Testing-only graceful early exit: confirm, then save everything buffered and
+  // jump to the summary, skipping any remaining phases. Gated by SHOW_EARLY_EXIT.
+  const handleEarlyExit = useCallback(() => {
+    if (ending || sessionEndedRef.current) return;
+    const ok = window.confirm(
+      'End the Breath Belt session now? Everything buffered — completed trials and '
+      + 'raw signal — will be saved, and any remaining phases will be skipped.'
+    );
+    if (ok) finishSession();
+  }, [ending, finishSession]);
+
   // Mid-session unmount: fire code 13 (session end) so the physio equipment
   // leaves session state. Async, fire-and-forget — chain stopNotifications after
   // so the serial write isn't truncated by an early port close.
@@ -178,6 +221,11 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
     if ([S.BASELINE_COMPLETE,   S.POST_BASELINE_COMPLETE  ].includes(fsm)) return 'COMPLETE';
     return 'READY';
   }
+
+  // Early-exit control, injected into the active-session screens' Layout.
+  const activeExit = SHOW_EARLY_EXIT
+    ? <EarlyExitButton onClick={handleEarlyExit} ending={ending} />
+    : null;
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -367,7 +415,7 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
 
   if ([S.BASELINE_READY, S.BASELINE_RECORDING, S.BASELINE_COMPLETE].includes(phase)) {
     return (
-      <Layout title="Natural baseline">
+      <Layout title="Natural baseline" earlyExit={activeExit}>
         <BaselineScreen
           phase={baselinePhaseMap(phase)}
           title="Natural baseline"
@@ -403,7 +451,7 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
 
   if (phase === S.PHASE2_READY) {
     return (
-      <Layout title="Phase 2 — Paced trials">
+      <Layout title="Phase 2 — Paced trials" earlyExit={activeExit}>
         <Screen>
           <p className="text-center" style={{ color: 'var(--tx2)', fontSize: 'var(--fs-body)', maxWidth: 400 }}>
             You will complete 9 trials following the avatar's breathing pace.
@@ -417,7 +465,7 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
 
   if (phase === S.PHASE2_RUNNING) {
     return (
-      <Layout title="Phase 2 — Fixed trials">
+      <Layout title="Phase 2 — Fixed trials" earlyExit={activeExit}>
         <FixedTrialsScreen
           avatarProps={avatarProps}
           breathValueRef={belt.breathValueRef}
@@ -433,6 +481,7 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
           onComplete={async (trialsData, trialGraphs) => {
             trialGraphsRef.current = trialGraphs
             await belt.sendTrigger('5')  // code 5 — phase 2 end
+            await session.flushTrials()  // persist phase-2 trials before continuing
             setPhase(S.PHASE2_REVIEW)
           }}
         />
@@ -442,7 +491,7 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
 
   if (phase === S.PHASE2_REVIEW) {
     return (
-      <Layout title="Phase 2 — Review">
+      <Layout title="Phase 2 — Review" earlyExit={activeExit}>
         <Phase2ReviewScreen
           trialGraphs={trialGraphsRef.current}
           onContinue={() => setPhase(S.PHASE3_INTRO)}
@@ -457,7 +506,7 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
 
   if (phase === S.PHASE3_INTRO) {
     return (
-      <Layout title="Phase 3 — Detection thresholds">
+      <Layout title="Phase 3 — Detection thresholds" earlyExit={activeExit}>
         <Screen>
           <p className="text-center" style={{ color: 'var(--tx2)', fontSize: 'var(--fs-body)', maxWidth: 420 }}>
             Follow the avatar as before. After each trial, report whether the pace
@@ -472,7 +521,7 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
 
   if (phase === S.PHASE3_RUNNING) {
     return (
-      <Layout title="Phase 3 — Detection thresholds">
+      <Layout title="Phase 3 — Detection thresholds" earlyExit={activeExit}>
         <StaircaseScreen
           avatarProps={avatarProps}
           breathValueRef={belt.breathValueRef}
@@ -490,6 +539,7 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
             await belt.sendTrigger('7');  // code 7 — phase 3 end
             convergenceRef.current     = convergence;
             pendingQuestStateRef.current = questState;
+            await session.flushTrials();  // persist phase-3 trials before continuing
             setPhase(S.POST_BASELINE_READY);
           }}
         />
@@ -502,7 +552,7 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
 
   if ([S.POST_BASELINE_READY, S.POST_BASELINE_RECORDING, S.POST_BASELINE_COMPLETE].includes(phase)) {
     return (
-      <Layout title="Post-session rest">
+      <Layout title="Post-session rest" earlyExit={activeExit}>
         <BaselineScreen
           phase={baselinePhaseMap(phase)}
           title="Post-session rest"
@@ -517,20 +567,7 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
           onStart={() => setPhase(S.POST_BASELINE_RECORDING)}
           onComplete={async (periodMs) => {
             postBaselinePeriodRef.current = periodMs;
-            await session.endSession({
-              calibState:           belt.mlrWeightsRef.current,   // replaces belt.calibStateRef.current
-              questState:           pendingQuestStateRef.current,
-              rawAccelRows:         belt.rawAccelRowsRef.current,
-              rawHRRows:            belt.rawHRRowsRef.current,
-              sessionNumber,
-              triggerDevice,
-              baselinePeriodMs:     preBaselinePeriodRef.current,
-              postBaselinePeriodMs: periodMs,
-            });
-            await belt.sendTrigger('13');  // code 13 — session end
-            sessionEndedRef.current = true;
-            belt.stopNotifications();
-            setPhase(S.SESSION_COMPLETE);
+            await finishSession();
           }}
         />
         {phase === S.POST_BASELINE_COMPLETE && (
@@ -562,7 +599,7 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
 
 // ── Layout helpers ────────────────────────────────────────────────────────
 
-function Layout({ title, children }) {
+function Layout({ title, earlyExit, children }) {
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg)' }}>
       <div style={{ maxWidth: 520, margin: '0 auto' }}>
@@ -573,7 +610,29 @@ function Layout({ title, children }) {
         </div>
         {children}
       </div>
+      {earlyExit}
     </div>
+  );
+}
+
+// Testing-only graceful-exit control. Fixed bottom-right so it's reachable from
+// any active-session screen without disturbing the centred study layout.
+function EarlyExitButton({ onClick, ending }) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={ending}
+      style={{
+        position:   'fixed', bottom: 16, right: 16, zIndex: 50,
+        border:     '1px solid var(--bd)', borderRadius: 10,
+        padding:    '8px 14px', cursor: ending ? 'default' : 'pointer',
+        background: 'var(--bgc)', color: 'var(--tx2)',
+        fontFamily: 'DM Sans', fontSize: 'var(--fs-body-sm)', fontWeight: 600,
+        opacity:    ending ? 0.6 : 0.85,
+      }}
+    >
+      {ending ? 'Saving…' : 'End session early'}
+    </button>
   );
 }
 
