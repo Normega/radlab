@@ -13,7 +13,6 @@ const SC_STATES = { READY: 'READY', IN_PROGRESS: 'IN_PROGRESS', RESPONSE: 'RESPO
 export default function StaircaseScreen({
   avatarProps,
   breathValueRef,
-  syncQuality,
   sendTrigger,
   currentPhaseRef,
   currentTrialRef,
@@ -74,7 +73,7 @@ export default function StaircaseScreen({
     const { key, log10Delta, conditionMs, sameContext, beltSyncMean, btBaselinePeriodMs, btConditionPeriodMs, syncMetrics } =
       pendingTrialRef.current
 
-    const { correct, responseIndex } = quest.recordResponse(key, response, log10Delta)
+    const { correct } = quest.recordResponse(key, response, log10Delta)
     const row = {
       phase:                  3,
       trial_number:           trialCount + 1,
