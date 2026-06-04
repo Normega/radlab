@@ -75,6 +75,7 @@ export default function BreathBelt({ studyMode = false, userId, studyId, externa
   const postBaselinePeriodRef = useRef(null);
   const convergenceRef        = useRef(null);
   const pendingQuestStateRef  = useRef(null);
+  const sessionStartMsRef     = useRef(null);  // Date.now() when trigger 1 fires
   const cascadeFiredRef       = useRef(false);
   const trialGraphsRef        = useRef([]);
 
@@ -178,6 +179,7 @@ export default function BreathBelt({ studyMode = false, userId, studyId, externa
         baselinePeriodMs:        preBaselinePeriodRef.current,
         postBaselinePeriodMs:    postBaselinePeriodRef.current,
         participantExternalId:   participantId || null,
+        convergence:             convergenceRef.current,
       });
       await belt.sendTrigger('13');   // code 13 — session end
     } catch (err) {
@@ -467,7 +469,8 @@ export default function BreathBelt({ studyMode = false, userId, studyId, externa
           triggerStart="2"
           triggerEnd="3"
           onStart={async () => {
-            await belt.sendTrigger('1');   // code 1 — session start
+            sessionStartMsRef.current = Date.now();  // anchor for trial_onset_ms
+            await belt.sendTrigger('1');              // code 1 — session start
             setPhase(S.BASELINE_RECORDING);
           }}
           onComplete={(periodMs) => {
@@ -515,6 +518,7 @@ export default function BreathBelt({ studyMode = false, userId, studyId, externa
           mlrWeightsRef={belt.mlrWeightsRef}
           recordTrial={recordTrialWithBackup}
           showSyncOverlay={PILOT_MODE}
+          sessionStartMsRef={sessionStartMsRef}
           onComplete={async (trialsData, trialGraphs) => {
             trialGraphsRef.current = trialGraphs
             await belt.sendTrigger('5')  // code 5 — phase 2 end
@@ -572,6 +576,7 @@ export default function BreathBelt({ studyMode = false, userId, studyId, externa
           recordTrial={recordTrialWithBackup}
           showSyncOverlay={PILOT_MODE}
           savedQuestState={null}
+          sessionStartMsRef={sessionStartMsRef}
           onComplete={async (trials, questState, convergence) => {
             await belt.sendTrigger('7');  // code 7 — phase 3 end
             convergenceRef.current     = convergence;

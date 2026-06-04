@@ -42,6 +42,7 @@ export default function FixedTrialsScreen({
   mlrWeightsRef,
   recordTrial,
   showSyncOverlay = true,
+  sessionStartMsRef,
   onComplete,
 }) {
   const [trialList]  = useState(buildTrialList)
@@ -66,7 +67,7 @@ export default function FixedTrialsScreen({
     setSyncData(null)                          // clear previous overlay
     setTrialState(TRIAL_STATES.IN_PROGRESS)
 
-    const { beltSyncMean, btBaselinePeriodMs, btConditionPeriodMs, syncMetrics } =
+    const { beltSyncMean, btBaselinePeriodMs, btConditionPeriodMs, syncMetrics, trialStartMs } =
       await runTrial('phase2', trialIdx + 1, conditionMs(condition))
 
     setSyncData(syncMetrics)                   // show overlay on READY screen
@@ -79,6 +80,7 @@ export default function FixedTrialsScreen({
       peakErrorMs: syncMetrics?.peakErrorMs ?? null,
     })
 
+    const sessionStartMs = sessionStartMsRef?.current ?? null
     const row = {
       phase:                  2,
       trial_number:           trialIdx + 1,
@@ -95,6 +97,7 @@ export default function FixedTrialsScreen({
       trial_r_baseline:       syncMetrics?.trialRBaseline  ?? null,
       trial_r_condition:      syncMetrics?.trialRCondition ?? null,
       peak_error_ms:          syncMetrics?.peakErrorMs     ?? null,
+      trial_onset_ms:         sessionStartMs != null ? Math.round(trialStartMs - sessionStartMs) : null,
     }
     trialsData.push(row)
     recordTrial(row)

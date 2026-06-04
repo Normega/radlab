@@ -160,7 +160,7 @@ export function useTrialRunner({
       }
     }
 
-    return { beltSyncMean, btBaselinePeriodMs, btConditionPeriodMs, syncMetrics }
+    return { beltSyncMean, btBaselinePeriodMs, btConditionPeriodMs, syncMetrics, trialStartMs }
   }
 
   return { getPhase, runTrial, controlRef }

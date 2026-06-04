@@ -62,6 +62,7 @@ export function useBeltSession(userId, client) {
     postBaselinePeriodMs,
     triggerDevice,
     participantExternalId,
+    convergence,
   }) => {
     // Prefer the value passed at endSession (most up-to-date); fall back to
     // what was set at startSession in case the caller doesn't re-pass it.
@@ -101,6 +102,10 @@ export function useBeltSession(userId, client) {
       calib_model_label:        calibState?.modelLabel ?? null,
       calib_fit_r:              calibState?.fitR       ?? null,
       calib_lag_ms:             calibState?.lagMs      ?? null,
+      thresh_faster_log10:      convergence?.faster != null ? Math.log10(convergence.faster.meanDeltaSec) : null,
+      thresh_slower_log10:      convergence?.slower != null ? Math.log10(convergence.slower.meanDeltaSec) : null,
+      thresh_sd_faster:         convergence?.faster?.sd ?? null,
+      thresh_sd_slower:         convergence?.slower?.sd ?? null,
     });
     if (sessError) console.error('belt_sessions insert:', sessError);
 

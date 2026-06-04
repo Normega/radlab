@@ -21,6 +21,7 @@ export default function StaircaseScreen({
   recordTrial,
   showSyncOverlay = true,
   savedQuestState,
+  sessionStartMsRef,
   onComplete,
 }) {
   const [scState,    setScState]    = useState(SC_STATES.READY)
@@ -56,11 +57,11 @@ export default function StaircaseScreen({
     setScState(SC_STATES.IN_PROGRESS)
     setResponse(null); setConfidence(null); setArousal(null)
 
-    const { beltSyncMean, btBaselinePeriodMs, btConditionPeriodMs, syncMetrics } =
+    const { beltSyncMean, btBaselinePeriodMs, btConditionPeriodMs, syncMetrics, trialStartMs } =
       await runTrial('phase3', trialCount + 1, conditionMs)
 
     setSyncData(syncMetrics)                 // overlay visible during RESPONSE, no graph
-    pendingTrialRef.current = { key, log10Delta, deltaSec, conditionMs, sameContext, beltSyncMean, btBaselinePeriodMs, btConditionPeriodMs, syncMetrics }
+    pendingTrialRef.current = { key, log10Delta, deltaSec, conditionMs, sameContext, beltSyncMean, btBaselinePeriodMs, btConditionPeriodMs, syncMetrics, trialStartMs }
     setScState(SC_STATES.RESPONSE)
   }, [trialCount, quest, runTrial])
 
@@ -70,6 +71,7 @@ export default function StaircaseScreen({
       pendingTrialRef.current
 
     const { correct } = quest.recordResponse(key, response, log10Delta)
+    const sessionStartMs = sessionStartMsRef?.current ?? null
     const row = {
       phase:                  3,
       trial_number:           trialCount + 1,
@@ -87,6 +89,7 @@ export default function StaircaseScreen({
       trial_r_baseline:       syncMetrics?.trialRBaseline  ?? null,
       trial_r_condition:      syncMetrics?.trialRCondition ?? null,
       peak_error_ms:          syncMetrics?.peakErrorMs     ?? null,
+      trial_onset_ms:         sessionStartMs != null ? Math.round(trialStartMs - sessionStartMs) : null,
     }
     trialsData.current.push(row)
     recordTrial(row)
