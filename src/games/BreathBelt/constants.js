@@ -48,14 +48,14 @@ export const QUEST_PRIOR_SD        = 0.25;
 //   AD_BBT       — ADInstruments PowerLab via Black Box ToolKit USB TTL Module
 //                  (Web Serial; 2-char hex per code, "RR" init, "00" clear).
 //   Biopac_Left  — Biopac via parallel-port card, left testing rig.  Parallel
-//                  port 0xCFF8; event codes placed on the high nibble (code * 16).
+//                  port 0xDFF8; event codes placed on the high nibble (code * 16).
 //   Biopac_Right — Biopac via parallel-port card, right testing rig. Parallel
 //                  port 0xD030; event codes sent as-is (code * 1).
 // `address`/`shift` are present only on the Biopac entries; their presence is
 // what marks a device as parallel-port (vs. AD_BBT's Web Serial path).
 export const TRIGGER_DEVICES = [
   { value: 'AD_BBT',       label: 'AD Instruments + Black Box ToolKit (AD_BBT)' },
-  { value: 'Biopac_Left',  label: 'Biopac — Left rig',  address: 0xCFF8, shift: 16 },
+  { value: 'Biopac_Left',  label: 'Biopac — Left rig',  address: 0xDFF8, shift: 16 },
   { value: 'Biopac_Right', label: 'Biopac — Right rig', address: 0xD030, shift: 1  },
 ];
 export const DEFAULT_TRIGGER_DEVICE = 'AD_BBT';
