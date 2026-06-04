@@ -1525,7 +1525,7 @@ Each testing rig uses different physio equipment, so the RA picks a **trigger de
 |---|---|---|
 | `AD_BBT` (default) | Web Serial COM box (Black Box ToolKit USB TTL Module) | 2-char uppercase hex per code, `"RR"` init on connect, `"00"` clear |
 | `Biopac_Right` | Parallel-port card via local helper, port `0xD030` | code sent as-is (`shift: 1`) |
-| `Biopac_Left` | Parallel-port card via local helper, port `0xCFF8` | code on the high nibble (`shift: 16`, i.e. `code × 16`) |
+| `Biopac_Left` | Parallel-port card via local helper, port `0xDFF8` | code on the high nibble (`shift: 16`, i.e. `code × 16`) |
 
 `sendTrigger(code)` branches on the selected device: AD_BBT writes hex over the serial writer; a Biopac device computes `code × shift` (clamped 0–255) and relays it to the parallel-port server. Both pulse the value high for 25 ms then write 0 to clear. A failed Biopac relay is logged (`console.error` with address + value) but never thrown — a missed trigger must not crash the session.
 

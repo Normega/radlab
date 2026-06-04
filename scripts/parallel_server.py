@@ -69,7 +69,7 @@ def status():
 @app.route('/send', methods=['POST'])
 def send():
     """
-    Body: { "address": 0xCFF8, "value": 16, "zero_delay": 20 }
+    Body: { "address": 0xDFF8, "value": 16, "zero_delay": 20 }
     zero_delay is optional; if present, sends value=0 after that many ms.
     """
     data = request.get_json(force=True)
@@ -78,7 +78,7 @@ def send():
         return jsonify({'ok': False, 'error': 'DLL not loaded'}), 500
 
     try:
-        address    = int(data.get('address', 0xCFF8))
+        address    = int(data.get('address', 0xDFF8))
         value      = int(data.get('value',   0))
         zero_delay = data.get('zero_delay')   # ms, optional
 

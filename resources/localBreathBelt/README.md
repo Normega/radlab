@@ -88,7 +88,7 @@ follow the steps below.
 | Dev server | `npm run dev` → `http://localhost:5173` |
 | App URL | `http://localhost:5173/games/breath-belt` |
 | Biopac — Right | parallel port `0xD030`, code sent as-is |
-| Biopac — Left | parallel port `0xCFF8`, code × 16 |
+| Biopac — Left | parallel port `0xDFF8`, code × 16 |
 | Event codes | 1–13 (see `src/games/BreathBelt/TRIGGERS.md`); 0 = line-clear |
 
 For full architecture, see §20 of `website.md` and `src/games/BreathBelt/TRIGGERS.md` in the repo.
