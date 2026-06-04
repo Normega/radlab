@@ -49,6 +49,7 @@ import StudySessionRunner from './pages/admin/StudySessionRunner'
 import QuestionnairesPage   from './pages/admin/QuestionnairesPage'
 import QuestionnaireUpload  from './pages/admin/QuestionnaireUpload'
 import QuestionnairePreview from './pages/admin/QuestionnairePreview'
+import DataExportPage       from './pages/admin/DataExportPage'
 import Unsubscribe   from './pages/Unsubscribe'
 import ConsentPage   from './pages/ConsentPage'
 import VideoTest     from './pages/dev/VideoTest'
@@ -265,6 +266,7 @@ export default function App() {
               <Route path="/admin/questionnaires"        element={<QuestionnairesPage />} />
               <Route path="/admin/questionnaires/new"    element={<QuestionnaireUpload />} />
               <Route path="/admin/questionnaires/:slug"  element={<QuestionnairePreview />} />
+              <Route path="/admin/export"                element={<DataExportPage />} />
             </Route>
           </Route>
 
