@@ -24,7 +24,11 @@ function downloadCsv(filename, rows) {
   document.body.removeChild(a); URL.revokeObjectURL(url)
 }
 
-// ── Data hooks ───────────────────────────────────────────────────────────────
+// ── Participant search ────────────────────────────────────────────────────────
+// Queries belt_sessions.participant_external_id AND study_enrollments.external_id
+// in parallel, merges by external_id. belt data is keyed by external_id directly;
+// questionnaire data uses profile_id from study_enrollments (preferred) or
+// belt_sessions.user_id as a fallback.
 
 function useParticipantSearch(q) {
   return useQuery({
@@ -32,38 +36,51 @@ function useParticipantSearch(q) {
     enabled: q.length >= 1,
     staleTime: 30_000,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('study_enrollments')
-        .select('profile_id, external_id, enrolled_at, studies!study_id(name)')
-        .ilike('external_id', `%${q}%`)
-        .order('enrolled_at', { ascending: false })
-        .limit(30)
-      if (error) throw error
-      // Deduplicate by profile_id, accumulate study names
-      const byProfile = {}
-      for (const e of data ?? []) {
-        if (!byProfile[e.profile_id]) {
-          byProfile[e.profile_id] = { profileId: e.profile_id, externalId: e.external_id, studies: [] }
-        }
-        const name = e.studies?.name
-        if (name && !byProfile[e.profile_id].studies.includes(name)) {
-          byProfile[e.profile_id].studies.push(name)
-        }
+      const [beltRes, enrollRes] = await Promise.all([
+        supabase
+          .from('belt_sessions')
+          .select('participant_external_id, user_id')
+          .ilike('participant_external_id', `%${q}%`)
+          .not('participant_external_id', 'is', null)
+          .limit(30),
+        supabase
+          .from('study_enrollments')
+          .select('external_id, profile_id, studies!study_id(name)')
+          .ilike('external_id', `%${q}%`)
+          .limit(30),
+      ])
+
+      const byId = {}
+
+      for (const b of beltRes.data ?? []) {
+        const eid = b.participant_external_id
+        if (!byId[eid]) byId[eid] = { externalId: eid, profileId: b.user_id, studies: [] }
       }
-      return Object.values(byProfile)
+      for (const e of enrollRes.data ?? []) {
+        const eid = e.external_id
+        if (!byId[eid]) byId[eid] = { externalId: eid, profileId: e.profile_id, studies: [] }
+        // Trust enrollment for profileId (authoritative over belt user_id)
+        byId[eid].profileId = e.profile_id
+        const name = e.studies?.name
+        if (name && !byId[eid].studies.includes(name)) byId[eid].studies.push(name)
+      }
+
+      return Object.values(byId).sort((a, b) => a.externalId.localeCompare(b.externalId))
     },
   })
 }
 
-function useBeltSessions(profileId) {
+// ── Data hooks ───────────────────────────────────────────────────────────────
+
+function useBeltSessions(externalId) {
   return useQuery({
-    queryKey: ['export-belt-sessions', profileId],
-    enabled: !!profileId,
+    queryKey: ['export-belt-sessions', externalId],
+    enabled: !!externalId,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('belt_sessions')
-        .select('id, session_id, created_at, calib_model_label, calib_fit_r, calib_lag_ms, trigger_device, storage_path')
-        .eq('user_id', profileId)
+        .select('id, session_id, created_at, calib_model_label, calib_fit_r, calib_lag_ms, trigger_device, storage_path, session_number')
+        .eq('participant_external_id', externalId)
         .order('created_at', { ascending: false })
       if (error) throw error
       return data ?? []
@@ -71,15 +88,15 @@ function useBeltSessions(profileId) {
   })
 }
 
-function useBeltTrials(profileId) {
+function useBeltTrials(externalId) {
   return useQuery({
-    queryKey: ['export-belt-trials', profileId],
-    enabled: !!profileId,
+    queryKey: ['export-belt-trials', externalId],
+    enabled: !!externalId,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('belt_trials')
         .select('session_id, phase, trial_number, condition, breath_period_ms, log10_mag, response, correct, confidence, arousal, belt_sync_mean, trial_r_baseline, trial_r_condition, peak_error_ms, created_at')
-        .eq('user_id', profileId)
+        .eq('participant_external_id', externalId)
         .order('created_at', { ascending: true })
       if (error) throw error
       return data ?? []
@@ -138,8 +155,8 @@ function SectionHeader({ title, count, onDownload, disabled }) {
 
 // ── Belt Sessions section ────────────────────────────────────────────────────
 
-function BeltSessionsSection({ profileId, externalId }) {
-  const { data = [], isLoading } = useBeltSessions(profileId)
+function BeltSessionsSection({ externalId }) {
+  const { data = [], isLoading } = useBeltSessions(externalId)
 
   return (
     <section style={S.section}>
@@ -158,7 +175,7 @@ function BeltSessionsSection({ profileId, externalId }) {
           <table style={S.table}>
             <thead>
               <tr>
-                {['Date', 'Calib model', 'Fit R', 'Lag ms', 'Trigger', 'Session ID'].map(h => (
+                {['Date', 'Sess #', 'Calib model', 'Fit R', 'Lag ms', 'Trigger', 'Session ID'].map(h => (
                   <th key={h} style={S.th}>{h}</th>
                 ))}
               </tr>
@@ -167,6 +184,7 @@ function BeltSessionsSection({ profileId, externalId }) {
               {data.map(row => (
                 <tr key={row.id} style={S.tr}>
                   <td style={S.td}>{fmtDate(row.created_at)}</td>
+                  <td style={S.tdMono}>{row.session_number ?? '—'}</td>
                   <td style={S.tdMono}>{row.calib_model_label ?? '—'}</td>
                   <td style={{ ...S.tdMono, color: fitColor(row.calib_fit_r) }}>{fmt(row.calib_fit_r)}</td>
                   <td style={S.tdMono}>{fmt(row.calib_lag_ms, 0)}</td>
@@ -201,8 +219,8 @@ const TRIAL_COLS = [
   { key: 'peak_error_ms',     label: 'Peak err ms', render: v => fmt(v, 0) },
 ]
 
-function BeltTrialsSection({ profileId, externalId }) {
-  const { data = [], isLoading } = useBeltTrials(profileId)
+function BeltTrialsSection({ externalId }) {
+  const { data = [], isLoading } = useBeltTrials(externalId)
 
   return (
     <section style={S.section}>
@@ -244,7 +262,6 @@ function QuestionnairesSection({ profileId, externalId }) {
   const { data = [], isLoading } = useQResponses(profileId)
 
   function dlQuestionnaires() {
-    // Each row: slug + completed_at + one column per item response
     const flat = data.map(r => ({
       questionnaire_slug: r.questionnaire_slug,
       completed_at:       r.completed_at,
@@ -265,6 +282,8 @@ function QuestionnairesSection({ profileId, externalId }) {
       />
       {isLoading ? (
         <p style={S.msg}>Loading…</p>
+      ) : !profileId ? (
+        <p style={S.msg}>No study enrollment found — questionnaire lookup requires an enrollment record.</p>
       ) : data.length === 0 ? (
         <p style={S.msg}>No questionnaire responses found.</p>
       ) : (
@@ -296,9 +315,9 @@ function QuestionnairesSection({ profileId, externalId }) {
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function DataExportPage() {
-  const [search,         setSearch]         = useState('')
+  const [search,          setSearch]          = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
-  const [selected,       setSelected]       = useState(null)
+  const [selected,        setSelected]        = useState(null) // { externalId, profileId }
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 300)
@@ -326,7 +345,7 @@ export default function DataExportPage() {
       <div style={S.searchWrap}>
         <input
           style={S.searchInput}
-          placeholder="Participant external ID (e.g. 1990)"
+          placeholder="Participant ID (e.g. 1990)"
           value={search}
           onChange={e => { setSearch(e.target.value); setSelected(null) }}
           autoComplete="off"
@@ -338,7 +357,7 @@ export default function DataExportPage() {
         {showDropdown && (
           <div style={S.dropdown}>
             {results.map(p => (
-              <button key={p.profileId} style={S.dropItem} onClick={() => pick(p)}>
+              <button key={p.externalId} style={S.dropItem} onClick={() => pick(p)}>
                 <span style={S.dropId}>{p.externalId}</span>
                 {p.studies.length > 0 && (
                   <span style={S.dropStudies}>{p.studies.join(' · ')}</span>
@@ -354,9 +373,9 @@ export default function DataExportPage() {
           <p style={S.badge}>
             Participant <strong style={{ fontFamily: '"Space Mono",monospace' }}>{selected.externalId}</strong>
           </p>
-          <BeltSessionsSection profileId={selected.profileId} externalId={selected.externalId} />
-          <BeltTrialsSection   profileId={selected.profileId} externalId={selected.externalId} />
-          <QuestionnairesSection profileId={selected.profileId} externalId={selected.externalId} />
+          <BeltSessionsSection   externalId={selected.externalId} />
+          <BeltTrialsSection     externalId={selected.externalId} />
+          <QuestionnairesSection externalId={selected.externalId} profileId={selected.profileId} />
         </>
       )}
     </div>
@@ -403,16 +422,13 @@ const S = {
     margin: '0 0 20px',
   },
 
-  section:    { background: '#fff', border: '1px solid var(--bd)', borderRadius: 12, marginBottom: 20, overflow: 'hidden' },
-  sectionHead:{
+  section:     { background: '#fff', border: '1px solid var(--bd)', borderRadius: 12, marginBottom: 20, overflow: 'hidden' },
+  sectionHead: {
     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
     padding: '14px 20px', borderBottom: '1px solid var(--bd)',
   },
-  sectionTitle: {
-    fontFamily: '"DM Sans",system-ui,sans-serif',
-    fontSize: 15, fontWeight: 600, color: 'var(--tx)',
-  },
-  sectionCount: { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)' },
+  sectionTitle:  { fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 15, fontWeight: 600, color: 'var(--tx)' },
+  sectionCount:  { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)' },
   csvBtn: {
     background: 'var(--pkb)', color: 'var(--pk)',
     border: '1px solid var(--pk)', borderRadius: 8,
@@ -428,14 +444,8 @@ const S = {
     color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.05em',
     borderBottom: '1px solid var(--bd)', background: '#fafafa', whiteSpace: 'nowrap',
   },
-  tr: { borderBottom: '1px solid var(--bd)' },
-  td: {
-    padding: '7px 12px',
-    fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 13, color: 'var(--tx)', whiteSpace: 'nowrap',
-  },
-  tdMono: {
-    padding: '7px 12px',
-    fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx)', whiteSpace: 'nowrap',
-  },
-  msg: { padding: '16px 20px', margin: 0, fontSize: 13, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif' },
+  tr:     { borderBottom: '1px solid var(--bd)' },
+  td:     { padding: '7px 12px', fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 13, color: 'var(--tx)', whiteSpace: 'nowrap' },
+  tdMono: { padding: '7px 12px', fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx)', whiteSpace: 'nowrap' },
+  msg:    { padding: '16px 20px', margin: 0, fontSize: 13, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif' },
 }

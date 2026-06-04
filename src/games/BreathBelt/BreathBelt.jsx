@@ -57,7 +57,7 @@ const S = {
   SESSION_COMPLETE:        'SESSION_COMPLETE',
 };
 
-export default function BreathBelt({ studyMode = false, userId, studyId, onSessionComplete, supabaseClient }) {
+export default function BreathBelt({ studyMode = false, userId, studyId, externalId, onSessionComplete, supabaseClient }) {
   const navigate = useNavigate();
   // In a participant study session the caller passes the participant-authenticated
   // client; all data reads/writes must use it so RLS (auth.uid() = user_id) passes.
@@ -67,6 +67,9 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
   const [sessionNumber, setSessionNumber] = useState(1);
   const [triggerDevice, setTriggerDevice] = useState(DEFAULT_TRIGGER_DEVICE);
   const [ending, setEnding] = useState(false);   // true while a session-end save is in flight
+  // participantId: in study mode this is pre-filled from the externalId prop and
+  // is read-only; in standalone lab mode the RA types it on the setup screen.
+  const [participantId, setParticipantId] = useState(externalId ?? '');
 
   const preBaselinePeriodRef  = useRef(null);
   const postBaselinePeriodRef = useRef(null);
@@ -164,7 +167,7 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
   useEffect(() => {
     if (phase === S.BASELINE_READY && !sessionStartedRef.current && effectiveUserId) {
       sessionStartedRef.current = true;
-      session.startSession(studyId ?? null);
+      session.startSession(studyId ?? null, participantId || null);
     }
   }, [phase, effectiveUserId]);
 
@@ -180,14 +183,15 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
     setEnding(true);
     try {
       await session.endSession({
-        calibState:           belt.mlrWeightsRef.current,
-        questState:           pendingQuestStateRef.current,
-        rawAccelRows:         belt.rawAccelRowsRef.current,
-        rawHRRows:            belt.rawHRRowsRef.current,
+        calibState:              belt.mlrWeightsRef.current,
+        questState:              pendingQuestStateRef.current,
+        rawAccelRows:            belt.rawAccelRowsRef.current,
+        rawHRRows:               belt.rawHRRowsRef.current,
         sessionNumber,
         triggerDevice,
-        baselinePeriodMs:     preBaselinePeriodRef.current,
-        postBaselinePeriodMs: postBaselinePeriodRef.current,
+        baselinePeriodMs:        preBaselinePeriodRef.current,
+        postBaselinePeriodMs:    postBaselinePeriodRef.current,
+        participantExternalId:   participantId || null,
       });
       await belt.sendTrigger('13');   // code 13 — session end
     } catch (err) {
@@ -197,7 +201,7 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
       setEnding(false);
       setPhase(S.SESSION_COMPLETE);
     }
-  }, [session, belt, sessionNumber, triggerDevice]);
+  }, [session, belt, sessionNumber, triggerDevice, participantId]);
 
   // Testing-only graceful early exit: confirm, then save everything buffered and
   // jump to the summary, skipping any remaining phases. Gated by PILOT_MODE.
@@ -355,34 +359,75 @@ export default function BreathBelt({ studyMode = false, userId, studyId, onSessi
   // ── Session setup ─────────────────────────────────────────────────────────
 
   if (phase === S.SESSION_SETUP) {
+    const canContinue = participantId.trim().length > 0;
     return (
       <Layout title="Session setup">
         <Screen>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%', maxWidth: 280 }}>
-            <label style={{ fontFamily: 'DM Sans', fontSize: 'var(--fs-body-sm)', color: 'var(--tx2)' }}>
-              Session number
-            </label>
-            <input
-              type="number" min={1} value={sessionNumber}
-              onChange={e => setSessionNumber(Math.max(1, parseInt(e.target.value) || 1))}
-              style={{
-                fontFamily: 'Space Mono', fontSize: 'var(--fs-mono-md)',
-                color: 'var(--tx)', background: 'var(--bgc)',
-                border: '1px solid var(--bd)', borderRadius: 10,
-                padding: '10px 14px', textAlign: 'center', width: '100%',
-              }}
-            />
-            <p style={{ fontFamily: 'DM Sans', fontSize: 'var(--fs-body-sm)', color: 'var(--tx3)', margin: 0 }}>
-              Increment for each visit by the same participant.
-            </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20, width: '100%', maxWidth: 280 }}>
 
-            <p style={{ fontFamily: 'DM Sans', fontSize: 'var(--fs-body-sm)', color: 'var(--tx3)', margin: '12px 0 0' }}>
+            {/* Participant ID — read-only in study mode, required input standalone */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <label style={{ fontFamily: 'DM Sans', fontSize: 'var(--fs-body-sm)', color: 'var(--tx2)' }}>
+                Participant ID
+              </label>
+              {externalId ? (
+                <div style={{
+                  fontFamily: 'Space Mono', fontSize: 'var(--fs-mono-md)',
+                  color: 'var(--tx)', background: 'var(--bgc)',
+                  border: '1px solid var(--bd)', borderRadius: 10,
+                  padding: '10px 14px', textAlign: 'center',
+                }}>
+                  {externalId}
+                </div>
+              ) : (
+                <input
+                  type="text"
+                  value={participantId}
+                  onChange={e => setParticipantId(e.target.value)}
+                  placeholder="e.g. 1990"
+                  autoComplete="off"
+                  style={{
+                    fontFamily: 'Space Mono', fontSize: 'var(--fs-mono-md)',
+                    color: 'var(--tx)', background: 'var(--bgc)',
+                    border: `1px solid ${canContinue ? 'var(--bd)' : 'var(--pk)'}`,
+                    borderRadius: 10,
+                    padding: '10px 14px', textAlign: 'center', width: '100%',
+                  }}
+                />
+              )}
+              <p style={{ fontFamily: 'DM Sans', fontSize: 'var(--fs-body-sm)', color: 'var(--tx3)', margin: 0 }}>
+                Required — identifies whose data this session belongs to.
+              </p>
+            </div>
+
+            {/* Session number */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <label style={{ fontFamily: 'DM Sans', fontSize: 'var(--fs-body-sm)', color: 'var(--tx2)' }}>
+                Session number
+              </label>
+              <input
+                type="number" min={1} value={sessionNumber}
+                onChange={e => setSessionNumber(Math.max(1, parseInt(e.target.value) || 1))}
+                style={{
+                  fontFamily: 'Space Mono', fontSize: 'var(--fs-mono-md)',
+                  color: 'var(--tx)', background: 'var(--bgc)',
+                  border: '1px solid var(--bd)', borderRadius: 10,
+                  padding: '10px 14px', textAlign: 'center', width: '100%',
+                }}
+              />
+              <p style={{ fontFamily: 'DM Sans', fontSize: 'var(--fs-body-sm)', color: 'var(--tx3)', margin: 0 }}>
+                Increment for each visit by the same participant.
+              </p>
+            </div>
+
+            <p style={{ fontFamily: 'DM Sans', fontSize: 'var(--fs-body-sm)', color: 'var(--tx3)', margin: 0 }}>
               Trigger device: <span style={{ fontFamily: 'Space Mono', color: 'var(--tx2)' }}>
                 {TRIGGER_DEVICES.find(d => d.value === triggerDevice)?.label ?? triggerDevice}
               </span>
             </p>
           </div>
-          <Btn onClick={async () => {
+
+          <Btn disabled={!canContinue} onClick={async () => {
             belt.setTriggerDevice(triggerDevice);
             const ok = await backup.initBackup(effectiveUserId);
             if (!ok && backup.isAvailable) {

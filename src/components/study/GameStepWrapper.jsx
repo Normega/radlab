@@ -20,8 +20,9 @@ export default function GameStepWrapper({ slug, enrollment, onComplete, supabase
   return (
     <GameComponent
       studyMode
-      userId={enrollment.user_id}
-      studyId={enrollment.study_id}
+      userId={enrollment.profile_id ?? enrollment.user_id}
+      studyId={enrollment.studies?.id ?? enrollment.study_id}
+      externalId={enrollment.external_id}
       onSessionComplete={result => onComplete({ game_slug: slug, ...result })}
       supabaseClient={supabaseClient}
     />

@@ -6,11 +6,12 @@ import { supabase as globalSupabase } from '../../../lib/supabase';
 // for normal self-serve play.
 export function useBeltSession(userId, client) {
   const db = client ?? globalSupabase;
-  const sessionIdRef   = useRef(null);
-  const trialsRef      = useRef([]);
-  const flushedCountRef = useRef(0);   // how many of trialsRef have been written to Supabase
+  const sessionIdRef        = useRef(null);
+  const trialsRef           = useRef([]);
+  const flushedCountRef     = useRef(0);   // how many of trialsRef have been written to Supabase
+  const participantEidRef   = useRef(null); // participant_external_id set at startSession
 
-  const startSession = useCallback(async (studyId = null) => {
+  const startSession = useCallback(async (studyId = null, externalId = null) => {
     const { data, error } = await db
       .from('game_sessions')
       .insert({
@@ -23,9 +24,10 @@ export function useBeltSession(userId, client) {
       .select('id')
       .single();
     if (error) { console.error('belt session start:', error); return null; }
-    sessionIdRef.current  = data.id;
-    trialsRef.current     = [];
-    flushedCountRef.current = 0;
+    sessionIdRef.current      = data.id;
+    trialsRef.current         = [];
+    flushedCountRef.current   = 0;
+    participantEidRef.current = externalId ?? null;
     return data.id;
   }, [userId, db]);
 
@@ -44,7 +46,7 @@ export function useBeltSession(userId, client) {
     const pending = trialsRef.current.slice(flushedCountRef.current);
     if (!pending.length) return;
     const { error } = await db.from('belt_trials').insert(
-      pending.map(t => ({ ...t, session_id: sessionId, user_id: userId }))
+      pending.map(t => ({ ...t, session_id: sessionId, user_id: userId, participant_external_id: participantEidRef.current }))
     );
     if (error) { console.error('belt_trials flush:', error); return; }
     flushedCountRef.current += pending.length;
@@ -59,7 +61,11 @@ export function useBeltSession(userId, client) {
     baselinePeriodMs,
     postBaselinePeriodMs,
     triggerDevice,
+    participantExternalId,
   }) => {
+    // Prefer the value passed at endSession (most up-to-date); fall back to
+    // what was set at startSession in case the caller doesn't re-pass it.
+    const eid = participantExternalId ?? participantEidRef.current ?? null;
     const sessionId = sessionIdRef.current;
     if (!sessionId) return;
 
@@ -82,18 +88,19 @@ export function useBeltSession(userId, client) {
     // 2. Insert belt_sessions row — calib metrics flattened from calibState JSON
     //    into the scalar columns added by belt_mlr_migration.sql.
     const { error: sessError } = await db.from('belt_sessions').insert({
-      session_id:              sessionId,
-      user_id:                 userId,
-      calib_state:             calibState,
-      storage_path:            basePath,
-      quest_state:             questState ?? null,
-      session_number:          sessionNumber ?? 1,
-      trigger_device:          triggerDevice ?? null,
-      baseline_period_ms:      baselinePeriodMs ?? null,
-      post_baseline_period_ms: postBaselinePeriodMs ?? null,
-      calib_model_label:       calibState?.modelLabel ?? null,
-      calib_fit_r:             calibState?.fitR       ?? null,
-      calib_lag_ms:            calibState?.lagMs      ?? null,
+      session_id:               sessionId,
+      user_id:                  userId,
+      participant_external_id:  eid,
+      calib_state:              calibState,
+      storage_path:             basePath,
+      quest_state:              questState ?? null,
+      session_number:           sessionNumber ?? 1,
+      trigger_device:           triggerDevice ?? null,
+      baseline_period_ms:       baselinePeriodMs ?? null,
+      post_baseline_period_ms:  postBaselinePeriodMs ?? null,
+      calib_model_label:        calibState?.modelLabel ?? null,
+      calib_fit_r:              calibState?.fitR       ?? null,
+      calib_lag_ms:             calibState?.lagMs      ?? null,
     });
     if (sessError) console.error('belt_sessions insert:', sessError);
 
@@ -101,7 +108,7 @@ export function useBeltSession(userId, client) {
     const remaining = trialsRef.current.slice(flushedCountRef.current);
     if (remaining.length) {
       const { error: trialError } = await db.from('belt_trials').insert(
-        remaining.map(t => ({ ...t, session_id: sessionId, user_id: userId }))
+        remaining.map(t => ({ ...t, session_id: sessionId, user_id: userId, participant_external_id: eid }))
       );
       if (trialError) console.error('belt_trials insert:', trialError);
       else flushedCountRef.current += remaining.length;
