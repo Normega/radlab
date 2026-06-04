@@ -69,7 +69,7 @@ export default function StaircaseScreen({
 
   const submitResponse = useCallback(() => {
     if (!response || confidence === null || arousal === null) return
-    const { key, log10Delta, conditionMs, sameContext, beltSyncMean, btBaselinePeriodMs, btConditionPeriodMs, syncMetrics } =
+    const { key, log10Delta, conditionMs, sameContext, beltSyncMean, btBaselinePeriodMs, btConditionPeriodMs, syncMetrics, trialStartMs, trialEndMs } =
       pendingTrialRef.current
 
     const { correct } = quest.recordResponse(key, response, log10Delta)
