@@ -6,7 +6,11 @@ import { supabase } from '../../lib/supabase'
 
 function toCsv(rows) {
   if (!rows.length) return ''
-  const cols = Object.keys(rows[0])
+  // Collect all unique keys across every row so sparse rows (e.g. different
+  // questionnaires with disjoint item sets) still get their columns included.
+  const colSet = new Set()
+  for (const r of rows) Object.keys(r).forEach(k => colSet.add(k))
+  const cols = [...colSet]
   const escape = v => {
     if (v == null) return ''
     const s = typeof v === 'object' ? JSON.stringify(v) : String(v)
