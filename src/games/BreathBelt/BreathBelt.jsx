@@ -94,21 +94,7 @@ export default function BreathBelt({ studyMode = false, userId, studyId, externa
   // session can start without waiting on a getUser() round-trip.
   const effectiveUserId = userId ?? profile?.id;
 
-  const { data: avatar } = useQuery({
-    queryKey: ['avatar', effectiveUserId],
-    queryFn: async () => {
-      const { data } = await db
-        .from('avatars').select('*').eq('user_id', effectiveUserId).single();
-      return data;
-    },
-    enabled: !!effectiveUserId,
-  });
-
-  const avatarProps = {
-    skinColor: avatar?.skin_color ?? '#FDBCB4',
-    eyeColor:  avatar?.eye_color  ?? '#4A90D9',
-    species:   'human',
-  };
+  const avatarProps = { skinColor: '#FDBCB4', eyeColor: '#4A90D9', species: 'human' };
 
   const belt    = useBeltConnection();
   const session = useBeltSession(effectiveUserId, db);
