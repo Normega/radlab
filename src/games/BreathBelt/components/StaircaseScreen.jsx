@@ -5,7 +5,7 @@ import { useTrialRunner } from '../hooks/useTrialRunner'
 import { useBeltQuestStaircases } from '../hooks/useBeltQuestStaircases'
 import ConfidenceRating from '../../shared/ConfidenceRating'
 import ArousalRating from '../../shared/ArousalRating'
-import { BASE_BREATH_SPEED_S, QUEST_MAX_PHASE3_TRIALS } from '../constants'
+import { BASE_BREATH_SPEED_S, QUEST_MAX_PHASE3_TRIALS, BASELINE_BREATHS_COUNT } from '../constants'
 
 const BASE_MS = BASE_BREATH_SPEED_S * 1000
 const SC_STATES = { READY: 'READY', IN_PROGRESS: 'IN_PROGRESS', RESPONSE: 'RESPONSE' }
@@ -30,8 +30,9 @@ export default function StaircaseScreen({
   const [confidence, setConfidence] = useState(null)
   const [arousal,    setArousal]    = useState(null)
   const [syncData,   setSyncData]   = useState(null)   // post-trial metrics (no graph)
-  const trialsData      = useRef([])
-  const pendingTrialRef = useRef(null)
+  const trialsData        = useRef([])
+  const pendingTrialRef   = useRef(null)
+  const responseFirstMsRef = useRef(null)  // epoch ms of first 3AFC button tap
   const avatarSize      = 240
 
   const quest = useBeltQuestStaircases(savedQuestState)
@@ -57,11 +58,12 @@ export default function StaircaseScreen({
     setScState(SC_STATES.IN_PROGRESS)
     setResponse(null); setConfidence(null); setArousal(null)
 
-    const { beltSyncMean, btBaselinePeriodMs, btConditionPeriodMs, syncMetrics, trialStartMs } =
+    const { beltSyncMean, btBaselinePeriodMs, btConditionPeriodMs, syncMetrics, trialStartMs, trialEndMs } =
       await runTrial('phase3', trialCount + 1, conditionMs)
 
     setSyncData(syncMetrics)                 // overlay visible during RESPONSE, no graph
-    pendingTrialRef.current = { key, log10Delta, deltaSec, conditionMs, sameContext, beltSyncMean, btBaselinePeriodMs, btConditionPeriodMs, syncMetrics, trialStartMs }
+    responseFirstMsRef.current = null        // reset for fresh response timing
+    pendingTrialRef.current = { key, log10Delta, deltaSec, conditionMs, sameContext, beltSyncMean, btBaselinePeriodMs, btConditionPeriodMs, syncMetrics, trialStartMs, trialEndMs }
     setScState(SC_STATES.RESPONSE)
   }, [trialCount, quest, runTrial])
 
@@ -72,6 +74,9 @@ export default function StaircaseScreen({
 
     const { correct } = quest.recordResponse(key, response, log10Delta)
     const sessionStartMs = sessionStartMsRef?.current ?? null
+    const responseRtMs = responseFirstMsRef.current != null && trialEndMs != null
+      ? Math.round(responseFirstMsRef.current - trialEndMs)
+      : null
     const row = {
       phase:                  3,
       trial_number:           trialCount + 1,
@@ -90,6 +95,9 @@ export default function StaircaseScreen({
       trial_r_condition:      syncMetrics?.trialRCondition ?? null,
       peak_error_ms:          syncMetrics?.peakErrorMs     ?? null,
       trial_onset_ms:         sessionStartMs != null ? Math.round(trialStartMs - sessionStartMs) : null,
+      condition_onset_ms:     sessionStartMs != null ? Math.round(trialStartMs - sessionStartMs + BASELINE_BREATHS_COUNT * BASE_BREATH_SPEED_S * 1000) : null,
+      trial_end_ms:           sessionStartMs != null ? Math.round(trialEndMs   - sessionStartMs) : null,
+      response_rt_ms:         responseRtMs,
     }
     trialsData.current.push(row)
     recordTrial(row)
@@ -154,7 +162,10 @@ export default function StaircaseScreen({
           </p>
           <div className="flex gap-3 justify-center">
             {['slower', 'same', 'faster'].map(opt => (
-              <button key={opt} onClick={() => setResponse(opt)}
+              <button key={opt} onClick={() => {
+                if (responseFirstMsRef.current === null) responseFirstMsRef.current = Date.now()
+                setResponse(opt)
+              }}
                 className="px-5 py-3 rounded-xl font-medium capitalize"
                 style={{
                   background: response === opt ? 'var(--pk)' : 'transparent',

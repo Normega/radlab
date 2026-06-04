@@ -76,6 +76,10 @@ export default function BreathBelt({ studyMode = false, userId, studyId, externa
   const convergenceRef        = useRef(null);
   const pendingQuestStateRef  = useRef(null);
   const sessionStartMsRef     = useRef(null);  // Date.now() when trigger 1 fires
+  const phase2StartMsRef      = useRef(null);  // ms from trigger-1 when trigger-4 fires
+  const phase2EndMsRef        = useRef(null);  // ms from trigger-1 when trigger-5 fires
+  const phase3StartMsRef      = useRef(null);  // ms from trigger-1 when trigger-6 fires
+  const phase3EndMsRef        = useRef(null);  // ms from trigger-1 when trigger-7 fires
   const cascadeFiredRef       = useRef(false);
   const trialGraphsRef        = useRef([]);
 
@@ -140,12 +144,18 @@ export default function BreathBelt({ studyMode = false, userId, studyId, externa
 
   // Code 4 — phase 2 start
   useEffect(() => {
-    if (phase === S.PHASE2_RUNNING) belt.sendTrigger('4');
+    if (phase === S.PHASE2_RUNNING) {
+      if (sessionStartMsRef.current != null) phase2StartMsRef.current = Date.now() - sessionStartMsRef.current;
+      belt.sendTrigger('4');
+    }
   }, [phase]);
 
   // Code 6 — phase 3 start
   useEffect(() => {
-    if (phase === S.PHASE3_RUNNING) belt.sendTrigger('6');
+    if (phase === S.PHASE3_RUNNING) {
+      if (sessionStartMsRef.current != null) phase3StartMsRef.current = Date.now() - sessionStartMsRef.current;
+      belt.sendTrigger('6');
+    }
   }, [phase]);
 
   // Start Supabase session once, at BASELINE_READY
@@ -180,6 +190,11 @@ export default function BreathBelt({ studyMode = false, userId, studyId, externa
         postBaselinePeriodMs:    postBaselinePeriodRef.current,
         participantExternalId:   participantId || null,
         convergence:             convergenceRef.current,
+        sessionStartEpochMs:     sessionStartMsRef.current,
+        phase2StartMs:           phase2StartMsRef.current,
+        phase2EndMs:             phase2EndMsRef.current,
+        phase3StartMs:           phase3StartMsRef.current,
+        phase3EndMs:             phase3EndMsRef.current,
       });
       await belt.sendTrigger('13');   // code 13 — session end
     } catch (err) {
@@ -521,6 +536,7 @@ export default function BreathBelt({ studyMode = false, userId, studyId, externa
           sessionStartMsRef={sessionStartMsRef}
           onComplete={async (trialsData, trialGraphs) => {
             trialGraphsRef.current = trialGraphs
+            if (sessionStartMsRef.current != null) phase2EndMsRef.current = Date.now() - sessionStartMsRef.current;
             await belt.sendTrigger('5')  // code 5 — phase 2 end
             await session.flushTrials()  // persist phase-2 trials before continuing
             // The Phase 2 review screen is researcher feedback — skip it in
@@ -578,6 +594,7 @@ export default function BreathBelt({ studyMode = false, userId, studyId, externa
           savedQuestState={null}
           sessionStartMsRef={sessionStartMsRef}
           onComplete={async (trials, questState, convergence) => {
+            if (sessionStartMsRef.current != null) phase3EndMsRef.current = Date.now() - sessionStartMsRef.current;
             await belt.sendTrigger('7');  // code 7 — phase 3 end
             convergenceRef.current     = convergence;
             pendingQuestStateRef.current = questState;

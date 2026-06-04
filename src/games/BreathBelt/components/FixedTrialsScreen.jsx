@@ -4,7 +4,8 @@ import BeltSyncRing from './BeltSyncRing'
 import TrialSyncOverlay from './TrialSyncOverlay'
 import { useTrialRunner } from '../hooks/useTrialRunner'
 import {
-  BASE_BREATH_SPEED_S, FASTER_BREATH_SPEED_S, SLOWER_BREATH_SPEED_S, TRIALS_PER_CONDITION,
+  BASE_BREATH_SPEED_S, FASTER_BREATH_SPEED_S, SLOWER_BREATH_SPEED_S,
+  TRIALS_PER_CONDITION, BASELINE_BREATHS_COUNT,
 } from '../constants'
 
 function shuffled(arr) {
@@ -67,7 +68,7 @@ export default function FixedTrialsScreen({
     setSyncData(null)                          // clear previous overlay
     setTrialState(TRIAL_STATES.IN_PROGRESS)
 
-    const { beltSyncMean, btBaselinePeriodMs, btConditionPeriodMs, syncMetrics, trialStartMs } =
+    const { beltSyncMean, btBaselinePeriodMs, btConditionPeriodMs, syncMetrics, trialStartMs, trialEndMs } =
       await runTrial('phase2', trialIdx + 1, conditionMs(condition))
 
     setSyncData(syncMetrics)                   // show overlay on READY screen
@@ -98,6 +99,8 @@ export default function FixedTrialsScreen({
       trial_r_condition:      syncMetrics?.trialRCondition ?? null,
       peak_error_ms:          syncMetrics?.peakErrorMs     ?? null,
       trial_onset_ms:         sessionStartMs != null ? Math.round(trialStartMs - sessionStartMs) : null,
+      condition_onset_ms:     sessionStartMs != null ? Math.round(trialStartMs - sessionStartMs + BASELINE_BREATHS_COUNT * BASE_BREATH_SPEED_S * 1000) : null,
+      trial_end_ms:           sessionStartMs != null ? Math.round(trialEndMs   - sessionStartMs) : null,
     }
     trialsData.push(row)
     recordTrial(row)

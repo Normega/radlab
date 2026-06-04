@@ -63,6 +63,11 @@ export function useBeltSession(userId, client) {
     triggerDevice,
     participantExternalId,
     convergence,
+    sessionStartEpochMs,
+    phase2StartMs,
+    phase2EndMs,
+    phase3StartMs,
+    phase3EndMs,
   }) => {
     // Prefer the value passed at endSession (most up-to-date); fall back to
     // what was set at startSession in case the caller doesn't re-pass it.
@@ -106,6 +111,11 @@ export function useBeltSession(userId, client) {
       thresh_slower_log10:      convergence?.slower != null ? Math.log10(convergence.slower.meanDeltaSec) : null,
       thresh_sd_faster:         convergence?.faster?.sd ?? null,
       thresh_sd_slower:         convergence?.slower?.sd ?? null,
+      session_start_epoch_ms:   sessionStartEpochMs ?? null,
+      phase2_start_ms:          phase2StartMs ?? null,
+      phase2_end_ms:            phase2EndMs   ?? null,
+      phase3_start_ms:          phase3StartMs ?? null,
+      phase3_end_ms:            phase3EndMs   ?? null,
     });
     if (sessError) console.error('belt_sessions insert:', sessError);
 

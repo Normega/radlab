@@ -102,6 +102,7 @@ export function useTrialRunner({
 
     // ── Trial end ─────────────────────────────────────────────────────────
     await sendTrigger('12')
+    const trialEndMs = Date.now()
 
     // Freeze avatar at neutral — will be held until next trial's 500 ms fixation
     controlRef.current?.resetToNeutral?.()
@@ -160,7 +161,7 @@ export function useTrialRunner({
       }
     }
 
-    return { beltSyncMean, btBaselinePeriodMs, btConditionPeriodMs, syncMetrics, trialStartMs }
+    return { beltSyncMean, btBaselinePeriodMs, btConditionPeriodMs, syncMetrics, trialStartMs, trialEndMs }
   }
 
   return { getPhase, runTrial, controlRef }
