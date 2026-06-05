@@ -196,7 +196,7 @@ export default function StudySessionRunner() {
       <div style={S.progressBarWrap}>
         <div style={{ ...S.progressBarFill, width: `${progressPct}%` }} />
       </div>
-      <p style={S.stepLabel}>{stepLabel}</p>
+      {activity?.category !== 'game' && <p style={S.stepLabel}>{stepLabel}</p>}
 
       <div style={S.stepContent}>
         {node ? (
