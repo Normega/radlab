@@ -9,6 +9,8 @@ import {
   DEFAULT_TRIGGER_DEVICE, TRIGGER_DEVICES, BIOPAC_SERVER_URL,
 } from '../constants'
 
+const SIM_MLR_WEIGHTS = { bias: 0.5, weights: [0.8, 0.1, 0.1], modelLabel: 'sim-mlr3w', lagMs: 50, fitR: 0.92 }
+
 // Relay a single parallel-port write to the local Biopac helper. A missed
 // trigger must not crash the session, so failures are logged, never thrown.
 async function postParallel(address, value) {
@@ -23,7 +25,7 @@ async function postParallel(address, value) {
   }
 }
 
-export function useBeltConnection() {
+export function useBeltConnection({ isSimMode = false } = {}) {
   const [btState,         setBtState]         = useState('IDLE')
   const [comState,        setComState]         = useState('IDLE')
   const [comMessage,      setComMessage]       = useState('')
@@ -65,6 +67,9 @@ export function useBeltConnection() {
 
   // Pacer radius fn — set by trial screens, read per accel packet
   const getPacerRadiusFnRef = useRef(() => NaN)
+
+  // Sim-mode breath interval
+  const simIntervalRef = useRef(null)
 
   // ── Calibration BREATHE timer ────────────────────────────────────────────
 
@@ -248,6 +253,9 @@ export function useBeltConnection() {
   }, [])
 
   const sendTrigger = useCallback(async (value) => {
+    // In sim mode triggers are a no-op — no hardware to pulse.
+    if (isSimMode) return
+
     const device = triggerDeviceRef.current
     const dev    = TRIGGER_DEVICES.find(d => d.value === device)
 
@@ -275,12 +283,14 @@ export function useBeltConnection() {
     } catch (err) {
       console.error('COM trigger:', err)
     }
-  }, [])
+  }, [isSimMode])
 
   // Connection check: pulse every event code 1..13 through the active device so
   // the RA can confirm all 13 marks land in the recording. Uses sendTrigger, so
   // it's correct for both AD_BBT (hex) and Biopac (code*shift) automatically.
+  // In sim mode this is a no-op (no hardware to check).
   const sendTestCascade = useCallback(async () => {
+    if (isSimMode) return
     setTestRunning(true)
     try {
       for (let code = 1; code <= 13; code++) {
@@ -290,7 +300,7 @@ export function useBeltConnection() {
     } finally {
       setTestRunning(false)
     }
-  }, [sendTrigger])
+  }, [sendTrigger, isSimMode])
 
   // ── Calibration ──────────────────────────────────────────────────────────
 
@@ -333,6 +343,28 @@ export function useBeltConnection() {
     setCalibPhase('NONE')
   }, [])
 
+  // ── Sim-mode helpers ─────────────────────────────────────────────────────
+
+  // startSimulation: skips all hardware, injects fake MLR weights, and starts
+  // a 40ms interval that writes a 4-second sine-wave breath signal.
+  const startSimulation = useCallback(() => {
+    if (simIntervalRef.current) clearInterval(simIntervalRef.current)
+    setBtState('CONNECTED')
+    mlrWeightsRef.current   = { ...SIM_MLR_WEIGHTS }
+    filterState3Ref.current = initFilterState3()
+    simIntervalRef.current  = setInterval(() => {
+      breathValueRef.current = 0.5 + 0.4 * Math.sin(2 * Math.PI * Date.now() / 4000)
+    }, 40)
+    setComState('CONNECTED')
+  }, [])
+
+  // acceptSimCalib: immediately populates calibReviewData and jumps calibPhase
+  // to REVIEW so CalibrationScreen's "Continue" button becomes active.
+  const acceptSimCalib = useCallback(() => {
+    setCalibReviewData({ fitR: 0.92, lagMs: 50, peakErrorMs: 120, modelLabel: 'sim-mlr3w', pacerPts: [], beltPts: [] })
+    setCalibPhase('REVIEW')
+  }, [])
+
   // ── Trial raw sample access ───────────────────────────────────────────────
   // Called by useTrialRunner after sendTrigger('12') to retrieve this trial's
   // raw samples for offline sync scoring, then clears the buffer.
@@ -347,6 +379,7 @@ export function useBeltConnection() {
   // ── Cleanup ───────────────────────────────────────────────────────────────
 
   const stopNotifications = useCallback(async () => {
+    if (simIntervalRef.current) { clearInterval(simIntervalRef.current); simIntervalRef.current = null }
     try { await readAccCharRef.current?.stopNotifications() }   catch { /* best-effort: ignore if not open / already closed */ }
     try { await heartRateCharRef.current?.stopNotifications() } catch { /* best-effort: ignore if not open / already closed */ }
     try { await serialPortWriterRef.current?.close(); await writableStreamClosedRef.current } catch { /* best-effort: ignore if not open / already closed */ }
@@ -362,6 +395,7 @@ export function useBeltConnection() {
     connect, connectCOM, connectBiopac, sendTrigger, sendTestCascade, setTriggerDevice,
     startCalibration, beginCalibCollection,
     acceptCalibration, redoCalibration, resetCalibration,
+    startSimulation, acceptSimCalib,
     getAndClearTrialSamples,
     stopNotifications,
   }

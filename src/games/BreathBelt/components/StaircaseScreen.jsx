@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import AvatarBreathPacer from '../../EbbAndFlow/components/AvatarBreathPacer'
 import TrialSyncOverlay from './TrialSyncOverlay'
 import { useTrialRunner } from '../hooks/useTrialRunner'
@@ -22,6 +22,7 @@ export default function StaircaseScreen({
   showSyncOverlay = true,
   savedQuestState,
   sessionStartMsRef,
+  isSimMode = false,
   onComplete,
 }) {
   const [scState,    setScState]    = useState(SC_STATES.READY)
@@ -83,6 +84,7 @@ export default function StaircaseScreen({
       condition:              key,
       breath_period_ms:       conditionMs,
       log10_mag:              log10Delta,
+      proportion_mag:         (conditionMs - BASE_MS) / BASE_MS,
       response,
       correct,
       same_context:           sameContext ?? null,
@@ -114,6 +116,34 @@ export default function StaircaseScreen({
       setScState(SC_STATES.READY)
     }
   }, [response, confidence, arousal, trialCount, quest, recordTrial, onComplete])
+
+  // Sim mode: auto-advance READY → startTrial(), and when RESPONSE is reached,
+  // fill in random ratings and submit after short delays.
+  useEffect(() => {
+    if (!isSimMode || scState !== SC_STATES.READY) return;
+    const t = setTimeout(() => { startTrial(); }, 300);
+    return () => clearTimeout(t);
+  }, [isSimMode, scState, startTrial]);
+
+  useEffect(() => {
+    if (!isSimMode || scState !== SC_STATES.RESPONSE) return;
+    // Wait 400ms then set random response values.
+    const t1 = setTimeout(() => {
+      const opts = ['slower', 'same', 'faster'];
+      setResponse(opts[Math.floor(Math.random() * 3)]);
+      setConfidence(Math.ceil(Math.random() * 7));
+      setArousal(Math.ceil(Math.random() * 7));
+    }, 400);
+    return () => clearTimeout(t1);
+  }, [isSimMode, scState]);
+
+  // Once all three response values are set in sim mode, submit after 200ms.
+  useEffect(() => {
+    if (!isSimMode || scState !== SC_STATES.RESPONSE) return;
+    if (response === null || confidence === null || arousal === null) return;
+    const t2 = setTimeout(() => { submitResponse(); }, 200);
+    return () => clearTimeout(t2);
+  }, [isSimMode, scState, response, confidence, arousal, submitResponse]);
 
   const conv     = quest.getConvergence()
   const canSubmit = response !== null && confidence !== null && arousal !== null

@@ -83,7 +83,7 @@ function useBeltSessions(externalId) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('belt_sessions')
-        .select('id, session_id, created_at, calib_model_label, calib_fit_r, calib_lag_ms, trigger_device, storage_path, session_number')
+        .select('id, session_id, created_at, session_number, calib_model_label, calib_fit_r, calib_lag_ms, trigger_device, storage_path, baseline_period_ms, post_baseline_period_ms, thresh_faster_log10, thresh_slower_log10, thresh_sd_faster, thresh_sd_slower, session_start_epoch_ms, phase2_start_ms, phase2_end_ms, phase3_start_ms, phase3_end_ms')
         .eq('participant_external_id', externalId)
         .order('created_at', { ascending: false })
       if (error) throw error
@@ -99,9 +99,25 @@ function useBeltTrials(externalId) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('belt_trials')
-        .select('session_id, phase, trial_number, condition, breath_period_ms, log10_mag, response, correct, confidence, arousal, belt_sync_mean, trial_r_baseline, trial_r_condition, peak_error_ms, created_at')
+        .select('session_id, phase, trial_number, condition, breath_period_ms, log10_mag, proportion_mag, response, correct, same_context, confidence, arousal, response_rt_ms, belt_sync_mean, bt_baseline_period_ms, bt_condition_period_ms, trial_r_baseline, trial_r_condition, peak_error_ms, trial_onset_ms, condition_onset_ms, trial_end_ms, created_at')
         .eq('participant_external_id', externalId)
         .order('created_at', { ascending: true })
+      if (error) throw error
+      return data ?? []
+    },
+  })
+}
+
+function useDemographics(profileId) {
+  return useQuery({
+    queryKey: ['export-demographics', profileId],
+    enabled: !!profileId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('demographics')
+        .select('age, gender, racialized, ses_ladder, enrollment_id, schedule_id, completed_at')
+        .eq('user_id', profileId)
+        .order('completed_at', { ascending: true })
       if (error) throw error
       return data ?? []
     },
@@ -179,7 +195,7 @@ function BeltSessionsSection({ externalId }) {
           <table style={S.table}>
             <thead>
               <tr>
-                {['Date', 'Sess #', 'Calib model', 'Fit R', 'Lag ms', 'Trigger', 'Session ID'].map(h => (
+                {['Date', 'Sess #', 'Calib model', 'Fit R', 'Lag ms', 'Trigger', 'BL period ms', 'Post BL ms', 'Thresh fast', 'Thresh slow', 'Session ID'].map(h => (
                   <th key={h} style={S.th}>{h}</th>
                 ))}
               </tr>
@@ -193,6 +209,10 @@ function BeltSessionsSection({ externalId }) {
                   <td style={{ ...S.tdMono, color: fitColor(row.calib_fit_r) }}>{fmt(row.calib_fit_r)}</td>
                   <td style={S.tdMono}>{fmt(row.calib_lag_ms, 0)}</td>
                   <td style={S.tdMono}>{row.trigger_device ?? '—'}</td>
+                  <td style={S.tdMono}>{row.baseline_period_ms != null ? Math.round(row.baseline_period_ms) : '—'}</td>
+                  <td style={S.tdMono}>{row.post_baseline_period_ms != null ? Math.round(row.post_baseline_period_ms) : '—'}</td>
+                  <td style={S.tdMono}>{fmt(row.thresh_faster_log10)}</td>
+                  <td style={S.tdMono}>{fmt(row.thresh_slower_log10)}</td>
                   <td style={S.tdMono}>{row.session_id?.slice(0, 8)}…</td>
                 </tr>
               ))}
@@ -207,20 +227,25 @@ function BeltSessionsSection({ externalId }) {
 // ── Belt Trials section ──────────────────────────────────────────────────────
 
 const TRIAL_COLS = [
-  { key: 'session_id',        label: 'Session',     render: v => v ? v.slice(0, 8) + '…' : '—' },
-  { key: 'phase',             label: 'Ph',          render: v => v },
-  { key: 'trial_number',      label: '#',           render: v => v },
-  { key: 'condition',         label: 'Condition',   render: v => v ?? '—' },
-  { key: 'breath_period_ms',  label: 'Period ms',   render: v => v },
-  { key: 'log10_mag',         label: 'log10 mag',   render: v => fmt(v) },
-  { key: 'response',          label: 'Response',    render: v => v ?? '—' },
-  { key: 'correct',           label: 'Correct',     render: v => v == null ? '—' : v ? '✓' : '✗' },
-  { key: 'confidence',        label: 'Conf',        render: v => v ?? '—' },
-  { key: 'arousal',           label: 'Arousal',     render: v => v ?? '—' },
-  { key: 'belt_sync_mean',    label: 'Sync',        render: v => fmt(v) },
-  { key: 'trial_r_baseline',  label: 'R base',      render: v => fmt(v) },
-  { key: 'trial_r_condition', label: 'R cond',      render: v => fmt(v) },
-  { key: 'peak_error_ms',     label: 'Peak err ms', render: v => fmt(v, 0) },
+  { key: 'session_id',            label: 'Session',      render: v => v ? v.slice(0, 8) + '…' : '—' },
+  { key: 'phase',                 label: 'Ph',           render: v => v },
+  { key: 'trial_number',          label: '#',            render: v => v },
+  { key: 'condition',             label: 'Condition',    render: v => v ?? '—' },
+  { key: 'same_context',          label: 'Same ctx',     render: v => v ?? '—' },
+  { key: 'breath_period_ms',      label: 'Period ms',    render: v => v != null ? Math.round(v) : '—' },
+  { key: 'log10_mag',             label: 'log10 mag',    render: v => fmt(v) },
+  { key: 'proportion_mag',        label: 'Prop mag',     render: v => fmt(v) },
+  { key: 'response',              label: 'Response',     render: v => v ?? '—' },
+  { key: 'correct',               label: 'Correct',      render: v => v == null ? '—' : v ? '✓' : '✗' },
+  { key: 'confidence',            label: 'Conf',         render: v => v ?? '—' },
+  { key: 'arousal',               label: 'Arousal',      render: v => v ?? '—' },
+  { key: 'response_rt_ms',        label: 'RT ms',        render: v => v ?? '—' },
+  { key: 'belt_sync_mean',        label: 'Sync',         render: v => fmt(v) },
+  { key: 'bt_baseline_period_ms', label: 'BT BL ms',     render: v => v != null ? Math.round(v) : '—' },
+  { key: 'bt_condition_period_ms',label: 'BT cond ms',   render: v => v != null ? Math.round(v) : '—' },
+  { key: 'trial_r_baseline',      label: 'R base',       render: v => fmt(v) },
+  { key: 'trial_r_condition',     label: 'R cond',       render: v => fmt(v) },
+  { key: 'peak_error_ms',         label: 'Peak err ms',  render: v => fmt(v, 0) },
 ]
 
 function BeltTrialsSection({ externalId }) {
@@ -316,6 +341,53 @@ function QuestionnairesSection({ profileId, externalId }) {
   )
 }
 
+// ── Demographics section ─────────────────────────────────────────────────────
+
+function DemographicsSection({ profileId, externalId }) {
+  const { data = [], isLoading } = useDemographics(profileId)
+
+  return (
+    <section style={S.section}>
+      <SectionHeader
+        title="Demographics"
+        count={isLoading ? null : data.length}
+        onDownload={() => downloadCsv(`demographics_${externalId}.csv`, data)}
+        disabled={isLoading || data.length === 0}
+      />
+      {isLoading ? (
+        <p style={S.msg}>Loading…</p>
+      ) : !profileId ? (
+        <p style={S.msg}>No study enrollment found — demographics lookup requires an enrollment record.</p>
+      ) : data.length === 0 ? (
+        <p style={S.msg}>No demographics found.</p>
+      ) : (
+        <div style={S.tableWrap}>
+          <table style={S.table}>
+            <thead>
+              <tr>
+                {['Age', 'Gender', 'Racialized', 'SES ladder', 'Completed'].map(h => (
+                  <th key={h} style={S.th}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {data.map((row, i) => (
+                <tr key={i} style={S.tr}>
+                  <td style={S.tdMono}>{row.age ?? '—'}</td>
+                  <td style={S.td}>{row.gender ?? '—'}</td>
+                  <td style={S.tdMono}>{row.racialized ?? '—'}</td>
+                  <td style={S.tdMono}>{row.ses_ladder ?? '—'}</td>
+                  <td style={S.td}>{fmtDate(row.completed_at)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
+  )
+}
+
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function DataExportPage() {
@@ -377,6 +449,7 @@ export default function DataExportPage() {
           <p style={S.badge}>
             Participant <strong style={{ fontFamily: '"Space Mono",monospace' }}>{selected.externalId}</strong>
           </p>
+          <DemographicsSection   externalId={selected.externalId} profileId={selected.profileId} />
           <BeltSessionsSection   externalId={selected.externalId} />
           <BeltTrialsSection     externalId={selected.externalId} />
           <QuestionnairesSection externalId={selected.externalId} profileId={selected.profileId} />

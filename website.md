@@ -1616,13 +1616,16 @@ Both staircases converge independently. Session ends when both converge. Quest s
 
 ### Belt period estimates — correspondence study
 
-`breathUtils.js` exports `estimateBreathPeriodMs(signal)`: accepts `{ t, value }[]` (wall-clock ms + 0–1 belt value). Uses 5-point peak detection with a 0.40 threshold and median inter-peak interval. Returns null if < 2 valid peaks detected.
+`breathUtils.js` exports `estimateBreathPeriodMs(signal, minPeriodMs=2000, maxPeriodMs=8000)`: accepts `{ t, value }[]`. Uses 5-point peak detection with a 0.40 normalised threshold and median inter-peak interval. Returns null if < 2 valid peaks detected, signal is flat (max−min < 1e-6), or no intervals fall within [minPeriodMs, maxPeriodMs].
 
-`useTrialRunner` samples `breathValueRef` in two separate windows per trial as `{ t: Date.now(), value }`:
+`useTrialRunner` collects raw `breathValue` numbers during two windows per trial, then converts to `{ t: i*40, value }` (synthetic relative timestamps, not wall-clock) before calling `estimateBreathPeriodMs`. Both calls pass **`minPeriodMs=1500`** — not the free-breathing default of 2000 — because at the fast extreme of the QUEST staircase the condition breath period approaches 2000 ms, making the inter-peak interval barely pass the 2000 ms gate; 1500 ms avoids false nulls from timing jitter without accepting noise (genuine breath peaks are always ≥ 1500 ms apart at the staircase range used).
+
 - **baseline window** (breaths 1–2 at BASE speed): `btBaselinePeriodMs`
 - **condition window** (breaths 3–4 at condition speed): `btConditionPeriodMs`
 
-Both are stored on `belt_trials` rows. Null is valid — do not drop the trial. `useTrialRunner` also sets `getPacerRadiusFnRef.current` at trial start (cleared to `() => NaN` at trial end), enabling per-sample pacer radius logging in the raw accel rows.
+`BaselineScreen` (pre/post 120 s windows) uses wall-clock `{ t: Date.now(), value }` samples and calls `estimateBreathPeriodMs` with the default `minPeriodMs=2000`. Session-level baseline fields are null if the MLR model is not yet calibrated when recording begins (flat `breathValueRef` → max−min < 1e-6).
+
+Both trial fields are stored on `belt_trials` rows. Null is valid — do not drop the trial. `useTrialRunner` also sets `getPacerRadiusFnRef.current` at trial start (cleared to `() => NaN` at trial end), enabling per-sample pacer radius logging in the raw accel rows.
 
 ### Data
 
@@ -1631,9 +1634,9 @@ Supabase schema in `belt_schema.sql` (initial) + `belt_correspondence_migration.
 | Table | Contents |
 |---|---|
 | `belt_sessions` | One row per session: user_id, calib_state JSON, quest_state JSON, storage_path, **session_number**, **baseline_period_ms**, **post_baseline_period_ms**, ***calib_model_label***, ***calib_fit_r***, ***calib_lag_ms*** |
-| `belt_trials` | One row per trial: phase, trial_number, condition, breath_period_ms, log10_mag, response, correct, *****same_context*****, confidence, arousal, belt_sync_mean, **bt_baseline_period_ms**, **bt_condition_period_ms**, ****trial_r_baseline****, ****trial_r_condition****, ****peak_error_ms**** |
+| `belt_trials` | One row per trial: phase, trial_number, condition, breath_period_ms, log10_mag, ††proportion_mag††, response, correct, *****same_context*****, confidence, arousal, belt_sync_mean, **bt_baseline_period_ms**, **bt_condition_period_ms**, ****trial_r_baseline****, ****trial_r_condition****, ****peak_error_ms**** |
 
-**Bold** = added by `belt_correspondence_migration.sql`. ***Bold italic*** = added by `belt_mlr_migration.sql` (now populated by `useBeltSession.endSession` from `calibState` JSON). ****Bold underline**** = added by `belt_sync_metrics_migration.sql`. *****Bold italic underline***** = added by inline `ALTER TABLE` (same_context — for SAME catch trial SDT analysis).
+**Bold** = added by `belt_correspondence_migration.sql`. ***Bold italic*** = added by `belt_mlr_migration.sql` (now populated by `useBeltSession.endSession` from `calibState` JSON). ****Bold underline**** = added by `belt_sync_metrics_migration.sql`. *****Bold italic underline***** = added by inline `ALTER TABLE` (same_context — for SAME catch trial SDT analysis). ††proportion_mag†† = added by `belt_proportion_migration.sql` — signed proportion change in breath period: `(breath_period_ms − 4000) / 4000`; negative = faster, positive = slower, zero = same; always non-null, computable from `breath_period_ms` alone.
 
 Raw signals are uploaded to the `belt-sessions` Storage bucket as two CSVs per session:
 
@@ -1669,6 +1672,7 @@ src/games/BreathBelt/
   belt_schema.sql                    ← initial Supabase migration
   belt_mlr_migration.sql             ← adds calib_model_label/calib_fit_r/calib_lag_ms to belt_sessions
   belt_sync_metrics_migration.sql    ← adds trial_r_baseline/trial_r_condition/peak_error_ms to belt_trials
+  belt_proportion_migration.sql      ← adds proportion_mag to belt_trials
   hooks/
     useBeltConnection.js     ← Web Bluetooth + Web Serial + Biopac parallel-port server, MLR calibration pipeline;
                                sendTrigger branches per device (AD_BBT hex / Biopac code×shift); connectCOM + connectBiopac;
@@ -1719,6 +1723,7 @@ Run these migrations manually in the Supabase SQL editor in order:
 4. `belt_sync_metrics_migration.sql` — adds `trial_r_baseline`, `trial_r_condition`, `peak_error_ms` to `belt_trials`
 5. Inline — `ADD COLUMN IF NOT EXISTS same_context text` on `belt_trials` (run June 2026; adds SAME catch trial SDT context column)
 6. Inline — `ALTER COLUMN breath_period_ms TYPE double precision` on `belt_trials` (run June 2026; QUEST-derived periods are floats, original integer type caused insert failures)
+7. `belt_proportion_migration.sql` — adds `proportion_mag` to `belt_trials` (run June 2026; applied via Supabase MCP)
 
 All migrations use `ADD COLUMN IF NOT EXISTS` — safe to run on existing data.
 

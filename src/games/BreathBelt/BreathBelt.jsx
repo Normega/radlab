@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import { useBeltConnection } from './hooks/useBeltConnection';
@@ -59,6 +59,11 @@ const S = {
 
 export default function BreathBelt({ studyMode = false, userId, studyId, externalId, onSessionComplete, supabaseClient }) {
   const navigate = useNavigate();
+  const location = useLocation();
+  // Sim mode: ?sim=1 in the URL. Read once at mount — no build-time constant so
+  // the production build can be tested without any code change.
+  const isSimMode = new URLSearchParams(location.search).get('sim') === '1';
+
   // In a participant study session the caller passes the participant-authenticated
   // client; all data reads/writes must use it so RLS (auth.uid() = user_id) passes.
   // Falls back to the shared global client for normal self-serve play.
@@ -67,9 +72,12 @@ export default function BreathBelt({ studyMode = false, userId, studyId, externa
   const [sessionNumber, setSessionNumber] = useState(1);
   const [triggerDevice, setTriggerDevice] = useState(DEFAULT_TRIGGER_DEVICE);
   const [ending, setEnding] = useState(false);   // true while a session-end save is in flight
-  // participantId: in study mode this is pre-filled from the externalId prop and
-  // is read-only; in standalone lab mode the RA types it on the setup screen.
-  const [participantId, setParticipantId] = useState(externalId ?? '');
+  // participantId: in study mode this is pre-filled from the externalId prop.
+  // In sim mode, pre-fill with a timestamped ID so no manual entry is needed.
+  // In standalone lab mode the RA types it on the setup screen.
+  const [participantId, setParticipantId] = useState(
+    isSimMode ? `SIM_${Date.now()}` : (externalId ?? '')
+  );
 
   const preBaselinePeriodRef  = useRef(null);
   const postBaselinePeriodRef = useRef(null);
@@ -101,7 +109,7 @@ export default function BreathBelt({ studyMode = false, userId, studyId, externa
 
   const avatarProps = { skinColor: '#FDBCB4', eyeColor: '#4A90D9', species: 'human' };
 
-  const belt    = useBeltConnection();
+  const belt    = useBeltConnection({ isSimMode });
   const session = useBeltSession(effectiveUserId, db);
   const backup  = useStreamingBackup();
   const basePeriodMs = BASE_BREATH_SPEED_S * 1000;
@@ -139,8 +147,70 @@ export default function BreathBelt({ studyMode = false, userId, studyId, externa
   }, [belt.comState, phase]);
 
   useEffect(() => {
-    if (phase === S.CALIBRATING && belt.calibPhase === 'COMPLETE') setPhase(S.BASELINE_READY);
-  }, [belt.calibPhase, phase]);
+    // In sim mode calibration jumps CALIB_READY → COMPLETE without ever entering
+    // CALIBRATING, so we also check S.CALIB_READY here.
+    const inCalibPhase = phase === S.CALIBRATING || (isSimMode && phase === S.CALIB_READY);
+    if (inCalibPhase && belt.calibPhase === 'COMPLETE') setPhase(S.BASELINE_READY);
+  }, [belt.calibPhase, phase, isSimMode]);
+
+  // ── Sim-mode auto-advance effects ────────────────────────────────────────
+  // Each effect watches `phase` and fires only when isSimMode is true.
+  // They are defined before the trigger effects so that state is already set
+  // before downstream effects run.
+
+  useEffect(() => {
+    if (!isSimMode) return;
+    if (phase !== S.BT_CONNECT) return;
+    // Call startSimulation() which sets btState → CONNECTED and comState →
+    // CONNECTED in one shot. The existing btState watcher will advance to
+    // COM_CONNECT; then the COM_CONNECT watcher below advances to SESSION_SETUP.
+    belt.startSimulation();
+  }, [phase, isSimMode]);
+
+  useEffect(() => {
+    if (!isSimMode) return;
+    if (phase !== S.COM_CONNECT || belt.comState !== 'CONNECTED') return;
+    // Skip the trigger-cascade verification screen and go straight to setup.
+    setPhase(S.SESSION_SETUP);
+  }, [phase, belt.comState, isSimMode]);
+
+  useEffect(() => {
+    if (!isSimMode) return;
+    if (phase !== S.SESSION_SETUP) return;
+    // participantId is already set to SIM_<ts> at mount; just advance.
+    setSessionNumber(1);
+    setPhase(S.CALIB_READY);
+  }, [phase, isSimMode]);
+
+  useEffect(() => {
+    if (!isSimMode) return;
+    if (phase !== S.CALIB_READY) return;
+    // Inject fake calibration data so CalibrationScreen enters REVIEW state,
+    // then accept it — CalibrationScreen's acceptCalibration calls belt.acceptCalibration()
+    // which sets calibPhase to COMPLETE, and the existing effect advances to BASELINE_READY.
+    belt.acceptSimCalib();
+  }, [phase, isSimMode]);
+
+  // When calibPhase is REVIEW (set by acceptSimCalib), auto-accept the calibration.
+  useEffect(() => {
+    if (!isSimMode) return;
+    if (belt.calibPhase !== 'REVIEW') return;
+    // Small delay so the REVIEW state renders briefly before we accept.
+    const t = setTimeout(() => {
+      belt.acceptCalibration();
+    }, 200);
+    return () => clearTimeout(t);
+  }, [belt.calibPhase, isSimMode]);
+
+  // Auto-advance past the "Continue to paced trials" button after pre-baseline.
+  useEffect(() => {
+    if (!isSimMode) return;
+    if (phase !== S.BASELINE_COMPLETE) return;
+    const t = setTimeout(() => setPhase(S.PHASE2_READY), 200);
+    return () => clearTimeout(t);
+  }, [phase, isSimMode]);
+
+  // ── End of sim-mode auto-advance effects ─────────────────────────────────
 
   // Code 4 — phase 2 start
   useEffect(() => {
@@ -483,6 +553,7 @@ export default function BreathBelt({ studyMode = false, userId, studyId, externa
           phaseLabel="baseline"
           triggerStart="2"
           triggerEnd="3"
+          isSimMode={isSimMode}
           onStart={async () => {
             sessionStartMsRef.current = Date.now();  // anchor for trial_onset_ms
             await belt.sendTrigger('1');              // code 1 — session start
@@ -505,6 +576,13 @@ export default function BreathBelt({ studyMode = false, userId, studyId, externa
   // ── Phase 2 ──────────────────────────────────────────────────────────────
   // Code 4 fired on entering PHASE2_RUNNING (useEffect above).
   // Code 5 fired in onComplete handler.
+
+  // Sim: auto-advance past PHASE2_READY and PHASE3_INTRO intro screens.
+  // Rendered as null so the effect below can fire.
+  if (isSimMode && phase === S.PHASE2_READY) {
+    // Defer so React has a chance to flush, then advance.
+    return <SimAutoAdvance onMount={() => setPhase(S.PHASE2_RUNNING)} />;
+  }
 
   if (phase === S.PHASE2_READY) {
     return (
@@ -534,6 +612,7 @@ export default function BreathBelt({ studyMode = false, userId, studyId, externa
           recordTrial={recordTrialWithBackup}
           showSyncOverlay={PILOT_MODE}
           sessionStartMsRef={sessionStartMsRef}
+          isSimMode={isSimMode}
           onComplete={async (trialsData, trialGraphs) => {
             trialGraphsRef.current = trialGraphs
             if (sessionStartMsRef.current != null) phase2EndMsRef.current = Date.now() - sessionStartMsRef.current;
@@ -562,6 +641,10 @@ export default function BreathBelt({ studyMode = false, userId, studyId, externa
   // ── Phase 3 ──────────────────────────────────────────────────────────────
   // Code 6 fired on entering PHASE3_RUNNING (useEffect above).
   // Code 7 fired in onComplete handler.
+
+  if (isSimMode && phase === S.PHASE3_INTRO) {
+    return <SimAutoAdvance onMount={() => setPhase(S.PHASE3_RUNNING)} />;
+  }
 
   if (phase === S.PHASE3_INTRO) {
     return (
@@ -593,6 +676,7 @@ export default function BreathBelt({ studyMode = false, userId, studyId, externa
           showSyncOverlay={PILOT_MODE}
           savedQuestState={null}
           sessionStartMsRef={sessionStartMsRef}
+          isSimMode={isSimMode}
           onComplete={async (trials, questState, convergence) => {
             if (sessionStartMsRef.current != null) phase3EndMsRef.current = Date.now() - sessionStartMsRef.current;
             await belt.sendTrigger('7');  // code 7 — phase 3 end
@@ -623,6 +707,7 @@ export default function BreathBelt({ studyMode = false, userId, studyId, externa
           phaseLabel="post_baseline"
           triggerStart="8"
           triggerEnd="9"
+          isSimMode={isSimMode}
           onStart={() => setPhase(S.POST_BASELINE_RECORDING)}
           onComplete={async (periodMs) => {
             postBaselinePeriodRef.current = periodMs;
@@ -729,4 +814,14 @@ function Err({ children }) {
       {children}
     </p>
   );
+}
+
+// Renders nothing visible; calls onMount after one tick so React can flush the
+// current render before the state update that triggers the next phase transition.
+function SimAutoAdvance({ onMount }) {
+  useEffect(() => {
+    const t = setTimeout(onMount, 50);
+    return () => clearTimeout(t);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  return null;
 }

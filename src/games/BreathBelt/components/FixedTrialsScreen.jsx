@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import AvatarBreathPacer from '../../EbbAndFlow/components/AvatarBreathPacer'
 import BeltSyncRing from './BeltSyncRing'
 import TrialSyncOverlay from './TrialSyncOverlay'
@@ -44,6 +44,7 @@ export default function FixedTrialsScreen({
   recordTrial,
   showSyncOverlay = true,
   sessionStartMsRef,
+  isSimMode = false,
   onComplete,
 }) {
   const [trialList]  = useState(buildTrialList)
@@ -88,6 +89,7 @@ export default function FixedTrialsScreen({
       condition,
       breath_period_ms:       conditionMs(condition),
       log10_mag:              null,
+      proportion_mag:         (conditionMs(condition) - BASE_BREATH_SPEED_S * 1000) / (BASE_BREATH_SPEED_S * 1000),
       response:               null,
       correct:                null,
       confidence:             null,
@@ -113,6 +115,13 @@ export default function FixedTrialsScreen({
       setTrialState(TRIAL_STATES.READY)
     }
   }, [trialIdx, trialList, runTrial, recordTrial, onComplete, trialsData])
+
+  // Sim mode: auto-call startTrial() after a short delay when READY.
+  useEffect(() => {
+    if (!isSimMode || trialState !== TRIAL_STATES.READY) return;
+    const t = setTimeout(() => { startTrial(); }, 300);
+    return () => clearTimeout(t);
+  }, [isSimMode, trialState, startTrial]);
 
   return (
     <div className="flex flex-col items-center gap-6 px-6 py-8" style={{ maxWidth: 480, margin: '0 auto' }}>

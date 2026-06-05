@@ -23,9 +23,12 @@ export default function BaselineScreen({
   phaseLabel,
   triggerStart,    // COM code to send at recording start  (e.g. '2' or '8')
   triggerEnd,      // COM code to send at recording end    (e.g. '3' or '9')
+  isSimMode = false,
   onStart,
   onComplete,      // (periodMs: number | null) => void
 }) {
+  // In sim mode, compress the recording to 4 s to keep the automated run fast.
+  const effectiveDurationMs = isSimMode ? 4000 : durationMs;
   const [elapsed, setElapsed] = useState(0);
   const timerRef    = useRef(null);
   const intervalRef = useRef(null);
@@ -33,6 +36,13 @@ export default function BaselineScreen({
   const samplesRef  = useRef([]);
   const { getPhase } = useBreathCycle();
   const avatarSize  = 240;
+
+  // Sim mode: auto-trigger onStart() after a short delay when in READY state.
+  useEffect(() => {
+    if (!isSimMode || phase !== 'READY') return;
+    const t = setTimeout(() => { onStart(); }, 500);
+    return () => clearTimeout(t);
+  }, [phase, isSimMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (phase !== 'RECORDING') return;
@@ -49,7 +59,7 @@ export default function BaselineScreen({
 
     const start = Date.now();
     intervalRef.current = setInterval(() => {
-      setElapsed(Math.min(Date.now() - start, durationMs));
+      setElapsed(Math.min(Date.now() - start, effectiveDurationMs));
     }, 500);
 
     timerRef.current = setTimeout(async () => {
@@ -59,17 +69,17 @@ export default function BaselineScreen({
       currentPhaseRef.current = 'idle';
       const periodMs = estimateBreathPeriodMs(samplesRef.current);
       onComplete(periodMs);
-    }, durationMs);
+    }, effectiveDurationMs);
 
     return () => {
       clearInterval(sampleRef.current);
       clearInterval(intervalRef.current);
       clearTimeout(timerRef.current);
     };
-  }, [phase]);
+  }, [phase]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const secondsLeft = Math.ceil((durationMs - elapsed) / 1000);
-  const progress    = elapsed / durationMs;
+  const secondsLeft = Math.ceil((effectiveDurationMs - elapsed) / 1000);
+  const progress    = elapsed / effectiveDurationMs;
 
   return (
     <div className="flex flex-col items-center gap-6 px-6 py-8"
@@ -94,7 +104,7 @@ export default function BaselineScreen({
               {title}
             </p>
             <p style={{ color: 'var(--tx2)', fontSize: 'var(--fs-body-sm)' }}>
-              Sit comfortably and breathe naturally for {durationMs / 1000} seconds.
+              Sit comfortably and breathe naturally for {effectiveDurationMs / 1000} seconds.
               The avatar will stay still. The orange ring shows your belt signal.
             </p>
           </div>

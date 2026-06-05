@@ -111,11 +111,15 @@ export function useTrialRunner({
     currentTrialRef.current = -1
 
     // ── Live period estimates ─────────────────────────────────────────────
+    // Use minPeriodMs=1500 (not the free-breathing default 2000) so that
+    // fast QUEST conditions (~2000ms/breath) don't fall below the threshold.
     const btBaselinePeriodMs  = estimateBreathPeriodMs(
-      baselineSamplesRef.current.map((v, i) => ({ t: i * SAMPLE_MS, value: v }))
+      baselineSamplesRef.current.map((v, i) => ({ t: i * SAMPLE_MS, value: v })),
+      1500
     )
     const btConditionPeriodMs = estimateBreathPeriodMs(
-      conditionSamplesRef.current.map((v, i) => ({ t: i * SAMPLE_MS, value: v }))
+      conditionSamplesRef.current.map((v, i) => ({ t: i * SAMPLE_MS, value: v })),
+      1500
     )
     const beltSyncMean = meanOf(conditionSamplesRef.current)
 
