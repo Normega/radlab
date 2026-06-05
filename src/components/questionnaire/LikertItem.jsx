@@ -57,7 +57,7 @@ export default function LikertItem({ item, labels, selectedValue, onSelect, auto
           fontSize:   'var(--fs-body-lg)',
           color:      'var(--tx)',
           lineHeight: 1.5,
-          margin:     '24px 0 16px',
+          margin:     '40px 0 16px',
           textAlign:  'center',
         }}
       >

@@ -76,10 +76,17 @@ export default function StudySessionsPanel({ study, qc }) {
 
   const removeSession = useMutation({
     mutationFn: async (sessionId) => {
+      // Delete child participant_schedule rows first (FK blocks direct deletion)
+      const { error: schedErr } = await supabase
+        .from('participant_schedule')
+        .delete()
+        .eq('study_session_id', sessionId)
+      if (schedErr) throw schedErr
       const { error } = await supabase.from('study_sessions').delete().eq('id', sessionId)
       if (error) throw error
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['study-sessions', studyId] }),
+    onError: (e) => window.alert(`Could not remove session: ${e.message}`),
   })
 
   return (
