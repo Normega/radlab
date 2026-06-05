@@ -29,11 +29,30 @@ function calcPos(va, ar) {
   return { ...exaggerated, mouthType: 'line', pupilTier: 1, blush: clamp(0.28 + ep(va) * 0.22), it: 1 }
 }
 
-// Valence/arousal diagonal: not-sure (low valence, slight arousal) → certain (high valence, low arousal)
-const PAIRS = [[-0.85, 0.1], [-0.58, 0], [-0.3, -0.1], [0.32, -0.2], [0.58, -0.27], [0.75, -0.32]]
-const POSITIONS = PAIRS.map(([va, ar]) => calcPos(va, ar))
+// v4 confidence scale — 7 faces, expanded extremes.
+// Faces 1 and 7 are hand-tuned direct params; 2–6 are calcPos-derived.
+const POSITIONS = [
+  // 1 — extreme uncertain: max brow furrow, lip corner depress, worried open mouth,
+  //     wide pupils. mouthCyAdd moves oval up; mouthRyMult narrows it on y-axis.
+  { au1:1.0, au2:0.5, au4:1.0, au5:0, au12:0, au15:0.9, au20:0.65, au27:0.88,
+    au43:0, sb2:0.55, mouthType:'alert', pupilTier:2, blush:0.03, it:0.18,
+    mouthCyAdd:-12, mouthRyMult:0.48 },
+  // 2 — old face 1
+  calcPos(-0.85, 0.1),
+  // 3 — old face 2
+  calcPos(-0.58, 0),
+  // 4 — neutral + slight upward curve
+  calcPos(0.12, -0.12),
+  // 5 — old face 6
+  calcPos(0.58, -0.27),
+  // 6 — old face 7
+  calcPos(0.75, -0.32),
+  // 7 — extreme certain: max smile, max squint (au43), open excited mouth, deep blush.
+  { au1:0, au2:0.82, au4:0, au5:0, au12:1.0, au15:0, au20:0, au27:0,
+    au43:1.0, sb2:0, mouthType:'excited', pupilTier:1, blush:0.58, it:1 },
+]
 
-const WORDS = ['guessing', 'unsure', 'leaning', 'fairly sure', 'confident', 'certain']
+const WORDS = ['no idea', 'guessing', 'leaning', 'somewhat sure', 'fairly sure', 'confident', 'certain']
 
 export default function ConfidenceRating({ value: valueProp, onChange, skinColor, eyeColor }) {
   const [internal, setInternal] = useState(null)
@@ -65,7 +84,7 @@ export default function ConfidenceRating({ value: valueProp, onChange, skinColor
         })}
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
-        <span style={{ fontSize: 12, color: '#abadb0' }}>not at all sure</span>
+        <span style={{ fontSize: 12, color: '#abadb0' }}>no idea</span>
         <span style={{ fontSize: 12, color: '#abadb0' }}>completely certain</span>
       </div>
       <div style={{ textAlign: 'center', marginTop: 8, fontSize: 13, color: '#f068a4', minHeight: 20 }}>

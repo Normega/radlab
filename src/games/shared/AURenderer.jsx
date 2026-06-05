@@ -63,9 +63,10 @@ export default function AURenderer({
 
   function mouth() {
     if (mouthType === 'alert' && au27 > 0) {
-      const cy2 = cY + 2 + au27 * 4
-      const rx = 8 + au27 * 11, ry = 3 + au27 * 10
-      const op = f(Math.min(1, au27 * 1.5))
+      const cy2 = cY + 2 + au27 * 4 + (position.mouthCyAdd || 0)
+      const rx  = 8 + au27 * 11
+      const ry  = (3 + au27 * 10) * (position.mouthRyMult || 1)
+      const op  = f(Math.min(1, au27 * 1.5))
       return <>
         <ellipse cx="100" cy={f(cy2)} rx={f(rx)} ry={f(ry)} fill={darken(MC, 20)} opacity={op} />
         <ellipse cx="100" cy={f(cy2)} rx={f(rx)} ry={f(ry)} fill="none" stroke={MC} strokeWidth="1.5" opacity={op} />
