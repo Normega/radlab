@@ -23,9 +23,14 @@ const GAMES = [
   { slug: 'still_water',    label: 'Still Water' },
 ]
 
+const PHYSIO_STEPS = [
+  { slug: 'belt_setup', label: 'Physio Setup (Belt + Triggers)' },
+]
+
 const STEP_TYPES = [
   { value: 'consent',       label: 'Consent' },
   { value: 'game',          label: 'Game' },
+  { value: 'physio',        label: 'Physio' },
   { value: 'questionnaire', label: 'Questionnaire' },
   { value: 'debrief',       label: 'Debrief' },
 ]
@@ -131,9 +136,10 @@ function SortableStep({ step, index, questionnaires, onUpdate, onRemove }) {
         value={step.type}
         onChange={e => {
           const type = e.target.value
-          const slug = type === 'consent' ? 'consent'
-            : type === 'debrief'       ? 'debrief'
-            : type === 'game'          ? (GAMES[0]?.slug ?? '')
+          const slug = type === 'consent'       ? 'consent'
+            : type === 'debrief'                ? 'debrief'
+            : type === 'game'                   ? (GAMES[0]?.slug ?? '')
+            : type === 'physio'                 ? (PHYSIO_STEPS[0]?.slug ?? '')
             : (questionnaires[0]?.slug ?? '')
           onUpdate({ type, slug })
         }}
@@ -151,6 +157,9 @@ function SortableStep({ step, index, questionnaires, onUpdate, onRemove }) {
         >
           {step.type === 'game' && GAMES.map(g => (
             <option key={g.slug} value={g.slug}>{g.label}</option>
+          ))}
+          {step.type === 'physio' && PHYSIO_STEPS.map(p => (
+            <option key={p.slug} value={p.slug}>{p.label}</option>
           ))}
           {step.type === 'questionnaire' && questionnaires.map(q => (
             <option key={q.slug} value={q.slug}>{q.name}</option>

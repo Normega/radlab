@@ -1,6 +1,7 @@
 import AptitudeSuite from '../../games/AptitudeSuite/AptitudeSuite'
 import BreathBelt    from '../../games/BreathBelt/BreathBelt'
 import StillWater    from '../../games/StillWater/StillWater'
+import { usePhysioContext } from './PhysioContext'
 
 const GAME_COMPONENTS = {
   aptitude_suite: AptitudeSuite,
@@ -8,7 +9,11 @@ const GAME_COMPONENTS = {
   still_water:    StillWater,
 }
 
+// Games that should receive the physio context when it is available
+const PHYSIO_AWARE_SLUGS = new Set(['breath_belt', 'still_water'])
+
 export default function GameStepWrapper({ slug, enrollment, onComplete, supabaseClient, isSimMode = false }) {
+  const physio = usePhysioContext()   // null if not inside a PhysioProvider
   const GameComponent = GAME_COMPONENTS[slug]
 
   if (!GameComponent) {
@@ -19,6 +24,8 @@ export default function GameStepWrapper({ slug, enrollment, onComplete, supabase
     )
   }
 
+  const physioProps = PHYSIO_AWARE_SLUGS.has(slug) ? { physio: physio ?? null } : {}
+
   return (
     <GameComponent
       studyMode
@@ -28,6 +35,7 @@ export default function GameStepWrapper({ slug, enrollment, onComplete, supabase
       onSessionComplete={result => onComplete({ game_slug: slug, ...result })}
       supabaseClient={supabaseClient}
       isSimMode={isSimMode}
+      {...physioProps}
     />
   )
 }

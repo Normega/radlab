@@ -4,6 +4,7 @@ import DebriefStep             from './DebriefStep'
 import DemographicsStep        from './DemographicsStep'
 import QuestionnaireStepWrapper from './QuestionnaireStepWrapper'
 import GameStepWrapper          from './GameStepWrapper'
+import PhysioSetupStep          from './PhysioSetupStep'
 
 /**
  * Props:
@@ -61,6 +62,16 @@ export default function StepDispatcher({ node, enrollment, scheduleId, stepIndex
         enrollment={enrollment}
         onComplete={onComplete}
         supabaseClient={supabaseClient}
+        isSimMode={isSimMode}
+      />
+    )
+  }
+
+  if (category === 'physio' && subcategory === 'belt_setup') {
+    return (
+      <PhysioSetupStep
+        enrollment={enrollment}
+        onComplete={onComplete}
         isSimMode={isSimMode}
       />
     )

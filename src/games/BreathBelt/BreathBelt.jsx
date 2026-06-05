@@ -43,6 +43,7 @@ const S = {
   SESSION_SETUP:           'SESSION_SETUP',
   CALIB_READY:             'CALIB_READY',
   CALIBRATING:             'CALIBRATING',
+  CONNECTION_CHECK:        'CONNECTION_CHECK',  // physio context path: verify belt still live
   BASELINE_READY:          'BASELINE_READY',
   BASELINE_RECORDING:      'BASELINE_RECORDING',
   BASELINE_COMPLETE:       'BASELINE_COMPLETE',
@@ -57,20 +58,32 @@ const S = {
   SESSION_COMPLETE:        'SESSION_COMPLETE',
 };
 
-export default function BreathBelt({ studyMode = false, userId, studyId, externalId, onSessionComplete, supabaseClient }) {
+export default function BreathBelt({ studyMode = false, userId, studyId, externalId, onSessionComplete, supabaseClient, physio = null, isSimMode: isSimModeProp }) {
   const navigate = useNavigate();
   const location = useLocation();
-  // Sim mode: ?sim=1 in the URL. Read once at mount — no build-time constant so
-  // the production build can be tested without any code change.
-  const isSimMode = new URLSearchParams(location.search).get('sim') === '1';
+  // Sim mode: ?sim=1 in the URL (standalone) OR passed as prop from study runner.
+  // Read once at mount — no build-time constant so the production build can be
+  // tested without any code change.
+  const isSimMode = isSimModeProp ?? (new URLSearchParams(location.search).get('sim') === '1');
+
+  // When running inside a study session with a PhysioSetupStep, the physio prop
+  // carries the already-live belt connection. We start at SESSION_START to skip
+  // all hardware setup. When physio is null (standalone or study without setup
+  // step) we run the full flow from BROWSER_CHECK as before.
+  const hasPhysioContext = physio !== null;
 
   // In a participant study session the caller passes the participant-authenticated
   // client; all data reads/writes must use it so RLS (auth.uid() = user_id) passes.
   // Falls back to the shared global client for normal self-serve play.
   const db = supabaseClient ?? supabase;
-  const [phase, setPhase] = useState(S.BROWSER_CHECK);
-  const [sessionNumber, setSessionNumber] = useState(1);
-  const [triggerDevice, setTriggerDevice] = useState(DEFAULT_TRIGGER_DEVICE);
+  // When a physio setup step already ran, jump straight to CONNECTION_CHECK.
+  const [phase, setPhase] = useState(hasPhysioContext ? S.CONNECTION_CHECK : S.BROWSER_CHECK);
+  // Local session number and trigger device — used only when physio is null.
+  const [localSessionNumber, setLocalSessionNumber] = useState(1);
+  const [localTriggerDevice, setLocalTriggerDevice] = useState(DEFAULT_TRIGGER_DEVICE);
+  // Resolved values: from physio context if present, otherwise local state.
+  const sessionNumber = physio?.sessionNumber ?? localSessionNumber;
+  const triggerDevice = physio?.triggerDevice ?? localTriggerDevice;
   const [ending, setEnding] = useState(false);   // true while a session-end save is in flight
   // participantId: in study mode this is pre-filled from the externalId prop.
   // In sim mode, pre-fill with a timestamped ID so no manual entry is needed.
@@ -109,7 +122,11 @@ export default function BreathBelt({ studyMode = false, userId, studyId, externa
 
   const avatarProps = { skinColor: '#FDBCB4', eyeColor: '#4A90D9', species: 'human' };
 
-  const belt    = useBeltConnection({ isSimMode });
+  // Always instantiate the local hook (React hooks rules — must not be conditional).
+  // In study mode with a physio context the local hook's return value is unused;
+  // the context's belt drives everything. In standalone mode it is the only belt.
+  const localBelt = useBeltConnection({ isSimMode });
+  const belt      = physio?.belt ?? localBelt;
   const session = useBeltSession(effectiveUserId, db);
   const backup  = useStreamingBackup();
   const basePeriodMs = BASE_BREATH_SPEED_S * 1000;
@@ -130,6 +147,17 @@ export default function BreathBelt({ studyMode = false, userId, studyId, externa
     if (!studyMode && !['lab', 'admin'].includes(profile?.role)) { setPhase(S.ACCESS_DENIED); return; }
     setPhase(S.BT_CONNECT);
   }, [phase, profile, profileLoading, studyMode]);
+
+  // CONNECTION_CHECK: verify the physio-context belt is still live, then advance.
+  // Runs once on mount (phase starts at CONNECTION_CHECK when hasPhysioContext).
+  useEffect(() => {
+    if (phase !== S.CONNECTION_CHECK) return;
+    if (!hasPhysioContext) return;
+    // Belt is live if BT is connected AND calibration weights are present.
+    const isLive = belt.btState === 'CONNECTED' && belt.mlrWeightsRef.current !== null;
+    if (isLive) setPhase(S.BASELINE_READY);
+    // If not live, stay in CONNECTION_CHECK — render below shows reconnect UI.
+  }, [phase, hasPhysioContext, belt.btState, belt.mlrWeightsRef]);
 
   useEffect(() => {
     if (phase === S.BT_CONNECT  && belt.btState  === 'CONNECTED') setPhase(S.COM_CONNECT);
@@ -178,7 +206,7 @@ export default function BreathBelt({ studyMode = false, userId, studyId, externa
     if (!isSimMode) return;
     if (phase !== S.SESSION_SETUP) return;
     // participantId is already set to SIM_<ts> at mount; just advance.
-    setSessionNumber(1);
+    setLocalSessionNumber(1);
     setPhase(S.CALIB_READY);
   }, [phase, isSimMode]);
 
@@ -348,7 +376,8 @@ export default function BreathBelt({ studyMode = false, userId, studyId, externa
   }
 
   if (phase === S.COM_CONNECT) {
-    const dev      = TRIGGER_DEVICES.find(d => d.value === triggerDevice);
+    // In the standalone path, the trigger device is managed in localTriggerDevice.
+    const dev      = TRIGGER_DEVICES.find(d => d.value === localTriggerDevice);
     const isBiopac = !!dev && dev.address != null;
 
     // Connected — verify triggers before continuing. A 1–13 cascade fires
@@ -359,7 +388,7 @@ export default function BreathBelt({ studyMode = false, userId, studyId, externa
         <Layout title={isBiopac ? 'Parallel server ready' : 'COM port ready'}>
           <Screen>
             <p className="text-center" style={{ color: 'var(--tx2)', fontSize: 'var(--fs-body)', maxWidth: 420 }}>
-              Connected to <strong style={{ color: 'var(--tx)' }}>{dev?.label ?? triggerDevice}</strong>.
+              Connected to <strong style={{ color: 'var(--tx)' }}>{dev?.label ?? localTriggerDevice}</strong>.
             </p>
             <p className="text-center" style={{ color: 'var(--tx2)', fontSize: 'var(--fs-body)', maxWidth: 420 }}>
               {belt.testRunning
@@ -391,8 +420,8 @@ export default function BreathBelt({ studyMode = false, userId, studyId, externa
               Trigger device
             </label>
             <select
-              value={triggerDevice}
-              onChange={e => setTriggerDevice(e.target.value)}
+              value={localTriggerDevice}
+              onChange={e => setLocalTriggerDevice(e.target.value)}
               disabled={belt.comState === 'CONNECTING'}
               style={{
                 fontFamily: 'Space Mono', fontSize: 'var(--fs-mono-md)',
@@ -415,7 +444,7 @@ export default function BreathBelt({ studyMode = false, userId, studyId, externa
           )}
           <Btn
             onClick={() => {
-              belt.setTriggerDevice(triggerDevice);
+              belt.setTriggerDevice(localTriggerDevice);
               if (isBiopac) belt.connectBiopac(); else belt.connectCOM();
             }}
             disabled={belt.comState === 'CONNECTING'}
@@ -479,8 +508,8 @@ export default function BreathBelt({ studyMode = false, userId, studyId, externa
                 Session number
               </label>
               <input
-                type="number" min={1} value={sessionNumber}
-                onChange={e => setSessionNumber(Math.max(1, parseInt(e.target.value) || 1))}
+                type="number" min={1} value={localSessionNumber}
+                onChange={e => setLocalSessionNumber(Math.max(1, parseInt(e.target.value) || 1))}
                 style={{
                   fontFamily: 'Space Mono', fontSize: 'var(--fs-mono-md)',
                   color: 'var(--tx)', background: 'var(--bgc)',
@@ -532,6 +561,42 @@ export default function BreathBelt({ studyMode = false, userId, studyId, externa
           acceptCalibration={belt.acceptCalibration}
           redoCalibration={belt.redoCalibration}
         />
+      </Layout>
+    );
+  }
+
+  // ── Connection check (physio context path) ───────────────────────────────
+  // Shown when hasPhysioContext and the belt connection has dropped since setup.
+
+  if (phase === S.CONNECTION_CHECK) {
+    const isLive = belt.btState === 'CONNECTED' && belt.mlrWeightsRef.current !== null;
+    return (
+      <Layout title="Checking connection">
+        <Screen>
+          {isLive ? (
+            <>
+              <p className="text-center" style={{ color: 'var(--tx2)', fontSize: 'var(--fs-body)', maxWidth: 400 }}>
+                Belt connection verified. Starting session…
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-center" style={{ color: '#c0392b', fontSize: 'var(--fs-body)', maxWidth: 400 }}>
+                Belt disconnected — check connection and try again.
+              </p>
+              <p className="text-center" style={{ color: 'var(--tx2)', fontSize: 'var(--fs-body-sm)', maxWidth: 400 }}>
+                BT: {belt.btState} · Calibration: {belt.mlrWeightsRef.current ? 'ready' : 'missing'}
+              </p>
+              <Btn onClick={() => {
+                const live = belt.btState === 'CONNECTED' && belt.mlrWeightsRef.current !== null;
+                if (live) setPhase(S.BASELINE_READY);
+                // else: stay on this screen — state update re-renders
+              }}>
+                Retry
+              </Btn>
+            </>
+          )}
+        </Screen>
       </Layout>
     );
   }

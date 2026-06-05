@@ -5,6 +5,7 @@ import { useQuery, useMutation } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { advanceSchedule } from '../../lib/scheduleGenerator'
 import StepDispatcher from '../../components/study/StepDispatcher'
+import { PhysioProvider } from '../../components/study/PhysioContext'
 
 const PHASE = { LOADING: 'LOADING', RUNNING: 'RUNNING', SAVING: 'SAVING', COMPLETE: 'COMPLETE' }
 
@@ -194,30 +195,32 @@ export default function StudySessionRunner() {
   }
 
   return (
-    <div style={S.fullScreen}>
-      <div style={S.progressBarWrap}>
-        <div style={{ ...S.progressBarFill, width: `${progressPct}%` }} />
-      </div>
-      {activity?.category !== 'game' && <p style={S.stepLabel}>{stepLabel}</p>}
+    <PhysioProvider isSimMode={isSimMode}>
+      <div style={S.fullScreen}>
+        <div style={S.progressBarWrap}>
+          <div style={{ ...S.progressBarFill, width: `${progressPct}%` }} />
+        </div>
+        {activity?.category !== 'game' && activity?.category !== 'physio' && <p style={S.stepLabel}>{stepLabel}</p>}
 
-      <div style={S.stepContent}>
-        {node ? (
-          <StepDispatcher
-            node={node}
-            enrollment={enrollment}
-            scheduleId={scheduleRow?.id}
-            stepIndex={currentStep}
-            totalSteps={totalSteps}
-            onComplete={handleStepComplete}
-            consentHtml={consentHtml}
-            debriefHtml={debriefHtml}
-            isSimMode={isSimMode}
-          />
-        ) : (
-          <p style={S.loadingText}>No content at step {currentStep}</p>
-        )}
+        <div style={S.stepContent}>
+          {node ? (
+            <StepDispatcher
+              node={node}
+              enrollment={enrollment}
+              scheduleId={scheduleRow?.id}
+              stepIndex={currentStep}
+              totalSteps={totalSteps}
+              onComplete={handleStepComplete}
+              consentHtml={consentHtml}
+              debriefHtml={debriefHtml}
+              isSimMode={isSimMode}
+            />
+          ) : (
+            <p style={S.loadingText}>No content at step {currentStep}</p>
+          )}
+        </div>
       </div>
-    </div>
+    </PhysioProvider>
   )
 }
 
