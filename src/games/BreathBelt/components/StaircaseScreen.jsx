@@ -158,7 +158,7 @@ export default function StaircaseScreen({
       {scState === SC_STATES.RESPONSE && (
         <div className="flex flex-col gap-6 w-full">
           <p className="text-center font-medium" style={{ color: 'var(--tx)', fontSize: 'var(--fs-body)' }}>
-            Did the avatar's pace change?
+            Did your breathing change speed?
           </p>
           <div className="flex gap-3 justify-center">
             {['slower', 'same', 'faster'].map(opt => (

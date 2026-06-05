@@ -14,7 +14,7 @@ const POSITIONS = [
   { ...EXPRESSION_TABLE.Alert.strong,   pupilR: AROUSAL_PUPIL_R[5] },
 ]
 
-const WORDS = ['very still', 'still', 'slightly still', 'slightly activated', 'activated', 'very activated']
+const WORDS = ['very tired', 'tired', 'slightly tired', 'slightly alert', 'alert', 'very alert']
 
 export default function ArousalRating({ value: valueProp, onChange, skinColor, eyeColor }) {
   const [internal, setInternal] = useState(null)
@@ -47,8 +47,8 @@ export default function ArousalRating({ value: valueProp, onChange, skinColor, e
         })}
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
-        <span style={{ fontSize: 12, color: '#abadb0' }}>very still</span>
-        <span style={{ fontSize: 12, color: '#abadb0' }}>very activated</span>
+        <span style={{ fontSize: 12, color: '#abadb0' }}>very tired</span>
+        <span style={{ fontSize: 12, color: '#abadb0' }}>very alert</span>
       </div>
       <div style={{ textAlign: 'center', marginTop: 8, fontSize: 13, color: '#f068a4', minHeight: 20 }}>
         {sel != null ? WORDS[sel - 1] : ''}
