@@ -203,6 +203,7 @@ export default function StudySessionRunner() {
           <StepDispatcher
             node={node}
             enrollment={enrollment}
+            scheduleId={scheduleRow?.id}
             stepIndex={currentStep}
             totalSteps={totalSteps}
             onComplete={handleStepComplete}

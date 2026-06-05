@@ -1,6 +1,7 @@
 // v2 — dispatches on activity.category + activity.subcategory from session_template_nodes
 import ConsentStep             from './ConsentStep'
 import DebriefStep             from './DebriefStep'
+import DemographicsStep        from './DemographicsStep'
 import QuestionnaireStepWrapper from './QuestionnaireStepWrapper'
 import GameStepWrapper          from './GameStepWrapper'
 
@@ -14,7 +15,7 @@ import GameStepWrapper          from './GameStepWrapper'
  *   consentHtml — HTML string for consent step (from study)
  *   debriefHtml — HTML string for debrief step (from study)
  */
-export default function StepDispatcher({ node, enrollment, stepIndex, totalSteps, onComplete, consentHtml, debriefHtml, supabaseClient }) {
+export default function StepDispatcher({ node, enrollment, scheduleId, stepIndex, totalSteps, onComplete, consentHtml, debriefHtml, supabaseClient }) {
   const activity = node?.activity ?? node?.activities
   if (!activity) {
     return (
@@ -32,6 +33,9 @@ export default function StepDispatcher({ node, enrollment, stepIndex, totalSteps
     }
     if (subcategory === 'debrief') {
       return <DebriefStep enrollment={enrollment} onComplete={onComplete} html={debriefHtml} />
+    }
+    if (subcategory === 'demographics') {
+      return <DemographicsStep enrollment={enrollment} scheduleId={scheduleId} onComplete={onComplete} supabaseClient={supabaseClient} />
     }
   }
 
