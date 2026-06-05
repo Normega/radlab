@@ -76,12 +76,10 @@ export default function StudySessionsPanel({ study, qc }) {
 
   const removeSession = useMutation({
     mutationFn: async (sessionId) => {
-      // Delete child participant_schedule rows first (FK blocks direct deletion)
-      const { error: schedErr } = await supabase
-        .from('participant_schedule')
-        .delete()
-        .eq('study_session_id', sessionId)
-      if (schedErr) throw schedErr
+      // Cascade rules on the FK chain handle child rows automatically:
+      // study_sessions → participant_schedule (CASCADE)
+      //   → participant_links (CASCADE), demographics.schedule_id (SET NULL)
+      //   → participant_schedule.link_id (SET NULL, breaks circular ref)
       const { error } = await supabase.from('study_sessions').delete().eq('id', sessionId)
       if (error) throw error
     },
