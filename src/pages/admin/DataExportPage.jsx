@@ -108,6 +108,22 @@ function useBeltTrials(externalId) {
   })
 }
 
+function useStillWaterResponses(profileId) {
+  return useQuery({
+    queryKey: ['export-stillwater', profileId],
+    enabled: !!profileId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('stillwater_responses')
+        .select('pos_rating, pos_x, pos_y, neg_rating, neg_x, neg_y, composite_x, composite_y, composite_label, ambivalence_x, ambivalence_y, ambivalence_mag, created_at')
+        .eq('user_id', profileId)
+        .order('created_at', { ascending: true })
+      if (error) throw error
+      return data ?? []
+    },
+  })
+}
+
 function useDemographics(profileId) {
   return useQuery({
     queryKey: ['export-demographics', profileId],
@@ -341,6 +357,55 @@ function QuestionnairesSection({ profileId, externalId }) {
   )
 }
 
+// ── Still Water section ──────────────────────────────────────────────────────
+
+function StillWaterSection({ profileId, externalId }) {
+  const { data = [], isLoading } = useStillWaterResponses(profileId)
+
+  return (
+    <section style={S.section}>
+      <SectionHeader
+        title="Still Water"
+        count={isLoading ? null : data.length}
+        onDownload={() => downloadCsv(`stillwater_${externalId}.csv`, data)}
+        disabled={isLoading || data.length === 0}
+      />
+      {isLoading ? (
+        <p style={S.msg}>Loading…</p>
+      ) : !profileId ? (
+        <p style={S.msg}>No study enrollment found — Still Water lookup requires an enrollment record.</p>
+      ) : data.length === 0 ? (
+        <p style={S.msg}>No Still Water responses found.</p>
+      ) : (
+        <div style={S.tableWrap}>
+          <table style={S.table}>
+            <thead>
+              <tr>
+                {['Date', 'Composite', 'Valence', 'Arousal', 'Step 1 rating', 'Step 2 rating', 'Ambivalence'].map(h => (
+                  <th key={h} style={S.th}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {data.map((row, i) => (
+                <tr key={i} style={S.tr}>
+                  <td style={S.td}>{fmtDate(row.created_at)}</td>
+                  <td style={S.tdMono}>{row.composite_label ?? '—'}</td>
+                  <td style={S.tdMono}>{fmt(row.composite_x)}</td>
+                  <td style={S.tdMono}>{fmt(row.composite_y)}</td>
+                  <td style={S.tdMono}>{row.pos_rating ?? '—'}</td>
+                  <td style={S.tdMono}>{row.neg_rating ?? '—'}</td>
+                  <td style={S.tdMono}>{fmt(row.ambivalence_mag)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
+  )
+}
+
 // ── Demographics section ─────────────────────────────────────────────────────
 
 function DemographicsSection({ profileId, externalId }) {
@@ -450,6 +515,7 @@ export default function DataExportPage() {
             Participant <strong style={{ fontFamily: '"Space Mono",monospace' }}>{selected.externalId}</strong>
           </p>
           <DemographicsSection   externalId={selected.externalId} profileId={selected.profileId} />
+          <StillWaterSection     externalId={selected.externalId} profileId={selected.profileId} />
           <BeltSessionsSection   externalId={selected.externalId} />
           <BeltTrialsSection     externalId={selected.externalId} />
           <QuestionnairesSection externalId={selected.externalId} profileId={selected.profileId} />

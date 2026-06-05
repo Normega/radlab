@@ -20,6 +20,7 @@ import { CSS } from '@dnd-kit/utilities'
 const GAMES = [
   { slug: 'aptitude_suite', label: 'Aptitude Suite' },
   { slug: 'breath_belt',    label: 'Breath Belt' },
+  { slug: 'still_water',    label: 'Still Water' },
 ]
 
 const STEP_TYPES = [

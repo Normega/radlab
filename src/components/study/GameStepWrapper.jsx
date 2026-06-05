@@ -1,9 +1,11 @@
 import AptitudeSuite from '../../games/AptitudeSuite/AptitudeSuite'
 import BreathBelt    from '../../games/BreathBelt/BreathBelt'
+import StillWater    from '../../games/StillWater/StillWater'
 
 const GAME_COMPONENTS = {
   aptitude_suite: AptitudeSuite,
   breath_belt:    BreathBelt,
+  still_water:    StillWater,
 }
 
 export default function GameStepWrapper({ slug, enrollment, onComplete, supabaseClient }) {

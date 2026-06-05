@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useAvatarConfig } from '../../hooks/useAvatarConfig'
 import { Link } from 'react-router-dom'
 import Nav from '../../components/Nav'
-import { supabase } from '../../lib/supabase'
+import { supabase as globalSupabase } from '../../lib/supabase'
 import { EMOTIONS, INTENSITY_LABELS, computeRating, getCompositeLabel, LABEL_TO_ID,
          CX, CY, INNER_R, d2r } from './constants'
 import WheelSVG from './WheelSVG'
@@ -11,27 +11,30 @@ import { EXPRESSION_TABLE, ZONE_NAMES, NEUTRAL_POS, AU_NUMERIC_KEYS } from '../s
 
 // ─── SAVE ─────────────────────────────────────────────────────────────────────
 
-async function saveResult({ userId, p1Sel, p2Sel, composite }) {
+async function saveResult({ db, userId, externalId, studyId, p1Sel, p2Sel, composite }) {
   const f = x => parseFloat(x.toFixed(4))
-  const { error } = await supabase.from('stillwater_responses').insert({
-    participant_id:   userId,
-    pos_rating:       p1Sel.rating,  pos_x: f(p1Sel.x),      pos_y: f(p1Sel.y),
-    neg_rating:       p2Sel.rating,  neg_x: f(p2Sel.x),      neg_y: f(p2Sel.y),
-    composite_x:      f(composite.cx),
-    composite_y:      f(composite.cy),
-    composite_label:  composite.label,
-    ambivalence_x:    f(composite.ambX),
-    ambivalence_y:    f(composite.ambY),
-    ambivalence_mag:  f(composite.ambMag),
+  const { error } = await db.from('stillwater_responses').insert({
+    user_id:                userId,
+    participant_external_id: externalId ?? null,
+    study_id:               studyId ?? null,
+    participant_id:         userId,   // legacy column — kept for backwards compat
+    pos_rating:             p1Sel.rating,  pos_x: f(p1Sel.x),  pos_y: f(p1Sel.y),
+    neg_rating:             p2Sel.rating,  neg_x: f(p2Sel.x),  neg_y: f(p2Sel.y),
+    composite_x:            f(composite.cx),
+    composite_y:            f(composite.cy),
+    composite_label:        composite.label,
+    ambivalence_x:          f(composite.ambX),
+    ambivalence_y:          f(composite.ambY),
+    ambivalence_mag:        f(composite.ambMag),
   })
   if (error) console.warn('StillWater insert:', error)
 
   if (userId) {
-    const { data: profile } = await supabase
+    const { data: profile } = await db
       .from('profiles').select('still_water_sessions, points').eq('id', userId).single()
     const updates = { still_water_sessions: (profile?.still_water_sessions ?? 0) + 1 }
     if (profile?.points !== undefined) updates.points = (profile.points ?? 0) + 5
-    await supabase.from('profiles').update(updates).eq('id', userId)
+    await db.from('profiles').update(updates).eq('id', userId)
   }
 }
 
@@ -183,7 +186,7 @@ function RatingScreen({ phase, activeIds, labels, onConfirm, skinColor, eyeColor
 
 // ─── REVEAL SCREEN ────────────────────────────────────────────────────────────
 
-function RevealScreen({ composite, phase1Sel, phase2Sel, animProgress, onReset, skinColor, eyeColor, hairStyle = 'none', hairColor = '#784421' }) {
+function RevealScreen({ composite, phase1Sel, phase2Sel, animProgress, onReset, onDone, skinColor, eyeColor, hairStyle = 'none', hairColor = '#784421' }) {
   const { cx, cy, label, mag, sectorId, zone } = composite
   const p  = animProgress
   const em = sectorId >= 0 ? EMOTIONS[sectorId] : null
@@ -230,8 +233,11 @@ function RevealScreen({ composite, phase1Sel, phase2Sel, animProgress, onReset, 
 
       {p >= 1 && (
         <div style={{ display: 'flex', gap: 10, width: '100%', maxWidth: 308 }}>
-          <button style={{ ...S.btnOutline, flex: 1 }} onClick={onReset}>Again</button>
-          <Link to="/games" style={{ ...S.btnPrimary, flex: 1, textAlign: 'center', textDecoration: 'none' }}>Games →</Link>
+          {!onDone && <button style={{ ...S.btnOutline, flex: 1 }} onClick={onReset}>Again</button>}
+          {onDone
+            ? <button style={{ ...S.btnPrimary, flex: 1 }} onClick={onDone}>Continue →</button>
+            : <Link to="/games" style={{ ...S.btnPrimary, flex: 1, textAlign: 'center', textDecoration: 'none' }}>Games →</Link>
+          }
         </div>
       )}
     </div>
@@ -240,14 +246,23 @@ function RevealScreen({ composite, phase1Sel, phase2Sel, animProgress, onReset, 
 
 // ─── MAIN ─────────────────────────────────────────────────────────────────────
 
-export default function StillWater({ session }) {
+export default function StillWater({
+  session,                         // standalone route — Supabase auth session
+  userId:      userIdProp,         // study mode — passed by GameStepWrapper
+  studyId,
+  externalId,
+  supabaseClient,
+  onSessionComplete,
+  studyMode = false,
+}) {
+  const db     = supabaseClient ?? globalSupabase
   const [phase,  setPhase]  = useState('intro')
   const [p1Sel,  setP1Sel]  = useState(null)
   const [p2Sel,  setP2Sel]  = useState(null)
   const [anim,   setAnim]   = useState(0)
   const animRef = useRef(null)
 
-  const userId = session?.user?.id ?? null
+  const userId = userIdProp ?? session?.user?.id ?? null
   const { data: avatar } = useAvatarConfig(userId)
   const skinColor = avatar?.skin_color  ?? '#FDBCB4'
   const eyeColor  = avatar?.eye_color   ?? '#4A90D9'
@@ -273,7 +288,7 @@ export default function StillWater({ session }) {
   // Save on reveal start
   useEffect(() => {
     if (phase !== 'reveal' || !composite || !p1Sel || !p2Sel) return
-    saveResult({ userId, p1Sel, p2Sel, composite })
+    saveResult({ db, userId, externalId, studyId, p1Sel, p2Sel, composite })
   }, [phase]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Reveal animation: 0.6s pause → 1s ease-out cubic
@@ -296,29 +311,36 @@ export default function StillWater({ session }) {
     setP1Sel(null); setP2Sel(null); setAnim(0); setPhase('intro')
   }, [])
 
+  const inner = (
+    <div style={{ minHeight: studyMode ? '100vh' : 'calc(100vh - 57px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 16px', userSelect: 'none' }}>
+      {phase === 'intro'   && <IntroScreen onStart={() => setPhase('phase1')} />}
+      {phase === 'phase1'  && (
+        <RatingScreen phase={1} activeIds={[1, 5]}
+          labels={{ left: 'Sad', right: 'Excited', question: 'How good or energised do you feel?' }}
+          onConfirm={s => { setP1Sel(s); setPhase('phase2') }}
+          skinColor={skinColor} eyeColor={eyeColor} hairStyle={hairStyle} hairColor={hairColor} />
+      )}
+      {phase === 'phase2'  && (
+        <RatingScreen phase={2} activeIds={[3, 7]}
+          labels={{ left: 'Calm', right: 'Tense', question: 'How settled or on-edge do you feel?' }}
+          onConfirm={s => { setP2Sel(s); setPhase('reveal') }}
+          skinColor={skinColor} eyeColor={eyeColor} hairStyle={hairStyle} hairColor={hairColor} />
+      )}
+      {phase === 'reveal' && composite && (
+        <RevealScreen composite={composite} phase1Sel={p1Sel} phase2Sel={p2Sel}
+          animProgress={anim} onReset={handleReset}
+          onDone={studyMode && onSessionComplete ? onSessionComplete : null}
+          skinColor={skinColor} eyeColor={eyeColor} hairStyle={hairStyle} hairColor={hairColor} />
+      )}
+    </div>
+  )
+
+  if (studyMode) return <div style={{ background: '#FCF0F5', minHeight: '100vh' }}>{inner}</div>
+
   return (
     <div style={{ background: '#FCF0F5', minHeight: '100vh' }}>
       <Nav session={session} />
-      <div style={{ minHeight: 'calc(100vh - 57px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 16px', userSelect: 'none' }}>
-        {phase === 'intro'   && <IntroScreen onStart={() => setPhase('phase1')} />}
-        {phase === 'phase1'  && (
-          <RatingScreen phase={1} activeIds={[1, 5]}
-            labels={{ left: 'Sad', right: 'Excited', question: 'How good or energised do you feel?' }}
-            onConfirm={s => { setP1Sel(s); setPhase('phase2') }}
-            skinColor={skinColor} eyeColor={eyeColor} hairStyle={hairStyle} hairColor={hairColor} />
-        )}
-        {phase === 'phase2'  && (
-          <RatingScreen phase={2} activeIds={[3, 7]}
-            labels={{ left: 'Calm', right: 'Tense', question: 'How settled or on-edge do you feel?' }}
-            onConfirm={s => { setP2Sel(s); setPhase('reveal') }}
-            skinColor={skinColor} eyeColor={eyeColor} hairStyle={hairStyle} hairColor={hairColor} />
-        )}
-        {phase === 'reveal' && composite && (
-          <RevealScreen composite={composite} phase1Sel={p1Sel} phase2Sel={p2Sel}
-            animProgress={anim} onReset={handleReset}
-            skinColor={skinColor} eyeColor={eyeColor} hairStyle={hairStyle} hairColor={hairColor} />
-        )}
-      </div>
+      {inner}
     </div>
   )
 }
