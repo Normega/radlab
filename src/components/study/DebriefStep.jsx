@@ -1,4 +1,15 @@
-export default function DebriefStep({ enrollment, onComplete, html }) {
+import { useEffect } from 'react'
+
+export default function DebriefStep({ enrollment, onComplete, html, isSimMode = false }) {
+  // Sim mode: auto-complete after a short delay
+  useEffect(() => {
+    if (!isSimMode) return
+    const t = setTimeout(() => {
+      onComplete({ debriefed_at: new Date().toISOString() })
+    }, 500)
+    return () => clearTimeout(t)
+  }, [isSimMode]) // eslint-disable-line react-hooks/exhaustive-deps
+
   function handleComplete() {
     onComplete({ debriefed_at: new Date().toISOString() })
   }

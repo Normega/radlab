@@ -1,6 +1,6 @@
 // v2 — reads session_template_nodes; route param :studySessionId
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { advanceSchedule } from '../../lib/scheduleGenerator'
@@ -29,7 +29,9 @@ function normalizeNode(n) {
 
 export default function StudySessionRunner() {
   const { id: studyId, enrollmentId, studySessionId } = useParams()
-  const navigate = useNavigate()
+  const navigate   = useNavigate()
+  const location   = useLocation()
+  const isSimMode  = new URLSearchParams(location.search).get('sim') === '1'
   const [phase,       setPhase]       = useState(PHASE.LOADING)
   const [currentStep, setCurrentStep] = useState(0)
 
@@ -209,6 +211,7 @@ export default function StudySessionRunner() {
             onComplete={handleStepComplete}
             consentHtml={consentHtml}
             debriefHtml={debriefHtml}
+            isSimMode={isSimMode}
           />
         ) : (
           <p style={S.loadingText}>No content at step {currentStep}</p>

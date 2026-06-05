@@ -1,7 +1,16 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
-export default function ConsentStep({ enrollment, onComplete, html }) {
+export default function ConsentStep({ enrollment, onComplete, html, isSimMode = false }) {
   const [agreed, setAgreed] = useState(false)
+
+  // Sim mode: auto-accept after a short delay
+  useEffect(() => {
+    if (!isSimMode) return
+    const t = setTimeout(() => {
+      onComplete({ consented: true, consented_at: new Date().toISOString() })
+    }, 500)
+    return () => clearTimeout(t)
+  }, [isSimMode]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleAgree() {
     if (!agreed) return

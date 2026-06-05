@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { supabase as globalSupabase } from '../../lib/supabase'
 import QuestionnaireRenderer from '../questionnaire/QuestionnaireRenderer'
 
-export default function QuestionnaireStepWrapper({ slug, enrollment, stepIndex, totalSteps, onComplete, supabaseClient }) {
+export default function QuestionnaireStepWrapper({ slug, enrollment, stepIndex, totalSteps, onComplete, supabaseClient, isSimMode = false }) {
   // In a participant session the caller passes the participant-authenticated
   // client; reads/writes must use it so RLS (auth.uid() = user_id) is satisfied.
   // Falls back to the global client for non-session contexts (e.g. preview).
@@ -48,6 +48,7 @@ export default function QuestionnaireStepWrapper({ slug, enrollment, stepIndex, 
       partNumber={stepIndex + 1}
       totalParts={totalSteps}
       onComplete={handleComplete}
+      isSimMode={isSimMode}
     />
   )
 }

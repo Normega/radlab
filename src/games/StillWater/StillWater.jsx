@@ -254,6 +254,7 @@ export default function StillWater({
   supabaseClient,
   onSessionComplete,
   studyMode = false,
+  isSimMode = false,
 }) {
   const db     = supabaseClient ?? globalSupabase
   const [phase,  setPhase]  = useState('intro')
@@ -263,6 +264,28 @@ export default function StillWater({
   const animRef = useRef(null)
 
   const userId = userIdProp ?? session?.user?.id ?? null
+
+  // Sim mode: auto-advance through each phase
+  useEffect(() => {
+    if (!isSimMode) return
+    const SIM_SEL = { emotionId: null, zone: null, rating: 4, x: 0, y: 0, neutral: true }
+    let t
+    if (phase === 'intro') {
+      t = setTimeout(() => setPhase('phase1'), 300)
+    } else if (phase === 'phase1') {
+      t = setTimeout(() => { setP1Sel(SIM_SEL); setPhase('phase2') }, 300)
+    } else if (phase === 'phase2') {
+      t = setTimeout(() => { setP2Sel(SIM_SEL); setPhase('reveal') }, 300)
+    } else if (phase === 'reveal') {
+      // Wait for the reveal animation (save fires on phase enter, anim takes ~1.6s)
+      // then call onSessionComplete automatically
+      t = setTimeout(() => {
+        if (studyMode && onSessionComplete) onSessionComplete({})
+      }, 2200)
+    }
+    return () => clearTimeout(t)
+  }, [isSimMode, phase]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const { data: avatar } = useAvatarConfig(userId)
   const skinColor = avatar?.skin_color  ?? '#FDBCB4'
   const eyeColor  = avatar?.eye_color   ?? '#4A90D9'

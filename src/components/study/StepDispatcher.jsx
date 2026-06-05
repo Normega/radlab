@@ -14,8 +14,9 @@ import GameStepWrapper          from './GameStepWrapper'
  *   onComplete  — called when the step finishes
  *   consentHtml — HTML string for consent step (from study)
  *   debriefHtml — HTML string for debrief step (from study)
+ *   isSimMode   — bool — when true all steps auto-complete
  */
-export default function StepDispatcher({ node, enrollment, scheduleId, stepIndex, totalSteps, onComplete, consentHtml, debriefHtml, supabaseClient }) {
+export default function StepDispatcher({ node, enrollment, scheduleId, stepIndex, totalSteps, onComplete, consentHtml, debriefHtml, supabaseClient, isSimMode = false }) {
   const activity = node?.activity ?? node?.activities
   if (!activity) {
     return (
@@ -29,13 +30,13 @@ export default function StepDispatcher({ node, enrollment, scheduleId, stepIndex
 
   if (category === 'form') {
     if (subcategory === 'consent') {
-      return <ConsentStep enrollment={enrollment} onComplete={onComplete} html={consentHtml} />
+      return <ConsentStep enrollment={enrollment} onComplete={onComplete} html={consentHtml} isSimMode={isSimMode} />
     }
     if (subcategory === 'debrief') {
-      return <DebriefStep enrollment={enrollment} onComplete={onComplete} html={debriefHtml} />
+      return <DebriefStep enrollment={enrollment} onComplete={onComplete} html={debriefHtml} isSimMode={isSimMode} />
     }
     if (subcategory === 'demographics') {
-      return <DemographicsStep enrollment={enrollment} scheduleId={scheduleId} onComplete={onComplete} supabaseClient={supabaseClient} />
+      return <DemographicsStep enrollment={enrollment} scheduleId={scheduleId} onComplete={onComplete} supabaseClient={supabaseClient} isSimMode={isSimMode} />
     }
   }
 
@@ -48,6 +49,7 @@ export default function StepDispatcher({ node, enrollment, scheduleId, stepIndex
         totalSteps={totalSteps}
         onComplete={onComplete}
         supabaseClient={supabaseClient}
+        isSimMode={isSimMode}
       />
     )
   }
@@ -59,6 +61,7 @@ export default function StepDispatcher({ node, enrollment, scheduleId, stepIndex
         enrollment={enrollment}
         onComplete={onComplete}
         supabaseClient={supabaseClient}
+        isSimMode={isSimMode}
       />
     )
   }

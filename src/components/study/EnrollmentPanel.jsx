@@ -6,6 +6,60 @@ import { supabase } from '../../lib/supabase'
 import { createParticipantAccount } from '../../lib/createParticipantAccount'
 import { generateSchedule } from '../../lib/scheduleGenerator'
 
+// ── Simulate ──────────────────────────────────────────────────────────────────
+// Creates a throwaway enrollment + participant_schedule row for the first
+// study session, then navigates to the runner with ?sim=1.
+export async function startSimulation({ study, navigate }) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not signed in.')
+
+  const now = new Date().toISOString()
+  const externalId = `SIM_${Date.now()}`
+
+  // Create the enrollment (profile_id = current admin user so RLS passes)
+  const { data: enrollment, error: enrollErr } = await supabase
+    .from('study_enrollments')
+    .insert({
+      study_id:    study.id,
+      profile_id:  user.id,
+      external_id: externalId,
+      enrolled_by: user.id,
+      enrolled_at: now,
+      consent_date: now,
+      status:      'enrolled',
+    })
+    .select('id')
+    .single()
+  if (enrollErr) throw enrollErr
+
+  // Fetch the first study_session for this study
+  const { data: sessions, error: sessErr } = await supabase
+    .from('study_sessions')
+    .select('id, send_time')
+    .eq('study_id', study.id)
+    .order('order_index', { ascending: true })
+    .limit(1)
+  if (sessErr) throw sessErr
+  if (!sessions || sessions.length === 0) throw new Error('No sessions in this study. Add a session first.')
+
+  const studySession = sessions[0]
+
+  // Create a participant_schedule row so the runner can mark completion
+  const { error: schedErr } = await supabase
+    .from('participant_schedule')
+    .insert({
+      participant_id:   user.id,
+      study_id:         study.id,
+      study_session_id: studySession.id,
+      scheduled_date:   now.slice(0, 10),
+      send_time:        studySession.send_time ?? '09:00',
+      status:           'pending',
+    })
+  if (schedErr) throw schedErr
+
+  navigate(`/admin/studies/${study.id}/session/${enrollment.id}/${studySession.id}?sim=1`)
+}
+
 function useEnrollments(studyId) {
   return useQuery({
     queryKey: ['enrollments', studyId],

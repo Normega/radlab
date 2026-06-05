@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
+import { startSimulation } from '../../components/study/EnrollmentPanel'
 
 function useStudySessions(studyId) {
   return useQuery({
@@ -42,13 +44,27 @@ const BLANK_FORM = {
 export default function StudySessionsPanel({ study, qc }) {
   const studyId        = study.id
   const isLongitudinal = study.delivery_mode === 'online_longitudinal'
+  const navigate       = useNavigate()
 
   const { data: sessions = [], isLoading } = useStudySessions(studyId)
   const { data: templates = [] }            = useSessionTemplates()
 
-  const [showForm, setShowForm] = useState(false)
-  const [form,     setForm]     = useState(BLANK_FORM)
-  const [formErr,  setFormErr]  = useState(null)
+  const [showForm,   setShowForm]   = useState(false)
+  const [form,       setForm]       = useState(BLANK_FORM)
+  const [formErr,    setFormErr]    = useState(null)
+  const [simRunning, setSimRunning] = useState(false)
+  const [simError,   setSimError]   = useState(null)
+
+  async function handleSimulate() {
+    setSimRunning(true)
+    setSimError(null)
+    try {
+      await startSimulation({ study, navigate })
+    } catch (e) {
+      setSimError(e.message)
+      setSimRunning(false)
+    }
+  }
 
   const addSession = useMutation({
     mutationFn: async () => {
@@ -91,10 +107,21 @@ export default function StudySessionsPanel({ study, qc }) {
     <div style={{ marginTop: 36 }}>
       <div style={S.sectionHeader}>
         <h2 style={S.sectionTitle}>Sessions</h2>
-        <button style={S.btnOutline} onClick={() => { setShowForm(v => !v); setFormErr(null) }}>
-          {showForm ? 'Cancel' : '+ Add session'}
-        </button>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <button
+            style={{ ...S.btnSim, opacity: simRunning ? 0.7 : 1 }}
+            onClick={handleSimulate}
+            disabled={simRunning || sessions.length === 0}
+            title={sessions.length === 0 ? 'Add a session first' : 'Run a throwaway simulation of this study'}
+          >
+            {simRunning ? 'Starting…' : 'Simulate'}
+          </button>
+          <button style={S.btnOutline} onClick={() => { setShowForm(v => !v); setFormErr(null) }}>
+            {showForm ? 'Cancel' : '+ Add session'}
+          </button>
+        </div>
       </div>
+      {simError && <p style={S.errMsg}>{simError}</p>}
 
       {showForm && (
         <div style={S.addForm}>
@@ -223,6 +250,7 @@ const S = {
   sectionTitle:   { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 20, fontWeight: 400, color: 'var(--tx)', margin: 0 },
   btnPrimary:     { background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
   btnOutline:     { background: '#fff', color: 'var(--pk)', border: '1.5px solid var(--pk)', borderRadius: 8, padding: '7px 14px', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
+  btnSim:         { background: '#f4f0fb', color: '#6d28d9', border: '1.5px solid #c4b5fd', borderRadius: 8, padding: '7px 14px', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
   addForm:        { background: '#fff', border: '1px solid var(--bd)', borderRadius: 10, padding: '16px 20px', marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 12 },
   formField:      { display: 'flex', flexDirection: 'column', gap: 5 },
   fieldLabel:     { fontFamily: '"Space Mono",monospace', fontSize: 10, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' },

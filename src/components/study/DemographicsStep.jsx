@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase as globalSupabase } from '../../lib/supabase'
 
 const SES_PROMPT = `Imagine a ladder that represents where people stand in society. At the top are people who are the best off — those with the most money, most education, and the best jobs. At the bottom are people who are the worst off — those with the least money, least education, and the worst or no job. Where would you place yourself on this ladder?`
 
-export default function DemographicsStep({ enrollment, scheduleId, onComplete, supabaseClient }) {
+export default function DemographicsStep({ enrollment, scheduleId, onComplete, supabaseClient, isSimMode = false }) {
   const db = supabaseClient ?? globalSupabase
 
   const [age,        setAge]        = useState('')
@@ -12,6 +12,34 @@ export default function DemographicsStep({ enrollment, scheduleId, onComplete, s
   const [sesLadder,  setSesLadder]  = useState(null)   // 1–10
   const [saving,     setSaving]     = useState(false)
   const [error,      setError]      = useState(null)
+
+  // Sim mode: auto-fill fields then submit
+  useEffect(() => {
+    if (!isSimMode) return
+    const simAge     = String(Math.floor(Math.random() * 17) + 19)   // 19–35
+    const simSes     = Math.floor(Math.random() * 4) + 4             // 4–7
+    setAge(simAge)
+    setGender('sim')
+    setRacialized('prefer_not_to_answer')
+    setSesLadder(simSes)
+    // Short delay to let state settle, then submit directly
+    const t = setTimeout(async () => {
+      setSaving(true)
+      const { error: dbErr } = await db.from('demographics').insert({
+        user_id:       enrollment.profile_id ?? enrollment.user_id,
+        enrollment_id: enrollment.id,
+        schedule_id:   scheduleId ?? null,
+        age:           parseInt(simAge),
+        gender:        'sim',
+        racialized:    'prefer_not_to_answer',
+        ses_ladder:    simSes,
+      })
+      setSaving(false)
+      if (dbErr) { console.error('sim demographics insert:', dbErr) }
+      onComplete({})
+    }, 500)
+    return () => clearTimeout(t)
+  }, [isSimMode]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const canSubmit = age !== '' && parseInt(age) > 0 && gender.trim() !== '' && racialized !== null && sesLadder !== null
 

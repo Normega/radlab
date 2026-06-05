@@ -28,6 +28,7 @@ export default function QuestionnaireRenderer({
   onComplete,
   onBack,
   previewMode = false,
+  isSimMode   = false,
 }) {
   const slides    = useRef(buildSlides(questionnaire)).current;
   const [slideIdx,   setSlideIdx]   = useState(0);
@@ -35,6 +36,27 @@ export default function QuestionnaireRenderer({
   const [visible,    setVisible]    = useState(true);  // fade control
   const [done,       setDone]       = useState(false);
   const transitioningRef = useRef(false);
+
+  // Sim mode: after a brief mount delay, fill all item responses and complete
+  useEffect(() => {
+    if (!isSimMode) return;
+    const t = setTimeout(() => {
+      const simResponses = {};
+      for (const slide of slides) {
+        if (slide.type !== 'item') continue;
+        const item   = slide.item;
+        const labels = effectiveLabels(item, questionnaire);
+        const min    = labels[0]?.value ?? 1;
+        const max    = labels[labels.length - 1]?.value ?? 5;
+        simResponses[item.id] = Math.floor(Math.random() * (max - min + 1)) + min;
+      }
+      if (previewMode) { setDone(true); return; }
+      const subscaleScores = computeSubscaleScores(questionnaire, simResponses);
+      const derivedScores  = computeDerivedScores(questionnaire, subscaleScores);
+      onComplete?.({ responses: simResponses, subscaleScores, derivedScores });
+    }, 300);
+    return () => clearTimeout(t);
+  }, [isSimMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const currentSlide = slides[slideIdx];
   const autoAdvance  = questionnaire.auto_advance !== false; // default true

@@ -8,7 +8,7 @@ const GAME_COMPONENTS = {
   still_water:    StillWater,
 }
 
-export default function GameStepWrapper({ slug, enrollment, onComplete, supabaseClient }) {
+export default function GameStepWrapper({ slug, enrollment, onComplete, supabaseClient, isSimMode = false }) {
   const GameComponent = GAME_COMPONENTS[slug]
 
   if (!GameComponent) {
@@ -27,6 +27,7 @@ export default function GameStepWrapper({ slug, enrollment, onComplete, supabase
       externalId={enrollment.external_id}
       onSessionComplete={result => onComplete({ game_slug: slug, ...result })}
       supabaseClient={supabaseClient}
+      isSimMode={isSimMode}
     />
   )
 }
