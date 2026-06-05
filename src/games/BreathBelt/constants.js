@@ -9,7 +9,7 @@
 // The only feedback shown in production is the end-of-calibration review.
 // NB: hiding the sync overlay does not affect data — all metrics are still
 // computed and saved to Supabase regardless of PILOT_MODE.
-export const PILOT_MODE = true;
+export const PILOT_MODE = false;
 
 // ── Breath timing ─────────────────────────────────────────────────────────
 export const BASE_BREATH_SPEED_S    = 4;
