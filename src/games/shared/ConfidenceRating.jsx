@@ -29,30 +29,28 @@ function calcPos(va, ar) {
   return { ...exaggerated, mouthType: 'line', pupilTier: 1, blush: clamp(0.28 + ep(va) * 0.22), it: 1 }
 }
 
-// v4 confidence scale — 7 faces, expanded extremes.
-// Faces 1 and 7 are hand-tuned direct params; 2–6 are calcPos-derived.
+// v4 confidence scale — 6 faces, expanded extremes.
+// Faces 1 and 6 are hand-tuned direct params; 2–5 are calcPos-derived.
 const POSITIONS = [
   // 1 — extreme uncertain: max brow furrow, lip corner depress, worried open mouth,
   //     wide pupils. mouthCyAdd moves oval up; mouthRyMult narrows it on y-axis.
   { au1:1.0, au2:0.5, au4:1.0, au5:0, au12:0, au15:0.9, au20:0.65, au27:0.88,
     au43:0, sb2:0.55, mouthType:'alert', pupilTier:2, blush:0.03, it:0.18,
     mouthCyAdd:-12, mouthRyMult:0.48 },
-  // 2 — old face 1
+  // 2
   calcPos(-0.85, 0.1),
-  // 3 — old face 2
+  // 3
   calcPos(-0.58, 0),
   // 4 — neutral + slight upward curve
   calcPos(0.12, -0.12),
-  // 5 — old face 6
+  // 5
   calcPos(0.58, -0.27),
-  // 6 — old face 7
-  calcPos(0.75, -0.32),
-  // 7 — extreme certain: max smile, max squint (au43), open excited mouth, deep blush.
+  // 6 — extreme certain: max smile, max squint (au43), open excited mouth, deep blush.
   { au1:0, au2:0.82, au4:0, au5:0, au12:1.0, au15:0, au20:0, au27:0,
     au43:1.0, sb2:0, mouthType:'excited', pupilTier:1, blush:0.58, it:1 },
 ]
 
-const WORDS = ['no idea', 'guessing', 'leaning', 'somewhat sure', 'fairly sure', 'confident', 'certain']
+const WORDS = ['no idea', 'guessing', 'leaning', 'somewhat sure', 'fairly sure', 'certain']
 
 export default function ConfidenceRating({ value: valueProp, onChange, skinColor, eyeColor }) {
   const [internal, setInternal] = useState(null)
