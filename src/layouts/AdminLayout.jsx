@@ -6,6 +6,7 @@ const NAV_ITEMS = [
   { to: '/admin/sessions',        label: 'Sessions'       },
   { to: '/admin/studies',         label: 'Studies'        },
   { to: '/admin/questionnaires',  label: 'Questionnaires' },
+  { to: '/admin/compensation',    label: 'Compensation'   },
   { to: '/admin/export',          label: 'Export'         },
 ]
 
