@@ -147,14 +147,6 @@ export default function StudySessionRunner() {
     advanceStep.mutate()
   }
 
-  if (isLoading || phase === PHASE.LOADING) {
-    return (
-      <div style={S.fullScreen}>
-        <p style={S.loadingText}>Loading session…</p>
-      </div>
-    )
-  }
-
   const studyName     = enrollment?.studies?.name ?? ''
   const externalId    = enrollment?.external_id ?? ''
   const consentHtml   = enrollment?.studies?.study_consent_forms?.html_content ?? null
@@ -167,59 +159,60 @@ export default function StudySessionRunner() {
     : ''
   const progressPct   = totalSteps > 0 ? (currentStep / totalSteps) * 100 : 0
 
-  if (phase === PHASE.COMPLETE) {
-    return (
-      <div style={S.fullScreen}>
-        <div style={S.completeBox}>
-          <div style={S.checkmark}>✓</div>
-          <h1 style={S.completeTitle}>Session Complete</h1>
-          <p style={S.completeBody}>
-            {externalId
-              ? <>Participant <span style={S.monoInline}>{externalId}</span> has finished this session.</>
-              : 'Session complete.'}
-          </p>
-          <button style={S.btnPrimary} onClick={() => navigate(`/admin/studies/${studyId}`)}>
-            Return to Study →
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  if (phase === PHASE.SAVING) {
-    return (
-      <div style={S.fullScreen}>
-        <p style={S.loadingText}>Saving…</p>
-      </div>
-    )
-  }
-
+  // PhysioProvider always wraps the full tree so the belt connection (BT + calib)
+  // survives phase transitions like SAVING, which previously unmounted the provider
+  // and reset the connection to IDLE before the Breath Belt step could use it.
   return (
     <PhysioProvider isSimMode={isSimMode}>
-      <div style={S.fullScreen}>
-        <div style={S.progressBarWrap}>
-          <div style={{ ...S.progressBarFill, width: `${progressPct}%` }} />
+      {(isLoading || phase === PHASE.LOADING) ? (
+        <div style={S.fullScreen}>
+          <p style={S.loadingText}>Loading session…</p>
         </div>
-        {activity?.category !== 'game' && activity?.category !== 'physio' && <p style={S.stepLabel}>{stepLabel}</p>}
+      ) : phase === PHASE.COMPLETE ? (
+        <div style={S.fullScreen}>
+          <div style={S.completeBox}>
+            <div style={S.checkmark}>✓</div>
+            <h1 style={S.completeTitle}>Session Complete</h1>
+            <p style={S.completeBody}>
+              {externalId
+                ? <>Participant <span style={S.monoInline}>{externalId}</span> has finished this session.</>
+                : 'Session complete.'}
+            </p>
+            <button style={S.btnPrimary} onClick={() => navigate(`/admin/studies/${studyId}`)}>
+              Return to Study →
+            </button>
+          </div>
+        </div>
+      ) : phase === PHASE.SAVING ? (
+        <div style={S.fullScreen}>
+          <p style={S.loadingText}>Saving…</p>
+        </div>
+      ) : (
+        <div style={S.fullScreen}>
+          <div style={S.progressBarWrap}>
+            <div style={{ ...S.progressBarFill, width: `${progressPct}%` }} />
+          </div>
+          {activity?.category !== 'game' && activity?.category !== 'physio' && <p style={S.stepLabel}>{stepLabel}</p>}
 
-        <div style={S.stepContent}>
-          {node ? (
-            <StepDispatcher
-              node={node}
-              enrollment={enrollment}
-              scheduleId={scheduleRow?.id}
-              stepIndex={currentStep}
-              totalSteps={totalSteps}
-              onComplete={handleStepComplete}
-              consentHtml={consentHtml}
-              debriefHtml={debriefHtml}
-              isSimMode={isSimMode}
-            />
-          ) : (
-            <p style={S.loadingText}>No content at step {currentStep}</p>
-          )}
+          <div style={S.stepContent}>
+            {node ? (
+              <StepDispatcher
+                node={node}
+                enrollment={enrollment}
+                scheduleId={scheduleRow?.id}
+                stepIndex={currentStep}
+                totalSteps={totalSteps}
+                onComplete={handleStepComplete}
+                consentHtml={consentHtml}
+                debriefHtml={debriefHtml}
+                isSimMode={isSimMode}
+              />
+            ) : (
+              <p style={S.loadingText}>No content at step {currentStep}</p>
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </PhysioProvider>
   )
 }
