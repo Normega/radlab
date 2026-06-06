@@ -244,26 +244,12 @@ export default function PhysioSetupStep({ enrollment, onComplete, isSimMode = fa
               </p>
             </div>
 
-            {/* Trigger device */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <label style={{ fontFamily: 'DM Sans', fontSize: 'var(--fs-body-sm)', color: 'var(--tx2)' }}>
-                Trigger device
-              </label>
-              <select
-                value={localTriggerDevice}
-                onChange={e => setLocalTriggerDevice(e.target.value)}
-                style={{
-                  fontFamily: 'Space Mono', fontSize: 'var(--fs-mono-md)',
-                  color: 'var(--tx)', background: 'var(--bgc)',
-                  border: '1px solid var(--bd)', borderRadius: 10,
-                  padding: '10px 14px', width: '100%',
-                }}
-              >
-                {TRIGGER_DEVICES.map(d => (
-                  <option key={d.value} value={d.value}>{d.label}</option>
-                ))}
-              </select>
-            </div>
+            {/* Trigger device — confirmed on the COM connect screen, shown read-only here */}
+            <p style={{ fontFamily: 'DM Sans', fontSize: 'var(--fs-body-sm)', color: 'var(--tx3)', margin: 0 }}>
+              Trigger device: <span style={{ fontFamily: 'Space Mono', color: 'var(--tx2)' }}>
+                {TRIGGER_DEVICES.find(d => d.value === localTriggerDevice)?.label ?? localTriggerDevice}
+              </span>
+            </p>
 
             {enrollment?.external_id && (
               <p style={{ fontFamily: 'DM Sans', fontSize: 'var(--fs-body-sm)', color: 'var(--tx3)', margin: 0 }}>
