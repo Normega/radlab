@@ -6,7 +6,7 @@ function useSummary() {
   return useQuery({
     queryKey: ['admin-summary'],
     queryFn: async () => {
-      const [sessions, studies, enrollments] = await Promise.all([
+      const [sessions, studies, enrollments, compensation] = await Promise.all([
         supabase.from('session_templates').select('id', { count: 'exact', head: true }),
         supabase.from('studies').select('id', { count: 'exact', head: true }).eq('active', true),
         supabase.from('study_enrollments').select('study_id', { count: 'exact', head: false })
@@ -15,11 +15,13 @@ function useSummary() {
             const unique = new Set((data ?? []).map(r => r.study_id))
             return { count: unique.size }
           }),
+        supabase.from('participant_compensation').select('id', { count: 'exact', head: true }),
       ])
       return {
-        sessions:    sessions.count ?? 0,
-        studies:     studies.count ?? 0,
-        enrollments: enrollments.count,
+        sessions:     sessions.count ?? 0,
+        studies:      studies.count ?? 0,
+        enrollments:  enrollments.count,
+        compensation: compensation.count ?? 0,
       }
     },
   })
@@ -49,6 +51,13 @@ export default function AdminDashboard() {
       count: data?.enrollments,
       to:    '/admin/studies',
       empty: 'No active enrolments.',
+    },
+    {
+      key:   'compensation',
+      label: 'Compensation records',
+      count: data?.compensation,
+      to:    '/admin/compensation',
+      empty: 'No compensation forms submitted yet.',
     },
   ]
 
