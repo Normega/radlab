@@ -2,6 +2,24 @@ import { useState, useRef, useCallback } from 'react';
 import { anagramPool } from '../data/anagrams';
 import { logisticPercentile, ANAGRAM_MIDPOINT, ANAGRAM_K } from '../constants';
 
+// Map from sorted-letters key → Set of valid words in the pool.
+// Built once so any pool word that is a valid anagram of the target is accepted.
+const anagramMap = (() => {
+  const map = {};
+  for (const words of Object.values(anagramPool)) {
+    for (const word of words) {
+      const key = word.split('').sort().join('');
+      if (!map[key]) map[key] = new Set();
+      map[key].add(word);
+    }
+  }
+  return map;
+})();
+
+function sortedKey(word) {
+  return word.split('').sort().join('');
+}
+
 function fisherYates(arr) {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -62,7 +80,8 @@ export function useAnagram() {
   const submit = useCallback((value) => {
     const guess = value.trim().toLowerCase();
     if (!guess) return;
-    if (guess === currentWord) {
+    const isValidAnagram = anagramMap[sortedKey(currentWord)]?.has(guess);
+    if (isValidAnagram) {
       solvesRef.current += 1;
       setScore(s => s + 1);
       showFeedback('correct');

@@ -1,7 +1,8 @@
 // 10+ common words per length, lengths 3–12
+// Words are grouped so anagram partners appear together (both are accepted on submit).
 export const anagramPool = {
-  3: ['cat','dog','run','sun','map','jar','cup','net','fog','box','ant','bat','cow','egg','fan','gem','hat','ink','jug','key','leg','mud','nap','oak','pan','rag','sap','tax','urn','vat'],
-  4: ['calm','lamp','frog','drum','pink','vest','curl','wolf','knot','clam','bark','bolt','cave','damp','earn','fact','glow','herb','itch','jury','kite','loft','moan','nail','opal','palm','quiz','rang','sail','tame'],
+  3: ['cat','act','dog','god','run','urn','sun','map','amp','jar','cup','net','ten','fog','box','ant','tan','bat','tab','cow','egg','fan','gem','hat','ink','jug','key','leg','mud','nap','pan','oak','rag','sap','tax','vat'],
+  4: ['calm','clam','lamp','palm','frog','drum','pink','vest','curl','wolf','knot','blot','bolt','bark','cave','damp','earn','near','fact','glow','herb','itch','jury','kite','loft','moan','nail','opal','quiz','rang','sail','tame','mate','team'],
   5: ['brand','flute','plumb','crank','shout','dwarf','blaze','crisp','quota','swamp','angel','blunt','clove','drain','feast','grasp','hinge','ivory','joust','knack','lemon','moist','noble','orbit','perch','quest','rivet','scout','thorn','visor'],
   6: ['battle','candle','dagger','enzyme','filter','goblin','hamlet','ignite','jigsaw','kettle','lantern','muffin','napkin','oyster','pencil','quartz','radish','saddle','tunnel','usurp','vanish','walrus','xyster','yellow','zipper','anchor','basket','castle','donkey','famine'],
   7: ['balance','cabinet','decorum','eclipse','fantasy','garland','harvest','impress','journey','kitchen','lantern','measure','nervous','obscure','pattern','qualify','rainbow','service','theater','uniform','variant','warrior','yardage','zealous','absolve','blister','captain','dismay','emerald','furnish'],
