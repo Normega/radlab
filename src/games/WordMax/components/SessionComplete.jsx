@@ -9,7 +9,7 @@ export default function SessionComplete({ results, totalScore, timedOut, saving,
       <div style={S.card}>
         <div style={S.icon}>{completed ? '✓' : timedOut ? '⏱' : '✓'}</div>
         <h2 style={S.heading}>
-          {timedOut && !completed ? 'Time's up!' : 'Session complete'}
+          {timedOut && !completed ? "Time's up!" : 'Session complete'}
         </h2>
         <p style={S.sub}>
           {completed
