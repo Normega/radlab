@@ -13,7 +13,39 @@ export default function WordInput({ value, onChange, onSubmit, remainingPool, di
       return;
     }
 
-    // Let control keys (Backspace, Delete, arrows, Tab, etc.) through normally.
+    if (e.key === 'Backspace') {
+      e.preventDefault();
+      const start = e.target.selectionStart;
+      const end   = e.target.selectionEnd;
+      if (start !== end) {
+        const next = value.slice(0, start) + value.slice(end);
+        onChange(next);
+        requestAnimationFrame(() => inputRef.current?.setSelectionRange(start, start));
+      } else if (start > 0) {
+        const next = value.slice(0, start - 1) + value.slice(start);
+        onChange(next);
+        requestAnimationFrame(() => inputRef.current?.setSelectionRange(start - 1, start - 1));
+      }
+      return;
+    }
+
+    if (e.key === 'Delete') {
+      e.preventDefault();
+      const start = e.target.selectionStart;
+      const end   = e.target.selectionEnd;
+      if (start !== end) {
+        const next = value.slice(0, start) + value.slice(end);
+        onChange(next);
+        requestAnimationFrame(() => inputRef.current?.setSelectionRange(start, start));
+      } else if (start < value.length) {
+        const next = value.slice(0, start) + value.slice(start + 1);
+        onChange(next);
+        requestAnimationFrame(() => inputRef.current?.setSelectionRange(start, start));
+      }
+      return;
+    }
+
+    // Let other control keys (arrows, Tab, etc.) through normally.
     if (e.key.length > 1) return;
 
     e.preventDefault();
