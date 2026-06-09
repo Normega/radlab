@@ -33,7 +33,7 @@ const SCREEN = { INTRO: 'INTRO', PLAYING: 'PLAYING', COMPLETE: 'COMPLETE' };
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function LexicalPerfectionism() {
+export default function WordMax() {
   // Dictionary
   const wordSetRef        = useRef(null);
   const [dictLoading, setDictLoading] = useState(true);
@@ -179,7 +179,7 @@ export default function LexicalPerfectionism() {
     setSaving(true);
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) { setSaving(false); return; }
-      supabase.from('lexical_sessions').insert({
+      supabase.from('word_max_sessions').insert({
         user_id:        user.id,
         completed:      setsCompleted === NUM_SETS,
         timed_out:      timedOut,
@@ -220,7 +220,7 @@ export default function LexicalPerfectionism() {
     return (
       <div style={S.centered}>
         <div style={S.introCard}>
-          <h1 style={S.heading}>Lexical Perfectionism</h1>
+          <h1 style={S.heading}>WordMax</h1>
           <p style={S.introBody}>
             You'll see <strong>5 sets of 10 letters</strong>. For each set, type one valid word
             using only those letters — each letter only as many times as it appears.

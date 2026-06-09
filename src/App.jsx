@@ -37,7 +37,7 @@ import Drift        from './games/Drift/Drift'
 import FarmJoy      from './games/FarmJoy/FarmJoy'
 import BreathBelt   from './games/BreathBelt/BreathBelt'
 import AptitudeSuite          from './games/AptitudeSuite/AptitudeSuite'
-import LexicalPerfectionism   from './games/LexicalPerfectionism/LexicalPerfectionism'
+import WordMax                from './games/WordMax/WordMax'
 import AdminRoute    from './components/AdminRoute'
 import AdminLayout   from './layouts/AdminLayout'
 import AdminDashboard from './pages/admin/AdminDashboard'
@@ -235,9 +235,9 @@ export default function App() {
             </ProtectedRoute>
           } />
 
-          <Route path="/games/lexical-perfectionism" element={
+          <Route path="/games/word-max" element={
             <ProtectedRoute session={session} hasAvatar={hasAvatar}>
-              <LexicalPerfectionism />
+              <WordMax />
             </ProtectedRoute>
           } />
 

@@ -2044,10 +2044,10 @@ Specced. Build brief: `INPERSON_STUDY_BRIEF.md`.
 
 ---
 
-## 23. Lexical Perfectionism
+## 23. WordMax
 
-**Route**: `/games/lexical-perfectionism`
-**Slug**: `lexical_perfectionism`
+**Route**: `/games/word-max`
+**Slug**: `word_max`
 **Access**: Protected
 **Duration**: 5 minutes shared across 5 sets
 **Status**: Built
@@ -2072,7 +2072,7 @@ All character keypresses intercepted in `onKeyDown` — uppercase enforced manua
 
 ### Schema
 
-Table: `lexical_sessions`
+Table: `word_max_sessions`
 
 | Column | Type | Notes |
 |---|---|---|
@@ -2086,7 +2086,7 @@ Table: `lexical_sessions`
 | `duration_ms` | int | actual elapsed ms at session end |
 | `set_results` | jsonb | array of 5 `{set_id, letters, word, score, dwell_ms}` objects; word/score null for timed-out sets |
 
-Migration: `supabase/migrations/20260609_lexical_sessions.sql`
+Migration: `supabase/migrations/20260609_lexical_sessions.sql` (creates `word_max_sessions`)
 
 ### File structure
 
