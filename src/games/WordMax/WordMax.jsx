@@ -102,7 +102,7 @@ export default function WordMax() {
 
   const currentSet = sets[setIndex] ?? { id: 0, letters: [] };
   const { displayLetters, shuffle, getUsedIndices, remainingPool, isDrawable } =
-    useLetterSet(currentSet.letters, setIndex);
+    useLetterSet(currentSet.letters, currentSet.id);
 
   // ── Start session ───────────────────────────────────────────────────────────
 
