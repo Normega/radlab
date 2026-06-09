@@ -6,12 +6,13 @@ import './StudyVideoPlayer.css'
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 interface Props {
-  storagePath:      string
-  participantId:    string
-  videoId:          string
-  scheduleId?:      string
+  storagePath:       string
+  participantId?:    string
+  videoId?:          string
+  scheduleId?:       string
   requiredWatchPct?: number   // 0–1, default 0.9
-  onComplete:       (sessionId: string) => void
+  onComplete?:       (sessionId: string) => void
+  preview?:          boolean  // skips all DB writes; for admin preview use only
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -35,6 +36,7 @@ export default function StudyVideoPlayer({
   scheduleId,
   requiredWatchPct = 0.9,
   onComplete,
+  preview = false,
 }: Props) {
   // ── UI state ────────────────────────────────────────────────────────────────
   const [signedUrl,   setSignedUrl]   = useState<string | null>(null)
@@ -71,9 +73,11 @@ export default function StudyVideoPlayer({
       try {
         const url = await getVideoSignedUrl(storagePath)
         if (cancelled) return
-        const session = await createVideoSession(participantId, videoId, scheduleId)
-        if (cancelled) return
-        sessionIdRef.current = session.id
+        if (!preview) {
+          const session = await createVideoSession(participantId!, videoId!, scheduleId)
+          if (cancelled) return
+          sessionIdRef.current = session.id
+        }
         setSignedUrl(url)
       } catch (e: unknown) {
         if (!cancelled) setError((e as Error).message ?? 'Failed to load video')
@@ -82,40 +86,44 @@ export default function StudyVideoPlayer({
       }
     })()
     return () => { cancelled = true }
-  }, [storagePath, participantId, videoId, scheduleId])
+  }, [storagePath, participantId, videoId, scheduleId, preview])
 
   // ── Completion RPC ────────────────────────────────────────────────────────────
   const triggerComplete = useCallback(async () => {
     if (completedRef.current) return
     completedRef.current = true
 
-    const sessionId = sessionIdRef.current
-    if (!sessionId) return
+    if (!preview) {
+      const sessionId = sessionIdRef.current
+      if (!sessionId) { setIsComplete(true); return }
 
-    const vid = videoRef.current
-    const duration = vid?.duration ?? 0
-    const watchedSecs = watchedSecondsRef.current.size
-    const watchPct = duration > 0 ? watchedSecs / duration : 0
+      const vid = videoRef.current
+      const duration = vid?.duration ?? 0
+      const watchedSecs = watchedSecondsRef.current.size
+      const watchPct = duration > 0 ? watchedSecs / duration : 0
 
-    const payload = {
-      p_session_id:      sessionId,
-      p_seconds_watched: watchedSecs,
-      p_watch_pct:       watchPct,
-      p_focus_losses:    focusLossesRef.current,
-      p_focus_loss_secs: Math.round(focusLossSecsRef.current),
-    }
+      const payload = {
+        p_session_id:      sessionId,
+        p_seconds_watched: watchedSecs,
+        p_watch_pct:       watchPct,
+        p_focus_losses:    focusLossesRef.current,
+        p_focus_loss_secs: Math.round(focusLossSecsRef.current),
+      }
 
-    let attempts = 0
-    while (attempts < 2) {
-      const { error: rpcErr } = await supabase.rpc('complete_video_session', payload)
-      if (!rpcErr) break
-      attempts++
-      if (attempts >= 2) console.warn('complete_video_session RPC failed after retry:', rpcErr.message)
+      let attempts = 0
+      while (attempts < 2) {
+        const { error: rpcErr } = await supabase.rpc('complete_video_session', payload)
+        if (!rpcErr) break
+        attempts++
+        if (attempts >= 2) console.warn('complete_video_session RPC failed after retry:', rpcErr.message)
+      }
+
+      onComplete?.(sessionId)
     }
 
     setIsComplete(true)
-    onComplete(sessionId)
-  }, [onComplete])
+    if (preview) onComplete?.('')
+  }, [onComplete, preview])
 
   // ── timeupdate: seek prevention, watched tracking, progress bar ──────────────
   const handleTimeUpdate = useCallback(() => {
@@ -156,6 +164,7 @@ export default function StudyVideoPlayer({
   // ── Video events ──────────────────────────────────────────────────────────────
   const handlePlay = useCallback(() => {
     setIsPlaying(true)
+    if (preview) return
     const vid = videoRef.current
     if (!vid || !sessionIdRef.current || startedLoggedRef.current) return
     startedLoggedRef.current = true
@@ -164,7 +173,7 @@ export default function StudyVideoPlayer({
       eventType:         'started',
       videoPositionSecs: vid.currentTime,
     })
-  }, [])
+  }, [preview])
 
   const handlePause = useCallback(() => {
     setIsPlaying(false)
@@ -187,14 +196,14 @@ export default function StudyVideoPlayer({
     isPlayingBeforeFocusRef.current = !!vid && !vid.paused
     vid?.pause()
 
-    if (sessionIdRef.current && vid) {
+    if (!preview && sessionIdRef.current && vid) {
       logVideoEvent({
         sessionId:         sessionIdRef.current,
         eventType:         'focus_lost',
         videoPositionSecs: vid.currentTime,
       })
     }
-  }, [])
+  }, [preview])
 
   const onFocusReturned = useCallback(() => {
     if (!focusActiveRef.current) return
@@ -211,14 +220,14 @@ export default function StudyVideoPlayer({
       vid.play().catch(() => {})
     }
 
-    if (sessionIdRef.current && vid) {
+    if (!preview && sessionIdRef.current && vid) {
       logVideoEvent({
         sessionId:         sessionIdRef.current,
         eventType:         'focus_returned',
         videoPositionSecs: vid.currentTime,
       })
     }
-  }, [])
+  }, [preview])
 
   useEffect(() => {
     const handleVisibility = () => {

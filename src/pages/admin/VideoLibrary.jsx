@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
+import StudyVideoPlayer from '../../components/video/StudyVideoPlayer'
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -30,7 +31,8 @@ export default function VideoLibrary() {
   const queryClient  = useQueryClient()
   const [activeFolder, setActiveFolder] = useState('__all__')
   const [confirmDelete, setConfirmDelete] = useState(null) // video id
-  const [copied, setCopied] = useState(null) // video id
+  const [copied,        setCopied]        = useState(null) // video id
+  const [previewVideo,  setPreviewVideo]  = useState(null) // video row
 
   const { data: videos = [], isLoading, isError } = useQuery({
     queryKey: ['video-library'],
@@ -149,6 +151,7 @@ export default function VideoLibrary() {
                     deleting={deleteMutation.isPending && confirmDelete === v.id}
                     onCopyPath={() => handleCopyPath(v)}
                     copied={copied === v.id}
+                    onPreview={() => setPreviewVideo(v)}
                   />
                 ))}
               </div>
@@ -166,10 +169,16 @@ export default function VideoLibrary() {
                 deleting={deleteMutation.isPending && confirmDelete === v.id}
                 onCopyPath={() => handleCopyPath(v)}
                 copied={copied === v.id}
+                onPreview={() => setPreviewVideo(v)}
               />
             ))}
           </div>
         )
+      )}
+
+      {/* Preview modal */}
+      {previewVideo && (
+        <PreviewModal video={previewVideo} onClose={() => setPreviewVideo(null)} />
       )}
     </div>
   )
@@ -211,7 +220,7 @@ function FolderTab({ label, count, active, onClick }) {
 
 // ── VideoRow ──────────────────────────────────────────────────────────────────
 
-function VideoRow({ video, confirmDelete, onConfirmDelete, onDelete, deleting, onCopyPath, copied }) {
+function VideoRow({ video, confirmDelete, onConfirmDelete, onDelete, deleting, onCopyPath, copied, onPreview }) {
   const isConfirming = confirmDelete === video.id
   const duration = fmtDuration(video.duration_secs)
 
@@ -244,6 +253,9 @@ function VideoRow({ video, confirmDelete, onConfirmDelete, onDelete, deleting, o
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
         {!isConfirming ? (
           <>
+            <button onClick={onPreview} style={S.previewBtn} title="Preview in player">
+              ▶ Preview
+            </button>
             <button onClick={onCopyPath} style={S.ghostBtn} title="Copy storage path">
               {copied ? '✓ Copied' : 'Copy path'}
             </button>
@@ -268,6 +280,74 @@ function VideoRow({ video, confirmDelete, onConfirmDelete, onDelete, deleting, o
             </button>
           </>
         )}
+      </div>
+    </div>
+  )
+}
+
+// ── PreviewModal ──────────────────────────────────────────────────────────────
+
+function PreviewModal({ video, onClose }) {
+  // Close on Escape
+  useEffect(() => {
+    function onKey(e) { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  return (
+    <div
+      style={{
+        position: 'fixed', inset: 0, zIndex: 1000,
+        background: 'rgba(0,0,0,0.88)',
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center',
+        padding: '24px 16px',
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{ width: '100%', maxWidth: 940 }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Modal header */}
+        <div style={{
+          display: 'flex', alignItems: 'center',
+          justifyContent: 'space-between', marginBottom: 12,
+        }}>
+          <div>
+            <p style={{
+              fontFamily: 'DM Sans', fontSize: 15, fontWeight: 600,
+              color: '#fff', margin: '0 0 2px',
+            }}>
+              {video.title}
+            </p>
+            <p style={{
+              fontFamily: 'Space Mono', fontSize: 11,
+              color: 'rgba(255,255,255,0.45)', margin: 0,
+            }}>
+              Preview — no session data recorded
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            style={{
+              background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
+              borderRadius: 8, padding: '6px 14px', cursor: 'pointer',
+              fontFamily: 'DM Sans', fontSize: 13, color: '#fff',
+            }}
+          >
+            ✕ Close
+          </button>
+        </div>
+
+        {/* Player */}
+        <StudyVideoPlayer
+          storagePath={video.storage_path}
+          preview
+          requiredWatchPct={0.9}
+          onComplete={onClose}
+        />
       </div>
     </div>
   )
@@ -344,6 +424,12 @@ const S = {
     fontFamily: 'Space Mono', fontSize: 11,
     color: 'var(--gy)', margin: '4px 0 0',
     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+  },
+  previewBtn: {
+    background: 'var(--bgp)', border: '1px solid var(--pkb)',
+    borderRadius: 7, padding: '5px 10px',
+    fontFamily: 'DM Sans', fontSize: 12,
+    color: 'var(--pkd)', cursor: 'pointer',
   },
   ghostBtn: {
     background: 'var(--bgc)', border: '1px solid var(--bd)',
