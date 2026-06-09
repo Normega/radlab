@@ -49,6 +49,7 @@ export default function WordMax() {
   const [timedOut,    setTimedOut]    = useState(false);
   const [saving,      setSaving]      = useState(false);
   const [saveError,   setSaveError]   = useState(null);
+  const [checking,    setChecking]    = useState(false);
 
   // Tracks ms spent on the current set (for dwell_ms)
   const setStartMsRef = useRef(null);
@@ -125,7 +126,21 @@ export default function WordMax() {
 
   // ── Submit word ─────────────────────────────────────────────────────────────
 
-  function handleSubmit() {
+  // Checks local word set first (fast); falls back to Free Dictionary API for
+  // words the static list misses (inflected forms, newer words, etc.).
+  async function isKnownWord(word) {
+    if (wordSetRef.current?.has(word)) return true;
+    try {
+      const r = await fetch(
+        `https://api.dictionaryapi.dev/api/v2/entries/en/${word.toLowerCase()}`
+      );
+      return r.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  async function handleSubmit() {
     const word = input.trim().toUpperCase();
     setError(null);
 
@@ -137,7 +152,12 @@ export default function WordMax() {
       setError('Word uses letters not in the set.');
       return;
     }
-    if (!wordSetRef.current?.has(word)) {
+
+    setChecking(true);
+    const valid = await isKnownWord(word);
+    setChecking(false);
+
+    if (!valid) {
       setError('Not a recognised word.');
       return;
     }
@@ -286,12 +306,13 @@ export default function WordMax() {
           onChange={setInput}
           onSubmit={handleSubmit}
           remainingPool={remainingPool}
-          disabled={false}
+          disabled={checking}
         />
 
-        {/* Error */}
+        {/* Error / checking */}
         <div style={S.errorArea}>
-          {error && <p style={S.errorMsg}>{error}</p>}
+          {checking && <p style={S.checkingMsg}>Checking…</p>}
+          {!checking && error && <p style={S.errorMsg}>{error}</p>}
         </div>
 
         {/* Score strip */}
@@ -338,6 +359,7 @@ const S = {
   hint:        { fontSize: 13, color: 'var(--tx3)', margin: 0, fontFamily: '"DM Sans", system-ui, sans-serif' },
   errorArea:   { height: 20, width: '100%', maxWidth: 480 },
   errorMsg:    { fontSize: 13, color: COLOR_DANGER, margin: 0, fontFamily: '"DM Sans", system-ui, sans-serif' },
+  checkingMsg: { fontSize: 13, color: 'var(--tx3)', margin: 0, fontFamily: '"DM Sans", system-ui, sans-serif' },
   scoreStrip:  { display: 'flex', gap: 16, justifyContent: 'center', width: '100%' },
   metricCard:  { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, background: 'var(--bgp)', borderRadius: 10, padding: '12px 24px' },
   metricVal:   { fontFamily: '"DM Serif Display", Georgia, serif', fontSize: 28, color: 'var(--pk)', lineHeight: 1 },
