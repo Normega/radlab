@@ -100,8 +100,8 @@ export default function VideoUpload() {
         .from('video_library')
         .select('folder')
         .order('folder')
-      const unique = [...new Set((data ?? []).map(r => r.folder))].sort()
-      return unique.length ? unique : ['General']
+      const unique = [...new Set(['General', ...(data ?? []).map(r => r.folder)])].sort()
+      return unique
     },
   })
 
