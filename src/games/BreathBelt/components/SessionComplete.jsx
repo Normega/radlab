@@ -20,7 +20,7 @@ export default function SessionComplete({
           Session {sessionNumber} complete
         </h2>
         <p style={{ color: 'var(--tx2)', fontSize: 'var(--fs-body)', marginBottom: 24 }}>
-          All data saved. The belt can now be removed.
+          {studyMode ? 'All data saved.' : 'All data saved. The belt can now be removed.'}
         </p>
 
         {/* Baseline period summary */}
