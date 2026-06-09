@@ -3,6 +3,11 @@ import { useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 
+// ── encoding spec (mirrors encode_study_clip.ps1) ─────────────────────────────
+const REQUIRED_WIDTH    = 1280
+const REQUIRED_HEIGHT   = 720
+const BITRATE_WARN_MBPS = 5   // above this strongly suggests un-encoded raw footage
+
 // ── helpers ───────────────────────────────────────────────────────────────────
 
 function fmtSize(bytes) {
@@ -16,21 +21,27 @@ function folderSlug(name) {
 }
 
 function generateStoragePath(folder, filename) {
-  const slug  = folderSlug(folder)
-  const dot   = filename.lastIndexOf('.')
-  const ext   = dot !== -1 ? filename.slice(dot) : ''
-  const base  = filename.slice(0, dot !== -1 ? dot : undefined).replace(/[^a-z0-9]+/gi, '_').toLowerCase()
-  const uid   = crypto.randomUUID().replace(/-/g, '').slice(0, 8)
+  const slug = folderSlug(folder)
+  const dot  = filename.lastIndexOf('.')
+  const ext  = dot !== -1 ? filename.slice(dot) : ''
+  const base = filename.slice(0, dot !== -1 ? dot : undefined).replace(/[^a-z0-9]+/gi, '_').toLowerCase()
+  const uid  = crypto.randomUUID().replace(/-/g, '').slice(0, 8)
   return `${slug}/${uid}_${base}${ext}`
 }
 
-function readVideoDuration(file) {
+function readVideoMetadata(file) {
   return new Promise((resolve) => {
     const url = URL.createObjectURL(file)
     const vid = document.createElement('video')
     vid.preload = 'metadata'
-    vid.onloadedmetadata = () => { resolve(Math.round(vid.duration)); URL.revokeObjectURL(url) }
-    vid.onerror = ()            => { resolve(null);                    URL.revokeObjectURL(url) }
+    vid.onloadedmetadata = () => {
+      resolve({ duration: Math.round(vid.duration), width: vid.videoWidth, height: vid.videoHeight })
+      URL.revokeObjectURL(url)
+    }
+    vid.onerror = () => {
+      resolve({ duration: null, width: null, height: null })
+      URL.revokeObjectURL(url)
+    }
     vid.src = url
   })
 }
@@ -41,21 +52,38 @@ function titleFromFilename(filename) {
   return base.replace(/[_-]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase()).trim()
 }
 
+function runChecks(file, meta) {
+  const { duration, width, height } = meta
+  const isMP4 = file.name.toLowerCase().endsWith('.mp4')
+  const isRightRes = width === REQUIRED_WIDTH && height === REQUIRED_HEIGHT
+
+  let bitrateValue = null
+  let bitrateOk = true
+  if (duration && duration > 0) {
+    bitrateValue = (file.size * 8) / duration / 1_000_000
+    bitrateOk = bitrateValue <= BITRATE_WARN_MBPS
+  }
+
+  return { isMP4, isRightRes, bitrateValue, bitrateOk, width, height }
+}
+
 // ── VideoUpload ───────────────────────────────────────────────────────────────
 
 export default function VideoUpload() {
-  const navigate     = useNavigate()
-  const queryClient  = useQueryClient()
+  const navigate    = useNavigate()
+  const queryClient = useQueryClient()
   const fileInputRef = useRef(null)
 
   // Form state
   const [file,          setFile]          = useState(null)
+  const [meta,          setMeta]          = useState(null)   // { duration, width, height }
+  const [checks,        setChecks]        = useState(null)   // result of runChecks()
   const [title,         setTitle]         = useState('')
   const [folder,        setFolder]        = useState('General')
   const [isNewFolder,   setIsNewFolder]   = useState(false)
   const [newFolderName, setNewFolderName] = useState('')
   const [description,   setDescription]  = useState('')
-  const [durationSecs,  setDurationSecs]  = useState(null)
+  const [override,      setOverride]      = useState(false)  // "upload anyway" after failed checks
 
   // Upload state
   const [dragging,   setDragging]   = useState(false)
@@ -85,10 +113,13 @@ export default function VideoUpload() {
       return
     }
     setError(null)
+    setOverride(false)
     setFile(f)
     setTitle(titleFromFilename(f.name))
-    const dur = await readVideoDuration(f)
-    setDurationSecs(dur)
+
+    const m = await readVideoMetadata(f)
+    setMeta(m)
+    setChecks(runChecks(f, m))
   }, [])
 
   function handleFileInput(e) {
@@ -96,18 +127,10 @@ export default function VideoUpload() {
     if (f) applyFile(f)
   }
 
-  function handleDragOver(e) {
-    e.preventDefault()
-    setDragging(true)
-  }
-
-  function handleDragLeave(e) {
-    if (!e.currentTarget.contains(e.relatedTarget)) setDragging(false)
-  }
-
+  function handleDragOver(e) { e.preventDefault(); setDragging(true) }
+  function handleDragLeave(e) { if (!e.currentTarget.contains(e.relatedTarget)) setDragging(false) }
   function handleDrop(e) {
-    e.preventDefault()
-    setDragging(false)
+    e.preventDefault(); setDragging(false)
     const f = e.dataTransfer.files?.[0]
     if (f) applyFile(f)
   }
@@ -116,18 +139,11 @@ export default function VideoUpload() {
 
   function handleFolderChange(e) {
     const val = e.target.value
-    if (val === '__new__') {
-      setIsNewFolder(true)
-      setFolder('')
-    } else {
-      setIsNewFolder(false)
-      setFolder(val)
-    }
+    if (val === '__new__') { setIsNewFolder(true); setFolder('') }
+    else                   { setIsNewFolder(false); setFolder(val) }
   }
 
-  const effectiveFolder = isNewFolder
-    ? (newFolderName.trim() || 'General')
-    : folder
+  const effectiveFolder = isNewFolder ? (newFolderName.trim() || 'General') : folder
 
   // ── Upload ────────────────────────────────────────────────────────────────
 
@@ -160,14 +176,13 @@ export default function VideoUpload() {
         folder:          effectiveFolder,
         storage_path:    storagePath,
         file_name:       file.name,
-        duration_secs:   durationSecs,
+        duration_secs:   meta?.duration ?? null,
         file_size_bytes: file.size,
         mime_type:       file.type,
         created_by:      user?.id ?? null,
       })
 
       if (dbErr) {
-        // Rollback storage upload
         await supabase.storage.from('videos').remove([storagePath])
         throw dbErr
       }
@@ -183,7 +198,10 @@ export default function VideoUpload() {
     }
   }
 
-  const canSubmit = file && title.trim() && !uploading
+  // ── Derived state ─────────────────────────────────────────────────────────
+
+  const hardFail = checks && (!checks.isMP4 || !checks.isRightRes)
+  const canSubmit = file && title.trim() && !uploading && (checks && (!hardFail || override))
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -191,9 +209,7 @@ export default function VideoUpload() {
     <div style={{ maxWidth: 680 }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 28 }}>
-        <button onClick={() => navigate('/admin/videos')} style={S.backBtn}>
-          ← Back
-        </button>
+        <button onClick={() => navigate('/admin/videos')} style={S.backBtn}>← Back</button>
         <h1 style={S.h1}>Upload video</h1>
       </div>
 
@@ -206,17 +222,11 @@ export default function VideoUpload() {
         style={{
           ...S.dropZone,
           borderColor: dragging ? 'var(--pk)' : file ? 'var(--pkbs)' : 'var(--bds)',
-          background: dragging ? 'var(--bgp)' : file ? 'var(--bgp)' : 'var(--bgc)',
-          cursor: file ? 'default' : 'pointer',
+          background:  dragging ? 'var(--bgp)' : file ? 'var(--bgp)' : 'var(--bgc)',
+          cursor:      file ? 'default' : 'pointer',
         }}
       >
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="video/*"
-          onChange={handleFileInput}
-          style={{ display: 'none' }}
-        />
+        <input ref={fileInputRef} type="file" accept="video/*" onChange={handleFileInput} style={{ display: 'none' }} />
 
         {file ? (
           <div style={{ textAlign: 'center' }}>
@@ -231,12 +241,10 @@ export default function VideoUpload() {
             </p>
             <p style={{ fontFamily: 'Space Mono', fontSize: 11, color: 'var(--tx3)', margin: '0 0 8px' }}>
               {fmtSize(file.size)}
-              {durationSecs != null && ` · ${Math.floor(durationSecs / 60)}:${(durationSecs % 60).toString().padStart(2, '0')}`}
+              {meta?.duration != null && ` · ${Math.floor(meta.duration / 60)}:${(meta.duration % 60).toString().padStart(2, '0')}`}
+              {meta?.width && ` · ${meta.width}×${meta.height}`}
             </p>
-            <button
-              onClick={e => { e.stopPropagation(); fileInputRef.current?.click() }}
-              style={S.changeBtn}
-            >
+            <button onClick={e => { e.stopPropagation(); fileInputRef.current?.click() }} style={S.changeBtn}>
               Change file
             </button>
           </div>
@@ -259,22 +267,20 @@ export default function VideoUpload() {
         )}
       </div>
 
+      {/* Pre-flight checks */}
+      {checks && <PreflightPanel checks={checks} override={override} onOverride={setOverride} />}
+
       {/* Form */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 20 }}>
 
-        {/* Title */}
         <label style={S.fieldWrap}>
           <span style={S.label}>Title <span style={{ color: 'var(--pk)' }}>*</span></span>
           <input
-            type="text"
-            value={title}
-            onChange={e => setTitle(e.target.value)}
-            placeholder="Untitled video"
-            style={S.input}
+            type="text" value={title} onChange={e => setTitle(e.target.value)}
+            placeholder="Untitled video" style={S.input}
           />
         </label>
 
-        {/* Folder */}
         <div style={S.fieldWrap}>
           <span style={S.label}>Folder</span>
           <div style={{ display: 'flex', gap: 10 }}>
@@ -283,19 +289,13 @@ export default function VideoUpload() {
               onChange={handleFolderChange}
               style={{ ...S.input, flex: 'none', width: 'auto', minWidth: 180 }}
             >
-              {existingFolders.map(f => (
-                <option key={f} value={f}>{f}</option>
-              ))}
+              {existingFolders.map(f => <option key={f} value={f}>{f}</option>)}
               <option value="__new__">+ New folder…</option>
             </select>
             {isNewFolder && (
               <input
-                type="text"
-                value={newFolderName}
-                onChange={e => setNewFolderName(e.target.value)}
-                placeholder="Folder name"
-                style={{ ...S.input, flex: 1 }}
-                autoFocus
+                type="text" value={newFolderName} onChange={e => setNewFolderName(e.target.value)}
+                placeholder="Folder name" style={{ ...S.input, flex: 1 }} autoFocus
               />
             )}
           </div>
@@ -306,15 +306,12 @@ export default function VideoUpload() {
           )}
         </div>
 
-        {/* Description */}
         <label style={S.fieldWrap}>
           <span style={S.label}>Description <span style={{ color: 'var(--tx3)' }}>(optional)</span></span>
           <textarea
-            value={description}
-            onChange={e => setDescription(e.target.value)}
+            value={description} onChange={e => setDescription(e.target.value)}
             placeholder="Brief description of the video content"
-            rows={3}
-            style={{ ...S.input, resize: 'vertical', lineHeight: 1.5 }}
+            rows={3} style={{ ...S.input, resize: 'vertical', lineHeight: 1.5 }}
           />
         </label>
 
@@ -327,9 +324,7 @@ export default function VideoUpload() {
             <span style={{ fontFamily: 'DM Sans', fontSize: 13, color: 'var(--tx2)' }}>
               {uploadDone ? 'Complete' : 'Uploading…'}
             </span>
-            <span style={{ fontFamily: 'Space Mono', fontSize: 11, color: 'var(--tx3)' }}>
-              {progress}%
-            </span>
+            <span style={{ fontFamily: 'Space Mono', fontSize: 11, color: 'var(--tx3)' }}>{progress}%</span>
           </div>
           <div style={S.progressTrack}>
             <div style={{
@@ -342,27 +337,114 @@ export default function VideoUpload() {
         </div>
       )}
 
-      {/* Error */}
-      {error && (
-        <div style={{ ...S.errorBox, marginTop: 16 }}>
-          {error}
-        </div>
-      )}
+      {/* Upload error */}
+      {error && <div style={{ ...S.errorBox, marginTop: 16 }}>{error}</div>}
 
       {/* Submit */}
       <div style={{ marginTop: 24 }}>
         <button
           onClick={handleUpload}
           disabled={!canSubmit}
-          style={{
-            ...S.primaryBtn,
-            opacity: canSubmit ? 1 : 0.5,
-            cursor: canSubmit ? 'pointer' : 'default',
-          }}
+          style={{ ...S.primaryBtn, opacity: canSubmit ? 1 : 0.45, cursor: canSubmit ? 'pointer' : 'default' }}
         >
           {uploading ? (uploadDone ? '✓ Done' : 'Uploading…') : 'Upload video'}
         </button>
       </div>
+    </div>
+  )
+}
+
+// ── PreflightPanel ────────────────────────────────────────────────────────────
+
+function PreflightPanel({ checks, override, onOverride }) {
+  const { isMP4, isRightRes, bitrateValue, bitrateOk, width, height } = checks
+  const hardFail = !isMP4 || !isRightRes
+  const allPass  = isMP4 && isRightRes && bitrateOk
+
+  const rows = [
+    {
+      label:  'Container',
+      pass:   isMP4,
+      hard:   true,
+      detail: isMP4 ? '.mp4' : 'Not .mp4 — run encode_study_clip.ps1 first',
+    },
+    {
+      label:  'Resolution',
+      pass:   isRightRes,
+      hard:   true,
+      detail: isRightRes
+        ? `${REQUIRED_WIDTH} × ${REQUIRED_HEIGHT}`
+        : `${width ?? '?'} × ${height ?? '?'} — expected ${REQUIRED_WIDTH} × ${REQUIRED_HEIGHT}`,
+    },
+    {
+      label:  'Approx. bitrate',
+      pass:   bitrateOk,
+      hard:   false,
+      detail: bitrateValue != null
+        ? `${bitrateValue.toFixed(1)} Mbps${bitrateOk ? ' ✓' : ' — may be un-encoded raw footage'}`
+        : 'Could not read duration',
+    },
+  ]
+
+  const panelBg    = allPass ? '#f0faf5' : hardFail && !override ? '#fff5f0' : '#fffbf0'
+  const panelBorder = allPass ? '#1EA878' : hardFail && !override ? '#e67e22' : '#f0c040'
+
+  return (
+    <div style={{
+      marginTop: 16,
+      background: panelBg,
+      border: `1px solid ${panelBorder}`,
+      borderRadius: 12,
+      padding: '14px 16px',
+    }}>
+      <p style={{
+        fontFamily: 'Space Mono', fontSize: 11,
+        color: allPass ? '#1EA878' : '#8b6000',
+        textTransform: 'uppercase', letterSpacing: '0.06em',
+        margin: '0 0 10px',
+      }}>
+        {allPass ? '✓ Encoding checks passed' : 'Encoding pre-flight'}
+      </p>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {rows.map(row => (
+          <div key={row.label} style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+            <span style={{
+              fontFamily: 'Space Mono', fontSize: 10,
+              color: row.pass ? '#1EA878' : row.hard ? '#c0392b' : '#b07800',
+              width: 14, flexShrink: 0, textAlign: 'center',
+            }}>
+              {row.pass ? '✓' : row.hard ? '✗' : '⚠'}
+            </span>
+            <span style={{ fontFamily: 'DM Sans', fontSize: 12, color: 'var(--tx2)', width: 90, flexShrink: 0 }}>
+              {row.label}
+            </span>
+            <span style={{
+              fontFamily: 'DM Sans', fontSize: 12,
+              color: row.pass ? 'var(--tx2)' : row.hard ? '#c0392b' : '#8b6000',
+            }}>
+              {row.detail}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {hardFail && (
+        <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid rgba(0,0,0,0.07)' }}>
+          <p style={{ fontFamily: 'DM Sans', fontSize: 12, color: 'var(--tx2)', margin: '0 0 8px' }}>
+            Run <code style={{ fontFamily: 'Space Mono', fontSize: 11, background: 'rgba(0,0,0,0.06)', padding: '1px 5px', borderRadius: 4 }}>encode_study_clip.ps1</code> on this file to produce a correctly encoded version, then upload the result.
+          </p>
+          {!override ? (
+            <button onClick={() => onOverride(true)} style={S.overrideBtn}>
+              Upload anyway
+            </button>
+          ) : (
+            <p style={{ fontFamily: 'Space Mono', fontSize: 11, color: '#8b6000', margin: 0 }}>
+              ⚠ Override active — upload will proceed despite failed checks
+            </p>
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -372,8 +454,7 @@ export default function VideoUpload() {
 const S = {
   h1: {
     fontFamily: '"DM Serif Display",Georgia,serif',
-    fontSize: 24, fontWeight: 400,
-    color: 'var(--tx)', margin: 0,
+    fontSize: 24, fontWeight: 400, color: 'var(--tx)', margin: 0,
   },
   backBtn: {
     background: 'var(--bgc)', border: '1px solid var(--bd)',
@@ -381,12 +462,9 @@ const S = {
     fontFamily: 'DM Sans', fontSize: 13, color: 'var(--tx2)',
   },
   dropZone: {
-    border: '2px dashed',
-    borderRadius: 14,
-    padding: '36px 24px',
+    border: '2px dashed', borderRadius: 14, padding: '36px 24px',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    transition: 'border-color 0.15s, background 0.15s',
-    minHeight: 160,
+    transition: 'border-color 0.15s, background 0.15s', minHeight: 160,
   },
   fileIcon: {
     width: 48, height: 48, borderRadius: 10,
@@ -405,9 +483,12 @@ const S = {
     borderRadius: 7, padding: '5px 12px', cursor: 'pointer',
     fontFamily: 'DM Sans', fontSize: 12, color: 'var(--tx2)',
   },
-  fieldWrap: {
-    display: 'flex', flexDirection: 'column', gap: 6,
+  overrideBtn: {
+    background: 'transparent', border: '1px solid #c09000',
+    borderRadius: 7, padding: '5px 12px', cursor: 'pointer',
+    fontFamily: 'DM Sans', fontSize: 12, color: '#8b6000',
   },
+  fieldWrap:     { display: 'flex', flexDirection: 'column', gap: 6 },
   label: {
     fontFamily: 'Space Mono', fontSize: 11,
     color: 'var(--tx2)', textTransform: 'uppercase', letterSpacing: '0.05em',
@@ -418,14 +499,8 @@ const S = {
     borderRadius: 10, padding: '10px 14px',
     outline: 'none', width: '100%', boxSizing: 'border-box',
   },
-  progressTrack: {
-    height: 6, borderRadius: 3,
-    background: 'var(--bg)', border: '1px solid var(--bd)',
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%', borderRadius: 3,
-  },
+  progressTrack: { height: 6, borderRadius: 3, background: 'var(--bg)', border: '1px solid var(--bd)', overflow: 'hidden' },
+  progressFill:  { height: '100%', borderRadius: 3 },
   errorBox: {
     background: '#fff5f0', border: '1px solid #e67e22',
     borderRadius: 10, padding: '12px 16px',
