@@ -2041,3 +2041,67 @@ Run `inperson_study_migration.sql` in Supabase SQL editor. Includes:
 ### Status
 
 Specced. Build brief: `INPERSON_STUDY_BRIEF.md`.
+
+---
+
+## 23. Lexical Perfectionism
+
+**Route**: `/games/lexical-perfectionism`
+**Slug**: `lexical_perfectionism`
+**Access**: Protected
+**Duration**: 5 minutes shared across 5 sets
+**Status**: Built
+
+### Overview
+
+Five sets of 10 letters. Submit one valid English word per set using only those letters (each only as many times as it appears). Points = word length. A shared 5-minute countdown runs across all 5 sets — spending too long hunting for a long word risks running out of time for later sets. Core perfectionism measure: dwell time per set vs. time remaining at submission.
+
+**Key behavioural measures**: time spent per set, word length chosen vs. time remaining, whether the participant times out before completing all 5 sets.
+
+### Dictionary
+
+Fetched at game load from `https://raw.githubusercontent.com/dwyl/english-words/master/words_alpha.txt` (370k words). Stored in a module-level `Set` (ref, not state). Start button hidden until fetch resolves. 4–10 letter words only.
+
+### Letter tile behaviour
+
+10 tiles rendered in shuffled display order. Tiles fade to 18% opacity as letters are consumed by the typed input (greedy left-to-right match against display order). Tiles restore on delete. Shuffle re-randomises display order and re-applies fade state.
+
+### Word input
+
+All character keypresses intercepted in `onKeyDown` — uppercase enforced manually with `setSelectionRange` to preserve cursor position. Letters not remaining in the pool (computed from prefix before cursor) are blocked at keydown. Enter submits.
+
+### Schema
+
+Table: `lexical_sessions`
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | uuid | PK |
+| `user_id` | uuid | FK → auth.users |
+| `created_at` | timestamptz | |
+| `completed` | boolean | true if all 5 sets submitted |
+| `timed_out` | boolean | true if timer expired before completion |
+| `total_score` | int | sum of word lengths |
+| `sets_completed` | int | number of sets with a submitted word |
+| `duration_ms` | int | actual elapsed ms at session end |
+| `set_results` | jsonb | array of 5 `{set_id, letters, word, score, dwell_ms}` objects; word/score null for timed-out sets |
+
+Migration: `supabase/migrations/20260609_lexical_sessions.sql`
+
+### File structure
+
+```
+src/games/LexicalPerfectionism/
+  LexicalPerfectionism.jsx    ← orchestration, timer, Supabase write
+  constants.js                ← SESSION_DURATION_MS, NUM_SETS, MIN_WORD_LENGTH, DICTIONARY_URL, colour thresholds
+  data/
+    letterSets.js             ← 25 verified sets + sampleSets()
+  hooks/
+    useGameTimer.js           ← ref-based countdown; start/stop; onExpire callback
+    useLetterSet.js           ← displayLetters, shuffle, getUsedIndices, remainingPool, isDrawable
+  components/
+    LetterTiles.jsx           ← 10 tiles with opacity fade on use
+    WordInput.jsx             ← controlled uppercase input with keydown letter-blocking
+    SetResults.jsx            ← completed set rows (letters / word / pts)
+    SessionComplete.jsx       ← end screen: score summary + per-set breakdown
+```

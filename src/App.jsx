@@ -36,7 +36,8 @@ import FaceRead     from './games/FaceRead/FaceRead'
 import Drift        from './games/Drift/Drift'
 import FarmJoy      from './games/FarmJoy/FarmJoy'
 import BreathBelt   from './games/BreathBelt/BreathBelt'
-import AptitudeSuite from './games/AptitudeSuite/AptitudeSuite'
+import AptitudeSuite          from './games/AptitudeSuite/AptitudeSuite'
+import LexicalPerfectionism   from './games/LexicalPerfectionism/LexicalPerfectionism'
 import AdminRoute    from './components/AdminRoute'
 import AdminLayout   from './layouts/AdminLayout'
 import AdminDashboard from './pages/admin/AdminDashboard'
@@ -231,6 +232,12 @@ export default function App() {
           <Route path="/games/aptitude-suite" element={
             <ProtectedRoute session={session} hasAvatar={hasAvatar}>
               <AptitudeSuite session={session} />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/games/lexical-perfectionism" element={
+            <ProtectedRoute session={session} hasAvatar={hasAvatar}>
+              <LexicalPerfectionism />
             </ProtectedRoute>
           } />
 
