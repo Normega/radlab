@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
+import InterventionPage from '../../components/study/InterventionPage'
 
 const CONDITION_LABELS = {
   non_reactivity:  'Non-Reactivity',
@@ -26,6 +27,7 @@ export default function TrainingLibrary() {
   const navigate    = useNavigate()
   const queryClient = useQueryClient()
   const [confirmDelete, setConfirmDelete] = useState(null)
+  const [demoModule,    setDemoModule]    = useState(null)
 
   const { data: modules = [], isLoading, isError } = useQuery({
     queryKey: ['intervention-modules'],
@@ -132,12 +134,20 @@ export default function TrainingLibrary() {
                   {/* Actions */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
                     {!isConfirming ? (
-                      <button
-                        onClick={() => setConfirmDelete(mod.id)}
-                        style={S.deleteBtn}
-                      >
-                        Delete
-                      </button>
+                      <>
+                        <button
+                          onClick={() => setDemoModule(mod.definition)}
+                          style={S.demoBtn}
+                        >
+                          ▶ Demo
+                        </button>
+                        <button
+                          onClick={() => setConfirmDelete(mod.id)}
+                          style={S.deleteBtn}
+                        >
+                          Delete
+                        </button>
+                      </>
                     ) : (
                       <>
                         <span style={{ fontFamily: 'DM Sans', fontSize: 13, color: 'var(--tx2)' }}>Delete?</span>
@@ -158,6 +168,78 @@ export default function TrainingLibrary() {
           </div>
         </div>
       ))}
+
+      {/* Demo modal */}
+      {demoModule && (
+        <DemoModal module={demoModule} onClose={() => setDemoModule(null)} />
+      )}
+    </div>
+  )
+}
+
+// ── DemoModal ─────────────────────────────────────────────────────────────────
+
+function DemoModal({ module, onClose }) {
+  useEffect(() => {
+    function onKey(e) { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  return (
+    <div
+      style={{
+        position: 'fixed', inset: 0, zIndex: 1000,
+        background: 'rgba(0,0,0,0.82)',
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'flex-start',
+        overflowY: 'auto',
+      }}
+      onClick={onClose}
+    >
+      {/* Header bar */}
+      <div
+        style={{
+          width: '100%', maxWidth: 640,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '14px 16px',
+        }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div>
+          <p style={{ fontFamily: 'DM Sans', fontSize: 13, fontWeight: 600, color: '#fff', margin: '0 0 2px' }}>
+            Demo — {module.title}
+          </p>
+          <p style={{ fontFamily: 'Space Mono', fontSize: 11, color: 'rgba(255,255,255,0.45)', margin: 0 }}>
+            Preview only — no data saved
+          </p>
+        </div>
+        <button
+          onClick={onClose}
+          style={{
+            background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
+            borderRadius: 8, padding: '6px 14px', cursor: 'pointer',
+            fontFamily: 'DM Sans', fontSize: 13, color: '#fff',
+          }}
+        >
+          ✕ Close
+        </button>
+      </div>
+
+      {/* Intervention page — no participant data, no DB writes */}
+      <div
+        style={{ width: '100%', maxWidth: 640, flex: 1 }}
+        onClick={e => e.stopPropagation()}
+      >
+        <InterventionPage
+          module={module}
+          participantId={null}
+          dayDataId={null}
+          scheduleId={null}
+          studyDay={module.lesson}
+          onComplete={onClose}
+        />
+      </div>
     </div>
   )
 }
@@ -233,6 +315,12 @@ const S = {
   },
   moduleId: {
     fontFamily: 'Space Mono', fontSize: 10, color: 'var(--gy)',
+  },
+  demoBtn: {
+    background: 'var(--bgp)', border: '1px solid var(--pkb)',
+    borderRadius: 7, padding: '5px 10px',
+    fontFamily: 'DM Sans', fontSize: 12,
+    color: 'var(--pkd)', cursor: 'pointer',
   },
   ghostBtn: {
     background: 'var(--bgc)', border: '1px solid var(--bd)',

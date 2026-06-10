@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
@@ -18,22 +18,22 @@ function validateModule(def) {
   if (!def || typeof def !== 'object') { errors.push('Not a valid JSON object'); return errors }
 
   if (!def.module_id || typeof def.module_id !== 'string') errors.push('module_id is required (string)')
-  if (!VALID_CONDITIONS.includes(def.condition)) errors.push(`condition must be one of: ${VALID_CONDITIONS.join(', ')}`)
-  if (!VALID_PHASES.includes(def.phase)) errors.push(`phase must be one of: ${VALID_PHASES.join(', ')}`)
-  if (typeof def.lesson !== 'number' || def.lesson < 1) errors.push('lesson must be a positive number')
-  if (!def.title || typeof def.title !== 'string') errors.push('title is required (string)')
+  if (!VALID_CONDITIONS.includes(def.condition))           errors.push(`condition must be one of: ${VALID_CONDITIONS.join(', ')}`)
+  if (!VALID_PHASES.includes(def.phase))                   errors.push(`phase must be one of: ${VALID_PHASES.join(', ')}`)
+  if (typeof def.lesson !== 'number' || def.lesson < 1)    errors.push('lesson must be a positive number')
+  if (!def.title || typeof def.title !== 'string')         errors.push('title is required (string)')
 
   if (!def.lead_in || typeof def.lead_in !== 'object') {
     errors.push('lead_in is required')
   } else {
-    if (!VALID_OWL_KEYS.includes(def.lead_in.owl)) errors.push(`lead_in.owl must be one of: ${VALID_OWL_KEYS.join(', ')}`)
+    if (!VALID_OWL_KEYS.includes(def.lead_in.owl)) errors.push(`lead_in.owl must be one of the valid owl keys`)
     if (!def.lead_in.text) errors.push('lead_in.text is required')
   }
 
   if (!def.lead_out || typeof def.lead_out !== 'object') {
     errors.push('lead_out is required')
   } else {
-    if (!VALID_OWL_KEYS.includes(def.lead_out.owl)) errors.push(`lead_out.owl must be one of: ${VALID_OWL_KEYS.join(', ')}`)
+    if (!VALID_OWL_KEYS.includes(def.lead_out.owl)) errors.push(`lead_out.owl must be one of the valid owl keys`)
     if (!def.lead_out.text) errors.push('lead_out.text is required')
   }
 
@@ -41,14 +41,14 @@ function validateModule(def) {
     errors.push('steps must be an array')
   } else {
     def.steps.forEach((step, i) => {
-      if (!VALID_STEP_TYPES.includes(step.type)) {
+      if (!VALID_STEP_TYPES.includes(step.type))
         errors.push(`steps[${i}].type must be one of: ${VALID_STEP_TYPES.join(', ')}`)
-      }
-      if (step.type === 'video' && !step.video_id) errors.push(`steps[${i}] (video) missing video_id`)
-      if ((step.type === 'text' || step.type === 'closing') && !Array.isArray(step.content)) {
+      if (step.type === 'video' && !step.video_id)
+        errors.push(`steps[${i}] (video) missing video_id`)
+      if ((step.type === 'text' || step.type === 'closing') && !Array.isArray(step.content))
         errors.push(`steps[${i}] (${step.type}) missing content array`)
-      }
-      if (step.type === 'prompt_response' && !step.prompt) errors.push(`steps[${i}] (prompt_response) missing prompt`)
+      if (step.type === 'prompt_response' && !step.prompt)
+        errors.push(`steps[${i}] (prompt_response) missing prompt`)
     })
   }
 
@@ -71,14 +71,50 @@ const STEP_TYPE_COLORS = {
 // ── TrainingUpload ────────────────────────────────────────────────────────────
 
 export default function TrainingUpload() {
-  const navigate    = useNavigate()
-  const queryClient = useQueryClient()
+  const navigate     = useNavigate()
+  const queryClient  = useQueryClient()
   const fileInputRef = useRef(null)
 
-  const [raw,       setRaw]       = useState('')
-  const [parsed,    setParsed]    = useState(null)
-  const [jsonError, setJsonError] = useState('')
-  const [errors,    setErrors]    = useState([])
+  const [raw,           setRaw]           = useState('')
+  const [parsed,        setParsed]        = useState(null)
+  const [jsonError,     setJsonError]     = useState('')
+  const [errors,        setErrors]        = useState([])
+  const [videoChecks,   setVideoChecks]   = useState(null)  // null=pending, []|[...]=done
+  const [checkingVids,  setCheckingVids]  = useState(false)
+  const [videoOverride, setVideoOverride] = useState(false)
+
+  // ── Async video existence check whenever a valid module is parsed ──────────
+  useEffect(() => {
+    if (!parsed) { setVideoChecks(null); setVideoOverride(false); return }
+
+    const videoSteps = (parsed.steps ?? []).filter(s => s.type === 'video')
+    if (videoSteps.length === 0) { setVideoChecks([]); return }
+
+    setCheckingVids(true)
+    setVideoChecks(null)
+    setVideoOverride(false)
+
+    Promise.all(
+      videoSteps.map(async step => {
+        // List the liliana/ prefix and look for an exact filename match.
+        // Supabase storage has no real directories — "liliana/" is a path prefix.
+        const { data } = await supabase.storage
+          .from('videos')
+          .list('liliana', { limit: 500, search: step.video_id })
+        const found = (data ?? []).some(f => f.name === step.video_id)
+        return {
+          video_id:    step.video_id,
+          bucket_path: `liliana/${step.video_id}`,
+          found,
+        }
+      })
+    ).then(results => {
+      setVideoChecks(results)
+      setCheckingVids(false)
+    })
+  }, [parsed])
+
+  // ── JSON parsing + schema validation ──────────────────────────────────────
 
   function handleRawChange(text) {
     setRaw(text)
@@ -106,6 +142,8 @@ export default function TrainingUpload() {
     reader.readAsText(file)
   }
 
+  // ── Save ──────────────────────────────────────────────────────────────────
+
   const save = useMutation({
     mutationFn: async () => {
       const { data: { user } } = await supabase.auth.getUser()
@@ -127,7 +165,12 @@ export default function TrainingUpload() {
     },
   })
 
-  const isReady = parsed && errors.length === 0
+  // ── Derived readiness ─────────────────────────────────────────────────────
+
+  const isSchemaValid  = parsed && errors.length === 0
+  const videosAllFound = videoChecks !== null && videoChecks.every(c => c.found)
+  const hasMissingVids = videoChecks !== null && videoChecks.some(c => !c.found)
+  const canImport      = isSchemaValid && !checkingVids && (videosAllFound || videoChecks?.length === 0 || videoOverride)
 
   return (
     <div style={{ maxWidth: 720 }}>
@@ -139,13 +182,7 @@ export default function TrainingUpload() {
 
       {/* File upload strip */}
       <div style={S.fileStrip}>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".json"
-          onChange={handleFile}
-          style={{ display: 'none' }}
-        />
+        <input ref={fileInputRef} type="file" accept=".json" onChange={handleFile} style={{ display: 'none' }} />
         <button onClick={() => fileInputRef.current?.click()} style={S.chooseBtn}>
           Choose .json file
         </button>
@@ -166,29 +203,35 @@ export default function TrainingUpload() {
         }}
       />
 
-      {/* JSON error */}
       {jsonError && (
         <p style={{ color: '#c0392b', fontFamily: 'Space Mono', fontSize: 12, margin: '8px 0' }}>
           {jsonError}
         </p>
       )}
 
-      {/* Validation errors */}
       {errors.length > 0 && (
         <div style={S.errorBox}>
           <p style={{ fontFamily: 'Space Mono', fontSize: 12, color: '#c0392b', margin: '0 0 6px', fontWeight: 600 }}>
             {errors.length} validation error{errors.length > 1 ? 's' : ''}
           </p>
           {errors.map((e, i) => (
-            <p key={i} style={{ fontFamily: 'DM Sans', fontSize: 13, color: '#8b4513', margin: '2px 0' }}>
-              · {e}
-            </p>
+            <p key={i} style={{ fontFamily: 'DM Sans', fontSize: 13, color: '#8b4513', margin: '2px 0' }}>· {e}</p>
           ))}
         </div>
       )}
 
-      {/* Preview */}
-      {isReady && <ModulePreview module={parsed} />}
+      {/* Module preview (schema valid) */}
+      {isSchemaValid && <ModulePreview module={parsed} />}
+
+      {/* Video existence check */}
+      {isSchemaValid && (
+        <VideoCheckPanel
+          checks={videoChecks}
+          checking={checkingVids}
+          override={videoOverride}
+          onOverride={setVideoOverride}
+        />
+      )}
 
       {/* Save error */}
       {save.isError && (
@@ -199,20 +242,81 @@ export default function TrainingUpload() {
         </p>
       )}
 
-      {/* Actions */}
       <div style={{ display: 'flex', gap: 12, marginTop: 20 }}>
         <button
           onClick={() => save.mutate()}
-          disabled={!isReady || save.isPending}
-          style={{
-            ...S.primaryBtn,
-            opacity: isReady ? 1 : 0.45,
-            cursor: isReady ? 'pointer' : 'default',
-          }}
+          disabled={!canImport || save.isPending}
+          style={{ ...S.primaryBtn, opacity: canImport ? 1 : 0.45, cursor: canImport ? 'pointer' : 'default' }}
         >
           {save.isPending ? 'Saving…' : 'Import module'}
         </button>
       </div>
+    </div>
+  )
+}
+
+// ── VideoCheckPanel ───────────────────────────────────────────────────────────
+
+function VideoCheckPanel({ checks, checking, override, onOverride }) {
+  if (checks !== null && checks.length === 0) return null  // no video steps
+
+  const allFound    = checks !== null && checks.every(c => c.found)
+  const hasMissing  = checks !== null && checks.some(c => !c.found)
+
+  const borderColor = checking    ? 'var(--bd)'
+                    : allFound    ? '#1EA878'
+                    : hasMissing  ? (override ? '#f0c040' : '#e67e22')
+                    : 'var(--bd)'
+
+  const bgColor     = checking    ? 'var(--bgc)'
+                    : allFound    ? '#f0faf5'
+                    : hasMissing  ? (override ? '#fffbf0' : '#fff5f0')
+                    : 'var(--bgc)'
+
+  return (
+    <div style={{ background: bgColor, border: `1px solid ${borderColor}`, borderRadius: 12, padding: '14px 16px', margin: '12px 0' }}>
+      <p style={{ fontFamily: 'Space Mono', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 10px', color: allFound ? '#1EA878' : '#8b6000' }}>
+        {checking ? 'Checking videos in bucket…' : allFound ? '✓ All videos found in bucket' : 'Video file check'}
+      </p>
+
+      {checks !== null && checks.map(c => (
+        <div key={c.video_id} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 8 }}>
+          <span style={{ fontFamily: 'Space Mono', fontSize: 11, color: c.found ? '#1EA878' : '#c0392b', flexShrink: 0, width: 14, textAlign: 'center' }}>
+            {c.found ? '✓' : '✗'}
+          </span>
+          <div style={{ minWidth: 0 }}>
+            <p style={{ fontFamily: 'Space Mono', fontSize: 11, color: 'var(--tx)', margin: '0 0 1px', wordBreak: 'break-all' }}>
+              {c.video_id}
+            </p>
+            <p style={{ fontFamily: 'DM Sans', fontSize: 11, color: c.found ? 'var(--tx3)' : '#c0392b', margin: 0 }}>
+              {c.found
+                ? `found at videos/${c.bucket_path}`
+                : `not found at videos/${c.bucket_path} — upload this file before delivery`}
+            </p>
+          </div>
+        </div>
+      ))}
+
+      {hasMissing && !override && (
+        <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(0,0,0,0.07)' }}>
+          <p style={{ fontFamily: 'DM Sans', fontSize: 12, color: 'var(--tx2)', margin: '0 0 8px' }}>
+            Upload the missing file{checks.filter(c => !c.found).length > 1 ? 's' : ''} to{' '}
+            <code style={{ fontFamily: 'Space Mono', fontSize: 11, background: 'rgba(0,0,0,0.06)', padding: '1px 5px', borderRadius: 4 }}>
+              videos/liliana/
+            </code>{' '}
+            before delivering this module.
+          </p>
+          <button onClick={() => onOverride(true)} style={S.overrideBtn}>
+            Import anyway
+          </button>
+        </div>
+      )}
+
+      {hasMissing && override && (
+        <p style={{ fontFamily: 'Space Mono', fontSize: 11, color: '#8b6000', margin: '8px 0 0' }}>
+          ⚠ Override active — import will proceed; upload missing videos before delivery
+        </p>
+      )}
     </div>
   )
 }
@@ -227,16 +331,15 @@ function ModulePreview({ module }) {
         ✓ Valid module
       </p>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 20px', marginBottom: 12 }}>
-        <PreviewRow label="Module ID"  value={module.module_id} mono />
-        <PreviewRow label="Condition"  value={CONDITION_LABELS[module.condition] ?? module.condition} />
-        <PreviewRow label="Phase"      value={module.phase} mono />
-        <PreviewRow label="Lesson"     value={`Day ${module.lesson}`} />
-        <PreviewRow label="Title"      value={module.title} />
+        <PreviewRow label="Module ID"    value={module.module_id}                              mono />
+        <PreviewRow label="Condition"    value={CONDITION_LABELS[module.condition] ?? module.condition} />
+        <PreviewRow label="Phase"        value={module.phase}                                  mono />
+        <PreviewRow label="Lesson"       value={`Day ${module.lesson}`}                             />
+        <PreviewRow label="Title"        value={module.title}                                       />
         {module.subtitle && <PreviewRow label="Subtitle" value={module.subtitle} />}
         <PreviewRow label="Lead-in owl"  value={module.lead_in.owl}  mono />
         <PreviewRow label="Lead-out owl" value={module.lead_out.owl} mono />
       </div>
-
       <p style={{ fontFamily: 'Space Mono', fontSize: 10, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '10px 0 6px' }}>
         {steps.length} step{steps.length !== 1 ? 's' : ''}
       </p>
@@ -244,11 +347,7 @@ function ModulePreview({ module }) {
         {steps.map((s, i) => {
           const col = STEP_TYPE_COLORS[s.type] ?? { bg: '#f0ede8', color: '#5f5e5a' }
           return (
-            <span key={i} style={{
-              background: col.bg, color: col.color,
-              borderRadius: 6, padding: '3px 10px',
-              fontFamily: 'Space Mono', fontSize: 11,
-            }}>
+            <span key={i} style={{ background: col.bg, color: col.color, borderRadius: 6, padding: '3px 10px', fontFamily: 'Space Mono', fontSize: 11 }}>
               {i + 1}. {s.type}{s.video_id ? ` — ${s.video_id}` : ''}
             </span>
           )
@@ -261,12 +360,8 @@ function ModulePreview({ module }) {
 function PreviewRow({ label, value, mono }) {
   return (
     <div>
-      <span style={{ fontFamily: 'Space Mono', fontSize: 10, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-        {label}:{' '}
-      </span>
-      <span style={{ fontFamily: mono ? 'Space Mono' : 'DM Sans', fontSize: mono ? 11 : 13, color: 'var(--tx)' }}>
-        {value}
-      </span>
+      <span style={{ fontFamily: 'Space Mono', fontSize: 10, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}: </span>
+      <span style={{ fontFamily: mono ? 'Space Mono' : 'DM Sans', fontSize: mono ? 11 : 13, color: 'var(--tx)' }}>{value}</span>
     </div>
   )
 }
@@ -274,46 +369,15 @@ function PreviewRow({ label, value, mono }) {
 // ── Styles ────────────────────────────────────────────────────────────────────
 
 const S = {
-  h1: {
-    fontFamily: '"DM Serif Display",Georgia,serif',
-    fontSize: 24, fontWeight: 400, color: 'var(--tx)', margin: 0,
-  },
-  backBtn: {
-    background: 'var(--bgc)', border: '1px solid var(--bd)',
-    borderRadius: 8, padding: '6px 14px', cursor: 'pointer',
-    fontFamily: 'DM Sans', fontSize: 13, color: 'var(--tx2)',
-  },
-  fileStrip: {
-    background: 'var(--bgc)', border: '1px dashed var(--bds)',
-    borderRadius: 12, padding: '16px 20px', marginBottom: 16,
-    display: 'flex', alignItems: 'center', gap: 16,
-  },
-  chooseBtn: {
-    background: 'var(--bgp)', border: '1px solid var(--pkbs)',
-    borderRadius: 8, padding: '8px 16px', cursor: 'pointer',
-    fontFamily: 'DM Sans', fontSize: 13, color: 'var(--pkd)',
-  },
-  textarea: {
-    width: '100%', minHeight: 260, boxSizing: 'border-box',
-    fontFamily: 'Space Mono', fontSize: 12,
-    color: 'var(--tx)', background: 'var(--bgc)',
-    border: '1px solid var(--bd)',
-    borderRadius: 12, padding: 16, resize: 'vertical', lineHeight: 1.6,
-    outline: 'none',
-  },
-  errorBox: {
-    background: '#fff5f0', border: '1px solid #e67e22',
-    borderRadius: 10, padding: '12px 16px', margin: '12px 0',
-  },
-  previewBox: {
-    background: 'var(--bgp)', border: '1px solid var(--pkb)',
-    borderRadius: 10, padding: '14px 16px', margin: '12px 0',
-  },
-  primaryBtn: {
-    background: 'var(--pk)', color: '#fff', border: 'none',
-    borderRadius: 10, padding: '12px 28px',
-    fontFamily: 'DM Sans', fontSize: 14, fontWeight: 600,
-  },
+  h1: { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 24, fontWeight: 400, color: 'var(--tx)', margin: 0 },
+  backBtn: { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 8, padding: '6px 14px', cursor: 'pointer', fontFamily: 'DM Sans', fontSize: 13, color: 'var(--tx2)' },
+  fileStrip: { background: 'var(--bgc)', border: '1px dashed var(--bds)', borderRadius: 12, padding: '16px 20px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 16 },
+  chooseBtn: { background: 'var(--bgp)', border: '1px solid var(--pkbs)', borderRadius: 8, padding: '8px 16px', cursor: 'pointer', fontFamily: 'DM Sans', fontSize: 13, color: 'var(--pkd)' },
+  textarea: { width: '100%', minHeight: 260, boxSizing: 'border-box', fontFamily: 'Space Mono', fontSize: 12, color: 'var(--tx)', background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 12, padding: 16, resize: 'vertical', lineHeight: 1.6, outline: 'none' },
+  errorBox: { background: '#fff5f0', border: '1px solid #e67e22', borderRadius: 10, padding: '12px 16px', margin: '12px 0' },
+  previewBox: { background: 'var(--bgp)', border: '1px solid var(--pkb)', borderRadius: 10, padding: '14px 16px', margin: '12px 0' },
+  primaryBtn: { background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 10, padding: '12px 28px', fontFamily: 'DM Sans', fontSize: 14, fontWeight: 600 },
+  overrideBtn: { background: 'transparent', border: '1px solid #c09000', borderRadius: 7, padding: '5px 12px', cursor: 'pointer', fontFamily: 'DM Sans', fontSize: 12, color: '#8b6000' },
 }
 
 const PLACEHOLDER = `{
