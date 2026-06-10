@@ -34,6 +34,23 @@ export default function SessionLibrary() {
   const qc = useQueryClient()
   const navigate = useNavigate()
   const [confirmDelete, setConfirmDelete] = useState(null)
+  const [deleteBlocked, setDeleteBlocked] = useState(null) // null=checking, []=clear, [label,...]=blocked
+
+  async function openDeleteDialog(s) {
+    setConfirmDelete(s)
+    setDeleteBlocked(null)
+    const { data } = await supabase
+      .from('study_sessions')
+      .select('studies(label)')
+      .eq('session_template_id', s.id)
+    const labels = [...new Set((data ?? []).map(r => r.studies?.label).filter(Boolean))]
+    setDeleteBlocked(labels)
+  }
+
+  function closeDeleteDialog() {
+    setConfirmDelete(null)
+    setDeleteBlocked(null)
+  }
 
   const deleteSession = useMutation({
     mutationFn: async (id) => {
@@ -42,7 +59,7 @@ export default function SessionLibrary() {
       const { error } = await supabase.from('session_templates').delete().eq('id', id)
       if (error) throw error
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['session-templates'] }); setConfirmDelete(null) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['session-templates'] }); closeDeleteDialog() },
   })
 
   const cloneSession = useMutation({
@@ -125,7 +142,7 @@ export default function SessionLibrary() {
                     <div style={S.actions}>
                       <Link to={`/admin/sessions/${s.id}`} style={S.actionBtn}>Edit</Link>
                       <button style={S.actionBtn} onClick={() => cloneSession.mutate(s)}>Clone</button>
-                      <button style={{ ...S.actionBtn, color: '#e04' }} onClick={() => setConfirmDelete(s)}>Delete</button>
+                      <button style={{ ...S.actionBtn, color: '#e04' }} onClick={() => openDeleteDialog(s)}>Delete</button>
                     </div>
                   </td>
                 </tr>
@@ -136,16 +153,35 @@ export default function SessionLibrary() {
       )}
 
       {confirmDelete && (
-        <div style={S.overlay} onClick={() => setConfirmDelete(null)}>
+        <div style={S.overlay} onClick={closeDeleteDialog}>
           <div style={S.dialog} onClick={e => e.stopPropagation()}>
             <h2 style={S.dialogTitle}>Delete "{confirmDelete.label}"?</h2>
-            <p style={S.dialogBody}>This removes the template and all its activity nodes. It can't be undone.</p>
-            <div style={S.dialogActions}>
-              <button style={S.btnGhost} onClick={() => setConfirmDelete(null)}>Cancel</button>
-              <button style={S.btnDanger} onClick={() => deleteSession.mutate(confirmDelete.id)} disabled={deleteSession.isPending}>
-                {deleteSession.isPending ? 'Deleting…' : 'Yes, delete'}
-              </button>
-            </div>
+            {deleteBlocked === null ? (
+              <p style={S.dialogBody}>Checking for dependencies…</p>
+            ) : deleteBlocked.length > 0 ? (
+              <>
+                <p style={S.dialogBody}>
+                  This session is used by {deleteBlocked.length === 1 ? 'a study' : `${deleteBlocked.length} studies`} and can't be deleted yet:
+                </p>
+                <ul style={S.blockList}>
+                  {deleteBlocked.map(l => <li key={l} style={S.blockItem}>{l}</li>)}
+                </ul>
+                <p style={S.dialogBody}>Remove it from {deleteBlocked.length === 1 ? 'that study' : 'those studies'} first, then delete.</p>
+                <div style={S.dialogActions}>
+                  <button style={S.btnGhost} onClick={closeDeleteDialog}>Close</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p style={S.dialogBody}>This removes the template and all its activity nodes. It can't be undone.</p>
+                <div style={S.dialogActions}>
+                  <button style={S.btnGhost} onClick={closeDeleteDialog}>Cancel</button>
+                  <button style={S.btnDanger} onClick={() => deleteSession.mutate(confirmDelete.id)} disabled={deleteSession.isPending}>
+                    {deleteSession.isPending ? 'Deleting…' : 'Yes, delete'}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -186,4 +222,6 @@ const S = {
   dialogTitle: { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 20, fontWeight: 400, margin: '0 0 10px', color: 'var(--tx)' },
   dialogBody: { fontSize: 14, color: 'var(--tx2)', margin: '0 0 24px', lineHeight: 1.6 },
   dialogActions: { display: 'flex', gap: 10, justifyContent: 'flex-end' },
+  blockList:    { margin: '0 0 16px', paddingLeft: 20 },
+  blockItem:    { fontSize: 14, color: 'var(--tx)', marginBottom: 4, fontFamily: '"DM Sans",system-ui,sans-serif' },
 }
