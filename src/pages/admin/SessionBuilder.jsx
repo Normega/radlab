@@ -116,7 +116,7 @@ export default function SessionBuilder() {
   const [description,   setDescription]   = useState('')
   const [sequence,      setSequence]      = useState([])
   const [error,         setError]         = useState(null)
-  const [collapsedCats, setCollapsedCats] = useState(new Set())
+  const [collapsedCats, setCollapsedCats] = useState(new Set(CATEGORY_ORDER))
 
   function toggleCat(cat) {
     setCollapsedCats(prev => {
