@@ -23,10 +23,11 @@ export default function TrainingStepWrapper({
 }) {
   const moduleId = node?.module_id ?? node?.activities?.subcategory
 
-  const [trainingModule,  setTrainingModule]  = useState(null)
-  const [participantId,   setParticipantId]   = useState(null)
-  const [studyDay,        setStudyDay]        = useState(1)
-  const [error,           setError]           = useState(null)
+  const [trainingModule, setTrainingModule] = useState(null)
+  const [participantId,  setParticipantId]  = useState(null)
+  const [dayDataId,      setDayDataId]      = useState(null)
+  const [studyDay,       setStudyDay]       = useState(1)
+  const [error,          setError]          = useState(null)
 
   useEffect(() => {
     if (isSimMode) {
@@ -43,8 +44,9 @@ export default function TrainingStepWrapper({
         .eq('module_id', moduleId)
         .single()
       if (me) { setError(me.message); return }
-      setTrainingModule(mod.definition)
-      setStudyDay(mod.lesson)
+
+      const definition = mod.definition
+      setTrainingModule(definition)
 
       // Look up the liliana_participants row for this profile
       const { data: lp } = await supabase
@@ -52,10 +54,46 @@ export default function TrainingStepWrapper({
         .select('id, current_day')
         .eq('profile_id', enrollment.profile_id)
         .maybeSingle()
-      if (lp) {
-        setParticipantId(lp.id)
-        setStudyDay(lp.current_day)
+
+      if (!lp) return  // participant not enrolled in Liliana study — no data saved
+
+      const pid      = lp.id
+      const day      = lp.current_day
+      const phaseLbl = definition.phase === 'phase1' ? 'Phase 1' : 'Phase 2'
+      const sessName = `${phaseLbl} · Day ${day}`
+
+      setParticipantId(pid)
+      setStudyDay(day)
+
+      // Create the day row on first attempt; SELECT the existing one on re-entry.
+      // UNIQUE(participant_id, study_day) means only the first attempt creates it —
+      // re-openers get the existing row and preserve the original started_at.
+      let dayRow = null
+
+      const { data: existing } = await supabase
+        .from('liliana_day_data')
+        .select('id')
+        .eq('participant_id', pid)
+        .eq('study_day', day)
+        .maybeSingle()
+
+      if (existing) {
+        dayRow = existing
+      } else {
+        const { data: inserted } = await supabase
+          .from('liliana_day_data')
+          .insert({
+            participant_id: pid,
+            study_day:      day,
+            session_name:   sessName,
+            started_at:     new Date().toISOString(),
+          })
+          .select('id')
+          .single()
+        dayRow = inserted
       }
+
+      if (dayRow) setDayDataId(dayRow.id)
     }
 
     load()
@@ -70,15 +108,14 @@ export default function TrainingStepWrapper({
   }
 
   if (!trainingModule) {
-    return (
-      <div style={S.loading}>Loading training…</div>
-    )
+    return <div style={S.loading}>Loading training…</div>
   }
 
   return (
     <InterventionPage
       module={trainingModule}
       participantId={participantId}
+      dayDataId={dayDataId}
       scheduleId={scheduleId}
       studyDay={studyDay}
       onComplete={onComplete}

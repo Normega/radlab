@@ -37,6 +37,7 @@ function initialNextEnabled(screen) {
 export default function InterventionPage({
   module,
   participantId,
+  dayDataId,
   scheduleId,
   studyDay,
   onComplete,
@@ -76,7 +77,8 @@ export default function InterventionPage({
       setSaving(true)
       await supabase.from('intervention_responses').insert({
         participant_id: participantId,
-        schedule_id:    scheduleId ?? null,
+        day_data_id:    dayDataId   ?? null,
+        schedule_id:    scheduleId  ?? null,
         module_id:      module.module_id,
         study_day:      studyDay,
         response_index: current._stepIndex,
@@ -86,6 +88,13 @@ export default function InterventionPage({
     }
 
     if (isLast) {
+      // Stamp completed_at on the day row
+      if (dayDataId) {
+        await supabase
+          .from('liliana_day_data')
+          .update({ completed_at: new Date().toISOString() })
+          .eq('id', dayDataId)
+      }
       onComplete()
     } else {
       setScreenIndex(i => i + 1)
