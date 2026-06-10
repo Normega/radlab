@@ -28,7 +28,8 @@ function buildScreens(module) {
   ]
 }
 
-function initialNextEnabled(screen) {
+function initialNextEnabled(screen, demoMode) {
+  if (demoMode) return screen.type !== 'prompt_response'
   return screen.type !== 'video' && screen.type !== 'prompt_response'
 }
 
@@ -41,11 +42,12 @@ export default function InterventionPage({
   scheduleId,
   studyDay,
   onComplete,
+  demoMode = false,
 }) {
   const screens = buildScreens(module)
 
   const [screenIndex, setScreenIndex] = useState(0)
-  const [nextEnabled, setNextEnabled]  = useState(() => initialNextEnabled(screens[0]))
+  const [nextEnabled, setNextEnabled]  = useState(() => initialNextEnabled(screens[0], demoMode))
   const [responses,   setResponses]    = useState({})   // _stepIndex → text
   const [saving,      setSaving]       = useState(false)
 
@@ -55,9 +57,9 @@ export default function InterventionPage({
   // Re-evaluate gate whenever screen changes
   useEffect(() => {
     const s = screens[screenIndex]
-    if (s.type === 'video')           setNextEnabled(false)
+    if (s.type === 'video' && !demoMode)   setNextEnabled(false)
     else if (s.type === 'prompt_response') setNextEnabled((responses[s._stepIndex] ?? '').length > 0)
-    else                              setNextEnabled(true)
+    else                                   setNextEnabled(true)
   }, [screenIndex]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleResponseChange = useCallback((stepIndex, text) => {

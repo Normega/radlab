@@ -248,6 +248,7 @@ function DemoModal({ module, onClose }) {
           scheduleId={null}
           studyDay={module.lesson}
           onComplete={onClose}
+          demoMode
         />
       </div>
     </div>
