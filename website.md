@@ -2105,3 +2105,300 @@ src/games/LexicalPerfectionism/
     SetResults.jsx            ← completed set rows (letters / word / pts)
     SessionComplete.jsx       ← end screen: score summary + per-set breakdown
 ```
+
+---
+
+## 24. Video Library (Admin)
+
+**Routes**: `/admin/videos`, `/admin/videos/new`
+**Access**: Lab/admin only
+**Status**: Built (June 2026)
+
+### Overview
+
+Standalone video file registry for managing video assets used in study sessions. Separate from `study_videos` (which ties videos to specific study tasks). Videos are uploaded to the `videos` Supabase Storage bucket; the library table stores metadata and provides folder-based organisation in the admin UI.
+
+### Supabase
+
+**Storage bucket**: `videos` (already existed). Storage RLS: authenticated users can read (for signed URLs); lab/admin can upload and delete. See `supabase/migrations/20260526_videos_bucket_storage_policies.sql`.
+
+**Table**: `video_library`
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | uuid | PK |
+| `title` | text | Display name |
+| `description` | text | nullable |
+| `folder` | text | Logical folder for UI grouping; default `'General'` |
+| `storage_path` | text | UNIQUE — path within `videos` bucket, e.g. `general/abc123_intro.mp4` |
+| `file_name` | text | Original filename |
+| `duration_secs` | int | nullable — read from browser before upload |
+| `file_size_bytes` | bigint | |
+| `mime_type` | text | |
+| `created_by` | uuid | FK → profiles |
+| `created_at` | timestamptz | |
+
+RLS: authenticated read; lab/admin insert/update/delete.
+
+**Note**: `study_videos` (which ties videos to `study_tasks`) was also missing INSERT/UPDATE/DELETE RLS policies — these were added in the same migration (`20260609_video_library.sql`).
+
+### VideoLibrary page
+
+- Folder tabs (pill-style): "All" + one tab per unique folder with count badge
+- In "All" view: videos grouped under folder headings
+- Each row: video icon, title, folder · duration · size · date, storage path in `Space Mono`
+- **▶ Preview** button — opens a dark modal overlay with `StudyVideoPlayer` in `preview` mode (no session data recorded)
+- **Copy path** button — copies `storage_path` to clipboard (useful when configuring study tasks)
+- Inline delete confirmation
+
+### VideoUpload page
+
+- Drag-and-drop zone or click-to-browse; auto-reads video duration and resolution from browser via `URL.createObjectURL`
+- **Encoding pre-flight check** — validates against `encode_study_clip.ps1` spec before upload:
+  - Container: must be `.mp4` (hard block)
+  - Resolution: must be `1280 × 720` (hard block)
+  - Approx. bitrate: warns if > 5 Mbps (suggests un-encoded raw footage)
+  - "Upload anyway" override available for both hard and soft failures
+- Title auto-populated from filename (snake_case → Title Case), editable
+- Folder picker: dropdown of existing folders + "+ New folder…" option
+- Storage path format: `{folder_slug}/{8-char-uid}_{sanitized_filename}.mp4`
+- Progress bar via `onUploadProgress` callback on Supabase storage upload
+- On success: inserts `video_library` row; navigates back to library
+
+### StudyVideoPlayer — preview prop
+
+`StudyVideoPlayer` gained a `preview?: boolean` prop (default `false`). When `true`:
+- Skips `createVideoSession` — no `participant_video_sessions` row created
+- Skips all `logVideoEvent` calls
+- Skips `complete_video_session` RPC
+- `participantId`, `videoId`, `onComplete` become optional
+
+Used by the VideoLibrary preview modal and the Training module demo modal.
+
+### File structure
+
+```
+src/pages/admin/
+  VideoLibrary.jsx    ← list + folder tabs + preview modal + delete
+  VideoUpload.jsx     ← drag-drop + pre-flight check + upload
+src/components/video/
+  StudyVideoPlayer.tsx  ← preview prop added
+  StudyVideoPlayer.css
+```
+
+---
+
+## 25. Training Module System
+
+**Routes**: `/admin/training`, `/admin/training/new`
+**Access**: Lab/admin (importer); participant (renderer via StudySessionRunner)
+**Status**: Built (June 2026)
+
+### Overview
+
+Intervention training is a first-class step type in the study session flow, distinct from games, questionnaires, and videos. Lab staff import JSON-defined training modules; the session runner renders them as a guided step-by-step participant experience. Built for Liliana's 31-day longitudinal study (Study 3).
+
+### JSON module schema
+
+```json
+{
+  "module_id": "non-reactivity-phase1-day1",
+  "condition": "non_reactivity | reappraisal | self_compassion",
+  "phase": "phase1 | phase2",
+  "lesson": 1,
+  "title": "string",
+  "subtitle": "string (optional)",
+  "lead_in":  { "owl": "owl_nonreactivity", "text": "string" },
+  "steps": [
+    { "type": "video",           "video_id": "filename.mp4", "label": "string" },
+    { "type": "text",            "content": [{ "tag": "p|h3", "text": "string" }] },
+    { "type": "prompt_response", "prompt": "string", "example": "string|null",
+      "example_label": "string|null", "size": "single_line|short|long" },
+    { "type": "closing",         "content": [{ "tag": "p", "text": "string" }] }
+  ],
+  "lead_out": { "owl": "owl_love", "text": "string" }
+}
+```
+
+Screen sequence delivered to participant: `lead_in → steps[] → lead_out`
+
+### Owl assets
+
+10 transparent PNGs stored at `public/assets/owls/{key}.png`. Valid keys:
+
+| Key | Key | Key |
+|---|---|---|
+| `owl_waving` | `owl_excited` | `owl_nonreactivity` |
+| `owl_reappraisal` | `owl_selfcompassion` | `owl_love` |
+| `owl_happy` | `owl_crying` | `owl_still` |
+| `owl_thinking` | | |
+
+### Database
+
+**`intervention_modules`** — library of imported JSON modules.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | uuid | PK |
+| `module_id` | text | UNIQUE slug, e.g. `non-reactivity-phase1-day1` |
+| `condition` | text | `non_reactivity`, `reappraisal`, `self_compassion` |
+| `phase` | text | `phase1`, `phase2` |
+| `lesson` | int | Day number within phase |
+| `title` | text | |
+| `subtitle` | text | nullable |
+| `definition` | jsonb | Full parsed JSON module |
+| `created_by` | uuid | FK → profiles |
+| `created_at` | timestamptz | |
+
+RLS: authenticated read; lab/admin write.
+
+**`session_template_nodes`** gained a `module_id text` column (FK → `intervention_modules.module_id`) for training steps.
+
+**`liliana_participants`** — study-specific participant table for Liliana's Study 3.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | uuid | PK |
+| `profile_id` | uuid | FK → profiles |
+| `study_id` | uuid | FK → studies |
+| `condition` | text | Assigned condition arm |
+| `randomization_arm` | text | nullable until assigned |
+| `phase` | text | `phase1`, `phase2`; default `phase1` |
+| `current_day` | int | Advances each completed session; default 1 |
+| `midpoint_completed_at` | timestamptz | null = not done; gates Phase 2 access |
+| `dropped_out` | bool | default false |
+| `dropout_reason` | text | nullable |
+| `enrolled_at` | timestamptz | |
+
+RLS: lab/admin all; participant can SELECT own row.
+
+**`liliana_day_data`** — one row per participant per day; created on first session attempt.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | uuid | PK |
+| `participant_id` | uuid | FK → liliana_participants |
+| `study_day` | int | 1–31 |
+| `session_name` | text | e.g. `"Phase 1 · Day 3"` |
+| `started_at` | timestamptz | Stamped on first open (re-entry preserves original) |
+| `completed_at` | timestamptz | Stamped when "Complete Practice" clicked; null = abandoned |
+| `data` | jsonb | Variable per-day content: pre/post check-ins, watch flags, etc. |
+| — | — | UNIQUE on `(participant_id, study_day)` |
+
+**`intervention_responses`** — per-prompt free-text answers, saved as participant advances.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | uuid | PK |
+| `participant_id` | uuid | FK → liliana_participants |
+| `day_data_id` | uuid | FK → liliana_day_data — links response to the session row |
+| `schedule_id` | uuid | nullable — FK → participant_schedule |
+| `module_id` | text | Which module was being delivered |
+| `study_day` | int | |
+| `response_index` | int | 0-based index of this `prompt_response` step within `steps[]` |
+| `response_text` | text | |
+| `created_at` | timestamptz | |
+
+`day_data_id` allows joining responses to their session row directly. Day row is always created before any prompt step is reachable, so the FK is always satisfiable.
+
+### Design system (InterventionPage)
+
+Distinct visual theme from the main platform — matches the longitudinal study's own design spec:
+
+| Token | Value |
+|---|---|
+| Background | `#f5f4f0` |
+| Page surface | `#ffffff`, max-width 640px |
+| Text primary | `#1a1a18` |
+| Text secondary | `#5f5e5a`, `#888780` |
+| Border | `#ebe8e3`, `#e0ddd8` |
+| Surface | `#f0ede8`, `#faf9f7` |
+| Done / accent | `#639922` |
+| Active step | `#2c2c2a` |
+| Complete button | `#3b6d11` |
+| Font | system-ui stack |
+
+### InterventionPage rendering rules
+
+**Progress bar** (5 steps, always in this state on the training page):
+Welcome ✓ → Check-in ✓ → **Practice** (active) → Check-in (upcoming) → Farewell (upcoming)
+
+**Step pips**: one dot per screen (lead_in + steps[] + lead_out). Done = `#639922`, current = `#2c2c2a`, upcoming = `#ddd`.
+
+**Next button gate per step type**:
+| Type | Gate |
+|---|---|
+| `lead_in`, `lead_out`, `text`, `closing` | Always enabled |
+| `video` | Disabled until 90% of video watched (`StudyVideoPlayer.onComplete`) |
+| `prompt_response` | Disabled until ≥ 1 character entered |
+
+In `demoMode` (admin preview), the video gate is lifted — Next is enabled immediately.
+
+**Final step** ("Complete Practice"): green button (`#3b6d11`); stamps `completed_at` on `liliana_day_data` row, then calls `onComplete()`.
+
+**Video steps**: use `StudyVideoPlayer` with `preview={true}` (no `participant_video_sessions` row) and `storagePath = liliana/{video_id}`.
+
+**Storage path convention**: training videos must be uploaded to the `videos` bucket with a `liliana/` prefix, e.g. `videos/liliana/1d103c49_nonreactivity_phase1_day1_resampled.mp4`. The `liliana/` folder does not auto-create — the prefix is simply part of the object name.
+
+### Session runner integration
+
+`training` is a first-class category in `StepDispatcher`. Nodes with `module_id` set are normalized by `StudySessionRunner.normalizeNode()` to `{ category: 'training', subcategory: module_id }`. The step label is hidden for training steps (full-screen experience, same as games).
+
+`TrainingStepWrapper` (mounted by `StepDispatcher`):
+1. Fetches module definition from `intervention_modules`
+2. Looks up `liliana_participants` row by `profile_id`
+3. Creates (or fetches) the `liliana_day_data` row for this day — **first attempt stamps `started_at`; re-entry gets existing row, preserving original timestamp**
+4. Passes `module`, `participantId`, `dayDataId`, `scheduleId`, `studyDay` to `InterventionPage`
+
+Sim mode (`isSimMode=true`) skips all DB calls and renders a stub module.
+
+### Admin pages
+
+**TrainingLibrary** (`/admin/training`):
+- Modules grouped by condition (Non-Reactivity / Reappraisal / Self-Compassion)
+- Each row shows: phase/day badge, title, step type chips, `module_id`, import date
+- Video steps show full bucket path (`videos/liliana/filename.mp4`) for upload reference
+- **▶ Demo** button — opens full-screen modal rendering the complete module in `demoMode` (no DB writes, video Next gate lifted)
+- Inline delete
+
+**TrainingUpload** (`/admin/training/new`):
+- JSON file picker or paste
+- Schema validation: required fields, condition/phase/owl key enums, step structure
+- **Video existence check** (async, runs after schema validates): pings `videos/liliana/` prefix in bucket for each `video` step; shows found/not-found per file with exact bucket path
+- Import button gated until check completes; "Import anyway" override available for missing videos — file names remain visible so they can be matched later
+- Module preview: condition, phase, lesson, owl keys, step breakdown with colour-coded type chips
+
+### SessionBuilder integration
+
+Training modules appear in the "Training Modules" section of the activity picker. Adding one sets `module_id` on the `session_template_nodes` row (with `activity_id` and `questionnaire_id` null). Training nodes are restored correctly on session edit.
+
+### Migrations
+
+```
+supabase/migrations/20260609_training_infrastructure.sql  — 4 tables + module_id column
+supabase/migrations/20260609_intervention_responses_day_fk.sql — day_data_id FK
+```
+
+### File structure
+
+```
+public/assets/owls/
+  owl_waving.png  owl_excited.png  owl_nonreactivity.png  owl_reappraisal.png
+  owl_selfcompassion.png  owl_love.png  owl_happy.png  owl_crying.png
+  owl_still.png  owl_thinking.png
+
+src/components/study/
+  InterventionPage.jsx     ← participant renderer; demoMode prop
+  TrainingStepWrapper.jsx  ← fetches module + participant row + creates day row
+
+src/pages/admin/
+  TrainingLibrary.jsx  ← module list + demo modal
+  TrainingUpload.jsx   ← JSON import + schema validation + video existence check
+```
+
+### Key learnings
+
+- Study-specific participant tables (`liliana_participants`) are the right call for longitudinal studies with typed study-specific variables. DDL required at study launch — can't be provisioned via a client INSERT. Pattern to reuse: dedicated table per major longitudinal study, shared `participants` + JSONB metadata for simpler studies.
+- `liliana_day_data.started_at` is stamped on first attempt; `completed_at` remains null for abandoned sessions. Use `completed_at IS NULL` to find drop-offs.
+- `midpoint_completed_at` on `liliana_participants` is a hard gate for Phase 2 — explicit nullable timestamp is cleaner than inferring completion from day data presence.
+- Training videos must be uploaded with the `liliana/` prefix in the object name — Supabase Storage has no real directories; the slash is just part of the path string.
