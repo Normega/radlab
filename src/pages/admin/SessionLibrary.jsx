@@ -37,6 +37,8 @@ export default function SessionLibrary() {
 
   const deleteSession = useMutation({
     mutationFn: async (id) => {
+      const { error: nodesErr } = await supabase.from('session_template_nodes').delete().eq('session_template_id', id)
+      if (nodesErr) throw nodesErr
       const { error } = await supabase.from('session_templates').delete().eq('id', id)
       if (error) throw error
     },
