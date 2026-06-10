@@ -112,10 +112,19 @@ export default function SessionBuilder() {
   const { data: trainingModules = [] }       = useTrainingModules()
   const { data: existing, isLoading }        = useSession(id)
 
-  const [label,       setLabel]       = useState('')
-  const [description, setDescription] = useState('')
-  const [sequence,    setSequence]    = useState([])
-  const [error,       setError]       = useState(null)
+  const [label,         setLabel]         = useState('')
+  const [description,   setDescription]   = useState('')
+  const [sequence,      setSequence]      = useState([])
+  const [error,         setError]         = useState(null)
+  const [collapsedCats, setCollapsedCats] = useState(new Set())
+
+  function toggleCat(cat) {
+    setCollapsedCats(prev => {
+      const next = new Set(prev)
+      next.has(cat) ? next.delete(cat) : next.add(cat)
+      return next
+    })
+  }
 
   useEffect(() => {
     if (!existing) return
@@ -311,8 +320,11 @@ export default function SessionBuilder() {
           {empty && <p style={S.muted}>No activities in the database yet.</p>}
           {Object.entries(grouped).map(([cat, items]) => (
             <div key={cat} style={{ marginBottom: 16 }}>
-              <p style={S.catLabel}>{CATEGORY_LABELS[cat] ?? cat}</p>
-              {items.map(act => (
+              <button style={S.catToggle} onClick={() => toggleCat(cat)}>
+                <span>{CATEGORY_LABELS[cat] ?? cat}</span>
+                <span style={S.catChevron}>{collapsedCats.has(cat) ? '▶' : '▼'}</span>
+              </button>
+              {!collapsedCats.has(cat) && items.map(act => (
                 <button
                   key={`${act._source ?? 'act'}-${act.id}`}
                   style={S.actBtn}
@@ -371,6 +383,8 @@ const S = {
   panel:        { background: '#fff', border: '1px solid var(--bd)', borderRadius: 10, padding: '18px 16px', minHeight: 200 },
   panelTitle:   { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 14px' },
   catLabel:     { fontFamily: '"Space Mono",monospace', fontSize: 10, color: 'var(--pk)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 6px' },
+  catToggle:    { display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', background: 'none', border: 'none', padding: '0 0 6px', cursor: 'pointer', fontFamily: '"Space Mono",monospace', fontSize: 10, color: 'var(--pk)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 },
+  catChevron:   { fontSize: 8, opacity: 0.7 },
   actBtn:       { display: 'flex', alignItems: 'center', gap: 8, width: '100%', background: 'none', border: '1px solid var(--bd)', borderRadius: 8, padding: '7px 10px', cursor: 'pointer', marginBottom: 5, textAlign: 'left' },
   actLabel:     { flex: 1, fontSize: 13, color: 'var(--tx)', fontFamily: '"DM Sans",system-ui,sans-serif' },
   uploadedTag:  { fontSize: 10, color: 'var(--tx3)', fontFamily: '"Space Mono",monospace', border: '1px solid var(--bd)', borderRadius: 4, padding: '1px 5px', flexShrink: 0 },
