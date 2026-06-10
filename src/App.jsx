@@ -59,6 +59,8 @@ import TrainingUpload       from './pages/admin/TrainingUpload'
 import Unsubscribe   from './pages/Unsubscribe'
 import ConsentPage   from './pages/ConsentPage'
 import VideoTest     from './pages/dev/VideoTest'
+import AudioAdmin    from './pages/admin/AudioAdmin'
+import AudioTest     from './pages/dev/AudioTest'
 
 const queryClient = new QueryClient()
 
@@ -257,6 +259,7 @@ export default function App() {
 
           {/* Dev-only test harness — component guards with import.meta.env.DEV */}
           <Route path="/dev/video-test" element={<VideoTest />} />
+          <Route path="/dev/audio-test" element={<AudioTest />} />
 
           {/* Unsubscribe — no auth or layout */}
           <Route path="/unsubscribe/:token" element={<Unsubscribe />} />
@@ -281,6 +284,7 @@ export default function App() {
               <Route path="/admin/export"                element={<DataExportPage />} />
               <Route path="/admin/videos"               element={<VideoLibrary />} />
               <Route path="/admin/videos/new"           element={<VideoUpload />} />
+              <Route path="/admin/audio"                element={<AudioAdmin />} />
               <Route path="/admin/training"             element={<TrainingLibrary />} />
               <Route path="/admin/training/new"         element={<TrainingUpload />} />
               <Route path="/admin/compensation"         element={<CompensationPage />} />
