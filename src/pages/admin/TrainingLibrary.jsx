@@ -106,7 +106,8 @@ export default function TrainingLibrary() {
           <div style={S.list}>
             {items.map(mod => {
               const steps = mod.definition?.steps ?? []
-              const stepTypes = steps.map(s => STEP_TYPE_LABELS[s.type] ?? s.type)
+              const stepTypes  = steps.map(s => STEP_TYPE_LABELS[s.type] ?? s.type)
+              const videoPaths = steps.filter(s => s.type === 'video').map(s => `liliana/${s.video_id}`)
               const isConfirming = confirmDelete === mod.id
 
               return (
@@ -129,6 +130,15 @@ export default function TrainingLibrary() {
                       {' · '}
                       {fmtDate(mod.created_at)}
                     </p>
+                    {videoPaths.length > 0 && (
+                      <div style={{ marginTop: 4 }}>
+                        {videoPaths.map(p => (
+                          <p key={p} style={S.videoPath}>
+                            videos/{p}
+                          </p>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   {/* Actions */}
@@ -315,6 +325,10 @@ const S = {
   },
   moduleId: {
     fontFamily: 'Space Mono', fontSize: 10, color: 'var(--gy)',
+  },
+  videoPath: {
+    fontFamily: 'Space Mono', fontSize: 10, color: 'var(--tx2)',
+    margin: '1px 0', letterSpacing: '0.02em',
   },
   demoBtn: {
     background: 'var(--bgp)', border: '1px solid var(--pkb)',
