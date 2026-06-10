@@ -41,9 +41,9 @@ export default function SessionLibrary() {
     setDeleteBlocked(null)
     const { data } = await supabase
       .from('study_sessions')
-      .select('studies(label)')
+      .select('studies(name)')
       .eq('session_template_id', s.id)
-    const labels = [...new Set((data ?? []).map(r => r.studies?.label).filter(Boolean))]
+    const labels = [...new Set((data ?? []).map(r => r.studies?.name).filter(Boolean))]
     setDeleteBlocked(labels)
   }
 
