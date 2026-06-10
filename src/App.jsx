@@ -60,6 +60,7 @@ import Unsubscribe   from './pages/Unsubscribe'
 import ConsentPage   from './pages/ConsentPage'
 import VideoTest     from './pages/dev/VideoTest'
 import AudioAdmin    from './pages/admin/AudioAdmin'
+import AudioUpload   from './pages/admin/AudioUpload'
 import AudioTest     from './pages/dev/AudioTest'
 
 const queryClient = new QueryClient()
@@ -285,6 +286,7 @@ export default function App() {
               <Route path="/admin/videos"               element={<VideoLibrary />} />
               <Route path="/admin/videos/new"           element={<VideoUpload />} />
               <Route path="/admin/audio"                element={<AudioAdmin />} />
+              <Route path="/admin/audio/new"            element={<AudioUpload />} />
               <Route path="/admin/training"             element={<TrainingLibrary />} />
               <Route path="/admin/training/new"         element={<TrainingUpload />} />
               <Route path="/admin/compensation"         element={<CompensationPage />} />
