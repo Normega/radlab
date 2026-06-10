@@ -1,11 +1,12 @@
 // v2 — dispatches on activity.category + activity.subcategory from session_template_nodes
-import ConsentStep             from './ConsentStep'
-import DebriefStep             from './DebriefStep'
-import DemographicsStep        from './DemographicsStep'
-import CompensationStep        from './CompensationStep'
+import ConsentStep              from './ConsentStep'
+import DebriefStep              from './DebriefStep'
+import DemographicsStep         from './DemographicsStep'
+import CompensationStep         from './CompensationStep'
 import QuestionnaireStepWrapper from './QuestionnaireStepWrapper'
 import GameStepWrapper          from './GameStepWrapper'
 import PhysioSetupStep          from './PhysioSetupStep'
+import TrainingStepWrapper      from './TrainingStepWrapper'
 
 /**
  * Props:
@@ -66,6 +67,18 @@ export default function StepDispatcher({ node, enrollment, scheduleId, stepIndex
         enrollment={enrollment}
         onComplete={onComplete}
         supabaseClient={supabaseClient}
+        isSimMode={isSimMode}
+      />
+    )
+  }
+
+  if (category === 'training') {
+    return (
+      <TrainingStepWrapper
+        node={node}
+        enrollment={enrollment}
+        scheduleId={scheduleId}
+        onComplete={onComplete}
         isSimMode={isSimMode}
       />
     )

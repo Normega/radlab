@@ -25,6 +25,17 @@ function normalizeNode(n) {
       },
     }
   }
+  if (n.module_id) {
+    return {
+      ...n,
+      activities: {
+        id:          n.module_id,
+        category:    'training',
+        subcategory: n.module_id,
+        label:       n.label ?? `Training: ${n.module_id}`,
+      },
+    }
+  }
   return n
 }
 
@@ -71,7 +82,7 @@ export default function StudySessionRunner() {
 
       const { data, error } = await supabase
         .from('session_template_nodes')
-        .select('id, order_index, label, activity_id, questionnaire_id, activities!activity_id(id, category, subcategory, label), questionnaires!questionnaire_id(id, slug, name)')
+        .select('id, order_index, label, activity_id, questionnaire_id, module_id, activities!activity_id(id, category, subcategory, label), questionnaires!questionnaire_id(id, slug, name)')
         .eq('session_template_id', sessionRow.session_template_id)
         .order('order_index', { ascending: true })
       if (error) throw error
@@ -192,7 +203,7 @@ export default function StudySessionRunner() {
           <div style={S.progressBarWrap}>
             <div style={{ ...S.progressBarFill, width: `${progressPct}%` }} />
           </div>
-          {activity?.category !== 'game' && activity?.category !== 'physio' && <p style={S.stepLabel}>{stepLabel}</p>}
+          {!['game', 'physio', 'training'].includes(activity?.category) && <p style={S.stepLabel}>{stepLabel}</p>}
 
           <div style={S.stepContent}>
             {node ? (

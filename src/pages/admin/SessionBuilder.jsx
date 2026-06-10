@@ -10,8 +10,8 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import { supabase } from '../../lib/supabase'
 
-const CATEGORY_ORDER  = ['game', 'questionnaire', 'form', 'physio']
-const CATEGORY_LABELS = { game: 'Games', questionnaire: 'Questionnaires', form: 'Forms', physio: 'Physio' }
+const CATEGORY_ORDER  = ['game', 'questionnaire', 'form', 'physio', 'training']
+const CATEGORY_LABELS = { game: 'Games', questionnaire: 'Questionnaires', form: 'Forms', physio: 'Physio', training: 'Training Modules' }
 
 function useActivities() {
   return useQuery({
@@ -21,6 +21,20 @@ function useActivities() {
         .from('activities')
         .select('id, label, category, estimated_minutes')
         .order('label')
+      if (error) throw error
+      return data ?? []
+    },
+  })
+}
+
+function useTrainingModules() {
+  return useQuery({
+    queryKey: ['intervention-modules-picker'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('intervention_modules')
+        .select('id, module_id, condition, phase, lesson, title')
+        .order('condition').order('phase').order('lesson')
       if (error) throw error
       return data ?? []
     },
@@ -52,7 +66,7 @@ function useSession(id) {
         .from('session_templates')
         .select(`
           id, label, description,
-          session_template_nodes(id, order_index, activity_id, questionnaire_id, label,
+          session_template_nodes(id, order_index, activity_id, questionnaire_id, module_id, label,
             activities(id, label, category, estimated_minutes),
             questionnaires(id, name, slug)
           )
@@ -95,6 +109,7 @@ export default function SessionBuilder() {
 
   const { data: activities = [] }            = useActivities()
   const { data: uploadedQuestionnaires = [] } = useUploadedQuestionnaires()
+  const { data: trainingModules = [] }       = useTrainingModules()
   const { data: existing, isLoading }        = useSession(id)
 
   const [label,       setLabel]       = useState('')
@@ -111,10 +126,11 @@ export default function SessionBuilder() {
     )
     setSequence(sorted.map((n, i) => ({
       _key:              `existing-${n.id}-${i}`,
-      activity_id:       n.activity_id ?? null,
+      activity_id:       n.activity_id      ?? null,
       questionnaire_id:  n.questionnaire_id ?? null,
+      module_id:         n.module_id        ?? null,
       label:             n.activities?.label ?? n.questionnaires?.name ?? n.label,
-      category:          n.activities?.category ?? 'questionnaire',
+      category:          n.module_id ? 'training' : (n.activities?.category ?? 'questionnaire'),
       estimated_minutes: n.activities?.estimated_minutes ?? null,
     })))
   }, [existing])
@@ -135,14 +151,24 @@ export default function SessionBuilder() {
     }
   }
 
-  // Handles both activities-table items and uploaded-questionnaire items.
-  // _source === 'uploaded' means the item came from the questionnaires table.
+  // Handles activities-table items, uploaded questionnaires, and training modules.
   function addItem(act) {
-    if (act._source === 'uploaded') {
+    if (act._source === 'training') {
+      setSequence(prev => [...prev, {
+        _key:              `tm-${act.module_id}-${Date.now()}`,
+        activity_id:       null,
+        questionnaire_id:  null,
+        module_id:         act.module_id,
+        label:             act.label,
+        category:          'training',
+        estimated_minutes: null,
+      }])
+    } else if (act._source === 'uploaded') {
       setSequence(prev => [...prev, {
         _key:             `q-${act.id}-${Date.now()}`,
         activity_id:      null,
         questionnaire_id: act.id,
+        module_id:        null,
         label:            act.label,
         category:         'questionnaire',
         estimated_minutes: null,
@@ -152,6 +178,7 @@ export default function SessionBuilder() {
         _key:              `${act.id}-${Date.now()}`,
         activity_id:       act.id,
         questionnaire_id:  null,
+        module_id:         null,
         label:             act.label,
         category:          act.category,
         estimated_minutes: act.estimated_minutes,
@@ -170,8 +197,9 @@ export default function SessionBuilder() {
         sequence.map((item, i) => ({
           session_template_id: tmplId,
           order_index:         i,
-          activity_id:         item.activity_id ?? null,
+          activity_id:         item.activity_id    ?? null,
           questionnaire_id:    item.questionnaire_id ?? null,
+          module_id:           item.module_id      ?? null,
           label:               item.label,
         }))
 
@@ -208,21 +236,26 @@ export default function SessionBuilder() {
     onError: (e) => setError(e.message),
   })
 
-  // Build the grouped picker: activities table items + uploaded questionnaires
-  // merged under the questionnaire category with an "uploaded" badge.
+  // Build the grouped picker: activities + uploaded questionnaires + training modules.
   const grouped = CATEGORY_ORDER.reduce((acc, cat) => {
     const actItems = activities.filter(a => a.category === cat)
     if (cat === 'questionnaire') {
       const uploadedItems = uploadedQuestionnaires.map(q => ({
-        _source: 'uploaded',
-        id:      q.id,
-        label:   q.name,
-        slug:    q.slug,
-        category: 'questionnaire',
-        estimated_minutes: null,
+        _source: 'uploaded', id: q.id, label: q.name, slug: q.slug,
+        category: 'questionnaire', estimated_minutes: null,
       }))
       const combined = [...actItems, ...uploadedItems]
       if (combined.length) acc[cat] = combined
+    } else if (cat === 'training') {
+      const tmItems = trainingModules.map(m => ({
+        _source:   'training',
+        id:        m.id,
+        module_id: m.module_id,
+        label:     `${m.title} (P${m.phase === 'phase1' ? 1 : 2} D${m.lesson})`,
+        category:  'training',
+        estimated_minutes: null,
+      }))
+      if (tmItems.length) acc[cat] = tmItems
     } else if (actItems.length) {
       acc[cat] = actItems
     }
@@ -232,7 +265,7 @@ export default function SessionBuilder() {
   if (uncategorized.length) grouped['other'] = uncategorized
 
   const totalMinutes = sequence.reduce((sum, i) => sum + (i.estimated_minutes ?? 0), 0)
-  const empty = activities.length === 0 && uploadedQuestionnaires.length === 0
+  const empty = activities.length === 0 && uploadedQuestionnaires.length === 0 && trainingModules.length === 0
 
   if (!isNew && isLoading) return <p style={S.muted}>Loading…</p>
 

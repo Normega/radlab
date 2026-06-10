@@ -54,6 +54,8 @@ import DataExportPage       from './pages/admin/DataExportPage'
 import CompensationPage     from './pages/admin/CompensationPage'
 import VideoLibrary         from './pages/admin/VideoLibrary'
 import VideoUpload          from './pages/admin/VideoUpload'
+import TrainingLibrary      from './pages/admin/TrainingLibrary'
+import TrainingUpload       from './pages/admin/TrainingUpload'
 import Unsubscribe   from './pages/Unsubscribe'
 import ConsentPage   from './pages/ConsentPage'
 import VideoTest     from './pages/dev/VideoTest'
@@ -279,6 +281,8 @@ export default function App() {
               <Route path="/admin/export"                element={<DataExportPage />} />
               <Route path="/admin/videos"               element={<VideoLibrary />} />
               <Route path="/admin/videos/new"           element={<VideoUpload />} />
+              <Route path="/admin/training"             element={<TrainingLibrary />} />
+              <Route path="/admin/training/new"         element={<TrainingUpload />} />
               <Route path="/admin/compensation"         element={<CompensationPage />} />
             </Route>
           </Route>
