@@ -1,5 +1,5 @@
-import { useState, useRef, useCallback } from 'react';
-import { supabase } from '../../lib/supabase';
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { supabase as globalSupabase } from '../../lib/supabase';
 import { useSessionTimer } from './hooks/useSessionTimer';
 import { useAnagram } from './hooks/useAnagram';
 import { useFluency } from './hooks/useFluency';
@@ -11,7 +11,16 @@ import FluencyBox from './components/FluencyBox';
 import WordProbeBox from './components/WordProbeBox';
 import SessionComplete from './components/SessionComplete';
 
-export default function AptitudeSuite({ session }) {
+export default function AptitudeSuite({
+  session,
+  userId:          userIdProp,
+  studyId,
+  supabaseClient,
+  onSessionComplete,
+  isSimMode = false,
+}) {
+  const db = supabaseClient ?? globalSupabase;
+
   const [phase, setPhase] = useState('instructions'); // 'instructions' | 'active' | 'complete'
   const [saving, setSaving] = useState(false);
 
@@ -28,20 +37,21 @@ export default function AptitudeSuite({ session }) {
   const scoresRef = useRef({ anagram, fluency, wordProbe });
   scoresRef.current = { anagram, fluency, wordProbe };
 
-  const userId = session?.user?.id ?? null;
+  const userId = userIdProp ?? session?.user?.id ?? null;
 
   // ── Supabase helpers ──────────────────────────────────────────────────────
 
   async function createSessionRow() {
     const now = new Date().toISOString();
     sessionStartRef.current = Date.now();
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from('aptitude_sessions')
       .insert({
         user_id: userId,
+        study_id: studyId ?? null,
         session_start: now,
         category_assigned: fluency.categoryKey,
-        is_test: false,
+        is_test: isSimMode,
       })
       .select('id')
       .single();
@@ -52,7 +62,7 @@ export default function AptitudeSuite({ session }) {
   function logEvent(task, event_type, value, scoreAtTime, pctAtTime) {
     if (!sessionIdRef.current) return;
     const elapsed_ms = sessionStartRef.current ? Date.now() - sessionStartRef.current : 0;
-    supabase.from('aptitude_events').insert({
+    db.from('aptitude_events').insert({
       session_id: sessionIdRef.current,
       task,
       event_type,
@@ -66,23 +76,34 @@ export default function AptitudeSuite({ session }) {
   }
 
   async function finaliseSession(anagramScore, anagramPct, fluencyScore, fluencyPct, wordprobeScore, wordprobePct) {
-    if (!sessionIdRef.current) return;
     const avg = (anagramPct + fluencyPct + wordprobePct) / 3;
-    const { error } = await supabase
-      .from('aptitude_sessions')
-      .update({
-        session_end: new Date().toISOString(),
-        anagram_score: anagramScore,
-        fluency_score: fluencyScore,
-        wordprobe_score: wordprobeScore,
-        anagram_pct: anagramPct,
-        fluency_pct: fluencyPct,
-        wordprobe_pct: wordprobePct,
-        avg_pct: avg.toFixed(2),
-        task_switch_count: taskSwitchCount.current,
-      })
-      .eq('id', sessionIdRef.current);
-    if (error) console.error('aptitude_sessions update failed', error);
+    if (sessionIdRef.current) {
+      const { error } = await db
+        .from('aptitude_sessions')
+        .update({
+          session_end: new Date().toISOString(),
+          anagram_score: anagramScore,
+          fluency_score: fluencyScore,
+          wordprobe_score: wordprobeScore,
+          anagram_pct: anagramPct,
+          fluency_pct: fluencyPct,
+          wordprobe_pct: wordprobePct,
+          avg_pct: avg.toFixed(2),
+          task_switch_count: taskSwitchCount.current,
+        })
+        .eq('id', sessionIdRef.current);
+      if (error) console.error('aptitude_sessions update failed', error);
+    }
+    onSessionComplete?.({
+      anagram_score:    anagramScore,
+      anagram_pct:      anagramPct,
+      fluency_score:    fluencyScore,
+      fluency_pct:      fluencyPct,
+      wordprobe_score:  wordprobeScore,
+      wordprobe_pct:    wordprobePct,
+      avg_pct:          +avg.toFixed(2),
+      task_switch_count: taskSwitchCount.current,
+    });
   }
 
   // ── Timer ─────────────────────────────────────────────────────────────────
@@ -109,6 +130,21 @@ export default function AptitudeSuite({ session }) {
     timer.start();
     setPhase('active');
   }
+
+  // ── Sim mode auto-advance ─────────────────────────────────────────────────
+  // Auto-begin on mount; auto-expire after a short delay so the study runner
+  // can step through without manual interaction.
+
+  useEffect(() => {
+    if (!isSimMode) return;
+    if (phase === 'instructions') handleBegin();
+  }, [isSimMode]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!isSimMode || phase !== 'active') return;
+    const t = setTimeout(() => handleExpire(), 800);
+    return () => clearTimeout(t);
+  }, [isSimMode, phase]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Task interaction tracking ─────────────────────────────────────────────
 
