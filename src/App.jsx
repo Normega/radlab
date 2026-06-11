@@ -62,6 +62,7 @@ import VideoTest     from './pages/dev/VideoTest'
 import AudioAdmin    from './pages/admin/AudioAdmin'
 import AudioUpload   from './pages/admin/AudioUpload'
 import AudioTest     from './pages/dev/AudioTest'
+import ColorMax      from './games/ColorMax/ColorMax'
 
 const queryClient = new QueryClient()
 
@@ -245,6 +246,12 @@ export default function App() {
           <Route path="/games/word-max" element={
             <ProtectedRoute session={session} hasAvatar={hasAvatar}>
               <WordMax />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/games/color-max" element={
+            <ProtectedRoute session={session} hasAvatar={hasAvatar}>
+              <ColorMax session={session} />
             </ProtectedRoute>
           } />
 
