@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
     // Use service role key to bypass RLS for profile creation
     const admin = createClient(
       Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('RADLAB_SERVICE_ROLE_KEY')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     )
 
     // 1. Create a real auth user (triggers the handle_new_user profile row creation)

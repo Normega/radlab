@@ -23,9 +23,14 @@ function json(body: unknown, status = 200) {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
 
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+  const authHeader = req.headers.get('Authorization')
+  if (!authHeader || authHeader !== `Bearer ${serviceKey}`) {
+    return json({ error: 'Unauthorized' }, 401)
+  }
+
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const serviceKey  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
     const db: SupabaseClient = createClient(supabaseUrl, serviceKey, {
       auth: { persistSession: false },
