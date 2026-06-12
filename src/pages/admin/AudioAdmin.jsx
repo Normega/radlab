@@ -49,7 +49,7 @@ export default function AudioAdmin() {
 
   const deleteMutation = useMutation({
     mutationFn: async (audio) => {
-      await supabase.storage.from('videos').remove([audio.storage_path])
+      await supabase.storage.from('audios').remove([audio.storage_path])
       const { error } = await supabase.from('study_audios').delete().eq('id', audio.id)
       if (error) throw error
     },
