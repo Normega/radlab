@@ -12,6 +12,8 @@ type StudyVideo = {
 }
 
 export default function VideoTest() {
+  if (!import.meta.env.DEV) return null
+
   const [userId,     setUserId]     = useState<string | null>(null)
   const [studyVideo, setStudyVideo] = useState<StudyVideo | null>(null)
   const [loadError,  setLoadError]  = useState<string | null>(null)

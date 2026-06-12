@@ -25,6 +25,25 @@ function json(body: unknown, status = 200) {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
 
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+  const serviceKey  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+
+  // Require service-role Bearer (from check_schedule) or a valid lab-member JWT.
+  const authHeader = req.headers.get('Authorization')
+  if (!authHeader) return json({ error: 'Unauthorized' }, 401)
+
+  if (authHeader !== `Bearer ${serviceKey}`) {
+    const callerClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
+      global: { headers: { Authorization: authHeader } },
+    })
+    const { data: { user }, error: authErr } = await callerClient.auth.getUser()
+    if (authErr || !user) return json({ error: 'Unauthorized' }, 401)
+
+    const { data: profile } = await callerClient
+      .from('profiles').select('role').eq('id', user.id).single()
+    if (!profile || profile.role !== 'lab') return json({ error: 'Forbidden' }, 403)
+  }
+
   try {
     const body = await req.json().catch(() => ({}))
     const { schedule_instance_id, test_override_email } = body
@@ -35,9 +54,6 @@ Deno.serve(async (req) => {
     }
 
     const isTest = !!test_override_email
-
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const serviceKey  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
     // Service role client — bypasses RLS; required for auth.users lookups.
     const db: SupabaseClient = createClient(supabaseUrl, serviceKey, {
