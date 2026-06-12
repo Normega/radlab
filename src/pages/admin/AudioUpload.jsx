@@ -143,7 +143,7 @@ export default function AudioUpload() {
       const storagePath = generateAudioPath(effectiveFolder, file.name)
 
       const { error: storageErr } = await supabase.storage
-        .from('videos')
+        .from('audios')
         .upload(storagePath, file, {
           cacheControl: '3600',
           upsert: false,
@@ -164,7 +164,7 @@ export default function AudioUpload() {
       })
 
       if (dbErr) {
-        await supabase.storage.from('videos').remove([storagePath])
+        await supabase.storage.from('audios').remove([storagePath])
         throw dbErr
       }
 

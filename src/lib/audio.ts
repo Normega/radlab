@@ -1,6 +1,6 @@
 import { supabase } from './supabase'
 
-const AUDIO_BUCKET   = 'videos'
+const AUDIO_BUCKET   = 'audios'
 const SIGNED_URL_TTL = 60 * 60  // 1 hour
 
 
