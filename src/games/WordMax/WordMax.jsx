@@ -33,7 +33,7 @@ const SCREEN = { INTRO: 'INTRO', PLAYING: 'PLAYING', COMPLETE: 'COMPLETE' };
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function WordMax() {
+export default function WordMax({ studyMode = false, userId: userIdProp = null, onSessionComplete = null, supabaseClient: supabaseClientProp = null }) {
   // Dictionary
   const wordSetRef        = useRef(null);
   const [dictLoading, setDictLoading] = useState(true);
@@ -196,11 +196,13 @@ export default function WordMax() {
     const setsCompleted = results.filter(r => r.word).length;
     const totalScore    = results.reduce((sum, r) => sum + (r.score || 0), 0);
 
+    const db = supabaseClientProp ?? supabase;
+
     setSaving(true);
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) { setSaving(false); return; }
-      supabase.from('word_max_sessions').insert({
-        user_id:        user.id,
+
+    const doInsert = (uid) => {
+      db.from('word_max_sessions').insert({
+        user_id:        uid,
         completed:      setsCompleted === NUM_SETS,
         timed_out:      timedOut,
         total_score:    totalScore,
@@ -209,9 +211,22 @@ export default function WordMax() {
         set_results:    results,
       }).then(({ error: dbErr }) => {
         setSaving(false);
-        if (dbErr) setSaveError('Could not save session — data is safe locally.');
+        if (dbErr) {
+          setSaveError('Could not save session — data is safe locally.');
+        } else if (onSessionComplete) {
+          onSessionComplete({ total_score: totalScore, sets_completed: setsCompleted, duration_ms: elapsedMs });
+        }
       });
-    });
+    };
+
+    if (userIdProp) {
+      doInsert(userIdProp);
+    } else {
+      supabase.auth.getUser().then(({ data: { user } }) => {
+        if (!user) { setSaving(false); return; }
+        doInsert(user.id);
+      });
+    }
   }, [screen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Computed display values ─────────────────────────────────────────────────
@@ -232,6 +247,7 @@ export default function WordMax() {
         saving={saving}
         saveError={saveError}
         onPlayAgain={() => setScreen(SCREEN.INTRO)}
+        onSessionComplete={onSessionComplete}
       />
     );
   }

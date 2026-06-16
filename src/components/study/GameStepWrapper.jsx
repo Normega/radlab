@@ -1,12 +1,16 @@
 import AptitudeSuite from '../../games/AptitudeSuite/AptitudeSuite'
 import BreathBelt    from '../../games/BreathBelt/BreathBelt'
+import ColorMax      from '../../games/ColorMax/ColorMax'
 import StillWater    from '../../games/StillWater/StillWater'
+import WordMax       from '../../games/WordMax/WordMax'
 import { usePhysioContext } from './PhysioContext'
 
 const GAME_COMPONENTS = {
   aptitude_suite: AptitudeSuite,
   breath_belt:    BreathBelt,
+  color_max:      ColorMax,
   still_water:    StillWater,
+  word_max:       WordMax,
 }
 
 // Games that should receive the physio context when it is available

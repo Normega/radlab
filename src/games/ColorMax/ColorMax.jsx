@@ -95,7 +95,8 @@ function fmtMs(ms) {
 }
 
 // ── ColorMax ───────────────────────────────────────────────────────────────
-export default function ColorMax({ session }) {
+export default function ColorMax({ session, studyMode = false, userId: userIdProp = null, onSessionComplete = null, supabaseClient: supabaseClientProp = null }) {
+  const db = supabaseClientProp ?? supabase
   // ── React state (drives re-renders) ─────────────────────────────────────
   const [phase,    setPhase]    = useState('start')   // 'start' | 'active' | 'complete'
   const [secsLeft, setSecsLeft] = useState(TOTAL_SECS)
@@ -271,7 +272,7 @@ export default function ColorMax({ session }) {
   function logEvent(eventType, value = null) {
     if (!sessionIdRef.current) return
     const elapsed_ms = sessionStartRef.current ? Date.now() - sessionStartRef.current : 0
-    supabase.from('aptitude_events').insert({
+    db.from('aptitude_events').insert({
       session_id: sessionIdRef.current,
       task:       'color_max',
       event_type: eventType,
@@ -283,7 +284,7 @@ export default function ColorMax({ session }) {
   function flushStrokes() {
     const batch = pendingStrokesRef.current.splice(0)
     if (!batch.length) return Promise.resolve()
-    return supabase.from('aptitude_events').insert(batch).then(({ error }) => {
+    return db.from('aptitude_events').insert(batch).then(({ error }) => {
       if (error) console.warn('stroke batch insert failed', error)
     })
   }
@@ -292,11 +293,11 @@ export default function ColorMax({ session }) {
 
   async function handleStart() {
     setStarting(true)
-    const uid = session?.user?.id ?? null
+    const uid = userIdProp ?? session?.user?.id ?? null
     const now = new Date().toISOString()
     sessionStartRef.current = Date.now()
 
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from('aptitude_sessions')
       .insert({ user_id: uid, game: 'color_max', session_start: now })
       .select('id')
@@ -361,7 +362,7 @@ export default function ColorMax({ session }) {
     logEvent('game_end', JSON.stringify({ imagesAttempted, avgCoverage }))
 
     if (sessionIdRef.current) {
-      const { error } = await supabase
+      const { error } = await db
         .from('aptitude_sessions')
         .update({ session_end: new Date().toISOString(), results })
         .eq('id', sessionIdRef.current)
@@ -607,6 +608,12 @@ export default function ColorMax({ session }) {
                   )
                 })}
               </div>
+
+              {onSessionComplete && (
+                <button className="cm-start-btn" onClick={() => onSessionComplete({ avg_coverage: r.avgCoverage, avg_precision: r.avgPrecision, images_attempted: r.imagesAttempted, total_secs: r.totalSecs })}>
+                  Continue
+                </button>
+              )}
             </div>
           )
         })()}

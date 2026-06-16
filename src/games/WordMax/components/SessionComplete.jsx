@@ -1,6 +1,6 @@
 import { NUM_SETS } from '../constants';
 
-export default function SessionComplete({ results, totalScore, timedOut, saving, saveError, onPlayAgain }) {
+export default function SessionComplete({ results, totalScore, timedOut, saving, saveError, onPlayAgain, onSessionComplete }) {
   const setsCompleted = results.filter(r => r.word).length;
   const completed     = setsCompleted === NUM_SETS;
 
@@ -54,9 +54,15 @@ export default function SessionComplete({ results, totalScore, timedOut, saving,
         {saving && <p style={S.saving}>Saving…</p>}
         {saveError && <p style={S.err}>{saveError}</p>}
 
-        <button style={S.btn} onClick={onPlayAgain} disabled={saving}>
-          Play again
-        </button>
+        {onSessionComplete ? (
+          <button style={S.btn} onClick={onSessionComplete} disabled={saving}>
+            {saving ? 'Saving…' : 'Continue'}
+          </button>
+        ) : (
+          <button style={S.btn} onClick={onPlayAgain} disabled={saving}>
+            Play again
+          </button>
+        )}
       </div>
     </div>
   );
