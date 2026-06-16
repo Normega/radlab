@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase'
 const NAV_ITEMS = [
   { to: '/admin/sessions',        label: 'Sessions'       },
   { to: '/admin/studies',         label: 'Studies'        },
+  { to: '/admin/games',           label: 'Games'          },
   { to: '/admin/questionnaires',  label: 'Questionnaires' },
   { to: '/admin/videos',          label: 'Videos'         },
   { to: '/admin/audio',           label: 'Audio'          },

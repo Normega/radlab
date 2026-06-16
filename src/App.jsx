@@ -61,6 +61,7 @@ import ConsentPage   from './pages/ConsentPage'
 import VideoTest     from './pages/dev/VideoTest'
 import AudioAdmin    from './pages/admin/AudioAdmin'
 import AudioUpload   from './pages/admin/AudioUpload'
+import AdminGamesPage from './pages/admin/GamesPage'
 import AudioTest     from './pages/dev/AudioTest'
 import ColorMax      from './games/ColorMax/ColorMax'
 
@@ -297,6 +298,7 @@ export default function App() {
               <Route path="/admin/training"             element={<TrainingLibrary />} />
               <Route path="/admin/training/new"         element={<TrainingUpload />} />
               <Route path="/admin/compensation"         element={<CompensationPage />} />
+              <Route path="/admin/games"               element={<AdminGamesPage />} />
             </Route>
           </Route>
 
