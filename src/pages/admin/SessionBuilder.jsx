@@ -10,8 +10,8 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import { supabase } from '../../lib/supabase'
 
-const CATEGORY_ORDER  = ['game', 'questionnaire', 'form', 'physio', 'training']
-const CATEGORY_LABELS = { game: 'Games', questionnaire: 'Questionnaires', form: 'Forms', physio: 'Physio', training: 'Training Modules' }
+const CATEGORY_ORDER  = ['game', 'questionnaire', 'vas', 'form', 'physio', 'training']
+const CATEGORY_LABELS = { game: 'Games', questionnaire: 'Questionnaires', vas: 'Rating Scales', form: 'Forms', physio: 'Physio', training: 'Training Modules' }
 
 function useActivities() {
   return useQuery({

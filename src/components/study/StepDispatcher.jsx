@@ -7,6 +7,7 @@ import QuestionnaireStepWrapper from './QuestionnaireStepWrapper'
 import GameStepWrapper          from './GameStepWrapper'
 import PhysioSetupStep          from './PhysioSetupStep'
 import TrainingStepWrapper      from './TrainingStepWrapper'
+import VasStepWrapper          from './VasStepWrapper'
 
 /**
  * Props:
@@ -79,6 +80,20 @@ export default function StepDispatcher({ node, enrollment, scheduleId, stepIndex
         enrollment={enrollment}
         scheduleId={scheduleId}
         onComplete={onComplete}
+        isSimMode={isSimMode}
+      />
+    )
+  }
+
+  if (category === 'vas') {
+    return (
+      <VasStepWrapper
+        subcategory={subcategory}
+        enrollment={enrollment}
+        stepIndex={stepIndex}
+        totalSteps={totalSteps}
+        onComplete={onComplete}
+        supabaseClient={supabaseClient}
         isSimMode={isSimMode}
       />
     )

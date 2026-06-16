@@ -61,8 +61,12 @@ import ConsentPage   from './pages/ConsentPage'
 import VideoTest     from './pages/dev/VideoTest'
 import AudioAdmin    from './pages/admin/AudioAdmin'
 import AudioUpload   from './pages/admin/AudioUpload'
-import AdminGamesPage from './pages/admin/GamesPage'
-import AudioTest     from './pages/dev/AudioTest'
+import AdminGamesPage    from './pages/admin/GamesPage'
+import VasLibraryPage   from './pages/admin/VasLibraryPage'
+import VasUploadPage    from './pages/admin/VasUploadPage'
+import VasPackageBuilder from './pages/admin/VasPackageBuilder'
+import VasPreviewPage   from './pages/admin/VasPreviewPage'
+import AudioTest        from './pages/dev/AudioTest'
 import ColorMax      from './games/ColorMax/ColorMax'
 
 const queryClient = new QueryClient()
@@ -299,6 +303,10 @@ export default function App() {
               <Route path="/admin/training/new"         element={<TrainingUpload />} />
               <Route path="/admin/compensation"         element={<CompensationPage />} />
               <Route path="/admin/games"               element={<AdminGamesPage />} />
+              <Route path="/admin/vas"                 element={<VasLibraryPage />} />
+              <Route path="/admin/vas/new"             element={<VasUploadPage />} />
+              <Route path="/admin/vas/packages/new"    element={<VasPackageBuilder />} />
+              <Route path="/admin/vas/:slug"           element={<VasPreviewPage />} />
             </Route>
           </Route>
 
