@@ -7,7 +7,7 @@ import { supabase } from '../../lib/supabase'
 
 const VALID_CONDITIONS = ['non_reactivity', 'reappraisal', 'self_compassion']
 const VALID_PHASES     = ['phase1', 'phase2']
-const VALID_STEP_TYPES = ['video', 'text', 'prompt_response', 'closing']
+const VALID_STEP_TYPES = ['video', 'audio', 'text', 'prompt_response', 'closing', 'slider']
 const VALID_OWL_KEYS   = [
   'owl_waving','owl_excited','owl_nonreactivity','owl_reappraisal',
   'owl_selfcompassion','owl_love','owl_happy','owl_crying','owl_still','owl_thinking',
@@ -45,10 +45,19 @@ function validateModule(def) {
         errors.push(`steps[${i}].type must be one of: ${VALID_STEP_TYPES.join(', ')}`)
       if (step.type === 'video' && !step.video_id)
         errors.push(`steps[${i}] (video) missing video_id`)
+      if (step.type === 'audio' && !step.audio_id)
+        errors.push(`steps[${i}] (audio) missing audio_id`)
       if ((step.type === 'text' || step.type === 'closing') && !Array.isArray(step.content))
         errors.push(`steps[${i}] (${step.type}) missing content array`)
       if (step.type === 'prompt_response' && !step.prompt)
         errors.push(`steps[${i}] (prompt_response) missing prompt`)
+      if (step.type === 'slider') {
+        if (!step.prompt)    errors.push(`steps[${i}] (slider) missing prompt`)
+        if (step.min == null) errors.push(`steps[${i}] (slider) missing min`)
+        if (step.max == null) errors.push(`steps[${i}] (slider) missing max`)
+        if (!step.min_label) errors.push(`steps[${i}] (slider) missing min_label`)
+        if (!step.max_label) errors.push(`steps[${i}] (slider) missing max_label`)
+      }
     })
   }
 
@@ -63,9 +72,11 @@ const CONDITION_LABELS = {
 
 const STEP_TYPE_COLORS = {
   video:           { bg: '#e8f0fe', color: '#1a56db' },
+  audio:           { bg: '#fce7f3', color: '#9d174d' },
   text:            { bg: '#f0fdf4', color: '#166534' },
   prompt_response: { bg: '#fef9c3', color: '#854d0e' },
   closing:         { bg: '#f5f3ff', color: '#6d28d9' },
+  slider:          { bg: '#ecfdf5', color: '#065f46' },
 }
 
 // ── TrainingUpload ────────────────────────────────────────────────────────────
@@ -82,6 +93,9 @@ export default function TrainingUpload() {
   const [videoChecks,   setVideoChecks]   = useState(null)  // null=pending, []|[...]=done
   const [checkingVids,  setCheckingVids]  = useState(false)
   const [videoOverride, setVideoOverride] = useState(false)
+  const [audioChecks,   setAudioChecks]   = useState(null)
+  const [checkingAudio, setCheckingAudio] = useState(false)
+  const [audioOverride, setAudioOverride] = useState(false)
 
   // ── Async video existence check whenever a valid module is parsed ──────────
   useEffect(() => {
@@ -111,6 +125,36 @@ export default function TrainingUpload() {
     ).then(results => {
       setVideoChecks(results)
       setCheckingVids(false)
+    })
+  }, [parsed])
+
+  // ── Async audio existence check ───────────────────────────────────────────
+  useEffect(() => {
+    if (!parsed) { setAudioChecks(null); setAudioOverride(false); return }
+
+    const audioSteps = (parsed.steps ?? []).filter(s => s.type === 'audio')
+    if (audioSteps.length === 0) { setAudioChecks([]); return }
+
+    setCheckingAudio(true)
+    setAudioChecks(null)
+    setAudioOverride(false)
+
+    Promise.all(
+      audioSteps.map(async step => {
+        const { data } = await supabase
+          .from('study_audios')
+          .select('id, title')
+          .eq('storage_path', step.audio_id)
+          .maybeSingle()
+        return {
+          audio_id: step.audio_id,
+          found:    !!data,
+          title:    data?.title ?? null,
+        }
+      })
+    ).then(results => {
+      setAudioChecks(results)
+      setCheckingAudio(false)
     })
   }, [parsed])
 
@@ -167,10 +211,15 @@ export default function TrainingUpload() {
 
   // ── Derived readiness ─────────────────────────────────────────────────────
 
-  const isSchemaValid  = parsed && errors.length === 0
-  const videosAllFound = videoChecks !== null && videoChecks.every(c => c.found)
-  const hasMissingVids = videoChecks !== null && videoChecks.some(c => !c.found)
-  const canImport      = isSchemaValid && !checkingVids && (videosAllFound || videoChecks?.length === 0 || videoOverride)
+  const isSchemaValid   = parsed && errors.length === 0
+  const videosAllFound  = videoChecks !== null && videoChecks.every(c => c.found)
+  const hasMissingVids  = videoChecks !== null && videoChecks.some(c => !c.found)
+  const audiosAllFound  = audioChecks !== null && audioChecks.every(c => c.found)
+  const hasMissingAudio = audioChecks !== null && audioChecks.some(c => !c.found)
+  const canImport       = isSchemaValid
+    && !checkingVids && !checkingAudio
+    && (videosAllFound || videoChecks?.length === 0 || videoOverride)
+    && (audiosAllFound || audioChecks?.length === 0 || audioOverride)
 
   return (
     <div style={{ maxWidth: 720 }}>
@@ -230,6 +279,16 @@ export default function TrainingUpload() {
           checking={checkingVids}
           override={videoOverride}
           onOverride={setVideoOverride}
+        />
+      )}
+
+      {/* Audio existence check */}
+      {isSchemaValid && (
+        <AudioCheckPanel
+          checks={audioChecks}
+          checking={checkingAudio}
+          override={audioOverride}
+          onOverride={setAudioOverride}
         />
       )}
 
@@ -321,6 +380,69 @@ function VideoCheckPanel({ checks, checking, override, onOverride }) {
   )
 }
 
+// ── AudioCheckPanel ───────────────────────────────────────────────────────────
+
+function AudioCheckPanel({ checks, checking, override, onOverride }) {
+  if (checks !== null && checks.length === 0) return null  // no audio steps
+
+  const allFound   = checks !== null && checks.every(c => c.found)
+  const hasMissing = checks !== null && checks.some(c => !c.found)
+
+  const borderColor = checking   ? 'var(--bd)'
+                    : allFound   ? '#1EA878'
+                    : hasMissing ? (override ? '#f0c040' : '#e67e22')
+                    : 'var(--bd)'
+
+  const bgColor     = checking   ? 'var(--bgc)'
+                    : allFound   ? '#f0faf5'
+                    : hasMissing ? (override ? '#fffbf0' : '#fff5f0')
+                    : 'var(--bgc)'
+
+  return (
+    <div style={{ background: bgColor, border: `1px solid ${borderColor}`, borderRadius: 12, padding: '14px 16px', margin: '12px 0' }}>
+      <p style={{ fontFamily: 'Space Mono', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 10px', color: allFound ? '#1EA878' : '#8b6000' }}>
+        {checking ? 'Checking audio in library…' : allFound ? '✓ All audio found in library' : 'Audio file check'}
+      </p>
+
+      {checks !== null && checks.map(c => (
+        <div key={c.audio_id} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 8 }}>
+          <span style={{ fontFamily: 'Space Mono', fontSize: 11, color: c.found ? '#1EA878' : '#c0392b', flexShrink: 0, width: 14, textAlign: 'center' }}>
+            {c.found ? '✓' : '✗'}
+          </span>
+          <div style={{ minWidth: 0 }}>
+            <p style={{ fontFamily: 'Space Mono', fontSize: 11, color: 'var(--tx)', margin: '0 0 1px', wordBreak: 'break-all' }}>
+              {c.audio_id}
+            </p>
+            <p style={{ fontFamily: 'DM Sans', fontSize: 11, color: c.found ? 'var(--tx3)' : '#c0392b', margin: 0 }}>
+              {c.found
+                ? `found in audio library — "${c.title}"`
+                : 'not found in audio library — upload via Admin → Audio before delivery'}
+            </p>
+          </div>
+        </div>
+      ))}
+
+      {hasMissing && !override && (
+        <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(0,0,0,0.07)' }}>
+          <p style={{ fontFamily: 'DM Sans', fontSize: 12, color: 'var(--tx2)', margin: '0 0 8px' }}>
+            Upload the missing file{checks.filter(c => !c.found).length > 1 ? 's' : ''} via{' '}
+            <strong>Admin → Audio</strong> before delivering this module.
+          </p>
+          <button onClick={() => onOverride(true)} style={S.overrideBtn}>
+            Import anyway
+          </button>
+        </div>
+      )}
+
+      {hasMissing && override && (
+        <p style={{ fontFamily: 'Space Mono', fontSize: 11, color: '#8b6000', margin: '8px 0 0' }}>
+          ⚠ Override active — import will proceed; upload missing audio before delivery
+        </p>
+      )}
+    </div>
+  )
+}
+
 // ── ModulePreview ─────────────────────────────────────────────────────────────
 
 function ModulePreview({ module }) {
@@ -348,7 +470,7 @@ function ModulePreview({ module }) {
           const col = STEP_TYPE_COLORS[s.type] ?? { bg: '#f0ede8', color: '#5f5e5a' }
           return (
             <span key={i} style={{ background: col.bg, color: col.color, borderRadius: 6, padding: '3px 10px', fontFamily: 'Space Mono', fontSize: 11 }}>
-              {i + 1}. {s.type}{s.video_id ? ` — ${s.video_id}` : ''}
+              {i + 1}. {s.type}{s.video_id ? ` — ${s.video_id}` : s.audio_id ? ` — ${s.audio_id}` : ''}
             </span>
           )
         })}

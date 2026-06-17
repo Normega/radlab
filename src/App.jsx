@@ -66,6 +66,7 @@ import VasLibraryPage   from './pages/admin/VasLibraryPage'
 import VasUploadPage    from './pages/admin/VasUploadPage'
 import VasPackageBuilder from './pages/admin/VasPackageBuilder'
 import VasPreviewPage   from './pages/admin/VasPreviewPage'
+import SliderCreatePage from './pages/admin/SliderCreatePage'
 import AudioTest        from './pages/dev/AudioTest'
 import ColorMax      from './games/ColorMax/ColorMax'
 
@@ -307,6 +308,7 @@ export default function App() {
               <Route path="/admin/vas/new"             element={<VasUploadPage />} />
               <Route path="/admin/vas/packages/new"    element={<VasPackageBuilder />} />
               <Route path="/admin/vas/:slug"           element={<VasPreviewPage />} />
+              <Route path="/admin/sliders/new"         element={<SliderCreatePage />} />
             </Route>
           </Route>
 

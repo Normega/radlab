@@ -46,10 +46,11 @@ export default function InterventionPage({
 }) {
   const screens = buildScreens(module)
 
-  const [screenIndex, setScreenIndex] = useState(0)
-  const [nextEnabled, setNextEnabled]  = useState(() => initialNextEnabled(screens[0], demoMode))
-  const [responses,   setResponses]    = useState({})   // _stepIndex → text
-  const [saving,      setSaving]       = useState(false)
+  const [screenIndex,  setScreenIndex]  = useState(0)
+  const [nextEnabled,  setNextEnabled]  = useState(() => initialNextEnabled(screens[0], demoMode))
+  const [responses,    setResponses]    = useState({})   // _stepIndex → text
+  const [sliderValues, setSliderValues] = useState({})   // _stepIndex → number
+  const [saving,       setSaving]       = useState(false)
 
   const current = screens[screenIndex]
   const isLast  = screenIndex === screens.length - 1
@@ -57,9 +58,19 @@ export default function InterventionPage({
   // Re-evaluate gate whenever screen changes
   useEffect(() => {
     const s = screens[screenIndex]
-    if (s.type === 'video' && !demoMode)   setNextEnabled(false)
-    else if (s.type === 'prompt_response') setNextEnabled((responses[s._stepIndex] ?? '').length > 0)
-    else                                   setNextEnabled(true)
+    if (s.type === 'video' && !demoMode) {
+      setNextEnabled(false)
+    } else if (s.type === 'prompt_response') {
+      setNextEnabled((responses[s._stepIndex] ?? '').length > 0)
+    } else if (s.type === 'slider') {
+      setNextEnabled(true)
+      if (sliderValues[s._stepIndex] === undefined) {
+        const mid = Math.round((s.min + s.max) / 2)
+        setSliderValues(prev => ({ ...prev, [s._stepIndex]: mid }))
+      }
+    } else {
+      setNextEnabled(true)
+    }
   }, [screenIndex]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleResponseChange = useCallback((stepIndex, text) => {
@@ -84,7 +95,25 @@ export default function InterventionPage({
         module_id:      module.module_id,
         study_day:      studyDay,
         response_index: current._stepIndex,
+        block_type:     'prompt_response',
         response_text:  responses[current._stepIndex] ?? '',
+      })
+      setSaving(false)
+    }
+
+    // Save slider value before advancing (always saves, even if untouched)
+    if (current.type === 'slider' && participantId) {
+      setSaving(true)
+      const mid = Math.round((current.min + current.max) / 2)
+      await supabase.from('intervention_responses').insert({
+        participant_id: participantId,
+        day_data_id:    dayDataId   ?? null,
+        schedule_id:    scheduleId  ?? null,
+        module_id:      module.module_id,
+        study_day:      studyDay,
+        response_index: current._stepIndex,
+        block_type:     'slider',
+        response_value: { value: sliderValues[current._stepIndex] ?? mid },
       })
       setSaving(false)
     }
@@ -166,6 +195,13 @@ export default function InterventionPage({
           )}
           {current.type === 'closing' && (
             <ClosingBlock step={current} />
+          )}
+          {current.type === 'slider' && (
+            <SliderBlock
+              step={current}
+              value={sliderValues[current._stepIndex] ?? Math.round((current.min + current.max) / 2)}
+              onChange={v => setSliderValues(prev => ({ ...prev, [current._stepIndex]: v }))}
+            />
           )}
         </div>
 
@@ -271,6 +307,31 @@ function ClosingBlock({ step }) {
       {step.content.map((item, i) => (
         <p key={i} style={S.closingP}>{item.text}</p>
       ))}
+    </div>
+  )
+}
+
+// ── SliderBlock ───────────────────────────────────────────────────────────────
+
+function SliderBlock({ step, value, onChange }) {
+  return (
+    <div>
+      <p style={S.promptLabel}>{step.prompt}</p>
+      <div style={S.sliderWrap}>
+        <input
+          type="range"
+          min={step.min}
+          max={step.max}
+          value={value}
+          onChange={e => onChange(Number(e.target.value))}
+          style={S.bigSlider}
+        />
+        <div style={S.sliderLabels}>
+          <span>{step.min_label}</span>
+          <span style={S.sliderVal}>{value}</span>
+          <span>{step.max_label}</span>
+        </div>
+      </div>
     </div>
   )
 }
@@ -439,6 +500,40 @@ const S = {
   closingP: {
     fontSize: 14, lineHeight: 1.7, color: '#5f5e5a',
     margin: '0 0 12px',
+  },
+
+  // ── Slider block
+  promptLabel: {
+    fontSize: 14, lineHeight: 1.7, color: '#2c2c2a',
+    margin: '0 0 16px', fontFamily: FONT,
+  },
+  sliderWrap: {
+    background: '#faf9f7',
+    border: '1px solid #e8e5e0',
+    borderRadius: 12,
+    padding: '20px 20px 16px',
+  },
+  bigSlider: {
+    width: '100%',
+    height: 8,
+    accentColor: '#639922',
+    cursor: 'pointer',
+    marginBottom: 12,
+    display: 'block',
+  },
+  sliderLabels: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    fontSize: 12,
+    color: '#5f5e5a',
+    fontFamily: FONT,
+  },
+  sliderVal: {
+    fontSize: 22,
+    fontWeight: 700,
+    color: '#639922',
+    fontFamily: FONT,
   },
 
   // ── Footer

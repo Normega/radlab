@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import VasRenderer from '../../components/vas/VasRenderer'
+import { SliderPreview } from './SliderCreatePage'
 
 // ── Data hooks ────────────────────────────────────────────────────────────────
 
@@ -34,13 +35,29 @@ function usePackages() {
   })
 }
 
+function useSliders() {
+  return useQuery({
+    queryKey: ['slider-scales'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('slider_scales')
+        .select('*')
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      return data ?? []
+    },
+  })
+}
+
 // ── VasLibraryPage ────────────────────────────────────────────────────────────
 
 export default function VasLibraryPage() {
   const { data: scales   = [], isLoading: loadingScales }   = useScales()
   const { data: packages = [], isLoading: loadingPackages } = usePackages()
-  const [previewScale, setPreviewScale] = useState(null)   // single vas_scale row
-  const [previewPkg,   setPreviewPkg]   = useState(null)   // { pkg, scales[] }
+  const { data: sliders  = [], isLoading: loadingSliders }  = useSliders()
+  const [previewScale,  setPreviewScale]  = useState(null)   // single vas_scale row
+  const [previewPkg,    setPreviewPkg]    = useState(null)   // { pkg, scales[] }
+  const [previewSlider, setPreviewSlider] = useState(null)   // single slider_scales row
   const [pkgPreviewIdx, setPkgPreviewIdx] = useState(0)
 
   return (
@@ -92,6 +109,24 @@ export default function VasLibraryPage() {
         ))}
       </Section>
 
+      {/* ── Sliders ───────────────────────────────────────────────────── */}
+      <Section
+        title="Sliders"
+        action={<Link to="/admin/sliders/new" style={S.newBtn}>+ New Slider</Link>}
+      >
+        {loadingSliders && <p style={S.muted}>Loading…</p>}
+        {!loadingSliders && sliders.length === 0 && (
+          <p style={S.empty}>No sliders yet. Create your first one.</p>
+        )}
+        {sliders.map(slider => (
+          <SliderRow
+            key={slider.id}
+            slider={slider}
+            onPreview={() => setPreviewSlider(slider)}
+          />
+        ))}
+      </Section>
+
       {/* ── Single scale preview modal ────────────────────────────────── */}
       {previewScale && (
         <Modal onClose={() => setPreviewScale(null)}>
@@ -122,6 +157,15 @@ export default function VasLibraryPage() {
               }}
             />
           )}
+        </Modal>
+      )}
+
+      {/* ── Slider preview modal ──────────────────────────────────────── */}
+      {previewSlider && (
+        <Modal onClose={() => setPreviewSlider(null)}>
+          <div style={{ padding: '24px 20px', background: '#fff', borderRadius: 12 }}>
+            <SliderPreviewModal slider={previewSlider} />
+          </div>
         </Modal>
       )}
     </div>
@@ -251,6 +295,76 @@ function PackageRow({ pkg, scales, onPreview }) {
         </div>
       </div>
     </div>
+  )
+}
+
+// ── Slider row ────────────────────────────────────────────────────────────────
+
+function SliderRow({ slider, onPreview }) {
+  const [confirming, setConfirming] = useState(false)
+  const qc = useQueryClient()
+
+  const del = useMutation({
+    mutationFn: async () => {
+      await supabase.from('activities').delete()
+        .eq('category', 'slider').eq('subcategory', `slider_${slider.slug}`)
+      const { error } = await supabase.from('slider_scales').delete().eq('id', slider.id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['slider-scales'] })
+      setConfirming(false)
+    },
+  })
+
+  const date = new Date(slider.created_at).toLocaleDateString()
+
+  return (
+    <div style={S.row}>
+      <div style={S.rowMain}>
+        <span style={S.chip}>{slider.slug}</span>
+        <span style={S.badge}>{slider.min}–{slider.max}</span>
+      </div>
+      <p style={S.rowQuestion}>{slider.prompt}</p>
+      <p style={{ ...S.rowQuestion, fontSize: 11, color: 'var(--tx3)' }}>
+        {slider.min_label} → {slider.max_label}
+      </p>
+      <div style={S.rowMeta}>
+        <span style={S.metaText}>{date}</span>
+        <div style={S.rowActions}>
+          <button style={S.previewBtn} onClick={onPreview}>▶ Preview</button>
+          {confirming ? (
+            <>
+              <span style={S.confirmMsg}>Delete slider?</span>
+              <button style={S.deleteConfirmBtn} onClick={() => del.mutate()} disabled={del.isPending}>
+                {del.isPending ? 'Deleting…' : 'Yes, delete'}
+              </button>
+              <button style={S.cancelBtn} onClick={() => setConfirming(false)}>Cancel</button>
+            </>
+          ) : (
+            <button style={S.deleteBtn} onClick={() => setConfirming(true)}>Delete</button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── SliderPreviewModal ────────────────────────────────────────────────────────
+
+function SliderPreviewModal({ slider }) {
+  const mid = Math.round((slider.min + slider.max) / 2)
+  const [val, setVal] = useState(mid)
+  return (
+    <SliderPreview
+      prompt={slider.prompt}
+      min={slider.min}
+      max={slider.max}
+      minLabel={slider.min_label}
+      maxLabel={slider.max_label}
+      value={val}
+      onChange={setVal}
+    />
   )
 }
 
