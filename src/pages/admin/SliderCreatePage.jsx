@@ -57,12 +57,13 @@ export default function SliderCreatePage() {
       })
       if (err) throw new Error(err.message)
 
-      await supabase.from('activities').insert({
-        category:    'slider',
+      const { error: actErr } = await supabase.from('activities').insert({
+        category:    'vas',
         subcategory: `slider_${slug.trim()}`,
         label:       `Slider – ${prompt.trim().slice(0, 60)}`,
         description: `${minLabel.trim()} → ${maxLabel.trim()} (${min}–${max})`,
       })
+      if (actErr) console.warn('activities insert:', actErr.message)
 
       navigate('/admin/vas')
     } catch (e) {

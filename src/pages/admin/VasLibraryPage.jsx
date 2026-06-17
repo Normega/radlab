@@ -307,7 +307,7 @@ function SliderRow({ slider, onPreview }) {
   const del = useMutation({
     mutationFn: async () => {
       await supabase.from('activities').delete()
-        .eq('category', 'slider').eq('subcategory', `slider_${slider.slug}`)
+        .eq('category', 'vas').eq('subcategory', `slider_${slider.slug}`)
       const { error } = await supabase.from('slider_scales').delete().eq('id', slider.id)
       if (error) throw error
     },
