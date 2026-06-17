@@ -247,7 +247,9 @@ export default function SessionBuilder() {
 
   // Build the grouped picker: activities + uploaded questionnaires + training modules.
   const grouped = CATEGORY_ORDER.reduce((acc, cat) => {
-    const actItems = activities.filter(a => a.category === cat)
+    const actItems = activities.filter(a =>
+      a.category === cat || (cat === 'vas' && a.category === 'slider')
+    )
     if (cat === 'questionnaire') {
       const uploadedItems = uploadedQuestionnaires.map(q => ({
         _source: 'uploaded', id: q.id, label: q.name, slug: q.slug,
@@ -270,7 +272,7 @@ export default function SessionBuilder() {
     }
     return acc
   }, {})
-  const uncategorized = activities.filter(a => !CATEGORY_ORDER.includes(a.category))
+  const uncategorized = activities.filter(a => !CATEGORY_ORDER.includes(a.category) && a.category !== 'slider')
   if (uncategorized.length) grouped['other'] = uncategorized
 
   const totalMinutes = sequence.reduce((sum, i) => sum + (i.estimated_minutes ?? 0), 0)
