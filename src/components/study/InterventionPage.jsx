@@ -30,7 +30,7 @@ function buildScreens(module) {
 
 function initialNextEnabled(screen, demoMode) {
   if (demoMode) return screen.type !== 'prompt_response'
-  return screen.type !== 'video' && screen.type !== 'prompt_response'
+  return screen.type !== 'video' && screen.type !== 'prompt_response' && screen.type !== 'slider'
 }
 
 // ── InterventionPage ──────────────────────────────────────────────────────────
@@ -46,11 +46,12 @@ export default function InterventionPage({
 }) {
   const screens = buildScreens(module)
 
-  const [screenIndex,  setScreenIndex]  = useState(0)
-  const [nextEnabled,  setNextEnabled]  = useState(() => initialNextEnabled(screens[0], demoMode))
-  const [responses,    setResponses]    = useState({})   // _stepIndex → text
-  const [sliderValues, setSliderValues] = useState({})   // _stepIndex → number
-  const [saving,       setSaving]       = useState(false)
+  const [screenIndex,   setScreenIndex]   = useState(0)
+  const [nextEnabled,   setNextEnabled]   = useState(() => initialNextEnabled(screens[0], demoMode))
+  const [responses,     setResponses]     = useState({})   // _stepIndex → text
+  const [sliderValues,  setSliderValues]  = useState({})   // _stepIndex → number
+  const [sliderTouched, setSliderTouched] = useState({})   // _stepIndex → bool
+  const [saving,        setSaving]        = useState(false)
 
   const current = screens[screenIndex]
   const isLast  = screenIndex === screens.length - 1
@@ -63,11 +64,7 @@ export default function InterventionPage({
     } else if (s.type === 'prompt_response') {
       setNextEnabled((responses[s._stepIndex] ?? '').length > 0)
     } else if (s.type === 'slider') {
-      setNextEnabled(true)
-      if (sliderValues[s._stepIndex] === undefined) {
-        const mid = Math.round((s.min + s.max) / 2)
-        setSliderValues(prev => ({ ...prev, [s._stepIndex]: mid }))
-      }
+      setNextEnabled(!!sliderTouched[s._stepIndex])
     } else {
       setNextEnabled(true)
     }
@@ -200,7 +197,14 @@ export default function InterventionPage({
             <SliderBlock
               step={current}
               value={sliderValues[current._stepIndex] ?? Math.round((current.min + current.max) / 2)}
-              onChange={v => setSliderValues(prev => ({ ...prev, [current._stepIndex]: v }))}
+              touched={!!sliderTouched[current._stepIndex]}
+              onChange={v => {
+                setSliderValues(prev => ({ ...prev, [current._stepIndex]: v }))
+                if (!sliderTouched[current._stepIndex]) {
+                  setSliderTouched(prev => ({ ...prev, [current._stepIndex]: true }))
+                  setNextEnabled(true)
+                }
+              }}
             />
           )}
         </div>
@@ -313,7 +317,7 @@ function ClosingBlock({ step }) {
 
 // ── SliderBlock ───────────────────────────────────────────────────────────────
 
-function SliderBlock({ step, value, onChange }) {
+function SliderBlock({ step, value, touched, onChange }) {
   return (
     <div>
       <p style={S.promptLabel}>{step.prompt}</p>
@@ -324,11 +328,14 @@ function SliderBlock({ step, value, onChange }) {
           max={step.max}
           value={value}
           onChange={e => onChange(Number(e.target.value))}
-          style={S.bigSlider}
+          style={{ ...S.bigSlider, accentColor: touched ? '#639922' : '#c0bdb8' }}
         />
-        <div style={S.sliderLabels}>
+        <div style={{ ...S.sliderLabels, color: touched ? '#5f5e5a' : '#b0ada8' }}>
           <span>{step.min_label}</span>
-          <span style={S.sliderVal}>{value}</span>
+          {touched
+            ? <span style={S.sliderVal}>{value}</span>
+            : <span style={S.sliderValEmpty}>—</span>
+          }
           <span>{step.max_label}</span>
         </div>
       </div>
@@ -533,6 +540,12 @@ const S = {
     fontSize: 22,
     fontWeight: 700,
     color: '#639922',
+    fontFamily: FONT,
+  },
+  sliderValEmpty: {
+    fontSize: 22,
+    fontWeight: 400,
+    color: '#c0bdb8',
     fontFamily: FONT,
   },
 
