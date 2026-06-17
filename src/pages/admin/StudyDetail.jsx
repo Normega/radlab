@@ -20,7 +20,8 @@ function useStudy(id) {
           id, name, created_at, delivery_mode, active,
           consent_required, active_consent_form_id, active_debrief_form_id,
           allow_restart, reminders_enabled, reminder_interval_days, reminder_max,
-          email_subject, email_body
+          email_subject, email_body,
+          allow_external_enrollment, external_enrollment_source, completion_redirect_url
         `)
         .eq('id', id)
         .single()
@@ -172,13 +173,17 @@ export default function StudyDetail() {
       )}
 
       {mode === 'online_single' && (
-        <AnonymousLinkPanel study={study} qc={qc} />
+        <>
+          <AnonymousLinkPanel study={study} qc={qc} />
+          <ExternalEnrollmentPanel study={study} qc={qc} />
+        </>
       )}
 
       {mode === 'online_longitudinal' && (
         <>
           <EmailPrefsCard study={study} />
           <LongitudinalParticipantsPanel study={study} qc={qc} />
+          <ExternalEnrollmentPanel study={study} qc={qc} />
         </>
       )}
 
@@ -716,6 +721,182 @@ function DebriefFormSection({ study, qc }) {
       )}
     </div>
   )
+}
+
+// ─── External enrollment panel ───────────────────────────────────────────────
+
+const SITE_ROOT = import.meta.env.DEV ? window.location.origin : 'https://radlab.zone'
+
+function ExternalEnrollmentPanel({ study, qc }) {
+  const [saving,       setSaving]       = useState(false)
+  const [saveError,    setSaveError]    = useState(null)
+  const [redirectUrl,  setRedirectUrl]  = useState(study?.completion_redirect_url ?? '')
+  const [urlSaving,    setUrlSaving]    = useState(false)
+  const [copiedKey,    setCopiedKey]    = useState(null)
+
+  if (!study) return null
+
+  const enabled = study.allow_external_enrollment ?? false
+  const source  = study.external_enrollment_source ?? null
+
+  async function toggle(val) {
+    setSaving(true); setSaveError(null)
+    const { error } = await supabase
+      .from('studies')
+      .update({ allow_external_enrollment: val })
+      .eq('id', study.id)
+    if (error) setSaveError(error.message)
+    else qc.invalidateQueries({ queryKey: ['study-detail', study.id] })
+    setSaving(false)
+  }
+
+  async function setSource(val) {
+    setSaving(true); setSaveError(null)
+    const { error } = await supabase
+      .from('studies')
+      .update({ external_enrollment_source: val })
+      .eq('id', study.id)
+    if (error) setSaveError(error.message)
+    else qc.invalidateQueries({ queryKey: ['study-detail', study.id] })
+    setSaving(false)
+  }
+
+  async function saveRedirectUrl() {
+    setUrlSaving(true); setSaveError(null)
+    const { error } = await supabase
+      .from('studies')
+      .update({ completion_redirect_url: redirectUrl.trim() || null })
+      .eq('id', study.id)
+    if (error) setSaveError(error.message)
+    else qc.invalidateQueries({ queryKey: ['study-detail', study.id] })
+    setUrlSaving(false)
+  }
+
+  function copyLink(key, text) {
+    navigator.clipboard.writeText(text)
+    setCopiedKey(key)
+    setTimeout(() => setCopiedKey(null), 2000)
+  }
+
+  const sonaLink    = `${SITE_ROOT}/study/join?study_id=${study.id}&id=%survey_code%`
+  const prolificLink = `${SITE_ROOT}/study/join?study_id=${study.id}&PROLIFIC_PID={{%PROLIFIC_PID%}}&STUDY_ID={{%STUDY_ID%}}&SESSION_ID={{%SESSION_ID%}}`
+
+  const showSona    = enabled && (source === 'sona'    || source === 'both')
+  const showProlific = enabled && (source === 'prolific' || source === 'both')
+
+  return (
+    <div style={{ marginTop: 40 }}>
+      <h2 style={S.sectionTitle}>External Enrollment</h2>
+
+      <div style={EE.card}>
+        {/* Enable toggle */}
+        <label style={EE.toggleRow}>
+          <input
+            type="checkbox"
+            checked={enabled}
+            onChange={e => toggle(e.target.checked)}
+            disabled={saving}
+          />
+          <span style={EE.toggleLabel}>Enable external enrollment (SONA / Prolific)</span>
+          {saving && <span style={EE.saving}>Saving…</span>}
+        </label>
+
+        {enabled && (
+          <>
+            {/* Source selector */}
+            <div style={EE.fieldGroup}>
+              <div style={EE.fieldLabel}>Participant source</div>
+              <div style={EE.radioRow}>
+                {['sona', 'prolific', 'both'].map(opt => (
+                  <label key={opt} style={EE.radioLabel}>
+                    <input
+                      type="radio"
+                      name="ext-source"
+                      value={opt}
+                      checked={source === opt}
+                      onChange={() => setSource(opt)}
+                      disabled={saving}
+                    />
+                    <span>{opt.charAt(0).toUpperCase() + opt.slice(1)}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Completion redirect URL */}
+            <div style={EE.fieldGroup}>
+              <div style={EE.fieldLabel}>Completion redirect URL <span style={EE.optional}>(optional)</span></div>
+              <div style={EE.urlRow}>
+                <input
+                  style={EE.urlInput}
+                  type="url"
+                  placeholder="https://app.prolific.com/submissions/complete?cc=XXXXX"
+                  value={redirectUrl}
+                  onChange={e => setRedirectUrl(e.target.value)}
+                />
+                <button
+                  style={{ ...S.btnPrimary, fontSize: 13, padding: '7px 14px', opacity: urlSaving ? 0.7 : 1 }}
+                  onClick={saveRedirectUrl}
+                  disabled={urlSaving}
+                >
+                  {urlSaving ? 'Saving…' : 'Save'}
+                </button>
+              </div>
+              <p style={EE.hint}>Participants are redirected here after completing the session. Leave blank to show the default completion screen.</p>
+            </div>
+
+            {/* Generated links */}
+            {(showSona || showProlific) && (
+              <div style={EE.fieldGroup}>
+                <div style={EE.fieldLabel}>Study links</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {showSona && (
+                    <LinkRow label="SONA" url={sonaLink} copied={copiedKey === 'sona'} onCopy={() => copyLink('sona', sonaLink)} />
+                  )}
+                  {showProlific && (
+                    <LinkRow label="Prolific" url={prolificLink} copied={copiedKey === 'prolific'} onCopy={() => copyLink('prolific', prolificLink)} />
+                  )}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {saveError && <p style={S.errMsg}>{saveError}</p>}
+      </div>
+    </div>
+  )
+}
+
+function LinkRow({ label, url, copied, onCopy }) {
+  return (
+    <div style={EE.linkRow}>
+      <span style={EE.linkLabel}>{label}</span>
+      <input style={EE.linkInput} type="text" readOnly value={url} onFocus={e => e.target.select()} />
+      <button style={EE.copyBtn} onClick={onCopy}>
+        {copied ? 'Copied!' : 'Copy'}
+      </button>
+    </div>
+  )
+}
+
+const EE = {
+  card:        { background: '#fff', border: '1px solid var(--bd)', borderRadius: 12, padding: '20px 22px' },
+  toggleRow:   { display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', userSelect: 'none' },
+  toggleLabel: { fontSize: 14, color: 'var(--tx)', fontFamily: '"DM Sans",system-ui,sans-serif' },
+  saving:      { fontSize: 12, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif' },
+  fieldGroup:  { marginTop: 20, paddingTop: 20, borderTop: '1px solid var(--bd)' },
+  fieldLabel:  { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 },
+  optional:    { textTransform: 'none', color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 11 },
+  radioRow:    { display: 'flex', gap: 20 },
+  radioLabel:  { display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 14, color: 'var(--tx)', fontFamily: '"DM Sans",system-ui,sans-serif' },
+  urlRow:      { display: 'flex', gap: 10 },
+  urlInput:    { flex: 1, fontSize: 13, fontFamily: '"DM Sans",system-ui,sans-serif', border: '1px solid var(--bd)', borderRadius: 8, padding: '7px 12px', color: 'var(--tx)', background: '#fff' },
+  hint:        { fontSize: 12, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif', margin: '6px 0 0' },
+  linkRow:     { display: 'flex', alignItems: 'center', gap: 10 },
+  linkLabel:   { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', width: 56, flexShrink: 0 },
+  linkInput:   { flex: 1, fontSize: 12, fontFamily: '"Space Mono",monospace', border: '1px solid var(--bd)', borderRadius: 7, padding: '6px 10px', color: 'var(--tx2)', background: 'var(--bgc)', cursor: 'text' },
+  copyBtn:     { background: 'none', border: '1px solid var(--bd)', borderRadius: 6, padding: '5px 10px', fontSize: 12, cursor: 'pointer', color: 'var(--pk)', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
 }
 
 // ─── Small components ─────────────────────────────────────────────────────────

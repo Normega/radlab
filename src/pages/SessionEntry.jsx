@@ -88,7 +88,13 @@ export default function SessionEntry() {
       setCurrentIndex(i => i + 1)
     } else {
       await sb.rpc('complete_session_by_token', { p_token: token })
-      setState('session_complete')
+      const redirectUrl = sessionData?.study?.completion_redirect_url
+      if (redirectUrl) {
+        setState('redirecting')
+        setTimeout(() => { window.location.href = redirectUrl }, 2000)
+      } else {
+        setState('session_complete')
+      }
     }
   }
 
@@ -108,6 +114,10 @@ export default function SessionEntry() {
         </StatusCard>
       </FullScreen>
     )
+  }
+
+  if (state === 'redirecting') {
+    return <FullScreen><StatusCard>Session complete — thank you! Redirecting…</StatusCard></FullScreen>
   }
 
   if (state === 'completed' || state === 'session_complete') {

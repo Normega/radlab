@@ -18,6 +18,7 @@ import { supabase, savePondWatchSession, saveEbbFlowSession } from './lib/supaba
 
 import Landing        from './pages/Landing'
 import SessionEntry  from './pages/SessionEntry'
+import StudyJoin     from './pages/StudyJoin'
 import PlatformPage from './pages/PlatformPage'
 import Login        from './pages/Login'
 import Signup       from './pages/Signup'
@@ -267,6 +268,9 @@ export default function App() {
               <ConsentPage session={session} />
             </AuthRoute>
           } />
+
+          {/* External participant enrollment (SONA / Prolific) — no auth guard */}
+          <Route path="/study/join" element={<StudyJoin />} />
 
           {/* Standalone participant link — no nav or auth guard */}
           <Route path="/s/:token" element={<SessionEntry />} />
