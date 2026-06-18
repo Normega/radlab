@@ -55,8 +55,11 @@ function validateModule(def) {
         errors.push(`steps[${i}] (audio) missing audio_id`)
       if ((step.type === 'text' || step.type === 'closing') && !Array.isArray(step.content))
         errors.push(`steps[${i}] (${step.type}) missing content array`)
-      if (step.type === 'closing' && step.owl && !VALID_OWL_KEYS.includes(step.owl))
-        errors.push(`steps[${i}] (closing) owl must be a valid owl key`)
+      if (step.type === 'closing' && step.owl) {
+        const owlKey = step.owl.replace(/\.png$/i, '')
+        if (!VALID_OWL_KEYS.includes(step.owl) && !VALID_OWL_KEYS.includes(owlKey))
+          errors.push(`steps[${i}] (closing) owl must be a valid owl key`)
+      }
       if (step.type === 'prompt_response' && !step.prompt)
         errors.push(`steps[${i}] (prompt_response) missing prompt`)
       if (step.type === 'slider') {
