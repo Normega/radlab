@@ -7,10 +7,16 @@ import { supabase } from '../../lib/supabase'
 
 const VALID_CONDITIONS = ['non_reactivity', 'reappraisal', 'self_compassion']
 const VALID_PHASES     = ['phase1', 'phase2']
-const VALID_STEP_TYPES = ['video', 'audio', 'text', 'prompt_response', 'closing', 'slider']
+const VALID_STEP_TYPES = [
+  'video', 'audio', 'text', 'prompt_response', 'closing', 'slider',
+  'multi_response', 'timer', 'training_response', 'training_response_multi',
+  'word_select', 'thought_rating', 'thought_choice', 'trigger_map',
+  'body_diagram', 'quality_explorer',
+]
 const VALID_OWL_KEYS   = [
   'owl_waving','owl_excited','owl_nonreactivity','owl_reappraisal',
   'owl_selfcompassion','owl_love','owl_happy','owl_crying','owl_still','owl_thinking',
+  'Owl_graduation',
 ]
 
 function validateModule(def) {
@@ -49,14 +55,43 @@ function validateModule(def) {
         errors.push(`steps[${i}] (audio) missing audio_id`)
       if ((step.type === 'text' || step.type === 'closing') && !Array.isArray(step.content))
         errors.push(`steps[${i}] (${step.type}) missing content array`)
+      if (step.type === 'closing' && step.owl && !VALID_OWL_KEYS.includes(step.owl))
+        errors.push(`steps[${i}] (closing) owl must be a valid owl key`)
       if (step.type === 'prompt_response' && !step.prompt)
         errors.push(`steps[${i}] (prompt_response) missing prompt`)
       if (step.type === 'slider') {
-        if (!step.prompt)    errors.push(`steps[${i}] (slider) missing prompt`)
+        if (!step.prompt)     errors.push(`steps[${i}] (slider) missing prompt`)
         if (step.min == null) errors.push(`steps[${i}] (slider) missing min`)
         if (step.max == null) errors.push(`steps[${i}] (slider) missing max`)
-        if (!step.min_label) errors.push(`steps[${i}] (slider) missing min_label`)
-        if (!step.max_label) errors.push(`steps[${i}] (slider) missing max_label`)
+        if (!step.min_label)  errors.push(`steps[${i}] (slider) missing min_label`)
+        if (!step.max_label)  errors.push(`steps[${i}] (slider) missing max_label`)
+      }
+      if (step.type === 'multi_response') {
+        if (!step.prompt)        errors.push(`steps[${i}] (multi_response) missing prompt`)
+        if (step.count == null)  errors.push(`steps[${i}] (multi_response) missing count`)
+      }
+      if (step.type === 'timer') {
+        if (step.duration_seconds == null) errors.push(`steps[${i}] (timer) missing duration_seconds`)
+      }
+      if (step.type === 'training_response' || step.type === 'training_response_multi') {
+        if (!Array.isArray(step.options) || step.options.length === 0)
+          errors.push(`steps[${i}] (${step.type}) missing options array`)
+      }
+      if (step.type === 'word_select') {
+        if (!Array.isArray(step.words) || step.words.length === 0)
+          errors.push(`steps[${i}] (word_select) missing words array`)
+      }
+      if (step.type === 'trigger_map') {
+        if (!Array.isArray(step.categories) || step.categories.length === 0)
+          errors.push(`steps[${i}] (trigger_map) missing categories array`)
+      }
+      if (step.type === 'body_diagram') {
+        if (!Array.isArray(step.hotspots) || step.hotspots.length === 0)
+          errors.push(`steps[${i}] (body_diagram) missing hotspots array`)
+      }
+      if (step.type === 'quality_explorer') {
+        if (!Array.isArray(step.qualities) || step.qualities.length === 0)
+          errors.push(`steps[${i}] (quality_explorer) missing qualities array`)
       }
     })
   }
@@ -71,12 +106,22 @@ const CONDITION_LABELS = {
 }
 
 const STEP_TYPE_COLORS = {
-  video:           { bg: '#e8f0fe', color: '#1a56db' },
-  audio:           { bg: '#fce7f3', color: '#9d174d' },
-  text:            { bg: '#f0fdf4', color: '#166534' },
-  prompt_response: { bg: '#fef9c3', color: '#854d0e' },
-  closing:         { bg: '#f5f3ff', color: '#6d28d9' },
-  slider:          { bg: '#ecfdf5', color: '#065f46' },
+  video:                  { bg: '#e8f0fe', color: '#1a56db' },
+  audio:                  { bg: '#fce7f3', color: '#9d174d' },
+  text:                   { bg: '#f0fdf4', color: '#166534' },
+  prompt_response:        { bg: '#fef9c3', color: '#854d0e' },
+  closing:                { bg: '#f5f3ff', color: '#6d28d9' },
+  slider:                 { bg: '#ecfdf5', color: '#065f46' },
+  multi_response:         { bg: '#fff7ed', color: '#9a3412' },
+  timer:                  { bg: '#f0f9ff', color: '#0369a1' },
+  training_response:      { bg: '#fdf4ff', color: '#7e22ce' },
+  training_response_multi:{ bg: '#fdf2f8', color: '#9d174d' },
+  word_select:            { bg: '#fffbeb', color: '#92400e' },
+  thought_rating:         { bg: '#f0fdf4', color: '#14532d' },
+  thought_choice:         { bg: '#f0fdfa', color: '#134e4a' },
+  trigger_map:            { bg: '#fef2f2', color: '#991b1b' },
+  body_diagram:           { bg: '#f7f7ff', color: '#3730a3' },
+  quality_explorer:       { bg: '#f0fdf4', color: '#065f46' },
 }
 
 // ── TrainingUpload ────────────────────────────────────────────────────────────
