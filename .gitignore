@@ -12,6 +12,14 @@ dist
 dist-ssr
 *.local
 
+# Environment files — never commit real keys (keep .env.example templates)
+.env
+.env.*
+!.env.example
+
+# Local Claude Code config (machine-specific; not for the repo)
+.claude/settings.local.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
