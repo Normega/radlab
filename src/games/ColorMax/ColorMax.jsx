@@ -452,13 +452,7 @@ export default function ColorMax({ session, studyMode = false, userId: userIdPro
         {phase === 'start' && (
           <div className="cm-start">
             <h1 className="cm-start-title">ColorMax</h1>
-            <p className="cm-start-sub">Paint by number — 5 images, 5 minutes</p>
-            <ul className="cm-rules">
-              <li>Color each region using the matching number</li>
-              <li>Switch between images any time</li>
-              <li>Thin brush, thick brush, and eraser available</li>
-              <li>Do as much or as little as you like</li>
-            </ul>
+            <p className="cm-start-sub">A paint by numbers activity! 5 images, 5 minutes. Color each region using the matching number — switch between images any time! The final reveal is entirely in your hands. A detail brush, heavy-fill brush, and a precision eraser will be available to you, and you will be scored on completeness and precision.</p>
             <button
               className="cm-start-btn"
               disabled={starting}

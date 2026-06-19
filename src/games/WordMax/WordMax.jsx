@@ -258,18 +258,13 @@ export default function WordMax({ studyMode = false, userId: userIdProp = null, 
         <div style={S.introCard}>
           <h1 style={S.heading}>WordMax</h1>
           <p style={S.introBody}>
-            You'll see <strong>5 sets of 10 letters</strong>. For each set, type one valid word
-            using only those letters — each letter only as many times as it appears.
+            You will be given <strong>5 sets of 10 letters</strong>. Spell exactly one valid word
+            per set. You will have <strong>5 minutes</strong> in total to complete all sets.
           </p>
           <p style={S.introBody}>
-            Points equal word length. A <strong>5-minute timer</strong> runs across all 5 sets.
-            Spending too long on one set risks running out of time.
+            Tip: Longer words earn higher points! Each guess must be a minimum of 4 letters.
+            Use letters only as often as shown.
           </p>
-          <ul style={S.rules}>
-            <li>Minimum word length: 4 letters</li>
-            <li>One word per set</li>
-            <li>Timer does not pause between sets</li>
-          </ul>
 
           {dictLoading && (
             <p style={S.dictMsg}>Loading dictionary…</p>
