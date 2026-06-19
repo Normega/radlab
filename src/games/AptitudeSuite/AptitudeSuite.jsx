@@ -237,7 +237,7 @@ export default function AptitudeSuite({
             fontSize: '2.5rem',
             fontWeight: '400',
             color: 'var(--tx)',
-            margin: '0 0 1.5rem',
+            margin: '0 0 1.25rem',
           }}>
             The Aptitude Suite
           </h1>
@@ -246,12 +246,59 @@ export default function AptitudeSuite({
             fontSize: '16px',
             lineHeight: '1.65',
             color: 'var(--tx2)',
-            margin: '0 0 2.5rem',
+            margin: '0 0 1.75rem',
+            textAlign: 'left',
           }}>
-            You have 10 minutes to work across three tasks. Each task scores you against
-            other participants — aim for the top 10%. Manage your time: you can switch
-            between tasks freely. Your overall score is the average of your three percentile ranks.
+            You have 8 minutes to work across three tasks. Keep going until the time runs
+            out and manage your time: you can switch between tasks freely. This assessment
+            measures the following skills that distinguish high cognitive performance: verbal
+            fluency, attention to detail, and mental flexibility. Each task scores you against
+            other participants — aim for the top 10%. Your overall score is the average of
+            your three percentile ranks.
           </p>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem', textAlign: 'left' }}>
+            {[
+              {
+                name: 'Unscramble',
+                desc: 'Rearrange a set of mixed letters to guess the correct word. Complete as many as you can for more points.',
+              },
+              {
+                name: 'Word Storm',
+                desc: 'You\'ll be given a category — name as many items from that category as you can think of. There is no limit to how many you can name, as long as you can think of more!',
+              },
+              {
+                name: 'Word Probe',
+                desc: 'Guess a hidden 5-letter word in 6 tries. Tip: fewer guesses means a higher score, but only valid words count as guesses. After each guess, the letters will be coloured to guide your next move: green = correct letter, correct position · yellow = correct letter, wrong position · grey = incorrect letter.',
+              },
+            ].map(({ name, desc }) => (
+              <div key={name} style={{
+                background: 'var(--bg)',
+                border: '1px solid var(--bd)',
+                borderRadius: '10px',
+                padding: '0.85rem 1rem',
+              }}>
+                <div style={{
+                  fontFamily: "'Space Mono', monospace",
+                  fontSize: '11px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.07em',
+                  color: 'var(--pk)',
+                  marginBottom: '0.35rem',
+                }}>
+                  {name}
+                </div>
+                <div style={{
+                  fontFamily: "'DM Sans', sans-serif",
+                  fontSize: '14px',
+                  lineHeight: '1.55',
+                  color: 'var(--tx2)',
+                }}>
+                  {desc}
+                </div>
+              </div>
+            ))}
+          </div>
           <button
             onClick={handleBegin}
             style={{
