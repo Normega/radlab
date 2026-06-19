@@ -780,9 +780,9 @@ function SliderBlock({ step, value, touched, onChange }) {
           style={{ ...S.bigSlider, accentColor: '#639922' }}
         />
         <div style={S.sliderLabels}>
-          <span>{step.min_label}</span>
+          <span style={{ whiteSpace: 'pre-line' }}>{step.min_label}</span>
           <span style={S.sliderVal}>{value}</span>
-          <span>{step.max_label}</span>
+          <span style={{ whiteSpace: 'pre-line', textAlign: 'right' }}>{step.max_label}</span>
         </div>
       </div>
     </div>
