@@ -9,7 +9,7 @@ function makeParticipantClient() {
   return createClient(
     import.meta.env.VITE_SUPABASE_URL,
     import.meta.env.VITE_SUPABASE_ANON_KEY,
-    { auth: { persistSession: false, autoRefreshToken: true } }
+    { auth: { persistSession: false, autoRefreshToken: true, storageKey: 'sb-participant' } }
   )
 }
 
