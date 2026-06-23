@@ -1,8 +1,9 @@
-// v3 — signs in participant via sign_in_with_link edge fn, then renders via StepDispatcher
+// v4 — screener gate added before consent check
 import { useEffect, useState, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { createClient } from '@supabase/supabase-js'
 import StepDispatcher from '../components/study/StepDispatcher'
+import ScreenerPage from '../components/ScreenerPage'
 
 // Dedicated client for participant sessions — never touches the shared lab/public client.
 function makeParticipantClient() {
@@ -21,6 +22,8 @@ export default function SessionEntry() {
   const [sessionData,    setSessionData]    = useState(null)
   const [currentIndex,   setCurrentIndex]   = useState(0)
   const [consentStudyId, setConsentStudyId] = useState(null)
+  const [screenerSpec,   setScreenerSpec]   = useState(null) // { screener, participantId, studyId }
+  const fullDataRef = useRef(null)
   // Isolated Supabase client — never modifies the global lab session.
   const sbRef = useRef(makeParticipantClient())
   const sb    = sbRef.current
@@ -72,14 +75,55 @@ export default function SessionEntry() {
       return
     }
 
+    // Screener gate — runs before consent
+    if (study.screener) {
+      const { data: priorResult } = await sb
+        .from('screener_results')
+        .select('phase1_passed, phase2_passed')
+        .eq('participant_id', link.participant_id)
+        .eq('study_id', link.study_id)
+        .maybeSingle()
+
+      const alreadyPassed = priorResult?.phase1_passed === true && priorResult?.phase2_passed === true
+      const previouslyFailed = priorResult && !alreadyPassed
+
+      if (previouslyFailed) {
+        setState('screener_blocked')
+        return
+      }
+
+      if (!alreadyPassed) {
+        fullDataRef.current = data
+        setScreenerSpec({
+          screener:      study.screener,
+          participantId: link.participant_id,
+          studyId:       link.study_id,
+        })
+        setState('needs_screener')
+        return
+      }
+    }
+
+    proceedAfterScreener(data)
+  }
+
+  function proceedAfterScreener(data) {
+    const { schedule, study, enrollment } = data
     if (study.consent_required && study.active_consent_form_id && !enrollment?.consent_date) {
       setConsentStudyId(schedule.study_id)
       setState('needs_consent')
       return
     }
-
     setSessionData(data)
     setState('running')
+  }
+
+  function handleScreenerPass() {
+    proceedAfterScreener(fullDataRef.current)
+  }
+
+  function handleScreenerFail() {
+    setState('screener_blocked')
   }
 
   async function handleStepComplete() {
@@ -136,6 +180,30 @@ export default function SessionEntry() {
           Your session opens on {d
             ? new Date(d).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })
             : 'a scheduled date'}.
+        </StatusCard>
+      </FullScreen>
+    )
+  }
+
+  if (state === 'needs_screener' && screenerSpec) {
+    return (
+      <div style={{ minHeight: '100vh', background: 'var(--bg, #FCF0F5)', display: 'flex', justifyContent: 'center' }}>
+        <ScreenerPage
+          study={{ id: screenerSpec.studyId, screener: screenerSpec.screener }}
+          participant={{ id: screenerSpec.participantId }}
+          supabaseClient={sb}
+          onPass={handleScreenerPass}
+          onFail={handleScreenerFail}
+        />
+      </div>
+    )
+  }
+
+  if (state === 'screener_blocked') {
+    return (
+      <FullScreen>
+        <StatusCard>
+          Thank you for your interest. Based on a previous eligibility check, this study is not the right fit for you at this time. Please reach out to the research team if you have any questions.
         </StatusCard>
       </FullScreen>
     )
