@@ -33,7 +33,7 @@ const PHASE_META = {
   outcome:      { step: 'Step 4 of 4', prog: 100, title: 'Screening Result',      sub: '' },
 }
 
-export default function ScreenerPage({ study, participant, supabaseClient, onPass }) {
+export default function ScreenerPage({ study, participant, supabaseClient, onPass, onFail, previewMode = false }) {
   const screener = study.screener
 
   const [phase,        setPhase]        = useState('description')
@@ -103,6 +103,7 @@ export default function ScreenerPage({ study, participant, supabaseClient, onPas
   // ── Data persistence ───────────────────────────────────────────────────────
 
   async function saveResult(phase1Passed, phase2Passed, phase2Outcome) {
+    if (previewMode) return
     setSaving(true)
     try {
       await supabaseClient.from('screener_results').upsert(

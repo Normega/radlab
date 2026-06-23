@@ -6,6 +6,7 @@ const NAV_ITEMS = [
   { to: '/admin/sessions',        label: 'Sessions'       },
   { to: '/admin/studies',         label: 'Studies'        },
   { to: '/admin/games',           label: 'Games'          },
+  { to: '/admin/screeners',       label: 'Screeners'      },
   { to: '/admin/questionnaires',  label: 'Questionnaires' },
   { to: '/admin/vas',             label: 'Rating Scales'  },
   { to: '/admin/videos',          label: 'Videos'         },

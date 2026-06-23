@@ -21,7 +21,8 @@ function useStudy(id) {
           consent_required, active_consent_form_id, active_debrief_form_id,
           allow_restart, reminders_enabled, reminder_interval_days, reminder_max,
           email_subject, email_body,
-          allow_external_enrollment, external_enrollment_source, completion_redirect_url
+          allow_external_enrollment, external_enrollment_source, completion_redirect_url,
+          screener_id
         `)
         .eq('id', id)
         .single()
@@ -187,7 +188,8 @@ export default function StudyDetail() {
         </>
       )}
 
-      {/* Consent and debrief forms — all types */}
+      {/* Screener, consent, and debrief — all types */}
+      <ScreenerSection study={study} qc={qc} />
       <ConsentFormSection study={study} qc={qc} />
       <DebriefFormSection study={study} qc={qc} />
     </div>
@@ -475,6 +477,122 @@ function ScheduleView({ studyId, participant, onBack, qc }) {
           </table>
         </div>
       )}
+    </div>
+  )
+}
+
+// ─── Screener section ─────────────────────────────────────────────────────────
+
+function useScreeners() {
+  return useQuery({
+    queryKey: ['screeners'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('screeners').select('id, slug, name').order('created_at')
+      if (error) throw error
+      return data ?? []
+    },
+  })
+}
+
+function ScreenerSection({ study, qc }) {
+  const { data: screeners = [] } = useScreeners()
+  const [selectedId, setSelectedId] = useState(null)
+  const [saving,     setSaving]     = useState(false)
+  const [err,        setErr]        = useState(null)
+
+  const attached  = screeners.find(s => s.id === study?.screener_id)
+  const available = screeners.filter(s => s.id !== study?.screener_id)
+
+  async function attach() {
+    if (!selectedId) return
+    setSaving(true); setErr(null)
+    try {
+      const { data: screener, error: fe } = await supabase
+        .from('screeners').select('id, definition').eq('id', selectedId).single()
+      if (fe) throw fe
+      const { error: ue } = await supabase
+        .from('studies')
+        .update({ screener_id: screener.id, screener: screener.definition })
+        .eq('id', study.id)
+      if (ue) throw ue
+      qc.invalidateQueries({ queryKey: ['study-detail', study.id] })
+      setSelectedId(null)
+    } catch (e) {
+      setErr(e.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function remove() {
+    setSaving(true); setErr(null)
+    try {
+      const { error } = await supabase
+        .from('studies')
+        .update({ screener_id: null, screener: null })
+        .eq('id', study.id)
+      if (error) throw error
+      qc.invalidateQueries({ queryKey: ['study-detail', study.id] })
+    } catch (e) {
+      setErr(e.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div style={{ marginTop: 40 }}>
+      <h2 style={S.sectionTitle}>Screener</h2>
+      <p style={{ fontSize: 13, color: 'var(--tx2)', margin: '4px 0 14px', fontFamily: '"DM Sans",system-ui,sans-serif' }}>
+        Pre-consent eligibility gate shown to participants before the consent form.
+      </p>
+
+      <div style={S.formCard}>
+        {attached ? (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+            <div>
+              <div style={{ fontFamily: '"Space Mono",monospace', fontSize: 10, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Active screener</div>
+              <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--tx)', fontFamily: '"DM Sans",system-ui,sans-serif' }}>{attached.name}</div>
+              <div style={{ fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--pk)', marginTop: 2 }}>{attached.slug}</div>
+            </div>
+            <button
+              style={{ ...S.actionBtn, color: '#c0392b', opacity: saving ? 0.5 : 1 }}
+              onClick={remove}
+              disabled={saving}
+            >
+              {saving ? 'Removing…' : 'Remove'}
+            </button>
+          </div>
+        ) : (
+          <p style={{ fontSize: 13, color: 'var(--tx2)', margin: 0, fontFamily: '"DM Sans",system-ui,sans-serif' }}>
+            No screener attached — participants proceed directly to the consent form.
+          </p>
+        )}
+
+        {screeners.length > 0 && (
+          <div style={{ marginTop: attached ? 18 : 14, paddingTop: attached ? 18 : 0, borderTop: attached ? '1px solid var(--bd)' : 'none', display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+            <select
+              style={{ ...S.input, flex: 1, minWidth: 200 }}
+              value={selectedId ?? ''}
+              onChange={e => setSelectedId(e.target.value || null)}
+            >
+              <option value="">— {attached ? 'Switch to a different screener…' : 'Select a screener…'} —</option>
+              {available.map(s => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+            </select>
+            <button
+              style={{ ...S.btnPrimary, fontSize: 13, padding: '7px 16px', opacity: (!selectedId || saving) ? 0.5 : 1 }}
+              onClick={attach}
+              disabled={!selectedId || saving}
+            >
+              {saving ? 'Saving…' : attached ? 'Switch' : 'Attach'}
+            </button>
+          </div>
+        )}
+
+        {err && <p style={{ ...S.errMsg, marginTop: 10 }}>{err}</p>}
+      </div>
     </div>
   )
 }
