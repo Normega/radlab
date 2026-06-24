@@ -200,6 +200,7 @@ export default function ScreenerPage({ study, participant, supabaseClient, onPas
     if (!gad7Def) return <div style={S.loading}>Loading questionnaire…</div>
     return (
       <QuestionnaireRenderer
+        key="screener-gad7"
         questionnaire={gad7Def}
         partNumber={1}
         totalParts={2}
@@ -213,6 +214,7 @@ export default function ScreenerPage({ study, participant, supabaseClient, onPas
     if (!phq8Def) return <div style={S.loading}>Loading questionnaire…</div>
     return (
       <QuestionnaireRenderer
+        key="screener-phq8"
         questionnaire={phq8Def}
         partNumber={2}
         totalParts={2}
