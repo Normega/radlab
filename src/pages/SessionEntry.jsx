@@ -107,19 +107,41 @@ export default function SessionEntry() {
     proceedAfterScreener(data)
   }
 
-  function proceedAfterScreener(data) {
+  async function proceedAfterScreener(data) {
     const { schedule, study, enrollment } = data
     if (study.consent_required && study.active_consent_form_id && !enrollment?.consent_date) {
       setConsentStudyId(schedule.study_id)
       setState('needs_consent')
       return
     }
+    // Consent confirmed (or not required) — flush any buffered screener responses
+    await flushScreenerDraft(data.link.participant_id, data.link.study_id)
     setSessionData(data)
     setState('running')
   }
 
-  function handleScreenerPass() {
-    proceedAfterScreener(fullDataRef.current)
+  // Write screener questionnaire answers buffered pre-consent into questionnaire_responses.
+  // Called only after consent is confirmed. If no draft exists, this is a no-op.
+  async function flushScreenerDraft(participantId, studyId) {
+    const draftKey = `screener_draft_${studyId}_${participantId}`
+    const raw = sessionStorage.getItem(draftKey)
+    if (!raw) return
+    let draft
+    try { draft = JSON.parse(raw) } catch { sessionStorage.removeItem(draftKey); return }
+    sessionStorage.removeItem(draftKey) // remove before inserting to prevent double-flush on retry
+    for (const q of draft.questionnaires ?? []) {
+      const { error } = await sb.from('questionnaire_responses').insert({
+        user_id:            participantId,
+        questionnaire_slug: q.slug,
+        responses:          q.responses,
+        completed_at:       draft.completedAt,
+      })
+      if (error) console.warn('[Screener] flush error for', q.slug, error.message)
+    }
+  }
+
+  async function handleScreenerPass() {
+    await proceedAfterScreener(fullDataRef.current)
   }
 
   function handleScreenerFail() {
