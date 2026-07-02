@@ -6,7 +6,12 @@ export default function SessionNode({ data, selected }) {
 
   return (
     <div style={{ ...S.node, ...(selected ? S.selected : {}) }}>
-      <Handle type="target" position={Position.Top} style={S.handle} />
+      {/* Horizontal connections */}
+      <Handle id="l" type="target" position={Position.Left}   style={S.handle} />
+      <Handle id="r" type="source" position={Position.Right}  style={S.handle} />
+      {/* Bottom used for wrap-around edge to next timepoint; hidden visually */}
+      <Handle id="b" type="source" position={Position.Bottom} style={{ ...S.handle, opacity: 0 }} />
+      <Handle id="t" type="target" position={Position.Top}    style={{ ...S.handle, opacity: 0 }} />
 
       <div style={S.chip}>● Session</div>
       <div style={S.label}>{data.label || 'Untitled'}</div>
@@ -16,8 +21,6 @@ export default function SessionNode({ data, selected }) {
       <div style={S.meta}>Link expires: {data.link_expires_hours ?? 48}h</div>
 
       {data.isLocked && <div style={S.lockBadge}>locked</div>}
-
-      <Handle type="source" position={Position.Bottom} style={S.handle} />
     </div>
   )
 }

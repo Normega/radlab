@@ -5,7 +5,12 @@ export default function BlockNode({ data, selected }) {
 
   return (
     <div style={{ ...S.node, ...(selected ? S.selected : {}) }}>
-      <Handle type="target" position={Position.Top} style={S.handle} />
+      {/* Horizontal connections */}
+      <Handle id="l" type="target" position={Position.Left}   style={S.handle} />
+      <Handle id="r" type="source" position={Position.Right}  style={S.handle} />
+      {/* Bottom for wrap-around; hidden visually */}
+      <Handle id="b" type="source" position={Position.Bottom} style={{ ...S.handle, opacity: 0 }} />
+      <Handle id="t" type="target" position={Position.Top}    style={{ ...S.handle, opacity: 0 }} />
 
       <div style={S.chip}>▦ Block</div>
       <div style={S.label}>{data.label || 'Untitled Block'}</div>
@@ -52,8 +57,6 @@ export default function BlockNode({ data, selected }) {
       )}
 
       {data.isLocked && <div style={S.lockBadge}>locked</div>}
-
-      <Handle type="source" position={Position.Bottom} style={S.handle} />
     </div>
   )
 }

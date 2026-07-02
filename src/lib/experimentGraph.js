@@ -177,6 +177,38 @@ export function duplicateBlock(graph, blockId) {
   return { nodes: [...graph.nodes, ...newChildNodes, newBlock], edges: newEdges }
 }
 
+// ─── Insertion helpers ───────────────────────────────────────────────────────
+
+/**
+ * Last top-level node in a timepoint's consecutive group.
+ * Returns timepointId itself if no sessions/blocks follow before the next timepoint.
+ */
+export function lastNodeInTimepointGroup(graph, timepointId) {
+  const nodeMap = Object.fromEntries(graph.nodes.map(n => [n.id, n]))
+  const order   = chainOrder(graph)
+  const idx     = order.indexOf(timepointId)
+  if (idx === -1) return timepointId
+  let last = timepointId
+  for (let i = idx + 1; i < order.length; i++) {
+    if (nodeMap[order[i]]?.type === 'timepoint') break
+    last = order[i]
+  }
+  return last
+}
+
+/**
+ * Splice a new node immediately after afterId in the chain.
+ * If nodeData includes an `id` field it is used; otherwise a fresh id is generated.
+ */
+export function insertAfter(graph, afterId, nodeData) {
+  const newNode  = { id: newId(), ...nodeData }
+  const outEdge  = graph.edges.find(e => e.from === afterId)
+  let   newEdges = graph.edges.filter(e => e.from !== afterId)
+  newEdges = [...newEdges, { from: afterId, to: newNode.id }]
+  if (outEdge) newEdges = [...newEdges, { from: newNode.id, to: outEdge.to }]
+  return { nodes: [...graph.nodes, newNode], edges: newEdges }
+}
+
 // ─── Compile to study_sessions (WP4) ─────────────────────────────────────────
 
 /**

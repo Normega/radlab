@@ -6,15 +6,19 @@ export default function TimepointNode({ data, selected }) {
 
   return (
     <div style={{ ...S.node, ...(selected ? S.selected : {}) }}>
-      <Handle type="target" position={Position.Top} style={S.handle} />
+      {/* Vertical spine connections */}
+      <Handle id="t" type="target" position={Position.Top}    style={S.handle} />
+      <Handle id="b" type="source" position={Position.Bottom} style={S.handle} />
+      {/* Horizontal session connections */}
+      <Handle id="r" type="source" position={Position.Right}  style={S.handle} />
+      {/* Left hidden — timepoints don't receive horizontal edges */}
+      <Handle id="l" type="target" position={Position.Left}   style={{ ...S.handle, opacity: 0 }} />
 
       <div style={S.chip}>⬡ Timepoint</div>
       <div style={S.label}>{data.label || 'Untitled'}</div>
       <div style={S.meta}>{dayLabel} · {timeLabel}</div>
 
       {data.isLocked && <div style={S.lockBadge}>locked</div>}
-
-      <Handle type="source" position={Position.Bottom} style={S.handle} />
     </div>
   )
 }

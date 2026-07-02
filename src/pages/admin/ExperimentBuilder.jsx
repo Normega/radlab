@@ -13,6 +13,7 @@ import {
   newId, validate, addNode, updateNode, removeNode,
   addSessionToBlock, removeSessionFromBlock, duplicateBlock,
   chainOrder, blockChildIds, topLevelNodes, toSlots,
+  insertAfter, lastNodeInTimepointGroup,
 } from '../../lib/experimentGraph'
 import TimepointNode    from '../../components/study/builder/nodes/TimepointNode'
 import SessionNode      from '../../components/study/builder/nodes/SessionNode'
@@ -22,25 +23,81 @@ const NODE_TYPES = { timepoint: TimepointNode, session: SessionNode, block: Bloc
 
 // ─── RF conversion helpers ───────────────────────────────────────────────────
 
-const NODE_GAP     = 120
-const BLOCK_CHILD_H = 38
-const BLOCK_HEADER_H = 90
+// Row-per-timepoint layout: timepoints form the left-column spine,
+// sessions/blocks spread horizontally to the right at the same Y.
+const LAYOUT = {
+  TP_X:           0,
+  SESSION_X_START: 290,
+  SESSION_X_GAP:  240,
+  ROW_BASE_H:     150,
+  BLOCK_CHILD_H:   26,
+}
 
 function autoLayout(graph) {
-  const nodeMap  = Object.fromEntries(graph.nodes.map(n => [n.id, n]))
-  const order    = chainOrder(graph)
-  const positions = {}
-  let y = 0
+  const nodeMap = Object.fromEntries(graph.nodes.map(n => [n.id, n]))
+  const order   = chainOrder(graph)
+
+  // Group chain into rows, one per timepoint
+  const rows = []
+  let cur = null
   for (const id of order) {
-    positions[id] = { x: 0, y }
     const node = nodeMap[id]
-    if (node?.type === 'block') {
-      y += BLOCK_HEADER_H + (node.children?.length ?? 0) * BLOCK_CHILD_H + NODE_GAP
-    } else {
-      y += NODE_GAP
+    if (!node) continue
+    if (node.type === 'timepoint') {
+      cur = { timepointId: id, sessions: [] }
+      rows.push(cur)
+    } else if (cur) {
+      cur.sessions.push(id)
     }
   }
+
+  const positions = {}
+  let y = 0
+  for (const row of rows) {
+    positions[row.timepointId] = { x: LAYOUT.TP_X, y }
+    row.sessions.forEach((sid, i) => {
+      positions[sid] = { x: LAYOUT.SESSION_X_START + i * LAYOUT.SESSION_X_GAP, y }
+    })
+    // Extra height for block children so rows don't overlap
+    let blockExtra = 0
+    for (const sid of row.sessions) {
+      const node = nodeMap[sid]
+      if (node?.type === 'block') {
+        blockExtra = Math.max(blockExtra, (node.children?.length ?? 0) * LAYOUT.BLOCK_CHILD_H)
+      }
+    }
+    y += LAYOUT.ROW_BASE_H + blockExtra
+  }
+
   return positions
+}
+
+// Determine insertion point based on current selection:
+//   - timepoint selected → last node in that timepoint's group
+//   - session/block selected → that node itself
+//   - nothing selected → null (append to tail)
+function insertionPoint(graph, selectedId) {
+  if (!selectedId) return null
+  const node = graph.nodes.find(n => n.id === selectedId)
+  if (!node) return null
+  return node.type === 'timepoint' ? lastNodeInTimepointGroup(graph, selectedId) : selectedId
+}
+
+// Day offset of the nearest preceding timepoint in the chain.
+// When afterId is null, returns max existing offset (for tail-append).
+function prevTimepointOffset(graph, afterId) {
+  if (!afterId) {
+    const tps = graph.nodes.filter(n => n.type === 'timepoint')
+    return tps.length ? Math.max(...tps.map(t => t.day_offset ?? 0)) : 0
+  }
+  const nodeMap = Object.fromEntries(graph.nodes.map(n => [n.id, n]))
+  const order   = chainOrder(graph)
+  const idx     = order.indexOf(afterId)
+  for (let i = idx; i >= 0; i--) {
+    const n = nodeMap[order[i]]
+    if (n?.type === 'timepoint') return n.day_offset ?? 0
+  }
+  return 0
 }
 
 function graphToRfNodes(graph, positions, selectedId, sessionTemplates, isLocked, callbacks) {
@@ -70,14 +127,22 @@ function graphToRfNodes(graph, positions, selectedId, sessionTemplates, isLocked
 }
 
 function graphToRfEdges(graph) {
-  return graph.edges.map(e => ({
-    id:     `${e.from}->${e.to}`,
-    source: e.from,
-    target: e.to,
-    type:   'smoothstep',
-    style:  { stroke: '#f068a4', strokeWidth: 2 },
-    markerEnd: { type: 'arrowclosed', color: '#f068a4' },
-  }))
+  const nodeMap = Object.fromEntries(graph.nodes.map(n => [n.id, n]))
+  return graph.edges.map(e => {
+    const toTimepoint = nodeMap[e.to]?.type === 'timepoint'
+    // Edges going TO a timepoint wrap around vertically (source bottom → target top).
+    // All other edges are horizontal (source right → target left).
+    return {
+      id:           `${e.from}->${e.to}`,
+      source:       e.from,
+      target:       e.to,
+      sourceHandle: toTimepoint ? 'b' : 'r',
+      targetHandle: toTimepoint ? 't' : 'l',
+      type:         'smoothstep',
+      style:        { stroke: toTimepoint ? 'var(--pkb, rgba(240,104,164,0.35))' : 'var(--bd, rgba(180,100,140,0.20))', strokeWidth: 2 },
+      markerEnd:    { type: 'arrowclosed', color: toTimepoint ? 'var(--pk, #f068a4)' : 'var(--gy, #abadb0)' },
+    }
+  })
 }
 
 // ─── Compile study_sessions (WP4) ────────────────────────────────────────────
@@ -275,14 +340,17 @@ export default function ExperimentBuilder() {
     load()
   }, [id])
 
-  // Mutate graph (all structural edits go through here)
-  const mutate = useCallback((fn) => {
+  // Mutate graph (all structural edits go through here).
+  // Pass { resetLayout: true } for add/insert/remove — clears manual positions
+  // so the auto-layout always looks correct after structural changes.
+  const mutate = useCallback((fn, { resetLayout = false } = {}) => {
     if (hasEnrollments) return
     setGraph(g => {
       const next = fn(g)
       setValidation(validate(next))
       return next
     })
+    if (resetLayout) setPositions({})
   }, [hasEnrollments])
 
   // Graph mutation callbacks
@@ -314,27 +382,43 @@ export default function ExperimentBuilder() {
   function handleNodeClick(_, rfNode) { setSelectedId(rfNode.id) }
   function handlePaneClick()          { setSelectedId(null) }
 
-  // Toolbar actions
-  function nextDayOffset() {
-    const tps = graph.nodes.filter(n => n.type === 'timepoint')
-    return tps.length ? Math.max(...tps.map(t => t.day_offset)) + 7 : 0
-  }
+  // Toolbar actions — insertion point is context-sensitive based on selectedId:
+  //   session/block selected → insert right after it
+  //   timepoint selected     → session goes at end of that timepoint's group;
+  //                            timepoint goes after the whole group
+  //   nothing selected       → append to end of chain
 
   function handleAddTimepoint() {
-    const offset = nextDayOffset()
-    mutate(g => addNode(g, { type: 'timepoint', day_offset: offset, time_of_day: null, label: `Day ${offset + 1}` }))
+    const nid = newId()
+    mutate(g => {
+      const after  = insertionPoint(g, selectedId)
+      const offset = prevTimepointOffset(g, after) + 7
+      const data   = { id: nid, type: 'timepoint', day_offset: offset, time_of_day: null, label: `Day ${offset + 1}` }
+      return after ? insertAfter(g, after, data) : addNode(g, data)
+    }, { resetLayout: true })
+    setSelectedId(nid)
   }
 
   function handleAddSession() {
-    mutate(g => addNode(g, { type: 'session', session_template_id: null, link_expires_hours: 48, label: 'New Session' }))
+    const nid = newId()
+    mutate(g => {
+      const after = insertionPoint(g, selectedId)
+      const data  = { id: nid, type: 'session', session_template_id: null, link_expires_hours: 48, label: 'New Session' }
+      return after ? insertAfter(g, after, data) : addNode(g, data)
+    }, { resetLayout: true })
+    setSelectedId(nid)
   }
 
   function handleAddBlock() {
+    const nid = newId()
     mutate(g => {
+      const after   = insertionPoint(g, selectedId)
       const childId = newId()
       const withChild = { ...g, nodes: [...g.nodes, { id: childId, type: 'session', session_template_id: null, link_expires_hours: 48, label: 'Session 1' }] }
-      return addNode(withChild, { type: 'block', label: 'New Block', children: [childId] })
-    })
+      const data    = { id: nid, type: 'block', label: 'New Block', children: [childId] }
+      return after ? insertAfter(withChild, after, data) : addNode(withChild, data)
+    }, { resetLayout: true })
+    setSelectedId(nid)
   }
 
   function handleNodeEdit(nodeId, updates) {
@@ -342,7 +426,7 @@ export default function ExperimentBuilder() {
   }
 
   function handleNodeRemove(nodeId) {
-    mutate(g => removeNode(g, nodeId))
+    mutate(g => removeNode(g, nodeId), { resetLayout: true })
     setSelectedId(null)
   }
 
@@ -432,10 +516,25 @@ export default function ExperimentBuilder() {
         {/* Toolbar */}
         {!hasEnrollments && (
           <div style={S.toolbar}>
-            <span style={S.toolbarLabel}>Add to end of chain:</span>
-            <button style={S.toolBtn} onClick={handleAddTimepoint}>⬡ Timepoint</button>
-            <button style={S.toolBtn} onClick={handleAddSession}>● Session</button>
-            <button style={S.toolBtn} onClick={handleAddBlock}>▦ Block</button>
+            {(() => {
+              const selNode = selectedId ? graph.nodes.find(n => n.id === selectedId) : null
+              const isTimepoint = selNode?.type === 'timepoint'
+              const hint = isTimepoint
+                ? `Into "${selNode.label || 'timepoint'}":`
+                : 'Inserting at end:'
+              return (
+                <>
+                  <span style={S.toolbarLabel}>{hint}</span>
+                  <button style={S.toolBtn} onClick={handleAddTimepoint}>⬡ Timepoint</button>
+                  {isTimepoint && (
+                    <>
+                      <button style={S.toolBtn} onClick={handleAddSession}>● Session</button>
+                      <button style={S.toolBtn} onClick={handleAddBlock}>▦ Block</button>
+                    </>
+                  )}
+                </>
+              )
+            })()}
           </div>
         )}
 
