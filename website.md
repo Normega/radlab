@@ -2,9 +2,14 @@
 
 > **Regulatory and Affective Dynamics Lab**  
 > University of Toronto · PI: Professor Norman Farb, PhD  
-> Last updated: 2026-05-29 (BreathBelt §20: Biopac parallel-port triggers implemented — Biopac_Left/Biopac_Right now relay through a local parallel_server.py helper; trigger-device selector moved onto the connect screen; connectBiopac() + sendTestCascade() added; a 1–13 test cascade auto-fires on connect with an RA verify step. Earlier 2026-05-26 update: MLR calibration pipeline replacing percentile approach; fitBestModel — 6 model variants, best by Pearson R; useBeltConnection exposes mlrWeightsRef, filterState3Ref, syncQuality, calibReviewData, beginCalibCollection, redoCalibration, getPacerRadiusFnRef; BeltSyncRing retained for other games; SynchronyBar shown during trials; useStreamingBackup adds parallel File System Access API CSV backup; belt_mlr_migration.sql adds calib_model_label, calib_fit_r, calib_lag_ms to belt_sessions.)
+> Last updated: 2026-07-02 (restructured into Parts I–IV: renumbered sections, restored lost §11/§16 headers, rewrote roadmap as §30, added §22 game stubs, §24 VAS stub; §28 Experiment Builder merged verbatim from commit 7a030c3 (renumbered from 26). Prior update: 2026-05-29 (BreathBelt §20: Biopac parallel-port triggers implemented — Biopac_Left/Biopac_Right now relay through a local parallel_server.py helper; trigger-device selector moved onto the connect screen; connectBiopac() + sendTestCascade() added; a 1–13 test cascade auto-fires on connect with an RA verify step. Earlier 2026-05-26 update: MLR calibration pipeline replacing percentile approach; fitBestModel — 6 model variants, best by Pearson R; useBeltConnection exposes mlrWeightsRef, filterState3Ref, syncQuality, calibReviewData, beginCalibCollection, redoCalibration, getPacerRadiusFnRef; BeltSyncRing retained for other games; SynchronyBar shown during trials; useStreamingBackup adds parallel File System Access API CSV backup; belt_mlr_migration.sql adds calib_model_label, calib_fit_r, calib_lag_ms to belt_sessions.))
 
 ---
+
+
+---
+
+# Part I — Platform Core
 
 ## 1. Platform Overview
 
@@ -257,7 +262,7 @@ One row per trial within a session.
 | `responded` | bool | Did participant respond |
 | `reaction_time_ms` | int | null on no-response trials |
 | `created_at` | timestamptz | DEFAULT NOW() — used for ordering within session |
-| `metrics` | jsonb | Flexible per-game metrics (see §10.2 for Ebb & Flow fields) |
+| `metrics` | jsonb | Flexible per-game metrics (see §15 for Ebb & Flow fields) |
 
 `cumulative_trial_number` is maintained by a `BEFORE INSERT` trigger (`trials_cumulative_trial_number`) that queries `MAX(cumulative_trial_number)` across all trials for the same user and increments by 1. Application code should never set this column — let the trigger handle it.
 
@@ -425,9 +430,238 @@ Space Mono reads small at any given size — prefer `--fs-mono-sm` or above for 
 
 ---
 
-## 10. Games
+## 10. Responsive Design
 
-### 10.1 Pond Watch
+**Core principle**: Minimise friction unless design requires user investment. Never add UI complexity (hamburgers, modals, extra taps) without a clear reason.
+
+**Breakpoints** (standard Tailwind):
+- `sm` 640px — large phone
+- `md` 768px — tablet portrait
+- `lg` 1024px — tablet landscape / small desktop
+- `xl` 1280px — desktop
+
+**Approach**: Tailwind responsive classes for layout (grids, padding, show/hide). `useBreakpoint()` hook only for structural component-level decisions.
+
+**Nav on mobile**:
+- Logged-out: logo + "Join free" button only (About and Log in dropped)
+- Logged-in: logo + "Dashboard" link only
+- No hamburger — not enough nav items to justify the friction
+
+**Game cards on mobile**: illustration stacks above info (Option 1). Uses CSS `order` classes — `order-first` on mobile pulls illustration to top, `md:order-last` returns it to right column on desktop. Border flips from `border-b` (stacked) to `md:border-l` (side-by-side). When there are 4+ games, reconsider switching to compact thumbnail row layout.
+
+**Layout collapse rules**:
+- Hero: `lg:grid-cols-[1fr_min(340px,35%)]` → single column below `lg`
+- Game card: `md:grid-cols-[1fr_200px]` → single column, illustration on top
+- Steps: `md:grid-cols-3` → single column on mobile
+- Tiers: `sm:grid-cols-2 lg:grid-cols-3` → 1 → 2 → 3 columns
+- Dashboard game grid: `md:grid-cols-2` → single column on mobile
+- Section padding: `24px` horizontal on all screen sizes (was 40px desktop only)
+
+**Recommended: Claude Code for implementation, Claude.ai for design**
+
+- Use **Claude.ai** (this chat) for architecture decisions, design mockups, and planning
+- Use **Claude Code** for all file editing, running builds, and git operations — it works directly on the local filesystem with no download/upload friction
+
+**Claude Code setup:**
+```powershell
+npm install -g @anthropic/claude-code
+cd radlab
+claude
+```
+Requires an Anthropic API key from `console.anthropic.com`.
+
+**Git workflow (PowerShell — no `&&`):**
+```powershell
+git add .
+git commit -m "your message"
+git push
+```
+Vercel auto-deploys on every push to `main`.
+
+**When sharing context with a new conversation**, paste in `website.md` — it contains everything needed to get up to speed. Individual changed files can be presented directly from Claude.ai rather than repacking the full tarball.
+
+---
+
+## 11. Deployment
+
+**Hosting**: Vercel  
+**Repo**: GitHub (push from local, Vercel auto-deploys on push to `main`)  
+**SPA routing**: `vercel.json` rewrites all paths to `index.html`
+
+**Environment variables** (set in both `.env.local` and Vercel dashboard):
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+
+**Deploy steps** (one-time):
+1. Push repo to GitHub
+2. Vercel → New Project → Import GitHub repo
+3. Add env vars in Vercel dashboard
+4. Deploy — subsequent pushes to `main` auto-deploy
+
+**Windows note**: Use PowerShell commands one at a time (no `&&` chaining).
+
+---
+
+
+---
+
+## 12. Hub & Lab Pages
+
+> Header restored 2026-07-02; this block previously sat inside §18 without a section header.
+
+
+### Decision
+
+The platform root (`radlab.vercel.app`) is a **hub splash page** with three equal cards linking to:
+1. **Come, See** — the games platform (`/games`)
+2. **UTMaps** — knowledge translation project (external link or `/utmaps` TBD)
+3. **Our Lab** — academic lab pages (`/lab/people`)
+
+Lab pages and games pages share the same Vite/React codebase and Vercel deployment but use separate layouts and nav.
+
+### Hub page (`src/pages/Hub.jsx`)
+
+- Route: `/`
+- No nav links — logo only in header (links back to `/`)
+- Logo: inline the RADlab_Logo.svg paths directly as `<svg>` at two sizes (nav 42×36, hero 66×56). The white fill dissolves into `#FCF0F5`, showing only pink and gray shapes. Do NOT use `RADlab_Logo_light.svg` here.
+- Three equal white cards, all light by default, flip to dark (`#1c1c1e`) on hover
+- Visual reference: `radlab_hub_mockup.html` (generated in claude.ai session 2026-05-04)
+- Sign-out from games must redirect to `/` (hub), not `/games`
+
+### Lab layout (`src/layouts/LabLayout.jsx`)
+
+Wraps all `/lab/*` routes. Renders:
+- Sticky nav: logo (links to `/`) + links: About · People · Research · Publications · Contact
+- Logo: `<img src="/RADlab_Logo_light.svg" height="34" alt="RADlab logo" />`
+- Main content area (no Supabase auth — all public)
+- Footer consistent with hub
+
+### Lab data files
+
+| File | Location | Purpose |
+|---|---|---|
+| `people.js` | `src/data/people.js` | PI, grad students, alumni — edit here to update people page |
+| `publications.js` | `src/data/publications.js` | Annotated bibliography; reverse chrono; `annotation` field nullable |
+
+### Lab pages
+
+| Page | File | Status |
+|---|---|---|
+| About | `src/pages/lab/AboutPage.jsx` | Stub — content TBD |
+| People | `src/pages/lab/PeoplePage.jsx` | Built — reads `people.js`; PI featured, grads grid, alumni collapsible |
+| Research | `src/pages/lab/ResearchPage.jsx` | Stub — content TBD |
+| Publications | `src/pages/lab/PublicationsPage.jsx` | Template built — reads `publications.js`; bold lab authors via `labMemberNames` |
+| Contact | `src/pages/lab/ContactPage.jsx` | Built — address + RA/grad/postdoc joining sections |
+
+### CSS additions for lab pages
+
+Add to `index.css` — copy from comment blocks at bottom of `PeoplePage.jsx` and `ContactPage.jsx`:
+- `.lab-page`, `.lab-section`, `.lab-section__heading` — shared layout
+- `.person-card`, `.person-grid`, `.alumni-toggle` — people page
+- `.contact-address`, `.contact-block`, `.contact-cta` — contact page
+- All font sizes reference guardrail tokens (`--fs-mono-sm`, `--fs-body-sm`, etc.) — never hardcode below 12px
+
+### Photo migration
+
+Photos currently at `radlab.zone/images/people/`. Steps:
+1. Download each from `https://www.radlab.zone/images/people/<filename>`
+2. Place in `public/images/people/<filename>`
+3. Update `photo` paths in `src/data/people.js` to `/images/people/<filename>`
+
+Filenames: `norm2.jpg` `thomas.jpg` `john.jpg` `sandy.jpg` `liliana.jpg` `zoey.jpg` `geissy.png` `phil.jpg` `leanh.jpg` `jordan.png` `kyle.jpg` `katie.jpg` `yiyi.jpg` `jaafar.jpg`
+
+---
+
+
+---
+
+## 13. Avatar System
+
+> Header restored 2026-07-02; content was present but the `## 11` header line had been lost.
+
+### Philosophy
+Every user gets a cartoony humanoid avatar that evolves as they accumulate points. The base avatar (skin + eye color only) is chosen at onboarding. Feature categories unlock at point thresholds, giving users a persistent reason to return and play more games. The avatar appears in the site header and on leaderboards.
+
+### Onboarding guard
+After signup, `App.jsx` checks whether an `avatars` row exists for the user. If not, the user is redirected to `/profile/avatar` before accessing any other screen. This ensures every user has a base avatar before they see the dashboard.
+
+### Navigation flow
+```
+Header avatar circle (36px, always visible when logged in)
+  → click → /profile
+              ├── large avatar preview (160px)
+              ├── display name + role badge
+              ├── points total + progress bar to next unlock
+              ├── unlock tracker (upcoming features, greyed out)
+              ├── activity summary (completed sessions count)
+              └── "Edit Avatar" button → /profile/avatar
+                    → AvatarEditor
+                          └── Save → back to /profile
+```
+
+### Header avatar
+- Renders `<BaseAvatar size={36} />` clipped to a circle in `Nav.jsx`
+- Fetched via React Query key `['avatar', userId]`
+- Falls back to a plain pink circle with the user's initial if no avatar row exists yet
+
+### BaseAvatar component
+**File**: `src/components/Avatar/BaseAvatar.jsx`  
+**Props**: `skinColor` (hex), `eyeColor` (hex), `size` (px, default 200)  
+**Renders**: Pure SVG, no UI chrome. Safe to use at any size — 36px in header, 160px on profile, 40px on leaderboards.
+
+**SVG construction:**
+- `viewBox="0 0 200 185"`
+- Head: `<ellipse cx="100" cy="105" rx="64" ry="68" />`
+- Left sclera: `<circle cx="76" cy="100" r="17" />`; right: `<circle cx="124" cy="100" r="17" />`
+- Left eyelid (upper, skin-colored crescent): `M 60 91 Q 76 94 92 91 A 17 17 0 0 0 60 91 Z`
+- Right eyelid: `M 108 91 Q 124 94 140 91 A 17 17 0 0 0 108 91 Z`
+- The eyelid's bottom edge (Bézier) droops into the eye; its top edge follows the sclera arc — produces a calm, half-lidded expression
+- Mouth: `M 82 145 Q 100 149 118 145` — wide, nearly flat, corners tilt slightly up
+- Eyebrows derived from `darken(skinColor, 18)`; blush from `mix(skinColor, "#FF8FAB", 0.45)`
+- No ears, nose, neck, or body in the base — those are unlock categories
+
+### Color palettes
+**Skin (16 swatches):**
+Human: `#FFEEE8 #FDBCB4 #F5CBA7 #E8B08A #C68642 #8D5524 #4A2912`  
+Fantasy: `#D4B8E0 #A8D8EA #B5EAD7 #FFD6A5 #C9B1D0 #8ECAE6 #95D5B2 #E8C1C1 #BDE0FE`
+
+**Eyes (16 swatches):** Warm Brown `#6B4F3A`, Dark Brown `#3D2B1F`, Hazel `#8B7355`, Sky Blue `#4A90D9`, Deep Blue `#1C5FA0`, Forest `#4A8B5A`, Dark Green `#2D6A4F`, Purple `#7B4FCF`, Amber `#FFBF00`, Red `#CC2200`, Teal `#00897B`, Pink `#F06292`, Steel `#546E7A`, Violet `#8B008B`, Ember `#FF8C00`, Moss `#2E7D32`
+
+### Unlock progression
+| Points | Unlocks |
+|---|---|
+| 0 | Base avatar (skin + eye color) |
+| 50 | Ears (human, cat, fox, rabbit, bear, dog, deer, wolf) |
+| 100 | Nose styles |
+| 150 | Hair type + hair color picker |
+| 200 | Mouth styles |
+| 300 | Auras / glows |
+| 500 | Scars, marks, tattoos |
+
+Species are expressed by mixing ear type + nose type + tail type freely — no species presets.
+
+### AvatarEditor component
+**File**: `src/components/Avatar/AvatarEditor.jsx`  
+- On mount: `SELECT * FROM avatars WHERE user_id = auth.uid()` — pre-populates pickers if row exists
+- On save: upsert into `avatars`; navigate to `/profile` on success
+- Currently shows only skin + eye pickers (base avatar); unlock-gated feature pickers added later
+
+### ProfilePage
+**File**: `src/pages/ProfilePage.jsx`  
+- Large avatar preview with "Edit Avatar" → `/profile/avatar`
+- Display name + role badge from `profiles`
+- Points total + progress bar to next unlock milestone
+- Unlock tracker list (upcoming categories, greyed out with point threshold shown)
+- Activity summary: count of completed `game_sessions`
+
+---
+
+
+---
+
+# Part II — Games
+
+## 14. Pond Watch
 
 **File**: `src/games/PondWatch.jsx`  
 **Paradigm**: Go/No-Go reaction time  
@@ -455,7 +689,7 @@ Space Mono reads small at any given size — prefer `--fs-mono-sm` or above for 
 
 ---
 
-### 10.2 Ebb & Flow
+## 15. Ebb & Flow
 
 **Files**: `src/games/EbbAndFlow/` (see §4 for full structure)  
 **Paradigm**: Interoceptive breath change detection — 4-breath adaptive staircase  
@@ -469,7 +703,7 @@ The term **PSI-AMP** (psionic amplifier) appears on the instruction screen as a 
 **Scientific basis**: Orthogonal manipulation of change *magnitude* (how much the breathing pace shifts) and *salience* (how abruptly vs. gradually the shift is delivered). Enables independent measurement of interoceptive sensitivity, conscious detection, metacognitive accuracy, and subjective arousal. Based on Study 1 data (N=103, 3,192 trials) — see `fourbreathtask.md` for full empirical priors.
 
 **Trial structure**:
-- Warm-up: replaced by First Contact onboarding (see §10.3). Ebb & Flow uses a shortened 4-breath warm-up for returning players who have completed First Contact
+- Warm-up: replaced by First Contact onboarding (see §16). Ebb & Flow uses a shortened 4-breath warm-up for returning players who have completed First Contact
 - After warm-up: `GET_READY` screen — avatar frozen at neutral, text prompt, spacebar or "Begin" button to start
 - Each trial: avatar resets to neutral synchronously then holds 1000ms before breath 1 begins
 - 4 breaths per trial; breath 1 always baseline reference
@@ -581,7 +815,7 @@ Mode buttons shown on session start screen — locked modes greyed out with lock
 
 ---
 
-### 10.3 First Contact / Deeper Contact
+## 16. First Contact / Deeper Contact
 
 **Files**: `src/games/FirstContact/`  
 **Route**: `/games/first-contact`  
@@ -642,271 +876,6 @@ deeper_contact_sessions += 1
 **Aura in Ebb & Flow**: `AvatarBreathPacer.jsx` reads `deeper_contact_last_sync` from profile. If 0, aura invisible. Aura is a fixed ambient effect seeded at session load — does not update during the detection task.
 
 **Status**: Specced. Not yet built. Build spec: `first-contact-spec.md`.
-
-### Philosophy
-Every user gets a cartoony humanoid avatar that evolves as they accumulate points. The base avatar (skin + eye color only) is chosen at onboarding. Feature categories unlock at point thresholds, giving users a persistent reason to return and play more games. The avatar appears in the site header and on leaderboards.
-
-### Onboarding guard
-After signup, `App.jsx` checks whether an `avatars` row exists for the user. If not, the user is redirected to `/profile/avatar` before accessing any other screen. This ensures every user has a base avatar before they see the dashboard.
-
-### Navigation flow
-```
-Header avatar circle (36px, always visible when logged in)
-  → click → /profile
-              ├── large avatar preview (160px)
-              ├── display name + role badge
-              ├── points total + progress bar to next unlock
-              ├── unlock tracker (upcoming features, greyed out)
-              ├── activity summary (completed sessions count)
-              └── "Edit Avatar" button → /profile/avatar
-                    → AvatarEditor
-                          └── Save → back to /profile
-```
-
-### Header avatar
-- Renders `<BaseAvatar size={36} />` clipped to a circle in `Nav.jsx`
-- Fetched via React Query key `['avatar', userId]`
-- Falls back to a plain pink circle with the user's initial if no avatar row exists yet
-
-### BaseAvatar component
-**File**: `src/components/Avatar/BaseAvatar.jsx`  
-**Props**: `skinColor` (hex), `eyeColor` (hex), `size` (px, default 200)  
-**Renders**: Pure SVG, no UI chrome. Safe to use at any size — 36px in header, 160px on profile, 40px on leaderboards.
-
-**SVG construction:**
-- `viewBox="0 0 200 185"`
-- Head: `<ellipse cx="100" cy="105" rx="64" ry="68" />`
-- Left sclera: `<circle cx="76" cy="100" r="17" />`; right: `<circle cx="124" cy="100" r="17" />`
-- Left eyelid (upper, skin-colored crescent): `M 60 91 Q 76 94 92 91 A 17 17 0 0 0 60 91 Z`
-- Right eyelid: `M 108 91 Q 124 94 140 91 A 17 17 0 0 0 108 91 Z`
-- The eyelid's bottom edge (Bézier) droops into the eye; its top edge follows the sclera arc — produces a calm, half-lidded expression
-- Mouth: `M 82 145 Q 100 149 118 145` — wide, nearly flat, corners tilt slightly up
-- Eyebrows derived from `darken(skinColor, 18)`; blush from `mix(skinColor, "#FF8FAB", 0.45)`
-- No ears, nose, neck, or body in the base — those are unlock categories
-
-### Color palettes
-**Skin (16 swatches):**
-Human: `#FFEEE8 #FDBCB4 #F5CBA7 #E8B08A #C68642 #8D5524 #4A2912`  
-Fantasy: `#D4B8E0 #A8D8EA #B5EAD7 #FFD6A5 #C9B1D0 #8ECAE6 #95D5B2 #E8C1C1 #BDE0FE`
-
-**Eyes (16 swatches):** Warm Brown `#6B4F3A`, Dark Brown `#3D2B1F`, Hazel `#8B7355`, Sky Blue `#4A90D9`, Deep Blue `#1C5FA0`, Forest `#4A8B5A`, Dark Green `#2D6A4F`, Purple `#7B4FCF`, Amber `#FFBF00`, Red `#CC2200`, Teal `#00897B`, Pink `#F06292`, Steel `#546E7A`, Violet `#8B008B`, Ember `#FF8C00`, Moss `#2E7D32`
-
-### Unlock progression
-| Points | Unlocks |
-|---|---|
-| 0 | Base avatar (skin + eye color) |
-| 50 | Ears (human, cat, fox, rabbit, bear, dog, deer, wolf) |
-| 100 | Nose styles |
-| 150 | Hair type + hair color picker |
-| 200 | Mouth styles |
-| 300 | Auras / glows |
-| 500 | Scars, marks, tattoos |
-
-Species are expressed by mixing ear type + nose type + tail type freely — no species presets.
-
-### AvatarEditor component
-**File**: `src/components/Avatar/AvatarEditor.jsx`  
-- On mount: `SELECT * FROM avatars WHERE user_id = auth.uid()` — pre-populates pickers if row exists
-- On save: upsert into `avatars`; navigate to `/profile` on success
-- Currently shows only skin + eye pickers (base avatar); unlock-gated feature pickers added later
-
-### ProfilePage
-**File**: `src/pages/ProfilePage.jsx`  
-- Large avatar preview with "Edit Avatar" → `/profile/avatar`
-- Display name + role badge from `profiles`
-- Points total + progress bar to next unlock milestone
-- Unlock tracker list (upcoming categories, greyed out with point threshold shown)
-- Activity summary: count of completed `game_sessions`
-
----
-
-## 12. Deployment
-
-**Hosting**: Vercel  
-**Repo**: GitHub (push from local, Vercel auto-deploys on push to `main`)  
-**SPA routing**: `vercel.json` rewrites all paths to `index.html`
-
-**Environment variables** (set in both `.env.local` and Vercel dashboard):
-- `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_ANON_KEY`
-
-**Deploy steps** (one-time):
-1. Push repo to GitHub
-2. Vercel → New Project → Import GitHub repo
-3. Add env vars in Vercel dashboard
-4. Deploy — subsequent pushes to `main` auto-deploy
-
-**Windows note**: Use PowerShell commands one at a time (no `&&` chaining).
-
----
-
-## 13. Open Next Steps
-
-**Hub + Lab pages (next Claude Code session):**
-- [ ] Create `src/pages/Hub.jsx` — use `radlab_hub_mockup.html` as the visual reference (available in project files or regenerate from claude.ai conversation). Inline the RADlab_Logo.svg paths directly as `<svg>` at two sizes (nav: 42×36, hero: 66×56).
-- [ ] Move `Landing.jsx` route from `/` to `/games` in `App.jsx`
-- [ ] Add `/` → `Hub` route in `App.jsx`
-- [ ] Create `src/layouts/LabLayout.jsx` — wraps `/lab/*` routes with lab nav (logo + About · People · Research · Publications · Contact). Logo links to `/`.
-- [ ] Add `/lab`, `/lab/about`, `/lab/people`, `/lab/research`, `/lab/publications`, `/lab/contact` routes in `App.jsx` using `LabLayout` as wrapper
-- [ ] Create `src/pages/lab/AboutPage.jsx` — stub with placeholder text
-- [ ] Create `src/pages/lab/ResearchPage.jsx` — stub with placeholder text
-- [ ] Create `src/pages/lab/PublicationsPage.jsx` — renders `src/data/publications.js`; reverse chrono; bold lab member names using `labMemberNames` array; annotation shown below citation if non-null
-- [ ] Place downloaded files: `src/data/people.js`, `src/data/publications.js`, `src/pages/lab/PeoplePage.jsx`, `src/pages/lab/ContactPage.jsx`
-- [ ] Add lab page CSS (from comment blocks in PeoplePage.jsx and ContactPage.jsx) to `index.css`
-- [ ] Update `Nav.jsx` — ensure sign-out redirect goes to `/` (hub), not `/games`
-- [ ] Migrate photos: download from `radlab.zone/images/people/` → `public/images/people/`; update photo paths in `src/data/people.js` to `/images/people/filename.jpg`
-
-**Photo migration reference** (current filenames at radlab.zone/images/people/):
-`norm2.jpg`, `thomas.jpg`, `john.jpg`, `sandy.jpg`, `liliana.jpg`, `zoey.jpg`, `geissy.png`, `phil.jpg`, `leanh.jpg`, `jordan.png`, `kyle.jpg`, `katie.jpg`, `yiyi.jpg`
-
-**First Contact / Deeper Contact (next Claude Code session):**
-- [ ] Run SQL: add First Contact columns to `profiles` (see §6)
-- [ ] Build `src/games/FirstContact/` per `first-contact-spec.md`
-- [ ] Add `/games/first-contact` route in `App.jsx`
-- [ ] Add onboarding guard — redirect `/games/ebb-flow` → `/games/first-contact` if not complete
-- [ ] Update `Games.jsx` — conditional First Contact vs Deeper Contact card
-- [ ] Add aura effect to `AvatarBreathPacer.jsx` (see spec §13)
-- [ ] Add `deeper_contact_last_sync` load to Ebb & Flow session start
-
-**Ebb & Flow — remaining:**
-- [ ] Remove temporary `[QUEST]` console.log statements from `useQuestStaircases.js` and `EbbAndFlow.jsx`
-- [ ] Run several more sessions to verify posterior distributions continue narrowing toward threshold
-- [ ] Compute posterior SD from `normalized_posteriors` for convergence check — formula: `sqrt(sum(posterior[i] * (thresh[i] - mean)^2))`
-
-**Farm Joy (next Claude Code session):**
-- [ ] Run SQL: create `farm_joy_trials`, `farm_joy_performance`, `farm_joy_feedback`, `farm_joy_value_history` tables with RLS; add `farm_joy_sessions` and `farm_joy_last_core_values` columns to `profiles` (see §19)
-- [ ] Drop `FarmField.jsx`, `Greenhouse.jsx`, `FarmRow.jsx` from claude.ai outputs into `src/games/FarmJoy/components/`
-- [ ] Place 24 veggie PNGs in `public/images/veggies/` (filenames listed in §19)
-- [ ] Build `src/games/FarmJoy/FarmJoy.jsx` per §19 state machine
-- [ ] Create `src/games/FarmJoy/data/values.js` with the 38 value taxonomy
-- [ ] Create `src/games/FarmJoy/data/veggies.js` with sprite list and value→veggie mapping helper
-- [ ] Build remaining components: `Veggie.jsx`, `PullAnimation.jsx`, `ValueCard.jsx`, `SortBins.jsx`, `FeedbackPrompt.jsx`, `Intro.jsx`, `HarvestSummary.jsx`
-- [ ] Create `src/games/FarmJoy/hooks/useFarmJoySession.js` for Supabase writes
-- [ ] Add `/games/farm-joy` route in `App.jsx`
-- [ ] Update `Games.jsx` with Farm Joy card (tagline and description in §19)
-
-**Ebb & Flow — completed:**
-- [x] Built `src/games/EbbAndFlow/` per `ebb-and-flow-spec.md`
-- [x] `npm install jsquest-plus` (package name on npm is `jsquest-plus` with hyphen)
-- [x] GET_READY screen between warmup and first trial
-- [x] `resetAvatarToNeutral()` — synchronous rAF cancel + setAttribute reset + 1000ms hold
-- [x] Added `/games/ebb-flow` route in `App.jsx`
-- [x] "Games" link in `Nav.jsx`; Ebb & Flow preview card on `Landing.jsx`; `Games.jsx` page
-- [x] Supabase columns for Ebb & Flow added to `profiles`
-- [x] `onSessionComplete` wired — total trials and points persisting across sessions
-- [x] QUEST+ staircase serialization and cross-session restoration confirmed working
-- [x] QUEST+ psychometric function fixed — correct Weibull P(correct) formula, scalar update() call
-- [x] `trials` table: `game_name`, `cumulative_trial_number` (trigger), `created_at` added
-- [x] `SessionFeedback.jsx` — post-10-trial feedback screen with sensitivity arcs, sync chart, change awareness, focus suggestion
-
-**Avatar system:**
-- [ ] Run SQL: create `avatars` + `avatar_unlocks` tables with RLS; add `points` column to `profiles`
-- [ ] Create `src/components/Avatar/BaseAvatar.jsx` (pure SVG component)
-- [ ] Create `src/components/Avatar/AvatarEditor.jsx` (editor UI with Supabase save/load)
-- [ ] Create `src/pages/ProfilePage.jsx`
-- [ ] Update `Nav.jsx` — add avatar circle (36px) linking to `/profile`
-- [ ] Update `App.jsx` — add `/profile` and `/profile/avatar` routes + onboarding guard
-
-**Supabase wiring:**
-- [ ] Create remaining tables (`studies`, `performance`, `questionnaire_responses`)
-- [ ] Enable RLS on all tables, write policies (`user_id = auth.uid()`)
-- [ ] Add `profiles` trigger — auto-create profile row on auth signup
-- [ ] Role-based post-login redirect
-
-**Pond Watch:**
-- [ ] Wire `onSessionComplete` to Supabase inserts
-- [ ] Expose `/games/pond-watch` route and link from Dashboard + Games page
-
-**Pages still to build:**
-- [ ] Onboarding flow — consent + demographics
-- [ ] `/study` — participant portal
-- [ ] `/admin` — lab panel
-- [ ] Dashboard performance charts (Recharts)
-- [ ] Leaderboard page
-
-**Polish:**
-- [ ] Login/Signup responsive padding on mobile
-- [ ] Dashboard responsive account info card
-
----
-
-## 14. Responsive Design
-
-**Core principle**: Minimise friction unless design requires user investment. Never add UI complexity (hamburgers, modals, extra taps) without a clear reason.
-
-**Breakpoints** (standard Tailwind):
-- `sm` 640px — large phone
-- `md` 768px — tablet portrait
-- `lg` 1024px — tablet landscape / small desktop
-- `xl` 1280px — desktop
-
-**Approach**: Tailwind responsive classes for layout (grids, padding, show/hide). `useBreakpoint()` hook only for structural component-level decisions.
-
-**Nav on mobile**:
-- Logged-out: logo + "Join free" button only (About and Log in dropped)
-- Logged-in: logo + "Dashboard" link only
-- No hamburger — not enough nav items to justify the friction
-
-**Game cards on mobile**: illustration stacks above info (Option 1). Uses CSS `order` classes — `order-first` on mobile pulls illustration to top, `md:order-last` returns it to right column on desktop. Border flips from `border-b` (stacked) to `md:border-l` (side-by-side). When there are 4+ games, reconsider switching to compact thumbnail row layout.
-
-**Layout collapse rules**:
-- Hero: `lg:grid-cols-[1fr_min(340px,35%)]` → single column below `lg`
-- Game card: `md:grid-cols-[1fr_200px]` → single column, illustration on top
-- Steps: `md:grid-cols-3` → single column on mobile
-- Tiers: `sm:grid-cols-2 lg:grid-cols-3` → 1 → 2 → 3 columns
-- Dashboard game grid: `md:grid-cols-2` → single column on mobile
-- Section padding: `24px` horizontal on all screen sizes (was 40px desktop only)
-
-**Recommended: Claude Code for implementation, Claude.ai for design**
-
-- Use **Claude.ai** (this chat) for architecture decisions, design mockups, and planning
-- Use **Claude Code** for all file editing, running builds, and git operations — it works directly on the local filesystem with no download/upload friction
-
-**Claude Code setup:**
-```powershell
-npm install -g @anthropic/claude-code
-cd radlab
-claude
-```
-Requires an Anthropic API key from `console.anthropic.com`.
-
-**Git workflow (PowerShell — no `&&`):**
-```powershell
-git add .
-git commit -m "your message"
-git push
-```
-Vercel auto-deploys on every push to `main`.
-
-**When sharing context with a new conversation**, paste in `website.md` — it contains everything needed to get up to speed. Individual changed files can be presented directly from Claude.ai rather than repacking the full tarball.
-
----
-
-## 15. Key Learnings
-
-- Safari/iOS: avoid `@keyframes` with custom properties inside SVGs, `foreignObject`, inline `<style>` in SVG groups. Move animations to document `<head>`. Use `setAttribute` + `requestAnimationFrame` for all SVG animation.
-- Logo: use `RADlab_Logo.svg` (white outline) or `RADlab_Logo_light.svg` (dark outline) — never redraw. White outline sits directly on the pink nav background. Dark outline for any other light surface.
-- `useRef`-based timing is the correct React pattern for RT measurement and breath timing. Never use `useState` for values read inside animation loops or timeouts.
-- SVG attribute names in `setAttribute` must be hyphenated (`stop-color`, `stroke-width`, `flood-color`) — camelCase only works in CSS, not XML attributes. Gradients silently fall back to black if this is wrong.
-- QUEST+ adaptive staircase (jsQuestPlus) for threshold tasks; SDT analysis for go/no-go (Pond Watch).
-- **jsQuestPlus serialization**: save `normalized_posteriors` (not `pdfAll`, not `priors`) and `trial_count` per staircase. Restore by passing `saved.normalized_posteriors` as the `priors` argument to the new jsQuestPlus constructor — this seeds the new instance from the previous session's posterior. jsQuestPlus does not reconstruct `stim_list` on restore (so `stim_list.length` will be 0), but the posterior is correctly restored and `getStimParams()` will return the right next stimulus. Track `trial_count` separately in a `useRef` since jsQuestPlus doesn't restore it.
-- **jsQuestPlus initialization timing**: the staircase hook must wait for the Supabase profile fetch to resolve before deciding whether to restore or initialize fresh. Use a `useEffect` that watches `savedState` and guards on `undefined` (still loading) vs `null` (confirmed no state). Initializing on mount before the fetch completes always produces fresh staircases regardless of saved data.
-- **jsQuestPlus internal property**: trial count is `stim_list?.length` not `trialCount` — check the actual object shape rather than assuming property names.
-- **Trials table schema**: always include `game_name` (indexed text column) and `cumulative_trial_number` (managed by a `BEFORE INSERT` Postgres trigger — never set from application code). Add `created_at TIMESTAMPTZ DEFAULT NOW()` for reliable ordering. The cumulative trigger queries `MAX(cumulative_trial_number)` across all trials joined to the same user via `game_sessions`, increments by 1, and sets it on the new row automatically.
-- **Diagnosing staircase bugs**: if all staircases show identical posteriors after trials, check (1) whether `update()` is being called with the right response index (0/1/2 — never undefined), (2) whether the staircase key lookup is resolving correctly for all four conditions, (3) whether the `update()` call wraps the stimulus in an array (`staircase.update([log10Mag], responseIndex)`). A posterior identical to the prior after N trials means `update()` either wasn't called or received symmetric inputs that cancelled out.
-- Supabase handles auth + DB — no custom backend needed.
-- Windows PowerShell: no `&&` — run commands one at a time.
-- For file updates: present individual changed files rather than repacking the full tarball.
-- Avatar reset before each trial (including warmup start) must be synchronous: cancel `requestAnimationFrame`, call `resetAvatarToNeutral()` via direct `setAttribute` calls, then hold 1000ms via `useRef` timer before restarting the rAF loop. Any state-driven or `useEffect`-driven reset will be too slow — one or more frames will render before the reset takes effect.
-- **jsQuestPlus psychometric function**: `getStimParams()` returns a plain scalar. `update()` takes a plain scalar too — `update(log10Mag, responseIndex)`, NOT `update([log10Mag], responseIndex)`. Wrapping in array causes NaN posterior silently.
-- **jsQuestPlus Weibull P(correct)**: do NOT use `jsQuestPlus.weibull()` — that function returns P(incorrect). Implement P(correct) directly: `(1 - lapse) * (guess + (1 - guess) * (1 - Math.exp(-Math.pow(10, slope * (stim - threshold))))) + lapse * guess`. No `/20` divisor — slope 5.70 is already in the correct units for this parameterisation.
-- **jsQuestPlus `psych_samples` order** must match the psychometric function's argument order exactly: `[thresholdSamples, slopeSamples, guessSamples, lapseSamples]`.
-- **npm package name**: `jsquest-plus` (hyphenated) — not `jsquestplus`. Import as `import jsQuestPlus from 'jsquest-plus'`.
-- **First Contact rolling buffer**: use a fixed-size 4-cycle buffer (`slice(-4)`) for sync scoring. Never use a cumulative mean — early poor cycles would permanently lower the score and make the 80% threshold unreachable.
-- **Aura rings in SVG**: render ring circles *before* the head ellipse in SVG draw order so they appear behind the avatar, not on top of it.
-- Platform theme is **awareness and attunement**, not water specifically. Game names should evoke noticing and change (Pond Watch, Ebb & Flow, First Contact, Deeper Contact) — contemplative and sensory rather than clinical.
-
----
 
 ## 17. Still Water — Mood Check-in Game
 
@@ -1137,67 +1106,6 @@ ALTER TABLE profiles ADD COLUMN face_read_total_score float DEFAULT 0;
 **Description**: Study a face and tap where it lands on the feeling map. Train your eye for emotion.  
 **Illustration concept**: Avatar face emerging from water, wide-eyed, expression ambiguous  
 
----
-
-### Decision
-
-The platform root (`radlab.vercel.app`) is a **hub splash page** with three equal cards linking to:
-1. **Come, See** — the games platform (`/games`)
-2. **UTMaps** — knowledge translation project (external link or `/utmaps` TBD)
-3. **Our Lab** — academic lab pages (`/lab/people`)
-
-Lab pages and games pages share the same Vite/React codebase and Vercel deployment but use separate layouts and nav.
-
-### Hub page (`src/pages/Hub.jsx`)
-
-- Route: `/`
-- No nav links — logo only in header (links back to `/`)
-- Logo: inline the RADlab_Logo.svg paths directly as `<svg>` at two sizes (nav 42×36, hero 66×56). The white fill dissolves into `#FCF0F5`, showing only pink and gray shapes. Do NOT use `RADlab_Logo_light.svg` here.
-- Three equal white cards, all light by default, flip to dark (`#1c1c1e`) on hover
-- Visual reference: `radlab_hub_mockup.html` (generated in claude.ai session 2026-05-04)
-- Sign-out from games must redirect to `/` (hub), not `/games`
-
-### Lab layout (`src/layouts/LabLayout.jsx`)
-
-Wraps all `/lab/*` routes. Renders:
-- Sticky nav: logo (links to `/`) + links: About · People · Research · Publications · Contact
-- Logo: `<img src="/RADlab_Logo_light.svg" height="34" alt="RADlab logo" />`
-- Main content area (no Supabase auth — all public)
-- Footer consistent with hub
-
-### Lab data files
-
-| File | Location | Purpose |
-|---|---|---|
-| `people.js` | `src/data/people.js` | PI, grad students, alumni — edit here to update people page |
-| `publications.js` | `src/data/publications.js` | Annotated bibliography; reverse chrono; `annotation` field nullable |
-
-### Lab pages
-
-| Page | File | Status |
-|---|---|---|
-| About | `src/pages/lab/AboutPage.jsx` | Stub — content TBD |
-| People | `src/pages/lab/PeoplePage.jsx` | Built — reads `people.js`; PI featured, grads grid, alumni collapsible |
-| Research | `src/pages/lab/ResearchPage.jsx` | Stub — content TBD |
-| Publications | `src/pages/lab/PublicationsPage.jsx` | Template built — reads `publications.js`; bold lab authors via `labMemberNames` |
-| Contact | `src/pages/lab/ContactPage.jsx` | Built — address + RA/grad/postdoc joining sections |
-
-### CSS additions for lab pages
-
-Add to `index.css` — copy from comment blocks at bottom of `PeoplePage.jsx` and `ContactPage.jsx`:
-- `.lab-page`, `.lab-section`, `.lab-section__heading` — shared layout
-- `.person-card`, `.person-grid`, `.alumni-toggle` — people page
-- `.contact-address`, `.contact-block`, `.contact-cta` — contact page
-- All font sizes reference guardrail tokens (`--fs-mono-sm`, `--fs-body-sm`, etc.) — never hardcode below 12px
-
-### Photo migration
-
-Photos currently at `radlab.zone/images/people/`. Steps:
-1. Download each from `https://www.radlab.zone/images/people/<filename>`
-2. Place in `public/images/people/<filename>`
-3. Update `photo` paths in `src/data/people.js` to `/images/people/<filename>`
-
-Filenames: `norm2.jpg` `thomas.jpg` `john.jpg` `sandy.jpg` `liliana.jpg` `zoey.jpg` `geissy.png` `phil.jpg` `leanh.jpg` `jordan.png` `kyle.jpg` `katie.jpg` `yiyi.jpg` `jaafar.jpg`
 
 ---
 
@@ -1735,7 +1643,88 @@ All three trigger devices are implemented: AD_BBT (Web Serial) is production-ver
 
 ---
 
-## 21. Questionnaire System
+## 21. WordMax
+
+**Route**: `/games/word-max`
+**Slug**: `word_max`
+**Access**: Protected
+**Duration**: 5 minutes shared across 5 sets
+**Status**: Built
+
+### Overview
+
+Five sets of 10 letters. Submit one valid English word per set using only those letters (each only as many times as it appears). Points = word length. A shared 5-minute countdown runs across all 5 sets — spending too long hunting for a long word risks running out of time for later sets. Core perfectionism measure: dwell time per set vs. time remaining at submission.
+
+**Key behavioural measures**: time spent per set, word length chosen vs. time remaining, whether the participant times out before completing all 5 sets.
+
+### Dictionary
+
+Fetched at game load from `https://raw.githubusercontent.com/dwyl/english-words/master/words_alpha.txt` (370k words). Stored in a module-level `Set` (ref, not state). Start button hidden until fetch resolves. 4–10 letter words only.
+
+### Letter tile behaviour
+
+10 tiles rendered in shuffled display order. Tiles fade to 18% opacity as letters are consumed by the typed input (greedy left-to-right match against display order). Tiles restore on delete. Shuffle re-randomises display order and re-applies fade state.
+
+### Word input
+
+All character keypresses intercepted in `onKeyDown` — uppercase enforced manually with `setSelectionRange` to preserve cursor position. Letters not remaining in the pool (computed from prefix before cursor) are blocked at keydown. Enter submits.
+
+### Schema
+
+Table: `word_max_sessions`
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | uuid | PK |
+| `user_id` | uuid | FK → auth.users |
+| `created_at` | timestamptz | |
+| `completed` | boolean | true if all 5 sets submitted |
+| `timed_out` | boolean | true if timer expired before completion |
+| `total_score` | int | sum of word lengths |
+| `sets_completed` | int | number of sets with a submitted word |
+| `duration_ms` | int | actual elapsed ms at session end |
+| `set_results` | jsonb | array of 5 `{set_id, letters, word, score, dwell_ms}` objects; word/score null for timed-out sets |
+
+Migration: `supabase/migrations/20260609_lexical_sessions.sql` (creates `word_max_sessions`)
+
+### File structure
+
+```
+src/games/LexicalPerfectionism/
+  LexicalPerfectionism.jsx    ← orchestration, timer, Supabase write
+  constants.js                ← SESSION_DURATION_MS, NUM_SETS, MIN_WORD_LENGTH, DICTIONARY_URL, colour thresholds
+  data/
+    letterSets.js             ← 25 verified sets + sampleSets()
+  hooks/
+    useGameTimer.js           ← ref-based countdown; start/stop; onExpire callback
+    useLetterSet.js           ← displayLetters, shuffle, getUsedIndices, remainingPool, isDrawable
+  components/
+    LetterTiles.jsx           ← 10 tiles with opacity fade on use
+    WordInput.jsx             ← controlled uppercase input with keydown letter-blocking
+    SetResults.jsx            ← completed set rows (letters / word / pts)
+    SessionComplete.jsx       ← end screen: score summary + per-set breakdown
+```
+
+---
+
+
+---
+
+## 22. Additional Games (documentation pending)
+
+Built and routed but not yet documented here. Each needs a full section on paradigm, flow, and schema.
+
+- **ColorMax** (`src/games/ColorMax/`) — canvas-based color game (companion to WordMax); paradigm writeup pending.
+- **Drift** (`src/games/Drift/`) — emotion-based game reusing Still Water EMOTIONS and the First Contact ContactAvatar; writeup pending.
+- **Owl Barn** (`src/games/OwlBarn.jsx` + `useOwlAudio.js`) — audio-based game; writeup pending.
+- **Aptitude Suite** (`src/games/AptitudeSuite/`) — multi-task cognitive battery with task-switching metrics; has its own `schema.sql`; writeup pending.
+
+
+---
+
+# Part III — Measurement & Study Infrastructure
+
+## 23. Questionnaire System
 
 ### Overview
 
@@ -1851,266 +1840,19 @@ Integrated. All source files placed. Routes registered inside the existing `Admi
 
 ---
 
-## 22. In-Person Study System
-
-### Overview
-
-Extends the study protocol system with an `in_person` delivery mode. A lab RA enrolls participants on-site using an external participant ID, runs a full session (consent → tasks → questionnaires → debrief) on a single screen, and can resume from the last completed step if the session crashes mid-run. The RA's lab account remains authenticated throughout; participants use a silently-created Supabase profile.
-
-> Note: the `online_longitudinal` delivery mode is being moved off this protocol model onto the node-graph Experiment Builder. See section 26. `in_person` and `online_single` stay here. Parts of this section's schema notes predate the live DB; section 26 records the verified current schema.
 
 ---
 
-### Routes
+## 24. VAS Scale System (documentation pending)
 
-All inside the existing `AdminRoute` / `AdminLayout` guard (`profiles.role === 'lab'` required).
+Visual analogue scale infrastructure is built and in use but undocumented here.
 
-| Route | Component | Purpose |
-|---|---|---|
-| `/admin/studies` | `StudiesPage` | Study list with delivery mode badges |
-| `/admin/studies/new` | `StudyFormPage` | Create study |
-| `/admin/studies/:id/edit` | `StudyFormPage` | Edit study |
-| `/admin/studies/:id` | `StudyDetailPage` | Study detail + enrollment panel |
-| `/admin/studies/:id/session/:enrollmentId` | `StudySessionRunner` | Full-screen session runner |
+- Components: `src/components/vas/`
+- Admin pages: `VasLibraryPage`, `VasUploadPage`, `VasPreviewPage`, `VasPackageBuilder`, `SliderCreatePage`
+- Scales built: confidence, life-satisfaction, task-satisfaction; emoji anchor assets in Supabase storage
+- Authoring workflow: `vas-scale` skill (claude.ai)
 
----
-
-### File structure
-
-```
-src/
-  pages/
-    admin/
-      StudiesPage.jsx           ← study list; In-Person badge on relevant studies
-      StudyDetailPage.jsx       ← study detail + enrollment panel
-      StudyFormPage.jsx         ← create/edit form; fields conditional on delivery_mode
-      StudySessionRunner.jsx    ← full-screen step runner; crash-recoverable
-  components/
-    study/
-      ProtocolBuilder.jsx       ← drag-to-reorder typed step list
-      EnrollmentPanel.jsx       ← enrolled participants list + inline enroll form
-      StepDispatcher.jsx        ← routes protocol step to correct component
-      ConsentStep.jsx           ← consent screen (text from studies.study_consent_text)
-      DebriefStep.jsx           ← debrief screen + session complete handoff
-      QuestionnaireStepWrapper.jsx  ← fetches questionnaire by slug; wraps QuestionnaireRenderer
-      GameStepWrapper.jsx       ← loads game component by slug; passes studyMode props
-  lib/
-    createParticipantAccount.js ← silent Supabase account creation (secondary client)
-inperson_study_migration.sql    ← run manually in Supabase SQL editor
-```
-
----
-
-### Schema
-
-#### `studies` table additions
-
-| Column | Type | Notes |
-|---|---|---|
-| `delivery_mode` | text | `'remote'` \| `'in_person'`; DEFAULT `'remote'` |
-| `study_consent_text` | text | Nullable; consent body shown in ConsentStep |
-
-`protocol` column format changed from bare slug strings to typed step objects:
-```json
-[
-  { "type": "consent",        "slug": "consent" },
-  { "type": "game",           "slug": "breath_belt" },
-  { "type": "questionnaire",  "slug": "panas" },
-  { "type": "debrief",        "slug": "debrief" }
-]
-```
-Valid `type` values: `consent`, `game`, `questionnaire`, `debrief`. Consent and debrief slugs are fixed; game slugs are platform game keys; questionnaire slugs match `questionnaires.slug`.
-
-#### `study_enrollments` table (new)
-
-| Column | Type | Notes |
-|---|---|---|
-| `id` | uuid | PK |
-| `study_id` | uuid | FK → `studies` |
-| `participant_id` | text | RA-provided external ID |
-| `user_id` | uuid | FK → `profiles` (silent account); set after account creation |
-| `enrolled_by` | uuid | FK → `profiles` (lab member who enrolled) |
-| `enrolled_at` | timestamptz | DEFAULT now() |
-| `status` | text | `'enrolled'` \| `'in_progress'` \| `'completed'` \| `'withdrawn'` |
-| `current_step` | int | Index into protocol array; DEFAULT 0 |
-| `completed_steps` | jsonb | Array of `{step, slug, type, completed_at, ...summary}`; DEFAULT `[]` |
-| `started_at` | timestamptz | Set on first step completion |
-| `completed_at` | timestamptz | Set when `current_step >= protocol.length` |
-| `notes` | text | Optional RA notes |
-
-UNIQUE constraint: `(study_id, participant_id)` — prevents double-enrollment.
-
-RLS: lab members full access; participants read own row via `user_id`.
-
----
-
-### Silent participant account creation
-
-`createParticipantAccount(participantId, studyId)` in `src/lib/createParticipantAccount.js`:
-
-- Creates a **secondary** Supabase client (anon key) so the RA's primary session is not disturbed
-- Calls `signUp()` with synthetic email `p-{participantId}@radlab.internal` and a random UUID password (never stored or shown)
-- After signup, updates the auto-created `profiles` row to `role = 'participant'`, `study_id = studyId` via the primary (RA-authenticated) client
-- Returns `{ userId, error }`
-
-Production path: move to a Supabase Edge Function with service role key. For lab use, secondary anon client + RLS is sufficient.
-
-Required RLS policy (in migration):
-```sql
-CREATE POLICY "lab_can_update_participant_profiles" ON profiles
-  FOR UPDATE TO authenticated
-  USING (EXISTS (SELECT 1 FROM profiles p WHERE p.id = auth.uid() AND p.role = 'lab'))
-  WITH CHECK (role = 'participant');
-```
-
----
-
-### Study creation form (`StudyFormPage`)
-
-Fields always shown: study name, delivery mode (radio: Remote / In-Person), protocol builder, active toggle.
-
-Fields hidden when `delivery_mode = 'in_person'`: reminder settings, enrollment email, messaging options.
-
-Protocol validation: warns (does not block) if consent or debrief step is missing.
-
----
-
-### Protocol builder (`ProtocolBuilder`)
-
-Each step is `{ type, slug }`. UI per step: type selector (consent / game / questionnaire / debrief), slug selector (fixed for consent/debrief; game list for game; locked questionnaires dropdown for questionnaire), remove button, reorder controls.
-
-Consent step is visually locked to position 0 if present; debrief to the last position.
-
----
-
-### Enrollment flow (`StudyDetailPage`)
-
-1. RA opens study detail page; sees enrolled participants table with status badges
-2. "Enroll New Participant" opens inline form: enter external participant ID → "Enroll & Begin Session"
-3. `createParticipantAccount()` called → `study_enrollments` row inserted → navigate to session runner
-4. Duplicate participant ID shows inline error (UNIQUE constraint)
-
-Enrollment table actions per row:
-- **Resume** (status `in_progress`): navigate to session runner
-- **Reset to beginning**: `current_step = 0`, `completed_steps = []`, `status = 'enrolled'` — does not delete game/questionnaire data rows
-- **Reset to step N**: set `current_step = N` — choose from completed steps by name
-- **Mark withdrawn**: set `status = 'withdrawn'`
-
-All reset actions require a confirm dialog.
-
----
-
-### Session runner (`StudySessionRunner`)
-
-On mount: fetches enrollment row (including `studies.protocol` and `studies.name`). Reads `current_step` and resumes from there — crash recovery is automatic on any reload of the same URL.
-
-State machine: `LOADING → RUNNING_STEP → SAVING → RUNNING_STEP → ... → COMPLETE`
-
-`SAVING` state (between steps): writes `current_step + 1`, appends to `completed_steps`, updates `status`. Spinner shown to prevent accidental advance.
-
-UI during steps: full-screen, no admin chrome. Thin progress bar at top with step label ("Step 2 of 4 — Questionnaire"). Only persistent UI element visible to participant.
-
-Final screen (after last step): "Session Complete — Participant [ID] has finished all steps." with a "Return to Study" link for the RA.
-
----
-
-### Step types
-
-| Type | Component | Notes |
-|---|---|---|
-| `consent` | `ConsentStep` | Static text from `studies.study_consent_text` (placeholder if null) + checkbox + "I Agree" button |
-| `questionnaire` | `QuestionnaireStepWrapper` | Fetches by slug; wraps `QuestionnaireRenderer`; writes to `questionnaire_responses` on complete |
-| `game` | `GameStepWrapper` | Dispatches to game component by slug; passes `studyMode`, `userId`, `studyId`; receives `onSessionComplete` |
-| `debrief` | `DebriefStep` | Static text (placeholder) + "Complete Session" button |
-
-Currently supported game slugs in `GameStepWrapper`: `breath_belt`.
-
-`BreathBelt.jsx` access guard updated to allow `studyMode === true` in addition to `role === 'lab'`.
-
----
-
-### Migration
-
-Run `inperson_study_migration.sql` in Supabase SQL editor. Includes:
-- `ALTER TABLE studies ADD COLUMN delivery_mode`
-- `ALTER TABLE studies ADD COLUMN study_consent_text`
-- `UPDATE studies SET protocol = '[]'` (resets all existing test data)
-- `CREATE TABLE study_enrollments` with RLS
-- RLS policy for lab members to update participant profiles
-
----
-
-### Status
-
-Specced. Build brief: `INPERSON_STUDY_BRIEF.md`.
-
----
-
-## 23. WordMax
-
-**Route**: `/games/word-max`
-**Slug**: `word_max`
-**Access**: Protected
-**Duration**: 5 minutes shared across 5 sets
-**Status**: Built
-
-### Overview
-
-Five sets of 10 letters. Submit one valid English word per set using only those letters (each only as many times as it appears). Points = word length. A shared 5-minute countdown runs across all 5 sets — spending too long hunting for a long word risks running out of time for later sets. Core perfectionism measure: dwell time per set vs. time remaining at submission.
-
-**Key behavioural measures**: time spent per set, word length chosen vs. time remaining, whether the participant times out before completing all 5 sets.
-
-### Dictionary
-
-Fetched at game load from `https://raw.githubusercontent.com/dwyl/english-words/master/words_alpha.txt` (370k words). Stored in a module-level `Set` (ref, not state). Start button hidden until fetch resolves. 4–10 letter words only.
-
-### Letter tile behaviour
-
-10 tiles rendered in shuffled display order. Tiles fade to 18% opacity as letters are consumed by the typed input (greedy left-to-right match against display order). Tiles restore on delete. Shuffle re-randomises display order and re-applies fade state.
-
-### Word input
-
-All character keypresses intercepted in `onKeyDown` — uppercase enforced manually with `setSelectionRange` to preserve cursor position. Letters not remaining in the pool (computed from prefix before cursor) are blocked at keydown. Enter submits.
-
-### Schema
-
-Table: `word_max_sessions`
-
-| Column | Type | Notes |
-|---|---|---|
-| `id` | uuid | PK |
-| `user_id` | uuid | FK → auth.users |
-| `created_at` | timestamptz | |
-| `completed` | boolean | true if all 5 sets submitted |
-| `timed_out` | boolean | true if timer expired before completion |
-| `total_score` | int | sum of word lengths |
-| `sets_completed` | int | number of sets with a submitted word |
-| `duration_ms` | int | actual elapsed ms at session end |
-| `set_results` | jsonb | array of 5 `{set_id, letters, word, score, dwell_ms}` objects; word/score null for timed-out sets |
-
-Migration: `supabase/migrations/20260609_lexical_sessions.sql` (creates `word_max_sessions`)
-
-### File structure
-
-```
-src/games/LexicalPerfectionism/
-  LexicalPerfectionism.jsx    ← orchestration, timer, Supabase write
-  constants.js                ← SESSION_DURATION_MS, NUM_SETS, MIN_WORD_LENGTH, DICTIONARY_URL, colour thresholds
-  data/
-    letterSets.js             ← 25 verified sets + sampleSets()
-  hooks/
-    useGameTimer.js           ← ref-based countdown; start/stop; onExpire callback
-    useLetterSet.js           ← displayLetters, shuffle, getUsedIndices, remainingPool, isDrawable
-  components/
-    LetterTiles.jsx           ← 10 tiles with opacity fade on use
-    WordInput.jsx             ← controlled uppercase input with keydown letter-blocking
-    SetResults.jsx            ← completed set rows (letters / word / pts)
-    SessionComplete.jsx       ← end screen: score summary + per-set breakdown
-```
-
----
-
-## 24. Video Library (Admin)
+## 25. Video Library (Admin)
 
 **Routes**: `/admin/videos`, `/admin/videos/new`
 **Access**: Lab/admin only
@@ -2190,7 +1932,7 @@ src/components/video/
 
 ---
 
-## 25. Training Module System
+## 26. Training Module System
 
 **Routes**: `/admin/training`, `/admin/training/new`
 **Access**: Lab/admin (importer); participant (renderer via StudySessionRunner)
@@ -2404,10 +2146,205 @@ src/pages/admin/
 - `liliana_day_data.started_at` is stamped on first attempt; `completed_at` remains null for abandoned sessions. Use `completed_at IS NULL` to find drop-offs.
 - `midpoint_completed_at` on `liliana_participants` is a hard gate for Phase 2 — explicit nullable timestamp is cleaner than inferring completion from day data presence.
 - Training videos must be uploaded with the `liliana/` prefix in the object name — Supabase Storage has no real directories; the slash is just part of the path string.
+## 27. In-Person Study System
+
+### Overview
+
+Extends the study protocol system with an `in_person` delivery mode. A lab RA enrolls participants on-site using an external participant ID, runs a full session (consent → tasks → questionnaires → debrief) on a single screen, and can resume from the last completed step if the session crashes mid-run. The RA's lab account remains authenticated throughout; participants use a silently-created Supabase profile.
+
+> Note: the `online_longitudinal` delivery mode has moved off this protocol model onto the node-graph Experiment Builder (§28). `in_person` and `online_single` stay here. Parts of this section's schema notes predate the live DB; §28 records the verified current schema.
 
 ---
 
-## 26. Experiment Builder (Longitudinal Study Redesign)
+### Routes
+
+All inside the existing `AdminRoute` / `AdminLayout` guard (`profiles.role === 'lab'` required).
+
+| Route | Component | Purpose |
+|---|---|---|
+| `/admin/studies` | `StudiesPage` | Study list with delivery mode badges |
+| `/admin/studies/new` | `StudyFormPage` | Create study |
+| `/admin/studies/:id/edit` | `StudyFormPage` | Edit study |
+| `/admin/studies/:id` | `StudyDetailPage` | Study detail + enrollment panel |
+| `/admin/studies/:id/session/:enrollmentId` | `StudySessionRunner` | Full-screen session runner |
+
+---
+
+### File structure
+
+```
+src/
+  pages/
+    admin/
+      StudiesPage.jsx           ← study list; In-Person badge on relevant studies
+      StudyDetailPage.jsx       ← study detail + enrollment panel
+      StudyFormPage.jsx         ← create/edit form; fields conditional on delivery_mode
+      StudySessionRunner.jsx    ← full-screen step runner; crash-recoverable
+  components/
+    study/
+      ProtocolBuilder.jsx       ← drag-to-reorder typed step list
+      EnrollmentPanel.jsx       ← enrolled participants list + inline enroll form
+      StepDispatcher.jsx        ← routes protocol step to correct component
+      ConsentStep.jsx           ← consent screen (text from studies.study_consent_text)
+      DebriefStep.jsx           ← debrief screen + session complete handoff
+      QuestionnaireStepWrapper.jsx  ← fetches questionnaire by slug; wraps QuestionnaireRenderer
+      GameStepWrapper.jsx       ← loads game component by slug; passes studyMode props
+  lib/
+    createParticipantAccount.js ← silent Supabase account creation (secondary client)
+inperson_study_migration.sql    ← run manually in Supabase SQL editor
+```
+
+---
+
+### Schema
+
+#### `studies` table additions
+
+| Column | Type | Notes |
+|---|---|---|
+| `delivery_mode` | text | `'remote'` \| `'in_person'`; DEFAULT `'remote'` |
+| `study_consent_text` | text | Nullable; consent body shown in ConsentStep |
+
+`protocol` column format changed from bare slug strings to typed step objects:
+```json
+[
+  { "type": "consent",        "slug": "consent" },
+  { "type": "game",           "slug": "breath_belt" },
+  { "type": "questionnaire",  "slug": "panas" },
+  { "type": "debrief",        "slug": "debrief" }
+]
+```
+Valid `type` values: `consent`, `game`, `questionnaire`, `debrief`. Consent and debrief slugs are fixed; game slugs are platform game keys; questionnaire slugs match `questionnaires.slug`.
+
+#### `study_enrollments` table (new)
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | uuid | PK |
+| `study_id` | uuid | FK → `studies` |
+| `participant_id` | text | RA-provided external ID |
+| `user_id` | uuid | FK → `profiles` (silent account); set after account creation |
+| `enrolled_by` | uuid | FK → `profiles` (lab member who enrolled) |
+| `enrolled_at` | timestamptz | DEFAULT now() |
+| `status` | text | `'enrolled'` \| `'in_progress'` \| `'completed'` \| `'withdrawn'` |
+| `current_step` | int | Index into protocol array; DEFAULT 0 |
+| `completed_steps` | jsonb | Array of `{step, slug, type, completed_at, ...summary}`; DEFAULT `[]` |
+| `started_at` | timestamptz | Set on first step completion |
+| `completed_at` | timestamptz | Set when `current_step >= protocol.length` |
+| `notes` | text | Optional RA notes |
+
+UNIQUE constraint: `(study_id, participant_id)` — prevents double-enrollment.
+
+RLS: lab members full access; participants read own row via `user_id`.
+
+---
+
+### Silent participant account creation
+
+`createParticipantAccount(participantId, studyId)` in `src/lib/createParticipantAccount.js`:
+
+- Creates a **secondary** Supabase client (anon key) so the RA's primary session is not disturbed
+- Calls `signUp()` with synthetic email `p-{participantId}@radlab.internal` and a random UUID password (never stored or shown)
+- After signup, updates the auto-created `profiles` row to `role = 'participant'`, `study_id = studyId` via the primary (RA-authenticated) client
+- Returns `{ userId, error }`
+
+Production path: move to a Supabase Edge Function with service role key. For lab use, secondary anon client + RLS is sufficient.
+
+Required RLS policy (in migration):
+```sql
+CREATE POLICY "lab_can_update_participant_profiles" ON profiles
+  FOR UPDATE TO authenticated
+  USING (EXISTS (SELECT 1 FROM profiles p WHERE p.id = auth.uid() AND p.role = 'lab'))
+  WITH CHECK (role = 'participant');
+```
+
+---
+
+### Study creation form (`StudyFormPage`)
+
+Fields always shown: study name, delivery mode (radio: Remote / In-Person), protocol builder, active toggle.
+
+Fields hidden when `delivery_mode = 'in_person'`: reminder settings, enrollment email, messaging options.
+
+Protocol validation: warns (does not block) if consent or debrief step is missing.
+
+---
+
+### Protocol builder (`ProtocolBuilder`)
+
+Each step is `{ type, slug }`. UI per step: type selector (consent / game / questionnaire / debrief), slug selector (fixed for consent/debrief; game list for game; locked questionnaires dropdown for questionnaire), remove button, reorder controls.
+
+Consent step is visually locked to position 0 if present; debrief to the last position.
+
+---
+
+### Enrollment flow (`StudyDetailPage`)
+
+1. RA opens study detail page; sees enrolled participants table with status badges
+2. "Enroll New Participant" opens inline form: enter external participant ID → "Enroll & Begin Session"
+3. `createParticipantAccount()` called → `study_enrollments` row inserted → navigate to session runner
+4. Duplicate participant ID shows inline error (UNIQUE constraint)
+
+Enrollment table actions per row:
+- **Resume** (status `in_progress`): navigate to session runner
+- **Reset to beginning**: `current_step = 0`, `completed_steps = []`, `status = 'enrolled'` — does not delete game/questionnaire data rows
+- **Reset to step N**: set `current_step = N` — choose from completed steps by name
+- **Mark withdrawn**: set `status = 'withdrawn'`
+
+All reset actions require a confirm dialog.
+
+---
+
+### Session runner (`StudySessionRunner`)
+
+On mount: fetches enrollment row (including `studies.protocol` and `studies.name`). Reads `current_step` and resumes from there — crash recovery is automatic on any reload of the same URL.
+
+State machine: `LOADING → RUNNING_STEP → SAVING → RUNNING_STEP → ... → COMPLETE`
+
+`SAVING` state (between steps): writes `current_step + 1`, appends to `completed_steps`, updates `status`. Spinner shown to prevent accidental advance.
+
+UI during steps: full-screen, no admin chrome. Thin progress bar at top with step label ("Step 2 of 4 — Questionnaire"). Only persistent UI element visible to participant.
+
+Final screen (after last step): "Session Complete — Participant [ID] has finished all steps." with a "Return to Study" link for the RA.
+
+---
+
+### Step types
+
+| Type | Component | Notes |
+|---|---|---|
+| `consent` | `ConsentStep` | Static text from `studies.study_consent_text` (placeholder if null) + checkbox + "I Agree" button |
+| `questionnaire` | `QuestionnaireStepWrapper` | Fetches by slug; wraps `QuestionnaireRenderer`; writes to `questionnaire_responses` on complete |
+| `game` | `GameStepWrapper` | Dispatches to game component by slug; passes `studyMode`, `userId`, `studyId`; receives `onSessionComplete` |
+| `debrief` | `DebriefStep` | Static text (placeholder) + "Complete Session" button |
+
+Currently supported game slugs in `GameStepWrapper`: `breath_belt`.
+
+`BreathBelt.jsx` access guard updated to allow `studyMode === true` in addition to `role === 'lab'`.
+
+---
+
+### Migration
+
+Run `inperson_study_migration.sql` in Supabase SQL editor. Includes:
+- `ALTER TABLE studies ADD COLUMN delivery_mode`
+- `ALTER TABLE studies ADD COLUMN study_consent_text`
+- `UPDATE studies SET protocol = '[]'` (resets all existing test data)
+- `CREATE TABLE study_enrollments` with RLS
+- RLS policy for lab members to update participant profiles
+
+---
+
+### Status
+
+Specced. Build brief: `INPERSON_STUDY_BRIEF.md`.
+
+---
+
+
+---
+
+## 28. Experiment Builder (Longitudinal Study Redesign)
 
 Replaces the longitudinal study planner with a node-graph design tool for `online_longitudinal` studies. Full detail in `experiment_builder_spec.md` and `phase1_implementation_brief.md`; this section records the durable decisions.
 
@@ -2537,3 +2474,80 @@ WP1–WP4 complete; build passes. Pending:
 - **WP7**: `src/components/study/builder/ContactSettingsModal.jsx`
 - Follow-up: drop `study_protocols` / `protocol_study_days` / `protocol_day_contacts` once WP6 verified
 - P2: randomize + counterbalance + forks + balanced draws
+
+---
+
+# Part IV — Operations
+
+## 29. Key Learnings
+
+- Safari/iOS: avoid `@keyframes` with custom properties inside SVGs, `foreignObject`, inline `<style>` in SVG groups. Move animations to document `<head>`. Use `setAttribute` + `requestAnimationFrame` for all SVG animation.
+- Logo: use `RADlab_Logo.svg` (white outline) or `RADlab_Logo_light.svg` (dark outline) — never redraw. White outline sits directly on the pink nav background. Dark outline for any other light surface.
+- `useRef`-based timing is the correct React pattern for RT measurement and breath timing. Never use `useState` for values read inside animation loops or timeouts.
+- SVG attribute names in `setAttribute` must be hyphenated (`stop-color`, `stroke-width`, `flood-color`) — camelCase only works in CSS, not XML attributes. Gradients silently fall back to black if this is wrong.
+- QUEST+ adaptive staircase (jsQuestPlus) for threshold tasks; SDT analysis for go/no-go (Pond Watch).
+- **jsQuestPlus serialization**: save `normalized_posteriors` (not `pdfAll`, not `priors`) and `trial_count` per staircase. Restore by passing `saved.normalized_posteriors` as the `priors` argument to the new jsQuestPlus constructor — this seeds the new instance from the previous session's posterior. jsQuestPlus does not reconstruct `stim_list` on restore (so `stim_list.length` will be 0), but the posterior is correctly restored and `getStimParams()` will return the right next stimulus. Track `trial_count` separately in a `useRef` since jsQuestPlus doesn't restore it.
+- **jsQuestPlus initialization timing**: the staircase hook must wait for the Supabase profile fetch to resolve before deciding whether to restore or initialize fresh. Use a `useEffect` that watches `savedState` and guards on `undefined` (still loading) vs `null` (confirmed no state). Initializing on mount before the fetch completes always produces fresh staircases regardless of saved data.
+- **jsQuestPlus internal property**: trial count is `stim_list?.length` not `trialCount` — check the actual object shape rather than assuming property names.
+- **Trials table schema**: always include `game_name` (indexed text column) and `cumulative_trial_number` (managed by a `BEFORE INSERT` Postgres trigger — never set from application code). Add `created_at TIMESTAMPTZ DEFAULT NOW()` for reliable ordering. The cumulative trigger queries `MAX(cumulative_trial_number)` across all trials joined to the same user via `game_sessions`, increments by 1, and sets it on the new row automatically.
+- **Diagnosing staircase bugs**: if all staircases show identical posteriors after trials, check (1) whether `update()` is being called with the right response index (0/1/2 — never undefined), (2) whether the staircase key lookup is resolving correctly for all four conditions, (3) whether the `update()` call wraps the stimulus in an array (`staircase.update([log10Mag], responseIndex)`). A posterior identical to the prior after N trials means `update()` either wasn't called or received symmetric inputs that cancelled out.
+- Supabase handles auth + DB — no custom backend needed.
+- Windows PowerShell: no `&&` — run commands one at a time.
+- For file updates: present individual changed files rather than repacking the full tarball.
+- Avatar reset before each trial (including warmup start) must be synchronous: cancel `requestAnimationFrame`, call `resetAvatarToNeutral()` via direct `setAttribute` calls, then hold 1000ms via `useRef` timer before restarting the rAF loop. Any state-driven or `useEffect`-driven reset will be too slow — one or more frames will render before the reset takes effect.
+- **jsQuestPlus psychometric function**: `getStimParams()` returns a plain scalar. `update()` takes a plain scalar too — `update(log10Mag, responseIndex)`, NOT `update([log10Mag], responseIndex)`. Wrapping in array causes NaN posterior silently.
+- **jsQuestPlus Weibull P(correct)**: do NOT use `jsQuestPlus.weibull()` — that function returns P(incorrect). Implement P(correct) directly: `(1 - lapse) * (guess + (1 - guess) * (1 - Math.exp(-Math.pow(10, slope * (stim - threshold))))) + lapse * guess`. No `/20` divisor — slope 5.70 is already in the correct units for this parameterisation.
+- **jsQuestPlus `psych_samples` order** must match the psychometric function's argument order exactly: `[thresholdSamples, slopeSamples, guessSamples, lapseSamples]`.
+- **npm package name**: `jsquest-plus` (hyphenated) — not `jsquestplus`. Import as `import jsQuestPlus from 'jsquest-plus'`.
+- **First Contact rolling buffer**: use a fixed-size 4-cycle buffer (`slice(-4)`) for sync scoring. Never use a cumulative mean — early poor cycles would permanently lower the score and make the 80% threshold unreachable.
+- **Aura rings in SVG**: render ring circles *before* the head ellipse in SVG draw order so they appear behind the avatar, not on top of it.
+- Platform theme is **awareness and attunement**, not water specifically. Game names should evoke noticing and change (Pond Watch, Ebb & Flow, First Contact, Deeper Contact) — contemplative and sensory rather than clinical.
+
+---
+
+---
+
+## 30. Roadmap
+
+> Rewritten 2026-07-02 against actual codebase state; replaces the stale "Open Next Steps." Completed history lives in git.
+
+### P0 — Liliana's longitudinal study (pretest August, recruit September)
+
+- [x] Experiment Builder Phase 1 WP1-WP4: authoring shell, `experimentGraph.js`, migration, `ProtocolBuilder` removed (commit 7a030c3, 2026-06)
+- [ ] Experiment Builder Phase 1 WP5-WP7: materializer + auto-enroll wiring, cron rewrite against live schema, contact settings modal (see §28 Status)
+- [ ] Experiment Builder Phase 2: randomize/counterbalance nodes, seeded draws, React Flow fork UI, materializer extension, completion-hook advance, balance audit view (per `phase2_implementation_brief.md`)
+- [ ] Verify multi-session return flow: `profile_id` continuity across participant links
+- [ ] Verify reminder cron end-to-end: due-check, Resend delivery, opt-out honored
+- [ ] Author Liliana's study in the builder; full dry run via SONA/Prolific link flow including completion redirect
+- [ ] Data export check for all her measures
+- [ ] August: pilot pass and fix list; September: recruitment live, support mode
+
+### P1 — Onboarding v2 + Wellness Buddy integration
+
+- [ ] Consent flow, minimal terms of service, and demographics for public-tier users
+- [ ] Login mood check-in: brief, playful avatar greeting on each login (current avatar system; candidate: lightweight Still Water variant). Default on; skippable.
+- [ ] Opt-in contact mechanism for public users
+- [ ] Port Wellness Buddy concepts (daily check-in framing, streak/continuity ideas) into the platform; the old CRA/Firebase avatar system is not migrated
+
+### P2 — Dashboard wiring
+
+- [ ] Audit which games write to `game_sessions`/`trials`/`performance` (Pond Watch `onSessionComplete` still unwired)
+- [ ] Per-game stat cards + Recharts trend charts on Dashboard
+- [ ] Leaderboard page (public tier)
+
+### P3 — Sense Foraging Foundations course (late summer)
+
+- [ ] Curriculum development first; delivery as a self-paced study via Training Modules (§26) + Experiment Builder (§28), with games interleaved as practice
+
+### P4 — Classroom dashboard adoption
+
+- [ ] Decide after course design settles: link out as-is / port to Supabase / API sync. Deferred.
+
+### Housekeeping
+
+- [ ] Rewrite `README.md` (still Vite template boilerplate); repo About URL still points to radlab.vercel.app
+- [ ] Remove remaining `[QUEST]` console.logs (4 in EbbAndFlow)
+- [ ] Document ColorMax, Drift, Owl Barn, Aptitude Suite (stubs at §22); document VAS system (§24)
+- [ ] Refresh §7 route table (`/study`, `/admin` marked "future" but role-based redirect and admin pages exist)
+- [ ] Login/Signup mobile padding; Dashboard account card responsiveness
+- [ ] BreathBelt: verify LabChart comment mapping for code 13
