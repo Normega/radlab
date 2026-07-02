@@ -69,6 +69,7 @@ import VasPackageBuilder from './pages/admin/VasPackageBuilder'
 import VasPreviewPage   from './pages/admin/VasPreviewPage'
 import SliderCreatePage      from './pages/admin/SliderCreatePage'
 import ScreenerLibraryPage  from './pages/admin/ScreenerLibraryPage'
+import ExperimentBuilder    from './pages/admin/ExperimentBuilder'
 import AudioTest        from './pages/dev/AudioTest'
 import ColorMax      from './games/ColorMax/ColorMax'
 
@@ -293,10 +294,11 @@ export default function App() {
               <Route path="/admin/sessions"         element={<SessionLibrary />} />
               <Route path="/admin/sessions/new"     element={<SessionBuilder />} />
               <Route path="/admin/sessions/:id"     element={<SessionBuilder />} />
-              <Route path="/admin/studies"          element={<StudyLibrary />} />
-              <Route path="/admin/studies/new"      element={<StudyFormPage />} />
-              <Route path="/admin/studies/:id/edit" element={<StudyFormPage />} />
-              <Route path="/admin/studies/:id"      element={<StudyDetail />} />
+              <Route path="/admin/studies"               element={<StudyLibrary />} />
+              <Route path="/admin/studies/new"           element={<StudyFormPage />} />
+              <Route path="/admin/studies/:id/edit"      element={<StudyFormPage />} />
+              <Route path="/admin/studies/:id/design"    element={<ExperimentBuilder />} />
+              <Route path="/admin/studies/:id"           element={<StudyDetail />} />
               <Route path="/admin/questionnaires"        element={<QuestionnairesPage />} />
               <Route path="/admin/questionnaires/new"    element={<QuestionnaireUpload />} />
               <Route path="/admin/questionnaires/:slug"  element={<QuestionnairePreview />} />

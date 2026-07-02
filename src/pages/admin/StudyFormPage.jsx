@@ -34,7 +34,7 @@ function useStudy(id) {
         .select(`
           id, name, delivery_mode, active,
           allow_restart, reminders_enabled, reminder_interval_days, reminder_max,
-          email_subject, email_body
+          email_subject, email_body, design_graph
         `)
         .eq('id', id)
         .single()
@@ -64,6 +64,13 @@ export default function StudyFormPage() {
   const [showPreview,          setShowPreview]         = useState(false)
   const [error,                setError]               = useState(null)
 
+  // Existing longitudinal studies are edited in the builder, not here.
+  useEffect(() => {
+    if (isEdit && existing?.delivery_mode === 'online_longitudinal') {
+      navigate(`/admin/studies/${id}/design`, { replace: true })
+    }
+  }, [isEdit, existing?.delivery_mode, id, navigate])
+
   useEffect(() => {
     if (!existing) return
     setName(existing.name ?? '')
@@ -87,18 +94,22 @@ export default function StudyFormPage() {
         name:         name.trim(),
         delivery_mode: deliveryMode,
         active,
-        allow_restart:           isLongitudinal ? allowRestart : false,
-        reminders_enabled:       isLongitudinal ? remindersEnabled : false,
-        reminder_interval_days:  isLongitudinal && reminderIntervalDays ? Number(reminderIntervalDays) : null,
-        reminder_max:            isLongitudinal && reminderMax ? Number(reminderMax) : null,
-        email_subject:           isLongitudinal ? (emailSubject || null) : null,
-        email_body:              isLongitudinal ? (emailBody || null) : null,
+        // Longitudinal email/reminder settings live solely in ContactSettingsModal (WP7).
+        // For non-longitudinal modes, persist the inline fields as before.
+        ...(!isLongitudinal ? {
+          allow_restart:          allowRestart,
+          reminders_enabled:      remindersEnabled,
+          reminder_interval_days: reminderIntervalDays ? Number(reminderIntervalDays) : null,
+          reminder_max:           reminderMax ? Number(reminderMax) : null,
+          email_subject:          emailSubject || null,
+          email_body:             emailBody || null,
+        } : {}),
       }
 
       if (isEdit) {
         const { error } = await supabase.from('studies').update(payload).eq('id', id)
         if (error) throw error
-        return id
+        return { studyId: id, isLongitudinal }
       } else {
         const { data: { user } } = await supabase.auth.getUser()
         const { data: study, error } = await supabase
@@ -107,14 +118,15 @@ export default function StudyFormPage() {
           .select('id')
           .single()
         if (error) throw error
-        return study.id
+        return { studyId: study.id, isLongitudinal }
       }
     },
-    onSuccess: (studyId) => {
+    onSuccess: ({ studyId, isLongitudinal }) => {
       qc.invalidateQueries({ queryKey: ['studies-list'] })
       qc.invalidateQueries({ queryKey: ['study-edit', id] })
       qc.invalidateQueries({ queryKey: ['study-detail', studyId] })
-      navigate(`/admin/studies/${studyId}`)
+      // Longitudinal studies go straight to the builder; others go to detail.
+      navigate(isLongitudinal ? `/admin/studies/${studyId}/design` : `/admin/studies/${studyId}`)
     },
     onError: (e) => setError(e.message),
   })
@@ -157,12 +169,19 @@ export default function StudyFormPage() {
           />
         </div>
 
-        {/* Delivery mode — radio cards */}
+        {/* Delivery mode — radio cards.
+            Locked once a longitudinal study has a design_graph or enrollments. */}
         <div style={S.fieldGroup}>
           <label style={S.fieldLabel}>Delivery mode</label>
+          {existing?.design_graph && (
+            <p style={{ ...S.muted, fontSize: 12, margin: '0 0 6px' }}>
+              Mode locked — this study has a design graph.
+            </p>
+          )}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {DELIVERY_MODES.map(opt => {
-              const selected = deliveryMode === opt.value
+              const selected  = deliveryMode === opt.value
+              const modeLocked = isEdit && existing?.design_graph && opt.value !== existing.delivery_mode
               return (
                 <label
                   key={opt.value}
@@ -170,6 +189,8 @@ export default function StudyFormPage() {
                     ...S.modeCard,
                     borderColor: selected ? 'var(--pk)' : 'var(--bd)',
                     background:  selected ? '#fdf2f8' : '#fff',
+                    opacity:     modeLocked ? 0.45 : 1,
+                    cursor:      modeLocked ? 'not-allowed' : 'pointer',
                   }}
                 >
                   <input
@@ -177,7 +198,8 @@ export default function StudyFormPage() {
                     name="deliveryMode"
                     value={opt.value}
                     checked={selected}
-                    onChange={() => setDeliveryMode(opt.value)}
+                    onChange={() => !modeLocked && setDeliveryMode(opt.value)}
+                    disabled={modeLocked}
                     style={{ accentColor: 'var(--pk)', marginTop: 1 }}
                   />
                   <div>
@@ -188,10 +210,21 @@ export default function StudyFormPage() {
               )
             })}
           </div>
+          {isLongitudinal && !isEdit && (
+            <p style={{ ...S.muted, fontSize: 12, margin: '6px 0 0' }}>
+              After creating, you'll be taken to the experiment builder to design the session timeline.
+            </p>
+          )}
+          {isLongitudinal && isEdit && (
+            <p style={{ ...S.muted, fontSize: 12, margin: '6px 0 0' }}>
+              Email and reminder settings live in the builder's Contact Settings panel.
+            </p>
+          )}
         </div>
 
-        {/* Email preferences — longitudinal only */}
-        {isLongitudinal && (
+        {/* Email preferences — non-longitudinal only.
+            Longitudinal studies configure email in the builder's Contact Settings. */}
+        {!isLongitudinal && (
           <div style={S.emailPrefs}>
             <div style={S.emailPrefsTitle}>Email preferences</div>
 

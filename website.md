@@ -1857,6 +1857,8 @@ Integrated. All source files placed. Routes registered inside the existing `Admi
 
 Extends the study protocol system with an `in_person` delivery mode. A lab RA enrolls participants on-site using an external participant ID, runs a full session (consent → tasks → questionnaires → debrief) on a single screen, and can resume from the last completed step if the session crashes mid-run. The RA's lab account remains authenticated throughout; participants use a silently-created Supabase profile.
 
+> Note: the `online_longitudinal` delivery mode is being moved off this protocol model onto the node-graph Experiment Builder. See section 26. `in_person` and `online_single` stay here. Parts of this section's schema notes predate the live DB; section 26 records the verified current schema.
+
 ---
 
 ### Routes
@@ -2402,3 +2404,136 @@ src/pages/admin/
 - `liliana_day_data.started_at` is stamped on first attempt; `completed_at` remains null for abandoned sessions. Use `completed_at IS NULL` to find drop-offs.
 - `midpoint_completed_at` on `liliana_participants` is a hard gate for Phase 2 — explicit nullable timestamp is cleaner than inferring completion from day data presence.
 - Training videos must be uploaded with the `liliana/` prefix in the object name — Supabase Storage has no real directories; the slash is just part of the path string.
+
+---
+
+## 26. Experiment Builder (Longitudinal Study Redesign)
+
+Replaces the longitudinal study planner with a node-graph design tool for `online_longitudinal` studies. Full detail in `experiment_builder_spec.md` and `phase1_implementation_brief.md`; this section records the durable decisions.
+
+### Scope
+
+- New builder owns `online_longitudinal` only. `in_person` and `online_single` stay on `StudyFormPage`; single-shot randomization stays in study code.
+- `delivery_mode`: `online_longitudinal` is the only value routing to the builder. Legacy `remote` and `online_single` are treated as equivalent single-shot and stay on `StudyFormPage`; existing rows are not migrated. If a CHECK constraint limits the column, extend it to allow the new value. Mixed in-person plus online longitudinal sessions are deferred (a per-session delivery flag can be added later without reshaping the graph).
+- Route: `ExperimentBuilder` at `/admin/studies/new` and `/admin/studies/:id/design` when `delivery_mode = 'online_longitudinal'`.
+
+### Confirmed live schema (ground truth, 2026-06)
+
+Two parallel runtime models existed on paper; a live column check settled which is real.
+
+- `participant_schedule`: `id, participant_id, study_id, study_session_id, scheduled_date, send_time, status, link_id, attempts, completed_at, created_at`.
+- `participant_links`: `id, schedule_id, participant_id, study_id, token, status, expires_at, created_at`.
+- Runtime is study_sessions-centric: `participant_schedule.study_session_id -> study_sessions`. auto-enroll and SessionEntry run on this path.
+- The deployed `check_schedule` and `send_message` reference a non-existent schema (`scheduled_for`, `protocol_id`, `day_contact_id`, `session_template_id`, `study_day`, `schedule_instance_id`). They are dead code for an unbuilt flow, rewritten rather than patched.
+- `message_log` exists; `participant_consent` does not and is not revived. Email opt-out lives on `study_enrollments` (alongside `consent_date`). Unsubscribe tokens live separately in `participant_unsubscribe_tokens`.
+
+### Canonical model going forward
+
+- `studies` + `design_graph` jsonb is the source of truth. Retire `study_protocols` / `protocol_study_days` / `protocol_day_contacts` and `src/pages/admin/ProtocolBuilder.jsx`.
+- Keep `study_sessions` (compiled session-slot catalog, one row per graph session node, new `node_key`), `participant_schedule`, `participant_links`, and `session_templates` / `session_template_nodes` / SessionBuilder (untouched).
+- Email and reminder settings consolidate onto `studies`; the `study_protocols` duplicate is retired.
+- Identifier convention: the profiles UUID is `participant_id` in the runtime/email tables (`participant_schedule`, `participant_links`, `message_log`, `participant_unsubscribe_tokens`, `participant_assignments`) and `profile_id` in `study_enrollments`. The RA-facing text id is `external_id`, only on `study_enrollments`. Never name a text external-id column `participant_id`.
+
+### Graph model (`design_graph`)
+
+Stored as `{ nodes, edges }`. Rendered with React Flow (`@xyflow/react`, MIT, client-side, no telemetry). Node types:
+
+- `timepoint`: `day_offset` (int days from day 1, day 1 = 0), `time_of_day` (null inherits baseline). First is baseline.
+- `session`: `session_template_id`, `link_expires_hours`, `label`. References a `session_templates` row; its internal steps are `session_template_nodes`, edited by SessionBuilder.
+- `block`: named ordered group of session ids; copy/paste-able; within-block order fixed.
+- `randomize` (P2): between-subjects fork; balanced without replacement.
+- `counterbalance` (P2): within-subjects order permutation; full permutation set, order randomized; within-block order preserved.
+
+Both fork operations compose in either order, at any timepoint.
+
+### Resolution and materialization
+
+- Rule: resolve each fork when the participant reaches it. Materialize greedily from t0, stop at the first randomize not yet reached.
+- Randomize at t0 resolves at enrollment (full schedule materializes immediately). Randomize mid-study (e.g. Liliana midpoint) resolves at that point, so balance is among those who actually reach it.
+- Enrollment is a bulk insert of all pre-fork `participant_schedule` rows. First session `unlocked` + link issued; later sessions `pending` with `scheduled_date`, the cron issues each link just in time. This replaces auto-enroll's single-row insert; the materializer is the enrollment flow the cron was waiting for.
+- Completion hook (P2) advances across a fork by drawing the balanced slot and bulk-creating the next branch. `complete_session_by_token` only marks done, it does not advance.
+- One live link per participant: issuing a new link revokes any prior active links for that participant.
+
+### Balanced draws (P2)
+
+- Fixed `design_seed` per study makes draws reproducible.
+- `draw_index` = participants already past the node (live count), so no participant total is declared; the sequence wraps forever by modulo. More participants than orders starts a new cycle; fewer means each order is used at most once.
+- Reshuffle each cycle from `seed + node_id + cycle_number` (permuted-block randomization; an RA cannot predict the next arm).
+- `participant_assignments` records every draw (group label or block order) for end-of-study audit within each group.
+
+### Liliana flow
+
+baseline -> counterbalanced Phase 1 (3 blocks, days 1-4 order preserved within each) -> midpoint assessment -> randomize into groups -> Phase 2 diverges by group.
+
+### Email and contact settings
+
+- Nested popout (`ContactSettingsModal`) inside the builder, not the first screen. Writes to `studies`: `reminders_enabled`, `reminder_interval_hours` (default 24), `reminder_max`, `allow_restart`, `max_attempts`, `email_subject`, `email_body`. Reuses the existing template-variable editor and iframe preview.
+- Cron rewrite: `check_schedule` and `send_message` rebuilt against the live schema. Settings read from `studies` by `study_id`, link expiry from `study_sessions.link_expires_hours` via `study_session_id`, email opt-out from `study_enrollments.email_reminders`, logging to `message_log`. The 15-minute cron does the date+time due-check in code (lab tz America/Toronto); `scheduled_date` + `send_time` stay the source columns.
+
+### Phasing
+
+- P1: additive migration; builder shell (timepoint, session, block) with React Flow; compile graph -> `study_sessions`; linear materializer wired into auto-enroll; contact popout; cron rewrite. Checkpoint after authoring, before runtime.
+- P2: randomize + counterbalance + forks + balanced draws + assignment writes + completion-hook advance.
+- P3: sample-flow generator and test run.
+
+### Phase 1 migration (additive, nothing dropped)
+
+- `studies`: `design_graph jsonb`, `design_seed text`, `design_version int`, `max_attempts int`, `reminder_interval_hours int default 24`.
+- `participant_schedule`: `study_day int`.
+- `study_sessions`: `node_key text`.
+- new `participant_assignments` (written from P2); `email_reminders` opt-out added to `study_enrollments`.
+- `study_protocols` family orphaned in P1, dropped in a follow-up migration once the cron rewrite is verified.
+
+### Key decisions and learnings
+
+- integrate-don't-regenerate, reinforced: the deployed cron functions had drifted from the live DB, visible only via a live column check. Verify schema against the database, not reconstructed DDL or function code.
+- Resolve-each-fork-when-reached dissolves the eager-vs-lazy dilemma: it satisfies both full-schedule-at-enrollment (randomize-first) and point-of-divergence balance (mid-study forks).
+- A multi-day materializer had to be built regardless (auto-enroll only ever created the first row), so lazy forks cost almost nothing extra.
+- Keep `scheduled_date` + `send_time`; do not add `scheduled_for` as a source column (a generated timestamptz is not immutable across time zones).
+
+### Phase 1 implementation — WP1–WP4 complete (2026-06-24)
+
+**WP1 — Migration** (`supabase/migrations/20260624_experiment_builder.sql`, applied)
+- `studies`: added `design_graph jsonb`, `design_seed text`, `design_version int default 1`, `max_attempts int default 1`; `reminder_interval_hours` already existed — altered to `SET DEFAULT 24`
+- `participant_schedule`: added `study_day int`
+- `study_sessions`: added `node_key text`
+- New table `participant_assignments (id, study_id, participant_id, node_id, group_label, block_order jsonb, draw_index int, created_at)` — written from P2 balanced-draw logic; RLS: lab ALL, participant SELECT own via `participant_id = auth.uid()`
+- `study_enrollments`: added `email_reminders bool default true`, `email_unsubscribed_at timestamptz`
+
+**WP2 — ProtocolBuilder retired**: `src/pages/admin/ProtocolBuilder.jsx` deleted. `study_protocols` was empty; no data migration needed. `study_protocols` / `protocol_study_days` / `protocol_day_contacts` left in DB — to be dropped in a follow-up migration once WP6 cron rewrite is verified.
+
+**WP3 — StudyFormPage + routing**
+- `App.jsx`: added `ExperimentBuilder` import and route `/admin/studies/:id/design`
+- `StudyFormPage`: selects `design_graph` for lock check; `onSuccess` redirects longitudinal → `/:id/design`, others → `/:id`; delivery-mode radios lock when `existing.design_graph` is set; email/reminder block hidden for longitudinal; hint text added; `useEffect` redirects `/admin/studies/:id/edit` → `/:id/design` for existing longitudinal studies
+
+**WP4 — ExperimentBuilder shell**
+
+*`src/lib/experimentGraph.js`* — pure graph helpers (no React):
+- `newId()`, `topLevelNodes()`, `entryNode()`, `chainOrder()`, `validate()`, `addNode()`, `updateNode()`, `removeNode()`, `addSessionToBlock()`, `removeSessionFromBlock()`, `duplicateBlock()`, `toSlots()`
+- `toSlots()` walks the chain; timepoints set `currentOffset`/`currentTime`; session nodes produce one slot at `dayNumber = offset + 1`; block children produce consecutive slots at `dayNumber = offset + i + 1`
+- `validate()` checks: single entry, starts with timepoint, baseline offset = 0, at least one session, all sessions have template, block children exist, single outgoing edge per non-block node
+
+*`src/components/study/builder/nodes/`*:
+- `TimepointNode.jsx` — pink border, shows day label + send time, locked badge
+- `SessionNode.jsx` — gray border, shows template name (red if missing) + link expiry, locked badge
+- `BlockNode.jsx` — pink-tinted, renders children as list with `Day +i` labels, "+ Add session" and "Duplicate block" buttons (callbacks via `data` props), locked badge
+
+*`src/pages/admin/ExperimentBuilder.jsx`* — main builder page:
+- Loads study + `design_graph` from DB; bootstraps baseline timepoint for new studies
+- `hasEnrollments` flag blocks structural edits and recompile
+- `graphToRfNodes()` / `graphToRfEdges()`: converts internal graph → RF nodes/edges; positions stored in `_positions` meta field on the graph, not in graph structure proper
+- `onNodesChange` syncs position changes only; `nodesConnectable={false}` prevents drag-to-connect
+- `compileStudySessions()`: calls `toSlots()` then delete-and-reinsert `study_sessions`
+- `EditPanel`: different fields per node type (timepoint: dayOffset + time; session: template picker + expiry; block: child count info)
+- Save: validates, writes `design_graph` + `_positions` + `design_version`, compiles, invalidates queries
+- Header: inline study name edit, save button, locked/error/saved badges
+- Toolbar: "+ Timepoint", "+ Session", "+ Block" (hidden when locked)
+
+### Status
+
+WP1–WP4 complete; build passes. Pending:
+- **WP5**: `supabase/functions/_shared/materializeSchedule.ts` + wire into `auto-enroll/index.ts`
+- **WP6**: Rewrite `check_schedule/index.ts` and `send_message/index.ts` against live schema; verify `/unsubscribe/:token` writes `study_enrollments.email_reminders = false`; lab timezone `America/Toronto`
+- **WP7**: `src/components/study/builder/ContactSettingsModal.jsx`
+- Follow-up: drop `study_protocols` / `protocol_study_days` / `protocol_day_contacts` once WP6 verified
+- P2: randomize + counterbalance + forks + balanced draws
