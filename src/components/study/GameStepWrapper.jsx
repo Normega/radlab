@@ -16,7 +16,7 @@ const GAME_COMPONENTS = {
 // Games that should receive the physio context when it is available
 const PHYSIO_AWARE_SLUGS = new Set(['breath_belt', 'still_water'])
 
-export default function GameStepWrapper({ slug, enrollment, onComplete, supabaseClient, isSimMode = false }) {
+export default function GameStepWrapper({ slug, enrollment, onComplete, supabaseClient, isSimMode = false, assignments = null }) {
   const physio = usePhysioContext()   // null if not inside a PhysioProvider
   const GameComponent = GAME_COMPONENTS[slug]
 
@@ -39,6 +39,7 @@ export default function GameStepWrapper({ slug, enrollment, onComplete, supabase
       onSessionComplete={result => onComplete({ game_slug: slug, ...result })}
       supabaseClient={supabaseClient}
       isSimMode={isSimMode}
+      assignments={assignments}
       {...physioProps}
     />
   )

@@ -1,9 +1,10 @@
-// v4 — screener gate added before consent check
+// v5 — condition assignment draws (draw_assignment RPC) gate the step flow
 import { useEffect, useState, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { createClient } from '@supabase/supabase-js'
 import StepDispatcher from '../components/study/StepDispatcher'
 import ScreenerPage from '../components/ScreenerPage'
+import { useAssignments } from '../hooks/useAssignment'
 
 // Dedicated client for participant sessions — never touches the shared lab/public client.
 function makeParticipantClient() {
@@ -27,6 +28,20 @@ export default function SessionEntry() {
   // Isolated Supabase client — never modifies the global lab session.
   const sbRef = useRef(makeParticipantClient())
   const sb    = sbRef.current
+
+  // Condition assignment: draw every slot before the step flow starts.
+  // Draws are idempotent server-side, so refresh returns the same arms.
+  const slotKeys = sessionData?.study?.assignment_slots
+    ? Object.keys(sessionData.study.assignment_slots)
+    : []
+  const {
+    assignments,
+    isLoading: assignmentsLoading,
+    isError:   assignmentsError,
+  } = useAssignments(sessionData?.link?.study_id, slotKeys, {
+    enabled: state === 'running' && slotKeys.length > 0,
+    client:  sb,
+  })
 
   useEffect(() => { resolveToken() }, [token])
 
@@ -251,6 +266,20 @@ export default function SessionEntry() {
   }
 
   if (state === 'running' && sessionData) {
+    // Block the step flow until condition draws resolve — never start unassigned.
+    if (slotKeys.length > 0 && assignmentsLoading) {
+      return <FullScreen><StatusCard>Preparing your session…</StatusCard></FullScreen>
+    }
+    if (slotKeys.length > 0 && assignmentsError) {
+      return (
+        <FullScreen>
+          <StatusCard>
+            Something went wrong preparing your session. Please refresh the page, or contact your researcher if the problem continues.
+          </StatusCard>
+        </FullScreen>
+      )
+    }
+
     const nodes       = sessionData.nodes ?? []
     const node        = nodes[currentIndex]
     const consentHtml = sessionData.consent_html ?? null
@@ -291,6 +320,7 @@ export default function SessionEntry() {
             consentHtml={consentHtml}
             debriefHtml={debriefHtml}
             supabaseClient={sb}
+            assignments={slotKeys.length > 0 ? assignments : null}
           />
         </div>
       </div>

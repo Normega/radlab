@@ -1,4 +1,4 @@
-// v2 — dispatches on activity.category + activity.subcategory from session_template_nodes
+// v3 — carries condition assignments ({ [slotKey]: arm }) into step components
 import ConsentStep              from './ConsentStep'
 import DebriefStep              from './DebriefStep'
 import DemographicsStep         from './DemographicsStep'
@@ -19,8 +19,9 @@ import VasStepWrapper          from './VasStepWrapper'
  *   consentHtml — HTML string for consent step (from study)
  *   debriefHtml — HTML string for debrief step (from study)
  *   isSimMode   — bool — when true all steps auto-complete
+ *   assignments — { [slotKey]: arm } from draw_assignment, or null
  */
-export default function StepDispatcher({ node, enrollment, scheduleId, stepIndex, totalSteps, onComplete, consentHtml, debriefHtml, supabaseClient, isSimMode = false }) {
+export default function StepDispatcher({ node, enrollment, scheduleId, stepIndex, totalSteps, onComplete, consentHtml, debriefHtml, supabaseClient, isSimMode = false, assignments = null }) {
   const activity = node?.activity ?? node?.activities
   if (!activity) {
     return (
@@ -69,6 +70,7 @@ export default function StepDispatcher({ node, enrollment, scheduleId, stepIndex
         onComplete={onComplete}
         supabaseClient={supabaseClient}
         isSimMode={isSimMode}
+        assignments={assignments}
       />
     )
   }

@@ -2350,7 +2350,7 @@ Replaces the longitudinal study planner with a node-graph design tool for `onlin
 
 ### Scope
 
-- New builder owns `online_longitudinal` only. `in_person` and `online_single` stay on `StudyFormPage`; single-shot randomization stays in study code.
+- New builder owns `online_longitudinal` only. `in_person` and `online_single` stay on `StudyFormPage`. Balanced condition assignment for single-shot studies runs through the shared `draw_assignment` primitive (see Shared assignment primitive below); per-trial randomization (stimulus order, jitter, item sampling) stays in study code via `src/utils/seededRandom.js`, seed logged with results.
 - `delivery_mode`: `online_longitudinal` is the only value routing to the builder. Legacy `remote` and `online_single` are treated as equivalent single-shot and stay on `StudyFormPage`; existing rows are not migrated. If a CHECK constraint limits the column, extend it to allow the new value. Mixed in-person plus online longitudinal sessions are deferred (a per-session delivery flag can be added later without reshaping the graph).
 - Route: `ExperimentBuilder` at `/admin/studies/new` and `/admin/studies/:id/design` when `delivery_mode = 'online_longitudinal'`.
 
@@ -2397,6 +2397,19 @@ Both fork operations compose in either order, at any timepoint.
 - `draw_index` = participants already past the node (live count), so no participant total is declared; the sequence wraps forever by modulo. More participants than orders starts a new cycle; fewer means each order is used at most once.
 - Reshuffle each cycle from `seed + node_id + cycle_number` (permuted-block randomization; an RA cannot predict the next arm).
 - `participant_assignments` records every draw (group label or block order) for end-of-study audit within each group.
+
+### Shared assignment primitive (2026-07)
+
+Single-shot studies and longitudinal randomize nodes share one draw implementation rather than duplicating balance logic.
+
+- `draw_assignment(study_id, slot_key)`: Postgres function, SECURITY DEFINER, participant from `auth.uid()`. Owns permuted-block draws (seed + slot + cycle, per Balanced draws above), concurrency (advisory lock on study + slot), idempotency (one assignment per participant per slot, returned on re-entry), and the audit write to `participant_assignments` (`node_id` doubles as the slot key, `kind = 'randomize'`).
+- Arms live server-side, never passed by the client: `studies.assignment_slots` jsonb (`{ "condition": ["A","B"] }`) for single-shot; `design_graph` randomize nodes for longitudinal (P2 extension point inside the function).
+- `design_seed` null falls back to `study_id::text`, so single-shot studies need no setup.
+- Callers: single-shot draws at SessionEntry via `useAssignment` hook when `assignment_slots` is non-empty, assignments passed into the step flow; longitudinal (P2) calls the same function from the materializer/completion-hook with arms from the graph.
+- StudyFormPage gains a Condition assignment section for non-longitudinal modes: named slots, comma-entry arms (min 2). A slot locks (read-only) once its first assignment exists; lock triggers on first draw, not launch. Escape hatch is duplicating the study, which carries slots but no assignments. New slots can always be added.
+- `assignment_balance` view (counts per study, slot, arm) serves pilot verification now and the P2 balance audit.
+- Anonymous participants work: token exchange yields an authenticated session, so `auth.uid()` resolves.
+- Pilot: Sandy study 3 (Sandy Luu). Full detail in `randomizer_spec.md` and `randomizer_implementation_brief.md`.
 
 ### Liliana flow
 
