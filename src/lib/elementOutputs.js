@@ -10,6 +10,14 @@
 // Games list only what their onSessionComplete actually reports. When a game's
 // payload changes, update it here so the picker stays honest.
 
+export const GAME_LABELS = {
+  aptitude_suite: 'Aptitude Suite',
+  word_max:       'WordMax',
+  color_max:      'ColorMax',
+  still_water:    'Still Water',
+  breath_belt:    'Breath Belt',
+}
+
 export const GAME_OUTPUTS = {
   aptitude_suite: [
     'anagram_score', 'anagram_pct',

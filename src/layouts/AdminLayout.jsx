@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { Link, NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 
 const NAV_SECTIONS = [
@@ -34,6 +34,19 @@ const NAV_SECTIONS = [
 
 function Sidebar({ session, onClose }) {
   const navigate = useNavigate()
+  const location = useLocation()
+  // Collapsed state per section header, persisted across visits. A section
+  // holding the active route always renders expanded.
+  const [collapsed, setCollapsed] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('adminNavCollapsed') ?? '{}') } catch { return {} }
+  })
+  function toggleSection(header) {
+    setCollapsed(prev => {
+      const next = { ...prev, [header]: !prev[header] }
+      try { localStorage.setItem('adminNavCollapsed', JSON.stringify(next)) } catch { /* ignore */ }
+      return next
+    })
+  }
   const displayName =
     session?.user?.user_metadata?.display_name ||
     session?.user?.email?.split('@')[0] ||
@@ -51,25 +64,39 @@ function Sidebar({ session, onClose }) {
       </Link>
 
       <nav style={S.nav}>
-        {NAV_SECTIONS.map((section, si) => (
-          <div key={si} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {section.header && <div style={S.navHeader}>{section.header}</div>}
-            {section.items.map(({ to, label }) => (
-              <NavLink
-                key={to}
-                to={to}
-                style={({ isActive }) => ({
-                  ...S.navLink,
-                  ...(section.header ? S.navIndent : {}),
-                  ...(isActive ? S.navActive : {}),
-                })}
-                onClick={onClose}
-              >
-                {label}
-              </NavLink>
-            ))}
-          </div>
-        ))}
+        {NAV_SECTIONS.map((section, si) => {
+          const sectionActive = section.items.some(it => location.pathname.startsWith(it.to))
+          const isCollapsed   = section.header && collapsed[section.header] && !sectionActive
+          return (
+            <div key={si} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {section.header && (
+                <button
+                  type="button"
+                  style={S.navHeader}
+                  onClick={() => toggleSection(section.header)}
+                  aria-expanded={!isCollapsed}
+                >
+                  <span style={{ ...S.chevron, transform: isCollapsed ? 'rotate(0deg)' : 'rotate(90deg)' }}>▸</span>
+                  {section.header}
+                </button>
+              )}
+              {!isCollapsed && section.items.map(({ to, label }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  style={({ isActive }) => ({
+                    ...S.navLink,
+                    ...(section.header ? S.navIndent : {}),
+                    ...(isActive ? S.navActive : {}),
+                  })}
+                  onClick={onClose}
+                >
+                  {label}
+                </NavLink>
+              ))}
+            </div>
+          )
+        })}
       </nav>
 
       <div style={S.bottom}>
@@ -144,9 +171,15 @@ const S = {
     padding: '0 10px',
   },
   navHeader: {
+    display: 'flex', alignItems: 'center', gap: 6,
     fontFamily: '"Space Mono",monospace', fontSize: 10,
     color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.08em',
     padding: '6px 12px 2px',
+    background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%',
+  },
+  chevron: {
+    display: 'inline-block', fontSize: 9,
+    transition: 'transform 0.15s', flexShrink: 0,
   },
   navIndent: { paddingLeft: 22 },
   navLink: {

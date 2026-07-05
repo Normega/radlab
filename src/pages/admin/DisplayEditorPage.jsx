@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
-import { gameVariableTokens } from '../../lib/elementOutputs'
+import { GAME_OUTPUTS, GAME_LABELS } from '../../lib/elementOutputs'
 
 const slugify = s => s.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '')
 
@@ -56,28 +56,21 @@ export default function DisplayEditorPage() {
       : [{ text: '', showIfSlot: '', showIfArms: '' }])
   }, [existing])
 
-  // Slider + VAS slugs for the variable picker
-  const { data: sliderSlugs } = useQuery({
-    queryKey: ['slider-slugs'],
+  // Slider + VAS elements (slug + human-readable prompt) for the picker
+  const { data: sliders } = useQuery({
+    queryKey: ['slider-picker'],
     queryFn: async () => {
-      const { data } = await supabase.from('slider_scales').select('slug').order('slug')
-      return (data ?? []).map(r => r.slug)
+      const { data } = await supabase.from('slider_scales').select('slug, prompt').order('slug')
+      return data ?? []
     },
   })
-  const { data: vasSlugs } = useQuery({
-    queryKey: ['vas-slugs'],
+  const { data: vasScales } = useQuery({
+    queryKey: ['vas-picker'],
     queryFn: async () => {
-      const { data } = await supabase.from('vas_scales').select('slug').order('slug')
-      return (data ?? []).map(r => r.slug)
+      const { data } = await supabase.from('vas_scales').select('slug, question').order('slug')
+      return data ?? []
     },
   })
-
-  const varTokens = [
-    '{{condition}}',
-    ...(sliderSlugs ?? []).map(s => `{{slider.${s}.value}}`),
-    ...(vasSlugs ?? []).map(s => `{{vas.${s}.value}}`),
-    ...gameVariableTokens(),
-  ]
 
   function insertToken(token) {
     setBlocks(bs => bs.map((b, i) => i === focusedIdx ? { ...b, text: b.text + token } : b))
@@ -169,13 +162,11 @@ export default function DisplayEditorPage() {
 
         <div style={S.fieldGroup}>
           <label style={S.fieldLabel}>Insert variable (into focused block)</label>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-            {varTokens.map(t => (
-              <button key={t} type="button" style={S.varPill} onClick={() => insertToken(t)}>
-                {t}
-              </button>
-            ))}
-          </div>
+          <VariablePicker
+            sliders={sliders ?? []}
+            vasScales={vasScales ?? []}
+            onInsert={insertToken}
+          />
           <p style={{ ...S.sub, fontSize: 12 }}>
             Variables resolve at runtime from the participant's condition assignment and earlier steps in the same session. Unresolved variables render as "—".
           </p>
@@ -234,6 +225,152 @@ export default function DisplayEditorPage() {
       </div>
     </div>
   )
+}
+
+// Drill-down variable picker: pick a source type, then an element, then (for
+// games) one of its outputs. A filter box narrows element lists as they grow.
+function VariablePicker({ sliders, vasScales, onInsert }) {
+  const [source, setSource] = useState('condition')
+  const [gameSlug, setGameSlug] = useState(null)
+  const [filter, setFilter] = useState('')
+
+  const TABS = [
+    { key: 'condition', label: 'Condition' },
+    { key: 'slider',    label: `Sliders (${sliders.length})` },
+    { key: 'vas',       label: `Rating scales (${vasScales.length})` },
+    { key: 'game',      label: 'Games' },
+  ]
+
+  const q = filter.trim().toLowerCase()
+  const match = (...fields) => !q || fields.some(f => (f ?? '').toLowerCase().includes(q))
+
+  return (
+    <div style={P.wrap}>
+      <div style={P.tabs}>
+        {TABS.map(t => (
+          <button
+            key={t.key}
+            type="button"
+            style={{ ...P.tab, ...(source === t.key ? P.tabActive : {}) }}
+            onClick={() => { setSource(t.key); setGameSlug(null); setFilter('') }}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {(source === 'slider' || source === 'vas' || (source === 'game' && !gameSlug)) && (
+        <input
+          style={P.filter}
+          value={filter}
+          onChange={e => setFilter(e.target.value)}
+          placeholder="Filter…"
+        />
+      )}
+
+      {source === 'condition' && (
+        <div style={P.body}>
+          <button type="button" style={P.pill} onClick={() => onInsert('{{condition}}')}>
+            {'{{condition}}'}
+          </button>
+          <p style={P.hint}>The participant's assigned arm. For studies with extra slots, any slot name works: {'{{my_slot}}'}.</p>
+        </div>
+      )}
+
+      {source === 'slider' && (
+        <div style={P.body}>
+          {sliders.filter(s => match(s.slug, s.prompt)).map(s => (
+            <button
+              key={s.slug}
+              type="button"
+              style={P.elementRow}
+              title={s.prompt}
+              onClick={() => onInsert(`{{slider.${s.slug}.value}}`)}
+            >
+              <span style={P.elementLabel}>{s.prompt?.slice(0, 64) || s.slug}</span>
+              <span style={P.elementSlug}>slider.{s.slug}.value</span>
+            </button>
+          ))}
+          {sliders.length === 0 && <p style={P.hint}>No sliders yet.</p>}
+        </div>
+      )}
+
+      {source === 'vas' && (
+        <div style={P.body}>
+          {vasScales.filter(s => match(s.slug, s.question)).map(s => (
+            <button
+              key={s.slug}
+              type="button"
+              style={P.elementRow}
+              title={s.question}
+              onClick={() => onInsert(`{{vas.${s.slug}.value}}`)}
+            >
+              <span style={P.elementLabel}>{s.question?.slice(0, 64) || s.slug}</span>
+              <span style={P.elementSlug}>vas.{s.slug}.value</span>
+            </button>
+          ))}
+          {vasScales.length === 0 && <p style={P.hint}>No VAS scales yet.</p>}
+        </div>
+      )}
+
+      {source === 'game' && !gameSlug && (
+        <div style={P.body}>
+          {Object.keys(GAME_OUTPUTS)
+            .filter(slug => match(slug, GAME_LABELS[slug]))
+            .map(slug => (
+              <button
+                key={slug}
+                type="button"
+                style={{ ...P.elementRow, opacity: GAME_OUTPUTS[slug].length ? 1 : 0.5 }}
+                onClick={() => GAME_OUTPUTS[slug].length && setGameSlug(slug)}
+              >
+                <span style={P.elementLabel}>{GAME_LABELS[slug] ?? slug}</span>
+                <span style={P.elementSlug}>
+                  {GAME_OUTPUTS[slug].length
+                    ? `${GAME_OUTPUTS[slug].length} variable${GAME_OUTPUTS[slug].length === 1 ? '' : 's'} →`
+                    : 'no outputs'}
+                </span>
+              </button>
+            ))}
+        </div>
+      )}
+
+      {source === 'game' && gameSlug && (
+        <div style={P.body}>
+          <button type="button" style={P.backBtn} onClick={() => setGameSlug(null)}>
+            ← {GAME_LABELS[gameSlug] ?? gameSlug}
+          </button>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {GAME_OUTPUTS[gameSlug].map(key => (
+              <button
+                key={key}
+                type="button"
+                style={P.pill}
+                onClick={() => onInsert(`{{game.${gameSlug}.${key}}}`)}
+              >
+                {key}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+const P = {
+  wrap:        { border: '1px solid var(--bd)', borderRadius: 10, overflow: 'hidden', background: '#fff' },
+  tabs:        { display: 'flex', borderBottom: '1px solid var(--bd)', background: 'var(--bgp)' },
+  tab:         { flex: 1, padding: '8px 10px', fontSize: 12, fontFamily: '"DM Sans",system-ui,sans-serif', color: 'var(--tx2)', background: 'none', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap' },
+  tabActive:   { color: 'var(--pkd)', fontWeight: 600, background: '#fff' },
+  filter:      { margin: '10px 12px 0', width: 'calc(100% - 24px)', boxSizing: 'border-box', fontSize: 13, fontFamily: '"DM Sans",system-ui,sans-serif', border: '1px solid var(--bd)', borderRadius: 7, padding: '6px 10px' },
+  body:        { display: 'flex', flexDirection: 'column', gap: 4, padding: 12, maxHeight: 240, overflowY: 'auto' },
+  pill:        { alignSelf: 'flex-start', fontFamily: '"Space Mono",monospace', fontSize: 11, background: 'var(--bgc)', border: '1px solid var(--pkb)', borderRadius: 6, padding: '3px 8px', color: 'var(--pkd)', cursor: 'pointer' },
+  elementRow:  { display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2, width: '100%', textAlign: 'left', background: 'none', border: '1px solid transparent', borderRadius: 8, padding: '7px 10px', cursor: 'pointer' },
+  elementLabel:{ fontSize: 13, color: 'var(--tx)', fontFamily: '"DM Sans",system-ui,sans-serif' },
+  elementSlug: { fontFamily: '"Space Mono",monospace', fontSize: 10, color: 'var(--pkd)' },
+  backBtn:     { alignSelf: 'flex-start', fontSize: 12, color: 'var(--tx2)', background: 'none', border: 'none', cursor: 'pointer', padding: '0 0 6px', fontFamily: '"DM Sans",system-ui,sans-serif' },
+  hint:        { fontSize: 12, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif', margin: 0 },
 }
 
 const S = {
