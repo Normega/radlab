@@ -1,4 +1,4 @@
-// v2
+// v3 — Condition assignment card (assignment_slots) for non-longitudinal modes
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -24,6 +24,9 @@ const DELIVERY_MODES = [
 
 const EMAIL_VARS = ['{{first_name}}', '{{study_day}}', '{{link_url}}', '{{expires_hours}}']
 
+const parseArms = text =>
+  (text ?? '').split(',').map(a => a.trim()).filter(Boolean)
+
 function useStudy(id) {
   return useQuery({
     queryKey: ['study-edit', id],
@@ -34,7 +37,7 @@ function useStudy(id) {
         .select(`
           id, name, delivery_mode, active,
           allow_restart, reminders_enabled, reminder_interval_days, reminder_max,
-          email_subject, email_body, design_graph
+          email_subject, email_body, design_graph, assignment_slots
         `)
         .eq('id', id)
         .single()
@@ -63,6 +66,27 @@ export default function StudyFormPage() {
   const [emailBody,            setEmailBody]           = useState('')
   const [showPreview,          setShowPreview]         = useState(false)
   const [error,                setError]               = useState(null)
+  // Condition assignment slots: [{ name, armsText }] — armsText is the raw
+  // comma-separated input; parsed on save.
+  const [slots,                setSlots]               = useState([])
+
+  // Slots with existing assignments render read-only (lock triggers on first
+  // draw, not launch). Lab RLS grants select on participant_assignments.
+  const { data: slotDrawCounts } = useQuery({
+    queryKey: ['assignment-slot-counts', id],
+    enabled: isEdit,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('participant_assignments')
+        .select('node_id')
+        .eq('study_id', id)
+      if (error) throw error
+      const counts = {}
+      for (const r of data ?? []) counts[r.node_id] = (counts[r.node_id] ?? 0) + 1
+      return counts
+    },
+  })
+  const lockedSlotNames = new Set(Object.keys(slotDrawCounts ?? {}))
 
   // Existing longitudinal studies are edited in the builder, not here.
   useEffect(() => {
@@ -82,6 +106,12 @@ export default function StudyFormPage() {
     setReminderMax(existing.reminder_max ?? '')
     setEmailSubject(existing.email_subject ?? '')
     setEmailBody(existing.email_body ?? '')
+    setSlots(existing.assignment_slots
+      ? Object.entries(existing.assignment_slots).map(([slotName, arms]) => ({
+          name:     slotName,
+          armsText: Array.isArray(arms) ? arms.join(', ') : '',
+        }))
+      : [])
   }, [existing])
 
   const isLongitudinal = deliveryMode === 'online_longitudinal'
@@ -89,6 +119,24 @@ export default function StudyFormPage() {
   const save = useMutation({
     mutationFn: async () => {
       if (!name.trim()) throw new Error('Study name is required.')
+
+      // Validate condition slots (non-longitudinal only)
+      let assignmentSlots = null
+      if (!isLongitudinal && slots.length > 0) {
+        const seen = new Set()
+        for (const s of slots) {
+          const slotName = s.name.trim()
+          if (!slotName) throw new Error('Every condition slot needs a name.')
+          if (seen.has(slotName)) throw new Error(`Duplicate slot name "${slotName}".`)
+          seen.add(slotName)
+          if (parseArms(s.armsText).length < 2) {
+            throw new Error(`Slot "${slotName}" needs at least 2 arms (comma-separated).`)
+          }
+        }
+        assignmentSlots = Object.fromEntries(
+          slots.map(s => [s.name.trim(), parseArms(s.armsText)])
+        )
+      }
 
       const payload = {
         name:         name.trim(),
@@ -103,6 +151,7 @@ export default function StudyFormPage() {
           reminder_max:           reminderMax ? Number(reminderMax) : null,
           email_subject:          emailSubject || null,
           email_body:             emailBody || null,
+          assignment_slots:       assignmentSlots,
         } : {}),
       }
 
@@ -317,6 +366,71 @@ export default function StudyFormPage() {
           </div>
         )}
 
+        {/* Condition assignment — non-longitudinal only.
+            Longitudinal studies randomize via graph nodes in the builder. */}
+        {!isLongitudinal && (
+          <div style={S.emailPrefs}>
+            <div style={S.emailPrefsTitle}>Condition assignment</div>
+            <p style={{ ...S.muted, fontSize: 12, margin: 0 }}>
+              Participants are randomly assigned to one arm per slot when they start
+              a session, balanced in blocks. Leave empty for no random assignment.
+            </p>
+
+            {slots.map((slot, i) => {
+              const locked = lockedSlotNames.has(slot.name)
+              return (
+                <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                    <div style={{ ...S.fieldGroup, flex: '0 0 150px' }}>
+                      <label style={S.fieldLabel}>Slot name</label>
+                      <input
+                        style={{ ...S.input, opacity: locked ? 0.55 : 1 }}
+                        value={slot.name}
+                        disabled={locked}
+                        onChange={e => setSlots(ss => ss.map((s, j) => j === i ? { ...s, name: e.target.value } : s))}
+                        placeholder="condition"
+                      />
+                    </div>
+                    <div style={{ ...S.fieldGroup, flex: 1, minWidth: 180 }}>
+                      <label style={S.fieldLabel}>Arms (comma-separated, min 2)</label>
+                      <input
+                        style={{ ...S.input, opacity: locked ? 0.55 : 1 }}
+                        value={slot.armsText}
+                        disabled={locked}
+                        onChange={e => setSlots(ss => ss.map((s, j) => j === i ? { ...s, armsText: e.target.value } : s))}
+                        placeholder="control, treatment"
+                      />
+                    </div>
+                    {!locked && (
+                      <button
+                        type="button"
+                        style={S.slotDelete}
+                        onClick={() => setSlots(ss => ss.filter((_, j) => j !== i))}
+                        aria-label={`Remove slot ${slot.name || i + 1}`}
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                  {locked && (
+                    <p style={{ ...S.muted, fontSize: 12, margin: 0 }}>
+                      Assignments exist for this slot. Duplicate the study to change arms.
+                    </p>
+                  )}
+                </div>
+              )
+            })}
+
+            <button
+              type="button"
+              style={S.addSlotBtn}
+              onClick={() => setSlots(ss => [...ss, { name: ss.length === 0 ? 'condition' : '', armsText: '' }])}
+            >
+              + Add slot
+            </button>
+          </div>
+        )}
+
         {/* Active toggle */}
         <div style={S.fieldGroup}>
           <div style={S.toggleRow}>
@@ -369,5 +483,7 @@ const S = {
   toggleLabel:    { fontSize: 14, color: 'var(--tx)', fontFamily: '"DM Sans",system-ui,sans-serif' },
   varPill:        { fontFamily: '"Space Mono",monospace', fontSize: 11, background: 'var(--bgc)', border: '1px solid var(--pkb)', borderRadius: 6, padding: '3px 8px', color: 'var(--pkd)', cursor: 'pointer' },
   previewBtn:     { fontSize: 13, color: 'var(--pkd)', background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', textDecoration: 'underline' },
+  slotDelete:     { background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tx3)', fontSize: 14, padding: '26px 4px 0', flexShrink: 0 },
+  addSlotBtn:     { alignSelf: 'flex-start', fontSize: 13, color: 'var(--pkd)', background: '#fff', border: '1px dashed var(--pkb)', borderRadius: 8, padding: '7px 14px', cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
   btnPrimary:     { display: 'inline-block', background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 18px', fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
 }
