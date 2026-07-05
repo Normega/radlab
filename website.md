@@ -1379,6 +1379,8 @@ Specced. Three background components built (FarmField, Greenhouse, FarmRow) and 
 
 Breath Belt is a lab-only psychophysics study measuring how well participants can detect changes in their own breathing pace. It uses a Polar H10 chest belt (via Web Bluetooth) to record respiratory acceleration data, and a COM port trigger box to send synchronisation signals to the physio equipment. The study runs in Chrome/Edge only (Web Bluetooth requirement).
 
+**Conference demo (2026-07)**: `src/games/BreathBelt/BreathBeltDemo.jsx` at `/demo/breath-belt` — unauthenticated, writes nothing (no Supabase, no CSV, no-op triggers, no COM/Biopac step). Flow: pairing → real MLR calibration with review panel → 3 paced trials with post-trial SignalGraph + sync chips → 2 hardcoded change-detection trials (speed up 4s→3s, then slow down 4s→5s) with 3AFC + confidence + arousal ratings and a reveal graph → summary. `?sim=1` rehearses without a belt (graphs show placeholders — sim produces no raw accel). Reuses `useBeltConnection`, `useTrialRunner`, `CalibrationScreen`, `SignalGraph`, shared rating scales.
+
 Access is gated internally by the component: only users with `profiles.role` of `'lab'` or `'admin'` can proceed past the browser check. All other users see an "Access restricted" screen.
 
 Route: `/games/breath-belt`

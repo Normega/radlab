@@ -72,6 +72,7 @@ import ScreenerLibraryPage  from './pages/admin/ScreenerLibraryPage'
 import ExperimentBuilder    from './pages/admin/ExperimentBuilder'
 import DisplaysPage         from './pages/admin/DisplaysPage'
 import DisplayEditorPage    from './pages/admin/DisplayEditorPage'
+import BreathBeltDemo       from './games/BreathBelt/BreathBeltDemo'
 import AudioTest        from './pages/dev/AudioTest'
 import ColorMax      from './games/ColorMax/ColorMax'
 
@@ -282,6 +283,9 @@ export default function App() {
           {/* Dev-only test harness — component guards with import.meta.env.DEV */}
           <Route path="/dev/video-test" element={<VideoTest />} />
           <Route path="/dev/audio-test" element={<AudioTest />} />
+
+          {/* Conference demo — no auth, writes nothing; ?sim=1 for beltless rehearsal */}
+          <Route path="/demo/breath-belt" element={<BreathBeltDemo />} />
 
           {/* Unsubscribe — no auth or layout */}
           <Route path="/unsubscribe/:token" element={<Unsubscribe />} />
