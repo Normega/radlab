@@ -2,18 +2,34 @@ import { useState } from 'react'
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 
-const NAV_ITEMS = [
-  { to: '/admin/sessions',        label: 'Sessions'       },
-  { to: '/admin/studies',         label: 'Studies'        },
-  { to: '/admin/games',           label: 'Games'          },
-  { to: '/admin/screeners',       label: 'Screeners'      },
-  { to: '/admin/questionnaires',  label: 'Questionnaires' },
-  { to: '/admin/vas',             label: 'Rating Scales'  },
-  { to: '/admin/videos',          label: 'Videos'         },
-  { to: '/admin/audio',           label: 'Audio'          },
-  { to: '/admin/training',        label: 'Training'       },
-  { to: '/admin/compensation',    label: 'Compensation'   },
-  { to: '/admin/export',          label: 'Export'         },
+const NAV_SECTIONS = [
+  {
+    header: null,
+    items: [
+      { to: '/admin/sessions',        label: 'Sessions'       },
+      { to: '/admin/studies',         label: 'Studies'        },
+    ],
+  },
+  {
+    header: 'Elements',
+    items: [
+      { to: '/admin/games',           label: 'Games'          },
+      { to: '/admin/screeners',       label: 'Screeners'      },
+      { to: '/admin/questionnaires',  label: 'Questionnaires' },
+      { to: '/admin/vas',             label: 'Rating Scales'  },
+      { to: '/admin/displays',        label: 'Displays'       },
+      { to: '/admin/videos',          label: 'Videos'         },
+      { to: '/admin/audio',           label: 'Audio'          },
+    ],
+  },
+  {
+    header: null,
+    items: [
+      { to: '/admin/training',        label: 'Training'       },
+      { to: '/admin/compensation',    label: 'Compensation'   },
+      { to: '/admin/export',          label: 'Export'         },
+    ],
+  },
 ]
 
 function Sidebar({ session, onClose }) {
@@ -35,15 +51,24 @@ function Sidebar({ session, onClose }) {
       </Link>
 
       <nav style={S.nav}>
-        {NAV_ITEMS.map(({ to, label }) => (
-          <NavLink
-            key={to}
-            to={to}
-            style={({ isActive }) => ({ ...S.navLink, ...(isActive ? S.navActive : {}) })}
-            onClick={onClose}
-          >
-            {label}
-          </NavLink>
+        {NAV_SECTIONS.map((section, si) => (
+          <div key={si} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {section.header && <div style={S.navHeader}>{section.header}</div>}
+            {section.items.map(({ to, label }) => (
+              <NavLink
+                key={to}
+                to={to}
+                style={({ isActive }) => ({
+                  ...S.navLink,
+                  ...(section.header ? S.navIndent : {}),
+                  ...(isActive ? S.navActive : {}),
+                })}
+                onClick={onClose}
+              >
+                {label}
+              </NavLink>
+            ))}
+          </div>
         ))}
       </nav>
 
@@ -115,9 +140,15 @@ const S = {
   },
   logo: { height: 36, display: 'block' },
   nav: {
-    display: 'flex', flexDirection: 'column', gap: 2,
+    display: 'flex', flexDirection: 'column', gap: 10,
     padding: '0 10px',
   },
+  navHeader: {
+    fontFamily: '"Space Mono",monospace', fontSize: 10,
+    color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.08em',
+    padding: '6px 12px 2px',
+  },
+  navIndent: { paddingLeft: 22 },
   navLink: {
     display: 'block', padding: '9px 12px', borderRadius: 8,
     fontFamily: '"DM Sans",system-ui,sans-serif',

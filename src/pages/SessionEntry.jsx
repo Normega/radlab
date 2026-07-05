@@ -1,4 +1,4 @@
-// v5 — condition assignment draws (draw_assignment RPC) gate the step flow
+// v6 — step outputs accumulated into a session context for display steps
 import { useEffect, useState, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { createClient } from '@supabase/supabase-js'
@@ -24,6 +24,10 @@ export default function SessionEntry() {
   const [currentIndex,   setCurrentIndex]   = useState(0)
   const [consentStudyId, setConsentStudyId] = useState(null)
   const [screenerSpec,   setScreenerSpec]   = useState(null) // { screener, participantId, studyId }
+  // Session context for display steps: outputs of completed steps, keyed
+  // by element type then slug (see src/lib/elementOutputs.js). In-memory only —
+  // a mid-session reload restarts the flow, so outputs rebuild as steps redo.
+  const [stepOutputs,    setStepOutputs]    = useState({})
   const fullDataRef = useRef(null)
   // Isolated Supabase client — never modifies the global lab session.
   const sbRef = useRef(makeParticipantClient())
@@ -163,7 +167,30 @@ export default function SessionEntry() {
     setState('screener_blocked')
   }
 
-  async function handleStepComplete() {
+  async function handleStepComplete(result) {
+    // Capture named outputs from steps that report them (games, sliders, VAS)
+    // so later display steps can interpolate {{game.<slug>.<key>}} etc.
+    if (result && typeof result === 'object') {
+      let type = null, slug = null, vals = null
+      if (result.game_slug) {
+        type = 'game'; slug = result.game_slug
+        const { game_slug, ...rest } = result
+        vals = rest
+      } else if (result.slider_slug) {
+        type = 'slider'; slug = result.slider_slug
+        vals = { value: result.value }
+      } else if (result.scale_slug) {
+        type = 'vas'; slug = result.scale_slug
+        vals = { value: result.value }
+      }
+      if (type) {
+        setStepOutputs(prev => ({
+          ...prev,
+          [type]: { ...(prev[type] ?? {}), [slug]: vals },
+        }))
+      }
+    }
+
     const nodes = sessionData?.nodes ?? []
     if (currentIndex < nodes.length - 1) {
       setCurrentIndex(i => i + 1)
@@ -321,6 +348,7 @@ export default function SessionEntry() {
             debriefHtml={debriefHtml}
             supabaseClient={sb}
             assignments={slotKeys.length > 0 ? assignments : null}
+            stepOutputs={stepOutputs}
           />
         </div>
       </div>

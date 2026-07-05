@@ -2,7 +2,7 @@
 
 > **Regulatory and Affective Dynamics Lab**  
 > University of Toronto · PI: Professor Norman Farb, PhD  
-> Last updated: 2026-07-05 (assignment randomizer implemented and pilot-verified: shared `draw_assignment` primitive, `assignment_slots` + StudyFormPage condition card, `useAssignment` hooks, SessionEntry draw gating, `seededRandom.js` utility — see §28 Shared assignment primitive. Prior update: 2026-07-02 (restructured into Parts I–IV: renumbered sections, restored lost §11/§16 headers, rewrote roadmap as §30, added §22 game stubs, §24 VAS stub; §28 Experiment Builder merged verbatim from commit 7a030c3 (renumbered from 26). Prior update: 2026-05-29 (BreathBelt §20: Biopac parallel-port triggers implemented — Biopac_Left/Biopac_Right now relay through a local parallel_server.py helper; trigger-device selector moved onto the connect screen; connectBiopac() + sendTestCascade() added; a 1–13 test cascade auto-fires on connect with an RA verify step. Earlier 2026-05-26 update: MLR calibration pipeline replacing percentile approach; fitBestModel — 6 model variants, best by Pearson R; useBeltConnection exposes mlrWeightsRef, filterState3Ref, syncQuality, calibReviewData, beginCalibCollection, redoCalibration, getPacerRadiusFnRef; BeltSyncRing retained for other games; SynchronyBar shown during trials; useStreamingBackup adds parallel File System Access API CSV backup; belt_mlr_migration.sql adds calib_model_label, calib_fit_r, calib_lag_ms to belt_sessions.))
+> Last updated: 2026-07-05 (display elements §24a: block-based `displays` table, condition-gated blocks, `{{variable}}` interpolation from session step outputs, admin editor + Elements nav regroup. Same day: assignment randomizer implemented and pilot-verified: shared `draw_assignment` primitive, `assignment_slots` + StudyFormPage condition card, `useAssignment` hooks, SessionEntry draw gating, `seededRandom.js` utility — see §28 Shared assignment primitive. Prior update: 2026-07-02 (restructured into Parts I–IV: renumbered sections, restored lost §11/§16 headers, rewrote roadmap as §30, added §22 game stubs, §24 VAS stub; §28 Experiment Builder merged verbatim from commit 7a030c3 (renumbered from 26). Prior update: 2026-05-29 (BreathBelt §20: Biopac parallel-port triggers implemented — Biopac_Left/Biopac_Right now relay through a local parallel_server.py helper; trigger-device selector moved onto the connect screen; connectBiopac() + sendTestCascade() added; a 1–13 test cascade auto-fires on connect with an RA verify step. Earlier 2026-05-26 update: MLR calibration pipeline replacing percentile approach; fitBestModel — 6 model variants, best by Pearson R; useBeltConnection exposes mlrWeightsRef, filterState3Ref, syncQuality, calibReviewData, beginCalibCollection, redoCalibration, getPacerRadiusFnRef; BeltSyncRing retained for other games; SynchronyBar shown during trials; useStreamingBackup adds parallel File System Access API CSV backup; belt_mlr_migration.sql adds calib_model_label, calib_fit_r, calib_lag_ms to belt_sessions.))
 
 ---
 
@@ -1851,6 +1851,24 @@ Visual analogue scale infrastructure is built and in use but undocumented here.
 - Admin pages: `VasLibraryPage`, `VasUploadPage`, `VasPreviewPage`, `VasPackageBuilder`, `SliderCreatePage`
 - Scales built: confidence, life-satisfaction, task-satisfaction; emoji anchor assets in Supabase storage
 - Authoring workflow: `vas-scale` skill (claude.ai)
+
+## 24a. Display Elements (2026-07-05)
+
+Participant-facing content pages placeable as session steps: instructions, condition-specific text, performance feedback. Built for Sandy study 3 (predicted vs. observed percentile after Aptitude Suite); the long-term host for what instruction screens currently do in game code.
+
+**Architecture — block-based from day one, text-only for now.** `displays` table (`slug`, `name`, `blocks` jsonb, RLS: authenticated read / lab write via `my_role()`). `blocks` is an ordered array of `{ type: 'text', text, showIf }`; video/audio/interactive block types are additive later (new `type` values), no schema change. Migration `20260705_displays.sql` (applied).
+
+**Element integration** follows the VAS pattern: one `activities` row per display (`category = 'display'`, `subcategory = slug`), so displays appear in SessionBuilder's picker (new "Displays" group) and flow through `session_template_nodes` / `get_session_by_token` with zero server changes. StepDispatcher v4 dispatches `category === 'display'` to `DisplayStepWrapper`.
+
+**Condition-dependent content**: per-block `showIf: { slot, in: [arms] }` filters against the participant's assignments from `draw_assignment` (§28 Shared assignment primitive). One display serves all conditions.
+
+**Variable interpolation**: `{{path}}` placeholders resolve from the session context — `{{condition}}` (any slot key), `{{slider.<slug>.value}}`, `{{vas.<slug>.value}}`, `{{game.<slug>.<key>}}`. SessionEntry v6 accumulates step outputs from each step's `onComplete` payload (games/sliders/VAS already reported these; previously discarded). Unresolved variables render as "—". The context is in-memory only: a mid-session reload restarts the flow (accepted; restart-from-top is the current session model).
+
+**Variable manifest**: `src/lib/elementOutputs.js` declares what each game reports (`aptitude_suite`: scores + percentiles + `avg_pct`; `word_max`, `color_max`; `still_water`/`breath_belt`: none). Sliders/VAS always produce `value`. The display editor's variable picker reads this manifest plus live slider/VAS slugs — keep the manifest updated when a game's `onSessionComplete` payload changes.
+
+**Admin**: `/admin/displays` (list) + `/admin/displays/new|:id` (editor: name, auto-slug locked after create, text blocks with per-block showIf inputs, variable pill picker). AdminLayout nav regrouped: Sessions/Studies top-level, then an **Elements** section (Games, Screeners, Questionnaires, Rating Scales, Displays, Videos, Audio), then Training/Compensation/Export.
+
+**Sandy study 3 wiring**: session = `slider_predicted_efficacy` → Aptitude Suite → display referencing `{{slider.predicted_efficacy.value}}` and `{{game.aptitude_suite.avg_pct}}`, with condition-gated blocks.
 
 ## 25. Video Library (Admin)
 

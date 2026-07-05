@@ -1,5 +1,6 @@
-// v3 — carries condition assignments ({ [slotKey]: arm }) into step components
+// v4 — display step category; stepOutputs (session context) threaded through
 import ConsentStep              from './ConsentStep'
+import DisplayStepWrapper       from './DisplayStepWrapper'
 import DebriefStep              from './DebriefStep'
 import DemographicsStep         from './DemographicsStep'
 import CompensationStep         from './CompensationStep'
@@ -20,8 +21,10 @@ import VasStepWrapper          from './VasStepWrapper'
  *   debriefHtml — HTML string for debrief step (from study)
  *   isSimMode   — bool — when true all steps auto-complete
  *   assignments — { [slotKey]: arm } from draw_assignment, or null
+ *   stepOutputs — { slider: {...}, vas: {...}, game: {...} } accumulated from
+ *                 earlier steps this session; consumed by display steps
  */
-export default function StepDispatcher({ node, enrollment, scheduleId, stepIndex, totalSteps, onComplete, consentHtml, debriefHtml, supabaseClient, isSimMode = false, assignments = null }) {
+export default function StepDispatcher({ node, enrollment, scheduleId, stepIndex, totalSteps, onComplete, consentHtml, debriefHtml, supabaseClient, isSimMode = false, assignments = null, stepOutputs = null }) {
   const activity = node?.activity ?? node?.activities
   if (!activity) {
     return (
@@ -94,6 +97,19 @@ export default function StepDispatcher({ node, enrollment, scheduleId, stepIndex
         enrollment={enrollment}
         stepIndex={stepIndex}
         totalSteps={totalSteps}
+        onComplete={onComplete}
+        supabaseClient={supabaseClient}
+        isSimMode={isSimMode}
+      />
+    )
+  }
+
+  if (category === 'display') {
+    return (
+      <DisplayStepWrapper
+        slug={subcategory}
+        assignments={assignments}
+        stepOutputs={stepOutputs}
         onComplete={onComplete}
         supabaseClient={supabaseClient}
         isSimMode={isSimMode}

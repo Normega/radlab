@@ -70,6 +70,8 @@ import VasPreviewPage   from './pages/admin/VasPreviewPage'
 import SliderCreatePage      from './pages/admin/SliderCreatePage'
 import ScreenerLibraryPage  from './pages/admin/ScreenerLibraryPage'
 import ExperimentBuilder    from './pages/admin/ExperimentBuilder'
+import DisplaysPage         from './pages/admin/DisplaysPage'
+import DisplayEditorPage    from './pages/admin/DisplayEditorPage'
 import AudioTest        from './pages/dev/AudioTest'
 import ColorMax      from './games/ColorMax/ColorMax'
 
@@ -316,6 +318,9 @@ export default function App() {
               <Route path="/admin/vas/packages/new"    element={<VasPackageBuilder />} />
               <Route path="/admin/vas/:slug"           element={<VasPreviewPage />} />
               <Route path="/admin/sliders/new"         element={<SliderCreatePage />} />
+              <Route path="/admin/displays"            element={<DisplaysPage />} />
+              <Route path="/admin/displays/new"        element={<DisplayEditorPage />} />
+              <Route path="/admin/displays/:id"        element={<DisplayEditorPage />} />
               <Route path="/admin/screeners"           element={<ScreenerLibraryPage />} />
             </Route>
           </Route>
