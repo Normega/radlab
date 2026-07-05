@@ -1856,7 +1856,7 @@ Visual analogue scale infrastructure is built and in use but undocumented here.
 
 Participant-facing content pages placeable as session steps: instructions, condition-specific text, performance feedback. Built for Sandy study 3 (predicted vs. observed percentile after Aptitude Suite); the long-term host for what instruction screens currently do in game code.
 
-**Architecture — block-based from day one, text-only for now.** `displays` table (`slug`, `name`, `blocks` jsonb, RLS: authenticated read / lab write via `my_role()`). `blocks` is an ordered array of `{ type: 'text', text, showIf }`; video/audio/interactive block types are additive later (new `type` values), no schema change. Migration `20260705_displays.sql` (applied).
+**Architecture — block-based from day one, text-only for now.** `displays` table (`slug`, `name`, `blocks` jsonb, RLS: authenticated read / lab write via `my_role()`). `blocks` is an ordered array of `{ type: 'text', text, showIf }`; video/audio/interactive block types are additive later (new `type` values), no schema change. Migration `20260705_displays.sql` (applied). Long-term, displays absorb the Training Module system — see §26 Convergence plan (Liliana stays on `intervention_modules`; Sense Foraging course authors as displays).
 
 **Element integration** follows the VAS pattern: one `activities` row per display (`category = 'display'`, `subcategory = slug`), so displays appear in SessionBuilder's picker (new "Displays" group) and flow through `session_template_nodes` / `get_session_by_token` with zero server changes. StepDispatcher v4 dispatches `category === 'display'` to `DisplayStepWrapper`.
 
@@ -2169,6 +2169,18 @@ src/pages/admin/
 - `liliana_day_data.started_at` is stamped on first attempt; `completed_at` remains null for abandoned sessions. Use `completed_at IS NULL` to find drop-offs.
 - `midpoint_completed_at` on `liliana_participants` is a hard gate for Phase 2 — explicit nullable timestamp is cleaner than inferring completion from day data presence.
 - Training videos must be uploaded with the `liliana/` prefix in the object name — Supabase Storage has no real directories; the slash is just part of the path string.
+
+### Convergence plan with Display Elements (decided 2026-07-05)
+
+Training modules and display elements (§24a) are two parallel block-based content systems (`intervention_modules.definition.steps` vs `displays.blocks`). Decision: converge on displays — but **not for Liliana**.
+
+- **Liliana stays frozen on `intervention_modules`** through her study. Her 34 modules are authored, working, and wired into study-specific data capture (`liliana_participants`, `liliana_day_data`). Rebuilding the delivery vehicle before the August pretest is timeline risk for zero participant benefit. Legacy by appointment, not neglect.
+- **Display block types grow by real demand**, additive to the shipped schema: video and audio blocks next (assets + admin libraries already exist), then a `prompt_response`-style response block with a general `display_responses` table. Response capture is the hard design (her modules *collect* data into study-specific tables; displays currently only *show* it) — it gets its own pass, not a deadline-driven one.
+- **Step-type census of her content** (what parity actually requires): `prompt_response` 92, `video` 37, `text` 18, `closing` 8, `multi_response` 7, `slider` 7, `audio` 5, `training_response` 6; long tail of bespoke interactives (`thought_rating`, `thought_choice`, `word_select`, `body_diagram`, `trigger_map`, `quality_explorer`, `timer`). Text + video + audio + response blocks ≈ 85% of usage; bespoke widgets get ported only if a future study needs them.
+- **Sense Foraging course (P3) is the convergence point**: authored as displays from day one. New curricula never touch `intervention_modules`.
+- **After Liliana's study completes**, retire `intervention_modules` / `TrainingStepWrapper` / `InterventionPage`; do not migrate live participants.
+- When building the video/audio display blocks, spec their shape against her `video`/`audio` step shapes so a future `definition.steps` → `blocks` converter is mostly mechanical.
+
 ## 27. In-Person Study System
 
 ### Overview
