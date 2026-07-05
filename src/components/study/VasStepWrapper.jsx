@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { supabase as globalSupabase } from '../../lib/supabase'
 import VasRenderer from '../vas/VasRenderer'
@@ -104,6 +104,9 @@ export default function VasStepWrapper({
   }).filter(Boolean)
 
   const [pkgIndex, setPkgIndex] = useState(0)
+  // Per-item values collected across the package, reported on completion so
+  // each item lands in the session context under its own slider./vas. key.
+  const pkgValuesRef = useRef([])
 
   // ── Sim mode ─────────────────────────────────────────────────────────────
 
@@ -167,9 +170,17 @@ export default function VasStepWrapper({
   const currentItem = pkgItems[pkgIndex]
 
   function handlePkgItemComplete(value) {
+    const item = pkgItems[pkgIndex]
+    if (item?.data?.slug !== undefined) {
+      pkgValuesRef.current.push({
+        type: item.type === 'slider' ? 'slider' : 'vas',
+        slug: item.data.slug,
+        value,
+      })
+    }
     const next = pkgIndex + 1
     if (next >= pkgItems.length) {
-      onComplete?.({ package_slug: slug, responses_count: next })
+      onComplete?.({ package_slug: slug, responses_count: next, item_values: pkgValuesRef.current })
     } else {
       setPkgIndex(next)
     }

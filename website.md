@@ -1870,6 +1870,11 @@ Participant-facing content pages placeable as session steps: instructions, condi
 
 **Sandy study 3 wiring**: session = `slider_predicted_efficacy` → Aptitude Suite → display referencing `{{slider.predicted_efficacy.value}}` and `{{game.aptitude_suite.avg_pct}}`, with condition-gated blocks.
 
+**Dependency checker (2026-07-05)**: `src/lib/displayDeps.js` (pure: `extractDeps`, `itemProduces`, `checkSequence`). Three layers, all warnings non-blocking (unmet variables render "—" at runtime, never crash):
+- *SessionBuilder*: display nodes show amber warnings per unmet variable — `missing` (no producer in session), `after` (producer ordered later), `badkey` (game exists but output name wrong, checked against `GAME_OUTPUTS`); slot expectations shown as an info line. Removing a node that later displays depend on prompts a confirm listing exactly which variables break. Display blocks and package contents fetched lazily only when such nodes are present; checks are pure client-side list scans on every edit.
+- *StudyFormPage v4*: warns when a display in the study's sessions (via `study_sessions` → `session_template_nodes`) expects a condition slot the study doesn't define — the randomizer half of the check.
+- *Package fix*: VAS/slider steps inside `vas_pkg_*` packages previously reported only `{ package_slug, responses_count }` — item values never reached the session context. Packages now report `item_values: [{type, slug, value}]` and SessionEntry v7 files each under its own `slider.`/`vas.` key, so packaging is transparent to variable availability (and to the checker, which resolves package contents to typed slugs).
+
 ## 25. Video Library (Admin)
 
 **Routes**: `/admin/videos`, `/admin/videos/new`

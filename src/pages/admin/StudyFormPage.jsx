@@ -1,8 +1,10 @@
-// v3 — Condition assignment card (assignment_slots) for non-longitudinal modes
+// v4 — slot dependency banner: warns when session displays expect slots this
+// study does not define
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
+import { extractDeps } from '../../lib/displayDeps'
 
 const DELIVERY_MODES = [
   {
@@ -87,6 +89,40 @@ export default function StudyFormPage() {
     },
   })
   const lockedSlotNames = new Set(Object.keys(slotDrawCounts ?? {}))
+
+  // Slots that displays in this study's sessions expect ({{tokens}} + showIf).
+  // Compared against the defined slots to warn about missing randomization.
+  const { data: displaySlotDeps } = useQuery({
+    queryKey: ['study-display-slot-deps', id],
+    enabled: isEdit,
+    queryFn: async () => {
+      const { data: sess } = await supabase
+        .from('study_sessions').select('session_template_id').eq('study_id', id)
+      const tmplIds = [...new Set((sess ?? []).map(s => s.session_template_id).filter(Boolean))]
+      if (!tmplIds.length) return []
+      const { data: nodes } = await supabase
+        .from('session_template_nodes')
+        .select('activities(category, subcategory)')
+        .in('session_template_id', tmplIds)
+      const slugs = [...new Set(
+        (nodes ?? [])
+          .filter(n => n.activities?.category === 'display')
+          .map(n => n.activities.subcategory)
+      )]
+      if (!slugs.length) return []
+      const { data: disps } = await supabase
+        .from('displays').select('slug, name, blocks').in('slug', slugs)
+      const deps = []
+      for (const d of disps ?? []) {
+        for (const slot of extractDeps(d.blocks).slotDeps) {
+          deps.push({ slot, display: d.name })
+        }
+      }
+      return deps
+    },
+  })
+  const definedSlotNames = new Set(slots.map(s => s.name.trim()))
+  const missingSlotDeps = (displaySlotDeps ?? []).filter(d => !definedSlotNames.has(d.slot))
 
   // Existing longitudinal studies are edited in the builder, not here.
   useEffect(() => {
@@ -376,6 +412,18 @@ export default function StudyFormPage() {
               a session, balanced in blocks. Leave empty for no random assignment.
             </p>
 
+            {missingSlotDeps.length > 0 && (
+              <div style={S.slotDepWarn}>
+                {missingSlotDeps.map((d, i) => (
+                  <div key={i}>
+                    ⚠ Display "{d.display}" in this study's session expects slot "{d.slot}",
+                    which is not defined here. Its condition-gated content will not show
+                    and {'{{'}{d.slot}{'}}'} will render as "—".
+                  </div>
+                ))}
+              </div>
+            )}
+
             {slots.map((slot, i) => {
               const locked = lockedSlotNames.has(slot.name)
               return (
@@ -484,6 +532,7 @@ const S = {
   varPill:        { fontFamily: '"Space Mono",monospace', fontSize: 11, background: 'var(--bgc)', border: '1px solid var(--pkb)', borderRadius: 6, padding: '3px 8px', color: 'var(--pkd)', cursor: 'pointer' },
   previewBtn:     { fontSize: 13, color: 'var(--pkd)', background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', textDecoration: 'underline' },
   slotDelete:     { background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tx3)', fontSize: 14, padding: '26px 4px 0', flexShrink: 0 },
+  slotDepWarn:    { display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12, color: '#9a6b1f', background: '#fdf6ec', border: '1px solid #f0d9b0', borderRadius: 8, padding: '10px 14px', fontFamily: '"DM Sans",system-ui,sans-serif', lineHeight: 1.5 },
   addSlotBtn:     { alignSelf: 'flex-start', fontSize: 13, color: 'var(--pkd)', background: '#fff', border: '1px dashed var(--pkb)', borderRadius: 8, padding: '7px 14px', cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
   btnPrimary:     { display: 'inline-block', background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 18px', fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
 }

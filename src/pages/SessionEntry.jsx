@@ -1,4 +1,4 @@
-// v6 — step outputs accumulated into a session context for display steps
+// v7 — VAS/slider package item values captured individually into the context
 import { useEffect, useState, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { createClient } from '@supabase/supabase-js'
@@ -171,23 +171,27 @@ export default function SessionEntry() {
     // Capture named outputs from steps that report them (games, sliders, VAS)
     // so later display steps can interpolate {{game.<slug>.<key>}} etc.
     if (result && typeof result === 'object') {
-      let type = null, slug = null, vals = null
+      const entries = [] // [type, slug, vals]
       if (result.game_slug) {
-        type = 'game'; slug = result.game_slug
         const { game_slug, ...rest } = result
-        vals = rest
+        entries.push(['game', game_slug, rest])
       } else if (result.slider_slug) {
-        type = 'slider'; slug = result.slider_slug
-        vals = { value: result.value }
+        entries.push(['slider', result.slider_slug, { value: result.value }])
       } else if (result.scale_slug) {
-        type = 'vas'; slug = result.scale_slug
-        vals = { value: result.value }
+        entries.push(['vas', result.scale_slug, { value: result.value }])
+      } else if (result.package_slug && Array.isArray(result.item_values)) {
+        for (const iv of result.item_values) {
+          entries.push([iv.type, iv.slug, { value: iv.value }])
+        }
       }
-      if (type) {
-        setStepOutputs(prev => ({
-          ...prev,
-          [type]: { ...(prev[type] ?? {}), [slug]: vals },
-        }))
+      if (entries.length) {
+        setStepOutputs(prev => {
+          const next = { ...prev }
+          for (const [type, slug, vals] of entries) {
+            next[type] = { ...(next[type] ?? {}), [slug]: vals }
+          }
+          return next
+        })
       }
     }
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
@@ -9,6 +9,7 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { supabase } from '../../lib/supabase'
+import { checkSequence, unmetMessage } from '../../lib/displayDeps'
 
 const CATEGORY_ORDER  = ['game', 'questionnaire', 'vas', 'display', 'form', 'physio', 'training']
 const CATEGORY_LABELS = { game: 'Games', questionnaire: 'Questionnaires', vas: 'Rating Scales', display: 'Displays', form: 'Forms', physio: 'Physio', training: 'Training Modules' }
@@ -19,7 +20,7 @@ function useActivities() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('activities')
-        .select('id, label, category, estimated_minutes')
+        .select('id, label, category, subcategory, estimated_minutes')
         .order('label')
       if (error) throw error
       return data ?? []
@@ -67,7 +68,7 @@ function useSession(id) {
         .select(`
           id, label, description,
           session_template_nodes(id, order_index, activity_id, questionnaire_id, module_id, label,
-            activities(id, label, category, estimated_minutes),
+            activities(id, label, category, subcategory, estimated_minutes),
             questionnaires(id, name, slug)
           )
         `)
@@ -79,24 +80,40 @@ function useSession(id) {
   })
 }
 
-function SortableItem({ item, onRemove }) {
+function SortableItem({ item, onRemove, verdict }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item._key })
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
   }
+  const hasWarnings = (verdict?.unmet?.length ?? 0) > 0
   return (
-    <div ref={setNodeRef} style={{ ...S.seqItem, ...style }}>
-      <span style={S.dragHandle} {...attributes} {...listeners}>⠿</span>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <span style={S.seqLabel}>{item.label}</span>
-        {item.category && <span style={S.seqCat}>{item.category}</span>}
+    <div ref={setNodeRef} style={{ ...S.seqItemWrap, ...style }}>
+      <div style={{ ...S.seqItem, ...(hasWarnings ? S.seqItemWarn : {}) }}>
+        <span style={S.dragHandle} {...attributes} {...listeners}>⠿</span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <span style={S.seqLabel}>{item.label}</span>
+          {item.category && <span style={S.seqCat}>{item.category}</span>}
+        </div>
+        {item.estimated_minutes ? (
+          <span style={S.seqMin}>{item.estimated_minutes}m</span>
+        ) : null}
+        <button style={S.removeBtn} onClick={() => onRemove(item._key)}>×</button>
       </div>
-      {item.estimated_minutes ? (
-        <span style={S.seqMin}>{item.estimated_minutes}m</span>
-      ) : null}
-      <button style={S.removeBtn} onClick={() => onRemove(item._key)}>×</button>
+      {hasWarnings && (
+        <div style={S.depWarnBox}>
+          {verdict.unmet.map((u, i) => (
+            <div key={i} style={S.depWarnLine}>⚠ {unmetMessage(u)}</div>
+          ))}
+        </div>
+      )}
+      {verdict?.slots?.length > 0 && (
+        <div style={S.depSlotLine}>
+          Expects condition slot{verdict.slots.length > 1 ? 's' : ''}{' '}
+          {verdict.slots.map(s => `"${s}"`).join(', ')} — define on the study's Condition assignment card.
+        </div>
+      )}
     </div>
   )
 }
@@ -140,6 +157,7 @@ export default function SessionBuilder() {
       module_id:         n.module_id        ?? null,
       label:             n.activities?.label ?? n.questionnaires?.name ?? n.label,
       category:          n.module_id ? 'training' : (n.activities?.category ?? 'questionnaire'),
+      subcategory:       n.activities?.subcategory ?? null,
       estimated_minutes: n.activities?.estimated_minutes ?? null,
     })))
   }, [existing])
@@ -190,13 +208,100 @@ export default function SessionBuilder() {
         module_id:         null,
         label:             act.label,
         category:          act.category,
+        subcategory:       act.subcategory ?? null,
         estimated_minutes: act.estimated_minutes,
       }])
     }
   }
 
+  // ── Display dependency checking ─────────────────────────────────────────
+  // Blocks for any displays in the sequence (lazy, only when present).
+  const displaySlugs = [...new Set(
+    sequence.filter(i => i.category === 'display' && i.subcategory).map(i => i.subcategory)
+  )].sort()
+  const { data: displayBlocksMap = {} } = useQuery({
+    queryKey: ['display-blocks', displaySlugs.join(',')],
+    enabled: displaySlugs.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('displays').select('slug, blocks').in('slug', displaySlugs)
+      if (error) throw error
+      return Object.fromEntries((data ?? []).map(d => [d.slug, d.blocks ?? []]))
+    },
+  })
+
+  // Contents of any VAS packages in the sequence, resolved to typed slugs,
+  // so packaged sliders/scales count as variable producers.
+  const pkgSlugs = [...new Set(
+    sequence.filter(i => i.category === 'vas' && i.subcategory?.startsWith('vas_pkg_'))
+            .map(i => i.subcategory.slice(8))
+  )].sort()
+  const { data: pkgContentsMap = {} } = useQuery({
+    queryKey: ['pkg-contents', pkgSlugs.join(',')],
+    enabled: pkgSlugs.length > 0,
+    queryFn: async () => {
+      const { data: pkgs, error } = await supabase
+        .from('vas_packages').select('slug, items, scale_ids').in('slug', pkgSlugs)
+      if (error) throw error
+      const itemsOf = p => p.items ?? (p.scale_ids ?? []).map(sid => ({ type: 'vas', id: sid }))
+      const vasIds = [], sliderIds = []
+      for (const p of pkgs ?? []) {
+        for (const it of itemsOf(p)) (it.type === 'slider' ? sliderIds : vasIds).push(it.id)
+      }
+      const [vasRows, sliderRows] = await Promise.all([
+        vasIds.length
+          ? supabase.from('vas_scales').select('id, slug').in('id', vasIds).then(r => r.data ?? [])
+          : [],
+        sliderIds.length
+          ? supabase.from('slider_scales').select('id, slug').in('id', sliderIds).then(r => r.data ?? [])
+          : [],
+      ])
+      const slugById = {
+        vas:    Object.fromEntries(vasRows.map(r => [r.id, r.slug])),
+        slider: Object.fromEntries(sliderRows.map(r => [r.id, r.slug])),
+      }
+      const map = {}
+      for (const p of pkgs ?? []) {
+        map[p.slug] = itemsOf(p).map(it => {
+          const type = it.type === 'slider' ? 'slider' : 'vas'
+          return { type, slug: slugById[type][it.id] }
+        }).filter(c => c.slug)
+      }
+      return map
+    },
+  })
+
+  // Aligned with sequence: null for non-displays, else { unmet, slots }.
+  const verdicts = useMemo(
+    () => checkSequence(sequence, displayBlocksMap, pkgContentsMap),
+    [sequence, displayBlocksMap, pkgContentsMap]
+  )
+
   function removeItem(key) {
-    setSequence(prev => prev.filter(i => i._key !== key))
+    const removed = sequence.find(i => i._key === key)
+    const nextSeq = sequence.filter(i => i._key !== key)
+
+    // Look ahead: does removing this break variables a later display uses?
+    const before = checkSequence(sequence, displayBlocksMap, pkgContentsMap)
+    const after  = checkSequence(nextSeq,  displayBlocksMap, pkgContentsMap)
+    const broken = []
+    nextSeq.forEach((item, i) => {
+      if (item.category !== 'display') return
+      const beforeIdx = sequence.findIndex(s => s._key === item._key)
+      const prevUnmet = new Set((before[beforeIdx]?.unmet ?? []).map(u => u.token))
+      for (const u of after[i]?.unmet ?? []) {
+        if (!prevUnmet.has(u.token)) broken.push(`"${item.label}" loses {{${u.token}}}`)
+      }
+    })
+    if (broken.length) {
+      const ok = window.confirm(
+        `Removing "${removed?.label}" breaks variables used by later displays:\n\n` +
+        broken.join('\n') +
+        `\n\nThose variables will show as "—" to participants. Remove anyway?`
+      )
+      if (!ok) return
+    }
+    setSequence(nextSeq)
   }
 
   const save = useMutation({
@@ -352,8 +457,8 @@ export default function SessionBuilder() {
           ) : (
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
               <SortableContext items={sequence.map(i => i._key)} strategy={verticalListSortingStrategy}>
-                {sequence.map(item => (
-                  <SortableItem key={item._key} item={item} onRemove={removeItem} />
+                {sequence.map((item, i) => (
+                  <SortableItem key={item._key} item={item} onRemove={removeItem} verdict={verdicts[i]} />
                 ))}
               </SortableContext>
             </DndContext>
@@ -390,7 +495,12 @@ const S = {
   uploadedTag:  { fontSize: 10, color: 'var(--tx3)', fontFamily: '"Space Mono",monospace', border: '1px solid var(--bd)', borderRadius: 4, padding: '1px 5px', flexShrink: 0 },
   actMin:       { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)' },
   actAdd:       { fontSize: 16, color: 'var(--pk)', fontWeight: 700, lineHeight: 1 },
-  seqItem:      { display: 'flex', alignItems: 'center', gap: 8, background: 'var(--pkb)', border: '1px solid var(--bd)', borderRadius: 8, padding: '7px 10px', marginBottom: 6, cursor: 'default' },
+  seqItemWrap:  { marginBottom: 6 },
+  seqItem:      { display: 'flex', alignItems: 'center', gap: 8, background: 'var(--pkb)', border: '1px solid var(--bd)', borderRadius: 8, padding: '7px 10px', cursor: 'default' },
+  seqItemWarn:  { border: '1px solid #e8a33d', background: '#fdf6ec' },
+  depWarnBox:   { background: '#fdf6ec', border: '1px solid #f0d9b0', borderTop: 'none', borderRadius: '0 0 8px 8px', padding: '6px 10px', margin: '0 4px' },
+  depWarnLine:  { fontSize: 11, color: '#9a6b1f', fontFamily: '"DM Sans",system-ui,sans-serif', lineHeight: 1.5 },
+  depSlotLine:  { fontSize: 11, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif', padding: '4px 10px 0', lineHeight: 1.5 },
   dragHandle:   { fontSize: 16, color: 'var(--tx3)', cursor: 'grab', userSelect: 'none', flexShrink: 0 },
   seqLabel:     { fontSize: 13, color: 'var(--tx)', fontFamily: '"DM Sans",system-ui,sans-serif', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
   seqCat:       { fontSize: 11, color: 'var(--tx3)', fontFamily: '"Space Mono",monospace', display: 'block' },
