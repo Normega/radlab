@@ -407,11 +407,11 @@ const SLIDES = [
 
   // 17 — ACC-DAN connectivity
   {
-    note: 'Figure: eNeuro (Farb, Zuo & Price 2023) Figure 6 — PPI analysis, ACC × dorsal attention network.',
+    note: 'Figure: eNeuro (Farb, Zuo & Price 2023) — dorsal attention network maps (same figure as slide 16, DAN panel).',
     render: (d) => (
       <Frame kicker="Connectivity">
         <H2>ACC sparing tracks attention-network coupling</H2>
-        <Figure src="/keynote/fig-eneuro-6.png" alt="PPI analysis ACC to dorsal attention network" missingLabel="eNeuro Fig 6 — ACC–DAN PPI" />
+        <Figure src="/keynote/fig-eneuro-4.png" alt="Dorsal attention network maps" missingLabel="eNeuro — DAN maps" />
         <Bullets items={[
           'ACC sparing predicts greater connectivity with the dorsal attention network (DAN).',
           'Attention-network engagement — not just regional activity — tracks subjective awareness.',
@@ -512,6 +512,10 @@ const FIGURE_PRELOAD = [
   '/keynote/fig-staircase.png',
   '/keynote/fig-detection-curve.png',
   '/keynote/fig-arousal-gating.png',
+  '/keynote/fig-eneuro-3.png',
+  '/keynote/fig-eneuro-4.png',
+  '/keynote/fig-ejn-classifier.png',
+  '/keynote/fig-brainsci-training.png',
   '/RADlab_Logo_light.svg',
   '/UofT_Logo.svg',
 ]
