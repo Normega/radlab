@@ -74,6 +74,7 @@ import DisplaysPage         from './pages/admin/DisplaysPage'
 import DisplayEditorPage    from './pages/admin/DisplayEditorPage'
 import BreathBeltDemo       from './games/BreathBelt/BreathBeltDemo'
 import PacerOpenerDemo      from './games/BreathBelt/PacerOpenerDemo'
+import Keynote              from './pages/keynote/Keynote'
 import AudioTest        from './pages/dev/AudioTest'
 import ColorMax      from './games/ColorMax/ColorMax'
 
@@ -289,6 +290,8 @@ export default function App() {
           <Route path="/demo/breath-belt" element={<BreathBeltDemo />} />
           {/* Keynote opener — whole-room pacer, no device, no data */}
           <Route path="/demo/pacer-opener" element={<PacerOpenerDemo />} />
+          {/* ISARP keynote deck — click-through, doubles as read-later resource */}
+          <Route path="/keynote" element={<Keynote />} />
 
           {/* Unsubscribe — no auth or layout */}
           <Route path="/unsubscribe/:token" element={<Unsubscribe />} />
