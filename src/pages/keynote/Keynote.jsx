@@ -485,9 +485,9 @@ const SLIDES = [
     note: 'Figures: EJN (Zuo, Price & Farb 2023) Fig 5 or 9 — classification map; Brain Sci (Price, Sevinc & Farb 2023) Fig 2C or 3B — connectivity increase with MABT training.',
     render: (d) => (
       <Frame wide kicker="Decodable and trainable">
-        <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', justifyContent: 'center' }}>
-          <Figure src="/keynote/fig-ejn-classifier.png" alt="Interoceptive vs exteroceptive classifier" missingLabel="EJN Fig 5/9 — classifier map" maxH="48vh" />
-          <Figure src="/keynote/fig-brainsci-training.png" alt="Connectivity increase with training" missingLabel="Brain Sci Fig 2C/3B — training connectivity" maxH="48vh" />
+        <div style={{ display: 'flex', gap: 28, flexWrap: 'nowrap', justifyContent: 'center', alignItems: 'center', maxWidth: '100%' }}>
+          <Figure src="/keynote/fig-ejn-accuracy.png" alt="Classifier accuracy: baseline vs post-intervention" missingLabel="EJN — classification accuracy" maxH="46vh" />
+          <Figure src="/keynote/fig-brainsci-training.png" alt="Connectivity increase with training" missingLabel="Brain Sci — training connectivity" maxH="46vh" />
         </div>
         <Bullets items={[
           'A classifier tells interoceptive from exteroceptive attention on brain activity alone — 73–85% accuracy, holding two months later.',
@@ -566,7 +566,7 @@ const FIGURE_PRELOAD = [
   '/keynote/fig-eneuro-3.png',
   '/keynote/fig-eneuro-4a.png',
   '/keynote/fig-eneuro-4b.png',
-  '/keynote/fig-ejn-classifier.png',
+  '/keynote/fig-ejn-accuracy.png',
   '/keynote/fig-brainsci-training.png',
   '/RADlab_Logo_light.svg',
   '/UofT_Logo.svg',
