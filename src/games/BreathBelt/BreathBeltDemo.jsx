@@ -86,22 +86,37 @@ function directionalAdherence(graph, baseMs, conditionMs) {
 // to the breathing window [trialStart, trialEnd] — so filtfilt sees a
 // breathing-only window like calibration, not the static fixation lead-in.
 // Falls back to the live sample only when there is no belt data (sim rehearsal).
+// Study 5's pipeline (breath_pipeline.R: run_pipeline) filters the ENTIRE
+// continuous recording once via filtfilt, then extracts each trial's troughs
+// from that already-filtered signal (analyze_respiration). filtfilt has no
+// data outside a window to reference, so filtering a short ~18s per-trial
+// slice in isolation (the previous approach here) distorts amplitude near
+// the window edges — how much depends on where the true breath boundaries
+// land relative to the cut, which varies trial to trial (matches the
+// "worked once, then failed" symptom). Filtering the whole accumulated
+// session once, then slicing the trial window out of the result, gives
+// filtfilt full context and removes that edge transient from every trial
+// after the first. No downsampling here — SignalGraph thins its own path.
 function buildCleanGraph(belt, res, basePeriodMs, changedPeriodMs, liveGraph) {
   const mlr = belt.mlrWeightsRef.current
   if (mlr && res?.trialStartMs != null && res?.trialEndMs != null) {
     const t0 = res.trialStartMs, t1 = res.trialEndMs
-    const samples = (belt.rawAccelRowsRef.current || [])
+    const allSamples = (belt.rawAccelRowsRef.current || [])
       .map(r => ({ t: r.packetTimestamp + r.sampleIndex * 5, x: r.x, y: r.y, z: r.z }))
-      .filter(s => s.t >= t0 && s.t <= t1)
       .sort((a, b) => a.t - b.t)
-    if (samples.length > 80) {
-      const beltRaw  = computeMLRPredictions(samples, mlr)
-      const pacerPts = samples.filter((_, i) => i % 5 === 0)
-        .map(s => ({ t: s.t, value: getPacerRadiusForTrial(s.t, t0, basePeriodMs, changedPeriodMs) }))
-      const beltAll  = samples.map((s, i) => ({ t: s.t, value: beltRaw[i] }))
-      const beltPts  = beltAll.filter((_, i) => i % 5 === 0)
-      const r = pearsonRArrays(beltPts.map(p => p.value), pacerPts.map(p => p.value))
-      return { pacerPts, beltPts, r }
+    if (allSamples.length > 80) {
+      const beltAll = computeMLRPredictions(allSamples, mlr)
+      const pacerPts = [], beltPts = []
+      for (let i = 0; i < allSamples.length; i++) {
+        const t = allSamples[i].t
+        if (t < t0 || t > t1) continue
+        pacerPts.push({ t, value: getPacerRadiusForTrial(t, t0, basePeriodMs, changedPeriodMs) })
+        beltPts.push({ t, value: beltAll[i] })
+      }
+      if (beltPts.length > 20 && pacerPts.length > 20) {
+        const r = pearsonRArrays(beltPts.map(p => p.value), pacerPts.map(p => p.value))
+        return { pacerPts, beltPts, r }
+      }
     }
   }
   return liveGraph
