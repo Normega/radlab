@@ -262,30 +262,34 @@ const SLIDES = [
     ),
   },
 
-  // 8 — Respiration as the fix, BCAT design
+  // 8 — BCAT design: salience × magnitude schematic
   {
     render: (d) => (
       <Frame kicker="Breath Change Awareness Task (BCAT)">
         <Bullets items={[
           'Breath rate can be paced, changed by a known amount, and verified with a belt.',
           'This separates detection from magnitude for the first time.',
-          'A staircase finds each person’s detection threshold.',
-          'The change is delivered abruptly or gradually.',
+          'The change is delivered abruptly or gradually, across a range of magnitudes.',
         ]} />
-        <Figure src="/keynote/fig-staircase.png" alt="QUEST staircase level across trials" missingLabel="Staircase figure" maxH="40vh" />
+        <SalienceMagnitudeSchematic />
         <Detail density={d}>
-          Studies 1A–2 use a single staircase; Studies 4–5 cross salience (high/low) with direction
-          (acceleration/deceleration). The staircase converges on the smallest change each person can detect.
+          Salience (abrupt vs gradual onset) is crossed with magnitude (how large the rate change is),
+          so detection can be moved independently of how big the bodily change actually is.
         </Detail>
       </Frame>
     ),
   },
 
-  // 9 — Schematic (visual only)
+  // 9 — Staircase finds each person's threshold
   {
-    render: () => (
-      <Frame kicker="Design">
-        <SalienceMagnitudeSchematic />
+    render: (d) => (
+      <Frame kicker="Finding the threshold">
+        <H2>A staircase finds each person’s detection threshold</H2>
+        <Figure src="/keynote/fig-staircase.png" alt="QUEST staircase level across trials" missingLabel="Staircase figure" maxH="46vh" />
+        <Detail density={d}>
+          Studies 1A–2 use a single staircase; Studies 4–5 cross salience (high/low) with direction
+          (acceleration/deceleration). The staircase converges on the smallest change each person can detect.
+        </Detail>
       </Frame>
     ),
   },
