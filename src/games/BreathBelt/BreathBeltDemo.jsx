@@ -18,8 +18,19 @@ import ArousalRating from '../shared/ArousalRating'
 import { pearsonRArrays } from './breathUtils'
 import { BASE_BREATH_SPEED_S, FASTER_BREATH_SPEED_S, SLOWER_BREATH_SPEED_S } from './constants'
 
+// Prefer the de-trended syncMetrics from useTrialRunner (real belt, same
+// processing as the calibration graph); fall back to the live-sampled graph
+// when there's no belt (sim rehearsal).
+function graphFromResult(res, liveGraph) {
+  const sm = res?.syncMetrics
+  if (sm && (sm.beltPts?.length ?? 0) > 1 && (sm.pacerPts?.length ?? 0) > 1) {
+    return { pacerPts: sm.pacerPts, beltPts: sm.beltPts, r: sm.trialRCondition ?? sm.trialRBaseline }
+  }
+  return liveGraph
+}
+
 // Samples the live belt signal vs the pacer during a trial, then builds the
-// pacer/belt point arrays SignalGraph expects. Works in sim and with a belt.
+// pacer/belt point arrays SignalGraph expects. Fallback for sim (no belt).
 function useGraphSampler(breathValueRef, getPhase) {
   const samplesRef = useRef([])
   const timerRef   = useRef(null)
@@ -186,8 +197,12 @@ function PacedTrialsAct({ belt, onDone }) {
   const start = useCallback(async () => {
     setState('RUNNING')
     sampler.begin()
-    await runTrial('demo_paced', trialIdx + 1, BASE_MS)
-    const graph = sampler.end()
+    // 'phase2' label makes useBeltConnection collect raw accel samples, so
+    // useTrialRunner returns syncMetrics processed the same (de-trended) way as
+    // the calibration graph. Fall back to the live sample only when there's no
+    // belt (sim rehearsal).
+    const res = await runTrial('phase2', trialIdx + 1, BASE_MS)
+    const graph = graphFromResult(res, sampler.end())
     resultsRef.current.push(graph)
     setLastGraph(graph)
     setState('GRAPH')
@@ -265,8 +280,8 @@ function StaircaseAct({ belt, onDone }) {
   const start = useCallback(async () => {
     setState('RUNNING')
     sampler.begin()
-    await runTrial('demo_staircase', trialIdx + 1, spec.conditionMs)
-    setLastResult({ graph: sampler.end() })
+    const res = await runTrial('phase3', trialIdx + 1, spec.conditionMs)
+    setLastResult({ graph: graphFromResult(res, sampler.end()) })
     setState('RATE')
   }, [runTrial, trialIdx, spec.conditionMs, sampler])
 
