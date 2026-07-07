@@ -19,6 +19,13 @@ function toCsv(rows) {
   return [cols.join(','), ...rows.map(r => cols.map(c => escape(r[c])).join(','))].join('\n')
 }
 
+// Checklist-type questionnaire items store an object per response
+// ({ response_value, item_weight, occurrence_count }); export the weighted
+// score. Likert responses are plain numbers and pass through.
+function responseScalar(v) {
+  return (v && typeof v === 'object') ? v.response_value ?? JSON.stringify(v) : v
+}
+
 function downloadCsv(filename, rows) {
   const blob = new Blob([toCsv(rows)], { type: 'text/csv' })
   const url  = URL.createObjectURL(blob)
@@ -320,7 +327,7 @@ async function buildTabularZipFiles(enrollments) {
       const cleanKey = rawKey.replace(/^item_/, '')
       const match    = cleanKey.match(/(\d+)$/)
       const col      = match ? `${prefix}_${match[1]}` : `${prefix}_${cleanKey}`
-      qWide[r.user_id][col] = val
+      qWide[r.user_id][col] = responseScalar(val)
     }
   }
   const qCsv = toCsv(Object.values(qWide))
@@ -531,7 +538,7 @@ function QuestionnairesSection({ profileId, externalId }) {
       questionnaire_slug: r.questionnaire_slug,
       completed_at:       r.completed_at,
       ...Object.fromEntries(
-        Object.entries(r.responses ?? {}).map(([k, v]) => [`item_${k}`, v])
+        Object.entries(r.responses ?? {}).map(([k, v]) => [`item_${k}`, responseScalar(v)])
       ),
     }))
     downloadCsv(`questionnaire_responses_${externalId}.csv`, flat)

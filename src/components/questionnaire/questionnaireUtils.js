@@ -3,6 +3,39 @@
 // Shared helpers for building the flat slide sequence and resolving
 // per-item scale labels. Used by QuestionnaireRenderer and admin pages.
 
+// True when the definition is a checklist-type questionnaire (independently
+// endorsed items with fixed point values). Absent questionnaire_type = likert.
+export function isChecklistType(questionnaire) {
+  return questionnaire?.questionnaire_type === 'checklist';
+}
+
+// Canonical stored response object for one checklist item.
+// occurrenceCount 0 = unchecked; response_value is the weighted score.
+export function checklistItemResponse(item, occurrenceCount) {
+  const count = occurrenceCount > 0 ? occurrenceCount : 0;
+  return {
+    response_value:   (item.weight ?? 0) * count,
+    item_weight:      item.weight ?? 0,
+    occurrence_count: count,
+  };
+}
+
+// Fill in never-touched items as unchecked so every checklist item has a
+// stored response object.
+export function normalizeChecklistResponses(questionnaire, responses) {
+  const full = {};
+  for (const item of questionnaire.items ?? []) {
+    full[item.id] = responses[item.id] ?? checklistItemResponse(item, 0);
+  }
+  return full;
+}
+
+// Total checklist score = sum of weighted item scores (method: weighted_checklist).
+export function computeChecklistTotal(questionnaire, responses) {
+  return (questionnaire.items ?? []).reduce(
+    (sum, item) => sum + (responses[item.id]?.response_value ?? 0), 0);
+}
+
 // Resolve effective scale labels for one item.
 // Priority: item.scale_labels_override > questionnaire.scale_labels > numeric fallback.
 export function effectiveLabels(item, questionnaire) {
@@ -50,6 +83,13 @@ export function buildSlides(questionnaire) {
   // render. Return the instruction slide only; callers guard against empty
   // questionnaires before reaching here, but this keeps buildSlides total.
   const items = Array.isArray(questionnaire?.items) ? questionnaire.items : [];
+
+  // Checklist questionnaires render as one scrollable screen of checkboxes
+  // rather than one slide per item.
+  if (isChecklistType(questionnaire)) {
+    slides.push({ type: 'checklist', items, totalItems: items.length });
+    return slides;
+  }
 
   let prevLabels = null;
   let itemDisplayIndex = 0;
@@ -100,6 +140,7 @@ export function computeSubscaleScores(questionnaire, responses) {
 
   const qMin = questionnaire.scale_min ?? 1;
   const qMax = questionnaire.scale_max ?? 5;
+  const checklist = isChecklistType(questionnaire);
 
   const entries = Array.isArray(subscales)
     ? subscales
@@ -110,6 +151,10 @@ export function computeSubscaleScores(questionnaire, responses) {
     const method  = subscale.method ?? questionnaire.scoring?.method ?? 'mean';
 
     const values = itemIds.map((id) => {
+      // Checklist (weighted_checklist): per-item score is the stored weighted
+      // value; unchecked/unseen items count as 0. No reverse scoring.
+      if (checklist) return responses[id]?.response_value ?? 0;
+
       const item = questionnaire.items.find(i => i.id === id);
       let value = responses[id];
       if (value == null) return null;
@@ -179,10 +224,40 @@ export function validateDefinition(def) {
   if (!def.instructions || typeof def.instructions !== 'string') errors.push('Missing "instructions".');
   if (!Array.isArray(def.items) || def.items.length === 0) errors.push('Missing or empty "items" array.');
 
+  const qType = def.questionnaire_type ?? 'likert';
+  if (qType !== 'likert' && qType !== 'checklist') {
+    errors.push('"questionnaire_type" must be "likert" or "checklist".');
+    return errors; // per-type checks below would be meaningless
+  }
+  const checklist = qType === 'checklist';
+
+  if (checklist) {
+    if (def.scale_min != null || def.scale_max != null || def.scale_labels != null) {
+      errors.push('Checklist questionnaires must have null "scale_min", "scale_max", and "scale_labels".');
+    }
+    if (def.scoring?.method !== 'weighted_checklist') {
+      errors.push('Checklist questionnaires require "scoring.method" = "weighted_checklist".');
+    }
+  }
+
   (def.items ?? []).forEach((item, i) => {
     const prefix = `Item ${i + 1}`;
     if (!item.id)   errors.push(`${prefix}: missing "id".`);
     if (!item.text) errors.push(`${prefix}: missing "text".`);
+
+    if (checklist) {
+      if (!Number.isInteger(item.weight) || item.weight < 0 || item.weight > 300) {
+        errors.push(`${prefix}: checklist items require an integer "weight" between 0 and 300.`);
+      }
+      if (typeof item.allow_multiple !== 'boolean') {
+        errors.push(`${prefix}: checklist items require boolean "allow_multiple".`);
+      }
+      if (item.scale_min != null || item.scale_max != null || item.scale_labels_override != null) {
+        errors.push(`${prefix}: checklist items do not use scale_min/scale_max/scale_labels_override.`);
+      }
+      return;
+    }
+
     if (item.type !== 'likert') errors.push(`${prefix}: only "likert" type is supported.`);
     const min = item.scale_min ?? def.scale_labels?.[0]?.value;
     const max = item.scale_max ?? def.scale_labels?.[def.scale_labels.length - 1]?.value;

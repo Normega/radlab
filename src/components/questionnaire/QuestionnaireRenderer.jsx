@@ -3,8 +3,11 @@ import ProgressLabel from './ProgressLabel';
 import InstructionScreen from './InstructionScreen';
 import ScaleChangeScreen from './ScaleChangeScreen';
 import LikertItem from './LikertItem';
+import ChecklistScreen from './ChecklistScreen';
 import { buildSlides, prevNavigableIndex, effectiveLabels, isEndpointOnly,
-         computeSubscaleScores, computeDerivedScores } from './questionnaireUtils';
+         computeSubscaleScores, computeDerivedScores,
+         isChecklistType, checklistItemResponse,
+         normalizeChecklistResponses, computeChecklistTotal } from './questionnaireUtils';
 
 const FADE_MS = 150; // slide transition duration
 
@@ -30,36 +33,59 @@ export default function QuestionnaireRenderer({
   previewMode = false,
   isSimMode   = false,
 }) {
-  const slides    = useRef(buildSlides(questionnaire)).current;
+  const [slides]  = useState(() => buildSlides(questionnaire)); // built once per mount
   const [slideIdx,   setSlideIdx]   = useState(0);
   const [responses,  setResponses]  = useState({});
   const [visible,    setVisible]    = useState(true);  // fade control
   const [done,       setDone]       = useState(false);
   const transitioningRef = useRef(false);
 
+  const isChecklist = isChecklistType(questionnaire);
+
+  // Finalize the questionnaire: normalize (checklist), score, and report.
+  const finish = useCallback((current) => {
+    if (previewMode) { setDone(true); return; }
+    const finalResponses = isChecklist
+      ? normalizeChecklistResponses(questionnaire, current)
+      : current;
+    const subscaleScores = computeSubscaleScores(questionnaire, finalResponses);
+    const derivedScores  = computeDerivedScores(questionnaire, subscaleScores);
+    const payload = { responses: finalResponses, subscaleScores, derivedScores };
+    if (isChecklist) payload.totalScore = computeChecklistTotal(questionnaire, finalResponses);
+    onComplete?.(payload);
+  }, [isChecklist, questionnaire, onComplete, previewMode]);
+
   // Sim mode: after a brief mount delay, fill all item responses and complete
   useEffect(() => {
     if (!isSimMode) return;
     const t = setTimeout(() => {
       const simResponses = {};
-      for (const slide of slides) {
-        if (slide.type !== 'item') continue;
-        const item   = slide.item;
-        const labels = effectiveLabels(item, questionnaire);
-        const min    = labels[0]?.value ?? 1;
-        const max    = labels[labels.length - 1]?.value ?? 5;
-        simResponses[item.id] = Math.floor(Math.random() * (max - min + 1)) + min;
+      if (isChecklist) {
+        for (const item of questionnaire.items ?? []) {
+          const checked = Math.random() < 0.5;
+          const count   = !checked ? 0
+            : item.allow_multiple ? 1 + Math.floor(Math.random() * 3) : 1;
+          simResponses[item.id] = checklistItemResponse(item, count);
+        }
+      } else {
+        for (const slide of slides) {
+          if (slide.type !== 'item') continue;
+          const item   = slide.item;
+          const labels = effectiveLabels(item, questionnaire);
+          const min    = labels[0]?.value ?? 1;
+          const max    = labels[labels.length - 1]?.value ?? 5;
+          simResponses[item.id] = Math.floor(Math.random() * (max - min + 1)) + min;
+        }
       }
-      if (previewMode) { setDone(true); return; }
-      const subscaleScores = computeSubscaleScores(questionnaire, simResponses);
-      const derivedScores  = computeDerivedScores(questionnaire, subscaleScores);
-      onComplete?.({ responses: simResponses, subscaleScores, derivedScores });
+      finish(simResponses);
     }, 300);
     return () => clearTimeout(t);
   }, [isSimMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const currentSlide = slides[slideIdx];
-  const autoAdvance  = questionnaire.auto_advance !== false; // default true
+  // Checklist questionnaires always use the Next button — advancing on every
+  // checkbox toggle would end the questionnaire on the first endorsement.
+  const autoAdvance  = questionnaire.auto_advance !== false && !isChecklist; // default true
 
   // ── Transition helper — fade out, advance, fade in ─────────────────────
   const goTo = useCallback(async (nextIdx) => {
@@ -80,14 +106,11 @@ export default function QuestionnaireRenderer({
     const next = slideIdx + 1;
     if (next >= slides.length) {
       // All items answered — complete
-      if (previewMode) { setDone(true); return; }
-      const subscaleScores = computeSubscaleScores(questionnaire, current);
-      const derivedScores  = computeDerivedScores(questionnaire, subscaleScores);
-      onComplete?.({ responses: current, subscaleScores, derivedScores });
+      finish(current);
     } else {
       goTo(next);
     }
-  }, [slideIdx, slides.length, responses, questionnaire, onComplete, previewMode, goTo]);
+  }, [slideIdx, slides.length, responses, finish, goTo]);
 
   // ── Back navigation ────────────────────────────────────────────────────
   const goBack = useCallback(() => {
@@ -110,6 +133,17 @@ export default function QuestionnaireRenderer({
     // Manual mode: user taps Next button (rendered below)
   }, [autoAdvance, advance, responses]);
 
+  // Checklist checkbox/stepper handler. Takes an updater (prevCount => nextCount)
+  // and resolves it against the true previous state inside the React updater,
+  // not a value captured at click time — otherwise rapid taps race and clobber
+  // each other (each reading the same stale count before a re-render lands).
+  const handleChecklistChange = useCallback((item, updateCount) => {
+    setResponses(prev => {
+      const prevCount = prev[item.id]?.occurrence_count ?? 0;
+      return { ...prev, [item.id]: checklistItemResponse(item, updateCount(prevCount)) };
+    });
+  }, []);
+
   if (done && previewMode) {
     return (
       <div
@@ -126,18 +160,25 @@ export default function QuestionnaireRenderer({
         }}
       >
         <span style={{ fontSize: 36 }}>✓</span>
-        <p>Preview complete — {Object.keys(responses).length} items answered.</p>
+        <p>
+          {isChecklist
+            ? `Preview complete — ${Object.values(responses).filter(r => (r?.occurrence_count ?? 0) > 0).length} items endorsed.`
+            : `Preview complete — ${Object.keys(responses).length} items answered.`}
+        </p>
       </div>
     );
   }
 
   // ── Progress label data (only for item slides) ─────────────────────────
-  const isItemSlide = currentSlide?.type === 'item';
+  const isItemSlide      = currentSlide?.type === 'item';
+  const isChecklistSlide = currentSlide?.type === 'checklist';
   const labels = isItemSlide ? effectiveLabels(currentSlide.item, questionnaire) : null;
   const currentResponse = isItemSlide ? responses[currentSlide.item.id] ?? null : null;
 
   // Can the Next button be shown? (manual mode: need a response)
-  const canNext = !autoAdvance && isItemSlide && currentResponse !== null;
+  // Checklist: always — endorsing zero items is a valid response.
+  const showNext = (!autoAdvance && isItemSlide) || isChecklistSlide;
+  const canNext  = isChecklistSlide || (showNext && currentResponse !== null);
 
   // Show back button on all slides (disabled on instruction with no onBack)
   const backDisabled = slideIdx === 0 && !onBack;
@@ -168,17 +209,27 @@ export default function QuestionnaireRenderer({
           transition: `opacity ${FADE_MS}ms ease`,
         }}
       >
+        {/* Callbacks wrap advance() so DOM click events are never passed in
+            as the responsesOverride argument. */}
         {currentSlide?.type === 'instruction' && (
           <InstructionScreen
             questionnaire={questionnaire}
-            onBegin={advance}
+            onBegin={() => advance()}
           />
         )}
 
         {currentSlide?.type === 'scale_change' && (
           <ScaleChangeScreen
             slide={currentSlide}
-            onContinue={advance}
+            onContinue={() => advance()}
+          />
+        )}
+
+        {isChecklistSlide && (
+          <ChecklistScreen
+            items={currentSlide.items}
+            responses={responses}
+            onChange={handleChecklistChange}
           />
         )}
 
@@ -231,10 +282,10 @@ export default function QuestionnaireRenderer({
           ← Back
         </button>
 
-        {/* Next button — bottom-right, only in manual mode on item slides */}
-        {!autoAdvance && isItemSlide ? (
+        {/* Next button — bottom-right, manual-mode item slides + checklist */}
+        {showNext ? (
           <button
-            onClick={advance}
+            onClick={() => advance()}
             disabled={!canNext}
             style={{
               pointerEvents:  'auto',

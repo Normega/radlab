@@ -174,7 +174,8 @@ export default function QuestionnaireUpload() {
             ✓ Valid
           </p>
           <p style={{ fontFamily: 'DM Sans', fontSize: 'var(--fs-body-sm)', color: 'var(--tx2)', margin: 0 }}>
-            <strong>{parsed.name}</strong> · slug: {parsed.slug} · {parsed.items.length} items
+            <strong>{parsed.name}</strong> · slug: {parsed.slug}
+            · type: {parsed.questionnaire_type ?? 'likert'} · {parsed.items.length} items
             · auto_advance: {parsed.auto_advance === false ? 'off' : 'on'}
           </p>
         </div>
