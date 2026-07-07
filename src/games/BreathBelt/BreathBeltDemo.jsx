@@ -1,9 +1,10 @@
-// v1 — conference demo: Polar H10 pairing → MLR calibration → 3 paced trials
+// v2 — conference demo: Polar H10 pairing → MLR calibration → 3 paced trials
 // with post-trial graphs → 2 hardcoded "staircase" trials (speed up, slow down)
 // with speed-change/confidence/arousal ratings and a reveal graph.
 // Writes NOTHING: no Supabase, no CSV backup, no triggers (no-op sendTrigger).
-// Add ?sim=1 to rehearse without a belt (graphs need live accel data, so sim
-// shows metrics placeholders).
+// Trial graphs are built from the live breathValue signal sampled against the
+// pacer (same SignalGraph as calibration) — so they render with a real belt AND
+// in ?sim=1 rehearsal, no dependency on raw-accel collection.
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useBeltConnection } from './hooks/useBeltConnection'
@@ -14,7 +15,37 @@ import BrowserWarning from './components/BrowserWarning'
 import AvatarBreathPacer from '../EbbAndFlow/components/AvatarBreathPacer'
 import ConfidenceRating from '../shared/ConfidenceRating'
 import ArousalRating from '../shared/ArousalRating'
+import { pearsonRArrays } from './breathUtils'
 import { BASE_BREATH_SPEED_S, FASTER_BREATH_SPEED_S, SLOWER_BREATH_SPEED_S } from './constants'
+
+// Samples the live belt signal vs the pacer during a trial, then builds the
+// pacer/belt point arrays SignalGraph expects. Works in sim and with a belt.
+function useGraphSampler(breathValueRef, getPhase) {
+  const samplesRef = useRef([])
+  const timerRef   = useRef(null)
+  const t0Ref      = useRef(0)
+  function begin() {
+    samplesRef.current = []
+    t0Ref.current = performance.now()
+    if (timerRef.current) clearInterval(timerRef.current)
+    timerRef.current = setInterval(() => {
+      const t     = performance.now() - t0Ref.current
+      const phase = getPhase()
+      const pacer = (Math.sin(phase * 2 * Math.PI - Math.PI / 2) + 1) / 2  // pacer breath value 0–1
+      const belt  = breathValueRef.current ?? 0
+      samplesRef.current.push({ t, pacer, belt })
+    }, 40)
+  }
+  function end() {
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null }
+    const s = samplesRef.current
+    const pacerPts = s.map(p => ({ t: p.t, value: p.pacer }))
+    const beltPts  = s.map(p => ({ t: p.t, value: p.belt }))
+    const r = s.length > 5 ? pearsonRArrays(s.map(p => p.belt), s.map(p => p.pacer)) : null
+    return { pacerPts, beltPts, r }
+  }
+  return { begin, end }
+}
 
 const BASE_MS   = BASE_BREATH_SPEED_S   * 1000  // 4000
 const FASTER_MS = FASTER_BREATH_SPEED_S * 1000  // 3000
@@ -139,7 +170,7 @@ export default function BreathBeltDemo() {
 function PacedTrialsAct({ belt, onDone }) {
   const [trialIdx, setTrialIdx] = useState(0)
   const [state,    setState]    = useState('READY')   // READY | RUNNING | GRAPH
-  const [lastResult, setLastResult] = useState(null)
+  const [lastGraph, setLastGraph] = useState(null)
   const resultsRef = useRef([])
 
   const { getPhase, runTrial, controlRef } = useTrialRunner({
@@ -150,14 +181,17 @@ function PacedTrialsAct({ belt, onDone }) {
     getAndClearTrialSamples: belt.getAndClearTrialSamples,
     mlrWeightsRef:           belt.mlrWeightsRef,
   })
+  const sampler = useGraphSampler(belt.breathValueRef, getPhase)
 
   const start = useCallback(async () => {
     setState('RUNNING')
-    const res = await runTrial('demo_paced', trialIdx + 1, BASE_MS)
-    resultsRef.current.push(res)
-    setLastResult(res)
+    sampler.begin()
+    await runTrial('demo_paced', trialIdx + 1, BASE_MS)
+    const graph = sampler.end()
+    resultsRef.current.push(graph)
+    setLastGraph(graph)
     setState('GRAPH')
-  }, [runTrial, trialIdx])
+  }, [runTrial, trialIdx, sampler])
 
   function next() {
     if (trialIdx + 1 >= PACED_TRIALS) onDone(resultsRef.current)
@@ -194,7 +228,7 @@ function PacedTrialsAct({ belt, onDone }) {
         <>
           <TrialGraphCard
             title={`Trial ${trialIdx + 1} — your breath vs. the pacer`}
-            syncMetrics={lastResult?.syncMetrics}
+            graph={lastGraph}
           />
           <Btn onClick={next}>
             {trialIdx + 1 >= PACED_TRIALS ? 'On to detection trials →' : 'Next trial →'}
@@ -226,19 +260,21 @@ function StaircaseAct({ belt, onDone }) {
     getAndClearTrialSamples: belt.getAndClearTrialSamples,
     mlrWeightsRef:           belt.mlrWeightsRef,
   })
+  const sampler = useGraphSampler(belt.breathValueRef, getPhase)
 
   const start = useCallback(async () => {
     setState('RUNNING')
-    const res = await runTrial('demo_staircase', trialIdx + 1, spec.conditionMs)
-    setLastResult(res)
+    sampler.begin()
+    await runTrial('demo_staircase', trialIdx + 1, spec.conditionMs)
+    setLastResult({ graph: sampler.end() })
     setState('RATE')
-  }, [runTrial, trialIdx, spec.conditionMs])
+  }, [runTrial, trialIdx, spec.conditionMs, sampler])
 
   function submitRatings() {
     const correct = response === spec.dir
     resultsRef.current.push({
       dir: spec.dir, detail: spec.detail, response, correct, confidence, arousal,
-      syncMetrics: lastResult?.syncMetrics ?? null,
+      graph: lastResult?.graph ?? null,
     })
     setState('REVEAL')
   }
@@ -324,7 +360,7 @@ function StaircaseAct({ belt, onDone }) {
           </p>
           <TrialGraphCard
             title="Where the change happened (breath 3 onward)"
-            syncMetrics={lastEntry.syncMetrics}
+            graph={lastEntry.graph}
           />
           <Btn onClick={next}>
             {trialIdx + 1 >= STAIRCASE_TRIALS.length ? 'Finish →' : 'Next trial →'}
@@ -347,10 +383,7 @@ function SummaryAct({ paced, staircase }) {
           <p style={D.summaryHead}>Paced trials — sync with pacer</p>
           {paced.map((r, i) => (
             <p key={i} style={D.summaryLine}>
-              Trial {i + 1}: {fmtR(r.syncMetrics?.trialRCondition)}
-              {r.syncMetrics?.peakErrorMs != null && isFinite(r.syncMetrics.peakErrorMs)
-                ? ` · peak timing ${Math.round(r.syncMetrics.peakErrorMs)} ms`
-                : ''}
+              Trial {i + 1}: sync {fmtR(r?.r)}
             </p>
           ))}
         </div>
@@ -377,32 +410,25 @@ function SummaryAct({ paced, staircase }) {
 
 // ── Shared bits ─────────────────────────────────────────────────────────────
 
-function TrialGraphCard({ title, syncMetrics }) {
-  if (!syncMetrics) {
+function TrialGraphCard({ title, graph }) {
+  if (!graph || (graph.pacerPts?.length ?? 0) < 2) {
     return (
       <p style={{ ...D.body, color: 'var(--tx3)' }}>
-        (Signal graph needs live belt data — not available in simulation.)
+        (Building signal graph…)
       </p>
     )
   }
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
       <SignalGraph
-        pacerPts={syncMetrics.pacerPts ?? []}
-        beltPts={syncMetrics.beltPts ?? []}
+        pacerPts={graph.pacerPts}
+        beltPts={graph.beltPts}
         width={440}
         height={130}
         label={title}
       />
       <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
-        <Chip label="Sync (baseline)"  value={fmtR(syncMetrics.trialRBaseline)} />
-        <Chip label="Sync (condition)" value={fmtR(syncMetrics.trialRCondition)} />
-        <Chip
-          label="Peak timing"
-          value={syncMetrics.peakErrorMs != null && isFinite(syncMetrics.peakErrorMs)
-            ? `${Math.round(syncMetrics.peakErrorMs)} ms`
-            : '—'}
-        />
+        <Chip label="Sync with pacer" value={fmtR(graph.r)} />
       </div>
       <p style={D.legend}>
         <span style={{ color: '#3498db' }}>— pacer</span>{'   '}
