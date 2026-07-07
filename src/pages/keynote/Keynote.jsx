@@ -215,18 +215,28 @@ const SLIDES = [
   // 3 — Breath frame
   {
     render: (d) => (
-      <Frame kicker="The breath">
-        <H>One signal we both feel and control</H>
-        <Bullets items={[
-          'Relaxation techniques use it to change the body.',
-          'Mindfulness and third-wave therapies use it as an anchor for appraisal — to change the meaning.',
-        ]} />
-        <Lead>One signal, both mechanisms, directly tied to therapeutic practice.</Lead>
-        <Detail density={d}>
-          Because breathing is simultaneously sensed and voluntarily controllable, it is the rare
-          physiological channel where the "change the body" and "change the meaning" routes to
-          emotion regulation can be studied with the same manipulation.
-        </Detail>
+      <Frame wide kicker="The breath">
+        <div style={{ display: 'flex', gap: 44, alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <div style={{ maxWidth: 540, display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'flex-start', textAlign: 'left' }}>
+            <H>One signal we both feel and control</H>
+            <Bullets items={[
+              'Relaxation techniques use it to change the body.',
+              'Mindfulness and third-wave therapies use it as an anchor for appraisal — to change the meaning.',
+            ]} />
+            <Lead>One signal, both mechanisms, directly tied to therapeutic practice.</Lead>
+            <Detail density={d}>
+              Because breathing is simultaneously sensed and voluntarily controllable, it is the rare
+              physiological channel where the "change the body" and "change the meaning" routes to
+              emotion regulation can be studied with the same manipulation.
+            </Detail>
+          </div>
+          <img
+            src="/keynote/breath.png"
+            alt="A person pausing to breathe amid a crowd"
+            style={{ width: 'min(360px, 68vw)', borderRadius: 16, boxShadow: '0 6px 30px rgba(0,0,0,0.12)', flexShrink: 0 }}
+            onError={e => { e.currentTarget.style.display = 'none' }}
+          />
+        </div>
       </Frame>
     ),
   },
@@ -571,6 +581,7 @@ const SLIDES = [
 
 const FIGURE_PRELOAD = [
   '/keynote/anxious.png',
+  '/keynote/breath.png',
   '/keynote/fig-staircase.png',
   '/keynote/fig-detection-curve.png',
   '/keynote/fig-arousal-gating.png',
