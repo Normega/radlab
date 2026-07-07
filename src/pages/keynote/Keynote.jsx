@@ -178,7 +178,7 @@ const SLIDES = [
           'Someone with anxiety — heart pounding, breath tight.',
           "A wave of undifferentiated arousal hits. They can't break it down or get a handle on it.",
           'Two clinicians disagree: one says calm the body, one says change the meaning.',
-          'Who is right depends on something we have not been able to test — until now.',
+          'Who is right depends on something we have not been able to test.',
         ]} />
       </Frame>
     ),
