@@ -15,24 +15,31 @@ import BrowserWarning from './components/BrowserWarning'
 import AvatarBreathPacer from '../EbbAndFlow/components/AvatarBreathPacer'
 import ConfidenceRating from '../shared/ConfidenceRating'
 import ArousalRating from '../shared/ArousalRating'
-import { pearsonRArrays, buildReviewEntry } from './breathUtils'
+import { pearsonRArrays, computeMLRPredictions, getPacerRadiusForTrial } from './breathUtils'
 import { BASE_BREATH_SPEED_S, FASTER_BREATH_SPEED_S, SLOWER_BREATH_SPEED_S } from './constants'
 
-// Rebuild the trial graph from the breathing window only. useTrialRunner's
-// syncMetrics filters the whole collected window, which includes ~500ms of
-// static fixation (collected under the trial phase) — that static→motion onset
-// gives filtfilt a startup transient at breath 1 that squashes breaths 2–4.
-// Dropping samples before trialStart makes the filter see a breathing-only
-// window, exactly like calibration. Falls back to the live sample (sim, no belt).
-function buildCleanGraph(samples, mlr, res, basePeriodMs, changedPeriodMs, liveGraph) {
-  if (mlr && Array.isArray(samples) && res?.trialStartMs != null) {
-    const trimmed = samples.filter(s => s.t >= res.trialStartMs)
-    if (trimmed.length > 80) {
-      const rev = buildReviewEntry(trimmed, mlr, res.trialStartMs, basePeriodMs, changedPeriodMs, 'demo')
-      if ((rev.beltPts?.length ?? 0) > 1 && (rev.pacerPts?.length ?? 0) > 1) {
-        const r = pearsonRArrays(rev.beltPts.map(p => p.value), rev.pacerPts.map(p => p.value))
-        return { pacerPts: rev.pacerPts, beltPts: rev.beltPts, r }
-      }
+// Build the trial graph with the EXACT procedure the calibration review uses
+// (useBeltConnection: computeMLRPredictions → getPacerRadius → downsample by 5).
+// Samples come from rawAccelRowsRef (always populated, never cleared), filtered
+// to the breathing window [trialStart, trialEnd] — so filtfilt sees a
+// breathing-only window like calibration, not the static fixation lead-in.
+// Falls back to the live sample only when there is no belt data (sim rehearsal).
+function buildCleanGraph(belt, res, basePeriodMs, changedPeriodMs, liveGraph) {
+  const mlr = belt.mlrWeightsRef.current
+  if (mlr && res?.trialStartMs != null && res?.trialEndMs != null) {
+    const t0 = res.trialStartMs, t1 = res.trialEndMs
+    const samples = (belt.rawAccelRowsRef.current || [])
+      .map(r => ({ t: r.packetTimestamp + r.sampleIndex * 5, x: r.x, y: r.y, z: r.z }))
+      .filter(s => s.t >= t0 && s.t <= t1)
+      .sort((a, b) => a.t - b.t)
+    if (samples.length > 80) {
+      const beltRaw  = computeMLRPredictions(samples, mlr)
+      const pacerPts = samples.filter((_, i) => i % 5 === 0)
+        .map(s => ({ t: s.t, value: getPacerRadiusForTrial(s.t, t0, basePeriodMs, changedPeriodMs) }))
+      const beltAll  = samples.map((s, i) => ({ t: s.t, value: beltRaw[i] }))
+      const beltPts  = beltAll.filter((_, i) => i % 5 === 0)
+      const r = pearsonRArrays(beltPts.map(p => p.value), pacerPts.map(p => p.value))
+      return { pacerPts, beltPts, r }
     }
   }
   return liveGraph
@@ -192,18 +199,13 @@ function PacedTrialsAct({ belt, onDone }) {
   const [state,    setState]    = useState('READY')   // READY | RUNNING | GRAPH
   const [lastGraph, setLastGraph] = useState(null)
   const resultsRef = useRef([])
-  const trialSamplesRef = useRef([])   // last trial's raw {t,x,y,z}, captured below
 
   const { getPhase, runTrial, controlRef } = useTrialRunner({
     breathValueRef:          belt.breathValueRef,
     sendTrigger:             noopTrigger,
     currentPhaseRef:         belt.currentPhaseRef,
     currentTrialRef:         belt.currentTrialRef,
-    getAndClearTrialSamples: () => {
-      const s = belt.getAndClearTrialSamples()   // capture before the runner clears it
-      trialSamplesRef.current = s
-      return s
-    },
+    getAndClearTrialSamples: belt.getAndClearTrialSamples,
     mlrWeightsRef:           belt.mlrWeightsRef,
   })
   const sampler = useGraphSampler(belt.breathValueRef, getPhase)
@@ -216,7 +218,7 @@ function PacedTrialsAct({ belt, onDone }) {
     // the calibration graph. Fall back to the live sample only when there's no
     // belt (sim rehearsal).
     const res = await runTrial('phase2', trialIdx + 1, BASE_MS)
-    const graph = buildCleanGraph(trialSamplesRef.current, belt.mlrWeightsRef.current, res, BASE_MS, BASE_MS, sampler.end())
+    const graph = buildCleanGraph(belt, res, BASE_MS, BASE_MS, sampler.end())
     resultsRef.current.push(graph)
     setLastGraph(graph)
     setState('GRAPH')
@@ -278,7 +280,6 @@ function StaircaseAct({ belt, onDone }) {
   const [arousal,    setArousal]    = useState(null)
   const [lastResult, setLastResult] = useState(null)
   const resultsRef = useRef([])
-  const trialSamplesRef = useRef([])   // last trial's raw {t,x,y,z}, captured below
 
   const spec = STAIRCASE_TRIALS[trialIdx]
 
@@ -287,11 +288,7 @@ function StaircaseAct({ belt, onDone }) {
     sendTrigger:             noopTrigger,
     currentPhaseRef:         belt.currentPhaseRef,
     currentTrialRef:         belt.currentTrialRef,
-    getAndClearTrialSamples: () => {
-      const s = belt.getAndClearTrialSamples()   // capture before the runner clears it
-      trialSamplesRef.current = s
-      return s
-    },
+    getAndClearTrialSamples: belt.getAndClearTrialSamples,
     mlrWeightsRef:           belt.mlrWeightsRef,
   })
   const sampler = useGraphSampler(belt.breathValueRef, getPhase)
@@ -300,7 +297,7 @@ function StaircaseAct({ belt, onDone }) {
     setState('RUNNING')
     sampler.begin()
     const res = await runTrial('phase3', trialIdx + 1, spec.conditionMs)
-    const graph = buildCleanGraph(trialSamplesRef.current, belt.mlrWeightsRef.current, res, BASE_MS, spec.conditionMs, sampler.end())
+    const graph = buildCleanGraph(belt, res, BASE_MS, spec.conditionMs, sampler.end())
     setLastResult({ graph })
     setState('RATE')
   }, [runTrial, trialIdx, spec.conditionMs, sampler])
