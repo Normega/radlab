@@ -94,29 +94,33 @@ export function SalienceMagnitudeSchematic() {
 }
 
 function RateChangeTrace({ w, h, abrupt, big }) {
-  // Baseline period then a faster period. Bigger => larger frequency jump.
-  const N = 240
+  // Exactly 4 breaths: 2 baseline, then a change at breath 3. Each breath is one
+  // sine cycle; a shorter duration = faster breath. big => larger change;
+  // abrupt = step at breath 3, gradual = ramp across breaths 3–4.
   const pad = 6
-  const baseP = 44                       // baseline pixel period
-  const newP  = baseP * (big ? 0.55 : 0.78)
-  const onset = 0.42                      // fraction where change begins
-  const ramp  = abrupt ? 0.0 : 0.22       // fraction over which it ramps
-  let phase = 0
+  const baseD = 1.0
+  const accD  = big ? 0.55 : 0.78
+  const durs  = abrupt
+    ? [baseD, baseD, accD, accD]
+    : [baseD, baseD, (baseD + accD) / 2, accD]
+  const total   = durs.reduce((a, b) => a + b, 0)
+  const usableW = w - 2 * pad
+  const amp     = h / 2 - pad - 2
+  const SPB     = 44   // samples per breath
+
   const pts = []
-  for (let i = 0; i < N; i++) {
-    const f = i / (N - 1)
-    let period
-    if (f < onset) period = baseP
-    else if (f < onset + ramp) {
-      const k = (f - onset) / ramp
-      period = baseP + (newP - baseP) * k
-    } else period = newP
-    phase += (2 * Math.PI) / period
-    const x = pad + f * (w - 2 * pad)
-    const y = h / 2 - Math.sin(phase) * (h / 2 - pad - 2)
-    pts.push(`${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`)
-  }
-  const onsetX = pad + onset * (w - 2 * pad)
+  let t = 0
+  durs.forEach((d, bi) => {
+    for (let s = 0; s <= SPB; s++) {
+      if (bi > 0 && s === 0) continue   // shared boundary point
+      const frac = s / SPB
+      const x = pad + ((t + frac * d) / total) * usableW
+      const y = h / 2 - Math.sin(frac * 2 * Math.PI) * amp
+      pts.push(`${pts.length === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`)
+    }
+    t += d
+  })
+  const onsetX = pad + ((durs[0] + durs[1]) / total) * usableW  // start of breath 3
   return (
     <svg width={w} height={h} style={{ display: 'block' }}>
       <line x1={onsetX} y1={4} x2={onsetX} y2={h - 4} stroke={PINK} strokeWidth="1" strokeDasharray="3 3" opacity="0.6" />
