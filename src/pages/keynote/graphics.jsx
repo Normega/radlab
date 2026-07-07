@@ -161,9 +161,9 @@ function RateChangeTrace({ w, h, abrupt, big, showAxis }) {
 // adherence is not what separates them.
 export function MissTrialTrace() {
   const W = 560, H = 256, padL = 18, padR = 18
-  const durs = [4, 4, 5, 5]                     // 2 baseline breaths (15/min) → 2 decelerated (12/min)
+  const durs = [5, 5, 4, 4]                     // 2 baseline breaths (12/min) → 2 accelerated (15/min)
   const T = durs.reduce((s, d) => s + d, 0)     // 18 s — axis sized to the full four breaths
-  const cue = durs[0] + durs[1]                 // change onset at breath 3 (t = 8 s)
+  const cue = durs[0] + durs[1]                 // change onset at breath 3 (t = 10 s)
   const bandTop = 84, bandBot = 176
   const midY = (bandTop + bandBot) / 2, amp = (bandBot - bandTop) / 2 - 4
   const xOf = t => padL + (t / T) * (W - padL - padR)
@@ -205,8 +205,8 @@ export function MissTrialTrace() {
         <text x={padL} y={36} fill="#6b6c70" fontSize="11" fontFamily="'DM Sans',sans-serif">participant reported: no change</text>
 
         {/* rate brackets */}
-        {bracket(xOf(0.4), xOf(7.6), 'baseline', '15 / min · 4 s')}
-        {bracket(xOf(8.4), xOf(17.6), 'after cue', '12 / min · 5 s')}
+        {bracket(xOf(0.4), xOf(9.6), 'baseline', '12 / min · 5 s')}
+        {bracket(xOf(10.4), xOf(17.6), 'after cue', '15 / min · 4 s')}
 
         {/* cue line */}
         <line x1={cueX} y1={bandTop - 8} x2={cueX} y2={bandBot + 8} stroke="#e8a33d" strokeWidth="1.5" strokeDasharray="4 3" />
@@ -237,7 +237,7 @@ export function MissTrialTrace() {
 
       {/* how the adherence score is read off this trial */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(240,104,164,0.1)', border: '1px solid rgba(240,104,164,0.35)', borderRadius: 10, padding: '8px 16px', fontSize: 14, color: INK }}>
-        <span style={{ fontFamily: '"Space Mono",monospace', color: '#c04a82' }}>belt rate 15 → 12 / min</span>
+        <span style={{ fontFamily: '"Space Mono",monospace', color: '#c04a82' }}>belt rate 12 → 15 / min</span>
         <span style={{ color: GRY }}>moved in the cued direction</span>
         <span style={{ fontWeight: 700, color: '#2ecc71' }}>✓ correct</span>
       </div>
