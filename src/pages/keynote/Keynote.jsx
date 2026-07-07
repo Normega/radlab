@@ -189,15 +189,25 @@ const SLIDES = [
 
   // 2 — Vignette hook
   {
-    note: 'Deliver as a short spoken story — about 30 seconds. Let the four beats breathe; do not read them verbatim.',
+    note: 'Deliver as a short spoken story — about 30 seconds. Let the four beats breathe; do not read them verbatim. Image: provided illustration — confirm usage rights for the hosted page.',
     render: () => (
-      <Frame kicker="A moment">
-        <Bullets items={[
-          'Someone with anxiety — heart pounding, breath tight.',
-          "A wave of undifferentiated arousal hits. They can't break it down or get a handle on it.",
-          'Two clinicians disagree: one says calm the body, one says change the meaning.',
-          'Who is right depends on something we have not been able to test.',
-        ]} />
+      <Frame wide kicker="A moment">
+        <div style={{ display: 'flex', gap: 44, alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <img
+            src="/keynote/anxious.png"
+            alt="A person feeling acutely anxious"
+            style={{ width: 'min(360px, 68vw)', borderRadius: 16, boxShadow: '0 6px 30px rgba(0,0,0,0.12)', flexShrink: 0 }}
+            onError={e => { e.currentTarget.style.display = 'none' }}
+          />
+          <div style={{ maxWidth: 460 }}>
+            <Bullets items={[
+              'Someone with anxiety — heart pounding, breath tight.',
+              "A wave of undifferentiated arousal hits. They can't break it down or get a handle on it.",
+              'Two clinicians disagree: one says calm the body, one says change the meaning.',
+              'Who is right depends on something we have not been able to test.',
+            ]} />
+          </div>
+        </div>
       </Frame>
     ),
   },
@@ -560,6 +570,7 @@ const SLIDES = [
 ]
 
 const FIGURE_PRELOAD = [
+  '/keynote/anxious.png',
   '/keynote/fig-staircase.png',
   '/keynote/fig-detection-curve.png',
   '/keynote/fig-arousal-gating.png',
