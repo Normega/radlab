@@ -18,15 +18,52 @@ import ArousalRating from '../shared/ArousalRating'
 import { pearsonRArrays, computeMLRPredictions, getPacerRadiusForTrial } from './breathUtils'
 import { BASE_BREATH_SPEED_S, FASTER_BREATH_SPEED_S, SLOWER_BREATH_SPEED_S } from './constants'
 
-// Directional adherence — the metric behind the study's 88.9% / 91% figures:
-// did the belt-measured breath rate move in the cued direction (faster => higher
-// rate, slower => lower rate)? Binary per trial, independent of the sync score.
-function directionalAdherence(res, dir) {
-  const b = res?.btBaselinePeriodMs, c = res?.btConditionPeriodMs
-  if (b == null || c == null || b <= 0 || c <= 0) return null
-  const baseRate = 60000 / b, condRate = 60000 / c
-  const correct = dir === 'faster' ? condRate > baseRate : condRate < baseRate
-  return { baseRate, condRate, correct }
+// Directional adherence — ported from Study 5's Intero2025_BehaviourLedBreathAnalysis.R
+// (direction_correct = sign(observed_dur_change) == sign(delta)):
+//   1. Detect breath-onset troughs in the belt signal (exhale trough = start
+//      of inhale, same convention as the pacer: bt=0 at phase 0).
+//   2. Per-breath durations = diff(trough times), for breaths 1-4.
+//   3. observed_dur_change = mean(dur3,dur4) - mean(dur1,dur2), seconds.
+//   4. delta = signed cued change, seconds (positive = slower/longer, matching
+//      the paper's "Change" column convention).
+//   5. direction_correct = sign(observed_dur_change) == sign(delta).
+// Runs on the same de-trended beltPts already built for the graph, so what the
+// audience sees and what gets scored are the same signal.
+
+// Local-minima (trough) detector — mirrors breathUtils' internal peak logic,
+// applied to -value to find troughs instead of peaks.
+function findTroughs(pts, minSepMs) {
+  const troughs = []
+  for (let i = 1; i < pts.length - 1; i++) {
+    if (pts[i].value < pts[i - 1].value && pts[i].value < pts[i + 1].value) {
+      if (!troughs.length || pts[i].t - troughs[troughs.length - 1].t > minSepMs) {
+        troughs.push(pts[i])
+      }
+    }
+  }
+  return troughs
+}
+
+function directionalAdherence(graph, baseMs, conditionMs) {
+  const beltPts = graph?.beltPts
+  if (!beltPts || beltPts.length < 20) return null
+
+  const minSepMs = Math.min(baseMs, conditionMs) * 0.6   // avoid double-counting noise
+  const troughs  = findTroughs(beltPts, minSepMs)
+  if (troughs.length < 5) return null   // need 5 troughs to bound 4 breaths
+
+  // Take the last 5 troughs (bounding the 4 most recent breaths) in case of
+  // spurious extra detections earlier in the window.
+  const t5   = troughs.slice(-5)
+  const durS = []
+  for (let i = 1; i < t5.length; i++) durS.push((t5[i].t - t5[i - 1].t) / 1000)
+  if (durS.length !== 4) return null
+
+  const [d1, d2, d3, d4] = durS
+  const observedChange = (d3 + d4) / 2 - (d1 + d2) / 2
+  const delta = (conditionMs - baseMs) / 1000   // positive = slower/longer, negative = faster/shorter
+  const correct = Math.sign(observedChange) === Math.sign(delta)
+  return { d1, d2, d3, d4, observedChange, delta, correct }
 }
 
 // Build the trial graph with the EXACT procedure the calibration review uses
@@ -309,10 +346,10 @@ function StaircaseAct({ belt, onDone }) {
     sampler.begin()
     const res = await runTrial('phase3', trialIdx + 1, spec.conditionMs)
     const graph = buildCleanGraph(belt, res, BASE_MS, spec.conditionMs, sampler.end())
-    const adherence = directionalAdherence(res, spec.dir)
+    const adherence = directionalAdherence(graph, BASE_MS, spec.conditionMs)
     setLastResult({ graph, adherence })
     setState('RATE')
-  }, [runTrial, trialIdx, spec.conditionMs, spec.dir, sampler])
+  }, [runTrial, trialIdx, spec.conditionMs, sampler])
 
   function submitRatings() {
     const correct = response === spec.dir
@@ -409,12 +446,13 @@ function StaircaseAct({ belt, onDone }) {
           />
           {lastEntry.adherence && (
             <p style={{ ...D.body, fontSize: 15, maxWidth: 520 }}>
-              Your breath actually changed:{' '}
-              <strong>{lastEntry.adherence.baseRate.toFixed(1)} → {lastEntry.adherence.condRate.toFixed(1)} breaths/min</strong>{' '}
+              Breaths 1–2 averaged <strong>{lastEntry.adherence.d1.toFixed(2)}s / {lastEntry.adherence.d2.toFixed(2)}s</strong>;
+              breaths 3–4 averaged <strong>{lastEntry.adherence.d3.toFixed(2)}s / {lastEntry.adherence.d4.toFixed(2)}s</strong> —
+              a change of <strong>{lastEntry.adherence.observedChange >= 0 ? '+' : ''}{lastEntry.adherence.observedChange.toFixed(2)}s</strong>{' '}
               {lastEntry.adherence.correct
                 ? <span style={{ color: '#2ecc71', fontWeight: 600 }}>in the cued direction ✓</span>
-                : <span style={{ color: '#e67e22', fontWeight: 600 }}>— direction unclear</span>}
-              . This is the adherence the study scores — whether or not you noticed the change.
+                : <span style={{ color: '#e67e22', fontWeight: 600 }}>— not in the cued direction</span>}
+              . This directional check — not the sync score — is the adherence the study scores, whether or not you noticed the change.
             </p>
           )}
           <Btn onClick={next}>
