@@ -177,8 +177,8 @@ const SLIDES = [
           <img src="/RADlab_Logo_light.svg" alt="RADlab" style={{ height: 60 }} />
           <img src="/UofT_Logo.svg" alt="University of Toronto" style={{ height: 60 }} />
         </div>
-        <h1 style={K.title}>Breath Change Awareness</h1>
-        <p style={K.subtitle}>Why Detection Gates Feeling</p>
+        <h1 style={K.title}>What You Miss Won’t Move You</h1>
+        <p style={K.subtitle}>Awareness Connects Respiratory Change to Subjective Arousal</p>
         <div style={{ height: 18 }} />
         <p style={K.author}>Professor Norman Farb</p>
         <p style={K.affil}>Department of Psychological and Brain Sciences<br />University of Toronto Mississauga</p>
