@@ -6,7 +6,7 @@
 // The two live demos are NOT embedded — their slides link out in a new tab.
 import { useState, useEffect, useCallback, useRef } from 'react'
 import {
-  PositionIcons, SalienceMagnitudeSchematic, BeltTraces,
+  PositionIcons, SalienceMagnitudeSchematic, MissTrialTrace,
   MaiaScatter, NeuralFlow, PacerAttentionIllustration,
 } from './graphics'
 
@@ -346,11 +346,13 @@ const SLIDES = [
   {
     render: (d) => (
       <Frame kicker="Study 5 — the clincher">
-        <BeltTraces />
-        <Lead>The body still complied on missed trials — 88.9% vs 91% correct direction. Physiology moved; feeling did not follow.</Lead>
+        <H2>The body changed — the mind missed it</H2>
+        <MissTrialTrace />
+        <Lead>Adherence is read per trial: did the belt’s breathing rate move the cued way? On missed trials it still does — 91.0% of the time, vs 88.9% on hits.</Lead>
         <Detail density={d}>
-          With respiratory recording, missed trials show the paced change actually happened in the body
-          almost as reliably as on hits. The dissociation is not a failure of the manipulation — it is the finding.
+          Averaged over trials, correct-direction adherence is statistically the same on hits and misses.
+          So "nothing changed in the body" cannot explain the missed detections — the paced change happened
+          either way. What separates a hit from a miss is only whether it was consciously registered.
         </Detail>
       </Frame>
     ),
