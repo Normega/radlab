@@ -63,10 +63,10 @@ function EyeIcon() {
 // ramp = gradual; small vs large = change magnitude (one of several staircase
 // levels).
 export function SalienceMagnitudeSchematic() {
-  const cellW = 190, cellH = 96
-  const cell = (abrupt, big, key) => (
-    <div key={key} style={{ border: '1px solid rgba(180,100,140,0.2)', borderRadius: 10, background: '#fff', padding: 8 }}>
-      <RateChangeTrace w={cellW} h={cellH} abrupt={abrupt} big={big} />
+  const cellW = 220, cellH = 92
+  const cell = (abrupt, big, showAxis, key) => (
+    <div key={key} style={{ border: '1px solid rgba(180,100,140,0.2)', borderRadius: 10, background: '#fff', padding: '8px 8px 4px' }}>
+      <RateChangeTrace w={cellW} h={cellH} abrupt={abrupt} big={big} showAxis={showAxis} />
     </div>
   )
   const colLabel = { fontFamily: '"Space Mono",monospace', fontSize: 12, color: GRY, textAlign: 'center', letterSpacing: '0.04em' }
@@ -79,52 +79,72 @@ export function SalienceMagnitudeSchematic() {
         <div style={colLabel}>large change</div>
 
         <div style={rowLabel}>abrupt</div>
-        {cell(true,  false, 'af')}
-        {cell(true,  true,  'at')}
+        {cell(true,  false, false, 'af')}
+        {cell(true,  true,  false, 'at')}
 
         <div style={rowLabel}>gradual</div>
-        {cell(false, false, 'gf')}
-        {cell(false, true,  'gt')}
+        {cell(false, false, true,  'gf')}
+        {cell(false, true,  true,  'gt')}
       </div>
       <div style={{ fontFamily: '"Space Mono",monospace', fontSize: 11, color: GRY }}>
-        salience (rows) × magnitude — staircase levels (columns)
+        salience (rows) × magnitude (columns) · shared time axis, seconds
       </div>
     </div>
   )
 }
 
-function RateChangeTrace({ w, h, abrupt, big }) {
+const SCHEMA_BASE_S = 4.0   // baseline breath, seconds
+const SCHEMA_TMAX_S = 16    // x-axis extent, shared by every panel
+const SCHEMA_TICKS  = [0, 4, 8, 12, 16]
+
+function RateChangeTrace({ w, h, abrupt, big, showAxis }) {
   // Exactly 4 breaths: 2 baseline, then a change at breath 3. Each breath is one
-  // sine cycle; a shorter duration = faster breath. big => larger change;
-  // abrupt = step at breath 3, gradual = ramp across breaths 3–4.
-  const pad = 6
-  const baseD = 1.0
-  const accD  = big ? 0.55 : 0.78
+  // sine cycle. Critically, x is REAL TIME on a fixed seconds/pixel scale shared
+  // across all four panels — so a large (faster) change draws visibly narrower
+  // breaths than a small one, instead of being stretched to the same width.
+  const pad = 10
+  const accD  = big ? 2.0 : 3.2                              // seconds per breath after the change
   const durs  = abrupt
-    ? [baseD, baseD, accD, accD]
-    : [baseD, baseD, (baseD + accD) / 2, accD]
-  const total   = durs.reduce((a, b) => a + b, 0)
-  const usableW = w - 2 * pad
-  const amp     = h / 2 - pad - 2
-  const SPB     = 44   // samples per breath
+    ? [SCHEMA_BASE_S, SCHEMA_BASE_S, accD, accD]
+    : [SCHEMA_BASE_S, SCHEMA_BASE_S, (SCHEMA_BASE_S + accD) / 2, accD]
+  const usableW  = w - 2 * pad
+  const pxPerSec = usableW / SCHEMA_TMAX_S
+  const xOf = t => pad + t * pxPerSec
+  const amp = h / 2 - 6
+  const SPB = 44
 
   const pts = []
-  let t = 0
+  let t0 = 0
   durs.forEach((d, bi) => {
     for (let s = 0; s <= SPB; s++) {
-      if (bi > 0 && s === 0) continue   // shared boundary point
+      if (bi > 0 && s === 0) continue
       const frac = s / SPB
-      const x = pad + ((t + frac * d) / total) * usableW
+      const x = xOf(t0 + frac * d)
       const y = h / 2 - Math.sin(frac * 2 * Math.PI) * amp
       pts.push(`${pts.length === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`)
     }
-    t += d
+    t0 += d
   })
-  const onsetX = pad + ((durs[0] + durs[1]) / total) * usableW  // start of breath 3
+  const onsetX = xOf(SCHEMA_BASE_S * 2)   // change onset — same x in every panel
+  const svgH = showAxis ? h + 20 : h
   return (
-    <svg width={w} height={h} style={{ display: 'block' }}>
-      <line x1={onsetX} y1={4} x2={onsetX} y2={h - 4} stroke={PINK} strokeWidth="1" strokeDasharray="3 3" opacity="0.6" />
+    <svg width={w} height={svgH} style={{ display: 'block' }}>
+      {SCHEMA_TICKS.map(tk => (
+        <line key={tk} x1={xOf(tk)} y1={2} x2={xOf(tk)} y2={h - 2} stroke="#1c1c1e" strokeWidth="1" opacity="0.05" />
+      ))}
+      <line x1={onsetX} y1={2} x2={onsetX} y2={h - 2} stroke={PINK} strokeWidth="1" strokeDasharray="3 3" opacity="0.6" />
       <path d={pts.join(' ')} fill="none" stroke={BLUE} strokeWidth="2" />
+      {showAxis && (
+        <g>
+          <line x1={xOf(0)} y1={h + 2} x2={xOf(SCHEMA_TMAX_S)} y2={h + 2} stroke={GRY} strokeWidth="1" />
+          {SCHEMA_TICKS.map(tk => (
+            <g key={tk}>
+              <line x1={xOf(tk)} y1={h + 2} x2={xOf(tk)} y2={h + 5} stroke={GRY} strokeWidth="1" />
+              <text x={xOf(tk)} y={h + 15} fill={GRY} fontSize="9" fontFamily="monospace" textAnchor="middle">{tk}</text>
+            </g>
+          ))}
+        </g>
+      )}
     </svg>
   )
 }
