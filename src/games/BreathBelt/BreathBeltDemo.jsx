@@ -18,6 +18,17 @@ import ArousalRating from '../shared/ArousalRating'
 import { pearsonRArrays, computeMLRPredictions, getPacerRadiusForTrial } from './breathUtils'
 import { BASE_BREATH_SPEED_S, FASTER_BREATH_SPEED_S, SLOWER_BREATH_SPEED_S } from './constants'
 
+// Directional adherence — the metric behind the study's 88.9% / 91% figures:
+// did the belt-measured breath rate move in the cued direction (faster => higher
+// rate, slower => lower rate)? Binary per trial, independent of the sync score.
+function directionalAdherence(res, dir) {
+  const b = res?.btBaselinePeriodMs, c = res?.btConditionPeriodMs
+  if (b == null || c == null || b <= 0 || c <= 0) return null
+  const baseRate = 60000 / b, condRate = 60000 / c
+  const correct = dir === 'faster' ? condRate > baseRate : condRate < baseRate
+  return { baseRate, condRate, correct }
+}
+
 // Build the trial graph with the EXACT procedure the calibration review uses
 // (useBeltConnection: computeMLRPredictions → getPacerRadius → downsample by 5).
 // Samples come from rawAccelRowsRef (always populated, never cleared), filtered
@@ -298,15 +309,17 @@ function StaircaseAct({ belt, onDone }) {
     sampler.begin()
     const res = await runTrial('phase3', trialIdx + 1, spec.conditionMs)
     const graph = buildCleanGraph(belt, res, BASE_MS, spec.conditionMs, sampler.end())
-    setLastResult({ graph })
+    const adherence = directionalAdherence(res, spec.dir)
+    setLastResult({ graph, adherence })
     setState('RATE')
-  }, [runTrial, trialIdx, spec.conditionMs, sampler])
+  }, [runTrial, trialIdx, spec.conditionMs, spec.dir, sampler])
 
   function submitRatings() {
     const correct = response === spec.dir
     resultsRef.current.push({
       dir: spec.dir, detail: spec.detail, response, correct, confidence, arousal,
       graph: lastResult?.graph ?? null,
+      adherence: lastResult?.adherence ?? null,
     })
     setState('REVEAL')
   }
@@ -394,6 +407,16 @@ function StaircaseAct({ belt, onDone }) {
             title="Where the change happened (breath 3 onward)"
             graph={lastEntry.graph}
           />
+          {lastEntry.adherence && (
+            <p style={{ ...D.body, fontSize: 15, maxWidth: 520 }}>
+              Your breath actually changed:{' '}
+              <strong>{lastEntry.adherence.baseRate.toFixed(1)} → {lastEntry.adherence.condRate.toFixed(1)} breaths/min</strong>{' '}
+              {lastEntry.adherence.correct
+                ? <span style={{ color: '#2ecc71', fontWeight: 600 }}>in the cued direction ✓</span>
+                : <span style={{ color: '#e67e22', fontWeight: 600 }}>— direction unclear</span>}
+              . This is the adherence the study scores — whether or not you noticed the change.
+            </p>
+          )}
           <Btn onClick={next}>
             {trialIdx + 1 >= STAIRCASE_TRIALS.length ? 'Finish →' : 'Next trial →'}
           </Btn>
