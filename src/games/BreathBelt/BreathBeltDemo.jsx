@@ -44,6 +44,16 @@ function findTroughs(pts, minSepMs) {
   return troughs
 }
 
+// Duration change (seconds) -> a slower/same/faster label. "Same" absorbs
+// small noise around zero (breath timing isn't pixel-precise); threshold is a
+// demo judgment call, not from the paper (which only classifies delta!=0 trials).
+const SAME_THRESHOLD_S = 0.25
+function classifyDirection(changeS) {
+  if (changeS > SAME_THRESHOLD_S)  return 'slower'   // longer duration = slower breathing
+  if (changeS < -SAME_THRESHOLD_S) return 'faster'   // shorter duration = faster breathing
+  return 'same'
+}
+
 function directionalAdherence(graph, baseMs, conditionMs) {
   const beltPts = graph?.beltPts
   if (!beltPts || beltPts.length < 20) return null
@@ -62,8 +72,12 @@ function directionalAdherence(graph, baseMs, conditionMs) {
   const [d1, d2, d3, d4] = durS
   const observedChange = (d3 + d4) / 2 - (d1 + d2) / 2
   const delta = (conditionMs - baseMs) / 1000   // positive = slower/longer, negative = faster/shorter
-  const correct = Math.sign(observedChange) === Math.sign(delta)
-  return { d1, d2, d3, d4, observedChange, delta, correct }
+  const expectedLabel = delta === 0 ? 'same' : classifyDirection(delta)
+  const observedLabel = classifyDirection(observedChange)
+  // "Correct" per the paper's convention (sign match) only applies to change
+  // trials; on same-pace trials (delta=0) we just check the observed label.
+  const correct = delta === 0 ? observedLabel === 'same' : Math.sign(observedChange) === Math.sign(delta)
+  return { d1, d2, d3, d4, observedChange, delta, expectedLabel, observedLabel, correct }
 }
 
 // Build the trial graph with the EXACT procedure the calibration review uses
@@ -246,6 +260,7 @@ function PacedTrialsAct({ belt, onDone }) {
   const [trialIdx, setTrialIdx] = useState(0)
   const [state,    setState]    = useState('READY')   // READY | RUNNING | GRAPH
   const [lastGraph, setLastGraph] = useState(null)
+  const [lastAdherence, setLastAdherence] = useState(null)
   const resultsRef = useRef([])
 
   const { getPhase, runTrial, controlRef } = useTrialRunner({
@@ -267,8 +282,12 @@ function PacedTrialsAct({ belt, onDone }) {
     // belt (sim rehearsal).
     const res = await runTrial('phase2', trialIdx + 1, BASE_MS)
     const graph = buildCleanGraph(belt, res, BASE_MS, BASE_MS, sampler.end())
+    // Same-pace trial: expected is always "same"; this checks whether the
+    // belt-measured breathing actually held steady.
+    const adherence = directionalAdherence(graph, BASE_MS, BASE_MS)
     resultsRef.current.push(graph)
     setLastGraph(graph)
+    setLastAdherence(adherence)
     setState('GRAPH')
   }, [runTrial, trialIdx, sampler])
 
@@ -308,6 +327,7 @@ function PacedTrialsAct({ belt, onDone }) {
           <TrialGraphCard
             title={`Trial ${trialIdx + 1} — your breath vs. the pacer`}
             graph={lastGraph}
+            adherence={lastAdherence}
           />
           <Btn onClick={next}>
             {trialIdx + 1 >= PACED_TRIALS ? 'On to detection trials →' : 'Next trial →'}
@@ -443,16 +463,11 @@ function StaircaseAct({ belt, onDone }) {
           <TrialGraphCard
             title="Where the change happened (breath 3 onward)"
             graph={lastEntry.graph}
+            adherence={lastEntry.adherence}
           />
           {lastEntry.adherence && (
-            <p style={{ ...D.body, fontSize: 15, maxWidth: 520 }}>
-              Breaths 1–2 averaged <strong>{lastEntry.adherence.d1.toFixed(2)}s / {lastEntry.adherence.d2.toFixed(2)}s</strong>;
-              breaths 3–4 averaged <strong>{lastEntry.adherence.d3.toFixed(2)}s / {lastEntry.adherence.d4.toFixed(2)}s</strong> —
-              a change of <strong>{lastEntry.adherence.observedChange >= 0 ? '+' : ''}{lastEntry.adherence.observedChange.toFixed(2)}s</strong>{' '}
-              {lastEntry.adherence.correct
-                ? <span style={{ color: '#2ecc71', fontWeight: 600 }}>in the cued direction ✓</span>
-                : <span style={{ color: '#e67e22', fontWeight: 600 }}>— not in the cued direction</span>}
-              . This directional check — not the sync score — is the adherence the study scores, whether or not you noticed the change.
+            <p style={{ ...D.body, fontSize: 13, color: 'var(--tx3)', maxWidth: 480 }}>
+              This directional check — not the sync score above — is the adherence the study scores (88.9% / 91% correct direction, hits vs. misses), whether or not you noticed the change.
             </p>
           )}
           <Btn onClick={next}>
@@ -503,7 +518,9 @@ function SummaryAct({ paced, staircase }) {
 
 // ── Shared bits ─────────────────────────────────────────────────────────────
 
-function TrialGraphCard({ title, graph }) {
+const LABEL_TEXT = { slower: 'Slower', same: 'Same', faster: 'Faster' }
+
+function TrialGraphCard({ title, graph, adherence }) {
   if (!graph || (graph.pacerPts?.length ?? 0) < 2) {
     return (
       <p style={{ ...D.body, color: 'var(--tx3)' }}>
@@ -522,11 +539,27 @@ function TrialGraphCard({ title, graph }) {
       />
       <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
         <Chip label="Sync with pacer" value={fmtR(graph.r)} />
+        {adherence && (
+          <>
+            <Chip label="Expected" value={LABEL_TEXT[adherence.expectedLabel]} />
+            <Chip
+              label="Observed"
+              value={`${LABEL_TEXT[adherence.observedLabel]} ${adherence.correct ? '✓' : '✗'}`}
+              tone={adherence.correct ? '#2ecc71' : '#e67e22'}
+            />
+          </>
+        )}
       </div>
       <p style={D.legend}>
         <span style={{ color: '#3498db' }}>— pacer</span>{'   '}
         <span style={{ color: '#e67e22' }}>— your breath</span>
       </p>
+      {adherence && (
+        <p style={{ ...D.legend, maxWidth: 440 }}>
+          Belt-measured breath durations: {adherence.d1.toFixed(2)}s, {adherence.d2.toFixed(2)}s → {adherence.d3.toFixed(2)}s, {adherence.d4.toFixed(2)}s
+          {' '}({adherence.observedChange >= 0 ? '+' : ''}{adherence.observedChange.toFixed(2)}s)
+        </p>
+      )}
     </div>
   )
 }
@@ -535,11 +568,11 @@ function fmtR(r) {
   return r != null && isFinite(r) ? `${Math.round(r * 100)}%` : '—'
 }
 
-function Chip({ label, value }) {
+function Chip({ label, value, tone }) {
   return (
     <div style={D.chip}>
       <span style={D.chipLabel}>{label}</span>
-      <span style={D.chipValue}>{value}</span>
+      <span style={{ ...D.chipValue, ...(tone ? { color: tone } : {}) }}>{value}</span>
     </div>
   )
 }
