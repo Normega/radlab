@@ -1,21 +1,42 @@
-﻿import { useState } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Nav from '../components/Nav'
 
-export default function Login() {
-  const [email,    setEmail]    = useState('')
-  const [password, setPassword] = useState('')
-  const [error,    setError]    = useState(null)
-  const [loading,  setLoading]  = useState(false)
+export default function ForgotPassword() {
+  const [email,   setEmail]   = useState('')
+  const [error,   setError]   = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [done,    setDone]    = useState(false)
 
   async function handleSubmit(e) {
     e.preventDefault()
     setError(null)
     setLoading(true)
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) { setError(error.message); setLoading(false) }
-    // on success: stay loading — PublicOnlyRoute in App.jsx handles the redirect
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    })
+    setLoading(false)
+    if (error) { setError(error.message); return }
+    setDone(true)
+  }
+
+  if (done) {
+    return (
+      <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
+        <Nav session={null} />
+        <div style={S.wrap}>
+          <div style={S.card}>
+            <img src="/RADlab_Logo_light.svg" height="48" alt="RADlab" style={{ display: 'block', margin: '0 auto 20px' }} />
+            <h1 style={S.title}>Check your email</h1>
+            <p style={{ ...S.sub, maxWidth: 320, margin: '0 auto 24px' }}>
+              If an account exists for <strong>{email}</strong>, we've sent a link to reset your password.
+            </p>
+            <Link to="/login" style={S.btnPrimary}>Back to login</Link>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -24,8 +45,8 @@ export default function Login() {
       <div style={S.wrap}>
         <div style={S.card}>
           <img src="/RADlab_Logo_light.svg" height="48" alt="RADlab" style={{ display: 'block', margin: '0 auto 20px' }} />
-          <h1 style={S.title}>Welcome back</h1>
-          <p style={S.sub}>Log in to your RADlab account</p>
+          <h1 style={S.title}>Reset your password</h1>
+          <p style={S.sub}>We'll email you a link to set a new one</p>
 
           {error && <div style={S.errorBox}>{error}</div>}
 
@@ -38,24 +59,15 @@ export default function Login() {
                 style={S.input} placeholder="you@example.com"
               />
             </div>
-            <div style={S.field}>
-              <label style={S.label}>Password</label>
-              <input
-                type="password" required autoComplete="current-password"
-                value={password} onChange={e => setPassword(e.target.value)}
-                style={S.input} placeholder="••••••••"
-              />
-              <Link to="/forgot-password" style={S.forgotLink}>Forgot password?</Link>
-            </div>
             <button type="submit" style={S.btnPrimary} disabled={loading}>
-              {loading ? 'Signing in…' : 'Sign in'}
+              {loading ? 'Sending…' : 'Send reset link'}
             </button>
           </form>
 
           <p style={S.footer}>
-            No account yet?{' '}
-            <Link to="/signup" style={{ color: 'var(--pk)', textDecoration: 'none', fontWeight: 500 }}>
-              Sign up free
+            Remembered it?{' '}
+            <Link to="/login" style={{ color: 'var(--pk)', textDecoration: 'none', fontWeight: 500 }}>
+              Sign in
             </Link>
           </p>
         </div>
@@ -73,8 +85,7 @@ const S = {
   field: { display: 'flex', flexDirection: 'column', gap: 6 },
   label: { fontFamily: '"Space Mono", monospace', fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--tx3)' },
   input: { padding: '10px 14px', borderRadius: 9, border: '1px solid var(--bds)', background: 'var(--bgp)', fontSize: 15, color: 'var(--tx)', outline: 'none', fontFamily: 'inherit' },
-  forgotLink: { alignSelf: 'flex-end', fontSize: 13, color: 'var(--pk)', textDecoration: 'none', marginTop: 2 },
-  btnPrimary: { padding: '12px 0', background: 'var(--pk)', border: 'none', borderRadius: 12, color: '#fff', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', marginTop: 4 },
+  btnPrimary: { display: 'block', width: '100%', padding: '12px 0', background: 'var(--pk)', border: 'none', borderRadius: 12, color: '#fff', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', marginTop: 4, textDecoration: 'none', textAlign: 'center' },
   errorBox: { background: '#FCEBEB', border: '1px solid #F09595', borderRadius: 9, padding: '10px 14px', fontSize: 13, color: '#A32D2D', marginBottom: 16 },
   footer: { textAlign: 'center', fontSize: 13, color: 'var(--tx2)', marginTop: 24 },
 }

@@ -2,7 +2,7 @@
 
 > **Regulatory and Affective Dynamics Lab**  
 > University of Toronto · PI: Professor Norman Farb, PhD  
-> Last updated: 2026-07-06 (ISARP keynote: `/keynote` 23-slide click-through deck with Minimal/Reading toggle + speaker notes, BCAT figures wired + neuro-figure drop-in slots, links out to the two live demos — see §20 Keynote deck. Prior same-day: keynote opener `/demo/pacer-opener` and BreathBelt conference demo `/demo/breath-belt`. Prior update: 2026-07-05 (display elements §24a: block-based `displays` table, condition-gated blocks, `{{variable}}` interpolation from session step outputs, admin editor + Elements nav regroup. Same day: assignment randomizer implemented and pilot-verified: shared `draw_assignment` primitive, `assignment_slots` + StudyFormPage condition card, `useAssignment` hooks, SessionEntry draw gating, `seededRandom.js` utility — see §28 Shared assignment primitive. Prior update: 2026-07-02 (restructured into Parts I–IV: renumbered sections, restored lost §11/§16 headers, rewrote roadmap as §30, added §22 game stubs, §24 VAS stub; §28 Experiment Builder merged verbatim from commit 7a030c3 (renumbered from 26). Prior update: 2026-05-29 (BreathBelt §20: Biopac parallel-port triggers implemented — Biopac_Left/Biopac_Right now relay through a local parallel_server.py helper; trigger-device selector moved onto the connect screen; connectBiopac() + sendTestCascade() added; a 1–13 test cascade auto-fires on connect with an RA verify step. Earlier 2026-05-26 update: MLR calibration pipeline replacing percentile approach; fitBestModel — 6 model variants, best by Pearson R; useBeltConnection exposes mlrWeightsRef, filterState3Ref, syncQuality, calibReviewData, beginCalibCollection, redoCalibration, getPacerRadiusFnRef; BeltSyncRing retained for other games; SynchronyBar shown during trials; useStreamingBackup adds parallel File System Access API CSV backup; belt_mlr_migration.sql adds calib_model_label, calib_fit_r, calib_lag_ms to belt_sessions.))
+> Last updated: 2026-07-07 (Password reset flow: `/forgot-password` + `/reset-password` pages added — see §8 Auth Flow. Prior same-day update: 2026-07-06 (ISARP keynote: `/keynote` 23-slide click-through deck with Minimal/Reading toggle + speaker notes, BCAT figures wired + neuro-figure drop-in slots, links out to the two live demos — see §20 Keynote deck. Prior same-day: keynote opener `/demo/pacer-opener` and BreathBelt conference demo `/demo/breath-belt`. Prior update: 2026-07-05 (display elements §24a: block-based `displays` table, condition-gated blocks, `{{variable}}` interpolation from session step outputs, admin editor + Elements nav regroup. Same day: assignment randomizer implemented and pilot-verified: shared `draw_assignment` primitive, `assignment_slots` + StudyFormPage condition card, `useAssignment` hooks, SessionEntry draw gating, `seededRandom.js` utility — see §28 Shared assignment primitive. Prior update: 2026-07-02 (restructured into Parts I–IV: renumbered sections, restored lost §11/§16 headers, rewrote roadmap as §30, added §22 game stubs, §24 VAS stub; §28 Experiment Builder merged verbatim from commit 7a030c3 (renumbered from 26). Prior update: 2026-05-29 (BreathBelt §20: Biopac parallel-port triggers implemented — Biopac_Left/Biopac_Right now relay through a local parallel_server.py helper; trigger-device selector moved onto the connect screen; connectBiopac() + sendTestCascade() added; a 1–13 test cascade auto-fires on connect with an RA verify step. Earlier 2026-05-26 update: MLR calibration pipeline replacing percentile approach; fitBestModel — 6 model variants, best by Pearson R; useBeltConnection exposes mlrWeightsRef, filterState3Ref, syncQuality, calibReviewData, beginCalibCollection, redoCalibration, getPacerRadiusFnRef; BeltSyncRing retained for other games; SynchronyBar shown during trials; useStreamingBackup adds parallel File System Access API CSV backup; belt_mlr_migration.sql adds calib_model_label, calib_fit_r, calib_lag_ms to belt_sessions.)))
 
 ---
 
@@ -166,6 +166,8 @@ radlab/
       Landing.jsx             ← games landing page (moved from / to /games)
       Login.jsx               ← auth: sign in
       Signup.jsx              ← auth: create account
+      ForgotPassword.jsx      ← auth: request password reset email (§8)
+      ResetPassword.jsx       ← auth: set new password from recovery link (§8)
       Dashboard.jsx           ← protected: post-login home
       ProfilePage.jsx         ← user profile: avatar, points, unlock progress
       Games.jsx               ← public games listing (/games/list) — Pond Watch + Ebb & Flow cards
@@ -341,6 +343,8 @@ RLS: users can read only their own rows.
 | `/games/list` | `Games` | Public — game listing page |
 | `/login` | `Login` | Public only (redirects to `/dashboard` if logged in) |
 | `/signup` | `Signup` | Public only |
+| `/forgot-password` | `ForgotPassword` | Public only — request reset email (§8) |
+| `/reset-password` | `ResetPassword` | No guard — reached via recovery email link (§8) |
 | `/dashboard` | `Dashboard` | Protected (redirects to `/login` if not logged in) |
 | `/profile` | `ProfilePage` | Protected — avatar, points, unlock progress |
 | `/profile/avatar` | `AvatarEditor` | Protected — avatar editor; redirected here on first login |
@@ -376,6 +380,17 @@ RLS: users can read only their own rows.
 4. Auth state listener in `App.jsx` catches session changes and re-renders
 5. Role-based redirect (currently all users → `/dashboard`; future: check `profiles.role`)
 6. **Sign out** → `supabase.auth.signOut()` → redirect to `/`
+
+### Password reset (2026-07-07)
+
+For Tier 1 (lab) and Tier 3 (public) users, who authenticate with real email/password. Does **not** apply to Tier 2 participant accounts — those use synthetic `p-{id}@radlab.internal` addresses with a hidden random password (§28 Silent participant account creation) and are RA-driven, not self-service.
+
+1. `Login.jsx` — "Forgot password?" link next to the password field → `/forgot-password`
+2. `ForgotPassword.jsx` (`src/pages/ForgotPassword.jsx`) — email form → `supabase.auth.resetPasswordForEmail(email, { redirectTo: '<origin>/reset-password' })`. Always shows the same "check your email" success message regardless of whether the address matches an account, to avoid account enumeration.
+3. Supabase emails a recovery link (template + redirect URL allowlist configured in the Supabase dashboard → Auth → URL Configuration)
+4. `ResetPassword.jsx` (`src/pages/ResetPassword.jsx`) — reached via the email link. Supabase's client parses the recovery token from the URL hash on load and fires a `PASSWORD_RECOVERY` auth event once the temporary recovery session is established; the page waits for that (`ready` state) before showing the new-password form. Falls back to an "invalid or expired" state after a 2.5s timeout if no session appears.
+5. On submit: `supabase.auth.updateUser({ password })`, then `supabase.auth.signOut()` so the user logs back in fresh with the new password
+6. Routes: `/forgot-password` is wrapped in `PublicOnlyRoute` (redirects away if already logged in, like `/login`/`/signup`); `/reset-password` has **no** session/role guard, since Supabase establishes a session as part of following the recovery link and `PublicOnlyRoute` would bounce the user away before they could set a new password
 
 ---
 

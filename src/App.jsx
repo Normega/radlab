@@ -22,6 +22,8 @@ import StudyJoin     from './pages/StudyJoin'
 import PlatformPage from './pages/PlatformPage'
 import Login        from './pages/Login'
 import Signup       from './pages/Signup'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword  from './pages/ResetPassword'
 import Dashboard    from './pages/Dashboard'
 import GamesPage    from './pages/GamesPage'
 import ProfilePage  from './pages/ProfilePage'
@@ -164,6 +166,9 @@ export default function App() {
           <Route path="/platform" element={<PlatformPage session={session} />} />
           <Route path="/login"  element={<PublicOnlyRoute session={session} role={role}><Login /></PublicOnlyRoute>} />
           <Route path="/signup" element={<PublicOnlyRoute session={session} role={role}><Signup /></PublicOnlyRoute>} />
+          <Route path="/forgot-password" element={<PublicOnlyRoute session={session} role={role}><ForgotPassword /></PublicOnlyRoute>} />
+          {/* No session/role guard — Supabase establishes a temporary recovery session when this link is followed from email */}
+          <Route path="/reset-password" element={<ResetPassword />} />
 
           <Route path="/dashboard" element={
             <ProtectedRoute session={session} hasAvatar={hasAvatar}>
