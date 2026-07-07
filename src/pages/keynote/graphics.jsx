@@ -199,7 +199,7 @@ export function MissTrialTrace() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-      <svg width={W} height={H} style={{ background: '#fff', border: '1px solid rgba(180,100,140,0.18)', borderRadius: 12, display: 'block', maxWidth: '100%' }}>
+      <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} preserveAspectRatio="xMidYMid meet" style={{ background: '#fff', border: '1px solid rgba(180,100,140,0.18)', borderRadius: 12, display: 'block', width: '100%', maxWidth: W, height: 'auto' }}>
         {/* miss label */}
         <text x={padL} y={22} fill="#e0447a" fontSize="12" fontFamily="monospace" letterSpacing="0.08em">MISSED TRIAL</text>
         <text x={padL} y={36} fill="#6b6c70" fontSize="11" fontFamily="'DM Sans',sans-serif">participant reported: no change</text>
