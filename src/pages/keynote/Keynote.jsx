@@ -358,7 +358,34 @@ const SLIDES = [
     ),
   },
 
-  // 14 — MAIA: confidence not sensitivity
+  // 14 — MAIA intro
+  {
+    render: (d) => (
+      <Frame kicker="Self-report awareness">
+        <H2>What do people know about their own interoception?</H2>
+        <Lead>The MAIA — Multidimensional Assessment of Interoceptive Awareness — asks how much people notice, attend to, and trust the signals of their own body.</Lead>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center', maxWidth: 720 }}>
+          {['Noticing', 'Attention regulation', 'Emotional awareness', 'Body listening', 'Trusting', 'Not-distracting'].map(s => (
+            <span key={s} style={{ fontSize: 14, color: 'var(--pkd)', background: 'var(--pkb)', borderRadius: 999, padding: '6px 14px' }}>{s}</span>
+          ))}
+        </div>
+        <div style={{ maxWidth: 640, borderLeft: '3px solid var(--pk)', padding: '4px 18px', textAlign: 'left' }}>
+          <p style={{ fontStyle: 'italic', color: 'var(--tx)', fontSize: 'clamp(15px, 1.9vw, 21px)', margin: 0, lineHeight: 1.45 }}>
+            "I notice changes in my breathing, such as whether it slows down or speeds up."
+          </p>
+          <p style={{ fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', margin: '8px 0 0' }}>
+            MAIA item 4 — the questionnaire literally asks about the breath.
+          </p>
+        </div>
+        <Detail density={d}>
+          Self-report tells us what people believe about their bodily awareness. But does believing you
+          notice your breathing mean you actually can? The BCAT lets us check self-report against measured ability.
+        </Detail>
+      </Frame>
+    ),
+  },
+
+  // 15 — MAIA: confidence not sensitivity
   {
     note: 'Illustrative scatterplots rendered from the reported correlations (confidence r = .260; sensitivity r = .071). Swap for supplementary figures if preferred.',
     render: (d) => (
@@ -377,7 +404,7 @@ const SLIDES = [
     ),
   },
 
-  // 15 — Cortical deactivation
+  // 16 — Cortical deactivation
   {
     note: 'Figure: eNeuro (Farb, Zuo & Price 2023) Figure 3 — whole-brain deactivation maps for breath vs visual attention.',
     render: (d) => (
@@ -396,7 +423,7 @@ const SLIDES = [
     ),
   },
 
-  // 16 — ACC sparing by awareness
+  // 17 — ACC sparing by awareness
   {
     note: 'Figure: eNeuro (Farb, Zuo & Price 2023) Figure 4 — MAIA covariate brain map and scatterplot.',
     render: (d) => (
@@ -411,7 +438,7 @@ const SLIDES = [
     ),
   },
 
-  // 17 — ACC-DAN connectivity
+  // 18 — ACC-DAN connectivity
   {
     note: 'Figure: eNeuro (Farb, Zuo & Price 2023) — dorsal attention network maps (same figure as slide 16, DAN panel).',
     render: (d) => (
@@ -426,7 +453,7 @@ const SLIDES = [
     ),
   },
 
-  // 18 — Schematic recap (visual only)
+  // 19 — Schematic recap (visual only)
   {
     render: () => (
       <Frame kicker="Putting it together">
@@ -435,7 +462,7 @@ const SLIDES = [
     ),
   },
 
-  // 19 — Decodable and trainable
+  // 20 — Decodable and trainable
   {
     note: 'Figures: EJN (Zuo, Price & Farb 2023) Fig 5 or 9 — classification map; Brain Sci (Price, Sevinc & Farb 2023) Fig 2C or 3B — connectivity increase with MABT training.',
     render: (d) => (
@@ -457,7 +484,7 @@ const SLIDES = [
     ),
   },
 
-  // 20 — Meaning, detection habits
+  // 21 — Meaning, detection habits
   {
     render: (d) => (
       <Frame kicker="Back to meaning">
@@ -476,7 +503,7 @@ const SLIDES = [
     ),
   },
 
-  // 21 — Callback to opening votes (image only)
+  // 22 — Callback to opening votes (image only)
   {
     note: 'Spoken, not on slide: return to the opening votes. Compare the room’s split to the hit/miss arousal pattern just shown.',
     render: () => (
@@ -486,7 +513,7 @@ const SLIDES = [
     ),
   },
 
-  // 22 — Closer demo (live)
+  // 23 — Closer demo (live)
   {
     note: 'Live strap demo. Open in a new tab: pairing → calibration → paced trials → change-detection trials. Return here after.',
     render: () => (
@@ -498,7 +525,7 @@ const SLIDES = [
     ),
   },
 
-  // 23 — Thank you
+  // 24 — Thank you
   {
     render: () => (
       <Frame>
