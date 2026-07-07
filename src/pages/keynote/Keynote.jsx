@@ -101,9 +101,9 @@ export default function Keynote() {
 
 // ── Layout + content helpers ────────────────────────────────────────────────
 
-function Frame({ kicker, children }) {
+function Frame({ kicker, children, wide }) {
   return (
-    <div style={K.frame}>
+    <div style={{ ...K.frame, ...(wide ? K.frameWide : {}) }}>
       {kicker && <div style={K.kicker}>{kicker}</div>}
       {children}
     </div>
@@ -125,8 +125,9 @@ function Detail({ density, children }) {
   return <p style={K.detail}>{children}</p>
 }
 
-function Figure({ src, alt, missingLabel, maxH = '52vh' }) {
+function Figure({ src, alt, missingLabel, maxH = '64vh' }) {
   const [err, setErr] = useState(false)
+  const [zoom, setZoom] = useState(false)
   if (err || !src) {
     return (
       <div style={K.figPlaceholder}>
@@ -136,7 +137,24 @@ function Figure({ src, alt, missingLabel, maxH = '52vh' }) {
       </div>
     )
   }
-  return <img src={src} alt={alt} style={{ ...K.figImg, maxHeight: maxH }} onError={() => setErr(true)} />
+  return (
+    <>
+      <img
+        src={src}
+        alt={alt}
+        title="Click to enlarge"
+        style={{ ...K.figImg, maxHeight: maxH, cursor: 'zoom-in' }}
+        onError={() => setErr(true)}
+        onClick={e => { e.stopPropagation(); setZoom(true) }}
+      />
+      {zoom && (
+        <div style={K.lightbox} onClick={e => { e.stopPropagation(); setZoom(false) }}>
+          <img src={src} alt={alt} style={K.lightboxImg} />
+          <span style={K.lightboxHint}>click anywhere to close</span>
+        </div>
+      )}
+    </>
+  )
 }
 
 function DemoLink({ href, label, sub }) {
@@ -283,9 +301,9 @@ const SLIDES = [
   // 9 — Staircase finds each person's threshold
   {
     render: (d) => (
-      <Frame kicker="Finding the threshold">
+      <Frame wide kicker="Finding the threshold">
         <H2>A staircase finds each person’s detection threshold</H2>
-        <Figure src="/keynote/fig-staircase.png" alt="QUEST staircase level across trials" missingLabel="Staircase figure" maxH="46vh" />
+        <Figure src="/keynote/fig-staircase.png" alt="QUEST staircase level across trials" missingLabel="Staircase figure" maxH="62vh" />
         <Detail density={d}>
           Studies 1A–2 use a single staircase; Studies 4–5 cross salience (high/low) with direction
           (acceleration/deceleration). The staircase converges on the smallest change each person can detect.
@@ -311,7 +329,7 @@ const SLIDES = [
   {
     note: 'Figure: psychometric detection curves, all five studies + random-effects meta-analytic forest plot (BCAT manuscript, fig_accuracy).',
     render: (d) => (
-      <Frame kicker="Result 1">
+      <Frame wide kicker="Result 1">
         <H2>People reliably detect changes above threshold</H2>
         <Figure src="/keynote/fig-detection-curve.png" alt="Psychometric detection curves across five studies" missingLabel="Detection curve figure" />
         <Detail density={d}>
@@ -326,9 +344,9 @@ const SLIDES = [
   {
     note: 'Figure: predicted arousal by breathing-rate change, split by detected/missed, across studies + forest plot (BCAT manuscript, fig_arousal). BF01 = 8.7–29.6 supporting the null on misses.',
     render: (d) => (
-      <Frame kicker="Result 2 — the key result">
+      <Frame wide kicker="Result 2 — the key result">
         <H2>Arousal gates on detection</H2>
-        <Figure src="/keynote/fig-arousal-gating.png" alt="Arousal by breathing-rate change, split by hit vs miss" missingLabel="Arousal gating figure" maxH={d === 'reading' ? '40vh' : '48vh'} />
+        <Figure src="/keynote/fig-arousal-gating.png" alt="Arousal by breathing-rate change, split by hit vs miss" missingLabel="Arousal gating figure" maxH={d === 'reading' ? '50vh' : '58vh'} />
         <Bullets items={[
           'Hits: arousal scales with magnitude.',
           'Misses: arousal stays flat.',
@@ -408,7 +426,7 @@ const SLIDES = [
   {
     note: 'Figure: eNeuro (Farb, Zuo & Price 2023) Figure 3 — whole-brain deactivation maps for breath vs visual attention.',
     render: (d) => (
-      <Frame kicker="Where it happens in the brain">
+      <Frame wide kicker="Where it happens in the brain">
         <H2>Attending to the breath deactivates cortex</H2>
         <Figure src="/keynote/fig-eneuro-3.png" alt="Whole-brain deactivation maps" missingLabel="eNeuro Fig 3 — whole-brain deactivation maps" />
         <Bullets items={[
@@ -427,9 +445,9 @@ const SLIDES = [
   {
     note: 'Figure: eNeuro (Farb, Zuo & Price 2023) Figure 4 — MAIA covariate brain map and scatterplot.',
     render: (d) => (
-      <Frame kicker="Individual differences">
+      <Frame wide kicker="Individual differences">
         <H2>Awareness spares the ACC</H2>
-        <Figure src="/keynote/fig-eneuro-4.png" alt="MAIA covariate brain map and scatterplot" missingLabel="eNeuro Fig 4 — MAIA covariate map + scatter" />
+        <Figure src="/keynote/fig-eneuro-4a.png" alt="ACC activity by interoceptive awareness (MAIA)" missingLabel="eNeuro Fig 4A — ACC × MAIA" maxH="60vh" />
         <Bullets items={[
           'Higher MAIA scores predict less deactivation in ACC and language regions.',
           'Greater self-reported body awareness → more preserved ACC activity during breath attention.',
@@ -442,9 +460,9 @@ const SLIDES = [
   {
     note: 'Figure: eNeuro (Farb, Zuo & Price 2023) — dorsal attention network maps (same figure as slide 16, DAN panel).',
     render: (d) => (
-      <Frame kicker="Connectivity">
+      <Frame wide kicker="Connectivity">
         <H2>ACC sparing tracks attention-network coupling</H2>
-        <Figure src="/keynote/fig-eneuro-4.png" alt="Dorsal attention network maps" missingLabel="eNeuro — DAN maps" />
+        <Figure src="/keynote/fig-eneuro-4b.png" alt="Dorsal attention network maps" missingLabel="eNeuro Fig 4B — DAN maps" maxH="60vh" />
         <Bullets items={[
           'ACC sparing predicts greater connectivity with the dorsal attention network (DAN).',
           'Attention-network engagement — not just regional activity — tracks subjective awareness.',
@@ -466,10 +484,10 @@ const SLIDES = [
   {
     note: 'Figures: EJN (Zuo, Price & Farb 2023) Fig 5 or 9 — classification map; Brain Sci (Price, Sevinc & Farb 2023) Fig 2C or 3B — connectivity increase with MABT training.',
     render: (d) => (
-      <Frame kicker="Decodable and trainable">
+      <Frame wide kicker="Decodable and trainable">
         <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', justifyContent: 'center' }}>
-          <Figure src="/keynote/fig-ejn-classifier.png" alt="Interoceptive vs exteroceptive classifier" missingLabel="EJN Fig 5/9 — classifier map" maxH="34vh" />
-          <Figure src="/keynote/fig-brainsci-training.png" alt="Connectivity increase with training" missingLabel="Brain Sci Fig 2C/3B — training connectivity" maxH="34vh" />
+          <Figure src="/keynote/fig-ejn-classifier.png" alt="Interoceptive vs exteroceptive classifier" missingLabel="EJN Fig 5/9 — classifier map" maxH="48vh" />
+          <Figure src="/keynote/fig-brainsci-training.png" alt="Connectivity increase with training" missingLabel="Brain Sci Fig 2C/3B — training connectivity" maxH="48vh" />
         </div>
         <Bullets items={[
           'A classifier tells interoceptive from exteroceptive attention on brain activity alone — 73–85% accuracy, holding two months later.',
@@ -546,7 +564,8 @@ const FIGURE_PRELOAD = [
   '/keynote/fig-detection-curve.png',
   '/keynote/fig-arousal-gating.png',
   '/keynote/fig-eneuro-3.png',
-  '/keynote/fig-eneuro-4.png',
+  '/keynote/fig-eneuro-4a.png',
+  '/keynote/fig-eneuro-4b.png',
   '/keynote/fig-ejn-classifier.png',
   '/keynote/fig-brainsci-training.png',
   '/RADlab_Logo_light.svg',
@@ -613,11 +632,12 @@ const K = {
   toggleOn: { background: 'var(--pk)', color: '#fff' },
   notesBtn: { border: '1px solid var(--bd)', background: '#fff', borderRadius: 999, padding: '5px 14px', fontSize: 12, color: 'var(--tx2)', cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
 
-  slideArea: { position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '64px 48px' },
+  slideArea: { position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '44px 40px' },
   frame: {
-    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 22,
+    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20,
     textAlign: 'center', maxWidth: 1000, width: '100%',
   },
+  frameWide: { maxWidth: 'min(1280px, 95vw)' },
   kicker: { fontFamily: '"Space Mono",monospace', fontSize: 13, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--pkd)' },
 
   title:    { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 'clamp(34px, 6vw, 66px)', fontWeight: 400, color: 'var(--tx)', margin: 0, lineHeight: 1.05 },
@@ -635,6 +655,9 @@ const K = {
   detail: { fontSize: 'clamp(14px, 1.6vw, 17px)', color: 'var(--tx2)', lineHeight: 1.6, maxWidth: 720, margin: 0, borderTop: '1px solid var(--bd)', paddingTop: 14 },
 
   figImg: { maxWidth: '100%', width: 'auto', objectFit: 'contain', borderRadius: 8, background: '#fff' },
+  lightbox: { position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(252,240,245,0.97)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'zoom-out', padding: '2vh 2vw' },
+  lightboxImg: { maxWidth: '96vw', maxHeight: '94vh', objectFit: 'contain', borderRadius: 8, background: '#fff', boxShadow: '0 8px 40px rgba(0,0,0,0.18)' },
+  lightboxHint: { position: 'absolute', bottom: 16, left: 0, right: 0, textAlign: 'center', fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)' },
   figPlaceholder: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '48px 40px', border: '1.5px dashed rgba(180,100,140,0.4)', borderRadius: 12, background: 'rgba(255,255,255,0.5)', color: 'var(--tx3)', minWidth: 420 },
   figPlaceIcon: { fontSize: 34, color: 'var(--pkb)' },
   figPlaceText: { fontSize: 15, color: 'var(--tx2)', fontWeight: 500 },
