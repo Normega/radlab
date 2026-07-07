@@ -1826,9 +1826,25 @@ The player component. Builds a flat slide sequence (instruction → [scale_chang
 **Props:**
 - `questionnaire` — full JSON definition
 - `partNumber` / `totalParts` — for the sticky progress label (e.g. "Part 2 of 3")
-- `onComplete(responses)` — called with `{ [itemId]: value }` map when all items answered
+- `onComplete(payload)` — called when all items answered; `payload` is `{ responses, subscaleScores, derivedScores }`, plus `totalScore` for checklist-type
 - `onBack` — optional; called if participant presses Back on the instruction screen
-- `previewMode` — shows "Preview complete — N items answered." instead of calling `onComplete`
+- `previewMode` — shows "Preview complete — N items [answered|endorsed]." instead of calling `onComplete`
+
+### Checklist-type questionnaires
+
+A second `questionnaire_type` alongside the default `"likert"` — for instruments like life-event checklists where each item is independently endorsed (checked or not) at a fixed point value, rather than rated on a shared response scale. `questionnaire_type` defaults to `"likert"` when absent, so all existing instrument JSONs are unaffected.
+
+Root fields when `questionnaire_type: "checklist"`:
+- `scale_min` / `scale_max` / `scale_labels` must be `null` (not used)
+- `scoring.method` must be `"weighted_checklist"`
+
+Per-item fields (checklist type):
+- `weight` — integer 0–300; point value if the item is endorsed
+- `allow_multiple` — `true` shows a frequency stepper (number of occurrences) once checked; `false` is a simple checkbox
+
+Rendered by `ChecklistScreen.jsx` as one scrollable screen of all items (not one slide per item like likert), always with a manual Next button — checklist questionnaires ignore `auto_advance`. Unchecked item score = 0; checked score = `weight × occurrence_count` (`occurrence_count` = 1 if `allow_multiple` is `false`). On completion, `QuestionnaireRenderer` normalizes any never-touched items to "unchecked" so every item has a response, then computes `totalScore` (sum of item scores) alongside the usual `subscaleScores`/`derivedScores` (which, for checklists, operate on the per-item weighted scores — no reverse-scoring).
+
+Each response is stored as `{ response_value, item_weight, occurrence_count }` — `response_value` is the weighted score, with `item_weight` and `occurrence_count` kept alongside so the score's source is transparent without re-deriving it from the definition. `validateDefinition()` in `questionnaireUtils.js` enforces the checklist-specific rules (item `weight`/`allow_multiple` presence, null root scale fields, `weighted_checklist` scoring method) in addition to the shared checks.
 
 ### locked flag
 
