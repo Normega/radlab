@@ -161,29 +161,32 @@ function RateChangeTrace({ w, h, abrupt, big, showAxis }) {
 // adherence is not what separates them.
 export function MissTrialTrace() {
   const W = 560, H = 256, padL = 18, padR = 18
-  const T = 24, cue = 8
+  const durs = [4, 4, 5, 5]                     // 2 baseline breaths (15/min) → 2 decelerated (12/min)
+  const T = durs.reduce((s, d) => s + d, 0)     // 18 s — axis sized to the full four breaths
+  const cue = durs[0] + durs[1]                 // change onset at breath 3 (t = 8 s)
   const bandTop = 84, bandBot = 176
   const midY = (bandTop + bandBot) / 2, amp = (bandBot - bandTop) / 2 - 4
   const xOf = t => padL + (t / T) * (W - padL - padR)
-  const periodAt = t => (t < cue ? 4.0 : 5.0)   // seconds/breath: 15/min → 12/min (Study 5 range)
 
   const rng = mulberry32(42)
-  const N = 700
+  const SPB = 48, lag = 0.28
   const pacer = [], belt = []
-  let phP = 0, phB = 0, prev = 0
-  for (let i = 0; i <= N; i++) {
-    const t = (i / N) * T
-    const dt = t - prev; prev = t
-    phP += (2 * Math.PI / periodAt(t)) * dt
-    phB += (2 * Math.PI / periodAt(Math.max(0, t - 0.4))) * dt   // slight belt lag
-    const yP = midY - Math.sin(phP) * amp
-    const yB = midY - Math.sin(phB) * (amp * 0.9) + (rng() - 0.5) * 3
-    pacer.push(`${i === 0 ? 'M' : 'L'}${xOf(t).toFixed(1)},${yP.toFixed(1)}`)
-    belt.push(`${i === 0 ? 'M' : 'L'}${xOf(t).toFixed(1)},${yB.toFixed(1)}`)
-  }
+  let t0 = 0
+  durs.forEach((d, bi) => {
+    for (let s = 0; s <= SPB; s++) {
+      if (bi > 0 && s === 0) continue           // shared boundary point
+      const frac = s / SPB
+      const t = t0 + frac * d
+      const yP = midY - Math.sin(frac * 2 * Math.PI) * amp
+      const yB = midY - Math.sin(frac * 2 * Math.PI) * (amp * 0.9) + (rng() - 0.5) * 3
+      pacer.push(`${pacer.length === 0 ? 'M' : 'L'}${xOf(t).toFixed(1)},${yP.toFixed(1)}`)
+      belt.push(`${belt.length === 0 ? 'M' : 'L'}${xOf(Math.min(t + lag, T)).toFixed(1)},${yB.toFixed(1)}`)  // slight belt lag
+    }
+    t0 += d
+  })
 
   const cueX = xOf(cue)
-  const ticks = [0, 4, 8, 12, 16, 20, 24]
+  const ticks = [0, 4, 8, 12, 16]
   const bracket = (x1, x2, label, sub) => (
     <g>
       <line x1={x1} y1={70} x2={x2} y2={70} stroke={GRY} strokeWidth="1" />
@@ -203,7 +206,7 @@ export function MissTrialTrace() {
 
         {/* rate brackets */}
         {bracket(xOf(0.4), xOf(7.6), 'baseline', '15 / min · 4 s')}
-        {bracket(xOf(8.4), xOf(23.6), 'after cue', '12 / min · 5 s')}
+        {bracket(xOf(8.4), xOf(17.6), 'after cue', '12 / min · 5 s')}
 
         {/* cue line */}
         <line x1={cueX} y1={bandTop - 8} x2={cueX} y2={bandBot + 8} stroke="#e8a33d" strokeWidth="1.5" strokeDasharray="4 3" />
