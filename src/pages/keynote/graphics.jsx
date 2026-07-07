@@ -103,10 +103,14 @@ function RateChangeTrace({ w, h, abrupt, big, showAxis }) {
   // across all four panels — so a large (faster) change draws visibly narrower
   // breaths than a small one, instead of being stretched to the same width.
   const pad = 10
-  const accD  = big ? 2.0 : 3.2                              // seconds per breath after the change
-  const durs  = abrupt
-    ? [SCHEMA_BASE_S, SCHEMA_BASE_S, accD, accD]
-    : [SCHEMA_BASE_S, SCHEMA_BASE_S, (SCHEMA_BASE_S + accD) / 2, accD]
+  const b = SCHEMA_BASE_S
+  const a = big ? 2.0 : 3.2                                  // seconds/breath after the change
+  // Low salience amortizes the change linearly over breaths 2–4 so the total
+  // duration equals the high-salience [b,b,a,a] version (= 2b + 2a). Both rows
+  // therefore end at the same x within a magnitude column.
+  const durs = abrupt
+    ? [b, b, a, a]
+    : [b, b + (a - b) / 3, b + 2 * (a - b) / 3, a]
   const usableW  = w - 2 * pad
   const pxPerSec = usableW / SCHEMA_TMAX_S
   const xOf = t => pad + t * pxPerSec
@@ -125,7 +129,7 @@ function RateChangeTrace({ w, h, abrupt, big, showAxis }) {
     }
     t0 += d
   })
-  const onsetX = xOf(SCHEMA_BASE_S * 2)   // change onset — same x in every panel
+  const onsetX = xOf(abrupt ? b * 2 : b)   // abrupt steps at breath 3; gradual begins at breath 2
   const svgH = showAxis ? h + 20 : h
   return (
     <svg width={w} height={svgH} style={{ display: 'block' }}>
@@ -157,11 +161,11 @@ function RateChangeTrace({ w, h, abrupt, big, showAxis }) {
 // adherence is not what separates them.
 export function MissTrialTrace() {
   const W = 560, H = 256, padL = 18, padR = 18
-  const T = 20, cue = 8
+  const T = 24, cue = 8
   const bandTop = 84, bandBot = 176
   const midY = (bandTop + bandBot) / 2, amp = (bandBot - bandTop) / 2 - 4
   const xOf = t => padL + (t / T) * (W - padL - padR)
-  const periodAt = t => (t < cue ? 4.0 : 2.6)   // seconds/breath: ~15/min → ~23/min
+  const periodAt = t => (t < cue ? 4.0 : 5.0)   // seconds/breath: 15/min → 12/min (Study 5 range)
 
   const rng = mulberry32(42)
   const N = 700
@@ -171,7 +175,7 @@ export function MissTrialTrace() {
     const t = (i / N) * T
     const dt = t - prev; prev = t
     phP += (2 * Math.PI / periodAt(t)) * dt
-    phB += (2 * Math.PI / periodAt(Math.max(0, t - 0.35))) * dt   // slight belt lag
+    phB += (2 * Math.PI / periodAt(Math.max(0, t - 0.4))) * dt   // slight belt lag
     const yP = midY - Math.sin(phP) * amp
     const yB = midY - Math.sin(phB) * (amp * 0.9) + (rng() - 0.5) * 3
     pacer.push(`${i === 0 ? 'M' : 'L'}${xOf(t).toFixed(1)},${yP.toFixed(1)}`)
@@ -179,58 +183,58 @@ export function MissTrialTrace() {
   }
 
   const cueX = xOf(cue)
-  const ticks = [0, 5, 10, 15, 20]
+  const ticks = [0, 4, 8, 12, 16, 20, 24]
   const bracket = (x1, x2, label, sub) => (
     <g>
-      <line x1={x1} y1={70} x2={x2} y2={70} stroke="#8b93a0" strokeWidth="1" />
-      <line x1={x1} y1={70} x2={x1} y2={76} stroke="#8b93a0" strokeWidth="1" />
-      <line x1={x2} y1={70} x2={x2} y2={76} stroke="#8b93a0" strokeWidth="1" />
-      <text x={(x1 + x2) / 2} y={60} fill="#c9ced6" fontSize="11" fontFamily="'DM Sans',sans-serif" textAnchor="middle">{label}</text>
-      <text x={(x1 + x2) / 2} y={49} fill="#8b93a0" fontSize="10" fontFamily="monospace" textAnchor="middle">{sub}</text>
+      <line x1={x1} y1={70} x2={x2} y2={70} stroke={GRY} strokeWidth="1" />
+      <line x1={x1} y1={70} x2={x1} y2={76} stroke={GRY} strokeWidth="1" />
+      <line x1={x2} y1={70} x2={x2} y2={76} stroke={GRY} strokeWidth="1" />
+      <text x={(x1 + x2) / 2} y={60} fill="#6b6c70" fontSize="11" fontFamily="'DM Sans',sans-serif" textAnchor="middle">{label}</text>
+      <text x={(x1 + x2) / 2} y={49} fill={GRY} fontSize="10" fontFamily="monospace" textAnchor="middle">{sub}</text>
     </g>
   )
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-      <svg width={W} height={H} style={{ background: '#0d1117', borderRadius: 12, display: 'block', maxWidth: '100%' }}>
+      <svg width={W} height={H} style={{ background: '#fff', border: '1px solid rgba(180,100,140,0.18)', borderRadius: 12, display: 'block', maxWidth: '100%' }}>
         {/* miss label */}
-        <text x={padL} y={22} fill="#ff6b6b" fontSize="12" fontFamily="monospace" letterSpacing="0.08em">MISSED TRIAL</text>
-        <text x={padL} y={36} fill="#8b93a0" fontSize="11" fontFamily="'DM Sans',sans-serif">participant reported: no change</text>
+        <text x={padL} y={22} fill="#e0447a" fontSize="12" fontFamily="monospace" letterSpacing="0.08em">MISSED TRIAL</text>
+        <text x={padL} y={36} fill="#6b6c70" fontSize="11" fontFamily="'DM Sans',sans-serif">participant reported: no change</text>
 
         {/* rate brackets */}
-        {bracket(xOf(0.4), xOf(7.6), 'baseline', '~15 / min')}
-        {bracket(xOf(8.4), xOf(19.6), 'after cue', '~23 / min')}
+        {bracket(xOf(0.4), xOf(7.6), 'baseline', '15 / min · 4 s')}
+        {bracket(xOf(8.4), xOf(23.6), 'after cue', '12 / min · 5 s')}
 
         {/* cue line */}
         <line x1={cueX} y1={bandTop - 8} x2={cueX} y2={bandBot + 8} stroke="#e8a33d" strokeWidth="1.5" strokeDasharray="4 3" />
-        <text x={cueX + 5} y={bandTop + 4} fill="#e8a33d" fontSize="10" fontFamily="monospace">rate-change cue</text>
+        <text x={cueX + 5} y={bandTop + 4} fill="#c98a1f" fontSize="10" fontFamily="monospace">rate-change cue</text>
 
         {/* traces */}
-        <path d={pacer.join(' ')} fill="none" stroke="#6ea8dc" strokeWidth="1.6" strokeDasharray="5 4" opacity="0.8" />
+        <path d={pacer.join(' ')} fill="none" stroke={BLUE} strokeWidth="1.6" strokeDasharray="5 4" opacity="0.75" />
         <path d={belt.join(' ')} fill="none" stroke={PINK} strokeWidth="2" />
 
         {/* time axis */}
-        <line x1={xOf(0)} y1={bandBot + 12} x2={xOf(T)} y2={bandBot + 12} stroke="#4a5162" strokeWidth="1" />
+        <line x1={xOf(0)} y1={bandBot + 12} x2={xOf(T)} y2={bandBot + 12} stroke={GRY} strokeWidth="1" />
         {ticks.map(tk => (
           <g key={tk}>
-            <line x1={xOf(tk)} y1={bandBot + 12} x2={xOf(tk)} y2={bandBot + 16} stroke="#4a5162" strokeWidth="1" />
-            <text x={xOf(tk)} y={bandBot + 28} fill="#8b93a0" fontSize="9" fontFamily="monospace" textAnchor="middle">{tk}</text>
+            <line x1={xOf(tk)} y1={bandBot + 12} x2={xOf(tk)} y2={bandBot + 16} stroke={GRY} strokeWidth="1" />
+            <text x={xOf(tk)} y={bandBot + 28} fill={GRY} fontSize="9" fontFamily="monospace" textAnchor="middle">{tk}</text>
           </g>
         ))}
-        <text x={xOf(T)} y={bandBot + 28} fill="#8b93a0" fontSize="9" fontFamily="monospace" textAnchor="end">seconds</text>
+        <text x={xOf(T)} y={bandBot + 28} fill={GRY} fontSize="9" fontFamily="monospace" textAnchor="end">s</text>
 
         {/* legend */}
         <g fontFamily="'DM Sans',sans-serif" fontSize="10.5">
-          <line x1={W - 210} y1={20} x2={W - 188} y2={20} stroke="#6ea8dc" strokeWidth="1.6" strokeDasharray="5 4" />
-          <text x={W - 184} y={23} fill="#c9ced6">pacer target</text>
+          <line x1={W - 210} y1={20} x2={W - 188} y2={20} stroke={BLUE} strokeWidth="1.6" strokeDasharray="5 4" />
+          <text x={W - 184} y={23} fill="#6b6c70">pacer target</text>
           <line x1={W - 210} y1={36} x2={W - 188} y2={36} stroke={PINK} strokeWidth="2" />
-          <text x={W - 184} y={39} fill="#c9ced6">breath (belt)</text>
+          <text x={W - 184} y={39} fill="#6b6c70">breath (belt)</text>
         </g>
       </svg>
 
       {/* how the adherence score is read off this trial */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(240,104,164,0.1)', border: '1px solid rgba(240,104,164,0.35)', borderRadius: 10, padding: '8px 16px', fontSize: 14, color: INK }}>
-        <span style={{ fontFamily: '"Space Mono",monospace', color: '#c04a82' }}>belt rate 15 → 23 / min</span>
+        <span style={{ fontFamily: '"Space Mono",monospace', color: '#c04a82' }}>belt rate 15 → 12 / min</span>
         <span style={{ color: GRY }}>moved in the cued direction</span>
         <span style={{ fontWeight: 700, color: '#2ecc71' }}>✓ correct</span>
       </div>
