@@ -601,7 +601,7 @@ export default function InterventionPage({
 
 // ── OwlScreen ─────────────────────────────────────────────────────────────────
 
-function OwlScreen({ owl, text }) {
+export function OwlScreen({ owl, text }) {
   // Support both bare key ("owl_happy") and filename ("Owl_graduation.png")
   const src = owl.endsWith('.png') ? `/assets/owls/${owl}` : `/assets/owls/${owl}.png`
   return (
@@ -1746,3 +1746,7 @@ const S = {
     transition: 'opacity 0.15s',
   },
 }
+
+// Shared with WrapperElementPage so the standard session screens (welcome,
+// check-ins, farewell) render in exactly this visual system.
+export const interventionStyles = S
