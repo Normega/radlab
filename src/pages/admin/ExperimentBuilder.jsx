@@ -18,6 +18,7 @@ import {
 import TimepointNode    from '../../components/study/builder/nodes/TimepointNode'
 import SessionNode      from '../../components/study/builder/nodes/SessionNode'
 import BlockNode        from '../../components/study/builder/nodes/BlockNode'
+import ContactSettingsModal from '../../components/study/builder/ContactSettingsModal'
 
 const NODE_TYPES = { timepoint: TimepointNode, session: SessionNode, block: BlockNode }
 
@@ -289,6 +290,7 @@ export default function ExperimentBuilder() {
   const [saveError,      setSaveError]     = useState(null)
   const [validation,     setValidation]    = useState(null)
   const [studyName,      setStudyName]     = useState('')
+  const [showContact,    setShowContact]   = useState(false)
 
   const { data: sessionTemplates = [] } = useQuery({
     queryKey: ['session-templates'],
@@ -488,6 +490,9 @@ export default function ExperimentBuilder() {
             />
           </div>
           <div style={S.headerRight}>
+            <button style={S.contactBtn} onClick={() => setShowContact(true)}>
+              Contact settings
+            </button>
             {hasEnrollments && (
               <span style={S.lockedBadge}>Locked — participants enrolled</span>
             )}
@@ -571,6 +576,10 @@ export default function ExperimentBuilder() {
             </div>
           )}
         </div>
+
+        {showContact && (
+          <ContactSettingsModal studyId={id} onClose={() => setShowContact(false)} />
+        )}
       </div>
     </ReactFlowProvider>
   )
@@ -585,6 +594,7 @@ const S = {
   nameInput:   { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 22, fontWeight: 400, color: 'var(--tx)', border: 'none', outline: 'none', background: 'transparent', padding: 0, minWidth: 240 },
   lockedBadge: { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--gy)', background: '#f5f5f5', borderRadius: 6, padding: '3px 8px' },
   errBadge:    { fontFamily: '"Space Mono",monospace', fontSize: 11, color: '#e04', background: '#fff0f0', border: '1px solid #fcc', borderRadius: 6, padding: '3px 8px' },
+  contactBtn:  { background: '#fff', border: '1px solid var(--bd)', borderRadius: 8, padding: '7px 14px', fontSize: 13, color: 'var(--tx2)', cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
   savedBadge:  { fontFamily: '"Space Mono",monospace', fontSize: 11, color: '#2d9e5f', background: '#f0faf4', border: '1px solid #a8e6c3', borderRadius: 6, padding: '3px 8px' },
   btnPrimary:  { background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 18px', fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
   saveError:   { background: '#fff0f0', border: '1px solid #fcc', borderRadius: 8, padding: '8px 14px', fontSize: 13, color: '#e04', marginBottom: 8, flexShrink: 0 },

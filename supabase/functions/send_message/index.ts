@@ -1,7 +1,7 @@
 // send_message — core email sending primitive.
 // Called by check_schedule (cron) or directly for test sends from the admin UI.
 //
-// POST body: { schedule_instance_id: string, test_override_email?: string }
+// POST body: { schedule_id: string, test_override_email?: string }
 // When test_override_email is provided this is a test send — consent is skipped,
 // recipient is the override address, subject is prefixed with [TEST].
 
@@ -9,6 +9,7 @@ import { createClient, SupabaseClient } from 'npm:@supabase/supabase-js@2'
 import { Resend } from 'npm:resend'
 import { renderEmail } from '../_shared/emailTemplate.ts'
 import { getOrCreateUnsubscribeToken } from '../_shared/unsubscribeToken.ts'
+import { issueLink } from '../_shared/issueLink.ts'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -46,11 +47,11 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json().catch(() => ({}))
-    const { schedule_instance_id, test_override_email } = body
+    const { schedule_id, test_override_email } = body
 
     // 1. Validate input
-    if (!schedule_instance_id) {
-      return json({ error: 'schedule_instance_id is required' }, 400)
+    if (!schedule_id) {
+      return json({ error: 'schedule_id is required' }, 400)
     }
 
     const isTest = !!test_override_email
@@ -63,37 +64,34 @@ Deno.serve(async (req) => {
     // 2. Fetch the schedule row
     const { data: row, error: rowErr } = await db
       .from('participant_schedule')
-      .select('id, participant_id, study_id, session_template_id, day_contact_id, scheduled_for, study_day, protocol_id, link_id, status, attempts')
-      .eq('id', schedule_instance_id)
+      .select('id, participant_id, study_id, study_session_id, scheduled_date, send_time, study_day, link_id, status, attempts')
+      .eq('id', schedule_id)
       .single()
 
     if (rowErr || !row) {
       return json({ error: 'Schedule row not found' }, 400)
     }
 
-    // Fetch link expiry hours from the day contact row
+    // Link expiry from the compiled session slot.
     let expiresHours = 48
-    if (row.day_contact_id) {
-      const { data: pdc } = await db
-        .from('protocol_day_contacts')
+    if (row.study_session_id) {
+      const { data: session } = await db
+        .from('study_sessions')
         .select('link_expires_hours')
-        .eq('id', row.day_contact_id)
+        .eq('id', row.study_session_id)
         .single()
-      if (pdc?.link_expires_hours) expiresHours = pdc.link_expires_hours
+      if (session?.link_expires_hours) expiresHours = session.link_expires_hours
     }
 
-    // Fetch per-protocol custom email subject/body (nullable — null uses default template)
-    let customSubject: string | null = null
-    let customBody: string | null = null
-    if (row.protocol_id) {
-      const { data: proto } = await db
-        .from('study_protocols')
-        .select('email_subject, email_body')
-        .eq('id', row.protocol_id)
-        .single()
-      customSubject = proto?.email_subject ?? null
-      customBody    = proto?.email_body ?? null
-    }
+    // Per-study custom email subject/body (nullable — null uses default template).
+    const { data: study } = await db
+      .from('studies')
+      .select('email_subject, email_body')
+      .eq('id', row.study_id)
+      .single()
+
+    const customSubject = study?.email_subject ?? null
+    const customBody    = study?.email_body ?? null
 
     // 3. Fetch participant profile and email
     const { data: profile } = await db
@@ -109,17 +107,19 @@ Deno.serve(async (req) => {
     const { data: { user: authUser } } = await db.auth.admin.getUserById(row.participant_id)
     const participantEmail = authUser?.email ?? null
 
-    // 4. Consent check (skipped for test sends)
+    // 4. Email opt-out check (skipped for test sends). Not gated on
+    // consent_date: the first link is emailed at enrollment, before the
+    // participant consents at /s/{token}, so requiring consent would block
+    // all first sends. No enrollment row => treat as opted in.
     if (!isTest) {
-      const { data: consent } = await db
-        .from('participant_consent')
+      const { data: enrollment } = await db
+        .from('study_enrollments')
         .select('email_reminders')
-        .eq('participant_id', row.participant_id)
         .eq('study_id', row.study_id)
-        .is('withdrawn_at', null)
+        .eq('profile_id', row.participant_id)
         .maybeSingle()
 
-      if (consent?.email_reminders === false) {
+      if (enrollment?.email_reminders === false) {
         return json({ suppressed: true, reason: 'consent_not_given' })
       }
     }
@@ -130,14 +130,26 @@ Deno.serve(async (req) => {
     if (row.link_id) {
       const { data: existingLink } = await db
         .from('participant_links')
-        .select('token')
+        .select('token, status, expires_at')
         .eq('id', row.link_id)
         .single()
-      token = existingLink?.token ?? null
+
+      const stillActive = existingLink?.status === 'active' &&
+        (!existingLink.expires_at || new Date(existingLink.expires_at) > new Date())
+
+      if (stillActive) token = existingLink!.token
     }
 
     if (!token) {
-      token = await issueLinkInternal(row, expiresHours, db)
+      // Reusing an expired or revoked token would email a dead link.
+      const link = await issueLink(db, {
+        scheduleId: row.id,
+        participantId: row.participant_id,
+        studyId: row.study_id,
+        linkExpiresHours: expiresHours,
+      })
+      token = link.token
+      await db.from('participant_schedule').update({ status: 'link_sent' }).eq('id', row.id)
     }
 
     const siteUrl = Deno.env.get('SITE_URL') ?? 'https://radlab.vercel.app'
@@ -207,37 +219,6 @@ Deno.serve(async (req) => {
 })
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-async function issueLinkInternal(
-  row: { id: string; participant_id: string; protocol_id: string | null },
-  expiresHours: number,
-  db: SupabaseClient,
-): Promise<string> {
-  const token     = crypto.randomUUID()
-  const expiresAt = new Date(Date.now() + expiresHours * 60 * 60 * 1000).toISOString()
-
-  const { data: link, error } = await db
-    .from('participant_links')
-    .insert({
-      token,
-      schedule_instance_id: row.id,
-      participant_id: row.participant_id,
-      protocol_id: row.protocol_id,
-      status: 'active',
-      expires_at: expiresAt,
-    })
-    .select('id')
-    .single()
-
-  if (error) throw new Error(`Failed to create participant link: ${error.message}`)
-
-  await db
-    .from('participant_schedule')
-    .update({ link_id: link.id, status: 'link_sent' })
-    .eq('id', row.id)
-
-  return token
-}
 
 async function logMessage(
   db: SupabaseClient,

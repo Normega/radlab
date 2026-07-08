@@ -1,6 +1,6 @@
 // handle_unsubscribe — processes unsubscribe requests from email links.
 // No authentication required — the token is the credential.
-// Uses the service role client to update participant_consent (RLS bypass needed).
+// Uses the service role client to update study_enrollments (RLS bypass needed).
 
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
@@ -47,16 +47,19 @@ Deno.serve(async (req) => {
 
     const { participant_id, study_id } = tokenRow
 
-    // 3. Fetch current consent record
-    const { data: consent } = await db
-      .from('participant_consent')
+    // 3. Fetch current enrollment record
+    const { data: enrollment } = await db
+      .from('study_enrollments')
       .select('id, email_reminders')
-      .eq('participant_id', participant_id)
       .eq('study_id', study_id)
-      .is('withdrawn_at', null)
+      .eq('profile_id', participant_id)
       .maybeSingle()
 
-    if (consent?.email_reminders === false) {
+    if (!enrollment) {
+      return json({ error: 'enrollment_not_found' }, 404)
+    }
+
+    if (enrollment.email_reminders === false) {
       return json({ status: 'already_unsubscribed' })
     }
 
@@ -73,11 +76,9 @@ Deno.serve(async (req) => {
 
     // 5. Set email_reminders = false
     await db
-      .from('participant_consent')
-      .update({ email_reminders: false })
-      .eq('participant_id', participant_id)
-      .eq('study_id', study_id)
-      .is('withdrawn_at', null)
+      .from('study_enrollments')
+      .update({ email_reminders: false, email_unsubscribed_at: new Date().toISOString() })
+      .eq('id', enrollment.id)
 
     // 6. Record used_at for audit (token stays valid — unsubscribe is idempotent)
     await db

@@ -7,6 +7,8 @@
 // Returns:   { token } | { error }
 
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import { baselineTimeOfDay, materializeSchedule } from '../_shared/materializeSchedule.ts'
+import type { Graph } from '../_shared/materializeSchedule.ts'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -39,7 +41,7 @@ Deno.serve(async (req) => {
     // 1. Verify the study exists and permits external enrollment from this source.
     const { data: study, error: studyErr } = await admin
       .from('studies')
-      .select('id, allow_external_enrollment, external_enrollment_source')
+      .select('id, allow_external_enrollment, external_enrollment_source, design_graph')
       .eq('id', study_id)
       .single()
 
@@ -136,7 +138,78 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 6. Find the first study session (lowest order_index).
+    const today = new Date().toISOString().split('T')[0]
+
+    // 6. Longitudinal studies (Experiment Builder): materialize the full
+    // multi-day schedule from the graph. Other delivery modes fall through
+    // to the legacy single-session path below.
+    if (study.design_graph) {
+      const graph = study.design_graph as Graph
+
+      let result
+      try {
+        result = await materializeSchedule(admin, {
+          participantId,
+          studyId: study_id,
+          graph,
+          t0Date: today,
+          baselineSendTime: baselineTimeOfDay(graph),
+        })
+      } catch (err) {
+        console.error('materializeSchedule failed:', err)
+        return json({ error: 'Failed to schedule this study for the participant.' }, 500)
+      }
+
+      if (result.inserted === 0) {
+        // Idempotent no-op: schedule already existed for this participant.
+        // The early re-entry check above only returns a link that is still
+        // active and unexpired; if we got here none was found. Reissuing an
+        // expired link for a later due session is check_schedule's job.
+        const { data: activeLink } = await admin
+          .from('participant_links')
+          .select('token')
+          .eq('participant_id', participantId)
+          .eq('study_id', study_id)
+          .eq('status', 'active')
+          .gte('expires_at', new Date().toISOString())
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+
+        if (activeLink) return json({ token: activeLink.token })
+        return json(
+          { error: 'Your session link has expired. A new link will be sent when your next session is due.' },
+          409,
+        )
+      }
+
+      const { data: unlockedSchedule, error: unlockedErr } = await admin
+        .from('participant_schedule')
+        .select('link_id')
+        .eq('participant_id', participantId)
+        .eq('study_id', study_id)
+        .eq('status', 'unlocked')
+        .single()
+
+      if (unlockedErr || !unlockedSchedule?.link_id) {
+        return json({ error: 'Failed to issue a session link.' }, 500)
+      }
+
+      const { data: link, error: linkErr } = await admin
+        .from('participant_links')
+        .select('token')
+        .eq('id', unlockedSchedule.link_id)
+        .single()
+
+      if (linkErr || !link) {
+        return json({ error: 'Failed to issue a session link.' }, 500)
+      }
+
+      return json({ token: link.token })
+    }
+
+    // 6b. Legacy single-shot path (in_person / online_single): one session,
+    // schedule row created immediately.
     const { data: session, error: sessionErr } = await admin
       .from('study_sessions')
       .select('id, send_time, link_expires_hours')
@@ -148,9 +221,6 @@ Deno.serve(async (req) => {
     if (sessionErr || !session) {
       return json({ error: 'No sessions are configured for this study yet.' }, 500)
     }
-
-    // 7. Create a participant_schedule entry.
-    const today = new Date().toISOString().split('T')[0]
 
     const { data: sched, error: schedErr } = await admin
       .from('participant_schedule')
@@ -169,7 +239,6 @@ Deno.serve(async (req) => {
       return json({ error: 'Failed to create session schedule.' }, 500)
     }
 
-    // 8. Create the participant_link.
     const expiresAt = new Date()
     expiresAt.setHours(expiresAt.getHours() + (session.link_expires_hours ?? 48))
 
@@ -189,7 +258,6 @@ Deno.serve(async (req) => {
       return json({ error: 'Failed to create session link.' }, 500)
     }
 
-    // 9. Back-fill schedule.link_id (deferred circular reference).
     await admin
       .from('participant_schedule')
       .update({ link_id: link.id })
