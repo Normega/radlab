@@ -1,21 +1,33 @@
 // materializeSchedule — walks a compiled Experiment Builder graph (studies.design_graph)
-// and bulk-creates the participant's participant_schedule rows at enrollment.
+// and bulk-creates the participant's participant_schedule rows, including
+// resolving randomize/counterbalance forks as they're reached.
 //
-// Phase 1: linear chain + block nodes only, no randomize/counterbalance forks.
-// P2 will re-walk from a saved fromNodeId when a participant reaches an unresolved fork.
+// Always walks from the true graph entry on every call and relies on
+// per-node idempotency (skip anything already materialized) rather than
+// resuming from a saved position — simpler and more robust than
+// reconstructing offset/time context at an arbitrary midpoint, and it's
+// what makes repeat calls (the check_schedule advance pass) safe.
 
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2'
 import { issueLink } from './issueLink.ts'
 
+export interface RandomizeArm {
+  group: string
+  weight?: number
+  entry: string
+}
+
 export interface GraphNode {
   id: string
-  type: 'timepoint' | 'session' | 'block'
+  type: 'timepoint' | 'session' | 'block' | 'randomize' | 'counterbalance'
   day_offset?: number
   time_of_day?: string | null
   session_template_id?: string
   link_expires_hours?: number
   label?: string
-  children?: string[]
+  children?: string[] // block
+  arms?: RandomizeArm[] // randomize
+  block_ids?: string[] // counterbalance
 }
 
 export interface GraphEdge {
@@ -47,19 +59,6 @@ export function entryNode(graph: Graph): GraphNode | null {
   return topLevelNodes(graph).find((n) => !targets.has(n.id)) ?? null
 }
 
-/** Ordered top-level node ids, walking the chain from fromNodeId (or the entry). */
-function chainOrder(graph: Graph, fromNodeId: string | null): string[] {
-  const order: string[] = []
-  const visited = new Set<string>()
-  let cur = fromNodeId ?? entryNode(graph)?.id ?? null
-  while (cur && !visited.has(cur)) {
-    visited.add(cur)
-    order.push(cur)
-    cur = graph.edges.find((e) => e.from === cur)?.to ?? null
-  }
-  return order
-}
-
 /** The baseline (entry) timepoint's own time_of_day, falling back to 09:00. */
 export function baselineTimeOfDay(graph: Graph): string {
   const entry = entryNode(graph)
@@ -79,58 +78,27 @@ interface PlannedRow {
   studyDay: number
 }
 
-/**
- * Walk the graph and produce one planned row per session node (including
- * block children). time_of_day on a timepoint is explicit-or-baseline —
- * a null time_of_day inherits baselineSendTime directly, not the nearest
- * preceding timepoint's resolved time.
- */
-function planRows(graph: Graph, fromNodeId: string | null, t0Date: string, baselineSendTime: string): PlannedRow[] {
-  const nodeMap = Object.fromEntries(graph.nodes.map((n) => [n.id, n]))
-  const order = chainOrder(graph, fromNodeId)
-
-  const rows: PlannedRow[] = []
-  let currentOffset = 0
-  let currentTime = baselineSendTime
-
-  for (const nodeId of order) {
-    const node = nodeMap[nodeId]
-    if (!node) continue
-
-    if (node.type === 'timepoint') {
-      currentOffset = node.day_offset ?? 0
-      currentTime = node.time_of_day || baselineSendTime
-    } else if (node.type === 'session') {
-      rows.push({
-        nodeKey: node.id,
-        scheduledDate: addDays(t0Date, currentOffset),
-        sendTime: currentTime,
-        studyDay: currentOffset + 1,
-      })
-    } else if (node.type === 'block') {
-      const children = (node.children ?? []).map((cid) => nodeMap[cid]).filter(Boolean) as GraphNode[]
-      children.forEach((child, i) => {
-        rows.push({
-          nodeKey: child.id,
-          scheduledDate: addDays(t0Date, currentOffset + i),
-          sendTime: currentTime,
-          studyDay: currentOffset + i + 1,
-        })
-      })
-    }
-  }
-
-  return rows
+async function drawAssignment(
+  db: SupabaseClient,
+  studyId: string,
+  nodeId: string,
+  participantId: string,
+): Promise<{ value: unknown; draw_index: number }> {
+  const { data, error } = await db.rpc('draw_assignment', {
+    p_study_id: studyId,
+    p_slot_key: nodeId,
+    p_participant_id: participantId,
+  })
+  if (error) throw error
+  return data as { value: unknown; draw_index: number }
 }
 
 export interface MaterializeArgs {
   participantId: string
   studyId: string
   graph: Graph
-  seed?: string | null // unused in P1, reserved for P2 balanced draws
   t0Date: string // enrollment date, YYYY-MM-DD
   baselineSendTime: string // time from the baseline timepoint
-  fromNodeId?: string | null // null = start at entry
 }
 
 export interface MaterializeResult {
@@ -139,38 +107,134 @@ export interface MaterializeResult {
 }
 
 /**
- * Bulk-create participant_schedule rows for a participant from a design_graph.
- * No-ops if rows already exist for (participantId, studyId) — safe to call
- * on retries or double submissions.
+ * Bulk-create participant_schedule rows for a participant from a design_graph,
+ * resolving forks as they're reached. Safe to call repeatedly (enrollment,
+ * then again from the check_schedule advance pass after each fork resolves) —
+ * already-materialized nodes are skipped, not re-inserted or re-drawn.
  */
 export async function materializeSchedule(
   db: SupabaseClient,
   args: MaterializeArgs,
 ): Promise<MaterializeResult> {
   const { participantId, studyId, graph, t0Date, baselineSendTime } = args
-  const fromNodeId = args.fromNodeId ?? null
 
-  const { count, error: countErr } = await db
-    .from('participant_schedule')
-    .select('id', { count: 'exact', head: true })
-    .eq('participant_id', participantId)
-    .eq('study_id', studyId)
-
-  if (countErr) throw countErr
-  if (count && count > 0) return { inserted: 0, stoppedAt: null }
-
-  const rows = planRows(graph, fromNodeId, t0Date, baselineSendTime)
-  if (rows.length === 0) return { inserted: 0, stoppedAt: null }
-
+  // study_sessions gives node_key -> study_session_id (needed for every
+  // insert) and, joined against existing participant_schedule rows, which
+  // nodes are already materialized and their status (needed for the
+  // randomize "reached" check and to skip re-inserting).
   const { data: sessionRows, error: sessErr } = await db
     .from('study_sessions')
     .select('id, node_key, link_expires_hours')
     .eq('study_id', studyId)
-
   if (sessErr) throw sessErr
-  const sessionByNodeKey = new Map((sessionRows ?? []).map((r) => [r.node_key, r]))
 
-  const inserts = rows.map((row, i) => {
+  const sessionByNodeKey = new Map((sessionRows ?? []).map((r) => [r.node_key, r]))
+  const sessionById = new Map((sessionRows ?? []).map((r) => [r.id, r]))
+
+  const { data: scheduleRows, error: schedErr } = await db
+    .from('participant_schedule')
+    .select('status, study_session_id')
+    .eq('participant_id', participantId)
+    .eq('study_id', studyId)
+  if (schedErr) throw schedErr
+
+  const materialized = new Map<string, string>() // nodeKey -> status
+  for (const row of scheduleRows ?? []) {
+    const session = sessionById.get(row.study_session_id)
+    if (session) materialized.set(session.node_key, row.status)
+  }
+
+  const { data: assignmentRows, error: assignErr } = await db
+    .from('participant_assignments')
+    .select('node_id, value')
+    .eq('study_id', studyId)
+    .eq('participant_id', participantId)
+  if (assignErr) throw assignErr
+
+  const assignmentByNode = new Map((assignmentRows ?? []).map((r) => [r.node_id, r.value]))
+
+  const nodeMap = Object.fromEntries(graph.nodes.map((n) => [n.id, n]))
+
+  const inserts: PlannedRow[] = []
+  let currentOffset = 0
+  let currentTime = baselineSendTime
+  let allUpstreamCompleted = true
+  let stoppedAt: string | null = null
+
+  function emit(nodeKey: string, offset: number, time: string) {
+    const status = materialized.get(nodeKey)
+    if (status === undefined) {
+      inserts.push({ nodeKey, scheduledDate: addDays(t0Date, offset), sendTime: time, studyDay: offset + 1 })
+      allUpstreamCompleted = false // just created this pass — can't be completed yet
+    } else if (status !== 'completed') {
+      allUpstreamCompleted = false
+    }
+  }
+
+  const seen = new Set<string>()
+  let cur: string | null = entryNode(graph)?.id ?? null
+
+  while (cur && !seen.has(cur)) {
+    seen.add(cur)
+    const node = nodeMap[cur]
+    if (!node) break
+
+    if (node.type === 'timepoint') {
+      currentOffset = node.day_offset ?? 0
+      currentTime = node.time_of_day || baselineSendTime
+      cur = graph.edges.find((e) => e.from === cur)?.to ?? null
+
+    } else if (node.type === 'session') {
+      emit(node.id, currentOffset, currentTime)
+      cur = graph.edges.find((e) => e.from === cur)?.to ?? null
+
+    } else if (node.type === 'block') {
+      const children = (node.children ?? []).map((cid) => nodeMap[cid]).filter(Boolean) as GraphNode[]
+      children.forEach((child, i) => emit(child.id, currentOffset + i, currentTime))
+      currentOffset += children.length
+      cur = graph.edges.find((e) => e.from === cur)?.to ?? null
+
+    } else if (node.type === 'counterbalance') {
+      let orderedBlockIds = assignmentByNode.get(node.id) as string[] | undefined
+      if (!orderedBlockIds) {
+        const draw = await drawAssignment(db, studyId, node.id, participantId)
+        orderedBlockIds = draw.value as string[]
+      }
+      let i = 0
+      for (const bid of orderedBlockIds) {
+        const block = nodeMap[bid]
+        if (!block) continue
+        for (const cid of block.children ?? []) {
+          if (!nodeMap[cid]) continue
+          emit(cid, currentOffset + i, currentTime)
+          i++
+        }
+      }
+      currentOffset += i
+      cur = graph.edges.find((e) => e.from === cur)?.to ?? null
+
+    } else if (node.type === 'randomize') {
+      if (!allUpstreamCompleted) {
+        stoppedAt = node.id
+        break
+      }
+      let group = assignmentByNode.get(node.id) as string | undefined
+      if (!group) {
+        const draw = await drawAssignment(db, studyId, node.id, participantId)
+        group = draw.value as string
+      }
+      const arm = (node.arms ?? []).find((a) => a.group === group)
+      if (!arm) throw new Error(`materializeSchedule: randomize "${node.id}" drew group "${group}" with no matching arm`)
+      cur = arm.entry
+
+    } else {
+      cur = null
+    }
+  }
+
+  if (inserts.length === 0) return { inserted: 0, stoppedAt }
+
+  const insertRows = inserts.map((row, i) => {
     const session = sessionByNodeKey.get(row.nodeKey)
     if (!session) {
       throw new Error(`No study_sessions row for node_key "${row.nodeKey}" — recompile the graph.`)
@@ -189,13 +253,12 @@ export async function materializeSchedule(
 
   const { error: insErr } = await db
     .from('participant_schedule')
-    .insert(inserts.map(({ _linkExpiresHours, ...rest }) => rest))
-
+    .insert(insertRows.map(({ _linkExpiresHours, ...rest }) => rest))
   if (insErr) throw insErr
 
   // Insert order isn't guaranteed by Postgres, so look the unlocked row back
-  // up by status rather than trusting array position — only index 0 was
-  // inserted as 'unlocked', so there is exactly one match.
+  // up by status rather than trusting array position — only the first
+  // inserted row this call was 'unlocked', so there is exactly one match.
   const { data: unlockedRow, error: unlockedErr } = await db
     .from('participant_schedule')
     .select('id')
@@ -203,16 +266,14 @@ export async function materializeSchedule(
     .eq('study_id', studyId)
     .eq('status', 'unlocked')
     .single()
-
   if (unlockedErr) throw unlockedErr
 
   await issueLink(db, {
     scheduleId: unlockedRow.id,
     participantId,
     studyId,
-    linkExpiresHours: inserts[0]._linkExpiresHours,
+    linkExpiresHours: insertRows[0]._linkExpiresHours,
   })
 
-  // P1 has no randomize nodes — the walk always runs to completion.
-  return { inserted: inserts.length, stoppedAt: null }
+  return { inserted: insertRows.length, stoppedAt }
 }

@@ -16,10 +16,19 @@ export function blockChildIds(graph) {
   return ids
 }
 
-/** Top-level nodes (not block children). */
+/** Set of block node ids owned by a counterbalance node's block_ids. */
+export function counterbalanceMemberBlockIds(graph) {
+  const ids = new Set()
+  for (const n of graph.nodes) {
+    if (n.type === 'counterbalance') n.block_ids?.forEach(c => ids.add(c))
+  }
+  return ids
+}
+
+/** Top-level nodes (not block children, not counterbalance member blocks). */
 export function topLevelNodes(graph) {
-  const children = blockChildIds(graph)
-  return graph.nodes.filter(n => !children.has(n.id))
+  const excluded = new Set([...blockChildIds(graph), ...counterbalanceMemberBlockIds(graph)])
+  return graph.nodes.filter(n => !excluded.has(n.id))
 }
 
 /** Entry node: top-level with no incoming edge. */
@@ -51,12 +60,20 @@ function tailNode(graph) {
 
 // ─── Validate ────────────────────────────────────────────────────────────────
 
+function factorial(n) {
+  let f = 1
+  for (let i = 2; i <= n; i++) f *= i
+  return f
+}
+
 export function validate(graph) {
   const errors = []
-  if (!graph.nodes.length) return { valid: false, errors: ['Graph is empty.'] }
+  const warnings = []
+  if (!graph.nodes.length) return { valid: false, errors: ['Graph is empty.'], warnings: [] }
 
   const topLevel = topLevelNodes(graph)
   const nodeIds  = new Set(graph.nodes.map(n => n.id))
+  const nodeMap  = Object.fromEntries(graph.nodes.map(n => [n.id, n]))
   const targets  = new Set(graph.edges.map(e => e.to))
   const entries  = topLevel.filter(n => !targets.has(n.id))
 
@@ -72,9 +89,13 @@ export function validate(graph) {
   const sessionCount = graph.nodes.filter(n => n.type === 'session').length
   if (sessionCount === 0) errors.push('Graph must contain at least one Session.')
 
+  const incomingCount = {}
+  for (const e of graph.edges) incomingCount[e.to] = (incomingCount[e.to] ?? 0) + 1
+
   for (const n of graph.nodes) {
     if (n.type === 'session' && !n.session_template_id)
       errors.push(`Session "${n.label || n.id}" has no template assigned.`)
+
     if (n.type === 'block') {
       for (const cid of n.children ?? []) {
         if (!nodeIds.has(cid))
@@ -82,6 +103,64 @@ export function validate(graph) {
       }
       if ((n.children ?? []).length === 0)
         errors.push(`Block "${n.label}" is empty — add at least one session.`)
+    }
+
+    if (n.type === 'randomize') {
+      const arms = n.arms ?? []
+      if (arms.length < 2)
+        errors.push(`Randomize "${n.label || n.id}" needs at least 2 arms.`)
+
+      const seenEntries = new Set()
+      for (const arm of arms) {
+        if (!arm.group) errors.push(`Randomize "${n.label || n.id}" has an arm with no group name.`)
+        if (arm.weight != null && (!Number.isInteger(arm.weight) || arm.weight < 1))
+          errors.push(`Randomize "${n.label || n.id}" arm "${arm.group}" needs a positive integer weight.`)
+
+        if (!arm.entry) {
+          errors.push(`Randomize "${n.label || n.id}" arm "${arm.group}" has no entry node.`)
+        } else if (!nodeIds.has(arm.entry)) {
+          errors.push(`Randomize "${n.label || n.id}" arm "${arm.group}" references missing entry node "${arm.entry}".`)
+        } else {
+          if (seenEntries.has(arm.entry))
+            errors.push(`Randomize "${n.label || n.id}" has two arms pointing at the same entry node "${arm.entry}".`)
+          seenEntries.add(arm.entry)
+
+          if (!graph.edges.some(e => e.from === n.id && e.to === arm.entry))
+            errors.push(`Randomize "${n.label || n.id}" arm "${arm.group}" has no edge to its entry node "${arm.entry}".`)
+          if ((incomingCount[arm.entry] ?? 0) > 1)
+            errors.push(`Node "${arm.entry}" is an arm entry but has more than one incoming edge — arm entries must be reachable only through their randomize node.`)
+        }
+      }
+
+      const armEntrySet = new Set(arms.map(a => a.entry).filter(Boolean))
+      for (const e of graph.edges) {
+        if (e.from === n.id && !armEntrySet.has(e.to))
+          errors.push(`Randomize "${n.label || n.id}" has an edge to "${e.to}" that doesn't match any declared arm.`)
+      }
+    }
+
+    if (n.type === 'counterbalance') {
+      const blockIds = n.block_ids ?? []
+      if (blockIds.length < 2)
+        errors.push(`Counterbalance "${n.label || n.id}" needs at least 2 blocks.`)
+
+      const seen = new Set()
+      for (const bid of blockIds) {
+        if (!nodeIds.has(bid)) {
+          errors.push(`Counterbalance "${n.label || n.id}" references missing block "${bid}".`)
+        } else if (nodeMap[bid]?.type !== 'block') {
+          errors.push(`Counterbalance "${n.label || n.id}" references "${bid}", which is not a Block node.`)
+        }
+        if (seen.has(bid))
+          errors.push(`Counterbalance "${n.label || n.id}" lists block "${bid}" more than once.`)
+        seen.add(bid)
+      }
+
+      if (blockIds.length > 6) {
+        errors.push(`Counterbalance "${n.label || n.id}" has ${blockIds.length} blocks (${factorial(blockIds.length)} permutations) — reduce to 6 or fewer.`)
+      } else if (blockIds.length > 4) {
+        warnings.push(`Counterbalance "${n.label || n.id}" has ${blockIds.length} blocks (${factorial(blockIds.length)} permutations) — balancing across that many orderings needs a large sample.`)
+      }
     }
   }
 
@@ -93,11 +172,20 @@ export function validate(graph) {
   const outDegree = {}
   for (const e of graph.edges) {
     outDegree[e.from] = (outDegree[e.from] ?? 0) + 1
-    if (outDegree[e.from] > 1)
-      errors.push(`Node "${e.from}" has more than one outgoing edge (Phase 1 is linear only).`)
+    if (outDegree[e.from] > 1 && nodeMap[e.from]?.type !== 'randomize')
+      errors.push(`Node "${e.from}" has more than one outgoing edge (only Randomize nodes may branch).`)
   }
 
-  return { valid: errors.length === 0, errors }
+  // Rejoin nodes (multiple incoming edges) must resolve to the same day
+  // offset from every upstream path, else "Day N" labeling is ambiguous at
+  // authoring time. Runtime correctness is unaffected — each real
+  // participant's materializer walk is single-path regardless.
+  const { conflicts } = fullTraversal(graph)
+  for (const c of conflicts) {
+    errors.push(`Node "${c.nodeId}" is reached at different day offsets from different branches (offset ${c.offsets[0]} vs ${c.offsets[1]}) — align the timepoints on each path before this node.`)
+  }
+
+  return { valid: errors.length === 0, errors, warnings }
 }
 
 // ─── Mutators ────────────────────────────────────────────────────────────────
@@ -209,58 +297,126 @@ export function insertAfter(graph, afterId, nodeData) {
   return { nodes: [...graph.nodes, newNode], edges: newEdges }
 }
 
-// ─── Compile to study_sessions (WP4) ─────────────────────────────────────────
+// ─── Full-graph traversal (Phase 2) ──────────────────────────────────────────
 
 /**
- * Walk the graph and return ordered slot objects, one per session node
- * (including block children). Fed into the study_sessions delete-and-reinsert.
+ * Visit every node reachable via every randomize arm, and via a
+ * counterbalance's block_ids in authored array order. Unlike chainOrder()
+ * (single-path, used by the authoring-UI helpers below), this is the one
+ * place that needs to see every branch: study_sessions must contain a row
+ * for every possible node, since different participants land on different
+ * nodes at runtime and the materializer looks sessions up by node_key.
  *
- * day_number = design-time nominal day (day_offset + 1 for direct sessions;
- * day_offset + i + 1 for block children, where i is 0-based child position).
+ * A counterbalance's authored block_ids order is a NOMINAL reference
+ * ordering for day_number/order_index labeling only — it does not represent
+ * any real participant's actual order, which the runtime materializer
+ * resolves independently per participant via draw_assignment.
+ *
+ * Returns { slots, conflicts }. `slots` is one { nodeId, offset, time }
+ * record per session node (each visited exactly once). `conflicts` flags
+ * nodes reached with disagreeing day offsets from different branches (an
+ * unaligned rejoin) — surfaced by validate() as an error.
  */
-export function toSlots(graph) {
+export function fullTraversal(graph) {
   const nodeMap = Object.fromEntries(graph.nodes.map(n => [n.id, n]))
-  const order   = chainOrder(graph)
+  const entry   = entryNode(graph)
 
-  const slots       = []
-  let orderIndex    = 0
-  let currentOffset = 0
-  let currentTime   = '09:00'
+  const slots    = []
+  const visited  = new Map() // nodeId -> { offset, time } at first visit
+  const conflicts = []
 
-  for (const nodeId of order) {
+  function markVisit(nodeId, offset, time) {
+    const seen = visited.get(nodeId)
+    if (seen) {
+      if (seen.offset !== offset) conflicts.push({ nodeId, offsets: [seen.offset, offset] })
+      return false
+    }
+    visited.set(nodeId, { offset, time })
+    return true
+  }
+
+  function emitSession(nodeId, offset, time) {
+    if (!markVisit(nodeId, offset, time)) return false
+    slots.push({ nodeId, offset, time })
+    return true
+  }
+
+  function walk(nodeId, offset, time) {
     const node = nodeMap[nodeId]
-    if (!node) continue
+    if (!node) return
+
+    if (node.type === 'session') {
+      if (!emitSession(nodeId, offset, time)) return
+      const succ = graph.edges.find(e => e.from === nodeId)?.to
+      if (succ) walk(succ, offset, time)
+      return
+    }
+
+    if (!markVisit(nodeId, offset, time)) return
 
     if (node.type === 'timepoint') {
-      currentOffset = node.day_offset ?? 0
-      if (node.time_of_day) currentTime = node.time_of_day
-
-    } else if (node.type === 'session') {
-      slots.push({
-        nodeKey:           node.id,
-        sessionTemplateId: node.session_template_id,
-        sendTime:          currentTime,
-        linkExpiresHours:  node.link_expires_hours ?? 48,
-        label:             node.label ?? '',
-        orderIndex:        orderIndex++,
-        dayNumber:         currentOffset + 1,
-      })
+      const nextOffset = node.day_offset ?? 0
+      const nextTime    = node.time_of_day || time
+      const succ = graph.edges.find(e => e.from === nodeId)?.to
+      if (succ) walk(succ, nextOffset, nextTime)
 
     } else if (node.type === 'block') {
-      const children = (node.children ?? []).map(cid => nodeMap[cid]).filter(Boolean)
-      children.forEach((child, i) => {
-        slots.push({
-          nodeKey:           child.id,
-          sessionTemplateId: child.session_template_id,
-          sendTime:          currentTime,
-          linkExpiresHours:  child.link_expires_hours ?? 48,
-          label:             child.label ?? '',
-          orderIndex:        orderIndex++,
-          dayNumber:         currentOffset + i + 1,
-        })
-      })
+      let curOffset = offset
+      for (const cid of node.children ?? []) {
+        if (nodeMap[cid]) { emitSession(cid, curOffset, time); curOffset += 1 }
+      }
+      const succ = graph.edges.find(e => e.from === nodeId)?.to
+      if (succ) walk(succ, curOffset, time)
+
+    } else if (node.type === 'counterbalance') {
+      let curOffset = offset
+      for (const bid of node.block_ids ?? []) {
+        const block = nodeMap[bid]
+        if (!block) continue
+        for (const cid of block.children ?? []) {
+          if (nodeMap[cid]) { emitSession(cid, curOffset, time); curOffset += 1 }
+        }
+      }
+      const succ = graph.edges.find(e => e.from === nodeId)?.to
+      if (succ) walk(succ, curOffset, time)
+
+    } else if (node.type === 'randomize') {
+      for (const arm of node.arms ?? []) {
+        if (arm.entry && nodeMap[arm.entry]) walk(arm.entry, offset, time)
+      }
     }
   }
 
-  return slots
+  if (entry) walk(entry.id, 0, '09:00')
+
+  return { slots, conflicts }
+}
+
+// ─── Compile to study_sessions (WP4) ─────────────────────────────────────────
+
+/**
+ * Return ordered slot objects, one per session node (including block and
+ * counterbalance children). Fed into the study_sessions delete-and-reinsert.
+ *
+ * day_number = design-time nominal day (offset + 1). For a plain linear
+ * graph this reproduces the exact ordering/timing Phase 1 already compiled;
+ * forks are additionally visited via fullTraversal() (see its doc comment
+ * for the counterbalance-ordering caveat).
+ */
+export function toSlots(graph) {
+  const nodeMap = Object.fromEntries(graph.nodes.map(n => [n.id, n]))
+  const { slots: raw } = fullTraversal(graph)
+
+  return raw.map((s, i) => {
+    const node = nodeMap[s.nodeId]
+    return {
+      nodeKey:           s.nodeId,
+      sessionTemplateId: node?.session_template_id,
+      sendTime:          s.time,
+      linkExpiresHours:  node?.link_expires_hours ?? 48,
+      label:             node?.label ?? '',
+      orderIndex:        i,
+      dayNumber:         s.offset + 1,
+    }
+  })
 }
