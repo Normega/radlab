@@ -1914,6 +1914,8 @@ Participant-facing content pages placeable as session steps: instructions, condi
 - *StudyFormPage v4*: warns when a display in the study's sessions (via `study_sessions` → `session_template_nodes`) expects a condition slot the study doesn't define — the randomizer half of the check.
 - *Package fix*: VAS/slider steps inside `vas_pkg_*` packages previously reported only `{ package_slug, responses_count }` — item values never reached the session context. Packages now report `item_values: [{type, slug, value}]` and SessionEntry v7 files each under its own `slider.`/`vas.` key, so packaging is transparent to variable availability (and to the checker, which resolves package contents to typed slugs).
 
+**Bugfix (2026-07-07)**: displays never appeared in SessionBuilder's picker. Root cause: `activities.category` has a CHECK constraint (`activities_category_check`) whose allowed list was never updated to include `'display'` when §24a shipped — DisplayEditorPage's `activities` insert (line ~101) silently failed the constraint and was swallowed by a `console.warn`, so no `activities` row ever existed for any display. Same class of bug as the RLS gotcha at the top of this file's companion CLAUDE.md, just a CHECK constraint instead of RLS. Fixed by `supabase/migrations/20260707_activities_category_add_display.sql`, which widens the constraint to include `'display'` and backfills `activities` rows for displays created before the fix (`aptitude_feedback`, `aptitude_feedback_redemption`). Verified live: both now show under SessionBuilder's Displays group and can be added to a session sequence.
+
 ## 25. Video Library (Admin)
 
 **Routes**: `/admin/videos`, `/admin/videos/new`
