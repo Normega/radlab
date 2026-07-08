@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
@@ -13,7 +13,7 @@ import {
   newId, validate, addNode, updateNode, removeNode,
   addSessionToBlock, removeSessionFromBlock, duplicateBlock,
   addArm, removeArm, addArmEntry, addBlockToCounterbalance, removeBlockFromCounterbalance,
-  chainOrder, topLevelNodes, toSlots, mergeInto,
+  chainOrder, topLevelNodes, entryNode, toSlots, mergeInto,
   findOwningBlock, findOwningCounterbalance,
   insertAfter, lastNodeInTimepointGroup,
 } from '../../lib/experimentGraph'
@@ -31,100 +31,76 @@ const NODE_TYPES = {
 
 // ─── RF conversion helpers ───────────────────────────────────────────────────
 
-// Row-per-timepoint layout: timepoints form the left-column spine,
-// sessions/blocks spread horizontally to the right at the same Y.
+// Camera habits: the canvas should always grow downward as elements are
+// added, not rightward, so a narrow (e.g. mobile) viewport stays usable —
+// the leftmost column sits at x=0 and only nested content (block sessions,
+// counterbalance blocks, randomize arms) indents slightly to the right.
 const LAYOUT = {
-  TP_X:           0,
-  SESSION_X_START: 290,
-  SESSION_X_GAP:  240,
-  ROW_BASE_H:     150,
-  BLOCK_CHILD_ROW_H: 110,
+  INDENT_X: 44,
+  ROW_H:    130,
 }
+const VIEWPORT_MARGIN = 24
 
 function autoLayout(graph) {
   const nodeMap = Object.fromEntries(graph.nodes.map(n => [n.id, n]))
-  const order   = chainOrder(graph)
-
-  // Group chain into rows, one per timepoint
-  const rows = []
-  let cur = null
-  for (const id of order) {
-    const node = nodeMap[id]
-    if (!node) continue
-    if (node.type === 'timepoint') {
-      cur = { timepointId: id, sessions: [] }
-      rows.push(cur)
-    } else if (cur) {
-      cur.sessions.push(id)
-    }
-  }
-
   const positions = {}
+  const visited = new Set()
   let y = 0
-  for (const row of rows) {
-    positions[row.timepointId] = { x: LAYOUT.TP_X, y }
-    row.sessions.forEach((sid, i) => {
-      positions[sid] = { x: LAYOUT.SESSION_X_START + i * LAYOUT.SESSION_X_GAP, y }
-    })
-    // Extra height reserved for a row's widest fork (block children stacked
-    // to the right of the block, or a counterbalance's own blocks stacked to
-    // its right) so the next row's cards don't overlap them.
-    let blockExtra = 0
-    for (const sid of row.sessions) {
-      const node = nodeMap[sid]
-      if (node?.type === 'block') {
-        blockExtra = Math.max(blockExtra, (node.children?.length ?? 0) * LAYOUT.BLOCK_CHILD_ROW_H)
-      }
-      if (node?.type === 'counterbalance') {
-        blockExtra = Math.max(blockExtra, (node.block_ids?.length ?? 0) * LAYOUT.ROW_BASE_H)
-      }
-    }
-    y += LAYOUT.ROW_BASE_H + blockExtra
+
+  // The single structural "next" node for plain chain-walking (trunk, or a
+  // rejoin's continuation past a merge). Randomize has no single next — its
+  // arms fan out explicitly below — so this deliberately returns null there.
+  function structuralNext(nodeId) {
+    if (nodeMap[nodeId]?.type === 'randomize') return null
+    return graph.edges.find(e => e.from === nodeId)?.to ?? null
   }
 
-  // chainOrder only walks one path, so a randomize node's non-followed arms
-  // are otherwise left unpositioned (defaulting to the canvas origin). Give
-  // each arm its own sub-row below the randomize node — a local walk
-  // suffices since each arm is itself linear.
-  for (const nodeId of order) {
+  // Depth-first placement: every node gets the next Y slot going, in visit
+  // order, so nothing ever overlaps and nothing is left at the canvas
+  // origin. Depth only controls indentation, never the Y cursor, so nested
+  // content (a block's sessions, a counterbalance's blocks, a randomize
+  // arm's chain) stacks below its parent instead of spreading beside it.
+  function place(nodeId, depth) {
+    if (!nodeId || visited.has(nodeId) || !nodeMap[nodeId]) return
+    visited.add(nodeId)
+    positions[nodeId] = { x: depth * LAYOUT.INDENT_X, y }
+    y += LAYOUT.ROW_H
+
     const node = nodeMap[nodeId]
-    if (node?.type !== 'randomize') continue
-    const baseY = positions[nodeId]?.y ?? y
-    ;(node.arms ?? []).forEach((arm, armIdx) => {
-      if (!arm.entry || positions[arm.entry]) return
-      let cur = arm.entry
-      let x = LAYOUT.SESSION_X_START
-      const armY = baseY + LAYOUT.ROW_BASE_H * (armIdx + 1)
-      const seen = new Set()
-      while (cur && !seen.has(cur) && !positions[cur]) {
-        seen.add(cur)
-        positions[cur] = { x, y: armY }
-        x += LAYOUT.SESSION_X_GAP
-        cur = graph.edges.find(e => e.from === cur)?.to ?? null
-      }
-    })
+    if (node.type === 'block') {
+      for (const cid of node.children ?? []) place(cid, depth + 1)
+    } else if (node.type === 'counterbalance') {
+      for (const bid of node.block_ids ?? []) place(bid, depth + 1)
+    } else if (node.type === 'randomize') {
+      for (const arm of node.arms ?? []) place(arm.entry, depth + 1)
+    }
+
+    place(structuralNext(nodeId), depth)
   }
 
-  // Containment: a counterbalance's own blocks, and a block's own sessions,
-  // are rendered as separate connected nodes rather than listed inline. Run
-  // counterbalance -> blocks before block -> sessions so a counterbalance's
-  // freshly-positioned blocks are in place before we position their children.
-  for (const node of graph.nodes) {
-    if (node.type !== 'counterbalance' || !positions[node.id]) continue
-    const { x: baseX, y: baseY } = positions[node.id]
-    ;(node.block_ids ?? []).forEach((bid, i) => {
-      if (!positions[bid]) positions[bid] = { x: baseX + LAYOUT.SESSION_X_GAP, y: baseY + i * LAYOUT.ROW_BASE_H }
-    })
-  }
-  for (const node of graph.nodes) {
-    if (node.type !== 'block' || !positions[node.id]) continue
-    const { x: baseX, y: baseY } = positions[node.id]
-    ;(node.children ?? []).forEach((cid, i) => {
-      if (!positions[cid]) positions[cid] = { x: baseX + LAYOUT.SESSION_X_GAP, y: baseY + i * LAYOUT.BLOCK_CHILD_ROW_H }
-    })
-  }
+  const entry = entryNode(graph)
+  if (entry) place(entry.id, 0)
+
+  // Anything still unreached (a merge target not yet wired, or a node
+  // authored while disconnected) gets appended at the end, at the trunk's
+  // indentation, rather than defaulting to the origin underneath everything
+  // else already there.
+  for (const node of topLevelNodes(graph)) place(node.id, 0)
 
   return positions
+}
+
+// Camera habit: pin whatever is currently leftmost/topmost to the viewport's
+// top-left corner (a small margin in), instead of React Flow's default
+// fitView (which zooms to fit the *whole* graph and re-centers it — fighting
+// a stable top-left anchor and shrinking text on a narrow viewport). Zoom is
+// left untouched so a manual zoom the user made isn't overridden.
+function pinViewportTopLeft(instance, nodes) {
+  if (!instance || nodes.length === 0) return
+  const minX = Math.min(...nodes.map(n => n.position.x))
+  const minY = Math.min(...nodes.map(n => n.position.y))
+  const zoom = instance.getZoom()
+  instance.setViewport({ x: VIEWPORT_MARGIN - minX * zoom, y: VIEWPORT_MARGIN - minY * zoom, zoom })
 }
 
 // Determine insertion point based on current selection:
@@ -463,6 +439,7 @@ export default function ExperimentBuilder() {
   const [validation,     setValidation]    = useState(null)
   const [studyName,      setStudyName]     = useState('')
   const [showContact,    setShowContact]   = useState(false)
+  const rfInstanceRef = useRef(null)
 
   const { data: sessionTemplates = [] } = useQuery({
     queryKey: ['session-templates'],
@@ -567,6 +544,21 @@ export default function ExperimentBuilder() {
     [graph, positions, selectedId, sessionTemplates, hasEnrollments, callbacks]
   )
   const rfEdges = useMemo(() => graphToRfEdges(graph), [graph])
+
+  // Camera habit: re-pin the viewport to the top-left corner whenever the
+  // set of rendered nodes changes (an add/remove), not on every render — a
+  // drag or a label edit shouldn't yank the camera out from under the user.
+  const nodeIdsKey = useMemo(() => rfNodes.map(n => n.id).sort().join('|'), [rfNodes])
+  useEffect(() => {
+    pinViewportTopLeft(rfInstanceRef.current, rfNodes)
+    // Deliberately keyed on nodeIdsKey (structural changes only), not rfNodes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nodeIdsKey])
+
+  function handleRfInit(instance) {
+    rfInstanceRef.current = instance
+    pinViewportTopLeft(instance, rfNodes)
+  }
 
   // Only sync position changes from RF
   function handleNodesChange(changes) {
@@ -826,8 +818,8 @@ export default function ExperimentBuilder() {
               onNodeClick={handleNodeClick}
               onPaneClick={handlePaneClick}
               nodesConnectable={false}
-              fitView
-              fitViewOptions={{ padding: 0.3 }}
+              onInit={handleRfInit}
+              defaultViewport={{ x: VIEWPORT_MARGIN, y: VIEWPORT_MARGIN, zoom: 1 }}
               deleteKeyCode={null}
             >
               <Background color="var(--bd)" gap={20} />
