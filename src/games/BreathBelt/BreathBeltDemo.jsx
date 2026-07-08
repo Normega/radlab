@@ -56,11 +56,17 @@ function classifyDirection(changeS) {
 
 function directionalAdherence(graph, baseMs, conditionMs) {
   const beltPts = graph?.beltPts
-  if (!beltPts || beltPts.length < 20) return null
+  if (!beltPts || beltPts.length < 20) {
+    console.debug('[adherence] skipped: too few belt points', { have: beltPts?.length ?? 0, need: 20 })
+    return null
+  }
 
   const minSepMs = Math.min(baseMs, conditionMs) * 0.6   // avoid double-counting noise
   const troughs  = findTroughs(beltPts, minSepMs)
-  if (troughs.length < 5) return null   // need 5 troughs to bound 4 breaths
+  if (troughs.length < 5) {
+    console.debug('[adherence] skipped: too few troughs', { found: troughs.length, need: 5, beltPtsSpanMs: beltPts[beltPts.length - 1].t - beltPts[0].t })
+    return null   // need 5 troughs to bound 4 breaths
+  }
 
   // Take the last 5 troughs (bounding the 4 most recent breaths) in case of
   // spurious extra detections earlier in the window.
@@ -97,10 +103,19 @@ function directionalAdherence(graph, baseMs, conditionMs) {
 // session once, then slicing the trial window out of the result, gives
 // filtfilt full context and removes that edge transient from every trial
 // after the first. No downsampling here — SignalGraph thins its own path.
+//
+// Window padding: the belt signal is a LAGGED reconstruction of breathing
+// (mlr.lagMs, typically 50-300ms from calibration), so the belt-measured
+// trough for breath 4 can fall after the pacer-timed trialEndMs — clipping
+// it out of an exact [trialStart, trialEnd] window and leaving only 4
+// troughs where directionalAdherence needs 5. Pad the window by lag + a
+// safety margin so the true boundary troughs aren't cut off.
 function buildCleanGraph(belt, res, basePeriodMs, changedPeriodMs, liveGraph) {
   const mlr = belt.mlrWeightsRef.current
   if (mlr && res?.trialStartMs != null && res?.trialEndMs != null) {
-    const t0 = res.trialStartMs, t1 = res.trialEndMs
+    const leadPadMs  = 300
+    const trailPadMs = Math.max(500, (mlr.lagMs ?? 0) + 300)
+    const t0 = res.trialStartMs - leadPadMs, t1 = res.trialEndMs + trailPadMs
     const allSamples = (belt.rawAccelRowsRef.current || [])
       .map(r => ({ t: r.packetTimestamp + r.sampleIndex * 5, x: r.x, y: r.y, z: r.z }))
       .sort((a, b) => a.t - b.t)
@@ -110,14 +125,21 @@ function buildCleanGraph(belt, res, basePeriodMs, changedPeriodMs, liveGraph) {
       for (let i = 0; i < allSamples.length; i++) {
         const t = allSamples[i].t
         if (t < t0 || t > t1) continue
-        pacerPts.push({ t, value: getPacerRadiusForTrial(t, t0, basePeriodMs, changedPeriodMs) })
+        // Pacer phase stays anchored to the true (unpadded) trial start so
+        // the padded fringe samples don't shift the pacer curve.
+        pacerPts.push({ t, value: getPacerRadiusForTrial(t, res.trialStartMs, basePeriodMs, changedPeriodMs) })
         beltPts.push({ t, value: beltAll[i] })
       }
       if (beltPts.length > 20 && pacerPts.length > 20) {
         const r = pearsonRArrays(beltPts.map(p => p.value), pacerPts.map(p => p.value))
         return { pacerPts, beltPts, r }
       }
+      console.debug('[buildCleanGraph] skipped: too few windowed points', { beltPts: beltPts.length, pacerPts: pacerPts.length, allSamples: allSamples.length })
+    } else {
+      console.debug('[buildCleanGraph] skipped: too few raw accel samples', { have: allSamples.length, need: 80 })
     }
+  } else {
+    console.debug('[buildCleanGraph] skipped: no MLR model or trial timestamps', { hasMlr: !!mlr, trialStartMs: res?.trialStartMs, trialEndMs: res?.trialEndMs })
   }
   return liveGraph
 }
@@ -287,6 +309,10 @@ function StaircaseAct({ belt, onDone }) {
     setState('RUNNING')
     sampler.begin()
     const res = await runTrial('phase3', trialIdx + 1, spec.conditionMs)
+    // Keep sampling briefly past trialEndMs so the belt's lagged trailing
+    // trough (see buildCleanGraph) isn't clipped from the live-sampler
+    // fallback either — mirrors the trailPadMs used on the real-belt path.
+    await new Promise(r => setTimeout(r, 500))
     const graph = buildCleanGraph(belt, res, BASE_MS, spec.conditionMs, sampler.end())
     const adherence = directionalAdherence(graph, BASE_MS, spec.conditionMs)
     setLastResult({ graph, adherence })
