@@ -1,6 +1,6 @@
-// v2 — conference demo: Polar H10 pairing → MLR calibration → 3 paced trials
-// with post-trial graphs → 2 hardcoded "staircase" trials (speed up, slow down)
-// with speed-change/confidence/arousal ratings and a reveal graph.
+// v3 — conference demo: Polar H10 pairing → MLR calibration → straight to 3
+// hardcoded "staircase" trials (speed up, slow down, no change) with
+// speed-change/confidence/arousal ratings and a reveal graph.
 // Writes NOTHING: no Supabase, no CSV backup, no triggers (no-op sendTrigger).
 // Trial graphs are built from the live breathValue signal sampled against the
 // pacer (same SignalGraph as calibration) — so they render with a real belt AND
@@ -155,11 +155,11 @@ const BASE_MS   = BASE_BREATH_SPEED_S   * 1000  // 4000
 const FASTER_MS = FASTER_BREATH_SPEED_S * 1000  // 3000
 const SLOWER_MS = SLOWER_BREATH_SPEED_S * 1000  // 5000
 
-const PACED_TRIALS = 3
-// Hardcoded staircase demo trials: one speed up, then one slow down.
+// Hardcoded staircase demo trials: speed up, no-change catch trial, slow down.
 const STAIRCASE_TRIALS = [
-  { dir: 'faster', conditionMs: FASTER_MS, label: 'sped up',    detail: '4s → 3s breaths' },
-  { dir: 'slower', conditionMs: SLOWER_MS, label: 'slowed down', detail: '4s → 5s breaths' },
+  { dir: 'faster', conditionMs: FASTER_MS, label: 'sped up',        detail: '4s → 3s breaths' },
+  { dir: 'same',   conditionMs: BASE_MS,   label: 'stayed the same', detail: '4s breaths, no change' },
+  { dir: 'slower', conditionMs: SLOWER_MS, label: 'slowed down',    detail: '4s → 5s breaths' },
 ]
 
 const AVATAR_PROPS = { skinColor: '#FDBCB4', eyeColor: '#4A90D9', species: 'human' }
@@ -170,9 +170,8 @@ export default function BreathBeltDemo() {
   const isSimMode = new URLSearchParams(location.search).get('sim') === '1'
 
   const belt = useBeltConnection({ isSimMode })
-  const [act, setAct] = useState('WELCOME') // WELCOME → CONNECT → CALIBRATE → PACED → STAIRCASE → SUMMARY
+  const [act, setAct] = useState('WELCOME') // WELCOME → CONNECT → CALIBRATE → STAIRCASE → SUMMARY
 
-  const pacedResultsRef     = useRef([])
   const staircaseResultsRef = useRef([])
 
   // Belt connected → calibrate
@@ -180,9 +179,9 @@ export default function BreathBeltDemo() {
     if (act === 'CONNECT' && belt.btState === 'CONNECTED') setAct('CALIBRATE')
   }, [act, belt.btState])
 
-  // Calibration accepted → paced trials
+  // Calibration accepted → straight to detection trials
   useEffect(() => {
-    if (act === 'CALIBRATE' && belt.calibPhase === 'COMPLETE') setAct('PACED')
+    if (act === 'CALIBRATE' && belt.calibPhase === 'COMPLETE') setAct('STAIRCASE')
   }, [act, belt.calibPhase])
 
   if (!navigator.bluetooth && !isSimMode) return <BrowserWarning />
@@ -205,8 +204,7 @@ export default function BreathBeltDemo() {
           <ol style={D.steps}>
             <li>Pair the belt (Web Bluetooth, no install)</li>
             <li>Calibrate: 4 breaths → fitted signal model</li>
-            <li>3 paced breathing trials, with your sync graph after each</li>
-            <li>2 detection trials: does the pace change? Rate what you felt</li>
+            <li>3 detection trials: does the pace change? Rate what you felt</li>
           </ol>
           <Btn onClick={() => {
             if (isSimMode) { belt.startSimulation(); setAct('CALIBRATE'); belt.acceptSimCalib() }
@@ -248,13 +246,6 @@ export default function BreathBeltDemo() {
         </Panel>
       )}
 
-      {act === 'PACED' && (
-        <PacedTrialsAct
-          belt={belt}
-          onDone={(results) => { pacedResultsRef.current = results; setAct('STAIRCASE') }}
-        />
-      )}
-
       {act === 'STAIRCASE' && (
         <StaircaseAct
           belt={belt}
@@ -263,97 +254,13 @@ export default function BreathBeltDemo() {
       )}
 
       {act === 'SUMMARY' && (
-        <SummaryAct paced={pacedResultsRef.current} staircase={staircaseResultsRef.current} />
+        <SummaryAct staircase={staircaseResultsRef.current} />
       )}
     </div>
   )
 }
 
-// ── Act 3: three paced trials, graph after each ────────────────────────────
-
-function PacedTrialsAct({ belt, onDone }) {
-  const [trialIdx, setTrialIdx] = useState(0)
-  const [state,    setState]    = useState('READY')   // READY | RUNNING | GRAPH
-  const [lastGraph, setLastGraph] = useState(null)
-  const [lastAdherence, setLastAdherence] = useState(null)
-  const resultsRef = useRef([])
-
-  const { getPhase, runTrial, controlRef } = useTrialRunner({
-    breathValueRef:          belt.breathValueRef,
-    sendTrigger:             noopTrigger,
-    currentPhaseRef:         belt.currentPhaseRef,
-    currentTrialRef:         belt.currentTrialRef,
-    getAndClearTrialSamples: belt.getAndClearTrialSamples,
-    mlrWeightsRef:           belt.mlrWeightsRef,
-  })
-  const sampler = useGraphSampler(belt.breathValueRef, getPhase)
-
-  const start = useCallback(async () => {
-    setState('RUNNING')
-    sampler.begin()
-    // 'phase2' label makes useBeltConnection collect raw accel samples, so
-    // useTrialRunner returns syncMetrics processed the same (de-trended) way as
-    // the calibration graph. Fall back to the live sample only when there's no
-    // belt (sim rehearsal).
-    const res = await runTrial('phase2', trialIdx + 1, BASE_MS)
-    const graph = buildCleanGraph(belt, res, BASE_MS, BASE_MS, sampler.end())
-    // Same-pace trial: expected is always "same"; this checks whether the
-    // belt-measured breathing actually held steady.
-    const adherence = directionalAdherence(graph, BASE_MS, BASE_MS)
-    resultsRef.current.push(graph)
-    setLastGraph(graph)
-    setLastAdherence(adherence)
-    setState('GRAPH')
-  }, [runTrial, trialIdx, sampler])
-
-  function next() {
-    if (trialIdx + 1 >= PACED_TRIALS) onDone(resultsRef.current)
-    else { setTrialIdx(i => i + 1); setState('READY') }
-  }
-
-  return (
-    <Panel wide>
-      <h2 style={D.h2}>Paced breathing — trial {trialIdx + 1} of {PACED_TRIALS}</h2>
-
-      {state !== 'GRAPH' && (
-        <div style={{ width: 240, height: 240, margin: '0 auto' }}>
-          <AvatarBreathPacer
-            {...AVATAR_PROPS}
-            scaleAmplitude={0.25}
-            getPhase={getPhase}
-            controlRef={controlRef}
-            paused={state === 'READY'}
-            size={240}
-          />
-        </div>
-      )}
-
-      {state === 'READY' && (
-        <>
-          <p style={D.body}>Breathe in as the avatar expands, out as it contracts. Four breaths.</p>
-          <Btn onClick={start}>Start trial {trialIdx + 1}</Btn>
-        </>
-      )}
-
-      {state === 'RUNNING' && <p style={D.body}>Follow the avatar's breathing…</p>}
-
-      {state === 'GRAPH' && (
-        <>
-          <TrialGraphCard
-            title={`Trial ${trialIdx + 1} — your breath vs. the pacer`}
-            graph={lastGraph}
-            adherence={lastAdherence}
-          />
-          <Btn onClick={next}>
-            {trialIdx + 1 >= PACED_TRIALS ? 'On to detection trials →' : 'Next trial →'}
-          </Btn>
-        </>
-      )}
-    </Panel>
-  )
-}
-
-// ── Act 4: two hardcoded staircase trials with ratings + reveal ────────────
+// ── Act 3: hardcoded staircase trials with ratings + reveal ────────────────
 
 function StaircaseAct({ belt, onDone }) {
   const [trialIdx, setTrialIdx] = useState(0)
@@ -389,7 +296,7 @@ function StaircaseAct({ belt, onDone }) {
   function submitRatings() {
     const correct = response === spec.dir
     resultsRef.current.push({
-      dir: spec.dir, detail: spec.detail, response, correct, confidence, arousal,
+      dir: spec.dir, label: spec.label, detail: spec.detail, response, correct, confidence, arousal,
       graph: lastResult?.graph ?? null,
       adherence: lastResult?.adherence ?? null,
     })
@@ -494,27 +401,19 @@ function StaircaseAct({ belt, onDone }) {
   )
 }
 
-// ── Act 5: summary ──────────────────────────────────────────────────────────
+// ── Act 4: summary ──────────────────────────────────────────────────────────
 
-function SummaryAct({ paced, staircase }) {
+function SummaryAct({ staircase }) {
   return (
     <Panel wide>
       <h2 style={D.h2}>Demo complete</h2>
 
       <div style={D.summaryGrid}>
         <div>
-          <p style={D.summaryHead}>Paced trials — sync with pacer</p>
-          {paced.map((r, i) => (
-            <p key={i} style={D.summaryLine}>
-              Trial {i + 1}: sync {fmtR(r?.r)}
-            </p>
-          ))}
-        </div>
-        <div>
           <p style={D.summaryHead}>Change detection</p>
           {staircase.map((r, i) => (
             <p key={i} style={D.summaryLine}>
-              Pace {r.dir === 'faster' ? 'sped up' : 'slowed down'}: said "{r.response}"{' '}
+              Pace {r.label}: said "{r.response}"{' '}
               {r.correct ? '✓' : '✗'} · confidence {r.confidence}/6 · arousal {r.arousal}/6
             </p>
           ))}
