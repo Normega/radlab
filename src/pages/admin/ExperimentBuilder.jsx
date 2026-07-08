@@ -12,15 +12,21 @@ import { supabase } from '../../lib/supabase'
 import {
   newId, validate, addNode, updateNode, removeNode,
   addSessionToBlock, removeSessionFromBlock, duplicateBlock,
-  chainOrder, blockChildIds, topLevelNodes, toSlots,
+  addArm, removeArm, addArmEntry, addBlockToCounterbalance, removeBlockFromCounterbalance,
+  chainOrder, topLevelNodes, toSlots,
   insertAfter, lastNodeInTimepointGroup,
 } from '../../lib/experimentGraph'
 import TimepointNode    from '../../components/study/builder/nodes/TimepointNode'
 import SessionNode      from '../../components/study/builder/nodes/SessionNode'
 import BlockNode        from '../../components/study/builder/nodes/BlockNode'
+import RandomizeNode    from '../../components/study/builder/nodes/RandomizeNode'
+import CounterbalanceNode from '../../components/study/builder/nodes/CounterbalanceNode'
 import ContactSettingsModal from '../../components/study/builder/ContactSettingsModal'
 
-const NODE_TYPES = { timepoint: TimepointNode, session: SessionNode, block: BlockNode }
+const NODE_TYPES = {
+  timepoint: TimepointNode, session: SessionNode, block: BlockNode,
+  randomize: RandomizeNode, counterbalance: CounterbalanceNode,
+}
 
 // ─── RF conversion helpers ───────────────────────────────────────────────────
 
@@ -70,6 +76,29 @@ function autoLayout(graph) {
     y += LAYOUT.ROW_BASE_H + blockExtra
   }
 
+  // chainOrder only walks one path, so a randomize node's non-followed arms
+  // are otherwise left unpositioned (defaulting to the canvas origin). Give
+  // each arm its own sub-row below the randomize node — a local walk
+  // suffices since each arm is itself linear.
+  for (const nodeId of order) {
+    const node = nodeMap[nodeId]
+    if (node?.type !== 'randomize') continue
+    const baseY = positions[nodeId]?.y ?? y
+    ;(node.arms ?? []).forEach((arm, armIdx) => {
+      if (!arm.entry || positions[arm.entry]) return
+      let cur = arm.entry
+      let x = LAYOUT.SESSION_X_START
+      const armY = baseY + LAYOUT.ROW_BASE_H * (armIdx + 1)
+      const seen = new Set()
+      while (cur && !seen.has(cur) && !positions[cur]) {
+        seen.add(cur)
+        positions[cur] = { x, y: armY }
+        x += LAYOUT.SESSION_X_GAP
+        cur = graph.edges.find(e => e.from === cur)?.to ?? null
+      }
+    })
+  }
+
   return positions
 }
 
@@ -103,9 +132,9 @@ function prevTimepointOffset(graph, afterId) {
 
 function graphToRfNodes(graph, positions, selectedId, sessionTemplates, isLocked, callbacks) {
   const nodeMap  = Object.fromEntries(graph.nodes.map(n => [n.id, n]))
-  const childIds = blockChildIds(graph)
-  const topLevel = graph.nodes.filter(n => !childIds.has(n.id))
+  const topLevel = topLevelNodes(graph)
   const auto     = autoLayout(graph)
+  const nodeLabels = Object.fromEntries(graph.nodes.map(n => [n.id, n.label || n.id]))
 
   return topLevel.map(node => ({
     id:       node.id,
@@ -116,12 +145,24 @@ function graphToRfNodes(graph, positions, selectedId, sessionTemplates, isLocked
       ...node,
       isLocked,
       sessionTemplates,
+      nodeLabels,
       // For blocks: resolve child node objects
       ...(node.type === 'block' ? {
         children: (node.children ?? []).map(cid => nodeMap[cid]).filter(Boolean),
         onAddSession:    () => callbacks.addSessionToBlock(node.id),
         onRemoveSession: (sessionId) => callbacks.removeSessionFromBlock(node.id, sessionId),
         onDuplicate:     () => callbacks.duplicateBlock(node.id),
+      } : {}),
+      ...(node.type === 'randomize' ? {
+        onAddArm:        () => callbacks.addArm(node.id),
+        onRemoveArm:     (armIndex) => callbacks.removeArm(node.id, armIndex),
+        onAddArmSession: (armIndex) => callbacks.addArmEntrySession(node.id, armIndex),
+        onAddArmBlock:   (armIndex) => callbacks.addArmEntryBlock(node.id, armIndex),
+      } : {}),
+      ...(node.type === 'counterbalance' ? {
+        blocks: (node.block_ids ?? []).map(bid => nodeMap[bid]).filter(Boolean),
+        onAddBlock:    () => callbacks.addBlockToCounterbalance(node.id),
+        onRemoveBlock: (blockId) => callbacks.removeBlockFromCounterbalance(node.id, blockId),
       } : {}),
     },
   }))
@@ -131,13 +172,20 @@ function graphToRfEdges(graph) {
   const nodeMap = Object.fromEntries(graph.nodes.map(n => [n.id, n]))
   return graph.edges.map(e => {
     const toTimepoint = nodeMap[e.to]?.type === 'timepoint'
+    const fromNode = nodeMap[e.from]
     // Edges going TO a timepoint wrap around vertically (source bottom → target top).
+    // Edges leaving a randomize node use a distinct handle per arm.
     // All other edges are horizontal (source right → target left).
+    let sourceHandle = toTimepoint ? 'b' : 'r'
+    if (fromNode?.type === 'randomize') {
+      const armIndex = (fromNode.arms ?? []).findIndex(a => a.entry === e.to)
+      if (armIndex !== -1) sourceHandle = `arm-${armIndex}`
+    }
     return {
       id:           `${e.from}->${e.to}`,
       source:       e.from,
       target:       e.to,
-      sourceHandle: toTimepoint ? 'b' : 'r',
+      sourceHandle,
       targetHandle: toTimepoint ? 't' : 'l',
       type:         'smoothstep',
       style:        { stroke: toTimepoint ? 'var(--pkb, rgba(240,104,164,0.35))' : 'var(--bd, rgba(180,100,140,0.20))', strokeWidth: 2 },
@@ -252,6 +300,48 @@ function EditPanel({ nodeId, graph, sessionTemplates, isLocked, onChange, onRemo
         </div>
       )}
 
+      {node.type === 'randomize' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {(node.arms ?? []).map((arm, i) => (
+            <div key={i} style={{ display: 'flex', gap: 6, alignItems: 'flex-end' }}>
+              <div style={{ flex: 1 }}>
+                {field(`Arm ${i + 1} group`,
+                  <input
+                    style={P.input}
+                    value={arm.group ?? ''}
+                    disabled={isLocked}
+                    onChange={e => onChange(nodeId, {
+                      arms: node.arms.map((a, j) => j === i ? { ...a, group: e.target.value } : a),
+                    })}
+                  />
+                )}
+              </div>
+              <div style={{ width: 64 }}>
+                {field('Weight',
+                  <input
+                    type="number" min="1" style={P.input}
+                    value={arm.weight ?? 1}
+                    disabled={isLocked}
+                    onChange={e => onChange(nodeId, {
+                      arms: node.arms.map((a, j) => j === i ? { ...a, weight: Number(e.target.value) } : a),
+                    })}
+                  />
+                )}
+              </div>
+            </div>
+          ))}
+          <div style={{ fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 12, color: 'var(--tx2)' }}>
+            Add/remove arms and wire their entry sessions on the canvas node.
+          </div>
+        </div>
+      )}
+
+      {node.type === 'counterbalance' && (
+        <div style={{ fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 13, color: 'var(--tx2)', marginTop: 4 }}>
+          {(node.block_ids ?? []).length} block{(node.block_ids ?? []).length !== 1 ? 's' : ''} — edit blocks via the canvas node.
+        </div>
+      )}
+
       {!isLocked && node.day_offset !== 0 && (
         <button
           style={P.removeBtn}
@@ -363,6 +453,28 @@ export default function ExperimentBuilder() {
       mutate(g => removeSessionFromBlock(g, blockId, sessionId)),
     duplicateBlock: (blockId) =>
       mutate(g => duplicateBlock(g, blockId)),
+    addArm: (randomizeId) =>
+      mutate(g => addArm(g, randomizeId), { resetLayout: true }),
+    removeArm: (randomizeId, armIndex) =>
+      mutate(g => removeArm(g, randomizeId, armIndex), { resetLayout: true }),
+    addArmEntrySession: (randomizeId, armIndex) =>
+      mutate(g => addArmEntry(g, randomizeId, armIndex, {
+        type: 'session', session_template_id: null, link_expires_hours: 48, label: 'New Session',
+      }), { resetLayout: true }),
+    addArmEntryBlock: (randomizeId, armIndex) => {
+      const childId = newId()
+      mutate(g => {
+        const withChild = {
+          ...g,
+          nodes: [...g.nodes, { id: childId, type: 'session', session_template_id: null, link_expires_hours: 48, label: 'Session 1' }],
+        }
+        return addArmEntry(withChild, randomizeId, armIndex, { type: 'block', label: 'New Block', children: [childId] })
+      }, { resetLayout: true })
+    },
+    addBlockToCounterbalance: (counterbalanceId) =>
+      mutate(g => addBlockToCounterbalance(g, counterbalanceId), { resetLayout: true }),
+    removeBlockFromCounterbalance: (counterbalanceId, blockId) =>
+      mutate(g => removeBlockFromCounterbalance(g, counterbalanceId, blockId), { resetLayout: true }),
   }), [mutate])
 
   // Derive RF nodes/edges
@@ -419,6 +531,29 @@ export default function ExperimentBuilder() {
       const withChild = { ...g, nodes: [...g.nodes, { id: childId, type: 'session', session_template_id: null, link_expires_hours: 48, label: 'Session 1' }] }
       const data    = { id: nid, type: 'block', label: 'New Block', children: [childId] }
       return after ? insertAfter(withChild, after, data) : addNode(withChild, data)
+    }, { resetLayout: true })
+    setSelectedId(nid)
+  }
+
+  function handleAddRandomize() {
+    const nid = newId()
+    mutate(g => {
+      const after = insertionPoint(g, selectedId)
+      const data = {
+        id: nid, type: 'randomize', label: 'New Randomize',
+        arms: [{ group: '', weight: 1, entry: null }, { group: '', weight: 1, entry: null }],
+      }
+      return after ? insertAfter(g, after, data) : addNode(g, data)
+    }, { resetLayout: true })
+    setSelectedId(nid)
+  }
+
+  function handleAddCounterbalance() {
+    const nid = newId()
+    mutate(g => {
+      const after = insertionPoint(g, selectedId)
+      const data = { id: nid, type: 'counterbalance', label: 'New Counterbalance', block_ids: [] }
+      return after ? insertAfter(g, after, data) : addNode(g, data)
     }, { resetLayout: true })
     setSelectedId(nid)
   }
@@ -490,6 +625,9 @@ export default function ExperimentBuilder() {
             />
           </div>
           <div style={S.headerRight}>
+            <Link to={`/admin/studies/${id}/balance`} style={S.balanceLink}>
+              Balance audit
+            </Link>
             <button style={S.contactBtn} onClick={() => setShowContact(true)}>
               Contact settings
             </button>
@@ -535,6 +673,8 @@ export default function ExperimentBuilder() {
                     <>
                       <button style={S.toolBtn} onClick={handleAddSession}>● Session</button>
                       <button style={S.toolBtn} onClick={handleAddBlock}>▦ Block</button>
+                      <button style={S.toolBtn} onClick={handleAddRandomize}>⑂ Randomize</button>
+                      <button style={S.toolBtn} onClick={handleAddCounterbalance}>⇄ Counterbalance</button>
                     </>
                   )}
                 </>
@@ -595,6 +735,7 @@ const S = {
   lockedBadge: { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--gy)', background: '#f5f5f5', borderRadius: 6, padding: '3px 8px' },
   errBadge:    { fontFamily: '"Space Mono",monospace', fontSize: 11, color: '#e04', background: '#fff0f0', border: '1px solid #fcc', borderRadius: 6, padding: '3px 8px' },
   contactBtn:  { background: '#fff', border: '1px solid var(--bd)', borderRadius: 8, padding: '7px 14px', fontSize: 13, color: 'var(--tx2)', cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
+  balanceLink: { background: '#fff', border: '1px solid var(--bd)', borderRadius: 8, padding: '7px 14px', fontSize: 13, color: 'var(--tx2)', textDecoration: 'none', fontFamily: '"DM Sans",system-ui,sans-serif' },
   savedBadge:  { fontFamily: '"Space Mono",monospace', fontSize: 11, color: '#2d9e5f', background: '#f0faf4', border: '1px solid #a8e6c3', borderRadius: 6, padding: '3px 8px' },
   btnPrimary:  { background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 18px', fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
   saveError:   { background: '#fff0f0', border: '1px solid #fcc', borderRadius: 8, padding: '8px 14px', fontSize: 13, color: '#e04', marginBottom: 8, flexShrink: 0 },
