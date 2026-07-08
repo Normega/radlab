@@ -157,6 +157,61 @@ export function rsaAmplitudeMs(rrPoints, now, windowMs = 12000) {
   return n >= 4 ? max - min : null
 }
 
+// ── Signal-quality / explained-variance tracker ────────────────────────────
+// The breath signal is a fixed 1-D projection (the calibration weight vector)
+// of the filtered x/y/z. This tracks how much of the total tri-axial breathing
+// variance still lies along that direction:
+//
+//   EVR = uᵀΣu / trace(Σ)      u = normalized weights, Σ = rolling covariance
+//
+// bounded [0,1]. High at calibration; drops when posture/fit change rotates the
+// breath's motion onto a different axis mix (the projection then flatlines even
+// though the chest is still moving). `totalVar` (= trace Σ) distinguishes that
+// from a breath-hold: posture change keeps totalVar high while EVR falls; a
+// hold drops both. The same Σ feeds PCA-based background recalibration (its top
+// eigenvector is the current best breath axis).
+
+export function createQualityTracker(weights, { windowMs = 15000 } = {}) {
+  let ux = 0, uy = 0, uz = 0
+  const setDir = (w) => {
+    const n = Math.sqrt(w[0]*w[0] + w[1]*w[1] + w[2]*w[2]) || 1
+    ux = w[0]/n; uy = w[1]/n; uz = w[2]/n
+  }
+  setDir(weights)
+  const buf = []
+
+  return {
+    setDirection(w) { setDir(w) },
+    push(t, fx, fy, fz) {
+      buf.push({ t, fx, fy, fz })
+      while (buf.length && t - buf[0].t > windowMs) buf.shift()
+    },
+    // { evr: 0–1 or null, totalVar, n } — null until enough samples.
+    stats() {
+      const n = buf.length
+      if (n < 60) return { evr: null, totalVar: null, n }
+      let mx = 0, my = 0, mz = 0
+      for (const p of buf) { mx += p.fx; my += p.fy; mz += p.fz }
+      mx /= n; my /= n; mz /= n
+      let cxx = 0, cxy = 0, cxz = 0, cyy = 0, cyz = 0, czz = 0
+      for (const p of buf) {
+        const dx = p.fx - mx, dy = p.fy - my, dz = p.fz - mz
+        cxx += dx*dx; cxy += dx*dy; cxz += dx*dz
+        cyy += dy*dy; cyz += dy*dz; czz += dz*dz
+      }
+      cxx /= n; cxy /= n; cxz /= n; cyy /= n; cyz /= n; czz /= n
+      const trace = cxx + cyy + czz
+      if (trace < 1e-12) return { evr: null, totalVar: trace, n }
+      // Σu then uᵀ(Σu)
+      const su0 = cxx*ux + cxy*uy + cxz*uz
+      const su1 = cxy*ux + cyy*uy + cyz*uz
+      const su2 = cxz*ux + cyz*uy + czz*uz
+      const explained = ux*su0 + uy*su1 + uz*su2
+      return { evr: Math.max(0, Math.min(1, explained / trace)), totalVar: trace, n }
+    },
+  }
+}
+
 // ── Time-windowed history buffer ───────────────────────────────────────────
 // Append-only ring trimmed by age. Games read slices for scopes/trails.
 

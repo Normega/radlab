@@ -8,7 +8,7 @@ import {
 } from '../../BreathBelt/constants'
 import {
   parseHrPacket, createPhaseDetector, createRateTracker,
-  rsaAmplitudeMs, createHistory,
+  rsaAmplitudeMs, createHistory, createQualityTracker,
 } from './breathFeatures'
 
 // ── useBreathSignal ─────────────────────────────────────────────────────────
@@ -49,6 +49,13 @@ const INGEST_CHUNK = 8       // accel samples per live-processing step (200 Hz /
 const SAMPLE_DT_MS = 5       // Polar PMD accel at 200 Hz
 const HISTORY_MS   = 60000
 
+// Signal-quality (explained-variance) monitor thresholds
+const QUALITY_STATS_MS       = 700    // recompute EVR at most this often
+const BASELINE_MIN_ELAPSED_MS = 8000  // wait this long post-(re)calibration before snapshotting the baseline
+const DEGRADE_EVR_FRAC       = 0.55   // EVR below this fraction of baseline is suspicious
+const MIN_ACTIVITY_FRAC      = 0.50   // ...but only flag if total variance stays this high (breathing present, not a hold)
+const DEGRADE_HOLD_MS        = 4000   // sustained this long before signalDegraded latches true
+
 export function useBreathSignal({ isSimMode = false } = {}) {
   const [btState,         setBtState]        = useState('IDLE')
   const [calibPhase,      setCalibPhase]     = useState('NONE')
@@ -79,7 +86,14 @@ export function useBreathSignal({ isSimMode = false } = {}) {
   const signalRef = useRef({
     t: 0, value: 0, phase: 'pause', bpm: null, regularitySdMs: null, regularityCv: null,
     lastPeriodMs: null, hr: null, rsaMs: null, lagMs: 0,
+    qualityEvr: null, qualityTotalVar: null, signalDegraded: false,
   })
+
+  // Signal-quality monitor state
+  const qualityTrackerRef  = useRef(null)
+  const qualityBaselineRef = useRef({ evr: null, totalVar: null, createdAt: 0 })
+  const qualityLastStatsRef = useRef(0)
+  const degradeSinceRef    = useRef(null)
 
   // Sim
   const simIntervalRef  = useRef(null)
@@ -123,6 +137,46 @@ export function useBreathSignal({ isSimMode = false } = {}) {
     signalRef.current.rsaMs = rsaAmplitudeMs(rrHistoryRef.current.all, t)
   }, [])
 
+  // ── Signal-quality (explained-variance) monitor ───────────────────────────
+  // (Re)start it for a fitted model; must be called whenever mlrWeights change.
+  const initQuality = useCallback((weights) => {
+    qualityTrackerRef.current  = createQualityTracker(weights)
+    qualityBaselineRef.current = { evr: null, totalVar: null, createdAt: Date.now() }
+    qualityLastStatsRef.current = 0
+    degradeSinceRef.current    = null
+    const s = signalRef.current
+    s.qualityEvr = null; s.qualityTotalVar = null; s.signalDegraded = false
+  }, [])
+
+  // Recompute EVR (throttled), snapshot a baseline a few seconds after
+  // (re)calibration, and latch signalDegraded when EVR collapses while total
+  // variance stays high (breathing on a different axis = posture/fit drift).
+  const updateQuality = useCallback((now) => {
+    const q = qualityTrackerRef.current
+    if (!q || now - qualityLastStatsRef.current < QUALITY_STATS_MS) return
+    qualityLastStatsRef.current = now
+    const st = q.stats()
+    const s = signalRef.current
+    s.qualityEvr = st.evr
+    s.qualityTotalVar = st.totalVar
+    const base = qualityBaselineRef.current
+    if (st.evr != null && base.evr == null && now - base.createdAt > BASELINE_MIN_ELAPSED_MS) {
+      base.evr = st.evr; base.totalVar = st.totalVar
+    }
+    let degraded = false
+    if (base.evr != null && st.evr != null) {
+      const evrLow = st.evr < DEGRADE_EVR_FRAC * base.evr
+      const active = st.totalVar > MIN_ACTIVITY_FRAC * base.totalVar
+      if (evrLow && active) {
+        if (degradeSinceRef.current == null) degradeSinceRef.current = now
+        degraded = now - degradeSinceRef.current >= DEGRADE_HOLD_MS
+      } else {
+        degradeSinceRef.current = null
+      }
+    }
+    s.signalDegraded = degraded
+  }, [])
+
   // ── BLE handlers ──────────────────────────────────────────────────────────
 
   const accelHandler = useCallback((e) => {
@@ -155,12 +209,15 @@ export function useBreathSignal({ isSimMode = false } = {}) {
     if (mlrWeightsRef.current) {
       for (let i = 0; i < measurements.length; i += INGEST_CHUNK) {
         const chunk = measurements.slice(i, i + INGEST_CHUNK)
-        const { prediction, state } = processPacketMLR(chunk, filterState3Ref.current, mlrWeightsRef.current)
+        const { prediction, state, filtered } = processPacketMLR(chunk, filterState3Ref.current, mlrWeightsRef.current)
         filterState3Ref.current = state
-        ingestBreathValue(timestamp + (i + chunk.length - 1) * SAMPLE_DT_MS, prediction)
+        const tt = timestamp + (i + chunk.length - 1) * SAMPLE_DT_MS
+        ingestBreathValue(tt, prediction)
+        qualityTrackerRef.current?.push(tt, filtered[0], filtered[1], filtered[2])
       }
+      updateQuality(timestamp)
     }
-  }, [ingestBreathValue])
+  }, [ingestBreathValue, updateQuality])
 
   const hrHandler = useCallback((e) => {
     const parsed = parseHrPacket(e.target?.value)
@@ -217,6 +274,7 @@ export function useBreathSignal({ isSimMode = false } = {}) {
 
       mlrWeightsRef.current   = result
       filterState3Ref.current = initFilterState3()
+      initQuality(result.weights)   // start the explained-variance monitor for this fit
 
       const beltRaw  = computeMLRPredictions(calibSamplesRef.current, result)
       const samples  = calibSamplesRef.current
@@ -230,7 +288,7 @@ export function useBreathSignal({ isSimMode = false } = {}) {
       setCalibPhase('REVIEW')
     }, 4 * periodMs)
     return () => clearTimeout(t)
-  }, [calibPhase])
+  }, [calibPhase, initQuality])
 
   const startCalibration = useCallback(() => {
     calibSamplesRef.current = []
@@ -260,6 +318,10 @@ export function useBreathSignal({ isSimMode = false } = {}) {
     collectingRef.current   = false
     mlrWeightsRef.current   = null
     filterState3Ref.current = initFilterState3()
+    qualityTrackerRef.current = null
+    degradeSinceRef.current   = null
+    const s = signalRef.current
+    s.qualityEvr = null; s.qualityTotalVar = null; s.signalDegraded = false
     setCalibReviewData(null)
     setCalibPhase('NONE')
   }, [])

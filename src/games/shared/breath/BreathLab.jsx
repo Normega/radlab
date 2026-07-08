@@ -5,7 +5,7 @@
 // HR, RR tachogram, RSA amplitude, and belt lag. This page is the ground truth
 // for speccing biofeedback games — if a mapping looks good here, it will feel
 // good in a game. Writes nothing; no auth.
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useBreathSignal } from './useBreathSignal'
 import CalibrationScreen from '../../BreathBelt/components/CalibrationScreen'
@@ -31,6 +31,14 @@ export default function BreathLab() {
   useEffect(() => {
     if (act === 'CALIBRATE' && breath.calibPhase === 'COMPLETE') setAct('LAB')
   }, [act, breath.calibPhase])
+
+  // Re-run calibration from the lab (e.g. after posture/fit change). Returns to
+  // the calibration screen; on completion the COMPLETE→LAB effect brings us back.
+  const recalibrate = useCallback(() => {
+    setAct('CALIBRATE')
+    if (isSimMode) breath.acceptSimCalib()
+    else breath.startCalibration()
+  }, [isSimMode, breath])
 
   if (!navigator.bluetooth && !isSimMode) return <BrowserWarning />
 
@@ -87,14 +95,14 @@ export default function BreathLab() {
         </Panel>
       )}
 
-      {act === 'LAB' && <LabView breath={breath} isSimMode={isSimMode} />}
+      {act === 'LAB' && <LabView breath={breath} isSimMode={isSimMode} onRecalibrate={recalibrate} />}
     </div>
   )
 }
 
 // ── The lab itself ──────────────────────────────────────────────────────────
 
-function LabView({ breath, isSimMode }) {
+function LabView({ breath, isSimMode, onRecalibrate }) {
   const [stats, setStats] = useState({})
   const [events, setEvents] = useState([])
   const [simPeriodS, setSimPeriodS] = useState(4)
@@ -117,7 +125,14 @@ function LabView({ breath, isSimMode }) {
 
   return (
     <>
-      <Recorder breath={breath} isSimMode={isSimMode} />
+      {stats.signalDegraded && (
+        <div style={S.degradedBanner}>
+          ⚠ Signal quality dropped — your posture or the belt fit may have changed, so the
+          breath signal no longer lines up with the calibrated axis. Re-calibrate to recapture it.
+          <button onClick={onRecalibrate} style={S.bannerBtn}>Re-calibrate</button>
+        </div>
+      )}
+      <Recorder breath={breath} isSimMode={isSimMode} onRecalibrate={onRecalibrate} />
       <Panel wide>
         <h2 style={S.h2}>Breath signal <span style={{ fontSize: 13, color: 'var(--tx3)' }}>(last {SCOPE_MS / 1000} s, colored by phase)</span></h2>
         <BreathScope breath={breath} />
@@ -127,6 +142,11 @@ function LabView({ breath, isSimMode }) {
           <Chip label="Period" value={fmt(stats.lastPeriodMs != null ? stats.lastPeriodMs / 1000 : null, 2, ' s')} />
           <Chip label="Regularity ±SD" value={fmt(stats.regularitySdMs != null ? stats.regularitySdMs / 1000 : null, 2, ' s')} />
           <Chip label="Belt lag" value={fmt(stats.lagMs, 0, ' ms')} />
+          <Chip
+            label="Signal fit (EVR)"
+            value={stats.qualityEvr == null ? '—' : `${Math.round(stats.qualityEvr * 100)}%`}
+            tone={stats.qualityEvr != null && stats.qualityEvr < 0.4 ? '#e74c3c' : undefined}
+          />
         </div>
         <p style={S.eventLine}>
           {events.map((e, i) => (
@@ -275,7 +295,7 @@ function RRScope({ breath }) {
 const REC_HZ = 50
 const REC_SCHEMA = 1
 
-function Recorder({ breath, isSimMode }) {
+function Recorder({ breath, isSimMode, onRecalibrate }) {
   const [recording, setRecording] = useState(false)
   const [count, setCount] = useState(0)
   const [note, setNote] = useState('')          // what the wearer was doing, free text
@@ -359,6 +379,9 @@ function Recorder({ breath, isSimMode }) {
         {!recording && <Btn onClick={start}>{hasData ? 'Record again' : 'Start recording'}</Btn>}
         {recording && <Btn onClick={stop}>Stop</Btn>}
         {hasData && <Btn onClick={download}>Download JSON</Btn>}
+        {!recording && onRecalibrate && (
+          <button onClick={onRecalibrate} style={S.secondaryBtn}>Re-calibrate</button>
+        )}
       </div>
       {savedName && (
         <p style={{ ...S.body, fontSize: 13, color: 'var(--tx3)' }}>
@@ -422,6 +445,22 @@ const S = {
     background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 12,
     padding: '13px 32px', fontSize: 15, fontWeight: 500,
     fontFamily: '"DM Sans",system-ui,sans-serif',
+  },
+  secondaryBtn: {
+    background: 'transparent', color: 'var(--tx)', border: '1px solid var(--bd)',
+    borderRadius: 12, padding: '13px 24px', fontSize: 15, fontWeight: 500,
+    fontFamily: '"DM Sans",system-ui,sans-serif', cursor: 'pointer',
+  },
+  degradedBanner: {
+    width: '100%', maxWidth: 700, marginTop: 12, padding: '14px 18px',
+    background: '#fff3e0', border: '1px solid #e67e22', borderRadius: 12,
+    color: '#a04a00', fontSize: 14, lineHeight: 1.5,
+    display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap',
+  },
+  bannerBtn: {
+    background: '#e67e22', color: '#fff', border: 'none', borderRadius: 10,
+    padding: '9px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer',
+    fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap',
   },
   scope: {
     width: '100%', maxWidth: 640, background: 'var(--bgp, #faf5f8)',

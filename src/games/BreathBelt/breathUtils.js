@@ -306,7 +306,10 @@ export function initFilterState3() {
 // ── processPacketMLR ─────────────────────────────────────────────────────
 // Live (causal) processing of one BT packet.
 // rawSamples: number[][] each [x, y, z]
-// Returns { prediction: number, state: FilterState3 }
+// Returns { prediction, state, filtered: [fx, fy, fz] }
+//   filtered = the last bandpassed per-axis values, for signal-quality /
+//   explained-variance monitoring (the covariance of these three across a
+//   window vs. the projection direction detects posture/fit drift).
 
 export function processPacketMLR(rawSamples, state, mlr) {
   const tight = mlr.modelLabel.includes('tight')
@@ -323,7 +326,7 @@ export function processPacketMLR(rawSamples, state, mlr) {
     const [smoothed, nlp] = lpStep(prediction, dlp)
     prediction = smoothed; dlp = nlp
   }
-  return { prediction, state: { dx, dy, dz, dlp } }
+  return { prediction, state: { dx, dy, dz, dlp }, filtered: [lx, ly, lz] }
 }
 
 // ── rollingPearsonR ───────────────────────────────────────────────────────
