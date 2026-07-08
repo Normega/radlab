@@ -1,14 +1,16 @@
 import { Handle, Position } from '@xyflow/react'
 
 export default function CounterbalanceNode({ data, selected }) {
-  const blocks = data.blocks ?? []
+  const count = data.blockCount ?? 0
 
   return (
     <div style={{ ...S.node, ...(selected ? S.selected : {}) }}>
-      {/* Horizontal connections — single in/out, like a plain Block */}
-      <Handle id="l" type="target" position={Position.Left}   style={S.handle} />
-      <Handle id="r" type="source" position={Position.Right}  style={S.handle} />
-      {/* Bottom for wrap-around; hidden visually */}
+      {/* Horizontal chain connections — single in/out, like a plain Block */}
+      <Handle id="l" type="target" position={Position.Left}  style={{ ...S.handle, top: '30%' }} />
+      <Handle id="r" type="source" position={Position.Right} style={{ ...S.handle, top: '30%' }} />
+      {/* Fans out to this counterbalance's own block nodes, rendered separately */}
+      <Handle id="blocks" type="source" position={Position.Right} style={{ ...S.handle, top: '75%' }} />
+      {/* Bottom/top for wrap-around; hidden visually */}
       <Handle id="b" type="source" position={Position.Bottom} style={{ ...S.handle, opacity: 0 }} />
       <Handle id="t" type="target" position={Position.Top}    style={{ ...S.handle, opacity: 0 }} />
 
@@ -16,33 +18,10 @@ export default function CounterbalanceNode({ data, selected }) {
       <div style={S.label}>{data.label || 'Untitled'}</div>
       <div style={S.caption}>Order randomized · within-block order fixed</div>
 
-      {blocks.length === 0 && (
-        <div style={{ ...S.blockRow, color: '#e04', fontStyle: 'italic' }}>No blocks — add at least 2</div>
-      )}
-
-      {blocks.map(block => (
-        <div key={block.id} style={S.blockRow}>
-          <span style={S.blockName}>{block.label || 'Untitled Block'}</span>
-          <span style={S.blockCount}>
-            {(block.children ?? []).length} session{(block.children ?? []).length !== 1 ? 's' : ''}
-          </span>
-          {!data.isLocked && (
-            <button
-              style={S.removeBtn}
-              onClick={e => { e.stopPropagation(); data.onRemoveBlock?.(block.id) }}
-              title="Remove block"
-            >×</button>
-          )}
-        </div>
-      ))}
-
-      {!data.isLocked && (
-        <button
-          style={S.addBtn}
-          onClick={e => { e.stopPropagation(); data.onAddBlock?.() }}
-        >
-          + Add block
-        </button>
+      {count === 0 ? (
+        <div style={{ ...S.hint, color: '#e04', fontStyle: 'italic' }}>No blocks — select this node, then add at least 2 from the toolbar</div>
+      ) : (
+        <div style={S.hint}>{count} block{count !== 1 ? 's' : ''} — shown as connected nodes to the right, one resolved order per participant</div>
       )}
 
       {data.isLocked && <div style={S.lockBadge}>locked</div>}
@@ -86,48 +65,12 @@ const S = {
     color: 'var(--tx3, #a8a9ad)',
     marginBottom: 8,
   },
-  blockRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 6,
+  hint: {
     padding: '4px 0',
     borderTop: '1px solid rgba(240,104,164,0.12)',
     fontFamily: '"DM Sans", system-ui, sans-serif',
     fontSize: 12,
     color: 'var(--tx2, #6b6c70)',
-  },
-  blockName: {
-    flex: 1,
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-  },
-  blockCount: {
-    fontFamily: '"Space Mono", monospace',
-    fontSize: 10,
-    color: 'var(--tx3, #a8a9ad)',
-  },
-  removeBtn: {
-    background: 'none',
-    border: 'none',
-    cursor: 'pointer',
-    color: 'var(--gy, #abadb0)',
-    fontSize: 15,
-    lineHeight: 1,
-    padding: '0 2px',
-    fontFamily: '"DM Sans", system-ui, sans-serif',
-  },
-  addBtn: {
-    marginTop: 8,
-    background: 'none',
-    border: '1px dashed var(--pkb, rgba(240,104,164,0.35))',
-    borderRadius: 6,
-    padding: '4px 10px',
-    fontSize: 12,
-    color: 'var(--pkd, #c04a82)',
-    cursor: 'pointer',
-    fontFamily: '"DM Sans", system-ui, sans-serif',
-    width: '100%',
   },
   lockBadge: {
     position: 'absolute',
