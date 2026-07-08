@@ -13,7 +13,8 @@ import {
   newId, validate, addNode, updateNode, removeNode,
   addSessionToBlock, removeSessionFromBlock, duplicateBlock,
   addArm, removeArm, addArmEntry, addBlockToCounterbalance, removeBlockFromCounterbalance,
-  chainOrder, topLevelNodes, toSlots,
+  chainOrder, topLevelNodes, toSlots, mergeInto,
+  findOwningBlock, findOwningCounterbalance,
   insertAfter, lastNodeInTimepointGroup,
 } from '../../lib/experimentGraph'
 import TimepointNode    from '../../components/study/builder/nodes/TimepointNode'
@@ -37,7 +38,7 @@ const LAYOUT = {
   SESSION_X_START: 290,
   SESSION_X_GAP:  240,
   ROW_BASE_H:     150,
-  BLOCK_CHILD_H:   26,
+  BLOCK_CHILD_ROW_H: 110,
 }
 
 function autoLayout(graph) {
@@ -65,12 +66,17 @@ function autoLayout(graph) {
     row.sessions.forEach((sid, i) => {
       positions[sid] = { x: LAYOUT.SESSION_X_START + i * LAYOUT.SESSION_X_GAP, y }
     })
-    // Extra height for block children so rows don't overlap
+    // Extra height reserved for a row's widest fork (block children stacked
+    // to the right of the block, or a counterbalance's own blocks stacked to
+    // its right) so the next row's cards don't overlap them.
     let blockExtra = 0
     for (const sid of row.sessions) {
       const node = nodeMap[sid]
       if (node?.type === 'block') {
-        blockExtra = Math.max(blockExtra, (node.children?.length ?? 0) * LAYOUT.BLOCK_CHILD_H)
+        blockExtra = Math.max(blockExtra, (node.children?.length ?? 0) * LAYOUT.BLOCK_CHILD_ROW_H)
+      }
+      if (node?.type === 'counterbalance') {
+        blockExtra = Math.max(blockExtra, (node.block_ids?.length ?? 0) * LAYOUT.ROW_BASE_H)
       }
     }
     y += LAYOUT.ROW_BASE_H + blockExtra
@@ -96,6 +102,25 @@ function autoLayout(graph) {
         x += LAYOUT.SESSION_X_GAP
         cur = graph.edges.find(e => e.from === cur)?.to ?? null
       }
+    })
+  }
+
+  // Containment: a counterbalance's own blocks, and a block's own sessions,
+  // are rendered as separate connected nodes rather than listed inline. Run
+  // counterbalance -> blocks before block -> sessions so a counterbalance's
+  // freshly-positioned blocks are in place before we position their children.
+  for (const node of graph.nodes) {
+    if (node.type !== 'counterbalance' || !positions[node.id]) continue
+    const { x: baseX, y: baseY } = positions[node.id]
+    ;(node.block_ids ?? []).forEach((bid, i) => {
+      if (!positions[bid]) positions[bid] = { x: baseX + LAYOUT.SESSION_X_GAP, y: baseY + i * LAYOUT.ROW_BASE_H }
+    })
+  }
+  for (const node of graph.nodes) {
+    if (node.type !== 'block' || !positions[node.id]) continue
+    const { x: baseX, y: baseY } = positions[node.id]
+    ;(node.children ?? []).forEach((cid, i) => {
+      if (!positions[cid]) positions[cid] = { x: baseX + LAYOUT.SESSION_X_GAP, y: baseY + i * LAYOUT.BLOCK_CHILD_ROW_H }
     })
   }
 
@@ -130,13 +155,26 @@ function prevTimepointOffset(graph, afterId) {
   return 0
 }
 
-function graphToRfNodes(graph, positions, selectedId, sessionTemplates, isLocked, callbacks) {
-  const nodeMap  = Object.fromEntries(graph.nodes.map(n => [n.id, n]))
-  const topLevel = topLevelNodes(graph)
-  const auto     = autoLayout(graph)
-  const nodeLabels = Object.fromEntries(graph.nodes.map(n => [n.id, n.label || n.id]))
+// Nodes drawn on canvas: top-level nodes plus every block's own sessions and
+// every counterbalance's own blocks, rendered as separate, connected nodes
+// (via synthetic containment edges below) rather than listed inline inside
+// their parent's card — so owned children are individually selectable and
+// the fork structure is visible at a glance.
+function renderableNodes(graph) {
+  const ids = new Set(topLevelNodes(graph).map(n => n.id))
+  for (const n of graph.nodes) {
+    if (n.type === 'block') (n.children ?? []).forEach(cid => ids.add(cid))
+    if (n.type === 'counterbalance') (n.block_ids ?? []).forEach(bid => ids.add(bid))
+  }
+  return graph.nodes.filter(n => ids.has(n.id))
+}
 
-  return topLevel.map(node => ({
+function graphToRfNodes(graph, positions, selectedId, sessionTemplates, isLocked, callbacks) {
+  const renderable  = renderableNodes(graph)
+  const auto        = autoLayout(graph)
+  const nodeLabels  = Object.fromEntries(graph.nodes.map(n => [n.id, n.label || n.id]))
+
+  return renderable.map(node => ({
     id:       node.id,
     type:     node.type,
     position: positions[node.id] ?? auto[node.id] ?? { x: 0, y: 0 },
@@ -146,12 +184,9 @@ function graphToRfNodes(graph, positions, selectedId, sessionTemplates, isLocked
       isLocked,
       sessionTemplates,
       nodeLabels,
-      // For blocks: resolve child node objects
       ...(node.type === 'block' ? {
-        children: (node.children ?? []).map(cid => nodeMap[cid]).filter(Boolean),
-        onAddSession:    () => callbacks.addSessionToBlock(node.id),
-        onRemoveSession: (sessionId) => callbacks.removeSessionFromBlock(node.id, sessionId),
-        onDuplicate:     () => callbacks.duplicateBlock(node.id),
+        sessionCount: (node.children ?? []).length,
+        onDuplicate:  () => callbacks.duplicateBlock(node.id),
       } : {}),
       ...(node.type === 'randomize' ? {
         onAddArm:        () => callbacks.addArm(node.id),
@@ -160,9 +195,7 @@ function graphToRfNodes(graph, positions, selectedId, sessionTemplates, isLocked
         onAddArmBlock:   (armIndex) => callbacks.addArmEntryBlock(node.id, armIndex),
       } : {}),
       ...(node.type === 'counterbalance' ? {
-        blocks: (node.block_ids ?? []).map(bid => nodeMap[bid]).filter(Boolean),
-        onAddBlock:    () => callbacks.addBlockToCounterbalance(node.id),
-        onRemoveBlock: (blockId) => callbacks.removeBlockFromCounterbalance(node.id, blockId),
+        blockCount: (node.block_ids ?? []).length,
       } : {}),
     },
   }))
@@ -170,7 +203,7 @@ function graphToRfNodes(graph, positions, selectedId, sessionTemplates, isLocked
 
 function graphToRfEdges(graph) {
   const nodeMap = Object.fromEntries(graph.nodes.map(n => [n.id, n]))
-  return graph.edges.map(e => {
+  const structural = graph.edges.map(e => {
     const toTimepoint = nodeMap[e.to]?.type === 'timepoint'
     const fromNode = nodeMap[e.from]
     // Edges going TO a timepoint wrap around vertically (source bottom → target top).
@@ -192,6 +225,31 @@ function graphToRfEdges(graph) {
       markerEnd:    { type: 'arrowclosed', color: toTimepoint ? 'var(--pk, #f068a4)' : 'var(--gy, #abadb0)' },
     }
   })
+
+  // Synthetic containment edges — block -> its sessions, counterbalance ->
+  // its blocks. Visual only: never added to graph.edges, so validate()'s
+  // outDegree checks and the materializer's traversal never see them.
+  const containment = []
+  for (const node of graph.nodes) {
+    if (node.type === 'block') {
+      for (const cid of node.children ?? []) containment.push({ from: node.id, to: cid, sourceHandle: 'children' })
+    }
+    if (node.type === 'counterbalance') {
+      for (const bid of node.block_ids ?? []) containment.push({ from: node.id, to: bid, sourceHandle: 'blocks' })
+    }
+  }
+  const containmentEdges = containment.map(e => ({
+    id:           `${e.from}=>${e.to}`,
+    source:       e.from,
+    target:       e.to,
+    sourceHandle: e.sourceHandle,
+    targetHandle: 'l',
+    type:         'smoothstep',
+    style:        { stroke: 'var(--pk, #f068a4)', strokeWidth: 1.5, strokeDasharray: '4 3' },
+    markerEnd:    { type: 'arrowclosed', color: 'var(--pk, #f068a4)' },
+  }))
+
+  return [...structural, ...containmentEdges]
 }
 
 // ─── Compile study_sessions (WP4) ────────────────────────────────────────────
@@ -224,7 +282,7 @@ async function compileStudySessions(studyId, graph) {
 
 // ─── Edit panel ──────────────────────────────────────────────────────────────
 
-function EditPanel({ nodeId, graph, sessionTemplates, isLocked, onChange, onRemove }) {
+function EditPanel({ nodeId, graph, sessionTemplates, isLocked, onChange, onRemove, onMerge }) {
   const node = graph.nodes.find(n => n.id === nodeId)
   if (!node) return null
 
@@ -296,7 +354,7 @@ function EditPanel({ nodeId, graph, sessionTemplates, isLocked, onChange, onRemo
 
       {node.type === 'block' && (
         <div style={{ fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 13, color: 'var(--tx2)', marginTop: 4 }}>
-          {(node.children ?? []).length} session{(node.children ?? []).length !== 1 ? 's' : ''} — edit sessions via the canvas node.
+          {(node.children ?? []).length} session{(node.children ?? []).length !== 1 ? 's' : ''} — shown as connected nodes on the canvas. Select this block, then use the toolbar to add another.
         </div>
       )}
 
@@ -338,9 +396,33 @@ function EditPanel({ nodeId, graph, sessionTemplates, isLocked, onChange, onRemo
 
       {node.type === 'counterbalance' && (
         <div style={{ fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 13, color: 'var(--tx2)', marginTop: 4 }}>
-          {(node.block_ids ?? []).length} block{(node.block_ids ?? []).length !== 1 ? 's' : ''} — edit blocks via the canvas node.
+          {(node.block_ids ?? []).length} block{(node.block_ids ?? []).length !== 1 ? 's' : ''} — shown as connected nodes on the canvas. Select this counterbalance, then use the toolbar to add another.
         </div>
       )}
+
+      {!isLocked && (() => {
+        // A dead-end node (no outgoing structural edge) — e.g. a randomize
+        // arm's tail, or a fork branch authored without a continuation — can
+        // be explicitly merged into any other top-level node to reconverge.
+        // Block/counterbalance-owned children aren't part of the trunk, so
+        // merging doesn't apply to them.
+        if (findOwningBlock(graph, nodeId) || findOwningCounterbalance(graph, nodeId)) return null
+        if (graph.edges.some(e => e.from === nodeId)) return null
+        const targets = topLevelNodes(graph).filter(n => n.id !== nodeId)
+        if (!targets.length) return null
+        return field('Merge into',
+          <select
+            style={P.input}
+            value=""
+            onChange={e => { if (e.target.value) onMerge(nodeId, e.target.value) }}
+          >
+            <option value="">— pick a node to reconverge into —</option>
+            {targets.map(t => (
+              <option key={t.id} value={t.id}>{t.label || t.id}</option>
+            ))}
+          </select>
+        )
+      })()}
 
       {!isLocked && node.day_offset !== 0 && (
         <button
@@ -447,12 +529,13 @@ export default function ExperimentBuilder() {
 
   // Graph mutation callbacks
   const callbacks = useMemo(() => ({
-    addSessionToBlock: (blockId) =>
-      mutate(g => addSessionToBlock(g, blockId)),
-    removeSessionFromBlock: (blockId, sessionId) =>
-      mutate(g => removeSessionFromBlock(g, blockId, sessionId)),
+    addSessionToBlock: (blockId) => {
+      const nid = newId()
+      mutate(g => addSessionToBlock(g, blockId, { id: nid }), { resetLayout: true })
+      setSelectedId(nid)
+    },
     duplicateBlock: (blockId) =>
-      mutate(g => duplicateBlock(g, blockId)),
+      mutate(g => duplicateBlock(g, blockId), { resetLayout: true }),
     addArm: (randomizeId) =>
       mutate(g => addArm(g, randomizeId), { resetLayout: true }),
     removeArm: (randomizeId, armIndex) =>
@@ -471,10 +554,11 @@ export default function ExperimentBuilder() {
         return addArmEntry(withChild, randomizeId, armIndex, { type: 'block', label: 'New Block', children: [childId] })
       }, { resetLayout: true })
     },
-    addBlockToCounterbalance: (counterbalanceId) =>
-      mutate(g => addBlockToCounterbalance(g, counterbalanceId), { resetLayout: true }),
-    removeBlockFromCounterbalance: (counterbalanceId, blockId) =>
-      mutate(g => removeBlockFromCounterbalance(g, counterbalanceId, blockId), { resetLayout: true }),
+    addBlockToCounterbalance: (counterbalanceId) => {
+      const nid = newId()
+      mutate(g => addBlockToCounterbalance(g, counterbalanceId, nid), { resetLayout: true })
+      setSelectedId(nid)
+    },
   }), [mutate])
 
   // Derive RF nodes/edges
@@ -558,12 +642,38 @@ export default function ExperimentBuilder() {
     setSelectedId(nid)
   }
 
+  // A Block/Counterbalance owns its children via an array (block.children /
+  // counterbalance.block_ids), not a structural edge — so adding a session or
+  // block "into" the currently-selected control element is a distinct action
+  // from the trunk-insertion helpers above.
+  function handleAddSessionToBlock() {
+    if (selectedId) callbacks.addSessionToBlock(selectedId)
+  }
+
+  function handleAddBlockToCounterbalance() {
+    if (selectedId) callbacks.addBlockToCounterbalance(selectedId)
+  }
+
+  function handleMergeInto(fromId, toId) {
+    mutate(g => mergeInto(g, fromId, toId), { resetLayout: true })
+  }
+
   function handleNodeEdit(nodeId, updates) {
     mutate(g => updateNode(g, nodeId, updates))
   }
 
   function handleNodeRemove(nodeId) {
-    mutate(g => removeNode(g, nodeId), { resetLayout: true })
+    // A block-owned session or counterbalance-owned block is removed from
+    // its owner's array, not spliced out of the structural chain.
+    const owningBlock = findOwningBlock(graph, nodeId)
+    const owningCounterbalance = findOwningCounterbalance(graph, nodeId)
+    if (owningBlock) {
+      mutate(g => removeSessionFromBlock(g, owningBlock.id, nodeId), { resetLayout: true })
+    } else if (owningCounterbalance) {
+      mutate(g => removeBlockFromCounterbalance(g, owningCounterbalance.id, nodeId), { resetLayout: true })
+    } else {
+      mutate(g => removeNode(g, nodeId), { resetLayout: true })
+    }
     setSelectedId(null)
   }
 
@@ -661,6 +771,28 @@ export default function ExperimentBuilder() {
           <div style={S.toolbar}>
             {(() => {
               const selNode = selectedId ? graph.nodes.find(n => n.id === selectedId) : null
+
+              // Toolbar is context-sensitive to whichever node is selected,
+              // not always anchored to a Timepoint: a Block/Counterbalance
+              // controls its own children, so selecting one exposes only the
+              // action(s) that add into it.
+              if (selNode?.type === 'block') {
+                return (
+                  <>
+                    <span style={S.toolbarLabel}>Into "{selNode.label || 'block'}":</span>
+                    <button style={S.toolBtn} onClick={handleAddSessionToBlock}>● Session</button>
+                  </>
+                )
+              }
+              if (selNode?.type === 'counterbalance') {
+                return (
+                  <>
+                    <span style={S.toolbarLabel}>Into "{selNode.label || 'counterbalance'}":</span>
+                    <button style={S.toolBtn} onClick={handleAddBlockToCounterbalance}>▦ Block</button>
+                  </>
+                )
+              }
+
               const isTimepoint = selNode?.type === 'timepoint'
               const hint = isTimepoint
                 ? `Into "${selNode.label || 'timepoint'}":`
@@ -712,6 +844,7 @@ export default function ExperimentBuilder() {
                 isLocked={hasEnrollments}
                 onChange={handleNodeEdit}
                 onRemove={handleNodeRemove}
+                onMerge={handleMergeInto}
               />
             </div>
           )}

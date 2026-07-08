@@ -37,6 +37,16 @@ export function entryNode(graph) {
   return topLevelNodes(graph).find(n => !targets.has(n.id)) ?? null
 }
 
+/** The block that owns nodeId as a child, if any. */
+export function findOwningBlock(graph, nodeId) {
+  return graph.nodes.find(n => n.type === 'block' && n.children?.includes(nodeId)) ?? null
+}
+
+/** The counterbalance that owns nodeId as one of its block_ids, if any. */
+export function findOwningCounterbalance(graph, nodeId) {
+  return graph.nodes.find(n => n.type === 'counterbalance' && n.block_ids?.includes(nodeId)) ?? null
+}
+
 /**
  * Ordered top-level node ids walking the linear chain. Stops at (but
  * includes) a randomize node — it has no single "next": arms fan out and
@@ -377,12 +387,12 @@ export function addArmEntry(graph, randomizeId, armIndex, nodeData) {
 // ─── Counterbalance block mutators ───────────────────────────────────────────
 
 /** Create a block (with one starter session) and append it to a counterbalance's block_ids. */
-export function addBlockToCounterbalance(graph, counterbalanceId) {
+export function addBlockToCounterbalance(graph, counterbalanceId, overrideBlockId) {
   const cbNode = graph.nodes.find(n => n.id === counterbalanceId)
   if (!cbNode || cbNode.type !== 'counterbalance') return graph
 
   const childId = newId()
-  const blockId = newId()
+  const blockId = overrideBlockId ?? newId()
   const child = { id: childId, type: 'session', link_expires_hours: 48, label: 'New Session' }
   const block = { id: blockId, type: 'block', label: 'New Block', children: [childId] }
 
@@ -414,6 +424,18 @@ export function removeBlockFromCounterbalance(graph, counterbalanceId, blockId) 
       ),
     edges: graph.edges,
   }
+}
+
+/**
+ * Wire a dead-end node's continuation to an existing node — the explicit
+ * "merge forked paths back together" action. Replaces any existing outgoing
+ * edge from fromId (there should be at most one, since this is only ever
+ * offered in the UI for non-randomize nodes with none). No cycle-checking
+ * beyond what validate() already catches generically.
+ */
+export function mergeInto(graph, fromId, toId) {
+  if (!fromId || !toId || fromId === toId) return graph
+  return { ...graph, edges: [...graph.edges.filter(e => e.from !== fromId), { from: fromId, to: toId }] }
 }
 
 // ─── Insertion helpers ───────────────────────────────────────────────────────
