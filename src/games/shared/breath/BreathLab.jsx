@@ -293,7 +293,7 @@ function RRScope({ breath }) {
 // hand-off artifact: a replay harness feeds `samples` straight into the game
 // mechanics with no belt and no tab-throttling.
 const REC_HZ = 50
-const REC_SCHEMA = 1
+const REC_SCHEMA = 2   // v2 adds filtered axes (fx/fy/fz) + live quality (evr/totalVar/degraded)
 
 function Recorder({ breath, isSimMode, onRecalibrate }) {
   const [recording, setRecording] = useState(false)
@@ -310,15 +310,24 @@ function Recorder({ breath, isSimMode, onRecalibrate }) {
     unsubRef.current = breath.onBreathEvent(ev => recRef.current.events.push(ev))
     timerRef.current = setInterval(() => {
       const s = breath.signalRef.current
+      const r4 = (v) => v == null ? null : Math.round(v * 1e4) / 1e4
       recRef.current.samples.push({
         t: s.t,
-        value: s.value == null ? null : Math.round(s.value * 1e4) / 1e4,
+        value: r4(s.value),
         phase: s.phase,
         bpm: s.bpm == null ? null : Math.round(s.bpm * 100) / 100,
         lastPeriodMs: s.lastPeriodMs ?? null,
         regularitySdMs: s.regularitySdMs == null ? null : Math.round(s.regularitySdMs),
+        regularityCv: s.regularityCv == null ? null : Math.round(s.regularityCv * 1e3) / 1e3,
         hr: s.hr ?? null,
         rsaMs: s.rsaMs == null ? null : Math.round(s.rsaMs),
+        // filtered axes + live signal-quality — for offline EVR analysis / detector tuning
+        fx: s.filtered ? r4(s.filtered[0]) : null,
+        fy: s.filtered ? r4(s.filtered[1]) : null,
+        fz: s.filtered ? r4(s.filtered[2]) : null,
+        evr: s.qualityEvr == null ? null : Math.round(s.qualityEvr * 1e3) / 1e3,
+        totalVar: s.qualityTotalVar == null ? null : Math.round(s.qualityTotalVar * 1e4) / 1e4,
+        degraded: s.signalDegraded,
       })
       setCount(recRef.current.samples.length)
     }, 1000 / REC_HZ)
@@ -343,6 +352,8 @@ function Recorder({ breath, isSimMode, onRecalibrate }) {
         sampleRateHz: REC_HZ,
         durationS: rec.samples.length ? (rec.samples[rec.samples.length - 1].t - rec.samples[0].t) / 1000 : 0,
         calib: c ? { fitR: c.fitR, lagMs: c.lagMs, modelLabel: c.modelLabel, peakErrorMs: c.peakErrorMs } : null,
+        // projection weights (direction) so EVR can be recomputed/re-tuned offline
+        weights: breath.mlrWeightsRef?.current?.weights ?? null,
         userAgent: navigator.userAgent,
       },
       samples: rec.samples,

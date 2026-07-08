@@ -87,6 +87,7 @@ export function useBreathSignal({ isSimMode = false } = {}) {
     t: 0, value: 0, phase: 'pause', bpm: null, regularitySdMs: null, regularityCv: null,
     lastPeriodMs: null, hr: null, rsaMs: null, lagMs: 0,
     qualityEvr: null, qualityTotalVar: null, signalDegraded: false,
+    filtered: null,   // last bandpassed [x,y,z] — recorded for offline EVR analysis
   })
 
   // Signal-quality monitor state
@@ -214,6 +215,7 @@ export function useBreathSignal({ isSimMode = false } = {}) {
         const tt = timestamp + (i + chunk.length - 1) * SAMPLE_DT_MS
         ingestBreathValue(tt, prediction)
         qualityTrackerRef.current?.push(tt, filtered[0], filtered[1], filtered[2])
+        signalRef.current.filtered = filtered
       }
       updateQuality(timestamp)
     }
