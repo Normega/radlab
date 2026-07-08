@@ -57,14 +57,25 @@ function classifyDirection(changeS) {
 function directionalAdherence(graph, baseMs, conditionMs) {
   const beltPts = graph?.beltPts
   if (!beltPts || beltPts.length < 20) {
-    console.debug('[adherence] skipped: too few belt points', { have: beltPts?.length ?? 0, need: 20 })
+    console.log('[adherence] skipped: too few belt points', { have: beltPts?.length ?? 0, need: 20 })
     return null
   }
 
   const minSepMs = Math.min(baseMs, conditionMs) * 0.6   // avoid double-counting noise
   const troughs  = findTroughs(beltPts, minSepMs)
   if (troughs.length < 5) {
-    console.debug('[adherence] skipped: too few troughs', { found: troughs.length, need: 5, beltPtsSpanMs: beltPts[beltPts.length - 1].t - beltPts[0].t })
+    // Signal-shape context: a flat / degenerate belt signal (tiny range)
+    // yields no real troughs. Report the value range and any troughs found
+    // (relative to window start) so a real run pins down the cause.
+    const vals = beltPts.map(p => p.value)
+    const lo = Math.min(...vals), hi = Math.max(...vals), t0 = beltPts[0].t
+    console.log('[adherence] skipped: too few troughs', {
+      found: troughs.length, need: 5,
+      beltPtsSpanMs: Math.round(beltPts[beltPts.length - 1].t - t0),
+      beltRange: Math.round((hi - lo) * 1000) / 1000,
+      minSepMs: Math.round(minSepMs),
+      troughOffsetsMs: troughs.map(t => Math.round(t.t - t0)),
+    })
     return null   // need 5 troughs to bound 4 breaths
   }
 
@@ -76,7 +87,7 @@ function directionalAdherence(graph, baseMs, conditionMs) {
   if (durS.length !== 4) return null
 
   const [d1, d2, d3, d4] = durS
-  console.debug('[adherence] ok', { troughs: troughs.length, durS: durS.map(d => Math.round(d * 100) / 100) })
+  console.log('[adherence] ok', { troughs: troughs.length, durS: durS.map(d => Math.round(d * 100) / 100) })
   const observedChange = (d3 + d4) / 2 - (d1 + d2) / 2
   const delta = (conditionMs - baseMs) / 1000   // positive = slower/longer, negative = faster/shorter
   const expectedLabel = delta === 0 ? 'same' : classifyDirection(delta)
@@ -144,19 +155,19 @@ function buildCleanGraph(belt, res, basePeriodMs, changedPeriodMs, liveGraph) {
       }
       if (beltPts.length > 20 && pacerPts.length > 20) {
         const r = pearsonRArrays(beltPts.map(p => p.value), pacerPts.map(p => p.value))
-        console.debug('[buildCleanGraph] ok', {
+        console.log('[buildCleanGraph] ok', {
           trial: res.trialNum ?? '?', lagMs, r: Math.round(r * 100) / 100,
           windowPts: beltPts.length, sessionSamples: allSamples.length,
           leadGapMs: Math.round(beltPts[0].t - t0), trailGapMs: Math.round(t1 - beltPts[beltPts.length - 1].t),
         })
         return { pacerPts, beltPts, r }
       }
-      console.debug('[buildCleanGraph] skipped: too few windowed points', { beltPts: beltPts.length, pacerPts: pacerPts.length, allSamples: allSamples.length, windowMs: t1 - t0 })
+      console.log('[buildCleanGraph] skipped: too few windowed points', { beltPts: beltPts.length, pacerPts: pacerPts.length, allSamples: allSamples.length, windowMs: t1 - t0 })
     } else {
-      console.debug('[buildCleanGraph] skipped: too few raw accel samples', { have: allSamples.length, need: 80 })
+      console.log('[buildCleanGraph] skipped: too few raw accel samples', { have: allSamples.length, need: 80 })
     }
   } else {
-    console.debug('[buildCleanGraph] skipped: no MLR model or trial timestamps', { hasMlr: !!mlr, trialStartMs: res?.trialStartMs, trialEndMs: res?.trialEndMs })
+    console.log('[buildCleanGraph] skipped: no MLR model or trial timestamps', { hasMlr: !!mlr, trialStartMs: res?.trialStartMs, trialEndMs: res?.trialEndMs })
   }
   return liveGraph
 }
@@ -349,18 +360,23 @@ function StaircaseAct({ belt, onDone }) {
     sampler.begin()
     const res = await runTrial('phase3', trialIdx + 1, spec.conditionMs)
     res.trialNum = trialIdx + 1   // for diagnostics only
+    console.log(`[BCAT demo] ===== trial ${trialIdx + 1} (${spec.dir}) =====`)
     // Don't build the graph until the belt's lagged trailing trough has
     // actually arrived. On a real belt this polls the accel buffer (fixes the
     // trial-1 "one trough short" race); in sim there's no accel stream so this
     // returns immediately and we just let the live sampler settle instead.
-    const lagMs   = belt.mlrWeightsRef.current?.lagMs ?? 0
-    const covered = await waitForCoverage(belt, res.trialEndMs + Math.max(500, lagMs + 300))
+    const lagMs    = belt.mlrWeightsRef.current?.lagMs ?? 0
+    const accelRows = belt.rawAccelRowsRef.current?.length ?? 0
+    const waitStart = Date.now()
+    const covered  = await waitForCoverage(belt, res.trialEndMs + Math.max(500, lagMs + 300))
     if (!covered) await new Promise(r => setTimeout(r, 500))
+    console.log('[BCAT demo] pre-build', { accelRows, covered, waitedMs: Date.now() - waitStart, lagMs })
     const graph = buildCleanGraph(belt, res, BASE_MS, spec.conditionMs, sampler.end())
     const adherence = directionalAdherence(graph, BASE_MS, spec.conditionMs)
+    console.log('[BCAT demo] result', { trial: trialIdx + 1, graphPts: graph?.beltPts?.length ?? 0, sync: graph?.r, cardShown: !!adherence })
     setLastResult({ graph, adherence })
     setState('RATE')
-  }, [runTrial, trialIdx, spec.conditionMs, sampler, belt])
+  }, [runTrial, trialIdx, spec.conditionMs, spec.dir, sampler, belt])
 
   function submitRatings() {
     const correct = response === spec.dir
