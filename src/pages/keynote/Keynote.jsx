@@ -212,7 +212,22 @@ const SLIDES = [
     ),
   },
 
-  // 3 — Breath frame
+  // 3 — Three positions
+  {
+    note: 'Spoken, not on slide: medication or relaxation for the body; mindfulness or cognitive therapy for meaning.',
+    render: (d) => (
+      <Frame kicker="Three positions, three intervention targets">
+        <PositionIcons />
+        <Lead>Intractable until now: we couldn't independently manipulate bodily arousal and detection probability to see their separate impact on felt arousal.</Lead>
+        <Detail density={d}>
+          The task manipulates both breathing rate and detection probability, letting us adjudicate
+          between the three positions rather than argue them.
+        </Detail>
+      </Frame>
+    ),
+  },
+
+  // 4 — Breath frame
   {
     render: (d) => (
       <Frame wide kicker="The breath">
@@ -241,7 +256,7 @@ const SLIDES = [
     ),
   },
 
-  // 4 — Opener demo (live)
+  // 5 — Opener demo (live)
   {
     note: 'Run live. Four breaths, no explanation beforehand. Open the demo in a new tab, run breathe → polls → reveal there, then return here and click forward.',
     render: () => (
@@ -253,7 +268,7 @@ const SLIDES = [
     ),
   },
 
-  // 5 — Return, live polls
+  // 6 — Return, live polls
   {
     render: () => (
       <Frame kicker="You just voted">
@@ -263,21 +278,6 @@ const SLIDES = [
           <PollCard q="What happened to your arousal?" opts={['More activated', 'Same', 'Calmer']} />
         </div>
         <Lead>Did noticing — or not noticing — change how you felt?</Lead>
-      </Frame>
-    ),
-  },
-
-  // 6 — Three positions
-  {
-    note: 'Spoken, not on slide: medication or relaxation for the body; mindfulness or cognitive therapy for meaning.',
-    render: (d) => (
-      <Frame kicker="Three positions, three intervention targets">
-        <PositionIcons />
-        <Lead>Intractable until now: we couldn't independently manipulate bodily arousal and detection probability to see their separate impact on felt arousal.</Lead>
-        <Detail density={d}>
-          The task manipulates both breathing rate and detection probability, letting us adjudicate
-          between the three positions rather than argue them.
-        </Detail>
       </Frame>
     ),
   },
