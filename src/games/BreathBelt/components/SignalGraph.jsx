@@ -14,6 +14,7 @@ export default function SignalGraph({
   width  = 300,
   height = 80,
   label,
+  markers,   // optional [{t, value}] — detected troughs, drawn on the belt curve
 }) {
   const hasPacer = pacerPts.length >= 2
   const hasBelt  = beltPts.length  >= 2
@@ -69,6 +70,16 @@ export default function SignalGraph({
       >
         {hasBelt  && <path d={path(beltPts,  toYb)} stroke="#e67e22" strokeWidth="1.5" fill="none" opacity="0.9" />}
         {hasPacer && <path d={path(pacerPts, toYp)} stroke="#3498db" strokeWidth="2"   fill="none" opacity="0.9" />}
+        {hasBelt && markers && markers.map((m, i) => {
+          const x = toX(m.t), y = toYb(m.value)
+          return (
+            <g key={i}>
+              <line x1={x} y1={PAD} x2={x} y2={height - PAD} stroke="#ffffff" strokeWidth="0.75" strokeDasharray="2 2" opacity="0.35" />
+              <circle cx={x} cy={y} r="3" fill="#ffffff" stroke="#0d1117" strokeWidth="1" />
+              <text x={x} y={PAD + 8} fill="#ffffff" fontSize="8" textAnchor="middle" opacity="0.7">{i + 1}</text>
+            </g>
+          )
+        })}
       </svg>
       {scoreMs !== undefined && (
         <span style={{ fontSize: '0.68rem', color: scoreColor }}>

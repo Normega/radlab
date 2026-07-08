@@ -87,7 +87,12 @@ function directionalAdherence(graph, baseMs, conditionMs) {
   if (durS.length !== 4) return null
 
   const [d1, d2, d3, d4] = durS
-  console.log('[adherence] ok', { troughs: troughs.length, durS: durS.map(d => Math.round(d * 100) / 100) })
+  const t0 = beltPts[0].t
+  console.log('[adherence] ok', {
+    troughsFound: troughs.length,
+    durS: durS.map(d => Math.round(d * 100) / 100),
+    troughOffsetsMs: t5.map(t => Math.round(t.t - t0)),
+  })
   const observedChange = (d3 + d4) / 2 - (d1 + d2) / 2
   const delta = (conditionMs - baseMs) / 1000   // positive = slower/longer, negative = faster/shorter
   const expectedLabel = delta === 0 ? 'same' : classifyDirection(delta)
@@ -95,7 +100,10 @@ function directionalAdherence(graph, baseMs, conditionMs) {
   // "Correct" per the paper's convention (sign match) only applies to change
   // trials; on same-pace trials (delta=0) we just check the observed label.
   const correct = delta === 0 ? observedLabel === 'same' : Math.sign(observedChange) === Math.sign(delta)
-  return { d1, d2, d3, d4, observedChange, delta, expectedLabel, observedLabel, correct }
+  // troughs: the 5 boundary points (breaths 1-4), returned so the reveal graph
+  // can mark exactly where detection fired — the quickest way to eyeball
+  // whether the detector is landing on real breath minima.
+  return { d1, d2, d3, d4, observedChange, delta, expectedLabel, observedLabel, correct, troughs: t5 }
 }
 
 // Build the trial graph with the EXACT procedure the calibration review uses
@@ -535,6 +543,7 @@ function TrialGraphCard({ title, graph, adherence }) {
         width={440}
         height={130}
         label={title}
+        markers={adherence?.troughs}
       />
       <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
         <Chip label="Sync with pacer" value={fmtR(graph.r)} />
@@ -552,6 +561,7 @@ function TrialGraphCard({ title, graph, adherence }) {
       <p style={D.legend}>
         <span style={{ color: '#3498db' }}>— pacer</span>{'   '}
         <span style={{ color: '#e67e22' }}>— your breath</span>
+        {adherence && <>{'   '}<span style={{ color: '#ffffff' }}>● 1–5 detected troughs</span></>}
       </p>
       {adherence && (
         <p style={{ ...D.legend, maxWidth: 440 }}>
