@@ -217,6 +217,7 @@ const SLIDES = [
     note: 'Spoken, not on slide: medication or relaxation for the body; mindfulness or cognitive therapy for meaning.',
     render: (d) => (
       <Frame kicker="Three positions, three intervention targets">
+        <H2>How does a change in the breath become subjective arousal?</H2>
         <PositionIcons />
         <Lead>Intractable until now: we couldn't independently manipulate bodily arousal and detection probability to see their separate impact on felt arousal.</Lead>
         <Detail density={d}>
