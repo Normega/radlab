@@ -1,0 +1,444 @@
+// ── BreathLab ───────────────────────────────────────────────────────────────
+// Dev instrumentation page for the shared breath-signal layer (useBreathSignal).
+// Pair a Polar H10 (or ?sim=1), calibrate, then watch every derived feature
+// live: breath value colored by inhale/exhale phase, breath rate, regularity,
+// HR, RR tachogram, RSA amplitude, and belt lag. This page is the ground truth
+// for speccing biofeedback games — if a mapping looks good here, it will feel
+// good in a game. Writes nothing; no auth.
+import { useState, useEffect, useRef } from 'react'
+import { useLocation } from 'react-router-dom'
+import { useBreathSignal } from './useBreathSignal'
+import CalibrationScreen from '../../BreathBelt/components/CalibrationScreen'
+import BrowserWarning from '../../BreathBelt/components/BrowserWarning'
+
+const AVATAR_PROPS = { skinColor: '#FDBCB4', eyeColor: '#4A90D9', species: 'human' }
+
+const PHASE_COLORS = { inhale: '#3498db', exhale: '#e67e22', pause: '#95a5a6' }
+const SCOPE_MS = 15000   // breath scope window
+const TACHO_MS = 45000   // RR tachogram window
+
+export default function BreathLab() {
+  const location = useLocation()
+  const isSimMode = new URLSearchParams(location.search).get('sim') === '1'
+
+  const breath = useBreathSignal({ isSimMode })
+  const [act, setAct] = useState('WELCOME') // WELCOME → CONNECT → CALIBRATE → LAB
+
+  useEffect(() => {
+    if (act === 'CONNECT' && breath.btState === 'CONNECTED') setAct('CALIBRATE')
+  }, [act, breath.btState])
+
+  useEffect(() => {
+    if (act === 'CALIBRATE' && breath.calibPhase === 'COMPLETE') setAct('LAB')
+  }, [act, breath.calibPhase])
+
+  if (!navigator.bluetooth && !isSimMode) return <BrowserWarning />
+
+  return (
+    <div style={S.page}>
+      <div style={S.header}>
+        <span style={S.brand}>RADlab · Breath Signal Lab</span>
+        <span style={S.badge}>DEV{isSimMode ? ' · SIM' : ''}</span>
+      </div>
+
+      {act === 'WELCOME' && (
+        <Panel>
+          <h1 style={S.h1}>Breath Signal Lab</h1>
+          <p style={S.body}>
+            Live view of everything the shared <code>useBreathSignal</code> hook derives from
+            the Polar H10: breath amplitude, inhale/exhale phase, rate, regularity,
+            heart rate, RR intervals, and RSA. Use it to prototype biofeedback mappings.
+          </p>
+          <Btn onClick={() => {
+            if (isSimMode) { breath.startSimulation(); breath.acceptSimCalib(); setAct('CALIBRATE') }
+            else setAct('CONNECT')
+          }}>
+            {isSimMode ? 'Start simulation' : 'Start'}
+          </Btn>
+        </Panel>
+      )}
+
+      {act === 'CONNECT' && (
+        <Panel>
+          <h2 style={S.h2}>Pair the belt</h2>
+          <p style={S.body}>
+            Put on the Polar H10 — connector centred, electrodes moistened.
+            Chrome will ask which device to connect.
+          </p>
+          {breath.btState === 'ERROR' && <p style={S.err}>Connection failed. Check the belt and try again.</p>}
+          <Btn onClick={breath.connect} disabled={breath.btState === 'CONNECTING'}>
+            {breath.btState === 'CONNECTING' ? 'Connecting…' : 'Connect to Polar H10'}
+          </Btn>
+        </Panel>
+      )}
+
+      {act === 'CALIBRATE' && (
+        <Panel wide>
+          <h2 style={S.h2}>Calibration</h2>
+          <CalibrationScreen
+            calibPhase={breath.calibPhase}
+            calibReviewData={breath.calibReviewData}
+            avatarProps={AVATAR_PROPS}
+            startCalibration={breath.startCalibration}
+            beginCalibCollection={breath.beginCalibCollection}
+            acceptCalibration={breath.acceptCalibration}
+            redoCalibration={breath.redoCalibration}
+          />
+        </Panel>
+      )}
+
+      {act === 'LAB' && <LabView breath={breath} isSimMode={isSimMode} />}
+    </div>
+  )
+}
+
+// ── The lab itself ──────────────────────────────────────────────────────────
+
+function LabView({ breath, isSimMode }) {
+  const [stats, setStats] = useState({})
+  const [events, setEvents] = useState([])
+  const [simPeriodS, setSimPeriodS] = useState(4)
+
+  // Chip values at 4 Hz — cheap enough for React state
+  useEffect(() => {
+    const id = setInterval(() => setStats({ ...breath.signalRef.current }), 250)
+    return () => clearInterval(id)
+  }, [breath])
+
+  // Breath-event ticker (last 6 transitions)
+  useEffect(() => {
+    return breath.onBreathEvent(ev => {
+      setEvents(prev => [...prev.slice(-5), ev])
+    })
+  }, [breath])
+
+  const fmt = (v, digits = 1, suffix = '') =>
+    v == null || !isFinite(v) ? '—' : `${v.toFixed(digits)}${suffix}`
+
+  return (
+    <>
+      <Recorder breath={breath} isSimMode={isSimMode} />
+      <Panel wide>
+        <h2 style={S.h2}>Breath signal <span style={{ fontSize: 13, color: 'var(--tx3)' }}>(last {SCOPE_MS / 1000} s, colored by phase)</span></h2>
+        <BreathScope breath={breath} />
+        <div style={S.chipRow}>
+          <Chip label="Phase" value={stats.phase ?? '—'} tone={PHASE_COLORS[stats.phase]} />
+          <Chip label="Rate" value={fmt(stats.bpm, 1, ' bpm')} />
+          <Chip label="Period" value={fmt(stats.lastPeriodMs != null ? stats.lastPeriodMs / 1000 : null, 2, ' s')} />
+          <Chip label="Regularity ±SD" value={fmt(stats.regularitySdMs != null ? stats.regularitySdMs / 1000 : null, 2, ' s')} />
+          <Chip label="Belt lag" value={fmt(stats.lagMs, 0, ' ms')} />
+        </div>
+        <p style={S.eventLine}>
+          {events.map((e, i) => (
+            <span key={i} style={{ color: e.type === 'inhale_start' ? PHASE_COLORS.inhale : PHASE_COLORS.exhale }}>
+              {e.type === 'inhale_start' ? '▲ in' : '▼ out'}{'  '}
+            </span>
+          ))}
+        </p>
+      </Panel>
+
+      <Panel wide>
+        <h2 style={S.h2}>Heart <span style={{ fontSize: 13, color: 'var(--tx3)' }}>(RR tachogram, last {TACHO_MS / 1000} s)</span></h2>
+        <RRScope breath={breath} />
+        <div style={S.chipRow}>
+          <Chip label="Heart rate" value={fmt(stats.hr, 0, ' bpm')} />
+          <Chip label="RSA (max−min RR)" value={fmt(stats.rsaMs, 0, ' ms')} />
+        </div>
+        <p style={{ ...S.body, fontSize: 13, color: 'var(--tx3)' }}>
+          RSA grows as breathing slows toward ~6 breaths/min — the heart-breath coupling
+          signal for coherence-style feedback.
+        </p>
+      </Panel>
+
+      {isSimMode && (
+        <Panel wide>
+          <h2 style={S.h2}>Sim controls</h2>
+          <label style={{ ...S.body, display: 'flex', alignItems: 'center', gap: 12 }}>
+            Breath period: {simPeriodS.toFixed(1)} s ({(60 / simPeriodS).toFixed(1)} bpm)
+            <input
+              type="range" min="2" max="12" step="0.5" value={simPeriodS}
+              onChange={e => {
+                const s = Number(e.target.value)
+                setSimPeriodS(s)
+                breath.setSimPeriodMs(s * 1000)
+              }}
+              style={{ flex: 1 }}
+            />
+          </label>
+        </Panel>
+      )}
+    </>
+  )
+}
+
+// ── Canvas scopes (rAF, read refs directly) ─────────────────────────────────
+
+// Scopes draw on setInterval, not rAF: rAF stops entirely in hidden tabs,
+// while an interval keeps ticking (throttled) so the trace survives tab switches.
+const DRAW_INTERVAL_MS = 33
+
+function BreathScope({ breath }) {
+  const canvasRef = useRef(null)
+  useEffect(() => {
+    const draw = () => {
+      const canvas = canvasRef.current
+      if (!canvas) return
+      const ctx = canvas.getContext('2d')
+      const { width: w, height: h } = canvas
+      ctx.clearRect(0, 0, w, h)
+
+      const now = Date.now()
+      const pts = breath.getRecentBreath(SCOPE_MS)
+
+      // midline
+      ctx.strokeStyle = 'rgba(0,0,0,0.07)'
+      ctx.beginPath(); ctx.moveTo(0, h / 2); ctx.lineTo(w, h / 2); ctx.stroke()
+
+      if (pts.length > 1) {
+        ctx.lineWidth = 2.5
+        ctx.lineJoin = 'round'
+        let prev = null
+        for (const p of pts) {
+          const x = w - ((now - p.t) / SCOPE_MS) * w
+          const y = h - 8 - p.value * (h - 16)
+          if (prev) {
+            ctx.strokeStyle = PHASE_COLORS[p.phase] ?? PHASE_COLORS.pause
+            ctx.beginPath(); ctx.moveTo(prev.x, prev.y); ctx.lineTo(x, y); ctx.stroke()
+          }
+          prev = { x, y }
+        }
+        // live dot
+        if (prev) {
+          ctx.fillStyle = PHASE_COLORS[pts[pts.length - 1].phase] ?? PHASE_COLORS.pause
+          ctx.beginPath(); ctx.arc(prev.x, prev.y, 5, 0, Math.PI * 2); ctx.fill()
+        }
+      }
+    }
+    const id = setInterval(draw, DRAW_INTERVAL_MS)
+    return () => clearInterval(id)
+  }, [breath])
+  return <canvas ref={canvasRef} width={640} height={180} style={S.scope} />
+}
+
+function RRScope({ breath }) {
+  const canvasRef = useRef(null)
+  useEffect(() => {
+    const draw = () => {
+      const canvas = canvasRef.current
+      if (!canvas) return
+      const ctx = canvas.getContext('2d')
+      const { width: w, height: h } = canvas
+      ctx.clearRect(0, 0, w, h)
+
+      const now = Date.now()
+      const pts = breath.getRecentRR(TACHO_MS)
+      if (pts.length > 1) {
+        let min = Infinity, max = -Infinity
+        for (const p of pts) { if (p.rr < min) min = p.rr; if (p.rr > max) max = p.rr }
+        const pad = Math.max((max - min) * 0.15, 10)
+        min -= pad; max += pad
+
+        ctx.strokeStyle = '#c0577f'
+        ctx.lineWidth = 2
+        ctx.lineJoin = 'round'
+        ctx.beginPath()
+        pts.forEach((p, i) => {
+          const x = w - ((now - p.t) / TACHO_MS) * w
+          const y = h - 8 - ((p.rr - min) / (max - min)) * (h - 16)
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y)
+        })
+        ctx.stroke()
+
+        // axis labels
+        ctx.fillStyle = 'rgba(0,0,0,0.4)'
+        ctx.font = '10px "Space Mono", monospace'
+        ctx.fillText(`${Math.round(max)} ms`, 6, 14)
+        ctx.fillText(`${Math.round(min)} ms`, 6, h - 6)
+      } else {
+        ctx.fillStyle = 'rgba(0,0,0,0.35)'
+        ctx.font = '12px "DM Sans", sans-serif'
+        ctx.fillText('Waiting for RR intervals…', 12, h / 2)
+      }
+    }
+    const id = setInterval(draw, DRAW_INTERVAL_MS)
+    return () => clearInterval(id)
+  }, [breath])
+  return <canvas ref={canvasRef} width={640} height={120} style={S.scope} />
+}
+
+// ── Recorder ──────────────────────────────────────────────────────────────
+// Captures a real session to a JSON file for offline analysis / tuning. Polls
+// signalRef at 50 Hz (faithful enough to replay the whole feature + game stack
+// deterministically) and logs breath-onset events. The downloaded file is the
+// hand-off artifact: a replay harness feeds `samples` straight into the game
+// mechanics with no belt and no tab-throttling.
+const REC_HZ = 50
+const REC_SCHEMA = 1
+
+function Recorder({ breath, isSimMode }) {
+  const [recording, setRecording] = useState(false)
+  const [count, setCount] = useState(0)
+  const [note, setNote] = useState('')          // what the wearer was doing, free text
+  const [savedName, setSavedName] = useState(null)
+  const recRef = useRef({ samples: [], events: [], startMs: 0 })
+  const timerRef = useRef(null)
+  const unsubRef = useRef(null)
+
+  const start = () => {
+    recRef.current = { samples: [], events: [], startMs: Date.now() }
+    setCount(0); setSavedName(null)
+    unsubRef.current = breath.onBreathEvent(ev => recRef.current.events.push(ev))
+    timerRef.current = setInterval(() => {
+      const s = breath.signalRef.current
+      recRef.current.samples.push({
+        t: s.t,
+        value: s.value == null ? null : Math.round(s.value * 1e4) / 1e4,
+        phase: s.phase,
+        bpm: s.bpm == null ? null : Math.round(s.bpm * 100) / 100,
+        lastPeriodMs: s.lastPeriodMs ?? null,
+        regularitySdMs: s.regularitySdMs == null ? null : Math.round(s.regularitySdMs),
+        hr: s.hr ?? null,
+        rsaMs: s.rsaMs == null ? null : Math.round(s.rsaMs),
+      })
+      setCount(recRef.current.samples.length)
+    }, 1000 / REC_HZ)
+    setRecording(true)
+  }
+
+  const stop = () => {
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null }
+    if (unsubRef.current) { unsubRef.current(); unsubRef.current = null }
+    setRecording(false)
+  }
+
+  const download = () => {
+    const rec = recRef.current
+    const c = breath.calibReviewData
+    const payload = {
+      meta: {
+        schema: REC_SCHEMA,
+        recordedAt: new Date().toISOString(),
+        isSimMode,
+        note,
+        sampleRateHz: REC_HZ,
+        durationS: rec.samples.length ? (rec.samples[rec.samples.length - 1].t - rec.samples[0].t) / 1000 : 0,
+        calib: c ? { fitR: c.fitR, lagMs: c.lagMs, modelLabel: c.modelLabel, peakErrorMs: c.peakErrorMs } : null,
+        userAgent: navigator.userAgent,
+      },
+      samples: rec.samples,
+      events: rec.events,
+    }
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
+    const name = `belt-recording-${stamp}.json`
+    const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url; a.download = name; document.body.appendChild(a); a.click()
+    document.body.removeChild(a); URL.revokeObjectURL(url)
+    setSavedName(name)
+  }
+
+  const durS = count / REC_HZ
+  const hasData = count > 0 && !recording
+
+  return (
+    <Panel wide>
+      <h2 style={S.h2}>Record a session <span style={{ fontSize: 13, color: 'var(--tx3)' }}>(for offline tuning)</span></h2>
+      <input
+        type="text" value={note} onChange={e => setNote(e.target.value)}
+        placeholder="note — e.g. '1 min natural, then 2 min slow'"
+        disabled={recording}
+        style={S.noteInput}
+      />
+      <div style={S.chipRow}>
+        <Chip label="State" value={recording ? '● REC' : hasData ? 'stopped' : 'idle'} tone={recording ? '#e74c3c' : undefined} />
+        <Chip label="Samples" value={String(count)} />
+        <Chip label="Duration" value={`${durS.toFixed(0)} s`} />
+      </div>
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
+        {!recording && <Btn onClick={start}>{hasData ? 'Record again' : 'Start recording'}</Btn>}
+        {recording && <Btn onClick={stop}>Stop</Btn>}
+        {hasData && <Btn onClick={download}>Download JSON</Btn>}
+      </div>
+      {savedName && (
+        <p style={{ ...S.body, fontSize: 13, color: 'var(--tx3)' }}>
+          Saved <strong>{savedName}</strong> to your Downloads folder. Hand the file to Claude
+          (it can read <code>C:\Users\norma\Downloads\{savedName}</code> directly).
+        </p>
+      )}
+    </Panel>
+  )
+}
+
+// ── UI bits ─────────────────────────────────────────────────────────────────
+
+function Panel({ children, wide = false }) {
+  return <div style={{ ...S.panel, maxWidth: wide ? 700 : 460 }}>{children}</div>
+}
+
+function Btn({ children, onClick, disabled }) {
+  return (
+    <button onClick={onClick} disabled={disabled}
+      style={{ ...S.btn, opacity: disabled ? 0.4 : 1, cursor: disabled ? 'default' : 'pointer' }}>
+      {children}
+    </button>
+  )
+}
+
+function Chip({ label, value, tone }) {
+  return (
+    <div style={S.chip}>
+      <span style={S.chipLabel}>{label}</span>
+      <span style={{ ...S.chipValue, ...(tone ? { color: tone } : {}) }}>{value}</span>
+    </div>
+  )
+}
+
+const S = {
+  page: {
+    minHeight: '100vh', background: 'var(--bg, #FCF0F5)',
+    display: 'flex', flexDirection: 'column', alignItems: 'center',
+    padding: '0 16px 48px', fontFamily: '"DM Sans",system-ui,sans-serif',
+  },
+  header: {
+    width: '100%', maxWidth: 700, display: 'flex', alignItems: 'center',
+    justifyContent: 'space-between', padding: '18px 4px',
+  },
+  brand: { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 18, color: 'var(--tx)' },
+  badge: {
+    fontFamily: '"Space Mono",monospace', fontSize: 10, letterSpacing: '0.1em',
+    color: 'var(--pkd)', background: 'var(--pkb)', borderRadius: 6, padding: '4px 10px',
+  },
+  panel: {
+    width: '100%', background: '#fff', border: '1px solid var(--bd)',
+    borderRadius: 14, padding: '28px 24px', marginTop: 12,
+    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16,
+  },
+  h1: { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 28, fontWeight: 400, color: 'var(--tx)', margin: 0, textAlign: 'center' },
+  h2: { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 20, fontWeight: 400, color: 'var(--tx)', margin: 0, textAlign: 'center' },
+  body: { fontSize: 15, color: 'var(--tx2)', lineHeight: 1.6, textAlign: 'center', margin: 0, maxWidth: 560 },
+  err: { fontSize: 13, color: '#e04', margin: 0 },
+  btn: {
+    background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 12,
+    padding: '13px 32px', fontSize: 15, fontWeight: 500,
+    fontFamily: '"DM Sans",system-ui,sans-serif',
+  },
+  scope: {
+    width: '100%', maxWidth: 640, background: 'var(--bgp, #faf5f8)',
+    border: '1px solid var(--bd)', borderRadius: 10,
+  },
+  noteInput: {
+    width: '100%', maxWidth: 420, padding: '10px 12px', borderRadius: 8,
+    border: '1px solid var(--bd)', fontSize: 14, fontFamily: '"DM Sans",system-ui,sans-serif',
+    background: 'var(--bgp, #faf5f8)', color: 'var(--tx)',
+  },
+  chipRow: { display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' },
+  chip: {
+    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+    background: 'var(--bgp, #faf5f8)', border: '1px solid var(--bd)', borderRadius: 10,
+    padding: '8px 16px', minWidth: 90,
+  },
+  chipLabel: { fontFamily: '"Space Mono",monospace', fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--tx3)' },
+  chipValue: { fontSize: 17, fontWeight: 600, color: 'var(--tx)', textTransform: 'capitalize' },
+  eventLine: { fontFamily: '"Space Mono",monospace', fontSize: 12, margin: 0, minHeight: 16 },
+}

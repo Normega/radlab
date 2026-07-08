@@ -78,6 +78,8 @@ import BreathBeltDemo       from './games/BreathBelt/BreathBeltDemo'
 import PacerOpenerDemo      from './games/BreathBelt/PacerOpenerDemo'
 import Keynote              from './pages/keynote/Keynote'
 import AudioTest        from './pages/dev/AudioTest'
+import BreathLab        from './games/shared/breath/BreathLab'
+import Ember            from './games/Ember/Ember'
 import ColorMax      from './games/ColorMax/ColorMax'
 
 const queryClient = new QueryClient()
@@ -290,11 +292,15 @@ export default function App() {
           {/* Dev-only test harness — component guards with import.meta.env.DEV */}
           <Route path="/dev/video-test" element={<VideoTest />} />
           <Route path="/dev/audio-test" element={<AudioTest />} />
+          {/* Breath-signal instrumentation for biofeedback game dev; ?sim=1 for beltless */}
+          <Route path="/dev/breath-lab" element={<BreathLab />} />
 
           {/* Conference demo — no auth, writes nothing; ?sim=1 for beltless rehearsal */}
           <Route path="/demo/breath-belt" element={<BreathBeltDemo />} />
           {/* Keynote opener — whole-room pacer, no device, no data */}
           <Route path="/demo/pacer-opener" element={<PacerOpenerDemo />} />
+          {/* Ember — breath biofeedback campfire; ?sim=1 for beltless rehearsal */}
+          <Route path="/demo/ember" element={<Ember />} />
           {/* ISARP keynote deck — click-through, doubles as read-later resource */}
           <Route path="/keynote" element={<Keynote />} />
 
