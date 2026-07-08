@@ -318,7 +318,20 @@ const SLIDES = [
     ),
   },
 
-  // 9 — Staircase finds each person's threshold
+  // 9 — Methods overview table
+  {
+    render: (d) => (
+      <Frame kicker="Five studies · N = 787">
+        <MethodsTable />
+        <Detail density={d}>
+          Each study adds a control — salience manipulation, a visual control condition, physiological
+          recording, preregistration — culminating in the preregistered, physiologically verified test in Study 5.
+        </Detail>
+      </Frame>
+    ),
+  },
+
+  // 10 — Staircase finds each person's threshold
   {
     render: (d) => (
       <Frame wide kicker="Finding the threshold">
@@ -327,19 +340,6 @@ const SLIDES = [
         <Detail density={d}>
           Studies 1A–2 use a single staircase; Studies 4–5 cross salience (high/low) with direction
           (acceleration/deceleration). The staircase converges on the smallest change each person can detect.
-        </Detail>
-      </Frame>
-    ),
-  },
-
-  // 10 — Methods overview table
-  {
-    render: (d) => (
-      <Frame kicker="Five studies · N = 787">
-        <MethodsTable />
-        <Detail density={d}>
-          Each study adds a control — salience manipulation, a visual control condition, physiological
-          recording, preregistration — culminating in the preregistered, physiologically verified test in Study 5.
         </Detail>
       </Frame>
     ),
