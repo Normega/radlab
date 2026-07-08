@@ -76,6 +76,7 @@ function directionalAdherence(graph, baseMs, conditionMs) {
   if (durS.length !== 4) return null
 
   const [d1, d2, d3, d4] = durS
+  console.debug('[adherence] ok', { troughs: troughs.length, durS: durS.map(d => Math.round(d * 100) / 100) })
   const observedChange = (d3 + d4) / 2 - (d1 + d2) / 2
   const delta = (conditionMs - baseMs) / 1000   // positive = slower/longer, negative = faster/shorter
   const expectedLabel = delta === 0 ? 'same' : classifyDirection(delta)
@@ -110,11 +111,21 @@ function directionalAdherence(graph, baseMs, conditionMs) {
 // it out of an exact [trialStart, trialEnd] window and leaving only 4
 // troughs where directionalAdherence needs 5. Pad the window by lag + a
 // safety margin so the true boundary troughs aren't cut off.
+//
+// Lag correction on the displayed sync: the person follows the pacer with a
+// roughly constant delay (mlr.lagMs). Comparing belt(t) against pacer(t)
+// therefore penalises the correlation for a delay that isn't a tracking
+// failure, making trial "sync" look worse than calibration for no real
+// reason. So the pacer reference is evaluated at t − lagMs (the pacer value
+// the person was actually responding to), matching how useTrialRunner scores
+// trialRCondition. This shifts ONLY the pacer curve + r; belt troughs (and so
+// directionalAdherence) are untouched.
 function buildCleanGraph(belt, res, basePeriodMs, changedPeriodMs, liveGraph) {
   const mlr = belt.mlrWeightsRef.current
   if (mlr && res?.trialStartMs != null && res?.trialEndMs != null) {
+    const lagMs      = mlr.lagMs ?? 0
     const leadPadMs  = 300
-    const trailPadMs = Math.max(500, (mlr.lagMs ?? 0) + 300)
+    const trailPadMs = Math.max(500, lagMs + 300)
     const t0 = res.trialStartMs - leadPadMs, t1 = res.trialEndMs + trailPadMs
     const allSamples = (belt.rawAccelRowsRef.current || [])
       .map(r => ({ t: r.packetTimestamp + r.sampleIndex * 5, x: r.x, y: r.y, z: r.z }))
@@ -125,16 +136,22 @@ function buildCleanGraph(belt, res, basePeriodMs, changedPeriodMs, liveGraph) {
       for (let i = 0; i < allSamples.length; i++) {
         const t = allSamples[i].t
         if (t < t0 || t > t1) continue
-        // Pacer phase stays anchored to the true (unpadded) trial start so
-        // the padded fringe samples don't shift the pacer curve.
-        pacerPts.push({ t, value: getPacerRadiusForTrial(t, res.trialStartMs, basePeriodMs, changedPeriodMs) })
+        // Pacer phase stays anchored to the true (unpadded) trial start; the
+        // t − lagMs shift aligns the reference to the participant's delayed
+        // response so the correlation isn't penalised for constant lag.
+        pacerPts.push({ t, value: getPacerRadiusForTrial(t - lagMs, res.trialStartMs, basePeriodMs, changedPeriodMs) })
         beltPts.push({ t, value: beltAll[i] })
       }
       if (beltPts.length > 20 && pacerPts.length > 20) {
         const r = pearsonRArrays(beltPts.map(p => p.value), pacerPts.map(p => p.value))
+        console.debug('[buildCleanGraph] ok', {
+          trial: res.trialNum ?? '?', lagMs, r: Math.round(r * 100) / 100,
+          windowPts: beltPts.length, sessionSamples: allSamples.length,
+          leadGapMs: Math.round(beltPts[0].t - t0), trailGapMs: Math.round(t1 - beltPts[beltPts.length - 1].t),
+        })
         return { pacerPts, beltPts, r }
       }
-      console.debug('[buildCleanGraph] skipped: too few windowed points', { beltPts: beltPts.length, pacerPts: pacerPts.length, allSamples: allSamples.length })
+      console.debug('[buildCleanGraph] skipped: too few windowed points', { beltPts: beltPts.length, pacerPts: pacerPts.length, allSamples: allSamples.length, windowMs: t1 - t0 })
     } else {
       console.debug('[buildCleanGraph] skipped: too few raw accel samples', { have: allSamples.length, need: 80 })
     }
@@ -142,6 +159,28 @@ function buildCleanGraph(belt, res, basePeriodMs, changedPeriodMs, liveGraph) {
     console.debug('[buildCleanGraph] skipped: no MLR model or trial timestamps', { hasMlr: !!mlr, trialStartMs: res?.trialStartMs, trialEndMs: res?.trialEndMs })
   }
   return liveGraph
+}
+
+// Wait until the raw accel buffer holds samples past `untilMs`, so the belt's
+// lagged trailing trough (breath 4, which lands ~lagMs after trialEndMs) has
+// actually streamed in before we build the graph. On the FIRST trial the
+// Bluetooth pipeline is freshly warmed and the last packet can arrive late; a
+// fixed short wait then builds the graph one trough short (4 not 5), which is
+// exactly the "cards missing on trial 1 only" symptom. Polls up to maxWaitMs.
+// Returns immediately (false) when there's no belt buffer at all (sim mode).
+async function waitForCoverage(belt, untilMs, maxWaitMs = 2500) {
+  const rows = belt.rawAccelRowsRef.current
+  if (!rows || rows.length === 0) return false   // sim: no accel stream to wait on
+  const startedAt = Date.now()
+  const lastSampleMs = () => {
+    const arr = belt.rawAccelRowsRef.current
+    const last = arr[arr.length - 1]
+    return last ? last.packetTimestamp + last.sampleIndex * 5 : 0
+  }
+  while (lastSampleMs() < untilMs && Date.now() - startedAt < maxWaitMs) {
+    await new Promise(r => setTimeout(r, 50))
+  }
+  return lastSampleMs() >= untilMs
 }
 
 // Samples the live belt signal vs the pacer during a trial, then builds the
@@ -309,15 +348,19 @@ function StaircaseAct({ belt, onDone }) {
     setState('RUNNING')
     sampler.begin()
     const res = await runTrial('phase3', trialIdx + 1, spec.conditionMs)
-    // Keep sampling briefly past trialEndMs so the belt's lagged trailing
-    // trough (see buildCleanGraph) isn't clipped from the live-sampler
-    // fallback either — mirrors the trailPadMs used on the real-belt path.
-    await new Promise(r => setTimeout(r, 500))
+    res.trialNum = trialIdx + 1   // for diagnostics only
+    // Don't build the graph until the belt's lagged trailing trough has
+    // actually arrived. On a real belt this polls the accel buffer (fixes the
+    // trial-1 "one trough short" race); in sim there's no accel stream so this
+    // returns immediately and we just let the live sampler settle instead.
+    const lagMs   = belt.mlrWeightsRef.current?.lagMs ?? 0
+    const covered = await waitForCoverage(belt, res.trialEndMs + Math.max(500, lagMs + 300))
+    if (!covered) await new Promise(r => setTimeout(r, 500))
     const graph = buildCleanGraph(belt, res, BASE_MS, spec.conditionMs, sampler.end())
     const adherence = directionalAdherence(graph, BASE_MS, spec.conditionMs)
     setLastResult({ graph, adherence })
     setState('RATE')
-  }, [runTrial, trialIdx, spec.conditionMs, sampler])
+  }, [runTrial, trialIdx, spec.conditionMs, sampler, belt])
 
   function submitRatings() {
     const correct = response === spec.dir
