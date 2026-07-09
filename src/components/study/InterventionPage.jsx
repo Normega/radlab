@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { supabase } from '../../lib/supabase'
+import { supabase as globalSupabase } from '../../lib/supabase'
 import StudyVideoPlayer from '../video/StudyVideoPlayer'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -47,7 +47,13 @@ export default function InterventionPage({
   studyDay,
   onComplete,
   demoMode = false,
+  supabaseClient = null,
 }) {
+  // In a participant session the caller passes the participant-authenticated
+  // client; the global client (anon on a link, lab in admin demo) is the
+  // fallback. Shadows the old module-level import so every write below uses it.
+  const supabase = supabaseClient ?? globalSupabase
+
   const screens = buildScreens(module)
 
   // Session context: multi_response → thought_rating / thought_choice
@@ -400,12 +406,13 @@ export default function InterventionPage({
           )}
 
           {current.type === 'video' && (
-            <VideoBlock step={current} demoMode={demoMode} onComplete={handleVideoComplete} />
+            <VideoBlock step={current} demoMode={demoMode} onComplete={handleVideoComplete} db={supabase} />
           )}
 
           {current.type === 'audio' && (
             <AudioBlock
               step={current}
+              db={supabase}
               onComplete={() => setNextEnabled(true)}
             />
           )}
@@ -614,7 +621,7 @@ export function OwlScreen({ owl, text }) {
 
 // ── VideoBlock ────────────────────────────────────────────────────────────────
 
-function VideoBlock({ step, demoMode, onComplete }) {
+function VideoBlock({ step, demoMode, onComplete, db = globalSupabase }) {
   return (
     <div>
       {step.label && <p style={S.videoLabel}>{step.label}</p>}
@@ -623,6 +630,7 @@ function VideoBlock({ step, demoMode, onComplete }) {
         preview
         requiredWatchPct={0.9}
         onComplete={onComplete}
+        supabaseClient={db}
       />
       {!demoMode && (
         <p style={S.videoNote}>Next will unlock once the video has been watched.</p>
@@ -633,7 +641,7 @@ function VideoBlock({ step, demoMode, onComplete }) {
 
 // ── AudioBlock ────────────────────────────────────────────────────────────────
 
-function AudioBlock({ step, onComplete }) {
+function AudioBlock({ step, onComplete, db = globalSupabase }) {
   const [url,        setUrl]        = useState(null)
   const [loading,    setLoading]    = useState(true)
   const [error,      setError]      = useState(null)
@@ -645,7 +653,7 @@ function AudioBlock({ step, onComplete }) {
   useEffect(() => {
     // Strip bucket prefix from audio_path to get the key within the bucket
     const key = step.audio_path ? step.audio_path.replace(/^audios\//, '') : step.audio_id
-    supabase.storage.from('audios').createSignedUrl(key, 3600).then(({ data, error: err }) => {
+    db.storage.from('audios').createSignedUrl(key, 3600).then(({ data, error: err }) => {
       if (err || !data?.signedUrl) { setError('Could not load audio.'); setLoading(false); return }
       setUrl(data.signedUrl)
       setLoading(false)

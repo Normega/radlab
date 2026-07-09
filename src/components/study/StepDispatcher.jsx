@@ -86,6 +86,7 @@ export default function StepDispatcher({ node, enrollment, scheduleId, stepIndex
         enrollment={enrollment}
         scheduleId={scheduleId}
         onComplete={onComplete}
+        supabaseClient={supabaseClient}
         isSimMode={isSimMode}
       />
     )

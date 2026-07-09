@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { supabase } from '../../lib/supabase'
+import { supabase as globalSupabase } from '../../lib/supabase'
 import InterventionPage from './InterventionPage'
 
 const SIM_MODULE = {
@@ -19,8 +19,13 @@ export default function TrainingStepWrapper({
   enrollment,
   scheduleId,
   onComplete,
+  supabaseClient = null,
   isSimMode = false,
 }) {
+  // Participant sessions run on SessionEntry's isolated authenticated client;
+  // the global client (anon on a link) would silently fail every save.
+  const supabase = supabaseClient ?? globalSupabase
+
   const moduleId = node?.module_id ?? node?.activities?.subcategory
 
   const [trainingModule, setTrainingModule] = useState(null)
@@ -48,17 +53,18 @@ export default function TrainingStepWrapper({
       const definition = mod.definition
       setTrainingModule(definition)
 
-      // Look up the liliana_participants row for this profile
-      const { data: lp } = await supabase
-        .from('liliana_participants')
-        .select('id, current_day')
-        .eq('profile_id', enrollment.profile_id)
-        .maybeSingle()
+      // Ensure the liliana_participants row exists (self-created on first
+      // training contact) and derive the day from the schedule row — the
+      // stored current_day counter alone never advanced, which would have
+      // pinned every day's data to study_day 1 (WP-L5 dry-run finding).
+      const { data: lp, error: lpErr } = await supabase.rpc('ensure_liliana_participant', {
+        p_schedule_id: scheduleId ?? null,
+      })
 
-      if (!lp) return  // participant not enrolled in Liliana study — no data saved
+      if (lpErr || !lp?.participant_id) return  // no participant context — nothing saved
 
-      const pid      = lp.id
-      const day      = lp.current_day
+      const pid      = lp.participant_id
+      const day      = lp.study_day
       const phaseLbl = definition.phase === 'phase1' ? 'Phase 1' : 'Phase 2'
       const sessName = `${phaseLbl} · Day ${day}`
 
@@ -128,6 +134,7 @@ export default function TrainingStepWrapper({
       scheduleId={scheduleId}
       studyDay={studyDay}
       onComplete={onComplete}
+      supabaseClient={supabase}
     />
   )
 }

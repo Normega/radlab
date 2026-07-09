@@ -12,8 +12,11 @@ const SIGNED_URL_TTL = 60 * 60  // 1 hour — covers long videos with buffer
 
 // ── Signed URL ────────────────────────────────────────────────────────────────
 
-export async function getVideoSignedUrl(storagePath: string): Promise<string> {
-  const { data, error } = await supabase.storage
+export async function getVideoSignedUrl(
+  storagePath: string,
+  client: typeof supabase = supabase,
+): Promise<string> {
+  const { data, error } = await client.storage
     .from(VIDEO_BUCKET)
     .createSignedUrl(storagePath, SIGNED_URL_TTL)
 
@@ -40,8 +43,9 @@ export async function createVideoSession(
   participantId: string,
   videoId: string,
   participantScheduleId?: string,
+  client: typeof supabase = supabase,
 ): Promise<VideoSessionRow> {
-  const { data, error } = await supabase
+  const { data, error } = await client
     .from('participant_video_sessions')
     .insert({
       participant_id:           participantId,
@@ -81,8 +85,11 @@ export interface VideoEventPayload {
   metadata?:         Record<string, unknown>
 }
 
-export async function logVideoEvent(payload: VideoEventPayload): Promise<void> {
-  const { error } = await supabase
+export async function logVideoEvent(
+  payload: VideoEventPayload,
+  client: typeof supabase = supabase,
+): Promise<void> {
+  const { error } = await client
     .from('participant_video_events')
     .insert({
       session_id:          payload.sessionId,

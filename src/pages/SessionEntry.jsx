@@ -345,6 +345,7 @@ export default function SessionEntry() {
           <StepDispatcher
             node={node}
             enrollment={enrollment}
+            scheduleId={sessionData.schedule?.id ?? null}
             stepIndex={currentIndex}
             totalSteps={totalSteps}
             onComplete={handleStepComplete}

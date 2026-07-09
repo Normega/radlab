@@ -13,6 +13,7 @@ interface Props {
   requiredWatchPct?: number   // 0–1, default 0.9
   onComplete?:       (sessionId: string) => void
   preview?:          boolean  // skips all DB writes; for admin preview use only
+  supabaseClient?:   typeof supabase | null  // participant-session client; falls back to global
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -37,7 +38,9 @@ export default function StudyVideoPlayer({
   requiredWatchPct = 0.9,
   onComplete,
   preview = false,
+  supabaseClient = null,
 }: Props) {
+  const db = supabaseClient ?? supabase
   // ── UI state ────────────────────────────────────────────────────────────────
   const [signedUrl,   setSignedUrl]   = useState<string | null>(null)
   const [isLoading,   setIsLoading]   = useState(true)
@@ -71,10 +74,10 @@ export default function StudyVideoPlayer({
     let cancelled = false
     ;(async () => {
       try {
-        const url = await getVideoSignedUrl(storagePath)
+        const url = await getVideoSignedUrl(storagePath, db)
         if (cancelled) return
         if (!preview) {
-          const session = await createVideoSession(participantId!, videoId!, scheduleId)
+          const session = await createVideoSession(participantId!, videoId!, scheduleId, db)
           if (cancelled) return
           sessionIdRef.current = session.id
         }
@@ -112,7 +115,7 @@ export default function StudyVideoPlayer({
 
       let attempts = 0
       while (attempts < 2) {
-        const { error: rpcErr } = await supabase.rpc('complete_video_session', payload)
+        const { error: rpcErr } = await db.rpc('complete_video_session', payload)
         if (!rpcErr) break
         attempts++
         if (attempts >= 2) console.warn('complete_video_session RPC failed after retry:', rpcErr.message)
@@ -123,7 +126,7 @@ export default function StudyVideoPlayer({
 
     setIsComplete(true)
     if (preview) onComplete?.('')
-  }, [onComplete, preview])
+  }, [onComplete, preview, db])
 
   // ── timeupdate: seek prevention, watched tracking, progress bar ──────────────
   const handleTimeUpdate = useCallback(() => {
@@ -172,8 +175,8 @@ export default function StudyVideoPlayer({
       sessionId:         sessionIdRef.current,
       eventType:         'started',
       videoPositionSecs: vid.currentTime,
-    })
-  }, [preview])
+    }, db)
+  }, [preview, db])
 
   const handlePause = useCallback(() => {
     setIsPlaying(false)
@@ -201,9 +204,9 @@ export default function StudyVideoPlayer({
         sessionId:         sessionIdRef.current,
         eventType:         'focus_lost',
         videoPositionSecs: vid.currentTime,
-      })
+      }, db)
     }
-  }, [preview])
+  }, [preview, db])
 
   const onFocusReturned = useCallback(() => {
     if (!focusActiveRef.current) return
@@ -225,9 +228,9 @@ export default function StudyVideoPlayer({
         sessionId:         sessionIdRef.current,
         eventType:         'focus_returned',
         videoPositionSecs: vid.currentTime,
-      })
+      }, db)
     }
-  }, [preview])
+  }, [preview, db])
 
   useEffect(() => {
     const handleVisibility = () => {
