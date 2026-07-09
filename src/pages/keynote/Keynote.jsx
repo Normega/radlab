@@ -166,7 +166,7 @@ function DemoLink({ href, label, sub }) {
   )
 }
 
-// ── Slides (1–23, matching the brief) ───────────────────────────────────────
+// ── Slides (1–25) ───────────────────────────────────────────────────────────
 
 const SLIDES = [
   // 1 — Title
@@ -533,7 +533,6 @@ const SLIDES = [
           'Interoceptive exposure: changes the habit, not the sensitivity.',
           'Savoring: the same logic, in the positive direction.',
         ]} />
-        <Lead>The vignette's two clinicians only had two of the three levers.</Lead>
         <Detail density={d}>
           If feeling is gated by detection, then interventions that change what a detected signal means —
           or how often it is detected — are a third, independent route, alongside changing the body and changing appraisal.
@@ -542,7 +541,23 @@ const SLIDES = [
     ),
   },
 
-  // 22 — Callback to opening votes (image only)
+  // 22 — The third lever (synthesis · vignette resolution)
+  {
+    render: () => (
+      <Frame kicker="The third lever">
+        <H2>Confidence and agency in what you detect</H2>
+        <Bullets items={[
+          'Trait awareness (MAIA) predicts confidence in detection, not raw sensitivity.',
+        ]} />
+        <Lead>
+          The vignette's two clinicians only had two of the three levers. The third lever is
+          building the confidence to shape one's own detection habits.
+        </Lead>
+      </Frame>
+    ),
+  },
+
+  // 23 — Callback to opening votes (image only)
   {
     note: 'Spoken, not on slide: return to the opening votes. Compare the room’s split to the hit/miss arousal pattern just shown.',
     render: () => (
@@ -552,7 +567,7 @@ const SLIDES = [
     ),
   },
 
-  // 23 — Closer demo (live)
+  // 24 — Closer demo (live)
   {
     note: 'Live strap demo. Open in a new tab: pairing → calibration → paced trials → change-detection trials. Return here after.',
     render: () => (
@@ -564,7 +579,7 @@ const SLIDES = [
     ),
   },
 
-  // 24 — Thank you
+  // 25 — Thank you
   {
     render: () => (
       <Frame>
