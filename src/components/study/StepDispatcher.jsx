@@ -9,6 +9,7 @@ import GameStepWrapper          from './GameStepWrapper'
 import PhysioSetupStep          from './PhysioSetupStep'
 import TrainingStepWrapper      from './TrainingStepWrapper'
 import VasStepWrapper          from './VasStepWrapper'
+import MidpointStep            from './MidpointStep'
 
 /**
  * Props:
@@ -98,6 +99,17 @@ export default function StepDispatcher({ node, enrollment, scheduleId, stepIndex
         scheduleId={scheduleId}
         stepIndex={stepIndex}
         totalSteps={totalSteps}
+        onComplete={onComplete}
+        supabaseClient={supabaseClient}
+        isSimMode={isSimMode}
+      />
+    )
+  }
+
+  if (category === 'midpoint') {
+    return (
+      <MidpointStep
+        enrollment={enrollment}
         onComplete={onComplete}
         supabaseClient={supabaseClient}
         isSimMode={isSimMode}

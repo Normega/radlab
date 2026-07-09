@@ -37,12 +37,16 @@ participants are drawn into one of **three midpoint groups**:
 
 | Group | Display | Phase 2 practice determined by |
 |---|---|---|
-| `feedback_choice` | Personal data summary (ranked practices) | Participant's choice, immediately after the feedback screen |
-| `control_choice` | Control display (no personal data) | Participant's choice, immediately after the control display |
-| `control_assigned` | Control display (no personal data) | Balanced random draw, announced as the owl's wisdom ("I have placed you on the … path") |
+| `feedback_choice` (Choice with Feedback) | Personal data summary (ranked practices) | Participant's free choice, immediately after the feedback screen |
+| `control_choice` (Choice) | Control display (no personal data) | Participant's free choice, immediately after the control display |
+| `control_assigned` (No-Choice) | Control display (no personal data) | Participant **states a preference**, then is assigned to one of the two **non-preferred** practices with equal probability — **never** the preferred one. The owl frames it: growth often occurs outside the comfort zone \o/ |
 
-This isolates the feedback effect (`feedback_choice` vs `control_choice`) and the choice effect
-(`control_choice` vs `control_assigned`). The two non-feedback groups see the **same** control display.
+(Group mechanics finalized by Norm 2026-07-09, replacing the earlier balanced-owl-draw design for the
+No-Choice arm.) This isolates the feedback effect (`feedback_choice` vs `control_choice`) and the
+choice effect (`control_choice` vs `control_assigned`). The two non-feedback groups see the **same**
+control display, and the **stated preference is recorded for all three groups** (choosers' selection
+doubles as their preference) — enabling the preference-vs-assignment analyses. The anti-preference
+pick is deterministic (seeded from study seed + node + participant) and happens server-side.
 
 **Snapshot for everyone**: the quality summary and ranking are computed and stored for *all three groups*
 at midpoint (only *shown* to `feedback_choice`). This gives the counterfactual for free — e.g., did
@@ -187,6 +191,17 @@ non-reactivity worst) in a self-cleaning batch:
   schedule's session template training node — immune to day-numbering drift between
   `participant_schedule.study_day` and `liliana_day_data.study_day` (which count different things).
 
+**Amended for the final No-Choice mechanics (2026-07-09, migration
+`20260709_liliana_midpoint_choice_rework.sql`, applied + verified live):** snapshot gains
+`stated_preference`; `phase2_source` is now `('choice','anti_preference')`;
+`participant_assignments.kind` gains `'anti_preference'`; `record_practice_decision(p_practice,
+p_source, p_node_id default null)` reworked — the fork node is auto-detected from `design_graph`
+(client never reads the graph), the choice path records the selection as both practice and
+preference, and the anti-preference path records the stated preference then assigns a seeded 50/50
+pick among the non-preferred arms server-side. Verified: `never_preferred = true`, assignment row
+`kind='anti_preference'`/`draw_index null` (materializer-routable, doesn't disturb balanced cycles),
+decision finality, and a 6/6 pick distribution across 12 simulated participants.
+
 ### WP-L4 — Midpoint step component
 
 - New step category `midpoint`: SessionBuilder picker entry + `StepDispatcher` case →
@@ -216,6 +231,23 @@ non-reactivity worst) in a self-cleaning batch:
   (all RPCs idempotent).
 
 Checkable on the live site: full midpoint experience per group via test participants / demo mode.
+
+**Status — implemented 2026-07-09.**
+- `src/components/study/MidpointStep.jsx`: new step category `midpoint` (StepDispatcher case,
+  SessionBuilder picker group, `activities` row `midpoint/liliana_midpoint`). On mount: draws
+  `midpoint_group` via `draw_assignment`, fetches the snapshot, branches:
+  - `feedback_choice`: owl intro → ranked feedback cards (stress ↓/↑ per practice, appraisal /6,
+    n sessions, #1 highlighted; `shown_at` stamped when the cards first render) → choice cards →
+    confirmation (owl_love).
+  - `control_choice`: control display (owl_still, no personal data) → choice cards → confirmation.
+  - `control_assigned`: control display → preference elicitation ("which would you pick?") →
+    server-side anti-preference assignment → reveal screen (owl acknowledges the preference,
+    comfort-zone rationale, announces the assigned practice with its card).
+  - Re-entry: `decided_at` set → "already set" screen. Sim mode: stub + continue, no DB.
+- All copy is placeholder pending Liliana's sign-off (constants at the top of the component).
+- `liliana_midpoint` step appended to the existing "Liliana Study 3 - Midpoint" session template
+  (order_index 10, after the assessment questionnaires).
+- Not yet click-tested end-to-end with a real participant link — that is the WP-L5 three-arm dry run.
 
 ### WP-L5 — Study wiring + end-to-end dry run
 
