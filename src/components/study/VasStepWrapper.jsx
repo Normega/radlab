@@ -17,6 +17,7 @@ import VasRenderer from '../vas/VasRenderer'
 export default function VasStepWrapper({
   subcategory,
   enrollment,
+  scheduleId = null,
   stepIndex,
   totalSteps,
   onComplete,
@@ -148,6 +149,7 @@ export default function VasStepWrapper({
         scale={singleScale}
         userId={userId}
         sessionId={null}
+        scheduleId={scheduleId}
         onComplete={value => onComplete?.({ scale_slug: slug, value })}
         previewMode={false}
         partNumber={stepIndex != null ? stepIndex + 1 : null}
@@ -206,6 +208,8 @@ export default function VasStepWrapper({
       scale={currentItem.data}
       userId={userId}
       sessionId={null}
+      scheduleId={scheduleId}
+      packageSlug={slug}
       onComplete={handlePkgItemComplete}
       previewMode={false}
       partNumber={pkgIndex + 1}

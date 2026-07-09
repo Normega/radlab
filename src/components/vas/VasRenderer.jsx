@@ -8,6 +8,8 @@ import { supabase as globalSupabase } from '../../lib/supabase'
  *   scale          — full vas_scales row (id, slug, question, anchors, scale_type)
  *   userId         — uuid for vas_responses insert
  *   sessionId      — uuid | null
+ *   scheduleId     — uuid | null — participant_schedule row (study sessions)
+ *   packageSlug    — string | null — vas_packages slug when delivered inside a package
  *   onComplete     — (value: number) => void
  *   previewMode    — bool — if true, skips DB write
  *   partNumber     — int | null — for "Scale N of M" eyebrow
@@ -18,6 +20,8 @@ export default function VasRenderer({
   scale,
   userId,
   sessionId = null,
+  scheduleId = null,
+  packageSlug = null,
   onComplete,
   previewMode = false,
   partNumber = null,
@@ -41,10 +45,12 @@ export default function VasRenderer({
     setSaving(true)
     const db = supabaseClient ?? globalSupabase
     const { error } = await db.from('vas_responses').insert({
-      user_id:   userId,
-      scale_id:  scale.id,
-      session_id: sessionId ?? null,
-      value:     selected,
+      user_id:      userId,
+      scale_id:     scale.id,
+      session_id:   sessionId ?? null,
+      schedule_id:  scheduleId ?? null,
+      package_slug: packageSlug ?? null,
+      value:        selected,
     })
     if (error) console.error('vas_responses insert:', error)
     setSaving(false)

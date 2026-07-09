@@ -95,6 +95,7 @@ export default function StepDispatcher({ node, enrollment, scheduleId, stepIndex
       <VasStepWrapper
         subcategory={subcategory}
         enrollment={enrollment}
+        scheduleId={scheduleId}
         stepIndex={stepIndex}
         totalSteps={totalSteps}
         onComplete={onComplete}
