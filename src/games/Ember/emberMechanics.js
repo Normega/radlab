@@ -9,6 +9,7 @@ import {
   REG_CV_SCALE, REG_MIN,
   FLAME_BASE_MIN, FLAME_FLICKER,
   RESONANCE_ZONE_BPM, DEFAULT_RATE_BPM,
+  RATE_TAU_S, HOLD_WINDOW_MS, HOLD_AMP_THRESHOLD, HOLD_DECAY_PER_S,
 } from './constants.js'
 
 function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v }
@@ -46,9 +47,74 @@ export function warmthDelta(rate, cv, dtS) {
   return scaled * RATE_PER_S * dtS
 }
 
-// Advance the warmth accumulator, clamped to [0, 1].
+// Advance the warmth accumulator, clamped to [0, 1]. Stateless single-frame step
+// on the raw instantaneous rate — kept for unit tests. The game uses
+// createWarmthEngine (below), which adds rate smoothing + a breath-hold guard.
 export function stepWarmth(W, signal, dtS) {
   return clamp(W + warmthDelta(rateFromSignal(signal), signal?.regularityCv, dtS), 0, 1)
+}
+
+// ── createWarmthEngine ──────────────────────────────────────────────────────
+// Stateful warmth accumulator with two anti-cheese guards over the raw step:
+//
+//   1. Sustained rate — gain is driven by an EMA of the instantaneous rate
+//      (RATE_TAU_S), not the last breath, so a couple of slow breaths can't
+//      spike the fill; you must hold slow breathing long enough to pull the
+//      average down.
+//   2. Breath-hold guard — if the breath value stops moving (peak-to-peak range
+//      over HOLD_WINDOW_MS collapses below HOLD_AMP_THRESHOLD), the person isn't
+//      actively breathing (held breath / belt not transducing), so instead of
+//      climbing on a frozen low rate the fire eases down (HOLD_DECAY_PER_S).
+//
+// step(signal, dtMs) → { W, holding, rate }. Uses an internal clock so it's fully
+// deterministic and node-testable. reset() clears all state.
+export function createWarmthEngine({
+  rateTauS         = RATE_TAU_S,
+  holdWindowMs     = HOLD_WINDOW_MS,
+  holdAmpThreshold = HOLD_AMP_THRESHOLD,
+  holdDecayPerS    = HOLD_DECAY_PER_S,
+} = {}) {
+  let W = 0
+  let emaRate = null
+  let clock = 0
+  const valBuf = []   // { t, value } over the hold window
+
+  return {
+    get warmth() { return W },
+    reset() { W = 0; emaRate = null; clock = 0; valBuf.length = 0 },
+    step(signal, dtMs) {
+      const dt = Math.max(0, dtMs || 0)
+      const dtS = Math.min(dt / 1000, 0.1)   // cap catch-up jumps (backgrounded tab)
+      clock += dt
+      const value = signal?.value == null ? 0.5 : signal.value
+
+      // breath-hold detection: has the breath signal stopped moving?
+      valBuf.push({ t: clock, value })
+      while (valBuf.length && clock - valBuf[0].t > holdWindowMs) valBuf.shift()
+      let holding = false
+      if (valBuf.length > 20 && clock - valBuf[0].t > holdWindowMs * 0.7) {
+        let mn = Infinity, mx = -Infinity
+        for (const p of valBuf) { if (p.value < mn) mn = p.value; if (p.value > mx) mx = p.value }
+        holding = (mx - mn) < holdAmpThreshold
+      }
+
+      // sustained rate: EMA of the instantaneous rate
+      const instant = rateFromSignal(signal)
+      if (emaRate == null) emaRate = instant
+      else emaRate += (instant - emaRate) * Math.min(dtS / rateTauS, 1)
+
+      // warmth update
+      let delta
+      if (holding) {
+        delta = -holdDecayPerS * dtS
+      } else {
+        const gain = rateGain(emaRate)
+        delta = (gain > 0 ? gain * regularityFactor(signal?.regularityCv) : gain) * RATE_PER_S * dtS
+      }
+      W = clamp(W + delta, 0, 1)
+      return { W, holding, rate: emaRate }
+    },
+  }
 }
 
 // Flame geometry from warmth (slow, strategic) + breath value (fast, tactical).

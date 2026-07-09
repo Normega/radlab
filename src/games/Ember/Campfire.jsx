@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import {
-  stepWarmth, rateFromSignal, flameGeom, classifyRate, flameColor,
+  createWarmthEngine, rateFromSignal, flameGeom, classifyRate, flameColor,
   emptyMetrics, accumulateMetrics,
 } from './emberMechanics'
 import { WIN_WARMTH, HOLD_MS, PACER_PERIOD_MS } from './constants'
@@ -33,6 +33,7 @@ export default function Campfire({ breath, running, showPacer, metricsRef, onCau
     const cx = W / 2
 
     // Game state (refs — never React state)
+    const engine = createWarmthEngine()   // warmth + rate-smoothing + breath-hold guard
     let warmth = 0
     let holdStart = null         // wall-clock ms when W first crossed WIN_WARMTH
     let caughtFired = false
@@ -62,15 +63,17 @@ export default function Campfire({ breath, running, showPacer, metricsRef, onCau
 
     const frame = () => {
       const now = performance.now()
-      const dtS = Math.min((now - lastT) / 1000, 0.1)  // cap dt after tab-switch stalls
+      const dtMs = now - lastT
+      const dtS = Math.min(dtMs / 1000, 0.1)  // cap dt after tab-switch stalls
       lastT = now
 
       const sig = breath.signalRef.current
-      const rate = rateFromSignal(sig)
-      const cls = classifyRate(rate)
+      let rate = rateFromSignal(sig)   // smoothed by the engine when running (below)
+      let holding = false
 
       if (running) {
-        warmth = stepWarmth(warmth, sig, dtS)
+        const r = engine.step(sig, dtMs)   // sustained-rate + breath-hold guard live here
+        warmth = r.W; rate = r.rate; holding = r.holding
 
         // Win-beacon hold streak
         if (warmth >= WIN_WARMTH) {
@@ -94,11 +97,12 @@ export default function Campfire({ breath, running, showPacer, metricsRef, onCau
         }
       }
 
+      const cls = classifyRate(rate)
       lastBreathValue = sig.value ?? lastBreathValue
       lastPhase = sig.phase ?? lastPhase
 
       // ── Emit particles ──
-      if (running) {
+      if (running && !holding) {
         // Sparks: rate-limited, scale with warmth, burst on exhale onset
         if (warmth > 0.6) { sparkAccum += dtS * (warmth * 14); while (sparkAccum >= 1) { spawn('spark'); sparkAccum -= 1 } }
         if (lastPhase === 'exhale' && warmth > 0.6 && Math.random() < 0.04) spawn('spark')

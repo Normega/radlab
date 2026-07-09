@@ -4,7 +4,19 @@ import assert from 'node:assert'
 import {
   rateFromSignal, rateGain, regularityFactor, warmthDelta, stepWarmth,
   flameGeom, classifyRate, flameColor, emptyMetrics, accumulateMetrics, summarize,
+  createWarmthEngine,
 } from './emberMechanics.js'
+
+// Feed the engine an oscillating (moving) breath at `bpm` for `ms`, from time t0.
+function feedBreathing(eng, bpm, ms, t0 = 0) {
+  const period = 60000 / bpm
+  let t = t0
+  for (; t < t0 + ms; t += 33) {
+    const value = 0.5 + 0.4 * Math.sin(2 * Math.PI * t / period)
+    eng.step({ t, value, lastPeriodMs: period, regularityCv: 0.05 }, 33)
+  }
+  return t
+}
 
 let n = 0
 const ok = (name, fn) => { fn(); n++; console.log('  ok', name) }
@@ -81,6 +93,32 @@ ok('metrics accumulate and summarize', () => {
   assert.equal(s.meanRegularitySdMs, 200)          // null frame excluded
   assert.equal(s.caughtFire, true)
   assert.equal(s.durationMs, 5000)
+})
+
+ok('engine: sustained slow breathing still wins', () => {
+  const eng = createWarmthEngine()
+  feedBreathing(eng, 6, 90000)   // 90 s at 6 bpm, moving
+  assert.ok(eng.warmth > 0.85, `90s slow should fill, got ${eng.warmth.toFixed(2)}`)
+})
+
+ok('engine: breath-hold guard blocks the frozen-rate exploit', () => {
+  const eng = createWarmthEngine()
+  // frozen slow rate (would fill on the raw step) but the breath value never moves
+  for (let t = 0; t < 20000; t += 33) eng.step({ t, value: 0.8, lastPeriodMs: 10000, regularityCv: 0.05 }, 33)
+  assert.ok(eng.warmth < 0.15, `held breath should not fill, got ${eng.warmth.toFixed(2)}`)
+})
+
+ok('engine: must sustain — brief slow burst stays modest, long one wins', () => {
+  const run = (slowMs) => {
+    const eng = createWarmthEngine()
+    const t1 = feedBreathing(eng, 17, 4000)      // seed EMA at a fast pace (like game start)
+    feedBreathing(eng, 6, slowMs, t1)            // then slow
+    return eng.warmth
+  }
+  const short = run(10000), long = run(60000)
+  assert.ok(short < 0.6, `10s slow after fast should stay modest, got ${short.toFixed(2)}`)
+  assert.ok(long > 0.85, `60s sustained slow should win, got ${long.toFixed(2)}`)
+  assert.ok(long - short > 0.3, 'sustained fills much more than a brief burst')
 })
 
 console.log(`\n${n} checks passed`)

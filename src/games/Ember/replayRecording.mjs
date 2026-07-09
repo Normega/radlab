@@ -15,7 +15,7 @@
 // would have done during that session.
 
 import { readFileSync } from 'node:fs'
-import { stepWarmth, rateFromSignal } from './emberMechanics.js'
+import { createWarmthEngine, rateFromSignal } from './emberMechanics.js'
 import { WIN_WARMTH, HOLD_MS } from './constants.js'
 
 const path = process.argv[2]
@@ -47,14 +47,15 @@ const warmthTrace = []   // [{ tS, W, rate }] thinned for a compact printout
 
 const t0 = samples[0].t
 let prevT = samples[0].t
+const engine = createWarmthEngine()   // same sustained-rate + breath-hold guard as the game
 
 for (const s of samples) {
   const dtMs = Math.max(0, s.t - prevT)
   prevT = s.t
-  const dtS = Math.min(dtMs / 1000, 0.1)   // same dt cap the game uses
 
-  W = stepWarmth(W, s, dtS)
-  const rate = rateFromSignal(s)
+  const r = engine.step(s, dtMs)
+  W = r.W
+  const rate = r.rate   // engine's smoothed rate (what the fill actually sees)
   rates.push(rate)
   if (rate <= 7) timeInResonanceMs += dtMs
 

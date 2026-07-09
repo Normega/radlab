@@ -24,6 +24,19 @@ export const RESONANCE_ZONE_BPM = 7  // counted as "in the resonance zone" for t
 export const REG_CV_SCALE = 0.35   // CV at which the regularity factor bottoms out (~35% variation)
 export const REG_MIN      = 0.60   // floor so natural breath-to-breath variation still fills well
 
+// Sustained-rate smoothing: the gain is driven by an exponential moving average
+// of the instantaneous rate (time constant below), not the last single breath —
+// so a couple of deliberate slow breaths don't spike the fill; you must *sustain*
+// slow breathing for the average to drop.
+export const RATE_TAU_S = 12   // EMA time constant, seconds (~24 s to mostly settle)
+
+// Breath-hold guard: if the breath signal stops moving (held breath, or belt not
+// transducing), the fire shouldn't keep climbing on a frozen low rate. Detected
+// as the peak-to-peak range of the breath value collapsing over a window.
+export const HOLD_WINDOW_MS    = 5000    // window to measure breath-value movement over
+export const HOLD_AMP_THRESHOLD = 0.15   // p2p range below this = not actively breathing
+export const HOLD_DECAY_PER_S   = 1 / 45 // while held, warmth eases down (drains in ~45 s)
+
 // Flame geometry
 export const FLAME_BASE_MIN  = 0.30  // ember height at W=0 (fraction of full)
 export const FLAME_FLICKER   = 0.15  // ±fraction the flame breathes within a cycle
