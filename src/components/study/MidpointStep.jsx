@@ -88,10 +88,13 @@ export default function MidpointStep({ enrollment, onComplete, supabaseClient, i
   }, [studyId, isSimMode])
 
   // Stamp shown_at the first time the feedback screen actually renders.
+  // The .then() is load-bearing: supabase-js builders are lazy and never
+  // execute unless awaited/then'd (WP-L5 dry-run finding).
   useEffect(() => {
     if (screen === 'feedback' && !markedShown.current) {
       markedShown.current = true
       db.rpc('get_liliana_midpoint_summary', { p_mark_shown: true })
+        .then(({ error: e }) => { if (e) console.error('mark_shown failed:', e.message) })
     }
   }, [screen])
 

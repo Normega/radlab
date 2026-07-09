@@ -88,6 +88,8 @@ truth — the live schema is. Evidence below is either `history: <recorded name>
 | `20260708_vas_schedule_linkage.sql` | history: `vas_schedule_linkage`; live: `vas_responses.schedule_id`/`package_slug`, `liliana_day_data.module_id` |
 | `20260709_liliana_feedback_backend.sql` | history: `liliana_feedback_backend` (+ three follow-up statements applied directly and folded into the file: schedule FK → ON DELETE SET NULL, kind CHECK gains 'choice'); live: `liliana_session_metrics` view, `liliana_midpoint_feedback` table, `get_liliana_midpoint_summary/1`, `record_practice_decision/3`, patched `draw_assignment/3` — full synthetic-data verification 2026-07-09 |
 | `20260709_liliana_midpoint_choice_rework.sql` | history: `liliana_midpoint_choice_rework`; live: `liliana_midpoint_feedback.stated_preference`, `phase2_source` CHECK ('choice','anti_preference'), `participant_assignments.kind` gains 'anti_preference', reworked `record_practice_decision` (node auto-detect + server-side anti-preference 50/50), activities category CHECK gains 'midpoint' + `midpoint/liliana_midpoint` row — synthetic-data verification 2026-07-09 |
+| `20260709_ensure_liliana_participant.sql` | history: `ensure_liliana_participant`; live: `ensure_liliana_participant/1` — exercised via real participant link 2026-07-09 |
+| `20260709_session_token_training_nodes.sql` | history: `session_token_training_nodes`; live: `get_session_by_token` returns `module_id` + synthesized training activities — exercised via real participant link 2026-07-09 |
 
 ## Undated files in this directory
 
