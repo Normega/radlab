@@ -3,44 +3,28 @@
 // Every daily check-in session follows the fixed sequence:
 //   Welcome → Check-in (pre) → Practice module → Check-in (post) → Farewell
 //
-// The practice module comes from `intervention_modules`; the four screens defined
-// here are platform-managed and identical across all days and conditions.
-// TrainingLibrary renders these definitions directly (▶ Demo), so edits here are
-// immediately inspectable at /admin/training.
+// The practice module comes from `intervention_modules`; the check-ins are the
+// two canonical VAS packages (managed at /admin/vas — the DB is the source of
+// truth; see docs/markdowns/liliana_feedback_spec.md §1):
+//   pre  = liliana_pre_intervention_ratings  (sleep, stress)
+//   post = liliana_post_intervention_ratings (stress, helpful, enjoyment, effort)
 //
-// NOTE: the check-in rating items below are PLACEHOLDERS pending Liliana's final
-// item wording. Edit CHECKIN_ITEMS in place — pre and post share the same items
-// by design (repeated measure).
+// In a real session the check-ins run as their own vas_pkg_* steps around the
+// training step (they are not rendered inside the InterventionPage chrome).
+// The ▶ Demo at /admin/training fetches the live package contents, so this
+// preview cannot drift from what participants actually see.
 
-export const CHECKIN_ITEMS = [
-  {
-    id: 'valence',
-    prompt: 'How pleasant or unpleasant do you feel right now?',
-    min_label: 'Very\nunpleasant',
-    max_label: 'Very\npleasant',
-  },
-  {
-    id: 'energy',
-    prompt: 'How calm or energized do you feel right now?',
-    min_label: 'Very\ncalm',
-    max_label: 'Very\nenergized',
-  },
-  {
-    id: 'stress',
-    prompt: 'How stressed do you feel right now?',
-    min_label: 'Not at all\nstressed',
-    max_label: 'Extremely\nstressed',
-  },
-]
+export const PRE_CHECKIN_PACKAGE_SLUG  = 'liliana_pre_intervention_ratings'
+export const POST_CHECKIN_PACKAGE_SLUG = 'liliana_post_intervention_ratings'
 
 // Progress-bar labels for the 5-slot session sequence (matches InterventionPage).
 export const SESSION_SLOT_LABELS = ['Welcome', 'Check-in', 'Practice', 'Check-in', 'Farewell']
 
 // Screen types:
-//   { type: 'owl',     owl, text }                       — owl + speech bubble
-//   { type: 'ratings', heading, sub, items }             — slider battery; Next
-//                                                          unlocks once every
-//                                                          slider has been moved
+//   { type: 'owl',         owl, text }  — owl + speech bubble
+//   { type: 'vas_package', slug }       — the live VAS package, rendered with
+//                                         the participant-facing VasRenderer
+//                                         (previewMode: nothing is saved)
 export const WRAPPER_ELEMENTS = [
   {
     key: 'welcome',
@@ -60,34 +44,23 @@ export const WRAPPER_ELEMENTS = [
     key: 'checkin_pre',
     name: 'Check-in (pre)',
     slot: 1,
-    description: 'Mood ratings taken immediately before the practice module.',
+    description: 'Sleep + stress ratings taken immediately before the practice module — contents live from the liliana_pre_intervention_ratings package (/admin/vas).',
     screens: [
-      {
-        type: 'ratings',
-        heading: 'Before you begin',
-        sub: 'Move each slider to show how you feel right now. There are no right or wrong answers.',
-        items: CHECKIN_ITEMS,
-      },
+      { type: 'vas_package', slug: PRE_CHECKIN_PACKAGE_SLUG },
     ],
-    finalButtonLabel: 'Begin practice',
   },
   {
     key: 'checkin_post',
     name: 'Check-in (post)',
     slot: 3,
-    description: 'The same ratings repeated immediately after the practice module.',
+    description: 'Stress, helpfulness, enjoyment and effort ratings immediately after the practice module — contents live from the liliana_post_intervention_ratings package (/admin/vas).',
     screens: [
       {
         type: 'owl',
         owl: 'owl_excited',
         text: 'Nice work today! Before you go, take a moment to check in one more time.',
       },
-      {
-        type: 'ratings',
-        heading: 'After your practice',
-        sub: 'Move each slider to show how you feel right now.',
-        items: CHECKIN_ITEMS,
-      },
+      { type: 'vas_package', slug: POST_CHECKIN_PACKAGE_SLUG },
     ],
     finalButtonLabel: 'Next',
   },

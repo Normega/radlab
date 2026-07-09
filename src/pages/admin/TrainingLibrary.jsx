@@ -128,8 +128,10 @@ export default function TrainingLibrary() {
 
         <p style={{ fontFamily: 'DM Sans', fontSize: 12, color: 'var(--tx3)', margin: '8px 2px 0' }}>
           These screens wrap every practice module: Welcome → Check-in → Practice → Check-in → Farewell.
-          Check-in rating items are placeholders pending final wording — edit{' '}
-          <span style={{ fontFamily: 'Space Mono', fontSize: 11 }}>src/components/study/wrapperElements.js</span>.
+          Check-in contents render live from the VAS packages{' '}
+          <span style={{ fontFamily: 'Space Mono', fontSize: 11 }}>liliana_pre_intervention_ratings</span> /{' '}
+          <span style={{ fontFamily: 'Space Mono', fontSize: 11 }}>liliana_post_intervention_ratings</span>{' '}
+          — edit those at /admin/vas; the demo here can't drift from what participants see.
         </p>
       </div>
 

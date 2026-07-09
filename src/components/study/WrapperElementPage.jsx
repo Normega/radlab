@@ -1,29 +1,50 @@
 import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { supabase } from '../../lib/supabase'
 import { interventionStyles as S, OwlScreen } from './InterventionPage'
 import { SESSION_SLOT_LABELS } from './wrapperElements'
+import VasRenderer from '../vas/VasRenderer'
 
-// Renders one standard session wrapper element (welcome / check-in / farewell)
-// in the same visual system as InterventionPage, with the 5-step progress bar
-// showing this element's actual position in the session sequence.
-// Preview-only for now: nothing is saved.
+// Renders one standard session wrapper element (welcome / check-in / farewell).
+// Owl screens use the InterventionPage visual system with the 5-step progress
+// bar; vas_package screens render the live package contents through the real
+// participant-facing VasRenderer (previewMode — nothing saved), full-bleed,
+// exactly as the session runner delivers the check-in steps. Preview-only.
 
 export default function WrapperElementPage({ element, onComplete }) {
   const screens = element.screens
-  const [screenIndex, setScreenIndex] = useState(0)
+  const [screenIndex,   setScreenIndex]   = useState(0)
+  const [pkgScaleIndex, setPkgScaleIndex] = useState(0)
 
-  // Slider state: { `${screenIdx}:${itemId}`: value }; touched mirrors it
-  const [values,  setValues]  = useState({})
-  const [touched, setTouched] = useState({})
+  // At most one vas_package screen per element; fetch its scales in item order.
+  const pkgSlug = screens.find(s => s.type === 'vas_package')?.slug ?? null
+
+  const { data: pkgScales, isLoading: pkgLoading, error: pkgError } = useQuery({
+    queryKey: ['wrapper-vas-package', pkgSlug],
+    enabled:  !!pkgSlug,
+    queryFn:  async () => {
+      const { data: pkg, error } = await supabase
+        .from('vas_packages')
+        .select('items, scale_ids')
+        .eq('slug', pkgSlug)
+        .single()
+      if (error) throw error
+      const ids = (pkg.items ?? (pkg.scale_ids ?? []).map(id => ({ type: 'vas', id })))
+        .filter(x => x.type === 'vas')
+        .map(x => x.id)
+      const { data: scales, error: e2 } = await supabase
+        .from('vas_scales')
+        .select('*')
+        .in('id', ids)
+      if (e2) throw e2
+      return ids.map(id => (scales ?? []).find(s => s.id === id)).filter(Boolean)
+    },
+  })
 
   const current = screens[screenIndex]
   const isLast  = screenIndex === screens.length - 1
 
-  const nextEnabled =
-    current.type !== 'ratings' ||
-    current.items.every(item => touched[`${screenIndex}:${item.id}`])
-
   function handleNext() {
-    if (!nextEnabled) return
     if (isLast) onComplete()
     else setScreenIndex(i => i + 1)
   }
@@ -31,6 +52,45 @@ export default function WrapperElementPage({ element, onComplete }) {
   function stepState(i) {
     return i < element.slot ? 'done' : i === element.slot ? 'active' : 'upcoming'
   }
+
+  // ── vas_package screens: the real check-in step, full-bleed ───────────────
+
+  if (current.type === 'vas_package') {
+    if (pkgLoading) {
+      return <div style={PKG.msg}>Loading check-in scales…</div>
+    }
+    if (pkgError || !pkgScales?.length) {
+      return (
+        <div style={{ ...PKG.msg, color: '#c0392b' }}>
+          Could not load VAS package "{current.slug}"
+          {pkgError ? ` — ${pkgError.message}` : ' (no scales found)'}.
+          Check it at /admin/vas.
+        </div>
+      )
+    }
+
+    const scale = pkgScales[Math.min(pkgScaleIndex, pkgScales.length - 1)]
+    return (
+      <VasRenderer
+        key={scale.id}
+        scale={scale}
+        userId={null}
+        previewMode
+        partNumber={pkgScaleIndex + 1}
+        totalParts={pkgScales.length}
+        onComplete={() => {
+          if (pkgScaleIndex + 1 < pkgScales.length) {
+            setPkgScaleIndex(i => i + 1)
+          } else {
+            setPkgScaleIndex(0)
+            handleNext()
+          }
+        }}
+      />
+    )
+  }
+
+  // ── owl screens: InterventionPage chrome ───────────────────────────────────
 
   return (
     <div style={S.bg}>
@@ -80,58 +140,13 @@ export default function WrapperElementPage({ element, onComplete }) {
           {current.type === 'owl' && (
             <OwlScreen owl={current.owl} text={current.text} />
           )}
-
-          {current.type === 'ratings' && (
-            <div>
-              {current.heading && <h3 style={S.textH3}>{current.heading}</h3>}
-              {current.sub     && <p  style={S.textP}>{current.sub}</p>}
-              {current.items.map(item => {
-                const key     = `${screenIndex}:${item.id}`
-                const value   = values[key] ?? 50
-                const isMoved = !!touched[key]
-                return (
-                  <div key={item.id} style={{ marginBottom: 18 }}>
-                    <p style={S.promptLabel}>{item.prompt}</p>
-                    <div style={S.sliderWrap}>
-                      <input
-                        type="range"
-                        min={0}
-                        max={100}
-                        value={value}
-                        onChange={e => {
-                          const v = Number(e.target.value)
-                          setValues(prev => ({ ...prev, [key]: v }))
-                          if (!isMoved) setTouched(prev => ({ ...prev, [key]: true }))
-                        }}
-                        style={{ ...S.bigSlider, accentColor: isMoved ? '#639922' : '#c0bdb8' }}
-                      />
-                      <div style={S.sliderLabels}>
-                        <span style={{ whiteSpace: 'pre-line' }}>{item.min_label}</span>
-                        <span style={{ ...S.sliderVal, color: isMoved ? '#639922' : '#c0bdb8' }}>
-                          {isMoved ? value : '—'}
-                        </span>
-                        <span style={{ whiteSpace: 'pre-line', textAlign: 'right' }}>{item.max_label}</span>
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          )}
         </div>
 
         {/* Footer */}
         <div style={S.footer}>
           <button
             onClick={handleNext}
-            disabled={!nextEnabled}
-            style={
-              isLast && element.finalButtonGreen
-                ? S.btnDone
-                : !nextEnabled
-                  ? { ...S.btnNext, ...S.btnDisabled }
-                  : S.btnNext
-            }
+            style={isLast && element.finalButtonGreen ? S.btnDone : S.btnNext}
           >
             {isLast ? element.finalButtonLabel : 'Next'}
           </button>
@@ -140,4 +155,13 @@ export default function WrapperElementPage({ element, onComplete }) {
       </div>
     </div>
   )
+}
+
+const PKG = {
+  msg: {
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    minHeight: 300, padding: 40, textAlign: 'center',
+    fontFamily: '"DM Sans",system-ui,sans-serif',
+    fontSize: 15, color: '#888780',
+  },
 }

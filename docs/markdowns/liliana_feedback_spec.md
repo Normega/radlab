@@ -121,6 +121,22 @@ Checkable: backend + invisible wiring; verify via a dry-run session then SQL row
 Checkable: run one training session end-to-end; six `vas_responses` rows land with `schedule_id` set.
 `/admin/training` Check-in demo cards show the real package items.
 
+**Status — implemented 2026-07-09.**
+- Discovery during implementation: 11 Liliana daily-training session templates already existed
+  (P1 D1 ×3 conditions, P1 D2–4 NR, P2 D1 ×3 conditions, P2 D2–4 NR), carrying the check-ins as
+  **six individual single-scale VAS steps** — which would have defeated WP-L1's pre/post stress
+  disambiguation (single-scale steps write `package_slug = null`, so the two stress responses per
+  session would be indistinguishable). All 11 converted in one SQL transaction to the canonical
+  3-step shape `Check-in (pre) [pre package] → training module → Check-in (post) [post package]`;
+  verified by re-query. The remaining ~23 daily templates must be authored with the same shape
+  (SessionBuilder: add the two packages from the activity picker around the training step).
+- `/admin/training` wrapper demo aligned: `wrapperElements.js` check-in elements now reference the
+  package slugs (exported as `PRE_/POST_CHECKIN_PACKAGE_SLUG`); `WrapperElementPage` fetches the
+  live package + scales and renders them through the real participant-facing `VasRenderer`
+  (previewMode, full-bleed — exactly what the session runner delivers, no second copy to drift).
+  Placeholder `CHECKIN_ITEMS` (valence/energy/stress sliders) deleted; TrainingLibrary footnote
+  updated to point at /admin/vas.
+
 ### WP-L3 — Metrics view, snapshot table, RPCs (migration)
 
 - **View `liliana_session_metrics`** (`security_invoker`, like `assignment_balance`): one row per
