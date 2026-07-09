@@ -522,11 +522,11 @@ export default function ExperimentBuilder() {
 
   // Graph mutation callbacks
   const callbacks = useMemo(() => ({
-    addSessionToBlock: (blockId) => {
-      const nid = newId()
-      mutate(g => addSessionToBlock(g, blockId, { id: nid }), { resetLayout: true })
-      setSelectedId(nid)
-    },
+    // Selection deliberately stays on the block/counterbalance itself here —
+    // adding a child shouldn't shift focus away from the parent the user is
+    // working in; the user picks what to select next.
+    addSessionToBlock: (blockId) =>
+      mutate(g => addSessionToBlock(g, blockId), { resetLayout: true }),
     duplicateBlock: (blockId) =>
       mutate(g => duplicateBlock(g, blockId), { resetLayout: true }),
     addArm: (randomizeId) =>
@@ -547,11 +547,8 @@ export default function ExperimentBuilder() {
         return addArmEntry(withChild, randomizeId, armIndex, { type: 'block', label: 'New Block', children: [childId] })
       }, { resetLayout: true })
     },
-    addBlockToCounterbalance: (counterbalanceId) => {
-      const nid = newId()
-      mutate(g => addBlockToCounterbalance(g, counterbalanceId, nid), { resetLayout: true })
-      setSelectedId(nid)
-    },
+    addBlockToCounterbalance: (counterbalanceId) =>
+      mutate(g => addBlockToCounterbalance(g, counterbalanceId), { resetLayout: true }),
   }), [mutate])
 
   // Derive RF nodes/edges
@@ -597,6 +594,10 @@ export default function ExperimentBuilder() {
   //                            timepoint goes after the whole group
   //   nothing selected       → append to end of chain
 
+  // None of these reselect the newly-added node — selection is left alone
+  // so the camera stays on whatever the user was already focused on; the
+  // user clicks the new node themselves if that's what they want to look at.
+
   function handleAddTimepoint() {
     const nid = newId()
     mutate(g => {
@@ -605,52 +606,43 @@ export default function ExperimentBuilder() {
       const data   = { id: nid, type: 'timepoint', day_offset: offset, time_of_day: null, label: `Day ${offset + 1}` }
       return after ? insertAfter(g, after, data) : addNode(g, data)
     }, { resetLayout: true })
-    setSelectedId(nid)
   }
 
   function handleAddSession() {
-    const nid = newId()
     mutate(g => {
       const after = insertionPoint(g, selectedId)
-      const data  = { id: nid, type: 'session', session_template_id: null, link_expires_hours: 48, label: 'New Session' }
+      const data  = { id: newId(), type: 'session', session_template_id: null, link_expires_hours: 48, label: 'New Session' }
       return after ? insertAfter(g, after, data) : addNode(g, data)
     }, { resetLayout: true })
-    setSelectedId(nid)
   }
 
   function handleAddBlock() {
-    const nid = newId()
     mutate(g => {
       const after   = insertionPoint(g, selectedId)
       const childId = newId()
       const withChild = { ...g, nodes: [...g.nodes, { id: childId, type: 'session', session_template_id: null, link_expires_hours: 48, label: 'Session 1' }] }
-      const data    = { id: nid, type: 'block', label: 'New Block', children: [childId] }
+      const data    = { id: newId(), type: 'block', label: 'New Block', children: [childId] }
       return after ? insertAfter(withChild, after, data) : addNode(withChild, data)
     }, { resetLayout: true })
-    setSelectedId(nid)
   }
 
   function handleAddRandomize() {
-    const nid = newId()
     mutate(g => {
       const after = insertionPoint(g, selectedId)
       const data = {
-        id: nid, type: 'randomize', label: 'New Randomize',
+        id: newId(), type: 'randomize', label: 'New Randomize',
         arms: [{ group: '', weight: 1, entry: null }, { group: '', weight: 1, entry: null }],
       }
       return after ? insertAfter(g, after, data) : addNode(g, data)
     }, { resetLayout: true })
-    setSelectedId(nid)
   }
 
   function handleAddCounterbalance() {
-    const nid = newId()
     mutate(g => {
       const after = insertionPoint(g, selectedId)
-      const data = { id: nid, type: 'counterbalance', label: 'New Counterbalance', block_ids: [] }
+      const data = { id: newId(), type: 'counterbalance', label: 'New Counterbalance', block_ids: [] }
       return after ? insertAfter(g, after, data) : addNode(g, data)
     }, { resetLayout: true })
-    setSelectedId(nid)
   }
 
   // A Block/Counterbalance owns its children via an array (block.children /
