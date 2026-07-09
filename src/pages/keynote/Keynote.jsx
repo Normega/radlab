@@ -166,7 +166,7 @@ function DemoLink({ href, label, sub }) {
   )
 }
 
-// ── Slides (1–25) ───────────────────────────────────────────────────────────
+// ── Slides (1–26) ───────────────────────────────────────────────────────────
 
 const SLIDES = [
   // 1 — Title
@@ -373,6 +373,7 @@ const SLIDES = [
           'Misses: arousal stays flat.',
           'Holds across all five studies — BF01 = 8.7 to 29.6 support the null on misses.',
         ]} />
+        <Lead>Same body, different feeling: arousal follows detection, not magnitude — the Moderate position.</Lead>
         <Detail density={d}>
           The body changed by the same amount on hits and misses. Felt arousal tracked the change only
           when the change was consciously detected — evidence for the detection-gating (moderate) position.
@@ -397,7 +398,27 @@ const SLIDES = [
     ),
   },
 
-  // 14 — MAIA intro
+  // 14 — Discussion / transition: what the behaviour settles
+  {
+    note: 'Spoken: this is the pivot. Close the behavioural story on the Moderate position, resolving the vignette’s two-clinician dispute, then open the two follow-on questions. Flag that the imaging ahead is a separate paradigm — sustained interoceptive attention, not the BCAT.',
+    render: (d) => (
+      <Frame kicker="What the behaviour settles">
+        <H2>Feeling is gated by detection</H2>
+        <Bullets items={[
+          'Not the body alone (Constitutive): the same paced change felt different only when it was noticed.',
+          'Not meaning alone (Constructivist): arousal scaled with real magnitude — but only once detected.',
+          'The Moderate position: detection is the gate between bodily change and felt arousal.',
+        ]} />
+        <Lead>The vignette’s two clinicians each held one lever. Two questions remain: do people know their own detection — and what does detection look like in the brain?</Lead>
+        <Detail density={d}>
+          The imaging that follows comes from a separate line of work on sustained interoceptive attention,
+          not the BCAT — a bridge still being built. Read it as convergent mechanism, not the same task.
+        </Detail>
+      </Frame>
+    ),
+  },
+
+  // 15 — MAIA intro
   {
     render: (d) => (
       <Frame kicker="Self-report awareness">
@@ -424,7 +445,7 @@ const SLIDES = [
     ),
   },
 
-  // 15 — MAIA: confidence not sensitivity
+  // 16 — MAIA: confidence not sensitivity
   {
     note: 'Illustrative scatterplots rendered from the reported correlations (confidence r = .260; sensitivity r = .071). Swap for supplementary figures if preferred.',
     render: (d) => (
@@ -443,7 +464,7 @@ const SLIDES = [
     ),
   },
 
-  // 16 — Cortical deactivation
+  // 17 — Cortical deactivation
   {
     note: 'Figure: eNeuro (Farb, Zuo & Price 2023) Figure 3 — whole-brain deactivation maps for breath vs visual attention.',
     render: (d) => (
@@ -462,7 +483,7 @@ const SLIDES = [
     ),
   },
 
-  // 17 — ACC sparing by awareness
+  // 18 — ACC sparing by awareness
   {
     note: 'Figure: eNeuro (Farb, Zuo & Price 2023) Figure 4 — MAIA covariate brain map and scatterplot.',
     render: (d) => (
@@ -477,7 +498,7 @@ const SLIDES = [
     ),
   },
 
-  // 18 — ACC-DAN connectivity
+  // 19 — ACC-DAN connectivity
   {
     note: 'Figure: eNeuro (Farb, Zuo & Price 2023) — dorsal attention network maps (same figure as slide 16, DAN panel).',
     render: (d) => (
@@ -492,7 +513,7 @@ const SLIDES = [
     ),
   },
 
-  // 19 — Schematic recap (visual only)
+  // 20 — Schematic recap (visual only)
   {
     render: () => (
       <Frame kicker="Putting it together">
@@ -501,7 +522,7 @@ const SLIDES = [
     ),
   },
 
-  // 20 — Decodable and trainable
+  // 21 — Decodable and trainable
   {
     note: 'Figures: EJN (Zuo, Price & Farb 2023) Fig 5 or 9 — classification map; Brain Sci (Price, Sevinc & Farb 2023) Fig 2C or 3B — connectivity increase with MABT training.',
     render: (d) => (
@@ -523,7 +544,7 @@ const SLIDES = [
     ),
   },
 
-  // 21 — Meaning, detection habits
+  // 22 — Meaning, detection habits
   {
     render: (d) => (
       <Frame kicker="Back to meaning">
@@ -541,7 +562,7 @@ const SLIDES = [
     ),
   },
 
-  // 22 — The third lever (synthesis · vignette resolution)
+  // 23 — The third lever (synthesis · vignette resolution)
   {
     render: () => (
       <Frame kicker="The third lever">
@@ -557,7 +578,7 @@ const SLIDES = [
     ),
   },
 
-  // 23 — Callback to opening votes (image only)
+  // 24 — Callback to opening votes (image only)
   {
     note: 'Spoken, not on slide: return to the opening votes. Compare the room’s split to the hit/miss arousal pattern just shown.',
     render: () => (
@@ -567,7 +588,7 @@ const SLIDES = [
     ),
   },
 
-  // 24 — Closer demo (live)
+  // 25 — Closer demo (live)
   {
     note: 'Live strap demo. Open in a new tab: pairing → calibration → paced trials → change-detection trials. Return here after.',
     render: () => (
@@ -579,7 +600,7 @@ const SLIDES = [
     ),
   },
 
-  // 25 — Thank you
+  // 26 — Thank you
   {
     render: () => (
       <Frame>
