@@ -166,7 +166,7 @@ function DemoLink({ href, label, sub }) {
   )
 }
 
-// ── Slides (1–26) ───────────────────────────────────────────────────────────
+// ── Slides (1–27) ───────────────────────────────────────────────────────────
 
 const SLIDES = [
   // 1 — Title
@@ -305,6 +305,7 @@ const SLIDES = [
   {
     render: (d) => (
       <Frame kicker="Breath Change Awareness Task (BCAT)">
+        <Lead>What you just did — breathe with the circle, then judge whether the pace changed — is one BCAT trial.</Lead>
         <Bullets items={[
           'Breath rate can be paced, changed by a known amount, and verified with a belt.',
           'This separates detection from magnitude for the first time.',
@@ -464,7 +465,23 @@ const SLIDES = [
     ),
   },
 
-  // 17 — Cortical deactivation
+  // 17 — Bridge into the imaging task
+  {
+    note: 'Figure: fMRI task conditions (breath vs visual attention blocks) — eNeuro (Farb, Zuo & Price 2023) task design. This is the hand-off into the imaging work: say plainly we are leaving the BCAT and entering a separate sustained-attention paradigm. Drop the image at public/keynote/fig-fmri-conditions.png.',
+    render: (d) => (
+      <Frame wide kicker="Into the scanner">
+        <H2>A different task: sustained attention to the breath</H2>
+        <Figure src="/keynote/fig-fmri-conditions.png" alt="fMRI task conditions: alternating breath-attention and visual-attention blocks" missingLabel="fMRI task conditions" maxH="58vh" />
+        <Bullets items={[
+          'In the scanner, attention alternates between the breath and a visual target while we image the brain.',
+          'This is sustained interoceptive attention — not the BCAT’s trial-by-trial rate-change detection.',
+        ]} />
+        <Lead>A separate paradigm — read the brain results as convergent mechanism, not the same task.</Lead>
+      </Frame>
+    ),
+  },
+
+  // 18 — Cortical deactivation
   {
     note: 'Figure: eNeuro (Farb, Zuo & Price 2023) Figure 3 — whole-brain deactivation maps for breath vs visual attention.',
     render: (d) => (
@@ -483,7 +500,7 @@ const SLIDES = [
     ),
   },
 
-  // 18 — ACC sparing by awareness
+  // 19 — ACC sparing by awareness
   {
     note: 'Figure: eNeuro (Farb, Zuo & Price 2023) Figure 4 — MAIA covariate brain map and scatterplot.',
     render: (d) => (
@@ -498,7 +515,7 @@ const SLIDES = [
     ),
   },
 
-  // 19 — ACC-DAN connectivity
+  // 20 — ACC-DAN connectivity
   {
     note: 'Figure: eNeuro (Farb, Zuo & Price 2023) — dorsal attention network maps (same figure as slide 16, DAN panel).',
     render: (d) => (
@@ -513,16 +530,17 @@ const SLIDES = [
     ),
   },
 
-  // 20 — Schematic recap (visual only)
+  // 21 — Schematic recap (visual only)
   {
     render: () => (
       <Frame kicker="Putting it together">
         <NeuralFlow />
+        <Lead>The ACC gates whether a bodily change reaches awareness.</Lead>
       </Frame>
     ),
   },
 
-  // 21 — Decodable and trainable
+  // 22 — Decodable and trainable
   {
     note: 'Figures: EJN (Zuo, Price & Farb 2023) Fig 5 or 9 — classification map; Brain Sci (Price, Sevinc & Farb 2023) Fig 2C or 3B — connectivity increase with MABT training.',
     render: (d) => (
@@ -544,7 +562,7 @@ const SLIDES = [
     ),
   },
 
-  // 22 — Meaning, detection habits
+  // 23 — Meaning, detection habits
   {
     render: (d) => (
       <Frame kicker="Back to meaning">
@@ -562,7 +580,7 @@ const SLIDES = [
     ),
   },
 
-  // 23 — The third lever (synthesis · vignette resolution)
+  // 24 — The third lever (synthesis · vignette resolution)
   {
     render: () => (
       <Frame kicker="The third lever">
@@ -578,17 +596,21 @@ const SLIDES = [
     ),
   },
 
-  // 24 — Callback to opening votes (image only)
+  // 25 — Callback to opening votes (image only)
   {
     note: 'Spoken, not on slide: return to the opening votes. Compare the room’s split to the hit/miss arousal pattern just shown.',
-    render: () => (
+    render: (d) => (
       <Frame>
         <PacerAttentionIllustration />
+        <Detail density={d}>
+          Back to the room: your votes split the same way the data did — what you felt tracked whether you
+          noticed the change, not the change itself.
+        </Detail>
       </Frame>
     ),
   },
 
-  // 25 — Closer demo (live)
+  // 26 — Closer demo (live)
   {
     note: 'Live strap demo. Open in a new tab: pairing → calibration → paced trials → change-detection trials. Return here after.',
     render: () => (
@@ -600,7 +622,7 @@ const SLIDES = [
     ),
   },
 
-  // 26 — Thank you
+  // 27 — Thank you
   {
     render: () => (
       <Frame>
@@ -622,6 +644,7 @@ const FIGURE_PRELOAD = [
   '/keynote/fig-staircase.png',
   '/keynote/fig-detection-curve.png',
   '/keynote/fig-arousal-gating.png',
+  '/keynote/fig-fmri-conditions.png',
   '/keynote/fig-eneuro-3.png',
   '/keynote/fig-eneuro-4a.png',
   '/keynote/fig-eneuro-4b.png',
