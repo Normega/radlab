@@ -90,17 +90,33 @@ function autoLayout(graph) {
   return positions
 }
 
-// Camera habit: pin whatever is currently leftmost/topmost to the viewport's
-// top-left corner (a small margin in), instead of React Flow's default
-// fitView (which zooms to fit the *whole* graph and re-centers it — fighting
-// a stable top-left anchor and shrinking text on a narrow viewport). Zoom is
-// left untouched so a manual zoom the user made isn't overridden.
+// Camera habit: pin a given graph point to the viewport's top-left corner
+// (a small margin in), instead of React Flow's default fitView (which zooms
+// to fit the *whole* graph and re-centers it — fighting a stable anchor and
+// shrinking text on a narrow viewport). Zoom is left untouched so a manual
+// zoom the user made isn't overridden.
+function pinViewport(instance, x, y) {
+  if (!instance) return
+  const zoom = instance.getZoom()
+  instance.setViewport({ x: VIEWPORT_MARGIN - x * zoom, y: VIEWPORT_MARGIN - y * zoom, zoom })
+}
+
 function pinViewportTopLeft(instance, nodes) {
   if (!instance || nodes.length === 0) return
   const minX = Math.min(...nodes.map(n => n.position.x))
   const minY = Math.min(...nodes.map(n => n.position.y))
-  const zoom = instance.getZoom()
-  instance.setViewport({ x: VIEWPORT_MARGIN - minX * zoom, y: VIEWPORT_MARGIN - minY * zoom, zoom })
+  pinViewport(instance, minX, minY)
+}
+
+// Keep the camera on whatever's currently selected — a newly-added node
+// auto-selects itself, so this is what makes new elements show up in frame
+// instead of landing wherever the layout happened to put them. Falls back
+// to the leftmost/topmost node when nothing's selected (e.g. on first load).
+function pinViewportToSelection(instance, nodes, selectedId) {
+  if (!instance) return
+  const node = selectedId ? nodes.find(n => n.id === selectedId) : null
+  if (node) pinViewport(instance, node.position.x, node.position.y)
+  else pinViewportTopLeft(instance, nodes)
 }
 
 // Determine insertion point based on current selection:
@@ -545,19 +561,22 @@ export default function ExperimentBuilder() {
   )
   const rfEdges = useMemo(() => graphToRfEdges(graph), [graph])
 
-  // Camera habit: re-pin the viewport to the top-left corner whenever the
-  // set of rendered nodes changes (an add/remove), not on every render — a
-  // drag or a label edit shouldn't yank the camera out from under the user.
+  // Camera habit: keep the selected node pinned at the top-left, so adding a
+  // new element (which auto-selects itself) or clicking another node always
+  // brings the focus into frame — re-pin whenever the selection or the set
+  // of rendered nodes changes, not on every render (a drag or a label edit
+  // shouldn't yank the camera out from under the user).
   const nodeIdsKey = useMemo(() => rfNodes.map(n => n.id).sort().join('|'), [rfNodes])
   useEffect(() => {
-    pinViewportTopLeft(rfInstanceRef.current, rfNodes)
-    // Deliberately keyed on nodeIdsKey (structural changes only), not rfNodes.
+    pinViewportToSelection(rfInstanceRef.current, rfNodes, selectedId)
+    // Deliberately keyed on selectedId/nodeIdsKey (not rfNodes/positions),
+    // so dragging or editing a label doesn't move the camera.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nodeIdsKey])
+  }, [selectedId, nodeIdsKey])
 
   function handleRfInit(instance) {
     rfInstanceRef.current = instance
-    pinViewportTopLeft(instance, rfNodes)
+    pinViewportToSelection(instance, rfNodes, selectedId)
   }
 
   // Only sync position changes from RF
