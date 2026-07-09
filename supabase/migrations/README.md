@@ -86,6 +86,7 @@ truth — the live schema is. Evidence below is either `history: <recorded name>
 | `20260707_profiles_prevent_privilege_escalation.sql` | live: `prevent_self_privilege_escalation/0`, trigger `profiles_prevent_privesc` |
 | `20260708_phase2_draw_assignment.sql` | live: `draw_assignment/3` (3-arg service-role variant); verified live 2026-07-08 (website.md §28 Phase 2 Pass 1) |
 | `20260708_vas_schedule_linkage.sql` | history: `vas_schedule_linkage`; live: `vas_responses.schedule_id`/`package_slug`, `liliana_day_data.module_id` |
+| `20260709_liliana_feedback_backend.sql` | history: `liliana_feedback_backend` (+ three follow-up statements applied directly and folded into the file: schedule FK → ON DELETE SET NULL, kind CHECK gains 'choice'); live: `liliana_session_metrics` view, `liliana_midpoint_feedback` table, `get_liliana_midpoint_summary/1`, `record_practice_decision/3`, patched `draw_assignment/3` — full synthetic-data verification 2026-07-09 |
 
 ## Undated files in this directory
 

@@ -167,6 +167,26 @@ Checkable: run one training session end-to-end; six `vas_responses` rows land wi
 
 Checkable: backend-only; verified by SQL against seeded test data.
 
+**Status — implemented, applied, and fully verified live 2026-07-09**
+(migration `20260709_liliana_feedback_backend.sql`). Verification ran the whole pipeline against
+synthetic 12-session Phase 1 data (self-compassion engineered best, reappraisal middle,
+non-reactivity worst) in a self-cleaning batch:
+- View pivots matched hand-computed values exactly (Δstress −0.25 / 1.0 / 3.0; appraisal 2.5 / 4.25 / 5.75).
+- `get_liliana_midpoint_summary()` ranked SC > RA > NR (v1 composites 1.18 / −0.06 / −1.12), snapshot
+  idempotent, `midpoint_group` backfilled after a later `draw_assignment('midpoint_group')`.
+- Choice path: assignment row `kind='choice'`, `draw_index=null`, snapshot + `midpoint_completed_at`
+  stamped; a second call attempting a different practice returned the original with `already_decided`.
+- Owl path: uses the drawn value (client-passed practice ignored); empty-data participants get a
+  graceful all-`low_n` ranking.
+- **Patch proven**: with a choice row already at the fork node, the next balanced draw got
+  `draw_index = 0` — decisions don't consume cycle positions.
+- Two schema fixes caught by live testing, folded into the migration: `participant_assignments.kind`
+  CHECK didn't allow `'choice'`; `vas_responses.schedule_id` FK lacked ON DELETE (would have blocked
+  the study-delete cascade) — now SET NULL.
+- Implementation detail: the view links check-ins to conditions by (profile, module) via the
+  schedule's session template training node — immune to day-numbering drift between
+  `participant_schedule.study_day` and `liliana_day_data.study_day` (which count different things).
+
 ### WP-L4 — Midpoint step component
 
 - New step category `midpoint`: SessionBuilder picker entry + `StepDispatcher` case →
