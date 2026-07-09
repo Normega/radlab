@@ -62,4 +62,6 @@ Discovered May 2026: `stillwater_responses` had an anon-only INSERT policy; `dri
 
 ## Migration convention
 
-All Supabase migrations live in `.\supabase\migrations\` and are named `YYYYMMDD_description.sql` (e.g. `20260606_compensation_form.sql`). **Never write migration SQL to the project root.** Run migrations manually in the Supabase SQL editor.
+All Supabase migrations live in `.\supabase\migrations\` and are named `YYYYMMDD_description.sql` (e.g. `20260606_compensation_form.sql`). **Never write migration SQL to the project root.** Run migrations manually in the Supabase SQL editor, or via the Supabase MCP `apply_migration` tool.
+
+**Applied-status manifest**: `supabase/migrations/README.md` records that every migration file up to 2026-07-08 is confirmed applied to the live project (with evidence per file). Do not re-audit those; only migrations dated after 2026-07-08 need checking. When you apply a new migration, add a row to that manifest.
