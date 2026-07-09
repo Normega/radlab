@@ -467,11 +467,11 @@ const SLIDES = [
 
   // 17 — Bridge into the imaging task
   {
-    note: 'Figure: fMRI task conditions (breath vs visual attention blocks) — eNeuro (Farb, Zuo & Price 2023) task design. This is the hand-off into the imaging work: say plainly we are leaving the BCAT and entering a separate sustained-attention paradigm. Drop the image at public/keynote/fig-fmri-conditions.png.',
+    note: 'Figure: fMRI task conditions (breath vs visual attention blocks) — eNeuro (Farb, Zuo & Price 2023) task design. This is the hand-off into the imaging work: say plainly we are leaving the BCAT and entering a separate sustained-attention paradigm. Figure: public/keynote/fig-fmri-conditions.webp.',
     render: (d) => (
       <Frame wide kicker="Into the scanner">
         <H2>A different task: sustained attention to the breath</H2>
-        <Figure src="/keynote/fig-fmri-conditions.png" alt="fMRI task conditions: alternating breath-attention and visual-attention blocks" missingLabel="fMRI task conditions" maxH="58vh" />
+        <Figure src="/keynote/fig-fmri-conditions.webp" alt="fMRI task conditions: alternating breath-attention and visual-attention blocks" missingLabel="fMRI task conditions" maxH="58vh" />
         <Bullets items={[
           'In the scanner, attention alternates between the breath and a visual target while we image the brain.',
           'This is sustained interoceptive attention — not the BCAT’s trial-by-trial rate-change detection.',
@@ -644,7 +644,7 @@ const FIGURE_PRELOAD = [
   '/keynote/fig-staircase.png',
   '/keynote/fig-detection-curve.png',
   '/keynote/fig-arousal-gating.png',
-  '/keynote/fig-fmri-conditions.png',
+  '/keynote/fig-fmri-conditions.webp',
   '/keynote/fig-eneuro-3.png',
   '/keynote/fig-eneuro-4a.png',
   '/keynote/fig-eneuro-4b.png',
