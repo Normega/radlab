@@ -60,24 +60,51 @@ function lpStep(x, st) {
 // ── Offline filtfilt (zero-phase, forward then reverse) ───────────────────
 // Used only during calibration fitting and review graph generation.
 // Do NOT use for live processing — use processPacketMLR() instead.
+//
+// Edge padding: the tight-bandpass second stage has a pole radius of
+// ~0.9984 (T_S1_A2), giving a settling time constant of ~600 samples
+// (~3s at the ~200Hz accel rate) and needing ~5 time constants (~3000
+// samples, ~15s) to fully decay. Filtering raw (unpadded), a cold
+// zero-state start distorts the first several seconds of every array —
+// e.g. the BreathBelt demo re-filters the whole accumulated session for
+// each trial's graph, so early trials (with little real signal ahead of
+// them) sit inside that warm-up transient and their belt-signal troughs
+// come out too corrupted to detect, while later trials (more real
+// preceding signal) don't. Odd-reflection padding (matching scipy's
+// filtfilt default) gives the filter believable "runway" before sample 0
+// so it's settled by the time real data starts, without needing minutes
+// of unrelated prior recording.
+
+const FILTFILT_PAD_SAMPLES = 3000   // ~15s at ~200Hz — see settling-time note above
+
+function oddExtend(sig, n) {
+  const left = []
+  for (let k = n; k >= 1; k--) left.push(2 * sig[0] - sig[k])
+  const right = []
+  const last = sig.length - 1
+  for (let k = 1; k <= n; k++) right.push(2 * sig[last] - sig[last - k])
+  return [...left, ...sig, ...right]
+}
+
+function runFiltfilt(sig, step, stateLen) {
+  const n = Math.min(FILTFILT_PAD_SAMPLES, sig.length - 1)
+  const padded = n > 0 ? oddExtend(sig, n) : sig
+  let st = Array(stateLen).fill(0)
+  const fwd = padded.map(x => { const [y, s] = step(x, st); st = s; return y })
+  st = Array(stateLen).fill(0)
+  const bwd = [...fwd].reverse()
+    .map(x => { const [y, s] = step(x, st); st = s; return y })
+    .reverse()
+  return n > 0 ? bwd.slice(n, bwd.length - n) : bwd
+}
 
 function filtfiltAxis(sig, variant) {
   const step = variant === 'tight' ? biquadStepTight : biquadStepWide
-  let st = [0, 0, 0, 0]
-  const fwd = sig.map(x => { const [y, s] = step(x, st); st = s; return y })
-  st = [0, 0, 0, 0]
-  return [...fwd].reverse()
-    .map(x => { const [y, s] = step(x, st); st = s; return y })
-    .reverse()
+  return runFiltfilt(sig, step, 4)
 }
 
 function filtfiltLP(sig) {
-  let st = [0, 0]
-  const fwd = sig.map(x => { const [y, s] = lpStep(x, st); st = s; return y })
-  st = [0, 0]
-  return [...fwd].reverse()
-    .map(x => { const [y, s] = lpStep(x, st); st = s; return y })
-    .reverse()
+  return runFiltfilt(sig, lpStep, 2)
 }
 
 // ── Filter all three axes (offline) ──────────────────────────────────────

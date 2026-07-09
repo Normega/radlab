@@ -1,6 +1,6 @@
-// v2 — conference demo: Polar H10 pairing → MLR calibration → 3 paced trials
-// with post-trial graphs → 2 hardcoded "staircase" trials (speed up, slow down)
-// with speed-change/confidence/arousal ratings and a reveal graph.
+// v3 — conference demo: Polar H10 pairing → MLR calibration → straight to 3
+// hardcoded "staircase" trials (speed up, slow down, no change) with
+// speed-change/confidence/arousal ratings and a reveal graph.
 // Writes NOTHING: no Supabase, no CSV backup, no triggers (no-op sendTrigger).
 // Trial graphs are built from the live breathValue signal sampled against the
 // pacer (same SignalGraph as calibration) — so they render with a real belt AND
@@ -56,11 +56,28 @@ function classifyDirection(changeS) {
 
 function directionalAdherence(graph, baseMs, conditionMs) {
   const beltPts = graph?.beltPts
-  if (!beltPts || beltPts.length < 20) return null
+  if (!beltPts || beltPts.length < 20) {
+    console.log('[adherence] skipped: too few belt points', { have: beltPts?.length ?? 0, need: 20 })
+    return null
+  }
 
   const minSepMs = Math.min(baseMs, conditionMs) * 0.6   // avoid double-counting noise
   const troughs  = findTroughs(beltPts, minSepMs)
-  if (troughs.length < 5) return null   // need 5 troughs to bound 4 breaths
+  if (troughs.length < 5) {
+    // Signal-shape context: a flat / degenerate belt signal (tiny range)
+    // yields no real troughs. Report the value range and any troughs found
+    // (relative to window start) so a real run pins down the cause.
+    const vals = beltPts.map(p => p.value)
+    const lo = Math.min(...vals), hi = Math.max(...vals), t0 = beltPts[0].t
+    console.log('[adherence] skipped: too few troughs', {
+      found: troughs.length, need: 5,
+      beltPtsSpanMs: Math.round(beltPts[beltPts.length - 1].t - t0),
+      beltRange: Math.round((hi - lo) * 1000) / 1000,
+      minSepMs: Math.round(minSepMs),
+      troughOffsetsMs: troughs.map(t => Math.round(t.t - t0)),
+    })
+    return null   // need 5 troughs to bound 4 breaths
+  }
 
   // Take the last 5 troughs (bounding the 4 most recent breaths) in case of
   // spurious extra detections earlier in the window.
@@ -70,6 +87,12 @@ function directionalAdherence(graph, baseMs, conditionMs) {
   if (durS.length !== 4) return null
 
   const [d1, d2, d3, d4] = durS
+  const t0 = beltPts[0].t
+  console.log('[adherence] ok', {
+    troughsFound: troughs.length,
+    durS: durS.map(d => Math.round(d * 100) / 100),
+    troughOffsetsMs: t5.map(t => Math.round(t.t - t0)),
+  })
   const observedChange = (d3 + d4) / 2 - (d1 + d2) / 2
   const delta = (conditionMs - baseMs) / 1000   // positive = slower/longer, negative = faster/shorter
   const expectedLabel = delta === 0 ? 'same' : classifyDirection(delta)
@@ -77,7 +100,10 @@ function directionalAdherence(graph, baseMs, conditionMs) {
   // "Correct" per the paper's convention (sign match) only applies to change
   // trials; on same-pace trials (delta=0) we just check the observed label.
   const correct = delta === 0 ? observedLabel === 'same' : Math.sign(observedChange) === Math.sign(delta)
-  return { d1, d2, d3, d4, observedChange, delta, expectedLabel, observedLabel, correct }
+  // troughs: the 5 boundary points (breaths 1-4), returned so the reveal graph
+  // can mark exactly where detection fired — the quickest way to eyeball
+  // whether the detector is landing on real breath minima.
+  return { d1, d2, d3, d4, observedChange, delta, expectedLabel, observedLabel, correct, troughs: t5 }
 }
 
 // Build the trial graph with the EXACT procedure the calibration review uses
@@ -97,10 +123,29 @@ function directionalAdherence(graph, baseMs, conditionMs) {
 // session once, then slicing the trial window out of the result, gives
 // filtfilt full context and removes that edge transient from every trial
 // after the first. No downsampling here — SignalGraph thins its own path.
+//
+// Window padding: the belt signal is a LAGGED reconstruction of breathing
+// (mlr.lagMs, typically 50-300ms from calibration), so the belt-measured
+// trough for breath 4 can fall after the pacer-timed trialEndMs — clipping
+// it out of an exact [trialStart, trialEnd] window and leaving only 4
+// troughs where directionalAdherence needs 5. Pad the window by lag + a
+// safety margin so the true boundary troughs aren't cut off.
+//
+// Lag correction on the displayed sync: the person follows the pacer with a
+// roughly constant delay (mlr.lagMs). Comparing belt(t) against pacer(t)
+// therefore penalises the correlation for a delay that isn't a tracking
+// failure, making trial "sync" look worse than calibration for no real
+// reason. So the pacer reference is evaluated at t − lagMs (the pacer value
+// the person was actually responding to), matching how useTrialRunner scores
+// trialRCondition. This shifts ONLY the pacer curve + r; belt troughs (and so
+// directionalAdherence) are untouched.
 function buildCleanGraph(belt, res, basePeriodMs, changedPeriodMs, liveGraph) {
   const mlr = belt.mlrWeightsRef.current
   if (mlr && res?.trialStartMs != null && res?.trialEndMs != null) {
-    const t0 = res.trialStartMs, t1 = res.trialEndMs
+    const lagMs      = mlr.lagMs ?? 0
+    const leadPadMs  = 300
+    const trailPadMs = Math.max(500, lagMs + 300)
+    const t0 = res.trialStartMs - leadPadMs, t1 = res.trialEndMs + trailPadMs
     const allSamples = (belt.rawAccelRowsRef.current || [])
       .map(r => ({ t: r.packetTimestamp + r.sampleIndex * 5, x: r.x, y: r.y, z: r.z }))
       .sort((a, b) => a.t - b.t)
@@ -110,16 +155,51 @@ function buildCleanGraph(belt, res, basePeriodMs, changedPeriodMs, liveGraph) {
       for (let i = 0; i < allSamples.length; i++) {
         const t = allSamples[i].t
         if (t < t0 || t > t1) continue
-        pacerPts.push({ t, value: getPacerRadiusForTrial(t, t0, basePeriodMs, changedPeriodMs) })
+        // Pacer phase stays anchored to the true (unpadded) trial start; the
+        // t − lagMs shift aligns the reference to the participant's delayed
+        // response so the correlation isn't penalised for constant lag.
+        pacerPts.push({ t, value: getPacerRadiusForTrial(t - lagMs, res.trialStartMs, basePeriodMs, changedPeriodMs) })
         beltPts.push({ t, value: beltAll[i] })
       }
       if (beltPts.length > 20 && pacerPts.length > 20) {
         const r = pearsonRArrays(beltPts.map(p => p.value), pacerPts.map(p => p.value))
+        console.log('[buildCleanGraph] ok', {
+          trial: res.trialNum ?? '?', lagMs, r: Math.round(r * 100) / 100,
+          windowPts: beltPts.length, sessionSamples: allSamples.length,
+          leadGapMs: Math.round(beltPts[0].t - t0), trailGapMs: Math.round(t1 - beltPts[beltPts.length - 1].t),
+        })
         return { pacerPts, beltPts, r }
       }
+      console.log('[buildCleanGraph] skipped: too few windowed points', { beltPts: beltPts.length, pacerPts: pacerPts.length, allSamples: allSamples.length, windowMs: t1 - t0 })
+    } else {
+      console.log('[buildCleanGraph] skipped: too few raw accel samples', { have: allSamples.length, need: 80 })
     }
+  } else {
+    console.log('[buildCleanGraph] skipped: no MLR model or trial timestamps', { hasMlr: !!mlr, trialStartMs: res?.trialStartMs, trialEndMs: res?.trialEndMs })
   }
   return liveGraph
+}
+
+// Wait until the raw accel buffer holds samples past `untilMs`, so the belt's
+// lagged trailing trough (breath 4, which lands ~lagMs after trialEndMs) has
+// actually streamed in before we build the graph. On the FIRST trial the
+// Bluetooth pipeline is freshly warmed and the last packet can arrive late; a
+// fixed short wait then builds the graph one trough short (4 not 5), which is
+// exactly the "cards missing on trial 1 only" symptom. Polls up to maxWaitMs.
+// Returns immediately (false) when there's no belt buffer at all (sim mode).
+async function waitForCoverage(belt, untilMs, maxWaitMs = 2500) {
+  const rows = belt.rawAccelRowsRef.current
+  if (!rows || rows.length === 0) return false   // sim: no accel stream to wait on
+  const startedAt = Date.now()
+  const lastSampleMs = () => {
+    const arr = belt.rawAccelRowsRef.current
+    const last = arr[arr.length - 1]
+    return last ? last.packetTimestamp + last.sampleIndex * 5 : 0
+  }
+  while (lastSampleMs() < untilMs && Date.now() - startedAt < maxWaitMs) {
+    await new Promise(r => setTimeout(r, 50))
+  }
+  return lastSampleMs() >= untilMs
 }
 
 // Samples the live belt signal vs the pacer during a trial, then builds the
@@ -155,11 +235,11 @@ const BASE_MS   = BASE_BREATH_SPEED_S   * 1000  // 4000
 const FASTER_MS = FASTER_BREATH_SPEED_S * 1000  // 3000
 const SLOWER_MS = SLOWER_BREATH_SPEED_S * 1000  // 5000
 
-const PACED_TRIALS = 3
-// Hardcoded staircase demo trials: one speed up, then one slow down.
+// Hardcoded staircase demo trials: speed up, no-change catch trial, slow down.
 const STAIRCASE_TRIALS = [
-  { dir: 'faster', conditionMs: FASTER_MS, label: 'sped up',    detail: '4s → 3s breaths' },
-  { dir: 'slower', conditionMs: SLOWER_MS, label: 'slowed down', detail: '4s → 5s breaths' },
+  { dir: 'faster', conditionMs: FASTER_MS, label: 'sped up',        detail: '4s → 3s breaths' },
+  { dir: 'same',   conditionMs: BASE_MS,   label: 'stayed the same', detail: '4s breaths, no change' },
+  { dir: 'slower', conditionMs: SLOWER_MS, label: 'slowed down',    detail: '4s → 5s breaths' },
 ]
 
 const AVATAR_PROPS = { skinColor: '#FDBCB4', eyeColor: '#4A90D9', species: 'human' }
@@ -170,9 +250,8 @@ export default function BreathBeltDemo() {
   const isSimMode = new URLSearchParams(location.search).get('sim') === '1'
 
   const belt = useBeltConnection({ isSimMode })
-  const [act, setAct] = useState('WELCOME') // WELCOME → CONNECT → CALIBRATE → PACED → STAIRCASE → SUMMARY
+  const [act, setAct] = useState('WELCOME') // WELCOME → CONNECT → CALIBRATE → STAIRCASE → SUMMARY
 
-  const pacedResultsRef     = useRef([])
   const staircaseResultsRef = useRef([])
 
   // Belt connected → calibrate
@@ -180,9 +259,9 @@ export default function BreathBeltDemo() {
     if (act === 'CONNECT' && belt.btState === 'CONNECTED') setAct('CALIBRATE')
   }, [act, belt.btState])
 
-  // Calibration accepted → paced trials
+  // Calibration accepted → straight to detection trials
   useEffect(() => {
-    if (act === 'CALIBRATE' && belt.calibPhase === 'COMPLETE') setAct('PACED')
+    if (act === 'CALIBRATE' && belt.calibPhase === 'COMPLETE') setAct('STAIRCASE')
   }, [act, belt.calibPhase])
 
   if (!navigator.bluetooth && !isSimMode) return <BrowserWarning />
@@ -205,8 +284,7 @@ export default function BreathBeltDemo() {
           <ol style={D.steps}>
             <li>Pair the belt (Web Bluetooth, no install)</li>
             <li>Calibrate: 4 breaths → fitted signal model</li>
-            <li>3 paced breathing trials, with your sync graph after each</li>
-            <li>2 detection trials: does the pace change? Rate what you felt</li>
+            <li>3 detection trials: does the pace change? Rate what you felt</li>
           </ol>
           <Btn onClick={() => {
             if (isSimMode) { belt.startSimulation(); setAct('CALIBRATE'); belt.acceptSimCalib() }
@@ -248,13 +326,6 @@ export default function BreathBeltDemo() {
         </Panel>
       )}
 
-      {act === 'PACED' && (
-        <PacedTrialsAct
-          belt={belt}
-          onDone={(results) => { pacedResultsRef.current = results; setAct('STAIRCASE') }}
-        />
-      )}
-
       {act === 'STAIRCASE' && (
         <StaircaseAct
           belt={belt}
@@ -263,97 +334,13 @@ export default function BreathBeltDemo() {
       )}
 
       {act === 'SUMMARY' && (
-        <SummaryAct paced={pacedResultsRef.current} staircase={staircaseResultsRef.current} />
+        <SummaryAct staircase={staircaseResultsRef.current} />
       )}
     </div>
   )
 }
 
-// ── Act 3: three paced trials, graph after each ────────────────────────────
-
-function PacedTrialsAct({ belt, onDone }) {
-  const [trialIdx, setTrialIdx] = useState(0)
-  const [state,    setState]    = useState('READY')   // READY | RUNNING | GRAPH
-  const [lastGraph, setLastGraph] = useState(null)
-  const [lastAdherence, setLastAdherence] = useState(null)
-  const resultsRef = useRef([])
-
-  const { getPhase, runTrial, controlRef } = useTrialRunner({
-    breathValueRef:          belt.breathValueRef,
-    sendTrigger:             noopTrigger,
-    currentPhaseRef:         belt.currentPhaseRef,
-    currentTrialRef:         belt.currentTrialRef,
-    getAndClearTrialSamples: belt.getAndClearTrialSamples,
-    mlrWeightsRef:           belt.mlrWeightsRef,
-  })
-  const sampler = useGraphSampler(belt.breathValueRef, getPhase)
-
-  const start = useCallback(async () => {
-    setState('RUNNING')
-    sampler.begin()
-    // 'phase2' label makes useBeltConnection collect raw accel samples, so
-    // useTrialRunner returns syncMetrics processed the same (de-trended) way as
-    // the calibration graph. Fall back to the live sample only when there's no
-    // belt (sim rehearsal).
-    const res = await runTrial('phase2', trialIdx + 1, BASE_MS)
-    const graph = buildCleanGraph(belt, res, BASE_MS, BASE_MS, sampler.end())
-    // Same-pace trial: expected is always "same"; this checks whether the
-    // belt-measured breathing actually held steady.
-    const adherence = directionalAdherence(graph, BASE_MS, BASE_MS)
-    resultsRef.current.push(graph)
-    setLastGraph(graph)
-    setLastAdherence(adherence)
-    setState('GRAPH')
-  }, [runTrial, trialIdx, sampler])
-
-  function next() {
-    if (trialIdx + 1 >= PACED_TRIALS) onDone(resultsRef.current)
-    else { setTrialIdx(i => i + 1); setState('READY') }
-  }
-
-  return (
-    <Panel wide>
-      <h2 style={D.h2}>Paced breathing — trial {trialIdx + 1} of {PACED_TRIALS}</h2>
-
-      {state !== 'GRAPH' && (
-        <div style={{ width: 240, height: 240, margin: '0 auto' }}>
-          <AvatarBreathPacer
-            {...AVATAR_PROPS}
-            scaleAmplitude={0.25}
-            getPhase={getPhase}
-            controlRef={controlRef}
-            paused={state === 'READY'}
-            size={240}
-          />
-        </div>
-      )}
-
-      {state === 'READY' && (
-        <>
-          <p style={D.body}>Breathe in as the avatar expands, out as it contracts. Four breaths.</p>
-          <Btn onClick={start}>Start trial {trialIdx + 1}</Btn>
-        </>
-      )}
-
-      {state === 'RUNNING' && <p style={D.body}>Follow the avatar's breathing…</p>}
-
-      {state === 'GRAPH' && (
-        <>
-          <TrialGraphCard
-            title={`Trial ${trialIdx + 1} — your breath vs. the pacer`}
-            graph={lastGraph}
-            adherence={lastAdherence}
-          />
-          <Btn onClick={next}>
-            {trialIdx + 1 >= PACED_TRIALS ? 'On to detection trials →' : 'Next trial →'}
-          </Btn>
-        </>
-      )}
-    </Panel>
-  )
-}
-
-// ── Act 4: two hardcoded staircase trials with ratings + reveal ────────────
+// ── Act 3: hardcoded staircase trials with ratings + reveal ────────────────
 
 function StaircaseAct({ belt, onDone }) {
   const [trialIdx, setTrialIdx] = useState(0)
@@ -380,16 +367,29 @@ function StaircaseAct({ belt, onDone }) {
     setState('RUNNING')
     sampler.begin()
     const res = await runTrial('phase3', trialIdx + 1, spec.conditionMs)
+    res.trialNum = trialIdx + 1   // for diagnostics only
+    console.log(`[BCAT demo] ===== trial ${trialIdx + 1} (${spec.dir}) =====`)
+    // Don't build the graph until the belt's lagged trailing trough has
+    // actually arrived. On a real belt this polls the accel buffer (fixes the
+    // trial-1 "one trough short" race); in sim there's no accel stream so this
+    // returns immediately and we just let the live sampler settle instead.
+    const lagMs    = belt.mlrWeightsRef.current?.lagMs ?? 0
+    const accelRows = belt.rawAccelRowsRef.current?.length ?? 0
+    const waitStart = Date.now()
+    const covered  = await waitForCoverage(belt, res.trialEndMs + Math.max(500, lagMs + 300))
+    if (!covered) await new Promise(r => setTimeout(r, 500))
+    console.log('[BCAT demo] pre-build', { accelRows, covered, waitedMs: Date.now() - waitStart, lagMs })
     const graph = buildCleanGraph(belt, res, BASE_MS, spec.conditionMs, sampler.end())
     const adherence = directionalAdherence(graph, BASE_MS, spec.conditionMs)
+    console.log('[BCAT demo] result', { trial: trialIdx + 1, graphPts: graph?.beltPts?.length ?? 0, sync: graph?.r, cardShown: !!adherence })
     setLastResult({ graph, adherence })
     setState('RATE')
-  }, [runTrial, trialIdx, spec.conditionMs, sampler])
+  }, [runTrial, trialIdx, spec.conditionMs, spec.dir, sampler, belt])
 
   function submitRatings() {
     const correct = response === spec.dir
     resultsRef.current.push({
-      dir: spec.dir, detail: spec.detail, response, correct, confidence, arousal,
+      dir: spec.dir, label: spec.label, detail: spec.detail, response, correct, confidence, arousal,
       graph: lastResult?.graph ?? null,
       adherence: lastResult?.adherence ?? null,
     })
@@ -494,27 +494,19 @@ function StaircaseAct({ belt, onDone }) {
   )
 }
 
-// ── Act 5: summary ──────────────────────────────────────────────────────────
+// ── Act 4: summary ──────────────────────────────────────────────────────────
 
-function SummaryAct({ paced, staircase }) {
+function SummaryAct({ staircase }) {
   return (
     <Panel wide>
       <h2 style={D.h2}>Demo complete</h2>
 
       <div style={D.summaryGrid}>
         <div>
-          <p style={D.summaryHead}>Paced trials — sync with pacer</p>
-          {paced.map((r, i) => (
-            <p key={i} style={D.summaryLine}>
-              Trial {i + 1}: sync {fmtR(r?.r)}
-            </p>
-          ))}
-        </div>
-        <div>
           <p style={D.summaryHead}>Change detection</p>
           {staircase.map((r, i) => (
             <p key={i} style={D.summaryLine}>
-              Pace {r.dir === 'faster' ? 'sped up' : 'slowed down'}: said "{r.response}"{' '}
+              Pace {r.label}: said "{r.response}"{' '}
               {r.correct ? '✓' : '✗'} · confidence {r.confidence}/6 · arousal {r.arousal}/6
             </p>
           ))}
@@ -551,6 +543,7 @@ function TrialGraphCard({ title, graph, adherence }) {
         width={440}
         height={130}
         label={title}
+        markers={adherence?.troughs}
       />
       <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
         <Chip label="Sync with pacer" value={fmtR(graph.r)} />
@@ -568,6 +561,7 @@ function TrialGraphCard({ title, graph, adherence }) {
       <p style={D.legend}>
         <span style={{ color: '#3498db' }}>— pacer</span>{'   '}
         <span style={{ color: '#e67e22' }}>— your breath</span>
+        {adherence && <>{'   '}<span style={{ color: '#ffffff' }}>● 1–5 detected troughs</span></>}
       </p>
       {adherence && (
         <p style={{ ...D.legend, maxWidth: 440 }}>

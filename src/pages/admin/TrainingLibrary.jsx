@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import InterventionPage from '../../components/study/InterventionPage'
+import WrapperElementPage from '../../components/study/WrapperElementPage'
+import { WRAPPER_ELEMENTS } from '../../components/study/wrapperElements'
 
 const CONDITION_LABELS = {
   non_reactivity:  'Non-Reactivity',
@@ -28,6 +30,7 @@ export default function TrainingLibrary() {
   const queryClient = useQueryClient()
   const [confirmDelete, setConfirmDelete] = useState(null)
   const [demoModule,    setDemoModule]    = useState(null)
+  const [demoWrapper,   setDemoWrapper]   = useState(null)
 
   const { data: modules = [], isLoading, isError } = useQuery({
     queryKey: ['intervention-modules'],
@@ -92,6 +95,45 @@ export default function TrainingLibrary() {
           </button>
         </div>
       )}
+
+      {/* Standard session wrapper elements — platform-managed, shared by every day */}
+      <div style={{ marginBottom: 36 }}>
+        <div style={S.conditionHeader}>
+          <div style={{ ...S.conditionDot, background: 'var(--pk)' }} />
+          <span style={S.conditionLabel}>Standard Session Elements</span>
+          <span style={S.conditionCount}>every daily session · platform-managed</span>
+        </div>
+
+        <div style={S.list}>
+          {WRAPPER_ELEMENTS.map(el => (
+            <div key={el.key} style={S.row}>
+              <div style={{ ...S.lessonBadge, background: 'var(--bgc)', border: '1px solid var(--bd)' }}>
+                <span style={S.lessonPhase}>step</span>
+                <span style={S.lessonDay}>{el.slot + 1}/5</span>
+              </div>
+
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={S.moduleTitle}>{el.name}</p>
+                <p style={S.moduleMeta}>{el.description}</p>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                <button onClick={() => setDemoWrapper(el)} style={S.demoBtn}>
+                  ▶ Demo
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <p style={{ fontFamily: 'DM Sans', fontSize: 12, color: 'var(--tx3)', margin: '8px 2px 0' }}>
+          These screens wrap every practice module: Welcome → Check-in → Practice → Check-in → Farewell.
+          Check-in contents render live from the VAS packages{' '}
+          <span style={{ fontFamily: 'Space Mono', fontSize: 11 }}>liliana_pre_intervention_ratings</span> /{' '}
+          <span style={{ fontFamily: 'Space Mono', fontSize: 11 }}>liliana_post_intervention_ratings</span>{' '}
+          — edit those at /admin/vas; the demo here can't drift from what participants see.
+        </p>
+      </div>
 
       {Object.entries(grouped).map(([cond, items]) => (
         <div key={cond} style={{ marginBottom: 36 }}>
@@ -179,9 +221,27 @@ export default function TrainingLibrary() {
         </div>
       ))}
 
-      {/* Demo modal */}
+      {/* Demo modals */}
       {demoModule && (
-        <DemoModal module={demoModule} onClose={() => setDemoModule(null)} />
+        <DemoModal title={`Demo — ${demoModule.title}`} onClose={() => setDemoModule(null)}>
+          <InterventionPage
+            module={demoModule}
+            participantId={null}
+            dayDataId={null}
+            scheduleId={null}
+            studyDay={demoModule.lesson}
+            onComplete={() => setDemoModule(null)}
+            demoMode
+          />
+        </DemoModal>
+      )}
+      {demoWrapper && (
+        <DemoModal title={`Demo — ${demoWrapper.name}`} onClose={() => setDemoWrapper(null)}>
+          <WrapperElementPage
+            element={demoWrapper}
+            onComplete={() => setDemoWrapper(null)}
+          />
+        </DemoModal>
       )}
     </div>
   )
@@ -189,7 +249,7 @@ export default function TrainingLibrary() {
 
 // ── DemoModal ─────────────────────────────────────────────────────────────────
 
-function DemoModal({ module, onClose }) {
+function DemoModal({ title, onClose, children }) {
   useEffect(() => {
     function onKey(e) { if (e.key === 'Escape') onClose() }
     window.addEventListener('keydown', onKey)
@@ -218,7 +278,7 @@ function DemoModal({ module, onClose }) {
       >
         <div>
           <p style={{ fontFamily: 'DM Sans', fontSize: 13, fontWeight: 600, color: '#fff', margin: '0 0 2px' }}>
-            Demo — {module.title}
+            {title}
           </p>
           <p style={{ fontFamily: 'Space Mono', fontSize: 11, color: 'rgba(255,255,255,0.45)', margin: 0 }}>
             Preview only — no data saved
@@ -236,20 +296,12 @@ function DemoModal({ module, onClose }) {
         </button>
       </div>
 
-      {/* Intervention page — no participant data, no DB writes */}
+      {/* Preview content — no participant data, no DB writes */}
       <div
         style={{ width: '100%', maxWidth: 640, flex: 1 }}
         onClick={e => e.stopPropagation()}
       >
-        <InterventionPage
-          module={module}
-          participantId={null}
-          dayDataId={null}
-          scheduleId={null}
-          studyDay={module.lesson}
-          onComplete={onClose}
-          demoMode
-        />
+        {children}
       </div>
     </div>
   )

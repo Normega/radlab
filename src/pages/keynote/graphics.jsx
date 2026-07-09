@@ -18,12 +18,12 @@ export function PositionIcons() {
   return (
     <div style={{ display: 'flex', gap: 40, flexWrap: 'wrap', justifyContent: 'center' }}>
       {items.map(it => (
-        <div key={it.key} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, width: 180 }}>
+        <div key={it.key} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, width: 220 }}>
           <div style={{ width: 96, height: 96, display: 'grid', placeItems: 'center', borderRadius: '50%', background: 'rgba(240,104,164,0.08)', border: '1.5px solid rgba(240,104,164,0.25)' }}>
             {it.icon}
           </div>
-          <div style={{ fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 22, color: INK }}>{it.title}</div>
-          <div style={{ fontSize: 15, color: '#6b6c70', textAlign: 'center' }}>{it.sub}</div>
+          <div style={{ fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 'clamp(20px, 2.4vw, 28px)', color: INK }}>{it.title}</div>
+          <div style={{ fontSize: 'clamp(17px, 2.1vw, 25px)', color: '#6b6c70', textAlign: 'center', lineHeight: 1.3 }}>{it.sub}</div>
         </div>
       ))}
     </div>

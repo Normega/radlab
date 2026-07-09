@@ -72,13 +72,21 @@ export default function TrainingStepWrapper({
 
       const { data: existing } = await supabase
         .from('liliana_day_data')
-        .select('id')
+        .select('id, module_id')
         .eq('participant_id', pid)
         .eq('study_day', day)
         .maybeSingle()
 
       if (existing) {
         dayRow = existing
+        // Backfill the condition stamp on rows created before module_id existed
+        // (or by an interrupted first attempt).
+        if (!existing.module_id && moduleId) {
+          await supabase
+            .from('liliana_day_data')
+            .update({ module_id: moduleId })
+            .eq('id', existing.id)
+        }
       } else {
         const { data: inserted } = await supabase
           .from('liliana_day_data')
@@ -86,6 +94,7 @@ export default function TrainingStepWrapper({
             participant_id: pid,
             study_day:      day,
             session_name:   sessName,
+            module_id:      moduleId,
             started_at:     new Date().toISOString(),
           })
           .select('id')

@@ -166,7 +166,7 @@ function DemoLink({ href, label, sub }) {
   )
 }
 
-// ── Slides (1–23, matching the brief) ───────────────────────────────────────
+// ── Slides (1–26) ───────────────────────────────────────────────────────────
 
 const SLIDES = [
   // 1 — Title
@@ -212,7 +212,23 @@ const SLIDES = [
     ),
   },
 
-  // 3 — Breath frame
+  // 3 — Three positions
+  {
+    note: 'Spoken, not on slide: medication or relaxation for the body; mindfulness or cognitive therapy for meaning.',
+    render: (d) => (
+      <Frame kicker="Three positions, three intervention targets">
+        <H2>How does a change in the breath become subjective arousal?</H2>
+        <PositionIcons />
+        <Lead>Intractable until now: we couldn't independently manipulate bodily arousal and detection probability to see their separate impact on felt arousal.</Lead>
+        <Detail density={d}>
+          The task manipulates both breathing rate and detection probability, letting us adjudicate
+          between the three positions rather than argue them.
+        </Detail>
+      </Frame>
+    ),
+  },
+
+  // 4 — Breath frame
   {
     render: (d) => (
       <Frame wide kicker="The breath">
@@ -241,7 +257,7 @@ const SLIDES = [
     ),
   },
 
-  // 4 — Opener demo (live)
+  // 5 — Opener demo (live)
   {
     note: 'Run live. Four breaths, no explanation beforehand. Open the demo in a new tab, run breathe → polls → reveal there, then return here and click forward.',
     render: () => (
@@ -253,7 +269,7 @@ const SLIDES = [
     ),
   },
 
-  // 5 — Return, live polls
+  // 6 — Return, live polls
   {
     render: () => (
       <Frame kicker="You just voted">
@@ -263,21 +279,6 @@ const SLIDES = [
           <PollCard q="What happened to your arousal?" opts={['More activated', 'Same', 'Calmer']} />
         </div>
         <Lead>Did noticing — or not noticing — change how you felt?</Lead>
-      </Frame>
-    ),
-  },
-
-  // 6 — Three positions
-  {
-    note: 'Spoken, not on slide: medication or relaxation for the body; mindfulness or cognitive therapy for meaning.',
-    render: (d) => (
-      <Frame kicker="Three positions, three intervention targets">
-        <PositionIcons />
-        <Lead>Intractable until now: we couldn't independently manipulate bodily arousal and detection probability to see their separate impact on felt arousal.</Lead>
-        <Detail density={d}>
-          The task manipulates both breathing rate and detection probability, letting us adjudicate
-          between the three positions rather than argue them.
-        </Detail>
       </Frame>
     ),
   },
@@ -318,7 +319,20 @@ const SLIDES = [
     ),
   },
 
-  // 9 — Staircase finds each person's threshold
+  // 9 — Methods overview table
+  {
+    render: (d) => (
+      <Frame kicker="Five studies · N = 787">
+        <MethodsTable />
+        <Detail density={d}>
+          Each study adds a control — salience manipulation, a visual control condition, physiological
+          recording, preregistration — culminating in the preregistered, physiologically verified test in Study 5.
+        </Detail>
+      </Frame>
+    ),
+  },
+
+  // 10 — Staircase finds each person's threshold
   {
     render: (d) => (
       <Frame wide kicker="Finding the threshold">
@@ -327,19 +341,6 @@ const SLIDES = [
         <Detail density={d}>
           Studies 1A–2 use a single staircase; Studies 4–5 cross salience (high/low) with direction
           (acceleration/deceleration). The staircase converges on the smallest change each person can detect.
-        </Detail>
-      </Frame>
-    ),
-  },
-
-  // 10 — Methods overview table
-  {
-    render: (d) => (
-      <Frame kicker="Five studies · N = 787">
-        <MethodsTable />
-        <Detail density={d}>
-          Each study adds a control — salience manipulation, a visual control condition, physiological
-          recording, preregistration — culminating in the preregistered, physiologically verified test in Study 5.
         </Detail>
       </Frame>
     ),
@@ -372,6 +373,7 @@ const SLIDES = [
           'Misses: arousal stays flat.',
           'Holds across all five studies — BF01 = 8.7 to 29.6 support the null on misses.',
         ]} />
+        <Lead>Same body, different feeling: arousal follows detection, not magnitude — the Moderate position.</Lead>
         <Detail density={d}>
           The body changed by the same amount on hits and misses. Felt arousal tracked the change only
           when the change was consciously detected — evidence for the detection-gating (moderate) position.
@@ -396,7 +398,27 @@ const SLIDES = [
     ),
   },
 
-  // 14 — MAIA intro
+  // 14 — Discussion / transition: what the behaviour settles
+  {
+    note: 'Spoken: this is the pivot. Close the behavioural story on the Moderate position, resolving the vignette’s two-clinician dispute, then open the two follow-on questions. Flag that the imaging ahead is a separate paradigm — sustained interoceptive attention, not the BCAT.',
+    render: (d) => (
+      <Frame kicker="What the behaviour settles">
+        <H2>Feeling is gated by detection</H2>
+        <Bullets items={[
+          'Not the body alone (Constitutive): the same paced change felt different only when it was noticed.',
+          'Not meaning alone (Constructivist): arousal scaled with real magnitude — but only once detected.',
+          'The Moderate position: detection is the gate between bodily change and felt arousal.',
+        ]} />
+        <Lead>The vignette’s two clinicians each held one lever. Two questions remain: do people know their own detection — and what does detection look like in the brain?</Lead>
+        <Detail density={d}>
+          The imaging that follows comes from a separate line of work on sustained interoceptive attention,
+          not the BCAT — a bridge still being built. Read it as convergent mechanism, not the same task.
+        </Detail>
+      </Frame>
+    ),
+  },
+
+  // 15 — MAIA intro
   {
     render: (d) => (
       <Frame kicker="Self-report awareness">
@@ -423,7 +445,7 @@ const SLIDES = [
     ),
   },
 
-  // 15 — MAIA: confidence not sensitivity
+  // 16 — MAIA: confidence not sensitivity
   {
     note: 'Illustrative scatterplots rendered from the reported correlations (confidence r = .260; sensitivity r = .071). Swap for supplementary figures if preferred.',
     render: (d) => (
@@ -442,7 +464,7 @@ const SLIDES = [
     ),
   },
 
-  // 16 — Cortical deactivation
+  // 17 — Cortical deactivation
   {
     note: 'Figure: eNeuro (Farb, Zuo & Price 2023) Figure 3 — whole-brain deactivation maps for breath vs visual attention.',
     render: (d) => (
@@ -461,7 +483,7 @@ const SLIDES = [
     ),
   },
 
-  // 17 — ACC sparing by awareness
+  // 18 — ACC sparing by awareness
   {
     note: 'Figure: eNeuro (Farb, Zuo & Price 2023) Figure 4 — MAIA covariate brain map and scatterplot.',
     render: (d) => (
@@ -476,7 +498,7 @@ const SLIDES = [
     ),
   },
 
-  // 18 — ACC-DAN connectivity
+  // 19 — ACC-DAN connectivity
   {
     note: 'Figure: eNeuro (Farb, Zuo & Price 2023) — dorsal attention network maps (same figure as slide 16, DAN panel).',
     render: (d) => (
@@ -491,7 +513,7 @@ const SLIDES = [
     ),
   },
 
-  // 19 — Schematic recap (visual only)
+  // 20 — Schematic recap (visual only)
   {
     render: () => (
       <Frame kicker="Putting it together">
@@ -500,7 +522,7 @@ const SLIDES = [
     ),
   },
 
-  // 20 — Decodable and trainable
+  // 21 — Decodable and trainable
   {
     note: 'Figures: EJN (Zuo, Price & Farb 2023) Fig 5 or 9 — classification map; Brain Sci (Price, Sevinc & Farb 2023) Fig 2C or 3B — connectivity increase with MABT training.',
     render: (d) => (
@@ -522,7 +544,7 @@ const SLIDES = [
     ),
   },
 
-  // 21 — Meaning, detection habits
+  // 22 — Meaning, detection habits
   {
     render: (d) => (
       <Frame kicker="Back to meaning">
@@ -532,7 +554,6 @@ const SLIDES = [
           'Interoceptive exposure: changes the habit, not the sensitivity.',
           'Savoring: the same logic, in the positive direction.',
         ]} />
-        <Lead>The vignette's two clinicians only had two of the three levers.</Lead>
         <Detail density={d}>
           If feeling is gated by detection, then interventions that change what a detected signal means —
           or how often it is detected — are a third, independent route, alongside changing the body and changing appraisal.
@@ -541,7 +562,23 @@ const SLIDES = [
     ),
   },
 
-  // 22 — Callback to opening votes (image only)
+  // 23 — The third lever (synthesis · vignette resolution)
+  {
+    render: () => (
+      <Frame kicker="The third lever">
+        <H2>Confidence and agency in what you detect</H2>
+        <Bullets items={[
+          'Trait awareness (MAIA) predicts confidence in detection, not raw sensitivity.',
+        ]} />
+        <Lead>
+          The vignette's two clinicians only had two of the three levers. The third lever is
+          building the confidence to shape one's own detection habits.
+        </Lead>
+      </Frame>
+    ),
+  },
+
+  // 24 — Callback to opening votes (image only)
   {
     note: 'Spoken, not on slide: return to the opening votes. Compare the room’s split to the hit/miss arousal pattern just shown.',
     render: () => (
@@ -551,7 +588,7 @@ const SLIDES = [
     ),
   },
 
-  // 23 — Closer demo (live)
+  // 25 — Closer demo (live)
   {
     note: 'Live strap demo. Open in a new tab: pairing → calibration → paced trials → change-detection trials. Return here after.',
     render: () => (
@@ -563,7 +600,7 @@ const SLIDES = [
     ),
   },
 
-  // 24 — Thank you
+  // 26 — Thank you
   {
     render: () => (
       <Frame>

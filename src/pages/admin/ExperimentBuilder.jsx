@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
@@ -12,65 +12,111 @@ import { supabase } from '../../lib/supabase'
 import {
   newId, validate, addNode, updateNode, removeNode,
   addSessionToBlock, removeSessionFromBlock, duplicateBlock,
-  chainOrder, blockChildIds, topLevelNodes, toSlots,
+  addArm, removeArm, addArmEntry, addBlockToCounterbalance, removeBlockFromCounterbalance,
+  chainOrder, topLevelNodes, entryNode, toSlots, mergeInto,
+  findOwningBlock, findOwningCounterbalance,
   insertAfter, lastNodeInTimepointGroup,
 } from '../../lib/experimentGraph'
 import TimepointNode    from '../../components/study/builder/nodes/TimepointNode'
 import SessionNode      from '../../components/study/builder/nodes/SessionNode'
 import BlockNode        from '../../components/study/builder/nodes/BlockNode'
+import RandomizeNode    from '../../components/study/builder/nodes/RandomizeNode'
+import CounterbalanceNode from '../../components/study/builder/nodes/CounterbalanceNode'
 import ContactSettingsModal from '../../components/study/builder/ContactSettingsModal'
 
-const NODE_TYPES = { timepoint: TimepointNode, session: SessionNode, block: BlockNode }
+const NODE_TYPES = {
+  timepoint: TimepointNode, session: SessionNode, block: BlockNode,
+  randomize: RandomizeNode, counterbalance: CounterbalanceNode,
+}
 
 // ─── RF conversion helpers ───────────────────────────────────────────────────
 
-// Row-per-timepoint layout: timepoints form the left-column spine,
-// sessions/blocks spread horizontally to the right at the same Y.
+// Camera habits: the canvas should always grow downward as elements are
+// added, not rightward, so a narrow (e.g. mobile) viewport stays usable —
+// the leftmost column sits at x=0 and only nested content (block sessions,
+// counterbalance blocks, randomize arms) indents slightly to the right.
 const LAYOUT = {
-  TP_X:           0,
-  SESSION_X_START: 290,
-  SESSION_X_GAP:  240,
-  ROW_BASE_H:     150,
-  BLOCK_CHILD_H:   26,
+  INDENT_X: 44,
+  ROW_H:    130,
 }
+const VIEWPORT_MARGIN = 24
 
 function autoLayout(graph) {
   const nodeMap = Object.fromEntries(graph.nodes.map(n => [n.id, n]))
-  const order   = chainOrder(graph)
-
-  // Group chain into rows, one per timepoint
-  const rows = []
-  let cur = null
-  for (const id of order) {
-    const node = nodeMap[id]
-    if (!node) continue
-    if (node.type === 'timepoint') {
-      cur = { timepointId: id, sessions: [] }
-      rows.push(cur)
-    } else if (cur) {
-      cur.sessions.push(id)
-    }
-  }
-
   const positions = {}
+  const visited = new Set()
   let y = 0
-  for (const row of rows) {
-    positions[row.timepointId] = { x: LAYOUT.TP_X, y }
-    row.sessions.forEach((sid, i) => {
-      positions[sid] = { x: LAYOUT.SESSION_X_START + i * LAYOUT.SESSION_X_GAP, y }
-    })
-    // Extra height for block children so rows don't overlap
-    let blockExtra = 0
-    for (const sid of row.sessions) {
-      const node = nodeMap[sid]
-      if (node?.type === 'block') {
-        blockExtra = Math.max(blockExtra, (node.children?.length ?? 0) * LAYOUT.BLOCK_CHILD_H)
-      }
-    }
-    y += LAYOUT.ROW_BASE_H + blockExtra
+
+  // The single structural "next" node for plain chain-walking (trunk, or a
+  // rejoin's continuation past a merge). Randomize has no single next — its
+  // arms fan out explicitly below — so this deliberately returns null there.
+  function structuralNext(nodeId) {
+    if (nodeMap[nodeId]?.type === 'randomize') return null
+    return graph.edges.find(e => e.from === nodeId)?.to ?? null
   }
+
+  // Depth-first placement: every node gets the next Y slot going, in visit
+  // order, so nothing ever overlaps and nothing is left at the canvas
+  // origin. Depth only controls indentation, never the Y cursor, so nested
+  // content (a block's sessions, a counterbalance's blocks, a randomize
+  // arm's chain) stacks below its parent instead of spreading beside it.
+  function place(nodeId, depth) {
+    if (!nodeId || visited.has(nodeId) || !nodeMap[nodeId]) return
+    visited.add(nodeId)
+    positions[nodeId] = { x: depth * LAYOUT.INDENT_X, y }
+    y += LAYOUT.ROW_H
+
+    const node = nodeMap[nodeId]
+    if (node.type === 'block') {
+      for (const cid of node.children ?? []) place(cid, depth + 1)
+    } else if (node.type === 'counterbalance') {
+      for (const bid of node.block_ids ?? []) place(bid, depth + 1)
+    } else if (node.type === 'randomize') {
+      for (const arm of node.arms ?? []) place(arm.entry, depth + 1)
+    }
+
+    place(structuralNext(nodeId), depth)
+  }
+
+  const entry = entryNode(graph)
+  if (entry) place(entry.id, 0)
+
+  // Anything still unreached (a merge target not yet wired, or a node
+  // authored while disconnected) gets appended at the end, at the trunk's
+  // indentation, rather than defaulting to the origin underneath everything
+  // else already there.
+  for (const node of topLevelNodes(graph)) place(node.id, 0)
 
   return positions
+}
+
+// Camera habit: pin a given graph point to the viewport's top-left corner
+// (a small margin in), instead of React Flow's default fitView (which zooms
+// to fit the *whole* graph and re-centers it — fighting a stable anchor and
+// shrinking text on a narrow viewport). Zoom is left untouched so a manual
+// zoom the user made isn't overridden.
+function pinViewport(instance, x, y) {
+  if (!instance) return
+  const zoom = instance.getZoom()
+  instance.setViewport({ x: VIEWPORT_MARGIN - x * zoom, y: VIEWPORT_MARGIN - y * zoom, zoom })
+}
+
+function pinViewportTopLeft(instance, nodes) {
+  if (!instance || nodes.length === 0) return
+  const minX = Math.min(...nodes.map(n => n.position.x))
+  const minY = Math.min(...nodes.map(n => n.position.y))
+  pinViewport(instance, minX, minY)
+}
+
+// Keep the camera on whatever's currently selected — a newly-added node
+// auto-selects itself, so this is what makes new elements show up in frame
+// instead of landing wherever the layout happened to put them. Falls back
+// to the leftmost/topmost node when nothing's selected (e.g. on first load).
+function pinViewportToSelection(instance, nodes, selectedId) {
+  if (!instance) return
+  const node = selectedId ? nodes.find(n => n.id === selectedId) : null
+  if (node) pinViewport(instance, node.position.x, node.position.y)
+  else pinViewportTopLeft(instance, nodes)
 }
 
 // Determine insertion point based on current selection:
@@ -101,13 +147,26 @@ function prevTimepointOffset(graph, afterId) {
   return 0
 }
 
-function graphToRfNodes(graph, positions, selectedId, sessionTemplates, isLocked, callbacks) {
-  const nodeMap  = Object.fromEntries(graph.nodes.map(n => [n.id, n]))
-  const childIds = blockChildIds(graph)
-  const topLevel = graph.nodes.filter(n => !childIds.has(n.id))
-  const auto     = autoLayout(graph)
+// Nodes drawn on canvas: top-level nodes plus every block's own sessions and
+// every counterbalance's own blocks, rendered as separate, connected nodes
+// (via synthetic containment edges below) rather than listed inline inside
+// their parent's card — so owned children are individually selectable and
+// the fork structure is visible at a glance.
+function renderableNodes(graph) {
+  const ids = new Set(topLevelNodes(graph).map(n => n.id))
+  for (const n of graph.nodes) {
+    if (n.type === 'block') (n.children ?? []).forEach(cid => ids.add(cid))
+    if (n.type === 'counterbalance') (n.block_ids ?? []).forEach(bid => ids.add(bid))
+  }
+  return graph.nodes.filter(n => ids.has(n.id))
+}
 
-  return topLevel.map(node => ({
+function graphToRfNodes(graph, positions, selectedId, sessionTemplates, isLocked, callbacks) {
+  const renderable  = renderableNodes(graph)
+  const auto        = autoLayout(graph)
+  const nodeLabels  = Object.fromEntries(graph.nodes.map(n => [n.id, n.label || n.id]))
+
+  return renderable.map(node => ({
     id:       node.id,
     type:     node.type,
     position: positions[node.id] ?? auto[node.id] ?? { x: 0, y: 0 },
@@ -116,12 +175,19 @@ function graphToRfNodes(graph, positions, selectedId, sessionTemplates, isLocked
       ...node,
       isLocked,
       sessionTemplates,
-      // For blocks: resolve child node objects
+      nodeLabels,
       ...(node.type === 'block' ? {
-        children: (node.children ?? []).map(cid => nodeMap[cid]).filter(Boolean),
-        onAddSession:    () => callbacks.addSessionToBlock(node.id),
-        onRemoveSession: (sessionId) => callbacks.removeSessionFromBlock(node.id, sessionId),
-        onDuplicate:     () => callbacks.duplicateBlock(node.id),
+        sessionCount: (node.children ?? []).length,
+        onDuplicate:  () => callbacks.duplicateBlock(node.id),
+      } : {}),
+      ...(node.type === 'randomize' ? {
+        onAddArm:        () => callbacks.addArm(node.id),
+        onRemoveArm:     (armIndex) => callbacks.removeArm(node.id, armIndex),
+        onAddArmSession: (armIndex) => callbacks.addArmEntrySession(node.id, armIndex),
+        onAddArmBlock:   (armIndex) => callbacks.addArmEntryBlock(node.id, armIndex),
+      } : {}),
+      ...(node.type === 'counterbalance' ? {
+        blockCount: (node.block_ids ?? []).length,
       } : {}),
     },
   }))
@@ -129,21 +195,53 @@ function graphToRfNodes(graph, positions, selectedId, sessionTemplates, isLocked
 
 function graphToRfEdges(graph) {
   const nodeMap = Object.fromEntries(graph.nodes.map(n => [n.id, n]))
-  return graph.edges.map(e => {
+  const structural = graph.edges.map(e => {
     const toTimepoint = nodeMap[e.to]?.type === 'timepoint'
+    const fromNode = nodeMap[e.from]
     // Edges going TO a timepoint wrap around vertically (source bottom → target top).
+    // Edges leaving a randomize node use a distinct handle per arm.
     // All other edges are horizontal (source right → target left).
+    let sourceHandle = toTimepoint ? 'b' : 'r'
+    if (fromNode?.type === 'randomize') {
+      const armIndex = (fromNode.arms ?? []).findIndex(a => a.entry === e.to)
+      if (armIndex !== -1) sourceHandle = `arm-${armIndex}`
+    }
     return {
       id:           `${e.from}->${e.to}`,
       source:       e.from,
       target:       e.to,
-      sourceHandle: toTimepoint ? 'b' : 'r',
+      sourceHandle,
       targetHandle: toTimepoint ? 't' : 'l',
       type:         'smoothstep',
       style:        { stroke: toTimepoint ? 'var(--pkb, rgba(240,104,164,0.35))' : 'var(--bd, rgba(180,100,140,0.20))', strokeWidth: 2 },
       markerEnd:    { type: 'arrowclosed', color: toTimepoint ? 'var(--pk, #f068a4)' : 'var(--gy, #abadb0)' },
     }
   })
+
+  // Synthetic containment edges — block -> its sessions, counterbalance ->
+  // its blocks. Visual only: never added to graph.edges, so validate()'s
+  // outDegree checks and the materializer's traversal never see them.
+  const containment = []
+  for (const node of graph.nodes) {
+    if (node.type === 'block') {
+      for (const cid of node.children ?? []) containment.push({ from: node.id, to: cid, sourceHandle: 'children' })
+    }
+    if (node.type === 'counterbalance') {
+      for (const bid of node.block_ids ?? []) containment.push({ from: node.id, to: bid, sourceHandle: 'blocks' })
+    }
+  }
+  const containmentEdges = containment.map(e => ({
+    id:           `${e.from}=>${e.to}`,
+    source:       e.from,
+    target:       e.to,
+    sourceHandle: e.sourceHandle,
+    targetHandle: 'l',
+    type:         'smoothstep',
+    style:        { stroke: 'var(--pk, #f068a4)', strokeWidth: 1.5, strokeDasharray: '4 3' },
+    markerEnd:    { type: 'arrowclosed', color: 'var(--pk, #f068a4)' },
+  }))
+
+  return [...structural, ...containmentEdges]
 }
 
 // ─── Compile study_sessions (WP4) ────────────────────────────────────────────
@@ -176,7 +274,7 @@ async function compileStudySessions(studyId, graph) {
 
 // ─── Edit panel ──────────────────────────────────────────────────────────────
 
-function EditPanel({ nodeId, graph, sessionTemplates, isLocked, onChange, onRemove }) {
+function EditPanel({ nodeId, graph, sessionTemplates, isLocked, onChange, onRemove, onMerge }) {
   const node = graph.nodes.find(n => n.id === nodeId)
   if (!node) return null
 
@@ -248,9 +346,75 @@ function EditPanel({ nodeId, graph, sessionTemplates, isLocked, onChange, onRemo
 
       {node.type === 'block' && (
         <div style={{ fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 13, color: 'var(--tx2)', marginTop: 4 }}>
-          {(node.children ?? []).length} session{(node.children ?? []).length !== 1 ? 's' : ''} — edit sessions via the canvas node.
+          {(node.children ?? []).length} session{(node.children ?? []).length !== 1 ? 's' : ''} — shown as connected nodes on the canvas. Select this block, then use the toolbar to add another.
         </div>
       )}
+
+      {node.type === 'randomize' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {(node.arms ?? []).map((arm, i) => (
+            <div key={i} style={{ display: 'flex', gap: 6, alignItems: 'flex-end' }}>
+              <div style={{ flex: 1 }}>
+                {field(`Arm ${i + 1} group`,
+                  <input
+                    style={P.input}
+                    value={arm.group ?? ''}
+                    disabled={isLocked}
+                    onChange={e => onChange(nodeId, {
+                      arms: node.arms.map((a, j) => j === i ? { ...a, group: e.target.value } : a),
+                    })}
+                  />
+                )}
+              </div>
+              <div style={{ width: 64 }}>
+                {field('Weight',
+                  <input
+                    type="number" min="1" style={P.input}
+                    value={arm.weight ?? 1}
+                    disabled={isLocked}
+                    onChange={e => onChange(nodeId, {
+                      arms: node.arms.map((a, j) => j === i ? { ...a, weight: Number(e.target.value) } : a),
+                    })}
+                  />
+                )}
+              </div>
+            </div>
+          ))}
+          <div style={{ fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 12, color: 'var(--tx2)' }}>
+            Add/remove arms and wire their entry sessions on the canvas node.
+          </div>
+        </div>
+      )}
+
+      {node.type === 'counterbalance' && (
+        <div style={{ fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 13, color: 'var(--tx2)', marginTop: 4 }}>
+          {(node.block_ids ?? []).length} block{(node.block_ids ?? []).length !== 1 ? 's' : ''} — shown as connected nodes on the canvas. Select this counterbalance, then use the toolbar to add another.
+        </div>
+      )}
+
+      {!isLocked && (() => {
+        // A dead-end node (no outgoing structural edge) — e.g. a randomize
+        // arm's tail, or a fork branch authored without a continuation — can
+        // be explicitly merged into any other top-level node to reconverge.
+        // Block/counterbalance-owned children aren't part of the trunk, so
+        // merging doesn't apply to them.
+        if (findOwningBlock(graph, nodeId) || findOwningCounterbalance(graph, nodeId)) return null
+        if (graph.edges.some(e => e.from === nodeId)) return null
+        const targets = topLevelNodes(graph).filter(n => n.id !== nodeId)
+        if (!targets.length) return null
+        return field('Merge into',
+          <select
+            style={P.input}
+            value=""
+            onChange={e => { if (e.target.value) onMerge(nodeId, e.target.value) }}
+          >
+            <option value="">— pick a node to reconverge into —</option>
+            {targets.map(t => (
+              <option key={t.id} value={t.id}>{t.label || t.id}</option>
+            ))}
+          </select>
+        )
+      })()}
 
       {!isLocked && node.day_offset !== 0 && (
         <button
@@ -291,6 +455,7 @@ export default function ExperimentBuilder() {
   const [validation,     setValidation]    = useState(null)
   const [studyName,      setStudyName]     = useState('')
   const [showContact,    setShowContact]   = useState(false)
+  const rfInstanceRef = useRef(null)
 
   const { data: sessionTemplates = [] } = useQuery({
     queryKey: ['session-templates'],
@@ -357,12 +522,33 @@ export default function ExperimentBuilder() {
 
   // Graph mutation callbacks
   const callbacks = useMemo(() => ({
+    // Selection deliberately stays on the block/counterbalance itself here —
+    // adding a child shouldn't shift focus away from the parent the user is
+    // working in; the user picks what to select next.
     addSessionToBlock: (blockId) =>
-      mutate(g => addSessionToBlock(g, blockId)),
-    removeSessionFromBlock: (blockId, sessionId) =>
-      mutate(g => removeSessionFromBlock(g, blockId, sessionId)),
+      mutate(g => addSessionToBlock(g, blockId), { resetLayout: true }),
     duplicateBlock: (blockId) =>
-      mutate(g => duplicateBlock(g, blockId)),
+      mutate(g => duplicateBlock(g, blockId), { resetLayout: true }),
+    addArm: (randomizeId) =>
+      mutate(g => addArm(g, randomizeId), { resetLayout: true }),
+    removeArm: (randomizeId, armIndex) =>
+      mutate(g => removeArm(g, randomizeId, armIndex), { resetLayout: true }),
+    addArmEntrySession: (randomizeId, armIndex) =>
+      mutate(g => addArmEntry(g, randomizeId, armIndex, {
+        type: 'session', session_template_id: null, link_expires_hours: 48, label: 'New Session',
+      }), { resetLayout: true }),
+    addArmEntryBlock: (randomizeId, armIndex) => {
+      const childId = newId()
+      mutate(g => {
+        const withChild = {
+          ...g,
+          nodes: [...g.nodes, { id: childId, type: 'session', session_template_id: null, link_expires_hours: 48, label: 'Session 1' }],
+        }
+        return addArmEntry(withChild, randomizeId, armIndex, { type: 'block', label: 'New Block', children: [childId] })
+      }, { resetLayout: true })
+    },
+    addBlockToCounterbalance: (counterbalanceId) =>
+      mutate(g => addBlockToCounterbalance(g, counterbalanceId), { resetLayout: true }),
   }), [mutate])
 
   // Derive RF nodes/edges
@@ -371,6 +557,24 @@ export default function ExperimentBuilder() {
     [graph, positions, selectedId, sessionTemplates, hasEnrollments, callbacks]
   )
   const rfEdges = useMemo(() => graphToRfEdges(graph), [graph])
+
+  // Camera habit: keep the selected node pinned at the top-left, so adding a
+  // new element (which auto-selects itself) or clicking another node always
+  // brings the focus into frame — re-pin whenever the selection or the set
+  // of rendered nodes changes, not on every render (a drag or a label edit
+  // shouldn't yank the camera out from under the user).
+  const nodeIdsKey = useMemo(() => rfNodes.map(n => n.id).sort().join('|'), [rfNodes])
+  useEffect(() => {
+    pinViewportToSelection(rfInstanceRef.current, rfNodes, selectedId)
+    // Deliberately keyed on selectedId/nodeIdsKey (not rfNodes/positions),
+    // so dragging or editing a label doesn't move the camera.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedId, nodeIdsKey])
+
+  function handleRfInit(instance) {
+    rfInstanceRef.current = instance
+    pinViewportToSelection(instance, rfNodes, selectedId)
+  }
 
   // Only sync position changes from RF
   function handleNodesChange(changes) {
@@ -390,6 +594,10 @@ export default function ExperimentBuilder() {
   //                            timepoint goes after the whole group
   //   nothing selected       → append to end of chain
 
+  // None of these reselect the newly-added node — selection is left alone
+  // so the camera stays on whatever the user was already focused on; the
+  // user clicks the new node themselves if that's what they want to look at.
+
   function handleAddTimepoint() {
     const nid = newId()
     mutate(g => {
@@ -398,29 +606,59 @@ export default function ExperimentBuilder() {
       const data   = { id: nid, type: 'timepoint', day_offset: offset, time_of_day: null, label: `Day ${offset + 1}` }
       return after ? insertAfter(g, after, data) : addNode(g, data)
     }, { resetLayout: true })
-    setSelectedId(nid)
   }
 
   function handleAddSession() {
-    const nid = newId()
     mutate(g => {
       const after = insertionPoint(g, selectedId)
-      const data  = { id: nid, type: 'session', session_template_id: null, link_expires_hours: 48, label: 'New Session' }
+      const data  = { id: newId(), type: 'session', session_template_id: null, link_expires_hours: 48, label: 'New Session' }
       return after ? insertAfter(g, after, data) : addNode(g, data)
     }, { resetLayout: true })
-    setSelectedId(nid)
   }
 
   function handleAddBlock() {
-    const nid = newId()
     mutate(g => {
       const after   = insertionPoint(g, selectedId)
       const childId = newId()
       const withChild = { ...g, nodes: [...g.nodes, { id: childId, type: 'session', session_template_id: null, link_expires_hours: 48, label: 'Session 1' }] }
-      const data    = { id: nid, type: 'block', label: 'New Block', children: [childId] }
+      const data    = { id: newId(), type: 'block', label: 'New Block', children: [childId] }
       return after ? insertAfter(withChild, after, data) : addNode(withChild, data)
     }, { resetLayout: true })
-    setSelectedId(nid)
+  }
+
+  function handleAddRandomize() {
+    mutate(g => {
+      const after = insertionPoint(g, selectedId)
+      const data = {
+        id: newId(), type: 'randomize', label: 'New Randomize',
+        arms: [{ group: '', weight: 1, entry: null }, { group: '', weight: 1, entry: null }],
+      }
+      return after ? insertAfter(g, after, data) : addNode(g, data)
+    }, { resetLayout: true })
+  }
+
+  function handleAddCounterbalance() {
+    mutate(g => {
+      const after = insertionPoint(g, selectedId)
+      const data = { id: newId(), type: 'counterbalance', label: 'New Counterbalance', block_ids: [] }
+      return after ? insertAfter(g, after, data) : addNode(g, data)
+    }, { resetLayout: true })
+  }
+
+  // A Block/Counterbalance owns its children via an array (block.children /
+  // counterbalance.block_ids), not a structural edge — so adding a session or
+  // block "into" the currently-selected control element is a distinct action
+  // from the trunk-insertion helpers above.
+  function handleAddSessionToBlock() {
+    if (selectedId) callbacks.addSessionToBlock(selectedId)
+  }
+
+  function handleAddBlockToCounterbalance() {
+    if (selectedId) callbacks.addBlockToCounterbalance(selectedId)
+  }
+
+  function handleMergeInto(fromId, toId) {
+    mutate(g => mergeInto(g, fromId, toId), { resetLayout: true })
   }
 
   function handleNodeEdit(nodeId, updates) {
@@ -428,7 +666,17 @@ export default function ExperimentBuilder() {
   }
 
   function handleNodeRemove(nodeId) {
-    mutate(g => removeNode(g, nodeId), { resetLayout: true })
+    // A block-owned session or counterbalance-owned block is removed from
+    // its owner's array, not spliced out of the structural chain.
+    const owningBlock = findOwningBlock(graph, nodeId)
+    const owningCounterbalance = findOwningCounterbalance(graph, nodeId)
+    if (owningBlock) {
+      mutate(g => removeSessionFromBlock(g, owningBlock.id, nodeId), { resetLayout: true })
+    } else if (owningCounterbalance) {
+      mutate(g => removeBlockFromCounterbalance(g, owningCounterbalance.id, nodeId), { resetLayout: true })
+    } else {
+      mutate(g => removeNode(g, nodeId), { resetLayout: true })
+    }
     setSelectedId(null)
   }
 
@@ -490,6 +738,9 @@ export default function ExperimentBuilder() {
             />
           </div>
           <div style={S.headerRight}>
+            <Link to={`/admin/studies/${id}/balance`} style={S.balanceLink}>
+              Balance audit
+            </Link>
             <button style={S.contactBtn} onClick={() => setShowContact(true)}>
               Contact settings
             </button>
@@ -523,6 +774,28 @@ export default function ExperimentBuilder() {
           <div style={S.toolbar}>
             {(() => {
               const selNode = selectedId ? graph.nodes.find(n => n.id === selectedId) : null
+
+              // Toolbar is context-sensitive to whichever node is selected,
+              // not always anchored to a Timepoint: a Block/Counterbalance
+              // controls its own children, so selecting one exposes only the
+              // action(s) that add into it.
+              if (selNode?.type === 'block') {
+                return (
+                  <>
+                    <span style={S.toolbarLabel}>Into "{selNode.label || 'block'}":</span>
+                    <button style={S.toolBtn} onClick={handleAddSessionToBlock}>● Session</button>
+                  </>
+                )
+              }
+              if (selNode?.type === 'counterbalance') {
+                return (
+                  <>
+                    <span style={S.toolbarLabel}>Into "{selNode.label || 'counterbalance'}":</span>
+                    <button style={S.toolBtn} onClick={handleAddBlockToCounterbalance}>▦ Block</button>
+                  </>
+                )
+              }
+
               const isTimepoint = selNode?.type === 'timepoint'
               const hint = isTimepoint
                 ? `Into "${selNode.label || 'timepoint'}":`
@@ -535,6 +808,8 @@ export default function ExperimentBuilder() {
                     <>
                       <button style={S.toolBtn} onClick={handleAddSession}>● Session</button>
                       <button style={S.toolBtn} onClick={handleAddBlock}>▦ Block</button>
+                      <button style={S.toolBtn} onClick={handleAddRandomize}>⑂ Randomize</button>
+                      <button style={S.toolBtn} onClick={handleAddCounterbalance}>⇄ Counterbalance</button>
                     </>
                   )}
                 </>
@@ -554,8 +829,8 @@ export default function ExperimentBuilder() {
               onNodeClick={handleNodeClick}
               onPaneClick={handlePaneClick}
               nodesConnectable={false}
-              fitView
-              fitViewOptions={{ padding: 0.3 }}
+              onInit={handleRfInit}
+              defaultViewport={{ x: VIEWPORT_MARGIN, y: VIEWPORT_MARGIN, zoom: 1 }}
               deleteKeyCode={null}
             >
               <Background color="var(--bd)" gap={20} />
@@ -572,6 +847,7 @@ export default function ExperimentBuilder() {
                 isLocked={hasEnrollments}
                 onChange={handleNodeEdit}
                 onRemove={handleNodeRemove}
+                onMerge={handleMergeInto}
               />
             </div>
           )}
@@ -595,6 +871,7 @@ const S = {
   lockedBadge: { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--gy)', background: '#f5f5f5', borderRadius: 6, padding: '3px 8px' },
   errBadge:    { fontFamily: '"Space Mono",monospace', fontSize: 11, color: '#e04', background: '#fff0f0', border: '1px solid #fcc', borderRadius: 6, padding: '3px 8px' },
   contactBtn:  { background: '#fff', border: '1px solid var(--bd)', borderRadius: 8, padding: '7px 14px', fontSize: 13, color: 'var(--tx2)', cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
+  balanceLink: { background: '#fff', border: '1px solid var(--bd)', borderRadius: 8, padding: '7px 14px', fontSize: 13, color: 'var(--tx2)', textDecoration: 'none', fontFamily: '"DM Sans",system-ui,sans-serif' },
   savedBadge:  { fontFamily: '"Space Mono",monospace', fontSize: 11, color: '#2d9e5f', background: '#f0faf4', border: '1px solid #a8e6c3', borderRadius: 6, padding: '3px 8px' },
   btnPrimary:  { background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 18px', fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
   saveError:   { background: '#fff0f0', border: '1px solid #fcc', borderRadius: 8, padding: '8px 14px', fontSize: 13, color: '#e04', marginBottom: 8, flexShrink: 0 },

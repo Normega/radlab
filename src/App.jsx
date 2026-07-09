@@ -72,6 +72,7 @@ import VasPreviewPage   from './pages/admin/VasPreviewPage'
 import SliderCreatePage      from './pages/admin/SliderCreatePage'
 import ScreenerLibraryPage  from './pages/admin/ScreenerLibraryPage'
 import ExperimentBuilder    from './pages/admin/ExperimentBuilder'
+import StudyBalancePage     from './pages/admin/StudyBalancePage'
 import DisplaysPage         from './pages/admin/DisplaysPage'
 import DisplayEditorPage    from './pages/admin/DisplayEditorPage'
 import BreathBeltDemo       from './games/BreathBelt/BreathBeltDemo'
@@ -321,6 +322,7 @@ export default function App() {
               <Route path="/admin/studies/new"           element={<StudyFormPage />} />
               <Route path="/admin/studies/:id/edit"      element={<StudyFormPage />} />
               <Route path="/admin/studies/:id/design"    element={<ExperimentBuilder />} />
+              <Route path="/admin/studies/:id/balance"   element={<StudyBalancePage />} />
               <Route path="/admin/studies/:id"           element={<StudyDetail />} />
               <Route path="/admin/questionnaires"        element={<QuestionnairesPage />} />
               <Route path="/admin/questionnaires/new"    element={<QuestionnaireUpload />} />

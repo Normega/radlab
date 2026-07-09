@@ -37,25 +37,48 @@ export function entryNode(graph) {
   return topLevelNodes(graph).find(n => !targets.has(n.id)) ?? null
 }
 
-/** Ordered top-level node ids walking the linear chain. */
+/** The block that owns nodeId as a child, if any. */
+export function findOwningBlock(graph, nodeId) {
+  return graph.nodes.find(n => n.type === 'block' && n.children?.includes(nodeId)) ?? null
+}
+
+/** The counterbalance that owns nodeId as one of its block_ids, if any. */
+export function findOwningCounterbalance(graph, nodeId) {
+  return graph.nodes.find(n => n.type === 'counterbalance' && n.block_ids?.includes(nodeId)) ?? null
+}
+
+/**
+ * Ordered top-level node ids walking the linear chain. Stops at (but
+ * includes) a randomize node — it has no single "next": arms fan out and
+ * are wired explicitly by the author, not a linear continuation. Letting
+ * this walk arbitrarily follow one arm would make the authoring-UI helpers
+ * (autoLayout, insertionPoint, prevTimepointOffset) treat that arm's
+ * content as though it were the main trunk.
+ */
 export function chainOrder(graph) {
   const entry = entryNode(graph)
   if (!entry) return []
+  const nodeMap = Object.fromEntries(graph.nodes.map(n => [n.id, n]))
   const order = []
   const visited = new Set()
   let cur = entry.id
   while (cur && !visited.has(cur)) {
     visited.add(cur)
     order.push(cur)
+    if (nodeMap[cur]?.type === 'randomize') break
     cur = graph.edges.find(e => e.from === cur)?.to ?? null
   }
   return order
 }
 
-/** Last top-level node in the chain (no outgoing edge). */
+/**
+ * Last node in the trunk (as walked by chainOrder — never an arm-owned
+ * leaf). May be a randomize node if the trunk currently ends there.
+ */
 function tailNode(graph) {
-  const sources = new Set(graph.edges.map(e => e.from))
-  return topLevelNodes(graph).find(n => !sources.has(n.id)) ?? null
+  const order = chainOrder(graph)
+  if (order.length === 0) return null
+  return graph.nodes.find(n => n.id === order[order.length - 1]) ?? null
 }
 
 // ─── Validate ────────────────────────────────────────────────────────────────
@@ -190,11 +213,16 @@ export function validate(graph) {
 
 // ─── Mutators ────────────────────────────────────────────────────────────────
 
-/** Append a new top-level node to the end of the chain. */
+/**
+ * Append a new top-level node to the end of the chain. If the trunk
+ * currently ends at a randomize node, the new node is added disconnected
+ * rather than wired from it — a randomize node's outgoing edges are
+ * exclusively its arms, wired explicitly by the author.
+ */
 export function addNode(graph, nodeData) {
   const tail    = tailNode(graph)
   const newNode = { id: newId(), ...nodeData }
-  const newEdges = tail
+  const newEdges = (tail && tail.type !== 'randomize')
     ? [...graph.edges, { from: tail.id, to: newNode.id }]
     : [...graph.edges]
   return { nodes: [...graph.nodes, newNode], edges: newEdges }
@@ -205,16 +233,45 @@ export function updateNode(graph, nodeId, updates) {
   return { ...graph, nodes: graph.nodes.map(n => n.id === nodeId ? { ...n, ...updates } : n) }
 }
 
-/** Remove a top-level node, splicing its predecessor → successor edge. */
+/**
+ * Remove a top-level node, splicing its predecessor → successor edge.
+ * Cascades to owned subtrees: a block's children, a counterbalance's
+ * block_ids (and their children), or a randomize's arms' private chains
+ * (walked the same shared-node-stopping way as removeArm).
+ *
+ * Randomize nodes have no single successor to splice to (one edge per
+ * arm, not one) — removing one just drops the predecessor's edge rather
+ * than guessing which arm should take its place.
+ */
 export function removeNode(graph, nodeId) {
-  const inEdge  = graph.edges.find(e => e.to   === nodeId)
-  const outEdge = graph.edges.find(e => e.from  === nodeId)
-  let newEdges = graph.edges.filter(e => e.from !== nodeId && e.to !== nodeId)
-  if (inEdge && outEdge) newEdges = [...newEdges, { from: inEdge.from, to: outEdge.to }]
-
   const node = graph.nodes.find(n => n.id === nodeId)
   const toRemove = new Set([nodeId])
-  if (node?.type === 'block') node.children?.forEach(c => toRemove.add(c))
+
+  if (node?.type === 'block') {
+    node.children?.forEach(c => toRemove.add(c))
+  } else if (node?.type === 'counterbalance') {
+    for (const bid of node.block_ids ?? []) {
+      toRemove.add(bid)
+      graph.nodes.find(n => n.id === bid)?.children?.forEach(c => toRemove.add(c))
+    }
+  } else if (node?.type === 'randomize') {
+    const incomingCount = {}
+    for (const e of graph.edges) incomingCount[e.to] = (incomingCount[e.to] ?? 0) + 1
+    for (const arm of node.arms ?? []) {
+      let cur = arm.entry
+      while (cur && incomingCount[cur] === 1 && !toRemove.has(cur)) {
+        toRemove.add(cur)
+        const armNode = graph.nodes.find(n => n.id === cur)
+        if (armNode?.type === 'block') armNode.children?.forEach(c => toRemove.add(c))
+        cur = graph.edges.find(e => e.from === cur)?.to ?? null
+      }
+    }
+  }
+
+  const inEdge  = graph.edges.find(e => e.to === nodeId)
+  const outEdge = node?.type !== 'randomize' ? graph.edges.find(e => e.from === nodeId) : null
+  let newEdges = graph.edges.filter(e => !toRemove.has(e.from) && !toRemove.has(e.to))
+  if (inEdge && outEdge) newEdges = [...newEdges, { from: inEdge.from, to: outEdge.to }]
 
   return { nodes: graph.nodes.filter(n => !toRemove.has(n.id)), edges: newEdges }
 }
@@ -265,6 +322,122 @@ export function duplicateBlock(graph, blockId) {
   return { nodes: [...graph.nodes, ...newChildNodes, newBlock], edges: newEdges }
 }
 
+// ─── Randomize arm mutators ──────────────────────────────────────────────────
+
+/** Append a new (unentered) arm to a randomize node. */
+export function addArm(graph, randomizeId) {
+  return {
+    ...graph,
+    nodes: graph.nodes.map(n =>
+      n.id === randomizeId
+        ? { ...n, arms: [...(n.arms ?? []), { group: '', weight: 1, entry: null }] }
+        : n
+    ),
+  }
+}
+
+/**
+ * Remove an arm and its private chain — walked from the arm's entry,
+ * stopping at any node shared with another path (more than one incoming
+ * edge), so a downstream rejoin point is never deleted out from under
+ * another arm.
+ */
+export function removeArm(graph, randomizeId, armIndex) {
+  const randomizeNode = graph.nodes.find(n => n.id === randomizeId)
+  const arm = randomizeNode?.arms?.[armIndex]
+  if (!randomizeNode || !arm) return graph
+
+  const incomingCount = {}
+  for (const e of graph.edges) incomingCount[e.to] = (incomingCount[e.to] ?? 0) + 1
+
+  const toRemove = new Set()
+  let cur = arm.entry
+  while (cur && incomingCount[cur] === 1) {
+    toRemove.add(cur)
+    const node = graph.nodes.find(n => n.id === cur)
+    if (node?.type === 'block') node.children?.forEach(c => toRemove.add(c))
+    cur = graph.edges.find(e => e.from === cur)?.to ?? null
+  }
+
+  const newArms = (randomizeNode.arms ?? []).filter((_, i) => i !== armIndex)
+  const newNodes = graph.nodes
+    .filter(n => !toRemove.has(n.id))
+    .map(n => n.id === randomizeId ? { ...n, arms: newArms } : n)
+  const newEdges = graph.edges.filter(e =>
+    !(e.from === randomizeId && e.to === arm.entry) && !toRemove.has(e.from) && !toRemove.has(e.to)
+  )
+
+  return { nodes: newNodes, edges: newEdges }
+}
+
+/** Create a node and set it as the given arm's entry, wiring the edge. */
+export function addArmEntry(graph, randomizeId, armIndex, nodeData) {
+  const randomizeNode = graph.nodes.find(n => n.id === randomizeId)
+  if (!randomizeNode || randomizeNode.type !== 'randomize' || !randomizeNode.arms?.[armIndex]) return graph
+
+  const newNode = { id: newId(), ...nodeData }
+  const newNodes = [...graph.nodes, newNode].map(n =>
+    n.id === randomizeId
+      ? { ...n, arms: (n.arms ?? []).map((a, i) => i === armIndex ? { ...a, entry: newNode.id } : a) }
+      : n
+  )
+  return { nodes: newNodes, edges: [...graph.edges, { from: randomizeId, to: newNode.id }] }
+}
+
+// ─── Counterbalance block mutators ───────────────────────────────────────────
+
+/** Create a block (with one starter session) and append it to a counterbalance's block_ids. */
+export function addBlockToCounterbalance(graph, counterbalanceId, overrideBlockId) {
+  const cbNode = graph.nodes.find(n => n.id === counterbalanceId)
+  if (!cbNode || cbNode.type !== 'counterbalance') return graph
+
+  const childId = newId()
+  const blockId = overrideBlockId ?? newId()
+  const child = { id: childId, type: 'session', link_expires_hours: 48, label: 'New Session' }
+  const block = { id: blockId, type: 'block', label: 'New Block', children: [childId] }
+
+  return {
+    nodes: [
+      ...graph.nodes.map(n =>
+        n.id === counterbalanceId ? { ...n, block_ids: [...(n.block_ids ?? []), blockId] } : n
+      ),
+      child,
+      block,
+    ],
+    edges: graph.edges,
+  }
+}
+
+/** Remove a block (and its children) from a counterbalance's block_ids. */
+export function removeBlockFromCounterbalance(graph, counterbalanceId, blockId) {
+  const block = graph.nodes.find(n => n.id === blockId)
+  const toRemove = new Set([blockId])
+  if (block?.type === 'block') block.children?.forEach(c => toRemove.add(c))
+
+  return {
+    nodes: graph.nodes
+      .filter(n => !toRemove.has(n.id))
+      .map(n =>
+        n.id === counterbalanceId
+          ? { ...n, block_ids: (n.block_ids ?? []).filter(b => b !== blockId) }
+          : n
+      ),
+    edges: graph.edges,
+  }
+}
+
+/**
+ * Wire a dead-end node's continuation to an existing node — the explicit
+ * "merge forked paths back together" action. Replaces any existing outgoing
+ * edge from fromId (there should be at most one, since this is only ever
+ * offered in the UI for non-randomize nodes with none). No cycle-checking
+ * beyond what validate() already catches generically.
+ */
+export function mergeInto(graph, fromId, toId) {
+  if (!fromId || !toId || fromId === toId) return graph
+  return { ...graph, edges: [...graph.edges.filter(e => e.from !== fromId), { from: fromId, to: toId }] }
+}
+
 // ─── Insertion helpers ───────────────────────────────────────────────────────
 
 /**
@@ -289,7 +462,25 @@ export function lastNodeInTimepointGroup(graph, timepointId) {
  * If nodeData includes an `id` field it is used; otherwise a fresh id is generated.
  */
 export function insertAfter(graph, afterId, nodeData) {
-  const newNode  = { id: newId(), ...nodeData }
+  const newNode   = { id: newId(), ...nodeData }
+  const afterNode = graph.nodes.find(n => n.id === afterId)
+
+  // A randomize node has no single "next" — arms fan out and are wired
+  // explicitly by the author, not a linear continuation. Splicing generically
+  // here (on either side) would either destroy existing arm edges or attach
+  // ambiguously, so the new node goes in disconnected instead when either
+  // side of the edit is a randomize node; validate() flags it until the
+  // author wires it in deliberately (typically as an arm entry).
+  if (afterNode?.type === 'randomize' || nodeData.type === 'randomize') {
+    // Don't touch a randomize anchor's existing (arm) edges at all; otherwise
+    // drop afterId's old outgoing edge (its target is left disconnected
+    // rather than reattached) and wire afterId -> the new node instead.
+    const newEdges = afterNode?.type === 'randomize'
+      ? graph.edges
+      : [...graph.edges.filter(e => e.from !== afterId), { from: afterId, to: newNode.id }]
+    return { nodes: [...graph.nodes, newNode], edges: newEdges }
+  }
+
   const outEdge  = graph.edges.find(e => e.from === afterId)
   let   newEdges = graph.edges.filter(e => e.from !== afterId)
   newEdges = [...newEdges, { from: afterId, to: newNode.id }]
