@@ -34,10 +34,16 @@ export default function BreathLab() {
 
   // Re-run calibration from the lab (e.g. after posture/fit change). Returns to
   // the calibration screen; on completion the COMPLETE→LAB effect brings us back.
+  // Real belt: reset to the NONE "ready" screen (clears the old fit) and let the
+  // user press Begin — this mirrors the initial flow. We must NOT jump straight
+  // to FIXATION: CalibrationScreen's fixation timer isn't safe against React
+  // StrictMode's mount-time double-invoke, so mounting directly into FIXATION
+  // hangs on the instruction screen. Sim has no real calibration, so it goes
+  // straight to the REVIEW panel (which has no such timer).
   const recalibrate = useCallback(() => {
     setAct('CALIBRATE')
     if (isSimMode) breath.acceptSimCalib()
-    else breath.startCalibration()
+    else breath.resetCalibration()
   }, [isSimMode, breath])
 
   if (!navigator.bluetooth && !isSimMode) return <BrowserWarning />
