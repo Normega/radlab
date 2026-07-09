@@ -21,7 +21,8 @@ export default function BreathLab() {
   const location = useLocation()
   const isSimMode = new URLSearchParams(location.search).get('sim') === '1'
 
-  const breath = useBreathSignal({ isSimMode })
+  const [autoRecalOn, setAutoRecalOn] = useState(true)
+  const breath = useBreathSignal({ isSimMode, autoRecal: autoRecalOn })
   const [act, setAct] = useState('WELCOME') // WELCOME → CONNECT → CALIBRATE → LAB
 
   useEffect(() => {
@@ -101,17 +102,24 @@ export default function BreathLab() {
         </Panel>
       )}
 
-      {act === 'LAB' && <LabView breath={breath} isSimMode={isSimMode} onRecalibrate={recalibrate} />}
+      {act === 'LAB' && (
+        <LabView
+          breath={breath} isSimMode={isSimMode} onRecalibrate={recalibrate}
+          autoRecalOn={autoRecalOn} setAutoRecalOn={setAutoRecalOn}
+        />
+      )}
     </div>
   )
 }
 
 // ── The lab itself ──────────────────────────────────────────────────────────
 
-function LabView({ breath, isSimMode, onRecalibrate }) {
+function LabView({ breath, isSimMode, onRecalibrate, autoRecalOn, setAutoRecalOn }) {
   const [stats, setStats] = useState({})
   const [events, setEvents] = useState([])
   const [simPeriodS, setSimPeriodS] = useState(4)
+  const [recalToast, setRecalToast] = useState(null)
+  const lastRecalCountRef = useRef(0)
 
   // Chip values at 4 Hz — cheap enough for React state
   useEffect(() => {
@@ -119,9 +127,21 @@ function LabView({ breath, isSimMode, onRecalibrate }) {
     return () => clearInterval(id)
   }, [breath])
 
-  // Breath-event ticker (last 6 transitions)
+  // Transient toast when a background auto-recalibration fires
+  useEffect(() => {
+    const n = stats.autoRecalCount || 0
+    if (n > lastRecalCountRef.current) {
+      lastRecalCountRef.current = n
+      setRecalToast(`Signal re-anchored to your current posture (fit ${Math.round((stats.qualityEvr || 0) * 100)}%)`)
+      const t = setTimeout(() => setRecalToast(null), 4000)
+      return () => clearTimeout(t)
+    }
+  }, [stats.autoRecalCount, stats.qualityEvr])
+
+  // Breath-event ticker (last 6 inhale/exhale transitions; ignore recal events)
   useEffect(() => {
     return breath.onBreathEvent(ev => {
+      if (ev.type !== 'inhale_start' && ev.type !== 'exhale_start') return
       setEvents(prev => [...prev.slice(-5), ev])
     })
   }, [breath])
@@ -131,10 +151,14 @@ function LabView({ breath, isSimMode, onRecalibrate }) {
 
   return (
     <>
+      {recalToast && <div style={S.recalToast}>↻ {recalToast}</div>}
       {stats.signalDegraded && (
         <div style={S.degradedBanner}>
           ⚠ Signal quality dropped — your posture or the belt fit may have changed, so the
-          breath signal no longer lines up with the calibrated axis. Re-calibrate to recapture it.
+          breath signal no longer lines up with the calibrated axis.
+          {autoRecalOn
+            ? ' Auto-recalibration is on but couldn’t find a clean axis (often a motion artifact) — re-calibrate if it persists.'
+            : ' Re-calibrate to recapture it.'}
           <button onClick={onRecalibrate} style={S.bannerBtn}>Re-calibrate</button>
         </div>
       )}
@@ -153,7 +177,12 @@ function LabView({ breath, isSimMode, onRecalibrate }) {
             value={stats.qualityEvr == null ? '—' : `${Math.round(stats.qualityEvr * 100)}%`}
             tone={stats.qualityEvr != null && stats.qualityEvr < 0.4 ? '#e74c3c' : undefined}
           />
+          <Chip label="Auto-recals" value={String(stats.autoRecalCount ?? 0)} />
         </div>
+        <label style={S.toggleRow}>
+          <input type="checkbox" checked={autoRecalOn} onChange={e => setAutoRecalOn(e.target.checked)} />
+          <span>Background auto-recalibration — re-project onto the current breath axis when posture drifts (no re-breathing needed)</span>
+        </label>
         <p style={S.eventLine}>
           {events.map((e, i) => (
             <span key={i} style={{ color: e.type === 'inhale_start' ? PHASE_COLORS.inhale : PHASE_COLORS.exhale }}>
@@ -473,6 +502,15 @@ const S = {
     background: '#fff3e0', border: '1px solid #e67e22', borderRadius: 12,
     color: '#a04a00', fontSize: 14, lineHeight: 1.5,
     display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap',
+  },
+  recalToast: {
+    width: '100%', maxWidth: 700, marginTop: 12, padding: '12px 18px',
+    background: '#e6f4ea', border: '1px solid #3aa76d', borderRadius: 12,
+    color: '#1c7a4a', fontSize: 14, fontWeight: 500,
+  },
+  toggleRow: {
+    display: 'flex', alignItems: 'flex-start', gap: 10, maxWidth: 640,
+    fontSize: 13, color: 'var(--tx3)', lineHeight: 1.4, cursor: 'pointer', textAlign: 'left',
   },
   bannerBtn: {
     background: '#e67e22', color: '#fff', border: 'none', borderRadius: 10,

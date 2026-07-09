@@ -60,7 +60,13 @@ const DEGRADE_EVR_FRAC       = 0.75   // EVR below this fraction of baseline is 
 const MIN_ACTIVITY_FRAC      = 0.50   // ...but only flag if total variance stays this high (breathing present, not a hold)
 const DEGRADE_HOLD_MS        = 4000   // sustained this long before signalDegraded latches true
 
-export function useBreathSignal({ isSimMode = false } = {}) {
+// Background auto-recalibration (PCA re-projection onto the current breath axis)
+const RECAL_COOLDOWN_MS      = 20000  // minimum gap between auto-recals
+const RECAL_MIN_EVR          = 0.70   // only accept a new axis that captures ≥ this much variance
+const RECAL_MIN_GAIN         = 0.10   // ...and beats the current EVR by at least this
+const RECAL_ARTIFACT_TV_MULT = 8      // skip recal while total variance spikes above this × baseline (motion artifact)
+
+export function useBreathSignal({ isSimMode = false, autoRecal = true } = {}) {
   const [btState,         setBtState]        = useState('IDLE')
   const [calibPhase,      setCalibPhase]     = useState('NONE')
   const [calibReviewData, setCalibReviewData] = useState(null)
@@ -92,6 +98,7 @@ export function useBreathSignal({ isSimMode = false } = {}) {
     lastPeriodMs: null, hr: null, rsaMs: null, lagMs: 0,
     qualityEvr: null, qualityTotalVar: null, signalDegraded: false,
     filtered: null,   // last bandpassed [x,y,z] — recorded for offline EVR analysis
+    autoRecalCount: 0, lastRecalAt: null,
   })
 
   // Signal-quality monitor state
@@ -99,6 +106,7 @@ export function useBreathSignal({ isSimMode = false } = {}) {
   const qualityBaselineRef = useRef({ evr: null, totalVar: null, createdAt: 0 })
   const qualityLastStatsRef = useRef(0)
   const degradeSinceRef    = useRef(null)
+  const lastRecalRef       = useRef(-Infinity)
 
   // Sim
   const simIntervalRef  = useRef(null)
@@ -149,8 +157,10 @@ export function useBreathSignal({ isSimMode = false } = {}) {
     qualityBaselineRef.current = { evr: null, totalVar: null, createdAt: Date.now() }
     qualityLastStatsRef.current = 0
     degradeSinceRef.current    = null
+    lastRecalRef.current       = -Infinity
     const s = signalRef.current
     s.qualityEvr = null; s.qualityTotalVar = null; s.signalDegraded = false
+    s.autoRecalCount = 0; s.lastRecalAt = null
   }, [])
 
   // Recompute EVR (throttled), snapshot a baseline a few seconds after
@@ -179,8 +189,36 @@ export function useBreathSignal({ isSimMode = false } = {}) {
         degradeSinceRef.current = null
       }
     }
+
+    // Background auto-recalibration: on a sustained degrade, silently re-project
+    // onto the current dominant breath axis (top PC) instead of only warning —
+    // provided we're past the cooldown and total variance isn't spiking (i.e.
+    // not mid motion-artifact, which would let PCA learn the artifact, not breath).
+    if (degraded && autoRecal && now - lastRecalRef.current > RECAL_COOLDOWN_MS &&
+        base.totalVar != null && st.totalVar < RECAL_ARTIFACT_TV_MULT * base.totalVar) {
+      const prop = q.proposeRecal()
+      if (prop && prop.evr >= RECAL_MIN_EVR && prop.evr > st.evr + RECAL_MIN_GAIN) {
+        const old = mlrWeightsRef.current
+        const variant = old?.modelLabel?.includes('tight') ? 'tight' : 'wide'
+        // PCA re-projection expressed as the same linear model the live path uses
+        mlrWeightsRef.current = {
+          bias: prop.bias, weights: prop.weights,
+          modelLabel: `mlr-${variant}`, lagMs: old?.lagMs ?? 0, fitR: prop.evr, autoRecal: true,
+        }
+        q.setDirection(prop.weights)                         // EVR now measured against the new axis
+        qualityBaselineRef.current = { evr: null, totalVar: null, createdAt: now } // re-anchor baseline
+        degradeSinceRef.current = null
+        lastRecalRef.current = now
+        s.autoRecalCount = (s.autoRecalCount || 0) + 1
+        s.lastRecalAt = now
+        s.signalDegraded = false
+        emit({ type: 'auto_recalibrated', t: now, evr: prop.evr })
+        return
+      }
+    }
+
     s.signalDegraded = degraded
-  }, [])
+  }, [autoRecal])
 
   // ── BLE handlers ──────────────────────────────────────────────────────────
 
@@ -326,8 +364,10 @@ export function useBreathSignal({ isSimMode = false } = {}) {
     filterState3Ref.current = initFilterState3()
     qualityTrackerRef.current = null
     degradeSinceRef.current   = null
+    lastRecalRef.current      = -Infinity
     const s = signalRef.current
     s.qualityEvr = null; s.qualityTotalVar = null; s.signalDegraded = false
+    s.autoRecalCount = 0; s.lastRecalAt = null
     setCalibReviewData(null)
     setCalibPhase('NONE')
   }, [])

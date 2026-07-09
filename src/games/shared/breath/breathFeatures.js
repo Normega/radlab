@@ -180,34 +180,90 @@ export function createQualityTracker(weights, { windowMs = 15000 } = {}) {
   setDir(weights)
   const buf = []
 
+  // Rolling 3×3 covariance of the filtered axes over the window; null if sparse.
+  function cov() {
+    const n = buf.length
+    if (n < 60) return null
+    let mx = 0, my = 0, mz = 0
+    for (const p of buf) { mx += p.fx; my += p.fy; mz += p.fz }
+    mx /= n; my /= n; mz /= n
+    let cxx = 0, cxy = 0, cxz = 0, cyy = 0, cyz = 0, czz = 0
+    for (const p of buf) {
+      const dx = p.fx - mx, dy = p.fy - my, dz = p.fz - mz
+      cxx += dx*dx; cxy += dx*dy; cxz += dx*dz
+      cyy += dy*dy; cyz += dy*dz; czz += dz*dz
+    }
+    cxx /= n; cxy /= n; cxz /= n; cyy /= n; cyz /= n; czz /= n
+    return { cxx, cxy, cxz, cyy, cyz, czz, trace: cxx + cyy + czz, n }
+  }
+
+  // Variance along a unit direction: dᵀΣd
+  const varAlong = (c, dx, dy, dz) => {
+    const s0 = c.cxx*dx + c.cxy*dy + c.cxz*dz
+    const s1 = c.cxy*dx + c.cyy*dy + c.cyz*dz
+    const s2 = c.cxz*dx + c.cyz*dy + c.czz*dz
+    return dx*s0 + dy*s1 + dz*s2
+  }
+
+  // Top eigenvector via power iteration, seeded for fast convergence.
+  const topEigen = (c, seed) => {
+    let vx = seed[0], vy = seed[1], vz = seed[2]
+    const n0 = Math.sqrt(vx*vx + vy*vy + vz*vz) || 1; vx /= n0; vy /= n0; vz /= n0
+    for (let i = 0; i < 40; i++) {
+      const nx = c.cxx*vx + c.cxy*vy + c.cxz*vz
+      const ny = c.cxy*vx + c.cyy*vy + c.cyz*vz
+      const nz = c.cxz*vx + c.cyz*vy + c.czz*vz
+      const nn = Math.sqrt(nx*nx + ny*ny + nz*nz)
+      if (nn < 1e-12) break
+      vx = nx/nn; vy = ny/nn; vz = nz/nn
+    }
+    return [vx, vy, vz]
+  }
+
   return {
     setDirection(w) { setDir(w) },
+    getDirection() { return [ux, uy, uz] },
     push(t, fx, fy, fz) {
       buf.push({ t, fx, fy, fz })
       while (buf.length && t - buf[0].t > windowMs) buf.shift()
     },
     // { evr: 0–1 or null, totalVar, n } — null until enough samples.
     stats() {
-      const n = buf.length
-      if (n < 60) return { evr: null, totalVar: null, n }
-      let mx = 0, my = 0, mz = 0
-      for (const p of buf) { mx += p.fx; my += p.fy; mz += p.fz }
-      mx /= n; my /= n; mz /= n
-      let cxx = 0, cxy = 0, cxz = 0, cyy = 0, cyz = 0, czz = 0
-      for (const p of buf) {
-        const dx = p.fx - mx, dy = p.fy - my, dz = p.fz - mz
-        cxx += dx*dx; cxy += dx*dy; cxz += dx*dz
-        cyy += dy*dy; cyz += dy*dz; czz += dz*dz
+      const c = cov()
+      if (!c) return { evr: null, totalVar: null, n: buf.length }
+      if (c.trace < 1e-12) return { evr: null, totalVar: c.trace, n: c.n }
+      return { evr: Math.max(0, Math.min(1, varAlong(c, ux, uy, uz) / c.trace)), totalVar: c.trace, n: c.n }
+    },
+    // Propose an unsupervised re-projection onto the current dominant breath axis
+    // (top principal component). Returned as a linear model {bias, weights} that
+    // maps the filtered axes to ~0..1 — the same form processPacketMLR consumes,
+    // so no change to the live path. Sign is chosen to preserve polarity vs the
+    // current direction (no pacer needed); scale/offset from robust percentiles
+    // of the recent projection. `evr` = fraction of variance the new axis captures.
+    // Returns null if there isn't enough data or no clear oscillation.
+    proposeRecal({ pct = 0.1 } = {}) {
+      const c = cov()
+      if (!c || c.trace < 1e-12) return null
+      let [ex, ey, ez] = topEigen(c, [ux, uy, uz])
+      const proj = buf.map(p => ex*p.fx + ey*p.fy + ez*p.fz)
+      const cur  = buf.map(p => ux*p.fx + uy*p.fy + uz*p.fz)
+      // sign continuity: keep positive correlation with the current projection
+      const pm = proj.reduce((a, b) => a + b, 0) / proj.length
+      const cm = cur.reduce((a, b) => a + b, 0) / cur.length
+      let num = 0
+      for (let i = 0; i < proj.length; i++) num += (proj[i] - pm) * (cur[i] - cm)
+      if (num < 0) { ex = -ex; ey = -ey; ez = -ez; for (let i = 0; i < proj.length; i++) proj[i] = -proj[i] }
+      const sorted = [...proj].sort((a, b) => a - b)
+      const lo = sorted[Math.floor((sorted.length - 1) * pct)]
+      const hi = sorted[Math.floor((sorted.length - 1) * (1 - pct))]
+      const range = hi - lo
+      if (!(range > 1e-9)) return null
+      return {
+        weights: [ex/range, ey/range, ez/range],
+        bias: -lo/range,
+        dir: [ex, ey, ez],
+        evr: Math.max(0, Math.min(1, varAlong(c, ex, ey, ez) / c.trace)),
       }
-      cxx /= n; cxy /= n; cxz /= n; cyy /= n; cyz /= n; czz /= n
-      const trace = cxx + cyy + czz
-      if (trace < 1e-12) return { evr: null, totalVar: trace, n }
-      // Σu then uᵀ(Σu)
-      const su0 = cxx*ux + cxy*uy + cxz*uz
-      const su1 = cxy*ux + cyy*uy + cyz*uz
-      const su2 = cxz*ux + cyz*uy + czz*uz
-      const explained = ux*su0 + uy*su1 + uz*su2
-      return { evr: Math.max(0, Math.min(1, explained / trace)), totalVar: trace, n }
     },
   }
 }
