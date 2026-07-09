@@ -52,7 +52,11 @@ const HISTORY_MS   = 60000
 // Signal-quality (explained-variance) monitor thresholds
 const QUALITY_STATS_MS       = 700    // recompute EVR at most this often
 const BASELINE_MIN_ELAPSED_MS = 8000  // wait this long post-(re)calibration before snapshotting the baseline
-const DEGRADE_EVR_FRAC       = 0.55   // EVR below this fraction of baseline is suspicious
+const DEGRADE_EVR_FRAC       = 0.75   // EVR below this fraction of baseline is suspicious
+// ^ tuned against a real sit→stand→slouch recording (2026-07-09): baseline EVR ~89%,
+//   standing dropped it to ~57-62% (fires ~25 s in), sit held 82-91% (safe margin). A
+//   mild slouch at ~71% is intentionally left as a pass; raise toward 0.85 to catch it
+//   too, at higher false-positive risk near normal sit variation.
 const MIN_ACTIVITY_FRAC      = 0.50   // ...but only flag if total variance stays this high (breathing present, not a hold)
 const DEGRADE_HOLD_MS        = 4000   // sustained this long before signalDegraded latches true
 
