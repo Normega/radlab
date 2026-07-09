@@ -65,3 +65,18 @@ Discovered May 2026: `stillwater_responses` had an anon-only INSERT policy; `dri
 All Supabase migrations live in `.\supabase\migrations\` and are named `YYYYMMDD_description.sql` (e.g. `20260606_compensation_form.sql`). **Never write migration SQL to the project root.** Run migrations manually in the Supabase SQL editor, or via the Supabase MCP `apply_migration` tool.
 
 **Applied-status manifest**: `supabase/migrations/README.md` records that every migration file up to 2026-07-08 is confirmed applied to the live project (with evidence per file). Do not re-audit those; only migrations dated after 2026-07-08 need checking. When you apply a new migration, add a row to that manifest.
+
+---
+
+## website.md convention — required on every merge to main
+
+`website.md` is the platform's living architecture record. **Every commit/merge to `main` must include a check of website.md, and an update when the change touches anything it documents.** Do this as part of the same commit, not as a follow-up.
+
+The check, concretely:
+
+1. Does the change add/alter behavior, schema, routes, files, or status that website.md describes? If yes, amend the relevant section(s) — status lines, file lists, verified behavior, key decisions.
+2. For substantive work (a feature, a migration, a fix verified live), prepend a short clause to the `> Last updated:` header line (newest first, "Prior update:" chaining — see existing entries for the pattern).
+3. Tick or add roadmap items in §30 if the work closes or opens one.
+4. Docs-only, comment-only, or trivial changes that website.md doesn't describe need no update — but the check itself is not optional.
+
+Rationale: website.md is the context handed to every new working session; a stale entry silently misleads the next session (and has — e.g. an implementation brief that predated a shipped primitive nearly caused a parallel reimplementation).
