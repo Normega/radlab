@@ -11,7 +11,7 @@ import { useBreathSignal } from './useBreathSignal'
 import CalibrationScreen from '../../BreathBelt/components/CalibrationScreen'
 import BrowserWarning from '../../BreathBelt/components/BrowserWarning'
 import AvatarBreathPacer from '../../EbbAndFlow/components/AvatarBreathPacer'
-import MirrorCalibration from './MirrorCalibration'
+import MirrorCalibration from './MirrorCalibration.jsx'
 
 const AVATAR_PROPS = { skinColor: '#FDBCB4', eyeColor: '#4A90D9', species: 'human' }
 

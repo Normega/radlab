@@ -7,7 +7,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useBreathSignal } from '../shared/breath/useBreathSignal'
-import MirrorCalibration from '../shared/breath/MirrorCalibration'
+import MirrorCalibration from '../shared/breath/MirrorCalibration.jsx'
 import AvatarBreathPacer from '../EbbAndFlow/components/AvatarBreathPacer'
 import BrowserWarning from '../BreathBelt/components/BrowserWarning'
 
