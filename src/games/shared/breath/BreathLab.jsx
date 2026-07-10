@@ -10,6 +10,7 @@ import { useLocation } from 'react-router-dom'
 import { useBreathSignal } from './useBreathSignal'
 import CalibrationScreen from '../../BreathBelt/components/CalibrationScreen'
 import BrowserWarning from '../../BreathBelt/components/BrowserWarning'
+import AvatarBreathPacer from '../../EbbAndFlow/components/AvatarBreathPacer'
 
 const AVATAR_PROPS = { skinColor: '#FDBCB4', eyeColor: '#4A90D9', species: 'human' }
 
@@ -192,6 +193,8 @@ function LabView({ breath, isSimMode, onRecalibrate, autoRecalOn, setAutoRecalOn
         </p>
       </Panel>
 
+      <MirrorPreview breath={breath} />
+
       <Panel wide>
         <h2 style={S.h2}>Heart <span style={{ fontSize: 13, color: 'var(--tx3)' }}>(RR tachogram, last {TACHO_MS / 1000} s)</span></h2>
         <RRScope breath={breath} />
@@ -223,6 +226,55 @@ function LabView({ breath, isSimMode, onRecalibrate, autoRecalOn, setAutoRecalOn
         </Panel>
       )}
     </>
+  )
+}
+
+// ── Mirror preview ──────────────────────────────────────────────────────────
+// The "avatar follows you" half of Mirror: an AvatarBreathPacer driven directly
+// by the live breath level (getLevel), not a clock. The mirror-mode toggle turns
+// on live amplitude auto-ranging so the pulse fills the range regardless of how
+// deep the wearer is breathing. This is the surface for feeling the pulse (range,
+// smoothing, lag) on a real belt before building the /demo/mirror game.
+const MIRROR_AVATAR = { skinColor: '#FDBCB4', eyeColor: '#4A90D9', species: 'human' }
+
+function MirrorPreview({ breath }) {
+  const [mirrorOn, setMirrorOn] = useState(true)
+  const [smooth, setSmooth] = useState(0.30)   // per-frame EMA on the level
+  const levelRef = useRef(0.5)
+  const smoothRef = useRef(smooth)
+  useEffect(() => { smoothRef.current = smooth }, [smooth])
+
+  // Sync the hook's mirror mode to the toggle (auto-range the live value).
+  useEffect(() => { breath.setMirrorMode?.(mirrorOn) }, [breath, mirrorOn])
+
+  // getLevel runs inside the avatar's rAF; EMA-smooth the raw value for grace.
+  const getLevel = useCallback(() => {
+    const v = breath.signalRef.current.value
+    const target = v == null ? 0.5 : v
+    levelRef.current += (target - levelRef.current) * smoothRef.current
+    return levelRef.current
+  }, [breath])
+
+  return (
+    <Panel wide>
+      <h2 style={S.h2}>Mirror preview <span style={{ fontSize: 13, color: 'var(--tx3)' }}>(avatar follows your breath)</span></h2>
+      <div style={{ position: 'relative', width: 240, height: 240 }}>
+        <AvatarBreathPacer {...MIRROR_AVATAR} getLevel={getLevel} scaleAmplitude={0.22} size={240} />
+      </div>
+      <label style={S.toggleRow}>
+        <input type="checkbox" checked={mirrorOn} onChange={e => setMirrorOn(e.target.checked)} />
+        <span>Mirror mode — auto-range the breath amplitude so the pulse fills the range and never clips (off = raw calibrated gain)</span>
+      </label>
+      <label style={{ ...S.body, display: 'flex', alignItems: 'center', gap: 12, fontSize: 13, width: '100%', maxWidth: 420 }}>
+        <span style={{ whiteSpace: 'nowrap', color: 'var(--tx3)' }}>smoothing {smooth.toFixed(2)}</span>
+        <input type="range" min="0.08" max="1" step="0.02" value={smooth}
+          onChange={e => setSmooth(Number(e.target.value))} style={{ flex: 1 }} />
+      </label>
+      <p style={{ ...S.body, fontSize: 13, color: 'var(--tx3)' }}>
+        The avatar expands as you inhale and settles as you exhale — a direct amplitude
+        mapping. Lower smoothing = snappier but jitterier; higher = calmer but laggier.
+      </p>
+    </Panel>
   )
 }
 

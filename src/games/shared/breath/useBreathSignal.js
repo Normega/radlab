@@ -10,6 +10,7 @@ import {
   parseHrPacket, createPhaseDetector, createRateTracker,
   rsaAmplitudeMs, createHistory, createQualityTracker,
 } from './breathFeatures'
+import { createAmplitudeRanger } from './mirrorCalibration'
 
 // ── useBreathSignal ─────────────────────────────────────────────────────────
 //
@@ -66,7 +67,7 @@ const RECAL_MIN_EVR          = 0.70   // only accept a new axis that captures �
 const RECAL_MIN_GAIN         = 0.10   // ...and beats the current EVR by at least this
 const RECAL_ARTIFACT_TV_MULT = 8      // skip recal while total variance spikes above this × baseline (motion artifact)
 
-export function useBreathSignal({ isSimMode = false, autoRecal = true } = {}) {
+export function useBreathSignal({ isSimMode = false, autoRecal = true, mirrorMode = false } = {}) {
   const [btState,         setBtState]        = useState('IDLE')
   const [calibPhase,      setCalibPhase]     = useState('NONE')
   const [calibReviewData, setCalibReviewData] = useState(null)
@@ -91,6 +92,16 @@ export function useBreathSignal({ isSimMode = false, autoRecal = true } = {}) {
   const rrHistoryRef     = useRef(createHistory(HISTORY_MS))
   const hrHistoryRef     = useRef(createHistory(HISTORY_MS))
   const listenersRef     = useRef(new Set())
+
+  // Mirror mode: live amplitude auto-ranging of the breath value. Keeps the
+  // calibrated axis but re-derives the 0..1 gain/offset from rolling percentiles
+  // so a breath-driven pulse always fills the range and never clips on depth
+  // drift. Off by default — Ember / BreathBelt use the frozen calibration gain.
+  // The ranger always exists; a ref flag gates whether it's applied, so callers
+  // (e.g. the lab) can toggle it live.
+  const amplitudeRangerRef = useRef(createAmplitudeRanger())
+  const mirrorOnRef        = useRef(mirrorMode)
+  const lastRangeAtRef     = useRef(0)
 
   // The one object games poll
   const signalRef = useRef({
@@ -122,7 +133,18 @@ export function useBreathSignal({ isSimMode = false, autoRecal = true } = {}) {
   }
 
   const ingestBreathValue = useCallback((t, rawValue) => {
-    const value = Math.max(0, Math.min(1, rawValue))
+    let value
+    if (mirrorOnRef.current) {
+      // Mirror mode: auto-range the raw (pre-clamp) projection. Recompute the
+      // percentile band a couple of times a second — cheap, and the band moves
+      // slowly anyway.
+      const ranger = amplitudeRangerRef.current
+      ranger.push(t, rawValue)
+      if (t - lastRangeAtRef.current > 500) { ranger.recompute(); lastRangeAtRef.current = t }
+      value = ranger.normalize(rawValue)
+    } else {
+      value = Math.max(0, Math.min(1, rawValue))
+    }
     const { phase, transition } = phaseDetectorRef.current.push(t, value)
     if (transition?.type === 'inhale_start') rateTrackerRef.current.pushOnset(transition.t)
 
@@ -429,8 +451,16 @@ export function useBreathSignal({ isSimMode = false, autoRecal = true } = {}) {
     phaseDetectorRef.current = createPhaseDetector()
     rateTrackerRef.current   = createRateTracker()
     breathHistoryRef.current = createHistory(HISTORY_MS)
+    amplitudeRangerRef.current?.reset()   // re-anchor the pulse's range to play-time breathing
+    lastRangeAtRef.current   = 0
     const s = signalRef.current
     s.phase = 'pause'; s.bpm = null; s.regularitySdMs = null; s.regularityCv = null; s.lastPeriodMs = null
+  }, [])
+
+  // Toggle live amplitude auto-ranging at runtime (the lab exposes this).
+  const setMirrorMode = useCallback((on) => {
+    mirrorOnRef.current = on
+    if (!on) { amplitudeRangerRef.current.reset(); lastRangeAtRef.current = 0 }
   }, [])
 
   const getRecentBreath = useCallback((ms) => breathHistoryRef.current.recent(ms, Date.now()), [])
@@ -465,5 +495,7 @@ export function useBreathSignal({ isSimMode = false, autoRecal = true } = {}) {
     // live data
     signalRef, getRecentBreath, getRecentRR, getRecentHr, onBreathEvent, resetFeatures,
     mlrWeightsRef,
+    // mirror mode (live amplitude auto-ranging)
+    setMirrorMode, amplitudeRangerRef,
   }
 }

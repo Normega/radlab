@@ -55,6 +55,10 @@ function applyNeutral(elems) {
 //   eyeColor       — hex string
 //   scaleAmplitude — 0.02 (empath) | 0.12 (listener) | 0.25 (beginner)
 //   getPhase       — function returning 0.0–1.0 within current breath cycle
+//   getLevel       — optional; function returning the breath level 0.0–1.0
+//                    directly (0 = exhale, 1 = inhale). When supplied it
+//                    overrides getPhase's cosine — the avatar tracks a live
+//                    breath signal instead of a clock (used by Mirror).
 //   paused         — static boolean (used by GetReadyScreen); for dynamic
 //                    imperative control use controlRef instead
 //   controlRef     — optional ref; populated with { resetToNeutral(), resumeAnimation() }
@@ -69,6 +73,7 @@ export default function AvatarBreathPacer({
   hairColor      = '#784421',
   scaleAmplitude = 0.25,
   getPhase,
+  getLevel,
   paused         = false,
   controlRef,
   size           = 240,
@@ -78,9 +83,11 @@ export default function AvatarBreathPacer({
   const elemsRef        = useRef(null);
   const scaleAmpRef     = useRef(scaleAmplitude);
   const pausedRef       = useRef(paused);
+  const getLevelRef     = useRef(getLevel);
   const frameRef        = useRef(null);
   useEffect(() => { scaleAmpRef.current = scaleAmplitude; }, [scaleAmplitude]);
   useEffect(() => { pausedRef.current = paused; }, [paused]);
+  useEffect(() => { getLevelRef.current = getLevel; }, [getLevel]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -218,7 +225,14 @@ export default function AvatarBreathPacer({
         return;
       }
 
-      const bT = (Math.sin(phase * Math.PI * 2 - Math.PI / 2) + 1) / 2;
+      // bT ∈ [0,1] is the breath level (0 = full exhale, 1 = full inhale) that
+      // drives every animated feature. Normally it's a cosine of the cycle phase
+      // (a clock-driven pacer). If getLevel is supplied, the level comes straight
+      // from it instead — this is how "Mirror" makes the avatar follow the
+      // wearer's live breath signal rather than a fixed rhythm.
+      const bT = getLevelRef.current
+        ? Math.max(0, Math.min(1, getLevelRef.current() ?? 0.5))
+        : (Math.sin(phase * Math.PI * 2 - Math.PI / 2) + 1) / 2;
 
       // Scale — whole SVG expands on inhale
       const s = 1 + scaleAmpRef.current * bT;
