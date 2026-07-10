@@ -2,7 +2,7 @@
 
 > **Regulatory and Affective Dynamics Lab**  
 > University of Toronto · PI: Professor Norman Farb, PhD  
-> Last updated: 2026-07-10 (Mirror — breath-driven avatar + adaptive materializing calibration on the shared breath layer, live at `/demo/mirror` (+ `/dev/breath-lab` preview with a Mirror/Standard mode selector). New `mirrorCalibration.js` (pure, 25 headless checks): live amplitude auto-ranger (fixes frozen-calibration clip on a breath-driven pulse), composite calibration-**confidence** engine (tracking·clarity·axis-lock·strength, gated by rhythm+motion, weakest-factor-routes-coaching), running-PCA projector, and an adaptive stop-policy session. `MirrorCalibration.jsx` materializes the avatar (ghost→solid as confidence climbs) and coaches live on stall. `useBreathSignal` gains opt-in `mirrorMode` (auto-ranged `value`) + `beginMirrorCollection`/`acceptMirrorNow` (confidence-driven stop, not the fixed 4-breath timer); `AvatarBreathPacer` gains `getLevel` (avatar tracks live breath). **Ember/BreathBelt untouched** (default off). Verified: build clean + Playwright sim smoke (materialize 0→100 %, converge, pulse preview, no errors). See breath-signal-layer §. Prior update: 2026-07-09 (New §26a — canonical documentation of Liliana Study 3: the 27-day design (counterbalanced Phase 1, three-arm midpoint with anti-preference No-Choice, quality metric v1/v2) and the WP-L1…WP-L5 infrastructure (capture linkage, scoring backend, MidpointStep, dry-run findings, migration list). Prior same-day update: WP-L5 of the Liliana feedback plan, dry run: all 36 missing daily templates generated (48/48), dry-run study authored programmatically (graph validated with the real `experimentGraph.js`, 51 sessions compiled, 27-consecutive-day calendar pending Liliana's confirmation), 3 participants enrolled via real `auto-enroll` (3 distinct counterbalance orders, walk stopped at fork), one full training session and **all three midpoint arms click-tested in a real browser through real participant links** — feedback cards matched designed data, anti-preference reveal correct. **Five launch-blocking bugs found and fixed**, none reachable from admin demos: token RPC couldn't serve training nodes; `scheduleId` never passed by SessionEntry (WP-L1 linkage silently null); global-anon-client use across the whole training stack (saves + authenticated-only video/audio buckets); `liliana_participants` never created / `current_day` never advanced (new `ensure_liliana_participant` RPC); a lazy supabase-js builder meant `shown_at` never stamped. Phase 2 cron advance verification + export coverage pending. See spec doc WP-L5 status. Prior same-day update: WP-L4 of the Liliana feedback plan: `MidpointStep.jsx` — new `midpoint` step category (StepDispatcher case, SessionBuilder picker, `activities` row `midpoint/liliana_midpoint`), three-arm midpoint experience: feedback→choice / control→choice / control→preference→**anti-preference assignment**. Group mechanics finalized by Norm same day, replacing the balanced-owl-draw design for the No-Choice arm: participant states a preference, then is assigned to one of the two **non-preferred** practices 50/50 (never the preferred), owl frames it as growth outside the comfort zone. Backend reworked to match (migration `20260709_liliana_midpoint_choice_rework.sql`, applied + verified live: `stated_preference` recorded for all three groups, `record_practice_decision(p_practice, p_source, p_node_id default null)` auto-detects the fork node from `design_graph` and does the seeded 50/50 server-side, `participant_assignments.kind` gains `'anti_preference'`). `liliana_midpoint` step appended to the "Liliana Study 3 - Midpoint" template (after the assessment questionnaires). All participant-facing copy is placeholder pending Liliana. Not yet click-tested with a real participant link — that's the WP-L5 dry run. Prior same-day update: WP-L3 of the Liliana feedback plan: scoring backend implemented, applied, and verified live against synthetic data — `liliana_session_metrics` view (six ratings pivoted + delta_stress/appraisal, linked to condition by (profile, module) via the schedule's template training node), `liliana_midpoint_feedback` snapshot table (RLS: participant SELECT own, writes RPC-only), `get_liliana_midpoint_summary()` (metric v1 = within-person z-blend of stress relief + appraisal, v2 = Δstress stored alongside; idempotent snapshot; deterministic tie-breaks), `record_practice_decision()` (choice writes a `kind='choice'` `participant_assignments` row the existing materializer routes; owl stamps the drawn value), and `draw_assignment` patched so choice rows don't consume permuted-block cycle positions (verified: draw_index 0 after a coexisting choice row). Two schema fixes caught live: kind CHECK + schedule-FK ON DELETE. Migration `20260709_liliana_feedback_backend.sql`. See §26 Daily check-in capture / spec doc. Prior same-day update: WP-L2 of the Liliana feedback plan: all 11 existing Liliana daily-training session templates converted from six single-scale VAS check-in steps to the two canonical packages (`Check-in (pre) → training → Check-in (post)`) — the single-scale shape would have defeated WP-L1's pre/post stress disambiguation; `/admin/training` wrapper demo now renders the live packages through the real `VasRenderer` (placeholder valence/energy/stress sliders deleted) — see §26 Daily check-in capture. Prior update: 2026-07-08 (WP-L1 of the Liliana feedback plan (`docs/markdowns/liliana_feedback_spec.md`): `vas_responses` gained `schedule_id` + `package_slug` (migration `20260708_vas_schedule_linkage.sql`, applied), `liliana_day_data` gained a `module_id` condition stamp, and `scheduleId` is now threaded StepDispatcher → VasStepWrapper → VasRenderer, so daily pre/post check-in ratings are attributable to a specific study day and the twice-per-session stress item is disambiguated by package. Canonical check-in contents = VAS packages `liliana_pre_intervention_ratings` / `liliana_post_intervention_ratings` (confirmed in live DB); the `wrapperElements.js` check-in items are placeholders superseded by those packages. See §26 Daily check-in capture. Prior same-day update: Training §26: the four standard session wrapper elements — Welcome, Check-in (pre), Check-in (post), Farewell — are now first-class, visually inspectable definitions. New `src/components/study/wrapperElements.js` (editable content + placeholder check-in rating items pending Liliana's final wording) + `WrapperElementPage.jsx` renderer (reuses InterventionPage's exported styles, progress bar shows each element's true slot); TrainingLibrary gained a "Standard Session Elements" section at `/admin/training` with ▶ Demo modals; existing module Demo refactored onto a shared children-based DemoModal and verified intact. Verified live in browser: all four demos render, slider gating works, owls load, farewell Finish button green. Not yet wired into the participant session flow — preview/spec only. Prior same-day update: Experiment Builder Phase 2 Pass 2: `RandomizeNode.jsx`/`CounterbalanceNode.jsx` builder UI, new `experimentGraph.js` mutators (`addArm`/`removeArm`/`addArmEntry`/`addBlockToCounterbalance`/`removeBlockFromCounterbalance`), balance audit view at `/admin/studies/:id/balance` — implemented and verified live via a temporary local `playwright` install (not added to package.json). Live browser testing caught and fixed a real bug code review missed: `insertAfter`/`addNode`/`tailNode`/`chainOrder` assumed every node has at most one outgoing edge, so toolbar-inserting near a populated Randomize node either destroyed its arm edges or wired a bogus continuation edge — `validate()` caught the resulting corruption but the insertion logic itself was wrong; fixed and covered by a new regression test (46 total standalone assertions passing). Balance audit view verified against 6 real draws: marginal counts balanced, stratified cross-tab correctly split by group. Not yet pushed. See §28. Prior same-day update: Phase 2 Pass 1 — `draw_assignment` extended in place for design_graph randomize/counterbalance nodes (not the stale brief's separate `balancedDraw.ts` module — reused the already-shipped shared primitive instead), `experimentGraph.js` rewritten for fork traversal/validation, `materializeSchedule.ts` + `check_schedule` advance pass resolve forks as participants reach them — fully verified live against a hand-authored scratch study, two backend bugs found and fixed (a `draw_assignment` value-shape mismatch, a `check_schedule` early-return skipping the advance pass); pushed same day (commit `8e98833`). Prior same-day update: WP7 contact settings modal built (`ContactSettingsModal.jsx`, reuses StudyFormPage's variable-pill/iframe-preview pattern, writes `reminder_interval_hours` not `_days`) — pushed same day (commit `9a79359`), closing Phase 1. Prior same-day update: the pg_cron `check_schedule` credential mismatch (anon key vs. this project's `sb_secret_...` key) is fixed and verified live — 6 real reminder emails sent, `message_log` confirms it. Prior same-day update: WP6 — `check_schedule`/`send_message` rewritten against the live schema and deployed, lab-tz-aware due-check via `America/Toronto`; `handle_unsubscribe` fixed to target `study_enrollments` instead of the nonexistent `participant_consent`; link issuance extracted to shared `issueLink.ts` — see §28 Status. Prior same-day update: WP5 materializer implemented and deployed — `supabase/functions/_shared/materializeSchedule.ts` walks `design_graph`, bulk-creates `participant_schedule` rows at enrollment (linear + block, no forks yet), issues the first link, revokes prior active links; wired into `auto-enroll/index.ts` for `online_longitudinal` studies, legacy single-row path untouched for other delivery modes. Prior update: 2026-07-07 (Password reset flow: `/forgot-password` + `/reset-password` pages added — see §8 Auth Flow. Prior same-day update: 2026-07-06 (ISARP keynote: `/keynote` 23-slide click-through deck with Minimal/Reading toggle + speaker notes, BCAT figures wired + neuro-figure drop-in slots, links out to the two live demos — see §20 Keynote deck. Prior same-day: keynote opener `/demo/pacer-opener` and BreathBelt conference demo `/demo/breath-belt`. Prior update: 2026-07-05 (display elements §24a: block-based `displays` table, condition-gated blocks, `{{variable}}` interpolation from session step outputs, admin editor + Elements nav regroup. Same day: assignment randomizer implemented and pilot-verified: shared `draw_assignment` primitive, `assignment_slots` + StudyFormPage condition card, `useAssignment` hooks, SessionEntry draw gating, `seededRandom.js` utility — see §28 Shared assignment primitive. Prior update: 2026-07-02 (restructured into Parts I–IV: renumbered sections, restored lost §11/§16 headers, rewrote roadmap as §30, added §22 game stubs, §24 VAS stub; §28 Experiment Builder merged verbatim from commit 7a030c3 (renumbered from 26). Prior update: 2026-05-29 (BreathBelt §20: Biopac parallel-port triggers implemented — Biopac_Left/Biopac_Right now relay through a local parallel_server.py helper; trigger-device selector moved onto the connect screen; connectBiopac() + sendTestCascade() added; a 1–13 test cascade auto-fires on connect with an RA verify step. Earlier 2026-05-26 update: MLR calibration pipeline replacing percentile approach; fitBestModel — 6 model variants, best by Pearson R; useBeltConnection exposes mlrWeightsRef, filterState3Ref, syncQuality, calibReviewData, beginCalibCollection, redoCalibration, getPacerRadiusFnRef; BeltSyncRing retained for other games; SynchronyBar shown during trials; useStreamingBackup adds parallel File System Access API CSV backup; belt_mlr_migration.sql adds calib_model_label, calib_fit_r, calib_lag_ms to belt_sessions.)))))))
+> Last updated: 2026-07-10 (New §29 Lecture Lounge — classroom engagement system designed and documented: three-surface model (student phone / instructor phone remote / projector screen) off one broadcast channel, 8-table schema, avatar-only identity, polling-window knowledge checks, instructor-gated question publishing with upvotes, Claude summarization Edge Function (first platform Anthropic API use). Part IV renumbered: Key Learnings §29→§30, Roadmap §30→§31; P4 roadmap resolved to full rebuild. Not yet implemented; Phase 1 brief in docs/markdowns/. Prior same-day update: Mirror — breath-driven avatar + adaptive materializing calibration on the shared breath layer, live at `/demo/mirror` (+ `/dev/breath-lab` preview with a Mirror/Standard mode selector). New `mirrorCalibration.js` (pure, 25 headless checks): live amplitude auto-ranger (fixes frozen-calibration clip on a breath-driven pulse), composite calibration-**confidence** engine (tracking·clarity·axis-lock·strength, gated by rhythm+motion, weakest-factor-routes-coaching), running-PCA projector, and an adaptive stop-policy session. `MirrorCalibration.jsx` materializes the avatar (ghost→solid as confidence climbs) and coaches live on stall. `useBreathSignal` gains opt-in `mirrorMode` (auto-ranged `value`) + `beginMirrorCollection`/`acceptMirrorNow` (confidence-driven stop, not the fixed 4-breath timer); `AvatarBreathPacer` gains `getLevel` (avatar tracks live breath). **Ember/BreathBelt untouched** (default off). Verified: build clean + Playwright sim smoke (materialize 0→100 %, converge, pulse preview, no errors). See breath-signal-layer §. Prior update: 2026-07-09 (New §26a — canonical documentation of Liliana Study 3: the 27-day design (counterbalanced Phase 1, three-arm midpoint with anti-preference No-Choice, quality metric v1/v2) and the WP-L1…WP-L5 infrastructure (capture linkage, scoring backend, MidpointStep, dry-run findings, migration list). Prior same-day update: WP-L5 of the Liliana feedback plan, dry run: all 36 missing daily templates generated (48/48), dry-run study authored programmatically (graph validated with the real `experimentGraph.js`, 51 sessions compiled, 27-consecutive-day calendar pending Liliana's confirmation), 3 participants enrolled via real `auto-enroll` (3 distinct counterbalance orders, walk stopped at fork), one full training session and **all three midpoint arms click-tested in a real browser through real participant links** — feedback cards matched designed data, anti-preference reveal correct. **Five launch-blocking bugs found and fixed**, none reachable from admin demos: token RPC couldn't serve training nodes; `scheduleId` never passed by SessionEntry (WP-L1 linkage silently null); global-anon-client use across the whole training stack (saves + authenticated-only video/audio buckets); `liliana_participants` never created / `current_day` never advanced (new `ensure_liliana_participant` RPC); a lazy supabase-js builder meant `shown_at` never stamped. Phase 2 cron advance verification + export coverage pending. See spec doc WP-L5 status. Prior same-day update: WP-L4 of the Liliana feedback plan: `MidpointStep.jsx` — new `midpoint` step category (StepDispatcher case, SessionBuilder picker, `activities` row `midpoint/liliana_midpoint`), three-arm midpoint experience: feedback→choice / control→choice / control→preference→**anti-preference assignment**. Group mechanics finalized by Norm same day, replacing the balanced-owl-draw design for the No-Choice arm: participant states a preference, then is assigned to one of the two **non-preferred** practices 50/50 (never the preferred), owl frames it as growth outside the comfort zone. Backend reworked to match (migration `20260709_liliana_midpoint_choice_rework.sql`, applied + verified live: `stated_preference` recorded for all three groups, `record_practice_decision(p_practice, p_source, p_node_id default null)` auto-detects the fork node from `design_graph` and does the seeded 50/50 server-side, `participant_assignments.kind` gains `'anti_preference'`). `liliana_midpoint` step appended to the "Liliana Study 3 - Midpoint" template (after the assessment questionnaires). All participant-facing copy is placeholder pending Liliana. Not yet click-tested with a real participant link — that's the WP-L5 dry run. Prior same-day update: WP-L3 of the Liliana feedback plan: scoring backend implemented, applied, and verified live against synthetic data — `liliana_session_metrics` view (six ratings pivoted + delta_stress/appraisal, linked to condition by (profile, module) via the schedule's template training node), `liliana_midpoint_feedback` snapshot table (RLS: participant SELECT own, writes RPC-only), `get_liliana_midpoint_summary()` (metric v1 = within-person z-blend of stress relief + appraisal, v2 = Δstress stored alongside; idempotent snapshot; deterministic tie-breaks), `record_practice_decision()` (choice writes a `kind='choice'` `participant_assignments` row the existing materializer routes; owl stamps the drawn value), and `draw_assignment` patched so choice rows don't consume permuted-block cycle positions (verified: draw_index 0 after a coexisting choice row). Two schema fixes caught live: kind CHECK + schedule-FK ON DELETE. Migration `20260709_liliana_feedback_backend.sql`. See §26 Daily check-in capture / spec doc. Prior same-day update: WP-L2 of the Liliana feedback plan: all 11 existing Liliana daily-training session templates converted from six single-scale VAS check-in steps to the two canonical packages (`Check-in (pre) → training → Check-in (post)`) — the single-scale shape would have defeated WP-L1's pre/post stress disambiguation; `/admin/training` wrapper demo now renders the live packages through the real `VasRenderer` (placeholder valence/energy/stress sliders deleted) — see §26 Daily check-in capture. Prior update: 2026-07-08 (WP-L1 of the Liliana feedback plan (`docs/markdowns/liliana_feedback_spec.md`): `vas_responses` gained `schedule_id` + `package_slug` (migration `20260708_vas_schedule_linkage.sql`, applied), `liliana_day_data` gained a `module_id` condition stamp, and `scheduleId` is now threaded StepDispatcher → VasStepWrapper → VasRenderer, so daily pre/post check-in ratings are attributable to a specific study day and the twice-per-session stress item is disambiguated by package. Canonical check-in contents = VAS packages `liliana_pre_intervention_ratings` / `liliana_post_intervention_ratings` (confirmed in live DB); the `wrapperElements.js` check-in items are placeholders superseded by those packages. See §26 Daily check-in capture. Prior same-day update: Training §26: the four standard session wrapper elements — Welcome, Check-in (pre), Check-in (post), Farewell — are now first-class, visually inspectable definitions. New `src/components/study/wrapperElements.js` (editable content + placeholder check-in rating items pending Liliana's final wording) + `WrapperElementPage.jsx` renderer (reuses InterventionPage's exported styles, progress bar shows each element's true slot); TrainingLibrary gained a "Standard Session Elements" section at `/admin/training` with ▶ Demo modals; existing module Demo refactored onto a shared children-based DemoModal and verified intact. Verified live in browser: all four demos render, slider gating works, owls load, farewell Finish button green. Not yet wired into the participant session flow — preview/spec only. Prior same-day update: Experiment Builder Phase 2 Pass 2: `RandomizeNode.jsx`/`CounterbalanceNode.jsx` builder UI, new `experimentGraph.js` mutators (`addArm`/`removeArm`/`addArmEntry`/`addBlockToCounterbalance`/`removeBlockFromCounterbalance`), balance audit view at `/admin/studies/:id/balance` — implemented and verified live via a temporary local `playwright` install (not added to package.json). Live browser testing caught and fixed a real bug code review missed: `insertAfter`/`addNode`/`tailNode`/`chainOrder` assumed every node has at most one outgoing edge, so toolbar-inserting near a populated Randomize node either destroyed its arm edges or wired a bogus continuation edge — `validate()` caught the resulting corruption but the insertion logic itself was wrong; fixed and covered by a new regression test (46 total standalone assertions passing). Balance audit view verified against 6 real draws: marginal counts balanced, stratified cross-tab correctly split by group. Not yet pushed. See §28. Prior same-day update: Phase 2 Pass 1 — `draw_assignment` extended in place for design_graph randomize/counterbalance nodes (not the stale brief's separate `balancedDraw.ts` module — reused the already-shipped shared primitive instead), `experimentGraph.js` rewritten for fork traversal/validation, `materializeSchedule.ts` + `check_schedule` advance pass resolve forks as participants reach them — fully verified live against a hand-authored scratch study, two backend bugs found and fixed (a `draw_assignment` value-shape mismatch, a `check_schedule` early-return skipping the advance pass); pushed same day (commit `8e98833`). Prior same-day update: WP7 contact settings modal built (`ContactSettingsModal.jsx`, reuses StudyFormPage's variable-pill/iframe-preview pattern, writes `reminder_interval_hours` not `_days`) — pushed same day (commit `9a79359`), closing Phase 1. Prior same-day update: the pg_cron `check_schedule` credential mismatch (anon key vs. this project's `sb_secret_...` key) is fixed and verified live — 6 real reminder emails sent, `message_log` confirms it. Prior same-day update: WP6 — `check_schedule`/`send_message` rewritten against the live schema and deployed, lab-tz-aware due-check via `America/Toronto`; `handle_unsubscribe` fixed to target `study_enrollments` instead of the nonexistent `participant_consent`; link issuance extracted to shared `issueLink.ts` — see §28 Status. Prior same-day update: WP5 materializer implemented and deployed — `supabase/functions/_shared/materializeSchedule.ts` walks `design_graph`, bulk-creates `participant_schedule` rows at enrollment (linear + block, no forks yet), issues the first link, revokes prior active links; wired into `auto-enroll/index.ts` for `online_longitudinal` studies, legacy single-row path untouched for other delivery modes. Prior update: 2026-07-07 (Password reset flow: `/forgot-password` + `/reset-password` pages added — see §8 Auth Flow. Prior same-day update: 2026-07-06 (ISARP keynote: `/keynote` 23-slide click-through deck with Minimal/Reading toggle + speaker notes, BCAT figures wired + neuro-figure drop-in slots, links out to the two live demos — see §20 Keynote deck. Prior same-day: keynote opener `/demo/pacer-opener` and BreathBelt conference demo `/demo/breath-belt`. Prior update: 2026-07-05 (display elements §24a: block-based `displays` table, condition-gated blocks, `{{variable}}` interpolation from session step outputs, admin editor + Elements nav regroup. Same day: assignment randomizer implemented and pilot-verified: shared `draw_assignment` primitive, `assignment_slots` + StudyFormPage condition card, `useAssignment` hooks, SessionEntry draw gating, `seededRandom.js` utility — see §28 Shared assignment primitive. Prior update: 2026-07-02 (restructured into Parts I–IV: renumbered sections, restored lost §11/§16 headers, rewrote roadmap as §30, added §22 game stubs, §24 VAS stub; §28 Experiment Builder merged verbatim from commit 7a030c3 (renumbered from 26). Prior update: 2026-05-29 (BreathBelt §20: Biopac parallel-port triggers implemented — Biopac_Left/Biopac_Right now relay through a local parallel_server.py helper; trigger-device selector moved onto the connect screen; connectBiopac() + sendTestCascade() added; a 1–13 test cascade auto-fires on connect with an RA verify step. Earlier 2026-05-26 update: MLR calibration pipeline replacing percentile approach; fitBestModel — 6 model variants, best by Pearson R; useBeltConnection exposes mlrWeightsRef, filterState3Ref, syncQuality, calibReviewData, beginCalibCollection, redoCalibration, getPacerRadiusFnRef; BeltSyncRing retained for other games; SynchronyBar shown during trials; useStreamingBackup adds parallel File System Access API CSV backup; belt_mlr_migration.sql adds calib_model_label, calib_fit_r, calib_lag_ms to belt_sessions.)))))))
 
 ---
 
@@ -2854,9 +2854,287 @@ All four verified live at a narrow (~600px) viewport: fresh baseline pins near t
 
 ---
 
+## 29. Lecture Lounge — Classroom Engagement System
+
+### Overview
+
+Live classroom engagement system for large lectures. Replaces the legacy Firebase app (emotion-psy341-winter2026.web.app); concepts ported, no code migrated. Goal: support community and belonging in large lecture spaces through anonymous-but-embodied participation (avatars, never names).
+
+Core loop: instructor stages a check-in from a console, students respond on their phones via a persistent class URL, results and Claude-generated comment summaries display live.
+
+**Status**: Designed 2026-07. Not yet implemented. First platform use of the Anthropic API.
+
+### Decisions (confirmed 2026-07)
+
+- Students link a verified `utoronto.ca` (or `mail.utoronto.ca`) email to their existing radlab account; grade export keys on that email
+- Identity in class interactions is avatar-only; usernames and identifiers never shown
+- Knowledge checks use a polling window (open, answer, close, tabulate); no speed scoring, no real-time countdown
+- Correct answer and response distribution shown after poll closes
+- One persistent student URL per class; separate instructor console controls what that URL displays
+- In-class operation is mobile-first for instructor and students; the web console is for out-of-class planning only. Three surfaces (student phone, instructor phone remote, projector screen) run off one broadcast channel
+- Claude summarization runs on instructor command after a poll closes, never streaming
+- Mood check-in is a single tap on a compact circumplex wheel (reuses Still Water WheelSVG + avatar feedback), not the full two-diagonal flow
+- Participation credit: count of check-ins responded to per lecture day
+- Open-ended responses stored linked to profile (required for participation) but displayed anonymously everywhere; moderation issues investigated directly in the database, no name reveal in any UI
+- Mood has no opt-out; the neutral middle of the wheel is the escape valve
+- Student questions stream live to the console during the check-in window; instructor publishes selected questions to student screens (publish tap = moderation), students upvote published questions, instructor marks questions answered
+- No competitive elements ever (no class leaderboards); motivation via platform points and self-only progress
+- Live emote reactions deferred
+
+### Student experience additions (confirmed 2026-07)
+
+- **Self-in-aggregate**: after mood submission, student sees their own dot highlighted on the class mood plot
+- **Avatar arrival**: student's avatar pops onto the wall on check-in completion
+- **Question lifecycle**: submitted → published (instructor tap) → upvotable by peers → answered (instructor tap); submitter sees status changes even though anonymous. Encourages questions via check-ins rather than mid-lecture interruptions
+- **Platform points**: 5 points per completed check-in to `profiles.points` (same pattern as Still Water)
+- **Participation streak**: self-only streak on the dashboard participation card
+- **Quiz reveal order**: show response distribution first, then correct answer
+- **Rejoin resilience**: refresh or reconnect restores current state from console broadcast; draft responses never lost
+- **Phone-first**: student view designed for one-thumb portrait use
+- **Landing page card**: public "Lecture Lounge" card with join-code entry for students plus a short instructor-facing pitch; classes are the platform's strongest organic traffic funnel
+- **Cross-sell nudge**: gentle post-check-in pointer to the rest of the site (e.g. Still Water), never blocking
+
+### Schema
+
+#### `classes`
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | uuid | PK |
+| `name` | text | e.g. `"PSY202 Fall 2026"` |
+| `slug` | text | UNIQUE; stable URL key, e.g. `psy202-fall-2026` |
+| `join_code` | text | Short code students enter to join |
+| `active` | bool | |
+| `created_by` | uuid | FK → `profiles` |
+| `created_at` | timestamptz | |
+
+#### `class_admins`
+
+Scoped instructor access. First departure from the flat lab/participant/public role model.
+
+| Column | Type | Notes |
+|---|---|---|
+| `class_id` | uuid | FK → `classes` |
+| `profile_id` | uuid | FK → `profiles` |
+| — | — | PK on `(class_id, profile_id)` |
+
+#### `class_members`
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | uuid | PK |
+| `class_id` | uuid | FK → `classes` |
+| `profile_id` | uuid | FK → `profiles` |
+| `utoronto_email` | text | Required for grade linkage |
+| `utoronto_verified_at` | timestamptz | null until magic-link verified |
+| `joined_at` | timestamptz | |
+| — | — | UNIQUE on `(class_id, profile_id)` |
+
+utoronto email lives here, not on `profiles`: class-scoped, and a student may verify once per class without polluting the global profile.
+
+#### `lectures`
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | uuid | PK |
+| `class_id` | uuid | FK → `classes` |
+| `lecture_number` | int | 1-indexed within term (~12 per term) |
+| `title` | text | |
+| `lecture_date` | date | |
+
+#### `checkins`
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | uuid | PK |
+| `lecture_id` | uuid | FK → `lectures` |
+| `position` | int | e.g. 1–3 within the lecture |
+| `config` | jsonb | Activity sequence (see config schema below) |
+| `status` | text | `'draft'` \| `'open'` \| `'closed'` |
+| `opened_at` | timestamptz | |
+| `closed_at` | timestamptz | |
+
+`config` jsonb schema:
+
+```json
+{
+  "auto_close_seconds": 180,
+  "activities": [
+    { "type": "mood" },
+    { "type": "pacing" },
+    { "type": "prompt", "text": "What is one thing that surprised you so far?" },
+    { "type": "question_box" },
+    { "type": "quiz", "items": [
+      { "id": "q1", "text": "...", "options": ["A", "B", "C", "D"], "correct": 1 }
+    ]}
+  ]
+}
+```
+
+Activities are optional and ordered; instructor composes each check-in from these five types. `prompt` is instructor-authored; `question_box` is open-ended student questions. `auto_close_seconds` is optional; when set, the remote shows a countdown and the check-in closes automatically unless the instructor closes early or extends.
+
+#### `checkin_responses`
+
+One row per student per check-in.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | uuid | PK |
+| `checkin_id` | uuid | FK → `checkins` |
+| `profile_id` | uuid | FK → `profiles` |
+| `mood` | jsonb | `{x, y, label}` from single-tap wheel; null if not in config |
+| `pacing` | int | e.g. 1–5 too slow ↔ too fast; null if not in config |
+| `prompt_response` | text | |
+| `quiz_answers` | jsonb | `{q1: 2, q2: 0}` |
+| `created_at` | timestamptz | |
+| — | — | UNIQUE on `(checkin_id, profile_id)` |
+
+RLS: students insert/update own row only while `checkins.status = 'open'`; class admins read all rows for their classes; students never read others' rows.
+
+#### `class_questions`
+
+Student questions get their own table (not a column on `checkin_responses`) to support the publish/answer/upvote lifecycle. A student may submit more than one question per check-in.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | uuid | PK |
+| `checkin_id` | uuid | FK → `checkins` |
+| `profile_id` | uuid | FK → `profiles` |
+| `text` | text | |
+| `published_at` | timestamptz | null = console-only; set by instructor tap |
+| `answered_at` | timestamptz | Set by instructor tap |
+| `created_at` | timestamptz | |
+
+RLS: students insert own; students read only published rows plus their own; class admins read all for their classes and update `published_at` / `answered_at`.
+
+#### `question_votes`
+
+| Column | Type | Notes |
+|---|---|---|
+| `question_id` | uuid | FK → `class_questions` |
+| `profile_id` | uuid | FK → `profiles` |
+| `created_at` | timestamptz | |
+| — | — | PK on `(question_id, profile_id)` |
+
+RLS: students insert/delete own votes on published questions only; vote counts readable by class members.
+
+#### `checkin_summaries`
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | uuid | PK |
+| `checkin_id` | uuid | FK → `checkins` |
+| `field` | text | `'prompt_response'` \| `'question_text'` |
+| `summary` | text | Claude output |
+| `model` | text | e.g. `claude-haiku-4-5` |
+| `created_at` | timestamptz | |
+
+Cached so re-display costs nothing; regenerate overwrites.
+
+### Surfaces and routes
+
+In-class experience is phone-first for everyone. Less tech-savvy instructors should never juggle browser tabs on a lectern mid-lecture: they open the projector view once before class, then drive everything from their phone.
+
+| Route | Component | Surface | Access |
+|---|---|---|---|
+| `/class/:slug` | `ClassRoom` | Student phone (respond) | Class members (join flow if not yet a member) |
+| `/class/:slug/console` | `ClassConsole` | Web planning dashboard (out of class) | `class_admins` for that class only |
+| `/class/:slug/remote` | `ClassRemote` | Instructor phone (drive, in class) | `class_admins` for that class only |
+| `/class/:slug/screen` | `ClassScreen` | Projector (ambient display, zero interaction after load) | `class_admins` session on the lectern |
+
+**Console (web, planning)**: create lectures, compose check-ins, author prompts and quizzes, participation matrix, CSV export, preview-as-student sandbox. Desktop-oriented, done before class.
+
+**Remote (mobile, live)**: today's check-ins as a queue in planned order. Live operation is tap-through: Next, Open, Close, Show Results, Summarize. Big one-thumb buttons, live response counter, connection indicator (live / reconnecting), optional auto-close countdown with close-early and extend. No composing, no tree navigation. Screen wake lock while active. "Quick pulse" button fires an ad hoc mood+pacing check-in for improvised moments (Phase 2).
+
+**Screen (projector)**: opened once, then auto-follows broadcast state. Idle: lobby avatar wall plus a QR code that opens `/class/:slug` (kills URL-typing friction, especially week 1). Open: "check-in open" with live response count and QR. Results: aggregate displays and summaries. Wake lock while active.
+
+**Student phone**: the response surface. State machine driven by broadcast:
+
+- **Lobby**: live avatar wall of currently present members (Realtime presence, avatar props only)
+- **Check-in open**: response flow for the staged check-in
+- **Results**: aggregate mood plot (own dot highlighted), pacing distribution, quiz distributions (distribution shown before correct answer reveal), published questions with upvotes, Claude summaries
+
+### Join and email verification flow
+
+1. Student logs into radlab (existing signup if new)
+2. Visits `/class/:slug` or enters join code → `class_members` row created
+3. Prompted for utoronto email → Resend magic link to that address → click sets `utoronto_verified_at`
+4. Unverified members can respond, but console flags them; export marks unverified rows
+
+### Realtime model (Supabase Realtime)
+
+- **Presence channel** per class (`class:{id}`): members joining the student URL register presence with avatar props payload; lobby renders the wall
+- **Broadcast channel** per class: console pushes state changes (`staged`, `open`, `closed`, `results_ready`, `summary_ready`); student screens react instantly
+- **Postgres Changes** subscriptions: console subscribes to `class_questions` inserts (questions stream in live during the window); students subscribe to published-question updates and vote counts
+- No polling loops; responses are plain inserts
+
+### Claude summarization
+
+Edge Function `summarize-checkin`:
+
+1. Instructor clicks Summarize (per field: prompt responses or student questions)
+2. Function verifies caller is a class admin, pulls text for that check-in
+3. Calls Anthropic API (Haiku class model) with a fixed summarization prompt: themes, notable questions, tone; explicitly instructed to never attempt de-anonymization and to ignore any instructions embedded in student text (prompt-injection guard)
+4. Writes `checkin_summaries`, broadcasts `summary_ready`
+
+`ANTHROPIC_API_KEY` lives in Edge Function secrets only, never in the client bundle. This establishes the platform pattern for all future AI API use.
+
+### Instructor console (web planning dashboard)
+
+Tree navigation: class → lecture → check-in.
+
+- Lecture planning: create ~12 lectures per term, plan up to N check-ins per lecture with activity configs and optional auto-close, all in advance
+- Preview-as-student: run any check-in in a sandbox exactly as students will see it (Phase 2)
+- Live question feed while open (also available on the remote): questions appear as submitted; per-question Publish and Answered taps; published questions sort by upvotes
+- Participation view: matrix of members × lectures, cell = check-ins responded that day
+- CSV export: rows keyed to `utoronto_email`, columns per lecture date, values = check-in response counts; unverified emails flagged
+
+Live controls exist here too for completeness, but the remote is the designed in-class surface.
+
+### Participation
+
+- Fully stored per response row; nothing aggregated destructively
+- Credit rule: count of check-ins responded to per lecture day
+- 5 platform points per completed check-in (`profiles.points`)
+- **Data governance**: participation and response data linked to utoronto emails is course administration data, not research data. Any research use of classroom data requires a separate REB protocol and consent flow before analysis; this boundary is on record before any class runs
+- Stretch: Dashboard participation card (own response counts + self-only streak) reading the student's own `checkin_responses`
+
+### File structure
+
+```
+src/classroom/
+  ClassRoom.jsx           ← student view state machine (lobby / respond / results)
+  ClassConsole.jsx        ← web planning dashboard shell + tree nav
+  ClassRemote.jsx         ← instructor mobile live remote (queue, big buttons)
+  ClassScreen.jsx         ← projector ambient display (QR, wall, results)
+  AvatarWall.jsx          ← presence-driven lobby wall (BaseAvatar grid)
+  CheckinRunner.jsx       ← renders activity sequence from config
+  MoodTap.jsx             ← single-tap circumplex wheel (wraps WheelSVG)
+  ResultsView.jsx         ← aggregate mood plot, distributions, summaries
+  ConsoleLecturePlanner.jsx
+  ConsoleParticipation.jsx
+supabase/functions/
+  summarize-checkin/      ← Anthropic API call, admin-gated
+```
+
+### Phasing
+
+- **Phase 1 (core loop)**: schema + RLS, join flow + email verification, web console (planning), mobile remote (queue, open/close, counter, connection indicator, wake lock, auto-close), projector screen (QR, state-following display), student check-in flow (mood with self-in-aggregate, pacing, prompt, question submission), broadcast state, results view, points award
+- **Phase 2**: quiz activity type + distributions, question publish/upvote/answered lifecycle with live feed on remote and console, Claude summarization Edge Function, avatar wall presence with arrival animation, preview-as-student, quick pulse
+- **Phase 3**: participation matrix + CSV export, dashboard participation card with streak (stretch), public landing page card (join-code entry + instructor pitch)
+- **Pre-launch gate (before first live class)**: verify Supabase Realtime concurrent-connection quota covers largest class size plus headroom; load-test a synthetic class at target scale
+- **Deferred**: live emote reactions
+
+### Key decisions and learnings
+
+- Avatar-only identity is viable precisely because avatar options are platform-curated; no free-form content can leak identity
+- Polling-window model over real-time sync cut the build scope substantially with no pedagogical loss
+- New table family over reusing `studies`: classroom semantics (membership, presence, live state) diverge too far from research protocol semantics
+- Three surfaces off one broadcast channel (student phone, instructor phone, projector) removes the lectern tab-juggling problem entirely; the instructor opens the screen view once and drives from their pocket
+
 # Part IV — Operations
 
-## 29. Key Learnings
+## 30. Key Learnings
 
 - Safari/iOS: avoid `@keyframes` with custom properties inside SVGs, `foreignObject`, inline `<style>` in SVG groups. Move animations to document `<head>`. Use `setAttribute` + `requestAnimationFrame` for all SVG animation.
 - Logo: use `RADlab_Logo.svg` (white outline) or `RADlab_Logo_light.svg` (dark outline) — never redraw. White outline sits directly on the pink nav background. Dark outline for any other light surface.
@@ -2884,7 +3162,7 @@ All four verified live at a narrow (~600px) viewport: fresh baseline pins near t
 
 ---
 
-## 30. Roadmap
+## 31. Roadmap
 
 > Rewritten 2026-07-02 against actual codebase state; replaces the stale "Open Next Steps." Completed history lives in git.
 
@@ -2926,9 +3204,10 @@ All four verified live at a narrow (~600px) viewport: fresh baseline pins near t
 
 - [ ] Curriculum development first; delivery as a self-paced study via Training Modules (§26) + Experiment Builder (§28), with games interleaved as practice
 
-### P4 — Classroom dashboard adoption
+### P4 — Lecture Lounge (classroom system)
 
-- [ ] Decide after course design settles: link out as-is / port to Supabase / API sync. Deferred.
+- [x] Decision made 2026-07-10: full rebuild on platform infrastructure as Lecture Lounge (see §29). Old Firebase app retired as feature reference only.
+- [ ] Phase 1 build per §29 phasing (brief: docs/markdowns/lecture_lounge_phase1_brief.md)
 
 ### Housekeeping
 
