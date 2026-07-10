@@ -353,6 +353,48 @@ been described as 31 days, implying ~4 non-session days whose placement is unkno
   (current behavior) vs shifting.
 - Recruitment source (SONA / Prolific / both) + completion redirect URL.
 
+## 4b. Methods-document reconciliation (2026-07-10)
+
+Liliana's methods document (parsed 2026-07-10) resolves the calendar and pre-specifies several
+details. Deltas against the built system, to be applied as **WP-L5b**:
+
+**Calendar (31 days, resolved)** — baseline day 1; Phase 1 days 2–13; **midpoint window days
+14–16** (hard deadline end of day 16, daily reminders; non-completers withdrawn from Phase 2,
+Phase 1 data retained); Phase 2 days 17–28; **final window days 29–31**. Graph edits: midpoint
+stays offset 13, Phase 2 arm timepoints move offset 14 → **16**, final offset 26 → **28**.
+Timing: emails ~**06:00** (not 09:00); **daily links live 24 h** (not 48); midpoint/final links
+**72 h**; same-day 18:00 reminder for dailies (reminder cadence config needs a pass — one
+study-level interval must serve both the 12-h daily reminder and the daily assessment-window
+reminders; likely interval 12 h + expiry-aware suppression, verify against check_schedule).
+Missed dailies skip forward on the original calendar (current behavior ✓).
+
+**Feedback metric pre-specified as Δstress (= metric v2)** — §4.3: "average within-session
+improvement in perceived stress … mean of the daily pre- to post-session difference scores" per
+arm. The participant-facing ranking must switch from v1 (z-blend) to **v2**; v1 remains stored in
+every snapshot for exploratory analysis. (Reverses the earlier v1-primary default — Norm's go
+required.)
+
+**Preference is a ranking (Appendix 16), captured by ALL groups** — drag-and-drop rank #1–#3,
+distinct from the choice act. Sequences: No-Choice = questionnaires → rank → anti-preference
+reveal; Choice = questionnaires → rank → select; Feedback = questionnaires → feedback → rank →
+select (feedback may influence the ranking). MidpointStep needs a ranking screen; snapshot gains
+the full ranking (`stated_preference` = rank #1). Anti-preference logic is already equivalent
+(50/50 among the two non-rank-1 arms).
+
+**Group assignment timing** — doc internally inconsistent (§4.3 "prior to the midpoint" vs §3.5
+"at completion"). Built behavior (drawn at midpoint-step mount) sits between; confirm with Liliana.
+
+**Confirmed matches, no work**: counterbalanced Phase 1 (block order random, within-block fixed);
+momentary assessment items + anchors = the two VAS packages exactly; PHQ-8/GAD-7 screener gates
+(existing two-phase screener infra); rolling enrollment; midpoint/final instrument lists.
+
+**New requirements**: baseline template additions (Student Stress Scale, PHQ-8/GAD-7 carry-over,
+introduction video, §4.1 order); distress-flag monitoring (PHQ-8/GAD-7 thresholds at assessments →
+resources + team follow-up); adherence/credit tooling (10-of-12 per phase, prorated SONA credit);
+daily-email content (PI contact + Appendix 17 resources). Appendices 12/14/15/17 supply the
+screener/consent/debrief/resources copy — clears those items from §4a; midpoint screen copy and
+ranking-screen instructions still owed.
+
 ## 5. Open items (Liliana / Norm)
 
 1. ~~Three-group structure~~ — confirmed 2026-07-08: feedback+choice / control display+choice /

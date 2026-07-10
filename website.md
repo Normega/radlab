@@ -2298,17 +2298,24 @@ Training modules and display elements (§24a) are two parallel block-based conte
 
 ### Study design
 
-A 27-consecutive-day online longitudinal RCT (calendar pending Liliana's confirmation — timepoint
-`day_offset`s are trivially editable in the Experiment Builder). Three emotion-regulation practices:
-**non_reactivity**, **reappraisal**, **self_compassion**.
+A **31-day** online longitudinal RCT (calendar confirmed 2026-07-10 from Liliana's methods
+document — the 3-day assessment windows are what stretch 27 session days to 31; timepoint
+`day_offset`s in the dry-run graph still reflect the old 27-day assumption pending WP-L5b). Three
+emotion-regulation practices: **non_reactivity**, **reappraisal**, **self_compassion**.
 
 | Days | Content |
 |---|---|
-| 1 | Baseline assessment (consent, demographics, trait battery) |
+| 1 | Screener → consent → Baseline assessment |
 | 2–13 | **Phase 1**: all three practices, 4 days each, block order **counterbalanced** (all 6 permutations, permuted-block draw at enrollment) |
-| 14 | **Midpoint assessment** (state battery + the midpoint feedback/choice step) |
-| 15–26 | **Phase 2**: 12 days of ONE practice, determined at the midpoint (see below) |
-| 27 | Final assessment + debrief |
+| 14–16 | **Midpoint window** (state battery + preference ranking + the feedback/choice step) — hard deadline end of day 16; non-completers are withdrawn from Phase 2 (Phase 1 data retained); the fork's completion gating enforces this naturally |
+| 17–28 | **Phase 2**: 12 days of ONE practice, determined at the midpoint (see below) |
+| 29–31 | **Final window**: final assessment + debrief |
+
+Timing (per methods doc): emails ~06:00 America/Toronto; daily links live 24 h (missed days skip
+forward on the original calendar); midpoint/final links 72 h with daily reminders; same-day 18:00
+reminder for dailies. Feedback metric **pre-specified as Δstress (metric v2)**; preference captured
+as a full #1–#3 **ranking** (Appendix 16) by all groups. Deltas vs. the built system are queued as
+WP-L5b — see the spec doc §4b reconciliation.
 
 **Daily training session shape** (all 24 training days): `Check-in (pre)` → practice module →
 `Check-in (post)`. Check-ins are the two canonical VAS packages (`emoji_6`, 1–6; contents managed
