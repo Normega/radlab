@@ -81,6 +81,7 @@ import Keynote              from './pages/keynote/Keynote'
 import AudioTest        from './pages/dev/AudioTest'
 import BreathLab        from './games/shared/breath/BreathLab'
 import Ember            from './games/Ember/Ember'
+import Mirror           from './games/Mirror/Mirror'
 import ColorMax      from './games/ColorMax/ColorMax'
 
 const queryClient = new QueryClient()
@@ -302,6 +303,8 @@ export default function App() {
           <Route path="/demo/pacer-opener" element={<PacerOpenerDemo />} />
           {/* Ember — breath biofeedback campfire; ?sim=1 for beltless rehearsal */}
           <Route path="/demo/ember" element={<Ember />} />
+          {/* Mirror — breath-driven avatar + materializing calibration; ?sim=1 beltless */}
+          <Route path="/demo/mirror" element={<Mirror />} />
           {/* ISARP keynote deck — click-through, doubles as read-later resource */}
           <Route path="/keynote" element={<Keynote />} />
 
