@@ -83,6 +83,8 @@ import BreathLab        from './games/shared/breath/BreathLab'
 import Ember            from './games/Ember/Ember'
 import Mirror           from './games/Mirror/Mirror'
 import ColorMax      from './games/ColorMax/ColorMax'
+import ClassRoom        from './classroom/ClassRoom'
+import ClassVerifyEmail from './classroom/ClassVerifyEmail'
 
 const queryClient = new QueryClient()
 
@@ -307,6 +309,14 @@ export default function App() {
           <Route path="/demo/mirror" element={<Mirror />} />
           {/* ISARP keynote deck — click-through, doubles as read-later resource */}
           <Route path="/keynote" element={<Keynote />} />
+
+          {/* Lecture Lounge — student surface (join/verify shell; full check-in flow lands in WP4) */}
+          <Route path="/class/verify" element={<ClassVerifyEmail />} />
+          <Route path="/class/:slug" element={
+            <AuthRoute session={session}>
+              <ClassRoom session={session} />
+            </AuthRoute>
+          } />
 
           {/* Unsubscribe — no auth or layout */}
           <Route path="/unsubscribe/:token" element={<Unsubscribe />} />
