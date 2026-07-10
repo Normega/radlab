@@ -11,6 +11,7 @@ import { useBreathSignal } from './useBreathSignal'
 import CalibrationScreen from '../../BreathBelt/components/CalibrationScreen'
 import BrowserWarning from '../../BreathBelt/components/BrowserWarning'
 import AvatarBreathPacer from '../../EbbAndFlow/components/AvatarBreathPacer'
+import MirrorCalibration from './MirrorCalibration'
 
 const AVATAR_PROPS = { skinColor: '#FDBCB4', eyeColor: '#4A90D9', species: 'human' }
 
@@ -23,6 +24,7 @@ export default function BreathLab() {
   const isSimMode = new URLSearchParams(location.search).get('sim') === '1'
 
   const [autoRecalOn, setAutoRecalOn] = useState(true)
+  const [calibMode, setCalibMode] = useState('mirror')  // 'mirror' (adaptive materializing) | 'standard' (fixed 4-breath)
   const breath = useBreathSignal({ isSimMode, autoRecal: autoRecalOn })
   const [act, setAct] = useState('WELCOME') // WELCOME → CONNECT → CALIBRATE → LAB
 
@@ -44,9 +46,10 @@ export default function BreathLab() {
   // straight to the REVIEW panel (which has no such timer).
   const recalibrate = useCallback(() => {
     setAct('CALIBRATE')
-    if (isSimMode) breath.acceptSimCalib()
+    if (calibMode === 'mirror') breath.resetCalibration()   // back to the Mirror "Begin" screen (sim loop refeeds)
+    else if (isSimMode) breath.acceptSimCalib()
     else breath.resetCalibration()
-  }, [isSimMode, breath])
+  }, [isSimMode, breath, calibMode])
 
   if (!navigator.bluetooth && !isSimMode) return <BrowserWarning />
 
@@ -65,9 +68,21 @@ export default function BreathLab() {
             the Polar H10: breath amplitude, inhale/exhale phase, rate, regularity,
             heart rate, RR intervals, and RSA. Use it to prototype biofeedback mappings.
           </p>
+          <label style={{ ...S.toggleRow, justifyContent: 'center' }}>
+            <span>Calibration:</span>
+            <select value={calibMode} onChange={e => setCalibMode(e.target.value)}
+              style={{ padding: '4px 8px', borderRadius: 6, border: '1px solid var(--bd)' }}>
+              <option value="mirror">Mirror (adaptive, materializing)</option>
+              <option value="standard">Standard (fixed 4 breaths)</option>
+            </select>
+          </label>
           <Btn onClick={() => {
-            if (isSimMode) { breath.startSimulation(); breath.acceptSimCalib(); setAct('CALIBRATE') }
-            else setAct('CONNECT')
+            if (isSimMode) {
+              breath.startSimulation()
+              // Mirror runs a real (materializing) calibration even in sim; standard skips to REVIEW.
+              if (calibMode !== 'mirror') breath.acceptSimCalib()
+              setAct('CALIBRATE')
+            } else setAct('CONNECT')
           }}>
             {isSimMode ? 'Start simulation' : 'Start'}
           </Btn>
@@ -90,16 +105,20 @@ export default function BreathLab() {
 
       {act === 'CALIBRATE' && (
         <Panel wide>
-          <h2 style={S.h2}>Calibration</h2>
-          <CalibrationScreen
-            calibPhase={breath.calibPhase}
-            calibReviewData={breath.calibReviewData}
-            avatarProps={AVATAR_PROPS}
-            startCalibration={breath.startCalibration}
-            beginCalibCollection={breath.beginCalibCollection}
-            acceptCalibration={breath.acceptCalibration}
-            redoCalibration={breath.redoCalibration}
-          />
+          <h2 style={S.h2}>{calibMode === 'mirror' ? 'Mirror calibration' : 'Calibration'}</h2>
+          {calibMode === 'mirror' ? (
+            <MirrorCalibration breath={breath} avatarProps={AVATAR_PROPS} />
+          ) : (
+            <CalibrationScreen
+              calibPhase={breath.calibPhase}
+              calibReviewData={breath.calibReviewData}
+              avatarProps={AVATAR_PROPS}
+              startCalibration={breath.startCalibration}
+              beginCalibCollection={breath.beginCalibCollection}
+              acceptCalibration={breath.acceptCalibration}
+              redoCalibration={breath.redoCalibration}
+            />
+          )}
         </Panel>
       )}
 

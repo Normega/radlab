@@ -336,3 +336,86 @@ function weightedGeomean(pairs) {
   }
   return wsum > 0 ? Math.exp(acc / wsum) : 0
 }
+
+// ── 3. Running projector (provisional breath axis) ──────────────────────────
+//
+// During calibration we don't yet have a fitted model, so to give the
+// confidence monitor a scalar breath signal we project the filtered axes onto
+// their own rolling top principal component. Sign is arbitrary (PCA) — that's
+// fine: tracking uses |correlation|, and the final supervised fit fixes polarity
+// against the pacer. refresh() recomputes the axis (call it a few times a second,
+// not per sample); project() uses the current axis.
+
+export function createRunningProjector({ windowMs = 12000 } = {}) {
+  const buf = []
+  let axis = [1, 0, 0]
+  return {
+    push(t, fx, fy, fz) {
+      buf.push({ t, fx, fy, fz })
+      while (buf.length && t - buf[0].t > windowMs) buf.shift()
+    },
+    refresh() {
+      const c = covariance(buf)
+      if (c && c.trace > 1e-9) axis = topEigen(c, axis).vec
+    },
+    project(fx, fy, fz) { return axis[0] * fx + axis[1] * fy + axis[2] * fz },
+    get axis() { return axis },
+    reset() { buf.length = 0; axis = [1, 0, 0] },
+  }
+}
+
+// ── 4. Adaptive calibration session ─────────────────────────────────────────
+//
+// Wraps the projector + confidence monitor + the stop policy behind one object,
+// so the hook and the headless tests share exactly the same behaviour. The
+// avatar "materializes" as confidence climbs; collection extends until a
+// sustained-confident spell (success) or a ceiling (timeout → coach and let the
+// user act while collection continues).
+//
+//   ingest(t, {fx,fy,fz})   — one filtered sample
+//   assess(now) → {
+//     confidence, sub, gates, weakest, coach, breaths,   // (from the monitor)
+//     elapsedMs, status: 'collecting' | 'ready' | 'timeout',
+//   }
+// `status` is the caller's cue: 'ready' → finalize the fit; 'timeout' → past the
+// ceiling without converging (keep coaching, or let the user redo).
+
+export function createCalibrationSession({
+  periodMs      = 5000,     // paced-avatar breath period during calibration
+  startMs       = 0,        // wall-clock ms the pacing began
+  minMs         = 20000,    // don't accept before this (need stable stats)
+  maxMs         = 60000,    // ceiling — past here, status becomes 'timeout'
+  minBreaths    = 4,        // ...and at least this many breaths seen
+  acceptC       = 0.85,     // confidence to accept at
+  acceptHoldMs  = 3000,     // ...sustained this long
+  refreshMs     = 250,      // axis re-projection cadence
+} = {}) {
+  const projector = createRunningProjector()
+  const monitor   = createCalibrationMonitor()
+  let confidentSince = null
+  let lastRefresh = 0
+
+  const pacerAt = (t) => (1 - Math.cos(2 * Math.PI * (t - startMs) / periodMs)) / 2
+
+  return {
+    ingest(t, s) {
+      projector.push(t, s.fx, s.fy, s.fz)
+      if (t - lastRefresh >= refreshMs) { projector.refresh(); lastRefresh = t }
+      const proj = projector.project(s.fx, s.fy, s.fz)
+      monitor.push(t, { fx: s.fx, fy: s.fy, fz: s.fz, proj, pacer: pacerAt(t) })
+    },
+    assess(now) {
+      const a = monitor.assess(now)
+      const elapsedMs = now - startMs
+      if (a.confidence >= acceptC) { if (confidentSince == null) confidentSince = now }
+      else confidentSince = null
+      const heldOk = confidentSince != null && now - confidentSince >= acceptHoldMs
+      let status = 'collecting'
+      if (elapsedMs >= minMs && a.breaths >= minBreaths && heldOk) status = 'ready'
+      else if (elapsedMs >= maxMs) status = 'timeout'
+      return { ...a, elapsedMs, status }
+    },
+    get axis() { return projector.axis },
+    reset() { projector.reset(); monitor.reset(); confidentSince = null; lastRefresh = 0 },
+  }
+}

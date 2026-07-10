@@ -7,7 +7,9 @@
 // guard the *behavior* (clean > noisy, off-axis tanks clarity, etc.), not exact
 // numbers — those get dialed on real belt data.
 
-import { createAmplitudeRanger, createCalibrationMonitor } from './mirrorCalibration.js'
+import {
+  createAmplitudeRanger, createCalibrationMonitor, createCalibrationSession,
+} from './mirrorCalibration.js'
 
 let pass = 0, fail = 0
 const ok = (cond, msg) => { if (cond) { pass++; console.log('  ok', msg) } else { fail++; console.log('  ✗ FAIL', msg) } }
@@ -140,6 +142,39 @@ console.log('\nMirror calibration primitives\n')
 {
   const ranger = createAmplitudeRanger({ minCount: 40 })
   ok(ranger.normalize(0.7) === 0.7, 'ranger: passes value through before ranging')
+}
+
+// ── adaptive session: a good follower converges to 'ready' after the minimum ──
+{
+  const startMs = 100000
+  const sess = createCalibrationSession({ periodMs: PERIOD, startMs, minMs: 20000, maxMs: 60000 })
+  const rand = mulberry32(3)
+  let last = null, readyAt = null
+  for (let t = startMs; t <= startMs + 60000; t += DT) {
+    const breath = (1 - Math.cos(2 * Math.PI * (t - startMs) / PERIOD)) / 2   // follows the pacer
+    const amp = (breath - 0.5)
+    sess.ingest(t, { fx: amp + 0.02 * (rand() - 0.5), fy: 0.01 * (rand() - 0.5), fz: 0.01 * (rand() - 0.5) })
+    if (t % 250 === 0) { last = sess.assess(t); if (last.status === 'ready' && readyAt == null) readyAt = last.elapsedMs }
+  }
+  ok(readyAt != null, 'session: a good follower reaches ready')
+  ok(readyAt >= 20000, `session: never accepts before the 20 s minimum (readyAt=${readyAt})`)
+  ok(readyAt < 45000, `session: converges well before the ceiling (readyAt=${(readyAt/1000).toFixed(0)}s)`)
+}
+
+// ── adaptive session: a breath-holder never converges → timeout + coaching ──
+{
+  const startMs = 200000
+  const sess = createCalibrationSession({ periodMs: PERIOD, startMs, minMs: 20000, maxMs: 40000 })
+  const rand = mulberry32(9)
+  let last = null
+  for (let t = startMs; t <= startMs + 42000; t += DT) {
+    // barely moving — a held breath / not engaging
+    sess.ingest(t, { fx: 0.01 * (rand() - 0.5), fy: 0.01 * (rand() - 0.5), fz: 0.01 * (rand() - 0.5) })
+    if (t % 250 === 0) last = sess.assess(t)
+  }
+  ok(last.status === 'timeout', `session: holder times out (status=${last.status})`)
+  ok(last.confidence < 0.6, `session: holder confidence stays low (${last.confidence.toFixed(2)})`)
+  ok(typeof last.coach === 'string' && last.coach.length > 0, 'session: timeout surfaces a coaching prompt')
 }
 
 console.log(`\n${pass} passed, ${fail} failed\n`)

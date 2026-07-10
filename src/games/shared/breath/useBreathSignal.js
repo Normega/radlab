@@ -10,7 +10,7 @@ import {
   parseHrPacket, createPhaseDetector, createRateTracker,
   rsaAmplitudeMs, createHistory, createQualityTracker,
 } from './breathFeatures'
-import { createAmplitudeRanger } from './mirrorCalibration'
+import { createAmplitudeRanger, createCalibrationSession } from './mirrorCalibration'
 
 // ── useBreathSignal ─────────────────────────────────────────────────────────
 //
@@ -46,6 +46,9 @@ import { createAmplitudeRanger } from './mirrorCalibration'
 // regularity feedback can be exercised by hand.
 
 const SIM_MLR_WEIGHTS = { bias: 0.5, weights: [0.8, 0.1, 0.1], modelLabel: 'sim-mlr3w', lagMs: 50, fitR: 0.92 }
+// Identity-ish wide model used only to obtain the live bandpassed axes during
+// mirror calibration (before any real model exists). Only `.filtered` is used.
+const DUMMY_WIDE = { modelLabel: 'mlr-wide', bias: 0, weights: [1, 0, 0] }
 const INGEST_CHUNK = 8       // accel samples per live-processing step (200 Hz / 8 ≈ 25 Hz)
 const SAMPLE_DT_MS = 5       // Polar PMD accel at 200 Hz
 const HISTORY_MS   = 60000
@@ -85,6 +88,13 @@ export function useBreathSignal({ isSimMode = false, autoRecal = true, mirrorMod
   const filterState3Ref  = useRef(initFilterState3())
   const collectingRef    = useRef(false) // true only during calib BREATHE
 
+  // Mirror (adaptive, materializing) calibration: a live confidence session fed
+  // the bandpassed axes during collection. Null unless a mirror calibration is
+  // running; its presence switches BREATHE from the fixed 4-breath timer to
+  // confidence-driven stopping.
+  const calibSessionRef     = useRef(null)
+  const calibFilterStateRef = useRef(initFilterState3())
+
   // Derived-feature state
   const phaseDetectorRef = useRef(createPhaseDetector())
   const rateTrackerRef   = useRef(createRateTracker())
@@ -110,6 +120,7 @@ export function useBreathSignal({ isSimMode = false, autoRecal = true, mirrorMod
     qualityEvr: null, qualityTotalVar: null, signalDegraded: false,
     filtered: null,   // last bandpassed [x,y,z] — recorded for offline EVR analysis
     autoRecalCount: 0, lastRecalAt: null,
+    calib: null,      // live mirror-calibration confidence snapshot (see createCalibrationSession)
   })
 
   // Signal-quality monitor state
@@ -242,6 +253,34 @@ export function useBreathSignal({ isSimMode = false, autoRecal = true, mirrorMod
     s.signalDegraded = degraded
   }, [autoRecal])
 
+  // Fit the collected calibration samples, wire up the model + quality monitor,
+  // and build the review graph. Shared by the fixed-timer path and the adaptive
+  // (mirror) path — only the *when* differs. Returns true on a usable fit.
+  // Defined above the BLE handlers so accelHandler can call it on convergence.
+  const runFit = useCallback(() => {
+    const periodMs = calibPeriodMsRef.current
+    collectingRef.current = false
+    setCalibPhase('FITTING')
+    const result = fitBestModel(calibSamplesRef.current, calibStartMsRef.current, periodMs)
+    if (!result || result.fitR < 0.4) { setCalibPhase('FAILED'); return false }
+
+    mlrWeightsRef.current   = result
+    filterState3Ref.current = initFilterState3()
+    initQuality(result.weights)   // start the explained-variance monitor for this fit
+
+    const beltRaw  = computeMLRPredictions(calibSamplesRef.current, result)
+    const samples  = calibSamplesRef.current
+    const pacerPts = samples.filter((_, i) => i % 5 === 0)
+      .map(sm => ({ t: sm.t, value: getPacerRadius(sm.t, calibStartMsRef.current, periodMs) }))
+    const beltAll  = samples.map((sm, i) => ({ t: sm.t, value: beltRaw[i] }))
+    const beltPts  = beltAll.filter((_, i) => i % 5 === 0)
+    const peakErrorMs = medianPeakTimingError(beltAll, pacerPts, periodMs)
+
+    setCalibReviewData({ pacerPts, beltPts, fitR: result.fitR, peakErrorMs, modelLabel: result.modelLabel, lagMs: result.lagMs })
+    setCalibPhase('REVIEW')
+    return true
+  }, [initQuality])
+
   // ── BLE handlers ──────────────────────────────────────────────────────────
 
   const accelHandler = useCallback((e) => {
@@ -267,6 +306,22 @@ export function useBreathSignal({ isSimMode = false, autoRecal = true, mirrorMod
       measurements.forEach((m, idx) => {
         calibSamplesRef.current.push({ t: timestamp + idx * SAMPLE_DT_MS, x: m[0], y: m[1], z: m[2] })
       })
+
+      // Mirror calibration: bandpass the axes live and feed the confidence
+      // session so the avatar can materialize during collection.
+      const sess = calibSessionRef.current
+      if (sess) {
+        for (let i = 0; i < measurements.length; i += INGEST_CHUNK) {
+          const chunk = measurements.slice(i, i + INGEST_CHUNK)
+          const { state, filtered } = processPacketMLR(chunk, calibFilterStateRef.current, DUMMY_WIDE)
+          calibFilterStateRef.current = state
+          const tt = timestamp + (i + chunk.length - 1) * SAMPLE_DT_MS
+          sess.ingest(tt, { fx: filtered[0], fy: filtered[1], fz: filtered[2] })
+        }
+        const a = sess.assess(timestamp)
+        signalRef.current.calib = a
+        if (a.status === 'ready') { calibSessionRef.current = null; runFit() }
+      }
     }
 
     // Live MLR in sub-packet chunks so games get ~25 Hz updates instead of
@@ -283,7 +338,7 @@ export function useBreathSignal({ isSimMode = false, autoRecal = true, mirrorMod
       }
       updateQuality(timestamp)
     }
-  }, [ingestBreathValue, updateQuality])
+  }, [ingestBreathValue, updateQuality, runFit])
 
   const hrHandler = useCallback((e) => {
     const parsed = parseHrPacket(e.target?.value)
@@ -330,31 +385,13 @@ export function useBreathSignal({ isSimMode = false, autoRecal = true, mirrorMod
   // ── Calibration state machine (mirrors useBeltConnection) ────────────────
 
   useEffect(() => {
-    if (calibPhase !== 'BREATHE') return
+    // Fixed 4-breath calibration timer. Skipped when a mirror session is active
+    // (that path stops on confidence, not a clock).
+    if (calibPhase !== 'BREATHE' || calibSessionRef.current) return
     const periodMs = calibPeriodMsRef.current
-    const t = setTimeout(() => {
-      collectingRef.current = false
-      setCalibPhase('FITTING')
-      const result = fitBestModel(calibSamplesRef.current, calibStartMsRef.current, periodMs)
-      if (!result || result.fitR < 0.4) { setCalibPhase('FAILED'); return }
-
-      mlrWeightsRef.current   = result
-      filterState3Ref.current = initFilterState3()
-      initQuality(result.weights)   // start the explained-variance monitor for this fit
-
-      const beltRaw  = computeMLRPredictions(calibSamplesRef.current, result)
-      const samples  = calibSamplesRef.current
-      const pacerPts = samples.filter((_, i) => i % 5 === 0)
-        .map(sm => ({ t: sm.t, value: getPacerRadius(sm.t, calibStartMsRef.current, periodMs) }))
-      const beltAll  = samples.map((sm, i) => ({ t: sm.t, value: beltRaw[i] }))
-      const beltPts  = beltAll.filter((_, i) => i % 5 === 0)
-      const peakErrorMs = medianPeakTimingError(beltAll, pacerPts, periodMs)
-
-      setCalibReviewData({ pacerPts, beltPts, fitR: result.fitR, peakErrorMs, modelLabel: result.modelLabel, lagMs: result.lagMs })
-      setCalibPhase('REVIEW')
-    }, 4 * periodMs)
+    const t = setTimeout(runFit, 4 * periodMs)
     return () => clearTimeout(t)
-  }, [calibPhase, initQuality])
+  }, [calibPhase, runFit])
 
   const startCalibration = useCallback(() => {
     calibSamplesRef.current = []
@@ -370,11 +407,42 @@ export function useBreathSignal({ isSimMode = false, autoRecal = true, mirrorMod
     setCalibPhase('BREATHE')
   }, [])
 
+  // Adaptive (mirror) collection: same entry point as beginCalibCollection but
+  // spins up a live confidence session, so BREATHE stops on confidence, not a
+  // clock, and the avatar materializes meanwhile. In sim the fake accel is
+  // synthesized from the pacer (below).
+  const beginMirrorCollection = useCallback((calibStartMs, breathPeriodMs) => {
+    calibSamplesRef.current     = []
+    calibStartMsRef.current     = calibStartMs
+    calibPeriodMsRef.current    = breathPeriodMs
+    calibFilterStateRef.current = initFilterState3()
+    calibSessionRef.current     = createCalibrationSession({ periodMs: breathPeriodMs, startMs: calibStartMs })
+    signalRef.current.calib     = null
+    if (isSimMode) simPeriodMsRef.current = breathPeriodMs
+    collectingRef.current       = true
+    setCalibPhase('BREATHE')
+  }, [isSimMode])
+
+  // Finalize the current mirror calibration on demand (e.g. the user accepts
+  // after a timeout, or a game auto-accepts). Uses whatever's collected.
+  const acceptMirrorNow = useCallback(() => {
+    if (!calibSessionRef.current) return
+    calibSessionRef.current = null
+    if (isSimMode) {
+      setCalibReviewData({ fitR: 0.92, lagMs: 50, peakErrorMs: 120, modelLabel: 'sim-mlr3w', pacerPts: [], beltPts: [] })
+      setCalibPhase('REVIEW')
+    } else {
+      runFit()
+    }
+  }, [isSimMode, runFit])
+
   const acceptCalibration = useCallback(() => setCalibPhase('COMPLETE'), [])
 
   const redoCalibration = useCallback(() => {
     calibSamplesRef.current = []
     collectingRef.current   = false
+    calibSessionRef.current = null
+    signalRef.current.calib = null
     setCalibReviewData(null)
     setCalibPhase('FIXATION')
   }, [])
@@ -382,6 +450,8 @@ export function useBreathSignal({ isSimMode = false, autoRecal = true, mirrorMod
   const resetCalibration = useCallback(() => {
     calibSamplesRef.current = []
     collectingRef.current   = false
+    calibSessionRef.current = null
+    signalRef.current.calib = null
     mlrWeightsRef.current   = null
     filterState3Ref.current = initFilterState3()
     qualityTrackerRef.current = null
@@ -411,15 +481,38 @@ export function useBreathSignal({ isSimMode = false, autoRecal = true, mirrorMod
       // Background tabs throttle timers to ~1 Hz; backfill 40 ms steps so the
       // phase/rate detectors always see a dense signal (capped at 3 s of catch-up)
       if (now - lastTick > 3000) lastTick = now - 3000
+      const sess = calibSessionRef.current
       for (let t = lastTick + 40; t <= now; t += 40) {
         const breath = 0.5 + 0.45 * Math.sin(2 * Math.PI * t / simPeriodMsRef.current)
         ingestBreathValue(t, breath)
+        // Mirror calibration in sim: the fake wearer follows the pacer exactly,
+        // so the confidence session converges and the avatar materializes. Feed
+        // it synthesized tri-axial accel (breath on one axis + a little noise).
+        if (sess) {
+          const start = calibStartMsRef.current, period = calibPeriodMsRef.current
+          const pacerVal = (1 - Math.cos(2 * Math.PI * (t - start) / period)) / 2
+          const amp = pacerVal - 0.5
+          sess.ingest(t, {
+            fx: amp + 0.02 * (Math.random() - 0.5),
+            fy: 0.01 * (Math.random() - 0.5),
+            fz: 0.01 * (Math.random() - 0.5),
+          })
+        }
         // Heartbeat: base 65 bpm, +12 bpm at inhale peak → RR 780–920 ms swing
         if (t >= simNextBeatRef.current) {
           const hrNow = 65 + 12 * breath
           const rr = 60000 / hrNow
           ingestHr(t, Math.round(hrNow), [rr])
           simNextBeatRef.current = t + rr
+        }
+      }
+      if (sess) {
+        const a = sess.assess(now)
+        signalRef.current.calib = a
+        if (a.status === 'ready') {
+          calibSessionRef.current = null
+          setCalibReviewData({ fitR: 0.92, lagMs: 50, peakErrorMs: 120, modelLabel: 'sim-mlr3w', pacerPts: [], beltPts: [] })
+          setCalibPhase('REVIEW')
         }
       }
       lastTick = now
@@ -490,6 +583,8 @@ export function useBreathSignal({ isSimMode = false, autoRecal = true, mirrorMod
     // calibration (prop-compatible with BreathBelt CalibrationScreen)
     calibPhase, calibReviewData,
     startCalibration, beginCalibCollection, acceptCalibration, redoCalibration, resetCalibration,
+    // mirror (adaptive, materializing) calibration
+    beginMirrorCollection, acceptMirrorNow,
     // sim
     startSimulation, setSimPeriodMs, acceptSimCalib,
     // live data
