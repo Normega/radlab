@@ -320,6 +320,39 @@ before September recruitment. Optional v3 = pooled-PCA fixed weights if the pilo
 arm with **zero materializer/cron changes**. The owl arm uses the normal draw, so it is balanced across
 `control_assigned` participants (after the WP-L3 `draw_index` kind-filter patch).
 
+## 4a. Liliana sign-off checklist (before the real study is authored)
+
+**Copy** (items 1–9 are constants at the top of `src/components/study/MidpointStep.jsx`; swapping
+wording in is minutes of work):
+1. Practice display names + one-line blurbs (Non-Reactivity / Reappraisal / Self-Compassion) —
+   should match her modules' language.
+2. Control display paragraph (both non-feedback groups; attention-matched, content-neutral).
+3. Feedback intro owl text + "See my results" button.
+4. Feedback screen heading/subtext + stat phrasings ("Stress ↓ X after practice",
+   "Enjoyment & helpfulness: X / 6", "based on N sessions", "your strongest", "limited data").
+5. Choice screen heading/subtext + "Lock it in".
+6. Preference question (No-Choice) heading/subtext + "That's my pick".
+7. **Anti-preference reveal (IRB-sensitive)**: preference acknowledgment + comfort-zone rationale +
+   placement sentence — needs her exact approved wording, paired with the matching debrief text.
+8. Choice confirmation + re-entry ("already set") screens.
+9. Midpoint header (badge / "Halfway there" / subtitle).
+10. Reminder email subject + body (builder → Contact settings; template variables available).
+11. Consent + debrief forms uploaded and linked (`active_consent_form_id` /
+    `active_debrief_form_id` — dry-run study has neither).
+12. Optional: Welcome/Farewell wrapper-screen copy (`wrapperElements.js`) — preview-only today,
+    only matters if those screens get wired into sessions.
+
+**Calendar / scheduling** (dry run assumes 27 consecutive days — but the study has historically
+been described as 31 days, implying ~4 non-session days whose placement is unknown):
+- Day map: gaps/rest days? (baseline→Phase 1 buffer, midpoint buffer, weekends?) Each is a
+  timepoint `day_offset` edit in the builder.
+- Send time (assumed 09:00 America/Toronto, same every day).
+- Link lifetime per session (assumed 48 h — the missed-day grace window).
+- Reminder policy: enabled? interval (default 24 h)? max per session?
+- Missed-day policy: `max_attempts` (currently 1); participants stay on their original calendar
+  (current behavior) vs shifting.
+- Recruitment source (SONA / Prolific / both) + completion redirect URL.
+
 ## 5. Open items (Liliana / Norm)
 
 1. ~~Three-group structure~~ — confirmed 2026-07-08: feedback+choice / control display+choice /
