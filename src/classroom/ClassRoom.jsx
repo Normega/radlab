@@ -64,7 +64,19 @@ export default function ClassRoom({ session }) {
       .select('id')
       .single()
     setJoining(false)
-    if (error) { setJoinError('Could not join — please try again.'); return }
+    if (error) {
+      // 23505 = unique violation on (class_id, user_id) — the membership row
+      // already exists (stale page loaded before an earlier join, a second
+      // tab, etc). That's not actually a failure from the student's point of
+      // view, so recover silently instead of showing a scary error.
+      if (error.code === '23505') {
+        const { data: existing } = await supabase
+          .from('class_members').select('id').eq('class_id', classInfo.id).eq('user_id', userId).single()
+        if (existing) { setMembership(existing); return }
+      }
+      setJoinError(error.message)
+      return
+    }
     setMembership(data)
   }
 
