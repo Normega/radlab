@@ -87,6 +87,7 @@ import ClassRoom        from './classroom/ClassRoom'
 import ClassVerifyEmail from './classroom/ClassVerifyEmail'
 import ClassConsole     from './classroom/ClassConsole'
 import ClassAdminRoute  from './components/ClassAdminRoute'
+import ClassesAdminPage from './pages/admin/ClassesAdminPage'
 
 const queryClient = new QueryClient()
 
@@ -338,6 +339,7 @@ export default function App() {
               <Route path="/admin/sessions"         element={<SessionLibrary />} />
               <Route path="/admin/sessions/new"     element={<SessionBuilder />} />
               <Route path="/admin/sessions/:id"     element={<SessionBuilder />} />
+              <Route path="/admin/classes"          element={<ClassesAdminPage />} />
               <Route path="/admin/studies"               element={<StudyLibrary />} />
               <Route path="/admin/studies/new"           element={<StudyFormPage />} />
               <Route path="/admin/studies/:id/edit"      element={<StudyFormPage />} />
