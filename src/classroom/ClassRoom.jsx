@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Nav from '../components/Nav'
+import CheckinRunner from './CheckinRunner'
+import ResultsView from './ResultsView'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -13,9 +15,11 @@ function isUtorontoEmail(email) {
   return UTORONTO_DOMAINS.includes(email.slice(at + 1).toLowerCase())
 }
 
-// Student surface. Phase 1 ships the join + utoronto verification shell —
-// the broadcast-driven check-in state machine (idle/open/closed/results)
-// is WP4 and replaces the placeholder "waiting" panel below.
+const BROADCAST_EVENTS = ['staged', 'open', 'closed', 'results_ready']
+
+// Student surface — a state machine (idle / open / closed / results) driven
+// by broadcasts on the class's Realtime channel, with a DB fetch on mount
+// so a refresh or reconnect restores state without waiting for a broadcast.
 export default function ClassRoom({ session }) {
   const { slug } = useParams()
   const userId = session?.user?.id
@@ -32,6 +36,11 @@ export default function ClassRoom({ session }) {
   const [emailError, setEmailError] = useState(null)
   const [sendingVerify, setSendingVerify] = useState(false)
   const [verifySent, setVerifySent] = useState(false)
+
+  // { id, status, config } | null (no live checkin) | undefined (loading)
+  const [liveCheckin, setLiveCheckin] = useState(undefined)
+  const [alreadyResponded, setAlreadyResponded] = useState(false)
+  const channelRef = useRef(null)
 
   useEffect(() => {
     let cancelled = false
@@ -53,6 +62,71 @@ export default function ClassRoom({ session }) {
     load()
     return () => { cancelled = true }
   }, [slug, userId])
+
+  // Restore current check-in state from the DB on mount/reconnect — most
+  // recently touched non-planned checkin for this class.
+  useEffect(() => {
+    if (!classInfo || !membership) return
+    let cancelled = false
+    supabase
+      .from('checkins')
+      .select('id, status, config, lecture_id, lectures!inner(class_id)')
+      .eq('lectures.class_id', classInfo.id)
+      .neq('status', 'planned')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .then(({ data }) => {
+        if (cancelled) return
+        const row = data?.[0]
+        setLiveCheckin(row ? { id: row.id, status: row.status, config: row.config } : null)
+      })
+    return () => { cancelled = true }
+  }, [classInfo, membership])
+
+  // Live updates via the class broadcast channel — remote pushes state,
+  // screen/student are consumers only.
+  useEffect(() => {
+    if (!classInfo) return
+    const channel = supabase.channel(`lounge:${classInfo.id}`)
+    for (const status of BROADCAST_EVENTS) {
+      channel.on('broadcast', { event: status }, ({ payload }) => {
+        if (!payload?.checkin_id) return
+        setLiveCheckin((prev) => ({
+          id: payload.checkin_id,
+          status,
+          config: payload.checkin_id === prev?.id ? prev?.config : undefined,
+        }))
+      })
+    }
+    channel.subscribe()
+    channelRef.current = channel
+    return () => { supabase.removeChannel(channel); channelRef.current = null }
+  }, [classInfo?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // A broadcast only carries the checkin_id, not its config — fetch it once
+  // if we don't already have it cached from the mount-time restore.
+  useEffect(() => {
+    if (!liveCheckin || liveCheckin.config !== undefined) return
+    let cancelled = false
+    supabase.from('checkins').select('config').eq('id', liveCheckin.id).single().then(({ data }) => {
+      if (cancelled || !data) return
+      setLiveCheckin((prev) => (prev?.id === liveCheckin.id ? { ...prev, config: data.config } : prev))
+    })
+    return () => { cancelled = true }
+  }, [liveCheckin])
+
+  // If the checkin is open, check whether this student already responded
+  // (refresh mid-checkin shouldn't re-ask everything). Not resetting to
+  // false when status leaves 'open' is deliberate — alreadyResponded is
+  // only ever read while status === 'open', so a stale value elsewhere is
+  // inert; the next 'open' checkin's id changing re-triggers this query.
+  useEffect(() => {
+    if (liveCheckin?.status !== 'open' || !userId) return
+    let cancelled = false
+    supabase.from('checkin_responses').select('id').eq('checkin_id', liveCheckin.id).eq('profile_id', userId).maybeSingle()
+      .then(({ data }) => { if (!cancelled) setAlreadyResponded(!!data) })
+    return () => { cancelled = true }
+  }, [liveCheckin?.id, liveCheckin?.status, userId])
 
   async function handleJoin() {
     if (!classInfo || !userId) return
@@ -115,6 +189,40 @@ export default function ClassRoom({ session }) {
     )
   }
 
+  function renderCheckinArea() {
+    if (liveCheckin === undefined) return null
+    if (liveCheckin?.status === 'open' && !alreadyResponded) {
+      if (liveCheckin.config === undefined) return null // still fetching config
+      return (
+        <div style={S.card}>
+          <CheckinRunner
+            checkinId={liveCheckin.id} config={liveCheckin.config} session={session}
+            onComplete={() => setAlreadyResponded(true)}
+          />
+        </div>
+      )
+    }
+    if (liveCheckin?.status === 'results_ready') {
+      return <div style={S.card}><ResultsView checkinId={liveCheckin.id} /></div>
+    }
+    // idle (no live checkin), staged, closed, or already-responded-while-open
+    return (
+      <div style={S.card}>
+        <p style={S.eyebrow}>{classInfo.name}</p>
+        <h1 style={S.title}>{liveCheckin?.status === 'open' ? "You're all set." : "You're in."}</h1>
+        <p style={S.sub}>
+          {liveCheckin?.status === 'open'
+            ? 'Waiting for your instructor to close this check-in…'
+            : liveCheckin?.status === 'closed'
+            ? 'Check-in closed. Results coming up…'
+            : liveCheckin?.status === 'staged'
+            ? 'Your instructor is about to open a check-in…'
+            : 'Waiting for your instructor to open the next check-in…'}
+        </p>
+      </div>
+    )
+  }
+
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
       <Nav session={session} />
@@ -156,11 +264,7 @@ export default function ClassRoom({ session }) {
               </div>
             )}
 
-            <div style={S.card}>
-              <p style={S.eyebrow}>{classInfo.name}</p>
-              <h1 style={S.title}>You're in.</h1>
-              <p style={S.sub}>Waiting for your instructor to open the next check-in…</p>
-            </div>
+            {renderCheckinArea()}
           </>
         )}
       </div>
