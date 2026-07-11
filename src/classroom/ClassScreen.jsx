@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useOutletContext } from 'react-router-dom'
 import QRCode from 'react-qr-code'
 import { supabase } from '../lib/supabase'
 import ResultsView from './ResultsView'
@@ -15,19 +15,11 @@ const BROADCAST_EVENTS = ['staged', 'open', 'closed', 'results_ready']
 // uses, restoring state from the DB on load/reload so it never needs a
 // broadcast to recover after being opened cold.
 export default function ClassScreen() {
-  const { slug } = useParams()
-  const [classInfo, setClassInfo] = useState(undefined)
+  // Resolved by ClassAdminRoute already — see ClassRemote for the same pattern.
+  const classInfo = useOutletContext()
   const [liveCheckin, setLiveCheckin] = useState(undefined)
   const [responseCount, setResponseCount] = useState(0)
   const respondedSetRef = useRef(new Set())
-
-  useEffect(() => {
-    let cancelled = false
-    supabase.from('classes').select('id, name, slug').eq('slug', slug).maybeSingle().then(({ data }) => {
-      if (!cancelled) setClassInfo(data ?? null)
-    })
-    return () => { cancelled = true }
-  }, [slug])
 
   useEffect(() => {
     if (!classInfo) return
@@ -45,7 +37,7 @@ export default function ClassScreen() {
         setLiveCheckin(row ? { id: row.id, status: row.status, config: row.config } : null)
       })
     return () => { cancelled = true }
-  }, [classInfo])
+  }, [classInfo?.id]) // eslint-disable-line react-hooks/exhaustive-deps -- only the id should re-trigger this, not every field on classInfo
 
   useEffect(() => {
     if (!classInfo) return
@@ -104,8 +96,7 @@ export default function ClassScreen() {
     return () => { wakeLock?.release?.().catch(() => {}); document.removeEventListener('visibilitychange', onVisible) }
   }, [])
 
-  if (classInfo === undefined) return <div style={S.stage} />
-  if (!classInfo) return <div style={S.stage}><p style={S.idleTitle}>Class not found</p></div>
+  if (!classInfo) return <div style={S.stage} />
 
   const joinUrl = `${window.location.origin}/class/${classInfo.slug}`
 

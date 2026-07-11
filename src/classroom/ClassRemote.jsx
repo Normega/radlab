@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useOutletContext } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Nav from '../components/Nav'
 
@@ -24,8 +24,9 @@ function nearestLecture(lectures) {
 // a check-in, watch responses land live, ride out (or extend) an auto-close
 // countdown. Planning happens on the console — this is the live surface.
 export default function ClassRemote({ session }) {
-  const { slug } = useParams()
-  const [classInfo, setClassInfo] = useState(undefined)
+  // Resolved by ClassAdminRoute already (it needs the class to run the
+  // admin check) — reusing it here instead of fetching it a second time.
+  const classInfo = useOutletContext()
   const [lecture, setLecture] = useState(undefined)
   const [checkins, setCheckins] = useState([])
   const [responseCounts, setResponseCounts] = useState({})
@@ -48,26 +49,34 @@ export default function ClassRemote({ session }) {
     }
   }
 
+  // Initial resolution: one embedded query for lectures + their checkins
+  // instead of two sequential round trips — pick the nearest lecture
+  // client-side and seed its checkins straight from the already-fetched
+  // data. Later refreshes (after open/close/etc.) use loadCheckins directly,
+  // since at that point we already know which lecture we're on.
   useEffect(() => {
+    if (!classInfo) return
     let cancelled = false
-    async function load() {
-      const { data: cls } = await supabase.from('classes').select('id, name, slug').eq('slug', slug).maybeSingle()
-      if (cancelled) return
-      setClassInfo(cls ?? null)
-      if (!cls) { setLecture(null); return }
-      const { data: lecs } = await supabase.from('lectures').select('*').eq('class_id', cls.id)
-      if (cancelled) return
-      setLecture(nearestLecture(lecs ?? []))
-    }
-    load()
+    supabase
+      .from('lectures')
+      .select('*, checkins(*)')
+      .eq('class_id', classInfo.id)
+      .then(({ data }) => {
+        if (cancelled) return
+        const nearest = nearestLecture(data ?? [])
+        setLecture(nearest)
+        if (!nearest) return
+        const rows = [...(nearest.checkins ?? [])].sort((a, b) => a.position - b.position)
+        setCheckins(rows)
+        const open = rows.find((c) => c.status === 'open')
+        if (open) {
+          supabase.from('checkin_responses').select('id', { count: 'exact', head: true }).eq('checkin_id', open.id).then(({ count }) => {
+            if (!cancelled) setResponseCounts((prev) => ({ ...prev, [open.id]: count ?? 0 }))
+          })
+        }
+      })
     return () => { cancelled = true }
-  }, [slug])
-
-  useEffect(() => {
-    // Deferred so loadCheckins' setState calls don't run synchronously
-    // within the effect body.
-    if (lecture?.id) queueMicrotask(() => loadCheckins(lecture.id))
-  }, [lecture?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [classInfo?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Broadcast channel — this is the one thing that actually pushes state to
   // the student and screen views (they're consumers only).
@@ -165,16 +174,8 @@ export default function ClassRemote({ session }) {
     return () => { wakeLock?.release?.().catch(() => {}); document.removeEventListener('visibilitychange', onVisible) }
   }, [])
 
-  if (classInfo === undefined || lecture === undefined) {
+  if (!classInfo || lecture === undefined) {
     return <div style={{ background: 'var(--bg)', minHeight: '100vh' }}><Nav session={session} /></div>
-  }
-  if (!classInfo) {
-    return (
-      <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
-        <Nav session={session} />
-        <div style={S.wrap}><p style={S.title}>Class not found</p></div>
-      </div>
-    )
   }
 
   return (
@@ -243,7 +244,6 @@ const S = {
   }),
   wrap: { maxWidth: 480, margin: '0 auto', padding: '12px 16px 40px' },
   hint: { fontSize: 14, color: 'var(--tx3)', textAlign: 'center', padding: '40px 20px' },
-  title: { fontFamily: SERIF, fontSize: 22, color: 'var(--tx)', padding: 20 },
   error: { fontSize: 13, color: '#c04a4a', background: '#fdecec', border: '1px solid #f3b8b8', borderRadius: 10, padding: '10px 14px', marginBottom: 12 },
   card: { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 16, padding: '16px 18px', marginBottom: 12 },
   cardHeader: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, flexWrap: 'wrap' },

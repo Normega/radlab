@@ -219,19 +219,28 @@ export default function ConsoleLecturePlanner({ classInfo }) {
   }
 
   async function reload() {
+    // One embedded query instead of lectures-then-checkins as two sequential
+    // round trips — checkin counts per lecture are small, so sorting the
+    // nested array client-side is simpler than PostgREST's embedded-order syntax.
     const { data: lecs } = await supabase
-      .from('lectures').select('*').eq('class_id', classInfo.id).order('number', { ascending: true, nullsFirst: false })
-    setLectures(lecs ?? [])
-    const ids = (lecs ?? []).map((l) => l.id)
-    if (ids.length === 0) { setCheckinsByLecture({}); return }
-    const { data: checkins } = await supabase
-      .from('checkins').select('*').in('lecture_id', ids).order('position', { ascending: true })
+      .from('lectures')
+      .select('*, checkins(*)')
+      .eq('class_id', classInfo.id)
+      .order('number', { ascending: true, nullsFirst: false })
+    const rows = lecs ?? []
+    // Leaving the embedded `checkins` array on each lecture row is harmless
+    // (LectureCard only reads its own named fields) — simpler than stripping it.
+    setLectures(rows)
     const grouped = {}
-    for (const c of checkins ?? []) (grouped[c.lecture_id] ??= []).push(c)
+    for (const l of rows) grouped[l.id] = [...(l.checkins ?? [])].sort((a, b) => a.position - b.position)
     setCheckinsByLecture(grouped)
   }
 
-  useEffect(() => { reload() }, [classInfo.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    // Deferred so reload()'s setState calls don't run synchronously within
+    // the effect body.
+    queueMicrotask(() => reload())
+  }, [classInfo.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function createLecture(e) {
     e.preventDefault()

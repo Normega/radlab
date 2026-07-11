@@ -42,31 +42,44 @@ export default function ClassRoom({ session }) {
   const [alreadyResponded, setAlreadyResponded] = useState(false)
   const channelRef = useRef(null)
 
+  // classInfo and utoronto verification don't depend on each other at all —
+  // fire both the moment we have a slug/userId instead of one waiting on
+  // the other.
   useEffect(() => {
     let cancelled = false
-    async function load() {
-      const { data: cls } = await supabase
-        .from('classes').select('id, name, slug').eq('slug', slug).maybeSingle()
-      if (cancelled) return
-      setClassInfo(cls ?? null)
-      if (!cls || !userId) { setMembership(null); return }
-
-      const [{ data: mem }, { data: profile }] = await Promise.all([
-        supabase.from('class_members').select('id').eq('class_id', cls.id).eq('user_id', userId).maybeSingle(),
-        supabase.from('profiles').select('utoronto_verified_at').eq('id', userId).single(),
-      ])
-      if (cancelled) return
-      setMembership(mem ?? null)
-      setUtorontoVerifiedAt(profile?.utoronto_verified_at ?? null)
-    }
-    load()
+    supabase.from('classes').select('id, name, slug').eq('slug', slug).maybeSingle().then(({ data }) => {
+      if (!cancelled) setClassInfo(data ?? null)
+    })
     return () => { cancelled = true }
-  }, [slug, userId])
+  }, [slug])
+
+  useEffect(() => {
+    if (!userId) return
+    let cancelled = false
+    supabase.from('profiles').select('utoronto_verified_at').eq('id', userId).single().then(({ data }) => {
+      if (!cancelled) setUtorontoVerifiedAt(data?.utoronto_verified_at ?? null)
+    })
+    return () => { cancelled = true }
+  }, [userId])
+
+  // membership and the check-in-state restore both only need classInfo.id —
+  // membership doesn't gate the checkin query (RLS already enforces that
+  // server-side), so firing them together instead of restore-waits-for-
+  // membership saves a full round trip on every load.
+  useEffect(() => {
+    if (classInfo === undefined) return // still loading
+    if (!classInfo || !userId) { queueMicrotask(() => setMembership(null)); return }
+    let cancelled = false
+    supabase.from('class_members').select('id').eq('class_id', classInfo.id).eq('user_id', userId).maybeSingle().then(({ data }) => {
+      if (!cancelled) setMembership(data ?? null)
+    })
+    return () => { cancelled = true }
+  }, [classInfo, userId])
 
   // Restore current check-in state from the DB on mount/reconnect — most
   // recently touched non-planned checkin for this class.
   useEffect(() => {
-    if (!classInfo || !membership) return
+    if (!classInfo) return
     let cancelled = false
     supabase
       .from('checkins')
@@ -81,7 +94,7 @@ export default function ClassRoom({ session }) {
         setLiveCheckin(row ? { id: row.id, status: row.status, config: row.config } : null)
       })
     return () => { cancelled = true }
-  }, [classInfo, membership])
+  }, [classInfo?.id]) // eslint-disable-line react-hooks/exhaustive-deps -- only the id should re-trigger this, not every field on classInfo
 
   // Live updates via the class broadcast channel — remote pushes state,
   // screen/student are consumers only.
