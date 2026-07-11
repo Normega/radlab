@@ -1,5 +1,11 @@
 // Lecture Lounge — sends the utoronto email verification link.
 //
+// Verification is account-level (profiles.utoronto_verified_at), not
+// per-class-membership: proving ownership once covers every class the
+// account joins afterward. class_id is still required so this can only be
+// triggered from a class you're actually a member of, and so the email can
+// link back to that class — it does not scope the verification itself.
+//
 // The token must never be visible to the calling browser: if it were
 // returned in the HTTP response, an already-authenticated client could
 // self-verify without ever receiving mail at the claimed address. So this
@@ -61,31 +67,34 @@ Deno.serve(async (req) => {
 
   // Confirm caller actually belongs to this class before writing anything —
   // the service-role client below bypasses RLS, so this check is load-bearing.
+  // Verification itself is account-level (profiles), not per class-membership.
   const { data: member } = await db
     .from('class_members')
-    .select('id, utoronto_verified_at')
+    .select('id')
     .eq('class_id', class_id)
     .eq('user_id', user.id)
     .maybeSingle()
 
   if (!member) return json({ error: 'Not a member of this class' }, 403)
-  if (member.utoronto_verified_at) return json({ error: 'Already verified' }, 400)
 
-  const { data: cls } = await db.from('classes').select('name').eq('id', class_id).single()
+  const { data: profile } = await db.from('profiles').select('utoronto_verified_at').eq('id', user.id).single()
+  if (profile?.utoronto_verified_at) return json({ error: 'Already verified' }, 400)
+
+  const { data: cls } = await db.from('classes').select('name, slug').eq('id', class_id).single()
   if (!cls) return json({ error: 'Class not found' }, 404)
 
   const token = crypto.randomUUID()
   const expiresAt = new Date(Date.now() + EXPIRES_HOURS * 60 * 60 * 1000).toISOString()
 
   const { error: updateErr } = await db
-    .from('class_members')
+    .from('profiles')
     .update({ utoronto_email: email, email_verify_token: token, email_verify_expires_at: expiresAt })
-    .eq('id', member.id)
+    .eq('id', user.id)
 
   if (updateErr) return json({ error: updateErr.message }, 500)
 
   const siteUrl = Deno.env.get('SITE_URL') ?? 'https://radlab.vercel.app'
-  const verifyUrl = `${siteUrl}/class/verify?token=${token}`
+  const verifyUrl = `${siteUrl}/class/verify?token=${token}&slug=${encodeURIComponent(cls.slug)}`
 
   const { subject, html, text } = renderClassVerifyEmail({
     class_name: cls.name,

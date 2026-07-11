@@ -10,11 +10,15 @@ const SERIF = '"DM Serif Display", Georgia, serif'
 export default function ClassVerifyEmail() {
   const [searchParams] = useSearchParams()
   const token = searchParams.get('token')
+  // Verification is account-level now — the initiating class's slug travels
+  // via its own query param (set by the Edge Function that sent this link)
+  // purely for the "back to class" deep link, not for the RPC itself.
+  const slug = searchParams.get('slug')
   const [result, setResult] = useState(() => (!token ? { error: 'not_found' } : undefined)) // undefined=loading
 
   useEffect(() => {
     if (!token) return
-    supabase.rpc('verify_class_email', { p_token: token }).then(({ data, error }) => {
+    supabase.rpc('verify_utoronto_email', { p_token: token }).then(({ data, error }) => {
       setResult(error ? { error: 'not_found' } : data)
     })
   }, [token])
@@ -27,9 +31,9 @@ export default function ClassVerifyEmail() {
         {result?.ok && (
           <>
             <h1 style={S.title}>Email verified</h1>
-            <p style={S.sub}>You're all set.</p>
-            {result.slug && (
-              <Link to={`/class/${result.slug}`} style={S.link}>Back to class →</Link>
+            <p style={S.sub}>You're all set — this covers every class you join with this account.</p>
+            {slug && (
+              <Link to={`/class/${slug}`} style={S.link}>Back to class →</Link>
             )}
           </>
         )}

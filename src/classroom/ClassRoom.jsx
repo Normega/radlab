@@ -22,6 +22,9 @@ export default function ClassRoom({ session }) {
 
   const [classInfo, setClassInfo] = useState(undefined) // undefined=loading, null=not found
   const [membership, setMembership] = useState(undefined)
+  // Verification is account-level (profiles), not per class-membership —
+  // proving utoronto ownership once carries across every class you join.
+  const [utorontoVerifiedAt, setUtorontoVerifiedAt] = useState(undefined)
   const [joining, setJoining] = useState(false)
   const [joinError, setJoinError] = useState(null)
 
@@ -39,12 +42,13 @@ export default function ClassRoom({ session }) {
       setClassInfo(cls ?? null)
       if (!cls || !userId) { setMembership(null); return }
 
-      const { data: mem } = await supabase
-        .from('class_members')
-        .select('id, utoronto_email, utoronto_verified_at')
-        .eq('class_id', cls.id).eq('user_id', userId).maybeSingle()
+      const [{ data: mem }, { data: profile }] = await Promise.all([
+        supabase.from('class_members').select('id').eq('class_id', cls.id).eq('user_id', userId).maybeSingle(),
+        supabase.from('profiles').select('utoronto_verified_at').eq('id', userId).single(),
+      ])
       if (cancelled) return
       setMembership(mem ?? null)
+      setUtorontoVerifiedAt(profile?.utoronto_verified_at ?? null)
     }
     load()
     return () => { cancelled = true }
@@ -57,7 +61,7 @@ export default function ClassRoom({ session }) {
     const { data, error } = await supabase
       .from('class_members')
       .insert({ class_id: classInfo.id, user_id: userId })
-      .select('id, utoronto_email, utoronto_verified_at')
+      .select('id')
       .single()
     setJoining(false)
     if (error) { setJoinError('Could not join — please try again.'); return }
@@ -115,7 +119,7 @@ export default function ClassRoom({ session }) {
           </div>
         ) : (
           <>
-            {!membership.utoronto_verified_at && (
+            {!utorontoVerifiedAt && (
               <div style={S.banner}>
                 {!verifySent ? (
                   <form onSubmit={handleSendVerify} style={S.bannerForm}>
