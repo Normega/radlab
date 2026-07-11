@@ -1,24 +1,15 @@
-import { useEffect, useState } from 'react'
 import { Navigate, Outlet } from 'react-router-dom'
-import { supabase } from '../lib/supabase'
 
-export default function AdminRoute({ session }) {
-  const [profile, setProfile] = useState(undefined)
-
-  useEffect(() => {
-    const userId = session?.user?.id
-    if (!userId) return                              // handled by the session === undefined / !session render guards
-    supabase
-      .from('profiles')
-      .select('role, super_admin')
-      .eq('id', userId)
-      .single()
-      .then(({ data }) => setProfile(data ?? null))
-  }, [session?.user?.id])
-
+// role/superAdmin are already fetched once in App.jsx the moment the session
+// resolves (fetchRole) — reusing them here instead of re-querying profiles
+// removes a redundant round-trip on every cold /admin/* load. This is a UX
+// gate only; the real enforcement is server-side RLS (my_role()/is_super_admin()),
+// which is re-evaluated fresh on every actual query regardless of what this
+// component renders.
+export default function AdminRoute({ session, role, superAdmin }) {
   if (session === undefined) return null          // auth loading
   if (!session) return <Navigate to="/login" replace />
-  if (profile === undefined) return null
-  if (profile?.role !== 'lab' && !profile?.super_admin) return <Navigate to="/dashboard" replace />
+  if (role === undefined) return null             // profile loading
+  if (role !== 'lab' && !superAdmin) return <Navigate to="/dashboard" replace />
   return <Outlet />
 }

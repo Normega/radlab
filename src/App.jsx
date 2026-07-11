@@ -131,17 +131,19 @@ function PublicOnlyRoute({ session, role, children }) {
 export default function App() {
   const [session,              setSession]              = useState(undefined)
   const [role,                 setRole]                 = useState(undefined)
+  const [superAdmin,           setSuperAdmin]           = useState(undefined)
   const [hasAvatar,            setHasAvatar]            = useState(undefined)
   const [firstContactComplete, setFirstContactComplete] = useState(undefined)
 
   async function fetchRole(userId) {
     const { data } = await supabase
       .from('profiles')
-      .select('role, first_contact_complete')
+      .select('role, first_contact_complete, super_admin')
       .eq('id', userId)
       .single()
     setRole(data?.role ?? 'public')
     setFirstContactComplete(data?.first_contact_complete ?? false)
+    setSuperAdmin(!!data?.super_admin)
   }
 
   async function checkAvatar(userId) {
@@ -154,13 +156,13 @@ export default function App() {
       const s = data.session ?? null
       setSession(s)
       if (s) { fetchRole(s.user.id); checkAvatar(s.user.id) }
-      else   { setRole(null); setHasAvatar(undefined) }
+      else   { setRole(null); setSuperAdmin(false); setHasAvatar(undefined) }
     })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
       const sess = s ?? null
       setSession(sess)
       if (sess) { fetchRole(sess.user.id); checkAvatar(sess.user.id) }
-      else      { setRole(null); setHasAvatar(undefined); setFirstContactComplete(undefined) }
+      else      { setRole(null); setSuperAdmin(false); setHasAvatar(undefined); setFirstContactComplete(undefined) }
     })
     return () => subscription.unsubscribe()
   }, [])
@@ -330,7 +332,7 @@ export default function App() {
           <Route path="/unsubscribe/:token" element={<Unsubscribe />} />
 
           {/* Admin section — role-gated */}
-          <Route element={<AdminRoute session={session} />}>
+          <Route element={<AdminRoute session={session} role={role} superAdmin={superAdmin} />}>
             {/* Full-screen session runner — no admin chrome */}
             <Route path="/admin/studies/:id/session/:enrollmentId/:studySessionId" element={<StudySessionRunner />} />
 
