@@ -1,27 +1,45 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import WheelSVG from '../games/StillWater/WheelSVG'
+import { CX, CY, OUTER_R } from '../games/StillWater/constants'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
 
-const SIZE = 240, PAD = 20
-const R = (SIZE - PAD * 2) / 2
-const CENTER = SIZE / 2
+const WHEEL_SIZE = 308
+const noop = () => {}
 
+// WheelSVG's own labeled octant grid (Alert/Excited/Good/Calm/Still/Sad/
+// Bad/Tense), faded, as background context — activeIds={null} is its
+// non-interactive static-preview mode (the same prop that turned out to
+// disable clicks entirely in MoodTap; here that's exactly what we want).
+// The scatter overlay uses the identical viewBox/CX/CY/OUTER_R so dots land
+// in the correct emotion region rather than a separately-scaled grid.
 function CircumplexScatter({ points }) {
   return (
-    <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`}>
-      <circle cx={CENTER} cy={CENTER} r={R} fill="none" stroke="var(--bd)" strokeWidth={1} />
-      <line x1={PAD} y1={CENTER} x2={SIZE - PAD} y2={CENTER} stroke="var(--bd)" strokeWidth={1} />
-      <line x1={CENTER} y1={PAD} x2={CENTER} y2={SIZE - PAD} stroke="var(--bd)" strokeWidth={1} />
-      {/* others first so the self dot always draws on top */}
-      {points.filter((p) => !p.is_self).map((p, i) => (
-        <circle key={i} cx={CENTER + Number(p.valence) * R} cy={CENTER - Number(p.arousal) * R} r={4} fill="var(--gy)" opacity={0.55} />
-      ))}
-      {points.filter((p) => p.is_self).map((p, i) => (
-        <circle key={i} cx={CENTER + Number(p.valence) * R} cy={CENTER - Number(p.arousal) * R} r={6} fill="var(--pk)" />
-      ))}
-    </svg>
+    <div style={{ position: 'relative', width: WHEEL_SIZE, height: WHEEL_SIZE, margin: '0 auto' }}>
+      <div style={{ opacity: 0.4 }}>
+        <WheelSVG activeIds={null} selection={null} hovered={null} onHover={noop} onZoneClick={noop} onNeutral={noop} />
+      </div>
+      <svg
+        width={WHEEL_SIZE} height={WHEEL_SIZE} viewBox="-12 -5 394 380"
+        style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none' }}
+      >
+        {/* others first so the self dot always draws on top */}
+        {points.filter((p) => !p.is_self).map((p, i) => (
+          <circle
+            key={i} cx={CX + Number(p.valence) * OUTER_R} cy={CY - Number(p.arousal) * OUTER_R}
+            r={6} fill="var(--gy)" opacity={0.8} stroke="#fff" strokeWidth={1}
+          />
+        ))}
+        {points.filter((p) => p.is_self).map((p, i) => (
+          <circle
+            key={i} cx={CX + Number(p.valence) * OUTER_R} cy={CY - Number(p.arousal) * OUTER_R}
+            r={9} fill="var(--pk)" stroke="#fff" strokeWidth={2}
+          />
+        ))}
+      </svg>
+    </div>
   )
 }
 
