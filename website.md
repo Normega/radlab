@@ -3214,6 +3214,7 @@ supabase/functions/
 - [x] WP4 broadcast state machine + student check-in state machine — implemented 2026-07-11
 - [x] WP5 check-in flow (mood/pacing/prompt/question) + results view — implemented 2026-07-11
 - [ ] Full three-surface loop (remote + screen + student) verified live through real authenticated browser sessions — not yet done, everything so far is SQL-impersonation/unauthenticated-route verification
+- [ ] **Instructor onboarding email package** (noted 2026-07-12, not started): from `/lecture-lounge/admin`, send all instructors on a course a package showing every link they need — console (`/class/:slug/console`), remote (`/class/:slug/remote`), screen (`/class/:slug/screen`), and the student join link (`/class/:slug`). Will need QR codes per link (reuse `react-qr-code`, already a dependency) and probably a link out to onboarding training material. Design/copy/exact trigger (auto on instructor-add vs. a manual "resend" button) not yet decided.
 - [ ] Phase 2: Claude summarization Edge Function, question publish/upvote/answered lifecycle, avatar wall presence, quiz activity type, participation matrix + CSV export
 
 ### Housekeeping
