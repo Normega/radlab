@@ -1,21 +1,52 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import WheelSVG from '../games/StillWater/WheelSVG'
-import { CX, CY, OUTER_R } from '../games/StillWater/constants'
+import { CX, CY, INNER_R, OUTER_R, EMOTIONS, d2r, centerAngle } from '../games/StillWater/constants'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
 
 const WHEEL_SIZE = 308
+const ZW = (OUTER_R - INNER_R) / 3
 const noop = () => {}
+
+// WheelSVG draws each emotion's wedge at a fixed angular slot (8 equal
+// 45deg segments) — that angle does NOT correspond to the emotion's actual
+// (valence, arousal): e.g. Alert's wedge points straight up on the wheel,
+// but its stored valence/arousal would plot up-and-to-the-left. Positioning
+// dots by literal valence/arousal put them in the wrong wedge relative to
+// the background. Using the wedge's own angle+zone geometry instead makes a
+// dot land exactly where that response actually tapped.
+//
+// Jittered because there are only 25 possible mood positions (8 emotions x
+// 3 zones, + neutral) — without jitter, identical taps stack on the exact
+// same pixel and read as a single dot (effectively looking "averaged")
+// instead of showing how many responses landed there.
+function jitteredPosition(point) {
+  if (point.emotion_id == null) {
+    // neutral — small jitter within the centre circle, uniform over the disk
+    const r = Math.sqrt(Math.random()) * (INNER_R * 0.55)
+    const a = Math.random() * Math.PI * 2
+    return { x: CX + r * Math.cos(a), y: CY + r * Math.sin(a) }
+  }
+  const emotion = EMOTIONS.find((e) => e.id === Number(point.emotion_id))
+  if (!emotion) return { x: CX, y: CY }
+  const zone = Number(point.zone) || 0
+  const baseAngle = centerAngle(emotion)
+  const baseRadius = INNER_R + (zone + 0.5) * ZW
+  const angle = baseAngle + (Math.random() - 0.5) * 24  // +/-12deg — wedge spans ~42deg
+  const radius = baseRadius + (Math.random() - 0.5) * (ZW * 0.7)
+  return { x: CX + radius * Math.cos(d2r(angle)), y: CY + radius * Math.sin(d2r(angle)) }
+}
 
 // WheelSVG's own labeled octant grid (Alert/Excited/Good/Calm/Still/Sad/
 // Bad/Tense), faded, as background context — activeIds={null} is its
 // non-interactive static-preview mode (the same prop that turned out to
 // disable clicks entirely in MoodTap; here that's exactly what we want).
-// The scatter overlay uses the identical viewBox/CX/CY/OUTER_R so dots land
-// in the correct emotion region rather than a separately-scaled grid.
+// The scatter overlay uses the identical viewBox/CX/CY so dots land in the
+// correct emotion region rather than a separately-scaled grid.
 function CircumplexScatter({ points }) {
+  const positioned = useMemo(() => points.map((p) => ({ ...p, ...jitteredPosition(p) })), [points])
   return (
     <div style={{ position: 'relative', width: WHEEL_SIZE, height: WHEEL_SIZE, margin: '0 auto' }}>
       <div style={{ opacity: 0.4 }}>
@@ -26,17 +57,11 @@ function CircumplexScatter({ points }) {
         style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none' }}
       >
         {/* others first so the self dot always draws on top */}
-        {points.filter((p) => !p.is_self).map((p, i) => (
-          <circle
-            key={i} cx={CX + Number(p.valence) * OUTER_R} cy={CY - Number(p.arousal) * OUTER_R}
-            r={6} fill="var(--gy)" opacity={0.8} stroke="#fff" strokeWidth={1}
-          />
+        {positioned.filter((p) => !p.is_self).map((p, i) => (
+          <circle key={i} cx={p.x} cy={p.y} r={6} fill="var(--gy)" opacity={0.8} stroke="#fff" strokeWidth={1} />
         ))}
-        {points.filter((p) => p.is_self).map((p, i) => (
-          <circle
-            key={i} cx={CX + Number(p.valence) * OUTER_R} cy={CY - Number(p.arousal) * OUTER_R}
-            r={9} fill="var(--pk)" stroke="#fff" strokeWidth={2}
-          />
+        {positioned.filter((p) => p.is_self).map((p, i) => (
+          <circle key={i} cx={p.x} cy={p.y} r={9} fill="var(--pk)" stroke="#fff" strokeWidth={2} />
         ))}
       </svg>
     </div>
