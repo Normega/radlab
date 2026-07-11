@@ -130,14 +130,14 @@ function LectureCard({ lecture, checkins, expanded, onToggle, onEditLecture, onD
   const [creatingCheckin, setCreatingCheckin] = useState(false)
   const [editingCheckinId, setEditingCheckinId] = useState(null)
 
-  function saveLecture(e) {
+  async function saveLecture(e) {
     e.preventDefault()
-    onEditLecture(lecture.id, {
+    const ok = await onEditLecture(lecture.id, {
       number: editForm.number === '' ? null : Number(editForm.number),
       title: editForm.title,
       lecture_date: editForm.lecture_date || null,
     })
-    setEditing(false)
+    if (ok) setEditing(false)
   }
 
   const nextPosition = (checkins?.length ?? 0) + 1
@@ -177,7 +177,7 @@ function LectureCard({ lecture, checkins, expanded, onToggle, onEditLecture, onD
                   position: c.position, activities: c.config?.activities ?? [],
                   promptText: c.config?.prompt_text ?? '', autoCloseSeconds: c.auto_close_seconds ?? '',
                 }}
-                onSave={(patch) => { onUpdateCheckin(c.id, patch); setEditingCheckinId(null) }}
+                onSave={async (patch) => { if (await onUpdateCheckin(c.id, patch)) setEditingCheckinId(null) }}
                 onCancel={() => setEditingCheckinId(null)}
               />
             ) : (
@@ -188,7 +188,7 @@ function LectureCard({ lecture, checkins, expanded, onToggle, onEditLecture, onD
           {creatingCheckin ? (
             <CheckinForm
               initial={emptyCheckinForm(nextPosition)}
-              onSave={(patch) => { onCreateCheckin(lecture.id, patch); setCreatingCheckin(false) }}
+              onSave={async (patch) => { if (await onCreateCheckin(lecture.id, patch)) setCreatingCheckin(false) }}
               onCancel={() => setCreatingCheckin(false)}
             />
           ) : (
@@ -206,6 +206,17 @@ export default function ConsoleLecturePlanner({ classInfo }) {
   const [expandedId, setExpandedId] = useState(null)
   const [creatingLecture, setCreatingLecture] = useState(false)
   const [newLecture, setNewLecture] = useState({ number: '', title: '', lecture_date: '' })
+  const [errorMsg, setErrorMsg] = useState(null)
+
+  // Every mutation goes through this so an RLS denial or any other DB error
+  // surfaces to the instructor instead of failing silently (see CLAUDE.md's
+  // RLS section — that failure mode is exactly what bit WP3a live).
+  async function run(promiseFactory) {
+    const { error } = await promiseFactory()
+    if (error) { setErrorMsg(error.message); return false }
+    setErrorMsg(null)
+    return true
+  }
 
   async function reload() {
     const { data: lecs } = await supabase
@@ -224,29 +235,42 @@ export default function ConsoleLecturePlanner({ classInfo }) {
 
   async function createLecture(e) {
     e.preventDefault()
-    await supabase.from('lectures').insert({
+    const ok = await run(() => supabase.from('lectures').insert({
       class_id: classInfo.id,
       number: newLecture.number === '' ? null : Number(newLecture.number),
       title: newLecture.title,
       lecture_date: newLecture.lecture_date || null,
-    })
+    }))
+    if (!ok) return
     setNewLecture({ number: '', title: '', lecture_date: '' })
     setCreatingLecture(false)
     reload()
   }
 
-  async function editLecture(id, patch) { await supabase.from('lectures').update(patch).eq('id', id); reload() }
+  async function editLecture(id, patch) {
+    const ok = await run(() => supabase.from('lectures').update(patch).eq('id', id))
+    if (ok) reload()
+    return ok
+  }
   async function deleteLecture(id) {
     if (!window.confirm('Delete this lecture and all its check-ins?')) return
-    await supabase.from('lectures').delete().eq('id', id)
-    reload()
+    const ok = await run(() => supabase.from('lectures').delete().eq('id', id))
+    if (ok) reload()
   }
-  async function createCheckin(lectureId, patch) { await supabase.from('checkins').insert({ lecture_id: lectureId, ...patch }); reload() }
-  async function updateCheckin(id, patch) { await supabase.from('checkins').update(patch).eq('id', id); reload() }
+  async function createCheckin(lectureId, patch) {
+    const ok = await run(() => supabase.from('checkins').insert({ lecture_id: lectureId, ...patch }))
+    if (ok) reload()
+    return ok
+  }
+  async function updateCheckin(id, patch) {
+    const ok = await run(() => supabase.from('checkins').update(patch).eq('id', id))
+    if (ok) reload()
+    return ok
+  }
   async function deleteCheckin(id) {
     if (!window.confirm('Delete this check-in?')) return
-    await supabase.from('checkins').delete().eq('id', id)
-    reload()
+    const ok = await run(() => supabase.from('checkins').delete().eq('id', id))
+    if (ok) reload()
   }
 
   if (lectures === undefined) return <p style={S.loading}>Loading…</p>
@@ -257,6 +281,13 @@ export default function ConsoleLecturePlanner({ classInfo }) {
         <p style={S.eyebrow}>Planning console</p>
         <h1 style={S.title}>{classInfo.name}</h1>
       </div>
+
+      {errorMsg && (
+        <div style={S.errorBanner}>
+          {errorMsg}
+          <button style={S.errorDismiss} onClick={() => setErrorMsg(null)}>×</button>
+        </div>
+      )}
 
       {lectures.map((l) => (
         <LectureCard
@@ -287,6 +318,12 @@ const S = {
   header: { marginBottom: 24 },
   eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)', marginBottom: 6 },
   title: { fontFamily: SERIF, fontSize: 32, color: 'var(--tx)' },
+  errorBanner: {
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+    background: '#fdecec', border: '1px solid #f3b8b8', color: '#a33',
+    borderRadius: 10, padding: '10px 14px', fontSize: 13, marginBottom: 16,
+  },
+  errorDismiss: { background: 'none', border: 'none', color: '#a33', fontSize: 16, cursor: 'pointer', lineHeight: 1 },
 
   lectureCard: { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 12, marginBottom: 12, overflow: 'hidden' },
   lectureHeader: { display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', cursor: 'pointer' },
