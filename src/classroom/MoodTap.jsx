@@ -1,8 +1,15 @@
 import { useState } from 'react'
 import WheelSVG from '../games/StillWater/WheelSVG'
+import { EMOTIONS } from '../games/StillWater/constants'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
+
+// WheelSVG's activeIds === null is a distinct non-interactive display mode
+// (used elsewhere for static previews), not "everything active" — its click
+// handler is gated on `activeIds !== null`, so passing null here made the
+// whole wheel permanently unclickable. Pass every emotion id explicitly.
+const ALL_EMOTION_IDS = EMOTIONS.map((e) => e.id)
 
 // Single tap on the compact circumplex wheel; neutral centre is a valid,
 // equally-weighted tap (no opt-out control). valence/arousal are the
@@ -39,7 +46,7 @@ export default function MoodTap({ onSubmit }) {
       <h2 style={S.title}>How are you feeling right now?</h2>
       <div style={S.wheelWrap}>
         <WheelSVG
-          activeIds={null}
+          activeIds={ALL_EMOTION_IDS}
           selection={selection}
           hovered={hovered}
           onHover={setHovered}
