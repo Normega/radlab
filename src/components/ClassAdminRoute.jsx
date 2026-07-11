@@ -35,6 +35,7 @@ export default function ClassAdminRoute({ session }) {
     return () => { cancelled = true }
   }, [slug, session?.user?.id])
 
+  if (session === undefined) return null          // auth loading
   if (!session) return <Navigate to="/login" replace />
   if (state.status === 'loading') return null
   if (state.status === 'not_found') return <Navigate to="/dashboard" replace />
