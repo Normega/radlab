@@ -60,6 +60,7 @@ const Keynote   = lazy(() => import('./pages/keynote/Keynote'))
 const ClassRoom        = lazy(() => import('./classroom/ClassRoom'))
 const ClassVerifyEmail = lazy(() => import('./classroom/ClassVerifyEmail'))
 const ClassConsole     = lazy(() => import('./classroom/ClassConsole'))
+const ClassRemote      = lazy(() => import('./classroom/ClassRemote'))
 const LectureLoungeAdminPage = lazy(() => import('./classroom/LectureLoungeAdminPage'))
 
 // Research admin section — separate partition from Lecture Lounge.
@@ -357,6 +358,7 @@ export default function App() {
             } />
             <Route element={<ClassAdminRoute session={session} />}>
               <Route path="/class/:slug/console" element={<ClassConsole session={session} />} />
+              <Route path="/class/:slug/remote" element={<ClassRemote session={session} />} />
             </Route>
             <Route element={<LectureLoungeAdminRoute session={session} role={role} superAdmin={superAdmin} />}>
               <Route path="/lecture-lounge/admin" element={<LectureLoungeAdminPage session={session} />} />
