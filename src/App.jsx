@@ -85,6 +85,8 @@ import Mirror           from './games/Mirror/Mirror'
 import ColorMax      from './games/ColorMax/ColorMax'
 import ClassRoom        from './classroom/ClassRoom'
 import ClassVerifyEmail from './classroom/ClassVerifyEmail'
+import ClassConsole     from './classroom/ClassConsole'
+import ClassAdminRoute  from './components/ClassAdminRoute'
 
 const queryClient = new QueryClient()
 
@@ -317,6 +319,11 @@ export default function App() {
               <ClassRoom session={session} />
             </AuthRoute>
           } />
+
+          {/* Lecture Lounge — planning console (per-class admin gated) */}
+          <Route element={<ClassAdminRoute session={session} />}>
+            <Route path="/class/:slug/console" element={<ClassConsole session={session} />} />
+          </Route>
 
           {/* Unsubscribe — no auth or layout */}
           <Route path="/unsubscribe/:token" element={<Unsubscribe />} />
