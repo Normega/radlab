@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import Nav from '../components/Nav'
+import QrDownloadButton from './QrDownloadButton'
 
 function slugify(s) {
   return s.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
@@ -104,6 +105,12 @@ function ClassRow({ cls, expanded, onToggle, onDelete }) {
             <button style={S.actionBtn} onClick={onToggle}>{expanded ? 'Hide instructors' : 'Instructors'}</button>
             <Link to={`/class/${cls.slug}/console`} style={S.actionBtn}>Console</Link>
             <Link to={`/class/${cls.slug}`} style={S.actionBtn}>Join page</Link>
+            <QrDownloadButton
+              value={`${window.location.origin}/class/${cls.slug}`}
+              filename={`${cls.slug}-join-qr.png`}
+              label="Download QR"
+              style={S.actionBtn}
+            />
             <button style={S.deleteBtn} onClick={() => onDelete(cls)}>Delete</button>
           </div>
         </td>
