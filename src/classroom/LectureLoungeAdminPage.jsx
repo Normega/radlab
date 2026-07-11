@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '../../lib/supabase'
+import { supabase } from '../lib/supabase'
+import Nav from '../components/Nav'
 
 function slugify(s) {
   return s.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
@@ -145,7 +146,10 @@ function ClassRow({ cls, expanded, onToggle, onDelete }) {
   )
 }
 
-export default function ClassesAdminPage() {
+// Own page chrome (Nav + wrap) — deliberately not AdminLayout. Lecture
+// Lounge admin is a separate partition from research admin: own route,
+// own bundle chunk, own layout, so a problem in one can't affect the other.
+export default function LectureLoungeAdminPage({ session }) {
   const { data: classes, isLoading } = useClasses()
   const createClass = useCreateClass()
   const deleteClass = useDeleteClass()
@@ -162,100 +166,109 @@ export default function ClassesAdminPage() {
   }
 
   return (
-    <div>
-      <div style={S.header}>
-        <div>
-          <h1 style={S.h1}>Classes</h1>
-          <p style={S.sub}>Lecture Lounge classes and their instructors.</p>
-        </div>
-        <button style={S.btnPrimary} onClick={() => setCreating(true)}>+ New class</button>
-      </div>
-
-      {creating && (
-        <form onSubmit={submitCreate} style={S.createForm}>
-          <input
-            type="text" required placeholder="Class name" value={form.name}
-            onChange={(e) => setForm({ name: e.target.value, slug: form.slug || slugify(e.target.value) })}
-            style={{ ...S.input, flex: 1 }}
-          />
-          <input
-            type="text" required placeholder="url-slug" value={form.slug}
-            onChange={(e) => setForm((f) => ({ ...f, slug: slugify(e.target.value) }))}
-            style={S.input}
-          />
-          <button type="submit" style={S.btnSmall} disabled={createClass.isPending}>
-            {createClass.isPending ? 'Creating…' : 'Create'}
-          </button>
-          <button type="button" style={S.cancelBtn} onClick={() => setCreating(false)}>Cancel</button>
-        </form>
-      )}
-      {createClass.isError && <p style={S.errorText}>{createClass.error.message}</p>}
-
-      {isLoading ? (
-        <p style={S.muted}>Loading…</p>
-      ) : !classes?.length ? (
-        <div style={S.empty}>
-          <p style={S.emptyText}>No classes yet.</p>
-          <p style={S.emptyHint}>Create one, then add instructors below.</p>
-        </div>
-      ) : (
-        <div style={S.tableWrap}>
-          <table style={S.table}>
-            <thead>
-              <tr>
-                {['Class', 'Slug', 'Created', 'Actions'].map((h) => <th key={h} style={S.th}>{h}</th>)}
-              </tr>
-            </thead>
-            <tbody>
-              {classes.map((cls) => (
-                <ClassRow
-                  key={cls.id} cls={cls} expanded={expandedId === cls.id}
-                  onToggle={() => setExpandedId(expandedId === cls.id ? null : cls.id)}
-                  onDelete={setPendingDelete}
-                />
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {pendingDelete && (
-        <div style={S.overlay} onClick={() => setPendingDelete(null)}>
-          <div style={S.dialog} onClick={(e) => e.stopPropagation()}>
-            <h2 style={S.dialogTitle}>Delete class?</h2>
-            <p style={S.dialogBody}>
-              <strong>{pendingDelete.name}</strong> and all its lectures, check-ins, and responses will be permanently removed. This cannot be undone.
-            </p>
-            <div style={S.dialogActions}>
-              <button style={S.cancelBtn} onClick={() => setPendingDelete(null)}>Cancel</button>
-              <button
-                style={S.confirmDeleteBtn} disabled={deleteClass.isPending}
-                onClick={() => deleteClass.mutate(pendingDelete.id, { onSuccess: () => setPendingDelete(null) })}
-              >
-                {deleteClass.isPending ? 'Deleting…' : 'Delete'}
-              </button>
-            </div>
-            {deleteClass.isError && <p style={S.dialogError}>{deleteClass.error.message}</p>}
+    <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
+      <Nav session={session} />
+      <div style={S.page}>
+        <div style={S.header}>
+          <div>
+            <p style={S.eyebrow}>Lecture Lounge admin</p>
+            <h1 style={S.h1}>Classes</h1>
+            <p style={S.sub}>Create classes and manage their instructors.</p>
           </div>
+          <button style={S.btnPrimary} onClick={() => setCreating(true)}>+ New class</button>
         </div>
-      )}
+
+        {creating && (
+          <form onSubmit={submitCreate} style={S.createForm}>
+            <input
+              type="text" required placeholder="Class name" value={form.name}
+              onChange={(e) => setForm({ name: e.target.value, slug: form.slug || slugify(e.target.value) })}
+              style={{ ...S.input, flex: 1 }}
+            />
+            <input
+              type="text" required placeholder="url-slug" value={form.slug}
+              onChange={(e) => setForm((f) => ({ ...f, slug: slugify(e.target.value) }))}
+              style={S.input}
+            />
+            <button type="submit" style={S.btnSmall} disabled={createClass.isPending}>
+              {createClass.isPending ? 'Creating…' : 'Create'}
+            </button>
+            <button type="button" style={S.cancelBtn} onClick={() => setCreating(false)}>Cancel</button>
+          </form>
+        )}
+        {createClass.isError && <p style={S.errorText}>{createClass.error.message}</p>}
+
+        {isLoading ? (
+          <p style={S.muted}>Loading…</p>
+        ) : !classes?.length ? (
+          <div style={S.empty}>
+            <p style={S.emptyText}>No classes yet.</p>
+            <p style={S.emptyHint}>Create one, then add instructors below.</p>
+          </div>
+        ) : (
+          <div style={S.tableWrap}>
+            <table style={S.table}>
+              <thead>
+                <tr>
+                  {['Class', 'Slug', 'Created', 'Actions'].map((h) => <th key={h} style={S.th}>{h}</th>)}
+                </tr>
+              </thead>
+              <tbody>
+                {classes.map((cls) => (
+                  <ClassRow
+                    key={cls.id} cls={cls} expanded={expandedId === cls.id}
+                    onToggle={() => setExpandedId(expandedId === cls.id ? null : cls.id)}
+                    onDelete={setPendingDelete}
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {pendingDelete && (
+          <div style={S.overlay} onClick={() => setPendingDelete(null)}>
+            <div style={S.dialog} onClick={(e) => e.stopPropagation()}>
+              <h2 style={S.dialogTitle}>Delete class?</h2>
+              <p style={S.dialogBody}>
+                <strong>{pendingDelete.name}</strong> and all its lectures, check-ins, and responses will be permanently removed. This cannot be undone.
+              </p>
+              <div style={S.dialogActions}>
+                <button style={S.cancelBtn} onClick={() => setPendingDelete(null)}>Cancel</button>
+                <button
+                  style={S.confirmDeleteBtn} disabled={deleteClass.isPending}
+                  onClick={() => deleteClass.mutate(pendingDelete.id, { onSuccess: () => setPendingDelete(null) })}
+                >
+                  {deleteClass.isPending ? 'Deleting…' : 'Delete'}
+                </button>
+              </div>
+              {deleteClass.isError && <p style={S.dialogError}>{deleteClass.error.message}</p>}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
 
+const MONO  = '"Space Mono", "Courier New", monospace'
+const SERIF = '"DM Serif Display", Georgia, serif'
+
 const S = {
+  page: { maxWidth: 900, margin: '0 auto', padding: '40px 24px' },
   header: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 28, flexWrap: 'wrap' },
-  h1: { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 26, fontWeight: 400, color: 'var(--tx)', margin: '0 0 4px' },
+  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)', marginBottom: 6 },
+  h1: { fontFamily: SERIF, fontSize: 26, fontWeight: 400, color: 'var(--tx)', margin: '0 0 4px' },
   sub: { fontSize: 14, color: 'var(--tx2)', margin: 0 },
   muted: { fontSize: 14, color: 'var(--tx3)' },
-  mono: { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)' },
+  mono: { fontFamily: MONO, fontSize: 12, color: 'var(--tx3)' },
   label: { fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 14, fontWeight: 500, color: 'var(--tx)' },
   empty: { textAlign: 'center', padding: '48px 0' },
-  emptyText: { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 20, color: 'var(--tx)', margin: '0 0 8px' },
+  emptyText: { fontFamily: SERIF, fontSize: 20, color: 'var(--tx)', margin: '0 0 8px' },
   emptyHint: { fontSize: 14, color: 'var(--tx2)', margin: 0 },
-  tableWrap: { overflowX: 'auto', borderRadius: 10, border: '1px solid var(--bd)', background: '#fff' },
+  tableWrap: { overflowX: 'auto', borderRadius: 10, border: '1px solid var(--bd)', background: 'var(--bgc)' },
   table: { width: '100%', borderCollapse: 'collapse' },
-  th: { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', textAlign: 'left', padding: '10px 16px', borderBottom: '1px solid var(--bd)', textTransform: 'uppercase', letterSpacing: '0.06em' },
+  th: { fontFamily: MONO, fontSize: 11, color: 'var(--tx3)', textAlign: 'left', padding: '10px 16px', borderBottom: '1px solid var(--bd)', textTransform: 'uppercase', letterSpacing: '0.06em' },
   tr: { borderBottom: '1px solid var(--bd)' },
   td: { padding: '12px 16px', verticalAlign: 'middle' },
   expandCell: { padding: '12px 16px 20px', background: 'var(--bg)', borderBottom: '1px solid var(--bd)' },
@@ -273,7 +286,7 @@ const S = {
   errorText: { fontSize: 13, color: '#c0392b', margin: '8px 0 0' },
   overlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 },
   dialog: { background: '#fff', borderRadius: 14, padding: '28px 32px', maxWidth: 420, width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.18)' },
-  dialogTitle: { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 20, fontWeight: 400, color: 'var(--tx)', margin: '0 0 12px' },
+  dialogTitle: { fontFamily: SERIF, fontSize: 20, fontWeight: 400, color: 'var(--tx)', margin: '0 0 12px' },
   dialogBody: { fontSize: 14, color: 'var(--tx2)', margin: '0 0 24px', lineHeight: 1.6 },
   dialogActions: { display: 'flex', justifyContent: 'flex-end', gap: 10 },
   confirmDeleteBtn: { background: '#c0392b', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 18px', fontSize: 14, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', fontWeight: 500 },

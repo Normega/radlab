@@ -84,6 +84,9 @@ export default function AdminDashboard() {
           </Link>
         ))}
       </div>
+
+      {/* Separate product, separate route/layout/bundle — not part of this admin section. */}
+      <Link to="/lecture-lounge/admin" style={S.externalLink}>Lecture Lounge admin (classes & instructors) →</Link>
     </div>
   )
 }
@@ -124,5 +127,9 @@ const S = {
   arrow: {
     position: 'absolute', bottom: 18, right: 20,
     fontSize: 16, color: 'var(--pk)',
+  },
+  externalLink: {
+    display: 'inline-block', marginTop: 28, fontSize: 14, color: 'var(--pk)',
+    fontWeight: 500, textDecoration: 'none',
   },
 }

@@ -1,93 +1,118 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
-import LabLayout     from './layouts/LabLayout'
-import AboutPage     from './pages/lab/AboutPage'
-import PeoplePage    from './pages/lab/PeoplePage'
-import ResearchPage  from './pages/lab/ResearchPage'
-import PublicationsPage from './pages/lab/PublicationsPage'
-import ContactPage   from './pages/lab/ContactPage'
-import MediaPage     from './pages/lab/MediaPage'
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { useEffect, useState } from 'react'
+import { supabase, savePondWatchSession, saveEbbFlowSession } from './lib/supabase'
+import Nav              from './components/Nav'
+import AuraFilterDef     from './components/AuraFilterDef'
+import AdminRoute        from './components/AdminRoute'
+import ClassAdminRoute   from './components/ClassAdminRoute'
+import LectureLoungeAdminRoute from './components/LectureLoungeAdminRoute'
+import ErrorBoundary     from './components/ErrorBoundary'
+
+// Route-level code-splitting: every page below is its own chunk, fetched on
+// first navigation and cached by the browser after (Vite's content-hashed
+// filenames make this safe). Landing stays a static import since it's the
+// first paint for almost every visitor — no reason to add a Suspense flash
+// to the one page nearly everyone hits. Everything else is lazy so a
+// visitor to "/" never downloads the game library, the research admin
+// section, or Lecture Lounge at all unless they navigate there.
+import Landing from './pages/Landing'
+
+const SessionEntry  = lazy(() => import('./pages/SessionEntry'))
+const StudyJoin     = lazy(() => import('./pages/StudyJoin'))
+const PlatformPage  = lazy(() => import('./pages/PlatformPage'))
+const Login         = lazy(() => import('./pages/Login'))
+const Signup        = lazy(() => import('./pages/Signup'))
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
+const ResetPassword  = lazy(() => import('./pages/ResetPassword'))
+const Dashboard      = lazy(() => import('./pages/Dashboard'))
+const GamesPage      = lazy(() => import('./pages/GamesPage'))
+const ProfilePage    = lazy(() => import('./pages/ProfilePage'))
+const AvatarEditor   = lazy(() => import('./components/Avatar/AvatarEditor'))
+const Unsubscribe    = lazy(() => import('./pages/Unsubscribe'))
+const ConsentPage    = lazy(() => import('./pages/ConsentPage'))
+
+const PondWatch     = lazy(() => import('./games/PondWatch'))
+const OwlBarn       = lazy(() => import('./games/OwlBarn'))
+const EbbAndFlow    = lazy(() => import('./games/EbbAndFlow/EbbAndFlow'))
+const FirstContact  = lazy(() => import('./games/FirstContact/FirstContact'))
+const StillWater    = lazy(() => import('./games/StillWater/StillWater'))
+const FaceRead      = lazy(() => import('./games/FaceRead/FaceRead'))
+const Drift         = lazy(() => import('./games/Drift/Drift'))
+const FarmJoy       = lazy(() => import('./games/FarmJoy/FarmJoy'))
+const BreathBelt    = lazy(() => import('./games/BreathBelt/BreathBelt'))
+const AptitudeSuite = lazy(() => import('./games/AptitudeSuite/AptitudeSuite'))
+const WordMax       = lazy(() => import('./games/WordMax/WordMax'))
+const ColorMax      = lazy(() => import('./games/ColorMax/ColorMax'))
+const Ember         = lazy(() => import('./games/Ember/Ember'))
+const Mirror        = lazy(() => import('./games/Mirror/Mirror'))
+const BreathBeltDemo  = lazy(() => import('./games/BreathBelt/BreathBeltDemo'))
+const PacerOpenerDemo = lazy(() => import('./games/BreathBelt/PacerOpenerDemo'))
+const BreathLab        = lazy(() => import('./games/shared/breath/BreathLab'))
+
+const VideoTest = lazy(() => import('./pages/dev/VideoTest'))
+const AudioTest = lazy(() => import('./pages/dev/AudioTest'))
+const Keynote   = lazy(() => import('./pages/keynote/Keynote'))
+
+// Lecture Lounge — its own partition: separate chunk group from research
+// admin and from the rest of the app, wrapped in its own error boundary
+// below so a crash here can't blank the rest of the site.
+const ClassRoom        = lazy(() => import('./classroom/ClassRoom'))
+const ClassVerifyEmail = lazy(() => import('./classroom/ClassVerifyEmail'))
+const ClassConsole     = lazy(() => import('./classroom/ClassConsole'))
+const LectureLoungeAdminPage = lazy(() => import('./classroom/LectureLoungeAdminPage'))
+
+// Research admin section — separate partition from Lecture Lounge.
+const AdminLayout   = lazy(() => import('./layouts/AdminLayout'))
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'))
+const SessionLibrary = lazy(() => import('./pages/admin/SessionLibrary'))
+const SessionBuilder = lazy(() => import('./pages/admin/SessionBuilder'))
+const StudyLibrary     = lazy(() => import('./pages/admin/StudyLibrary'))
+const StudyDetail      = lazy(() => import('./pages/admin/StudyDetail'))
+const StudyFormPage    = lazy(() => import('./pages/admin/StudyFormPage'))
+const StudySessionRunner = lazy(() => import('./pages/admin/StudySessionRunner'))
+const QuestionnairesPage   = lazy(() => import('./pages/admin/QuestionnairesPage'))
+const QuestionnaireUpload  = lazy(() => import('./pages/admin/QuestionnaireUpload'))
+const QuestionnairePreview = lazy(() => import('./pages/admin/QuestionnairePreview'))
+const DataExportPage       = lazy(() => import('./pages/admin/DataExportPage'))
+const CompensationPage     = lazy(() => import('./pages/admin/CompensationPage'))
+const VideoLibrary         = lazy(() => import('./pages/admin/VideoLibrary'))
+const VideoUpload          = lazy(() => import('./pages/admin/VideoUpload'))
+const TrainingLibrary      = lazy(() => import('./pages/admin/TrainingLibrary'))
+const TrainingUpload       = lazy(() => import('./pages/admin/TrainingUpload'))
+const AudioAdmin    = lazy(() => import('./pages/admin/AudioAdmin'))
+const AudioUpload   = lazy(() => import('./pages/admin/AudioUpload'))
+const AdminGamesPage    = lazy(() => import('./pages/admin/GamesPage'))
+const VasLibraryPage   = lazy(() => import('./pages/admin/VasLibraryPage'))
+const VasUploadPage    = lazy(() => import('./pages/admin/VasUploadPage'))
+const VasPackageBuilder = lazy(() => import('./pages/admin/VasPackageBuilder'))
+const VasPreviewPage   = lazy(() => import('./pages/admin/VasPreviewPage'))
+const SliderCreatePage      = lazy(() => import('./pages/admin/SliderCreatePage'))
+const ScreenerLibraryPage  = lazy(() => import('./pages/admin/ScreenerLibraryPage'))
+const ExperimentBuilder    = lazy(() => import('./pages/admin/ExperimentBuilder'))
+const StudyBalancePage     = lazy(() => import('./pages/admin/StudyBalancePage'))
+const DisplaysPage         = lazy(() => import('./pages/admin/DisplaysPage'))
+const DisplayEditorPage    = lazy(() => import('./pages/admin/DisplayEditorPage'))
+
+const LabLayout      = lazy(() => import('./layouts/LabLayout'))
+const AboutPage      = lazy(() => import('./pages/lab/AboutPage'))
+const PeoplePage     = lazy(() => import('./pages/lab/PeoplePage'))
+const ResearchPage   = lazy(() => import('./pages/lab/ResearchPage'))
+const PublicationsPage = lazy(() => import('./pages/lab/PublicationsPage'))
+const ContactPage    = lazy(() => import('./pages/lab/ContactPage'))
+const MediaPage      = lazy(() => import('./pages/lab/MediaPage'))
 
 function ScrollToTop() {
   const { pathname } = useLocation()
   useEffect(() => { window.scrollTo(0, 0) }, [pathname])
   return null
 }
-import { supabase, savePondWatchSession, saveEbbFlowSession } from './lib/supabase'
 
-import Landing        from './pages/Landing'
-import SessionEntry  from './pages/SessionEntry'
-import StudyJoin     from './pages/StudyJoin'
-import PlatformPage from './pages/PlatformPage'
-import Login        from './pages/Login'
-import Signup       from './pages/Signup'
-import ForgotPassword from './pages/ForgotPassword'
-import ResetPassword  from './pages/ResetPassword'
-import Dashboard    from './pages/Dashboard'
-import GamesPage    from './pages/GamesPage'
-import ProfilePage  from './pages/ProfilePage'
-import Nav          from './components/Nav'
-import PondWatch    from './games/PondWatch'
-import OwlBarn      from './games/OwlBarn'
-import AvatarEditor  from './components/Avatar/AvatarEditor'
-import EbbAndFlow    from './games/EbbAndFlow/EbbAndFlow'
-import FirstContact  from './games/FirstContact/FirstContact'
-import AuraFilterDef from './components/AuraFilterDef'
-import StillWater   from './games/StillWater/StillWater'
-import FaceRead     from './games/FaceRead/FaceRead'
-import Drift        from './games/Drift/Drift'
-import FarmJoy      from './games/FarmJoy/FarmJoy'
-import BreathBelt   from './games/BreathBelt/BreathBelt'
-import AptitudeSuite          from './games/AptitudeSuite/AptitudeSuite'
-import WordMax                from './games/WordMax/WordMax'
-import AdminRoute    from './components/AdminRoute'
-import AdminLayout   from './layouts/AdminLayout'
-import AdminDashboard from './pages/admin/AdminDashboard'
-import SessionLibrary from './pages/admin/SessionLibrary'
-import SessionBuilder from './pages/admin/SessionBuilder'
-import StudyLibrary     from './pages/admin/StudyLibrary'
-import StudyDetail      from './pages/admin/StudyDetail'
-import StudyFormPage    from './pages/admin/StudyFormPage'
-import StudySessionRunner from './pages/admin/StudySessionRunner'
-import QuestionnairesPage   from './pages/admin/QuestionnairesPage'
-import QuestionnaireUpload  from './pages/admin/QuestionnaireUpload'
-import QuestionnairePreview from './pages/admin/QuestionnairePreview'
-import DataExportPage       from './pages/admin/DataExportPage'
-import CompensationPage     from './pages/admin/CompensationPage'
-import VideoLibrary         from './pages/admin/VideoLibrary'
-import VideoUpload          from './pages/admin/VideoUpload'
-import TrainingLibrary      from './pages/admin/TrainingLibrary'
-import TrainingUpload       from './pages/admin/TrainingUpload'
-import Unsubscribe   from './pages/Unsubscribe'
-import ConsentPage   from './pages/ConsentPage'
-import VideoTest     from './pages/dev/VideoTest'
-import AudioAdmin    from './pages/admin/AudioAdmin'
-import AudioUpload   from './pages/admin/AudioUpload'
-import AdminGamesPage    from './pages/admin/GamesPage'
-import VasLibraryPage   from './pages/admin/VasLibraryPage'
-import VasUploadPage    from './pages/admin/VasUploadPage'
-import VasPackageBuilder from './pages/admin/VasPackageBuilder'
-import VasPreviewPage   from './pages/admin/VasPreviewPage'
-import SliderCreatePage      from './pages/admin/SliderCreatePage'
-import ScreenerLibraryPage  from './pages/admin/ScreenerLibraryPage'
-import ExperimentBuilder    from './pages/admin/ExperimentBuilder'
-import StudyBalancePage     from './pages/admin/StudyBalancePage'
-import DisplaysPage         from './pages/admin/DisplaysPage'
-import DisplayEditorPage    from './pages/admin/DisplayEditorPage'
-import BreathBeltDemo       from './games/BreathBelt/BreathBeltDemo'
-import PacerOpenerDemo      from './games/BreathBelt/PacerOpenerDemo'
-import Keynote              from './pages/keynote/Keynote'
-import AudioTest        from './pages/dev/AudioTest'
-import BreathLab        from './games/shared/breath/BreathLab'
-import Ember            from './games/Ember/Ember'
-import Mirror           from './games/Mirror/Mirror'
-import ColorMax      from './games/ColorMax/ColorMax'
-import ClassRoom        from './classroom/ClassRoom'
-import ClassVerifyEmail from './classroom/ClassVerifyEmail'
-import ClassConsole     from './classroom/ClassConsole'
-import ClassAdminRoute  from './components/ClassAdminRoute'
-import ClassesAdminPage from './pages/admin/ClassesAdminPage'
+// Blank themed background rather than a spinner — most chunks are small and
+// load fast, especially on repeat visits once the browser has them cached.
+function RouteFallback() {
+  return <div style={{ minHeight: '100vh', background: 'var(--bg)' }} />
+}
 
 const queryClient = new QueryClient()
 
@@ -172,6 +197,7 @@ export default function App() {
       <AuraFilterDef />
       <BrowserRouter>
         <ScrollToTop />
+        <Suspense fallback={<RouteFallback />}>
         <Routes>
           <Route path="/"         element={<Landing session={session} />} />
           <Route path="/platform" element={<PlatformPage session={session} />} />
@@ -315,17 +341,26 @@ export default function App() {
           {/* ISARP keynote deck — click-through, doubles as read-later resource */}
           <Route path="/keynote" element={<Keynote />} />
 
-          {/* Lecture Lounge — student surface (join/verify shell; full check-in flow lands in WP4) */}
-          <Route path="/class/verify" element={<ClassVerifyEmail />} />
-          <Route path="/class/:slug" element={
-            <AuthRoute session={session}>
-              <ClassRoom session={session} />
-            </AuthRoute>
-          } />
-
-          {/* Lecture Lounge — planning console (per-class admin gated) */}
-          <Route element={<ClassAdminRoute session={session} />}>
-            <Route path="/class/:slug/console" element={<ClassConsole session={session} />} />
+          {/*
+            Lecture Lounge — its own partition. Own chunk group (all four
+            components below are separately lazy-loaded), own error boundary
+            (a crash here shows a scoped error screen instead of blanking the
+            whole app), own admin route/layout entirely separate from
+            research admin (LectureLoungeAdminRoute, not AdminRoute/AdminLayout).
+          */}
+          <Route element={<ErrorBoundary label="Lecture Lounge"><Outlet /></ErrorBoundary>}>
+            <Route path="/class/verify" element={<ClassVerifyEmail />} />
+            <Route path="/class/:slug" element={
+              <AuthRoute session={session}>
+                <ClassRoom session={session} />
+              </AuthRoute>
+            } />
+            <Route element={<ClassAdminRoute session={session} />}>
+              <Route path="/class/:slug/console" element={<ClassConsole session={session} />} />
+            </Route>
+            <Route element={<LectureLoungeAdminRoute session={session} role={role} superAdmin={superAdmin} />}>
+              <Route path="/lecture-lounge/admin" element={<LectureLoungeAdminPage session={session} />} />
+            </Route>
           </Route>
 
           {/* Unsubscribe — no auth or layout */}
@@ -341,7 +376,6 @@ export default function App() {
               <Route path="/admin/sessions"         element={<SessionLibrary />} />
               <Route path="/admin/sessions/new"     element={<SessionBuilder />} />
               <Route path="/admin/sessions/:id"     element={<SessionBuilder />} />
-              <Route path="/admin/classes"          element={<ClassesAdminPage />} />
               <Route path="/admin/studies"               element={<StudyLibrary />} />
               <Route path="/admin/studies/new"           element={<StudyFormPage />} />
               <Route path="/admin/studies/:id/edit"      element={<StudyFormPage />} />
@@ -385,6 +419,7 @@ export default function App() {
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </Suspense>
       </BrowserRouter>
     </QueryClientProvider>
   )

@@ -8,7 +8,6 @@ const NAV_SECTIONS = [
     items: [
       { to: '/admin/sessions',        label: 'Sessions'       },
       { to: '/admin/studies',         label: 'Studies'        },
-      { to: '/admin/classes',         label: 'Classes'        },
     ],
   },
   {
