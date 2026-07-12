@@ -99,6 +99,7 @@ const ExperimentBuilder    = lazy(() => import('./pages/admin/ExperimentBuilder'
 const StudyBalancePage     = lazy(() => import('./pages/admin/StudyBalancePage'))
 const DisplaysPage         = lazy(() => import('./pages/admin/DisplaysPage'))
 const DisplayEditorPage    = lazy(() => import('./pages/admin/DisplayEditorPage'))
+const UserAdminPage        = lazy(() => import('./pages/admin/UserAdminPage'))
 
 const LabLayout      = lazy(() => import('./layouts/LabLayout'))
 const AboutPage      = lazy(() => import('./pages/lab/AboutPage'))
@@ -408,7 +409,7 @@ export default function App() {
             {/* Full-screen session runner — no admin chrome */}
             <Route path="/admin/studies/:id/session/:enrollmentId/:studySessionId" element={<StudySessionRunner />} />
 
-            <Route element={<AdminLayout session={session} />}>
+            <Route element={<AdminLayout session={session} superAdmin={superAdmin} />}>
               <Route path="/admin"                  element={<AdminDashboard />} />
               <Route path="/admin/sessions"         element={<SessionLibrary />} />
               <Route path="/admin/sessions/new"     element={<SessionBuilder />} />
@@ -440,6 +441,8 @@ export default function App() {
               <Route path="/admin/displays/new"        element={<DisplayEditorPage />} />
               <Route path="/admin/displays/:id"        element={<DisplayEditorPage />} />
               <Route path="/admin/screeners"           element={<ScreenerLibraryPage />} />
+              {/* Super-admin only — RPCs enforce server-side, page shows 'forbidden' otherwise */}
+              <Route path="/admin/users"               element={<UserAdminPage />} />
             </Route>
           </Route>
 

@@ -1,10 +1,9 @@
 ﻿import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Nav from '../components/Nav'
 
 export default function Signup() {
-  const navigate  = useNavigate()
   const [email,    setEmail]    = useState('')
   const [password, setPassword] = useState('')
   const [name,     setName]     = useState('')
@@ -17,7 +16,7 @@ export default function Signup() {
     setError(null)
     setLoading(true)
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: { data: { display_name: name } },
@@ -25,6 +24,15 @@ export default function Signup() {
 
     setLoading(false)
     if (error) { setError(error.message); return }
+
+    // Supabase anti-enumeration: signUp with an already-registered, confirmed
+    // email returns a success-shaped response (no error, NO email sent) with
+    // an empty identities array. Without this check the user sees "check your
+    // email" and nothing ever arrives.
+    if (data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+      setError('already_registered')
+      return
+    }
 
     // Supabase sends a confirmation email by default.
     // If email confirmation is disabled in your project settings, this
@@ -60,7 +68,14 @@ export default function Signup() {
           <h1 style={S.title}>Join RADlab</h1>
           <p style={S.sub}>Free account · no credit card needed</p>
 
-          {error && <div style={S.errorBox}>{error}</div>}
+          {error === 'already_registered' ? (
+            <div style={S.errorBox}>
+              This email is already registered.{' '}
+              <Link to="/login" style={{ color: 'inherit', fontWeight: 600 }}>Sign in</Link>
+              {' '}or{' '}
+              <Link to="/forgot-password" style={{ color: 'inherit', fontWeight: 600 }}>reset your password</Link>.
+            </div>
+          ) : error && <div style={S.errorBox}>{error}</div>}
 
           <form onSubmit={handleSubmit} style={S.form}>
             <div style={S.field}>

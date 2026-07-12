@@ -32,7 +32,17 @@ const NAV_SECTIONS = [
   },
 ]
 
-function Sidebar({ session, onClose }) {
+// Super-admin-only entries — appended to the nav when superAdmin is true.
+// The pages behind them enforce the real gate server-side (RPCs raise
+// 'forbidden' for non-supers); hiding the link is just tidiness.
+const SUPER_ADMIN_SECTION = {
+  header: null,
+  items: [
+    { to: '/admin/users', label: 'Users' },
+  ],
+}
+
+function Sidebar({ session, superAdmin, onClose }) {
   const navigate = useNavigate()
   const location = useLocation()
   // Collapsed state per section header, persisted across visits. A section
@@ -64,7 +74,7 @@ function Sidebar({ session, onClose }) {
       </Link>
 
       <nav style={S.nav}>
-        {NAV_SECTIONS.map((section, si) => {
+        {(superAdmin ? [...NAV_SECTIONS, SUPER_ADMIN_SECTION] : NAV_SECTIONS).map((section, si) => {
           const sectionActive = section.items.some(it => location.pathname.startsWith(it.to))
           const isCollapsed   = section.header && collapsed[section.header] && !sectionActive
           return (
@@ -108,7 +118,7 @@ function Sidebar({ session, onClose }) {
   )
 }
 
-export default function AdminLayout({ session }) {
+export default function AdminLayout({ session, superAdmin }) {
   const [open, setOpen] = useState(false)
 
   return (
@@ -117,7 +127,7 @@ export default function AdminLayout({ session }) {
       {/* Desktop sidebar — hidden on mobile via Tailwind */}
       <div className="hidden md:block" style={{ width: 220, flexShrink: 0 }}>
         <div style={{ position: 'sticky', top: 0, height: '100vh', overflowY: 'auto' }}>
-          <Sidebar session={session} onClose={() => {}} />
+          <Sidebar session={session} superAdmin={superAdmin} onClose={() => {}} />
         </div>
       </div>
 
@@ -128,7 +138,7 @@ export default function AdminLayout({ session }) {
           onClick={() => setOpen(false)}
         >
           <div style={{ width: 240, height: '100%', background: '#fff' }} onClick={e => e.stopPropagation()}>
-            <Sidebar session={session} onClose={() => setOpen(false)} />
+            <Sidebar session={session} superAdmin={superAdmin} onClose={() => setOpen(false)} />
           </div>
         </div>
       )}
