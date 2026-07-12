@@ -62,9 +62,9 @@ BEGIN
   DELETE FROM public.farm_joy_feedback     WHERE user_id = p_target;
   DELETE FROM public.farm_joy_value_history WHERE user_id = p_target;
   DELETE FROM public.farm_joy_performance  WHERE user_id = p_target;
-  -- drift / stillwater have no FK constraint so orphaned rows are fine,
-  -- but delete them too for cleanliness
-  DELETE FROM public.drift_trials          WHERE user_id = p_target;
+  -- drift_trials links through session_id (not user_id); drift_performance has user_id
+  DELETE FROM public.drift_trials
+    WHERE session_id IN (SELECT id FROM public.drift_performance WHERE user_id = p_target);
   DELETE FROM public.drift_performance     WHERE user_id = p_target;
   DELETE FROM public.stillwater_responses  WHERE user_id = p_target;
   DELETE FROM public.vas_responses         WHERE user_id = p_target;
