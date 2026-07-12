@@ -31,6 +31,7 @@ const ProfilePage    = lazy(() => import('./pages/ProfilePage'))
 const AvatarEditor   = lazy(() => import('./components/Avatar/AvatarEditor'))
 const Unsubscribe    = lazy(() => import('./pages/Unsubscribe'))
 const ConsentPage    = lazy(() => import('./pages/ConsentPage'))
+const Verified       = lazy(() => import('./pages/Verified'))
 
 // Ripple — public-tier onboarding/login concierge (docs/markdowns/ripple_spec.md).
 // Its own partition like Lecture Lounge: separate chunk, own error boundary below.
@@ -247,6 +248,8 @@ export default function App() {
           <Route path="/forgot-password" element={<PublicOnlyRoute session={session} role={role}><ForgotPassword /></PublicOnlyRoute>} />
           {/* No session/role guard — Supabase establishes a temporary recovery session when this link is followed from email */}
           <Route path="/reset-password" element={<ResetPassword />} />
+          {/* Email confirmation landing — no guard; Supabase sets the session from the URL hash on arrival */}
+          <Route path="/verified" element={<Verified session={session} />} />
 
           <Route path="/dashboard" element={
             <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome} needsRippleName={needsRippleName}>
