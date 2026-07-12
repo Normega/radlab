@@ -32,6 +32,10 @@ const AvatarEditor   = lazy(() => import('./components/Avatar/AvatarEditor'))
 const Unsubscribe    = lazy(() => import('./pages/Unsubscribe'))
 const ConsentPage    = lazy(() => import('./pages/ConsentPage'))
 
+// Ripple — public-tier onboarding/login concierge (docs/markdowns/ripple_spec.md).
+// Its own partition like Lecture Lounge: separate chunk, own error boundary below.
+const WelcomeFlow    = lazy(() => import('./ripple/WelcomeFlow'))
+
 const PondWatch     = lazy(() => import('./games/PondWatch'))
 const OwlBarn       = lazy(() => import('./games/OwlBarn'))
 const EbbAndFlow    = lazy(() => import('./games/EbbAndFlow/EbbAndFlow'))
@@ -133,10 +137,15 @@ function EbbFlowGuard({ firstContactComplete, children }) {
   return children
 }
 
-// Requires auth + avatar. If no avatar row exists, redirects to /profile/avatar.
-function ProtectedRoute({ session, hasAvatar, children }) {
+// Requires auth + onboarding + avatar. New public users (no consent/demographics
+// on record and no avatar yet) are routed through /welcome first (Ripple WP1);
+// existing users with an avatar keep the old /profile/avatar path until the
+// WP2 migration beat lands.
+function ProtectedRoute({ session, hasAvatar, needsWelcome, children }) {
   if (session === undefined) return null                          // auth loading
   if (!session) return <Navigate to="/login" replace />
+  if (needsWelcome === undefined) return null                    // role/onboarding check in progress
+  if (needsWelcome) return <Navigate to="/welcome" replace />
   if (hasAvatar === undefined) return null                       // avatar check in progress
   if (hasAvatar === false) return <Navigate to="/profile/avatar" replace />
   return children
@@ -161,16 +170,18 @@ export default function App() {
   const [superAdmin,           setSuperAdmin]           = useState(undefined)
   const [hasAvatar,            setHasAvatar]            = useState(undefined)
   const [firstContactComplete, setFirstContactComplete] = useState(undefined)
+  const [onboardingComplete,   setOnboardingComplete]   = useState(undefined)
 
   async function fetchRole(userId) {
     const { data } = await supabase
       .from('profiles')
-      .select('role, first_contact_complete, super_admin')
+      .select('role, first_contact_complete, super_admin, onboarding_complete')
       .eq('id', userId)
       .single()
     setRole(data?.role ?? 'public')
     setFirstContactComplete(data?.first_contact_complete ?? false)
     setSuperAdmin(!!data?.super_admin)
+    setOnboardingComplete(data?.onboarding_complete ?? false)
   }
 
   async function checkAvatar(userId) {
@@ -183,16 +194,24 @@ export default function App() {
       const s = data.session ?? null
       setSession(s)
       if (s) { fetchRole(s.user.id); checkAvatar(s.user.id) }
-      else   { setRole(null); setSuperAdmin(false); setHasAvatar(undefined) }
+      else   { setRole(null); setSuperAdmin(false); setHasAvatar(undefined); setOnboardingComplete(undefined) }
     })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
       const sess = s ?? null
       setSession(sess)
       if (sess) { fetchRole(sess.user.id); checkAvatar(sess.user.id) }
-      else      { setRole(null); setSuperAdmin(false); setHasAvatar(undefined); setFirstContactComplete(undefined) }
+      else      { setRole(null); setSuperAdmin(false); setHasAvatar(undefined); setFirstContactComplete(undefined); setOnboardingComplete(undefined) }
     })
     return () => subscription.unsubscribe()
   }, [])
+
+  // Ripple WP1 onboarding guard: only NEW public users (no avatar yet) go
+  // through /welcome — existing users keep working until the WP2 migration
+  // beat (consent catch-up + "your avatar has become your Ripple") ships.
+  const needsWelcome =
+    (role === undefined || onboardingComplete === undefined || hasAvatar === undefined)
+      ? undefined
+      : role === 'public' && onboardingComplete === false && hasAvatar === false
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -210,22 +229,36 @@ export default function App() {
           <Route path="/reset-password" element={<ResetPassword />} />
 
           <Route path="/dashboard" element={
-            <ProtectedRoute session={session} hasAvatar={hasAvatar}>
+            <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome}>
               <Dashboard session={session} />
             </ProtectedRoute>
           } />
 
           <Route path="/games" element={
-            <ProtectedRoute session={session} hasAvatar={hasAvatar}>
+            <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome}>
               <GamesPage session={session} firstContactComplete={firstContactComplete} />
             </ProtectedRoute>
           } />
 
           <Route path="/profile" element={
-            <ProtectedRoute session={session} hasAvatar={hasAvatar}>
+            <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome}>
               <ProfilePage session={session} />
             </ProtectedRoute>
           } />
+
+          {/*
+            Ripple — public-tier onboarding/login concierge. Own partition per
+            the Lecture Lounge precedent: own lazy chunk, own error boundary so
+            a crash here can never block login or the dashboard.
+            AuthRoute only — this flow runs BEFORE the avatar guard is satisfied.
+          */}
+          <Route element={<ErrorBoundary label="Ripple"><Outlet /></ErrorBoundary>}>
+            <Route path="/welcome" element={
+              <AuthRoute session={session}>
+                <WelcomeFlow session={session} onComplete={() => setOnboardingComplete(true)} />
+              </AuthRoute>
+            } />
+          </Route>
 
           {/* AuthRoute (no avatar guard) — this IS the onboarding screen */}
           <Route path="/profile/avatar" element={
@@ -235,14 +268,14 @@ export default function App() {
           } />
 
           <Route path="/games/pond-watch" element={
-            <ProtectedRoute session={session} hasAvatar={hasAvatar}>
+            <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome}>
               <Nav session={session} />
               <PondWatch userId={session?.user?.id} studyId={null} onSessionComplete={savePondWatchSession} />
             </ProtectedRoute>
           } />
 
           <Route path="/games/first-contact" element={
-            <ProtectedRoute session={session} hasAvatar={hasAvatar}>
+            <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome}>
               <FirstContact
                 session={session}
                 onComplete={() => setFirstContactComplete(true)}
@@ -251,7 +284,7 @@ export default function App() {
           } />
 
           <Route path="/games/ebb-flow" element={
-            <ProtectedRoute session={session} hasAvatar={hasAvatar}>
+            <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome}>
               <EbbFlowGuard firstContactComplete={firstContactComplete}>
                 <EbbAndFlow session={session} onSessionComplete={saveEbbFlowSession} />
               </EbbFlowGuard>
@@ -259,56 +292,56 @@ export default function App() {
           } />
 
           <Route path="/games/owl-barn" element={
-            <ProtectedRoute session={session} hasAvatar={hasAvatar}>
+            <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome}>
               <Nav session={session} />
               <OwlBarn userId={session?.user?.id} studyId={null} />
             </ProtectedRoute>
           } />
 
           <Route path="/games/still-water" element={
-            <ProtectedRoute session={session} hasAvatar={hasAvatar}>
+            <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome}>
               <StillWater session={session} />
             </ProtectedRoute>
           } />
 
           <Route path="/games/face-read" element={
-            <ProtectedRoute session={session} hasAvatar={hasAvatar}>
+            <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome}>
               <FaceRead session={session} />
             </ProtectedRoute>
           } />
 
           <Route path="/games/drift" element={
-            <ProtectedRoute session={session} hasAvatar={hasAvatar}>
+            <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome}>
               <Drift session={session} />
             </ProtectedRoute>
           } />
 
           <Route path="/games/farm-joy" element={
-            <ProtectedRoute session={session} hasAvatar={hasAvatar}>
+            <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome}>
               <FarmJoy session={session} />
             </ProtectedRoute>
           } />
 
           <Route path="/games/breath-belt" element={
-            <ProtectedRoute session={session} hasAvatar={hasAvatar}>
+            <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome}>
               <BreathBelt />
             </ProtectedRoute>
           } />
 
           <Route path="/games/aptitude-suite" element={
-            <ProtectedRoute session={session} hasAvatar={hasAvatar}>
+            <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome}>
               <AptitudeSuite session={session} />
             </ProtectedRoute>
           } />
 
           <Route path="/games/word-max" element={
-            <ProtectedRoute session={session} hasAvatar={hasAvatar}>
+            <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome}>
               <WordMax />
             </ProtectedRoute>
           } />
 
           <Route path="/games/color-max" element={
-            <ProtectedRoute session={session} hasAvatar={hasAvatar}>
+            <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome}>
               <ColorMax session={session} />
             </ProtectedRoute>
           } />
