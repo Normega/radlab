@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import BaseAvatar from '../components/Avatar/BaseAvatar'
 import SyncAura from '../components/SyncAura'
 
+const MONO = '"Space Mono", "Courier New", monospace'
+
 // Presence-driven lobby wall. Each entry is whatever useClassPresence's
 // selfPayload shape carries: { user_id, skin_color, eye_color, species,
 // hair_style, hair_color, aura }.
@@ -28,24 +30,27 @@ export default function AvatarWall({ avatars, size = 56, maxWidth = 360 }) {
   if (!avatars.length) return <p style={S.empty}>No one's here yet.</p>
 
   return (
-    <div style={{ ...S.grid, maxWidth }}>
-      {avatars.map((a) => (
-        <div key={a.user_id ?? a.presence_ref} style={S.slot(arrivingIds.has(a.user_id))}>
-          {a.aura?.enabled ? (
-            <SyncAura params={{ inset: a.aura.maxInset ?? 4, opacity: 0.6 }} color={a.aura.color ?? 'var(--pk)'} size={size}>
+    <div>
+      <p style={S.count}>{avatars.length} {avatars.length === 1 ? 'person' : 'people'} here</p>
+      <div style={{ ...S.grid, maxWidth }}>
+        {avatars.map((a) => (
+          <div key={a.user_id ?? a.presence_ref} style={S.slot(arrivingIds.has(a.user_id))}>
+            {a.aura?.enabled ? (
+              <SyncAura params={{ inset: a.aura.maxInset ?? 4, opacity: 0.6 }} color={a.aura.color ?? 'var(--pk)'} size={size}>
+                <BaseAvatar
+                  skinColor={a.skin_color} eyeColor={a.eye_color} species={a.species ?? 'human'}
+                  hairStyle={a.hair_style ?? 'none'} hairColor={a.hair_color ?? '#784421'} size={size}
+                />
+              </SyncAura>
+            ) : (
               <BaseAvatar
                 skinColor={a.skin_color} eyeColor={a.eye_color} species={a.species ?? 'human'}
                 hairStyle={a.hair_style ?? 'none'} hairColor={a.hair_color ?? '#784421'} size={size}
               />
-            </SyncAura>
-          ) : (
-            <BaseAvatar
-              skinColor={a.skin_color} eyeColor={a.eye_color} species={a.species ?? 'human'}
-              hairStyle={a.hair_style ?? 'none'} hairColor={a.hair_color ?? '#784421'} size={size}
-            />
-          )}
-        </div>
-      ))}
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -54,6 +59,7 @@ const S = {
   grid: { display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center', maxWidth: 360, margin: '0 auto' },
   slot: (arriving) => ({ animation: arriving ? 'lecture-lounge-avatar-in 0.5s ease-out' : 'none' }),
   empty: { fontSize: 13, color: 'var(--tx3)', textAlign: 'center' },
+  count: { fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx3)', textAlign: 'center', marginBottom: 10 },
 }
 
 if (typeof document !== 'undefined' && !document.getElementById('lecture-lounge-avatar-in-kf')) {
