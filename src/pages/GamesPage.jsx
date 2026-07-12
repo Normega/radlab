@@ -81,7 +81,7 @@ export default function GamesPage({ session, firstContactComplete }) {
           <GameCard
             title="Ebb &amp; Flow"
             badge="Interoception · Breath sync"
-            desc="Breathe with your avatar and detect subtle shifts in rhythm."
+            desc="Breathe with your Ripple and detect subtle shifts in rhythm."
             to="/games/ebb-flow"
             locked={!loading && !isComplete}
           />

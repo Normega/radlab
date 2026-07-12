@@ -79,7 +79,7 @@ export default function ProfilePage({ session }) {
             <span style={{ ...S.roleBadge, background: roleMeta.bg, color: roleMeta.color }}>
               {roleMeta.label}
             </span>
-            <Link to="/profile/avatar" style={S.editBtn}>Edit Avatar</Link>
+            <Link to="/profile/avatar" style={S.editBtn}>Edit Ripple</Link>
           </div>
         </div>
 

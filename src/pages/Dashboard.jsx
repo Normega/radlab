@@ -40,7 +40,7 @@ export default function Dashboard({ session }) {
           <GameCard
             title="Ebb &amp; Flow"
             tag="Interoception · Breath sync"
-            desc="Breathe with your avatar and detect subtle shifts in rhythm. Each session adapts to your sensitivity."
+            desc="Breathe with your Ripple and detect subtle shifts in rhythm. Each session adapts to your sensitivity."
             status="Play now →"
             to="/games/ebb-flow"
           />
@@ -625,7 +625,7 @@ function ContactCard({ userId }) {
           <p style={S.gameDesc}>
             {data === null
               ? 'Loading…'
-              : 'Breathe with your avatar to make contact and deepen your connection.'}
+              : 'Breathe with your Ripple to make contact and deepen your connection.'}
           </p>
         ) : (
           <div style={{ display: 'flex', gap: 16, alignItems: 'center', marginTop: 8 }}>

@@ -298,10 +298,10 @@ export default function AvatarEditor({ session, setHasAvatar }) {
       <div style={S.wrap}>
         {/* Header */}
         <div style={S.header}>
-          <p style={S.eyebrow}>Profile · Avatar</p>
+          <p style={S.eyebrow}>Profile · Ripple</p>
           <h1 style={S.title}>This is you.</h1>
           <p style={S.sub}>
-            Start with your base avatar. As you explore and complete activities,
+            Start with your base Ripple. As you explore and complete activities,
             you'll unlock new features to make it your own.
           </p>
         </div>
@@ -527,12 +527,12 @@ export default function AvatarEditor({ session, setHasAvatar }) {
                 opacity: saving ? 0.7 : 1,
               }}
             >
-              {saving ? 'Saving…' : saved ? '✓  Avatar saved — let\'s go!' : 'Looks good — save my avatar'}
+              {saving ? 'Saving…' : saved ? '✓  Ripple saved — let\'s go!' : 'Looks good — save my Ripple'}
             </button>
 
             {saved && (
               <p style={S.savedNote}>
-                Your avatar will evolve as you complete games and activities.
+                Your Ripple will evolve as you complete games and activities.
               </p>
             )}
           </div>

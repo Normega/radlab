@@ -19,7 +19,7 @@ export default function SessionStart({ totalTrials = 0, totalScore = 0, sessionS
       <p style={S.eyebrow}>Ebb &amp; Flow</p>
       <h1 style={S.title}>Breathe in.<br />Notice the shift.</h1>
       <p style={S.sub}>
-        Follow your avatar's breath. When the rhythm changes, tell us what you sensed.
+        Follow your Ripple's breath. When the rhythm changes, tell us what you sensed.
         The subtler the detection, the more points you earn.
       </p>
 
@@ -52,7 +52,7 @@ export default function SessionStart({ totalTrials = 0, totalScore = 0, sessionS
       <div style={S.instructCard}>
         <p style={S.instructTitle}>How it works</p>
         <ol style={S.steps}>
-          <li>Your avatar will breathe — follow its rhythm. Let your own breath sync up.</li>
+          <li>Your Ripple will breathe — follow its rhythm. Let your own breath sync up.</li>
           <li>Hold the attunement button while you inhale. Release when you exhale.</li>
           <li>On some trials the pace will shift. After each 4-breath sequence, tell us what you noticed.</li>
           <li>Rate your confidence and how activated you feel.</li>

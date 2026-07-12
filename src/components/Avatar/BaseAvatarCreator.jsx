@@ -278,7 +278,7 @@ export default function BaseAvatarCreator() {
             marginInline: "auto",
             lineHeight: 1.55,
           }}>
-            Start with your base avatar. As you explore and complete activities,
+            Start with your base Ripple. As you explore and complete activities,
             you'll unlock new features to make it your own.
           </p>
         </div>
@@ -436,7 +436,7 @@ export default function BaseAvatarCreator() {
                   : "0 4px 20px rgba(240,104,164,0.35)",
               }}
             >
-              {saved ? "✓  Avatar saved — let's go!" : "Looks good — save my avatar"}
+              {saved ? "✓  Ripple saved — let's go!" : "Looks good — save my Ripple"}
             </button>
 
             {saved && (
@@ -447,7 +447,7 @@ export default function BaseAvatarCreator() {
                 marginTop: 12,
                 animation: "fadeUp 0.3s ease both",
               }}>
-                Your avatar will evolve as you complete games and activities.
+                Your Ripple will evolve as you complete games and activities.
               </p>
             )}
           </div>

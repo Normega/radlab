@@ -199,7 +199,7 @@ export default function SessionFeedback({
       <div style={S.card}>
         <div style={S.cardHeader}>
           <div>
-            <p style={S.eyebrow}>connection to your avatar</p>
+            <p style={S.eyebrow}>connection to your Ripple</p>
             <p style={S.bigNum}>
               {(syncMean * 100).toFixed(0)}
               <span style={S.bigNumUnit}>%</span>

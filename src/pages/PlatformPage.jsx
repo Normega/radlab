@@ -64,7 +64,7 @@ export default function PlatformPage({ session }) {
                 <span style={S.gameBadge}>Breath sync · Onboarding</span>
                 <h2 style={S.gameTitle}>First Contact</h2>
                 <p style={S.gameDesc}>
-                  Meet your avatar. Breathe together. The more you sync,
+                  Meet your Ripple. Breathe together. The more you sync,
                   the more it comes alive. Required before anything else — takes about 3 minutes.
                 </p>
                 <div className="flex gap-6 pt-4 mb-5" style={{ borderTop: '1px solid var(--bd)' }}>
@@ -118,7 +118,7 @@ export default function PlatformPage({ session }) {
                 <span style={S.gameBadge}>Interoception · Breath sync</span>
                 <h2 style={S.gameTitle}>Ebb &amp; Flow</h2>
                 <p style={S.gameDesc}>
-                  Breathe with your avatar. Notice when something changes.
+                  Breathe with your Ripple. Notice when something changes.
                   A quiet game of awareness — each session takes about 5 minutes.
                 </p>
                 <div className="flex gap-6 pt-4 mb-5" style={{ borderTop: '1px solid var(--bd)' }}>
