@@ -68,6 +68,18 @@ export default function UserAdminPage() {
         (u.role ?? '').toLowerCase().includes(q))
     : users
 
+  const ROLE_ORDER = ['lab', 'public', 'participant']
+  const ROLE_LABELS = { lab: 'Lab', public: 'Public', participant: 'Participants' }
+  const grouped = ROLE_ORDER
+    .map(role => ({ role, label: ROLE_LABELS[role], users: filtered.filter(u => u.role === role) }))
+    .concat((() => {
+      const other = filtered.filter(u => !ROLE_ORDER.includes(u.role))
+      return other.length ? [{ role: 'other', label: 'Other', users: other }] : []
+    })())
+    .filter(g => g.users.length > 0)
+
+  const busy = setRole.isPending || deleteUser.isPending
+
   return (
     <div>
       <div style={{ marginBottom: 28 }}>
@@ -88,29 +100,19 @@ export default function UserAdminPage() {
 
       {actionError && <p style={S.errBox}>{actionError}</p>}
 
-      <div style={S.tableWrap}>
-        <table style={S.table}>
-          <thead>
-            <tr>
-              {['Email', 'Display name', 'Role', 'Confirmed', 'Created', 'Last sign-in', ''].map(h => (
-                <th key={h} style={S.th}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map(u => (
-              <UserRow
-                key={u.id}
-                user={u}
-                onSetRole={role => setRole.mutate({ id: u.id, role })}
-                onDelete={() => { setActionError(null); setDeleteTarget(u) }}
-                busy={setRole.isPending || deleteUser.isPending}
-              />
-            ))}
-          </tbody>
-        </table>
-        {filtered.length === 0 && <p style={{ ...S.muted, padding: 16 }}>No matching users.</p>}
-      </div>
+      {grouped.length === 0 && <p style={S.muted}>No matching users.</p>}
+
+      {grouped.map(g => (
+        <RoleSection
+          key={g.role}
+          role={g.role}
+          label={g.label}
+          users={g.users}
+          onSetRole={(id, role) => setRole.mutate({ id, role })}
+          onDelete={u => { setActionError(null); setDeleteTarget(u) }}
+          busy={busy}
+        />
+      ))}
 
       {deleteTarget && (
         <DeleteModal
@@ -120,6 +122,43 @@ export default function UserAdminPage() {
           onCancel={() => { setDeleteTarget(null); setActionError(null) }}
           onConfirm={() => deleteUser.mutate(deleteTarget.id)}
         />
+      )}
+    </div>
+  )
+}
+
+function RoleSection({ role, label, users, onSetRole, onDelete, busy }) {
+  const [open, setOpen] = useState(true)
+  return (
+    <div style={{ marginBottom: 24 }}>
+      <button style={S.sectionHeader} onClick={() => setOpen(o => !o)}>
+        <span style={{ ...S.roleBadge, ...(ROLE_COLORS[role] ?? S.roleBadgeFallback) }}>{label}</span>
+        <span style={S.sectionCount}>{users.length} user{users.length === 1 ? '' : 's'}</span>
+        <span style={S.chevron}>{open ? '▾' : '▸'}</span>
+      </button>
+      {open && (
+        <div style={S.tableWrap}>
+          <table style={S.table}>
+            <thead>
+              <tr>
+                {['Email', 'Display name', 'Confirmed', 'Created', 'Last sign-in', ''].map(h => (
+                  <th key={h} style={S.th}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {users.map(u => (
+                <UserRow
+                  key={u.id}
+                  user={u}
+                  onSetRole={r => onSetRole(u.id, r)}
+                  onDelete={() => onDelete(u)}
+                  busy={busy}
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   )
@@ -143,20 +182,17 @@ function UserRow({ user: u, onSetRole, onDelete, busy }) {
         {u.super_admin && <span style={S.superBadge}>super</span>}
       </td>
       <td style={S.td}>{u.display_name ?? <span style={S.muted}>—</span>}</td>
-      <td style={S.td}>
-        <span style={{ ...S.roleBadge, ...(ROLE_COLORS[u.role] ?? {}) }}>{u.role ?? 'no profile'}</span>
+      <td style={S.td}>{u.email_confirmed_at ? '✓' : <span style={{ color: '#c60' }}>pending</span>}</td>
+      <td style={S.td}>{fmtDate(u.created_at)}</td>
+      <td style={S.td}>{u.last_sign_in_at ? fmtDate(u.last_sign_in_at) : <span style={S.muted}>never</span>}</td>
+      <td style={{ ...S.td, textAlign: 'right', whiteSpace: 'nowrap' }}>
         {toggleable && (
           <button style={S.smallBtn} disabled={busy} onClick={handleRoleClick}>
             {confirmingRole ? `Confirm → ${nextRole}?` : `→ ${nextRole}`}
           </button>
         )}
-      </td>
-      <td style={S.td}>{u.email_confirmed_at ? '✓' : <span style={{ color: '#c60' }}>pending</span>}</td>
-      <td style={S.td}>{fmtDate(u.created_at)}</td>
-      <td style={S.td}>{u.last_sign_in_at ? fmtDate(u.last_sign_in_at) : <span style={S.muted}>never</span>}</td>
-      <td style={{ ...S.td, textAlign: 'right' }}>
         {!u.super_admin && (
-          <button style={S.dangerBtn} disabled={busy} onClick={onDelete}>Delete</button>
+          <button style={{ ...S.dangerBtn, marginLeft: 8 }} disabled={busy} onClick={onDelete}>Delete</button>
         )}
       </td>
     </tr>
@@ -235,10 +271,18 @@ const S = {
   },
   td: { padding: '10px 14px', borderBottom: '1px solid var(--bds)', color: 'var(--tx)', whiteSpace: 'nowrap' },
 
-  roleBadge: {
-    display: 'inline-block', padding: '2px 10px', borderRadius: 999,
-    fontFamily: MONO, fontSize: 11, border: '1px solid transparent',
+  sectionHeader: {
+    display: 'flex', alignItems: 'center', gap: 10, background: 'none',
+    border: 'none', padding: '6px 0', cursor: 'pointer', marginBottom: 8, width: '100%',
   },
+  sectionCount: { fontSize: 13, color: 'var(--tx3)', fontFamily: MONO },
+  chevron: { fontSize: 14, color: 'var(--tx3)', marginLeft: 'auto' },
+
+  roleBadge: {
+    display: 'inline-block', padding: '3px 12px', borderRadius: 999,
+    fontFamily: MONO, fontSize: 12, fontWeight: 600, border: '1px solid transparent',
+  },
+  roleBadgeFallback: { background: 'var(--bgp)', color: 'var(--tx2)', borderColor: 'var(--bds)' },
   superBadge: {
     marginLeft: 8, padding: '1px 8px', borderRadius: 999, fontFamily: MONO,
     fontSize: 10, background: '#FFF4D6', color: '#8A6D00', border: '1px solid #EDD98F',
