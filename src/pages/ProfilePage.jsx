@@ -2,7 +2,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import Nav from '../components/Nav'
-import BaseAvatar from '../components/Avatar/BaseAvatar'
+import RippleAvatar from '../ripple/RippleAvatar'
 import { useAvatarConfig } from '../hooks/useAvatarConfig'
 
 const UNLOCK_MILESTONES = [
@@ -72,7 +72,7 @@ export default function ProfilePage({ session }) {
         {/* ── Avatar card ─────────────────────────────────────────── */}
         <div style={S.avatarCard}>
           <div style={S.avatarPreview}>
-            <BaseAvatar skinColor={skinColor} eyeColor={eyeColor} species={avatarData?.species ?? 'human'} hairStyle={hairStyle} hairColor={hairColor} size={160} />
+            <RippleAvatar skinColor={skinColor} eyeColor={eyeColor} species={avatarData?.species ?? 'human'} hairStyle={hairStyle} hairColor={hairColor} size={160} />
           </div>
           <div style={S.avatarInfo}>
             <h1 style={S.displayName}>{displayName}</h1>

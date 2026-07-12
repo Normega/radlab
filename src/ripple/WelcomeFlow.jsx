@@ -2,22 +2,33 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { CONSENT_VERSION, TOS_VERSION, CONSENT_DOC, TOS_DOC } from './consentDocs'
+import { SKIN_COLORS, EYE_COLORS } from '../components/Avatar/BaseAvatar'
+import RippleAvatar from './RippleAvatar'
 
 // ── WelcomeFlow ───────────────────────────────────────────────────────────────
-// Route: /welcome — public-tier onboarding (Ripple WP1, spec §4.1).
-// Steps: intro → consent + ToS → demographics → bridge into avatar creation.
-// WP2 replaces the bridge's /profile/avatar handoff with the full
-// meet-your-Ripple customize + name beat.
-//
-// Steps already on record (consents at current versions, an existing
-// demographics row) are skipped, so the flow is safe to re-enter.
+// Route: /welcome — public-tier onboarding (Ripple WP1+WP2, spec §4.1).
+// Steps: intro → consent + ToS → demographics → customize appearance → name Ripple.
+// Each step is skipped when already satisfied, so the flow is safe to re-enter.
+// WP2 replaces the WP1 bridge placeholder with the full customize + name beat.
 
 const STEPS = {
   LOADING:      'loading',
   INTRO:        'intro',
   CONSENT:      'consent',
   DEMOGRAPHICS: 'demographics',
-  BRIDGE:       'bridge',
+  CUSTOMIZE:    'customize',
+  NAME:         'name',
+}
+
+const RIPPLE_NAMES = [
+  'Mira', 'Orin', 'Sage', 'Wren', 'Lumi', 'Crest',
+  'Fenn', 'Zara', 'Coda', 'Tavi', 'River', 'Bay',
+  'Reef', 'Tide', 'Beck', 'Haven', 'Marsh', 'Sol',
+]
+
+function pickRandom(current) {
+  const others = RIPPLE_NAMES.filter(n => n !== current)
+  return others[Math.floor(Math.random() * others.length)]
 }
 
 const SES_PROMPT = 'Imagine a ladder that represents where people stand in society. At the top are people who are the best off — those with the most money, most education, and the best jobs. At the bottom are people who are the worst off. Where would you place yourself on this ladder?'
@@ -29,19 +40,28 @@ export default function WelcomeFlow({ session, onComplete }) {
   const [error, setError] = useState(null)
   const [busy,  setBusy]  = useState(false)
 
-  // Which steps are already satisfied (re-entry / partial completion)
+  // Which steps are already satisfied
   const [consentDone,      setConsentDone]      = useState(false)
   const [demographicsDone, setDemographicsDone] = useState(false)
+  const [avatarDone,       setAvatarDone]       = useState(false)
+  const [rippleNameDone,   setRippleNameDone]   = useState(false)
 
   // Consent step state
   const [agreedConsent, setAgreedConsent] = useState(false)
   const [agreedTos,     setAgreedTos]     = useState(false)
 
-  // Demographics step state (same instrument as the study DemographicsStep)
+  // Demographics step state
   const [age,        setAge]        = useState('')
   const [gender,     setGender]     = useState('')
   const [racialized, setRacialized] = useState(null)
   const [sesLadder,  setSesLadder]  = useState(null)
+
+  // Customize step state (pre-populated if avatar row already exists)
+  const [skin, setSkin] = useState(SKIN_COLORS[1])  // Peach default
+  const [eye,  setEye]  = useState(EYE_COLORS[3])   // Sky Blue default
+
+  // Name step state
+  const [rippleName, setRippleName] = useState(() => pickRandom(''))
 
   async function load() {
     const userId = session.user.id
@@ -57,20 +77,31 @@ export default function WelcomeFlow({ session, onComplete }) {
       return
     }
 
-    const [{ data: consentRows }, { data: demoRows }] = await Promise.all([
-      supabase.from('consents')
-        .select('doc_type, version')
-        .eq('user_id', userId),
-      supabase.from('demographics')
-        .select('id')
-        .eq('user_id', userId)
-        .limit(1),
+    const [
+      { data: consentRows },
+      { data: demoRows },
+      { data: existingAvatar },
+      { data: rippleRow },
+    ] = await Promise.all([
+      supabase.from('consents').select('doc_type, version').eq('user_id', userId),
+      supabase.from('demographics').select('id').eq('user_id', userId).limit(1),
+      supabase.from('avatars').select('skin_color, eye_color').eq('user_id', userId).maybeSingle(),
+      supabase.from('ripples').select('name').eq('user_id', userId).maybeSingle(),
     ])
 
     const hasConsent = (consentRows ?? []).some(r => r.doc_type === 'consent' && r.version === CONSENT_VERSION)
     const hasTos     = (consentRows ?? []).some(r => r.doc_type === 'tos'     && r.version === TOS_VERSION)
     setConsentDone(hasConsent && hasTos)
     setDemographicsDone((demoRows ?? []).length > 0)
+
+    if (existingAvatar) {
+      setAvatarDone(true)
+      const foundSkin = SKIN_COLORS.find(c => c.hex === existingAvatar.skin_color)
+      const foundEye  = EYE_COLORS.find(c => c.hex === existingAvatar.eye_color)
+      if (foundSkin) setSkin(foundSkin)
+      if (foundEye)  setEye(foundEye)
+    }
+    setRippleNameDone(!!(rippleRow?.name))
 
     setStep(STEPS.INTRO)
   }
@@ -80,11 +111,21 @@ export default function WelcomeFlow({ session, onComplete }) {
     load()
   }, [session])  // eslint-disable-line react-hooks/exhaustive-deps
 
-  function nextAfterIntro() {
-    if (!consentDone)           setStep(STEPS.CONSENT)
-    else if (!demographicsDone) setStep(STEPS.DEMOGRAPHICS)
-    else                        finish()
+  // ── Step progression helpers ──────────────────────────────────────────────
+
+  function advance(options = {}) {
+    const cd  = options.consentDone      ?? consentDone
+    const dd  = options.demographicsDone ?? demographicsDone
+    const ad  = options.avatarDone       ?? avatarDone
+    const rnd = options.rippleNameDone   ?? rippleNameDone
+    if (!cd)  return setStep(STEPS.CONSENT)
+    if (!dd)  return setStep(STEPS.DEMOGRAPHICS)
+    if (!ad)  return setStep(STEPS.CUSTOMIZE)
+    if (!rnd) return setStep(STEPS.NAME)
+    finalFinish()
   }
+
+  // ── Consent submit ────────────────────────────────────────────────────────
 
   async function submitConsent() {
     if (!agreedConsent || !agreedTos || busy) return
@@ -100,9 +141,10 @@ export default function WelcomeFlow({ session, onComplete }) {
     if (dbErr) { setError('Could not save your agreement — please try again.'); console.error('consents upsert:', dbErr); return }
 
     setConsentDone(true)
-    if (!demographicsDone) setStep(STEPS.DEMOGRAPHICS)
-    else finish()
+    advance({ consentDone: true })
   }
+
+  // ── Demographics submit ───────────────────────────────────────────────────
 
   const canSubmitDemographics =
     age !== '' && parseInt(age) > 0 && gender.trim() !== '' && racialized !== null && sesLadder !== null
@@ -123,29 +165,65 @@ export default function WelcomeFlow({ session, onComplete }) {
     if (dbErr) { setError('Could not save — please try again.'); console.error('demographics insert:', dbErr); return }
 
     setDemographicsDone(true)
-    finish()
+    advance({ demographicsDone: true })
   }
 
-  async function finish() {
+  // ── Customize submit ──────────────────────────────────────────────────────
+
+  async function submitCustomize() {
+    if (busy) return
+    setBusy(true); setError(null)
+
+    const { error: dbErr } = await supabase.from('avatars').upsert(
+      { user_id: session.user.id, skin_color: skin.hex, eye_color: eye.hex, species: 'human' },
+      { onConflict: 'user_id' }
+    )
+
+    setBusy(false)
+    if (dbErr) { setError('Could not save your appearance — please try again.'); console.error('avatars upsert:', dbErr); return }
+
+    setAvatarDone(true)
+    advance({ avatarDone: true })
+  }
+
+  // ── Name submit ───────────────────────────────────────────────────────────
+
+  async function submitName() {
+    if (!rippleName.trim() || busy) return
+    setBusy(true); setError(null)
+
+    const { error: dbErr } = await supabase.from('ripples')
+      .upsert({ user_id: session.user.id, name: rippleName.trim() }, { onConflict: 'user_id' })
+
+    setBusy(false)
+    if (dbErr) { setError('Could not save — please try again.'); console.error('ripples upsert:', dbErr); return }
+
+    setRippleNameDone(true)
+    finalFinish()
+  }
+
+  // ── Final: mark onboarding complete ──────────────────────────────────────
+
+  async function finalFinish() {
     setBusy(true); setError(null)
     const userId = session.user.id
 
-    // Ripple identity row with default settings (name arrives in WP2's beat)
-    const { error: rippleErr } = await supabase.from('ripples')
+    // Ensure ripples row exists even if name was skipped
+    await supabase.from('ripples')
       .upsert({ user_id: userId }, { onConflict: 'user_id', ignoreDuplicates: true })
-    if (rippleErr) { setBusy(false); setError('Something went wrong — please try again.'); console.error('ripples upsert:', rippleErr); return }
 
     const { error: profileErr } = await supabase.from('profiles')
       .update({ onboarding_complete: true })
       .eq('id', userId)
-    if (profileErr) { setBusy(false); setError('Something went wrong — please try again.'); console.error('profiles update:', profileErr); return }
 
     setBusy(false)
+    if (profileErr) { setError('Something went wrong — please try again.'); console.error('profiles update:', profileErr); return }
+
     onComplete?.()
-    setStep(STEPS.BRIDGE)
+    navigate('/dashboard', { replace: true })
   }
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+  // ── Render ────────────────────────────────────────────────────────────────
 
   if (step === STEPS.LOADING) {
     return <div style={S.page}><div style={S.wrap}><p style={S.muted}>Loading…</p></div></div>
@@ -166,7 +244,7 @@ export default function WelcomeFlow({ session, onComplete }) {
             Two quick things first: how your data is used here, and a few
             questions about you.
           </p>
-          <button style={S.btn} onClick={nextAfterIntro}>Let&rsquo;s go →</button>
+          <button style={S.btn} onClick={() => advance()}>Let&rsquo;s go →</button>
         </div>
       </div>
     )
@@ -275,26 +353,122 @@ export default function WelcomeFlow({ session, onComplete }) {
     )
   }
 
-  // BRIDGE — WP2 replaces this handoff with the full meet/customize/name beat
-  return (
-    <div style={S.page}>
-      <div style={S.wrap}>
-        <p style={S.eyebrow}>One more thing</p>
-        <h1 style={S.title}>Time to meet your Ripple</h1>
-        <p style={S.body}>
-          Your Ripple starts as a face you choose. It will grow with you as you
-          play and check in — this is your partner here, made visible.
-        </p>
-        {error && <p style={S.errBox}>{error}</p>}
-        <button style={S.btn} onClick={() => navigate('/profile/avatar', { replace: true })}>
-          Choose a face →
-        </button>
+  if (step === STEPS.CUSTOMIZE) {
+    return (
+      <div style={S.page}>
+        <div style={S.wrap}>
+          <p style={S.eyebrow}>Almost there</p>
+          <h1 style={S.title}>Choose a face</h1>
+          <p style={S.body}>
+            This is your Ripple. Pick a look that feels like you — more features
+            unlock as you explore.
+          </p>
+
+          <div style={S.previewBox}>
+            <RippleAvatar skinColor={skin.hex} eyeColor={eye.hex} size={180} />
+          </div>
+
+          <div style={S.pickerSection}>
+            <p style={S.pickerLabel}>Skin · Fur · Scales</p>
+            <div style={S.swatchRow}>
+              {SKIN_COLORS.map(c => (
+                <button
+                  key={c.hex}
+                  title={c.label}
+                  onClick={() => setSkin(c)}
+                  style={{
+                    ...S.swatch,
+                    background: c.hex,
+                    border: skin.hex === c.hex ? '3px solid var(--pk)' : '3px solid transparent',
+                    outline: skin.hex === c.hex ? '2px solid white' : 'none',
+                    outlineOffset: '-4px',
+                    transform: skin.hex === c.hex ? 'scale(1.2)' : 'scale(1)',
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div style={S.pickerSection}>
+            <p style={S.pickerLabel}>Eye color</p>
+            <div style={S.swatchRow}>
+              {EYE_COLORS.map(c => (
+                <button
+                  key={c.hex}
+                  title={c.label}
+                  onClick={() => setEye(c)}
+                  style={{
+                    ...S.swatch,
+                    background: c.hex,
+                    border: eye.hex === c.hex ? '3px solid var(--pk)' : '3px solid transparent',
+                    outline: eye.hex === c.hex ? '2px solid white' : 'none',
+                    outlineOffset: '-4px',
+                    transform: eye.hex === c.hex ? 'scale(1.2)' : 'scale(1)',
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+
+          {error && <p style={S.errBox}>{error}</p>}
+
+          <button style={{ ...S.btn, opacity: busy ? 0.5 : 1 }} disabled={busy} onClick={submitCustomize}>
+            {busy ? 'Saving…' : 'Looks good →'}
+          </button>
+        </div>
       </div>
-    </div>
-  )
+    )
+  }
+
+  if (step === STEPS.NAME) {
+    const label = rippleName.trim() || 'your Ripple'
+    return (
+      <div style={S.page}>
+        <div style={S.wrap}>
+          <p style={S.eyebrow}>One last thing</p>
+          <h1 style={S.title}>Name your Ripple</h1>
+          <p style={S.body}>
+            Give your Ripple a name — it&rsquo;s yours to change anytime.
+          </p>
+
+          <div style={S.previewBox}>
+            <RippleAvatar skinColor={skin.hex} eyeColor={eye.hex} size={180} />
+          </div>
+
+          <div style={S.nameRow}>
+            <input
+              type="text"
+              value={rippleName}
+              onChange={e => setRippleName(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && submitName()}
+              placeholder="Your Ripple's name"
+              style={S.input}
+              maxLength={32}
+              autoFocus
+            />
+            <button style={S.genBtn} onClick={() => setRippleName(pickRandom(rippleName))} title="Suggest another name">
+              ✦
+            </button>
+          </div>
+
+          {error && <p style={S.errBox}>{error}</p>}
+
+          <button
+            style={{ ...S.btn, opacity: (!rippleName.trim() || busy) ? 0.5 : 1 }}
+            disabled={!rippleName.trim() || busy}
+            onClick={submitName}
+          >
+            {busy ? 'Saving…' : `Meet ${label} →`}
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  return null
 }
 
-// ── DocBox — scrollable doc with its own agreement checkbox ──────────────────
+// ── DocBox ────────────────────────────────────────────────────────────────────
 function DocBox({ doc, agreed, onToggle }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -314,10 +488,9 @@ function DocBox({ doc, agreed, onToggle }) {
   )
 }
 
-// ── Styles (ConsentPage idiom) ────────────────────────────────────────────────
-
-const MONO  = '"Space Mono", monospace'
-const SERIF = '"DM Serif Display", serif'
+// ── Styles ────────────────────────────────────────────────────────────────────
+const MONO  = '"Space Mono", "Courier New", monospace'
+const SERIF = '"DM Serif Display", Georgia, serif'
 const SANS  = '"DM Sans", system-ui, sans-serif'
 
 const S = {
@@ -351,9 +524,8 @@ const S = {
   field:      { display: 'flex', flexDirection: 'column', gap: 8 },
   fieldLabel: { fontSize: 14, color: 'var(--tx)', fontFamily: SANS, fontWeight: 600, lineHeight: 1.5 },
   input: {
-    padding: '10px 14px', borderRadius: 10, border: '1px solid var(--bd)',
-    fontSize: 15, fontFamily: SANS, color: 'var(--tx)', background: '#fff',
-    maxWidth: 320,
+    flex: 1, padding: '10px 14px', borderRadius: 10, border: '1px solid var(--bd)',
+    fontSize: 15, fontFamily: SANS, color: 'var(--tx)', background: 'var(--bg)',
   },
   radioRow:   { display: 'flex', gap: 20, flexWrap: 'wrap' },
   radioLabel: { display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontFamily: SANS, color: 'var(--tx)', cursor: 'pointer' },
@@ -361,6 +533,31 @@ const S = {
   ladderBtn: {
     width: 40, height: 40, borderRadius: 10, border: '1px solid var(--bd)',
     fontFamily: MONO, fontSize: 14, cursor: 'pointer', transition: 'background 0.1s',
+  },
+
+  previewBox: {
+    alignSelf: 'center',
+    background: 'var(--bgp)', borderRadius: 32, padding: 20,
+    boxShadow: '0 8px 40px rgba(240,104,164,0.15)',
+  },
+  pickerSection: { display: 'flex', flexDirection: 'column', gap: 10 },
+  pickerLabel: {
+    fontFamily: MONO, fontSize: 11, letterSpacing: '0.1em',
+    textTransform: 'uppercase', color: 'var(--tx3)', margin: 0,
+  },
+  swatchRow: { display: 'flex', flexWrap: 'wrap', gap: 8 },
+  swatch: {
+    width: 28, height: 28, borderRadius: '50%', cursor: 'pointer', padding: 0,
+    flexShrink: 0, boxShadow: '0 1px 4px rgba(0,0,0,0.18)',
+    transition: 'transform 0.12s ease, box-shadow 0.12s ease',
+  },
+
+  nameRow: { display: 'flex', gap: 10, alignItems: 'center' },
+  genBtn: {
+    width: 44, height: 44, borderRadius: 12, flexShrink: 0,
+    border: '1px solid var(--bd)', background: 'var(--bgp)',
+    color: 'var(--pk)', fontSize: 18, cursor: 'pointer',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
   },
 
   btn: {

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import BaseAvatar from '../components/Avatar/BaseAvatar'
+import RippleAvatar from '../ripple/RippleAvatar'
 import SyncAura from '../components/SyncAura'
 
 const MONO = '"Space Mono", "Courier New", monospace'
@@ -37,13 +37,13 @@ export default function AvatarWall({ avatars, size = 56, maxWidth = 360 }) {
           <div key={a.user_id ?? a.presence_ref} style={S.slot(arrivingIds.has(a.user_id))}>
             {a.aura?.enabled ? (
               <SyncAura params={{ inset: a.aura.maxInset ?? 4, opacity: 0.6 }} color={a.aura.color ?? 'var(--pk)'} size={size}>
-                <BaseAvatar
+                <RippleAvatar
                   skinColor={a.skin_color} eyeColor={a.eye_color} species={a.species ?? 'human'}
                   hairStyle={a.hair_style ?? 'none'} hairColor={a.hair_color ?? '#784421'} size={size}
                 />
               </SyncAura>
             ) : (
-              <BaseAvatar
+              <RippleAvatar
                 skinColor={a.skin_color} eyeColor={a.eye_color} species={a.species ?? 'human'}
                 hairStyle={a.hair_style ?? 'none'} hairColor={a.hair_color ?? '#784421'} size={size}
               />

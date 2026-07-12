@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import Nav from '../Nav'
-import BaseAvatar, { SKIN_COLORS, EYE_COLORS } from './BaseAvatar'
+import { SKIN_COLORS, EYE_COLORS } from './BaseAvatar'
+import RippleAvatar from '../../ripple/RippleAvatar'
 import { SPECIES, SPECIES_ORDER } from '../../lib/avatar-species'
 import { HAIR_STYLES, HAIR_COLORS } from '../../assets/hair/hairStyles'
 import { getUnlockedSpecies } from '../../lib/avatar-unlocks'
@@ -315,10 +316,10 @@ export default function AvatarEditor({ session, setHasAvatar }) {
               <div key={bump} style={{ animation: 'popIn 0.32s ease both' }}>
                 {auraFeatureUnlocked && auraEnabled ? (
                   <SyncAura params={{ inset: auraMaxInset, opacity: 0.60 }} color={auraColor.value} size={200}>
-                    <BaseAvatar skinColor={skin.hex} eyeColor={eye.hex} species={species} hairStyle={hairStyle} hairColor={hairColor} size={200} />
+                    <RippleAvatar skinColor={skin.hex} eyeColor={eye.hex} species={species} hairStyle={hairStyle} hairColor={hairColor} size={200} />
                   </SyncAura>
                 ) : (
-                  <BaseAvatar skinColor={skin.hex} eyeColor={eye.hex} species={species} hairStyle={hairStyle} hairColor={hairColor} size={200} />
+                  <RippleAvatar skinColor={skin.hex} eyeColor={eye.hex} species={species} hairStyle={hairStyle} hairColor={hairColor} size={200} />
                 )}
               </div>
             </div>

@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
-import BaseAvatar from './Avatar/BaseAvatar'
+import RippleAvatar from '../ripple/RippleAvatar'
 import { useAvatarConfig } from '../hooks/useAvatarConfig'
 
 function useProfile(userId) {
@@ -53,7 +53,7 @@ export default function Nav({ session }) {
             <button style={S.btnOutline} onClick={handleSignOut}>Sign out</button>
             <Link to="/profile" style={S.avatarCircle}>
               {avatarData ? (
-                <BaseAvatar skinColor={avatarData.skin_color} eyeColor={avatarData.eye_color} species={avatarData.species ?? 'human'} hairStyle={avatarData.hair_style ?? 'none'} hairColor={avatarData.hair_color ?? '#784421'} size={36} />
+                <RippleAvatar skinColor={avatarData.skin_color} eyeColor={avatarData.eye_color} species={avatarData.species ?? 'human'} hairStyle={avatarData.hair_style ?? 'none'} hairColor={avatarData.hair_color ?? '#784421'} valence={0} arousal={0} size={36} />
               ) : (
                 <div style={S.avatarInitial}>{initial}</div>
               )}
