@@ -71,6 +71,35 @@ function QuestionBoxTap({ checkinId, userId, onSubmit }) {
   )
 }
 
+function QuizTap({ items, onSubmit }) {
+  const [answers, setAnswers] = useState({})
+  const allAnswered = items.length > 0 && items.every((q) => q.id in answers)
+  return (
+    <div style={S.stepWrap}>
+      <p style={S.eyebrow}>Quiz</p>
+      <h2 style={S.title}>Quick check</h2>
+      {items.map((q) => (
+        <div key={q.id} style={S.quizQuestion}>
+          <p style={S.quizQuestionText}>{q.text}</p>
+          {q.options.map((opt, i) => (
+            <label key={i} style={S.quizOptionLabel(answers[q.id] === i)}>
+              <input
+                type="radio" name={q.id} checked={answers[q.id] === i}
+                onChange={() => setAnswers((a) => ({ ...a, [q.id]: i }))}
+                style={{ marginRight: 8 }}
+              />
+              {opt}
+            </label>
+          ))}
+        </div>
+      ))}
+      <button style={S.primaryBtn} onClick={() => onSubmit({ quiz_answers: answers })} disabled={!allAnswered}>
+        Submit →
+      </button>
+    </div>
+  )
+}
+
 // Renders the config activity sequence one step at a time, phone-first.
 // Draft answers persist in component state across steps; a single upsert
 // writes the full checkin_responses row on the final step (re-submit while
@@ -97,6 +126,7 @@ export default function CheckinRunner({ checkinId, config, session, onComplete }
         mood,
         pacing: finalDraft.pacing ?? null,
         prompt_response: finalDraft.prompt_response ?? null,
+        quiz_answers: finalDraft.quiz_answers ?? null,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'checkin_id,profile_id' })
 
@@ -144,6 +174,7 @@ export default function CheckinRunner({ checkinId, config, session, onComplete }
     case 'pacing':        return <PacingTap onSubmit={handleStepSubmit} />
     case 'prompt':         return <PromptTap promptText={config?.prompt_text} onSubmit={handleStepSubmit} />
     case 'question_box':  return <QuestionBoxTap checkinId={checkinId} userId={session.user.id} onSubmit={handleStepSubmit} />
+    case 'quiz':           return <QuizTap items={config?.quiz_items ?? []} onSubmit={handleStepSubmit} />
     default:
       return null // handled by the effect above
   }
@@ -171,4 +202,10 @@ const S = {
     cursor: 'pointer', fontFamily: 'inherit',
   }),
   pacingLabels: { display: 'flex', justifyContent: 'space-between', width: '100%', maxWidth: 280, fontSize: 12, color: 'var(--tx3)' },
+  quizQuestion: { width: '100%', textAlign: 'left', marginBottom: 20 },
+  quizQuestionText: { fontSize: 15, color: 'var(--tx)', fontWeight: 500, marginBottom: 10 },
+  quizOptionLabel: (active) => ({
+    display: 'flex', alignItems: 'center', padding: '10px 12px', borderRadius: 10, fontSize: 14, marginBottom: 6, cursor: 'pointer',
+    border: `1px solid ${active ? 'var(--pk)' : 'var(--bds)'}`, background: active ? 'var(--bgp)' : 'var(--bgc)', color: 'var(--tx)',
+  }),
 }

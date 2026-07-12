@@ -6,7 +6,7 @@ import Nav from '../components/Nav'
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
 
-const ACTIVITY_LABELS = { mood: 'Mood', pacing: 'Pacing', prompt: 'Prompt', question_box: 'Question box' }
+const ACTIVITY_LABELS = { mood: 'Mood', pacing: 'Pacing', prompt: 'Prompt', question_box: 'Question box', quiz: 'Quiz' }
 
 function nearestLecture(lectures) {
   if (!lectures.length) return null
@@ -181,6 +181,13 @@ export default function ClassRemote({ session }) {
     loadCheckins(lecture.id)
   }
 
+  async function handleRevealQuiz(checkin) {
+    setActionError(null)
+    const { error } = await supabase.from('checkins').update({ quiz_revealed_at: new Date().toISOString() }).eq('id', checkin.id)
+    if (error) { setActionError(error.message); return }
+    loadCheckins(lecture.id)
+  }
+
   async function handleExtend(checkin) {
     await supabase.from('checkins').update({ auto_close_seconds: (checkin.auto_close_seconds ?? 0) + 60 }).eq('id', checkin.id)
     loadCheckins(lecture.id)
@@ -261,6 +268,7 @@ export default function ClassRemote({ session }) {
             const isOpen = c.status === 'open'
             const activities = (c.config?.activities ?? []).map((a) => ACTIVITY_LABELS[a] ?? a).join(' → ')
             const collectsQuestions = (c.config?.activities ?? []).includes('question_box') && c.status !== 'planned'
+            const hasQuiz = (c.config?.activities ?? []).includes('quiz')
             const questions = questionsByCheckin[c.id] ?? []
             return (
               <div key={c.id} style={S.card}>
@@ -286,7 +294,11 @@ export default function ClassRemote({ session }) {
                     </>
                   )}
                   {c.status === 'closed' && <button style={S.bigBtn} onClick={() => handleShowResults(c)}>Show results</button>}
-                  {c.status === 'results_ready' && <span style={S.doneLabel}>Results shown</span>}
+                  {c.status === 'results_ready' && (
+                    hasQuiz && !c.quiz_revealed_at
+                      ? <button style={S.bigBtn} onClick={() => handleRevealQuiz(c)}>Reveal quiz answers</button>
+                      : <span style={S.doneLabel}>{hasQuiz ? 'Quiz answers revealed' : 'Results shown'}</span>
+                  )}
                 </div>
 
                 {collectsQuestions && (

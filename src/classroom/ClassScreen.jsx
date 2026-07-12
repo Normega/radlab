@@ -7,7 +7,7 @@ import ResultsView from './ResultsView'
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
 
-const ACTIVITY_LABELS = { mood: 'Mood', pacing: 'Pacing', prompt: 'Prompt', question_box: 'Question box' }
+const ACTIVITY_LABELS = { mood: 'Mood', pacing: 'Pacing', prompt: 'Prompt', question_box: 'Question box', quiz: 'Quiz' }
 const BROADCAST_EVENTS = ['staged', 'open', 'closed', 'results_ready']
 
 // Projector display. Opened once before class, zero interaction after —

@@ -9,9 +9,69 @@ const ACTIVITY_DEFS = [
   { key: 'pacing', label: 'Pacing' },
   { key: 'prompt', label: 'Prompt' },
   { key: 'question_box', label: 'Question box' },
+  { key: 'quiz', label: 'Quiz' },
 ]
 
-function ActivitiesEditor({ activities, onChange, promptText, onPromptTextChange }) {
+function emptyQuizItem() {
+  // Random, not position-derived — a position-derived id (q1, q2, ...) would
+  // collide after removing an earlier question and adding a new one.
+  return { id: `q_${crypto.randomUUID().replace(/-/g, '').slice(0, 8)}`, text: '', options: ['', ''], correct: 0 }
+}
+
+// Correct answers never round-trip through this component's onChange back
+// into checkins.config — CheckinForm.submit splits { id, text, options }
+// (safe, public) from { correct } (goes to checkin_quiz_keys, admin-only
+// table) before saving. See 20260713_lecture_lounge_quiz.sql.
+function QuizItemsEditor({ items, onChange }) {
+  function updateItem(i, patch) { onChange(items.map((it, idx) => (idx === i ? { ...it, ...patch } : it))) }
+  function addItem() { onChange([...items, emptyQuizItem()]) }
+  function removeItem(i) { onChange(items.filter((_, idx) => idx !== i)) }
+  function updateOption(i, optIdx, value) {
+    const next = [...items[i].options]
+    next[optIdx] = value
+    updateItem(i, { options: next })
+  }
+  function addOption(i) {
+    if (items[i].options.length >= 6) return
+    updateItem(i, { options: [...items[i].options, ''] })
+  }
+  function removeOption(i, optIdx) {
+    if (items[i].options.length <= 2) return
+    const next = items[i].options.filter((_, idx) => idx !== optIdx)
+    updateItem(i, { options: next, correct: items[i].correct >= next.length ? 0 : items[i].correct })
+  }
+
+  return (
+    <div style={{ marginTop: 10 }}>
+      <label style={S.fieldLabel}>Quiz questions</label>
+      {items.map((it, i) => (
+        <div key={it.id} style={S.quizItemBox}>
+          <div style={S.quizItemHeader}>
+            <input
+              type="text" value={it.text} onChange={(e) => updateItem(i, { text: e.target.value })}
+              placeholder="Question text" style={{ ...S.input, flex: 1 }}
+            />
+            <button type="button" style={S.linkBtnDanger} onClick={() => removeItem(i)}>Remove</button>
+          </div>
+          {it.options.map((opt, optIdx) => (
+            <div key={optIdx} style={S.quizOptionRow}>
+              <input type="radio" checked={it.correct === optIdx} onChange={() => updateItem(i, { correct: optIdx })} title="Correct answer" />
+              <input
+                type="text" value={opt} onChange={(e) => updateOption(i, optIdx, e.target.value)}
+                placeholder={`Option ${optIdx + 1}`} style={{ ...S.input, flex: 1 }}
+              />
+              <button type="button" style={S.orderBtn} disabled={it.options.length <= 2} onClick={() => removeOption(i, optIdx)}>×</button>
+            </div>
+          ))}
+          <button type="button" style={S.ghostBtnSm} onClick={() => addOption(i)} disabled={it.options.length >= 6}>+ Option</button>
+        </div>
+      ))}
+      <button type="button" style={S.addBtn} onClick={addItem}>+ Add question</button>
+    </div>
+  )
+}
+
+function ActivitiesEditor({ activities, onChange, promptText, onPromptTextChange, quizItems, onQuizItemsChange }) {
   function toggle(key) {
     if (activities.includes(key)) onChange(activities.filter((a) => a !== key))
     else onChange([...activities, key])
@@ -33,10 +93,6 @@ function ActivitiesEditor({ activities, onChange, promptText, onPromptTextChange
             {a.label}
           </label>
         ))}
-        <span style={S.activityChipDisabled} title="Coming in Phase 2">
-          <input type="checkbox" disabled style={{ marginRight: 6 }} />
-          Quiz <span style={S.phase2Badge}>Phase 2</span>
-        </span>
       </div>
       {activities.length > 0 && (
         <div style={S.orderList}>
@@ -60,27 +116,37 @@ function ActivitiesEditor({ activities, onChange, promptText, onPromptTextChange
           />
         </div>
       )}
+      {activities.includes('quiz') && <QuizItemsEditor items={quizItems} onChange={onQuizItemsChange} />}
     </div>
   )
 }
 
 function emptyCheckinForm(nextPosition) {
-  return { position: nextPosition, activities: [], promptText: '', autoCloseSeconds: '' }
+  return { position: nextPosition, activities: [], promptText: '', autoCloseSeconds: '', quizItems: [] }
+}
+
+function quizItemsValid(items) {
+  return items.length > 0 && items.every((it) => it.text.trim() && it.options.filter((o) => o.trim()).length >= 2)
 }
 
 function CheckinForm({ initial, onSave, onCancel }) {
   const [form, setForm] = useState(initial)
   function set(k, v) { setForm((f) => ({ ...f, [k]: v })) }
 
+  const quizOk = !form.activities.includes('quiz') || quizItemsValid(form.quizItems)
+
   function submit(e) {
     e.preventDefault()
+    const isQuiz = form.activities.includes('quiz')
     onSave({
       position: Number(form.position) || 0,
       config: {
         activities: form.activities,
         ...(form.activities.includes('prompt') ? { prompt_text: form.promptText } : {}),
+        ...(isQuiz ? { quiz_items: form.quizItems.map(({ id, text, options }) => ({ id, text, options })) } : {}),
       },
       auto_close_seconds: form.autoCloseSeconds === '' ? null : Number(form.autoCloseSeconds),
+      ...(isQuiz ? { quizAnswerKey: Object.fromEntries(form.quizItems.map((qi) => [qi.id, qi.correct])) } : {}),
     })
   }
 
@@ -101,9 +167,11 @@ function CheckinForm({ initial, onSave, onCancel }) {
         onChange={(v) => set('activities', v)}
         promptText={form.promptText}
         onPromptTextChange={(v) => set('promptText', v)}
+        quizItems={form.quizItems}
+        onQuizItemsChange={(v) => set('quizItems', v)}
       />
       <div style={S.formBtnRow}>
-        <button type="submit" style={S.primaryBtnSm} disabled={form.activities.length === 0}>Save check-in</button>
+        <button type="submit" style={S.primaryBtnSm} disabled={form.activities.length === 0 || !quizOk}>Save check-in</button>
         <button type="button" style={S.ghostBtnSm} onClick={onCancel}>Cancel</button>
       </div>
     </form>
@@ -176,6 +244,7 @@ function LectureCard({ lecture, checkins, expanded, onToggle, onEditLecture, onD
                 initial={{
                   position: c.position, activities: c.config?.activities ?? [],
                   promptText: c.config?.prompt_text ?? '', autoCloseSeconds: c.auto_close_seconds ?? '',
+                  quizItems: (c.config?.quiz_items ?? []).map((qi) => ({ ...qi, correct: c.quizAnswerKey?.[qi.id] ?? 0 })),
                 }}
                 onSave={async (patch) => { if (await onUpdateCheckin(c.id, patch)) setEditingCheckinId(null) }}
                 onCancel={() => setEditingCheckinId(null)}
@@ -231,8 +300,24 @@ export default function ConsoleLecturePlanner({ classInfo }) {
     // Leaving the embedded `checkins` array on each lecture row is harmless
     // (LectureCard only reads its own named fields) — simpler than stripping it.
     setLectures(rows)
+
+    // checkin_quiz_keys isn't embeddable from checkins in one shot the way
+    // class_questions is (correct answers are deliberately kept off any row
+    // students can read — see the migration — so it's a fully separate,
+    // admin-only fetch, not just a stylistic choice).
+    const quizCheckinIds = rows.flatMap((l) => (l.checkins ?? []).filter((c) => (c.config?.activities ?? []).includes('quiz')).map((c) => c.id))
+    let keysByCheckin = {}
+    if (quizCheckinIds.length) {
+      const { data: keys } = await supabase.from('checkin_quiz_keys').select('checkin_id, answer_key').in('checkin_id', quizCheckinIds)
+      keysByCheckin = Object.fromEntries((keys ?? []).map((k) => [k.checkin_id, k.answer_key]))
+    }
+
     const grouped = {}
-    for (const l of rows) grouped[l.id] = [...(l.checkins ?? [])].sort((a, b) => a.position - b.position)
+    for (const l of rows) {
+      grouped[l.id] = [...(l.checkins ?? [])]
+        .sort((a, b) => a.position - b.position)
+        .map((c) => (c.id in keysByCheckin ? { ...c, quizAnswerKey: keysByCheckin[c.id] } : c))
+    }
     setCheckinsByLecture(grouped)
   }
 
@@ -266,14 +351,27 @@ export default function ConsoleLecturePlanner({ classInfo }) {
     const ok = await run(() => supabase.from('lectures').delete().eq('id', id))
     if (ok) reload()
   }
-  async function createCheckin(lectureId, patch) {
-    const ok = await run(() => supabase.from('checkins').insert({ lecture_id: lectureId, ...patch }))
-    if (ok) reload()
-    return ok
+  // quizAnswerKey isn't a checkins column — it goes to the separate
+  // admin-only checkin_quiz_keys table (see 20260713_lecture_lounge_quiz.sql
+  // for why correct answers can't live anywhere a student can read).
+  async function saveQuizKey(checkinId, quizAnswerKey) {
+    if (!quizAnswerKey) return true
+    return run(() => supabase.from('checkin_quiz_keys').upsert({ checkin_id: checkinId, answer_key: quizAnswerKey }))
   }
-  async function updateCheckin(id, patch) {
+
+  async function createCheckin(lectureId, { quizAnswerKey, ...patch }) {
+    const { data, error } = await supabase.from('checkins').insert({ lecture_id: lectureId, ...patch }).select('id').single()
+    if (error) { setErrorMsg(error.message); return false }
+    if (!(await saveQuizKey(data.id, quizAnswerKey))) return false
+    setErrorMsg(null)
+    reload()
+    return true
+  }
+  async function updateCheckin(id, { quizAnswerKey, ...patch }) {
     const ok = await run(() => supabase.from('checkins').update(patch).eq('id', id))
-    if (ok) reload()
+    if (!ok) return false
+    if (!(await saveQuizKey(id, quizAnswerKey))) return false
+    reload()
     return ok
   }
   async function deleteCheckin(id) {
@@ -365,8 +463,9 @@ const S = {
     border: `1px solid ${active ? 'var(--pk)' : 'var(--bds)'}`, background: active ? 'var(--bgp)' : 'var(--bgc)',
     color: active ? 'var(--pkd)' : 'var(--tx2)', cursor: 'pointer',
   }),
-  activityChipDisabled: { display: 'inline-flex', alignItems: 'center', padding: '6px 12px', borderRadius: 20, fontSize: 13, border: '1px solid var(--bd)', color: 'var(--tx3)' },
-  phase2Badge: { fontFamily: MONO, fontSize: 10, marginLeft: 6, color: 'var(--tx3)' },
+  quizItemBox: { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 10, padding: 12, marginBottom: 8 },
+  quizItemHeader: { display: 'flex', gap: 10, alignItems: 'center', marginBottom: 8 },
+  quizOptionRow: { display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 },
 
   orderList: { marginTop: 10 },
   orderLabel: { fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx3)', marginBottom: 4 },

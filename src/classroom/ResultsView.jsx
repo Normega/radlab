@@ -155,6 +155,65 @@ function QuestionsList({ checkinId, session }) {
   )
 }
 
+// Quiz distribution, staged reveal (Norm's call over "reveal immediately
+// like mood/pacing" — Peer-Instruction style: everyone sees where the room
+// landed before finding out who was right). Correct-answer info physically
+// cannot reach this component before the instructor's reveal tap — the RPC
+// itself withholds answer_key until checkins.quiz_revealed_at is set (or
+// the caller is an admin), so there's no client-side gate to bypass here,
+// just a straight render of whatever the RPC returned. The postgres_changes
+// subscription on checkins is what turns "instructor tapped reveal on their
+// phone" into "this student's screen updates" without a page reload — see
+// 20260713_lecture_lounge_quiz.sql for why checkins (not a new broadcast
+// event) is the mechanism.
+function QuizResults({ checkinId }) {
+  const [data, setData] = useState(undefined)
+
+  useEffect(() => {
+    let cancelled = false
+    async function load() {
+      const { data: res } = await supabase.rpc('get_checkin_quiz_results', { p_checkin_id: checkinId })
+      if (!cancelled && res && !res.error) setData(res)
+    }
+    load()
+    const ch = supabase
+      .channel(`quiz-reveal-${checkinId}`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'checkins', filter: `id=eq.${checkinId}` }, load)
+      .subscribe()
+    return () => { cancelled = true; supabase.removeChannel(ch) }
+  }, [checkinId])
+
+  if (!data?.items?.length) return null
+
+  return (
+    <div style={S.section}>
+      <p style={S.subLabel}>Quiz{!data.revealed && ' — answer not yet revealed'}</p>
+      {data.items.map((q) => {
+        const counts = data.counts?.[q.id] ?? q.options.map(() => 0)
+        const max = Math.max(1, ...counts)
+        const correctIdx = data.answer_key?.[q.id]
+        return (
+          <div key={q.id} style={S.quizResultBlock}>
+            <p style={S.quizResultText}>{q.text}</p>
+            {q.options.map((opt, i) => {
+              const isCorrect = data.revealed && i === correctIdx
+              return (
+                <div key={i} style={S.quizResultRow}>
+                  <span style={S.quizResultOption(isCorrect)}>{opt}{isCorrect ? ' ✓' : ''}</span>
+                  <div style={S.quizResultBarTrack}>
+                    <div style={{ ...S.quizResultBarFill(isCorrect), width: `${(counts[i] / max) * 100}%` }} />
+                  </div>
+                  <span style={S.quizResultCount}>{counts[i]}</span>
+                </div>
+              )
+            })}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 function PacingBar({ counts }) {
   const max = Math.max(1, ...counts)
   return (
@@ -210,6 +269,8 @@ export default function ResultsView({ checkinId, session }) {
         </div>
       )}
 
+      <QuizResults checkinId={checkinId} />
+
       <QuestionsList checkinId={checkinId} session={session} />
 
       {!moodPoints.length && !hasPacing && <p style={S.hint}>No results to show for this check-in.</p>}
@@ -244,4 +305,14 @@ const S = {
     background: active ? 'var(--pkb)' : 'var(--bgc)', color: active ? 'var(--pkd)' : 'var(--tx2)',
   }),
   voteCountReadonly: { fontFamily: MONO, fontSize: 12, color: 'var(--tx3)', whiteSpace: 'nowrap' },
+  quizResultBlock: { textAlign: 'left', marginBottom: 16 },
+  quizResultText: { fontSize: 13, color: 'var(--tx)', fontWeight: 500, marginBottom: 8 },
+  quizResultRow: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 },
+  quizResultOption: (correct) => ({
+    fontSize: 12, color: correct ? '#1a8a4a' : 'var(--tx2)', fontWeight: correct ? 700 : 400,
+    width: 90, flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+  }),
+  quizResultBarTrack: { flex: 1, height: 10, borderRadius: 5, background: 'var(--bg)', overflow: 'hidden' },
+  quizResultBarFill: (correct) => ({ height: '100%', borderRadius: 5, background: correct ? '#1a8a4a' : 'var(--pk)' }),
+  quizResultCount: { fontFamily: MONO, fontSize: 11, color: 'var(--tx3)', width: 18, textAlign: 'right' },
 }
