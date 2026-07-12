@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { useAvatarConfig } from '../hooks/useAvatarConfig'
 import Nav from '../components/Nav'
 import CheckinRunner from './CheckinRunner'
 import ResultsView from './ResultsView'
+import AvatarWall from './AvatarWall'
+import { useClassPresence } from './useClassPresence'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -41,6 +44,18 @@ export default function ClassRoom({ session }) {
   const [liveCheckin, setLiveCheckin] = useState(undefined)
   const [alreadyResponded, setAlreadyResponded] = useState(false)
   const channelRef = useRef(null)
+
+  // Presence: only actual members register themselves in the room (per
+  // website.md — "members joining the student URL register presence"), so
+  // selfPayload stays null until membership resolves to a real row AND the
+  // avatar query has settled (data is undefined while loading, null if the
+  // user has never opened the avatar editor — most haven't: only ~12% of
+  // profiles have an avatars row live. Falling back to {} rather than
+  // gating on a row existing means those students still show up in the
+  // wall wearing BaseAvatar's own defaults, same as they'd see elsewhere.
+  const { data: avatarConfig, isLoading: avatarLoading } = useAvatarConfig(userId)
+  const selfPresence = membership && !avatarLoading ? { user_id: userId, ...(avatarConfig ?? {}) } : null
+  const presentAvatars = useClassPresence(classInfo?.id, selfPresence)
 
   // classInfo and utoronto verification don't depend on each other at all —
   // fire both the moment we have a slug/userId instead of one waiting on
@@ -232,6 +247,7 @@ export default function ClassRoom({ session }) {
             ? 'Your instructor is about to open a check-in…'
             : 'Waiting for your instructor to open the next check-in…'}
         </p>
+        <div style={S.wallWrap}><AvatarWall avatars={presentAvatars} /></div>
       </div>
     )
   }
@@ -291,6 +307,7 @@ const S = {
   eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)', marginBottom: 8 },
   title: { fontFamily: SERIF, fontSize: 28, color: 'var(--tx)', marginBottom: 8 },
   sub: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.5 },
+  wallWrap: { marginTop: 24 },
   error: { fontSize: 13, color: '#c04a4a', marginTop: 8 },
   primaryBtn: {
     marginTop: 20, padding: '12px 28px', borderRadius: 10, border: 'none',

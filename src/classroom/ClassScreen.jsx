@@ -3,6 +3,8 @@ import { useOutletContext } from 'react-router-dom'
 import QRCode from 'react-qr-code'
 import { supabase } from '../lib/supabase'
 import ResultsView from './ResultsView'
+import AvatarWall from './AvatarWall'
+import { useClassPresence } from './useClassPresence'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -20,6 +22,8 @@ export default function ClassScreen() {
   const [liveCheckin, setLiveCheckin] = useState(undefined)
   const [responseCount, setResponseCount] = useState(0)
   const respondedSetRef = useRef(new Set())
+  // Read-only: the projector isn't a "member" in the room, just watching.
+  const presentAvatars = useClassPresence(classInfo?.id, null)
 
   useEffect(() => {
     if (!classInfo) return
@@ -130,6 +134,7 @@ export default function ClassScreen() {
       <div style={S.idlePulse} />
       <p style={S.eyebrow}>Lecture Lounge</p>
       <h1 style={S.idleTitle}>{classInfo.name}</h1>
+      <div style={S.wallWrap}><AvatarWall avatars={presentAvatars} size={64} maxWidth={700} /></div>
       <div style={S.qrRow}>
         <QRCode value={joinUrl} size={180} fgColor="#1c1c1e" bgColor="#FCF0F5" />
         <p style={S.qrHint}>{joinUrl.replace(/^https?:\/\//, '')}</p>
@@ -147,6 +152,7 @@ const S = {
   idleTitle: { fontFamily: SERIF, fontSize: 56, color: 'var(--tx)', marginBottom: 32, maxWidth: 900 },
   openTitle: { fontFamily: SERIF, fontSize: 48, color: 'var(--tx)', marginBottom: 12, maxWidth: 900 },
   counter: { fontFamily: MONO, fontSize: 28, color: 'var(--pkd)', marginBottom: 32 },
+  wallWrap: { maxWidth: 700, marginBottom: 32 },
   qrRow: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, background: '#fff', padding: 24, borderRadius: 20 },
   qrHint: { fontFamily: MONO, fontSize: 14, color: 'var(--tx2)' },
   resultsScale: { transform: 'scale(1.6)', transformOrigin: 'top center', marginTop: 40 },
