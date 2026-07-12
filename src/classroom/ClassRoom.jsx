@@ -216,7 +216,7 @@ export default function ClassRoom({ session }) {
       )
     }
     if (liveCheckin?.status === 'results_ready') {
-      return <div style={S.card}><ResultsView checkinId={liveCheckin.id} /></div>
+      return <div style={S.card}><ResultsView checkinId={liveCheckin.id} session={session} /></div>
     }
     // idle (no live checkin), staged, closed, or already-responded-while-open
     return (

@@ -30,6 +30,8 @@ export default function ClassRemote({ session }) {
   const [lecture, setLecture] = useState(undefined)
   const [checkins, setCheckins] = useState([])
   const [responseCounts, setResponseCounts] = useState({})
+  const [questionsByCheckin, setQuestionsByCheckin] = useState({})
+  const [voteCounts, setVoteCounts] = useState({})
   const [connStatus, setConnStatus] = useState('connecting')
   const [actionError, setActionError] = useState(null)
   const [countdown, setCountdown] = useState(null)
@@ -38,28 +40,56 @@ export default function ClassRemote({ session }) {
   const respondedSetsRef = useRef({})
   const autoCloseFiredRef = useRef(new Set())
 
-  async function loadCheckins(lectureId) {
-    const { data } = await supabase.from('checkins').select('*').eq('lecture_id', lectureId).order('position', { ascending: true })
-    const rows = data ?? []
+  // Shapes an embedded checkins(*, class_questions(*)) result into the
+  // separate checkins/questionsByCheckin state shape the rest of the
+  // component uses. Pure — no fetching — so both the initial combined-embed
+  // load and later targeted refreshes can share it.
+  function applyCheckinsData(rows) {
+    // Leaving the embedded class_questions array on each checkin row is
+    // harmless (the render logic reads from questionsByCheckin, not from
+    // checkins[i].class_questions) — simpler than stripping it.
     setCheckins(rows)
+    const grouped = {}
+    for (const c of rows) {
+      grouped[c.id] = [...(c.class_questions ?? [])].sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+    }
+    setQuestionsByCheckin(grouped)
+  }
+
+  async function loadFollowUps(rows) {
     const open = rows.find((c) => c.status === 'open')
     if (open && !(open.id in responseCounts)) {
       const { count } = await supabase.from('checkin_responses').select('id', { count: 'exact', head: true }).eq('checkin_id', open.id)
       setResponseCounts((prev) => ({ ...prev, [open.id]: count ?? 0 }))
     }
+    const publishedIds = rows.flatMap((c) => (c.class_questions ?? []).filter((q) => q.status === 'published').map((q) => q.id))
+    if (publishedIds.length) {
+      const { data: votes } = await supabase.from('question_votes').select('question_id').in('question_id', publishedIds)
+      const counts = {}
+      for (const v of votes ?? []) counts[v.question_id] = (counts[v.question_id] ?? 0) + 1
+      setVoteCounts((prev) => ({ ...prev, ...counts }))
+    }
   }
 
-  // Initial resolution: one embedded query for lectures + their checkins
-  // instead of two sequential round trips — pick the nearest lecture
-  // client-side and seed its checkins straight from the already-fetched
-  // data. Later refreshes (after open/close/etc.) use loadCheckins directly,
-  // since at that point we already know which lecture we're on.
+  async function loadCheckins(lectureId) {
+    const { data } = await supabase
+      .from('checkins').select('*, class_questions(*)').eq('lecture_id', lectureId).order('position', { ascending: true })
+    const rows = data ?? []
+    applyCheckinsData(rows)
+    loadFollowUps(rows)
+  }
+
+  // Initial resolution: one embedded query for lectures + their checkins +
+  // questions instead of separate sequential round trips — pick the nearest
+  // lecture client-side and seed everything from the already-fetched data.
+  // Later refreshes (after open/close/publish/etc.) use loadCheckins
+  // directly, since at that point we already know which lecture we're on.
   useEffect(() => {
     if (!classInfo) return
     let cancelled = false
     supabase
       .from('lectures')
-      .select('*, checkins(*)')
+      .select('*, checkins(*, class_questions(*))')
       .eq('class_id', classInfo.id)
       .then(({ data }) => {
         if (cancelled) return
@@ -67,13 +97,8 @@ export default function ClassRemote({ session }) {
         setLecture(nearest)
         if (!nearest) return
         const rows = [...(nearest.checkins ?? [])].sort((a, b) => a.position - b.position)
-        setCheckins(rows)
-        const open = rows.find((c) => c.status === 'open')
-        if (open) {
-          supabase.from('checkin_responses').select('id', { count: 'exact', head: true }).eq('checkin_id', open.id).then(({ count }) => {
-            if (!cancelled) setResponseCounts((prev) => ({ ...prev, [open.id]: count ?? 0 }))
-          })
-        }
+        applyCheckinsData(rows)
+        loadFollowUps(rows)
       })
     return () => { cancelled = true }
   }, [classInfo?.id]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -103,6 +128,24 @@ export default function ClassRemote({ session }) {
         set.add(pid)
         respondedSetsRef.current[openCheckin.id] = set
         setResponseCounts((prev) => ({ ...prev, [openCheckin.id]: set.size }))
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(ch) }
+  }, [openCheckin?.id]) // eslint-disable-line react-hooks/exhaustive-deps -- only the id should re-trigger the subscription, not every field on the checkin row
+
+  // Live question feed for the open checkin — only an open checkin can
+  // receive new submissions (RLS only allows class_questions inserts while
+  // status='open'), so closed/results_ready checkins' questions never need
+  // a live subscription, just whatever loadCheckins already fetched.
+  useEffect(() => {
+    if (!openCheckin) return
+    const ch = supabase
+      .channel(`remote-questions-${openCheckin.id}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'class_questions', filter: `checkin_id=eq.${openCheckin.id}` }, (payload) => {
+        setQuestionsByCheckin((prev) => ({
+          ...prev,
+          [openCheckin.id]: [...(prev[openCheckin.id] ?? []), payload.new],
+        }))
       })
       .subscribe()
     return () => { supabase.removeChannel(ch) }
@@ -141,6 +184,24 @@ export default function ClassRemote({ session }) {
   async function handleExtend(checkin) {
     await supabase.from('checkins').update({ auto_close_seconds: (checkin.auto_close_seconds ?? 0) + 60 }).eq('id', checkin.id)
     loadCheckins(lecture.id)
+  }
+
+  async function handlePublishQuestion(question) {
+    const { error } = await supabase.from('class_questions').update({ status: 'published' }).eq('id', question.id)
+    if (error) { setActionError(error.message); return }
+    setQuestionsByCheckin((prev) => ({
+      ...prev,
+      [question.checkin_id]: (prev[question.checkin_id] ?? []).map((q) => (q.id === question.id ? { ...q, status: 'published' } : q)),
+    }))
+  }
+
+  async function handleAnswerQuestion(question) {
+    const { error } = await supabase.from('class_questions').update({ status: 'answered' }).eq('id', question.id)
+    if (error) { setActionError(error.message); return }
+    setQuestionsByCheckin((prev) => ({
+      ...prev,
+      [question.checkin_id]: (prev[question.checkin_id] ?? []).map((q) => (q.id === question.id ? { ...q, status: 'answered' } : q)),
+    }))
   }
 
   // Visible countdown; fires the actual close itself, but the checkin_responses
@@ -199,6 +260,8 @@ export default function ClassRemote({ session }) {
           checkins.map((c) => {
             const isOpen = c.status === 'open'
             const activities = (c.config?.activities ?? []).map((a) => ACTIVITY_LABELS[a] ?? a).join(' → ')
+            const collectsQuestions = (c.config?.activities ?? []).includes('question_box') && c.status !== 'planned'
+            const questions = questionsByCheckin[c.id] ?? []
             return (
               <div key={c.id} style={S.card}>
                 <div style={S.cardHeader}>
@@ -225,6 +288,34 @@ export default function ClassRemote({ session }) {
                   {c.status === 'closed' && <button style={S.bigBtn} onClick={() => handleShowResults(c)}>Show results</button>}
                   {c.status === 'results_ready' && <span style={S.doneLabel}>Results shown</span>}
                 </div>
+
+                {collectsQuestions && (
+                  <div style={S.questionsWrap}>
+                    <p style={S.questionsLabel}>Questions {questions.length > 0 && `(${questions.length})`}</p>
+                    {!questions.length ? (
+                      <p style={S.noQuestions}>None yet.</p>
+                    ) : (
+                      [...questions]
+                        .sort((a, b) => {
+                          if (a.status === 'published' && b.status === 'published') return (voteCounts[b.id] ?? 0) - (voteCounts[a.id] ?? 0)
+                          return new Date(a.created_at) - new Date(b.created_at)
+                        })
+                        .map((q) => (
+                          <div key={q.id} style={S.questionRow}>
+                            <div style={S.questionTextRow}>
+                              <span style={S.questionText}>{q.question_text}</span>
+                              {q.status === 'published' && <span style={S.voteCount}>▲ {voteCounts[q.id] ?? 0}</span>}
+                            </div>
+                            <div style={S.questionActions}>
+                              {q.status === 'submitted' && <button style={S.smallBtn} onClick={() => handlePublishQuestion(q)}>Publish</button>}
+                              {q.status === 'published' && <button style={S.smallBtn} onClick={() => handleAnswerQuestion(q)}>Mark answered</button>}
+                              {q.status === 'answered' && <span style={S.answeredLabel}>Answered</span>}
+                            </div>
+                          </div>
+                        ))
+                    )}
+                  </div>
+                )}
               </div>
             )
           })
@@ -267,4 +358,17 @@ const S = {
     color: 'var(--tx2)', fontSize: 15, cursor: 'pointer', fontFamily: 'inherit',
   },
   doneLabel: { fontSize: 13, color: 'var(--tx3)', padding: '10px 0' },
+  questionsWrap: { marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--bd)' },
+  questionsLabel: { fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx3)', marginBottom: 8 },
+  noQuestions: { fontSize: 13, color: 'var(--tx3)' },
+  questionRow: { background: 'var(--bg)', borderRadius: 10, padding: '10px 12px', marginBottom: 8 },
+  questionTextRow: { display: 'flex', justifyContent: 'space-between', gap: 10, marginBottom: 8 },
+  questionText: { fontSize: 14, color: 'var(--tx)', lineHeight: 1.4 },
+  voteCount: { fontFamily: MONO, fontSize: 12, color: 'var(--pkd)', whiteSpace: 'nowrap' },
+  questionActions: { display: 'flex' },
+  smallBtn: {
+    padding: '7px 14px', borderRadius: 8, border: 'none', background: 'var(--pk)',
+    color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+  },
+  answeredLabel: { fontFamily: MONO, fontSize: 11, color: 'var(--tx3)' },
 }

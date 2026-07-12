@@ -68,6 +68,93 @@ function CircumplexScatter({ points }) {
   )
 }
 
+// Published questions with upvotes, per website.md §29 ("Results: ...
+// published questions with upvotes"). Voting is only interactive when a
+// session is passed — ClassScreen renders ResultsView with no session
+// (zero-interaction projector display), so it naturally gets a read-only
+// view for free. "Your question" status uses the same RLS class_questions
+// already grants (own row readable regardless of status) — submitter sees
+// it move through the lifecycle even though nobody else can tell it's theirs.
+function QuestionsList({ checkinId, session }) {
+  const [questions, setQuestions] = useState(undefined)
+  const [voteCounts, setVoteCounts] = useState({})
+  const [myVotes, setMyVotes] = useState(new Set())
+  const [myQuestion, setMyQuestion] = useState(null)
+  const userId = session?.user?.id
+
+  useEffect(() => {
+    let cancelled = false
+    async function load() {
+      const { data: qs } = await supabase
+        .from('class_questions').select('id, question_text, status').eq('checkin_id', checkinId).eq('status', 'published')
+      if (cancelled) return
+      const list = qs ?? []
+      setQuestions(list)
+
+      const ids = list.map((q) => q.id)
+      if (ids.length) {
+        const { data: votes } = await supabase.from('question_votes').select('question_id, profile_id').in('question_id', ids)
+        if (cancelled) return
+        const counts = {}
+        const mine = new Set()
+        for (const v of votes ?? []) {
+          counts[v.question_id] = (counts[v.question_id] ?? 0) + 1
+          if (v.profile_id === userId) mine.add(v.question_id)
+        }
+        setVoteCounts(counts)
+        setMyVotes(mine)
+      }
+
+      if (userId) {
+        const { data: mine } = await supabase
+          .from('class_questions').select('status').eq('checkin_id', checkinId).eq('profile_id', userId).maybeSingle()
+        if (!cancelled) setMyQuestion(mine ?? null)
+      }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [checkinId, userId])
+
+  async function toggleVote(questionId) {
+    if (!userId) return
+    const hasVoted = myVotes.has(questionId)
+    if (hasVoted) {
+      await supabase.from('question_votes').delete().eq('question_id', questionId).eq('profile_id', userId)
+      setMyVotes((prev) => { const next = new Set(prev); next.delete(questionId); return next })
+      setVoteCounts((prev) => ({ ...prev, [questionId]: Math.max(0, (prev[questionId] ?? 1) - 1) }))
+    } else {
+      await supabase.from('question_votes').insert({ question_id: questionId, profile_id: userId })
+      setMyVotes((prev) => new Set(prev).add(questionId))
+      setVoteCounts((prev) => ({ ...prev, [questionId]: (prev[questionId] ?? 0) + 1 }))
+    }
+  }
+
+  if (questions === undefined || (!questions.length && !myQuestion)) return null
+
+  const sorted = [...questions].sort((a, b) => (voteCounts[b.id] ?? 0) - (voteCounts[a.id] ?? 0))
+
+  return (
+    <div style={S.section}>
+      <p style={S.subLabel}>Questions</p>
+      {myQuestion && (
+        <p style={S.myQuestionStatus}>
+          Your question: <strong>{myQuestion.status === 'submitted' ? 'under review' : myQuestion.status}</strong>
+        </p>
+      )}
+      {sorted.map((q) => (
+        <div key={q.id} style={S.questionRow}>
+          <span style={S.questionText}>{q.question_text}</span>
+          {userId ? (
+            <button style={S.voteBtn(myVotes.has(q.id))} onClick={() => toggleVote(q.id)}>▲ {voteCounts[q.id] ?? 0}</button>
+          ) : (
+            <span style={S.voteCountReadonly}>▲ {voteCounts[q.id] ?? 0}</span>
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function PacingBar({ counts }) {
   const max = Math.max(1, ...counts)
   return (
@@ -86,7 +173,7 @@ function PacingBar({ counts }) {
 // Anonymized results via get_checkin_mood_results RPC — checkin_responses
 // itself grants no cross-member read, so this is the only way a student
 // sees the aggregate at all (own row flagged, others unlinked from identity).
-export default function ResultsView({ checkinId }) {
+export default function ResultsView({ checkinId, session }) {
   const [results, setResults] = useState(undefined)
 
   useEffect(() => {
@@ -123,6 +210,8 @@ export default function ResultsView({ checkinId }) {
         </div>
       )}
 
+      <QuestionsList checkinId={checkinId} session={session} />
+
       {!moodPoints.length && !hasPacing && <p style={S.hint}>No results to show for this check-in.</p>}
     </div>
   )
@@ -143,4 +232,16 @@ const S = {
   pacingFill: { width: '100%', background: 'var(--pk)', borderRadius: 4, minHeight: 2 },
   pacingCount: { fontSize: 11, color: 'var(--tx3)', marginTop: 4, fontFamily: MONO },
   pacingLabels: { position: 'absolute', bottom: 0, left: 0, right: 0, display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--tx3)' },
+  myQuestionStatus: { fontSize: 12, color: 'var(--tx2)', marginBottom: 10 },
+  questionRow: {
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
+    background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 10, padding: '10px 12px', marginBottom: 8, textAlign: 'left',
+  },
+  questionText: { fontSize: 13, color: 'var(--tx)', lineHeight: 1.4 },
+  voteBtn: (active) => ({
+    fontFamily: MONO, fontSize: 12, whiteSpace: 'nowrap', padding: '5px 10px', borderRadius: 8, cursor: 'pointer',
+    border: `1px solid ${active ? 'var(--pk)' : 'var(--bds)'}`,
+    background: active ? 'var(--pkb)' : 'var(--bgc)', color: active ? 'var(--pkd)' : 'var(--tx2)',
+  }),
+  voteCountReadonly: { fontFamily: MONO, fontSize: 12, color: 'var(--tx3)', whiteSpace: 'nowrap' },
 }
