@@ -33,6 +33,7 @@ export default function ClassScreen() {
       .select('id, status, config, lecture_id, lectures!inner(class_id)')
       .eq('lectures.class_id', classInfo.id)
       .neq('status', 'planned')
+      .is('dismissed_at', null)
       .order('created_at', { ascending: false })
       .limit(1)
       .then(({ data }) => {
@@ -58,6 +59,11 @@ export default function ClassScreen() {
         }))
       })
     }
+    channel.on('broadcast', { event: 'dismissed' }, () => {
+      respondedSetRef.current = new Set()
+      setResponseCount(0)
+      setLiveCheckin(null)
+    })
     channel.subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [classInfo?.id]) // eslint-disable-line react-hooks/exhaustive-deps

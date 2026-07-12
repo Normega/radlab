@@ -92,7 +92,12 @@ export default function ClassRoom({ session }) {
   }, [classInfo, userId])
 
   // Restore current check-in state from the DB on mount/reconnect — most
-  // recently touched non-planned checkin for this class.
+  // recently touched non-planned, non-dismissed checkin for this class.
+  // Excluding dismissed ones matters: without it, a checkin left in
+  // results_ready forever (nothing else resets it) would keep "restoring"
+  // as the live one on every reload, so the true idle/lobby view — and the
+  // avatar wall, which only renders there — could become unreachable after
+  // the first check-in of a term until the instructor explicitly dismisses.
   useEffect(() => {
     if (!classInfo) return
     let cancelled = false
@@ -101,6 +106,7 @@ export default function ClassRoom({ session }) {
       .select('id, status, config, lecture_id, lectures!inner(class_id)')
       .eq('lectures.class_id', classInfo.id)
       .neq('status', 'planned')
+      .is('dismissed_at', null)
       .order('created_at', { ascending: false })
       .limit(1)
       .then(({ data }) => {
@@ -126,6 +132,10 @@ export default function ClassRoom({ session }) {
         }))
       })
     }
+    // Not a checkin status — a distinct signal meaning "there is no live
+    // checkin," so this goes straight to null rather than through the
+    // status-object shape the loop above builds.
+    channel.on('broadcast', { event: 'dismissed' }, () => setLiveCheckin(null))
     channel.subscribe()
     channelRef.current = channel
     return () => { supabase.removeChannel(channel); channelRef.current = null }

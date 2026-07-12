@@ -188,6 +188,19 @@ export default function ClassRemote({ session }) {
     loadCheckins(lecture.id)
   }
 
+  // Without this, a results_ready checkin restores as "the live one" on
+  // every ClassRoom/ClassScreen reload forever (nothing else resets it) —
+  // the lobby, and the avatar wall that only renders there, become
+  // unreachable after the first check-in of a term. Persisted (not just
+  // broadcast) so a page reload doesn't revert to showing stale results.
+  async function handleDismiss(checkin) {
+    setActionError(null)
+    const { error } = await supabase.from('checkins').update({ dismissed_at: new Date().toISOString() }).eq('id', checkin.id)
+    if (error) { setActionError(error.message); return }
+    broadcast('dismissed', checkin.id)
+    loadCheckins(lecture.id)
+  }
+
   async function handleExtend(checkin) {
     await supabase.from('checkins').update({ auto_close_seconds: (checkin.auto_close_seconds ?? 0) + 60 }).eq('id', checkin.id)
     loadCheckins(lecture.id)
@@ -295,9 +308,14 @@ export default function ClassRemote({ session }) {
                   )}
                   {c.status === 'closed' && <button style={S.bigBtn} onClick={() => handleShowResults(c)}>Show results</button>}
                   {c.status === 'results_ready' && (
-                    hasQuiz && !c.quiz_revealed_at
-                      ? <button style={S.bigBtn} onClick={() => handleRevealQuiz(c)}>Reveal quiz answers</button>
-                      : <span style={S.doneLabel}>{hasQuiz ? 'Quiz answers revealed' : 'Results shown'}</span>
+                    <>
+                      {hasQuiz && !c.quiz_revealed_at
+                        ? <button style={S.bigBtn} onClick={() => handleRevealQuiz(c)}>Reveal quiz answers</button>
+                        : <span style={S.doneLabel}>{hasQuiz ? 'Quiz answers revealed' : 'Results shown'}</span>}
+                      {c.dismissed_at
+                        ? <span style={S.doneLabel}>Back in lobby</span>
+                        : <button style={S.ghostBtn} onClick={() => handleDismiss(c)}>Back to lobby</button>}
+                    </>
                   )}
                 </div>
 
