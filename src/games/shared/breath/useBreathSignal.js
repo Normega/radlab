@@ -94,6 +94,7 @@ export function useBreathSignal({ isSimMode = false, autoRecal = true, mirrorMod
   // confidence-driven stopping.
   const calibSessionRef     = useRef(null)
   const calibFilterStateRef = useRef(initFilterState3())
+  const calibTraceRef       = useRef(null)   // last mirror-calibration trace (for offline tuning)
 
   // Derived-feature state
   const phaseDetectorRef = useRef(createPhaseDetector())
@@ -320,7 +321,7 @@ export function useBreathSignal({ isSimMode = false, autoRecal = true, mirrorMod
         }
         const a = sess.assess(timestamp)
         signalRef.current.calib = a
-        if (a.status === 'ready') { calibSessionRef.current = null; runFit() }
+        if (a.status === 'ready') { calibTraceRef.current = sess.getTrace(); calibSessionRef.current = null; runFit() }
       }
     }
 
@@ -427,6 +428,7 @@ export function useBreathSignal({ isSimMode = false, autoRecal = true, mirrorMod
   // after a timeout, or a game auto-accepts). Uses whatever's collected.
   const acceptMirrorNow = useCallback(() => {
     if (!calibSessionRef.current) return
+    calibTraceRef.current = calibSessionRef.current.getTrace()
     calibSessionRef.current = null
     if (isSimMode) {
       setCalibReviewData({ fitR: 0.92, lagMs: 50, peakErrorMs: 120, modelLabel: 'sim-mlr3w', pacerPts: [], beltPts: [] })
@@ -510,6 +512,7 @@ export function useBreathSignal({ isSimMode = false, autoRecal = true, mirrorMod
         const a = sess.assess(now)
         signalRef.current.calib = a
         if (a.status === 'ready') {
+          calibTraceRef.current = sess.getTrace()
           calibSessionRef.current = null
           setCalibReviewData({ fitR: 0.92, lagMs: 50, peakErrorMs: 120, modelLabel: 'sim-mlr3w', pacerPts: [], beltPts: [] })
           setCalibPhase('REVIEW')
@@ -584,7 +587,7 @@ export function useBreathSignal({ isSimMode = false, autoRecal = true, mirrorMod
     calibPhase, calibReviewData,
     startCalibration, beginCalibCollection, acceptCalibration, redoCalibration, resetCalibration,
     // mirror (adaptive, materializing) calibration
-    beginMirrorCollection, acceptMirrorNow,
+    beginMirrorCollection, acceptMirrorNow, calibTraceRef,
     // sim
     startSimulation, setSimPeriodMs, acceptSimCalib,
     // live data

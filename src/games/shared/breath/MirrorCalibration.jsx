@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import AvatarBreathPacer from '../../EbbAndFlow/components/AvatarBreathPacer'
 import { useBreathCycle } from '../../EbbAndFlow/useBreathCycle'
 import CalibReviewPanel from '../../BreathBelt/components/CalibReviewPanel'
@@ -76,7 +76,7 @@ export default function MirrorCalibration({ breath, avatarProps, breathPeriodMs 
 
   // Materialization: ghost → solid as confidence climbs.
   const conf   = calib?.confidence ?? 0
-  const opacity = 0.10 + 0.90 * conf
+  const opacity = 0.06 + 0.94 * conf   // face materializes over an always-visible skin disc
   const blurPx  = (1 - conf) * 7
   const pct     = Math.round(conf * 100)
   const timedOut = calib?.status === 'timeout'
@@ -85,7 +85,19 @@ export default function MirrorCalibration({ breath, avatarProps, breathPeriodMs 
     <div className="flex flex-col items-center gap-6 px-6 py-8" style={{ maxWidth: 520, margin: '0 auto' }}>
       {showAvatar && (
         <div style={{ position: 'relative', width: avatarSize, height: avatarSize }}>
+          {/* Always-visible head outline so the avatar is never invisible: at
+              low confidence it's just an empty circle; the face materializes
+              inside it as confidence climbs, and the outline fades out as the
+              real face edge takes over. */}
           <div style={{
+            position: 'absolute', left: avatarSize * 0.185, top: avatarSize * 0.21,
+            width: avatarSize * 0.63, height: avatarSize * 0.72, borderRadius: '50%',
+            border: '2px solid rgba(0,0,0,0.16)', background: 'transparent',
+            opacity: Math.max(0, 1 - conf * 1.3),
+            transition: 'opacity 160ms linear',
+          }} />
+          <div style={{
+            position: 'relative',
             opacity, filter: `blur(${blurPx.toFixed(1)}px)`,
             transition: 'opacity 160ms linear, filter 160ms linear',
           }}>

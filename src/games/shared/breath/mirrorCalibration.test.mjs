@@ -144,6 +144,25 @@ console.log('\nMirror calibration primitives\n')
   ok(ranger.normalize(0.7) === 0.7, 'ranger: passes value through before ranging')
 }
 
+// ── rhythm: a secondary intra-breath bump must not be double-counted ──
+// Regression for the ~33% calibration-confidence cap: naive peak-picking latched
+// onto a harmonic bump and reported ~2× the rate, inflating period CV and
+// false-failing the rhythm gate. The zero-crossing detector must see one breath.
+{
+  const mon = createCalibrationMonitor()
+  let last = null
+  for (let t = 0; t <= 24000; t += DT) {
+    // fundamental at 12 bpm + a smaller in-phase 2nd harmonic (the "double bump")
+    const b = Math.sin(2 * Math.PI * t / 5000) + 0.35 * Math.sin(4 * Math.PI * t / 5000)
+    const amp = 0.5 * b
+    mon.push(t, { fx: amp + 0.01 * (Math.sin(t * 7.1)), fy: 0, fz: 0, proj: amp + 0.5, pacer: (1 - Math.cos(2 * Math.PI * t / 5000)) / 2 })
+    if (t % 250 === 0) last = mon.assess(t)
+  }
+  // ~12 bpm over the ~20 s buffer ⇒ ~4 breaths, NOT ~8
+  ok(last.breaths >= 3 && last.breaths <= 6, `double-bump: counts true breaths not harmonics (got ${last.breaths})`)
+  ok(last.gates.rhythm, 'double-bump: rhythm gate passes on regular breathing')
+}
+
 // ── adaptive session: a good follower converges to 'ready' after the minimum ──
 {
   const startMs = 100000

@@ -274,6 +274,28 @@ function MirrorPreview({ breath }) {
     return levelRef.current
   }, [breath])
 
+  // Download the last mirror-calibration trace (raw axes + pacer + per-assess
+  // confidence factors) for offline tuning of the confidence engine.
+  const trace = breath.calibTraceRef?.current
+  const downloadCalib = () => {
+    if (!trace) return
+    const payload = {
+      meta: {
+        kind: 'mirror-calib-trace', recordedAt: new Date().toISOString(),
+        calib: breath.calibReviewData,
+        weights: breath.mlrWeightsRef?.current?.weights ?? null,
+        userAgent: navigator.userAgent,
+      },
+      ...trace,
+    }
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
+    const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url; a.download = `mirror-calib-${stamp}.json`
+    document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url)
+  }
+
   return (
     <Panel wide>
       <h2 style={S.h2}>Mirror preview <span style={{ fontSize: 13, color: 'var(--tx3)' }}>(avatar follows your breath)</span></h2>
@@ -293,6 +315,11 @@ function MirrorPreview({ breath }) {
         The avatar expands as you inhale and settles as you exhale — a direct amplitude
         mapping. Lower smoothing = snappier but jitterier; higher = calmer but laggier.
       </p>
+      {trace && (
+        <button onClick={downloadCalib} style={S.secondaryBtn}>
+          ⤓ Calibration data ({trace.samples?.length ?? 0} samples)
+        </button>
+      )}
     </Panel>
   )
 }

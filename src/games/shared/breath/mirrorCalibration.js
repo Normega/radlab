@@ -107,15 +107,31 @@ function axisAngleDeg(a, b) {
   return Math.acos(clamp01(dot / (na * nb))) * 180 / Math.PI
 }
 
-// Local maxima of a {t,v} series, min-separated in time. Used for rhythm checks.
-function findPeaks(pts, minSepMs) {
-  const peaks = []
-  for (let i = 1; i < pts.length - 1; i++) {
-    if (pts[i].v > pts[i - 1].v && pts[i].v >= pts[i + 1].v) {
-      if (!peaks.length || pts[i].t - peaks[peaks.length - 1].t > minSepMs) peaks.push(pts[i])
+// Breath onsets = upward zero-crossings of the mean-subtracted projection, with
+// a hysteresis deadband (must dip below −dead before the next crossing counts)
+// and a refractory min-separation. Robust to the secondary intra-breath bumps
+// that make naive local-maximum peak-picking report ~2× the true rate (validated
+// against real belt recordings: 27 bpm → 12 bpm, CV 0.37 → 0.20). Returns onset
+// timestamps.
+function breathOnsets(rows, deadFrac = 0.12, minSepMs = 2000) {
+  if (rows.length < 4) return []
+  const proj = rows.map(r => r.proj)
+  const m = mean(proj)
+  const sorted = [...proj].sort((a, b) => a - b)
+  const range = (percentile(sorted, 0.95) - percentile(sorted, 0.05)) || 1e-6
+  const dead = deadFrac * range
+  const onsets = []
+  let armed = false
+  for (let i = 0; i < rows.length; i++) {
+    const v = proj[i] - m
+    if (v < -dead) armed = true
+    else if (v > dead && armed) {
+      if (!onsets.length || rows[i].t - onsets[onsets.length - 1] > minSepMs) {
+        onsets.push(rows[i].t); armed = false
+      }
     }
   }
-  return peaks
+  return onsets
 }
 
 // ── 1. Live amplitude auto-ranger ───────────────────────────────────────────
@@ -184,14 +200,15 @@ export function createCalibrationMonitor({
   smoothTau      = 0.35,    // EMA smoothing of the composite (0..1 per assess)
   minSamples     = 120,     // ~5 s at 25 Hz before assess is trustworthy
   // factor ramps (raw metric → 0..1)
-  trackingRamp   = [0.50, 0.88],   // Pearson r vs pacer
+  trackingRamp   = [0.45, 0.85],   // Pearson r vs pacer (lag-aligned — see below)
+  trackingMaxLagSamples = 20,      // search belt-vs-pacer lag up to ~0.8 s @ 25 Hz
   clarityRamp    = [0.55, 0.90],   // EVR (variance captured by top axis)
   lockRampDeg    = [22, 5],        // axis angle between window halves (note: hi<lo → inverted)
   strengthRamp   = [3, 12],        // breath-excursion / noise-floor ratio
-  // gates
-  rhythmCvMax    = 0.35,           // max CV of inter-peak intervals to pass
-  rhythmBpm      = [7, 26],        // plausible natural-breathing band
-  gatePenalty    = 0.45,           // multiply confidence by this when a gate fails
+  // rhythm gate (breaths detected as detrended upward zero-crossings, not peaks)
+  rhythmCvMax    = 0.40,           // max CV of inter-breath intervals to pass
+  rhythmBpm      = [5, 24],        // plausible breathing band (natural → slow/resonance)
+  gatePenalty    = 0.70,           // soft penalty when a gate fails (was a harsh 0.45 that hard-capped a good fit)
   motionTvMult   = 6,              // totalVar spike above this × its own median = motion
 } = {}) {
   const buf = []            // { t, fx, fy, fz, proj, pacer }
@@ -224,10 +241,19 @@ export function createCalibrationMonitor({
       }
       if (!ready) return blank
 
-      // ── tracking: correlation with the paced avatar ──
+      // ── tracking: lag-aligned correlation with the paced avatar ──
+      // The belt lags the pacer by physiology + filter delay, so a zero-lag
+      // correlation understates a genuinely good shape match (this is why a
+      // calibration whose review graph looks great could still read low live).
+      // Take the best |r| over a small lag range (belt delayed vs pacer).
       const proj  = w.map(p => p.proj)
       const pacer = w.map(p => p.pacer)
-      const r = Math.abs(pearson(proj, pacer))
+      let r = 0
+      const maxLag = Math.min(trackingMaxLagSamples, proj.length - 4)
+      for (let lag = 0; lag <= maxLag; lag++) {
+        const rr = Math.abs(pearson(proj.slice(lag), pacer.slice(0, pacer.length - lag)))
+        if (rr > r) r = rr
+      }
       const tracking = ramp(r, trackingRamp[0], trackingRamp[1])
 
       // ── clarity: EVR = λ1 / traceΣ over the window ──
@@ -261,15 +287,25 @@ export function createCalibrationMonitor({
       const snr = excursion / noise
       const strength = ramp(snr, strengthRamp[0], strengthRamp[1])
 
-      // ── rhythm gate: regular, in-band peaks ──
-      const peaks = findPeaks(w.map(p => ({ t: p.t, v: p.proj })), 1500)
+      // ── rhythm gate: regular, in-band breaths ──
+      // Breaths are counted as upward zero-crossings of the detrended projection
+      // (see breathOnsets) rather than local maxima: naive peak-picking latched
+      // onto secondary intra-breath bumps and reported ~2× the true rate, which
+      // inflated the period CV and made this gate false-fail on good breathing —
+      // the root cause of calibration confidence stalling near the gate penalty.
+      // Detect over the full buffer (up to ~20 s), not the 10 s factor window —
+      // slow breathing yields too few breaths in 10 s to judge regularity.
+      const onsets = breathOnsets(buf, 0.12, 2000)
       const iois = []
-      for (let i = 1; i < peaks.length; i++) iois.push(peaks[i].t - peaks[i - 1].t)
-      let rhythm = false, breaths = peaks.length
+      for (let i = 1; i < onsets.length; i++) iois.push(onsets[i] - onsets[i - 1])
+      let rhythm = false, breaths = onsets.length
       if (iois.length >= 2) {
         const m = mean(iois), cv = std(iois) / (m || 1)
         const bpm = 60000 / m
         rhythm = cv <= rhythmCvMax && bpm >= rhythmBpm[0] && bpm <= rhythmBpm[1]
+      } else if (iois.length === 1) {
+        const bpm = 60000 / iois[0]   // too few for a CV — accept if the one interval is in-band
+        rhythm = bpm >= rhythmBpm[0] && bpm <= rhythmBpm[1]
       }
 
       // ── motion gate: totalVar spike vs its own rolling median ──
@@ -280,10 +316,12 @@ export function createCalibrationMonitor({
       const motion = !(tvMed > 1e-12 && tv > motionTvMult * tvMed)
 
       // ── composite: weighted geometric mean of factors, gated ──
-      // lock is weighted a touch lower — it's the last factor to converge.
+      // Tracking (does the breath follow the pace?) carries the most weight — a
+      // clean phase/shape match is the meaningful calibration signal; lock is
+      // weighted lowest as it's the last factor to converge.
       const factors = { tracking, clarity, lock, strength }
       let confidence = weightedGeomean([
-        [tracking, 1.0], [clarity, 1.0], [strength, 1.0], [lock, 0.6],
+        [tracking, 1.6], [clarity, 1.0], [strength, 0.8], [lock, 0.6],
       ])
       if (!rhythm) confidence *= gatePenalty
       if (!motion) confidence *= gatePenalty
@@ -308,7 +346,7 @@ export function createCalibrationMonitor({
         // all healthy — surface the weakest factor as a gentle nudge
         [['tracking', tracking], ['clarity', clarity], ['lock', lock], ['strength', strength]]
           .sort((a, b) => a[1] - b[1])[0][0]
-      const confident = smoothed >= 0.85
+      const confident = smoothed >= 0.82
 
       return {
         confidence: smoothed,
@@ -386,7 +424,7 @@ export function createCalibrationSession({
   minMs         = 20000,    // don't accept before this (need stable stats)
   maxMs         = 60000,    // ceiling — past here, status becomes 'timeout'
   minBreaths    = 4,        // ...and at least this many breaths seen
-  acceptC       = 0.85,     // confidence to accept at
+  acceptC       = 0.82,     // confidence to accept at
   acceptHoldMs  = 3000,     // ...sustained this long
   refreshMs     = 250,      // axis re-projection cadence
 } = {}) {
@@ -397,12 +435,19 @@ export function createCalibrationSession({
 
   const pacerAt = (t) => (1 - Math.cos(2 * Math.PI * (t - startMs) / periodMs)) / 2
 
+  // Optional trace for offline tuning of the confidence engine on real
+  // calibration data (the play-time recorder only captures post-calibration).
+  const traceSamples = []   // { t, fx, fy, fz, pacer, proj }
+  const traceAssess  = []   // { t, confidence, sub, gates, breaths, status }
+
   return {
     ingest(t, s) {
       projector.push(t, s.fx, s.fy, s.fz)
       if (t - lastRefresh >= refreshMs) { projector.refresh(); lastRefresh = t }
       const proj = projector.project(s.fx, s.fy, s.fz)
-      monitor.push(t, { fx: s.fx, fy: s.fy, fz: s.fz, proj, pacer: pacerAt(t) })
+      const pacer = pacerAt(t)
+      monitor.push(t, { fx: s.fx, fy: s.fy, fz: s.fz, proj, pacer })
+      traceSamples.push({ t, fx: s.fx, fy: s.fy, fz: s.fz, pacer, proj })
     },
     assess(now) {
       const a = monitor.assess(now)
@@ -413,7 +458,11 @@ export function createCalibrationSession({
       let status = 'collecting'
       if (elapsedMs >= minMs && a.breaths >= minBreaths && heldOk) status = 'ready'
       else if (elapsedMs >= maxMs) status = 'timeout'
+      traceAssess.push({ t: now, confidence: a.confidence, sub: a.sub, gates: a.gates, breaths: a.breaths, status })
       return { ...a, elapsedMs, status }
+    },
+    getTrace() {
+      return { periodMs, startMs, axis: projector.axis, samples: traceSamples, assess: traceAssess }
     },
     get axis() { return projector.axis },
     reset() { projector.reset(); monitor.reset(); confidentSince = null; lastRefresh = 0 },
