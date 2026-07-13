@@ -242,11 +242,7 @@ export default function App() {
         <ScrollToTop />
         <Suspense fallback={<RouteFallback />}>
         <Routes>
-          <Route path="/" element={
-            <PublicOnlyRoute session={session} role={role}>
-              <Landing session={session} />
-            </PublicOnlyRoute>
-          } />
+          <Route path="/"         element={<Landing session={session} />} />
           <Route path="/platform" element={<PlatformPage session={session} />} />
           <Route path="/login"  element={<PublicOnlyRoute session={session} role={role}><Login /></PublicOnlyRoute>} />
           <Route path="/signup" element={<PublicOnlyRoute session={session} role={role}><Signup /></PublicOnlyRoute>} />
