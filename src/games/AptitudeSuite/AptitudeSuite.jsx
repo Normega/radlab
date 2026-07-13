@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { supabase as globalSupabase } from '../../lib/supabase';
+import { DEMO_SECS, isDemoMode } from '../../lib/demoMode';
 import { useSessionTimer } from './hooks/useSessionTimer';
 import { useAnagram } from './hooks/useAnagram';
 import { useFluency } from './hooks/useFluency';
@@ -15,6 +16,7 @@ export default function AptitudeSuite({
   session,
   userId:          userIdProp,
   studyId,
+  studyMode = false,
   supabaseClient,
   onSessionComplete,
   isSimMode = false,
@@ -121,7 +123,12 @@ export default function AptitudeSuite({
     });
   }, []);
 
-  const timer = useSessionTimer({ onExpire: handleExpire });
+  // Admin quick-demo (?demo=1) shortens the session; never honored in studies
+  const demo  = !studyMode && !studyId && !isSimMode && isDemoMode();
+  const timer = useSessionTimer({
+    onExpire: handleExpire,
+    ...(demo ? { durationMs: DEMO_SECS * 1000 } : {}),
+  });
 
   // ── Begin ─────────────────────────────────────────────────────────────────
 

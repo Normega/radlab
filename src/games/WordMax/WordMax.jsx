@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
+import { DEMO_SECS, isDemoMode } from '../../lib/demoMode';
 import {
   SESSION_DURATION_MS, NUM_SETS, MIN_WORD_LENGTH,
   DICTIONARY_URL, AMBER_THRESHOLD_S, RED_THRESHOLD_S,
@@ -34,6 +35,8 @@ const SCREEN = { INTRO: 'INTRO', PLAYING: 'PLAYING', COMPLETE: 'COMPLETE' };
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function WordMax({ studyMode = false, userId: userIdProp = null, onSessionComplete = null, supabaseClient: supabaseClientProp = null }) {
+  // Admin quick-demo (?demo=1) shortens the session; never honored in studies
+  const sessionMs = !studyMode && isDemoMode() ? DEMO_SECS * 1000 : SESSION_DURATION_MS;
   // Dictionary
   const wordSetRef        = useRef(null);
   const [dictLoading, setDictLoading] = useState(true);
@@ -97,7 +100,7 @@ export default function WordMax({ studyMode = false, userId: userIdProp = null, 
     setScreen(SCREEN.COMPLETE);
   }, [sets, setIndex]);
 
-  const { secondsRemaining, start: startTimer, stop: stopTimer, startTimeRef } = useGameTimer({ onExpire: handleExpire });
+  const { secondsRemaining, start: startTimer, stop: stopTimer, startTimeRef } = useGameTimer({ onExpire: handleExpire, durationMs: sessionMs });
 
   // ── Letter set hook ─────────────────────────────────────────────────────────
 
@@ -191,8 +194,8 @@ export default function WordMax({ studyMode = false, userId: userIdProp = null, 
   useEffect(() => {
     if (screen !== SCREEN.COMPLETE || results.length === 0) return;
     const elapsedMs     = startTimeRef.current
-      ? Math.min(Date.now() - startTimeRef.current, SESSION_DURATION_MS)
-      : SESSION_DURATION_MS;
+      ? Math.min(Date.now() - startTimeRef.current, sessionMs)
+      : sessionMs;
     const setsCompleted = results.filter(r => r.word).length;
     const totalScore    = results.reduce((sum, r) => sum + (r.score || 0), 0);
 
@@ -232,7 +235,7 @@ export default function WordMax({ studyMode = false, userId: userIdProp = null, 
   // ── Computed display values ─────────────────────────────────────────────────
 
   const color       = timerColor(secondsRemaining);
-  const pct         = (secondsRemaining / (SESSION_DURATION_MS / 1000)) * 100;
+  const pct         = (secondsRemaining / (sessionMs / 1000)) * 100;
   const usedIndices = screen === SCREEN.PLAYING ? getUsedIndices(input) : [];
   const totalScore  = results.reduce((s, r) => s + (r.score || 0), 0);
 

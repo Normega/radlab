@@ -1,8 +1,8 @@
 import { useRef, useState, useEffect } from 'react';
 import { SESSION_DURATION_MS } from '../constants';
 
-export function useSessionTimer({ onExpire, autoStart = false }) {
-  const [secondsRemaining, setSecondsRemaining] = useState(SESSION_DURATION_MS / 1000);
+export function useSessionTimer({ onExpire, autoStart = false, durationMs = SESSION_DURATION_MS }) {
+  const [secondsRemaining, setSecondsRemaining] = useState(durationMs / 1000);
   const [running, setRunning] = useState(false);
   const startTimeRef  = useRef(null);
   const intervalRef   = useRef(null);
@@ -21,7 +21,7 @@ export function useSessionTimer({ onExpire, autoStart = false }) {
     if (!running) return;
     intervalRef.current = setInterval(() => {
       const elapsed = Date.now() - startTimeRef.current;
-      const remaining = Math.max(0, SESSION_DURATION_MS - elapsed);
+      const remaining = Math.max(0, durationMs - elapsed);
       setSecondsRemaining(Math.ceil(remaining / 1000));
       if (remaining <= 0 && !expiredRef.current) {
         expiredRef.current = true;
@@ -31,7 +31,7 @@ export function useSessionTimer({ onExpire, autoStart = false }) {
       }
     }, 250);
     return () => clearInterval(intervalRef.current);
-  }, [running]);
+  }, [running, durationMs]);
 
   useEffect(() => {
     if (autoStart) start();

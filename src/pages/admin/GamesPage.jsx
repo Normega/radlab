@@ -11,9 +11,11 @@ const GAMES = [
   { name: 'Farm Joy',      slug: 'farm-joy',       badge: 'Values clarification',         public: true  },
   { name: 'Ebb & Flow',    slug: 'ebb-flow',       badge: 'Interoception · Breath sync',  public: true  },
   // ── Study / researcher tools ───────────────────────────────────────────
-  { name: 'AptitudeSuite', slug: 'aptitude-suite', badge: 'Cognitive assessment',         public: false },
-  { name: 'WordMax',       slug: 'word-max',       badge: 'Language · Working memory',    public: false },
-  { name: 'ColorMax',      slug: 'color-max',      badge: 'Attention · Motor',            public: false },
+  // `timed: true` = game has a session countdown; shows a Quick demo link
+  // that launches it with the timer cut to 20s (?demo=1)
+  { name: 'AptitudeSuite', slug: 'aptitude-suite', badge: 'Cognitive assessment',         public: false, timed: true },
+  { name: 'WordMax',       slug: 'word-max',       badge: 'Language · Working memory',    public: false, timed: true },
+  { name: 'ColorMax',      slug: 'color-max',      badge: 'Attention · Motor',            public: false, timed: true },
   { name: 'Breath Belt',   slug: 'breath-belt',    badge: 'Physio · Breath sync',         public: false, note: 'Requires Polar H10 belt' },
 ]
 
@@ -43,7 +45,7 @@ function Section({ title, games }) {
   )
 }
 
-function GameCard({ name, slug, badge, note }) {
+function GameCard({ name, slug, badge, note, timed }) {
   return (
     <div style={S.card}>
       <div style={S.cardBody}>
@@ -51,9 +53,22 @@ function GameCard({ name, slug, badge, note }) {
         <h3 style={S.gameName}>{name}</h3>
         {note && <p style={S.note}>{note}</p>}
       </div>
-      <Link to={`/games/${slug}`} style={S.reviewLink} target="_blank" rel="noreferrer">
-        Review →
-      </Link>
+      <div style={S.linkRow}>
+        <Link to={`/games/${slug}`} style={S.reviewLink} target="_blank" rel="noreferrer">
+          Review →
+        </Link>
+        {timed && (
+          <Link
+            to={`/games/${slug}?demo=1`}
+            style={S.demoLink}
+            target="_blank"
+            rel="noreferrer"
+            title="Timer cut to 20 seconds"
+          >
+            Quick demo →
+          </Link>
+        )}
+      </div>
     </div>
   )
 }
@@ -106,11 +121,22 @@ const S = {
     margin: 0, lineHeight: 1.4,
   },
 
-  reviewLink: {
-    display: 'block', padding: '10px 18px',
+  linkRow: {
+    display: 'flex',
     background: 'var(--bgp)', borderTop: '1px solid var(--pkb)',
+  },
+  reviewLink: {
+    display: 'block', padding: '10px 18px', flex: 1,
     fontFamily: '"Space Mono",monospace', fontSize: 11,
     letterSpacing: '0.1em', textTransform: 'uppercase',
     color: 'var(--pk)', textDecoration: 'none',
+  },
+  demoLink: {
+    display: 'block', padding: '10px 18px',
+    borderLeft: '1px solid var(--pkb)',
+    fontFamily: '"Space Mono",monospace', fontSize: 11,
+    letterSpacing: '0.1em', textTransform: 'uppercase',
+    color: 'var(--tx3)', textDecoration: 'none',
+    whiteSpace: 'nowrap',
   },
 }

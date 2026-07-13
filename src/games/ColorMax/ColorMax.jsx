@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
+import { DEMO_SECS, isDemoMode } from '../../lib/demoMode'
 import { COLORS, W, H, drawPage } from './drawings'
 import './ColorMax.css'
 
@@ -89,17 +90,14 @@ function mmss(secs) {
   return `${m}:${s < 10 ? '0' : ''}${s}`
 }
 
-function fmtMs(ms) {
-  const s = Math.round(ms / 1000)
-  return mmss(s)
-}
-
 // ── ColorMax ───────────────────────────────────────────────────────────────
 export default function ColorMax({ session, studyMode = false, userId: userIdProp = null, onSessionComplete = null, supabaseClient: supabaseClientProp = null }) {
   const db = supabaseClientProp ?? supabase
+  // Admin quick-demo (?demo=1) shortens the session; never honored in studies
+  const totalSecs = !studyMode && isDemoMode() ? DEMO_SECS : TOTAL_SECS
   // ── React state (drives re-renders) ─────────────────────────────────────
   const [phase,    setPhase]    = useState('start')   // 'start' | 'active' | 'complete'
-  const [secsLeft, setSecsLeft] = useState(TOTAL_SECS)
+  const [secsLeft, setSecsLeft] = useState(totalSecs)
   const [tool,     setToolSt]   = useState('thin')
   const [colorIdx, setColIdxSt] = useState(0)
   const [page,     setPageSt]   = useState(0)
@@ -136,7 +134,7 @@ export default function ColorMax({ session, studyMode = false, userId: userIdPro
   const sessionIdRef    = useRef(null)
   const sessionStartRef = useRef(null)
   const timerRef        = useRef(null)
-  const secsLeftRef     = useRef(TOTAL_SECS)
+  const secsLeftRef     = useRef(totalSecs)
 
   // ── Batched stroke events ────────────────────────────────────────────────
   const pendingStrokesRef = useRef([])
@@ -306,7 +304,7 @@ export default function ColorMax({ session, studyMode = false, userId: userIdPro
     else sessionIdRef.current = data.id
 
     // Start countdown
-    secsLeftRef.current = TOTAL_SECS
+    secsLeftRef.current = totalSecs
     timerRef.current = setInterval(() => {
       secsLeftRef.current -= 1
       setSecsLeft(secsLeftRef.current)
@@ -336,9 +334,9 @@ export default function ColorMax({ session, studyMode = false, userId: userIdPro
 
     const scores = calcScores(pagePaintRef.current, refPixelRef.current)
 
-    const totalSecs = sessionStartRef.current
+    const playedSecs = sessionStartRef.current
       ? Math.round((Date.now() - sessionStartRef.current) / 1000)
-      : TOTAL_SECS
+      : totalSecs
 
     const pfScores       = scores.filter(r => r.perf > 0)
     const avgCoverage    = +(scores.reduce((a, r) => a + r.cov, 0) / 5).toFixed(1)
@@ -354,7 +352,7 @@ export default function ColorMax({ session, studyMode = false, userId: userIdPro
       imagesAttempted,
       toolTime:       { ...toolTimeRef.current },
       toolTimeByPage: toolTimeByPgRef.current.map(t => ({ ...t })),
-      totalSecs,
+      totalSecs: playedSecs,
     }
     resultsRef.current = results
 
@@ -437,8 +435,6 @@ export default function ColorMax({ session, studyMode = false, userId: userIdPro
 
   // ── Render ────────────────────────────────────────────────────────────────
 
-  const tt = toolTimeRef.current
-
   return (
     <div className="cm-wrap">
       <div className="cm-card">
@@ -458,7 +454,7 @@ export default function ColorMax({ session, studyMode = false, userId: userIdPro
               disabled={starting}
               onClick={handleStart}
             >
-              {starting ? 'Starting…' : 'Start — 5:00'}
+              {starting ? 'Starting…' : `Start — ${mmss(totalSecs)}`}
             </button>
           </div>
         )}
@@ -548,13 +544,13 @@ export default function ColorMax({ session, studyMode = false, userId: userIdPro
 
         {/* ── Results screen ── */}
         {phase === 'complete' && resultsRef.current && (() => {
-          const r   = resultsRef.current
-          const tms = r.toolTime
+          const r = resultsRef.current
           return (
             <div className="cm-results">
               <h1 className="cm-results-title">ColorMax</h1>
               <p className="cm-results-sub">{mmss(r.totalSecs)} played</p>
 
+              <div className="cm-overall-title">Overall Score</div>
               <div className="cm-stats">
                 <div className="cm-stat">
                   <div className="cm-stat-val">{r.avgCoverage}%</div>
@@ -570,19 +566,10 @@ export default function ColorMax({ session, studyMode = false, userId: userIdPro
                 </div>
               </div>
 
-              <div className="cm-brush-row">
-                <span className="cm-brush-item">
-                  Thin&nbsp;<span className="cm-brush-val">{fmtMs(tms.thin)}</span>
-                </span>
-                <span className="cm-brush-item">
-                  Thick&nbsp;<span className="cm-brush-val">{fmtMs(tms.thick)}</span>
-                </span>
-                <span className="cm-brush-item">
-                  Eraser&nbsp;<span className="cm-brush-val">{fmtMs(tms.eraser)}</span>
-                </span>
+              <div className="cm-breakdown-header">
+                <span className="cm-breakdown-section-title">Per image</span>
+                <span className="cm-breakdown-cols-label">Coverage / Precision</span>
               </div>
-
-              <div className="cm-breakdown-section-title">Per image</div>
               <div className="cm-breakdown">
                 {PAGE_NAMES.map((name, i) => {
                   const sc = r.scores[i]
