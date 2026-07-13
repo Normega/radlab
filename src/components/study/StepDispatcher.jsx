@@ -3,6 +3,7 @@ import ConsentStep              from './ConsentStep'
 import DisplayStepWrapper       from './DisplayStepWrapper'
 import DebriefStep              from './DebriefStep'
 import DemographicsStep         from './DemographicsStep'
+import EquityCensusStep         from './EquityCensusStep'
 import CompensationStep         from './CompensationStep'
 import QuestionnaireStepWrapper from './QuestionnaireStepWrapper'
 import GameStepWrapper          from './GameStepWrapper'
@@ -46,6 +47,9 @@ export default function StepDispatcher({ node, enrollment, scheduleId, stepIndex
     }
     if (subcategory === 'demographics') {
       return <DemographicsStep enrollment={enrollment} scheduleId={scheduleId} onComplete={onComplete} supabaseClient={supabaseClient} isSimMode={isSimMode} />
+    }
+    if (subcategory === 'equity_census') {
+      return <EquityCensusStep enrollment={enrollment} scheduleId={scheduleId} onComplete={onComplete} supabaseClient={supabaseClient} isSimMode={isSimMode} />
     }
     if (subcategory === 'compensation') {
       return <CompensationStep enrollment={enrollment} onComplete={onComplete} supabaseClient={supabaseClient} isSimMode={isSimMode} />

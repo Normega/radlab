@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase as globalSupabase } from '../../lib/supabase'
 
-export default function CompensationStep({ enrollment, onComplete, supabaseClient, isSimMode = false }) {
+export default function CompensationStep({ enrollment, onComplete, supabaseClient, isSimMode = false, previewMode = false }) {
   const db = supabaseClient ?? globalSupabase
 
   const [compensationType, setCompensationType] = useState(null) // 'pay' | 'credit'
@@ -34,6 +34,7 @@ export default function CompensationStep({ enrollment, onComplete, supabaseClien
 
   async function handleSubmit() {
     if (!canSubmit || saving) return
+    if (previewMode) { onComplete({ preview: true }); return }
     setSaving(true)
     setError(null)
 

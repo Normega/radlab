@@ -83,6 +83,7 @@ const StudySessionRunner = lazy(() => import('./pages/admin/StudySessionRunner')
 const QuestionnairesPage   = lazy(() => import('./pages/admin/QuestionnairesPage'))
 const QuestionnaireUpload  = lazy(() => import('./pages/admin/QuestionnaireUpload'))
 const QuestionnairePreview = lazy(() => import('./pages/admin/QuestionnairePreview'))
+const AdvancedInstrumentPreview = lazy(() => import('./pages/admin/AdvancedInstrumentPreview'))
 const DataExportPage       = lazy(() => import('./pages/admin/DataExportPage'))
 const CompensationPage     = lazy(() => import('./pages/admin/CompensationPage'))
 const VideoLibrary         = lazy(() => import('./pages/admin/VideoLibrary'))
@@ -455,6 +456,7 @@ export default function App() {
               <Route path="/admin/studies/:id"           element={<StudyDetail />} />
               <Route path="/admin/questionnaires"        element={<QuestionnairesPage />} />
               <Route path="/admin/questionnaires/new"    element={<QuestionnaireUpload />} />
+              <Route path="/admin/questionnaires/advanced/:key" element={<AdvancedInstrumentPreview />} />
               <Route path="/admin/questionnaires/:slug"  element={<QuestionnairePreview />} />
               <Route path="/admin/export"                element={<DataExportPage />} />
               <Route path="/admin/videos"               element={<VideoLibrary />} />

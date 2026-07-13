@@ -3,7 +3,7 @@ import { supabase as globalSupabase } from '../../lib/supabase'
 
 const SES_PROMPT = `Imagine a ladder that represents where people stand in society. At the top are people who are the best off — those with the most money, most education, and the best jobs. At the bottom are people who are the worst off — those with the least money, least education, and the worst or no job. Where would you place yourself on this ladder?`
 
-export default function DemographicsStep({ enrollment, scheduleId, onComplete, supabaseClient, isSimMode = false }) {
+export default function DemographicsStep({ enrollment, scheduleId, onComplete, supabaseClient, isSimMode = false, previewMode = false }) {
   const db = supabaseClient ?? globalSupabase
 
   const [age,        setAge]        = useState('')
@@ -45,6 +45,7 @@ export default function DemographicsStep({ enrollment, scheduleId, onComplete, s
 
   async function handleSubmit() {
     if (!canSubmit || saving) return
+    if (previewMode) { onComplete({ preview: true }); return }
     setSaving(true)
     setError(null)
     const { error: dbErr } = await db.from('demographics').insert({
