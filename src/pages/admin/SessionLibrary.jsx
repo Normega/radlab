@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
@@ -36,6 +36,16 @@ export default function SessionLibrary() {
   const [confirmDelete, setConfirmDelete] = useState(null)
   const [deleteBlocked, setDeleteBlocked] = useState(null)
   const [collapsed, setCollapsed] = useState(new Set())
+  const initialized = useRef(false)
+
+  // On first load, collapse all named folders (Uncategorized stays open)
+  useEffect(() => {
+    if (!sessions || initialized.current) return
+    initialized.current = true
+    const named = [...new Set(sessions.map(s => s.folder?.trim()).filter(Boolean))]
+    if (named.length) setCollapsed(new Set(named))
+  }, [sessions])
+
   const [extraFolders, setExtraFolders] = useState([])
   const [showNewFolder, setShowNewFolder] = useState(false)
   const [newFolderInput, setNewFolderInput] = useState('')
