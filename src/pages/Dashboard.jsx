@@ -31,8 +31,12 @@ export default function Dashboard({ session }) {
           </div>
         </div>
 
+        {/* Ripple */}
+        <p style={S.secLabel}>// Ripple</p>
+        <RippleCard userId={user?.id} />
+
         {/* Game cards */}
-        <p style={S.secLabel}>// Games</p>
+        <p style={{ ...S.secLabel, marginTop: 40 }}>// Games</p>
         <div style={S.gameGrid}>
           <StillWaterCard userId={user?.id} />
           <FaceReadCard userId={user?.id} />
@@ -642,6 +646,71 @@ function ContactCard({ userId }) {
       </div>
       <Link to="/games/first-contact" style={{ ...S.gameStatus, display: 'block', textDecoration: 'none' }}>
         {hasData ? 'Play again →' : 'Play now →'}
+      </Link>
+    </div>
+  )
+}
+
+// ── RIPPLE CARD ───────────────────────────────────────────────────────────────
+
+function RippleCard({ userId }) {
+  const [data, setData] = useState(null)
+
+  useEffect(() => {
+    if (!userId) return
+    Promise.all([
+      supabase.from('ripples').select('name, streak_current, last_checkin_on').eq('user_id', userId).maybeSingle(),
+      supabase.from('ripple_checkins').select('composite_label, composite_x, composite_y, local_date').eq('user_id', userId).order('local_date', { ascending: false }).limit(1).maybeSingle(),
+    ]).then(([{ data: ripple }, { data: lastCheckin }]) => {
+      setData({ ripple, lastCheckin })
+    })
+  }, [userId])
+
+  if (data === null) return null
+
+  const { ripple, lastCheckin } = data
+  const name   = ripple?.name
+  const streak = ripple?.streak_current ?? 0
+  const checkedInToday = (() => {
+    if (!ripple?.last_checkin_on) return false
+    const pad = n => String(n).padStart(2, '0')
+    const now = new Date()
+    return ripple.last_checkin_on === `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
+  })()
+
+  return (
+    <div style={S.gameCard}>
+      <div style={S.gameCardInner}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+          <div>
+            <span style={S.gameBadge}>Daily check-in</span>
+            <h2 style={S.gameTitle}>{name ?? 'Your Ripple'}</h2>
+          </div>
+          {streak > 0 && (
+            <div style={{ textAlign: 'right', paddingTop: 4, flexShrink: 0 }}>
+              <div style={{ fontFamily: MONO, fontSize: 28, fontWeight: 700, color: 'var(--pk)', lineHeight: 1 }}>{streak}</div>
+              <div style={{ fontFamily: MONO, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--tx3)', marginTop: 3 }}>day streak</div>
+            </div>
+          )}
+        </div>
+        {lastCheckin ? (
+          <div style={{ display: 'flex', gap: 14, alignItems: 'center', marginTop: 8, flexWrap: 'wrap' }}>
+            <SwMoodGrid rows={[{ composite_x: lastCheckin.composite_x, composite_y: lastCheckin.composite_y }]} />
+            <div>
+              <div style={{ fontFamily: SERIF, fontSize: 19, color: 'var(--tx)', marginBottom: 3 }}>
+                Feeling {lastCheckin.composite_label?.toLowerCase() ?? 'balanced'}
+              </div>
+              <div style={{ fontFamily: MONO, fontSize: 11, color: 'var(--tx3)' }}>
+                {checkedInToday ? 'Today' : lastCheckin.local_date}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <p style={S.gameDesc}>You haven't checked in yet. Start now to track how you're arriving each day.</p>
+        )}
+      </div>
+      <Link to="/checkin" style={{ ...S.gameStatus, display: 'block', textDecoration: 'none' }}>
+        {checkedInToday ? 'Check in again →' : 'Check in now →'}
       </Link>
     </div>
   )

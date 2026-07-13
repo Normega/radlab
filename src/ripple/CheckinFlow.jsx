@@ -66,7 +66,9 @@ async function saveCheckin({ supabase, userId, context, p1Sel, p2Sel, composite 
 
   // Points
   const { data: profile } = await supabase.from('profiles').select('points').eq('id', userId).single()
-  await supabase.from('profiles').update({ points: (profile?.points ?? 0) + 5 }).eq('id', userId)
+  const newPoints = (profile?.points ?? 0) + 5
+  await supabase.from('profiles').update({ points: newPoints }).eq('id', userId)
+  return { newStreak, newBest, pointsTotal: newPoints }
 }
 
 // ── RatingStep ────────────────────────────────────────────────────────────────
@@ -159,7 +161,7 @@ function RatingStep({ phase, activeIds, labels, skinColor, eyeColor, species, ha
 
 // ── RevealStep ────────────────────────────────────────────────────────────────
 
-function RevealStep({ composite, skinColor, eyeColor, species, hairStyle, hairColor, saveDone, onContinue }) {
+function RevealStep({ composite, p1Sel, p2Sel, rippleName, rewardData, skinColor, eyeColor, species, hairStyle, hairColor, saveDone, onContinue }) {
   const [anim, setAnim] = useState(0)
   const animRef = useRef(null)
 
@@ -177,21 +179,30 @@ function RevealStep({ composite, skinColor, eyeColor, species, hairStyle, hairCo
     return () => { clearTimeout(pause); cancelAnimationFrame(animRef.current) }
   }, [])
 
-  const em = composite.sectorId >= 0 ? EMOTIONS[composite.sectorId] : null
+  const { label, zone, sectorId, cx, cy, mag } = composite
+  const em = sectorId >= 0 ? EMOTIONS[sectorId] : null
   const valence    = em ? em.valence * anim : 0
   const arousal    = em ? em.arousal * anim : 0
-  const intensityT = em ? intensityFromZone(composite.zone) * anim : 0
+  const intensityT = em ? intensityFromZone(zone) * anim : 0
   const pupilTier  = em?.pupilTier ?? 1
   const glowColor  = anim > 0.6 && em ? em.outer : null
-  const { label, zone } = composite
+
+  const p1EmName = p1Sel?.neutral ? 'neutral' : (EMOTIONS.find(e => e.id === p1Sel?.emotionId)?.name?.toLowerCase() ?? '')
+  const p2EmName = p2Sel?.neutral ? 'neutral' : (EMOTIONS.find(e => e.id === p2Sel?.emotionId)?.name?.toLowerCase() ?? '')
+  const p1Int = !p1Sel?.neutral && p1Sel?.zone != null ? INTENSITY_LABELS[p1Sel.zone + 1] : null
+  const p2Int = !p2Sel?.neutral && p2Sel?.zone != null ? INTENSITY_LABELS[p2Sel.zone + 1] : null
+
+  const heading = anim < 1
+    ? 'Reading your mood…'
+    : label === 'neutral'
+      ? (rippleName ? `${rippleName} is balanced` : 'Feeling balanced')
+      : (rippleName ? `${rippleName} feels ${label.toLowerCase()}` : `Feeling ${label.toLowerCase()}`)
 
   return (
-    <div style={{ ...S.stepWrap, maxWidth: 360 }}>
+    <div style={S.stepWrap}>
       <div style={{ textAlign: 'center' }}>
-        <p style={S.eyebrow}>Your Ripple</p>
-        <h2 style={{ fontFamily: SERIF, fontSize: 22, color: '#1c1c1e', fontWeight: 400, margin: 0 }}>
-          {anim < 1 ? 'Reading your mood…' : label === 'neutral' ? 'Feeling balanced' : `Feeling ${label.toLowerCase()}`}
-        </h2>
+        <p style={S.eyebrow}>{rippleName ?? 'Your Ripple'}</p>
+        <h2 style={{ fontFamily: SERIF, fontSize: 22, color: '#1c1c1e', fontWeight: 400, margin: 0 }}>{heading}</h2>
         {anim >= 1 && zone >= 0 && label !== 'neutral' && (
           <p style={{ fontFamily: MONO, fontSize: 12, color: '#abadb0', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '4px 0 0' }}>
             {INTENSITY_LABELS[zone + 1]}
@@ -199,19 +210,42 @@ function RevealStep({ composite, skinColor, eyeColor, species, hairStyle, hairCo
         )}
       </div>
 
-      <div style={{ background: 'white', borderRadius: 28, padding: '20px 18px 16px', boxShadow: '0 8px 40px rgba(240,104,164,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <RippleAvatar
-          skinColor={skinColor} eyeColor={eyeColor} species={species}
-          hairStyle={hairStyle} hairColor={hairColor}
-          valence={valence} arousal={arousal} intensityT={intensityT} pupilTier={pupilTier}
-          glowColor={glowColor} size={200}
+      <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap', justifyContent: 'center' }}>
+        <WheelSVG activeIds={null} selection={null} hovered={null}
+          onHover={() => {}} onZoneClick={() => {}} onNeutral={() => {}}
+          revealData={anim > 0.25 ? { cx, cy, mag, sectorId, zone } : null}
         />
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: 156 }}>
+          <div style={S.faceCard}>
+            <RippleAvatar
+              skinColor={skinColor} eyeColor={eyeColor} species={species}
+              hairStyle={hairStyle} hairColor={hairColor}
+              valence={valence} arousal={arousal} intensityT={intensityT} pupilTier={pupilTier}
+              glowColor={glowColor} size={136}
+            />
+          </div>
+          {anim >= 1 && (
+            <div style={{ background: 'white', borderRadius: 13, padding: '10px 12px', boxShadow: '0 2px 18px rgba(180,120,160,0.10)', fontFamily: MONO, fontSize: 12, lineHeight: 2, color: '#abadb0' }}>
+              <div><span style={{ color: '#d0b8c8' }}>energy  </span>{p1EmName}{p1Int ? ` · ${p1Int}` : ''}</div>
+              <div><span style={{ color: '#d0b8c8' }}>tension </span>{p2EmName}{p2Int ? ` · ${p2Int}` : ''}</div>
+              <div style={{ borderTop: '1px solid #f0e8ec', marginTop: 4, paddingTop: 4 }}>
+                <span style={{ color: '#d0b8c8' }}>streak  </span>
+                {rewardData != null ? `${rewardData.newStreak}d` : '…'}
+              </div>
+              <div>
+                <span style={{ color: '#d0b8c8' }}>points  </span>
+                {rewardData != null ? '+5' : '…'}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {anim >= 1 && (
         <button
           style={{
-            ...S.btn, width: '100%',
+            ...S.btn, width: 308,
             background:  saveDone ? '#f068a4' : '#E8D0E0',
             boxShadow:   saveDone ? '0 4px 20px rgba(240,104,164,0.30)' : 'none',
             cursor:      saveDone ? 'pointer' : 'default',
@@ -234,10 +268,12 @@ export default function CheckinFlow({ session, context = 'manual', onComplete, s
   const userId  = session?.user?.id ?? null
   const navigate = useNavigate()
 
-  const [phase,    setPhase]    = useState('phase1')
-  const [p1Sel,    setP1Sel]    = useState(null)
-  const [p2Sel,    setP2Sel]    = useState(null)
-  const [saveDone, setSaveDone] = useState(false)
+  const [phase,      setPhase]      = useState('phase1')
+  const [p1Sel,      setP1Sel]      = useState(null)
+  const [p2Sel,      setP2Sel]      = useState(null)
+  const [saveDone,   setSaveDone]   = useState(false)
+  const [rippleName, setRippleName] = useState(null)
+  const [rewardData, setRewardData] = useState(null)
 
   const { data: avatar } = useAvatarConfig(userId)
   const skinColor = avatar?.skin_color ?? '#FDBCB4'
@@ -263,10 +299,17 @@ export default function CheckinFlow({ session, context = 'manual', onComplete, s
   }, [p1Sel, p2Sel])
 
   useEffect(() => {
+    if (!userId) return
+    db.from('ripples').select('name').eq('user_id', userId).maybeSingle()
+      .then(({ data }) => setRippleName(data?.name ?? null))
+  }, [userId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
     if (phase !== 'reveal' || !composite || !userId) return
     setSaveDone(false)
+    setRewardData(null)
     saveCheckin({ supabase: db, userId, context, p1Sel, p2Sel, composite })
-      .then(() => setSaveDone(true))
+      .then(reward => { setRewardData(reward); setSaveDone(true) })
       .catch(err => { console.warn('saveCheckin:', err); setSaveDone(true) })
   }, [phase]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -294,7 +337,8 @@ export default function CheckinFlow({ session, context = 'manual', onComplete, s
           onConfirm={s => { setP2Sel(s); setPhase('reveal') }} />
       )}
       {phase === 'reveal' && composite && (
-        <RevealStep composite={composite}
+        <RevealStep composite={composite} p1Sel={p1Sel} p2Sel={p2Sel}
+          rippleName={rippleName} rewardData={rewardData}
           skinColor={skinColor} eyeColor={eyeColor} species={species}
           hairStyle={hairStyle} hairColor={hairColor}
           saveDone={saveDone} onContinue={handleContinue} />
