@@ -66,7 +66,7 @@ function useSession(id) {
       const { data, error } = await supabase
         .from('session_templates')
         .select(`
-          id, label, description,
+          id, label, description, folder,
           session_template_nodes(id, order_index, activity_id, questionnaire_id, module_id, label,
             activities(id, label, category, subcategory, estimated_minutes),
             questionnaires(id, name, slug)
@@ -131,6 +131,7 @@ export default function SessionBuilder() {
 
   const [label,         setLabel]         = useState('')
   const [description,   setDescription]   = useState('')
+  const [folder,        setFolder]        = useState('')
   const [sequence,      setSequence]      = useState([])
   const [error,         setError]         = useState(null)
   const [collapsedCats, setCollapsedCats] = useState(new Set(CATEGORY_ORDER))
@@ -147,6 +148,7 @@ export default function SessionBuilder() {
     if (!existing) return
     setLabel(existing.label ?? '')
     setDescription(existing.description ?? '')
+    setFolder(existing.folder ?? '')
     const sorted = [...(existing.session_template_nodes ?? [])].sort(
       (a, b) => a.order_index - b.order_index
     )
@@ -320,7 +322,7 @@ export default function SessionBuilder() {
       if (isNew) {
         const { data: tmpl, error: te } = await supabase
           .from('session_templates')
-          .insert({ label: label.trim(), description: description.trim() || null })
+          .insert({ label: label.trim(), description: description.trim() || null, folder: folder.trim() || null })
           .select('id').single()
         if (te) throw te
         if (sequence.length) {
@@ -331,7 +333,7 @@ export default function SessionBuilder() {
       } else {
         const { error: ue } = await supabase
           .from('session_templates')
-          .update({ label: label.trim(), description: description.trim() || null })
+          .update({ label: label.trim(), description: description.trim() || null, folder: folder.trim() || null })
           .eq('id', id)
         if (ue) throw ue
         await supabase.from('session_template_nodes').delete().eq('session_template_id', id)
@@ -408,6 +410,13 @@ export default function SessionBuilder() {
           value={label}
           onChange={e => setLabel(e.target.value)}
           placeholder="e.g. Baseline intake"
+        />
+        <label style={{ ...S.fieldLabel, marginTop: 12 }}>Folder</label>
+        <input
+          style={S.input}
+          value={folder}
+          onChange={e => setFolder(e.target.value)}
+          placeholder="e.g. liliana  (leave blank for uncategorized)"
         />
         <label style={{ ...S.fieldLabel, marginTop: 12 }}>Description</label>
         <textarea

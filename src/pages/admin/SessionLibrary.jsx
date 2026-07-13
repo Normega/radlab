@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
@@ -10,7 +10,7 @@ function useSessions() {
       const { data, error } = await supabase
         .from('session_templates')
         .select(`
-          id, label, description, created_at, cloned_from,
+          id, label, description, folder, created_at, cloned_from,
           session_template_nodes(
             id,
             activities(estimated_minutes)
@@ -35,6 +35,33 @@ export default function SessionLibrary() {
   const navigate = useNavigate()
   const [confirmDelete, setConfirmDelete] = useState(null)
   const [deleteBlocked, setDeleteBlocked] = useState(null) // null=checking, []=clear, [label,...]=blocked
+  const [collapsed, setCollapsed] = useState(new Set())
+
+  function toggleFolder(key) {
+    setCollapsed(prev => {
+      const next = new Set(prev)
+      next.has(key) ? next.delete(key) : next.add(key)
+      return next
+    })
+  }
+
+  // Group sessions into named folders; blank/null folder → '' (shown last as "Uncategorized")
+  const grouped = useMemo(() => {
+    if (!sessions) return []
+    const map = new Map()
+    sessions.forEach(s => {
+      const key = s.folder?.trim() || ''
+      if (!map.has(key)) map.set(key, [])
+      map.get(key).push(s)
+    })
+    return [...map.entries()]
+      .sort(([a], [b]) => {
+        if (a === '') return 1
+        if (b === '') return -1
+        return a.localeCompare(b)
+      })
+      .map(([folder, items]) => ({ folder, items }))
+  }, [sessions])
 
   async function openDeleteDialog(s) {
     setConfirmDelete(s)
@@ -120,35 +147,52 @@ export default function SessionLibrary() {
           <Link to="/admin/sessions/new" style={S.btnPrimary}>Build your first one →</Link>
         </div>
       ) : (
-        <div style={S.tableWrap}>
-          <table style={S.table}>
-            <thead>
-              <tr>
-                {['Label', 'Activities', 'Est. duration', 'Created', 'Actions'].map(h => (
-                  <th key={h} style={S.th}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {sessions.map(s => (
-                <tr key={s.id} style={S.tr}>
-                  <td style={S.td}><span style={S.label}>{s.label}</span></td>
-                  <td style={S.td}><Chip>{s.nodeCount}</Chip></td>
-                  <td style={S.td}>
-                    {s.totalMinutes ? <Chip>{s.totalMinutes} min</Chip> : <span style={S.muted}>—</span>}
-                  </td>
-                  <td style={S.td}><span style={S.mono}>{fmtDate(s.created_at)}</span></td>
-                  <td style={S.td}>
-                    <div style={S.actions}>
-                      <Link to={`/admin/sessions/${s.id}`} style={S.actionBtn}>Edit</Link>
-                      <button style={S.actionBtn} onClick={() => cloneSession.mutate(s)}>Clone</button>
-                      <button style={{ ...S.actionBtn, color: '#e04' }} onClick={() => openDeleteDialog(s)}>Delete</button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {grouped.map(({ folder, items }) => {
+            const key  = folder || '__none__'
+            const open = !collapsed.has(key)
+            return (
+              <div key={key} style={S.folderBlock}>
+                <button style={S.folderHeader} onClick={() => toggleFolder(key)}>
+                  <span style={S.folderChevron}>{open ? '▼' : '▶'}</span>
+                  <span style={S.folderName}>{folder || 'Uncategorized'}</span>
+                  <span style={S.folderCount}>{items.length}</span>
+                </button>
+                {open && (
+                  <div style={S.tableWrap}>
+                    <table style={S.table}>
+                      <thead>
+                        <tr>
+                          {['Label', 'Activities', 'Est. duration', 'Created', 'Actions'].map(h => (
+                            <th key={h} style={S.th}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {items.map(s => (
+                          <tr key={s.id} style={S.tr}>
+                            <td style={S.td}><span style={S.label}>{s.label}</span></td>
+                            <td style={S.td}><Chip>{s.nodeCount}</Chip></td>
+                            <td style={S.td}>
+                              {s.totalMinutes ? <Chip>{s.totalMinutes} min</Chip> : <span style={S.muted}>—</span>}
+                            </td>
+                            <td style={S.td}><span style={S.mono}>{fmtDate(s.created_at)}</span></td>
+                            <td style={S.td}>
+                              <div style={S.actions}>
+                                <Link to={`/admin/sessions/${s.id}`} style={S.actionBtn}>Edit</Link>
+                                <button style={S.actionBtn} onClick={() => cloneSession.mutate(s)}>Clone</button>
+                                <button style={{ ...S.actionBtn, color: '#e04' }} onClick={() => openDeleteDialog(s)}>Delete</button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )
+          })}
         </div>
       )}
 
@@ -207,7 +251,12 @@ const S = {
   empty: { textAlign: 'center', padding: '48px 0' },
   emptyText: { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 20, color: 'var(--tx)', margin: '0 0 8px' },
   emptyHint: { fontSize: 14, color: 'var(--tx2)', margin: '0 0 24px' },
-  tableWrap: { overflowX: 'auto', borderRadius: 10, border: '1px solid var(--bd)', background: '#fff' },
+  folderBlock:  { borderRadius: 10, border: '1px solid var(--bd)', overflow: 'hidden' },
+  folderHeader: { width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', background: 'var(--bgp)', border: 'none', cursor: 'pointer', textAlign: 'left' },
+  folderChevron:{ fontFamily: '"Space Mono",monospace', fontSize: 10, color: 'var(--tx3)', width: 12, flexShrink: 0 },
+  folderName:   { fontFamily: '"Space Mono",monospace', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--tx)', fontWeight: 700, flex: 1 },
+  folderCount:  { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)' },
+  tableWrap: { overflowX: 'auto', background: '#fff' },
   table: { width: '100%', borderCollapse: 'collapse' },
   th: { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', textAlign: 'left', padding: '10px 16px', borderBottom: '1px solid var(--bd)', textTransform: 'uppercase', letterSpacing: '0.06em' },
   tr: { borderBottom: '1px solid var(--bd)' },
