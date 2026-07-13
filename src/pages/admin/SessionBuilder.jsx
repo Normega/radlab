@@ -411,13 +411,6 @@ export default function SessionBuilder() {
           onChange={e => setLabel(e.target.value)}
           placeholder="e.g. Baseline intake"
         />
-        <label style={{ ...S.fieldLabel, marginTop: 12 }}>Folder</label>
-        <input
-          style={S.input}
-          value={folder}
-          onChange={e => setFolder(e.target.value)}
-          placeholder="e.g. liliana  (leave blank for uncategorized)"
-        />
         <label style={{ ...S.fieldLabel, marginTop: 12 }}>Description</label>
         <textarea
           style={{ ...S.input, minHeight: 64, resize: 'vertical' }}
