@@ -80,20 +80,21 @@ export default function MirrorCalibration({ breath, avatarProps, breathPeriodMs 
   const blurPx  = (1 - conf) * 7
   const pct     = Math.round(conf * 100)
   const timedOut = calib?.status === 'timeout'
-  const skin    = avatarProps?.skinColor ?? '#FDBCB4'
 
   return (
     <div className="flex flex-col items-center gap-6 px-6 py-8" style={{ maxWidth: 520, margin: '0 auto' }}>
       {showAvatar && (
         <div style={{ position: 'relative', width: avatarSize, height: avatarSize }}>
-          {/* Always-visible skin disc so the avatar is never invisible: at low
-              confidence it reads as a plain head-shaped circle; the face (same
-              skin tone) materializes inside it as confidence climbs. */}
+          {/* Always-visible head outline so the avatar is never invisible: at
+              low confidence it's just an empty circle; the face materializes
+              inside it as confidence climbs, and the outline fades out as the
+              real face edge takes over. */}
           <div style={{
             position: 'absolute', left: avatarSize * 0.185, top: avatarSize * 0.21,
             width: avatarSize * 0.63, height: avatarSize * 0.72, borderRadius: '50%',
-            background: skin,
-            boxShadow: 'inset -8px -12px 20px rgba(0,0,0,0.14), inset 8px 10px 20px rgba(255,255,255,0.28)',
+            border: '2px solid rgba(0,0,0,0.16)', background: 'transparent',
+            opacity: Math.max(0, 1 - conf * 1.3),
+            transition: 'opacity 160ms linear',
           }} />
           <div style={{
             position: 'relative',
