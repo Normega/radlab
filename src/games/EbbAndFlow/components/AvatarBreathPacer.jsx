@@ -265,6 +265,15 @@ export default function AvatarBreathPacer({
     frameRef.current = frame;
     applyNeutral(elemsRef.current);
 
+    // Exception: breath-follow mode (getLevel). There's no warmup/trial loop to
+    // wait for — the avatar simply tracks the live breath — so auto-start the RAF.
+    // Without this the face renders but sits frozen (the caller has no controlRef
+    // to call resumeAnimation on).
+    if (getLevelRef.current) {
+      pausedRef.current = false;
+      rafRef.current = requestAnimationFrame(frame);
+    }
+
     // ── Imperative control API ───────────────────────────────────────────
     // resetToNeutral: synchronously kills RAF + writes neutral attrs.
     //   Must be called from the same synchronous task as any state change
