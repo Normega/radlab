@@ -4,12 +4,12 @@ import { supabase } from '../lib/supabase'
 import { CONSENT_VERSION, TOS_VERSION, CONSENT_DOC, TOS_DOC } from './consentDocs'
 import { SKIN_COLORS, EYE_COLORS } from '../components/Avatar/BaseAvatar'
 import RippleAvatar from './RippleAvatar'
+import CheckinFlow from './CheckinFlow'
 
 // ── WelcomeFlow ───────────────────────────────────────────────────────────────
-// Route: /welcome — public-tier onboarding (Ripple WP1+WP2, spec §4.1).
-// Steps: intro → consent + ToS → demographics → customize appearance → name Ripple.
+// Route: /welcome — public-tier onboarding (Ripple WP1+WP2+WP3, spec §4.1).
+// Steps: intro → consent + ToS → demographics → customize appearance → name Ripple → check-in.
 // Each step is skipped when already satisfied, so the flow is safe to re-enter.
-// WP2 replaces the WP1 bridge placeholder with the full customize + name beat.
 
 const STEPS = {
   LOADING:      'loading',
@@ -18,6 +18,7 @@ const STEPS = {
   DEMOGRAPHICS: 'demographics',
   CUSTOMIZE:    'customize',
   NAME:         'name',
+  CHECKIN:      'checkin',
 }
 
 const RIPPLE_NAMES = [
@@ -122,7 +123,7 @@ export default function WelcomeFlow({ session, onComplete }) {
     if (!dd)  return setStep(STEPS.DEMOGRAPHICS)
     if (!ad)  return setStep(STEPS.CUSTOMIZE)
     if (!rnd) return setStep(STEPS.NAME)
-    finalFinish()
+    setStep(STEPS.CHECKIN)
   }
 
   // ── Consent submit ────────────────────────────────────────────────────────
@@ -199,7 +200,7 @@ export default function WelcomeFlow({ session, onComplete }) {
     if (dbErr) { setError('Could not save — please try again.'); console.error('ripples upsert:', dbErr); return }
 
     setRippleNameDone(true)
-    finalFinish()
+    advance({ rippleNameDone: true })
   }
 
   // ── Final: mark onboarding complete ──────────────────────────────────────
@@ -461,6 +462,14 @@ export default function WelcomeFlow({ session, onComplete }) {
             {busy ? 'Saving…' : `Meet ${label} →`}
           </button>
         </div>
+      </div>
+    )
+  }
+
+  if (step === STEPS.CHECKIN) {
+    return (
+      <div style={S.page}>
+        <CheckinFlow session={session} context="onboarding" onComplete={finalFinish} />
       </div>
     )
   }

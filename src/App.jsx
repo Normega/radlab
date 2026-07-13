@@ -37,6 +37,7 @@ const Verified       = lazy(() => import('./pages/Verified'))
 // Its own partition like Lecture Lounge: separate chunk, own error boundary below.
 const WelcomeFlow    = lazy(() => import('./ripple/WelcomeFlow'))
 const RippleName     = lazy(() => import('./ripple/RippleName'))
+const CheckinFlow    = lazy(() => import('./ripple/CheckinFlow'))
 
 const PondWatch     = lazy(() => import('./games/PondWatch'))
 const OwlBarn       = lazy(() => import('./games/OwlBarn'))
@@ -285,6 +286,11 @@ export default function App() {
               <AuthRoute session={session}>
                 <RippleName session={session} onNamed={() => setRippleNamed(true)} />
               </AuthRoute>
+            } />
+            <Route path="/checkin" element={
+              <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome} needsRippleName={needsRippleName}>
+                <CheckinFlow session={session} context="manual" showNav={true} />
+              </ProtectedRoute>
             } />
           </Route>
 
