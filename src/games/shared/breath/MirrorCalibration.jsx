@@ -30,8 +30,24 @@ export default function MirrorCalibration({ breath, avatarProps, breathPeriodMs 
   const controlRef     = useRef(null)
   const animStartedRef = useRef(false)
   const phaseRef       = useRef(calibPhase)
+  const outlineRef     = useRef(null)
   const avatarSize     = 240
   useEffect(() => { phaseRef.current = calibPhase }, [calibPhase])
+
+  // Breathe the head outline with the pacer, matching the avatar's own scale
+  // (1 + 0.22·bT). At low confidence the outline is basically all that's visible,
+  // so it must move too — otherwise the screen looks frozen. Interval, not rAF,
+  // so it keeps ticking if the tab is backgrounded.
+  useEffect(() => {
+    const id = setInterval(() => {
+      const el = outlineRef.current
+      if (!el) return
+      const phase = getPhase ? getPhase() : 0
+      const bT = (Math.sin(phase * Math.PI * 2 - Math.PI / 2) + 1) / 2
+      el.style.transform = `scale(${(1 + 0.22 * bT).toFixed(4)})`
+    }, 33)
+    return () => clearInterval(id)
+  }, [getPhase])
 
   // Live confidence snapshot (poll the ref ~10 Hz for the React-driven chrome).
   const [calib, setCalib] = useState(null)
@@ -89,10 +105,11 @@ export default function MirrorCalibration({ breath, avatarProps, breathPeriodMs 
               low confidence it's just an empty circle; the face materializes
               inside it as confidence climbs, and the outline fades out as the
               real face edge takes over. */}
-          <div style={{
+          <div ref={outlineRef} style={{
             position: 'absolute', left: avatarSize * 0.185, top: avatarSize * 0.21,
             width: avatarSize * 0.63, height: avatarSize * 0.72, borderRadius: '50%',
             border: '2px solid rgba(0,0,0,0.16)', background: 'transparent',
+            transformOrigin: 'center 52%',
             opacity: Math.max(0, 1 - conf * 1.3),
             transition: 'opacity 160ms linear',
           }} />
