@@ -78,6 +78,37 @@ Deno.serve(async (req) => {
       .not('expires_at', 'is', null)
       .lt('expires_at', now.toISOString())
 
+    // 0b. Terminal-ize dead rows: sent/issued rows scheduled before today with
+    // no remaining active link can never be completed — mark them 'missed' so
+    // they stop blocking the fork advance pass (participants may miss daily
+    // sessions and still advance; a missed fork-gating assessment simply never
+    // resolves the fork). Rows with a still-active link (e.g. a 72h assessment
+    // window spanning several days) are protected until step 0 expires it.
+    let missed = 0
+    {
+      const { data: staleRows } = await db
+        .from('participant_schedule')
+        .select('id')
+        .in('status', ['link_sent', 'unlocked'])
+        .lt('scheduled_date', todayStr)
+
+      if (staleRows && staleRows.length > 0) {
+        const staleIds = staleRows.map((r) => r.id)
+        const { data: activeForStale } = await db
+          .from('participant_links')
+          .select('schedule_id')
+          .eq('status', 'active')
+          .in('schedule_id', staleIds)
+
+        const protectedIds = new Set((activeForStale ?? []).map((l) => l.schedule_id))
+        const deadIds = staleIds.filter((id) => !protectedIds.has(id))
+        if (deadIds.length > 0) {
+          await db.from('participant_schedule').update({ status: 'missed' }).in('id', deadIds)
+          missed = deadIds.length
+        }
+      }
+    }
+
     // 1. Fetch pending rows scheduled today or earlier (date-only filter; the
     // send_time cutoff is applied below since Postgres can't compare it
     // against "now" without knowing which rows are for today).
@@ -189,10 +220,10 @@ Deno.serve(async (req) => {
             await suppressRow(db, row.id, row.participant_id, sendBody.reason ?? 'consent_not_given')
             suppressed++
           } else if (sendBody?.success) {
-            // Increment attempts on success
+            // Increment attempts + stamp send time (reminder cadence anchor)
             await db
               .from('participant_schedule')
-              .update({ attempts: (row.attempts ?? 0) + 1 })
+              .update({ attempts: (row.attempts ?? 0) + 1, last_sent_at: now.toISOString() })
               .eq('id', row.id)
             processed++
           } else {
@@ -202,6 +233,77 @@ Deno.serve(async (req) => {
         } catch (sendErr) {
           console.error(`send_message fetch error for row ${row.id}:`, sendErr)
           failed++
+        }
+      }
+    }
+
+    // 3b. Reminders: re-send rows that were sent but not completed while
+    // their link is still ACTIVE (an expired link is never re-emailed here —
+    // dead rows become 'missed' in step 0b instead). Cadence derives from the
+    // session's link lifetime: 12 h for daily sessions (<= 24 h links → one
+    // same-evening nudge), 24 h for assessment windows (72 h links → one
+    // reminder per remaining day). attempts counts initial send + reminders,
+    // capped by studies.max_attempts; gated on studies.reminders_enabled.
+    let reminded = 0
+    {
+      const { data: activeLinkRows } = await db
+        .from('participant_links')
+        .select('schedule_id')
+        .eq('status', 'active')
+
+      const activeIds = (activeLinkRows ?? []).map((l) => l.schedule_id)
+      if (activeIds.length > 0) {
+        const { data: remRows } = await db
+          .from('participant_schedule')
+          .select('id, participant_id, study_id, study_session_id, attempts, last_sent_at')
+          .in('id', activeIds)
+          .eq('status', 'link_sent')
+          .not('last_sent_at', 'is', null)
+
+        if (remRows && remRows.length > 0) {
+          const remStudyIds = [...new Set(remRows.map((r) => r.study_id))]
+          const { data: remStudies } = await db
+            .from('studies')
+            .select('id, max_attempts, reminders_enabled')
+            .in('id', remStudyIds)
+          const remStudyMap = new Map((remStudies ?? []).map((s) => [s.id, s]))
+
+          const sessIds = [...new Set(remRows.map((r) => r.study_session_id).filter(Boolean))]
+          const { data: sessRows } = sessIds.length > 0
+            ? await db.from('study_sessions').select('id, link_expires_hours').in('id', sessIds)
+            : { data: [] }
+          const sessMap = new Map((sessRows ?? []).map((s) => [s.id, s.link_expires_hours ?? 48]))
+
+          for (const row of remRows) {
+            const study = remStudyMap.get(row.study_id)
+            if (!study || study.reminders_enabled === false) continue
+            if ((row.attempts ?? 0) >= (study.max_attempts ?? 1)) continue
+
+            const expires = sessMap.get(row.study_session_id) ?? 48
+            const intervalMs = (expires <= 24 ? 12 : 24) * 60 * 60 * 1000
+            if (now.getTime() - new Date(row.last_sent_at).getTime() < intervalMs) continue
+
+            try {
+              const sendRes = await fetch(`${supabaseUrl}/functions/v1/send_message`, {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${serviceKey}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ schedule_id: row.id }),
+              })
+              const sendBody = await sendRes.json()
+              if (sendBody?.success) {
+                await db
+                  .from('participant_schedule')
+                  .update({ attempts: (row.attempts ?? 0) + 1, last_sent_at: now.toISOString() })
+                  .eq('id', row.id)
+                reminded++
+              }
+            } catch (remErr) {
+              console.error(`reminder send failed for row ${row.id}:`, remErr)
+            }
+          }
         }
       }
     }
@@ -259,7 +361,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    return json({ processed, suppressed, failed, advanced })
+    return json({ processed, suppressed, failed, missed, reminded, advanced })
 
   } catch (err) {
     console.error('check_schedule unexpected error:', err)

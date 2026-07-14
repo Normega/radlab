@@ -158,16 +158,27 @@ export async function materializeSchedule(
   const inserts: PlannedRow[] = []
   let currentOffset = 0
   let currentTime = baselineSendTime
-  let allUpstreamCompleted = true
+  // Fork gating (see the randomize branch below): a fork resolves once
+  // nothing upstream is still actionable AND the session immediately before
+  // the fork (the assessment that gates it, e.g. Liliana's midpoint) is
+  // completed. Rows in a terminal-but-incomplete state ('missed', 'blocked')
+  // do NOT block — participants may miss daily sessions and still advance
+  // (methods doc allows missed days; check_schedule marks dead rows 'missed').
+  // A missed gate session, by contrast, never resolves the fork = withdrawal.
+  const ACTIONABLE = new Set(['pending', 'unlocked', 'link_sent'])
+  let anyUpstreamActionable = false
+  let lastSessionStatus: string | undefined
   let stoppedAt: string | null = null
 
   function emit(nodeKey: string, offset: number, time: string) {
     const status = materialized.get(nodeKey)
     if (status === undefined) {
       inserts.push({ nodeKey, scheduledDate: addDays(t0Date, offset), sendTime: time, studyDay: offset + 1 })
-      allUpstreamCompleted = false // just created this pass — can't be completed yet
-    } else if (status !== 'completed') {
-      allUpstreamCompleted = false
+      anyUpstreamActionable = true // just created this pass — actionable by definition
+      lastSessionStatus = undefined
+    } else {
+      if (ACTIONABLE.has(status)) anyUpstreamActionable = true
+      lastSessionStatus = status
     }
   }
 
@@ -214,7 +225,7 @@ export async function materializeSchedule(
       cur = graph.edges.find((e) => e.from === cur)?.to ?? null
 
     } else if (node.type === 'randomize') {
-      if (!allUpstreamCompleted) {
+      if (anyUpstreamActionable || lastSessionStatus !== 'completed') {
         stoppedAt = node.id
         break
       }

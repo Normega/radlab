@@ -7,12 +7,17 @@ import { interventionStyles as S, OwlScreen } from './InterventionPage'
  * activity category 'midpoint'. Three-arm manipulation, group drawn at mount
  * via the shared draw_assignment primitive (slot 'midpoint_group'):
  *
- *   feedback_choice  — personalized Phase 1 feedback → free practice choice
- *   control_choice   — control display (no personal data) → free choice
- *   control_assigned — control display → states a preference → assigned to
- *                      one of the two NON-preferred practices (50/50, done
+ *   feedback_choice  — personalized Phase 1 feedback → preference ranking →
+ *                      free practice choice
+ *   control_choice   — control display (no personal data) → preference
+ *                      ranking → free choice
+ *   control_assigned — control display → preference ranking → assigned to
+ *                      one of the two NON-rank-1 practices (50/50, done
  *                      server-side in record_practice_decision); the owl
  *                      frames it as growth outside the comfort zone
+ *
+ * All groups rank the three practices #1–#3 (methods doc Appendix 16) before
+ * any choice/assignment; the full ranking is stored on the snapshot.
  *
  * All decisions and the snapshot live server-side (get_liliana_midpoint_summary
  * / record_practice_decision, both SECURITY DEFINER + idempotent), so re-entry
@@ -53,6 +58,7 @@ export default function MidpointStep({ enrollment, onComplete, supabaseClient, i
   const [group,    setGroup]    = useState(null)
   const [snapshot, setSnapshot] = useState(null)
   const [selected, setSelected] = useState(null)
+  const [ranking,  setRanking]  = useState([])   // practice keys, rank 1 first
   const [result,   setResult]   = useState(null)
   const [saving,   setSaving]   = useState(false)
   const markedShown = useRef(false)
@@ -98,13 +104,14 @@ export default function MidpointStep({ enrollment, onComplete, supabaseClient, i
     }
   }, [screen])
 
-  async function submitDecision(source) {
-    if (!selected || saving) return
+  async function submitDecision(source, practice) {
+    if (!practice || saving) return
     setSaving(true)
     try {
       const { data, error: re } = await db.rpc('record_practice_decision', {
-        p_practice: selected,
+        p_practice: practice,
         p_source:   source,
+        p_ranking:  ranking.length === 3 ? ranking : null,
       })
       if (re) throw re
       setResult(data)
@@ -115,6 +122,12 @@ export default function MidpointStep({ enrollment, onComplete, supabaseClient, i
     } finally {
       setSaving(false)
     }
+  }
+
+  // Tap-to-rank: tapping an unranked card assigns the next rank; tapping a
+  // ranked card removes it (later ranks shift up).
+  function toggleRank(key) {
+    setRanking(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key])
   }
 
   // ── simple full-page states ────────────────────────────────────────────────
@@ -134,7 +147,7 @@ export default function MidpointStep({ enrollment, onComplete, supabaseClient, i
 
   // ── screen content ─────────────────────────────────────────────────────────
 
-  const ranking  = snapshot?.ranking ?? []
+  const results  = snapshot?.ranking ?? []   // per-practice feedback stats, rank order
   const decided  = result?.practice ?? snapshot?.phase2_practice
   const decidedP = PRACTICES[decided]
 
@@ -159,7 +172,7 @@ export default function MidpointStep({ enrollment, onComplete, supabaseClient, i
           Based on your daily check-ins — how your stress changed after each practice, and how
           enjoyable and helpful you found it.
         </p>
-        {ranking.map(r => {
+        {results.map(r => {
           const p = PRACTICES[r.condition]
           if (!p) return null
           const d = r.mean_delta_stress
@@ -192,32 +205,70 @@ export default function MidpointStep({ enrollment, onComplete, supabaseClient, i
         })}
       </div>
     )
-    footer = <button style={S.btnNext} onClick={() => setScreen('choose')}>Choose my practice</button>
+    footer = <button style={S.btnNext} onClick={() => setScreen('rank')}>Continue</button>
   }
 
   if (screen === 'control') {
     body = <OwlScreen owl="owl_still" text={CONTROL_TEXT} />
-    footer = (
+    footer = <button style={S.btnNext} onClick={() => setScreen('rank')}>Next</button>
+  }
+
+  if (screen === 'rank') {
+    const done = ranking.length === 3
+    body = (
+      <div>
+        <h3 style={S.textH3}>Rank the three practices</h3>
+        <p style={S.textP}>
+          Tap the practices in order of preference — the one you would most like to continue first.
+          Tap a ranked practice again to undo. There are no right or wrong answers.
+        </p>
+        {Object.entries(PRACTICES).map(([key, p]) => {
+          const pos = ranking.indexOf(key)
+          return (
+            <button
+              key={key}
+              onClick={() => toggleRank(key)}
+              style={{ ...M.pickCard, ...(pos >= 0 ? M.pickCardSelected : {}) }}
+            >
+              <img src={`/assets/owls/${p.owl}.png`} alt="" style={M.cardOwl} />
+              <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                <p style={M.cardTitle}>{p.label}</p>
+                <p style={M.cardMeta}>{p.blurb}</p>
+              </div>
+              <div style={{ ...M.rankSlot, ...(pos >= 0 ? M.rankSlotOn : {}) }}>
+                {pos >= 0 ? `#${pos + 1}` : '–'}
+              </div>
+            </button>
+          )
+        })}
+      </div>
+    )
+    footer = group === 'control_assigned' ? (
       <button
-        style={S.btnNext}
-        onClick={() => setScreen(group === 'control_choice' ? 'choose' : 'preference')}
+        style={{ ...S.btnNext, ...(!done || saving ? { opacity: 0.4, cursor: 'not-allowed' } : {}) }}
+        disabled={!done || saving}
+        onClick={() => submitDecision('anti_preference', ranking[0])}
       >
-        Next
+        {saving ? 'Saving…' : 'Confirm my ranking'}
+      </button>
+    ) : (
+      <button
+        style={{ ...S.btnNext, ...(!done ? { opacity: 0.4, cursor: 'not-allowed' } : {}) }}
+        disabled={!done}
+        onClick={() => setScreen('choose')}
+      >
+        Confirm my ranking
       </button>
     )
   }
 
-  if (screen === 'choose' || screen === 'preference') {
-    const isPreference = screen === 'preference'
+  if (screen === 'choose') {
     body = (
       <div>
-        <h3 style={S.textH3}>
-          {isPreference ? 'Which practice would you pick?' : 'Choose your practice for Phase 2'}
-        </h3>
+        <h3 style={S.textH3}>Choose your practice for Phase 2</h3>
         <p style={S.textP}>
-          {isPreference
-            ? 'Before we continue, we would like to know which practice you would prefer. There are no right or wrong answers.'
-            : 'You will work with this practice every day for the rest of the study. Pick the one that feels right for you.'}
+          You will work with this practice every day for the rest of the study. Pick the one that
+          feels right for you — it does not have to match your ranking.
         </p>
         {Object.entries(PRACTICES).map(([key, p]) => (
           <button
@@ -239,9 +290,9 @@ export default function MidpointStep({ enrollment, onComplete, supabaseClient, i
       <button
         style={{ ...S.btnNext, ...(!selected || saving ? { opacity: 0.4, cursor: 'not-allowed' } : {}) }}
         disabled={!selected || saving}
-        onClick={() => submitDecision(isPreference ? 'anti_preference' : 'choice')}
+        onClick={() => submitDecision('choice', selected)}
       >
-        {saving ? 'Saving…' : isPreference ? "That's my pick" : 'Lock it in'}
+        {saving ? 'Saving…' : 'Lock it in'}
       </button>
     )
   }
@@ -362,4 +413,11 @@ const M = {
     border: '2px solid #c0bdb8', flexShrink: 0,
   },
   radioOn: { border: '6px solid #3b6d11' },
+  rankSlot: {
+    minWidth: 36, height: 28, borderRadius: 8, flexShrink: 0,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    border: '1.5px solid #c0bdb8', color: '#c0bdb8',
+    fontSize: 13, fontWeight: 700, fontFamily: 'system-ui,sans-serif',
+  },
+  rankSlotOn: { border: '1.5px solid #3b6d11', background: '#3b6d11', color: '#fff' },
 }

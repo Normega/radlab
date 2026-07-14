@@ -385,7 +385,35 @@ the full ranking (`stated_preference` = rank #1). Anti-preference logic is alrea
 (50/50 among the two non-rank-1 arms).
 
 **Group assignment timing** — doc internally inconsistent (§4.3 "prior to the midpoint" vs §3.5
-"at completion"). Built behavior (drawn at midpoint-step mount) sits between; confirm with Liliana.
+"at completion"). Built behavior (drawn at midpoint-step mount) sits between; Norm confirmed
+2026-07-10 that draw-at-midpoint-start is fine.
+
+**WP-L5b implementation status (2026-07-14):**
+- **Ranking**: `preference_ranking` jsonb on the snapshot; `record_practice_decision/4` validates
+  the ranking (each arm exactly once; anti-preference practice must equal rank #1);
+  `stated_preference` = rank #1. MidpointStep: tap-to-rank screen for all groups; sequences
+  feedback → rank → select, control → rank → select, control → rank → anti-preference reveal.
+  Selection is independent of the ranking (browser-verified: ranked reappraisal #1, chose
+  self_compassion). Migration `20260710_preference_ranking.sql`.
+- **Calendar/timing applied to the dry-run study**: Phase 2 timepoints offset 16 (day 17), final
+  offset 28 (day 29); all sends 06:00; daily links 24 h, midpoint/final 72 h; study
+  `max_attempts 4`, `reminder_interval_hours 12`. Fresh enrollment (dryrun-d) confirmed the new
+  materialized calendar.
+- **Baseline template** matches §4.1: Student Stress Scale inserted after Demographics, wellbeing
+  order fixed (life sat → SPANE → PWB). Introduction video still pending Liliana's file.
+- **Missed-day handling (launch-critical fix)**: the old system had NO repeat reminders, and one
+  missed daily permanently blocked the Phase 2 fork (advance pass required zero outstanding rows;
+  materializer required every upstream session completed — contradicting the methods doc's
+  missed-days allowance). Now: `check_schedule` v10 marks dead rows (sent/issued, no active link,
+  scheduled before today) as **'missed'**; the materializer fork gate is "nothing upstream still
+  actionable AND the immediately preceding session (the gating assessment) completed" — missed
+  dailies pass through, a missed midpoint never resolves the fork (= Phase-2 withdrawal per the
+  methods doc, enforced structurally).
+- **Reminders (new capability)**: `last_sent_at` on `participant_schedule`
+  (`20260710_schedule_last_sent_at.sql`); check_schedule re-sends link_sent rows while their link
+  is still active — cadence 12 h for daily sessions (one same-evening nudge before the 24 h link
+  dies) and 24 h for 72 h assessment windows (one reminder per remaining day) — capped by
+  `studies.max_attempts` (4), gated on `reminders_enabled`, never re-emails an expired link.
 
 **Confirmed matches, no work**: counterbalanced Phase 1 (block order random, within-block fixed);
 momentary assessment items + anchors = the two VAS packages exactly; PHQ-8/GAD-7 screener gates
