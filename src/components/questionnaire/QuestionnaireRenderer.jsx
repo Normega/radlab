@@ -200,7 +200,6 @@ export default function QuestionnaireRenderer({
         itemIndex={isItemSlide ? currentSlide.itemDisplayIndex : null}
         totalItems={isItemSlide ? currentSlide.totalItems : null}
         instructions={isItemSlide ? questionnaire.instructions : null}
-        labels={labels}
       />
 
       {/* Slide content — fade transition */}

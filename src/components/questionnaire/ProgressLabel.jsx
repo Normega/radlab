@@ -12,7 +12,6 @@ export default function ProgressLabel({
   itemIndex,   // 1-based display index
   totalItems,
   instructions = null, // questionnaire.instructions — renders the reminder frame when present
-  labels       = null, // effective scale labels for the current item
 }) {
   if (!itemIndex) return null;
 
@@ -72,7 +71,7 @@ export default function ProgressLabel({
         </span>
       </div>
 
-      <InstructionFrame instructions={instructions} labels={labels} />
+      <InstructionFrame instructions={instructions} />
     </div>
   );
 }
