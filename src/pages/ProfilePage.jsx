@@ -1,4 +1,5 @@
-﻿import { Link } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import Nav from '../components/Nav'
@@ -21,11 +22,52 @@ const ROLE_META = {
 }
 
 export default function ProfilePage({ session }) {
-  const userId      = session?.user?.id
+  const userId        = session?.user?.id
   const emailFallback = session?.user?.email?.split('@')[0] || 'researcher'
 
   const { data: avatarData } = useAvatarConfig(userId)
 
+  // ── Ripple state (local — mutations happen here) ──────────────────────────
+  const [ripple,       setRipple]       = useState(null)
+  const [checkinCount, setCheckinCount] = useState(null)
+  const [editing,      setEditing]      = useState(false)
+  const [nameInput,    setNameInput]    = useState('')
+  const [saving,       setSaving]       = useState(false)
+
+  useEffect(() => {
+    if (!userId) return
+    Promise.all([
+      supabase.from('ripples')
+        .select('name, streak_current, streak_best, check_in_enabled, last_checkin_on')
+        .eq('user_id', userId).maybeSingle(),
+      supabase.from('ripple_checkins')
+        .select('local_date', { count: 'exact', head: true })
+        .eq('user_id', userId),
+    ]).then(([{ data: r }, { count }]) => {
+      setRipple(r ?? {})
+      setCheckinCount(count ?? 0)
+    })
+  }, [userId])
+
+  async function saveName() {
+    const name = nameInput.trim()
+    if (!name || name === ripple?.name) { setEditing(false); return }
+    setSaving(true)
+    await supabase.from('ripples').update({ name }).eq('user_id', userId)
+    setRipple(r => ({ ...r, name }))
+    setSaving(false)
+    setEditing(false)
+  }
+
+  async function toggleCheckIn() {
+    const next = !(ripple?.check_in_enabled !== false)
+    await supabase.from('ripples').update({ check_in_enabled: next }).eq('user_id', userId)
+    setRipple(r => ({ ...r, check_in_enabled: next }))
+  }
+
+  const enabled = ripple?.check_in_enabled !== false
+
+  // ── Profile / gamification (read-only) ───────────────────────────────────
   const { data: profile } = useQuery({
     queryKey: ['profile', userId],
     queryFn: async () => {
@@ -50,12 +92,12 @@ export default function ProfilePage({ session }) {
   const roleMeta    = ROLE_META[role] || ROLE_META.public
 
   // Progress bar: distance between the milestone just passed and the next one
-  const nextIdx     = UNLOCK_MILESTONES.findIndex(m => m.pts > points)
+  const nextIdx       = UNLOCK_MILESTONES.findIndex(m => m.pts > points)
   const nextMilestone = nextIdx >= 0 ? UNLOCK_MILESTONES[nextIdx] : null
-  const prevPts     = nextMilestone
+  const prevPts       = nextMilestone
     ? (UNLOCK_MILESTONES[nextIdx - 1]?.pts ?? 0)
     : (UNLOCK_MILESTONES[UNLOCK_MILESTONES.length - 1]?.pts ?? 0)
-  const progressPct = nextMilestone
+  const progressPct   = nextMilestone
     ? Math.round(((points - prevPts) / (nextMilestone.pts - prevPts)) * 100)
     : 100
 
@@ -79,7 +121,89 @@ export default function ProfilePage({ session }) {
             <span style={{ ...S.roleBadge, background: roleMeta.bg, color: roleMeta.color }}>
               {roleMeta.label}
             </span>
-            <Link to="/profile/avatar" style={S.editBtn}>Edit Ripple</Link>
+            <Link to="/profile/avatar" style={S.editBtn}>Edit avatar</Link>
+          </div>
+        </div>
+
+        {/* ── Ripple ──────────────────────────────────────────────── */}
+        <p style={S.secLabel}>// Ripple</p>
+
+        {/* Identity + stats */}
+        <div style={S.card}>
+          {editing ? (
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: ripple ? 16 : 0 }}>
+              <input
+                autoFocus
+                value={nameInput}
+                onChange={e => setNameInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') saveName(); if (e.key === 'Escape') setEditing(false) }}
+                style={S.nameInput}
+              />
+              <button onClick={saveName} disabled={saving} style={S.btnSmall}>
+                {saving ? '…' : 'Save'}
+              </button>
+              <button onClick={() => setEditing(false)} style={S.btnSmallGhost}>
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap', marginBottom: ripple ? 16 : 0 }}>
+              <span style={S.rippleName}>
+                {ripple?.name ?? (ripple === null ? '…' : '—')}
+              </span>
+              <span style={{ fontFamily: MONO, fontSize: 11, color: 'var(--tx3)' }}>your ripple</span>
+              {ripple && (
+                <button
+                  onClick={() => { setNameInput(ripple?.name ?? ''); setEditing(true) }}
+                  style={{ fontFamily: MONO, fontSize: 11, color: 'var(--pk)', background: 'none', border: 'none', cursor: 'pointer', letterSpacing: '0.05em', padding: 0, marginLeft: 4 }}
+                >
+                  Edit
+                </button>
+              )}
+            </div>
+          )}
+
+          {ripple && (
+            <div style={{ display: 'flex', gap: 28, flexWrap: 'wrap' }}>
+              {[
+                { label: 'streak',      value: `${ripple.streak_current ?? 0}d` },
+                { label: 'best streak', value: `${ripple.streak_best    ?? 0}d` },
+                { label: 'check-ins',   value: checkinCount ?? '—' },
+              ].map(({ label, value }) => (
+                <div key={label}>
+                  <div style={{ fontFamily: MONO, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--tx3)', marginBottom: 2 }}>{label}</div>
+                  <div style={{ fontFamily: MONO, fontSize: 17, color: 'var(--tx)', fontWeight: 700 }}>{value}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Check-in toggle */}
+        <div style={{ ...S.card, marginTop: 10, marginBottom: 40 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ fontFamily: MONO, fontSize: 13, color: 'var(--tx)', margin: '0 0 4px', letterSpacing: '0.03em' }}>
+                Daily check-in
+              </p>
+              <p style={{ fontSize: 13, color: 'var(--tx3)', margin: 0, lineHeight: 1.5 }}>
+                {enabled
+                  ? 'Active — your streak and history are tracking.'
+                  : 'Paused — your data is safe and your streak is saved.'}
+              </p>
+            </div>
+            <button
+              onClick={ripple ? toggleCheckIn : undefined}
+              disabled={!ripple}
+              style={{ ...S.toggle, background: enabled ? 'var(--pk)' : 'var(--bds)' }}
+            >
+              <div style={{
+                width: 20, height: 20, borderRadius: '50%', background: 'white',
+                transform: enabled ? 'translateX(20px)' : 'translateX(2px)',
+                transition: 'transform 0.2s',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.18)',
+              }} />
+            </button>
           </div>
         </div>
 
@@ -176,8 +300,28 @@ const S = {
     textDecoration: 'none', alignSelf: 'flex-start', marginTop: 4,
   },
 
-  secLabel:    { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--tx3)', marginBottom: 16 },
-  card:        { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 16, padding: '20px 24px', overflow: 'hidden' },
+  secLabel:  { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--tx3)', marginBottom: 16 },
+  card:      { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 16, padding: '20px 24px', overflow: 'hidden' },
+
+  rippleName:  { fontFamily: SERIF, fontSize: 26, color: 'var(--tx)', fontWeight: 400 },
+  nameInput:   {
+    fontFamily: SERIF, fontSize: 22, border: 'none',
+    borderBottom: '2px solid var(--pk)', background: 'transparent',
+    color: 'var(--tx)', outline: 'none', minWidth: 0, flex: 1, padding: '2px 0',
+  },
+  btnSmall: {
+    fontFamily: MONO, fontSize: 12, padding: '5px 12px', borderRadius: 8,
+    background: 'var(--pk)', color: 'white', border: 'none', cursor: 'pointer',
+  },
+  btnSmallGhost: {
+    fontFamily: MONO, fontSize: 12, padding: '5px 12px', borderRadius: 8,
+    background: 'var(--bgp)', color: 'var(--tx2)', border: '1px solid var(--bd)', cursor: 'pointer',
+  },
+  toggle: {
+    width: 44, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer',
+    padding: 0, flexShrink: 0, transition: 'background 0.2s',
+    display: 'flex', alignItems: 'center',
+  },
 
   pointsRow:   { display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 16 },
   pointsNum:   { fontFamily: MONO, fontSize: 52, color: 'var(--pk)', lineHeight: 1 },

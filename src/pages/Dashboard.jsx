@@ -35,7 +35,7 @@ export default function Dashboard({ session }) {
         {/* Ripple */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <p style={{ ...S.secLabel, marginBottom: 0 }}>// Ripple</p>
-          <Link to="/ripple/settings" style={{ fontFamily: MONO, fontSize: 11, color: 'var(--tx3)', textDecoration: 'none', letterSpacing: '0.05em' }}>settings →</Link>
+          <Link to="/profile" style={{ fontFamily: MONO, fontSize: 11, color: 'var(--tx3)', textDecoration: 'none', letterSpacing: '0.05em' }}>settings →</Link>
         </div>
         <RippleSection userId={user?.id} />
 
@@ -672,7 +672,7 @@ function RippleSection({ userId }) {
   if (!enabled) return (
     <div style={{ fontFamily: MONO, fontSize: 12, color: 'var(--tx3)', padding: '4px 0 20px', letterSpacing: '0.04em' }}>
       Check-ins are paused.{' '}
-      <Link to="/ripple/settings" style={{ color: 'var(--pk)', textDecoration: 'none' }}>Manage →</Link>
+      <Link to="/profile" style={{ color: 'var(--pk)', textDecoration: 'none' }}>Manage →</Link>
     </div>
   )
 
