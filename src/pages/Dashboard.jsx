@@ -659,26 +659,47 @@ function ContactCard({ userId }) {
 // Fetches check_in_enabled once and gates the full Ripple section.
 
 function RippleSection({ userId }) {
-  const [enabled, setEnabled] = useState(null)
+  const [config, setConfig] = useState(null)
 
   useEffect(() => {
     if (!userId) return
-    supabase.from('ripples').select('check_in_enabled').eq('user_id', userId).maybeSingle()
-      .then(({ data }) => setEnabled(data ? data.check_in_enabled !== false : true))
+    supabase.from('ripples')
+      .select('check_in_enabled, prompt_cadence, last_checkin_on')
+      .eq('user_id', userId).maybeSingle()
+      .then(({ data }) => setConfig(data
+        ? { enabled: data.check_in_enabled !== false, cadence: data.prompt_cadence ?? 'daily', lastCheckinOn: data.last_checkin_on }
+        : { enabled: true, cadence: 'daily', lastCheckinOn: null }
+      ))
   }, [userId])
 
-  if (enabled === null) return null
+  if (config === null) return null
 
-  if (!enabled) return (
+  if (!config.enabled) return (
     <div style={{ fontFamily: MONO, fontSize: 12, color: 'var(--tx3)', padding: '4px 0 20px', letterSpacing: '0.04em' }}>
       Check-ins are paused.{' '}
       <Link to="/profile" style={{ color: 'var(--pk)', textDecoration: 'none' }}>Manage →</Link>
     </div>
   )
 
+  // Decide whether to show the greeting/prompt based on cadence
+  const pad = n => String(n).padStart(2, '0')
+  const now = new Date()
+  const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
+  const daysSinceLast = config.lastCheckinOn
+    ? Math.round((new Date(todayStr + 'T00:00:00') - new Date(config.lastCheckinOn + 'T00:00:00')) / 86400000)
+    : null
+
+  const showGreeting = (() => {
+    if (config.cadence === 'never')       return false
+    if (config.cadence === 'every_login') return true
+    if (config.cadence === 'daily')       return daysSinceLast === null || daysSinceLast >= 1
+    if (config.cadence === 'weekly')      return daysSinceLast === null || daysSinceLast >= 7
+    return true
+  })()
+
   return (
     <>
-      <RippleGreeting userId={userId} />
+      {showGreeting && <RippleGreeting userId={userId} />}
       <RippleCard userId={userId} />
     </>
   )

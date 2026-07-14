@@ -38,7 +38,7 @@ export default function ProfilePage({ session }) {
     if (!userId) return
     Promise.all([
       supabase.from('ripples')
-        .select('name, streak_current, streak_best, check_in_enabled, last_checkin_on')
+        .select('name, streak_current, streak_best, check_in_enabled, prompt_cadence, last_checkin_on')
         .eq('user_id', userId).maybeSingle(),
       supabase.from('ripple_checkins')
         .select('local_date', { count: 'exact', head: true })
@@ -65,7 +65,13 @@ export default function ProfilePage({ session }) {
     setRipple(r => ({ ...r, check_in_enabled: next }))
   }
 
+  async function saveCadence(cadence) {
+    await supabase.from('ripples').update({ prompt_cadence: cadence }).eq('user_id', userId)
+    setRipple(r => ({ ...r, prompt_cadence: cadence }))
+  }
+
   const enabled = ripple?.check_in_enabled !== false
+  const cadence = ripple?.prompt_cadence ?? 'daily'
 
   // ── Profile / gamification (read-only) ───────────────────────────────────
   const { data: profile } = useQuery({
@@ -179,7 +185,7 @@ export default function ProfilePage({ session }) {
           )}
         </div>
 
-        {/* Check-in toggle */}
+        {/* Check-in toggle + cadence */}
         <div style={{ ...S.card, marginTop: 10, marginBottom: 40 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16 }}>
             <div style={{ flex: 1, minWidth: 0 }}>
@@ -205,6 +211,35 @@ export default function ProfilePage({ session }) {
               }} />
             </button>
           </div>
+
+          {ripple && enabled && (
+            <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--bd)' }}>
+              <p style={{ fontFamily: MONO, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--tx3)', margin: '0 0 10px' }}>
+                Prompt frequency
+              </p>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {[
+                  { key: 'every_login', label: 'Every login' },
+                  { key: 'daily',       label: 'Once daily' },
+                  { key: 'weekly',      label: 'Weekly' },
+                  { key: 'never',       label: 'Never' },
+                ].map(({ key, label }) => {
+                  const active = cadence === key
+                  return (
+                    <button key={key} onClick={() => saveCadence(key)} style={{
+                      fontFamily: MONO, fontSize: 12, padding: '6px 14px', borderRadius: 8,
+                      background: active ? 'var(--pk)' : 'var(--bgp)',
+                      color: active ? 'white' : 'var(--tx2)',
+                      border: `1.5px solid ${active ? 'var(--pk)' : 'var(--bd)'}`,
+                      cursor: 'pointer', transition: 'all 0.15s',
+                    }}>
+                      {label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ── Points & progress ───────────────────────────────────── */}
