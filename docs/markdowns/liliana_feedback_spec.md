@@ -370,9 +370,12 @@ Missed dailies skip forward on the original calendar (current behavior ✓).
 
 **Feedback metric pre-specified as Δstress (= metric v2)** — §4.3: "average within-session
 improvement in perceived stress … mean of the daily pre- to post-session difference scores" per
-arm. The participant-facing ranking must switch from v1 (z-blend) to **v2**; v1 remains stored in
-every snapshot for exploratory analysis. (Reverses the earlier v1-primary default — Norm's go
-required.)
+arm. **Done 2026-07-10** (Norm confirmed; migration `20260710_metric_v2_primary.sql`, applied):
+ranking now orders by mean Δstress (tie-breaks delta → helpfulness → seeded hash),
+`metric_version = 2`, ranking entries carry both composites; v1 still computed + stored for
+exploratory analysis. Verified live with a designed-disagreement participant (Δ4.0/appraisal 2.25
+ranks #1 over Δ1.0/appraisal 5.75, which v1 would have preferred). Feedback UI already foregrounds
+the stress delta with raw means as secondary — no component change needed; z-scores never shown.
 
 **Preference is a ranking (Appendix 16), captured by ALL groups** — drag-and-drop rank #1–#3,
 distinct from the choice act. Sequences: No-Choice = questionnaires → rank → anti-preference
