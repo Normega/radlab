@@ -11,8 +11,8 @@ import { CSS } from '@dnd-kit/utilities'
 import { supabase } from '../../lib/supabase'
 import { checkSequence, unmetMessage } from '../../lib/displayDeps'
 
-const CATEGORY_ORDER  = ['game', 'questionnaire', 'vas', 'display', 'video', 'form', 'physio', 'training', 'midpoint', 'assessment_leadin']
-const CATEGORY_LABELS = { game: 'Games', questionnaire: 'Questionnaires', vas: 'Rating Scales', display: 'Displays', form: 'Forms', physio: 'Physio', training: 'Training Modules', midpoint: 'Midpoint', video: 'Videos', assessment_leadin: 'Assessment Lead-ins' }
+const CATEGORY_ORDER  = ['game', 'questionnaire', 'vas', 'display', 'video', 'form', 'physio', 'training', 'midpoint', 'assessment_leadin', 'daily_welcome', 'daily_farewell']
+const CATEGORY_LABELS = { game: 'Games', questionnaire: 'Questionnaires', vas: 'Rating Scales', display: 'Displays', form: 'Forms', physio: 'Physio', training: 'Training Modules', midpoint: 'Midpoint', video: 'Videos', assessment_leadin: 'Assessment Lead-ins', daily_welcome: 'Daily Welcome', daily_farewell: 'Daily Farewell' }
 
 function useActivities() {
   return useQuery({

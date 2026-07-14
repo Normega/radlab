@@ -13,6 +13,8 @@ import VasStepWrapper          from './VasStepWrapper'
 import MidpointStep            from './MidpointStep'
 import VideoStepWrapper        from './VideoStepWrapper'
 import AssessmentLeadInStep    from './AssessmentLeadInStep'
+import DailyWelcomeStep        from './DailyWelcomeStep'
+import DailyFarewellStep       from './DailyFarewellStep'
 
 /**
  * Props:
@@ -142,6 +144,27 @@ export default function StepDispatcher({ node, enrollment, scheduleId, stepIndex
     return (
       <AssessmentLeadInStep
         variant={subcategory}
+        onComplete={onComplete}
+      />
+    )
+  }
+
+  if (category === 'daily_welcome') {
+    return (
+      <DailyWelcomeStep
+        enrollment={enrollment}
+        scheduleId={scheduleId}
+        onComplete={onComplete}
+        supabaseClient={supabaseClient}
+        demoMode={demoMode}
+      />
+    )
+  }
+
+  if (category === 'daily_farewell') {
+    return (
+      <DailyFarewellStep
+        condition={subcategory}
         onComplete={onComplete}
       />
     )
