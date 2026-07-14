@@ -22,6 +22,7 @@ import SessionNode      from '../../components/study/builder/nodes/SessionNode'
 import BlockNode        from '../../components/study/builder/nodes/BlockNode'
 import RandomizeNode    from '../../components/study/builder/nodes/RandomizeNode'
 import CounterbalanceNode from '../../components/study/builder/nodes/CounterbalanceNode'
+import SessionDemoModal from '../../components/study/SessionDemoModal'
 import ContactSettingsModal from '../../components/study/builder/ContactSettingsModal'
 
 const NODE_TYPES = {
@@ -274,7 +275,7 @@ async function compileStudySessions(studyId, graph) {
 
 // ─── Edit panel ──────────────────────────────────────────────────────────────
 
-function EditPanel({ nodeId, graph, sessionTemplates, isLocked, onChange, onRemove, onMerge }) {
+function EditPanel({ nodeId, graph, sessionTemplates, isLocked, onChange, onRemove, onMerge, onDemo }) {
   const node = graph.nodes.find(n => n.id === nodeId)
   if (!node) return null
 
@@ -341,6 +342,17 @@ function EditPanel({ nodeId, graph, sessionTemplates, isLocked, onChange, onRemo
             </select>
           )}
           {field('Link expires (hours)', input(node.link_expires_hours, 'link_expires_hours', 'number', { min: 1 }))}
+          {node.session_template_id && (
+            <button
+              style={P.demoBtn}
+              onClick={() => onDemo?.(
+                node.session_template_id,
+                sessionTemplates.find(t => t.id === node.session_template_id)?.label ?? node.label ?? 'Session'
+              )}
+            >
+              ▶ Demo this session
+            </button>
+          )}
         </>
       )}
 
@@ -435,6 +447,7 @@ const P = {
   label:      { fontFamily: '"Space Mono",monospace', fontSize: 10, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.05em' },
   input:      { fontSize: 13, fontFamily: '"DM Sans",system-ui,sans-serif', border: '1px solid var(--bd)', borderRadius: 7, padding: '6px 10px', color: 'var(--tx)', background: '#fff', width: '100%', boxSizing: 'border-box' },
   removeBtn:  { marginTop: 8, background: 'none', border: '1px solid #fcc', borderRadius: 7, padding: '6px 12px', fontSize: 13, color: '#e04', cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
+  demoBtn:    { marginTop: 4, background: 'var(--bgp)', border: '1px solid var(--pkb)', borderRadius: 7, padding: '6px 12px', fontSize: 13, color: 'var(--pk)', cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
@@ -455,6 +468,7 @@ export default function ExperimentBuilder() {
   const [validation,     setValidation]    = useState(null)
   const [studyName,      setStudyName]     = useState('')
   const [showContact,    setShowContact]   = useState(false)
+  const [demoSession,    setDemoSession]   = useState(null)
   const rfInstanceRef = useRef(null)
 
   const { data: sessionTemplates = [] } = useQuery({
@@ -848,6 +862,7 @@ export default function ExperimentBuilder() {
                 onChange={handleNodeEdit}
                 onRemove={handleNodeRemove}
                 onMerge={handleMergeInto}
+                onDemo={(templateId, label) => setDemoSession({ templateId, label })}
               />
             </div>
           )}
@@ -855,6 +870,14 @@ export default function ExperimentBuilder() {
 
         {showContact && (
           <ContactSettingsModal studyId={id} onClose={() => setShowContact(false)} />
+        )}
+
+        {demoSession && (
+          <SessionDemoModal
+            templateId={demoSession.templateId}
+            label={demoSession.label}
+            onClose={() => setDemoSession(null)}
+          />
         )}
       </div>
     </ReactFlowProvider>

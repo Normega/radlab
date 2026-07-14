@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
+import SessionDemoModal from '../../components/study/SessionDemoModal'
 
 function useSessions() {
   return useQuery({
@@ -35,6 +36,7 @@ export default function SessionLibrary() {
   const navigate = useNavigate()
   const [confirmDelete, setConfirmDelete] = useState(null)
   const [deleteBlocked, setDeleteBlocked] = useState(null)
+  const [demoSession,   setDemoSession]   = useState(null)
   const [collapsed, setCollapsed] = useState(new Set())
   const initialized = useRef(false)
 
@@ -241,6 +243,7 @@ export default function SessionLibrary() {
                             <td style={S.td}><span style={S.mono}>{fmtDate(s.created_at)}</span></td>
                             <td style={S.td}>
                               <div style={S.actions}>
+                                <button style={{ ...S.actionBtn, color: 'var(--pk)' }} onClick={() => setDemoSession(s)}>▶ Demo</button>
                                 <Link to={`/admin/sessions/${s.id}`} style={S.actionBtn}>Edit</Link>
                                 <select
                                   style={S.moveSelect}
@@ -267,6 +270,14 @@ export default function SessionLibrary() {
             )
           })}
         </div>
+      )}
+
+      {demoSession && (
+        <SessionDemoModal
+          templateId={demoSession.id}
+          label={demoSession.label}
+          onClose={() => setDemoSession(null)}
+        />
       )}
 
       {confirmDelete && (

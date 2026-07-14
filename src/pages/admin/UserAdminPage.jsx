@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
+import ParticipantsAdminTab from './ParticipantsAdminTab'
 
 // ── UserAdminPage ─────────────────────────────────────────────────────────────
 // Route: /admin/users — SUPER ADMINS ONLY. The sidebar link is hidden for
@@ -12,6 +13,7 @@ import { supabase } from '../../lib/supabase'
 
 export default function UserAdminPage() {
   const queryClient = useQueryClient()
+  const [tab,           setTab]           = useState('accounts')  // 'accounts' | 'participants'
   const [search,        setSearch]        = useState('')
   const [deleteTarget,  setDeleteTarget]  = useState(null)   // user object
   const [actionError,   setActionError]   = useState(null)
@@ -44,10 +46,10 @@ export default function UserAdminPage() {
     onError:   e  => setActionError(e.message),
   })
 
-  if (isLoading) return <p style={S.muted}>Loading…</p>
+  if (isLoading && tab === 'accounts') return <p style={S.muted}>Loading…</p>
 
   // Non-supers who navigate here directly get the RPC's forbidden error
-  if (loadError) {
+  if (loadError && tab === 'accounts') {
     return (
       <div>
         <h1 style={S.h1}>Users</h1>
@@ -82,14 +84,31 @@ export default function UserAdminPage() {
 
   return (
     <div>
-      <div style={{ marginBottom: 28 }}>
+      <div style={{ marginBottom: 20 }}>
         <h1 style={S.h1}>Users</h1>
         <p style={S.sub}>
-          {users.length} account{users.length === 1 ? '' : 's'}. Toggle roles between lab and public,
-          or delete test accounts. Super admins and participant accounts can't be modified here.
+          {tab === 'accounts'
+            ? `${users.length} account${users.length === 1 ? '' : 's'}. Toggle roles between lab and public, or delete test accounts. Super admins and participant accounts can't be modified here.`
+            : 'Study participants grouped by study — progress, current session, manual reminders, and data-export entry points.'}
         </p>
       </div>
 
+      <div style={S.tabBar}>
+        {[['accounts', 'Accounts'], ['participants', 'Participants']].map(([key, tlabel]) => (
+          <button
+            key={key}
+            style={{ ...S.tabBtn, ...(tab === key ? S.tabBtnActive : {}) }}
+            onClick={() => setTab(key)}
+          >
+            {tlabel}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'participants' && <ParticipantsAdminTab />}
+
+      {tab === 'accounts' && (
+      <>
       <input
         type="search"
         placeholder="Filter by email, name, or role…"
@@ -122,6 +141,8 @@ export default function UserAdminPage() {
           onCancel={() => { setDeleteTarget(null); setActionError(null) }}
           onConfirm={() => deleteUser.mutate(deleteTarget.id)}
         />
+      )}
+      </>
       )}
     </div>
   )
@@ -255,6 +276,14 @@ const S = {
   h1:    { fontFamily: '"DM Serif Display", Georgia, serif', fontSize: 28, color: 'var(--tx)', margin: 0 },
   sub:   { fontSize: 14, color: 'var(--tx2)', marginTop: 6 },
   muted: { fontSize: 13, color: 'var(--tx3)' },
+
+  tabBar: { display: 'flex', gap: 8, marginBottom: 22, borderBottom: '1px solid var(--bd)', paddingBottom: 0 },
+  tabBtn: {
+    background: 'none', border: 'none', borderBottom: '2px solid transparent',
+    padding: '8px 14px 10px', fontSize: 14, color: 'var(--tx2)', cursor: 'pointer',
+    fontFamily: '"DM Sans",system-ui,sans-serif',
+  },
+  tabBtnActive: { color: 'var(--pk)', borderBottom: '2px solid var(--pk)', fontWeight: 600 },
 
   search: {
     width: '100%', maxWidth: 420, padding: '10px 14px', borderRadius: 10,

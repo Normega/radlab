@@ -23,6 +23,7 @@ export default function VasStepWrapper({
   onComplete,
   supabaseClient,
   isSimMode = false,
+  demoMode = false,
 }) {
   const db     = supabaseClient ?? globalSupabase
   const userId = enrollment?.profile_id ?? enrollment?.user_id
@@ -130,7 +131,7 @@ export default function VasStepWrapper({
     return (
       <StudySliderBlock
         scale={sliderScale}
-        userId={userId}
+        userId={demoMode ? null : userId}
         db={db}
         onComplete={value => onComplete?.({ slider_slug: slug, value })}
       />
@@ -151,7 +152,7 @@ export default function VasStepWrapper({
         sessionId={null}
         scheduleId={scheduleId}
         onComplete={value => onComplete?.({ scale_slug: slug, value })}
-        previewMode={false}
+        previewMode={demoMode}
         partNumber={stepIndex != null ? stepIndex + 1 : null}
         totalParts={totalSteps ?? null}
         supabaseClient={db}
@@ -193,7 +194,7 @@ export default function VasStepWrapper({
       <StudySliderBlock
         key={currentItem.id}
         scale={currentItem.data}
-        userId={userId}
+        userId={demoMode ? null : userId}
         db={db}
         partNumber={pkgIndex + 1}
         totalParts={pkgItems.length}
@@ -211,7 +212,7 @@ export default function VasStepWrapper({
       scheduleId={scheduleId}
       packageSlug={slug}
       onComplete={handlePkgItemComplete}
-      previewMode={false}
+      previewMode={demoMode}
       partNumber={pkgIndex + 1}
       totalParts={pkgItems.length}
       supabaseClient={db}

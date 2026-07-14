@@ -21,6 +21,7 @@ export default function TrainingStepWrapper({
   onComplete,
   supabaseClient = null,
   isSimMode = false,
+  demoMode = false,
 }) {
   // Participant sessions run on SessionEntry's isolated authenticated client;
   // the global client (anon on a link) would silently fail every save.
@@ -39,7 +40,8 @@ export default function TrainingStepWrapper({
       setTrainingModule(SIM_MODULE)
       return
     }
-    if (!moduleId || !enrollment?.profile_id) return
+    if (!moduleId) return
+    if (!demoMode && !enrollment?.profile_id) return
 
     async function load() {
       // Fetch the module definition
@@ -52,6 +54,10 @@ export default function TrainingStepWrapper({
 
       const definition = mod.definition
       setTrainingModule(definition)
+
+      // Demo mode: module renders via InterventionPage demoMode (video gates
+      // lifted, no participant/day rows, no response saves) — stop here.
+      if (demoMode) return
 
       // Ensure the liliana_participants row exists (self-created on first
       // training contact) and derive the day from the schedule row — the
@@ -129,12 +135,13 @@ export default function TrainingStepWrapper({
   return (
     <InterventionPage
       module={trainingModule}
-      participantId={participantId}
-      dayDataId={dayDataId}
+      participantId={demoMode ? null : participantId}
+      dayDataId={demoMode ? null : dayDataId}
       scheduleId={scheduleId}
       studyDay={studyDay}
       onComplete={onComplete}
       supabaseClient={supabase}
+      demoMode={demoMode}
     />
   )
 }

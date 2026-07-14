@@ -342,6 +342,19 @@ wording in is minutes of work):
 12. Optional: Welcome/Farewell wrapper-screen copy (`wrapperElements.js`) — preview-only today,
     only matters if those screens get wired into sessions.
 
+**Update 2026-07-14 — midpoint copy resolved + intro video wired.** Liliana's preview HTMLs
+(`I:\Shared drives\Liliana\Study3\Questionnaires_logic\MidPoint\`) supplied the canonical ranking
++ assignment copy; MidpointStep now implements them verbatim (drag/arrow ranking with colored rank
+badges + "Your current ranking" box; assignment screens: "Great news!" chosen variant vs
+"Sometimes it's good to step outside your comfort zone!" assigned variant, per-practice "What to
+expect" paragraphs, "Begin Phase 2"), browser-verified through real participant links (both
+variants; anti-preference invariant held). Practice labels/descriptions are hers
+("Non-reactivity", "Self-compassion"). Checklist items 1, 5, 6, 8 (and 9's subtitle) are closed;
+still open: control display copy (item 2), feedback intro/screen copy (3–4), reveal wording is now
+hers (7 closed). The introduction video (`Liliana_Study3_Intro`) is wired as the final Baseline
+step via the new `video` step category (`20260714_video_step.sql`), with full watch tracking —
+item on the §4b list closed.
+
 **Calendar / scheduling** (dry run assumes 27 consecutive days — but the study has historically
 been described as 31 days, implying ~4 non-session days whose placement is unknown):
 - Day map: gaps/rest days? (baseline→Phase 1 buffer, midpoint buffer, weekends?) Each is a

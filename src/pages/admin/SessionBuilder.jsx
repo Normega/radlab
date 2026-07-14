@@ -11,8 +11,8 @@ import { CSS } from '@dnd-kit/utilities'
 import { supabase } from '../../lib/supabase'
 import { checkSequence, unmetMessage } from '../../lib/displayDeps'
 
-const CATEGORY_ORDER  = ['game', 'questionnaire', 'vas', 'display', 'form', 'physio', 'training', 'midpoint']
-const CATEGORY_LABELS = { game: 'Games', questionnaire: 'Questionnaires', vas: 'Rating Scales', display: 'Displays', form: 'Forms', physio: 'Physio', training: 'Training Modules', midpoint: 'Midpoint' }
+const CATEGORY_ORDER  = ['game', 'questionnaire', 'vas', 'display', 'video', 'form', 'physio', 'training', 'midpoint']
+const CATEGORY_LABELS = { game: 'Games', questionnaire: 'Questionnaires', vas: 'Rating Scales', display: 'Displays', form: 'Forms', physio: 'Physio', training: 'Training Modules', midpoint: 'Midpoint', video: 'Videos' }
 
 function useActivities() {
   return useQuery({
