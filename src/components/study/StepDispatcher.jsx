@@ -12,6 +12,7 @@ import TrainingStepWrapper      from './TrainingStepWrapper'
 import VasStepWrapper          from './VasStepWrapper'
 import MidpointStep            from './MidpointStep'
 import VideoStepWrapper        from './VideoStepWrapper'
+import AssessmentLeadInStep    from './AssessmentLeadInStep'
 
 /**
  * Props:
@@ -133,6 +134,15 @@ export default function StepDispatcher({ node, enrollment, scheduleId, stepIndex
         supabaseClient={supabaseClient}
         isSimMode={isSimMode}
         demoMode={demoMode}
+      />
+    )
+  }
+
+  if (category === 'assessment_leadin') {
+    return (
+      <AssessmentLeadInStep
+        variant={subcategory}
+        onComplete={onComplete}
       />
     )
   }

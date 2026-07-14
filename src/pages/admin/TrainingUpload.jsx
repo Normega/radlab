@@ -16,7 +16,7 @@ const VALID_STEP_TYPES = [
 const VALID_OWL_KEYS   = [
   'owl_waving','owl_excited','owl_nonreactivity','owl_reappraisal',
   'owl_selfcompassion','owl_love','owl_happy','owl_crying','owl_still','owl_thinking',
-  'Owl_graduation',
+  'owl_veryhappy','Owl_graduation',
 ]
 
 function validateModule(def) {
