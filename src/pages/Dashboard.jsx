@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import Nav from '../components/Nav'
+import { greetingFor } from '../ripple/greetings'
 
 export default function Dashboard({ session }) {
   const navigate    = useNavigate()
@@ -32,8 +33,11 @@ export default function Dashboard({ session }) {
         </div>
 
         {/* Ripple */}
-        <p style={S.secLabel}>// Ripple</p>
-        <RippleCard userId={user?.id} />
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <p style={{ ...S.secLabel, marginBottom: 0 }}>// Ripple</p>
+          <Link to="/ripple/settings" style={{ fontFamily: MONO, fontSize: 11, color: 'var(--tx3)', textDecoration: 'none', letterSpacing: '0.05em' }}>settings →</Link>
+        </div>
+        <RippleSection userId={user?.id} />
 
         {/* Game cards */}
         <p style={{ ...S.secLabel, marginTop: 40 }}>// Games</p>
@@ -651,26 +655,133 @@ function ContactCard({ userId }) {
   )
 }
 
-// ── RIPPLE CARD ───────────────────────────────────────────────────────────────
+// ── RIPPLE SECTION ────────────────────────────────────────────────────────────
+// Fetches check_in_enabled once and gates the full Ripple section.
 
-function RippleCard({ userId }) {
-  const [data, setData] = useState(null)
+function RippleSection({ userId }) {
+  const [enabled, setEnabled] = useState(null)
+
+  useEffect(() => {
+    if (!userId) return
+    supabase.from('ripples').select('check_in_enabled').eq('user_id', userId).maybeSingle()
+      .then(({ data }) => setEnabled(data ? data.check_in_enabled !== false : true))
+  }, [userId])
+
+  if (enabled === null) return null
+
+  if (!enabled) return (
+    <div style={{ fontFamily: MONO, fontSize: 12, color: 'var(--tx3)', padding: '4px 0 20px', letterSpacing: '0.04em' }}>
+      Check-ins are paused.{' '}
+      <Link to="/ripple/settings" style={{ color: 'var(--pk)', textDecoration: 'none' }}>Manage →</Link>
+    </div>
+  )
+
+  return (
+    <>
+      <RippleGreeting userId={userId} />
+      <RippleCard userId={userId} />
+    </>
+  )
+}
+
+// ── RIPPLE GREETING ───────────────────────────────────────────────────────────
+
+function RippleGreeting({ userId }) {
+  const [greeting, setGreeting] = useState(null)
+  const [visible,  setVisible]  = useState(false)
 
   useEffect(() => {
     if (!userId) return
     Promise.all([
-      supabase.from('ripples').select('name, streak_current, last_checkin_on').eq('user_id', userId).maybeSingle(),
-      supabase.from('ripple_checkins').select('composite_label, composite_x, composite_y, local_date').eq('user_id', userId).order('local_date', { ascending: false }).limit(1).maybeSingle(),
-    ]).then(([{ data: ripple }, { data: lastCheckin }]) => {
-      setData({ ripple, lastCheckin })
+      supabase.from('ripples')
+        .select('streak_current, last_checkin_on')
+        .eq('user_id', userId).maybeSingle(),
+      supabase.from('ripple_checkins')
+        .select('composite_label, composite_y, local_date')
+        .eq('user_id', userId)
+        .order('local_date', { ascending: false })
+        .limit(7),
+    ]).then(([{ data: ripple }, { data: checkins }]) => {
+      const pad = n => String(n).padStart(2, '0')
+      const now = new Date()
+      const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
+
+      // Days since last check-in
+      const lastDate = ripple?.last_checkin_on ?? null
+      let daysSinceLast = null
+      if (lastDate) {
+        if (lastDate === todayStr) {
+          daysSinceLast = 0
+        } else {
+          const diffMs = new Date(todayStr + 'T00:00:00') - new Date(lastDate + 'T00:00:00')
+          daysSinceLast = Math.round(diffMs / 86400000)
+        }
+      }
+
+      // Arousal trend from last 7 composite_y values.
+      // In the circumplex data: composite_y < 0 = high arousal (excited/tense side);
+      // composite_y > 0 = low arousal (calm/sad side).
+      const ys = (checkins ?? []).map(r => r.composite_y).filter(v => v != null)
+      const meanY = ys.length ? ys.reduce((a, b) => a + b, 0) / ys.length : 0
+      const arousalTrend = meanY < -0.15 ? 'high' : meanY > 0.15 ? 'low' : 'neutral'
+
+      setGreeting(greetingFor({
+        compositeLabel: checkins?.[0]?.composite_label ?? null,
+        streakDays:     ripple?.streak_current ?? 0,
+        daysSinceLast,
+        arousalTrend,
+      }))
+      setTimeout(() => setVisible(true), 80)
     })
   }, [userId])
 
-  if (data === null) return null
+  if (!greeting) return null
 
-  const { ripple, lastCheckin } = data
+  return (
+    <div style={{
+      marginBottom: 20,
+      opacity:   visible ? 1 : 0,
+      transform: visible ? 'none' : 'translateY(6px)',
+      transition: 'opacity 0.5s ease, transform 0.5s ease',
+    }}>
+      <p style={{ fontFamily: SERIF, fontSize: 22, color: 'var(--tx)', fontWeight: 400, margin: '0 0 4px' }}>
+        {greeting.headline}
+      </p>
+      <p style={{ fontFamily: MONO, fontSize: 12, color: 'var(--tx3)', margin: 0, letterSpacing: '0.04em' }}>
+        {greeting.sub}
+      </p>
+    </div>
+  )
+}
+
+// ── RIPPLE CARD ───────────────────────────────────────────────────────────────
+
+function RippleCard({ userId }) {
+  const [ripple,   setRipple]   = useState(null)
+  const [checkins, setCheckins] = useState(null)
+
+  useEffect(() => {
+    if (!userId) return
+    Promise.all([
+      supabase.from('ripples')
+        .select('name, streak_current, last_checkin_on')
+        .eq('user_id', userId).maybeSingle(),
+      supabase.from('ripple_checkins')
+        .select('composite_label, composite_x, composite_y, local_date')
+        .eq('user_id', userId)
+        .order('local_date', { ascending: true })
+        .limit(30),
+    ]).then(([{ data: r }, { data: c }]) => {
+      setRipple(r ?? {})
+      setCheckins(c ?? [])
+    })
+  }, [userId])
+
+  if (ripple === null) return null
+
   const name   = ripple?.name
   const streak = ripple?.streak_current ?? 0
+
   const checkedInToday = (() => {
     if (!ripple?.last_checkin_on) return false
     const pad = n => String(n).padStart(2, '0')
@@ -678,9 +789,21 @@ function RippleCard({ userId }) {
     return ripple.last_checkin_on === `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
   })()
 
+  const last      = checkins?.length ? checkins[checkins.length - 1] : null
+  const hasTrends = checkins && checkins.length >= 2
+
+  // Mode composite label across all check-ins
+  const modeLabel = (() => {
+    if (!checkins?.length) return null
+    const counts = {}
+    checkins.forEach(c => { if (c.composite_label) counts[c.composite_label] = (counts[c.composite_label] || 0) + 1 })
+    return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null
+  })()
+
   return (
     <div style={S.gameCard}>
       <div style={S.gameCardInner}>
+        {/* Header: name + streak badge */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
           <div>
             <span style={S.gameBadge}>Daily check-in</span>
@@ -693,22 +816,48 @@ function RippleCard({ userId }) {
             </div>
           )}
         </div>
-        {lastCheckin ? (
+
+        {/* No check-ins yet */}
+        {!last && (
+          <p style={S.gameDesc}>You haven't checked in yet. Start now to track how you're arriving each day.</p>
+        )}
+
+        {/* Single check-in — dot + label */}
+        {last && !hasTrends && (
           <div style={{ display: 'flex', gap: 14, alignItems: 'center', marginTop: 8, flexWrap: 'wrap' }}>
-            <SwMoodGrid rows={[{ composite_x: lastCheckin.composite_x, composite_y: lastCheckin.composite_y }]} />
+            <SwMoodGrid rows={[last]} />
             <div>
               <div style={{ fontFamily: SERIF, fontSize: 19, color: 'var(--tx)', marginBottom: 3 }}>
-                Feeling {lastCheckin.composite_label?.toLowerCase() ?? 'balanced'}
+                Feeling {last.composite_label?.toLowerCase() ?? 'balanced'}
               </div>
               <div style={{ fontFamily: MONO, fontSize: 11, color: 'var(--tx3)' }}>
-                {checkedInToday ? 'Today' : lastCheckin.local_date}
+                {checkedInToday ? 'Today' : last.local_date}
               </div>
             </div>
           </div>
-        ) : (
-          <p style={S.gameDesc}>You haven't checked in yet. Start now to track how you're arriving each day.</p>
+        )}
+
+        {/* 2+ check-ins — scatter + sparklines + stats */}
+        {hasTrends && (
+          <>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'stretch', marginTop: 8 }}>
+              <SwMoodGrid rows={checkins} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1, minWidth: 0 }}>
+                <SwLinePlot rows={checkins} field="valence" label="VALENCE" color="#f068a4" />
+                <SwLinePlot rows={checkins} field="arousal" label="AROUSAL" color="#9b6bb5" />
+              </div>
+            </div>
+            <div style={{ marginTop: 12 }}>
+              <StatCluster stats={[
+                { label: 'check-ins',  value: checkins.length },
+                { label: 'most often', value: modeLabel?.toLowerCase() ?? '—' },
+                { label: 'today',      value: last.composite_label?.toLowerCase() ?? '—' },
+              ]} />
+            </div>
+          </>
         )}
       </div>
+
       <Link to="/checkin" style={{ ...S.gameStatus, display: 'block', textDecoration: 'none' }}>
         {checkedInToday ? 'Check in again →' : 'Check in now →'}
       </Link>

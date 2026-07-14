@@ -8,11 +8,12 @@ import WheelSVG from '../games/StillWater/WheelSVG'
 import RippleAvatar from './RippleAvatar'
 import Nav from '../components/Nav'
 import { supabase as globalSupabase } from '../lib/supabase'
+import { drawItems, formatItemResponses } from './itemEngine'
 
 // ── CheckinFlow ───────────────────────────────────────────────────────────────
 // Ripple WP3 — two-diagonal circumplex check-in.
-// Phases: phase1 (Sad↔Excited) → phase2 (Calm↔Tense) → reveal (RippleAvatar with FACS)
-// Saves to ripple_checkins; updates ripples streak + profiles.points (+5).
+// Phases: phase1 → phase2 → items (0–2 VAS questions, WP4) → reveal
+// Saves to ripple_checkins (incl. items jsonb); updates ripples streak + item_state + profiles.points (+5).
 //
 // Props:
 //   session     — Supabase session (for userId)
@@ -26,7 +27,7 @@ const SANS  = '"DM Sans", system-ui, sans-serif'
 
 const intensityFromZone = z => [0.33, 0.67, 1.0][z] ?? 1
 
-async function saveCheckin({ supabase, userId, context, p1Sel, p2Sel, composite }) {
+async function saveCheckin({ supabase, userId, context, p1Sel, p2Sel, composite, items, nextItemState }) {
   const pad = n => String(n).padStart(2, '0')
   const now = new Date()
   const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
@@ -47,6 +48,7 @@ async function saveCheckin({ supabase, userId, context, p1Sel, p2Sel, composite 
     ambivalence_x:   f(composite.ambX),
     ambivalence_y:   f(composite.ambY),
     ambivalence_mag: f(composite.ambMag),
+    items:           items?.length ? items : null,
   }, { onConflict: 'user_id,local_date' })
   if (ciErr) console.warn('ripple_checkins upsert:', ciErr)
 
@@ -62,6 +64,7 @@ async function saveCheckin({ supabase, userId, context, p1Sel, p2Sel, composite 
   const newBest = Math.max(rpl?.streak_best ?? 0, newStreak)
   await supabase.from('ripples').update({
     last_checkin_on: today, streak_current: newStreak, streak_best: newBest,
+    ...(nextItemState ? { item_state: nextItemState } : {}),
   }).eq('user_id', userId)
 
   // Points
@@ -152,7 +155,49 @@ function RatingStep({ phase, activeIds, labels, skinColor, eyeColor, species, ha
 
       {sel && (
         <button style={{ ...S.btn, width: 308 }} onClick={() => onConfirm(sel)}>
-          {phase === 1 ? 'Next →' : 'See result →'}
+          {phase === 1 ? 'Next →' : 'Next →'}
+        </button>
+      )}
+    </div>
+  )
+}
+
+// ── ItemStep ──────────────────────────────────────────────────────────────────
+
+function ItemStep({ item, value, onChange, onConfirm, isLast }) {
+  return (
+    <div style={S.stepWrap}>
+      <div style={{ textAlign: 'center' }}>
+        <p style={S.eyebrow}>A quick question</p>
+        <h2 style={S.ratingQ}>{item.question}</h2>
+      </div>
+
+      <div style={{ width: 308, display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontFamily: SANS, fontSize: 11, color: '#888', width: 60, textAlign: 'right', flexShrink: 0, lineHeight: 1.2 }}>{item.left}</span>
+          <div style={{ flex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative' }}>
+            <div style={{ position: 'absolute', left: 0, right: 0, top: '50%', height: 2, background: '#E8D0E0', transform: 'translateY(-50%)', borderRadius: 1 }} />
+            {[1, 2, 3, 4, 5, 6, 7].map(d => {
+              const isS = value === d
+              return (
+                <button key={d} onClick={() => onChange(d)} style={{
+                  width: isS ? 18 : 10, height: isS ? 18 : 10, borderRadius: '50%',
+                  background: isS ? '#f068a4' : '#E8D0E0',
+                  border: isS ? '2px solid white' : 'none',
+                  boxShadow: isS ? '0 0 0 2px #f068a4' : 'none',
+                  position: 'relative', zIndex: 1, transition: 'all 0.15s',
+                  cursor: 'pointer', padding: 0, flexShrink: 0,
+                }} />
+              )
+            })}
+          </div>
+          <span style={{ fontFamily: SANS, fontSize: 11, color: '#888', width: 60, flexShrink: 0, lineHeight: 1.2 }}>{item.right}</span>
+        </div>
+      </div>
+
+      {value != null && (
+        <button style={{ ...S.btn, width: 308 }} onClick={onConfirm}>
+          {isLast ? 'See result →' : 'Next →'}
         </button>
       )}
     </div>
@@ -161,7 +206,7 @@ function RatingStep({ phase, activeIds, labels, skinColor, eyeColor, species, ha
 
 // ── RevealStep ────────────────────────────────────────────────────────────────
 
-function RevealStep({ composite, p1Sel, p2Sel, rippleName, rewardData, skinColor, eyeColor, species, hairStyle, hairColor, saveDone, onContinue }) {
+function RevealStep({ composite, p1Sel, p2Sel, rippleName, rewardData, skinColor, eyeColor, species, hairStyle, hairColor, saveDone, onContinue, drawnItems, itemResponses }) {
   const [anim, setAnim] = useState(0)
   const animRef = useRef(null)
 
@@ -198,6 +243,8 @@ function RevealStep({ composite, p1Sel, p2Sel, rippleName, rewardData, skinColor
       ? (rippleName ? `${rippleName} is balanced` : 'Feeling balanced')
       : (rippleName ? `${rippleName} feels ${label.toLowerCase()}` : `Feeling ${label.toLowerCase()}`)
 
+  const hasItems = drawnItems?.length > 0
+
   return (
     <div style={S.stepWrap}>
       <div style={{ textAlign: 'center' }}>
@@ -229,6 +276,16 @@ function RevealStep({ composite, p1Sel, p2Sel, rippleName, rewardData, skinColor
             <div style={{ background: 'white', borderRadius: 13, padding: '10px 12px', boxShadow: '0 2px 18px rgba(180,120,160,0.10)', fontFamily: MONO, fontSize: 12, lineHeight: 2, color: '#abadb0' }}>
               <div><span style={{ color: '#d0b8c8' }}>energy  </span>{p1EmName}{p1Int ? ` · ${p1Int}` : ''}</div>
               <div><span style={{ color: '#d0b8c8' }}>tension </span>{p2EmName}{p2Int ? ` · ${p2Int}` : ''}</div>
+              {hasItems && (
+                <div style={{ borderTop: '1px solid #f0e8ec', marginTop: 2, paddingTop: 2 }}>
+                  {drawnItems.map((item, i) => (
+                    <div key={item.itemId}>
+                      <span style={{ color: '#d0b8c8' }}>{item.poolId === 'satisfaction' ? 'life    ' : 'stress  '}</span>
+                      {itemResponses[i] != null ? `${itemResponses[i]}/7` : '—'}
+                    </div>
+                  ))}
+                </div>
+              )}
               <div style={{ borderTop: '1px solid #f0e8ec', marginTop: 4, paddingTop: 4 }}>
                 <span style={{ color: '#d0b8c8' }}>streak  </span>
                 {rewardData != null ? `${rewardData.newStreak}d` : '…'}
@@ -268,12 +325,17 @@ export default function CheckinFlow({ session, context = 'manual', onComplete, s
   const userId  = session?.user?.id ?? null
   const navigate = useNavigate()
 
-  const [phase,      setPhase]      = useState('phase1')
-  const [p1Sel,      setP1Sel]      = useState(null)
-  const [p2Sel,      setP2Sel]      = useState(null)
-  const [saveDone,   setSaveDone]   = useState(false)
-  const [rippleName, setRippleName] = useState(null)
-  const [rewardData, setRewardData] = useState(null)
+  const [phase,            setPhase]            = useState('phase1')
+  const [p1Sel,            setP1Sel]            = useState(null)
+  const [p2Sel,            setP2Sel]            = useState(null)
+  const [saveDone,         setSaveDone]         = useState(false)
+  const [rippleName,       setRippleName]       = useState(null)
+  const [rewardData,       setRewardData]       = useState(null)
+  const [currentItemState, setCurrentItemState] = useState(null)
+  const [drawnItems,       setDrawnItems]       = useState([])
+  const [nextItemState,    setNextItemState]    = useState(null)
+  const [itemResponses,    setItemResponses]    = useState([])
+  const [itemIndex,        setItemIndex]        = useState(0)
 
   const { data: avatar } = useAvatarConfig(userId)
   const skinColor = avatar?.skin_color ?? '#FDBCB4'
@@ -300,15 +362,19 @@ export default function CheckinFlow({ session, context = 'manual', onComplete, s
 
   useEffect(() => {
     if (!userId) return
-    db.from('ripples').select('name').eq('user_id', userId).maybeSingle()
-      .then(({ data }) => setRippleName(data?.name ?? null))
+    db.from('ripples').select('name, item_state').eq('user_id', userId).maybeSingle()
+      .then(({ data }) => {
+        setRippleName(data?.name ?? null)
+        setCurrentItemState(data?.item_state ?? null)
+      })
   }, [userId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (phase !== 'reveal' || !composite || !userId) return
     setSaveDone(false)
     setRewardData(null)
-    saveCheckin({ supabase: db, userId, context, p1Sel, p2Sel, composite })
+    const formattedItems = drawnItems.length > 0 ? formatItemResponses(drawnItems, itemResponses) : null
+    saveCheckin({ supabase: db, userId, context, p1Sel, p2Sel, composite, items: formattedItems, nextItemState })
       .then(reward => { setRewardData(reward); setSaveDone(true) })
       .catch(err => { console.warn('saveCheckin:', err); setSaveDone(true) })
   }, [phase]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -316,6 +382,24 @@ export default function CheckinFlow({ session, context = 'manual', onComplete, s
   function handleContinue() {
     if (onComplete) onComplete()
     else navigate('/dashboard', { replace: true })
+  }
+
+  function handlePhase2Confirm(s) {
+    setP2Sel(s)
+    const { drawn, nextState } = drawItems(currentItemState)
+    setDrawnItems(drawn)
+    setNextItemState(nextState)
+    setItemIndex(0)
+    setItemResponses([])
+    setPhase(drawn.length > 0 ? 'items' : 'reveal')
+  }
+
+  function handleItemConfirm() {
+    if (itemIndex + 1 < drawnItems.length) {
+      setItemIndex(i => i + 1)
+    } else {
+      setPhase('reveal')
+    }
   }
 
   const inner = (
@@ -334,14 +418,24 @@ export default function CheckinFlow({ session, context = 'manual', onComplete, s
         <RatingStep phase={2} activeIds={[3, 7]}
           labels={{ left: 'Calm', right: 'Tense', question: 'How settled or on-edge do you feel?' }}
           skinColor={skinColor} eyeColor={eyeColor} species={species} hairStyle={hairStyle} hairColor={hairColor}
-          onConfirm={s => { setP2Sel(s); setPhase('reveal') }} />
+          onConfirm={handlePhase2Confirm} />
+      )}
+      {phase === 'items' && drawnItems.length > 0 && (
+        <ItemStep
+          item={drawnItems[itemIndex]}
+          value={itemResponses[itemIndex] ?? null}
+          onChange={v => setItemResponses(prev => { const next = [...prev]; next[itemIndex] = v; return next })}
+          onConfirm={handleItemConfirm}
+          isLast={itemIndex + 1 >= drawnItems.length}
+        />
       )}
       {phase === 'reveal' && composite && (
         <RevealStep composite={composite} p1Sel={p1Sel} p2Sel={p2Sel}
           rippleName={rippleName} rewardData={rewardData}
           skinColor={skinColor} eyeColor={eyeColor} species={species}
           hairStyle={hairStyle} hairColor={hairColor}
-          saveDone={saveDone} onContinue={handleContinue} />
+          saveDone={saveDone} onContinue={handleContinue}
+          drawnItems={drawnItems} itemResponses={itemResponses} />
       )}
     </div>
   )

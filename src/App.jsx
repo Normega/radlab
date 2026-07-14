@@ -35,9 +35,10 @@ const Verified       = lazy(() => import('./pages/Verified'))
 
 // Ripple — public-tier onboarding/login concierge (docs/markdowns/ripple_spec.md).
 // Its own partition like Lecture Lounge: separate chunk, own error boundary below.
-const WelcomeFlow    = lazy(() => import('./ripple/WelcomeFlow'))
-const RippleName     = lazy(() => import('./ripple/RippleName'))
-const CheckinFlow    = lazy(() => import('./ripple/CheckinFlow'))
+const WelcomeFlow      = lazy(() => import('./ripple/WelcomeFlow'))
+const RippleName       = lazy(() => import('./ripple/RippleName'))
+const CheckinFlow      = lazy(() => import('./ripple/CheckinFlow'))
+const RippleSettings   = lazy(() => import('./ripple/RippleSettings'))
 
 const PondWatch     = lazy(() => import('./games/PondWatch'))
 const OwlBarn       = lazy(() => import('./games/OwlBarn'))
@@ -291,6 +292,11 @@ export default function App() {
             <Route path="/checkin" element={
               <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome} needsRippleName={needsRippleName}>
                 <CheckinFlow session={session} context="manual" showNav={true} />
+              </ProtectedRoute>
+            } />
+            <Route path="/ripple/settings" element={
+              <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome} needsRippleName={needsRippleName}>
+                <RippleSettings session={session} />
               </ProtectedRoute>
             } />
           </Route>
