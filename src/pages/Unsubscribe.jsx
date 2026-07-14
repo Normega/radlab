@@ -20,6 +20,14 @@ const STATES = {
     heading: 'Already unsubscribed',
     body: "You've already been unsubscribed from email reminders for this study.",
   },
+  ripple_success: {
+    heading: 'Ripple reminders off',
+    body: "You'll no longer receive check-in reminder emails. You can still check in any time from your dashboard, and can re-enable reminders from your profile.",
+  },
+  ripple_already: {
+    heading: 'Already unsubscribed',
+    body: "You've already been unsubscribed from Ripple check-in reminder emails.",
+  },
 }
 
 export default function Unsubscribe() {
@@ -29,6 +37,18 @@ export default function Unsubscribe() {
   useEffect(() => {
     async function run() {
       try {
+        // Try Ripple first — returns { status: 'token_not_found' } (200) if not a Ripple token
+        const { data: rData, error: rErr } = await supabase.functions.invoke('handle_ripple_unsubscribe', {
+          body: { token },
+        })
+        if (!rErr && rData?.status && rData.status !== 'token_not_found') {
+          if (rData.status === 'success')                    setState('ripple_success')
+          else if (rData.status === 'already_unsubscribed') setState('ripple_already')
+          else                                               setState('invalid')
+          return
+        }
+
+        // Not a Ripple token — fall back to participant study unsubscribe
         const { data, error } = await supabase.functions.invoke('handle_unsubscribe', {
           body: { token },
         })
@@ -36,10 +56,10 @@ export default function Unsubscribe() {
           setState('invalid')
           return
         }
-        if (data?.status === 'success')            setState('success')
-        else if (data?.status === 'blocked')       setState('blocked')
-        else if (data?.status === 'already_unsubscribed') setState('already')
-        else                                        setState('invalid')
+        if (data?.status === 'success')                    setState('success')
+        else if (data?.status === 'blocked')               setState('blocked')
+        else if (data?.status === 'already_unsubscribed')  setState('already')
+        else                                               setState('invalid')
       } catch {
         setState('invalid')
       }

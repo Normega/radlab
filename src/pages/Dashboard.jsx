@@ -663,13 +663,22 @@ function RippleSection({ userId }) {
 
   useEffect(() => {
     if (!userId) return
-    supabase.from('ripples')
-      .select('check_in_enabled, prompt_cadence, last_checkin_on')
-      .eq('user_id', userId).maybeSingle()
-      .then(({ data }) => setConfig(data
-        ? { enabled: data.check_in_enabled !== false, cadence: data.prompt_cadence ?? 'daily', lastCheckinOn: data.last_checkin_on }
-        : { enabled: true, cadence: 'daily', lastCheckinOn: null }
-      ))
+    Promise.all([
+      supabase.from('ripples')
+        .select('check_in_enabled, prompt_cadence, last_checkin_on')
+        .eq('user_id', userId).maybeSingle(),
+      supabase.from('ripple_checkins')
+        .select('local_date')
+        .eq('user_id', userId)
+        .order('local_date', { ascending: false })
+        .limit(1),
+    ]).then(([{ data: r }, { data: ci }]) => {
+      const lastCheckinOn = r?.last_checkin_on ?? ci?.[0]?.local_date ?? null
+      setConfig(r
+        ? { enabled: r.check_in_enabled !== false, cadence: r.prompt_cadence ?? 'daily', lastCheckinOn }
+        : { enabled: true, cadence: 'daily', lastCheckinOn }
+      )
+    })
   }, [userId])
 
   if (config === null) return null
@@ -727,8 +736,8 @@ function RippleGreeting({ userId }) {
       const now = new Date()
       const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
 
-      // Days since last check-in
-      const lastDate = ripple?.last_checkin_on ?? null
+      // Days since last check-in — fall back to ripple_checkins if ripples.last_checkin_on is stale
+      const lastDate = ripple?.last_checkin_on ?? checkins?.[0]?.local_date ?? null
       let daysSinceLast = null
       if (lastDate) {
         if (lastDate === todayStr) {

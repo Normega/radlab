@@ -38,7 +38,7 @@ export default function ProfilePage({ session }) {
     if (!userId) return
     Promise.all([
       supabase.from('ripples')
-        .select('name, streak_current, streak_best, check_in_enabled, prompt_cadence, last_checkin_on')
+        .select('name, streak_current, streak_best, check_in_enabled, prompt_cadence, last_checkin_on, reminder_enabled, reminder_time')
         .eq('user_id', userId).maybeSingle(),
       supabase.from('ripple_checkins')
         .select('local_date', { count: 'exact', head: true })
@@ -70,8 +70,20 @@ export default function ProfilePage({ session }) {
     setRipple(r => ({ ...r, prompt_cadence: cadence }))
   }
 
-  const enabled = ripple?.check_in_enabled !== false
-  const cadence = ripple?.prompt_cadence ?? 'daily'
+  async function saveReminderEnabled(next) {
+    await supabase.from('ripples').update({ reminder_enabled: next }).eq('user_id', userId)
+    setRipple(r => ({ ...r, reminder_enabled: next }))
+  }
+
+  async function saveReminderTime(time) {
+    await supabase.from('ripples').update({ reminder_time: time }).eq('user_id', userId)
+    setRipple(r => ({ ...r, reminder_time: time }))
+  }
+
+  const enabled        = ripple?.check_in_enabled !== false
+  const cadence        = ripple?.prompt_cadence ?? 'daily'
+  const reminderOn     = ripple?.reminder_enabled === true
+  const reminderTime   = ripple?.reminder_time ?? 'morning'
 
   // ── Profile / gamification (read-only) ───────────────────────────────────
   const { data: profile } = useQuery({
@@ -238,6 +250,62 @@ export default function ProfilePage({ session }) {
                   )
                 })}
               </div>
+            </div>
+          )}
+
+          {ripple && enabled && cadence !== 'never' && (
+            <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--bd)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, marginBottom: reminderOn ? 14 : 0 }}>
+                <div>
+                  <p style={{ fontFamily: MONO, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--tx3)', margin: '0 0 3px' }}>
+                    Email reminders
+                  </p>
+                  <p style={{ fontSize: 13, color: 'var(--tx3)', margin: 0, lineHeight: 1.4 }}>
+                    {reminderOn ? 'Sending at your chosen time.' : 'Off — no reminder emails.'}
+                  </p>
+                </div>
+                <button
+                  onClick={() => saveReminderEnabled(!reminderOn)}
+                  style={{ ...S.toggle, background: reminderOn ? 'var(--pk)' : 'var(--bds)', flexShrink: 0 }}
+                >
+                  <div style={{
+                    width: 20, height: 20, borderRadius: '50%', background: 'white',
+                    transform: reminderOn ? 'translateX(20px)' : 'translateX(2px)',
+                    transition: 'transform 0.2s',
+                    boxShadow: '0 1px 4px rgba(0,0,0,0.18)',
+                  }} />
+                </button>
+              </div>
+
+              {reminderOn && (
+                <div>
+                  <p style={{ fontFamily: MONO, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--tx3)', margin: '0 0 8px' }}>
+                    Time of day (Toronto)
+                  </p>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    {[
+                      { key: 'morning', label: 'Morning', sub: '8 AM' },
+                      { key: 'midday',  label: 'Midday',  sub: '12 PM' },
+                      { key: 'evening', label: 'Evening', sub: '7 PM' },
+                    ].map(({ key, label, sub }) => {
+                      const active = reminderTime === key
+                      return (
+                        <button key={key} onClick={() => saveReminderTime(key)} style={{
+                          fontFamily: MONO, fontSize: 12, padding: '6px 14px', borderRadius: 8,
+                          background: active ? 'var(--pk)' : 'var(--bgp)',
+                          color: active ? 'white' : 'var(--tx2)',
+                          border: `1.5px solid ${active ? 'var(--pk)' : 'var(--bd)'}`,
+                          cursor: 'pointer', transition: 'all 0.15s',
+                          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1,
+                        }}>
+                          <span>{label}</span>
+                          <span style={{ fontSize: 10, opacity: 0.75 }}>{sub}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
