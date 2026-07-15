@@ -68,14 +68,6 @@ export const ADVANCED_INSTRUMENTS = [
     load: () => import('./WellnessTipStep'),
   },
   {
-    key: 'consent',
-    name: 'Consent',
-    description: 'Renders the consent HTML defined per-study (Studies → edit → consent). Not previewable here because its content comes from the study, not the instrument.',
-    source: 'src/components/study/ConsentStep.jsx',
-    table: null,
-    previewable: false,
-  },
-  {
     key: 'debrief',
     name: 'Debrief',
     description: 'Renders the debrief HTML defined per-study. Review its content on the study edit page.',
