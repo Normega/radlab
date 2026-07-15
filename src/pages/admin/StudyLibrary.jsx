@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 
@@ -38,10 +38,26 @@ function useDeleteStudy() {
   })
 }
 
+function useDuplicateStudy() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, newName }) => {
+      const { data, error } = await supabase.rpc('duplicate_study', { p_study_id: id, p_new_name: newName })
+      if (error) throw error
+      return data // new study id
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['studies-list'] }),
+  })
+}
+
 export default function StudyLibrary() {
+  const navigate = useNavigate()
   const { data: studies, isLoading } = useStudies()
   const deleteStudy = useDeleteStudy()
+  const duplicateStudy = useDuplicateStudy()
   const [pendingDelete, setPendingDelete] = useState(null)
+  const [pendingDuplicate, setPendingDuplicate] = useState(null)
+  const [duplicateName, setDuplicateName] = useState('')
 
   return (
     <div>
@@ -87,6 +103,12 @@ export default function StudyLibrary() {
                   <td style={S.td}>
                     <div style={S.actions}>
                       <Link to={`/admin/studies/${s.id}`} style={S.actionBtn}>View</Link>
+                      <button
+                        onClick={() => { setPendingDuplicate(s); setDuplicateName(`${s.name} (Copy)`) }}
+                        style={S.actionBtn}
+                      >
+                        Duplicate
+                      </button>
                       <button onClick={() => setPendingDelete(s)} style={S.deleteBtn}>Delete</button>
                     </div>
                   </td>
@@ -118,6 +140,46 @@ export default function StudyLibrary() {
             </div>
             {deleteStudy.isError && (
               <p style={S.dialogError}>{deleteStudy.error.message}</p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {pendingDuplicate && (
+        <div style={S.overlay} onClick={() => setPendingDuplicate(null)}>
+          <div style={S.dialog} onClick={e => e.stopPropagation()}>
+            <h2 style={S.dialogTitle}>Duplicate study</h2>
+            <p style={S.dialogBody}>
+              Clones <strong>{pendingDuplicate.name}</strong>'s full configuration — design, session
+              templates, consent/debrief forms, screener — into a brand-new study with no
+              participants, enrollments, or other data carried over.
+            </p>
+            <label style={S.fieldLabel}>
+              New study name
+              <input
+                style={S.textInput}
+                value={duplicateName}
+                onChange={e => setDuplicateName(e.target.value)}
+                autoFocus
+              />
+            </label>
+            <div style={S.dialogActions}>
+              <button style={S.cancelBtn} onClick={() => setPendingDuplicate(null)}>Cancel</button>
+              <button
+                style={S.btnPrimary}
+                disabled={duplicateStudy.isPending || !duplicateName.trim()}
+                onClick={() => {
+                  duplicateStudy.mutate(
+                    { id: pendingDuplicate.id, newName: duplicateName.trim() },
+                    { onSuccess: (newId) => { setPendingDuplicate(null); navigate(`/admin/studies/${newId}`) } },
+                  )
+                }}
+              >
+                {duplicateStudy.isPending ? 'Duplicating…' : 'Duplicate'}
+              </button>
+            </div>
+            {duplicateStudy.isError && (
+              <p style={S.dialogError}>{duplicateStudy.error.message}</p>
             )}
           </div>
         </div>
@@ -175,6 +237,8 @@ const S = {
   dialog: { background: '#fff', borderRadius: 14, padding: '28px 32px', maxWidth: 420, width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.18)' },
   dialogTitle: { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 20, fontWeight: 400, color: 'var(--tx)', margin: '0 0 12px' },
   dialogBody: { fontSize: 14, color: 'var(--tx2)', margin: '0 0 24px', lineHeight: 1.6 },
+  fieldLabel: { display: 'block', fontSize: 13, color: 'var(--tx2)', fontFamily: '"DM Sans",system-ui,sans-serif', margin: '0 0 20px' },
+  textInput: { display: 'block', width: '100%', marginTop: 6, padding: '9px 12px', fontSize: 14, borderRadius: 8, border: '1px solid var(--bd)', fontFamily: '"DM Sans",system-ui,sans-serif', boxSizing: 'border-box' },
   dialogActions: { display: 'flex', justifyContent: 'flex-end', gap: 10 },
   cancelBtn: { background: 'none', border: '1px solid var(--bd)', borderRadius: 8, padding: '8px 18px', fontSize: 14, cursor: 'pointer', color: 'var(--tx2)', fontFamily: '"DM Sans",system-ui,sans-serif' },
   confirmDeleteBtn: { background: '#c0392b', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 18px', fontSize: 14, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', fontWeight: 500 },
