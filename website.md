@@ -2522,7 +2522,7 @@ study (duplicate the proven dry-run graph), delete the dry-run study + `ext-sona
 
 An `online_longitudinal` 3-arm RCT (PI Zerin Mahfuz; Faculty Sponsor Norman Farb;
 Co-I Ellen Langer, Harvard). RIS protocol 50533 / REB 65268. Target N = 111 (37/arm),
-PSYC100 students screening PHQ-8 5–9. Structurally a sibling of Liliana Study 3 (§26a)
+PSY100 students screening PHQ-8 5–9. Structurally a sibling of Liliana Study 3 (§26a)
 — it rides the same Experiment Builder → `study_sessions` → `participant_schedule` →
 cron-email → magic-link-session plumbing (§28); this is a content/materials build, not a
 plumbing build.
@@ -2574,7 +2574,7 @@ additive change all other games ignore) so baseline vs. post is distinguishable.
 
 **Screener** (`screeners.langerian-mindfulness-v1`) — single-instrument PHQ-8 **range** gate
 (5–9 pass; `<5` fail_low; `>9` fail_high). Phase-1 eligibility: U of T student · **PSY100**
-(added — in the consent eligibility (which lists it as PSYC100) but absent from the source `Screening.pdf`) · English ·
+(added — in the consent eligibility but absent from the source `Screening.pdf`) · English ·
 vision · daily-email capacity · both surveys · a **3-way distress safety item** (pass_answer
 `no`; `unsure` passes through for follow-up; `yes` stops). Every non-pass outcome states no
 course credit + names the SONA alternative + shows resources. The "no mood/cognitive/substance
