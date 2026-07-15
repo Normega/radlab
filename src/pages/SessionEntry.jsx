@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom'
 import { createClient } from '@supabase/supabase-js'
 import StepDispatcher from '../components/study/StepDispatcher'
 import ScreenerPage from '../components/ScreenerPage'
+import ConsentGate from '../components/study/ConsentGate'
 import { useAssignments } from '../hooks/useAssignment'
 
 // Dedicated client for participant sessions — never touches the shared lab/public client.
@@ -14,8 +15,6 @@ function makeParticipantClient() {
     { auth: { persistSession: false, autoRefreshToken: true, storageKey: 'sb-participant' } }
   )
 }
-
-const CONSENT_URL = (studyId) => `/study/${studyId}/consent`
 
 export default function SessionEntry() {
   const { token } = useParams()
@@ -128,12 +127,20 @@ export default function SessionEntry() {
 
   async function proceedAfterScreener(data) {
     const { schedule, study, enrollment } = data
+    fullDataRef.current = data // needed by handleConsentComplete if the consent gate fires below
     if (study.consent_required && study.active_consent_form_id && !enrollment?.consent_date) {
       setConsentStudyId(schedule.study_id)
       setState('needs_consent')
       return
     }
     // Consent confirmed (or not required) — flush any buffered screener responses
+    await flushScreenerDraft(data.link.participant_id, data.link.study_id)
+    setSessionData(data)
+    setState('running')
+  }
+
+  async function handleConsentComplete() {
+    const data = fullDataRef.current
     await flushScreenerDraft(data.link.participant_id, data.link.study_id)
     setSessionData(data)
     setState('running')
@@ -278,21 +285,20 @@ export default function SessionEntry() {
   }
 
   if (state === 'needs_consent') {
-    const returnTo = encodeURIComponent(`/s/${token}`)
+    // Rendered inline (not a navigate-away to the standalone /study/:id/consent
+    // route) using this component's own isolated participant client — that
+    // route's global-session AuthRoute guard has nothing to authenticate a
+    // genuine anonymous participant with, since sb's session is deliberately
+    // never persisted to the global client/localStorage. See ConsentGate.jsx.
     return (
-      <FullScreen>
-        <div style={{ maxWidth: 480, padding: '0 24px', textAlign: 'center' }}>
-          <p style={{ fontSize: 18, color: 'var(--tx2)', lineHeight: 1.6, marginBottom: 24 }}>
-            Before beginning this study, you need to read and sign the consent form.
-          </p>
-          <a
-            href={`${CONSENT_URL(consentStudyId)}?returnTo=${returnTo}`}
-            style={{ display: 'inline-block', padding: '12px 32px', borderRadius: 12, background: 'var(--pk)', color: '#fff', fontFamily: '"DM Sans",system-ui,sans-serif', fontWeight: 500, textDecoration: 'none' }}
-          >
-            Review consent form →
-          </a>
-        </div>
-      </FullScreen>
+      <div style={{ minHeight: '100vh', background: 'var(--bg, #FCF0F5)', display: 'flex', justifyContent: 'center' }}>
+        <ConsentGate
+          studyId={consentStudyId}
+          participantId={fullDataRef.current?.link?.participant_id}
+          supabaseClient={sb}
+          onComplete={handleConsentComplete}
+        />
+      </div>
     )
   }
 
