@@ -76,10 +76,16 @@ export function renderTerminationEmail(vars: {
   first_name: string
   study_name: string
   is_test?: boolean
+  variant?: 'adherence' | 'missed_assessment'
+  gate_label?: string // missed_assessment: the assessment's label, e.g. "Midpoint Assessment"
 }): { subject: string; html: string; text: string } {
+  const middle = vars.variant === 'missed_assessment'
+    ? `Unfortunately, you didn't complete the ${vars.gate_label ?? 'scheduled assessment'} within its scheduled window, we will award credit for the time you spent, but your participation in the study is now complete.`
+    : `Unfortunately, you didn't complete the minimum required sessions for this phase of the study (we noted that at least 10 of 12 sessions are needed), we will award credit for the time you spent, but your participation in the study is now complete.`
+
   const bodyText = `Hi ${vars.first_name},
 
-Unfortunately, you didn't complete the minimum required sessions for this phase of the study (we noted that at least 10 of 12 sessions are needed), we will award credit for the time you spent, but your participation in the study is now complete.
+${middle}
 
 Thank you for your participation,
 The RADlab Team

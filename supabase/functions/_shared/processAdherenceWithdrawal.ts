@@ -27,9 +27,11 @@ export async function processAdherenceWithdrawal(
   const { participantId, studyId, withdrawal, testOverrideEmail } = args
   const isTest = !!testOverrideEmail
 
-  const reason =
-    `Adherence check failed: completed ${withdrawal.completed}/${withdrawal.ofTotal} ` +
-    `daily sessions in ${withdrawal.phase} (minimum ${withdrawal.minRequired} required).`
+  const reason = withdrawal.kind === 'missed_assessment'
+    ? `Assessment window missed: the ${withdrawal.gateLabel ?? 'gating assessment'} ` +
+      `was not completed before its link expired.`
+    : `Adherence check failed: completed ${withdrawal.completed}/${withdrawal.ofTotal} ` +
+      `daily sessions in ${withdrawal.phase} (minimum ${withdrawal.minRequired} required).`
 
   const { error: enrollErr } = await db
     .from('study_enrollments')
@@ -72,6 +74,8 @@ export async function processAdherenceWithdrawal(
     first_name: firstName,
     study_name: study?.name ?? 'this study',
     is_test: isTest,
+    variant: withdrawal.kind,
+    gate_label: withdrawal.gateLabel,
   })
 
   const resend = new Resend(Deno.env.get('RESEND_API_KEY'))

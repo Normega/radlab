@@ -184,6 +184,10 @@ Deno.serve(async (req) => {
         return json({ error: 'Your participation in this study has ended.' }, 409)
       }
 
+      if (result.completedStudy) {
+        return json({ error: 'You have already completed this study — thank you for participating!' }, 409)
+      }
+
       if (result.inserted === 0) {
         // Idempotent no-op: schedule already existed for this participant.
         // The early re-entry check above only returns a link that is still

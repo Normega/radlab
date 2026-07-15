@@ -146,6 +146,7 @@ Deno.serve(async (req) => {
     let processed = 0
     let suppressed = 0
     let failed = 0
+    let deferred = 0
 
     // Steps 2-3 only apply when something is actually due to send — the
     // advance pass (step 4) below must still run every tick regardless,
@@ -177,7 +178,14 @@ Deno.serve(async (req) => {
           continue
         }
 
-        // 2b. Active link check — participant already has an active link for a different row
+        // 2b. Active link check — participant already has an active link for
+        // a different row. This is TRANSIENT (step 0 expires the stale link
+        // on a later tick), so defer: leave the row 'pending' and retry next
+        // tick. It must NOT suppressRow — 'blocked' is permanent, and a
+        // missed day's link is routinely still nominally 'active' at the
+        // instant the next day's 06:00 row is processed (confirmed live
+        // 2026-07-15: a real dry-run participant's day-3 session was
+        // permanently blocked this way and never emailed).
         const { data: activeLink } = await db
           .from('participant_links')
           .select('id, schedule_id')
@@ -186,8 +194,7 @@ Deno.serve(async (req) => {
           .maybeSingle()
 
         if (activeLink && activeLink.schedule_id !== row.id) {
-          await suppressRow(db, row.id, row.participant_id, 'existing_active_link')
-          suppressed++
+          deferred++
           continue
         }
 
@@ -332,6 +339,7 @@ Deno.serve(async (req) => {
     // every cron tick even for participants with nothing new to do.
     let advanced = 0
     let withdrawn = 0
+    let completedStudies = 0
     const { data: graphStudies } = await db
       .from('studies')
       .select('id, design_graph')
@@ -393,13 +401,31 @@ Deno.serve(async (req) => {
               console.error(`adherence withdrawal failed for participant ${participantId} study ${studyId}:`, withdrawErr)
             }
           }
+
+          // Whole study finished (final assessment completed) — mark the
+          // enrollment. The status filter makes this idempotent across
+          // ticks and never touches withdrawn enrollments.
+          if (result.completedStudy) {
+            const { data: compRows, error: compErr } = await db
+              .from('study_enrollments')
+              .update({ status: 'completed' })
+              .eq('study_id', studyId)
+              .eq('profile_id', participantId)
+              .in('status', ['enrolled', 'in_progress'])
+              .select('id')
+            if (compErr) {
+              console.error(`completion mark failed for participant ${participantId} study ${studyId}:`, compErr.message)
+            } else if (compRows && compRows.length > 0) {
+              completedStudies++
+            }
+          }
         } catch (advanceErr) {
           console.error(`advance pass failed for participant ${participantId} study ${studyId}:`, advanceErr)
         }
       }
     }
 
-    return json({ processed, suppressed, failed, missed, reminded, advanced, withdrawn })
+    return json({ processed, suppressed, deferred, failed, missed, reminded, advanced, withdrawn, completed: completedStudies })
 
   } catch (err) {
     console.error('check_schedule unexpected error:', err)

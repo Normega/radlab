@@ -34,11 +34,17 @@ export interface GraphNode {
 }
 
 export interface AdherenceWithdrawal {
+  // 'adherence': failed an adherence_check node's completed-session count.
+  // 'missed_assessment': the session gating a randomize fork (e.g. Liliana's
+  // midpoint) went 'missed' — the fork can never resolve, so rather than
+  // stalling silently forever the participant is formally withdrawn.
+  kind: 'adherence' | 'missed_assessment'
   nodeId: string
-  phase: string
-  completed: number
-  minRequired: number
-  ofTotal: number
+  phase?: string // adherence only
+  completed?: number // adherence only
+  minRequired?: number // adherence only
+  ofTotal?: number // adherence only
+  gateLabel?: string // missed_assessment only — the gating session's label
 }
 
 export interface GraphEdge {
@@ -124,6 +130,10 @@ export interface MaterializeResult {
   inserted: number
   stoppedAt: string | null
   withdrawal: AdherenceWithdrawal | null
+  // True when the walk ran off the end of the graph with nothing upstream
+  // actionable and the final session completed — i.e. the participant has
+  // finished the whole study. The caller marks the enrollment 'completed'.
+  completedStudy: boolean
 }
 
 /**
@@ -230,6 +240,7 @@ export async function materializeSchedule(
   const ACTIONABLE = new Set(['pending', 'unlocked', 'link_sent'])
   let anyUpstreamActionable = false
   let lastSessionStatus: string | undefined
+  let lastSessionNodeKey: string | undefined
   let stoppedAt: string | null = null
   let withdrawal: AdherenceWithdrawal | null = null
 
@@ -239,9 +250,11 @@ export async function materializeSchedule(
       inserts.push({ nodeKey, scheduledDate: addDays(t0Date, offset), sendTime: time, studyDay: offset + 1 })
       anyUpstreamActionable = true // just created this pass — actionable by definition
       lastSessionStatus = undefined
+      lastSessionNodeKey = undefined
     } else {
       if (ACTIONABLE.has(status)) anyUpstreamActionable = true
       lastSessionStatus = status
+      lastSessionNodeKey = nodeKey
     }
   }
 
@@ -288,7 +301,20 @@ export async function materializeSchedule(
       cur = graph.edges.find((e) => e.from === cur)?.to ?? null
 
     } else if (node.type === 'randomize') {
-      if (anyUpstreamActionable || lastSessionStatus !== 'completed') {
+      if (anyUpstreamActionable) {
+        stoppedAt = node.id
+        break
+      }
+      if (lastSessionStatus !== 'completed') {
+        // 'missed' is terminal — the gating assessment's window lapsed and
+        // it can never complete, so the fork can never resolve. Formal
+        // withdrawal + termination email (Norm, 2026-07-15) instead of the
+        // old silent stall. Other non-completed states (e.g. 'blocked')
+        // still stall so an admin can intervene.
+        if (lastSessionStatus === 'missed') {
+          const gateLabel = lastSessionNodeKey ? nodeMap[lastSessionNodeKey]?.label : undefined
+          withdrawal = { kind: 'missed_assessment', nodeId: node.id, gateLabel }
+        }
         stoppedAt = node.id
         break
       }
@@ -313,7 +339,7 @@ export async function materializeSchedule(
       const ofTotal = node.of_total ?? 12
       const completed = await countCompletedPhaseDays(db, participantId, studyId, node.phase ?? 'phase1')
       if (completed < minRequired) {
-        withdrawal = { nodeId: node.id, phase: node.phase ?? 'phase1', completed, minRequired, ofTotal }
+        withdrawal = { kind: 'adherence', nodeId: node.id, phase: node.phase ?? 'phase1', completed, minRequired, ofTotal }
         stoppedAt = node.id
         break
       }
@@ -324,7 +350,14 @@ export async function materializeSchedule(
     }
   }
 
-  if (inserts.length === 0) return { inserted: 0, stoppedAt, withdrawal }
+  // Ran off the end of the graph (no gate break), nothing left actionable,
+  // and the last session — the final assessment — is completed: the
+  // participant has finished the study.
+  const completedStudy =
+    cur === null && stoppedAt === null && withdrawal === null &&
+    !anyUpstreamActionable && lastSessionStatus === 'completed'
+
+  if (inserts.length === 0) return { inserted: 0, stoppedAt, withdrawal, completedStudy }
 
   const insertRows = inserts.map((row, i) => {
     const session = sessionByNodeKey.get(row.nodeKey)
@@ -369,5 +402,5 @@ export async function materializeSchedule(
     })
   }
 
-  return { inserted: insertRows.length, stoppedAt, withdrawal }
+  return { inserted: insertRows.length, stoppedAt, withdrawal, completedStudy }
 }
