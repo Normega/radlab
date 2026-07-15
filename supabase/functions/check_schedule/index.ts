@@ -110,6 +110,18 @@ Deno.serve(async (req) => {
       }
     }
 
+    // 0c. Withdrawn enrollments (adherence termination, or the manual admin
+    // "Withdraw" action) — fetched once and honored by every pass below:
+    // due-row sends (1b), reminders (3b), and the advance pass (4). None of
+    // these checked withdrawal at all before 2026-07-15.
+    const { data: withdrawnEnrollments } = await db
+      .from('study_enrollments')
+      .select('profile_id, study_id')
+      .eq('status', 'withdrawn')
+    const withdrawnSet = new Set(
+      (withdrawnEnrollments ?? []).map((w) => `${w.profile_id}:${w.study_id}`),
+    )
+
     // 1. Fetch pending rows scheduled today or earlier (date-only filter; the
     // send_time cutoff is applied below since Postgres can't compare it
     // against "now" without knowing which rows are for today).
@@ -124,22 +136,12 @@ Deno.serve(async (req) => {
       return json({ error: fetchErr.message }, 500)
     }
 
-    let dueRows = (candidateRows ?? []).filter(
-      (r) => scheduleKey(r.scheduled_date, r.send_time) <= nowKey,
+    // 1b. Time cutoff + withdrawn filter.
+    const dueRows = (candidateRows ?? []).filter(
+      (r) =>
+        scheduleKey(r.scheduled_date, r.send_time) <= nowKey &&
+        !withdrawnSet.has(`${r.participant_id}:${r.study_id}`),
     )
-
-    // 1b. Exclude any row whose enrollment has been withdrawn (adherence
-    // termination, or the pre-existing manual admin "Withdraw" action —
-    // neither was previously checked here at all).
-    if (dueRows.length > 0) {
-      const { data: withdrawnRows } = await db
-        .from('study_enrollments')
-        .select('profile_id, study_id')
-        .eq('status', 'withdrawn')
-        .in('study_id', [...new Set(dueRows.map((r) => r.study_id))])
-      const withdrawnSet = new Set((withdrawnRows ?? []).map((w) => `${w.profile_id}:${w.study_id}`))
-      dueRows = dueRows.filter((r) => !withdrawnSet.has(`${r.participant_id}:${r.study_id}`))
-    }
 
     let processed = 0
     let suppressed = 0
@@ -289,6 +291,7 @@ Deno.serve(async (req) => {
           const sessMap = new Map((sessRows ?? []).map((s) => [s.id, s.link_expires_hours ?? 48]))
 
           for (const row of remRows) {
+            if (withdrawnSet.has(`${row.participant_id}:${row.study_id}`)) continue
             const study = remStudyMap.get(row.study_id)
             if (!study || study.reminders_enabled === false) continue
             if ((row.attempts ?? 0) >= (study.max_attempts ?? 1)) continue
@@ -343,18 +346,10 @@ Deno.serve(async (req) => {
         .select('participant_id, study_id, status, scheduled_date')
         .in('study_id', graphStudyIds)
 
-      // Participants already withdrawn (adherence termination or a manual
-      // admin withdraw) must not be re-walked — materializeSchedule is
-      // idempotent for schedule rows, but a repeat "withdrawal detected"
-      // result would re-run processAdherenceWithdrawal (and re-email) on
-      // every single cron tick otherwise.
-      const { data: withdrawnEnrollments } = await db
-        .from('study_enrollments')
-        .select('profile_id, study_id')
-        .eq('status', 'withdrawn')
-        .in('study_id', graphStudyIds)
-      const withdrawnSet = new Set((withdrawnEnrollments ?? []).map((w) => `${w.profile_id}:${w.study_id}`))
-
+      // Participants already withdrawn (see withdrawnSet above) must not be
+      // re-walked — materializeSchedule is idempotent for schedule rows, but
+      // a repeat "withdrawal detected" result would re-run
+      // processAdherenceWithdrawal (and re-email) on every cron tick.
       const byParticipantStudy = new Map<string, { statuses: string[]; minDate: string }>()
       for (const r of allRows ?? []) {
         const key = `${r.participant_id}:${r.study_id}`
@@ -376,6 +371,11 @@ Deno.serve(async (req) => {
         if (!graph) continue
 
         try {
+          // unlockFirst deliberately omitted (false): nobody is in the
+          // browser during a cron tick, so new rows must be 'pending' for
+          // the due-row sender above to email them — an 'unlocked' row
+          // would never be sent (this exact bug stranded the Phase 2 day-1
+          // email for every fork-advanced participant until 2026-07-15).
           const result = await materializeSchedule(db, {
             participantId,
             studyId,

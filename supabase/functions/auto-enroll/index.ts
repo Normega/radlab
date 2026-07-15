@@ -60,7 +60,7 @@ Deno.serve(async (req) => {
     // 2. Check for an existing enrollment to support re-entry.
     const { data: existing } = await admin
       .from('study_enrollments')
-      .select('id, profile_id')
+      .select('id, profile_id, status')
       .eq('study_id', study_id)
       .eq('external_id', external_id)
       .maybeSingle()
@@ -68,6 +68,14 @@ Deno.serve(async (req) => {
     let participantId: string
 
     if (existing?.profile_id) {
+      // Withdrawn (adherence termination or manual admin withdraw) is final —
+      // exit before materializeSchedule, whose adherence gate would otherwise
+      // re-detect the failure and re-run the whole withdrawal (+ email) on
+      // every re-entry click.
+      if (existing.status === 'withdrawn') {
+        return json({ error: 'Your participation in this study has ended.' }, 409)
+      }
+
       participantId = existing.profile_id
 
       // Return a still-active link if one exists.
@@ -155,6 +163,9 @@ Deno.serve(async (req) => {
           graph,
           t0Date: today,
           baselineSendTime: baselineTimeOfDay(graph),
+          // Participant is in the browser right now — unlock the first row
+          // and issue its link so it can be returned in this response.
+          unlockFirst: true,
         })
       } catch (err) {
         console.error('materializeSchedule failed:', err)

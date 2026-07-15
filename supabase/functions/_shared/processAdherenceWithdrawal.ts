@@ -46,6 +46,16 @@ export async function processAdherenceWithdrawal(
     .eq('status', 'active')
   if (revokeErr) throw revokeErr
 
+  // Mirror onto the Liliana-specific participant record (admin views and
+  // analyses read dropped_out there, not study_enrollments). Non-fatal:
+  // a failure here must not block the termination email.
+  const { error: lpErr } = await db
+    .from('liliana_participants')
+    .update({ dropped_out: true, dropout_reason: reason })
+    .eq('profile_id', participantId)
+    .eq('study_id', studyId)
+  if (lpErr) console.error('processAdherenceWithdrawal: failed to set liliana_participants.dropped_out:', lpErr.message)
+
   const { data: study } = await db.from('studies').select('name').eq('id', studyId).single()
   const { data: profile } = await db.from('profiles').select('display_name').eq('id', participantId).single()
   const firstName = (profile?.display_name ?? '').split(' ')[0] || 'Participant'

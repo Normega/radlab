@@ -110,6 +110,14 @@ export interface MaterializeArgs {
   graph: Graph
   t0Date: string // enrollment date, YYYY-MM-DD
   baselineSendTime: string // time from the baseline timepoint
+  // True only when the participant is present in the browser right now
+  // (auto-enroll): the first inserted row is set 'unlocked' with a link
+  // issued immediately so it can be served back in the same response.
+  // False (default) for the check_schedule advance pass — nobody is there
+  // to receive an instant link, and the due-row sender only emails
+  // 'pending' rows, so an 'unlocked' row created here would never be
+  // emailed at all (it would just expire into 'missed').
+  unlockFirst?: boolean
 }
 
 export interface MaterializeResult {
@@ -170,7 +178,7 @@ export async function materializeSchedule(
   db: SupabaseClient,
   args: MaterializeArgs,
 ): Promise<MaterializeResult> {
-  const { participantId, studyId, graph, t0Date, baselineSendTime } = args
+  const { participantId, studyId, graph, t0Date, baselineSendTime, unlockFirst = false } = args
 
   // study_sessions gives node_key -> study_session_id (needed for every
   // insert) and, joined against existing participant_schedule rows, which
@@ -330,7 +338,7 @@ export async function materializeSchedule(
       scheduled_date: row.scheduledDate,
       send_time: row.sendTime,
       study_day: row.studyDay,
-      status: i === 0 ? 'unlocked' : 'pending',
+      status: unlockFirst && i === 0 ? 'unlocked' : 'pending',
       _linkExpiresHours: session.link_expires_hours,
     }
   })
@@ -340,24 +348,26 @@ export async function materializeSchedule(
     .insert(insertRows.map(({ _linkExpiresHours, ...rest }) => rest))
   if (insErr) throw insErr
 
-  // Insert order isn't guaranteed by Postgres, so look the unlocked row back
-  // up by status rather than trusting array position — only the first
-  // inserted row this call was 'unlocked', so there is exactly one match.
-  const { data: unlockedRow, error: unlockedErr } = await db
-    .from('participant_schedule')
-    .select('id')
-    .eq('participant_id', participantId)
-    .eq('study_id', studyId)
-    .eq('status', 'unlocked')
-    .single()
-  if (unlockedErr) throw unlockedErr
+  if (unlockFirst) {
+    // Insert order isn't guaranteed by Postgres, so look the unlocked row back
+    // up by status rather than trusting array position — only the first
+    // inserted row this call was 'unlocked', so there is exactly one match.
+    const { data: unlockedRow, error: unlockedErr } = await db
+      .from('participant_schedule')
+      .select('id')
+      .eq('participant_id', participantId)
+      .eq('study_id', studyId)
+      .eq('status', 'unlocked')
+      .single()
+    if (unlockedErr) throw unlockedErr
 
-  await issueLink(db, {
-    scheduleId: unlockedRow.id,
-    participantId,
-    studyId,
-    linkExpiresHours: insertRows[0]._linkExpiresHours,
-  })
+    await issueLink(db, {
+      scheduleId: unlockedRow.id,
+      participantId,
+      studyId,
+      linkExpiresHours: insertRows[0]._linkExpiresHours,
+    })
+  }
 
   return { inserted: insertRows.length, stoppedAt, withdrawal }
 }
