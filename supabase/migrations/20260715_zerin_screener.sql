@@ -27,7 +27,7 @@ insert into public.screeners (slug, name, description, definition) values (
       "fail_action": "stop",
       "items": [
         { "id": "p1_uoft",     "text": "I am currently enrolled as a student at the University of Toronto." },
-        { "id": "p1_psyc100",  "text": "I am enrolled in PSYC100 this term." },
+        { "id": "p1_psyc100",  "text": "I am enrolled in PSY100 this term." },
         { "id": "p1_english",  "text": "I can fluently read and write in English." },
         { "id": "p1_vision",   "text": "I have normal or corrected-to-normal vision." },
         { "id": "p1_capacity", "text": "I feel able to take part in a study that involves brief mood-related reflections delivered three times per day over a three-week period." },
