@@ -89,7 +89,6 @@ export default function SessionDemoModal({ templateId, label, onClose }) {
             stepIndex={index}
             totalSteps={total}
             onComplete={advance}
-            consentHtml={null}
             debriefHtml={null}
             supabaseClient={null}
             demoMode

@@ -47,7 +47,7 @@ export default function StudySessionRunner() {
   const [phase,       setPhase]       = useState(PHASE.LOADING)
   const [currentStep, setCurrentStep] = useState(0)
 
-  // Fetch enrollment (for participant context and consent/debrief HTML)
+  // Fetch enrollment (for participant context and debrief HTML)
   const { data: enrollment, isLoading: enrollLoading } = useQuery({
     queryKey: ['enrollment', enrollmentId],
     queryFn: async () => {
@@ -57,7 +57,6 @@ export default function StudySessionRunner() {
           id, profile_id, external_id, status,
           studies!study_id(
             id, name,
-            study_consent_forms:active_consent_form_id(html_content),
             study_debrief_forms:active_debrief_form_id(html_content)
           )
         `)
@@ -160,7 +159,6 @@ export default function StudySessionRunner() {
 
   const studyName     = enrollment?.studies?.name ?? ''
   const externalId    = enrollment?.external_id ?? ''
-  const consentHtml   = enrollment?.studies?.study_consent_forms?.html_content ?? null
   const debriefHtml   = enrollment?.studies?.study_debrief_forms?.html_content ?? null
   const totalSteps    = nodes.length
   const node          = nodes[currentStep]
@@ -214,7 +212,6 @@ export default function StudySessionRunner() {
                 stepIndex={currentStep}
                 totalSteps={totalSteps}
                 onComplete={handleStepComplete}
-                consentHtml={consentHtml}
                 debriefHtml={debriefHtml}
                 isSimMode={isSimMode}
               />

@@ -319,7 +319,6 @@ export default function SessionEntry() {
 
     const nodes       = sessionData.nodes ?? []
     const node        = nodes[currentIndex]
-    const consentHtml = sessionData.consent_html ?? null
     const debriefHtml = sessionData.debrief_html ?? null
 
     // Build a minimal enrollment object for StepDispatcher child components.
@@ -357,7 +356,6 @@ export default function SessionEntry() {
             stepIndex={currentIndex}
             totalSteps={totalSteps}
             onComplete={handleStepComplete}
-            consentHtml={consentHtml}
             debriefHtml={debriefHtml}
             supabaseClient={sb}
             assignments={slotKeys.length > 0 ? assignments : null}

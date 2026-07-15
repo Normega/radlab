@@ -1,5 +1,4 @@
 // v5 — video step category; demoMode (admin session demo: real UI, no writes)
-import ConsentStep              from './ConsentStep'
 import DisplayStepWrapper       from './DisplayStepWrapper'
 import DebriefStep              from './DebriefStep'
 import DemographicsStep         from './DemographicsStep'
@@ -25,7 +24,6 @@ import DailyFarewellStep       from './DailyFarewellStep'
  *   stepIndex   — 0-based position in this session
  *   totalSteps  — total nodes in this session
  *   onComplete  — called when the step finishes
- *   consentHtml — HTML string for consent step (from study)
  *   debriefHtml — HTML string for debrief step (from study)
  *   isSimMode   — bool — when true all steps auto-complete
  *   demoMode    — bool — admin session demo: render the real participant UI
@@ -35,7 +33,7 @@ import DailyFarewellStep       from './DailyFarewellStep'
  *   stepOutputs — { slider: {...}, vas: {...}, game: {...} } accumulated from
  *                 earlier steps this session; consumed by display steps
  */
-export default function StepDispatcher({ node, enrollment, scheduleId, studyDay = null, sendTime = null, stepIndex, totalSteps, onComplete, consentHtml, debriefHtml, supabaseClient, isSimMode = false, demoMode = false, assignments = null, stepOutputs = null }) {
+export default function StepDispatcher({ node, enrollment, scheduleId, studyDay = null, sendTime = null, stepIndex, totalSteps, onComplete, debriefHtml, supabaseClient, isSimMode = false, demoMode = false, assignments = null, stepOutputs = null }) {
   const activity = node?.activity ?? node?.activities
   if (!activity) {
     return (
@@ -55,9 +53,6 @@ export default function StepDispatcher({ node, enrollment, scheduleId, studyDay 
   }
 
   if (category === 'form') {
-    if (subcategory === 'consent') {
-      return <ConsentStep enrollment={enrollment} onComplete={onComplete} html={consentHtml} isSimMode={isSimMode} />
-    }
     if (subcategory === 'debrief') {
       return <DebriefStep enrollment={enrollment} onComplete={onComplete} html={debriefHtml} isSimMode={isSimMode} />
     }
