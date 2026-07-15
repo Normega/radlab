@@ -5,6 +5,8 @@ import DebriefStep              from './DebriefStep'
 import DemographicsStep         from './DemographicsStep'
 import EquityCensusStep         from './EquityCensusStep'
 import CompensationStep         from './CompensationStep'
+import MoodCheckinStep          from './MoodCheckinStep'
+import WellnessTipStep          from './WellnessTipStep'
 import QuestionnaireStepWrapper from './QuestionnaireStepWrapper'
 import GameStepWrapper          from './GameStepWrapper'
 import PhysioSetupStep          from './PhysioSetupStep'
@@ -33,7 +35,7 @@ import DailyFarewellStep       from './DailyFarewellStep'
  *   stepOutputs — { slider: {...}, vas: {...}, game: {...} } accumulated from
  *                 earlier steps this session; consumed by display steps
  */
-export default function StepDispatcher({ node, enrollment, scheduleId, stepIndex, totalSteps, onComplete, consentHtml, debriefHtml, supabaseClient, isSimMode = false, demoMode = false, assignments = null, stepOutputs = null }) {
+export default function StepDispatcher({ node, enrollment, scheduleId, studyDay = null, sendTime = null, stepIndex, totalSteps, onComplete, consentHtml, debriefHtml, supabaseClient, isSimMode = false, demoMode = false, assignments = null, stepOutputs = null }) {
   const activity = node?.activity ?? node?.activities
   if (!activity) {
     return (
@@ -68,6 +70,33 @@ export default function StepDispatcher({ node, enrollment, scheduleId, stepIndex
     if (subcategory === 'compensation') {
       return <CompensationStep enrollment={enrollment} onComplete={onComplete} supabaseClient={supabaseClient} isSimMode={isSimMode} />
     }
+    if (subcategory === 'mood_checkin' || subcategory === 'mood_checkin_reflective') {
+      return (
+        <MoodCheckinStep
+          enrollment={enrollment}
+          scheduleId={scheduleId}
+          studyDay={studyDay}
+          sendTime={sendTime}
+          subcategory={subcategory}
+          onComplete={onComplete}
+          supabaseClient={supabaseClient}
+          isSimMode={isSimMode}
+        />
+      )
+    }
+    if (subcategory === 'wellness_tip') {
+      return (
+        <WellnessTipStep
+          enrollment={enrollment}
+          scheduleId={scheduleId}
+          studyDay={studyDay}
+          sendTime={sendTime}
+          onComplete={onComplete}
+          supabaseClient={supabaseClient}
+          isSimMode={isSimMode}
+        />
+      )
+    }
   }
 
   if (category === 'questionnaire') {
@@ -90,6 +119,7 @@ export default function StepDispatcher({ node, enrollment, scheduleId, stepIndex
       <GameStepWrapper
         slug={subcategory}
         enrollment={enrollment}
+        scheduleId={scheduleId}
         onComplete={onComplete}
         supabaseClient={supabaseClient}
         isSimMode={isSimMode}

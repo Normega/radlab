@@ -27,3 +27,31 @@ export function evaluatePhase2(gad7Answers, phq8Answers) {
   if (!isSevere && isModerate) return 'pass'
   return 'fail_low'
 }
+
+// Generalized phase-2 evaluator, driven by the screener definition, over an
+// arbitrary set of questionnaires keyed by slug. Returns 'pass' | 'fail_low' |
+// 'fail_high'.
+//
+//   phase2.scoring.mode === 'range':  single-instrument band gate (Zerin: PHQ-8
+//     score 5–9 passes; below is fail_low, above is fail_high). Shape:
+//       { mode: 'range', questionnaire_slug, pass: {min,max} }
+//     (fail_low = below pass.min, fail_high = above pass.max)
+//
+//   otherwise: the legacy two-instrument GAD-7 + PHQ-8 logic (Liliana), by the
+//     questionnaire list order — byte-identical to the original path.
+export function evaluateScreenerPhase2(responsesBySlug, phase2) {
+  const scoring = phase2?.scoring ?? {}
+
+  if (scoring.mode === 'range') {
+    const slug  = scoring.questionnaire_slug
+    const score = sumAnswers(responsesBySlug[slug] ?? {})
+    const min   = scoring.pass?.min ?? -Infinity
+    const max   = scoring.pass?.max ?? Infinity
+    if (score < min) return 'fail_low'
+    if (score > max) return 'fail_high'
+    return 'pass'
+  }
+
+  const slugs = (phase2?.questionnaires ?? []).map(q => q.questionnaire_slug)
+  return evaluatePhase2(responsesBySlug[slugs[0]] ?? {}, responsesBySlug[slugs[1]] ?? {})
+}

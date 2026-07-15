@@ -14,6 +14,7 @@ export const GAME_LABELS = {
   aptitude_suite: 'Aptitude Suite',
   word_max:       'WordMax',
   color_max:      'ColorMax',
+  pond_watch:     'Pond Watch',
   still_water:    'Still Water',
   breath_belt:    'Breath Belt',
 }
@@ -27,6 +28,7 @@ export const GAME_OUTPUTS = {
   ],
   word_max:  ['total_score', 'sets_completed', 'duration_ms'],
   color_max: ['avg_coverage', 'avg_precision', 'images_attempted', 'total_secs'],
+  pond_watch: [],    // metrics land in pond_watch_results (nested payload, not flat step outputs)
   still_water: [],   // reports no outputs
   breath_belt: [],   // physio data lands in belt_sessions, not step outputs
 }

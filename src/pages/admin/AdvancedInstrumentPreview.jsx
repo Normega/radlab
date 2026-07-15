@@ -120,6 +120,7 @@ export default function AdvancedInstrumentPreview() {
             key={previewKey}
             enrollment={PREVIEW_ENROLLMENT}
             scheduleId={null}
+            subcategory={key}
             previewMode={true}
             onComplete={() => setCompleted(true)}
           />
