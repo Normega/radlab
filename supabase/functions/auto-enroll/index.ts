@@ -9,6 +9,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { baselineTimeOfDay, materializeSchedule } from '../_shared/materializeSchedule.ts'
 import type { Graph } from '../_shared/materializeSchedule.ts'
+import { processAdherenceWithdrawal } from '../_shared/processAdherenceWithdrawal.ts'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -158,6 +159,18 @@ Deno.serve(async (req) => {
       } catch (err) {
         console.error('materializeSchedule failed:', err)
         return json({ error: 'Failed to schedule this study for the participant.' }, 500)
+      }
+
+      // Defense-in-depth only — the adherence gate can't realistically
+      // resolve at enrollment time, before any daily sessions exist. Real
+      // handling lives in check_schedule's advance pass.
+      if (result.withdrawal) {
+        try {
+          await processAdherenceWithdrawal(admin, { participantId, studyId: study_id, withdrawal: result.withdrawal })
+        } catch (err) {
+          console.error('processAdherenceWithdrawal failed:', err)
+        }
+        return json({ error: 'Your participation in this study has ended.' }, 409)
       }
 
       if (result.inserted === 0) {

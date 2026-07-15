@@ -65,6 +65,87 @@ export function renderEmail(vars: {
   return { subject, html, text }
 }
 
+// ─── Termination email (adherence check failure) ──────────────────────────────
+// Distinct from renderEmail() above: no link, no CTA, no expiry notice — a
+// plain informational message. Reuses the same header/card/footer branding
+// with a trimmed wrapper (renderEmail's HTML_WRAPPER hardcodes the CTA
+// button into the string, so this is a separate wrapper rather than adding
+// link-optional branching into the heavily-used session-link path).
+
+export function renderTerminationEmail(vars: {
+  first_name: string
+  study_name: string
+  is_test?: boolean
+}): { subject: string; html: string; text: string } {
+  const bodyText = `Hi ${vars.first_name},
+
+Unfortunately, you didn't complete the minimum required sessions for this phase of the study (we noted that at least 10 of 12 sessions are needed), we will award credit for the time you spent, but your participation in the study is now complete.
+
+Thank you for your participation,
+The RADlab Team
+University of Toronto Mississauga`
+
+  let subject = `Your participation in ${vars.study_name} is now complete`
+  if (vars.is_test) subject = `[TEST] ${subject}`
+
+  const bodyHtml = bodyText
+    .split(/\n\n+/)
+    .map(para =>
+      `<p style="margin:0 0 16px 0;font-size:15px;color:#1c1c1e;line-height:1.6;">${
+        para.replace(/\n/g, '<br>')
+      }</p>`
+    )
+    .join('\n')
+
+  const html = TERMINATION_HTML_WRAPPER.replace('{{email_body_html}}', bodyHtml)
+
+  return { subject, html, text: bodyText }
+}
+
+const TERMINATION_HTML_WRAPPER = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RADlab</title>
+</head>
+<body style="margin:0;padding:0;background-color:#FCF0F5;font-family:Arial,Helvetica,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#FCF0F5;padding:40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+
+          <!-- Header -->
+          <tr>
+            <td style="padding:0 0 24px 0;">
+              <p style="margin:0;font-family:Georgia,'Times New Roman',serif;font-size:22px;color:#1c1c1e;font-weight:normal;">RADlab</p>
+              <p style="margin:4px 0 0 0;font-size:12px;color:#abadb0;font-family:Arial,Helvetica,sans-serif;">Regulatory and Affective Dynamics Lab · University of Toronto Mississauga</p>
+            </td>
+          </tr>
+
+          <!-- Card -->
+          <tr>
+            <td style="background-color:#ffffff;border-radius:12px;padding:40px;box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+
+              {{email_body_html}}
+
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding:24px 0 0 0;">
+              <p style="margin:0;font-size:11px;color:#abadb0;line-height:1.6;">You are receiving this because you enrolled in a study at RADlab, University of Toronto Mississauga. If you believe this was sent in error, please contact your researcher.</p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`
+
 // ─── Default body ─────────────────────────────────────────────────────────────
 
 const DEFAULT_BODY = `Hi {{first_name}},

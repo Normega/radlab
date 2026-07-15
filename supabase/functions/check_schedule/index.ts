@@ -9,6 +9,7 @@
 import { createClient, SupabaseClient } from 'npm:@supabase/supabase-js@2'
 import { materializeSchedule, baselineTimeOfDay } from '../_shared/materializeSchedule.ts'
 import type { Graph } from '../_shared/materializeSchedule.ts'
+import { processAdherenceWithdrawal } from '../_shared/processAdherenceWithdrawal.ts'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -123,9 +124,22 @@ Deno.serve(async (req) => {
       return json({ error: fetchErr.message }, 500)
     }
 
-    const dueRows = (candidateRows ?? []).filter(
+    let dueRows = (candidateRows ?? []).filter(
       (r) => scheduleKey(r.scheduled_date, r.send_time) <= nowKey,
     )
+
+    // 1b. Exclude any row whose enrollment has been withdrawn (adherence
+    // termination, or the pre-existing manual admin "Withdraw" action —
+    // neither was previously checked here at all).
+    if (dueRows.length > 0) {
+      const { data: withdrawnRows } = await db
+        .from('study_enrollments')
+        .select('profile_id, study_id')
+        .eq('status', 'withdrawn')
+        .in('study_id', [...new Set(dueRows.map((r) => r.study_id))])
+      const withdrawnSet = new Set((withdrawnRows ?? []).map((w) => `${w.profile_id}:${w.study_id}`))
+      dueRows = dueRows.filter((r) => !withdrawnSet.has(`${r.participant_id}:${r.study_id}`))
+    }
 
     let processed = 0
     let suppressed = 0
@@ -314,6 +328,7 @@ Deno.serve(async (req) => {
     // segment. materializeSchedule is idempotent, so this is safe to run
     // every cron tick even for participants with nothing new to do.
     let advanced = 0
+    let withdrawn = 0
     const { data: graphStudies } = await db
       .from('studies')
       .select('id, design_graph')
@@ -328,6 +343,18 @@ Deno.serve(async (req) => {
         .select('participant_id, study_id, status, scheduled_date')
         .in('study_id', graphStudyIds)
 
+      // Participants already withdrawn (adherence termination or a manual
+      // admin withdraw) must not be re-walked — materializeSchedule is
+      // idempotent for schedule rows, but a repeat "withdrawal detected"
+      // result would re-run processAdherenceWithdrawal (and re-email) on
+      // every single cron tick otherwise.
+      const { data: withdrawnEnrollments } = await db
+        .from('study_enrollments')
+        .select('profile_id, study_id')
+        .eq('status', 'withdrawn')
+        .in('study_id', graphStudyIds)
+      const withdrawnSet = new Set((withdrawnEnrollments ?? []).map((w) => `${w.profile_id}:${w.study_id}`))
+
       const byParticipantStudy = new Map<string, { statuses: string[]; minDate: string }>()
       for (const r of allRows ?? []) {
         const key = `${r.participant_id}:${r.study_id}`
@@ -338,6 +365,8 @@ Deno.serve(async (req) => {
       }
 
       for (const [key, entry] of byParticipantStudy) {
+        if (withdrawnSet.has(key)) continue
+
         const hasOutstanding = entry.statuses.some((s) => s === 'unlocked' || s === 'pending' || s === 'link_sent')
         const hasCompleted = entry.statuses.some((s) => s === 'completed')
         if (hasOutstanding || !hasCompleted) continue
@@ -355,13 +384,22 @@ Deno.serve(async (req) => {
             baselineSendTime: baselineTimeOfDay(graph),
           })
           if (result.inserted > 0) advanced++
+
+          if (result.withdrawal) {
+            try {
+              await processAdherenceWithdrawal(db, { participantId, studyId, withdrawal: result.withdrawal })
+              withdrawn++
+            } catch (withdrawErr) {
+              console.error(`adherence withdrawal failed for participant ${participantId} study ${studyId}:`, withdrawErr)
+            }
+          }
         } catch (advanceErr) {
           console.error(`advance pass failed for participant ${participantId} study ${studyId}:`, advanceErr)
         }
       }
     }
 
-    return json({ processed, suppressed, failed, missed, reminded, advanced })
+    return json({ processed, suppressed, failed, missed, reminded, advanced, withdrawn })
 
   } catch (err) {
     console.error('check_schedule unexpected error:', err)

@@ -185,6 +185,16 @@ export function validate(graph) {
         warnings.push(`Counterbalance "${n.label || n.id}" has ${blockIds.length} blocks (${factorial(blockIds.length)} permutations) — balancing across that many orderings needs a large sample.`)
       }
     }
+
+    if (n.type === 'adherence_check') {
+      if (!n.phase) errors.push(`Adherence Check "${n.label || n.id}" needs a phase.`)
+      if (!Number.isInteger(n.min_required) || n.min_required < 0)
+        errors.push(`Adherence Check "${n.label || n.id}" needs a non-negative integer minimum.`)
+      if (!Number.isInteger(n.of_total) || n.of_total < 1)
+        errors.push(`Adherence Check "${n.label || n.id}" needs a positive integer total.`)
+      if (Number.isInteger(n.min_required) && Number.isInteger(n.of_total) && n.min_required > n.of_total)
+        errors.push(`Adherence Check "${n.label || n.id}" minimum (${n.min_required}) can't exceed its total (${n.of_total}).`)
+    }
   }
 
   for (const e of graph.edges) {
@@ -575,6 +585,11 @@ export function fullTraversal(graph) {
       for (const arm of node.arms ?? []) {
         if (arm.entry && nodeMap[arm.entry]) walk(arm.entry, offset, time)
       }
+
+    } else if (node.type === 'adherence_check') {
+      // Zero-duration structural node — no session slot, no offset change.
+      const succ = graph.edges.find(e => e.from === nodeId)?.to
+      if (succ) walk(succ, offset, time)
     }
   }
 

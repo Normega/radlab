@@ -22,12 +22,14 @@ import SessionNode      from '../../components/study/builder/nodes/SessionNode'
 import BlockNode        from '../../components/study/builder/nodes/BlockNode'
 import RandomizeNode    from '../../components/study/builder/nodes/RandomizeNode'
 import CounterbalanceNode from '../../components/study/builder/nodes/CounterbalanceNode'
+import AdherenceCheckNode from '../../components/study/builder/nodes/AdherenceCheckNode'
 import SessionDemoModal from '../../components/study/SessionDemoModal'
 import ContactSettingsModal from '../../components/study/builder/ContactSettingsModal'
 
 const NODE_TYPES = {
   timepoint: TimepointNode, session: SessionNode, block: BlockNode,
   randomize: RandomizeNode, counterbalance: CounterbalanceNode,
+  adherence_check: AdherenceCheckNode,
 }
 
 // ─── RF conversion helpers ───────────────────────────────────────────────────
@@ -362,6 +364,31 @@ function EditPanel({ nodeId, graph, sessionTemplates, isLocked, onChange, onRemo
         </div>
       )}
 
+      {node.type === 'adherence_check' && (
+        <>
+          {field('Phase',
+            <select
+              style={P.input}
+              value={node.phase ?? ''}
+              disabled={isLocked}
+              onChange={e => onChange(nodeId, { phase: e.target.value || null })}
+            >
+              <option value="">— select —</option>
+              <option value="phase1">Phase 1</option>
+              <option value="phase2">Phase 2</option>
+            </select>
+          )}
+          {field('Minimum required sessions', input(node.min_required, 'min_required', 'number', { min: 0 }))}
+          {field('Out of total sessions', input(node.of_total, 'of_total', 'number', { min: 1 }))}
+          <div style={{ fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 12, color: 'var(--tx2)', marginTop: 2 }}>
+            Evaluated once every upstream session in the phase has resolved (completed or missed). A
+            participant below the minimum is withdrawn — their enrollment status becomes "withdrawn",
+            any active session link is revoked, and they receive a termination email. Counts completed
+            daily training sessions in the selected phase (Liliana-specific metric).
+          </div>
+        </>
+      )}
+
       {node.type === 'randomize' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {(node.arms ?? []).map((arm, i) => (
@@ -640,6 +667,14 @@ export default function ExperimentBuilder() {
     }, { resetLayout: true })
   }
 
+  function handleAddAdherenceCheck() {
+    mutate(g => {
+      const after = insertionPoint(g, selectedId)
+      const data  = { id: newId(), type: 'adherence_check', label: 'Adherence Check', phase: 'phase1', min_required: 10, of_total: 12 }
+      return after ? insertAfter(g, after, data) : addNode(g, data)
+    }, { resetLayout: true })
+  }
+
   function handleAddRandomize() {
     mutate(g => {
       const after = insertionPoint(g, selectedId)
@@ -818,6 +853,7 @@ export default function ExperimentBuilder() {
                 <>
                   <span style={S.toolbarLabel}>{hint}</span>
                   <button style={S.toolBtn} onClick={handleAddTimepoint}>⬡ Timepoint</button>
+                  <button style={S.toolBtn} onClick={handleAddAdherenceCheck}>⛔ Adherence Check</button>
                   {isTimepoint && (
                     <>
                       <button style={S.toolBtn} onClick={handleAddSession}>● Session</button>

@@ -19,7 +19,7 @@ export interface RandomizeArm {
 
 export interface GraphNode {
   id: string
-  type: 'timepoint' | 'session' | 'block' | 'randomize' | 'counterbalance'
+  type: 'timepoint' | 'session' | 'block' | 'randomize' | 'counterbalance' | 'adherence_check'
   day_offset?: number
   time_of_day?: string | null
   session_template_id?: string
@@ -28,6 +28,17 @@ export interface GraphNode {
   children?: string[] // block
   arms?: RandomizeArm[] // randomize
   block_ids?: string[] // counterbalance
+  phase?: string // adherence_check — 'phase1' | 'phase2', matches intervention_modules.phase
+  min_required?: number // adherence_check
+  of_total?: number // adherence_check, informational only (shown in the withdrawal reason)
+}
+
+export interface AdherenceWithdrawal {
+  nodeId: string
+  phase: string
+  completed: number
+  minRequired: number
+  ofTotal: number
 }
 
 export interface GraphEdge {
@@ -104,6 +115,49 @@ export interface MaterializeArgs {
 export interface MaterializeResult {
   inserted: number
   stoppedAt: string | null
+  withdrawal: AdherenceWithdrawal | null
+}
+
+/**
+ * Count of this participant's completed daily training sessions in the given
+ * phase — Liliana-specific (liliana_participants/liliana_day_data/
+ * intervention_modules), not a generic graph-position count. See
+ * get_liliana_credit_report (20260714_liliana_sona_credit_report.sql) for
+ * the same pattern used by the SONA credit report.
+ */
+async function countCompletedPhaseDays(
+  db: SupabaseClient,
+  participantId: string,
+  studyId: string,
+  phase: string,
+): Promise<number> {
+  const { data: lp, error: lpErr } = await db
+    .from('liliana_participants')
+    .select('id')
+    .eq('profile_id', participantId)
+    .eq('study_id', studyId)
+    .maybeSingle()
+  if (lpErr) throw lpErr
+  if (!lp) return 0
+
+  const { data: dayRows, error: dayErr } = await db
+    .from('liliana_day_data')
+    .select('module_id')
+    .eq('participant_id', lp.id)
+    .not('completed_at', 'is', null)
+  if (dayErr) throw dayErr
+
+  const moduleIds = [...new Set((dayRows ?? []).map((r) => r.module_id).filter(Boolean))]
+  if (moduleIds.length === 0) return 0
+
+  const { data: modRows, error: modErr } = await db
+    .from('intervention_modules')
+    .select('module_id, phase')
+    .in('module_id', moduleIds)
+  if (modErr) throw modErr
+
+  const phaseByModule = new Map((modRows ?? []).map((m) => [m.module_id, m.phase]))
+  return (dayRows ?? []).filter((r) => phaseByModule.get(r.module_id) === phase).length
 }
 
 /**
@@ -169,6 +223,7 @@ export async function materializeSchedule(
   let anyUpstreamActionable = false
   let lastSessionStatus: string | undefined
   let stoppedAt: string | null = null
+  let withdrawal: AdherenceWithdrawal | null = null
 
   function emit(nodeKey: string, offset: number, time: string) {
     const status = materialized.get(nodeKey)
@@ -238,12 +293,30 @@ export async function materializeSchedule(
       if (!arm) throw new Error(`materializeSchedule: randomize "${node.id}" drew group "${group}" with no matching arm`)
       cur = arm.entry
 
+    } else if (node.type === 'adherence_check') {
+      // Same "everything upstream resolved" gate as a randomize fork — but
+      // unlike a fork, there's no single gating session to require completed;
+      // any mix of completed/missed daily sessions is fine, only the count matters.
+      if (anyUpstreamActionable) {
+        stoppedAt = node.id
+        break
+      }
+      const minRequired = node.min_required ?? 10
+      const ofTotal = node.of_total ?? 12
+      const completed = await countCompletedPhaseDays(db, participantId, studyId, node.phase ?? 'phase1')
+      if (completed < minRequired) {
+        withdrawal = { nodeId: node.id, phase: node.phase ?? 'phase1', completed, minRequired, ofTotal }
+        stoppedAt = node.id
+        break
+      }
+      cur = graph.edges.find((e) => e.from === cur)?.to ?? null
+
     } else {
       cur = null
     }
   }
 
-  if (inserts.length === 0) return { inserted: 0, stoppedAt }
+  if (inserts.length === 0) return { inserted: 0, stoppedAt, withdrawal }
 
   const insertRows = inserts.map((row, i) => {
     const session = sessionByNodeKey.get(row.nodeKey)
@@ -286,5 +359,5 @@ export async function materializeSchedule(
     linkExpiresHours: insertRows[0]._linkExpiresHours,
   })
 
-  return { inserted: insertRows.length, stoppedAt }
+  return { inserted: insertRows.length, stoppedAt, withdrawal }
 }
