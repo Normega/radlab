@@ -346,6 +346,8 @@ export default function SessionEntry() {
             node={node}
             enrollment={enrollment}
             scheduleId={sessionData.schedule?.id ?? null}
+            studyDay={sessionData.schedule?.study_day ?? null}
+            sendTime={sessionData.schedule?.send_time ?? null}
             stepIndex={currentIndex}
             totalSteps={totalSteps}
             onComplete={handleStepComplete}

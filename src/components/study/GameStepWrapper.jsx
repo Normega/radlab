@@ -1,6 +1,7 @@
 import AptitudeSuite from '../../games/AptitudeSuite/AptitudeSuite'
 import BreathBelt    from '../../games/BreathBelt/BreathBelt'
 import ColorMax      from '../../games/ColorMax/ColorMax'
+import PondWatch     from '../../games/PondWatch'
 import StillWater    from '../../games/StillWater/StillWater'
 import WordMax       from '../../games/WordMax/WordMax'
 import { usePhysioContext } from './PhysioContext'
@@ -9,6 +10,7 @@ const GAME_COMPONENTS = {
   aptitude_suite: AptitudeSuite,
   breath_belt:    BreathBelt,
   color_max:      ColorMax,
+  pond_watch:     PondWatch,
   still_water:    StillWater,
   word_max:       WordMax,
 }
@@ -16,7 +18,7 @@ const GAME_COMPONENTS = {
 // Games that should receive the physio context when it is available
 const PHYSIO_AWARE_SLUGS = new Set(['breath_belt', 'still_water'])
 
-export default function GameStepWrapper({ slug, enrollment, onComplete, supabaseClient, isSimMode = false, assignments = null }) {
+export default function GameStepWrapper({ slug, enrollment, scheduleId = null, onComplete, supabaseClient, isSimMode = false, assignments = null }) {
   const physio = usePhysioContext()   // null if not inside a PhysioProvider
   const GameComponent = GAME_COMPONENTS[slug]
 
@@ -36,6 +38,7 @@ export default function GameStepWrapper({ slug, enrollment, onComplete, supabase
       userId={enrollment.profile_id ?? enrollment.user_id}
       studyId={enrollment.studies?.id ?? enrollment.study_id}
       externalId={enrollment.external_id}
+      scheduleId={scheduleId}
       onSessionComplete={result => onComplete({ game_slug: slug, ...result })}
       supabaseClient={supabaseClient}
       isSimMode={isSimMode}

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { evaluatePhase2 } from '../lib/screenerUtils'
+import { evaluateScreenerPhase2 } from '../lib/screenerUtils'
 import QuestionnaireRenderer from './questionnaire/QuestionnaireRenderer'
 
 // ── ScreenerPage ───────────────────────────────────────────────────────────────
@@ -36,32 +36,35 @@ const PHASE_META = {
 
 export default function ScreenerPage({ study, participant, supabaseClient, onPass, onFail, previewMode = false }) {
   const screener    = study.screener
-  const phase2Slugs = screener?.phase2?.questionnaires ?? []
-  const gad7Slug    = phase2Slugs[0]?.questionnaire_slug ?? 'gad-7'
-  const phq8Slug    = phase2Slugs[1]?.questionnaire_slug ?? 'phq-8'
+  // Ordered phase-2 questionnaires (1 or 2). Zerin: [phq-8]; Liliana: [gad-7, phq-8].
+  const phase2Slugs = (screener?.phase2?.questionnaires ?? [])
+    .slice()
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+    .map(q => q.questionnaire_slug)
 
   const [phase,         setPhase]         = useState('description')
   const [eligAnswers,   setEligAnswers]   = useState({})
   const [eligResult,    setEligResult]    = useState(null)
-  const [gad7Def,       setGad7Def]       = useState(null)
-  const [phq8Def,       setPhq8Def]       = useState(null)
+  const [q2Defs,        setQ2Defs]        = useState([])   // definitions aligned to phase2Slugs
+  const [q2Index,       setQ2Index]       = useState(0)    // which phase-2 questionnaire is showing
   const [outcome,       setOutcome]       = useState(null)
   const [saving,        setSaving]        = useState(false)
 
-  // gad7 responses held in a ref so phq8's onComplete closure always reads the
-  // current value without stale-closure risk across the phase transition render.
-  const gad7ResponsesRef = useRef(null)
+  // Phase-2 responses accumulate here (keyed by slug) so each questionnaire's
+  // onComplete closure reads a stable ref across phase-transition renders.
+  const q2ResponsesRef = useRef({})
 
   const meta = PHASE_META[phase] ?? { step: 'Step 3 of 4', prog: 75 }
 
   // Pre-load questionnaire definitions so there's no lag when phase 2 starts.
   useEffect(() => {
-    Promise.all([
-      supabaseClient.from('questionnaires').select('definition').eq('slug', gad7Slug).single(),
-      supabaseClient.from('questionnaires').select('definition').eq('slug', phq8Slug).single(),
-    ]).then(([r1, r2]) => {
-      if (r1.data?.definition) setGad7Def(r1.data.definition)
-      if (r2.data?.definition) setPhq8Def(r2.data.definition)
+    if (phase2Slugs.length === 0) return
+    Promise.all(
+      phase2Slugs.map(slug =>
+        supabaseClient.from('questionnaires').select('definition').eq('slug', slug).single()
+      )
+    ).then(results => {
+      setQ2Defs(results.map(r => r.data?.definition ?? null))
     })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -75,9 +78,20 @@ export default function ScreenerPage({ study, participant, supabaseClient, onPas
   const phase1Items     = screener?.phase1?.items ?? []
   const allEligAnswered = phase1Items.length > 0 && Object.keys(eligAnswers).length === phase1Items.length
 
+  // A phase-1 item passes on its `pass_answer` (default 'yes'). Items that opt
+  // into an "unsure" option (Zerin distress safety gate) treat 'unsure' as a
+  // pass-through by default — the participant continues and the answer is
+  // recorded for follow-up — unless the item sets unsure_action: 'stop'.
+  function itemPasses(item, answer) {
+    const passAnswer = item.pass_answer ?? 'yes'
+    if (answer === passAnswer) return true
+    if (answer === 'unsure' && item.unsure && (item.unsure_action ?? 'continue') === 'continue') return true
+    return false
+  }
+
   function checkEligibility() {
-    const allYes = phase1Items.every((_, i) => eligAnswers[i] === 'yes')
-    if (allYes) {
+    const allPass = phase1Items.every((item, i) => itemPasses(item, eligAnswers[i]))
+    if (allPass) {
       setEligResult('pass')
     } else {
       saveResult(false, null, null)
@@ -86,19 +100,20 @@ export default function ScreenerPage({ study, participant, supabaseClient, onPas
     }
   }
 
-  // ── Phase 2: questionnaires ────────────────────────────────────────────────
+  // ── Phase 2: questionnaires (index-driven over phase2Slugs) ─────────────────
 
-  function handleGad7Complete({ responses }) {
-    gad7ResponsesRef.current = responses
-    setPhase('phq8')
+  async function handleQuestionnaireComplete({ responses }) {
+    const slug = phase2Slugs[q2Index]
+    q2ResponsesRef.current = { ...q2ResponsesRef.current, [slug]: responses }
+    if (q2Index < phase2Slugs.length - 1) {
+      setQ2Index(q2Index + 1)
+    } else {
+      await submitPhase2(q2ResponsesRef.current)
+    }
   }
 
-  async function handlePhq8Complete({ responses }) {
-    await submitPhase2(gad7ResponsesRef.current, responses)
-  }
-
-  async function submitPhase2(gad7R, phq8R) {
-    const result = evaluatePhase2(gad7R, phq8R)
+  async function submitPhase2(responsesBySlug) {
+    const result = evaluateScreenerPhase2(responsesBySlug, screener?.phase2)
     setOutcome(result)
     setPhase('outcome')
     await saveResult(true, result === 'pass', result)
@@ -109,10 +124,7 @@ export default function ScreenerPage({ study, participant, supabaseClient, onPas
           `screener_draft_${study.id}_${participant.id}`,
           JSON.stringify({
             completedAt: new Date().toISOString(),
-            questionnaires: [
-              { slug: gad7Slug, responses: gad7R },
-              { slug: phq8Slug, responses: phq8R },
-            ],
+            questionnaires: phase2Slugs.map(slug => ({ slug, responses: responsesBySlug[slug] })),
           })
         )
       } catch (e) {
@@ -126,6 +138,11 @@ export default function ScreenerPage({ study, participant, supabaseClient, onPas
   async function saveResult(phase1Passed, phase2Passed, phase2Outcome) {
     if (previewMode) return
     setSaving(true)
+    const phase1Answers = phase1Items.map((item, i) => ({
+      id:     item.id ?? String(i),
+      text:   item.text,
+      answer: eligAnswers[i] ?? null,
+    }))
     try {
       await supabaseClient.from('screener_results').upsert(
         {
@@ -135,6 +152,7 @@ export default function ScreenerPage({ study, participant, supabaseClient, onPas
           phase1_passed:  phase1Passed,
           phase2_passed:  phase1Passed ? phase2Passed : null,
           phase2_outcome: phase1Passed ? phase2Outcome : null,
+          phase1_answers: phase1Answers,
         },
         { onConflict: 'participant_id,study_id' }
       )
@@ -196,30 +214,25 @@ export default function ScreenerPage({ study, participant, supabaseClient, onPas
   // ── Phase 2 renders standalone — QuestionnaireRenderer is the viewport ─────
   // (its fixed bottom bar and sticky ProgressLabel expect to own the scroll root)
 
-  if (phase === 'gad7') {
-    if (!gad7Def) return <div style={S.loading}>Loading questionnaire…</div>
+  if (phase === 'phase2') {
+    const def = q2Defs[q2Index]
+    if (!def) return <div style={S.loading}>Loading questionnaire…</div>
     return (
       <QuestionnaireRenderer
-        key="screener-gad7"
-        questionnaire={gad7Def}
-        partNumber={1}
-        totalParts={2}
-        onComplete={handleGad7Complete}
-        onBack={() => { gad7ResponsesRef.current = null; setEligResult(null); setPhase('eligibility') }}
-      />
-    )
-  }
-
-  if (phase === 'phq8') {
-    if (!phq8Def) return <div style={S.loading}>Loading questionnaire…</div>
-    return (
-      <QuestionnaireRenderer
-        key="screener-phq8"
-        questionnaire={phq8Def}
-        partNumber={2}
-        totalParts={2}
-        onComplete={handlePhq8Complete}
-        onBack={() => { gad7ResponsesRef.current = null; setPhase('gad7') }}
+        key={`screener-q2-${q2Index}`}
+        questionnaire={def}
+        partNumber={q2Index + 1}
+        totalParts={phase2Slugs.length}
+        onComplete={handleQuestionnaireComplete}
+        onBack={() => {
+          if (q2Index > 0) {
+            setQ2Index(q2Index - 1)
+          } else {
+            q2ResponsesRef.current = {}
+            setEligResult(null)
+            setPhase('eligibility')
+          }
+        }}
       />
     )
   }
@@ -268,17 +281,24 @@ export default function ScreenerPage({ study, participant, supabaseClient, onPas
         </p>
         {phase1Items.map((item, i) => {
           const val = eligAnswers[i]
+          // An answered item is highlighted green when it passes, red/amber when it
+          // doesn't — regardless of whether the passing answer is Yes or No.
+          const passes = val != null && itemPasses(item, val)
+          const isUnsure = val === 'unsure'
           return (
             <div key={item.id ?? i} style={{
               ...S.eligItem,
-              background:  val === 'yes' ? '#f0f7eb' : val === 'no' ? RED_BG : '#fff',
-              borderColor: val === 'yes' ? GREEN     : val === 'no' ? '#e57373' : '#e0ddd8',
+              background:  val == null ? '#fff'  : isUnsure ? '#fbf6e9' : passes ? '#f0f7eb' : RED_BG,
+              borderColor: val == null ? '#e0ddd8' : isUnsure ? '#e0c169' : passes ? GREEN : '#e57373',
             }}>
               <div style={S.eligNum}>{i + 1}</div>
               <div style={S.eligText}>{item.text}</div>
               <div style={S.eligBtns}>
                 <button onClick={() => setEligAnswer(i, 'yes')} style={{ ...S.eligBtn, ...(val === 'yes' ? S.eligBtnYesActive : S.eligBtnYes) }}>Yes</button>
                 <button onClick={() => setEligAnswer(i, 'no')}  style={{ ...S.eligBtn, ...(val === 'no'  ? S.eligBtnNoActive  : S.eligBtnNo)  }}>No</button>
+                {item.unsure && (
+                  <button onClick={() => setEligAnswer(i, 'unsure')} style={{ ...S.eligBtn, ...S.eligBtnUnsure, ...(val === 'unsure' ? S.eligBtnUnsureActive : {}) }}>Unsure</button>
+                )}
               </div>
             </div>
           )
@@ -339,7 +359,7 @@ export default function ScreenerPage({ study, participant, supabaseClient, onPas
       if (eligResult === 'pass') {
         return (
           <div style={S.footer}>
-            <button onClick={() => setPhase('gad7')} style={S.btnProceed}>
+            <button onClick={() => { setQ2Index(0); setPhase('phase2') }} style={S.btnProceed}>
               Continue to Pre-Screening ›
             </button>
           </div>
@@ -421,6 +441,8 @@ const S = {
   eligBtnYesActive: { background: GREEN, borderColor: GREEN, color: '#fff' },
   eligBtnNo:        { color: '#c0392b' },
   eligBtnNoActive:  { background: '#e57373', borderColor: '#e57373', color: '#fff' },
+  eligBtnUnsure:       { width: 'auto', padding: '0 10px', color: '#8a6d1a' },
+  eligBtnUnsureActive: { background: '#e0c169', borderColor: '#e0c169', color: '#fff' },
   statusBanner: { borderRadius: 10, padding: '14px 16px', marginTop: 12, fontSize: 13, lineHeight: 1.6 },
   outcomeCard:     { borderRadius: 12, padding: 20, marginBottom: 8 },
   outcomeIcon:     { fontSize: 36, textAlign: 'center', marginBottom: 14 },
