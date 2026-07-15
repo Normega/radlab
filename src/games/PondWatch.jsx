@@ -7,13 +7,19 @@
  * Non-targets: Heron, Frog, Fish, Ripple → withhold
  *
  * Props:
- *   onSessionComplete(data) — called at end of session with full trial + metrics data
- *                             wire this to your Supabase push function
- *   userId  (string)        — passed through into session data
- *   studyId (string|null)   — passed through into session data
+ *   onSessionComplete(data) — called when the participant leaves the results
+ *                             screen (study mode) or at end of session (standalone)
+ *   userId  (string)        — participant id (auth.uid()); stored as user_id
+ *   studyId (string|null)   — study id; stored as study_id
+ *   studyMode (bool)        — true when embedded in a study session step
+ *   externalId (string|null)— RA-facing participant id; stored as external_id
+ *   scheduleId (string|null)— participant_schedule row; distinguishes baseline vs post
+ *   supabaseClient          — isolated participant client (falls back to global)
+ *   isSimMode (bool)        — admin simulate run: auto-completes with synthetic metrics
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { supabase as globalSupabase } from '../lib/supabase'
 
 // ─── CONFIG ──────────────────────────────────────────────────────────────────
 
@@ -273,7 +279,16 @@ const feedbackConfig = {
 
 // ─── MAIN COMPONENT ──────────────────────────────────────────────────────────
 
-export default function PondWatch({ onSessionComplete, userId = null, studyId = null }) {
+export default function PondWatch({
+  onSessionComplete,
+  userId = null,
+  studyId = null,
+  studyMode = false,
+  externalId = null,
+  scheduleId = null,
+  supabaseClient = null,
+  isSimMode = false,
+}) {
   const [phase,       setPhase]       = useState(PHASE.INSTRUCTIONS)
   const [countdown,   setCountdown]   = useState(CFG.COUNTDOWN_FROM)
   const [trialIndex,  setTrialIndex]  = useState(0)
@@ -399,8 +414,55 @@ export default function PondWatch({ onSessionComplete, userId = null, studyId = 
     }
     setResults(sessionData)
     setPhase(PHASE.RESULTS)
-    if (onSessionComplete) onSessionComplete(sessionData)
-  }, [onSessionComplete, userId, studyId])
+
+    // Study mode: self-persist one row, then wait for the participant to press
+    // Continue before advancing the session (mirrors ColorMax). Standalone play
+    // reports immediately and offers "Play again".
+    if (studyMode && userId) {
+      const db = supabaseClient ?? globalSupabase
+      db.from('pond_watch_results').insert({
+        user_id:            userId,
+        study_id:           studyId,
+        external_id:        externalId,
+        schedule_id:        scheduleId,
+        started_at:         startTimeRef.current,
+        ended_at:           endedAt,
+        hit_rate:           metrics.hitRate,
+        false_alarm_rate:   metrics.falseAlarmRate,
+        d_prime:            metrics.dPrime,
+        criterion:          metrics.criterion,
+        median_rt_ms:       metrics.medianRtMs,
+        rt_sd_ms:           metrics.rtSdMs,
+        accuracy:           metrics.accuracy,
+        hits:               metrics.hits,
+        misses:             metrics.misses,
+        false_alarms:       metrics.falseAlarms,
+        correct_rejections: metrics.correctRejections,
+        n_trials:           metrics.nTrials,
+        trials:             resultsRef.current,
+      }).then(({ error }) => { if (error) console.warn('pond_watch_results insert failed', error) })
+    } else if (onSessionComplete) {
+      onSessionComplete(sessionData)
+    }
+  }, [onSessionComplete, userId, studyId, studyMode, externalId, scheduleId, supabaseClient])
+
+  // Admin simulate run: skip play, report synthetic metrics so the flow advances.
+  useEffect(() => {
+    if (!isSimMode) return
+    const t = setTimeout(() => {
+      onSessionComplete?.({
+        gameName:  'pond_watch',
+        simulated: true,
+        metrics: {
+          hitRate: 0.9, falseAlarmRate: 0.1, dPrime: 2.56, criterion: 0,
+          medianRtMs: 420, rtSdMs: 80, accuracy: 0.9,
+          hits: 27, misses: 3, falseAlarms: 3, correctRejections: 27, nTrials: 60,
+        },
+        trials: [],
+      })
+    }, 400)
+    return () => clearTimeout(t)
+  }, [isSimMode]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─── RESPONSE HANDLER ────────────────────────────────────────────────────
 
@@ -563,15 +625,21 @@ export default function PondWatch({ onSessionComplete, userId = null, studyId = 
             </div>
 
             <div style={S.actions}>
-              <button style={S.btnPrimary} onClick={() => {
-                setPhase(PHASE.INSTRUCTIONS)
-                setResults(null)
-                setCurrentStim(null)
-                setFeedback(null)
-                resultsRef.current = []
-              }}>
-                Play again
-              </button>
+              {studyMode ? (
+                <button style={S.btnPrimary} onClick={() => onSessionComplete?.(results)}>
+                  Continue
+                </button>
+              ) : (
+                <button style={S.btnPrimary} onClick={() => {
+                  setPhase(PHASE.INSTRUCTIONS)
+                  setResults(null)
+                  setCurrentStim(null)
+                  setFeedback(null)
+                  resultsRef.current = []
+                }}>
+                  Play again
+                </button>
+              )}
             </div>
           </div>
         </div>
