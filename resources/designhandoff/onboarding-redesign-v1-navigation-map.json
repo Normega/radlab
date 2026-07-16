@@ -1,0 +1,339 @@
+{
+  "project": "RADlab - Onboarding Redesign v1",
+  "figmaFileKey": "PA9HnpqCEwwc8DDm8gvzhC",
+  "figmaFileUrl": "https://www.figma.com/design/PA9HnpqCEwwc8DDm8gvzhC/RADlab---Onboarding-Redesign-v1",
+  "pages": {
+    "visualSourceOfTruth": "New/Revised Screens",
+    "navigationSourceOfTruth": "Demo",
+    "designSystem": "Design System"
+  },
+  "tokens": {
+    "colors": {
+      "background/base": "#FCF0F5",
+      "background/surface": "#FFFFFF",
+      "background/tint": "#FBEAF3",
+      "primary/pink": "#F068A4",
+      "primary/pinkDark": "#C04A82",
+      "text/main": "#1C1C1E",
+      "text/secondary": "#6B6C70",
+      "text/muted": "#ABADB0"
+    },
+    "typography": {
+      "display": { "family": "DM Serif Display", "weights": [400], "sizes": [36, 28, 20], "role": "headings" },
+      "body": { "family": "DM Sans", "weights": [400, 600], "sizes": [16, 14, 12], "role": "ui/body" },
+      "utility": { "family": "Space Mono", "weights": [400], "sizes": [20, 14, 12], "role": "eyebrow/mono" },
+      "lineHeight": "150%",
+      "letterSpacing": "0%",
+      "scaleCaveat": "This is a consolidated reference scale, NOT a complete inventory. Some new screens use sizes outside it (e.g. Large Hero on About page). Use the actual per-screen CSS when developing rather than treating this scale as a complete fit; per-screen CSS wins where they differ and integrates more cleanly with the live site."
+    },
+    "radii": { "button": 24, "eyebrowLabelAndCard": 12, "unit": "px", "note": "24px = clickable buttons only. 12px = shared radius for eyebrow labels AND cards/panels." }
+  },
+  "globalRules": [
+    "Header is consistent across the whole platform regardless of auth state.",
+    "Header shows Dashboard and Games even for guests, but they are preview-only (not interactive) until an account exists.",
+    "NOT YET BUILT: there is currently no Guest version of the Dashboard and Games screens in the live version. Those guest-preview designs would be planned/created only if the consistent-header approach is approved. Treat as forward-looking intention, not an existing screen; confirm scope before building guest-preview states for those two pages.",
+    "About is permanently reachable from the nav (guest and user variants).",
+    "Logo links to radlab.zone/ on every screen with a header.",
+    "Back buttons use history-back semantics, not hardcoded routes.",
+    "Buttons use 24px radius; eyebrow labels AND cards use 12px radius (24px reserved for clickable buttons).",
+    "Reconcile with existing components: this is a redesign of a live site with its own component library. Before generating a new component, check whether an equivalent already exists and prefer extending/restyling it. Flag mismatches (props/structure/naming) for a human decision rather than silently overwriting."
+  ],
+  "components": [
+    { "name": "Header", "variants": ["Guest", "User"] },
+    { "name": "Button/PrimaryCTA", "variants": ["BgPink", "BgWhite", "Inactive"], "radius": 24 },
+    { "name": "Button/SecondaryCTA", "variants": ["BgNoFill"], "radius": 24 },
+    { "name": "ButtonNav", "variants": ["Active", "Inactive"] },
+    { "name": "EyebrowLabel", "variants": ["BgPink", "BgWhite", "NoBg"], "radius": 12 },
+    { "name": "NavigationIcon", "variants": ["Close", "Back"] },
+    { "name": "OnboardingNavigation", "variants": ["OnlyL", "OnlyR", "BothButtons"] },
+    { "name": "FillableBox", "variants": ["Inactive", "Active"] },
+    { "name": "Checkbox", "variants": ["Active", "Inactive"] },
+    { "name": "Question", "variants": ["SingleSelect", "Scale"] },
+    { "name": "CredentialsBox", "variants": [] },
+    { "name": "GameCard", "variants": ["Default", "first-contact", "pond-watch", "ebb-flow"] },
+    { "name": "GamesCarousel", "variants": ["Default"] },
+    { "name": "GameImage", "variants": ["FirstContact", "PondWatch", "EbbFlow"], "warning": "placeholder screenshots" },
+    { "name": "RADLabLogo", "variants": ["Outlined", "Default"] }
+  ],
+  "stateModel": {
+    "note": "How to read Inactive/Active screen pairs and DISSOLVE transitions in the prototype.",
+    "shorthand": "A single prototype click that dissolves an Inactive screen into its Active counterpart is SHORTHAND. It compresses the page's arrival state (Inactive: required inputs empty, continue button disabled) and its all-inputs-satisfied state (Active: button enabled) into one click. It does NOT mean one click flips the whole page.",
+    "liveBehavior": "Inactive and Active are the SAME page in the live build. Reaching Active typically requires the user to interact multiple times on that one page (fill each field, check each consent box, answer each question) before the enabled continue button appears.",
+    "implementation": "Implement each Inactive/Active pair as ONE screen with real per-input validation state. Not two screens, not a single toggle. The Active frame is just the 'all requirements met' end-state; the Inactive frame is the empty arrival state."
+  },
+  "screens": [
+    {
+      "id": "home",
+      "name": "radlab.zone/",
+      "demoNodeId": "2001:1413",
+      "group": "marketing",
+      "elements": [
+        { "label": "body preview", "trigger": "onClick", "action": "navigate", "to": "aboutGuest" }
+      ]
+    },
+    {
+      "id": "aboutGuest",
+      "name": "AboutPage(Guest)",
+      "demoNodeId": "2001:1372",
+      "visualNodeId": "111:147",
+      "group": "marketing",
+      "elements": [
+        { "label": "Logo", "trigger": "onClick", "action": "navigate", "to": "home" },
+        { "label": "Nav button", "trigger": "onClick", "action": "scrollTo", "to": "HeroSection" },
+        { "label": "Secondary CTA (learn more)", "trigger": "onClick", "action": "scrollTo", "to": "AboutSection" },
+        { "label": "Secondary CTA (header, log in)", "trigger": "onClick", "action": "navigate", "to": "loginInactive" },
+        { "label": "Primary CTA (x3, sign up)", "trigger": "onClick", "action": "navigate", "to": "signupJoinInactive" }
+      ]
+    },
+    {
+      "id": "aboutUser",
+      "name": "AboutPage(User)",
+      "visualNodeId": "170:514",
+      "group": "marketing",
+      "note": "Logged-in variant of About; same layout, header reflects auth."
+    },
+    {
+      "id": "signupJoinInactive",
+      "name": "Signup/Join(Inactive)",
+      "demoNodeId": "2001:1368",
+      "visualNodeId": "153:321",
+      "group": "auth",
+      "elements": [
+        { "label": "input fields", "trigger": "onClick", "action": "stateChange", "to": "signupJoinActive", "transition": "dissolve" },
+        { "label": "Secondary CTA", "trigger": "onClick", "action": "navigate", "to": "loginInactive" },
+        { "label": "AlternativeLink (log in)", "trigger": "onClick", "action": "navigate", "to": "loginInactive" },
+        { "label": "Logo", "trigger": "onClick", "action": "navigate", "to": "home" },
+        { "label": "Nav icon", "trigger": "onClick", "action": "navigate", "to": "aboutGuest" },
+        { "label": "Exit button (top-left of box)", "trigger": "onClick", "action": "navigate", "to": "aboutGuest", "note": "or previous page" }
+      ]
+    },
+    {
+      "id": "signupJoinActive",
+      "name": "Signup/Join(Active)",
+      "demoNodeId": "2001:1365",
+      "visualNodeId": "153:866",
+      "group": "auth",
+      "elements": [
+        { "label": "Primary CTA", "trigger": "onClick", "action": "navigate", "to": "emailConfirmation" },
+        { "label": "Secondary CTA / AlternativeLink", "trigger": "onClick", "action": "navigate", "to": "loginInactive" }
+      ]
+    },
+    {
+      "id": "emailConfirmation",
+      "name": "Signup/EmailConfirmation",
+      "demoNodeId": "2001:1362",
+      "visualNodeId": "153:560",
+      "group": "auth",
+      "warning": "Copy shows literal [email] placeholder; live version injects the entered email. Preserve live behavior.",
+      "elements": [
+        { "label": "Primary CTA", "trigger": "onClick", "action": "navigate", "to": "loginInactive" },
+        { "label": "Secondary CTA", "trigger": "onClick", "action": "navigate", "to": "loginInactive" }
+      ]
+    },
+    {
+      "id": "loginInactive",
+      "name": "Login(Inactive)",
+      "demoNodeId": "2001:1359",
+      "visualNodeId": "153:742",
+      "group": "auth",
+      "elements": [
+        { "label": "input fields", "trigger": "onClick", "action": "stateChange", "to": "loginActive", "transition": "dissolve" },
+        { "label": "Primary CTA", "trigger": "onClick", "action": "navigate", "to": "signupJoinInactive", "note": "prototype wiring; real target on submit likely Dashboard/onboarding" },
+        { "label": "AlternativeLink (sign up)", "trigger": "onClick", "action": "navigate", "to": "signupJoinInactive" },
+        { "label": "Nav icon", "trigger": "onClick", "action": "navigate", "to": "aboutGuest" },
+        { "label": "Logo", "trigger": "onClick", "action": "navigate", "to": "home" }
+      ]
+    },
+    {
+      "id": "loginActive",
+      "name": "Login(Active)",
+      "demoNodeId": "2001:1356",
+      "visualNodeId": "170:769",
+      "group": "auth",
+      "elements": [
+        { "label": "Primary CTA", "trigger": "onClick", "action": "navigate", "to": "onboardingWelcome", "note": "demo routes new-user login into onboarding" },
+        { "label": "Nav icon", "trigger": "onClick", "action": "navigate", "to": "aboutGuest" },
+        { "label": "Logo", "trigger": "onClick", "action": "navigate", "to": "home" }
+      ]
+    },
+    {
+      "id": "onboardingWelcome",
+      "name": "1. Onboarding/Welcome",
+      "demoNodeId": "2001:1353",
+      "visualNodeId": "170:990",
+      "group": "onboarding",
+      "eyebrow": "RADLAB GAMES PLATFORM",
+      "elements": [
+        { "label": "Primary CTA (Next)", "trigger": "onClick", "action": "navigate", "to": "onboardingDataInactive" }
+      ]
+    },
+    {
+      "id": "onboardingDataInactive",
+      "name": "2. Onboarding/Data(Inactive)",
+      "demoNodeId": "2001:1349",
+      "visualNodeId": "170:1201",
+      "group": "onboarding",
+      "step": "1 of 3",
+      "title": "Data Privacy / TOS",
+      "note": "Consent checkboxes right-aligned to align with Agree & continue button.",
+      "elements": [
+        { "label": "Consent checkbox", "trigger": "onClick", "action": "stateChange", "to": "onboardingDataActive", "transition": "dissolve" },
+        { "label": "Previous", "trigger": "onClick", "action": "back" }
+      ]
+    },
+    {
+      "id": "onboardingDataActive",
+      "name": "2. Onboarding/Data(Active)",
+      "demoNodeId": "2001:1345",
+      "visualNodeId": "187:1927",
+      "group": "onboarding",
+      "step": "1 of 3",
+      "elements": [
+        { "label": "Previous", "trigger": "onClick", "action": "navigate", "to": "onboardingWelcome" },
+        { "label": "Primary CTA (Agree & continue)", "trigger": "onClick", "action": "navigate", "to": "onboardingDemographicsInactive" }
+      ]
+    },
+    {
+      "id": "onboardingDemographicsInactive",
+      "name": "3. Onboarding/Demographics(Inactive)",
+      "demoNodeId": "2001:1329",
+      "visualNodeId": "187:1328",
+      "group": "onboarding",
+      "step": "2 of 3",
+      "title": "Demographics",
+      "note": "Fillable boxes and 1-10 single-select scale have a background fill for contrast.",
+      "elements": [
+        { "label": "Question inputs (Box/Options/SingleSelect/Scale)", "trigger": "onClick", "action": "stateChange", "to": "onboardingDemographicsActive", "transition": "dissolve" },
+        { "label": "Previous", "trigger": "onClick", "action": "back" }
+      ]
+    },
+    {
+      "id": "onboardingDemographicsActive",
+      "name": "3. Onboarding/Demographics(Active)",
+      "demoNodeId": "2001:1313",
+      "visualNodeId": "187:2428",
+      "group": "onboarding",
+      "step": "2 of 3",
+      "elements": [
+        { "label": "Previous", "trigger": "onClick", "action": "navigate", "to": "onboardingDataActive" },
+        { "label": "Primary CTA (Next)", "trigger": "onClick", "action": "navigate", "to": "onboardingRippleInactive" }
+      ]
+    },
+    {
+      "id": "onboardingRippleInactive",
+      "name": "4. Onboarding/Ripple(Inactive)",
+      "demoNodeId": "2001:1291",
+      "visualNodeId": "187:2611",
+      "group": "onboarding",
+      "step": "3 of 3",
+      "title": "Meet your Ripple",
+      "warning": "Uses live-version screenshots as placeholders; use existing live CSS for Ripple avatar customization.",
+      "elements": [
+        { "label": "Customization / name Ripple", "trigger": "onClick", "action": "stateChange", "to": "onboardingRippleActive", "transition": "dissolve" },
+        { "label": "Previous", "trigger": "onClick", "action": "back" }
+      ]
+    },
+    {
+      "id": "onboardingRippleActive",
+      "name": "4. Onboarding/Ripple(Active)",
+      "demoNodeId": "2001:1269",
+      "visualNodeId": "187:2743",
+      "group": "onboarding",
+      "step": "3 of 3",
+      "elements": [
+        { "label": "Previous", "trigger": "onClick", "action": "navigate", "to": "onboardingDemographicsActive" },
+        { "label": "Primary CTA (Next)", "trigger": "onClick", "action": "navigate", "to": "onboardingFinish" }
+      ]
+    },
+    {
+      "id": "onboardingFinish",
+      "name": "5. Onboarding/Finish",
+      "demoNodeId": "2001:1256",
+      "visualNodeId": "187:2837",
+      "group": "onboarding",
+      "note": "Success screen. Primary CTA label is dynamic: 'Check-in with [Name]' using the Ripple name.",
+      "elements": [
+        { "label": "Primary CTA (Check-in with [Name])", "trigger": "onClick", "action": "navigate", "to": "checkinQ1" },
+        { "label": "Secondary CTA (Go to Dashboard) / Previous", "trigger": "onClick", "action": "navigate", "to": "dashboard" }
+      ]
+    },
+    {
+      "id": "checkinQ1",
+      "name": "Checkin/q1",
+      "demoNodeId": "2001:1426",
+      "group": "checkin",
+      "elements": [ { "label": "screen", "trigger": "onClick", "action": "navigate", "to": "checkinQ2" } ]
+    },
+    {
+      "id": "checkinQ2",
+      "name": "Checkin/q2",
+      "demoNodeId": "2001:1423",
+      "group": "checkin",
+      "elements": [ { "label": "screen", "trigger": "onClick", "action": "navigate", "to": "checkinResult" } ]
+    },
+    {
+      "id": "checkinResult",
+      "name": "Checkin/result",
+      "demoNodeId": "2001:1420",
+      "group": "checkin",
+      "elements": [ { "label": "screen", "trigger": "onClick", "action": "navigate", "to": "checkinIntention" } ]
+    },
+    {
+      "id": "checkinIntention",
+      "name": "Checkin/intention",
+      "demoNodeId": "2001:1417",
+      "group": "checkin",
+      "note": "End of check-in loop."
+    },
+    {
+      "id": "dashboard",
+      "name": "Dashboard",
+      "demoNodeId": "2005:2992",
+      "url": "https://radlab.zone/dashboard",
+      "group": "member",
+      "note": "Member home; onboarding Finish and check-in resolve here.",
+      "guestVersion": "NOT YET BUILT. No Guest version of Dashboard (or Games) exists in the live version. Guest-preview designs for these two pages would be planned only if the consistent-header approach is approved."
+    }
+  ],
+  "responsive": {
+    "sourceNote": "Figma file contains DESKTOP frames only (all 1440px wide). No mobile artboard exists. The rules below are RECOMMENDED behavior inferred from desktop layouts + React/Tailwind best practice, NOT authored design intent. A future mobile design supersedes this.",
+    "strategy": "mobile-first; Figma frames represent xl/2xl presentation",
+    "breakpoints": { "base": 0, "sm": 640, "md": 768, "lg": 1024, "xl": 1280, "2xl": 1536 },
+    "maxContentWidth": "~1200px, centered",
+    "globalRules": [
+      "Step display type sizes down on mobile (hero 36->~28, section 28->~22); body sizes 16/14/12 can stay.",
+      "Minimum ~44x44px touch targets.",
+      "Consider full-width stacked CTAs on mobile instead of right-aligned inline.",
+      "Consistent mobile gutter (~px-5)."
+    ],
+    "perScreen": {
+      "header": "Collapse nav links (Dashboard/Games/About) into hamburger/drawer; keep primary auth action visible; preserve guest preview-only rule inside drawer.",
+      "aboutPage": "Games carousel stays horizontal-scroll (mobile-friendly). 'What is this' 2-col and 'What you get out of it' 3-col stack to single column. CTA banner full-bleed.",
+      "authScreens": "Centered ~350px card -> near-full-width with gutter; already near mobile width, adapts cleanly.",
+      "onboardingWelcomeFinish": "Full-width content; stack CTAs full-width (Finish: primary on top).",
+      "onboardingData": "Text panels stack; keep checkbox associated with its consent line (right-align may relax to inline-left).",
+      "onboardingDemographics": "RISK: 1-10 ladder scale overflows phones. Prefer wrap, else horizontal-scroll, else compact segmented control. Keep ~40px tap targets. FLAG FOR DESIGNER.",
+      "onboardingRipple": "RISK: skin-tone (~15) and eye-color (~18) swatch rows overflow. Wrap to grid (6-8/row) or horizontal-scroll; swatches >=32px. Use LIVE Ripple component/CSS, not placeholder screenshots.",
+      "onboardingPrevNext": "Keep Previous bottom-left / Next bottom-right; a fixed bottom bar with buttons at opposite ends works on mobile.",
+      "dashboardCheckin": "Dashboard is an existing live page; match its current responsive behavior."
+    },
+    "openQuestionsForDesigner": [
+      "1-10 scale on mobile: wrap, scroll, or compact segmented control?",
+      "Ripple swatch rows on mobile: grid or horizontal scroll?",
+      "Mobile header: keep Join free / avatar outside the drawer, or collapse everything?"
+    ]
+  },
+  "integrationWarnings": [
+    "Do not ship placeholder screenshots: game-card images (About) and Ripple customization screens are live-site screenshots; wire in real components/CSS.",
+    "EmailConfirmation [email] placeholder must be replaced with the actual entered email (Supabase auth).",
+    "Finish CTA 'Check-in with [Name]' must bind to the user's chosen Ripple name.",
+    "Radii: buttons 24px; eyebrow labels AND cards 12px, everywhere.",
+    "Header identical for guest/user; Dashboard/Games preview-only for guests. NOTE: guest Dashboard/Games screens are NOT yet built in the live version and would only be designed if the consistent-header approach is approved.",
+    "Back = history back, not a hardcoded route.",
+    "Login success should route via Supabase session (new user -> onboarding, returning -> dashboard); demo wiring is for click-through only.",
+    "Disabled-button style is flexible: grayscale->pink transition or keep current live style.",
+    "DISSOLVE / Inactive->Active is SHORTHAND for one page's empty arrival state vs. its all-inputs-satisfied end-state -- not a page transition and not a single toggle. Live pages usually need several interactions before the Active continue button enables. Implement as one screen with real per-input validation. See stateModel.",
+    "Type scale is a consolidated reference, not complete: some screens use sizes outside it (e.g. Large Hero on About). Use per-screen CSS where it differs.",
+    "Reconcile new components with the developer's existing live component library before building; prefer extending existing components, and flag prop/structure/naming mismatches for a human decision instead of overwriting."
+  ]
+}
