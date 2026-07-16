@@ -279,6 +279,26 @@ Live routes have moved since website.md §7 was written: `/` is now `Landing` (h
 
 ---
 
+## 9. Decisions — Phase 0 gate review (Norm, 2026-07-16)
+
+The §8 questions were resolved in review. These rulings govern Phase 1+:
+
+| # | Question | Ruling |
+|---|---|---|
+| 1 | Extra live tokens | **Keep the 4 border tokens** (`--bd`, `--bds`, `--pkb`, `--pkbs`) as sanctioned supplements. **Merge `--tx3` into text-muted** by redefining it to `#ABADB0` (one line; 383 call sites converge on the token). |
+| 2 | Semantic colors | **Minimal set in Phase 1**: tokenize error tint/border/text from the current auth values (`#FCEBEB` / `#F09595` / `#A32D2D`). Admin status colors exempt until a later cleanup. |
+| 3 | 13px | **13 → 14.** `--fs-mono-md` retires. Redesigned surfaces first; long tail as touched. |
+| 3b | 18px | **18 → 16.** `--fs-body-lg` retires. Long-form contexts rely on 150% line-height. |
+| 3c | Below-floor sizes (11/10/9px) | Floor to 12 on any touched surface (both the old guardrails and the new scale agree these are violations). Untouched files migrate opportunistically. |
+| 5 | DM Sans weights | **Load 600; migrate ALL 500 → 600 in one pass** (Norm chose full migration over surface-by-surface). `font-weight: 700` in DM Sans contexts (currently faux-bold) also → 600. Drop the 500 file once no uses remain. Expect a uniform, site-wide bolding — visual QA accordingly. |
+| 6 | Space Mono 700 | **Keep** for game/admin data readouts; **not used** on redesigned surfaces (spec: 400 only there). |
+| 4 | Study-infra second palette | **Migrate — ASAP.** Liliana's pretest is *just starting* (July, earlier than the August plan), so the migration is pulled forward: it happens **immediately after Phase 1 tokens land**, before Phases 2–6, so the maximum share of pretest/recruitment runs on the new look. Participant-facing screens: `InterventionPage`, `MidpointStep`, `ScreenerPage`, `DailyFarewellStep`, VAS/questionnaire wrappers. |
+| 7 | Guest header preview | **Visible, inert**: Dashboard/Games render muted and non-navigating for guests, optional "Join free to unlock" hint on click. No invented preview pages (guardrail #1 holds). |
+
+**Revised sequencing consequence:** Phase 1 = tokens (colors + semantic error set + fonts incl. the 600 load + full weight migration + radii keys) → **Phase 1b = study-infra token migration (new, urgent)** → Phase 2 primitives → Phases 3–6 per the brief. Still one phase per review stop.
+
+---
+
 ## Appendix: method limitations
 
 - Regex inventory: template-literal colors (e.g. Ember's computed `rgba(...)` fire math) appear as raw strings in `colors.csv` (~15 rows); dynamic values can't be classified and are all game-internal.
