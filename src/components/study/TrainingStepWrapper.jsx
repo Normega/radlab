@@ -151,11 +151,11 @@ const S = {
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     minHeight: 300,
     fontFamily: '"DM Sans",system-ui,sans-serif',
-    fontSize: 15, color: '#888780',
+    fontSize: 15, color: 'var(--tx2)',
   },
   error: {
     padding: 40, textAlign: 'center',
     fontFamily: '"DM Sans",system-ui,sans-serif',
-    fontSize: 14, color: '#c0392b',
+    fontSize: 14, color: 'var(--err-tx)',
   },
 }

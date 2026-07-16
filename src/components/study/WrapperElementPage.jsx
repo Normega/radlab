@@ -61,7 +61,7 @@ export default function WrapperElementPage({ element, onComplete }) {
     }
     if (pkgError || !pkgScales?.length) {
       return (
-        <div style={{ ...PKG.msg, color: '#c0392b' }}>
+        <div style={{ ...PKG.msg, color: 'var(--err-tx)' }}>
           Could not load VAS package "{current.slug}"
           {pkgError ? ` — ${pkgError.message}` : ' (no scales found)'}.
           Check it at /admin/vas.
@@ -101,8 +101,8 @@ export default function WrapperElementPage({ element, onComplete }) {
           <div style={{ display: 'flex' }}>
             {SESSION_SLOT_LABELS.map((label, i) => {
               const state = stepState(i)
-              const color = state === 'done' ? '#639922' : state === 'active' ? '#2c2c2a' : '#a09d98'
-              const bar   = state === 'done' ? '#639922' : state === 'active' ? '#2c2c2a' : '#ddd'
+              const color = state === 'done' ? 'var(--pk)' : state === 'active' ? 'var(--tx)' : 'var(--gy)'
+              const bar   = state === 'done' ? 'var(--pk)' : state === 'active' ? 'var(--tx)' : '#ddd'
               return (
                 <div key={i} style={S.stepCol}>
                   <span style={{ ...S.stepLabel, color }}>{label}</span>
@@ -130,7 +130,7 @@ export default function WrapperElementPage({ element, onComplete }) {
           {screens.map((_, i) => (
             <div key={i} style={{
               ...S.pip,
-              background: i < screenIndex ? '#639922' : i === screenIndex ? '#2c2c2a' : '#ddd',
+              background: i < screenIndex ? 'var(--pk)' : i === screenIndex ? 'var(--tx)' : '#ddd',
             }} />
           ))}
         </div>
@@ -162,6 +162,6 @@ const PKG = {
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     minHeight: 300, padding: 40, textAlign: 'center',
     fontFamily: '"DM Sans",system-ui,sans-serif',
-    fontSize: 15, color: '#888780',
+    fontSize: 15, color: 'var(--tx2)',
   },
 }

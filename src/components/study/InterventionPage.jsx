@@ -367,11 +367,11 @@ export default function InterventionPage({
           <div style={{ display: 'flex' }}>
             {SESSION_STEPS.map((step, i) => (
               <div key={i} style={S.stepCol}>
-                <span style={{ ...S.stepLabel, color: step.state === 'done' ? '#639922' : step.state === 'active' ? '#2c2c2a' : '#a09d98' }}>
+                <span style={{ ...S.stepLabel, color: step.state === 'done' ? 'var(--pk)' : step.state === 'active' ? 'var(--tx)' : 'var(--gy)' }}>
                   {step.label}
                 </span>
-                <div style={{ ...S.stepTrack, background: step.state === 'done' ? '#639922' : step.state === 'active' ? '#2c2c2a' : '#ddd' }}>
-                  <div style={{ ...S.stepDot, background: step.state === 'done' ? '#639922' : step.state === 'active' ? '#2c2c2a' : '#ddd' }} />
+                <div style={{ ...S.stepTrack, background: step.state === 'done' ? 'var(--pk)' : step.state === 'active' ? 'var(--tx)' : '#ddd' }}>
+                  <div style={{ ...S.stepDot, background: step.state === 'done' ? 'var(--pk)' : step.state === 'active' ? 'var(--tx)' : '#ddd' }} />
                 </div>
               </div>
             ))}
@@ -394,7 +394,7 @@ export default function InterventionPage({
           {screens.map((_, i) => (
             <div key={i} style={{
               ...S.pip,
-              background: i < screenIndex ? '#639922' : i === screenIndex ? '#2c2c2a' : '#ddd',
+              background: i < screenIndex ? 'var(--pk)' : i === screenIndex ? 'var(--tx)' : '#ddd',
             }} />
           ))}
         </div>
@@ -681,7 +681,7 @@ function AudioBlock({ step, onComplete, db = globalSupabase }) {
   }
 
   if (loading) return <p style={S.audioNote}>Loading audio…</p>
-  if (error)   return <p style={{ ...S.audioNote, color: '#c0392b' }}>{error}</p>
+  if (error)   return <p style={{ ...S.audioNote, color: 'var(--err-tx)' }}>{error}</p>
 
   const pct = Math.round(progress * 100)
   return (
@@ -698,9 +698,9 @@ function AudioBlock({ step, onComplete, db = globalSupabase }) {
         />
         <div style={S.audioProgressRow}>
           <div style={S.audioProgressTrack}>
-            <div style={{ ...S.audioProgressFill, width: `${pct}%`, background: complete ? '#639922' : '#2c2c2a' }} />
+            <div style={{ ...S.audioProgressFill, width: `${pct}%`, background: complete ? 'var(--pk)' : 'var(--tx)' }} />
           </div>
-          <span style={{ ...S.audioProgressLabel, color: complete ? '#639922' : '#888780' }}>
+          <span style={{ ...S.audioProgressLabel, color: complete ? 'var(--pk)' : 'var(--tx2)' }}>
             {complete ? '✓ Complete' : `${pct}% listened`}
           </span>
         </div>
@@ -785,7 +785,7 @@ function SliderBlock({ step, value, touched, onChange }) {
           max={step.max}
           value={value}
           onChange={e => onChange(Number(e.target.value))}
-          style={{ ...S.bigSlider, accentColor: '#639922' }}
+          style={{ ...S.bigSlider, accentColor: 'var(--pk)' }}
         />
         <div style={S.sliderLabels}>
           <span style={{ whiteSpace: 'pre-line' }}>{step.min_label}</span>
@@ -849,7 +849,7 @@ function TimerBlock({ step, onComplete }) {
     <div style={S.timerWrap}>
       {step.heading     && <h3 style={S.textH3}>{step.heading}</h3>}
       {step.instruction && <p  style={S.textP}>{step.instruction}</p>}
-      <div style={{ ...S.timerDisplay, color: done ? '#639922' : '#2c2c2a' }}>
+      <div style={{ ...S.timerDisplay, color: done ? 'var(--pk)' : 'var(--tx)' }}>
         {mins}:{secs}
       </div>
       <p style={S.timerSublabel}>
@@ -1007,7 +1007,7 @@ function ThoughtRatingBlock({ step, thoughts, ratings, movedMap, onRatingChange 
           <div key={i} style={S.thoughtSliderRow}>
             <div style={S.thoughtSliderLabel}>
               <span>"{thought}"</span>
-              <span style={{ color: '#639922' }}>{moved ? val : '—'}</span>
+              <span style={{ color: 'var(--pk)' }}>{moved ? val : '—'}</span>
             </div>
             <input
               type="range"
@@ -1015,7 +1015,7 @@ function ThoughtRatingBlock({ step, thoughts, ratings, movedMap, onRatingChange 
               max={step.max ?? 100}
               value={val}
               onChange={e => onRatingChange(i, Number(e.target.value), thoughts)}
-              style={{ width: '100%', accentColor: '#639922' }}
+              style={{ width: '100%', accentColor: 'var(--pk)' }}
             />
             <div style={S.sliderEnds}>
               <span>{step.min ?? 0}</span>
@@ -1088,7 +1088,7 @@ function TriggerMapBlock({ step, values, onChange }) {
                 onClick={() => setOpenId(isOpen ? null : cat.id)}
               >
                 <span>{cat.icon}</span>
-                <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: '#1a1a18', fontFamily: FONT }}>{cat.label}</span>
+                <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: 'var(--tx)', fontFamily: FONT }}>{cat.label}</span>
                 <span style={{ ...S.triggerArrow, ...(isOpen ? S.triggerArrowOpen : {}) }}>▶</span>
               </div>
               {isOpen && (
@@ -1106,7 +1106,7 @@ function TriggerMapBlock({ step, values, onChange }) {
           )
         })}
       </div>
-      <p style={{ fontSize: 12, color: '#888780', margin: '8px 0 0', fontFamily: FONT }}>
+      <p style={{ fontSize: 12, color: 'var(--tx2)', margin: '8px 0 0', fontFamily: FONT }}>
         {filledCount} categor{filledCount === 1 ? 'y' : 'ies'} filled.{' '}
         {filledCount >= minReq ? 'You may continue, or add more.' : `Fill at least ${minReq} to continue.`}
       </p>
@@ -1180,7 +1180,7 @@ function BodyDiagramBlock({ step, values, onChange }) {
                 )}
                 <circle
                   cx={h.cx} cy={h.cy} r="7"
-                  fill={state === 'done' ? '#639922' : state === 'active' ? '#f59e0b' : '#ddd'}
+                  fill={state === 'done' ? 'var(--pk)' : state === 'active' ? '#f59e0b' : '#ddd'}
                   opacity={state === 'locked' ? 0.3 : 1}
                 />
               </g>
@@ -1199,7 +1199,7 @@ function BodyDiagramBlock({ step, values, onChange }) {
                 transition: 'opacity 0.25s, transform 0.25s',
               }}
             >
-              <label style={{ fontSize: 12, fontWeight: 600, color: '#5f5e5a', fontFamily: FONT, display: 'block', marginBottom: 4 }}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--tx2)', fontFamily: FONT, display: 'block', marginBottom: 4 }}>
                 {h.label}
               </label>
               <textarea
@@ -1221,7 +1221,7 @@ function BodyDiagramBlock({ step, values, onChange }) {
         transform: unlocked.behavior ? 'translateY(0)' : 'translateY(6px)',
         transition: 'opacity 0.25s, transform 0.25s',
       }}>
-        <label style={{ fontSize: 12, fontWeight: 600, color: '#5f5e5a', fontFamily: FONT, display: 'block', marginBottom: 4 }}>
+        <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--tx2)', fontFamily: FONT, display: 'block', marginBottom: 4 }}>
           I behave this way:
         </label>
         <textarea
@@ -1299,18 +1299,18 @@ function QualityExplorerBlock({ step, state, onChange }) {
             max={6}
             value={sliderValue}
             onChange={e => handleSlider(Number(e.target.value))}
-            style={{ ...S.bigSlider, accentColor: sliderMoved ? '#639922' : '#c0bdb8' }}
+            style={{ ...S.bigSlider, accentColor: sliderMoved ? 'var(--pk)' : 'var(--gy)' }}
           />
           <div style={S.sliderLabels}>
-            <span style={{ fontSize: 12, color: '#5f5e5a' }}>{activeQuality.min_label}</span>
-            <span style={{ ...S.sliderVal, color: sliderMoved ? '#639922' : '#c0bdb8' }}>{sliderValue}</span>
-            <span style={{ fontSize: 12, color: '#5f5e5a' }}>{activeQuality.max_label}</span>
+            <span style={{ fontSize: 12, color: 'var(--tx2)' }}>{activeQuality.min_label}</span>
+            <span style={{ ...S.sliderVal, color: sliderMoved ? 'var(--pk)' : 'var(--gy)' }}>{sliderValue}</span>
+            <span style={{ fontSize: 12, color: 'var(--tx2)' }}>{activeQuality.max_label}</span>
           </div>
 
           {/* Description — fades in after slider moved */}
           {sliderMoved && (
             <div style={{ marginTop: 14 }}>
-              <p style={{ fontSize: 13, color: '#5f5e5a', marginBottom: 6, fontFamily: FONT }}>
+              <p style={{ fontSize: 13, color: 'var(--tx2)', marginBottom: 6, fontFamily: FONT }}>
                 {step.describe_prompt ?? 'Describe this quality in your own words.'}
               </p>
               <input
@@ -1331,11 +1331,11 @@ function QualityExplorerBlock({ step, state, onChange }) {
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 
-const FONT = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+const FONT = '"DM Sans", system-ui, sans-serif'
 
 const S = {
   bg: {
-    background: '#f5f4f0',
+    background: 'var(--bgp)',
     minHeight: '100%',
     display: 'flex',
     justifyContent: 'center',
@@ -1353,8 +1353,8 @@ const S = {
 
   // ── Progress bar
   progressBar: {
-    background: '#f0ede8',
-    borderBottom: '1px solid #e0ddd8',
+    background: 'var(--bgp)',
+    borderBottom: '1px solid var(--bds)',
     padding: '12px 20px 0',
   },
   stepCol: {
@@ -1376,35 +1376,35 @@ const S = {
   // ── Header
   header: {
     padding: '20px 24px 16px',
-    borderBottom: '1px solid #ebe8e3',
+    borderBottom: '1px solid var(--bd)',
   },
   practiceBadge: {
     display: 'inline-flex', alignItems: 'center', gap: 6,
-    background: '#f0ede8', border: '1px solid #ddd',
+    background: 'var(--bgp)', border: '1px solid #ddd',
     borderRadius: 6, padding: '4px 10px',
-    fontSize: 11, fontWeight: 600, color: '#5f5e5a',
+    fontSize: 11, fontWeight: 600, color: 'var(--tx2)',
     textTransform: 'uppercase', letterSpacing: '0.05em',
     marginBottom: 10,
   },
   badgeDot: {
-    width: 6, height: 6, borderRadius: '50%', background: '#639922',
+    width: 6, height: 6, borderRadius: '50%', background: 'var(--pk)',
   },
   dayNumber: {
-    fontSize: 22, fontWeight: 600, color: '#1a1a18',
+    fontSize: 22, fontWeight: 600, color: 'var(--tx)',
   },
   dayTitle: {
-    fontSize: 15, fontWeight: 600, color: '#1a1a18', marginTop: 2,
+    fontSize: 15, fontWeight: 600, color: 'var(--tx)', marginTop: 2,
   },
   daySubtitle: {
-    fontSize: 13, color: '#888780', marginTop: 2,
+    fontSize: 13, color: 'var(--tx2)', marginTop: 2,
   },
 
   // ── Step pips
   pips: {
     display: 'flex', alignItems: 'center', gap: 4,
     padding: '10px 24px',
-    borderBottom: '1px solid #f0ede8',
-    background: '#faf9f7',
+    borderBottom: '1px solid var(--bgp)',
+    background: 'var(--bg)',
   },
   pip: {
     width: 6, height: 6, borderRadius: '50%',
@@ -1420,11 +1420,11 @@ const S = {
     width: 110, height: 110, flexShrink: 0, objectFit: 'contain',
   },
   speechBubble: {
-    background: '#f9f8f5',
-    border: '1px solid #e0ddd8',
+    background: 'var(--bg)',
+    border: '1px solid var(--bds)',
     borderRadius: '12px 12px 12px 4px',
     padding: '14px 16px',
-    fontSize: 14, lineHeight: 1.7, color: '#2c2c2a',
+    fontSize: 14, lineHeight: 1.7, color: 'var(--tx)',
     flex: 1,
   },
 
@@ -1435,18 +1435,18 @@ const S = {
 
   // ── Video
   videoLabel: {
-    fontSize: 12, fontWeight: 600, color: '#5f5e5a',
+    fontSize: 12, fontWeight: 600, color: 'var(--tx2)',
     textTransform: 'uppercase', letterSpacing: '0.04em',
     marginBottom: 10,
   },
   videoNote: {
-    fontSize: 11, color: '#a09d98', marginTop: 8, textAlign: 'center',
+    fontSize: 11, color: 'var(--gy)', marginTop: 8, textAlign: 'center',
   },
 
   // ── Audio
   audioWrap: {
-    background: '#faf9f7',
-    border: '1px solid #e8e5e0',
+    background: 'var(--bg)',
+    border: '1px solid var(--bd)',
     borderRadius: 12,
     padding: '16px 20px',
     marginBottom: 8,
@@ -1455,7 +1455,7 @@ const S = {
     display: 'flex', alignItems: 'center', gap: 12, marginTop: 10,
   },
   audioProgressTrack: {
-    flex: 1, height: 4, background: '#e8e5e0', borderRadius: 2, overflow: 'hidden',
+    flex: 1, height: 4, background: 'var(--bd)', borderRadius: 2, overflow: 'hidden',
   },
   audioProgressFill: {
     height: '100%', borderRadius: 2, transition: 'width 1s linear',
@@ -1464,59 +1464,59 @@ const S = {
     fontSize: 12, fontFamily: FONT, whiteSpace: 'nowrap',
   },
   audioNote: {
-    fontSize: 11, color: '#a09d98', marginTop: 8, textAlign: 'center',
+    fontSize: 11, color: 'var(--gy)', marginTop: 8, textAlign: 'center',
   },
 
   // ── Text block
   textH3: {
-    fontSize: 15, fontWeight: 600, color: '#1a1a18',
+    fontSize: 15, fontWeight: 600, color: 'var(--tx)',
     margin: '0 0 8px',
   },
   textP: {
-    fontSize: 14, lineHeight: 1.7, color: '#5f5e5a',
+    fontSize: 14, lineHeight: 1.7, color: 'var(--tx2)',
     margin: '0 0 12px',
   },
 
   // ── prompt_response
   prHeading: {
-    fontSize: 15, fontWeight: 600, color: '#1a1a18',
+    fontSize: 15, fontWeight: 600, color: 'var(--tx)',
     margin: '0 0 10px',
   },
   prPreamble: {
-    fontSize: 14, lineHeight: 1.7, color: '#5f5e5a',
+    fontSize: 14, lineHeight: 1.7, color: 'var(--tx2)',
     margin: '0 0 12px',
     fontStyle: 'italic',
   },
   promptBox: {
-    background: '#f0ede8',
-    border: '1px solid #e0ddd8',
+    background: 'var(--bgp)',
+    border: '1px solid var(--bds)',
     borderRadius: 8,
     padding: '14px 16px',
-    fontSize: 14, lineHeight: 1.7, color: '#2c2c2a',
+    fontSize: 14, lineHeight: 1.7, color: 'var(--tx)',
     marginBottom: 12,
   },
   exampleBox: {
-    background: '#faf9f7',
-    border: '1px solid #e8e5e0',
+    background: 'var(--bg)',
+    border: '1px solid var(--bd)',
     borderRadius: 8,
     padding: '12px 14px',
     marginBottom: 12,
   },
   exampleLabel: {
     fontSize: 11, fontWeight: 600, textTransform: 'uppercase',
-    letterSpacing: '0.04em', color: '#888780',
+    letterSpacing: '0.04em', color: 'var(--tx2)',
     margin: '0 0 4px',
   },
   exampleText: {
-    fontSize: 13, lineHeight: 1.6, color: '#5f5e5a',
+    fontSize: 13, lineHeight: 1.6, color: 'var(--tx2)',
     fontStyle: 'italic', margin: 0,
   },
   textarea: {
     width: '100%', boxSizing: 'border-box',
-    border: '1px solid #d9d6d1',
+    border: '1px solid var(--bds)',
     borderRadius: 8,
     padding: '10px 12px',
-    fontSize: 14, fontFamily: FONT, color: '#1a1a18',
+    fontSize: 14, fontFamily: FONT, color: 'var(--tx)',
     lineHeight: 1.6, resize: 'vertical',
     outline: 'none',
     background: '#fff',
@@ -1524,25 +1524,25 @@ const S = {
 
   // ── Closing
   closingP: {
-    fontSize: 14, lineHeight: 1.7, color: '#5f5e5a',
+    fontSize: 14, lineHeight: 1.7, color: 'var(--tx2)',
     margin: '0 0 12px',
   },
 
   // ── Slider
   promptLabel: {
-    fontSize: 14, lineHeight: 1.7, color: '#2c2c2a',
+    fontSize: 14, lineHeight: 1.7, color: 'var(--tx)',
     margin: '0 0 16px', fontFamily: FONT,
   },
   sliderWrap: {
-    background: '#faf9f7',
-    border: '1px solid #e8e5e0',
+    background: 'var(--bg)',
+    border: '1px solid var(--bd)',
     borderRadius: 12,
     padding: '20px 20px 16px',
   },
   bigSlider: {
     width: '100%',
     height: 8,
-    accentColor: '#639922',
+    accentColor: 'var(--pk)',
     cursor: 'pointer',
     marginBottom: 12,
     display: 'block',
@@ -1552,15 +1552,15 @@ const S = {
     justifyContent: 'space-between',
     alignItems: 'center',
     fontSize: 12,
-    color: '#5f5e5a',
+    color: 'var(--tx2)',
     fontFamily: FONT,
   },
   sliderVal: {
-    fontSize: 22, fontWeight: 600, color: '#639922', fontFamily: FONT,
+    fontSize: 22, fontWeight: 600, color: 'var(--pk)', fontFamily: FONT,
   },
   sliderEnds: {
     display: 'flex', justifyContent: 'space-between',
-    fontSize: 10, color: '#888780', marginTop: 2, fontFamily: FONT,
+    fontSize: 10, color: 'var(--tx2)', marginTop: 2, fontFamily: FONT,
   },
 
   // ── MultiResponse
@@ -1569,14 +1569,14 @@ const S = {
   },
   inputNum: {
     width: 24, height: 24, borderRadius: '50%',
-    background: '#f0ede8', fontSize: 11, fontWeight: 600, color: '#5f5e5a',
+    background: 'var(--bgp)', fontSize: 11, fontWeight: 600, color: 'var(--tx2)',
     display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
     fontFamily: FONT,
   },
   multiInput: {
-    flex: 1, border: '1px solid #e0ddd8', borderRadius: 8,
+    flex: 1, border: '1px solid var(--bds)', borderRadius: 8,
     padding: '9px 12px', fontSize: 14, fontFamily: FONT,
-    color: '#1a1a18', background: '#fff', outline: 'none',
+    color: 'var(--tx)', background: '#fff', outline: 'none',
     boxSizing: 'border-box', width: '100%',
   },
 
@@ -1586,69 +1586,69 @@ const S = {
     padding: '32px 20px', gap: 12,
   },
   timerDisplay: {
-    fontSize: 64, fontWeight: 600, color: '#2c2c2a',
+    fontSize: 64, fontWeight: 600, color: 'var(--tx)',
     fontVariantNumeric: 'tabular-nums', letterSpacing: -2,
     fontFamily: FONT,
   },
   timerSublabel: {
-    fontSize: 13, color: '#888780', textAlign: 'center', fontFamily: FONT,
+    fontSize: 13, color: 'var(--tx2)', textAlign: 'center', fontFamily: FONT,
   },
   timerTrack: {
-    width: 160, height: 4, background: '#e8e5e0', borderRadius: 2, overflow: 'hidden', marginTop: 8,
+    width: 160, height: 4, background: 'var(--bd)', borderRadius: 2, overflow: 'hidden', marginTop: 8,
   },
   timerFill: {
-    height: '100%', background: '#639922', borderRadius: 2, transition: 'width 1s linear',
+    height: '100%', background: 'var(--pk)', borderRadius: 2, transition: 'width 1s linear',
   },
 
   // ── Training response (single-select)
   scenarioBox: {
-    background: '#f5f4f0', borderLeft: '3px solid #639922', borderRadius: 6,
-    padding: '10px 14px', fontSize: 13, color: '#5f5e5a', marginBottom: 14,
+    background: 'var(--bgp)', borderLeft: '3px solid var(--pk)', borderRadius: 6,
+    padding: '10px 14px', fontSize: 13, color: 'var(--tx2)', marginBottom: 14,
     fontFamily: FONT,
   },
   mcOption: {
     display: 'flex', alignItems: 'flex-start', gap: 12,
-    padding: '12px 14px', border: '1px solid #e0ddd8',
+    padding: '12px 14px', border: '1px solid var(--bds)',
     borderRadius: 10, cursor: 'pointer', marginBottom: 10, background: '#fff',
     fontFamily: FONT,
   },
   mcOptionSelected: {
-    background: '#f0f7eb', borderColor: '#639922',
+    background: 'var(--bgp)', borderColor: 'var(--pk)',
   },
   mcRadio: {
-    width: 18, height: 18, borderRadius: '50%', border: '2px solid #e0ddd8',
+    width: 18, height: 18, borderRadius: '50%', border: '2px solid var(--bds)',
     flexShrink: 0, marginTop: 2,
   },
   mcRadioSelected: {
-    borderColor: '#639922', background: '#639922', boxShadow: 'inset 0 0 0 3px #fff',
+    borderColor: 'var(--pk)', background: 'var(--pk)', boxShadow: 'inset 0 0 0 3px #fff',
   },
   mcLabel: {
-    fontSize: 14, fontWeight: 600, color: '#1a1a18', fontFamily: FONT,
+    fontSize: 14, fontWeight: 600, color: 'var(--tx)', fontFamily: FONT,
   },
   mcDesc: {
-    fontSize: 12, color: '#888780', marginTop: 2, fontFamily: FONT,
+    fontSize: 12, color: 'var(--tx2)', marginTop: 2, fontFamily: FONT,
   },
 
   // ── Training response multi (checkbox)
   distCheckbox: {
-    width: 18, height: 18, borderRadius: 4, border: '2px solid #e0ddd8',
+    width: 18, height: 18, borderRadius: 4, border: '2px solid var(--bds)',
     flexShrink: 0, marginTop: 2, position: 'relative',
   },
   distCheckboxSelected: {
-    borderColor: '#639922', background: '#639922',
+    borderColor: 'var(--pk)', background: 'var(--pk)',
   },
   distCheck: {
     position: 'absolute', top: -1, left: 1,
     fontSize: 12, color: '#fff', fontWeight: 600, fontFamily: FONT,
   },
   distLabel: {
-    fontSize: 14, fontWeight: 600, color: '#1a1a18', marginBottom: 4, fontFamily: FONT,
+    fontSize: 14, fontWeight: 600, color: 'var(--tx)', marginBottom: 4, fontFamily: FONT,
   },
   distDesc: {
-    fontSize: 13, color: '#5f5e5a', marginBottom: 4, fontFamily: FONT,
+    fontSize: 13, color: 'var(--tx2)', marginBottom: 4, fontFamily: FONT,
   },
   distExample: {
-    fontSize: 12, color: '#888780', fontStyle: 'italic', fontFamily: FONT,
+    fontSize: 12, color: 'var(--tx2)', fontStyle: 'italic', fontFamily: FONT,
   },
 
   // ── Word select
@@ -1656,13 +1656,13 @@ const S = {
     display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 12,
   },
   wordChip: {
-    padding: '10px 18px', border: '1.5px solid #e0ddd8', borderRadius: 20,
-    fontSize: 14, fontWeight: 600, color: '#2c2c2a',
+    padding: '10px 18px', border: '1.5px solid var(--bds)', borderRadius: 20,
+    fontSize: 14, fontWeight: 600, color: 'var(--tx)',
     background: '#fff', cursor: 'pointer', userSelect: 'none',
     transition: 'all 0.15s', fontFamily: FONT,
   },
   wordChipSelected: {
-    background: '#f0f7eb', borderColor: '#639922', color: '#3b6d11', fontWeight: 600,
+    background: 'var(--bgp)', borderColor: 'var(--pk)', color: 'var(--pkd)', fontWeight: 600,
   },
 
   // ── Thought sliders
@@ -1670,7 +1670,7 @@ const S = {
     marginBottom: 16,
   },
   thoughtSliderLabel: {
-    fontSize: 13, fontWeight: 600, color: '#2c2c2a',
+    fontSize: 13, fontWeight: 600, color: 'var(--tx)',
     marginBottom: 6, display: 'flex', justifyContent: 'space-between', fontFamily: FONT,
   },
 
@@ -1679,11 +1679,11 @@ const S = {
     display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 6,
   },
   triggerTile: {
-    border: '1px solid #e0ddd8', borderRadius: 10,
+    border: '1px solid var(--bds)', borderRadius: 10,
     overflow: 'hidden', background: '#fff',
   },
   triggerTileFilled: {
-    borderColor: '#639922',
+    borderColor: 'var(--pk)',
   },
   triggerTileOpen: {
     // gridColumn set inline
@@ -1691,27 +1691,27 @@ const S = {
   triggerHeader: {
     display: 'flex', alignItems: 'center', gap: 8,
     padding: '11px 14px', cursor: 'pointer',
-    background: '#faf9f7', userSelect: 'none',
+    background: 'var(--bg)', userSelect: 'none',
   },
   triggerHeaderActive: {
-    background: '#f0f7eb',
+    background: 'var(--bgp)',
   },
   triggerArrow: {
-    fontSize: 11, color: '#888780',
+    fontSize: 11, color: 'var(--tx2)',
     transition: 'transform 0.2s',
   },
   triggerArrowOpen: {
-    transform: 'rotate(90deg)', color: '#639922',
+    transform: 'rotate(90deg)', color: 'var(--pk)',
   },
   triggerBody: {
-    padding: '10px 14px', borderTop: '1px solid #e8e5e0',
+    padding: '10px 14px', borderTop: '1px solid var(--bd)',
   },
   triggerTextarea: {
     width: '100%', boxSizing: 'border-box',
-    border: '1px solid #e0ddd8', borderRadius: 6,
+    border: '1px solid var(--bds)', borderRadius: 6,
     padding: '8px 10px', fontSize: 13, fontFamily: FONT,
     resize: 'none', height: 68, outline: 'none',
-    color: '#1a1a18', background: '#fff',
+    color: 'var(--tx)', background: '#fff',
   },
 
   // ── Quality explorer
@@ -1719,35 +1719,35 @@ const S = {
     display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16,
   },
   qualityBtn: {
-    padding: '7px 14px', border: '1.5px solid #e0ddd8', borderRadius: 16,
-    fontSize: 13, fontWeight: 600, color: '#2c2c2a', background: '#fff',
+    padding: '7px 14px', border: '1.5px solid var(--bds)', borderRadius: 16,
+    fontSize: 13, fontWeight: 600, color: 'var(--tx)', background: '#fff',
     cursor: 'pointer', fontFamily: FONT,
   },
   qualityBtnActive: {
-    background: '#f0f7eb', borderColor: '#639922', color: '#3b6d11', fontWeight: 600,
+    background: 'var(--bgp)', borderColor: 'var(--pk)', color: 'var(--pkd)', fontWeight: 600,
   },
   qualityPanel: {
-    background: '#faf9f7', border: '1px solid #e8e5e0',
+    background: 'var(--bg)', border: '1px solid var(--bd)',
     borderRadius: 12, padding: '16px 20px', marginBottom: 12,
   },
 
   // ── Footer
   footer: {
     padding: '16px 24px 28px',
-    borderTop: '1px solid #ebe8e3',
+    borderTop: '1px solid var(--bd)',
   },
   btnNext: {
-    width: '100%', background: '#2c2c2a', color: '#fff',
+    width: '100%', background: 'var(--tx)', color: '#fff',
     border: 'none', borderRadius: 8,
     padding: '14px 24px', fontSize: 15, fontWeight: 600,
     cursor: 'pointer', fontFamily: FONT, letterSpacing: '0.01em',
     transition: 'opacity 0.15s',
   },
   btnDisabled: {
-    background: '#c8c5c0', cursor: 'not-allowed',
+    background: 'var(--gy)', cursor: 'not-allowed',
   },
   btnDone: {
-    width: '100%', background: '#3b6d11', color: '#fff',
+    width: '100%', background: 'var(--pkd)', color: '#fff',
     border: 'none', borderRadius: 8,
     padding: '14px 24px', fontSize: 15, fontWeight: 600,
     cursor: 'pointer', fontFamily: FONT, letterSpacing: '0.01em',

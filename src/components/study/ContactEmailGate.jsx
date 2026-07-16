@@ -146,7 +146,7 @@ const S = {
   },
 
   errBox: {
-    fontSize: 13, color: '#e04', background: '#fff0f0',
+    fontSize: 13, color: '#e04', background: 'var(--err-bg)',
     border: '1px solid #fcc', borderRadius: 8, padding: '10px 16px', margin: 0,
   },
 }

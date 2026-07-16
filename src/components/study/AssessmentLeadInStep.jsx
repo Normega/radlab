@@ -53,8 +53,8 @@ export default function AssessmentLeadInStep({ variant, onComplete }) {
           <div style={{ display: 'flex' }}>
             {STUDY_STEPS.map((label, i) => {
               const state = i < content.activeStep ? 'done' : i === content.activeStep ? 'active' : 'upcoming'
-              const dotColor = state === 'done' ? '#639922' : state === 'active' ? '#2c2c2a' : '#ddd'
-              const labelColor = state === 'done' ? '#639922' : state === 'active' ? '#2c2c2a' : '#a09d98'
+              const dotColor = state === 'done' ? 'var(--pk)' : state === 'active' ? 'var(--tx)' : '#ddd'
+              const labelColor = state === 'done' ? 'var(--pk)' : state === 'active' ? 'var(--tx)' : 'var(--gy)'
               return (
                 <div key={label} style={S.stepCol}>
                   <span style={{ ...S.stepLabel, color: labelColor }}>{label}</span>
@@ -94,9 +94,9 @@ const M = {
   badgeRow: { padding: '20px 24px 0' },
   badge: {
     display: 'inline-block',
-    background: '#f0f5e8', color: '#639922', border: '1px solid #c8dfa0',
+    background: 'var(--bgp)', color: 'var(--pk)', border: '1px solid var(--pkbs)',
     borderRadius: 999, fontSize: 11, fontWeight: 600,
     letterSpacing: '0.05em', textTransform: 'uppercase', padding: '4px 12px',
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    fontFamily: '"DM Sans", system-ui, sans-serif',
   },
 }

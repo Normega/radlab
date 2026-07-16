@@ -68,7 +68,7 @@ export default function CompensationStep({ enrollment, onComplete, supabaseClien
           <label style={{
             ...S.optionCard,
             borderColor: compensationType === 'pay' ? 'var(--pk)' : 'var(--bd)',
-            background:  compensationType === 'pay' ? '#fdf2f8' : '#fff',
+            background:  compensationType === 'pay' ? 'var(--bg)' : '#fff',
           }}>
             <input
               type="radio"
@@ -87,7 +87,7 @@ export default function CompensationStep({ enrollment, onComplete, supabaseClien
           <label style={{
             ...S.optionCard,
             borderColor: compensationType === 'credit' ? 'var(--pk)' : 'var(--bd)',
-            background:  compensationType === 'credit' ? '#fdf2f8' : '#fff',
+            background:  compensationType === 'credit' ? 'var(--bg)' : '#fff',
           }}>
             <input
               type="radio"
@@ -163,6 +163,6 @@ const S = {
   fieldLabel: { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' },
   input:      { fontSize: 15, fontFamily: '"DM Sans",system-ui,sans-serif', border: '1px solid var(--bd)', borderRadius: 8, padding: '10px 14px', color: 'var(--tx)', background: '#fff', width: '100%', boxSizing: 'border-box' },
   infoNote:   { fontSize: 13, color: 'var(--tx2)', fontFamily: '"DM Sans",system-ui,sans-serif', margin: '6px 0 0', lineHeight: 1.55 },
-  errMsg:     { fontSize: 13, color: '#e04', background: '#fff0f0', border: '1px solid #fcc', borderRadius: 8, padding: '8px 14px', marginBottom: 12 },
+  errMsg:     { fontSize: 13, color: '#e04', background: 'var(--err-bg)', border: '1px solid #fcc', borderRadius: 8, padding: '8px 14px', marginBottom: 12 },
   btn:        { display: 'block', width: '100%', background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 9, padding: '12px 20px', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', marginTop: 4 },
 }
