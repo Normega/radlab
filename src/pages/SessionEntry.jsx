@@ -5,6 +5,7 @@ import { createClient } from '@supabase/supabase-js'
 import StepDispatcher from '../components/study/StepDispatcher'
 import ScreenerPage from '../components/ScreenerPage'
 import ConsentGate from '../components/study/ConsentGate'
+import ContactEmailGate from '../components/study/ContactEmailGate'
 import { useAssignments } from '../hooks/useAssignment'
 
 // Dedicated client for participant sessions — never touches the shared lab/public client.
@@ -133,6 +134,23 @@ export default function SessionEntry() {
       setState('needs_consent')
       return
     }
+    await proceedAfterConsent(data)
+  }
+
+  async function proceedAfterConsent(data) {
+    const { study, enrollment } = data
+    // Contact-email gate: external (SONA/Prolific) enrollments carry a
+    // synthetic, undeliverable auth email — for multi-day studies, no daily
+    // link or reminder can ever reach them until they give a real address.
+    // Admin-enrolled participants have real auth emails, so no gate for them.
+    if (study.longitudinal && enrollment?.external_source && !enrollment?.contact_email) {
+      setState('needs_contact_email')
+      return
+    }
+    await startStepFlow(data)
+  }
+
+  async function startStepFlow(data) {
     // Consent confirmed (or not required) — flush any buffered screener responses
     await flushScreenerDraft(data.link.participant_id, data.link.study_id)
     setSessionData(data)
@@ -140,10 +158,11 @@ export default function SessionEntry() {
   }
 
   async function handleConsentComplete() {
-    const data = fullDataRef.current
-    await flushScreenerDraft(data.link.participant_id, data.link.study_id)
-    setSessionData(data)
-    setState('running')
+    await proceedAfterConsent(fullDataRef.current)
+  }
+
+  async function handleContactEmailComplete() {
+    await startStepFlow(fullDataRef.current)
   }
 
   // Write screener questionnaire answers buffered pre-consent into questionnaire_responses.
@@ -297,6 +316,20 @@ export default function SessionEntry() {
           participantId={fullDataRef.current?.link?.participant_id}
           supabaseClient={sb}
           onComplete={handleConsentComplete}
+        />
+      </div>
+    )
+  }
+
+  if (state === 'needs_contact_email') {
+    // Same inline pattern as the consent gate above — must use this
+    // component's isolated participant client.
+    return (
+      <div style={{ minHeight: '100vh', background: 'var(--bg, #FCF0F5)', display: 'flex', justifyContent: 'center' }}>
+        <ContactEmailGate
+          studyId={fullDataRef.current?.link?.study_id}
+          supabaseClient={sb}
+          onComplete={handleContactEmailComplete}
         />
       </div>
     )

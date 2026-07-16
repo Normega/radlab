@@ -13,6 +13,7 @@
 import { SupabaseClient } from 'npm:@supabase/supabase-js@2'
 import { Resend } from 'npm:resend'
 import { renderTerminationEmail } from './emailTemplate.ts'
+import { resolveParticipantEmail } from './participantEmail.ts'
 import type { AdherenceWithdrawal } from './materializeSchedule.ts'
 
 export async function processAdherenceWithdrawal(
@@ -62,8 +63,9 @@ export async function processAdherenceWithdrawal(
   const { data: profile } = await db.from('profiles').select('display_name').eq('id', participantId).single()
   const firstName = (profile?.display_name ?? '').split(' ')[0] || 'Participant'
 
-  const { data: { user: authUser } } = await db.auth.admin.getUserById(participantId)
-  const to = isTest ? testOverrideEmail! : authUser?.email
+  // contact_email first, non-synthetic auth email as fallback — never "send"
+  // to an ext-*@participants.radlab.zone address (undeliverable by construction).
+  const to = isTest ? testOverrideEmail! : await resolveParticipantEmail(db, participantId, studyId)
 
   if (!to) {
     await logTerminationMessage(db, participantId, 'failed', isTest)

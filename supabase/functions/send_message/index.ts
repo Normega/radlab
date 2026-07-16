@@ -10,6 +10,7 @@ import { Resend } from 'npm:resend'
 import { renderEmail } from '../_shared/emailTemplate.ts'
 import { getOrCreateUnsubscribeToken } from '../_shared/unsubscribeToken.ts'
 import { issueLink } from '../_shared/issueLink.ts'
+import { resolveParticipantEmail } from '../_shared/participantEmail.ts'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -103,9 +104,10 @@ Deno.serve(async (req) => {
     const displayName = profile?.display_name ?? ''
     const firstName   = displayName.split(' ')[0] || 'Participant'
 
-    // auth.users requires service role
-    const { data: { user: authUser } } = await db.auth.admin.getUserById(row.participant_id)
-    const participantEmail = authUser?.email ?? null
+    // Prefers study_enrollments.contact_email; falls back to the auth email
+    // only when it isn't a synthetic ext-*@participants.radlab.zone address
+    // (external enrollments' auth email is undeliverable by construction).
+    const participantEmail = await resolveParticipantEmail(db, row.participant_id, row.study_id)
 
     // 4. Email opt-out check (skipped for test sends). Not gated on
     // consent_date: the first link is emailed at enrollment, before the
