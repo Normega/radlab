@@ -1,4 +1,5 @@
-// v7 — VAS/slider package item values captured individually into the context
+// v8 — completion screen now says when the next contact will happen
+//      (complete_session_by_token returns { next_contact, has_more })
 import { useEffect, useState, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { createClient } from '@supabase/supabase-js'
@@ -27,6 +28,8 @@ export default function SessionEntry() {
   // by element type then slug (see src/lib/elementOutputs.js). In-memory only —
   // a mid-session reload restarts the flow, so outputs rebuild as steps redo.
   const [stepOutputs,    setStepOutputs]    = useState({})
+  // { next_contact: {scheduled_date, send_time}|null, has_more: bool|null }
+  const [completionInfo, setCompletionInfo] = useState(null)
   const fullDataRef = useRef(null)
   // Isolated Supabase client — never modifies the global lab session.
   const sbRef = useRef(makeParticipantClient())
@@ -206,12 +209,13 @@ export default function SessionEntry() {
     if (currentIndex < nodes.length - 1) {
       setCurrentIndex(i => i + 1)
     } else {
-      await sb.rpc('complete_session_by_token', { p_token: token })
+      const { data: completion } = await sb.rpc('complete_session_by_token', { p_token: token })
       const redirectUrl = sessionData?.study?.completion_redirect_url
       if (redirectUrl) {
         setState('redirecting')
         setTimeout(() => { window.location.href = redirectUrl }, 2000)
       } else {
+        setCompletionInfo(completion ?? null)
         setState('session_complete')
       }
     }
@@ -239,8 +243,12 @@ export default function SessionEntry() {
     return <FullScreen><StatusCard>Session complete — thank you! Redirecting…</StatusCard></FullScreen>
   }
 
-  if (state === 'completed' || state === 'session_complete') {
+  if (state === 'completed') {
     return <FullScreen><StatusCard>You have completed this session. Thank you!</StatusCard></FullScreen>
+  }
+
+  if (state === 'session_complete') {
+    return <FullScreen><StatusCard>{completionMessage(completionInfo)}</StatusCard></FullScreen>
   }
 
   if (state === 'expired') {
@@ -383,4 +391,55 @@ function StatusCard({ children }) {
       {children}
     </p>
   )
+}
+
+// new Date('YYYY-MM-DD') parses as UTC midnight, which renders as the
+// previous day anywhere west of Greenwich — parse as local time instead.
+function parseLocalDate(dateStr) {
+  const [y, m, d] = dateStr.split('-').map(Number)
+  return new Date(y, m - 1, d)
+}
+
+// Manual 12-hour formatting — toLocaleTimeString gives "6:00 p.m." in
+// en-CA, whose trailing period doubles up against the sentence's own.
+function formatSendTime(timeStr) {
+  if (!timeStr) return null
+  const [h, m] = timeStr.split(':').map(Number)
+  if (Number.isNaN(h)) return null
+  const h12 = ((h + 11) % 12) + 1
+  return `${h12}:${String(m || 0).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`
+}
+
+// Completion copy from complete_session_by_token's { next_contact, has_more }:
+// a concrete date/time when the next schedule row already exists, a
+// "watch your email" line when the graph continues but the next segment
+// hasn't materialized yet (fork gate — the cron resolves it within 15 min),
+// a study-complete line at the end of the graph, and the old generic text
+// for legacy no-graph studies.
+function completionMessage(info) {
+  const generic = 'You have completed this session. Thank you!'
+  if (!info) return generic
+
+  const next = info.next_contact
+  if (next?.scheduled_date) {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const nextDay = parseLocalDate(next.scheduled_date)
+    const days = Math.round((nextDay - today) / 86400000)
+    const time = formatSendTime(next.send_time)
+    if (days <= 0) {
+      return `Thank you — this session is complete! Your next session is later today${time ? ` — watch for an email around ${time}` : ''}.`
+    }
+    const dateLabel = nextDay.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })
+    const when = days === 1 ? `tomorrow (${dateLabel})` : `in ${days} days (${dateLabel})`
+    return `Thank you — this session is complete! Your next session is ${when}. A link will be emailed to you when it opens.`
+  }
+
+  if (info.has_more) {
+    return "Thank you — this session is complete! You'll receive an email when your next session is ready."
+  }
+  if (info.has_more === false) {
+    return 'Thank you — you have completed the final session of this study!'
+  }
+  return generic
 }
