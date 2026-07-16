@@ -217,7 +217,17 @@ export default function SessionEntry() {
         setStepOutputs(prev => {
           const next = { ...prev }
           for (const [type, slug, vals] of entries) {
-            next[type] = { ...(next[type] ?? {}), [slug]: vals }
+            let v = vals
+            // redemption_score = aptitude_suite.avg_pct + color_max.avg_pct, only
+            // derivable once both games have reported — no {{}} arithmetic support,
+            // so it's precomputed here as a plain step output instead.
+            if (type === 'game' && slug === 'color_max' && v.avg_pct != null) {
+              const aptitudePct = prev.game?.aptitude_suite?.avg_pct
+              if (aptitudePct != null) {
+                v = { ...v, redemption_score: +(aptitudePct + v.avg_pct).toFixed(2) }
+              }
+            }
+            next[type] = { ...(next[type] ?? {}), [slug]: v }
           }
           return next
         })

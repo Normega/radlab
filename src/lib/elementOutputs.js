@@ -27,7 +27,9 @@ export const GAME_OUTPUTS = {
     'avg_pct', 'task_switch_count',
   ],
   word_max:  ['total_score', 'sets_completed', 'duration_ms'],
-  color_max: ['avg_coverage', 'avg_precision', 'images_attempted', 'total_secs'],
+  // redemption_score isn't in ColorMax's own onSessionComplete payload — SessionEntry
+  // derives it as aptitude_suite.avg_pct + color_max.avg_pct once both steps have run.
+  color_max: ['avg_coverage', 'avg_precision', 'avg_pct', 'redemption_score', 'images_attempted', 'total_secs'],
   pond_watch: [],    // metrics land in pond_watch_results (nested payload, not flat step outputs)
   still_water: [],   // reports no outputs
   breath_belt: [],   // physio data lands in belt_sessions, not step outputs
