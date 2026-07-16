@@ -10,6 +10,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2'
 import { baselineTimeOfDay, materializeSchedule } from '../_shared/materializeSchedule.ts'
 import type { Graph } from '../_shared/materializeSchedule.ts'
 import { processAdherenceWithdrawal } from '../_shared/processAdherenceWithdrawal.ts'
+import { todayInLabTz } from '../_shared/labDate.ts'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -147,7 +148,9 @@ Deno.serve(async (req) => {
       }
     }
 
-    const today = new Date().toISOString().split('T')[0]
+    // Lab-local, not UTC: an 8 PM+ Toronto enrollment must still anchor the
+    // schedule to today's date, not UTC's already-rolled-over tomorrow.
+    const today = todayInLabTz()
 
     // 6. Longitudinal studies (Experiment Builder): materialize the full
     // multi-day schedule from the graph. Other delivery modes fall through
