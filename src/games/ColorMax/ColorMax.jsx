@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { DEMO_SECS, isDemoMode } from '../../lib/demoMode'
 import { COLORS, W, H, drawPage } from './drawings'
+import { COVERAGE_MIDPOINT, COVERAGE_K, PRECISION_MIDPOINT, PRECISION_K, logisticPercentile } from './constants'
 import './ColorMax.css'
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -345,10 +346,15 @@ export default function ColorMax({ session, studyMode = false, userId: userIdPro
       : 0
     const imagesAttempted = scores.filter(r => r.cov > 0).length
 
+    const coveragePct  = logisticPercentile(avgCoverage,  COVERAGE_MIDPOINT,  COVERAGE_K)
+    const precisionPct = logisticPercentile(avgPrecision, PRECISION_MIDPOINT, PRECISION_K)
+    const avgPct        = +((coveragePct + precisionPct) / 2).toFixed(2)
+
     const results = {
       scores,
       avgCoverage,
       avgPrecision,
+      avgPct,
       imagesAttempted,
       toolTime:       { ...toolTimeRef.current },
       toolTimeByPage: toolTimeByPgRef.current.map(t => ({ ...t })),
@@ -362,7 +368,7 @@ export default function ColorMax({ session, studyMode = false, userId: userIdPro
     if (sessionIdRef.current) {
       const { error } = await db
         .from('aptitude_sessions')
-        .update({ session_end: new Date().toISOString(), results })
+        .update({ session_end: new Date().toISOString(), results, avg_pct: avgPct })
         .eq('id', sessionIdRef.current)
       if (error) console.warn('aptitude_sessions update failed', error)
     }
@@ -561,6 +567,10 @@ export default function ColorMax({ session, studyMode = false, userId: userIdPro
                   <div className="cm-stat-lbl">Precision</div>
                 </div>
                 <div className="cm-stat">
+                  <div className="cm-stat-val">{r.avgPct}%</div>
+                  <div className="cm-stat-lbl">Percentile</div>
+                </div>
+                <div className="cm-stat">
                   <div className="cm-stat-val">{r.imagesAttempted}/5</div>
                   <div className="cm-stat-lbl">Images</div>
                 </div>
@@ -591,7 +601,7 @@ export default function ColorMax({ session, studyMode = false, userId: userIdPro
               </div>
 
               {onSessionComplete && (
-                <button className="cm-start-btn" onClick={() => onSessionComplete({ avg_coverage: r.avgCoverage, avg_precision: r.avgPrecision, images_attempted: r.imagesAttempted, total_secs: r.totalSecs })}>
+                <button className="cm-start-btn" onClick={() => onSessionComplete({ avg_coverage: r.avgCoverage, avg_precision: r.avgPrecision, avg_pct: r.avgPct, images_attempted: r.imagesAttempted, total_secs: r.totalSecs })}>
                   Continue
                 </button>
               )}
