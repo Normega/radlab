@@ -528,7 +528,7 @@ const M = {
   feedbackBadge: {
     position: 'absolute', top: -9, left: 12,
     background: '#e0ddd8', color: '#5f5e5a', borderRadius: 8,
-    fontSize: 11, fontWeight: 700, padding: '2px 8px',
+    fontSize: 11, fontWeight: 600, padding: '2px 8px',
     fontFamily: 'system-ui,sans-serif',
   },
   feedbackBadgeTop: { background: '#3b6d11', color: '#fff' },
@@ -554,7 +554,7 @@ const M = {
   rankCircle: {
     width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    fontSize: 16, fontWeight: 800, color: '#fff',
+    fontSize: 16, fontWeight: 600, color: '#fff',
     fontFamily: 'system-ui,sans-serif', transition: 'background 0.2s',
   },
   arrowWrap: { display: 'flex', flexDirection: 'column', gap: 4, flexShrink: 0 },
@@ -571,14 +571,14 @@ const M = {
     padding: '14px 16px',
   },
   resultTitle: {
-    fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em',
+    fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em',
     color: '#5f5e5a', marginBottom: 10, fontFamily: 'system-ui,sans-serif',
   },
   resultRow: {
     display: 'flex', alignItems: 'center', gap: 10, fontSize: 13,
     color: '#2c2c2a', marginBottom: 6, fontFamily: 'system-ui,sans-serif',
   },
-  resultNum: { fontWeight: 700, color: '#639922', minWidth: 24 },
+  resultNum: { fontWeight: 600, color: '#639922', minWidth: 24 },
 
   // ── assignment screen (Liliana's assignment previews) ──
   hero: {
@@ -587,18 +587,18 @@ const M = {
   },
   heroOwl:     { width: 96, height: 96, objectFit: 'contain', marginBottom: 8 },
   heroEyebrow: {
-    fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em',
+    fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em',
     color: '#639922', fontFamily: 'system-ui,sans-serif',
   },
   heroSub:   { fontSize: 13, color: '#888780', marginTop: 2, fontFamily: 'system-ui,sans-serif' },
-  heroTitle: { fontSize: 24, fontWeight: 800, color: '#1a1a18', marginTop: 6, fontFamily: 'system-ui,sans-serif' },
+  heroTitle: { fontSize: 24, fontWeight: 600, color: '#1a1a18', marginTop: 6, fontFamily: 'system-ui,sans-serif' },
   heroDesc:  { fontSize: 13.5, color: '#5f5e5a', marginTop: 6, lineHeight: 1.5, fontFamily: 'system-ui,sans-serif' },
   messageBox: {
     background: '#f5fbf0', border: '1px solid #cde3b3', borderRadius: 12,
     padding: '16px 18px', marginBottom: 16,
   },
   messageTitle: {
-    fontSize: 15, fontWeight: 700, color: '#3b6d11', marginBottom: 8,
+    fontSize: 15, fontWeight: 600, color: '#3b6d11', marginBottom: 8,
     fontFamily: 'system-ui,sans-serif',
   },
   messageText: {
@@ -610,7 +610,7 @@ const M = {
     padding: '16px 18px',
   },
   expectTitle: {
-    fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em',
+    fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em',
     color: '#5f5e5a', marginBottom: 8, fontFamily: 'system-ui,sans-serif',
   },
 }

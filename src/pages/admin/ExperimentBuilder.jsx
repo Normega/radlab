@@ -932,7 +932,7 @@ const S = {
   contactBtn:  { background: '#fff', border: '1px solid var(--bd)', borderRadius: 8, padding: '7px 14px', fontSize: 13, color: 'var(--tx2)', cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
   balanceLink: { background: '#fff', border: '1px solid var(--bd)', borderRadius: 8, padding: '7px 14px', fontSize: 13, color: 'var(--tx2)', textDecoration: 'none', fontFamily: '"DM Sans",system-ui,sans-serif' },
   savedBadge:  { fontFamily: '"Space Mono",monospace', fontSize: 11, color: '#2d9e5f', background: '#f0faf4', border: '1px solid #a8e6c3', borderRadius: 6, padding: '3px 8px' },
-  btnPrimary:  { background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 18px', fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
+  btnPrimary:  { background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
   saveError:   { background: '#fff0f0', border: '1px solid #fcc', borderRadius: 8, padding: '8px 14px', fontSize: 13, color: '#e04', marginBottom: 8, flexShrink: 0 },
   errorList:   { background: '#fff8f0', border: '1px solid #fde', borderRadius: 8, padding: '8px 14px', marginBottom: 8, flexShrink: 0 },
   errorItem:   { fontSize: 13, color: '#c04a82', fontFamily: '"DM Sans",system-ui,sans-serif', lineHeight: 1.6 },

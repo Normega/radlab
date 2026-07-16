@@ -1069,6 +1069,6 @@ const S = {
   ghostBtn: {
     padding: '12px 28px', background: 'transparent', color: 'var(--tx2)',
     border: '1.5px solid var(--bd)', borderRadius: 999, fontSize: 15,
-    fontFamily: 'DM Sans,sans-serif', fontWeight: 500, cursor: 'pointer',
+    fontFamily: 'DM Sans,sans-serif', fontWeight: 600, cursor: 'pointer',
   },
 }

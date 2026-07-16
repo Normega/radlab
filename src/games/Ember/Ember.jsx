@@ -227,7 +227,7 @@ const S = {
   err: { fontSize: 13, color: '#e04', margin: 0 },
   btn: {
     background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 12,
-    padding: '13px 32px', fontSize: 15, fontWeight: 500, fontFamily: '"DM Sans",system-ui,sans-serif',
+    padding: '13px 32px', fontSize: 15, fontWeight: 600, fontFamily: '"DM Sans",system-ui,sans-serif',
   },
   sumRow: {
     display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',

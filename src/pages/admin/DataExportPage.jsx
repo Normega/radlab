@@ -1037,7 +1037,7 @@ const S = {
     background: 'var(--pkb)', color: 'var(--pk)',
     border: '1px solid var(--pk)', borderRadius: 8,
     padding: '6px 14px', cursor: 'pointer',
-    fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 13, fontWeight: 500,
+    fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 13, fontWeight: 600,
   },
 
   select: {

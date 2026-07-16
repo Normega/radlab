@@ -62,7 +62,7 @@ const S = {
   caption: {
     fontFamily: '"DM Sans", system-ui, sans-serif',
     fontSize: 11,
-    color: 'var(--tx3, #a8a9ad)',
+    color: 'var(--tx3, #abadb0)',
     marginBottom: 8,
   },
   hint: {

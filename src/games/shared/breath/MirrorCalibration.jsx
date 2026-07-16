@@ -198,7 +198,7 @@ export default function MirrorCalibration({ breath, avatarProps, breathPeriodMs 
             </span>
           </p>
           <button onClick={redoCalibration}
-            className="px-5 py-3 rounded-xl font-medium"
+            className="px-5 py-3 rounded-xl font-semibold"
             style={{ background: 'var(--pk)', color: '#fff', fontSize: 'var(--fs-body)' }}>
             Try again
           </button>
@@ -238,7 +238,7 @@ function MirrorReady({ onStart }) {
           Sit comfortably and settle in. Once the connection is forged, it will follow you.
         </p>
       </div>
-      <button onClick={onStart} className="px-6 py-3 rounded-xl font-medium"
+      <button onClick={onStart} className="px-6 py-3 rounded-xl font-semibold"
         style={{ background: 'var(--pk)', color: '#fff', fontSize: 'var(--fs-body)' }}>
         Begin
       </button>

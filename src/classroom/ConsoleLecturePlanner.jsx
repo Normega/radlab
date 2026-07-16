@@ -435,7 +435,7 @@ const S = {
   lectureCard: { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 12, marginBottom: 12, overflow: 'hidden' },
   lectureHeader: { display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', cursor: 'pointer' },
   lectureNum: { fontFamily: MONO, fontSize: 13, color: 'var(--pk)', minWidth: 28 },
-  lectureTitle: { flex: 1, fontSize: 15, color: 'var(--tx)', fontWeight: 500 },
+  lectureTitle: { flex: 1, fontSize: 15, color: 'var(--tx)', fontWeight: 600 },
   lectureDate: { fontFamily: MONO, fontSize: 12, color: 'var(--tx3)' },
   chevron: { color: 'var(--tx3)' },
   lectureBody: { padding: '0 18px 18px', borderTop: '1px solid var(--bd)' },

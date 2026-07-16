@@ -129,7 +129,7 @@ const S = {
   metaText:     { fontSize: 13, color: 'var(--tx2)', fontFamily: '"DM Sans",system-ui,sans-serif' },
   cardActions:  { display: 'flex', gap: 10, alignItems: 'center', flexShrink: 0 },
   actionBtn:    { background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: 'var(--tx2)', padding: 0, fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
-  btnPreview:   { background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
+  btnPreview:   { background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
   jsonWrap:     { borderTop: '1px solid var(--bd)', background: '#f8f6f2' },
   jsonPre:      { margin: 0, padding: '16px 20px', fontSize: 12, lineHeight: 1.6, color: '#2c2c2a', fontFamily: '"Space Mono",monospace', overflowX: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-word' },
   previewOverlay: { position: 'fixed', inset: 0, zIndex: 200, display: 'flex', flexDirection: 'column', overflowY: 'auto' },

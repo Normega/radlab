@@ -249,5 +249,5 @@ const S = {
   previewBtn:{ fontSize: 13, color: 'var(--pkd)', background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', textDecoration: 'underline' },
   actions:   { display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 4 },
   cancelBtn: { background: '#fff', border: '1px solid var(--bd)', borderRadius: 8, padding: '8px 16px', fontSize: 14, color: 'var(--tx2)', cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
-  saveBtn:   { background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 18px', fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
+  saveBtn:   { background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
 }

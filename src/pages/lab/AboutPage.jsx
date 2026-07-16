@@ -203,7 +203,7 @@ const S = {
     borderRadius: 9,
     padding: '10px 20px',
     fontSize: '0.9rem',
-    fontWeight: 500,
+    fontWeight: 600,
     textDecoration: 'none',
     fontFamily: '"DM Sans", system-ui, sans-serif',
     whiteSpace: 'nowrap',

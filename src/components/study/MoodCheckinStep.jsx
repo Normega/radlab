@@ -170,11 +170,11 @@ const S = {
   ratingRow: { display: 'flex', gap: 8, justifyContent: 'space-between' },
   ratingBtn: { flex: 1, aspectRatio: '1 / 1', minWidth: 0, border: '1.5px solid', borderRadius: 10, fontSize: 17, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', transition: 'all 0.12s' },
   anchorRow: { display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif', margin: '6px 2px 24px' },
-  qLabel:    { fontSize: 15, fontWeight: 500, color: 'var(--tx)', fontFamily: '"DM Sans",system-ui,sans-serif', margin: '0 0 10px', display: 'block' },
+  qLabel:    { fontSize: 15, fontWeight: 600, color: 'var(--tx)', fontFamily: '"DM Sans",system-ui,sans-serif', margin: '0 0 10px', display: 'block' },
   dirRow:    { display: 'flex', gap: 10, marginBottom: 8 },
   dirBtn:    { flex: 1, border: '1.5px solid', borderRadius: 10, padding: '12px 10px', fontSize: 14, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', transition: 'all 0.12s' },
   reasonWrap:{ marginTop: 22 },
   textarea:  { width: '100%', boxSizing: 'border-box', fontSize: 15, fontFamily: '"DM Sans",system-ui,sans-serif', border: '1px solid var(--bd)', borderRadius: 8, padding: '10px 14px', color: 'var(--tx)', background: '#fff', resize: 'vertical', lineHeight: 1.5 },
   errMsg:    { fontSize: 13, color: '#e04', background: '#fff0f0', border: '1px solid #fcc', borderRadius: 8, padding: '8px 14px', margin: '16px 0 0' },
-  btn:       { display: 'block', width: '100%', background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 9, padding: '13px 20px', fontSize: 15, fontWeight: 500, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', marginTop: 24 },
+  btn:       { display: 'block', width: '100%', background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 9, padding: '13px 20px', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', marginTop: 24 },
 }

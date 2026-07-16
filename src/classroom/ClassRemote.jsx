@@ -369,7 +369,7 @@ const S = {
   card: { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 16, padding: '16px 18px', marginBottom: 12 },
   cardHeader: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, flexWrap: 'wrap' },
   pos: { fontFamily: MONO, fontSize: 12, color: 'var(--tx3)' },
-  activities: { flex: 1, fontSize: 15, color: 'var(--tx)', fontWeight: 500 },
+  activities: { flex: 1, fontSize: 15, color: 'var(--tx)', fontWeight: 600 },
   statusBadge: (status) => ({
     fontFamily: MONO, fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, padding: '3px 8px', borderRadius: 6,
     background: status === 'open' ? 'var(--pkb)' : status === 'results_ready' ? '#e5f7ee' : 'var(--bg)',

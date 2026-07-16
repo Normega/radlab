@@ -283,13 +283,13 @@ function StudySliderBlock({ scale, userId, db, onComplete, partNumber, totalPart
 const SS = {
   wrap:      { padding: '40px 32px', maxWidth: 560, margin: '0 auto', fontFamily: '"DM Sans",system-ui,sans-serif' },
   partLabel: { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', margin: '0 0 16px' },
-  prompt:    { fontSize: 18, fontWeight: 500, color: 'var(--tx)', margin: '0 0 24px', lineHeight: 1.5 },
+  prompt:    { fontSize: 18, fontWeight: 600, color: 'var(--tx)', margin: '0 0 24px', lineHeight: 1.5 },
   sliderWrap: { background: '#faf9f7', border: '1px solid #e8e5e0', borderRadius: 12, padding: '24px 24px 18px', marginBottom: 28 },
   slider:    { width: '100%', height: 8, cursor: 'pointer', marginBottom: 14, display: 'block' },
   labels:    { display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13 },
-  val:       { fontSize: 28, fontWeight: 700, color: 'var(--pk)' },
+  val:       { fontSize: 28, fontWeight: 600, color: 'var(--pk)' },
   valEmpty:  { fontSize: 28, fontWeight: 400, color: '#c0bdb8' },
-  btn:       { background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 10, padding: '13px 32px', fontSize: 15, fontWeight: 500, fontFamily: '"DM Sans",system-ui,sans-serif', transition: 'opacity 0.15s' },
+  btn:       { background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 10, padding: '13px 32px', fontSize: 15, fontWeight: 600, fontFamily: '"DM Sans",system-ui,sans-serif', transition: 'opacity 0.15s' },
 }
 
 const S = {

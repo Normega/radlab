@@ -195,7 +195,7 @@ const S = {
   navLink: {
     display: 'block', padding: '9px 12px', borderRadius: 8,
     fontFamily: '"DM Sans",system-ui,sans-serif',
-    fontSize: 14, fontWeight: 500,
+    fontSize: 14, fontWeight: 600,
     color: 'var(--tx2)', textDecoration: 'none',
   },
   navActive: {

@@ -90,7 +90,7 @@ const S = {
   btn: {
     display: 'block', width: '100%', marginTop: 16,
     background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 10,
-    padding: '13px 32px', fontSize: 15, fontWeight: 500,
+    padding: '13px 32px', fontSize: 15, fontWeight: 600,
     fontFamily: '"DM Sans",system-ui,sans-serif', cursor: 'pointer',
     transition: 'opacity 0.15s',
   },

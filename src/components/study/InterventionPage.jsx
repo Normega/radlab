@@ -1361,7 +1361,7 @@ const S = {
     display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1,
   },
   stepLabel: {
-    fontSize: 10, fontWeight: 500, letterSpacing: '0.04em',
+    fontSize: 10, fontWeight: 600, letterSpacing: '0.04em',
     textTransform: 'uppercase', marginBottom: 8, whiteSpace: 'nowrap',
   },
   stepTrack: {
@@ -1382,7 +1382,7 @@ const S = {
     display: 'inline-flex', alignItems: 'center', gap: 6,
     background: '#f0ede8', border: '1px solid #ddd',
     borderRadius: 6, padding: '4px 10px',
-    fontSize: 11, fontWeight: 500, color: '#5f5e5a',
+    fontSize: 11, fontWeight: 600, color: '#5f5e5a',
     textTransform: 'uppercase', letterSpacing: '0.05em',
     marginBottom: 10,
   },
@@ -1393,7 +1393,7 @@ const S = {
     fontSize: 22, fontWeight: 600, color: '#1a1a18',
   },
   dayTitle: {
-    fontSize: 15, fontWeight: 500, color: '#1a1a18', marginTop: 2,
+    fontSize: 15, fontWeight: 600, color: '#1a1a18', marginTop: 2,
   },
   daySubtitle: {
     fontSize: 13, color: '#888780', marginTop: 2,
@@ -1435,7 +1435,7 @@ const S = {
 
   // ── Video
   videoLabel: {
-    fontSize: 12, fontWeight: 500, color: '#5f5e5a',
+    fontSize: 12, fontWeight: 600, color: '#5f5e5a',
     textTransform: 'uppercase', letterSpacing: '0.04em',
     marginBottom: 10,
   },
@@ -1503,7 +1503,7 @@ const S = {
     marginBottom: 12,
   },
   exampleLabel: {
-    fontSize: 11, fontWeight: 500, textTransform: 'uppercase',
+    fontSize: 11, fontWeight: 600, textTransform: 'uppercase',
     letterSpacing: '0.04em', color: '#888780',
     margin: '0 0 4px',
   },
@@ -1556,7 +1556,7 @@ const S = {
     fontFamily: FONT,
   },
   sliderVal: {
-    fontSize: 22, fontWeight: 700, color: '#639922', fontFamily: FONT,
+    fontSize: 22, fontWeight: 600, color: '#639922', fontFamily: FONT,
   },
   sliderEnds: {
     display: 'flex', justifyContent: 'space-between',
@@ -1569,7 +1569,7 @@ const S = {
   },
   inputNum: {
     width: 24, height: 24, borderRadius: '50%',
-    background: '#f0ede8', fontSize: 11, fontWeight: 700, color: '#5f5e5a',
+    background: '#f0ede8', fontSize: 11, fontWeight: 600, color: '#5f5e5a',
     display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
     fontFamily: FONT,
   },
@@ -1586,7 +1586,7 @@ const S = {
     padding: '32px 20px', gap: 12,
   },
   timerDisplay: {
-    fontSize: 64, fontWeight: 700, color: '#2c2c2a',
+    fontSize: 64, fontWeight: 600, color: '#2c2c2a',
     fontVariantNumeric: 'tabular-nums', letterSpacing: -2,
     fontFamily: FONT,
   },
@@ -1639,10 +1639,10 @@ const S = {
   },
   distCheck: {
     position: 'absolute', top: -1, left: 1,
-    fontSize: 12, color: '#fff', fontWeight: 700, fontFamily: FONT,
+    fontSize: 12, color: '#fff', fontWeight: 600, fontFamily: FONT,
   },
   distLabel: {
-    fontSize: 14, fontWeight: 700, color: '#1a1a18', marginBottom: 4, fontFamily: FONT,
+    fontSize: 14, fontWeight: 600, color: '#1a1a18', marginBottom: 4, fontFamily: FONT,
   },
   distDesc: {
     fontSize: 13, color: '#5f5e5a', marginBottom: 4, fontFamily: FONT,
@@ -1657,7 +1657,7 @@ const S = {
   },
   wordChip: {
     padding: '10px 18px', border: '1.5px solid #e0ddd8', borderRadius: 20,
-    fontSize: 14, fontWeight: 500, color: '#2c2c2a',
+    fontSize: 14, fontWeight: 600, color: '#2c2c2a',
     background: '#fff', cursor: 'pointer', userSelect: 'none',
     transition: 'all 0.15s', fontFamily: FONT,
   },
@@ -1720,7 +1720,7 @@ const S = {
   },
   qualityBtn: {
     padding: '7px 14px', border: '1.5px solid #e0ddd8', borderRadius: 16,
-    fontSize: 13, fontWeight: 500, color: '#2c2c2a', background: '#fff',
+    fontSize: 13, fontWeight: 600, color: '#2c2c2a', background: '#fff',
     cursor: 'pointer', fontFamily: FONT,
   },
   qualityBtnActive: {
@@ -1739,7 +1739,7 @@ const S = {
   btnNext: {
     width: '100%', background: '#2c2c2a', color: '#fff',
     border: 'none', borderRadius: 8,
-    padding: '14px 24px', fontSize: 15, fontWeight: 500,
+    padding: '14px 24px', fontSize: 15, fontWeight: 600,
     cursor: 'pointer', fontFamily: FONT, letterSpacing: '0.01em',
     transition: 'opacity 0.15s',
   },
@@ -1749,7 +1749,7 @@ const S = {
   btnDone: {
     width: '100%', background: '#3b6d11', color: '#fff',
     border: 'none', borderRadius: 8,
-    padding: '14px 24px', fontSize: 15, fontWeight: 500,
+    padding: '14px 24px', fontSize: 15, fontWeight: 600,
     cursor: 'pointer', fontFamily: FONT, letterSpacing: '0.01em',
     transition: 'opacity 0.15s',
   },

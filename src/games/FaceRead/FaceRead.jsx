@@ -127,7 +127,7 @@ function IntroScreen({ onStart, skinColor, eyeColor, hairStyle = 'none', hairCol
           <div key={n} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
             <div style={{ background: '#F4E0F0', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontFamily: 'Space Mono,monospace', fontSize: 12, color: '#f068a4', fontWeight: 700 }}>{n}</div>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 500, color: '#1c1c1e', marginBottom: 2 }}>{title}</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#1c1c1e', marginBottom: 2 }}>{title}</div>
               <div style={{ fontSize: 12, color: '#888', lineHeight: 1.5 }}>{body}</div>
             </div>
           </div>
@@ -234,10 +234,10 @@ function SummaryScreen({ trials, meanScore, bestScore, onPlay }) {
           const clk  = EMOTIONS.find(e => e.id === t.clickedEmoId)
           const exact = t.targetEmoId === t.clickedEmoId && t.targetZone === t.clickedZone
           return (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 16px', borderBottom: i < trials.length - 1 ? '1px solid #F4ECF2' : 'none' }}>
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 16px', borderBottom: i < trials.length - 1 ? '1px solid var(--bgp)' : 'none' }}>
               <div style={{ fontFamily: 'Space Mono,monospace', fontSize: 12, color: '#ccc', width: 20, flexShrink: 0 }}>{i + 1}</div>
               <div style={{ flex: 1, fontSize: 13, color: '#444' }}>
-                <span style={{ fontWeight: 500 }}>{tgt?.name}</span> z{t.targetZone + 1}
+                <span style={{ fontWeight: 600 }}>{tgt?.name}</span> z{t.targetZone + 1}
                 {!exact && (
                   <span style={{ color: '#bbb', fontSize: 12 }}> &rarr; {clk?.name} z{t.clickedZone + 1}</span>
                 )}
@@ -435,6 +435,6 @@ const S = {
   introCard: { background: 'white', borderRadius: 16, padding: '16px 18px', boxShadow: '0 2px 18px rgba(180,120,160,0.10)', marginBottom: 20, textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 12 },
   ratingQ:   { fontFamily: 'DM Serif Display,serif', fontSize: 20, color: '#1c1c1e', fontWeight: 400 },
   faceCard:  { background: 'white', borderRadius: 18, padding: '12px 10px 10px', boxShadow: '0 2px 18px rgba(180,120,160,0.10)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, width: 156 },
-  btnPrimary: { background: '#f068a4', color: 'white', border: 'none', borderRadius: 12, padding: 14, fontFamily: 'DM Sans,sans-serif', fontSize: 15, fontWeight: 500, cursor: 'pointer', display: 'block', width: '100%' },
-  btnOutline: { background: 'white', color: '#f068a4', border: '1.5px solid #f068a4', borderRadius: 12, padding: 11, fontFamily: 'DM Sans,sans-serif', fontSize: 13, fontWeight: 500, cursor: 'pointer' },
+  btnPrimary: { background: '#f068a4', color: 'white', border: 'none', borderRadius: 12, padding: 14, fontFamily: 'DM Sans,sans-serif', fontSize: 15, fontWeight: 600, cursor: 'pointer', display: 'block', width: '100%' },
+  btnOutline: { background: 'white', color: '#f068a4', border: '1.5px solid #f068a4', borderRadius: 12, padding: 11, fontFamily: 'DM Sans,sans-serif', fontSize: 13, fontWeight: 600, cursor: 'pointer' },
 }

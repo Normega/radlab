@@ -188,7 +188,7 @@ export default function ParticipantsAdminTab() {
 
 function statusStyle(status) {
   const color = status === 'unlocked' ? '#3b6d11' : status === 'link_sent' ? '#2980b9' : 'var(--tx3)'
-  return { color, fontWeight: 700 }
+  return { color, fontWeight: 600 }
 }
 
 function fmtDate(ts) {
@@ -211,7 +211,7 @@ const S = {
   th:        { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', textAlign: 'left', padding: '10px 16px', borderBottom: '1px solid var(--bd)', textTransform: 'uppercase', letterSpacing: '0.06em' },
   tr:        { borderBottom: '1px solid var(--bd)' },
   td:        { padding: '11px 16px', verticalAlign: 'middle' },
-  pid:       { fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 14, fontWeight: 500, color: 'var(--tx)' },
+  pid:       { fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 14, fontWeight: 600, color: 'var(--tx)' },
   srcChip:   { marginLeft: 8, fontFamily: '"Space Mono",monospace', fontSize: 10, background: 'var(--pkb)', color: 'var(--pk)', borderRadius: 5, padding: '1px 6px', textTransform: 'uppercase' },
   optOutChip:{ marginLeft: 8, fontFamily: '"Space Mono",monospace', fontSize: 10, background: '#fef3e8', color: '#7d4f00', borderRadius: 5, padding: '1px 6px' },
   actions:   { display: 'flex', gap: 12, alignItems: 'center' },

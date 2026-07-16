@@ -139,5 +139,5 @@ const S = {
   hint: { fontSize: 12, color: 'var(--tx3)', margin: '4px 0 0' },
   toggleLabel: { fontSize: 13, color: 'var(--tx2)', fontFamily: '"DM Sans",system-ui,sans-serif' },
   notice: { fontSize: 12, color: 'var(--tx2)', background: '#fffbe6', border: '1px solid #ffe88a', borderRadius: 8, padding: '8px 12px', margin: '8px 0 0', lineHeight: 1.5 },
-  btnPrimary: { display: 'inline-block', background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 18px', fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
+  btnPrimary: { display: 'inline-block', background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
 }

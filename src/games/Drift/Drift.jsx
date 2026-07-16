@@ -158,7 +158,7 @@ function IntroScreen({ onStart }) {
           <div key={n} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
             <div style={{ background: '#F4E0F0', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontFamily: 'Space Mono,monospace', fontSize: 12, color: '#f068a4', fontWeight: 700 }}>{n}</div>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 500, color: '#1c1c1e', marginBottom: 2 }}>{title}</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#1c1c1e', marginBottom: 2 }}>{title}</div>
               <div style={{ fontSize: 12, color: '#888', lineHeight: 1.5 }}>{body}</div>
             </div>
           </div>
@@ -293,7 +293,7 @@ function FeedbackPanel({ targetMs, reproducedMs, trialIdx, totalTrials, onNext }
             <span style={{ fontFamily: 'Space Mono,monospace', fontSize: 11, color: '#bbb', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Target</span>
             <span style={{ fontFamily: 'Space Mono,monospace', fontSize: 12, color: '#888' }}>{(targetMs / 1000).toFixed(1)}s</span>
           </div>
-          <div style={{ height: 8, background: '#F4ECF2', borderRadius: 4, overflow: 'hidden' }}>
+          <div style={{ height: 8, background: 'var(--bgp)', borderRadius: 4, overflow: 'hidden' }}>
             <div style={{ height: '100%', width: `${tPct}%`, background: '#D0C0CC', borderRadius: 4 }} />
           </div>
         </div>
@@ -303,7 +303,7 @@ function FeedbackPanel({ targetMs, reproducedMs, trialIdx, totalTrials, onNext }
             <span style={{ fontFamily: 'Space Mono,monospace', fontSize: 11, color: '#f068a4', textTransform: 'uppercase', letterSpacing: '0.08em' }}>You</span>
             <span style={{ fontFamily: 'Space Mono,monospace', fontSize: 12, color: '#f068a4' }}>{(reproducedMs / 1000).toFixed(1)}s</span>
           </div>
-          <div style={{ height: 8, background: '#F4ECF2', borderRadius: 4, overflow: 'hidden' }}>
+          <div style={{ height: 8, background: 'var(--bgp)', borderRadius: 4, overflow: 'hidden' }}>
             <div style={{ height: '100%', width: `${rPct}%`, background: '#f068a4', borderRadius: 4 }} />
           </div>
         </div>
@@ -341,10 +341,10 @@ function SummaryScreen({ results, onPlay }) {
           const off   = Math.abs(r.ratio - 1)
           const color = off < 0.1 ? '#1EA878' : off < 0.25 ? '#D88000' : '#abadb0'
           return (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', borderBottom: i < results.length - 1 ? '1px solid #F4ECF2' : 'none' }}>
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', borderBottom: i < results.length - 1 ? '1px solid var(--bgp)' : 'none' }}>
               <div style={{ fontFamily: 'Space Mono,monospace', fontSize: 12, color: '#ccc', width: 20, flexShrink: 0 }}>{i + 1}</div>
               <div style={{ flex: 1, fontSize: 13, color: '#666' }}>
-                <span style={{ fontWeight: 500 }}>{(r.targetMs / 1000).toFixed(0)}s</span>
+                <span style={{ fontWeight: 600 }}>{(r.targetMs / 1000).toFixed(0)}s</span>
                 <span style={{ color: '#bbb', fontSize: 12 }}> · {r.emotionName}</span>
               </div>
               <div style={{ fontFamily: 'Space Mono,monospace', fontSize: 12, color: '#bbb', width: 40, textAlign: 'right' }}>
@@ -356,7 +356,7 @@ function SummaryScreen({ results, onPlay }) {
             </div>
           )
         })}
-        <div style={{ padding: '10px 16px', borderTop: '1px solid #F4ECF2', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ padding: '10px 16px', borderTop: '1px solid var(--bgp)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ fontFamily: 'Space Mono,monospace', fontSize: 11, color: '#bbb', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Mean error</span>
           <span style={{ fontFamily: 'Space Mono,monospace', fontSize: 13, color: '#888' }}>{meanErrSec.toFixed(1)}s</span>
         </div>
@@ -574,6 +574,6 @@ const S = {
   phase:      { fontFamily: 'DM Serif Display,serif', fontSize: 22, color: '#1c1c1e', fontWeight: 400, margin: 0 },
   faceCard:   { background: 'white', borderRadius: 20, padding: '18px 16px 14px', boxShadow: '0 2px 18px rgba(180,120,160,0.10)', display: 'flex', alignItems: 'center', justifyContent: 'center' },
   hint:       { fontFamily: 'Space Mono,monospace', fontSize: 12, color: '#C8B0BC', letterSpacing: '0.08em', textAlign: 'center', margin: 0 },
-  btnPrimary: { background: '#f068a4', color: 'white', border: 'none', borderRadius: 12, padding: 14, fontFamily: 'DM Sans,sans-serif', fontSize: 15, fontWeight: 500, cursor: 'pointer', display: 'block', width: '100%' },
-  btnOutline: { background: 'white', color: '#f068a4', border: '1.5px solid #f068a4', borderRadius: 12, padding: 11, fontFamily: 'DM Sans,sans-serif', fontSize: 13, fontWeight: 500, cursor: 'pointer' },
+  btnPrimary: { background: '#f068a4', color: 'white', border: 'none', borderRadius: 12, padding: 14, fontFamily: 'DM Sans,sans-serif', fontSize: 15, fontWeight: 600, cursor: 'pointer', display: 'block', width: '100%' },
+  btnOutline: { background: 'white', color: '#f068a4', border: '1.5px solid #f068a4', borderRadius: 12, padding: 11, fontFamily: 'DM Sans,sans-serif', fontSize: 13, fontWeight: 600, cursor: 'pointer' },
 }

@@ -248,9 +248,9 @@ export default function StudySessionsPanel({ study, qc }) {
 const S = {
   sectionHeader:  { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
   sectionTitle:   { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 20, fontWeight: 400, color: 'var(--tx)', margin: 0 },
-  btnPrimary:     { background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
-  btnOutline:     { background: '#fff', color: 'var(--pk)', border: '1.5px solid var(--pk)', borderRadius: 8, padding: '7px 14px', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
-  btnSim:         { background: '#f4f0fb', color: '#6d28d9', border: '1.5px solid #c4b5fd', borderRadius: 8, padding: '7px 14px', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
+  btnPrimary:     { background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
+  btnOutline:     { background: '#fff', color: 'var(--pk)', border: '1.5px solid var(--pk)', borderRadius: 8, padding: '7px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
+  btnSim:         { background: '#f4f0fb', color: '#6d28d9', border: '1.5px solid #c4b5fd', borderRadius: 8, padding: '7px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
   addForm:        { background: '#fff', border: '1px solid var(--bd)', borderRadius: 10, padding: '16px 20px', marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 12 },
   formField:      { display: 'flex', flexDirection: 'column', gap: 5 },
   fieldLabel:     { fontFamily: '"Space Mono",monospace', fontSize: 10, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' },

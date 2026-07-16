@@ -66,7 +66,7 @@ export default function ForgotPassword() {
 
           <p style={S.footer}>
             Remembered it?{' '}
-            <Link to="/login" style={{ color: 'var(--pk)', textDecoration: 'none', fontWeight: 500 }}>
+            <Link to="/login" style={{ color: 'var(--pk)', textDecoration: 'none', fontWeight: 600 }}>
               Sign in
             </Link>
           </p>
@@ -86,6 +86,6 @@ const S = {
   label: { fontFamily: '"Space Mono", monospace', fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--tx3)' },
   input: { padding: '10px 14px', borderRadius: 9, border: '1px solid var(--bds)', background: 'var(--bgp)', fontSize: 15, color: 'var(--tx)', outline: 'none', fontFamily: 'inherit' },
   btnPrimary: { display: 'block', width: '100%', padding: '12px 0', background: 'var(--pk)', border: 'none', borderRadius: 12, color: '#fff', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', marginTop: 4, textDecoration: 'none', textAlign: 'center' },
-  errorBox: { background: '#FCEBEB', border: '1px solid #F09595', borderRadius: 9, padding: '10px 14px', fontSize: 13, color: '#A32D2D', marginBottom: 16 },
+  errorBox: { background: 'var(--err-bg)', border: '1px solid var(--err-bd)', borderRadius: 9, padding: '10px 14px', fontSize: 13, color: 'var(--err-tx)', marginBottom: 16 },
   footer: { textAlign: 'center', fontSize: 13, color: 'var(--tx2)', marginTop: 24 },
 }

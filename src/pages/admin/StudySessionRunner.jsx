@@ -237,5 +237,5 @@ const S = {
   completeTitle:    { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 30, fontWeight: 400, color: 'var(--tx)', margin: 0 },
   completeBody:     { fontSize: 15, color: 'var(--tx2)', fontFamily: '"DM Sans",system-ui,sans-serif', margin: 0, lineHeight: 1.6 },
   monoInline:       { fontFamily: '"Space Mono",monospace', fontSize: 13, color: 'var(--tx)' },
-  btnPrimary:       { background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 10, padding: '12px 28px', fontSize: 15, fontWeight: 500, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', marginTop: 8 },
+  btnPrimary:       { background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 10, padding: '12px 28px', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', marginTop: 8 },
 }

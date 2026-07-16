@@ -203,7 +203,7 @@ const S = {
   hint:  { fontSize: 11, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif', margin: '4px 0 0' },
   row2:  { display: 'flex', gap: 14, marginTop: 14 },
   actions: { display: 'flex', gap: 10, marginTop: 24 },
-  saveBtn:   { background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 9, padding: '10px 22px', fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
+  saveBtn:   { background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 9, padding: '10px 22px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
   cancelBtn: { background: 'none', border: '1px solid var(--bd)', borderRadius: 9, padding: '10px 16px', fontSize: 14, cursor: 'pointer', color: 'var(--tx2)', fontFamily: '"DM Sans",system-ui,sans-serif' },
   errMsg: { fontSize: 13, color: '#e04', background: '#fff0f0', border: '1px solid #fcc', borderRadius: 8, padding: '8px 14px', margin: '12px 0' },
 }
@@ -215,5 +215,5 @@ const SP = {
   slider:    { width: '100%', height: 8, accentColor: '#639922', cursor: 'pointer', marginBottom: 12, display: 'block' },
   labels:    { display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, color: '#5f5e5a' },
   labelTxt:  { fontFamily: '"DM Sans",system-ui,sans-serif' },
-  val:       { fontSize: 22, fontWeight: 700, color: '#639922', fontFamily: '"DM Sans",system-ui,sans-serif' },
+  val:       { fontSize: 22, fontWeight: 600, color: '#639922', fontFamily: '"DM Sans",system-ui,sans-serif' },
 }

@@ -690,7 +690,7 @@ function MethodsTable() {
           <tr key={ri}>
             {r.map((cell, ci) => (
               <td key={ci} style={ci === 0 ? K.tdLabel : K.td}>
-                {cell === '✓' ? <span style={{ color: '#f068a4', fontWeight: 700 }}>✓</span> : cell}
+                {cell === '✓' ? <span style={{ color: '#f068a4', fontWeight: 600 }}>✓</span> : cell}
               </td>
             ))}
           </tr>
@@ -724,7 +724,7 @@ const K = {
 
   title:    { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 'clamp(34px, 6vw, 66px)', fontWeight: 400, color: 'var(--tx)', margin: 0, lineHeight: 1.05 },
   subtitle: { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 'clamp(20px, 3.2vw, 34px)', fontWeight: 400, color: 'var(--pkd)', margin: 0, fontStyle: 'italic' },
-  author:   { fontSize: 'clamp(17px, 2.2vw, 22px)', color: 'var(--tx)', margin: 0, fontWeight: 500 },
+  author:   { fontSize: 'clamp(17px, 2.2vw, 22px)', color: 'var(--tx)', margin: 0, fontWeight: 600 },
   affil:    { fontSize: 'clamp(14px, 1.7vw, 17px)', color: 'var(--tx2)', margin: 0, lineHeight: 1.5 },
   event:    { fontFamily: '"Space Mono",monospace', fontSize: 13, color: 'var(--tx3)', margin: '10px 0 0', letterSpacing: '0.06em' },
   crests:   { display: 'flex', gap: 32, alignItems: 'center', marginBottom: 6 },
@@ -742,10 +742,10 @@ const K = {
   lightboxHint: { position: 'absolute', bottom: 16, left: 0, right: 0, textAlign: 'center', fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)' },
   figPlaceholder: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '48px 40px', border: '1.5px dashed rgba(180,100,140,0.4)', borderRadius: 12, background: 'rgba(255,255,255,0.5)', color: 'var(--tx3)', minWidth: 420 },
   figPlaceIcon: { fontSize: 34, color: 'var(--pkb)' },
-  figPlaceText: { fontSize: 15, color: 'var(--tx2)', fontWeight: 500 },
+  figPlaceText: { fontSize: 15, color: 'var(--tx2)', fontWeight: 600 },
   figPlacePath: { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)' },
 
-  demoBtn: { display: 'inline-block', background: 'var(--pk)', color: '#fff', textDecoration: 'none', borderRadius: 14, padding: '16px 44px', fontSize: 'clamp(16px, 2vw, 21px)', fontWeight: 500 },
+  demoBtn: { display: 'inline-block', background: 'var(--pk)', color: '#fff', textDecoration: 'none', borderRadius: 14, padding: '16px 44px', fontSize: 'clamp(16px, 2vw, 21px)', fontWeight: 600 },
   demoSub: { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)' },
 
   pollGrid: { display: 'flex', gap: 20, flexWrap: 'wrap', justifyContent: 'center' },
@@ -757,7 +757,7 @@ const K = {
   table: { borderCollapse: 'collapse', fontSize: 'clamp(12px, 1.5vw, 17px)', background: '#fff', borderRadius: 10, overflow: 'hidden' },
   th: { fontFamily: '"Space Mono",monospace', fontSize: '0.82em', fontWeight: 700, color: 'var(--pkd)', padding: '10px 14px', borderBottom: '2px solid var(--pkb)', textAlign: 'center' },
   td: { padding: '9px 14px', textAlign: 'center', color: 'var(--tx)', borderBottom: '1px solid var(--bd)' },
-  tdLabel: { padding: '9px 16px', textAlign: 'left', color: 'var(--tx2)', borderBottom: '1px solid var(--bd)', fontWeight: 500, whiteSpace: 'nowrap' },
+  tdLabel: { padding: '9px 16px', textAlign: 'left', color: 'var(--tx2)', borderBottom: '1px solid var(--bd)', fontWeight: 600, whiteSpace: 'nowrap' },
 
   bottom: { position: 'absolute', bottom: 14, left: 0, right: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 20, cursor: 'default' },
   navArrow: { border: 'none', background: 'none', color: 'var(--tx3)', fontSize: 30, lineHeight: 1, cursor: 'pointer', padding: '0 6px' },

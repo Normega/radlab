@@ -935,7 +935,7 @@ const S = {
   sub:     { fontSize: 15, color: 'var(--tx2)' },
   accountBadge: { background: 'var(--bgc)', border: '1px solid var(--bds)', borderRadius: 12, padding: '14px 18px', textAlign: 'right' },
   badgeLabel:   { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--tx3)', marginBottom: 4 },
-  badgeEmail:   { fontSize: 14, color: 'var(--tx)', fontWeight: 500 },
+  badgeEmail:   { fontSize: 14, color: 'var(--tx)', fontWeight: 600 },
   secLabel: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--tx3)', marginBottom: 16 },
   gameGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 },
   gameCard: { background: 'var(--bgc)', border: '1px solid var(--pkbs)', borderRadius: 16, overflow: 'hidden', display: 'flex', flexDirection: 'column' },

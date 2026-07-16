@@ -159,7 +159,7 @@ const M = {
     borderRadius: '0 8px 8px 0', padding: '12px 14px', fontSize: 13, lineHeight: 1.6,
     color: '#2c2c2a', marginBottom: 14, fontFamily: FONT,
   },
-  link: { color: '#3b6d11', textDecoration: 'none', fontWeight: 500 },
+  link: { color: '#3b6d11', textDecoration: 'none', fontWeight: 600 },
   resourceCard: {
     background: '#faf9f7', border: '1px solid #e8e5e0', borderRadius: 10,
     padding: '14px 16px', marginBottom: 10,
@@ -168,7 +168,7 @@ const M = {
   resourceDesc: { fontSize: 13, color: '#5f5e5a', lineHeight: 1.55, marginBottom: 10, fontFamily: FONT },
   resourceLinks: { display: 'flex', flexWrap: 'wrap', gap: 8 },
   resourceLink: {
-    display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 500,
+    display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600,
     color: '#3b6d11', textDecoration: 'none', background: '#fff', border: '1px solid #c8ddb8',
     borderRadius: 6, padding: '5px 10px', fontFamily: FONT,
   },

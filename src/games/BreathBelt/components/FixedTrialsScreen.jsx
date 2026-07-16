@@ -151,7 +151,7 @@ export default function FixedTrialsScreen({
           </p>
           <button
             onClick={startTrial}
-            className="px-6 py-3 rounded-xl font-medium"
+            className="px-6 py-3 rounded-xl font-semibold"
             style={{ background: 'var(--pk)', color: '#fff', fontSize: 'var(--fs-body)' }}
           >
             Start trial {trialIdx + 1}

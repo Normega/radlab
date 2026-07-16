@@ -666,7 +666,7 @@ const PK    = '#f068a4'
 const PKD   = '#c04a82'
 const TX    = '#1c1c1e'
 const TX2   = '#6b6c70'
-const TX3   = '#a8a9ad'
+const TX3   = '#abadb0'
 const BG    = '#FCF0F5'
 const BGC   = '#ffffff'
 const BGP   = '#FBEAF3'
@@ -729,7 +729,7 @@ const S = {
   },
   ruleHead: {
     fontSize: 15,
-    fontWeight: 500,
+    fontWeight: 600,
     color: TX,
     marginBottom: 4,
   },

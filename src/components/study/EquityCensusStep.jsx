@@ -742,7 +742,7 @@ const S = {
     alignSelf: 'flex-start',
     background: 'var(--pk)', color: '#fff', border: 'none',
     borderRadius: 10, padding: '13px 32px',
-    fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 16, fontWeight: 500,
+    fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 16, fontWeight: 600,
     transition: 'opacity 0.15s',
   },
   hint: { fontSize: 13, color: 'var(--tx3)', margin: '-30px 0 0', lineHeight: 1.5 },

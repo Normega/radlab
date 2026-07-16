@@ -172,7 +172,7 @@ export default function StaircaseScreen({
           <p className="text-center" style={{ color: 'var(--tx2)', fontSize: 'var(--fs-body)' }}>
             Breathe with the avatar. Notice if the pace changes.
           </p>
-          <button onClick={startTrial} className="px-6 py-3 rounded-xl font-medium"
+          <button onClick={startTrial} className="px-6 py-3 rounded-xl font-semibold"
             style={{ background: 'var(--pk)', color: '#fff', fontSize: 'var(--fs-body)' }}>
             Start trial
           </button>
@@ -187,7 +187,7 @@ export default function StaircaseScreen({
 
       {scState === SC_STATES.RESPONSE && (
         <div className="flex flex-col gap-6 w-full">
-          <p className="text-center font-medium" style={{ color: 'var(--tx)', fontSize: 'var(--fs-body)' }}>
+          <p className="text-center font-semibold" style={{ color: 'var(--tx)', fontSize: 'var(--fs-body)' }}>
             Did your breathing change speed?
           </p>
           <div className="flex gap-3 justify-center">
@@ -196,7 +196,7 @@ export default function StaircaseScreen({
                 if (responseFirstMsRef.current === null) responseFirstMsRef.current = Date.now()
                 setResponse(opt)
               }}
-                className="px-5 py-3 rounded-xl font-medium capitalize"
+                className="px-5 py-3 rounded-xl font-semibold capitalize"
                 style={{
                   background: response === opt ? 'var(--pk)' : 'transparent',
                   color:      response === opt ? '#fff' : 'var(--tx)',
@@ -219,7 +219,7 @@ export default function StaircaseScreen({
             <ArousalRating value={arousal} onChange={setArousal} />
           </div>
           <button onClick={submitResponse} disabled={!canSubmit}
-            className="px-6 py-3 rounded-xl font-medium w-full"
+            className="px-6 py-3 rounded-xl font-semibold w-full"
             style={{
               background: canSubmit ? 'var(--pk)' : 'var(--bd)',
               color: canSubmit ? '#fff' : 'var(--tx3)',

@@ -86,5 +86,5 @@ const S = {
   bPts:        { fontFamily: '"Space Mono", monospace', fontSize: 12, color: 'var(--pk)', fontWeight: 700, minWidth: 28, textAlign: 'right' },
   saving:      { fontSize: 13, color: 'var(--tx3)', margin: 0 },
   err:         { fontSize: 13, color: '#dc2626', margin: 0 },
-  btn:         { background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 10, padding: '12px 28px', fontSize: 15, fontWeight: 500, cursor: 'pointer', fontFamily: '"DM Sans", system-ui, sans-serif', width: '100%' },
+  btn:         { background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 10, padding: '12px 28px', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans", system-ui, sans-serif', width: '100%' },
 };

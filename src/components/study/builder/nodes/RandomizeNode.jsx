@@ -116,7 +116,7 @@ const S = {
   },
   armGroup: {
     flex: 1,
-    fontWeight: 500,
+    fontWeight: 600,
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
@@ -124,12 +124,12 @@ const S = {
   armWeight: {
     fontFamily: '"Space Mono", monospace',
     fontSize: 10,
-    color: 'var(--tx3, #a8a9ad)',
+    color: 'var(--tx3, #abadb0)',
   },
   armEntry: {
     marginTop: 2,
     fontSize: 11,
-    color: 'var(--tx3, #a8a9ad)',
+    color: 'var(--tx3, #abadb0)',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',

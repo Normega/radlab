@@ -148,7 +148,7 @@ const S = {
   lockBadge: {
     display: 'inline-block', fontFamily: MONO, fontSize: 12, letterSpacing: 0.5,
     padding: '3px 8px', borderRadius: 5,
-    background: '#f5f5f5', color: 'var(--tx3)', border: '1px solid var(--bd)',
+    background: 'var(--bg)', color: 'var(--tx3)', border: '1px solid var(--bd)',
   },
 
   gameTitle:  { fontFamily: SERIF, fontSize: 26, color: 'var(--tx)', marginBottom: 8 },
