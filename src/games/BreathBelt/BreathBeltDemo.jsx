@@ -638,18 +638,18 @@ const D = {
   err: { fontSize: 13, color: '#e04', margin: 0 },
   btn: {
     background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 12,
-    padding: '13px 32px', fontSize: 15, fontWeight: 500,
+    padding: '13px 32px', fontSize: 15, fontWeight: 600,
     fontFamily: '"DM Sans",system-ui,sans-serif',
   },
   afcBtn: {
-    padding: '12px 20px', borderRadius: 12, fontWeight: 500, minWidth: 84,
+    padding: '12px 20px', borderRadius: 12, fontWeight: 600, minWidth: 84,
     border: '1px solid var(--bds, var(--bd))', fontSize: 15, cursor: 'pointer',
     textTransform: 'capitalize', fontFamily: '"DM Sans",system-ui,sans-serif',
   },
   rateLabel: { fontSize: 14, color: 'var(--tx2)', textAlign: 'center', margin: '0 0 10px' },
   chip: {
     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
-    background: 'var(--bgp, #faf5f8)', border: '1px solid var(--bd)', borderRadius: 10,
+    background: 'var(--bgp, #FBEAF3)', border: '1px solid var(--bd)', borderRadius: 10,
     padding: '8px 16px',
   },
   chipLabel: { fontFamily: '"Space Mono",monospace', fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--tx3)' },

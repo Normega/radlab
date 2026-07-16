@@ -72,8 +72,8 @@ export default function DailyFarewellStep({ condition, onComplete }) {
           <div style={{ display: 'flex' }}>
             {SESSION_STEPS.map((label, i) => {
               const isActive = i === SESSION_STEPS.length - 1
-              const color = isActive ? '#2c2c2a' : '#639922'
-              const track = isActive ? '#2c2c2a' : '#639922'
+              const color = isActive ? 'var(--tx)' : 'var(--pk)'
+              const track = isActive ? 'var(--tx)' : 'var(--pk)'
               return (
                 <div key={label} style={S.stepCol}>
                   <span style={{ ...S.stepLabel, color }}>{label}</span>
@@ -94,7 +94,7 @@ export default function DailyFarewellStep({ condition, onComplete }) {
           <div style={S.dayNumber}>Session complete</div>
         </div>
 
-        <div style={{ ...S.owlScreen, borderBottom: '1px solid #ebe8e3', background: '#faf9f7', padding: '20px 24px' }}>
+        <div style={{ ...S.owlScreen, borderBottom: '1px solid var(--bd)', background: 'var(--bg)', padding: '20px 24px' }}>
           <img src={`/assets/owls/${meta.owl}.png`} alt="" style={{ ...S.owlImg, width: 100, height: 100 }} />
           <div style={S.speechBubble}>{OWL_MESSAGE}</div>
         </div>
@@ -142,36 +142,36 @@ export default function DailyFarewellStep({ condition, onComplete }) {
   )
 }
 
-const FONT = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+const FONT = '"DM Sans", system-ui, sans-serif'
 
 const M = {
   sectionHeader: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 },
   sectionIcon: {
-    width: 26, height: 26, borderRadius: '50%', background: '#f0ede8',
+    width: 26, height: 26, borderRadius: '50%', background: 'var(--bgp)',
     display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 13,
   },
   sectionTitle: {
     fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase',
-    color: '#5f5e5a', fontFamily: FONT,
+    color: 'var(--tx2)', fontFamily: FONT,
   },
   contactBlock: {
-    background: '#f9f8f5', border: '1px solid #e8e5e0', borderLeft: '3px solid #2c2c2a',
+    background: 'var(--bg)', border: '1px solid var(--bd)', borderLeft: '3px solid var(--tx)',
     borderRadius: '0 8px 8px 0', padding: '12px 14px', fontSize: 13, lineHeight: 1.6,
-    color: '#2c2c2a', marginBottom: 14, fontFamily: FONT,
+    color: 'var(--tx)', marginBottom: 14, fontFamily: FONT,
   },
-  link: { color: '#3b6d11', textDecoration: 'none', fontWeight: 500 },
+  link: { color: 'var(--pkd)', textDecoration: 'none', fontWeight: 600 },
   resourceCard: {
-    background: '#faf9f7', border: '1px solid #e8e5e0', borderRadius: 10,
+    background: 'var(--bg)', border: '1px solid var(--bd)', borderRadius: 10,
     padding: '14px 16px', marginBottom: 10,
   },
-  resourceName: { fontSize: 14, fontWeight: 600, color: '#1a1a18', marginBottom: 4, fontFamily: FONT },
-  resourceDesc: { fontSize: 13, color: '#5f5e5a', lineHeight: 1.55, marginBottom: 10, fontFamily: FONT },
+  resourceName: { fontSize: 14, fontWeight: 600, color: 'var(--tx)', marginBottom: 4, fontFamily: FONT },
+  resourceDesc: { fontSize: 13, color: 'var(--tx2)', lineHeight: 1.55, marginBottom: 10, fontFamily: FONT },
   resourceLinks: { display: 'flex', flexWrap: 'wrap', gap: 8 },
   resourceLink: {
-    display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 500,
-    color: '#3b6d11', textDecoration: 'none', background: '#fff', border: '1px solid #c8ddb8',
+    display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600,
+    color: 'var(--pkd)', textDecoration: 'none', background: '#fff', border: '1px solid var(--pkb)',
     borderRadius: 6, padding: '5px 10px', fontFamily: FONT,
   },
-  addressNote: { fontSize: 12, color: '#888780', marginTop: 10, lineHeight: 1.6, fontFamily: FONT },
-  footerNote: { textAlign: 'center', fontSize: 11, color: '#a09d98', marginTop: 10, fontFamily: FONT },
+  addressNote: { fontSize: 12, color: 'var(--tx2)', marginTop: 10, lineHeight: 1.6, fontFamily: FONT },
+  footerNote: { textAlign: 'center', fontSize: 11, color: 'var(--gy)', marginTop: 10, fontFamily: FONT },
 }

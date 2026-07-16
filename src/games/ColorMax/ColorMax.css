@@ -42,7 +42,7 @@
 .cm-start-title {
   font-family: 'DM Serif Display', serif;
   font-size: 34px;
-  color: #1e1e1e;
+  color: var(--tx);
   margin: 0 0 6px;
 }
 .cm-start-sub {
@@ -92,7 +92,7 @@
 .cm-timer {
   font-family: 'Space Mono', monospace;
   font-size: 20px;
-  color: #1e1e1e;
+  color: var(--tx);
   min-width: 50px;
 }
 .cm-timer.warn { color: #d93535; }
@@ -179,13 +179,13 @@
   justify-content: center;
   font-family: 'DM Sans', sans-serif;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   color: rgba(0, 0, 0, 0.4);
   flex-shrink: 0;
   transition: border-color 0.1s, transform 0.1s;
 }
 .cm-swatch:hover  { transform: scale(1.1); border-color: rgba(0,0,0,0.25); }
-.cm-swatch.active { border-color: #1e1e1e; transform: scale(1.12); }
+.cm-swatch.active { border-color: var(--tx); transform: scale(1.12); }
 
 /* ── Canvas area ─────────────────────────────────────── */
 .cm-canvas-area {
@@ -223,7 +223,7 @@
 .cm-results-title {
   font-family: 'DM Serif Display', serif;
   font-size: 28px;
-  color: #1e1e1e;
+  color: var(--tx);
   margin: 0 0 6px;
   text-align: center;
 }
@@ -237,8 +237,8 @@
 .cm-overall-title {
   font-family: 'DM Sans', sans-serif;
   font-size: 15px;
-  font-weight: 700;
-  color: #1e1e1e;
+  font-weight: 600;
+  color: var(--tx);
   text-align: center;
   margin-bottom: 12px;
 }
@@ -257,7 +257,7 @@
 .cm-stat-val {
   font-family: 'Space Mono', monospace;
   font-size: 22px;
-  color: #1e1e1e;
+  color: var(--tx);
   line-height: 1;
   margin-bottom: 5px;
 }
@@ -283,8 +283,8 @@
 .cm-breakdown-cols-label {
   font-family: 'DM Sans', sans-serif;
   font-size: 13px;
-  font-weight: 700;
-  color: #1e1e1e;
+  font-weight: 600;
+  color: var(--tx);
 }
 .cm-breakdown {
   display: flex;

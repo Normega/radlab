@@ -523,7 +523,7 @@ const S = {
   fieldLabel:     { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' },
   input:          { fontSize: 14, fontFamily: '"DM Sans",system-ui,sans-serif', border: '1px solid var(--bd)', borderRadius: 8, padding: '8px 12px', color: 'var(--tx)', background: '#fff', width: '100%', boxSizing: 'border-box' },
   modeCard:       { display: 'flex', gap: 10, alignItems: 'flex-start', border: '1.5px solid', borderRadius: 10, padding: '12px 14px', cursor: 'pointer', transition: 'border-color 0.15s, background 0.15s' },
-  modeLabel:      { fontSize: 14, fontWeight: 500, color: 'var(--tx)', fontFamily: '"DM Sans",system-ui,sans-serif' },
+  modeLabel:      { fontSize: 14, fontWeight: 600, color: 'var(--tx)', fontFamily: '"DM Sans",system-ui,sans-serif' },
   modeDesc:       { fontSize: 12, color: 'var(--tx2)', fontFamily: '"DM Sans",system-ui,sans-serif', marginTop: 2 },
   emailPrefs:     { display: 'flex', flexDirection: 'column', gap: 16, background: 'var(--bgp)', border: '1px solid var(--pkb)', borderRadius: 10, padding: '18px 20px' },
   emailPrefsTitle:{ fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--pkd)', textTransform: 'uppercase', letterSpacing: '0.06em' },
@@ -534,5 +534,5 @@ const S = {
   slotDelete:     { background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tx3)', fontSize: 14, padding: '26px 4px 0', flexShrink: 0 },
   slotDepWarn:    { display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12, color: '#9a6b1f', background: '#fdf6ec', border: '1px solid #f0d9b0', borderRadius: 8, padding: '10px 14px', fontFamily: '"DM Sans",system-ui,sans-serif', lineHeight: 1.5 },
   addSlotBtn:     { alignSelf: 'flex-start', fontSize: 13, color: 'var(--pkd)', background: '#fff', border: '1px dashed var(--pkb)', borderRadius: 8, padding: '7px 14px', cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
-  btnPrimary:     { display: 'inline-block', background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 18px', fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
+  btnPrimary:     { display: 'inline-block', background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
 }

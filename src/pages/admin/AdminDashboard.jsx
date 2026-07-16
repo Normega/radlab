@@ -130,6 +130,6 @@ const S = {
   },
   externalLink: {
     display: 'inline-block', marginTop: 28, fontSize: 14, color: 'var(--pk)',
-    fontWeight: 500, textDecoration: 'none',
+    fontWeight: 600, textDecoration: 'none',
   },
 }

@@ -6,7 +6,7 @@ import { mulberry32, hashStringToInt } from '../../utils/seededRandom'
 const PINK = '#f068a4'
 const BLUE = '#4A90D9'
 const INK  = '#1c1c1e'
-const GRY  = '#a8a9ad'
+const GRY  = '#abadb0'
 
 // ── Slide 6: three intervention-target icons ────────────────────────────────
 export function PositionIcons() {
@@ -239,7 +239,7 @@ export function MissTrialTrace() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(240,104,164,0.1)', border: '1px solid rgba(240,104,164,0.35)', borderRadius: 10, padding: '8px 16px', fontSize: 14, color: INK }}>
         <span style={{ fontFamily: '"Space Mono",monospace', color: '#c04a82' }}>belt rate 12 → 15 / min</span>
         <span style={{ color: GRY }}>moved in the cued direction</span>
-        <span style={{ fontWeight: 700, color: '#2ecc71' }}>✓ correct</span>
+        <span style={{ fontWeight: 600, color: '#2ecc71' }}>✓ correct</span>
       </div>
     </div>
   )

@@ -76,8 +76,8 @@ export default function DailyWelcomeStep({ enrollment, scheduleId, onComplete, s
           <div style={{ display: 'flex' }}>
             {SESSION_STEPS.map((label, i) => {
               const isActive = i === 0
-              const color = isActive ? '#2c2c2a' : '#a09d98'
-              const track = isActive ? '#2c2c2a' : '#ddd'
+              const color = isActive ? 'var(--tx)' : 'var(--gy)'
+              const track = isActive ? 'var(--tx)' : '#ddd'
               return (
                 <div key={label} style={S.stepCol}>
                   <span style={{ ...S.stepLabel, color }}>{label}</span>
@@ -114,6 +114,6 @@ const M = {
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     minHeight: 300, padding: 40, textAlign: 'center',
     fontFamily: '"DM Sans",system-ui,sans-serif',
-    fontSize: 15, color: '#888780',
+    fontSize: 15, color: 'var(--tx2)',
   },
 }

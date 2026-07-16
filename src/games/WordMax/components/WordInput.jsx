@@ -124,7 +124,7 @@ const S = {
     borderRadius: 10,
     padding: '10px 22px',
     fontSize: 14,
-    fontWeight: 500,
+    fontWeight: 600,
     cursor: 'pointer',
     fontFamily: '"DM Sans", system-ui, sans-serif',
     whiteSpace: 'nowrap',

@@ -694,7 +694,7 @@ const S = {
   qLabel: { fontSize: 15, fontWeight: 600, color: 'var(--tx)', lineHeight: 1.5 },
   defBlock: {
     fontSize: 13, color: 'var(--tx2)', lineHeight: 1.6, margin: 0,
-    background: '#faf7fb', border: '1px solid var(--bd)', borderRadius: 10, padding: '12px 14px',
+    background: 'var(--bg)', border: '1px solid var(--bd)', borderRadius: 10, padding: '12px 14px',
   },
 
   radioCol: { display: 'flex', flexDirection: 'column', gap: 4 },
@@ -742,9 +742,9 @@ const S = {
     alignSelf: 'flex-start',
     background: 'var(--pk)', color: '#fff', border: 'none',
     borderRadius: 10, padding: '13px 32px',
-    fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 16, fontWeight: 500,
+    fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 16, fontWeight: 600,
     transition: 'opacity 0.15s',
   },
   hint: { fontSize: 13, color: 'var(--tx3)', margin: '-30px 0 0', lineHeight: 1.5 },
-  error: { fontSize: 14, color: '#dc2626', margin: 0 },
+  error: { fontSize: 14, color: 'var(--err-tx)', margin: 0 },
 }

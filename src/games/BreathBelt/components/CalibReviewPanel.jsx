@@ -88,7 +88,7 @@ export default function CalibReviewPanel({
         <button
           onClick={onContinue}
           disabled={blocked}
-          className="px-5 py-3 rounded-xl font-medium"
+          className="px-5 py-3 rounded-xl font-semibold"
           style={{
             background: blocked ? 'var(--bd)' : 'var(--pk)',
             color:      blocked ? 'var(--tx3)' : '#fff',

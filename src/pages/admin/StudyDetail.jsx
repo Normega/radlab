@@ -552,7 +552,7 @@ function ScreenerSection({ study, qc }) {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
             <div>
               <div style={{ fontFamily: '"Space Mono",monospace', fontSize: 10, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Active screener</div>
-              <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--tx)', fontFamily: '"DM Sans",system-ui,sans-serif' }}>{attached.name}</div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--tx)', fontFamily: '"DM Sans",system-ui,sans-serif' }}>{attached.name}</div>
               <div style={{ fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--pk)', marginTop: 2 }}>{attached.slug}</div>
             </div>
             <button
@@ -1065,11 +1065,11 @@ const S = {
   th:            { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', textAlign: 'left', padding: '10px 16px', borderBottom: '1px solid var(--bd)', textTransform: 'uppercase', letterSpacing: '0.06em' },
   tr:            { borderBottom: '1px solid var(--bd)' },
   td:            { padding: '12px 16px', verticalAlign: 'middle' },
-  pName:         { fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 14, fontWeight: 500, color: 'var(--tx)' },
+  pName:         { fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 14, fontWeight: 600, color: 'var(--tx)' },
   mono:          { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)' },
   actions:       { display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' },
   actionBtn:     { background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: 'var(--tx2)', padding: 0, fontFamily: '"DM Sans",system-ui,sans-serif' },
-  btnPrimary:    { display: 'inline-block', background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 18px', fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
+  btnPrimary:    { display: 'inline-block', background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
   overlay:       { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center' },
   dialog:        { background: '#fff', borderRadius: 14, padding: '28px 32px', maxWidth: 440, width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,0.18)' },
   dialogTitle:   { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 20, fontWeight: 400, color: 'var(--tx)', margin: '0 0 10px' },

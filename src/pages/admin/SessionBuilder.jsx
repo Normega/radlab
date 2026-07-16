@@ -496,7 +496,7 @@ const S = {
   actLabel:     { flex: 1, fontSize: 13, color: 'var(--tx)', fontFamily: '"DM Sans",system-ui,sans-serif' },
   uploadedTag:  { fontSize: 10, color: 'var(--tx3)', fontFamily: '"Space Mono",monospace', border: '1px solid var(--bd)', borderRadius: 4, padding: '1px 5px', flexShrink: 0 },
   actMin:       { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)' },
-  actAdd:       { fontSize: 16, color: 'var(--pk)', fontWeight: 700, lineHeight: 1 },
+  actAdd:       { fontSize: 16, color: 'var(--pk)', fontWeight: 600, lineHeight: 1 },
   seqItemWrap:  { marginBottom: 6 },
   seqItem:      { display: 'flex', alignItems: 'center', gap: 8, background: 'var(--pkb)', border: '1px solid var(--bd)', borderRadius: 8, padding: '7px 10px', cursor: 'default' },
   seqItemWarn:  { border: '1px solid #e8a33d', background: '#fdf6ec' },
@@ -511,5 +511,5 @@ const S = {
   totalRow:     { display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--bd)', marginTop: 12, paddingTop: 10 },
   totalLabel:   { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' },
   totalVal:     { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx)', fontWeight: 700 },
-  btnPrimary:   { display: 'inline-block', background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 18px', fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
+  btnPrimary:   { display: 'inline-block', background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
 }

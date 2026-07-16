@@ -18,8 +18,8 @@ import QuestionnaireRenderer from './questionnaire/QuestionnaireRenderer'
 //   onFail          — () => void
 //   previewMode     — bool — skips DB writes and sessionStorage when true
 
-const GREEN  = '#639922'
-const RED_BG = '#fff3f3'
+const GREEN  = 'var(--pk)'
+const RED_BG = 'var(--err-bg)'
 
 const DEFAULT_SCALE = [
   { value: 0, label: 'Not at all' },
@@ -181,7 +181,7 @@ export default function ScreenerPage({ study, participant, supabaseClient, onPas
     if (outcome === 'pass') {
       const o = outcomes.pass ?? {}
       return {
-        cardStyle: { background: '#f0f7eb', border: '1.5px solid #b8d9a0' },
+        cardStyle: { background: 'var(--bgp)', border: '1.5px solid var(--pkbs)' },
         icon: '✅',
         heading: o.heading ?? 'You appear to be a good candidate for this study.',
         body:    o.body    ?? 'Based on your responses, you seem to be experiencing a level of emotional distress that this study is designed to support. Press Next to continue to the consent form and baseline survey.',
@@ -201,7 +201,7 @@ export default function ScreenerPage({ study, participant, supabaseClient, onPas
     if (outcome === 'fail_high') {
       const o = outcomes.fail_high ?? {}
       return {
-        cardStyle: { background: RED_BG, border: '1.5px solid #f5c6c6' },
+        cardStyle: { background: RED_BG, border: '1.5px solid var(--err-bd)' },
         icon: '💙',
         heading: o.heading ?? 'It sounds like you may be going through a particularly difficult time.',
         body:    o.body    ?? 'We want to make sure you have the right level of support. Because this study is not a substitute for professional mental health care, we are not able to enroll participants who are currently experiencing high levels of distress.',
@@ -288,8 +288,8 @@ export default function ScreenerPage({ study, participant, supabaseClient, onPas
           return (
             <div key={item.id ?? i} style={{
               ...S.eligItem,
-              background:  val == null ? '#fff'  : isUnsure ? '#fbf6e9' : passes ? '#f0f7eb' : RED_BG,
-              borderColor: val == null ? '#e0ddd8' : isUnsure ? '#e0c169' : passes ? GREEN : '#e57373',
+              background:  val == null ? '#fff'  : isUnsure ? '#fbf6e9' : passes ? 'var(--bgp)' : RED_BG,
+              borderColor: val == null ? 'var(--bds)' : isUnsure ? '#e0c169' : passes ? GREEN : '#e57373',
             }}>
               <div style={S.eligNum}>{i + 1}</div>
               <div style={S.eligText}>{item.text}</div>
@@ -304,7 +304,7 @@ export default function ScreenerPage({ study, participant, supabaseClient, onPas
           )
         })}
         {eligResult === 'pass' && (
-          <div style={{ ...S.statusBanner, background: '#f0f7eb', border: '1px solid #b8d9a0', color: '#2c5c0a' }}>
+          <div style={{ ...S.statusBanner, background: 'var(--bgp)', border: '1px solid var(--pkbs)', color: 'var(--pkd)' }}>
             <strong>✓ &nbsp;You appear to meet the eligibility criteria.</strong><br />
             You will now complete a brief questionnaire about your emotional well-being. This helps us ensure the study is the right fit for you at this time.
           </div>
@@ -415,46 +415,46 @@ export default function ScreenerPage({ study, participant, supabaseClient, onPas
 
 const S = {
   page:         { background: '#fff', width: '100%', maxWidth: 680, margin: '0 auto', minHeight: '100vh', display: 'flex', flexDirection: 'column', fontFamily: '"DM Sans", system-ui, sans-serif' },
-  topBar:       { background: '#f0ede8', borderBottom: '1px solid #e0ddd8', padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 },
-  topBadge:     { fontSize: 11, fontFamily: '"Space Mono", monospace', fontWeight: 700, color: '#5f5e5a', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: 6 },
-  topBadgeDot:  { display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: '#639922' },
-  stepIndicator:{ fontFamily: '"Space Mono", monospace', fontSize: 11, color: '#888780', fontWeight: 500 },
-  progressWrap: { height: 4, background: '#e0ddd8', flexShrink: 0 },
-  progressFill: { height: '100%', background: '#639922', transition: 'width 0.4s' },
-  header:       { padding: '20px 24px 16px', borderBottom: '1px solid #ebe8e3', flexShrink: 0 },
-  pageTitle:    { fontFamily: '"DM Serif Display", Georgia, serif', fontSize: 21, fontWeight: 700, color: 'var(--tx, #1c1c1e)' },
-  pageSubtitle: { fontFamily: '"DM Sans", system-ui, sans-serif', fontSize: 13, color: '#888780', marginTop: 3 },
+  topBar:       { background: 'var(--bgp)', borderBottom: '1px solid var(--bds)', padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 },
+  topBadge:     { fontSize: 11, fontFamily: '"Space Mono", monospace', fontWeight: 700, color: 'var(--tx2)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: 6 },
+  topBadgeDot:  { display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: 'var(--pk)' },
+  stepIndicator:{ fontFamily: '"Space Mono", monospace', fontSize: 11, color: 'var(--tx2)', fontWeight: 600 },
+  progressWrap: { height: 4, background: 'var(--bds)', flexShrink: 0 },
+  progressFill: { height: '100%', background: 'var(--pk)', transition: 'width 0.4s' },
+  header:       { padding: '20px 24px 16px', borderBottom: '1px solid var(--bd)', flexShrink: 0 },
+  pageTitle:    { fontFamily: '"DM Serif Display", Georgia, serif', fontSize: 21, fontWeight: 400, color: 'var(--tx, #1c1c1e)' },
+  pageSubtitle: { fontFamily: '"DM Sans", system-ui, sans-serif', fontSize: 13, color: 'var(--tx2)', marginTop: 3 },
   scrollArea:   { flex: 1, overflowY: 'auto' },
   content:      { padding: 24 },
-  partLabel:    { fontSize: 13, fontWeight: 700, color: 'var(--tx, #1c1c1e)', padding: '10px 14px', background: '#f5f4f0', borderLeft: `3px solid ${GREEN}`, borderRadius: '0 6px 6px 0', marginBottom: 16 },
-  introText:    { fontSize: 14, lineHeight: 1.75, color: '#2c2c2a', marginBottom: 16 },
-  studyStep:    { display: 'flex', gap: 12, padding: '11px 14px', border: '1px solid #ebe8e3', borderRadius: 8, marginBottom: 8, background: '#fff' },
-  stepNum:      { width: 24, height: 24, borderRadius: '50%', background: '#f0ede8', fontSize: 11, fontFamily: '"Space Mono", monospace', fontWeight: 700, color: '#5f5e5a', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 },
-  stepText:     { fontSize: 13, lineHeight: 1.6, color: '#2c2c2a' },
-  infoBox:      { background: '#faf9f7', border: '1px solid #e0ddd8', borderRadius: 10, padding: '14px 16px', marginBottom: 16, fontSize: 13, lineHeight: 1.7, color: '#5f5e5a' },
-  eligItem:     { display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 14px', border: '1.5px solid #e0ddd8', borderRadius: 10, marginBottom: 8, transition: 'border-color 0.15s, background 0.15s' },
-  eligNum:      { fontFamily: '"Space Mono", monospace', fontSize: 12, fontWeight: 700, color: '#a09d98', flexShrink: 0, width: 20, paddingTop: 1 },
-  eligText:     { fontSize: 13, lineHeight: 1.55, color: '#2c2c2a', flex: 1 },
+  partLabel:    { fontSize: 13, fontWeight: 600, color: 'var(--tx, #1c1c1e)', padding: '10px 14px', background: 'var(--bgp)', borderLeft: `3px solid ${GREEN}`, borderRadius: '0 6px 6px 0', marginBottom: 16 },
+  introText:    { fontSize: 14, lineHeight: 1.75, color: 'var(--tx)', marginBottom: 16 },
+  studyStep:    { display: 'flex', gap: 12, padding: '11px 14px', border: '1px solid var(--bd)', borderRadius: 8, marginBottom: 8, background: '#fff' },
+  stepNum:      { width: 24, height: 24, borderRadius: '50%', background: 'var(--bgp)', fontSize: 11, fontFamily: '"Space Mono", monospace', fontWeight: 700, color: 'var(--tx2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 },
+  stepText:     { fontSize: 13, lineHeight: 1.6, color: 'var(--tx)' },
+  infoBox:      { background: 'var(--bg)', border: '1px solid var(--bds)', borderRadius: 10, padding: '14px 16px', marginBottom: 16, fontSize: 13, lineHeight: 1.7, color: 'var(--tx2)' },
+  eligItem:     { display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 14px', border: '1.5px solid var(--bds)', borderRadius: 10, marginBottom: 8, transition: 'border-color 0.15s, background 0.15s' },
+  eligNum:      { fontFamily: '"Space Mono", monospace', fontSize: 12, fontWeight: 700, color: 'var(--gy)', flexShrink: 0, width: 20, paddingTop: 1 },
+  eligText:     { fontSize: 13, lineHeight: 1.55, color: 'var(--tx)', flex: 1 },
   eligBtns:     { display: 'flex', gap: 6, flexShrink: 0, marginLeft: 'auto', paddingLeft: 10 },
-  eligBtn:      { width: 36, height: 28, borderRadius: 6, border: '1.5px solid #e0ddd8', background: '#f5f4f0', fontSize: 11, fontFamily: '"DM Sans", system-ui, sans-serif', fontWeight: 700, cursor: 'pointer', transition: 'all 0.12s' },
-  eligBtnYes:       { color: '#3b6d11' },
+  eligBtn:      { width: 36, height: 28, borderRadius: 6, border: '1.5px solid var(--bds)', background: 'var(--bgp)', fontSize: 11, fontFamily: '"DM Sans", system-ui, sans-serif', fontWeight: 600, cursor: 'pointer', transition: 'all 0.12s' },
+  eligBtnYes:       { color: 'var(--pkd)' },
   eligBtnYesActive: { background: GREEN, borderColor: GREEN, color: '#fff' },
-  eligBtnNo:        { color: '#c0392b' },
+  eligBtnNo:        { color: 'var(--err-tx)' },
   eligBtnNoActive:  { background: '#e57373', borderColor: '#e57373', color: '#fff' },
   eligBtnUnsure:       { width: 'auto', padding: '0 10px', color: '#8a6d1a' },
   eligBtnUnsureActive: { background: '#e0c169', borderColor: '#e0c169', color: '#fff' },
   statusBanner: { borderRadius: 10, padding: '14px 16px', marginTop: 12, fontSize: 13, lineHeight: 1.6 },
   outcomeCard:     { borderRadius: 12, padding: 20, marginBottom: 8 },
   outcomeIcon:     { fontSize: 36, textAlign: 'center', marginBottom: 14 },
-  outcomeHeading:  { fontFamily: '"DM Serif Display", Georgia, serif', fontSize: 19, fontWeight: 700, color: 'var(--tx, #1c1c1e)', lineHeight: 1.4, marginBottom: 12 },
-  outcomeBody:     { fontSize: 14, lineHeight: 1.75, color: '#2c2c2a' },
-  resourcesHeading:{ fontFamily: '"Space Mono", monospace', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#5f5e5a', marginBottom: 10 },
-  resourceItem:    { display: 'flex', flexDirection: 'column', padding: '10px 12px', border: '1px solid #e0ddd8', borderRadius: 8, marginBottom: 6, background: '#fff' },
+  outcomeHeading:  { fontFamily: '"DM Serif Display", Georgia, serif', fontSize: 19, fontWeight: 400, color: 'var(--tx, #1c1c1e)', lineHeight: 1.4, marginBottom: 12 },
+  outcomeBody:     { fontSize: 14, lineHeight: 1.75, color: 'var(--tx)' },
+  resourcesHeading:{ fontFamily: '"Space Mono", monospace', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--tx2)', marginBottom: 10 },
+  resourceItem:    { display: 'flex', flexDirection: 'column', padding: '10px 12px', border: '1px solid var(--bds)', borderRadius: 8, marginBottom: 6, background: '#fff' },
   resourceName:    { fontSize: 13, fontWeight: 600, color: 'var(--tx, #1c1c1e)' },
-  resourceContact: { fontSize: 12, color: '#5f5e5a', marginTop: 2, fontFamily: '"Space Mono", monospace' },
-  footer:       { padding: '16px 24px 28px', borderTop: '1px solid #ebe8e3', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 8 },
-  btnNext:      { width: '100%', border: 'none', borderRadius: 8, padding: '14px 24px', fontSize: 15, fontFamily: '"DM Sans", system-ui, sans-serif', fontWeight: 500, cursor: 'pointer', background: '#2c2c2a', color: '#fff', transition: 'background 0.15s' },
-  btnProceed:   { width: '100%', border: 'none', borderRadius: 8, padding: '14px 24px', fontSize: 15, fontFamily: '"DM Sans", system-ui, sans-serif', fontWeight: 500, cursor: 'pointer', background: '#3b6d11', color: '#fff', transition: 'background 0.15s' },
-  btnDisabled:  { background: '#c8c5c0', cursor: 'default' },
+  resourceContact: { fontSize: 12, color: 'var(--tx2)', marginTop: 2, fontFamily: '"Space Mono", monospace' },
+  footer:       { padding: '16px 24px 28px', borderTop: '1px solid var(--bd)', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 8 },
+  btnNext:      { width: '100%', border: 'none', borderRadius: 8, padding: '14px 24px', fontSize: 15, fontFamily: '"DM Sans", system-ui, sans-serif', fontWeight: 600, cursor: 'pointer', background: 'var(--tx)', color: '#fff', transition: 'background 0.15s' },
+  btnProceed:   { width: '100%', border: 'none', borderRadius: 8, padding: '14px 24px', fontSize: 15, fontFamily: '"DM Sans", system-ui, sans-serif', fontWeight: 600, cursor: 'pointer', background: 'var(--pkd)', color: '#fff', transition: 'background 0.15s' },
+  btnDisabled:  { background: 'var(--gy)', cursor: 'default' },
   loading:      { padding: 40, textAlign: 'center', fontFamily: '"DM Sans",system-ui,sans-serif', color: 'var(--tx2)', fontSize: 15 },
 }

@@ -587,12 +587,12 @@ const S = {
   err: { fontSize: 13, color: '#e04', margin: 0 },
   btn: {
     background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 12,
-    padding: '13px 32px', fontSize: 15, fontWeight: 500,
+    padding: '13px 32px', fontSize: 15, fontWeight: 600,
     fontFamily: '"DM Sans",system-ui,sans-serif',
   },
   secondaryBtn: {
     background: 'transparent', color: 'var(--tx)', border: '1px solid var(--bd)',
-    borderRadius: 12, padding: '13px 24px', fontSize: 15, fontWeight: 500,
+    borderRadius: 12, padding: '13px 24px', fontSize: 15, fontWeight: 600,
     fontFamily: '"DM Sans",system-ui,sans-serif', cursor: 'pointer',
   },
   degradedBanner: {
@@ -604,7 +604,7 @@ const S = {
   recalToast: {
     width: '100%', maxWidth: 700, marginTop: 12, padding: '12px 18px',
     background: '#e6f4ea', border: '1px solid #3aa76d', borderRadius: 12,
-    color: '#1c7a4a', fontSize: 14, fontWeight: 500,
+    color: '#1c7a4a', fontSize: 14, fontWeight: 600,
   },
   toggleRow: {
     display: 'flex', alignItems: 'flex-start', gap: 10, maxWidth: 640,
@@ -616,18 +616,18 @@ const S = {
     fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap',
   },
   scope: {
-    width: '100%', maxWidth: 640, background: 'var(--bgp, #faf5f8)',
+    width: '100%', maxWidth: 640, background: 'var(--bgp, #FBEAF3)',
     border: '1px solid var(--bd)', borderRadius: 10,
   },
   noteInput: {
     width: '100%', maxWidth: 420, padding: '10px 12px', borderRadius: 8,
     border: '1px solid var(--bd)', fontSize: 14, fontFamily: '"DM Sans",system-ui,sans-serif',
-    background: 'var(--bgp, #faf5f8)', color: 'var(--tx)',
+    background: 'var(--bgp, #FBEAF3)', color: 'var(--tx)',
   },
   chipRow: { display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' },
   chip: {
     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
-    background: 'var(--bgp, #faf5f8)', border: '1px solid var(--bd)', borderRadius: 10,
+    background: 'var(--bgp, #FBEAF3)', border: '1px solid var(--bd)', borderRadius: 10,
     padding: '8px 16px', minWidth: 90,
   },
   chipLabel: { fontFamily: '"Space Mono",monospace', fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--tx3)' },

@@ -388,5 +388,5 @@ const S = {
   blockTitle: { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--pkd)', textTransform: 'uppercase', letterSpacing: '0.06em' },
   deleteBtn:  { fontSize: 13, color: '#e04', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: '"DM Sans",system-ui,sans-serif' },
   addBtn:     { alignSelf: 'flex-start', fontSize: 13, color: 'var(--pkd)', background: '#fff', border: '1px dashed var(--pkb)', borderRadius: 8, padding: '7px 14px', cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
-  btnPrimary: { display: 'inline-block', background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 18px', fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
+  btnPrimary: { display: 'inline-block', background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
 }

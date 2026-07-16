@@ -203,7 +203,7 @@ const S = {
   }),
   pacingLabels: { display: 'flex', justifyContent: 'space-between', width: '100%', maxWidth: 280, fontSize: 12, color: 'var(--tx3)' },
   quizQuestion: { width: '100%', textAlign: 'left', marginBottom: 20 },
-  quizQuestionText: { fontSize: 15, color: 'var(--tx)', fontWeight: 500, marginBottom: 10 },
+  quizQuestionText: { fontSize: 15, color: 'var(--tx)', fontWeight: 600, marginBottom: 10 },
   quizOptionLabel: (active) => ({
     display: 'flex', alignItems: 'center', padding: '10px 12px', borderRadius: 10, fontSize: 14, marginBottom: 6, cursor: 'pointer',
     border: `1px solid ${active ? 'var(--pk)' : 'var(--bds)'}`, background: active ? 'var(--bgp)' : 'var(--bgc)', color: 'var(--tx)',

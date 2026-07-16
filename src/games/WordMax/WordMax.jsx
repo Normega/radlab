@@ -358,8 +358,8 @@ const S = {
   introBody:   { fontSize: 15, color: 'var(--tx2)', margin: '0 0 12px', lineHeight: 1.65, fontFamily: '"DM Sans", system-ui, sans-serif' },
   rules:       { fontSize: 14, color: 'var(--tx2)', margin: '0 0 28px', paddingLeft: 20, lineHeight: 1.8, fontFamily: '"DM Sans", system-ui, sans-serif' },
   dictMsg:     { fontSize: 13, color: 'var(--tx3)', margin: '0 0 12px', fontFamily: '"DM Sans", system-ui, sans-serif' },
-  dictErr:     { fontSize: 13, color: COLOR_DANGER, background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '8px 12px', margin: '0 0 12px' },
-  startBtn:    { width: '100%', background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 10, padding: '13px', fontSize: 16, fontWeight: 500, cursor: 'pointer', fontFamily: '"DM Sans", system-ui, sans-serif' },
+  dictErr:     { fontSize: 13, color: COLOR_DANGER, background: 'var(--err-bg)', border: '1px solid #fecaca', borderRadius: 8, padding: '8px 12px', margin: '0 0 12px' },
+  startBtn:    { width: '100%', background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 10, padding: '13px', fontSize: 16, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans", system-ui, sans-serif' },
 
   // Play
   playWrap:    { minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' },

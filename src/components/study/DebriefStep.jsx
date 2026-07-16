@@ -89,7 +89,7 @@ const S = {
     borderRadius: 10,
     padding: '12px 28px',
     fontSize: 16,
-    fontWeight: 500,
+    fontWeight: 600,
     fontFamily: '"DM Sans",system-ui,sans-serif',
     cursor: 'pointer',
   },

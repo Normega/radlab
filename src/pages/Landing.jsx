@@ -171,7 +171,7 @@ const S = {
   heroBrand: {},
   heroLogo:  { flexShrink: 0, display: 'block' },
   h1:        { fontFamily: SERIF, fontSize: 'clamp(2.6rem, 5vw, 4rem)', lineHeight: 1.08, color: 'var(--tx)', margin: 0 },
-  sub:       { fontSize: '1rem', color: 'var(--gy)', lineHeight: 1.7, maxWidth: 500, fontWeight: 300 },
+  sub:       { fontSize: '1rem', color: 'var(--gy)', lineHeight: 1.7, maxWidth: 500, fontWeight: 400 },
 
   hubSection: { padding: '40px 52px 100px', position: 'relative', zIndex: 1 },
 
@@ -183,7 +183,7 @@ const S = {
   },
   cardTag:   { fontFamily: MONO, fontSize: '0.75rem', letterSpacing: '0.13em', textTransform: 'uppercase', fontWeight: 700, transition: 'color 0.28s' },
   cardTitle: { fontFamily: SERIF, fontSize: '1.7rem', lineHeight: 1.12, transition: 'color 0.28s' },
-  cardDesc:  { fontSize: '0.875rem', lineHeight: 1.65, fontWeight: 300, flex: 1, transition: 'color 0.28s' },
+  cardDesc:  { fontSize: '0.875rem', lineHeight: 1.65, fontWeight: 400, flex: 1, transition: 'color 0.28s' },
   chips:     { display: 'flex', flexWrap: 'wrap', gap: 7, marginTop: 4 },
   chip:      { fontFamily: MONO, fontSize: '0.75rem', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '5px 11px', borderRadius: 20, transition: 'background 0.28s, color 0.28s' },
   cardCta:   { marginTop: 8, fontFamily: MONO, fontSize: '0.8125rem', letterSpacing: '0.1em', textTransform: 'uppercase', transition: 'color 0.28s' },

@@ -229,7 +229,7 @@ function LbRow({ rank, name, score, dp, you }) {
   return (
     <div style={{ ...S.lbRow, ...(you ? S.lbRowYou : {}) }}>
       <span style={{ ...S.lbRank, ...(you ? { color: 'var(--pk)', fontWeight: 700 } : {}) }}>{rank}</span>
-      <span style={{ ...S.lbName, ...(you ? { color: 'var(--pkd)', fontWeight: 500 } : {}) }}>{name}</span>
+      <span style={{ ...S.lbName, ...(you ? { color: 'var(--pkd)', fontWeight: 600 } : {}) }}>{name}</span>
       <span style={S.lbScore}>{score}</span>
       <span style={S.lbDp}>{dp}</span>
     </div>
@@ -375,11 +375,11 @@ const S = {
   steps:     { gap: 1, background: 'var(--bd)', border: '1px solid var(--bd)', borderRadius: 14, overflow: 'hidden' },
   step:      { background: 'var(--bgc)', padding: '26px 24px' },
   stepN:     { fontFamily: MONO, fontSize: 12, color: 'var(--pk)', marginBottom: 10, letterSpacing: 1 },
-  stepTitle: { fontSize: 16, fontWeight: 500, color: 'var(--tx)', marginBottom: 8 },
+  stepTitle: { fontSize: 16, fontWeight: 600, color: 'var(--tx)', marginBottom: 8 },
   stepBody:  { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.6 },
 
   tierCard:  { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 14, padding: 26 },
-  tierTitle: { fontSize: 16, fontWeight: 500, color: 'var(--tx)', marginBottom: 8 },
+  tierTitle: { fontSize: 16, fontWeight: 600, color: 'var(--tx)', marginBottom: 8 },
   tierBody:  { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.6 },
 
   ctaTitle: { fontFamily: SERIF, fontSize: 'clamp(32px, 4vw, 54px)', color: 'var(--tx)', marginBottom: 14, letterSpacing: -1 },
@@ -387,6 +387,6 @@ const S = {
 
   footerTxt: { fontFamily: MONO, fontSize: 11, color: 'var(--tx3)', letterSpacing: 1 },
 
-  btnPrimary: { display: 'inline-block', fontSize: 14, padding: '9px 20px', borderRadius: 9, fontWeight: 500, background: 'var(--pk)', border: '1px solid var(--pk)', color: '#fff', textDecoration: 'none', fontFamily: 'inherit', cursor: 'pointer' },
-  btnOutline: { display: 'inline-block', fontSize: 14, padding: '9px 20px', borderRadius: 9, fontWeight: 500, border: '1px solid var(--bds)', background: 'transparent', color: 'var(--tx2)', textDecoration: 'none', fontFamily: 'inherit', cursor: 'pointer' },
+  btnPrimary: { display: 'inline-block', fontSize: 14, padding: '9px 20px', borderRadius: 9, fontWeight: 600, background: 'var(--pk)', border: '1px solid var(--pk)', color: '#fff', textDecoration: 'none', fontFamily: 'inherit', cursor: 'pointer' },
+  btnOutline: { display: 'inline-block', fontSize: 14, padding: '9px 20px', borderRadius: 9, fontWeight: 600, border: '1px solid var(--bds)', background: 'transparent', color: 'var(--tx2)', textDecoration: 'none', fontFamily: 'inherit', cursor: 'pointer' },
 }

@@ -108,7 +108,7 @@ export default function BaselineScreen({
               The avatar will stay still. The orange ring shows your belt signal.
             </p>
           </div>
-          <button onClick={onStart} className="px-6 py-3 rounded-xl font-medium"
+          <button onClick={onStart} className="px-6 py-3 rounded-xl font-semibold"
             style={{ background: 'var(--pk)', color: '#fff', fontSize: 'var(--fs-body)' }}>
             Begin recording
           </button>

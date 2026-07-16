@@ -95,13 +95,13 @@ const S = {
   link:      { fontSize: 14, color: 'var(--tx2)', textDecoration: 'none' },
   btnOutline: {
     fontSize: 14, padding: '7px 18px', borderRadius: 9,
-    cursor: 'pointer', fontWeight: 500,
+    cursor: 'pointer', fontWeight: 600,
     border: '1px solid var(--bds)', background: 'transparent',
     color: 'var(--tx2)', textDecoration: 'none',
     fontFamily: 'inherit',
   },
   btnPrimary: {
-    borderRadius: 9, cursor: 'pointer', fontWeight: 500,
+    borderRadius: 9, cursor: 'pointer', fontWeight: 600,
     background: 'var(--pk)', border: '1px solid var(--pk)',
     color: '#fff', textDecoration: 'none',
     fontFamily: 'inherit', whiteSpace: 'nowrap',
@@ -120,6 +120,6 @@ const S = {
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     color: '#fff',
     fontFamily: '"DM Serif Display", Georgia, serif',
-    fontSize: 15, fontWeight: 700,
+    fontSize: 15, fontWeight: 400,
   },
 }

@@ -1,9 +1,11 @@
-/* Fonts — must come before @tailwind directives */
+/* Fonts — must come before @tailwind directives.
+   Design-system weights (design-audit/DRIFT-REPORT.md §9): DM Serif Display 400,
+   DM Sans 400/600, Space Mono 400 (+700 sanctioned for game/admin data readouts only). */
 @import '@fontsource/dm-serif-display';
 @import '@fontsource/space-mono/400.css';
 @import '@fontsource/space-mono/700.css';
 @import '@fontsource/dm-sans/400.css';
-@import '@fontsource/dm-sans/500.css';
+@import '@fontsource/dm-sans/600.css';
 
 @tailwind base;
 @tailwind components;
@@ -14,19 +16,22 @@
   /*
     FONT SIZE GUARDRAILS — never go below --fs-min in any component.
     Space Mono reads small; prefer --fs-mono-sm or above for labels.
+    Type scale (Onboarding Redesign v1): 12 / 14 / 16 / 20 / 28 / 36 px only.
       --fs-min:      12px  (absolute floor, WCAG)
       --fs-mono-sm:  12px  (mono labels, chips, tags)
-      --fs-mono-md:  13px  (nav links, CTAs, eyebrows)
-      --fs-body-sm:  14px  (secondary sans body)
+      --fs-mono-md:  14px  (DEPRECATED alias of --fs-body-sm; was 13px — off-scale.
+                            Use --fs-body-sm in new code.)
+      --fs-body-sm:  14px  (secondary sans body, nav links, CTAs, eyebrows)
       --fs-body:     16px  (default body)
-      --fs-body-lg:  18px  (comfortable reading)
+      --fs-body-lg:  16px  (DEPRECATED alias of --fs-body; was 18px — off-scale.
+                            Use --fs-body in new code.)
   */
   --fs-min:     0.75rem;
   --fs-mono-sm: 0.75rem;
-  --fs-mono-md: 0.8125rem;
+  --fs-mono-md: 0.875rem;
   --fs-body-sm: 0.875rem;
   --fs-body:    1rem;
-  --fs-body-lg: 1.125rem;
+  --fs-body-lg: 1rem;
   --bg:   #FCF0F5;
   --bgc:  #ffffff;
   --bgp:  #FBEAF3;
@@ -37,9 +42,13 @@
   --gy:   #abadb0;
   --tx:   #1c1c1e;
   --tx2:  #6b6c70;
-  --tx3:  #a8a9ad;
+  --tx3:  #abadb0; /* merged into text-muted (was #a8a9ad) — DRIFT-REPORT §9; prefer --gy in new code */
   --bd:   rgba(180, 100, 140, 0.13);
   --bds:  rgba(180, 100, 140, 0.25);
+  /* Semantic error tokens — promoted from the auth-page error boxes (DRIFT-REPORT §9 Q2) */
+  --err-bg: #FCEBEB;
+  --err-bd: #F09595;
+  --err-tx: #A32D2D;
 }
 
 body {
@@ -62,7 +71,7 @@ body {
   font-family: 'DM Serif Display', serif;
   font-size: 1.5rem;
   font-weight: 400;
-  color: #1c1c1e;
+  color: var(--tx);
   margin-bottom: 1.25rem;
   padding-bottom: 0.5rem;
   border-bottom: 1px solid #e8e0e4;
@@ -72,7 +81,7 @@ body {
 .person-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.25rem; }
 
 .person-card {
-  background: #fff;
+  background: var(--bgc);
   border-radius: 12px;
   padding: 1.25rem;
   display: flex;
@@ -102,13 +111,13 @@ body {
   font-family: 'DM Serif Display', serif;
   font-size: 1.1rem;
   font-weight: 400;
-  color: #1c1c1e;
+  color: var(--tx);
   margin: 0;
 }
 
 .person-card__role {
   font-size: 0.75rem;
-  color: #abadb0;
+  color: var(--gy);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin: 0;
@@ -130,35 +139,35 @@ body {
   font-size: 0.75rem;
   padding: 3px 10px;
   border-radius: 99px;
-  border: 1px solid #f068a4;
-  color: #f068a4;
+  border: 1px solid var(--pk);
+  color: var(--pk);
   text-decoration: none;
   transition: background 0.15s, color 0.15s;
 }
 
-.person-card__link:hover { background: #f068a4; color: #fff; }
+.person-card__link:hover { background: var(--pk); color: #fff; }
 
 /* Alumni toggle */
 .alumni-toggle {
   background: none;
-  border: 1px solid #abadb0;
+  border: 1px solid var(--gy);
   border-radius: 8px;
   padding: 6px 16px;
   font-size: 0.875rem;
   cursor: pointer;
-  color: #1c1c1e;
+  color: var(--tx);
   margin-bottom: 1rem;
   font-family: 'DM Sans', system-ui, sans-serif;
   transition: border-color 0.15s, color 0.15s;
 }
-.alumni-toggle:hover { border-color: #f068a4; color: #f068a4; }
+.alumni-toggle:hover { border-color: var(--pk); color: var(--pk); }
 
 /* Contact page */
 .contact-address {
   font-style: normal;
   font-size: 0.875rem;
   line-height: 2;
-  color: #6b6c70;
+  color: var(--tx2);
   font-family: 'DM Sans', system-ui, sans-serif;
   border-left: 3px solid #f0b8d4;
   padding-left: 1.25rem;
@@ -168,7 +177,7 @@ body {
 
 .contact-block {
   padding: 1.5rem 2rem;
-  background: #fff;
+  background: var(--bgc);
   border-radius: 12px;
   border: 1px solid rgba(180,100,140,0.18);
   display: flex;
@@ -180,7 +189,7 @@ body {
   font-family: 'DM Serif Display', serif;
   font-size: 1.15rem;
   font-weight: 400;
-  color: #1c1c1e;
+  color: var(--tx);
   margin: 0;
 }
 
@@ -192,7 +201,7 @@ body {
   font-family: 'Space Mono', monospace;
   font-size: 0.75rem;
   letter-spacing: 0.06em;
-  color: #f068a4;
+  color: var(--pk);
   text-decoration: none;
   text-transform: uppercase;
   transition: opacity 0.15s;

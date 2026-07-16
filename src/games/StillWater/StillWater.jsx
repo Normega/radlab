@@ -89,7 +89,7 @@ function IntroScreen({ onStart }) {
           <div key={n} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
             <div style={{ background: bg, borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontFamily: 'Space Mono,monospace', fontSize: 12, color: c, fontWeight: 700 }}>{n}</div>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 500, color: '#1c1c1e', marginBottom: 2 }}>{title}</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#1c1c1e', marginBottom: 2 }}>{title}</div>
               <div style={{ fontSize: 12, color: '#888', lineHeight: 1.5 }}>{body}</div>
             </div>
           </div>
@@ -380,6 +380,6 @@ const S = {
   faceCard: { background: 'white', borderRadius: 18, padding: '12px 10px 10px', boxShadow: '0 2px 18px rgba(180,120,160,0.10)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 },
   statsCard:{ background: 'white', borderRadius: 13, padding: '10px 12px', boxShadow: '0 2px 18px rgba(180,120,160,0.10)', fontFamily: 'Space Mono,monospace', fontSize: 12, lineHeight: 2, color: '#abadb0' },
   statKey:  { color: '#d0b8c8' },
-  btnPrimary: { background: '#f068a4', color: 'white', border: 'none', borderRadius: 12, padding: 14, fontFamily: 'DM Sans,sans-serif', fontSize: 15, fontWeight: 500, cursor: 'pointer', display: 'block', width: '100%' },
-  btnOutline: { background: 'white', color: '#f068a4', border: '1.5px solid #f068a4', borderRadius: 12, padding: 11, fontFamily: 'DM Sans,sans-serif', fontSize: 13, fontWeight: 500, cursor: 'pointer' },
+  btnPrimary: { background: '#f068a4', color: 'white', border: 'none', borderRadius: 12, padding: 14, fontFamily: 'DM Sans,sans-serif', fontSize: 15, fontWeight: 600, cursor: 'pointer', display: 'block', width: '100%' },
+  btnOutline: { background: 'white', color: '#f068a4', border: '1.5px solid #f068a4', borderRadius: 12, padding: 11, fontFamily: 'DM Sans,sans-serif', fontSize: 13, fontWeight: 600, cursor: 'pointer' },
 }

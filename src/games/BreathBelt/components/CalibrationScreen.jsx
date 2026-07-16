@@ -176,7 +176,7 @@ function CalibReady({ onStart }) {
       </div>
       <button
         onClick={onStart}
-        className="px-6 py-3 rounded-xl font-medium"
+        className="px-6 py-3 rounded-xl font-semibold"
         style={{ background: 'var(--pk)', color: '#fff', fontSize: 'var(--fs-body)' }}
       >
         Begin calibration
@@ -197,7 +197,7 @@ function CalibFailed({ onRedo }) {
       </p>
       <button
         onClick={onRedo}
-        className="px-5 py-3 rounded-xl font-medium"
+        className="px-5 py-3 rounded-xl font-semibold"
         style={{ background: 'var(--pk)', color: '#fff', fontSize: 'var(--fs-body)' }}
       >
         Retry calibration

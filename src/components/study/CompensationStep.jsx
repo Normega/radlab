@@ -68,7 +68,7 @@ export default function CompensationStep({ enrollment, onComplete, supabaseClien
           <label style={{
             ...S.optionCard,
             borderColor: compensationType === 'pay' ? 'var(--pk)' : 'var(--bd)',
-            background:  compensationType === 'pay' ? '#fdf2f8' : '#fff',
+            background:  compensationType === 'pay' ? 'var(--bg)' : '#fff',
           }}>
             <input
               type="radio"
@@ -87,7 +87,7 @@ export default function CompensationStep({ enrollment, onComplete, supabaseClien
           <label style={{
             ...S.optionCard,
             borderColor: compensationType === 'credit' ? 'var(--pk)' : 'var(--bd)',
-            background:  compensationType === 'credit' ? '#fdf2f8' : '#fff',
+            background:  compensationType === 'credit' ? 'var(--bg)' : '#fff',
           }}>
             <input
               type="radio"
@@ -157,12 +157,12 @@ const S = {
   subtext:    { fontSize: 15, color: 'var(--tx2)', margin: '0 0 28px', fontFamily: '"DM Sans",system-ui,sans-serif' },
   options:    { display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 },
   optionCard: { display: 'flex', gap: 12, alignItems: 'flex-start', border: '1.5px solid', borderRadius: 10, padding: '14px 16px', cursor: 'pointer', transition: 'border-color 0.15s, background 0.15s' },
-  optionLabel:{ fontSize: 15, fontWeight: 500, color: 'var(--tx)', fontFamily: '"DM Sans",system-ui,sans-serif', marginBottom: 2 },
+  optionLabel:{ fontSize: 15, fontWeight: 600, color: 'var(--tx)', fontFamily: '"DM Sans",system-ui,sans-serif', marginBottom: 2 },
   optionDesc: { fontSize: 13, color: 'var(--tx2)', fontFamily: '"DM Sans",system-ui,sans-serif' },
   fieldWrap:  { display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 20 },
   fieldLabel: { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' },
   input:      { fontSize: 15, fontFamily: '"DM Sans",system-ui,sans-serif', border: '1px solid var(--bd)', borderRadius: 8, padding: '10px 14px', color: 'var(--tx)', background: '#fff', width: '100%', boxSizing: 'border-box' },
   infoNote:   { fontSize: 13, color: 'var(--tx2)', fontFamily: '"DM Sans",system-ui,sans-serif', margin: '6px 0 0', lineHeight: 1.55 },
-  errMsg:     { fontSize: 13, color: '#e04', background: '#fff0f0', border: '1px solid #fcc', borderRadius: 8, padding: '8px 14px', marginBottom: 12 },
-  btn:        { display: 'block', width: '100%', background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 9, padding: '12px 20px', fontSize: 15, fontWeight: 500, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', marginTop: 4 },
+  errMsg:     { fontSize: 13, color: '#e04', background: 'var(--err-bg)', border: '1px solid #fcc', borderRadius: 8, padding: '8px 14px', marginBottom: 12 },
+  btn:        { display: 'block', width: '100%', background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 9, padding: '12px 20px', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', marginTop: 4 },
 }

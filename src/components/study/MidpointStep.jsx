@@ -68,7 +68,7 @@ const CONTROL_TEXT =
   'Each practice trains a different skill: noticing without reacting, reframing, and self-kindness. ' +
   'In Phase 2 you will settle into one practice and go deeper with it, day by day.'
 
-const RANK_BADGE_COLORS = ['#639922', '#2980b9', '#888780']
+const RANK_BADGE_COLORS = ['var(--pk)', 'var(--pkd)', 'var(--tx2)']
 
 // Locally generated snapshot for demoMode — plausible random stats, ranked by
 // mean Δstress (metric v2), never touching the network.
@@ -207,7 +207,7 @@ export default function MidpointStep({ enrollment, onComplete, supabaseClient, i
   // ── simple full-page states ────────────────────────────────────────────────
 
   if (screen === 'loading') return <div style={M.msg}>Preparing your midpoint…</div>
-  if (screen === 'error')   return <div style={{ ...M.msg, color: '#c0392b' }}>Midpoint step failed: {error}</div>
+  if (screen === 'error')   return <div style={{ ...M.msg, color: 'var(--err-tx)' }}>Midpoint step failed: {error}</div>
   if (screen === 'sim') {
     return (
       <div style={M.msg}>
@@ -506,111 +506,111 @@ const M = {
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     minHeight: 300, padding: 40, textAlign: 'center',
     fontFamily: '"DM Sans",system-ui,sans-serif',
-    fontSize: 15, color: '#888780',
+    fontSize: 15, color: 'var(--tx2)',
   },
   card: {
     display: 'flex', alignItems: 'center', gap: 14,
-    background: '#faf9f7', border: '1px solid #e0ddd8', borderRadius: 12,
+    background: 'var(--bg)', border: '1px solid var(--bds)', borderRadius: 12,
     padding: '14px 16px', marginBottom: 12, position: 'relative',
   },
-  cardTop: { background: '#f4f9ee', border: '1px solid #3b6d11' },
+  cardTop: { background: 'var(--bgp)', border: '1px solid var(--pkd)' },
   pickCard: {
     display: 'flex', alignItems: 'center', gap: 14, width: '100%',
-    background: '#faf9f7', border: '1px solid #e0ddd8', borderRadius: 12,
+    background: 'var(--bg)', border: '1px solid var(--bds)', borderRadius: 12,
     padding: '14px 16px', marginBottom: 12, cursor: 'pointer',
     fontFamily: 'inherit',
   },
-  pickCardSelected: { background: '#f4f9ee', border: '1px solid #3b6d11' },
+  pickCardSelected: { background: 'var(--bgp)', border: '1px solid var(--pkd)' },
   cardOwl:   { width: 52, height: 52, objectFit: 'contain', flexShrink: 0 },
-  cardTitle: { margin: 0, fontSize: 16, fontWeight: 600, color: '#1a1a18', fontFamily: 'system-ui,sans-serif' },
-  cardMeta:  { margin: '3px 0 0', fontSize: 13.5, color: '#5f5e5a', fontFamily: 'system-ui,sans-serif', lineHeight: 1.45 },
-  cardSub:   { margin: '4px 0 0', fontSize: 12, color: '#888780', fontFamily: 'system-ui,sans-serif' },
+  cardTitle: { margin: 0, fontSize: 16, fontWeight: 600, color: 'var(--tx)', fontFamily: '"DM Sans", system-ui, sans-serif' },
+  cardMeta:  { margin: '3px 0 0', fontSize: 13.5, color: 'var(--tx2)', fontFamily: '"DM Sans", system-ui, sans-serif', lineHeight: 1.45 },
+  cardSub:   { margin: '4px 0 0', fontSize: 12, color: 'var(--tx2)', fontFamily: '"DM Sans", system-ui, sans-serif' },
   feedbackBadge: {
     position: 'absolute', top: -9, left: 12,
-    background: '#e0ddd8', color: '#5f5e5a', borderRadius: 8,
-    fontSize: 11, fontWeight: 700, padding: '2px 8px',
-    fontFamily: 'system-ui,sans-serif',
+    background: 'var(--bds)', color: 'var(--tx2)', borderRadius: 8,
+    fontSize: 11, fontWeight: 600, padding: '2px 8px',
+    fontFamily: '"DM Sans", system-ui, sans-serif',
   },
-  feedbackBadgeTop: { background: '#3b6d11', color: '#fff' },
+  feedbackBadgeTop: { background: 'var(--pkd)', color: '#fff' },
   topTag: {
-    marginLeft: 8, fontSize: 11, fontWeight: 600, color: '#3b6d11',
-    background: '#e7f2da', borderRadius: 6, padding: '2px 7px',
+    marginLeft: 8, fontSize: 11, fontWeight: 600, color: 'var(--pkd)',
+    background: 'var(--bgp)', borderRadius: 6, padding: '2px 7px',
     verticalAlign: 'middle',
   },
   radio: {
     width: 20, height: 20, borderRadius: '50%',
-    border: '2px solid #c0bdb8', flexShrink: 0,
+    border: '2px solid var(--gy)', flexShrink: 0,
   },
-  radioOn: { border: '6px solid #3b6d11' },
+  radioOn: { border: '6px solid var(--pkd)' },
 
   // ── rank list (Liliana's preference-ranking preview) ──
   rankItem: {
     display: 'flex', alignItems: 'center', gap: 14,
-    background: '#fff', border: '1.5px solid #e0ddd8', borderRadius: 12,
+    background: '#fff', border: '1.5px solid var(--bds)', borderRadius: 12,
     padding: '14px 16px', marginBottom: 10, cursor: 'grab', userSelect: 'none',
     transition: 'box-shadow 0.15s, border-color 0.15s',
   },
-  rankItemOver: { borderColor: '#639922', background: '#f5fbf0', boxShadow: '0 4px 16px rgba(99,153,34,0.15)' },
+  rankItemOver: { borderColor: 'var(--pk)', background: 'var(--bgp)', boxShadow: '0 4px 16px rgba(240,104,164,0.15)' },
   rankCircle: {
     width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    fontSize: 16, fontWeight: 800, color: '#fff',
-    fontFamily: 'system-ui,sans-serif', transition: 'background 0.2s',
+    fontSize: 16, fontWeight: 600, color: '#fff',
+    fontFamily: '"DM Sans", system-ui, sans-serif', transition: 'background 0.2s',
   },
   arrowWrap: { display: 'flex', flexDirection: 'column', gap: 4, flexShrink: 0 },
   arrowBtn: {
-    width: 28, height: 28, border: '1px solid #e0ddd8', borderRadius: 6,
-    background: '#f5f4f0', cursor: 'pointer', display: 'flex',
-    alignItems: 'center', justifyContent: 'center', fontSize: 11, color: '#2c2c2a',
+    width: 28, height: 28, border: '1px solid var(--bds)', borderRadius: 6,
+    background: 'var(--bgp)', cursor: 'pointer', display: 'flex',
+    alignItems: 'center', justifyContent: 'center', fontSize: 11, color: 'var(--tx)',
   },
   arrowBtnOff: { opacity: 0.25, cursor: 'default' },
   dragHandle: { display: 'flex', flexDirection: 'column', gap: 4, flexShrink: 0, padding: '4px 2px', opacity: 0.35 },
-  dragBar: { display: 'block', width: 18, height: 2, background: '#2c2c2a', borderRadius: 1 },
+  dragBar: { display: 'block', width: 18, height: 2, background: 'var(--tx)', borderRadius: 1 },
   resultBox: {
-    background: '#faf9f7', border: '1px solid #e0ddd8', borderRadius: 10,
+    background: 'var(--bg)', border: '1px solid var(--bds)', borderRadius: 10,
     padding: '14px 16px',
   },
   resultTitle: {
-    fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em',
-    color: '#5f5e5a', marginBottom: 10, fontFamily: 'system-ui,sans-serif',
+    fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em',
+    color: 'var(--tx2)', marginBottom: 10, fontFamily: '"DM Sans", system-ui, sans-serif',
   },
   resultRow: {
     display: 'flex', alignItems: 'center', gap: 10, fontSize: 13,
-    color: '#2c2c2a', marginBottom: 6, fontFamily: 'system-ui,sans-serif',
+    color: 'var(--tx)', marginBottom: 6, fontFamily: '"DM Sans", system-ui, sans-serif',
   },
-  resultNum: { fontWeight: 700, color: '#639922', minWidth: 24 },
+  resultNum: { fontWeight: 600, color: 'var(--pk)', minWidth: 24 },
 
   // ── assignment screen (Liliana's assignment previews) ──
   hero: {
-    background: '#faf9f7', border: '1px solid #e0ddd8', borderRadius: 14,
+    background: 'var(--bg)', border: '1px solid var(--bds)', borderRadius: 14,
     padding: '24px 20px 20px', textAlign: 'center', marginBottom: 16,
   },
   heroOwl:     { width: 96, height: 96, objectFit: 'contain', marginBottom: 8 },
   heroEyebrow: {
-    fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em',
-    color: '#639922', fontFamily: 'system-ui,sans-serif',
+    fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em',
+    color: 'var(--pk)', fontFamily: '"DM Sans", system-ui, sans-serif',
   },
-  heroSub:   { fontSize: 13, color: '#888780', marginTop: 2, fontFamily: 'system-ui,sans-serif' },
-  heroTitle: { fontSize: 24, fontWeight: 800, color: '#1a1a18', marginTop: 6, fontFamily: 'system-ui,sans-serif' },
-  heroDesc:  { fontSize: 13.5, color: '#5f5e5a', marginTop: 6, lineHeight: 1.5, fontFamily: 'system-ui,sans-serif' },
+  heroSub:   { fontSize: 13, color: 'var(--tx2)', marginTop: 2, fontFamily: '"DM Sans", system-ui, sans-serif' },
+  heroTitle: { fontSize: 24, fontWeight: 600, color: 'var(--tx)', marginTop: 6, fontFamily: '"DM Sans", system-ui, sans-serif' },
+  heroDesc:  { fontSize: 13.5, color: 'var(--tx2)', marginTop: 6, lineHeight: 1.5, fontFamily: '"DM Sans", system-ui, sans-serif' },
   messageBox: {
-    background: '#f5fbf0', border: '1px solid #cde3b3', borderRadius: 12,
+    background: 'var(--bgp)', border: '1px solid var(--pkb)', borderRadius: 12,
     padding: '16px 18px', marginBottom: 16,
   },
   messageTitle: {
-    fontSize: 15, fontWeight: 700, color: '#3b6d11', marginBottom: 8,
-    fontFamily: 'system-ui,sans-serif',
+    fontSize: 15, fontWeight: 600, color: 'var(--pkd)', marginBottom: 8,
+    fontFamily: '"DM Sans", system-ui, sans-serif',
   },
   messageText: {
-    fontSize: 14, lineHeight: 1.65, color: '#2c2c2a', margin: 0,
-    fontFamily: 'system-ui,sans-serif',
+    fontSize: 14, lineHeight: 1.65, color: 'var(--tx)', margin: 0,
+    fontFamily: '"DM Sans", system-ui, sans-serif',
   },
   expectBox: {
-    background: '#faf9f7', border: '1px solid #e0ddd8', borderRadius: 12,
+    background: 'var(--bg)', border: '1px solid var(--bds)', borderRadius: 12,
     padding: '16px 18px',
   },
   expectTitle: {
-    fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em',
-    color: '#5f5e5a', marginBottom: 8, fontFamily: 'system-ui,sans-serif',
+    fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em',
+    color: 'var(--tx2)', marginBottom: 8, fontFamily: '"DM Sans", system-ui, sans-serif',
   },
 }

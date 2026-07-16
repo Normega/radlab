@@ -177,7 +177,7 @@ const S = {
     width: '100%',
     background: 'var(--pk)', color: '#fff',
     border: 'none', borderRadius: 10,
-    padding: '13px', fontSize: 15, fontWeight: 500,
+    padding: '13px', fontSize: 15, fontWeight: 600,
     fontFamily: '"DM Sans",system-ui,sans-serif',
     transition: 'opacity 0.2s',
   },

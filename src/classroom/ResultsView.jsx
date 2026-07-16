@@ -306,7 +306,7 @@ const S = {
   }),
   voteCountReadonly: { fontFamily: MONO, fontSize: 12, color: 'var(--tx3)', whiteSpace: 'nowrap' },
   quizResultBlock: { textAlign: 'left', marginBottom: 16 },
-  quizResultText: { fontSize: 13, color: 'var(--tx)', fontWeight: 500, marginBottom: 8 },
+  quizResultText: { fontSize: 13, color: 'var(--tx)', fontWeight: 600, marginBottom: 8 },
   quizResultRow: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 },
   quizResultOption: (correct) => ({
     fontSize: 12, color: correct ? '#1a8a4a' : 'var(--tx2)', fontWeight: correct ? 700 : 400,

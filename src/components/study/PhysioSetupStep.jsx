@@ -339,7 +339,7 @@ function Btn({ onClick, disabled, secondary, children }) {
 
 function Err({ children }) {
   return (
-    <p style={{ color: '#c0392b', fontFamily: 'DM Sans', fontSize: 'var(--fs-body-sm)' }}>
+    <p style={{ color: 'var(--err-tx)', fontFamily: 'DM Sans', fontSize: 'var(--fs-body-sm)' }}>
       {children}
     </p>
   )

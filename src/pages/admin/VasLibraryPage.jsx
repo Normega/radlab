@@ -392,7 +392,7 @@ const S = {
   section:       { marginBottom: 40 },
   sectionHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
   sectionTitle:  { fontFamily: '"Space Mono",monospace', fontSize: 11, fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 },
-  newBtn:        { background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', textDecoration: 'none', display: 'inline-block' },
+  newBtn:        { background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', textDecoration: 'none', display: 'inline-block' },
   table:         { background: '#fff', border: '1px solid var(--bd)', borderRadius: 12, overflow: 'hidden' },
 
   row:      { padding: '14px 18px', borderBottom: '1px solid var(--bd)', display: 'flex', flexDirection: 'column', gap: 6 },

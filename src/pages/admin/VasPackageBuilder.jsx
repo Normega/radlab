@@ -329,7 +329,7 @@ function SliderPreview({ scale, partNumber, totalParts, onComplete }) {
       <p style={{ fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', marginBottom: 14 }}>
         {partNumber} of {totalParts}
       </p>
-      <p style={{ fontSize: 16, fontWeight: 500, color: 'var(--tx)', marginBottom: 16, lineHeight: 1.5 }}>
+      <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--tx)', marginBottom: 16, lineHeight: 1.5 }}>
         {scale.prompt}
       </p>
       <div style={{ background: '#faf9f7', border: '1px solid #e8e5e0', borderRadius: 12, padding: '20px 20px 14px', marginBottom: 20 }}>
@@ -346,7 +346,7 @@ function SliderPreview({ scale, partNumber, totalParts, onComplete }) {
                       fontSize: 13, color: touched ? 'var(--tx2)' : '#b0ada8' }}>
           <span>{scale.min_label}</span>
           {touched
-            ? <span style={{ fontSize: 24, fontWeight: 700, color: 'var(--pk)' }}>{value}</span>
+            ? <span style={{ fontSize: 24, fontWeight: 600, color: 'var(--pk)' }}>{value}</span>
             : <span style={{ fontSize: 24, color: '#c0bdb8' }}>—</span>}
           <span>{scale.max_label}</span>
         </div>
@@ -355,7 +355,7 @@ function SliderPreview({ scale, partNumber, totalParts, onComplete }) {
         onClick={() => touched && onComplete(value)}
         disabled={!touched}
         style={{ background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 10,
-                 padding: '11px 28px', fontSize: 14, fontWeight: 500, cursor: touched ? 'pointer' : 'not-allowed',
+                 padding: '11px 28px', fontSize: 14, fontWeight: 600, cursor: touched ? 'pointer' : 'not-allowed',
                  opacity: touched ? 1 : 0.4, fontFamily: '"DM Sans",system-ui,sans-serif' }}
       >
         Next →
@@ -404,7 +404,7 @@ const S = {
   orderBadge: { fontFamily: '"Space Mono",monospace', fontSize: 10, color: 'var(--tx3)', minWidth: 20, textAlign: 'center' },
   arrowBtn:   { background: 'none', border: '1px solid var(--bd)', borderRadius: 4, width: 22, height: 22, fontSize: 11, cursor: 'pointer', color: 'var(--tx2)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 },
 
-  saveBtn:   { background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 9, padding: '10px 22px', fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
+  saveBtn:   { background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 9, padding: '10px 22px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
   cancelBtn: { background: 'none', border: '1px solid var(--bd)', borderRadius: 9, padding: '10px 16px', fontSize: 14, cursor: 'pointer', color: 'var(--tx2)', fontFamily: '"DM Sans",system-ui,sans-serif' },
 
   previewSummary:   { display: 'flex', flexDirection: 'column', gap: 10 },

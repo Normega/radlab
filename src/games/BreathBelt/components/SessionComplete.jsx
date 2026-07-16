@@ -50,7 +50,7 @@ export default function SessionComplete({
         )}
 
         <button onClick={onDone}
-          className="px-6 py-3 rounded-xl font-medium w-full"
+          className="px-6 py-3 rounded-xl font-semibold w-full"
           style={{ background: 'var(--pk)', color: '#fff', fontSize: 'var(--fs-body)' }}>
           {studyMode ? 'Continue' : 'Back to dashboard'}
         </button>

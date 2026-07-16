@@ -81,7 +81,7 @@ const S = {
     border: 'none',
     padding: '2px 0',
     fontSize: 11,
-    color: 'var(--tx3, #a8a9ad)',
+    color: 'var(--tx3, #abadb0)',
     cursor: 'pointer',
     fontFamily: '"DM Sans", system-ui, sans-serif',
     textAlign: 'left',

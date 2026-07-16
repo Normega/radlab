@@ -5,7 +5,7 @@
   width: 100%;
   max-width: 540px;
   margin: 0 auto;
-  background: #FCF0F5;
+  background: var(--bg);
   border-radius: 14px;
   overflow: hidden;
   outline: none;
@@ -43,7 +43,7 @@
 
 .sap-error-msg {
   font-size: 0.875rem;
-  color: #c0392b;
+  color: var(--err-tx);
 }
 
 /* ── Focus-lost overlay ─────────────────────────────────────────────────── */
@@ -138,7 +138,7 @@
 }
 
 .sap-play-btn:hover:not(:disabled) {
-  background: #e0549a;
+  background: var(--pk);
 }
 
 .sap-play-btn:active:not(:disabled) {

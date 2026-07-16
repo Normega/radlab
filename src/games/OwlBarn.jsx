@@ -897,7 +897,7 @@ const BGC   = '#ffffff'
 const PK    = '#f068a4'
 const TX    = '#1c1c1e'
 const TX2   = '#6b6c70'
-const TX3   = '#a8a9ad'
+const TX3   = '#abadb0'
 const BD    = 'rgba(180,100,140,0.15)'
 const BGP   = '#FBEAF3'
 
@@ -940,7 +940,7 @@ const S = {
   btnSecondary: {
     flex: 1, padding: '12px 0', background: BGP,
     border: `1px solid ${BD}`, borderRadius: 12, color: PK,
-    fontSize: 14, fontWeight: 500, cursor: 'pointer',
+    fontSize: 14, fontWeight: 600, cursor: 'pointer',
     fontFamily: 'system-ui,sans-serif',
   },
   btnDark: {

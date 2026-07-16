@@ -316,7 +316,7 @@ export default function AptitudeSuite({
               borderRadius: '10px',
               fontFamily: "'DM Sans', sans-serif",
               fontSize: '16px',
-              fontWeight: '500',
+              fontWeight: '600',
               cursor: 'pointer',
             }}
           >

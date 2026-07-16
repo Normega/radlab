@@ -66,7 +66,7 @@ export default function Phase2ReviewScreen({ trialGraphs, onContinue }) {
 
       <button
         onClick={onContinue}
-        className="px-6 py-3 rounded-xl font-medium"
+        className="px-6 py-3 rounded-xl font-semibold"
         style={{ background: 'var(--pk)', color: '#fff', fontSize: 'var(--fs-body)' }}
       >
         Continue to staircase

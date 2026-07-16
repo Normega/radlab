@@ -224,12 +224,12 @@ const S = {
   runCue:   { fontSize: 'clamp(18px, 2.4vw, 26px)', color: 'var(--tx2)', margin: 0, background: 'rgba(255,255,255,0.55)', padding: '8px 20px', borderRadius: 999 },
   pollCount:{ fontFamily: '"Space Mono",monospace', fontSize: 13, letterSpacing: '0.1em', color: 'var(--tx3)', textTransform: 'uppercase', margin: 0 },
   optRow:   { display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center' },
-  opt:      { fontSize: 'clamp(18px, 2.6vw, 30px)', fontWeight: 500, color: 'var(--pk)', background: '#fff', border: '1.5px solid var(--pkb, #f6c6dd)', borderRadius: 14, padding: '12px 26px' },
+  opt:      { fontSize: 'clamp(18px, 2.6vw, 30px)', fontWeight: 600, color: 'var(--pk)', background: '#fff', border: '1.5px solid var(--pkb, #f6c6dd)', borderRadius: 14, padding: '12px 26px' },
   showHands:{ fontFamily: '"Space Mono",monospace', fontSize: 14, color: 'var(--tx3)', margin: 0, letterSpacing: '0.06em' },
   revealHint:{ fontSize: 'clamp(14px, 1.8vw, 18px)', color: 'var(--tx3)', margin: 0 },
   btn: {
     marginTop: 6, borderRadius: 14, padding: '14px 40px',
-    fontSize: 'clamp(16px, 2vw, 20px)', fontWeight: 500, cursor: 'pointer',
+    fontSize: 'clamp(16px, 2vw, 20px)', fontWeight: 600, cursor: 'pointer',
     fontFamily: '"DM Sans",system-ui,sans-serif',
   },
   resetCorner: {

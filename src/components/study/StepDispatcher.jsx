@@ -260,7 +260,7 @@ function DemoSkipCard({ category, subcategory, label, onComplete }) {
 
 const CARD = {
   wrap: { display: 'flex', justifyContent: 'center', padding: '60px 24px', fontFamily: '"DM Sans",system-ui,sans-serif' },
-  box:  { maxWidth: 440, width: '100%', textAlign: 'center', background: '#faf9f7', border: '1px dashed #c8c5c0', borderRadius: 14, padding: '32px 28px' },
+  box:  { maxWidth: 440, width: '100%', textAlign: 'center', background: 'var(--bg)', border: '1px dashed var(--gy)', borderRadius: 14, padding: '32px 28px' },
   chip: { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.05em' },
   title:{ fontSize: 18, fontWeight: 600, color: 'var(--tx)', margin: '10px 0 8px' },
   sub:  { fontSize: 13.5, color: 'var(--tx2)', lineHeight: 1.55, margin: '0 0 20px' },

@@ -172,7 +172,7 @@ const S = {
 
   section: { display: 'flex', flexDirection: 'column', gap: 12 },
   qLabel:  { fontSize: 16, fontWeight: 600, color: 'var(--tx)', lineHeight: 1.4 },
-  prompt:  { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.65, margin: 0, background: '#faf7fb', border: '1px solid var(--bd)', borderRadius: 10, padding: '14px 16px' },
+  prompt:  { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.65, margin: 0, background: 'var(--bg)', border: '1px solid var(--bd)', borderRadius: 10, padding: '14px 16px' },
 
   numberInput: {
     width: 120, padding: '10px 14px', boxSizing: 'border-box',
@@ -225,8 +225,8 @@ const S = {
     alignSelf: 'flex-start',
     background: 'var(--pk)', color: '#fff', border: 'none',
     borderRadius: 10, padding: '13px 32px',
-    fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 16, fontWeight: 500,
+    fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 16, fontWeight: 600,
     transition: 'opacity 0.15s',
   },
-  error: { fontSize: 14, color: '#dc2626', margin: 0 },
+  error: { fontSize: 14, color: 'var(--err-tx)', margin: 0 },
 }
