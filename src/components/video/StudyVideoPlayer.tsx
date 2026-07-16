@@ -98,7 +98,7 @@ export default function StudyVideoPlayer({
 
     if (!preview) {
       const sessionId = sessionIdRef.current
-      if (!sessionId) { setIsComplete(true); return }
+      if (!sessionId) return
 
       const vid = videoRef.current
       const duration = vid?.duration ?? 0
@@ -124,7 +124,6 @@ export default function StudyVideoPlayer({
       onComplete?.(sessionId)
     }
 
-    setIsComplete(true)
     if (preview) onComplete?.('')
   }, [onComplete, preview, db])
 
@@ -184,6 +183,7 @@ export default function StudyVideoPlayer({
 
   const handleEnded = useCallback(() => {
     setIsPlaying(false)
+    setIsComplete(true)
     if (!completedRef.current) triggerComplete()
   }, [triggerComplete])
 
@@ -219,7 +219,7 @@ export default function StudyVideoPlayer({
     setIsFocusLost(false)
 
     const vid = videoRef.current
-    if (vid && isPlayingBeforeFocusRef.current && !completedRef.current) {
+    if (vid && isPlayingBeforeFocusRef.current && !vid.ended) {
       vid.play().catch(() => {})
     }
 
