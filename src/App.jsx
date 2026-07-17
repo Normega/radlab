@@ -60,6 +60,7 @@ const BreathLab        = lazy(() => import('./games/shared/breath/BreathLab'))
 const VideoTest = lazy(() => import('./pages/dev/VideoTest'))
 const AudioTest = lazy(() => import('./pages/dev/AudioTest'))
 const UiKit     = lazy(() => import('./pages/dev/UiKit'))
+const OnboardingPreview = lazy(() => import('./pages/dev/OnboardingPreview'))
 const Keynote   = lazy(() => import('./pages/keynote/Keynote'))
 
 // Lecture Lounge — its own partition: separate chunk group from research
@@ -401,6 +402,8 @@ export default function App() {
           <Route path="/dev/audio-test" element={<AudioTest />} />
           {/* Phase 2 primitive gallery (Onboarding Redesign v1) */}
           <Route path="/dev/ui-kit" element={<UiKit />} />
+          {/* Phase 4 onboarding step previews (?step=welcome|data|demographics|ripple|finish) */}
+          <Route path="/dev/onboarding-preview" element={<OnboardingPreview />} />
           {/* Breath-signal instrumentation for biofeedback game dev; ?sim=1 for beltless */}
           <Route path="/dev/breath-lab" element={<BreathLab />} />
 
