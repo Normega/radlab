@@ -1,11 +1,15 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Nav from '../components/Nav'
+import CredentialsBox from '../components/ui/CredentialsBox'
+import FillableBox from '../components/ui/FillableBox'
+import PrimaryCTA from '../components/ui/PrimaryCTA'
 
 // Reached via the link in the "reset password" email. Supabase's client parses
 // the recovery token out of the URL on load and fires a PASSWORD_RECOVERY auth
 // event once the session is established — we wait for that before showing the form.
+// Restyled onto the Phase 3 CredentialsBox pattern. No exit icon mid-recovery —
+// history-back would leave the temporary recovery session in a confusing state.
 export default function ResetPassword() {
   const [ready,    setReady]    = useState(false)
   const [invalid,  setInvalid]  = useState(false)
@@ -30,6 +34,8 @@ export default function ResetPassword() {
     return () => { subscription.unsubscribe(); clearTimeout(timer) }
   }, [])
 
+  const valid = password.length >= 8 && confirm.length >= 8
+
   async function handleSubmit(e) {
     e.preventDefault()
     setError(null)
@@ -49,16 +55,12 @@ export default function ResetPassword() {
     return (
       <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
         <Nav session={null} />
-        <div style={S.wrap}>
-          <div style={S.card}>
-            <img src="/RADlab_Logo_light.svg" height="48" alt="RADlab" style={{ display: 'block', margin: '0 auto 20px' }} />
-            <h1 style={S.title}>Password updated</h1>
-            <p style={{ ...S.sub, maxWidth: 320, margin: '0 auto 24px' }}>
-              Your password has been changed. Sign in with your new password.
-            </p>
-            <Link to="/login" style={S.btnPrimary}>Go to login</Link>
-          </div>
-        </div>
+        <CredentialsBox title="Password updated" exit={false}>
+          <p style={S.body}>
+            Your password has been changed. Log in with your new password.
+          </p>
+          <PrimaryCTA to="/login">Go to login</PrimaryCTA>
+        </CredentialsBox>
       </div>
     )
   }
@@ -67,16 +69,12 @@ export default function ResetPassword() {
     return (
       <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
         <Nav session={null} />
-        <div style={S.wrap}>
-          <div style={S.card}>
-            <img src="/RADlab_Logo_light.svg" height="48" alt="RADlab" style={{ display: 'block', margin: '0 auto 20px' }} />
-            <h1 style={S.title}>Link expired</h1>
-            <p style={{ ...S.sub, maxWidth: 320, margin: '0 auto 24px' }}>
-              This reset link is invalid or has expired. Request a new one to continue.
-            </p>
-            <Link to="/forgot-password" style={S.btnPrimary}>Request new link</Link>
-          </div>
-        </div>
+        <CredentialsBox title="Link expired" exit={false}>
+          <p style={S.body}>
+            This reset link is invalid or has expired. Request a new one to continue.
+          </p>
+          <PrimaryCTA to="/forgot-password">Request new link</PrimaryCTA>
+        </CredentialsBox>
       </div>
     )
   }
@@ -85,12 +83,9 @@ export default function ResetPassword() {
     return (
       <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
         <Nav session={null} />
-        <div style={S.wrap}>
-          <div style={S.card}>
-            <img src="/RADlab_Logo_light.svg" height="48" alt="RADlab" style={{ display: 'block', margin: '0 auto 20px' }} />
-            <p style={{ ...S.sub, textAlign: 'center' }}>Verifying your reset link…</p>
-          </div>
-        </div>
+        <CredentialsBox exit={false}>
+          <p style={S.body}>Verifying your reset link…</p>
+        </CredentialsBox>
       </div>
     )
   }
@@ -98,50 +93,42 @@ export default function ResetPassword() {
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
       <Nav session={null} />
-      <div style={S.wrap}>
-        <div style={S.card}>
-          <img src="/RADlab_Logo_light.svg" height="48" alt="RADlab" style={{ display: 'block', margin: '0 auto 20px' }} />
-          <h1 style={S.title}>Set a new password</h1>
-          <p style={S.sub}>Choose something you'll remember</p>
+      <CredentialsBox title="Set a new password" tagline="Choose something you'll remember" exit={false}>
+        {error && <div style={S.errorBox}>{error}</div>}
 
-          {error && <div style={S.errorBox}>{error}</div>}
-
-          <form onSubmit={handleSubmit} style={S.form}>
-            <div style={S.field}>
-              <label style={S.label}>New password</label>
-              <input
-                type="password" required minLength={8} autoComplete="new-password"
-                value={password} onChange={e => setPassword(e.target.value)}
-                style={S.input} placeholder="8+ characters"
-              />
-            </div>
-            <div style={S.field}>
-              <label style={S.label}>Confirm password</label>
-              <input
-                type="password" required minLength={8} autoComplete="new-password"
-                value={confirm} onChange={e => setConfirm(e.target.value)}
-                style={S.input} placeholder="8+ characters"
-              />
-            </div>
-            <button type="submit" style={S.btnPrimary} disabled={loading}>
+        <form onSubmit={handleSubmit} style={S.form}>
+          <FillableBox
+            label="New password"
+            placeholder="8+ characters"
+            type="password" required minLength={8} autoComplete="new-password"
+            value={password} onChange={e => setPassword(e.target.value)}
+          />
+          <FillableBox
+            label="Confirm password"
+            placeholder="8+ characters"
+            type="password" required minLength={8} autoComplete="new-password"
+            value={confirm} onChange={e => setConfirm(e.target.value)}
+          />
+          <div style={S.ctaRow}>
+            <PrimaryCTA type="submit" disabled={!valid || loading}>
               {loading ? 'Saving…' : 'Set new password'}
-            </button>
-          </form>
-        </div>
-      </div>
+            </PrimaryCTA>
+          </div>
+        </form>
+      </CredentialsBox>
     </div>
   )
 }
 
 const S = {
-  wrap:  { display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 20px' },
-  card:  { background: 'var(--bgc)', border: '1px solid var(--bds)', borderRadius: 20, padding: '40px 36px', width: '100%', maxWidth: 420 },
-  title: { fontFamily: '"DM Serif Display", Georgia, serif', fontSize: 30, color: 'var(--tx)', textAlign: 'center', marginBottom: 6 },
-  sub:   { fontSize: 14, color: 'var(--tx2)', textAlign: 'center', marginBottom: 28 },
-  form:  { display: 'flex', flexDirection: 'column', gap: 16 },
-  field: { display: 'flex', flexDirection: 'column', gap: 6 },
-  label: { fontFamily: '"Space Mono", monospace', fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--tx3)' },
-  input: { padding: '10px 14px', borderRadius: 9, border: '1px solid var(--bds)', background: 'var(--bgp)', fontSize: 15, color: 'var(--tx)', outline: 'none', fontFamily: 'inherit' },
-  btnPrimary: { display: 'block', width: '100%', padding: '12px 0', background: 'var(--pk)', border: 'none', borderRadius: 12, color: '#fff', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', marginTop: 4, textDecoration: 'none', textAlign: 'center' },
-  errorBox: { background: 'var(--err-bg)', border: '1px solid var(--err-bd)', borderRadius: 9, padding: '10px 14px', fontSize: 13, color: 'var(--err-tx)', marginBottom: 16 },
+  form: { display: 'flex', flexDirection: 'column', gap: 16, width: '100%', paddingTop: 8 },
+  ctaRow: { display: 'flex', justifyContent: 'center', paddingTop: 8 },
+  body: {
+    fontFamily: '"DM Sans", system-ui, sans-serif', fontSize: 12, lineHeight: 1.5,
+    color: 'var(--tx2)', textAlign: 'center', margin: '0 0 16px', maxWidth: 250,
+  },
+  errorBox: {
+    background: 'var(--err-bg)', border: '1px solid var(--err-bd)', borderRadius: 12,
+    padding: '10px 14px', fontSize: 13, color: 'var(--err-tx)', width: '100%', boxSizing: 'border-box',
+  },
 }
