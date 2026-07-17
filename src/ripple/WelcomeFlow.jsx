@@ -360,7 +360,8 @@ export default function WelcomeFlow({ session, onComplete, devInitialStep }) {
 
             <div style={S.field}>
               <label style={S.fieldLabel}>{SES_PROMPT}</label>
-              {/* 1–10 scale: bg fill for contrast (Dev Spec §4.3); wraps on
+              {/* 1–10 scale: white (--bgc) fill so buttons stand out against the
+                  --bg page (fields-invisible report, 2026-07-17); wraps on
                   narrow screens per the 2026-07-17 designer call. */}
               <div style={S.ladderRow}>
                 {Array.from({ length: 10 }, (_, i) => i + 1).map(n => (
@@ -369,8 +370,8 @@ export default function WelcomeFlow({ session, onComplete, devInitialStep }) {
                     disabled={demographicsDone}
                     style={{
                       ...S.ladderBtn,
-                      background:  sesLadder === n ? 'var(--pk)' : 'var(--bg)',
-                      borderColor: sesLadder === n ? 'var(--pk)' : 'var(--bgp)',
+                      background:  sesLadder === n ? 'var(--pk)' : 'var(--bgc)',
+                      borderColor: sesLadder === n ? 'var(--pk)' : 'var(--bds)',
                       color:       sesLadder === n ? '#fff'      : 'var(--tx)',
                     }}
                     onClick={() => setSesLadder(n)}

@@ -1,7 +1,9 @@
 /**
  * FillableBox — Onboarding Redesign v1 primitive (Figma node 152:250).
  * Labelled text input with background fill for contrast (Dev Spec §4.3).
- * Structure: SPACE MONO label / filled input (base bg, tint border, 12px radius) / description.
+ * Structure: SPACE MONO label / filled input (card white, tint border, 12px radius) / description.
+ * Fill is --bgc (white), not --bg: every consumer renders this directly on the
+ * --bg page, so a --bg fill made fields invisible (reported 2026-07-17).
  *
  * Deviations from Figma, per repo guardrails (index.css --fs rules):
  *   - input text 16px, not 12px (iOS auto-zoom floor; --fs-body)
@@ -28,7 +30,7 @@ const S = {
   },
   input: {
     minHeight: 40, padding: '0 8px', boxSizing: 'border-box', width: '100%',
-    background: 'var(--bg)', border: '1px solid var(--bgp)', borderRadius: 12,
+    background: 'var(--bgc)', border: '1px solid var(--bds)', borderRadius: 12,
     fontFamily: '"DM Sans", system-ui, sans-serif', fontWeight: 400,
     fontSize: 'var(--fs-body)', lineHeight: 1.5, color: 'var(--tx)',
     outline: 'none',
