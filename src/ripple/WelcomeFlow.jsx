@@ -4,21 +4,32 @@ import { supabase } from '../lib/supabase'
 import { CONSENT_VERSION, TOS_VERSION, CONSENT_DOC, TOS_DOC } from './consentDocs'
 import { SKIN_COLORS, EYE_COLORS } from '../components/Avatar/BaseAvatar'
 import RippleAvatar from './RippleAvatar'
-import CheckinFlow from './CheckinFlow'
+import Nav from '../components/Nav'
+import EyebrowLabel from '../components/ui/EyebrowLabel'
+import FillableBox from '../components/ui/FillableBox'
+import Checkbox from '../components/ui/Checkbox'
+import OnboardingNavigation from '../components/ui/OnboardingNavigation'
+import PrimaryCTA from '../components/ui/PrimaryCTA'
+import SecondaryCTA from '../components/ui/SecondaryCTA'
 
 // ── WelcomeFlow ───────────────────────────────────────────────────────────────
-// Route: /welcome — public-tier onboarding (Ripple WP1+WP2+WP3, spec §4.1).
-// Steps: intro → consent + ToS → demographics → customize appearance → name Ripple → check-in.
-// Each step is skipped when already satisfied, so the flow is safe to re-enter.
+// Route: /welcome — public-tier onboarding, rebuilt for Onboarding Redesign v1
+// (Dev Spec §3.3; Figma 170:990 → 187:1927 → 187:2428 → 187:2743 → 187:2837).
+// Structure: Welcome → 1/3 Data → 2/3 Demographics → 3/3 Ripple (customize +
+// name COMBINED) → Finish. Check-in is no longer part of the mandatory flow —
+// Finish offers it ("Check-in with [Name] →" → /checkin) beside Go to Dashboard.
+// Every step is skipped when already satisfied, so the flow is safe to re-enter,
+// and Previous across a saved step never double-writes (see submit guards).
+// All DB writes are unchanged from WP1-3: versioned consents upsert,
+// demographics insert, avatars/ripples upserts, profiles.onboarding_complete.
 
 const STEPS = {
   LOADING:      'loading',
-  INTRO:        'intro',
-  CONSENT:      'consent',
+  WELCOME:      'welcome',
+  DATA:         'data',
   DEMOGRAPHICS: 'demographics',
-  CUSTOMIZE:    'customize',
-  NAME:         'name',
-  CHECKIN:      'checkin',
+  RIPPLE:       'ripple',
+  FINISH:       'finish',
 }
 
 const RIPPLE_NAMES = [
@@ -34,7 +45,9 @@ function pickRandom(current) {
 
 const SES_PROMPT = 'Imagine a ladder that represents where people stand in society. At the top are people who are the best off — those with the most money, most education, and the best jobs. At the bottom are people who are the worst off. Where would you place yourself on this ladder?'
 
-export default function WelcomeFlow({ session, onComplete }) {
+// devInitialStep: DEV-only escape hatch for /dev/onboarding-preview — forces the
+// flow to open on a given step so each screen can be eyeballed without a session.
+export default function WelcomeFlow({ session, onComplete, devInitialStep }) {
   const navigate = useNavigate()
 
   const [step,  setStep]  = useState(STEPS.LOADING)
@@ -44,10 +57,9 @@ export default function WelcomeFlow({ session, onComplete }) {
   // Which steps are already satisfied
   const [consentDone,      setConsentDone]      = useState(false)
   const [demographicsDone, setDemographicsDone] = useState(false)
-  const [avatarDone,       setAvatarDone]       = useState(false)
-  const [rippleNameDone,   setRippleNameDone]   = useState(false)
+  const [rippleDone,       setRippleDone]       = useState(false) // avatar + name
 
-  // Consent step state
+  // Data step state
   const [agreedConsent, setAgreedConsent] = useState(false)
   const [agreedTos,     setAgreedTos]     = useState(false)
 
@@ -57,11 +69,9 @@ export default function WelcomeFlow({ session, onComplete }) {
   const [racialized, setRacialized] = useState(null)
   const [sesLadder,  setSesLadder]  = useState(null)
 
-  // Customize step state (pre-populated if avatar row already exists)
-  const [skin, setSkin] = useState(SKIN_COLORS[1])  // Peach default
-  const [eye,  setEye]  = useState(EYE_COLORS[3])   // Sky Blue default
-
-  // Name step state
+  // Ripple step state (customize + name, one step per Dev Spec §4.3)
+  const [skin,       setSkin]       = useState(SKIN_COLORS[1])  // Peach default
+  const [eye,        setEye]        = useState(EYE_COLORS[3])   // Sky Blue default
   const [rippleName, setRippleName] = useState(() => pickRandom(''))
 
   async function load() {
@@ -93,18 +103,19 @@ export default function WelcomeFlow({ session, onComplete }) {
     const hasConsent = (consentRows ?? []).some(r => r.doc_type === 'consent' && r.version === CONSENT_VERSION)
     const hasTos     = (consentRows ?? []).some(r => r.doc_type === 'tos'     && r.version === TOS_VERSION)
     setConsentDone(hasConsent && hasTos)
+    if (hasConsent && hasTos) { setAgreedConsent(true); setAgreedTos(true) }
     setDemographicsDone((demoRows ?? []).length > 0)
 
     if (existingAvatar) {
-      setAvatarDone(true)
       const foundSkin = SKIN_COLORS.find(c => c.hex === existingAvatar.skin_color)
       const foundEye  = EYE_COLORS.find(c => c.hex === existingAvatar.eye_color)
       if (foundSkin) setSkin(foundSkin)
       if (foundEye)  setEye(foundEye)
     }
-    setRippleNameDone(!!(rippleRow?.name))
+    if (rippleRow?.name) setRippleName(rippleRow.name)
+    setRippleDone(!!existingAvatar && !!(rippleRow?.name))
 
-    setStep(STEPS.INTRO)
+    setStep(import.meta.env.DEV && devInitialStep ? devInitialStep : STEPS.WELCOME)
   }
 
   useEffect(() => {
@@ -112,21 +123,19 @@ export default function WelcomeFlow({ session, onComplete }) {
     load()
   }, [session])  // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Step progression helpers ──────────────────────────────────────────────
+  // ── Step progression ──────────────────────────────────────────────────────
 
   function advance(options = {}) {
-    const cd  = options.consentDone      ?? consentDone
-    const dd  = options.demographicsDone ?? demographicsDone
-    const ad  = options.avatarDone       ?? avatarDone
-    const rnd = options.rippleNameDone   ?? rippleNameDone
-    if (!cd)  return setStep(STEPS.CONSENT)
-    if (!dd)  return setStep(STEPS.DEMOGRAPHICS)
-    if (!ad)  return setStep(STEPS.CUSTOMIZE)
-    if (!rnd) return setStep(STEPS.NAME)
-    setStep(STEPS.CHECKIN)
+    const cd = options.consentDone      ?? consentDone
+    const dd = options.demographicsDone ?? demographicsDone
+    const rd = options.rippleDone       ?? rippleDone
+    if (!cd) return setStep(STEPS.DATA)
+    if (!dd) return setStep(STEPS.DEMOGRAPHICS)
+    if (!rd) return setStep(STEPS.RIPPLE)
+    setStep(STEPS.FINISH)
   }
 
-  // ── Consent submit ────────────────────────────────────────────────────────
+  // ── Data (consent + ToS) submit ───────────────────────────────────────────
 
   async function submitConsent() {
     if (!agreedConsent || !agreedTos || busy) return
@@ -142,7 +151,7 @@ export default function WelcomeFlow({ session, onComplete }) {
     if (dbErr) { setError('Could not save your agreement — please try again.'); console.error('consents upsert:', dbErr); return }
 
     setConsentDone(true)
-    advance({ consentDone: true })
+    setStep(STEPS.DEMOGRAPHICS)
   }
 
   // ── Demographics submit ───────────────────────────────────────────────────
@@ -151,6 +160,8 @@ export default function WelcomeFlow({ session, onComplete }) {
     age !== '' && parseInt(age) > 0 && gender.trim() !== '' && racialized !== null && sesLadder !== null
 
   async function submitDemographics() {
+    // Revisited via Previous after a successful save → don't insert a second row
+    if (demographicsDone) { setStep(STEPS.RIPPLE); return }
     if (!canSubmitDemographics || busy) return
     setBusy(true); setError(null)
 
@@ -166,50 +177,43 @@ export default function WelcomeFlow({ session, onComplete }) {
     if (dbErr) { setError('Could not save — please try again.'); console.error('demographics insert:', dbErr); return }
 
     setDemographicsDone(true)
-    advance({ demographicsDone: true })
+    setStep(STEPS.RIPPLE)
   }
 
-  // ── Customize submit ──────────────────────────────────────────────────────
+  // ── Ripple submit (appearance + name together) ────────────────────────────
 
-  async function submitCustomize() {
-    if (busy) return
-    setBusy(true); setError(null)
-
-    const { error: dbErr } = await supabase.from('avatars').upsert(
-      { user_id: session.user.id, skin_color: skin.hex, eye_color: eye.hex, species: 'human' },
-      { onConflict: 'user_id' }
-    )
-
-    setBusy(false)
-    if (dbErr) { setError('Could not save your appearance — please try again.'); console.error('avatars upsert:', dbErr); return }
-
-    setAvatarDone(true)
-    advance({ avatarDone: true })
-  }
-
-  // ── Name submit ───────────────────────────────────────────────────────────
-
-  async function submitName() {
+  async function submitRipple() {
     if (!rippleName.trim() || busy) return
-    setBusy(true); setError(null)
-
-    const { error: dbErr } = await supabase.from('ripples')
-      .upsert({ user_id: session.user.id, name: rippleName.trim() }, { onConflict: 'user_id' })
-
-    setBusy(false)
-    if (dbErr) { setError('Could not save — please try again.'); console.error('ripples upsert:', dbErr); return }
-
-    setRippleNameDone(true)
-    advance({ rippleNameDone: true })
-  }
-
-  // ── Final: mark onboarding complete ──────────────────────────────────────
-
-  async function finalFinish() {
     setBusy(true); setError(null)
     const userId = session.user.id
 
-    // Ensure ripples row exists even if name was skipped
+    const { error: avatarErr } = await supabase.from('avatars').upsert(
+      { user_id: userId, skin_color: skin.hex, eye_color: eye.hex, species: 'human' },
+      { onConflict: 'user_id' }
+    )
+    if (avatarErr) {
+      setBusy(false)
+      setError('Could not save your Ripple — please try again.'); console.error('avatars upsert:', avatarErr); return
+    }
+
+    const { error: nameErr } = await supabase.from('ripples')
+      .upsert({ user_id: userId, name: rippleName.trim() }, { onConflict: 'user_id' })
+
+    setBusy(false)
+    if (nameErr) { setError('Could not save — please try again.'); console.error('ripples upsert:', nameErr); return }
+
+    setRippleDone(true)
+    setStep(STEPS.FINISH)
+  }
+
+  // ── Finish: mark onboarding complete, then go where the user chose ────────
+
+  async function finalFinish(dest) {
+    if (busy) return
+    setBusy(true); setError(null)
+    const userId = session.user.id
+
+    // Ensure ripples row exists even if something upstream was skipped
     await supabase.from('ripples')
       .upsert({ user_id: userId }, { onConflict: 'user_id', ignoreDuplicates: true })
 
@@ -221,277 +225,264 @@ export default function WelcomeFlow({ session, onComplete }) {
     if (profileErr) { setError('Something went wrong — please try again.'); console.error('profiles update:', profileErr); return }
 
     onComplete?.()
-    navigate('/dashboard', { replace: true })
+    navigate(dest, { replace: true })
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
 
-  if (step === STEPS.LOADING) {
-    return <div style={S.page}><div style={S.wrap}><p style={S.muted}>Loading…</p></div></div>
-  }
+  const name = rippleName.trim() || 'your Ripple'
 
-  if (step === STEPS.INTRO) {
-    return (
-      <div style={S.page}>
-        <div style={S.wrap}>
-          <p style={S.eyebrow}>RADlab</p>
-          <h1 style={S.title}>Welcome</h1>
-          <p style={S.body}>
-            When the water is still, you can see what&rsquo;s moving underneath.
-            In a moment you&rsquo;ll meet your <strong>Ripple</strong> — a companion
-            that reflects how you&rsquo;re doing, and a partner in noticing it.
-          </p>
-          <p style={S.body}>
-            Two quick things first: how your data is used here, and a few
-            questions about you.
-          </p>
-          <button style={S.btn} onClick={() => advance()}>Let&rsquo;s go →</button>
-        </div>
-      </div>
-    )
-  }
+  return (
+    <div style={S.page}>
+      <Nav session={session} />
+      <div style={S.wrap}>
 
-  if (step === STEPS.CONSENT) {
-    return (
-      <div style={S.page}>
-        <div style={S.wrap}>
-          <p style={S.eyebrow}>Step 1 of 2</p>
-          <h1 style={S.title}>Your data, plainly</h1>
+        {step === STEPS.LOADING && <p style={S.muted}>Loading…</p>}
 
-          <DocBox doc={CONSENT_DOC} agreed={agreedConsent} onToggle={setAgreedConsent} />
-          <DocBox doc={TOS_DOC}     agreed={agreedTos}     onToggle={setAgreedTos} />
+        {step === STEPS.WELCOME && (
+          <>
+            <EyebrowLabel variant="nobg">RADLAB GAMES PLATFORM</EyebrowLabel>
+            <h1 style={S.title}>Welcome</h1>
+            <div style={S.infoBox}>
+              <p style={S.body}>
+                When the water is still, you can see what&rsquo;s moving underneath.
+                In a moment you&rsquo;ll meet your <strong>Ripple</strong> — a companion
+                that reflects how you&rsquo;re doing, and a partner in noticing it.
+              </p>
+              <p style={S.body}>
+                Two quick things first: how your data is used here, and a few
+                questions about you.
+              </p>
+            </div>
+            <OnboardingNavigation onNext={() => advance()} />
+          </>
+        )}
 
-          {error && <p style={S.errBox}>{error}</p>}
+        {step === STEPS.DATA && (
+          <>
+            <EyebrowLabel variant="nobg">STEP 1 OF 3</EyebrowLabel>
+            <h1 style={S.title}>Your data, plainly</h1>
 
-          <button
-            style={{ ...S.btn, opacity: (!agreedConsent || !agreedTos || busy) ? 0.5 : 1 }}
-            disabled={!agreedConsent || !agreedTos || busy}
-            onClick={submitConsent}
-          >
-            {busy ? 'Saving…' : 'Agree & continue →'}
-          </button>
-        </div>
-      </div>
-    )
-  }
+            <DocPanel doc={CONSENT_DOC} agreed={agreedConsent} onToggle={setAgreedConsent} />
+            <DocPanel doc={TOS_DOC}     agreed={agreedTos}     onToggle={setAgreedTos} />
 
-  if (step === STEPS.DEMOGRAPHICS) {
-    return (
-      <div style={S.page}>
-        <div style={S.wrap}>
-          <p style={S.eyebrow}>Step 2 of 2</p>
-          <h1 style={S.title}>A little about you</h1>
-          <p style={S.body}>
-            These questions help our research account for how wellbeing differs
-            across backgrounds. They&rsquo;re stored separately from your name.
-          </p>
+            {error && <p style={S.errBox}>{error}</p>}
 
-          <div style={S.field}>
-            <label style={S.fieldLabel}>Age</label>
-            <input
-              type="number" min="16" max="120" value={age}
-              onChange={e => setAge(e.target.value)}
-              style={S.input}
+            <OnboardingNavigation
+              onPrevious={() => setStep(STEPS.WELCOME)}
+              onNext={submitConsent}
+              nextDisabled={!agreedConsent || !agreedTos || busy}
+              nextLabel={busy ? 'Saving…' : 'Agree & continue →'}
             />
-          </div>
+          </>
+        )}
 
-          <div style={S.field}>
-            <label style={S.fieldLabel}>Gender</label>
-            <input
-              type="text" value={gender} placeholder="In your own words"
-              onChange={e => setGender(e.target.value)}
-              style={S.input}
+        {step === STEPS.DEMOGRAPHICS && (
+          <>
+            <EyebrowLabel variant="nobg">STEP 2 OF 3</EyebrowLabel>
+            <h1 style={S.title}>A little about you</h1>
+            <p style={S.body}>
+              These questions help our research account for how wellbeing differs
+              across backgrounds. They&rsquo;re stored separately from your name.
+            </p>
+
+            <div style={S.fieldGrid}>
+              <FillableBox
+                label="Age"
+                type="number" min="16" max="120"
+                value={age} onChange={e => setAge(e.target.value)}
+                disabled={demographicsDone}
+              />
+              <FillableBox
+                label="Gender"
+                type="text" placeholder="In your own words"
+                value={gender} onChange={e => setGender(e.target.value)}
+                disabled={demographicsDone}
+              />
+            </div>
+
+            <div style={S.field}>
+              <label style={S.fieldLabel}>Do you identify as a member of a racialized group?</label>
+              <div style={S.radioRow}>
+                {[['yes', 'Yes'], ['no', 'No'], ['prefer_not_to_answer', 'Prefer not to answer']].map(([val, label]) => (
+                  <label key={val} style={S.radioLabel}>
+                    <input
+                      type="radio" name="racialized" checked={racialized === val}
+                      onChange={() => setRacialized(val)}
+                      disabled={demographicsDone}
+                      style={{ accentColor: 'var(--pk)' }}
+                    />
+                    {label}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div style={S.field}>
+              <label style={S.fieldLabel}>{SES_PROMPT}</label>
+              {/* 1–10 scale: bg fill for contrast (Dev Spec §4.3); wraps on
+                  narrow screens per the 2026-07-17 designer call. */}
+              <div style={S.ladderRow}>
+                {Array.from({ length: 10 }, (_, i) => i + 1).map(n => (
+                  <button
+                    key={n}
+                    disabled={demographicsDone}
+                    style={{
+                      ...S.ladderBtn,
+                      background:  sesLadder === n ? 'var(--pk)' : 'var(--bg)',
+                      borderColor: sesLadder === n ? 'var(--pk)' : 'var(--bgp)',
+                      color:       sesLadder === n ? '#fff'      : 'var(--tx)',
+                    }}
+                    onClick={() => setSesLadder(n)}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+              <p style={S.muted}>1 = bottom of the ladder · 10 = top</p>
+            </div>
+
+            {demographicsDone && <p style={S.muted}>Already saved — these answers can&rsquo;t be edited here.</p>}
+            {error && <p style={S.errBox}>{error}</p>}
+
+            <OnboardingNavigation
+              onPrevious={() => setStep(STEPS.DATA)}
+              onNext={submitDemographics}
+              nextDisabled={(!demographicsDone && !canSubmitDemographics) || busy}
+              nextLabel={busy ? 'Saving…' : 'Next →'}
             />
-          </div>
+          </>
+        )}
 
-          <div style={S.field}>
-            <label style={S.fieldLabel}>Do you identify as a member of a racialized group?</label>
-            <div style={S.radioRow}>
-              {[['yes', 'Yes'], ['no', 'No'], ['prefer_not_to_answer', 'Prefer not to answer']].map(([val, label]) => (
-                <label key={val} style={S.radioLabel}>
-                  <input
-                    type="radio" name="racialized" checked={racialized === val}
-                    onChange={() => setRacialized(val)}
-                    style={{ accentColor: 'var(--pk)' }}
+        {step === STEPS.RIPPLE && (
+          <>
+            <EyebrowLabel variant="nobg">STEP 3 OF 3</EyebrowLabel>
+            <h1 style={S.title}>Meet your Ripple</h1>
+            <p style={S.body}>
+              This is your Ripple. Pick a look that feels like you — more features
+              unlock as you explore — and give it a name. Yours to change anytime.
+            </p>
+
+            {/* Live Ripple customizer (WP2), NOT the Figma placeholder screenshots
+                — brief guardrail #4 / Dev Spec §4.3 integration warning. */}
+            <div style={S.previewBox}>
+              <RippleAvatar skinColor={skin.hex} eyeColor={eye.hex} size={180} />
+            </div>
+
+            <div style={S.pickerSection}>
+              <p style={S.pickerLabel}>Skin · Fur · Scales</p>
+              <div style={S.swatchRow}>
+                {SKIN_COLORS.map(c => (
+                  <button
+                    key={c.hex}
+                    title={c.label}
+                    onClick={() => setSkin(c)}
+                    style={{
+                      ...S.swatch,
+                      background: c.hex,
+                      border: skin.hex === c.hex ? '3px solid var(--pk)' : '3px solid transparent',
+                      outline: skin.hex === c.hex ? '2px solid white' : 'none',
+                      outlineOffset: '-4px',
+                      transform: skin.hex === c.hex ? 'scale(1.2)' : 'scale(1)',
+                    }}
                   />
-                  {label}
-                </label>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
 
-          <div style={S.field}>
-            <label style={S.fieldLabel}>{SES_PROMPT}</label>
-            <div style={S.ladderRow}>
-              {Array.from({ length: 10 }, (_, i) => i + 1).map(n => (
-                <button
-                  key={n}
-                  style={{
-                    ...S.ladderBtn,
-                    background: sesLadder === n ? 'var(--pk)' : 'transparent',
-                    color:      sesLadder === n ? '#fff'      : 'var(--tx)',
-                  }}
-                  onClick={() => setSesLadder(n)}
-                >
-                  {n}
-                </button>
-              ))}
+            <div style={S.pickerSection}>
+              <p style={S.pickerLabel}>Eye color</p>
+              <div style={S.swatchRow}>
+                {EYE_COLORS.map(c => (
+                  <button
+                    key={c.hex}
+                    title={c.label}
+                    onClick={() => setEye(c)}
+                    style={{
+                      ...S.swatch,
+                      background: c.hex,
+                      border: eye.hex === c.hex ? '3px solid var(--pk)' : '3px solid transparent',
+                      outline: eye.hex === c.hex ? '2px solid white' : 'none',
+                      outlineOffset: '-4px',
+                      transform: eye.hex === c.hex ? 'scale(1.2)' : 'scale(1)',
+                    }}
+                  />
+                ))}
+              </div>
             </div>
-            <p style={S.muted}>1 = bottom of the ladder · 10 = top</p>
-          </div>
 
-          {error && <p style={S.errBox}>{error}</p>}
-
-          <button
-            style={{ ...S.btn, opacity: (!canSubmitDemographics || busy) ? 0.5 : 1 }}
-            disabled={!canSubmitDemographics || busy}
-            onClick={submitDemographics}
-          >
-            {busy ? 'Saving…' : 'Continue →'}
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  if (step === STEPS.CUSTOMIZE) {
-    return (
-      <div style={S.page}>
-        <div style={S.wrap}>
-          <p style={S.eyebrow}>Almost there</p>
-          <h1 style={S.title}>Choose a face</h1>
-          <p style={S.body}>
-            This is your Ripple. Pick a look that feels like you — more features
-            unlock as you explore.
-          </p>
-
-          <div style={S.previewBox}>
-            <RippleAvatar skinColor={skin.hex} eyeColor={eye.hex} size={180} />
-          </div>
-
-          <div style={S.pickerSection}>
-            <p style={S.pickerLabel}>Skin · Fur · Scales</p>
-            <div style={S.swatchRow}>
-              {SKIN_COLORS.map(c => (
-                <button
-                  key={c.hex}
-                  title={c.label}
-                  onClick={() => setSkin(c)}
-                  style={{
-                    ...S.swatch,
-                    background: c.hex,
-                    border: skin.hex === c.hex ? '3px solid var(--pk)' : '3px solid transparent',
-                    outline: skin.hex === c.hex ? '2px solid white' : 'none',
-                    outlineOffset: '-4px',
-                    transform: skin.hex === c.hex ? 'scale(1.2)' : 'scale(1)',
-                  }}
-                />
-              ))}
+            <div style={S.nameRow}>
+              <FillableBox
+                label="Ripple name"
+                placeholder="Your Ripple's name"
+                value={rippleName}
+                onChange={e => setRippleName(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && submitRipple()}
+                maxLength={32}
+                style={{ flex: 1 }}
+              />
+              <button style={S.genBtn} onClick={() => setRippleName(pickRandom(rippleName))} title="Suggest another name">
+                ✦
+              </button>
             </div>
-          </div>
 
-          <div style={S.pickerSection}>
-            <p style={S.pickerLabel}>Eye color</p>
-            <div style={S.swatchRow}>
-              {EYE_COLORS.map(c => (
-                <button
-                  key={c.hex}
-                  title={c.label}
-                  onClick={() => setEye(c)}
-                  style={{
-                    ...S.swatch,
-                    background: c.hex,
-                    border: eye.hex === c.hex ? '3px solid var(--pk)' : '3px solid transparent',
-                    outline: eye.hex === c.hex ? '2px solid white' : 'none',
-                    outlineOffset: '-4px',
-                    transform: eye.hex === c.hex ? 'scale(1.2)' : 'scale(1)',
-                  }}
-                />
-              ))}
-            </div>
-          </div>
+            {error && <p style={S.errBox}>{error}</p>}
 
-          {error && <p style={S.errBox}>{error}</p>}
-
-          <button style={{ ...S.btn, opacity: busy ? 0.5 : 1 }} disabled={busy} onClick={submitCustomize}>
-            {busy ? 'Saving…' : 'Looks good →'}
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  if (step === STEPS.NAME) {
-    const label = rippleName.trim() || 'your Ripple'
-    return (
-      <div style={S.page}>
-        <div style={S.wrap}>
-          <p style={S.eyebrow}>One last thing</p>
-          <h1 style={S.title}>Name your Ripple</h1>
-          <p style={S.body}>
-            Give your Ripple a name — it&rsquo;s yours to change anytime.
-          </p>
-
-          <div style={S.previewBox}>
-            <RippleAvatar skinColor={skin.hex} eyeColor={eye.hex} size={180} />
-          </div>
-
-          <div style={S.nameRow}>
-            <input
-              type="text"
-              value={rippleName}
-              onChange={e => setRippleName(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && submitName()}
-              placeholder="Your Ripple's name"
-              style={S.input}
-              maxLength={32}
-              autoFocus
+            <OnboardingNavigation
+              onPrevious={() => setStep(STEPS.DEMOGRAPHICS)}
+              onNext={submitRipple}
+              nextDisabled={!rippleName.trim() || busy}
+              nextLabel={busy ? 'Saving…' : 'Next →'}
             />
-            <button style={S.genBtn} onClick={() => setRippleName(pickRandom(rippleName))} title="Suggest another name">
-              ✦
-            </button>
-          </div>
+          </>
+        )}
 
-          {error && <p style={S.errBox}>{error}</p>}
+        {step === STEPS.FINISH && (
+          <>
+            {/* Finish copy composed to tone — Figma frame 187:2837 unavailable at
+                build time (MCP rate limit); layout follows Dev Spec §3.3/§6.3. */}
+            <EyebrowLabel variant="nobg">ALL SET</EyebrowLabel>
+            <h1 style={S.title}>Say hi to {name}</h1>
+            <div style={S.finishRow}>
+              <div style={S.previewBox}>
+                <RippleAvatar skinColor={skin.hex} eyeColor={eye.hex} size={140} />
+              </div>
+              <p style={{ ...S.body, flex: 1, minWidth: 220 }}>
+                Onboarding&rsquo;s done — the platform is yours. A quick first
+                check-in helps {name} start reflecting you, or head straight
+                to your dashboard and explore the games.
+              </p>
+            </div>
 
-          <button
-            style={{ ...S.btn, opacity: (!rippleName.trim() || busy) ? 0.5 : 1 }}
-            disabled={!rippleName.trim() || busy}
-            onClick={submitName}
-          >
-            {busy ? 'Saving…' : `Meet ${label} →`}
-          </button>
-        </div>
+            {error && <p style={S.errBox}>{error}</p>}
+
+            <div style={S.finishCtas}>
+              <SecondaryCTA onClick={() => finalFinish('/dashboard')}>Go to Dashboard</SecondaryCTA>
+              <PrimaryCTA onClick={() => finalFinish('/checkin')} disabled={busy}>
+                {busy ? 'One sec…' : `Check-in with ${name} →`}
+              </PrimaryCTA>
+            </div>
+          </>
+        )}
+
       </div>
-    )
-  }
-
-  if (step === STEPS.CHECKIN) {
-    return (
-      <div style={S.page}>
-        <CheckinFlow session={session} context="onboarding" onComplete={finalFinish} />
-      </div>
-    )
-  }
-
-  return null
+    </div>
+  )
 }
 
-// ── DocBox ────────────────────────────────────────────────────────────────────
-function DocBox({ doc, agreed, onToggle }) {
+// ── DocPanel ──────────────────────────────────────────────────────────────────
+// Scrollable doc panel + consent checkbox right-aligned below it, lining up
+// with the Agree & continue button (Dev Spec §4.3; Figma 187:1927).
+function DocPanel({ doc, agreed, onToggle }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
       <div style={S.docBox}>
         <h2 style={S.docTitle}>{doc.title}</h2>
         {doc.paragraphs.map((p, i) => <p key={i} style={S.docPara}>{p}</p>)}
       </div>
       <label style={S.checkRow}>
-        <input
-          type="checkbox" checked={agreed}
-          onChange={e => onToggle(e.target.checked)}
-          style={{ width: 16, height: 16, accentColor: 'var(--pk)', cursor: 'pointer', flexShrink: 0 }}
-        />
         <span style={S.checkLabel}>{doc.checkboxLabel}</span>
+        <Checkbox checked={agreed} onChange={e => onToggle(e.target.checked)} />
       </label>
     </div>
   )
@@ -505,42 +496,41 @@ const SANS  = '"DM Sans", system-ui, sans-serif'
 const S = {
   page: { background: 'var(--bg)', minHeight: '100vh' },
   wrap: {
-    maxWidth: 640, margin: '0 auto', padding: '64px 24px',
-    display: 'flex', flexDirection: 'column', gap: 24,
-  },
-  eyebrow: {
-    fontFamily: MONO, fontSize: 11, letterSpacing: '0.12em',
-    textTransform: 'uppercase', color: 'var(--pk)', margin: 0,
+    maxWidth: 840, margin: '0 auto', padding: '40px 24px 80px',
+    display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 16,
   },
   title: {
-    fontFamily: SERIF, fontSize: 'clamp(26px, 4vw, 36px)',
-    color: 'var(--tx)', margin: 0, letterSpacing: -0.5,
+    fontFamily: SERIF, fontWeight: 400, fontSize: 'clamp(28px, 4vw, 36px)',
+    lineHeight: 1.5, color: 'var(--tx)', margin: 0,
   },
-  body: { fontSize: 15, color: 'var(--tx2)', lineHeight: 1.7, margin: 0, fontFamily: SANS },
+  body: { fontSize: 16, color: 'var(--tx)', lineHeight: 1.5, margin: 0, fontFamily: SANS },
+  infoBox: { display: 'flex', flexDirection: 'column', gap: 16, borderRadius: 12, width: '100%' },
 
   docBox: {
-    border: '1px solid var(--bd)', borderRadius: 12,
-    background: '#fff', maxHeight: 280, overflowY: 'auto',
-    padding: '20px 24px',
+    border: '1px solid var(--bgp)', borderRadius: 12,
+    background: 'var(--bgc)', maxHeight: 280, overflowY: 'auto',
+    padding: '20px 24px', width: '100%', boxSizing: 'border-box',
     boxShadow: 'inset 0 -24px 20px -20px rgba(0,0,0,0.04)',
   },
-  docTitle: { fontFamily: MONO, fontSize: 13, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--tx)', margin: '0 0 12px' },
-  docPara:  { fontSize: 14, lineHeight: 1.7, color: 'var(--tx)', fontFamily: SANS, margin: '0 0 12px' },
+  docTitle: { fontFamily: MONO, fontWeight: 400, fontSize: 16, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--tx)', margin: '0 0 12px' },
+  docPara:  { fontSize: 16, lineHeight: 1.5, color: 'var(--tx)', fontFamily: SANS, margin: '0 0 12px' },
 
-  checkRow:   { display: 'flex', alignItems: 'flex-start', gap: 12, cursor: 'pointer', userSelect: 'none' },
-  checkLabel: { fontSize: 14, color: 'var(--tx)', lineHeight: 1.5, fontFamily: SANS },
-
-  field:      { display: 'flex', flexDirection: 'column', gap: 8 },
-  fieldLabel: { fontSize: 14, color: 'var(--tx)', fontFamily: SANS, fontWeight: 600, lineHeight: 1.5 },
-  input: {
-    flex: 1, padding: '10px 14px', borderRadius: 10, border: '1px solid var(--bd)',
-    fontSize: 15, fontFamily: SANS, color: 'var(--tx)', background: 'var(--bg)',
+  // Consent row: label left, box right — right-aligned as a group so the
+  // checkboxes line up with the Agree & continue button (Dev Spec §4.3).
+  checkRow: {
+    display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10,
+    alignSelf: 'flex-end', minHeight: 44, cursor: 'pointer', userSelect: 'none',
   },
+  checkLabel: { fontSize: 12, fontWeight: 600, color: 'var(--tx)', lineHeight: 1.5, fontFamily: SANS, textAlign: 'right' },
+
+  fieldGrid:  { display: 'flex', gap: 16, width: '100%', flexWrap: 'wrap' },
+  field:      { display: 'flex', flexDirection: 'column', gap: 8, width: '100%' },
+  fieldLabel: { fontSize: 14, color: 'var(--tx)', fontFamily: SANS, fontWeight: 600, lineHeight: 1.5 },
   radioRow:   { display: 'flex', gap: 20, flexWrap: 'wrap' },
-  radioLabel: { display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontFamily: SANS, color: 'var(--tx)', cursor: 'pointer' },
+  radioLabel: { display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontFamily: SANS, color: 'var(--tx)', cursor: 'pointer', minHeight: 40 },
   ladderRow:  { display: 'flex', gap: 8, flexWrap: 'wrap' },
   ladderBtn: {
-    width: 40, height: 40, borderRadius: 10, border: '1px solid var(--bd)',
+    width: 40, height: 40, borderRadius: 12, border: '1px solid var(--bgp)',
     fontFamily: MONO, fontSize: 14, cursor: 'pointer', transition: 'background 0.1s',
   },
 
@@ -549,10 +539,10 @@ const S = {
     background: 'var(--bgp)', borderRadius: 32, padding: 20,
     boxShadow: '0 8px 40px rgba(240,104,164,0.15)',
   },
-  pickerSection: { display: 'flex', flexDirection: 'column', gap: 10 },
+  pickerSection: { display: 'flex', flexDirection: 'column', gap: 10, width: '100%' },
   pickerLabel: {
-    fontFamily: MONO, fontSize: 11, letterSpacing: '0.1em',
-    textTransform: 'uppercase', color: 'var(--tx3)', margin: 0,
+    fontFamily: MONO, fontSize: 12, letterSpacing: '0.1em',
+    textTransform: 'uppercase', color: 'var(--gy)', margin: 0,
   },
   swatchRow: { display: 'flex', flexWrap: 'wrap', gap: 8 },
   swatch: {
@@ -561,26 +551,21 @@ const S = {
     transition: 'transform 0.12s ease, box-shadow 0.12s ease',
   },
 
-  nameRow: { display: 'flex', gap: 10, alignItems: 'center' },
+  nameRow: { display: 'flex', gap: 10, alignItems: 'flex-end', width: '100%', maxWidth: 420 },
   genBtn: {
-    width: 44, height: 44, borderRadius: 12, flexShrink: 0,
-    border: '1px solid var(--bd)', background: 'var(--bgp)',
+    width: 40, height: 40, borderRadius: 12, flexShrink: 0,
+    border: '1px solid var(--bgp)', background: 'var(--bgp)',
     color: 'var(--pk)', fontSize: 18, cursor: 'pointer',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
   },
 
-  btn: {
-    alignSelf: 'flex-start',
-    padding: '13px 32px', borderRadius: 12,
-    background: 'var(--pk)', color: '#fff', border: 'none',
-    fontFamily: MONO, fontSize: 13, fontWeight: 700, letterSpacing: '0.05em',
-    cursor: 'pointer', boxShadow: '0 4px 20px rgba(240,104,164,0.35)',
-    transition: 'opacity 0.15s',
-  },
+  finishRow:  { display: 'flex', alignItems: 'center', gap: 28, flexWrap: 'wrap', width: '100%' },
+  finishCtas: { display: 'flex', gap: 12, flexWrap: 'wrap', alignSelf: 'stretch', justifyContent: 'flex-end' },
 
-  muted:  { fontSize: 13, color: 'var(--tx3)', margin: 0, fontFamily: SANS },
+  muted:  { fontSize: 13, color: 'var(--gy)', margin: 0, fontFamily: SANS },
   errBox: {
-    fontSize: 13, color: '#e04', background: '#fff0f0',
-    border: '1px solid #fcc', borderRadius: 8, padding: '10px 16px', margin: 0,
+    fontSize: 13, color: 'var(--err-tx)', background: 'var(--err-bg)',
+    border: '1px solid var(--err-bd)', borderRadius: 12, padding: '10px 16px', margin: 0,
+    width: '100%', boxSizing: 'border-box',
   },
 }
