@@ -23,27 +23,28 @@ export default function Landing({ session }) {
         </a>
       </nav>
 
-      {/* HERO */}
-      <section style={S.hero}>
+      {/* HERO — centers on mobile, left-aligned from md up */}
+      <section style={S.hero} className="px-5 md:px-[52px] text-center md:text-left">
         <p className="hidden md:block" style={S.eyebrow}>
           <a href="https://www.utoronto.ca" target="_blank" rel="noopener noreferrer" style={S.eyebrowLink}>University of Toronto</a>
           &nbsp;·&nbsp; Department of Psychology
         </p>
-        <div className="flex flex-col items-start md:flex-row md:items-center" style={{ gap: 12, marginBottom: 22 }}>
-          <img src="/RADlab_Logo.svg" height="80" alt="" aria-hidden="true" style={S.heroLogo} />
+        <div className="flex flex-col items-center md:flex-row md:items-center" style={{ gap: 12, marginBottom: 22 }}>
+          {/* Explicit style height — Tailwind preflight overrides the height attribute on imgs */}
+          <img src="/RADlab_Logo.svg" alt="" aria-hidden="true" className="h-16 md:h-20" style={S.heroLogo} />
           <h1 style={S.h1}>
-            <span style={{ whiteSpace: 'nowrap' }}>Regulatory &amp; Affective</span><br />
+            Regulatory &amp; Affective<br />
             <em style={{ fontStyle: 'italic', color: 'var(--pk)' }}>Dynamics</em>
           </h1>
         </div>
-        <p style={S.sub}>
+        <p style={S.sub} className="mx-auto md:mx-0">
           We study how people sense, regulate, and adapt — through rigorous experiments designed to feel like play.
         </p>
       </section>
 
-      {/* HUB CARDS */}
-      <section style={S.hubSection}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 20, maxWidth: 1080 }}>
+      {/* HUB CARDS — 1 col on mobile, 2 from md up */}
+      <section style={S.hubSection} className="px-5 md:px-[52px]">
+        <div className="grid grid-cols-1 md:grid-cols-2 w-full" style={{ gap: 20, maxWidth: 1080 }}>
           <HubCard
             tag="Game Platform"
             title="Come, See"
@@ -83,7 +84,7 @@ export default function Landing({ session }) {
       </section>
 
       {/* FOOTER */}
-      <footer style={S.footer}>
+      <footer style={S.footer} className="px-5 md:px-[52px]">
         <div style={S.footerText}>
           <PulseDot />
           <strong style={{ color: 'var(--tx)' }}>RADlab</strong>&nbsp;·&nbsp;University of Toronto Mississauga
@@ -165,15 +166,17 @@ const S = {
   uoftLink: { display: 'flex', alignItems: 'center', flexShrink: 0 },
   wordmark: { fontFamily: SERIF, fontSize: 'clamp(22px, 5vw, 36px)', letterSpacing: -0.5, color: 'var(--tx)', lineHeight: 1 },
 
-  hero:      { padding: '80px 52px 52px', maxWidth: 860, position: 'relative', zIndex: 1 },
+  // Horizontal padding lives in responsive classNames (px-5 md:px-[52px]) —
+  // vertical padding must stay longhand or the inline shorthand zeroes the class px
+  hero:      { paddingTop: 64, paddingBottom: 40, maxWidth: 860, position: 'relative', zIndex: 1 },
   eyebrow:   { fontFamily: MONO, fontSize: '0.8125rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--pk)', marginBottom: 20 },
   eyebrowLink: { color: 'var(--pk)', textDecoration: 'none', borderBottom: '1px solid rgba(240,104,164,0.35)' },
   heroBrand: {},
-  heroLogo:  { flexShrink: 0, display: 'block' },
-  h1:        { fontFamily: SERIF, fontSize: 'clamp(2.6rem, 5vw, 4rem)', lineHeight: 1.08, color: 'var(--tx)', margin: 0 },
+  heroLogo:  { flexShrink: 0, display: 'block', width: 'auto' },
+  h1:        { fontFamily: SERIF, fontSize: 'clamp(2.1rem, 8.5vw, 4rem)', lineHeight: 1.08, color: 'var(--tx)', margin: 0 },
   sub:       { fontSize: '1rem', color: 'var(--gy)', lineHeight: 1.7, maxWidth: 500, fontWeight: 400 },
 
-  hubSection: { padding: '40px 52px 100px', position: 'relative', zIndex: 1 },
+  hubSection: { paddingTop: 40, paddingBottom: 90, position: 'relative', zIndex: 1 },
 
   card: {
     display: 'flex', flexDirection: 'column', gap: 14,
@@ -188,7 +191,7 @@ const S = {
   chip:      { fontFamily: MONO, fontSize: '0.75rem', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '5px 11px', borderRadius: 20, transition: 'background 0.28s, color 0.28s' },
   cardCta:   { marginTop: 8, fontFamily: MONO, fontSize: '0.8125rem', letterSpacing: '0.1em', textTransform: 'uppercase', transition: 'color 0.28s' },
 
-  footer:     { marginTop: 'auto', padding: '26px 52px', borderTop: '1px solid var(--pkb)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, position: 'relative', zIndex: 1 },
+  footer:     { marginTop: 'auto', paddingTop: 26, paddingBottom: 26, borderTop: '1px solid var(--pkb)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, position: 'relative', zIndex: 1 },
   footerText: { fontFamily: MONO, fontSize: '0.75rem', color: 'var(--gy)', letterSpacing: '0.06em', display: 'flex', alignItems: 'center' },
 
   pulse: {

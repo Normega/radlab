@@ -488,6 +488,7 @@ Space Mono reads small at any given size — prefer `--fs-mono-sm` or above for 
 **Game cards on mobile**: illustration stacks above info (Option 1). Uses CSS `order` classes — `order-first` on mobile pulls illustration to top, `md:order-last` returns it to right column on desktop. Border flips from `border-b` (stacked) to `md:border-l` (side-by-side). When there are 4+ games, reconsider switching to compact thumbnail row layout.
 
 **Layout collapse rules**:
+- Landing (`/`) hub cards: `grid-cols-1 md:grid-cols-2` (2026-07-17 — was a hard-coded 2-col grid that crushed on phones); hero centers on mobile, left-aligns from `md`; gutters `px-5 md:px-[52px]` via classNames (inline padding must stay longhand top/bottom or the shorthand zeroes the class padding)
 - Hero: `lg:grid-cols-[1fr_min(340px,35%)]` → single column below `lg`
 - Game card: `md:grid-cols-[1fr_200px]` → single column, illustration on top
 - Steps: `md:grid-cols-3` → single column on mobile
