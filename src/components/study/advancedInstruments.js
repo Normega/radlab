@@ -25,7 +25,7 @@ export const ADVANCED_INSTRUMENTS = [
   {
     key: 'equity_census',
     name: 'U of T Student Equity Census',
-    description: 'Full 2025–2026 U of T Student Equity Census: gender identity, trans identity, sexual orientation, disability, Indigenous identity, racial/ethnocultural identity, religion, parental education, feedback. Every question offers "Prefer not to answer". Maximally sensitive wording — may be overkill for some studies; prefer Standard Demographics unless equity reporting requires it.',
+    description: 'Full 2025–2026 U of T Student Equity Census plus a leading numeric age question: age, gender identity, trans identity, sexual orientation, disability, Indigenous identity, racial/ethnocultural identity, religion, parental education, feedback. Every census question offers "Prefer not to answer"; age requires a numeric entry. Maximally sensitive wording — may be overkill for some studies; prefer Standard Demographics unless equity reporting requires it.',
     source: 'src/components/study/EquityCensusStep.jsx',
     table: 'equity_census_responses',
     previewable: true,
