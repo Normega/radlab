@@ -670,7 +670,7 @@ const S = {
 
   nameRow: { display: 'flex', gap: 10, alignItems: 'flex-end', width: '100%', maxWidth: 420 },
   genBtn: {
-    width: 40, height: 40, borderRadius: 12, flexShrink: 0,
+    width: 40, height: 40, borderRadius: 24, flexShrink: 0, // clickable → 24px rule
     border: '1px solid var(--bgp)', background: 'var(--bgp)',
     color: 'var(--pk)', fontSize: 18, cursor: 'pointer',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
