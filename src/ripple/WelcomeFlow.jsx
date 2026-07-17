@@ -29,6 +29,7 @@ const STEPS = {
   DATA:         'data',
   DEMOGRAPHICS: 'demographics',
   RIPPLE:       'ripple',
+  HABIT:        'habit',
   FINISH:       'finish',
 }
 
@@ -74,6 +75,14 @@ export default function WelcomeFlow({ session, onComplete, devInitialStep }) {
   const [eye,        setEye]        = useState(EYE_COLORS[3])   // Sky Blue default
   const [rippleName, setRippleName] = useState(() => pickRandom(''))
 
+  // Habit step state (reminder prefs — Norm 2026-07-17: users start OPTED IN
+  // to daily morning emails; this screen lets them opt out or change frequency/
+  // time before finishing. Writes ripples.reminder_* + prompt_cadence, the
+  // exact fields the live WP6 reminder engine reads.)
+  const [remindersOn,  setRemindersOn]  = useState(true)
+  const [reminderFreq, setReminderFreq] = useState('daily')   // 'daily' | 'weekly'
+  const [reminderTime, setReminderTime] = useState('morning') // 'morning' | 'midday' | 'evening'
+
   async function load() {
     const userId = session.user.id
 
@@ -97,7 +106,7 @@ export default function WelcomeFlow({ session, onComplete, devInitialStep }) {
       supabase.from('consents').select('doc_type, version').eq('user_id', userId),
       supabase.from('demographics').select('id').eq('user_id', userId).limit(1),
       supabase.from('avatars').select('skin_color, eye_color').eq('user_id', userId).maybeSingle(),
-      supabase.from('ripples').select('name').eq('user_id', userId).maybeSingle(),
+      supabase.from('ripples').select('name, reminder_enabled, reminder_time, prompt_cadence').eq('user_id', userId).maybeSingle(),
     ])
 
     const hasConsent = (consentRows ?? []).some(r => r.doc_type === 'consent' && r.version === CONSENT_VERSION)
@@ -114,6 +123,14 @@ export default function WelcomeFlow({ session, onComplete, devInitialStep }) {
     }
     if (rippleRow?.name) setRippleName(rippleRow.name)
     setRippleDone(!!existingAvatar && !!(rippleRow?.name))
+    // Re-entry: reflect saved reminder prefs if the row has been through Habit
+    // before (reminder_enabled defaults false in the DB, but the flow's default
+    // is opted-in — only override when a deliberate choice was stored).
+    if (rippleRow && rippleRow.reminder_enabled === true) {
+      setRemindersOn(true)
+      setReminderFreq(rippleRow.prompt_cadence === 'weekly' ? 'weekly' : 'daily')
+      setReminderTime(rippleRow.reminder_time ?? 'morning')
+    }
 
     setStep(import.meta.env.DEV && devInitialStep ? devInitialStep : STEPS.WELCOME)
   }
@@ -132,7 +149,9 @@ export default function WelcomeFlow({ session, onComplete, devInitialStep }) {
     if (!cd) return setStep(STEPS.DATA)
     if (!dd) return setStep(STEPS.DEMOGRAPHICS)
     if (!rd) return setStep(STEPS.RIPPLE)
-    setStep(STEPS.FINISH)
+    // Habit has no persistent "done" flag — passing through again on re-entry
+    // just shows the saved prefs, which is the desired behavior.
+    setStep(STEPS.HABIT)
   }
 
   // ── Data (consent + ToS) submit ───────────────────────────────────────────
@@ -203,6 +222,27 @@ export default function WelcomeFlow({ session, onComplete, devInitialStep }) {
     if (nameErr) { setError('Could not save — please try again.'); console.error('ripples upsert:', nameErr); return }
 
     setRippleDone(true)
+    setStep(STEPS.HABIT)
+  }
+
+  // ── Habit submit (reminder prefs) ─────────────────────────────────────────
+
+  async function submitHabit() {
+    if (busy) return
+    setBusy(true); setError(null)
+
+    // Opted out → reminder_enabled false, cadence untouched (prompt_cadence
+    // also drives the on-site check-in prompt, which stays at its default).
+    const patch = remindersOn
+      ? { reminder_enabled: true, reminder_time: reminderTime, prompt_cadence: reminderFreq }
+      : { reminder_enabled: false }
+
+    const { error: dbErr } = await supabase.from('ripples')
+      .update(patch).eq('user_id', session.user.id)
+
+    setBusy(false)
+    if (dbErr) { setError('Could not save your preferences — please try again.'); console.error('ripples reminder update:', dbErr); return }
+
     setStep(STEPS.FINISH)
   }
 
@@ -437,20 +477,97 @@ export default function WelcomeFlow({ session, onComplete, devInitialStep }) {
           </>
         )}
 
+        {step === STEPS.HABIT && (
+          <>
+            {/* Reminder prefs — added per Norm 2026-07-17, not in the Figma file.
+                Copy honors the Ripple spec §5 guardrails: no guilt/neediness
+                levers; frames rhythm as serving reflection, user in control. */}
+            <EyebrowLabel variant="nobg">ONE SMALL THING</EyebrowLabel>
+            <h1 style={S.title}>Reflection works in rhythms</h1>
+            <p style={S.body}>
+              {name} reflects you best when check-ins happen regularly — a minute
+              most days is plenty. To help the habit take hold, we&rsquo;ll send a
+              gentle morning email reminder. You&rsquo;re in control: adjust or turn
+              it off here, or later from your profile.
+            </p>
+
+            <div style={S.habitCard}>
+              <Checkbox checked={remindersOn} onChange={e => setRemindersOn(e.target.checked)}>
+                Email me check-in reminders
+              </Checkbox>
+
+              {remindersOn && (
+                <>
+                  <div style={S.habitGroup}>
+                    <p style={S.pickerLabel}>How often</p>
+                    <div style={S.pillRow}>
+                      {[['daily', 'Daily'], ['weekly', 'Weekly']].map(([val, label]) => (
+                        <button
+                          key={val}
+                          onClick={() => setReminderFreq(val)}
+                          style={{
+                            ...S.pillBtn,
+                            background:  reminderFreq === val ? 'var(--pk)' : 'var(--bg)',
+                            borderColor: reminderFreq === val ? 'var(--pk)' : 'var(--bgp)',
+                            color:       reminderFreq === val ? '#fff'      : 'var(--tx)',
+                          }}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div style={S.habitGroup}>
+                    <p style={S.pickerLabel}>Time of day</p>
+                    <div style={S.pillRow}>
+                      {[['morning', 'Morning'], ['midday', 'Midday'], ['evening', 'Evening']].map(([val, label]) => (
+                        <button
+                          key={val}
+                          onClick={() => setReminderTime(val)}
+                          style={{
+                            ...S.pillBtn,
+                            background:  reminderTime === val ? 'var(--pk)' : 'var(--bg)',
+                            borderColor: reminderTime === val ? 'var(--pk)' : 'var(--bgp)',
+                            color:       reminderTime === val ? '#fff'      : 'var(--tx)',
+                          }}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {!remindersOn && (
+                <p style={S.muted}>No emails — {name} will simply be here when you visit.</p>
+              )}
+            </div>
+
+            {error && <p style={S.errBox}>{error}</p>}
+
+            <OnboardingNavigation
+              onPrevious={() => setStep(STEPS.RIPPLE)}
+              onNext={submitHabit}
+              nextDisabled={busy}
+              nextLabel={busy ? 'Saving…' : 'Next →'}
+            />
+          </>
+        )}
+
         {step === STEPS.FINISH && (
           <>
-            {/* Finish copy composed to tone — Figma frame 187:2837 unavailable at
-                build time (MCP rate limit); layout follows Dev Spec §3.3/§6.3. */}
-            <EyebrowLabel variant="nobg">ALL SET</EyebrowLabel>
-            <h1 style={S.title}>Say hi to {name}</h1>
+            <EyebrowLabel variant="nobg">WELCOME ABOARD</EyebrowLabel>
+            <h1 style={S.title}>You&rsquo;re all set</h1>
             <div style={S.finishRow}>
               <div style={S.previewBox}>
                 <RippleAvatar skinColor={skin.hex} eyeColor={eye.hex} size={140} />
               </div>
               <p style={{ ...S.body, flex: 1, minWidth: 220 }}>
-                Onboarding&rsquo;s done — the platform is yours. A quick first
-                check-in helps {name} start reflecting you, or head straight
-                to your dashboard and explore the games.
+                Time for you and your Ripple to start exploring. Complete a
+                check-in now, or take a look at our platform and games at your
+                own pace.
               </p>
             </div>
 
@@ -557,6 +674,19 @@ const S = {
     border: '1px solid var(--bgp)', background: 'var(--bgp)',
     color: 'var(--pk)', fontSize: 18, cursor: 'pointer',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
+  },
+
+  habitCard: {
+    display: 'flex', flexDirection: 'column', gap: 16,
+    background: 'var(--bgc)', border: '1px solid var(--bgp)', borderRadius: 12,
+    padding: '16px 24px', width: '100%', boxSizing: 'border-box',
+  },
+  habitGroup: { display: 'flex', flexDirection: 'column', gap: 8 },
+  pillRow:    { display: 'flex', gap: 8, flexWrap: 'wrap' },
+  pillBtn: {
+    padding: '8px 20px', borderRadius: 24, border: '1px solid var(--bgp)',
+    fontFamily: SANS, fontSize: 14, fontWeight: 600, cursor: 'pointer',
+    transition: 'background 0.1s',
   },
 
   finishRow:  { display: 'flex', alignItems: 'center', gap: 28, flexWrap: 'wrap', width: '100%' },
