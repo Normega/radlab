@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { todayInLabTz } from '../_shared/labDate.ts'
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
@@ -84,7 +85,8 @@ Deno.serve(async (req) => {
     if (sessErr) throw new Error(`Sessions fetch failed: ${sessErr.message}`)
     if (!sessions?.length) throw new Error('No sessions configured for this study.')
 
-    const today = new Date().toISOString().slice(0, 10)
+    // Lab-local, not UTC — see _shared/labDate.ts.
+    const today = todayInLabTz()
     const scheduleRows = sessions.map((s, i) => ({
       participant_id:   participantId,
       study_id:         studyId,
