@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { todayInLabTz } from '../_shared/labDate.ts'
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
@@ -63,14 +64,14 @@ Deno.serve(async (req) => {
     })
     if (profileErr) throw new Error(`Profile update failed: ${profileErr.message}`)
 
-    // 2. Create enrollment record
-    const now = new Date().toISOString()
+    // 2. Create enrollment record. consent_date is deliberately NOT stamped
+    // here — the participant consents at /s/{token} (SessionEntry's consent
+    // gate + record_consent RPC), which only fires while consent_date is null.
     const { error: enrollErr } = await admin.from('study_enrollments').insert({
       study_id:     studyId,
       profile_id:   participantId,
       external_id:  sonaId ?? null,
-      enrolled_at:  now,
-      consent_date: now,
+      enrolled_at:  new Date().toISOString(),
       status:       'enrolled',
     })
     if (enrollErr) throw new Error(`Enrollment insert failed: ${enrollErr.message}`)
@@ -84,7 +85,8 @@ Deno.serve(async (req) => {
     if (sessErr) throw new Error(`Sessions fetch failed: ${sessErr.message}`)
     if (!sessions?.length) throw new Error('No sessions configured for this study.')
 
-    const today = new Date().toISOString().slice(0, 10)
+    // Lab-local, not UTC — see _shared/labDate.ts.
+    const today = todayInLabTz()
     const scheduleRows = sessions.map((s, i) => ({
       participant_id:   participantId,
       study_id:         studyId,
