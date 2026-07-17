@@ -3,8 +3,9 @@ import { supabase as globalSupabase } from '../../lib/supabase'
 
 // ── U of T Student Equity Census ────────────────────────────────────────────
 // Reproduction of the 2025-2026 U of T Student Equity Census (Office of the
-// Vice-Provost, Students). All questions required; every question offers
-// "Prefer not to answer". Responses stored as a single jsonb blob in
+// Vice-Provost, Students), preceded by a required numeric age question (not
+// part of the original census). All questions required; every census question
+// offers "Prefer not to answer". Responses stored as a single jsonb blob in
 // equity_census_responses (see supabase/migrations/20260713_equity_census.sql).
 //
 // Registered in src/components/study/advancedInstruments.js — keep that entry
@@ -217,6 +218,7 @@ function toggleMulti(options, selected, value) {
 export default function EquityCensusStep({ enrollment, scheduleId, onComplete, supabaseClient, isSimMode = false, previewMode = false }) {
   const db = supabaseClient ?? globalSupabase
 
+  const [age, setAge]                     = useState('')
   const [gender, setGender]               = useState([])
   const [trans, setTrans]                 = useState(null)
   const [orientation, setOrientation]     = useState([])
@@ -239,6 +241,7 @@ export default function EquityCensusStep({ enrollment, scheduleId, onComplete, s
 
   function buildResponses() {
     return {
+      age:                    Number(age),
       gender_identity:        gender,
       gender_identity_other:  gender.includes('not_listed') ? (specify.gender ?? '') : null,
       trans_identity:         trans,
@@ -277,6 +280,7 @@ export default function EquityCensusStep({ enrollment, scheduleId, onComplete, s
   // Sim mode: answer "prefer not to answer" throughout, then submit
   useEffect(() => {
     if (!isSimMode) return
+    setAge('30')
     setGender([PNA]); setTrans(PNA); setOrientation([PNA])
     setDisability(PNA); setIndigenous(PNA); setRacialized(PNA)
     setRace([PNA]); setReligion([PNA]); setParentEdu(PNA)
@@ -284,6 +288,7 @@ export default function EquityCensusStep({ enrollment, scheduleId, onComplete, s
       if (!previewMode) {
         setSaving(true)
         const { error: dbErr } = await insertResponses({
+          age: 30,
           gender_identity: [PNA], gender_identity_other: null, trans_identity: PNA,
           sexual_orientation: [PNA], sexual_orientation_other: null,
           disability: PNA, disability_types: [], disability_types_other: null,
@@ -300,7 +305,10 @@ export default function EquityCensusStep({ enrollment, scheduleId, onComplete, s
     return () => clearTimeout(t)
   }, [isSimMode]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  const ageValid = /^\d+$/.test(age.trim()) && Number(age) >= 10 && Number(age) <= 120
+
   const canSubmit =
+    ageValid &&
     gender.length > 0 &&
     trans !== null &&
     orientation.length > 0 &&
@@ -329,13 +337,32 @@ export default function EquityCensusStep({ enrollment, scheduleId, onComplete, s
       <h1 style={S.title}>Student Equity Census</h1>
       <p style={S.sub}>
         These questions are drawn from the U of T Student Equity Census. All questions are required — if
-        you do not wish to provide an answer for any question, you can select &ldquo;Prefer not to
-        answer&rdquo;. This option is available on every question. Your responses are confidential.
+        you do not wish to provide an answer for any census question, you can select &ldquo;Prefer not to
+        answer&rdquo;. This option is available on every census question. Your responses are confidential.
       </p>
 
-      {/* 1. Gender identity */}
+      {/* 1. Age */}
       <div style={S.section}>
-        <h2 style={S.qNum}>1. Gender Identity</h2>
+        <h2 style={S.qNum}>1. Age</h2>
+        <label style={S.qLabel}>What is your age in years?</label>
+        <input
+          type="number"
+          inputMode="numeric"
+          min={10}
+          max={120}
+          value={age}
+          onChange={e => setAge(e.target.value)}
+          placeholder="e.g. 21"
+          style={S.ageInput}
+        />
+        {age.trim() !== '' && !ageValid && (
+          <p style={S.error}>Please enter your age as a whole number (10–120).</p>
+        )}
+      </div>
+
+      {/* 2. Gender identity */}
+      <div style={S.section}>
+        <h2 style={S.qNum}>2. Gender Identity</h2>
         <label style={S.qLabel}>
           Please indicate which of the following terms best describes your gender identity. Check as many
           as apply. For select options, you may specify further below after selecting.
@@ -355,9 +382,9 @@ export default function EquityCensusStep({ enrollment, scheduleId, onComplete, s
         <ButtonRow options={TRANS_OPTIONS} value={trans} onChange={setTrans} />
       </div>
 
-      {/* 2. Sexual orientation */}
+      {/* 3. Sexual orientation */}
       <div style={S.section}>
-        <h2 style={S.qNum}>2. Sexual Orientation</h2>
+        <h2 style={S.qNum}>3. Sexual Orientation</h2>
         <label style={S.qLabel}>
           Please indicate which of the following terms best describe your sexual orientation. Check as
           many as apply. For select options, you may specify further below after selecting.
@@ -371,9 +398,9 @@ export default function EquityCensusStep({ enrollment, scheduleId, onComplete, s
         />
       </div>
 
-      {/* 3. Disability */}
+      {/* 4. Disability */}
       <div style={S.section}>
-        <h2 style={S.qNum}>3. Disability</h2>
+        <h2 style={S.qNum}>4. Disability</h2>
         <label style={S.qLabel}>Do you identify as a person with a disability?</label>
         <p style={S.defBlock}>{DISABILITY_DEF}</p>
         <ButtonRow
@@ -401,9 +428,9 @@ export default function EquityCensusStep({ enrollment, scheduleId, onComplete, s
         )}
       </div>
 
-      {/* 4. Indigenous identity */}
+      {/* 5. Indigenous identity */}
       <div style={S.section}>
-        <h2 style={S.qNum}>4. Indigenous Identity</h2>
+        <h2 style={S.qNum}>5. Indigenous Identity</h2>
         <label style={S.qLabel}>
           Do you identify as an Indigenous person from Turtle Island/North America? For example, First
           Nations (status or non-status), Inuk (Inuit), Métis, Alaska Native, Native American, Native
@@ -434,9 +461,9 @@ export default function EquityCensusStep({ enrollment, scheduleId, onComplete, s
         )}
       </div>
 
-      {/* 5. Racial / ethnocultural identity */}
+      {/* 6. Racial / ethnocultural identity */}
       <div style={S.section}>
-        <h2 style={S.qNum}>5. Racial and/or Ethnocultural Identity</h2>
+        <h2 style={S.qNum}>6. Racial and/or Ethnocultural Identity</h2>
         <label style={S.qLabel}>Do you identify as a racialized person/person of colour?</label>
         <p style={S.defBlock}>{RACIALIZED_DEF}</p>
         <ButtonRow
@@ -463,9 +490,9 @@ export default function EquityCensusStep({ enrollment, scheduleId, onComplete, s
         />
       </div>
 
-      {/* 6. Religion */}
+      {/* 7. Religion */}
       <div style={S.section}>
-        <h2 style={S.qNum}>6. Religious, Spiritual Affiliations or Beliefs</h2>
+        <h2 style={S.qNum}>7. Religious, Spiritual Affiliations or Beliefs</h2>
         <label style={S.qLabel}>
           Which of the following best reflect your religious identity, spiritual traditions or beliefs?
           Check as many as apply.
@@ -479,9 +506,9 @@ export default function EquityCensusStep({ enrollment, scheduleId, onComplete, s
         />
       </div>
 
-      {/* 7. Parental education */}
+      {/* 8. Parental education */}
       <div style={S.section}>
-        <h2 style={S.qNum}>7. Educational Attainment of Parents or Guardians</h2>
+        <h2 style={S.qNum}>8. Educational Attainment of Parents or Guardians</h2>
         <label style={S.qLabel}>
           What is the highest level of formal education of your most highly educated parent or guardian?
         </label>
@@ -512,9 +539,9 @@ export default function EquityCensusStep({ enrollment, scheduleId, onComplete, s
         </div>
       </div>
 
-      {/* 8. Feedback */}
+      {/* 9. Feedback */}
       <div style={S.section}>
-        <h2 style={S.qNum}>8. Feedback <span style={S.optional}>(optional)</span></h2>
+        <h2 style={S.qNum}>9. Feedback <span style={S.optional}>(optional)</span></h2>
         <label style={S.qLabel}>
           To assist us in our review of this data collection, please share any comments about the
           questions or this process with us here. We appreciate your feedback as we work to collect
@@ -710,6 +737,12 @@ const S = {
   checkLabel: { fontSize: 14, color: 'var(--tx)', lineHeight: 1.5 },
   defText: {
     display: 'block', fontSize: 12.5, color: 'var(--tx3)', lineHeight: 1.55, marginTop: 2,
+  },
+  ageInput: {
+    width: 120, boxSizing: 'border-box', padding: '10px 14px',
+    border: '1px solid var(--bd)', borderRadius: 10,
+    fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 15, color: 'var(--tx)',
+    background: '#fff', outline: 'none',
   },
   specifyInput: {
     display: 'block', width: '100%', maxWidth: 420, boxSizing: 'border-box',
