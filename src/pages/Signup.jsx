@@ -1,7 +1,17 @@
-﻿import { useState } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Nav from '../components/Nav'
+import CredentialsBox from '../components/ui/CredentialsBox'
+import FillableBox from '../components/ui/FillableBox'
+import PrimaryCTA from '../components/ui/PrimaryCTA'
+
+// Signup/Join — Onboarding Redesign v1 (Figma 153:321 / 153:866).
+// One screen: the Inactive→Active pair is per-input validation gating the CTA
+// (Dev Spec §3, DISSOLVE note), not two screens. Done-state renders the
+// Signup/EmailConfirmation design (153:560) with the real entered email.
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export default function Signup() {
   const [email,    setEmail]    = useState('')
@@ -11,8 +21,11 @@ export default function Signup() {
   const [loading,  setLoading]  = useState(false)
   const [done,     setDone]     = useState(false)
 
+  const valid = name.trim().length > 0 && EMAIL_RE.test(email) && password.length >= 8
+
   async function handleSubmit(e) {
     e.preventDefault()
+    if (!valid) return
     setError(null)
     setLoading(true)
 
@@ -37,27 +50,21 @@ export default function Signup() {
       return
     }
 
-    // Supabase sends a confirmation email by default.
-    // If email confirmation is disabled in your project settings, this
-    // will redirect straight to dashboard via the auth state listener in App.jsx.
     setDone(true)
   }
 
+  // Signup/EmailConfirmation (Figma 153:560) — real email, never the [email] placeholder.
   if (done) {
     return (
       <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
         <Nav session={null} />
-        <div style={S.wrap}>
-          <div style={S.card}>
-            <img src="/RADlab_Logo_light.svg" height="48" alt="RADlab" style={{ display: 'block', margin: '0 auto 20px' }} />
-            <h1 style={S.title}>Check your email</h1>
-            <p style={{ ...S.sub, maxWidth: 320, margin: '0 auto 24px' }}>
-              We sent a confirmation link to <strong>{email}</strong>.
-              Click it to activate your account, then come back to log in.
-            </p>
-            <Link to="/login" style={S.btnPrimary}>Go to login</Link>
-          </div>
-        </div>
+        <CredentialsBox title="Check your email">
+          <p style={S.confirmBody}>
+            We sent a confirmation link to <strong>{email}</strong>.
+            Click it to activate your account, then come back to log in.
+          </p>
+          <PrimaryCTA to="/login">Go to login</PrimaryCTA>
+        </CredentialsBox>
       </div>
     )
   }
@@ -65,75 +72,63 @@ export default function Signup() {
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
       <Nav session={null} />
-      <div style={S.wrap}>
-        <div style={S.card}>
-          <img src="/RADlab_Logo_light.svg" height="48" alt="RADlab" style={{ display: 'block', margin: '0 auto 20px' }} />
-          <h1 style={S.title}>Join RADlab</h1>
-          <p style={S.sub}>Free account · no credit card needed</p>
+      <CredentialsBox title="Join RADlab" tagline="Free-to-play perception games">
+        {error === 'already_registered' ? (
+          <div style={S.errorBox}>
+            This email is already registered.{' '}
+            <Link to="/login" style={{ color: 'inherit', fontWeight: 600 }}>Log in</Link>
+            {' '}or{' '}
+            <Link to="/forgot-password" style={{ color: 'inherit', fontWeight: 600 }}>reset your password</Link>.
+          </div>
+        ) : error && <div style={S.errorBox}>{error}</div>}
 
-          {error === 'already_registered' ? (
-            <div style={S.errorBox}>
-              This email is already registered.{' '}
-              <Link to="/login" style={{ color: 'inherit', fontWeight: 600 }}>Sign in</Link>
-              {' '}or{' '}
-              <Link to="/forgot-password" style={{ color: 'inherit', fontWeight: 600 }}>reset your password</Link>.
-            </div>
-          ) : error && <div style={S.errorBox}>{error}</div>}
-
-          <form onSubmit={handleSubmit} style={S.form}>
-            <div style={S.field}>
-              <label style={S.label}>Display name</label>
-              <input
-                type="text" required
-                value={name} onChange={e => setName(e.target.value)}
-                style={S.input} placeholder="e.g. neuroqueen88"
-              />
-              <p style={S.hint}>This is what appears on leaderboards</p>
-            </div>
-            <div style={S.field}>
-              <label style={S.label}>Email</label>
-              <input
-                type="email" required autoComplete="email"
-                value={email} onChange={e => setEmail(e.target.value)}
-                style={S.input} placeholder="you@example.com"
-              />
-            </div>
-            <div style={S.field}>
-              <label style={S.label}>Password</label>
-              <input
-                type="password" required minLength={8} autoComplete="new-password"
-                value={password} onChange={e => setPassword(e.target.value)}
-                style={S.input} placeholder="8+ characters"
-              />
-            </div>
-            <button type="submit" style={S.btnPrimary} disabled={loading}>
+        <form onSubmit={handleSubmit} style={S.form}>
+          <FillableBox
+            label="Display name"
+            placeholder="e.g. neuroqueen88"
+            description="This is what appears on leaderboards"
+            type="text" required
+            value={name} onChange={e => setName(e.target.value)}
+          />
+          <FillableBox
+            label="Email"
+            placeholder="you@example.com"
+            type="email" required autoComplete="email"
+            value={email} onChange={e => setEmail(e.target.value)}
+          />
+          <FillableBox
+            label="Password"
+            placeholder="8+ characters"
+            type="password" required minLength={8} autoComplete="new-password"
+            value={password} onChange={e => setPassword(e.target.value)}
+          />
+          <div style={S.ctaRow}>
+            <PrimaryCTA type="submit" disabled={!valid || loading}>
               {loading ? 'Creating account…' : 'Create account'}
-            </button>
-          </form>
+            </PrimaryCTA>
+          </div>
+        </form>
 
-          <p style={S.footer}>
-            Already have an account?{' '}
-            <Link to="/login" style={{ color: 'var(--pk)', textDecoration: 'none', fontWeight: 600 }}>
-              Sign in
-            </Link>
-          </p>
-        </div>
-      </div>
+        <p style={S.footer}>
+          Already have an account?{' '}
+          <Link to="/login" style={S.footerLink}>Log in</Link>
+        </p>
+      </CredentialsBox>
     </div>
   )
 }
 
 const S = {
-  wrap:  { display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 20px' },
-  card:  { background: 'var(--bgc)', border: '1px solid var(--bds)', borderRadius: 20, padding: '40px 36px', width: '100%', maxWidth: 420 },
-  title: { fontFamily: '"DM Serif Display", Georgia, serif', fontSize: 30, color: 'var(--tx)', textAlign: 'center', marginBottom: 6 },
-  sub:   { fontSize: 14, color: 'var(--tx2)', textAlign: 'center', marginBottom: 28 },
-  form:  { display: 'flex', flexDirection: 'column', gap: 16 },
-  field: { display: 'flex', flexDirection: 'column', gap: 6 },
-  label: { fontFamily: '"Space Mono", monospace', fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--tx3)' },
-  input: { padding: '10px 14px', borderRadius: 9, border: '1px solid var(--bds)', background: 'var(--bgp)', fontSize: 15, color: 'var(--tx)', outline: 'none', fontFamily: 'inherit' },
-  hint:  { fontSize: 12, color: 'var(--tx3)', marginTop: 2 },
-  btnPrimary: { display: 'block', width: '100%', padding: '12px 0', background: 'var(--pk)', border: 'none', borderRadius: 12, color: '#fff', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', marginTop: 4, textDecoration: 'none', textAlign: 'center' },
-  errorBox: { background: 'var(--err-bg)', border: '1px solid var(--err-bd)', borderRadius: 9, padding: '10px 14px', fontSize: 13, color: 'var(--err-tx)', marginBottom: 16 },
-  footer: { textAlign: 'center', fontSize: 13, color: 'var(--tx2)', marginTop: 24 },
+  form: { display: 'flex', flexDirection: 'column', gap: 16, width: '100%', paddingTop: 8 },
+  ctaRow: { display: 'flex', justifyContent: 'center', paddingTop: 8 },
+  confirmBody: {
+    fontFamily: '"DM Sans", system-ui, sans-serif', fontSize: 12, lineHeight: 1.5,
+    color: 'var(--tx2)', textAlign: 'center', margin: '0 0 16px', maxWidth: 250,
+  },
+  errorBox: {
+    background: 'var(--err-bg)', border: '1px solid var(--err-bd)', borderRadius: 12,
+    padding: '10px 14px', fontSize: 13, color: 'var(--err-tx)', width: '100%', boxSizing: 'border-box',
+  },
+  footer: { textAlign: 'center', fontSize: 12, fontWeight: 600, color: 'var(--tx2)', margin: '8px 0 0' },
+  footerLink: { color: 'var(--pk)', textDecoration: 'none', fontWeight: 600 },
 }
