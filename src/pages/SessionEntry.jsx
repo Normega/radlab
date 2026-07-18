@@ -32,6 +32,10 @@ export default function SessionEntry() {
   // { next_contact: {scheduled_date, send_time}|null, has_more: bool|null }
   const [completionInfo, setCompletionInfo] = useState(null)
   const fullDataRef = useRef(null)
+  // Wall-clock (client Date.now) when the current step mounted — used to record
+  // per-step time-on-screen. Same clock for entry+exit, so duration is accurate
+  // even if the participant's absolute clock is skewed.
+  const stepEnteredAtRef = useRef(null)
   // Isolated Supabase client — never modifies the global lab session.
   const sbRef = useRef(makeParticipantClient())
   const sb    = sbRef.current
@@ -51,6 +55,16 @@ export default function SessionEntry() {
   })
 
   useEffect(() => { resolveToken() }, [token])
+
+  // Stamp when each step becomes visible, so handleStepComplete can record how
+  // long it was on screen. Fires on entry to step 0 (state → running) and on
+  // every subsequent advance (currentIndex change).
+  useEffect(() => {
+    if (state !== 'running') return
+    const nodes = sessionData?.nodes ?? []
+    if (!nodes[currentIndex]) return
+    stepEnteredAtRef.current = Date.now()
+  }, [state, currentIndex, sessionData])
 
   async function resolveToken() {
     // 1. Exchange link token for a participant Supabase session
@@ -197,6 +211,28 @@ export default function SessionEntry() {
   }
 
   async function handleStepComplete(result) {
+    // Record time-on-screen for the step just finished (fire-and-forget; never
+    // blocks advancing). Covers both the advance and final-step branches below.
+    const exitedAt  = Date.now()
+    const enteredAt = stepEnteredAtRef.current
+    const timedNodes = sessionData?.nodes ?? []
+    const timedNode  = timedNodes[currentIndex]
+    if (enteredAt && timedNode) {
+      const activity = timedNode.activity ?? timedNode.activities ?? {}
+      sb.from('participant_step_timings').insert({
+        participant_id:          sessionData?.link?.participant_id,
+        participant_schedule_id: sessionData?.schedule?.id ?? null,
+        study_id:                sessionData?.link?.study_id ?? null,
+        step_index:              currentIndex,
+        activity_id:             activity.id ?? timedNode.activity_id ?? null,
+        category:                activity.category ?? null,
+        subcategory:             activity.subcategory ?? null,
+        label:                   activity.label ?? timedNode.label ?? null,
+        entered_at:              new Date(enteredAt).toISOString(),
+        exited_at:               new Date(exitedAt).toISOString(),
+      }).then(({ error }) => { if (error) console.warn('step timing insert failed:', error.message) })
+    }
+
     // Capture named outputs from steps that report them (games, sliders, VAS)
     // so later display steps can interpolate {{game.<slug>.<key>}} etc.
     if (result && typeof result === 'object') {
