@@ -47,10 +47,14 @@ export default function WellnessTipStep({
   const db = supabaseClient ?? globalSupabase
   const slot = slotFromSendTime(sendTime)
 
+  // The schedule counts baseline as study_day 1, so dailies arrive as
+  // study_day 2–22. Subtract 1 to get the protocol day (1–21) that keys the
+  // tip script, the "Day N" label, and the saved row — otherwise day-1's tip
+  // never shows and the final-day script falls off the end.
   // Live: look up by day+slot. Preview (no schedule context): show a sample.
-  const effectiveDay  = previewMode && studyDay == null ? 1 : studyDay
+  const protocolDay   = studyDay != null ? studyDay - 1 : (previewMode ? 1 : null)
   const effectiveSlot = previewMode && slot == null ? 'morning' : slot
-  const tip = CONTROL_TIPS[effectiveDay]?.[effectiveSlot]
+  const tip = CONTROL_TIPS[protocolDay]?.[effectiveSlot]
     ?? 'Take a brief moment for yourself before continuing.'
 
   const [saving, setSaving] = useState(false)
@@ -74,7 +78,7 @@ export default function WellnessTipStep({
       study_id:    studyId,
       external_id: enrollment?.external_id ?? null,
       schedule_id: scheduleId,
-      study_day:   studyDay,
+      study_day:   protocolDay,
       slot,
       arm:         'control',
       rating:      null,
@@ -94,7 +98,7 @@ export default function WellnessTipStep({
   return (
     <div style={S.wrap}>
       <div style={S.card}>
-        <p style={S.eyebrow}>Daily check-in{effectiveDay ? ` · Day ${effectiveDay}` : ''}</p>
+        <p style={S.eyebrow}>Daily check-in{protocolDay ? ` · Day ${protocolDay}` : ''}</p>
         <p style={S.tip}>{tip}</p>
         {error && <p style={S.errMsg}>{error}</p>}
         <button

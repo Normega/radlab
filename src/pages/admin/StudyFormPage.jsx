@@ -376,7 +376,7 @@ export default function StudyFormPage() {
                 style={{ ...S.input, minHeight: 120, resize: 'vertical' }}
                 value={emailBody}
                 onChange={e => setEmailBody(e.target.value)}
-                placeholder="Hi {{first_name}}, your session link is ready: {{link_url}}"
+                placeholder="Hi! Your session link is ready: {{link_url}}"
               />
             </div>
 

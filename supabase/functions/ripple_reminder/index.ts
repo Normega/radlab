@@ -113,14 +113,6 @@ Deno.serve(async (req) => {
       return json({ sent: 0, skipped: (candidates ?? []).length, window: activeWindow })
     }
 
-    // Bulk-fetch display names
-    const userIds = eligible.map(r => r.user_id)
-    const { data: profiles } = await db
-      .from('profiles')
-      .select('id, display_name')
-      .in('id', userIds)
-    const nameMap = new Map((profiles ?? []).map(p => [p.id, p.display_name]))
-
     const resend = new Resend(Deno.env.get('RESEND_API_KEY'))
     let sent = 0, failed = 0
 
@@ -134,14 +126,12 @@ Deno.serve(async (req) => {
           continue
         }
 
-        const displayName = nameMap.get(row.user_id) ?? ''
-        const firstName   = displayName.split(' ')[0] || 'there'
-        const checkinUrl  = `${siteUrl}/checkin`
+        const checkinUrl = `${siteUrl}/checkin`
 
         const unsubToken     = await getOrCreateRippleUnsubscribeToken(db, row.user_id)
         const unsubscribeUrl = `${siteUrl}/unsubscribe/${unsubToken}`
 
-        const { subject, html, text } = renderRippleEmail({ firstName, checkinUrl, unsubscribeUrl })
+        const { subject, html, text } = renderRippleEmail({ checkinUrl, unsubscribeUrl })
 
         const { error: sendErr } = await resend.emails.send({
           from: fromEmail,
@@ -181,14 +171,13 @@ Deno.serve(async (req) => {
 // ─── Email template ───────────────────────────────────────────────────────────
 
 function renderRippleEmail(vars: {
-  firstName: string
   checkinUrl: string
   unsubscribeUrl: string
 }): { subject: string; html: string; text: string } {
   const subject = 'Your Ripple check-in — how are you arriving today?'
 
   const text =
-`Hi ${vars.firstName},
+`Hi!
 
 Just a gentle nudge — how are you arriving today?
 
@@ -225,7 +214,7 @@ Regulatory and Affective Dynamics Lab · University of Toronto Mississauga`
           <tr>
             <td style="background-color:#ffffff;border-radius:12px;padding:40px;box-shadow:0 1px 4px rgba(0,0,0,0.06);">
 
-              <p style="margin:0 0 8px 0;font-size:15px;color:#1c1c1e;line-height:1.6;">Hi ${vars.firstName},</p>
+              <p style="margin:0 0 8px 0;font-size:15px;color:#1c1c1e;line-height:1.6;">Hi!</p>
               <p style="margin:0 0 16px 0;font-size:15px;color:#1c1c1e;line-height:1.6;">Just a gentle nudge — how are you arriving today?</p>
               <p style="margin:0 0 32px 0;font-size:15px;color:#555;line-height:1.6;">Your Ripple is ready when you are.</p>
 

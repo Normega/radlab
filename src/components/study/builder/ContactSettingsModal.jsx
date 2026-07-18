@@ -167,7 +167,7 @@ export default function ContactSettingsModal({ studyId, onClose }) {
                   style={{ ...S.input, minHeight: 120, resize: 'vertical' }}
                   value={emailBody}
                   onChange={e => setEmailBody(e.target.value)}
-                  placeholder="Hi {{first_name}}, your Study Day {{study_day}} session is ready: {{link_url}}"
+                  placeholder="Hi! Your Study Day {{study_day}} session is ready: {{link_url}}"
                 />
               </div>
 

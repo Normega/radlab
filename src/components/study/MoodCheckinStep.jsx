@@ -33,6 +33,11 @@ export default function MoodCheckinStep({
   const slot = slotFromSendTime(sendTime)
   const anchor = comparisonAnchor(slot)
 
+  // The schedule counts baseline as study_day 1, so dailies arrive as
+  // study_day 2–22. Subtract 1 to get the protocol day (1–21) used for the
+  // "Day N" label and the saved row (matches WellnessTipStep's numbering).
+  const protocolDay = studyDay != null ? studyDay - 1 : null
+
   const [rating,    setRating]    = useState(null)
   const [direction, setDirection] = useState(null)
   const [reason,    setReason]    = useState('')
@@ -63,7 +68,7 @@ export default function MoodCheckinStep({
       study_id:    studyId,
       external_id: enrollment?.external_id ?? null,
       schedule_id: scheduleId,
-      study_day:   studyDay,
+      study_day:   protocolDay,
       slot,
       arm,
       rating:      r,
@@ -88,7 +93,7 @@ export default function MoodCheckinStep({
   return (
     <div style={S.wrap}>
       <div style={S.card}>
-        <p style={S.eyebrow}>Daily check-in{studyDay ? ` · Day ${studyDay}` : ''}</p>
+        <p style={S.eyebrow}>Daily check-in{protocolDay ? ` · Day ${protocolDay}` : ''}</p>
         <h2 style={S.heading}>How are you feeling right now?</h2>
         <p style={S.scaleHint}>1 = very bad&nbsp;&nbsp;·&nbsp;&nbsp;7 = very good</p>
 

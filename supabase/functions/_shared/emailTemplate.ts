@@ -154,7 +154,7 @@ const TERMINATION_HTML_WRAPPER = `<!DOCTYPE html>
 
 // ─── Default body ─────────────────────────────────────────────────────────────
 
-const DEFAULT_BODY = `Hi {{first_name}},
+const DEFAULT_BODY = `Hi!
 
 Your session for Study Day {{study_day}} is ready.
 
