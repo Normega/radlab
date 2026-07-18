@@ -25,6 +25,7 @@ export default function VideoStepWrapper({
   const db = supabaseClient ?? globalSupabase
   const participantId = enrollment?.profile_id ?? enrollment?.user_id ?? null
   const [done, setDone] = useState(false)
+  const [sessionId, setSessionId] = useState(null)
 
   const { data: video, isLoading, error } = useQuery({
     queryKey: ['video-step', subcategory],
@@ -62,7 +63,7 @@ export default function VideoStepWrapper({
         requiredWatchPct={0.9}
         preview={preview}
         supabaseClient={db}
-        onComplete={() => setDone(true)}
+        onComplete={(sid) => { setDone(true); if (sid) setSessionId(sid) }}
       />
       {!done && (
         <p style={S.note}>Continue will unlock once the video has been watched.</p>
@@ -70,7 +71,16 @@ export default function VideoStepWrapper({
       <button
         style={{ ...S.btn, ...(done ? {} : S.btnOff) }}
         disabled={!done}
-        onClick={() => onComplete?.({ video_id: video.id, watched: true })}
+        onClick={async () => {
+          // Stamp when the participant left the video screen, so post-video dwell
+          // (advanced_at - completed_at) is measurable. Fire-and-forget; never
+          // block advancing on it. Skipped in preview (no sessionId).
+          if (sessionId && !preview) {
+            db.rpc('mark_video_advanced', { p_session_id: sessionId })
+              .then(({ error }) => { if (error) console.warn('mark_video_advanced failed:', error.message) })
+          }
+          onComplete?.({ video_id: video.id, watched: true })
+        }}
       >
         Continue
       </button>
