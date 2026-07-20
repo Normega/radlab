@@ -48,6 +48,7 @@ const FaceRead      = lazy(() => import('./games/FaceRead/FaceRead'))
 const Drift         = lazy(() => import('./games/Drift/Drift'))
 const FarmJoy       = lazy(() => import('./games/FarmJoy/FarmJoy'))
 const BreathBelt    = lazy(() => import('./games/BreathBelt/BreathBelt'))
+const BreathGuardian = lazy(() => import('./games/BreathGuardian/BreathGuardian'))
 const AptitudeSuite = lazy(() => import('./games/AptitudeSuite/AptitudeSuite'))
 const WordMax       = lazy(() => import('./games/WordMax/WordMax'))
 const ColorMax      = lazy(() => import('./games/ColorMax/ColorMax'))
@@ -363,6 +364,14 @@ export default function App() {
           <Route path="/games/breath-belt" element={
             <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome} needsRippleName={needsRippleName}>
               <BreathBelt />
+            </ProtectedRoute>
+          } />
+
+          {/* Breath Guardian — hold-to-inhale dome game; fullscreen fixed overlay
+              with its own in-game exit link, so no Nav here (it would be covered). */}
+          <Route path="/games/breath-guardian" element={
+            <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome} needsRippleName={needsRippleName}>
+              <BreathGuardian session={session} />
             </ProtectedRoute>
           } />
 

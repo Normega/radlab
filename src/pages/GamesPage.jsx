@@ -77,6 +77,15 @@ export default function GamesPage({ session, firstContactComplete }) {
             to="/games/farm-joy"
           />
 
+          {/* Breath Guardian — hold-to-inhale dome game */}
+          <GameCard
+            title="Breath Guardian"
+            badge="Breath regulation · Boundaries"
+            desc="Hold to breathe in and raise the dome; release to breathe out and welcome the world through."
+            to="/games/breath-guardian"
+          />
+
+
           {/* Ebb & Flow: locked until First Contact is complete */}
           <GameCard
             title="Ebb &amp; Flow"
