@@ -77,11 +77,11 @@ export default function GamesPage({ session, firstContactComplete }) {
             to="/games/farm-joy"
           />
 
-          {/* Breath Guardian — hold-to-inhale dome game */}
+          {/* Breath Guardian — hold-to-inhale breathing game */}
           <GameCard
             title="Breath Guardian"
             badge="Breath regulation · Boundaries"
-            desc="Hold to breathe in and raise the dome; release to breathe out and welcome the world through."
+            desc="Hold to breathe in and raise the shield; release to breathe out and welcome the world through."
             to="/games/breath-guardian"
           />
 
