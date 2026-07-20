@@ -1,9 +1,11 @@
 // send_message — core email sending primitive.
 // Called by check_schedule (cron) or directly for test sends from the admin UI.
 //
-// POST body: { schedule_id: string, test_override_email?: string }
+// POST body: { schedule_id: string, test_override_email?: string, is_reminder?: boolean }
 // When test_override_email is provided this is a test send — consent is skipped,
 // recipient is the override address, subject is prefixed with [TEST].
+// When is_reminder is true (reminder resends from check_schedule) the copy is
+// framed as a follow-up nudge rather than a first-time invitation.
 
 import { createClient, SupabaseClient } from 'npm:@supabase/supabase-js@2'
 import { Resend } from 'npm:resend'
@@ -48,7 +50,7 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json().catch(() => ({}))
-    const { schedule_id, test_override_email } = body
+    const { schedule_id, test_override_email, is_reminder } = body
 
     // 1. Validate input
     if (!schedule_id) {
@@ -128,6 +130,7 @@ Deno.serve(async (req) => {
 
     // 5. Resolve or create participant link
     let token: string | null = null
+    let linkExpiresAt: string | null = null
 
     if (row.link_id) {
       const { data: existingLink } = await db
@@ -139,7 +142,10 @@ Deno.serve(async (req) => {
       const stillActive = existingLink?.status === 'active' &&
         (!existingLink.expires_at || new Date(existingLink.expires_at) > new Date())
 
-      if (stillActive) token = existingLink!.token
+      if (stillActive) {
+        token = existingLink!.token
+        linkExpiresAt = existingLink!.expires_at ?? null
+      }
     }
 
     if (!token) {
@@ -164,16 +170,28 @@ Deno.serve(async (req) => {
       unsubscribeUrl = `${siteUrl}/unsubscribe/${unsubToken}`
     }
 
+    // For a reminder the link has already been alive a while, so its remaining
+    // lifetime is shorter than the session's full expiry window. Show whole
+    // hours REMAINING, rounded down so we never promise more time than is
+    // actually left. First sends (and the rare case where we lack the link's
+    // expires_at) keep the full window, which is accurate at issue time.
+    let displayExpiresHours = expiresHours
+    if (is_reminder && linkExpiresAt) {
+      const remainingHours = Math.floor((new Date(linkExpiresAt).getTime() - Date.now()) / 3_600_000)
+      displayExpiresHours = Math.max(1, remainingHours)
+    }
+
     // 7. Render email (subject + HTML + plain text)
     const { subject, html, text } = renderEmail({
       first_name:      firstName,
       study_day:       row.study_day,
       link_url:        linkUrl,
-      expires_hours:   expiresHours,
+      expires_hours:   displayExpiresHours,
       custom_subject:  customSubject,
       custom_body:     customBody,
       unsubscribe_url: unsubscribeUrl,
       is_test:         isTest,
+      is_reminder:     !!is_reminder,
     })
 
     // Warn if any template variables remain unresolved after substitution

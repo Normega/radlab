@@ -314,7 +314,7 @@ Deno.serve(async (req) => {
                   'Authorization': `Bearer ${serviceKey}`,
                   'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ schedule_id: row.id }),
+                body: JSON.stringify({ schedule_id: row.id, is_reminder: true }),
               })
               const sendBody = await sendRes.json()
               if (sendBody?.success) {

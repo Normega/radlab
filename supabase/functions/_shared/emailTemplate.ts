@@ -12,6 +12,7 @@ export function renderEmail(vars: {
   custom_body: string | null
   unsubscribe_url: string | null
   is_test?: boolean
+  is_reminder?: boolean
 }): { subject: string; html: string; text: string } {
   // {{study_day}} resolves to the integer, or "your study" for single-shot rows
   const studyDayStr = vars.study_day != null ? String(vars.study_day) : 'your study'
@@ -28,10 +29,19 @@ export function renderEmail(vars: {
   let subject = vars.custom_subject
     ? resolve(vars.custom_subject)
     : 'Your RADlab session is ready'
+  // Reminder resends prefix the subject so it's distinguishable in the inbox
+  // from the original send (whose copy it otherwise reuses verbatim).
+  if (vars.is_reminder) subject = `Reminder: ${subject}`
   if (vars.is_test) subject = `[TEST] ${subject}`
 
-  // Body text (resolved)
-  const bodyText = resolve(vars.custom_body ?? DEFAULT_BODY)
+  // Body text (resolved). For a reminder resend, lead with a short line that
+  // makes clear this is a follow-up nudge rather than a first-time invitation;
+  // the original (or per-study custom) body follows unchanged beneath it, so
+  // the link, expiry notice, and any custom copy are preserved.
+  const resolvedBody = resolve(vars.custom_body ?? DEFAULT_BODY)
+  const bodyText = vars.is_reminder
+    ? `${REMINDER_INTRO}\n\n${resolvedBody}`
+    : resolvedBody
 
   // Convert resolved body text to HTML:
   // double newlines → <p> tags, single newlines → <br>
@@ -151,6 +161,13 @@ const TERMINATION_HTML_WRAPPER = `<!DOCTYPE html>
   </table>
 </body>
 </html>`
+
+// ─── Reminder lead-in ─────────────────────────────────────────────────────────
+// Prepended to the body on a reminder resend (see renderEmail). Kept generic so
+// it flows regardless of how the original/custom body opens, and so it never
+// contradicts the per-study copy that follows.
+
+const REMINDER_INTRO = `Just a friendly reminder — it looks like you haven't completed this session yet, and your personal link is still active, so there's still time. The original details are below.`
 
 // ─── Default body ─────────────────────────────────────────────────────────────
 

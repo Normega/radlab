@@ -78,10 +78,15 @@ export default function ParticipantsAdminTab() {
     setCollapsed(next)
   }
 
-  async function sendReminder(scheduleId) {
+  async function sendReminder(row) {
+    const scheduleId = row.id
     setReminder(prev => ({ ...prev, [scheduleId]: 'sending' }))
+    // Frame as a reminder only when the link has actually been sent already;
+    // if the current row was never emailed (pending/unlocked), this button is
+    // the first send and should use the normal invitation copy.
+    const isReminder = row.status === 'link_sent'
     const { data: res, error: err } = await supabase.functions.invoke('send_message', {
-      body: { schedule_id: scheduleId },
+      body: { schedule_id: scheduleId, is_reminder: isReminder },
     })
     if (err || res?.error || res?.success === false) {
       setReminder(prev => ({ ...prev, [scheduleId]: err?.message ?? res?.error ?? 'send failed' }))
@@ -159,7 +164,7 @@ export default function ParticipantsAdminTab() {
                                 : remState === 'sent' ? <span style={{ ...S.mono, color: '#3b6d11' }}>sent ✓</span>
                                 : remState ? <span style={{ ...S.mono, color: '#e04' }} title={remState}>{remState}</span>
                                 : (
-                                  <button style={S.actionBtn} onClick={() => sendReminder(p.current.id)}>
+                                  <button style={S.actionBtn} onClick={() => sendReminder(p.current)}>
                                     Send reminder
                                   </button>
                                 )
