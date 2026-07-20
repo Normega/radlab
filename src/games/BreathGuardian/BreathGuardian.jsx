@@ -976,7 +976,39 @@ export default function BreathGuardian({ session }) {
             </g>
         )}
 
-        {/* ---------- ENTITIES ---------- */}
+        {/* ---------- HERO ---------- */}
+        {/* Drawn BEFORE the entities so the imps/villagers (and pathogens/
+            nutrients) march in FRONT of the guardian's body, not behind it.
+            (The avatar face is a separate HTML overlay that still paints on top,
+            but it sits high/centred, clear of the ground-level sprites.) */}
+        {skinKey === "fantasy" ? (() => {
+          const sheet = SHEETS.fantasy;
+          const frame = Math.round(p * (sheet.frames - 1));
+          const col = frame % sheet.cols;
+          const row = Math.floor(frame / sheet.cols);
+          const dispH = layout.guardH;
+          const dispW = (sheet.cellW / sheet.cellH) * dispH;
+          const sc = dispW / sheet.cellW;
+          const [mx, my] = MOUNTS.fantasy[frame];
+          const fit = HEAD_FIT.fantasy;
+          const headD = 27 * sc * fit.scale * (1 + 0.16 * ease); // fixed base; visible swell with breath
+          const hx = mx * sc;
+          const hy = my * sc + headD * fit.dy;
+          return (
+            <g transform={`translate(${layout.guardianX - dispW / 2}, ${layout.groundY - dispH})`}>
+              <clipPath id="guardClip"><rect width={dispW} height={dispH} /></clipPath>
+              <g clipPath="url(#guardClip)">
+                <image href={sheet.src} x={-col * dispW} y={-row * dispH}
+                  width={sheet.cols * dispW} height={sheet.rows * dispH} />
+              </g>
+              <AvatarHead x={hx} y={hy} d={headD} avatar={avatar} markerRef={headMarkerRef} />
+            </g>
+          );
+        })() : (
+          <CellHero ease={ease} cx={layout.guardianX} groundY={layout.groundY} fit={HEAD_FIT.medical} avatar={avatar} markerRef={headMarkerRef} now={clockRef.current} />
+        )}
+
+        {/* ---------- ENTITIES (in front of the guardian) ---------- */}
         {entities.map((e) => {
           const img =
             e.mode === "bounce" ? e.art.b        // threat recoils (B pose), mirrored to face left
@@ -1008,35 +1040,6 @@ export default function BreathGuardian({ session }) {
               strokeWidth={4 * (1 - age)} opacity={1 - age} />
           );
         })}
-
-
-        {/* ---------- HERO ---------- */}
-        {skinKey === "fantasy" ? (() => {
-          const sheet = SHEETS.fantasy;
-          const frame = Math.round(p * (sheet.frames - 1));
-          const col = frame % sheet.cols;
-          const row = Math.floor(frame / sheet.cols);
-          const dispH = layout.guardH;
-          const dispW = (sheet.cellW / sheet.cellH) * dispH;
-          const sc = dispW / sheet.cellW;
-          const [mx, my] = MOUNTS.fantasy[frame];
-          const fit = HEAD_FIT.fantasy;
-          const headD = 27 * sc * fit.scale * (1 + 0.16 * ease); // fixed base; visible swell with breath
-          const hx = mx * sc;
-          const hy = my * sc + headD * fit.dy;
-          return (
-            <g transform={`translate(${layout.guardianX - dispW / 2}, ${layout.groundY - dispH})`}>
-              <clipPath id="guardClip"><rect width={dispW} height={dispH} /></clipPath>
-              <g clipPath="url(#guardClip)">
-                <image href={sheet.src} x={-col * dispW} y={-row * dispH}
-                  width={sheet.cols * dispW} height={sheet.rows * dispH} />
-              </g>
-              <AvatarHead x={hx} y={hy} d={headD} avatar={avatar} markerRef={headMarkerRef} />
-            </g>
-          );
-        })() : (
-          <CellHero ease={ease} cx={layout.guardianX} groundY={layout.groundY} fit={HEAD_FIT.medical} avatar={avatar} markerRef={headMarkerRef} now={clockRef.current} />
-        )}
 
         {/* ---------- "things aren't going well": edge vignette on breaches ---------- */}
         {damage > 0.01 && (
