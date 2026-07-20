@@ -15,9 +15,12 @@ const CONDITION_META = {
   self_compassion: { owl: 'owl_selfcompassion', badge: 'Self-Compassion Practice' },
 }
 
+// No hardcoded "see you tomorrow" — the completion screen shown right after
+// "Close Session" names the actual next interaction from the schedule
+// (completionMessage in SessionEntry), so this stays cadence-agnostic.
 const OWL_MESSAGE =
   "That's it for today. Well done for showing up. Remember, even a small pause can create space between " +
-  'what you feel and how you respond. See you tomorrow!'
+  'what you feel and how you respond. See you at your next check-in!'
 
 const INTRO_TEXT =
   'If you feel any discomfort at any point, please feel free to raise those concerns to the experimenter by ' +
@@ -135,7 +138,7 @@ export default function DailyFarewellStep({ condition, onComplete }) {
           <button style={S.btnDone} onClick={() => onComplete?.({ condition })}>
             Close Session
           </button>
-          <p style={M.footerNote}>Your responses have been saved. You will receive tomorrow's session by email at 6:00 AM.</p>
+          <p style={M.footerNote}>Your responses have been saved.</p>
         </div>
       </div>
     </div>

@@ -505,11 +505,11 @@ function formatSendTime(timeStr) {
 }
 
 // Completion copy from complete_session_by_token's { next_contact, has_more }:
-// a concrete date/time when the next schedule row already exists, a
-// "watch your email" line when the graph continues but the next segment
-// hasn't materialized yet (fork gate — the cron resolves it within 15 min),
-// a study-complete line at the end of the graph, and the old generic text
-// for legacy no-graph studies.
+// a concrete date/time for the next interaction — from a materialized schedule
+// row, or (next_contact.estimated) derived from the study design when the next
+// segment hasn't materialized yet (fork gate). A study-complete line at the end
+// of the graph, a soft "watch your email" line only if even the design can't
+// name a date, and the old generic text for legacy no-graph studies.
 function completionMessage(info) {
   const generic = 'You have completed this session. Thank you!'
   if (!info) return generic
@@ -521,16 +521,23 @@ function completionMessage(info) {
     const nextDay = parseLocalDate(next.scheduled_date)
     const days = Math.round((nextDay - today) / 86400000)
     const time = formatSendTime(next.send_time)
+    // `estimated` = derived from the design because the schedule row isn't
+    // materialized yet; the date/time are still exact for a fixed-cadence study,
+    // so we state them and just say to "watch for" the link rather than implying
+    // it's already been sent.
+    const linkLine = next.estimated
+      ? 'Watch for an email with your link when it opens.'
+      : 'A link will be emailed to you when it opens.'
     if (days <= 0) {
-      return `Thank you — this session is complete! Your next session is later today${time ? ` — watch for an email around ${time}` : ''}.`
+      return `Thank you — this session is complete! Your next session is later today${time ? ` at ${time}` : ''}. ${linkLine}`
     }
     const dateLabel = nextDay.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })
     const when = days === 1 ? `tomorrow (${dateLabel})` : `in ${days} days (${dateLabel})`
-    return `Thank you — this session is complete! Your next session is ${when}. A link will be emailed to you when it opens.`
+    return `Thank you — this session is complete! Your next session is ${when}${time ? ` at ${time}` : ''}. ${linkLine}`
   }
 
   if (info.has_more) {
-    return "Thank you — this session is complete! You'll receive an email when your next session is ready."
+    return 'Thank you — this session is complete! Your next session is coming soon — watch your email for the link.'
   }
   if (info.has_more === false) {
     return 'Thank you — you have completed the final session of this study!'
