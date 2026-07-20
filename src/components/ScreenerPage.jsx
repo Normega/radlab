@@ -124,6 +124,11 @@ export default function ScreenerPage({ study, participant, supabaseClient, onPas
           `screener_draft_${study.id}_${participant.id}`,
           JSON.stringify({
             completedAt: new Date().toISOString(),
+            // When the screener opts into carry-forward, the matching in-session
+            // questionnaire node skips re-administering these (SessionEntry
+            // flushes the answers, then drops a screener_carried_* marker the
+            // node reads). Avoids two back-to-back PHQ-8s in one sitting.
+            carryForward: !!screener?.phase2?.carry_forward,
             questionnaires: phase2Slugs.map(slug => ({ slug, responses: responsesBySlug[slug] })),
           })
         )

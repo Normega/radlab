@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { useEffect, useRef, useState } from 'react'
 import { supabase as globalSupabase } from '../../lib/supabase'
 import QuestionnaireRenderer from '../questionnaire/QuestionnaireRenderer'
 
@@ -8,8 +9,27 @@ export default function QuestionnaireStepWrapper({ slug, enrollment, stepIndex, 
   // Falls back to the global client for non-session contexts (e.g. preview).
   const db = supabaseClient ?? globalSupabase
 
+  // Carry-forward skip: if this instrument was already completed during the
+  // pre-consent screener, the screener flush has already written its response
+  // row (see SessionEntry.flushScreenerDraft). Skip re-administering it and
+  // advance immediately. Read synchronously on first render so the questionnaire
+  // never flashes on screen; only in a real participant session (never demo).
+  const participantId = enrollment?.user_id ?? enrollment?.profile_id
+  const carriedKey = (!demoMode && enrollment?.study_id && participantId)
+    ? `screener_carried_${enrollment.study_id}_${participantId}`
+    : null
+  const [carried] = useState(() => {
+    if (!carriedKey) return false
+    try {
+      const m = JSON.parse(sessionStorage.getItem(carriedKey) || 'null')
+      return Array.isArray(m?.slugs) && m.slugs.includes(slug)
+    } catch { return false }
+  })
+  const carriedFiredRef = useRef(false)
+
   const { data: q, isLoading, error } = useQuery({
     queryKey: ['questionnaire-def', slug],
+    enabled: !carried,
     queryFn: async () => {
       const { data, error } = await db
         .from('questionnaires')
@@ -20,6 +40,23 @@ export default function QuestionnaireStepWrapper({ slug, enrollment, stepIndex, 
       return data
     },
   })
+
+  useEffect(() => {
+    if (!carried || carriedFiredRef.current) return
+    carriedFiredRef.current = true // guard against double-fire (StrictMode / re-render)
+    // Consume this slug from the marker so it can't be skipped twice.
+    try {
+      const m = JSON.parse(sessionStorage.getItem(carriedKey) || 'null')
+      if (Array.isArray(m?.slugs)) {
+        const remaining = m.slugs.filter(s => s !== slug)
+        if (remaining.length) sessionStorage.setItem(carriedKey, JSON.stringify({ ...m, slugs: remaining }))
+        else sessionStorage.removeItem(carriedKey)
+      }
+    } catch { /* marker cleanup is best-effort */ }
+    onComplete({ carried_forward: true, slug })
+  }, [carried]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (carried) return <div style={S.loading}>Loading…</div>
 
   if (isLoading) return <div style={S.loading}>Loading questionnaire…</div>
   if (error)     return <div style={S.err}>Could not load questionnaire "{slug}": {error.message}</div>

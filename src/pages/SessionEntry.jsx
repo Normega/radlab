@@ -200,6 +200,21 @@ export default function SessionEntry() {
       })
       if (error) console.warn('[Screener] flush error for', q.slug, error.message)
     }
+    // Carry-forward: the row(s) above ARE the baseline measure. Mark these slugs
+    // so the matching in-session questionnaire node auto-skips instead of asking
+    // the same instrument a second time (see QuestionnaireStepWrapper). The
+    // marker lives in sessionStorage — it survives a reload of the baseline
+    // session but dies when the tab closes, so a later session opened in a fresh
+    // tab (e.g. the post-study PHQ-8) re-administers normally.
+    if (draft.carryForward) {
+      const slugs = (draft.questionnaires ?? []).map(q => q.slug)
+      if (slugs.length) {
+        sessionStorage.setItem(
+          `screener_carried_${studyId}_${participantId}`,
+          JSON.stringify({ slugs, completedAt: draft.completedAt })
+        )
+      }
+    }
   }
 
   async function handleScreenerPass() {

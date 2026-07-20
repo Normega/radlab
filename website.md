@@ -2613,7 +2613,10 @@ dry-run study + `ext-sona-dryrun-*` accounts.
 
 ## 26b. Zerin Langerian Mindfulness Study
 
-> Updated 2026-07-16: Phase 2 authored (live study `6d3c38ce-…`) and dry-run-verified
+> Updated 2026-07-20: PHQ-8 no longer administered twice at intake — the screener's
+> passing PHQ-8 answers now carry forward as the baseline row and the Baseline session's
+> PHQ-8 node auto-skips (screener `phase2.carry_forward: true`; see "Screener" below).
+> Prior update: 2026-07-16, Phase 2 authored (live study `6d3c38ce-…`) and dry-run-verified
 > end-to-end (enroll → screener → consent → baseline → randomize → dailies → post →
 > completion, all three arms). Prior update: Added 2026-07-15, study design + Phase-1
 > reusable-materials build.
@@ -2682,6 +2685,23 @@ vision · daily-email capacity · both surveys · a **3-way distress safety item
 course credit + names the SONA alternative + shows resources. The "no mood/cognitive/substance
 disorder" exclusion from Liliana's screener was **dropped** (conflicts with recruiting mildly
 depressed students).
+
+**PHQ-8 carry-forward** (2026-07-20, `20260720_zerin_screener_carry_forward.sql`) — the screener
+and the Baseline session both administered PHQ-8, so a passing participant answered it twice
+back-to-back. `phase2.carry_forward: true` (opt-in flag on the screener JSON — study + library
+row) makes the passing screener answers *become* the baseline: `ScreenerPage` tags the buffered
+draft, `SessionEntry.flushScreenerDraft` writes the PHQ-8 row **and** drops a short-lived
+`screener_carried_<studyId>_<participantId>` marker in `sessionStorage`, and
+`QuestionnaireStepWrapper` reads that marker and auto-skips the matching Baseline node (no
+re-ask, no duplicate row). The PHQ-8 node stays in the "Zerin Baseline" template on purpose so
+the session remains self-contained. Robustness: the marker survives a reload but dies on tab
+close, so the **Zerin Post-Study** PHQ-8 (separate session, fresh tab weeks later) administers
+normally; and the screener row is written at consent, so it persists even if baseline is
+abandoned. Screener *fails* are unchanged — no PHQ-8 answers are stored, only the
+`screener_results` outcome (attempts-vs-passes stats). Opt-in, so Liliana's `emotion-regulation-v1`
+screener (which re-uses none of this) is untouched. Note: `questionnaire_responses.session_id`
+FKs `game_sessions`, which a questionnaire step never creates, so baseline vs. post PHQ-8 rows
+are both `session_id NULL` — distinguished by `completed_at`, as before.
 
 **`ScreenerPage` generalization** — was hardcoded to a GAD-7 → PHQ-8 two-questionnaire
 sequence. Now index-driven over `phase2.questionnaires` (1 or 2), phase-1 items support
