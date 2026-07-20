@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
 import AvatarBreathPacer from "../EbbAndFlow/components/AvatarBreathPacer";
 
-import guardianSheet from "./assets/guardian_breath_sheet.png";
+import guardianSheet from "./assets/guardian_breath_sheet.webp";
 import impA from "./assets/imp_a.png";
 import impB from "./assets/imp_b.png";
 import vilFA from "./assets/villager_f_a.png";
@@ -95,8 +95,6 @@ const FREE_SECONDS = 30;
 const WAVE_SECONDS = 75;
 const SELF_SECONDS = 60;
 const TRAVERSE_S = 3.2;      // breath scrub 0->1 and 1->0
-const GUARD_H = 210;
-const ENTITY_H = 88;
 const TRAVEL_S = 3.4;        // entity spawn -> dome edge
 // Self-directed ("your lead") is a no-fail energy-breathing phase: inhale draws
 // motes of energy into the fortress (charge builds), exhale releases a soft
@@ -109,15 +107,54 @@ const MOTE_MAX = 70;            // safety cap on concurrent motes
 // golden shield glow of the block/welcome phases.
 const PULSE_DUR_MS = 1700;
 const PULSE_COLORS = ["#8fb3ff", "#c79cff", "#8fe0d8", "#ff9ec7", "#a8e063"];
-const RESOLVE_X = 442;       // where dome up/down is judged
-const SAFE_X = 588;          // detonation / arrival point
-const GROUND_Y = 392;
+// ── Responsive stage layout ────────────────────────────────────────────────
+// The scene is authored along a horizontal ground line: guardian on the left,
+// safe-space fortress on the right, threats/friends marching in from off-left
+// to a resolve line (dome judged) then a safe point (arrival). All of that
+// geometry lives in a per-orientation LAYOUT so the same mechanic fits both a
+// wide desktop stage and a narrow phone in portrait — where the landscape
+// composition would otherwise crop the guardian and the fortress off-screen.
+//
+// Only PIXEL GEOMETRY changes between layouts. Timing (TRAVEL_S, TRAVERSE_S,
+// phase seconds, spawn plan) is held constant, so portrait and landscape
+// sessions stay directly comparable in the research dataset — a phone player
+// just sees a shorter (but identically paced) approach track.
 
-// Safe-space fortress art + placement per skin (base sits on the horizon). Used
-// by the backdrop (art + breath aura) and the light-phase ripple layer.
-const FORTRESS = {
-  fantasy: { art: villageArt,       glow: villageGlowArt,       x: 500, y: 239, w: 240, h: 210 },
-  medical: { art: cellFortressArt,  glow: cellFortressGlowArt,  x: 502, y: 177, w: 233, h: 250 },
+// Fortress art is layout-independent; only its placement (x/y/w/h) varies.
+const FORTRESS_ART = {
+  fantasy: { art: villageArt,      glow: villageGlowArt },
+  medical: { art: cellFortressArt, glow: cellFortressGlowArt },
+};
+
+const LAYOUTS = {
+  landscape: {
+    W: 800, H: 500,
+    guardianX: 230, groundY: 392,
+    resolveX: 442,       // where dome up/down is judged
+    safeX: 588,          // detonation / arrival point
+    spawnX: -60,         // entities march in from off-stage left
+    guardH: 210, entityH: 88,
+    fortress: {
+      fantasy: { x: 500, y: 239, w: 240, h: 210 },
+      medical: { x: 502, y: 177, w: 233, h: 250 },
+    },
+  },
+  // Portrait: narrower/taller viewBox, guardian and fortress pulled together so
+  // both — and the full approach runway — stay inside the center-cropped band.
+  // Tuned against a ~390×844 phone; key x anchors kept within [40,400] so the
+  // side-crop margin never eats the guardian or the fortress.
+  portrait: {
+    W: 440, H: 780,
+    guardianX: 116, groundY: 556,
+    resolveX: 205,       // dome judged just left of the fortress
+    safeX: 298,          // arrival, inside the fortress
+    spawnX: -40,
+    guardH: 188, entityH: 82,
+    fortress: {
+      fantasy: { x: 220, y: 449, w: 170, h: 149 },
+      medical: { x: 222, y: 393, w: 176, h: 189 },
+    },
+  },
 };
 
 // Qualitative refuge state — replaces a numeric score, in keeping with the
@@ -210,6 +247,23 @@ export default function BreathGuardian({ session }) {
   const [skinKey, setSkinKey] = useState("fantasy");
   const skin = SKINS[skinKey];
 
+  // Orientation-responsive stage: a portrait phone gets the pulled-in layout so
+  // the guardian and fortress aren't cropped off the sides; everything else
+  // (desktop, landscape phone) keeps the original wide composition. Re-evaluated
+  // on rotate/resize; the RAF loop reads geometry through layoutRef (below), so
+  // a mid-session rotation retunes the stage without restarting the loop.
+  const [portrait, setPortrait] = useState(
+    () => typeof window !== "undefined" && window.matchMedia("(max-aspect-ratio: 1/1)").matches
+  );
+  useEffect(() => {
+    const mq = window.matchMedia("(max-aspect-ratio: 1/1)");
+    const onChange = () => setPortrait(mq.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+  const layout = portrait ? LAYOUTS.portrait : LAYOUTS.landscape;
+  const fortGeom = layout.fortress[skinKey];
+
   // Avatar config for the logged-in user (procedural face fields; may be null).
   const [avatar, setAvatar] = useState(null);
   const userIdRef = useRef(null);
@@ -264,8 +318,11 @@ export default function BreathGuardian({ session }) {
   const screenRef = useRef("intro");
   screenRef.current = screen;
   // Current fortress geometry, readable inside the RAF loop (for the mote focal).
-  const fortRef = useRef(FORTRESS[skinKey]);
-  fortRef.current = FORTRESS[skinKey];
+  const fortRef = useRef(fortGeom);
+  fortRef.current = fortGeom;
+  // Current stage layout, readable inside the RAF loop (spawn/travel geometry).
+  const layoutRef = useRef(layout);
+  layoutRef.current = layout;
 
   const inhaleStartRef = useRef(null);
   const exhaleStartRef = useRef(null);
@@ -405,10 +462,15 @@ export default function BreathGuardian({ session }) {
     const dataset = {
       session: {
         app: "breath-guardian",
-        version: "0.5",
+        version: "0.6",
         startedISO: new Date(Date.now() - (performance.now() - sessionT0Ref.current)).toISOString(),
         skin: skinKey,
         inputMode: inputModeRef.current,
+        // Stage orientation + viewport, so portrait (phone) and landscape sessions
+        // can be segmented or comparability-checked. Timing is identical across
+        // layouts (only pixel geometry differs), so the two are poolable.
+        layout: layoutRef.current === LAYOUTS.portrait ? "portrait" : "landscape",
+        viewport: typeof window !== "undefined" ? { w: window.innerWidth, h: window.innerHeight } : null,
         phases: phaseLogRef.current,
         finalScore: scoreRef.current,
         finalWellbeing,
@@ -471,6 +533,7 @@ export default function BreathGuardian({ session }) {
 
       // waves: spawn + move + resolve (block/welcome mechanic)
       if (screen === "waves") {
+        const L = layoutRef.current;
         const tPhase = (ts - phaseStartRef.current) / 1000;
         const plan = spawnPlanRef.current;
         while (plan.length && plan[0].t <= tPhase) {
@@ -480,8 +543,8 @@ export default function BreathGuardian({ session }) {
           const eid = idRef.current++;
           entitiesRef.current.push({
             id: eid, kind: p.kind, art,
-            x: -60, dir: 1, mode: "approach",
-            y: skin.floaters ? GROUND_Y - 60 - Math.random() * 90 : GROUND_Y,
+            x: L.spawnX, dir: 1, mode: "approach",
+            y: skin.floaters ? L.groundY - 60 - Math.random() * 90 : L.groundY,
             bobSeed: Math.random() * Math.PI * 2, born: ts, resolvedAt: 0,
           });
           {
@@ -499,7 +562,7 @@ export default function BreathGuardian({ session }) {
             });
           }
         }
-        const speed = (RESOLVE_X + 60) / TRAVEL_S;
+        const speed = (L.resolveX - L.spawnX) / TRAVEL_S;
         const list = entitiesRef.current;
         // accumulate attention measures for the CLOSEST approaching entity (the active trial)
         {
@@ -520,7 +583,7 @@ export default function BreathGuardian({ session }) {
         for (const e of list) {
           if (e.mode === "approach") {
             e.x += speed * dt;
-            if (e.x >= RESOLVE_X) {
+            if (e.x >= L.resolveX) {
               const pNow = progressRef.current;
               const tr = trialsRef.current.find((t) => t.id === e.id);
               if (tr) tr.pAtArrival = Math.round(pNow * 1000) / 1000;
@@ -542,20 +605,20 @@ export default function BreathGuardian({ session }) {
             }
           } else if (e.mode === "breach" || e.mode === "enter") {
             e.x += speed * 0.85 * dt;
-            if (e.x >= SAFE_X) {
+            if (e.x >= L.safeX) {
               if (e.mode === "breach") {
                 healthRef.current = Math.max(0, healthRef.current - 10);
                 setHealth(healthRef.current);
                 scoreRef.current = Math.max(0, scoreRef.current - 8);
                 setScore(scoreRef.current);
                 { const tr2 = trialsRef.current.find((t) => t.id === e.id); if (tr2) tr2.scoreAfter = scoreRef.current; }
-                setPoofs((ps) => [...ps.slice(-6), { id: e.id, x: SAFE_X, y: e.y - 40, t0: ts }]);
+                setPoofs((ps) => [...ps.slice(-6), { id: e.id, x: L.safeX, y: e.y - 40, t0: ts }]);
               } else {
                 scoreRef.current = Math.min(100, scoreRef.current + 5);
                 setScore(scoreRef.current);
                 { const tr2 = trialsRef.current.find((t) => t.id === e.id); if (tr2) tr2.scoreAfter = scoreRef.current; }
                 setHelped((h) => h + 1);
-                setPoofs((ps) => [...ps.slice(-6), { id: e.id, x: SAFE_X, y: e.y - 46, t0: ts, good: true }]);
+                setPoofs((ps) => [...ps.slice(-6), { id: e.id, x: L.safeX, y: e.y - 46, t0: ts, good: true }]);
               }
               e.mode = "gone";
             }
@@ -605,8 +668,9 @@ export default function BreathGuardian({ session }) {
       }
 
       // draw energy motes on the canvas (light phase); clear it otherwise. Maps
-      // viewBox (0..800, 0..500) onto the backing store at xMidYMax-slice scale,
-      // matching the stage <svg> so the dots line up with the fortress.
+      // the current layout's viewBox (L.W × L.H) onto the backing store at
+      // xMidYMax-slice scale, matching the stage <svg> so the dots line up with
+      // the fortress in both orientations.
       {
         const cv = motesCanvasRef.current;
         if (cv) {
@@ -614,9 +678,10 @@ export default function BreathGuardian({ session }) {
           const cw = cv.width, ch = cv.height;
           ctx.clearRect(0, 0, cw, ch);
           if (screen === "selfdirected" && motesRef.current.length) {
-            const sc = Math.max(cw / 800, ch / 500);
-            const ox = (cw - 800 * sc) / 2;   // xMid
-            const oy = ch - 500 * sc;          // yMax (bottom-aligned)
+            const L = layoutRef.current;       // match the stage viewBox + slice
+            const sc = Math.max(cw / L.W, ch / L.H);
+            const ox = (cw - L.W * sc) / 2;    // xMid
+            const oy = ch - L.H * sc;          // yMax (bottom-aligned)
             const f = fortRef.current;
             const fx = f.x + f.w / 2, fy = f.y + f.h * 0.42;
             ctx.fillStyle = skin.gold;
@@ -777,7 +842,12 @@ export default function BreathGuardian({ session }) {
   // (health falls). Shape-agnostic, so it can't misalign with the art. Reaches
   // full gloom by ~health 45 (≈4 breaches) so a couple of imps is clearly felt.
   const damage = Math.min(1, (100 - health) / 55);
-  const fort = FORTRESS[skinKey];
+  const fort = { ...FORTRESS_ART[skinKey], ...fortGeom };
+  // Stage viewBox + a horizontal scale for the backdrop decoration coords, which
+  // are authored in the 800-wide landscape space and spread across the current
+  // stage width (kx === 1 in landscape, so that layout renders identically).
+  const { W: vbW, H: vbH, groundY: gy } = layout;
+  const kx = vbW / 800;
   const inPlay = ["free", "waves", "bridge", "bridge2", "selfdirected"].includes(screen);
   const fmt = (s) => `${s.toFixed(1)}s`;
   // Wellbeing: start at the middle, rise with good outcomes, fall with breaches.
@@ -819,7 +889,7 @@ export default function BreathGuardian({ session }) {
 
       {/* ===== STAGE ===== */}
       <svg
-        viewBox="0 0 800 500" preserveAspectRatio="xMidYMax slice"
+        viewBox={`0 0 ${vbW} ${vbH}`} preserveAspectRatio="xMidYMax slice"
         style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
         onPointerDown={(e) => { if (inPlay) { if (!inputModeRef.current) inputModeRef.current = "touch"; e.currentTarget.setPointerCapture(e.pointerId); startHold(); } }}
         onPointerUp={() => inPlay && endHold()}
@@ -853,31 +923,31 @@ export default function BreathGuardian({ session }) {
         {/* ---------- BACKDROP ---------- */}
         {skinKey === "fantasy" ? (
           <>
-            <rect width="800" height="500" fill="url(#sky)" />
+            <rect width={vbW} height={vbH} fill="url(#sky)" />
             {[[90,60],[180,110],[300,45],[420,90],[560,55],[660,120],[730,70],[240,160],[500,150],[640,40]].map(([x,y],i)=>(
-              <circle key={i} className="bg-star" cx={x} cy={y} r={i%3===0?2:1.3} fill={skin.cream}
+              <circle key={i} className="bg-star" cx={x*kx} cy={y} r={i%3===0?2:1.3} fill={skin.cream}
                 style={{ animationDelay: `${(i*0.7)%3}s` }} />
             ))}
-            <path d="M0,330 Q200,270 420,320 T800,300 V500 H0 Z" fill="#2e2246" />
-            <rect y="380" width="800" height="120" fill={skin.ground} />
-            <ellipse cx="400" cy="384" rx="430" ry="26" fill={skin.groundLight} opacity="0.5" />
+            <path d={`M0,${gy-62} Q${vbW*0.25},${gy-122} ${vbW*0.52},${gy-72} T${vbW},${gy-92} V${vbH} H0 Z`} fill="#2e2246" />
+            <rect y={gy-12} width={vbW} height={vbH-gy+12} fill={skin.ground} />
+            <ellipse cx={vbW/2} cy={gy-8} rx={vbW*0.54} ry={26} fill={skin.groundLight} opacity="0.5" />
             {/* safe-space village; silhouette aura kindles with the breath (and
                 blazes with the accumulated radiance in the light phase) */}
             <FortressImage href={fort.art} glowHref={fort.glow} x={fort.x} y={fort.y} w={fort.w} h={fort.h} glow={auraStage} />
           </>
         ) : (
           <>
-            <rect width="800" height="500" fill="url(#cellAmbient)" />
+            <rect width={vbW} height={vbH} fill="url(#cellAmbient)" />
             {[[110,90,60],[640,70,80],[730,260,46],[70,300,52],[360,60,40],[520,330,64]].map(([x,y,r],i)=>(
-              <circle key={i} className="bg-drift" cx={x} cy={y} r={r} fill={skin.skyLow} opacity="0.35"
+              <circle key={i} className="bg-drift" cx={x*kx} cy={y} r={r} fill={skin.skyLow} opacity="0.35"
                 style={{ animationDelay: `${(i*1.3)%7}s` }} />
             ))}
             {[[200,140],[300,220],[460,120],[600,180],[170,250],[700,120],[420,300]].map(([x,y],i)=>(
-              <circle key={`s${i}`} className="bg-star" cx={x} cy={y} r={2} fill={skin.cream} opacity="0.5"
+              <circle key={`s${i}`} className="bg-star" cx={x*kx} cy={y} r={2} fill={skin.cream} opacity="0.5"
                 style={{ animationDelay: `${(i*0.9)%3}s` }} />
             ))}
-            <path d="M0,392 Q200,376 400,390 T800,388 V500 H0 Z" fill={skin.ground} />
-            <path d="M0,392 Q200,376 400,390 T800,388" fill="none" stroke={skin.groundLight} strokeWidth="6" opacity="0.6" />
+            <path d={`M0,${gy} Q${vbW*0.25},${gy-16} ${vbW*0.5},${gy-2} T${vbW},${gy-4} V${vbH} H0 Z`} fill={skin.ground} />
+            <path d={`M0,${gy} Q${vbW*0.25},${gy-16} ${vbW*0.5},${gy-2} T${vbW},${gy-4}`} fill="none" stroke={skin.groundLight} strokeWidth="6" opacity="0.6" />
             {/* safe-space cell fortress; silhouette aura kindles with the breath
                 (and blazes with the accumulated radiance in the light phase) */}
             <FortressImage href={fort.art} glowHref={fort.glow} x={fort.x} y={fort.y} w={fort.w} h={fort.h} glow={auraStage} />
@@ -916,12 +986,13 @@ export default function BreathGuardian({ session }) {
           // mirror them horizontally to face their retreat direction.
           const flip = e.mode === "turned" || e.mode === "bounce";
           const wobble = skin.floaters ? Math.sin(clockRef.current / 480 + e.bobSeed) * 6 : 0;
-          const hW = ENTITY_H * 0.72;
+          const entH = layout.entityH;
+          const hW = entH * 0.72;
           return (
             <image
               key={e.id} href={img}
-              x={e.x - hW / 2} y={e.y - ENTITY_H + wobble}
-              width={hW} height={ENTITY_H}
+              x={e.x - hW / 2} y={e.y - entH + wobble}
+              width={hW} height={entH}
               transform={flip ? `scale(-1,1) translate(${-2 * e.x},0)` : undefined}
               style={{ opacity: e.mode === "bounce" || e.mode === "turned" ? 0.9 : 1 }}
             />
@@ -945,7 +1016,7 @@ export default function BreathGuardian({ session }) {
           const frame = Math.round(p * (sheet.frames - 1));
           const col = frame % sheet.cols;
           const row = Math.floor(frame / sheet.cols);
-          const dispH = GUARD_H;
+          const dispH = layout.guardH;
           const dispW = (sheet.cellW / sheet.cellH) * dispH;
           const sc = dispW / sheet.cellW;
           const [mx, my] = MOUNTS.fantasy[frame];
@@ -954,7 +1025,7 @@ export default function BreathGuardian({ session }) {
           const hx = mx * sc;
           const hy = my * sc + headD * fit.dy;
           return (
-            <g transform={`translate(${230 - dispW / 2}, ${GROUND_Y - dispH})`}>
+            <g transform={`translate(${layout.guardianX - dispW / 2}, ${layout.groundY - dispH})`}>
               <clipPath id="guardClip"><rect width={dispW} height={dispH} /></clipPath>
               <g clipPath="url(#guardClip)">
                 <image href={sheet.src} x={-col * dispW} y={-row * dispH}
@@ -964,12 +1035,12 @@ export default function BreathGuardian({ session }) {
             </g>
           );
         })() : (
-          <CellHero ease={ease} cx={230} groundY={GROUND_Y} fit={HEAD_FIT.medical} avatar={avatar} markerRef={headMarkerRef} now={clockRef.current} />
+          <CellHero ease={ease} cx={layout.guardianX} groundY={layout.groundY} fit={HEAD_FIT.medical} avatar={avatar} markerRef={headMarkerRef} now={clockRef.current} />
         )}
 
         {/* ---------- "things aren't going well": edge vignette on breaches ---------- */}
         {damage > 0.01 && (
-          <rect width="800" height="500" fill="url(#damageVignette)" opacity={damage}
+          <rect width={vbW} height={vbH} fill="url(#damageVignette)" opacity={damage}
             style={{ transition: "opacity 800ms ease", pointerEvents: "none" }} />
         )}
       </svg>
