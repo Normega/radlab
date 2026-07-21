@@ -42,8 +42,12 @@ const PHASE = {
   ITI:          'iti',
   STIMULUS:     'stimulus',
   FEEDBACK:     'feedback',
+  PAUSED:       'paused',
   RESULTS:      'results',
 }
+
+// Phases with live timers — the only ones the off-screen pause interrupts.
+const ACTIVE_PHASES = [PHASE.COUNTDOWN, PHASE.ITI, PHASE.STIMULUS, PHASE.FEEDBACK]
 
 // ─── TRIAL GENERATION ────────────────────────────────────────────────────────
 
@@ -304,6 +308,7 @@ export default function PondWatch({
   const respondedRef    = useRef(false)
   const timersRef       = useRef([])
   const startTimeRef    = useRef(null)
+  const pausesRef       = useRef(0)         // off-screen pauses this session (data-quality flag)
 
   // Keep phaseRef in sync
   useEffect(() => { phaseRef.current = phase }, [phase])
@@ -326,6 +331,7 @@ export default function PondWatch({
   const startCountdown = useCallback(() => {
     trialsRef.current   = generateTrials()
     resultsRef.current  = []
+    pausesRef.current   = 0
     startTimeRef.current = new Date().toISOString()
     setCountdown(CFG.COUNTDOWN_FROM)
     setPhase(PHASE.COUNTDOWN)
@@ -333,13 +339,16 @@ export default function PondWatch({
 
   const runCountdown = useCallback((n) => {
     if (n <= 0) {
-      setPhase(PHASE.ITI)
-      setTrialIndex(0)
+      // Resume-safe: the next trial is always the first unrecorded one, so the
+      // same countdown serves both a fresh start and a return from pause.
+      const idx = resultsRef.current.length
+      if (idx >= trialsRef.current.length) endSession()
+      else startITI(idx)
       return
     }
     setCountdown(n)
     after(1000, () => runCountdown(n - 1))
-  }, [after])
+  }, [after]) // eslint-disable-line
 
   useEffect(() => {
     if (phase === PHASE.COUNTDOWN) runCountdown(CFG.COUNTDOWN_FROM)
@@ -411,6 +420,7 @@ export default function PondWatch({
       studyId,
       trials:      resultsRef.current,
       metrics,
+      pauses:      pausesRef.current,
     }
     setResults(sessionData)
     setPhase(PHASE.RESULTS)
@@ -482,12 +492,38 @@ export default function PondWatch({
     return () => window.removeEventListener('keydown', onKey)
   }, [handleResponse])
 
-  // ITI starts when we first reach ITI phase (index 0)
+  // ── OFF-SCREEN PAUSE ─────────────────────────────────────────────────────
+  // The trial chain must never advance while the participant isn't looking:
+  // background tabs still fire (throttled) timeouts, silently resolving trials
+  // as misses/correct rejections. On tab-hide or window blur, kill every
+  // pending timer and drop into PAUSED. The in-flight trial was never recorded
+  // (results are only written by recordResponse), so resuming re-runs it — no
+  // trial is scored while off-screen.
   useEffect(() => {
-    if (phase === PHASE.ITI && trialIndex === 0 && resultsRef.current.length === 0) {
-      startITI(0)
+    const pause = () => {
+      if (!ACTIVE_PHASES.includes(phaseRef.current)) return
+      clearTimers()
+      pausesRef.current += 1
+      setCurrentStim(null)
+      setFeedback(null)
+      setPhase(PHASE.PAUSED)
     }
-  }, [phase]) // eslint-disable-line
+    const onVisibility = () => { if (document.hidden) pause() }
+    document.addEventListener('visibilitychange', onVisibility)
+    window.addEventListener('blur', pause)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility)
+      window.removeEventListener('blur', pause)
+    }
+  }, [clearTimers])
+
+  // Resume goes through the normal countdown so the participant re-orients
+  // before the next stimulus; runCountdown then picks up at the first
+  // unrecorded trial.
+  const resumeFromPause = useCallback(() => {
+    setCountdown(CFG.COUNTDOWN_FROM)
+    setPhase(PHASE.COUNTDOWN)
+  }, [])
 
   // Cleanup on unmount
   useEffect(() => () => clearTimers(), [clearTimers])
@@ -535,6 +571,25 @@ export default function PondWatch({
           <div style={S.countdownWrap}>
             <p style={S.countdownNum}>{countdown}</p>
             <p style={S.countdownSub}>Get ready…</p>
+          </div>
+        </div>
+      )}
+
+      {/* ── PAUSED (participant left the screen) ── */}
+      {phase === PHASE.PAUSED && (
+        <div style={S.screen}>
+          <div style={S.card}>
+            <p style={S.eyebrow}>Paused</p>
+            <h2 style={S.title}>The pond will wait.</h2>
+            <p style={S.pauseText}>
+              The game paused because you left this screen — it only runs while
+              you're watching. Your progress is safe:{' '}
+              {resultsRef.current.length} of {CFG.TRIAL_COUNT} trials done.
+              You'll get a short countdown before the pond resumes.
+            </p>
+            <button style={S.btnPrimary} onClick={resumeFromPause}>
+              Resume watching
+            </button>
           </div>
         </div>
       )}
@@ -745,6 +800,12 @@ const S = {
     fontFamily: MONO,
     fontSize: 12,
     color: PKD,
+  },
+  pauseText: {
+    fontSize: 14,
+    color: TX2,
+    lineHeight: 1.6,
+    marginBottom: 24,
   },
   meta: {
     fontFamily: MONO,
