@@ -449,7 +449,11 @@ export default function SessionEntry() {
           Step {currentIndex + 1} of {totalSteps}
         </p>
         <div style={{ flex: 1, overflowY: 'auto' }}>
+          {/* key: adjacent steps of the same category (e.g. two questionnaires)
+              must not share a component instance — stale per-step state hangs
+              the flow (Zerin baseline PHQ-8 carry-forward → LMS-14). */}
           <StepDispatcher
+            key={currentIndex}
             node={node}
             enrollment={enrollment}
             scheduleId={sessionData.schedule?.id ?? null}

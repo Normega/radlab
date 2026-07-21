@@ -18,13 +18,17 @@ export default function QuestionnaireStepWrapper({ slug, enrollment, stepIndex, 
   const carriedKey = (!demoMode && enrollment?.study_id && participantId)
     ? `screener_carried_${enrollment.study_id}_${participantId}`
     : null
-  const [carried] = useState(() => {
-    if (!carriedKey) return false
+  // Stored as the slug it applies to (not a boolean) so a parent that reuses
+  // this instance across steps with a different slug can never inherit a stale
+  // skip — that reuse is what hung the Zerin baseline at step 2.
+  const [carriedFor] = useState(() => {
+    if (!carriedKey) return null
     try {
       const m = JSON.parse(sessionStorage.getItem(carriedKey) || 'null')
-      return Array.isArray(m?.slugs) && m.slugs.includes(slug)
-    } catch { return false }
+      return (Array.isArray(m?.slugs) && m.slugs.includes(slug)) ? slug : null
+    } catch { return null }
   })
+  const carried = carriedFor === slug
   const carriedFiredRef = useRef(false)
 
   const { data: q, isLoading, error } = useQuery({
