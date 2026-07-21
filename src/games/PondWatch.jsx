@@ -449,6 +449,7 @@ export default function PondWatch({
         false_alarms:       metrics.falseAlarms,
         correct_rejections: metrics.correctRejections,
         n_trials:           metrics.nTrials,
+        pauses:             pausesRef.current,
         trials:             resultsRef.current,
       }).then(({ error }) => { if (error) console.warn('pond_watch_results insert failed', error) })
     } else if (onSessionComplete) {
