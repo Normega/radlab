@@ -63,6 +63,7 @@ const AudioTest = lazy(() => import('./pages/dev/AudioTest'))
 const UiKit     = lazy(() => import('./pages/dev/UiKit'))
 const OnboardingPreview = lazy(() => import('./pages/dev/OnboardingPreview'))
 const Keynote   = lazy(() => import('./pages/keynote/Keynote'))
+const ToniJuly2026 = lazy(() => import('./pages/toni-july-2026/ToniJuly2026'))
 
 // Lecture Lounge — its own partition: separate chunk group from research
 // admin and from the rest of the app, wrapped in its own error boundary
@@ -426,6 +427,8 @@ export default function App() {
           <Route path="/demo/mirror" element={<Mirror />} />
           {/* ISARP keynote deck — click-through, doubles as read-later resource */}
           <Route path="/keynote" element={<Keynote />} />
+          {/* toni_july_2026 group-meeting deck — fMRI preprocessing with an AI agent in the loop */}
+          <Route path="/toni-july-2026" element={<ToniJuly2026 />} />
 
           {/*
             Lecture Lounge — its own partition. Own chunk group (all four
