@@ -129,7 +129,8 @@ const SLIDES = [
             <div style={{ height: 12 }} />
             <p style={{ ...K.author, textAlign: 'left' }}>intero2024 · interoception fMRI · 53 subjects</p>
             <p style={{ ...K.affil, textAlign: 'left' }}>BIDS → MRIQC → fMRIPrep → ICA-AROMA</p>
-            <p style={{ ...K.event, textAlign: 'left' }}>RADlab group meeting · July 2026</p>
+            <p style={{ ...K.event, textAlign: 'left' }}>ToNI Users Meeting · July 2026</p>
+            <p style={K.facility}>Toronto Neuroimaging Facility · University of Toronto</p>
           </div>
         </div>
       </Frame>
@@ -207,6 +208,7 @@ const SLIDES = [
     render: (d) => (
       <Frame wide kicker="Part A · the study">
         <H2>intero2024 in one slide</H2>
+        <p style={K.provenance}>Acquired on the Siemens Prisma 3T · ToNI</p>
         <StatTiles items={[
           { big: '53', label: 'subjects · single session' },
           { big: '251', label: 'BOLD runs total' },
@@ -729,9 +731,10 @@ const SLIDES = [
     render: () => (
       <Frame>
         <h1 style={K.title}>Thank you</h1>
-        <Lead>Questions</Lead>
-        <div style={{ maxWidth: 620 }}>
+        <Lead>Questions — and happy to share any of this</Lead>
+        <div style={{ maxWidth: 680 }}>
           <Bullets items={[
+            'The scripts + Apptainer containers are reusable on any ToNI Prisma 3T dataset — ask me for the runbook.',
             'Docs: code/BIDS_CONVERSION_PROCESS.md · code/MRIQC_QC_SUMMARY.md · code/FMRIPREP_AROMA_RUNBOOK.md',
           ]} />
         </div>
@@ -805,6 +808,8 @@ const K = {
   author:   { fontSize: 'clamp(16px, 2.1vw, 21px)', color: 'var(--tx)', margin: 0, fontWeight: 600 },
   affil:    { fontSize: 'clamp(13px, 1.6vw, 16px)', color: 'var(--tx2)', margin: 0, lineHeight: 1.5, fontFamily: '"Space Mono",monospace' },
   event:    { fontFamily: '"Space Mono",monospace', fontSize: 13, color: 'var(--tx3)', margin: '10px 0 0', letterSpacing: '0.06em' },
+  facility: { fontFamily: '"Space Mono",monospace', fontSize: 11.5, color: 'var(--tx3)', margin: '3px 0 0', letterSpacing: '0.04em', textAlign: 'left', opacity: 0.9 },
+  provenance: { fontFamily: '"Space Mono",monospace', fontSize: 'clamp(12px, 1.5vw, 15px)', color: 'var(--tx2)', margin: 0, letterSpacing: '0.03em' },
   crests:   { display: 'flex', gap: 32, alignItems: 'center', marginBottom: 6 },
 
   titleRow:  { display: 'flex', gap: 48, alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap' },
