@@ -349,7 +349,8 @@ function EditPanel({ nodeId, graph, sessionTemplates, isLocked, onChange, onRemo
               style={P.demoBtn}
               onClick={() => onDemo?.(
                 node.session_template_id,
-                sessionTemplates.find(t => t.id === node.session_template_id)?.label ?? node.label ?? 'Session'
+                sessionTemplates.find(t => t.id === node.session_template_id)?.label ?? node.label ?? 'Session',
+                node.id
               )}
             >
               ▶ Demo this session
@@ -898,7 +899,18 @@ export default function ExperimentBuilder() {
                 onChange={handleNodeEdit}
                 onRemove={handleNodeRemove}
                 onMerge={handleMergeInto}
-                onDemo={(templateId, label) => setDemoSession({ templateId, label })}
+                onDemo={(templateId, label, nodeId) => {
+                  // Resolve the demoed node's design-time day/time so day-keyed
+                  // steps (Zerin daily check-ins / wellness tips) show that
+                  // day's real content instead of a placeholder.
+                  const slot = toSlots(graph).find(s => s.nodeKey === nodeId)
+                  setDemoSession({
+                    templateId,
+                    label,
+                    studyDay: slot?.dayNumber ?? null,
+                    sendTime: slot?.sendTime ?? null,
+                  })
+                }}
               />
             </div>
           )}
@@ -912,6 +924,8 @@ export default function ExperimentBuilder() {
           <SessionDemoModal
             templateId={demoSession.templateId}
             label={demoSession.label}
+            studyDay={demoSession.studyDay}
+            sendTime={demoSession.sendTime}
             onClose={() => setDemoSession(null)}
           />
         )}

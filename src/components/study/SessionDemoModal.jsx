@@ -16,7 +16,11 @@ import StepDispatcher from './StepDispatcher'
  * A persistent "Skip step" control covers anything gated (e.g. watch-to-90%
  * video gates) so an auditor can move on without sitting through media.
  */
-export default function SessionDemoModal({ templateId, label, onClose }) {
+// studyDay/sendTime: optional design-time context from the Experiment Builder
+// (the demoed node's nominal day + send time), letting day-keyed steps (Zerin
+// daily check-ins / wellness tips) render that day's real content. Absent when
+// demoing from the Session Library, where a template has no day context.
+export default function SessionDemoModal({ templateId, label, studyDay = null, sendTime = null, onClose }) {
   const [index, setIndex] = useState(0)
   const [runId, setRunId] = useState(0) // bump to restart
 
@@ -86,6 +90,8 @@ export default function SessionDemoModal({ templateId, label, onClose }) {
             node={node}
             enrollment={null}
             scheduleId={null}
+            studyDay={studyDay}
+            sendTime={sendTime}
             stepIndex={index}
             totalSteps={total}
             onComplete={advance}

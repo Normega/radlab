@@ -47,8 +47,15 @@ export default function StepDispatcher({ node, enrollment, scheduleId, studyDay 
   const label = activity.label ?? node?.label ?? subcategory
 
   // In demo mode, steps whose real UI is inseparable from participant/server
-  // context are represented by a card rather than a broken render.
-  if (demoMode && (category === 'form' || category === 'game' || category === 'physio')) {
+  // context are represented by a card rather than a broken render. The daily
+  // check-in forms are the exception: they render self-contained and write
+  // nothing in previewMode, so the demo shows the real widget with the
+  // day/slot content piped in via studyDay/sendTime.
+  const PREVIEWABLE_FORMS = ['mood_checkin', 'mood_checkin_reflective', 'wellness_tip']
+  if (demoMode && (
+    category === 'game' || category === 'physio' ||
+    (category === 'form' && !PREVIEWABLE_FORMS.includes(subcategory))
+  )) {
     return <DemoSkipCard category={category} subcategory={subcategory} label={label} onComplete={onComplete} />
   }
 
@@ -76,6 +83,7 @@ export default function StepDispatcher({ node, enrollment, scheduleId, studyDay 
           onComplete={onComplete}
           supabaseClient={supabaseClient}
           isSimMode={isSimMode}
+          previewMode={demoMode}
         />
       )
     }
@@ -89,6 +97,7 @@ export default function StepDispatcher({ node, enrollment, scheduleId, studyDay 
           onComplete={onComplete}
           supabaseClient={supabaseClient}
           isSimMode={isSimMode}
+          previewMode={demoMode}
         />
       )
     }
