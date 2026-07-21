@@ -246,6 +246,42 @@ export function ResumeChat() {
   )
 }
 
+// ── Multi-bubble chat thread (the design conversation) ──────────────────────
+// messages: [{ who: 'norm' | 'agent', text, tag? }]. Norm = pink, right; agent
+// = white, left — same visual language as ResumeChat, scaled for 2–3 turns.
+export function ChatThread({ messages = [], maxWidth = 780 }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 11, maxWidth, width: '100%' }} onClick={e => e.stopPropagation()}>
+      {messages.map((m, i) => {
+        const isUser = m.who === 'norm'
+        return (
+          <div key={i} style={{
+            alignSelf: isUser ? 'flex-end' : 'flex-start',
+            maxWidth: '89%',
+            background: isUser ? 'var(--pk)' : '#fff',
+            color: isUser ? '#fff' : 'var(--tx)',
+            border: isUser ? 'none' : '1px solid var(--bd)',
+            borderRadius: isUser ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+            padding: '11px 16px',
+            fontSize: 'clamp(13px, 1.6vw, 17px)',
+            lineHeight: 1.48,
+            boxShadow: isUser ? '0 4px 16px rgba(240,104,164,0.22)' : '0 2px 10px rgba(0,0,0,0.05)',
+            textAlign: 'left',
+          }}>
+            {m.tag && (
+              <div style={{
+                fontFamily: '"Space Mono",monospace', fontSize: 11, marginBottom: 5,
+                color: isUser ? 'rgba(255,255,255,0.85)' : 'var(--pkd)',
+              }}>{m.tag}</div>
+            )}
+            <div>{m.text}</div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 // ── Results — three completion counters ─────────────────────────────────────
 export function ResultsCounters() {
   const tiles = [

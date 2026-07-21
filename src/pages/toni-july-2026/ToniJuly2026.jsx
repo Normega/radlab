@@ -10,7 +10,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
   Terminal, PipelineDiagram, DiskTimeline, ExitCodeDiagram,
-  ResumeChat, ResultsCounters, StatTiles,
+  ResumeChat, ChatThread, ResultsCounters, StatTiles,
 } from './graphics'
 
 export default function ToniJuly2026() {
@@ -111,23 +111,63 @@ const SLIDES = [
   // 1 — Title
   {
     render: () => (
-      <Frame>
-        <div style={K.crests}>
-          <img src="/RADlab_Logo_light.svg" alt="RADlab" style={{ height: 56 }} onError={e => { e.currentTarget.style.display = 'none' }} />
-          <img src="/UofT_Logo.svg" alt="University of Toronto" style={{ height: 56 }} onError={e => { e.currentTarget.style.display = 'none' }} />
+      <Frame wide>
+        <div style={K.titleRow}>
+          <img
+            src="/toni-july-2026/chatwithAI.gif"
+            alt="A researcher and an AI agent working together at a laptop"
+            style={K.heroImg}
+            onError={e => { e.currentTarget.style.display = 'none' }}
+          />
+          <div style={K.titleText}>
+            <div style={{ ...K.crests, marginBottom: 10 }}>
+              <img src="/RADlab_Logo_light.svg" alt="RADlab" style={{ height: 48 }} onError={e => { e.currentTarget.style.display = 'none' }} />
+              <img src="/UofT_Logo.svg" alt="University of Toronto" style={{ height: 48 }} onError={e => { e.currentTarget.style.display = 'none' }} />
+            </div>
+            <h1 style={{ ...K.title, textAlign: 'left' }}>From DICOMs to denoised fMRI</h1>
+            <p style={{ ...K.subtitle, textAlign: 'left' }}>— with an AI agent in the loop</p>
+            <div style={{ height: 12 }} />
+            <p style={{ ...K.author, textAlign: 'left' }}>intero2024 · interoception fMRI · 53 subjects</p>
+            <p style={{ ...K.affil, textAlign: 'left' }}>BIDS → MRIQC → fMRIPrep → ICA-AROMA</p>
+            <p style={{ ...K.event, textAlign: 'left' }}>RADlab group meeting · July 2026</p>
+          </div>
         </div>
-        <h1 style={K.title}>From DICOMs to denoised fMRI</h1>
-        <p style={K.subtitle}>— with an AI agent in the loop</p>
-        <div style={{ height: 14 }} />
-        <p style={K.author}>intero2024 · interoception fMRI · 53 subjects</p>
-        <p style={K.affil}>BIDS → MRIQC → fMRIPrep → ICA-AROMA</p>
-        <p style={K.event}>RADlab group meeting · July 2026</p>
       </Frame>
     ),
     note: 'Two stories at once: how we preprocessed the interoception dataset, and what it was like to run that pipeline with an AI coding agent doing the driving and debugging.',
   },
 
-  // 2 — Why a replay
+  // 2 — The maze of analytic choices (motivation)
+  {
+    note: 'The “garden of forking paths”: every preprocessing step has several defensible options, and the combinations explode. The point isn’t that one path is objectively right — it’s that you have to choose deliberately and make the choice reproducible. This motivates the design conversation a few slides on.',
+    render: (d) => (
+      <Frame wide kicker="Why this is hard">
+        <div style={K.splitRow}>
+          <div style={K.splitText}>
+            <H2>fMRI preprocessing is a maze of choices</H2>
+            <Bullets items={[
+              'Every step forks: which template? recon-all on? which output spaces? distortion correction? which denoising strategy? how much smoothing?',
+              'Each fork is defensible on its own — and each one moves the results.',
+              'The combinations explode far faster than anyone can eyeball.',
+            ]} />
+            <Lead>The goal isn’t to find the one “true” path — it’s to choose deliberately, and make the path reproducible.</Lead>
+            <Detail density={d}>
+              This is the “garden of forking paths” — researcher degrees of freedom at every stage. It’s exactly
+              why the next few slides are a design conversation: deciding the path on purpose, then locking it in.
+            </Detail>
+          </div>
+          <img
+            src="/toni-july-2026/nerdchoices.png"
+            alt="A person standing on a single lit path through a vast dark maze of options"
+            style={K.splitImg}
+            onError={e => { e.currentTarget.style.display = 'none' }}
+          />
+        </div>
+      </Frame>
+    ),
+  },
+
+  // 3 — Why a replay
   {
     note: 'Everything shown is from the actual run. The agent had the full session in memory, so the transcript is faithful, not dramatized.',
     render: (d) => (
@@ -153,7 +193,7 @@ const SLIDES = [
         <H2>Where we’re going</H2>
         <Bullets items={[
           'Part A — the study & the data',
-          'Part B — the pipeline, stage by stage',
+          'Part B — deciding the pipeline, then running it stage by stage',
           'Part C — two real incidents the agent caught & fixed  ← the interesting part',
           'Part D — autonomy, results, honest assessment, takeaways',
         ]} />
@@ -201,6 +241,74 @@ const SLIDES = [
         <Lead>The principle throughout: process everything, exclude later — never silently delete data.</Lead>
         <Detail density={d}>
           Every exception was encoded in code, not fixed by hand, so a re-run reproduces the same choices.
+        </Detail>
+      </Frame>
+    ),
+  },
+
+  // Setup 1 — kickoff + recon-all
+  {
+    note: 'Reconstructed design conversation. The decisions shown (recon-all on, the output-space set, a separate AROMA step, nonaggr denoising, containers) are the real ones — captured in the agent’s memory and the launcher scripts — but the exact wording is representative, not a verbatim transcript.',
+    render: (d) => (
+      <Frame wide kicker="Part B · deciding the pipeline">
+        <H2>Session zero: what do we even run?</H2>
+        <ChatThread messages={[
+          { who: 'norm', tag: 'norm', text: 'intero2024 — 53 subjects, interoception fMRI, raw DICOMs off the scanner. I want a clean, reproducible preprocessing pipeline. Where do we start?' },
+          { who: 'agent', tag: 'agent — proposing the standard route', text: 'BIDS-format first, then fMRIPrep for registration, recon-all, and normalization — field standard, containerizes cleanly. First fork: full FreeSurfer surfaces (recon-all) on? It’s 6–10 h/subject.' },
+          { who: 'norm', tag: 'norm — owns the science', text: 'On. Interoception lives in insula, brainstem, thalamus — I want surfaces and subcortical together.' },
+        ]} />
+        <Detail density={d}>
+          The human makes the scientific call; the agent surfaces the cost (6–10 h/subject) and the options.
+          That single “surfaces + subcortical” decision is what later forces the CIFTI 91k grayordinate output.
+        </Detail>
+      </Frame>
+    ),
+  },
+
+  // Setup 2 — output spaces + the AROMA dependency
+  {
+    note: 'This is the foreshadow. NLin6Asym is chosen here, in the design conversation, specifically because AROMA can’t run without it — the payoff lands on the Stage 4a and 4b slides.',
+    render: (d) => (
+      <Frame wide kicker="Part B · deciding the pipeline">
+        <H2>The choice that quietly runs everything: output spaces</H2>
+        <ChatThread messages={[
+          { who: 'agent', tag: 'agent — flagging a dependency', text: 'Output spaces drive everything downstream. NLin2009cAsym for reporting. But if you want ICA-AROMA denoising, we also need NLin6Asym — AROMA only runs in that space.' },
+          { who: 'norm', tag: 'norm', text: 'Yes to AROMA. Add both, plus T1w, fsnative, fsaverage5, and CIFTI 91k.' },
+          { who: 'agent', tag: 'agent — making the dependency explicit', text: 'Then NLin6Asym is load-bearing. I’ll note it as a hard prerequisite in the runbook so a future edit doesn’t quietly drop it and silently break AROMA.' },
+        ]} />
+        <Detail density={d}>
+          NLin6Asym isn’t cosmetic — it’s the prerequisite that makes Stage 4b possible at all. Deciding it
+          here, on purpose, is why it didn’t become an incident later.
+        </Detail>
+      </Frame>
+    ),
+  },
+
+  // Setup 3 — AROMA is separate + reproducibility (chat + scaffolding terminal)
+  {
+    note: 'A common misconception is that fMRIPrep still does AROMA. It doesn’t — removed in v21.0. Settling that here (separate BIDS-App) is what shapes the whole two-container design.',
+    render: (d) => (
+      <Frame wide kicker="Part B · deciding the pipeline">
+        <H2>One surprise, then lock in reproducibility</H2>
+        <ChatThread messages={[
+          { who: 'norm', tag: 'norm', text: 'Just run AROMA inside fMRIPrep?' },
+          { who: 'agent', tag: 'agent', text: 'Can’t — ICA-AROMA was pulled from fMRIPrep core in v21.0. We run the standalone fMRIPost-AROMA on the derivatives, non-aggressive denoising. I’ll pin every stage to an Apptainer container and wrap each in a resumable launcher.' },
+        ]} />
+        <Lead>“It can run for a week — that’s fine. Don’t cut corners for speed.”</Lead>
+        <Terminal
+          title="agent — scaffolding the pipeline"
+          maxWidth={720}
+          lines={[
+            { k: 'cmd', t: 'apptainer pull containers/fmriprep-24.1.1.sif docker://nipreps/fmriprep:24.1.1' },
+            { k: 'dim', t: 'Getting image source signatures … Writing manifest … done' },
+            { k: 'cmd', t: 'ls code/' },
+            { k: 'out', t: 'nifti_to_bids.py  deface_t1w.sh  run_mriqc.sh  run_fmriprep.sh  run_fmripost_aroma.sh' },
+            { k: 'comment', t: 'every stage = one pinned container + one resumable launcher' },
+          ]}
+        />
+        <Detail density={d}>
+          With the science and the reproducibility contract settled, everything after this is execution —
+          which is exactly where the two incidents come from.
         </Detail>
       </Frame>
     ),
@@ -698,6 +806,14 @@ const K = {
   affil:    { fontSize: 'clamp(13px, 1.6vw, 16px)', color: 'var(--tx2)', margin: 0, lineHeight: 1.5, fontFamily: '"Space Mono",monospace' },
   event:    { fontFamily: '"Space Mono",monospace', fontSize: 13, color: 'var(--tx3)', margin: '10px 0 0', letterSpacing: '0.06em' },
   crests:   { display: 'flex', gap: 32, alignItems: 'center', marginBottom: 6 },
+
+  titleRow:  { display: 'flex', gap: 48, alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap' },
+  titleText: { display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left', maxWidth: 560 },
+  heroImg:   { width: 'min(340px, 66vw)', borderRadius: 20, boxShadow: '0 10px 40px rgba(74,144,217,0.18)', flexShrink: 0, background: '#fff' },
+
+  splitRow:  { display: 'flex', gap: 44, alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap' },
+  splitText: { display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left', gap: 15, maxWidth: 560, flex: '1 1 380px' },
+  splitImg:  { width: 'min(400px, 70vw)', borderRadius: 16, boxShadow: '0 10px 40px rgba(28,28,40,0.28)', flexShrink: 0 },
 
   h:    { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 'clamp(28px, 4.6vw, 50px)', fontWeight: 400, color: 'var(--tx)', margin: 0, lineHeight: 1.1 },
   h2:   { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 'clamp(24px, 3.6vw, 40px)', fontWeight: 400, color: 'var(--tx)', margin: 0, lineHeight: 1.12 },
