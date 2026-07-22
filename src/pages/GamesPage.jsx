@@ -45,6 +45,14 @@ export default function GamesPage({ session, firstContactComplete }) {
             to="/games/drift"
           />
 
+          {/* Delve — sense-foraging attention practice */}
+          <GameCard
+            title="Delve"
+            badge="Attention · Sense foraging"
+            desc="An image waits behind haze. Rest your attention in one place and it slowly comes clear; what you've seen fades back."
+            to="/games/delve"
+          />
+
           {/* Contact card — same game, featured styling for first-timers */}
           {!loading && (
             <GameCard

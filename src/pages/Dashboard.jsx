@@ -45,6 +45,7 @@ export default function Dashboard({ session }) {
           <StillWaterCard userId={user?.id} />
           <FaceReadCard userId={user?.id} />
           <DriftCard userId={user?.id} />
+          <DelveCard userId={user?.id} />
           <GameCard
             title="Ebb &amp; Flow"
             tag="Interoception · Breath sync"
@@ -459,6 +460,57 @@ function DriftCard({ userId }) {
       </div>
       <Link to="/games/drift" style={{ ...S.gameStatus, display: 'block', textDecoration: 'none' }}>
         {hasData ? 'Play again →' : 'Play now →'}
+      </Link>
+    </div>
+  )
+}
+
+// ── DELVE CARD ────────────────────────────────────────────────────────────────
+
+function DelveCard({ userId }) {
+  const [rows, setRows] = useState(null)
+  useEffect(() => {
+    if (!userId) return
+    supabase.from('game_sessions')
+      .select('started_at, performance(delve_duration_ms, delve_avg_dwell_ms)')
+      .eq('user_id', userId)
+      .eq('game_name', 'delve')
+      .not('ended_at', 'is', null)
+      .order('started_at', { ascending: true })
+      .limit(20)
+      .then(({ data }) => {
+        const perfs = (data ?? []).map(s => s.performance?.[0]).filter(Boolean)
+        setRows(perfs)
+      })
+  }, [userId])
+  const hasData = rows && rows.length > 0
+  const last = rows?.[rows.length - 1]
+  const dwells = (rows ?? []).map(r => r.delve_avg_dwell_ms).filter(v => v != null).map(v => v / 1000)
+  const fmtMin = ms => {
+    if (ms == null) return null
+    const s = Math.round(ms / 1000)
+    return s >= 60 ? `${Math.floor(s / 60)}m ${s % 60}s` : `${s}s`
+  }
+  return (
+    <div style={S.gameCard}>
+      <div style={S.gameCardInner}>
+        <span style={S.gameBadge}>Attention · Sense foraging</span>
+        <h2 style={S.gameTitle}>Delve</h2>
+        {!hasData ? (
+          <p style={S.gameDesc}>{rows === null ? 'Loading…' : 'An image waits behind haze. Rest your attention in one place and it slowly comes clear.'}</p>
+        ) : (
+          <>
+            <StatCluster stats={[
+              { label: 'sessions', value: rows.length },
+              { label: 'last time', value: fmtMin(last.delve_duration_ms) },
+              { label: 'avg dwell', value: last.delve_avg_dwell_ms != null ? `${(last.delve_avg_dwell_ms / 1000).toFixed(1)}s` : null },
+            ]} />
+            {dwells.length > 0 && <MiniSparkline values={dwells} color="#8a7f66" label="AVG DWELL (S)" />}
+          </>
+        )}
+      </div>
+      <Link to="/games/delve" style={{ ...S.gameStatus, display: 'block', textDecoration: 'none' }}>
+        {hasData ? 'Delve again →' : 'Play now →'}
       </Link>
     </div>
   )
