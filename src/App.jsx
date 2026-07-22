@@ -5,6 +5,7 @@ import { supabase, savePondWatchSession, saveEbbFlowSession } from './lib/supaba
 import Nav              from './components/Nav'
 import AuraFilterDef     from './components/AuraFilterDef'
 import AdminRoute        from './components/AdminRoute'
+import TalksRoute        from './components/TalksRoute'
 import ClassAdminRoute   from './components/ClassAdminRoute'
 import LectureLoungeAdminRoute from './components/LectureLoungeAdminRoute'
 import ErrorBoundary     from './components/ErrorBoundary'
@@ -64,6 +65,7 @@ const UiKit     = lazy(() => import('./pages/dev/UiKit'))
 const OnboardingPreview = lazy(() => import('./pages/dev/OnboardingPreview'))
 const Keynote   = lazy(() => import('./pages/keynote/Keynote'))
 const ToniJuly2026 = lazy(() => import('./pages/toni-july-2026/ToniJuly2026'))
+const Talks     = lazy(() => import('./pages/talks/Talks'))
 
 // Lecture Lounge — its own partition: separate chunk group from research
 // admin and from the rest of the app, wrapped in its own error boundary
@@ -425,10 +427,19 @@ export default function App() {
           <Route path="/demo/ember" element={<Ember />} />
           {/* Mirror — breath-driven avatar + materializing calibration; ?sim=1 beltless */}
           <Route path="/demo/mirror" element={<Mirror />} />
-          {/* ISARP keynote deck — click-through, doubles as read-later resource */}
-          <Route path="/keynote" element={<Keynote />} />
-          {/* toni_july_2026 group-meeting deck — fMRI preprocessing with an AI agent in the loop */}
-          <Route path="/toni-july-2026" element={<ToniJuly2026 />} />
+          {/*
+            Talks — private slide-deck hub + the decks it lists, gated by
+            TalksRoute (superAdmin only for now; widen to lab admins with a
+            one-line change in TalksRoute). Everything here requires login:
+            /talks is the index, the deck routes are the click-through shows.
+          */}
+          <Route element={<TalksRoute session={session} role={role} superAdmin={superAdmin} />}>
+            <Route path="/talks" element={<Talks />} />
+            {/* ISARP keynote deck — click-through, doubles as read-later resource */}
+            <Route path="/keynote" element={<Keynote />} />
+            {/* toni_july_2026 deck — fMRI preprocessing + downstream analysis with an AI agent */}
+            <Route path="/toni-july-2026" element={<ToniJuly2026 />} />
+          </Route>
 
           {/*
             Lecture Lounge — its own partition. Own chunk group (all four

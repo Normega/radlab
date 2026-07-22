@@ -306,6 +306,133 @@ export function ResultsCounters() {
   )
 }
 
+// ════════════════════════════════════════════════════════════════════════════
+//  DATASET 2 — downstream analysis (clinical sample). Blue accent (#4A90D9)
+//  throughout to read as distinct from dataset 1's pink.
+// ════════════════════════════════════════════════════════════════════════════
+
+// Downstream analysis flow — deliberately starts FROM fMRIPrep output, to make
+// the "we pick up where dataset 1 ended" point visually.
+export function AnalysisPipeline() {
+  const stages = [
+    { name: 'fMRIPrep', tool: 'MNI152NLin2009cAsym', c: '#7c6cd4', start: true },
+    { name: 'FSL FEAT', tool: 'first-level GLM', c: BLUE },
+    { name: 'Fixed effects', tool: 'within-subject', c: BLUE },
+    { name: 'randomise', tool: 'TFCE + permutation', c: BLUE },
+    { name: 'Harvard–Oxford', tool: 'atlas labeling', c: BLUE },
+  ]
+  return (
+    <div style={{ display: 'flex', alignItems: 'stretch', gap: 6, flexWrap: 'wrap', justifyContent: 'center', maxWidth: '100%' }}>
+      {stages.map((s, i) => (
+        <div key={s.name} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'center', minWidth: 132, padding: '14px 14px', borderRadius: 12, background: '#fff', border: `1.5px solid ${s.c}${s.start ? '' : '33'}`, boxShadow: s.start ? `0 0 0 3px ${s.c}22` : '0 3px 14px rgba(0,0,0,0.05)', position: 'relative' }}>
+            {s.start && <span style={{ position: 'absolute', top: -22, fontFamily: '"Space Mono",monospace', fontSize: 11, fontWeight: 700, color: s.c, whiteSpace: 'nowrap' }}>picks up here ↓</span>}
+            <span style={{ fontFamily: '"DM Sans",sans-serif', fontSize: 'clamp(13px,1.5vw,16px)', fontWeight: 600, color: INK, textAlign: 'center', lineHeight: 1.15 }}>{s.name}</span>
+            <span style={{ fontFamily: '"Space Mono",monospace', fontSize: 11, color: '#6b6c70', textAlign: 'center' }}>{s.tool}</span>
+          </div>
+          {i < stages.length - 1 && <span style={{ color: '#b9c3d4', fontSize: 22, lineHeight: 1 }}>→</span>}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// Registered vs. what-the-code-did — the centerpiece methods slide. Separates
+// the cosmetic engine swap from the substantive error-control deviation.
+export function RegisteredVsActual() {
+  const Row = ({ tone, tag, left, right, note }) => (
+    <div style={{ padding: '14px 18px', borderRadius: 12, background: '#fff', border: `1.5px solid ${tone}44`, textAlign: 'left' }}>
+      <div style={{ fontFamily: '"Space Mono",monospace', fontSize: 12, fontWeight: 700, letterSpacing: '0.03em', color: tone, marginBottom: 8 }}>{tag}</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', fontFamily: '"Space Mono",monospace', fontSize: 'clamp(12px,1.5vw,15px)', color: INK }}>
+        <span style={{ padding: '4px 10px', borderRadius: 7, background: 'rgba(0,0,0,0.05)' }}>{left}</span>
+        <span style={{ color: tone, fontSize: 18 }}>→</span>
+        <span style={{ padding: '4px 10px', borderRadius: 7, background: `${tone}18`, color: tone === '#9aa0aa' ? INK : tone, fontWeight: 600 }}>{right}</span>
+      </div>
+      <div style={{ fontSize: 13.5, color: '#6b6c70', marginTop: 9, fontFamily: '"DM Sans",sans-serif', lineHeight: 1.4 }}>{note}</div>
+    </div>
+  )
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 880, width: '100%' }}>
+      <Row
+        tone="#9aa0aa"
+        tag="ENGINE SWAP — a documentable, minor deviation"
+        left="SPM12" right="FSL FEAT"
+        note="Both are mass-univariate GLM. Name it in the deviations log and move on — this is not the part that matters."
+      />
+      <Row
+        tone={BLUE}
+        tag="ERROR CONTROL — the deviation that actually matters"
+        left="cluster p<.005 (~400 vox)" right="TFCE + permutation (randomise)"
+        note="The convenient threshold was neither registered nor defensible post-Eklund, Nichols & Knutsson (2016). Moving to the registered TFCE/permutation is a genuine improvement, not just compliance."
+      />
+      <div style={{ padding: '11px 16px', borderRadius: 10, background: 'rgba(74,144,217,0.06)', border: '1px dashed rgba(74,144,217,0.35)', fontSize: 13.5, color: '#4b5563', textAlign: 'left', fontFamily: '"DM Sans",sans-serif', lineHeight: 1.45 }}>
+        <b style={{ color: BLUE }}>Also reconciled:</b> the registered H1 group test + the H3 <span style={{ fontFamily: '"Space Mono",monospace', fontSize: 12 }}>covariate × [Decentered − Analytic]</span> moderation contrast (both absent from the second level) · rumination coded as the registered RRS-10 <i>total</i>, not the single sub-scale the code used.
+      </div>
+    </div>
+  )
+}
+
+// The compute-reality table — WSL-on-Windows failures and their fixes.
+export function ComputeRealityTable() {
+  const rows = [
+    ['Batch dies at ~10 min', 'Agent background calls are time-capped', 'Run out-of-band (Task Scheduler)'],
+    ['Dies again at ~15 min, every time', '8 workers copy 149 MB .feat dirs to the /mnt/g drvfs mount at once → WSL 9p server falls over', 'Compute + store on native ext4'],
+    ['“Stalled!” alarms that weren’t', 'FILM jobs ran ~40 min each (virtual-disk I/O bound)', 'Process-aware thresholds'],
+  ]
+  return (
+    <table style={{ borderCollapse: 'collapse', fontSize: 'clamp(11px, 1.35vw, 14px)', background: '#fff', borderRadius: 10, overflow: 'hidden', maxWidth: 900, tableLayout: 'fixed' }}>
+      <thead>
+        <tr>
+          {['Symptom', 'Root cause', 'Fix'].map((h, i) => (
+            <th key={h} style={{ fontFamily: '"Space Mono",monospace', fontSize: '0.85em', fontWeight: 700, color: BLUE, padding: '10px 14px', borderBottom: `2px solid ${BLUE}33`, textAlign: 'left', width: i === 1 ? '46%' : '27%' }}>{h}</th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((r, ri) => (
+          <tr key={ri}>
+            {r.map((cell, ci) => (
+              <td key={ci} style={{ padding: '10px 14px', textAlign: 'left', color: ci === 0 ? INK : '#4b5563', borderBottom: '1px solid var(--bd)', verticalAlign: 'top', fontWeight: ci === 0 ? 600 : 400, lineHeight: 1.4 }}>{cell}</td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )
+}
+
+// Synthesis — the two datasets rhyme. Pattern | Dataset 1 (pink) | Dataset 2 (blue).
+export function ParallelPatterns() {
+  const rows = [
+    ['Plan before executing', 'Session-zero design conversation', 'Pre-registration reconciliation'],
+    ['Lock the analytic forks', 'Garden of forking paths', 'Primary model locked before group maps'],
+    ['The environment fights back', 'Scratch fills the disk to 0', 'WSL drvfs vs native ext4'],
+    ['Idempotent resume', 'Crash → fix → relaunch, skip done', '98 runs travel & skip on the port'],
+    ['Carry the context forward', 'Persistent memory across sessions', 'Travel bundle → a fresh Claude continues'],
+    ['Verify, don’t trust', 'Exit code lies → check the log', 'Corrupt run-4 → fingerprint the identity'],
+  ]
+  return (
+    <table style={{ borderCollapse: 'collapse', fontSize: 'clamp(11px, 1.35vw, 15px)', background: '#fff', borderRadius: 10, overflow: 'hidden', maxWidth: 1020 }}>
+      <thead>
+        <tr>
+          <th style={{ padding: '10px 14px', textAlign: 'left', fontFamily: '"Space Mono",monospace', fontSize: '0.82em', color: '#6b6c70', borderBottom: '2px solid var(--bd)' }}>Pattern</th>
+          <th style={{ padding: '10px 14px', textAlign: 'left', fontFamily: '"Space Mono",monospace', fontSize: '0.82em', color: PINKD, borderBottom: `2px solid ${PINK}44` }}>Dataset 1 · preprocessing</th>
+          <th style={{ padding: '10px 14px', textAlign: 'left', fontFamily: '"Space Mono",monospace', fontSize: '0.82em', color: BLUE, borderBottom: `2px solid ${BLUE}44` }}>Dataset 2 · analysis</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((r, ri) => (
+          <tr key={ri}>
+            <td style={{ padding: '9px 14px', textAlign: 'left', color: INK, fontWeight: 600, borderBottom: '1px solid var(--bd)', whiteSpace: 'nowrap' }}>{r[0]}</td>
+            <td style={{ padding: '9px 14px', textAlign: 'left', color: '#4b5563', borderBottom: '1px solid var(--bd)' }}>{r[1]}</td>
+            <td style={{ padding: '9px 14px', textAlign: 'left', color: '#4b5563', borderBottom: '1px solid var(--bd)' }}>{r[2]}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )
+}
+
 // ── Small numeric stat tiles (reused on data / disk slides) ──────────────────
 export function StatTiles({ items }) {
   return (

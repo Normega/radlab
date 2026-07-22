@@ -11,6 +11,7 @@ import { useState, useEffect, useCallback } from 'react'
 import {
   Terminal, PipelineDiagram, DiskTimeline, ExitCodeDiagram,
   ResumeChat, ChatThread, ResultsCounters, StatTiles,
+  AnalysisPipeline, RegisteredVsActual, ComputeRealityTable, ParallelPatterns,
 } from './graphics'
 
 export default function ToniJuly2026() {
@@ -105,6 +106,22 @@ function Detail({ density, children }) {
   return <p style={K.detail}>{children}</p>
 }
 
+// Act divider — pink for dataset 1, blue for dataset 2.
+function DatasetDivider({ n, tone, title, sub, points }) {
+  return (
+    <Frame>
+      <div style={{ ...K.datasetBadge, color: tone, borderColor: `${tone}55`, background: `${tone}12` }}>DATASET {n}</div>
+      <h1 style={{ ...K.title, marginTop: 6 }}>{title}</h1>
+      <p style={{ ...K.subtitle, color: tone }}>{sub}</p>
+      {points && (
+        <div style={K.dividerPoints}>
+          {points.map((p, i) => <span key={i} style={{ ...K.dividerChip, borderColor: `${tone}44` }}>{p}</span>)}
+        </div>
+      )}
+    </Frame>
+  )
+}
+
 // ── Slides ──────────────────────────────────────────────────────────────────
 
 const SLIDES = [
@@ -191,15 +208,32 @@ const SLIDES = [
   {
     render: () => (
       <Frame kicker="Roadmap">
-        <H2>Where we’re going</H2>
+        <H2>Two datasets, two phases of the pipeline</H2>
         <Bullets items={[
-          'Part A — the study & the data',
-          'Part B — deciding the pipeline, then running it stage by stage',
-          'Part C — two real incidents the agent caught & fixed  ← the interesting part',
-          'Part D — autonomy, results, honest assessment, takeaways',
+          'Dataset 1 — healthy-control breath study: getting preprocessing right (Parts A–D below).',
+          'Dataset 2 — a clinical sample: picking up after fMRIPrep for pre-registered functional analysis.',
+          'Throughout: the same collaboration with an AI coding agent — and the patterns that recur.',
         ]} />
+        <Detail density="reading">
+          Part A the study &amp; data · Part B deciding + running the pipeline · Part C two real incidents ·
+          Part D autonomy &amp; results — all dataset 1; then the dataset-2 analysis act, then a synthesis.
+        </Detail>
       </Frame>
     ),
+  },
+
+  // 3b — Dataset 1 divider (light retro-label)
+  {
+    render: () => (
+      <DatasetDivider
+        n="1"
+        tone="#f068a4"
+        title="Healthy-control breath study"
+        sub="getting preprocessing right"
+        points={['intero2024 · 53 subjects', 'DICOM → BIDS → fMRIPrep → AROMA', 'the pipeline & the agent incidents']}
+      />
+    ),
+    note: 'Dataset 1 is the preprocessing story: healthy controls, the breath-monitoring study, and the agent driving the pipeline. Dataset 2 later picks up downstream, in a clinical sample.',
   },
 
   // 4 — intero2024 in one slide
@@ -671,6 +705,161 @@ const SLIDES = [
     ),
   },
 
+  // ════ DATASET 2 — downstream analysis, clinical sample (blue accent) ════
+
+  // D2-1 — Dataset 2 divider + ethics/pre-reg framing (public methods-only)
+  {
+    render: () => (
+      <DatasetDivider
+        n="2"
+        tone="#4A90D9"
+        title="Downstream analysis, a clinical sample"
+        sub="picking up after fMRIPrep"
+        points={['Pre-registered · OSF xctf6', 'Consented clinical sample', 'Methods only · no participant data shown']}
+      />
+    ),
+    note: 'Deliberate framing: this is a clinical suicidal-ideation study, pre-registered (OSF xctf6) and consented. Nothing participant-level appears anywhere in this act — the focus is neuroimaging methods and how the AI collaboration worked. Not results; those aren’t in yet.',
+  },
+
+  // D2-2 — study & registered plan (starts from fMRIPrep)
+  {
+    note: 'The PI flagged the pre-registration PDF as authoritative. Registered: fMRIPrep → FSL FEAT → TFCE/permutation, FDR q<.001 as the registered fallback; ROI claims via whole-brain correction then Harvard–Oxford labeling; networks via the CAREN atlas.',
+    render: (d) => (
+      <Frame wide kicker="Dataset 2 · the study & the registered plan">
+        <H2>A 2×2 imagery study, pre-registered end to end</H2>
+        <StatTiles items={[
+          { big: '56', label: 'participants · clinical sample', c: '#4A90D9' },
+          { big: '2×2', label: 'Imagery × Processing mode', c: '#4A90D9' },
+          { big: '5', label: 'pre-registered hypotheses', c: '#4A90D9' },
+        ]} />
+        <AnalysisPipeline />
+        <Detail density={d}>
+          Imagery content (Suicidal vs Neutral) × processing mode (Decentered “Sense” vs Analytic “Judge”),
+          ~60 s imagery blocks. Registered analysis: fMRIPrep → FSL FEAT → TFCE + permutation (randomise), with
+          FDR q&lt;.001 as the registered fallback; ROI claims adjudicated by whole-brain correction then
+          Harvard–Oxford labeling.
+        </Detail>
+      </Frame>
+    ),
+  },
+
+  // D2-3 — the brief / planning partnership
+  {
+    note: 'That last clause — “please ask me instead of making assumptions” — set the tone: a planning partnership, not autopilot. Nearly every consequential fork was surfaced as a question.',
+    render: (d) => (
+      <Frame wide kicker="Dataset 2 · the collaboration">
+        <H2>“Please ask me instead of making assumptions”</H2>
+        <ChatThread messages={[
+          { who: 'norm', tag: 'the brief', text: 'Review the current scripts, re-run the R to confirm reproducibility, and discuss improvements. Especially review how we honour the pre-registration — the PDF is authoritative. Please ask me instead of making assumptions.' },
+          { who: 'agent', tag: 'agent — planning partner, not autopilot', text: 'Understood. I’ll reproduce the behavioural pipeline first, then surface every gap between what’s registered and what the code actually does — as questions, not silent choices.' },
+        ]} />
+        <Detail density={d}>
+          Reproducing the R behavioural pipeline was the easy part — bit-for-bit on a pinned R version. The
+          substance was the gap between the registration and the code, and that gap got worked as a conversation.
+        </Detail>
+      </Frame>
+    ),
+  },
+
+  // D2-4 — honouring the pre-registration (centerpiece)
+  {
+    note: 'The heart of the methods story. Separate two things easy to conflate: the engine swap (SPM↔FSL, minor) vs the error-control method (cluster p<.005 → TFCE/permutation, the substantive fix, post-Eklund, Nichols & Knutsson 2016). Forks were locked before any group map was seen.',
+    render: (d) => (
+      <Frame wide kicker="Dataset 2 · honouring the pre-registration">
+        <H2>Registered vs. what the code actually did</H2>
+        <RegisteredVsActual />
+        <Lead>The discipline that mattered: the primary “imagery reactivity” model (Maintenance-only) was locked <i>before</i> looking at any group map — so the analysis isn’t selected on significance.</Lead>
+        <Detail density={d}>
+          The other estimate (Generation + Maintenance combined) is reported as a pre-specified sensitivity
+          analysis — the same garden-of-forking-paths problem as dataset 1, handled by committing before seeing results.
+        </Detail>
+      </Frame>
+    ),
+  },
+
+  // D2-5 — let cheap data decide expensive choices
+  {
+    note: 'A 30-minute behavioural check pre-emptively justified a first-level modelling choice that would otherwise be an arbitrary fork. Values are analysis-in-progress, shown to make the methods point — not confirmatory results.',
+    render: (d) => (
+      <Frame wide kicker="Dataset 2 · let cheap data decide">
+        <H2>A behavioural check settled a modelling fork</H2>
+        <ChatThread messages={[
+          { who: 'norm', tag: 'the PI’s question', text: 'I believe Sense leads to faster flanker processing than Judge — maybe worth exploring flanker brain activity too?' },
+          { who: 'agent', tag: 'agent — let the behaviour decide (3,058 trials, mixed models)', text: 'Decentered → ~53 ms faster flanker RT (p<.001) — your intuition holds. But interference × mode is flat (p=.93): a uniform carry-over of the preceding mode, not a change in conflict control.' },
+        ]} />
+        <Bullets items={[
+          'Suicidal images took ~0.9 s longer to generate (p=.010) → Generation is a condition-differential construction process — kept out of the reactivity estimate. That’s the empirical argument for the Maintenance-only primary model.',
+          'Flanker stays split by mode as a labelled exploratory analysis.',
+        ]} />
+        <Detail density={d}>
+          Cheap behavioural data justified an expensive first-level parameterisation — turning an arbitrary
+          fork into a defensible, pre-specified choice.
+        </Detail>
+      </Frame>
+    ),
+  },
+
+  // D2-6 — the compute reality
+  {
+    note: 'The part a facility recognises: the science was settled; the environment fought back. Nearly every failure was a WSL-on-Windows artifact — drvfs vs native ext4 was the single biggest throughput determinant.',
+    render: (d) => (
+      <Frame wide kicker="Dataset 2 · the compute reality">
+        <H2>Your filesystem is a methods decision</H2>
+        <ComputeRealityTable />
+        <Lead>~40 min/job on the WSL virtual disk vs ~5–10 min expected on real hardware. The fix wasn’t the model — it was where the .feat directories get staged.</Lead>
+        <Detail density={d}>
+          The pivot: “I have a real Linux box — port over, or be patient?” → port. The pipeline was already
+          idempotent, so the ~98 computed runs travelled along and were skipped on resume — the Windows effort
+          became the first partition of the job, not wasted work.
+        </Detail>
+      </Frame>
+    ),
+  },
+
+  // D2-7 — the handoff
+  {
+    note: 'Because the agent could only operate the Windows machine, the port was packaged as a self-contained travel bundle so a fresh Claude on the Linux box could continue seamlessly. The corrupt run-4 cameo: mean-image fingerprint 0.97–0.98 within-subject vs ~0.64 across — suggestive identity evidence (the rigorous check is sform/qform + dims).',
+    render: (d) => (
+      <Frame wide kicker="Dataset 2 · the handoff">
+        <H2>A travel bundle a fresh Claude could pick up</H2>
+        <Terminal
+          title="USB 3 travel bundle — packaged for the Linux box"
+          maxWidth={780}
+          lines={[
+            { k: 'cmd', t: 'ls $MINDLOCK_ROOT/' },
+            { k: 'out', t: 'derivatives/  ev_confounds/  firstlevel_98_done/  scripts_linux/  HANDOFF.md  memory/' },
+            { k: 'comment', t: '235 GB fMRIPrep derivatives · path-configurable scripts (one MINDLOCK_ROOT var)' },
+            { k: 'comment', t: '98 salvaged first-levels skip on resume · memory/ = every locked decision' },
+            { k: 'ok',  t: 'HANDOFF.md + memory/ → a fresh Claude reads it and continues, no re-litigation' },
+          ]}
+        />
+        <Bullets items={[
+          'Everyday-neuroimaging cameo: a corrupt run-4 volume, caught before handoff.',
+          'Mean-image “fingerprint”: 0.97–0.98 vs the subject’s own runs, ~0.64 vs anyone else’s → right subject, valid replacement.',
+        ]} />
+        <Detail density={d}>
+          Idempotent ≠ automatically safe to double up: two workers on a shared store can still race the same
+          not-yet-done job — so the clean patterns are partition (Variant A/B per box) or separate stores + merge.
+        </Detail>
+      </Frame>
+    ),
+  },
+
+  // D2-8 — synthesis: the two datasets rhyme
+  {
+    note: 'The payoff: the same collaboration patterns show up whether you’re getting preprocessing right (dataset 1) or getting a pre-registered analysis off the ground (dataset 2).',
+    render: (d) => (
+      <Frame wide kicker="Two datasets, one collaboration">
+        <H2>The same patterns, upstream and downstream</H2>
+        <ParallelPatterns />
+        <Detail density={d}>
+          Neither column is agent-specific magic — it’s engineering + methods hygiene. The agent just makes the
+          discipline cheaper to keep: forks locked, environments tamed, context carried, success verified.
+        </Detail>
+      </Frame>
+    ),
+  },
+
   // 21 — What worked / what to watch
   {
     note: 'Treat it as a strong, tireless operator that still needs a scientist’s judgment on the science.',
@@ -810,6 +999,10 @@ const K = {
   event:    { fontFamily: '"Space Mono",monospace', fontSize: 13, color: 'var(--tx3)', margin: '10px 0 0', letterSpacing: '0.06em' },
   facility: { fontFamily: '"Space Mono",monospace', fontSize: 11.5, color: 'var(--tx3)', margin: '3px 0 0', letterSpacing: '0.04em', textAlign: 'left', opacity: 0.9 },
   provenance: { fontFamily: '"Space Mono",monospace', fontSize: 'clamp(12px, 1.5vw, 15px)', color: 'var(--tx2)', margin: 0, letterSpacing: '0.03em' },
+
+  datasetBadge: { fontFamily: '"Space Mono",monospace', fontSize: 14, fontWeight: 700, letterSpacing: '0.12em', padding: '7px 18px', borderRadius: 999, border: '1.5px solid', display: 'inline-block' },
+  dividerPoints: { display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center', marginTop: 10 },
+  dividerChip: { fontFamily: '"Space Mono",monospace', fontSize: 13, color: 'var(--tx2)', background: '#fff', border: '1px solid', borderRadius: 999, padding: '6px 14px' },
   crests:   { display: 'flex', gap: 32, alignItems: 'center', marginBottom: 6 },
 
   titleRow:  { display: 'flex', gap: 48, alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap' },
