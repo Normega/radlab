@@ -2,10 +2,13 @@
 
 **Validating the accelerometer breath belt against the lab-grade stretch belt**
 
-> Version 0.1 (draft for discussion) · 2026-07-22 · RADlab
+> Version 0.2 (draft for discussion) · 2026-07-22 · RADlab
 > Status: **DRAFT** — decision points flagged `[DECIDE]`; empirical thresholds flagged `[SET]`.
+> v0.2 adds a live-Supabase data audit (§0a) that fixes the sample and surfaces two execution
+> constraints (period columns are ~95% null → recompute offline; only Biopac sessions have `.acq`).
 > This plan is written to be lifted into an OSF preregistration once the `[DECIDE]`/`[SET]`
-> items are fixed and the dataset is frozen. Nothing here has seen the paired data yet.
+> items are fixed and the dataset is frozen. The audit reads *metadata only* (counts, fill-rates,
+> device split) — no breath waveforms or outcomes have been inspected, so the design remains blind.
 
 ---
 
@@ -30,6 +33,46 @@ near-perfectly and still disagree by a fixed or rate-dependent offset that makes
 non-substitutable. Every primary claim is therefore stated as an **equivalence** test
 (TOST / concordance / limits of agreement), not a null-hypothesis-significance "they're
 correlated" test.
+
+---
+
+## 0a. Data reality check — Supabase audit, 2026-07-22
+
+Queried the live project before fixing any `[SET]`/`[DECIDE]`. Findings that materially shape
+the plan:
+
+- **Paired sample = 21 participants (confirmed), up to 24.** 34 `belt_sessions` exist (29 distinct
+  participants), collected **2026-06-03 → 06-22**. The `.acq`/AcqKnowledge record only exists for
+  **Biopac** sessions: 26 sessions (Biopac_Right 23 + Biopac_Left 3) across **24 distinct
+  participants**. Of those, **21 also appear in `participant_compensation`** — the exact set the
+  request describes ("in compensation *and* part of breath belts"). All 21 are Biopac. The remaining
+  3 Biopac participants are not in the compensation roster (pilot/uncompensated — confirm before
+  including).
+- **The 8 AD_BBT sessions (5 participants) are out of the `.acq` set.** AD_BBT = ADInstruments
+  PowerLab → **LabChart** (`.adicht`), *not* AcqKnowledge. They can only join the correspondence
+  analysis if their physio data was exported to a comparable format; otherwise exclude.
+- **All 34 sessions pass the calibration gate** (`calib_fit_r ≥ 0.4`; Biopac mean R ≈ 0.75). Good.
+- **The stored scalar period columns are unusable as-is — recompute offline.** `bt_condition_period_ms`
+  is non-null in only **12/315 Phase-2** and **60/1023 Phase-3** trials (~4–6%); session
+  `baseline_period_ms`/`post_baseline_period_ms` are non-null in **1/34** sessions. `estimateBreathPeriodMs`
+  nulls out on the short 2-breath windows (and on pre-calibration flat baselines). **Consequence:**
+  the Level-1 primary endpoint (§4) must derive periods from the **raw accel CSVs in Storage**, via
+  the same offline pipeline used for the `.acq` — *not* read the stored `bt_*_period_ms` columns.
+  This is actually cleaner: both belts get periods from one pipeline over full-length raw signal.
+- **Per-trial sync-R *is* densely populated** (`trial_r_condition` in 297/315 Phase-2, 945/1023
+  Phase-3) — usable directly as a belt-vs-pacer tracking-quality covariate.
+- **Extra alignment anchors exist in `belt_sessions`** beyond the repo migration: `session_start_epoch_ms`
+  (wall-clock anchor), `phase2_start_ms/phase2_end_ms`, `phase3_start_ms/phase3_end_ms` (relative-ms
+  phase boundaries), populated in 26/34 sessions. These supplement the 13 trigger fiducials for
+  Level-0 alignment (§3).
+- **Trial volume is ample:** 315 Phase-2 + 1023 Phase-3 trials total (Phase 3 ≈ 30–40 QUEST trials
+  per session). Within-subject agreement estimates will be well-powered *per participant*.
+
+Still unverifiable from Supabase (lives on the lab rigs, not the DB): **whether each Biopac session
+has a saved `.acq` file containing all 13 trigger marks.** That inventory is the true gate on final N
+— the 21/24 figure is the upper bound the database can confirm. One caveat to chase: `belt_trials`
+Phase-2 spans 35 `session_id`s vs 34 `belt_sessions` rows — confirm the `belt_trials.session_id`
+join key (it may reference `game_sessions`, not `belt_sessions.id`) before merging.
 
 ---
 
@@ -220,7 +263,11 @@ already prototyped in the shared breath layer).
 ## 6. Shared processing pipeline (identical for both belts)
 
 To ensure any difference is the *device*, not the *method*, both signals pass through one pipeline,
-mirroring Study 5's `breath_pipeline.R` (`run_pipeline`):
+mirroring Study 5's `breath_pipeline.R` (`run_pipeline`). **Both belts' periods are derived here, from
+raw signal — the stored `bt_*_period_ms` / `baseline_period_ms` columns are ~95%/97% null (§0a) and are
+not used.** The accel raw stream comes from the per-session `_accel.csv` in the `belt-sessions` Storage
+bucket (`{user_id}/{session_id}_accel.csv`), sliced by the `phase`/`trial` columns and the trigger
+fiducials; the stretch belt from the `.acq` respiration channel.
 
 1. Resample both to a common grid `[SET: e.g. 25 Hz]` (the accel breath-signal rate; downsample the
    `.acq`).
@@ -258,11 +305,13 @@ constants before touching the paired data.
 
 ## 8. Sample, inclusion, exclusion
 
-- **Sample.** All participants from the past ~month with a **paired** record: a website accel-belt
-  session and a simultaneous stretch-belt `.acq`. Cross-reference the compensation roster against
-  `belt_sessions` to enumerate the paired set. `[SET: final N participants / N sessions once the
-  dataset is frozen — cannot be queried from this repo; pull from Supabase `belt_sessions` + the
-  `.acq` inventory.]`
+- **Sample (enumerated 2026-07-22 — see §0a).** **21 participants** have both a compensation-roster
+  entry and a Biopac Breath Belt session (→ AcqKnowledge `.acq`); up to **24** if the 3 uncompensated
+  Biopac participants are included. Sessions span 2026-06-03 → 06-22; all pass the calibration gate.
+  The 8 AD_BBT sessions (5 participants) are excluded from the `.acq` set (LabChart, not AcqKnowledge)
+  unless their physio was exported separately. **Final N is gated by the `.acq` file inventory on the
+  lab rigs** (each Biopac session's saved `.acq` with all 13 trigger marks) — `[SET: confirm file
+  inventory; expect ≈ 21–24 participants, 24–26 sessions]`.
 - **Power.** For equivalence (TOST), power is driven by the LoA width relative to the margin and the
   number of paired windows per participant (Phases 2–3 give tens of trials each). Do a small
   simulation-based power/precision check once the margin `[SET]` and a variance guess (from the first
