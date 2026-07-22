@@ -18,7 +18,7 @@ import { useState, useEffect, useRef } from 'react'
 //   - ConsentPage.jsx (route `/study/:studyId/consent`) — admin preview
 //     links and consent-only re-entry, using the app's normal global client
 //     and an already-authenticated lab/admin session.
-export default function ConsentGate({ studyId, participantId, supabaseClient, onComplete }) {
+export default function ConsentGate({ studyId, participantId, supabaseClient, onComplete, prefetched = null }) {
   const [state,   setState]   = useState(STATES.LOADING)
   const [study,   setStudy]   = useState(null)
   const [form,    setForm]    = useState(null)
@@ -33,6 +33,22 @@ export default function ConsentGate({ studyId, participantId, supabaseClient, on
 
   async function load() {
     setState(STATES.LOADING)
+
+    // Fast path: SessionEntry passes the token payload straight through. That
+    // data came from get_session_by_token (SECURITY DEFINER), so it's already
+    // authorized — using it avoids re-reading studies/study_enrollments/
+    // study_consent_forms under RLS here, which can intermittently return
+    // nothing if the participant's JWT isn't yet attached to these requests,
+    // leaving the consent form blank / "not found". ConsentPage (admin route,
+    // global session) passes no prefetched data and uses the query path below.
+    if (prefetched) {
+      if (!prefetched.consentRequired || !prefetched.activeConsentFormId) { onComplete(); return }
+      if (prefetched.consentDate) { setState(STATES.ALREADY_CONSENTED); return }
+      setStudy({ name: prefetched.studyName ?? null })
+      setForm({ html_content: prefetched.consentHtml ?? '' })
+      setState(STATES.READY)
+      return
+    }
 
     const { data: studyData, error: se } = await supabaseClient
       .from('studies')
@@ -107,7 +123,7 @@ export default function ConsentGate({ studyId, participantId, supabaseClient, on
   if (state === STATES.ALREADY_CONSENTED) {
     return (
       <div style={S.wrap}>
-        <p style={S.eyebrow}>{study?.name}</p>
+        {study?.name && <p style={S.eyebrow}>{study.name}</p>}
         <h1 style={S.title}>You've already consented</h1>
         <p style={S.body}>Your consent for this study is on record.</p>
         <button style={S.btn} onClick={onComplete}>Continue →</button>
@@ -117,7 +133,7 @@ export default function ConsentGate({ studyId, participantId, supabaseClient, on
 
   return (
     <div style={S.wrap}>
-      <p style={S.eyebrow}>{study?.name}</p>
+      {study?.name && <p style={S.eyebrow}>{study.name}</p>}
       <h1 style={S.title}>Research Consent Form</h1>
 
       <div ref={bodyRef} style={S.formBox}>

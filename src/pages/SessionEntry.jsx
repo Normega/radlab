@@ -36,6 +36,13 @@ export default function SessionEntry() {
   // per-step time-on-screen. Same clock for entry+exit, so duration is accurate
   // even if the participant's absolute clock is skewed.
   const stepEnteredAtRef = useRef(null)
+  // Index whose completion we've already processed. Guards against a step's
+  // onComplete firing twice (e.g. a double-tap on a questionnaire's final
+  // answer): without it each call runs setCurrentIndex(i => i + 1), advancing
+  // two steps and silently skipping one — which is how the debrief (and, before
+  // it, whole questionnaires) got skipped. Reset is implicit: each real step has
+  // a distinct, increasing index, and a session restart re-enters index 0.
+  const completedIndexRef = useRef(-1)
   // Isolated Supabase client — never modifies the global lab session.
   const sbRef = useRef(makeParticipantClient())
   const sb    = sbRef.current
@@ -226,6 +233,13 @@ export default function SessionEntry() {
   }
 
   async function handleStepComplete(result) {
+    // Ignore a repeat completion for the step we're already advancing past — a
+    // double-fired onComplete must not double-advance (which skips the next
+    // step). currentIndex is stable within this render, so both synchronous
+    // calls see the same value; the second returns here.
+    if (completedIndexRef.current === currentIndex) return
+    completedIndexRef.current = currentIndex
+
     // Record time-on-screen for the step just finished (fire-and-forget; never
     // blocks advancing). Covers both the advance and final-step branches below.
     const exitedAt  = Date.now()
@@ -384,6 +398,13 @@ export default function SessionEntry() {
           studyId={consentStudyId}
           participantId={fullDataRef.current?.link?.participant_id}
           supabaseClient={sb}
+          prefetched={{
+            consentRequired:     fullDataRef.current?.study?.consent_required,
+            activeConsentFormId: fullDataRef.current?.study?.active_consent_form_id,
+            consentDate:         fullDataRef.current?.enrollment?.consent_date,
+            consentHtml:         fullDataRef.current?.consent_html,
+            studyName:           null, // get_session_by_token doesn't return the study name; the form's own heading names it
+          }}
           onComplete={handleConsentComplete}
         />
       </div>

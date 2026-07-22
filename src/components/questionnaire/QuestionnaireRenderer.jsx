@@ -39,12 +39,21 @@ export default function QuestionnaireRenderer({
   const [visible,    setVisible]    = useState(true);  // fade control
   const [done,       setDone]       = useState(false);
   const transitioningRef = useRef(false);
+  // onComplete must fire at most once per mount. The last item's advance() calls
+  // finish() directly, bypassing goTo()'s transitioningRef guard — so without
+  // this a double-tap on the final answer fires onComplete twice, and the parent
+  // (SessionEntry) advances two steps, silently skipping the next one (a
+  // questionnaire, or the debrief). SessionEntry remounts this per step
+  // (key={currentIndex}), so a per-mount ref resets correctly each step.
+  const finishedRef = useRef(false);
 
   const isChecklist = isChecklistType(questionnaire);
 
   // Finalize the questionnaire: normalize (checklist), score, and report.
   const finish = useCallback((current) => {
     if (previewMode) { setDone(true); return; }
+    if (finishedRef.current) return;
+    finishedRef.current = true;
     const finalResponses = isChecklist
       ? normalizeChecklistResponses(questionnaire, current)
       : current;
