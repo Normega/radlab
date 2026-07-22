@@ -68,11 +68,32 @@ the plan:
 - **Trial volume is ample:** 315 Phase-2 + 1023 Phase-3 trials total (Phase 3 ≈ 30–40 QUEST trials
   per session). Within-subject agreement estimates will be well-powered *per participant*.
 
-Still unverifiable from Supabase (lives on the lab rigs, not the DB): **whether each Biopac session
-has a saved `.acq` file containing all 13 trigger marks.** That inventory is the true gate on final N
-— the 21/24 figure is the upper bound the database can confirm. One caveat to chase: `belt_trials`
-Phase-2 spans 35 `session_id`s vs 34 `belt_sessions` rows — confirm the `belt_trials.session_id`
-join key (it may reference `game_sessions`, not `belt_sessions.id`) before merging.
+One caveat to chase: `belt_trials` Phase-2 spans 35 `session_id`s vs 34 `belt_sessions` rows —
+confirm the `belt_trials.session_id` join key (it may reference `game_sessions`, not
+`belt_sessions.id`) before merging.
+
+### File inventory reconciled — `L:\My Drive\BreathBeltSummer2026`, 2026-07-22
+
+Cross-checked the `.acq` files against the Supabase `belt_sessions` roster and Storage bucket.
+`.acq` naming is `L<leftID>.R<rightID>.acq` (participant SONA IDs; `0000`/`00000` = that rig idle);
+study proper is **all Biopac** (AD_BBT/`.adicht` dropped entirely — no import path needed).
+
+- **19 study `.acq` files** (06-05 → 06-22), 25 unique participant IDs. Non-study `.acq` excluded:
+  `Template.acq`, `Test.acq`, `june4*.acq`; the 3 `.adicht` files are ADInstruments pilots.
+- **22 fully paired participants** — every study Biopac `belt_sessions` row has a matching `.acq`.
+  This is the clean correspondence sample (21 also in `participant_compensation`).
+- **Accel raw signal is in Supabase Storage, not this folder.** The `belt-sessions` bucket holds
+  32 `_accel.csv` + 32 `_hr.csv` (436 MB, 06-03 → 06-22, keyed `{user_id}/{session_id}_*.csv`). The
+  local CSVs in the Drive folder stop at 06-05 — they are **pilot** streaming-backups (5 test UUIDs),
+  not study data. So both halves of each pair are retrievable: accel from Storage, stretch from `.acq`.
+- **3 `.acq`-only participants with no Supabase session: `14776`, `16711`, `16549`**, plus `9967`'s
+  first run (left rig 06-12 in `L9967.R16753`; only its 06-16 right-rig run is in the DB). In every
+  case it is the **left-rig** participant that failed to reach Supabase while the right-rig partner
+  uploaded — a left-laptop upload-failure pattern. These have lab `.acq` data but **no accel side**,
+  so they cannot enter the correspondence analysis unless their website session is recovered.
+- `L16549.R14542.acq` carries a 2026-07-22 file mtime (Drive re-sync); its *content* is a June
+  session — verify from its internal trigger timestamps, not the filesystem date.
+- Parser inputs on hand: `TriggerCodes.txt` (event-channel/code documentation) and `Template.acq`.
 
 ---
 
@@ -305,13 +326,13 @@ constants before touching the paired data.
 
 ## 8. Sample, inclusion, exclusion
 
-- **Sample (enumerated 2026-07-22 — see §0a).** **21 participants** have both a compensation-roster
-  entry and a Biopac Breath Belt session (→ AcqKnowledge `.acq`); up to **24** if the 3 uncompensated
-  Biopac participants are included. Sessions span 2026-06-03 → 06-22; all pass the calibration gate.
-  The 8 AD_BBT sessions (5 participants) are excluded from the `.acq` set (LabChart, not AcqKnowledge)
-  unless their physio was exported separately. **Final N is gated by the `.acq` file inventory on the
-  lab rigs** (each Biopac session's saved `.acq` with all 13 trigger marks) — `[SET: confirm file
-  inventory; expect ≈ 21–24 participants, 24–26 sessions]`.
+- **Sample (enumerated & file-reconciled 2026-07-22 — see §0a).** **N = 22 fully-paired participants**:
+  each has a Biopac `belt_sessions` row (accel raw in Storage) *and* a matching `L#####.R#####.acq`
+  (stretch belt). 21 of the 22 are also in `participant_compensation`. Sessions span 2026-06-05 →
+  06-22, all `session_number` 1, all pass the calibration gate. **+3 recoverable** (`14776`, `16711`,
+  `16549`) have `.acq` but no Supabase/accel session (left-rig upload failures) — includable only if
+  their website session is recovered. AD_BBT/`.adicht` excluded (study proper = all Biopac).
+  Remaining check: confirm all 13 trigger marks are present in each `.acq` (Level-0, §3).
 - **Power.** For equivalence (TOST), power is driven by the LoA width relative to the margin and the
   number of paired windows per participant (Phases 2–3 give tens of trials each). Do a small
   simulation-based power/precision check once the margin `[SET]` and a variance guess (from the first
