@@ -270,6 +270,20 @@ function mergePrefixed(target, prefix, srcRow) {
   }
 }
 
+// Equity-census answers live inside a `responses` jsonb (not top-level columns),
+// so they need flattening rather than mergePrefixed: arrays → "a; b", nested
+// objects → JSON, scalars pass through. This is the demographic intake online
+// studies use in place of the classic demographics step, so its fields belong in
+// the per-participant master row — not just a participation count.
+function mergeEquityCensus(target, srcRow) {
+  if (!srcRow?.responses) return
+  for (const [k, v] of Object.entries(srcRow.responses)) {
+    target[`eq_${k}`] = Array.isArray(v) ? v.join('; ')
+      : (v && typeof v === 'object') ? JSON.stringify(v)
+      : (v ?? '')
+  }
+}
+
 // Checklist questionnaire items store an object; export the weighted value.
 function responseScalar(v) {
   return (v && typeof v === 'object') ? (v.response_value ?? JSON.stringify(v)) : v
@@ -337,6 +351,7 @@ export function buildMasterTable(context, resultsByTable) {
   }
 
   const dem  = firstRowByProfile(entryOf('demographics'),         resultsByTable.demographics ?? [],         context, byId)
+  const eq   = firstRowByProfile(entryOf('equity_census_responses'), resultsByTable.equity_census_responses ?? [], context, byId)
   const scr  = firstRowByProfile(entryOf('screener_results'),     resultsByTable.screener_results ?? [],     context, byId)
   const comp = firstRowByProfile(entryOf('participant_compensation'), resultsByTable.participant_compensation ?? [], context, byId)
   const qWide = questionnaireWideByProfile(resultsByTable.questionnaire_responses ?? [])
@@ -351,6 +366,7 @@ export function buildMasterTable(context, resultsByTable) {
       status:         e.status,
     }
     mergePrefixed(row, 'dem',      dem.get(pid))
+    mergeEquityCensus(row,         eq.get(pid))
     mergePrefixed(row, 'screener', scr.get(pid))
     Object.assign(row, qWide[pid] ?? {})
     mergePrefixed(row, 'comp',     comp.get(pid))
