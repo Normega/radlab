@@ -1,30 +1,13 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { zipSync, strToU8 } from 'fflate'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
+import {
+  fetchStudyData, buildMasterTable, hasPhysio, toCsv, responseScalar,
+} from '../../lib/studyExport'
 
 // ── CSV helpers ──────────────────────────────────────────────────────────────
-
-function toCsv(rows) {
-  if (!rows.length) return ''
-  const colSet = new Set()
-  for (const r of rows) Object.keys(r).forEach(k => colSet.add(k))
-  const cols = [...colSet]
-  const escape = v => {
-    if (v == null) return ''
-    const s = typeof v === 'object' ? JSON.stringify(v) : String(v)
-    return /[,"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
-  }
-  return [cols.join(','), ...rows.map(r => cols.map(c => escape(r[c])).join(','))].join('\n')
-}
-
-// Checklist-type questionnaire items store an object per response
-// ({ response_value, item_weight, occurrence_count }); export the weighted
-// score. Likert responses are plain numbers and pass through.
-function responseScalar(v) {
-  return (v && typeof v === 'object') ? v.response_value ?? JSON.stringify(v) : v
-}
 
 function downloadCsv(filename, rows) {
   const blob = new Blob([toCsv(rows)], { type: 'text/csv' })
@@ -182,10 +165,11 @@ function useStudies() {
     queryKey: ['export-studies'],
     staleTime: 60_000,
     queryFn: async () => {
+      // All studies (not just in-person) — physio export self-disables when a
+      // study has no BreathBelt data.
       const { data, error } = await supabase
         .from('studies')
-        .select('id, name')
-        .eq('delivery_mode', 'in_person')
+        .select('id, name, delivery_mode')
         .order('name')
       if (error) throw error
       return data ?? []
@@ -193,19 +177,12 @@ function useStudies() {
   })
 }
 
-function useStudyEnrollments(studyId) {
+function useStudyData(studyId) {
   return useQuery({
-    queryKey: ['export-study-enrollments', studyId],
+    queryKey: ['study-export-all', studyId],
     enabled: !!studyId,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('study_enrollments')
-        .select('profile_id, external_id, enrolled_at, consent_date')
-        .eq('study_id', studyId)
-        .order('external_id')
-      if (error) throw error
-      return data ?? []
-    },
+    staleTime: 60_000,
+    queryFn: () => fetchStudyData(studyId),
   })
 }
 
@@ -240,105 +217,6 @@ function SectionHeader({ title, count, onDownload, disabled }) {
       </button>
     </div>
   )
-}
-
-// ── Tabular zip builder ───────────────────────────────────────────────────────
-
-async function buildTabularZipFiles(enrollments) {
-  const profileIds  = enrollments.map(e => e.profile_id)
-  const externalIds = enrollments.map(e => e.external_id)
-
-  const [demRows, swRows, sessRows, trialRows, qRows] = await Promise.all([
-    supabase.from('demographics')
-      .select('user_id, age, gender, racialized, ses_ladder, enrollment_id, schedule_id, completed_at')
-      .in('user_id', profileIds).then(r => r.data ?? []),
-
-    supabase.from('stillwater_responses')
-      .select('user_id, pos_rating, neg_rating, composite_x, composite_y, composite_label, ambivalence_x, ambivalence_y, ambivalence_mag, created_at')
-      .in('user_id', profileIds).order('created_at', { ascending: true }).then(r => r.data ?? []),
-
-    supabase.from('belt_sessions')
-      .select('id, session_id, user_id, participant_external_id, created_at, session_number, calib_model_label, calib_fit_r, calib_lag_ms, trigger_device, storage_path, baseline_period_ms, post_baseline_period_ms, thresh_faster_log10, thresh_slower_log10, thresh_sd_faster, thresh_sd_slower, session_start_epoch_ms, phase2_start_ms, phase2_end_ms, phase3_start_ms, phase3_end_ms')
-      .in('participant_external_id', externalIds).then(r => r.data ?? []),
-
-    supabase.from('belt_trials')
-      .select('session_id, participant_external_id, phase, trial_number, condition, breath_period_ms, log10_mag, proportion_mag, response, correct, same_context, confidence, arousal, response_rt_ms, belt_sync_mean, bt_baseline_period_ms, bt_condition_period_ms, trial_r_baseline, trial_r_condition, peak_error_ms, trial_onset_ms, condition_onset_ms, trial_end_ms, created_at')
-      .in('participant_external_id', externalIds).order('created_at', { ascending: true }).then(r => r.data ?? []),
-
-    supabase.from('questionnaire_responses')
-      .select('user_id, questionnaire_slug, responses, completed_at')
-      .in('user_id', profileIds).order('completed_at', { ascending: true }).then(r => r.data ?? []),
-  ])
-
-  const enrollMap = {}
-  for (const e of enrollments) enrollMap[e.profile_id] = e
-
-  // demographics.csv
-  const demCsv = toCsv(demRows.map(r => {
-    const e = enrollMap[r.user_id] ?? {}
-    return { participant_id: e.external_id, enrolled_at: e.enrolled_at, consent_date: e.consent_date, ...r, user_id: undefined }
-  }))
-
-  // stillwater.csv — first row = pre, second = post per participant
-  const SW_FIELDS = ['pos_rating','neg_rating','composite_x','composite_y','composite_label','ambivalence_x','ambivalence_y','ambivalence_mag']
-  const swByUser = {}
-  for (const r of swRows) {
-    if (!swByUser[r.user_id]) swByUser[r.user_id] = []
-    swByUser[r.user_id].push(r)
-  }
-  const swCsv = toCsv(enrollments.map(e => {
-    const rows = swByUser[e.profile_id] ?? []
-    const pre  = rows[0] ?? {}
-    const post = rows[1] ?? {}
-    const out  = { participant_id: e.external_id }
-    for (const f of SW_FIELDS) {
-      out[`pre_${f}`]  = pre[f]  ?? null
-      out[`post_${f}`] = post[f] ?? null
-    }
-    return out
-  }))
-
-  // belt_sessions.csv
-  const sessCsv = toCsv(sessRows.map(r => {
-    const e = enrollMap[r.user_id] ?? {}
-    return { participant_id: e.external_id ?? r.participant_external_id, ...r, user_id: undefined }
-  }))
-
-  // belt_trials.csv
-  const trialCsv = toCsv(trialRows.map(r => ({
-    participant_id: r.participant_external_id,
-    ...r,
-  })))
-
-  // questionnaires.csv — wide format, one row per participant
-  function normalizeSlug(slug) {
-    return slug
-      .replace('brief-maia-2', 'maia2')
-      .replace('barq-r',       'barqr')
-      .replace('phq-4',        'phq4')
-      .replace(/-/g, '')
-  }
-  const qWide = {}
-  for (const e of enrollments) qWide[e.profile_id] = { participant_id: e.external_id }
-  for (const r of qRows) {
-    if (!qWide[r.user_id]) continue
-    const prefix = normalizeSlug(r.questionnaire_slug)
-    for (const [rawKey, val] of Object.entries(r.responses ?? {})) {
-      const cleanKey = rawKey.replace(/^item_/, '')
-      const match    = cleanKey.match(/(\d+)$/)
-      const col      = match ? `${prefix}_${match[1]}` : `${prefix}_${cleanKey}`
-      qWide[r.user_id][col] = responseScalar(val)
-    }
-  }
-  const qCsv = toCsv(Object.values(qWide))
-
-  return [
-    { filename: 'demographics.csv',   content: demCsv   },
-    { filename: 'stillwater.csv',     content: swCsv    },
-    { filename: 'belt_sessions.csv',  content: sessCsv  },
-    { filename: 'belt_trials.csv',    content: trialCsv },
-    { filename: 'questionnaires.csv', content: qCsv     },
-  ]
 }
 
 // ── Physio zip builder ────────────────────────────────────────────────────────
@@ -814,40 +692,127 @@ function BeltPhysioSection({ externalId }) {
 
 // ── Study-level export section ────────────────────────────────────────────────
 
+const CATEGORY_ORDER = [
+  'Sessions', 'Games', 'Questionnaires', 'Rating scales', 'Screeners',
+  'Demographics', 'Physio', 'Video', 'Audio', 'Forms', 'Timing',
+  'Assignments', 'Training',
+]
+
+function truncate(s, n) {
+  return s.length > n ? s.slice(0, n) + '…' : s
+}
+
+// Generic preview of any rows: first 20 rows, first 14 columns.
+function GenericPreview({ rows }) {
+  const MAX_ROWS = 20
+  const MAX_COLS = 14
+  const cols = useMemo(() => {
+    const set = new Set()
+    for (const r of rows.slice(0, MAX_ROWS)) Object.keys(r).forEach(k => set.add(k))
+    return [...set]
+  }, [rows])
+  if (!rows.length) return <p style={S.msg}>No rows.</p>
+  const shown = cols.slice(0, MAX_COLS)
+  const extra = cols.length - shown.length
+  const cell  = v => (v == null ? '—' : typeof v === 'object' ? JSON.stringify(v) : String(v))
+
+  return (
+    <div style={S.tableWrap}>
+      <table style={S.table}>
+        <thead>
+          <tr>
+            {shown.map(c => <th key={c} style={S.th}>{c}</th>)}
+            {extra > 0 && <th style={S.th}>+{extra} more</th>}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.slice(0, MAX_ROWS).map((r, i) => (
+            <tr key={i} style={S.tr}>
+              {shown.map(c => (
+                <td key={c} style={S.tdMono} title={cell(r[c])}>{truncate(cell(r[c]), 40)}</td>
+              ))}
+              {extra > 0 && <td style={S.tdMono}>…</td>}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p style={S.msg}>
+        Showing first {Math.min(MAX_ROWS, rows.length)} of {rows.length} row{rows.length !== 1 ? 's' : ''}
+        {extra > 0 ? ` · ${cols.length} columns` : ''} — download CSV for the complete table.
+      </p>
+    </div>
+  )
+}
+
+function TableCard({ entry, studyName }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <section style={S.section}>
+      <div style={S.sectionHead}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
+          <span style={S.sectionTitle}>{entry.label}</span>
+          <span style={S.sectionCount}>{entry.rows.length} rows</span>
+          <code style={S.tableName}>{entry.table}</code>
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button style={S.linkBtn} onClick={() => setOpen(o => !o)}>{open ? 'Hide' : 'Preview'}</button>
+          <button style={S.csvBtn} onClick={() => downloadCsv(`${studyName}__${entry.table}.csv`, entry.rows)}>↓ CSV</button>
+        </div>
+      </div>
+      {open && <GenericPreview rows={entry.rows} />}
+    </section>
+  )
+}
+
 function StudyExportSection() {
-  const [studyId,     setStudyId]     = useState('')
-  const [tabularBusy, setTabularBusy] = useState(false)
-  const [physioBusy,  setPhysioBusy]  = useState(false)
-  const [status,      setStatus]      = useState('')
+  const [studyId,    setStudyId]    = useState('')
+  const [zipBusy,    setZipBusy]    = useState(false)
+  const [physioBusy, setPhysioBusy] = useState(false)
+  const [status,     setStatus]     = useState('')
+  const [masterOpen, setMasterOpen] = useState(false)
 
-  const { data: studies     = [] } = useStudies()
-  const { data: enrollments = [] } = useStudyEnrollments(studyId)
+  const { data: studies = [] }               = useStudies()
+  const { data: studyData, isFetching, error } = useStudyData(studyId)
 
-  async function handleTabularExport() {
-    if (!studyId || !enrollments.length) return
-    setTabularBusy(true)
-    setStatus('Fetching data…')
+  const studyName   = studies.find(s => s.id === studyId)?.name ?? studyId
+  const tables      = studyData?.tables ?? []
+  const errors      = studyData?.errors ?? []
+  const enrollments = studyData?.context?.enrollments ?? []
+  const master = useMemo(
+    () => (studyData ? buildMasterTable(studyData.context, studyData.resultsByTable) : []),
+    [studyData],
+  )
+  const physioAvailable = studyData ? hasPhysio(studyData.resultsByTable) : false
+
+  const grouped = CATEGORY_ORDER
+    .map(cat => ({ cat, items: tables.filter(t => t.category === cat) }))
+    .filter(g => g.items.length)
+
+  async function handleFullExport() {
+    if (!studyData) return
+    setZipBusy(true)
+    setStatus('Building zip…')
     try {
-      const files     = await buildTabularZipFiles(enrollments)
-      setStatus('Building zip…')
-      const studyName = studies.find(s => s.id === studyId)?.name ?? studyId
-      downloadZip(`${studyName}_tabular_export.zip`, files)
-      setStatus(`Done — ${enrollments.length} participant${enrollments.length !== 1 ? 's' : ''} exported.`)
+      const files = [
+        { filename: '_participant_master.csv', content: toCsv(master) },
+        ...tables.map(t => ({ filename: `${t.table}.csv`, content: toCsv(t.rows) })),
+      ]
+      downloadZip(`${studyName}_study_export.zip`, files)
+      setStatus(`Done — master + ${tables.length} table${tables.length !== 1 ? 's' : ''} exported.`)
     } catch (e) {
       setStatus(`Error: ${e.message}`)
     } finally {
-      setTabularBusy(false)
+      setZipBusy(false)
     }
   }
 
   async function handlePhysioExport() {
-    if (!studyId || !enrollments.length) return
+    if (!enrollments.length) return
     setPhysioBusy(true)
     setStatus('Fetching physio files…')
     try {
-      const files     = await buildPhysioZipFiles(enrollments, msg => setStatus(msg))
+      const files = await buildPhysioZipFiles(enrollments, msg => setStatus(msg))
       setStatus('Building zip…')
-      const studyName = studies.find(s => s.id === studyId)?.name ?? studyId
       downloadZip(`${studyName}_physio_export.zip`, files)
       setStatus('Done — physio files exported.')
     } catch (e) {
@@ -865,7 +830,7 @@ function StudyExportSection() {
       <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
         <select
           value={studyId}
-          onChange={e => { setStudyId(e.target.value); setStatus('') }}
+          onChange={e => { setStudyId(e.target.value); setStatus(''); setMasterOpen(false) }}
           style={S.select}
         >
           <option value="">Select a study…</option>
@@ -874,35 +839,78 @@ function StudyExportSection() {
           ))}
         </select>
 
-        {studyId && (
-          <p style={{ margin: 0, fontSize: 12, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif' }}>
-            {enrollments.length} enrolled participant{enrollments.length !== 1 ? 's' : ''}
-          </p>
-        )}
+        {studyId && isFetching && <p style={S.dim}>Loading study data…</p>}
+        {error && <p style={S.err}>Error loading study: {error.message}</p>}
 
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <button
-            style={{ ...S.csvBtn, opacity: (!studyId || tabularBusy) ? 0.4 : 1 }}
-            disabled={!studyId || tabularBusy || enrollments.length === 0}
-            onClick={handleTabularExport}
-          >
-            {tabularBusy ? 'Exporting…' : '↓ Export Tabular Data'}
-          </button>
-          <button
-            style={{ ...S.csvBtn, opacity: (!studyId || physioBusy) ? 0.4 : 1 }}
-            disabled={!studyId || physioBusy || enrollments.length === 0}
-            onClick={handlePhysioExport}
-          >
-            {physioBusy ? 'Exporting…' : '↓ Export Physio Data'}
-          </button>
-        </div>
-
-        {status && (
-          <p style={{ margin: 0, fontSize: 12, color: 'var(--tx2)', fontFamily: '"Space Mono",monospace' }}>
-            {status}
-          </p>
+        {studyId && !isFetching && studyData && (
+          <>
+            <p style={S.dim}>
+              {enrollments.length} enrolled participant{enrollments.length !== 1 ? 's' : ''} · {tables.length} non-empty table{tables.length !== 1 ? 's' : ''}
+            </p>
+            {errors.length > 0 && (
+              <p style={S.warn}>
+                ⚠ {errors.length} table{errors.length !== 1 ? 's' : ''} could not be read
+                ({errors.map(e => e.table).join(', ')}). If these should hold data, the
+                lab-read RLS migration (20260723_export_lab_read_policies) may not be applied yet.
+              </p>
+            )}
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <button
+                style={{ ...S.csvBtn, opacity: (zipBusy || !tables.length) ? 0.4 : 1 }}
+                disabled={zipBusy || !tables.length}
+                onClick={handleFullExport}
+              >
+                {zipBusy ? 'Exporting…' : '↓ Export All Tables + Master (ZIP)'}
+              </button>
+              <button
+                style={{ ...S.csvBtn, opacity: (physioBusy || !physioAvailable) ? 0.4 : 1 }}
+                disabled={physioBusy || !physioAvailable}
+                onClick={handlePhysioExport}
+                title={physioAvailable ? '' : 'This study has no BreathBelt data'}
+              >
+                {physioBusy ? 'Exporting…' : physioAvailable ? '↓ Export Physio (ZIP)' : 'No physio data'}
+              </button>
+            </div>
+            {status && <p style={S.mono}>{status}</p>}
+          </>
         )}
       </div>
+
+      {studyId && !isFetching && studyData && (
+        <div style={{ padding: '0 20px 20px' }}>
+          {/* Combined participant-level master — one row per participant */}
+          <section style={{ ...S.section, borderColor: 'var(--pk)' }}>
+            <div style={S.sectionHead}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
+                <span style={S.sectionTitle}>Combined participant master</span>
+                <span style={S.sectionCount}>{master.length} participants · one row each</span>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button style={S.linkBtn} onClick={() => setMasterOpen(o => !o)}>{masterOpen ? 'Hide' : 'Preview'}</button>
+                <button
+                  style={{ ...S.csvBtn, opacity: master.length ? 1 : 0.4 }}
+                  disabled={!master.length}
+                  onClick={() => downloadCsv(`${studyName}__participant_master.csv`, master)}
+                >
+                  ↓ CSV
+                </button>
+              </div>
+            </div>
+            {masterOpen && <GenericPreview rows={master} />}
+          </section>
+
+          {grouped.map(g => (
+            <div key={g.cat}>
+              <p style={S.catHead}>{g.cat}</p>
+              {g.items.map(entry => <TableCard key={entry.table} entry={entry} studyName={studyName} />)}
+            </div>
+          ))}
+
+          {tables.length === 0 && (
+            <p style={S.msg}>No participant data found for this study yet.</p>
+          )}
+        </div>
+      )}
     </section>
   )
 }
@@ -935,7 +943,7 @@ export default function DataExportPage() {
   return (
     <div>
       <h1 style={S.h1}>Export Data</h1>
-      <p style={S.sub}>Export BreathBelt and questionnaire data as CSV. Use the study-level export for batch downloads.</p>
+      <p style={S.sub}>Pick a study to preview and export every research element its participants generated — each table individually, plus a combined one-row-per-participant master — all as CSV.</p>
 
       <StudyExportSection />
 
@@ -1059,4 +1067,27 @@ const S = {
   tdMono: { padding: '7px 12px', fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx)', whiteSpace: 'nowrap' },
   msg:    { padding: '16px 20px', margin: 0, fontSize: 13, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif' },
   chartLabel: { margin: '0 0 6px', fontSize: 11, fontFamily: '"Space Mono",monospace', color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.05em' },
+
+  dim:  { margin: 0, fontSize: 12, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif' },
+  mono: { margin: 0, fontSize: 12, color: 'var(--tx2)', fontFamily: '"Space Mono",monospace' },
+  err:  { margin: 0, fontSize: 13, color: '#dc2626', fontFamily: '"DM Sans",system-ui,sans-serif' },
+  warn: {
+    margin: 0, fontSize: 12, color: '#92400e', background: '#fef3c7',
+    border: '1px solid #fcd34d', borderRadius: 8, padding: '8px 12px',
+    fontFamily: '"DM Sans",system-ui,sans-serif', lineHeight: 1.4,
+  },
+  catHead: {
+    margin: '22px 0 8px', fontSize: 11, fontWeight: 700,
+    fontFamily: '"Space Mono",monospace', color: 'var(--tx2)',
+    textTransform: 'uppercase', letterSpacing: '0.08em',
+  },
+  tableName: {
+    fontFamily: '"Space Mono",monospace', fontSize: 10, color: 'var(--tx3)',
+    background: '#f3f4f6', borderRadius: 4, padding: '2px 6px',
+  },
+  linkBtn: {
+    background: 'none', border: '1px solid var(--bd)', borderRadius: 8,
+    padding: '6px 12px', cursor: 'pointer', color: 'var(--tx2)',
+    fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 13, fontWeight: 600,
+  },
 }
