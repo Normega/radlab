@@ -433,6 +433,40 @@ export function ParallelPatterns() {
   )
 }
 
+// ── Provenance of an AI answer — three sources, and how much each drove
+//    slide 8's "where do we start?" advice. Backup / Q&A slide.
+export function AdviceProvenance() {
+  const cols = [
+    { label: 'Field default', tag: 'the skeleton', sub: 'the standard 2026 pipeline — what I’d tell almost anyone', weight: 3, c: '#7c6cd4' },
+    { label: 'Your brief, this session', tag: 'the specific forks', sub: 'the study you just described — surfaces + subcortical, wanting AROMA', weight: 3, c: BLUE },
+    { label: 'Durable memory of you', tag: 'here: almost none', sub: 'preferences carried across sessions in explicit files', weight: 1, c: PINK },
+  ]
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 940, width: '100%' }}>
+      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
+        {cols.map(col => (
+          <div key={col.label} style={{ flex: '1 1 240px', maxWidth: 300, padding: '16px 18px', borderRadius: 14, background: '#fff', border: `1.5px solid ${col.c}44`, textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ fontFamily: '"DM Sans",sans-serif', fontSize: 'clamp(15px,1.8vw,18px)', fontWeight: 600, color: INK }}>{col.label}</div>
+            <div style={{ fontFamily: '"Space Mono",monospace', fontSize: 12, color: col.c }}>{col.tag}</div>
+            <div style={{ fontSize: 13.5, color: '#6b6c70', lineHeight: 1.4, fontFamily: '"DM Sans",sans-serif' }}>{col.sub}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
+              <span style={{ fontFamily: '"Space Mono",monospace', fontSize: 10.5, color: '#9aa0aa', letterSpacing: '0.04em' }}>DROVE SLIDE 8</span>
+              <span style={{ display: 'flex', gap: 4 }}>
+                {[0, 1, 2].map(i => (
+                  <span key={i} style={{ width: 9, height: 9, borderRadius: '50%', background: i < col.weight ? col.c : `${col.c}22`, display: 'inline-block' }} />
+                ))}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div style={{ fontFamily: '"Space Mono",monospace', fontSize: 12.5, color: '#6b6c70', textAlign: 'center', lineHeight: 1.5 }}>
+        I can point to a source when one exists — I can’t read off what caused what. Self-reports are inference, and can confabulate.
+      </div>
+    </div>
+  )
+}
+
 // ── Small numeric stat tiles (reused on data / disk slides) ──────────────────
 export function StatTiles({ items }) {
   return (

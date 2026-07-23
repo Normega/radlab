@@ -12,6 +12,7 @@ import {
   Terminal, PipelineDiagram, DiskTimeline, ExitCodeDiagram,
   ResumeChat, ChatThread, ResultsCounters, StatTiles,
   AnalysisPipeline, RegisteredVsActual, ComputeRealityTable, ParallelPatterns,
+  AdviceProvenance,
 } from './graphics'
 
 export default function ToniJuly2026() {
@@ -284,7 +285,7 @@ const SLIDES = [
 
   // Setup 1 — kickoff + recon-all
   {
-    note: 'Reconstructed design conversation. The decisions shown (recon-all on, the output-space set, a separate AROMA step, nonaggr denoising, containers) are the real ones — captured in the agent’s memory and the launcher scripts — but the exact wording is representative, not a verbatim transcript.',
+    note: 'Reconstructed design conversation — the decisions shown (recon-all on, the output-space set, a separate AROMA step, nonaggr denoising, containers) are the real ones, from the run’s records and memory; the wording is representative. Worth being honest about *why* the agent answers so fast: it isn’t assuming — it’s (a) proposing the field-standard pipeline it would suggest to almost anyone, and (b) carrying memory of prior preferences from earlier sessions, so it doesn’t re-litigate the basics. Little of “where do we start?” is bespoke recall; most is field default + the study you just described. (See the “what does the advice depend on?” backup slide.)',
     render: (d) => (
       <Frame wide kicker="Part B · deciding the pipeline">
         <H2>Session zero: what do we even run?</H2>
@@ -293,6 +294,10 @@ const SLIDES = [
           { who: 'agent', tag: 'agent — proposing the standard route', text: 'BIDS-format first, then fMRIPrep for registration, recon-all, and normalization — field standard, containerizes cleanly. First fork: full FreeSurfer surfaces (recon-all) on? It’s 6–10 h/subject.' },
           { who: 'norm', tag: 'norm — owns the science', text: 'On. Interoception lives in insula, brainstem, thalamus — I want surfaces and subcortical together.' },
         ]} />
+        <p style={K.aside}>
+          It skips the basics because prior sessions are in its memory — remembering, not assuming. But most of this
+          answer is the field-standard pipeline it’d propose to anyone, plus what you just described.
+        </p>
         <Detail density={d}>
           The human makes the scientific call; the agent surfaces the cost (6–10 h/subject) and the options.
           That single “surfaces + subcortical” decision is what later forces the CIFTI 91k grayordinate output.
@@ -971,6 +976,23 @@ const SLIDES = [
       </Frame>
     ),
   },
+
+  // 25 — Backup / Q&A: provenance of the AI's advice
+  {
+    note: 'Backup for Q&A — pull up if someone asks how much of the agent’s advice is personalized vs generic, or whether the model can tell. Honest answer: it can reason about its sources but can’t read them off, so self-reports are inference (and can confabulate). For slide 8 specifically, most of “where do we start?” was field-standard pipeline + the study just described — very little was durable memory of the PI, because this session carried no fMRIPrep preferences in memory. The reproducibility point: pin the model version + the brief + the memory files and the advice is reproducible — same provenance discipline as the pipeline.',
+    render: (d) => (
+      <Frame wide kicker="Backup · working with AI">
+        <H2>Can the AI tell what its advice depends on?</H2>
+        <Lead>Partly — it can reason about its sources, but it can’t read them off. So “why did you suggest that?” is an <i>inference</i>, and can be confabulated.</Lead>
+        <AdviceProvenance />
+        <Detail density={d}>
+          The reproducibility angle: “personalization” mostly comes from the brief in front of the model plus
+          field defaults — not hidden recall. Pin the model version, the task brief, and the memory files, and
+          the advice is reproducible — the same provenance discipline the whole pipeline runs on.
+        </Detail>
+      </Frame>
+    ),
+  },
 ]
 
 // ── Styles (RADlab pink frame, matching /keynote) ────────────────────────────
@@ -999,6 +1021,7 @@ const K = {
   event:    { fontFamily: '"Space Mono",monospace', fontSize: 13, color: 'var(--tx3)', margin: '10px 0 0', letterSpacing: '0.06em' },
   facility: { fontFamily: '"Space Mono",monospace', fontSize: 11.5, color: 'var(--tx3)', margin: '3px 0 0', letterSpacing: '0.04em', textAlign: 'left', opacity: 0.9 },
   provenance: { fontFamily: '"Space Mono",monospace', fontSize: 'clamp(12px, 1.5vw, 15px)', color: 'var(--tx2)', margin: 0, letterSpacing: '0.03em' },
+  aside: { fontSize: 'clamp(13px, 1.55vw, 16px)', color: 'var(--tx2)', margin: 0, lineHeight: 1.5, maxWidth: 780, textAlign: 'left', borderLeft: '3px solid var(--pkbs, rgba(240,104,164,0.35))', padding: '2px 0 2px 16px', fontStyle: 'italic' },
 
   datasetBadge: { fontFamily: '"Space Mono",monospace', fontSize: 14, fontWeight: 700, letterSpacing: '0.12em', padding: '7px 18px', borderRadius: 999, border: '1.5px solid', display: 'inline-block' },
   dividerPoints: { display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center', marginTop: 10 },
