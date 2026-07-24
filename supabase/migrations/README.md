@@ -142,6 +142,16 @@ truth — the live schema is. Evidence below is either `history: <recorded name>
 | `20260723_rrq_rumination_rename_and_midpoint_labels.sql` | live (applied via MCP `apply_migration`, `rrq_rumination_rename_and_midpoint_labels`): data-only fix to two `questionnaires` rows. The scale mislabeled `slug 'rrs'` / "Ruminative Response Scale (RRS)" is actually the **RRQ Rumination subscale** (Trapnell & Campbell 1999 — 12 items, 5-point agree/disagree; verbatim items like "I always seem to be 're-hashing'…"), not the Nolen-Hoeksema RRS (22/10 items, 4-point frequency). Renamed `slug 'rrs' → 'rrq-rumination'` + name → "Rumination-Reflection Questionnaire – Rumination Subscale (RRQ)" to match its existing sibling `rrq-reflection`; migrated the 6 test-only `questionnaire_responses` rows (4 users, no real participants) to the new slug. Also labeled the previously-bare midpoint (`scale_labels[2]`, value 3) as "Neither Agree nor Disagree" on **both** RRQ subscales — they were fully anchored except point 3. Endpoint-anchored scales (brief-maia-2, lms-14, mpod-t, scs-26, sscs-s) deliberately left untouched. Session step resolves the slug via `questionnaires.id` in `get_session_by_token`, so the Sandy Study 3 node needed no change. Verified post-apply: both scales show the 5 labels; 0 leftover `rrs` rows in either table; 6 responses now under `rrq-rumination`. |
 | `20260723_export_lab_read_policies.sql` | live (applied manually via Supabase SQL editor 2026-07-23, confirmed by Norm — manual run, no `schema_migrations` history record). Adds a `"<table>: export lab read"` SELECT policy (`my_role()='lab'`) to every table the study Export tab reads (~37, listed in the file), so a lab member's study-level export isn't silently blocked by `own rows` policies. Idempotent DO-block loop (DROP IF EXISTS + CREATE, per-table `undefined_table` guard) — safe to re-run; only touches policies it names. Supports §28a / `src/lib/studyExport.js`. |
 
+## radlab-academic project migrations
+
+These files target the **separate `radlab-academic` Supabase project** (courses/enrollments/identity
+schema for the academic partition), **not** the main radlab project everything above refers to.
+Don't look for their effects in the main project's schema.
+
+| File | Applied — evidence |
+|---|---|
+| `20260724_academic_init.sql` | Applied to `radlab-academic` manually by Norm (2026-07-24, confirmed by Norm — no `schema_migrations` history record). Creates `identity` schema (`identity.people` + signup trigger `on_auth_user_created`), `public.current_person_id()` helper, `courses`, `enrollments`, `invites` (service-role only, deliberately no authenticated policies), `ingest_jobs` (staff-read RLS via enrollments), storage upload policy for bucket `ingest-pdfs`, and PSY240 2026F seed data + staff invites. Supersedes the flat `ingest_staff` design in the partition plan §4. |
+
 ## Undated files in this directory
 
 | File | Applied — evidence |
