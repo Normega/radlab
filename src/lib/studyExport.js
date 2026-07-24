@@ -142,7 +142,7 @@ const uniq = arr => [...new Set(arr.filter(v => v != null))]
 // One round of lookups shared by every table fetch.
 
 export async function resolveStudyContext(studyId) {
-  const [enrollments, gameSessions, lilParts] = await Promise.all([
+  const [enrollments, gameSessions, lilParts, vasScales] = await Promise.all([
     pageAll((f, t) => supabase.from('study_enrollments')
       .select('profile_id, external_id, enrolled_at, consent_date, status')
       .eq('study_id', studyId).range(f, t)),
@@ -151,6 +151,9 @@ export async function resolveStudyContext(studyId) {
     // liliana_participants is itself study-scoped; tolerate its absence
     pageAll((f, t) => supabase.from('liliana_participants')
       .select('id, profile_id').eq('study_id', studyId).range(f, t)).catch(() => []),
+    // Reference lookup so vas_responses (which stores scale_id) can be reported
+    // under human-readable slugs in the master. Small table; tolerate absence.
+    supabase.from('vas_scales').select('id, slug').then(r => r.data ?? []).catch(() => []),
   ])
 
   const externalToProfile = new Map()
@@ -170,6 +173,7 @@ export async function resolveStudyContext(studyId) {
     externalToProfile,
     gameSessionById,
     lilPartById,
+    vasScaleSlugById: new Map(vasScales.map(s => [s.id, s.slug])),
   }
 }
 
@@ -297,20 +301,69 @@ function normalizeSlug(slug) {
     .replace(/-/g, '')
 }
 
-// Wide questionnaire block, keyed by profile_id → { <slug>_<item>: value }
+// Which slugs are administered more than once to any single participant. When a
+// slug repeats, EVERY occurrence (for every participant) gets a _t<n> suffix so
+// columns stay aligned across the sample; single-administration instruments stay
+// unsuffixed. `slugOf(row)` extracts the comparison slug. Rows must be pre-sorted
+// chronologically so occurrence n follows administration order.
+function repeatedSlugSet(rows, slugOf) {
+  const perProfileSlug = {}
+  for (const r of rows) {
+    if (r.user_id == null) continue
+    const k = `${r.user_id} ${slugOf(r)}`
+    perProfileSlug[k] = (perProfileSlug[k] ?? 0) + 1
+  }
+  const max = {}
+  for (const [k, n] of Object.entries(perProfileSlug)) {
+    const slug = k.slice(k.indexOf(' ') + 1)
+    max[slug] = Math.max(max[slug] ?? 0, n)
+  }
+  return new Set(Object.keys(max).filter(s => max[s] > 1))
+}
+
+// Wide questionnaire block, keyed by profile_id → { <slug>[_t<n>]_<item>: value }.
+// Sliders live here too (slug `slider_*`, response { value }); they are treated
+// exactly like questionnaires. A repeated instrument (a slider asked pre/mid/post,
+// or a questionnaire re-administered across days) is disambiguated by _t<n> in
+// completion order rather than clobbering into one column.
 function questionnaireWideByProfile(qRows) {
+  const rows = [...qRows].sort((a, b) => new Date(a.completed_at ?? 0) - new Date(b.completed_at ?? 0))
+  const repeated = repeatedSlugSet(rows, r => r.questionnaire_slug)
   const byProfile = {}
-  for (const r of qRows) {
+  const occ = {}
+  for (const r of rows) {
     const pid = r.user_id
     if (pid == null) continue
     if (!byProfile[pid]) byProfile[pid] = {}
-    const prefix = normalizeSlug(r.questionnaire_slug)
+    const slug = r.questionnaire_slug
+    const n    = (occ[`${pid} ${slug}`] = (occ[`${pid} ${slug}`] ?? 0) + 1)
+    const prefix = repeated.has(slug) ? `${normalizeSlug(slug)}_t${n}` : normalizeSlug(slug)
     for (const [rawKey, val] of Object.entries(r.responses ?? {})) {
       const cleanKey = rawKey.replace(/^item_/, '')
       const m = cleanKey.match(/(\d+)$/)
       const colName = m ? `${prefix}_${m[1]}` : `${prefix}_${cleanKey}`
       byProfile[pid][colName] = responseScalar(val)
     }
+  }
+  return byProfile
+}
+
+// Wide VAS block, keyed by profile_id → { vas_<slug>[_t<n>]: value }. vas_responses
+// is multi-row (a scale can be asked repeatedly), so it isn't a single-row
+// broadcast table — same _t<n> occurrence scheme as questionnaires/sliders.
+function vasWideByProfile(vasRows, scaleSlugById) {
+  const slugOf = r => normalizeSlug(scaleSlugById.get(r.scale_id) ?? r.scale_id ?? 'unknown')
+  const rows = [...vasRows].sort((a, b) => new Date(a.responded_at ?? 0) - new Date(b.responded_at ?? 0))
+  const repeated = repeatedSlugSet(rows, slugOf)
+  const byProfile = {}
+  const occ = {}
+  for (const r of rows) {
+    const pid = r.user_id
+    if (pid == null) continue
+    if (!byProfile[pid]) byProfile[pid] = {}
+    const slug = slugOf(r)
+    const n    = (occ[`${pid} ${slug}`] = (occ[`${pid} ${slug}`] ?? 0) + 1)
+    byProfile[pid][repeated.has(slug) ? `vas_${slug}_t${n}` : `vas_${slug}`] = r.value
   }
   return byProfile
 }
@@ -354,7 +407,8 @@ export function buildMasterTable(context, resultsByTable) {
   const eq   = firstRowByProfile(entryOf('equity_census_responses'), resultsByTable.equity_census_responses ?? [], context, byId)
   const scr  = firstRowByProfile(entryOf('screener_results'),     resultsByTable.screener_results ?? [],     context, byId)
   const comp = firstRowByProfile(entryOf('participant_compensation'), resultsByTable.participant_compensation ?? [], context, byId)
-  const qWide = questionnaireWideByProfile(resultsByTable.questionnaire_responses ?? [])
+  const qWide   = questionnaireWideByProfile(resultsByTable.questionnaire_responses ?? [])
+  const vasWide = vasWideByProfile(resultsByTable.vas_responses ?? [], context.vasScaleSlugById ?? new Map())
 
   return context.enrollments.map(e => {
     const pid = e.profile_id
@@ -368,7 +422,8 @@ export function buildMasterTable(context, resultsByTable) {
     mergePrefixed(row, 'dem',      dem.get(pid))
     mergeEquityCensus(row,         eq.get(pid))
     mergePrefixed(row, 'screener', scr.get(pid))
-    Object.assign(row, qWide[pid] ?? {})
+    Object.assign(row, qWide[pid]   ?? {})
+    Object.assign(row, vasWide[pid] ?? {})
     mergePrefixed(row, 'comp',     comp.get(pid))
     for (const [table, m] of Object.entries(countByTable)) {
       row[`${table}_n`] = m.get(pid) ?? 0
