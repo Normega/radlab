@@ -563,7 +563,7 @@ const SLIDES = [
 
   // 15 — Incident 2: everything failed (terminal)
   {
-    note: '36 subjects had literally printed “finished successfully” — yet were logged as FAIL. Something didn’t add up.',
+    note: '36 subjects had literally printed “finished successfully” — yet were logged as FAIL. Something didn’t add up. Note: this grep is an incident-time snapshot — the launcher truncates its log on each new batch, so on today’s log (the clean re-run) the same command returns 17, not 36. Present the 36 as “what we saw during the broken batch,” not a live check.',
     render: (d) => (
       <Frame wide kicker="Incident 2">
         <H2>“Everything failed” — it didn’t</H2>
@@ -573,12 +573,13 @@ const SLIDES = [
           'First action: stop the batch to protect the disk, then diagnose calmly.',
         ]} />
         <Terminal
-          title="the punchline check"
-          maxWidth={720}
+          title="the punchline check · captured during the broken batch"
+          maxWidth={740}
           lines={[
+            { k: 'comment', t: 'mid-incident — the launcher truncates this log on each new batch' },
             { k: 'cmd', t: 'grep -c "finished successfully" code/fmripost_aroma_log.txt' },
             { k: 'ok',  t: '36' },
-            { k: 'comment', t: '…but the launcher logged those same 36 subjects as FAIL.' },
+            { k: 'comment', t: '…yet all 36 were logged FAIL. (The later clean re-run overwrote this log → it now reads 17.)' },
           ]}
         />
         <Detail density={d}>
