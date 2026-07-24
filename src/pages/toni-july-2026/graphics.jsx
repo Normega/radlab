@@ -467,6 +467,55 @@ export function AdviceProvenance() {
   )
 }
 
+// ── MRIQC flag rule — fd_mean boxplot with the Tukey fence. Real numbers from
+//    MRIQC_QC_SUMMARY.md (median 0.15, fence 0.36; movers up to 1.03).
+export function TukeyFencePlot() {
+  const W = 780, H = 214, x0 = 52, xW = 592, xmax = 1.15
+  const x = v => x0 + (v / xmax) * xW
+  const cy = 88, axisY = 152
+  const FLAG = '#d98a1f', PASS = '#2f9e5f'
+  const b = { q1: 0.10, q3: 0.22, med: 0.15, wl: 0.04, fence: 0.36 }
+  const pass = [[0.05, 12], [0.08, -10], [0.10, 16], [0.12, -6], [0.13, 8], [0.15, -14], [0.16, 14], [0.18, -8], [0.20, 6], [0.23, -12], [0.26, 10], [0.29, -6], [0.32, 12]]
+  const flag = [[0.42, -8], [0.51, 10], [0.53, -12], [0.56, 6], [0.62, -6], [0.64, 12], [0.70, -10]]
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ maxWidth: 800, background: '#fff', borderRadius: 12, border: '1px solid var(--bd)' }}>
+      {/* axis + ticks */}
+      <line x1={x0} y1={axisY} x2={x(1.12)} y2={axisY} stroke="#ccc" strokeWidth="1" />
+      {[0, 0.2, 0.4, 0.6, 0.8, 1.0].map(t => (
+        <g key={t}>
+          <line x1={x(t)} y1={axisY} x2={x(t)} y2={axisY + 4} stroke="#ccc" strokeWidth="1" />
+          <text x={x(t)} y={axisY + 17} textAnchor="middle" fontFamily='"Space Mono",monospace' fontSize="10.5" fill="#abadb0">{t.toFixed(1)}</text>
+        </g>
+      ))}
+      {/* box + whiskers + median */}
+      <line x1={x(b.wl)} y1={cy} x2={x(b.q1)} y2={cy} stroke="#7b8794" strokeWidth="1.5" />
+      <line x1={x(b.q3)} y1={cy} x2={x(0.34)} y2={cy} stroke="#7b8794" strokeWidth="1.5" />
+      <line x1={x(b.wl)} y1={cy - 7} x2={x(b.wl)} y2={cy + 7} stroke="#7b8794" strokeWidth="1.5" />
+      <rect x={x(b.q1)} y={cy - 18} width={x(b.q3) - x(b.q1)} height="36" rx="3" fill="rgba(74,144,217,0.12)" stroke={BLUE} strokeWidth="1.5" />
+      <line x1={x(b.med)} y1={cy - 18} x2={x(b.med)} y2={cy + 18} stroke={BLUE} strokeWidth="2" />
+      <text x={x(b.med)} y={cy - 24} textAnchor="middle" fontFamily='"Space Mono",monospace' fontSize="10.5" fill={BLUE}>median 0.15</text>
+      {/* fence */}
+      <line x1={x(b.fence)} y1={52} x2={x(b.fence)} y2={axisY} stroke={FLAG} strokeWidth="1.6" strokeDasharray="5 3" />
+      <text x={x(b.fence) + 6} y={62} fontFamily='"Space Mono",monospace' fontSize="11" fontWeight="700" fill={FLAG}>fence 0.36</text>
+      <text x={x(b.fence) + 6} y={76} fontFamily='"Space Mono",monospace' fontSize="9.5" fill="#8a7a5a">= Q3 + 1.5·IQR</text>
+      {/* pass points */}
+      {pass.map(([v, dy], i) => <circle key={`p${i}`} cx={x(v)} cy={cy + dy} r="3.4" fill={PASS} opacity="0.75" />)}
+      {/* flagged points */}
+      {flag.map(([v, dy], i) => <circle key={`f${i}`} cx={x(v)} cy={cy + dy} r="3.6" fill={FLAG} />)}
+      {/* extreme outlier */}
+      <circle cx={x(1.03)} cy={cy} r="4.4" fill={PINK} />
+      <text x={x(1.03)} y={cy - 12} textAnchor="middle" fontFamily='"Space Mono",monospace' fontSize="10" fill={PINKD}>sub-085 breathing run-2</text>
+      <text x={x(1.03)} y={cy + 20} textAnchor="middle" fontFamily='"Space Mono",monospace' fontSize="10" fill={PINKD}>1.03</text>
+      {/* axis units label (row 1) + legend (row 2) — kept on separate rows */}
+      <text x={x0} y={186} fontFamily='"Space Mono",monospace' fontSize="10.5" fill="#6b6c70">fd_mean — mean framewise displacement (mm) · n = 251 runs</text>
+      <g fontFamily='"Space Mono",monospace' fontSize="10.5" fill="#6b6c70">
+        <circle cx={x0 + 4} cy={205} r="3.4" fill={PASS} opacity="0.75" /><text x={x0 + 13} y={209}>in-distribution → pass</text>
+        <circle cx={x0 + 196} cy={205} r="3.6" fill={FLAG} /><text x={x0 + 205} y={209}>beyond fence → flag</text>
+      </g>
+    </svg>
+  )
+}
+
 // ── Rendered .md-file artifact (light "document" card, distinct from Terminal).
 //    lines: [{ k: 'h' | 'li' | 'p' | 'code', t }]
 export function DocExcerpt({ file, section, lines = [], maxWidth = 760 }) {

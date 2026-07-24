@@ -12,7 +12,7 @@ import {
   Terminal, PipelineDiagram, DiskTimeline, ExitCodeDiagram,
   ResumeChat, ChatThread, ResultsCounters, StatTiles,
   AnalysisPipeline, RegisteredVsActual, ComputeRealityTable, ParallelPatterns,
-  AdviceProvenance, DocExcerpt,
+  AdviceProvenance, DocExcerpt, TukeyFencePlot,
 } from './graphics'
 
 export default function ToniJuly2026() {
@@ -411,20 +411,66 @@ const SLIDES = [
           'Outputs a per-run flag table → feeds downstream exclusion, not deletion.',
         ]} />
         <Terminal
-          title="derivatives/qc_flags.tsv"
+          title="MRIQC — participant, then group"
           maxWidth={720}
           lines={[
-            { k: 'cmd', t: 'head derivatives/qc_flags.tsv' },
-            { k: 'dim', t: 'subject  task          fd_mean  flag' },
-            { k: 'out', t: 'sub-001  localizer      0.12     ok' },
-            { k: 'out', t: 'sub-001  breathing      0.31     review' },
-            { k: 'out', t: 'sub-002  authenticity   0.09     ok' },
-            { k: 'dim', t: '…  (flags feed analysis-stage exclusion — no run is deleted)' },
+            { k: 'cmd', t: './run_mriqc.sh all 4' },
+            { k: 'ok',  t: 'participant done: OK=53  FAIL=0' },
+            { k: 'cmd', t: './run_mriqc.sh group' },
+            { k: 'out', t: 'derivatives/mriqc/group_T1w.html   group_bold.html' },
+            { k: 'comment', t: 'MRIQC 24 · 53 subjects · 251 BOLD runs · 0 processing failures' },
           ]}
         />
         <Detail density={d}>
-          The flag table is advisory. Exclusion happens later, in analysis — every run still went through
-          fMRIPrep regardless of its motion flag.
+          MRIQC computes per-image quality metrics and group reports — no accept/reject built in. How a run
+          gets flagged (and what that did/didn’t trigger) is the next two slides.
+        </Detail>
+      </Frame>
+    ),
+  },
+
+  // 8b — QC mechanics: what's assessed + the flag rule
+  {
+    note: 'What MRIQC actually assessed. Anatomy: CNR/SNR (contrast, signal), CJV & EFC (motion, inhomogeneity, blurring). BOLD: fd_mean & fd_perc (head motion), tSNR (signal stability), gsr (ghosting). The flag rule is relative, not a fixed cutoff — Tukey fences on the group distribution (Q3+1.5·IQR / Q1−1.5·IQR). fd_mean group median 0.15 mm, upper fence 0.36; worst mover sub-085 breathing run-2 at 1.03. All real from MRIQC_QC_SUMMARY.md.',
+    render: (d) => (
+      <Frame wide kicker="Stage 3 · MRIQC — the flag rule">
+        <H2>What’s measured, and how a run gets flagged</H2>
+        <Bullets items={[
+          'Anatomy (T1w): CNR / SNR (contrast, signal), CJV & EFC (motion, inhomogeneity, blurring).',
+          'BOLD: fd_mean & fd_perc (head motion), tSNR (signal stability), gsr (ghosting).',
+        ]} />
+        <TukeyFencePlot />
+        <Lead>The rule is <i>relative</i>, not a fixed cutoff: a run is flagged when it’s a Tukey-fence outlier on the group distribution (beyond Q3 + 1.5·IQR). A flag is a “look at this,” not a fail.</Lead>
+        <Detail density={d}>
+          Same logic applies to the low-signal metrics with a lower fence (e.g. tSNR median 30, fence 18).
+          The breathing task is expected to move — so context, not the number alone, decides.
+        </Detail>
+      </Frame>
+    ),
+  },
+
+  // 8c — QC: what the flags actually caught (real doc)
+  {
+    note: 'What the flags surfaced, verbatim from MRIQC_QC_SUMMARY.md. The key point: a flag is analysis-stage review, not a processing blocker — every run still went through fMRIPrep. Exclusion is decided later, using fMRIPrep confounds.',
+    render: (d) => (
+      <Frame wide kicker="Stage 3 · MRIQC — what it caught">
+        <H2>Flag ≠ exclude</H2>
+        <DocExcerpt
+          file="code/MRIQC_QC_SUMMARY.md"
+          section="functional review shortlist (n = 251 runs)"
+          maxWidth={780}
+          lines={[
+            { k: 'li', t: 'sub-094 breathing run-2 — fd_perc 89.7% (≈90% of volumes over the FD threshold) → almost certainly exclude.' },
+            { k: 'li', t: 'sub-085 — heavy mover across runs (breathing run-2 fd_mean 1.03; authenticity 1.02).' },
+            { k: 'li', t: 'sub-056 breathing run-2 — tSNR 11.1 + no PA fieldmap → weakest run in the dataset.' },
+            { k: 'li', t: 'sub-070 — consistent ghosting (gsr) on all runs.' },
+            { k: 'li', t: 'Anatomy: all 53 usable; mild CJV/EFC outliers (sub-074, sub-061) — none disqualifying.' },
+          ]}
+        />
+        <Lead>Every one of these still went through fMRIPrep. Exclusion is an analysis-stage decision — the flag table informs it, it doesn’t enforce it.</Lead>
+        <Detail density={d}>
+          The principle the whole pipeline runs on: process everything, exclude later, never silently delete —
+          and record the rationale (this doc) so the exclusion is reproducible.
         </Detail>
       </Frame>
     ),
