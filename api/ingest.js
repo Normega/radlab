@@ -5,14 +5,25 @@
 //                             is public by design (RLS enforces access); serving
 //                             it from here keeps COURSE_* env vars server-side
 //                             only, with no VITE_-prefixed duplicates to manage.
-// POST /api/ingest          → run one ingest job. Body:
+// POST /api/ingest          → start one ingest job. Body:
 //                             { pdf_path, pdf_mode: 'native'|'extracted', course_id }
+//                             Responds 202 { job_id } within seconds; the actual
+//                             ingest runs in the background via waitUntil().
 //
 // Auth model (radlab-academic project, NOT the main radlab project):
 // the caller's JWT is verified by resolving public.current_person_id() under
 // that JWT, then confirming an active 'ta'/'instructor' enrollment for the
 // course. Job inserts/updates go through the service role — ingest_jobs has
 // deliberately no authenticated write policies.
+//
+// Duplicate protection: pdf_path embeds a per-submit timestamp, so it uniquely
+// identifies one portal submit. A retried POST — a dropped connection can make
+// the browser or an intermediary transparently re-send the request — returns
+// the existing job instead of starting a second ingest. Discovered 2026-07-24
+// when the original long-held-connection design produced duplicate jobs on the
+// first live test; responding early (202 + waitUntil) removes the held-open
+// connection that invited those retries, and the dedupe covers any that still
+// occur.
 //
 // Privacy: the Anthropic API call receives ONLY the paper (text or PDF bytes)
 // and the wiki index built from prior results. No email, name, person_id, or
@@ -23,6 +34,7 @@
 import { createClient } from '@supabase/supabase-js'
 import Anthropic from '@anthropic-ai/sdk'
 import { extractText } from 'unpdf'
+import { waitUntil } from '@vercel/functions'
 
 // Vercel function config. 300s needs Fluid Compute (default on current
 // Vercel projects); if the deploy rejects it, drop to 60 and prefer
@@ -125,6 +137,20 @@ export default async function handler(req, res) {
     auth: { persistSession: false, autoRefreshToken: false },
   })
 
+  // Idempotency: a job already exists for this exact submit → return it
+  // instead of starting a duplicate ingest.
+  const { data: existing } = await service
+    .from('ingest_jobs')
+    .select('id, status')
+    .eq('course_id', course_id)
+    .eq('pdf_path', pdf_path)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  if (existing) {
+    return res.status(200).json({ job_id: existing.id, status: existing.status, deduped: true })
+  }
+
   const { data: job, error: jobErr } = await service
     .from('ingest_jobs')
     .insert({ course_id, created_by: personId, pdf_path, pdf_mode, status: 'processing' })
@@ -132,21 +158,28 @@ export default async function handler(req, res) {
     .single()
   if (jobErr) return res.status(500).json({ error: `Could not create job: ${jobErr.message}` })
 
-  const fail = async (message, rawOutput) => {
+  // Respond now; run the ingest in the background. waitUntil keeps the
+  // function alive (up to maxDuration) after the response is sent, so no
+  // HTTP connection stays open for the minutes-long model call.
+  waitUntil(runIngest(service, job.id, { pdf_path, pdf_mode, course_id }))
+  return res.status(202).json({ job_id: job.id, status: 'processing' })
+}
+
+async function runIngest(service, jobId, { pdf_path, pdf_mode, course_id }) {
+  const markFailed = async (message, rawOutput) => {
     await service.from('ingest_jobs').update({
       status: 'failed',
       error: message.slice(0, 4000),
       // Preserve raw model output for debugging malformed-JSON failures.
       result_json: rawOutput ? { raw_output: rawOutput } : null,
       completed_at: new Date().toISOString(),
-    }).eq('id', job.id)
-    return res.status(500).json({ error: message, job_id: job.id })
+    }).eq('id', jobId)
   }
 
   try {
     // ── Load the PDF from storage ──
     const { data: blob, error: dlErr } = await service.storage.from(BUCKET).download(pdf_path)
-    if (dlErr || !blob) return await fail(`PDF download failed: ${dlErr?.message || 'not found'}`)
+    if (dlErr || !blob) return await markFailed(`PDF download failed: ${dlErr?.message || 'not found'}`)
     const pdfBuffer = Buffer.from(await blob.arrayBuffer())
 
     // ── Wiki index: aggregate index_entries from this course's done jobs ──
@@ -179,7 +212,7 @@ export default async function handler(req, res) {
       // conservative floor. Don't silently send header-noise to the model.
       const chars = text?.trim().length ?? 0
       if (chars < Math.max(500, (totalPages ?? 1) * 100)) {
-        return await fail(
+        return await markFailed(
           `Extracted only ${chars} characters from ${totalPages} page(s) — this looks like a scanned PDF with no text layer. Use native mode, which reads page images.`
         )
       }
@@ -248,7 +281,7 @@ export default async function handler(req, res) {
       try {
         result = parseJson(raw)
       } catch {
-        return await fail('Model output was not valid JSON after one retry', raw)
+        return await markFailed('Model output was not valid JSON after one retry', raw)
       }
     }
 
@@ -258,10 +291,8 @@ export default async function handler(req, res) {
       input_tokens: inputTokens,
       output_tokens: outputTokens,
       completed_at: new Date().toISOString(),
-    }).eq('id', job.id)
-
-    return res.status(200).json({ job_id: job.id, status: 'done' })
+    }).eq('id', jobId)
   } catch (err) {
-    return await fail(err?.message || 'Ingest failed')
+    await markFailed(err?.message || 'Ingest failed')
   }
 }
