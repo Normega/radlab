@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { supabase } from '../lib/supabase'
+import { supabase } from '../../lib/supabase'
 
 // Realtime Presence — a genuinely new mechanism for this codebase (every
 // other Lecture Lounge live-update path uses broadcast or postgres_changes).

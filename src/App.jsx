@@ -6,8 +6,8 @@ import Nav              from './components/Nav'
 import AuraFilterDef     from './components/AuraFilterDef'
 import AdminRoute        from './components/AdminRoute'
 import TalksRoute        from './components/TalksRoute'
-import ClassAdminRoute   from './components/ClassAdminRoute'
-import LectureLoungeAdminRoute from './components/LectureLoungeAdminRoute'
+import ClassAdminRoute   from './academic/lecture-lounge/ClassAdminRoute'
+import LectureLoungeAdminRoute from './academic/lecture-lounge/LectureLoungeAdminRoute'
 import ErrorBoundary     from './components/ErrorBoundary'
 
 // Route-level code-splitting: every page below is its own chunk, fetched on
@@ -68,15 +68,16 @@ const Keynote   = lazy(() => import('./pages/keynote/Keynote'))
 const ToniJuly2026 = lazy(() => import('./pages/toni-july-2026/ToniJuly2026'))
 const Talks     = lazy(() => import('./pages/talks/Talks'))
 
-// Lecture Lounge — its own partition: separate chunk group from research
-// admin and from the rest of the app, wrapped in its own error boundary
-// below so a crash here can't blank the rest of the site.
-const ClassRoom        = lazy(() => import('./classroom/ClassRoom'))
-const ClassVerifyEmail = lazy(() => import('./classroom/ClassVerifyEmail'))
-const ClassConsole     = lazy(() => import('./classroom/ClassConsole'))
-const ClassRemote      = lazy(() => import('./classroom/ClassRemote'))
-const ClassScreen      = lazy(() => import('./classroom/ClassScreen'))
-const LectureLoungeAdminPage = lazy(() => import('./classroom/LectureLoungeAdminPage'))
+// Academic partition (src/academic/) — Lecture Lounge lives here, the Field
+// Guide ingest portal joins it. Separate chunk group from research admin and
+// from the rest of the app, wrapped in its own error boundary below so a
+// crash here can't blank the rest of the site.
+const ClassRoom        = lazy(() => import('./academic/lecture-lounge/ClassRoom'))
+const ClassVerifyEmail = lazy(() => import('./academic/lecture-lounge/ClassVerifyEmail'))
+const ClassConsole     = lazy(() => import('./academic/lecture-lounge/ClassConsole'))
+const ClassRemote      = lazy(() => import('./academic/lecture-lounge/ClassRemote'))
+const ClassScreen      = lazy(() => import('./academic/lecture-lounge/ClassScreen'))
+const LectureLoungeAdminPage = lazy(() => import('./academic/lecture-lounge/LectureLoungeAdminPage'))
 
 // Research admin section — separate partition from Lecture Lounge.
 const AdminLayout   = lazy(() => import('./layouts/AdminLayout'))
@@ -449,13 +450,16 @@ export default function App() {
           </Route>
 
           {/*
-            Lecture Lounge — its own partition. Own chunk group (all four
-            components below are separately lazy-loaded), own error boundary
-            (a crash here shows a scoped error screen instead of blanking the
-            whole app), own admin route/layout entirely separate from
-            research admin (LectureLoungeAdminRoute, not AdminRoute/AdminLayout).
+            Academic partition — Lecture Lounge (and, next, the Field Guide
+            ingest portal). Own chunk group (every component separately
+            lazy-loaded), own error boundary (a crash here shows a scoped
+            error screen instead of blanking the whole app), own admin
+            route/layout entirely separate from research admin
+            (LectureLoungeAdminRoute, not AdminRoute/AdminLayout).
+            Student-facing /class/:slug URLs deliberately stay short — they
+            are typed from projector QR codes and baked into sent emails.
           */}
-          <Route element={<ErrorBoundary label="Lecture Lounge"><Outlet /></ErrorBoundary>}>
+          <Route element={<ErrorBoundary label="Academic"><Outlet /></ErrorBoundary>}>
             <Route path="/class/verify" element={<ClassVerifyEmail />} />
             <Route path="/class/:slug" element={
               <AuthRoute session={session}>
@@ -468,8 +472,10 @@ export default function App() {
               <Route path="/class/:slug/screen" element={<ClassScreen />} />
             </Route>
             <Route element={<LectureLoungeAdminRoute session={session} role={role} superAdmin={superAdmin} />}>
-              <Route path="/lecture-lounge/admin" element={<LectureLoungeAdminPage session={session} />} />
+              <Route path="/academic/lecture-lounge/admin" element={<LectureLoungeAdminPage session={session} />} />
             </Route>
+            {/* Pre-partition URL, keep redirecting for at least two terms */}
+            <Route path="/lecture-lounge/admin" element={<Navigate to="/academic/lecture-lounge/admin" replace />} />
           </Route>
 
           {/* Unsubscribe — no auth or layout */}

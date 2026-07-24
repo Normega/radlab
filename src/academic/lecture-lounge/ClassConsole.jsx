@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
-import Nav from '../components/Nav'
+import Nav from '../../components/Nav'
 import ConsoleLecturePlanner from './ConsoleLecturePlanner'
 import ConsoleParticipation from './ConsoleParticipation'
 

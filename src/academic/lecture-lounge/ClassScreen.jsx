@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import QRCode from 'react-qr-code'
-import { supabase } from '../lib/supabase'
+import { supabase } from '../../lib/supabase'
 import ResultsView from './ResultsView'
 import AvatarWall from './AvatarWall'
 import { useClassPresence } from './useClassPresence'

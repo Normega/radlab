@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import WheelSVG from '../games/StillWater/WheelSVG'
-import { EMOTIONS } from '../games/StillWater/constants'
+import WheelSVG from '../../games/StillWater/WheelSVG'
+import { EMOTIONS } from '../../games/StillWater/constants'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
