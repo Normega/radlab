@@ -172,8 +172,17 @@ export default async function handler(req, res) {
     const closing = 'Return the JSON object as specified in your instructions. Return only JSON.'
     let userContent
     if (pdf_mode === 'extracted') {
-      const { text } = await extractText(new Uint8Array(pdfBuffer), { mergePages: true })
-      if (!text?.trim()) return await fail('Text extraction produced no text — try native mode')
+      const { totalPages, text } = await extractText(new Uint8Array(pdfBuffer), { mergePages: true })
+      // Empty or near-empty extraction is the signature of a scanned PDF with
+      // no OCR text layer (often just a repeated header line per page) — not a
+      // corrupt file. Real papers run thousands of chars/page; ~100/page is a
+      // conservative floor. Don't silently send header-noise to the model.
+      const chars = text?.trim().length ?? 0
+      if (chars < Math.max(500, (totalPages ?? 1) * 100)) {
+        return await fail(
+          `Extracted only ${chars} characters from ${totalPages} page(s) — this looks like a scanned PDF with no text layer. Use native mode, which reads page images.`
+        )
+      }
       userContent = [{
         type: 'text',
         text: `EXISTING WIKI INDEX:\n${wikiIndex}\n\nPAPER TEXT:\n${text}\n\n${closing}`,
