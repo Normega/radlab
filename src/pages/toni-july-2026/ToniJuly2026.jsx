@@ -12,7 +12,7 @@ import {
   Terminal, PipelineDiagram, DiskTimeline, ExitCodeDiagram,
   ResumeChat, ChatThread, ResultsCounters, StatTiles,
   AnalysisPipeline, RegisteredVsActual, ComputeRealityTable, ParallelPatterns,
-  AdviceProvenance,
+  AdviceProvenance, DocExcerpt,
 } from './graphics'
 
 export default function ToniJuly2026() {
@@ -710,6 +710,81 @@ const SLIDES = [
     ),
   },
 
+  // T1 — the decision record ships with the code
+  {
+    note: 'These are the real in-repo docs (code/*.md on the imaging box), not mockups. The point: every non-obvious choice is written down next to the scripts that run it, so a labmate, a reviewer, or a fresh agent can see what was done and why. The §3 decision list shown is verbatim from BIDS_CONVERSION_PROCESS.md.',
+    render: (d) => (
+      <Frame wide kicker="Dataset 1 · traceability & reproducibility">
+        <H2>The choices live in the repo, not in someone’s head</H2>
+        <Terminal
+          title="the decision record ships with the code"
+          maxWidth={760}
+          lines={[
+            { k: 'cmd', t: 'ls code/*.md' },
+            { k: 'out', t: 'BIDS_CONVERSION_PROCESS.md   FMRIPREP_AROMA_RUNBOOK.md   MRIQC_QC_SUMMARY.md' },
+            { k: 'comment', t: 'every non-obvious choice → written down, beside the scripts that run it' },
+          ]}
+        />
+        <DocExcerpt
+          file="code/BIDS_CONVERSION_PROCESS.md"
+          section="§3 Decisions (confirmed with PI)"
+          maxWidth={760}
+          lines={[
+            { k: 'li', t: 'SDC: PA pepolar (complete per-run coverage; GRE maps excluded to avoid ambiguity).' },
+            { k: 'li', t: 'Task labels: localizer / breathing / authenticity.' },
+            { k: 'li', t: 'Aborted fragments excluded from BIDS (kept in Nifti/); complete restart kept.' },
+            { k: 'li', t: 'Defacing: yes (containerized pydeface, on copies).' },
+            { k: 'li', t: 'fMRIPrep engine: Apptainer/Singularity.' },
+          ]}
+        />
+        <Lead>A labmate, a reviewer, or a fresh agent can open these and see exactly what was done and why — and a re-run reproduces the same decisions.</Lead>
+        <Detail density={d}>
+          The three docs cover conversion (what/why for every sequence + the SDC choice), the fMRIPrep/AROMA
+          config with its failure modes and recovery, and per-run QC with exclusion rationale. Nothing lives
+          only in a chat log or someone’s memory.
+        </Detail>
+      </Frame>
+    ),
+  },
+
+  // T2 — one decision traced end to end (doc → code → command)
+  {
+    note: 'Traceability made concrete: the same decision appears as prose rationale in the runbook, as the exact code that implements it, and as a re-runnable command. A reviewer can follow the whole chain. The code shown is verbatim from run_fmripost_aroma.sh (verified against the box).',
+    render: (d) => (
+      <Frame wide kicker="Dataset 1 · traceability & reproducibility">
+        <H2>One decision, traced end to end</H2>
+        <DocExcerpt
+          file="code/FMRIPREP_AROMA_RUNBOOK.md"
+          section="§3 — the exit-code gotcha"
+          maxWidth={780}
+          lines={[
+            { k: 'p', t: 'This build prints “finished successfully!”, writes every output, then exits non-zero.' },
+            { k: 'li', t: 'Declare OK iff the log says so AND the report file exists — not by $?.' },
+            { k: 'li', t: 'Clean scratch only on that real-success signal.' },
+          ]}
+        />
+        <div style={K.traceLink}>↓ &nbsp;documented decision, implemented verbatim</div>
+        <Terminal
+          title="run_fmripost_aroma.sh:58 — the code, then the re-runnable command"
+          maxWidth={780}
+          lines={[
+            { k: 'out', t: 'if grep -q "fMRIPost-AROMA finished successfully" "$slog" \\' },
+            { k: 'ok',  t: '   && [ -f "$OUT/${sub}.html" ]; then echo OK; rm -rf "$WORK/.../sub_${label}_wf"' },
+            { k: 'out', t: 'else echo FAIL; fi' },
+            { k: 'blank' },
+            { k: 'cmd', t: './run_fmripost_aroma.sh all 4' },
+            { k: 'comment', t: 'idempotent — skips finished subjects, re-runs only the rest' },
+          ]}
+        />
+        <Lead>The prose says <i>why</i>; the script does exactly that; the command re-runs it. A reviewer can follow the whole chain — traceability, not a claim.</Lead>
+        <Detail density={d}>
+          This is the same discipline dataset 2 applies to its pre-registration — decisions captured, locked,
+          and reproducible — just upstream, in the preprocessing rather than the analysis.
+        </Detail>
+      </Frame>
+    ),
+  },
+
   // ════ DATASET 2 — downstream analysis, clinical sample (blue accent) ════
 
   // D2-1 — Dataset 2 divider + ethics/pre-reg framing (public methods-only)
@@ -1022,6 +1097,7 @@ const K = {
   facility: { fontFamily: '"Space Mono",monospace', fontSize: 11.5, color: 'var(--tx3)', margin: '3px 0 0', letterSpacing: '0.04em', textAlign: 'left', opacity: 0.9 },
   provenance: { fontFamily: '"Space Mono",monospace', fontSize: 'clamp(12px, 1.5vw, 15px)', color: 'var(--tx2)', margin: 0, letterSpacing: '0.03em' },
   aside: { fontSize: 'clamp(13px, 1.55vw, 16px)', color: 'var(--tx2)', margin: 0, lineHeight: 1.5, maxWidth: 780, textAlign: 'left', borderLeft: '3px solid var(--pkbs, rgba(240,104,164,0.35))', padding: '2px 0 2px 16px', fontStyle: 'italic' },
+  traceLink: { fontFamily: '"Space Mono",monospace', fontSize: 12.5, color: 'var(--pkd)', letterSpacing: '0.02em' },
 
   datasetBadge: { fontFamily: '"Space Mono",monospace', fontSize: 14, fontWeight: 700, letterSpacing: '0.12em', padding: '7px 18px', borderRadius: 999, border: '1.5px solid', display: 'inline-block' },
   dividerPoints: { display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center', marginTop: 10 },

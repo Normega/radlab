@@ -467,6 +467,31 @@ export function AdviceProvenance() {
   )
 }
 
+// ── Rendered .md-file artifact (light "document" card, distinct from Terminal).
+//    lines: [{ k: 'h' | 'li' | 'p' | 'code', t }]
+export function DocExcerpt({ file, section, lines = [], maxWidth = 760 }) {
+  return (
+    <div style={{ width: '100%', maxWidth, borderRadius: 12, overflow: 'hidden', background: '#fff', border: '1px solid var(--bd)', boxShadow: '0 6px 24px rgba(0,0,0,0.06)', textAlign: 'left' }} onClick={e => e.stopPropagation()}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 14px', background: '#faf3f7', borderBottom: '1px solid var(--bd)' }}>
+        <span style={{ fontSize: 13 }}>📄</span>
+        <span style={{ fontFamily: '"Space Mono",monospace', fontSize: 12, color: PINKD }}>{file}{section ? `  —  ${section}` : ''}</span>
+      </div>
+      <div style={{ padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {lines.map((l, i) => {
+          if (l.k === 'h') return <div key={i} style={{ fontFamily: '"DM Sans",sans-serif', fontWeight: 700, fontSize: 'clamp(14px,1.6vw,17px)', color: INK, marginTop: i ? 6 : 0 }}>{l.t}</div>
+          if (l.k === 'code') return <div key={i} style={{ fontFamily: '"Space Mono",monospace', fontSize: 'clamp(11.5px,1.4vw,13.5px)', color: '#0a7d55', background: 'rgba(0,0,0,0.045)', borderRadius: 6, padding: '6px 10px', whiteSpace: 'pre-wrap' }}>{l.t}</div>
+          if (l.k === 'li') return (
+            <div key={i} style={{ display: 'flex', gap: 9, fontSize: 'clamp(13px,1.5vw,15.5px)', color: '#333', lineHeight: 1.42 }}>
+              <span style={{ color: PINK, flexShrink: 0 }}>•</span><span>{l.t}</span>
+            </div>
+          )
+          return <div key={i} style={{ fontSize: 'clamp(13px,1.5vw,15.5px)', color: '#444', lineHeight: 1.45 }}>{l.t}</div>
+        })}
+      </div>
+    </div>
+  )
+}
+
 // ── Small numeric stat tiles (reused on data / disk slides) ──────────────────
 export function StatTiles({ items }) {
   return (
