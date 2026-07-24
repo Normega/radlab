@@ -85,11 +85,11 @@ Every route-level page component registered in `src/App.jsx` must be lazy-loaded
 When a feature area should be resilient to the rest of the site — a bug in it shouldn't blank other pages, and it shouldn't share a bundle with an unrelated section — go one step further than plain code-splitting:
 
 - Every page in that area lazy-loaded (above) — this alone puts it in its own chunk group, verifiable by grep-ing `dist/assets/` for that area's component names after a build.
-- Its own route guard component, not a shared one, even when the authorization *rule* is identical (e.g. `LectureLoungeAdminRoute` is a separate file from `AdminRoute`, not a shared import — see `src/components/`).
+- Its own route guard component, not a shared one, even when the authorization *rule* is identical (e.g. `LectureLoungeAdminRoute` is a separate file from `AdminRoute`, not a shared import — see `src/academic/lecture-lounge/`).
 - Its own layout/chrome, not another section's (Lecture Lounge admin uses a plain `Nav` + wrapper, not `AdminLayout`'s sidebar).
 - Wrap its route group in `<ErrorBoundary label="...">` (`src/components/ErrorBoundary.jsx`) so a render crash there shows a scoped error screen instead of unmounting the whole app.
 
-Reference implementation: `/lecture-lounge/admin` vs `/admin/*` in `App.jsx`.
+Reference implementation: `/academic/lecture-lounge/admin` vs `/admin/*` in `App.jsx`.
 
 ### Background
 

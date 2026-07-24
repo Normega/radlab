@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { supabase } from '../lib/supabase'
-import WheelSVG from '../games/StillWater/WheelSVG'
-import { CX, CY, INNER_R, OUTER_R, EMOTIONS, d2r, centerAngle } from '../games/StillWater/constants'
+import { supabase } from '../../lib/supabase'
+import WheelSVG from '../../games/StillWater/WheelSVG'
+import { CX, CY, INNER_R, OUTER_R, EMOTIONS, d2r, centerAngle } from '../../games/StillWater/constants'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
