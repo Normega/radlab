@@ -11,7 +11,7 @@ import { useState, useEffect, useCallback } from 'react'
 import {
   Terminal, PipelineDiagram, DiskTimeline, ExitCodeDiagram,
   ResumeChat, ChatThread, ResultsCounters, StatTiles,
-  AnalysisPipeline, RegisteredVsActual, ComputeRealityTable, ParallelPatterns,
+  AnalysisPipeline, RegisteredVsActual, ParallelPatterns,
   AdviceProvenance, DocExcerpt, TukeyFencePlot,
 } from './graphics'
 
@@ -186,39 +186,18 @@ const SLIDES = [
     ),
   },
 
-  // 3 — Why a replay
+  // 3 — Roadmap (now carries the "replay, not live" framing)
   {
-    note: 'Everything shown is from the actual run. The agent had the full session in memory, so the transcript is faithful, not dramatized.',
+    note: 'Everything shown is a replay of the actual run, not a live demo — the real pipeline was ~4 days of wall-clock compute (a fresh subject is ~6–10 h, mostly recon-all). None of the commands execute here; they ran on the imaging box and are shown verbatim with their real output so the artifacts stay inspectable. The agent had the full session in memory, so the transcript is faithful, not dramatized.',
     render: (d) => (
-      <Frame kicker="Ground rules">
-        <H2>You’re seeing a replay, not a live run</H2>
-        <Bullets items={[
-          'The real pipeline ran ~4 days of wall-clock compute across 53 subjects.',
-          'recon-all alone is ~6–10 h/subject — nobody wants to watch that.',
-          'So we replay the interactions, and show the fast read-only checks as real terminal output.',
-        ]} />
-        <Detail density={d}>
-          None of the commands on these slides execute here — they ran on the imaging box. They’re shown
-          verbatim with their real output so the artifacts are inspectable, without a multi-day live run.
-        </Detail>
-      </Frame>
-    ),
-  },
-
-  // 3 — Roadmap
-  {
-    render: () => (
       <Frame kicker="Roadmap">
-        <H2>Two datasets, two phases of the pipeline</H2>
+        <H2>Two datasets, one collaboration</H2>
         <Bullets items={[
-          'Dataset 1 — healthy-control breath study: getting preprocessing right (Parts A–D below).',
-          'Dataset 2 — a clinical sample: picking up after fMRIPrep for pre-registered functional analysis.',
-          'Throughout: the same collaboration with an AI coding agent — and the patterns that recur.',
+          'Dataset 1 — healthy-control breath study: getting preprocessing right. This is the focus.',
+          'Dataset 2 — a clinical sample: a shorter companion, picking up after fMRIPrep for pre-registered analysis.',
+          'Throughout: the same AI coding agent — and the collaboration patterns that recur.',
         ]} />
-        <Detail density="reading">
-          Part A the study &amp; data · Part B deciding + running the pipeline · Part C two real incidents ·
-          Part D autonomy &amp; results — all dataset 1; then the dataset-2 analysis act, then a synthesis.
-        </Detail>
+        <Lead>Everything here is a replay of the real run — read-only checks shown as their real terminal output, not a live demo.</Lead>
       </Frame>
     ),
   },
@@ -241,7 +220,7 @@ const SLIDES = [
   {
     note: 'Interoception implicates insula, brainstem, thalamus — that drove a couple of config choices later (surface + subcortical together).',
     render: (d) => (
-      <Frame wide kicker="Part A · the study">
+      <Frame wide kicker="The study">
         <H2>intero2024 in one slide</H2>
         <p style={K.provenance}>Acquired on the Siemens Prisma 3T · ToNI</p>
         <StatTiles items={[
@@ -267,7 +246,7 @@ const SLIDES = [
   {
     note: 'None of this is in the textbook. Handling per-subject exceptions reproducibly is most of the real work — a place the agent helped by encoding decisions in code, not by hand.',
     render: (d) => (
-      <Frame kicker="Part A · the data">
+      <Frame kicker="The data">
         <H2>The messy reality of real scanner data</H2>
         <Bullets items={[
           'Aborted + restarted runs → keep the full one, drop the fragments.',
@@ -287,7 +266,7 @@ const SLIDES = [
   {
     note: 'Reconstructed design conversation — the decisions shown (recon-all on, the output-space set, a separate AROMA step, nonaggr denoising, containers) are the real ones, from the run’s records and memory; the wording is representative. Worth being honest about *why* the agent answers so fast: it isn’t assuming — it’s (a) proposing the field-standard pipeline it would suggest to almost anyone, and (b) carrying memory of prior preferences from earlier sessions, so it doesn’t re-litigate the basics. Little of “where do we start?” is bespoke recall; most is field default + the study you just described. (See the “what does the advice depend on?” backup slide.)',
     render: (d) => (
-      <Frame wide kicker="Part B · deciding the pipeline">
+      <Frame wide kicker="Deciding the pipeline">
         <H2>Session zero: what do we even run?</H2>
         <ChatThread messages={[
           { who: 'norm', tag: 'norm', text: 'intero2024 — 53 subjects, interoception fMRI, raw DICOMs off the scanner. I want a clean, reproducible preprocessing pipeline. Where do we start?' },
@@ -310,7 +289,7 @@ const SLIDES = [
   {
     note: 'This is the foreshadow. NLin6Asym is chosen here, in the design conversation, specifically because AROMA can’t run without it — the payoff lands on the Stage 4a and 4b slides.',
     render: (d) => (
-      <Frame wide kicker="Part B · deciding the pipeline">
+      <Frame wide kicker="Deciding the pipeline">
         <H2>The choice that quietly runs everything: output spaces</H2>
         <ChatThread messages={[
           { who: 'agent', tag: 'agent — flagging a dependency', text: 'Output spaces drive everything downstream. NLin2009cAsym for reporting. But if you want ICA-AROMA denoising, we also need NLin6Asym — AROMA only runs in that space.' },
@@ -329,7 +308,7 @@ const SLIDES = [
   {
     note: 'A common misconception is that fMRIPrep still does AROMA. It doesn’t — removed in v21.0. Settling that here (separate BIDS-App) is what shapes the whole two-container design.',
     render: (d) => (
-      <Frame wide kicker="Part B · deciding the pipeline">
+      <Frame wide kicker="Deciding the pipeline">
         <H2>One surprise, then lock in reproducibility</H2>
         <ChatThread messages={[
           { who: 'norm', tag: 'norm', text: 'Just run AROMA inside fMRIPrep?' },
@@ -355,11 +334,33 @@ const SLIDES = [
     ),
   },
 
+  // Collaboration — what the interactions look like (folded from the old
+  // stand-alone "collaboration model" slide; resume chat shown here as a
+  // representative later-session sample rather than the incident cold-open)
+  {
+    note: 'Folds the collaboration model into the chatting examples. The agent works in the terminal (reads files, runs commands, edits scripts) and carries persistent memory across sessions — study design, config prefs, and the standing rule “run batches autonomously, only interrupt on error.” The resume chat is a sample of a later interaction (picking up a long run days on); chronology is loose — it’s a representative sample, not strictly the incident cold-open.',
+    render: (d) => (
+      <Frame wide kicker="How it works, day to day">
+        <H2>What the interactions actually look like</H2>
+        <Bullets items={[
+          'The agent works in the terminal — reads files, runs commands, edits the scripts.',
+          'Persistent memory across sessions: study design, config prefs, and the standing rule “run batches autonomously, only interrupt on error.”',
+        ]} />
+        <p style={K.aside}>A sample from a later session — same chat interface, picking up a long run days on:</p>
+        <ResumeChat />
+        <Detail density={d}>
+          No re-briefing between sessions: it pulls its own memory of the project and goes to look at actual
+          disk state. That habit — check reality, don’t assume — is what surfaces the incidents later in the run.
+        </Detail>
+      </Frame>
+    ),
+  },
+
   // 6 — Four stages (pipeline diagram + terminal)
   {
     note: 'Each stage is a script + a container. That matters for the agent story: reproducible, resumable units it could run, monitor, and fix independently.',
     render: (d) => (
-      <Frame wide kicker="Part B · the pipeline">
+      <Frame wide kicker="The pipeline">
         <H2>Four stages, each a script + a container</H2>
         <PipelineDiagram />
         <Terminal
@@ -511,22 +512,6 @@ const SLIDES = [
         <Detail density={d}>
           The misconception that fMRIPrep still runs AROMA is exactly what tripped up the first version of
           our launcher — the setup for Incident 2.
-        </Detail>
-      </Frame>
-    ),
-  },
-
-  // 11 — Collaboration model (resume chat)
-  {
-    note: 'No re-briefing. It pulled its own memory of the project and went to look at actual disk state — which is where story #1 starts.',
-    render: (d) => (
-      <Frame kicker="Part C · the agent story">
-        <H2>The collaboration model</H2>
-        <ResumeChat />
-        <Detail density={d}>
-          The agent runs in the terminal — reads files, runs commands, edits scripts — and carries persistent
-          memory across sessions: study design, config prefs, and the standing rule “run batches autonomously,
-          only interrupt on error.”
         </Detail>
       </Frame>
     ),
@@ -706,7 +691,7 @@ const SLIDES = [
   {
     note: 'It behaved like a careful labmate watching a long run overnight — pinging me only when it mattered.',
     render: (d) => (
-      <Frame wide kicker="Part D · autonomy">
+      <Frame wide kicker="Autonomy">
         <H2>Autonomous monitoring over days</H2>
         <Bullets items={[
           'Standing instruction (from memory): run long batches autonomously; only interrupt on error or completion.',
@@ -734,7 +719,7 @@ const SLIDES = [
   {
     note: 'Open one subject’s fMRIPrep or AROMA HTML report here if you want to show real QC (public/... or on the box).',
     render: (d) => (
-      <Frame wide kicker="Part D · results">
+      <Frame wide kicker="Results">
         <H2>Complete coverage, disk stable</H2>
         <ResultsCounters />
         <Terminal
@@ -870,24 +855,6 @@ const SLIDES = [
     ),
   },
 
-  // D2-3 — the brief / planning partnership
-  {
-    note: 'That last clause — “please ask me instead of making assumptions” — set the tone: a planning partnership, not autopilot. Nearly every consequential fork was surfaced as a question.',
-    render: (d) => (
-      <Frame wide kicker="Dataset 2 · the collaboration">
-        <H2>“Please ask me instead of making assumptions”</H2>
-        <ChatThread messages={[
-          { who: 'norm', tag: 'the brief', text: 'Review the current scripts, re-run the R to confirm reproducibility, and discuss improvements. Especially review how we honour the pre-registration — the PDF is authoritative. Please ask me instead of making assumptions.' },
-          { who: 'agent', tag: 'agent — planning partner, not autopilot', text: 'Understood. I’ll reproduce the behavioural pipeline first, then surface every gap between what’s registered and what the code actually does — as questions, not silent choices.' },
-        ]} />
-        <Detail density={d}>
-          Reproducing the R behavioural pipeline was the easy part — bit-for-bit on a pinned R version. The
-          substance was the gap between the registration and the code, and that gap got worked as a conversation.
-        </Detail>
-      </Frame>
-    ),
-  },
-
   // D2-4 — honouring the pre-registration (centerpiece)
   {
     note: 'The heart of the methods story. Separate two things easy to conflate: the engine swap (SPM↔FSL, minor) vs the error-control method (cluster p<.005 → TFCE/permutation, the substantive fix, post-Eklund, Nichols & Knutsson 2016). Forks were locked before any group map was seen.',
@@ -926,53 +893,7 @@ const SLIDES = [
     ),
   },
 
-  // D2-6 — the compute reality
-  {
-    note: 'The part a facility recognises: the science was settled; the environment fought back. Nearly every failure was a WSL-on-Windows artifact — drvfs vs native ext4 was the single biggest throughput determinant.',
-    render: (d) => (
-      <Frame wide kicker="Dataset 2 · the compute reality">
-        <H2>Your filesystem is a methods decision</H2>
-        <ComputeRealityTable />
-        <Lead>~40 min/job on the WSL virtual disk vs ~5–10 min expected on real hardware. The fix wasn’t the model — it was where the .feat directories get staged.</Lead>
-        <Detail density={d}>
-          The pivot: “I have a real Linux box — port over, or be patient?” → port. The pipeline was already
-          idempotent, so the ~98 computed runs travelled along and were skipped on resume — the Windows effort
-          became the first partition of the job, not wasted work.
-        </Detail>
-      </Frame>
-    ),
-  },
-
-  // D2-7 — the handoff
-  {
-    note: 'Because the agent could only operate the Windows machine, the port was packaged as a self-contained travel bundle so a fresh Claude on the Linux box could continue seamlessly. The corrupt run-4 cameo: mean-image fingerprint 0.97–0.98 within-subject vs ~0.64 across — suggestive identity evidence (the rigorous check is sform/qform + dims).',
-    render: (d) => (
-      <Frame wide kicker="Dataset 2 · the handoff">
-        <H2>A travel bundle a fresh Claude could pick up</H2>
-        <Terminal
-          title="USB 3 travel bundle — packaged for the Linux box"
-          maxWidth={780}
-          lines={[
-            { k: 'cmd', t: 'ls $MINDLOCK_ROOT/' },
-            { k: 'out', t: 'derivatives/  ev_confounds/  firstlevel_98_done/  scripts_linux/  HANDOFF.md  memory/' },
-            { k: 'comment', t: '235 GB fMRIPrep derivatives · path-configurable scripts (one MINDLOCK_ROOT var)' },
-            { k: 'comment', t: '98 salvaged first-levels skip on resume · memory/ = every locked decision' },
-            { k: 'ok',  t: 'HANDOFF.md + memory/ → a fresh Claude reads it and continues, no re-litigation' },
-          ]}
-        />
-        <Bullets items={[
-          'Everyday-neuroimaging cameo: a corrupt run-4 volume, caught before handoff.',
-          'Mean-image “fingerprint”: 0.97–0.98 vs the subject’s own runs, ~0.64 vs anyone else’s → right subject, valid replacement.',
-        ]} />
-        <Detail density={d}>
-          Idempotent ≠ automatically safe to double up: two workers on a shared store can still race the same
-          not-yet-done job — so the clean patterns are partition (Variant A/B per box) or separate stores + merge.
-        </Detail>
-      </Frame>
-    ),
-  },
-
-  // D2-8 — synthesis: the two datasets rhyme
+  // D2-6 — synthesis: the two datasets rhyme
   {
     note: 'The payoff: the same collaboration patterns show up whether you’re getting preprocessing right (dataset 1) or getting a pre-registered analysis off the ground (dataset 2).',
     render: (d) => (
@@ -1021,22 +942,22 @@ const SLIDES = [
     ),
   },
 
-  // 22 — Takeaways
+  // 22 — Getting started (concrete "how to try this yourself")
   {
-    note: 'Most of these are good engineering hygiene that pay off whether or not you use an agent. The agent just makes the payoff bigger.',
+    note: 'The practical how-to. Deliberately concrete — the stack + the first moves — rather than abstract principles. Most of it is reproducibility hygiene that pays off with or without an agent; the agent just makes it cheaper to keep. Emphasise: no cluster needed, a workstation + containers is enough.',
     render: (d) => (
-      <Frame kicker="Takeaways">
-        <H2>Adopting agentic tools</H2>
+      <Frame wide kicker="Getting started">
+        <H2>How to try this on your own data</H2>
         <Bullets items={[
-          'Containerize + script every stage → safe, reproducible units to drive.',
-          'Build idempotency + completion markers in → “crash/fix/resume” becomes trivial.',
-          'Give it persistent project memory → no re-briefing, consistent decisions.',
-          'Define an autonomy contract (“only interrupt on error”) → works over multi-day runs.',
-          'Keep a human on success-criteria and science → exit codes lie; results don’t.',
+          'The stack: Claude Code in the terminal + Apptainer/Singularity containers + git. No cluster required — a workstation is enough.',
+          'Put each stage in a pinned-container script with a completion marker → “crash → fix → resume” stays safe and idempotent.',
+          'Give the agent a memory file (study design + config decisions) and a decision-log .md → no re-briefing, and the choices stay traceable.',
+          'Set an autonomy contract (“run batches autonomously, only interrupt on error”) for the long, unattended stretches.',
+          'Keep a human on the science — you own the config and the success criteria. Exit codes lie; results don’t.',
         ]} />
         <Detail density={d}>
-          None of these are agent-specific magic — they’re engineering hygiene that pays off either way. The
-          agent just makes the payoff bigger.
+          None of this is agent-specific magic — it’s reproducibility hygiene that pays off either way. The
+          agent just makes the payoff bigger, and the discipline cheaper to keep.
         </Detail>
       </Frame>
     ),
