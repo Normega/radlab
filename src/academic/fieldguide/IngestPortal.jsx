@@ -13,6 +13,9 @@ export default function IngestPortal() {
   const { courseClient, session, staffEnrollments } = useOutletContext()
   const [courseId, setCourseId] = useState(staffEnrollments[0]?.course_id)
   const [file, setFile] = useState(null)
+  // Native is the confirmed course default (2026-07-24 four-paper mode test:
+  // content parity, but native has no text-layer dependency — see website.md
+  // §29a). The toggle stays for cost experiments; extracted refuses scans.
   const [mode, setMode] = useState('native')
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState(null)
@@ -107,7 +110,7 @@ export default function IngestPortal() {
             {['native', 'extracted'].map(m => (
               <label key={m} style={{ ...S.sub, cursor: 'pointer', display: 'flex', gap: 5, alignItems: 'center' }}>
                 <input type="radio" name="pdf_mode" value={m} checked={mode === m} onChange={() => setMode(m)} />
-                {m === 'native' ? 'Native (Claude reads the PDF)' : 'Extracted (text extracted server-side)'}
+                {m === 'native' ? 'Native — course default (Claude reads page images)' : 'Extracted (text-only; cheaper, fails on scans)'}
               </label>
             ))}
           </div>
