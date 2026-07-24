@@ -78,6 +78,12 @@ const ClassConsole     = lazy(() => import('./academic/lecture-lounge/ClassConso
 const ClassRemote      = lazy(() => import('./academic/lecture-lounge/ClassRemote'))
 const ClassScreen      = lazy(() => import('./academic/lecture-lounge/ClassScreen'))
 const LectureLoungeAdminPage = lazy(() => import('./academic/lecture-lounge/LectureLoungeAdminPage'))
+const AcademicHome         = lazy(() => import('./academic/AcademicHome'))
+// Field Guide auths against the separate radlab-academic Supabase project;
+// its guard carries that login flow, so it's lazy like the pages (unlike the
+// small static guards above).
+const FieldGuideStaffRoute = lazy(() => import('./academic/fieldguide/FieldGuideStaffRoute'))
+const IngestPortal         = lazy(() => import('./academic/fieldguide/IngestPortal'))
 
 // Research admin section — separate partition from Lecture Lounge.
 const AdminLayout   = lazy(() => import('./layouts/AdminLayout'))
@@ -476,6 +482,13 @@ export default function App() {
             </Route>
             {/* Pre-partition URL, keep redirecting for at least two terms */}
             <Route path="/lecture-lounge/admin" element={<Navigate to="/academic/lecture-lounge/admin" replace />} />
+            <Route path="/academic" element={<AcademicHome />} />
+            {/* Field Guide — auth against the radlab-academic project lives
+                inside FieldGuideStaffRoute (course login + staff enrollment
+                check), not the main-site session. */}
+            <Route element={<FieldGuideStaffRoute />}>
+              <Route path="/academic/fieldguide/ingest" element={<IngestPortal />} />
+            </Route>
           </Route>
 
           {/* Unsubscribe — no auth or layout */}
