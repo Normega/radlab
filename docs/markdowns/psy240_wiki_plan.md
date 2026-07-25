@@ -273,10 +273,14 @@ Do **not** build a second pipeline. Add a second system prompt and a `source_typ
 discriminator to `api/ingest.js`.
 
 1. **Fix the taxonomy first.** A seed file / `disorders` table: the 20 DSM-5-TR diagnostic
-   classes → a **teaching subset of ~60–70 pages** for a 12-week course. Not all ~150–300
+   classes → a **teaching subset of ~60–70 pages** for the course. Not all ~150–300
    codable diagnoses; that's a reference work, not a syllabus. Shape: every class gets a
    class-level overview page plus 2–5 anchor disorders. This list is the course outline, so
-   it's an instructor decision, not a generated one.
+   it's an instructor decision, not a generated one. **Drafted 2026-07-25 —
+   [`psy240_taxonomy.md`](./psy240_taxonomy.md)**: 71 generated pages for fall (16 topic
+   overviews + 9 foundations + 46 Tier A disorders), 11 hand-written lecture pages, and 52
+   Tier B stubs generated from the seed without a model call. See open question 6 for how that
+   amends the shape assumed here.
 2. **Assemble a source bundle per disorder** — the matching Bridley/Daffin module section,
    the CDDR entry, the NIMH topic page, 2–4 canonical papers, one guideline.
 3. **Run `reference`-mode ingest** on each bundle. Same JSON output shape, plus a mandatory
@@ -511,8 +515,14 @@ Two scheduling notes given the "both at once" decision:
   archive, not student-facing, so if August compresses, it yields to WP4/WP5 — the term can
   start without it. Sequencing it parallel to the content sprint (rather than before it) is
   deliberate for that reason.
-- **Start the taxonomy list now**, ahead of WP1. It's an instructor decision, it gates WP3
-  and WP4, and it doesn't depend on any code existing.
+- ~~**Start the taxonomy list now**, ahead of WP1~~ — **done 2026-07-25**:
+  [`psy240_taxonomy.md`](./psy240_taxonomy.md). WP3 and WP4 now have their input; what's left is
+  an instructor sign-off pass on the tier calls, not authoring. Two review-budget notes carried
+  over from it: the gender dysphoria page and the paraphilic overview need **rewrite-level**
+  review (~30 min each, not 15) because the source deck's terminology is dated in the first case
+  and the framing is lecture-hall-provocative in the second; and the ten personality disorders
+  are the cheapest place to spend a spare review hour (promoting the seven Tier B PDs to Tier A
+  is +1.5 h).
 
 ---
 
@@ -525,10 +535,26 @@ Two scheduling notes given the "both at once" decision:
    via myaccess EZproxy, with stable chapter-level DOIs (§2.1).
 5. **CDDR licence variant** — still open; blocked from verification in-session (§2.2 note).
    Doesn't gate WP1–WP4; resolve before quoting CDDR text verbatim.
-6. **New, from the WP0 decisions**: the ~65-page taxonomy list itself. Instructor decision,
-   gates WP3/WP4, needs no code — the next thing to produce.
-7. **New**: which DSM-5-TR chapter `x##` slugs map to which class (§2.1) — enumerate once
-   against the live DSM Library ToC while authoring the taxonomy seed.
+6. ~~The ~65-page taxonomy list itself~~ — **drafted 2026-07-25:
+   [`psy240_taxonomy.md`](./psy240_taxonomy.md)**, built from the eleven Fall 2025 lecture decks
+   rather than a generic syllabus. Awaiting instructor sign-off on the tier calls; the list
+   itself is buildable now. Three findings that amend this plan:
+   - The course is **11 × 3-hour lectures**, not ~20 classes, so the content anchor is the
+     **DSM-5-TR diagnostic class** (18 of 20 are taught) and the *lecture* page becomes thin
+     hand-written navigation over it — a fourth page type this plan didn't have.
+   - Complete coverage of what's actually taught is ~123 pages, which doesn't fit a 15-hour
+     review. Resolved by a **Tier A / Tier B split**: 71 fully-generated pages for fall
+     (~15.5 h review, $28–71 — same order as the ~65 estimated here), and 52 Tier B stubs
+     generated mechanically from the seed with no model call, so no wikilink is dead on day
+     one and the stubs become WP6's student-contribution targets.
+   - `disorders` seed columns implied: `slug`, `title`, `dsm_chapter` (1–20),
+     `dsm_chapter_doi`, `tier`, `lecture` (1–11).
+7. ~~Which DSM-5-TR chapter `x##` slugs map to which class~~ — **reduced to a 15-minute
+   verification** (taxonomy §4). The three slugs confirmed in §2.1 sit at exactly their manual
+   chapter ordinals (Anxiety 5th = `x05`, OCD 6th = `x06`, Somatic Symptom 9th = `x09`), so all
+   20 are pre-filled as *predicted* and each row gets ticked against the live ToC. Check `x01`
+   first — if Neurodevelopmental isn't `x01` the ordinal rule is dead and the column gets
+   discarded rather than trusted.
 8. **Roster: R1, R2, or R3?** (§2a.2) — R3 recommended. This is the decision that determines
    whether one roster serves both systems or two rosters get reconciled by hand all term.
 9. **Roster: how do PSY240 students avoid Ripple onboarding?** (§2a.3) — course-scoped
