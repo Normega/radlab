@@ -67,7 +67,7 @@ function IntroScreen({ onStart }) {
           { n: 3, title: 'Nothing to complete', body: 'Wander between scenes if you like. Stay as long as you please — a quiet finish button waits in the corner. Headphones help.' },
         ].map(({ n, title, body }) => (
           <div key={n} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-            <div style={{ background: '#E0F0EA', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontFamily: 'Space Mono,monospace', fontSize: 12, color: '#2f9e78', fontWeight: 700 }}>{n}</div>
+            <div style={{ background: '#F4E0F0', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontFamily: 'Space Mono,monospace', fontSize: 12, color: '#f068a4', fontWeight: 700 }}>{n}</div>
             <div>
               <div style={{ fontSize: 13, fontWeight: 600, color: '#1c1c1e', marginBottom: 2 }}>{title}</div>
               <div style={{ fontSize: 12, color: '#888', lineHeight: 1.5 }}>{body}</div>
@@ -494,7 +494,7 @@ export default function Tune({ session }) {
   }
 
   return (
-    <div style={{ background: '#F0FAF5', minHeight: '100vh' }}>
+    <div style={{ background: '#FCF0F5', minHeight: '100vh' }}>
       <Nav session={session} />
       <div style={{ minHeight: 'calc(100vh - 57px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 16px', userSelect: 'none' }}>
         {phase === 'intro' && <IntroScreen onStart={startGame} />}
@@ -510,9 +510,9 @@ const S = {
   eyebrow:    { fontFamily: 'Space Mono,monospace', fontSize: 12, color: '#abadb0', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 12 },
   h1:         { fontFamily: 'DM Serif Display,serif', fontSize: 28, color: '#1c1c1e', fontWeight: 400, margin: '0 0 8px' },
   sub:        { color: '#888', fontSize: 13, marginBottom: 28, lineHeight: 1.6 },
-  card:       { background: 'white', borderRadius: 16, padding: '16px 18px', boxShadow: '0 2px 18px rgba(120,180,160,0.12)', marginBottom: 20, textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 12 },
-  btnPrimary: { background: '#2f9e78', color: 'white', border: 'none', borderRadius: 12, padding: 14, fontFamily: 'DM Sans,sans-serif', fontSize: 15, fontWeight: 600, cursor: 'pointer', display: 'block', width: '100%' },
-  btnOutline: { background: 'white', color: '#2f9e78', border: '1.5px solid #2f9e78', borderRadius: 12, padding: 11, fontFamily: 'DM Sans,sans-serif', fontSize: 13, fontWeight: 600, cursor: 'pointer' },
+  card:       { background: 'white', borderRadius: 16, padding: '16px 18px', boxShadow: '0 2px 18px rgba(180,120,160,0.10)', marginBottom: 20, textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 12 },
+  btnPrimary: { background: '#f068a4', color: 'white', border: 'none', borderRadius: 12, padding: 14, fontFamily: 'DM Sans,sans-serif', fontSize: 15, fontWeight: 600, cursor: 'pointer', display: 'block', width: '100%' },
+  btnOutline: { background: 'white', color: '#f068a4', border: '1.5px solid #f068a4', borderRadius: 12, padding: 11, fontFamily: 'DM Sans,sans-serif', fontSize: 13, fontWeight: 600, cursor: 'pointer' },
 
   topbar: {
     position: 'fixed', top: 0, left: 0, right: 0, zIndex: 6,
