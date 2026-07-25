@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import RippleAvatar from '../ripple/RippleAvatar'
-import SyncAura from '../components/SyncAura'
+import RippleAvatar from '../../ripple/RippleAvatar'
+import SyncAura from '../../components/SyncAura'
 
 const MONO = '"Space Mono", "Courier New", monospace'
 

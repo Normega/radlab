@@ -1,0 +1,405 @@
+// Field Guide ingest — the platform's first real serverless function.
+//
+// GET  /api/ingest          → public client config for the radlab-academic
+//                             Supabase project ({ url, anonKey }). The anon key
+//                             is public by design (RLS enforces access); serving
+//                             it from here keeps COURSE_* env vars server-side
+//                             only, with no VITE_-prefixed duplicates to manage.
+// POST /api/ingest          → start one ingest job. Body:
+//                             { pdf_path, pdf_mode: 'native'|'extracted', course_id }
+//                             Responds 202 { job_id } within seconds; the actual
+//                             ingest runs in the background via waitUntil().
+//
+// Auth model (radlab-academic project, NOT the main radlab project):
+// the caller's JWT is verified by resolving public.current_person_id() under
+// that JWT, then confirming an active 'ta'/'instructor' enrollment for the
+// course. Job inserts/updates go through the service role — ingest_jobs has
+// deliberately no authenticated write policies.
+//
+// Duplicate protection: pdf_path embeds a per-submit timestamp, so it uniquely
+// identifies one portal submit. A retried POST — a dropped connection can make
+// the browser or an intermediary transparently re-send the request — returns
+// the existing job instead of starting a second ingest. Discovered 2026-07-24
+// when the original long-held-connection design produced duplicate jobs on the
+// first live test; responding early (202 + waitUntil) removes the held-open
+// connection that invited those retries, and the dedupe covers any that still
+// occur.
+//
+// Privacy: the Anthropic API call receives ONLY the paper (text or PDF bytes)
+// and the wiki index built from prior results. No email, name, person_id, or
+// any other identity data may ever enter the prompt.
+//
+// The UI never blocks on this call — it polls ingest_jobs (staff-read RLS).
+
+import { createClient } from '@supabase/supabase-js'
+import Anthropic from '@anthropic-ai/sdk'
+import { extractText } from 'unpdf'
+import { waitUntil } from '@vercel/functions'
+
+// Vercel function config. 300s needs Fluid Compute (default on current
+// Vercel projects); if the deploy rejects it, drop to 60 and prefer
+// 'extracted' mode for large papers.
+export const maxDuration = 300
+
+const MODEL = 'claude-opus-4-8'
+const BUCKET = 'ingest-pdfs'
+
+// Ported verbatim from the prototype's psy240_schema.py — the compact PSY240
+// ingest schema embedded as a system prompt. Do not redesign this schema in
+// code changes; it is the single source of truth for the wiki page format.
+const SYSTEM_PROMPT = `You are maintaining a course wiki for an undergraduate abnormal psychology course, anchored on the DSM-5 and built collaboratively from student-submitted peer-reviewed papers.
+
+You will be given:
+1. The full text of one academic paper
+2. A compact index of wiki pages that already exist
+
+Your job: read the paper, then output ALL new or updated wiki pages needed, as a single JSON object. Do not use any tools. Do not ask questions. Return only JSON.
+
+PAGE TYPES:
+- disorder: a DSM-5 diagnostic category. Fields: title, dsm5_criteria_summary (paraphrased, never verbatim DSM-5 text), prevalence, related_disorders, key_studies
+- study: one page per paper. Fields: title, authors, year, journal, doi, design, sample, key_findings, limitations, disorders_touched, concepts_touched
+- concept: a theoretical or empirical construct. Fields: title, definition, related_concepts, key_studies
+- treatment: an intervention or treatment approach. Fields: title, target_disorders, mechanism, evidence_base, limitations
+- debate: a contested claim in the field. Fields: title, summary, field_positions (list of researcher/stance pairs), related_disorders, related_concepts
+  NOTE: never populate a "my_take" field. That field is reserved for human instructor edits only.
+
+RULES:
+- Paraphrase all diagnostic criteria. Never reproduce DSM-5 text verbatim.
+- If a page already exists in the index, output it as an "update" with only the new information to merge, not a full rewrite.
+- If a page is new, output it as "new" with full content.
+- Flag any direct contradiction with existing wiki content in a "contradictions" field, do not silently resolve it.
+- Wikilink filenames: lowercase, hyphens for spaces.
+
+OUTPUT FORMAT (JSON only, no other text):
+{
+  "pages": [
+    {"action": "new" | "update", "type": "disorder|study|concept|treatment|debate", "filename": "lowercase-with-dashes.md", "content": "full markdown content with YAML frontmatter"}
+  ],
+  "index_entries": [
+    {"filename": "...", "type": "...", "one_line_summary": "..."}
+  ],
+  "contradictions": ["description of any conflict with existing wiki content, or empty list"],
+  "log_entry": "2-4 sentence summary of what was ingested and what pages were touched"
+}`
+
+export default async function handler(req, res) {
+  const url = process.env.COURSE_SUPABASE_URL
+  const anonKey = process.env.COURSE_SUPABASE_ANON_KEY
+  const serviceKey = process.env.COURSE_SUPABASE_SERVICE_KEY
+
+  if (!url || !anonKey || !serviceKey || !process.env.ANTHROPIC_API_KEY) {
+    return res.status(500).json({ error: 'Server misconfigured: missing COURSE_SUPABASE_* or ANTHROPIC_API_KEY env vars' })
+  }
+
+  if (req.method === 'GET') {
+    // Public client config — the anon key is designed to be public.
+    return res.status(200).json({ url, anonKey })
+  }
+  if (req.method !== 'POST') {
+    res.setHeader('Allow', 'GET, POST')
+    return res.status(405).json({ error: 'Method not allowed' })
+  }
+
+  const { pdf_path, pdf_mode, course_id } = req.body ?? {}
+  if (!pdf_path || !course_id || !['native', 'extracted'].includes(pdf_mode)) {
+    return res.status(400).json({ error: 'Required: pdf_path, course_id, pdf_mode ("native" | "extracted")' })
+  }
+
+  // ── Auth: verify the JWT against radlab-academic, then the enrollment ──
+  const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '')
+  if (!token) return res.status(401).json({ error: 'Missing Authorization bearer token' })
+
+  // Client scoped to the caller's JWT: RLS applies, so current_person_id()
+  // resolves the caller and the enrollments query can only see their own rows.
+  const userClient = createClient(url, anonKey, {
+    global: { headers: { Authorization: `Bearer ${token}` } },
+    auth: { persistSession: false, autoRefreshToken: false },
+  })
+
+  const { data: personId, error: personErr } = await userClient.rpc('current_person_id')
+  if (personErr || !personId) {
+    return res.status(401).json({ error: 'Invalid session or unknown user' })
+  }
+
+  const { data: staffRows, error: enrollErr } = await userClient
+    .from('enrollments')
+    .select('id, role')
+    .eq('course_id', course_id)
+    .eq('status', 'active')
+    .in('role', ['ta', 'instructor'])
+  if (enrollErr) return res.status(500).json({ error: `Enrollment check failed: ${enrollErr.message}` })
+  if (!staffRows?.length) {
+    return res.status(403).json({ error: 'No active TA/instructor enrollment for this course' })
+  }
+
+  // ── Service role from here on (ingest_jobs has no authenticated writes) ──
+  const service = createClient(url, serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  })
+
+  // Idempotency: a job already exists for this exact submit → return it
+  // instead of starting a duplicate ingest.
+  const { data: existing } = await service
+    .from('ingest_jobs')
+    .select('id, status')
+    .eq('course_id', course_id)
+    .eq('pdf_path', pdf_path)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  if (existing) {
+    return res.status(200).json({ job_id: existing.id, status: existing.status, deduped: true })
+  }
+
+  const { data: job, error: jobErr } = await service
+    .from('ingest_jobs')
+    .insert({ course_id, created_by: personId, pdf_path, pdf_mode, status: 'processing' })
+    .select('id')
+    .single()
+  if (jobErr) return res.status(500).json({ error: `Could not create job: ${jobErr.message}` })
+
+  // Respond now; run the ingest in the background. waitUntil keeps the
+  // function alive (up to maxDuration) after the response is sent, so no
+  // HTTP connection stays open for the minutes-long model call.
+  waitUntil(runIngest(service, job.id, { pdf_path, pdf_mode, course_id, personId }))
+  return res.status(202).json({ job_id: job.id, status: 'processing' })
+}
+
+async function runIngest(service, jobId, { pdf_path, pdf_mode, course_id, personId }) {
+  const markFailed = async (message, rawOutput) => {
+    await service.from('ingest_jobs').update({
+      status: 'failed',
+      error: message.slice(0, 4000),
+      // Preserve raw model output for debugging malformed-JSON failures. Only
+      // set when there is something to preserve — a persistence failure comes
+      // after the parsed result is already saved, and must not null it out.
+      ...(rawOutput ? { result_json: { raw_output: rawOutput } } : {}),
+      completed_at: new Date().toISOString(),
+    }).eq('id', jobId)
+  }
+
+  try {
+    // ── Load the PDF from storage ──
+    const { data: blob, error: dlErr } = await service.storage.from(BUCKET).download(pdf_path)
+    if (dlErr || !blob) return await markFailed(`PDF download failed: ${dlErr?.message || 'not found'}`)
+    const pdfBuffer = Buffer.from(await blob.arrayBuffer())
+
+    // ── Wiki index: read wiki_pages, the source of truth (WP1) ──
+    // Previously this replayed index_entries out of every done job's
+    // result_json. That made the index a function of ingest history rather
+    // than of the wiki, so a page edited or retired after ingest still
+    // advertised its original summary to the model, and pages created any
+    // other way were invisible. Rendered as `<slug>.md` because the system
+    // prompt's contract is filenames.
+    const { data: indexPages } = await service
+      .from('wiki_pages')
+      .select('slug, type, summary')
+      .eq('course_id', course_id)
+      .neq('status', 'archived')
+      .order('slug', { ascending: true })
+    const wikiIndex = indexPages?.length
+      ? indexPages.map(p => `- ${p.slug}.md (${p.type}): ${p.summary ?? ''}`).join('\n')
+      : '(the wiki is empty — every page will be new)'
+
+    // ── Build the user content per mode (ported from build_user_prompt) ──
+    const closing = 'Return the JSON object as specified in your instructions. Return only JSON.'
+    let userContent
+    if (pdf_mode === 'extracted') {
+      const { totalPages, text } = await extractText(new Uint8Array(pdfBuffer), { mergePages: true })
+      // Empty or near-empty extraction is the signature of a scanned PDF with
+      // no OCR text layer (often just a repeated header line per page) — not a
+      // corrupt file. Real papers run thousands of chars/page; ~100/page is a
+      // conservative floor. Don't silently send header-noise to the model.
+      const chars = text?.trim().length ?? 0
+      if (chars < Math.max(500, (totalPages ?? 1) * 100)) {
+        return await markFailed(
+          `Extracted only ${chars} characters from ${totalPages} page(s) — this looks like a scanned PDF with no text layer. Use native mode, which reads page images.`
+        )
+      }
+      userContent = [{
+        type: 'text',
+        text: `EXISTING WIKI INDEX:\n${wikiIndex}\n\nPAPER TEXT:\n${text}\n\n${closing}`,
+      }]
+    } else {
+      userContent = [
+        {
+          type: 'document',
+          source: { type: 'base64', media_type: 'application/pdf', data: pdfBuffer.toString('base64') },
+        },
+        {
+          type: 'text',
+          text: `EXISTING WIKI INDEX:\n${wikiIndex}\n\nThe paper is the attached PDF document.\n\n${closing}`,
+        },
+      ]
+    }
+
+    // ── Call the Messages API (streaming: large JSON output) ──
+    const anthropic = new Anthropic()
+    let inputTokens = 0
+    let outputTokens = 0
+
+    const callModel = async (extraNudge) => {
+      const stream = anthropic.messages.stream({
+        model: MODEL,
+        max_tokens: 64000,
+        thinking: { type: 'adaptive' },
+        system: SYSTEM_PROMPT,
+        messages: [{
+          role: 'user',
+          content: extraNudge
+            ? [...userContent, { type: 'text', text: extraNudge }]
+            : userContent,
+        }],
+      })
+      const msg = await stream.finalMessage()
+      inputTokens += msg.usage.input_tokens
+        + (msg.usage.cache_creation_input_tokens ?? 0)
+        + (msg.usage.cache_read_input_tokens ?? 0)
+      outputTokens += msg.usage.output_tokens
+      if (msg.stop_reason === 'refusal') {
+        throw new Error(`Model refused the request${msg.stop_details?.explanation ? `: ${msg.stop_details.explanation}` : ''}`)
+      }
+      if (msg.stop_reason === 'max_tokens') {
+        throw new Error('Output truncated at max_tokens — paper may be too large for one call')
+      }
+      return msg.content.filter(b => b.type === 'text').map(b => b.text).join('')
+    }
+
+    const parseJson = (raw) => {
+      // Tolerate a fenced ```json block despite the return-only-JSON instruction.
+      const stripped = raw.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '')
+      return JSON.parse(stripped)
+    }
+
+    let raw = await callModel()
+    let result
+    try {
+      result = parseJson(raw)
+    } catch {
+      // One retry per the plan, then fail with the raw output preserved.
+      raw = await callModel('Your previous attempt was not valid JSON. Return ONLY the JSON object, with no surrounding text or code fences.')
+      try {
+        result = parseJson(raw)
+      } catch {
+        return await markFailed('Model output was not valid JSON after one retry', raw)
+      }
+    }
+
+    // Save the parsed result before persisting proposals: the tokens are
+    // already spent, so a downstream write failure must never lose the output.
+    await service.from('ingest_jobs').update({
+      result_json: result,
+      input_tokens: inputTokens,
+      output_tokens: outputTokens,
+    }).eq('id', jobId)
+
+    const failures = await persistProposals(service, { jobId, courseId: course_id, personId, result })
+    if (failures.length) {
+      return await markFailed(
+        `Model output parsed, but ${failures.length} page(s) failed to persist: ${failures.join('; ')}`
+      )
+    }
+
+    await service.from('ingest_jobs').update({
+      status: 'done',
+      completed_at: new Date().toISOString(),
+    }).eq('id', jobId)
+  } catch (err) {
+    await markFailed(err?.message || 'Ingest failed')
+  }
+}
+
+// Wikilink target for a model-supplied filename: 'Panic-Disorder.md' → 'panic-disorder'.
+const toSlug = (filename) => filename.trim().toLowerCase().replace(/\.md$/, '')
+
+// The model returns page bodies with YAML frontmatter but no separate title
+// field, so read it from the frontmatter. Falling back to a de-slugified title
+// is display-only — it never round-trips back into a slug (see taxonomy §4:
+// slugs are stored, never derived).
+function extractTitle(content, slug) {
+  const frontmatter = content?.match(/^---\r?\n([\s\S]*?)\r?\n---/)
+  const titleLine = frontmatter?.[1].match(/^title:\s*(.+)$/m)
+  const title = titleLine?.[1].trim().replace(/^["']|["']$/g, '')
+  if (title) return title
+  return slug.replace(/-/g, ' ').replace(/^\w/, c => c.toUpperCase())
+}
+
+// Write each returned page as a *proposed* version awaiting review.
+//
+// Nothing here touches wiki_pages.content. A page that doesn't exist yet is
+// created as a shell (slug/type/title/summary) so it appears in the index and
+// resolves inbound wikilinks; its body stays null until a reviewer promotes a
+// proposal. That keeps the invariant that published content — the thing
+// students read and the thing WP7 exports — has always been through review,
+// and it's why retiring the job-replay index above is safe: wiki_pages now
+// gets a row for every page the model produces.
+//
+// Returns an array of human-readable failures (empty on success).
+async function persistProposals(service, { jobId, courseId, personId, result }) {
+  const summaries = new Map(
+    (result?.index_entries ?? [])
+      .filter(e => e?.filename)
+      .map(e => [toSlug(e.filename), e.one_line_summary ?? null])
+  )
+
+  const failures = []
+  for (const page of result?.pages ?? []) {
+    if (!page?.filename || !page?.type) {
+      failures.push(`malformed page entry: ${JSON.stringify(page)?.slice(0, 120)}`)
+      continue
+    }
+    const slug = toSlug(page.filename)
+    const title = extractTitle(page.content, slug)
+    const summary = summaries.get(slug) ?? null
+
+    try {
+      const { data: existing, error: lookupErr } = await service
+        .from('wiki_pages')
+        .select('id')
+        .eq('course_id', courseId)
+        .eq('slug', slug)
+        .maybeSingle()
+      if (lookupErr) throw new Error(lookupErr.message)
+
+      let pageId = existing?.id
+      if (!pageId) {
+        const { data: created, error: insertErr } = await service
+          .from('wiki_pages')
+          .insert({
+            course_id: courseId,
+            slug,
+            type: page.type,
+            title,
+            summary,
+            status: 'proposed',
+            created_by: personId,
+            updated_by: personId,
+          })
+          .select('id')
+          .single()
+        if (insertErr) throw new Error(insertErr.message)
+        pageId = created.id
+      }
+      // An existing page's summary is deliberately left alone — overwriting it
+      // from an unreviewed proposal would change what students see.
+
+      const { error: versionErr } = await service
+        .from('wiki_page_versions')
+        .insert({
+          page_id: pageId,
+          kind: 'proposed',
+          action: page.action === 'update' ? 'update' : 'new',
+          title,
+          summary,
+          content: page.content ?? null,
+          job_id: jobId,
+          created_by: personId,
+          review_status: 'pending',
+        })
+      if (versionErr) throw new Error(versionErr.message)
+    } catch (err) {
+      failures.push(`${slug}: ${err.message}`)
+    }
+  }
+  return failures
+}

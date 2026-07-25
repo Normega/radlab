@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
-import { supabase } from '../lib/supabase'
-import Nav from '../components/Nav'
+import { supabase } from '../../lib/supabase'
+import Nav from '../../components/Nav'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'

@@ -13,6 +13,7 @@ export function renderEmail(vars: {
   unsubscribe_url: string | null
   is_test?: boolean
   is_reminder?: boolean
+  after_missed?: boolean
 }): { subject: string; html: string; text: string } {
   // {{study_day}} resolves to the integer, or "your study" for single-shot rows
   const studyDayStr = vars.study_day != null ? String(vars.study_day) : 'your study'
@@ -34,14 +35,17 @@ export function renderEmail(vars: {
   if (vars.is_reminder) subject = `Reminder: ${subject}`
   if (vars.is_test) subject = `[TEST] ${subject}`
 
-  // Body text (resolved). For a reminder resend, lead with a short line that
-  // makes clear this is a follow-up nudge rather than a first-time invitation;
-  // the original (or per-study custom) body follows unchanged beneath it, so
-  // the link, expiry notice, and any custom copy are preserved.
+  // Body text (resolved). Two optional lead-ins, both prepended so the original
+  // (or per-study custom) body follows unchanged beneath — link, expiry notice,
+  // and custom copy all preserved:
+  //   is_reminder   — this is a follow-up nudge, not a first-time invitation.
+  //   after_missed  — the participant's previous session window closed unused.
+  // A reminder wins when both are true: it's a resend of the very email the
+  // missed-session line already introduced, so running both would apologize for
+  // a miss and then nudge about the same message in one breath.
   const resolvedBody = resolve(vars.custom_body ?? DEFAULT_BODY)
-  const bodyText = vars.is_reminder
-    ? `${REMINDER_INTRO}\n\n${resolvedBody}`
-    : resolvedBody
+  const intro = vars.is_reminder ? REMINDER_INTRO : vars.after_missed ? MISSED_INTRO : null
+  const bodyText = intro ? `${intro}\n\n${resolvedBody}` : resolvedBody
 
   // Convert resolved body text to HTML:
   // double newlines → <p> tags, single newlines → <br>
@@ -168,6 +172,17 @@ const TERMINATION_HTML_WRAPPER = `<!DOCTYPE html>
 // contradicts the per-study copy that follows.
 
 const REMINDER_INTRO = `Just a friendly reminder — it looks like you haven't completed this session yet, and your personal link is still active, so there's still time. The original details are below.`
+
+// ─── Missed-session lead-in ───────────────────────────────────────────────────
+// Prepended when the participant's previous session window closed unused (see
+// send_message). Deliberately carried on the next session's email rather than
+// sent as a message of its own: it reaches them at the moment they can act on
+// it, and adds no extra email to someone who is already not opening them.
+// Non-punitive by design — a miss that reads as failure invites the shame →
+// avoidance → further-misses spiral this is meant to interrupt. Worded to hold
+// up whether they missed one session or a few.
+
+const MISSED_INTRO = `We noticed your last session's window closed before you got to it — that's completely okay. Missing a session doesn't affect your standing in the study, and there's nothing to make up. Here's the next one.`
 
 // ─── Default body ─────────────────────────────────────────────────────────────
 

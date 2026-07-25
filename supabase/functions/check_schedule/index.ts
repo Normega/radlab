@@ -70,6 +70,16 @@ Deno.serve(async (req) => {
     const { date: todayStr, time: nowTime } = formatInTimeZone(now, LAB_TIMEZONE)
     const nowKey = scheduleKey(todayStr, nowTime)
 
+    // Rows scheduled within the past hour count as "on time" (the cron ticks
+    // every 15 min, so an on-time row is normally processed well inside this
+    // window). Only rows older than this are eligible for the late-row
+    // suppression in step 2c.
+    const { date: graceDate, time: graceTime } = formatInTimeZone(
+      new Date(now.getTime() - 60 * 60 * 1000),
+      LAB_TIMEZONE,
+    )
+    const onTimeKey = scheduleKey(graceDate, graceTime)
+
     // 0. Auto-expire any active links whose expires_at has passed.
     //    Prevents stale manually-issued links from blocking automated sends indefinitely.
     await db
@@ -198,9 +208,18 @@ Deno.serve(async (req) => {
           continue
         }
 
-        // 2c. New link imminent check — another pending row for this participant
-        // is due within reminder_interval_hours of now.
-        if (settings.reminder_interval_hours) {
+        // 2c. New link imminent check — LATE rows only: a backlogged row
+        // (due over an hour ago, e.g. held up by an active link or downtime)
+        // is skipped when the participant's next row is due within
+        // reminder_interval_hours anyway. An on-time row must NEVER be
+        // suppressed here: in a 3-check-ins-per-day study every same-day
+        // sibling is "imminent", and applying this check to on-time rows
+        // permanently blocked every 09:00 and 14:00 check-in of the Zerin
+        // study — only the 20:00 send survived (confirmed live 2026-07-24).
+        if (
+          settings.reminder_interval_hours &&
+          scheduleKey(row.scheduled_date, row.send_time) < onTimeKey
+        ) {
           const cutoffInstant = new Date(now.getTime() + settings.reminder_interval_hours * 60 * 60 * 1000)
           const { date: cutoffDate, time: cutoffTime } = formatInTimeZone(cutoffInstant, LAB_TIMEZONE)
           const cutoffKey = scheduleKey(cutoffDate, cutoffTime)
@@ -262,11 +281,14 @@ Deno.serve(async (req) => {
 
     // 3b. Reminders: re-send rows that were sent but not completed while
     // their link is still ACTIVE (an expired link is never re-emailed here —
-    // dead rows become 'missed' in step 0b instead). Cadence derives from the
-    // session's link lifetime: 12 h for daily sessions (<= 24 h links → one
-    // same-evening nudge), 24 h for assessment windows (72 h links → one
-    // reminder per remaining day). attempts counts initial send + reminders,
-    // capped by studies.max_attempts; gated on studies.reminders_enabled.
+    // dead rows become 'missed' in step 0b instead). Cadence is the study's
+    // reminder_interval_hours, falling back to a link-lifetime heuristic when
+    // unset: 12 h for daily sessions (<= 24 h links), 24 h for assessment
+    // windows (72 h links). Reminder count (attempts - 1, the initial send is
+    // attempt 1) is capped by studies.reminder_max when set; attempts overall
+    // stay capped by studies.max_attempts; gated on studies.reminders_enabled.
+    // A reminder never fires for a link shorter than the cadence — short
+    // check-in windows (e.g. 4 h EMA links) simply get no reminder.
     let reminded = 0
     {
       const { data: activeLinkRows } = await db
@@ -287,7 +309,7 @@ Deno.serve(async (req) => {
           const remStudyIds = [...new Set(remRows.map((r) => r.study_id))]
           const { data: remStudies } = await db
             .from('studies')
-            .select('id, max_attempts, reminders_enabled')
+            .select('id, max_attempts, reminders_enabled, reminder_interval_hours, reminder_max')
             .in('id', remStudyIds)
           const remStudyMap = new Map((remStudies ?? []).map((s) => [s.id, s]))
 
@@ -302,9 +324,12 @@ Deno.serve(async (req) => {
             const study = remStudyMap.get(row.study_id)
             if (!study || study.reminders_enabled === false) continue
             if ((row.attempts ?? 0) >= (study.max_attempts ?? 1)) continue
+            const remindersSent = Math.max(0, (row.attempts ?? 0) - 1)
+            if (study.reminder_max != null && remindersSent >= study.reminder_max) continue
 
             const expires = sessMap.get(row.study_session_id) ?? 48
-            const intervalMs = (expires <= 24 ? 12 : 24) * 60 * 60 * 1000
+            const cadenceHours = study.reminder_interval_hours ?? (expires <= 24 ? 12 : 24)
+            const intervalMs = cadenceHours * 60 * 60 * 1000
             if (now.getTime() - new Date(row.last_sent_at).getTime() < intervalMs) continue
 
             try {

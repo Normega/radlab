@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Navigate, Outlet, useParams } from 'react-router-dom'
-import { supabase } from '../lib/supabase'
+import { supabase } from '../../lib/supabase'
 
 // Per-class admin gate for /class/:slug/console, /remote, /screen.
 // Mirrors AdminRoute's shape but authorization is scoped to one class

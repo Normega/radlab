@@ -1,3 +1,5 @@
+// v9 — expired-link screen is now a soft landing that names the next session
+//      (get_session_by_token returns { error: 'expired', next_session })
 // v8 — completion screen now says when the next contact will happen
 //      (complete_session_by_token returns { next_contact, has_more })
 import { useEffect, useState, useRef } from 'react'
@@ -31,6 +33,9 @@ export default function SessionEntry() {
   const [stepOutputs,    setStepOutputs]    = useState({})
   // { next_contact: {scheduled_date, send_time}|null, has_more: bool|null }
   const [completionInfo, setCompletionInfo] = useState(null)
+  // { scheduled_date, send_time } | null — next upcoming session, shown on the
+  // expired-link screen so a closed window isn't a dead end.
+  const [nextSession,    setNextSession]    = useState(null)
   const fullDataRef = useRef(null)
   // Wall-clock (client Date.now) when the current step mounted — used to record
   // per-step time-on-screen. Same clock for entry+exit, so duration is accurate
@@ -102,7 +107,20 @@ export default function SessionEntry() {
 
     // 3. Load session data via RPC (now authenticated)
     const { data, error } = await sb.rpc('get_session_by_token', { p_token: token })
-    if (error || !data || data.error) { setState('not_found'); return }
+    if (error || !data) { setState('not_found'); return }
+
+    // The RPC returns errors for revoked/expired tokens before it builds any
+    // link payload, so these — not the link.status checks below — are the paths
+    // a real revoked or expired token takes. Folding them into the generic
+    // not_found branch is what told expired-link clickers "This link is not
+    // valid"; 'expired' carries next_session for the soft-landing copy.
+    if (data.error === 'expired') {
+      setNextSession(data.next_session ?? null)
+      setState('expired')
+      return
+    }
+    if (data.error === 'revoked') { setState('revoked');   return }
+    if (data.error)               { setState('not_found'); return }
 
     const { link, schedule, study, enrollment } = data
 
@@ -346,7 +364,7 @@ export default function SessionEntry() {
   }
 
   if (state === 'expired') {
-    return <FullScreen><StatusCard>This session window has closed. Please contact your researcher.</StatusCard></FullScreen>
+    return <FullScreen><StatusCard>{expiredMessage(nextSession)}</StatusCard></FullScreen>
   }
 
   if (state === 'too_early') {
@@ -568,4 +586,36 @@ function completionMessage(info) {
     return 'Thank you — you have completed the final session of this study!'
   }
   return generic
+}
+
+// Copy for a link whose window has already closed, from get_session_by_token's
+// { error: 'expired', next_session }. Someone reading this clicked a link and
+// wanted to take part, so it's the single highest-intent moment we have to keep
+// them in the study — the previous text ("This link is not valid.") neither
+// told them they were still enrolled nor that anything else was coming. Two
+// jobs, in order: remove the sense that a miss is a failure, then name the next
+// session concretely so the miss converts into a forward commitment.
+function expiredMessage(next) {
+  const reassurance =
+    "This session's window has closed — that's completely okay. Missing one doesn't affect your standing in the study, and there's nothing to make up."
+
+  // No upcoming row: study finished, participant withdrawn, or the next
+  // segment is behind a fork gate that hasn't resolved. Stay soft and don't
+  // promise a session we can't name.
+  if (!next?.scheduled_date) {
+    return `${reassurance} If you're expecting another session and don't hear from us, please contact your researcher.`
+  }
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const nextDay = parseLocalDate(next.scheduled_date)
+  const days = Math.round((nextDay - today) / 86400000)
+  const time = formatSendTime(next.send_time)
+
+  if (days <= 0) {
+    return `${reassurance} Your next session opens later today${time ? ` at ${time}` : ''} — we'll email you a link when it does.`
+  }
+  const dateLabel = nextDay.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })
+  const when = days === 1 ? `tomorrow (${dateLabel})` : `in ${days} days (${dateLabel})`
+  return `${reassurance} Your next session opens ${when}${time ? ` at ${time}` : ''} — we'll email you a link when it does.`
 }
