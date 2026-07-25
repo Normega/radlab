@@ -68,45 +68,82 @@ for the first three at all; the second three are Tier B at most.
 
 ---
 
-## 4. DSM-5-TR chapter DOI map (open question #7)
+## 4. DSM-5-TR chapter DOI map — **resolved 2026-07-25** (closes open question #7)
 
-The plan confirmed the DOI pattern and three slugs, and flagged the remaining ~16 as
-guesswork-prohibited. The three confirmed slugs turn out to sit at exactly their manual chapter
-positions (Anxiety = 5th = `x05`, OCD = 6th = `x06`, Somatic Symptom = 9th = `x09`), which makes
-the ordinal hypothesis strong enough to **pre-fill and verify** rather than discover. Treat the
-`x##` column below as *predicted* and mark each row verified as it's checked against the live
-ToC; store the result as `disorders.dsm_chapter_doi` (or a `dsm_chapters` lookup, since it is
-per-chapter, not per-disorder).
+**All 18 taught chapters are verified.** No myaccess session was needed: PsychiatryOnline 403s
+automated fetches, but its chapter pages are search-indexed, so each chapter's real DOI was
+recovered from the index by exact-phrase search on the DOI stem (`"appi.books.9780890425787.x03"`
+→ the indexed "Bipolar and Related Disorders | Psychiatry Online" result carries the full slug in
+its URL). Store the result as `disorders.dsm_chapter_doi` — or better, a `dsm_chapters` lookup,
+since it is per-chapter, not per-disorder.
+
+**The prediction was half right, and the wrong half would have shipped broken links.** The
+*ordinal* hypothesis held perfectly — chapters 1–19 are `x01`–`x19` in manual order. The
+*name* half did not: 5 of the 19 slugs are not the chapter title slugified, and there is no rule
+that generates them.
+
+- `x02_Schizophrenia_Spectrum` — truncated, drops "and Other Psychotic Disorders"
+- `x15_Disruptive_Impulse_Control` — truncated, drops "and Conduct Disorders"
+- `x16_Substance_Related_Disorders` — truncated, drops "and Addictive"
+- `x12_Sleep-Wake_Disorders` — keeps the **hyphen** where every other slug converts punctuation
+  to `_`
+- `x14_Gender_Dysophoria` — **misspelled in the official DOI** ("Dysophoria"). Not a
+  transcription error on our side; that is the live URL.
+
+So a generated-slug column would have produced five 404s, including on a page already flagged for
+rewrite-level review. The lesson generalizes past this table: **DOI slugs are opaque identifiers,
+not derived strings** — treat any future `x##`-style map as data to harvest, never to compute.
+
+Chapter 20 breaks the pattern completely: Medication-Induced Movement Disorders has **no `x##`
+prefix at all** (`.Medication_Induced_Movement_Disorders`), as does the front matter
+(`.Introduction`, plus `.x00_Diagnostic_Classification` for the DSM-5-TR Classification). Neither
+is taught, so this doesn't cost the course anything — but it's why the ordinal rule cannot be
+trusted past 19.
 
 Base: `10.1176/appi.books.9780890425787` · proxied host:
 `dsm-psychiatryonline-org.myaccess.library.utoronto.ca`
 
-| # | Chapter | Predicted slug | Verified? | Course |
-|---|---|---|---|---|
-| 1 | Neurodevelopmental Disorders | `.x01_Neurodevelopmental_Disorders` | — | L10 (+L3 tics) |
-| 2 | Schizophrenia Spectrum and Other Psychotic Disorders | `.x02_Schizophrenia_Spectrum...` | — | L9 |
-| 3 | Bipolar and Related Disorders | `.x03_Bipolar_and_Related_Disorders` | — | L5 |
-| 4 | Depressive Disorders | `.x04_Depressive_Disorders` | — | L5 |
-| 5 | Anxiety Disorders | `.x05_Anxiety_Disorders` | **✔ confirmed** | L3 |
-| 6 | Obsessive-Compulsive and Related Disorders | `.x06_Obsessive_Compulsive_and_Related_Disorders` | **✔ confirmed** | L3/L4 |
-| 7 | Trauma- and Stressor-Related Disorders | `.x07_Trauma_and_Stressor_Related_Disorders` | — | L4 |
-| 8 | Dissociative Disorders | `.x08_Dissociative_Disorders` | — | L4 |
-| 9 | Somatic Symptom and Related Disorders | `.x09_Somatic_Symptom_and_Related_Disorders` | **✔ confirmed** | L3 |
-| 10 | Feeding and Eating Disorders | `.x10_Feeding_and_Eating_Disorders` | — | L6 |
-| 11 | Elimination Disorders | `.x11_...` | — | **not taught** |
-| 12 | Sleep-Wake Disorders | `.x12_Sleep_Wake_Disorders` | — | L6 |
-| 13 | Sexual Dysfunctions | `.x13_Sexual_Dysfunctions` | — | L7 |
-| 14 | Gender Dysphoria | `.x14_Gender_Dysphoria` | — | L7 |
-| 15 | Disruptive, Impulse-Control, and Conduct Disorders | `.x15_Disruptive_Impulse_Control_and_Conduct_Disorders` | — | L8 + L10 |
-| 16 | Substance-Related and Addictive Disorders | `.x16_Substance_Related_and_Addictive_Disorders` | — | L8 |
-| 17 | Neurocognitive Disorders | `.x17_Neurocognitive_Disorders` | — | L10 |
-| 18 | Personality Disorders | `.x18_Personality_Disorders` | — | L11 |
-| 19 | Paraphilic Disorders | `.x19_Paraphilic_Disorders` | — | L7 |
-| 20 | Other Mental Disorders / Medication-Induced Movement Disorders | `.x20_...` | — | **not taught** |
+Slugs below are **verified against the live PsychiatryOnline index**, not predicted. Copy them
+verbatim; ⚠ marks a slug that differs from what the chapter title would generate.
 
-Verification is one pass over the DSM Library ToC while signed in through myaccess — ~15 minutes,
-and it either confirms 17 predictions at once or falsifies the ordinal rule immediately (check
-`x01` first: if Neurodevelopmental is not `x01`, discard the whole column and enumerate by hand).
+| # | Chapter | Verified slug | Course |
+|---|---|---|---|
+| — | Introduction | `.Introduction` | — |
+| — | DSM-5-TR Classification | `.x00_Diagnostic_Classification` | — |
+| 1 | Neurodevelopmental Disorders | `.x01_Neurodevelopmental_Disorders` | L10 (+L3 tics) |
+| 2 | Schizophrenia Spectrum and Other Psychotic Disorders | ⚠ `.x02_Schizophrenia_Spectrum` | L9 |
+| 3 | Bipolar and Related Disorders | `.x03_Bipolar_and_Related_Disorders` | L5 |
+| 4 | Depressive Disorders | `.x04_Depressive_Disorders` | L5 |
+| 5 | Anxiety Disorders | `.x05_Anxiety_Disorders` | L3 |
+| 6 | Obsessive-Compulsive and Related Disorders | `.x06_Obsessive_Compulsive_and_Related_Disorders` | L3/L4 |
+| 7 | Trauma- and Stressor-Related Disorders | `.x07_Trauma_and_Stressor_Related_Disorders` | L4 |
+| 8 | Dissociative Disorders | `.x08_Dissociative_Disorders` | L4 |
+| 9 | Somatic Symptom and Related Disorders | `.x09_Somatic_Symptom_and_Related_Disorders` | L3 |
+| 10 | Feeding and Eating Disorders | `.x10_Feeding_and_Eating_Disorders` | L6 |
+| 11 | Elimination Disorders | `.x11_Elimination_Disorders` | **not taught** |
+| 12 | Sleep-Wake Disorders | ⚠ `.x12_Sleep-Wake_Disorders` *(hyphen, not `_`)* | L6 |
+| 13 | Sexual Dysfunctions | `.x13_Sexual_Dysfunctions` | L7 |
+| 14 | Gender Dysphoria | ⚠ `.x14_Gender_Dysophoria` *(APA's own typo — keep it)* | L7 |
+| 15 | Disruptive, Impulse-Control, and Conduct Disorders | ⚠ `.x15_Disruptive_Impulse_Control` | L8 + L10 |
+| 16 | Substance-Related and Addictive Disorders | ⚠ `.x16_Substance_Related_Disorders` | L8 |
+| 17 | Neurocognitive Disorders | `.x17_Neurocognitive_Disorders` | L10 |
+| 18 | Personality Disorders | `.x18_Personality_Disorders` | L11 |
+| 19 | Paraphilic Disorders | `.x19_Paraphilic_Disorders` | L7 |
+| 20 | Other Mental Disorders | *unverified* — the only row still open | **not taught** |
+| — | Medication-Induced Movement Disorders | `.Medication_Induced_Movement_Disorders` *(no `x##`)* | **not taught** |
+
+Both `/doi/` and `/doi/abs/` resolve, and the DSM content also lives on its own subdomain
+(`dsm.psychiatryonline.org`), which is what the myaccess host rewrites. Example, ready to use:
+
+```
+https://dsm-psychiatryonline-org.myaccess.library.utoronto.ca/doi/10.1176/appi.books.9780890425787.x14_Gender_Dysophoria
+```
+
+**One thing still worth 60 seconds of Norm's myaccess session**, before WP4 generates 71 pages of
+these links: click any two of the above through the proxy — one plain, one ⚠ — and confirm they
+land on the chapter rather than a login wall or an EZproxy error. The slugs are verified as
+*correct*; what's untested is that the proxied host serves them to a signed-in reader exactly as
+the public host does. If it does, the map is done and needs no further checking.
 
 ---
 
@@ -421,9 +458,11 @@ he can review a generated draft (drop them from ingest, −2 h); or promote/demo
 
 ## 8. Consequences for the plan
 
-1. **WP3's taxonomy seed input now exists.** The `disorders` seed is §6 plus the §4 chapter
-   map: `slug`, `title`, `dsm_chapter` (1–20), `dsm_chapter_doi`, `tier` (A/B/overview/
-   foundations), `lecture` (1–11). The `tier` column is the thing WP4's sprint is driven by,
+1. **WP3's taxonomy seed input now exists — and is complete.** The `disorders` seed is §6 plus
+   the §4 chapter map: `slug`, `title`, `dsm_chapter` (1–20), `dsm_chapter_doi`, `tier`
+   (A/B/overview/foundations), `lecture` (1–11). `dsm_chapter_doi` is real verified data as of
+   2026-07-25, not placeholders, so WP1 can seed it directly — **but store the slug string, never
+   a title-to-slug function**; five of the nineteen are unpredictable from the title (§4). The `tier` column is the thing WP4's sprint is driven by,
    and `lecture` is what makes a lecture page's links generate themselves.
 2. **A `lecture` entity is needed, not just a class overview page.** The plan assumed
    class overview = anchor page; §5 splits them, because the pedagogically useful lecture page

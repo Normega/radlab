@@ -549,12 +549,18 @@ Two scheduling notes given the "both at once" decision:
      one and the stubs become WP6's student-contribution targets.
    - `disorders` seed columns implied: `slug`, `title`, `dsm_chapter` (1–20),
      `dsm_chapter_doi`, `tier`, `lecture` (1–11).
-7. ~~Which DSM-5-TR chapter `x##` slugs map to which class~~ — **reduced to a 15-minute
-   verification** (taxonomy §4). The three slugs confirmed in §2.1 sit at exactly their manual
-   chapter ordinals (Anxiety 5th = `x05`, OCD 6th = `x06`, Somatic Symptom 9th = `x09`), so all
-   20 are pre-filled as *predicted* and each row gets ticked against the live ToC. Check `x01`
-   first — if Neurodevelopmental isn't `x01` the ordinal rule is dead and the column gets
-   discarded rather than trusted.
+7. ~~Which DSM-5-TR chapter `x##` slugs map to which class~~ — **resolved 2026-07-25**: all 18
+   taught chapters verified, [taxonomy §4](./psy240_taxonomy.md). No myaccess pass was needed —
+   PsychiatryOnline 403s automated fetches but its chapter pages are search-indexed, so each real
+   slug came out of the index by exact-phrase search on the DOI stem. The ordinal half of the
+   prediction held (chapters 1–19 = `x01`–`x19`); the *name* half was wrong for 5 of 19, in ways
+   no rule generates — three truncations (`x02_Schizophrenia_Spectrum`,
+   `x15_Disruptive_Impulse_Control`, `x16_Substance_Related_Disorders`), one retained hyphen
+   (`x12_Sleep-Wake_Disorders`), and one **misspelling in APA's own DOI**
+   (`x14_Gender_Dysophoria`). Generating slugs from titles would have shipped five 404s. Standing
+   rule: DOI slugs are opaque identifiers, harvest them, never compute them. Residual: chapter 20
+   ("Other Mental Disorders", not taught) is the one unverified row, and one 60-second check that
+   the *proxied* host serves these slugs to a signed-in reader.
 8. **Roster: R1, R2, or R3?** (§2a.2) — R3 recommended. This is the decision that determines
    whether one roster serves both systems or two rosters get reconciled by hand all term.
 9. **Roster: how do PSY240 students avoid Ripple onboarding?** (§2a.3) — course-scoped
