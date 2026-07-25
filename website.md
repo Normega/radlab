@@ -3742,7 +3742,7 @@ Built and **live-tested 2026-07-24** on branch `feature/academic-partition` (env
 - [x] Env vars in Vercel + deploy + staff registration click-test (Norm, 2026-07-24; surfaced the duplicate-POST bug fixed the same day)
 - [x] Mode-comparison API test — expanded to 4 papers incl. an OCR'd 1916 scan and a figure-bearing modern paper; parity throughout, native ~45% dearer; numbers recorded in `ingest-budget-estimate.md` (2026-07-24)
 - [x] Default mode confirmed by Norm: **native** (portal pre-selects + labels it); extracted test jobs and PDFs purged, 4 canonical native runs kept (2026-07-24)
-- [ ] Phase 2 (designed, not built): student submission flow, review queue, wiki publishing
+- [ ] Phase 2 (designed, not built): student submission flow, review queue, wiki publishing. **Plan of record: `docs/markdowns/psy240_wiki_plan.md`** (2026-07-25) — wiki architecture options A–E with a recommendation (native Postgres-backed wiki in the academic partition now, git/Quartz static export mirror in term 2), the copyright-safe source corpus for the DSM-5-TR course core (CC-licensed Bridley & Daffin *Fundamentals of Psychological Disorders* 3rd ed. as textbook replacement, ICD-11 CDDR, public-domain NIMH, link-not-copy to library-licensed DSM-5-TR), a `reference` ingest mode for scaffold-building (~65 disorder pages, est. $30–70 total), and WP0–WP6 sequencing. Four decisions open (§5 of that doc).
 
 ### Housekeeping
 
