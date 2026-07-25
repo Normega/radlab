@@ -1,3 +1,6 @@
+// v10 — completed links no longer render as "missed": get_session_by_token
+//       checks completion before expiry and returns { error: 'completed' },
+//       which gets its own copy. Both terminal screens name the next session.
 // v9 — expired-link screen is now a soft landing that names the next session
 //      (get_session_by_token returns { error: 'expired', next_session })
 // v8 — completion screen now says when the next contact will happen
@@ -114,9 +117,9 @@ export default function SessionEntry() {
     // a real revoked or expired token takes. Folding them into the generic
     // not_found branch is what told expired-link clickers "This link is not
     // valid"; 'expired' carries next_session for the soft-landing copy.
-    if (data.error === 'expired') {
+    if (data.error === 'expired' || data.error === 'completed') {
       setNextSession(data.next_session ?? null)
-      setState('expired')
+      setState(data.error)
       return
     }
     if (data.error === 'revoked') { setState('revoked');   return }
@@ -356,7 +359,7 @@ export default function SessionEntry() {
   }
 
   if (state === 'completed') {
-    return <FullScreen><StatusCard>You have completed this session. Thank you!</StatusCard></FullScreen>
+    return <FullScreen><StatusCard>{completedMessage(nextSession)}</StatusCard></FullScreen>
   }
 
   if (state === 'session_complete') {
@@ -596,14 +599,26 @@ function completionMessage(info) {
 // jobs, in order: remove the sense that a miss is a failure, then name the next
 // session concretely so the miss converts into a forward commitment.
 function expiredMessage(next) {
-  const reassurance =
-    "This session's window has closed — that's completely okay. Missing one doesn't affect your standing in the study, and there's nothing to make up."
+  return `This session's window has closed — that's completely okay. Missing one doesn't affect your standing in the study, and there's nothing to make up. ${nextSessionSentence(next)}`
+}
 
-  // No upcoming row: study finished, participant withdrawn, or the next
-  // segment is behind a fork gate that hasn't resolved. Stay soft and don't
-  // promise a session we can't name.
+// Copy for a link whose session was already COMPLETED, from
+// get_session_by_token's { error: 'completed', next_session }. Kept strictly
+// separate from expiredMessage: a completed session's link is also past its
+// expiry window, and before the RPC checked completion first, these
+// participants were told they'd missed a session they had actually done —
+// the worst possible message to send the most diligent people in the study.
+function completedMessage(next) {
+  return `You've already completed this session — thank you! ${nextSessionSentence(next)}`
+}
+
+// Shared tail naming the next session, so the completed and expired screens
+// can't drift apart. Null next: study finished, participant withdrawn, or the
+// next segment is behind a fork gate that hasn't resolved — stay soft and
+// don't promise a session we can't name.
+function nextSessionSentence(next) {
   if (!next?.scheduled_date) {
-    return `${reassurance} If you're expecting another session and don't hear from us, please contact your researcher.`
+    return "If you're expecting another session and don't hear from us, please contact your researcher."
   }
 
   const today = new Date()
@@ -613,9 +628,9 @@ function expiredMessage(next) {
   const time = formatSendTime(next.send_time)
 
   if (days <= 0) {
-    return `${reassurance} Your next session opens later today${time ? ` at ${time}` : ''} — we'll email you a link when it does.`
+    return `Your next session opens later today${time ? ` at ${time}` : ''} — we'll email you a link when it does.`
   }
   const dateLabel = nextDay.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })
   const when = days === 1 ? `tomorrow (${dateLabel})` : `in ${days} days (${dateLabel})`
-  return `${reassurance} Your next session opens ${when}${time ? ` at ${time}` : ''} — we'll email you a link when it does.`
+  return `Your next session opens ${when}${time ? ` at ${time}` : ''} — we'll email you a link when it does.`
 }
