@@ -133,17 +133,26 @@ verbatim; ⚠ marks a slug that differs from what the chapter title would genera
 | — | Medication-Induced Movement Disorders | `.Medication_Induced_Movement_Disorders` *(no `x##`)* | **not taught** |
 
 Both `/doi/` and `/doi/abs/` resolve, and the DSM content also lives on its own subdomain
-(`dsm.psychiatryonline.org`), which is what the myaccess host rewrites. Example, ready to use:
+(`dsm.psychiatryonline.org`). Two myaccess host rewrites exist; **the confirmed-working one is the
+un-prefixed form**:
 
 ```
-https://dsm-psychiatryonline-org.myaccess.library.utoronto.ca/doi/10.1176/appi.books.9780890425787.x14_Gender_Dysophoria
+https://psychiatryonline-org.myaccess.library.utoronto.ca/doi/10.1176/appi.books.9780890425787.x14_Gender_Dysophoria
 ```
 
-**One thing still worth 60 seconds of Norm's myaccess session**, before WP4 generates 71 pages of
-these links: click any two of the above through the proxy — one plain, one ⚠ — and confirm they
-land on the chapter rather than a login wall or an EZproxy error. The slugs are verified as
-*correct*; what's untested is that the proxied host serves them to a signed-in reader exactly as
-the public host does. If it does, the map is done and needs no further checking.
+**Proxy path confirmed by Norm, 2026-07-25** — that URL hits a UTORid login wall when
+unauthenticated and serves the chapter once signed in. Tested on the ⚠ misspelled slug specifically,
+the one most likely to break. The map is therefore done end to end: slugs correct, and the proxied
+host serves them to a signed-in reader.
+
+**These links are for readers, not for fetching.** An agent cannot verify them by retrieval —
+PsychiatryOnline returns 403 to automated requests, and a signed-in *human* session does not
+transfer to one (different machine, no cookie jar; re-confirmed 2026-07-25 by fetching during an
+active session and still getting 403). Nor should that be worked around: systematically pulling
+chapters through EZproxy is what library terms of use prohibit and what gets a UTORid suspended,
+and it would contradict §2.1's central decision — the wiki *links* criteria and never carries them.
+Verify slugs the way they were harvested (public search index); let the student's own browser do the
+authenticated part.
 
 ---
 

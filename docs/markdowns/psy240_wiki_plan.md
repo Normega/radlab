@@ -558,9 +558,13 @@ Two scheduling notes given the "both at once" decision:
    `x15_Disruptive_Impulse_Control`, `x16_Substance_Related_Disorders`), one retained hyphen
    (`x12_Sleep-Wake_Disorders`), and one **misspelling in APA's own DOI**
    (`x14_Gender_Dysophoria`). Generating slugs from titles would have shipped five 404s. Standing
-   rule: DOI slugs are opaque identifiers, harvest them, never compute them. Residual: chapter 20
-   ("Other Mental Disorders", not taught) is the one unverified row, and one 60-second check that
-   the *proxied* host serves these slugs to a signed-in reader.
+   rule: DOI slugs are opaque identifiers, harvest them, never compute them. The proxied path is
+   confirmed too (Norm, 2026-07-25: login wall when signed out, chapter when signed in, tested on
+   the misspelled slug), via `psychiatryonline-org.myaccess.library.utoronto.ca` — the un-prefixed
+   host. Only residual is chapter 20 ("Other Mental Disorders"), which the course doesn't teach.
+   Note for future sessions: these links can't be agent-verified by retrieval and shouldn't be —
+   403 to automation, human sessions don't transfer, and bulk EZproxy fetching both breaches library
+   terms and contradicts the link-don't-copy decision in §2.1.
 8. **Roster: R1, R2, or R3?** (§2a.2) — R3 recommended. This is the decision that determines
    whether one roster serves both systems or two rosters get reconciled by hand all term.
 9. **Roster: how do PSY240 students avoid Ripple onboarding?** (§2a.3) — course-scoped
