@@ -439,7 +439,9 @@ he can review a generated draft (drop them from ingest, −2 h); or promote/demo
    it does not work as unattended reference text). Budget 30 min each rather than 15.
 5. **Appendix A is a Lecture Lounge deliverable, not a wiki one** — the 11 lectures' Emotion
    Form prompts are the check-in prompt library the classroom app needs, and the decks were
-   the only place they existed.
+   the only place they existed. Now complete for all 11 lectures (~35 prompts), and it carries a
+   data-model constraint: a prompt is anchored to a *section boundary within* a lecture, not to
+   the lecture, so a one-check-in-per-session schema can't represent the library as run.
 
 ---
 
@@ -452,13 +454,43 @@ lecture's disorder, answerable by anyone without disclosing pathology.
 
 | L | Prompts |
 |---|---|
-| 1–5 | *(opening/break prompts in these decks are Mood Dashboard beats without transcribed Emotion Form text — recover from the decks' notes if the prompt library matters for those weeks)* |
+| 1 | icebreaker: "under 'EmotionForm', rate how you are feeling, and in the comments, tell us why you are taking this class!" · *(the two mid-lecture "Break Time!" slides carry the dashboard link only — no Emotion Form prompt was written on them)* |
+| 2 | "What is the most confusing or 'I want to learn more' topic we've covered so far?" · "Is it a good thing that we have so much more information about abnormal psych disorders? Does it make our lives better?" |
+| 3 | "What is the most confusing or 'I want to learn more' topic we've covered so far?" *(reused from L2)* · "What is something you get anxious about?" · "What is something you can't stop thinking about, or a behaviour you can't seem to change?" |
+| 4 | "What is something you find yourself doing repeatedly even though it doesn't give you lasting relief/satisfaction?" · "How do you manage distress after go wrong or you get really upset?" *(sic)* · "Do you ever wonder if this is real life vs. just a dream or simulation? What seems like a 'glitch' in the matrix to you sometimes?" |
+| 5 | "What does it feel like in your body when you feel really depressed or down?" · "Have you ever felt so 'up' that you weren't yourself? What did it feel like?" · "What is harder to manage — feeling very low, or feeling too much energy / out of control? Do you get in more trouble for what you do or don't do?" |
 | 6 | "How do you feel about your eating habits? Do you wish anything were different?" · "Do you win you your life with whom you feel comfortable talking about sexual issues?" *(sic)* · "Are you sleeping enough? How would you describe your sleep quality?" · in-class poll: "Are you dieting (trying to change your weight through diet) right now?" |
 | 7 | "What is something you do / enjoy in your own life that steps outside of traditional gender roles?" · "Do you wish you had more people in your life with whom you could discuss sexual issues?" · "What is the difference between sex and gender?" · poll: "Rate the Midterm!" |
 | 8 | "What is a legal substance or activity for which you may exhibit addictive traits (dependence, difficulty stopping, need more for same rush, etc.)?" · "Is there a particular drug you are the most curious about?" · "What is the most common trigger of an addictive behaviour for you?" |
 | 9 | "What is a situation where you weren't sure whether you could trust your own thoughts or senses?" · "Was there ever a time you were 100% sure you were right about a belief or experience only to learn you had been mistaken?" · "What would be worse for you — not trusting your mind even though it is exciting (no medication) or feeling dull and lifeless (with medication)?" |
 | 10 | "What area in life is your biggest struggle?" · poll: hidden disability? · "What do you understand to be the most central symptoms of autism spectrum disorder?" · "What are you most afraid of losing when you become a senior citizen?" |
 | 11 | "What's the most annoying thing about your personality for other people?" · "What's your biggest question/concern about mental health and the law?" · "Any course-related questions you never got to ask?" |
+
+**Where they sit is part of the design.** Reading L1–L5 slide-by-slide makes the placement rule
+visible: with one exception, each prompt is on the slide *immediately before* the block it hooks
+into, so it is asked while the students' own answer is still the only material in the room. L3's
+"something you get anxious about" opens the GAD block; its "can't stop thinking about" prompt
+opens Ch 6; L4's "doing repeatedly" prompt opens the OCD recap, "how do you manage distress"
+opens trauma, and "glitch in the matrix" opens dissociation; L5 runs body-felt depression →
+Depressive Disorders, "so 'up' you weren't yourself" → Bipolar, "low vs. too much energy" →
+Treatment. The exception is the *first* prompt of L2 and L3, which is a course-level check
+("most confusing topic so far") rather than a content hook — and it is the one prompt reused
+verbatim across two weeks.
+
+Two consequences for the Lecture Lounge prompt library, which is the deliverable this appendix
+feeds (§8.5):
+
+- The unit is a **prompt anchored to a section boundary**, not a prompt-per-lecture. ~35 prompts
+  across 11 lectures, 2–4 per lecture, each attached to the block that follows it. A data model
+  with one check-in per session loses the thing that makes them work.
+- **A prompt is reusable and some are lecture-agnostic.** "Most confusing topic so far" is a
+  recurring course-level beat, and the polls ("Rate the Midterm!", "Are you dieting right now?")
+  are a different type again — instrumented in-class polls, not reflective prompts. Worth
+  distinguishing at least *hook* / *course check* / *poll* in whatever the library stores.
+
+L1 is the only lecture whose break-slide prompts were never written down (the two "Break Time!"
+slides carry the dashboard link alone); given the icebreaker is course-admin rather than content,
+L1 likely ran with one prompt, and nothing needs recovering.
 
 ---
 
