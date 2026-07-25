@@ -489,7 +489,7 @@ roster-gated, so no public-visibility UI is needed yet).
 | WP | Work | When |
 |---|---|---|
 | ~~WP0~~ | ~~Decisions~~ — **done 2026-07-25**, see the Decisions section above | ✔ |
-| ~~WP1~~ | ~~Schema~~ — **written 2026-07-25**, `supabase/migrations/20260725_academic_wiki_schema.sql`; **awaiting apply to `radlab-academic`**. See the WP1 note below. | ▲ |
+| ~~WP1~~ | ~~Schema~~ — **done 2026-07-25**, `supabase/migrations/20260725_academic_wiki_schema.sql`, applied live to `radlab-academic`. See the WP1 note below. | ✔ |
 | WP2 | Reader UI — lazy-loaded pages, `ErrorBoundary label="Academic"`, wikilink resolution, backlinks, `tsvector` search, ToC | early Aug |
 | WP3 | `reference` ingest mode + taxonomy seed (~65 pages + DSM chapter-DOI map) + side-by-side review UI | mid Aug |
 | WP4 | **Content sprint**: run the ~65-page scaffold, instructor review pass (~15 h) | mid–late Aug |
@@ -522,11 +522,14 @@ wiki. Reading `wiki_pages` instead is only equivalent if something writes a row 
 the shells. A page edited or retired after ingest now stops advertising its stale summary, and
 pages created any other way become visible to the model.
 
-**Verified locally, not live.** Postgres 16 with stubbed `auth`/`storage`: applies clean on the
-init migration; versioning, both directions of link resolution, proposal isolation, criteria-URL
-assembly, `tsvector` search, and the student/staff/outsider RLS split all behave as intended, and
-authenticated writes are correctly refused. **Norm still has to run it** against `radlab-academic`
-— nothing here is live until then.
+**Verified locally, then applied live.** Postgres 16 with stubbed `auth`/`storage`: applies clean
+on the init migration; versioning, both directions of link resolution, proposal isolation,
+criteria-URL assembly, `tsvector` search, and the student/staff/outsider RLS split all behave as
+intended, and authenticated writes are correctly refused. Applied to `radlab-academic` by Norm on
+2026-07-25 and confirmed with `supabase/checks/wp1_verify.sql` — a read-only, re-runnable check that
+reports per-object status in either state. Re-run it after any schema change to that project: its
+last check is the CLAUDE.md RLS-enabled-but-no-policy audit, and its slug check catches anyone
+"correcting" the five irregular DOI slugs back into 404s.
 
 **WP5 is now the schedule's real risk, not WP6.** It gates student submission (no accounts,
 no submissions), it has a hard external deadline (the QR path has to work in week 1, and
