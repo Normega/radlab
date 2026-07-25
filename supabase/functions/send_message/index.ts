@@ -6,6 +6,8 @@
 // recipient is the override address, subject is prefixed with [TEST].
 // When is_reminder is true (reminder resends from check_schedule) the copy is
 // framed as a follow-up nudge rather than a first-time invitation.
+// A first send whose preceding session went unused additionally leads with a
+// short, non-punitive acknowledgment (see followsMissedSession below).
 
 import { createClient, SupabaseClient } from 'npm:@supabase/supabase-js@2'
 import { Resend } from 'npm:resend'
@@ -181,6 +183,12 @@ Deno.serve(async (req) => {
       displayExpiresHours = Math.max(1, remainingHours)
     }
 
+    // Acknowledge a previous session the participant didn't get to, on the
+    // email that gives them the next one. Skipped for test sends (no real
+    // history to reason about) and for reminders (renderEmail's reminder
+    // lead-in takes precedence — see MISSED_INTRO there).
+    const afterMissed = !isTest && !is_reminder && await followsMissedSession(db, row)
+
     // 7. Render email (subject + HTML + plain text)
     const { subject, html, text } = renderEmail({
       first_name:      firstName,
@@ -192,6 +200,7 @@ Deno.serve(async (req) => {
       unsubscribe_url: unsubscribeUrl,
       is_test:         isTest,
       is_reminder:     !!is_reminder,
+      after_missed:    afterMissed,
     })
 
     // Warn if any template variables remain unresolved after substitution
@@ -239,6 +248,65 @@ Deno.serve(async (req) => {
 })
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/** Rows are ordered by the (date, time) pair, which Postgres can't compare as a
+ *  tuple over PostgREST — same lexicographic key trick as check_schedule. */
+function scheduleKey(date: string, time: string | null): string {
+  return `${date}T${time ?? '00:00:00'}`
+}
+
+// Beyond this many consecutive misses, stop acknowledging. Someone who has
+// missed four in a row has disengaged, and a warm "no problem" on every email
+// starts to read as tone-deaf rather than kind — that case belongs to the
+// adherence-withdrawal path, not to more cheerful copy.
+const MAX_ACK_STREAK = 4
+
+/**
+ * True when the session immediately before this one closed unused — i.e. the
+ * participant was emailed a link (attempts >= 1) and its window expired.
+ *
+ * Deliberately the *immediately* preceding row, so a miss is only acknowledged
+ * on the very next email: if they've completed anything since, that completion
+ * is the preceding row and nothing is said. Rows that were never emailed
+ * (system-blocked, or 'unlocked' first sessions the cron never sends) are
+ * excluded by the attempts check — apologizing for a link the participant never
+ * received would only confuse them.
+ */
+async function followsMissedSession(
+  db: SupabaseClient,
+  row: { id: string; participant_id: string; study_id: string; scheduled_date: string; send_time: string | null },
+): Promise<boolean> {
+  const { data, error } = await db
+    .from('participant_schedule')
+    .select('scheduled_date, send_time, status, attempts')
+    .eq('participant_id', row.participant_id)
+    .eq('study_id', row.study_id)
+    .neq('id', row.id)
+    .lte('scheduled_date', row.scheduled_date)
+    .order('scheduled_date', { ascending: false })
+    .order('send_time', { ascending: false })
+    .limit(MAX_ACK_STREAK + 4)
+
+  if (error) {
+    console.warn('missed-session lookup failed:', error.message)
+    return false
+  }
+
+  // The date-only filter above keeps same-day siblings scheduled later than
+  // this row (3-check-ins-a-day studies), so drop them by full key.
+  const thisKey = scheduleKey(row.scheduled_date, row.send_time)
+  const prior = (data ?? []).filter((r) => scheduleKey(r.scheduled_date, r.send_time) < thisKey)
+
+  if (prior.length === 0) return false
+  if (prior[0].status !== 'missed' || (prior[0].attempts ?? 0) < 1) return false
+
+  let streak = 0
+  for (const r of prior) {
+    if (r.status !== 'missed') break
+    streak++
+  }
+  return streak < MAX_ACK_STREAK
+}
 
 async function logMessage(
   db: SupabaseClient,
