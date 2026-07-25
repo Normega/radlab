@@ -78,11 +78,47 @@ begin
                  else 'FAIL — ' || n || ' link(s) exist; unreviewed content reached the link graph' end;
   return next;
 
-  -- ── informational: did the 2nd ingest see the index? ───────
-  select count(*) into upd from public.wiki_page_versions where kind='proposed' and action='update';
-  step := 'INDEX REUSE';
-  result := case when upd > 0 then 'GOOD — ' || upd || ' proposal(s) marked action=update: the model saw existing pages'
-                 else 'none yet — expected after a SECOND, related PDF. All-new on ingest #1 is correct.' end;
+  -- ── did the index actually reach the prompt? ───────────────
+  -- action=update is only meaningful if the target page predates the job
+  -- that proposed it. A model can label a page 'update' that never existed;
+  -- persistProposals then creates a fresh shell and the rows look identical
+  -- to a real update. Compare against page creation to tell them apart.
+  step := '=== INDEX REUSE ===';  result := '';  return next;
+  for r in
+    select p.slug, v.action, p.created_at < j.created_at as predates
+    from public.wiki_page_versions v
+    join public.wiki_pages p on p.id = v.page_id
+    left join public.ingest_jobs j on j.id = v.job_id
+    where v.kind = 'proposed' and j.id is not null
+    order by j.created_at, p.slug
+  loop
+    step := '  ' || r.slug;
+    result := 'action=' || r.action
+      || case when r.action = 'update' and r.predates then ' | GENUINE — page predates this job'
+              when r.action = 'update' then ' | SUSPECT — page created by this same job; the model claimed an update on a page that did not exist'
+              when r.predates then ' | STALE — page already existed but came back as new; the model ignored the index entry'
+              else ' | new page, first sighting' end;
+    return next;
+  end loop;
+
+  select count(*) into upd
+  from public.wiki_page_versions v
+  join public.wiki_pages p on p.id = v.page_id
+  join public.ingest_jobs j on j.id = v.job_id
+  where v.kind='proposed' and v.action='update' and p.created_at < j.created_at;
+
+  select count(*) into bad
+  from public.wiki_page_versions v
+  join public.wiki_pages p on p.id = v.page_id
+  join public.ingest_jobs j on j.id = v.job_id
+  where v.kind='proposed' and v.action='update' and p.created_at >= j.created_at;
+
+  step := 'VERDICT 4';
+  result := case
+    when upd > 0 and bad = 0 then 'PASS — ' || upd || ' genuine update(s): the wiki_pages index reached the prompt. This is what retiring the job-replay index was for.'
+    when upd > 0 then 'MIXED — ' || upd || ' genuine, ' || bad || ' suspect. Read the rows above.'
+    when bad > 0 then 'FAIL — ' || bad || ' update(s) target pages that did not exist. The index is not reaching the model.'
+    else 'none yet — expected until a SECOND, related PDF. All-new on ingest #1 is correct.' end;
   return next;
 end
 $fn$;
