@@ -48,6 +48,7 @@ const StillWater    = lazy(() => import('./games/StillWater/StillWater'))
 const FaceRead      = lazy(() => import('./games/FaceRead/FaceRead'))
 const Drift         = lazy(() => import('./games/Drift/Drift'))
 const Delve         = lazy(() => import('./games/Delve/Delve'))
+const Tune          = lazy(() => import('./games/Tune/Tune'))
 const FarmJoy       = lazy(() => import('./games/FarmJoy/FarmJoy'))
 const BreathBelt    = lazy(() => import('./games/BreathBelt/BreathBelt'))
 const BreathGuardian = lazy(() => import('./games/BreathGuardian/BreathGuardian'))
@@ -369,6 +370,12 @@ export default function App() {
           <Route path="/games/delve" element={
             <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome} needsRippleName={needsRippleName}>
               <Delve session={session} />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/games/tune" element={
+            <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome} needsRippleName={needsRippleName}>
+              <Tune session={session} />
             </ProtectedRoute>
           } />
 
