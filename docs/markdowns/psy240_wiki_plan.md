@@ -321,6 +321,139 @@ ever asks.
 
 ---
 
+## 2a. Roster, invitation, and enrollment
+
+Norm's spec (2026-07-25). This was a gap in the first draft of this plan — it was folded
+into the student-submission WP as if incidental. It isn't: no student can submit anything
+until they have an account, and nothing in the repo currently gets 300 students accounts.
+`invites` is service-role-only and seeded with exactly two staff rows.
+
+### 2a.1 The flow as specified
+
+1. Instructor uploads a roster CSV: **name, student ID, email**.
+2. It populates a roster table with a status column flowing
+   **`added` → `invited` → `enrolled`**, with two send actions: **bulk** (all not-yet-enrolled)
+   and **per-row** (for a student added manually after a mass invite).
+3. Students confirm by clicking a unique link in the email.
+4. **QR path** for the first class or two: QR → form → student enters their U of T email →
+   a match against the roster enrolls them.
+5. Enrolled students get a persistent login and can sign in any time by entering their email
+   and having it verified against the roster — using Lecture Lounge infrastructure.
+
+All of this is sound and mostly maps onto primitives that already exist. Four things need
+decisions or corrections before it's buildable.
+
+### 2a.2 The cross-project question — the one real decision
+
+Requirement 5 crosses a deliberate architectural boundary. **Lecture Lounge lives on the
+main radlab project** (`class_members.user_id` → main-project `auth.uid()`, verification via
+`verify_class_email()` + the `send-class-verification-email` Edge Function, export keyed on
+`class_members.utoronto_email`). **The Field Guide lives on radlab-academic**, a separate
+project with a separate auth realm, chosen specifically to keep course PII off the research
+platform. One roster has to serve both.
+
+| | Approach | Trade-off |
+|---|---|---|
+| **R1** | Roster on radlab-academic; Lecture Lounge keeps its current self-join + verify | Least work, no cross-project plumbing. **Does not deliver requirement 5** — the roster wouldn't gate Lecture Lounge. Two unrelated accounts per student. |
+| **R2** | Roster on the main radlab project so Lecture Lounge reads it directly | Delivers requirement 5 natively, but puts names + student IDs on the research platform — exactly what radlab-academic was created to avoid, and against §29's own governance boundary. **Not recommended.** |
+| **R3** | **Roster on radlab-academic as the single course-identity authority; Lecture Lounge verifies against it through a serverless function** (`api/roster-check.js`: email → match/no-match under the service role) | **Recommended.** One roster for 300 students instead of two to reconcile, PII stays partitioned, and it delivers requirement 5. Costs one function plus a call in the Lecture Lounge join flow. |
+
+Under R3, a roster match should be allowed to **auto-verify** the Lecture Lounge email: a
+roster hit plus a clicked magic link is strictly stronger evidence than today's
+self-asserted email plus magic link. That must still go through `verify_class_email()` or an
+equivalent SECURITY DEFINER path — the existing lockdown migration (`20260710_lecture_lounge_email_verify_lockdown.sql`)
+deliberately makes it structurally impossible for a client to set `utoronto_verified_at`, and
+that invariant should not be weakened for roster users.
+
+**R1 is the safe fallback if August compresses** — it's a subset of R3, so starting on R3
+and stopping short leaves nothing stranded.
+
+### 2a.3 Integration risk worth naming early
+
+Requirement 5 — "sign in by entering an email" — is **passwordless magic-link auth**, and
+Lecture Lounge today is *account-level*: students link a verified email to an **existing
+radlab account** created through the normal signup. Supabase supports this natively
+(`signInWithOtp`), so the auth mechanism is free, but a magic-link user arrives with no
+password, no `display_name`, and no profile history, and the main project's
+`ProtectedRoute` / `fetchRole` / Ripple-onboarding chain makes assumptions about new users
+(a public-tier user with no `ripples.name` gets routed into `/welcome` and the Ripple naming
+beat). **A PSY240 student signing in for a lecture activity must not land in Ripple
+onboarding.** This needs a deliberate decision — a course-scoped account flavour, or an
+onboarding bypass for roster-originated accounts — and it is the highest-risk unknown in
+this WP, because it touches the main project's auth path rather than adding to the academic
+partition.
+
+### 2a.4 Corrections to the flow
+
+- **The QR form must not flip status to `enrolled`.** Submitting a form only proves someone
+  typed an email. Under requirement 5 `enrolled` is the thing that grants a persistent
+  login, so it has to mean "the person who controls that mailbox clicked the link."
+  The form should *send* the magic link on a roster match; **clicking it enrolls.** This
+  also makes the QR path and the email path converge on one guarantee instead of two.
+- **The QR form is a public, unauthenticated endpoint that triggers email sends** — rate
+  limit per IP and per email address, and cap resends per roster row. Worst case today is
+  mild (a mistyped email sends a link to its real owner, who ignores it), but an unlimited
+  send endpoint is an abuse vector regardless.
+- **Unmatched form attempts need a destination.** The most common real failure is a student
+  entering a personal address. Log these to a small instructor-resolvable queue and show the
+  student "we couldn't match that — see the instructor," rather than failing silently.
+  **Do not** offer student-ID entry as a public fallback: it puts a durable institutional
+  identifier into an unauthenticated form for no real gain.
+- **More statuses than three.** `added → invited → enrolled` plus at minimum `bounced`
+  (otherwise a bad address is indistinguishable from an unmotivated student) and
+  `dropped`/`inactive` for drops — `enrollments.status` already models active/inactive, so
+  the roster should mirror it. Also store `invited_at`, `last_invited_at`, and
+  `invite_count` so a bulk send doesn't re-spam someone invited ten minutes earlier.
+
+### 2a.5 Email matching — broader is fine, normalize hard
+
+Accept `@mail.utoronto.ca`, `@utoronto.ca`, and `@alum.utoronto.ca`. ACORN rosters generally
+give the `mail.` form, but students routinely use the shorter alias for the same mailbox, so
+matching on the literal string will generate support email all term.
+
+Store a **normalized match key** on each roster row: lowercase, trimmed, and with any
+utoronto domain collapsed to a single canonical form, so `norman.farb@utoronto.ca` matches a
+roster entry of `norman.farb@mail.utoronto.ca`. Match on that key, never on raw input.
+
+### 2a.6 Practical blocker: bulk email
+
+Supabase's built-in auth email has a low hourly rate limit — a few messages per hour — which
+will not send 300 invites. **Custom SMTP is required**, not optional. The platform already
+uses **Resend** (the reminder cron and the Lecture Lounge verification function), so this is
+a configuration step on radlab-academic plus reusing an established sender identity, not new
+infrastructure. Worth confirming Resend's own send limits and domain verification for the
+academic project before the first bulk send, and doing a staged send (a handful, then the
+rest) rather than 300 at once.
+
+### 2a.7 Schema sketch
+
+PII placement follows the project's own invariant: **names and student IDs are PII, so the
+roster belongs in the `identity` schema**, not `public`. Student ID is the most sensitive
+field here — a durable institutional identifier — and is worth carrying only because grade
+upload eventually needs it.
+
+- `identity.roster` — `course_id`, `full_name`, `student_number`, `email`, `email_match_key`,
+  `status`, `invited_at`, `last_invited_at`, `invite_count`, `enrolled_at`, `person_id`
+  (null until enrolled), `notes`. Service-role writes only; staff read via a narrow
+  SECURITY DEFINER view or RPC scoped by `enrollments`, matching the `get_class_participation`
+  pattern rather than exposing the table.
+- `identity.roster_match_attempts` — the unmatched-QR-attempt queue: submitted email,
+  timestamp, IP hash, resolution.
+- Reuse the existing `public.invites` + `identity.handle_new_user()` trigger for the actual
+  enrollment write — the roster drives invite creation; it doesn't replace that mechanism.
+
+### 2a.8 Governance
+
+Roster data — names, student numbers, participation — is **course administration data under
+FIPPA, not research data**, the same boundary §29 already draws for Lecture Lounge
+participation. It must not enter any research analysis without a separate REB protocol.
+Separately: Lecture Lounge's design principle is anonymous-but-embodied participation
+(avatars, never names). Loading real names into a roster the classroom system can now query
+makes it newly possible to display them — **don't**. Names are for the instructor's roster
+view and grade export only.
+
+---
+
 ## 3. Student contribution flow (Phase 2)
 
 1. **Submit**: PDF + a *structured annotation* — why this paper, what it claims, what it
@@ -356,9 +489,18 @@ roster-gated, so no public-visibility UI is needed yet).
 | WP2 | Reader UI — lazy-loaded pages, `ErrorBoundary label="Academic"`, wikilink resolution, backlinks, `tsvector` search, ToC | early Aug |
 | WP3 | `reference` ingest mode + taxonomy seed (~65 pages + DSM chapter-DOI map) + side-by-side review UI | mid Aug |
 | WP4 | **Content sprint**: run the ~65-page scaffold, instructor review pass (~15 h) | mid–late Aug |
-| WP5 | Student submission + annotation form + review queue + participation export | late Aug (before term) |
-| WP6 | **Export mirror** (now in fall scope): published pages → markdown + YAML frontmatter → private git repo; one-way and generated, never edited in place. Quartz build optional/undeployed until the wiki goes public | late Aug, parallel to WP4 |
-| WP7 | Term 2 / opportunistic: flip the mirror public, `pgvector` related-pages, Lecture Lounge cross-links, peer-review beat | Sept+ |
+| **WP5** | **Roster & enrollment (§2a)** — CSV upload, `identity.roster` + status flow, bulk/per-row invite via Resend SMTP, magic-link enrollment, QR self-match form + unmatched queue, `api/roster-check.js`, Lecture Lounge integration (R3) | mid Aug — **ahead of WP6** |
+| WP6 | Student submission + annotation form + review queue + participation export | late Aug (before term) |
+| WP7 | **Export mirror**: published pages → markdown + YAML frontmatter → private git repo; one-way and generated, never edited in place. Quartz build optional/undeployed until the wiki goes public | late Aug, parallel to WP4 |
+| WP8 | Term 2 / opportunistic: flip the mirror public, `pgvector` related-pages, Lecture Lounge cross-links, peer-review beat | Sept+ |
+
+**WP5 is now the schedule's real risk, not WP6.** It gates student submission (no accounts,
+no submissions), it has a hard external deadline (the QR path has to work in week 1, and
+invites should land before term starts), and §2a.3 — the magic-link/Ripple-onboarding
+collision — is the only work in this plan that modifies the **main** project's auth path
+rather than adding to the academic partition. Everything else here is additive and reversible.
+Sequence WP5's Lecture Lounge integration early enough to discover that problem in August
+rather than in a lecture hall.
 
 **Critical path to the first day of class is WP4**, not the code. The build is ~4 work
 packages; the content review is ~15 instructor-hours and cannot be parallelized away.
@@ -387,3 +529,13 @@ Two scheduling notes given the "both at once" decision:
    gates WP3/WP4, needs no code — the next thing to produce.
 7. **New**: which DSM-5-TR chapter `x##` slugs map to which class (§2.1) — enumerate once
    against the live DSM Library ToC while authoring the taxonomy seed.
+8. **Roster: R1, R2, or R3?** (§2a.2) — R3 recommended. This is the decision that determines
+   whether one roster serves both systems or two rosters get reconciled by hand all term.
+9. **Roster: how do PSY240 students avoid Ripple onboarding?** (§2a.3) — course-scoped
+   account flavour vs. an onboarding bypass for roster-originated accounts. Needs a decision
+   before WP5 touches the main project's auth path.
+10. **Where does the roster CSV come from** — ACORN export, Quercus, or a hand-built sheet?
+    Determines the expected column names and how late adds/drops arrive (one-off re-upload
+    vs. periodic re-sync). Re-upload must be idempotent on `student_number` either way.
+11. **Resend limits + domain verification** for radlab-academic, before the first bulk send
+    (§2a.6).
