@@ -53,6 +53,14 @@ export default function GamesPage({ session, firstContactComplete }) {
             to="/games/delve"
           />
 
+          {/* Tune — auditory sense-foraging practice */}
+          <GameCard
+            title="Tune"
+            badge="Attention · Sense foraging"
+            desc="A world of sound waits in a soft haze. Rest your attention near a voice and it clarifies as the rest softens back."
+            to="/games/tune"
+          />
+
           {/* Contact card — same game, featured styling for first-timers */}
           {!loading && (
             <GameCard
