@@ -489,7 +489,7 @@ roster-gated, so no public-visibility UI is needed yet).
 | WP | Work | When |
 |---|---|---|
 | ~~WP0~~ | ~~Decisions~~ — **done 2026-07-25**, see the Decisions section above | ✔ |
-| WP1 | `wiki_pages`, `wiki_page_versions`, `wiki_links`, `disorders` schema + RLS (CLAUDE.md pattern), roster-gated read via `enrollments`; `dsm_chapter_doi` on `disorders`; retire the index-from-jobs aggregation in `api/ingest.js` | early Aug |
+| ~~WP1~~ | ~~Schema~~ — **written 2026-07-25**, `supabase/migrations/20260725_academic_wiki_schema.sql`; **awaiting apply to `radlab-academic`**. See the WP1 note below. | ▲ |
 | WP2 | Reader UI — lazy-loaded pages, `ErrorBoundary label="Academic"`, wikilink resolution, backlinks, `tsvector` search, ToC | early Aug |
 | WP3 | `reference` ingest mode + taxonomy seed (~65 pages + DSM chapter-DOI map) + side-by-side review UI | mid Aug |
 | WP4 | **Content sprint**: run the ~65-page scaffold, instructor review pass (~15 h) | mid–late Aug |
@@ -497,6 +497,36 @@ roster-gated, so no public-visibility UI is needed yet).
 | WP6 | Student submission + annotation form + review queue + participation export | late Aug (before term) |
 | WP7 | **Export mirror**: published pages → markdown + YAML frontmatter → private git repo; one-way and generated, never edited in place. Quartz build optional/undeployed until the wiki goes public | late Aug, parallel to WP4 |
 | WP8 | Term 2 / opportunistic: flip the mirror public, `pgvector` related-pages, Lecture Lounge cross-links, peer-review beat | Sept+ |
+
+### WP1 as built (2026-07-25)
+
+Migration: `supabase/migrations/20260725_academic_wiki_schema.sql`. Three decisions differ from
+the one-line spec above, each deliberate:
+
+1. **`dsm_chapters` lookup instead of a `disorders.dsm_chapter_doi` column.** The DOI is
+   per-chapter, so a column would store 123 copies of 20 strings — and since five slugs are
+   irregular (§7 above), each copy is a chance to "fix" one. `disorders.dsm_chapter` FKs to the
+   lookup; the `disorder_criteria_links` view assembles the proxied URL.
+2. **Proposals live in `wiki_page_versions`, not in `wiki_pages.content`.** The ingest never
+   writes page bodies. A page the model invents is created as a *shell* (slug/type/title/summary,
+   null content) so it appears in the index and resolves inbound wikilinks, while its body waits
+   as a `kind='proposed'` version. The invariant this buys: anything in `wiki_pages.content` has
+   been reviewed — which is what students read and what WP7 exports.
+3. **Link extraction is a database trigger, not function code.** Links derive from accepted
+   content; doing it in `api/ingest.js` would put unreviewed proposals into the graph and skew
+   the red-link count that the Tier B argument in taxonomy §5 depends on.
+
+Retiring the index-from-jobs aggregation needed (2) to be safe: the old index replayed
+`index_entries` from every done job, so it was a function of ingest *history* rather than of the
+wiki. Reading `wiki_pages` instead is only equivalent if something writes a row per page — hence
+the shells. A page edited or retired after ingest now stops advertising its stale summary, and
+pages created any other way become visible to the model.
+
+**Verified locally, not live.** Postgres 16 with stubbed `auth`/`storage`: applies clean on the
+init migration; versioning, both directions of link resolution, proposal isolation, criteria-URL
+assembly, `tsvector` search, and the student/staff/outsider RLS split all behave as intended, and
+authenticated writes are correctly refused. **Norm still has to run it** against `radlab-academic`
+— nothing here is live until then.
 
 **WP5 is now the schedule's real risk, not WP6.** It gates student submission (no accounts,
 no submissions), it has a hard external deadline (the QR path has to work in week 1, and

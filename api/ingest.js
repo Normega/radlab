@@ -161,17 +161,19 @@ export default async function handler(req, res) {
   // Respond now; run the ingest in the background. waitUntil keeps the
   // function alive (up to maxDuration) after the response is sent, so no
   // HTTP connection stays open for the minutes-long model call.
-  waitUntil(runIngest(service, job.id, { pdf_path, pdf_mode, course_id }))
+  waitUntil(runIngest(service, job.id, { pdf_path, pdf_mode, course_id, personId }))
   return res.status(202).json({ job_id: job.id, status: 'processing' })
 }
 
-async function runIngest(service, jobId, { pdf_path, pdf_mode, course_id }) {
+async function runIngest(service, jobId, { pdf_path, pdf_mode, course_id, personId }) {
   const markFailed = async (message, rawOutput) => {
     await service.from('ingest_jobs').update({
       status: 'failed',
       error: message.slice(0, 4000),
-      // Preserve raw model output for debugging malformed-JSON failures.
-      result_json: rawOutput ? { raw_output: rawOutput } : null,
+      // Preserve raw model output for debugging malformed-JSON failures. Only
+      // set when there is something to preserve — a persistence failure comes
+      // after the parsed result is already saved, and must not null it out.
+      ...(rawOutput ? { result_json: { raw_output: rawOutput } } : {}),
       completed_at: new Date().toISOString(),
     }).eq('id', jobId)
   }
@@ -182,23 +184,21 @@ async function runIngest(service, jobId, { pdf_path, pdf_mode, course_id }) {
     if (dlErr || !blob) return await markFailed(`PDF download failed: ${dlErr?.message || 'not found'}`)
     const pdfBuffer = Buffer.from(await blob.arrayBuffer())
 
-    // ── Wiki index: aggregate index_entries from this course's done jobs ──
-    // (latest entry per filename wins — enables the "update vs new" behavior
-    // across successive ingests during the test phase)
-    const { data: doneJobs } = await service
-      .from('ingest_jobs')
-      .select('result_json')
+    // ── Wiki index: read wiki_pages, the source of truth (WP1) ──
+    // Previously this replayed index_entries out of every done job's
+    // result_json. That made the index a function of ingest history rather
+    // than of the wiki, so a page edited or retired after ingest still
+    // advertised its original summary to the model, and pages created any
+    // other way were invisible. Rendered as `<slug>.md` because the system
+    // prompt's contract is filenames.
+    const { data: indexPages } = await service
+      .from('wiki_pages')
+      .select('slug, type, summary')
       .eq('course_id', course_id)
-      .eq('status', 'done')
-      .order('created_at', { ascending: true })
-    const indexByFile = new Map()
-    for (const row of doneJobs ?? []) {
-      for (const entry of row.result_json?.index_entries ?? []) {
-        if (entry?.filename) indexByFile.set(entry.filename, entry)
-      }
-    }
-    const wikiIndex = indexByFile.size
-      ? [...indexByFile.values()].map(e => `- ${e.filename} (${e.type}): ${e.one_line_summary}`).join('\n')
+      .neq('status', 'archived')
+      .order('slug', { ascending: true })
+    const wikiIndex = indexPages?.length
+      ? indexPages.map(p => `- ${p.slug}.md (${p.type}): ${p.summary ?? ''}`).join('\n')
       : '(the wiki is empty — every page will be new)'
 
     // ── Build the user content per mode (ported from build_user_prompt) ──
@@ -285,14 +285,121 @@ async function runIngest(service, jobId, { pdf_path, pdf_mode, course_id }) {
       }
     }
 
+    // Save the parsed result before persisting proposals: the tokens are
+    // already spent, so a downstream write failure must never lose the output.
     await service.from('ingest_jobs').update({
-      status: 'done',
       result_json: result,
       input_tokens: inputTokens,
       output_tokens: outputTokens,
+    }).eq('id', jobId)
+
+    const failures = await persistProposals(service, { jobId, courseId: course_id, personId, result })
+    if (failures.length) {
+      return await markFailed(
+        `Model output parsed, but ${failures.length} page(s) failed to persist: ${failures.join('; ')}`
+      )
+    }
+
+    await service.from('ingest_jobs').update({
+      status: 'done',
       completed_at: new Date().toISOString(),
     }).eq('id', jobId)
   } catch (err) {
     await markFailed(err?.message || 'Ingest failed')
   }
+}
+
+// Wikilink target for a model-supplied filename: 'Panic-Disorder.md' → 'panic-disorder'.
+const toSlug = (filename) => filename.trim().toLowerCase().replace(/\.md$/, '')
+
+// The model returns page bodies with YAML frontmatter but no separate title
+// field, so read it from the frontmatter. Falling back to a de-slugified title
+// is display-only — it never round-trips back into a slug (see taxonomy §4:
+// slugs are stored, never derived).
+function extractTitle(content, slug) {
+  const frontmatter = content?.match(/^---\r?\n([\s\S]*?)\r?\n---/)
+  const titleLine = frontmatter?.[1].match(/^title:\s*(.+)$/m)
+  const title = titleLine?.[1].trim().replace(/^["']|["']$/g, '')
+  if (title) return title
+  return slug.replace(/-/g, ' ').replace(/^\w/, c => c.toUpperCase())
+}
+
+// Write each returned page as a *proposed* version awaiting review.
+//
+// Nothing here touches wiki_pages.content. A page that doesn't exist yet is
+// created as a shell (slug/type/title/summary) so it appears in the index and
+// resolves inbound wikilinks; its body stays null until a reviewer promotes a
+// proposal. That keeps the invariant that published content — the thing
+// students read and the thing WP7 exports — has always been through review,
+// and it's why retiring the job-replay index above is safe: wiki_pages now
+// gets a row for every page the model produces.
+//
+// Returns an array of human-readable failures (empty on success).
+async function persistProposals(service, { jobId, courseId, personId, result }) {
+  const summaries = new Map(
+    (result?.index_entries ?? [])
+      .filter(e => e?.filename)
+      .map(e => [toSlug(e.filename), e.one_line_summary ?? null])
+  )
+
+  const failures = []
+  for (const page of result?.pages ?? []) {
+    if (!page?.filename || !page?.type) {
+      failures.push(`malformed page entry: ${JSON.stringify(page)?.slice(0, 120)}`)
+      continue
+    }
+    const slug = toSlug(page.filename)
+    const title = extractTitle(page.content, slug)
+    const summary = summaries.get(slug) ?? null
+
+    try {
+      const { data: existing, error: lookupErr } = await service
+        .from('wiki_pages')
+        .select('id')
+        .eq('course_id', courseId)
+        .eq('slug', slug)
+        .maybeSingle()
+      if (lookupErr) throw new Error(lookupErr.message)
+
+      let pageId = existing?.id
+      if (!pageId) {
+        const { data: created, error: insertErr } = await service
+          .from('wiki_pages')
+          .insert({
+            course_id: courseId,
+            slug,
+            type: page.type,
+            title,
+            summary,
+            status: 'proposed',
+            created_by: personId,
+            updated_by: personId,
+          })
+          .select('id')
+          .single()
+        if (insertErr) throw new Error(insertErr.message)
+        pageId = created.id
+      }
+      // An existing page's summary is deliberately left alone — overwriting it
+      // from an unreviewed proposal would change what students see.
+
+      const { error: versionErr } = await service
+        .from('wiki_page_versions')
+        .insert({
+          page_id: pageId,
+          kind: 'proposed',
+          action: page.action === 'update' ? 'update' : 'new',
+          title,
+          summary,
+          content: page.content ?? null,
+          job_id: jobId,
+          created_by: personId,
+          review_status: 'pending',
+        })
+      if (versionErr) throw new Error(versionErr.message)
+    } catch (err) {
+      failures.push(`${slug}: ${err.message}`)
+    }
+  }
+  return failures
 }
