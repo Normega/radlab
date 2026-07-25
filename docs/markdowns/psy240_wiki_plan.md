@@ -12,6 +12,24 @@
 
 ---
 
+## Decisions (Norm, 2026-07-25)
+
+1. **Architecture: option B + C together** — native Postgres-backed wiki in
+   `src/academic/fieldguide/`, *and* the markdown/git export mirror, both before the term.
+2. **Access: roster-gated for fall.** Only enrolled students/TAs/instructors read it.
+3. **Scaffold scope: ~65 anchor pages** (20 class overviews + 2–5 anchor disorders each).
+4. **U of T DSM access: confirmed** — see §2.1, the link-don't-copy path is available.
+
+**Consequence of pairing (1) with (2):** for the fall the export mirror is a **private
+archive**, not a public site — it targets a private git repo (and optionally an
+Access-gated or simply undeployed Quartz build), which buys the permanent markdown archive,
+the Obsidian round-trip, and off-platform backup from day one. Making it public later is a
+deploy decision, not a rebuild. Because the export is strictly one-way and generated,
+building it now costs no sync complexity; the thing to avoid is ever editing the exported
+files as a second master.
+
+---
+
 ## 0. What the wiki actually has to do
 
 The architecture question is not "which static site generator" — it's "which of these
@@ -188,11 +206,31 @@ re-aggregating `index_entries` out of every `done` job's `result_json` on every 
 2. **Free to use structurally.** Disorder *names*, the *chapter/class groupings*, and
    ICD/DSM code numbers are facts and classification, not creative expression. The
    taxonomy skeleton is buildable without touching protected text.
-3. **Link, don't copy.** U of T almost certainly licenses PsychiatryOnline / the DSM-5
-   Library. Every disorder page should carry a deep link to the **official criteria** for
-   authenticated students. That is the legitimate, zero-cost, zero-risk criteria path, and
-   it's better pedagogy than a paraphrase — students learn to read the actual manual.
-   *Action item: confirm U of T's PsychiatryOnline subscription and the stable link format.*
+3. **Link, don't copy — confirmed available (checked 2026-07-25).** U of T licenses the
+   PsychiatryOnline DSM Library through EZproxy: the rewritten host
+   `dsm-psychiatryonline-org.myaccess.library.utoronto.ca` is live, which only exists if the
+   subscription is configured in myaccess. And PsychiatryOnline exposes **stable
+   chapter-level DOIs**, so each disorder page can deep-link the official criteria rather
+   than paraphrasing them.
+
+   Pattern — DSM-5-TR is book DOI `10.1176/appi.books.9780890425787`, chapters are
+   `…9780890425787.x##_Chapter_Name`:
+
+   ```
+   public:   https://psychiatryonline.org/doi/10.1176/appi.books.9780890425787.x05_Anxiety_Disorders
+   proxied:  https://dsm-psychiatryonline-org.myaccess.library.utoronto.ca/doi/10.1176/appi.books.9780890425787.x05_Anxiety_Disorders
+   ```
+
+   Chapter slugs confirmed by search: `.Introduction`, `.x05_Anxiety_Disorders`,
+   `.x06_Obsessive_Compulsive_and_Related_Disorders`,
+   `.x09_Somatic_Symptom_and_Related_Disorders`. The `x##` numbers appear to run in
+   manual chapter order, but **the remaining ~16 were not verified** — enumerate them
+   once against the live DSM Library ToC and store the map alongside the taxonomy seed
+   (a `dsm_chapter_doi` column on `disorders`), rather than generating slugs by guesswork.
+
+   This is the legitimate, zero-cost, zero-risk criteria path, and it's better pedagogy
+   than a paraphrase — students learn to read the actual manual. It also means the wiki
+   never needs to carry criteria text at all.
 
 **Policy to state explicitly:** DSM-5-TR PDFs never enter the `ingest-pdfs` bucket and
 never enter an Anthropic call. The pipeline ingests open literature and open reference
@@ -203,7 +241,7 @@ works only.
 | Source | License | Use |
 |---|---|---|
 | **[Fundamentals of Psychological Disorders, 3rd ed.](https://opentext.wsu.edu/abnormal-psych/)** (Bridley & Daffin, WSU) — 15 modules, **updated through DSM-5-TR**, free PDF + [Pressbooks](https://wsu.pressbooks.pub/abnormal-psych/) + [LibreTexts](https://socialsci.libretexts.org/Bookshelves/Psychology/Fundamentals_of_Psychological_Disorders_(Bridley_and_Daffin)) | **CC BY-NC-SA 4.0** | **The textbook replacement and the scaffold's spine.** Remixable with attribution + share-alike; its module structure maps almost 1:1 onto a 12-week abnormal syllabus. |
-| **[ICD-11 CDDR](https://www.who.int/publications/i/item/9789240077263)** (WHO, 2024) — essential features, boundaries with normality *and with other disorders*, course / developmental / gender / culture features, for every category | WHO open licence — **verify the copyright page**: WHO's standard is CC BY-NC-SA 3.0 IGO, but one catalogue listing says BY-NC-ND 3.0 IGO. Confirm before remixing. | Criteria-level scaffolding that is legally quotable and ~harmonized with DSM-5-TR. Bonus pedagogy: DSM-vs-ICD comparison is a real topic in the field. |
+| **[ICD-11 CDDR](https://www.who.int/publications/i/item/9789240077263)** (WHO, 2024) — essential features, boundaries with normality *and with other disorders*, course / developmental / gender / culture features, for every category | WHO open licence, **exact variant still unverified** — see the note below | Criteria-level scaffolding that is legally quotable and ~harmonized with DSM-5-TR. Bonus pedagogy: DSM-vs-ICD comparison is a real topic in the field. |
 | **ICD-11 MMS browser / coding tool** | free to access | official category names, codes, hierarchy |
 | **[NIMH health topics + statistics](https://www.nimh.nih.gov/health)** | **US public domain** ([policy](https://www.nimh.nih.gov/health/publications/reprinting-and-reusing-nimh-publications)) — text copyable without permission, **images excluded**, cite NIMH | prevalence, treatment overviews, plain-language sections. The only tier-1 source you can copy outright. |
 | **MedlinePlus, NIH, CDC, SAMHSA** | public domain | epidemiology, public-health framing, service-use data |
@@ -212,6 +250,22 @@ works only.
 | **APA psychiatry.org DSM-5-TR fact sheets; APA free "Online Assessment Measures"** | copyrighted, free to read; the measures are free for clinical/research use | link + paraphrase; the cross-cutting measures and WHODAS are genuinely useful class material |
 | **Open-access primary literature** (PMC, PLOS, eLife, Nature Communications) | mostly CC BY | etiology and treatment evidence — the ingest pipeline's home turf |
 | **Cochrane reviews + plain-language summaries; NICE guidelines; CANMAT / CPA Canadian guidelines** | free to read | treatment evidence base, effect sizes, Canadian clinical relevance |
+
+**CDDR licence — attempted 2026-07-25, not resolved.** `who.int` and `iris.who.int` are
+blocked by this environment's network policy (agent-proxy `connect_rejected`), and every
+third-party mirror of the PDF also refused fetching, so the copyright page could not be read
+directly. Available evidence is conflicting: a search-engine reading of the WHO IRIS record
+reports **CC BY-NC-SA 3.0 IGO** (which is WHO's standard licence for publications), while a
+scraped catalogue listing says BY-NC-**ND** 3.0 IGO — that latter source is a low-quality
+book-scrape site and I'd weight it lightly. **30-second check for Norm:** open the CDDR PDF,
+page ~2, read the "Some rights reserved" block.
+
+**This does not gate the build.** Under *either* variant the CDDR may be read, cited, and
+**paraphrased** — paraphrase creates new expression, and facts and ideas aren't protected in
+the first place. Only verbatim remixing differs between SA and ND. Since the pipeline's
+standing invariant is already "paraphrase, never reproduce verbatim," the distinction only
+matters if we later decide to quote CDDR passages directly. Resolve it before doing that;
+don't block WP3 on it.
 
 ### 2.3 Method: a `reference` mode on the pipeline you already have
 
@@ -292,29 +346,44 @@ in parallel and never twice for the same paper.
 
 ## 4. Sequencing
 
+Revised against the 2026-07-25 decisions (the exporter moves into fall scope; access is
+roster-gated, so no public-visibility UI is needed yet).
+
 | WP | Work | When |
 |---|---|---|
-| **WP0** | **Decisions**: architecture (A–E), public vs roster-gated, scaffold scope (~65 pages?) | now |
-| WP1 | `wiki_pages`, `wiki_page_versions`, `wiki_links`, `disorders` schema + RLS (CLAUDE.md pattern); retire the index-from-jobs aggregation | early Aug |
+| ~~WP0~~ | ~~Decisions~~ — **done 2026-07-25**, see the Decisions section above | ✔ |
+| WP1 | `wiki_pages`, `wiki_page_versions`, `wiki_links`, `disorders` schema + RLS (CLAUDE.md pattern), roster-gated read via `enrollments`; `dsm_chapter_doi` on `disorders`; retire the index-from-jobs aggregation in `api/ingest.js` | early Aug |
 | WP2 | Reader UI — lazy-loaded pages, `ErrorBoundary label="Academic"`, wikilink resolution, backlinks, `tsvector` search, ToC | early Aug |
-| WP3 | `reference` ingest mode + taxonomy seed + side-by-side review UI | mid Aug |
-| WP4 | **Content sprint**: run the ~65-page scaffold, instructor review pass | mid–late Aug |
+| WP3 | `reference` ingest mode + taxonomy seed (~65 pages + DSM chapter-DOI map) + side-by-side review UI | mid Aug |
+| WP4 | **Content sprint**: run the ~65-page scaffold, instructor review pass (~15 h) | mid–late Aug |
 | WP5 | Student submission + annotation form + review queue + participation export | late Aug (before term) |
-| WP6 | Optional/term 2: markdown+git export mirror (option C), `pgvector` related-pages, Lecture Lounge cross-links, peer review | Sept+ |
+| WP6 | **Export mirror** (now in fall scope): published pages → markdown + YAML frontmatter → private git repo; one-way and generated, never edited in place. Quartz build optional/undeployed until the wiki goes public | late Aug, parallel to WP4 |
+| WP7 | Term 2 / opportunistic: flip the mirror public, `pgvector` related-pages, Lecture Lounge cross-links, peer-review beat | Sept+ |
 
-**Critical path to the first day of class is WP4**, not the code. The build is ~3 work
-packages; the content review is ~15 instructor-hours and cannot be parallelized away. Start
-the taxonomy decision (WP0, item 3) before the code is finished.
+**Critical path to the first day of class is WP4**, not the code. The build is ~4 work
+packages; the content review is ~15 instructor-hours and cannot be parallelized away.
+
+Two scheduling notes given the "both at once" decision:
+
+- **WP6 is the one piece that can slip without hurting the course.** It's backup and
+  archive, not student-facing, so if August compresses, it yields to WP4/WP5 — the term can
+  start without it. Sequencing it parallel to the content sprint (rather than before it) is
+  deliberate for that reason.
+- **Start the taxonomy list now**, ahead of WP1. It's an instructor decision, it gates WP3
+  and WP4, and it doesn't depend on any code existing.
 
 ---
 
-## 5. Open questions for Norm
+## 5. Open questions
 
-1. **Architecture** — B (native, recommended), A (stay on Quartz), C (B then export), D?
-2. **Public or roster-gated?** Gated is safer with student work and unreviewed content;
-   public is a much better artifact and a recruiting tool for the course. C makes this a
-   per-page toggle rather than a one-way decision.
-3. **Scaffold scope** — ~65 anchor pages, or wider?
-4. **Does U of T license PsychiatryOnline / DSM-5 Library?** Determines whether the
-   "link to official criteria" path in §2.1 is available. Worth confirming early.
-5. **Verify the CDDR licence** (BY-NC-SA vs BY-NC-ND IGO) before any remixing of its text.
+1. ~~Architecture~~ — **resolved**: native + export mirror, both before the term.
+2. ~~Public or roster-gated~~ — **resolved**: roster-gated for fall.
+3. ~~Scaffold scope~~ — **resolved**: ~65 anchor pages.
+4. ~~Does U of T license PsychiatryOnline / DSM-5 Library?~~ — **resolved 2026-07-25: yes**,
+   via myaccess EZproxy, with stable chapter-level DOIs (§2.1).
+5. **CDDR licence variant** — still open; blocked from verification in-session (§2.2 note).
+   Doesn't gate WP1–WP4; resolve before quoting CDDR text verbatim.
+6. **New, from the WP0 decisions**: the ~65-page taxonomy list itself. Instructor decision,
+   gates WP3/WP4, needs no code — the next thing to produce.
+7. **New**: which DSM-5-TR chapter `x##` slugs map to which class (§2.1) — enumerate once
+   against the live DSM Library ToC while authoring the taxonomy seed.
