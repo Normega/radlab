@@ -16,6 +16,7 @@ export default function ReviewQueue() {
   const { courseClient, session, staffEnrollments } = useOutletContext()
   const [courseId, setCourseId] = useState(staffEnrollments[0]?.course_id)
   const [rows, setRows] = useState(null)   // null = loading
+  const [shelf, setShelf] = useState([])   // pages that already carry accepted content
   const [counts, setCounts] = useState(null)
   const [openId, setOpenId] = useState(null)
   const [edits, setEdits] = useState({})   // version_id -> edited body
@@ -26,16 +27,39 @@ export default function ReviewQueue() {
 
   const load = useCallback(async () => {
     if (!courseId) return
-    const [{ data: queue }, { count: published }, { count: pages }] = await Promise.all([
+    const [{ data: queue }, { data: shelfRows }, { count: pages }] = await Promise.all([
       courseClient.from('review_queue').select('*').eq('course_id', courseId).order('proposed_at'),
-      courseClient.from('wiki_pages').select('id', { count: 'exact', head: true })
-        .eq('course_id', courseId).eq('status', 'published'),
+      courseClient.from('wiki_page_shelf').select('*').eq('course_id', courseId).order('slug'),
       courseClient.from('wiki_pages').select('id', { count: 'exact', head: true })
         .eq('course_id', courseId),
     ])
     setRows(queue ?? [])
-    setCounts({ published: published ?? 0, pages: pages ?? 0 })
+    setShelf(shelfRows ?? [])
+    setCounts({
+      published: (shelfRows ?? []).filter(p => p.status === 'published').length,
+      pages: pages ?? 0,
+    })
   }, [courseClient, courseId])
+
+  // Unpublish is deliberately its own action, not a toggle: publishing exposes
+  // a page to every enrolled student, unpublishing retracts something they may
+  // already have read, and a toggle implies those are symmetric. The reason is
+  // mandatory — a page pulled for a typo and one pulled because a student
+  // flagged a factual error are indistinguishable three weeks later otherwise.
+  const unpublish = async (page) => {
+    const reason = window.prompt(
+      `Unpublish "${page.slug}"?\n\nIt returns to draft — content and review history are kept, only student visibility is revoked.\n\nWhy are you pulling it? (recorded with your name)`
+    )
+    if (reason == null) return
+    if (!reason.trim()) return setNotice('Unpublish cancelled — a reason is required.')
+    const { data, error } = await courseClient.rpc('unpublish_page', {
+      p_page_id: page.page_id,
+      p_reason: reason,
+    })
+    if (error) return setNotice(`${page.slug}: ${error.message}`)
+    setNotice(`${data.slug} unpublished → draft · "${data.reason}"`)
+    load()
+  }
 
   useEffect(() => { load() }, [load])
 
@@ -204,6 +228,42 @@ export default function ReviewQueue() {
           </div>
         )
       }))}
+
+      {shelf.length > 0 && (
+        <>
+          <h2 style={S.h2}>Pages</h2>
+          <p style={S.sub}>
+            Reviewed pages. <b>Published</b> is visible to every enrolled student; <b>draft</b> is
+            staff-only. There is no bulk publish — each page is published by the person who
+            reviewed it, so <code>reviewed_by</code> means something.
+          </p>
+          {shelf.map(page => (
+            <div key={page.page_id} style={S.card}>
+              <div style={{ ...S.cardHead, cursor: 'default' }}>
+                <span style={{ textAlign: 'left', minWidth: 0 }}>
+                  <span style={S.slug}>{page.slug}</span>
+                  <span style={S.metaLine}>
+                    {page.type} · v{page.current_version} · {page.body_length} chars ·{' '}
+                    {page.outbound_links} out / {page.backlinks} in
+                    {page.pending_proposals > 0 && (
+                      <> · <b>{page.pending_proposals} proposal(s) still pending</b></>
+                    )}
+                    {page.last_unpublish_reason && (
+                      <><br /><span style={S.dim}>last pulled: “{page.last_unpublish_reason}”</span></>
+                    )}
+                  </span>
+                </span>
+                <span style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
+                  <Badge kind={page.status === 'published' ? 'update' : 'first'}>{page.status}</Badge>
+                  {page.status === 'published' && (
+                    <button style={S.danger} onClick={() => unpublish(page)}>Unpublish</button>
+                  )}
+                </span>
+              </div>
+            </div>
+          ))}
+        </>
+      )}
     </Page>
   )
 }
@@ -292,6 +352,8 @@ const S = {
   linkBtn: { fontSize: 13, color: 'var(--pk)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0 },
   input: { fontSize: 15, padding: '8px 10px', borderRadius: 8, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx)' },
   notice: { ...{ fontSize: 14, lineHeight: 1.5 }, color: 'var(--pk)', marginTop: 14, fontFamily: MONO, fontSize: 13 },
+
+  h2: { fontFamily: SERIF, fontSize: 20, color: 'var(--tx)', margin: '30px 0 4px' },
 
   statRow: { display: 'flex', gap: 10, marginTop: 18, flexWrap: 'wrap' },
   stat: { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 12, padding: '12px 18px', display: 'flex', flexDirection: 'column', minWidth: 120 },
