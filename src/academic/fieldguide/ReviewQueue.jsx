@@ -248,6 +248,14 @@ export default function ReviewQueue() {
                     {page.pending_proposals > 0 && (
                       <> · <b>{page.pending_proposals} proposal(s) still pending</b></>
                     )}
+                    {/* Self-declared gaps. A disorder page built from one paper
+                        will usually have several — that's the wiki saying what
+                        to read next, not a defect. */}
+                    {page.gap_count > 0 && (
+                      <><br /><span style={{ color: 'var(--pk)' }}>
+                        needs: {page.needs.join(', ')}
+                      </span></>
+                    )}
                     {page.last_unpublish_reason && (
                       <><br /><span style={S.dim}>last pulled: “{page.last_unpublish_reason}”</span></>
                     )}

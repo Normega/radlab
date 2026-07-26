@@ -44,9 +44,22 @@ export const maxDuration = 300
 const MODEL = 'claude-opus-4-8'
 const BUCKET = 'ingest-pdfs'
 
-// Ported verbatim from the prototype's psy240_schema.py — the compact PSY240
-// ingest schema embedded as a system prompt. Do not redesign this schema in
-// code changes; it is the single source of truth for the wiki page format.
+// The compact PSY240 ingest schema, embedded as a system prompt. Originally a
+// verbatim port of the prototype's psy240_schema.py; still the single source of
+// truth for the wiki page format, so don't drift it casually.
+//
+// Amended once, deliberately, 2026-07-26 (Norm's call after reviewing the first
+// 26 proposals): `disorder` pages now require a fixed section skeleton and must
+// declare their own gaps. Before this, a disorder page inherited whatever shape
+// the source paper had — both pages produced from psychotherapy-efficacy papers
+// came out entirely treatment-shaped, with no diagnosis or etiology and nothing
+// indicating either was missing. A page that silently omits etiology looks the
+// same as one where etiology is genuinely unsettled.
+//
+// The `needs:` frontmatter list is the machine-readable half: a trigger parses
+// it into wiki_pages.needs, which turns "what is this wiki missing" into a
+// query — the WP4 ingest worklist and the student assignment list are the same
+// data. Gaps are expected on a page built from one paper; they are the point.
 const SYSTEM_PROMPT = `You are maintaining a course wiki for an undergraduate abnormal psychology course, anchored on the DSM-5 and built collaboratively from student-submitted peer-reviewed papers.
 
 You will be given:
@@ -56,7 +69,18 @@ You will be given:
 Your job: read the paper, then output ALL new or updated wiki pages needed, as a single JSON object. Do not use any tools. Do not ask questions. Return only JSON.
 
 PAGE TYPES:
-- disorder: a DSM-5 diagnostic category. Fields: title, dsm5_criteria_summary (paraphrased, never verbatim DSM-5 text), prevalence, related_disorders, key_studies
+- disorder: a DSM-5 diagnostic category. Frontmatter fields: title, prevalence, related_disorders, key_studies, needs.
+  The markdown body MUST contain these H2 sections, in this order, ALWAYS, even when the paper supports none of them:
+    ## Presentation      what it looks like clinically; a brief vignette if the source supports one
+    ## Diagnosis         criteria STRUCTURE paraphrased (never DSM-5 wording), differential diagnosis, specifiers
+    ## Epidemiology      prevalence, onset, course, sex/gender, culture
+    ## Etiology          genetic/neurobiological, cognitive-behavioural, developmental, social determinants — say which are better evidenced than others
+    ## Treatment         approaches, effect sizes, guideline recommendations, and what does NOT work
+    ## Contested         validity of the category, competing models, culture-bound presentations, medicalization critiques
+  One source paper will almost never fill all six. For every section the source does not support, put exactly one line under that heading:
+    > **Needs research:** <specifically what is missing, e.g. "genetic and neurobiological findings; this source only covers psychosocial treatment">
+  and list that section's lowercase name in the frontmatter "needs" array, e.g. needs: [diagnosis, etiology, epidemiology].
+  Do NOT invent content to fill a section, and do NOT drop a section to avoid an empty one. A visible gap is the wiki telling the course what to read next; a missing heading is indistinguishable from a settled question.
 - study: one page per paper. Fields: title, authors, year, journal, doi, design, sample, key_findings, limitations, disorders_touched, concepts_touched
 - concept: a theoretical or empirical construct. Fields: title, definition, related_concepts, key_studies
 - treatment: an intervention or treatment approach. Fields: title, target_disorders, mechanism, evidence_base, limitations
