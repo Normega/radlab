@@ -263,14 +263,24 @@ const MAX_ACK_STREAK = 4
 
 /**
  * True when the session immediately before this one closed unused — i.e. the
- * participant was emailed a link (attempts >= 1) and its window expired.
+ * participant was emailed a link (attempts >= 1), never completed it, and its
+ * window has since closed.
+ *
+ * A miss is defined by the CLOSED WINDOW, not by status === 'missed'. The
+ * 'missed' label is only applied by check_schedule step 0b, which considers
+ * rows with scheduled_date < today — so in a several-times-a-day study an
+ * intra-day miss keeps a non-terminal 'link_sent' status until the next day.
+ * Keying off the label meant the 20:00 email never acknowledged a missed 14:00
+ * (observed live 2026-07-25), which is exactly the case this feature exists
+ * for. A dead link is the reliable signal in both cases.
  *
  * Deliberately the *immediately* preceding row, so a miss is only acknowledged
  * on the very next email: if they've completed anything since, that completion
  * is the preceding row and nothing is said. Rows that were never emailed
  * (system-blocked, or 'unlocked' first sessions the cron never sends) are
  * excluded by the attempts check — apologizing for a link the participant never
- * received would only confuse them.
+ * received would only confuse them. A row whose link is still live isn't a miss
+ * yet: the participant can still do it, and the reminder pass covers that.
  */
 async function followsMissedSession(
   db: SupabaseClient,
@@ -278,7 +288,7 @@ async function followsMissedSession(
 ): Promise<boolean> {
   const { data, error } = await db
     .from('participant_schedule')
-    .select('scheduled_date, send_time, status, attempts')
+    .select('id, scheduled_date, send_time, status, attempts')
     .eq('participant_id', row.participant_id)
     .eq('study_id', row.study_id)
     .neq('id', row.id)
@@ -296,13 +306,35 @@ async function followsMissedSession(
   // this row (3-check-ins-a-day studies), so drop them by full key.
   const thisKey = scheduleKey(row.scheduled_date, row.send_time)
   const prior = (data ?? []).filter((r) => scheduleKey(r.scheduled_date, r.send_time) < thisKey)
-
   if (prior.length === 0) return false
-  if (prior[0].status !== 'missed' || (prior[0].attempts ?? 0) < 1) return false
+
+  // Which of those rows still have an openable link? Same liveness test as the
+  // link reuse check above — status 'active' and not past expires_at.
+  const { data: priorLinks, error: linkErr } = await db
+    .from('participant_links')
+    .select('schedule_id, status, expires_at')
+    .in('schedule_id', prior.map((r) => r.id))
+
+  if (linkErr) {
+    console.warn('missed-session link lookup failed:', linkErr.message)
+    return false
+  }
+
+  const nowMs = Date.now()
+  const stillOpen = new Set(
+    (priorLinks ?? [])
+      .filter((l) => l.status === 'active' && (!l.expires_at || new Date(l.expires_at).getTime() > nowMs))
+      .map((l) => l.schedule_id),
+  )
+
+  const isMiss = (r: { id: string; status: string; attempts: number | null }) =>
+    r.status !== 'completed' && (r.attempts ?? 0) >= 1 && !stillOpen.has(r.id)
+
+  if (!isMiss(prior[0])) return false
 
   let streak = 0
   for (const r of prior) {
-    if (r.status !== 'missed') break
+    if (!isMiss(r)) break
     streak++
   }
   return streak < MAX_ACK_STREAK
