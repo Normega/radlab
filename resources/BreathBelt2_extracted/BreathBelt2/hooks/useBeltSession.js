@@ -1,0 +1,95 @@
+import { useRef, useCallback } from 'react';
+import { supabase } from '../../../lib/supabase';
+
+export function useBeltSession(userId) {
+  const sessionIdRef = useRef(null);
+  const trialsRef    = useRef([]);
+
+  const startSession = useCallback(async (studyId = null) => {
+    const { data, error } = await supabase
+      .from('game_sessions')
+      .insert({
+        user_id:    userId,
+        game_name:  'breath_belt',
+        study_id:   studyId,
+        is_test:    false,
+        started_at: new Date().toISOString(),
+      })
+      .select('id')
+      .single();
+    if (error) { console.error('belt session start:', error); return null; }
+    sessionIdRef.current = data.id;
+    trialsRef.current    = [];
+    return data.id;
+  }, [userId]);
+
+  const recordTrial = useCallback((trialRow) => {
+    trialsRef.current.push(trialRow);
+  }, []);
+
+  const endSession = useCallback(async ({
+    calibState,
+    questState,
+    rawAccelRows,
+    rawHRRows,
+    sessionNumber,
+    baselinePeriodMs,
+    postBaselinePeriodMs,
+  }) => {
+    const sessionId = sessionIdRef.current;
+    if (!sessionId) return;
+
+    // 1. Upload raw data to Storage
+    const csv = `=== ACCEL ===\n${buildAccelCsv(rawAccelRows)}\n\n=== HR ===\n${buildHRCsv(rawHRRows)}`;
+    const storagePath = `${userId}/${sessionId}_raw.csv`;
+    const { error: storageError } = await supabase.storage
+      .from('belt-sessions')
+      .upload(storagePath, new Blob([csv], { type: 'text/csv' }), { upsert: true });
+    if (storageError) console.error('belt storage upload:', storageError);
+
+    // 2. Insert belt_sessions row
+    const { error: sessError } = await supabase.from('belt_sessions').insert({
+      session_id:            sessionId,
+      user_id:               userId,
+      calib_state:           calibState,
+      storage_path:          storagePath,
+      quest_state:           questState ?? null,
+      session_number:        sessionNumber ?? 1,
+      baseline_period_ms:    baselinePeriodMs ?? null,
+      post_baseline_period_ms: postBaselinePeriodMs ?? null,
+    });
+    if (sessError) console.error('belt_sessions insert:', sessError);
+
+    // 3. Insert belt_trials rows
+    if (trialsRef.current.length) {
+      const { error: trialError } = await supabase.from('belt_trials').insert(
+        trialsRef.current.map(t => ({ ...t, session_id: sessionId, user_id: userId }))
+      );
+      if (trialError) console.error('belt_trials insert:', trialError);
+    }
+
+    // 4. Close game_sessions row
+    await supabase
+      .from('game_sessions')
+      .update({ ended_at: new Date().toISOString() })
+      .eq('id', sessionId);
+  }, [userId]);
+
+  return { sessionIdRef, startSession, recordTrial, endSession };
+}
+
+function buildAccelCsv(rows) {
+  const header = 'phase,trial,packet_timestamp,sample_index,x,y,z';
+  const body   = rows.map(r =>
+    [r.phase, r.trial, r.packetTimestamp, r.sampleIndex, r.x, r.y, r.z].join(',')
+  ).join('\n');
+  return `${header}\n${body}`;
+}
+
+function buildHRCsv(rows) {
+  const header = 'phase,trial,timestamp,heart_rate';
+  const body   = rows.map(r =>
+    [r.phase, r.trial, r.timestamp, r.heartRate].join(',')
+  ).join('\n');
+  return `${header}\n${body}`;
+}

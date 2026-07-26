@@ -1,0 +1,149 @@
+
+<style>
+.track{margin-bottom:2.5rem}
+.track-label{font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:1rem;text-transform:uppercase;letter-spacing:0.07em}
+.track-row{position:relative;display:flex;justify-content:space-between;align-items:center}
+.track-line{position:absolute;top:50%;left:36px;right:36px;height:2px;background:var(--color-border-tertiary);transform:translateY(-50%);pointer-events:none}
+.face-btn{background:none;border:none;padding:0;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;position:relative;z-index:1}
+.face-btn svg{display:block;border-radius:50%;outline:3px solid transparent;outline-offset:2px;transition:outline-color 0.12s}
+.face-btn.sel svg{outline-color:#f068a4}
+.face-num{font-size:11px;color:var(--color-text-tertiary);font-family:var(--font-mono);transition:color 0.12s}
+.face-btn.sel .face-num{color:#f068a4}
+.anchors{display:flex;justify-content:space-between;margin-top:4px}
+.anchors span{font-size:12px;color:var(--color-text-tertiary)}
+.word-display{text-align:center;margin-top:8px;font-size:13px;color:#f068a4;min-height:20px}
+</style>
+
+<div style="padding:1.5rem 0.5rem">
+  <div class="track">
+    <div class="track-label">Arousal — how activated do you feel right now?</div>
+    <div class="track-row" id="ar-row"><div class="track-line"></div></div>
+    <div class="anchors"><span>very still</span><span>very activated</span></div>
+    <div class="word-display" id="ar-word"></div>
+  </div>
+  <div class="track">
+    <div class="track-label">Confidence — how certain are you about your answer?</div>
+    <div class="track-row" id="co-row"><div class="track-line"></div></div>
+    <div class="anchors"><span>not at all sure</span><span>completely certain</span></div>
+    <div class="word-display" id="co-word"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+const NS='http://www.w3.org/2000/svg';
+function h2r(h){const n=parseInt(h.replace('#',''),16);return[(n>>16)&255,(n>>8)&255,n&255];}
+function r2h(r,g,b){return'#'+[r,g,b].map(v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0')).join('');}
+function lt(h,a){const[r,g,b]=h2r(h);return r2h(r+a,g+a,b+a);}
+const dk=(h,a)=>lt(h,-a);
+const mx=(a,b,t)=>{const[r1,g1,b1]=h2r(a),[r2,g2,b2]=h2r(b);return r2h(r1+(r2-r1)*t,g1+(g2-g1)*t,b1+(b2-b1)*t);};
+const clamp=(v,lo=0,hi=1)=>Math.max(lo,Math.min(hi,v));
+const ep=v=>Math.max(0,v);const en=v=>Math.max(0,-v);
+const ff=v=>Number(v).toFixed(1);
+
+const SK='#FDBCB4',IR='#4A90D9';
+const SKD=dk(SK,18),SKL=lt(SK,18),BL=mx(SK,'#FF8FAB',0.45),BRC=dk(SK,36),MC=dk(mx(SK,'#C06070',0.5),18),IRD=dk(IR,30),IRL=lt(IR,35);
+
+function geom({au1=0,au2=0,au4=0,au5=0,au12=0,au15=0,au20=0,au43=0,sb2=0,it=1,pupilTier=1,blush=0.28}){
+  const ET=83,H=16,lc=clamp(8-au5*6+au43*14,1.5,28),ly=ET+lc,lcy=ly+4,ll=Math.max(0,(ET+8)-ly);
+  const PT=[[5.5,5.5,5.5],[5.5,5.5,7.5],[5.5,7.5,9.5]],iz=Math.min(2,Math.max(0,Math.round(it*3)-1));
+  return{lO:[60,82-au2*8+au4*6-sb2*20-ll*0.8],lC:[76,77-au1*5-au2*4+au4*6-sb2*16-ll*0.8],lI:[90,81-au1*10+au4*6-sb2*18-ll*0.8],
+    rI:[110,81-au1*10+au4*6-sb2*18-ll*0.8],rC:[124,77-au1*5-au2*4+au4*6-sb2*16-ll*0.8],rO:[140,82-au2*8+au4*6-sb2*20-ll*0.8],
+    cLX:82-au20*10,cRX:118+au20*10,cY:145-au12*12+au15*6+au20*it*6,mCY:149+au12*12-au15*8-au20*it*4,
+    ly,lcy,pR:PT[Math.min(2,Math.max(0,pupilTier))][iz],bl:clamp(blush)};
+}
+
+function calcPos(va,ar,ex=1.5){
+  const sb2v=en(va)*ep(ar)*0.55,it=1;
+  const raw={au1:clamp(en(va)*(1-ep(ar)*1.5)+sb2v)*it,au2:clamp(ep(va)*(0.3+ep(ar)*0.7)+sb2v*0.7)*it,
+    au4:clamp(en(va)*0.35+en(va)*ep(ar)*0.75)*it,au5:clamp(ep(ar)*0.85)*(0.4+0.6*it),
+    au12:clamp(ep(va))*it,au15:clamp(en(va)*en(ar)*1.4)*it,au20:clamp(en(va)*ep(ar)*1.4)*it,
+    au27:clamp(en(va)*ep(ar)*1.3)*it,au43:clamp((0.3-ar)/1.3,0,1)*(0.4+0.6*it),sb2:sb2v};
+  const r={};Object.keys(raw).forEach(k=>r[k]=Math.min(1,raw[k]*ex));
+  return{...r,mouthType:'line',pupilTier:1,blush:clamp(0.28+ep(va)*0.22),it};
+}
+
+function mk(tag,attrs,parent){
+  const e=document.createElementNS(NS,tag);
+  for(const[k,v]of Object.entries(attrs))e.setAttribute(k,String(v));
+  if(parent)parent.appendChild(e);return e;
+}
+
+function clearSVG(s){while(s.firstChild)s.removeChild(s.firstChild);}
+
+function renderFace(svg,pos){
+  clearSVG(svg);
+  const g=geom(pos),{au27=0,au12=0,mouthType='line'}=pos;
+  const id='f'+Math.random().toString(36).slice(2,7);
+  const defs=mk('defs',{},svg);
+  function rg(id,cx,cy,r,stops){const g=mk('radialGradient',{id,cx,cy,r},defs);stops.forEach(([o,c])=>mk('stop',{offset:o,'stop-color':c},g));}
+  rg(`${id}h`,'38%','30%','68%',[['0%',SKL],['60%',SK],['100%',SKD]]);
+  rg(`${id}i`,'35%','30%','65%',[['0%',IRL],['55%',IR],['100%',IRD]]);
+  rg(`${id}s`,'40%','30%','60%',[['0%','#fff'],['100%','#F0EBE8']]);
+  const bf=mk('filter',{id:`${id}b`},defs);mk('feGaussianBlur',{stdDeviation:'1.2'},bf);
+  mk('ellipse',{cx:'100',cy:'105',rx:'64',ry:'68',fill:`url(#${id}h)`},svg);
+  [[76,76],[124,124]].forEach(([cx,cp])=>{
+    mk('circle',{cx,cy:'101',r:'18',fill:SKD,opacity:'0.13'},svg);
+    mk('circle',{cx,cy:'100',r:'17',fill:`url(#${id}s)`},svg);
+    mk('circle',{cx,cy:'101',r:'12',fill:`url(#${id}i)`},svg);
+    mk('circle',{cx,cy:'101',r:ff(g.pR),fill:'#0D0D0D'},svg);
+    mk('circle',{cx:cx-6,cy:'102',r:'3.5',fill:'white',opacity:'0.95'},svg);
+    mk('circle',{cx:cx+3,cy:'108',r:'1.8',fill:'white',opacity:'0.65'},svg);
+    mk('path',{d:`M${cp-19} 83 Q${cx} 80 ${cp+19} 83 L${cp+19} ${ff(g.ly)} Q${cx} ${ff(g.lcy)} ${cp-19} ${ff(g.ly)} Z`,fill:SK},svg);
+    mk('path',{d:`M${cp+19} ${ff(g.ly)} Q${cx} ${ff(g.lcy)} ${cp-19} ${ff(g.ly)}`,stroke:SKD,'stroke-width':'2.2',fill:'none','stroke-linecap':'round',opacity:'0.6'},svg);
+  });
+  const mD=`M${ff(g.cLX)} ${ff(g.cY)} Q100 ${ff(g.mCY)} ${ff(g.cRX)} ${ff(g.cY)}`;
+  const eScale=au27||au12;
+  if(mouthType==='alert'&&au27>0){
+    const cy2=g.cY+2+au27*4,rx=8+au27*11,ry=3+au27*10;
+    mk('ellipse',{cx:'100',cy:ff(cy2),rx:ff(rx),ry:ff(ry),fill:dk(MC,20),opacity:ff(Math.min(1,au27*1.5))},svg);
+    mk('ellipse',{cx:'100',cy:ff(cy2),rx:ff(rx),ry:ff(ry),fill:'none',stroke:MC,'stroke-width':'1.5',opacity:ff(Math.min(1,au27*1.5))},svg);
+  } else if(mouthType==='excited'){
+    mk('path',{d:`M${ff(g.cLX+4)} ${ff(g.cY)} Q100 ${ff(g.mCY+9*eScale)} ${ff(g.cRX-4)} ${ff(g.cY)}`,fill:dk(MC,8),opacity:ff(Math.max(0.15,0.75*eScale))},svg);
+  } else if(mouthType==='tense'){
+    mk('path',{d:`M${ff(g.cLX+4)} ${ff(g.cY)} Q100 ${ff(g.cY-12*au27)} ${ff(g.cRX-4)} ${ff(g.cY)}`,fill:dk(MC,8),opacity:ff(Math.max(0.15,0.75*au27))},svg);
+  } else {
+    mk('path',{d:mD,stroke:MC,'stroke-width':'2.2',fill:'none','stroke-linecap':'round'},svg);
+  }
+  mk('ellipse',{cx:'62',cy:'120',rx:'16',ry:'8',fill:BL,opacity:ff(g.bl),filter:`url(#${id}b)`},svg);
+  mk('ellipse',{cx:'138',cy:'120',rx:'16',ry:'8',fill:BL,opacity:ff(g.bl),filter:`url(#${id}b)`},svg);
+  mk('path',{d:`M${ff(g.lO[0])} ${ff(g.lO[1])} Q${ff(g.lC[0])} ${ff(g.lC[1])} ${ff(g.lI[0])} ${ff(g.lI[1])}`,stroke:BRC,'stroke-width':'4',fill:'none','stroke-linecap':'round',opacity:'0.88'},svg);
+  mk('path',{d:`M${ff(g.rI[0])} ${ff(g.rI[1])} Q${ff(g.rC[0])} ${ff(g.rC[1])} ${ff(g.rO[0])} ${ff(g.rO[1])}`,stroke:BRC,'stroke-width':'4',fill:'none','stroke-linecap':'round',opacity:'0.88'},svg);
+}
+
+const AROUSAL=[
+  {au1:0,   au2:0,    au4:0,    au5:0,   au12:0.04,au15:0,au20:0.29, au27:0,    au43:1,    sb2:0,    mouthType:'line', pupilTier:0,blush:0.05,it:1    },
+  {au1:0.01,au2:0,    au4:0.05, au5:0,   au12:0,   au15:0,au20:0.22, au27:0,    au43:0.585,sb2:0,    mouthType:'line', pupilTier:0,blush:0.28,it:0.667},
+  {au1:0,   au2:0,    au4:0,    au5:0,   au12:0.03,au15:0,au20:0.11, au27:0,    au43:0.438,sb2:0,    mouthType:'line', pupilTier:0,blush:0.28,it:0.333},
+  {au1:0,   au2:0,    au4:0,    au5:0,   au12:0,   au15:0,au20:0,    au27:0,    au43:0,    sb2:0,    mouthType:'line', pupilTier:1,blush:0.28,it:1    },
+  {au1:0.33,au2:0.089,au4:0.273,au5:0.25,au12:0.41,au15:0,au20:0.06, au27:0.53, au43:0,    sb2:0.383,mouthType:'alert',pupilTier:2,blush:0.28,it:0.3  },
+  {au1:0.45,au2:0.179,au4:0.547,au5:0.93,au12:0.42,au15:0,au20:0.651,au27:0.68, au43:0,    sb2:0.383,mouthType:'alert',pupilTier:2,blush:0.42,it:0.24 },
+  {au1:0.85,au2:0.51, au4:0.82, au5:1,   au12:0.58,au15:0,au20:0.976,au27:0.906,au43:0,    sb2:0.383,mouthType:'alert',pupilTier:2,blush:0.6, it:0.05 },
+];
+const CONF=[[-0.85,0.1],[-0.58,0],[-0.3,-0.1],[0,-0.12],[0.32,-0.2],[0.58,-0.27],[0.75,-0.32]].map(([va,ar])=>calcPos(va,ar,1.5));
+const AR_WORDS=['very still','still','slightly still','neutral','slightly activated','activated','very activated'];
+const CO_WORDS=['guessing','unsure','leaning','somewhat sure','fairly sure','confident','certain'];
+
+function buildTrack(rowId,wordId,points,words){
+  const row=document.getElementById(rowId),wordEl=document.getElementById(wordId);
+  const btns=[];
+  points.forEach((pos,i)=>{
+    const btn=document.createElement('button');
+    btn.className='face-btn';
+    const svg=document.createElementNS(NS,'svg');
+    svg.setAttribute('viewBox','0 0 200 185');svg.setAttribute('width','72');svg.setAttribute('height','72');
+    renderFace(svg,pos);
+    const num=document.createElement('span');num.className='face-num';num.textContent=i+1;
+    btn.appendChild(svg);btn.appendChild(num);
+    btn.addEventListener('click',()=>{
+      btns.forEach((b,j)=>b.classList.toggle('sel',j===i));
+      wordEl.textContent=words[i];
+    });
+    row.appendChild(btn);btns.push(btn);
+  });
+}
+
+buildTrack('ar-row','ar-word',AROUSAL,AR_WORDS);
+buildTrack('co-row','co-word',CONF,CO_WORDS);
+})();
+</script>

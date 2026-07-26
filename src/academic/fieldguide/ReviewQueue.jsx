@@ -42,15 +42,17 @@ export default function ReviewQueue() {
   const decide = async (row, decision, publish = true) => {
     setBusyId(row.version_id)
     setNotice(null)
-    const edited = edits[row.version_id]
+    // What the reviewer is actually looking at: their edits if any, else the
+    // pre-filled draft (which for a delta is current + addendum, not the raw
+    // proposal). Send it whenever it differs from what the model proposed —
+    // comparing against `edits` alone would let an un-edited merge fall through
+    // to p_content = null, and the RPC would then write the bare delta,
+    // reproducing the very fragment the pre-fill exists to prevent.
+    const effective = edits[row.version_id] ?? mergeDraft(row)
     const { data, error } = await courseClient.rpc('review_proposal', {
       p_version_id: row.version_id,
       p_decision: decision,
-      // Only send content when the reviewer actually changed it; null means
-      // "accept exactly what was proposed".
-      p_content: decision === 'accept' && edited != null && edited !== row.proposed_content
-        ? edited
-        : null,
+      p_content: decision === 'accept' && effective !== row.proposed_content ? effective : null,
       p_publish: publish,
     })
     setBusyId(null)
@@ -88,8 +90,17 @@ export default function ReviewQueue() {
 
       {rows.map(row => {
         const open = openId === row.version_id
-        const body = edits[row.version_id] ?? row.proposed_content ?? ''
-        const dirty = edits[row.version_id] != null && edits[row.version_id] !== row.proposed_content
+        // An `update` proposal is a DELTA — the system prompt asks the model
+        // for "only the new information to merge, not a full rewrite". Accepting
+        // it as-is replaces the whole page with the addendum, which is how
+        // dodo-bird-verdict ended up as a bare "Update from Fonagy (2015)"
+        // section with no definition above it (2026-07-26). So when there is a
+        // body to merge into, the editor starts pre-merged: current content,
+        // then the delta. The reviewer edits that down into one page.
+        const merged = mergeDraft(row)
+        const body = edits[row.version_id] ?? merged
+        const dirty = edits[row.version_id] != null && edits[row.version_id] !== merged
+        const isDelta = row.action === 'update' && !!row.current_content
         return (
           <div key={row.version_id} style={S.card}>
             <button style={S.cardHead} onClick={() => setOpenId(open ? null : row.version_id)}>
@@ -114,6 +125,22 @@ export default function ReviewQueue() {
               <p style={S.rewriteFlag}>⚠ {row.tier_review_note}</p>
             )}
 
+            {isDelta && (
+              <p style={S.mergeFlag}>
+                <b>This is an update, not a full page.</b> The model was asked for only the new
+                information to merge. The editor below is pre-filled with the current body
+                followed by this addendum — edit it into one coherent page before accepting, or
+                you will replace the page with the addendum alone.
+              </p>
+            )}
+            {row.action === 'update' && !row.current_content && (
+              <p style={S.mergeFlag}>
+                <b>Update proposed against a page with no accepted body.</b> Nothing exists to
+                merge into, so this addendum would become the entire page. Prefer reviewing that
+                page&rsquo;s full proposal first, or rewrite this into a standalone page.
+              </p>
+            )}
+
             {open && (
               <div style={{ padding: '0 14px 14px' }}>
                 <div style={S.split}>
@@ -127,7 +154,7 @@ export default function ReviewQueue() {
                   </div>
                   <div style={{ minWidth: 0 }}>
                     <p style={S.colLabel}>
-                      Proposed {dirty && <span style={{ color: 'var(--pk)' }}>· edited</span>}
+                      {isDelta ? 'Merged (current + addendum) — edit before accepting' : 'Proposed'} {dirty && <span style={{ color: 'var(--pk)' }}>· edited</span>}
                     </p>
                     <textarea
                       style={{ ...S.pre, width: '100%', minHeight: 320, resize: 'vertical' }}
@@ -164,6 +191,18 @@ export default function ReviewQueue() {
       })}
     </Page>
   )
+}
+
+// What the editor should open with. For a delta against an existing body,
+// that's the two stitched together so "accept without thinking" produces a
+// merge rather than a replacement. Everything else opens as proposed.
+function mergeDraft(row) {
+  const proposed = row.proposed_content ?? ''
+  if (row.action !== 'update' || !row.current_content) return proposed
+  // Drop the addendum's own frontmatter — the page already has one, and two
+  // YAML blocks in a single file is invalid.
+  const withoutFrontmatter = proposed.replace(/^\s*---\r?\n[\s\S]*?\r?\n---\r?\n?/, '')
+  return `${row.current_content.trimEnd()}\n\n${withoutFrontmatter.trimStart()}`
 }
 
 function Page({ course, session, client, children, staffEnrollments, courseId, setCourseId }) {
@@ -233,6 +272,7 @@ const S = {
   metaLine: { display: 'block', fontSize: 12, color: 'var(--tx2)', marginTop: 2 },
   chev: { color: 'var(--tx2)', fontSize: 13 },
   badge: { fontFamily: MONO, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', padding: '3px 7px', borderRadius: 20 },
+  mergeFlag: { margin: '0 14px 12px', padding: '8px 10px', borderRadius: 8, background: 'rgba(214,51,132,.07)', border: '1px solid rgba(214,51,132,.28)', color: 'var(--tx)', fontSize: 13, lineHeight: 1.45 },
   rewriteFlag: { margin: '0 14px 12px', padding: '8px 10px', borderRadius: 8, background: 'rgba(192,57,43,.08)', border: '1px solid rgba(192,57,43,.25)', color: '#c0392b', fontSize: 13, lineHeight: 1.45 },
 
   split: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 12 },

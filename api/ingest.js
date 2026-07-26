@@ -191,11 +191,25 @@ async function runIngest(service, jobId, { pdf_path, pdf_mode, course_id, person
     // advertised its original summary to the model, and pages created any
     // other way were invisible. Rendered as `<slug>.md` because the system
     // prompt's contract is filenames.
+    //
+    // Only pages with an ACCEPTED body count as existing. A shell — created
+    // so an invented page appears in the wiki and resolves inbound links —
+    // has no reviewed content, so there is nothing for the model to write a
+    // delta against. Including shells here caused exactly that: the model saw
+    // `borderline-personality-disorder` in the index, returned
+    // `action: "update"` per the system prompt's "only the new information to
+    // merge", and the reviewer accepted a body that was a Fonagy addendum with
+    // no definition in front of it. Excluding bodiless pages means a page
+    // nobody has reviewed yet is proposed afresh — two competing full drafts
+    // to choose between, which is a reviewable state; a delta against nothing
+    // is not. (Found 2026-07-26 on live data, after two accepted updates both
+    // produced fragments.)
     const { data: indexPages } = await service
       .from('wiki_pages')
       .select('slug, type, summary')
       .eq('course_id', course_id)
       .neq('status', 'archived')
+      .not('content', 'is', null)
       .order('slug', { ascending: true })
     const wikiIndex = indexPages?.length
       ? indexPages.map(p => `- ${p.slug}.md (${p.type}): ${p.summary ?? ''}`).join('\n')
