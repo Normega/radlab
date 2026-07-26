@@ -491,12 +491,50 @@ roster-gated, so no public-visibility UI is needed yet).
 | ~~WP0~~ | ~~Decisions~~ — **done 2026-07-25**, see the Decisions section above | ✔ |
 | ~~WP1~~ | ~~Schema~~ — **done 2026-07-25**, `supabase/migrations/20260725_academic_wiki_schema.sql`, applied live to `radlab-academic`. See the WP1 note below. | ✔ |
 | WP2 | Reader UI — lazy-loaded pages, `ErrorBoundary label="Academic"`, wikilink resolution, backlinks, `tsvector` search, ToC | early Aug |
-| WP3 | `reference` ingest mode + taxonomy seed (~65 pages + DSM chapter-DOI map) + side-by-side review UI | mid Aug |
+| WP3 | ◐ **taxonomy seed + review path done 2026-07-25** (`20260725_academic_wiki_wp3.sql`, applied live). Outstanding: the review **UI**, and `reference` ingest mode. See the WP3 note below. | ◐ |
 | WP4 | **Content sprint**: run the ~65-page scaffold, instructor review pass (~15 h) | mid–late Aug |
 | **WP5** | **Roster & enrollment (§2a)** — CSV upload, `identity.roster` + status flow, bulk/per-row invite via Resend SMTP, magic-link enrollment, QR self-match form + unmatched queue, `api/roster-check.js`, Lecture Lounge integration (R3) | mid Aug — **ahead of WP6** |
 | WP6 | Student submission + annotation form + review queue + participation export | late Aug (before term) |
 | WP7 | **Export mirror**: published pages → markdown + YAML frontmatter → private git repo; one-way and generated, never edited in place. Quartz build optional/undeployed until the wiki goes public | late Aug, parallel to WP4 |
 | WP8 | Term 2 / opportunistic: flip the mirror public, `pgvector` related-pages, Lecture Lounge cross-links, peer-review beat | Sept+ |
+
+### WP3 as built — part 1: taxonomy seed + review path (2026-07-25)
+
+Migration: `supabase/migrations/20260725_academic_wiki_wp3.sql`, applied live.
+
+**Seed.** All 123 catalog rows from taxonomy §6 — 46 Tier A, 52 Tier B, 16 overviews,
+9 foundations, across 18 DSM chapters (11 and 20 aren't taught). Idempotent on
+`(course_id, slug)`, so re-running never clobbers later edits. Two departures from a literal
+reading of §6, both noted in `tier_review_note` on the rows themselves: the mood overview
+covers DSM chapters 3 *and* 4 and is filed under 3 (L5 teaches them as one block), and chapter
+14 gets no overview row because a one-disorder chapter needs one page.
+
+**Slug convention validated independently.** The seed links catalog rows to pages that already
+exist by slug. Exactly 2 of the 22 ingested pages are `type='disorder'`
+(`borderline-personality-disorder`, `persistent-depressive-disorder`) and **both matched
+hand-written catalog slugs exactly** — the model's independent slug choices and the taxonomy's
+agree. The other 20 pages are concept/study/treatment/debate, correctly outside the catalog.
+That's the drift check taxonomy §5 worried about, passing on live data.
+
+**Review path.** `review_proposal(version_id, decision, content, publish)` — SECURITY DEFINER
+with an internal staff check, so `wiki_pages` still has **no** authenticated write policies. The
+write surface is one audited function rather than a broad UPDATE grant, matching
+`get_class_participation` / `verify_class_email`. Accepting sets page content (the reviewer's
+edit via `p_content`, or the proposal as-is), which fires the existing triggers for the accepted
+snapshot and link extraction. Plus a `review_queue` view joining each pending proposal to its
+target page, the current body to diff against, and the catalog's `tier_review_note` — so the
+rewrite-level flags surface in the UI rather than living only in a markdown file.
+
+**Verified against live data in a rolled-back transaction**, impersonating the instructor's JWT:
+accept published a page (1886 chars, v1), the trigger wrote the accepted snapshot, and 3
+wikilinks were extracted *and all 3 resolved* — the graph closing because the targets already
+exist. Reject left the page body null. Queue went 26 → 24. Then rolled back, so nothing is
+actually published yet.
+
+One testing note worth keeping: an earlier version of that test put the RPC call and its
+assertions in one `UNION ALL` statement and appeared to show the RPC doing nothing. That was the
+single-statement snapshot, not a bug — a volatile function's writes aren't visible to other
+branches of the same statement. Assertions have to be separate statements.
 
 ### WP1 as built (2026-07-25)
 
