@@ -88,8 +88,17 @@ export default function ReviewQueue() {
         </p>
       )}
 
-      {rows.map(row => {
+      {groupByPage(rows).map(group => group.rows.map((row, idxInPage) => {
         const open = openId === row.version_id
+        // A page can have several pending proposals — typically a full `new`
+        // from one paper and a delta `update` from the next. They arrive ~17
+        // rows apart in time order, which is how an update got accepted before
+        // its own page had a body. Grouped by page and ordered within it, the
+        // dependency is visible instead of remembered.
+        const stackSize = group.rows.length
+        const blockedBy = row.action === 'update' && !row.current_content
+          ? group.rows.find(r => r.action !== 'update' && r.version_id !== row.version_id)
+          : null
         // An `update` proposal is a DELTA — the system prompt asks the model
         // for "only the new information to merge, not a full rewrite". Accepting
         // it as-is replaces the whole page with the addendum, which is how
@@ -109,6 +118,7 @@ export default function ReviewQueue() {
                 <span style={S.metaLine}>
                   {row.type} · {row.proposed_length} chars
                   {row.tier && <> · tier {row.tier}</>}
+                  {stackSize > 1 && <> · <b>{idxInPage + 1} of {stackSize} for this page</b></>}
                 </span>
               </span>
               <span style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
@@ -136,8 +146,13 @@ export default function ReviewQueue() {
             {row.action === 'update' && !row.current_content && (
               <p style={S.mergeFlag}>
                 <b>Update proposed against a page with no accepted body.</b> Nothing exists to
-                merge into, so this addendum would become the entire page. Prefer reviewing that
-                page&rsquo;s full proposal first, or rewrite this into a standalone page.
+                merge into, so this addendum would become the entire page.{' '}
+                {blockedBy
+                  ? <>Review the full <b>{blockedBy.action}</b> proposal for this page first
+                      ({blockedBy.proposed_length} chars, listed directly above) — then reopen this
+                      one and it will pre-fill as a merge.</>
+                  : <>There is no full proposal for this page in the queue, so this needs
+                      rewriting into a standalone page before accepting.</>}
               </p>
             )}
 
@@ -188,9 +203,26 @@ export default function ReviewQueue() {
             )}
           </div>
         )
-      })}
+      }))}
     </Page>
   )
+}
+
+// Queue order: proposals for the same page adjacent, and within a page,
+// full proposals before deltas — the order they have to be reviewed in. Pages
+// themselves keep arrival order, so the queue still reads chronologically.
+function groupByPage(rows) {
+  const byPage = new Map()
+  for (const r of rows) {
+    if (!byPage.has(r.page_id)) byPage.set(r.page_id, { page_id: r.page_id, slug: r.slug, rows: [] })
+    byPage.get(r.page_id).rows.push(r)
+  }
+  for (const g of byPage.values()) {
+    g.rows.sort((a, b) =>
+      (a.action === 'update') - (b.action === 'update') ||
+      new Date(a.proposed_at) - new Date(b.proposed_at))
+  }
+  return [...byPage.values()]
 }
 
 // What the editor should open with. For a delta against an existing body,
