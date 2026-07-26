@@ -85,6 +85,7 @@ const AcademicHome         = lazy(() => import('./academic/AcademicHome'))
 // small static guards above).
 const FieldGuideStaffRoute = lazy(() => import('./academic/fieldguide/FieldGuideStaffRoute'))
 const IngestPortal         = lazy(() => import('./academic/fieldguide/IngestPortal'))
+const ReviewQueue          = lazy(() => import('./academic/fieldguide/ReviewQueue'))
 
 // Research admin section — separate partition from Lecture Lounge.
 const AdminLayout   = lazy(() => import('./layouts/AdminLayout'))
@@ -495,6 +496,7 @@ export default function App() {
                 check), not the main-site session. */}
             <Route element={<FieldGuideStaffRoute />}>
               <Route path="/academic/fieldguide/ingest" element={<IngestPortal />} />
+              <Route path="/academic/fieldguide/review" element={<ReviewQueue />} />
             </Route>
           </Route>
 

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useOutletContext } from 'react-router-dom'
+import { Link, useOutletContext } from 'react-router-dom'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -88,7 +88,8 @@ export default function IngestPortal() {
           </div>
           <div style={{ textAlign: 'right' }}>
             <p style={{ ...S.sub, fontSize: 12 }}>{session.user.email}</p>
-            <button style={S.linkBtn} onClick={() => courseClient.auth.signOut()}>Sign out</button>
+            <Link to="/academic/fieldguide/review" style={{ fontSize: 13, color: 'var(--pk)' }}>Review queue</Link>
+            <button style={{ ...S.linkBtn, marginLeft: 10 }} onClick={() => courseClient.auth.signOut()}>Sign out</button>
           </div>
         </header>
 
