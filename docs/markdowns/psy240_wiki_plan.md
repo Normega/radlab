@@ -491,7 +491,7 @@ roster-gated, so no public-visibility UI is needed yet).
 | ~~WP0~~ | ~~Decisions~~ — **done 2026-07-25**, see the Decisions section above | ✔ |
 | ~~WP1~~ | ~~Schema~~ — **done 2026-07-25**, `supabase/migrations/20260725_academic_wiki_schema.sql`, applied live to `radlab-academic`. See the WP1 note below. | ✔ |
 | WP2 | Reader UI — lazy-loaded pages, `ErrorBoundary label="Academic"`, wikilink resolution, backlinks, `tsvector` search, ToC | early Aug |
-| WP3 | ◐ **taxonomy seed + review path done 2026-07-25** (`20260725_academic_wiki_wp3.sql`, applied live). Outstanding: the review **UI**, and `reference` ingest mode. See the WP3 note below. | ◐ |
+| ~~WP3~~ | ~~Seed + review path + review UI + `reference` mode~~ — **done 2026-07-26**, all applied live. See the WP3 notes below. | ✔ |
 | WP4 | **Content sprint**: run the ~65-page scaffold, instructor review pass (~15 h) | mid–late Aug |
 | **WP5** | **Roster & enrollment (§2a)** — CSV upload, `identity.roster` + status flow, bulk/per-row invite via Resend SMTP, magic-link enrollment, QR self-match form + unmatched queue, `api/roster-check.js`, Lecture Lounge integration (R3) | mid Aug — **ahead of WP6** |
 | WP6 | Student submission + annotation form + review queue + participation export | late Aug (before term) |

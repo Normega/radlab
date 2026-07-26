@@ -106,6 +106,75 @@ OUTPUT FORMAT (JSON only, no other text):
   "log_entry": "2-4 sentence summary of what was ingested and what pages were touched"
 }`
 
+// Reference mode (WP3/WP4). Same output contract as the paper prompt — the
+// review queue, merge path and link extraction all work unchanged — but the
+// intent is inverted: paper mode asks "what pages does this paper touch?", and
+// the model decides. Reference mode names the target page up front from the
+// taxonomy catalog and asks the model to fill *that* page's declared gaps from
+// an open reference work.
+//
+// Two things this prompt insists on that the paper prompt cannot:
+//   - `sources:` frontmatter with per-section provenance, because scaffold
+//     content has to be traceable to a licence-compatible source (plan §2.1);
+//     it's the audit trail if anyone ever asks where a claim came from.
+//   - the copyright frame. Reference sources are exactly the material where
+//     over-copying is tempting: StatPearls is CC BY-NC-ND (read and cite, never
+//     remix) and DSM-5-TR is never a source at all — the page links criteria
+//     and does not carry them.
+const SYSTEM_PROMPT_REFERENCE = `You are building a course wiki page for an undergraduate abnormal psychology course (PSY240), from an open reference work rather than from a single research paper.
+
+You will be given:
+1. The reference source (a textbook module, clinical guideline, or public-health reference)
+2. The TARGET page you are filling, from the course's DSM-5-TR-anchored catalogue
+3. That page's current content, if any, and the sections it has declared it still needs
+4. A compact index of wiki pages that already exist
+
+Your job: produce the target page — or an update to it — as a single JSON object. Do not use any tools. Do not ask questions. Return only JSON.
+
+TARGET PAGE STRUCTURE (disorder pages) — these H2 sections, in this order, ALWAYS:
+  ## Presentation      what it looks like clinically; a brief vignette if the source supports one
+  ## Diagnosis         criteria STRUCTURE paraphrased, differential diagnosis, specifiers
+  ## Epidemiology      prevalence, onset, course, sex/gender, culture
+  ## Etiology          genetic/neurobiological, cognitive-behavioural, developmental, social determinants — say which are better evidenced
+  ## Treatment         approaches, effect sizes, guideline recommendations, and what does NOT work
+  ## Contested         validity of the category, competing models, culture-bound presentations, medicalization critiques
+Overview and foundations pages use headings that suit their subject instead, but follow the same gap rules.
+
+PRIORITY: fill the sections listed as NEEDED first. If the source does not cover a needed section, say so rather than padding it.
+
+FOR EVERY SECTION the source does not support, write exactly one line under that heading:
+  > **Needs research:** <specifically what is missing>
+and list that section's lowercase name in the frontmatter "needs" array.
+
+SOURCING — mandatory:
+- Frontmatter must include a "sources" array naming what this content came from, e.g. sources: ["Bridley & Daffin, Fundamentals of Psychological Disorders 3e, Module 12", "NIMH health topic: Schizophrenia"].
+- Attribute in-text where a specific claim, statistic or effect size comes from a named source.
+- Prevalence and epidemiology figures must carry their source and year.
+
+COPYRIGHT — non-negotiable:
+- Never reproduce DSM-5-TR criteria text, tables or decision trees. Paraphrase the STRUCTURE of criteria only; the page links the official chapter, it does not carry it.
+- Paraphrase everything. Do not copy sentences from the source, even when it is openly licensed — some course sources are CC BY-NC-ND, which permits citing but not remixing.
+- Facts, prevalence figures and classifications are free to state; wording is not.
+
+RULES:
+- If the target page already has content, output ONE page with action "update" containing only the new information to merge — do not restate what is already there.
+- If it has no content yet, output action "new" with the full page.
+- You may also output additional NEW pages for concepts or treatments the source introduces that the wiki lacks, but the target page is the point — do not drown it.
+- Flag any contradiction with existing wiki content in "contradictions"; do not silently resolve it.
+- Wikilink filenames: lowercase, hyphens for spaces.
+
+OUTPUT FORMAT (JSON only, no other text):
+{
+  "pages": [
+    {"action": "new" | "update", "type": "disorder|study|concept|treatment|debate", "filename": "lowercase-with-dashes.md", "content": "full markdown content with YAML frontmatter"}
+  ],
+  "index_entries": [
+    {"filename": "...", "type": "...", "one_line_summary": "..."}
+  ],
+  "contradictions": ["description of any conflict with existing wiki content, or empty list"],
+  "log_entry": "2-4 sentence summary of what was ingested, which target sections it filled, and which remain needed"
+}`
+
 export default async function handler(req, res) {
   const url = process.env.COURSE_SUPABASE_URL
   const anonKey = process.env.COURSE_SUPABASE_ANON_KEY
@@ -124,9 +193,20 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const { pdf_path, pdf_mode, course_id } = req.body ?? {}
+  const { pdf_path, pdf_mode, course_id, source_type = 'paper', target_slug = null } = req.body ?? {}
   if (!pdf_path || !course_id || !['native', 'extracted'].includes(pdf_mode)) {
     return res.status(400).json({ error: 'Required: pdf_path, course_id, pdf_mode ("native" | "extracted")' })
+  }
+  if (!['paper', 'reference'].includes(source_type)) {
+    return res.status(400).json({ error: 'source_type must be "paper" or "reference"' })
+  }
+  // Mirrors the DB constraint, so a bad request fails here with a readable
+  // message rather than as a check-constraint violation two layers down.
+  if (source_type === 'reference' && !target_slug) {
+    return res.status(400).json({ error: 'reference mode requires target_slug (the catalogue page to fill)' })
+  }
+  if (source_type === 'paper' && target_slug) {
+    return res.status(400).json({ error: 'target_slug only applies to reference mode' })
   }
 
   // ── Auth: verify the JWT against radlab-academic, then the enrollment ──
@@ -177,7 +257,7 @@ export default async function handler(req, res) {
 
   const { data: job, error: jobErr } = await service
     .from('ingest_jobs')
-    .insert({ course_id, created_by: personId, pdf_path, pdf_mode, status: 'processing' })
+    .insert({ course_id, created_by: personId, pdf_path, pdf_mode, status: 'processing', source_type, target_slug })
     .select('id')
     .single()
   if (jobErr) return res.status(500).json({ error: `Could not create job: ${jobErr.message}` })
@@ -185,11 +265,11 @@ export default async function handler(req, res) {
   // Respond now; run the ingest in the background. waitUntil keeps the
   // function alive (up to maxDuration) after the response is sent, so no
   // HTTP connection stays open for the minutes-long model call.
-  waitUntil(runIngest(service, job.id, { pdf_path, pdf_mode, course_id, personId }))
+  waitUntil(runIngest(service, job.id, { pdf_path, pdf_mode, course_id, personId, source_type, target_slug }))
   return res.status(202).json({ job_id: job.id, status: 'processing' })
 }
 
-async function runIngest(service, jobId, { pdf_path, pdf_mode, course_id, personId }) {
+async function runIngest(service, jobId, { pdf_path, pdf_mode, course_id, personId, source_type = 'paper', target_slug = null }) {
   const markFailed = async (message, rawOutput) => {
     await service.from('ingest_jobs').update({
       status: 'failed',
@@ -239,6 +319,43 @@ async function runIngest(service, jobId, { pdf_path, pdf_mode, course_id, person
       ? indexPages.map(p => `- ${p.slug}.md (${p.type}): ${p.summary ?? ''}`).join('\n')
       : '(the wiki is empty — every page will be new)'
 
+    // ── Reference mode: the brief for the page being filled ──
+    // Named target + its current body + its declared gaps. Without this the
+    // model is just reading a textbook chapter and guessing what the course
+    // wants; with it, the run is answerable — it either filled the sections it
+    // was pointed at or it didn't, and wiki_gap_report says which.
+    let targetBrief = ''
+    if (source_type === 'reference') {
+      const { data: cat } = await service
+        .from('disorders')
+        .select('slug, title, tier, lecture, dsm_chapter, tier_review_note')
+        .eq('course_id', course_id)
+        .eq('slug', target_slug)
+        .maybeSingle()
+      if (!cat) {
+        return await markFailed(`No catalogue entry for "${target_slug}" in this course — reference runs must target a seeded page.`)
+      }
+      const { data: page } = await service
+        .from('wiki_pages')
+        .select('content, needs, status')
+        .eq('course_id', course_id)
+        .eq('slug', target_slug)
+        .maybeSingle()
+
+      const gaps = page?.needs?.length ? page.needs.join(', ') : null
+      targetBrief =
+        `TARGET PAGE: ${cat.slug}.md — "${cat.title}"\n` +
+        `Catalogue: tier ${cat.tier}` +
+        (cat.dsm_chapter ? `, DSM-5-TR chapter ${cat.dsm_chapter}` : '') +
+        (cat.lecture ? `, taught in lecture ${cat.lecture}` : '') + '\n' +
+        (cat.tier_review_note ? `Editorial note: ${cat.tier_review_note}\n` : '') +
+        (page?.content
+          ? `SECTIONS STILL NEEDED: ${gaps ?? '(none declared — extend where the source adds something)'}\n\n` +
+            `CURRENT PAGE CONTENT (produce an "update" that merges into this; do not restate it):\n${page.content}\n`
+          : `This page has no accepted content yet — produce it as "new", in full.\n`) +
+        '\n'
+    }
+
     // ── Build the user content per mode (ported from build_user_prompt) ──
     const closing = 'Return the JSON object as specified in your instructions. Return only JSON.'
     let userContent
@@ -256,7 +373,7 @@ async function runIngest(service, jobId, { pdf_path, pdf_mode, course_id, person
       }
       userContent = [{
         type: 'text',
-        text: `EXISTING WIKI INDEX:\n${wikiIndex}\n\nPAPER TEXT:\n${text}\n\n${closing}`,
+        text: `${targetBrief}EXISTING WIKI INDEX:\n${wikiIndex}\n\n${source_type === 'reference' ? 'REFERENCE SOURCE TEXT' : 'PAPER TEXT'}:\n${text}\n\n${closing}`,
       }]
     } else {
       userContent = [
@@ -266,7 +383,7 @@ async function runIngest(service, jobId, { pdf_path, pdf_mode, course_id, person
         },
         {
           type: 'text',
-          text: `EXISTING WIKI INDEX:\n${wikiIndex}\n\nThe paper is the attached PDF document.\n\n${closing}`,
+          text: `${targetBrief}EXISTING WIKI INDEX:\n${wikiIndex}\n\nThe ${source_type === 'reference' ? 'reference source' : 'paper'} is the attached PDF document.\n\n${closing}`,
         },
       ]
     }
@@ -281,7 +398,7 @@ async function runIngest(service, jobId, { pdf_path, pdf_mode, course_id, person
         model: MODEL,
         max_tokens: 64000,
         thinking: { type: 'adaptive' },
-        system: SYSTEM_PROMPT,
+        system: source_type === 'reference' ? SYSTEM_PROMPT_REFERENCE : SYSTEM_PROMPT,
         messages: [{
           role: 'user',
           content: extraNudge

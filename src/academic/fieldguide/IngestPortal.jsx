@@ -17,6 +17,13 @@ export default function IngestPortal() {
   // content parity, but native has no text-layer dependency — see website.md
   // §29a). The toggle stays for cost experiments; extracted refuses scans.
   const [mode, setMode] = useState('native')
+  // Reference mode (WP3): fill a NAMED catalogue page from an open reference
+  // work, rather than letting the model decide what pages a paper touches.
+  // The target picker is the worklist — incomplete catalogue entries, Tier A
+  // first — so the sprint order is the UI's default order.
+  const [sourceType, setSourceType] = useState('paper')
+  const [targetSlug, setTargetSlug] = useState('')
+  const [worklist, setWorklist] = useState([])
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState(null)
   const [jobs, setJobs] = useState([])
@@ -35,6 +42,12 @@ export default function IngestPortal() {
   }
 
   useEffect(() => { if (courseId) loadJobs() }, [courseId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!courseId) return
+    courseClient.from('reference_worklist').select('*').eq('course_id', courseId)
+      .then(({ data }) => setWorklist(data ?? []))
+  }, [courseClient, courseId])
 
   // Poll while anything is still running
   useEffect(() => {
@@ -63,7 +76,11 @@ export default function IngestPortal() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ pdf_path: pdfPath, pdf_mode: mode, course_id: courseId }),
+        body: JSON.stringify({
+          pdf_path: pdfPath, pdf_mode: mode, course_id: courseId,
+          source_type: sourceType,
+          target_slug: sourceType === 'reference' ? targetSlug : null,
+        }),
       }).catch(() => {})
 
       setNotice('Ingest started — the job appears below within a few seconds.')
@@ -107,6 +124,40 @@ export default function IngestPortal() {
           <input ref={fileInput} style={{ fontSize: 14, color: 'var(--tx)' }} type="file" accept="application/pdf,.pdf"
             onChange={e => setFile(e.target.files?.[0] ?? null)} />
           <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+            <span style={{ ...S.sub, fontWeight: 600 }}>Source:</span>
+            <label style={{ ...S.sub, cursor: 'pointer', display: 'flex', gap: 5, alignItems: 'center' }}>
+              <input type="radio" name="source_type" checked={sourceType === 'paper'}
+                onChange={() => { setSourceType('paper'); setTargetSlug('') }} />
+              Paper — a study; the model decides which pages it touches
+            </label>
+            <label style={{ ...S.sub, cursor: 'pointer', display: 'flex', gap: 5, alignItems: 'center' }}>
+              <input type="radio" name="source_type" checked={sourceType === 'reference'}
+                onChange={() => setSourceType('reference')} />
+              Reference — fill one named catalogue page
+            </label>
+          </div>
+
+          {sourceType === 'reference' && (
+            <div>
+              <select style={{ ...S.input, width: '100%' }} value={targetSlug}
+                      onChange={e => setTargetSlug(e.target.value)} required>
+                <option value="">Choose the page this source should fill…</option>
+                {worklist.map(w => (
+                  <option key={w.slug} value={w.slug}>
+                    {w.tier === 'A' ? '★ ' : ''}{w.title} — {w.state}
+                    {w.gap_count > 0 ? ` (needs ${w.needs.join(', ')})` : ''}
+                    {w.reference_runs > 0 ? ` · ${w.reference_runs} prior run(s)` : ''}
+                  </option>
+                ))}
+              </select>
+              <p style={{ ...S.sub, fontSize: 12, marginTop: 6 }}>
+                {worklist.length} catalogue page(s) still incomplete, Tier A first. The run is
+                scored against this page&rsquo;s declared gaps.
+              </p>
+            </div>
+          )}
+
+          <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
             <span style={{ ...S.sub, fontWeight: 600 }}>PDF mode:</span>
             {['native', 'extracted'].map(m => (
               <label key={m} style={{ ...S.sub, cursor: 'pointer', display: 'flex', gap: 5, alignItems: 'center' }}>
@@ -115,7 +166,7 @@ export default function IngestPortal() {
               </label>
             ))}
           </div>
-          <button style={{ ...S.primary, opacity: !file || busy ? 0.5 : 1 }} type="submit" disabled={!file || busy}>
+          <button style={{ ...S.primary, opacity: (!file || busy || (sourceType === 'reference' && !targetSlug)) ? 0.5 : 1 }} type="submit" disabled={!file || busy || (sourceType === 'reference' && !targetSlug)}>
             {busy ? 'Uploading…' : 'Upload & ingest'}
           </button>
           {notice && <p style={{ ...S.sub, color: 'var(--pk)' }}>{notice}</p>}
