@@ -598,8 +598,15 @@ function completionMessage(info) {
 // told them they were still enrolled nor that anything else was coming. Two
 // jobs, in order: remove the sense that a miss is a failure, then name the next
 // session concretely so the miss converts into a forward commitment.
+//
+// Reassure about the OCCASIONAL miss only. This originally said a miss "doesn't
+// affect your standing in the study", which is not true — adherence withdrawal
+// ends participation below the required session count — and a participant
+// deciding whether to keep going should not be told otherwise. Same constraint
+// as MISSED_INTRO in supabase/functions/_shared/emailTemplate.ts; keep the two
+// in step.
 function expiredMessage(next) {
-  return `This session's window has closed — that's completely okay. Missing one doesn't affect your standing in the study, and there's nothing to make up. ${nextSessionSentence(next)}`
+  return `This session's window has closed — that's completely okay. Missing the occasional session is normal, and there's nothing to make up. ${nextSessionSentence(next)}`
 }
 
 // Copy for a link whose session was already COMPLETED, from
