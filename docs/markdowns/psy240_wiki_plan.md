@@ -22,6 +22,17 @@
 3. **Scaffold scope: ~65 anchor pages** (20 class overviews + 2–5 anchor disorders each).
 4. **U of T DSM access: confirmed** — see §2.1, the link-don't-copy path is available.
 
+**Decisions (Norm, 2026-07-27)**
+
+5. **Roster ownership: R3** — radlab-academic is the single course-identity authority;
+   Lecture Lounge verifies against it through a serverless check (§2a.2). Closes open
+   question 8. R1 remains the safe fallback if August compresses, and is a strict subset.
+6. **Roster CSV comes from Quercus** (§2a, open question 10). Column names differ from an
+   ACORN export and the email column may be the institutional alias rather than the
+   `@mail.` form, so the importer maps columns explicitly and normalizes to the match key
+   in §2a.5 rather than trusting a fixed header row. Re-upload stays idempotent on
+   `student_number`.
+
 **Consequence of pairing (1) with (2):** for the fall the export mirror is a **private
 archive**, not a public site — it targets a private git repo (and optionally an
 Access-gated or simply undeployed Quartz build), which buys the permanent markdown archive,
@@ -492,13 +503,74 @@ roster-gated, so no public-visibility UI is needed yet).
 |---|---|---|
 | ~~WP0~~ | ~~Decisions~~ — **done 2026-07-25**, see the Decisions section above | ✔ |
 | ~~WP1~~ | ~~Schema~~ — **done 2026-07-25**, `supabase/migrations/20260725_academic_wiki_schema.sql`, applied live to `radlab-academic`. See the WP1 note below. | ✔ |
-| WP2 | Reader UI — lazy-loaded pages, `ErrorBoundary label="Academic"`, wikilink resolution, backlinks, `tsvector` search, ToC | early Aug |
+| ~~WP2~~ | ~~Reader UI~~ — **done 2026-07-27**, see the WP2 note below | ✔ |
 | ~~WP3~~ | ~~Seed + review path + review UI + `reference` mode~~ — **done 2026-07-26**, all applied live. See the WP3 notes below. | ✔ |
 | WP4 | **Content sprint**: run the ~65-page scaffold, instructor review pass (~15 h) | mid–late Aug |
 | **WP5** | **Roster & enrollment (§2a)** — CSV upload, `identity.roster` + status flow, bulk/per-row invite via Resend SMTP, magic-link enrollment, QR self-match form + unmatched queue, `api/roster-check.js`, Lecture Lounge integration (R3) | mid Aug — **ahead of WP6** |
 | WP6 | Student submission + annotation form + review queue + participation export | late Aug (before term) |
 | WP7 | **Export mirror**: published pages → markdown + YAML frontmatter → private git repo; one-way and generated, never edited in place. Quartz build optional/undeployed until the wiki goes public | late Aug, parallel to WP4 |
 | WP8 | Term 2 / opportunistic: flip the mirror public, `pgvector` related-pages, Lecture Lounge cross-links, peer-review beat | Sept+ |
+
+### WP2 as built: the reader (2026-07-27)
+
+No migration — WP2 is read-only, and the RLS split written in WP1 turned out to be the whole
+access design. `src/academic/fieldguide/wiki/`: `WikiIndex` (`/academic/fieldguide/wiki`) and
+`WikiPage` (`…/wiki/:slug`), both lazy, both under a new `FieldGuideMemberRoute`.
+
+**One reader for students and staff.** The guard takes any active enrollment; what comes back
+is decided by `members read published pages` vs `staff read all pages`. Nothing in the UI
+filters on status defensively — a draft is invisible to a student because the database never
+returns it. The same fact drives link colouring: the resolution set is *this reader's*
+readable pages, so a link to an unpublished page renders unresolved for a student and live
+for staff, which is the honest state in both cases. `FieldGuideStaffRoute` and the new member
+guard are now thin wrappers over a shared `FieldGuideAuthRoute`; duplicating a full sign-in
+flow between them would have meant two places to fix an auth bug.
+
+**Link rules are duplicated by necessity, so they're documented as a pair.** `wikiText.js`
+decides what renders as a link; `sync_wiki_links()` decides what becomes a row in
+`wiki_links`. Both implement the same narrow rule (`[[slug]]`, `[[slug|label]]`,
+`[[slug#section]]`, `[label](slug.md)`; nothing with a scheme or a path separator). Checked
+against all 44 live page bodies: **zero mismatches over the 45 edges the trigger derived** —
+every reference the reader makes clickable is one the graph knows about, and vice versa.
+
+Three things that only showed up against real content:
+
+- **Anchors have to be unique, and on real pages they aren't.** `major-depressive-disorder`
+  carries the six-section disorder skeleton **three times** and
+  `persistent-depressive-disorder` twice — one copy per accepted `update` proposal. So
+  "presentation" is not a unique id. Ids are now uniquified (`-2`, `-3`) and handed to the
+  renderer *by source line* (mdast reports a position for every node) rather than by a
+  counter, which re-renders would desynchronise. The repetition itself is a content problem
+  for the review pass, not a rendering one.
+- **Content uses H1 as a section heading**, e.g. `# Update from Fonagy (2015)` — a merge
+  seam. Scanning only h2/h3 for the contents left 15 of 44 pages with an empty ToC while
+  their headings were still anchored, so the scan takes h1 too and the renderer demotes it.
+- **125 relations live only in frontmatter** (`related_disorders`, `key_studies`,
+  `concepts_touched`, …) and **none of them are in `wiki_links`**, because the trigger reads
+  the body only. 102 of the 125 point at pages that already exist. The reader renders them
+  as a *Related* strip — navigable, but deliberately not presented as graph edges. Whether
+  the graph should carry them is a database question; see open question 12.
+
+Also on the page: ToC, backlinks (`Referenced by`), the self-declared `needs` list shown to
+everyone (for a student it's the assignment list), derived attribution from
+`wiki_page_provenance`, and — for `disorder` pages — the `disorder_criteria_links` deep link,
+which is where the §2.1 link-don't-copy decision finally becomes something a student clicks.
+The index browses by DSM chapter rather than by page type, with `tsvector` search over
+title+summary+content, and unwritten catalogue rows shown by default for staff (the worklist)
+and hidden by default for students.
+
+Verified by build (`WikiIndex`/`WikiPage` emit as their own chunks; `react-markdown` lands in
+the WikiPage chunk, entry bundle unchanged at ~235 KB raw) and by two offline checks against
+the live corpus: the link-rule comparison above, and a server-render of `WikiMarkdown` over
+three real pages plus a synthetic one exercising every link form, asserting that each ToC
+anchor exists in the output, ids are unique, no `[[wikilink]]` survives, and each of the six
+link shapes resolves correctly. That last check earned its keep: section links
+(`slug.md#Section`) were being sent down the external-link branch, because such an href
+doesn't end in `.md` — the database rule stops at the hash and the reader now does too, and
+the section is slugified so it matches the heading id it points at. Real content happens not
+to use section links yet, so nothing on the live corpus would have caught it. **Not yet
+click-tested in a browser** — `npm run dev` can't run the Field Guide (§6 of the handoff),
+so that needs a deploy.
 
 ### WP3 as built — part 1: taxonomy seed + review path (2026-07-25)
 
@@ -638,13 +710,26 @@ Two scheduling notes given the "both at once" decision:
    Note for future sessions: these links can't be agent-verified by retrieval and shouldn't be —
    403 to automation, human sessions don't transfer, and bulk EZproxy fetching both breaches library
    terms and contradicts the link-don't-copy decision in §2.1.
-8. **Roster: R1, R2, or R3?** (§2a.2) — R3 recommended. This is the decision that determines
-   whether one roster serves both systems or two rosters get reconciled by hand all term.
+8. ~~**Roster: R1, R2, or R3?**~~ — **resolved 2026-07-27: R3.** One roster on
+   radlab-academic serves both systems; Lecture Lounge verifies through `api/roster-check.js`
+   under the service role. See the Decisions section.
 9. **Roster: how do PSY240 students avoid Ripple onboarding?** (§2a.3) — course-scoped
    account flavour vs. an onboarding bypass for roster-originated accounts. Needs a decision
    before WP5 touches the main project's auth path.
-10. **Where does the roster CSV come from** — ACORN export, Quercus, or a hand-built sheet?
-    Determines the expected column names and how late adds/drops arrive (one-off re-upload
-    vs. periodic re-sync). Re-upload must be idempotent on `student_number` either way.
+10. ~~**Where does the roster CSV come from**~~ — **resolved 2026-07-27: Quercus export.**
+    Its column names differ from ACORN's and its email column may be the institutional
+    alias, so WP5's importer maps columns explicitly and matches on the normalized key
+    (§2a.5), not on a fixed header row or a literal string. Re-upload idempotent on
+    `student_number`.
 11. **Resend limits + domain verification** for radlab-academic, before the first bulk send
     (§2a.6).
+12. **Should frontmatter relations become graph edges?** (new, 2026-07-27) — 125 relations
+    are declared in frontmatter (`related_disorders`, `key_studies`, `concepts_touched`,
+    `disorders_touched`, `related_concepts`, `target_disorders`) and none reach `wiki_links`,
+    because `sync_wiki_links()` reads the body only. 102 of them point at pages that exist.
+    Consequences if left as-is: backlink counts understate connectedness by roughly 3×, and
+    the red-link count that taxonomy §5's Tier B argument rests on is measured on a partial
+    graph. Extending the trigger is a small change; the reason to think first is that it
+    would fold a *model-declared* relation into the same graph as an author's explicit
+    in-text link, and the two aren't the same claim. The reader currently shows them
+    separately, which keeps the option open either way.

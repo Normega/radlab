@@ -1,6 +1,6 @@
 # PSY240 Field Guide — session handoff
 
-> Written 2026-07-27, end of the WP1/WP3 build sessions. Read this **plus**
+> Updated 2026-07-27 (WP2 built; roster decisions taken). Read this **plus**
 > `psy240_wiki_plan.md` (architecture + sequencing) and `psy240_taxonomy.md`
 > (the 123-page catalogue). This file is the *state of play and open threads*;
 > those two are the durable record. If they disagree with this file, they win —
@@ -15,9 +15,9 @@
 | WP0 decisions | ✔ done |
 | WP1 schema | ✔ done, applied live |
 | **WP3** seed + review path + review UI + `reference` mode | ✔ **done, applied live, exercised on real content** |
-| WP2 reader UI | ✘ not started — **recommended next build** |
+| **WP2** reader UI | ✔ **built 2026-07-27** — verified offline against the live corpus, **not yet click-tested in a browser** |
 | WP4 content sprint | ✘ not started — the critical path to day one |
-| WP5 roster & enrollment | ✘ not started — **the schedule's real risk**, and blocked on four decisions (§4) |
+| WP5 roster & enrollment | ✘ not started — **the schedule's real risk**; two of its four decisions are now taken (§4) |
 | WP6 student submission | ✘ not started, depends on WP5 |
 | WP7 export mirror | ✘ not started |
 
@@ -65,18 +65,23 @@ for radlab-academic is applied. Add a row when you apply one.
 
 ## 4. Open decisions — these need Norm, and two have external lead time
 
-From `psy240_wiki_plan.md` §2a, still unanswered:
+From `psy240_wiki_plan.md` §2a:
 
-1. **Roster ownership: R1 / R2 / R3.** Which project owns the student roster.
-   R3 recommended (radlab-academic as the single course-identity authority,
-   Lecture Lounge verifying through a serverless check).
-2. **How PSY240 students avoid Ripple onboarding.** A magic-link user with no
-   `ripples.name` currently routes into `/welcome`. This is the only work in the
-   whole plan that touches the **main** project's auth path.
-3. **Where the roster CSV comes from** — ACORN, Quercus, or hand-built. Sets the
-   expected columns and how late adds arrive.
-4. **Resend domain verification for radlab-academic.** External, has lead time,
-   and Supabase's built-in auth email cannot send ~300 invites.
+1. ~~**Roster ownership**~~ — **decided 2026-07-27: R3.** radlab-academic is the
+   single course-identity authority; Lecture Lounge verifies against it through
+   `api/roster-check.js` under the service role. PII stays partitioned, one
+   roster serves both systems.
+2. **How PSY240 students avoid Ripple onboarding.** *Still open.* A magic-link
+   user with no `ripples.name` currently routes into `/welcome`. This is the only
+   work in the whole plan that touches the **main** project's auth path.
+   Recommendation on the table: a course-origin flag on the account that
+   `ProtectedRoute` skips onboarding for, rather than a new account tier.
+3. ~~**Where the roster CSV comes from**~~ — **decided 2026-07-27: Quercus
+   export.** Column names differ from ACORN's and the email column may be the
+   institutional alias, so the importer maps columns explicitly and matches on
+   the normalized key, never a literal string.
+4. **Resend domain verification for radlab-academic.** *Still open, external
+   lead time.* Supabase's built-in auth email cannot send ~300 invites.
 
 Also open but not blocking: the **CDDR licence variant** (BY-NC-SA vs BY-NC-ND
 3.0 IGO). A 30-second check of the PDF's copyright page. Doesn't gate anything —
@@ -101,7 +106,19 @@ These were learned by running real content through, not by reasoning:
 - **Slug convention holds across independent sources.** Both `type='disorder'`
   pages the model invented matched hand-written catalogue slugs exactly. No drift
   at 44 pages.
-- **0 red links across 45.** Every wikilink resolves.
+- **0 red links across 45.** Every wikilink resolves. **But** (found 2026-07-27
+  while building the reader) that graph is only the *body* links: a further **125
+  relations are declared in frontmatter and none of them reach `wiki_links`**,
+  because `sync_wiki_links()` reads the body only. 102 point at pages that exist.
+  So connectedness is understated roughly 3×, and the red-link count that
+  taxonomy §5's Tier B argument leans on is measured on a partial graph. Plan
+  open question 12.
+- **Some pages carry the disorder skeleton more than once.**
+  `major-depressive-disorder` has Presentation/Diagnosis/…/Contested **three
+  times**, `persistent-depressive-disorder` twice — one copy per accepted
+  `update` proposal, plus H1 seams like `# Update from Fonagy (2015)`. The
+  merge guard stops a delta *replacing* a page; it doesn't stop the skeleton
+  accumulating. Worth an editing pass on those two before the first publish.
 
 ## 6. Gotchas that cost time this session
 
@@ -132,18 +149,30 @@ These were learned by running real content through, not by reasoning:
 
 ## 7. Suggested next move
 
-**WP2, the reader UI.** 44 pages exist and nobody can read them, and reviewing
-71 more in a raw-markdown textarea is the expensive part of WP4 — rendered
-markdown with working wikilinks and backlinks makes the most costly hours
-cheaper. Doing it *before* the content sprint rather than after is the argument.
-Roughly one session: render, wikilink resolution, backlinks, `tsvector` search,
-ToC.
+**WP4, the content sprint** — the reader now exists, so reviewing a page means
+reading a rendered page with working links instead of markdown in a textarea,
+which was the argument for building WP2 first. Shape from §5: ~15 module runs in
+paper mode to lay down chapters, then targeted reference runs on Tier A pages
+that still declare gaps (`reference_worklist` says which).
 
-In parallel, put §4's four roster decisions to Norm, since two have external
-lead time and WP5 is the schedule's real risk.
+Two things to clear before or during it:
 
-One loose end worth clearing early: the 18 pages from the Module 4 paper-mode
-run predate the attribution fix, so they carry no `sources:` frontmatter of
-their own. They *are* attributed through `wiki_page_provenance`, so nothing is
-unattributed — but if `sources:` in frontmatter matters for the WP7 export,
-those pages want regenerating or hand-editing before the first publish.
+- **Click-test the reader on a deploy.** It is verified offline (link rules vs
+  the DB graph, server-rendered anchors) but has never run in a browser —
+  `npm run dev` can't serve the Field Guide (§6).
+- **The two repeated-skeleton pages** (§5) want an editing pass.
+
+**WP5 is still the schedule's real risk.** Two of its four decisions are taken;
+the Ripple-onboarding collision and Resend domain verification remain, and the
+second has external lead time.
+
+One loose end, now with a proposed answer: the 18 pages from the Module 4
+paper-mode run predate the attribution fix, so they carry no `sources:`
+frontmatter of their own. They *are* attributed through `wiki_page_provenance`,
+so nothing is unattributed. **Proposal (2026-07-27): leave them, and have WP7's
+exporter synthesize `sources:` from provenance at export time** rather than
+regenerating pages. The database stays the single source of truth for
+attribution, every exported page gets a correct block regardless of what the
+model emitted, and no page has to be rewritten to satisfy a file format. The
+reader already takes this line — it shows *Built from* out of provenance, not
+out of frontmatter.

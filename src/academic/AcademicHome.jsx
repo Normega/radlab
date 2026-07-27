@@ -17,6 +17,10 @@ export default function AcademicHome() {
           <h2 style={S.cardTitle}>Lecture Lounge</h2>
           <p style={S.sub}>Live classroom engagement — admin console for classes and instructors. Students join at their class link.</p>
         </Link>
+        <Link to="/academic/fieldguide/wiki" style={S.card}>
+          <h2 style={S.cardTitle}>Field Guide — wiki</h2>
+          <p style={S.sub}>The course wiki. Open to anyone enrolled; published pages only unless you're staff.</p>
+        </Link>
         <Link to="/academic/fieldguide/ingest" style={S.card}>
           <h2 style={S.cardTitle}>Field Guide — ingest</h2>
           <p style={S.sub}>Course wiki paper-ingest portal. Instructors and TAs only.</p>
