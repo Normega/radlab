@@ -87,6 +87,11 @@ PAGE TYPES:
 - debate: a contested claim in the field. Fields: title, summary, field_positions (list of researcher/stance pairs), related_disorders, related_concepts
   NOTE: never populate a "my_take" field. That field is reserved for human instructor edits only.
 
+SOURCING — mandatory on every page:
+- Frontmatter must include a "sources" array naming what the content came from, e.g. sources: ["Bridley & Daffin, Fundamentals of Psychological Disorders 3e, Module 4", "Shedler 2010, Am Psychol 65(2)"].
+- Attribute in-text where a specific claim, statistic or effect size comes from a named source, and carry the year on prevalence figures.
+- This is not optional tidiness: openly-licensed course sources (CC BY-NC-SA, CC BY-NC-ND) require attribution as a licence condition, and a page with no provenance cannot be checked later.
+
 RULES:
 - Paraphrase all diagnostic criteria. Never reproduce DSM-5 text verbatim.
 - If a page already exists in the index, output it as an "update" with only the new information to merge, not a full rewrite.
