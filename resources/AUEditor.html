@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AU Expression Editor · RADlab</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=DM+Serif+Display&family=Space+Mono&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#FCF0F5;font-family:'DM Sans',sans-serif;height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:white;border-bottom:1px solid #EAD8E4;padding:10px 14px;flex-shrink:0;}
+.eyebrow{font-family:'Space Mono',monospace;font-size:10px;color:#abadb0;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;}
+.em-tabs{display:flex;gap:3px;flex-wrap:wrap;margin-bottom:6px;}
+.em-tab{padding:4px 11px;border-radius:6px;border:1.5px solid transparent;font-size:12px;cursor:pointer;color:white;font-weight:500;opacity:0.55;transition:opacity 0.12s;}
+.em-tab.active{opacity:1;box-shadow:0 2px 8px rgba(0,0,0,0.15);}
+.zone-tabs{display:flex;gap:4px;}
+.zone-tab{padding:3px 11px;border-radius:5px;border:1px solid #E0D0DC;font-size:11px;cursor:pointer;background:white;color:#888;font-family:'Space Mono',monospace;transition:all 0.1s;}
+.zone-tab.active{background:#f068a4;color:white;border-color:#f068a4;}
+.body{display:flex;flex:1;overflow:hidden;}
+.left{width:196px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;padding:14px 10px;gap:10px;border-right:1px solid #EAD8E4;background:white;}
+.face-card{background:#FCF0F5;border-radius:16px;padding:12px;}
+.pos-label{text-align:center;}
+.pos-name{font-family:'DM Serif Display',serif;font-size:15px;color:#1c1c1e;}
+.pos-zone{font-family:'Space Mono',monospace;font-size:10px;color:#abadb0;text-transform:uppercase;margin-top:2px;}
+.btns{display:flex;flex-direction:column;gap:5px;width:100%;}
+.btn{width:100%;padding:7px 10px;border-radius:7px;font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;border:none;font-weight:500;text-align:center;}
+.btn-ghost{background:white;color:#888;border:1px solid #E0D0DC;}
+.btn-ghost:hover{background:#F8F0F5;}
+.btn-neutral{background:#FCF0F5;color:#c060a0;border:1px solid #F0D0E0;}
+.btn-neutral:hover{background:#F8E0F0;}
+.btn-export{background:#1c1c1e;color:white;}
+.btn-export:hover{background:#333;}
+.right{flex:1;overflow-y:auto;padding:12px 14px;}
+.section{margin-bottom:14px;}
+.section-title{font-family:'Space Mono',monospace;font-size:9px;color:#c0a0b0;text-transform:uppercase;letter-spacing:0.12em;margin-bottom:5px;padding-bottom:4px;border-bottom:1px solid #F0E0E8;}
+.srow{display:flex;align-items:center;gap:6px;margin-bottom:3px;}
+.srow label{font-size:10px;color:#888;width:100px;flex-shrink:0;font-family:'Space Mono',monospace;white-space:nowrap;}
+.srow input[type=range]{flex:1;height:3px;accent-color:#f068a4;cursor:pointer;}
+.srow .val{font-size:10px;color:#1c1c1e;width:30px;text-align:right;font-family:'Space Mono',monospace;}
+.radio-group{display:flex;gap:3px;flex-wrap:wrap;margin-bottom:4px;}
+.radio-label{font-size:10px;color:#888;font-family:'Space Mono',monospace;width:100px;flex-shrink:0;align-self:center;}
+.ropt{padding:2px 8px;border-radius:4px;border:1px solid #E0D0DC;font-size:10px;cursor:pointer;background:white;color:#666;font-family:'Space Mono',monospace;transition:all 0.1s;}
+.ropt.active{background:#1c1c1e;color:white;border-color:#1c1c1e;}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:100;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:white;border-radius:16px;padding:18px;width:min(92vw,600px);max-height:85vh;display:flex;flex-direction:column;gap:10px;}
+.modal h3{font-family:'DM Serif Display',serif;font-size:17px;color:#1c1c1e;}
+.modal textarea{flex:1;font-family:'Space Mono',monospace;font-size:9.5px;border:1px solid #E0D0DC;border-radius:8px;padding:10px;resize:none;min-height:320px;line-height:1.6;}
+.modal-btns{display:flex;gap:6px;}
+.btn-copy{background:#f068a4;color:white;padding:7px 14px;border-radius:7px;font-size:12px;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;}
+.btn-close{background:white;color:#888;padding:7px 14px;border-radius:7px;font-size:12px;cursor:pointer;border:1px solid #E0D0DC;font-family:'DM Sans',sans-serif;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="eyebrow">RADlab · AU Expression Editor — 8 emotions × 3 zones = 24 positions</div>
+  <div class="em-tabs" id="em-tabs"></div>
+  <div class="zone-tabs" id="zone-tabs"></div>
+</div>
+
+<div class="body">
+  <div class="left">
+    <div class="face-card">
+      <svg id="face-svg" viewBox="0 0 200 185" width="160" height="160"></svg>
+    </div>
+    <div class="pos-label">
+      <div class="pos-name" id="pos-name">Alert</div>
+      <div class="pos-zone" id="pos-zone">mild</div>
+    </div>
+    <div class="btns">
+      <button class="btn btn-neutral" id="btn-reset">↺ Reset to neutral</button>
+      <button class="btn btn-ghost"   id="btn-calc">↺ Reset to defaults</button>
+      <button class="btn btn-export"  id="btn-export">Export all 24 →</button>
+    </div>
+  </div>
+  <div class="right" id="controls"></div>
+</div>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <h3>Exported positions</h3>
+    <textarea id="export-text" readonly></textarea>
+    <div class="modal-btns">
+      <button class="btn-copy" id="btn-copy">Copy to clipboard</button>
+      <button class="btn-close" id="btn-close-modal">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Emotion data ──────────────────────────────────────────────────────────────
+const EMOTIONS=[
+  {name:'Alert',   va:-0.85,ar: 0.82,pupilTier:2,color:'#B82222'},
+  {name:'Excited', va: 0.88,ar: 0.88,pupilTier:2,color:'#D88000'},
+  {name:'Good',    va: 0.72,ar: 0.45,pupilTier:1,color:'#C4A000'},
+  {name:'Calm',    va: 0.80,ar: 0.08,pupilTier:0,color:'#DC6E2E'},
+  {name:'Still',   va: 0.00,ar:-0.65,pupilTier:0,color:'#1EA878'},
+  {name:'Sad',     va:-0.28,ar:-0.88,pupilTier:0,color:'#4878B8'},
+  {name:'Bad',     va:-0.72,ar:-0.48,pupilTier:1,color:'#384070'},
+  {name:'Tense',   va:-0.58,ar: 0.35,pupilTier:2,color:'#804080'},
+];
+const ZONES=[{name:'mild',it:1/3},{name:'moderate',it:2/3},{name:'strong',it:1.0}];
+const NEUTRAL={au1:0,au2:0,au4:0,au5:0,au12:0,au15:0,au20:0,au27:0,au43:0,sb2:0,mouthType:'line',pupilTier:1,blush:0.28,it:1.0};
+
+// ── AU helpers ────────────────────────────────────────────────────────────────
+const clamp=(v,lo=0,hi=1)=>Math.max(lo,Math.min(hi,v));
+const ep=v=>Math.max(0,v); const en=v=>Math.max(0,-v);
+
+function fromCalcExpr(va,ar,it,pupilTier){
+  const sb2=en(va)*ep(ar)*0.55;
+  const au1 =+( clamp(en(va)*(1-ep(ar)*1.5)+sb2)*it ).toFixed(3);
+  const au2 =+( clamp(ep(va)*(0.3+ep(ar)*0.7)+sb2*0.7)*it ).toFixed(3);
+  const au4 =+( clamp(en(va)*0.35+en(va)*ep(ar)*0.75)*it ).toFixed(3);
+  const au5 =+( clamp(ep(ar)*0.85)*(0.4+0.6*it) ).toFixed(3);
+  const au12=+( clamp(ep(va))*it ).toFixed(3);
+  const au15=+( clamp(en(va)*en(ar)*1.4)*it ).toFixed(3);
+  const au20=+( clamp(en(va)*ep(ar)*1.4)*it ).toFixed(3);
+  const au27=+( clamp(en(va)*ep(ar)*1.3)*it ).toFixed(3);
+  const au43=+( clamp((0.3-ar)/1.3,0,1)*(0.4+0.6*it) ).toFixed(3);
+  const bs2 =+sb2.toFixed(3);
+  let mouthType='line';
+  if(au27>0.28) mouthType='alert';
+  else if(va>0.5&&ar>0.6) mouthType='excited';
+  else if(en(va)>0.3&&ar>0.15) mouthType='tense';
+  return{au1,au2,au4,au5,au12,au15,au20,au27,au43,sb2:bs2,mouthType,pupilTier,blush:+(0.28+ep(va)*0.22).toFixed(3),it:+it.toFixed(3)};
+}
+
+// ── Positions state — initialised from hand-authored expression table ─────────
+const EXPRESSION_DEFAULTS = {
+  Alert: {
+    mild:     { au1:0.33, au2:0.089, au4:0.273, au5:0.25,  au12:0.41,  au15:0,    au20:0.06,  au27:0.53,  au43:0,     sb2:0.383, mouthType:'alert',   pupilTier:2, blush:0.28, it:0.3   },
+    moderate: { au1:0.45, au2:0.179, au4:0.547, au5:0.93,  au12:0.42,  au15:0,    au20:0.651, au27:0.68,  au43:0,     sb2:0.383, mouthType:'alert',   pupilTier:2, blush:0.42, it:0.24  },
+    strong:   { au1:0.85, au2:0.51,  au4:0.82,  au5:1,     au12:0.58,  au15:0,    au20:0.976, au27:0.906, au43:0,     sb2:0.383, mouthType:'alert',   pupilTier:2, blush:0.6,  it:0.05  }
+  },
+  Excited: {
+    mild:     { au1:0.12, au2:0.269, au4:0,     au5:0.449, au12:0.69,  au15:0,    au20:0.54,  au27:0.75,  au43:0,     sb2:0,     mouthType:'excited', pupilTier:2, blush:0.474,it:0.333 },
+    moderate: { au1:0.3,  au2:0.76,  au4:0,     au5:0.598, au12:0.88,  au15:0,    au20:0.63,  au27:0.91,  au43:0,     sb2:0,     mouthType:'excited', pupilTier:2, blush:0.474,it:0.71  },
+    strong:   { au1:0.44, au2:1,     au4:0,     au5:0.748, au12:1,     au15:0,    au20:0.47,  au27:0.2,   au43:0,     sb2:0,     mouthType:'excited', pupilTier:2, blush:0.6,  it:1     }
+  },
+  Good: {
+    mild:     { au1:0,    au2:0.148, au4:0,     au5:0.229, au12:0.24,  au15:0,    au20:0,     au27:0,     au43:0,     sb2:0,     mouthType:'line',    pupilTier:1, blush:0.438,it:0.333 },
+    moderate: { au1:0,    au2:0.295, au4:0,     au5:0.306, au12:0.48,  au15:0,    au20:0,     au27:0,     au43:0,     sb2:0,     mouthType:'line',    pupilTier:0, blush:0.438,it:0.667 },
+    strong:   { au1:0,    au2:0.443, au4:0,     au5:0.383, au12:0.97,  au15:0,    au20:0.66,  au27:0,     au43:0,     sb2:0,     mouthType:'line',    pupilTier:1, blush:0.438,it:1     }
+  },
+  Calm: {
+    mild:     { au1:0,    au2:0.095, au4:0,     au5:0.041, au12:0.267, au15:0,    au20:0.09,  au27:0,     au43:0.2,   sb2:0,     mouthType:'line',    pupilTier:0, blush:0.456,it:0.333 },
+    moderate: { au1:0,    au2:0.19,  au4:0.29,  au5:0.054, au12:0.533, au15:0,    au20:0.25,  au27:0,     au43:0.3,   sb2:0,     mouthType:'line',    pupilTier:0, blush:0.456,it:0.667 },
+    strong:   { au1:0.19, au2:0.285, au4:0.3,   au5:0.068, au12:0.8,   au15:0,    au20:0.4,   au27:0,     au43:0.5,   sb2:0,     mouthType:'line',    pupilTier:0, blush:0.456,it:1     }
+  },
+  Still: {
+    mild:     { au1:0,    au2:0,     au4:0,     au5:0,     au12:0.03,  au15:0,    au20:0.11,  au27:0,     au43:0.438, sb2:0,     mouthType:'line',    pupilTier:0, blush:0.28, it:0.333 },
+    moderate: { au1:0.01, au2:0,     au4:0.05,  au5:0,     au12:0,     au15:0,    au20:0.22,  au27:0,     au43:0.585, sb2:0,     mouthType:'line',    pupilTier:0, blush:0.28, it:0.667 },
+    strong:   { au1:0,    au2:0,     au4:0,     au5:0,     au12:0.04,  au15:0,    au20:0.29,  au27:0,     au43:1,     sb2:0,     mouthType:'line',    pupilTier:0, blush:0.05, it:1     }
+  },
+  Sad: {
+    mild:     { au1:0.16, au2:0.14,  au4:0.033, au5:0,     au12:0,     au15:0.45, au20:0,     au27:0,     au43:0.37,  sb2:0,     mouthType:'line',    pupilTier:0, blush:0.28, it:0.333 },
+    moderate: { au1:0.61, au2:0.18,  au4:0.29,  au5:0,     au12:0,     au15:0.58, au20:0.27,  au27:0,     au43:0.52,  sb2:0,     mouthType:'line',    pupilTier:0, blush:0.28, it:0.667 },
+    strong:   { au1:0.92, au2:0,     au4:0.98,  au5:0,     au12:0,     au15:0.64, au20:0.73,  au27:0,     au43:0.77,  sb2:0,     mouthType:'line',    pupilTier:0, blush:0.28, it:1     }
+  },
+  Bad: {
+    mild:     { au1:0.02, au2:0.29,  au4:0.3,   au5:0,     au12:0,     au15:0.36, au20:0,     au27:0,     au43:0.05,  sb2:0,     mouthType:'line',    pupilTier:1, blush:0.28, it:0.07  },
+    moderate: { au1:0,    au2:0.3,   au4:0.4,   au5:0,     au12:0.02,  au15:0.53, au20:0.36,  au27:0,     au43:0.08,  sb2:0,     mouthType:'line',    pupilTier:1, blush:0.28, it:0.13  },
+    strong:   { au1:0.3,  au2:0.86,  au4:0.86,  au5:0,     au12:0.18,  au15:0.83, au20:0.69,  au27:0,     au43:0.12,  sb2:0,     mouthType:'line',    pupilTier:1, blush:0.28, it:1     }
+  },
+  Tense: {
+    mild:     { au1:0.02, au2:0.23,  au4:0.118, au5:0.26,  au12:0.28,  au15:0.33, au20:0.4,   au27:1,     au43:0,     sb2:0.112, mouthType:'tense',   pupilTier:2, blush:0.28, it:0.333 },
+    moderate: { au1:0.11, au2:0.56,  au4:0.47,  au5:0.56,  au12:0.25,  au15:0,    au20:0.83,  au27:1,     au43:0,     sb2:0.112, mouthType:'tense',   pupilTier:2, blush:0.47, it:0.667 },
+    strong:   { au1:0.09, au2:0.75,  au4:1,     au5:0.97,  au12:0.46,  au15:0.07, au20:1,     au27:1,     au43:0,     sb2:0.112, mouthType:'tense',   pupilTier:2, blush:0.6,  it:1     }
+  }
+};
+
+const positions={};
+EMOTIONS.forEach(em=>ZONES.forEach(z=>{
+  positions[`${em.name}_${z.name}`]={...EXPRESSION_DEFAULTS[em.name][z.name]};
+}));
+
+let curEm='Alert', curZone='mild';
+const key=()=>`${curEm}_${curZone}`;
+const pos=()=>positions[key()];
+
+// ── Color utils ───────────────────────────────────────────────────────────────
+function h2r(h){const n=parseInt(h.replace('#',''),16);return[(n>>16)&255,(n>>8)&255,n&255];}
+function r2h(r,g,b){return'#'+[r,g,b].map(v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0')).join('');}
+function lt(h,a){const[r,g,b]=h2r(h);return r2h(r+a,g+a,b+a);}
+function dk(h,a){return lt(h,-a);}
+function mx(a,b,t){const[r1,g1,b1]=h2r(a),[r2,g2,b2]=h2r(b);return r2h(r1+(r2-r1)*t,g1+(g2-g1)*t,b1+(b2-b1)*t);}
+
+// ── Face renderer ─────────────────────────────────────────────────────────────
+const NS='http://www.w3.org/2000/svg';
+const SK='#FDBCB4',IR='#4A90D9';
+const SKD=dk(SK,18),SKL=lt(SK,18),BL=mx(SK,'#FF8FAB',0.45),BRC=dk(SK,36);
+const MC=dk(mx(SK,'#C06070',0.5),18),IRD=dk(IR,30),IRL=lt(IR,35);
+
+function mk(tag,attrs,parent){
+  const e=document.createElementNS(NS,tag);
+  for(const[k,v]of Object.entries(attrs))e.setAttribute(k,String(v));
+  if(parent)parent.appendChild(e);return e;
+}
+
+function clearSVG(svg){
+  // svg.innerHTML='' is silently ignored on SVGElement in iOS Safari — use removeChild loop
+  while(svg.firstChild) svg.removeChild(svg.firstChild);
+}
+
+function renderFace(svg,p){
+  clearSVG(svg);
+  const{au1,au2,au4,au5,au12,au15,au20,au27,au43,sb2,mouthType,pupilTier,blush,it}=p;
+  const id='e'+Math.random().toString(36).slice(2,7);
+  const f=v=>Number(v).toFixed(1);
+
+  // Geometry
+  const ET=83,H=16;
+  const lc=clamp(8-au5*6+au43*14,1.5,28);
+  const ly=ET+lc,lr=(H*H+lc*lc)/(2*lc),lcy=ly+4;
+  const ll=Math.max(0,(ET+8)-ly);
+  const lO=[60, 82-au2*8+au4*6-sb2*20-ll*0.8];
+  const lC=[76, 77-au1*5-au2*4+au4*6-sb2*16-ll*0.8];
+  const lI=[90, 81-au1*10+au4*6-sb2*18-ll*0.8];
+  const rI=[110,81-au1*10+au4*6-sb2*18-ll*0.8];
+  const rC=[124,77-au1*5-au2*4+au4*6-sb2*16-ll*0.8];
+  const rO=[140,82-au2*8+au4*6-sb2*20-ll*0.8];
+  const cLX=82-au20*10,cRX=118+au20*10;
+  const cY=145-au12*12+au15*6+au20*it*6;
+  const mCY=149+au12*12-au15*8-au20*it*4;
+  const PT=[[5.5,5.5,5.5],[5.5,5.5,7.5],[5.5,7.5,9.5]];
+  const iz=Math.min(2,Math.max(0,Math.round(it*3)-1));
+  const pR=PT[Math.min(2,Math.max(0,pupilTier))][iz];
+  const bl=clamp(blush);
+
+  // Defs — only radial gradients + blush blur; no clipPath (all circles are fully
+  // contained within eye-white r=17 so clipping is geometrically unnecessary) and
+  // no shadow filter (SVG filters on dynamically-created SVG elements are unreliable
+  // in older iOS Safari WebKit and cause blank rendering)
+  const defs=mk('defs',{},svg);
+  function rg(gid,cx,cy,r,stops){
+    const g=mk('radialGradient',{id:gid,cx,cy,r},defs);
+    stops.forEach(([off,col])=>mk('stop',{offset:off,'stop-color':col},g));
+  }
+  rg(`${id}h`,'38%','30%','68%',[['0%',SKL],['60%',SK],['100%',SKD]]);
+  rg(`${id}i`,'35%','30%','65%',[['0%',IRL],['55%',IR],['100%',IRD]]);
+  rg(`${id}s`,'40%','30%','60%',[['0%','#fff'],['100%','#F0EBE8']]);
+  const bf=mk('filter',{id:`${id}b`},defs);mk('feGaussianBlur',{stdDeviation:'1.2'},bf);
+
+  // Head
+  mk('ellipse',{cx:'100',cy:'105',rx:'64',ry:'68',fill:`url(#${id}h)`},svg);
+
+  // Eyes
+  function eye(cx,cp){
+    // Shadow: plain offset circle behind eye-white — no SVG filter, fully Safari-safe
+    mk('circle',{cx,cy:'101',r:'18',fill:SKD,opacity:'0.13'},svg);
+    mk('circle',{cx,cy:'100',r:'17',fill:`url(#${id}s)`},svg);
+    mk('circle',{cx,cy:'101',r:'12',fill:`url(#${id}i)`},svg);
+    mk('circle',{cx,cy:'101',r:f(pR),fill:'#0D0D0D'},svg);
+    mk('circle',{cx:String(cx-6),cy:'102',r:'3.5',fill:'white',opacity:'0.95'},svg);
+    mk('circle',{cx:String(cx+3),cy:'108',r:'1.8',fill:'white',opacity:'0.65'},svg);
+    // Fixed-top lid: top edge anchored at y=83, only lash line moves down
+    mk('path',{d:`M${cp-19} 83 Q${cx} 80 ${cp+19} 83 L${cp+19} ${f(ly)} Q${cx} ${f(lcy)} ${cp-19} ${f(ly)} Z`,fill:SK},svg);
+    mk('path',{d:`M${cp+19} ${f(ly)} Q${cx} ${f(lcy)} ${cp-19} ${f(ly)}`,stroke:SKD,'stroke-width':'2.2',fill:'none','stroke-linecap':'round',opacity:'0.6'},svg);
+  }
+  eye(76,76); eye(124,124);
+
+  // Mouth
+  const mD=`M${f(cLX)} ${f(cY)} Q100 ${f(mCY)} ${f(cRX)} ${f(cY)}`;
+  if(mouthType==='alert'&&au27>0){
+    const cy2=cY+2+au27*4,rx=8+au27*11,ry=3+au27*10;
+    mk('ellipse',{cx:'100',cy:f(cy2),rx:f(rx),ry:f(ry),fill:dk(MC,20),opacity:f(Math.min(1,au27*1.5))},svg);
+    mk('ellipse',{cx:'100',cy:f(cy2),rx:f(rx),ry:f(ry),fill:'none',stroke:MC,'stroke-width':'1.5',opacity:f(Math.min(1,au27*1.5))},svg);
+  } else if(mouthType==='excited'){
+    // au27 now drives the arc depth (non-zero in current table); au12 fallback for legacy
+    const eScale=au27||au12;
+    mk('path',{d:`M${f(cLX+4)} ${f(cY)} Q100 ${f(mCY+9*eScale)} ${f(cRX-4)} ${f(cY)}`,fill:dk(MC,8),opacity:f(Math.max(0.15,0.75*eScale))},svg);
+  } else if(mouthType==='tense'){
+    mk('path',{d:`M${f(cLX+4)} ${f(cY)} Q100 ${f(cY-12*au27)} ${f(cRX-4)} ${f(cY)}`,fill:dk(MC,8),opacity:f(Math.max(0.15,0.75*au27))},svg);
+  } else {
+    mk('path',{d:mD,stroke:MC,'stroke-width':'2.2',fill:'none','stroke-linecap':'round'},svg);
+  }
+
+  // Blush
+  mk('ellipse',{cx:'62',cy:'120',rx:'16',ry:'8',fill:BL,opacity:f(bl),filter:`url(#${id}b)`},svg);
+  mk('ellipse',{cx:'138',cy:'120',rx:'16',ry:'8',fill:BL,opacity:f(bl),filter:`url(#${id}b)`},svg);
+
+  // Brows
+  mk('path',{d:`M${f(lO[0])} ${f(lO[1])} Q${f(lC[0])} ${f(lC[1])} ${f(lI[0])} ${f(lI[1])}`,stroke:BRC,'stroke-width':'4',fill:'none','stroke-linecap':'round',opacity:'0.88'},svg);
+  mk('path',{d:`M${f(rI[0])} ${f(rI[1])} Q${f(rC[0])} ${f(rC[1])} ${f(rO[0])} ${f(rO[1])}`,stroke:BRC,'stroke-width':'4',fill:'none','stroke-linecap':'round',opacity:'0.88'},svg);
+}
+
+// ── Controls builder ──────────────────────────────────────────────────────────
+const AU_GROUPS=[
+  {title:'BROWS',sliders:[
+    {key:'au1', label:'au1 inner raise'},
+    {key:'au2', label:'au2 outer raise'},
+    {key:'au4', label:'au4 brow lower'},
+    {key:'sb2', label:'sb2 shame brow'},
+  ]},
+  {title:'EYES',sliders:[
+    {key:'au5',  label:'au5 lid open'},
+    {key:'au43', label:'au43 lid droop'},
+  ]},
+  {title:'MOUTH CORNERS',sliders:[
+    {key:'au12', label:'au12 smile'},
+    {key:'au15', label:'au15 depress'},
+    {key:'au20', label:'au20 stretch'},
+    {key:'it',   label:'it  intensity', min:0.05, max:1.0},
+  ]},
+  {title:'MOUTH OPENING',sliders:[
+    {key:'au27', label:'au27 open amt'},
+  ]},
+  {title:'OTHER',sliders:[
+    {key:'blush', label:'blush opacity', max:0.6},
+  ]},
+];
+
+function buildControls(){
+  const col=document.getElementById('controls');
+  col.innerHTML='';
+  const p=pos();
+
+  AU_GROUPS.forEach(grp=>{
+    const sec=document.createElement('div');
+    sec.className='section';
+    const t=document.createElement('div');
+    t.className='section-title';
+    t.textContent=grp.title;
+    sec.appendChild(t);
+
+    grp.sliders.forEach(s=>{
+      const row=document.createElement('div');
+      row.className='srow';
+      const lbl=document.createElement('label');
+      lbl.textContent=s.label;
+      const min=s.min??0, max=s.max??1;
+      const inp=document.createElement('input');
+      inp.type='range'; inp.min=min; inp.max=max; inp.step=0.01;
+      inp.value=p[s.key]??0;
+      const val=document.createElement('span');
+      val.className='val';
+      val.textContent=Number(p[s.key]??0).toFixed(2);
+      inp.addEventListener('input',()=>{
+        pos()[s.key]=parseFloat(inp.value);
+        val.textContent=parseFloat(inp.value).toFixed(2);
+        renderFace(document.getElementById('face-svg'),pos());
+      });
+      row.append(lbl,inp,val);
+      sec.appendChild(row);
+    });
+
+    // Mouth type radio
+    if(grp.title==='MOUTH OPENING'){
+      const rrow=document.createElement('div');
+      rrow.style.cssText='display:flex;align-items:center;gap:3px;margin-bottom:4px;margin-top:2px;';
+      const rlbl=document.createElement('span');
+      rlbl.style.cssText='font-size:10px;color:#888;width:100px;flex-shrink:0;font-family:Space Mono,monospace;';
+      rlbl.textContent='mouth type';
+      rrow.appendChild(rlbl);
+      ['line','alert','excited','tense'].forEach(mt=>{
+        const b=document.createElement('button');
+        b.className='ropt'+(p.mouthType===mt?' active':'');
+        b.textContent=mt;
+        b.addEventListener('click',()=>{
+          pos().mouthType=mt;
+          rrow.querySelectorAll('.ropt').forEach(x=>x.classList.remove('active'));
+          b.classList.add('active');
+          renderFace(document.getElementById('face-svg'),pos());
+        });
+        rrow.appendChild(b);
+      });
+      sec.appendChild(rrow);
+    }
+
+    // Pupil tier radio
+    if(grp.title==='OTHER'){
+      const rrow=document.createElement('div');
+      rrow.style.cssText='display:flex;align-items:center;gap:3px;margin-bottom:4px;';
+      const rlbl=document.createElement('span');
+      rlbl.style.cssText='font-size:10px;color:#888;width:100px;flex-shrink:0;font-family:Space Mono,monospace;';
+      rlbl.textContent='pupil tier';
+      rrow.appendChild(rlbl);
+      [0,1,2].forEach(pt=>{
+        const b=document.createElement('button');
+        b.className='ropt'+(p.pupilTier===pt?' active':'');
+        b.textContent=pt===0?'0 small':pt===1?'1 normal':'2 large';
+        b.addEventListener('click',()=>{
+          pos().pupilTier=pt;
+          rrow.querySelectorAll('.ropt').forEach(x=>x.classList.remove('active'));
+          b.classList.add('active');
+          renderFace(document.getElementById('face-svg'),pos());
+        });
+        rrow.appendChild(b);
+      });
+      sec.appendChild(rrow);
+    }
+
+    col.appendChild(sec);
+  });
+}
+
+// ── Nav ───────────────────────────────────────────────────────────────────────
+function buildNav(){
+  const emTab=document.getElementById('em-tabs');
+  const zoneTab=document.getElementById('zone-tabs');
+  emTab.innerHTML=''; zoneTab.innerHTML='';
+
+  EMOTIONS.forEach(em=>{
+    const b=document.createElement('button');
+    b.className='em-tab'+(em.name===curEm?' active':'');
+    b.textContent=em.name;
+    b.style.background=em.color;
+    b.style.borderColor=em.color;
+    b.addEventListener('click',()=>{curEm=em.name;refresh();});
+    emTab.appendChild(b);
+  });
+
+  ZONES.forEach(z=>{
+    const b=document.createElement('button');
+    b.className='zone-tab'+(z.name===curZone?' active':'');
+    b.textContent=z.name;
+    b.addEventListener('click',()=>{curZone=z.name;refresh();});
+    zoneTab.appendChild(b);
+  });
+}
+
+function refresh(){
+  buildNav();
+  buildControls();
+  document.getElementById('pos-name').textContent=curEm;
+  document.getElementById('pos-zone').textContent=curZone;
+  renderFace(document.getElementById('face-svg'),pos());
+}
+
+// ── Buttons ───────────────────────────────────────────────────────────────────
+document.getElementById('btn-reset').addEventListener('click',()=>{
+  positions[key()]={...NEUTRAL, pupilTier:EMOTIONS.find(e=>e.name===curEm).pupilTier};
+  refresh();
+});
+
+document.getElementById('btn-calc').addEventListener('click',()=>{
+  const z=ZONES.find(z=>z.name===curZone);
+  positions[key()]={...EXPRESSION_DEFAULTS[curEm][curZone]};
+  refresh();
+});
+
+document.getElementById('btn-export').addEventListener('click',()=>{
+  const out={};
+  EMOTIONS.forEach(em=>{
+    out[em.name]={};
+    ZONES.forEach(z=>{
+      const p={...positions[`${em.name}_${z.name}`]};
+      // Round all numeric values to 3dp
+      Object.keys(p).forEach(k=>{if(typeof p[k]==='number') p[k]=+p[k].toFixed(3);});
+      out[em.name][z.name]=p;
+    });
+  });
+
+  // Format as JS export
+  let lines=['export const EXPRESSION_TABLE = {'];
+  EMOTIONS.forEach((em,ei)=>{
+    lines.push(`  ${em.name}: {`);
+    ZONES.forEach((z,zi)=>{
+      const p=out[em.name][z.name];
+      const kvs=Object.entries(p).map(([k,v])=>typeof v==='string'?`${k}:'${v}'`:`${k}:${v}`).join(', ');
+      const comma=(zi<ZONES.length-1)?',':'';
+      lines.push(`    ${z.name}: { ${kvs} }${comma}`);
+    });
+    const comma=(ei<EMOTIONS.length-1)?',':'';
+    lines.push(`  }${comma}`);
+  });
+  lines.push('};');
+
+  document.getElementById('export-text').value=lines.join('\n');
+  document.getElementById('modal-overlay').classList.add('open');
+});
+
+document.getElementById('btn-copy').addEventListener('click',()=>{
+  const ta=document.getElementById('export-text');
+  ta.select();
+  navigator.clipboard.writeText(ta.value).then(()=>{
+    document.getElementById('btn-copy').textContent='Copied ✓';
+    setTimeout(()=>{document.getElementById('btn-copy').textContent='Copy to clipboard';},1500);
+  });
+});
+
+document.getElementById('btn-close-modal').addEventListener('click',()=>{
+  document.getElementById('modal-overlay').classList.remove('open');
+});
+
+document.getElementById('modal-overlay').addEventListener('click',(e)=>{
+  if(e.target===document.getElementById('modal-overlay'))
+    document.getElementById('modal-overlay').classList.remove('open');
+});
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+refresh();
+</script>
+</body>
+</html>

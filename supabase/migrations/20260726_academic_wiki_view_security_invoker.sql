@@ -1,0 +1,33 @@
+-- 20260726_academic_wiki_view_security_invoker.sql
+-- TARGET: radlab-academic.
+--
+-- SECURITY FIX for two views introduced in
+-- 20260725_academic_wiki_schema.sql (disorder_criteria_links) and
+-- 20260725_academic_wiki_wp3.sql (review_queue).
+--
+-- In PostgreSQL a view executes with the privileges of its OWNER, so RLS on
+-- the underlying tables is evaluated against the owner (postgres) rather than
+-- the caller. Supabase grants SELECT on public views to `authenticated` by
+-- default. Net effect: the roster gate on wiki_pages / wiki_page_versions /
+-- disorders held for direct table access but was bypassed entirely through
+-- either view.
+--
+-- Measured before the fix, as an authenticated user with NO enrollment:
+--   wiki_pages (table)              0 rows   <- correct
+--   wiki_page_versions (table)      0 rows   <- correct
+--   disorders (table)               0 rows   <- correct
+--   review_queue (view)            26 rows   <- LEAK: unreviewed proposal bodies
+--   disorder_criteria_links (view) 123 rows  <- LEAK: full course catalog
+--
+-- review_queue is the serious one: the entire point of the review gate is that
+-- unreviewed text is not readable, and it was readable by anyone who could
+-- sign up. security_invoker = true (PG15+; this project is on 17.6) makes the
+-- views run as the caller, so the existing table policies apply.
+--
+-- Convention for this project: EVERY view over a roster-gated table must set
+-- security_invoker. There is no case here where owner-rights execution is
+-- wanted — the narrow-privileged-read pattern is a SECURITY DEFINER *function*
+-- with an explicit membership check (see review_proposal), not a view.
+
+alter view public.disorder_criteria_links set (security_invoker = true);
+alter view public.review_queue           set (security_invoker = true);
