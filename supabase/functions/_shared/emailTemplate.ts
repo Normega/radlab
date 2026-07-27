@@ -181,8 +181,14 @@ const REMINDER_INTRO = `Just a friendly reminder — it looks like you haven't c
 // Non-punitive by design — a miss that reads as failure invites the shame →
 // avoidance → further-misses spiral this is meant to interrupt. Worded to hold
 // up whether they missed one session or a few.
+//
+// It must NOT promise that missing has no consequence. It originally read
+// "doesn't affect your standing in the study", which is false: adherence
+// withdrawal ends participation below the required session count (see
+// processAdherenceWithdrawal and renderTerminationEmail's "at least 10 of 12"
+// copy). Reassure about the OCCASIONAL miss — the true and still-kind claim.
 
-const MISSED_INTRO = `We noticed your last session's window closed before you got to it — that's completely okay. Missing a session doesn't affect your standing in the study, and there's nothing to make up. Here's the next one.`
+const MISSED_INTRO = `We noticed your last session's window closed before you got to it — that's completely okay. Missing the occasional session is normal, and there's nothing to make up. Here's the next one.`
 
 // ─── Default body ─────────────────────────────────────────────────────────────
 
