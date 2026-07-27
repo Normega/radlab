@@ -150,6 +150,22 @@ Copy then becomes a function of the row rather than a constant:
 
 ---
 
+## 3a. Agreed sequence (2026-07-27)
+
+Two phases, deliberately separate, because only the first can hurt anyone:
+
+**Phase A — shadow-mode the generic counter.** Generalize
+`countCompletedPhaseDays` (whole study as one phase when unspecified), compute
+it *alongside* the existing count, log disagreements, change no enrollment
+outcome. Blocked on Q4 (days vs sessions). Review the logged disagreements before
+Phase B.
+
+**Phase B — the audit hook.** Add `governing_adherence`, resolve it at compile
+time, and add a test asserting participant-facing copy against it. Copy itself
+stays a single hedged string for every study, so this phase cannot change what
+any participant sees — it only fails a build when a string starts claiming
+something the rules don't support.
+
 ## 4. Work breakdown
 
 | # | Task | Size |
@@ -168,11 +184,15 @@ be settled before any of it is written.
 
 ## 5. Open questions for Norm
 
-1. **Should Zerin participants be told missing is consequence-free?** It's true
-   today. But if an adherence rule is ever added, the copy silently becomes a
-   lie for everyone already enrolled. Safer to keep one hedged string for all
-   studies and treat this whole linkage as an *audit* mechanism rather than a
-   copy-personalisation one — cheaper, and it can't regress.
+1. ~~**Should Zerin participants be told missing is consequence-free?**~~
+   **Answered 2026-07-27 (Norm): no — one hedged string for every study.** The
+   live wording is "Missing the occasional session is normal, and there's
+   nothing to make up", in `MISSED_INTRO` (`_shared/emailTemplate.ts`) and
+   `expiredMessage` (`SessionEntry.jsx`). Hedged = asserts nothing that depends
+   on a per-study rule, so it stays true with or without an `adherence_check`
+   and cannot regress when one is added. **Copy therefore does NOT vary per
+   study**, and this whole linkage exists as an *audit* mechanism only: the
+   resolved rule is what a test asserts copy against, never what renders.
 2. ~~**Is `countCompletedPhaseDays` meant to stay Liliana-specific?**~~
    **Answered 2026-07-27 (Norm): no — generalize to all studies, whole study as
    one phase when phases aren't specified.** Consequences in §2.6 and §2.7; the
@@ -184,10 +204,16 @@ be settled before any of it is written.
    Liliana they coincide; for Zerin's 3×/day they differ by 3×. Needs an answer
    before the generic counter is written, and existing `min_required`/`of_total`
    values need to be read in whichever unit is chosen.
-5. **How do currently-enrolled participants cross over?** (§2.6.) One live
-   participant flips from passing to withdrawn under the generic count.
-   Recommended: shadow-mode the new count, log disagreements, and decide from
-   real data rather than switching the authority in one step.
+5. ~~**How do currently-enrolled participants cross over?**~~
+   **Answered 2026-07-27 (Norm): shadow-mode the counter first.** Compute the
+   generic count alongside the existing `liliana_day_data` one, log every
+   disagreement, and change nothing about who is withdrawn until the
+   disagreements have been looked at. The 10-vs-9 participant in §2.6 is the
+   reason: no enrollment outcome may change as a side effect of this work.
+
+Still open: **Q3** (show progress toward the threshold, or only that one
+exists?) and **Q4** (thresholds authored in days or sessions?). Q4 blocks the
+generic counter; Q3 blocks nothing and can wait.
 
 My recommendation: answer Q1 as "one hedged string for everyone" and build items
 1, 2, 4, 6 as an **audit** — the column exists so a test can assert copy against
