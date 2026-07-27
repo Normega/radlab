@@ -262,6 +262,9 @@ export default function ReviewQueue() {
                   </span>
                 </span>
                 <span style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
+                  {/* Rendered, as a student sees it — the check that raw
+                      markdown in a textarea can't give you. */}
+                  <Link to={`/academic/fieldguide/wiki/${page.slug}`} style={S.link}>View</Link>
                   <Badge kind={page.status === 'published' ? 'update' : 'first'}>{page.status}</Badge>
                   {page.status === 'published' && (
                     <button style={S.danger} onClick={() => unpublish(page)}>Unpublish</button>
@@ -317,7 +320,8 @@ function Page({ course, session, client, children, staffEnrollments, courseId, s
           </div>
           <div style={{ textAlign: 'right' }}>
             <p style={{ ...S.sub, fontSize: 12 }}>{session.user.email}</p>
-            <Link to="/academic/fieldguide/ingest" style={S.link}>Ingest portal</Link>
+            <Link to="/academic/fieldguide/wiki" style={S.link}>Wiki</Link>
+            <Link to="/academic/fieldguide/ingest" style={{ ...S.link, marginLeft: 10 }}>Ingest portal</Link>
             <button style={{ ...S.linkBtn, marginLeft: 10 }} onClick={() => client.auth.signOut()}>Sign out</button>
           </div>
         </header>

@@ -110,7 +110,8 @@ export default function IngestPortal() {
           </div>
           <div style={{ textAlign: 'right' }}>
             <p style={{ ...S.sub, fontSize: 12 }}>{session.user.email}</p>
-            <Link to="/academic/fieldguide/review" style={{ fontSize: 13, color: 'var(--pk)' }}>Review queue</Link>
+            <Link to="/academic/fieldguide/wiki" style={{ fontSize: 13, color: 'var(--pk)' }}>Wiki</Link>
+            <Link to="/academic/fieldguide/review" style={{ fontSize: 13, color: 'var(--pk)', marginLeft: 10 }}>Review queue</Link>
             <button style={{ ...S.linkBtn, marginLeft: 10 }} onClick={() => courseClient.auth.signOut()}>Sign out</button>
           </div>
         </header>

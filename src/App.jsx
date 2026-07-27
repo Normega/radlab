@@ -86,6 +86,11 @@ const AcademicHome         = lazy(() => import('./academic/AcademicHome'))
 const FieldGuideStaffRoute = lazy(() => import('./academic/fieldguide/FieldGuideStaffRoute'))
 const IngestPortal         = lazy(() => import('./academic/fieldguide/IngestPortal'))
 const ReviewQueue          = lazy(() => import('./academic/fieldguide/ReviewQueue'))
+// The wiki reader takes any active enrollment, not just staff — students read
+// through the same components, and RLS decides what comes back.
+const FieldGuideMemberRoute = lazy(() => import('./academic/fieldguide/FieldGuideMemberRoute'))
+const WikiIndex            = lazy(() => import('./academic/fieldguide/wiki/WikiIndex'))
+const WikiPage             = lazy(() => import('./academic/fieldguide/wiki/WikiPage'))
 
 // Research admin section — separate partition from Lecture Lounge.
 const AdminLayout   = lazy(() => import('./layouts/AdminLayout'))
@@ -497,6 +502,11 @@ export default function App() {
             <Route element={<FieldGuideStaffRoute />}>
               <Route path="/academic/fieldguide/ingest" element={<IngestPortal />} />
               <Route path="/academic/fieldguide/review" element={<ReviewQueue />} />
+            </Route>
+            {/* The wiki itself — same login, member-level gate. */}
+            <Route element={<FieldGuideMemberRoute />}>
+              <Route path="/academic/fieldguide/wiki" element={<WikiIndex />} />
+              <Route path="/academic/fieldguide/wiki/:slug" element={<WikiPage />} />
             </Route>
           </Route>
 
