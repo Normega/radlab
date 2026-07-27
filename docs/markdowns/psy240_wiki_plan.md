@@ -9,6 +9,8 @@
 > (PDF → Anthropic → wiki-page JSON, native mode default), staff portal at
 > `/academic/fieldguide/ingest`. Phase 2 — student submission, review queue, wiki
 > publishing — is designed but not built. **This doc is the Phase 2 plan of record.**
+>
+> **Resuming work? Read [`psy240_handoff.md`](./psy240_handoff.md) first** — current state, live database numbers, open decisions, and the gotchas that cost time.
 
 ---
 

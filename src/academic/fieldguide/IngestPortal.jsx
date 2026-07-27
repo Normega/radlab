@@ -24,6 +24,9 @@ export default function IngestPortal() {
   const [sourceType, setSourceType] = useState('paper')
   const [targetSlug, setTargetSlug] = useState('')
   const [worklist, setWorklist] = useState([])
+  // Attribution is a licence condition for the openly-licensed course sources,
+  // so it is captured here rather than left to the model to remember.
+  const [citation, setCitation] = useState('')
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState(null)
   const [jobs, setJobs] = useState([])
@@ -80,11 +83,13 @@ export default function IngestPortal() {
           pdf_path: pdfPath, pdf_mode: mode, course_id: courseId,
           source_type: sourceType,
           target_slug: sourceType === 'reference' ? targetSlug : null,
+          source_citation: citation.trim() || null,
         }),
       }).catch(() => {})
 
       setNotice('Ingest started — the job appears below within a few seconds.')
       setFile(null)
+      setCitation('')
       if (fileInput.current) fileInput.current.value = ''
       setTimeout(loadJobs, 2500)
     } catch (err) {
@@ -123,6 +128,16 @@ export default function IngestPortal() {
         <form onSubmit={submit} style={S.card}>
           <input ref={fileInput} style={{ fontSize: 14, color: 'var(--tx)' }} type="file" accept="application/pdf,.pdf"
             onChange={e => setFile(e.target.files?.[0] ?? null)} />
+          <div>
+            <input style={{ ...S.input, width: '100%' }} type="text" value={citation}
+              onChange={e => setCitation(e.target.value)} required
+              placeholder="Citation — e.g. Bridley & Daffin (2023), Fundamentals of Psychological Disorders 3e, Module 4. CC BY-NC-SA 4.0" />
+            <p style={{ ...S.sub, fontSize: 12, marginTop: 4 }}>
+              Recorded against every page this run produces. Attribution is a licence condition
+              for CC-licensed sources, so it is captured here rather than left to the model.
+            </p>
+          </div>
+
           <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
             <span style={{ ...S.sub, fontWeight: 600 }}>Source:</span>
             <label style={{ ...S.sub, cursor: 'pointer', display: 'flex', gap: 5, alignItems: 'center' }}>
@@ -174,7 +189,7 @@ export default function IngestPortal() {
               </label>
             ))}
           </div>
-          <button style={{ ...S.primary, opacity: (!file || busy || (sourceType === 'reference' && !targetSlug)) ? 0.5 : 1 }} type="submit" disabled={!file || busy || (sourceType === 'reference' && !targetSlug)}>
+          <button style={{ ...S.primary, opacity: (!file || busy || !citation.trim() || (sourceType === 'reference' && !targetSlug)) ? 0.5 : 1 }} type="submit" disabled={!file || busy || !citation.trim() || (sourceType === 'reference' && !targetSlug)}>
             {busy ? 'Uploading…' : 'Upload & ingest'}
           </button>
           {notice && <p style={{ ...S.sub, color: 'var(--pk)' }}>{notice}</p>}
