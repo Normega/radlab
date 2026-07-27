@@ -198,7 +198,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const { pdf_path, pdf_mode, course_id, source_type = 'paper', target_slug = null } = req.body ?? {}
+  const { pdf_path, pdf_mode, course_id, source_type = 'paper', target_slug = null, source_citation = null } = req.body ?? {}
   if (!pdf_path || !course_id || !['native', 'extracted'].includes(pdf_mode)) {
     return res.status(400).json({ error: 'Required: pdf_path, course_id, pdf_mode ("native" | "extracted")' })
   }
@@ -262,7 +262,7 @@ export default async function handler(req, res) {
 
   const { data: job, error: jobErr } = await service
     .from('ingest_jobs')
-    .insert({ course_id, created_by: personId, pdf_path, pdf_mode, status: 'processing', source_type, target_slug })
+    .insert({ course_id, created_by: personId, pdf_path, pdf_mode, status: 'processing', source_type, target_slug, source_citation })
     .select('id')
     .single()
   if (jobErr) return res.status(500).json({ error: `Could not create job: ${jobErr.message}` })
