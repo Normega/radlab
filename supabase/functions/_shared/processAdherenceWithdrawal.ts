@@ -72,12 +72,16 @@ export async function processAdherenceWithdrawal(
     return { emailed: false, reason: 'no_recipient_email' }
   }
 
+  // The same numbers that went into withdrawal_reason above — the participant
+  // is told the threshold that was actually enforced, not a hardcoded one.
   const { subject, html, text } = renderTerminationEmail({
     first_name: firstName,
     study_name: study?.name ?? 'this study',
     is_test: isTest,
     variant: withdrawal.kind,
     gate_label: withdrawal.gateLabel,
+    min_required: withdrawal.minRequired ?? null,
+    of_total: withdrawal.ofTotal ?? null,
   })
 
   const resend = new Resend(Deno.env.get('RESEND_API_KEY'))

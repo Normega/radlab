@@ -92,10 +92,26 @@ export function renderTerminationEmail(vars: {
   is_test?: boolean
   variant?: 'adherence' | 'missed_assessment'
   gate_label?: string // missed_assessment: the assessment's label, e.g. "Midpoint Assessment"
+  // adherence: the threshold that was actually enforced, from the study's
+  // adherence_check graph node. These were hardcoded as "at least 10 of 12"
+  // until 2026-07-27 — the Liliana studies happen to use 10/12, so the prose
+  // was accidentally right there and would have been wrong for any study that
+  // set a different min_required. The one email whose job is to state the rule
+  // must state the rule that was applied, so these are now passed in.
+  min_required?: number | null
+  of_total?: number | null
 }): { subject: string; html: string; text: string } {
+  // Omit the parenthetical entirely rather than assert a threshold we weren't
+  // given — a wrong number here is worse than no number.
+  const threshold = vars.min_required == null
+    ? ''
+    : vars.of_total == null
+      ? ` (we noted that at least ${vars.min_required} sessions are needed)`
+      : ` (we noted that at least ${vars.min_required} of ${vars.of_total} sessions are needed)`
+
   const middle = vars.variant === 'missed_assessment'
     ? `Unfortunately, you didn't complete the ${vars.gate_label ?? 'scheduled assessment'} within its scheduled window, we will award credit for the time you spent, but your participation in the study is now complete.`
-    : `Unfortunately, you didn't complete the minimum required sessions for this phase of the study (we noted that at least 10 of 12 sessions are needed), we will award credit for the time you spent, but your participation in the study is now complete.`
+    : `Unfortunately, you didn't complete the minimum required sessions for this phase of the study${threshold}, we will award credit for the time you spent, but your participation in the study is now complete.`
 
   const bodyText = `Hi ${vars.first_name},
 
