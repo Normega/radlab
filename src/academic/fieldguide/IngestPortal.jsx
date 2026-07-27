@@ -142,17 +142,25 @@ export default function IngestPortal() {
               <select style={{ ...S.input, width: '100%' }} value={targetSlug}
                       onChange={e => setTargetSlug(e.target.value)} required>
                 <option value="">Choose the page this source should fill…</option>
-                {worklist.map(w => (
-                  <option key={w.slug} value={w.slug}>
-                    {w.tier === 'A' ? '★ ' : ''}{w.title} — {w.state}
-                    {w.gap_count > 0 ? ` (needs ${w.needs.join(', ')})` : ''}
-                    {w.reference_runs > 0 ? ` · ${w.reference_runs} prior run(s)` : ''}
-                  </option>
+                {/* Grouped by DSM-5-TR chapter because that is how the sprint
+                    runs: one textbook module maps to one chapter. A flat list
+                    of 121 is where mis-selections come from. */}
+                {groupByChapter(worklist).map(group => (
+                  <optgroup key={group.title} label={`${group.title} (${group.rows.length})`}>
+                    {group.rows.map(w => (
+                      <option key={w.slug} value={w.slug}>
+                        {w.tier === 'overview' ? '◆ ' : w.tier === 'A' ? '★ ' : '   '}{w.title}
+                        {w.gap_count > 0 ? ` — needs ${w.needs.join(', ')}` : ` — ${w.state}`}
+                        {w.reference_runs > 0 ? ` · ${w.reference_runs} prior run(s)` : ''}
+                      </option>
+                    ))}
+                  </optgroup>
                 ))}
               </select>
               <p style={{ ...S.sub, fontSize: 12, marginTop: 6 }}>
-                {worklist.length} catalogue page(s) still incomplete, Tier A first. The run is
-                scored against this page&rsquo;s declared gaps.
+                {worklist.length} catalogue page(s) still incomplete, grouped by DSM-5-TR chapter.
+                ◆ chapter overview · ★ Tier A. The run is scored against this page&rsquo;s
+                declared gaps.
               </p>
             </div>
           )}
@@ -253,4 +261,17 @@ const S = {
   jobCard: { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 12, marginTop: 10 },
   jobHeader: { width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, padding: '12px 14px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tx)' },
   pre: { fontFamily: MONO, fontSize: 12, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', background: 'var(--bg)', border: '1px solid var(--bd)', borderRadius: 8, padding: 12, marginTop: 6, maxHeight: 420, overflowY: 'auto', color: 'var(--tx)' },
+}
+
+// Bucket the worklist into <optgroup>s. The view already returns rows in
+// chapter order (overview, then Tier A, then B), so grouping preserves it.
+function groupByChapter(rows) {
+  const out = []
+  for (const r of rows) {
+    const title = r.chapter_title ?? 'Uncategorised'
+    let g = out[out.length - 1]
+    if (!g || g.title !== title) { g = { title, rows: [] }; out.push(g) }
+    g.rows.push(r)
+  }
+  return out
 }
