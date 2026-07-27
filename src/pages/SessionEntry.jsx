@@ -606,7 +606,7 @@ function completionMessage(info) {
 // as MISSED_INTRO in supabase/functions/_shared/emailTemplate.ts; keep the two
 // in step.
 function expiredMessage(next) {
-  return `This session's window has closed — that's completely okay. Missing the occasional session is normal, and there's nothing to make up. ${nextSessionSentence(next)}`
+  return `This session's window has closed — that's completely okay. Missing the occasional session is normal, and there's nothing to make up. Just do your best to catch the ones you can. ${nextSessionSentence(next)}`
 }
 
 // Copy for a link whose session was already COMPLETED, from

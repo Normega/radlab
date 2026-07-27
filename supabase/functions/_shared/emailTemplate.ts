@@ -204,7 +204,7 @@ const REMINDER_INTRO = `Just a friendly reminder — it looks like you haven't c
 // processAdherenceWithdrawal and renderTerminationEmail's "at least 10 of 12"
 // copy). Reassure about the OCCASIONAL miss — the true and still-kind claim.
 
-const MISSED_INTRO = `We noticed your last session's window closed before you got to it — that's completely okay. Missing the occasional session is normal, and there's nothing to make up. Here's the next one.`
+const MISSED_INTRO = `We noticed your last session's window closed before you got to it — that's completely okay. Missing the occasional session is normal, and there's nothing to make up. Just do your best to catch the ones you can — here's the next one.`
 
 // ─── Default body ─────────────────────────────────────────────────────────────
 

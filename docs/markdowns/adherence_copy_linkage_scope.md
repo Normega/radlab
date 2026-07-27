@@ -98,10 +98,12 @@ The function is `countCompletedPhaseDays` and Liliana runs one session per day,
 so day-count and session-count coincide there. Under "the whole study is one
 phase", Zerin's 3-check-ins-per-day schedule breaks that: counting schedule rows
 counts *check-ins*, so a 30-day study yields ~90, and a threshold authored as
-"10" means something wildly different from what its author intended. The
-generalized function needs an explicit denominator — distinct `scheduled_date`
-values, or raw session count — and `of_total` has to be authored in the same
-unit. This is a new open question (Q4 below).
+"10" would mean something its author didn't intend.
+
+> **Decided 2026-07-27 (Norm): sessions, always.** Adherence is adherence to the
+> laid-out schedule, so the unit is invariant to cadence. Costs nothing for the
+> live studies — see Q4 for the verification and the three implementation
+> consequences.
 
 **2.3 — the enforced threshold can differ from the authored one.**
 `min_required` and `of_total` are optional on the node, with `?? 10` and `?? 12`
@@ -155,10 +157,11 @@ Copy then becomes a function of the row rather than a constant:
 Two phases, deliberately separate, because only the first can hurt anyone:
 
 **Phase A — shadow-mode the generic counter.** Generalize
-`countCompletedPhaseDays` (whole study as one phase when unspecified), compute
-it *alongside* the existing count, log disagreements, change no enrollment
-outcome. Blocked on Q4 (days vs sessions). Review the logged disagreements before
-Phase B.
+`countCompletedPhaseDays` → `countCompletedPhaseSessions` (whole study as one
+phase when unspecified; count the participant's own completed schedule rows, in
+sessions), compute it *alongside* the existing count, log disagreements, change
+no enrollment outcome. **Unblocked** — Q4 answered 2026-07-27. Review the logged
+disagreements before Phase B.
 
 **Phase B — the audit hook.** Add `governing_adherence`, resolve it at compile
 time, and add a test asserting participant-facing copy against it. Copy itself
@@ -200,10 +203,23 @@ be settled before any of it is written.
 3. **Do participants ever need to see their progress toward the threshold**
    ("8 of 10 so far"), or only the fact that a threshold exists? The former is a
    much stronger retention tool and a much bigger surface to get wrong.
-4. **In what unit is a threshold authored — days or sessions?** (§2.7.) For
-   Liliana they coincide; for Zerin's 3×/day they differ by 3×. Needs an answer
-   before the generic counter is written, and existing `min_required`/`of_total`
-   values need to be read in whichever unit is chosen.
+4. ~~**In what unit is a threshold authored — days or sessions?**~~
+   **Answered 2026-07-27 (Norm): always sessions, never days.** Adherence is
+   adherence *to the laid-out schedule*, so the unit must be invariant to
+   cadence — once a day, three times a day, or once a week all count the same
+   way. Consequences:
+   - **No re-authoring needed for the live studies.** Liliana phase1 is 12
+     session templates across 12 distinct days, against an authored `of_total`
+     of 12 — sessions and days coincide there, so existing thresholds already
+     mean what "sessions" implies. Verified live.
+   - `countCompletedPhaseDays` becomes a misnomer → rename to
+     `countCompletedPhaseSessions` when Phase A generalizes it.
+   - It must count **a participant's own completed schedule rows**, never
+     `study_sessions` templates: Liliana phase2 has 36 templates (3 randomize
+     arms × 12) but any one participant does 12. Counting templates would make
+     the denominator 3× too large for any forked study.
+   - For a study like Zerin, `of_total` is authored as total scheduled sessions
+     (3/day × N days), not days — the researcher's call at authoring time.
 5. ~~**How do currently-enrolled participants cross over?**~~
    **Answered 2026-07-27 (Norm): shadow-mode the counter first.** Compute the
    generic count alongside the existing `liliana_day_data` one, log every
