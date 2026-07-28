@@ -960,7 +960,11 @@ function ExternalEnrollmentPanel({ study, qc }) {
                   {urlSaving ? 'Saving…' : 'Save'}
                 </button>
               </div>
-              <p style={EE.hint}>Participants are redirected here after completing the session. Leave blank to show the default completion screen.</p>
+              <p style={EE.hint}>
+                After the debrief, participants see a completion screen confirming that {source === 'prolific' ? 'Prolific' : source === 'sona' ? 'SONA' : 'SONA / Prolific'} is
+                being notified to grant their credit, then are returned to this URL (automatically after 10 seconds, or sooner via a button).
+                Leave blank to show the default completion screen with no redirect.
+              </p>
             </div>
 
             {/* Generated links */}
