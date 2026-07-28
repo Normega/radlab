@@ -234,6 +234,82 @@ export function hasPhysio(resultsByTable) {
   return PHYSIO_TABLES.some(t => (resultsByTable[t]?.length ?? 0) > 0)
 }
 
+// ── Participant-scoped fetch (the by-participant search) ──────────────────────
+// Same registry as the study export, filtered to ONE participant instead of a
+// study. Study-scoped tables are reached through their per-participant owner
+// column, so no study id is needed — a participant in several studies gets all
+// of their rows.
+//
+// Why this exists: the by-participant view used to be a hardcoded list of six
+// sections (demographics, Still Water, belt sessions/trials/physio,
+// questionnaires) written before the registry. For an online participant that
+// rendered five permanently-empty BreathBelt/in-person cards while silently
+// omitting everything they actually generated — equity census, VAS, games, step
+// timings, assignments, video, audio, compensation.
+export async function fetchParticipantData(profileId, externalId, onProgress = () => {}) {
+  const [gameSessions, lilParts] = await Promise.all([
+    profileId
+      ? pageAll((f, t) => supabase.from('game_sessions')
+          .select('id, user_id').eq('user_id', profileId).range(f, t)).catch(() => [])
+      : [],
+    profileId
+      ? pageAll((f, t) => supabase.from('liliana_participants')
+          .select('id, profile_id').eq('profile_id', profileId).range(f, t)).catch(() => [])
+      : [],
+  ])
+
+  const idsFor = {
+    profile:  profileId   != null ? [profileId]   : [],
+    external: externalId  != null ? [externalId]  : [],
+    session:  gameSessions.map(s => s.id),
+    lilPart:  lilParts.map(p => p.id),
+  }
+
+  const resultsByTable = {}
+  const errors = []
+
+  async function fetchOne(entry) {
+    switch (entry.strategy) {
+      case 'profile':  return fetchByIn(entry.table, entry.col, idsFor.profile)
+      case 'external': return fetchByIn(entry.table, entry.col, idsFor.external)
+      case 'session':  return fetchByIn(entry.table, 'session_id', idsFor.session)
+      case 'liliana':  return fetchByIn(entry.table, entry.col, idsFor.lilPart)
+      case 'study': {
+        // Study-scoped tables still carry a per-participant owner column; use it
+        // directly so the participant view needs no study selection.
+        const { space, col } = ownerOf(entry)
+        if (!col) return []
+        return fetchByIn(entry.table, col, space === 'external' ? idsFor.external : idsFor.profile)
+      }
+      case 'parent': {
+        const parentRows = resultsByTable[entry.parentTable] ?? []
+        return fetchByIn(entry.table, entry.parentCol, parentRows.map(r => r.id))
+      }
+      default: return []
+    }
+  }
+
+  async function run(entry) {
+    onProgress(`Fetching ${entry.label}…`)
+    try {
+      resultsByTable[entry.table] = await fetchOne(entry)
+    } catch (e) {
+      resultsByTable[entry.table] = []
+      errors.push({ table: entry.table, message: e?.message ?? String(e) })
+    }
+  }
+
+  // Parents first so 'parent' (event) tables can resolve their ids.
+  await Promise.all(EXPORT_TABLES.filter(e => e.strategy !== 'parent').map(run))
+  await Promise.all(EXPORT_TABLES.filter(e => e.strategy === 'parent').map(run))
+
+  const tables = EXPORT_TABLES
+    .map(entry => ({ ...entry, rows: resultsByTable[entry.table] ?? [] }))
+    .filter(t => t.rows.length > 0)
+
+  return { tables, errors, resultsByTable }
+}
+
 // ── Row → participant attribution (for the combined master) ───────────────────
 
 function rowOwnerProfileId(entry, row, ctx, resultsByTableById) {

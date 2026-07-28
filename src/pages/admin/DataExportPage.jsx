@@ -4,7 +4,7 @@ import { supabase } from '../../lib/supabase'
 import { zipSync, strToU8 } from 'fflate'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import {
-  fetchStudyData, buildMasterTable, hasPhysio, toCsv, responseScalar,
+  fetchStudyData, fetchParticipantData, buildMasterTable, hasPhysio, toCsv,
 } from '../../lib/studyExport'
 
 // ── CSV helpers ──────────────────────────────────────────────────────────────
@@ -94,70 +94,6 @@ function useBeltSessions(externalId) {
   })
 }
 
-function useBeltTrials(externalId) {
-  return useQuery({
-    queryKey: ['export-belt-trials', externalId],
-    enabled: !!externalId,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('belt_trials')
-        .select('session_id, phase, trial_number, condition, breath_period_ms, log10_mag, proportion_mag, response, correct, same_context, confidence, arousal, response_rt_ms, belt_sync_mean, bt_baseline_period_ms, bt_condition_period_ms, trial_r_baseline, trial_r_condition, peak_error_ms, trial_onset_ms, condition_onset_ms, trial_end_ms, created_at')
-        .eq('participant_external_id', externalId)
-        .order('created_at', { ascending: true })
-      if (error) throw error
-      return data ?? []
-    },
-  })
-}
-
-function useStillWaterResponses(profileId) {
-  return useQuery({
-    queryKey: ['export-stillwater', profileId],
-    enabled: !!profileId,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('stillwater_responses')
-        .select('pos_rating, pos_x, pos_y, neg_rating, neg_x, neg_y, composite_x, composite_y, composite_label, ambivalence_x, ambivalence_y, ambivalence_mag, created_at')
-        .eq('user_id', profileId)
-        .order('created_at', { ascending: true })
-      if (error) throw error
-      return data ?? []
-    },
-  })
-}
-
-function useDemographics(profileId) {
-  return useQuery({
-    queryKey: ['export-demographics', profileId],
-    enabled: !!profileId,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('demographics')
-        .select('age, gender, racialized, ses_ladder, enrollment_id, schedule_id, completed_at')
-        .eq('user_id', profileId)
-        .order('completed_at', { ascending: true })
-      if (error) throw error
-      return data ?? []
-    },
-  })
-}
-
-function useQResponses(profileId) {
-  return useQuery({
-    queryKey: ['export-q-responses', profileId],
-    enabled: !!profileId,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('questionnaire_responses')
-        .select('id, questionnaire_slug, responses, completed_at')
-        .eq('user_id', profileId)
-        .order('completed_at', { ascending: true })
-      if (error) throw error
-      return data ?? []
-    },
-  })
-}
-
 // ── Study-level hooks ─────────────────────────────────────────────────────────
 
 function useStudies() {
@@ -186,38 +122,8 @@ function useStudyData(studyId) {
   })
 }
 
-// ── Shared helpers ───────────────────────────────────────────────────────────
 
-function fmt(v, decimals = 2) {
-  if (v == null) return '—'
-  return typeof v === 'number' ? v.toFixed(decimals) : String(v)
-}
 
-function fmtDate(s) {
-  if (!s) return '—'
-  return new Date(s).toLocaleString('en-CA', { dateStyle: 'short', timeStyle: 'short' })
-}
-
-function fitColor(r) {
-  if (r == null) return 'var(--tx3)'
-  if (r >= 0.7)  return '#16a34a'
-  if (r >= 0.4)  return '#d97706'
-  return '#dc2626'
-}
-
-function SectionHeader({ title, count, onDownload, disabled }) {
-  return (
-    <div style={S.sectionHead}>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
-        <span style={S.sectionTitle}>{title}</span>
-        {count != null && <span style={S.sectionCount}>{count} rows</span>}
-      </div>
-      <button style={{ ...S.csvBtn, opacity: disabled ? 0.4 : 1 }} onClick={onDownload} disabled={disabled}>
-        ↓ CSV
-      </button>
-    </div>
-  )
-}
 
 // ── Physio zip builder ────────────────────────────────────────────────────────
 
@@ -292,270 +198,6 @@ function buildSessionEntries(sessions) {
     })
   }
   return entries
-}
-
-// ── Belt Sessions section ────────────────────────────────────────────────────
-
-function BeltSessionsSection({ externalId }) {
-  const { data = [], isLoading } = useBeltSessions(externalId)
-
-  return (
-    <section style={S.section}>
-      <SectionHeader
-        title="BreathBelt Sessions"
-        count={isLoading ? null : data.length}
-        onDownload={() => downloadCsv(`belt_sessions_${externalId}.csv`, data)}
-        disabled={isLoading || data.length === 0}
-      />
-      {isLoading ? (
-        <p style={S.msg}>Loading…</p>
-      ) : data.length === 0 ? (
-        <p style={S.msg}>No sessions found.</p>
-      ) : (
-        <div style={S.tableWrap}>
-          <table style={S.table}>
-            <thead>
-              <tr>
-                {['Date', 'Sess #', 'Calib model', 'Fit R', 'Lag ms', 'Trigger', 'BL period ms', 'Post BL ms', 'Thresh fast', 'Thresh slow', 'Session ID'].map(h => (
-                  <th key={h} style={S.th}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {data.map(row => (
-                <tr key={row.id} style={S.tr}>
-                  <td style={S.td}>{fmtDate(row.created_at)}</td>
-                  <td style={S.tdMono}>{row.session_number ?? '—'}</td>
-                  <td style={S.tdMono}>{row.calib_model_label ?? '—'}</td>
-                  <td style={{ ...S.tdMono, color: fitColor(row.calib_fit_r) }}>{fmt(row.calib_fit_r)}</td>
-                  <td style={S.tdMono}>{fmt(row.calib_lag_ms, 0)}</td>
-                  <td style={S.tdMono}>{row.trigger_device ?? '—'}</td>
-                  <td style={S.tdMono}>{row.baseline_period_ms != null ? Math.round(row.baseline_period_ms) : '—'}</td>
-                  <td style={S.tdMono}>{row.post_baseline_period_ms != null ? Math.round(row.post_baseline_period_ms) : '—'}</td>
-                  <td style={S.tdMono}>{fmt(row.thresh_faster_log10)}</td>
-                  <td style={S.tdMono}>{fmt(row.thresh_slower_log10)}</td>
-                  <td style={S.tdMono}>{row.session_id?.slice(0, 8)}…</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </section>
-  )
-}
-
-// ── Belt Trials section ──────────────────────────────────────────────────────
-
-const TRIAL_COLS = [
-  { key: 'session_id',            label: 'Session',      render: v => v ? v.slice(0, 8) + '…' : '—' },
-  { key: 'phase',                 label: 'Ph',           render: v => v },
-  { key: 'trial_number',          label: '#',            render: v => v },
-  { key: 'condition',             label: 'Condition',    render: v => v ?? '—' },
-  { key: 'same_context',          label: 'Same ctx',     render: v => v ?? '—' },
-  { key: 'breath_period_ms',      label: 'Period ms',    render: v => v != null ? Math.round(v) : '—' },
-  { key: 'log10_mag',             label: 'log10 mag',    render: v => fmt(v) },
-  { key: 'proportion_mag',        label: 'Prop mag',     render: v => fmt(v) },
-  { key: 'response',              label: 'Response',     render: v => v ?? '—' },
-  { key: 'correct',               label: 'Correct',      render: v => v == null ? '—' : v ? '✓' : '✗' },
-  { key: 'confidence',            label: 'Conf',         render: v => v ?? '—' },
-  { key: 'arousal',               label: 'Arousal',      render: v => v ?? '—' },
-  { key: 'response_rt_ms',        label: 'RT ms',        render: v => v ?? '—' },
-  { key: 'belt_sync_mean',        label: 'Sync',         render: v => fmt(v) },
-  { key: 'bt_baseline_period_ms', label: 'BT BL ms',     render: v => v != null ? Math.round(v) : '—' },
-  { key: 'bt_condition_period_ms',label: 'BT cond ms',   render: v => v != null ? Math.round(v) : '—' },
-  { key: 'trial_r_baseline',      label: 'R base',       render: v => fmt(v) },
-  { key: 'trial_r_condition',     label: 'R cond',       render: v => fmt(v) },
-  { key: 'peak_error_ms',         label: 'Peak err ms',  render: v => fmt(v, 0) },
-]
-
-function BeltTrialsSection({ externalId }) {
-  const { data = [], isLoading } = useBeltTrials(externalId)
-
-  return (
-    <section style={S.section}>
-      <SectionHeader
-        title="BreathBelt Trials"
-        count={isLoading ? null : data.length}
-        onDownload={() => downloadCsv(`belt_trials_${externalId}.csv`, data)}
-        disabled={isLoading || data.length === 0}
-      />
-      {isLoading ? (
-        <p style={S.msg}>Loading…</p>
-      ) : data.length === 0 ? (
-        <p style={S.msg}>No trials found.</p>
-      ) : (
-        <div style={S.tableWrap}>
-          <table style={S.table}>
-            <thead>
-              <tr>{TRIAL_COLS.map(c => <th key={c.key} style={S.th}>{c.label}</th>)}</tr>
-            </thead>
-            <tbody>
-              {data.map((row, i) => (
-                <tr key={i} style={S.tr}>
-                  {TRIAL_COLS.map(c => (
-                    <td key={c.key} style={S.tdMono}>{c.render(row[c.key])}</td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </section>
-  )
-}
-
-// ── Questionnaires section ───────────────────────────────────────────────────
-
-function QuestionnairesSection({ profileId, externalId }) {
-  const { data = [], isLoading } = useQResponses(profileId)
-
-  function dlQuestionnaires() {
-    const flat = data.map(r => ({
-      questionnaire_slug: r.questionnaire_slug,
-      completed_at:       r.completed_at,
-      ...Object.fromEntries(
-        Object.entries(r.responses ?? {}).map(([k, v]) => [`item_${k}`, responseScalar(v)])
-      ),
-    }))
-    downloadCsv(`questionnaire_responses_${externalId}.csv`, flat)
-  }
-
-  return (
-    <section style={S.section}>
-      <SectionHeader
-        title="Questionnaire Responses"
-        count={isLoading ? null : data.length}
-        onDownload={dlQuestionnaires}
-        disabled={isLoading || data.length === 0}
-      />
-      {isLoading ? (
-        <p style={S.msg}>Loading…</p>
-      ) : !profileId ? (
-        <p style={S.msg}>No study enrollment found — questionnaire lookup requires an enrollment record.</p>
-      ) : data.length === 0 ? (
-        <p style={S.msg}>No questionnaire responses found.</p>
-      ) : (
-        <div style={S.tableWrap}>
-          <table style={S.table}>
-            <thead>
-              <tr>
-                {['Questionnaire', 'Completed', 'Items answered'].map(h => (
-                  <th key={h} style={S.th}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {data.map(row => (
-                <tr key={row.id} style={S.tr}>
-                  <td style={S.tdMono}>{row.questionnaire_slug}</td>
-                  <td style={S.td}>{fmtDate(row.completed_at)}</td>
-                  <td style={S.tdMono}>{Object.keys(row.responses ?? {}).length}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </section>
-  )
-}
-
-// ── Still Water section ──────────────────────────────────────────────────────
-
-function StillWaterSection({ profileId, externalId }) {
-  const { data = [], isLoading } = useStillWaterResponses(profileId)
-
-  return (
-    <section style={S.section}>
-      <SectionHeader
-        title="Still Water"
-        count={isLoading ? null : data.length}
-        onDownload={() => downloadCsv(`stillwater_${externalId}.csv`, data)}
-        disabled={isLoading || data.length === 0}
-      />
-      {isLoading ? (
-        <p style={S.msg}>Loading…</p>
-      ) : !profileId ? (
-        <p style={S.msg}>No study enrollment found — Still Water lookup requires an enrollment record.</p>
-      ) : data.length === 0 ? (
-        <p style={S.msg}>No Still Water responses found.</p>
-      ) : (
-        <div style={S.tableWrap}>
-          <table style={S.table}>
-            <thead>
-              <tr>
-                {['Date', 'Composite', 'Valence', 'Arousal', 'Step 1 rating', 'Step 2 rating', 'Ambivalence'].map(h => (
-                  <th key={h} style={S.th}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {data.map((row, i) => (
-                <tr key={i} style={S.tr}>
-                  <td style={S.td}>{fmtDate(row.created_at)}</td>
-                  <td style={S.tdMono}>{row.composite_label ?? '—'}</td>
-                  <td style={S.tdMono}>{fmt(row.composite_x)}</td>
-                  <td style={S.tdMono}>{fmt(row.composite_y)}</td>
-                  <td style={S.tdMono}>{row.pos_rating ?? '—'}</td>
-                  <td style={S.tdMono}>{row.neg_rating ?? '—'}</td>
-                  <td style={S.tdMono}>{fmt(row.ambivalence_mag)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </section>
-  )
-}
-
-// ── Demographics section ─────────────────────────────────────────────────────
-
-function DemographicsSection({ profileId, externalId }) {
-  const { data = [], isLoading } = useDemographics(profileId)
-
-  return (
-    <section style={S.section}>
-      <SectionHeader
-        title="Demographics"
-        count={isLoading ? null : data.length}
-        onDownload={() => downloadCsv(`demographics_${externalId}.csv`, data)}
-        disabled={isLoading || data.length === 0}
-      />
-      {isLoading ? (
-        <p style={S.msg}>Loading…</p>
-      ) : !profileId ? (
-        <p style={S.msg}>No study enrollment found — demographics lookup requires an enrollment record.</p>
-      ) : data.length === 0 ? (
-        <p style={S.msg}>No demographics found.</p>
-      ) : (
-        <div style={S.tableWrap}>
-          <table style={S.table}>
-            <thead>
-              <tr>
-                {['Age', 'Gender', 'Racialized', 'SES ladder', 'Completed'].map(h => (
-                  <th key={h} style={S.th}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {data.map((row, i) => (
-                <tr key={i} style={S.tr}>
-                  <td style={S.tdMono}>{row.age ?? '—'}</td>
-                  <td style={S.td}>{row.gender ?? '—'}</td>
-                  <td style={S.tdMono}>{row.racialized ?? '—'}</td>
-                  <td style={S.tdMono}>{row.ses_ladder ?? '—'}</td>
-                  <td style={S.td}>{fmtDate(row.completed_at)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </section>
-  )
 }
 
 // ── Physio preview chart ──────────────────────────────────────────────────────
@@ -915,6 +557,101 @@ function StudyExportSection() {
   )
 }
 
+// ── Participant-level export section ──────────────────────────────────────────
+// Registry-driven, mirroring the study-level view: fetches every table in
+// EXPORT_TABLES scoped to this participant, drops the empty ones, and groups
+// what remains by category. Replaces the old hardcoded six sections, which
+// showed permanently-empty BreathBelt/in-person cards to online participants
+// while omitting the tables they actually had data in.
+
+function useParticipantData(profileId, externalId) {
+  return useQuery({
+    queryKey: ['participant-export-all', profileId, externalId],
+    enabled:  !!(profileId || externalId),
+    staleTime: 60_000,
+    queryFn:  () => fetchParticipantData(profileId, externalId),
+  })
+}
+
+function ParticipantExportSection({ externalId, profileId }) {
+  const { data, isFetching, error } = useParticipantData(profileId, externalId)
+  const [zipBusy, setZipBusy] = useState(false)
+  const [status,  setStatus]  = useState('')
+
+  const tables = data?.tables ?? []
+  const errors = data?.errors ?? []
+  const physioAvailable = data ? hasPhysio(data.resultsByTable) : false
+  const totalRows = tables.reduce((n, t) => n + t.rows.length, 0)
+
+  const grouped = CATEGORY_ORDER
+    .map(cat => ({ cat, items: tables.filter(t => t.category === cat) }))
+    .filter(g => g.items.length)
+
+  function handleZip() {
+    if (!tables.length) return
+    setZipBusy(true)
+    try {
+      downloadZip(
+        `participant_${externalId}_export.zip`,
+        tables.map(t => ({ filename: `${t.table}.csv`, content: toCsv(t.rows) })),
+      )
+      setStatus(`Done — ${tables.length} table${tables.length !== 1 ? 's' : ''} exported.`)
+    } catch (e) {
+      setStatus(`Error: ${e.message}`)
+    } finally {
+      setZipBusy(false)
+    }
+  }
+
+  if (isFetching) return <p style={S.msg}>Loading participant data…</p>
+  if (error)      return <p style={S.err}>Error loading participant: {error.message}</p>
+  if (!data)      return null
+
+  return (
+    <>
+      <p style={S.dim}>
+        {tables.length} non-empty table{tables.length !== 1 ? 's' : ''} · {totalRows} row{totalRows !== 1 ? 's' : ''} total
+      </p>
+
+      {errors.length > 0 && (
+        <p style={S.warn}>
+          ⚠ {errors.length} table{errors.length !== 1 ? 's' : ''} could not be read
+          ({errors.map(e => e.table).join(', ')}). If these should hold data, the
+          lab-read RLS migration (20260723_export_lab_read_policies) may not be applied yet.
+        </p>
+      )}
+
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', margin: '0 0 18px' }}>
+        <button
+          style={{ ...S.csvBtn, opacity: (zipBusy || !tables.length) ? 0.4 : 1 }}
+          disabled={zipBusy || !tables.length}
+          onClick={handleZip}
+        >
+          {zipBusy ? 'Exporting…' : '↓ Export All Tables (ZIP)'}
+        </button>
+      </div>
+      {status && <p style={S.mono}>{status}</p>}
+
+      {grouped.map(g => (
+        <div key={g.cat}>
+          <p style={S.catHead}>{g.cat}</p>
+          {g.items.map(entry => (
+            <TableCard key={entry.table} entry={entry} studyName={`participant_${externalId}`} />
+          ))}
+        </div>
+      ))}
+
+      {/* Physio files live in storage, not a table — keep the dedicated
+          download/preview, but only when this participant has belt sessions. */}
+      {physioAvailable && <BeltPhysioSection externalId={externalId} />}
+
+      {tables.length === 0 && (
+        <p style={S.msg}>No data found for this participant.</p>
+      )}
+    </>
+  )
+}
+
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function DataExportPage() {
@@ -982,12 +719,7 @@ export default function DataExportPage() {
           <p style={S.badge}>
             Participant <strong style={{ fontFamily: '"Space Mono",monospace' }}>{selected.externalId}</strong>
           </p>
-          <DemographicsSection   externalId={selected.externalId} profileId={selected.profileId} />
-          <StillWaterSection     externalId={selected.externalId} profileId={selected.profileId} />
-          <BeltSessionsSection   externalId={selected.externalId} />
-          <BeltTrialsSection     externalId={selected.externalId} />
-          <BeltPhysioSection     externalId={selected.externalId} />
-          <QuestionnairesSection externalId={selected.externalId} profileId={selected.profileId} />
+          <ParticipantExportSection externalId={selected.externalId} profileId={selected.profileId} />
         </>
       )}
     </div>
