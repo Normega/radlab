@@ -1,3 +1,6 @@
+// v11 — studies with a completion redirect URL now end on a real completion
+//       screen (CompletionRedirectScreen) naming SONA/Prolific and the credit
+//       being granted, instead of a 2-second "Redirecting…" flash
 // v10 — completed links no longer render as "missed": get_session_by_token
 //       checks completion before expiry and returns { error: 'completed' },
 //       which gets its own copy. Both terminal screens name the next session.
@@ -12,6 +15,7 @@ import StepDispatcher from '../components/study/StepDispatcher'
 import ScreenerPage from '../components/ScreenerPage'
 import ConsentGate from '../components/study/ConsentGate'
 import ContactEmailGate from '../components/study/ContactEmailGate'
+import CompletionRedirectScreen from '../components/study/CompletionRedirectScreen'
 import { useAssignments } from '../hooks/useAssignment'
 
 // Dedicated client for participant sessions — never touches the shared lab/public client.
@@ -39,6 +43,9 @@ export default function SessionEntry() {
   // { scheduled_date, send_time } | null — next upcoming session, shown on the
   // expired-link screen so a closed window isn't a dead end.
   const [nextSession,    setNextSession]    = useState(null)
+  // { url, source } | null — set when the study has a completion redirect URL;
+  // source is 'sona' | 'prolific' | null and only names the platform in copy.
+  const [redirectInfo,   setRedirectInfo]   = useState(null)
   const fullDataRef = useRef(null)
   // Wall-clock (client Date.now) when the current step mounted — used to record
   // per-step time-on-screen. Same clock for entry+exit, so duration is accurate
@@ -253,6 +260,25 @@ export default function SessionEntry() {
     setState('screener_blocked')
   }
 
+  // Which platform recruited this participant — 'sona' | 'prolific' | null.
+  // The enrollment's own source is authoritative (auto-enroll stamps it from
+  // the join link); the study-level setting is the fallback for enrollments
+  // made outside that path, and can't disambiguate a study set to 'both'.
+  // Used only to name the platform on the completion screen.
+  async function resolveExternalSource() {
+    const enrolled = sessionData?.enrollment?.external_source
+    if (enrolled === 'sona' || enrolled === 'prolific') return enrolled
+    const studyId = sessionData?.link?.study_id
+    if (!studyId) return null
+    const { data } = await sb
+      .from('studies')
+      .select('external_enrollment_source')
+      .eq('id', studyId)
+      .maybeSingle()
+    const s = data?.external_enrollment_source
+    return (s === 'sona' || s === 'prolific') ? s : null
+  }
+
   async function handleStepComplete(result) {
     // Ignore a repeat completion for the step we're already advancing past — a
     // double-fired onComplete must not double-advance (which skips the next
@@ -327,8 +353,9 @@ export default function SessionEntry() {
       const { data: completion } = await sb.rpc('complete_session_by_token', { p_token: token })
       const redirectUrl = sessionData?.study?.completion_redirect_url
       if (redirectUrl) {
+        setCompletionInfo(completion ?? null)
+        setRedirectInfo({ url: redirectUrl, source: await resolveExternalSource() })
         setState('redirecting')
-        setTimeout(() => { window.location.href = redirectUrl }, 2000)
       } else {
         setCompletionInfo(completion ?? null)
         setState('session_complete')
@@ -355,7 +382,13 @@ export default function SessionEntry() {
   }
 
   if (state === 'redirecting') {
-    return <FullScreen><StatusCard>Session complete — thank you! Redirecting…</StatusCard></FullScreen>
+    return (
+      <CompletionRedirectScreen
+        redirectUrl={redirectInfo?.url}
+        source={redirectInfo?.source ?? null}
+        hasMore={completionInfo?.has_more === true}
+      />
+    )
   }
 
   if (state === 'completed') {
