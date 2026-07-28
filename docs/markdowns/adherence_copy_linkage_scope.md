@@ -164,10 +164,17 @@ no enrollment outcome. **Unblocked** — Q4 answered 2026-07-27. Review the logg
 disagreements before Phase B.
 
 **Phase B — the audit hook.** Add `governing_adherence`, resolve it at compile
-time, and add a test asserting participant-facing copy against it. Copy itself
-stays a single hedged string for every study, so this phase cannot change what
-any participant sees — it only fails a build when a string starts claiming
-something the rules don't support.
+time, and add a test asserting participant-facing copy — and consent text (Q6) —
+against it. The hedged string itself stays identical for every study, so this
+phase cannot change what any participant sees; it only fails a build when a
+claim stops matching the rules.
+
+**Phase C — the progress display.** "So far, you've completed x out of y (%) of
+your scheduled check-ins", universal, with the threshold stated where one
+exists. Depends on Phase A (the number must be validated before participants
+see it) and reuses Phase B's resolved rule for the threshold sentence. `y` is
+elapsed sessions; suppressed below ~3 elapsed. This is the only phase with a
+participant-visible surface, which is why it is last.
 
 ## 4. Work breakdown
 
@@ -200,9 +207,47 @@ be settled before any of it is written.
    **Answered 2026-07-27 (Norm): no — generalize to all studies, whole study as
    one phase when phases aren't specified.** Consequences in §2.6 and §2.7; the
    migration is not free and needs Q5 answered before it ships.
-3. **Do participants ever need to see their progress toward the threshold**
-   ("8 of 10 so far"), or only the fact that a threshold exists? The former is a
-   much stronger retention tool and a much bigger surface to get wrong.
+3. **Do participants ever need to see their progress toward the threshold?**
+   **Partly answered 2026-07-27 (Norm): show progress universally** — "So far,
+   you've completed x out of y (%) of your scheduled check-ins." Whether to also
+   state the threshold ("you need N to be in good standing") was left open.
+
+   **The consent forms resolve it.** Liliana's active consent form already says:
+   *"To receive full credit for each phase, you are expected to complete at
+   least 10 out of 12 daily sessions within that phase."* Zerin's has no
+   equivalent sentence, matching its lack of an `adherence_check`. So for any
+   study with a rule, the participant has already been told the number and
+   agreed to it — stating it in-app is consistency, not new pressure. Today the
+   only place it appears post-consent is the **termination email, after they
+   have already failed it**, which is the worst possible ordering.
+   **Recommend: state the threshold wherever one exists**, sourced from the same
+   `adherence_check` node the enforcement reads, so it cannot drift.
+
+   Three implementation constraints on the progress display itself:
+
+   - **`y` must be elapsed sessions, not whole-study.** For a forked study the
+     participant's full path isn't materialized until forks resolve (Liliana
+     phase2 appears only after the midpoint), so a whole-study denominator is
+     unknowable mid-study *and* demoralizing — "10 of 48" at day 12 reads as
+     failure. Norm's "So far…" phrasing already implies elapsed; make it
+     explicit: sessions whose window has closed.
+   - **Suppress it early.** Someone who misses their first session would see
+     "0 out of 1 (0%)". Needs a floor (don't render below ~3 elapsed sessions)
+     or it becomes the most discouraging thing on the page at the exact moment
+     it matters most.
+   - **Blocked on Phase A.** This makes the counter *participant-visible*. It is
+     currently the shadow counter that disagrees with `liliana_day_data` for
+     3 of 17 participants (§2.6). Showing a contested number to participants —
+     and one they may compare against their own memory — before it is validated
+     would be worse than showing nothing.
+
+6. **NEW — should the audit also check consent text against the rule?**
+   Liliana's consent says "10 out of 12 **daily sessions**", but Q4 decided
+   thresholds are counted in *sessions*. They coincide for Liliana; a future
+   3×/day study would make the consent wording and the enforced rule diverge,
+   and the consent form is the strongest claim the lab makes about the rule.
+   The same linkage that lets a test assert check-in copy could assert consent
+   text — arguably the higher-value target of the two.
 4. ~~**In what unit is a threshold authored — days or sessions?**~~
    **Answered 2026-07-27 (Norm): always sessions, never days.** Adherence is
    adherence *to the laid-out schedule*, so the unit must be invariant to
