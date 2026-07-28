@@ -160,8 +160,14 @@ Two phases, deliberately separate, because only the first can hurt anyone:
 `countCompletedPhaseDays` → `countCompletedPhaseSessions` (whole study as one
 phase when unspecified; count the participant's own completed schedule rows, in
 sessions), compute it *alongside* the existing count, log disagreements, change
-no enrollment outcome. **Unblocked** — Q4 answered 2026-07-27. Review the logged
-disagreements before Phase B.
+no enrollment outcome. Review the logged disagreements before Phase B.
+
+Phase A must settle **two** predicates, not one — §2.6 (which completions count:
+`liliana_day_data` vs schedule rows, errs toward withdrawing) and §2.8 (which
+*sessions* count: all vs daily-only, errs toward retaining). They are
+independent and each has live participants sitting on the boundary, so the
+shadow log needs to record both counts separately rather than one combined
+number.
 
 **Phase B — the audit hook.** Add `governing_adherence`, resolve it at compile
 time, and add a test asserting participant-facing copy — and consent text (Q6) —
@@ -241,13 +247,41 @@ be settled before any of it is written.
      and one they may compare against their own memory — before it is validated
      would be worse than showing nothing.
 
-6. **NEW — should the audit also check consent text against the rule?**
-   Liliana's consent says "10 out of 12 **daily sessions**", but Q4 decided
-   thresholds are counted in *sessions*. They coincide for Liliana; a future
-   3×/day study would make the consent wording and the enforced rule diverge,
-   and the consent form is the strongest claim the lab makes about the rule.
-   The same linkage that lets a test assert check-in copy could assert consent
-   text — arguably the higher-value target of the two.
+6. ~~**Should the audit also check consent text against the rule?**~~
+   **Answered 2026-07-28 (Norm): yes.** The consent form is the strongest claim
+   the lab makes about the rule, so it is in scope for the Phase B assertions.
+
+   **Correction to my framing (Norm, 2026-07-28):** "10 out of 12 *daily*
+   sessions" is not a competing unit. The unit was always sessions; "daily" is a
+   frequency clarifier that also signals the count excludes the extra time for
+   the midpoint assessment. So there is no days-vs-sessions divergence in the
+   consent text — Q4 stands unchanged.
+
+**2.8 — but "daily" does define the counted SET, and that is load-bearing.**
+Excluding assessments is not cosmetic. Every Liliana participant has 1-2
+completed non-daily rows (baseline, midpoint). Counting all completed sessions
+instead of daily module sessions:
+
+| all completed | daily only | passes on daily-only | passes if all counted |
+|---|---|---|---|
+| 11 | 9 | ✗ | ✓ |
+| 10 | 9 | ✗ (×2) | ✓ (×2) |
+
+**Three participants would wrongly pass.** Note the direction: §2.6's finding
+wrongly *withdrew* one participant, this one wrongly *retains* three. The
+counter errs both ways depending on choices nobody has written down, which is
+the strongest argument yet for shadow mode.
+
+Today the exclusion is free — the phase join runs through
+`session_template_nodes.module_id` and assessments have no module, so they drop
+out automatically. **The Q2 generalization removes that filter**: "whole study
+as one phase" has no module join to hide behind. Phase A therefore needs an
+explicit *countable session* predicate, not just a phase predicate. Options:
+count only rows whose template has a `module_id`; add an explicit
+`study_sessions.counts_toward_adherence boolean` at compile time (fits naturally
+alongside `governing_adherence` from §3); or exclude by session type/label.
+**Recommended: the explicit boolean** — it makes the countable set visible and
+authorable rather than an emergent property of which tables happen to join.
 4. ~~**In what unit is a threshold authored — days or sessions?**~~
    **Answered 2026-07-27 (Norm): always sessions, never days.** Adherence is
    adherence *to the laid-out schedule*, so the unit must be invariant to
