@@ -5,7 +5,9 @@
 // midpoint -> randomize -> Phase 2 arm -> final window).
 //
 // Run: node supabase/functions/_shared/materializeSchedule.test.mjs
-// (Node >= 22.18 strips the .ts types on import; no build step.)
+// On Node < 22.18 (type stripping not yet on by default), add the flag:
+//   node --experimental-strip-types supabase/functions/_shared/materializeSchedule.test.mjs
+// Either way there is no build step.
 import assert from 'node:assert'
 import { materializeSchedule } from './materializeSchedule.ts'
 
