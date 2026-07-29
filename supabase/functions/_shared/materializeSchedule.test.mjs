@@ -1,4 +1,6 @@
-// Calendar checks for materializeSchedule's early-gate pull-forward, on a
+// Calendar checks for materializeSchedule's gate-relative scheduling — a
+// segment behind a gating assessment starts the day after that assessment was
+// completed, early or late, and the rest of the study moves with it. Run on a
 // graph shaped like Liliana Study 3 (baseline -> counterbalanced Phase 1 ->
 // midpoint -> randomize -> Phase 2 arm -> final window).
 //
@@ -266,16 +268,37 @@ function plan(db) {
 }
 
 // 4b. Fork resolved long after the window (e.g. an admin clearing a 'blocked'
-//     row on day 18): the nominal calendar is already in the past, and the
-//     pull-forward stays inert rather than compounding it — check_schedule
-//     sends those rows as due, which is the pre-existing behavior.
+//     row on day 18), so the nominal Phase 2 start is already in the past: the
+//     segment is pushed to today rather than materialized behind the calendar,
+//     where check_schedule would send the first row at once and sweep the rest
+//     to 'missed'.
 {
   const t0 = addDays(labToday(), -17) // today is study day 18
   const { db } = await run(t0, throughMidpoint(t0, addDays(t0, 13)))
   const p2 = plan(db)
 
-  assert.equal(p2[0].date, addDays(t0, 16), 'nominal Phase 2 start, unshifted')
-  assert.equal(p2[0].studyDay, 17)
+  assert.equal(p2[0].date, labToday(), 'Phase 2 starts today, not on the elapsed day 17')
+  assert.equal(p2[0].studyDay, 18)
+  assert.equal(p2[11].date, addDays(t0, 28), 'the arm runs its full 12 days from there')
+}
+
+// 4c. The push carries to the tail exactly as the pull does: the final window
+//     opens after the shifted Phase 2, not on its nominal day 29.
+{
+  const t0 = addDays(labToday(), -28) // today is study day 29
+  const schedule = throughMidpoint(t0, addDays(t0, 13))
+  for (let i = 1; i <= 12; i++) {
+    // Phase 2 as a day-18 resolution materialized it: days 18-29.
+    schedule.push(row(`s_p2_nr${i}`, addDays(t0, 16 + i), 'completed', completedAt(addDays(t0, 16 + i))))
+  }
+
+  const { db } = await run(t0, schedule, { assignments: [{ node_id: 'rnd_mid', value: 'feedback_choice' }] })
+  const final = plan(db)
+
+  assert.equal(final.length, 1)
+  assert.equal(final[0].nodeKey, 's_final')
+  assert.equal(final[0].date, addDays(t0, 29), 'final window follows Phase 2, one day out from nominal')
+  assert.equal(final[0].studyDay, 30)
 }
 
 // 5. A missed midpoint still withdraws — the pull-forward reads completed_at,
@@ -306,4 +329,4 @@ function plan(db) {
   assert.equal(result.stoppedAt, 'ac_p1')
 }
 
-console.log('materializeSchedule: 7/7 calendar checks passed')
+console.log('materializeSchedule: 8/8 calendar checks passed')

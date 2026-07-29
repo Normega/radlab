@@ -8,11 +8,12 @@
 // reconstructing offset/time context at an arbitrary midpoint, and it's
 // what makes repeat calls (the check_schedule advance pass) safe.
 //
-// A node's day_offset is nominal, not the participant's calendar: completing
-// an assessment that gates a fork before its window closes pulls everything
-// after it forward by the unused days (see `dayShift`). Rows already
-// materialized are never moved — the shift only ever decides where the next
-// unmaterialized segment lands.
+// A node's day_offset is nominal, not the participant's calendar: a segment
+// behind a gating assessment starts the day after that assessment was
+// actually completed, and everything after it moves by the same offset (see
+// `dayShift`) — early completion pulls the rest of the study in, late
+// completion pushes it out. Rows already materialized are never moved; the
+// shift only decides where the next unmaterialized segment lands.
 
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2'
 import { issueLink } from './issueLink.ts'
@@ -270,17 +271,18 @@ export async function materializeSchedule(
   let stoppedAt: string | null = null
   let withdrawal: AdherenceWithdrawal | null = null
   // Days by which this participant's calendar runs ahead of the graph's
-  // nominal day_offsets — see the timepoint and randomize branches below.
-  // Zero for everyone who takes an assessment window to its last day, which
-  // is the calendar the graph was authored against.
+  // nominal day_offsets (negative = behind) — see the timepoint and randomize
+  // branches below. Zero for everyone who completes a gating assessment on the
+  // last day of its window, which is the calendar the graph was authored
+  // against.
   let dayShift = 0
-  let pendingPullOffset: number | null = null
+  let pendingGateOffset: number | null = null
   const todayOffset = daysBetween(t0Date, todayInLabTz())
 
   function emit(nodeKey: string, offset: number, time: string) {
     // A session reached without an intervening timepoint continues the current
-    // calendar, so there is no gap left for a pending pull-forward to close.
-    pendingPullOffset = null
+    // calendar — there is no timepoint left for a pending gate to reposition.
+    pendingGateOffset = null
     const row = materialized.get(nodeKey)
     if (row === undefined) {
       inserts.push({ nodeKey, scheduledDate: addDays(t0Date, offset), sendTime: time, studyDay: offset + 1 })
@@ -348,17 +350,21 @@ export async function materializeSchedule(
         // still to be materialized. (A day_offset edited after enrollment is
         // deliberately not retro-applied to a participant already running.)
         dayShift = nominal - daysBetween(t0Date, anchorDate)
-        pendingPullOffset = null
-      } else if (pendingPullOffset !== null) {
-        // Gate completed early (see the randomize branch): start this segment
-        // the day after completion instead of leaving the unused window as
-        // dead air, and carry the same shift through every later timepoint.
-        // Never before today — a fork that resolves late (cron lag, or an
-        // admin clearing a 'blocked' row days later) must not back-date rows
-        // into a burst of already-due sends.
-        const earliest = Math.max(pendingPullOffset + 1, todayOffset)
-        if (nominal - dayShift > earliest) dayShift = nominal - earliest
-        pendingPullOffset = null
+        pendingGateOffset = null
+      } else if (pendingGateOffset !== null) {
+        // This segment is gated (see the randomize branch), so it starts the
+        // day after the gate was completed rather than on its nominal day —
+        // in BOTH directions, and every later timepoint moves with it:
+        //   completed early -> pulled in, no dead air waiting out the window
+        //   completed late  -> pushed out, rather than materializing rows
+        //                      already in the past (which check_schedule sends
+        //                      as a burst and then sweeps to 'missed')
+        // Never before today: when the fork itself resolves late (cron lag, an
+        // admin clearing a 'blocked' row days later) the day after completion
+        // may already be gone, and rows must not be back-dated.
+        const start = Math.max(pendingGateOffset + 1, todayOffset)
+        dayShift = nominal - start
+        pendingGateOffset = null
       }
 
       currentOffset = nominal - dayShift
@@ -416,15 +422,23 @@ export async function materializeSchedule(
       // on the LAST day of its window — Liliana's midpoint window is days
       // 14-16 and Phase 2 nominally starts day 17, so an early completion used
       // to buy nothing but two days of silence. Record the day it was actually
-      // completed; the arm's first timepoint pulls its own calendar (and every
-      // timepoint after it, including the shared final window) forward by the
-      // unused days. The window stays three days long — it is a catch window,
-      // not a waiting period (Norm, 2026-07-29).
+      // completed; the arm's first timepoint starts the day after, and every
+      // timepoint after it (including the shared final window) moves with it.
+      // The window stays three days long — it is a catch window, not a waiting
+      // period (Norm, 2026-07-29).
+      //
+      // A gate completed after its arm's nominal start moves the same way, in
+      // the other direction: without this the arm materialized into the past,
+      // where check_schedule sends the first row immediately and sweeps the
+      // rest to 'missed' a day later. Reachable wherever a gate's link can
+      // outlive the next timepoint (Zerin's post-baseline fork, arm timepoints
+      // at offset 1) — not on Liliana's midpoint, whose 72 h window closes
+      // before Phase 2's nominal day 17 either way.
       const gateCompletedAt = lastSessionNodeKey
         ? materialized.get(lastSessionNodeKey)?.completedAt
         : null
       if (gateCompletedAt) {
-        pendingPullOffset = Math.max(0, daysBetween(t0Date, labDateOf(gateCompletedAt)))
+        pendingGateOffset = Math.max(0, daysBetween(t0Date, labDateOf(gateCompletedAt)))
       }
 
       let group = assignmentByNode.get(node.id) as string | undefined
