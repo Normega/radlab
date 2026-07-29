@@ -721,8 +721,15 @@ Two scheduling notes given the "both at once" decision:
     alias, so WP5's importer maps columns explicitly and matches on the normalized key
     (§2a.5), not on a fixed header row or a literal string. Re-upload idempotent on
     `student_number`.
-11. **Resend limits + domain verification** for radlab-academic, before the first bulk send
-    (§2a.6).
+11. ~~**Resend limits + domain verification**~~ — **resolved 2026-07-29.** The verified
+    domain is `mail.radlab.zone` (not the apex), already configured and passing, so course
+    mail sends from `psy240@mail.radlab.zone` with no DNS work. The framing in §2a.6 was
+    wrong in one respect worth recording: **Resend's quota is per account, not per domain**,
+    so a course-specific domain buys reputation isolation and *no* volume relief — only the
+    plan tier does, and Norm moved to it on 2026-07-29. Remaining is configuration:
+    Custom SMTP on radlab-academic, plus raising Supabase's own auth email rate limit
+    (enabling custom SMTP does not raise it). Tooling and the full survey: website.md §11,
+    `scripts/check-email-dns.ps1`, `scripts/parse-dmarc-report.py`.
 12. **Should frontmatter relations become graph edges?** (new, 2026-07-27) — 125 relations
     are declared in frontmatter (`related_disorders`, `key_studies`, `concepts_touched`,
     `disorders_touched`, `related_concepts`, `target_disorders`) and none reach `wiki_links`,

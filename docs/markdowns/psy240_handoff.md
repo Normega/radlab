@@ -80,8 +80,17 @@ From `psy240_wiki_plan.md` §2a:
    export.** Column names differ from ACORN's and the email column may be the
    institutional alias, so the importer maps columns explicitly and matches on
    the normalized key, never a literal string.
-4. **Resend domain verification for radlab-academic.** *Still open, external
-   lead time.* Supabase's built-in auth email cannot send ~300 invites.
+4. ~~**Resend domain verification**~~ — **mostly resolved 2026-07-29.** The
+   verified Resend domain turned out to be **`mail.radlab.zone`** (not the
+   apex), already fully configured and passing, so course mail can send from
+   `psy240@mail.radlab.zone` with **no DNS work at all**. Two corrections to
+   the earlier framing: verifying a *new* domain was never the blocker, and a
+   second domain would not have helped anyway — **Resend's sending quota is
+   per account, not per domain**, so only the plan tier addresses a 300-invite
+   day. Norm moved to the paid plan 2026-07-29, which settles it. What remains
+   is configuration, not verification: Custom SMTP on radlab-academic pointing
+   at Resend, **and raising Supabase's own auth email rate limit**, which
+   enabling custom SMTP does not do by itself. See website.md §11.
 
 Also open but not blocking: the **CDDR licence variant** (BY-NC-SA vs BY-NC-ND
 3.0 IGO). A 30-second check of the PDF's copyright page. Doesn't gate anything —
