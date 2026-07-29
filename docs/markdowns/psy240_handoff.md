@@ -82,8 +82,12 @@ From `psy240_wiki_plan.md` §2a:
    the normalized key, never a literal string.
 4. ~~**Resend domain verification**~~ — **mostly resolved 2026-07-29.** The
    verified Resend domain turned out to be **`mail.radlab.zone`** (not the
-   apex), already fully configured and passing, so course mail can send from
-   `psy240@mail.radlab.zone` with **no DNS work at all**. Two corrections to
+   apex), already fully configured and passing. **Superseded the same day:**
+   Norm moved to the paid tier and added a second verified domain,
+   **`course.radlab.zone`**, so PSY240 sends as `psy240@course.radlab.zone` on
+   a reputation separate from participant mail — a 300-invite blast with
+   bounces can no longer damage deliverability for a running study. Two
+   corrections to
    the earlier framing: verifying a *new* domain was never the blocker, and a
    second domain would not have helped anyway — **Resend's sending quota is
    per account, not per domain**, so only the plan tier addresses a 300-invite

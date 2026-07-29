@@ -4,7 +4,16 @@
 # send (Google Workspace for personal mail, Resend for platform + course mail):
 #
 #     powershell -File scripts/check-email-dns.ps1
-#     powershell -File scripts/check-email-dns.ps1 -Domain course.radlab.zone
+#     powershell -File scripts/check-email-dns.ps1 -Domain course.radlab.zone `
+#                -ResendDomain course.radlab.zone
+#
+# Defaults check the apex for Workspace mail and mail.radlab.zone for Resend.
+# There are TWO verified Resend domains -- mail.radlab.zone (platform mail:
+# reminders, send_message, Lecture Lounge) and course.radlab.zone (PSY240) --
+# so check the course one explicitly with the second form above. A Resend-only
+# subdomain legitimately has no SPF or DMARC of its own: SPF is evaluated at
+# send.<domain> and DMARC is inherited from the apex, so those rows reading
+# MISSING for such a domain is correct, not a finding. See website.md s11.
 #
 # Queries two public resolvers rather than the local one, so it reports what
 # the world sees and not a stale cache. When the two disagree the record is
@@ -14,7 +23,13 @@
 # non-ASCII character here would come back mangled.
 
 param(
+  # The domain whose own mail is being checked: SPF, Workspace DKIM, DMARC.
   [string]$Domain = 'radlab.zone',
+  # The domain verified in RESEND, which is a different thing and on this
+  # platform is a subdomain -- mail.radlab.zone, not the apex. Checking the
+  # Resend records at the apex reports three failures that are not failures,
+  # and a checker that cries wolf gets ignored. Pass '' to skip these rows.
+  [string]$ResendDomain = 'mail.radlab.zone',
   # Resend's bounce host is region-specific and the region is fixed when the
   # domain is added in Resend. Change this if the domain was added elsewhere.
   [string]$ResendRegion = 'us-east-1'
@@ -92,20 +107,22 @@ if ($dmarc.Count) {
 # Resend signs with the 'resend' selector and uses a send.<domain> subdomain
 # for the Return-Path, which is why its SPF and MX go there and not on the
 # apex -- so they never collide with the Google SPF record above.
-$rdkim = @(Get-Txt "resend._domainkey.$Domain" $resolvers[0])
-Report 'DKIM (Resend)' "resend._domainkey.$Domain" ($rdkim.Count -gt 0) ($rdkim.Count -gt 0) `
-  $(if ($rdkim.Count) { 'published' } else { 'not published -- domain is not verified in Resend' })
+if ($ResendDomain) {
+  $rdkim = @(Get-Txt "resend._domainkey.$ResendDomain" $resolvers[0])
+  Report 'DKIM (Resend)' "resend._domainkey.$ResendDomain" ($rdkim.Count -gt 0) ($rdkim.Count -gt 0) `
+    $(if ($rdkim.Count) { 'published' } else { 'not published -- domain is not verified in Resend' })
 
-$rspf = @(@(Get-Txt "send.$Domain" $resolvers[0]) | Where-Object { $_ -like 'v=spf1*' })
-$rspfOk = ($rspf.Count -eq 1) -and ($rspf[0] -like '*amazonses.com*')
-Report 'SPF (Resend bounce host)' "send.$Domain" ($rspf.Count -gt 0) $rspfOk `
-  $(if ($rspf.Count) { $rspf[0] } else { 'not published' })
+  $rspf = @(@(Get-Txt "send.$ResendDomain" $resolvers[0]) | Where-Object { $_ -like 'v=spf1*' })
+  $rspfOk = ($rspf.Count -eq 1) -and ($rspf[0] -like '*amazonses.com*')
+  Report 'SPF (Resend bounce host)' "send.$ResendDomain" ($rspf.Count -gt 0) $rspfOk `
+    $(if ($rspf.Count) { $rspf[0] } else { 'not published' })
 
-$expectedMx = "feedback-smtp.$ResendRegion.amazonses.com"
-$rmx = @(Get-Mx "send.$Domain" $resolvers[0])
-$rmxOk = ($rmx | Where-Object { $_ -like "feedback-smtp.*" }).Count -gt 0
-Report 'MX (Resend bounce host)' "send.$Domain" ($rmx.Count -gt 0) $rmxOk `
-  $(if ($rmx.Count) { $rmx -join ', ' } else { "not published -- expected $expectedMx" })
+  $expectedMx = "feedback-smtp.$ResendRegion.amazonses.com"
+  $rmx = @(Get-Mx "send.$ResendDomain" $resolvers[0])
+  $rmxOk = ($rmx | Where-Object { $_ -like "feedback-smtp.*" }).Count -gt 0
+  Report 'MX (Resend bounce host)' "send.$ResendDomain" ($rmx.Count -gt 0) $rmxOk `
+    $(if ($rmx.Count) { $rmx -join ', ' } else { "not published -- expected $expectedMx" })
+}
 
 $results | Format-Table -AutoSize -Wrap
 

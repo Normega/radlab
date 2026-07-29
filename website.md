@@ -568,7 +568,11 @@ Vercel auto-deploys on every push to `main`.
 
 Every outbound email — reminder cron, `send_message`, adherence/termination mail, Lecture Lounge verification — goes through **Resend**, via `RESEND_API_KEY` and `FROM_EMAIL` (Supabase Edge Function secrets). Note the code's fallback if `FROM_EMAIL` is unset is `research@radlab.vercel.app`, a domain that cannot be verified, so a send from the fallback is rejected rather than silently delivered.
 
-The verified Resend domain is **`mail.radlab.zone`**, not the apex — DKIM at `resend._domainkey.mail.radlab.zone`, and Resend's Return-Path on `send.mail.radlab.zone` (its own SPF + an MX to `feedback-smtp.us-east-1.amazonses.com`). The apex is Google Workspace mail (`aspmx.l.google.com`), authenticated separately since 2026-07-29: SPF `v=spf1 include:_spf.google.com ~all` and Workspace DKIM at `google._domainkey.radlab.zone`. DNS is at Namecheap (`dns1.registrar-servers.com`).
+**Two verified Resend domains, neither of them the apex** (both confirmed live 2026-07-29): `mail.radlab.zone` for platform mail (reminders, `send_message`, Lecture Lounge) and **`course.radlab.zone` for PSY240**, added when the account moved to the paid tier. Each has DKIM at `resend._domainkey.<domain>` and a Return-Path on `send.<domain>` carrying its own SPF plus an MX to `feedback-smtp.us-east-1.amazonses.com`. Course mail therefore sends as `psy240@course.radlab.zone`, on a reputation separate from participant email — so a 300-invite blast with bounces cannot damage deliverability for a running study.
+
+A Resend-only subdomain correctly has **no SPF or DMARC record of its own**: SPF is evaluated against the Return-Path at `send.<domain>`, and DMARC is inherited from the apex. The checker reporting those rows MISSING for such a domain is expected, not a finding.
+
+The apex is Google Workspace mail (`aspmx.l.google.com`), authenticated separately since 2026-07-29: SPF `v=spf1 include:_spf.google.com ~all` and Workspace DKIM at `google._domainkey.radlab.zone`. DNS is at Namecheap (`dns1.registrar-servers.com`).
 
 Two rules that follow, and are easy to get backwards:
 

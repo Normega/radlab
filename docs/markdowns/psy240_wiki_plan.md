@@ -722,8 +722,10 @@ Two scheduling notes given the "both at once" decision:
     (§2a.5), not on a fixed header row or a literal string. Re-upload idempotent on
     `student_number`.
 11. ~~**Resend limits + domain verification**~~ — **resolved 2026-07-29.** The verified
-    domain is `mail.radlab.zone` (not the apex), already configured and passing, so course
-    mail sends from `psy240@mail.radlab.zone` with no DNS work. The framing in §2a.6 was
+    domain for platform mail is `mail.radlab.zone` (not the apex), and a second domain
+    **`course.radlab.zone`** was added the same day on the paid tier, so PSY240 sends as
+    `psy240@course.radlab.zone` — on a reputation separate from participant email, which
+    matters because a 300-invite blast produces bounces. The framing in §2a.6 was
     wrong in one respect worth recording: **Resend's quota is per account, not per domain**,
     so a course-specific domain buys reputation isolation and *no* volume relief — only the
     plan tier does, and Norm moved to it on 2026-07-29. Remaining is configuration:
