@@ -181,10 +181,27 @@ exists. `y` is elapsed sessions; suppressed below ~3 elapsed. This is the only
 phase with a participant-visible surface, which is why it is last.
 
 > **Partially shipped ahead of Phase A, 2026-07-29** — the *descriptive half*
-> only, on reminders: `So far, you've responded to 5 out of 6 check-ins (83%).`
+> only: `So far, you've responded to 5 out of 6 check-ins (83%).`
 > (`progressSentence` in `emailTemplate.ts`, `checkInProgress` in
 > `send_message`). Norm asked to start experimenting while the cohort is still
 > test users.
+>
+> **Placement, settled 2026-07-29:** reminders **and the missed-session email**,
+> never a plain first send. The principle is Norm's — surface it only where
+> there's a lapse to speak to; on a first send the participant is about to do
+> the session anyway and a running score reads as surveillance. Reminders alone
+> were not enough: Zerin's daily check-in link expires in 4 h while its
+> `reminder_interval_hours` is 6, so the link is dead before a reminder is ever
+> due and only **4 of 79** Zerin sends have ever had one (none at 09:00 or
+> 14:00). Reminder-only would have meant Liliana-only indefinitely. The
+> missed-session path already fires for Zerin — `followsMissedSession` keys off
+> the closed window, not the lagging `missed` label — and costs no extra email.
+> Measured: Zerin goes from 0 emails carrying the line to **39** (38 with a
+> number); Liliana adds 33 and 14.
+>
+> Rejected alternative: dropping Zerin's reminder cadence below 4 h so reminders
+> could fire. With three check-ins a day and `reminder_max: 1` that is up to six
+> emails a day to someone already not opening them — the opposite of the intent.
 >
 > The Phase A dependency was stated as "the number must be validated before
 > participants see it". That argument applies to a number which *determines an
@@ -264,14 +281,20 @@ be settled before any of it is written.
      §3a. The descriptive line shipped early on a test cohort; the *threshold*
      sentence remains blocked.
 
-   **What to watch in the experiment (2026-07-29).** Six participants would see
-   a line today: 92%, 83% (×3), 45%, 36%. The low two are the tone risk — "you've
-   responded to 4 out of 11 check-ins (36%)" reaches someone already
-   disengaging, which is the shame → avoidance spiral this whole feature was
-   built to interrupt. It lands *after* the reminder's warm opener rather than
-   before, which helps. If it reads badly, the fix is a warmer variant below
-   some rate rather than hiding the number — suppressing only bad news would
-   make the line dishonest.
+   **The low-rate contradiction, resolved 2026-07-29.** `MISSED_INTRO` said
+   "Missing the occasional session is normal" — put that next to "you've
+   responded to 4 out of 11 check-ins (36%)" and the two sentences contradict
+   each other in one paragraph. At 36% it isn't occasional. That inaccuracy
+   predates the number; the number merely exposes it.
+
+   Resolved the honest way — the *intro* stops overclaiming rather than the
+   number being hidden. Below `LOW_RATE_PCT` (50%, the principled cut:
+   "occasional" holds exactly while completions outnumber misses) the email uses
+   `MISSED_INTRO_LOW_RATE`, which acknowledges the difficulty, still says there's
+   nothing to make up, and states no threshold and no threat. **Suppressing only
+   bad news was explicitly rejected** — that would make the line dishonest, and
+   the number is the one part that has to stay trustworthy. Not a rare path:
+   11 of 38 Zerin emails and 17 of 43 Liliana emails would use it.
 
 6. ~~**Should the audit also check consent text against the rule?**~~
    **Answered 2026-07-28 (Norm): yes.** The consent form is the strongest claim

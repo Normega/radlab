@@ -14,10 +14,11 @@ export function renderEmail(vars: {
   is_test?: boolean
   is_reminder?: boolean
   after_missed?: boolean
-  // Response rate so far, shown on reminders only (see send_message's
-  // checkInProgress). Null when there isn't enough history to be worth
-  // showing. Descriptive only — it never states a pass threshold, so it
-  // stays true for studies with and without an adherence_check.
+  // Response rate so far, shown on reminders and missed-session emails (see
+  // send_message's checkInProgress). Null when there isn't enough history to be
+  // worth showing. Descriptive only — it never states a pass threshold, so it
+  // stays true for studies with and without an adherence_check. Also selects
+  // which missed-session lead-in is used (see LOW_RATE_PCT).
   progress?: { completed: number; total: number; pct: number } | null
 }): { subject: string; html: string; text: string } {
   // {{study_day}} resolves to the integer, or "your study" for single-shot rows
@@ -49,13 +50,21 @@ export function renderEmail(vars: {
   // missed-session line already introduced, so running both would apologize for
   // a miss and then nudge about the same message in one breath.
   const resolvedBody = resolve(vars.custom_body ?? DEFAULT_BODY)
-  const intro = vars.is_reminder ? REMINDER_INTRO : vars.after_missed ? MISSED_INTRO : null
 
-  // Response rate, reminders only for now — one condition away from also
-  // riding first sends and missed-session emails if that turns out to help.
-  // Sits between the lead-in and the body so it reads as context for the
-  // nudge rather than as a verdict tacked onto the end.
-  const progressLine = vars.is_reminder && vars.progress
+  // The missed-session lead-in stops claiming the miss was "occasional" once
+  // the response rate says otherwise — see MISSED_INTRO_LOW_RATE.
+  const missedIntro = vars.progress && vars.progress.pct < LOW_RATE_PCT
+    ? MISSED_INTRO_LOW_RATE
+    : MISSED_INTRO
+  const intro = vars.is_reminder ? REMINDER_INTRO : vars.after_missed ? missedIntro : null
+
+  // Response rate — on reminders and on missed-session emails, i.e. only where
+  // the participant has actually lapsed and we're already writing about it.
+  // Deliberately NOT on plain first sends: there the number changes nothing
+  // (they're about to do the session anyway) and reads as a running score.
+  // Sits between the lead-in and the body so it's context for the nudge rather
+  // than a verdict tacked onto the end.
+  const progressLine = (vars.is_reminder || vars.after_missed) && vars.progress
     ? progressSentence(vars.progress)
     : null
 
@@ -219,6 +228,20 @@ const REMINDER_INTRO = `Just a friendly reminder — it looks like you haven't c
 // copy). Reassure about the OCCASIONAL miss — the true and still-kind claim.
 
 const MISSED_INTRO = `We noticed your last session's window closed before you got to it — that's completely okay. Missing the occasional session is normal, and there's nothing to make up. Just do your best to catch the ones you can — here's the next one.`
+
+// Below this response rate, misses are the majority, so calling them
+// "occasional" is no longer true — MISSED_INTRO and the response-rate line
+// would contradict each other in the same paragraph. 50% is the principled cut:
+// "occasional" is defensible exactly while completions outnumber misses.
+const LOW_RATE_PCT = 50
+
+// Same job as MISSED_INTRO, for participants whose rate has dropped below
+// LOW_RATE_PCT. Acknowledges the reality rather than insisting it's normal,
+// without scolding, without threatening withdrawal, and without naming a
+// threshold (still blocked — see progressSentence). The one thing it must never
+// become is a warning: someone at this rate is the most likely to disengage
+// entirely, and a reproach is what tips them over.
+const MISSED_INTRO_LOW_RATE = `We noticed your last session's window closed before you got to it. We know it hasn't been easy to keep up lately — there's still nothing to make up, and every check-in you do adds something. Here's the next one whenever you're ready.`
 
 // ─── Response-rate line ───────────────────────────────────────────────────────
 // Deliberately DESCRIPTIVE, not normative: it reports what the participant has
