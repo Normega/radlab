@@ -7,9 +7,16 @@
 // resuming from a saved position — simpler and more robust than
 // reconstructing offset/time context at an arbitrary midpoint, and it's
 // what makes repeat calls (the check_schedule advance pass) safe.
+//
+// A node's day_offset is nominal, not the participant's calendar: completing
+// an assessment that gates a fork before its window closes pulls everything
+// after it forward by the unused days (see `dayShift`). Rows already
+// materialized are never moved — the shift only ever decides where the next
+// unmaterialized segment lands.
 
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2'
 import { issueLink } from './issueLink.ts'
+import { labDateOf, todayInLabTz } from './labDate.ts'
 
 export interface RandomizeArm {
   group: string
@@ -86,6 +93,13 @@ function addDays(dateStr: string, days: number): string {
   const d = new Date(`${dateStr}T00:00:00Z`)
   d.setUTCDate(d.getUTCDate() + days)
   return d.toISOString().split('T')[0]
+}
+
+/** Whole days from `from` to `to` (both 'YYYY-MM-DD'); negative if `to` is earlier. */
+function daysBetween(from: string, to: string): number {
+  return Math.round(
+    (Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000,
+  )
 }
 
 interface PlannedRow {
@@ -205,15 +219,27 @@ export async function materializeSchedule(
 
   const { data: scheduleRows, error: schedErr } = await db
     .from('participant_schedule')
-    .select('status, study_session_id')
+    .select('status, study_session_id, scheduled_date, completed_at')
     .eq('participant_id', participantId)
     .eq('study_id', studyId)
   if (schedErr) throw schedErr
 
-  const materialized = new Map<string, string>() // nodeKey -> status
+  interface MaterializedRow {
+    status: string
+    scheduledDate: string | null
+    completedAt: string | null
+  }
+
+  const materialized = new Map<string, MaterializedRow>() // nodeKey -> row
   for (const row of scheduleRows ?? []) {
     const session = sessionById.get(row.study_session_id)
-    if (session) materialized.set(session.node_key, row.status)
+    if (session) {
+      materialized.set(session.node_key, {
+        status: row.status,
+        scheduledDate: row.scheduled_date ?? null,
+        completedAt: row.completed_at ?? null,
+      })
+    }
   }
 
   const { data: assignmentRows, error: assignErr } = await db
@@ -243,19 +269,62 @@ export async function materializeSchedule(
   let lastSessionNodeKey: string | undefined
   let stoppedAt: string | null = null
   let withdrawal: AdherenceWithdrawal | null = null
+  // Days by which this participant's calendar runs ahead of the graph's
+  // nominal day_offsets — see the timepoint and randomize branches below.
+  // Zero for everyone who takes an assessment window to its last day, which
+  // is the calendar the graph was authored against.
+  let dayShift = 0
+  let pendingPullOffset: number | null = null
+  const todayOffset = daysBetween(t0Date, todayInLabTz())
 
   function emit(nodeKey: string, offset: number, time: string) {
-    const status = materialized.get(nodeKey)
-    if (status === undefined) {
+    // A session reached without an intervening timepoint continues the current
+    // calendar, so there is no gap left for a pending pull-forward to close.
+    pendingPullOffset = null
+    const row = materialized.get(nodeKey)
+    if (row === undefined) {
       inserts.push({ nodeKey, scheduledDate: addDays(t0Date, offset), sendTime: time, studyDay: offset + 1 })
       anyUpstreamActionable = true // just created this pass — actionable by definition
       lastSessionStatus = undefined
       lastSessionNodeKey = undefined
     } else {
-      if (ACTIONABLE.has(status)) anyUpstreamActionable = true
-      lastSessionStatus = status
+      if (ACTIONABLE.has(row.status)) anyUpstreamActionable = true
+      lastSessionStatus = row.status
       lastSessionNodeKey = nodeKey
     }
+  }
+
+  /**
+   * The first session node a timepoint schedules, following the same
+   * structural nodes the walk itself does. Its materialized row (when there is
+   * one) is what anchors the timepoint to the participant's real calendar.
+   * Null at a randomize fork — which arm was drawn is decided by the walk, not
+   * by peeking ahead.
+   */
+  function firstSessionAfter(timepointId: string): string | null {
+    const walked = new Set<string>()
+    let at = graph.edges.find((e) => e.from === timepointId)?.to ?? null
+    while (at && !walked.has(at)) {
+      walked.add(at)
+      const n: GraphNode | undefined = nodeMap[at]
+      if (!n) return null
+      if (n.type === 'session') return n.id
+      if (n.type === 'block') return (n.children ?? [])[0] ?? null
+      if (n.type === 'counterbalance') {
+        const order = (assignmentByNode.get(n.id) as string[] | undefined) ?? n.block_ids ?? []
+        for (const bid of order) {
+          const first = (nodeMap[bid]?.children ?? [])[0]
+          if (first) return first
+        }
+        return null
+      }
+      if (n.type === 'adherence_check') {
+        at = graph.edges.find((e) => e.from === at)?.to ?? null
+        continue
+      }
+      return null
+    }
+    return null
   }
 
   const seen = new Set<string>()
@@ -267,7 +336,32 @@ export async function materializeSchedule(
     if (!node) break
 
     if (node.type === 'timepoint') {
-      currentOffset = node.day_offset ?? 0
+      const nominal = node.day_offset ?? 0
+      const anchorKey = firstSessionAfter(node.id)
+      const anchorDate = anchorKey ? materialized.get(anchorKey)?.scheduledDate : null
+
+      if (anchorDate) {
+        // Already materialized: adopt whatever shift these rows were created
+        // with rather than recomputing one. Repeat passes then stay on the
+        // calendar the participant was actually emailed, and a pull-forward
+        // applied on an earlier pass carries into the timepoints that are
+        // still to be materialized. (A day_offset edited after enrollment is
+        // deliberately not retro-applied to a participant already running.)
+        dayShift = nominal - daysBetween(t0Date, anchorDate)
+        pendingPullOffset = null
+      } else if (pendingPullOffset !== null) {
+        // Gate completed early (see the randomize branch): start this segment
+        // the day after completion instead of leaving the unused window as
+        // dead air, and carry the same shift through every later timepoint.
+        // Never before today — a fork that resolves late (cron lag, or an
+        // admin clearing a 'blocked' row days later) must not back-date rows
+        // into a burst of already-due sends.
+        const earliest = Math.max(pendingPullOffset + 1, todayOffset)
+        if (nominal - dayShift > earliest) dayShift = nominal - earliest
+        pendingPullOffset = null
+      }
+
+      currentOffset = nominal - dayShift
       currentTime = node.time_of_day || baselineSendTime
       cur = graph.edges.find((e) => e.from === cur)?.to ?? null
 
@@ -318,6 +412,21 @@ export async function materializeSchedule(
         stoppedAt = node.id
         break
       }
+      // The arm's nominal calendar assumes the gating assessment was completed
+      // on the LAST day of its window — Liliana's midpoint window is days
+      // 14-16 and Phase 2 nominally starts day 17, so an early completion used
+      // to buy nothing but two days of silence. Record the day it was actually
+      // completed; the arm's first timepoint pulls its own calendar (and every
+      // timepoint after it, including the shared final window) forward by the
+      // unused days. The window stays three days long — it is a catch window,
+      // not a waiting period (Norm, 2026-07-29).
+      const gateCompletedAt = lastSessionNodeKey
+        ? materialized.get(lastSessionNodeKey)?.completedAt
+        : null
+      if (gateCompletedAt) {
+        pendingPullOffset = Math.max(0, daysBetween(t0Date, labDateOf(gateCompletedAt)))
+      }
+
       let group = assignmentByNode.get(node.id) as string | undefined
       if (!group) {
         const draw = await drawAssignment(db, studyId, node.id, participantId)
