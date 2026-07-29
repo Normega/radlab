@@ -100,10 +100,8 @@ radlab/
           ResponseScreen.jsx
           WarmupScreen.jsx
           SessionStart.jsx
-          SessionSummary.jsx
           SessionFeedback.jsx
           ModeSelector.jsx
-          ContinuePrompt.jsx
         constants.js
       FirstContact/             ← onboarding sync game + standalone Deeper Contact
         FirstContact.jsx
@@ -879,7 +877,7 @@ Mode buttons shown on session start screen — locked modes greyed out with lock
 - Staircase restoration: pass `saved.normalized_posteriors` as `priors` to new jsQuestPlus constructor
 - Avatar aura intensity in Ebb & Flow seeded from `profiles.deeper_contact_last_sync` — fixed ambient effect, does not update mid-session. Max opacity capped at 0.35.
 
-**Session feedback** (`SessionFeedback.jsx`): shown after every 10 trials, replacing the old `ContinuePrompt`. Shows:
+**Session feedback** (`SessionFeedback.jsx`): shown after every 10 trials, replacing the old `ContinuePrompt` (since deleted). Shows:
 - Excitement sensitivity arc (amber, faster staircases combined) — certainty % = `(1 − SD/0.15) × 100`
 - Calm sensitivity arc (blue, slower staircases combined) — same formula
 - Connection to avatar: sync mean %, trend (strengthening/steady/fading), dual-line chart (faded trial-by-trial + solid trend)
