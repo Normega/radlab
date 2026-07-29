@@ -37,7 +37,9 @@ export const gradStudents = [
     role: "PhD Candidate",
     photo: "/images/people/sandy.jpg",
     bio: "Sandy received her HBSc in Life Sciences with a specialization in sensory motor systems from McMaster University and her MSc in Neuroscience from Queen's University. She is currently a PhD candidate at the University of Toronto, where her research focuses on examining linkages between perfectionism, rumination, and self-regulation behaviours. Sandy's work also aims to explore interactive mindfulness-based interventions, drawing on psychotherapeutic models such as CBT to support student mental health. In her spare time, you can find her doing yoga and pilates, watching reality TV, Quora-surfing, and making playlists.",
-    links: [],
+    links: [
+      { label: "LinkedIn", url: "https://www.linkedin.com/in/sandyluu11" },
+    ],
   },
   {
     name: "Liliana Wu",

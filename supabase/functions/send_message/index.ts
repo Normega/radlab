@@ -189,9 +189,16 @@ Deno.serve(async (req) => {
     // lead-in takes precedence — see MISSED_INTRO there).
     const afterMissed = !isTest && !is_reminder && await followsMissedSession(db, row)
 
-    // Response rate so far — reminders only, and only once there's enough
-    // history for the number to mean anything (see checkInProgress).
-    const progress = !isTest && is_reminder ? await checkInProgress(db, row) : null
+    // Response rate so far — on reminders and on the email that follows a
+    // missed session, i.e. only where the participant has lapsed and we're
+    // already writing about it. Never on a plain first send: there the number
+    // changes nothing and reads as a running score. Only computed once there's
+    // enough history for it to mean anything (see checkInProgress). It also
+    // selects the missed-session lead-in, so a low rate doesn't get told the
+    // miss was "occasional" (see LOW_RATE_PCT in emailTemplate.ts).
+    const progress = !isTest && (is_reminder || afterMissed)
+      ? await checkInProgress(db, row)
+      : null
 
     // 7. Render email (subject + HTML + plain text)
     const { subject, html, text } = renderEmail({

@@ -16,8 +16,8 @@ const PARTICLES = [
   { size: 26, color: '#B89976', tx: -60, ty: -15, delay: 0.22 },
 ]
 
-// Matches VeggieReveal.jsx: sprite bottom anchors 5 SVG units below mound center
-// so the base visually overlaps the mound soil
+// Sprite bottom anchors 5 SVG units below mound center, so the base visually
+// overlaps the mound soil.
 const MOUND_OVERLAP = 5
 
 /**
