@@ -177,10 +177,29 @@ claim stops matching the rules.
 
 **Phase C — the progress display.** "So far, you've completed x out of y (%) of
 your scheduled check-ins", universal, with the threshold stated where one
-exists. Depends on Phase A (the number must be validated before participants
-see it) and reuses Phase B's resolved rule for the threshold sentence. `y` is
-elapsed sessions; suppressed below ~3 elapsed. This is the only phase with a
-participant-visible surface, which is why it is last.
+exists. `y` is elapsed sessions; suppressed below ~3 elapsed. This is the only
+phase with a participant-visible surface, which is why it is last.
+
+> **Partially shipped ahead of Phase A, 2026-07-29** — the *descriptive half*
+> only, on reminders: `So far, you've responded to 5 out of 6 check-ins (83%).`
+> (`progressSentence` in `emailTemplate.ts`, `checkInProgress` in
+> `send_message`). Norm asked to start experimenting while the cohort is still
+> test users.
+>
+> The Phase A dependency was stated as "the number must be validated before
+> participants see it". That argument applies to a number which *determines an
+> outcome*; this one deliberately makes no claim about standing, so it only has
+> to be an honest description of the schedule, and it uses the simple
+> definition (prior rows with `attempts >= 1`; answered = `status='completed'`)
+> rather than trying to match the unsettled enforcement counter. **The threshold
+> half is still blocked** and must not be added until §2.6/§2.8 are settled —
+> the moment a threshold appears next to the number, the two definitions have to
+> agree.
+>
+> Residual risk accepted: the displayed count can still contradict a
+> participant's own memory where the two enforcement candidates disagree (3 of
+> 17, §2.6). With a test cohort that is a *feature* — it surfaces the
+> discrepancy from the participant side, which the shadow log alone cannot.
 
 ## 4. Work breakdown
 
@@ -241,11 +260,18 @@ be settled before any of it is written.
      "0 out of 1 (0%)". Needs a floor (don't render below ~3 elapsed sessions)
      or it becomes the most discouraging thing on the page at the exact moment
      it matters most.
-   - **Blocked on Phase A.** This makes the counter *participant-visible*. It is
-     currently the shadow counter that disagrees with `liliana_day_data` for
-     3 of 17 participants (§2.6). Showing a contested number to participants —
-     and one they may compare against their own memory — before it is validated
-     would be worse than showing nothing.
+   - ~~**Blocked on Phase A.**~~ Revisited 2026-07-29 — see the Phase C note in
+     §3a. The descriptive line shipped early on a test cohort; the *threshold*
+     sentence remains blocked.
+
+   **What to watch in the experiment (2026-07-29).** Six participants would see
+   a line today: 92%, 83% (×3), 45%, 36%. The low two are the tone risk — "you've
+   responded to 4 out of 11 check-ins (36%)" reaches someone already
+   disengaging, which is the shame → avoidance spiral this whole feature was
+   built to interrupt. It lands *after* the reminder's warm opener rather than
+   before, which helps. If it reads badly, the fix is a warmer variant below
+   some rate rather than hiding the number — suppressing only bad news would
+   make the line dishonest.
 
 6. ~~**Should the audit also check consent text against the rule?**~~
    **Answered 2026-07-28 (Norm): yes.** The consent form is the strongest claim

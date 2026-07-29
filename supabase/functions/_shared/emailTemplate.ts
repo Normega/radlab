@@ -14,6 +14,11 @@ export function renderEmail(vars: {
   is_test?: boolean
   is_reminder?: boolean
   after_missed?: boolean
+  // Response rate so far, shown on reminders only (see send_message's
+  // checkInProgress). Null when there isn't enough history to be worth
+  // showing. Descriptive only — it never states a pass threshold, so it
+  // stays true for studies with and without an adherence_check.
+  progress?: { completed: number; total: number; pct: number } | null
 }): { subject: string; html: string; text: string } {
   // {{study_day}} resolves to the integer, or "your study" for single-shot rows
   const studyDayStr = vars.study_day != null ? String(vars.study_day) : 'your study'
@@ -45,7 +50,16 @@ export function renderEmail(vars: {
   // a miss and then nudge about the same message in one breath.
   const resolvedBody = resolve(vars.custom_body ?? DEFAULT_BODY)
   const intro = vars.is_reminder ? REMINDER_INTRO : vars.after_missed ? MISSED_INTRO : null
-  const bodyText = intro ? `${intro}\n\n${resolvedBody}` : resolvedBody
+
+  // Response rate, reminders only for now — one condition away from also
+  // riding first sends and missed-session emails if that turns out to help.
+  // Sits between the lead-in and the body so it reads as context for the
+  // nudge rather than as a verdict tacked onto the end.
+  const progressLine = vars.is_reminder && vars.progress
+    ? progressSentence(vars.progress)
+    : null
+
+  const bodyText = [intro, progressLine, resolvedBody].filter(Boolean).join('\n\n')
 
   // Convert resolved body text to HTML:
   // double newlines → <p> tags, single newlines → <br>
@@ -205,6 +219,22 @@ const REMINDER_INTRO = `Just a friendly reminder — it looks like you haven't c
 // copy). Reassure about the OCCASIONAL miss — the true and still-kind claim.
 
 const MISSED_INTRO = `We noticed your last session's window closed before you got to it — that's completely okay. Missing the occasional session is normal, and there's nothing to make up. Just do your best to catch the ones you can — here's the next one.`
+
+// ─── Response-rate line ───────────────────────────────────────────────────────
+// Deliberately DESCRIPTIVE, not normative: it reports what the participant has
+// done and never names a pass threshold, so the same sentence is true for a
+// study with an adherence_check and one without. Stating the threshold is a
+// separate decision (docs/markdowns/adherence_copy_linkage_scope.md, Q3) and
+// needs the resolved-rule linkage that doesn't exist yet — do not fold one in
+// here without it, or this becomes the per-study-claim problem all over again.
+//
+// The denominator excludes the check-in this email is nudging about: its window
+// is still open, so counting it would score the participant down for something
+// they still have time to do.
+
+function progressSentence(p: { completed: number; total: number; pct: number }): string {
+  return `So far, you've responded to ${p.completed} out of ${p.total} check-ins (${p.pct}%).`
+}
 
 // ─── Default body ─────────────────────────────────────────────────────────────
 

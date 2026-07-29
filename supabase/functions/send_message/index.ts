@@ -189,6 +189,10 @@ Deno.serve(async (req) => {
     // lead-in takes precedence — see MISSED_INTRO there).
     const afterMissed = !isTest && !is_reminder && await followsMissedSession(db, row)
 
+    // Response rate so far — reminders only, and only once there's enough
+    // history for the number to mean anything (see checkInProgress).
+    const progress = !isTest && is_reminder ? await checkInProgress(db, row) : null
+
     // 7. Render email (subject + HTML + plain text)
     const { subject, html, text } = renderEmail({
       first_name:      firstName,
@@ -201,6 +205,7 @@ Deno.serve(async (req) => {
       is_test:         isTest,
       is_reminder:     !!is_reminder,
       after_missed:    afterMissed,
+      progress,
     })
 
     // Warn if any template variables remain unresolved after substitution
@@ -338,6 +343,65 @@ async function followsMissedSession(
     streak++
   }
   return streak < MAX_ACK_STREAK
+}
+
+// Below this many closed check-ins the number is noise, and worse than noise
+// early on: someone who misses their first would read "0 out of 1 (0%)" at
+// exactly the moment a nudge should be encouraging.
+const MIN_PROGRESS_SESSIONS = 3
+
+/**
+ * The participant's response rate over check-ins that have already closed.
+ *
+ * Denominator = prior rows that were actually emailed (`attempts >= 1`), so
+ * system-blocked and never-sent rows can't score anyone down for something they
+ * were never asked to do. It excludes the row this email is about, whose window
+ * is still open on a reminder by construction.
+ *
+ * No link-liveness check is needed here, unlike followsMissedSession: issueLink
+ * revokes every other active link when it issues one, so at most one link is
+ * live at a time and it is this row's. Any *prior* row is therefore closed
+ * already, and its status alone settles whether it was answered.
+ *
+ * Returns null below MIN_PROGRESS_SESSIONS — the caller omits the line entirely
+ * rather than rendering a number built on one or two data points.
+ *
+ * NOTE: "responded to" here means the schedule row reached 'completed'. That is
+ * the display-side twin of the enforcement counter, which is still unsettled
+ * (docs/markdowns/adherence_copy_linkage_scope.md §2.6/§2.8 — the two candidate
+ * definitions disagree for 3 of 17 live participants). This deliberately does
+ * NOT try to match the enforcement rule: it makes no claim about standing, so
+ * it only has to be an honest description of the schedule. If a threshold is
+ * ever stated alongside it, the two must be reconciled first.
+ */
+async function checkInProgress(
+  db: SupabaseClient,
+  row: { id: string; participant_id: string; study_id: string; scheduled_date: string; send_time: string | null },
+): Promise<{ completed: number; total: number; pct: number } | null> {
+  const { data, error } = await db
+    .from('participant_schedule')
+    .select('scheduled_date, send_time, status, attempts')
+    .eq('participant_id', row.participant_id)
+    .eq('study_id', row.study_id)
+    .neq('id', row.id)
+    .gte('attempts', 1)
+    .lte('scheduled_date', row.scheduled_date)
+
+  if (error) {
+    console.warn('check-in progress lookup failed:', error.message)
+    return null
+  }
+
+  // Date-only filter above still admits same-day siblings scheduled later than
+  // this row (several-check-ins-a-day studies) — drop them by full key.
+  const thisKey = scheduleKey(row.scheduled_date, row.send_time)
+  const prior = (data ?? []).filter((r) => scheduleKey(r.scheduled_date, r.send_time) < thisKey)
+
+  const total = prior.length
+  if (total < MIN_PROGRESS_SESSIONS) return null
+
+  const completed = prior.filter((r) => r.status === 'completed').length
+  return { completed, total, pct: Math.round((completed / total) * 100) }
 }
 
 async function logMessage(
