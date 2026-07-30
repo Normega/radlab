@@ -38,7 +38,8 @@ const NAV_SECTIONS = [
 const SUPER_ADMIN_SECTION = {
   header: null,
   items: [
-    { to: '/admin/users', label: 'Users' },
+    { to: '/admin/users',       label: 'Users'       },
+    { to: '/admin/diagnostics', label: 'Diagnostics' },
   ],
 }
 

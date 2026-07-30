@@ -126,6 +126,7 @@ const LilianaCreditPage    = lazy(() => import('./pages/admin/LilianaCreditPage'
 const DisplaysPage         = lazy(() => import('./pages/admin/DisplaysPage'))
 const DisplayEditorPage    = lazy(() => import('./pages/admin/DisplayEditorPage'))
 const UserAdminPage        = lazy(() => import('./pages/admin/UserAdminPage'))
+const Diagnostics          = lazy(() => import('./pages/admin/Diagnostics'))
 
 const LabLayout      = lazy(() => import('./layouts/LabLayout'))
 const AboutPage      = lazy(() => import('./pages/lab/AboutPage'))
@@ -554,6 +555,7 @@ export default function App() {
               <Route path="/admin/screeners"           element={<ScreenerLibraryPage />} />
               {/* Super-admin only — RPCs enforce server-side, page shows 'forbidden' otherwise */}
               <Route path="/admin/users"               element={<UserAdminPage />} />
+              <Route path="/admin/diagnostics"         element={<Diagnostics />} />
             </Route>
           </Route>
 
