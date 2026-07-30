@@ -3,6 +3,7 @@ import { useAvatarConfig } from '../../hooks/useAvatarConfig'
 import { Link } from 'react-router-dom'
 import Nav from '../../components/Nav'
 import { supabase } from '../../lib/supabase'
+import { dbWrite } from '../../lib/dbWrite'
 import { EMOTIONS } from '../StillWater/constants'
 import WheelSVG from '../StillWater/WheelSVG'
 import AURenderer from '../shared/AURenderer'
@@ -64,7 +65,13 @@ async function saveTrialResult({ sessionId, userId, trialNum, targetEmoId, targe
 
 async function saveSessionComplete({ sessionId, userId, meanScore }) {
   if (sessionId) {
-    await supabase.from('game_sessions').update({ ended_at: new Date().toISOString() }).eq('id', sessionId)
+    await dbWrite(
+      supabase.from('game_sessions')
+        .update({ ended_at: new Date().toISOString() })
+        .eq('id', sessionId)
+        .select('id'),
+      'game_sessions.ended_at', { expectRows: true },
+    )
     await supabase.from('face_read_performance').insert({
       session_id:       sessionId,
       user_id:          userId,
@@ -80,7 +87,10 @@ async function saveSessionComplete({ sessionId, userId, meanScore }) {
       face_read_best_score: Math.max(p?.face_read_best_score ?? 0, meanScore),
     }
     if (p?.points !== undefined) updates.points = (p.points ?? 0) + Math.max(1, Math.round(meanScore / 10))
-    await supabase.from('profiles').update(updates).eq('id', userId)
+    await dbWrite(
+      supabase.from('profiles').update(updates).eq('id', userId).select('id'),
+      'profiles.face_read_progress', { expectRows: true },
+    )
   }
 }
 

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase as globalSupabase } from '../../lib/supabase'
+import { dbWrite } from '../../lib/dbWrite'
 import InterventionPage from './InterventionPage'
 
 const SIM_MODULE = {
@@ -94,10 +95,13 @@ export default function TrainingStepWrapper({
         // Backfill the condition stamp on rows created before module_id existed
         // (or by an interrupted first attempt).
         if (!existing.module_id && moduleId) {
-          await supabase
-            .from('liliana_day_data')
-            .update({ module_id: moduleId })
-            .eq('id', existing.id)
+          await dbWrite(
+            supabase.from('liliana_day_data')
+              .update({ module_id: moduleId })
+              .eq('id', existing.id)
+              .select('id'),
+            'liliana_day_data.module_id', { expectRows: true },
+          )
         }
       } else {
         const { data: inserted } = await supabase

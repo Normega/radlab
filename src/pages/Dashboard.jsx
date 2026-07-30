@@ -1,6 +1,7 @@
 ﻿import { useNavigate, Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import { dbWrite } from '../lib/dbWrite'
 import Nav from '../components/Nav'
 import { greetingFor } from '../ripple/greetings'
 
@@ -116,7 +117,10 @@ function Reminders({ userId }) {
     // TODO: reminder emails sent via Supabase Edge Function + Resend
     // Trigger: pg_cron job queries profiles where reminder_frequency != 'none'
     // and last session > N days ago. Runs weekly. See website.md for plan.
-    await supabase.from('profiles').update({ reminder_frequency: value }).eq('id', userId)
+    await dbWrite(
+      supabase.from('profiles').update({ reminder_frequency: value }).eq('id', userId).select('id'),
+      'profiles.reminder_frequency', { expectRows: true },
+    )
 
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)

@@ -8,6 +8,7 @@ import WheelSVG from '../games/StillWater/WheelSVG'
 import RippleAvatar from './RippleAvatar'
 import Nav from '../components/Nav'
 import { supabase as globalSupabase } from '../lib/supabase'
+import { dbWrite } from '../lib/dbWrite'
 import { drawItems, formatItemResponses } from './itemEngine'
 
 // ── CheckinFlow ───────────────────────────────────────────────────────────────
@@ -100,7 +101,10 @@ async function saveCheckin({ supabase, userId, context, p1Sel, p2Sel, composite,
   // Points
   const { data: profile } = await supabase.from('profiles').select('points').eq('id', userId).single()
   const newPoints = (profile?.points ?? 0) + 5
-  await supabase.from('profiles').update({ points: newPoints }).eq('id', userId)
+  await dbWrite(
+    supabase.from('profiles').update({ points: newPoints }).eq('id', userId).select('id'),
+    'profiles.points (check-in +5)', { expectRows: true },
+  )
   // `localDate` travels with the reward so the intention written later lands on
   // THIS row — see saveIntention.
   return { newStreak, newBest, pointsTotal: newPoints, localDate: today }

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase as globalSupabase } from '../../lib/supabase'
+import { dbWrite } from '../../lib/dbWrite'
 import StudyVideoPlayer from '../video/StudyVideoPlayer'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -207,10 +208,13 @@ export default function InterventionPage({
     if (participantId) await saveCurrentBlock()
     if (isLast) {
       if (dayDataId) {
-        await supabase
-          .from('liliana_day_data')
-          .update({ completed_at: new Date().toISOString() })
-          .eq('id', dayDataId)
+        await dbWrite(
+          supabase.from('liliana_day_data')
+            .update({ completed_at: new Date().toISOString() })
+            .eq('id', dayDataId)
+            .select('id'),
+          'liliana_day_data.completed_at', { expectRows: true },
+        )
       }
       onComplete()
     } else {

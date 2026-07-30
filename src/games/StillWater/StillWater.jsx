@@ -3,6 +3,7 @@ import { useAvatarConfig } from '../../hooks/useAvatarConfig'
 import { Link, useSearchParams } from 'react-router-dom'
 import Nav from '../../components/Nav'
 import { supabase as globalSupabase } from '../../lib/supabase'
+import { dbWrite } from '../../lib/dbWrite'
 import { EMOTIONS, INTENSITY_LABELS, computeRating, getCompositeLabel, LABEL_TO_ID,
          CX, CY, INNER_R, d2r } from './constants'
 import WheelSVG from './WheelSVG'
@@ -35,7 +36,10 @@ async function saveResult({ db, userId, externalId, studyId, p1Sel, p2Sel, compo
       .from('profiles').select('still_water_sessions, points').eq('id', userId).single()
     const updates = { still_water_sessions: (profile?.still_water_sessions ?? 0) + 1 }
     if (profile?.points !== undefined) updates.points = (profile.points ?? 0) + 5
-    await db.from('profiles').update(updates).eq('id', userId)
+    await dbWrite(
+      db.from('profiles').update(updates).eq('id', userId).select('id'),
+      'profiles.still_water_progress', { expectRows: true },
+    )
   }
 }
 
