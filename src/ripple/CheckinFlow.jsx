@@ -101,14 +101,39 @@ async function saveCheckin({ supabase, userId, context, p1Sel, p2Sel, composite,
   const { data: profile } = await supabase.from('profiles').select('points').eq('id', userId).single()
   const newPoints = (profile?.points ?? 0) + 5
   await supabase.from('profiles').update({ points: newPoints }).eq('id', userId)
-  return { newStreak, newBest, pointsTotal: newPoints }
+  // `localDate` travels with the reward so the intention written later lands on
+  // THIS row — see saveIntention.
+  return { newStreak, newBest, pointsTotal: newPoints, localDate: today }
 }
 
-async function saveIntention(supabase, userId, text) {
-  const pad = n => String(n).padStart(2, '0')
-  const now = new Date()
-  const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
-  await supabase.from('ripple_checkins').update({ intention: text }).eq('user_id', userId).eq('local_date', today)
+// `localDate` is the date saveCheckin actually wrote, passed in rather than
+// recomputed. Recomputing lost the intention outright across midnight: a
+// check-in started at 23:58 stored local_date = day N, the user picked an
+// intention a minute later, and this update looked for day N+1, matched zero
+// rows, and reported success (a zero-row update is not an error, and the
+// caller's .catch() only sees throws).
+//
+// Deliberately still an update, not an upsert: upserting would mint a
+// ripple_checkins row holding an intention and no ratings, which would then
+// count toward streaks and pollute the mood history.
+async function saveIntention(supabase, userId, text, localDate) {
+  let day = localDate
+  if (!day) {
+    const pad = n => String(n).padStart(2, '0')
+    const now = new Date()
+    day = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
+  }
+  const { data, error } = await supabase.from('ripple_checkins')
+    .update({ intention: text })
+    .eq('user_id', userId)
+    .eq('local_date', day)
+    .select('id')
+  if (error) { console.error('saveIntention:', error); return false }
+  if (!data || data.length === 0) {
+    console.warn(`saveIntention: no ripple_checkins row for ${day} — intention not saved`)
+    return false
+  }
+  return true
 }
 
 // ── RatingStep ────────────────────────────────────────────────────────────────
@@ -600,7 +625,9 @@ export default function CheckinFlow({ session, context = 'manual', onComplete, s
   }
 
   async function handleMicroIntentionConfirm(text) {
-    if (text) await saveIntention(db, userId, text).catch(err => console.warn('saveIntention:', err))
+    // rewardData carries the local_date saveCheckin wrote; without it (save
+    // failed) saveIntention falls back to today's date.
+    if (text) await saveIntention(db, userId, text, rewardData?.localDate).catch(err => console.warn('saveIntention:', err))
     // Skip suggestion in onboarding — the flow is already long enough
     if (context === 'onboarding') {
       handleComplete()
