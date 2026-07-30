@@ -39,13 +39,19 @@ Deno.serve(async (req) => {
   if (!authHeader) return json({ error: 'Unauthorized' }, 401)
 
   if (authHeader !== `Bearer ${serviceKey}`) {
-    const callerClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
-      global: { headers: { Authorization: authHeader } },
-    })
-    const { data: { user }, error: authErr } = await callerClient.auth.getUser()
+    // Caller JWT path. Deliberately does NOT use SUPABASE_ANON_KEY: that var is
+    // deprecated in favour of publishable keys, and the legacy JWT pair it used
+    // to hold was revoked 2026-07-30 — when it eventually stops being injected,
+    // this path would 401 in a way indistinguishable from an expired session.
+    // getUser(jwt) validates the token server-side; the service key is only the
+    // apikey for that call, and the role read below is a gate, so reading the
+    // true role rather than the RLS-visible one is what we want.
+    const auth = createClient(supabaseUrl, serviceKey)
+    const token = authHeader.replace(/^Bearer\s+/i, '')
+    const { data: { user }, error: authErr } = await auth.auth.getUser(token)
     if (authErr || !user) return json({ error: 'Unauthorized' }, 401)
 
-    const { data: profile } = await callerClient
+    const { data: profile } = await auth
       .from('profiles').select('role').eq('id', user.id).single()
     if (!profile || profile.role !== 'lab') return json({ error: 'Forbidden' }, 403)
   }
