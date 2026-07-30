@@ -16,7 +16,7 @@
 | WP1 schema | ✔ done, applied live |
 | **WP3** seed + review path + review UI + `reference` mode | ✔ **done, applied live, exercised on real content** |
 | **WP2** reader UI | ✔ **built 2026-07-27** — verified offline against the live corpus, **not yet click-tested in a browser** |
-| WP4 content sprint | ✘ not started — the critical path to day one |
+| WP4 content sprint | ✘ not started — the critical path to day one. **Run plan: [`psy240_wp4_runplan.md`](./psy240_wp4_runplan.md)** (16 runs in lecture order, 78 pages, ~17 h) |
 | WP5 roster & enrollment | ✘ not started — **the schedule's real risk**; two of its four decisions are now taken (§4) |
 | WP6 student submission | ✘ not started, depends on WP5 |
 | WP7 export mirror | ✘ not started |
