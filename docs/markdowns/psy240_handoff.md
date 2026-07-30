@@ -198,12 +198,17 @@ Two things to clear before or during it:
 
 - ~~Click-test the reader~~ — **done 2026-07-30, works.** Which is how the
   duplicated skeletons got found.
-- **An edit path, then the two repeated-skeleton pages** (§5). `edit_page(page_id,
-  content, reason)` as a SECURITY DEFINER RPC with the staff check, writing an
-  accepted version so history survives, plus a staff-only edit affordance on the
-  reader. Needed regardless of those two pages — right now a typo is
-  uncorrectable. Then the pages themselves, which is editorial judgement about
-  which prose to keep where the copies overlap, not a mechanical merge.
+- ~~An edit path~~ — **done 2026-07-30**: `edit_page(page_id, content, note)`
+  plus an **Edit page** button on the reader for staff. History is automatic
+  (the snapshot trigger keeps the previous body), blanking and no-ops are
+  refused, and saving re-derives gaps and links.
+- **The two repeated-skeleton pages** (§5) can now be fixed, and it's editorial
+  judgement rather than a mechanical merge: for MDD, copy 3 is a complete good
+  page and copy 1 contributes a substantial Treatment section from a different
+  source, so the merge is "copy 3 as the spine, fold in copy 1's Treatment, drop
+  every placeholder". PDD is copy 1 as the spine plus copy 2's three short
+  increments. Claude can prepare a stitched draft; deciding which prose survives
+  where they overlap is the instructor's call.
 
 **WP5 is still the schedule's real risk**, but its external dependency is gone:
 three of its four decisions are settled and the whole email path is configured

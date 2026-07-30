@@ -609,11 +609,26 @@ placeholders for but never declared (`cyclothymic-disorder` etiology,
 against all 44 live pages before the swap: 40 unchanged, the 4 that moved were exactly the
 corrections.
 
-**Left open:** there is no way to edit an accepted page — only `review_proposal` (which needs a
-pending version) and `unpublish_page` exist, and `wiki_pages` has no authenticated write policies.
-So the two duplicated pages cannot be cleaned up yet, and neither can a typo. `edit_page(page_id,
-content, reason)` plus a staff-only edit affordance is the missing primitive; this plan never
-called for it, which is the gap worth noting.
+**A missing primitive this plan never called for, now added** (`20260730_wiki_edit_page.sql`):
+there was no way to edit an accepted page at all. `review_proposal()` needs a pending version so it
+can only accept what an ingest proposed, `unpublish_page()` only hides a page, and `wiki_pages` has
+no authenticated write policies — so nothing on a page 300 students read could be corrected without
+service-role SQL. `edit_page(page_id, content, note)` follows the same one-audited-function shape as
+the other two write paths, with a staff-only **Edit page** button on the reader. History is
+automatic (the snapshot trigger already keeps the previous body, so every save is recoverable —
+which is why the UI can be a plain textarea); blanking is refused because a bodiless page is a
+*shell* awaiting its first proposal, making that a retirement rather than a correction; and the
+note is optional, unlike unpublish's mandatory reason, because an edit leaves a diff.
+
+Worth folding into §3's contribution flow when WP6 is built: the review queue is the gate for
+*proposed* content, and `edit_page` is now the gate for *accepted* content. Both are staff-only
+SECURITY DEFINER functions rather than table grants, which is the pattern to keep.
+
+**Still open:** MDD and PDD themselves. They no longer misreport their gaps but still read as three
+copies and two. For MDD, copy 3 is a complete page and copy 1 contributes a substantial Treatment
+section from a different source, so the merge is copy 3 as spine plus copy 1's Treatment, with every
+placeholder dropped; PDD is copy 1 as spine plus copy 2's three short increments. That is editorial
+judgement about which prose survives where copies overlap, not a mechanical merge.
 
 ### WP3 as built — part 1: taxonomy seed + review path (2026-07-25)
 

@@ -33,6 +33,14 @@ export default function WikiPage() {
   const [provenance, setProvenance] = useState(null)
   const [catalog, setCatalog] = useState(null)
 
+  // Staff editing
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState('')
+  const [note, setNote] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [saveNotice, setSaveNotice] = useState(null)
+  const [reloadKey, setReloadKey] = useState(0)
+
   // undefined = still loading, null = nothing this reader can see at this slug
   const page = loaded.slug === slug ? loaded.row : undefined
 
@@ -74,7 +82,29 @@ export default function WikiPage() {
     })()
 
     return () => { cancelled = true }
-  }, [courseClient, courseId, slug])
+    // reloadKey re-runs the whole fetch after a save, so the rendered body,
+    // table of contents, gap list and link graph all reflect the edit rather
+    // than the client patching its own copy and drifting from the database.
+  }, [courseClient, courseId, slug, reloadKey])
+
+  const save = async () => {
+    setSaving(true)
+    setSaveNotice(null)
+    const { data, error } = await courseClient.rpc('edit_page', {
+      p_page_id: page.id,
+      p_content: draft,
+      p_note: note || null,
+    })
+    setSaving(false)
+    if (error) return setSaveNotice(error.message)
+    setEditing(false)
+    setDraft('')
+    setSaveNotice(
+      `Saved as v${data.current_version} · ${data.links_extracted} link${data.links_extracted === 1 ? '' : 's'}` +
+      ` · ${data.needs?.length ? `still needs: ${data.needs.join(', ')}` : 'no declared gaps'}`
+    )
+    setReloadKey(k => k + 1)
+  }
 
   const { meta, body } = useMemo(() => splitFrontmatter(page?.content), [page?.content])
   const toc = useMemo(() => extractHeadings(body), [body])
@@ -113,7 +143,14 @@ export default function WikiPage() {
         {catalog?.dsm_chapter_title && <> · <span style={S.dim}>{catalog.dsm_chapter_title}</span></>}
       </nav>
 
-      <h1 style={S.title}>{page.title}</h1>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+        <h1 style={{ ...S.title, flex: '1 1 auto' }}>{page.title}</h1>
+        {isStaff && !editing && page.content && (
+          <button style={S.editBtn} onClick={() => { setDraft(page.content); setNote(''); setEditing(true) }}>
+            Edit page
+          </button>
+        )}
+      </div>
       <p style={S.metaLine}>
         {page.type} · v{page.current_version}
         {catalog?.tier && <> · tier {catalog.tier}</>}
@@ -121,6 +158,47 @@ export default function WikiPage() {
         {' · '}updated {new Date(page.updated_at).toLocaleDateString()}
       </p>
       {page.summary && <p style={S.summary}>{page.summary}</p>}
+
+      {saveNotice && <p style={S.saveNotice}>{saveNotice}</p>}
+
+      {/* Staff editing. The only client-reachable write to a page body besides
+          review_proposal — wiki_pages has no authenticated write policies, so
+          the staff check lives inside edit_page(). The previous body is kept as
+          an accepted version by the existing snapshot trigger, which is why
+          this can be a plain textarea rather than a guarded ceremony. */}
+      {isStaff && editing && (
+        <section style={S.editBox}>
+          <p style={S.colLabel}>Editing {page.slug} · markdown, frontmatter included</p>
+          <textarea
+            style={S.editArea}
+            value={draft}
+            onChange={e => setDraft(e.target.value)}
+            spellCheck
+          />
+          <input
+            style={S.noteInput}
+            placeholder="What changed, and why (optional, but it's what version history will show)"
+            value={note}
+            onChange={e => setNote(e.target.value)}
+          />
+          <p style={S.sub}>
+            Gaps and links are re-derived on save: removing a <code style={S.code}>&gt; **Needs
+            research:**</code> line closes that gap, and adding a wikilink adds a graph edge.
+          </p>
+          <div style={{ display: 'flex', gap: 10, marginTop: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+            <button style={S.primary} disabled={saving || draft === page.content} onClick={save}>
+              {saving ? 'Saving…' : 'Save changes'}
+            </button>
+            <button style={S.secondary} disabled={saving} onClick={() => { setEditing(false); setDraft('') }}>
+              Cancel
+            </button>
+            <span style={S.dim}>
+              {draft.length.toLocaleString()} chars
+              {draft === page.content && ' · unchanged'}
+            </span>
+          </div>
+        </section>
+      )}
 
       {/* Staff see drafts; the badge is there so nobody reviews a page
           believing students are already reading it. */}
@@ -298,6 +376,15 @@ const S = {
   section: { marginTop: 30, paddingTop: 18, borderTop: '1px solid var(--bd)' },
   sectionH: { fontFamily: SERIF, fontSize: 18, color: 'var(--tx)', margin: '0 0 8px' },
   needsBox: { marginTop: 30, padding: '14px 16px', borderRadius: 12, background: 'var(--bgc)', border: '1px solid var(--bd)' },
+
+  editBtn: { flexShrink: 0, marginTop: 8, fontSize: 13, fontWeight: 600, padding: '7px 14px', borderRadius: 20, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx)', cursor: 'pointer' },
+  editBox: { marginTop: 16, padding: 16, borderRadius: 12, background: 'var(--bgc)', border: '1px solid var(--bd)' },
+  colLabel: { fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx2)', margin: '0 0 8px' },
+  editArea: { width: '100%', boxSizing: 'border-box', minHeight: 420, resize: 'vertical', fontFamily: MONO, fontSize: 12.5, lineHeight: 1.55, padding: 12, borderRadius: 8, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx)' },
+  noteInput: { width: '100%', boxSizing: 'border-box', marginTop: 10, fontSize: 14, padding: '9px 11px', borderRadius: 8, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx)' },
+  saveNotice: { marginTop: 12, fontFamily: MONO, fontSize: 13, color: 'var(--pk)', lineHeight: 1.5 },
+  primary: { fontSize: 14, fontWeight: 600, padding: '9px 16px', borderRadius: 24, border: 'none', background: 'var(--pk)', color: '#fff', cursor: 'pointer' },
+  secondary: { fontSize: 14, fontWeight: 600, padding: '9px 16px', borderRadius: 24, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx)', cursor: 'pointer' },
 
   chips: { display: 'flex', flexWrap: 'wrap', gap: 8 },
   chip: { fontSize: 13, padding: '5px 11px', borderRadius: 20, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx)', textDecoration: 'none' },
