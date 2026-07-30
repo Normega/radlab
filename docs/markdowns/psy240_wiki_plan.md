@@ -728,9 +728,14 @@ Two scheduling notes given the "both at once" decision:
     matters because a 300-invite blast produces bounces. The framing in §2a.6 was
     wrong in one respect worth recording: **Resend's quota is per account, not per domain**,
     so a course-specific domain buys reputation isolation and *no* volume relief — only the
-    plan tier does, and Norm moved to it on 2026-07-29. Remaining is configuration:
-    Custom SMTP on radlab-academic, plus raising Supabase's own auth email rate limit
-    (enabling custom SMTP does not raise it). Tooling and the full survey: website.md §11,
+    plan tier does, and Norm moved to it on 2026-07-29. Custom SMTP on radlab-academic was
+    configured the same day and three rate limits raised (`rate_limit_email_sent` 2 → 300,
+    `rate_limit_otp` and `rate_limit_verify` 30 → 300 per hour) — the latter two sized for
+    the **week-1 QR burst**, not the invite send, since ~200 students requesting and clicking
+    links inside one lecture would otherwise fail after 30 of each. §2a.6's "custom SMTP is
+    required" is right but incomplete: enabling it does not raise the cap, it only makes the
+    cap raisable, and two adjacent counters it does not cover are what the QR path actually
+    hits. Not yet exercised: an actual send. Tooling and full survey: website.md §11,
     `scripts/check-email-dns.ps1`, `scripts/parse-dmarc-report.py`.
 12. **Should frontmatter relations become graph edges?** (new, 2026-07-27) — 125 relations
     are declared in frontmatter (`related_disorders`, `key_studies`, `concepts_touched`,

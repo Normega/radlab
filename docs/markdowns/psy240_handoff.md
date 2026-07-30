@@ -80,7 +80,7 @@ From `psy240_wiki_plan.md` §2a:
    export.** Column names differ from ACORN's and the email column may be the
    institutional alias, so the importer maps columns explicitly and matches on
    the normalized key, never a literal string.
-4. ~~**Resend domain verification**~~ — **mostly resolved 2026-07-29.** The
+4. ~~**Resend domain verification**~~ — **done 2026-07-29, email is unblocked.** The
    verified Resend domain turned out to be **`mail.radlab.zone`** (not the
    apex), already fully configured and passing. **Superseded the same day:**
    Norm moved to the paid tier and added a second verified domain,
@@ -91,10 +91,30 @@ From `psy240_wiki_plan.md` §2a:
    the earlier framing: verifying a *new* domain was never the blocker, and a
    second domain would not have helped anyway — **Resend's sending quota is
    per account, not per domain**, so only the plan tier addresses a 300-invite
-   day. Norm moved to the paid plan 2026-07-29, which settles it. What remains
-   is configuration, not verification: Custom SMTP on radlab-academic pointing
-   at Resend, **and raising Supabase's own auth email rate limit**, which
-   enabling custom SMTP does not do by itself. See website.md §11.
+   day. Norm moved to the paid plan 2026-07-29, which settles it.
+
+   **Configured and verified the same day** (values read back over the
+   Management API, see website.md §11): Custom SMTP on radlab-academic
+   (`smtp.resend.com:465`, user `resend`, sender `accounts@course.radlab.zone`
+   / "RADlab Courses" — deliberately course-*neutral*, because that field is
+   project-wide and this project hosts many courses; per-course sender identity
+   belongs on the invite Edge Function, composed from `courses.code`).
+   `mailer_autoconfirm` stays false, so clicking is what enrols.
+
+   Three rate limits raised from their defaults, all per hour:
+   `rate_limit_email_sent` 2 → 300, `rate_limit_otp` 30 → 300,
+   `rate_limit_verify` 30 → 300. **The last two are the week-1 ones**, and the
+   reason is the QR path: ~200 students scanning in one lecture would have hit
+   `rate_limit_otp` after 30 sends and `rate_limit_verify` after 30 clicks,
+   failing as generic errors on their phones mid-class. `rate_limit_verify`
+   cannot be engineered around — every click verifies a token through Supabase
+   auth however the email was sent — so raising it was mandatory, not optional.
+
+   Still untested: whether mail actually *flows*. The settings being right and
+   Resend accepting the credential are different claims; a password reset sent
+   from radlab-academic is the cheapest end-to-end proof. Also unchanged:
+   `mailer_otp_exp` is 3600, so links die after an hour — fine for the QR path,
+   tight for a bulk invite a student opens after class.
 
 Also open but not blocking: the **CDDR licence variant** (BY-NC-SA vs BY-NC-ND
 3.0 IGO). A 30-second check of the PDF's copyright page. Doesn't gate anything —
@@ -175,9 +195,11 @@ Two things to clear before or during it:
   `npm run dev` can't serve the Field Guide (§6).
 - **The two repeated-skeleton pages** (§5) want an editing pass.
 
-**WP5 is still the schedule's real risk.** Two of its four decisions are taken;
-the Ripple-onboarding collision and Resend domain verification remain, and the
-second has external lead time.
+**WP5 is still the schedule's real risk**, but its external dependency is gone:
+three of its four decisions are settled and the whole email path is configured
+(§4). **The Ripple-onboarding collision is now the only open one** — and it is
+the item that touches the *main* project's auth path rather than adding to the
+academic partition, so it wants deciding before WP5 starts rather than during.
 
 One loose end, now with a proposed answer: the 18 pages from the Module 4
 paper-mode run predate the attribution fix, so they carry no `sources:`
