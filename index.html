@@ -8,6 +8,35 @@
   </head>
   <body>
     <div id="root"></div>
+    <!--
+      Password-recovery landing rescue (2026-07-30).
+
+      Supabase silently substitutes the project's Site URL when a
+      `redirect_to` is not in the Redirect URLs allowlist — it does NOT error.
+      Verified against the live project: only `https://radlab.vercel.app/…` is
+      allowlisted, so a reset requested from radlab.zone, www.radlab.zone or
+      localhost lands on `https://radlab.vercel.app#access_token=…&type=recovery`
+      — the root page, with a valid recovery session in the hash. supabase-js
+      consumes it, the user is silently signed in, and the password form they
+      were sent to is never shown.
+
+      The real fix is the allowlist (Dashboard → Authentication → URL
+      Configuration). This is the belt: if a recovery hash lands anywhere other
+      than /reset-password, move it there before any app code runs.
+
+      Deliberately inline and pre-module: supabase-js strips the hash during
+      client init, so anything inside the bundle races it. Matches only the
+      exact recovery signature, so participant magic-links (which mint their
+      session server-side and never carry this hash) are untouched.
+    -->
+    <script>
+      (function () {
+        var h = window.location.hash
+        if (!h || h.indexOf('type=recovery') === -1) return
+        if (window.location.pathname === '/reset-password') return
+        window.location.replace('/reset-password' + window.location.search + h)
+      })()
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
