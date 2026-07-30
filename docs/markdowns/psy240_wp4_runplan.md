@@ -189,6 +189,15 @@ Licensed CC BY-NC-SA 4.0.
 
 Byte-for-byte the format already used for Module 04, so provenance stays consistent.
 
+**You only type it once.** Since 2026-07-30 the portal keeps the citation after submit and offers
+a *"reuse a citation from a previous run"* picker built from this course's past jobs — so run 2
+onwards is a dropdown pick plus changing the module number and title. The **Suggest citation**
+button reads a DOI off the PDF and resolves it, which is the path for journal articles; the
+textbook has no DOI, so for these fifteen runs use the reuse picker.
+
+A suggestion never fills the field on its own — you accept it explicitly. That is deliberate:
+attribution is a licence condition, and a looked-up citation nobody read is worse than a typed one.
+
 ---
 
 ## 7. Before committing 17 hours
