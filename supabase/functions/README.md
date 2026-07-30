@@ -8,6 +8,13 @@ Set these secrets in Supabase Dashboard → Edge Functions → Secrets:
 - `SITE_URL` — `https://radlab.vercel.app`
 - `SUPABASE_SERVICE_ROLE_KEY` — from Supabase → Settings → API
 
+Optional, all with working defaults (`auto-enroll` rate limiting, live 2026-07-30):
+- `ENROLL_RATE_MAX` — new accounts allowed per IP per window (default `1`)
+- `ENROLL_RATE_WINDOW_S` — window in seconds (default `60`)
+- `ENROLL_IP_SALT` — salt for the stored IP hash. Unset, the service key stands
+  in; rotating that simply resets the counting window. Set it if you ever want
+  the hashes stable across a key rotation.
+
 ## Deploy
 
 ```bash
