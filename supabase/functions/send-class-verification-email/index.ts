@@ -23,7 +23,12 @@ const CORS = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const UTORONTO_DOMAINS = ['utoronto.ca', 'mail.utoronto.ca']
+// `radlab.zone` is accepted alongside the student domains: it is a Workspace
+// domain restricted to lab staff, and without it the verification flow cannot be
+// exercised end to end without a real student account (Norm, 2026-07-30). This
+// list is the REAL gate — the copy in src/academic/lecture-lounge/ClassRoom.jsx
+// is a convenience check only, and the two must stay in sync.
+const UTORONTO_DOMAINS = ['utoronto.ca', 'mail.utoronto.ca', 'radlab.zone']
 const EXPIRES_HOURS = 24
 
 function json(body: unknown, status = 200) {

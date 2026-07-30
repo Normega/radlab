@@ -3428,7 +3428,7 @@ Core loop: instructor stages a check-in from a console, students respond on thei
 
 ### Decisions (confirmed 2026-07)
 
-- Students link a verified `utoronto.ca` (or `mail.utoronto.ca`) email to their existing radlab account; grade export keys on that email
+- Students link a verified `utoronto.ca` (or `mail.utoronto.ca`) email to their existing radlab account; grade export keys on that email. **`radlab.zone` is also accepted** (2026-07-30) — a Workspace domain restricted to lab staff, added because the verification flow otherwise cannot be exercised end to end without a real student account. Deliberately absent from the student-facing error copy. The list lives in two places that must stay in sync: `supabase/functions/send-class-verification-email/index.ts` (the real gate) and `ClassRoom.jsx` (a convenience check that only saves a round trip). `verify_utoronto_email()` consumes the token and checks no domain, so no migration was needed
 - Identity in class interactions is avatar-only; usernames and identifiers never shown
 - Knowledge checks use a polling window (open, answer, close, tabulate); no speed scoring, no real-time countdown
 - Correct answer and response distribution shown after poll closes
