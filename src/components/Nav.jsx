@@ -15,8 +15,10 @@ import SecondaryCTA from './ui/SecondaryCTA'
  * redesign header at once.
  *
  * Consistent-header rule (Dev Spec §2): Dashboard · Games · About always
- * visible. For guests, Dashboard/Games are preview-only — visible, inert
- * (§9 Q7) — and About points at /platform (the redesign About page).
+ * visible. For guests, Dashboard stays preview-only — visible, inert (§9 Q7);
+ * Games became a real link 2026-07-30 when /games went public read-only
+ * (revised Games Page, Figma 4047:3653). About points at /platform (the
+ * redesign About page).
  * Admin pill is a live-site necessity for lab users (not in Figma; kept
  * per the Phase 2 header-swap decision).
  *
@@ -71,7 +73,7 @@ export default function Nav({ session }) {
   ) : (
     <>
       <ButtonNav inert>Dashboard</ButtonNav>
-      <ButtonNav inert>Games</ButtonNav>
+      <ButtonNav to="/games" active={isActive('/games')} onClick={() => setOpen(false)}>Games</ButtonNav>
       <ButtonNav to="/platform" active={isActive('/platform')} onClick={() => setOpen(false)}>About</ButtonNav>
     </>
   )
