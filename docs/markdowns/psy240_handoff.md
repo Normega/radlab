@@ -151,7 +151,13 @@ These were learned by running real content through, not by reasoning:
   times**, `persistent-depressive-disorder` twice — one copy per accepted
   `update` proposal, plus H1 seams like `# Update from Fonagy (2015)`. The
   merge guard stops a delta *replacing* a page; it doesn't stop the skeleton
-  accumulating. Worth an editing pass on those two before the first publish.
+  accumulating. **Root cause found and fixed 2026-07-30** (two prompt rules
+  contradicted each other — see the WP2 follow-up note in the plan), so it
+  won't recur across WP4's 46 Tier A pages. **The two existing pages are still
+  unfixed**, and can't be until there's an edit path: `wiki_pages` has no
+  authenticated write policies and no `edit_page` RPC exists, so an accepted
+  page currently cannot be corrected at all. They no longer misreport their
+  gaps, but they still read as three copies.
 
 ## 6. Gotchas that cost time this session
 
@@ -190,10 +196,14 @@ that still declare gaps (`reference_worklist` says which).
 
 Two things to clear before or during it:
 
-- **Click-test the reader on a deploy.** It is verified offline (link rules vs
-  the DB graph, server-rendered anchors) but has never run in a browser —
-  `npm run dev` can't serve the Field Guide (§6).
-- **The two repeated-skeleton pages** (§5) want an editing pass.
+- ~~Click-test the reader~~ — **done 2026-07-30, works.** Which is how the
+  duplicated skeletons got found.
+- **An edit path, then the two repeated-skeleton pages** (§5). `edit_page(page_id,
+  content, reason)` as a SECURITY DEFINER RPC with the staff check, writing an
+  accepted version so history survives, plus a staff-only edit affordance on the
+  reader. Needed regardless of those two pages — right now a typo is
+  uncorrectable. Then the pages themselves, which is editorial judgement about
+  which prose to keep where the copies overlap, not a mechanical merge.
 
 **WP5 is still the schedule's real risk**, but its external dependency is gone:
 three of its four decisions are settled and the whole email path is configured

@@ -572,6 +572,49 @@ to use section links yet, so nothing on the live corpus would have caught it. **
 click-tested in a browser** — `npm run dev` can't run the Field Guide (§6 of the handoff),
 so that needs a deploy.
 
+### WP2 follow-up: the gap mechanism was wrong, and why (2026-07-30)
+
+Migration `20260730_wiki_body_needs_and_replace.sql`. Found by click-testing the reader, which
+made duplicated disorder skeletons visible for the first time — `major-depressive-disorder`
+carried the six H2 sections **three times**, `persistent-depressive-disorder` twice.
+
+**Two prompt rules in this plan contradicted each other.** §2.4's fixed section structure became
+"disorder pages MUST carry all six H2 sections, ALWAYS", while §3's contribution flow makes an
+`update` "only the new information to merge". Both at once means every update to a disorder page
+emits a full skeleton, which the review UI's merge pre-fill appends. This plan's WP4 is ~15
+paper-mode module runs *followed by targeted reference runs on Tier A pages that still declare
+gaps* — i.e. dozens of updates against pages that already exist — so left alone it would have
+recurred across all 46 Tier A pages.
+
+Fixed on both sides. Paper mode scopes the skeleton to `action: new` and states that an update is
+appended rather than merged section-by-section. **Reference mode now returns a complete page with
+a new `action: 'replace'`** that overwrites instead of appending: it already names its target and
+receives the current body, so "rewrite this page with the gaps filled" is simpler than a merge and
+reads as one voice rather than two stitched together. A distinct action rather than a heuristic on
+content shape, because the review UI must not pre-merge it — it shows a banner saying the current
+body will be overwritten, and keeps the previous body as an accepted version.
+
+**The more consequential half: `needs` was lying, and `needs` aims WP4.** `extract_page_needs()`
+parsed the frontmatter `needs:` list, taking the first match in the document, while the merge
+pre-fill strips an addendum's frontmatter (correctly — two YAML blocks in one file is invalid). So
+the gap list froze at the first source's assessment while content kept growing. Measured live: MDD
+declared 4 gaps and PDD 1, and **all five were already filled further down the same page**. Since
+`reference_worklist` reads `needs`, the content sprint would have been aimed by data wrong in both
+directions.
+
+Gaps are now derived from the body — a section is a gap when no copy of it holds prose. This is
+self-correcting, needs nothing from the model, and caught two gaps the model had written
+placeholders for but never declared (`cyclothymic-disorder` etiology,
+`disruptive-mood-dysregulation-disorder` epidemiology). Built as a shadow function and diffed
+against all 44 live pages before the swap: 40 unchanged, the 4 that moved were exactly the
+corrections.
+
+**Left open:** there is no way to edit an accepted page — only `review_proposal` (which needs a
+pending version) and `unpublish_page` exist, and `wiki_pages` has no authenticated write policies.
+So the two duplicated pages cannot be cleaned up yet, and neither can a typo. `edit_page(page_id,
+content, reason)` plus a staff-only edit affordance is the missing primitive; this plan never
+called for it, which is the gap worth noting.
+
 ### WP3 as built — part 1: taxonomy seed + review path (2026-07-25)
 
 Migration: `supabase/migrations/20260725_academic_wiki_wp3.sql`, applied live.
