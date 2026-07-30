@@ -624,11 +624,23 @@ Worth folding into §3's contribution flow when WP6 is built: the review queue i
 *proposed* content, and `edit_page` is now the gate for *accepted* content. Both are staff-only
 SECURITY DEFINER functions rather than table grants, which is the pattern to keep.
 
-**Still open:** MDD and PDD themselves. They no longer misreport their gaps but still read as three
-copies and two. For MDD, copy 3 is a complete page and copy 1 contributes a substantial Treatment
-section from a different source, so the merge is copy 3 as spine plus copy 1's Treatment, with every
-placeholder dropped; PDD is copy 1 as spine plus copy 2's three short increments. That is editorial
-judgement about which prose survives where copies overlap, not a mechanical merge.
+**Both pages merged 2026-07-30** through `edit_page()`, and doing it taught two things worth
+carrying into WP4's review hours:
+
+- **Read the copies before deciding which one wins.** MDD's third copy already contained the first
+  verbatim — the model's later pass had effectively integrated it — so the merge was mostly
+  deletion. But PDD's *second* copy was genuinely additive: it supplied the criteria structure
+  (copy 1 described the category's history but never the symptom list) and the legacy DSM-IV
+  prevalence and sex ratios, which closed a gap copy 1 had declared. "Keep the longest copy" would
+  have lost real content.
+- **Narrow a gap marker rather than deleting it.** PDD's Epidemiology gained prevalence figures but
+  still lacks onset-age distribution and cross-cultural data, so the marker was rewritten to say
+  exactly that. A page that overstates its own completeness is worse than one that admits a hole.
+
+Merging PDD also exposed a flaw in the same-day gap rule: "no copy holds prose" lost the partially
+filled case, so a section with content *and* a marker read as complete. Corrected in
+`20260730_wiki_needs_partial_sections.sql` — a gap is a marker **or** an empty section. Wiki-wide,
+links went 45 → 71 with 0 red, because the merges linked concepts the prose already named.
 
 ### WP3 as built — part 1: taxonomy seed + review path (2026-07-25)
 

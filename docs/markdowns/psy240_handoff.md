@@ -146,18 +146,19 @@ These were learned by running real content through, not by reasoning:
   So connectedness is understated roughly 3×, and the red-link count that
   taxonomy §5's Tier B argument leans on is measured on a partial graph. Plan
   open question 12.
-- **Some pages carry the disorder skeleton more than once.**
-  `major-depressive-disorder` has Presentation/Diagnosis/…/Contested **three
-  times**, `persistent-depressive-disorder` twice — one copy per accepted
-  `update` proposal, plus H1 seams like `# Update from Fonagy (2015)`. The
-  merge guard stops a delta *replacing* a page; it doesn't stop the skeleton
-  accumulating. **Root cause found and fixed 2026-07-30** (two prompt rules
-  contradicted each other — see the WP2 follow-up note in the plan), so it
-  won't recur across WP4's 46 Tier A pages. **The two existing pages are still
-  unfixed**, and can't be until there's an edit path: `wiki_pages` has no
-  authenticated write policies and no `edit_page` RPC exists, so an accepted
-  page currently cannot be corrected at all. They no longer misreport their
-  gaps, but they still read as three copies.
+- ~~**Some pages carry the disorder skeleton more than once.**~~ — **all
+  resolved 2026-07-30.** `major-depressive-disorder` had the six sections three
+  times and `persistent-depressive-disorder` twice, one copy per accepted
+  `update`. Root cause was two prompt rules contradicting each other (see the
+  WP2 follow-up in the plan), now fixed, so it won't recur across WP4's 46
+  Tier A pages. Both pages merged through the new `edit_page()`: MDD 15,825 →
+  11,032 chars, and wiki-wide links went **45 → 71 with 0 red** because the
+  merge linked concepts the prose already named. Two things worth knowing from
+  doing it: copy 3 of MDD already contained copy 1 verbatim, so the model's
+  third pass had effectively integrated it — and PDD's second copy was
+  genuinely additive (the criteria structure and the DSM-IV prevalence figures),
+  so "drop the duplicates" would have lost real content. Read the copies before
+  assuming which one wins.
 
 ## 6. Gotchas that cost time this session
 
@@ -202,13 +203,11 @@ Two things to clear before or during it:
   plus an **Edit page** button on the reader for staff. History is automatic
   (the snapshot trigger keeps the previous body), blanking and no-ops are
   refused, and saving re-derives gaps and links.
-- **The two repeated-skeleton pages** (§5) can now be fixed, and it's editorial
-  judgement rather than a mechanical merge: for MDD, copy 3 is a complete good
-  page and copy 1 contributes a substantial Treatment section from a different
-  source, so the merge is "copy 3 as the spine, fold in copy 1's Treatment, drop
-  every placeholder". PDD is copy 1 as the spine plus copy 2's three short
-  increments. Claude can prepare a stitched draft; deciding which prose survives
-  where they overlap is the instructor's call.
+- ~~The two repeated-skeleton pages~~ — **merged 2026-07-30** (§5). Both want an
+  instructor read for voice rather than for correctness: the merges preserved
+  wording verbatim and only cut duplication, so nothing was rewritten, but MDD's
+  Treatment section now carries a textbook paragraph and a psychodynamic
+  evidence block from different sources side by side.
 
 **WP5 is still the schedule's real risk**, but its external dependency is gone:
 three of its four decisions are settled and the whole email path is configured
