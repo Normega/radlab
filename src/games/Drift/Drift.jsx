@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import Nav from '../../components/Nav'
 import { supabase } from '../../lib/supabase'
+import { dbWrite } from '../../lib/dbWrite'
 import { EMOTIONS } from '../StillWater/constants'
 import ContactAvatar from '../FirstContact/components/ContactAvatar'
 
@@ -106,7 +107,13 @@ async function saveTrialResult({ sessionId, trialNum, trial, reproducedMs, ratio
 
 async function saveSessionComplete({ sessionId, userId, meanRatio, meanAbsError }) {
   if (sessionId) {
-    await supabase.from('game_sessions').update({ ended_at: new Date().toISOString() }).eq('id', sessionId)
+    await dbWrite(
+      supabase.from('game_sessions')
+        .update({ ended_at: new Date().toISOString() })
+        .eq('id', sessionId)
+        .select('id'),
+      'game_sessions.ended_at', { expectRows: true },
+    )
     await supabase.from('drift_performance').insert({
       session_id: sessionId, user_id: userId,
       mean_ratio: parseFloat(meanRatio.toFixed(4)),
@@ -118,7 +125,10 @@ async function saveSessionComplete({ sessionId, userId, meanRatio, meanAbsError 
     const { data: p } = await supabase.from('profiles').select('drift_sessions, points').eq('id', userId).single()
     const updates = { drift_sessions: (p?.drift_sessions ?? 0) + 1 }
     if (p?.points !== undefined) updates.points = (p.points ?? 0) + 5
-    await supabase.from('profiles').update(updates).eq('id', userId)
+    await dbWrite(
+      supabase.from('profiles').update(updates).eq('id', userId).select('id'),
+      'profiles.drift_progress', { expectRows: true },
+    )
   }
 }
 

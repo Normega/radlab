@@ -70,7 +70,7 @@ Your job: read the paper, then output ALL new or updated wiki pages needed, as a
 
 PAGE TYPES:
 - disorder: a DSM-5 diagnostic category. Frontmatter fields: title, prevalence, related_disorders, key_studies, needs.
-  The markdown body MUST contain these H2 sections, in this order, ALWAYS, even when the paper supports none of them:
+  When you are creating the page (action "new"), the markdown body MUST contain these H2 sections, in this order, ALWAYS, even when the paper supports none of them:
     ## Presentation      what it looks like clinically; a brief vignette if the source supports one
     ## Diagnosis         criteria STRUCTURE paraphrased (never DSM-5 wording), differential diagnosis, specifiers
     ## Epidemiology      prevalence, onset, course, sex/gender, culture
@@ -81,6 +81,7 @@ PAGE TYPES:
     > **Needs research:** <specifically what is missing, e.g. "genetic and neurobiological findings; this source only covers psychosocial treatment">
   and list that section's lowercase name in the frontmatter "needs" array, e.g. needs: [diagnosis, etiology, epidemiology].
   Do NOT invent content to fill a section, and do NOT drop a section to avoid an empty one. A visible gap is the wiki telling the course what to read next; a missing heading is indistinguishable from a settled question.
+  ON AN UPDATE to a disorder page that already exists, the six-section rule does NOT apply. Output ONLY the H2 sections you are actually adding content to. Do not emit the other headings, do not emit "Needs research" placeholders for sections you are not touching, and do not emit a "needs" array — the page already has all of that. An update is appended to the page, not merged section by section, so a full skeleton in an update lands as a SECOND copy of the skeleton on the page.
 - study: one page per paper. Fields: title, authors, year, journal, doi, design, sample, key_findings, limitations, disorders_touched, concepts_touched
 - concept: a theoretical or empirical construct. Fields: title, definition, related_concepts, key_studies
 - treatment: an intervention or treatment approach. Fields: title, target_disorders, mechanism, evidence_base, limitations
@@ -94,7 +95,7 @@ SOURCING — mandatory on every page:
 
 RULES:
 - Paraphrase all diagnostic criteria. Never reproduce DSM-5 text verbatim.
-- If a page already exists in the index, output it as an "update" with only the new information to merge, not a full rewrite.
+- If a page already exists in the index, output it as an "update" with only the new information to merge, not a full rewrite. An update is a DELTA: it gets appended to the existing page, so restating what is already there duplicates it.
 - If a page is new, output it as "new" with full content.
 - Flag any direct contradiction with existing wiki content in a "contradictions" field, do not silently resolve it.
 - Wikilink filenames: lowercase, hyphens for spaces.
@@ -110,6 +111,21 @@ OUTPUT FORMAT (JSON only, no other text):
   "contradictions": ["description of any conflict with existing wiki content, or empty list"],
   "log_entry": "2-4 sentence summary of what was ingested and what pages were touched"
 }`
+
+// Amended 2026-07-30. Two prompt rules were contradicting each other: disorder
+// pages must carry all six H2 sections "ALWAYS", and an update must contain
+// "only the new information to merge". Both at once means every update to a
+// disorder page emits a full skeleton, which the merge pre-fill appends — one
+// skeleton per accepted update. On live data major-depressive-disorder ended up
+// with the six sections three times and persistent-depressive-disorder twice,
+// and WP4 would have reproduced that across all 46 Tier A pages, since its plan
+// is targeted reference runs against pages that already exist.
+//
+// Paper mode now scopes the skeleton to `action: new` (above). Reference mode
+// takes the other road: a complete page with `action: replace`, because it
+// already names its target and is handed the current body, so "rewrite this
+// page with the gaps filled" avoids the merge entirely and reads as one voice
+// instead of two stitched together.
 
 // Reference mode (WP3/WP4). Same output contract as the paper prompt — the
 // review queue, merge path and link extraction all work unchanged — but the
@@ -134,9 +150,14 @@ You will be given:
 3. That page's current content, if any, and the sections it has declared it still needs
 4. A compact index of wiki pages that already exist
 
-Your job: produce the target page — or an update to it — as a single JSON object. Do not use any tools. Do not ask questions. Return only JSON.
+Your job: produce the COMPLETE target page as a single JSON object. Do not use any tools. Do not ask questions. Return only JSON.
 
-TARGET PAGE STRUCTURE (disorder pages) — these H2 sections, in this order, ALWAYS:
+THE TARGET PAGE IS A WHOLE-PAGE REWRITE, NOT A DELTA:
+- If the target already has content, output it with action "replace" and return the ENTIRE page: everything worth keeping from the current body, with the needed sections now filled from your source. Accepting a "replace" overwrites the page, so anything you leave out is lost — carry the existing material forward, and do not restate the same point twice because it appeared in both.
+- If the target has no content yet, output action "new" with the full page.
+- Either way the page you return must stand alone and read as one coherent voice. Do NOT write an "Update from <source>" section, and do not repeat the section skeleton.
+
+TARGET PAGE STRUCTURE (disorder pages) — these H2 sections, in this order, ALWAYS, exactly once each:
   ## Presentation      what it looks like clinically; a brief vignette if the source supports one
   ## Diagnosis         criteria STRUCTURE paraphrased, differential diagnosis, specifiers
   ## Epidemiology      prevalence, onset, course, sex/gender, culture
@@ -162,8 +183,8 @@ COPYRIGHT — non-negotiable:
 - Facts, prevalence figures and classifications are free to state; wording is not.
 
 RULES:
-- If the target page already has content, output ONE page with action "update" containing only the new information to merge — do not restate what is already there.
-- If it has no content yet, output action "new" with the full page.
+- The target page is ONE page in the output, with action "replace" if it already has content or "new" if it does not. See the whole-page-rewrite rule above.
+- Keep any existing claim that your source does not contradict, including its in-text attribution. If your source DOES contradict it, keep both and say so, and also record it in "contradictions" — do not silently drop the older claim.
 - You may also output additional NEW pages for concepts or treatments the source introduces that the wiki lacks, but the target page is the point — do not drown it.
 - Flag any contradiction with existing wiki content in "contradictions"; do not silently resolve it.
 - Wikilink filenames: lowercase, hyphens for spaces.
@@ -171,7 +192,7 @@ RULES:
 OUTPUT FORMAT (JSON only, no other text):
 {
   "pages": [
-    {"action": "new" | "update", "type": "disorder|study|concept|treatment|debate", "filename": "lowercase-with-dashes.md", "content": "full markdown content with YAML frontmatter"}
+    {"action": "new" | "replace", "type": "disorder|study|concept|treatment|debate", "filename": "lowercase-with-dashes.md", "content": "full markdown content with YAML frontmatter"}
   ],
   "index_entries": [
     {"filename": "...", "type": "...", "one_line_summary": "..."}
@@ -548,7 +569,11 @@ async function persistProposals(service, { jobId, courseId, personId, result }) 
         .insert({
           page_id: pageId,
           kind: 'proposed',
-          action: page.action === 'update' ? 'update' : 'new',
+          // Anything the model returns that isn't a recognised action lands as
+          // `new`, which is the safe default: a `new` proposal is reviewed as a
+          // whole page, whereas mislabelling something as `update` would have
+          // the UI pre-merge it onto the existing body.
+          action: ['update', 'replace'].includes(page.action) ? page.action : 'new',
           title,
           summary,
           content: page.content ?? null,

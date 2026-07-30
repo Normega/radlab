@@ -85,7 +85,7 @@ export async function processAdherenceWithdrawal(
   })
 
   const resend = new Resend(Deno.env.get('RESEND_API_KEY'))
-  const fromEmail = Deno.env.get('FROM_EMAIL') ?? 'research@radlab.vercel.app'
+  const fromEmail = Deno.env.get('FROM_EMAIL') ?? 'research@radlab.zone'
 
   const { error: sendErr } = await resend.emails.send({ from: fromEmail, to, subject, html, text })
 

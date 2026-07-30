@@ -24,6 +24,39 @@ function json(body: unknown, status = 200) {
   })
 }
 
+// ── Rate limiting ─────────────────────────────────────────────────────────────
+// `enrollment_attempts` was created for this in 20260617_external_enrollment.sql
+// and then never wired up — the table sat empty for six weeks while this
+// endpoint stayed open (found 2026-07-30).
+//
+// The exposure is real: `external_id` comes straight off the join URL
+// (`PROLIFIC_PID` / `id`), so anyone holding the link can vary it and mint a
+// participant account, enrollment and materialized schedule per request.
+// Repeating the SAME id is already harmless — that path returns the existing
+// link — so only brand-new accounts are throttled, and a participant reloading
+// their own link is never told to wait.
+//
+// Limits are env-tunable; defaults are one new account per IP per 60s.
+const RATE_MAX      = Number(Deno.env.get('ENROLL_RATE_MAX')      ?? '1')
+const RATE_WINDOW_S = Number(Deno.env.get('ENROLL_RATE_WINDOW_S') ?? '60')
+
+/** SHA-256 of salt+IP: enough to recognise a repeat visitor without storing
+ *  anyone's address. Salted because the IPv4 space is small enough to brute
+ *  force an unsalted hash. Set ENROLL_IP_SALT to pin it; otherwise the service
+ *  key stands in — rotating that just resets the counting window. */
+async function hashClientIp(req: Request): Promise<string | null> {
+  const raw = req.headers.get('x-forwarded-for')
+    ?? req.headers.get('cf-connecting-ip')
+    ?? req.headers.get('x-real-ip')
+  const ip = raw?.split(',')[0]?.trim()
+  if (!ip) return null
+
+  const salt  = Deno.env.get('ENROLL_IP_SALT') ?? Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  const bytes = new TextEncoder().encode(`${salt}:${ip}`)
+  const hash  = await crypto.subtle.digest('SHA-256', bytes)
+  return [...new Uint8Array(hash)].map(b => b.toString(16).padStart(2, '0')).join('')
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
 
@@ -95,6 +128,41 @@ Deno.serve(async (req) => {
 
       // Existing enrollment but link expired — fall through to create a new link.
     } else {
+      // 2b. Rate limit — NEW accounts only (see the note by hashClientIp). Every
+      //     check is fail-open: a limiter that errors must never stand between a
+      //     real participant and their study.
+      const ipHash = await hashClientIp(req)
+      if (ipHash) {
+        const since = new Date(Date.now() - RATE_WINDOW_S * 1000).toISOString()
+        const { count, error: rateErr } = await admin
+          .from('enrollment_attempts')
+          .select('id', { count: 'exact', head: true })
+          .eq('study_id', study_id)
+          .eq('ip_hash', ipHash)
+          .gte('attempted_at', since)
+
+        if (rateErr) {
+          console.error('enrollment_attempts lookup failed — allowing through:', rateErr.message)
+        } else if ((count ?? 0) >= RATE_MAX) {
+          console.warn(`auto-enroll rate limited: study ${study_id}, ${count} new account(s) in ${RATE_WINDOW_S}s`)
+          return json({
+            error: 'Too many new sign-ups from this connection. Please wait a minute and try again.',
+          }, 429)
+        }
+
+        const { error: attemptErr } = await admin
+          .from('enrollment_attempts')
+          .insert({ study_id, ip_hash: ipHash })
+        if (attemptErr) console.error('enrollment_attempts insert failed:', attemptErr.message)
+
+        // Keep the ledger from growing forever — nothing reads past the window.
+        // Runs only on the new-account path, so this is rare by construction.
+        const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+        await admin.from('enrollment_attempts').delete().lt('attempted_at', cutoff)
+      } else {
+        console.warn('auto-enroll: no client IP header — rate limit skipped')
+      }
+
       // 3. Create (or find) the auth account for this external participant.
       const safeId = external_id.toLowerCase().replace(/[^a-z0-9]/g, '-')
       const email  = `ext-${source}-${safeId}@participants.radlab.zone`

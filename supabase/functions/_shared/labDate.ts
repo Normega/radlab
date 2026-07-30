@@ -5,13 +5,18 @@
 
 export const LAB_TIMEZONE = 'America/Toronto'
 
-/** Today's date ('YYYY-MM-DD') in the lab's time zone. */
-export function todayInLabTz(): string {
+/** Calendar date ('YYYY-MM-DD') of an instant, in the lab's time zone. */
+export function labDateOf(instant: Date | string): string {
   // en-CA formats as YYYY-MM-DD directly.
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: LAB_TIMEZONE,
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
-  }).format(new Date())
+  }).format(typeof instant === 'string' ? new Date(instant) : instant)
+}
+
+/** Today's date ('YYYY-MM-DD') in the lab's time zone. */
+export function todayInLabTz(): string {
+  return labDateOf(new Date())
 }

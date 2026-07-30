@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import Nav from '../../components/Nav'
 import { supabase } from '../../lib/supabase'
+import { dbWrite } from '../../lib/dbWrite'
 import defaultBg from './assets/default-background.jpg'
 import {
   DWELL_VELOCITY_PX_S, REVEAL_RADIUS, GROWTH_RATE, DECAY_RATE,
@@ -75,7 +76,13 @@ async function fetchBackground(userId) {
 
 async function saveSessionComplete({ sessionId, durationMs, avgDwellMs, backgroundId }) {
   if (!sessionId) return
-  await supabase.from('game_sessions').update({ ended_at: new Date().toISOString() }).eq('id', sessionId)
+  await dbWrite(
+    supabase.from('game_sessions')
+      .update({ ended_at: new Date().toISOString() })
+      .eq('id', sessionId)
+      .select('id'),
+    'game_sessions.ended_at', { expectRows: true },
+  )
   await supabase.from('performance').insert({
     session_id:          sessionId,
     delve_duration_ms:   durationMs,

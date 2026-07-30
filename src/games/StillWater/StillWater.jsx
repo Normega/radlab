@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useAvatarConfig } from '../../hooks/useAvatarConfig'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import Nav from '../../components/Nav'
 import { supabase as globalSupabase } from '../../lib/supabase'
+import { dbWrite } from '../../lib/dbWrite'
 import { EMOTIONS, INTENSITY_LABELS, computeRating, getCompositeLabel, LABEL_TO_ID,
          CX, CY, INNER_R, d2r } from './constants'
 import WheelSVG from './WheelSVG'
+import { gameByRouteSlug } from '../../data/games'
 import AURenderer from '../shared/AURenderer'
 import { EXPRESSION_TABLE, ZONE_NAMES, NEUTRAL_POS, AU_NUMERIC_KEYS } from '../shared/expressionTable'
 
@@ -34,13 +36,16 @@ async function saveResult({ db, userId, externalId, studyId, p1Sel, p2Sel, compo
       .from('profiles').select('still_water_sessions, points').eq('id', userId).single()
     const updates = { still_water_sessions: (profile?.still_water_sessions ?? 0) + 1 }
     if (profile?.points !== undefined) updates.points = (profile.points ?? 0) + 5
-    await db.from('profiles').update(updates).eq('id', userId)
+    await dbWrite(
+      db.from('profiles').update(updates).eq('id', userId).select('id'),
+      'profiles.still_water_progress', { expectRows: true },
+    )
   }
 }
 
 // ─── INTRO ────────────────────────────────────────────────────────────────────
 
-function IntroScreen({ onStart }) {
+function IntroScreen({ onStart, bouncedFrom }) {
   const R = 70, CX2 = 92, CY2 = 92
   const mkPt = ang => ({ x: CX2 + R * Math.cos(d2r(ang)), y: CY2 + R * Math.sin(d2r(ang)) })
   const NE = mkPt(-45), SW = mkPt(135), SE = mkPt(45), NW = mkPt(-135)
@@ -49,6 +54,12 @@ function IntroScreen({ onStart }) {
 
   return (
     <div style={{ maxWidth: 380, textAlign: 'center', padding: '0 16px' }}>
+      {/* Redirect banner when UnlockGuard bounced the user here */}
+      {bouncedFrom && (
+        <p style={S.redirectNote}>
+          Complete Still Water before beginning {bouncedFrom.title}.
+        </p>
+      )}
       <p style={S.eyebrow}>RADlab · Come, See</p>
       <h1 style={S.introH1}>How are you arriving?</h1>
       <p style={S.introSub}>
@@ -265,6 +276,11 @@ export default function StillWater({
 
   const userId = userIdProp ?? session?.user?.id ?? null
 
+  // Set when UnlockGuard bounced the user here from a game Still Water gates
+  // (Face Read). Never present in study mode, which has no such links.
+  const [searchParams] = useSearchParams()
+  const bouncedFrom    = gameByRouteSlug(searchParams.get('from'))
+
   // Sim mode: auto-advance through each phase
   useEffect(() => {
     if (!isSimMode) return
@@ -336,7 +352,7 @@ export default function StillWater({
 
   const inner = (
     <div style={{ minHeight: studyMode ? '100vh' : 'calc(100vh - 57px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 16px', userSelect: 'none' }}>
-      {phase === 'intro'   && <IntroScreen onStart={() => setPhase('phase1')} />}
+      {phase === 'intro'   && <IntroScreen onStart={() => setPhase('phase1')} bouncedFrom={bouncedFrom} />}
       {phase === 'phase1'  && (
         <RatingScreen phase={1} activeIds={[1, 5]}
           labels={{ left: 'Sad', right: 'Excited', question: 'How good or energised do you feel?' }}
@@ -372,6 +388,13 @@ export default function StillWater({
 
 const S = {
   eyebrow:  { fontFamily: 'Space Mono,monospace', fontSize: 12, color: '#abadb0', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 12 },
+  // Matches FirstContact's redirect banner — both are UnlockGuard landings.
+  redirectNote: {
+    fontFamily: 'Space Mono,monospace', fontSize: 12, letterSpacing: '0.10em',
+    textTransform: 'uppercase', color: 'var(--pk)',
+    background: 'var(--bgp)', border: '1px solid var(--pkb)',
+    borderRadius: 8, padding: '8px 16px', margin: '0 0 20px',
+  },
   introH1:  { fontFamily: 'DM Serif Display,serif', fontSize: 26, color: '#1c1c1e', fontWeight: 400, margin: '0 0 8px' },
   introSub: { color: '#888', fontSize: 13, marginBottom: 28, lineHeight: 1.6 },
   introCard:{ background: 'white', borderRadius: 16, padding: '16px 18px', boxShadow: '0 2px 18px rgba(180,120,160,0.10)', marginBottom: 20, textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 12 },

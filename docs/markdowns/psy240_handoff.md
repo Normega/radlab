@@ -16,7 +16,7 @@
 | WP1 schema | ✔ done, applied live |
 | **WP3** seed + review path + review UI + `reference` mode | ✔ **done, applied live, exercised on real content** |
 | **WP2** reader UI | ✔ **built 2026-07-27** — verified offline against the live corpus, **not yet click-tested in a browser** |
-| WP4 content sprint | ✘ not started — the critical path to day one |
+| WP4 content sprint | ✘ not started — the critical path to day one. **Run plan: [`psy240_wp4_runplan.md`](./psy240_wp4_runplan.md)** (16 runs in lecture order, 78 pages, ~17 h) |
 | WP5 roster & enrollment | ✘ not started — **the schedule's real risk**; two of its four decisions are now taken (§4) |
 | WP6 student submission | ✘ not started, depends on WP5 |
 | WP7 export mirror | ✘ not started |
@@ -80,7 +80,7 @@ From `psy240_wiki_plan.md` §2a:
    export.** Column names differ from ACORN's and the email column may be the
    institutional alias, so the importer maps columns explicitly and matches on
    the normalized key, never a literal string.
-4. ~~**Resend domain verification**~~ — **mostly resolved 2026-07-29.** The
+4. ~~**Resend domain verification**~~ — **done 2026-07-29, email is unblocked.** The
    verified Resend domain turned out to be **`mail.radlab.zone`** (not the
    apex), already fully configured and passing. **Superseded the same day:**
    Norm moved to the paid tier and added a second verified domain,
@@ -91,10 +91,30 @@ From `psy240_wiki_plan.md` §2a:
    the earlier framing: verifying a *new* domain was never the blocker, and a
    second domain would not have helped anyway — **Resend's sending quota is
    per account, not per domain**, so only the plan tier addresses a 300-invite
-   day. Norm moved to the paid plan 2026-07-29, which settles it. What remains
-   is configuration, not verification: Custom SMTP on radlab-academic pointing
-   at Resend, **and raising Supabase's own auth email rate limit**, which
-   enabling custom SMTP does not do by itself. See website.md §11.
+   day. Norm moved to the paid plan 2026-07-29, which settles it.
+
+   **Configured and verified the same day** (values read back over the
+   Management API, see website.md §11): Custom SMTP on radlab-academic
+   (`smtp.resend.com:465`, user `resend`, sender `accounts@course.radlab.zone`
+   / "RADlab Courses" — deliberately course-*neutral*, because that field is
+   project-wide and this project hosts many courses; per-course sender identity
+   belongs on the invite Edge Function, composed from `courses.code`).
+   `mailer_autoconfirm` stays false, so clicking is what enrols.
+
+   Three rate limits raised from their defaults, all per hour:
+   `rate_limit_email_sent` 2 → 300, `rate_limit_otp` 30 → 300,
+   `rate_limit_verify` 30 → 300. **The last two are the week-1 ones**, and the
+   reason is the QR path: ~200 students scanning in one lecture would have hit
+   `rate_limit_otp` after 30 sends and `rate_limit_verify` after 30 clicks,
+   failing as generic errors on their phones mid-class. `rate_limit_verify`
+   cannot be engineered around — every click verifies a token through Supabase
+   auth however the email was sent — so raising it was mandatory, not optional.
+
+   Still untested: whether mail actually *flows*. The settings being right and
+   Resend accepting the credential are different claims; a password reset sent
+   from radlab-academic is the cheapest end-to-end proof. Also unchanged:
+   `mailer_otp_exp` is 3600, so links die after an hour — fine for the QR path,
+   tight for a bulk invite a student opens after class.
 
 Also open but not blocking: the **CDDR licence variant** (BY-NC-SA vs BY-NC-ND
 3.0 IGO). A 30-second check of the PDF's copyright page. Doesn't gate anything —
@@ -126,12 +146,19 @@ These were learned by running real content through, not by reasoning:
   So connectedness is understated roughly 3×, and the red-link count that
   taxonomy §5's Tier B argument leans on is measured on a partial graph. Plan
   open question 12.
-- **Some pages carry the disorder skeleton more than once.**
-  `major-depressive-disorder` has Presentation/Diagnosis/…/Contested **three
-  times**, `persistent-depressive-disorder` twice — one copy per accepted
-  `update` proposal, plus H1 seams like `# Update from Fonagy (2015)`. The
-  merge guard stops a delta *replacing* a page; it doesn't stop the skeleton
-  accumulating. Worth an editing pass on those two before the first publish.
+- ~~**Some pages carry the disorder skeleton more than once.**~~ — **all
+  resolved 2026-07-30.** `major-depressive-disorder` had the six sections three
+  times and `persistent-depressive-disorder` twice, one copy per accepted
+  `update`. Root cause was two prompt rules contradicting each other (see the
+  WP2 follow-up in the plan), now fixed, so it won't recur across WP4's 46
+  Tier A pages. Both pages merged through the new `edit_page()`: MDD 15,825 →
+  11,032 chars, and wiki-wide links went **45 → 71 with 0 red** because the
+  merge linked concepts the prose already named. Two things worth knowing from
+  doing it: copy 3 of MDD already contained copy 1 verbatim, so the model's
+  third pass had effectively integrated it — and PDD's second copy was
+  genuinely additive (the criteria structure and the DSM-IV prevalence figures),
+  so "drop the duplicates" would have lost real content. Read the copies before
+  assuming which one wins.
 
 ## 6. Gotchas that cost time this session
 
@@ -170,14 +197,23 @@ that still declare gaps (`reference_worklist` says which).
 
 Two things to clear before or during it:
 
-- **Click-test the reader on a deploy.** It is verified offline (link rules vs
-  the DB graph, server-rendered anchors) but has never run in a browser —
-  `npm run dev` can't serve the Field Guide (§6).
-- **The two repeated-skeleton pages** (§5) want an editing pass.
+- ~~Click-test the reader~~ — **done 2026-07-30, works.** Which is how the
+  duplicated skeletons got found.
+- ~~An edit path~~ — **done 2026-07-30**: `edit_page(page_id, content, note)`
+  plus an **Edit page** button on the reader for staff. History is automatic
+  (the snapshot trigger keeps the previous body), blanking and no-ops are
+  refused, and saving re-derives gaps and links.
+- ~~The two repeated-skeleton pages~~ — **merged 2026-07-30** (§5). Both want an
+  instructor read for voice rather than for correctness: the merges preserved
+  wording verbatim and only cut duplication, so nothing was rewritten, but MDD's
+  Treatment section now carries a textbook paragraph and a psychodynamic
+  evidence block from different sources side by side.
 
-**WP5 is still the schedule's real risk.** Two of its four decisions are taken;
-the Ripple-onboarding collision and Resend domain verification remain, and the
-second has external lead time.
+**WP5 is still the schedule's real risk**, but its external dependency is gone:
+three of its four decisions are settled and the whole email path is configured
+(§4). **The Ripple-onboarding collision is now the only open one** — and it is
+the item that touches the *main* project's auth path rather than adding to the
+academic partition, so it wants deciding before WP5 starts rather than during.
 
 One loose end, now with a proposed answer: the 18 pages from the Module 4
 paper-mode run predate the attribution fix, so they carry no `sources:`

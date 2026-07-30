@@ -2,6 +2,7 @@ import Nav from '../components/Nav'
 import EyebrowLabel from '../components/ui/EyebrowLabel'
 import PrimaryCTA from '../components/ui/PrimaryCTA'
 import SecondaryCTA from '../components/ui/SecondaryCTA'
+import { gameBySlug, metaRows } from '../data/games'
 
 // AboutPage (Guest/User) — Onboarding Redesign v1 Phase 5 (Figma 111:147 /
 // 170:514, from Norm's frame screenshots 2026-07-17; same layout both variants,
@@ -15,6 +16,18 @@ import SecondaryCTA from '../components/ui/SecondaryCTA'
 // stat panel, Leaderboard, "Who's This For?", numbered How-it-works steps —
 // "How it works" now scrolls to the What-is-this section.
 // Game illustrations are the live SVGs (real art, not Figma screenshots).
+//
+// The carousel's three games read their title/blurb/duration/trials from
+// `src/data/games.js` (2026-07-30). They used to be hard-coded here, which is
+// how this page and the games page ended up with different Pond Watch copy and
+// three different guesses at each game's length. Only the illustration and its
+// caption are local — those are marketing art with no place in the catalog.
+
+const CAROUSEL = [
+  { slug: 'first_contact', caption: 'Breath sync',   art: <ContactIllustration /> },
+  { slug: 'pond_watch',    caption: 'Duck spotted!', art: <PondIllustration /> },
+  { slug: 'ebb_flow',      caption: 'Hold on inhale', art: <EbbFlowIllustration /> },
+]
 
 export default function PlatformPage({ session }) {
   const playTarget = session ? '/games' : '/signup'
@@ -49,30 +62,9 @@ export default function PlatformPage({ session }) {
         <div style={S.inner}>
           <EyebrowLabel variant="white" style={{ marginBottom: 20 }}>A peek at the games</EyebrowLabel>
           <div style={S.carousel} className="games-carousel">
-            <GameCard
-              title="First Contact"
-              desc="Meet your Ripple. Breathe together. The more you sync, the more it comes alive. Required before anything else."
-              meta={[['Duration', '~3 min'], ['Trials', '1']]}
-              caption="Breath sync"
-            >
-              <ContactIllustration />
-            </GameCard>
-            <GameCard
-              title="Pond Watch"
-              desc="You're a wildlife monitor. A duck appears — hit spacebar. A heron glides past — don't you dare touch it. Sounds easy. Your brain will betray you."
-              meta={[['Duration', '~5 min'], ['Trials', '60']]}
-              caption="Duck spotted!"
-            >
-              <PondIllustration />
-            </GameCard>
-            <GameCard
-              title="Ebb & Flow"
-              desc="Breathe with your Ripple. Notice when something changes. A quiet game of awareness."
-              meta={[['Duration', '~5 min'], ['Trials', '~15']]}
-              caption="Hold on inhale"
-            >
-              <EbbFlowIllustration />
-            </GameCard>
+            {CAROUSEL.map(({ slug, caption, art }) => (
+              <GameCard key={slug} game={gameBySlug(slug)} caption={caption}>{art}</GameCard>
+            ))}
           </div>
         </div>
       </section>
@@ -160,14 +152,16 @@ export default function PlatformPage({ session }) {
 // Carousel card: info left, tint illustration panel right (Figma GameCard).
 // Fixed-ish width so the row scrolls horizontally; ~85vw cap keeps the next
 // card peeking on phones (Dev Spec §6.3).
-function GameCard({ title, desc, meta, caption, children }) {
+// Title / blurb / duration / trials come from the games catalog; the
+// illustration and its caption are marketing art that only lives here.
+function GameCard({ game, caption, children }) {
   return (
     <div style={S.gameCard}>
       <div style={S.gameInfo}>
-        <h2 style={S.gameTitle}>{title}</h2>
-        <p style={S.gameDesc}>{desc}</p>
+        <h2 style={S.gameTitle}>{game.title}</h2>
+        <p style={S.gameDesc}>{game.desc}</p>
         <div style={S.gameMetaRow}>
-          {meta.map(([label, val]) => (
+          {metaRows(game).map(([label, val]) => (
             <div key={label}>
               <p style={S.metaLabel}>{label}</p>
               <p style={S.metaVal}>{val}</p>

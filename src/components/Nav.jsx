@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
@@ -15,8 +15,10 @@ import SecondaryCTA from './ui/SecondaryCTA'
  * redesign header at once.
  *
  * Consistent-header rule (Dev Spec §2): Dashboard · Games · About always
- * visible. For guests, Dashboard/Games are preview-only — visible, inert
- * (§9 Q7) — and About points at /platform (the redesign About page).
+ * visible. For guests, Dashboard stays preview-only — visible, inert (§9 Q7);
+ * Games became a real link 2026-07-30 when /games went public read-only
+ * (revised Games Page, Figma 4047:3653). About points at /platform (the
+ * redesign About page).
  * Admin pill is a live-site necessity for lab users (not in Figma; kept
  * per the Phase 2 header-swap decision).
  *
@@ -58,6 +60,10 @@ export default function Nav({ session }) {
     navigate('/')
   }
 
+  // Close the mobile drawer on navigation. The account menu closes itself —
+  // its state is per-instance, see AccountMenu.
+  useEffect(() => { setOpen(false) }, [location.pathname])
+
   const isActive = (path) => location.pathname === path
 
   // The three always-present nav items (consistent-header rule).
@@ -71,19 +77,25 @@ export default function Nav({ session }) {
   ) : (
     <>
       <ButtonNav inert>Dashboard</ButtonNav>
-      <ButtonNav inert>Games</ButtonNav>
+      <ButtonNav to="/games" active={isActive('/games')} onClick={() => setOpen(false)}>Games</ButtonNav>
       <ButtonNav to="/platform" active={isActive('/platform')} onClick={() => setOpen(false)}>About</ButtonNav>
     </>
   )
 
-  const avatarCircle = session && (
-    <Link to="/profile" style={S.avatarRing} aria-label="Profile">
-      {avatarData ? (
-        <RippleAvatar skinColor={avatarData.skin_color} eyeColor={avatarData.eye_color} species={avatarData.species ?? 'human'} hairStyle={avatarData.hair_style ?? 'none'} hairColor={avatarData.hair_color ?? '#784421'} valence={0} arousal={0} size={40} />
-      ) : (
-        <div style={S.avatarInitial}>{initial}</div>
-      )}
-    </Link>
+  // Account menu. The avatar used to be a bare link to /profile with a
+  // separate "Sign out" button beside it; since 2026-07-30 it opens this menu
+  // and Sign out lives inside it (Norm's IA rework).
+  const avatarMenu = session && (
+    <AccountMenu
+      onSignOut={handleSignOut}
+      trigger={
+        avatarData ? (
+          <RippleAvatar skinColor={avatarData.skin_color} eyeColor={avatarData.eye_color} species={avatarData.species ?? 'human'} hairStyle={avatarData.hair_style ?? 'none'} hairColor={avatarData.hair_color ?? '#784421'} valence={0} arousal={0} size={40} />
+        ) : (
+          <div style={S.avatarInitial}>{initial}</div>
+        )
+      }
+    />
   )
 
   return (
@@ -99,12 +111,7 @@ export default function Nav({ session }) {
         {/* Desktop: full pill nav */}
         <div style={S.links} className="hidden md:flex">
           {navItems}
-          {session ? (
-            <>
-              <SecondaryCTA onClick={handleSignOut}>Sign out</SecondaryCTA>
-              {avatarCircle}
-            </>
-          ) : (
+          {session ? avatarMenu : (
             <>
               <SecondaryCTA to="/login">Log in</SecondaryCTA>
               <PrimaryCTA to="/signup">Join free</PrimaryCTA>
@@ -114,7 +121,7 @@ export default function Nav({ session }) {
 
         {/* Mobile: primary action + hamburger */}
         <div style={S.links} className="flex md:hidden">
-          {session ? avatarCircle : (
+          {session ? avatarMenu : (
             <PrimaryCTA to="/signup" style={{ fontSize: 14, padding: '8px 14px' }}>Join free</PrimaryCTA>
           )}
           <button
@@ -135,18 +142,104 @@ export default function Nav({ session }) {
         </div>
       </div>
 
-      {/* Mobile drawer — same items, same guest inert rule */}
+      {/* Mobile drawer — same items, same guest inert rule. Signed-in account
+          actions are NOT repeated here; they live in the avatar menu, which
+          stays visible in the bar on mobile. */}
       {open && (
         <div style={S.drawer} className="md:hidden">
           {navItems}
-          {session ? (
-            <SecondaryCTA onClick={handleSignOut} style={{ alignSelf: 'stretch' }}>Sign out</SecondaryCTA>
-          ) : (
+          {!session && (
             <SecondaryCTA to="/login" onClick={() => setOpen(false)} style={{ alignSelf: 'stretch' }}>Log in</SecondaryCTA>
           )}
         </div>
       )}
     </nav>
+  )
+}
+
+// ── ACCOUNT MENU ──────────────────────────────────────────────────────────
+// Avatar button + dropdown (My Ripple / Profile / Settings / Sign out).
+// Closes on outside click, on Escape, and on route change.
+//
+// Rendered TWICE — once in the desktop bar, once in the mobile bar — with one
+// copy always `display:none`. Each instance therefore owns its `open` state
+// locally; it must NOT be lifted into Nav and shared.
+//
+// Why (bug, 2026-07-30): with a single shared `open`, both copies mounted a
+// dropdown and both attached a document `mousedown` listener. Clicking an item
+// in the visible menu fired the HIDDEN copy's outside-click handler too — its
+// wrapper doesn't contain the visible item — which closed the menu on
+// mousedown, unmounting the <Link> before the browser could fire `click`. The
+// menu just vanished and nothing navigated. Per-instance state means only the
+// copy you actually opened has a listener at all.
+
+const MENU_ITEMS = [
+  { to: '/ripple',   label: 'My Ripple' },
+  { to: '/profile',  label: 'Profile' },
+  { to: '/settings', label: 'Settings' },
+]
+
+// Link or button depending on whether `to` is given, with a hover fill —
+// inline styles can't express :hover, and a menu without hover feedback reads
+// as inert.
+function MenuItem({ to, onClick, style, children }) {
+  const [hover, setHover] = useState(false)
+  const s = { ...S.menuItem, ...style, ...(hover ? S.menuItemHover : {}) }
+  const handlers = {
+    onMouseEnter: () => setHover(true),
+    onMouseLeave: () => setHover(false),
+    onFocus:      () => setHover(true),
+    onBlur:       () => setHover(false),
+  }
+  if (to) return <Link to={to} role="menuitem" style={s} {...handlers}>{children}</Link>
+  return <button type="button" role="menuitem" onClick={onClick} style={s} {...handlers}>{children}</button>
+}
+
+function AccountMenu({ onSignOut, trigger }) {
+  const [open, setOpen] = useState(false)
+  const wrapRef  = useRef(null)
+  const { pathname } = useLocation()
+
+  // The items are <Link>s, which change the route without unmounting Nav.
+  useEffect(() => { setOpen(false) }, [pathname])
+
+  useEffect(() => {
+    if (!open) return
+    function onDocDown(e) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false)
+    }
+    function onKey(e) { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('mousedown', onDocDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDocDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+
+  return (
+    <div ref={wrapRef} style={S.menuWrap}>
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        style={S.avatarRing}
+        aria-label="Account menu"
+        aria-haspopup="menu"
+        aria-expanded={open}
+      >
+        {trigger}
+      </button>
+
+      {open && (
+        <div style={S.menu} role="menu">
+          {MENU_ITEMS.map(({ to, label }) => (
+            <MenuItem key={to} to={to}>{label}</MenuItem>
+          ))}
+          <div style={S.menuDivider} />
+          <MenuItem onClick={onSignOut} style={S.menuSignOut}>Sign out</MenuItem>
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -186,10 +279,31 @@ const S = {
   avatarRing: {
     padding: 3, borderRadius: 24, flexShrink: 0,
     border: '2px solid var(--pk)',
+    background: 'transparent',
     display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
     textDecoration: 'none', cursor: 'pointer',
     lineHeight: 0,
   },
+
+  // ── account menu ──
+  menuWrap: { position: 'relative', display: 'inline-flex', flexShrink: 0 },
+  menu: {
+    position: 'absolute', top: 'calc(100% + 8px)', right: 0, zIndex: 20,
+    minWidth: 184, padding: 6,
+    background: 'var(--bgc)', border: '1px solid var(--bds)', borderRadius: 12,
+    boxShadow: '0 10px 28px rgba(180,100,140,0.16)',
+    display: 'flex', flexDirection: 'column',
+  },
+  menuItem: {
+    display: 'block', width: '100%', textAlign: 'left',
+    padding: '10px 12px', borderRadius: 8, border: 'none',
+    background: 'transparent', cursor: 'pointer',
+    fontFamily: '"DM Sans", system-ui, sans-serif', fontWeight: 600, fontSize: 14,
+    color: 'var(--tx)', textDecoration: 'none', whiteSpace: 'nowrap',
+  },
+  menuItemHover: { background: 'var(--bgp)' },
+  menuDivider: { height: 1, background: 'var(--bd)', margin: '6px 4px' },
+  menuSignOut: { color: 'var(--pkd)' },
   avatarInitial: {
     width: 40, height: 40, borderRadius: '50%',
     background: 'var(--pk)',

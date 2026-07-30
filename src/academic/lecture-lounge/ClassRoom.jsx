@@ -11,7 +11,15 @@ import { useClassPresence } from './useClassPresence'
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
 
-const UTORONTO_DOMAINS = ['utoronto.ca', 'mail.utoronto.ca']
+// `radlab.zone` is accepted alongside the student domains: it is a Workspace
+// domain restricted to lab staff, and without it the verification flow cannot be
+// exercised end to end without a real student account (Norm, 2026-07-30). Kept
+// out of the error copy below on purpose — students should be told to use their
+// utoronto address, and staff already know their own domain.
+// MUST STAY IN SYNC with the same list in
+// supabase/functions/send-class-verification-email/index.ts, which is the real
+// gate; this copy only saves a round trip.
+const UTORONTO_DOMAINS = ['utoronto.ca', 'mail.utoronto.ca', 'radlab.zone']
 function isUtorontoEmail(email) {
   const at = email.lastIndexOf('@')
   if (at === -1) return false

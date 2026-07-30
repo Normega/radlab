@@ -29,6 +29,8 @@ const ResetPassword  = lazy(() => import('./pages/ResetPassword'))
 const Dashboard      = lazy(() => import('./pages/Dashboard'))
 const GamesPage      = lazy(() => import('./pages/GamesPage'))
 const ProfilePage    = lazy(() => import('./pages/ProfilePage'))
+const MyRipplePage   = lazy(() => import('./pages/MyRipplePage'))
+const SettingsPage   = lazy(() => import('./pages/SettingsPage'))
 const AvatarEditor   = lazy(() => import('./components/Avatar/AvatarEditor'))
 const Unsubscribe    = lazy(() => import('./pages/Unsubscribe'))
 const ConsentPage    = lazy(() => import('./pages/ConsentPage'))
@@ -126,6 +128,7 @@ const LilianaCreditPage    = lazy(() => import('./pages/admin/LilianaCreditPage'
 const DisplaysPage         = lazy(() => import('./pages/admin/DisplaysPage'))
 const DisplayEditorPage    = lazy(() => import('./pages/admin/DisplayEditorPage'))
 const UserAdminPage        = lazy(() => import('./pages/admin/UserAdminPage'))
+const Diagnostics          = lazy(() => import('./pages/admin/Diagnostics'))
 
 const LabLayout      = lazy(() => import('./layouts/LabLayout'))
 const AboutPage      = lazy(() => import('./pages/lab/AboutPage'))
@@ -155,12 +158,19 @@ function roleToPath(role) {
   return '/dashboard'
 }
 
-// Guards /games/ebb-flow: redirects to /games/first-contact when not yet complete.
-// Renders nothing while firstContactComplete is still loading (undefined).
-function EbbFlowGuard({ firstContactComplete, children }) {
-  if (firstContactComplete === undefined) return null
-  if (firstContactComplete === false)
-    return <Navigate to="/games/first-contact?from=ebb-flow" replace />
+// Guards a game that unlocks only once its prerequisite has been played, and
+// bounces to the prerequisite with `?from=<this game's route slug>` so that
+// game can explain why the user landed there.
+//
+// `unlocked` is tri-state: undefined while the profile read is in flight, and
+// we render nothing rather than bounce — redirecting on a not-yet-loaded value
+// would throw out a user who has in fact unlocked the game.
+//
+// The gates here mirror `unlock` in src/data/games.js, which drives the padlock
+// on the games page. Change one, change the other.
+function UnlockGuard({ unlocked, to, from, children }) {
+  if (unlocked === undefined) return null
+  if (unlocked === false) return <Navigate to={`${to}?from=${from}`} replace />
   return children
 }
 
@@ -199,6 +209,7 @@ export default function App() {
   const [superAdmin,           setSuperAdmin]           = useState(undefined)
   const [hasAvatar,            setHasAvatar]            = useState(undefined)
   const [firstContactComplete, setFirstContactComplete] = useState(undefined)
+  const [stillWaterPlayed,     setStillWaterPlayed]     = useState(undefined)
   const [onboardingComplete,   setOnboardingComplete]   = useState(undefined)
   const [rippleNamed,          setRippleNamed]          = useState(undefined)
 
@@ -210,13 +221,14 @@ export default function App() {
   async function fetchRole(userId) {
     const { data } = await supabase
       .from('profiles')
-      .select('role, first_contact_complete, super_admin, onboarding_complete')
+      .select('role, first_contact_complete, super_admin, onboarding_complete, still_water_sessions')
       .eq('id', userId)
       .single()
     const r  = data?.role ?? 'public'
     const oc = data?.onboarding_complete ?? false
     setRole(r)
     setFirstContactComplete(data?.first_contact_complete ?? false)
+    setStillWaterPlayed((data?.still_water_sessions ?? 0) > 0)
     setSuperAdmin(!!data?.super_admin)
     setOnboardingComplete(oc)
     // Only check ripple name for public users who've completed onboarding (migration beat)
@@ -234,13 +246,13 @@ export default function App() {
       const s = data.session ?? null
       setSession(s)
       if (s) { fetchRole(s.user.id); checkAvatar(s.user.id) }
-      else   { setRole(null); setSuperAdmin(false); setHasAvatar(undefined); setOnboardingComplete(undefined); setRippleNamed(undefined) }
+      else   { setRole(null); setSuperAdmin(false); setHasAvatar(undefined); setFirstContactComplete(undefined); setStillWaterPlayed(undefined); setOnboardingComplete(undefined); setRippleNamed(undefined) }
     })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
       const sess = s ?? null
       setSession(sess)
       if (sess) { fetchRole(sess.user.id); checkAvatar(sess.user.id) }
-      else      { setRole(null); setSuperAdmin(false); setHasAvatar(undefined); setFirstContactComplete(undefined); setOnboardingComplete(undefined); setRippleNamed(undefined) }
+      else      { setRole(null); setSuperAdmin(false); setHasAvatar(undefined); setFirstContactComplete(undefined); setStillWaterPlayed(undefined); setOnboardingComplete(undefined); setRippleNamed(undefined) }
     })
     return () => subscription.unsubscribe()
   }, [])
@@ -281,15 +293,37 @@ export default function App() {
             </ProtectedRoute>
           } />
 
-          <Route path="/games" element={
+          {/*
+            Public, read-only for guests (revised Games Page, Figma 4047:3653):
+            the catalogue is browsable logged-out, but every card routes to
+            /signup rather than into the game. Logged-in users get the check-in
+            reminder and the unlock gates. Deliberately NOT wrapped in
+            ProtectedRoute — a guest landing here is the designed state.
+          */}
+          <Route path="/games" element={<GamesPage session={session} />} />
+
+          {/*
+            The three destinations of the header's avatar menu (2026-07-30 IA
+            rework): /ripple = the Ripple itself, /profile = who you are and
+            what you've earned, /settings = prompts, reminders, password,
+            deletion. /ripple is distinct from the /ripple/name migration beat
+            below, which is an onboarding step, not a destination.
+          */}
+          <Route path="/ripple" element={
             <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome} needsRippleName={needsRippleName}>
-              <GamesPage session={session} firstContactComplete={firstContactComplete} />
+              <MyRipplePage session={session} />
             </ProtectedRoute>
           } />
 
           <Route path="/profile" element={
             <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome} needsRippleName={needsRippleName}>
               <ProfilePage session={session} />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/settings" element={
+            <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome} needsRippleName={needsRippleName}>
+              <SettingsPage session={session} />
             </ProtectedRoute>
           } />
 
@@ -342,9 +376,9 @@ export default function App() {
 
           <Route path="/games/ebb-flow" element={
             <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome} needsRippleName={needsRippleName}>
-              <EbbFlowGuard firstContactComplete={firstContactComplete}>
+              <UnlockGuard unlocked={firstContactComplete} to="/games/first-contact" from="ebb-flow">
                 <EbbAndFlow session={session} onSessionComplete={saveEbbFlowSession} />
-              </EbbFlowGuard>
+              </UnlockGuard>
             </ProtectedRoute>
           } />
 
@@ -363,7 +397,9 @@ export default function App() {
 
           <Route path="/games/face-read" element={
             <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome} needsRippleName={needsRippleName}>
-              <FaceRead session={session} />
+              <UnlockGuard unlocked={stillWaterPlayed} to="/games/still-water" from="face-read">
+                <FaceRead session={session} />
+              </UnlockGuard>
             </ProtectedRoute>
           } />
 
@@ -401,7 +437,9 @@ export default function App() {
               with its own in-game exit link, so no Nav here (it would be covered). */}
           <Route path="/games/breath-guardian" element={
             <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome} needsRippleName={needsRippleName}>
-              <BreathGuardian session={session} />
+              <UnlockGuard unlocked={firstContactComplete} to="/games/first-contact" from="breath-guardian">
+                <BreathGuardian session={session} />
+              </UnlockGuard>
             </ProtectedRoute>
           } />
 
@@ -554,6 +592,7 @@ export default function App() {
               <Route path="/admin/screeners"           element={<ScreenerLibraryPage />} />
               {/* Super-admin only — RPCs enforce server-side, page shows 'forbidden' otherwise */}
               <Route path="/admin/users"               element={<UserAdminPage />} />
+              <Route path="/admin/diagnostics"         element={<Diagnostics />} />
             </Route>
           </Route>
 

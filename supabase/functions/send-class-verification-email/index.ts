@@ -23,7 +23,12 @@ const CORS = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const UTORONTO_DOMAINS = ['utoronto.ca', 'mail.utoronto.ca']
+// `radlab.zone` is accepted alongside the student domains: it is a Workspace
+// domain restricted to lab staff, and without it the verification flow cannot be
+// exercised end to end without a real student account (Norm, 2026-07-30). This
+// list is the REAL gate — the copy in src/academic/lecture-lounge/ClassRoom.jsx
+// is a convenience check only, and the two must stay in sync.
+const UTORONTO_DOMAINS = ['utoronto.ca', 'mail.utoronto.ca', 'radlab.zone']
 const EXPIRES_HOURS = 24
 
 function json(body: unknown, status = 200) {
@@ -49,10 +54,18 @@ Deno.serve(async (req) => {
   const authHeader = req.headers.get('Authorization')
   if (!authHeader) return json({ error: 'Unauthorized' }, 401)
 
-  const callerClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
-    global: { headers: { Authorization: authHeader } },
-  })
-  const { data: { user }, error: authErr } = await callerClient.auth.getUser()
+  // Caller JWT path. Deliberately does NOT use SUPABASE_ANON_KEY: that var is
+  // deprecated in favour of publishable keys, and the legacy JWT pair it used to
+  // hold was revoked 2026-07-30 — when it eventually stops being injected, this
+  // path would 401 in a way indistinguishable from an expired session.
+  // getUser(jwt) validates the token server-side; the service key is only the
+  // apikey for that call. The class-membership check below already runs on the
+  // service-role client, so nothing else changes here.
+  const callerAuth = createClient(supabaseUrl, serviceKey)
+  // `callerToken`, not `token` — the verification token is declared further down
+  // in this same scope.
+  const callerToken = authHeader.replace(/^Bearer\s+/i, '')
+  const { data: { user }, error: authErr } = await callerAuth.auth.getUser(callerToken)
   if (authErr || !user) return json({ error: 'Unauthorized' }, 401)
 
   const body = await req.json().catch(() => ({}))
@@ -93,7 +106,7 @@ Deno.serve(async (req) => {
 
   if (updateErr) return json({ error: updateErr.message }, 500)
 
-  const siteUrl = Deno.env.get('SITE_URL') ?? 'https://radlab.vercel.app'
+  const siteUrl = Deno.env.get('SITE_URL') ?? 'https://radlab.zone'
   const verifyUrl = `${siteUrl}/class/verify?token=${token}&slug=${encodeURIComponent(cls.slug)}`
 
   const { subject, html, text } = renderClassVerifyEmail({
@@ -103,7 +116,7 @@ Deno.serve(async (req) => {
   })
 
   const resend    = new Resend(Deno.env.get('RESEND_API_KEY'))
-  const fromEmail = Deno.env.get('FROM_EMAIL') ?? 'research@radlab.vercel.app'
+  const fromEmail = Deno.env.get('FROM_EMAIL') ?? 'research@radlab.zone'
 
   const { error: sendErr } = await resend.emails.send({ from: fromEmail, to: email, subject, html, text })
 

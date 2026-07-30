@@ -1,5 +1,6 @@
 import { useRef, useCallback } from 'react';
 import { supabase as globalSupabase } from '../../../lib/supabase';
+import { dbWrite } from '../../../lib/dbWrite';
 
 // `client` is the participant-authenticated Supabase client in a study session
 // (so RLS auth.uid() = user_id is satisfied); falls back to the global client
@@ -130,10 +131,13 @@ export function useBeltSession(userId, client) {
     }
 
     // 4. Close game_sessions row
-    await db
-      .from('game_sessions')
-      .update({ ended_at: new Date().toISOString() })
-      .eq('id', sessionId);
+    await dbWrite(
+      db.from('game_sessions')
+        .update({ ended_at: new Date().toISOString() })
+        .eq('id', sessionId)
+        .select('id'),
+      'game_sessions.ended_at', { expectRows: true },
+    );
   }, [userId, db]);
 
   return { sessionIdRef, startSession, recordTrial, flushTrials, endSession };

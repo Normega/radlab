@@ -14,15 +14,24 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) return json({ error: 'Unauthorized' }, 401)
 
-    const callerClient = createClient(
+    // Caller JWT path. Deliberately does NOT use SUPABASE_ANON_KEY: that var is
+    // deprecated in favour of publishable keys, and the legacy JWT pair it used
+    // to hold was revoked 2026-07-30 — when it eventually stops being injected,
+    // this path would 401 in a way indistinguishable from an expired session.
+    // getUser(jwt) validates the token server-side; the service key is only the
+    // apikey for that call, and the role read below is a gate, so reading the
+    // true role rather than the RLS-visible one is what we want.
+    const callerAuth = createClient(
       Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_ANON_KEY')!,
-      { global: { headers: { Authorization: authHeader } } }
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     )
-    const { data: { user }, error: authErr } = await callerClient.auth.getUser()
+    // `callerToken`, not `token` — the participant link's own token is declared
+    // further down in this same scope.
+    const callerToken = authHeader.replace(/^Bearer\s+/i, '')
+    const { data: { user }, error: authErr } = await callerAuth.auth.getUser(callerToken)
     if (authErr || !user) return json({ error: 'Unauthorized' }, 401)
 
-    const { data: callerProfile } = await callerClient
+    const { data: callerProfile } = await callerAuth
       .from('profiles')
       .select('role')
       .eq('id', user.id)

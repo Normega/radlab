@@ -134,6 +134,10 @@ export default function ReviewQueue() {
         const body = edits[row.version_id] ?? merged
         const dirty = edits[row.version_id] != null && edits[row.version_id] !== merged
         const isDelta = row.action === 'update' && !!row.current_content
+        // A reference-mode rewrite of a page that already has a body. Not
+        // pre-merged (it is already whole), but the reviewer has to know the
+        // current body is about to be overwritten rather than added to.
+        const isReplace = row.action === 'replace' && !!row.current_content
         return (
           <div key={row.version_id} style={S.card}>
             <button style={S.cardHead} onClick={() => setOpenId(open ? null : row.version_id)}>
@@ -167,6 +171,14 @@ export default function ReviewQueue() {
                 you will replace the page with the addendum alone.
               </p>
             )}
+            {isReplace && (
+              <p style={S.mergeFlag}>
+                <b>This is a full-page replacement.</b> Accepting it <b>overwrites</b> the current
+                body — the two are not combined. Read the left column for anything the rewrite
+                dropped, and edit it back in before accepting. The previous body is kept as an
+                accepted version, so this is recoverable, but not from this screen.
+              </p>
+            )}
             {row.action === 'update' && !row.current_content && (
               <p style={S.mergeFlag}>
                 <b>Update proposed against a page with no accepted body.</b> Nothing exists to
@@ -193,7 +205,9 @@ export default function ReviewQueue() {
                   </div>
                   <div style={{ minWidth: 0 }}>
                     <p style={S.colLabel}>
-                      {isDelta ? 'Merged (current + addendum) — edit before accepting' : 'Proposed'} {dirty && <span style={{ color: 'var(--pk)' }}>· edited</span>}
+                      {isDelta ? 'Merged (current + addendum) — edit before accepting'
+                        : isReplace ? 'Proposed replacement — overwrites the current body'
+                        : 'Proposed'} {dirty && <span style={{ color: 'var(--pk)' }}>· edited</span>}
                     </p>
                     <textarea
                       style={{ ...S.pre, width: '100%', minHeight: 320, resize: 'vertical' }}
@@ -299,6 +313,11 @@ function groupByPage(rows) {
 // What the editor should open with. For a delta against an existing body,
 // that's the two stitched together so "accept without thinking" produces a
 // merge rather than a replacement. Everything else opens as proposed.
+//
+// `replace` deliberately does NOT pre-merge: it is already a complete page
+// (reference mode rewrites its target rather than appending to it), so
+// stitching it onto the current body is what produced the duplicated
+// six-section skeletons this action exists to prevent.
 function mergeDraft(row) {
   const proposed = row.proposed_content ?? ''
   if (row.action !== 'update' || !row.current_content) return proposed
@@ -347,13 +366,18 @@ const Stat = ({ n, label, accent }) => (
   </div>
 )
 
-const Badge = ({ kind, children }) => (
-  <span style={{
-    ...S.badge,
-    background: kind === 'update' ? 'rgba(214,51,132,.12)' : kind === 'first' ? 'rgba(0,0,0,.05)' : 'rgba(0,0,0,.05)',
-    color: kind === 'update' ? 'var(--pk)' : 'var(--tx2)',
-  }}>{children}</span>
-)
+// `update` and `replace` both carry consequences a plain `new` doesn't — one is
+// appended, the other overwrites — so both read as accented rather than neutral.
+const Badge = ({ kind, children }) => {
+  const accent = kind === 'update' || kind === 'replace'
+  return (
+    <span style={{
+      ...S.badge,
+      background: accent ? 'rgba(214,51,132,.12)' : 'rgba(0,0,0,.05)',
+      color: accent ? 'var(--pk)' : 'var(--tx2)',
+    }}>{children}</span>
+  )
+}
 
 const S = {
   eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)' },

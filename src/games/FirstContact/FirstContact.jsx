@@ -8,6 +8,7 @@ import { auraParamsFromSync, AURA_DEFAULT_COLOR } from '../../lib/auraUtils';
 import { useBreathCycle } from '../EbbAndFlow/useBreathCycle';
 import { useButtonSync } from '../EbbAndFlow/useButtonSync';
 import { useBreathSync } from './useBreathSync';
+import { gameByRouteSlug } from '../../data/games';
 import {
   SYNC_THRESHOLD, MIN_CYCLES_BEFORE_COMPLETE, BREATH_DURATION_MS, COPY,
 } from './constants';
@@ -32,7 +33,10 @@ import PsiAmpButton    from '../EbbAndFlow/components/PsiAmpButton';
 export default function FirstContact({ session, onComplete }) {
   const navigate        = useNavigate();
   const [searchParams]  = useSearchParams();
-  const fromEbbFlow     = searchParams.get('from') === 'ebb-flow';
+  // Set when UnlockGuard bounced the user here from a game Contact gates
+  // (Ebb & Flow, Breath Guardian) — resolved through the games catalog so the
+  // banner names whichever one it was.
+  const bouncedFrom     = gameByRouteSlug(searchParams.get('from'));
   const userId          = session?.user?.id;
 
   // ── Phase (React state + ref for async reads) ─────────────────────────
@@ -214,10 +218,10 @@ export default function FirstContact({ session, onComplete }) {
 
       <div style={S.wrap}>
 
-        {/* Redirect banner when bounced from /games/ebb-flow */}
-        {fromEbbFlow && phase === 'INTRO' && (
+        {/* Redirect banner when UnlockGuard bounced the user here */}
+        {bouncedFrom && phase === 'INTRO' && (
           <p style={S.redirectNote}>
-            Complete Contact before beginning Ebb &amp; Flow.
+            Complete Contact before beginning {bouncedFrom.title}.
           </p>
         )}
 

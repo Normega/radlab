@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import Nav from '../../components/Nav'
 import { supabase } from '../../lib/supabase'
+import { dbWrite } from '../../lib/dbWrite'
 import {
   DWELL_VELOCITY, INFLUENCE_RADIUS, GROWTH_RATE, DECAY_RATE,
   FREQ_MUFFLED, DUCK_DEPTH, DUCK_FLOOR, AUDIO_BUCKET, audioPath, SCENES,
@@ -29,7 +30,13 @@ async function startSession(userId) {
 
 async function saveSessionComplete({ sessionId, durationMs, avgDwellMs, scenesVisited }) {
   if (!sessionId) return
-  await supabase.from('game_sessions').update({ ended_at: new Date().toISOString() }).eq('id', sessionId)
+  await dbWrite(
+    supabase.from('game_sessions')
+      .update({ ended_at: new Date().toISOString() })
+      .eq('id', sessionId)
+      .select('id'),
+    'game_sessions.ended_at', { expectRows: true },
+  )
   await supabase.from('performance').insert({
     session_id:          sessionId,
     tune_duration_ms:    durationMs,

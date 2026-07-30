@@ -237,8 +237,12 @@ export default function WelcomeFlow({ session, onComplete, devInitialStep }) {
       ? { reminder_enabled: true, reminder_time: reminderTime, prompt_cadence: reminderFreq }
       : { reminder_enabled: false }
 
+    // Upsert for the same reason as ProfilePage/CheckinFlow: the NAME step
+    // above does create the row, so in the normal flow an update would work —
+    // but any path that reaches HABIT without it would silently discard the
+    // user's very first reminder choice.
     const { error: dbErr } = await supabase.from('ripples')
-      .update(patch).eq('user_id', session.user.id)
+      .upsert({ user_id: session.user.id, ...patch }, { onConflict: 'user_id' })
 
     setBusy(false)
     if (dbErr) { setError('Could not save your preferences — please try again.'); console.error('ripples reminder update:', dbErr); return }

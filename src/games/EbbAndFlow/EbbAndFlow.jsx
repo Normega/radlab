@@ -2,6 +2,7 @@
 import { useNavigate } from 'react-router-dom';
 import Nav from '../../components/Nav';
 import { supabase } from '../../lib/supabase';
+import { dbWrite } from '../../lib/dbWrite';
 import { useAvatarConfig } from '../../hooks/useAvatarConfig';
 import { useQuestStaircases } from './useQuestStaircases';
 import { useBreathCycle } from './useBreathCycle';
@@ -409,7 +410,10 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
   // ── Mode change ───────────────────────────────────────────────────────
   async function handleModeSelect(key) {
     if (!userId) return;
-    await supabase.from('profiles').update({ ebb_flow_game_mode: key }).eq('id', userId);
+    await dbWrite(
+      supabase.from('profiles').update({ ebb_flow_game_mode: key }).eq('id', userId).select('id'),
+      'profiles.ebb_flow_game_mode', { expectRows: true },
+    );
     setProfile(p => ({ ...p, ebb_flow_game_mode: key }));
   }
 

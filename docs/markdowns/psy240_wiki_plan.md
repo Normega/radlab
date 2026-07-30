@@ -572,6 +572,76 @@ to use section links yet, so nothing on the live corpus would have caught it. **
 click-tested in a browser** — `npm run dev` can't run the Field Guide (§6 of the handoff),
 so that needs a deploy.
 
+### WP2 follow-up: the gap mechanism was wrong, and why (2026-07-30)
+
+Migration `20260730_wiki_body_needs_and_replace.sql`. Found by click-testing the reader, which
+made duplicated disorder skeletons visible for the first time — `major-depressive-disorder`
+carried the six H2 sections **three times**, `persistent-depressive-disorder` twice.
+
+**Two prompt rules in this plan contradicted each other.** §2.4's fixed section structure became
+"disorder pages MUST carry all six H2 sections, ALWAYS", while §3's contribution flow makes an
+`update` "only the new information to merge". Both at once means every update to a disorder page
+emits a full skeleton, which the review UI's merge pre-fill appends. This plan's WP4 is ~15
+paper-mode module runs *followed by targeted reference runs on Tier A pages that still declare
+gaps* — i.e. dozens of updates against pages that already exist — so left alone it would have
+recurred across all 46 Tier A pages.
+
+Fixed on both sides. Paper mode scopes the skeleton to `action: new` and states that an update is
+appended rather than merged section-by-section. **Reference mode now returns a complete page with
+a new `action: 'replace'`** that overwrites instead of appending: it already names its target and
+receives the current body, so "rewrite this page with the gaps filled" is simpler than a merge and
+reads as one voice rather than two stitched together. A distinct action rather than a heuristic on
+content shape, because the review UI must not pre-merge it — it shows a banner saying the current
+body will be overwritten, and keeps the previous body as an accepted version.
+
+**The more consequential half: `needs` was lying, and `needs` aims WP4.** `extract_page_needs()`
+parsed the frontmatter `needs:` list, taking the first match in the document, while the merge
+pre-fill strips an addendum's frontmatter (correctly — two YAML blocks in one file is invalid). So
+the gap list froze at the first source's assessment while content kept growing. Measured live: MDD
+declared 4 gaps and PDD 1, and **all five were already filled further down the same page**. Since
+`reference_worklist` reads `needs`, the content sprint would have been aimed by data wrong in both
+directions.
+
+Gaps are now derived from the body — a section is a gap when no copy of it holds prose. This is
+self-correcting, needs nothing from the model, and caught two gaps the model had written
+placeholders for but never declared (`cyclothymic-disorder` etiology,
+`disruptive-mood-dysregulation-disorder` epidemiology). Built as a shadow function and diffed
+against all 44 live pages before the swap: 40 unchanged, the 4 that moved were exactly the
+corrections.
+
+**A missing primitive this plan never called for, now added** (`20260730_wiki_edit_page.sql`):
+there was no way to edit an accepted page at all. `review_proposal()` needs a pending version so it
+can only accept what an ingest proposed, `unpublish_page()` only hides a page, and `wiki_pages` has
+no authenticated write policies — so nothing on a page 300 students read could be corrected without
+service-role SQL. `edit_page(page_id, content, note)` follows the same one-audited-function shape as
+the other two write paths, with a staff-only **Edit page** button on the reader. History is
+automatic (the snapshot trigger already keeps the previous body, so every save is recoverable —
+which is why the UI can be a plain textarea); blanking is refused because a bodiless page is a
+*shell* awaiting its first proposal, making that a retirement rather than a correction; and the
+note is optional, unlike unpublish's mandatory reason, because an edit leaves a diff.
+
+Worth folding into §3's contribution flow when WP6 is built: the review queue is the gate for
+*proposed* content, and `edit_page` is now the gate for *accepted* content. Both are staff-only
+SECURITY DEFINER functions rather than table grants, which is the pattern to keep.
+
+**Both pages merged 2026-07-30** through `edit_page()`, and doing it taught two things worth
+carrying into WP4's review hours:
+
+- **Read the copies before deciding which one wins.** MDD's third copy already contained the first
+  verbatim — the model's later pass had effectively integrated it — so the merge was mostly
+  deletion. But PDD's *second* copy was genuinely additive: it supplied the criteria structure
+  (copy 1 described the category's history but never the symptom list) and the legacy DSM-IV
+  prevalence and sex ratios, which closed a gap copy 1 had declared. "Keep the longest copy" would
+  have lost real content.
+- **Narrow a gap marker rather than deleting it.** PDD's Epidemiology gained prevalence figures but
+  still lacks onset-age distribution and cross-cultural data, so the marker was rewritten to say
+  exactly that. A page that overstates its own completeness is worse than one that admits a hole.
+
+Merging PDD also exposed a flaw in the same-day gap rule: "no copy holds prose" lost the partially
+filled case, so a section with content *and* a marker read as complete. Corrected in
+`20260730_wiki_needs_partial_sections.sql` — a gap is a marker **or** an empty section. Wiki-wide,
+links went 45 → 71 with 0 red, because the merges linked concepts the prose already named.
+
 ### WP3 as built — part 1: taxonomy seed + review path (2026-07-25)
 
 Migration: `supabase/migrations/20260725_academic_wiki_wp3.sql`, applied live.
@@ -665,9 +735,10 @@ Two scheduling notes given the "both at once" decision:
   an instructor sign-off pass on the tier calls, not authoring. Two review-budget notes carried
   over from it: the gender dysphoria page and the paraphilic overview need **rewrite-level**
   review (~30 min each, not 15) because the source deck's terminology is dated in the first case
-  and the framing is lecture-hall-provocative in the second; and the ten personality disorders
-  are the cheapest place to spend a spare review hour (promoting the seven Tier B PDs to Tier A
-  is +1.5 h).
+  and the framing is lecture-hall-provocative in the second; and ~~the ten personality disorders
+  are the cheapest place to spend a spare review hour~~ — **taken 2026-07-30**: the seven Tier B
+  PDs were promoted to Tier A, so fall scope is **78 generated pages at ~17 review hours**
+  (was 71 / ~15.5).
 
 ---
 
@@ -728,9 +799,14 @@ Two scheduling notes given the "both at once" decision:
     matters because a 300-invite blast produces bounces. The framing in §2a.6 was
     wrong in one respect worth recording: **Resend's quota is per account, not per domain**,
     so a course-specific domain buys reputation isolation and *no* volume relief — only the
-    plan tier does, and Norm moved to it on 2026-07-29. Remaining is configuration:
-    Custom SMTP on radlab-academic, plus raising Supabase's own auth email rate limit
-    (enabling custom SMTP does not raise it). Tooling and the full survey: website.md §11,
+    plan tier does, and Norm moved to it on 2026-07-29. Custom SMTP on radlab-academic was
+    configured the same day and three rate limits raised (`rate_limit_email_sent` 2 → 300,
+    `rate_limit_otp` and `rate_limit_verify` 30 → 300 per hour) — the latter two sized for
+    the **week-1 QR burst**, not the invite send, since ~200 students requesting and clicking
+    links inside one lecture would otherwise fail after 30 of each. §2a.6's "custom SMTP is
+    required" is right but incomplete: enabling it does not raise the cap, it only makes the
+    cap raisable, and two adjacent counters it does not cover are what the QR path actually
+    hits. Not yet exercised: an actual send. Tooling and full survey: website.md §11,
     `scripts/check-email-dns.ps1`, `scripts/parse-dmarc-report.py`.
 12. **Should frontmatter relations become graph edges?** (new, 2026-07-27) — 125 relations
     are declared in frontmatter (`related_disorders`, `key_studies`, `concepts_touched`,

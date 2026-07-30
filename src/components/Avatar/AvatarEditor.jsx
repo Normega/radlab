@@ -283,7 +283,9 @@ export default function AvatarEditor({ session, setHasAvatar }) {
     setSaved(true)
     queryClient.invalidateQueries({ queryKey: ['avatar', userId] })
     if (setHasAvatar) setHasAvatar(true)
-    setTimeout(() => navigate('/profile'), 900)
+    // → My Ripple, not /profile: since the 2026-07-30 IA rework the Ripple's
+    // face and name live there, so that's where a just-saved avatar shows up.
+    setTimeout(() => navigate('/ripple'), 900)
   }
 
   if (loading) return (
