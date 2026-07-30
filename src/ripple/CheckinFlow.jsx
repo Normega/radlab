@@ -86,10 +86,16 @@ async function saveCheckin({ supabase, userId, context, p1Sel, p2Sel, composite,
                   : prev === yesterday ? (rpl?.streak_current ?? 0) + 1
                   : 1
   const newBest = Math.max(rpl?.streak_best ?? 0, newStreak)
-  await supabase.from('ripples').update({
+  // UPSERT, not update: a user with no `ripples` row (180 of 186 profiles had
+  // none on 2026-07-30) matched zero rows here, so their streak and
+  // last_checkin_on silently never persisted — which also kept them out of
+  // ripple_reminder's query, since it selects from `ripples`.
+  const { error: streakErr } = await supabase.from('ripples').upsert({
+    user_id: userId,
     last_checkin_on: today, streak_current: newStreak, streak_best: newBest,
     ...(nextItemState ? { item_state: nextItemState } : {}),
-  }).eq('user_id', userId)
+  }, { onConflict: 'user_id' })
+  if (streakErr) console.error('ripples streak upsert:', streakErr)
 
   // Points
   const { data: profile } = await supabase.from('profiles').select('points').eq('id', userId).single()

@@ -33,6 +33,7 @@ export default function ProfilePage({ session }) {
   const [editing,      setEditing]      = useState(false)
   const [nameInput,    setNameInput]    = useState('')
   const [saving,       setSaving]       = useState(false)
+  const [saveError,    setSaveError]    = useState(null)
 
   useEffect(() => {
     if (!userId) return
@@ -49,36 +50,47 @@ export default function ProfilePage({ session }) {
     })
   }, [userId])
 
+  // UPSERT, not update. These were `.update().eq('user_id', userId)`, which
+  // matches zero rows — and therefore silently succeeds — for anyone without a
+  // `ripples` row. 180 of 186 profiles had none when this was found (Norm,
+  // 2026-07-30): every toggle on this page appeared to work and nothing was
+  // ever written, because local state was set optimistically regardless. The
+  // `disabled={!ripple}` guard below didn't help either, since the loader sets
+  // `{}` when there's no row and `{}` is truthy.
+  //
+  // Every column except user_id has a default or is nullable, so an insert
+  // carrying only the changed field is valid; `ripples_user_id_key` is the
+  // conflict target; RLS ("ripples: own rows", FOR ALL, WITH CHECK
+  // user_id = auth.uid()) permits the insert.
+  async function patchRipple(patch) {
+    const { error } = await supabase.from('ripples')
+      .upsert({ user_id: userId, ...patch }, { onConflict: 'user_id' })
+    if (error) {
+      console.error('ripples upsert:', error)
+      setSaveError('Could not save that — please try again.')
+      return false
+    }
+    setSaveError(null)
+    setRipple(r => ({ ...r, ...patch }))
+    return true
+  }
+
   async function saveName() {
     const name = nameInput.trim()
     if (!name || name === ripple?.name) { setEditing(false); return }
     setSaving(true)
-    await supabase.from('ripples').update({ name }).eq('user_id', userId)
-    setRipple(r => ({ ...r, name }))
+    await patchRipple({ name })
     setSaving(false)
     setEditing(false)
   }
 
   async function toggleCheckIn() {
-    const next = !(ripple?.check_in_enabled !== false)
-    await supabase.from('ripples').update({ check_in_enabled: next }).eq('user_id', userId)
-    setRipple(r => ({ ...r, check_in_enabled: next }))
+    await patchRipple({ check_in_enabled: !(ripple?.check_in_enabled !== false) })
   }
 
-  async function saveCadence(cadence) {
-    await supabase.from('ripples').update({ prompt_cadence: cadence }).eq('user_id', userId)
-    setRipple(r => ({ ...r, prompt_cadence: cadence }))
-  }
-
-  async function saveReminderEnabled(next) {
-    await supabase.from('ripples').update({ reminder_enabled: next }).eq('user_id', userId)
-    setRipple(r => ({ ...r, reminder_enabled: next }))
-  }
-
-  async function saveReminderTime(time) {
-    await supabase.from('ripples').update({ reminder_time: time }).eq('user_id', userId)
-    setRipple(r => ({ ...r, reminder_time: time }))
-  }
+  async function saveCadence(cadence)   { await patchRipple({ prompt_cadence: cadence }) }
+  async function saveReminderEnabled(n) { await patchRipple({ reminder_enabled: n }) }
+  async function saveReminderTime(time) { await patchRipple({ reminder_time: time }) }
 
   const enabled        = ripple?.check_in_enabled !== false
   const cadence        = ripple?.prompt_cadence ?? 'daily'
@@ -305,6 +317,12 @@ export default function ProfilePage({ session }) {
                     })}
                   </div>
                 </div>
+              )}
+
+              {/* A write that fails must say so — this page spent its whole life
+                  reporting success it never had. */}
+              {saveError && (
+                <p style={{ fontSize: 12, color: '#a32020', margin: '10px 0 0' }}>{saveError}</p>
               )}
             </div>
           )}
