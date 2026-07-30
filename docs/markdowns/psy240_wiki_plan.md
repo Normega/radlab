@@ -735,9 +735,10 @@ Two scheduling notes given the "both at once" decision:
   an instructor sign-off pass on the tier calls, not authoring. Two review-budget notes carried
   over from it: the gender dysphoria page and the paraphilic overview need **rewrite-level**
   review (~30 min each, not 15) because the source deck's terminology is dated in the first case
-  and the framing is lecture-hall-provocative in the second; and the ten personality disorders
-  are the cheapest place to spend a spare review hour (promoting the seven Tier B PDs to Tier A
-  is +1.5 h).
+  and the framing is lecture-hall-provocative in the second; and ~~the ten personality disorders
+  are the cheapest place to spend a spare review hour~~ — **taken 2026-07-30**: the seven Tier B
+  PDs were promoted to Tier A, so fall scope is **78 generated pages at ~17 review hours**
+  (was 71 / ~15.5).
 
 ---
 

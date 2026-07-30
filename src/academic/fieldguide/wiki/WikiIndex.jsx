@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useOutletContext } from 'react-router-dom'
 import { WIKI_BASE } from './wikiText'
 import { useWikiCourse } from './useWikiCourse'
+import { TIER_LABEL, TIER_HELP } from './tiers'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -153,6 +154,14 @@ export default function WikiIndex() {
             </p>
           )}
 
+          {/* A legend, not just the hover text on each card: `title` does
+              nothing on a touch device, and this wiki is read on phones. */}
+          <p style={S.legend}>
+            <b>Central to the course</b> — full page, covering presentation through to open debates.{' '}
+            <b>Supporting page</b> — shorter: a description, a link to the official DSM-5-TR criteria,
+            and pointers to related disorders. Both are taught; only the page length differs.
+          </p>
+
           <label style={S.toggle}>
             <input type="checkbox" checked={showEmpty} onChange={e => setShowEmpty(e.target.checked)} />
             Show catalogue entries that aren't written yet
@@ -173,20 +182,24 @@ export default function WikiIndex() {
                   // the map. For a student that is also the contribution list.
                   if (!page) {
                     return (
-                      <span key={row.slug} style={{ ...S.card, ...S.cardEmpty }}>
+                      <span key={row.slug} style={{ ...S.card, ...S.cardEmpty }}
+                            title={TIER_HELP[row.tier]}>
                         <span style={S.cardTitle}>{row.title}</span>
-                        <span style={S.cardMeta}>not written yet{row.tier === 'B' ? ' · tier B' : ''}</span>
+                        <span style={S.cardMeta}>
+                          not written yet{TIER_LABEL[row.tier] ? ` · ${TIER_LABEL[row.tier]}` : ''}
+                        </span>
                       </span>
                     )
                   }
                   return (
-                    <Link key={row.slug} to={`${WIKI_BASE}/${row.slug}`} style={S.card}>
+                    <Link key={row.slug} to={`${WIKI_BASE}/${row.slug}`} style={S.card}
+                          title={TIER_HELP[row.tier]}>
                       <span style={S.cardTitle}>{page.title}</span>
                       <span style={S.cardMeta}>
                         {page.status !== 'published' && <b style={{ color: 'var(--pk)' }}>draft · </b>}
                         {page.needs?.length > 0
                           ? `needs ${page.needs.length} section${page.needs.length === 1 ? '' : 's'}`
-                          : row.tier === 'A' ? 'tier A' : row.tier}
+                          : (TIER_LABEL[row.tier] ?? row.tier)}
                       </span>
                     </Link>
                   )
@@ -292,7 +305,8 @@ const S = {
   h2: { fontFamily: SERIF, fontSize: 20, color: 'var(--tx)', margin: '24px 0 10px', display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' },
   chNum: { fontFamily: MONO, fontSize: 12, color: 'var(--tx2)', border: '1px solid var(--bd)', borderRadius: 6, padding: '1px 6px' },
   chCount: { fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx2)' },
-  toggle: { display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 13, color: 'var(--tx2)', marginTop: 14, cursor: 'pointer' },
+  legend: { fontSize: 13, color: 'var(--tx2)', lineHeight: 1.6, margin: '16px 0 0', maxWidth: '78ch' },
+  toggle: { display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 13, color: 'var(--tx2)', marginTop: 10, cursor: 'pointer' },
   typeLabel: { fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx2)', margin: '0 0 6px' },
 
   grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 230px), 1fr))', gap: 10 },

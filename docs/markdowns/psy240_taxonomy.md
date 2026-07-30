@@ -165,8 +165,14 @@ Four kinds of page, and only two of them cost model time or review hours.
 | **Lecture page** (L1–L11) | 11 | No — hand-written | Instructor authors directly: objectives, the lecture's disorder links, Emotion Form prompts, quiz/case-study pointers. ~10 min each, no source bundle |
 | **Topic overview** | 16 | Yes | The shared conceptual core the course teaches *as* a block (e.g. triple vulnerability for anxiety; tolerance/withdrawal/reinforcement for substances; clusters + FFM for personality). Full review |
 | **Foundations page** | 9 | Yes | Non-disorder anchors the exams weight heavily (assessment, diagnosis, research methods, suicide, law, ethics) |
-| **Disorder page — Tier A** | 46 | Yes | Full §2.4 seven-section treatment; full instructor review (~10–15 min) |
-| **Disorder page — Tier B** | 52 | Yes, cheaply | Short page: name, class, one-paragraph description, **criteria deep-link**, differential pointers to its Tier A neighbours, empty student-contribution slot. ~3 min review |
+| **Disorder page — Tier A** | 53 | Yes | Full §2.4 seven-section treatment; full instructor review (~10–15 min) |
+| **Disorder page — Tier B** | 45 | Yes, cheaply | Short page: name, class, one-paragraph description, **criteria deep-link**, differential pointers to its Tier A neighbours, empty student-contribution slot. ~3 min review |
+
+> Counts revised 2026-07-30 (was 46/52): the seven Tier B personality disorders were promoted, so
+> all ten PDs now get full pages. See §6 chapter 18. **The reader surfaces these labels to
+> students** as "central to the course" / "supporting page", with the explicit caveat that a
+> supporting page is shorter for review-budget reasons and not because the disorder is off the
+> syllabus — the tier must never be read as "skippable".
 
 **Why the two tiers.** Tier B is not filler — it is what keeps the link graph closed. A Tier A
 page's *differential diagnosis* section names its neighbours (a panic disorder page has to
@@ -419,13 +425,16 @@ stubs saying "one slide's worth" is worse than one page comparing them.
 | B | Dependent personality disorder |
 | B | Obsessive-compulsive personality disorder |
 
-**This is the tier split most likely to be wrong.** L11 gives all ten PDs the full
-description → causes → treatment treatment, so an argument exists for ten Tier A pages. Three
-were kept because they carry the chapter's conceptual weight (BPD for DBT and the suicide link,
-ASPD for the conduct-disorder pathway and the neurobiology, schizotypal for the spectrum
-argument); the other seven are short in substance and the overview carries their shared
-framework. If Norm wants ten, that is +7 Tier A ≈ +1.5 review hours — a cheap upgrade, and the
-single easiest place to spend a spare review hour.
+~~**This is the tier split most likely to be wrong.**~~ — **resolved 2026-07-30: all ten are
+Tier A** (migration `20260730_promote_personality_disorders_tier_a.sql`). The original reasoning
+stands as the record of why it was a close call: L11 gives all ten PDs the full description →
+causes → treatment treatment, so an argument existed for ten Tier A pages from the start. Three
+were initially kept because they carry the chapter's conceptual weight (BPD for DBT and the
+suicide link, ASPD for the conduct-disorder pathway and the neurobiology, schizotypal for the
+spectrum argument); the other seven were judged short in substance with the overview carrying
+their shared framework. Norm took the upgrade: **+7 Tier A ≈ +1.5 review hours**, on the argument
+that a student who has just had a full lecture on narcissistic PD and then finds a 150-word stub
+concludes the wiki is thin. The seven promoted rows carry a `tier_review_note` recording it.
 
 ### 19. Paraphilic (L7) — overview + 2A + 4B
 
@@ -448,15 +457,18 @@ single easiest place to spend a spare review hour.
 | Lecture pages (L1–L11) | 11 | no | instructor-authored, ~2 h total |
 | Topic overviews | 16 | yes | ~3.5 h |
 | Foundations | 9 | yes | ~2 h |
-| Disorder pages — Tier A | 46 | yes | ~10 h |
-| **Fall scope subtotal** | **71 generated** | | **~15.5 h** |
-| Disorder pages — Tier B | 52 | skeleton only, from the seed | ~0 h in August |
+| Disorder pages — Tier A | ~~46~~ **53** | yes | ~~~10 h~~ **~11.5 h** |
+| **Fall scope subtotal** | ~~71~~ **78 generated** | | ~~~15.5 h~~ **~17 h** |
+| Disorder pages — Tier B | ~~52~~ **45** | skeleton only, from the seed | ~0 h in August |
 | **Complete coverage** | **123** | | |
 
-**Model cost, fall scope:** 71 pages × ~$0.40–1.00 ≈ **$28–71** — unchanged from the plan's
-estimate, because the plan's ~65 and this list's 71 are the same order. Tier B skeletons are
-generated from the seed file mechanically (name, class, criteria DOI, differential pointers), so
-they add no model cost.
+> **Revised 2026-07-30**: the seven Tier B personality disorders were promoted to Tier A (§6
+> chapter 18), so Tier A is 53 and Tier B 45. Fall scope is 78 generated pages at ~17 review
+> hours. The 123-row total is unchanged — this moves pages between tiers, it does not add any.
+
+**Model cost, fall scope:** 78 pages × ~$0.40–1.00 ≈ **$31–78** — still the same order as the
+plan's ~65 estimate. Tier B skeletons are generated from the seed file mechanically (name, class,
+criteria DOI, differential pointers), so they add no model cost.
 
 **Review hours land at ~15.5**, matching the plan's ~15 h estimate. The levers, if August
 compresses: the 9 foundations pages are lecture-note-shaped and Norm can write them faster than

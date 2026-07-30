@@ -4,6 +4,7 @@ import { WikiMarkdown } from './wikiMarkdown'
 import { WIKI_BASE, splitFrontmatter, extractHeadings } from './wikiText'
 import { useWikiCourse } from './useWikiCourse'
 import { useWideLayout } from './useWideLayout'
+import { TIER_LABEL, TIER_HELP } from './tiers'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -153,7 +154,12 @@ export default function WikiPage() {
       </div>
       <p style={S.metaLine}>
         {page.type} · v{page.current_version}
-        {catalog?.tier && <> · tier {catalog.tier}</>}
+        {/* Same wording as the index's legend. The tier is a review-budget
+            device, so it describes how full the page is — not whether the
+            disorder is examinable. */}
+        {catalog?.tier && TIER_LABEL[catalog.tier] && (
+          <> · <span title={TIER_HELP[catalog.tier]} style={{ cursor: 'help' }}>{TIER_LABEL[catalog.tier]}</span></>
+        )}
         {catalog?.lecture && <> · lecture {catalog.lecture}</>}
         {' · '}updated {new Date(page.updated_at).toLocaleDateString()}
       </p>
