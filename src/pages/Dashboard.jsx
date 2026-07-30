@@ -35,7 +35,7 @@ export default function Dashboard({ session }) {
         {/* Ripple */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <p style={{ ...S.secLabel, marginBottom: 0 }}>// Ripple</p>
-          <Link to="/profile" style={{ fontFamily: MONO, fontSize: 11, color: 'var(--tx3)', textDecoration: 'none', letterSpacing: '0.05em' }}>settings →</Link>
+          <Link to="/settings" style={{ fontFamily: MONO, fontSize: 11, color: 'var(--tx3)', textDecoration: 'none', letterSpacing: '0.05em' }}>settings →</Link>
         </div>
         <RippleSection userId={user?.id} />
 
@@ -73,73 +73,14 @@ export default function Dashboard({ session }) {
         <p style={{ ...S.secLabel, marginTop: 40 }}>// Your stats</p>
         <YourStats userId={user?.id} />
 
-        {/* Account info */}
-        <p style={{ ...S.secLabel, marginTop: 40 }}>// Account</p>
-        <div style={S.infoCard}>
-          <Row label="Email"        val={user?.email} />
-          <Row label="User ID"      val={user?.id?.slice(0, 8) + '…'} mono />
-          <Row label="Account type" val="Public" />
-          <Row label="Member since" val={new Date(user?.created_at).toLocaleDateString('en-CA', { year: 'numeric', month: 'long', day: 'numeric' })} />
-        </div>
-
-        {/* Reminders */}
-        <p style={{ ...S.secLabel, marginTop: 40 }}>// Reminders</p>
-        <Reminders userId={user?.id} />
-      </div>
-    </div>
-  )
-}
-
-// ── REMINDERS ────────────────────────────────────────────────────────────────
-
-const REMINDER_OPTIONS = [
-  { value: 'none',      label: 'No reminders' },
-  { value: 'weekly',    label: 'Weekly' },
-  { value: 'biweekly',  label: 'Every two weeks' },
-  { value: 'monthly',   label: 'Monthly' },
-]
-
-function Reminders({ userId }) {
-  const [frequency, setFrequency] = useState('none')
-  const [saved,     setSaved]     = useState(false)
-
-  useEffect(() => {
-    if (!userId) return
-    supabase.from('profiles').select('reminder_frequency').eq('id', userId).single()
-      .then(({ data }) => { if (data?.reminder_frequency) setFrequency(data.reminder_frequency) })
-  }, [userId])
-
-  async function handleSelect(value) {
-    if (value === frequency) return
-    setFrequency(value)
-
-    // TODO: reminder emails sent via Supabase Edge Function + Resend
-    // Trigger: pg_cron job queries profiles where reminder_frequency != 'none'
-    // and last session > N days ago. Runs weekly. See website.md for plan.
-    await supabase.from('profiles').update({ reminder_frequency: value }).eq('id', userId)
-
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
-  }
-
-  return (
-    <div style={S.remindersCard}>
-      <p style={S.remindersDesc}>
-        Get an email nudge when you haven't played in a while. We'll never send more than one email per week.
-      </p>
-      <div style={S.reminderRow}>
-        <div style={S.btnGroup}>
-          {REMINDER_OPTIONS.map(opt => (
-            <button
-              key={opt.value}
-              style={{ ...S.reminderBtn, ...(frequency === opt.value ? S.reminderBtnActive : {}) }}
-              onClick={() => handleSelect(opt.value)}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
-        {saved && <span style={S.savedLabel}>Saved</span>}
+        {/*
+          `// Account` moved to /profile and `// Reminders` was deleted outright
+          (2026-07-30 account-menu IA rework). The reminders block wrote
+          profiles.reminder_frequency, which nothing has ever read — the live
+          engine is the ripple_reminder Edge Function reading
+          ripples.reminder_enabled / reminder_time, now surfaced on /settings.
+          The dashboard is the daily view: Ripple, Games, stats.
+        */}
       </div>
     </div>
   )
@@ -738,7 +679,7 @@ function RippleSection({ userId }) {
   if (!config.enabled) return (
     <div style={{ fontFamily: MONO, fontSize: 12, color: 'var(--tx3)', padding: '4px 0 20px', letterSpacing: '0.04em' }}>
       Check-ins are paused.{' '}
-      <Link to="/profile" style={{ color: 'var(--pk)', textDecoration: 'none' }}>Manage →</Link>
+      <Link to="/settings" style={{ color: 'var(--pk)', textDecoration: 'none' }}>Manage →</Link>
     </div>
   )
 
@@ -965,15 +906,6 @@ function GameCard({ title, tag, desc, status, to, muted }) {
   )
 }
 
-function Row({ label, val, mono }) {
-  return (
-    <div style={S.row}>
-      <span style={S.rowLabel}>{label}</span>
-      <span style={{ ...S.rowVal, ...(mono ? { fontFamily: '"Space Mono", monospace', fontSize: 12 } : {}) }}>{val}</span>
-    </div>
-  )
-}
-
 // ── STYLES ────────────────────────────────────────────────────────────────────
 
 const MONO  = '"Space Mono", "Courier New", monospace'
@@ -1002,22 +934,4 @@ const S = {
   statsPlaceholder: { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 16, padding: '40px 32px', textAlign: 'center' },
   placeholderTitle: { fontFamily: SERIF, fontSize: 22, color: 'var(--tx)', marginBottom: 8 },
   placeholderSub:   { fontSize: 14, color: 'var(--tx2)', maxWidth: 360, margin: '0 auto' },
-  infoCard: { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 16, overflow: 'hidden' },
-  row:      { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '13px 20px', borderBottom: '1px solid var(--bd)' },
-  rowLabel: { fontFamily: MONO, fontSize: 12, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--tx3)' },
-  rowVal:   { fontSize: 14, color: 'var(--tx)' },
-
-  remindersCard:  { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 16, padding: '20px 24px' },
-  remindersDesc:  { fontSize: 14, color: 'var(--tx2)', marginBottom: 16 },
-  reminderRow:    { display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' },
-  btnGroup:       { display: 'flex', gap: 8, flexWrap: 'wrap' },
-  reminderBtn: {
-    fontSize: 14, padding: '8px 16px', borderRadius: 9, cursor: 'pointer',
-    border: '1px solid var(--bds)', background: 'var(--bgc)', color: 'var(--tx2)',
-    fontFamily: 'inherit', transition: 'all 0.15s',
-  },
-  reminderBtnActive: {
-    background: 'var(--pk)', borderColor: 'var(--pk)', color: '#fff',
-  },
-  savedLabel: { fontFamily: MONO, fontSize: 13, color: 'var(--pk)' },
 }

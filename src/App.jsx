@@ -29,6 +29,8 @@ const ResetPassword  = lazy(() => import('./pages/ResetPassword'))
 const Dashboard      = lazy(() => import('./pages/Dashboard'))
 const GamesPage      = lazy(() => import('./pages/GamesPage'))
 const ProfilePage    = lazy(() => import('./pages/ProfilePage'))
+const MyRipplePage   = lazy(() => import('./pages/MyRipplePage'))
+const SettingsPage   = lazy(() => import('./pages/SettingsPage'))
 const AvatarEditor   = lazy(() => import('./components/Avatar/AvatarEditor'))
 const Unsubscribe    = lazy(() => import('./pages/Unsubscribe'))
 const ConsentPage    = lazy(() => import('./pages/ConsentPage'))
@@ -300,9 +302,28 @@ export default function App() {
           */}
           <Route path="/games" element={<GamesPage session={session} />} />
 
+          {/*
+            The three destinations of the header's avatar menu (2026-07-30 IA
+            rework): /ripple = the Ripple itself, /profile = who you are and
+            what you've earned, /settings = prompts, reminders, password,
+            deletion. /ripple is distinct from the /ripple/name migration beat
+            below, which is an onboarding step, not a destination.
+          */}
+          <Route path="/ripple" element={
+            <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome} needsRippleName={needsRippleName}>
+              <MyRipplePage session={session} />
+            </ProtectedRoute>
+          } />
+
           <Route path="/profile" element={
             <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome} needsRippleName={needsRippleName}>
               <ProfilePage session={session} />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/settings" element={
+            <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome} needsRippleName={needsRippleName}>
+              <SettingsPage session={session} />
             </ProtectedRoute>
           } />
 
