@@ -42,7 +42,6 @@ export default function Nav({ session }) {
   const navigate  = useNavigate()
   const location  = useLocation()
   const [open, setOpen] = useState(false)
-  const [menuOpen, setMenuOpen] = useState(false)
   const userId    = session?.user?.id
 
   const { data: avatarData } = useAvatarConfig(userId)
@@ -57,14 +56,13 @@ export default function Nav({ session }) {
 
   async function handleSignOut() {
     setOpen(false)
-    setMenuOpen(false)
     await supabase.auth.signOut()
     navigate('/')
   }
 
-  // Close the account menu on navigation — the menu items are <Link>s, which
-  // change the route without unmounting Nav.
-  useEffect(() => { setMenuOpen(false); setOpen(false) }, [location.pathname])
+  // Close the mobile drawer on navigation. The account menu closes itself —
+  // its state is per-instance, see AccountMenu.
+  useEffect(() => { setOpen(false) }, [location.pathname])
 
   const isActive = (path) => location.pathname === path
 
@@ -89,8 +87,6 @@ export default function Nav({ session }) {
   // and Sign out lives inside it (Norm's IA rework).
   const avatarMenu = session && (
     <AccountMenu
-      open={menuOpen}
-      setOpen={setMenuOpen}
       onSignOut={handleSignOut}
       trigger={
         avatarData ? (
@@ -163,9 +159,19 @@ export default function Nav({ session }) {
 
 // ── ACCOUNT MENU ──────────────────────────────────────────────────────────
 // Avatar button + dropdown (My Ripple / Profile / Settings / Sign out).
-// Closes on outside click, on Escape, and on route change (handled by the
-// caller's effect). Rendered on both desktop and mobile — the avatar is the
-// one signed-in control that stays in the bar at every width.
+// Closes on outside click, on Escape, and on route change.
+//
+// Rendered TWICE — once in the desktop bar, once in the mobile bar — with one
+// copy always `display:none`. Each instance therefore owns its `open` state
+// locally; it must NOT be lifted into Nav and shared.
+//
+// Why (bug, 2026-07-30): with a single shared `open`, both copies mounted a
+// dropdown and both attached a document `mousedown` listener. Clicking an item
+// in the visible menu fired the HIDDEN copy's outside-click handler too — its
+// wrapper doesn't contain the visible item — which closed the menu on
+// mousedown, unmounting the <Link> before the browser could fire `click`. The
+// menu just vanished and nothing navigated. Per-instance state means only the
+// copy you actually opened has a listener at all.
 
 const MENU_ITEMS = [
   { to: '/ripple',   label: 'My Ripple' },
@@ -189,8 +195,13 @@ function MenuItem({ to, onClick, style, children }) {
   return <button type="button" role="menuitem" onClick={onClick} style={s} {...handlers}>{children}</button>
 }
 
-function AccountMenu({ open, setOpen, onSignOut, trigger }) {
-  const wrapRef = useRef(null)
+function AccountMenu({ onSignOut, trigger }) {
+  const [open, setOpen] = useState(false)
+  const wrapRef  = useRef(null)
+  const { pathname } = useLocation()
+
+  // The items are <Link>s, which change the route without unmounting Nav.
+  useEffect(() => { setOpen(false) }, [pathname])
 
   useEffect(() => {
     if (!open) return
@@ -204,7 +215,7 @@ function AccountMenu({ open, setOpen, onSignOut, trigger }) {
       document.removeEventListener('mousedown', onDocDown)
       document.removeEventListener('keydown', onKey)
     }
-  }, [open, setOpen])
+  }, [open])
 
   return (
     <div ref={wrapRef} style={S.menuWrap}>
