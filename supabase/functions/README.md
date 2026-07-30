@@ -4,9 +4,16 @@
 
 Set these secrets in Supabase Dashboard → Edge Functions → Secrets:
 - `RESEND_API_KEY` — from resend.com dashboard
-- `FROM_EMAIL` — verified sender e.g. `research@radlab.vercel.app`
-- `SITE_URL` — `https://radlab.vercel.app`
+- `FROM_EMAIL` — verified sender in your Resend domain, e.g. `research@radlab.zone`
+- `SITE_URL` — `https://radlab.zone` (canonical; `www` 308s to it)
 - `SUPABASE_SERVICE_ROLE_KEY` — from Supabase → Settings → API
+
+> Both of the above are **required in practice**. The in-code fallbacks pointed
+> at `radlab.vercel.app` until 2026-07-30 — a host that is not the canonical
+> domain and, for `FROM_EMAIL`, could never be a verified Resend sender, so
+> falling through to it meant links to the wrong host or a silent send failure.
+> They now default to `radlab.zone`, but set the secrets explicitly rather than
+> relying on that.
 
 Optional, all with working defaults (`auto-enroll` rate limiting, live 2026-07-30):
 - `ENROLL_RATE_MAX` — new accounts allowed per IP per window (default `1`)

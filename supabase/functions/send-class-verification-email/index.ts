@@ -106,7 +106,7 @@ Deno.serve(async (req) => {
 
   if (updateErr) return json({ error: updateErr.message }, 500)
 
-  const siteUrl = Deno.env.get('SITE_URL') ?? 'https://radlab.vercel.app'
+  const siteUrl = Deno.env.get('SITE_URL') ?? 'https://radlab.zone'
   const verifyUrl = `${siteUrl}/class/verify?token=${token}&slug=${encodeURIComponent(cls.slug)}`
 
   const { subject, html, text } = renderClassVerifyEmail({
@@ -116,7 +116,7 @@ Deno.serve(async (req) => {
   })
 
   const resend    = new Resend(Deno.env.get('RESEND_API_KEY'))
-  const fromEmail = Deno.env.get('FROM_EMAIL') ?? 'research@radlab.vercel.app'
+  const fromEmail = Deno.env.get('FROM_EMAIL') ?? 'research@radlab.zone'
 
   const { error: sendErr } = await resend.emails.send({ from: fromEmail, to: email, subject, html, text })
 

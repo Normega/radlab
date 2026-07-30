@@ -168,7 +168,7 @@ Deno.serve(async (req) => {
       await db.from('participant_schedule').update({ status: 'link_sent' }).eq('id', row.id)
     }
 
-    const siteUrl = Deno.env.get('SITE_URL') ?? 'https://radlab.vercel.app'
+    const siteUrl = Deno.env.get('SITE_URL') ?? 'https://radlab.zone'
     const linkUrl = `${siteUrl}/s/${token}`
 
     // 6. Generate unsubscribe URL (omitted for test sends)
@@ -235,7 +235,7 @@ Deno.serve(async (req) => {
     }
 
     const resend    = new Resend(Deno.env.get('RESEND_API_KEY'))
-    const fromEmail = Deno.env.get('FROM_EMAIL') ?? 'research@radlab.vercel.app'
+    const fromEmail = Deno.env.get('FROM_EMAIL') ?? 'research@radlab.zone'
 
     const { data: sendData, error: sendErr } = await resend.emails.send({
       from: fromEmail,

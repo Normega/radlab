@@ -1,0 +1,25 @@
+-- Drop profiles.reminder_frequency — a control that never did anything.
+--
+-- The Dashboard's `// Reminders` block wrote this column (none/weekly/
+-- biweekly/monthly) and NOTHING has ever read it. The `// TODO: reminder
+-- emails sent via Supabase Edge Function + Resend` next to it was never
+-- built; the reminder engine that does exist (`ripple_reminder`) reads
+-- `ripples.reminder_enabled` / `ripples.reminder_time` instead. The block was
+-- deleted 2026-07-30 with the account-area IA rework (§12b), leaving the
+-- column referenced by nothing at all.
+--
+-- Verified before dropping:
+--   * repo grep: only prose in comments and website.md
+--   * no function, view, materialized view or index references it
+--   * 182 of 184 profiles hold the 'none' default; exactly two set anything
+--     else (one 'weekly', one 'biweekly'), and neither ever received an email
+--     because no sender existed
+--
+-- Deliberately NOT migrating those two values into ripples.reminder_enabled.
+-- Turning on somebody's email because of a preference they expressed to a
+-- control that visibly did nothing — and may not remember setting — is the
+-- kind of opt-in ripple_spec §5 exists to prevent. The 'weekly' user already
+-- has reminder_enabled = true through the real settings page; the 'biweekly'
+-- user has no `ripples` row at all and is left alone.
+
+ALTER TABLE public.profiles DROP COLUMN IF EXISTS reminder_frequency;

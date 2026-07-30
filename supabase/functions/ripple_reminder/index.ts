@@ -88,8 +88,8 @@ Deno.serve(async (req) => {
     const now   = new Date()
     const today = torontoDateStr(now)
 
-    const siteUrl   = Deno.env.get('SITE_URL') ?? 'https://radlab.vercel.app'
-    const fromEmail = Deno.env.get('FROM_EMAIL') ?? 'research@radlab.vercel.app'
+    const siteUrl   = Deno.env.get('SITE_URL') ?? 'https://radlab.zone'
+    const fromEmail = Deno.env.get('FROM_EMAIL') ?? 'research@radlab.zone'
     const resend    = new Resend(Deno.env.get('RESEND_API_KEY'))
 
     const body       = await req.json().catch(() => ({}))
