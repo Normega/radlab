@@ -59,30 +59,88 @@ function daysBetween(earlier: string, later: string): number {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
 
-  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-  const authHeader = req.headers.get('Authorization')
-  if (!authHeader || authHeader !== `Bearer ${serviceKey}`) {
-    return json({ error: 'Unauthorized' }, 401)
+  const serviceKey  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+  const authHeader  = req.headers.get('Authorization')
+  if (!authHeader) return json({ error: 'Unauthorized' }, 401)
+
+  const db: SupabaseClient = createClient(supabaseUrl, serviceKey, {
+    auth: { persistSession: false },
+  })
+
+  // Two callers, mirroring send_message: the cron job presents the service key;
+  // a lab member presents their own JWT, which is only useful for a test send.
+  // Verified with the service client — deliberately NOT SUPABASE_ANON_KEY, which
+  // is deprecated in favour of publishable keys and whose legacy value was
+  // revoked 2026-07-30.
+  let callerUserId: string | null = null
+  if (authHeader !== `Bearer ${serviceKey}`) {
+    const callerToken = authHeader.replace(/^Bearer\s+/i, '')
+    const { data: { user }, error: authErr } = await db.auth.getUser(callerToken)
+    if (authErr || !user) return json({ error: 'Unauthorized' }, 401)
+
+    const { data: profile } = await db.from('profiles').select('role').eq('id', user.id).single()
+    if (!profile || profile.role !== 'lab') return json({ error: 'Forbidden — lab role required' }, 403)
+    callerUserId = user.id
   }
 
   try {
     const now   = new Date()
-    const hour  = torontoHour(now)
     const today = torontoDateStr(now)
+
+    const siteUrl   = Deno.env.get('SITE_URL') ?? 'https://radlab.vercel.app'
+    const fromEmail = Deno.env.get('FROM_EMAIL') ?? 'research@radlab.vercel.app'
+    const resend    = new Resend(Deno.env.get('RESEND_API_KEY'))
+
+    const body       = await req.json().catch(() => ({}))
+    const testEmail  = typeof body?.test_override_email === 'string' ? body.test_override_email.trim() : null
+    const testUserId = typeof body?.test_as_user_id     === 'string' ? body.test_as_user_id            : null
+
+    // ── Test send ────────────────────────────────────────────────────────────
+    // Exists because this email class shipped 2026-07-14 and was never seen by
+    // anyone until 2026-07-30: the cron job 401-ed for 15 days, and the only way
+    // to observe the email was to be a due recipient in one of three hourly
+    // windows. A test send bypasses the window, the cadence/staleness filter and
+    // the once-per-day dedup, and deliberately does NOT stamp
+    // last_reminder_sent_on — so testing can never suppress somebody's real
+    // reminder later that day.
+    //
+    // The content is byte-identical to the real thing, including a REAL
+    // unsubscribe token, which is the part most worth eyeballing. That token
+    // must belong to an actual account, hence test_as_user_id when there's no
+    // caller identity to borrow.
+    if (testEmail) {
+      const tokenUserId = testUserId ?? callerUserId
+      if (!tokenUserId) {
+        return json({
+          error: 'test_override_email needs test_as_user_id when called with the service key — ' +
+                 'the unsubscribe link has to belong to a real account',
+        }, 400)
+      }
+
+      const result = await deliverRippleEmail({ db, resend, fromEmail, siteUrl, to: testEmail, userId: tokenUserId })
+      if (!result.ok) {
+        console.error('ripple_reminder test send failed:', result.error)
+        return json({ test: true, sent: 0, failed: 1, error: result.error }, 502)
+      }
+
+      console.log(`ripple_reminder TEST send to ${testEmail} (unsubscribe token for ${tokenUserId})`)
+      return json({
+        test: true,
+        sent: 1,
+        to: testEmail,
+        unsubscribe_token_for: tokenUserId,
+        note: 'window, cadence and dedup bypassed; last_reminder_sent_on NOT written',
+      })
+    }
+
+    const hour = torontoHour(now)
 
     // Only run during the three send windows
     const activeWindow = Object.entries(WINDOW_HOURS).find(([, h]) => h === hour)?.[0] ?? null
     if (!activeWindow) {
       return json({ sent: 0, skipped: 0, reason: `no_window_at_hour_${hour}` })
     }
-
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const siteUrl     = Deno.env.get('SITE_URL') ?? 'https://radlab.vercel.app'
-    const fromEmail   = Deno.env.get('FROM_EMAIL') ?? 'research@radlab.vercel.app'
-
-    const db: SupabaseClient = createClient(supabaseUrl, serviceKey, {
-      auth: { persistSession: false },
-    })
 
     // Fetch window-matched candidates
     const { data: candidates, error: fetchErr } = await db
@@ -113,7 +171,6 @@ Deno.serve(async (req) => {
       return json({ sent: 0, skipped: (candidates ?? []).length, window: activeWindow })
     }
 
-    const resend = new Resend(Deno.env.get('RESEND_API_KEY'))
     let sent = 0, failed = 0
 
     for (const row of eligible) {
@@ -126,28 +183,15 @@ Deno.serve(async (req) => {
           continue
         }
 
-        const checkinUrl = `${siteUrl}/checkin`
-
-        const unsubToken     = await getOrCreateRippleUnsubscribeToken(db, row.user_id)
-        const unsubscribeUrl = `${siteUrl}/unsubscribe/${unsubToken}`
-
-        const { subject, html, text } = renderRippleEmail({ checkinUrl, unsubscribeUrl })
-
-        const { error: sendErr } = await resend.emails.send({
-          from: fromEmail,
-          to: email,
-          subject,
-          html,
-          text,
-        })
-
-        if (sendErr) {
-          console.error(`Resend error for user ${row.user_id}:`, sendErr)
+        const result = await deliverRippleEmail({ db, resend, fromEmail, siteUrl, to: email, userId: row.user_id })
+        if (!result.ok) {
+          console.error(`Resend error for user ${row.user_id}:`, result.error)
           failed++
           continue
         }
 
-        // Mark sent today to prevent duplicate sends
+        // Mark sent today to prevent duplicate sends. Only the real path does
+        // this — a test send must never suppress somebody's actual reminder.
         await db.from('ripples')
           .update({ last_reminder_sent_on: today })
           .eq('user_id', row.user_id)
@@ -167,6 +211,37 @@ Deno.serve(async (req) => {
     return json({ error: msg }, 500)
   }
 })
+
+// ─── Delivery ─────────────────────────────────────────────────────────────────
+// The single place a Ripple reminder is rendered and sent, used by both the cron
+// path and the test send. Sharing it is the point: a test that renders its own
+// email would drift from the real one and stop being evidence.
+//
+// Never writes last_reminder_sent_on — that stays with the caller, so only the
+// real path marks a user as reminded today.
+async function deliverRippleEmail(opts: {
+  db: SupabaseClient
+  resend: Resend
+  fromEmail: string
+  siteUrl: string
+  to: string
+  userId: string
+}): Promise<{ ok: boolean; error?: string }> {
+  const { db, resend, fromEmail, siteUrl, to, userId } = opts
+
+  const checkinUrl = `${siteUrl}/checkin`
+
+  const unsubToken     = await getOrCreateRippleUnsubscribeToken(db, userId)
+  const unsubscribeUrl = `${siteUrl}/unsubscribe/${unsubToken}`
+
+  const { subject, html, text } = renderRippleEmail({ checkinUrl, unsubscribeUrl })
+
+  const { error: sendErr } = await resend.emails.send({ from: fromEmail, to, subject, html, text })
+  if (sendErr) {
+    return { ok: false, error: sendErr.message ?? String(sendErr) }
+  }
+  return { ok: true }
+}
 
 // ─── Email template ───────────────────────────────────────────────────────────
 

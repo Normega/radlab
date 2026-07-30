@@ -49,6 +49,44 @@ curl -X POST https://qajrlfqoicfcfhthsfay.supabase.co/functions/v1/send_message 
   -d '{"schedule_id": "<uuid>", "test_override_email": "you@email.com"}'
 ```
 
+## Test ripple_reminder manually
+
+`ripple_reminder` only sends inside three Toronto windows (08:00 / 12:00 / 19:00)
+to users who are due, which means the email was unobservable on demand — it
+shipped 2026-07-14 and nobody saw one until 2026-07-30. `test_override_email`
+fixes that: it bypasses the window, the cadence/staleness filter and the
+once-per-day dedup, and **does not** write `last_reminder_sent_on`, so a test can
+never suppress somebody's real reminder later that day.
+
+The content is identical to a real send, including a **real unsubscribe token** —
+which is why the token has to belong to an actual account. With the service key
+there's no caller identity to borrow, so name one:
+
+```bash
+curl -X POST https://qajrlfqoicfcfhthsfay.supabase.co/functions/v1/ripple_reminder \
+  -H "Authorization: Bearer <service-role-key>" \
+  -H "Content-Type: application/json" \
+  -d '{"test_override_email": "you@email.com", "test_as_user_id": "<uuid>"}'
+```
+
+A **lab-role user's JWT** works too, and then `test_as_user_id` is optional — the
+unsubscribe token is minted for the caller. Anything else gets 401/403.
+
+Without the service key at hand, send it from SQL and let the working cron job
+supply the credential, so the key is never pasted anywhere:
+
+```sql
+SELECT net.http_post(
+  url     := 'https://qajrlfqoicfcfhthsfay.supabase.co/functions/v1/ripple_reminder',
+  headers := jsonb_build_object('Content-Type','application/json',
+             'Authorization', 'Bearer ' || (SELECT (regexp_match(command, 'sb_secret_[A-Za-z0-9_-]+'))[1]
+                                              FROM cron.job WHERE jobname = 'check-schedule-every-15min')),
+  body    := jsonb_build_object('test_override_email','you@email.com','test_as_user_id','<uuid>')
+);
+-- then read the result (pg_net is async):
+SELECT status_code, content FROM net._http_response ORDER BY created DESC LIMIT 3;
+```
+
 ## Invoke check_schedule manually
 
 ```bash
