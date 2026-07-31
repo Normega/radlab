@@ -15,12 +15,20 @@ import SecondaryCTA from '../components/ui/SecondaryCTA'
 // ── WelcomeFlow ───────────────────────────────────────────────────────────────
 // Route: /welcome — public-tier onboarding, rebuilt for Onboarding Redesign v1
 // (Dev Spec §3.3; Figma 170:990 → 187:1927 → 187:2428 → 187:2743 → 187:2837).
-// Structure: Welcome → 1/3 Data → 2/3 Demographics → 3/3 Ripple (customize +
-// name COMBINED) → Finish. Check-in is no longer part of the mandatory flow —
-// Finish offers it ("Check-in with [Name] →" → /checkin) beside Go to Dashboard.
-// Every step is skipped when already satisfied, so the flow is safe to re-enter,
-// and Previous across a saved step never double-writes (see submit guards).
-// All DB writes are unchanged from WP1-3: versioned consents upsert,
+// Structure: Welcome → 1/3 Ripple (customize + name COMBINED) → 2/3 Data →
+// 3/3 Demographics → Habit → Finish. Check-in is no longer part of the mandatory
+// flow — Finish offers it ("Check-in with [Name] →" → /checkin) beside Go to
+// Dashboard. Every step is skipped when already satisfied, so the flow is safe to
+// re-enter, and Previous across a saved step never double-writes (see submit
+// guards).
+//
+// Ripple-before-paperwork ordering (Norm 2026-07-30): the Ripple is the reason
+// someone stays, so it comes first — but the Ripple step writes NOTHING. Colours
+// and name are held in React state and persisted by persistRipple() once consent
+// is on record, so no user-generated content is stored before agreement. Data →
+// Demographics must stay adjacent: CONSENT_DOC says "the demographic questions on
+// the next screen".
+// DB writes otherwise unchanged from WP1-3: versioned consents upsert,
 // demographics insert, avatars/ripples upserts, profiles.onboarding_complete.
 
 const STEPS = {
@@ -146,12 +154,32 @@ export default function WelcomeFlow({ session, onComplete, devInitialStep }) {
     const cd = options.consentDone      ?? consentDone
     const dd = options.demographicsDone ?? demographicsDone
     const rd = options.rippleDone       ?? rippleDone
+    if (!rd) return setStep(STEPS.RIPPLE)
     if (!cd) return setStep(STEPS.DATA)
     if (!dd) return setStep(STEPS.DEMOGRAPHICS)
-    if (!rd) return setStep(STEPS.RIPPLE)
     // Habit has no persistent "done" flag — passing through again on re-entry
     // just shows the saved prefs, which is the desired behavior.
     setStep(STEPS.HABIT)
+  }
+
+  // ── Deferred Ripple write ─────────────────────────────────────────────────
+  // The Ripple step collects colours + name but persists nothing; this runs once
+  // consent is on record. Returns the error (or null) rather than setting state,
+  // so both callers can phrase their own failure. Both writes are upserts, so a
+  // retry after a partial failure is safe.
+
+  async function persistRipple() {
+    const userId = session.user.id
+
+    const { error: avatarErr } = await supabase.from('avatars').upsert(
+      { user_id: userId, skin_color: skin.hex, eye_color: eye.hex, species: 'human' },
+      { onConflict: 'user_id' }
+    )
+    if (avatarErr) return avatarErr
+
+    const { error: nameErr } = await supabase.from('ripples')
+      .upsert({ user_id: userId, name: rippleName.trim() }, { onConflict: 'user_id' })
+    return nameErr ?? null
   }
 
   // ── Data (consent + ToS) submit ───────────────────────────────────────────
@@ -166,10 +194,20 @@ export default function WelcomeFlow({ session, onComplete, devInitialStep }) {
       { user_id: userId, doc_type: 'tos',     version: TOS_VERSION },
     ], { onConflict: 'user_id,doc_type,version', ignoreDuplicates: true })
 
-    setBusy(false)
-    if (dbErr) { setError('Could not save your agreement — please try again.'); console.error('consents upsert:', dbErr); return }
-
+    if (dbErr) {
+      setBusy(false)
+      setError('Could not save your agreement — please try again.'); console.error('consents upsert:', dbErr); return
+    }
     setConsentDone(true)
+
+    // Agreement is on record → the Ripple held in state may now be written.
+    const rippleErr = await persistRipple()
+    setBusy(false)
+    if (rippleErr) {
+      setError('Could not save your Ripple — please try again.'); console.error('deferred ripple write:', rippleErr); return
+    }
+
+    setRippleDone(true)
     setStep(STEPS.DEMOGRAPHICS)
   }
 
@@ -180,7 +218,7 @@ export default function WelcomeFlow({ session, onComplete, devInitialStep }) {
 
   async function submitDemographics() {
     // Revisited via Previous after a successful save → don't insert a second row
-    if (demographicsDone) { setStep(STEPS.RIPPLE); return }
+    if (demographicsDone) { setStep(STEPS.HABIT); return }
     if (!canSubmitDemographics || busy) return
     setBusy(true); setError(null)
 
@@ -196,33 +234,29 @@ export default function WelcomeFlow({ session, onComplete, devInitialStep }) {
     if (dbErr) { setError('Could not save — please try again.'); console.error('demographics insert:', dbErr); return }
 
     setDemographicsDone(true)
-    setStep(STEPS.RIPPLE)
+    setStep(STEPS.HABIT)
   }
 
-  // ── Ripple submit (appearance + name together) ────────────────────────────
+  // ── Ripple continue (appearance + name together) ──────────────────────────
+  // Normally writes nothing — the picks ride in state until submitConsent()
+  // persists them. The one exception is re-entry from the pre-2026-07-30 order,
+  // where consent is already on file but no Ripple was ever made: there is no
+  // upcoming consent step to carry the write, so it happens here.
 
-  async function submitRipple() {
+  async function continueFromRipple() {
     if (!rippleName.trim() || busy) return
-    setBusy(true); setError(null)
-    const userId = session.user.id
 
-    const { error: avatarErr } = await supabase.from('avatars').upsert(
-      { user_id: userId, skin_color: skin.hex, eye_color: eye.hex, species: 'human' },
-      { onConflict: 'user_id' }
-    )
-    if (avatarErr) {
-      setBusy(false)
-      setError('Could not save your Ripple — please try again.'); console.error('avatars upsert:', avatarErr); return
+    if (!consentDone) { setError(null); setStep(STEPS.DATA); return }
+
+    setBusy(true); setError(null)
+    const rippleErr = await persistRipple()
+    setBusy(false)
+    if (rippleErr) {
+      setError('Could not save your Ripple — please try again.'); console.error('ripple upsert:', rippleErr); return
     }
 
-    const { error: nameErr } = await supabase.from('ripples')
-      .upsert({ user_id: userId, name: rippleName.trim() }, { onConflict: 'user_id' })
-
-    setBusy(false)
-    if (nameErr) { setError('Could not save — please try again.'); console.error('ripples upsert:', nameErr); return }
-
     setRippleDone(true)
-    setStep(STEPS.HABIT)
+    setStep(demographicsDone ? STEPS.HABIT : STEPS.DEMOGRAPHICS)
   }
 
   // ── Habit submit (reminder prefs) ─────────────────────────────────────────
@@ -290,21 +324,104 @@ export default function WelcomeFlow({ session, onComplete, devInitialStep }) {
             <div style={S.infoBox}>
               <p style={S.body}>
                 When the water is still, you can see what&rsquo;s moving underneath.
-                In a moment you&rsquo;ll meet your <strong>Ripple</strong> — a companion
-                that reflects how you&rsquo;re doing, and a partner in noticing it.
+                First, meet your <strong>Ripple</strong> — a companion that reflects
+                how you&rsquo;re doing, and a partner in noticing it.
               </p>
               <p style={S.body}>
-                Two quick things first: how your data is used here, and a few
-                questions about you.
+                After that, two quick things: how your data is used here, and a
+                few questions about you.
               </p>
             </div>
             <OnboardingNavigation onNext={() => advance()} />
           </>
         )}
 
-        {step === STEPS.DATA && (
+        {step === STEPS.RIPPLE && (
           <>
             <EyebrowLabel variant="nobg">STEP 1 OF 3</EyebrowLabel>
+            <h1 style={S.title}>Meet your Ripple</h1>
+            <p style={S.body}>
+              This is your Ripple. Pick a look that feels like you — more features
+              unlock as you explore — and give it a name. Yours to change anytime.
+            </p>
+
+            {/* Live Ripple customizer (WP2), NOT the Figma placeholder screenshots
+                — brief guardrail #4 / Dev Spec §4.3 integration warning. */}
+            <div style={S.previewBox}>
+              <RippleAvatar skinColor={skin.hex} eyeColor={eye.hex} size={180} />
+            </div>
+
+            <div style={S.pickerSection}>
+              <p style={S.pickerLabel}>Skin · Fur · Scales</p>
+              <div style={S.swatchRow}>
+                {SKIN_COLORS.map(c => (
+                  <button
+                    key={c.hex}
+                    title={c.label}
+                    onClick={() => setSkin(c)}
+                    style={{
+                      ...S.swatch,
+                      background: c.hex,
+                      border: skin.hex === c.hex ? '3px solid var(--pk)' : '3px solid transparent',
+                      outline: skin.hex === c.hex ? '2px solid white' : 'none',
+                      outlineOffset: '-4px',
+                      transform: skin.hex === c.hex ? 'scale(1.2)' : 'scale(1)',
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div style={S.pickerSection}>
+              <p style={S.pickerLabel}>Eye color</p>
+              <div style={S.swatchRow}>
+                {EYE_COLORS.map(c => (
+                  <button
+                    key={c.hex}
+                    title={c.label}
+                    onClick={() => setEye(c)}
+                    style={{
+                      ...S.swatch,
+                      background: c.hex,
+                      border: eye.hex === c.hex ? '3px solid var(--pk)' : '3px solid transparent',
+                      outline: eye.hex === c.hex ? '2px solid white' : 'none',
+                      outlineOffset: '-4px',
+                      transform: eye.hex === c.hex ? 'scale(1.2)' : 'scale(1)',
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div style={S.nameRow}>
+              <FillableBox
+                label="Ripple name"
+                placeholder="Your Ripple's name"
+                value={rippleName}
+                onChange={e => setRippleName(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && continueFromRipple()}
+                maxLength={32}
+                style={{ flex: 1 }}
+              />
+              <button style={S.genBtn} onClick={() => setRippleName(pickRandom(rippleName))} title="Suggest another name">
+                ✦
+              </button>
+            </div>
+
+            {error && <p style={S.errBox}>{error}</p>}
+
+            <OnboardingNavigation
+              onPrevious={() => setStep(STEPS.WELCOME)}
+              onNext={continueFromRipple}
+              nextDisabled={!rippleName.trim() || busy}
+              nextLabel={busy ? 'Saving…' : 'Next →'}
+            />
+          </>
+        )}
+
+        {step === STEPS.DATA && (
+          <>
+            <EyebrowLabel variant="nobg">STEP 2 OF 3</EyebrowLabel>
             <h1 style={S.title}>Your data, plainly</h1>
 
             <DocPanel doc={CONSENT_DOC} agreed={agreedConsent} onToggle={setAgreedConsent} />
@@ -313,7 +430,7 @@ export default function WelcomeFlow({ session, onComplete, devInitialStep }) {
             {error && <p style={S.errBox}>{error}</p>}
 
             <OnboardingNavigation
-              onPrevious={() => setStep(STEPS.WELCOME)}
+              onPrevious={() => setStep(STEPS.RIPPLE)}
               onNext={submitConsent}
               nextDisabled={!agreedConsent || !agreedTos || busy}
               nextLabel={busy ? 'Saving…' : 'Agree & continue →'}
@@ -323,7 +440,7 @@ export default function WelcomeFlow({ session, onComplete, devInitialStep }) {
 
         {step === STEPS.DEMOGRAPHICS && (
           <>
-            <EyebrowLabel variant="nobg">STEP 2 OF 3</EyebrowLabel>
+            <EyebrowLabel variant="nobg">STEP 3 OF 3</EyebrowLabel>
             <h1 style={S.title}>A little about you</h1>
             <p style={S.body}>
               These questions help our research account for how wellbeing differs
@@ -394,89 +511,6 @@ export default function WelcomeFlow({ session, onComplete, devInitialStep }) {
               onPrevious={() => setStep(STEPS.DATA)}
               onNext={submitDemographics}
               nextDisabled={(!demographicsDone && !canSubmitDemographics) || busy}
-              nextLabel={busy ? 'Saving…' : 'Next →'}
-            />
-          </>
-        )}
-
-        {step === STEPS.RIPPLE && (
-          <>
-            <EyebrowLabel variant="nobg">STEP 3 OF 3</EyebrowLabel>
-            <h1 style={S.title}>Meet your Ripple</h1>
-            <p style={S.body}>
-              This is your Ripple. Pick a look that feels like you — more features
-              unlock as you explore — and give it a name. Yours to change anytime.
-            </p>
-
-            {/* Live Ripple customizer (WP2), NOT the Figma placeholder screenshots
-                — brief guardrail #4 / Dev Spec §4.3 integration warning. */}
-            <div style={S.previewBox}>
-              <RippleAvatar skinColor={skin.hex} eyeColor={eye.hex} size={180} />
-            </div>
-
-            <div style={S.pickerSection}>
-              <p style={S.pickerLabel}>Skin · Fur · Scales</p>
-              <div style={S.swatchRow}>
-                {SKIN_COLORS.map(c => (
-                  <button
-                    key={c.hex}
-                    title={c.label}
-                    onClick={() => setSkin(c)}
-                    style={{
-                      ...S.swatch,
-                      background: c.hex,
-                      border: skin.hex === c.hex ? '3px solid var(--pk)' : '3px solid transparent',
-                      outline: skin.hex === c.hex ? '2px solid white' : 'none',
-                      outlineOffset: '-4px',
-                      transform: skin.hex === c.hex ? 'scale(1.2)' : 'scale(1)',
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
-
-            <div style={S.pickerSection}>
-              <p style={S.pickerLabel}>Eye color</p>
-              <div style={S.swatchRow}>
-                {EYE_COLORS.map(c => (
-                  <button
-                    key={c.hex}
-                    title={c.label}
-                    onClick={() => setEye(c)}
-                    style={{
-                      ...S.swatch,
-                      background: c.hex,
-                      border: eye.hex === c.hex ? '3px solid var(--pk)' : '3px solid transparent',
-                      outline: eye.hex === c.hex ? '2px solid white' : 'none',
-                      outlineOffset: '-4px',
-                      transform: eye.hex === c.hex ? 'scale(1.2)' : 'scale(1)',
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
-
-            <div style={S.nameRow}>
-              <FillableBox
-                label="Ripple name"
-                placeholder="Your Ripple's name"
-                value={rippleName}
-                onChange={e => setRippleName(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && submitRipple()}
-                maxLength={32}
-                style={{ flex: 1 }}
-              />
-              <button style={S.genBtn} onClick={() => setRippleName(pickRandom(rippleName))} title="Suggest another name">
-                ✦
-              </button>
-            </div>
-
-            {error && <p style={S.errBox}>{error}</p>}
-
-            <OnboardingNavigation
-              onPrevious={() => setStep(STEPS.DEMOGRAPHICS)}
-              onNext={submitRipple}
-              nextDisabled={!rippleName.trim() || busy}
               nextLabel={busy ? 'Saving…' : 'Next →'}
             />
           </>
@@ -553,7 +587,7 @@ export default function WelcomeFlow({ session, onComplete, devInitialStep }) {
             {error && <p style={S.errBox}>{error}</p>}
 
             <OnboardingNavigation
-              onPrevious={() => setStep(STEPS.RIPPLE)}
+              onPrevious={() => setStep(STEPS.DEMOGRAPHICS)}
               onNext={submitHabit}
               nextDisabled={busy}
               nextLabel={busy ? 'Saving…' : 'Next →'}
