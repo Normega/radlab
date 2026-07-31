@@ -67,6 +67,7 @@ const VideoTest = lazy(() => import('./pages/dev/VideoTest'))
 const AudioTest = lazy(() => import('./pages/dev/AudioTest'))
 const UiKit     = lazy(() => import('./pages/dev/UiKit'))
 const OnboardingPreview = lazy(() => import('./pages/dev/OnboardingPreview'))
+const InsightsPreview   = lazy(() => import('./pages/dev/InsightsPreview'))
 const Keynote   = lazy(() => import('./pages/keynote/Keynote'))
 const ToniJuly2026 = lazy(() => import('./pages/toni-july-2026/ToniJuly2026'))
 const Talks     = lazy(() => import('./pages/talks/Talks'))
@@ -496,6 +497,8 @@ export default function App() {
           <Route path="/dev/ui-kit" element={<UiKit />} />
           {/* Phase 4 onboarding step previews (?step=welcome|data|demographics|ripple|finish) */}
           <Route path="/dev/onboarding-preview" element={<OnboardingPreview />} />
+          {/* Dashboard Insights widget with synthetic data (?state=rich|sparse|empty) */}
+          <Route path="/dev/insights-preview" element={<InsightsPreview />} />
           {/* Breath-signal instrumentation for biofeedback game dev; ?sim=1 for beltless */}
           <Route path="/dev/breath-lab" element={<BreathLab />} />
 
