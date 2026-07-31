@@ -19,8 +19,12 @@ const SESSION_STEPS = [
   { label: 'Farewell', state: 'upcoming' },
 ]
 
-// Types always enabled (no gating needed)
-const ALWAYS_ENABLED = new Set(['lead_in', 'lead_out', 'text', 'closing', 'slider'])
+// Types always enabled (no gating needed). 'slider' is deliberately NOT here:
+// it is gated on having been moved (see the 'slider' case in the gate effect),
+// because an untouched handle is a non-response, not a choice of whatever value
+// it happens to rest on. This set short-circuits ahead of the switch, so
+// listing a type here silently makes its case below dead code.
+const ALWAYS_ENABLED = new Set(['lead_in', 'lead_out', 'text', 'closing'])
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -129,7 +133,9 @@ export default function InterventionPage({
         setNextEnabled((responses[s._stepIndex] ?? '').length > 0)
         break
       case 'slider':
-        setNextEnabled(true)
+        // A slider that has not been moved has no response — an untouched
+        // handle must not count as choosing the value it happens to sit on.
+        setNextEnabled(!!sliderTouched[s._stepIndex])
         break
       case 'multi_response': {
         const vals = multiResponses[s._stepIndex] ?? []
@@ -250,10 +256,15 @@ export default function InterventionPage({
           break
 
         case 'slider': {
-          const mid = Math.round((s.min + s.max) / 2)
+          // null, never a coerced midpoint. The Next gate should make an
+          // untouched slider unreachable, but if that ever regresses the data
+          // must record "no answer" rather than invent one — a fabricated
+          // midpoint is indistinguishable from a real response, and on the
+          // day-7 pre/post pair two of them read as "reappraisal changed
+          // nothing".
           await supabase.from('intervention_responses').insert({
             ...base,
-            response_text: JSON.stringify({ value: sliderValues[idx] ?? mid }),
+            response_text: JSON.stringify({ value: sliderValues[idx] ?? null }),
           })
           break
         }
@@ -447,6 +458,7 @@ export default function InterventionPage({
                 if (!sliderTouched[current._stepIndex]) {
                   setSliderTouched(prev => ({ ...prev, [current._stepIndex]: true }))
                 }
+                setNextEnabled(true)
               }}
             />
           )}
@@ -778,14 +790,15 @@ function ClosingBlock({ step }) {
 
 // ── SliderBlock ───────────────────────────────────────────────────────────────
 
-// OPEN QUESTION (2026-07-31): `touched` is passed in but not used, and
-// `sliderTouched` in the parent is read nowhere else — so the slider always
-// displays its default value, including before the participant has moved it.
-// The near-certain original intent was to hide the number until first touch so
-// the default does not anchor the response, which is standard practice for a
-// VAS-style item. Kept rather than deleted because that is an instrument-design
-// decision with data implications, not a lint fix — it needs Norm's call.
-// eslint-disable-next-line no-unused-vars
+// Until the participant moves the handle there is no response, and the UI says
+// so: no number is shown, the track is dimmed, and Next stays disabled (see the
+// 'slider' case in the gate effect). Previously the handle sat at the midpoint
+// with its value displayed and Next live, so clicking straight through silently
+// recorded that midpoint — on these 1–6 items, a 4 — as if it were an answer.
+//
+// This mirrors StudySliderBlock in VasStepWrapper.jsx, which already gated its
+// Submit on `touched` and showed an em-dash until then; InterventionPage's
+// slider was the inconsistent one.
 function SliderBlock({ step, value, touched, onChange }) {
   return (
     <div>
@@ -797,14 +810,26 @@ function SliderBlock({ step, value, touched, onChange }) {
           max={step.max}
           value={value}
           onChange={e => onChange(Number(e.target.value))}
-          style={{ ...S.bigSlider, accentColor: 'var(--pk)' }}
+          aria-valuetext={touched ? String(value) : 'No value selected yet'}
+          style={{
+            ...S.bigSlider,
+            accentColor: touched ? 'var(--pk)' : '#c9c9cf',
+            opacity: touched ? 1 : 0.75,
+          }}
         />
         <div style={S.sliderLabels}>
           <span style={{ whiteSpace: 'pre-line' }}>{step.min_label}</span>
-          <span style={S.sliderVal}>{value}</span>
+          <span style={{ ...S.sliderVal, color: touched ? undefined : '#b0b0b8' }}>
+            {touched ? value : '—'}
+          </span>
           <span style={{ whiteSpace: 'pre-line', textAlign: 'right' }}>{step.max_label}</span>
         </div>
       </div>
+      {!touched && (
+        <p style={{ marginTop: 10, fontSize: 14, color: '#6b6c70', fontStyle: 'italic' }}>
+          Move the slider to choose a value.
+        </p>
+      )}
     </div>
   )
 }
