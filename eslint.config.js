@@ -27,7 +27,10 @@ export default defineConfig([
       },
     },
     rules: {
-      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+      // caughtErrorsIgnorePattern: `catch (_)` is the other half of the
+      // best-effort-teardown idiom allowed by no-empty below — the binding is
+      // named `_` precisely because it is never inspected.
+      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]', caughtErrorsIgnorePattern: '^_' }],
       // Best-effort teardown (`try { node.stop() } catch (_) {}`) is a
       // deliberate idiom in the audio and device code, where a failed stop on
       // an already-dead node is not worth handling.
