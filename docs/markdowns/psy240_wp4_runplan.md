@@ -175,28 +175,57 @@ instead of two stitched together.
 
 ---
 
-## 6. Citation string — required at upload
+## 6. Citations — copy these, don't compose them
 
-Attribution is a **licence condition** for CC BY-NC-SA material, not a courtesy, and the portal
-requires a citation per job. Page attribution is derived from it (`wiki_page_provenance`), so
-getting it right once per upload is the whole job. Copy this, changing only the number and title:
+Attribution is a **licence condition** for CC BY-NC-SA material, not a courtesy. Page attribution
+derives from `ingest_jobs.source_citation` (`wiki_page_provenance`), so the string you paste at
+upload is the one a reader eventually sees under *Built from*.
+
+**The form.** Creative Commons attribution wants four things — title, author, source, licence
+(TASL). The original Module 4 citation had the first two and named the licence but gave **no link
+to the source**, which is the part that lets a reader find the original and check the paraphrase.
+The form below adds it. All three URLs were checked live on 2026-07-30 and resolve.
 
 ```
-Bridley, A., & Daffin, L. W. (2023). Fundamentals of Psychological Disorders
-(3rd ed., DSM-5-TR update), Module NN: TITLE. Washington State University.
-Licensed CC BY-NC-SA 4.0.
+Bridley, A., & Daffin, L. W. (2023). Module N: TITLE. In Fundamentals of Psychological
+Disorders (3rd ed., DSM-5-TR update). Washington State University.
+Licensed CC BY-NC-SA 4.0. https://opentext.wsu.edu/abnormal-psych/
 ```
 
-Byte-for-byte the format already used for Module 04, so provenance stays consistent.
+**The sixteen, ready to paste.** Module titles are taken from the book's own table of contents,
+so a mistyped module name can't enter the provenance record:
 
-**You only type it once.** Since 2026-07-30 the portal keeps the citation after submit and offers
-a *"reuse a citation from a previous run"* picker built from this course's past jobs — so run 2
-onwards is a dropdown pick plus changing the module number and title. The **Suggest citation**
-button reads a DOI off the PDF and resolves it, which is the path for journal articles; the
-textbook has no DOI, so for these fifteen runs use the reuse picker.
+| # | Citation |
+|---|---|
+| 1 | `Bridley, A., & Daffin, L. W. (2023). Module 1: What is Abnormal Psychology? In Fundamentals of Psychological Disorders (3rd ed., DSM-5-TR update). Washington State University. Licensed CC BY-NC-SA 4.0. https://opentext.wsu.edu/abnormal-psych/` |
+| 2 | `Bridley, A., & Daffin, L. W. (2023). Module 2: Models of Abnormal Psychology. In Fundamentals of Psychological Disorders (3rd ed., DSM-5-TR update). Washington State University. Licensed CC BY-NC-SA 4.0. https://opentext.wsu.edu/abnormal-psych/` |
+| 3 | `Bridley, A., & Daffin, L. W. (2023). Module 3: Clinical Assessment, Diagnosis, and Treatment. In Fundamentals of Psychological Disorders (3rd ed., DSM-5-TR update). Washington State University. Licensed CC BY-NC-SA 4.0. https://opentext.wsu.edu/abnormal-psych/` |
+| 4 | `Bridley, A., & Daffin, L. W. (2023). Module 4: Mood Disorders. In Fundamentals of Psychological Disorders (3rd ed., DSM-5-TR update). Washington State University. Licensed CC BY-NC-SA 4.0. https://opentext.wsu.edu/abnormal-psych/` |
+| 5 | `Bridley, A., & Daffin, L. W. (2023). Module 5: Trauma- and Stressor-Related Disorders. In Fundamentals of Psychological Disorders (3rd ed., DSM-5-TR update). Washington State University. Licensed CC BY-NC-SA 4.0. https://opentext.wsu.edu/abnormal-psych/` |
+| 6 | `Bridley, A., & Daffin, L. W. (2023). Module 6: Dissociative Disorders. In Fundamentals of Psychological Disorders (3rd ed., DSM-5-TR update). Washington State University. Licensed CC BY-NC-SA 4.0. https://opentext.wsu.edu/abnormal-psych/` |
+| 7 | `Bridley, A., & Daffin, L. W. (2023). Module 7: Anxiety Disorders. In Fundamentals of Psychological Disorders (3rd ed., DSM-5-TR update). Washington State University. Licensed CC BY-NC-SA 4.0. https://opentext.wsu.edu/abnormal-psych/` |
+| 8 | `Bridley, A., & Daffin, L. W. (2023). Module 8: Somatic Symptom and Related Disorders. In Fundamentals of Psychological Disorders (3rd ed., DSM-5-TR update). Washington State University. Licensed CC BY-NC-SA 4.0. https://opentext.wsu.edu/abnormal-psych/` |
+| 9 | `Bridley, A., & Daffin, L. W. (2023). Module 9: Obsessive-Compulsive and Related Disorders. In Fundamentals of Psychological Disorders (3rd ed., DSM-5-TR update). Washington State University. Licensed CC BY-NC-SA 4.0. https://opentext.wsu.edu/abnormal-psych/` |
+| 10 | `Bridley, A., & Daffin, L. W. (2023). Module 10: Feeding and Eating Disorders. In Fundamentals of Psychological Disorders (3rd ed., DSM-5-TR update). Washington State University. Licensed CC BY-NC-SA 4.0. https://opentext.wsu.edu/abnormal-psych/` |
+| 11 | `Bridley, A., & Daffin, L. W. (2023). Module 11: Substance-Related and Addictive Disorders. In Fundamentals of Psychological Disorders (3rd ed., DSM-5-TR update). Washington State University. Licensed CC BY-NC-SA 4.0. https://opentext.wsu.edu/abnormal-psych/` |
+| 12 | `Bridley, A., & Daffin, L. W. (2023). Module 12: Schizophrenia Spectrum and Other Psychotic Disorders. In Fundamentals of Psychological Disorders (3rd ed., DSM-5-TR update). Washington State University. Licensed CC BY-NC-SA 4.0. https://opentext.wsu.edu/abnormal-psych/` |
+| 13 | `Bridley, A., & Daffin, L. W. (2023). Module 13: Personality Disorders. In Fundamentals of Psychological Disorders (3rd ed., DSM-5-TR update). Washington State University. Licensed CC BY-NC-SA 4.0. https://opentext.wsu.edu/abnormal-psych/` |
+| 14 | `Bridley, A., & Daffin, L. W. (2023). Module 14: Neurocognitive Disorders. In Fundamentals of Psychological Disorders (3rd ed., DSM-5-TR update). Washington State University. Licensed CC BY-NC-SA 4.0. https://opentext.wsu.edu/abnormal-psych/` |
+| 15 | `Bridley, A., & Daffin, L. W. (2023). Module 15: Contemporary Issues in Psychopathology. In Fundamentals of Psychological Disorders (3rd ed., DSM-5-TR update). Washington State University. Licensed CC BY-NC-SA 4.0. https://opentext.wsu.edu/abnormal-psych/` |
+| 16 | `Bridley, A., & Daffin, L. W. (2023). Module 16: Disorders of Childhood Overview. In Fundamentals of Psychological Disorders (3rd ed., DSM-5-TR update). Washington State University. Licensed CC BY-NC-SA 4.0. https://opentext.wsu.edu/abnormal-psych/` |
 
-A suggestion never fills the field on its own — you accept it explicitly. That is deliberate:
-attribution is a licence condition, and a looked-up citation nobody read is worse than a typed one.
+**Why paste rather than edit.** The portal now keeps the citation after submit and offers a
+*"reuse a citation from a previous run"* picker, so editing the previous string is possible — but
+the two things you'd edit are the module number and its exact title, which is precisely where a
+typo becomes a permanent provenance error nobody notices. Pasting a prepared row costs the same
+and can't drift.
+
+The **Suggest citation** button is the path for journal articles: it reads a DOI off the PDF and
+resolves it. The textbook has no DOI, verified — so for these sixteen runs it will correctly tell
+you it found none.
+
+A suggestion never fills the field on its own; you accept it explicitly. Attribution is a licence
+condition, and a looked-up citation nobody read is worse than one typed badly.
 
 ---
 

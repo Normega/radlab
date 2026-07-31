@@ -3986,6 +3986,8 @@ Three changes, in increasing order of how much they actually help:
 
 Verified against live APIs before shipping: five realistic DOI forms extract correctly (plain, URL, parenthesised, trailing comma), the textbook correctly yields *no DOI* — which is the path the sprint actually uses — and doi.org returned better citations than the ones hand-written in the database, adding volume, issue and page numbers.
 
+**Citation form for the textbook.** Creative Commons attribution wants title, author, source and licence (TASL); the original Module 4 citation had the first two and named the licence but gave **no link to the source**, which is the part that lets a reader find the original and check a paraphrase. All sixteen module citations are now pre-written in the run plan (`psy240_wp4_runplan.md` §6) with the source URL added, and the two existing Module 4 jobs were updated to match — which flowed straight through to that page's *Built from* without touching the page, because `wiki_page_provenance` derives at read time. Pasting a prepared row beats editing the previous one: the two things you'd edit are the module number and its exact title, which is precisely where a typo becomes a permanent provenance error nobody notices.
+
 ### Gap mechanism corrected; a third proposal action (2026-07-30)
 
 Click-testing the reader turned up duplicated disorder skeletons — `major-depressive-disorder` carrying the six H2 sections **three times**, `persistent-depressive-disorder` twice, one copy per accepted `update`. Migration `20260730_wiki_body_needs_and_replace.sql`. Two problems, both worse than the visible repetition:
