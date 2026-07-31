@@ -111,9 +111,13 @@ export default function InsightsPreview() {
 
         {/* The assembled Ripple card as it sits above the widget on /dashboard. */}
         <div style={{ marginBottom: 24 }}>
+          {/* Newest-first, matching the real query's ordering — RippleCard reads
+              checkins[0] as "latest" and derives most-often from the whole set,
+              so handing it ascending rows or a single row would preview a card
+              that cannot exist. */}
           <RippleCard devState={{
             ripple: { name: 'Pickles', streak_current: 4, last_checkin_on: rows.at(-1)?.local_date ?? null },
-            checkins: rows.length ? [rows.at(-1)] : [],
+            checkins: [...rows].reverse(),
           }} />
         </div>
 

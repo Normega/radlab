@@ -28,6 +28,10 @@ export default function InsightsWidget({ userId, devRows, initialWindow = 'month
   const [tab,      setTab]      = useState('emotion')
   const [windowId, setWindowId] = useState(initialWindow)
   const [fetched,  setFetched]  = useState(null)
+  // Streak moved here 2026-07-31 when the check-in bar took the v2 three-field
+  // shape, which has no room for it. Read from ripples rather than derived from
+  // the rows below, so it stays the same number the rest of the app maintains.
+  const [streak,   setStreak]   = useState(null)
 
   // devRows is read straight through rather than pushed into state: setting state
   // synchronously inside the effect would cascade an extra render for no reason.
@@ -42,6 +46,11 @@ export default function InsightsWidget({ userId, devRows, initialWindow = 'month
       .order('local_date', { ascending: true })
       .limit(1000)
       .then(({ data }) => setFetched(data ?? []))
+
+    supabase.from('ripples')
+      .select('streak_current')
+      .eq('user_id', userId).maybeSingle()
+      .then(({ data }) => setStreak(data?.streak_current ?? 0))
   }, [userId, devRows])
 
   return (
@@ -63,7 +72,7 @@ export default function InsightsWidget({ userId, devRows, initialWindow = 'month
 
       <div style={S.body}>
         {tab === 'emotion'
-          ? <EmotionTab checkins={checkins} windowId={windowId} />
+          ? <EmotionTab checkins={checkins} windowId={windowId} streak={streak} />
           : <NotYetTab category={CATEGORIES.find(c => c.id === tab)} />}
       </div>
     </div>
@@ -107,7 +116,7 @@ function TimeFilter({ value, onChange }) {
 
 // ── Emotion tab ───────────────────────────────────────────────────────────────
 
-function EmotionTab({ checkins, windowId }) {
+function EmotionTab({ checkins, windowId, streak }) {
   const summary = useMemo(
     () => (checkins ? emotionSummary(checkins, windowId) : null),
     [checkins, windowId]
@@ -160,6 +169,7 @@ function EmotionTab({ checkins, windowId }) {
               hint="Average change in positive activation between one check-in and the next"
             />
             <Stat label="check-ins" value={summary.count} />
+            {streak > 0 && <Stat label="day streak" value={streak} />}
             <Stat label="most often" value={summary.mode?.toLowerCase() ?? '—'} />
           </div>
         </div>
