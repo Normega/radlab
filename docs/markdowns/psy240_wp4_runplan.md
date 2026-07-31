@@ -220,6 +220,25 @@ foundations modules (prose and concepts) extracted is a safe saving. For the **d
 stay native** — the criteria and prevalence tables are the payload, and a mangled table looks like
 a successful run.
 
+**Prompt caching was investigated (2026-07-31) and is not worth it here.** The arithmetic, on
+Module 01's real 91,863 input tokens at Opus 4.8's $5/MTok: three reference runs cost **$1.38**
+uncached, **$1.01** with a 1-hour cache — a 27% saving, about **$0.37 per module**. Two things
+kill it. Caching only breaks even at **three or more runs against the same PDF**, and only Module
+01 has three targets (02 and 03 have two, Module 15 has one — for those, caching costs *more*
+than not caching). And a **5-minute TTL is actively worse than no caching** in this workflow:
+triage sits between runs, so each run would write a cache the next run is too late to read —
+3 × 1.25× = 3.75× versus 3× for doing nothing. Meanwhile switching those same runs to extracted
+mode costs nothing to implement and brings three runs to about **$0.38**, beating every cached
+variant of the native path.
+
+One structural note worth keeping, because it is non-obvious and would otherwise be rediscovered:
+`api/ingest.js` already puts the PDF **before** the volatile text (target brief + wiki index) in
+the user message, and the wiki index changes between runs as pages are accepted. That ordering —
+done for an unrelated reason — is exactly what caching needs, so if the economics ever change,
+enabling it is a one-line `cache_control` on the document block with **no prompt reordering**. The
+token accounting already sums `input + cache_creation + cache_read`, so recorded job totals would
+stay comparable.
+
 ---
 
 ## 6. Citations — copy these, don't compose them
