@@ -1,5 +1,6 @@
 import { useSearchParams } from 'react-router-dom'
 import InsightsWidget from '../../dashboard/InsightsWidget'
+import { RippleFace, RippleCard } from '../Dashboard'
 import { dayKey } from '../../dashboard/metrics'
 
 /**
@@ -90,6 +91,32 @@ export default function InsightsPreview() {
           <a href="?state=empty" style={{ color: 'var(--pk)' }}>empty</a>{' · '}
           <a href="?state=rich&window=year" style={{ color: 'var(--pk)' }}>year</a>
         </p>
+        {/* Ripple portrait left of the check-in info, as it sits on the dashboard.
+            One per mood sector, so every face the lookup can produce is visible
+            at a glance rather than only whichever mood the previewer last felt. */}
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 24 }}>
+          {['Good', 'Excited', 'Alert', 'Tense', 'Bad', 'Sad', 'Still', 'Calm', 'neutral'].map(label => (
+            <div key={label} style={{ textAlign: 'center' }}>
+              <RippleFace
+                size={78}
+                devAvatar={{ skin_color: '#FDBCB4', eye_color: '#4A90D9', species: 'human' }}
+                last={{ composite_label: label, composite_x: 0.6, composite_y: 0.6 }}
+              />
+              <div style={{ fontFamily: '"Space Mono", monospace', fontSize: 9, color: 'var(--tx3)', marginTop: 4, textTransform: 'uppercase' }}>
+                {label}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* The assembled Ripple card as it sits above the widget on /dashboard. */}
+        <div style={{ marginBottom: 24 }}>
+          <RippleCard devState={{
+            ripple: { name: 'Pickles', streak_current: 4, last_checkin_on: rows.at(-1)?.local_date ?? null },
+            checkins: rows.length ? [rows.at(-1)] : [],
+          }} />
+        </div>
+
         <InsightsWidget devRows={rows} initialWindow={window} />
       </div>
     </div>
