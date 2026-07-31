@@ -5,7 +5,11 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  // `resources/` is an archive of zips, extracted third-party drops, and
+  // briefing docs. Nothing under src/ imports from it and it is not the Vite
+  // publicDir, so it never reaches a bundle — linting it only produced noise
+  // from code we do not ship or maintain.
+  globalIgnores(['dist', 'resources']),
   {
     files: ['**/*.{js,jsx}'],
     extends: [
@@ -24,11 +28,22 @@ export default defineConfig([
     },
     rules: {
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+      // Best-effort teardown (`try { node.stop() } catch (_) {}`) is a
+      // deliberate idiom in the audio and device code, where a failed stop on
+      // an already-dead node is not worth handling.
+      'no-empty': ['error', { allowEmptyCatch: true }],
     },
   },
   {
     // Vercel serverless functions run in Node, not the browser
     files: ['api/**/*.js'],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
+  {
+    // Build/tooling config runs in Node, not the browser
+    files: ['*.config.js'],
     languageOptions: {
       globals: globals.node,
     },
