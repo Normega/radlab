@@ -15,8 +15,13 @@ import QuestionnaireRenderer from './questionnaire/QuestionnaireRenderer'
 //   participant     — { id }
 //   supabaseClient  — participant-authenticated Supabase client
 //   onPass          — () => void
-//   onFail          — () => void
 //   previewMode     — bool — skips DB writes and sessionStorage when true
+//
+// There is deliberately no onFail: a screen-out is terminal *inside* this
+// component, which renders its own per-outcome card (fail_low / fail_high
+// heading, body and resources, all configurable via screener.outcomes) with
+// showContinue false. The parent is not notified because there is nothing
+// further for it to show.
 
 const GREEN  = 'var(--pk)'
 const RED_BG = 'var(--err-bg)'
@@ -34,7 +39,7 @@ const PHASE_META = {
   outcome:      { step: 'Step 4 of 4', prog: 100, title: 'Screening Result',     sub: '' },
 }
 
-export default function ScreenerPage({ study, participant, supabaseClient, onPass, onFail, previewMode = false }) {
+export default function ScreenerPage({ study, participant, supabaseClient, onPass, previewMode = false }) {
   const screener    = study.screener
   // Ordered phase-2 questionnaires (1 or 2). Zerin: [phq-8]; Liliana: [gad-7, phq-8].
   const phase2Slugs = (screener?.phase2?.questionnaires ?? [])

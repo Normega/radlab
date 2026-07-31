@@ -5,10 +5,8 @@ export default function SessionComplete({
   anagramScore, anagramPct,
   fluencyScore, fluencyPct, categoryLabel,
   wordprobeScore, wordprobePct,
-  taskSwitchCount,
   submitted,
 }) {
-  const avg = Math.round((anagramPct + fluencyPct + wordprobePct) / 3);
 
   return (
     <div style={{

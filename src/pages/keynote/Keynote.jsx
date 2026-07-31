@@ -468,7 +468,7 @@ const SLIDES = [
   // 17 — Bridge into the imaging task
   {
     note: 'Figure: fMRI task conditions (breath vs visual attention blocks) — eNeuro (Farb, Zuo & Price 2023) task design. This is the hand-off into the imaging work: say plainly we are leaving the BCAT and entering a separate sustained-attention paradigm. Figure: public/keynote/fig-fmri-conditions.webp.',
-    render: (d) => (
+    render: () => (
       <Frame wide kicker="Into the scanner">
         <H2>A different task: sustained attention to the breath</H2>
         <Figure src="/keynote/fig-fmri-conditions.webp" alt="fMRI task conditions: alternating breath-attention and visual-attention blocks" missingLabel="fMRI task conditions" maxH="58vh" />
@@ -503,7 +503,7 @@ const SLIDES = [
   // 19 — ACC sparing by awareness
   {
     note: 'Figure: eNeuro (Farb, Zuo & Price 2023) Figure 4 — MAIA covariate brain map and scatterplot.',
-    render: (d) => (
+    render: () => (
       <Frame wide kicker="Individual differences">
         <H2>Awareness spares the ACC</H2>
         <Figure src="/keynote/fig-eneuro-4a.png" alt="ACC activity by interoceptive awareness (MAIA)" missingLabel="eNeuro Fig 4A — ACC × MAIA" maxH="60vh" />
@@ -518,7 +518,7 @@ const SLIDES = [
   // 20 — ACC-DAN connectivity
   {
     note: 'Figure: eNeuro (Farb, Zuo & Price 2023) — dorsal attention network maps (same figure as slide 16, DAN panel).',
-    render: (d) => (
+    render: () => (
       <Frame wide kicker="Connectivity">
         <H2>ACC sparing tracks attention-network coupling</H2>
         <Figure src="/keynote/fig-eneuro-4b.png" alt="Dorsal attention network maps" missingLabel="eNeuro Fig 4B — DAN maps" maxH="60vh" />

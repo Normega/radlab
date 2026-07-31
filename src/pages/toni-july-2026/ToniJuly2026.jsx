@@ -189,7 +189,7 @@ const SLIDES = [
   // 3 — Roadmap (now carries the "replay, not live" framing)
   {
     note: 'Everything shown is a replay of the actual run, not a live demo — the real pipeline was ~4 days of wall-clock compute (a fresh subject is ~6–10 h, mostly recon-all). None of the commands execute here; they ran on the imaging box and are shown verbatim with their real output so the artifacts stay inspectable. The agent had the full session in memory, so the transcript is faithful, not dramatized.',
-    render: (d) => (
+    render: () => (
       <Frame kicker="Roadmap">
         <H2>Two datasets, one collaboration</H2>
         <Bullets items={[

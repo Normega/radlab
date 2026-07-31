@@ -157,7 +157,6 @@ export default function StudySessionRunner() {
     advanceStep.mutate()
   }
 
-  const studyName     = enrollment?.studies?.name ?? ''
   const externalId    = enrollment?.external_id ?? ''
   const debriefHtml   = enrollment?.studies?.study_debrief_forms?.html_content ?? null
   const totalSteps    = nodes.length

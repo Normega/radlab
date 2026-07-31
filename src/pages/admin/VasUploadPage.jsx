@@ -119,7 +119,7 @@ export default function VasUploadPage() {
 
       // Insert vas_scales
       const { data: { user } } = await supabase.auth.getUser()
-      const { data: scaleRow, error: scaleErr } = await supabase
+      const { error: scaleErr } = await supabase
         .from('vas_scales')
         .insert({
           slug,

@@ -28,15 +28,9 @@ const GH_ROW_Y = [370, 690]
 
 // R2: top half is 55% of game height → xMidYMid slice shows SVG y≈229.5..790.5
 const GH_TOP_PCT = 55
-const GH_VIS_H   = 1020 * GH_TOP_PCT / 100   // 561 SVG units visible vertically
-const GH_VIS_TOP = 510 - GH_VIS_H / 2         // 229.5
 
 // Pot soil line (cy=-28 relative to pot center in Greenhouse.jsx defs)
 const POT_SOIL_OFFSET = 28
-
-const ghLeft  = col => `${GH_COL_X[col] / VB_W * 100}%`
-// Bottom of sprite anchored to soil line (combine with transform: translate(-50%, -100%))
-const ghSoilY = row => `${(GH_ROW_Y[row] - POT_SOIL_OFFSET - GH_VIS_TOP) / GH_VIS_H * 100}%`
 
 // FarmRow harvest: mounds at ROW_Y_HARVEST (match FarmRow.jsx)
 const FR_ROW_Y = [175, 510, 845]
