@@ -260,10 +260,10 @@ export default function TrainingUpload() {
   // ── Derived readiness ─────────────────────────────────────────────────────
 
   const isSchemaValid   = parsed && errors.length === 0
+  // The per-file "missing" state is rendered by the FileCheckList children from
+  // videoChecks/audioChecks directly — no separate hasMissing* flag is needed.
   const videosAllFound  = videoChecks !== null && videoChecks.every(c => c.found)
-  const hasMissingVids  = videoChecks !== null && videoChecks.some(c => !c.found)
   const audiosAllFound  = audioChecks !== null && audioChecks.every(c => c.found)
-  const hasMissingAudio = audioChecks !== null && audioChecks.some(c => !c.found)
   const canImport       = isSchemaValid
     && !checkingVids && !checkingAudio
     && (videosAllFound || videoChecks?.length === 0 || videoOverride)

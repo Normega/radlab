@@ -67,8 +67,10 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
   const [syncScore,    setSyncScore]    = useState(0);
   const [showHint,     setShowHint]     = useState(false);
   const [breathIndex,  setBreathIndex]  = useState(0);
-  const [trialCount,   setTrialCount]   = useState(0);
-  const [sessionScore, setSessionScore] = useState(0);
+  // Values are read from trialCountRef / sessionScoreRef below (the async trial
+  // loop needs synchronous reads); these setters exist only to trigger a render.
+  const [, setTrialCount]   = useState(0);
+  const [, setSessionScore] = useState(0);
 
   // ── Profile + avatar ──────────────────────────────────────────────────
   // undefined = still loading; null = loaded, no row found; object = loaded
@@ -99,14 +101,13 @@ export default function EbbAndFlow({ session, onSessionComplete }) {
   const syncScoreRef       = useRef(0);
 
   // ── Hooks ─────────────────────────────────────────────────────────────
-  const { getPhase, startBreath, reset: resetBreath } = useBreathCycle();
+  const { getPhase, startBreath } = useBreathCycle();
   const {
-    staircases,
     getNextStimForKey, recordResponse,
     getMostUncertainStaircase, allConverged,
-    getThresholdEstimate, getSD, serialize,
+    getSD, serialize,
   } = useQuestStaircases(profile?.ebb_flow_quest_state);
-  const { onPress: rawPress, onRelease: rawRelease, computeBreathSyncScore } = useButtonSync(getPhase);
+  const { onPress: rawPress, onRelease: rawRelease } = useButtonSync(getPhase);
 
   // ── Load profile ──────────────────────────────────────────────────────
   useEffect(() => {

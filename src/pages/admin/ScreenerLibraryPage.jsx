@@ -63,7 +63,6 @@ export default function ScreenerLibraryPage() {
               supabaseClient={supabase}
               previewMode={true}
               onPass={() => setPreviewScreener(null)}
-              onFail={() => setPreviewScreener(null)}
             />
           </div>
         </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, Link } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   ReactFlow, Background, Controls,
@@ -482,7 +482,6 @@ const P = {
 
 export default function ExperimentBuilder() {
   const { id } = useParams()
-  const navigate  = useNavigate()
   const qc        = useQueryClient()
 
   const [study,          setStudy]         = useState(null)

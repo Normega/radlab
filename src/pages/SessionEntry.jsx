@@ -132,7 +132,7 @@ export default function SessionEntry() {
     if (data.error === 'revoked') { setState('revoked');   return }
     if (data.error)               { setState('not_found'); return }
 
-    const { link, schedule, study, enrollment } = data
+    const { link, schedule, study } = data
 
     if (link.status === 'revoked')              { setState('revoked');   return }
     if (link.status === 'used' || link.status === 'completed') {
@@ -254,10 +254,6 @@ export default function SessionEntry() {
 
   async function handleScreenerPass() {
     await proceedAfterScreener(fullDataRef.current)
-  }
-
-  function handleScreenerFail() {
-    setState('screener_blocked')
   }
 
   // Which platform recruited this participant — 'sona' | 'prolific' | null.
@@ -424,7 +420,6 @@ export default function SessionEntry() {
           participant={{ id: screenerSpec.participantId }}
           supabaseClient={sb}
           onPass={handleScreenerPass}
-          onFail={handleScreenerFail}
         />
       </div>
     )

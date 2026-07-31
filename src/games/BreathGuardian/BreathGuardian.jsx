@@ -291,7 +291,7 @@ export default function BreathGuardian({ session }) {
   const [progress, setProgress] = useState(0);
   const [timeLeft, setTimeLeft] = useState(FREE_SECONDS);
   const [stats, setStats] = useState(null);
-  const [score, setScore] = useState(0);
+  const [, setScore] = useState(0); // value read from scoreRef; setter re-renders
   const [helped, setHelped] = useState(0);
   const [blocked, setBlocked] = useState(0);
   const [health, setHealth] = useState(100); // drives grossness only

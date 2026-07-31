@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 
-export default function DebriefStep({ enrollment, onComplete, html, isSimMode = false }) {
+export default function DebriefStep({ onComplete, html, isSimMode = false }) {
   // Sim mode: auto-complete after a short delay
   useEffect(() => {
     if (!isSimMode) return

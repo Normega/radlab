@@ -15,7 +15,6 @@ import { BASELINE_BREATH_DURATION_MS } from './constants';
 export function useBreathCycle() {
   const cycleStartRef    = useRef(null);
   const cycleDurationRef = useRef(BASELINE_BREATH_DURATION_MS);
-  const resolversRef     = useRef([]); // pending resolve callbacks
   const timerRef         = useRef(null);
 
   function getPhase() {
