@@ -201,6 +201,7 @@ RULES:
 - The target page is ONE page in the output, with action "replace" if it already has content or "new" if it does not. See the whole-page-rewrite rule above.
 - Keep any existing claim that your source does not contradict, including its in-text attribution. If your source DOES contradict it, keep both and say so, and also record it in "contradictions" — do not silently drop the older claim.
 - You may also output additional NEW pages for concepts or treatments the source introduces that the wiki lacks, but the target page is the point — do not drown it.
+- NEVER output a second page covering the target page's own subject under a different name. If material belongs on the target, put it on the target. A supporting page must be a distinct concept the target links TO — a named theory, method, study or intervention — not a re-titled version of the target. Concretely: filling "research-methods" and also emitting "research-methods-in-psychopathology" is wrong; filling it and also emitting "single-subject-experimental-design" is right.
 - Flag any contradiction with existing wiki content in "contradictions"; do not silently resolve it.
 - Wikilink filenames: lowercase, hyphens for spaces.
 

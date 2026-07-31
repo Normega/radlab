@@ -1,0 +1,48 @@
+# The repo's first CI workflow (2026-07-30). Deliberately small.
+#
+# It runs the test suite and the production build on every push to main and
+# every PR. The suite's newest member is supabase/functions/verifyJwtConfig
+# .test.mjs, which is the reason this file exists: config.toml pins each Edge
+# Function's verify_jwt, but nothing stopped someone adding a function and
+# forgetting the entry — which deploys it JWT-required and silently breaks its
+# caller. That check now fails the build instead.
+#
+# `npm run lint` is NOT here on purpose. It currently reports ~6,000 pre-existing
+# errors, so adding it would make CI red on arrival and therefore ignored, which
+# is worse than no CI. Wire it in once the backlog is cleared.
+#
+# Node 22 is required, not just convenient: the test script uses
+# --experimental-strip-types so materializeSchedule.test.mjs can import the .ts
+# module it exercises. That flag landed in 22.6.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Tests
+        run: npm test
+        env:
+          # Optional. When this secret exists, verifyJwtConfig additionally
+          # compares config.toml against what is actually deployed and fails on
+          # drift. Absent, that one check skips and the offline checks still
+          # run — so CI is useful with or without it.
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Production build
+        run: npm run build

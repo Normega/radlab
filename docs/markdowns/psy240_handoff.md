@@ -1,10 +1,11 @@
 # PSY240 Field Guide — session handoff
 
-> Updated 2026-07-27 (WP2 built; roster decisions taken). Read this **plus**
-> `psy240_wiki_plan.md` (architecture + sequencing) and `psy240_taxonomy.md`
-> (the 123-page catalogue). This file is the *state of play and open threads*;
-> those two are the durable record. If they disagree with this file, they win —
-> this one goes stale fastest.
+> Rewritten 2026-07-31, mid-WP4. Read this **plus** `psy240_wiki_plan.md`
+> (architecture + sequencing), `psy240_taxonomy.md` (the 123-page catalogue) and
+> **`psy240_wp4_runplan.md`** (the ingest run order, module→chapter map, and the
+> sixteen ready-to-paste citations). This file is the *state of play and open
+> threads*; those three are the durable record. If they disagree with this file,
+> they win — this one goes stale fastest.
 
 ---
 
@@ -14,214 +15,188 @@
 |---|---|
 | WP0 decisions | ✔ done |
 | WP1 schema | ✔ done, applied live |
-| **WP3** seed + review path + review UI + `reference` mode | ✔ **done, applied live, exercised on real content** |
-| **WP2** reader UI | ✔ **built 2026-07-27** — verified offline against the live corpus, **not yet click-tested in a browser** |
-| WP4 content sprint | ✘ not started — the critical path to day one. **Run plan: [`psy240_wp4_runplan.md`](./psy240_wp4_runplan.md)** (16 runs in lecture order, 78 pages, ~17 h) |
-| WP5 roster & enrollment | ✘ not started — **the schedule's real risk**; two of its four decisions are now taken (§4) |
+| WP2 reader UI | ✔ **done, click-tested, deployed** — `/academic/fieldguide/wiki` |
+| WP3 seed + review path + review UI + `reference` mode | ✔ done, exercised on real content |
+| **WP4 content sprint** | **▶ in progress — started 2026-07-31.** Module 01 done (paper + 3 reference runs). Next: Modules 02, 03, 15 |
+| WP5 roster & enrollment | ✘ not started. Email path fully configured; **one decision left** (§4) |
 | WP6 student submission | ✘ not started, depends on WP5 |
 | WP7 export mirror | ✘ not started |
 
-`main` was at `b6adf9d` when this was written. Everything described here is
-merged and pushed; nothing is sitting on a branch.
+Everything is merged and pushed to `main`; nothing sits on a branch.
 
-## 2. Live database state (radlab-academic)
+## 2. Live database state (radlab-academic, 2026-07-31)
 
 ```
-57 proposals accepted, 0 pending      44 pages with accepted bodies, all DRAFT
-45 wikilinks, 0 red links             nothing published — no student can see anything
-catalogue: 123 rows — 12 with gaps, 111 with no page yet
+54 live pages with bodies       0 published — no student can see anything yet
+1 archived (abnormal-behavior)  0 proposals pending — review queue is clear
+105 wikilinks, 0 red links      catalogue: 123 rows — 2 complete, 13 gaps, 108 no page yet
+16 ingest jobs                  ~877k input / ~127k output tokens to date
 ```
 
-Nothing has ever been published. Every accept so far has been *accept as draft*,
-which is deliberate: there is no reader UI and no enrolled students, so
-publishing buys nothing and is the harder direction to reverse.
+Nothing has ever been published. Every accept so far is *accept as draft*, which is
+deliberate: no students are enrolled, so publishing buys nothing and is the harder
+direction to reverse.
 
 ## 3. How to work on this
 
-**Use the `supabase-academic` MCP server.** It was registered at user scope on
-2026-07-25 and points at `qldgwpneygvgcvexlduz` (radlab-academic). The plain
-`supabase` server points at the **main** radlab project — querying it for
-`wiki_pages` fails in a way that looks exactly like a failed migration. This
-cost time; don't repeat it.
+**Use the `supabase-academic` MCP server** — it points at `qldgwpneygvgcvexlduz`.
+The plain `supabase` server is the **main** radlab project; querying it for
+`wiki_pages` fails in a way that looks exactly like a failed migration. This has
+cost time twice.
 
-Fallback if the MCP is unavailable: the Supabase Management API query endpoint
-(`POST /v1/projects/qldgwpneygvgcvexlduz/database/query`) with the access token
-from the MCP args in `~/.claude.json`. Note that file breaks PowerShell's
-`ConvertFrom-Json` (duplicate keys) — extract the token by regex. A working
-helper script pattern is in the scratchpad as `acq.ps1`.
+**The MCP's `execute_sql` intermittently returns "Failed to execute SQL query"**
+on perfectly valid SQL. It is transient — retry the same query, optionally with
+`public.`-qualified table names. Do not start debugging the SQL.
 
-**Read-only check scripts** live in `supabase/checks/`:
+**Read-only check scripts** live in `supabase/checks/` (`wp1_verify.sql`,
+`wp1_ingest_smoke.sql`, `wp3_review_state.sql`, and the ⚠ dangerous
+`wp3_reset_review_state.sql`). Email/DNS checks live in `scripts/`:
+`check-email-dns.ps1` and `parse-dmarc-report.py`.
 
-| Script | Answers |
+**Migrations** are applied via MCP `apply_migration` and recorded in
+`supabase/migrations/README.md` with evidence. Add a row when you apply one.
+
+**`npm run dev` cannot run the Field Guide** — the client fetches its Supabase
+config from `GET /api/ingest`, which only exists on Vercel. Use a deploy.
+
+### The write path (all staff-only SECURITY DEFINER functions)
+
+`wiki_pages` has **no authenticated write policies**. Every change goes through one
+of these, each with an internal `is_course_staff()` check:
+
+| Function | Purpose |
 |---|---|
-| `wp1_verify.sql` | is the WP1 schema applied? (7 checks, works either way) |
-| `wp1_ingest_smoke.sql` | did an ingest write shells + proposals correctly, and did the index reach the model? |
-| `wp3_review_state.sql` | where does the review queue stand right now? |
-| `wp3_reset_review_state.sql` | **undo** — puts reviewed proposals back to pending. Ships wrapped in `BEGIN…ROLLBACK`. ⚠ It cannot tell test reviews from real ones; dangerous now that real review has happened. |
+| `review_proposal(version_id, decision, content, publish)` | Accept/reject a *pending* proposal |
+| `edit_page(page_id, content, note)` | Correct an accepted page. History automatic |
+| `rename_page(page_id, new_slug, new_title)` | Move to a different slug; rebinds links, reports what it orphaned |
+| `archive_page(page_id, reason)` / `restore_page(page_id, reason)` | Retire / un-retire. Archived pages leave the model's ingest index too |
+| `unpublish_page(page_id, reason)` | Published → draft |
 
-**Migrations are applied manually** (Management API or SQL editor) and recorded
-in `supabase/migrations/README.md` with evidence. Every migration listed there
-for radlab-academic is applied. Add a row when you apply one.
+To call any of them from a session, impersonate the instructor inside a `DO` block:
+`set_config('request.jwt.claims', json_build_object('sub', <auth_user_id>, 'role','authenticated')::text, true)`.
 
-## 4. Open decisions — these need Norm, and two have external lead time
+## 4. Open decisions
 
-From `psy240_wiki_plan.md` §2a:
+1. ~~Roster ownership~~ — **R3** (radlab-academic owns it; Lecture Lounge verifies
+   via `api/roster-check.js`).
+2. **How PSY240 students avoid Ripple onboarding — the only one still open, and
+   smaller than the plan claims.** Verified 2026-07-30: `/class/:slug` is wrapped in
+   `AuthRoute`, not `ProtectedRoute`, so it never passes through the onboarding
+   chain; and a magic-link signup gets a `profiles` row automatically from the
+   `on_auth_user_created` trigger. **The decision reduces to which `emailRedirectTo`
+   the invite uses.** The genuine main-project work in WP5 is not the onboarding
+   bypass but the R3 **auto-verify** — a roster hit setting `utoronto_verified_at`
+   through `verify_class_email()` or an equivalent SECURITY DEFINER path.
+3. ~~Roster CSV source~~ — **Quercus** (map columns explicitly; match on the
+   normalized key, never a literal string).
+4. ~~Resend~~ — **done.** See §6.
 
-1. ~~**Roster ownership**~~ — **decided 2026-07-27: R3.** radlab-academic is the
-   single course-identity authority; Lecture Lounge verifies against it through
-   `api/roster-check.js` under the service role. PII stays partitioned, one
-   roster serves both systems.
-2. **How PSY240 students avoid Ripple onboarding.** *Still open.* A magic-link
-   user with no `ripples.name` currently routes into `/welcome`. This is the only
-   work in the whole plan that touches the **main** project's auth path.
-   Recommendation on the table: a course-origin flag on the account that
-   `ProtectedRoute` skips onboarding for, rather than a new account tier.
-3. ~~**Where the roster CSV comes from**~~ — **decided 2026-07-27: Quercus
-   export.** Column names differ from ACORN's and the email column may be the
-   institutional alias, so the importer maps columns explicitly and matches on
-   the normalized key, never a literal string.
-4. ~~**Resend domain verification**~~ — **done 2026-07-29, email is unblocked.** The
-   verified Resend domain turned out to be **`mail.radlab.zone`** (not the
-   apex), already fully configured and passing. **Superseded the same day:**
-   Norm moved to the paid tier and added a second verified domain,
-   **`course.radlab.zone`**, so PSY240 sends as `psy240@course.radlab.zone` on
-   a reputation separate from participant mail — a 300-invite blast with
-   bounces can no longer damage deliverability for a running study. Two
-   corrections to
-   the earlier framing: verifying a *new* domain was never the blocker, and a
-   second domain would not have helped anyway — **Resend's sending quota is
-   per account, not per domain**, so only the plan tier addresses a 300-invite
-   day. Norm moved to the paid plan 2026-07-29, which settles it.
+Also open, not blocking: the **CDDR licence variant** (30-second check of the PDF's
+copyright page), and **plan open question 12** — 125 frontmatter relations that never
+reach `wiki_links`. That one bit in practice on 2026-07-31: archiving a page needed
+six references retargeted across five pages, and four were frontmatter-only and so
+invisible to any link-based check.
 
-   **Configured and verified the same day** (values read back over the
-   Management API, see website.md §11): Custom SMTP on radlab-academic
-   (`smtp.resend.com:465`, user `resend`, sender `accounts@course.radlab.zone`
-   / "RADlab Courses" — deliberately course-*neutral*, because that field is
-   project-wide and this project hosts many courses; per-course sender identity
-   belongs on the invite Edge Function, composed from `courses.code`).
-   `mailer_autoconfirm` stays false, so clicking is what enrols.
+## 5. WP4 — exactly where the sprint is
 
-   Three rate limits raised from their defaults, all per hour:
-   `rate_limit_email_sent` 2 → 300, `rate_limit_otp` 30 → 300,
-   `rate_limit_verify` 30 → 300. **The last two are the week-1 ones**, and the
-   reason is the QR path: ~200 students scanning in one lecture would have hit
-   `rate_limit_otp` after 30 sends and `rate_limit_verify` after 30 clicks,
-   failing as generic errors on their phones mid-class. `rate_limit_verify`
-   cannot be engineered around — every click verifies a token through Supabase
-   auth however the email was sent — so raising it was mandatory, not optional.
+**Run plan: `psy240_wp4_runplan.md`.** All 16 module PDFs are split out in
+`F:\gits\Handbook\Resources\` as `BridleyDaffin-ModuleNN-Title.pdf`.
 
-   Still untested: whether mail actually *flows*. The settings being right and
-   Resend accepting the credential are different claims; a password reset sent
-   from radlab-academic is the cheapest end-to-end proof. Also unchanged:
-   `mailer_otp_exp` is 3600, so links die after an hour — fine for the QR path,
-   tight for a bulk invite a student opens after class.
+**Done:** Module 01 — one paper run (6 supporting pages) and three reference runs
+filling `what-is-abnormal`, `historical-traditions`, `research-methods`. Module 04
+(mood) was done earlier.
 
-Also open but not blocking: the **CDDR licence variant** (BY-NC-SA vs BY-NC-ND
-3.0 IGO). A 30-second check of the PDF's copyright page. Doesn't gate anything —
-under either variant it can be read, cited and paraphrased, which is already the
-pipeline's invariant.
+**Next:** Modules 02, 03, 15 in **reference** mode, then the disorder chapters in
+**paper** mode (runs 5–15), Module 16 last.
 
-## 5. What the live testing established
+**Mode is per module and getting it wrong is expensive.** Reference mode only for
+the foundations modules, because foundations slugs are *our invention* and paper
+mode will never hit them — proven when Module 01's paper run produced six good pages
+and zero foundations. Disorder chapters stay paper mode: disorder names are canonical
+so the slugs converge, one paper run yields ~18 pages where reference mode would need
+one run per target (Module 13 alone would be 11 runs), and reference mode
+deliberately suppresses the supporting concept/treatment/debate pages.
 
-These were learned by running real content through, not by reasoning:
+**Triage between every run.** `api/ingest.js` builds the model's index from pages
+with *accepted content only*, so an unreviewed page is invisible to the next run and
+gets proposed afresh. Triage (accept-as-draft, ~5 min) is not the review; the real
+~17-hour review happens later in the reader, where `edit_page` fixes things in place.
 
-- **Both ingest modes have a job.** Paper mode on a *textbook module* produced 7
-  disorder pages plus 11 supporting pages in one pass — cheap breadth, a whole
-  DSM chapter at a time. Reference mode on a *single page* produced one page at
-  2.5× the depth with full provenance and every gap closed, at a quarter of the
-  output tokens. The WP4 shape that follows: ~15 module runs in paper mode to lay
-  down chapters, then targeted reference runs on Tier A pages that still declare
-  gaps. `reference_worklist` tells you which.
-- **The gap mechanism works and discriminates.** Pages declare their own missing
-  sections; `persistent-depressive-disorder` came back needing only `etiology`
-  while treatment-only mentions correctly needed four sections. It is not
-  emitting a boilerplate list.
-- **Slug convention holds across independent sources.** Both `type='disorder'`
-  pages the model invented matched hand-written catalogue slugs exactly. No drift
-  at 44 pages.
-- **0 red links across 45.** Every wikilink resolves. **But** (found 2026-07-27
-  while building the reader) that graph is only the *body* links: a further **125
-  relations are declared in frontmatter and none of them reach `wiki_links`**,
-  because `sync_wiki_links()` reads the body only. 102 point at pages that exist.
-  So connectedness is understated roughly 3×, and the red-link count that
-  taxonomy §5's Tier B argument leans on is measured on a partial graph. Plan
-  open question 12.
-- ~~**Some pages carry the disorder skeleton more than once.**~~ — **all
-  resolved 2026-07-30.** `major-depressive-disorder` had the six sections three
-  times and `persistent-depressive-disorder` twice, one copy per accepted
-  `update`. Root cause was two prompt rules contradicting each other (see the
-  WP2 follow-up in the plan), now fixed, so it won't recur across WP4's 46
-  Tier A pages. Both pages merged through the new `edit_page()`: MDD 15,825 →
-  11,032 chars, and wiki-wide links went **45 → 71 with 0 red** because the
-  merge linked concepts the prose already named. Two things worth knowing from
-  doing it: copy 3 of MDD already contained copy 1 verbatim, so the model's
-  third pass had effectively integrated it — and PDD's second copy was
-  genuinely additive (the criteria structure and the DSM-IV prevalence figures),
-  so "drop the duplicates" would have lost real content. Read the copies before
-  assuming which one wins.
+**Citations:** paste from run plan §6 — sixteen ready-made strings. Don't retype.
 
-## 6. Gotchas that cost time this session
+## 6. Infrastructure that is done and shouldn't be re-litigated
 
-- **`update` proposals are DELTAS.** The prompt asks for "only the new
-  information to merge". Accepting one verbatim replaces the page with the
-  addendum. Now guarded server-side in `review_proposal`, pre-merged in the UI,
-  and the queue groups by page so a `new` and its `update` sit together. Two
-  pages were published as fragments before this was caught.
-- **Views default to security-definer in Postgres.** Both views shipped without
-  `security_invoker`, so any authenticated account with **no enrollment** could
-  read all 26 unreviewed proposals and the whole catalogue. Convention now:
-  every view over a roster-gated table sets `security_invoker`. The
-  narrow-privileged-read pattern here is a SECURITY DEFINER *function* with a
-  membership check, never a view.
-- **Attribution must not depend on the model.** For CC BY-NC-SA sources it is a
-  licence condition. It is now derived from the ingest record
-  (`wiki_page_provenance`), and the portal requires a citation at upload.
-- **DOI slugs are opaque.** Five of the nineteen DSM chapter slugs are not the
-  title slugified — three truncations, one retained hyphen, and
-  `x14_Gender_Dysophoria`, a misspelling in APA's own DOI. Harvest them, never
-  compute them. `wp1_verify.sql` check 5 guards this.
-- **The Management API returns only the last statement's result set.** Multi-step
-  SQL tests must capture intermediate state into a temp table or they silently
-  prove nothing. A volatile function's writes are also invisible to other
-  branches of the same `UNION ALL` statement.
-- **`npm run dev` cannot run the Field Guide.** The client fetches its Supabase
-  config from `GET /api/ingest`, which only exists on Vercel. Use a deploy.
+- **Model: `claude-opus-5`** (moved from Opus 4.8, 2026-07-31; same $5/$25). A
+  refusal retries once on `claude-opus-4-8` (`FALLBACK_MODEL`) — this syllabus is full
+  of material that can false-positive a safety classifier (suicide, substance use,
+  paraphilias, gender dysphoria). Client-side retry, deliberately not the server-side
+  `fallbacks` beta.
+- **Email:** radlab-academic sends via Resend SMTP. Verified domains are
+  `mail.radlab.zone` (platform) and `course.radlab.zone` (PSY240). Sender is
+  course-*neutral* (`accounts@course.radlab.zone`) because Supabase allows one sender
+  per project; per-course identity belongs on the invite Edge Function.
+  `rate_limit_email_sent`/`otp`/`verify` all raised to 300/hour — the latter two are
+  the week-1 QR-burst limits, not the invite send. **Never exercised with a real
+  send.**
+- **Prompt caching: investigated and declined** (numbers in run plan §5). Extracted
+  mode is the bigger, free lever on prose modules. Recorded there: the PDF already
+  sits before the volatile text in the request, so enabling caching later is a
+  one-line `cache_control` with no reordering.
 
-## 7. Suggested next move
+## 7. What the live work established
 
-**WP4, the content sprint** — the reader now exists, so reviewing a page means
-reading a rendered page with working links instead of markdown in a textarea,
-which was the argument for building WP2 first. Shape from §5: ~15 module runs in
-paper mode to lay down chapters, then targeted reference runs on Tier A pages
-that still declare gaps (`reference_worklist` says which).
+- **Both ingest modes have a job**, and the split is by *slug canonicality*, not by
+  source type. See §5.
+- **Reference mode duplicates its own target.** Each Module 01 reference run produced
+  its target *plus* a re-titled version of it (`history-of-mental-illness` alongside
+  `historical-traditions`; `research-methods-in-psychopathology` alongside
+  `research-methods`). Both rejected. **Prompt fixed 2026-07-31** — watch whether the
+  fix holds on Module 02.
+- **Gaps are derived from the page body**, not frontmatter (two migrations,
+  2026-07-30). A section is a gap if it carries a `> **Needs research:**` marker or
+  has no prose. This matters because `reference_worklist` reads it and that aims WP4.
+- **Repeated skeletons are fixed at the source.** MDD once carried the six-section
+  disorder skeleton three times, one copy per accepted `update`. Two prompt rules
+  contradicted each other; paper mode now scopes the skeleton to `action: new`, and
+  reference mode returns a whole page with `action: 'replace'`.
+- **0 red links across 105** — but that graph is body links only; frontmatter
+  relations are not in it (§4).
+- **Tier A is now 53, Tier B 45** — all ten personality disorders promoted
+  2026-07-31. Fall scope: 78 generated pages, ~17 review hours.
 
-Two things to clear before or during it:
+## 8. Gotchas that cost time
 
-- ~~Click-test the reader~~ — **done 2026-07-30, works.** Which is how the
-  duplicated skeletons got found.
-- ~~An edit path~~ — **done 2026-07-30**: `edit_page(page_id, content, note)`
-  plus an **Edit page** button on the reader for staff. History is automatic
-  (the snapshot trigger keeps the previous body), blanking and no-ops are
-  refused, and saving re-derives gaps and links.
-- ~~The two repeated-skeleton pages~~ — **merged 2026-07-30** (§5). Both want an
-  instructor read for voice rather than for correctness: the merges preserved
-  wording verbatim and only cut duplication, so nothing was rewritten, but MDD's
-  Treatment section now carries a textbook paragraph and a psychodynamic
-  evidence block from different sources side by side.
+- **`update` proposals are DELTAS** — accepting one verbatim replaces the page with
+  the addendum. Guarded server-side, pre-merged in the UI.
+- **Views default to security-definer in Postgres.** Every view over a roster-gated
+  table must set `security_invoker`. Narrow privileged reads are SECURITY DEFINER
+  *functions* with a membership check, never views.
+- **`wiki_pages_bind_links()` only binds, never unbinds** — which is why
+  `rename_page` cleans up after itself and reports orphans. `link_disorder_page()`
+  has the same gap.
+- **Attribution must not depend on the model.** Derived from the ingest record via
+  `wiki_page_provenance`; citations are correctable after the fact at the job, and
+  every page built from it updates itself.
+- **DOI slugs are opaque** — harvest, never compute. `wp1_verify.sql` check 5 guards it.
+- **The Management API returns only the last statement's result set**, and a volatile
+  function's writes are invisible to other branches of the same statement. Multi-step
+  SQL tests need separate statements, or a self-aborting `DO` block that `raise`s a
+  summary (the pattern used throughout this project's verification).
 
-**WP5 is still the schedule's real risk**, but its external dependency is gone:
-three of its four decisions are settled and the whole email path is configured
-(§4). **The Ripple-onboarding collision is now the only open one** — and it is
-the item that touches the *main* project's auth path rather than adding to the
-academic partition, so it wants deciding before WP5 starts rather than during.
+## 9. Suggested next move
 
-One loose end, now with a proposed answer: the 18 pages from the Module 4
-paper-mode run predate the attribution fix, so they carry no `sources:`
-frontmatter of their own. They *are* attributed through `wiki_page_provenance`,
-so nothing is unattributed. **Proposal (2026-07-27): leave them, and have WP7's
-exporter synthesize `sources:` from provenance at export time** rather than
-regenerating pages. The database stays the single source of truth for
-attribution, every exported page gets a correct block regardless of what the
-model emitted, and no page has to be rewritten to satisfy a file format. The
-reader already takes this line — it shows *Built from* out of provenance, not
-out of frontmatter.
+1. **Run Module 02 in reference mode** against `models-of-psychopathology` and
+   `integrative-model`, and check whether the duplicate-sibling prompt fix held.
+2. Then Module 03 (`clinical-assessment`, `diagnosis-and-classification`) and
+   Module 15 (`law-and-ethics`).
+3. Then the disorder chapters in paper mode, lecture order, Module 16 last.
+4. **Before the first publish**, decide open question 12 — whether frontmatter
+   relations should join the link graph. It changes what "0 red links" means.
+5. WP5 remains the schedule's real risk. Its external dependency is gone; the
+   Ripple/`emailRedirectTo` decision and the R3 auto-verify are what's left.
+
+One loose end: the 18 pages from the Module 04 paper run predate the attribution fix
+and carry no `sources:` frontmatter of their own. They *are* attributed through
+`wiki_page_provenance`. **Proposal: leave them, and have WP7's exporter synthesize
+`sources:` from provenance at export time** — the database stays the single source of
+truth and no page needs rewriting. The reader already takes this line.
