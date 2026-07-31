@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import RippleAvatar from '../ripple/RippleAvatar'
 import { useAvatarConfig } from '../hooks/useAvatarConfig'
+import { useDisplayName } from '../hooks/useDisplayName'
 import ButtonNav from './ui/ButtonNav'
 import PrimaryCTA from './ui/PrimaryCTA'
 import SecondaryCTA from './ui/SecondaryCTA'
@@ -48,11 +49,10 @@ export default function Nav({ session }) {
   const { data: profile }    = useProfile(userId)
   const isAdmin = profile?.role === 'lab' || profile?.super_admin === true
 
-  const initial = (
-    session?.user?.user_metadata?.display_name?.[0] ||
-    session?.user?.email?.[0] ||
-    '?'
-  ).toUpperCase()
+  // Same name the Dashboard greets you by — both read profiles.display_name
+  // through the shared hook, so the initial can't drift from the greeting.
+  const { displayName } = useDisplayName(session?.user, '')
+  const initial = (displayName?.[0] || session?.user?.email?.[0] || '?').toUpperCase()
 
   async function handleSignOut() {
     setOpen(false)

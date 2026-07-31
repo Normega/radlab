@@ -190,7 +190,7 @@ radlab/
 
 - **Account name**: RADlab (linked to GitHub, PI: Norman Farb)
 - **Auth**: Supabase Auth (email/password)
-- **`display_name`** stored in `user_metadata` at signup, and copied into `profiles.display_name` by `handle_new_user` at the same moment — **two stores, no ongoing sync**, so anything that renames a user must write both (§12f)
+- **`display_name`** — **`profiles.display_name` is the source of truth**; every client reader goes through `useDisplayName` and every server reader already did (§12f). `user_metadata.display_name` is the *seed*: set at signup (and by the participant-minting functions), copied into `profiles` once by `handle_new_user`, thereafter only a no-round-trip placeholder while the query is in flight. Do not read it as truth.
 - **Client library**: `supabase-js` via `src/lib/supabase.js`
 - **Keys**: `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` in `.env.local` (local) and Vercel env vars (production)
 - **Email confirmation**: disable for development in Supabase dashboard → Authentication → Email
@@ -901,18 +901,18 @@ Recency-weighted PA and NA (exponential decay, half-life scaled to the window: 0
 
 ---
 
-## 12f. Renaming yourself — and the two places your name is stored (2026-07-31)
+## 12f. Renaming yourself, and collapsing the two name stores (2026-07-31)
 
 Norm, on the dashboard: *"why does my dashboard say 'hey normega' if my ripple's name is now 'Barnes'?"* Those are two different names, both correct, and the question exposed that only one of them could be changed.
 
-**Your name is stored twice.**
+**Your name was stored twice** — this is the state the question found, since undone by the collapse below. Read it as the diagnosis, not as current architecture.
 
-| Store | Written by | Read by |
+| Store | Written by | Read by (then) |
 |---|---|---|
 | `auth.users.raw_user_meta_data ->> 'display_name'` | `Signup.jsx` (`data: { display_name }`) | Dashboard greeting (`Dashboard.jsx`), `Nav`'s avatar initial, `AdminLayout` |
-| `profiles.display_name` | `handle_new_user` trigger, **once, at signup** | `/profile`, and every admin list — participants, study detail, user admin, Liliana credit |
+| `profiles.display_name` | `handle_new_user` trigger, **once, at signup** | `/profile`, every admin list — participants, study detail, user admin, Liliana credit — and, server-side, `send_message` + `processAdherenceWithdrawal` |
 
-`handle_new_user` copies metadata → `profiles` on INSERT and there is **no ongoing sync in either direction**. The two have simply never diverged, because until now nothing could change either one after signup.
+`handle_new_user` copies metadata → `profiles` on INSERT and there is **no ongoing sync in either direction**. The two had simply never diverged, because until now nothing could change either one after signup.
 
 Distinct from both: **`ripples.name`** — the Ripple's own name, renamed on `/ripple` (§12b). The dashboard greeting has never read it, and shouldn't; "Hey, Normega" is you, "Barnes feels calm" is your Ripple.
 
@@ -920,7 +920,7 @@ Distinct from both: **`ripples.name`** — the Ripple's own name, renamed on `/r
 
 `/profile`'s identity card gets a **Rename** affordance, deliberately the same shape and behaviour as `/ripple`'s (Enter saves, Escape cancels, ghost buttons) so renaming yourself and renaming your Ripple are not two different interactions.
 
-**It writes both stores.** `profiles.display_name` first, then `supabase.auth.updateUser({ data: { display_name } })`. The second write is not optional bookkeeping: it emits `USER_UPDATED`, which `App.jsx`'s `onAuthStateChange` turns into a fresh `session` prop, so the Dashboard greeting and the Nav initial change **without a reload**. Writing only `profiles` would leave the greeting stale — reproducing the exact mismatch that prompted this. If the auth write fails after the DB write succeeds the UI says so ("Saved, but the greeting may lag until you sign in again") rather than reporting a clean save.
+**It writes `profiles.display_name`**, and invalidates the shared `['display-name', userId]` key — which updates the greeting, the Nav initial and the admin sidebar together, without a reload (see the collapse below).
 
 **`UPDATE`, not `upsert`.** `profiles` has no INSERT policy for `authenticated` — the row is the signup trigger's — so an upsert would fail for anyone it *did* have to insert for. And since `.update()` matching zero rows returns success, the call `.select()`s the row back and treats an empty result as failure. Same trap as the `ripples` upsert note in §12b, opposite resolution, because the two tables get their rows from different places.
 
@@ -930,9 +930,27 @@ Distinct from both: **`ripples.name`** — the Ripple's own name, renamed on `/r
 
 **Consequence worth knowing**: `profiles.display_name` is what lab members see in `ParticipantsAdminTab`, `StudyDetail`, `UserAdminPage` and `LilianaCreditPage`. A participant renaming themselves mid-study changes those lists. Identification survives — all four key on `external_id` / `sona_id` first and fall back to the name — but credit-granting is the one place a surprise rename could cost a minute. Names are not unique and never were.
 
+### The collapse — `useDisplayName` (same day)
+
+Shipping the rename made the duplication a live hazard rather than a dormant one, so Norm called for collapsing it. **`profiles.display_name` is now the only store anything reads**, through `src/hooks/useDisplayName.js` — same shape as `useAvatarConfig`, same reason (one React Query key, so every consumer shares a cache entry and one invalidation updates all of them).
+
+Converted: the Dashboard greeting, `Nav`'s avatar initial, `AdminLayout`'s sidebar name, and `/profile` itself. That is every client reader there was.
+
+**Server-side already agreed** — `send_message` and `processAdherenceWithdrawal` both address participants from `profiles.display_name`. So before this, a reminder email and the dashboard could greet the same person by different names. That was reachable, not theoretical, the moment anything edited either store.
+
+**`user_metadata` survives as the seed, not a store.** It is how a name reaches `handle_new_user` at signup, and how `create_participant` / `create_anonymous_participant` / `auto-enroll` name the accounts they mint — it cannot be removed. The hook's resolution order is `profiles.display_name` → `user_metadata` → email local-part → caller's fallback, with metadata second **because it is readable off the session with no round trip**: it renders instantly while the query is in flight, where falling straight to the email would flash "Hey, norman." before settling on the real name. The rename still writes it afterwards, purely to keep that seed from going stale — a failed metadata write is now a logged warning, not a failed save, because nothing reads it as truth.
+
+### The Ripple portrait is gone from `/profile`
+
+Norm, same day: showing the Ripple's face beside *your* name and then printing a note explaining that the two are different is a confusion the page created and then apologised for. The portrait is removed, and with it the identity card that held it — what remained would have been a second copy of the name, a role badge the Account table already states as "Account type", and that note. The name is the page title now, with **Rename** beside it and the role badge under it. The Ripple keeps its own page.
+
 ### Verified
 
-Build clean; `ProfilePage` still emits its own lazy chunk. **Not verified live**: `/profile` is auth-gated and the save path has not been exercised under a real signed-in session — the round trip (both writes landing, the greeting flipping without a reload) is reviewed but unclicked.
+Build clean; `ProfilePage` still emits its own lazy chunk and `useDisplayName` its own shared one. Lint clean on every changed file (the three errors `eslint` reports across them are pre-existing — `Nav`'s `setState`-in-effect and `Dashboard`'s `Date.now` purity).
+
+The page was exercised through **temporary** `/dev/profile-preview` scaffolding against a faked session (the §12b technique; scaffolding reverted, `App.jsx` restored from the index): no Ripple portrait in the body — the only remaining SVG is `Nav`'s own account avatar — **Rename** swaps to an input pre-filled with the current name plus Save/Cancel, and there is no horizontal overflow at 375 px. Screenshots time out in this worktree, so that is structural confirmation, not visual.
+
+**Still not verified live**: the save itself. `/profile` is auth-gated, so the write landing and the greeting flipping without a reload remain reviewed but unclicked.
 
 ---
 

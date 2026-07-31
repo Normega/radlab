@@ -8,6 +8,7 @@ import InsightsWidget from '../dashboard/InsightsWidget'
 import { modeLabel } from '../dashboard/metrics'
 import RippleAvatar from '../ripple/RippleAvatar'
 import { useAvatarConfig } from '../hooks/useAvatarConfig'
+import { useDisplayName } from '../hooks/useDisplayName'
 import { EMOTIONS, LABEL_TO_ID } from '../games/StillWater/constants'
 import { greetingFor } from '../ripple/greetings'
 
@@ -16,7 +17,9 @@ const todayLong = () =>
 
 export default function Dashboard({ session }) {
   const user        = session?.user
-  const displayName = user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'researcher'
+  // Reads profiles.display_name, not user_metadata — see useDisplayName for
+  // why the greeting used to lag behind a rename.
+  const { displayName } = useDisplayName(user)
 
   // handleSignOut + useNavigate removed 2026-07-30: dead since the account-menu
   // IA rework moved signing out into the avatar dropdown. Nothing rendered it.

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { useDisplayName } from '../hooks/useDisplayName'
 
 const NAV_SECTIONS = [
   {
@@ -58,10 +59,7 @@ function Sidebar({ session, superAdmin, onClose }) {
       return next
     })
   }
-  const displayName =
-    session?.user?.user_metadata?.display_name ||
-    session?.user?.email?.split('@')[0] ||
-    'Lab member'
+  const { displayName } = useDisplayName(session?.user, 'Lab member')
 
   async function handleSignOut() {
     await supabase.auth.signOut()

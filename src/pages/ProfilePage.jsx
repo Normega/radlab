@@ -1,10 +1,8 @@
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Nav from '../components/Nav'
-import RippleAvatar from '../ripple/RippleAvatar'
-import { useAvatarConfig } from '../hooks/useAvatarConfig'
+import { useDisplayName } from '../hooks/useDisplayName'
 
 // ── ProfilePage (/profile) ────────────────────────────────────────────────
 // Who you are on the platform and what you've earned. Narrowed 2026-07-30
@@ -12,6 +10,11 @@ import { useAvatarConfig } from '../hooks/useAvatarConfig'
 // /ripple, every prompt and reminder control moved to /settings, and the
 // account facts below moved UP from the Dashboard's old `// Account` block,
 // which is gone.
+//
+// No Ripple portrait here, deliberately (Norm, 2026-07-31): showing the
+// Ripple's face beside *your* name and then explaining that the two are
+// different people is a confusion the page created and then apologised for.
+// The Ripple has its own page. This one is about you.
 
 const UNLOCK_MILESTONES = [
   { pts: 50,  label: 'Ears & species',  icon: '👂' },
@@ -29,23 +32,26 @@ const ROLE_META = {
 }
 
 export default function ProfilePage({ session }) {
-  const user          = session?.user
-  const userId        = user?.id
-  const emailFallback = user?.email?.split('@')[0] || 'researcher'
-  const queryClient   = useQueryClient()
+  const user        = session?.user
+  const userId      = user?.id
+  const queryClient = useQueryClient()
 
   const [editing,   setEditing]   = useState(false)
   const [nameInput, setNameInput] = useState('')
   const [saving,    setSaving]    = useState(false)
   const [saveError, setSaveError] = useState(null)
 
-  const { data: avatarData } = useAvatarConfig(userId)
+  // `displayName` is what to render (with fallbacks); `storedName` is the raw
+  // profiles.display_name — null when never set — which is what the rename
+  // form must edit and compare against, so an unnamed account doesn't come
+  // pre-filled with its own email local-part.
+  const { displayName, data: storedName } = useDisplayName(user)
 
   const { data: profile } = useQuery({
     queryKey: ['profile', userId],
     queryFn: async () => {
       const { data } = await supabase.from('profiles')
-        .select('display_name, role, points').eq('id', userId).maybeSingle()
+        .select('role, points').eq('id', userId).maybeSingle()
       return data
     },
     enabled: !!userId,
@@ -61,20 +67,27 @@ export default function ProfilePage({ session }) {
     enabled: !!userId,
   })
 
-  const displayName = profile?.display_name || user?.user_metadata?.display_name || emailFallback
-  const role        = profile?.role || 'public'
+  const role     = profile?.role || 'public'
+  const points   = profile?.points ?? 0
+  const roleMeta = ROLE_META[role] || ROLE_META.public
 
-  // Your name is stored TWICE: profiles.display_name (read here, and by every
-  // admin list) and auth user_metadata.display_name (read by the Dashboard
-  // greeting and Nav's avatar initial). `handle_new_user` copies metadata →
-  // profiles once at signup and never again, so a rename must write both or
-  // the Dashboard keeps greeting you by the old name (Norm hit exactly this,
-  // 2026-07-31). UPDATE, not upsert: profiles has no INSERT policy for
-  // `authenticated` — the row is created by the signup trigger — and .update()
-  // matching zero rows reports success, so .select() is what proves it landed.
+  // `profiles.display_name` is the one store anything reads (useDisplayName),
+  // so this is the only write that matters — invalidating the shared key
+  // updates the greeting, the Nav initial and the admin sidebar at once.
+  //
+  // UPDATE, not upsert: profiles has no INSERT policy for `authenticated` (the
+  // row comes from the signup trigger), and .update() matching zero rows
+  // reports success — so .select() is what proves it landed.
+  //
+  // The metadata write that follows is *not* a second store being kept in
+  // sync. It refreshes the signup seed, which useDisplayName renders off the
+  // session while the query is in flight; leaving it stale would flash the old
+  // name for a beat on every cold load — indistinguishable, to anyone
+  // watching, from the bug this all started with. Nothing reads it as truth,
+  // so failing it is a soft warning rather than a failed save.
   async function saveName() {
     const name = nameInput.trim()
-    if (!name || name === profile?.display_name) { setEditing(false); return }
+    if (!name || name === storedName) { setEditing(false); return }
     setSaving(true)
 
     const { data: rows, error: dbErr } = await supabase.from('profiles')
@@ -87,18 +100,15 @@ export default function ProfilePage({ session }) {
       return
     }
 
-    // Emits USER_UPDATED, which App's onAuthStateChange turns into a fresh
-    // `session` prop — so the Dashboard greeting changes without a reload.
-    const { error: authErr } = await supabase.auth.updateUser({ data: { display_name: name } })
-    if (authErr) console.error('auth updateUser display_name:', authErr)
+    queryClient.invalidateQueries({ queryKey: ['display-name', userId] })
 
-    queryClient.invalidateQueries({ queryKey: ['profile', userId] })
-    setSaveError(authErr ? 'Saved, but the greeting may lag until you sign in again.' : null)
+    const { error: authErr } = await supabase.auth.updateUser({ data: { display_name: name } })
+    if (authErr) console.error('auth updateUser display_name seed:', authErr)
+
+    setSaveError(null)
     setEditing(false)
     setSaving(false)
   }
-  const points      = profile?.points ?? 0
-  const roleMeta    = ROLE_META[role] || ROLE_META.public
 
   // Progress bar spans the gap between the milestone just passed and the next.
   const nextIdx       = UNLOCK_MILESTONES.findIndex(m => m.pts > points)
@@ -120,56 +130,43 @@ export default function ProfilePage({ session }) {
       <div style={S.wrap}>
 
         <p style={S.eyebrow}>Profile</p>
-        <h1 style={S.title}>{displayName}</h1>
 
-        {/* ── Identity ──────────────────────────────────────────── */}
-        <div style={S.identityCard}>
-          <RippleAvatar
-            skinColor={avatarData?.skin_color || '#FDBCB4'}
-            eyeColor={avatarData?.eye_color   || '#4A90D9'}
-            species={avatarData?.species      ?? 'human'}
-            hairStyle={avatarData?.hair_style ?? 'none'}
-            hairColor={avatarData?.hair_color ?? '#784421'}
-            size={96}
-          />
-          <div style={S.identitySide}>
-            {editing ? (
-              <div style={S.nameRow}>
-                <input
-                  autoFocus
-                  value={nameInput}
-                  onChange={e => setNameInput(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter') saveName(); if (e.key === 'Escape') setEditing(false) }}
-                  style={S.nameInput}
-                  maxLength={60}
-                  aria-label="Your name"
-                />
-                <button onClick={saveName} disabled={saving} style={S.btnSmall}>{saving ? '…' : 'Save'}</button>
-                <button onClick={() => setEditing(false)} style={S.btnGhost}>Cancel</button>
-              </div>
-            ) : (
-              <div style={S.nameRow}>
-                <span style={S.nameVal}>{displayName}</span>
-                <button
-                  onClick={() => { setNameInput(profile?.display_name ?? displayName); setEditing(true); setSaveError(null) }}
-                  style={S.btnGhost}
-                >
-                  Rename
-                </button>
-              </div>
-            )}
-
-            <span style={{ ...S.roleBadge, background: roleMeta.bg, color: roleMeta.color }}>
-              {roleMeta.label}
-            </span>
-            <p style={S.identityNote}>
-              This is what the platform calls <em>you</em>. Your Ripple&rsquo;s own
-              name and face live on <Link to="/ripple" style={S.inlineLink}>My Ripple</Link>.
-            </p>
-
-            {saveError && <p style={S.error}>{saveError}</p>}
+        {/* Identity is the page title itself now. With the Ripple portrait
+            gone there was nothing left to anchor a separate identity card —
+            it would have held a second copy of this name, a role badge that
+            the Account table states as "Account type", and a note explaining
+            a juxtaposition that no longer exists. */}
+        {editing ? (
+          <div style={S.nameRow}>
+            <input
+              autoFocus
+              value={nameInput}
+              onChange={e => setNameInput(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') saveName(); if (e.key === 'Escape') setEditing(false) }}
+              style={S.nameInput}
+              maxLength={60}
+              aria-label="Your name"
+            />
+            <button onClick={saveName} disabled={saving} style={S.btnSmall}>{saving ? '…' : 'Save'}</button>
+            <button onClick={() => setEditing(false)} style={S.btnGhost}>Cancel</button>
           </div>
-        </div>
+        ) : (
+          <div style={S.nameRow}>
+            <h1 style={S.title}>{displayName}</h1>
+            <button
+              onClick={() => { setNameInput(storedName ?? displayName); setEditing(true); setSaveError(null) }}
+              style={S.btnGhost}
+            >
+              Rename
+            </button>
+          </div>
+        )}
+
+        <span style={{ ...S.roleBadge, background: roleMeta.bg, color: roleMeta.color }}>
+          {roleMeta.label}
+        </span>
+
+        {saveError && <p style={S.error}>{saveError}</p>}
 
         {/* ── Account ───────────────────────────────────────────── */}
         <p style={S.secLabel}>// Account</p>
@@ -261,26 +258,16 @@ const SANS  = '"DM Sans", system-ui, sans-serif'
 const S = {
   wrap:    { maxWidth: 720, margin: '0 auto', padding: '40px 24px 72px' },
   eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)', marginBottom: 8 },
-  title:   { fontFamily: SERIF, fontSize: 'clamp(28px, 4vw, 36px)', color: 'var(--tx)', letterSpacing: -0.5, marginBottom: 28 },
-
-  identityCard: {
-    background: 'var(--bgc)', border: '1px solid var(--pkbs)', borderRadius: 12,
-    padding: 24, display: 'flex', alignItems: 'center', gap: 24,
-    flexWrap: 'wrap', marginBottom: 40,
-  },
-  identitySide: { display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'flex-start' },
+  title:   { fontFamily: SERIF, fontSize: 'clamp(28px, 4vw, 36px)', color: 'var(--tx)', letterSpacing: -0.5, margin: 0 },
   roleBadge: {
     display: 'inline-block', fontFamily: MONO, fontSize: 12,
     letterSpacing: '0.08em', textTransform: 'uppercase',
-    padding: '5px 10px', borderRadius: 12,
+    padding: '5px 10px', borderRadius: 12, marginBottom: 40,
   },
-  identityNote: { fontFamily: SANS, fontSize: 14, color: 'var(--tx2)', margin: 0, lineHeight: 1.55 },
-  inlineLink:   { color: 'var(--pk)' },
 
   // Rename controls — same shapes as MyRipplePage's, so renaming yourself and
   // renaming your Ripple look and behave identically.
-  nameRow: { display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' },
-  nameVal: { fontFamily: SERIF, fontSize: 26, color: 'var(--tx)' },
+  nameRow: { display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap', marginBottom: 12 },
   nameInput: {
     fontFamily: SANS, fontSize: 16, padding: '8px 12px', minWidth: 0, width: 180,
     borderRadius: 8, border: '1px solid var(--bds)', background: 'var(--bgc)', color: 'var(--tx)',
