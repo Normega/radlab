@@ -41,7 +41,22 @@ import { waitUntil } from '@vercel/functions'
 // 'extracted' mode for large papers.
 export const maxDuration = 300
 
-const MODEL = 'claude-opus-4-8'
+const MODEL = 'claude-opus-5'
+
+// Where a refusal retries. Claude Opus 5 runs elevated cybersecurity and
+// bio safety classifiers, and a declined request comes back as a normal 200
+// with stop_reason 'refusal' rather than an error. Benign adjacent material can
+// trip them — and this course is unusually full of it: suicide and self-harm,
+// substance use, paraphilic disorders, gender dysphoria. A false positive on
+// one of those would fail the ingest for a page the syllabus requires, so a
+// refusal retries once on Opus 4.8 instead of ending the job.
+//
+// Deliberately a client-side retry rather than the server-side `fallbacks`
+// parameter: that needs a beta header and SDK support we cannot verify from
+// here, and a wrong guess would 400 *every* ingest rather than degrade on the
+// rare refusal. This costs one extra round trip on a path that should almost
+// never fire.
+const FALLBACK_MODEL = 'claude-opus-4-8'
 const BUCKET = 'ingest-pdfs'
 
 // The compact PSY240 ingest schema, embedded as a system prompt. Originally a
@@ -419,9 +434,12 @@ async function runIngest(service, jobId, { pdf_path, pdf_mode, course_id, person
     let inputTokens = 0
     let outputTokens = 0
 
-    const callModel = async (extraNudge) => {
+    // One attempt against one model. Token counts accumulate across every
+    // attempt, so a job's recorded totals cover the retry and the fallback too —
+    // which means a fallback job's tokens are a mix of two models' rates.
+    const attempt = async (model, extraNudge) => {
       const stream = anthropic.messages.stream({
-        model: MODEL,
+        model,
         max_tokens: 64000,
         thinking: { type: 'adaptive' },
         system: source_type === 'reference' ? SYSTEM_PROMPT_REFERENCE : SYSTEM_PROMPT,
@@ -437,8 +455,24 @@ async function runIngest(service, jobId, { pdf_path, pdf_mode, course_id, person
         + (msg.usage.cache_creation_input_tokens ?? 0)
         + (msg.usage.cache_read_input_tokens ?? 0)
       outputTokens += msg.usage.output_tokens
+      return msg
+    }
+
+    const callModel = async (extraNudge) => {
+      let msg = await attempt(MODEL, extraNudge)
+
+      // A refusal is a successful HTTP 200 with an empty or partial body, not an
+      // exception — checking stop_reason before reading content is the whole
+      // guard. Retry once on the fallback; a second refusal is a real refusal.
       if (msg.stop_reason === 'refusal') {
-        throw new Error(`Model refused the request${msg.stop_details?.explanation ? `: ${msg.stop_details.explanation}` : ''}`)
+        const why = msg.stop_details?.category ?? 'unspecified'
+        console.warn(`[ingest] ${MODEL} refused (${why}); retrying on ${FALLBACK_MODEL}`)
+        msg = await attempt(FALLBACK_MODEL, extraNudge)
+        if (msg.stop_reason === 'refusal') {
+          throw new Error(
+            `Both ${MODEL} and ${FALLBACK_MODEL} refused the request` +
+            `${msg.stop_details?.explanation ? `: ${msg.stop_details.explanation}` : ''}`)
+        }
       }
       if (msg.stop_reason === 'max_tokens') {
         throw new Error('Output truncated at max_tokens — paper may be too large for one call')
