@@ -119,6 +119,53 @@ Why this is safe:
 
 ---
 
+## 5a. Recommended build order (2026-07-31)
+
+**Ship the rebase alone first. Do not build the declarative gate yet.**
+
+The gate check already exists — `rnd_p2` refuses to resolve unless the preceding
+session is `completed`, `ac_p1` handles the adherence condition. Liliana's
+gating works today; only the date arithmetic is broken. So:
+
+**Phase 1 — anchor rebase (items 2 + 3 below). No schema, no UI, ~40 lines.**
+
+1. `materializeSchedule`'s schedule query selects `status, study_session_id` —
+   add `completed_at`, and make the `materialized` map hold
+   `{status, completedAt}` rather than a bare status string.
+2. Track `lastSessionCompletedAt` beside the existing `lastSessionStatus` /
+   `lastSessionNodeKey`.
+3. In the `randomize` branch, once it confirms `lastSessionStatus ===
+   'completed'`, set `(anchorDate, anchorOffset)` from that session before
+   continuing the walk.
+4. `emit()` uses `addDays(anchorDate, offset - anchorOffset)`.
+5. Liliana graph: `t_p2_*` 16 → 14.
+
+`t_final` shifts for free — same anchor.
+
+**Phase 2 — declarative `gates_continuation` (items 1, 4, 5). Later.**
+
+Only needed for a mandatory session *not* followed by a fork, which no current
+study has. Deferring it also means the block semantics parked by decision 1 can
+be settled against a second real use case instead of guessed at.
+
+**Why this order**
+
+- Phase 1 is the entire fix for the live study; Phase 2 buys Liliana nothing.
+- Not throwaway: Phase 2 reuses the identical rebase code and only changes
+  *where the anchor comes from* — a declared flag instead of "the session before
+  a fork". Phase 1 builds the machinery, Phase 2 rewires its trigger.
+- `materializeSchedule` decides every participant's schedule. Changing date
+  arithmetic alone is contained and verifiable; adding a new gate concept in the
+  same pass moves two things at once in the platform's most load-bearing
+  function.
+- No new routine, cron step, or pass is required — the advance pass already
+  re-walks every 15 minutes and materializes when the fork resolves.
+
+**The verification that matters:** replay the four in-flight participants and
+assert **zero diffs**. All four completed on time, so `completedDate == t0 + 13`
+and the rebase must be a mathematical no-op. Any row that moves means the
+arithmetic is wrong.
+
 ## 6. Work breakdown
 
 | # | Change | Where | Size |
