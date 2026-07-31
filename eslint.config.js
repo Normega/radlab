@@ -69,12 +69,15 @@ export default defineConfig([
       'react-hooks/immutability': 'warn',
       'react-hooks/purity': 'warn',
       'react-hooks/preserve-manual-memoization': 'warn',
-      'react-hooks/static-components': 'warn',
-      // Deliberately NOT demoted: react-hooks/rules-of-hooks and
-      // react-hooks/set-state-in-render. Both are genuine correctness rules
-      // (broken hook order; render-phase setState loops) and both are at zero
-      // violations, so keeping them at error costs nothing and guards a real
-      // footgun.
+      // Deliberately NOT demoted, all at zero violations, so keeping them at
+      // their default error severity costs nothing and guards a real footgun:
+      // rules-of-hooks (broken hook order), set-state-in-render (render-phase
+      // setState loops), and static-components — the last of which was demoted
+      // briefly and promoted back once graphics.jsx's in-render Row was hoisted
+      // to module scope. A component created during render gets a fresh
+      // identity every render, so React remounts its subtree instead of
+      // updating it, and any state inside is destroyed. Cheap to never
+      // reintroduce; unpleasant to debug if you do.
 
       // Fast Refresh reliability in dev only — never a production concern.
       'react-refresh/only-export-components': 'warn',
