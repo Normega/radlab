@@ -14,9 +14,12 @@
 
 ## 0. Read this first — two things that will bite
 
-**Run sequentially, never in parallel, and never the same source twice.** Filenames are
-unstable run-to-run, so two concurrent ingests of overlapping material produce two competing
-carves of the same concepts. One job at a time, each seeing the wiki the previous one left.
+**Run sequentially, never in parallel, and never the same source twice *in paper mode*.**
+Filenames are unstable run-to-run, so two concurrent ingests of overlapping material produce two
+competing carves of the same concepts. One job at a time, each seeing the wiki the previous one
+left. **Reference mode is the exception**: it names its target, so running the same module against
+several different catalogue pages is the intended pattern, not a violation — `reference_worklist`
+counts prior runs per page for exactly that reason.
 
 **Triage between runs, or you get duplicates.** `api/ingest.js` builds the model's wiki index
 from pages **with accepted content only** — a page sitting unreviewed is invisible to the next
@@ -97,10 +100,10 @@ weeks 1–4 finished, not a random half of the course.
 
 | # | Upload | Mode | Produces | Lec |
 |---|---|---|---|---|
-| 1 | Module 01 | paper | foundations + framing concepts | L1 |
-| 2 | Module 02 | paper | the integrative model, the four perspectives | L1–2 |
-| 3 | Module 03 | paper | assessment, diagnosis, treatment overview | L2 |
-| 4 | Module 15 | paper | law, ethics, commitment | L1/L10 |
+| 1 | Module 01 | **reference** ×3 → `what-is-abnormal`, `historical-traditions`, `research-methods` | L1 |
+| 2 | Module 02 | **reference** ×2 → `models-of-psychopathology`, `integrative-model` | L1–2 |
+| 3 | Module 03 | **reference** ×2 → `clinical-assessment`, `diagnosis-and-classification` | L2 |
+| 4 | Module 15 | **reference** ×1 → `law-and-ethics` | L1/L10 |
 | 5 | Module 07 | paper | 4 Tier A + anxiety overview (1 already written) | L3 |
 | 6 | Module 09 | paper | 2 Tier A + OCD overview | L3 |
 | 7 | Module 08 | paper | 3 Tier A + somatic overview (1 written) | L3 |
@@ -113,6 +116,29 @@ weeks 1–4 finished, not a random half of the course.
 | 13 | Module 14 | paper | 3 Tier A + neurocognitive overview | L10 |
 | 14 | Module 13 | paper | **10 Tier A** + personality overview (1 written) | L11 |
 | 15 | **Module 16 — run this LAST** | paper | neurodevelopmental + disruptive/conduct, and deltas onto pages from runs 5–10 | L3/8/10 |
+
+### Why the foundations runs are reference mode, not paper
+
+**Learned the hard way on 2026-07-31**, when Module 01 was run in paper mode as the first draft
+of this plan said. It produced six genuinely good pages — `stigma-of-mental-illness`,
+`medicalization-of-distress`, `epidemiology`, `multicultural-psychology` — and **none of the
+catalogue foundations it was supposed to fill.** The module has sections on the history of mental
+illness and on research methods; no page was made for either. It wrote `abnormal-behavior` where
+the catalogue says `what-is-abnormal`.
+
+The reason generalises, so it is worth stating: **the slug convention holds for disorders because
+disorder names are canonical.** The field agrees what "major depressive disorder" is called, so the
+model's independent choice and the catalogue's hand-written slug converge — which is exactly what
+was measured and celebrated at 44 pages. **Foundations slugs are our invention.** There is nothing
+for the model to converge on, so paper mode will keep missing them however many times it is run.
+
+Anything with a catalogue slug the field would not independently invent — foundations, and the 16
+topic overviews — wants reference mode, which names the target. Paper mode is for letting a source
+tell you what it contains.
+
+Paper-mode runs on the foundations modules are still *useful* — that is where the supporting
+concept pages come from — so the shape is: reference runs for the named pages, and optionally one
+paper run per module afterwards for the surrounding concepts.
 
 **Module 16 goes last, deliberately.** It cross-cuts: it covers selective mutism and separation
 anxiety (anxiety), trichotillomania and excoriation (OCD), reactive attachment (trauma), pica and
@@ -172,6 +198,27 @@ For each Tier A page still declaring gaps, run reference mode against a second s
 page as the target. Since 2026-07-30 reference mode returns a **complete page with `action:
 replace`** rather than a delta, so accepting overwrites cleanly and you get one coherent voice
 instead of two stitched together.
+
+### What repeat runs on one source cost
+
+Every run re-sends the whole document, so three reference runs against one module read that module
+three times. Measured on the two real runs:
+
+| Run | Mode | Input tokens | Output | Pages |
+|---|---|---|---|---|
+| Module 04, paper | extracted | 24,938 | 16,468 | 18 |
+| Module 04, reference | extracted | 26,090 | 4,372 | 1 |
+| Module 01, paper | **native** | **91,863** | 8,970 | 6 |
+
+**Native costs ~3.7× the input of extracted on this book.** Native is the course default because
+*student* submissions may be scans with no text layer — that reasoning does not apply to this
+textbook, which is born-digital with a clean text layer, and Module 04 produced 18 good pages in
+extracted mode.
+
+The trade-off is real though: extraction silently drops figures and mangles tables. For the
+foundations modules (prose and concepts) extracted is a safe saving. For the **disorder chapters,
+stay native** — the criteria and prevalence tables are the payload, and a mangled table looks like
+a successful run.
 
 ---
 
