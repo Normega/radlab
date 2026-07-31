@@ -30,7 +30,8 @@ supabase functions deploy <name> --project-ref qajrlfqoicfcfhthsfay
 ```
 
 **`verify_jwt` lives in `supabase/config.toml` — do not pass it on the command
-line.** Seven of the ten functions run with `verify_jwt = false` (pg_cron,
+line, and `npm test` enforces that every function is listed there
+(`verifyJwtConfig.test.mjs`).** Seven of the ten functions run with `verify_jwt = false` (pg_cron,
 server-side callers, unauthenticated links). Without the config file the CLI
 defaults to `true`, so a deploy that forgot `--no-verify-jwt` silently flipped
 them to JWT-required and broke the caller — that is what happened on
