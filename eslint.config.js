@@ -43,6 +43,41 @@ export default defineConfig([
       // deliberate idiom in the audio and device code, where a failed stop on
       // an already-dead node is not worth handling.
       'no-empty': ['error', { allowEmptyCatch: true }],
+
+      // ── React Compiler diagnostics: warn, not error ───────────────────────
+      //
+      // eslint-plugin-react-hooks v7's `recommended` preset turns on ~15 rules
+      // beyond the classic two, most at error. They are React Compiler
+      // *preconditions*: the compiler auto-memoizes components and must prove
+      // each one is pure and idempotent to do so safely. We do not run the
+      // compiler (vite.config.js is a bare `react()` — no
+      // babel-plugin-react-compiler), so none of these change runtime
+      // behaviour today.
+      //
+      // Only the rules we currently violate are demoted; the rest keep their
+      // default error severity and act as free guards, since a new violation
+      // would then be the only error in the output. That is the whole point:
+      // at 0 errors, a red lint means "you just broke something", which is
+      // what makes the CI gate in .github/workflows/ci.yml meaningful. With 94
+      // permanent errors it meant nothing, and real bugs hid in the noise for
+      // months (see website.md on issueLink and the Ebb & Flow aggregates).
+      //
+      // These stay reported and stay countable. If the React Compiler is ever
+      // adopted, flip these back to error and the backlog is unchanged.
+      'react-hooks/refs': 'warn',
+      'react-hooks/set-state-in-effect': 'warn',
+      'react-hooks/immutability': 'warn',
+      'react-hooks/purity': 'warn',
+      'react-hooks/preserve-manual-memoization': 'warn',
+      'react-hooks/static-components': 'warn',
+      // Deliberately NOT demoted: react-hooks/rules-of-hooks and
+      // react-hooks/set-state-in-render. Both are genuine correctness rules
+      // (broken hook order; render-phase setState loops) and both are at zero
+      // violations, so keeping them at error costs nothing and guards a real
+      // footgun.
+
+      // Fast Refresh reliability in dev only — never a production concern.
+      'react-refresh/only-export-components': 'warn',
     },
   },
   {

@@ -390,13 +390,13 @@ export default function ColorMax({ session, studyMode = false, userId: userIdPro
       drawPage(ctx, i, true)
       refPixelRef.current[i] = ctx.getImageData(0, 0, W, H)
     }
-  }, [phase]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [phase])
 
   // Load page whenever the active page changes.
   useEffect(() => {
     if (phase !== 'active') return
     loadPage(pageRef.current)
-  }, [phase, page]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [phase, page])
 
   // Attach brush event handlers to the paint canvas once when game goes active.
   // Handlers only reference refs so stale closures are safe.

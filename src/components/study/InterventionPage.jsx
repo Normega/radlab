@@ -778,6 +778,14 @@ function ClosingBlock({ step }) {
 
 // ── SliderBlock ───────────────────────────────────────────────────────────────
 
+// OPEN QUESTION (2026-07-31): `touched` is passed in but not used, and
+// `sliderTouched` in the parent is read nowhere else — so the slider always
+// displays its default value, including before the participant has moved it.
+// The near-certain original intent was to hide the number until first touch so
+// the default does not anchor the response, which is standard practice for a
+// VAS-style item. Kept rather than deleted because that is an instrument-design
+// decision with data implications, not a lint fix — it needs Norm's call.
+// eslint-disable-next-line no-unused-vars
 function SliderBlock({ step, value, touched, onChange }) {
   return (
     <div>

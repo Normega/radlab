@@ -19,7 +19,7 @@ export function useLetterSet(letters, resetKey) {
 
   useEffect(() => {
     setDisplayLetters(shuffleArray([...lettersRef.current]));
-  }, [resetKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [resetKey]);
 
   const shuffle = useCallback(() => {
     setDisplayLetters(prev => shuffleArray([...prev]));
