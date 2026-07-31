@@ -313,7 +313,7 @@ export default function OwlBarn({ onSessionComplete, userId = null, studyId = nu
     if      (winnumRef.current <= 1)  { winnumRef.current = 1;  winnumDirRef.current =  1 }
     else if (winnumRef.current >= 10) { winnumRef.current = 10; winnumDirRef.current = -1 }
     isLockedRef.current = lockNext
-    startHoot() // eslint-disable-line no-use-before-define
+    startHoot()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // 2. triggerWrongCount
@@ -377,7 +377,7 @@ export default function OwlBarn({ onSessionComplete, userId = null, studyId = nu
     responseOnsetRef.current = null
     silenceOnsetRef.current  = performance.now()
     after(dur, () => onSilenceExpire())
-  }, [after, onSilenceExpire, audio]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [after, onSilenceExpire, audio])
 
   // 6. startHoot
   const startHoot = useCallback(() => {
@@ -422,7 +422,7 @@ export default function OwlBarn({ onSessionComplete, userId = null, studyId = nu
       setSwoopActive(false)
       advanceToNextWindow(true)
     })
-  }, [after, clearTimers, advanceToNextWindow, audio]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [after, clearTimers, advanceToNextWindow, audio])
 
   // 8. handleTap — spacebar / screen tap
   // Uses phaseRef (not state) — no stale-closure risk for hoot detection

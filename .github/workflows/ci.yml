@@ -7,9 +7,24 @@
 # forgetting the entry — which deploys it JWT-required and silently breaks its
 # caller. That check now fails the build instead.
 #
-# `npm run lint` is NOT here on purpose. It currently reports ~6,000 pre-existing
-# errors, so adding it would make CI red on arrival and therefore ignored, which
-# is worse than no CI. Wire it in once the backlog is cleared.
+# `npm run lint` IS here as of 2026-07-31, as an errors-only gate.
+#
+# It was left out originally on the reasoning that a lint which is red on
+# arrival gets ignored, which is worse than no CI — correct, and the reason the
+# backlog got cleared before wiring it in. (The original note estimated ~6,000
+# pre-existing errors; the real figure was 246 problems / 205 errors on the
+# config as it then stood. The argument held either way.)
+#
+# That backlog is now 0 errors / ~129 warnings. The remaining warnings are
+# almost entirely eslint-plugin-react-hooks v7's React Compiler diagnostics,
+# deliberately set to warn in eslint.config.js because we do not run the
+# compiler — see the comment block there for the full reasoning.
+#
+# `eslint` exits non-zero on errors only, so warnings do not fail this job.
+# That is the point: at 0 errors, a red lint means someone just introduced a
+# real problem, rather than adding to a pile nobody reads. Do NOT add
+# --max-warnings 0 until the compiler-diagnostic backlog is actually worked
+# through, or this returns to being red-on-arrival and ignored.
 #
 # Node 22 is required, not just convenient: the test script uses
 # --experimental-strip-types so materializeSchedule.test.mjs can import the .ts
@@ -34,6 +49,9 @@ jobs:
           cache: npm
 
       - run: npm ci
+
+      - name: Lint (errors fail the build; warnings do not)
+        run: npm run lint
 
       - name: Tests
         run: npm test

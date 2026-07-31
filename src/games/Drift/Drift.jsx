@@ -440,7 +440,7 @@ export default function Drift({ session }) {
       setPhase('watching')
     }, 1000)
     return () => clearTimeout(readyTimerRef.current)
-  }, [phase, trialIdx]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [phase, trialIdx])
 
   // Watching: interval timer — ContactAvatar drives its own breath animation
   useEffect(() => {
