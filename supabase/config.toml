@@ -1,0 +1,59 @@
+# Supabase CLI config.
+#
+# This file exists for ONE reason: to pin each Edge Function's `verify_jwt`.
+#
+# Without it, `supabase functions deploy <name>` defaults to verify_jwt = true.
+# Seven of the ten functions below run with it FALSE — they are called by
+# pg_cron, by server-side code, or by unauthenticated links — so a deploy that
+# forgot `--no-verify-jwt` silently flipped them to JWT-required and broke the
+# caller. That is not hypothetical: it is why the 2026-07-30 redeploy had to
+# pass the flag by hand for send_message / check_schedule / auto-enroll, and
+# remembering a flag per function is exactly the kind of thing that gets
+# forgotten once.
+#
+# Every deployed function is listed explicitly, including the `true` ones, so
+# nothing depends on the CLI's default. When you add a function, add it here
+# in the same commit.
+#
+# Deploys still target the linked project (supabase/.temp/linked-project.json).
+# `project_id` below is the CLI's local identifier, not the remote ref.
+
+project_id = "radlab"
+
+# ── Called by pg_cron or server-side code with the service key ──────────────
+[functions.check_schedule]
+verify_jwt = false
+
+[functions.ripple_reminder]
+# Cron presents the service key; a lab JWT is also accepted for test sends.
+# The function does its own auth check on the Authorization header, so the
+# gateway must let the request through to it.
+verify_jwt = true
+
+[functions.send_message]
+verify_jwt = false
+
+[functions.auto-enroll]
+verify_jwt = false
+
+# ── Called from unauthenticated public links ───────────────────────────────
+[functions.handle_unsubscribe]
+verify_jwt = false
+
+[functions.handle_ripple_unsubscribe]
+verify_jwt = true
+
+[functions.sign_in_with_link]
+# Participant session links — the caller has no session yet, by definition.
+verify_jwt = false
+
+# ── Participant provisioning, called server-side ───────────────────────────
+[functions.create_participant]
+verify_jwt = false
+
+[functions.create_anonymous_participant]
+verify_jwt = false
+
+# ── Called from the browser with a real user JWT ───────────────────────────
+[functions.send-class-verification-email]
+verify_jwt = true

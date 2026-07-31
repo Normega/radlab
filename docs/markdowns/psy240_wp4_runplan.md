@@ -14,9 +14,12 @@
 
 ## 0. Read this first — two things that will bite
 
-**Run sequentially, never in parallel, and never the same source twice.** Filenames are
-unstable run-to-run, so two concurrent ingests of overlapping material produce two competing
-carves of the same concepts. One job at a time, each seeing the wiki the previous one left.
+**Run sequentially, never in parallel, and never the same source twice *in paper mode*.**
+Filenames are unstable run-to-run, so two concurrent ingests of overlapping material produce two
+competing carves of the same concepts. One job at a time, each seeing the wiki the previous one
+left. **Reference mode is the exception**: it names its target, so running the same module against
+several different catalogue pages is the intended pattern, not a violation — `reference_worklist`
+counts prior runs per page for exactly that reason.
 
 **Triage between runs, or you get duplicates.** `api/ingest.js` builds the model's wiki index
 from pages **with accepted content only** — a page sitting unreviewed is invisible to the next
@@ -97,10 +100,10 @@ weeks 1–4 finished, not a random half of the course.
 
 | # | Upload | Mode | Produces | Lec |
 |---|---|---|---|---|
-| 1 | Module 01 | paper | foundations + framing concepts | L1 |
-| 2 | Module 02 | paper | the integrative model, the four perspectives | L1–2 |
-| 3 | Module 03 | paper | assessment, diagnosis, treatment overview | L2 |
-| 4 | Module 15 | paper | law, ethics, commitment | L1/L10 |
+| 1 | Module 01 | **reference** ×3 → `what-is-abnormal`, `historical-traditions`, `research-methods` | L1 |
+| 2 | Module 02 | **reference** ×2 → `models-of-psychopathology`, `integrative-model` | L1–2 |
+| 3 | Module 03 | **reference** ×2 → `clinical-assessment`, `diagnosis-and-classification` | L2 |
+| 4 | Module 15 | **reference** ×1 → `law-and-ethics` | L1/L10 |
 | 5 | Module 07 | paper | 4 Tier A + anxiety overview (1 already written) | L3 |
 | 6 | Module 09 | paper | 2 Tier A + OCD overview | L3 |
 | 7 | Module 08 | paper | 3 Tier A + somatic overview (1 written) | L3 |
@@ -113,6 +116,29 @@ weeks 1–4 finished, not a random half of the course.
 | 13 | Module 14 | paper | 3 Tier A + neurocognitive overview | L10 |
 | 14 | Module 13 | paper | **10 Tier A** + personality overview (1 written) | L11 |
 | 15 | **Module 16 — run this LAST** | paper | neurodevelopmental + disruptive/conduct, and deltas onto pages from runs 5–10 | L3/8/10 |
+
+### Why the foundations runs are reference mode, not paper
+
+**Learned the hard way on 2026-07-31**, when Module 01 was run in paper mode as the first draft
+of this plan said. It produced six genuinely good pages — `stigma-of-mental-illness`,
+`medicalization-of-distress`, `epidemiology`, `multicultural-psychology` — and **none of the
+catalogue foundations it was supposed to fill.** The module has sections on the history of mental
+illness and on research methods; no page was made for either. It wrote `abnormal-behavior` where
+the catalogue says `what-is-abnormal`.
+
+The reason generalises, so it is worth stating: **the slug convention holds for disorders because
+disorder names are canonical.** The field agrees what "major depressive disorder" is called, so the
+model's independent choice and the catalogue's hand-written slug converge — which is exactly what
+was measured and celebrated at 44 pages. **Foundations slugs are our invention.** There is nothing
+for the model to converge on, so paper mode will keep missing them however many times it is run.
+
+Anything with a catalogue slug the field would not independently invent — foundations, and the 16
+topic overviews — wants reference mode, which names the target. Paper mode is for letting a source
+tell you what it contains.
+
+Paper-mode runs on the foundations modules are still *useful* — that is where the supporting
+concept pages come from — so the shape is: reference runs for the named pages, and optionally one
+paper run per module afterwards for the surrounding concepts.
 
 **Module 16 goes last, deliberately.** It cross-cuts: it covers selective mutism and separation
 anxiety (anxiety), trichotillomania and excoriation (OCD), reactive attachment (trauma), pica and
@@ -173,21 +199,99 @@ page as the target. Since 2026-07-30 reference mode returns a **complete page wi
 replace`** rather than a delta, so accepting overwrites cleanly and you get one coherent voice
 instead of two stitched together.
 
+### What repeat runs on one source cost
+
+Every run re-sends the whole document, so three reference runs against one module read that module
+three times. Measured on the two real runs:
+
+| Run | Mode | Input tokens | Output | Pages |
+|---|---|---|---|---|
+| Module 04, paper | extracted | 24,938 | 16,468 | 18 |
+| Module 04, reference | extracted | 26,090 | 4,372 | 1 |
+| Module 01, paper | **native** | **91,863** | 8,970 | 6 |
+
+**Native costs ~3.7× the input of extracted on this book.** Native is the course default because
+*student* submissions may be scans with no text layer — that reasoning does not apply to this
+textbook, which is born-digital with a clean text layer, and Module 04 produced 18 good pages in
+extracted mode.
+
+The trade-off is real though: extraction silently drops figures and mangles tables. For the
+foundations modules (prose and concepts) extracted is a safe saving. For the **disorder chapters,
+stay native** — the criteria and prevalence tables are the payload, and a mangled table looks like
+a successful run.
+
+**Prompt caching was investigated (2026-07-31) and is not worth it here.** The arithmetic, on
+Module 01's real 91,863 input tokens at Opus 4.8's $5/MTok: three reference runs cost **$1.38**
+uncached, **$1.01** with a 1-hour cache — a 27% saving, about **$0.37 per module**. Two things
+kill it. Caching only breaks even at **three or more runs against the same PDF**, and only Module
+01 has three targets (02 and 03 have two, Module 15 has one — for those, caching costs *more*
+than not caching). And a **5-minute TTL is actively worse than no caching** in this workflow:
+triage sits between runs, so each run would write a cache the next run is too late to read —
+3 × 1.25× = 3.75× versus 3× for doing nothing. Meanwhile switching those same runs to extracted
+mode costs nothing to implement and brings three runs to about **$0.38**, beating every cached
+variant of the native path.
+
+One structural note worth keeping, because it is non-obvious and would otherwise be rediscovered:
+`api/ingest.js` already puts the PDF **before** the volatile text (target brief + wiki index) in
+the user message, and the wiki index changes between runs as pages are accepted. That ordering —
+done for an unrelated reason — is exactly what caching needs, so if the economics ever change,
+enabling it is a one-line `cache_control` on the document block with **no prompt reordering**. The
+token accounting already sums `input + cache_creation + cache_read`, so recorded job totals would
+stay comparable.
+
 ---
 
-## 6. Citation string — required at upload
+## 6. Citations — copy these, don't compose them
 
-Attribution is a **licence condition** for CC BY-NC-SA material, not a courtesy, and the portal
-requires a citation per job. Page attribution is derived from it (`wiki_page_provenance`), so
-getting it right once per upload is the whole job. Copy this, changing only the number and title:
+Attribution is a **licence condition** for CC BY-NC-SA material, not a courtesy. Page attribution
+derives from `ingest_jobs.source_citation` (`wiki_page_provenance`), so the string you paste at
+upload is the one a reader eventually sees under *Built from*.
+
+**The form.** Creative Commons attribution wants four things — title, author, source, licence
+(TASL). The original Module 4 citation had the first two and named the licence but gave **no link
+to the source**, which is the part that lets a reader find the original and check the paraphrase.
+The form below adds it. All three URLs were checked live on 2026-07-30 and resolve.
 
 ```
-Bridley, A., & Daffin, L. W. (2023). Fundamentals of Psychological Disorders
-(3rd ed., DSM-5-TR update), Module NN: TITLE. Washington State University.
-Licensed CC BY-NC-SA 4.0.
+Bridley, A., & Daffin, L. W. (2023). Module N: TITLE. In Fundamentals of Psychological
+Disorders (3rd ed., DSM-5-TR update). Washington State University.
+Licensed CC BY-NC-SA 4.0. https://opentext.wsu.edu/abnormal-psych/
 ```
 
-Byte-for-byte the format already used for Module 04, so provenance stays consistent.
+**The sixteen, ready to paste.** Module titles are taken from the book's own table of contents,
+so a mistyped module name can't enter the provenance record:
+
+| # | Citation |
+|---|---|
+| 1 | `Bridley, A., & Daffin, L. W. (2023). Module 1: What is Abnormal Psychology? In Fundamentals of Psychological Disorders (3rd ed., DSM-5-TR update). Washington State University. Licensed CC BY-NC-SA 4.0. https://opentext.wsu.edu/abnormal-psych/` |
+| 2 | `Bridley, A., & Daffin, L. W. (2023). Module 2: Models of Abnormal Psychology. In Fundamentals of Psychological Disorders (3rd ed., DSM-5-TR update). Washington State University. Licensed CC BY-NC-SA 4.0. https://opentext.wsu.edu/abnormal-psych/` |
+| 3 | `Bridley, A., & Daffin, L. W. (2023). Module 3: Clinical Assessment, Diagnosis, and Treatment. In Fundamentals of Psychological Disorders (3rd ed., DSM-5-TR update). Washington State University. Licensed CC BY-NC-SA 4.0. https://opentext.wsu.edu/abnormal-psych/` |
+| 4 | `Bridley, A., & Daffin, L. W. (2023). Module 4: Mood Disorders. In Fundamentals of Psychological Disorders (3rd ed., DSM-5-TR update). Washington State University. Licensed CC BY-NC-SA 4.0. https://opentext.wsu.edu/abnormal-psych/` |
+| 5 | `Bridley, A., & Daffin, L. W. (2023). Module 5: Trauma- and Stressor-Related Disorders. In Fundamentals of Psychological Disorders (3rd ed., DSM-5-TR update). Washington State University. Licensed CC BY-NC-SA 4.0. https://opentext.wsu.edu/abnormal-psych/` |
+| 6 | `Bridley, A., & Daffin, L. W. (2023). Module 6: Dissociative Disorders. In Fundamentals of Psychological Disorders (3rd ed., DSM-5-TR update). Washington State University. Licensed CC BY-NC-SA 4.0. https://opentext.wsu.edu/abnormal-psych/` |
+| 7 | `Bridley, A., & Daffin, L. W. (2023). Module 7: Anxiety Disorders. In Fundamentals of Psychological Disorders (3rd ed., DSM-5-TR update). Washington State University. Licensed CC BY-NC-SA 4.0. https://opentext.wsu.edu/abnormal-psych/` |
+| 8 | `Bridley, A., & Daffin, L. W. (2023). Module 8: Somatic Symptom and Related Disorders. In Fundamentals of Psychological Disorders (3rd ed., DSM-5-TR update). Washington State University. Licensed CC BY-NC-SA 4.0. https://opentext.wsu.edu/abnormal-psych/` |
+| 9 | `Bridley, A., & Daffin, L. W. (2023). Module 9: Obsessive-Compulsive and Related Disorders. In Fundamentals of Psychological Disorders (3rd ed., DSM-5-TR update). Washington State University. Licensed CC BY-NC-SA 4.0. https://opentext.wsu.edu/abnormal-psych/` |
+| 10 | `Bridley, A., & Daffin, L. W. (2023). Module 10: Feeding and Eating Disorders. In Fundamentals of Psychological Disorders (3rd ed., DSM-5-TR update). Washington State University. Licensed CC BY-NC-SA 4.0. https://opentext.wsu.edu/abnormal-psych/` |
+| 11 | `Bridley, A., & Daffin, L. W. (2023). Module 11: Substance-Related and Addictive Disorders. In Fundamentals of Psychological Disorders (3rd ed., DSM-5-TR update). Washington State University. Licensed CC BY-NC-SA 4.0. https://opentext.wsu.edu/abnormal-psych/` |
+| 12 | `Bridley, A., & Daffin, L. W. (2023). Module 12: Schizophrenia Spectrum and Other Psychotic Disorders. In Fundamentals of Psychological Disorders (3rd ed., DSM-5-TR update). Washington State University. Licensed CC BY-NC-SA 4.0. https://opentext.wsu.edu/abnormal-psych/` |
+| 13 | `Bridley, A., & Daffin, L. W. (2023). Module 13: Personality Disorders. In Fundamentals of Psychological Disorders (3rd ed., DSM-5-TR update). Washington State University. Licensed CC BY-NC-SA 4.0. https://opentext.wsu.edu/abnormal-psych/` |
+| 14 | `Bridley, A., & Daffin, L. W. (2023). Module 14: Neurocognitive Disorders. In Fundamentals of Psychological Disorders (3rd ed., DSM-5-TR update). Washington State University. Licensed CC BY-NC-SA 4.0. https://opentext.wsu.edu/abnormal-psych/` |
+| 15 | `Bridley, A., & Daffin, L. W. (2023). Module 15: Contemporary Issues in Psychopathology. In Fundamentals of Psychological Disorders (3rd ed., DSM-5-TR update). Washington State University. Licensed CC BY-NC-SA 4.0. https://opentext.wsu.edu/abnormal-psych/` |
+| 16 | `Bridley, A., & Daffin, L. W. (2023). Module 16: Disorders of Childhood Overview. In Fundamentals of Psychological Disorders (3rd ed., DSM-5-TR update). Washington State University. Licensed CC BY-NC-SA 4.0. https://opentext.wsu.edu/abnormal-psych/` |
+
+**Why paste rather than edit.** The portal now keeps the citation after submit and offers a
+*"reuse a citation from a previous run"* picker, so editing the previous string is possible — but
+the two things you'd edit are the module number and its exact title, which is precisely where a
+typo becomes a permanent provenance error nobody notices. Pasting a prepared row costs the same
+and can't drift.
+
+The **Suggest citation** button is the path for journal articles: it reads a DOI off the PDF and
+resolves it. The textbook has no DOI, verified — so for these sixteen runs it will correctly tell
+you it found none.
+
+A suggestion never fills the field on its own; you accept it explicitly. Attribution is a licence
+condition, and a looked-up citation nobody read is worse than one typed badly.
 
 ---
 

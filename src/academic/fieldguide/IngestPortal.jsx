@@ -27,6 +27,16 @@ export default function IngestPortal() {
   // Attribution is a licence condition for the openly-licensed course sources,
   // so it is captured here rather than left to the model to remember.
   const [citation, setCitation] = useState('')
+  // Citation assistance. `suggestion` is never written into `citation` on its
+  // own — the operator accepts it explicitly. A looked-up citation carries the
+  // authority of having been looked up, so one nobody read is worse than one
+  // typed badly, and from WP6 the person uploading is a student.
+  const [doiInput, setDoiInput] = useState('')
+  const [suggestion, setSuggestion] = useState(null)
+  const [looking, setLooking] = useState(false)
+  // Set when the PDF was uploaded early to read its DOI, so submit does not
+  // upload it twice. Cleared whenever the chosen file changes.
+  const [uploadedPath, setUploadedPath] = useState(null)
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState(null)
   const [jobs, setJobs] = useState([])
@@ -38,7 +48,7 @@ export default function IngestPortal() {
   const loadJobs = async () => {
     const { data } = await courseClient
       .from('ingest_jobs')
-      .select('id, pdf_path, pdf_mode, status, input_tokens, output_tokens, error, result_json, created_at, completed_at')
+      .select('id, pdf_path, pdf_mode, status, input_tokens, output_tokens, error, result_json, created_at, completed_at, source_citation')
       .eq('course_id', courseId)
       .order('created_at', { ascending: false })
     setJobs(data ?? [])
@@ -59,18 +69,63 @@ export default function IngestPortal() {
     return () => clearInterval(t)
   }, [jobs]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Distinct citations already used on this course, newest first. The whole
+  // fix for the content sprint: fifteen textbook modules share one 180-char
+  // citation differing by two words, and retyping it fifteen times is how a
+  // licence-required field ends up inconsistent.
+  const pastCitations = [...new Set(
+    jobs.map(j => j.source_citation).filter(c => c && !c.startsWith('UNVERIFIED')),
+  )].slice(0, 12)
+
+  const upload = async () => {
+    if (uploadedPath) return uploadedPath
+    const safeName = file.name.replace(/[^\w.-]+/g, '_')
+    const pdfPath = `${courseId}/${Date.now()}_${safeName}`
+    const { error: upErr } = await courseClient.storage
+      .from('ingest-pdfs')
+      .upload(pdfPath, file, { contentType: 'application/pdf' })
+    if (upErr) throw new Error(`Upload failed: ${upErr.message}`)
+    setUploadedPath(pdfPath)
+    return pdfPath
+  }
+
+  // Uses a pasted DOI when there is one, otherwise reads the PDF's opening
+  // pages. Uploading early leaves an orphan object in the bucket if the operator
+  // then abandons the form — acceptable, and it is the same path submit would
+  // have used, so nothing is uploaded twice.
+  const suggestCitation = async () => {
+    if (!courseId || (!file && !doiInput.trim())) return
+    setLooking(true)
+    setNotice(null)
+    setSuggestion(null)
+    try {
+      const body = { course_id: courseId }
+      if (doiInput.trim()) body.doi = doiInput.trim()
+      else body.pdf_path = await upload()
+
+      const r = await fetch('/api/cite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify(body),
+      })
+      const j = await r.json()
+      if (!r.ok) throw new Error(j.error || `Lookup failed (${r.status})`)
+      setSuggestion(j)
+      if (!j.citation) setNotice(j.note || 'No citation could be determined — type one below.')
+    } catch (err) {
+      setNotice(err.message)
+    } finally {
+      setLooking(false)
+    }
+  }
+
   const submit = async (e) => {
     e.preventDefault()
     if (!file || !courseId) return
     setBusy(true)
     setNotice(null)
     try {
-      const safeName = file.name.replace(/[^\w.-]+/g, '_')
-      const pdfPath = `${courseId}/${Date.now()}_${safeName}`
-      const { error: upErr } = await courseClient.storage
-        .from('ingest-pdfs')
-        .upload(pdfPath, file, { contentType: 'application/pdf' })
-      if (upErr) throw new Error(`Upload failed: ${upErr.message}`)
+      const pdfPath = await upload()
 
       // Fire the ingest; don't await completion — the jobs list polls.
       fetch('/api/ingest', {
@@ -89,7 +144,11 @@ export default function IngestPortal() {
 
       setNotice('Ingest started — the job appears below within a few seconds.')
       setFile(null)
-      setCitation('')
+      setUploadedPath(null)
+      setSuggestion(null)
+      setDoiInput('')
+      // Citation is deliberately NOT cleared: consecutive runs from one book
+      // differ by a module number, so keeping it turns retyping into editing.
       if (fileInput.current) fileInput.current.value = ''
       setTimeout(loadJobs, 2500)
     } catch (err) {
@@ -128,14 +187,74 @@ export default function IngestPortal() {
 
         <form onSubmit={submit} style={S.card}>
           <input ref={fileInput} style={{ fontSize: 14, color: 'var(--tx)' }} type="file" accept="application/pdf,.pdf"
-            onChange={e => setFile(e.target.files?.[0] ?? null)} />
+            onChange={e => {
+              setFile(e.target.files?.[0] ?? null)
+              // A new file invalidates both the early upload and any suggestion
+              // read off the old one.
+              setUploadedPath(null)
+              setSuggestion(null)
+            }} />
+
           <div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+              <button type="button" style={S.secondary} onClick={suggestCitation}
+                      disabled={looking || (!file && !doiInput.trim())}>
+                {looking ? 'Looking up…' : 'Suggest citation'}
+              </button>
+              <input style={{ ...S.input, flex: '1 1 220px', minWidth: 0 }} type="text" value={doiInput}
+                     onChange={e => setDoiInput(e.target.value)}
+                     placeholder="optional: paste a DOI to look up instead of reading the PDF" />
+            </div>
+            <p style={{ ...S.sub, fontSize: 12, marginTop: 4 }}>
+              Reads the DOI off the PDF&rsquo;s first pages and resolves it. Open-licensed
+              textbooks usually have no DOI — for those, reuse a previous citation below.
+            </p>
+          </div>
+
+          {/* A suggestion is never written into the field on its own. Accepting
+              is one click, but it has to be a click: attribution is a licence
+              condition, and a looked-up citation nobody read is worse than a
+              typed one because it looks authoritative. */}
+          {suggestion?.citation && (
+            <div style={S.suggestBox}>
+              <p style={S.colLabel}>
+                Suggested — from {suggestion.source}
+                {suggestion.doi && <> · DOI <code style={{ fontFamily: MONO }}>{suggestion.doi}</code></>}
+              </p>
+              <p style={{ ...S.sub, color: 'var(--tx)', margin: '0 0 8px' }}>{suggestion.citation}</p>
+              {suggestion.title && (
+                <p style={{ ...S.sub, fontSize: 12, margin: '0 0 8px' }}>
+                  Resolved title: <b>{suggestion.title}</b> — check this is the document you uploaded.
+                </p>
+              )}
+              {suggestion.note && <p style={{ ...S.sub, fontSize: 12, color: 'var(--pk)' }}>{suggestion.note}</p>}
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
+                <button type="button" style={S.primary}
+                        onClick={() => { setCitation(suggestion.citation); setSuggestion(null) }}>
+                  Use this citation
+                </button>
+                <button type="button" style={S.linkBtn} onClick={() => setSuggestion(null)}>Dismiss</button>
+              </div>
+            </div>
+          )}
+
+          <div>
+            {pastCitations.length > 0 && (
+              <select style={{ ...S.input, width: '100%', marginBottom: 6 }} value=""
+                      onChange={e => { if (e.target.value) setCitation(e.target.value) }}>
+                <option value="">Reuse a citation from a previous run…</option>
+                {pastCitations.map(c => (
+                  <option key={c} value={c}>{c.length > 110 ? `${c.slice(0, 110)}…` : c}</option>
+                ))}
+              </select>
+            )}
             <input style={{ ...S.input, width: '100%' }} type="text" value={citation}
               onChange={e => setCitation(e.target.value)} required
               placeholder="Citation — e.g. Bridley & Daffin (2023), Fundamentals of Psychological Disorders 3e, Module 4. CC BY-NC-SA 4.0" />
             <p style={{ ...S.sub, fontSize: 12, marginTop: 4 }}>
               Recorded against every page this run produces. Attribution is a licence condition
               for CC-licensed sources, so it is captured here rather than left to the model.
+              Kept after submit, so a run of textbook modules only needs the number changed.
             </p>
           </div>
 
@@ -274,6 +393,9 @@ const S = {
   input: { fontSize: 15, padding: '8px 10px', borderRadius: 8, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx)' },
   primary: { fontSize: 15, fontWeight: 600, padding: '10px 16px', borderRadius: 24, border: 'none', background: 'var(--pk)', color: '#fff', cursor: 'pointer', alignSelf: 'flex-start' },
   linkBtn: { fontSize: 13, color: 'var(--pk)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0 },
+  secondary: { fontSize: 14, fontWeight: 600, padding: '9px 14px', borderRadius: 24, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx)', cursor: 'pointer', flexShrink: 0 },
+  suggestBox: { padding: '12px 14px', borderRadius: 10, background: 'var(--bgc)', border: '1px solid var(--bd)' },
+  colLabel: { fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx2)', margin: '0 0 6px' },
   jobCard: { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 12, marginTop: 10 },
   jobHeader: { width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, padding: '12px 14px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tx)' },
   pre: { fontFamily: MONO, fontSize: 12, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', background: 'var(--bg)', border: '1px solid var(--bd)', borderRadius: 8, padding: 12, marginTop: 6, maxHeight: 420, overflowY: 'auto', color: 'var(--tx)' },

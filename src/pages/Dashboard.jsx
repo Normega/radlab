@@ -1,46 +1,63 @@
-﻿import { useNavigate, Link } from 'react-router-dom'
+﻿import { Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import Nav from '../components/Nav'
+import EyebrowLabel from '../components/ui/EyebrowLabel'
+import PrimaryCTA from '../components/ui/PrimaryCTA'
+import InsightsWidget from '../dashboard/InsightsWidget'
+import { modeLabel } from '../dashboard/metrics'
+import RippleAvatar from '../ripple/RippleAvatar'
+import { useAvatarConfig } from '../hooks/useAvatarConfig'
+import { EMOTIONS, LABEL_TO_ID } from '../games/StillWater/constants'
 import { greetingFor } from '../ripple/greetings'
 
+const todayLong = () =>
+  new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+
 export default function Dashboard({ session }) {
-  const navigate    = useNavigate()
   const user        = session?.user
   const displayName = user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'researcher'
 
-  async function handleSignOut() {
-    await supabase.auth.signOut()
-    navigate('/')
-  }
+  // handleSignOut + useNavigate removed 2026-07-30: dead since the account-menu
+  // IA rework moved signing out into the avatar dropdown. Nothing rendered it.
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
       <Nav session={session} />
 
       <div style={S.wrap}>
-        {/* Welcome */}
+        {/* Welcome — "signed in as" badge dropped 2026-07-30 (Redesign v2): the
+            greeting already confirms identity, so the badge was chrome. */}
         <div style={S.header}>
           <div>
-            <p style={S.eyebrow}>Dashboard</p>
             <h1 style={S.title}>Hey, {displayName}.</h1>
-            <p style={S.sub}>Your lab bench is almost ready.</p>
-          </div>
-          <div style={S.accountBadge}>
-            <p style={S.badgeLabel}>Signed in as</p>
-            <p style={S.badgeEmail}>{user?.email}</p>
+            <p style={S.sub}>Today is {todayLong()}. What&rsquo;s on your mind?</p>
           </div>
         </div>
 
-        {/* Ripple */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <p style={{ ...S.secLabel, marginBottom: 0 }}>// Ripple</p>
-          <Link to="/settings" style={{ fontFamily: MONO, fontSize: 11, color: 'var(--tx3)', textDecoration: 'none', letterSpacing: '0.05em' }}>settings →</Link>
+        {/* Today's check-in — Ripple beside a bar of the day's fields. The
+            "settings →" link that used to sit here is gone: /settings is in the
+            avatar menu (§12b), and it read as a setting for the check-in. */}
+        <div style={{ marginBottom: 16 }}>
+          <EyebrowLabel variant="white">Today&rsquo;s check-in</EyebrowLabel>
         </div>
         <RippleSection userId={user?.id} />
 
-        {/* Game cards */}
-        <p style={{ ...S.secLabel, marginTop: 40 }}>// Games</p>
+        {/* Insights — the single dashboard widget (Redesign v2, Figma 4082:2349).
+            Emotion is wired; the other three categories land one at a time. */}
+        <div style={{ marginTop: 40, marginBottom: 16 }}>
+          <EyebrowLabel variant="white">Insights</EyebrowLabel>
+        </div>
+        <InsightsWidget userId={user?.id} />
+
+        {/* Game cards — the v2 design removes this section outright, since it
+            duplicates the games page. Kept deliberately until the widget's other
+            three tabs exist (Norm, 2026-07-30): these cards are currently the
+            only place per-game stats (d′, drift ratio, dwell) are visible, and
+            deleting them now would lose that with nothing to replace it. */}
+        <div style={{ marginTop: 40, marginBottom: 16 }}>
+          <EyebrowLabel variant="white">Games</EyebrowLabel>
+        </div>
         <div style={S.gameGrid}>
           <StillWaterCard userId={user?.id} />
           <FaceReadCard userId={user?.id} />
@@ -70,7 +87,9 @@ export default function Dashboard({ session }) {
         </div>
 
         {/* Stats */}
-        <p style={{ ...S.secLabel, marginTop: 40 }}>// Your stats</p>
+        <div style={{ marginTop: 40, marginBottom: 16 }}>
+          <EyebrowLabel variant="white">Your stats</EyebrowLabel>
+        </div>
         <YourStats userId={user?.id} />
 
         {/*
@@ -140,7 +159,12 @@ function StillWaterCard({ userId }) {
 function SwMoodGrid({ rows }) {
   const CX = 54, CY = 54, R = 46
   const last = rows[rows.length - 1]
-  const toDot = r => ({ x: CX + r.composite_x * R, y: CY + r.composite_y * R })
+  // composite_y is stored maths-convention: POSITIVE = high arousal (verified
+  // against live rows — `Alert` sits at +0.50, `Excited` at +0.33, and
+  // getCompositeLabel reads it with atan2). SVG y grows downward, so it must be
+  // negated here. Until 2026-07-30 it was not, which drew a maximally alert
+  // check-in in the corner labelled "calm".
+  const toDot = r => ({ x: CX + r.composite_x * R, y: CY - r.composite_y * R })
 
   return (
     <svg width={108} height={108} viewBox="0 0 108 108" style={{ flexShrink: 0 }}>
@@ -186,7 +210,9 @@ function SwLinePlot({ rows, field, label, color }) {
   const pw = SW_VW - SW_PAD.l - SW_PAD.r
   const ph = SW_VH - SW_PAD.t - SW_PAD.b
   const n  = rows.length
-  const vals = rows.map(r => field === 'valence' ? r.composite_x : -r.composite_y)
+  // Arousal plots composite_y directly: positive IS high arousal (see SwMoodGrid).
+  // It was negated here until 2026-07-30, which drew the arousal trace upside-down.
+  const vals = rows.map(r => field === 'valence' ? r.composite_x : r.composite_y)
   const xOf  = i => SW_PAD.l + (n < 2 ? pw / 2 : (i / (n - 1)) * pw)
   const yOf  = v => SW_PAD.t + (1 - v) / 2 * ph
   const pts  = vals.map((v, i) => `${xOf(i).toFixed(1)},${yOf(v).toFixed(1)}`).join(' ')
@@ -747,11 +773,12 @@ function RippleGreeting({ userId }) {
       }
 
       // Arousal trend from last 7 composite_y values.
-      // In the circumplex data: composite_y < 0 = high arousal (excited/tense side);
-      // composite_y > 0 = low arousal (calm/sad side).
+      // composite_y > 0 = high arousal (excited/tense side); < 0 = low arousal
+      // (calm/sad side). This was asserted the other way round until 2026-07-30,
+      // so the greeting told wired-up users they were running low and vice versa.
       const ys = (checkins ?? []).map(r => r.composite_y).filter(v => v != null)
       const meanY = ys.length ? ys.reduce((a, b) => a + b, 0) / ys.length : 0
-      const arousalTrend = meanY < -0.15 ? 'high' : meanY > 0.15 ? 'low' : 'neutral'
+      const arousalTrend = meanY > 0.15 ? 'high' : meanY < -0.15 ? 'low' : 'neutral'
 
       setGreeting(greetingFor({
         compositeLabel: checkins?.[0]?.composite_label ?? null,
@@ -782,113 +809,137 @@ function RippleGreeting({ userId }) {
   )
 }
 
+// ── RIPPLE FACE ───────────────────────────────────────────────────────────────
+// The Ripple portrait wearing the latest check-in's mood. Exported so
+// /dev/insights-preview can render it against synthetic rows without an account.
+
+export function RippleFace({ userId, last, size = 124, devAvatar, bare = false }) {
+  const { data: fetched } = useAvatarConfig(devAvatar ? null : userId)
+  const avatar = devAvatar ?? fetched
+
+  const sectorId = last?.composite_label ? (LABEL_TO_ID[last.composite_label] ?? -1) : -1
+  const em = sectorId >= 0 ? EMOTIONS[sectorId] : null
+
+  const intensityT = last && last.composite_x != null && last.composite_y != null
+    ? Math.min(1, Math.hypot(last.composite_x, last.composite_y))
+    : 0
+
+  return (
+    <div style={{
+      flexShrink: 0,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      // `bare` = sits directly on the page beside the check-in bar, as the v2
+      // frame draws it. The tiled form is kept for the preview grid.
+      ...(bare ? {} : { borderRadius: 24, padding: 10, background: 'var(--bgp)' }),
+      filter: em ? `drop-shadow(0 6px 18px ${em.outer}33)` : 'none',
+    }}>
+      <RippleAvatar
+        skinColor={avatar?.skin_color ?? '#FDBCB4'}
+        eyeColor={avatar?.eye_color ?? '#4A90D9'}
+        species={avatar?.species ?? 'human'}
+        hairStyle={avatar?.hair_style ?? 'none'}
+        hairColor={avatar?.hair_color ?? '#784421'}
+        valence={em ? em.valence : 0}
+        arousal={em ? em.arousal : 0}
+        intensityT={intensityT}
+        pupilTier={em?.pupilTier ?? 1}
+        glowColor={em ? em.outer : null}
+        size={size}
+      />
+    </div>
+  )
+}
+
 // ── RIPPLE CARD ───────────────────────────────────────────────────────────────
 
-function RippleCard({ userId }) {
+// devState: DEV-only escape hatch for /dev/insights-preview, so the assembled
+// card can be looked at without a signed-in account with check-in history.
+export function RippleCard({ userId, devState }) {
   const [ripple,   setRipple]   = useState(null)
   const [checkins, setCheckins] = useState(null)
 
   useEffect(() => {
-    if (!userId) return
+    if (devState || !userId) return
     Promise.all([
       supabase.from('ripples')
         .select('name, streak_current, last_checkin_on')
         .eq('user_id', userId).maybeSingle(),
+      // Latest row drives today's mood and intention; the label-only history
+      // behind it is what "most often mood" is computed from. Trends themselves
+      // live in InsightsWidget (2026-07-30) rather than being drawn twice.
       supabase.from('ripple_checkins')
-        .select('composite_label, composite_x, composite_y, local_date')
+        .select('composite_label, composite_x, composite_y, local_date, intention')
         .eq('user_id', userId)
-        .order('local_date', { ascending: true })
-        .limit(30),
+        .order('local_date', { ascending: false })
+        .limit(400),
     ]).then(([{ data: r }, { data: c }]) => {
       setRipple(r ?? {})
       setCheckins(c ?? [])
     })
-  }, [userId])
+  }, [userId, devState])
 
-  if (ripple === null) return null
-
-  const name   = ripple?.name
-  const streak = ripple?.streak_current ?? 0
+  const state = devState ?? (ripple === null ? null : { ripple, checkins })
+  if (state === null) return null
 
   const checkedInToday = (() => {
-    if (!ripple?.last_checkin_on) return false
+    if (!state.ripple?.last_checkin_on) return false
     const pad = n => String(n).padStart(2, '0')
     const now = new Date()
-    return ripple.last_checkin_on === `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
+    return state.ripple.last_checkin_on === `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
   })()
 
-  const last      = checkins?.length ? checkins[checkins.length - 1] : null
-  const hasTrends = checkins && checkins.length >= 2
+  const last = state.checkins?.[0] ?? null
+  const mode = modeLabel(state.checkins ?? [])
 
-  // Mode composite label across all check-ins
-  const modeLabel = (() => {
-    if (!checkins?.length) return null
-    const counts = {}
-    checkins.forEach(c => { if (c.composite_label) counts[c.composite_label] = (counts[c.composite_label] || 0) + 1 })
-    return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null
-  })()
-
+  // The Ripple sits OUTSIDE the bar, on the page, not inside the bordered
+  // surface (v2 CheckinReminder frame). The face wears the latest mood — see
+  // RippleFace for why the expression routes through the EMOTIONS lookup.
   return (
-    <div style={S.gameCard}>
-      <div style={S.gameCardInner}>
-        {/* Header: name + streak badge */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
-          <div>
-            <span style={S.gameBadge}>Daily check-in</span>
-            <h2 style={S.gameTitle}>{name ?? 'Your Ripple'}</h2>
-          </div>
-          {streak > 0 && (
-            <div style={{ textAlign: 'right', paddingTop: 4, flexShrink: 0 }}>
-              <div style={{ fontFamily: MONO, fontSize: 28, fontWeight: 700, color: 'var(--pk)', lineHeight: 1 }}>{streak}</div>
-              <div style={{ fontFamily: MONO, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--tx3)', marginTop: 3 }}>day streak</div>
-            </div>
-          )}
-        </div>
+    <div style={S.checkinRow}>
+      <RippleFace userId={userId} last={last} size={96} bare />
 
-        {/* No check-ins yet */}
-        {!last && (
-          <p style={S.gameDesc}>You haven't checked in yet. Start now to track how you're arriving each day.</p>
-        )}
-
-        {/* Single check-in — dot + label */}
-        {last && !hasTrends && (
-          <div style={{ display: 'flex', gap: 14, alignItems: 'center', marginTop: 8, flexWrap: 'wrap' }}>
-            <SwMoodGrid rows={[last]} />
-            <div>
-              <div style={{ fontFamily: SERIF, fontSize: 19, color: 'var(--tx)', marginBottom: 3 }}>
-                Feeling {last.composite_label?.toLowerCase() ?? 'balanced'}
-              </div>
-              <div style={{ fontFamily: MONO, fontSize: 11, color: 'var(--tx3)' }}>
-                {checkedInToday ? 'Today' : last.local_date}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 2+ check-ins — scatter + sparklines + stats */}
-        {hasTrends && (
+      <div style={S.checkinBar}>
+        {!last ? (
+          <p style={{ ...S.gameDesc, margin: 0, flex: 1, minWidth: 200 }}>
+            You haven&rsquo;t checked in yet. Start now to track how you&rsquo;re arriving each day.
+          </p>
+        ) : (
           <>
-            <div style={{ display: 'flex', gap: 10, alignItems: 'stretch', marginTop: 8 }}>
-              <SwMoodGrid rows={checkins} />
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1, minWidth: 0 }}>
-                <SwLinePlot rows={checkins} field="valence" label="VALENCE" color="#f068a4" />
-                <SwLinePlot rows={checkins} field="arousal" label="AROUSAL" color="#9b6bb5" />
-              </div>
-            </div>
-            <div style={{ marginTop: 12 }}>
-              <StatCluster stats={[
-                { label: 'check-ins',  value: checkins.length },
-                { label: 'most often', value: modeLabel?.toLowerCase() ?? '—' },
-                { label: 'today',      value: last.composite_label?.toLowerCase() ?? '—' },
-              ]} />
-            </div>
+            <CheckinField
+              label={checkedInToday ? 'Today’s intention' : 'Last intention'}
+              value={last.intention ? `“${last.intention}”` : '—'}
+              italic={!!last.intention}
+            />
+            <CheckinField
+              label={checkedInToday ? 'Today’s mood' : 'Last mood'}
+              value={last.composite_label ?? '—'}
+            />
+            {/* Null until some mood actually repeats — see modeLabel(). */}
+            <CheckinField label="Most often mood" value={mode ?? '—'} />
           </>
         )}
-      </div>
 
-      <Link to="/checkin" style={{ ...S.gameStatus, display: 'block', textDecoration: 'none' }}>
-        {checkedInToday ? 'Check in again →' : 'Check in now →'}
-      </Link>
+        {/* marginLeft:auto — fields pack left, the CTA holds the right edge, as
+            the frame draws it. `auto` rather than a spacer so that when the row
+            wraps on narrow screens the button simply drops below. */}
+        <PrimaryCTA to="/checkin" style={{ flexShrink: 0, marginLeft: 'auto' }}>
+          {checkedInToday ? 'Check in again →' : 'Check in now →'}
+        </PrimaryCTA>
+      </div>
+    </div>
+  )
+}
+
+function CheckinField({ label, value, italic = false }) {
+  return (
+    <div style={{ minWidth: 110, maxWidth: 320 }}>
+      <EyebrowLabel style={{ fontSize: 11, padding: '4px 8px' }}>{label}</EyebrowLabel>
+      <div style={{
+        fontFamily: SERIF, fontSize: 17, color: 'var(--tx)', marginTop: 8,
+        lineHeight: 1.35, fontStyle: italic ? 'italic' : 'normal',
+      }}>
+        {value}
+      </div>
     </div>
   )
 }
@@ -926,6 +977,15 @@ const S = {
   badgeLabel:   { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--tx3)', marginBottom: 4 },
   badgeEmail:   { fontSize: 14, color: 'var(--tx)', fontWeight: 600 },
   secLabel: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--tx3)', marginBottom: 16 },
+
+  // Check-in reminder: Ripple on the page at the left, bordered bar beside it.
+  checkinRow: { display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' },
+  checkinBar: {
+    flex: 1, minWidth: 300,
+    display: 'flex', alignItems: 'center', gap: 28, flexWrap: 'wrap',
+    background: 'var(--bgc)', border: '1px solid var(--pkbs)',
+    borderRadius: 24, padding: '18px 22px',
+  },
   gameGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 },
   gameCard: { background: 'var(--bgc)', border: '1px solid var(--pkbs)', borderRadius: 16, overflow: 'hidden', display: 'flex', flexDirection: 'column' },
   gameCardMuted: { border: '1px solid var(--bd)' },

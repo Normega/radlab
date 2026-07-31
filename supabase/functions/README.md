@@ -26,8 +26,24 @@ Optional, all with working defaults (`auto-enroll` rate limiting, live 2026-07-3
 
 ```bash
 supabase link --project-ref qajrlfqoicfcfhthsfay   # once per machine
-supabase functions deploy <name>
+supabase functions deploy <name> --project-ref qajrlfqoicfcfhthsfay
 ```
+
+**`verify_jwt` lives in `supabase/config.toml` — do not pass it on the command
+line.** Seven of the ten functions run with `verify_jwt = false` (pg_cron,
+server-side callers, unauthenticated links). Without the config file the CLI
+defaults to `true`, so a deploy that forgot `--no-verify-jwt` silently flipped
+them to JWT-required and broke the caller — that is what happened on
+2026-07-30 and why the config exists. Every function is listed there
+explicitly, including the `true` ones; **add new functions to it in the same
+commit**. Verified both directions after adding it: `handle_unsubscribe`
+redeployed with no flag and stayed `false`, `handle_ripple_unsubscribe` stayed
+`true`, and all ten still match their intended setting.
+
+Note `--project-ref` is still required. Adding `config.toml` made the CLI stop
+falling back to `supabase/.temp/linked-project.json` for ref resolution
+(`LegacyProjectNotLinkedError`); harmless, and unlike `--no-verify-jwt` a
+missing ref fails loudly instead of silently breaking a function.
 
 **No `--schedule` flag on `check_schedule`.** Its 15-minute cadence is a
 pg_cron job in the database calling the function over `net.http_post` (see

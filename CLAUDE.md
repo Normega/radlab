@@ -109,3 +109,29 @@ The check, concretely:
 4. Docs-only, comment-only, or trivial changes that website.md doesn't describe need no update — but the check itself is not optional.
 
 Rationale: website.md is the context handed to every new working session; a stale entry silently misleads the next session (and has — e.g. an implementation brief that predated a shipped primitive nearly caused a parallel reimplementation).
+
+---
+
+## Branch policy — finish the branch, and merge before you deploy
+
+**Work on `main` directly for small, verifiable changes.** Branches earn their keep when work is risky or genuinely parallel; for "fix it, verify it live, move on" they add a merge step and a chance to forget.
+
+**If you do create a branch, end the task by merging it to `main` and deleting it** — or delete it unmerged if the work was abandoned. Do not leave it for later; later is how 52 branches accumulate.
+
+**Never leave a change that is already live on an unmerged branch.** This is the rule that actually matters. A migration applied via the Supabase MCP, or an Edge Function deployed with the CLI, is *live* — but if the code or the migration file exists only on a branch, the next person who deploys that function from `main` silently reverts it. "Applied and verified live" is not durable until it is in `main`.
+
+So: **merge first, deploy second.** A deploy takes whatever is in the working tree.
+
+### Periodic cleanup
+
+Safe because `-d` refuses anything unmerged — the worst case is that it declines:
+
+```bash
+git branch --merged main | grep -vE '^\*|main|backup/' | xargs -r git branch -d
+```
+
+Before deleting an *unmerged* branch, check what it actually holds — `git merge-tree --write-tree main <branch>` then diff that tree against `main`. "N commits ahead" and `git cherry` both overstate things: they count patch-ids, so a branch whose work reached `main` by another route still looks unmerged. Never judge a branch by its name or its age.
+
+### Background
+
+Discovered 2026-07-30 while triaging 52 local branches: 44 were fully merged (harmless noise), and of the 7 genuinely ahead, 4 were superseded, 1 held a preregistration document that existed nowhere else — and **1 held a consent-gate fix that had been applied live on 2026-07-17 and never merged**. Redeploying that Edge Function from `main` earlier the same day silently reverted it, so admin-generated participant links stopped showing the consent form. Proven by three `study_enrollments` rows: `consent_date` null (fixed) → stamped (reverted) → null again (re-merged and redeployed). The clutter was cosmetic; it was the clutter that kept that one branch invisible.
