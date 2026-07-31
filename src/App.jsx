@@ -231,8 +231,10 @@ export default function App() {
     setStillWaterPlayed((data?.still_water_sessions ?? 0) > 0)
     setSuperAdmin(!!data?.super_admin)
     setOnboardingComplete(oc)
-    // Only check ripple name for public users who've completed onboarding (migration beat)
-    if (r === 'public' && oc) checkRippleName(userId)
+    // Checked for ALL public users, not just onboarded ones (2026-07-30): the name
+    // is what distinguishes a user part-way through the current /welcome flow from
+    // a legacy user who predates it — see needsWelcome.
+    if (r === 'public') checkRippleName(userId)
     else setRippleNamed(true)
   }
 
@@ -258,12 +260,25 @@ export default function App() {
   }, [])
 
   // Ripple onboarding guards:
-  //   needsWelcome    — new public user, no avatar yet → /welcome (full flow)
+  //   needsWelcome    — public user who hasn't finished /welcome → /welcome (full flow)
   //   needsRippleName — existing public user, onboarded but no Ripple name yet → /ripple/name (migration beat)
+  //
+  // "Hasn't finished" cannot be read off the avatar row alone. Until 2026-07-30 it
+  // could: the avatar was written on the LAST content step, so no-avatar ≈ not-done.
+  // The Ripple-first reorder moved that write to the consent step, which silently
+  // opened the exit — a user who agreed and then clicked any link in the global Nav
+  // passed this guard with demographics and reminders never collected, and
+  // onboarding_complete still false. Caught 2026-07-30 walking the new flow live.
+  //
+  // So the two states are told apart by the Ripple's NAME, written in the same
+  // transaction as the avatar by WelcomeFlow's persistRipple():
+  //   no avatar                  → brand-new user, hasn't started  → /welcome
+  //   avatar + name, not complete→ part-way through the new flow   → /welcome (resumes)
+  //   avatar, NO name, not complete → legacy user predating the flow → left alone
   const needsWelcome =
-    (role === undefined || onboardingComplete === undefined || hasAvatar === undefined)
+    (role === undefined || onboardingComplete === undefined || hasAvatar === undefined || rippleNamed === undefined)
       ? undefined
-      : role === 'public' && onboardingComplete === false && hasAvatar === false
+      : role === 'public' && onboardingComplete === false && (hasAvatar === false || rippleNamed === true)
 
   const needsRippleName =
     (role === undefined || onboardingComplete === undefined || rippleNamed === undefined)
