@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence } from 'framer-motion'
 import { PHASE, CFG, sampleValues } from './constants.js'
 import { assignVeggies, veggieUrl } from './data/veggies.js'
 import { saveFarmJoySession } from './hooks/useFarmJoySession.js'

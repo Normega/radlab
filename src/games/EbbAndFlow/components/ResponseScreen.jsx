@@ -1,4 +1,4 @@
-﻿import { useState, useRef, useCallback } from 'react';
+﻿import { useState, useRef } from 'react';
 
 // ── PlacementSlider ────────────────────────────────────────────────────────
 // Mandatory-placement pattern:
