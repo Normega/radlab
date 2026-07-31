@@ -73,9 +73,18 @@ export async function saveFirstContactSession({
 
 // Save a completed Ebb & Flow session to Supabase.
 // Inserts game_sessions → trials (bulk), updates profiles ebb_flow_* columns.
+//
+// The caller also passes session_score and session_sync_mean, which are
+// deliberately NOT stored: no column exists for either, and both are exactly
+// derivable from the per-trial rows this function does write.
+//   session_sync_mean = avg((metrics->>'trial_sync_mean')::numeric) per session
+//   session_score     = sum of computeTrialScore(trial_type, correct, confidence),
+//                       all three of which live in trials.metrics
+// They were previously destructured here and silently dropped, which read like
+// a persistence bug. Derive them at analysis time instead.
 export async function saveEbbFlowSession({
-  user_id, trials, session_score, total_score, total_trials,
-  quest_state, game_mode, new_mode_unlocked, session_sync_mean,
+  user_id, trials, total_score, total_trials,
+  quest_state, game_mode, new_mode_unlocked,
 }) {
   const now = new Date().toISOString()
 

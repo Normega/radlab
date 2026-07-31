@@ -4,7 +4,7 @@
 // the standalone resource) toggle live so both can be compared. Speaker notes
 // (figure sources + spoken-only content) toggle with the notes button or "N".
 // The two live demos are NOT embedded — their slides link out in a new tab.
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   PositionIcons, SalienceMagnitudeSchematic, MissTrialTrace,
   MaiaScatter, NeuralFlow, PacerAttentionIllustration,

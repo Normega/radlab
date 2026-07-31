@@ -92,14 +92,16 @@ export async function advanceSchedule(participantId, studyId, completedScheduleI
  *
  * Expires any existing active participant_links for this participant + study.
  * Creates a new participant_links row.
- * Updates participant_schedule status to 'link_sent'.
+ * Updates participant_schedule status to 'link_sent' and back-fills link_id
+ * (the admin schedule table joins links via participant_links!link_id, so
+ * without the back-fill an issued link is invisible and unrevocable in the UI).
  * Returns the new link token.
  */
 export async function issueLink(scheduleRowId) {
   const { data: schedRow, error: schedErr } = await supabase
     .from('participant_schedule')
     .select('participant_id, study_id, study_sessions(link_expires_hours)')
-    .eq('id', schedRowId)
+    .eq('id', scheduleRowId)
     .single()
   if (schedErr) throw schedErr
 
@@ -117,19 +119,19 @@ export async function issueLink(scheduleRowId) {
   const { data: link, error: linkErr } = await supabase
     .from('participant_links')
     .insert({
-      schedule_id:    schedRowId,
+      schedule_id:    scheduleRowId,
       participant_id: schedRow.participant_id,
       study_id:       schedRow.study_id,
       expires_at:     expiresAt,
     })
-    .select('token')
+    .select('id, token')
     .single()
   if (linkErr) throw linkErr
 
   await supabase
     .from('participant_schedule')
-    .update({ status: 'link_sent' })
-    .eq('id', schedRowId)
+    .update({ status: 'link_sent', link_id: link.id })
+    .eq('id', scheduleRowId)
 
   return link.token
 }

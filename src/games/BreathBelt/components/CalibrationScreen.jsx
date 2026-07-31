@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef } from 'react'
 import AvatarBreathPacer from '../../EbbAndFlow/components/AvatarBreathPacer'
 import { useBreathCycle } from '../../EbbAndFlow/useBreathCycle'
 import CalibReviewPanel from './CalibReviewPanel'
