@@ -330,6 +330,42 @@ stay comparable.
 
 ---
 
+### Effort: `medium` beats `high` here, measured over three chapters
+
+Set on 2026-08-01 to survive the 300s cap (§0). The question was whether it thins the pages.
+It does not. Native paper-mode disorder chapters, like for like:
+
+| Module | Effort | Secs | Output tok | Pages | Content chars | **Chars per output tok** | Secs/page |
+|---|---|---|---|---|---|---|---|
+| 07 anxiety | high | 298 | 27,020 | 14 | 56,347 | **2.08** | 21.3 |
+| 09 OCD | medium | 189 | 16,750 | 10 | 36,985 | **2.21** | 18.9 |
+| 08 somatic | medium | 202 | 18,635 | 12 | 41,253 | **2.21** | 16.8 |
+
+Both medium runs land on **exactly 2.21** chars of page per output token against 2.08 at high — more
+of each token becomes page rather than thinking — and time per page falls. (Module 04's paper run
+is 1.79, but it was extracted mode with much shorter pages, so it is not comparable.)
+
+**Raw page length does not separate the two, and the reason is worth keeping.** Mean new
+Tier A page: 6,124 chars at high (M07), 6,778 at medium (M09), 4,781 at medium (M08). Medium
+produced both the longest and the shortest set, so the variance is the *source module*, not the
+effort setting. The `needs` frontmatter confirms it — length tracks declared gaps almost exactly:
+
+| Declared gaps | Pages | Length |
+|---|---|---|
+| 3 | illness-anxiety, functional-neurological, factitious | 3,868–4,251 |
+| 2 | psychological-factors-affecting-other-medical-conditions | 6,899 |
+| 1 | hoarding, body-dysmorphic, obsessive-compulsive | 6,103–7,710 |
+
+The short Module 08 pages are short because the somatic chapter genuinely carries little etiology
+and treatment, and the model **declared the gap instead of padding**. That is the behaviour the
+`needs` mechanism exists to produce, and it is the opposite of quality loss.
+
+Caveat: N=1 high against N=2 medium, different source modules. The efficiency metric is consistent
+and no quality signal points the other way, so **stay on medium** — but this is worth re-checking
+if a later chapter reads thin for reasons the gap list doesn't explain.
+
+---
+
 ## 6. Citations — copy these, don't compose them
 
 Attribution is a **licence condition** for CC BY-NC-SA material, not a courtesy. Page attribution
@@ -393,3 +429,115 @@ with working links should have moved it — better to learn that on run 5 than i
 **Run 5 (Module 07, anxiety) is the natural pilot**: it is the next lecture's material, produces 4
 Tier A pages plus an overview, and one page in that chapter already has a body, so it exercises the
 merge path as well as the create path.
+
+---
+
+## 8. The gap map — what the sweep will fix, and what it won't
+
+> Written 2026-08-01 after Modules 07, 09 and 08. The working order is **skeleton first, review
+> second**: get every part assembled, then review the assembled thing. This section exists so the
+> skeleton's holes are visible *while* it is being assembled, because two of them are invisible to
+> the obvious check and one of them the remaining runs will never close.
+
+### 8.1 Where the skeleton stands
+
+Counting a page as written only if it has an accepted body (after triaging the 22 proposals from
+Modules 09 and 08):
+
+| Tier | Written | Total |
+|---|---|---|
+| A (central to the course) | 17 | 54 |
+| B (supporting) | 7 | 46 |
+| Foundation | 8 | 9 |
+| **Overview** | **0** | **16** |
+
+### 8.2 "Has a page" is not "has a skeleton" — the stub problem
+
+**Six of the Tier A pages that exist are stubs**, at 1,716–3,029 characters against a healthy
+5,000–8,000, and they are invisible to any coverage count:
+
+| Page | Chars | Will a scheduled run fix it? |
+|---|---|---|
+| `bulimia-nervosa` | 1,716 | ✅ Module 10 (run 10) |
+| `anorexia-nervosa` | 2,049 | ✅ Module 10 (run 10) |
+| `borderline-personality-disorder` | 3,029 | ✅ Module 13 (run 14) |
+| `somatic-symptom-disorder` | 2,713 | ✅ already — Module 08's pending update is 5,166 |
+| **`bipolar-i-disorder`** | **2,845** | ❌ **no — Module 04 is done** |
+| **`bipolar-ii-disorder`** | **1,914** | ❌ **no — Module 04 is done** |
+
+They exist because the **early journal-article ingests** (Shedler, Fonagy, the BMJ psychotherapy
+paper) mentioned these disorders in passing and created pages for them. Every page produced by the
+*module* sweep is healthy; every stub predates it.
+
+**The mood block is the one that bites.** Lecture 5 reads as fully covered — 4 of 4 Tier A written
+— but three of those four are incomplete (`bipolar-i`, `bipolar-ii`, and `persistent-depressive-
+disorder`, which declares epidemiology, etiology *and* treatment missing), and **Module 04 has
+already run, so nothing in the remaining schedule will revisit them.** Left alone they ship as-is.
+Fix: one reference-mode run per page against Module 04, in the reference pass (§5).
+
+### 8.3 `needs` detects missing headings, not thin ones
+
+`bipolar-i-disorder` and `bipolar-ii-disorder` declare only `contested` — by the gap list they are
+nearly complete. They are 2,845 and 1,914 characters. Every skeleton heading is present; each
+section is a sentence or two beneath it.
+
+So **the gap list understates the work**, and a length check has to run alongside it. Working rule:
+a Tier A page under ~4,000 characters is thin regardless of what it declares.
+
+### 8.4 The two gap families, and why they split cleanly
+
+The `needs` vocabulary across the corpus falls into two groups, and they map onto two different
+kinds of work:
+
+**Core skeleton** — `diagnosis` (5 pages), `presentation` (4), `epidemiology` (7), `etiology` (9),
+`treatment` (5). A page missing these is missing the template. This is instructor work.
+
+**`contested`** — 9 pages, and structurally absent almost everywhere else. The textbook does not do
+controversy; it reports consensus. That makes it the single best student contribution target in the
+corpus: the section is *supposed* to exist, the model correctly refuses to invent it, and finding
+the live disagreement in a diagnosis is real intellectual work rather than summarising.
+
+A third group is bespoke one-off enrichments on the foundation pages
+(`non-western-and-global-histories`, `canadian-law-and-other-jurisdictions`,
+`cultural-and-contextual-considerations`, `alternatives-to-categorical-diagnosis`). Genuinely
+additive, not core.
+
+### 8.5 Thin *and* central — the hub check
+
+Length alone mis-ranks: a short page nothing links to costs little, a short page everything links
+to degrades all of them. Pages under 2,500 chars with 6+ inbound links:
+
+| Page | Chars | Inbound |
+|---|---|---|
+| `epidemiology` | 2,339 | 8 |
+| `allegiance-effect` | 1,371 | 7 |
+| `multicultural-psychology` | 2,104 | 7 |
+| **`cognitive-behavioral-therapy`** | **1,362** | **6** |
+| `effect-size` | 1,527 | 6 |
+
+`cognitive-behavioral-therapy` is the one to look at first — the most-referenced treatment in an
+abnormal psychology course, and one of the thinnest pages in the wiki.
+
+### 8.6 The two lists
+
+**Core text — must exist before the class starts.**
+
+1. **The 16 topic overviews.** Zero written; every lecture needs its own. Reference pass (§5).
+2. **The mood block: `bipolar-i`, `bipolar-ii`, `persistent-depressive-disorder`.** No scheduled run
+   will touch them (§8.2).
+3. **Lecture 7 in full** — 7 Tier A pages and 3 overviews with no textbook source at all (§4).
+4. **`suicide-and-self-harm`** — the only unwritten foundation, and uncovered by the textbook (§4).
+5. **`cognitive-behavioral-therapy`**, and the thin hubs behind it (§8.5).
+6. The 37 remaining Tier A pages from unrun modules — *on track* via the sweep, not at risk.
+
+**Student starting points — publish the list, don't fill them.**
+
+1. **`contested` sections**, corpus-wide. The best of the set (§8.4).
+2. **The 39 remaining Tier B stubs** — what the taxonomy designed them for.
+3. **Thin peripheral concepts**: `defense-mechanisms` (717), `attributional-style` (784),
+   `cognitive-triad` (801), `learned-helplessness` (871), `monoamine-hypothesis` (901),
+   `transference` (971). Small, well-scoped, low-risk.
+4. **Foundation enrichments** — the bespoke one-offs in §8.4.
+
+Norm's sequencing note, kept because it governs how this list is used: the student list gets
+extended *after* the core textbook is assembled, not now.
