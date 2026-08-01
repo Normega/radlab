@@ -112,8 +112,9 @@ SOURCING — mandatory on every page:
 RULES:
 - Paraphrase all diagnostic criteria. Never reproduce DSM-5 text verbatim.
 - If a page already exists in the index, output it as an "update" with only the new information to merge, not a full rewrite. An update is a DELTA: it gets appended to the existing page, so restating what is already there duplicates it.
-- The index lists each existing page's "existing sections". Use them. An "update" MUST NOT contain an H2 heading that is already listed for that page — that heading would land on the page a second time. Add sections the page does not have, and put new material for an existing section under a NEW, more specific heading.
-- If the source genuinely gives you a fuller version of sections the page already has — typically because the existing page is a stub whose headings sit almost empty — then it is NOT an update. Output "replace" and return the ENTIRE page: every existing section carried forward (rewritten where your source is better, kept as-is where it is not) plus whatever you are adding. Accepting a "replace" overwrites the page, so anything you leave out is lost.
+- The index lists each existing page's "existing sections". Use them. An "update" MUST NOT contain an H2 heading that is already listed for that page — that heading would land on the page a second time. Add sections the page does not have, and put genuinely new material for an already-full section under a NEW, more specific heading.
+- The index also lists "empty placeholder sections" for some pages. Those headings exist but hold nothing except a "Needs research" line — the page is a stub. They are NOT content, and the rule above does NOT apply to them. If your source fills one, do NOT invent a new heading for it: that would leave the placeholder sitting above your content under a different name, and the page would go on advertising a gap it no longer has.
+- So: if your source fills one or more of a page's "empty placeholder sections", the output is a "replace", not an "update". Return the ENTIRE page — every section under its EXISTING canonical heading, placeholders replaced by your content, sections you cannot improve carried forward verbatim, and the "needs" array reduced to only what is still genuinely missing. Use H3 subheadings inside a section if you need internal structure. Accepting a "replace" overwrites the page, so anything you leave out is lost.
 - If a page is new, output it as "new" with full content.
 - Flag any direct contradiction with existing wiki content in a "contradictions" field, do not silently resolve it.
 - Wikilink filenames: lowercase, hyphens for spaces.
@@ -385,9 +386,21 @@ async function runIngest(service, jobId, { pdf_path, pdf_mode, course_id, person
     // Cheap: ~2.6k extra tokens across the whole index, and input barely moves
     // runtime — Module 01 sent 92k input tokens and finished in 110s, while
     // Module 07 sent half that and took 298s. Generation is output-bound.
+    // `needs` rides along with the headings because headings alone are
+    // ambiguous in the case that matters most. A stub — a page whose six
+    // headings are all present with a "Needs research" line under each — is
+    // indistinguishable in a heading list from a complete page. Module 10 hit
+    // exactly that: shown `existing sections: Presentation, Diagnosis,
+    // Epidemiology, Etiology, Treatment, Contested` for `anorexia-nervosa`, the
+    // model reasonably read it as complete, obeyed "do not restate an existing
+    // heading", and filed its clinical description under "Clinical picture and
+    // warning signs" instead. No heading collided, so nothing caught it — and
+    // the page would have declared `needs: [presentation]` while carrying a
+    // presentation section under another name. Semantic duplication is worse
+    // than the syntactic kind precisely because no mechanical check sees it.
     const { data: indexPages } = await service
       .from('wiki_pages')
-      .select('slug, type, summary, content')
+      .select('slug, type, summary, content, needs')
       .eq('course_id', course_id)
       .neq('status', 'archived')
       .not('content', 'is', null)
@@ -395,10 +408,10 @@ async function runIngest(service, jobId, { pdf_path, pdf_mode, course_id, person
     const wikiIndex = indexPages?.length
       ? indexPages.map(p => {
           const headings = splitH2(p.content).sections.map(s => s.heading)
-          const line = `- ${p.slug}.md (${p.type}): ${p.summary ?? ''}`
-          return headings.length
-            ? `${line}\n    existing sections: ${headings.join(', ')}`
-            : line
+          const lines = [`- ${p.slug}.md (${p.type}): ${p.summary ?? ''}`]
+          if (headings.length) lines.push(`    existing sections: ${headings.join(', ')}`)
+          if (p.needs?.length) lines.push(`    empty placeholder sections: ${p.needs.join(', ')}`)
+          return lines.join('\n')
         }).join('\n')
       : '(the wiki is empty — every page will be new)'
 

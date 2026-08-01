@@ -165,7 +165,7 @@ weeks 1–4 finished, not a random half of the course.
 | — | ~~Module 05~~ | paper ✔ | **run + triaged 2026-08-01** — 13 pages, 2 Tier A | L4 |
 | — | ~~Module 06~~ | paper ✔ | **run + triaged 2026-08-01** — 8 pages, 2 Tier A + the DID debate page | L4 |
 | — | ~~Module 04~~ | paper ✔ | **already run** — 7 pages | L5 |
-| 10 | Module 10 | paper | 3 Tier A (2 written) | L6 |
+| — | ~~Module 10~~ | paper ✔ | **run + triaged 2026-08-01** — 11 pages; the two eating stubs restructured by hand (§8.9) | L6 |
 | 11 | Module 11 | paper | 5 Tier A | L8 |
 | 12 | Module 12 | paper | 2 Tier A | L9 |
 | 13 | Module 14 | paper | 3 Tier A | L10 |
@@ -482,7 +482,7 @@ Counting a page as written only if it has an accepted body (after triaging Modul
 
 | Tier | Written | Total |
 |---|---|---|
-| A (central to the course) | 21 | 54 |
+| A (central to the course) | 22 | 54 |
 | B (supporting) | 10 | 46 |
 | Foundation | 8 | 9 |
 | **Overview** | **0** | **16** |
@@ -628,3 +628,55 @@ Not settled here because it is an editorial call, not a mechanical one. The two 
   when the section links out to a `debate` page, and the student list shrinks accordingly.
 - **It does not** — then the `Contested` section should carry a summary of the debate and a link to
   it, and the current state is genuinely incomplete.
+
+### 8.9 Semantic duplication: the stub failure that collides with nothing
+
+Module 10 produced the failure mode §8.2's stubs were always going to cause, and it slipped past
+every check because it never produced a duplicate heading.
+
+`anorexia-nervosa` and `bulimia-nervosa` both got `update` deltas that obeyed the rule "do not
+restate a heading the page already has" — and so filed a clinical description under **"Clinical
+picture and warning signs"** while `## Presentation` sat above it holding nothing but a
+`> **Needs research:**` line. Same for prevalence under "Prevalence and cultural distribution"
+against an empty `## Epidemiology`, and causation under "Multidimensional etiology" against an
+empty `## Etiology`.
+
+Appended, each page would have carried the content **and** a placeholder asking for that same
+content, under two names, while still declaring `needs: [presentation, diagnosis, epidemiology,
+etiology]` — so `reference_worklist` would have kept offering a finished page as unwritten work.
+
+**Why nothing caught it.** `reconcileCollidingUpdate` looks for shared headings and there were none;
+the duplicate-heading check in `wiki_merge_health.sql` returns clean. Both are correct. Syntactic
+duplication is mechanically visible and semantic duplication is not.
+
+**The cause was a missing signal, not a bad rule.** The index showed:
+
+```
+- anorexia-nervosa.md (disorder): …
+    existing sections: Presentation, Diagnosis, Epidemiology, Etiology, Treatment, Contested
+```
+
+which reads as a *complete* page. **A stub and a finished page are indistinguishable in a heading
+list.** The model reasoned correctly from what it was given.
+
+**Fix (2026-08-01):** entries now carry `empty placeholder sections: …` from `wiki_pages.needs`, and
+the prompt states that those headings hold nothing, that the do-not-restate rule does not apply to
+them, and that filling one makes the output a `replace` under the **existing canonical heading**,
+with H3 subheadings for internal structure and `needs` cut to what is genuinely still missing.
+
+**Repairing a page that already has this shape.** Do not re-run the module (§0). Demote each delta
+heading to an H3 under the canonical H2 it belongs to, verbatim, and drop the placeholder it fills.
+Three things to watch, all of which came up on these two pages:
+
+1. **Do not zero out `needs` reflexively.** Both modules supplied the *differential* but not criteria
+   structure or specifiers, so `diagnosis` stayed a declared gap and the arrays went 4 → 1, not 4 → 0.
+2. **The same-sounding section can belong in different places.** Anorexia's "Prognosis and mortality"
+   went under Epidemiology (course); bulimia's "Outcome predictors" went under Treatment (treatment
+   response). Read the content, don't match on the heading.
+3. **Check placeholders for content before deleting them.** Anorexia's Epidemiology placeholder had a
+   real treatment finding buried inside its `Needs research` line — *age moderates response, older
+   patients to individual therapy, younger to family-based* — which deleting the placeholder would
+   have destroyed. It now sits in Treatment.
+
+Result: `anorexia-nervosa` 2,049 → 6,795 chars, `bulimia-nervosa` 1,716 → 6,108, both with the
+six-section skeleton intact. Two of §8.2's six stubs are now real pages.
