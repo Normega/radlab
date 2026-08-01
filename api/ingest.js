@@ -96,7 +96,8 @@ PAGE TYPES:
     > **Needs research:** <specifically what is missing, e.g. "genetic and neurobiological findings; this source only covers psychosocial treatment">
   and list that section's lowercase name in the frontmatter "needs" array, e.g. needs: [diagnosis, etiology, epidemiology].
   Do NOT invent content to fill a section, and do NOT drop a section to avoid an empty one. A visible gap is the wiki telling the course what to read next; a missing heading is indistinguishable from a settled question.
-  ON AN UPDATE to a disorder page that already exists, the six-section rule does NOT apply. Output ONLY the H2 sections you are actually adding content to. Do not emit the other headings, do not emit "Needs research" placeholders for sections you are not touching, and do not emit a "needs" array — the page already has all of that. An update is appended to the page, not merged section by section, so a full skeleton in an update lands as a SECOND copy of the skeleton on the page.
+  ON AN UPDATE to a disorder page that already exists, the six-section rule does NOT apply. Output ONLY the H2 sections you are actually adding content to, and only headings NOT already listed under that page's "existing sections" in the index. Do not emit the other headings, do not emit "Needs research" placeholders for sections you are not touching, and do not emit a "needs" array — the page already has all of that. An update is appended to the page, not merged section by section, so a full skeleton in an update lands as a SECOND copy of the skeleton on the page.
+  ON A REPLACE of a disorder page, the six-section rule DOES apply again: return all six headings in order, with a "needs" array covering whatever is still unsupported, exactly as for a new page. A replace is the whole page.
 - study: one page per paper. Fields: title, authors, year, journal, doi, design, sample, key_findings, limitations, disorders_touched, concepts_touched
 - concept: a theoretical or empirical construct. Fields: title, definition, related_concepts, key_studies
 - treatment: an intervention or treatment approach. Fields: title, target_disorders, mechanism, evidence_base, limitations
@@ -111,6 +112,8 @@ SOURCING — mandatory on every page:
 RULES:
 - Paraphrase all diagnostic criteria. Never reproduce DSM-5 text verbatim.
 - If a page already exists in the index, output it as an "update" with only the new information to merge, not a full rewrite. An update is a DELTA: it gets appended to the existing page, so restating what is already there duplicates it.
+- The index lists each existing page's "existing sections". Use them. An "update" MUST NOT contain an H2 heading that is already listed for that page — that heading would land on the page a second time. Add sections the page does not have, and put new material for an existing section under a NEW, more specific heading.
+- If the source genuinely gives you a fuller version of sections the page already has — typically because the existing page is a stub whose headings sit almost empty — then it is NOT an update. Output "replace" and return the ENTIRE page: every existing section carried forward (rewritten where your source is better, kept as-is where it is not) plus whatever you are adding. Accepting a "replace" overwrites the page, so anything you leave out is lost.
 - If a page is new, output it as "new" with full content.
 - Flag any direct contradiction with existing wiki content in a "contradictions" field, do not silently resolve it.
 - Wikilink filenames: lowercase, hyphens for spaces.
@@ -118,7 +121,7 @@ RULES:
 OUTPUT FORMAT (JSON only, no other text):
 {
   "pages": [
-    {"action": "new" | "update", "type": "disorder|study|concept|treatment|debate", "filename": "lowercase-with-dashes.md", "content": "full markdown content with YAML frontmatter"}
+    {"action": "new" | "update" | "replace", "type": "disorder|study|concept|treatment|debate", "filename": "lowercase-with-dashes.md", "content": "full markdown content with YAML frontmatter"}
   ],
   "index_entries": [
     {"filename": "...", "type": "...", "one_line_summary": "..."}
@@ -370,15 +373,33 @@ async function runIngest(service, jobId, { pdf_path, pdf_mode, course_id, person
     // to choose between, which is a reviewable state; a delta against nothing
     // is not. (Found 2026-07-26 on live data, after two accepted updates both
     // produced fragments.)
+    // Each entry carries the page's existing H2 headings, not just a one-line
+    // summary. Without them the model is told "an update is a delta, do not
+    // restate what is already there" and given no way to know what that is —
+    // so it restates, and the delta lands as a second copy of the skeleton.
+    // That is how `major-depressive-disorder` ended up with three copies of the
+    // six-section skeleton and `persistent-depressive-disorder` with two, both
+    // merged back by hand on 2026-07-30. `reconcileCollidingUpdate` catches the
+    // result server-side; this is the half that prevents it being produced.
+    //
+    // Cheap: ~2.6k extra tokens across the whole index, and input barely moves
+    // runtime — Module 01 sent 92k input tokens and finished in 110s, while
+    // Module 07 sent half that and took 298s. Generation is output-bound.
     const { data: indexPages } = await service
       .from('wiki_pages')
-      .select('slug, type, summary')
+      .select('slug, type, summary, content')
       .eq('course_id', course_id)
       .neq('status', 'archived')
       .not('content', 'is', null)
       .order('slug', { ascending: true })
     const wikiIndex = indexPages?.length
-      ? indexPages.map(p => `- ${p.slug}.md (${p.type}): ${p.summary ?? ''}`).join('\n')
+      ? indexPages.map(p => {
+          const headings = splitH2(p.content).sections.map(s => s.heading)
+          const line = `- ${p.slug}.md (${p.type}): ${p.summary ?? ''}`
+          return headings.length
+            ? `${line}\n    existing sections: ${headings.join(', ')}`
+            : line
+        }).join('\n')
       : '(the wiki is empty — every page will be new)'
 
     // ── Reference mode: the brief for the page being filled ──

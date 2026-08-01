@@ -169,7 +169,7 @@ weeks 1–4 finished, not a random half of the course.
 | 11 | Module 11 | paper | 5 Tier A | L8 |
 | 12 | Module 12 | paper | 2 Tier A | L9 |
 | 13 | Module 14 | paper | 3 Tier A | L10 |
-| 14 | Module 13 | paper | **10 Tier A** (1 written) | L11 |
+| 14 | Module 13 | paper, **try extracted** | **10 Tier A** (1 written) — the one run that will not fit 300s; see §5 | L11 |
 | 15 | **Module 16 — run this LAST** | paper | neurodevelopmental + disruptive/conduct, and deltas onto pages from runs 5–10 | L3/8/10 |
 
 ### Why the foundations runs are reference mode, not paper
@@ -308,6 +308,43 @@ The trade-off is real though: extraction silently drops figures and mangles tabl
 foundations modules (prose and concepts) extracted is a safe saving. For the **disorder chapters,
 stay native** — the criteria and prevalence tables are the payload, and a mangled table looks like
 a successful run.
+
+> **Corrected 2026-08-01 — "the tables are the payload" was never checked, and does not hold.**
+> The rule above was written from first principles and asserted as settled. Three measurements
+> against the live corpus say otherwise:
+>
+> 1. **No disorder page contains a markdown table, in either mode** — 0 of 24. Whatever native
+>    preserves, it is not arriving as a table. The model prosifies tabular material, which is
+>    arguably the right call for a wiki, but it means the stated benefit is invisible in the output.
+> 2. **Percentage figures — the actual content of a prevalence table — are *denser* in extracted
+>    pages**: 1.19 per 1,000 characters against 0.91 for native. (Confounded: extracted is Module 04,
+>    native is 07/08/09.)
+> 3. **The decisive one.** Every prevalence figure the *native* Module 08 run put on a page —
+>    1.3%, 10%, 35%, 6%, 60% — is present in the text `pdftotext -layout` pulls out of the same PDF,
+>    which contains only six distinct percentages in total. Extraction had access to everything
+>    native actually used, and lost nothing that reached a page.
+>
+> **What this does not test:** figures and diagrams, and DSM criteria laid out as tables rather than
+> prose. Those could still favour native and have not been measured. The 3.7× input premium is
+> therefore unjustified *on prevalence data* and unexamined elsewhere.
+>
+> **Recommendation: do not churn mid-sweep.** The saving is ~$0.17 per run and ~$1.30 across
+> everything remaining, against a real cost in consistency — pages generated two different ways
+> during one sweep. Native stays the default for the remaining disorder chapters. The two places to
+> revisit it:
+>
+> - **Module 13** (ten Tier A personality disorders, run 14) is the one run that will not fit in
+>   300s. Try it **extracted at `effort: medium`** before splitting the PDF: extraction buys input
+>   headroom, medium buys output headroom, and the pair may make a split unnecessary. If the run
+>   still overruns, split at a section boundary — Cluster A / B / C, which is how both the DSM and
+>   the book group them — rather than splitting prose from tables. A prose page and a tables page
+>   have to be merged afterwards, which is deliberately inducing the collision that §8 exists to
+>   prevent.
+> - **Any future non-textbook source**, where the extraction quality is unknown and the check above
+>   is worth re-running before trusting it.
+>
+> Reproduce with `pdftotext -layout <module>.pdf -` and compare against the figures on the pages
+> that module produced.
 
 **Prompt caching was investigated (2026-07-31) and is not worth it here.** The arithmetic, on
 Module 01's real 91,863 input tokens at Opus 4.8's $5/MTok: three reference runs cost **$1.38**
