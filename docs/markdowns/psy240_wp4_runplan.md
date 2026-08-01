@@ -162,8 +162,8 @@ weeks 1–4 finished, not a random half of the course.
 | — | ~~Module 07~~ | paper ✔ | **run 2026-07-31, triaged 2026-08-01** — 14 pages, 5 Tier A | L3 |
 | 6 | Module 09 | paper | 2 Tier A | L3 |
 | 7 | Module 08 | paper | 3 Tier A (1 written) | L3 |
-| 8 | Module 05 | paper | 2 Tier A | L4 |
-| 9 | Module 06 | paper | 2 Tier A | L4 |
+| — | ~~Module 05~~ | paper ✔ | **run + triaged 2026-08-01** — 13 pages, 2 Tier A | L4 |
+| — | ~~Module 06~~ | paper ✔ | **run + triaged 2026-08-01** — 8 pages, 2 Tier A + the DID debate page | L4 |
 | — | ~~Module 04~~ | paper ✔ | **already run** — 7 pages | L5 |
 | 10 | Module 10 | paper | 3 Tier A (2 written) | L6 |
 | 11 | Module 11 | paper | 5 Tier A | L8 |
@@ -478,13 +478,12 @@ merge path as well as the create path.
 
 ### 8.1 Where the skeleton stands
 
-Counting a page as written only if it has an accepted body (after triaging the 22 proposals from
-Modules 09 and 08):
+Counting a page as written only if it has an accepted body (after triaging Modules 09, 08, 05 and 06):
 
 | Tier | Written | Total |
 |---|---|---|
-| A (central to the course) | 17 | 54 |
-| B (supporting) | 7 | 46 |
+| A (central to the course) | 21 | 54 |
+| B (supporting) | 10 | 46 |
 | Foundation | 8 | 9 |
 | **Overview** | **0** | **16** |
 
@@ -578,3 +577,54 @@ abnormal psychology course, and one of the thinnest pages in the wiki.
 
 Norm's sequencing note, kept because it governs how this list is used: the student list gets
 extended *after* the core textbook is assembled, not now.
+
+### 8.7 Check the slug against the catalogue at every triage
+
+The slug convention is what makes paper mode viable — disorder names are canonical, so the model's
+independent choice and the catalogue's hand-written slug converge. It has now missed twice, and both
+misses were invisible to a coverage count:
+
+| Run | Model wrote | Catalogue has | Consequence |
+|---|---|---|---|
+| Module 15 | `internet-gaming-disorder` | *(no row at all)* | Good page, outside the catalogue |
+| Module 05 | `adjustment-disorder` | `adjustment-disorders` | **Tier A** row read "no page yet" |
+
+Both failures look identical from the wiki side — the page exists, reads well, resolves its links —
+and identical from the catalogue side — the row is unlinked, so `reference_worklist` keeps offering
+it as unwritten work and the browse-by-DSM-chapter view never shows it.
+
+**The pattern to expect is number.** DSM category names covering subtypes are plural
+(`adjustment-disorders`, `tic-disorders`, `communication-disorders`, `parasomnias`) while single
+diagnoses are singular. The model reaches for the singular because it is writing about *a* disorder.
+
+Check at every triage:
+
+```sql
+SELECT p.slug AS page_only, d.slug AS catalogue_only
+FROM wiki_pages p
+FULL JOIN disorders d ON d.page_id = p.id
+WHERE p.type = 'disorder' AND (d.id IS NULL OR p.id IS NULL);
+```
+
+**Fix with `rename_page()`, and fix it *after* accepting, not before.** Wikilinks are extracted on
+accept, so a rename run before triage reports a clean rename and is wrong — Module 05's rename
+orphaned two inbound links (`posttraumatic-stress-disorder`, `acute-stress-disorder`, both of which
+had linked the singular) that did not exist an hour earlier. `rename_page()` reports what it
+orphaned; retarget those with `edit_page()` and re-check red links.
+
+### 8.8 Open question: does a debate page discharge a `contested` gap?
+
+Module 06 wrote the DID controversy as its own page — `sociocultural-iatrogenic-model-of-did`,
+3,430 chars — while all three dissociative disorder pages still declare `needs: [contested]`.
+
+That is defensible: `debate` is a first-class page type, and the iatrogenic argument spans the whole
+diagnostic category rather than sitting under one diagnosis. But it means the gap list overstates
+what is missing, and `contested` is the largest single entry on the student-contribution list
+(§8.6), so the answer changes what students are pointed at.
+
+Not settled here because it is an editorial call, not a mechanical one. The two options:
+
+- **A linked debate page discharges the gap** — then the `needs` parser should drop `contested`
+  when the section links out to a `debate` page, and the student list shrinks accordingly.
+- **It does not** — then the `Contested` section should carry a summary of the debate and a link to
+  it, and the current state is genuinely incomplete.
