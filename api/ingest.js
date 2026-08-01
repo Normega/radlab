@@ -613,6 +613,75 @@ function extractTitle(content, slug) {
 // gets a row for every page the model produces.
 //
 // Returns an array of human-readable failures (empty on success).
+// Split a markdown body into its H2 sections, keeping order and the preamble
+// (frontmatter + any intro) that precedes the first heading.
+function splitH2(md) {
+  const preamble = []
+  const sections = []
+  let current = null
+  for (const line of (md ?? '').split('\n')) {
+    const m = /^## (.+?)\s*$/.exec(line)
+    if (m) {
+      current = { heading: m[1], lines: [line] }
+      sections.push(current)
+    } else if (current) {
+      current.lines.push(line)
+    } else {
+      preamble.push(line)
+    }
+  }
+  return { preamble, sections }
+}
+
+// ── Reconcile an `update` whose headings collide with the target's ──
+//
+// An `update` is a delta, and the review UI merges it by concatenation. That is
+// right when the delta adds new sections and wrong when it restates existing
+// ones: two `## Etiology` headings on one page, which reads as a duplicated page
+// and has to be unpicked by hand.
+//
+// It is not hypothetical. On 2026-07-30 `major-depressive-disorder` was found
+// carrying **three** copies of the six-section skeleton and
+// `persistent-depressive-disorder` **two**; both were merged back by hand
+// through `edit_page()`. Module 08's `somatic-symptom-disorder` delta arrived
+// with the same shape on 2026-08-01 — five headings, all of them collisions.
+//
+// The trigger is a target that is a *stub*: headings present, bodies near-empty.
+// The model sees a page that exists, correctly calls its output an `update`, and
+// then writes full versions of the very sections that already have headings.
+// `bulimia-nervosa`, `anorexia-nervosa` and `borderline-personality-disorder` are
+// all in that state today, so Modules 10 and 13 will produce three more.
+//
+// Returns null when the delta is a genuine addition (no shared headings) — the
+// common case, and the one the merge path already handles correctly.
+//
+// Otherwise the proposal becomes a `replace`, which the review UI deliberately
+// does *not* pre-merge. A replace has to carry everything forward, so any
+// section the target has and the delta lacks is appended verbatim, in its
+// original order. That graft is mechanical, not editorial: whole sections move
+// unchanged, nothing is rewritten, and nothing is dropped.
+function reconcileCollidingUpdate(deltaMd, targetMd) {
+  const delta = splitH2(deltaMd)
+  const target = splitH2(targetMd)
+  if (!delta.sections.length || !target.sections.length) return null
+
+  const deltaHeadings = new Set(delta.sections.map(s => s.heading))
+  const collisions = target.sections.filter(s => deltaHeadings.has(s.heading))
+  if (!collisions.length) return null
+
+  const orphans = target.sections.filter(s => !deltaHeadings.has(s.heading))
+  const lines = [
+    ...delta.preamble,
+    ...delta.sections.flatMap(s => s.lines),
+    ...orphans.flatMap(s => s.lines),
+  ]
+  return {
+    content: lines.join('\n').replace(/\n{3,}$/, '\n'),
+    collided: collisions.map(s => s.heading),
+    grafted: orphans.map(s => s.heading),
+  }
+}
+
 async function persistProposals(service, { jobId, courseId, personId, result }) {
   const summaries = new Map(
     (result?.index_entries ?? [])
@@ -633,7 +702,7 @@ async function persistProposals(service, { jobId, courseId, personId, result }) 
     try {
       const { data: existing, error: lookupErr } = await service
         .from('wiki_pages')
-        .select('id')
+        .select('id, content')
         .eq('course_id', courseId)
         .eq('slug', slug)
         .maybeSingle()
@@ -661,19 +730,38 @@ async function persistProposals(service, { jobId, courseId, personId, result }) 
       // An existing page's summary is deliberately left alone — overwriting it
       // from an unreviewed proposal would change what students see.
 
+      // Anything the model returns that isn't a recognised action lands as
+      // `new`, which is the safe default: a `new` proposal is reviewed as a
+      // whole page, whereas mislabelling something as `update` would have
+      // the UI pre-merge it onto the existing body.
+      let action = ['update', 'replace'].includes(page.action) ? page.action : 'new'
+      let content = page.content ?? null
+
+      // A delta that restates sections the target already has is a replace, not
+      // an update — see reconcileCollidingUpdate above.
+      if (action === 'update' && content && existing?.content) {
+        const reconciled = reconcileCollidingUpdate(content, existing.content)
+        if (reconciled) {
+          action = 'replace'
+          content = reconciled.content
+          console.warn(
+            `[ingest] ${slug}: update restated ${reconciled.collided.length} existing ` +
+            `section(s) (${reconciled.collided.join(', ')}) — reclassified as replace` +
+            (reconciled.grafted.length
+              ? `, carrying forward ${reconciled.grafted.join(', ')}`
+              : ''))
+        }
+      }
+
       const { error: versionErr } = await service
         .from('wiki_page_versions')
         .insert({
           page_id: pageId,
           kind: 'proposed',
-          // Anything the model returns that isn't a recognised action lands as
-          // `new`, which is the safe default: a `new` proposal is reviewed as a
-          // whole page, whereas mislabelling something as `update` would have
-          // the UI pre-merge it onto the existing body.
-          action: ['update', 'replace'].includes(page.action) ? page.action : 'new',
+          action,
           title,
           summary,
-          content: page.content ?? null,
+          content,
           job_id: jobId,
           created_by: personId,
           review_status: 'pending',
