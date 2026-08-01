@@ -312,6 +312,26 @@ export default async function handler(req, res) {
 }
 
 async function runIngest(service, jobId, { pdf_path, pdf_mode, course_id, personId, source_type = 'paper', target_slug = null }) {
+  // ── The deadline, and why it is shared rather than per-call ──
+  //
+  // `waitUntil` keeps this alive only to `maxDuration`. When the platform hits
+  // that limit it kills the function outright: no catch runs, `markFailed`
+  // never fires, and the job row sits at 'processing' forever with no error.
+  // That is exactly how Module 09 failed on 2026-08-01 — an hour of waiting on
+  // a run that had been dead since second 300.
+  //
+  // So the code has to fail *itself* first. One wall-clock deadline is computed
+  // here and shared by every model call, because the budget belongs to the
+  // *invocation*, not to a call: a malformed-JSON retry calls the model again,
+  // and each call can itself retry on the fallback model, so one job can make
+  // up to four calls. Per-call timeouts would let four 240s calls run 960s
+  // inside a 300s function — the same silent kill, four times as likely.
+  //
+  // The 45s reserve covers what happens outside the model call: PDF download,
+  // the wiki-index query, and persisting pages and versions afterwards.
+  const DEADLINE_AT = Date.now() + (maxDuration - 45) * 1000
+  const msLeft = () => DEADLINE_AT - Date.now()
+
   const markFailed = async (message, rawOutput) => {
     await service.from('ingest_jobs').update({
       status: 'failed',
@@ -439,10 +459,39 @@ async function runIngest(service, jobId, { pdf_path, pdf_mode, course_id, person
     // attempt, so a job's recorded totals cover the retry and the fallback too —
     // which means a fallback job's tokens are a mix of two models' rates.
     const attempt = async (model, extraNudge) => {
+      const budget = msLeft()
+      if (budget <= 15000) {
+        throw new Error(
+          `Out of time before calling ${model}: ${Math.round(budget / 1000)}s left of the ` +
+          `${maxDuration}s function budget. Earlier attempts consumed it — check whether this ` +
+          `job hit the malformed-JSON retry or the refusal fallback, which each add a whole call.`)
+      }
+
       const stream = anthropic.messages.stream({
         model,
-        max_tokens: 64000,
+        // Generation runs ~82 output tokens/sec, measured across 22 jobs, so
+        // this ceiling is also a time budget: 64000 was ~780s of generation
+        // against a 300s function — the model was allowed to produce more than
+        // twice what could ever be waited for. 32000 still covers the largest
+        // legitimate chapter (Module 07 used 27020) without pretending the
+        // budget is unbounded. The deadline below is what actually enforces it;
+        // this only stops a runaway response from being started.
+        max_tokens: 32000,
         thinking: { type: 'adaptive' },
+        // Effort is the real lever on runtime, and it is not a quality
+        // tradeoff at this end of the scale: Opus 5 is unusually strong at
+        // medium. Module 07 spent 27020 output tokens to produce ~14100 tokens
+        // of actual page content — roughly half the run, and half the 298
+        // seconds, was thinking. Default effort is `high`; medium buys back
+        // most of that.
+        //
+        // Thinking stays ON deliberately. Disabling it is the obvious-looking
+        // saving and is a trap here: with thinking disabled Opus 5 can leak
+        // `<thinking>` tags into the visible response, and this pipeline
+        // JSON.parses that response. A leaked tag fails the parse, fires the
+        // retry, and doubles the runtime — the exact failure we are budgeting
+        // against.
+        output_config: { effort: 'medium' },
         system: source_type === 'reference' ? SYSTEM_PROMPT_REFERENCE : SYSTEM_PROMPT,
         messages: [{
           role: 'user',
@@ -450,7 +499,7 @@ async function runIngest(service, jobId, { pdf_path, pdf_mode, course_id, person
             ? [...userContent, { type: 'text', text: extraNudge }]
             : userContent,
         }],
-      })
+      }, { signal: AbortSignal.timeout(budget) })
       const msg = await stream.finalMessage()
       inputTokens += msg.usage.input_tokens
         + (msg.usage.cache_creation_input_tokens ?? 0)
@@ -521,7 +570,20 @@ async function runIngest(service, jobId, { pdf_path, pdf_mode, course_id, person
       completed_at: new Date().toISOString(),
     }).eq('id', jobId)
   } catch (err) {
-    await markFailed(err?.message || 'Ingest failed')
+    // An aborted model call arrives as a terse TimeoutError/APIUserAbortError.
+    // Left as-is it records "The operation was aborted", which reads like a
+    // network blip and sends the next reader looking in the wrong place — so
+    // name the real cause and what to do about it.
+    const aborted = err?.name === 'TimeoutError'
+      || err?.name === 'AbortError'
+      || err?.name === 'APIUserAbortError'
+    await markFailed(aborted
+      ? `Ran out of time: the model call was still generating with under 45s left of the ` +
+        `${maxDuration}s function budget, so it was stopped deliberately rather than being ` +
+        `killed silently by the platform. Nothing was written. This module produces more ` +
+        `output than one invocation can wait for — split it, or run it in 'extracted' mode ` +
+        `if it is a prose module. See docs/markdowns/psy240_wp4_runplan.md §0.`
+      : (err?.message || 'Ingest failed'))
   }
 }
 

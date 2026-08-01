@@ -12,7 +12,7 @@
 
 ---
 
-## 0. Read this first — three things that will bite
+## 0. Read this first — four things that will bite
 
 **Run sequentially, never in parallel, and never the same source twice *in paper mode*.**
 Filenames are unstable run-to-run, so two concurrent ingests of overlapping material produce two
@@ -35,6 +35,46 @@ inventing a supporting page that squats on a slug this plan already lists as a l
 `classification-systems`, whose DSM history, elements-of-a-diagnosis list, ICD-11 chapter listing
 and harmonization argument were a strict subset of `diagnosis-and-classification` — run 2's target.
 It had to be archived and its inbound links retargeted. It should have been rejected at triage.
+
+**A run has 300 seconds, and that is a hard wall.** The Vercel project is on Hobby, where
+`maxDuration` cannot exceed 300s. The ingest runs inside `waitUntil()` *after* the 202 response,
+so when the platform hits that limit it kills the function outright — no catch runs, the job row
+stays `processing` forever, and nothing surfaces. Module 09 was lost that way on 2026-08-01 and
+sat "processing" for an hour before anyone looked.
+
+Runtime is **output-token-bound at ~82 tokens/sec**, measured across all 22 jobs; input barely
+matters (Module 01 sent 91,863 input tokens and finished in 110s). So 300 seconds buys roughly
+**25,000 output tokens**, and that is the real budget for a run.
+
+Module 07 finished in **298 of the 300 seconds available** — it did not pass comfortably, it
+squeaked through. Two seconds of margin is what separated the pilot run from the failure.
+
+Three changes now hold the line, all in `api/ingest.js`:
+
+- **`effort: 'medium'`** (was the `high` default). This is the big one and it is not the quality
+  tradeoff it looks like. Module 07 spent 27,020 output tokens to produce ~14,100 tokens of actual
+  page content — **about half the run, and half the 298 seconds, was thinking**. Opus 5 is
+  unusually strong at medium, so this buys back most of that time.
+- **A shared wall-clock deadline.** Every model call gets an `AbortSignal` sized to what is left of
+  the invocation, not to a fresh per-call timeout. The budget belongs to the *invocation*: a
+  malformed-JSON retry calls the model again and each call can retry on the fallback model, so one
+  job can make four calls. The job now fails itself with a legible error instead of being killed
+  silently.
+- **`max_tokens: 32000`** (was 64,000). At 82 tok/s the old ceiling was ~780 seconds of generation
+  inside a 300-second function — the model was permitted to produce more than twice what could
+  ever be waited for.
+
+**Thinking stays on.** Disabling it is the obvious-looking saving and is a trap: with thinking
+disabled Opus 5 can leak `<thinking>` tags into the visible response, and this pipeline
+`JSON.parse`s that response. A leaked tag fails the parse, fires the retry, and doubles the
+runtime — precisely the failure being budgeted against.
+
+**Module 13 will still not fit, and probably Module 11 and 16 too.** Ten Tier A personality
+disorders cannot be written in 25,000 output tokens. Those need splitting: the module PDF cut at a
+section boundary and run as two paper jobs with triage between. Two halves of one module are
+disjoint sources, so the never-the-same-source-twice rule in this section is not violated — and
+triage between them means the second half sees the first half's accepted pages, which is the
+coordination that keeps the carve coherent.
 
 **Triage between runs, or you get duplicates.** `api/ingest.js` builds the model's wiki index
 from pages **with accepted content only** — a page sitting unreviewed is invisible to the next
