@@ -12,14 +12,29 @@
 
 ---
 
-## 0. Read this first — two things that will bite
+## 0. Read this first — three things that will bite
 
 **Run sequentially, never in parallel, and never the same source twice *in paper mode*.**
 Filenames are unstable run-to-run, so two concurrent ingests of overlapping material produce two
 competing carves of the same concepts. One job at a time, each seeing the wiki the previous one
-left. **Reference mode is the exception**: it names its target, so running the same module against
-several different catalogue pages is the intended pattern, not a violation — `reference_worklist`
-counts prior runs per page for exactly that reason.
+left. **Reference mode may name several targets against one module** — `reference_worklist` counts
+prior runs per page for exactly that reason — **but those runs are still sequential, with triage
+between each, broad target first.**
+
+> **Corrected 2026-07-31.** An earlier draft called reference mode "the exception" to the
+> never-in-parallel rule full stop. That holds only for *conceptually disjoint* targets. Module 02's
+> two runs were launched 17 seconds apart against `models-of-psychopathology` and
+> `integrative-model`: neither saw the other, two supporting pages were proposed twice over, and the
+> two target pages came back as near-duplicates sharing three identically-titled sections. Both had
+> to be cut back afterwards. Run them one at a time.
+
+**When a module feeds two catalogue slugs, vet run 1's supporting pages against run 2's target
+before accepting them.** Triage-between-runs fixes duplicate *proposals*; it does not stop run 1
+inventing a supporting page that squats on a slug this plan already lists as a later target. Module
+03 hit this while doing everything else correctly: the `clinical-assessment` run produced
+`classification-systems`, whose DSM history, elements-of-a-diagnosis list, ICD-11 chapter listing
+and harmonization argument were a strict subset of `diagnosis-and-classification` — run 2's target.
+It had to be archived and its inbound links retargeted. It should have been rejected at triage.
 
 **Triage between runs, or you get duplicates.** `api/ingest.js` builds the model's wiki index
 from pages **with accepted content only** — a page sitting unreviewed is invisible to the next
@@ -39,7 +54,7 @@ student sees a drafted page.
 ## 1. The book, as it actually is
 
 `Fundamentals-of-Psychological-Disorders-1721254433._oss.pdf`, 343 pages, **16 modules** in six
-parts. All 16 are now split out in `F:\gits\Handbook\Resources\` as
+parts. All 16 are now split out in `F:\gits\radlab_project\PSY240resources\` as
 `BridleyDaffin-ModuleNN-Title.pdf`, using the same boundaries and naming as the two you had
 already extracted — verified by reproducing Module 04 (23 pages) and Module 07 (18 pages)
 byte-for-page against your own files.
@@ -100,21 +115,21 @@ weeks 1–4 finished, not a random half of the course.
 
 | # | Upload | Mode | Produces | Lec |
 |---|---|---|---|---|
-| 1 | Module 01 | **reference** ×3 → `what-is-abnormal`, `historical-traditions`, `research-methods` | L1 |
-| 2 | Module 02 | **reference** ×2 → `models-of-psychopathology`, `integrative-model` | L1–2 |
-| 3 | Module 03 | **reference** ×2 → `clinical-assessment`, `diagnosis-and-classification` | L2 |
+| — | ~~Module 01~~ | reference ×3 ✔ → `what-is-abnormal`, `historical-traditions`, `research-methods` (+ a paper run, 6 supporting pages) | L1 |
+| — | ~~Module 02~~ | reference ×2 ✔ → `models-of-psychopathology`, `integrative-model` — **ran concurrently; both targets needed trimming afterwards** (§0) | L1–2 |
+| — | ~~Module 03~~ | reference ×2 ✔ → `clinical-assessment`, `diagnosis-and-classification` — **run 1's `classification-systems` pre-empted run 2 and was archived** (§0) | L2 |
 | 4 | Module 15 | **reference** ×1 → `law-and-ethics` | L1/L10 |
-| 5 | Module 07 | paper | 4 Tier A + anxiety overview (1 already written) | L3 |
-| 6 | Module 09 | paper | 2 Tier A + OCD overview | L3 |
-| 7 | Module 08 | paper | 3 Tier A + somatic overview (1 written) | L3 |
-| 8 | Module 05 | paper | 2 Tier A + trauma overview | L4 |
-| 9 | Module 06 | paper | 2 Tier A + dissociative overview | L4 |
+| — | ~~Module 07~~ | paper ✔ | **run 2026-07-31, triaged 2026-08-01** — 14 pages, 5 Tier A | L3 |
+| 6 | Module 09 | paper | 2 Tier A | L3 |
+| 7 | Module 08 | paper | 3 Tier A (1 written) | L3 |
+| 8 | Module 05 | paper | 2 Tier A | L4 |
+| 9 | Module 06 | paper | 2 Tier A | L4 |
 | — | ~~Module 04~~ | paper ✔ | **already run** — 7 pages | L5 |
-| 10 | Module 10 | paper | 3 Tier A + eating overview (2 written) | L6 |
-| 11 | Module 11 | paper | 5 Tier A + substance overview | L8 |
-| 12 | Module 12 | paper | 2 Tier A + schizophrenia overview | L9 |
-| 13 | Module 14 | paper | 3 Tier A + neurocognitive overview | L10 |
-| 14 | Module 13 | paper | **10 Tier A** + personality overview (1 written) | L11 |
+| 10 | Module 10 | paper | 3 Tier A (2 written) | L6 |
+| 11 | Module 11 | paper | 5 Tier A | L8 |
+| 12 | Module 12 | paper | 2 Tier A | L9 |
+| 13 | Module 14 | paper | 3 Tier A | L10 |
+| 14 | Module 13 | paper | **10 Tier A** (1 written) | L11 |
 | 15 | **Module 16 — run this LAST** | paper | neurodevelopmental + disruptive/conduct, and deltas onto pages from runs 5–10 | L3/8/10 |
 
 ### Why the foundations runs are reference mode, not paper
@@ -139,6 +154,33 @@ tell you what it contains.
 Paper-mode runs on the foundations modules are still *useful* — that is where the supporting
 concept pages come from — so the shape is: reference runs for the named pages, and optionally one
 paper run per module afterwards for the surrounding concepts.
+
+### The 16 overviews are a reference-pass job — measured, not predicted
+
+The paragraph above predicted this; **2026-08-01 confirmed it.** Two disorder chapters have now
+been run in paper mode — Module 04 (18 pages) and Module 07 (14 pages) — and between them they
+produced **zero of the 16 topic overviews**. Not `mood-disorders`, not `anxiety-disorders`,
+despite both chapters being entirely about those blocks.
+
+The run table above used to promise "N Tier A **+ overview**" from each chapter run. That column
+was wrong and has been corrected: paper mode delivers the Tier A disorders reliably and the
+overview never. The reason is the same one that sank the Module 01 paper run — an overview slug
+like `obsessive-compulsive-and-related-disorders` is the catalogue's construction, and there is
+nothing for the model to converge on.
+
+So all 16 overviews belong to the **reference pass (§5)**, not to the module sweep. Two ways to
+take them, and the choice is real:
+
+- **Deferred (plan as written).** Finish the module sweep, then one reference run per overview.
+  Cleanest bookkeeping; overviews get written against a wiki that already knows every disorder
+  they summarise, which is the right context for an overview.
+- **Interleaved.** After each chapter's paper run, one extra *extracted*-mode reference run
+  against the same module naming that overview slug. Costs about $0.13 and one triage cycle per
+  module, and keeps the chapter fresh — but the overview is written before its sibling chapters
+  exist, so cross-block framing has to be added later anyway.
+
+Deferred is the default for that last reason. Interleaving buys freshness the overview cannot
+actually use.
 
 **Module 16 goes last, deliberately.** It cross-cuts: it covers selective mutism and separation
 anxiety (anxiety), trichotillomania and excoriation (OCD), reactive attachment (trauma), pica and
@@ -209,8 +251,15 @@ three times. Measured on the two real runs:
 | Module 04, paper | extracted | 24,938 | 16,468 | 18 |
 | Module 04, reference | extracted | 26,090 | 4,372 | 1 |
 | Module 01, paper | **native** | **91,863** | 8,970 | 6 |
+| Module 01, reference ×3 | **native** | **92,266–92,270** each | 5,477 / 9,897 / 10,842 | 1 + clone each |
+| Module 02, reference ×2 | **native** | **92,225–92,232** each | 15,115 / 16,612 | 4 and 6 |
+| Module 03, reference ×2 | extracted | **21,798 / 22,041** | 13,060 / 9,435 | 3 and 2 |
 
-**Native costs ~3.7× the input of extracted on this book.** Native is the course default because
+**Native costs ~3.7× the input of extracted on this book**, and the Module 03 runs confirmed it
+end to end: 22k against 92k on modules of comparable length, a **4.2× saving**, with no loss of
+quality in the output — `clinical-assessment` and `diagnosis-and-classification` are the two
+strongest foundations pages produced so far. Modules 01 and 02 were run native before this was
+settled, at a cost of roughly $0.85 per run more than necessary. **Module 15 should be extracted.** Native is the course default because
 *student* submissions may be scans with no text layer — that reasoning does not apply to this
 textbook, which is born-digital with a clean text layer, and Module 04 produced 18 good pages in
 extracted mode.
