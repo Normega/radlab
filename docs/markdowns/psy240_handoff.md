@@ -17,21 +17,27 @@
 | WP1 schema | ✔ done, applied live |
 | WP2 reader UI | ✔ **done, click-tested, deployed** — `/academic/fieldguide/wiki` |
 | WP3 seed + review path + review UI + `reference` mode | ✔ done, exercised on real content |
-| **WP4 content sprint** | **▶ in progress — started 2026-07-31.** Module 01 done (paper + 3 reference runs). Next: Modules 02, 03, 15 |
+| **WP4 content sprint** | **▶ in progress — started 2026-07-31.** Modules 01, 02, 03 done (plus 04 earlier). Next: Module 15, then the disorder chapters |
 | WP5 roster & enrollment | ✘ not started. Email path fully configured; **one decision left** (§4) |
 | WP6 student submission | ✘ not started, depends on WP5 |
 | WP7 export mirror | ✘ not started |
 
 Everything is merged and pushed to `main`; nothing sits on a branch.
 
-## 2. Live database state (radlab-academic, 2026-07-31)
+## 2. Live database state (radlab-academic, 2026-07-31, after Module 03)
 
 ```
-54 live pages with bodies       0 published — no student can see anything yet
-1 archived (abnormal-behavior)  0 proposals pending — review queue is clear
-105 wikilinks, 0 red links      catalogue: 123 rows — 2 complete, 13 gaps, 108 no page yet
-16 ingest jobs                  ~877k input / ~127k output tokens to date
+66 live pages with bodies       0 published — no student can see anything yet
+2 archived (abnormal-behavior,  0 proposals pending — review queue is clear
+  classification-systems)       catalogue: 123 rows — 3 complete, 16 gaps, 104 no page yet
+177 wikilinks, 0 red links      20 ingest jobs, ~1.11M input / ~182k output tokens to date
 ```
+
+Two empty `proposed` page rows also linger — `history-of-mental-illness` and
+`research-methods-in-psychopathology`, the rejected duplicate siblings from Module 01. Their
+versions are correctly `rejected` and they hold no content, so they are invisible to the ingest
+index and to students, but they squat on two slugs and inflate any raw page count. Worth clearing
+before the first publish; harmless until then.
 
 Nothing has ever been published. Every accept so far is *accept as draft*, which is
 deliberate: no students are enrolled, so publishing buys nothing and is the harder
@@ -102,25 +108,35 @@ invisible to any link-based check.
 **Run plan: `psy240_wp4_runplan.md`.** All 16 module PDFs are split out in
 `F:\gits\Handbook\Resources\` as `BridleyDaffin-ModuleNN-Title.pdf`.
 
-**Done:** Module 01 — one paper run (6 supporting pages) and three reference runs
-filling `what-is-abnormal`, `historical-traditions`, `research-methods`. Module 04
-(mood) was done earlier.
+**Done:** Module 01 (one paper run → 6 supporting pages; three reference runs filling
+`what-is-abnormal`, `historical-traditions`, `research-methods`), Module 02 (→
+`models-of-psychopathology`, `integrative-model`), Module 03 (→ `clinical-assessment`,
+`diagnosis-and-classification`). Module 04 (mood) was done earlier.
 
-**Next:** Modules 02, 03, 15 in **reference** mode, then the disorder chapters in
-**paper** mode (runs 5–15), Module 16 last.
+**Next:** Module 15 in **reference** mode (one target, `law-and-ethics`), then the disorder
+chapters in **paper** mode (runs 5–15), Module 16 last.
 
 **Mode is per module and getting it wrong is expensive.** Reference mode only for
 the foundations modules, because foundations slugs are *our invention* and paper
 mode will never hit them — proven when Module 01's paper run produced six good pages
 and zero foundations. Disorder chapters stay paper mode: disorder names are canonical
-so the slugs converge, one paper run yields ~18 pages where reference mode would need
-one run per target (Module 13 alone would be 11 runs), and reference mode
-deliberately suppresses the supporting concept/treatment/debate pages.
+so the slugs converge, and one paper run yields ~18 pages where reference mode would need
+one run per target (Module 13 alone would be 11 runs).
+
+**Extracted mode for the foundations modules, native for the disorder chapters.** Measured
+across five real runs: Modules 01–02 ran native at ~92k input tokens each, Module 03 ran
+extracted at ~22k — a 4.2× saving on the same book, confirming the run plan's estimate. Prose
+modules lose nothing to extraction; the disorder chapters must stay native because the criteria
+and prevalence tables are the payload and a mangled table looks like a successful run.
 
 **Triage between every run.** `api/ingest.js` builds the model's index from pages
 with *accepted content only*, so an unreviewed page is invisible to the next run and
 gets proposed afresh. Triage (accept-as-draft, ~5 min) is not the review; the real
 ~17-hour review happens later in the reader, where `edit_page` fixes things in place.
+
+**Two reference targets against one module overlap, and there are two distinct ways it
+happens.** See §7 — this is the main thing WP4 has taught so far, and both Module 02 and
+Module 03 needed cleanup afterwards.
 
 **Citations:** paste from run plan §6 — sixteen ready-made strings. Don't retype.
 
@@ -147,11 +163,48 @@ gets proposed afresh. Triage (accept-as-draft, ~5 min) is not the review; the re
 
 - **Both ingest modes have a job**, and the split is by *slug canonicality*, not by
   source type. See §5.
-- **Reference mode duplicates its own target.** Each Module 01 reference run produced
-  its target *plus* a re-titled version of it (`history-of-mental-illness` alongside
-  `historical-traditions`; `research-methods-in-psychopathology` alongside
-  `research-methods`). Both rejected. **Prompt fixed 2026-07-31** — watch whether the
-  fix holds on Module 02.
+- **Reference mode used to duplicate its own target — fixed, and the fix holds.** Each
+  Module 01 reference run produced its target *plus* a re-titled version of it
+  (`history-of-mental-illness` alongside `historical-traditions`;
+  `research-methods-in-psychopathology` alongside `research-methods`). Prompt fixed
+  2026-07-31 and **confirmed on Modules 02 and 03**: four further reference runs, zero
+  re-titled clones, every run landing on the exact catalogue slug and title. Consider this
+  closed.
+- **Reference mode does *not* suppress supporting pages** — an earlier version of this file
+  claimed it did, and that was wrong. Module 02's two runs produced five (respondent and
+  operant conditioning, observational learning, Little Albert, ECT, systematic
+  desensitization); Module 03's produced three. They are good pages and the behaviour is
+  welcome, but it is also what causes the collisions below, so plan for it.
+- **Two reference targets against one module overlap. Two different mechanisms, both
+  needing cleanup after the fact.**
+  - *Concurrency* (Module 02). The two runs were launched 17 seconds apart, so neither saw
+    the other's output and neither had been triaged. `electroconvulsive-therapy` and
+    `systematic-desensitization` were each proposed twice, and the two target pages came
+    back as near-duplicates — `models-of-psychopathology` and `integrative-model` shared
+    three identically-titled sections and each covered the other's subject. **Run reference
+    targets sequentially with triage between, broad target first.** The run plan's
+    "reference mode is the exception to never-in-parallel" was written for conceptually
+    disjoint targets and now says so.
+  - *Pre-emption* (Module 03). Sequential with triage, and it still collided: run 1
+    (`clinical-assessment`) invented a supporting page, `classification-systems`, whose
+    content was a strict subset of `diagnosis-and-classification` — the catalogue target
+    run 2 was always going to write. Archived afterwards. Triage-between-runs fixes
+    duplicate *proposals*; it does nothing about a run-1 supporting page squatting on a
+    slug the run plan already lists as a later target. **Guard: when a module feeds two
+    catalogue slugs, check run 1's supporting pages against the next target's subject
+    before accepting them.** `classification-systems` should have been rejected at triage.
+- **A module can fail to support a catalogue page at all.** Module 02 produced a good
+  `models-of-psychopathology` but cannot fill `integrative-model`: the textbook never states
+  a formal integrative framework — no diathesis-stress, no biopsychosocial model, no
+  RDoC/HiTOP — and offers no evidence that integrated accounts outperform single-model ones.
+  `integrative-model` is now a ~2.8k-char page that is mostly a declared gap, which is the
+  honest state. It needs a second source (NIMH's RDoC material is public domain), so treat it
+  as a run-plan §4 uncovered topic rather than a completed page.
+- **One gap, one page.** After Module 02 both `models-of-psychopathology` and
+  `integrative-model` declared the same missing diathesis-stress material, so
+  `reference_worklist` counted one hole against two pages and would have aimed a future run
+  at whichever surfaced first. The gap now lives only on the page whose subject it is.
+  Worth checking whenever two pages sit next to each other in the catalogue.
 - **Gaps are derived from the page body**, not frontmatter (two migrations,
   2026-07-30). A section is a gap if it carries a `> **Needs research:**` marker or
   has no prose. This matters because `reference_worklist` reads it and that aims WP4.
@@ -159,10 +212,19 @@ gets proposed afresh. Triage (accept-as-draft, ~5 min) is not the review; the re
   disorder skeleton three times, one copy per accepted `update`. Two prompt rules
   contradicted each other; paper mode now scopes the skeleton to `action: new`, and
   reference mode returns a whole page with `action: 'replace'`.
-- **0 red links across 105** — but that graph is body links only; frontmatter
-  relations are not in it (§4).
+- **0 red links across 177** — but that graph is body links only; frontmatter
+  relations are not in it (§4). This held through an archive: `archive_page` does *not*
+  rebind inbound links the way `rename_page` does, so retiring `classification-systems`
+  meant retargeting every reference first, then archiving. Do it in that order.
 - **Tier A is now 53, Tier B 45** — all ten personality disorders promoted
   2026-07-31. Fall scope: 78 generated pages, ~17 review hours.
+- **Review-then-edit is the working division of labour.** Norm runs the ingest and the
+  accept/reject triage in the portal; Claude reviews the accepted pages afterwards and
+  applies the trims with `edit_page` (or hands trimmed content straight to
+  `review_proposal`, which avoids storing a bloated accepted version). Handing over a prose
+  list of edits to re-key in the UI was tried once and produced a page with deleted headings
+  but surviving body paragraphs. Prefer `position()`/`substr()` splicing over retyping long
+  bodies — a missed anchor then raises instead of silently writing something mangled.
 
 ## 8. Gotchas that cost time
 
@@ -185,11 +247,11 @@ gets proposed afresh. Triage (accept-as-draft, ~5 min) is not the review; the re
 
 ## 9. Suggested next move
 
-1. **Run Module 02 in reference mode** against `models-of-psychopathology` and
-   `integrative-model`, and check whether the duplicate-sibling prompt fix held.
-2. Then Module 03 (`clinical-assessment`, `diagnosis-and-classification`) and
-   Module 15 (`law-and-ethics`).
-3. Then the disorder chapters in paper mode, lecture order, Module 16 last.
+1. **Run Module 15 in reference mode** against `law-and-ethics`, extracted, citation row 15.
+   Single target, so neither of the §7 overlap mechanisms can fire — the cleanest run left in
+   the foundations set.
+2. Then the disorder chapters in paper mode, lecture order, **native**, Module 16 last.
+   Module 07 (anxiety) is the natural pilot for timing the real review — see run plan §7.
 4. **Before the first publish**, decide open question 12 — whether frontmatter
    relations should join the link graph. It changes what "0 red links" means.
 5. WP5 remains the schedule's real risk. Its external dependency is gone; the
