@@ -3066,6 +3066,13 @@ d14 send → 18:00 d14 reminder → 06:00 d15 reminder → **18:00 d16 last chan
 The whole *when* decision is a pure `reminderAction()` rather than inline conditionals, so the
 timing is tested against a clock instead of only reasoned about.
 
+**Copy status: signed off by Liliana, 2026-08-01.** The three `finalNoticeIntro` strings in
+`emailTemplate.ts` are approved and live, not placeholders — unlike `MidpointStep.jsx`'s
+participant-facing copy, which is still awaiting sign-off (see the WP-L4 note above; the two are
+separate reviews and only this one has cleared). Worth keeping distinct because these are the only
+session emails that state a consequence, so a later reword has to re-check that the `gate` string
+still matches what `processAdherenceWithdrawal` actually does.
+
 Which sessions qualify is **derived from graph position**, not a flag, in `_shared/criticalSession.ts`
 — by the same predicates that decide what actually happens on a miss, so the copy can never threaten
 a consequence the code won't apply (the lesson `renderTerminationEmail`'s hardcoded "10 of 12" taught
