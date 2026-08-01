@@ -10,6 +10,11 @@ import { createClient, SupabaseClient } from 'npm:@supabase/supabase-js@2'
 import { materializeSchedule, baselineTimeOfDay } from '../_shared/materializeSchedule.ts'
 import type { Graph } from '../_shared/materializeSchedule.ts'
 import { processAdherenceWithdrawal } from '../_shared/processAdherenceWithdrawal.ts'
+import {
+  criticalSessionKind,
+  FINAL_NOTICE_LEAD_HOURS,
+  FINAL_NOTICE_MERGE_HOURS,
+} from '../_shared/criticalSession.ts'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -283,6 +288,14 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Design graphs, fetched once and used by both the reminder pass (3b, to
+    // decide which sessions are critical) and the advance pass (4).
+    const { data: graphStudies } = await db
+      .from('studies')
+      .select('id, design_graph')
+      .not('design_graph', 'is', null)
+    const graphByStudyId = new Map((graphStudies ?? []).map((s) => [s.id, s.design_graph as Graph]))
+
     // 3b. Reminders: re-send rows that were sent but not completed while
     // their link is still ACTIVE (an expired link is never re-emailed here —
     // dead rows become 'missed' in step 0b instead). Cadence is the study's
@@ -293,20 +306,40 @@ Deno.serve(async (req) => {
     // stay capped by studies.max_attempts; gated on studies.reminders_enabled.
     // A reminder never fires for a link shorter than the cadence — short
     // check-in windows (e.g. 4 h EMA links) simply get no reminder.
+    //
+    // 'unlocked' rows are included alongside 'link_sent' (2026-08-01). A row
+    // becomes 'unlocked' the moment get_session_by_token is called, i.e. as
+    // soon as the participant OPENS the link — so filtering to 'link_sent'
+    // alone silently excluded everyone who started a session and abandoned it
+    // partway, which is precisely the person a reminder is for. Two live rows
+    // were in that state when this was found.
+    //
+    // Final notice (2026-08-01): on a critical session — one gating a fork, or
+    // ending the study — an extra reminder fires FINAL_NOTICE_LEAD_HOURS before
+    // the link closes, regardless of cadence. On a 72 h window at 12 h cadence
+    // and reminder_max 2 the last cadence reminder lands 48 h before the
+    // deadline, so "last chance" copy on it would simply be false. Any cadence
+    // reminder due within FINAL_NOTICE_MERGE_HOURS of the notice is dropped in
+    // its favour rather than sent beside it. See _shared/criticalSession.ts.
     let reminded = 0
+    let finalNotices = 0
     {
       const { data: activeLinkRows } = await db
         .from('participant_links')
-        .select('schedule_id')
+        .select('schedule_id, expires_at')
         .eq('status', 'active')
 
-      const activeIds = (activeLinkRows ?? []).map((l) => l.schedule_id)
+      const expiresByScheduleId = new Map(
+        (activeLinkRows ?? []).map((l) => [l.schedule_id, l.expires_at as string | null]),
+      )
+      const activeIds = [...expiresByScheduleId.keys()]
       if (activeIds.length > 0) {
         const { data: remRows } = await db
           .from('participant_schedule')
-          .select('id, participant_id, study_id, study_session_id, attempts, last_sent_at')
+          .select('id, participant_id, study_id, study_session_id, attempts, last_sent_at, final_notice_sent_at')
           .in('id', activeIds)
-          .eq('status', 'link_sent')
+          .in('status', ['link_sent', 'unlocked'])
+          .is('completed_at', null)
           .not('last_sent_at', 'is', null)
 
         if (remRows && remRows.length > 0) {
@@ -319,22 +352,89 @@ Deno.serve(async (req) => {
 
           const sessIds = [...new Set(remRows.map((r) => r.study_session_id).filter(Boolean))]
           const { data: sessRows } = sessIds.length > 0
-            ? await db.from('study_sessions').select('id, link_expires_hours').in('id', sessIds)
+            ? await db.from('study_sessions').select('id, node_key, link_expires_hours').in('id', sessIds)
             : { data: [] }
-          const sessMap = new Map((sessRows ?? []).map((s) => [s.id, s.link_expires_hours ?? 48]))
+          const sessMap = new Map((sessRows ?? []).map((s) => [s.id, s]))
 
           for (const row of remRows) {
             if (withdrawnSet.has(`${row.participant_id}:${row.study_id}`)) continue
             const study = remStudyMap.get(row.study_id)
             if (!study || study.reminders_enabled === false) continue
+
+            const session = sessMap.get(row.study_session_id)
+            const expires = session?.link_expires_hours ?? 48
+
+            // Is this a critical session, and if so when does its notice fire?
+            // Both need the study's graph; a study without one (legacy, or a
+            // hand-built schedule) simply gets no final notices.
+            const graph = graphByStudyId.get(row.study_id)
+            const expiresAt = expiresByScheduleId.get(row.id)
+            let noticeKind: ReturnType<typeof criticalSessionKind> = null
+            let noticeAtMs: number | null = null
+            if (graph && session?.node_key && expiresAt) {
+              noticeKind = criticalSessionKind(graph, session.node_key, expires)
+              if (noticeKind) {
+                noticeAtMs = new Date(expiresAt).getTime() - FINAL_NOTICE_LEAD_HOURS * 3_600_000
+              }
+            }
+
+            // Nothing follows a last chance. On a cadence shorter than the lead
+            // time (Zerin's is 6 h) an ordinary "Reminder:" would otherwise
+            // still be due before the link closes, arriving after the email
+            // that said this was the final one — de-escalating exactly when the
+            // deadline is nearest.
+            if (row.final_notice_sent_at) continue
+
+            // The notice itself: due, and exempt from reminder_max /
+            // max_attempts. Those caps exist to bound routine nudging; letting
+            // one swallow the single email that warns about withdrawal would
+            // invert their purpose. Once per row, via the guard above.
+            if (noticeAtMs !== null && now.getTime() >= noticeAtMs) {
+              try {
+                const sendRes = await fetch(`${supabaseUrl}/functions/v1/send_message`, {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${serviceKey}`,
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({ schedule_id: row.id, final_notice: noticeKind }),
+                })
+                const sendBody = await sendRes.json()
+                if (sendBody?.success) {
+                  await db
+                    .from('participant_schedule')
+                    .update({
+                      attempts: (row.attempts ?? 0) + 1,
+                      last_sent_at: now.toISOString(),
+                      final_notice_sent_at: now.toISOString(),
+                    })
+                    .eq('id', row.id)
+                  finalNotices++
+                }
+              } catch (noticeErr) {
+                console.error(`final notice send failed for row ${row.id}:`, noticeErr)
+              }
+              continue
+            }
+
             if ((row.attempts ?? 0) >= (study.max_attempts ?? 1)) continue
             const remindersSent = Math.max(0, (row.attempts ?? 0) - 1)
             if (study.reminder_max != null && remindersSent >= study.reminder_max) continue
 
-            const expires = sessMap.get(row.study_session_id) ?? 48
             const cadenceHours = study.reminder_interval_hours ?? (expires <= 24 ? 12 : 24)
             const intervalMs = cadenceHours * 60 * 60 * 1000
             if (now.getTime() - new Date(row.last_sent_at).getTime() < intervalMs) continue
+
+            // A cadence reminder landing within the merge window of a pending
+            // final notice is dropped, not deferred: the notice says everything
+            // it would have, more urgently, and two emails hours apart about
+            // the same link is the volume this study can least afford. Outside
+            // that window both send — a nudge 12 h before the notice is a
+            // genuinely separate touch.
+            if (noticeAtMs !== null &&
+                Math.abs(now.getTime() - noticeAtMs) < FINAL_NOTICE_MERGE_HOURS * 3_600_000) {
+              continue
+            }
 
             try {
               const sendRes = await fetch(`${supabaseUrl}/functions/v1/send_message`, {
@@ -369,14 +469,9 @@ Deno.serve(async (req) => {
     let advanced = 0
     let withdrawn = 0
     let completedStudies = 0
-    const { data: graphStudies } = await db
-      .from('studies')
-      .select('id, design_graph')
-      .not('design_graph', 'is', null)
 
     if (graphStudies && graphStudies.length > 0) {
       const graphStudyIds = graphStudies.map((s) => s.id)
-      const graphByStudyId = new Map(graphStudies.map((s) => [s.id, s.design_graph as Graph]))
 
       const { data: allRows } = await db
         .from('participant_schedule')
@@ -454,7 +549,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    return json({ processed, suppressed, deferred, failed, missed, reminded, advanced, withdrawn, completed: completedStudies })
+    return json({ processed, suppressed, deferred, failed, missed, reminded, finalNotices, advanced, withdrawn, completed: completedStudies })
 
   } catch (err) {
     console.error('check_schedule unexpected error:', err)

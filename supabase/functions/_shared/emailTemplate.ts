@@ -14,6 +14,13 @@ export function renderEmail(vars: {
   is_test?: boolean
   is_reminder?: boolean
   after_missed?: boolean
+  // The deadline-anchored last-chance reminder on a critical session (see
+  // criticalSession.ts). Its value names which consequence is true, so the
+  // copy can only ever state one the code will actually apply.
+  final_notice?: 'gate' | 'terminal' | 'window' | null
+  // final_notice only — the session's own label ("Midpoint Assessment"), same
+  // source the missed_assessment termination email names it by.
+  session_label?: string | null
   // Response rate so far, shown on reminders and missed-session emails (see
   // send_message's checkInProgress). Null when there isn't enough history to be
   // worth showing. Descriptive only — it never states a pass threshold, so it
@@ -37,8 +44,12 @@ export function renderEmail(vars: {
     ? resolve(vars.custom_subject)
     : 'Your RADlab session is ready'
   // Reminder resends prefix the subject so it's distinguishable in the inbox
-  // from the original send (whose copy it otherwise reuses verbatim).
-  if (vars.is_reminder) subject = `Reminder: ${subject}`
+  // from the original send (whose copy it otherwise reuses verbatim). The final
+  // notice takes a stronger prefix than an ordinary reminder — by the time it
+  // sends, "Reminder:" has already been used on this same session at least once
+  // and no longer distinguishes anything.
+  if (vars.final_notice) subject = `Last chance: ${subject}`
+  else if (vars.is_reminder) subject = `Reminder: ${subject}`
   if (vars.is_test) subject = `[TEST] ${subject}`
 
   // Body text (resolved). Two optional lead-ins, both prepended so the original
@@ -56,7 +67,9 @@ export function renderEmail(vars: {
   const missedIntro = vars.progress && vars.progress.pct < LOW_RATE_PCT
     ? MISSED_INTRO_LOW_RATE
     : MISSED_INTRO
-  const intro = vars.is_reminder ? REMINDER_INTRO : vars.after_missed ? missedIntro : null
+  const intro = vars.final_notice
+    ? finalNoticeIntro(vars.final_notice, vars.session_label, vars.expires_hours)
+    : vars.is_reminder ? REMINDER_INTRO : vars.after_missed ? missedIntro : null
 
   // Response rate — on reminders and on missed-session emails, i.e. only where
   // the participant has actually lapsed and we're already writing about it.
@@ -64,7 +77,11 @@ export function renderEmail(vars: {
   // (they're about to do the session anyway) and reads as a running score.
   // Sits between the lead-in and the body so it's context for the nudge rather
   // than a verdict tacked onto the end.
-  const progressLine = (vars.is_reminder || vars.after_missed) && vars.progress
+  //
+  // Suppressed on the final notice: that email is about one deadline and one
+  // action, and a completion percentage beside a "this is your last chance"
+  // paragraph reads as a verdict on the participant rather than context.
+  const progressLine = !vars.final_notice && (vars.is_reminder || vars.after_missed) && vars.progress
     ? progressSentence(vars.progress)
     : null
 
@@ -211,6 +228,48 @@ const TERMINATION_HTML_WRAPPER = `<!DOCTYPE html>
 // contradicts the per-study copy that follows.
 
 const REMINDER_INTRO = `Just a friendly reminder — it looks like you haven't completed this session yet, and your personal link is still active, so there's still time. The original details are below.`
+
+// ─── Final-notice lead-in ─────────────────────────────────────────────────────
+// The last-chance reminder on a critical session, fired 12 h before the link
+// closes rather than on the reminder cadence (see criticalSession.ts and
+// check_schedule's reminder pass). Replaces REMINDER_INTRO when set.
+//
+// This is the one participant email that is deliberately urgent, and the only
+// one allowed to name a consequence — so the consequence has to be the one the
+// code will actually apply. The kind is derived from the session's position in
+// the design graph by the same predicate that performs the withdrawal, which is
+// what keeps these three strings honest:
+//
+//   'gate'     — materializeSchedule withdraws on a missed fork gate, so this
+//                may say participation ends. The credit clause matches what
+//                renderTerminationEmail above actually promises.
+//   'terminal' — nobody is withdrawn; the study just finishes without the
+//                final answers. It must NOT borrow the gate's language.
+//   'window'   — an authored override on a session whose position tells us
+//                nothing. Urgency about the deadline, no claim about after.
+//
+// Urgent, not punitive: the deadline is stated plainly and the participant is
+// never blamed for being late to it. Same principle as MISSED_INTRO — a
+// reproach is what tips a wavering participant into dropping out entirely.
+
+function finalNoticeIntro(
+  kind: 'gate' | 'terminal' | 'window',
+  sessionLabel: string | null | undefined,
+  hoursLeft: number,
+): string {
+  // "your Midpoint Assessment" when the graph names it, "this session" when it
+  // doesn't — never a guessed name.
+  const what = sessionLabel ? `your ${sessionLabel}` : 'this session'
+  const when = `about ${hoursLeft} hour${hoursLeft === 1 ? '' : 's'}`
+
+  if (kind === 'gate') {
+    return `This is the final reminder for ${what}, and it's the one session in the study you can't skip. Your link closes in ${when}. Everything in the rest of the study is built on your answers here, so if this window closes without it, your participation ends at this point — you'd still receive credit for the sessions you've already completed, but there would be no further ones. There's still time, and the original details are below.`
+  }
+  if (kind === 'terminal') {
+    return `This is the final reminder for ${what} — the last session of the study. Your link closes in ${when}, and it can't be reopened once it does. If the window closes without it, the study finishes without your final answers. You'd still receive credit for everything you've completed. There's still time, and the original details are below.`
+  }
+  return `This is the final reminder for ${what}. Your link closes in ${when}, and it can't be reopened once it does. There's still time, and the original details are below.`
+}
 
 // ─── Missed-session lead-in ───────────────────────────────────────────────────
 // Prepended when the participant's previous session window closed unused (see

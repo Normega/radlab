@@ -1,11 +1,15 @@
 // send_message — core email sending primitive.
 // Called by check_schedule (cron) or directly for test sends from the admin UI.
 //
-// POST body: { schedule_id: string, test_override_email?: string, is_reminder?: boolean }
+// POST body: { schedule_id: string, test_override_email?: string,
+//              is_reminder?: boolean, final_notice?: 'gate'|'terminal'|'window' }
 // When test_override_email is provided this is a test send — consent is skipped,
 // recipient is the override address, subject is prefixed with [TEST].
 // When is_reminder is true (reminder resends from check_schedule) the copy is
 // framed as a follow-up nudge rather than a first-time invitation.
+// final_notice is the deadline-anchored last-chance reminder on a critical
+// session; check_schedule decides both whether it applies and which kind, since
+// that derivation needs the study's design_graph (see _shared/criticalSession.ts).
 // A first send whose preceding session went unused additionally leads with a
 // short, non-punitive acknowledgment (see followsMissedSession below).
 
@@ -58,7 +62,7 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json().catch(() => ({}))
-    const { schedule_id, test_override_email, is_reminder } = body
+    const { schedule_id, test_override_email, is_reminder, final_notice } = body
 
     // 1. Validate input
     if (!schedule_id) {
@@ -83,15 +87,19 @@ Deno.serve(async (req) => {
       return json({ error: 'Schedule row not found' }, 400)
     }
 
-    // Link expiry from the compiled session slot.
+    // Link expiry from the compiled session slot. The label rides along for the
+    // final notice, which names the session it's about ("your Midpoint
+    // Assessment") — the same source renderTerminationEmail names it by.
     let expiresHours = 48
+    let sessionLabel: string | null = null
     if (row.study_session_id) {
       const { data: session } = await db
         .from('study_sessions')
-        .select('link_expires_hours')
+        .select('link_expires_hours, label')
         .eq('id', row.study_session_id)
         .single()
       if (session?.link_expires_hours) expiresHours = session.link_expires_hours
+      sessionLabel = session?.label ?? null
     }
 
     // Per-study custom email subject/body (nullable — null uses default template).
@@ -183,8 +191,10 @@ Deno.serve(async (req) => {
     // hours REMAINING, rounded down so we never promise more time than is
     // actually left. First sends (and the rare case where we lack the link's
     // expires_at) keep the full window, which is accurate at issue time.
+    // Load-bearing for the final notice, whose whole point is the countdown —
+    // and where the floor keeps "about 12 hours" from ever overstating.
     let displayExpiresHours = expiresHours
-    if (is_reminder && linkExpiresAt) {
+    if ((is_reminder || final_notice) && linkExpiresAt) {
       const remainingHours = Math.floor((new Date(linkExpiresAt).getTime() - Date.now()) / 3_600_000)
       displayExpiresHours = Math.max(1, remainingHours)
     }
@@ -193,7 +203,7 @@ Deno.serve(async (req) => {
     // email that gives them the next one. Skipped for test sends (no real
     // history to reason about) and for reminders (renderEmail's reminder
     // lead-in takes precedence — see MISSED_INTRO there).
-    const afterMissed = !isTest && !is_reminder && await followsMissedSession(db, row)
+    const afterMissed = !isTest && !is_reminder && !final_notice && await followsMissedSession(db, row)
 
     // Response rate so far — on reminders and on the email that follows a
     // missed session, i.e. only where the participant has lapsed and we're
@@ -202,7 +212,10 @@ Deno.serve(async (req) => {
     // enough history for it to mean anything (see checkInProgress). It also
     // selects the missed-session lead-in, so a low rate doesn't get told the
     // miss was "occasional" (see LOW_RATE_PCT in emailTemplate.ts).
-    const progress = !isTest && (is_reminder || afterMissed)
+    // Never computed for a final notice — renderEmail suppresses the line there
+    // anyway, so the query would be pure waste on the one send that is timing-
+    // critical (it fires within a 12 h deadline window).
+    const progress = !isTest && !final_notice && (is_reminder || afterMissed)
       ? await checkInProgress(db, row)
       : null
 
@@ -218,6 +231,8 @@ Deno.serve(async (req) => {
       is_test:         isTest,
       is_reminder:     !!is_reminder,
       after_missed:    afterMissed,
+      final_notice:    final_notice ?? null,
+      session_label:   sessionLabel,
       progress,
     })
 
@@ -247,8 +262,11 @@ Deno.serve(async (req) => {
 
     const sendStatus = sendErr ? 'failed' : 'sent'
 
-    // 9. Log the send attempt
-    await logMessage(db, row.participant_id, sendStatus, isTest, null)
+    // 9. Log the send attempt. Final notices get their own kind: they are the
+    // only session email that names a consequence, so "did this participant
+    // actually receive their warning before being withdrawn?" has to be
+    // answerable from message_log alone.
+    await logMessage(db, row.participant_id, sendStatus, isTest, null, final_notice ? 'final_notice' : 'session_link')
 
     // 10. Return result
     if (sendErr) {
@@ -423,6 +441,7 @@ async function logMessage(
   status: string,
   isTest: boolean,
   suppressedReason: string | null,
+  kind: 'session_link' | 'final_notice' = 'session_link',
 ) {
   const { error } = await db.from('message_log').insert({
     participant_id: participantId,
@@ -431,6 +450,7 @@ async function logMessage(
     status,
     is_test: isTest,
     suppressed_reason: suppressedReason,
+    kind,
   })
   if (error) console.error('Failed to write message_log:', error.message)
 }

@@ -19,6 +19,16 @@ export default function SessionNode({ data, selected }) {
         {templateName}
       </div>
       <div style={S.meta}>Link expires: {data.link_expires_hours ?? 48}h</div>
+      {/* Only the explicit override is shown. The Auto case is derived from
+          graph position by criticalSession.ts on the server, and re-deriving it
+          here to draw a badge would put a second copy of that rule in the
+          codebase — the one thing it must not have, since its whole job is to
+          agree with what materializeSchedule does on a miss. */}
+      {data.final_notice !== undefined && data.final_notice !== null && (
+        <div style={S.meta}>
+          Last-chance reminder: {data.final_notice ? 'always' : 'never'}
+        </div>
+      )}
 
       {data.isLocked && <div style={S.lockBadge}>locked</div>}
     </div>

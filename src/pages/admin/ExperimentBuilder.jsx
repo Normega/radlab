@@ -344,6 +344,28 @@ function EditPanel({ nodeId, graph, sessionTemplates, isLocked, onChange, onRemo
             </select>
           )}
           {field('Link expires (hours)', input(node.link_expires_hours, 'link_expires_hours', 'number', { min: 1 }))}
+          {/* Last-chance reminder, 12 h before the link closes. Left on Auto it
+              derives from where the session sits: on by default for a session
+              that gates a randomize fork (missing it withdraws the participant)
+              or that ends the study, off for everything else including the
+              baseline. Override only when the derivation is wrong for a study —
+              a forced-on session that neither gates nor ends gets urgency about
+              the deadline but makes no claim about what follows, since there
+              isn't one to derive. See _shared/criticalSession.ts. */}
+          {field('Last-chance reminder (12 h before expiry)',
+            <select
+              style={P.input}
+              value={node.final_notice === true ? 'on' : node.final_notice === false ? 'off' : 'auto'}
+              disabled={isLocked}
+              onChange={e => onChange(nodeId, {
+                final_notice: e.target.value === 'auto' ? undefined : e.target.value === 'on',
+              })}
+            >
+              <option value="auto">Auto — from graph position</option>
+              <option value="on">Always send</option>
+              <option value="off">Never send</option>
+            </select>
+          )}
           {node.session_template_id && (
             <button
               style={P.demoBtn}

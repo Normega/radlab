@@ -33,6 +33,9 @@ export interface GraphNode {
   session_template_id?: string
   link_expires_hours?: number
   label?: string
+  // session — tri-state override for the deadline-anchored "last chance"
+  // reminder (see criticalSession.ts). Undefined derives from graph position.
+  final_notice?: boolean
   children?: string[] // block
   arms?: RandomizeArm[] // randomize
   block_ids?: string[] // counterbalance
