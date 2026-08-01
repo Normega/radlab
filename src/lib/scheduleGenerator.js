@@ -108,10 +108,16 @@ export async function issueLink(scheduleRowId) {
   const expiresHours = schedRow.study_sessions?.link_expires_hours ?? 48
   const expiresAt = new Date(Date.now() + expiresHours * 60 * 60 * 1000).toISOString()
 
-  // Expire all existing active links for this participant + study.
+  // Close any live link for this participant in this study. 'expired' rather
+  // than 'revoked' because the link being closed is a session the participant
+  // missed, not something a human cancelled — matches _shared/issueLink.ts.
   await supabase
     .from('participant_links')
-    .update({ status: 'expired' })
+    .update({
+      status:       'expired',
+      ended_reason: 'superseded',
+      ended_at:     new Date().toISOString(),
+    })
     .eq('participant_id', schedRow.participant_id)
     .eq('study_id', schedRow.study_id)
     .eq('status', 'active')

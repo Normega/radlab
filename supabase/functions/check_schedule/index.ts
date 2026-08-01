@@ -84,7 +84,11 @@ Deno.serve(async (req) => {
     //    Prevents stale manually-issued links from blocking automated sends indefinitely.
     await db
       .from('participant_links')
-      .update({ status: 'expired' })
+      .update({
+        status: 'expired',
+        ended_reason: 'timeout',
+        ended_at: now.toISOString(),
+      })
       .eq('status', 'active')
       .not('expires_at', 'is', null)
       .lt('expires_at', now.toISOString())
