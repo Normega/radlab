@@ -166,7 +166,7 @@ weeks 1–4 finished, not a random half of the course.
 | — | ~~Module 06~~ | paper ✔ | **run + triaged 2026-08-01** — 8 pages, 2 Tier A + the DID debate page | L4 |
 | — | ~~Module 04~~ | paper ✔ | **already run** — 7 pages | L5 |
 | — | ~~Module 10~~ | paper ✔ | **run + triaged 2026-08-01** — 11 pages; the two eating stubs restructured by hand (§8.9) | L6 |
-| 11 | Module 11 | paper | 5 Tier A | L8 |
+| — | ~~Module 11~~ | paper ✔ | **run + triaged 2026-08-01** — 17 pages, but **0 of 5 Tier A**: carve mismatch, see §4 and the reference runs below | L8 |
 | 12 | Module 12 | paper | 2 Tier A | L9 |
 | 13 | Module 14 | paper | 3 Tier A | L10 |
 | 14 | Module 13 | paper, **try extracted** | **10 Tier A** (1 written) — the one run that will not fit 300s; see §5 | L11 |
@@ -250,6 +250,23 @@ this plan, and worth knowing in July rather than in week six. The 9th foundation
 **suicide**, is also uncovered: it appears inside Module 04's mood epidemiology but has no section
 of its own.
 
+> **Added 2026-08-01 after Module 11: `gambling-disorder` joins this list.** It is Tier A on the
+> catalogue and **gambling appears zero times in the entire module** — checked with
+> `pdftotext -layout` over the whole 57,887-character extraction, not inferred from the table of
+> contents. Module 11 covers only substance-related disorders; the addictive-behaviours half of DSM
+> chapter 16 is absent. So the count above becomes **8 Tier A pages with no textbook source**.
+> NIMH is the obvious replacement source.
+>
+> This is worth separating from the *other* Lecture 8 problem, which looks similar and is not the
+> same thing. Alcohol, cannabis, opioid and stimulant are **also** unwritten after Module 11, but for
+> the opposite reason: their material is present and abundant (alcohol 52 mentions, cannabis 21,
+> opioid 21, stimulant 19) and merely distributed across the intoxication, withdrawal, epidemiology,
+> etiology and treatment sections, because the module partitions by *drug class* — Depressants /
+> Stimulants / Hallucinogens-Cannabis — rather than by the five substances the catalogue names.
+> Those four are recoverable from this module by reference mode, which is exactly the tool for
+> pulling a named target out of a source that is organised some other way. Gambling is not
+> recoverable from it at any effort, because the content is not there.
+
 Use **reference mode** for all of these — it names the target page from the catalogue, so you get
 the page the course needs rather than whatever carve a source suggests. Sources:
 
@@ -280,6 +297,39 @@ For each Tier A page still declaring gaps, run reference mode against a second s
 page as the target. Since 2026-07-30 reference mode returns a **complete page with `action:
 replace`** rather than a delta, so accepting overwrites cleanly and you get one coherent voice
 instead of two stitched together.
+
+### Queued reference runs — Lecture 8, four targets against Module 11
+
+Module 11's paper run produced good generic pages and **none of the five Tier A substances** (§4).
+Four are recoverable from the same module because the material is there, just partitioned by drug
+class instead of by substance. Reference mode names the target and pulls from wherever in the
+source the material sits, which is precisely this situation.
+
+Upload `BridleyDaffin-Module11-SubstanceRelatedAddictive.pdf`, **reference** mode, once per target,
+**sequentially with triage between each** (§0 — this is the pattern that bit on Module 02, where two
+runs launched 17 seconds apart produced near-duplicate targets):
+
+| # | `target_slug` | Where the material lives in the module |
+|---|---|---|
+| 1 | `alcohol-use-disorder` | 11.1.5.1 Depressants; heaviest coverage in the module (52 mentions) |
+| 2 | `stimulant-use-disorder` | 11.1.5.2 Stimulants — cocaine and amphetamines |
+| 3 | `cannabis-related-disorders` | 11.1.5.3 Hallucinogens/Cannabis/Combination |
+| 4 | `opioid-use-disorder` | 11.1.5.1 Depressants, alongside alcohol and sedative-hypnotics |
+
+**Broad target first is the §0 rule, and here it means alcohol first** — it has the most coverage,
+so it is the run most likely to invent supporting pages the later three would otherwise duplicate.
+Vet its supporting pages against the remaining three targets before accepting them.
+
+Expect **`action: replace` or `new`, not `update`** on the targets themselves: each is an unwritten
+catalogue slug, so there is no body to delta against.
+
+Use citation row 11 from §6 verbatim. **`gambling-disorder` is not in this list** — the module does
+not mention it at all, so it needs a different source entirely (§4).
+
+Extracted mode is a reasonable choice for these four: they are re-reads of one document, the
+prose-vs-tables finding in §5 above showed extraction losing nothing that reached a page, and four
+native re-reads of a 65k-token module is the one place in this sprint where the input cost is
+actually worth avoiding.
 
 ### What repeat runs on one source cost
 
