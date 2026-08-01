@@ -100,14 +100,25 @@ invisible to any link-based check.
 ## 5. WP4 — exactly where the sprint is
 
 **Run plan: `psy240_wp4_runplan.md`.** All 16 module PDFs are split out in
-`F:\gits\Handbook\Resources\` as `BridleyDaffin-ModuleNN-Title.pdf`.
+`F:\gits\radlab_project\PSY240resources\` as `BridleyDaffin-ModuleNN-Title.pdf`.
 
-**Done:** Module 01 — one paper run (6 supporting pages) and three reference runs
-filling `what-is-abnormal`, `historical-traditions`, `research-methods`. Module 04
-(mood) was done earlier.
+**Done (through run 5, as of 2026-08-01):** the whole foundations block — Module 01
+(one paper run for 6 supporting pages, plus three reference runs filling
+`what-is-abnormal`, `historical-traditions`, `research-methods`), Module 02
+(`models-of-psychopathology`, `integrative-model`), Module 03 (`clinical-assessment`,
+`diagnosis-and-classification`), Module 15 (`law-and-ethics`). Then the first disorder
+chapter: **Module 07 (anxiety), paper mode — 14 pages, all triaged and accepted as
+drafts.** Module 04 (mood) was done earlier.
 
-**Next:** Modules 02, 03, 15 in **reference** mode, then the disorder chapters in
-**paper** mode (runs 5–15), Module 16 last.
+**Next: run 6 — Module 09 (OCD), paper mode, native.** Then 08, 05, 06, 10, 11, 12,
+14, 13, with Module 16 last.
+
+**The 16 topic overviews will not come out of the module sweep.** Module 04 and Module
+07 both ran paper mode over a whole disorder block and produced zero overviews between
+them. Overview slugs are the catalogue's invention, so they behave like the foundations
+did — they need reference mode, and they belong to the reference pass (run plan §5),
+not to any chapter run. The run plan's table was corrected on 2026-08-01 to stop
+promising them.
 
 **Mode is per module and getting it wrong is expensive.** Reference mode only for
 the foundations modules, because foundations slugs are *our invention* and paper
