@@ -3058,7 +3058,13 @@ emails don't. Deliberately **exempt from `reminder_max`/`max_attempts`**: those 
 nudging, and letting one swallow the single email that warns about withdrawal inverts their purpose.
 Once-only via `participant_schedule.final_notice_sent_at`, and nothing follows it — a row that has
 had its notice sends no further cadence reminders, so a short cadence can't de-escalate from "last
-chance" back to "Reminder:" as the deadline nears.
+chance" back to "Reminder:" as the deadline nears. On today's settings the ±6 h merge rule never
+actually bites (Liliana's two cadence reminders land at +12 h and +24 h, Zerin's one at +6 h, and the
+notice at +60 h) — it is insurance for a study configured with a higher `reminder_max`, not a change
+to current behaviour. So the live effect is simply one extra email: Liliana's midpoint goes 06:00
+d14 send → 18:00 d14 reminder → 06:00 d15 reminder → **18:00 d16 last chance** → 06:00 d17 expiry.
+The whole *when* decision is a pure `reminderAction()` rather than inline conditionals, so the
+timing is tested against a clock instead of only reasoned about.
 
 Which sessions qualify is **derived from graph position**, not a flag, in `_shared/criticalSession.ts`
 — by the same predicates that decide what actually happens on a miss, so the copy can never threaten

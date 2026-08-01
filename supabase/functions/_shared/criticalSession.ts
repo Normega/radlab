@@ -142,3 +142,53 @@ export function criticalSessionKind(
   if (isTerminal(graph, node.id)) return 'terminal'
   return forced ? 'window' : null
 }
+
+/** What the reminder pass should do with one row on this tick. */
+export type ReminderAction = 'final_notice' | 'reminder' | 'none'
+
+/**
+ * Whether this row is due a final notice, an ordinary cadence reminder, or
+ * nothing — the whole timing decision, kept pure so it can be tested against a
+ * clock instead of only reasoned about. check_schedule applies the study-level
+ * gates (reminders_enabled, withdrawal, the attempt caps) around it; everything
+ * here is about WHEN.
+ *
+ * Order matters and encodes three rules:
+ *   1. Nothing follows a last chance. Once sent, the row is done — otherwise a
+ *      cadence shorter than the lead time (Zerin's is 6 h) would land an
+ *      ordinary "Reminder:" after it, de-escalating as the deadline nears.
+ *   2. The notice is due from its instant onward, regardless of cadence. It is
+ *      exempt from the attempt caps by design, so the caller must not apply
+ *      them before consulting this.
+ *   3. A cadence reminder inside the merge window is dropped, not deferred: the
+ *      notice says everything it would, more urgently. Outside that window both
+ *      send — a nudge half a day before the notice is a separate touch.
+ */
+export function reminderAction(args: {
+  nowMs: number
+  /** Link expiry, ms. Null when unknown — then only cadence applies. */
+  expiresAtMs: number | null
+  lastSentAtMs: number
+  cadenceHours: number
+  /** Null when this session gets no final notice at all. */
+  noticeKind: CriticalKind | null
+  finalNoticeAlreadySent: boolean
+}): ReminderAction {
+  const { nowMs, expiresAtMs, lastSentAtMs, cadenceHours, noticeKind, finalNoticeAlreadySent } = args
+
+  if (finalNoticeAlreadySent) return 'none'
+
+  const noticeAtMs = noticeKind !== null && expiresAtMs !== null
+    ? expiresAtMs - FINAL_NOTICE_LEAD_HOURS * 3_600_000
+    : null
+
+  if (noticeAtMs !== null && nowMs >= noticeAtMs) return 'final_notice'
+
+  if (nowMs - lastSentAtMs < cadenceHours * 3_600_000) return 'none'
+
+  if (noticeAtMs !== null && Math.abs(nowMs - noticeAtMs) < FINAL_NOTICE_MERGE_HOURS * 3_600_000) {
+    return 'none'
+  }
+
+  return 'reminder'
+}

@@ -10,11 +10,7 @@ import { createClient, SupabaseClient } from 'npm:@supabase/supabase-js@2'
 import { materializeSchedule, baselineTimeOfDay } from '../_shared/materializeSchedule.ts'
 import type { Graph } from '../_shared/materializeSchedule.ts'
 import { processAdherenceWithdrawal } from '../_shared/processAdherenceWithdrawal.ts'
-import {
-  criticalSessionKind,
-  FINAL_NOTICE_LEAD_HOURS,
-  FINAL_NOTICE_MERGE_HOURS,
-} from '../_shared/criticalSession.ts'
+import { criticalSessionKind, reminderAction } from '../_shared/criticalSession.ts'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -364,32 +360,31 @@ Deno.serve(async (req) => {
             const session = sessMap.get(row.study_session_id)
             const expires = session?.link_expires_hours ?? 48
 
-            // Is this a critical session, and if so when does its notice fire?
-            // Both need the study's graph; a study without one (legacy, or a
-            // hand-built schedule) simply gets no final notices.
+            // Is this a critical session? Needs the study's graph, so a study
+            // without one (legacy, or a hand-built schedule) simply gets no
+            // final notices.
             const graph = graphByStudyId.get(row.study_id)
             const expiresAt = expiresByScheduleId.get(row.id)
-            let noticeKind: ReturnType<typeof criticalSessionKind> = null
-            let noticeAtMs: number | null = null
-            if (graph && session?.node_key && expiresAt) {
-              noticeKind = criticalSessionKind(graph, session.node_key, expires)
-              if (noticeKind) {
-                noticeAtMs = new Date(expiresAt).getTime() - FINAL_NOTICE_LEAD_HOURS * 3_600_000
-              }
-            }
+            const noticeKind = graph && session?.node_key
+              ? criticalSessionKind(graph, session.node_key, expires)
+              : null
 
-            // Nothing follows a last chance. On a cadence shorter than the lead
-            // time (Zerin's is 6 h) an ordinary "Reminder:" would otherwise
-            // still be due before the link closes, arriving after the email
-            // that said this was the final one — de-escalating exactly when the
-            // deadline is nearest.
-            if (row.final_notice_sent_at) continue
+            const cadenceHours = study.reminder_interval_hours ?? (expires <= 24 ? 12 : 24)
+            const action = reminderAction({
+              nowMs: now.getTime(),
+              expiresAtMs: expiresAt ? new Date(expiresAt).getTime() : null,
+              lastSentAtMs: new Date(row.last_sent_at).getTime(),
+              cadenceHours,
+              noticeKind,
+              finalNoticeAlreadySent: !!row.final_notice_sent_at,
+            })
+            if (action === 'none') continue
 
-            // The notice itself: due, and exempt from reminder_max /
-            // max_attempts. Those caps exist to bound routine nudging; letting
-            // one swallow the single email that warns about withdrawal would
-            // invert their purpose. Once per row, via the guard above.
-            if (noticeAtMs !== null && now.getTime() >= noticeAtMs) {
+            // The notice is exempt from reminder_max / max_attempts. Those caps
+            // exist to bound routine nudging; letting one swallow the single
+            // email that warns about withdrawal would invert their purpose —
+            // which is why this branch sits ahead of them.
+            if (action === 'final_notice') {
               try {
                 const sendRes = await fetch(`${supabaseUrl}/functions/v1/send_message`, {
                   method: 'POST',
@@ -417,24 +412,11 @@ Deno.serve(async (req) => {
               continue
             }
 
+            // Ordinary cadence reminder — the attempt caps apply here and only
+            // here.
             if ((row.attempts ?? 0) >= (study.max_attempts ?? 1)) continue
             const remindersSent = Math.max(0, (row.attempts ?? 0) - 1)
             if (study.reminder_max != null && remindersSent >= study.reminder_max) continue
-
-            const cadenceHours = study.reminder_interval_hours ?? (expires <= 24 ? 12 : 24)
-            const intervalMs = cadenceHours * 60 * 60 * 1000
-            if (now.getTime() - new Date(row.last_sent_at).getTime() < intervalMs) continue
-
-            // A cadence reminder landing within the merge window of a pending
-            // final notice is dropped, not deferred: the notice says everything
-            // it would have, more urgently, and two emails hours apart about
-            // the same link is the volume this study can least afford. Outside
-            // that window both send — a nudge 12 h before the notice is a
-            // genuinely separate touch.
-            if (noticeAtMs !== null &&
-                Math.abs(now.getTime() - noticeAtMs) < FINAL_NOTICE_MERGE_HOURS * 3_600_000) {
-              continue
-            }
 
             try {
               const sendRes = await fetch(`${supabaseUrl}/functions/v1/send_message`, {

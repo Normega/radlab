@@ -9,7 +9,7 @@
 //   node --experimental-strip-types supabase/functions/_shared/criticalSession.test.mjs
 // Either way there is no build step.
 import assert from 'node:assert'
-import { criticalSessionKind } from './criticalSession.ts'
+import { criticalSessionKind, reminderAction } from './criticalSession.ts'
 
 // ─── Fixtures ────────────────────────────────────────────────────────────────
 
@@ -183,6 +183,83 @@ function kindOf(graph, nodeKey, overrideHours) {
   assert.strictEqual(
     criticalSessionKind(forcedDaily, 's_p2_nr_1', 4), null,
     'forced session below the window floor still gets no notice',
+  )
+}
+
+// ─── Timing ──────────────────────────────────────────────────────────────────
+// The reminder pass's WHEN decision. Clock in hours-from-link-issue so the
+// cases read as a calendar rather than as epoch arithmetic.
+
+const H = 3_600_000
+
+/** Liliana's midpoint: 72 h link, 12 h cadence, issued at t=0. */
+function midpoint({ atHours, lastSentHours, alreadySent = false, kind = 'gate', cadenceHours = 12 }) {
+  return reminderAction({
+    nowMs: atHours * H,
+    expiresAtMs: 72 * H,
+    lastSentAtMs: lastSentHours * H,
+    cadenceHours,
+    noticeKind: kind,
+    finalNoticeAlreadySent: alreadySent,
+  })
+}
+
+{
+  // The notice fires at expiry - 12 h = t+60 h, and not a moment before.
+  assert.strictEqual(midpoint({ atHours: 59.9, lastSentHours: 24 }), 'none',
+    'no notice before its instant (and no cadence reminder either — inside the merge window)')
+  assert.strictEqual(midpoint({ atHours: 60, lastSentHours: 24 }), 'final_notice',
+    'notice fires exactly at expiry - 12 h')
+  assert.strictEqual(midpoint({ atHours: 66, lastSentHours: 24 }), 'final_notice',
+    'a cron tick after the instant still sends it — the window is not missed by being late')
+
+  // The two ordinary reminders still run on cadence, well clear of the notice.
+  assert.strictEqual(midpoint({ atHours: 12, lastSentHours: 0 }), 'reminder',
+    'first cadence reminder at +12 h is untouched')
+  assert.strictEqual(midpoint({ atHours: 24, lastSentHours: 12 }), 'reminder',
+    'second cadence reminder at +24 h is untouched')
+  assert.strictEqual(midpoint({ atHours: 20, lastSentHours: 12 }), 'none',
+    'cadence not yet elapsed')
+
+  // Norm's rule: extra if the cadence reminder is far from the notice, a
+  // replacement if it is near. Notice at t+60; merge window is t+54..t+66.
+  assert.strictEqual(midpoint({ atHours: 48, lastSentHours: 36 }), 'reminder',
+    'cadence reminder 12 h before the notice still sends — a separate touch')
+  assert.strictEqual(midpoint({ atHours: 56, lastSentHours: 44 }), 'none',
+    'cadence reminder inside the merge window is dropped in the notice\'s favour')
+
+  // Nothing follows a last chance.
+  assert.strictEqual(midpoint({ atHours: 66, lastSentHours: 60, alreadySent: true }), 'none',
+    'no further notice once sent')
+  assert.strictEqual(midpoint({ atHours: 66, lastSentHours: 60, alreadySent: true, cadenceHours: 6 }), 'none',
+    'and no cadence reminder after it either, even on a 6 h cadence that is due')
+}
+
+{
+  // A non-critical session keeps exactly its old behaviour: cadence only, no
+  // notice, no merge window suppressing anything.
+  const daily = (atHours, lastSentHours) => reminderAction({
+    nowMs: atHours * H,
+    expiresAtMs: 24 * H,
+    lastSentAtMs: lastSentHours * H,
+    cadenceHours: 12,
+    noticeKind: null,
+    finalNoticeAlreadySent: false,
+  })
+  assert.strictEqual(daily(12, 0), 'reminder', 'daily reminder at +12 h unchanged')
+  assert.strictEqual(daily(11, 0), 'none', 'daily below cadence unchanged')
+  assert.strictEqual(daily(13, 0), 'reminder',
+    'a daily near its own expiry is never suppressed — nothing to merge with')
+
+  // A critical session whose link expiry we somehow don't know falls back to
+  // cadence rather than guessing a deadline.
+  assert.strictEqual(
+    reminderAction({
+      nowMs: 12 * H, expiresAtMs: null, lastSentAtMs: 0,
+      cadenceHours: 12, noticeKind: 'gate', finalNoticeAlreadySent: false,
+    }),
+    'reminder',
+    'unknown expiry degrades to plain cadence',
   )
 }
 
