@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase as globalSupabase } from '../../lib/supabase'
 import { dbWrite } from '../../lib/dbWrite'
 import StudyVideoPlayer from '../video/StudyVideoPlayer'
+import NoDefaultSlider from './NoDefaultSlider'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -75,8 +76,9 @@ export default function InterventionPage({
   const [responses,     setResponses]     = useState({})
 
   // slider (existing)
+  // No companion "touched" map: a slider is answered iff sliderValues has an
+  // entry for it. A parallel flag is what drifted out of sync before.
   const [sliderValues,  setSliderValues]  = useState({})
-  const [sliderTouched, setSliderTouched] = useState({})
 
   // multi_response
   const [multiResponses, setMultiResponses] = useState({})  // {stepIdx: string[]}
@@ -135,7 +137,7 @@ export default function InterventionPage({
       case 'slider':
         // A slider that has not been moved has no response — an untouched
         // handle must not count as choosing the value it happens to sit on.
-        setNextEnabled(!!sliderTouched[s._stepIndex])
+        setNextEnabled(sliderValues[s._stepIndex] != null)
         break
       case 'multi_response': {
         const vals = multiResponses[s._stepIndex] ?? []
@@ -451,13 +453,9 @@ export default function InterventionPage({
           {current.type === 'slider' && (
             <SliderBlock
               step={current}
-              value={sliderValues[current._stepIndex] ?? Math.round((current.min + current.max) / 2)}
-              touched={!!sliderTouched[current._stepIndex]}
+              value={sliderValues[current._stepIndex] ?? null}
               onChange={v => {
                 setSliderValues(prev => ({ ...prev, [current._stepIndex]: v }))
-                if (!sliderTouched[current._stepIndex]) {
-                  setSliderTouched(prev => ({ ...prev, [current._stepIndex]: true }))
-                }
                 setNextEnabled(true)
               }}
             />
@@ -790,44 +788,35 @@ function ClosingBlock({ step }) {
 
 // ── SliderBlock ───────────────────────────────────────────────────────────────
 
-// Until the participant moves the handle there is no response, and the UI says
-// so: no number is shown, the track is dimmed, and Next stays disabled (see the
-// 'slider' case in the gate effect). Previously the handle sat at the midpoint
-// with its value displayed and Next live, so clicking straight through silently
-// recorded that midpoint — on these 1–6 items, a 4 — as if it were an answer.
-//
-// This mirrors StudySliderBlock in VasStepWrapper.jsx, which already gated its
-// Submit on `touched` and showed an em-dash until then; InterventionPage's
-// slider was the inconsistent one.
-function SliderBlock({ step, value, touched, onChange }) {
+// `value` null means unanswered — there is no separate touched flag, because a
+// parallel flag is exactly what drifted out of sync and let an untouched
+// midpoint be saved as a real response. No handle is drawn until the
+// participant chooses, and Next stays disabled until then (see the 'slider'
+// case in the gate effect).
+function SliderBlock({ step, value, onChange }) {
+  const answered = value != null
   return (
     <div>
       <p style={S.promptLabel}>{step.prompt}</p>
       <div style={S.sliderWrap}>
-        <input
-          type="range"
+        <NoDefaultSlider
           min={step.min}
           max={step.max}
           value={value}
-          onChange={e => onChange(Number(e.target.value))}
-          aria-valuetext={touched ? String(value) : 'No value selected yet'}
-          style={{
-            ...S.bigSlider,
-            accentColor: touched ? 'var(--pk)' : '#c9c9cf',
-            opacity: touched ? 1 : 0.75,
-          }}
+          onChange={onChange}
+          ariaLabel={step.prompt}
         />
         <div style={S.sliderLabels}>
           <span style={{ whiteSpace: 'pre-line' }}>{step.min_label}</span>
-          <span style={{ ...S.sliderVal, color: touched ? undefined : '#b0b0b8' }}>
-            {touched ? value : '—'}
+          <span style={{ ...S.sliderVal, color: answered ? undefined : '#b0b0b8' }}>
+            {answered ? value : '—'}
           </span>
           <span style={{ whiteSpace: 'pre-line', textAlign: 'right' }}>{step.max_label}</span>
         </div>
       </div>
-      {!touched && (
+      {!answered && (
         <p style={{ marginTop: 10, fontSize: 14, color: '#6b6c70', fontStyle: 'italic' }}>
-          Move the slider to choose a value.
+          Tap or drag the slider to choose a value.
         </p>
       )}
     </div>
