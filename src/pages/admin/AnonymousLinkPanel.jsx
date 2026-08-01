@@ -76,9 +76,15 @@ export default function AnonymousLinkPanel({ study, qc }) {
 
   const revokeLink = useMutation({
     mutationFn: async (linkId) => {
+      const { data: { user } } = await supabase.auth.getUser()
       const { error } = await supabase
         .from('participant_links')
-        .update({ status: 'revoked' })
+        .update({
+          status:       'revoked',
+          ended_reason: 'admin_revoked',
+          ended_at:     new Date().toISOString(),
+          ended_by:     user?.id ?? null,
+        })
         .eq('id', linkId)
       if (error) throw error
     },

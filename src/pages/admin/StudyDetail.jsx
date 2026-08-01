@@ -396,7 +396,15 @@ function ScheduleView({ studyId, participant, onBack, qc }) {
 
   const revokeLink = useMutation({
     mutationFn: async ({ linkId, scheduleId }) => {
-      await supabase.from('participant_links').update({ status: 'revoked' }).eq('id', linkId)
+      // A human deliberately ended this one, so it is 'revoked' + admin_revoked
+      // — distinct from a link the system superseded, which is just a miss.
+      const { data: { user } } = await supabase.auth.getUser()
+      await supabase.from('participant_links').update({
+        status:       'revoked',
+        ended_reason: 'admin_revoked',
+        ended_at:     new Date().toISOString(),
+        ended_by:     user?.id ?? null,
+      }).eq('id', linkId)
       await supabase.from('participant_schedule').update({ status: 'pending', link_id: null }).eq('id', scheduleId)
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['participant-schedule', studyId, participant.profileId] }),

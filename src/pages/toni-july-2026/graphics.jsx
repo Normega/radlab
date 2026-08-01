@@ -337,29 +337,34 @@ export function AnalysisPipeline() {
   )
 }
 
+// Row for RegisteredVsActual. Module scope, not inside the component: a
+// component defined during render gets a new identity every render, so React
+// unmounts and remounts its whole subtree instead of updating it. Row closes
+// over nothing but its props and the module constants, so it belongs here.
+const RegisteredVsActualRow = ({ tone, tag, left, right, note }) => (
+  <div style={{ padding: '14px 18px', borderRadius: 12, background: '#fff', border: `1.5px solid ${tone}44`, textAlign: 'left' }}>
+    <div style={{ fontFamily: '"Space Mono",monospace', fontSize: 12, fontWeight: 700, letterSpacing: '0.03em', color: tone, marginBottom: 8 }}>{tag}</div>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', fontFamily: '"Space Mono",monospace', fontSize: 'clamp(12px,1.5vw,15px)', color: INK }}>
+      <span style={{ padding: '4px 10px', borderRadius: 7, background: 'rgba(0,0,0,0.05)' }}>{left}</span>
+      <span style={{ color: tone, fontSize: 18 }}>→</span>
+      <span style={{ padding: '4px 10px', borderRadius: 7, background: `${tone}18`, color: tone === '#9aa0aa' ? INK : tone, fontWeight: 600 }}>{right}</span>
+    </div>
+    <div style={{ fontSize: 13.5, color: '#6b6c70', marginTop: 9, fontFamily: '"DM Sans",sans-serif', lineHeight: 1.4 }}>{note}</div>
+  </div>
+)
+
 // Registered vs. what-the-code-did — the centerpiece methods slide. Separates
 // the cosmetic engine swap from the substantive error-control deviation.
 export function RegisteredVsActual() {
-  const Row = ({ tone, tag, left, right, note }) => (
-    <div style={{ padding: '14px 18px', borderRadius: 12, background: '#fff', border: `1.5px solid ${tone}44`, textAlign: 'left' }}>
-      <div style={{ fontFamily: '"Space Mono",monospace', fontSize: 12, fontWeight: 700, letterSpacing: '0.03em', color: tone, marginBottom: 8 }}>{tag}</div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', fontFamily: '"Space Mono",monospace', fontSize: 'clamp(12px,1.5vw,15px)', color: INK }}>
-        <span style={{ padding: '4px 10px', borderRadius: 7, background: 'rgba(0,0,0,0.05)' }}>{left}</span>
-        <span style={{ color: tone, fontSize: 18 }}>→</span>
-        <span style={{ padding: '4px 10px', borderRadius: 7, background: `${tone}18`, color: tone === '#9aa0aa' ? INK : tone, fontWeight: 600 }}>{right}</span>
-      </div>
-      <div style={{ fontSize: 13.5, color: '#6b6c70', marginTop: 9, fontFamily: '"DM Sans",sans-serif', lineHeight: 1.4 }}>{note}</div>
-    </div>
-  )
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 880, width: '100%' }}>
-      <Row
+      <RegisteredVsActualRow
         tone="#9aa0aa"
         tag="ENGINE SWAP — a documentable, minor deviation"
         left="SPM12" right="FSL FEAT"
         note="Both are mass-univariate GLM. Name it in the deviations log and move on — this is not the part that matters."
       />
-      <Row
+      <RegisteredVsActualRow
         tone={BLUE}
         tag="ERROR CONTROL — the deviation that actually matters"
         left="cluster p<.005 (~400 vox)" right="TFCE + permutation (randomise)"

@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { supabase as globalSupabase } from '../../lib/supabase'
 import VasRenderer from '../vas/VasRenderer'
+import NoDefaultSlider from './NoDefaultSlider'
 
 /**
  * Mounts inside StepDispatcher for steps with category === 'vas'.
@@ -223,10 +224,14 @@ export default function VasStepWrapper({
 // ── StudySliderBlock ──────────────────────────────────────────────────────────
 
 function StudySliderBlock({ scale, userId, db, onComplete, partNumber, totalParts }) {
-  const mid = Math.round((scale.min + scale.max) / 2)
-  const [value,   setValue]   = useState(mid)
-  const [touched, setTouched] = useState(false)
+  // null until chosen. This block already gated Submit on a `touched` flag, but
+  // its handle still rested at the midpoint, so selecting the midpoint took an
+  // extra move away and back — a native range fires no change event when the
+  // value is unchanged. NoDefaultSlider draws no handle until there is a value
+  // and commits on pointer-down, so every option costs the same one gesture.
+  const [value,   setValue]   = useState(null)
   const [saving,  setSaving]  = useState(false)
+  const touched = value != null
 
   async function handleSubmit() {
     if (!touched || saving) return
@@ -249,16 +254,13 @@ function StudySliderBlock({ scale, userId, db, onComplete, partNumber, totalPart
       )}
       <p style={SS.prompt}>{scale.prompt}</p>
       <div style={SS.sliderWrap}>
-        <input
-          type="range"
+        <NoDefaultSlider
           min={scale.min}
           max={scale.max}
           value={value}
-          onChange={e => {
-            setValue(Number(e.target.value))
-            setTouched(true)
-          }}
-          style={{ ...SS.slider, accentColor: touched ? 'var(--pk)' : 'var(--gy)' }}
+          onChange={setValue}
+          ariaLabel={scale.prompt}
+          disabled={saving}
         />
         <div style={{ ...SS.labels, color: touched ? 'var(--tx2)' : 'var(--gy)' }}>
           <span>{scale.min_label}</span>

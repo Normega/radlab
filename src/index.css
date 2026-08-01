@@ -220,3 +220,73 @@ body {
   width: 100%;
   height: 100%;
 }
+
+/* ── No-default slider ────────────────────────────────────────────────────────
+   A range input with genuinely no initial position. The native input is kept
+   as a transparent interaction layer on top (so keyboard, drag, touch and
+   screen-reader support are all inherited) and the track/thumb are drawn as
+   plain elements underneath, which is what lets the thumb simply not exist
+   until the participant has chosen a value. See NoDefaultSlider.jsx. */
+.ndslider {
+  position: relative;
+  width: 100%;
+  height: 40px;
+  display: block;
+}
+.ndslider__input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;          /* invisible, but still the real control */
+  cursor: pointer;
+  z-index: 2;
+}
+.ndslider__input:disabled { cursor: not-allowed; }
+.ndslider__visual {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.ndslider__track {
+  position: absolute;
+  left: 0; right: 0; top: 50%;
+  transform: translateY(-50%);
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.09);
+}
+.ndslider__fill {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 8px;
+  border-radius: 999px;
+  background: var(--pk);
+}
+.ndslider__tick {
+  position: absolute;
+  top: 50%;
+  width: 2px; height: 2px;
+  margin-left: -1px;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.22);
+}
+.ndslider__thumb {
+  position: absolute;
+  top: 50%;
+  width: 24px; height: 24px;
+  margin-left: -12px;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  background: #fff;
+  border: 3px solid var(--pk);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+}
+/* Keyboard focus ring, drawn on the visual layer since the input is invisible */
+.ndslider__input:focus-visible + .ndslider__visual .ndslider__track {
+  outline: 2px solid var(--pk);
+  outline-offset: 6px;
+}

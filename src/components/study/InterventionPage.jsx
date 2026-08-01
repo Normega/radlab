@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase as globalSupabase } from '../../lib/supabase'
 import { dbWrite } from '../../lib/dbWrite'
 import StudyVideoPlayer from '../video/StudyVideoPlayer'
+import NoDefaultSlider from './NoDefaultSlider'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -19,8 +20,12 @@ const SESSION_STEPS = [
   { label: 'Farewell', state: 'upcoming' },
 ]
 
-// Types always enabled (no gating needed)
-const ALWAYS_ENABLED = new Set(['lead_in', 'lead_out', 'text', 'closing', 'slider'])
+// Types always enabled (no gating needed). 'slider' is deliberately NOT here:
+// it is gated on having been moved (see the 'slider' case in the gate effect),
+// because an untouched handle is a non-response, not a choice of whatever value
+// it happens to rest on. This set short-circuits ahead of the switch, so
+// listing a type here silently makes its case below dead code.
+const ALWAYS_ENABLED = new Set(['lead_in', 'lead_out', 'text', 'closing'])
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -71,8 +76,9 @@ export default function InterventionPage({
   const [responses,     setResponses]     = useState({})
 
   // slider (existing)
+  // No companion "touched" map: a slider is answered iff sliderValues has an
+  // entry for it. A parallel flag is what drifted out of sync before.
   const [sliderValues,  setSliderValues]  = useState({})
-  const [sliderTouched, setSliderTouched] = useState({})
 
   // multi_response
   const [multiResponses, setMultiResponses] = useState({})  // {stepIdx: string[]}
@@ -129,7 +135,9 @@ export default function InterventionPage({
         setNextEnabled((responses[s._stepIndex] ?? '').length > 0)
         break
       case 'slider':
-        setNextEnabled(true)
+        // A slider that has not been moved has no response — an untouched
+        // handle must not count as choosing the value it happens to sit on.
+        setNextEnabled(sliderValues[s._stepIndex] != null)
         break
       case 'multi_response': {
         const vals = multiResponses[s._stepIndex] ?? []
@@ -250,10 +258,15 @@ export default function InterventionPage({
           break
 
         case 'slider': {
-          const mid = Math.round((s.min + s.max) / 2)
+          // null, never a coerced midpoint. The Next gate should make an
+          // untouched slider unreachable, but if that ever regresses the data
+          // must record "no answer" rather than invent one — a fabricated
+          // midpoint is indistinguishable from a real response, and on the
+          // day-7 pre/post pair two of them read as "reappraisal changed
+          // nothing".
           await supabase.from('intervention_responses').insert({
             ...base,
-            response_text: JSON.stringify({ value: sliderValues[idx] ?? mid }),
+            response_text: JSON.stringify({ value: sliderValues[idx] ?? null }),
           })
           break
         }
@@ -440,13 +453,10 @@ export default function InterventionPage({
           {current.type === 'slider' && (
             <SliderBlock
               step={current}
-              value={sliderValues[current._stepIndex] ?? Math.round((current.min + current.max) / 2)}
-              touched={!!sliderTouched[current._stepIndex]}
+              value={sliderValues[current._stepIndex] ?? null}
               onChange={v => {
                 setSliderValues(prev => ({ ...prev, [current._stepIndex]: v }))
-                if (!sliderTouched[current._stepIndex]) {
-                  setSliderTouched(prev => ({ ...prev, [current._stepIndex]: true }))
-                }
+                setNextEnabled(true)
               }}
             />
           )}
@@ -778,33 +788,37 @@ function ClosingBlock({ step }) {
 
 // ── SliderBlock ───────────────────────────────────────────────────────────────
 
-// OPEN QUESTION (2026-07-31): `touched` is passed in but not used, and
-// `sliderTouched` in the parent is read nowhere else — so the slider always
-// displays its default value, including before the participant has moved it.
-// The near-certain original intent was to hide the number until first touch so
-// the default does not anchor the response, which is standard practice for a
-// VAS-style item. Kept rather than deleted because that is an instrument-design
-// decision with data implications, not a lint fix — it needs Norm's call.
-// eslint-disable-next-line no-unused-vars
-function SliderBlock({ step, value, touched, onChange }) {
+// `value` null means unanswered — there is no separate touched flag, because a
+// parallel flag is exactly what drifted out of sync and let an untouched
+// midpoint be saved as a real response. No handle is drawn until the
+// participant chooses, and Next stays disabled until then (see the 'slider'
+// case in the gate effect).
+function SliderBlock({ step, value, onChange }) {
+  const answered = value != null
   return (
     <div>
       <p style={S.promptLabel}>{step.prompt}</p>
       <div style={S.sliderWrap}>
-        <input
-          type="range"
+        <NoDefaultSlider
           min={step.min}
           max={step.max}
           value={value}
-          onChange={e => onChange(Number(e.target.value))}
-          style={{ ...S.bigSlider, accentColor: 'var(--pk)' }}
+          onChange={onChange}
+          ariaLabel={step.prompt}
         />
         <div style={S.sliderLabels}>
           <span style={{ whiteSpace: 'pre-line' }}>{step.min_label}</span>
-          <span style={S.sliderVal}>{value}</span>
+          <span style={{ ...S.sliderVal, color: answered ? undefined : '#b0b0b8' }}>
+            {answered ? value : '—'}
+          </span>
           <span style={{ whiteSpace: 'pre-line', textAlign: 'right' }}>{step.max_label}</span>
         </div>
       </div>
+      {!answered && (
+        <p style={{ marginTop: 10, fontSize: 14, color: '#6b6c70', fontStyle: 'italic' }}>
+          Tap or drag the slider to choose a value.
+        </p>
+      )}
     </div>
   )
 }

@@ -41,9 +41,16 @@ export async function processAdherenceWithdrawal(
     .eq('profile_id', participantId)
   if (enrollErr) throw enrollErr
 
+  // 'revoked', deliberately: participation has ended, so "contact your
+  // researcher" is the right thing for this participant to see — unlike a
+  // superseded link, which is just a missed session.
   const { error: revokeErr } = await db
     .from('participant_links')
-    .update({ status: 'revoked' })
+    .update({
+      status: 'revoked',
+      ended_reason: 'withdrawn',
+      ended_at: new Date().toISOString(),
+    })
     .eq('study_id', studyId)
     .eq('participant_id', participantId)
     .eq('status', 'active')

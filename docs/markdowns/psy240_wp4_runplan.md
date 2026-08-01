@@ -54,7 +54,7 @@ student sees a drafted page.
 ## 1. The book, as it actually is
 
 `Fundamentals-of-Psychological-Disorders-1721254433._oss.pdf`, 343 pages, **16 modules** in six
-parts. All 16 are now split out in `F:\gits\Handbook\Resources\` as
+parts. All 16 are now split out in `F:\gits\radlab_project\PSY240resources\` as
 `BridleyDaffin-ModuleNN-Title.pdf`, using the same boundaries and naming as the two you had
 already extracted — verified by reproducing Module 04 (23 pages) and Module 07 (18 pages)
 byte-for-page against your own files.
@@ -119,17 +119,17 @@ weeks 1–4 finished, not a random half of the course.
 | — | ~~Module 02~~ | reference ×2 ✔ → `models-of-psychopathology`, `integrative-model` — **ran concurrently; both targets needed trimming afterwards** (§0) | L1–2 |
 | — | ~~Module 03~~ | reference ×2 ✔ → `clinical-assessment`, `diagnosis-and-classification` — **run 1's `classification-systems` pre-empted run 2 and was archived** (§0) | L2 |
 | 4 | Module 15 | **reference** ×1 → `law-and-ethics` | L1/L10 |
-| 5 | Module 07 | paper | 4 Tier A + anxiety overview (1 already written) | L3 |
-| 6 | Module 09 | paper | 2 Tier A + OCD overview | L3 |
-| 7 | Module 08 | paper | 3 Tier A + somatic overview (1 written) | L3 |
-| 8 | Module 05 | paper | 2 Tier A + trauma overview | L4 |
-| 9 | Module 06 | paper | 2 Tier A + dissociative overview | L4 |
+| — | ~~Module 07~~ | paper ✔ | **run 2026-07-31, triaged 2026-08-01** — 14 pages, 5 Tier A | L3 |
+| 6 | Module 09 | paper | 2 Tier A | L3 |
+| 7 | Module 08 | paper | 3 Tier A (1 written) | L3 |
+| 8 | Module 05 | paper | 2 Tier A | L4 |
+| 9 | Module 06 | paper | 2 Tier A | L4 |
 | — | ~~Module 04~~ | paper ✔ | **already run** — 7 pages | L5 |
-| 10 | Module 10 | paper | 3 Tier A + eating overview (2 written) | L6 |
-| 11 | Module 11 | paper | 5 Tier A + substance overview | L8 |
-| 12 | Module 12 | paper | 2 Tier A + schizophrenia overview | L9 |
-| 13 | Module 14 | paper | 3 Tier A + neurocognitive overview | L10 |
-| 14 | Module 13 | paper | **10 Tier A** + personality overview (1 written) | L11 |
+| 10 | Module 10 | paper | 3 Tier A (2 written) | L6 |
+| 11 | Module 11 | paper | 5 Tier A | L8 |
+| 12 | Module 12 | paper | 2 Tier A | L9 |
+| 13 | Module 14 | paper | 3 Tier A | L10 |
+| 14 | Module 13 | paper | **10 Tier A** (1 written) | L11 |
 | 15 | **Module 16 — run this LAST** | paper | neurodevelopmental + disruptive/conduct, and deltas onto pages from runs 5–10 | L3/8/10 |
 
 ### Why the foundations runs are reference mode, not paper
@@ -154,6 +154,33 @@ tell you what it contains.
 Paper-mode runs on the foundations modules are still *useful* — that is where the supporting
 concept pages come from — so the shape is: reference runs for the named pages, and optionally one
 paper run per module afterwards for the surrounding concepts.
+
+### The 16 overviews are a reference-pass job — measured, not predicted
+
+The paragraph above predicted this; **2026-08-01 confirmed it.** Two disorder chapters have now
+been run in paper mode — Module 04 (18 pages) and Module 07 (14 pages) — and between them they
+produced **zero of the 16 topic overviews**. Not `mood-disorders`, not `anxiety-disorders`,
+despite both chapters being entirely about those blocks.
+
+The run table above used to promise "N Tier A **+ overview**" from each chapter run. That column
+was wrong and has been corrected: paper mode delivers the Tier A disorders reliably and the
+overview never. The reason is the same one that sank the Module 01 paper run — an overview slug
+like `obsessive-compulsive-and-related-disorders` is the catalogue's construction, and there is
+nothing for the model to converge on.
+
+So all 16 overviews belong to the **reference pass (§5)**, not to the module sweep. Two ways to
+take them, and the choice is real:
+
+- **Deferred (plan as written).** Finish the module sweep, then one reference run per overview.
+  Cleanest bookkeeping; overviews get written against a wiki that already knows every disorder
+  they summarise, which is the right context for an overview.
+- **Interleaved.** After each chapter's paper run, one extra *extracted*-mode reference run
+  against the same module naming that overview slug. Costs about $0.13 and one triage cycle per
+  module, and keeps the chapter fresh — but the overview is written before its sibling chapters
+  exist, so cross-block framing has to be added later anyway.
+
+Deferred is the default for that last reason. Interleaving buys freshness the overview cannot
+actually use.
 
 **Module 16 goes last, deliberately.** It cross-cuts: it covers selective mutism and separation
 anxiety (anxiety), trichotillomania and excoriation (OCD), reactive attachment (trauma), pica and
