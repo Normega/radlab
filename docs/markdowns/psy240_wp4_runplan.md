@@ -326,7 +326,7 @@ catalogue slug, so there is no body to delta against.
 Use citation row 11 from §6 verbatim. **`gambling-disorder` is not in this list** — the module does
 not mention it at all, so it needs a different source entirely (§4).
 
-Extracted mode is a reasonable choice for these four: they are re-reads of one document, the
+Use **extracted** for these four — confirmed on this exact module, not assumed: they are re-reads of one document, the
 prose-vs-tables finding in §5 above showed extraction losing nothing that reached a page, and four
 native re-reads of a 65k-token module is the one place in this sprint where the input cost is
 actually worth avoiding.
@@ -395,6 +395,24 @@ a successful run.
 >
 > Reproduce with `pdftotext -layout <module>.pdf -` and compare against the figures on the pages
 > that module produced.
+>
+> **Two false-positive modes in that check, both hit on Module 11 (2026-08-01).** Re-running it
+> there appeared to show 2 of 16 figures lost to extraction. Neither was real:
+>
+> - **`86%` — wrong attribution.** The figure sat on `operant-conditioning`, which Module 11 only
+>   *updated*; the number came from Module 09's ERP material and predated the run. Joining pages to
+>   a job by `job_id` attributes the page's **whole body** to that job, not just what the job added.
+>   Compare against the *proposal* content, not the current page, on any page that has been updated.
+> - **`65%` — the source spells numbers in words.** Bridley & Daffin write "Sixty-five percent of
+>   individuals report their first drug of use was marijuana"; the model normalised it to `65%`.
+>   A digit-matching regex finds nothing. Grep the surrounding term (`gateway`) rather than the
+>   figure before concluding anything is missing.
+>
+> Corrected, Module 11 is **16 of 16 figures preserved**, and the drug-class section structure
+> (`11.1.5.1 Depressants`, `11.1.5.2 Stimulants`, `11.1.5.3 Hallucinogens/Cannabis`) survives intact.
+> The mention counts that establish which Tier A substances are recoverable — alcohol 52, cannabis
+> 21, opioid 21, stimulant 19 — were themselves counted from the extracted text, so extraction
+> demonstrably carries what the queued reference runs need.
 
 **Prompt caching was investigated (2026-07-31) and is not worth it here.** The arithmetic, on
 Module 01's real 91,863 input tokens at Opus 4.8's $5/MTok: three reference runs cost **$1.38**
