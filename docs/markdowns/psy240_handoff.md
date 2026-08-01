@@ -17,27 +17,31 @@
 | WP1 schema | ✔ done, applied live |
 | WP2 reader UI | ✔ **done, click-tested, deployed** — `/academic/fieldguide/wiki` |
 | WP3 seed + review path + review UI + `reference` mode | ✔ done, exercised on real content |
-| **WP4 content sprint** | **▶ in progress — started 2026-07-31.** Modules 01, 02, 03 done (plus 04 earlier). Next: Module 15, then the disorder chapters |
+| **WP4 content sprint** | **▶ in progress — started 2026-07-31.** Foundations block complete (Modules 01, 02, 03, 15; 04 earlier) and Module 07 the first disorder chapter. Next: run 6, Module 09 |
 | WP5 roster & enrollment | ✘ not started. Email path fully configured; **one decision left** (§4) |
 | WP6 student submission | ✘ not started, depends on WP5 |
 | WP7 export mirror | ✘ not started |
 
 Everything is merged and pushed to `main`; nothing sits on a branch.
 
-## 2. Live database state (radlab-academic, 2026-07-31, after Module 03)
+## 2. Live database state (radlab-academic, 2026-08-01, after Module 07)
 
 ```
-66 live pages with bodies       0 published — no student can see anything yet
+84 live pages with bodies       0 published — no student can see anything yet
 2 archived (abnormal-behavior,  0 proposals pending — review queue is clear
-  classification-systems)       catalogue: 123 rows — 3 complete, 16 gaps, 104 no page yet
-177 wikilinks, 0 red links      20 ingest jobs, ~1.11M input / ~182k output tokens to date
+  classification-systems)       catalogue: 125 rows — 4 complete, 21 gaps, 100 no page yet
+252 wikilinks, 0 red links      22 ingest jobs, ~1.17M input / ~220k output tokens to date
 ```
 
-Two empty `proposed` page rows also linger — `history-of-mental-illness` and
-`research-methods-in-psychopathology`, the rejected duplicate siblings from Module 01. Their
-versions are correctly `rejected` and they hold no content, so they are invisible to the ingest
-index and to students, but they squat on two slugs and inflate any raw page count. Worth clearing
-before the first publish; harmless until then.
+**Every page row now has a body.** The two empty `proposed` rows that used to linger here —
+`history-of-mental-illness` and `research-methods-in-psychopathology`, the rejected duplicate
+siblings from Module 01 — are gone, and the hole that created them is closed. They mattered more
+than "squatting on two slugs" suggested: `wiki_pages_bind_links()` resolves a `[[wikilink]]` by
+slug against any existing row, so `what-is-abnormal`'s link to the first of them *resolved* and
+rendered blue while leading to a blank page. The link was retargeted to `historical-traditions`,
+and `20260801_reject_drops_orphan_page_shell.sql` makes rejection drop the shell it created. So
+`0 red links` above now means what it says — check it with the companion query,
+`select count(*) from wiki_links l join wiki_pages p on p.id = l.target_page_id where p.content is null`.
 
 Nothing has ever been published. Every accept so far is *accept as draft*, which is
 deliberate: no students are enrolled, so publishing buys nothing and is the harder
