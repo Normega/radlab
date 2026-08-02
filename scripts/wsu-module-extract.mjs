@@ -38,19 +38,25 @@ if (process.argv.includes('--list')) {
   process.exit(0);
 }
 
-const n = Number(process.argv[2]);
-if (!Number.isInteger(n)) {
-  console.error('usage: wsu-module-extract.mjs <module number> | --list');
+const arg = process.argv.slice(2).join(' ').trim();
+if (!arg) {
+  console.error('usage: wsu-module-extract.mjs <module number | section title> | --list');
   process.exit(1);
 }
 
-const startIdx = bounds.findIndex((b) => new RegExp(`^Module ${n}\\b`).test(b.title));
+// A bare integer means "Module N" (the Fundamentals book). Anything else is matched as a
+// case-insensitive title prefix, which is what the section-numbered books need — Cummings'
+// Abnormal Psychology has "3.1 Mood Disorders", not "Module 3".
+const startIdx = /^\d+$/.test(arg)
+  ? bounds.findIndex((b) => new RegExp(`^Module ${arg}\\b`).test(b.title))
+  : bounds.findIndex((b) => b.title.toLowerCase().startsWith(arg.toLowerCase()));
+
 if (startIdx < 0) {
-  console.error(`Module ${n} not found. Chapters present:\n` + bounds.map((b) => '  ' + b.title).join('\n'));
+  console.error(`"${arg}" not found. Chapters present:\n` + bounds.map((b) => '  ' + b.title).join('\n'));
   process.exit(1);
 }
 const start = bounds[startIdx].offset;
 const end = bounds[startIdx + 1]?.offset ?? html.length;
 
-process.stderr.write(`Module ${n}: bytes ${start}..${end} (${end - start} chars)\n`);
+process.stderr.write(`${bounds[startIdx].title}: bytes ${start}..${end} (${end - start} chars)\n`);
 process.stdout.write(toMarkdown(html.slice(start, end)));
