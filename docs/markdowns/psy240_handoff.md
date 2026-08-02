@@ -24,10 +24,8 @@ brief for them. In yield order:
    Run plan §10.4 records the method and what it did *not* fix. Two consequences carry forward:
    `contested` is still empty on nine pages, and the companion's treatment sections are **entirely
    US-institutional**, so the Canadian requirement below is now sharper, not softer.
-2. **One Tier A page remains: `gambling-disorder`.** NIMH (US public domain) is the source — it is a
-   behavioural addiction no textbook in this corpus covers. Sleep and gender dysphoria came from
-   Davies (§12); all of Lecture 7 from Goerling & Wolfe (§13), which also completed the **16
-   overviews**.
+2. ~~Tier A~~ — **complete at 54/54.** `gambling-disorder` was the last, written from Menchón et al.
+   (2018, CC BY) plus the NRC (1999) criteria history (§14). Overviews are complete at 16/16.
 3. **`suicide-and-self-harm` — now writable, and the immediate next job.** Davies (2025) has a
    *Suicide and Prevention* chapter; it had no source before. Only unwritten foundation, and the
    most-linked red link in the corpus.
@@ -76,7 +74,7 @@ Everything is merged and pushed to `main`; nothing sits on a branch.
 108 empty sections         109 annotations
 ```
 
-**Catalogue coverage: Tier A 53/54, Tier B 33/46, foundations 13/14, overviews 16/16 — complete.**
+**Catalogue coverage: Tier A 54/54 — complete. Tier B 33/46, foundations 13/14, overviews 16/16 — complete.**
 
 Tier A by lecture — L3 **10/10**, L4 **4/4**, L5 **4/4**, L6 3/5, L7 **0/5**, L8 4/5, L9 **2/2**,
 L10 **9/9**, L11 **10/10**. Six lectures complete. **Every remaining Tier A gap is a page the

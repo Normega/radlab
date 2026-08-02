@@ -1425,3 +1425,60 @@ two numbers is where the medicalisation argument lives.
 
 **The keyword scan before planning is now standard** (§12.3) and it paid off here in the opposite
 direction: it confirmed full coverage before any work started, and it correctly predicted 13 pages.
+
+---
+
+## 14. Tier A complete — `gambling-disorder`, and two sources with different licences
+
+**Tier A 53 → 54/54.** Every Tier A page in the catalogue now has a body. With overviews at 16/16,
+**`suicide-and-self-harm` is the only unwritten page across Tier A, foundations and overviews** — and
+it now carries **11 inbound red links**, more than any other target in the corpus.
+
+### 14.1 Two sources, and only one of them is remixable
+
+| Source | Licence | Used for |
+|---|---|---|
+| **Menchón et al. (2018)**, *An overview of gambling disorder*, F1000Research 7:434 | **CC BY 4.0** — fully remixable | Current clinical picture: treatment, pharmacology, risk factors, subgroups |
+| **National Research Council (1999)**, Appendix B, *Pathological Gambling: A Critical Review*, National Academies Press | **Not openly licensed.** Copyrighted, freely readable on NCBI Bookshelf | DSM-III / III-R / IV criteria history — **summarised, not reproduced** |
+
+**The NAP source is handled the way §4 prescribes for StatPearls: read, cite, paraphrase — do not
+remix.** The criteria lists were not reproduced verbatim; the page describes the *evolution* of the
+classification instead, which is both the licence-safe route and the more useful teaching content.
+The `licence_note` field on each job records which applies, so the distinction survives independently
+of the page.
+
+**This is the first page in the corpus built from two sources with materially different licences**,
+and the pattern will recur as more journal and government material comes in.
+
+### 14.2 What the page carries
+
+**The reclassification is the spine.** DSM-5 moved gambling disorder into *Substance-Related and
+Addictive Disorders* — **the first behavioural addiction placed alongside the substance disorders** —
+on the basis of shared criteria, symptomatology, genetic vulnerability, comorbidity, biomarkers and
+cognitive deficits. From DSM-III (1980) to DSM-IV (1994) the same behaviour sat under **Impulse
+Control Disorders Not Elsewhere Classified**. Teaching both framings shows a category being
+**re-theorised rather than discovered**.
+
+Menchón et al. add the point that makes it more than taxonomy: the reclassification **changes
+perceived dangerousness, expectations of recovery, and attributions of responsibility**.
+
+**Three numbers do most of the work:**
+
+- **Only ~10% of people with gambling disorder ever seek treatment.** Every other figure on the page
+  describes that tenth, selected for severity.
+- **32% suicidal ideation and 17% lifetime attempts** among treatment-seeking patients; another study
+  found **30.2% reporting an attempt in the 12 months before treatment**. See `suicide-and-self-harm`.
+- **No drug is approved anywhere.** Opioid antagonists are the best-supported class and the
+  meta-analytic verdict is **"a small but significant benefit"** over placebo.
+
+**The risk-factor meta-analysis is unusually well specified** — 13 individual, 1 relationship and 1
+community risk factor, plus **three protective factors**, which is rare in this corpus. And **three
+replicated subgroups** (behaviourally conditioned, emotionally vulnerable, antisocial impulsive)
+support treatment matching rather than one protocol.
+
+### 14.3 The Canadian gap here is a conflict of interest, not just missing data
+
+Every figure is US or European. For a Canadian course the omission is specific and sharp:
+**provincial governments both regulate gambling and depend on its revenue**, and provincial
+self-exclusion programmes have no equivalent in this literature. Neither source mentions
+industry funding of gambling research. Recorded as a declared gap on the page.
