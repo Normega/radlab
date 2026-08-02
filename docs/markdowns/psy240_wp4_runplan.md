@@ -267,6 +267,23 @@ of its own.
 > pulling a named target out of a source that is organised some other way. Gambling is not
 > recoverable from it at any effort, because the content is not there.
 
+> **Added 2026-08-02 after Module 16: a second, larger class of uncovered material, and it is not
+> uncovered by omission.** Module 16 states twice — in its overview and again in its recap — that it
+> gives clinical presentation, prevalence, comorbidity and differential diagnosis **only**, and
+> defers etiology, assessment and treatment to a companion volume. So all 18 pages built from it
+> have real Presentation, Diagnosis and Epidemiology sections and **empty Etiology and Treatment
+> sections — 36 gaps that no amount of re-reading the source will close**. Unlike §4's list above,
+> the remedy is already identified and cheap: **Bridley & Daffin, *Behavioral Disorders of
+> Childhood*** (https://opentext.wsu.edu/behavioral-disorders-childhood/) — same authors, same
+> series, same CC BY-NC-SA licence, same section format, and written to cover exactly the three
+> things Module 16 withholds for exactly these disorders. It is the single highest-yield source
+> addition available and should be the next ingest.
+>
+> Distinguish the three classes when triaging, because they look alike in a gap count and have
+> different remedies: **not in the source at all** (§4 — needs a different source), **in the source
+> but carved differently** (Module 11's four substances — recoverable by reference mode), and **out
+> of the source's declared scope** (Module 16's etiology and treatment — needs the companion volume).
+
 Use **reference mode** for all of these — it names the target page from the catalogue, so you get
 the page the course needs rather than whatever carve a source suggests. Sources:
 
@@ -565,14 +582,19 @@ merge path as well as the create path.
 
 ### 8.1 Where the skeleton stands
 
-Counting a page as written only if it has an accepted body (after triaging Modules 09, 08, 05 and 06):
+Counting a page as written only if it has an accepted body. **Updated 2026-08-02 after Module 16
+closed the module sweep** (the earlier row is kept because §8.2's stub analysis is written against it):
 
-| Tier | Written | Total |
-|---|---|---|
-| A (central to the course) | 40 | 54 |
-| B (supporting) | 14 | 46 |
-| Foundation | 8 | 9 |
-| **Overview** | **1** | **16** |
+| Tier | Written | Total | Was, before Module 16 |
+|---|---|---|---|
+| A (central to the course) | **46** | 54 | 40 |
+| B (supporting) | **24** | 46 | 14 |
+| Foundation | 13 | 14 | 13 |
+| **Overview** | **3** | **16** | 1 |
+
+Tier A by lecture: L3 **10/10**, L4 **4/4**, L5 **4/4**, L6 3/5, L7 **0/5**, L8 4/5, L9 **2/2**,
+L10 **9/9**, L11 **10/10**. Six lectures complete. **Everything still missing at Tier A is a page
+the textbook does not cover** — §4's list, unchanged and now exhaustive.
 
 ### 8.2 "Has a page" is not "has a skeleton" — the stub problem
 
@@ -911,3 +933,115 @@ the sweep (`reconcileCollidingUpdate`, the placeholder-aware index, `wiki_merge_
 
 **One consequence to plan for:** the pipeline stops being exercised by every module run. It needs a
 deliberate test pass before students touch it.
+
+### 9.7 Module 16 closed the sweep — and it needed a script, not a one-off slice
+
+**All 16 modules are now in.** Module 16 by direct parse produced **18 pages** — the 6 remaining
+Lecture 10 Tier A entries (`adhd`, `autism-spectrum-disorder`, `conduct-disorder`,
+`intellectual-developmental-disorder`, `oppositional-defiant-disorder`, `specific-learning-disorder`),
+9 Tier B, and **2 overviews** — taking Tier A **40 → 46/54**, Tier B **14 → 24/46**, overviews
+**1 → 3/16**, and completing **Lecture 10 at 9 of 9**. Zero slug misses, zero duplicate headings,
+zero off-catalogue pages, and provenance verified after acceptance.
+
+**The HTML slice is now `scripts/wsu-module-extract.mjs`.** Module 13 sliced the book by hand. That
+does not survive being done seventeen times, and it will not survive a second textbook — so the
+recipe in §9.4 steps 1–2 is a committed script: `node scripts/wsu-module-extract.mjs 16` prints the
+module as markdown, `--list` prints every chapter's byte offset and size. It replaces `<img>` with a
+visible `[[IMAGE: file]]` marker, which is the part that must not be reimplemented casually — a
+silently dropped figure is how Table 13.1 nearly went missing. Module 16 contains **zero images**,
+which the script established in one pass rather than by inspection.
+
+**Two decisions worth keeping.**
+
+*Empty beats annotated when the source has nothing.* A section whose only content is a
+`> **Needs research:**` blockquote still parses as **empty** (`prose=false`), so it lands in `needs`
+— instructor work — while telling the reader exactly what is missing. That is the right
+classification for Module 16's 36 etiology/treatment holes: they need a second source, not a
+student's literature search. Adding a token sentence of prose to each would have converted 36
+instructor gaps into 36 student annotations and quietly falsified the worklist. The **one** page
+where the annotated form was correct is `communication-disorders`, whose Presentation section has
+real content on social (pragmatic) communication disorder *plus* a marker naming the three
+communication disorders the source never mentions.
+
+*Catalogue-first also means declining material.* Module 16 covers pica, rumination disorder,
+enuresis, encopresis, stereotypic movement disorder and social (pragmatic) communication disorder
+at length. **None has a catalogue slug**, so none got a page. Stereotypic movement disorder and
+social (pragmatic) communication disorder were folded into `neurodevelopmental-disorders` and
+`communication-disorders`, where they earn their place as differentials; the feeding and elimination
+disorders were left out entirely. This is §8.7 applied in the other direction — the check that stops
+a source inventing catalogue entries is the same check that stops it padding the corpus.
+
+**One pre-existing defect found by the corpus check**, which is the review pass arriving early:
+`historical-traditions` (a Module 1 pipeline page) linked to `[[abnormal-behavior]]`, which is not a
+catalogue slug and has no page. Retargeted to `[[what-is-abnormal]]` via `edit_page()`. Every red
+link in the corpus now points at a real catalogue slug.
+
+---
+
+## 10. What the next sources have to do
+
+Written 2026-08-02, when the textbook sweep finished and Norm raised adding open-licensed material,
+**including a Canadian text**. This section is the brief: what is actually missing, ordered by yield.
+It is derived from the live corpus, not from a plan.
+
+### 10.1 The four gap classes, largest first
+
+**(a) 36 etiology/treatment holes across Module 16's 18 pages.** Out of the source's declared scope,
+not absent from it. Fix: **Bridley & Daffin, *Behavioral Disorders of Childhood*** — same authors,
+same CC BY-NC-SA licence, same format, covering etiology/assessment/treatment for precisely these
+disorders. One book closes the largest single block of gaps in the corpus. Do this first.
+
+**(b) 8 Tier A pages with no textbook source at all** (§4): all five of Lecture 7
+(`erectile-disorder`, `female-sexual-interest-arousal-disorder`, `gender-dysphoria`,
+`exhibitionistic-disorder`, `pedophilic-disorder`), both sleep-wake pages (`insomnia-disorder`,
+`narcolepsy`), and `gambling-disorder`. **This is now the whole of the remaining Tier A deficit** —
+every other Tier A page exists. L7 also holds the two pages the taxonomy flagged for rewrite-level
+review.
+
+**(c) `suicide-and-self-harm` — the only unwritten foundation, and now the most-linked red link in
+the corpus at 7 inbound references.** Module 16 added five of those seven: ADHD, autism, conduct
+disorder, specific learning disorder and intermittent explosive disorder each report suicide risk.
+It is uncovered by the textbook. NIMH statistics are US public domain; the Canadian figures are the
+ones a UofT course needs.
+
+**(d) 13 unwritten overviews.** Not source-limited — the material exists in modules already ingested.
+This is a reference-pass job, and the three that exist (`neurocognitive-disorders`,
+`neurodevelopmental-disorders`, `disruptive-impulse-control-and-conduct-disorders`) came out at
+9.4k–15.2k chars with no empty sections, so the pattern is established.
+
+### 10.2 What specifically needs to be Canadian
+
+Not a preference — these are places where a US source is *wrong for the course*, not merely
+foreign:
+
+- **`law-and-ethics`** already declares `canadian-law-and-other-jurisdictions` as a gap. Duty to
+  warn is the clean case: the corpus documents `tarasoff-duty-to-warn`, a California decision, while
+  Canadian practice runs on *Smith v Jones* (SCC, 1999) and provincial regulatory standards.
+- **All prevalence in the disruptive/conduct chapter is US or "high-income countries".** The
+  conduct-disorder range (2% to >10%) is wide enough that the choice of source changes what a student
+  believes.
+- **Service systems differ structurally.** The neurodevelopmental pages assume US special-education
+  law; Canadian identification runs through provincial frameworks, and school-board designation is
+  not the same thing as a DSM diagnosis. `intellectual-developmental-disorder` and
+  `specific-learning-disorder` both carry this as a declared gap.
+- **Practice guidance**: CADDRA for ADHD, CANMAT for mood and anxiety, Canadian youth-justice context
+  for conduct disorder.
+- **Fetal alcohol spectrum disorder** is a Canadian public-health priority and appears **nowhere**
+  in the WSU book.
+- **Suicide statistics** (class c above).
+
+### 10.3 How to take a new source in
+
+The §9 recipe is source-agnostic. A new text is a new `ingest_jobs` row with its own
+`source_citation` and a `pdf_path` of the form `direct-parse/<file>#<locator>`. Three things to
+settle *before* the first run, because each has bitten once already:
+
+1. **Check the licence page**, and record the exact variant in the citation. CC BY-NC-**ND** (e.g.
+   StatPearls) may be read, cited and paraphrased but **never remixed** — that is a different
+   workflow, not a stricter one.
+2. **Write the citation into §6-style prepared strings first.** Attribution is a licence condition
+   and is derived from the job row, so a typo becomes a permanent provenance error. Pasting a
+   prepared row costs the same as typing one and cannot drift.
+3. **Decide the carve against the catalogue, not the source.** A second source covering a page that
+   already exists produces an `update` — and **update proposals are deltas**. See §8's gotcha:
+   pass merged content to `review_proposal()`, never the delta.
