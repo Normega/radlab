@@ -1158,3 +1158,103 @@ false rationale, which were corrected in place afterwards.
 have caught this — read `sync_wiki_links()` — takes one query, and running it *first* would have cost
 nothing. A corpus-wide "defect" that no one has noticed is more likely to be a misreading of the
 schema than a real bug; verify the mechanism before mass-editing on the strength of it.
+
+---
+
+## 11. The Canadian text — Cummings (2020), and what a third source changes
+
+**Source.** Cummings, J. A. (2020). *Abnormal Psychology.* University of Saskatchewan Open Press.
+**CC BY-NC-SA 4.0**, so remixable on the same terms as the WSU books. HTML export at
+`PSY240resources/Abnormal-Psychology-1598733236.html` (686 KB), native PDF alongside it. Canonical
+URL `https://openpress.usask.ca/abnormalpsychology/` — **not** the URL in the book's own metadata
+sample citation, which contains a typo (`abnormalpsychcology`).
+
+**Cite by section, with the section's own authors.** This book is compiled from OERs — a *different*
+Bridley & Daffin volume (*Essentials of Abnormal Psychology*, ed. Cuttler), OpenStax, and Noba — and
+**every section carries its own author list**. Section 2.4 is Susan Barron alone; 8.1 is Pelphrey and
+Campoli; 2.5 is Strauss and Cummings. A single whole-book citation would misattribute most of it.
+`scripts/wsu-module-extract.mjs` now matches a section title as well as `Module N`, because this book
+numbers sections `1.1`, `3.1` and so on.
+
+### 11.1 What it covers, and what it does not
+
+**Nine chapters:** defining/classifying, perspectives (models, therapies, psychopharmacology, EBP),
+mood, anxiety + body dysmorphic, schizophrenia, PTSD, ADHD and childhood behaviour disorders, autism,
+personality.
+
+**It does not cover sleep-wake, sexual dysfunctions, paraphilias, substance, eating, dissociative,
+somatic or neurocognitive disorders.** So it does **not** close §4's uncovered list or unblock the
+three remaining overviews. Check this before assuming a new source fills a known gap — chapter
+coverage is the first thing to establish, not the last.
+
+### 11.2 Why Canadian content is a correctness fix, demonstrated
+
+The prevalence deltas are not decoration; several **reverse or reframe** what the US figures teach.
+
+| | Canada | US |
+|---|---|---|
+| [[major-depressive-disorder]] lifetime | **11.2%** | 16.6% |
+| [[generalized-anxiety-disorder]] lifetime | **8.7%** | 5.7% — **Canada higher, the opposite direction to depression** |
+| [[obsessive-compulsive-disorder]] | **0.93%** | 1.6% |
+| [[social-anxiety-disorder]] lifetime | 13% (Ontario) | 12.1% — close agreement, unlike the above |
+
+Three findings have no US-source equivalent at all:
+
+- **Cluster B personality disorders in Quebec: 13 years of life expectancy lost for men, 9 for women**
+  (Cailhol et al., 2017). A whole-province administrative cohort. Nothing in the DSM-derived material
+  conveys that these are conditions with a mortality profile.
+- **Panic: a third of Canadian adults have a panic attack in a year; 1–2% are diagnosed with panic
+  disorder.** The cleanest available demonstration that the *apprehension*, not the attack, is the
+  disorder.
+- **Sexual and gender minorities in Ontario: 67.7% lifetime depression for sexual minorities, 72% for
+  gender liminal people, 66.4% current depression among FtM trans participants** (Williams et al.,
+  2017; Rotondi et al., 2011). The largest disparities in the corpus, from community samples.
+
+And **service context is Canadian and provincial**: Ontario's 2019 autism funding changes had families
+leaving the province to obtain services. Where treatment access is decided provincially, "does it
+work" and "can you get it" are not separable questions.
+
+### 11.3 What it adds that neither WSU book has
+
+- **[[evidence-based-practice]]** — defined by the **Canadian Psychological Association (2012)**, and
+  three-legged: best research evidence, critical evaluation of it, *and* client specificity. The
+  common error is collapsing EBP into "use the treatment with the best trial evidence".
+- **[[empirically-supported-treatments]]** — the 1990s task forces, the two criteria, and four
+  substantive objections including the **manualisation selection effect** (therapies that can be
+  written as step-by-step rules were prioritised) and payers **funding only listed approaches, which
+  is not how the list was intended to be used**.
+- **[[treatments-that-harm]]** — Lilienfeld (2007) on potentially harmful therapies. **This closes the
+  most-repeated `Needs research` line in the corpus.** Every "what does not work" note now has a page
+  to point at: [[psychological-debriefing]], scared-straight and deviancy training, the discredited
+  attachment therapies.
+- **[[eco-anxiety]]** — with Canada's own wildfire and flood exposure, and the finding that the same
+  distress produces paralysis or engagement depending on how it is held.
+- **[[person-centered-therapy]]**, **[[mindfulness-based-therapy]]**, **[[acceptance-and-commitment-therapy]]**,
+  **[[emerging-treatment-strategies]]** — four orientations the WSU books do not describe. The
+  mindfulness page carries one of the few explicit magnitude statements in the corpus: **moderate**
+  symptom improvement for anxiety and depression (Hofmann et al., 2010).
+- **Diathesis-stress, stated formally** — which closed a gap `integrative-model` had declared since
+  Module 02 and which the handoff had explicitly earmarked a new text to fix. It also supplies
+  **protective factors**, the half usually omitted, which is the frame in which "why do most exposed
+  people *not* develop the disorder" becomes a proper question rather than a curiosity.
+
+### 11.4 Sections still unswept
+
+Done: **1.1, 2.2, 2.3, 2.5, 3.1, 4.1, 6.1, 8.1, 9.1.**
+
+Remaining, with what each is expected to yield:
+
+| Section | Chars | Expected target |
+|---|---|---|
+| **2.4 Psychopharmacology** (Barron) | 26k | Pharmacokinetics, metabolism, **grapefruit-juice interaction**, individualised therapy, **juveniles and the elderly**. Nothing comparable exists in the corpus; the medication pages are mechanism-only |
+| **1.4 Diagnosing and Classifying** | 16k | **ICD-11 and DSM–ICD harmonization**, which `diagnosis-and-classification` lacks; may bear on its `alternatives-to-categorical-diagnosis` gap |
+| **1.3 Clinical Assessment** | 15k | `clinical-assessment`, `mental-status-examination` |
+| **2.1 Historical Perspectives** | 13k | `historical-traditions`, `deinstitutionalization` |
+| **7.1 ADHD & behaviour disorders** | 48k | Canadian ADHD context (CADDAC); a second source for `adhd`, `oppositional-defiant-disorder`, `conduct-disorder` |
+| **5.1 Schizophrenia** | 48k | Second source for `schizophrenia`; Schizophrenia Society of Canada |
+| **1.2 Cultural Expectations** | 8k | `multicultural-psychology`, and **Szasz's *Myth of Mental Illness*** for `medicalization-of-distress` |
+| **4.2 Body Dysmorphic Disorder** | 9k | Second source for `body-dysmorphic-disorder` |
+
+**55 image markers across the book have not been read natively.** None was needed for the sections
+swept so far, but 2.3 and 2.4 (neurotransmission, brain structures, drug administration) are the ones
+most likely to carry content as figures — check them against the PDF before writing those pages.
