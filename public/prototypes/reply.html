@@ -51,7 +51,7 @@ const P = {
   racketDecay: 22,     // seconds for one call's worth of racket to fade
   racketHush: 3.2,     // racket level above which voices hold their peace
   replyDelayMin: 1.6,  // s after your call before the first answer may come
-  trustGain: 0.16,     // trust gained by a well-spaced, soft call
+  trustGain: 0.09,     // trust gained by a well-spaced, soft call
   duration: 270,       // nocturne begins near here
 };
 
@@ -106,13 +106,18 @@ function placeVoices(){
       id:i,
       type:VOICE_TYPES[i%VOICE_TYPES.length],
       ridge, x, y:0,
-      shyness:0.12+hash1(i*5+3)*0.5,   // trust needed before it will answer
+      shyness:0.10+hash1(i*5+3)*0.75,  // trust needed before it will answer
       trust:0,
       glow:0, ember:0,
       lastSpokeAt:-99,
       register: ridge===1? 1.0 : ridge===2? 0.7 : 1.4,  // far = lower or higher
     });
   }
+  // one voice answers the very first offering — the opening must not be silent
+  voices[0].shyness=0.008;
+  // one voice is held back entirely: "a voice you haven't heard" stays true
+  voices[voices.length-1].reserved=true;
+  voices[voices.length-1].shyness=9;
   placeVoices();
 }
 function ridgeYat(L,x){
@@ -127,20 +132,25 @@ let racket=0;                 // rises with each call, decays; too high = hush
 let motif=[];                 // player's recent pitches (indices into SCALE)
 let pending=[];               // scheduled replies [{dueT, voice, motif}]
 let eventLog=[];              // {t, who, kind} for debugging & the nocturne
-let lastCallEnd=-99;
-let unpromptedNext=35+Math.random()*15;
+let lastCallEnd=-99;   // wasHushed/strangerAt live with unpromptedNext above
+let unpromptedNext=16+Math.random()*8;
+let wasHushed=false, strangerAt=null;
 let duetWindow=null;          // {voice, until} — valley called first, listening for an answer
-let hushRecoverNote=false;
 
 function playerCallStarted(){
   startAudio();
+  if(AC&&AC.state==='suspended') AC.resume();  // iOS interruption recovery
 }
 function playerCallEnded(pitchIdx,heldMs){
   const t=T();
   const soft=heldMs>140&&heldMs<2600;   // a tap-spam or an endless lean-on isn't an offering
   const sinceLast=t-lastCallEnd;
-  // well-spaced soft calls sit below the decay rate (stable); crowding adds up
-  racket+=(soft&&sinceLast>6?0.6:1.2)+(heldMs>2600?0.4:0);
+  // well-spaced soft calls sit below the decay rate (stable); crowding adds up.
+  // The first ~20s are a grace period: a new arrival's excited tapping
+  // shouldn't hush the valley before the conversation has begun.
+  const grace=t<20?0.5:1;
+  racket+=((soft&&sinceLast>6?0.6:1.2)+(heldMs>2600?0.4:0))*grace;
+  racket=Math.min(racket,P.racketHush*1.8);  // proportionate: worst recovery ~20s
   motif.push(pitchIdx); if(motif.length>5) motif.shift();
   lastCallEnd=t;
   eventLog.push({t:+t.toFixed(1),who:'you',kind:'call',pitch:pitchIdx});
@@ -148,23 +158,27 @@ function playerCallEnded(pitchIdx,heldMs){
   if(duetWindow && t<duetWindow.until && soft){
     const v=duetWindow.voice;
     v.trust=Math.min(1,v.trust+P.trustGain*2.2);
+    // meeting the valley warms the whole valley, too
+    for(const o of voices) if(o!==v) o.trust=Math.min(1,o.trust+P.trustGain*0.5);
     schedule(v, t+0.9+Math.random()*0.8);
     eventLog.push({t:+t.toFixed(1),who:'voice'+v.id,kind:'duet'});
     duetWindow=null;
     return;
   }
-  if(racket>P.racketHush){ hushRecoverNote=true; return; }  // the valley waits you out
+  if(racket>P.racketHush){ wasHushed=true; return; }  // the valley waits you out
   if(!soft) return;
-  // well-spaced soft call: trust grows in whoever is nearest in pitch-register
+  // well-spaced soft call: trust grows most in the voices whose register you
+  // sang toward — courting the high whistler means singing high
   const spacing=t-(eventLog.filter(e=>e.who==='you').slice(-2,-1)[0]?.t ?? -99);
   const wellSpaced=spacing>6;
-  const candidates=voices.filter(v=>v.trust>=v.shyness*0.4);
   for(const v of voices){
-    if(wellSpaced) v.trust=Math.min(1,v.trust+P.trustGain*(0.5+hash1(v.id+t)*0.8));
-    else v.trust=Math.min(1,v.trust+P.trustGain*0.15);
+    const pref=v.register<0.9?1.5: v.register<1.2?3.5:6;
+    const near=Math.max(0.15,1-Math.abs(pitchIdx-pref)/5);
+    if(wellSpaced) v.trust=Math.min(1,v.trust+P.trustGain*near*(0.7+hash1(v.id+t)*0.6));
+    else v.trust=Math.min(1,v.trust+P.trustGain*0.15*near);
   }
   // schedule replies from voices whose trust clears their shyness
-  const repliers=voices.filter(v=>v.trust>=v.shyness && t-v.lastSpokeAt>4);
+  const repliers=voices.filter(v=>!v.reserved&&v.trust>=v.shyness && t-v.lastSpokeAt>4);
   shuffle(repliers);
   const nReplies=Math.min(repliers.length, 1+Math.floor(Math.random()*2)+(avgTrust()>0.55?1:0));
   let delay=P.replyDelayMin+Math.random()*2.5;
@@ -189,16 +203,24 @@ function update(t,dt){
   for(let i=pending.length-1;i>=0;i--){
     const p=pending[i];
     if(t>=p.dueT){
+      if(racket>P.racketHush){ p.dueT=t+2+Math.random()*2; continue; }  // the voices wait for quiet
       pending.splice(i,1);
-      if(racket>P.racketHush*1.15) continue;      // racket cancels the mood
       speak(p.voice,p.motif,t);
     }
+  }
+
+  // when the hush lifts, the most-trusted voice speaks first — the valley returns
+  if(wasHushed&&racket<P.racketHush*0.8){
+    wasHushed=false;
+    const rv=[...voices].filter(v=>!v.reserved).sort((a,b)=>b.trust-a.trust)[0];
+    if(rv&&rv.trust>=rv.shyness) schedule(rv,t+1.5+Math.random());
   }
 
   // the valley sometimes calls first — non-contingent, unprompted
   if(t>unpromptedNext){
     unpromptedNext=t+28+Math.random()*22;
-    const v=voices[Math.floor(Math.random()*voices.length)];
+    const free=voices.filter(v=>!v.reserved);
+    const v=free[Math.floor(Math.random()*free.length)];
     speak(v,[Math.floor(Math.random()*SCALE.length)],t,true);
     duetWindow={voice:v, until:t+9};
     eventLog.push({t:+t.toFixed(1),who:'voice'+v.id,kind:'unprompted'});
@@ -206,10 +228,13 @@ function update(t,dt){
   if(duetWindow&&t>duetWindow.until) duetWindow=null;
 
   // nocturne: near the end, if any bond formed, the valley sings a round
-  if(!nocturneAt&&t>P.duration&&voices.some(v=>v.trust>=v.shyness)){
+  if(!nocturneAt&&t>P.duration){
     nocturneAt=t+3;
     let d=0;
-    const singers=voices.filter(v=>v.trust>=v.shyness*0.8);
+    // the nocturne comes for everyone: your trusted voices if you joined the
+    // valley; the valley singing a round to itself, at distance, if you listened
+    let singers=voices.filter(v=>!v.reserved&&v.trust>=v.shyness*0.8);
+    if(singers.length===0) singers=voices.filter(v=>!v.reserved).slice(0,4);
     for(let round=0;round<2;round++){
       for(const v of singers){
         schedule(v,nocturneAt+d);
@@ -218,11 +243,12 @@ function update(t,dt){
     }
     eventLog.push({t:+t.toFixed(1),who:'valley',kind:'nocturne',singers:singers.length});
   }
-  // ...and after the hush, one voice you haven't heard before, once
-  if(nocturneAt&&!strangerDone&&t>nocturneAt+45){
-    strangerDone=true;
-    const quiet=voices.filter(v=>v.lastSpokeAt<0);
-    const v=quiet.length? quiet[0]: voices[voices.length-1];
+  // ...and after the hush, one voice no one has heard — for everyone, even
+  // (especially) the player who only listened
+  if(!strangerDone&&t>P.duration+48){
+    strangerDone=true; strangerAt=t;
+    const v=voices.find(v=>v.reserved)||voices[voices.length-1];
+    v.shyness=0;
     speak(v,[7],t,true);
     eventLog.push({t:+t.toFixed(1),who:'voice'+v.id,kind:'stranger'});
   }
@@ -240,11 +266,13 @@ function update(t,dt){
 
 // --- speaking ---------------------------------------------------------------
 function speak(v,srcMotif,t,solo){
-  v.glow=1; v.lastSpokeAt=t;
+  v.glow=solo?1.6:1; v.lastSpokeAt=t;
   eventLog.push({t:+t.toFixed(1),who:'voice'+v.id,kind:'reply',type:v.type});
   if(!AC) return;
   const pan=(v.x/W)*2-1;
-  const dist=v.ridge/3;
+  // the valley's own first moves come closer — brighter, less veiled — so an
+  // opening is audibly different from an answer
+  const dist=(v.ridge/3)*(solo?0.45:1);
   const notes=(srcMotif&&srcMotif.length? srcMotif: [2,4]).map(n=>SCALE[clamp(n+ (Math.random()<0.4? (Math.random()<0.5?-1:1):0),0,SCALE.length-1)]*v.register);
   const when=AC.currentTime+0.05;
   ({thrush, owl, frog, bellbug, whistler, dove})[v.type](notes,when,pan,dist,solo);
@@ -260,10 +288,14 @@ function startAudio(){
     master=AC.createGain(); master.gain.value=0.6; master.connect(AC.destination);
     // valley acoustics: feedback delay into lowpass
     verb=AC.createGain(); verb.gain.value=0.9;
-    const dl=AC.createDelay(2); dl.delayTime.value=0.42;
-    const fb=AC.createGain(); fb.gain.value=0.38;
+    // valley wash: three mutually-prime delays so the echo diffuses rather
+    // than slapping back
     const lp=AC.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=1400;
-    verb.connect(dl); dl.connect(lp); lp.connect(fb); fb.connect(dl);
+    for(const dtime of [0.29,0.41,0.53]){
+      const dl=AC.createDelay(2); dl.delayTime.value=dtime;
+      const fb=AC.createGain(); fb.gain.value=0.30;
+      verb.connect(dl); dl.connect(lp); dl.connect(fb); fb.connect(dl);
+    }
     lp.connect(master);
     verb.connect(master);
     // wind bed
@@ -290,7 +322,11 @@ function updateAmbience(t){
   const at=avgTrust();
   cricketsG.gain.setTargetAtTime(at*0.012, AC.currentTime, 1.5);
   const hush=racket>P.racketHush;
-  windG.gain.setTargetAtTime(hush?0.075:0.045, AC.currentTime, 1.0);
+  // wind lulls while the valley waits for your answer; settles low after the
+  // stranger — a wordless "you can go"
+  let w=hush?0.075:(duetWindow?0.028:0.045);
+  if(strangerAt&&t>strangerAt+6) w=0.022;
+  windG.gain.setTargetAtTime(w, AC.currentTime, 1.0);
 }
 function panner(pan,dist){
   const p=AC.createStereoPanner? AC.createStereoPanner(): null;
@@ -502,6 +538,36 @@ function render(t){
       ctx.fillStyle=`hsla(${voiceHue(v)},70%,75%,${0.5*v.ember*puls+v.glow*0.4})`;
       ctx.beginPath();ctx.arc(v.x,v.y,1.8+v.glow*2.5,0,7);ctx.fill();
     }
+    // fireflies keep company near trusted embers — somewhere for the eye
+    // to sit during the listening
+    if(v.ember>0.3){
+      for(let i=0;i<2;i++){
+        const fx=v.x+Math.sin(t*0.5+v.id*3+i*2.7)*26;
+        const fy=v.y-8+Math.cos(t*0.4+i*1.9+v.id)*14;
+        const blink=Math.max(0,Math.sin(t*1.3+v.id+i*3.1));
+        ctx.fillStyle=`rgba(216,255,178,${0.35*blink*v.ember})`;
+        ctx.beginPath();ctx.arc(fx,fy,1.3,0,7);ctx.fill();
+      }
+    }
+  }
+  // a voice about to answer stirs first — anticipation, never a promise
+  for(const p of pending){
+    const dt0=p.dueT-t;
+    if(dt0>0&&dt0<1.2){
+      const v=p.voice, a=0.10*(1-dt0/1.2);
+      const gg=ctx.createRadialGradient(v.x,v.y,0,v.x,v.y,22);
+      gg.addColorStop(0,`hsla(${voiceHue(v)},55%,72%,${a})`);
+      gg.addColorStop(1,`hsla(${voiceHue(v)},55%,72%,0)`);
+      ctx.fillStyle=gg;ctx.beginPath();ctx.arc(v.x,v.y,22,0,7);ctx.fill();
+    }
+  }
+  // while the valley waits for your answer, its light reaches toward you
+  if(duetWindow){
+    const v=duetWindow.voice;
+    const pulse=0.5+0.5*Math.sin(t*2.2);
+    ctx.strokeStyle=`hsla(${voiceHue(v)},60%,75%,${0.18+0.14*pulse})`;
+    ctx.lineWidth=1.2;
+    ctx.beginPath();ctx.arc(v.x,v.y,13+pulse*9,0,7);ctx.stroke();
   }
   // player's call rings
   for(const r of rings){
@@ -541,13 +607,17 @@ function vignette(){
 const t0=performance.now();
 let skew=0;
 function T(){return (performance.now()-t0)/1000+skew;}
-let prev=performance.now(),lastFrameAt=performance.now();
+let prevT=null,lastFrameAt=performance.now();
 const DBG={frames:0};
 function frame(now){
   DBG.frames++;
-  const dt=Math.min(0.05,(now-prev)/1000);prev=now;
-  update(T(),dt);
-  render(T());
+  // dt from the session clock, not rAF wall-gaps: racket/ember integration
+  // stays honest under background-tab throttling
+  const tn=T();
+  if(prevT===null) prevT=tn;
+  const dt=Math.min(0.1,Math.max(0,tn-prevT));prevT=tn;
+  update(tn,dt);
+  render(tn);
   lastFrameAt=now;
   requestAnimationFrame(frame);
 }
