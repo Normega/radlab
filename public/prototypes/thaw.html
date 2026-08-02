@@ -51,7 +51,7 @@
    ============================================================ */
 
 const P = {                       // tunables
-  refog: 0.004,                   // fog regrowth per second (alpha)
+  refog: 0.012,                   // fog regrowth per second (alpha)
   vGentle: 380,                   // px/s under which strokes clear well
   vSmear: 1100,                   // px/s over which strokes add fog
   brushR: 46,                     // stamp radius, css px
@@ -112,22 +112,41 @@ function initFog(){
   fctx.globalCompositeOperation='source-over';
 }
 
+// canvas compositing quantizes to 1/255 per fill — tiny per-frame alphas
+// round to zero, so regrowth must accumulate as a debt and fire in steps
+let refogDebt=0;
 function refog(dt, amount){
+  refogDebt+=amount*dt;
+  if(refogDebt<0.02) return;
   fctx.globalCompositeOperation='source-over';
-  fctx.fillStyle=`rgba(255,255,255,${Math.min(1, amount*dt)})`;
+  fctx.fillStyle=`rgba(255,255,255,${Math.min(1,refogDebt)})`;
   fctx.fillRect(0,0,fogC.width,fogC.height);
+  refogDebt=0;
 }
 
-// breath bloom from the bottom edge when the hands hurry
+// breath bloom from the bottom edge when the hands hurry (debt-stepped
+// past the 1/255 quantization floor, same as refog)
+let breathDebt=0;
 function breathe(dt, strength){
   if(strength<=0.003) return;
+  breathDebt+=Math.min(0.9,strength)*dt*2.2;
+  if(breathDebt<0.03) return;
   const h=fogC.height, w=fogC.width;
   const g=fctx.createLinearGradient(0,h,0,h*0.45);
-  g.addColorStop(0,`rgba(255,255,255,${Math.min(0.9,strength)*dt*2.2})`);
+  g.addColorStop(0,`rgba(255,255,255,${Math.min(1,breathDebt)})`);
   g.addColorStop(1,'rgba(255,255,255,0)');
   fctx.globalCompositeOperation='source-over';
   fctx.fillStyle=g;
   fctx.fillRect(0,0,w,h);
+  // at high heat the whole rim mists faintly, so hurry is visible anywhere
+  if(strength>0.7){
+    const rg=fctx.createRadialGradient(w/2,h/2,Math.min(w,h)*0.35,w/2,h/2,Math.min(w,h)*0.72);
+    rg.addColorStop(0,'rgba(255,255,255,0)');
+    rg.addColorStop(1,`rgba(255,255,255,${Math.min(0.6,breathDebt*0.6)})`);
+    fctx.fillStyle=rg;
+    fctx.fillRect(0,0,w,h);
+  }
+  breathDebt=0;
 }
 
 function stampClear(x,y,strength,r){
@@ -147,6 +166,12 @@ function stampSmear(x,y,dx,dy,r){
   const len=Math.hypot(dx,dy)||1;
   const nx=dx/len, ny=dy/len;
   fctx.globalCompositeOperation='source-over';
+  // compacted wet streak: on full frost a fast swipe still leaves a visible
+  // mark (darker, like crystals crushed to water film) — speed always answers
+  fctx.fillStyle='rgba(150,162,186,0.16)';
+  fctx.beginPath();
+  fctx.ellipse(x*s,y*s, r*1.6*s, r*0.55*s, Math.atan2(ny,nx), 0, 7);
+  fctx.fill();
   // streaky white deposit, elongated along motion
   for(let i=0;i<3;i++){
     const off=(i-1)*r*0.4;
@@ -339,9 +364,17 @@ function drawScene(t, dt){
   if(t>EV.hareAt && t<EV.hareAt+14){
     drawHare(S,t-EV.hareAt);
   }
+  // its prints linger in the snow, softening as fresh snow fills them
+  for(const pr of harePrints){
+    const age=t-pr.at;
+    const a=Math.max(0,0.30*(1-age/90));
+    if(a<=0) continue;
+    S.fillStyle=`rgba(60,66,110,${a})`;
+    S.beginPath();S.ellipse(pr.x,pr.y,3.2,1.6,0,0,7);S.fill();
+  }
 
-  // snowfall
-  const snowAmt = t<25?0 : t<40? (t-25)/15 : (t<150?1: Math.min(2,(t-150)/40+1));
+  // snowfall — begins almost at once; the first minute must not be empty
+  const snowAmt = t<8?0 : t<20? (t-8)/12*1.6 : (t<150?1.6: Math.min(2.6,(t-150)/40+1.6));
   ensureSnow(Math.floor(60*snowAmt), Math.floor(90*snowAmt));
   S.fillStyle='rgba(245,247,255,0.9)';
   for(const f of snowFar){
@@ -400,11 +433,18 @@ function drawCardinal(S,t){
   S.restore();
 }
 
+let harePrints=[], lastPrintT=-9;
 function drawHare(S,tt){
   const p=tt/14;
   const x=lerp(W*1.05,-W*0.08,p);
   const hop=Math.abs(Math.sin(tt*3.2));
   const y=groundY+H*0.055 - hop*hop*16;
+  // each landing leaves prints in the snow — memory in the world, not a hoard
+  if(hop<0.12&&tt-lastPrintT>0.4){
+    lastPrintT=tt;
+    harePrints.push({x:x+6,y:groundY+H*0.058,at:T()});
+    harePrints.push({x:x-7,y:groundY+H*0.062,at:T()});
+  }
   S.save();S.translate(x,y);S.scale(-1,1);
   S.fillStyle='rgba(226,228,240,0.92)';
   S.beginPath();S.ellipse(0,0,13,8,Math.sin(tt*3.2)*0.12,0,7);S.fill();     // body
@@ -416,7 +456,7 @@ function drawHare(S,tt){
 }
 
 // --- input -----------------------------------------------------------------
-let pointerDown=false, lastPt=null, lastT=0, breathHeat=0, squeak=0;
+let pointerDown=false, lastPt=null, lastT=0, breathHeat=0, squeak=0, lastMoveAt=0;
 cv.addEventListener('pointerdown',e=>{
   pointerDown=true; lastPt=[e.clientX,e.clientY]; lastT=performance.now();
   cv.setPointerCapture(e.pointerId);
@@ -436,8 +476,10 @@ function processMove(x,y,now){
   for(let i=1;i<=steps;i++){
     const px=lastPt[0]+dx*i/steps, py=lastPt[1]+dy*i/steps;
     if(speed<P.vGentle){
-      const st=0.28*(1-speed/(P.vGentle*1.35));
-      stampClear(px,py,Math.max(0.05,st),P.brushR);
+      // low ceiling: even a perfect pass takes 2-4 wipes — the image comes
+      // through gradually rather than the surface being deleted
+      const st=0.11*(1-speed/(P.vGentle*1.35));
+      stampClear(px,py,Math.max(0.03,st),P.brushR);
       squeak=Math.min(1,squeak+0.08);
     } else if(speed>P.vSmear){
       stampSmear(px,py,dx,dy,P.brushR*0.8);
@@ -449,7 +491,7 @@ function processMove(x,y,now){
     }
   }
   if(speed>P.vSmear*0.7) breathHeat=Math.min(1.6,breathHeat+0.01*P.breathGain);
-  lastPt=[x,y]; lastT=now;
+  lastPt=[x,y]; lastT=now; lastMoveAt=now;
 }
 window.addEventListener('pointerup',()=>{pointerDown=false;lastPt=null;});
 window.addEventListener('pointercancel',()=>{pointerDown=false;lastPt=null;});
@@ -481,8 +523,26 @@ function startAudio(){
       if(!AC) return;
       const t=T();
       if(t>EV.cardinalIn+6 && t<EV.cardinalOut && Math.random()<0.5) chirp();
+      // heard before seen: a chirp through the glass invites clearing toward it
+      else if(t>EV.cardinalIn-14 && t<EV.cardinalIn-4 && Math.random()<0.35) chirp();
+      if(!hootDone && t>EV.owlAt-6){ hootDone=true; hoot(); }
     }, 3500);
   }catch(e){/* audio is optional */}
+}
+let hootDone=false;
+function hoot(){
+  const t0=AC.currentTime;
+  for(const [dt0,f] of [[0,310],[0.5,260]]){
+    const o=AC.createOscillator(),g=AC.createGain();
+    o.type='sine';
+    o.frequency.setValueAtTime(f,t0+dt0);
+    o.frequency.exponentialRampToValueAtTime(f*0.93,t0+dt0+0.35);
+    g.gain.setValueAtTime(0,t0+dt0);
+    g.gain.linearRampToValueAtTime(0.09,t0+dt0+0.08);
+    g.gain.exponentialRampToValueAtTime(0.001,t0+dt0+0.45);
+    o.connect(g);g.connect(outsideLP);
+    o.start(t0+dt0);o.stop(t0+dt0+0.5);
+  }
 }
 function chirp(){
   const t0=AC.currentTime;
@@ -540,14 +600,19 @@ function sampleClearness(now){
 function coldClear(t,dt){
   if(t<P.duration) return;
   const p=Math.min(1,(t-P.duration)/45);
-  // erode from edges inward
+  // erode from edges inward — inset travels the FULL radius so the pane
+  // center thaws too, and a late whole-pane fade guarantees completion
   const w=fogC.width,h=fogC.height;
   fctx.globalCompositeOperation='destination-out';
-  const inset=p*Math.min(w,h)*0.75;
+  const inset=p*Math.min(w,h)*1.25;
   const g=fctx.createRadialGradient(w/2,h/2,Math.max(2,Math.min(w,h)*0.85-inset),w/2,h/2,Math.max(3,Math.min(w,h)*1.15-inset));
   g.addColorStop(0,'rgba(0,0,0,0)');
   g.addColorStop(1,`rgba(0,0,0,${dt*1.6})`);
   fctx.fillStyle=g;fctx.fillRect(0,0,w,h);
+  if(p>0.8){
+    fctx.fillStyle=`rgba(0,0,0,${dt*0.9*(p-0.8)/0.2})`;
+    fctx.fillRect(0,0,w,h);
+  }
   fctx.globalCompositeOperation='source-over';
 }
 
@@ -564,6 +629,11 @@ function frame(now){
 
   // fog dynamics
   const endPhase = t>P.duration;
+  // hand-warmth: a resting fingertip melts a soft opening — stillness is
+  // rewarded above even slowness
+  if(pointerDown&&lastPt&&performance.now()-lastMoveAt>350){
+    stampClear(lastPt[0],lastPt[1],0.9*dt,P.brushR*0.62);
+  }
   refog(dt, endPhase?0:P.refog);
   breathHeat=Math.max(0,breathHeat-dt*0.25);
   breathe(dt, endPhase?0:breathHeat*0.35);
@@ -676,6 +746,7 @@ window.__thaw = {
 let skew=0;
 
 // --- go --------------------------------------------------------------------
+if(!/dev/.test(location.search)) document.getElementById('hint').style.display='none';
 resize();
 seedStars();
 window.addEventListener('resize',resize);
