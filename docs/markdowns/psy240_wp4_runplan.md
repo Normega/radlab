@@ -168,7 +168,7 @@ weeks 1–4 finished, not a random half of the course.
 | — | ~~Module 10~~ | paper ✔ | **run + triaged 2026-08-01** — 11 pages; the two eating stubs restructured by hand (§8.9) | L6 |
 | — | ~~Module 11~~ | paper ✔ | **run + triaged 2026-08-01** — 17 pages, but **0 of 5 Tier A**: carve mismatch, see §4 and the reference runs below | L8 |
 | — | ~~Module 12~~ | paper ✔ | **run + triaged 2026-08-01** — 14 pages, 2 Tier A + 2 Tier B; L9 Tier A complete | L9 |
-| 13 | Module 14 | paper | 3 Tier A | L10 |
+| — | ~~Module 14~~ | paper ✔ | **run + triaged 2026-08-02** — 13 pages, 2 Tier A + 1 Tier B; `vascular-ncd` queued as a reference run (§5) | L10 |
 | 14 | Module 13 | paper, **try extracted** | **10 Tier A** (1 written) — the one run that will not fit 300s; see §5 | L11 |
 | 15 | **Module 16 — run this LAST** | paper | neurodevelopmental + disruptive/conduct, and deltas onto pages from runs 5–10 | L3/8/10 |
 
@@ -330,6 +330,25 @@ Use **extracted** for these four — confirmed on this exact module, not assumed
 prose-vs-tables finding in §5 above showed extraction losing nothing that reached a page, and four
 native re-reads of a 65k-token module is the one place in this sprint where the input cost is
 actually worth avoiding.
+
+### Queued reference run — `vascular-ncd` against Module 14
+
+Module 14's paper run wrote `delirium`, the two level constructs, and two aetiology subtypes, but not
+`vascular-ncd` — **Tier A**, covered by the module in §14.3.3 with 11 mentions. Same situation as the
+four Lecture 8 substances: the material is present, the module just partitions it under Etiology by
+aetiology rather than giving each subtype its own chapter section.
+
+Upload `BridleyDaffin-Module14-NeurocognitiveDisorders.pdf`, **reference** mode, **extracted**,
+`target_slug` = `vascular-ncd`. Citation row 14 from §6. One run, so no sequencing concern.
+
+Expect `new`, not `update` — the slug is unwritten. Vet any supporting page it invents against the
+five Tier B NCD subtypes still unwritten (`frontotemporal-ncd`, `ncd-with-lewy-bodies`,
+`substance-medication-induced-ncd`, `ncd-other-aetiologies`), which are the obvious things for it to
+squat on.
+
+The module also covers Parkinson's and Huntington's NCD (§14.3.7–8, 13 and 9 mentions), which the
+catalogue folds into `ncd-other-aetiologies` (Tier B). Worth a second reference run against that slug
+if Tier B becomes a priority; not before.
 
 ### What repeat runs on one source cost
 
@@ -550,8 +569,8 @@ Counting a page as written only if it has an accepted body (after triaging Modul
 
 | Tier | Written | Total |
 |---|---|---|
-| A (central to the course) | 28 | 54 |
-| B (supporting) | 12 | 46 |
+| A (central to the course) | 30 | 54 |
+| B (supporting) | 13 | 46 |
 | Foundation | 8 | 9 |
 | **Overview** | **0** | **16** |
 
