@@ -167,7 +167,7 @@ weeks 1–4 finished, not a random half of the course.
 | — | ~~Module 04~~ | paper ✔ | **already run** — 7 pages | L5 |
 | — | ~~Module 10~~ | paper ✔ | **run + triaged 2026-08-01** — 11 pages; the two eating stubs restructured by hand (§8.9) | L6 |
 | — | ~~Module 11~~ | paper ✔ | **run + triaged 2026-08-01** — 17 pages, but **0 of 5 Tier A**: carve mismatch, see §4 and the reference runs below | L8 |
-| 12 | Module 12 | paper | 2 Tier A | L9 |
+| — | ~~Module 12~~ | paper ✔ | **run + triaged 2026-08-01** — 14 pages, 2 Tier A + 2 Tier B; L9 Tier A complete | L9 |
 | 13 | Module 14 | paper | 3 Tier A | L10 |
 | 14 | Module 13 | paper, **try extracted** | **10 Tier A** (1 written) — the one run that will not fit 300s; see §5 | L11 |
 | 15 | **Module 16 — run this LAST** | paper | neurodevelopmental + disruptive/conduct, and deltas onto pages from runs 5–10 | L3/8/10 |
@@ -550,8 +550,8 @@ Counting a page as written only if it has an accepted body (after triaging Modul
 
 | Tier | Written | Total |
 |---|---|---|
-| A (central to the course) | 26 | 54 |
-| B (supporting) | 10 | 46 |
+| A (central to the course) | 28 | 54 |
+| B (supporting) | 12 | 46 |
 | Foundation | 8 | 9 |
 | **Overview** | **0** | **16** |
 
