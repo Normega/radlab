@@ -145,7 +145,9 @@ function makeSeed(x,y,state){
     x,y,state,
     vx:0,vy:0,
     spin:Math.random()*7, spinV:(Math.random()-0.5)*2,
-    heldAt:0, wilt:0, flare:0,
+    heldAt:0, heldFor:0, wilt:0, flare:0,
+    landDepth:Math.random()*46,
+    driftK:0.45+Math.random()*0.5,   // seeds loiter and swirl at their own pace
     holdIdx:0, // order in the held comet
     jitPh:Math.random()*7,
     tumbleT:0,
@@ -214,13 +216,14 @@ function maybeMurmur(t){
     return;
   }
   if(t<murmuration.nextCheck) return;
-  murmuration.nextCheck=t+15+Math.random()*20;
+  murmuration.nextCheck=t+8+Math.random()*8;
   const flying=seeds.filter(s=>s.state==='fly');
-  if(flying.length>=14 && Math.random()<0.65){
+  if(flying.length>=6 && Math.random()<0.75){
     murmuration.active=true;
     murmuration.until=t+9;
     murmuration.ph=Math.random()*7;
-    for(const s of flying) if(Math.random()<0.85) s.murmur=true;
+    for(const s of flying) if(Math.random()<0.85){ s.murmur=true; s.mPh=Math.random()*2; }
+    murmuration.nextCheck=t+9+14;   // a rest after the figure — gifts stay rare
     sfxChord([0,4,7]);
   }
 }
@@ -290,6 +293,19 @@ function sfxPop(vol){
   const ng=AC.createGain(); ng.gain.value=0.15*vol;
   ns.connect(nf);nf.connect(ng);ng.connect(master);ns.start(t0);
 }
+function sfxFlutter(){
+  // a knocked-down seed: dry rustle, not a chime — disturbance must not
+  // reward the ear
+  if(!AC) return;
+  const t0=AC.currentTime;
+  const nb=AC.createBuffer(1,AC.sampleRate*0.12,AC.sampleRate);
+  const nd=nb.getChannelData(0);
+  for(let i=0;i<nd.length;i++) nd[i]=(Math.random()*2-1)*(1-i/nd.length)*Math.sin(i*0.01);
+  const ns=AC.createBufferSource(); ns.buffer=nb;
+  const bf=AC.createBiquadFilter(); bf.type='bandpass'; bf.frequency.value=900; bf.Q.value=1.2;
+  const ng=AC.createGain(); ng.gain.value=0.05;
+  ns.connect(bf);bf.connect(ng);ng.connect(master);ns.start(t0);
+}
 function sfxGather(){
   if(!AC) return;
   const t0=AC.currentTime;
@@ -345,7 +361,7 @@ function sfxBloom(){
 }
 
 // --- timeline ---------------------------------------------------------------
-let nextWindPop=28;
+let nextWindPop=28, liftedAll=false;
 function timeline(t,dt){
   // wind pops a pod on its own — it happens without you
   if(t>nextWindPop){
@@ -353,13 +369,27 @@ function timeline(t,dt){
     const closed=pods.filter(p=>!p.open);
     if(closed.length>0) popPod(closed[Math.floor(Math.random()*closed.length)],true);
   }
-  // ambient drifters from off-screen — the world was already foraging
-  if(Math.random()<dt*0.25){
+  // ambient drifters from off-screen — the world was already foraging;
+  // gusts deliver flurries, so breezes are watchable weather
+  if(Math.random()<dt*0.18*gustEnv(t)){
     const s=makeSeed(-10,H*(0.2+Math.random()*0.45),'fly');
     s.flare=0.3; seeds.push(s);
   }
-  // finale: remaining pods let go on their own
-  if(t>P.duration+15 && Math.random()<dt*0.4){
+  // spent pods quietly re-ripen — discovered, never announced
+  for(const p of pods){
+    if(p.open&&p.seedsLeft<=0&&!p.emptyAt) p.emptyAt=t;
+    if(p.emptyAt&&t>p.emptyAt+80&&p.seedsLeft<8&&Math.random()<dt*0.09){ p.seedsLeft++; }
+  }
+  // finale: one rising gust lifts everything that has landed — a single
+  // held image of the field letting go
+  if(!liftedAll && t>P.duration+22){
+    liftedAll=true;
+    for(const s of seeds){
+      if(s.state==='landed'){ s.state='fly'; s.vy=-40-Math.random()*40; s.flare=0.6; }
+    }
+  }
+  // ...and remaining pods let go on their own
+  if(t>P.duration+15 && Math.random()<dt*1.0){
     const closed=pods.filter(p=>!p.open);
     if(closed.length) popPod(closed[0],true);
     else {
@@ -412,24 +442,35 @@ function update(t,dt){
       s.vx*=Math.pow(0.002,dt); s.vy*=Math.pow(0.002,dt);
       s.x+=s.vx*dt*3; s.y+=s.vy*dt*3;
       s.wilt=Math.min(1,s.wilt+dt/P.wiltTau);
+      s.heldFor+=dt;
+      // held long past wilting, a seed slips free on its own — the world
+      // resolves the grasp; release is taught by physics, not patience
+      if(s.heldFor>P.wiltTau*2){
+        const hi=held.indexOf(s);
+        if(hi>=0) held.splice(hi,1);
+        s.state='tumble'; s.tumbleT=1.2+Math.random();
+      }
     }
     else if(s.state==='fly'){
       const v=windVec(s.x,s.y,t);
-      let ax=(v[0]-s.vx)*1.1, ay=(v[1]-s.vy)*1.1;
+      let ax=(v[0]*s.driftK-s.vx)*1.1, ay=(v[1]-s.vy)*1.1;
       // gentle buoyant wobble
       ay+=Math.sin(t*2.2+s.jitPh)*9;
-      // murmuration attraction
+      // murmuration attraction — phase-offset targets trail the figure into
+      // a ribbon rather than a clump
       if(s.murmur&&mp){
-        ax+=(mp[0]-s.x)*0.7; ay+=(mp[1]-s.y)*0.7;
+        const tp=murmurPoint(t-(s.mPh||0));
+        ax+=(tp[0]-s.x)*0.7; ay+=(tp[1]-s.y)*0.7;
       }
-      // pointer disturbance: reaching in knocks seeds off the current
-      if(pointer.down||performance.now()-(pointer.lastT||0)<120){
+      // pointer disturbance: reaching in knocks seeds off the current.
+      // Touch only — a hovering cursor is a gaze, and gazing must be free.
+      if(pointer.down){
         const d=Math.hypot(s.x-pointer.x,s.y-pointer.y);
         if(d<P.repelR){
           const k=(1-d/P.repelR);
           ax+=(s.x-pointer.x)/Math.max(8,d)*380*k;
           ay+=(s.y-pointer.y)/Math.max(8,d)*380*k;
-          if(k>0.35&&s.state==='fly'){ s.state='tumble'; s.tumbleT=1.6+Math.random(); sfxGather(); }
+          if(k>0.35&&s.state==='fly'){ s.state='tumble'; s.tumbleT=1.6+Math.random(); sfxFlutter(); }
         }
       }
       s.vx+=ax*dt; s.vy+=ay*dt;
@@ -437,15 +478,17 @@ function update(t,dt){
       s.spin+=s.spinV*dt;
       s.flare=Math.max(0,s.flare-dt*0.7);
       s.wilt=Math.max(0,s.wilt-dt*0.05);
-      // landing on the far slope
+      // landing on the far slope — each seed settles a different depth into
+      // the hill face, so blooms scatter across the slope, not along its rim
       if(s.x>W*0.55){
-        const hy=farHill(s.x);
+        const hy=farHill(s.x)+s.landDepth*(1-(farHill(s.x)/H));
         if(s.y>hy-3){
           s.state='landed'; s.y=hy; s.vx=0; s.vy=0;
           if(Math.random()<0.4){
             const b={x:s.x,y:hy,at:t+1+Math.random()*2,r:0,hue:30+Math.random()*40,opened:false};
             blooms.push(b);
           }
+          if(s.y>H) s.y=H-2;
         }
       }
       if(s.x>W+30||s.y<-40){ seeds.splice(i,1); continue; }
@@ -470,6 +513,13 @@ function update(t,dt){
   for(const b of blooms){
     if(!b.opened&&t>b.at){ b.opened=true; sfxBloom(); }
     if(b.opened) b.r=Math.min(1,b.r+dt*0.8);
+    // after dusk a bloom sometimes looses a glowing seed of its own —
+    // what you released comes back as new drift
+    if(b.opened&&b.r>=1&&skyPhase(t)>0.5&&Math.random()<dt*0.012){
+      const s=makeSeed(b.x,b.y-6,'fly');
+      s.flare=0.8; s.vy=-40-Math.random()*20; s.vx=-10+Math.random()*20;
+      seeds.push(s);
+    }
   }
 
   for(const p of pods){ p.popAnim=Math.max(0,p.popAnim-dt*2.2); }
@@ -755,11 +805,12 @@ window.__milkweed={
     pointer.down=false;
     return 'disturbed';
   },
-  step(sims){ for(let i=0;i<sims;i++) update(T(),0.016); return 'stepped '+sims; },
+  step(sims){ for(let i=0;i<sims;i++){ skew+=0.016; update(T(),0.016); } return 'stepped to t='+T().toFixed(1); },
   seeds(){ return seeds.slice(0,50).map(s=>({state:s.state,x:s.x|0,y:s.y|0,wilt:+s.wilt.toFixed(2)})); },
 };
 
 // --- go ---------------------------------------------------------------------
+if(!/dev/.test(location.search)) document.getElementById('hint').style.display='none';
 resize(); seedStars();
 window.addEventListener('resize',resize);
 const intro=document.getElementById('intro');
