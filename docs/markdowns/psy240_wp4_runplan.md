@@ -1258,3 +1258,85 @@ Remaining, with what each is expected to yield:
 **55 image markers across the book have not been read natively.** None was needed for the sections
 swept so far, but 2.3 and 2.4 (neurotransmission, brain structures, drug administration) are the ones
 most likely to carry content as figures — check them against the PDF before writing those pages.
+
+---
+
+## 12. The fourth source — Davies (2025), and what is left after it
+
+**Source.** Davies, C. (2025). *Adult Psychopathology.* Amherst, MA: University of Massachusetts
+Amherst Libraries. **PDF only** (`Adult-Psychopathology-1770239033.pdf`, 565pp) — Pressbooks/Prince
+output with a clean text layer, so `pdftotext -layout` is sufficient and no image route was needed.
+Canonical URL **verified live**: `https://openbooks.library.umass.edu/adultpsychopathology/` (the PDF
+itself carries no URL — do not guess one).
+
+### 12.1 Three licences in one book
+
+The book default is **CC BY-NC 4.0** — the first source in this corpus that is **not** ShareAlike. But
+the chapters used carry their own sub-licences, and the citation must say so:
+
+| Chapters used | Adapted from | Licence |
+|---|---|---|
+| 23–24 Gender Dysphoria | *Abnormal Psychology* (Coursehero) | **CC BY-SA** |
+| 47–48 Sleep | *Psychology 2e* (OpenStax) | **CC BY 4.0** |
+
+**Check the per-chapter attribution line, not just the copyright page.** A compiled OER can carry
+three licences at once, and the one that governs a given page is the chapter's, not the book's.
+
+### 12.2 What it delivered
+
+**Tier A 46 → 49/54; overviews 13 → 14/16.** Six pages:
+
+- **`gender-dysphoria`** — the page the taxonomy flagged for **rewrite-level review** over dated
+  terminology. A 2025 source handles it properly: the GID → gender dysphoria rename, the DSM-5 move
+  out of the sexual-disorders category, the post-transition specifier and **why it exists** (so that
+  successful treatment does not remove access to ongoing treatment), and the **0.6% transgender
+  against ~0.01% diagnosed** gap that makes the identity/diagnosis distinction quantitative. The page
+  is written *against* the terminology history rather than around it, per the review flag.
+- **`insomnia-disorder`**, **`narcolepsy`**, **`obstructive-sleep-apnea-hypopnea`**, **`parasomnias`**,
+  and the **`sleep-wake-disorders`** overview.
+
+**The best single teaching item is the gender-dysphoria trade-off**: the diagnosis is criticised as
+stigmatising *and* is what makes insurers cover gender-confirming care, so removing it would relieve
+the stigma at the cost of the access. Most [[medicalization-of-distress]] cases in this course run
+one way; this one does not.
+
+**The best sleep item is the sleepwalking finding**: benzodiazepines did not alleviate sleepwalking,
+but every sleepwalking patient with a sleep-related breathing problem improved markedly once the
+breathing was treated (Guilleminault et al., 2005). Treat the apnea, and the parasomnia may resolve.
+
+### 12.3 What it does not cover — and the pattern that is now three-for-three
+
+**No sexual dysfunctions and no paraphilic disorders.** The only mentions are rows in the DSM chapter
+table. **No gambling** — zero occurrences. Verified by keyword scan over the whole extraction, not
+inferred from the contents page.
+
+That is the third consecutive new source that covered less than expected:
+
+| Source | Expected to fill | Actually covered |
+|---|---|---|
+| *Behavioral Disorders of Childhood* | Module 16's etiology/treatment | ✅ 17 of 18 pages |
+| Cummings, *Abnormal Psychology* | "Canadian content" broadly | 9 chapters; **no** sleep, sexual, substance, eating, dissociative, somatic, NCD |
+| Davies, *Adult Psychopathology* | "sleep and sexual disorders" | **Sleep yes, sexual no** |
+
+**Establish coverage before planning work.** A keyword scan of the extracted text costs one command
+and settles it; a table of contents does not, because a chapter may name a topic it only lists.
+
+### 12.4 What remains uncovered, after four sources
+
+**Five Tier A pages, one foundation, two overviews — and they are now a single coherent block plus one
+straggler.**
+
+| | Needed |
+|---|---|
+| `erectile-disorder`, `female-sexual-interest-arousal-disorder` + the **`sexual-dysfunctions`** overview | A source covering DSM chapter 13 |
+| `exhibitionistic-disorder`, `pedophilic-disorder` + the **`paraphilic-disorders`** overview | A source covering DSM chapter 19. The taxonomy flags the paraphilic overview for **rewrite-level review** — lecture-hall-provocative framing in the deck |
+| `gambling-disorder` | **NIMH** (US public domain) remains the obvious source; it is a behavioural addiction and no textbook here covers it |
+| `suicide-and-self-harm` | Still the only unwritten foundation, still the most-linked red link. **Davies has a chapter 22, "Suicide and Prevention" — this is now writable and was not before** |
+
+**`suicide-and-self-harm` is the immediate next job.** It has a source now, it is a foundation page,
+and it carries more inbound red links than anything else in the corpus.
+
+Then: the two textbooks Norm supplied are also **second sources for chapters already written** — the
+Cummings sections still unswept (§11.4) and Davies' parts on PTSD, anxiety, OCD, mood, psychosis,
+personality, somatic, dissociative, eating and substance. That is the review-and-fill pass, and it is
+where the remaining `Needs research` lines get closed rather than where new pages get created.

@@ -24,10 +24,13 @@ brief for them. In yield order:
    Run plan §10.4 records the method and what it did *not* fix. Two consequences carry forward:
    `contested` is still empty on nine pages, and the companion's treatment sections are **entirely
    US-institutional**, so the Canadian requirement below is now sharper, not softer.
-2. **The 8 Tier A pages with no textbook source** — all five of Lecture 7, both sleep-wake pages,
-   and `gambling-disorder`. This is now the *entire* remaining Tier A deficit.
-3. **`suicide-and-self-harm`** — the only unwritten foundation, and now the most-linked red link in
-   the corpus (7 inbound references, 5 of them added by Module 16).
+2. **Five Tier A pages remain** after four sources: `erectile-disorder`,
+   `female-sexual-interest-arousal-disorder`, `exhibitionistic-disorder`, `pedophilic-disorder` and
+   `gambling-disorder`. They reduce to **one source covering DSM chapters 13 and 19**, plus **NIMH
+   for gambling**. Sleep and gender dysphoria are done (run plan §12).
+3. **`suicide-and-self-harm` — now writable, and the immediate next job.** Davies (2025) has a
+   *Suicide and Prevention* chapter; it had no source before. Only unwritten foundation, and the
+   most-linked red link in the corpus.
 4. ~~The 13 unwritten overviews~~ — **10 done 2026-08-02**, taking overviews 3/16 → 13/16 with
    zero empty sections (run plan §10.5). The remaining three — `sleep-wake-disorders`,
    `paraphilic-disorders`, `sexual-dysfunctions` — are **blocked by item 2**: every one of their
@@ -73,7 +76,7 @@ Everything is merged and pushed to `main`; nothing sits on a branch.
 108 empty sections         109 annotations
 ```
 
-**Catalogue coverage: Tier A 46/54, Tier B 24/46, foundations 13/14, overviews 13/16.**
+**Catalogue coverage: Tier A 49/54, Tier B 26/46, foundations 13/14, overviews 14/16.**
 
 Tier A by lecture — L3 **10/10**, L4 **4/4**, L5 **4/4**, L6 3/5, L7 **0/5**, L8 4/5, L9 **2/2**,
 L10 **9/9**, L11 **10/10**. Six lectures complete. **Every remaining Tier A gap is a page the
