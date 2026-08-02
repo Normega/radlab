@@ -1045,3 +1045,49 @@ settle *before* the first run, because each has bitten once already:
 3. **Decide the carve against the catalogue, not the source.** A second source covering a page that
    already exists produces an `update` — and **update proposals are deltas**. See §8's gotcha:
    pass merged content to `review_proposal()`, never the delta.
+
+### 10.4 Done 2026-08-02: the companion volume, and what it closed
+
+**Item 10.1(a) is complete.** *Behavioral Disorders of Childhood* (Bridley & Daffin, 3rd ed. 2022,
+CC BY-NC-SA 4.0) filled the Etiology and Treatment sections on **17 of the 18 Module 16 pages** —
+every one except `communication-disorders`, which has no chapter in that book either. Empty sections
+across the corpus fell **142 → 108**; annotations rose **60 → 79**, which is the right direction:
+material that was an instructor-sized hole is now present prose carrying a student-sized ask.
+
+**Source format: the WXR export, not the live site.** Pressbooks offers this book only as `mpdf` and
+`wxr` — `?type=xhtml` returns 500. The WXR (`Behavioral-Disorders-of-Childhood-1668708112.xml`) is a
+single local file containing every chapter's HTML in `content:encoded` CDATA, so a run is
+reproducible and does not depend on the site being reachable. `scripts/pressbooks-wxr-extract.mjs`
+reads it; `--list` prints every chapter with its size. Verified against the live chapter pages on
+Module 11 before committing to it: 34,277 chars against 33,764, the delta being the title line.
+
+**Ten jobs, not one.** Attribution is a licence condition, and the parent book set the precedent of
+citing the specific module. So each of the nine source chapters got its own `ingest_jobs` row with
+its own citation, plus a tenth whole-book row for `neurodevelopmental-disorders`, which synthesises
+Modules 7–10 and cannot honestly claim any single one. Verified after acceptance: `adhd` reports two
+sources — Module 10 of the companion volume and Module 16 of the parent book — with the right module
+named on each.
+
+**Splice, do not retype.** These were `action='replace'` versions built in SQL by
+`substr()`/`position()` around the `## Etiology` and `## Contested` anchors, with the frontmatter
+`sources:` line spliced in at the `---\n\n# ` boundary. Only the new prose was written by hand.
+Anchor uniqueness and ordering were checked on all 18 pages *before* the first insert — one
+`## Etiology`, one `## Contested`, correctly ordered, one frontmatter close. This is §7's
+"prefer splicing over retyping long bodies" applied at scale, and it kept 17 multi-thousand-character
+pages untouched outside the two sections being filled.
+
+**What the companion volume does not fix.** `contested` is still empty on nine pages — this book has
+no more critical apparatus than the parent. Its treatment sections are **entirely US-institutional**:
+IEPs under IDEA, insurance-gated ABA, US state screening rates. That makes §10.2's Canadian
+requirement sharper rather than softer — `intellectual-developmental-disorder`,
+`specific-learning-disorder`, `autism-spectrum-disorder` and the `neurodevelopmental-disorders`
+overview now each carry an explicit declared gap naming provincial frameworks, CADDRA, and the
+distinction between a school-board designation and a DSM diagnosis. And it reports response rates
+and names programmes without ever giving an **effect size**, which is now the single most repeated
+`Needs research` line in the corpus.
+
+**One methodological note worth keeping.** The Module 14 etiology in this book is written for OCD and
+then applied to trichotillomania and excoriation, while the same chapter states that environmental
+factors matter more for the other OCD-related disorders than for OCD itself. Both new pages say so
+explicitly rather than inheriting the OCD account silently. When a source generalises across a
+category, the page should say which member the evidence was actually collected on.

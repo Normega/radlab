@@ -1,6 +1,7 @@
 # PSY240 Field Guide — session handoff
 
-> Rewritten 2026-08-02, after Module 16 closed the textbook sweep. Read this **plus**
+> Rewritten 2026-08-02, after Module 16 closed the textbook sweep and the companion volume closed
+> 34 of the 36 gaps it left. Read this **plus**
 > `psy240_wiki_plan.md` (architecture + sequencing), `psy240_taxonomy.md` (the catalogue) and
 > **`psy240_wp4_runplan.md`** — the operational manual: **§9 is the working method**, **§10 is the
 > brief for new sources**, §8 the gap map, §6 the sixteen citations. This file is the *state of play
@@ -17,12 +18,12 @@ All sixteen modules are ingested. Every Tier A page the WSU textbook can support
 remains is not more of the same sweep — it is four specific things, and run plan **§10** is the
 brief for them. In yield order:
 
-1. **Ingest *Behavioral Disorders of Childhood*** (Bridley & Daffin, same authors, same
-   CC BY-NC-SA licence, https://opentext.wsu.edu/behavioral-disorders-childhood/). Module 16
-   declares that it covers presentation, prevalence, comorbidity and differential diagnosis **only**,
-   deferring etiology, assessment and treatment to that volume — so 18 pages carry **36 empty
-   Etiology/Treatment sections** that no re-reading of the current book will fill. One source closes
-   the largest block of gaps in the corpus.
+1. ~~Ingest *Behavioral Disorders of Childhood*~~ — **done 2026-08-02.** It filled Etiology and
+   Treatment on **17 of the 18** Module 16 pages (all but `communication-disorders`, which has no
+   chapter there either), taking corpus empty sections **142 → 108** and annotations **60 → 79**.
+   Run plan §10.4 records the method and what it did *not* fix. Two consequences carry forward:
+   `contested` is still empty on nine pages, and the companion's treatment sections are **entirely
+   US-institutional**, so the Canadian requirement below is now sharper, not softer.
 2. **The 8 Tier A pages with no textbook source** — all five of Lecture 7, both sleep-wake pages,
    and `gambling-disorder`. This is now the *entire* remaining Tier A deficit.
 3. **`suicide-and-self-harm`** — the only unwritten foundation, and now the most-linked red link in
@@ -57,15 +58,15 @@ cases. Module 16's corpus check already turned up one unknown case — a broken 
 
 Everything is merged and pushed to `main`; nothing sits on a branch.
 
-## 2. Live database state (radlab-academic, 2026-08-02, after Module 16)
+## 2. Live database state (radlab-academic, 2026-08-02, after the companion volume)
 
 ```
 204 pages with bodies       0 published — no student can see anything yet
-768 wikilinks               0 proposals pending — review queue clear
-6 red links                 0 blue links to an empty page
+802 wikilinks               0 proposals pending — review queue clear
+11 red links                0 blue links to an empty page
 0 duplicate headings        0 off-catalogue disorder pages
-130 catalogue rows          38 ingest jobs
-142 empty sections          60 annotations
+130 catalogue rows          48 ingest jobs
+108 empty sections          79 annotations
 ```
 
 **Catalogue coverage: Tier A 46/54, Tier B 24/46, foundations 13/14, overviews 3/16.**
@@ -74,14 +75,16 @@ Tier A by lecture — L3 **10/10**, L4 **4/4**, L5 **4/4**, L6 3/5, L7 **0/5**, 
 L10 **9/9**, L11 **10/10**. Six lectures complete. **Every remaining Tier A gap is a page the
 textbook does not cover** — the list is closed and is item 2 above.
 
-All 6 red links point at real catalogue slugs not yet written (`suicide-and-self-harm` ×7 inbound,
+All 11 red links point at real catalogue slugs not yet written (`suicide-and-self-harm` ×7 inbound,
 `brief-psychotic-disorder`, `hypersomnolence-disorder`, `kleptomania`, `pyromania`). A red link to
 an unwritten catalogue page is the designed state; a red link to a *non*-catalogue slug is a defect,
 and there are now none.
 
-**The jump in empty sections (95 → 142) is not a regression.** 36 of the 47 are Module 16's
-etiology/treatment holes, which are the source's declared scope limit rather than an extraction
-failure — see §4 and run plan §9.7.
+**Empty sections went 95 → 142 → 108 in one day, and both moves were correct.** Module 16 added 36
+holes that were its declared scope limit rather than an extraction failure (§4, run plan §9.7); the
+companion volume then closed 34 of them (run plan §10.4). **Watch annotations, not just empty
+sections** — the rise 60 → 79 is the real signal, because it means instructor-sized holes became
+present prose carrying student-sized asks.
 
 Nothing has ever been published. Every accept is *accept as draft* — no students are enrolled, so
 publishing buys nothing and is the harder direction to reverse.
@@ -95,10 +98,21 @@ looks exactly like a failed migration. This has cost time twice.
 **The MCP's `execute_sql` intermittently returns "Failed to execute SQL query"** on valid SQL. It is
 transient — retry the same query. Do not start debugging the SQL.
 
-**`scripts/wsu-module-extract.mjs`** slices a module out of the book HTML and prints it as markdown;
-`--list` prints every chapter's byte offset and size. It converts `<img>` to a visible
-`[[IMAGE: file]]` marker — do not reimplement that casually, it is what stops a figure vanishing
-silently. Point it at another book with `WSU_BOOK_HTML`.
+**Two extractors, one converter.** `scripts/lib/pressbooks-md.mjs` holds the HTML→markdown logic;
+both extractors use it, so two source formats cannot drift apart.
+
+- **`scripts/wsu-module-extract.mjs`** — slices a module out of a Pressbooks **XHTML export**
+  (the parent book). `--list` prints every chapter's byte offset and size. `WSU_BOOK_HTML` repoints it.
+- **`scripts/pressbooks-wxr-extract.mjs`** — extracts chapters from a Pressbooks **WXR** export
+  (`.xml`), for books that publish no XHTML. `--list` lists chapters; `--out DIR` writes one `.md` each.
+
+Both convert `<img>` to a visible `[[IMAGE: file]]` marker — **do not reimplement that casually**, it
+is what stops a figure vanishing silently. Read any marker off the native PDF page with the Read tool.
+
+**If a source will not download, stop and ask Norm.** Standing rule from 2026-08-02: the companion
+volume's XHTML export 500s, and rather than asking, the session built a nine-page live scraper as a
+workaround. Norm had the WXR and the PDF and supplied both. The WXR is also strictly better — one
+local file, reproducible, no site dependency.
 
 **Read-only check scripts** live in `supabase/checks/` — `wp1_verify.sql`, `wp1_ingest_smoke.sql`,
 `wp3_review_state.sql`, **`wiki_merge_health.sql`**, and the ⚠ dangerous
