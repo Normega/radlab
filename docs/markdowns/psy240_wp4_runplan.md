@@ -169,7 +169,7 @@ weeks 1–4 finished, not a random half of the course.
 | — | ~~Module 11~~ | paper ✔ | **run + triaged 2026-08-01** — 17 pages, but **0 of 5 Tier A**: carve mismatch, see §4 and the reference runs below | L8 |
 | — | ~~Module 12~~ | paper ✔ | **run + triaged 2026-08-01** — 14 pages, 2 Tier A + 2 Tier B; L9 Tier A complete | L9 |
 | — | ~~Module 14~~ | paper ✔ | **run + triaged 2026-08-02** — 13 pages, 2 Tier A + 1 Tier B; `vascular-ncd` queued as a reference run (§5) | L10 |
-| 14 | Module 13 | paper, **try extracted** | **10 Tier A** (1 written) — the one run that will not fit 300s; see §5 | L11 |
+| — | ~~Module 13~~ | **direct parse** ✔ | **2026-08-02 — the pilot for §9.** 13 pages, **10 of 10 Tier A**, zero empty sections, zero slug misses; L11 Tier A complete | L11 |
 | 15 | **Module 16 — run this LAST** | paper | neurodevelopmental + disruptive/conduct, and deltas onto pages from runs 5–10 | L3/8/10 |
 
 ### Why the foundations runs are reference mode, not paper
@@ -569,10 +569,10 @@ Counting a page as written only if it has an accepted body (after triaging Modul
 
 | Tier | Written | Total |
 |---|---|---|
-| A (central to the course) | 30 | 54 |
-| B (supporting) | 13 | 46 |
+| A (central to the course) | 40 | 54 |
+| B (supporting) | 14 | 46 |
 | Foundation | 8 | 9 |
-| **Overview** | **0** | **16** |
+| **Overview** | **1** | **16** |
 
 ### 8.2 "Has a page" is not "has a skeleton" — the stub problem
 
@@ -807,3 +807,107 @@ empty, i.e. the page already says which debate is missing.
 **Two things to keep in mind when re-running the counts.** A page can appear on both lists (some
 sections empty, others annotated). And `annotations` is computed on the fly from `content` rather
 than stored, so it is always current but is not indexed — fine for the worklist, not for a hot path.
+
+---
+
+## 9. Direct parse — the method from 2026-08-02 onward
+
+> Piloted on Module 13 (personality disorders), the run this plan flagged as most likely to fail:
+> ten Tier A pages in one go, against a 300s ceiling that Module 11 had already come within 13
+> seconds of. It produced **13 pages, 10 of 10 Tier A, zero empty sections, zero slug misses**, and
+> took Tier A from 30/54 to 40/54 — the largest single jump of the sprint.
+
+### 9.1 What actually changes, and what does not
+
+**The model call moves out of the 300-second Vercel function and into the session.** That is the
+whole change. Everything downstream is untouched: the run still writes an `ingest_jobs` row, still
+lands `kind='proposed'` versions carrying that `job_id`, and is still accepted through
+`review_proposal()`. Provenance, the version trail, `needs`/`annotations` computation, link
+extraction and the collision guards all work exactly as before.
+
+**Do not use `edit_page()` to create these pages.** `wiki_page_provenance` joins
+`wiki_page_versions` on `kind='proposed'` **and** `review_status='accepted'`, then to `ingest_jobs`
+by `job_id`. An `edit_page()` write produces `kind='accepted'` with a null `job_id`, so it
+contributes nothing — the page would show **no sources** under *Built from*, which for CC BY-NC-SA
+material is a licence violation rather than a cosmetic gap. Verified working on Module 13:
+`borderline-personality-disorder` correctly reports four sources, accumulating Module 13 alongside
+the earlier Fonagy and Shedler journal ingests.
+
+### 9.2 Why it beats the pipeline: catalogue-first vs source-first
+
+Nearly every failure in §8 traces to one cause. The pipeline is **one-shot and blind** — the model
+sees a source, carves it as the source is built, and only afterwards does anyone discover the
+catalogue wanted a different partition. That produced the carve mismatches (§4, substance and NCD),
+the slug misses (§8.7), and the semantic duplication on stubs (§8.9).
+
+Working in-session inverts it. Both the module *and* the catalogue fit in context at once, so the
+question becomes "here are the ten slugs I must fill — find their material" rather than "here is a
+chapter, see what falls out". On Module 13 that meant **ten of ten slugs matched by construction**,
+with no renames and no orphaned links, on a module whose ten disorders had never been written.
+
+Reference mode was always the better-behaved half of the pipeline for exactly this reason. Direct
+parse is reference mode without the 300-second ceiling, without a triage cycle per target, and with
+`disorders` visible while writing.
+
+### 9.3 Format: HTML primary, native PDF for images
+
+Settled empirically on 2026-08-02 against the full book HTML
+(`PSY240resources/Fundamentals-of-Psychological-Disorders-1721254433.html`, 1.06M chars):
+
+| | `pdftotext -layout` | **HTML** | Native PDF |
+|---|---|---|---|
+| Prose, headings | inferred from numbering | ✅ real `h2`/`h3` | ✅ |
+| Lists | flattened | ✅ 274 `<ul>` / 121 `<ol>` | ✅ |
+| Real `<table>` (3 in the book) | flattened | ✅ | ✅ |
+| **Content delivered as an image** | ✗ invisible | ✗ **URL only** | ✅ |
+
+**HTML is primary — and it is the only format that tells you where the figures are.** But it is not
+sufficient. The book has 17 `<img>`; most are cover art, CC badges, or Module 2 figures, but
+`Table-13.1.jpg` is a full **prevalence matrix for all ten personality disorders across three data
+sources**, and `pdftotext` does not even preserve its caption.
+
+So the workflow is: parse HTML for structure and prose → scan the module's byte range for `<img>` →
+read those PDF pages natively with the Read tool. Module 13 cost ~15k tokens of text plus two vision
+pages ≈ **18k**, against ~65k for a full-native paper run. Better coverage at a quarter of the input.
+
+**Amends the §5 correction.** "The tables are the payload" was wrong about `<table>` markup — 0 in
+24 disorder pages — and right about the *category*, in a form no text format exposes. The
+distinction that matters is **prose vs image**, not native vs extracted.
+
+### 9.4 The recipe
+
+1. **Locate the module** in the HTML by `<h1>`/`<h2>` byte offset; slice that range.
+2. **Convert to markdown** — map `h2`–`h5` to `##`–`#####`, `<li>` to `-`, replace `<img …>` with a
+   visible `[[IMAGE: filename]]` marker so figures cannot be silently dropped.
+3. **Read any image markers** off the corresponding PDF page (`Read` with `pages`).
+4. **Pull the catalogue** for that lecture — slug, tier, and existing `needs` — before writing.
+5. **Create the job row**: `source_type='paper'`, `pdf_mode='extracted'`, a `pdf_path` of the form
+   `direct-parse/<html file>#module-N`, and **citation row N from §6 verbatim**. Record the figures
+   read natively in `result_json` so the method is auditable.
+6. **Create page shells** for every slug in one `INSERT … ON CONFLICT DO NOTHING`.
+7. **Insert versions** against those shells — `kind='proposed'`, the right `action`, the `job_id`.
+8. **Run the §8 checks before accepting**: catalogue match, heading collisions, `needs` vs
+   `annotations`.
+9. **Accept** through `review_proposal(id,'accept',NULL,false)` — `false` keeps them drafts.
+10. **Close the job** (`status='done'`, `completed_at`), then re-run the corpus checks.
+
+### 9.5 Two SQL traps, both hit on the pilot
+
+**A data-modifying CTE's rows are invisible to the rest of the same statement.** An
+`ins AS (INSERT … RETURNING id)` followed by a main query that reads `wiki_pages` will not see the
+new shells, so the versions silently insert zero rows. Either read from the CTE itself, or — better,
+and what §9.4 does — create all shells in one statement and insert versions in the next.
+
+**`FROM a, b JOIN c ON … a.col` does not parse.** `JOIN` binds tighter than the comma, so `a` is not
+in scope. Use explicit `CROSS JOIN`.
+
+### 9.6 What this leaves the ingest GUI for
+
+Its actual job: **student submissions of peer-reviewed papers** (WP6). That use case wants precisely
+what bulk textbook ingest kept fighting — one unfamiliar paper, unknown structure, a proposal queue,
+mandatory human review, refusal fallbacks, provenance captured at upload. Every guard built during
+the sweep (`reconcileCollidingUpdate`, the placeholder-aware index, `wiki_merge_health.sql`) is
+*more* valuable there, because a student's paper genuinely may restate an existing section.
+
+**One consequence to plan for:** the pipeline stops being exercised by every module run. It needs a
+deliberate test pass before students touch it.
