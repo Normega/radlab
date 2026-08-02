@@ -298,7 +298,7 @@ page as the target. Since 2026-07-30 reference mode returns a **complete page wi
 replace`** rather than a delta, so accepting overwrites cleanly and you get one coherent voice
 instead of two stitched together.
 
-### Queued reference runs — Lecture 8, four targets against Module 11
+### Queued reference runs — Lecture 8 ✔ **all four run and triaged 2026-08-01**
 
 Module 11's paper run produced good generic pages and **none of the five Tier A substances** (§4).
 Four are recoverable from the same module because the material is there, just partitioned by drug
@@ -550,7 +550,7 @@ Counting a page as written only if it has an accepted body (after triaging Modul
 
 | Tier | Written | Total |
 |---|---|---|
-| A (central to the course) | 22 | 54 |
+| A (central to the course) | 26 | 54 |
 | B (supporting) | 10 | 46 |
 | Foundation | 8 | 9 |
 | **Overview** | **0** | **16** |
@@ -748,3 +748,43 @@ Three things to watch, all of which came up on these two pages:
 
 Result: `anorexia-nervosa` 2,049 → 6,795 chars, `bulimia-nervosa` 1,716 → 6,108, both with the
 six-section skeleton intact. Two of §8.2's six stubs are now real pages.
+
+### 8.10 Empty vs annotated — the distinction that actually splits the two lists
+
+§8.4 split the gap vocabulary by the gap's **name**: core-skeleton names (`diagnosis`,
+`presentation`, `epidemiology`, `etiology`, `treatment`) were instructor work, `contested` was the
+student target. That was a reasonable first cut and it is not the real seam. The real seam is
+**whether the section has content at all**, and it was invisible until 2026-08-01 because
+`extract_page_needs` scored a gap on `marker OR not prose` — collapsing both cases into one array.
+
+| | What it is | Whose job |
+|---|---|---|
+| **Empty** (`needs`) | Heading present, no prose — only a `> **Needs research:**` line | Instructor. The template is missing. |
+| **Annotated** (`annotations`) | Real content *plus* a line naming a specific sub-gap | Student. A scoped, concrete ask. |
+
+The Lecture 8 reference runs made it unmissable: eleven flagged sections, **one truly empty**, ten
+with 1,764–3,980 chars and 4–15 prose lines apiece. `alcohol-use-disorder` — 16,921 characters, the
+most complete disorder page in the wiki — declared four gaps and sorted to the top of
+`reference_worklist`. The tool was offering the most finished page as the most-needing-work.
+
+Corpus-wide the split was **89 empty sections across 52 pages against 27 annotated across 17**.
+
+`20260801_split_needs_from_annotations.sql` separates them: `needs` now means empty-only, and
+`extract_page_annotations` is its complement, both wrappers over one shared parser so they cannot
+drift. `wiki_gap_report` and `reference_worklist` expose `annotations` alongside `needs`.
+
+**What this changes for the two lists in §8.6.**
+
+- **Core text** takes `needs` — 77 flags across 44 pages. This is the number that means "unwritten".
+- **Student starting points** take `annotations` — 27 asks across 17 pages, each already phrased as
+  a specific question by the model that wrote the page. That is a far better assignment than "write
+  the Contested section from scratch": the work is bounded, the page states what is missing, and a
+  student can tell when they are done.
+
+`contested` remains the single largest entry on the student list, but for a better reason than
+before — not because of what it is called, but because on most pages it is *annotated* rather than
+empty, i.e. the page already says which debate is missing.
+
+**Two things to keep in mind when re-running the counts.** A page can appear on both lists (some
+sections empty, others annotated). And `annotations` is computed on the fly from `content` rather
+than stored, so it is always current but is not indexed — fine for the worklist, not for a hot path.
