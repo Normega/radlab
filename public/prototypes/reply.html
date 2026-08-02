@@ -590,6 +590,7 @@ window.__reply={
 function motifNote(pitchIdx,heldMs){ playerCallEnded(pitchIdx,heldMs??600); }
 
 // --- go ---------------------------------------------------------------------
+if(!/dev/.test(location.search)) document.getElementById('hint').style.display='none';
 resize();seedStars();
 window.addEventListener('resize',resize);
 const intro=document.getElementById('intro');

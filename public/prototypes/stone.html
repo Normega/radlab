@@ -266,7 +266,7 @@ function visitorUpdate(t,dt){
     minnows.school=Array.from({length:6},(_,i)=>({a:Math.random()*7,r:8+Math.random()*22,ph:Math.random()*7}));
     eventLog.push({t:+t.toFixed(1),kind:'minnows',ev:'shelter'});
   }
-  if(minnows.present&&disturbance>0.8){
+  if(minnows.present&&disturbance>0.5){
     minnows.present=false; minnows.sinceScatter=t; stillFor=0;
     eventLog.push({t:+t.toFixed(1),kind:'minnows',ev:'scatter'});
   }
@@ -732,6 +732,7 @@ window.__stone={
 };
 
 // --- go ---------------------------------------------------------------------
+if(!/dev/.test(location.search)) document.getElementById('hint').style.display='none';
 resize();seedStars();
 window.addEventListener('resize',resize);
 const intro=document.getElementById('intro');

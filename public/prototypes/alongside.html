@@ -656,6 +656,7 @@ window.__alongside={
 const step_=step;
 
 // --- go ---------------------------------------------------------------------
+if(!/dev/.test(location.search)) document.getElementById('hint').style.display='none';
 resize();
 window.addEventListener('resize',resize);
 const intro=document.getElementById('intro');
