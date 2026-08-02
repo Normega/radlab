@@ -1340,3 +1340,88 @@ Then: the two textbooks Norm supplied are also **second sources for chapters alr
 Cummings sections still unswept (§11.4) and Davies' parts on PTSD, anxiety, OCD, mood, psychosis,
 personality, somatic, dissociative, eating and substance. That is the review-and-fill pass, and it is
 where the remaining `Needs research` lines get closed rather than where new pages get created.
+
+---
+
+## 13. The fifth source — Goerling & Wolfe (2022): overviews complete, Tier A 53/54
+
+**Source.** Goerling, E., & Wolfe, E. (2022). *Introduction to Human Sexuality.* Open Oregon
+Educational Resources. WXR + PDF in `PSY240resources/`; URL verified live at
+`https://openoregon.pressbooks.pub/introtohumansexuality/`. Book licence **CC BY-NC-SA 4.0**, with
+per-chapter sub-licences: **Ch 17 adapted from Miller's *Clinical Perspectives in Abnormal
+Psychology* under CC BY 4.0**; **Ch 16 adapted from Walinga & Stangor's *Introduction to Psychology –
+1st Canadian Edition* (BCcampus) under CC BY-NC-SA 4.0**.
+
+**Edition caveat recorded in the job:** the WXR export is dated 2022-10-21 while the live edition is
+now ©2024. The citation names 2022, the copy actually read.
+
+### 13.1 What it closed
+
+**13 pages. Tier A 49 → 53/54. Tier B 26 → 33/46. Overviews 14 → 16/16 — complete.**
+**Lecture 7 Tier A is now 5 of 5**, the last incomplete lecture apart from gambling.
+
+Sexual dysfunctions (ch 17): the `sexual-dysfunctions` overview, `erectile-disorder`,
+`female-sexual-interest-arousal-disorder`, `male-hypoactive-sexual-desire-disorder`,
+`ejaculation-and-orgasmic-disorders`, `genito-pelvic-pain-penetration-disorder`.
+
+Paraphilic disorders (ch 16): the `paraphilic-disorders` overview, `pedophilic-disorder`,
+`exhibitionistic-disorder`, `voyeuristic-disorder`, `fetishistic-disorder`,
+`sexual-sadism-and-masochism-disorders`, `transvestic-disorder`.
+
+**Only `gambling-disorder` and `suicide-and-self-harm` remain unwritten at Tier A / foundation**, and
+both have identified sources (NIMH; Davies ch 22).
+
+### 13.2 The taxonomy's rewrite-level flag was correct, and this is how it was handled
+
+The catalogue flagged the paraphilic overview for rewrite-level review — *"lecture-hall-provocative
+framing… must not be laundered into a reference page."* **Chapter 16 justifies that flag.** Four
+passages were treated as **source defects, named on the page rather than reproduced or silently
+dropped**:
+
+1. **A cultural-relativism passage** presenting adult–child sexual contact as normal in some
+   societies. Named on `pedophilic-disorder` and `paraphilic-disorders` as not teachable: the issue
+   is **capacity to consent**, and the passage confuses a descriptive claim about practices with a
+   normative one about harm.
+2. **A relayed conflation of pedophilia with homosexuality**, reproduced by the source without
+   rebuttal. Stated on the page as **false**, with the distinction spelled out.
+3. **"Women who wear low-cut gowns are exhibitionists in a sense"** — not a DSM criterion, no
+   diagnostic content, imports victim-blaming into a chapter about non-consensual acts.
+4. **Internally contradictory voyeurism prevalence** — 12%/4% stated, then "prevalence not known" in
+   the same passage. The page says **do not quote these figures**.
+
+**The general rule this establishes: when a source contains material that should not be taught,
+name it as a defect on the page.** Dropping it silently leaves the next person to rediscover it from
+the source; reproducing it launders it. The `source_quality_warning` field in `ingest_jobs.result_json`
+carries the same warning at the job level.
+
+### 13.3 What the chapter gets right, and what it is missing
+
+**The paraphilia / paraphilic disorder distinction is the best-stated version in the corpus** —
+Lehmiller (2019): an unusual sexual interest requiring no treatment, against one that distresses the
+person or victimises others. **Consent is the organising axis**, and it sorts the eight disorders
+better than the DSM's own ordering.
+
+**The BDSM evidence is the strongest counter-pathologising finding available**: practitioners show
+*higher* wellbeing than average, less neuroticism, more openness and conscientiousness, and **no
+correlation with childhood sexual assault** (Joyal, 2018; Lehmiller, 2019).
+
+**But the paraphilia chapter supplies essentially no etiology and no treatment at all.** Both
+sections are empty across every paraphilic page. That is the single largest declared gap this run
+created, and it is honest: the chapter is descriptive and forensic, not clinical.
+
+**And the sexual-dysfunction chapter's threshold is worth teaching in its own right** — six months,
+75% of occasions, clinically significant distress — because the headline survey figures (43% of
+women, 31% of men) measure *difficulty in the past year* and do not apply it. The gap between those
+two numbers is where the medicalisation argument lives.
+
+### 13.4 Five sources in, what the pattern says
+
+| Source | Expected | Delivered |
+|---|---|---|
+| *Behavioral Disorders of Childhood* | Module 16 etiology/treatment | ✅ as expected |
+| Cummings, *Abnormal Psychology* | "Canadian content" | Partial — 9 chapters only |
+| Davies, *Adult Psychopathology* | "sleep and sexual" | Partial — sleep only |
+| Goerling & Wolfe, *Human Sexuality* | "sex and gender content" | ✅ **as expected — closed both chapters** |
+
+**The keyword scan before planning is now standard** (§12.3) and it paid off here in the opposite
+direction: it confirmed full coverage before any work started, and it correctly predicted 13 pages.
