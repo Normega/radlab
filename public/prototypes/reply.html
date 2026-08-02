@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Reply</title>
+<style>
+  html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#05060e;}
+  canvas{display:block;touch-action:none;cursor:pointer;}
+  #intro{
+    position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    pointer-events:none;z-index:5;
+    font-family:Georgia,'Times New Roman',serif;font-style:italic;
+    color:rgba(225,230,248,0.85);font-size:clamp(16px,2.6vw,22px);
+    text-shadow:0 1px 8px rgba(0,0,0,0.6);
+    opacity:0;transition:opacity 3s ease;text-align:center;padding:0 24px;
+  }
+  #tune{
+    position:fixed;top:8px;right:8px;z-index:10;display:none;
+    background:rgba(8,10,20,0.9);border:1px solid rgba(255,255,255,0.14);
+    border-radius:8px;padding:10px 14px;font-family:ui-monospace,monospace;font-size:11px;
+    color:#c8d0ea;min-width:230px;
+  }
+  #tune label{display:block;margin:6px 0 2px;}
+  #tune input{width:100%;}
+  #hint{position:fixed;bottom:6px;right:10px;z-index:6;font-family:ui-monospace,monospace;
+    font-size:10px;color:rgba(255,255,255,0.16);pointer-events:none;}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="intro">The valley is listening.<br>Hold a finger down, softly, and let go.</div>
+<div id="hint">t&nbsp;·&nbsp;tuning</div>
+<div id="tune">
+  <label>racket decay (s) <span id="v_rdec"></span></label><input type="range" id="s_rdec" min="5" max="60" step="1">
+  <label>racket hush threshold <span id="v_rth"></span></label><input type="range" id="s_rth" min="1" max="8" step="0.5">
+  <label>reply delay min (s) <span id="v_dmin"></span></label><input type="range" id="s_dmin" min="0.5" max="5" step="0.25">
+  <label>trust per good call <span id="v_tgain"></span></label><input type="range" id="s_tgain" min="0.05" max="0.5" step="0.01">
+</div>
+<script>
+'use strict';
+/* ============================================================
+   REPLY — call and quiet response.
+   A dark valley. Offer a small sound, then listen.
+   Softer, sparser offerings draw richer replies; racket gets
+   only wind, and the valley returns slowly. Sometimes the
+   valley calls first. Sound gradually reveals space.
+   ============================================================ */
+
+const P = {
+  racketDecay: 22,     // seconds for one call's worth of racket to fade
+  racketHush: 3.2,     // racket level above which voices hold their peace
+  replyDelayMin: 1.6,  // s after your call before the first answer may come
+  trustGain: 0.16,     // trust gained by a well-spaced, soft call
+  duration: 270,       // nocturne begins near here
+};
+
+const cv=document.getElementById('c');
+const ctx=cv.getContext('2d');
+let W=0,H=0,DPR=1;
+function resize(){
+  DPR=Math.min(window.devicePixelRatio||1,2);
+  W=window.innerWidth;H=window.innerHeight;
+  cv.width=W*DPR;cv.height=H*DPR;cv.style.width=W+'px';cv.style.height=H+'px';
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  buildRidges();
+  placeVoices();
+}
+
+// --- musical material -------------------------------------------------------
+// A minor pentatonic, low to high
+const SCALE=[220.0,261.6,293.7,329.6,392.0,440.0,523.3,659.3];
+function yToPitch(y){
+  const k=1-clamp(y/H,0,1);
+  return clamp(Math.round(k*(SCALE.length-1)),0,SCALE.length-1);
+}
+
+// --- the valley -------------------------------------------------------------
+let ridges=[];
+function buildRidges(){
+  ridges=[];
+  const layers=4;
+  for(let L=0;L<layers;L++){
+    const pts=[];
+    const base=H*(0.42+L*0.13);
+    const amp=H*(0.05+L*0.02);
+    const seed=L*13.7+5;
+    for(let x=0;x<=W;x+=10){
+      pts.push([x, base + Math.sin(x*0.004+seed)*amp + Math.sin(x*0.011+seed*2)*amp*0.5]);
+    }
+    ridges.push({pts, depth:L});
+  }
+}
+
+// --- voices -----------------------------------------------------------------
+// Each answerer lives on a ridge, has a timbre, a shyness, and a trust level.
+const VOICE_TYPES=['thrush','owl','frog','bellbug','whistler','dove'];
+let voices=[];
+function placeVoices(){
+  if(voices.length) { for(const v of voices){ v.y=ridgeYat(v.ridge,v.x)-6; } return; }
+  const n=8;
+  for(let i=0;i<n;i++){
+    const ridge=1+Math.floor(hash1(i*3+1)*3);
+    const x=W*(0.08+0.84*hash1(i*7+2));
+    voices.push({
+      id:i,
+      type:VOICE_TYPES[i%VOICE_TYPES.length],
+      ridge, x, y:0,
+      shyness:0.12+hash1(i*5+3)*0.5,   // trust needed before it will answer
+      trust:0,
+      glow:0, ember:0,
+      lastSpokeAt:-99,
+      register: ridge===1? 1.0 : ridge===2? 0.7 : 1.4,  // far = lower or higher
+    });
+  }
+  placeVoices();
+}
+function ridgeYat(L,x){
+  const pts=ridges[L].pts;
+  const i=clamp(Math.floor(x/10),0,pts.length-1);
+  return pts[i][1];
+}
+function hash1(n){ const s=Math.sin(n*127.1)*43758.5453; return s-Math.floor(s); }
+
+// --- conversational state ---------------------------------------------------
+let racket=0;                 // rises with each call, decays; too high = hush
+let motif=[];                 // player's recent pitches (indices into SCALE)
+let pending=[];               // scheduled replies [{dueT, voice, motif}]
+let eventLog=[];              // {t, who, kind} for debugging & the nocturne
+let lastCallEnd=-99;
+let unpromptedNext=35+Math.random()*15;
+let duetWindow=null;          // {voice, until} — valley called first, listening for an answer
+let hushRecoverNote=false;
+
+function playerCallStarted(){
+  startAudio();
+}
+function playerCallEnded(pitchIdx,heldMs){
+  const t=T();
+  const soft=heldMs>140&&heldMs<2600;   // a tap-spam or an endless lean-on isn't an offering
+  const sinceLast=t-lastCallEnd;
+  // well-spaced soft calls sit below the decay rate (stable); crowding adds up
+  racket+=(soft&&sinceLast>6?0.6:1.2)+(heldMs>2600?0.4:0);
+  motif.push(pitchIdx); if(motif.length>5) motif.shift();
+  lastCallEnd=t;
+  eventLog.push({t:+t.toFixed(1),who:'you',kind:'call',pitch:pitchIdx});
+  // answering an unprompted call is a moment of meeting
+  if(duetWindow && t<duetWindow.until && soft){
+    const v=duetWindow.voice;
+    v.trust=Math.min(1,v.trust+P.trustGain*2.2);
+    schedule(v, t+0.9+Math.random()*0.8);
+    eventLog.push({t:+t.toFixed(1),who:'voice'+v.id,kind:'duet'});
+    duetWindow=null;
+    return;
+  }
+  if(racket>P.racketHush){ hushRecoverNote=true; return; }  // the valley waits you out
+  if(!soft) return;
+  // well-spaced soft call: trust grows in whoever is nearest in pitch-register
+  const spacing=t-(eventLog.filter(e=>e.who==='you').slice(-2,-1)[0]?.t ?? -99);
+  const wellSpaced=spacing>6;
+  const candidates=voices.filter(v=>v.trust>=v.shyness*0.4);
+  for(const v of voices){
+    if(wellSpaced) v.trust=Math.min(1,v.trust+P.trustGain*(0.5+hash1(v.id+t)*0.8));
+    else v.trust=Math.min(1,v.trust+P.trustGain*0.15);
+  }
+  // schedule replies from voices whose trust clears their shyness
+  const repliers=voices.filter(v=>v.trust>=v.shyness && t-v.lastSpokeAt>4);
+  shuffle(repliers);
+  const nReplies=Math.min(repliers.length, 1+Math.floor(Math.random()*2)+(avgTrust()>0.55?1:0));
+  let delay=P.replyDelayMin+Math.random()*2.5;
+  for(let i=0;i<nReplies;i++){
+    schedule(repliers[i], t+delay);
+    delay+=1.2+Math.random()*2.2;
+  }
+}
+
+function schedule(v,dueT){
+  pending.push({dueT, voice:v, motif:motif.slice(-3)});
+}
+
+function avgTrust(){ return voices.reduce((s,v)=>s+v.trust,0)/voices.length; }
+
+// --- update -----------------------------------------------------------------
+let nocturneAt=null, nocturneDone=false, strangerDone=false;
+function update(t,dt){
+  racket=Math.max(0,racket-dt*(P.racketHush/P.racketDecay));
+
+  // fire due replies (sim-time scheduling — resilient to timer throttling)
+  for(let i=pending.length-1;i>=0;i--){
+    const p=pending[i];
+    if(t>=p.dueT){
+      pending.splice(i,1);
+      if(racket>P.racketHush*1.15) continue;      // racket cancels the mood
+      speak(p.voice,p.motif,t);
+    }
+  }
+
+  // the valley sometimes calls first — non-contingent, unprompted
+  if(t>unpromptedNext){
+    unpromptedNext=t+28+Math.random()*22;
+    const v=voices[Math.floor(Math.random()*voices.length)];
+    speak(v,[Math.floor(Math.random()*SCALE.length)],t,true);
+    duetWindow={voice:v, until:t+9};
+    eventLog.push({t:+t.toFixed(1),who:'voice'+v.id,kind:'unprompted'});
+  }
+  if(duetWindow&&t>duetWindow.until) duetWindow=null;
+
+  // nocturne: near the end, if any bond formed, the valley sings a round
+  if(!nocturneAt&&t>P.duration&&voices.some(v=>v.trust>=v.shyness)){
+    nocturneAt=t+3;
+    let d=0;
+    const singers=voices.filter(v=>v.trust>=v.shyness*0.8);
+    for(let round=0;round<2;round++){
+      for(const v of singers){
+        schedule(v,nocturneAt+d);
+        d+=1.1+Math.random()*1.3;
+      }
+    }
+    eventLog.push({t:+t.toFixed(1),who:'valley',kind:'nocturne',singers:singers.length});
+  }
+  // ...and after the hush, one voice you haven't heard before, once
+  if(nocturneAt&&!strangerDone&&t>nocturneAt+45){
+    strangerDone=true;
+    const quiet=voices.filter(v=>v.lastSpokeAt<0);
+    const v=quiet.length? quiet[0]: voices[voices.length-1];
+    speak(v,[7],t,true);
+    eventLog.push({t:+t.toFixed(1),who:'voice'+v.id,kind:'stranger'});
+  }
+
+  for(const v of voices){
+    v.glow=Math.max(0,v.glow-dt*0.4);
+    v.ember=v.trust>=v.shyness? Math.min(1,v.ember+dt*0.2): v.ember;
+  }
+  for(let i=rings.length-1;i>=0;i--){
+    const r=rings[i]; r.r+=dt*140; r.a-=dt*0.5;
+    if(r.a<=0) rings.splice(i,1);
+  }
+  updateAmbience(t);
+}
+
+// --- speaking ---------------------------------------------------------------
+function speak(v,srcMotif,t,solo){
+  v.glow=1; v.lastSpokeAt=t;
+  eventLog.push({t:+t.toFixed(1),who:'voice'+v.id,kind:'reply',type:v.type});
+  if(!AC) return;
+  const pan=(v.x/W)*2-1;
+  const dist=v.ridge/3;
+  const notes=(srcMotif&&srcMotif.length? srcMotif: [2,4]).map(n=>SCALE[clamp(n+ (Math.random()<0.4? (Math.random()<0.5?-1:1):0),0,SCALE.length-1)]*v.register);
+  const when=AC.currentTime+0.05;
+  ({thrush, owl, frog, bellbug, whistler, dove})[v.type](notes,when,pan,dist,solo);
+}
+
+// --- audio ------------------------------------------------------------------
+let AC=null, master=null, verb=null, started=false;
+let windG=null, cricketsG=null;
+function startAudio(){
+  if(started) return; started=true;
+  try{
+    AC=new (window.AudioContext||window.webkitAudioContext)();
+    master=AC.createGain(); master.gain.value=0.6; master.connect(AC.destination);
+    // valley acoustics: feedback delay into lowpass
+    verb=AC.createGain(); verb.gain.value=0.9;
+    const dl=AC.createDelay(2); dl.delayTime.value=0.42;
+    const fb=AC.createGain(); fb.gain.value=0.38;
+    const lp=AC.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=1400;
+    verb.connect(dl); dl.connect(lp); lp.connect(fb); fb.connect(dl);
+    lp.connect(master);
+    verb.connect(master);
+    // wind bed
+    const buf=AC.createBuffer(1,AC.sampleRate*4,AC.sampleRate);
+    const d=buf.getChannelData(0);
+    for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+    const n=AC.createBufferSource(); n.buffer=buf; n.loop=true;
+    const bp=AC.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=240; bp.Q.value=0.4;
+    windG=AC.createGain(); windG.gain.value=0.045;
+    n.connect(bp); bp.connect(windG); windG.connect(master); n.start();
+    // crickets bed (rises with established trust): pulsed high sine
+    const co=AC.createOscillator(); co.type='sine'; co.frequency.value=4300;
+    const cShape=AC.createGain(); cShape.gain.value=0;
+    const cl=AC.createOscillator(); cl.type='square'; cl.frequency.value=13;
+    const clG=AC.createGain(); clG.gain.value=0.5;
+    cl.connect(clG); clG.connect(cShape.gain);
+    cricketsG=AC.createGain(); cricketsG.gain.value=0;
+    co.connect(cShape); cShape.connect(cricketsG); cricketsG.connect(master);
+    co.start(); cl.start();
+  }catch(e){}
+}
+function updateAmbience(t){
+  if(!AC) return;
+  const at=avgTrust();
+  cricketsG.gain.setTargetAtTime(at*0.012, AC.currentTime, 1.5);
+  const hush=racket>P.racketHush;
+  windG.gain.setTargetAtTime(hush?0.075:0.045, AC.currentTime, 1.0);
+}
+function panner(pan,dist){
+  const p=AC.createStereoPanner? AC.createStereoPanner(): null;
+  if(p) p.pan.value=clamp(pan,-0.9,0.9);
+  const lp=AC.createBiquadFilter(); lp.type='lowpass';
+  lp.frequency.value=5200-dist*3400;
+  const g=AC.createGain(); g.gain.value=1-dist*0.45;
+  if(p){ lp.connect(p); p.connect(verb); } else { lp.connect(verb); }
+  g.connect(lp);
+  return g;
+}
+// timbres — each takes (notes[], when, pan, dist)
+function thrush(notes,when,pan,dist){
+  const out=panner(pan,dist);
+  let t=when;
+  for(const f of notes.slice(0,3)){
+    const o=AC.createOscillator(),g=AC.createGain();
+    const m=AC.createOscillator(),mg=AC.createGain();
+    m.frequency.value=f*2.01; mg.gain.value=f*0.6; m.connect(mg); mg.connect(o.frequency);
+    o.frequency.setValueAtTime(f*2,t);
+    o.frequency.exponentialRampToValueAtTime(f*1.5,t+0.12);
+    g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.09,t+0.02);
+    g.gain.exponentialRampToValueAtTime(0.001,t+0.18);
+    o.connect(g); g.connect(out);
+    o.start(t); o.stop(t+0.2); m.start(t); m.stop(t+0.2);
+    t+=0.22+Math.random()*0.1;
+  }
+}
+function owl(notes,when,pan,dist){
+  const out=panner(pan,dist);
+  const f=Math.max(160,notes[0]*0.5);
+  for(let i=0;i<2;i++){
+    const t=when+i*0.55;
+    const o=AC.createOscillator(),g=AC.createGain();
+    o.type='sine';
+    o.frequency.setValueAtTime(f*1.1,t);
+    o.frequency.exponentialRampToValueAtTime(f*0.92,t+0.4);
+    g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.11,t+0.08);
+    g.gain.exponentialRampToValueAtTime(0.001,t+0.5);
+    o.connect(g);g.connect(out);o.start(t);o.stop(t+0.55);
+  }
+}
+function frog(notes,when,pan,dist){
+  const out=panner(pan,dist);
+  const f=Math.max(110,notes[0]*0.35);
+  for(let i=0;i<3;i++){
+    const t=when+i*0.3;
+    const o=AC.createOscillator(),g=AC.createGain(),fl=AC.createBiquadFilter();
+    o.type='sawtooth'; o.frequency.value=f;
+    fl.type='lowpass'; fl.frequency.setValueAtTime(500,t);
+    fl.frequency.exponentialRampToValueAtTime(220,t+0.12);
+    g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.05,t+0.02);
+    g.gain.exponentialRampToValueAtTime(0.001,t+0.14);
+    o.connect(fl);fl.connect(g);g.connect(out);o.start(t);o.stop(t+0.16);
+  }
+}
+function bellbug(notes,when,pan,dist){
+  const out=panner(pan,dist);
+  const f=notes[0]*2;
+  for(let i=0;i<3;i++){
+    const t=when+i*0.42;
+    const o=AC.createOscillator(),g=AC.createGain();
+    const o2=AC.createOscillator(),g2=AC.createGain();
+    o.type='sine'; o.frequency.value=f;
+    o2.type='sine'; o2.frequency.value=f*2.76; g2.gain.value=0.3;
+    g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.055,t+0.005);
+    g.gain.exponentialRampToValueAtTime(0.001,t+0.6);
+    o.connect(g); o2.connect(g2); g2.connect(g); g.connect(out);
+    o.start(t);o.stop(t+0.65);o2.start(t);o2.stop(t+0.65);
+  }
+}
+function whistler(notes,when,pan,dist){
+  const out=panner(pan,dist);
+  const o=AC.createOscillator(),g=AC.createGain();
+  const vib=AC.createOscillator(),vg=AC.createGain();
+  vib.frequency.value=5.5; vg.gain.value=8; vib.connect(vg); vg.connect(o.frequency);
+  o.type='sine';
+  const f0=notes[0]*1.5, f1=(notes[1]||notes[0]*1.2)*1.5;
+  o.frequency.setValueAtTime(f0,when);
+  o.frequency.exponentialRampToValueAtTime(f1,when+0.5);
+  o.frequency.exponentialRampToValueAtTime(f0*0.9,when+1.1);
+  g.gain.setValueAtTime(0,when); g.gain.linearRampToValueAtTime(0.06,when+0.2);
+  g.gain.exponentialRampToValueAtTime(0.001,when+1.3);
+  o.connect(g);g.connect(out);
+  o.start(when);o.stop(when+1.4);vib.start(when);vib.stop(when+1.4);
+}
+function dove(notes,when,pan,dist){
+  const out=panner(pan,dist);
+  const f=Math.max(240,notes[0]*0.7);
+  const seq=[[0,0.25],[0.35,0.5],[0.95,0.4],[1.45,0.4]];
+  for(const [dt0,len] of seq){
+    const t=when+dt0;
+    const o=AC.createOscillator(),g=AC.createGain();
+    o.type='sine';
+    o.frequency.setValueAtTime(f,t);
+    o.frequency.exponentialRampToValueAtTime(f*0.85,t+len);
+    g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.07,t+0.06);
+    g.gain.exponentialRampToValueAtTime(0.001,t+len);
+    o.connect(g);g.connect(out);o.start(t);o.stop(t+len+0.05);
+  }
+}
+// player's own voice: a soft breath-tone that swells while held
+let callOsc=null,callGain=null,callPitch=0;
+function startCallTone(pitchIdx){
+  if(!AC) return;
+  stopCallTone(true);
+  callPitch=pitchIdx;
+  const f=SCALE[pitchIdx];
+  callOsc=AC.createOscillator(); callOsc.type='sine'; callOsc.frequency.value=f;
+  const o2=AC.createOscillator(); o2.type='sine'; o2.frequency.value=f*2;
+  const g2=AC.createGain(); g2.gain.value=0.18;
+  callGain=AC.createGain(); callGain.gain.value=0;
+  callGain.gain.setTargetAtTime(0.12,AC.currentTime,0.35);   // slow swell — gentleness built in
+  callOsc.connect(callGain); o2.connect(g2); g2.connect(callGain);
+  callGain.connect(verb);
+  callOsc.start(); o2.start();
+  callOsc._o2=o2;
+}
+function stopCallTone(abrupt){
+  if(!callOsc||!AC) return;
+  const g=callGain,o=callOsc,o2=callOsc._o2;
+  g.gain.setTargetAtTime(0,AC.currentTime,abrupt?0.02:0.25);
+  setTimeout(()=>{try{o.stop();o2.stop();}catch(e){}},800);
+  callOsc=null;callGain=null;
+}
+
+// --- input ------------------------------------------------------------------
+let holdStart=0,holdPitch=0,holding=false,holdPos=null;
+cv.addEventListener('pointerdown',e=>{
+  playerCallStarted();
+  holding=true; holdStart=performance.now();
+  holdPitch=yToPitch(e.clientY);
+  holdPos=[e.clientX,e.clientY];
+  startCallTone(holdPitch);
+  cv.setPointerCapture(e.pointerId);
+});
+window.addEventListener('pointerup',e=>{
+  if(!holding) return;
+  holding=false;
+  const heldMs=performance.now()-holdStart;
+  stopCallTone(false);
+  rings.push({x:holdPos[0],y:holdPos[1],r:8,a:0.5});
+  playerCallEnded(holdPitch,heldMs);
+});
+window.addEventListener('pointercancel',()=>{ if(holding){holding=false;stopCallTone(true);} });
+
+// --- render -----------------------------------------------------------------
+let rings=[];
+let stars=[];
+function seedStars(){
+  stars=[];
+  for(let i=0;i<170;i++){
+    stars.push({x:Math.random()*W,y:Math.random()*H*0.5,r:Math.random()<0.12?1.8:1,
+      a:0.25+Math.random()*0.65,s:0.4+Math.random()*2,p:Math.random()*7});
+  }
+}
+function render(t){
+  // sky
+  const g=ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,'#05060f');
+  g.addColorStop(0.5,'#0a0d20');
+  g.addColorStop(1,'#131530');
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  for(const st of stars){
+    const tw=0.6+0.4*Math.sin(t*st.s+st.p);
+    ctx.fillStyle=`rgba(225,232,255,${st.a*tw})`;
+    ctx.fillRect(st.x,st.y,st.r,st.r);
+  }
+  // voice glows behind ridges (halos on the far side)
+  for(const v of voices){
+    if(v.glow>0.01||v.ember>0.01){
+      const r=30+v.glow*90;
+      const a=v.glow*0.5+v.ember*0.06;
+      const gg=ctx.createRadialGradient(v.x,v.y,0,v.x,v.y,r);
+      const hue=voiceHue(v);
+      gg.addColorStop(0,`hsla(${hue},60%,70%,${a})`);
+      gg.addColorStop(1,`hsla(${hue},60%,70%,0)`);
+      ctx.fillStyle=gg;
+      ctx.beginPath();ctx.arc(v.x,v.y,r,0,7);ctx.fill();
+    }
+  }
+  // ridges, back to front; trusted voices rim-light their ridge
+  for(let L=ridges.length-1;L>=0;L--){
+    const rd=ridges[L];
+    const shade=[[26,30,58],[19,22,46],[13,15,34],[8,9,22]][L];
+    ctx.fillStyle=css(shade);
+    ctx.beginPath();
+    ctx.moveTo(0,H);
+    for(const [x,y] of rd.pts) ctx.lineTo(x,y);
+    ctx.lineTo(W,H);ctx.closePath();ctx.fill();
+    // rim light near trusted voices on this ridge
+    for(const v of voices){
+      if(v.ridge!==L||v.ember<=0.01) continue;
+      ctx.save();
+      ctx.strokeStyle=`hsla(${voiceHue(v)},50%,72%,${0.12*v.ember+v.glow*0.25})`;
+      ctx.lineWidth=1.5;
+      ctx.beginPath();
+      let started=false;
+      for(const [x,y] of rd.pts){
+        if(Math.abs(x-v.x)<90){ if(!started){ctx.moveTo(x,y);started=true;} else ctx.lineTo(x,y); }
+      }
+      ctx.stroke();ctx.restore();
+    }
+  }
+  // embers: a tiny persistent light where a voice has come to trust you
+  for(const v of voices){
+    if(v.ember>0.02){
+      const puls=0.7+0.3*Math.sin(t*1.4+v.id);
+      ctx.fillStyle=`hsla(${voiceHue(v)},70%,75%,${0.5*v.ember*puls+v.glow*0.4})`;
+      ctx.beginPath();ctx.arc(v.x,v.y,1.8+v.glow*2.5,0,7);ctx.fill();
+    }
+  }
+  // player's call rings
+  for(const r of rings){
+    ctx.strokeStyle=`rgba(220,228,255,${Math.max(0,r.a)})`;
+    ctx.lineWidth=1.2;
+    ctx.beginPath();ctx.arc(r.x,r.y,r.r,0,7);ctx.stroke();
+  }
+  // while holding: a soft gathering of light under the finger
+  if(holding&&holdPos){
+    const held=(performance.now()-holdStart)/1000;
+    const a=Math.min(0.4,held*0.3);
+    const gg=ctx.createRadialGradient(holdPos[0],holdPos[1],0,holdPos[0],holdPos[1],36);
+    gg.addColorStop(0,`rgba(226,232,255,${a})`);
+    gg.addColorStop(1,'rgba(226,232,255,0)');
+    ctx.fillStyle=gg;
+    ctx.beginPath();ctx.arc(holdPos[0],holdPos[1],36,0,7);ctx.fill();
+  }
+  // hush mist: when the valley is waiting you out, air thickens slightly
+  if(racket>P.racketHush*0.7){
+    const a=clamp((racket-P.racketHush*0.7)/P.racketHush,0,0.35);
+    ctx.fillStyle=`rgba(30,34,58,${a*0.5})`;
+    ctx.fillRect(0,0,W,H);
+  }
+  vignette();
+}
+function voiceHue(v){
+  return {thrush:45,owl:28,frog:110,bellbug:190,whistler:280,dove:340}[v.type]||60;
+}
+function vignette(){
+  const g=ctx.createRadialGradient(W/2,H/2,Math.min(W,H)*0.45,W/2,H/2,Math.max(W,H)*0.8);
+  g.addColorStop(0,'rgba(2,3,8,0)');
+  g.addColorStop(1,'rgba(2,3,8,0.5)');
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+}
+
+// --- loop -------------------------------------------------------------------
+const t0=performance.now();
+let skew=0;
+function T(){return (performance.now()-t0)/1000+skew;}
+let prev=performance.now(),lastFrameAt=performance.now();
+const DBG={frames:0};
+function frame(now){
+  DBG.frames++;
+  const dt=Math.min(0.05,(now-prev)/1000);prev=now;
+  update(T(),dt);
+  render(T());
+  lastFrameAt=now;
+  requestAnimationFrame(frame);
+}
+setInterval(()=>{if(performance.now()-lastFrameAt>500)frame(performance.now());},250);
+
+// --- helpers ----------------------------------------------------------------
+function clamp(v,a,b){return v<a?a:(v>b?b:v);}
+function css(c){return `rgb(${c[0]|0},${c[1]|0},${c[2]|0})`;}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}}
+
+// --- tuning -----------------------------------------------------------------
+const panel=document.getElementById('tune');
+window.addEventListener('keydown',e=>{if(e.key==='t')panel.style.display=panel.style.display==='block'?'none':'block';});
+function bind(id,key,fmt){
+  const s=document.getElementById('s_'+id),v=document.getElementById('v_'+id);
+  s.value=P[key];v.textContent=fmt(P[key]);
+  s.addEventListener('input',()=>{P[key]=parseFloat(s.value);v.textContent=fmt(P[key]);});
+}
+bind('rdec','racketDecay',x=>x|0);
+bind('rth','racketHush',x=>x.toFixed(1));
+bind('dmin','replyDelayMin',x=>x.toFixed(2));
+bind('tgain','trustGain',x=>x.toFixed(2));
+
+// --- debug API --------------------------------------------------------------
+window.__reply={
+  P,DBG,
+  get t(){return T();},
+  skipTo(sec){skew=sec-(performance.now()-t0)/1000;return 'now t='+T();},
+  get racket(){return racket;},
+  voices(){return voices.map(v=>({id:v.id,type:v.type,x:v.x|0,trust:+v.trust.toFixed(2),shyness:+v.shyness.toFixed(2),answers:v.trust>=v.shyness}));},
+  log(){return eventLog.slice(-30);},
+  pendingCount(){return pending.length;},
+  call(pitchIdx,heldMs){ // synthetic soft call (no audio needed)
+    motifNote(pitchIdx,heldMs);
+    return {racket:+racket.toFixed(2),pending:pending.length};
+  },
+  step(sims){for(let i=0;i<sims;i++){skew+=0.016;update(T(),0.016);}return 'stepped to t='+T().toFixed(1);},
+  avgTrust,
+};
+function motifNote(pitchIdx,heldMs){ playerCallEnded(pitchIdx,heldMs??600); }
+
+// --- go ---------------------------------------------------------------------
+resize();seedStars();
+window.addEventListener('resize',resize);
+const intro=document.getElementById('intro');
+setTimeout(()=>{intro.style.opacity=1;},600);
+setTimeout(()=>{intro.style.opacity=0;},7000);
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
