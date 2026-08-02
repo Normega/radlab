@@ -1091,3 +1091,70 @@ then applied to trichotillomania and excoriation, while the same chapter states 
 factors matter more for the other OCD-related disorders than for OCD itself. Both new pages say so
 explicitly rather than inheriting the OCD account silently. When a source generalises across a
 category, the page should say which member the evidence was actually collected on.
+
+### 10.5 Done 2026-08-02: ten of the sixteen overviews
+
+**Overviews 3/16 → 13/16.** All ten that could be written from ingested material are written; the
+three that remain are `sleep-wake-disorders`, `paraphilic-disorders` and `sexual-dysfunctions`.
+
+**That is not a shortfall, it is §4's list showing up in a different shape.** Every member page of
+those three overviews is unwritten, because the textbook has no chapter for sleep-wake or for
+Lecture 7. An overview whose members are all empty would have no source at all. **Check member-page
+coverage before scheduling an overview** — a chapter map assembled from nothing is the one failure
+mode this job class has.
+
+Written: `mood-disorders`, `psychosis-and-the-schizophrenia-spectrum`, `personality-disorders`,
+`anxiety-disorders`, `obsessive-compulsive-and-related-disorders`,
+`somatic-symptom-and-related-disorders`, `trauma-and-stressor-related-disorders`,
+`dissociative-disorders`, `feeding-and-eating-disorders`,
+`substance-related-and-addictive-disorders`. **7.4k–12.3k chars each, zero empty sections across all
+ten**, which matches what the `neurocognitive-disorders` pilot predicted in §3.
+
+**Method: synthesise from the member pages, cite the module.** The member pages are already faithful
+renderings of the module and carry vetted figures, so building the map from them is more accurate
+than re-reading the chapter and re-deriving the numbers — and the citation still traces to the
+module, because that is where the content came from. Each overview got its own `reference` job with
+`target_slug` set (the `ingest_jobs_target_slug_ck` constraint requires it for `source_type='reference'`).
+
+**What the overviews are for, learned by writing ten of them.** The useful ones do something the
+member pages structurally cannot: put the chapter's numbers in one table so the outliers show. That
+is where the teaching value concentrated every time —
+
+- **Personality disorders**: the DSM-5-TR Table 13.1 grid, where two disorders were found at **0.0%**
+  by one national survey and 6.2% and 1.8% by another. The best epidemiology teaching material in
+  the corpus, and an argument about method rather than about people.
+- **Feeding and eating**: anorexia and bulimia run ~10:1 female, **binge-eating disorder is close to
+  even** — which complicates the simple sociocultural account, since the disorder with the least
+  body-image content has the most even ratio.
+- **Substance-related**: **9% of US teens and adults against ~22% of Native Americans**, reported
+  with no explanation. Teaching that rate without context teaches a stereotype; it is the single
+  clearest place in the corpus where Canadian material is a requirement and not an enrichment.
+- **Mood**: unipolar ~30% of relatives affected against bipolar heritability near **90%**.
+- **Dissociative**: **50% of adults report a transient depersonalization episode**, 1–2% have the
+  disorder — the course's cleanest continuum-with-normality case.
+- **OCD-related**: the reference disorder (OCD, ~1.2%) is **rarer than three of the four conditions
+  grouped around it**.
+
+**A structural pattern the overviews made visible, which no single page could.** Four chapters
+develop their etiology on one member and apply it to the rest by assumption: psychosis (schizophrenia
+only), trauma (PTSD only), OCD-related (OCD only), somatic (class-level only). Each overview says so
+explicitly rather than presenting a chapter-wide account that does not exist. **When a source
+generalises across a category, the page should name the member the evidence was collected on** — the
+same rule §10.4 recorded for trichotillomania and excoriation.
+
+### 10.6 A wrong call worth recording
+
+**Claim made and retracted the same day:** that 168 markdown-style links (`[text](slug.md)`) across
+35 pages "never reached `wiki_links`" and understated the graph. **False.** `sync_wiki_links()`
+parses both forms explicitly, and `src/academic/fieldguide/wiki/wikiText.js` normalises `[[…]]` *into*
+`[label](slug.md)` so one renderer handles both. The link total was unchanged at 802 across the
+edit — which was visible immediately and is the proof.
+
+The conversion was applied before the claim was checked. It is harmless (display text is preserved
+exactly, and the corpus now uses one syntax), but it created 35 version-history entries carrying a
+false rationale, which were corrected in place afterwards.
+
+**The lesson is ordering, and it is the same one §9 already teaches for slugs.** The check that would
+have caught this — read `sync_wiki_links()` — takes one query, and running it *first* would have cost
+nothing. A corpus-wide "defect" that no one has noticed is more likely to be a misreading of the
+schema than a real bug; verify the mechanism before mass-editing on the strength of it.

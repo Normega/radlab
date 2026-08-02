@@ -28,7 +28,11 @@ brief for them. In yield order:
    and `gambling-disorder`. This is now the *entire* remaining Tier A deficit.
 3. **`suicide-and-self-harm`** — the only unwritten foundation, and now the most-linked red link in
    the corpus (7 inbound references, 5 of them added by Module 16).
-4. **The 13 unwritten overviews** — a reference pass, not a source problem.
+4. ~~The 13 unwritten overviews~~ — **10 done 2026-08-02**, taking overviews 3/16 → 13/16 with
+   zero empty sections (run plan §10.5). The remaining three — `sleep-wake-disorders`,
+   `paraphilic-disorders`, `sexual-dysfunctions` — are **blocked by item 2**: every one of their
+   member pages is unwritten, so there is nothing to map. Check member coverage before scheduling
+   an overview.
 
 **Norm is supplying additional open-licensed material, including a Canadian text.** Run plan §10.2
 lists where a US source is not merely foreign but *wrong for the course*: duty to warn (Tarasoff vs
@@ -61,21 +65,21 @@ Everything is merged and pushed to `main`; nothing sits on a branch.
 ## 2. Live database state (radlab-academic, 2026-08-02, after the companion volume)
 
 ```
-204 pages with bodies       0 published — no student can see anything yet
-802 wikilinks               0 proposals pending — review queue clear
-11 red links                0 blue links to an empty page
+214 pages with bodies       0 published — no student can see anything yet
+988 wikilinks               0 proposals pending — review queue clear
+19 red links                0 blue links to an empty page
 0 duplicate headings        0 off-catalogue disorder pages
-130 catalogue rows          48 ingest jobs
-108 empty sections          79 annotations
+130 catalogue rows          58 ingest jobs
+108 empty sections         109 annotations
 ```
 
-**Catalogue coverage: Tier A 46/54, Tier B 24/46, foundations 13/14, overviews 3/16.**
+**Catalogue coverage: Tier A 46/54, Tier B 24/46, foundations 13/14, overviews 13/16.**
 
 Tier A by lecture — L3 **10/10**, L4 **4/4**, L5 **4/4**, L6 3/5, L7 **0/5**, L8 4/5, L9 **2/2**,
 L10 **9/9**, L11 **10/10**. Six lectures complete. **Every remaining Tier A gap is a page the
 textbook does not cover** — the list is closed and is item 2 above.
 
-All 11 red links point at real catalogue slugs not yet written (`suicide-and-self-harm` ×7 inbound,
+All 19 red links point at real catalogue slugs not yet written (`suicide-and-self-harm` ×7 inbound,
 `brief-psychotic-disorder`, `hypersomnolence-disorder`, `kleptomania`, `pyromania`). A red link to
 an unwritten catalogue page is the designed state; a red link to a *non*-catalogue slug is a defect,
 and there are now none.
