@@ -1645,3 +1645,66 @@ histories` and `## Outcome evidence on historical reforms`** as second copies ra
 existing empty ones; and a `clinical-assessment` block had landed **after `## Contested`** instead of
 inside its own section. Both were repaired pre-acceptance. **That is three separate runs now in which
 the pre-accept checks caught a real structural error** — they are not ceremony.
+
+---
+
+## 17. `student-support-resources` — the first student-facing page, and the first with a standing verification requirement
+
+**Source:** Kulzhabayeva, D. (2026). *Mental Health and Student Support Resources.* RADlab, University
+of Toronto. **Internal lab material, compiled 2026-07-20** — not an openly licensed publication, used
+with the lab's own authority for the lab's own course.
+
+This closed the **highest-priority verification item** flagged in §15.3: the `suicide-and-self-harm`
+page gave the **US 988 line only**.
+
+### 17.1 What it carries
+
+**Immediate danger** — 911 or nearest emergency department. **Crisis, any time** — **9-8-8 Suicide
+Crisis Helpline** (call or text 988, free and confidential anywhere in Canada, 24h) and **Good2Talk**
+(1-866-925-5454 / text GOOD2TALKON to 686868, Ontario post-secondary students, 24h). **U of T** —
+Mental-Health Resource Portal, and **TELUS Health Student Support** (1-844-451-9700, 24h, all U of T
+students). **All three campuses** — St. George, UTM, UTSC, with same-day mental-health appointment
+routing for St. George. **Outside Canada** — Find-A-Helpline, verified lines in 150+ countries.
+
+**Worth noting for anyone reading the literature: Canada and the US share the 988 digits.** A paper
+citing "988" may mean either service, and the pages say so.
+
+### 17.2 Two editorial decisions
+
+**The study-specific research contact was omitted.** The source ends with the investigator name and
+email for the Dana Kulzhabayeva causal-reasoning study, because the document was written to appear at
+the end of *that study's* surveys. **Directing PSY240 students to a different study's investigator
+would misdirect them.** Recorded in `result_json.omitted_deliberately` so the omission is visible as a
+decision rather than an oversight.
+
+**The page states why it exists, from the corpus's own findings.** About **60% of people with
+suicidal thoughts do not seek help**, citing **low perceived need** and **wanting to handle it alone**
+— not unavailable treatment; **~10% of people with gambling disorder ever seek treatment**; and fear
+of stigma recurs as a barrier throughout. **The barrier the literature identifies is knowledge and
+reluctance, not scarcity** — which is exactly what a visible, specific list addresses. That makes the
+page an application of the course content rather than boilerplate appended to it.
+
+### 17.3 A standing obligation, not a one-off check
+
+**This is the only page in the corpus where a stale detail could cause direct harm.** Phone numbers,
+URLs and service hours change. The page carries a visible ⚠ block and the job carries a
+`staleness_warning`:
+
+> Re-verify **every entry** before the Field Guide is published to students, and **again at the start
+> of each term**. If a number cannot be verified, **remove it rather than publish it unchecked**.
+
+**A frontmatter flag `verify_before_publishing: true` marks it**, so a future publication pass can
+find it by query rather than by memory.
+
+### 17.4 Open: how prominently to signpost it
+
+It currently has **one inbound link**, from `suicide-and-self-harm` — which is itself linked from
+eleven disorder pages, so it is one hop from most sensitive material. **One hop is a real barrier for
+a reader in distress**, but where to place trigger-adjacent signposting across a course is a
+pedagogical decision for the instructor, not a corpus-mechanics one.
+
+The defensible bounded rule, if wanted: **link it from every page on which the corpus itself reports
+elevated suicide risk** — currently `major-depressive-disorder`, `bipolar-i-disorder`,
+`borderline-personality-disorder`, `adhd`, `autism-spectrum-disorder`, `conduct-disorder`,
+`specific-learning-disorder`, `intermittent-explosive-disorder`, `gambling-disorder`,
+`anorexia-nervosa` and `gender-dysphoria`. **Norm's call.**
