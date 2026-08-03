@@ -143,7 +143,7 @@ export default function WikiIndex() {
 
       {results !== null ? (
         <>
-          <h2 style={S.h2}>
+          <h2 style={S.h2Loose}>
             {searching ? 'Searching…' : `${results.length} result${results.length === 1 ? '' : 's'}`}
           </h2>
           {results.map(r => (
@@ -206,7 +206,14 @@ export default function WikiIndex() {
           {visibleGroups.map(g => {
             const isFolded = folded.has(g.number)
             return (
-            <section key={g.number} style={{ marginTop: 26 }}>
+            <section key={g.number} style={{ marginTop: 16 }}>
+              {/* The heading is a full-width band rather than loose text. Two
+                  reasons beyond looks: the band's left edge lines up with the
+                  card grid and the search box, which loose text with a leading
+                  caret never did; and the icons carry a baked-in white
+                  background from the source composite, so on the pink ground
+                  they read as white squares — inside a white band they
+                  disappear, with no tile or transparency needed. */}
               <h2 style={S.h2}>
                 <button
                   type="button"
@@ -217,9 +224,8 @@ export default function WikiIndex() {
                   })}
                   aria-expanded={!isFolded}
                   aria-controls={`chapter-${g.number}`}
-                  style={S.chToggle}
+                  style={S.band}
                 >
-                  <span aria-hidden="true" style={{ ...S.caret, transform: isFolded ? 'rotate(-90deg)' : 'none' }}>▾</span>
                   {/* Decorative: the chapter is named right beside it, so an
                       alt text would only make a screen reader say it twice. */}
                   {chapterIcon(g.number) && (
@@ -227,8 +233,13 @@ export default function WikiIndex() {
                          width={46} height={46} loading="lazy" style={S.chIcon} />
                   )}
                   {g.number > 0 && <span style={S.chNum}>{g.number}</span>}
-                  <span>{g.title}</span>
-                  <span style={S.chCount}>{g.readable} of {g.rows.length}</span>
+                  {/* Title and count share a wrapping row, so a long chapter
+                      name breaks before it collides with the count. */}
+                  <span style={S.chTitles}>
+                    <span style={S.chTitle}>{g.title}</span>
+                    <span style={S.chCount}>{g.readable} of {g.rows.length}</span>
+                  </span>
+                  <span aria-hidden="true" style={{ ...S.caret, transform: isFolded ? 'rotate(-90deg)' : 'none' }}>▾</span>
                 </button>
               </h2>
               <div id={`chapter-${g.number}`} hidden={isFolded} style={isFolded ? undefined : S.grid}>
@@ -268,7 +279,7 @@ export default function WikiIndex() {
 
           {contributed.length > 0 && (
             <section style={{ marginTop: 34 }}>
-              <h2 style={S.h2}>Contributed pages</h2>
+              <h2 style={S.h2Loose}>Contributed pages</h2>
               <p style={S.sub}>
                 Pages built from papers rather than from the course catalogue — studies, concepts,
                 treatments and debates that hang off the disorder pages.
@@ -360,8 +371,10 @@ const S = {
 
   search: { width: '100%', boxSizing: 'border-box', fontSize: 16, padding: '11px 14px', borderRadius: 10, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx)', margin: '18px 0 4px' },
 
-  h2: { fontFamily: SERIF, fontSize: 20, color: 'var(--tx)', margin: '24px 0 10px', display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' },
-  chIcon: { flexShrink: 0, alignSelf: 'center', borderRadius: 10, border: '1px solid var(--bd)', background: '#fff', objectFit: 'contain' },
+  h2: { margin: '0 0 10px' },
+  // Search-result headings still use loose text; only chapter headings are bands.
+  h2Loose: { fontFamily: SERIF, fontSize: 20, color: 'var(--tx)', margin: '24px 0 10px' },
+  chIcon: { flexShrink: 0, borderRadius: 9, objectFit: 'contain' },
   chNum: { fontFamily: MONO, fontSize: 12, color: 'var(--tx2)', border: '1px solid var(--bd)', borderRadius: 6, padding: '1px 6px' },
   chCount: { fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx2)' },
   legend: { fontSize: 13, color: 'var(--tx2)', lineHeight: 1.6, margin: '16px 0 0', maxWidth: '78ch' },
@@ -373,8 +386,10 @@ const S = {
   foldCount: { fontFamily: MONO, fontSize: 11, letterSpacing: 0.5, color: 'var(--tx2)' },
   // The h2 keeps the heading semantics; the button inside takes the click, so a
   // screen reader still hears a heading rather than only a control.
-  chToggle: { display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap', width: '100%', textAlign: 'left', padding: 0, border: 'none', background: 'none', cursor: 'pointer', fontFamily: SERIF, fontSize: 20, color: 'var(--tx)' },
-  caret: { flexShrink: 0, fontSize: 12, color: 'var(--pk)', transition: 'transform .15s ease', display: 'inline-block' },
+  band: { display: 'flex', alignItems: 'center', gap: 12, width: '100%', boxSizing: 'border-box', background: 'var(--bgc)', border: '1px solid var(--bds)', borderRadius: 12, padding: '7px 14px 7px 7px', textAlign: 'left', cursor: 'pointer', color: 'var(--tx)' },
+  chTitles: { display: 'flex', alignItems: 'baseline', gap: 9, flexWrap: 'wrap', minWidth: 0 },
+  chTitle: { fontFamily: SERIF, fontSize: 20, lineHeight: 1.15 },
+  caret: { flexShrink: 0, fontSize: 13, color: 'var(--pk)', marginLeft: 'auto', paddingLeft: 8, transition: 'transform .15s ease', display: 'inline-block' },
   typeLabel: { fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx2)', margin: '0 0 6px' },
 
   grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 230px), 1fr))', gap: 10 },
