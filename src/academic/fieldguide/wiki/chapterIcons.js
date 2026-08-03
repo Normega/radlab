@@ -8,11 +8,15 @@
 // A chapter with no file renders *no* icon rather than a broken image, so a
 // half-finished set degrades to the text-only layout it replaces.
 //
-// Vite inlines these as URLs at build time (`query: '?url'`), so the bundle
-// carries paths, not image data.
+// `?no-inline` matters. Most of these icons are under Vite's 4 KB inline
+// threshold, so by default they are base64'd into a shared chunk — which built
+// out to 56 KB that *every* wiki page had to download, including an article
+// page that shows exactly one 22px icon. Forcing separate files lets the
+// browser fetch only the icons actually on screen, and makes `loading="lazy"`
+// mean something.
 const files = import.meta.glob('../../../assets/chapter-icons/*.{webp,png,svg}', {
   eager: true,
-  query: '?url',
+  query: '?no-inline&url',
   import: 'default',
 })
 
