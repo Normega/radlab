@@ -329,46 +329,136 @@ function playerUpdate(dt){
 }
 
 // --- audio ------------------------------------------------------------------
-let AC=null,master=null,padG=null,cricketsG=null,started=false;
+// --- audio: two cellos -------------------------------------------------------
+// The wisp and the traveller are each a bowed string, faint, always playing.
+// Distance is intonation: out at the edges the player's string sits flat of a
+// fifth and beats against the wisp's; at the companion distance, at a shared
+// pace, it glides true and the beating stops. Coming into tune IS the feedback
+// — no meter, no chime, and nothing announces the moment it locks.
+let AC=null,master=null,cricketsG=null,started=false;
+let wispCello=null,playerCello=null,harmony=0;
+// keeping pace means covering the same ground over time, not moving at an
+// identical instant — someone walking alongside is always correcting, so the
+// attunement signal reads smoothed speeds, never frame-level velocity
+let spdAvgP=0,spdAvgW=0,accAvg=0,AUD={};
+const ROOT=146.83;            // D3 — both voices sit in cello register
+
+function noiseBuffer(sec){
+  const b=AC.createBuffer(1,Math.floor(AC.sampleRate*sec),AC.sampleRate);
+  const d=b.getChannelData(0);
+  for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+  return b;
+}
+
+function makeCello(freq,pan){
+  const out=AC.createGain(); out.gain.value=0;
+  const lp=AC.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=780; lp.Q.value=2.2;
+  const body=AC.createBiquadFilter(); body.type='peaking';
+  body.frequency.value=260; body.Q.value=1.1; body.gain.value=5;
+  const oscs=[];
+  for(const det of [-4,4]){                       // two strings' worth of body
+    const o=AC.createOscillator(); o.type='sawtooth';
+    o.frequency.value=freq; o.detune.value=det;
+    const g=AC.createGain(); g.gain.value=0.42;
+    o.connect(g); g.connect(lp); o.start(); oscs.push(o);
+  }
+  const bn=AC.createBufferSource(); bn.buffer=noiseBuffer(3); bn.loop=true;
+  const bf=AC.createBiquadFilter(); bf.type='bandpass'; bf.frequency.value=1900; bf.Q.value=1.4;
+  const bg=AC.createGain(); bg.gain.value=0.03;   // the bow on the string
+  bn.connect(bf); bf.connect(bg); bg.connect(lp); bn.start();
+  const vib=AC.createOscillator(); vib.frequency.value=4.4;
+  const vibG=AC.createGain(); vibG.gain.value=8;  // cents, narrowed as it settles
+  for(const o of oscs) vibG.connect(o.detune);
+  vib.connect(vibG); vib.start();
+  lp.connect(body);
+  let tail=body;
+  if(AC.createStereoPanner){ const p=AC.createStereoPanner(); p.pan.value=pan||0; body.connect(p); tail=p; }
+  tail.connect(out); out.connect(master);
+  return {out,oscs,vibG,lp,
+    setFreq(f,tau){ for(const o of oscs) o.frequency.setTargetAtTime(f,AC.currentTime,tau); },
+    setLevel(v,tau){ out.gain.setTargetAtTime(v,AC.currentTime,tau); },
+    setVib(c,tau){ vibG.gain.setTargetAtTime(c,AC.currentTime,tau); },
+    setTone(hz,tau){ lp.frequency.setTargetAtTime(hz,AC.currentTime,tau); }};
+}
+
 function startAudio(){
   if(started)return;started=true;
   try{
     AC=new (window.AudioContext||window.webkitAudioContext)();
     master=AC.createGain();master.gain.value=0.5;master.connect(AC.destination);
-    // crickets
-    const co=AC.createOscillator();co.type='sine';co.frequency.value=4100;
-    const sh=AC.createGain();sh.gain.value=0;
-    const cl=AC.createOscillator();cl.type='square';cl.frequency.value=11;
-    const clG=AC.createGain();clG.gain.value=0.5;
-    cl.connect(clG);clG.connect(sh.gain);
-    cricketsG=AC.createGain();cricketsG.gain.value=0.008;
-    co.connect(sh);sh.connect(cricketsG);cricketsG.connect(master);
-    co.start();cl.start();
-    // bond pad: two soft detuned sines; steadier with bond, never louder than soft
-    padG=AC.createGain();padG.gain.value=0;
-    const f=110;
-    for(const det of [0,0.5]){
-      const o=AC.createOscillator();o.type='sine';o.frequency.value=f+det;
-      const g=AC.createGain();g.gain.value=0.5;
-      o.connect(g);g.connect(padG);o.start();
-    }
-    padG.connect(master);
+    // night air: bandpassed noise breathing under a slow tremolo — no tone
+    const n=AC.createBufferSource(); n.buffer=noiseBuffer(4); n.loop=true;
+    const bp=AC.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=4200; bp.Q.value=4;
+    const trem=AC.createGain(); trem.gain.value=0.55;
+    const lfo=AC.createOscillator(); lfo.type='sine'; lfo.frequency.value=5.2;
+    const lfoG=AC.createGain(); lfoG.gain.value=0.4;
+    lfo.connect(lfoG); lfoG.connect(trem.gain); lfo.start();
+    cricketsG=AC.createGain(); cricketsG.gain.value=0.004;
+    n.connect(bp); bp.connect(trem); trem.connect(cricketsG); cricketsG.connect(master); n.start();
+    // the two voices, bowed in from silence
+    wispCello=makeCello(ROOT,-0.16);
+    playerCello=makeCello(ROOT*1.5,0.16);
+    wispCello.setLevel(0.052,2.0);
+    playerCello.setLevel(0.046,2.0);
   }catch(e){}
 }
+
 function audioUpdate(dt){
   if(!AC)return;
-  padG.gain.setTargetAtTime(bond*0.028,AC.currentTime,1.2);
+  const d=Math.hypot(player.x-wisp.x,player.y-wisp.y);
+  const ideal=(P.nearR+P.farR)/2, span=(P.farR-P.nearR)/2;
+  // a broad plateau through the middle of the band, falling off only toward
+  // its edges: walking companionably is a zone, not a tightrope
+  const near=1-clamp((Math.abs(d-ideal)-span*0.45)/(span*0.55),0,1);
+  const a=1-Math.exp(-dt/1.8);
+  spdAvgP+=(player.spd-spdAvgP)*a;
+  spdAvgW+=(wisp.spd-spdAvgW)*a;
+  accAvg+=(player.accel-accAvg)*a;
+  const pace=1-clamp(Math.abs(spdAvgP-spdAvgW)/110,0,1);
+  const calm=1-clamp(accAvg/900,0,1);
+  AUD={near:+near.toFixed(2),pace:+pace.toFixed(2),calm:+calm.toFixed(2),
+       d:d|0,spdP:spdAvgP|0,spdW:spdAvgW|0,acc:accAvg|0};
+  // distance leads; pace and steadiness only colour it, so a player who is
+  // simply there, correcting as anyone would, still gets to hear it lock
+  let target=near*(0.75+0.25*pace)*(0.8+0.2*calm);
+  if(wisp.mist>0||wisp.state==='gone') target=0;         // alone, you drift flat
+  if(meadowBloom>0) target=1;                            // the ending resolves
+  harmony+=(target-harmony)*Math.min(1,dt*0.7);          // settles slowly, like tuning
+  // settling assist: get near enough and the string finishes the last of the
+  // distance itself. You do not manufacture the harmony; you come close and
+  // it arrives — and the smoothstep means it eases in rather than snapping.
+  const k=clamp(harmony/0.8,0,1), tune=k*k*(3-2*k);
+  const ratio=1.5*(1-0.038*(1-tune));                    // sour fifth → true fifth
+  // the debug readout reports what is actually sounding, never its own copy
+  // of the formula — a mirrored constant is how tuning data starts lying
+  AUD.ratio=ratio;
+  playerCello.setFreq(ROOT*ratio,0.55);
+  playerCello.setVib(9-6*tune,1.2);                      // steadier, never louder
+  wispCello.setVib(7-4*tune,1.2);
+  playerCello.setTone(760+tune*260,1.0);
+  wispCello.setTone(740+tune*240,1.0);
+  const presence=(wisp.state==='gone'||wisp.mist>0)?0:clamp(1-(d-P.nearR)/P.loseR,0.25,1);
+  const fade=meadowBloom>0?1-meadowBloom*0.55:1;
+  // out of tune is also quieter — two voices that aren't blending don't fill
+  // the air. Consonance is never a volume reward; dissonance simply recedes.
+  wispCello.setLevel((0.034+0.018*tune)*presence*fade,1.4);
+  playerCello.setLevel((0.030+0.016*tune)*fade,1.4);
+  cricketsG.gain.setTargetAtTime(0.004+harmony*0.002,AC.currentTime,2);
 }
+
 function sfxMist(){
   if(!AC)return;
+  // the bow lifts: a soft exhale, dark, not a hiss
   const t0=AC.currentTime;
-  const buf=AC.createBuffer(1,AC.sampleRate*0.5,AC.sampleRate);
-  const d=buf.getChannelData(0);
-  for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*(1-i/d.length);
-  const n=AC.createBufferSource();n.buffer=buf;
-  const f=AC.createBiquadFilter();f.type='highpass';f.frequency.value=2000;
-  const g=AC.createGain();g.gain.value=0.06;
-  n.connect(f);f.connect(g);g.connect(master);n.start(t0);
+  const n=AC.createBufferSource(); n.buffer=noiseBuffer(0.9);
+  const f=AC.createBiquadFilter(); f.type='lowpass';
+  f.frequency.setValueAtTime(1100,t0);
+  f.frequency.exponentialRampToValueAtTime(280,t0+0.8);
+  const g=AC.createGain();
+  g.gain.setValueAtTime(0,t0);
+  g.gain.linearRampToValueAtTime(0.045,t0+0.14);
+  g.gain.exponentialRampToValueAtTime(0.001,t0+0.9);
+  n.connect(f);f.connect(g);g.connect(master);n.start(t0);n.stop(t0+0.95);
 }
 function sfxSurface(){
   if(!AC)return;
@@ -383,7 +473,8 @@ function sfxSurface(){
 function sfxBloom(){
   if(!AC)return;
   const t0=AC.currentTime;
-  const fs=[220,277,330,440];
+  // D major over the two cellos' D and A — the ending resolves their fifth
+  const fs=[293.66,369.99,440,587.33];
   fs.forEach((f,i)=>{
     const o=AC.createOscillator(),g=AC.createGain();
     o.type='sine';o.frequency.value=f;
@@ -643,6 +734,12 @@ window.__alongside={
   get t(){return T();},
   skipTo(sec){skew=sec-(performance.now()-t0)/1000;return 'now t='+T();},
   get bond(){return bond;},
+  get harmony(){return harmony;},
+  audio(){const k=clamp(harmony/0.8,0,1),tune=k*k*(3-2*k);
+    const ratio=AUD.ratio||1.5;
+    return {started, harmony:+harmony.toFixed(3), tune:+tune.toFixed(3),
+      playerHz:+(ROOT*ratio).toFixed(1), trueFifthHz:+(ROOT*1.5).toFixed(1),
+      centsFlat:+(1200*Math.log2(ratio/1.5)).toFixed(1), f:AUD};},
   state(){return {wisp:{x:wisp.x|0,y:wisp.y|0,state:wisp.state,mist:+wisp.mist.toFixed(2),tourIdx:wisp.tourIdx,spd:+wisp.spd.toFixed(0)},
     player:{x:player.x|0,y:player.y|0,spd:+player.spd.toFixed(0)},
     bond:+bond.toFixed(3),fireflies:fireflies.length,settleTimer:+settleTimer.toFixed(1),meadowBloom:+meadowBloom.toFixed(2),
