@@ -1709,3 +1709,73 @@ section on each, so a reader in distress does not have to hunt for it. The pages
 `borderline-personality-disorder`, `adhd`, `autism-spectrum-disorder`, `conduct-disorder`,
 `specific-learning-disorder`, `intermittent-explosive-disorder`, `gambling-disorder`,
 `anorexia-nervosa` and `gender-dysphoria`. **Norm's call.**
+
+---
+
+## 18. The `contested` campaign — World Psychiatry, and why this is per-page not per-source
+
+**`contested` is now the largest hole in the corpus: 47 pages, 38% of all empty sections** — 22 of
+them Tier A. `treatment` follows at 27, `etiology` at 19, `epidemiology` at 11.
+
+**Textbooks will not close it.** Five textbooks in, every one supplied presentation, prevalence,
+etiology and treatment, and every one left `contested` empty on most pages. Critique is a different
+genre. The vehicle the corpus already has for it is the **`debate` page type**
+(`eating-disorders-as-an-ocd-variant`, `sociocultural-iatrogenic-model-of-did`,
+`categorical-vs-dimensional-personality-models`) and the **journal-article ingest** (Fonagy, Shedler,
+Menchón).
+
+### 18.1 Proof of concept: PTSD
+
+**Bryant, R. A. (2019). Post-traumatic stress disorder: a state-of-the-art review of evidence and
+challenges. *World Psychiatry*, 18(3), 259-269.** Retrieved from PMC6732680, verified before use.
+
+It closed the gap completely and produced the best `contested` section in the corpus:
+
+- **Only 42% of trauma survivors are diagnosed with PTSD under *both* DSM-5 and ICD-11.** Two manuals,
+  the same people, agreement on fewer than half the cases — which reframes every prevalence figure on
+  the page, including the Canadian ones.
+- **636,120 permutations** of how DSM-5 PTSD may present. Two people can share the diagnosis with
+  almost no symptoms in common, which is Bryant's explanation for why biomarkers have not been found.
+- **The breadth/specificity trade-off has a real cost on both sides**: DSM-5 reaches more survivors,
+  but moving beyond fear symptoms **undermines the evidence base of the exposure treatments the page
+  recommends**.
+- **Complex PTSD survives its validity test** — latent class analyses distinguish it from PTSD *and*
+  from borderline personality disorder.
+- **Only two-thirds respond adequately to trauma-focused CBT**, which Bryant reads as evidence the
+  definition is not capturing the essential mechanisms — a failure of the *category* presenting as a
+  failure of treatment.
+
+### 18.2 Licence handling
+
+The PMC record shows **"© 2019 World Psychiatric Association" with no explicit Creative Commons
+statement** in the retrieved metadata. Treated **conservatively as free-to-read but not remixable**:
+cite and paraphrase, no extended verbatim reproduction — the same handling as StatPearls (§4) and the
+NAP gambling source (§14.1), recorded in `licence_note` on the job. **Verify before any reuse beyond
+paraphrase.** Much of World Psychiatry is CC-licensed; the conservative default costs nothing.
+
+### 18.3 The shape of the campaign, and why it is slower than a textbook sweep
+
+**This is one article per page, not one source per chapter.** Each target needs: a search, a
+**verification fetch** to confirm the article exists and says what the search summary claims, a read,
+and a write. Searches for OCD, bipolar, panic and GAD returned mostly *non*-World Psychiatry work,
+so each disorder has to be checked individually rather than assumed covered.
+
+**Never write a citation from a search-result summary.** Two of the first candidates illustrate why:
+`PMC11733476` looked like Brewin's 2025 PTSD review and is in fact **Maercker's commentary on it**;
+the Wiley copy of Brewin returns **403** to automated fetch. Both were caught by fetching before
+writing. A fabricated citation in a reference corpus is worse than an empty section.
+
+**Practical route:** Wiley blocks automated access; **PMC is the reliable path** for World Psychiatry.
+
+### 18.4 Where to aim next
+
+World Psychiatry's **state-of-the-art review series** is the richest seam and covers major disorders.
+Highest-value remaining Tier A targets with empty `contested`: `obsessive-compulsive-disorder`,
+`bipolar-i-disorder`, `generalized-anxiety-disorder`, `panic-disorder`, `substance-use-disorder`
+(foundation), `dissociative-identity-disorder`, `neurocognitive-disorder-due-to-alzheimers-disease`,
+`delirium`, `binge-eating-disorder`.
+
+Where World Psychiatry has no matching review, other fully open-access venues carry the same genre —
+**F1000Research** (already used for `gambling-disorder`), **BMC Psychiatry**, **Frontiers in
+Psychiatry** — and the **`debate` page type** remains the right vehicle for a dispute that deserves
+its own page rather than a section.
