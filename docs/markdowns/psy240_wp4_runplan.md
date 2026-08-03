@@ -1482,3 +1482,77 @@ Every figure is US or European. For a Canadian course the omission is specific a
 **provincial governments both regulate gambling and depend on its revenue**, and provincial
 self-exclusion programmes have no equivalent in this literature. Neither source mentions
 industry funding of gambling research. Recorded as a declared gap on the page.
+
+---
+
+## 15. The skeleton is complete — `suicide-and-self-harm`
+
+**Tier A 54/54. Foundations 14/14. Overviews 16/16.** Every page the catalogue marks as central,
+foundational or structural now has a body. **Only Tier B remains incomplete, at 33/46.**
+
+`suicide-and-self-harm` was the last, and had been the most-linked red link in the corpus at **11
+inbound references** — accumulated across eleven disorder pages that each reported suicide risk with
+nowhere to point. Source: **Davies (2025) ch 22**, adapted from Coursehero under CC BY-SA.
+
+### 15.1 Safe messaging, and what it cost analytically
+
+The source includes a **named-individual case study with circumstantial detail**. The page **omits the
+circumstances and method entirely** and keeps only the general teaching point — that risk is often
+invisible to those closest to the person, so **absence of visible warning signs is not evidence of
+absence of risk**. A `editorial_note` on the ingest job records the decision so it is not silently
+reversed later.
+
+**It cost the page nothing.** The analytic content survives without the detail, which is worth knowing
+for the next time a source mixes clinical material with case narrative. Means-restriction evidence
+(higher rates in households with firearms) **is** retained, because it is protective public-health
+content rather than method information — that distinction is the one to apply.
+
+The page also carries a short reader-facing note at the top pointing to the crisis-line section.
+
+### 15.2 What the chapter supplies that the corpus needed
+
+**The ideation gap is the organising finding.** Roughly **10.6 million US adults with serious suicidal
+thoughts**, against **1.4 million attempts** and **47,000 deaths**. Jobes and Joiner's (2019) point is
+that prevention research, clinical treatment and health policy are all organised around the two
+smaller numbers. A field that measures what it can count under-serves the largest affected group.
+
+**Berman's (2009) three-part model** — vulnerability *plus* means *plus* absent protective factors —
+is the frame that makes the 90%-have-a-diagnosis figure interpretable in both directions, and each
+leg is separately modifiable, which is exactly how the prevention section is organised.
+
+**The treatment evidence is the strongest in the corpus, and it comes with magnitudes**, which is rare
+here:
+
+| Intervention | Finding |
+|---|---|
+| **Crisis Response Plan** | Attempts reduced **76%** at 6 months vs no-harm contracts |
+| **Brief CBT** (12 sessions) | **60% less likely** to attempt at 24 months |
+| **Cognitive Therapy for Suicide Prevention** | **50% less likely** to attempt at 18 months |
+| **Caring contacts** (Motto & Bostrom) | A letter every 4 months for 5 years **reduced suicides** |
+| **CAMS** | Reduces ideation and distress, increases hope and retention; **as good as DBT** on attempts |
+| **DBT** | Reduces attempts and self-harm; **ideation results inconsistent across RCTs** |
+
+**The pattern is the teachable part: treatments that target suicidality *directly* outperform treating
+an underlying disorder and expecting risk to follow.** That runs against how the rest of this course
+handles comorbidity.
+
+**And a clean displaced-practice case.** Coercive **no-harm contracts** — asking a patient to promise
+*not* to act — have been replaced by **stabilization planning**, which plans what the person *will*
+do. Adopted across US Veterans Affairs and the Department of Defense. See `treatments-that-harm` and
+`evidence-based-practice`.
+
+**The barrier that limits all of it: ~60% of people with suicidal thoughts do not seek help**, and the
+reasons given are **low perceived need** and **wanting to deal with it alone** — not unavailability of
+treatment.
+
+### 15.3 Two gaps flagged on the page, one of them urgent
+
+**Non-suicidal self-injury is in this page's title and absent from the source.** Its distinct
+function, its relationship to suicide risk, and its adolescent prevalence all need a second source.
+
+**The crisis line is US-only (988).** The page flags that the **Canadian 9-8-8 Suicide Crisis
+Helpline** and provincial services should be stated, **with the number and hours verified before
+publishing** — this is the one line on the page a student in distress might act on, and it is the
+single highest-priority verification item outstanding in the corpus. Canadian rates generally, and
+rates among First Nations, Inuit and Métis communities in particular, cannot be substituted from a US
+source.
