@@ -2631,7 +2631,7 @@ court or insurer who commissioned the assessment.
 own role, and **the limits to confidentiality**. In a forensic assessment the person is often not the
 client and the usual promise does not hold; saying so in advance *is* the ethical requirement.
 
-### 25.4 What could not be sourced, and was not faked
+### 25.4 What could not be sourced at first, and was not faked
 
 **Smith v Jones (1999 SCC) has no source in the corpus.** CanLII **403s automated fetches**, and per the
 standing instruction (memory: ask when a download fails rather than substitute) the case was **not
@@ -2649,6 +2649,44 @@ professional-standards document is not the answer.
 decision as the duty-to-warn rule in a way that would "actively mislead" a Toronto student. That was
 too strong — the page **already carried a detailed Needs-research block** naming the Canadian
 counterparts including the *Smith v Jones* distinction. It was a **declared gap, not a silent error**.
+
+### 25.4a Resolved: Norm supplied the judgment
+
+**Norm saved the CanLII PDF to `PSY240resources/` and the case is now written up from the judgment
+itself**, in the duty-to-warn section rather than the Canadian one — beside *Tarasoff*, where the
+contrast reads.
+
+**The permission-versus-duty point is anchored in the procedural history, which is stronger than
+asserting it.** The **trial judge held the psychiatrist was under a *duty* to disclose**; the **Court of
+Appeal varied that to an order *permitting* disclosure**; the **Supreme Court dismissed the appeal and
+affirmed the Court of Appeal**. The Canadian rule is what a clinician *may* do; *Tarasoff* is what a
+Californian clinician *must* do.
+
+**A second difference the page now makes explicit**: *Smith v Jones* is a **solicitor-client privilege**
+case — the psychiatrist was retained by defence counsel — where *Tarasoff* arose from a **therapeutic**
+relationship and a negligence claim. The doctrines have different parents.
+
+**The three factors, with the Court's own qualifications**: **clarity** (person or group must be
+ascertainable; a general threat to a whole city may be too vague, but a large group can count if clearly
+identified), **seriousness** (danger of death or serious bodily harm), **imminence** (must create *a
+sense of urgency*; **may apply to some time in the future**, with no particular time limit required).
+They are **weighted, not counted**. If met, **disclosure is still limited to the information necessary
+to protect public safety**.
+
+**The dissent is on the page too**, because it makes the clinical argument the majority does not: the
+breach must be **as narrow as possible**, the psychiatrist should disclose **his opinion and that it
+rests on a consultation** but not the accused's own account of the offence (which risks becoming
+**conscriptive evidence**) — and their reasoning is itself a public-safety argument, that a narrow
+exception **fosters a climate in which dangerous individuals disclose, seek treatment and pose less
+danger**, the accused here having been diagnosed **only because he felt secure in confiding**.
+
+**The divergence from *Tarasoff* is deliberate**: the Court **considered *Tarasoff*** directly, along
+with *Thompson v. County of Alameda*, *Brady v. Hopper* and *W. v. Egdell*.
+
+**Handling.** This is a **primary legal source, not a licensed article** — a public SCC judgment, used
+by paraphrase and short quotation. Facts are kept at **headnote level**: the page states the category of
+threat and the identified victim group, because both are load-bearing for the clarity factor, and no
+method detail. Recorded in `result_json.editorial_note`.
 
 ### 25.5 Still open on this page
 
