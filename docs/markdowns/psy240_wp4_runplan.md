@@ -1556,3 +1556,92 @@ publishing** — this is the one line on the page a student in distress might ac
 single highest-priority verification item outstanding in the corpus. Canadian rates generally, and
 rates among First Nations, Inuit and Métis communities in particular, cannot be substituted from a US
 source.
+
+---
+
+## 16. The sweep completes — every section of every source is in
+
+**All seventeen Cummings sections and all relevant Davies chapters are now swept.** The remaining
+work produced **one new page and nine gap-closing updates**, and the ordering principle was
+**gap-first rather than source-first**: the declared `needs` and `annotations` lists were queried
+first, and only the sections that could close them were read.
+
+That inversion is worth keeping. Sweeping a source section by section produces bulk; sweeping it
+against a gap list produces closure. **Nine of the ten items below closed a specific declared gap.**
+
+### 16.1 What closed
+
+| Page | Was | Closed by |
+|---|---|---|
+| **`psychopharmacology`** *(new)* | did not exist | Cummings 2.4 (Barron) |
+| `deinstitutionalization` | `outcomes-and-criticisms` empty | Cummings 2.1 |
+| `historical-traditions` | `non-western-and-global-histories` + `outcome-evidence-on-historical-reforms` empty | Cummings 2.1 |
+| `mental-status-examination` | `limitations` annotated | Cummings 1.3 |
+| `clinical-assessment` | `cultural-and-contextual-considerations` annotated | Cummings 1.2 |
+| `medicalization-of-distress` | no Szasz at all | Cummings 1.2 |
+| `body-dysmorphic-disorder` | `contested` empty | Cummings 4.2 |
+| `schizophrenia` | `contested` empty | Davies ch 25–31 |
+| `antipsychotic-medications` | `what-they-do-not-do` annotated | Davies ch 25–31 |
+| `adhd` | MTA trial declared missing since Module 16 | Cummings 7.1 |
+
+**All ten now have zero empty sections.** Corpus empty sections **129 → 123** despite four new
+pages being added in the same period.
+
+### 16.2 The findings worth teaching
+
+**The MTA trial closed the longest-standing declared gap in the corpus**, and its result is better
+than either side of the medication debate usually reports: **stimulant medication was most effective
+on core symptoms and combined treatment was no better** — but behavioural treatment produced **less
+school disruption, lower required stimulant doses, and higher parent satisfaction**. A single
+headline result is not a treatment recommendation.
+
+**The ADHD parenting myth is refuted by an unusually clean design.** Cunningham and Barkley (1979)
+found mothers of children with ADHD less attentive and more controlling — then showed that **giving
+the children stimulants improved the mothers' parenting to the level of mothers of typically
+developing children**. The arrow runs child → parent. Pelham et al. (1997) add that **a brief
+interaction with an impulsive child raised parents' alcohol consumption**. This is the corpus's best
+worked example of a reciprocal effect mistaken for a unidirectional cause.
+
+**Moral treatment and deinstitutionalisation failed the same way, a century apart.** Moral treatment
+was **"a victim of its own success"** — it worked best at **≤200 patients**, post-Civil-War
+immigration pushed facilities to **1,000+**, funding and staffing collapsed, and **immigrants were
+denied the moral treatment given to native-born citizens even where resources existed.** Teaching the
+two collapses together shows the recurring failure is **resourcing and equity, not the humane
+principle**.
+
+**The institutional model arrived in Canada as imperial policy.** The **County Asylums Act 1845** was
+extended to English colonies **including Canada**, after maltreatment at a Kingston, Jamaica facility
+prompted a colonial audit; Dorothea Dix's work also extended to Canada. That partially closes
+`non-western-and-global-histories` — **partially**, and the page says so.
+
+**Szasz is now on the record properly.** *The Myth of Mental Illness* (1961), the "problems in living"
+reframing, and the argument's decisive vindication — **Szasz was perhaps the first psychiatrist to
+openly challenge homosexuality as a diagnosis**. The page holds that against `gender-dysphoria`,
+where the same argument is live and where removing the diagnosis would also remove funded care.
+**The critique was right once; that does not make it automatically right again.**
+
+**`psychopharmacology`** supplies what the medication pages lacked: ADME, **route of administration
+predicting abuse liability** (fast to brain + reward circuit = high risk, and the *cues* become
+addictive too — you can avoid old haunts, you cannot avoid waking up), cytochrome P450 and the
+**grapefruit-juice interaction** (85 drugs), the **four metaboliser categories** where both extremes
+look like treatment failure and neither is, and the two populations **excluded from the trials that
+licensed their drugs** — children and older adults, the latter consuming a projected 40% of
+prescriptions by 2030.
+
+### 16.3 Two sections were read and produced nothing
+
+**Cummings 5.1 (schizophrenia) and 7.1 (ADHD) contain no substantive Canadian prose** — an earlier
+keyword count suggested otherwise because it was matching **reference-list entries** (Canadian
+Journal of Psychiatry, Schizophrenia Society of Canada, CADDAC). 7.1 was swept anyway for the MTA
+trial and the diversion material; 5.1 added nothing beyond what Davies supplied.
+
+**Lesson: count keyword hits in the body, not the references.** A citation to a Canadian journal is
+not Canadian content, and the earlier §11 scan overstated Canadian coverage on that basis.
+
+### 16.4 The check caught two errors before acceptance, again
+
+The duplicate-heading check flagged that appended content had **re-created `## Non-Western and global
+histories` and `## Outcome evidence on historical reforms`** as second copies rather than filling the
+existing empty ones; and a `clinical-assessment` block had landed **after `## Contested`** instead of
+inside its own section. Both were repaired pre-acceptance. **That is three separate runs now in which
+the pre-accept checks caught a real structural error** — they are not ceremony.
