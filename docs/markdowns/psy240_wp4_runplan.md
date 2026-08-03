@@ -2361,3 +2361,90 @@ failed**.
 still has four gaps and thin open-access literature (§19.8).
 
 **Live: 251 pages, 1,353 wikilinks, 132 ingest jobs, 78 empty sections, 0 published.**
+
+---
+
+## 23. `communication-disorders` closes, and the chapter map gets its missing chapter
+
+Two jobs from one session: the last multi-gap page in Lecture 10, and a chapter the catalogue had
+deliberately omitted.
+
+### 23.1 `communication-disorders` — 4 gaps closed, 4 sources
+
+| Section | Source |
+|---|---|
+| epidemiology | Calder et al. 2022, *J Paediatr Child Health* (Raine Study) |
+| etiology | Mountford et al. 2022, *Children* |
+| treatment | Rinaldi et al. 2021, *Brain Sciences* |
+| contested | Sansavini et al. 2021, *Brain Sciences* |
+
+All CC BY 4.0. Page now **19,215 chars, five sources, zero declared gaps**.
+
+**The scope note is doing real work here.** All four sources are about **developmental language
+disorder**, which maps to **one** of DSM-5-TR's four communication disorders. **Speech sound disorder,
+childhood-onset fluency disorder (stuttering) and social (pragmatic) communication disorder remain
+uncovered**, and that is stated in the Epidemiology section and again in a closing Needs-research line.
+The page was previously honest about a *source* limit ("Module 16 covers only the last of these") and
+now carries a different, larger one; the fix was to keep saying so rather than to let four good sources
+imply full coverage.
+
+**The three findings that made the page worth doing:**
+
+- **Ascertainment decides the answer, twice on one page.** Heritability is **0.97** in clinically
+  ascertained twins and **near zero** in population-screened twins. And the long-standing male
+  predominance disappears in an unselected cohort — **52.9% male, p = 0.799** — which the authors
+  attribute to **referral bias toward males and under-detection of females**. A sex ratio from clinic
+  samples measures who gets referred.
+- **Only 2 of 104 children meeting criteria had been identified by a health professional**, in a
+  prospective birth cohort. Set that beside the diagnostic review's conclusion that there is
+  **insufficient evidence for universal screening** — both are on the record, and the tension is the
+  teachable part.
+- **The treatment evidence runs the wrong way relative to the epidemiology.** Expressive targets have
+  RCT support (SMD 0.44-1.08); **receptive vocabulary has no studies at all** — while **46.2%** of
+  affected children have combined receptive-expressive difficulties and 20.2% are receptive-only. And
+  the one long follow-up (Wake et al.) found gains **gone by age 6 with controls caught up**, which
+  suggests acceleration rather than change of outcome.
+
+**A pattern worth naming: the nosology limits the genetics.** Genetic studies used language cutoffs
+from **1.25 to 2.0 SD** with inconsistent IQ thresholds, because there is no international diagnostic
+consensus — so samples cannot be pooled and results cannot replicate. The Etiology section says this
+and points forward to Contested rather than treating the two as separate topics.
+
+### 23.2 `elimination-disorders` — a page for a chapter the course does not teach
+
+**It existed nowhere**: no page, no catalogue row, no `disorders` row. That was not an oversight —
+`dsm_chapters` records **Chapter 11 as `taught = false`**, one of two so marked (with Ch. 20, *Other
+Mental Disorders*). The decision was recorded; the consequence was that a whole DSM chapter was
+invisible.
+
+**Written anyway, as an explicitly out-of-scope overview.** A Field Guide that silently omits a chapter
+reads as incomplete rather than scoped, and a reader meeting enuresis or encopresis in a case or a
+comorbidity list has nowhere to land. The page opens with a scope note saying the course does not teach
+it, that it is not exam material, and that it is deliberately thinner than a taught page.
+
+**Catalogue handling:** a `disorders` row was added with **`tier = 'overview'` and `lecture = NULL`**,
+plus a `tier_review_note` explaining why. Catalogue rows: **130 → 131**. `lecture = NULL` is the honest
+encoding — the page exists, no lecture teaches it — and it keeps the page from counting as
+off-catalogue.
+
+**The justification for the page is in the psychiatric comorbidity, which is the part a psychology
+course would actually use.** **20-30% of children with enuresis and 30-50% with encopresis** have a
+clinically relevant comorbid disorder — **over a fourfold increase** on peers, [[adhd]] most often.
+Where effects reach significance they are mostly **externalising** (attention 0.37, social problems
+0.39, self-concept 0.42, aggression 0.33), and **depression and anxiety do not differ significantly** —
+the null result being the surprising one.
+
+**Encopresis is left as a declared gap** because no encopresis-specific source was used; it appears in
+the comorbidity meta-analysis as **7 studies of 214 children** against 32 studies of 3,244 for enuresis,
+and the page says so rather than padding.
+
+### 23.3 A rule that emerged from both pages
+
+**Where a page covers less than its title claims, say so in the section that carries the numbers — not
+only in a note at the top.** `communication-disorders` repeats its scope limit in Epidemiology, where a
+reader is most likely to lift a figure, and again at the end of Contested. `elimination-disorders`
+carries the "not taught" note in the opening section and the encopresis gap inside the encopresis
+heading. A scope note at the top of a long page is read once and then forgotten.
+
+**Live: 252 pages, 1,361 wikilinks, 138 ingest jobs, 75 empty sections, 131 catalogue rows,
+0 published.**
