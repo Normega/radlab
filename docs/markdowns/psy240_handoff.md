@@ -64,15 +64,15 @@ cases. Module 16's corpus check already turned up one unknown case — a broken 
 
 Everything is merged and pushed to `main`; nothing sits on a branch.
 
-## 2. Live database state (radlab-academic, 2026-08-03, Lecture 10 clear)
+## 2. Live database state (radlab-academic, 2026-08-03, after the paraphilias cluster)
 
 ```
 252 pages with bodies       0 published — no student can see anything yet
-1,361 wikilinks             0 proposals pending — review queue clear
+1,383 wikilinks             0 proposals pending — review queue clear
 10 red links                0 blue links to an empty page
 0 duplicate headings        0 off-catalogue disorder pages
-131 catalogue rows         138 ingest jobs
-75 empty sections           Lecture 10 clear; DSM ch.11 now has an out-of-scope overview
+131 catalogue rows         146 ingest jobs
+67 empty sections           major-tier gaps: 16 across 11 pages
 ```
 
 **Catalogue coverage: Tier A 54/54, foundations 14/14, overviews 16/16 — all complete. Tier B 33/46 is the only incomplete tier.**

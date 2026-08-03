@@ -2448,3 +2448,114 @@ heading. A scope note at the top of a long page is read once and then forgotten.
 
 **Live: 252 pages, 1,361 wikilinks, 138 ingest jobs, 75 empty sections, 131 catalogue rows,
 0 published.**
+
+---
+
+## 24. The paraphilias — the cluster with the worst existing content, and four sources that fix it
+
+**Six pages closed across Lecture 7**, including both Tier A pages and the chapter overview. Major-tier
+gaps fell **21 → 16**, `treatment` **18 → 11**, `etiology` **15 → 11**.
+
+| Page | Closed | Source |
+|---|---|---|
+| `pedophilic-disorder` | etiology | Joyal 2023, *Sexual Offending* |
+| " | treatment | Landgren et al. 2022, *Drugs* |
+| `paraphilic-disorders` (overview) | etiology | Joyal 2023 |
+| " | treatment | Culos et al. 2024, *J Clin Med* |
+| `exhibitionistic-disorder` | treatment | Culos et al. 2024 |
+| `voyeuristic-disorder` | treatment | Culos et al. 2024 |
+| `fetishistic-disorder` | treatment | Culos et al. 2024 |
+| `sexual-sadism-and-masochism-disorders` | treatment | Culos et al. 2024 |
+
+### 24.1 The finding that reorganises the chapter
+
+**A neuroimaging meta-analysis of 436 men with pedophilic disorder against 449 controls found no
+structural brain difference** (reported in Joyal, 2023). Pedophilic disorder is the most-researched
+paraphilia by a wide margin, so a null result there is the strongest available statement about the
+chapter as a whole — and it is now the opening of both `pedophilic-disorder` etiology and the overview's.
+
+**The three circulating neurobiological models all explain the wrong thing.** Frontal-dysexecutive,
+temporal-limbic and dual-dysfunction accounts explain **hypersexuality and disinhibition** and none
+explains **the paraphilic interest itself**. The distinction between *why someone acts* and *why
+someone wants* now runs through the chapter.
+
+**Acquired cases argue against the models they are usually cited to support.** Joyal reviewed **64
+documented cases**: 63 male, mean onset **52.8**, and **81% with no premorbid interest**. They arrive
+with hyperphagia, kleptomania, aggression and compulsivity — a **general failure of behavioural
+filtering**, sometimes without corresponding sexual fantasies at all. His conclusion, now on the page:
+such cases **should not be used to infer the neurology of the developmental disorder**. A lesion that
+removes inhibition tells you about inhibition.
+
+**One observation sits against the whole account and is recorded as unresolved**: almost all 64 acquired
+cases were male, though generalised fronto-temporal disinhibition should not be sex-specific.
+
+### 24.2 Say what the treatment does *not* show
+
+**The pedophilic-disorder treatment section opens with the gap rather than the efficacy**, because the
+review does: testosterone-lowering drugs reduce sexual *activity*, and *"it remains to be explored if
+reduced sexual activity translates into a reduction in criminal sexual behavior"* — **risk of offending
+was not assessed in any of the randomised trials**. Everything downstream is read against that.
+
+The numbers are real but small: **cyproterone acetate** 4 studies / 32 people, significant reduction
+across all domains; **degarelix** one RCT of 52 with the fastest onset documented; **medroxyprogesterone**
+mixed across 4 studies / 61. Median sample **13.5**, median follow-up **15 weeks**, only one study after
+2010.
+
+**And the harms are not incidental.** Degarelix: injection-site reactions 88%, raised liver enzymes 44%,
+**two cases of increased suicidal ideation**. Cyproterone is under European restriction over meningioma
+risk. Testosterone suppression brings reduced bone density, insulin resistance and cardiovascular risk.
+
+**Adding psychotherapy has not been shown to add anything on this evidence** — McConaghy compared drug
+alone, imaginal desensitisation alone, and both, and found **no significant differences**. That is worth
+holding against the overview's summary that combined treatment is "superior".
+
+### 24.3 State the size of the literature before quoting from it
+
+The whole pharmacological evidence base for this chapter is **28 studies and 379 people**, of which
+**only three of 28 scored above 5** on the Newcastle-Ottawa scale. That sentence opens the treatment
+section on every paraphilia page, before any drug is named — the §19.6 rule, applied per page rather
+than once on the overview.
+
+**The most-quoted recidivism figure in the field rests on a single 1992 study**: 18% on
+medroxyprogesterone, 35% after discontinuation, 58% untreated. It is on the page with its provenance
+attached.
+
+### 24.4 Two asymmetries the sources ignore and the pages name
+
+- **`sexual-sadism-and-masochism-disorders` is two different treatment questions.** Masochism requires
+  **distress in the person themselves**; sadism centres on **acting on urges with a non-consenting
+  person**. A drug literature built around drive reduction and recidivism was assembled for the second
+  and is routinely read onto the first. The page says so, and asks whether a diagnosis whose criterion
+  is the patient's own distress should be treated by suppressing sexual drive at all.
+- **`fetishistic-disorder` is the one paraphilia where the conditioning account has been studied** — so
+  a learning account predicts **behavioural treatment is where the leverage is**, and the pharmacological
+  review cannot speak to it. Named as a gap rather than filled with drug evidence that answers a
+  different question.
+
+### 24.5 Scope notes that stop a source over-reaching
+
+**The WFSBP guideline most often cited for this chapter (Thibaut et al., 2015) is
+adolescent-specific.** Fetched, read, and *not* used as general treatment guidance; the overview records
+what it is and one thing it explains — that **ethical constraints make placebo-controlled or
+no-treatment designs very difficult in potential offenders**, which is the structural reason this
+literature is shaped the way it is rather than a failing of any single study.
+
+**Prevention services are named because they are protective information**: the German **Dunkelfeld
+Project**, **Stop It Now** (UK and US), the Swedish **Preventell** helpline, **Don't Offend India**.
+Landgren et al. recruited through a national helpline, which is unusual — the review notes this
+literature **includes few voluntary participants**, so most of it generalises poorly outside forensic
+settings.
+
+**Handling.** All four sources are clinical or forensic reviews and are used for **etiology, treatment
+and prevention only**. No offence detail appears on any page. `result_json.editorial_note` records that
+decision on the two pedophilic-disorder jobs so it is not silently reversed.
+
+### 24.6 What is left in Lecture 7
+
+`exhibitionistic-disorder` (etiology), `fetishistic-disorder` (epidemiology), `transvestic-disorder`
+(etiology, treatment), and `contested` on `genito-pelvic-pain-penetration-disorder` and
+`male-hypoactive-sexual-desire-disorder`. **Transvestic disorder is absent from the pharmacological
+review entirely**, so it needs its own search rather than another read-across.
+
+**Live: 252 pages, 1,383 wikilinks, 146 ingest jobs, 67 empty sections, 0 published.** Major-tier gaps
+**16 across 11 pages**; corpus-wide `contested` 19, `etiology` 11, `treatment` 11, `epidemiology` 7.
