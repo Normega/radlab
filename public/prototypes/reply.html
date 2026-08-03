@@ -97,15 +97,22 @@ function buildRidges(){
 const VOICE_TYPES=['thrush','owl','frog','bellbug','whistler','dove'];
 let voices=[];
 function placeVoices(){
-  if(voices.length) { for(const v of voices){ v.y=ridgeYat(v.ridge,v.x)-6; } return; }
+  if(voices.length) {
+    for(const v of voices){ v.x=v.fx*W; v.y=ridgeYat(v.ridge,v.x)-6; }
+    return;
+  }
   const n=8;
   for(let i=0;i<n;i++){
     const ridge=1+Math.floor(hash1(i*3+1)*3);
-    const x=W*(0.08+0.84*hash1(i*7+2));
+    const fx=0.08+0.84*hash1(i*7+2);
+    const x=fx*W;
     voices.push({
       id:i,
       type:VOICE_TYPES[i%VOICE_TYPES.length],
-      ridge, x, y:0,
+      ridge, x, fx, y:0,
+      // each voice is a little constellation, not a single point
+      pts:Array.from({length:5},(_,k)=>[(hash1(i*97+k*13)-0.5)*26,(hash1(i*89+k*17)-0.5)*18]),
+      heard:false,
       shyness:0.10+hash1(i*5+3)*0.75,  // trust needed before it will answer
       trust:0,
       glow:0, ember:0,
@@ -266,7 +273,7 @@ function update(t,dt){
 
 // --- speaking ---------------------------------------------------------------
 function speak(v,srcMotif,t,solo){
-  v.glow=solo?1.6:1; v.lastSpokeAt=t;
+  v.glow=solo?1.6:1; v.lastSpokeAt=t; v.heard=true;
   eventLog.push({t:+t.toFixed(1),who:'voice'+v.id,kind:'reply',type:v.type});
   if(!AC) return;
   const pan=(v.x/W)*2-1;
@@ -531,12 +538,21 @@ function render(t){
       ctx.stroke();ctx.restore();
     }
   }
-  // embers: a tiny persistent light where a voice has come to trust you
+  // each voice renders as a small constellation: bright while speaking,
+  // steady-warm once trusted, and a faint trace once merely heard —
+  // sound leaves memory in space
   for(const v of voices){
-    if(v.ember>0.02){
-      const puls=0.7+0.3*Math.sin(t*1.4+v.id);
-      ctx.fillStyle=`hsla(${voiceHue(v)},70%,75%,${0.5*v.ember*puls+v.glow*0.4})`;
-      ctx.beginPath();ctx.arc(v.x,v.y,1.8+v.glow*2.5,0,7);ctx.fill();
+    const trace=v.heard?0.07:0;
+    const base=0.5*v.ember+trace;
+    if(base>0.01||v.glow>0.01){
+      for(let k=0;k<v.pts.length;k++){
+        const [ox,oy]=v.pts[k];
+        const tw=0.55+0.45*Math.sin(t*(1.1+k*0.23)+v.id*2+k*2.1);
+        const a=Math.min(0.9, base*tw + v.glow*(0.45+0.2*Math.sin(t*6+k)));
+        if(a<=0.015) continue;
+        ctx.fillStyle=`hsla(${voiceHue(v)},70%,75%,${a})`;
+        ctx.beginPath();ctx.arc(v.x+ox,v.y+oy,1.2+(k===0?0.9:0)+v.glow*1.5,0,7);ctx.fill();
+      }
     }
     // fireflies keep company near trusted embers — somewhere for the eye
     // to sit during the listening
