@@ -64,16 +64,17 @@ cases. Module 16's corpus check already turned up one unknown case — a broken 
 
 Everything is merged and pushed to `main`; nothing sits on a branch.
 
-## 2. Live database state (radlab-academic, 2026-08-03, after the Lecture 8 block)
+## 2. Live database state (radlab-academic, 2026-08-03, after the sleep bundle — **the catalogue is complete**)
 
 ```
-259 pages with bodies       0 published — no student can see anything yet
-1,426 wikilinks             0 proposals pending — review queue clear
-4 red links                 0 off-catalogue red links
+262 pages with bodies       0 published — no student can see anything yet
+1,443 wikilinks             0 proposals pending — review queue clear
+0 red links                 244 of 244 link targets resolve
 0 duplicate headings        0 off-catalogue disorder pages
-131 catalogue rows         169 ingest jobs
-68 empty sections           major-tier gaps: 9 across 8 pages
-298 annotations             3 catalogue pages not yet written (all Tier B)
+131 catalogue rows         175 ingest jobs
+131 catalogue written       0 catalogue pages left to write
+72 empty sections           major-tier gaps: 8 across 7 pages
+303 annotations             (see the correction below — count directly, not via the view)
 ```
 
 **Catalogue coverage: Tier A 54/54, foundations 14/14, overviews 16/16 — all complete. Tier B 33/46 is the only incomplete tier.**
@@ -103,7 +104,19 @@ remains sound, but closing the last major-tier gaps will not empty the backlog. 
 Nothing has ever been published. Every accept is *accept as draft* — no students are enrolled, so
 publishing buys nothing and is the harder direction to reverse.
 
-**The major tier is nearly closed, and that changes what the binding constraint is.** Nine pages hold
+**The catalogue closed on 2026-08-03.** All 131 catalogue slugs have bodies and all 244 distinct
+wikilink targets resolve — the red-link count, a working signal since WP2, is zero for the first
+time. Verify with:
+
+```sql
+SELECT (SELECT count(*) FROM disorders) AS rows,
+       (SELECT count(*) FROM disorders d JOIN wiki_pages p ON p.slug=d.slug
+         WHERE p.content IS NOT NULL) AS written,
+       (SELECT count(DISTINCT l.target_slug) FROM wiki_links l
+         LEFT JOIN wiki_pages p ON p.slug=l.target_slug WHERE p.id IS NULL) AS red;
+```
+
+**Content is no longer the binding constraint, and that changes what the next session is for.** Nine pages hold
 the last 13 gaps (§6). Once they are done, "what to write next" stops being the question and
 **publishing** becomes it — which carries the `student-support-resources` verification obligation
 (every phone number and URL re-checked before students get access, and each term). Two things to
@@ -240,13 +253,12 @@ only.
 | `exhibitionistic-disorder` | A | etiology |
 | `integrative-model` | foundation | comparative-evidence |
 | `research-methods` | foundation | evaluating-the-evidence-base |
-| `sleep-wake-disorders` | overview | contested |
 | `elimination-disorders` | overview | encopresis |
 
-**Three catalogue pages remain unwritten**, and two of them bundle with the sleep overview's last
-gap: `hypersomnolence-disorder` and `circadian-rhythm-sleep-wake-disorders` (L6, DSM ch.12), plus
-`brief-psychotic-disorder` (L9, DSM ch.2). Writing the sleep pair should be paired with
-`sleep-wake-disorders`'s `contested` gap in one source pass.
+**Nothing is left to write from scratch.** Eight gaps across seven existing pages, then the work is
+**WP4b's review pass** and **publishing**. Three of the four Tier A gaps are single sections needing
+one targeted search each; `integrative-model` and `research-methods` are bespoke conceptual
+sections of the kind `alternatives-to-categorical-diagnosis` turned out to be (run plan §26).
 
 `transvestic-disorder` needs its own search — it is **absent from the paraphilias pharmacological
 review entirely** (run plan §24).

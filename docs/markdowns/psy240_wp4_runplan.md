@@ -2870,3 +2870,79 @@ FROM wiki_pages WHERE content IS NOT NULL;
 ### 27.7 State after
 
 Pages **252 → 259**; wikilinks 1,384 → 1,426; ingest jobs 154 → 169; unwritten catalogue pages **10 → 3** (`hypersomnolence-disorder`, `circadian-rhythm-sleep-wake-disorders`, `brief-psychotic-disorder`); major-tier gaps **13/9 pages → 9/8**; empty sections 64 → 68 (new pages carrying honestly declared gaps); off-catalogue red links **0** — three introduced during the sweep (`opioid-related-disorders`, `alcohol-related-disorders`, `placebo-effect`, `comorbidity`) were caught by the standing check and repointed at the real slugs.
+
+---
+
+## 28. The sleep bundle — and the catalogue closes
+
+Six sources, four pages. `sleep-wake-disorders` lost its last gap, the two unwritten sleep slugs were written, and `brief-psychotic-disorder` was taken in the same pass because it was the only thing left.
+
+**The catalogue is complete.**
+
+```
+catalogue rows          131
+catalogue pages written 131   (0 missing)
+distinct link targets   244
+targets that resolve    244   (0 red links)
+```
+
+Every slug in `disorders` has a body, and **every wikilink in the corpus resolves** — 1,443 links, 244 distinct targets, nothing dangling. The red-link count has been a working signal since WP2; this is the first time it has been zero.
+
+| Page | Sources |
+|---|---|
+| `circadian-rhythm-sleep-wake-disorders` (new) | Steele et al. 2021 |
+| `hypersomnolence-disorder` (new) | Maski et al. 2021 (AASM guideline) |
+| `sleep-wake-disorders` — `contested` closed | Steele et al. 2021; Maski et al. 2021 |
+| `brief-psychotic-disorder` (new) | Correll et al. 2008; Fusar-Poli et al. 2017 |
+
+Note the job pattern: **Steele and Maski each served two target pages**, so each needed **two job rows** — one per (source, target) pair, per §9. Four jobs from two sources.
+
+### 28.1 The finding: a remission rate is a function of follow-up length
+
+Two sources on `brief-psychotic-disorder` looked, on first reading, to contradict each other. Correll et al. (2008) report that **three of four** adolescents with brief psychotic disorder achieved full remission. Fusar-Poli et al. (2017) report that **54%** of 80 people with Brief Limited Intermittent Psychotic Symptoms developed a persistent psychotic disorder.
+
+The reconciliation is in the failure function:
+
+| Time from BLIPS | Transitioned |
+|---|---|
+| 3 months | 10% |
+| 12 months | 19% |
+| 24 months | 30% |
+| **60 months** | **54%** |
+
+**Correll's mean follow-up was 22.8 months** — the point on that curve where transition is around 30% and still climbing. The two studies are not in conflict; they stopped watching at different times. **A remission rate is not a property of a disorder, it is a property of the study's horizon**, and any claim that brief psychotic episodes are benign has to state the horizon it was measured over. This belongs in the review pass as a standing question alongside §21's "what is the newest source": **over what period was this outcome measured?**
+
+Supporting detail worth keeping: 68% of the BLIPS cohort also met ICD-10 acute and transient psychotic disorder criteria, so the two literatures are substantially the same territory under different names; and prior studies of this population report **diagnostic instability of 23% to 87%**, a range wide enough to be a statement about the category rather than about the studies.
+
+### 28.2 Sleep medicine does not use the DSM, and that closed the overview's `contested` gap
+
+The gap asked, among other things, "whether sleep disorders belong in a psychiatric manual at all." The answer available from the sources is better than an argument — it is an observation about practice. **Steele et al. (2021), a contemporary review of the circadian disorders, defines every subtype by ICSD-3 and does not mention DSM-5 anywhere.** ICSD-3 recognises six circadian subtypes with their own duration criteria; the DSM handles the territory more coarsely. Add the fact already recorded on `diagnosis-and-classification` that **ICD-11 places sleep-wake disorders in Chapter 07, outside the mental and behavioural disorders**, and a student consulting three manuals gets three different answers about whether these are psychiatric conditions — while the specialty that treats them uses a fourth book.
+
+The complementary finding from the AASM guideline: it makes recommendations for narcolepsy, idiopathic hypersomnia and Kleine-Levin syndrome and **none at all for psychiatric hypersomnia**, the evidence being "insufficient and inconclusive." The sleepiness most likely to present in a psychology clinic falls between two specialties' guidelines.
+
+**Naming note recorded on the page**: DSM-5-TR's *hypersomnolence disorder* is sleep medicine's *idiopathic hypersomnia*, grouped with narcolepsy and Kleine-Levin as the *central disorders of hypersomnolence*. A student searching the DSM term will not find the literature.
+
+### 28.3 Evidence-base size, again — and a clean comparison inside one guideline
+
+§19.6 keeps paying. The AASM hypersomnolence guideline gives idiopathic hypersomnia **one strong recommendation (modafinil, moderate certainty) and four conditional ones, three of them at very low certainty**. The instructive part is the internal comparison: modafinil for idiopathic hypersomnia rests on **1 RCT plus 4 observational studies**; modafinil for **narcolepsy**, in the same guideline, rests on **9 RCTs plus 4 observational studies**. Same drug, neighbouring disorder, nine times the trial evidence.
+
+The panel's own caveats are unusually candid and are quoted on the page: small samples throughout, older treatments "rarely evaluated using a randomized controlled trial design," and **"comparative effectiveness studies were virtually nonexistent."** So a recommendation table ranks what has been *tested*, which systematically disadvantages older and cheaper drugs. Whole populations are absent — no paediatric recommendations, pregnant and lactating women outside the review's scope, no postmarketing safety data for solriamfetol or pitolisant.
+
+Steele et al. supply the matching verdict for the circadian disorders: treatment there "remains more as an **art-of-medicine approach** based on known aspects of circadian sleep–wake physiology rather than rigorous evidence." Light dose, melatonin timing, evening screen restriction, blue-light glasses and chronotherapy are all mechanism-led rather than trial-led.
+
+### 28.4 A teaching table worth reusing
+
+The single most transferable thing in `circadian-rhythm-sleep-wake-disorders` is that **light and melatonin phase-response curves are roughly 180° out of phase**, so both treatments reverse direction depending on when they are given:
+
+| | Phase **advance** (earlier) | Phase **delay** (later) |
+|---|---|---|
+| **Light** | after core-temperature minimum (morning) | before it (evening) |
+| **Melatonin** | 2–7 h before DLMO (evening) | biological morning |
+
+A patient self-medicating melatonin at the wrong hour moves their clock the wrong way. Effective doses are also far below what is sold — **0.5 mg** for phase advance, with 0.1–0.3 mg producing physiological plasma levels.
+
+### 28.5 State after
+
+Pages **259 → 262**; wikilinks 1,426 → 1,443; jobs 169 → 175; **unwritten catalogue pages 3 → 0**; **red links 1 → 0**; major-tier gaps **9 across 8 pages → 8 across 7**; empty sections 68 → 72 and annotations 300 → 303, both rising because three new pages carry honestly declared gaps.
+
+**What this means for sequencing.** Content is no longer the binding constraint. Eight major-tier gaps remain across seven pages (`illness-anxiety-disorder` ×2, `functional-neurological-symptom-disorder`, `adjustment-disorders`, `exhibitionistic-disorder`, `integrative-model`, `research-methods`, `elimination-disorders`), and after those the work is **WP4b's review pass** and **publishing** — which carries the `student-support-resources` verification obligation. The 303 in-prose annotations across ~140 pages (§27.5) are the long tail and are not going to be closed by this kind of sweep.
