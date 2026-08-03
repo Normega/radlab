@@ -51,7 +51,7 @@ const P = {
   racketDecay: 22,     // seconds for one call's worth of racket to fade
   racketHush: 3.2,     // racket level above which voices hold their peace
   replyDelayMin: 1.6,  // s after your call before the first answer may come
-  trustGain: 0.09,     // trust gained by a well-spaced, soft call
+  trustGain: 0.14,     // trust gained by a well-spaced, soft call in-register
   duration: 270,       // nocturne begins near here
 };
 
@@ -95,6 +95,19 @@ function buildRidges(){
 // --- voices -----------------------------------------------------------------
 // Each answerer lives on a ridge, has a timbre, a shyness, and a trust level.
 const VOICE_TYPES=['thrush','owl','frog','bellbug','whistler','dove'];
+// Each type is a creature with a home register, a way of moving, and its own
+// idle cadence. `home` is an index into SCALE: it is both the pitch the voice
+// answers in and the pitch band that courts it, so calling low wakes the low
+// creatures and the night fills from the bottom up. Ordered here by how low
+// each one actually sounds once its timbre's own octave is applied.
+const PERSONA={
+  frog:    {home:0, pts:5, motion:'pulse',   chirp:[9,15]},
+  owl:     {home:1, pts:3, motion:'breathe', chirp:[16,25]},
+  dove:    {home:3, pts:6, motion:'sway',    chirp:[12,19]},
+  whistler:{home:5, pts:4, motion:'drift',   chirp:[14,22]},
+  thrush:  {home:6, pts:7, motion:'flick',   chirp:[7,12]},
+  bellbug: {home:7, pts:8, motion:'shimmer', chirp:[8,14]},
+};
 let voices=[];
 function placeVoices(){
   if(voices.length) {
@@ -106,18 +119,23 @@ function placeVoices(){
     const ridge=1+Math.floor(hash1(i*3+1)*3);
     const fx=0.08+0.84*hash1(i*7+2);
     const x=fx*W;
+    const type=VOICE_TYPES[i%VOICE_TYPES.length];
+    const pa=PERSONA[type];
+    // the second of a repeated type sits a little off its kin's register, so
+    // no two creatures are twins and the ladder stays evenly peopled
+    const dup=i>=VOICE_TYPES.length;
+    const home=clamp(dup?(pa.home>3?pa.home-2:pa.home+1):pa.home,0,SCALE.length-1);
     voices.push({
-      id:i,
-      type:VOICE_TYPES[i%VOICE_TYPES.length],
+      id:i, type, persona:pa, home,
       ridge, x, fx, y:0,
       // each voice is a little constellation, not a single point
-      pts:Array.from({length:5},(_,k)=>[(hash1(i*97+k*13)-0.5)*26,(hash1(i*89+k*17)-0.5)*18]),
+      pts:Array.from({length:pa.pts},(_,k)=>[(hash1(i*97+k*13)-0.5)*26,(hash1(i*89+k*17)-0.5)*18]),
       heard:false,
       shyness:0.10+hash1(i*5+3)*0.75,  // trust needed before it will answer
       trust:0,
       glow:0, ember:0,
       lastSpokeAt:-99,
-      register: ridge===1? 1.0 : ridge===2? 0.7 : 1.4,  // far = lower or higher
+      chirpNext:pa.chirp[0]*(0.4+hash1(i*31+5)),   // staggered, so no chorus-on-cue
     });
   }
   // one voice answers the very first offering — the opening must not be silent
@@ -140,6 +158,7 @@ let motif=[];                 // player's recent pitches (indices into SCALE)
 let pending=[];               // scheduled replies [{dueT, voice, motif}]
 let eventLog=[];              // {t, who, kind} for debugging & the nocturne
 let lastCallEnd=-99;   // wasHushed/strangerAt live with unpromptedNext above
+let lastUtteranceAt=-99;
 let unpromptedNext=16+Math.random()*8;
 let wasHushed=false, strangerAt=null;
 let duetWindow=null;          // {voice, until} — valley called first, listening for an answer
@@ -179,8 +198,7 @@ function playerCallEnded(pitchIdx,heldMs){
   const spacing=t-(eventLog.filter(e=>e.who==='you').slice(-2,-1)[0]?.t ?? -99);
   const wellSpaced=spacing>6;
   for(const v of voices){
-    const pref=v.register<0.9?1.5: v.register<1.2?3.5:6;
-    const near=Math.max(0.15,1-Math.abs(pitchIdx-pref)/5);
+    const near=Math.max(0.15,1-Math.abs(pitchIdx-v.home)/5);
     if(wellSpaced) v.trust=Math.min(1,v.trust+P.trustGain*near*(0.7+hash1(v.id+t)*0.6));
     else v.trust=Math.min(1,v.trust+P.trustGain*0.15*near);
   }
@@ -221,6 +239,24 @@ function update(t,dt){
     wasHushed=false;
     const rv=[...voices].filter(v=>!v.reserved).sort((a,b)=>b.trust-a.trust)[0];
     if(rv&&rv.trust>=rv.shyness) schedule(rv,t+1.5+Math.random());
+  }
+
+  // Trusted creatures chirp on their own, each at its own cadence and in its
+  // own register. This is the night filling in: court the low voices and the
+  // dark hums; court the high ones too and the whole ladder is singing. It
+  // asks nothing of the player and stops when the valley is hushed.
+  if(racket<P.racketHush){
+    for(const v of voices){
+      if(v.reserved||v.trust<v.shyness) continue;
+      if(t<v.chirpNext){ continue; }
+      const [lo,hi]=v.persona.chirp;
+      // a settled voice chirps a little more freely
+      const scale=1.25-0.4*v.trust;
+      v.chirpNext=t+(lo+Math.random()*(hi-lo))*scale;
+      // keep the texture airy: never chirp on top of another utterance
+      if(t-lastUtteranceAt<0.9||t-v.lastSpokeAt<4) continue;
+      speak(v,null,t,false,true);
+    }
   }
 
   // the valley sometimes calls first — non-contingent, unprompted
@@ -272,15 +308,24 @@ function update(t,dt){
 }
 
 // --- speaking ---------------------------------------------------------------
-function speak(v,srcMotif,t,solo){
-  v.glow=solo?1.6:1; v.lastSpokeAt=t; v.heard=true;
-  eventLog.push({t:+t.toFixed(1),who:'voice'+v.id,kind:'reply',type:v.type});
+function speak(v,srcMotif,t,solo,idle){
+  v.glow=idle?0.55:(solo?1.6:1); v.lastSpokeAt=t; v.heard=true;
+  lastUtteranceAt=t;
+  eventLog.push({t:+t.toFixed(1),who:'voice'+v.id,kind:idle?'chirp':'reply',type:v.type});
   if(!AC) return;
   const pan=(v.x/W)*2-1;
   // the valley's own first moves come closer — brighter, less veiled — so an
-  // opening is audibly different from an answer
-  const dist=(v.ridge/3)*(solo?0.45:1);
-  const notes=(srcMotif&&srcMotif.length? srcMotif: [2,4]).map(n=>SCALE[clamp(n+ (Math.random()<0.4? (Math.random()<0.5?-1:1):0),0,SCALE.length-1)]*v.register);
+  // opening is audibly different from an answer; idle chirps sit furthest back
+  const dist=clamp((v.ridge/3)*(solo?0.45:1)+(idle?0.3:0),0,1);
+  // the voice answers in ITS OWN register: it takes the shape of your phrase
+  // and transposes it home, so the band you sang toward is the band that
+  // sings back
+  const src=(idle?[v.home]:(srcMotif&&srcMotif.length?srcMotif:[v.home]));
+  const centre=src.reduce((a,b)=>a+b,0)/src.length;
+  const notes=src.map(n=>{
+    const drift=Math.random()<0.4?(Math.random()<0.5?-1:1):0;
+    return SCALE[clamp(Math.round(v.home+(n-centre))+drift,0,SCALE.length-1)];
+  });
   const when=AC.currentTime+0.05;
   ({thrush, owl, frog, bellbug, whistler, dove})[v.type](notes,when,pan,dist,solo);
 }
@@ -364,7 +409,7 @@ function thrush(notes,when,pan,dist){
 }
 function owl(notes,when,pan,dist){
   const out=panner(pan,dist);
-  const f=Math.max(160,notes[0]*0.5);
+  const f=Math.max(120,notes[0]*0.5);
   for(let i=0;i<2;i++){
     const t=when+i*0.55;
     const o=AC.createOscillator(),g=AC.createGain();
@@ -378,7 +423,7 @@ function owl(notes,when,pan,dist){
 }
 function frog(notes,when,pan,dist){
   const out=panner(pan,dist);
-  const f=Math.max(110,notes[0]*0.35);
+  const f=Math.max(75,notes[0]*0.35);
   for(let i=0;i<3;i++){
     const t=when+i*0.3;
     const o=AC.createOscillator(),g=AC.createGain(),fl=AC.createBiquadFilter();
@@ -422,7 +467,7 @@ function whistler(notes,when,pan,dist){
 }
 function dove(notes,when,pan,dist){
   const out=panner(pan,dist);
-  const f=Math.max(240,notes[0]*0.7);
+  const f=Math.max(190,notes[0]*0.7);
   const seq=[[0,0.25],[0.35,0.5],[0.95,0.4],[1.45,0.4]];
   for(const [dt0,len] of seq){
     const t=when+dt0;
@@ -547,11 +592,13 @@ function render(t){
     if(base>0.01||v.glow>0.01){
       for(let k=0;k<v.pts.length;k++){
         const [ox,oy]=v.pts[k];
-        const tw=0.55+0.45*Math.sin(t*(1.1+k*0.23)+v.id*2+k*2.1);
-        const a=Math.min(0.9, base*tw + v.glow*(0.45+0.2*Math.sin(t*6+k)));
+        const m=motionOf(v,k,t);
+        const a=Math.min(0.9, base*m.tw + v.glow*(0.45+0.2*Math.sin(t*6+k)));
         if(a<=0.015) continue;
         ctx.fillStyle=`hsla(${voiceHue(v)},70%,75%,${a})`;
-        ctx.beginPath();ctx.arc(v.x+ox,v.y+oy,1.2+(k===0?0.9:0)+v.glow*1.5,0,7);ctx.fill();
+        ctx.beginPath();
+        ctx.arc(v.x+ox+m.dx, v.y+oy+m.dy, (1.2+(k===0?0.9:0))*m.r+v.glow*1.5, 0, 7);
+        ctx.fill();
       }
     }
     // fireflies keep company near trusted embers — somewhere for the eye
@@ -609,6 +656,36 @@ function render(t){
   }
   vignette();
 }
+// how each creature holds itself: the constellation moves the way the animal
+// does, so a voice is recognizable before it sings
+function motionOf(v,k,t){
+  const ph=v.id*2+k*2.1;
+  switch(v.persona.motion){
+    case 'flick':    // thrush — quick darting jumps, then stillness
+      { const beat=Math.floor(t*1.6+ph*0.3);
+        const j=Math.sin(beat*12.9898+k)*43758.5453;
+        const jitter=(j-Math.floor(j))-0.5;
+        const snap=Math.max(0,1-((t*1.6+ph*0.3)%1)*4);
+        return {dx:jitter*7*snap, dy:jitter*4*snap, tw:0.5+0.5*snap, r:1}; }
+    case 'breathe':  // owl — barely moves; the whole shape swells and settles
+      { const b=0.5+0.5*Math.sin(t*0.42+v.id);
+        return {dx:0, dy:-b*1.2, tw:0.45+0.55*b, r:1+b*0.5}; }
+    case 'pulse':    // frog — the constellation blinks in unison, slow
+      { const p=Math.pow(Math.max(0,Math.sin(t*0.85+v.id)),3);
+        return {dx:0, dy:0, tw:0.25+0.75*p, r:1+p*0.35}; }
+    case 'shimmer':  // bellbug — fine, fast, every point out of phase
+      { const s=0.5+0.5*Math.sin(t*5.2+ph*3);
+        return {dx:Math.sin(t*3.1+ph)*1.2, dy:Math.cos(t*2.7+ph)*1.2, tw:0.2+0.8*s, r:0.8}; }
+    case 'drift':    // whistler — points glide in slow wide orbits
+      { const a=t*0.25+ph;
+        return {dx:Math.cos(a)*6, dy:Math.sin(a)*3.5, tw:0.6+0.4*Math.sin(t*0.7+ph), r:1}; }
+    case 'sway':     // dove — a gentle shared rocking, paired
+      { const s=Math.sin(t*0.9+v.id+(k%2)*0.5);
+        return {dx:s*3.2, dy:Math.abs(s)*-1.1, tw:0.55+0.45*Math.sin(t*1.1+ph), r:1}; }
+    default:
+      return {dx:0, dy:0, tw:0.55+0.45*Math.sin(t*1.1+ph), r:1};
+  }
+}
 function voiceHue(v){
   return {thrush:45,owl:28,frog:110,bellbug:190,whistler:280,dove:340}[v.type]||60;
 }
@@ -663,7 +740,7 @@ window.__reply={
   get t(){return T();},
   skipTo(sec){skew=sec-(performance.now()-t0)/1000;return 'now t='+T();},
   get racket(){return racket;},
-  voices(){return voices.map(v=>({id:v.id,type:v.type,x:v.x|0,trust:+v.trust.toFixed(2),shyness:+v.shyness.toFixed(2),answers:v.trust>=v.shyness}));},
+  voices(){return voices.map(v=>({id:v.id,type:v.type,home:v.home,motion:v.persona.motion,x:v.x|0,trust:+v.trust.toFixed(2),shyness:+v.shyness.toFixed(2),answers:v.trust>=v.shyness}));},
   log(){return eventLog.slice(-30);},
   pendingCount(){return pending.length;},
   call(pitchIdx,heldMs){ // synthetic soft call (no audio needed)
