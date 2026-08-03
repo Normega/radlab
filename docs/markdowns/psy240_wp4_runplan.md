@@ -1703,8 +1703,9 @@ eleven disorder pages, so it is one hop from most sensitive material. **One hop 
 a reader in distress**, but where to place trigger-adjacent signposting across a course is a
 pedagogical decision for the instructor, not a corpus-mechanics one.
 
-The defensible bounded rule, if wanted: **link it from every page on which the corpus itself reports
-elevated suicide risk** — currently `major-depressive-disorder`, `bipolar-i-disorder`,
+**Done 2026-08-02 at Norm's direction:** linked from every page on which the corpus itself reports
+elevated suicide risk — **12 inbound links**. A one-line support blockquote sits above the first
+section on each, so a reader in distress does not have to hunt for it. The pages are — currently `major-depressive-disorder`, `bipolar-i-disorder`,
 `borderline-personality-disorder`, `adhd`, `autism-spectrum-disorder`, `conduct-disorder`,
 `specific-learning-disorder`, `intermittent-explosive-disorder`, `gambling-disorder`,
 `anorexia-nervosa` and `gender-dysphoria`. **Norm's call.**
