@@ -165,6 +165,20 @@ export default function WikiPage() {
       </p>
       {page.summary && <p style={S.summary}>{page.summary}</p>}
 
+      {/* Frontmatter `prevalence`, surfaced because it's the one headline number
+          a reader looks for and it otherwise sat invisible in the source. Shown
+          verbatim, including the honest "no figure in this source" cases — a page
+          that says the rate is unknown is making a claim worth reading, and
+          hiding those would leave only the disorders that happen to be counted.
+          The label links to /prevalence, which is what gives all 108 disorder
+          pages a route to that concept page without a wikilink in every body. */}
+      {meta.prevalence && (
+        <p style={S.prevalence}>
+          <Link to={`${WIKI_BASE}/prevalence`} style={S.prevalenceLabel}>Prevalence</Link>
+          <span style={S.prevalenceText}>{meta.prevalence}</span>
+        </p>
+      )}
+
       {saveNotice && <p style={S.saveNotice}>{saveNotice}</p>}
 
       {/* Staff editing. The only client-reachable write to a page body besides
@@ -362,6 +376,11 @@ const S = {
   title: { fontFamily: SERIF, fontSize: 34, color: 'var(--tx)', margin: '4px 0 6px', lineHeight: 1.15 },
   metaLine: { fontFamily: MONO, fontSize: 12, letterSpacing: 0.5, textTransform: 'uppercase', color: 'var(--tx2)' },
   summary: { fontSize: 17, color: 'var(--tx2)', lineHeight: 1.6, margin: '12px 0 0', maxWidth: '62ch' },
+
+  prevalence: { display: 'flex', gap: 10, alignItems: 'baseline', flexWrap: 'wrap', margin: '14px 0 0', padding: '10px 14px', borderRadius: 10, background: 'var(--bgc)', border: '1px solid var(--bd)', maxWidth: '62ch' },
+  prevalenceLabel: { flex: '0 0 auto', fontFamily: MONO, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--pk)', textDecoration: 'none' },
+  prevalenceText: { flex: '1 1 200px', fontSize: 14, color: 'var(--tx)', lineHeight: 1.5 },
+
   sub: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.55 },
   dim: { color: 'var(--tx2)', fontSize: 13 },
   link: { color: 'var(--pk)', textDecoration: 'none' },

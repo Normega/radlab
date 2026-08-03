@@ -2033,3 +2033,94 @@ have thin open-access review literature, and several of the rest are better serv
 per page than by another batch sweep.
 
 **Live: 247 pages, 1,286 wikilinks, 114 ingest jobs, 0 published, queue clear.**
+
+---
+
+## 20. `prevalence` — a frontmatter invariant, a concept page, and a reader surface
+
+**All 108 disorder pages now carry a one-line `prevalence:` value in frontmatter, and the reader
+renders it.** Before this, 63 had a value, 12 had a placeholder and **33 had no such field at all** —
+and none of the three states was visible to a reader, because `WikiPage.jsx` never rendered the field.
+
+### 20.1 The invariant
+
+**Every page with `type = 'disorder'` has exactly one `prevalence:` line, inside the frontmatter block,
+on one line, double-quoted.** Check it with:
+
+```sql
+SELECT count(*) FILTER (WHERE content !~ E'\nprevalence:') AS missing
+FROM wiki_pages WHERE type = 'disorder';
+```
+
+**One line matters.** `splitFrontmatter()` in `src/academic/fieldguide/wiki/wikiText.js` parses a
+deliberately narrow YAML subset — `key: scalar` and inline `[a, b, c]` lists, one line each. A folded
+or block-scalar value would be silently dropped, so a long prevalence string must stay on a single
+line rather than wrap.
+
+**Placement is immediately after `title:`.** Inserted with a first-match `regexp_replace` on
+`(\ntitle:[^\n]*\n)`, which keeps it above the `sources:` block list rather than stranded after it.
+
+### 20.2 "No figure in this source" is a value, not a gap
+
+**21 of the 108 pages honestly report that no rate exists.** Those are written out rather than left
+blank, because the two states mean different things:
+
+- **Blank** = nobody looked.
+- **"Largely unknown — deception is intrinsic to the disorder and clinicians rarely record the
+  diagnosis (APA, 2022)"** (`factitious-disorder`) = somebody looked, and the absence has a reason.
+
+The reason is often the most teachable part of the page. `pedophilic-disorder` — stigma keeps people
+out of clinical samples, so published figures are unrepresentative *by construction*.
+`voyeuristic-disorder` — the source's own two figures are contradicted within the same passage, so the
+field says the rate is not known **and says why the numbers already on the page must not be quoted**.
+
+**The reader shows these too.** Hiding them would leave only the disorders that happen to have been
+counted, which is exactly the distortion the `prevalence` page argues against.
+
+### 20.3 Values are derived, not researched
+
+Each value was written **from that page's own Epidemiology section**, which is already provenanced —
+so no new claim enters the corpus and the frontmatter cannot drift from the body's sources. This is
+why it was done as a plain `UPDATE` on `wiki_pages.content` rather than through an ingest job: it is a
+restatement, not an ingest.
+
+**A plain UPDATE is safe here** because the triggers do the bookkeeping: `wiki_pages_snapshot_trg`
+keeps the previous body as an accepted version, `wiki_pages_set_needs_trg` re-derives `needs`,
+`wiki_pages_sync_links_trg` re-derives the graph, `wiki_pages_touch_trg` bumps the timestamp. Link
+count was unchanged at 1,286 across the 45-page edit, which is the check that frontmatter-only edits
+touched no bodies.
+
+**Overview pages carry a chapter-level range** rather than a single rate — `anxiety-disorders`
+("specific phobia 8-12% (US) down to agoraphobia 1-1.7% worldwide"), `personality-disorders`
+("narcissistic personality disorder 0.0% (NCS-R) against 6.2% (NESARC)"). The point of those is the
+spread, not a midpoint.
+
+### 20.4 The `prevalence` concept page
+
+**New page, `type='concept'`, three provenanced sources** — deliberately *not* a duplicate of
+`epidemiology`, which keeps the definitions (point/period/lifetime, incidence, comorbidity). The new
+page carries the thing the §19 campaign kept turning up: **what a published rate is actually a property
+of** — the manual, the instrument, the threshold, the sample.
+
+| Section | Source |
+|---|---|
+| The manual decides the number (delirium, 200 patients, 16%-28%) | Sepulveda et al. 2016, CC BY 4.0 |
+| A stable rate can hide an unstable category (agoraphobia, 43% non-overlap) | Roest et al. 2019, CC BY-NC 4.0 |
+| The instrument, and where its threshold came from (41 measures, 4.3%-86%) | Lebel et al. 2020, CC BY 4.0 |
+
+**Built as three sequential versions under three jobs** (§19.3), so all three appear under *Built from*
+rather than one crowding out the others. Figures borrowed from elsewhere in the corpus — PTSD's 42%
+concordance, the Y-BOCS 16, gaming disorder's 30+ instruments — are cited inline and wikilinked to the
+page where they are fully provenanced, which is cross-referencing rather than unsourced content.
+
+### 20.5 The label is the link
+
+**`WikiPage.jsx` renders the frontmatter value under the summary, with the word "Prevalence" linking to
+`/academic/fieldguide/wiki/prevalence`.** That gives **all 108 disorder pages a route to the concept
+page without editing 108 bodies** — the alternative, a `[[prevalence]]` wikilink in every disorder
+page, would have added ~108 graph edges of no analytical value and touched every page's version
+history to do it.
+
+The trade-off is explicit: the concept page gets **one** backlink (from `epidemiology`, where the link
+*is* in the body and *is* a real edge) rather than 109. The reader can always reach it; the graph
+stays meaningful.
