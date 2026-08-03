@@ -121,7 +121,7 @@ let mossWarm=0;
 const VKIND={
   dragonfly:{phase:[0,0.6]}, leaves:{phase:[0,0.9]}, strider:{phase:[0,0.7]},
   dipper:{phase:[0.1,0.65]}, frog:{phase:[0.45,0.95]}, sun:{phase:[0,0.35]},
-  firefly:{phase:[0.8,1]},
+  firefly:{phase:[0.8,1]}, moths:{phase:[0.78,1]}, fishrise:{phase:[0.6,1]},
 };
 
 function spawnVisitor(t){
@@ -141,16 +141,21 @@ function spawnVisitor(t){
     case 'dipper': v.x=-30; v.y=stream.top-30; v.stay=16+Math.random()*8; v.dove=false; v.gotFish=false; break;
     case 'frog': v.x=stone.x-stone.rx*2.6; v.y=stone.y+stone.ry*2.4; v.stay=14+Math.random()*10; break;
     case 'firefly': v.x=W*0.7; v.y=stream.top-60; v.stay=999; break;
+    case 'moths': v.x=stone.x; v.y=stone.y-stone.ry-24; v.stay=30+Math.random()*20;
+      v.wings=Array.from({length:3},(_,i)=>({ph:Math.random()*7,r:18+Math.random()*16})); break;
+    case 'fishrise': v.x=W*(0.15+Math.random()*0.6); v.y=stone.y+(Math.random()-0.5)*40; v.stay=7; v.rose=false; break;
   }
   visitors.push(v);
 }
 
 function visitorUpdate(t,dt){
+  dayKMemo=dayK(t);   // authoritative here, not in render — headless-safe
   // scheduler
   if(t>nextVisitAt){
     nextVisitAt=t+P.visitEvery*(0.6+Math.random()*0.8);
     spawnVisitor(t);
   }
+  if(eventLog.length>400) eventLog.splice(0,eventLog.length-400);
   if(sunPatch.active){
     mossWarm=Math.min(1,mossWarm+dt*0.08);
     if(t>sunPatch.until){ sunPatch.active=false; }
@@ -170,15 +175,16 @@ function visitorUpdate(t,dt){
         if(Math.hypot(v.x-perch[0],v.y-perch[1])<6){ v.state='perched'; eventLog.push({t:+t.toFixed(1),kind:v.kind,ev:'land'}); }
       } else if(v.state==='perched'){
         v.x=perch[0];v.y=perch[1];
-        const stayFor=v.stay+v.attended*1.6;   // attention makes it comfortable
+        // attention makes it comfortable — but never captive
+        const stayFor=v.stay+Math.min(v.attended,20)*1.6;
         if(disturbance>0.9){ v.state='startled'; v.st=t; }
         else if(age>stayFor){ v.state='leaving'; }
       } else if(v.state==='startled'){
-        // a loop over the water, then back if the water calms
+        // a loop over the water, patient enough to outlast any tantrum's decay
         const a=(t-v.st)*2.4;
         v.x=stone.x+Math.cos(a)*90; v.y=stone.y-70+Math.sin(a*1.4)*36;
         if(t-v.st>4&&disturbance<0.4){ v.state='arriving'; }
-        else if(t-v.st>10){ v.state='leaving'; }
+        else if(t-v.st>4+P.distDecay*1.6){ v.state='leaving'; }
       } else if(v.state==='leaving'){
         v.x+=90*dt; v.y-=44*dt;
         if(v.x>W+40){ visitors.splice(i,1); eventLog.push({t:+t.toFixed(1),kind:v.kind,ev:'leave'}); }
@@ -187,7 +193,7 @@ function visitorUpdate(t,dt){
     else if(v.kind==='leaves'){
       let allGone=true;
       for(const L of v.leaves){
-        if(L.free&&L.x>W+40) continue;
+        if(L.x>W+40) continue;
         allGone=false;
         const [fx,fy]=flowAt(L.x,L.y);
         if(!L.free&&!L.snagT&&Math.hypot(L.x-stone.x,L.y-(stone.y-6))<stone.rx*1.05&&L.x<stone.x){
@@ -217,7 +223,7 @@ function visitorUpdate(t,dt){
       const sp=disturbance>0.6?170:60;
       v.x+=(v.goal[0]-v.x)*dt*sp/30; v.y+=(v.goal[1]-v.y)*dt*sp/30;
       if(Math.random()<dt*3) addRipple(v.x,v.y,false);
-      if(age>v.stay){ visitors.splice(i,1); eventLog.push({t:+t.toFixed(1),kind:v.kind,ev:'leave'}); }
+      if(age>v.stay+Math.min(v.attended,15)*0.5){ visitors.splice(i,1); eventLog.push({t:+t.toFixed(1),kind:v.kind,ev:'leave'}); }
     }
     else if(v.kind==='dipper'){
       const perch=[stone.x+stone.rx*0.45,stone.y-stone.ry-6];
@@ -226,13 +232,15 @@ function visitorUpdate(t,dt){
         if(Math.hypot(v.x-perch[0],v.y-perch[1])<7){ v.state='perched'; v.bobPh=0; eventLog.push({t:+t.toFixed(1),kind:v.kind,ev:'land'}); }
       } else if(v.state==='perched'){
         v.x=perch[0];v.y=perch[1];v.bobPh=(v.bobPh||0)+dt*5;
-        if(disturbance>1.1){ v.state='leaving'; }
+        const fishBeat=v.gotFish&&t-v.fishT<2.2;   // the payoff always plays out
+        if(disturbance>1.1&&!fishBeat){ v.state='leaving'; }
+        else if(!v.dove&&age>Math.max(v.stay*2,30)){ v.state='leaving'; }  // may leave undived
         else if(!v.dove&&age>5&&Math.random()<dt*0.25){
           v.state='diving'; v.st=t; v.dove=true;
           eventLog.push({t:+t.toFixed(1),kind:v.kind,ev:'dive'});
           addRipple(perch[0]+14,stone.y+4,true); sfxPlop();
         }
-        else if(v.dove&&age>v.stay){ v.state='leaving'; }
+        else if(v.dove&&age>v.stay+Math.min(v.attended,15)*0.8&&!fishBeat){ v.state='leaving'; }
       } else if(v.state==='diving'){
         const p=(t-v.st)/2.4;
         if(p<0.5){ v.y=perch[1]+p*2*(stone.y+8-perch[1]); v.x=perch[0]+14*p*2; }
@@ -244,10 +252,11 @@ function visitorUpdate(t,dt){
       }
     }
     else if(v.kind==='frog'){
-      // eyes surface, watch, sink
-      v.up=age<2? age/2 : (age>v.stay-2? Math.max(0,(v.stay-age)/2):1);
+      // eyes surface, watch, sink — watched-back, they linger
+      const stayFor=v.stay+Math.min(v.attended,12)*0.5;
+      v.up=age<2? age/2 : (age>stayFor-2? Math.max(0,(stayFor-age)/2):1);
       if(disturbance>0.9) v.stay=Math.min(v.stay,age+1.5);
-      if(age>v.stay){ visitors.splice(i,1); eventLog.push({t:+t.toFixed(1),kind:v.kind,ev:'sink'}); }
+      if(age>stayFor){ visitors.splice(i,1); eventLog.push({t:+t.toFixed(1),kind:v.kind,ev:'sink'}); }
     }
     else if(v.kind==='firefly'){
       const perch=[stone.x+stone.rx*0.1,stone.y-stone.ry-10];
@@ -258,10 +267,20 @@ function visitorUpdate(t,dt){
       } else { v.x=perch[0];v.y=perch[1]; }
       // the firefly stays. It is the last visitor.
     }
+    else if(v.kind==='moths'){
+      // moths work the firefly's glow (or the moon on the water); attention
+      // draws their orbits in close
+      if(age>v.stay&&!isAttended){ visitors.splice(i,1); eventLog.push({t:+t.toFixed(1),kind:v.kind,ev:'leave'}); }
+    }
+    else if(v.kind==='fishrise'){
+      if(!v.rose&&age>1){ v.rose=true; addRipple(v.x,v.y,true); if(Math.random()<0.6) sfxPlop(); }
+      if(age>v.stay){ visitors.splice(i,1); }
+    }
   }
 
-  // minnows: shelter in your eddy only after the water has been calm a while
-  if(!minnows.present&&stillFor>P.minnowStill&&dayKMemo<0.85){
+  // minnows: shelter in your eddy only after the water has been calm a while;
+  // at night they stay on as moonlit glints — the stillness sign never sleeps
+  if(!minnows.present&&stillFor>P.minnowStill){
     minnows.present=true;
     minnows.school=Array.from({length:6},(_,i)=>({a:Math.random()*7,r:8+Math.random()*22,ph:Math.random()*7}));
     eventLog.push({t:+t.toFixed(1),kind:'minnows',ev:'shelter'});
@@ -275,6 +294,8 @@ let dayKMemo=0;
 
 // --- attend gesture ---------------------------------------------------------
 function findAttendTarget(x,y){
+  // a hold deep in the eddy means the minnows, even with a strider about
+  if(minnows.present&&Math.hypot(x-eddyX(),y-stone.y)<P.attendR*0.5) return 'minnows';
   let best=null,bd=P.attendR;
   for(const v of visitors){
     let vx=v.x,vy=v.y;
@@ -302,9 +323,11 @@ cv.addEventListener('pointermove',e=>{
   if(attendHold.active){attendHold.x=e.clientX;attendHold.y=e.clientY;
     attendHold.target=findAttendTarget(e.clientX,e.clientY)||attendHold.target;}
   else if(pMoved>140){
-    // a fast drag stirs the water
-    disturbance=Math.min(2,disturbance+0.35);
-    addRipple(e.clientX,e.clientY,true);
+    // a fast drag stirs the water (if it touches the water)
+    if(e.clientY>stream.top&&e.clientY<stream.bot){
+      disturbance=Math.min(2,disturbance+(disturbance>1.2?0.18:0.35));
+      addRipple(e.clientX,e.clientY,true);
+    }
     pMoved=0;
   }
 });
@@ -314,9 +337,13 @@ window.addEventListener('pointerup',e=>{
   const held=performance.now()-pT0;
   if(attendHold.active){ attendHold.active=false; attendHold.target=null; return; }
   if(held<260&&pMoved<24){
-    // a tap: the water answers, visitors lift
-    disturbance=Math.min(2,disturbance+0.55);
-    if(pStart[1]>stream.top&&pStart[1]<stream.bot){ addRipple(pStart[0],pStart[1],true); sfxPlop(); }
+    // a tap on the water answers with a ripple; taps on the bank are just
+    // taps. Past a tantrum threshold each tap adds less — saturation, not
+    // escalation
+    if(pStart[1]>stream.top&&pStart[1]<stream.bot){
+      disturbance=Math.min(2,disturbance+(disturbance>1.2?0.28:0.55));
+      addRipple(pStart[0],pStart[1],true); sfxPlop();
+    }
   }
 });
 window.addEventListener('pointercancel',()=>{pDown=false;attendHold.active=false;attendHold.target=null;});
@@ -452,14 +479,17 @@ function render(t,dt){
     ctx.ellipse(eddyX(),stone.y,stone.rx*(0.5+i*0.25),stone.ry*(0.5+i*0.25),0,a0,a0+2.2);
     ctx.stroke();
   }
-  // minnows in the eddy
+  // minnows in the eddy — moonlit glints at night; attention draws the
+  // school in close
   if(minnows.present){
+    const minAtt=attendHold.active&&attendHold.target==='minnows'?0.55:1;
     for(const m of minnows.school){
-      const mx=eddyX()+Math.cos(t*0.7+m.a)*m.r;
-      const my=stone.y+Math.sin(t*0.9+m.a)*m.r*0.5;
+      const mx=eddyX()+Math.cos(t*0.7+m.a)*m.r*minAtt;
+      const my=stone.y+Math.sin(t*0.9+m.a)*m.r*0.5*minAtt;
       ctx.save();ctx.translate(mx,my);
       ctx.rotate(Math.atan2(Math.cos(t*0.9+m.a),(-Math.sin(t*0.7+m.a))||0.01));
-      ctx.fillStyle=`rgba(190,205,190,${0.4-k*0.15})`;
+      const glint=k>0.6? Math.max(0,Math.sin(t*2.3+m.ph))*(k-0.6)/0.4:0;
+      ctx.fillStyle=`rgba(${190+glint*50|0},${205+glint*35|0},${190+glint*60|0},${0.4-k*0.15+glint*0.45+(minAtt<1?0.15:0)})`;
       ctx.beginPath();ctx.ellipse(0,0,4.5,1.4,0,0,7);ctx.fill();
       ctx.restore();
     }
@@ -502,6 +532,14 @@ function render(t,dt){
       ctx.beginPath();ctx.ellipse(0,0,7,3.4,0,0,7);ctx.fill();
       ctx.strokeStyle='rgba(60,40,20,0.5)';ctx.lineWidth=0.7;
       ctx.beginPath();ctx.moveTo(-7,0);ctx.lineTo(7,0);ctx.stroke();
+      // attended while snagged: the vein-lattice comes through
+      if(v.detail>0.1&&L.snagT&&!L.free){
+        ctx.strokeStyle=`rgba(230,200,120,${v.detail*0.7})`;
+        ctx.lineWidth=0.5;
+        for(const va of [-0.5,-0.25,0.25,0.5]){
+          ctx.beginPath();ctx.moveTo(-4,0);ctx.lineTo(4,va*6);ctx.stroke();
+        }
+      }
       ctx.restore();
     }
   }
@@ -532,6 +570,26 @@ function render(t,dt){
     else if(v.kind==='dipper') drawDipper(v,t,k);
     else if(v.kind==='strider') drawStrider(v,t,k);
     else if(v.kind==='firefly') drawFirefly(v,t,k);
+    else if(v.kind==='moths'){
+      // moths work the glow above the stone; attention draws their orbits in
+      for(const m of v.wings){
+        const r=m.r*(1-v.detail*0.45);
+        const mx=v.x+Math.cos(t*1.5+m.ph)*r;
+        const my=v.y+Math.sin(t*1.9+m.ph)*r*0.6;
+        const flut=Math.sin(t*26+m.ph)*0.5;
+        ctx.fillStyle=`rgba(210,205,190,${0.35+v.detail*0.3})`;
+        ctx.save();ctx.translate(mx,my);ctx.rotate(flut);
+        ctx.beginPath();ctx.ellipse(-1.2,0,2,1,0,0,7);ctx.fill();
+        ctx.beginPath();ctx.ellipse(1.2,0,2,1,0,0,7);ctx.fill();
+        ctx.restore();
+      }
+    }
+    else if(v.kind==='fishrise'&&v.rose&&t-v.t0<3.4){
+      // a dark back breaks the moon-path, and is gone
+      const p=(t-v.t0-1)/2.4;
+      ctx.fillStyle=`rgba(30,38,46,${0.7*Math.sin(Math.PI*clamp(p,0,1))})`;
+      ctx.beginPath();ctx.ellipse(v.x,v.y-3,9,3.2,0,Math.PI,0);ctx.fill();
+    }
   }
   // attention halo
   if(attendHold.active){
@@ -633,7 +691,10 @@ function drawStrider(v,t,k){
   ctx.restore();
 }
 function drawFirefly(v,t,k){
-  const blink=0.35+0.65*Math.max(0,Math.sin(t*1.1+1));
+  // attended, it answers: the slow blink becomes a call-and-response double
+  const base=Math.max(0,Math.sin(t*1.1+1));
+  const answer=v.detail>0.1? Math.max(0,Math.sin(t*1.1+1-0.9))*v.detail:0;
+  const blink=0.35+0.65*Math.max(base,answer);
   const gg=ctx.createRadialGradient(v.x,v.y,0,v.x,v.y,16);
   gg.addColorStop(0,`rgba(215,255,170,${0.5*blink})`);
   gg.addColorStop(1,'rgba(215,255,170,0)');
@@ -702,7 +763,7 @@ bind('minn','minnowStill',x=>x|0);
 window.__stone={
   P,DBG,
   get t(){return T();},
-  skipTo(sec){skew=sec-(performance.now()-t0)/1000;return 'now t='+T();},
+  skipTo(sec){skew=sec-(performance.now()-t0)/1000;nextVisitAt=Math.min(nextVisitAt,T()+8);return 'now t='+T();},
   get disturbance(){return disturbance;},
   get stillFor(){return stillFor;},
   visitors(){return visitors.map(v=>({kind:v.kind,state:v.state,x:v.x|0,y:v.y|0,attended:+(v.attended||0).toFixed(1)}));},
