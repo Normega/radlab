@@ -64,15 +64,16 @@ cases. Module 16's corpus check already turned up one unknown case — a broken 
 
 Everything is merged and pushed to `main`; nothing sits on a branch.
 
-## 2. Live database state (radlab-academic, 2026-08-03, after the paraphilias cluster)
+## 2. Live database state (radlab-academic, 2026-08-03, after `alternatives-to-categorical-diagnosis`)
 
 ```
 252 pages with bodies       0 published — no student can see anything yet
-1,383 wikilinks             0 proposals pending — review queue clear
+1,384 wikilinks             0 proposals pending — review queue clear
 10 red links                0 blue links to an empty page
 0 duplicate headings        0 off-catalogue disorder pages
-131 catalogue rows         146 ingest jobs
-67 empty sections           major-tier gaps: 16 across 11 pages
+131 catalogue rows         154 ingest jobs
+64 empty sections           major-tier gaps: 13 across 9 pages
+33 annotations              10 catalogue pages not yet written (all Tier B)
 ```
 
 **Catalogue coverage: Tier A 54/54, foundations 14/14, overviews 16/16 — all complete. Tier B 33/46 is the only incomplete tier.**
@@ -94,6 +95,14 @@ present prose carrying student-sized asks.
 
 Nothing has ever been published. Every accept is *accept as draft* — no students are enrolled, so
 publishing buys nothing and is the harder direction to reverse.
+
+**The major tier is nearly closed, and that changes what the binding constraint is.** Nine pages hold
+the last 13 gaps (§6). Once they are done, "what to write next" stops being the question and
+**publishing** becomes it — which carries the `student-support-resources` verification obligation
+(every phone number and URL re-checked before students get access, and each term). Two things to
+settle before a first publish: whether Tier B's 10 unwritten pages should land first, and that
+**`norman@radlab.zone` has no enrollment** — it authenticates and is then denied. `kavabee@gmail.com`
+is ta/active and `norman.farb@utoronto.ca` is instructor/active.
 
 ## 3. How to work on this
 
@@ -214,7 +223,27 @@ only.
 
 ## 6. What is left to write
 
-Run plan **§10** is the ordered brief. In one line each:
+**The major tier is down to 9 pages and 13 gaps**, and the list is closed:
+
+| Page | Tier | Missing |
+|---|---|---|
+| `substance-intoxication` | foundation | contested, epidemiology, etiology, treatment |
+| `illness-anxiety-disorder` | A | etiology, treatment |
+| `functional-neurological-symptom-disorder` | A | treatment |
+| `adjustment-disorders` | A | etiology |
+| `exhibitionistic-disorder` | A | etiology |
+| `integrative-model` | foundation | comparative-evidence |
+| `research-methods` | foundation | evaluating-the-evidence-base |
+| `sleep-wake-disorders` | overview | contested |
+| `elimination-disorders` | overview | encopresis |
+
+`substance-intoxication` is both the emptiest and the best-bundled: it sits with the **8 unwritten
+Lecture 8 substance stubs** (caffeine, hallucinogen, inhalant, sedative-hypnotic-anxiolytic, tobacco,
+plus kleptomania and pyromania), so one source pass could serve both and clear most remaining red
+links. `transvestic-disorder` needs its own search — it is **absent from the paraphilias
+pharmacological review entirely** (run plan §24).
+
+Older brief, largely worked through — run plan **§10**. In one line each:
 
 - **The companion volume** — closes 36 etiology/treatment gaps across Module 16's 18 pages.
 - **8 Tier A pages with no textbook source** — L7 entire (`erectile-disorder`,

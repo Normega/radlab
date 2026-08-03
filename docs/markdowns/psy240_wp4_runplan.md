@@ -2694,3 +2694,108 @@ Provincial **Mental Health Acts** for civil committal, including Ontario's **For
 stand trial** under Canadian law; ***Smith v Jones***; and on the ethics side the **CPA Code of
 Ethics**, provincial **mandated reporting**, sexual boundary violations and the disciplinary
 mechanisms, record-keeping, and telehealth. None of these is in a source obtained so far.
+
+---
+
+## 26. `alternatives-to-categorical-diagnosis` — four challengers that do not agree with each other
+
+The gap was picked over larger ones for a reason that had nothing to do with its size. It was **one
+empty section on a page with 23 inbound wikilinks** — second only to `evidence-based-practice` — and
+the contested sections written during the L9–L11 sweeps had been *pointing at it*: the dimensional-vs-
+categorical argument on OCD severity bands, the three-column prevalence disagreement on personality
+disorders, DMDD's DSM/ICD placement split, insomnia's collapsed subtypes. Every one of those says "see
+`diagnosis-and-classification`" for an argument that was not on the page. **A red link is visible; a
+blue link to a declared gap is not**, and this is the second kind. Rank derived gaps by inbound links,
+not only by tier.
+
+### 26.1 The sources, and why exactly four
+
+The existing Needs-research marker named four things — HiTOP, RDoC, the DSM-5 Section III alternative
+model for personality disorders, and "the general argument that latent continua fit psychopathology
+data better than discrete categories." Searching each by name rather than by journal (§18's rule) gave
+one source per item, and the fourth turned out to be misdescribed by its own marker: the general
+argument is not one argument.
+
+| Source | Covers | Licence |
+|---|---|---|
+| Krueger & Hobbs (2020), *Psychopathology* 53(3-4) | the DSM-5 AMPD | NIH Public Access author manuscript — free to read, **not CC** |
+| Conway et al. (2019), *Perspectives on Psychological Science* 14(3) | HiTOP | NIHPA author manuscript — free to read, **not CC** |
+| Cuthbert (2014), *World Psychiatry* 13(1) | RDoC | © World Psychiatric Association, open access |
+| Borsboom (2017), *World Psychiatry* 16(1) | network theory | © World Psychiatric Association, open access |
+
+Two of the four are **author manuscripts, not CC-licensed** — free to read under the NIH Public Access
+Policy, which permits reading and citing but is not an open licence. The citation strings record this
+distinction explicitly. Paraphrase-and-cite was the handling regardless, so the practical constraint
+was unchanged, but the provenance row should not claim a licence the source does not carry.
+
+### 26.2 The finding the section is built around
+
+**"Dimensional alternatives" is not one position, and the four disagree with each other about what a
+mental disorder is.** DSM categories, the AMPD's traits and HiTOP's spectra all keep the **common-cause
+/ latent-variable** model — something hidden generates the symptoms — and argue only about its shape:
+category, continuum, or (for RDoC) neural circuit. **Borsboom's network theory removes it entirely**:
+symptoms cause each other, and the pathology *is* the set of interactions.
+
+That matters pedagogically because **HiTOP and network models are routinely taught as allies against
+the DSM while resting on incompatible premises.** Conway et al. concede only that the two are "not
+necessarily mutually exclusive," which is a long way from having shown they fit. The section ends on a
+five-row comparison table whose second column ("why symptoms co-occur") is where the fault line shows.
+
+The second organising finding: **every one of the four is candid that it cannot yet do the DSM's job.**
+RDoC is not a diagnostic system *by design* and Cuthbert says DSM codes will be needed for records and
+insurance indefinitely; HiTOP awaits normative data and agreed cutoffs — the same practical thresholds
+it faults the DSM for setting arbitrarily; network theory has no trial showing network-guided treatment
+beats standard care. So the categorical model is **not so much defended by the evidence as left
+standing by the absence of a deployable replacement.** Both halves are true at once, and the page now
+says so in `## Contested` rather than implying a consensus that does not exist.
+
+### 26.3 A gap closed in a section that had not declared one
+
+Conway et al. report that **roughly 40% of the diagnoses examined in the DSM-5 field trials did not
+reach the cutoff for acceptable inter-rater agreement.** The page's `## How reliable is a diagnosis?`
+section had ended with an explicit promissory note — the textbook gives no kappa values, so the figure
+"has to be sourced elsewhere." **It was prose, so no derived gap tracked it**; only the sentence itself
+recorded the debt. It has been paid, with the citation qualified: this is a secondary characterisation
+offered while arguing *for* an alternative classification, not the primary trial report, so the
+proportion is flagged as indicative rather than exact.
+
+This is §21's lesson in a second form. There, a stale treatment section had no declared gap. Here, a
+*declared* debt sat in prose that `extract_page_needs()` cannot see. **Read the prose of the sections
+you are already sourcing** — a page that says "sourced elsewhere" is asking, and nothing in the tooling
+will ask on its behalf.
+
+### 26.4 One source, two pages
+
+`personality-disorders` carried an annotation asking for exactly "the DSM-5 Alternative Model for
+Personality Disorders (Section III) **and why it was not adopted as primary**" — which Krueger & Hobbs
+answers directly. Rather than leave it for a later pass, a **second job row** was written for the same
+source against that target slug (one job per source-and-page pair, per §9) and the annotation narrowed
+to its two remaining asks: the stability-over-time assumption, and label stigma in clinical services.
+
+Worth noting what the answer is: **the reasons were political, and the model's authors say so** — the
+work "proved to be fraught with political and practical complexities," the compromise was to print both
+models, and the resistance came from psychiatry's need to "preserve the tradition of the medical model
+as a basis for ensuring putative legitimacy." The corroborating detail is where the literature lives:
+most AMPD research is in psychology journals, not psychiatry journals. **ICD-11 made the opposite call**
+— types abolished outright, severity rating mandatory — so on personality the two manuals this corpus
+elsewhere describes as *converging* have in fact diverged.
+
+### 26.5 A mistake worth recording: a replacement that ate a heading
+
+Building the section in four provenance-separated increments, step 3 replaced the anchor
+`…arbitrarily.\n\n## Contested` with new text that **did not restore `## Contested`**. The heading was
+deleted, and the whole Contested section was silently absorbed into
+`alternatives-to-categorical-diagnosis`. Nothing errored. Step 4 then failed to match its own anchor
+and inserted only a fragment, which is what surfaced it.
+
+**Length deltas are a weak check and were not enough here.** Step 3's delta looked right because the
+inserted block dwarfed the 12 characters removed. What caught it was querying
+`extract_page_sections()` for the section *list* — `contested` was simply gone. **When a replacement
+spans a heading, assert on the section list, not the character count**, and prefer anchors that sit
+inside one section. The bad version was rejected rather than accepted-and-patched, so the page history
+shows one clean accept per source.
+
+### 26.6 State after
+
+Major-tier gaps **14 across 10 pages → 13 across 9**; empty sections 65 → 64;
+`diagnosis-and-classification` 16.4k → 37.1k chars, 8 sections, zero gaps, five sources in provenance.
