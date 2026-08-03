@@ -2799,3 +2799,74 @@ shows one clean accept per source.
 
 Major-tier gaps **14 across 10 pages → 13 across 9**; empty sections 65 → 64;
 `diagnosis-and-classification` 16.4k → 37.1k chars, 8 sections, zero gaps, five sources in provenance.
+
+---
+
+## 27. The Lecture 8 block — `substance-intoxication` closes and seven catalogue pages get written
+
+One sweep, **13 sources, 8 pages**: the foundation page `substance-intoxication` went from four declared gaps to zero, and the seven unwritten Lecture 8 catalogue slugs were written. Unwritten catalogue pages **10 → 3**; major-tier gaps **13 across 9 pages → 9 across 8**.
+
+| Page | Sources |
+|---|---|
+| `substance-intoxication` | Sacak et al. 2021 (ED case series, CC BY-NC); Baldacara et al. 2024 (ABP consensus, CC BY) |
+| `inhalant-use-disorder` | Radparvar 2023 (CC BY-NC-ND); Wu & Howard 2006 (NESARC, author ms) |
+| `caffeine-related-disorders` | Bodur et al. 2024 (CC BY); Abdoli et al. 2024 (CC BY) |
+| `hallucinogen-related-disorders` | Yildirim et al. 2024 (CC BY); Martinotti et al. 2018 (CC BY) |
+| `sedative-hypnotic-anxiolytic-related-disorders` | Schmitz 2016 (CC BY-NC); Votaw et al. 2019 (author ms) |
+| `tobacco-use-disorder` | Hartmann-Boyce et al. 2018 (Cochrane); Kirst et al. 2013 (CJPH, Canadian) |
+| `pyromania` | Vaughn et al. 2010 (NESARC, author ms) |
+| `kleptomania` | Grant & Chamberlain 2018 (author ms); Mangot 2014 (CC BY-NC-SA) |
+
+### 27.1 The finding that generalises: what a source counts is not what the page is about
+
+Three pages in this block turned on the same distinction, and it is the most transferable thing in the sweep.
+
+- **`substance-intoxication`.** The only countable population is the one that reaches a hospital, and in a 1,344-case consecutive ED series **55.7% were intentional self-poisoning**, with psychiatric medications, NSAIDs and paracetamol together outweighing recreational substances and alcohol (21.0% and 8.3%). An emergency department measuring "acute intoxication" is largely measuring **[[suicide-and-self-harm]]**. The sex ratio inverts accordingly — men were 92.2% of recreational-drug cases and women 67.6% of intentional poisonings — so "the sex ratio for intoxication" has no answer until you say which intoxication.
+- **`pyromania`.** A search for the diagnosis returns essentially **nothing**; what exists is research on **fire-setting**, the behaviour. NESARC gives 1.0% lifetime fire-setting with **OR 12.38 for antisocial personality disorder** and 71.7% alcohol use disorder, but measured the behaviour with a *single item* and reports **no count of people meeting pyromania criteria at all**. The page is built on the behaviour and says so.
+- **`sedative-hypnotic-anxiolytic`.** Votaw et al. call inconsistent definitions of "misuse" the biggest limitation in the field, and demonstrate it: when NSDUH rewrote its definition in 2015, reported misuse of one's own prescription moved **14.1% → 21.8%** with no change in behaviour.
+
+**Rule for the review pass:** before quoting a prevalence figure, ask what the denominator's recruitment channel was. Three of the eight pages here needed that caution stated in the text, not buried in a limitations line.
+
+### 27.2 Evidence-base size, stated first — three worked cases
+
+§19.6's rule earned its keep three times:
+
+- **The Brazilian Psychiatric Association acute-intoxication consensus could not grade its own evidence** — not by Oxford, not GRADE, not AMSTAR — because "the literature is still scarce." It fell back on a three-round Delphi at a 65% threshold, and **only 52 of 102 proposed items cleared it.** Half of what a national specialist panel proposed could not command two-thirds agreement among the panel. The Treatment section on `substance-intoxication` is the best available guidance *and* expert opinion, and the page says both.
+- **Inhalants:** one randomised trial exists, and it addresses comorbid psychiatric symptoms rather than the inhalant use. Everything else — baclofen, lamotrigine, buspirone, risperidone, aripiprazole — is case reports and case series, presented on the page as a table with an *evidence behind it* column rather than as a drug list.
+- **Tobacco is the opposite pole and belongs in the corpus as the contrast case**: 136 trials, 64,640 participants, **RR 1.55 (1.49–1.61), GRADE high**, with the authors telling funders to stop running these trials. Reading `tobacco-use-disorder` beside `inhalant-use-disorder` is the cheapest way to show a student what "evidence base" means as a variable rather than a formality.
+
+### 27.3 Two clinical inversions worth teaching
+
+**Blood concentration does not define intoxication.** The consensus gives alcohol bands (>400 mg/dL = respiratory depression, coma, death) *and* a lethal dose of ~300 mg/dL in a non-tolerant person — a figure that sits **below** the severe band. That is not an inconsistency to reconcile; it is tolerance, and it is why a tolerant drinker's overdose risk rises rather than falls.
+
+**The pharmacologically obvious drug is sometimes the one to avoid.** For HPPD, risperidone is what theory recommends — LSD is a partial 5-HT2 agonist, risperidone antagonises 5-HT2 — and in practice it **worsens** the visual disturbance and anxiety, probably via α2 presynaptic antagonism. Olanzapine exacerbated a case; haloperidol can worsen flashbacks early; sertraline has been reported both ways. A worked example for [[evidence-based-practice]] that mechanism does not substitute for outcome data.
+
+### 27.4 Two mistakes, both caught by assertions rather than by reading
+
+1. **A `replace()` spanning a heading deleted it.** Building `alternatives-to-categorical-diagnosis` (§26) the same session, an anchor ending `…\n\n## Contested` was replaced with text that did not restore the heading. Length deltas looked right. Only asserting on `extract_page_sections()`'s **section list** caught it. Recorded here too because the same pattern recurred as a temptation throughout this block.
+2. **One version drew on two sources.** The first `kleptomania` version combined Grant & Chamberlain with Mangot under a single `job_id` — a provenance error, since `wiki_page_provenance` joins version→job and the page would have credited one source for both. Rejected and rewritten as two versions. **Note the side effect that cost a step: rejecting the only version of a new page returns `page_dropped: true` and deletes the shell**, so the page had to be recreated before re-proposing.
+
+### 27.5 A measurement flaw in the tracking, found while counting
+
+**`reference_worklist.annotation_count` only counts annotations on pages that still have derived gaps.** A page that closes its last `## Section` gap drops out of the view, and its `> **Needs research:**` markers stop being counted.
+
+```
+annotations via the worklist view:   33   (19 pages)
+annotations actually in the corpus: 298  (139 pages)
+```
+
+Every annotation figure in this run plan and in the handoff — including §29a's "watch annotations, not just empty sections" and the handoff's "the rise 60 → 79 is the real signal" — has been reporting a **filtered subset**, not the corpus. The derived-gap tracking is unaffected and remains sound; what was wrong is the sense that the backlog is small. **More than half the corpus (139 of 259 pages) carries at least one in-prose research ask**, and closing the last major-tier derived gaps will not change that. Count annotations directly:
+
+```sql
+SELECT sum((length(content)-length(replace(content,'Needs research:','')))
+           / length('Needs research:'))
+FROM wiki_pages WHERE content IS NOT NULL;
+```
+
+### 27.6 Canadian content
+
+`tobacco-use-disorder` carries the one Canadian source in the block (Kirst et al. 2013, two national surveys, n = 123,846 and 13,581): problematic alcohol and illicit drug use and mental health problems are all significantly more prevalent among current smokers, with effects **significantly larger among youth**. Its more useful contribution is a Canadian statement of a Canadian gap — the authors conclude that "not enough is known about the prevalence of various types of tobacco use co-morbidities among the Canadian population." Standing annotations were left on `inhalant-use-disorder` (volatile substance use among Indigenous youth in remote and northern communities — a recognised Canadian public-health problem absent from both sources) and `tobacco-use-disorder` (actual Canadian smoking prevalence, provincial and Indigenous breakdowns).
+
+### 27.7 State after
+
+Pages **252 → 259**; wikilinks 1,384 → 1,426; ingest jobs 154 → 169; unwritten catalogue pages **10 → 3** (`hypersomnolence-disorder`, `circadian-rhythm-sleep-wake-disorders`, `brief-psychotic-disorder`); major-tier gaps **13/9 pages → 9/8**; empty sections 64 → 68 (new pages carrying honestly declared gaps); off-catalogue red links **0** — three introduced during the sweep (`opioid-related-disorders`, `alcohol-related-disorders`, `placebo-effect`, `comorbidity`) were caught by the standing check and repointed at the real slugs.

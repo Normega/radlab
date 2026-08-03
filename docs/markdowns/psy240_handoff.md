@@ -64,16 +64,16 @@ cases. Module 16's corpus check already turned up one unknown case — a broken 
 
 Everything is merged and pushed to `main`; nothing sits on a branch.
 
-## 2. Live database state (radlab-academic, 2026-08-03, after `alternatives-to-categorical-diagnosis`)
+## 2. Live database state (radlab-academic, 2026-08-03, after the Lecture 8 block)
 
 ```
-252 pages with bodies       0 published — no student can see anything yet
-1,384 wikilinks             0 proposals pending — review queue clear
-10 red links                0 blue links to an empty page
+259 pages with bodies       0 published — no student can see anything yet
+1,426 wikilinks             0 proposals pending — review queue clear
+4 red links                 0 off-catalogue red links
 0 duplicate headings        0 off-catalogue disorder pages
-131 catalogue rows         154 ingest jobs
-64 empty sections           major-tier gaps: 13 across 9 pages
-33 annotations              10 catalogue pages not yet written (all Tier B)
+131 catalogue rows         169 ingest jobs
+68 empty sections           major-tier gaps: 9 across 8 pages
+298 annotations             3 catalogue pages not yet written (all Tier B)
 ```
 
 **Catalogue coverage: Tier A 54/54, foundations 14/14, overviews 16/16 — all complete. Tier B 33/46 is the only incomplete tier.**
@@ -90,8 +90,15 @@ and there are now none.
 **Empty sections went 95 → 142 → 108 in one day, and both moves were correct.** Module 16 added 36
 holes that were its declared scope limit rather than an extraction failure (§4, run plan §9.7); the
 companion volume then closed 34 of them (run plan §10.4). **Watch annotations, not just empty
-sections** — the rise 60 → 79 is the real signal, because it means instructor-sized holes became
-present prose carrying student-sized asks.
+sections** — instructor-sized holes become present prose carrying student-sized asks.
+
+**Correction (2026-08-03): every annotation figure previously quoted here was a filtered subset.**
+`reference_worklist.annotation_count` only counts annotations on pages that still have a derived
+gap, so a page that closes its last empty section drops out of the view and its
+`> **Needs research:**` markers stop being counted. The view reports **33**; the corpus actually
+holds **298 across 139 pages** — more than half of it. Derived-gap tracking is unaffected and
+remains sound, but closing the last major-tier gaps will not empty the backlog. Count directly:
+`SELECT sum((length(content)-length(replace(content,'Needs research:','')))/length('Needs research:')) FROM wiki_pages WHERE content IS NOT NULL;`
 
 Nothing has ever been published. Every accept is *accept as draft* — no students are enrolled, so
 publishing buys nothing and is the harder direction to reverse.
@@ -227,7 +234,6 @@ only.
 
 | Page | Tier | Missing |
 |---|---|---|
-| `substance-intoxication` | foundation | contested, epidemiology, etiology, treatment |
 | `illness-anxiety-disorder` | A | etiology, treatment |
 | `functional-neurological-symptom-disorder` | A | treatment |
 | `adjustment-disorders` | A | etiology |
@@ -237,11 +243,13 @@ only.
 | `sleep-wake-disorders` | overview | contested |
 | `elimination-disorders` | overview | encopresis |
 
-`substance-intoxication` is both the emptiest and the best-bundled: it sits with the **8 unwritten
-Lecture 8 substance stubs** (caffeine, hallucinogen, inhalant, sedative-hypnotic-anxiolytic, tobacco,
-plus kleptomania and pyromania), so one source pass could serve both and clear most remaining red
-links. `transvestic-disorder` needs its own search — it is **absent from the paraphilias
-pharmacological review entirely** (run plan §24).
+**Three catalogue pages remain unwritten**, and two of them bundle with the sleep overview's last
+gap: `hypersomnolence-disorder` and `circadian-rhythm-sleep-wake-disorders` (L6, DSM ch.12), plus
+`brief-psychotic-disorder` (L9, DSM ch.2). Writing the sleep pair should be paired with
+`sleep-wake-disorders`'s `contested` gap in one source pass.
+
+`transvestic-disorder` needs its own search — it is **absent from the paraphilias pharmacological
+review entirely** (run plan §24).
 
 Older brief, largely worked through — run plan **§10**. In one line each:
 
