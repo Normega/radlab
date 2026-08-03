@@ -7,7 +7,20 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY in .env.local')
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+// The Field Guide authenticates against a DIFFERENT Supabase project
+// (radlab-academic, see src/academic/courseClient.js). Its confirmation links
+// land under /academic/…, carrying a token this project cannot use — and this
+// client, with URL detection on by default, would try to consume it anyway:
+// either writing another project's session into this one's storage, or eating
+// a single-use code before the academic client can exchange it. Detection is
+// left on everywhere else, because the main site's own /verified and
+// /reset-password flows depend on it.
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    detectSessionInUrl:
+      typeof window === 'undefined' || !window.location.pathname.startsWith('/academic'),
+  },
+})
 
 // Save a completed PondWatch session to Supabase.
 // Inserts game_sessions → trials (bulk) → performance in sequence.

@@ -5,6 +5,12 @@ import { getCourseClient } from '../courseClient'
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
 
+// Where a confirmation link lands. Any route under this guard works: the guard
+// creates the course client, which consumes the token in the URL, and the
+// onAuthStateChange subscription below re-renders signed in. The wiki is the
+// place a confirming reader actually wanted to be.
+const WIKI_AFTER_CONFIRM = '/academic/fieldguide/wiki'
+
 // Shared auth shell for /academic/fieldguide/*. Unlike every other guard in
 // the app this one authenticates against the SEPARATE radlab-academic Supabase
 // project: users register directly on that project (invites seeded by
@@ -109,12 +115,20 @@ function CourseLogin({ client }) {
     setNotice(null)
     const { error, data } = mode === 'signin'
       ? await client.auth.signInWithPassword({ email, password })
-      : await client.auth.signUp({ email, password })
+      // Without an explicit emailRedirectTo the confirmation link falls back to
+      // the radlab-academic project's Site URL — which sent everyone to
+      // localhost. Note this only works if the URL is also on that project's
+      // redirect allow-list; Supabase silently falls back to Site URL if not.
+      : await client.auth.signUp({
+          email,
+          password,
+          options: { emailRedirectTo: `${window.location.origin}${WIKI_AFTER_CONFIRM}` },
+        })
     setBusy(false)
     if (error) return setNotice(error.message)
     // Signup with email confirmation enabled returns no session yet.
     if (mode === 'signup' && !data.session) {
-      setNotice('Account created — check your email to confirm, then sign in.')
+      setNotice('Account created — check your email for a confirmation link. It will bring you back here signed in.')
       setMode('signin')
     }
   }
