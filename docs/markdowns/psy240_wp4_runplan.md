@@ -1828,3 +1828,51 @@ accessible.** The general rule this establishes: **where the ideal journal has n
 prefer a permissively licensed piece by an author who shaped the classification over a paywalled
 review by a stranger to it** — provenance and reuse rights both improve, and the thinner content is
 visible as declared gaps rather than hidden.
+
+### 18.7 Use the Europe PMC REST API, do not guess PMC IDs
+
+**A guessed PMC ID returned the wrong article on the first attempt** — `PMC10168175` is Nesse's
+*Evolutionary psychiatry* (World Psychiatry 22(2):177-202), the article immediately preceding the one
+wanted. Adjacent articles in the same issue have adjacent IDs, which makes a near-miss look plausible.
+
+**The reliable lookup is the Europe PMC REST API**, which returns exact identifiers as JSON:
+
+```
+curl -sG "https://www.ebi.ac.uk/europepmc/webservices/rest/search" \
+  --data-urlencode 'query=TITLE:"<article title>"' \
+  --data-urlencode 'format=json'
+```
+
+It gives `pmid`, `pmcid`, journal, volume, issue, pages, `isOpenAccess` and `inEPMC` in one call.
+**PMC and Europe PMC search *pages* are JS-rendered and unreadable to WebFetch** — the API is not.
+
+Volkow & Blanco resolved to **PMID 37159360, PMCID PMC10168177**, `isOpenAccess=N` but `inEPMC=Y`:
+free to read, not formally open access, which is exactly the conservative-handling case.
+
+### 18.8 `substance-use-disorder` — when the best source is also a party to the dispute
+
+**Volkow, N. D., & Blanco, C. (2023). Substance use disorders: a comprehensive update. *World
+Psychiatry*, 22(2), 203-229.** The most comprehensive source available — and **Volkow directs NIDA**,
+the institution most identified with the **brain disease model of addiction**, which the review
+presents as **established neuroscience rather than a contested position**.
+
+**The page treats that framing as one side of the dispute rather than as background**, and flags the
+authorship. This is the first time in the corpus that a source's own position has had to be handled
+as evidence rather than as narration, and it is a pattern to expect more of as the campaign moves
+into contested territory: **the most authoritative review of a disputed area is often written by a
+party to the dispute.**
+
+**The paper's own figures are the sharpest material against its strongest claim.** It states that
+substance use disorders "tend to be chronic" and reports lifetime remission of **99.2% cocaine, 97.2%
+cannabis, 90.6% alcohol, 83.7% nicotine**. Most people who develop one eventually remit — which is
+exactly the evidence critics cite when arguing the brain disease model **downplays natural recovery**.
+Relapse also follows a **hyperbolic function**, risk falling the longer remission lasts, which argues
+against reading a single relapse as an unchanging disease process.
+
+**Two absences named on the page.** The review does not critique the DSM-5 collapse of abuse and
+dependence into one severity continuum; and it **covers no behavioural addictions at all** — no
+`gambling-disorder`, no `internet-gaming-disorder` — despite DSM-5 having placed gambling in this
+chapter as the first behavioural addiction. The most authoritative recent review of the chapter omits
+its newest and most disputed part.
+
+**Progress: `contested` 47 → 43 empty.**
