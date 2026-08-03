@@ -64,15 +64,15 @@ cases. Module 16's corpus check already turned up one unknown case — a broken 
 
 Everything is merged and pushed to `main`; nothing sits on a branch.
 
-## 2. Live database state (radlab-academic, 2026-08-03, after the prevalence pass)
+## 2. Live database state (radlab-academic, 2026-08-03, after the Lecture 10 sweep)
 
 ```
-248 pages with bodies       0 published — no student can see anything yet
-1,300 wikilinks             0 proposals pending — review queue clear
+250 pages with bodies       0 published — no student can see anything yet
+1,343 wikilinks             0 proposals pending — review queue clear
 11 red links                0 blue links to an empty page
 0 duplicate headings        0 off-catalogue disorder pages
-130 catalogue rows         117 ingest jobs
-108/108 disorder pages carry a frontmatter prevalence value (21 of them "no figure in this source")
+130 catalogue rows         127 ingest jobs
+79 empty sections           contested 20 · treatment 18 · etiology 15 · epidemiology 8
 ```
 
 **Catalogue coverage: Tier A 54/54, foundations 14/14, overviews 16/16 — all complete. Tier B 33/46 is the only incomplete tier.**

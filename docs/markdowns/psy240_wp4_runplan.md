@@ -2124,3 +2124,134 @@ history to do it.
 The trade-off is explicit: the concept page gets **one** backlink (from `epidemiology`, where the link
 *is* in the body and *is* a real edge) rather than 109. The reader can always reach it; the graph
 stays meaningful.
+
+---
+
+## 21. The Lecture 10 neurocognitive sweep — treatment closes, and one section was simply out of date
+
+**Nine sources, eight pages, two of them new.** `treatment` fell **23 → 18**, and every page in the
+neurocognitive chapter except `neurocognitive-disorder-other-aetiologies` now has a treatment section.
+
+### 21.1 What was written
+
+| Page | Source | Closed |
+|---|---|---|
+| `neurocognitive-disorder-due-to-alzheimers-disease` | Espay, Kepp & Herrup 2024, *eNeuro* | **replaced a stale treatment claim** |
+| " | Haass & Selkoe 2022, *PLoS Biology* | contested (enriched) |
+| `delirium` | Abraha et al. 2015, *PLOS ONE* | treatment |
+| **`neurocognitive-disorder-with-lewy-bodies`** *(new)* | McKeith et al. 2017, *Neurology* | whole page bar etiology |
+| `frontotemporal-neurocognitive-disorder` | Gambogi et al. 2021, *Dement Neuropsychol* | treatment, contested |
+| `mild-neurocognitive-disorder` | Chen et al. 2021, *Front Neurol* | treatment |
+| `vascular-neurocognitive-disorder` | Jaul & Meiron 2017, *Front Aging Neurosci* | treatment |
+| `neurocognitive-disorder-due-to-traumatic-brain-injury` | Barman, Chatterjee & Bhide 2016, *Indian J Psychol Med* | treatment |
+| **`substance-medication-induced-neurocognitive-disorder`** *(new)* | Sachdeva et al. 2016; Wijnia 2022 | whole page |
+
+### 21.2 A page can be complete and still be wrong
+
+**`neurocognitive-disorder-due-to-alzheimers-disease` had a full treatment section, no declared gap,
+and a sentence saying disease-modifying therapy was "research in its infancy."** That was accurate to
+its source — the Alzheimer's Association, **2017** — and by 2026 it was false. **Lecanemab and
+donanemab had completed phase 3 and reached clinical use, and neither appeared anywhere on the page.**
+
+**The gap query cannot find this class of problem.** `needs` and `annotations` only surface what a page
+*declares* missing; a confidently-written stale section declares nothing. It was found by reading the
+treatment section while checking something else.
+
+**Standing check to add to any review pass: for every page, what is the newest source, and has the
+field moved since?** Sections most exposed are ones citing an advocacy organisation or a textbook
+rather than a journal, and ones about **treatment** rather than presentation — presentation ages
+slowly, treatment does not.
+
+### 21.3 The relative-versus-absolute framing, worked
+
+The anti-amyloid trials are the corpus's best worked example of a reporting choice doing the
+persuasive work.
+
+| | Lecanemab | Donanemab |
+|---|---|---|
+| Difference from placebo | **0.45** points (CDR-SB, 18-point scale) | **3.4** points (iADRS, 144-point scale) |
+| Reported as | "27% slowing" | "33% slowing" |
+| As a share of the whole scale | **2.5%** | **2.4%** |
+| Minimal clinically important difference | 1.0 (MCI) / 1.6 (mild dementia) | 5 (MCI) / 9 (mild dementia) |
+| **Below MCID?** | **yes, on both** | **yes, on both** |
+| Treatment-related adverse events | 45% | 89% |
+| Brain swelling and/or bleeding | ~25% | >33% |
+| **Number needed to harm** | **~3** | **~3** |
+
+Both framings describe the same result. Pair this with `obsessive-compulsive-disorder`, where the
+minimal clinically important difference was derived empirically in 2025 — it demonstrates that the
+threshold *can* be established, and that here it has not been.
+
+### 21.4 Both sides, both partisan
+
+Run plan §19.5 recorded that the best source on a disputed area is often a party to the dispute. Here
+**both** sources are, and in opposite directions: **Espay, Kepp and Herrup** are prominent critics of
+the anti-amyloid approach; **Selkoe originated the amyloid cascade hypothesis** and Haass is a leading
+proponent. The page names both positions in the running text and then does the thing that makes the
+pairing worth having — **states what both sides concede**:
+
+1. **The field has no validated definition of clinical meaningfulness**, which the proponents say
+   outright. The entire dispute turns on a threshold nobody has set.
+2. **The aducanumab approval was irregular** — EMERGE positive, ENGAGE negative, accelerated approval,
+   reconciliation by post-hoc reanalysis that even its defenders label post-hoc.
+3. **The trials may not measure the toxic species** — the proponents' own mechanism implicates soluble
+   oligomers, which are **invisible to amyloid PET**.
+
+**Where two partisan sources are available, take both and mine the overlap.** The concessions are more
+informative than either case.
+
+### 21.5 The findings worth teaching from this chapter
+
+- **Delirium: prevention works, treatment does not.** Multicomponent programmes cut incidence (**RR
+  0.71** after hip fracture; **RR 0.42** in high-risk medical patients when family-delivered) — but for
+  patients who already have delirium *"the available evidence does not support the efficacy"* of the
+  same interventions. Also **no effect on falls, length of stay or mortality**, and **no benefit at all
+  in low-risk patients**.
+- **The same drug, three answers, because the deficit differs.** Donepezil helps in
+  `neurocognitive-disorder-due-to-traumatic-brain-injury`, is **contraindicated** in
+  `mild-neurocognitive-disorder` (one guideline recommends **deprescribing** it), and is **useless or
+  harmful** in `frontotemporal-neurocognitive-disorder`, where the cholinergic system is **relatively
+  preserved** and a case series found **increased disinhibition in 4 of 12** treated patients. This is
+  the argument for subtyping neurocognitive disorders, stated in a currency that matters.
+- **Two dementias where the standard response to agitation is the dangerous one.** Antipsychotics
+  cause a severe, sometimes fatal sensitivity reaction in **Lewy body** disease, and **parkinsonism and
+  tardive antecollis** in bvFTD.
+- **A criteria change can reflect improved practice rather than new knowledge.** Severe antipsychotic
+  sensitivity was **downgraded** from "suggestive" to "supportive" in the DLB criteria **because
+  prescribing fell**, so the reaction is now too rarely seen to be diagnostically useful.
+- **Rehabilitation after structural damage: compensate, don't restore.** External memory aids have
+  **strong evidence** after TBI; memory drills aimed at rebuilding the capacity largely do not work.
+- **Oral thiamine is not a weaker treatment for Wernicke encephalopathy — it is not a treatment.**
+  And requiring the classic triad finds **23%** of cases against **85%** for Caine's two-of-four
+  criteria.
+- **One neurocognitive disorder can partially reverse.** Alcohol-related impairment improves over a
+  year or more of abstinence, with increased brain volume — the only page in the chapter where the
+  prognosis is not uniformly grim.
+
+### 21.6 Saying what a source does not have
+
+Two pages record an absence in the running text rather than quietly writing around it:
+
+- **`vascular-neurocognitive-disorder`** — the prevention framework is presented as **a rationale, not
+  a trial literature**, because Jaul and Meiron cite **no randomised trials** for any tier of it. The
+  page says so.
+- **`substance-medication-induced-neurocognitive-disorder`** — a **scope note at the top** states that
+  the DSM category covers inhalants, sedative-hypnotics and medications while **the evidence here is
+  almost entirely about alcohol**. Same handling as `substance-withdrawal` (§19).
+
+### 21.7 What remains in Lecture 10
+
+**`neurocognitive-disorder-other-aetiologies`** is the last unwritten page in the chapter and is
+awkward by construction: one catalogue slug covering **Parkinson's disease, Huntington's disease, HIV
+infection and prion disease**. There is no single source; it needs roughly one per aetiology, so it is
+a small batch of its own rather than an add-on.
+
+**`neurocognitive-disorder-with-lewy-bodies` declares `etiology`** — the consensus report covers
+diagnosis and management, not pathogenesis, and says the **genetic contribution is substantial but
+poorly characterised** (*GBA* overrepresented, most patients do not carry it).
+
+**`communication-disorders`** still has four gaps. It sits in Lecture 10 but is a neurodevelopmental
+page, and §19.8 already flagged its open-access literature as thin.
+
+**Live: 250 pages, 1,343 wikilinks, 127 ingest jobs, 79 empty sections, 0 published.** Gaps now
+`contested` 20, `treatment` 18, `etiology` 15, `epidemiology` 8.
