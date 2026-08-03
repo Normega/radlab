@@ -20,11 +20,20 @@ const files = import.meta.glob('../../../assets/chapter-icons/*.{webp,png,svg}',
   import: 'default',
 })
 
+// Chapter 0 is the Foundations group — the framing material that carries no DSM
+// chapter number. It is a real key here, not a sentinel, so `> 0` would drop it.
 export const CHAPTER_ICONS = new Map(
   Object.entries(files)
     .map(([path, url]) => [Number(path.split('/').pop().split('.')[0]), url])
-    .filter(([n]) => Number.isInteger(n) && n > 0)
+    .filter(([n]) => Number.isInteger(n) && n >= 0)
 )
 
-/** URL for a DSM chapter's icon, or null when that chapter has none yet. */
-export const chapterIcon = (n) => CHAPTER_ICONS.get(Number(n)) ?? null
+/**
+ * URL for a DSM chapter's icon, or null when that chapter has none yet.
+ *
+ * The empty check is load-bearing now that 0 is a real key: `Number(null)` and
+ * `Number('')` are both 0, so a page with no chapter would otherwise be handed
+ * the Foundations pillar.
+ */
+export const chapterIcon = (n) =>
+  (n === null || n === undefined || n === '') ? null : (CHAPTER_ICONS.get(Number(n)) ?? null)

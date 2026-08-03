@@ -4479,6 +4479,16 @@ of URLs**, the browser fetches only the icons on screen, and `loading="lazy"` st
 Icons are marked `alt="" aria-hidden` — the chapter is named in text right beside them, so a label
 would only make a screen reader say it twice.
 
+**Foundations gets one too.** The framing group carries no DSM chapter number, so it is keyed as
+**chapter 0** — a real key, not a sentinel, which made one guard load-bearing: `Number(null)` and
+`Number('')` are both **0**, so without an explicit empty check any page with no chapter would have
+been handed the Foundations pillar. Its source art has generous margins, so
+`scripts/dsm-icon-trim.mjs` crops to the content bounding box and re-emits square before scaling —
+otherwise a piece of art that does not fill its frame reads smaller than the flat glyphs beside it.
+
+**Sized at 46px in the index headings and 30px in the breadcrumb**, which is large enough to work as a
+chapter marker rather than as decoration next to 20px and 13px text.
+
 ### Collapsible sections: chapter groups on the index, `##` sections on the page (2026-08-03)
 
 **Pages outgrew the scroll.** The reference pages now run 8,000-20,000 characters with six to eleven

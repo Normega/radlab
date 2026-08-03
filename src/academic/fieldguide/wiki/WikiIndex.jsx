@@ -224,7 +224,7 @@ export default function WikiIndex() {
                       alt text would only make a screen reader say it twice. */}
                   {chapterIcon(g.number) && (
                     <img src={chapterIcon(g.number)} alt="" aria-hidden="true"
-                         width={34} height={34} loading="lazy" style={S.chIcon} />
+                         width={46} height={46} loading="lazy" style={S.chIcon} />
                   )}
                   {g.number > 0 && <span style={S.chNum}>{g.number}</span>}
                   <span>{g.title}</span>
@@ -361,7 +361,7 @@ const S = {
   search: { width: '100%', boxSizing: 'border-box', fontSize: 16, padding: '11px 14px', borderRadius: 10, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx)', margin: '18px 0 4px' },
 
   h2: { fontFamily: SERIF, fontSize: 20, color: 'var(--tx)', margin: '24px 0 10px', display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' },
-  chIcon: { flexShrink: 0, alignSelf: 'center', borderRadius: 8, border: '1px solid var(--bd)', background: '#fff', objectFit: 'contain' },
+  chIcon: { flexShrink: 0, alignSelf: 'center', borderRadius: 10, border: '1px solid var(--bd)', background: '#fff', objectFit: 'contain' },
   chNum: { fontFamily: MONO, fontSize: 12, color: 'var(--tx2)', border: '1px solid var(--bd)', borderRadius: 6, padding: '1px 6px' },
   chCount: { fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx2)' },
   legend: { fontSize: 13, color: 'var(--tx2)', lineHeight: 1.6, margin: '16px 0 0', maxWidth: '78ch' },

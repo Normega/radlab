@@ -204,7 +204,7 @@ export default function WikiPage() {
         {catalog?.dsm_chapter_title && (
           <> · {chapterIcon(catalog.dsm_chapter) && (
             <img src={chapterIcon(catalog.dsm_chapter)} alt="" aria-hidden="true"
-                 width={22} height={22} loading="lazy" style={S.crumbIcon} />
+                 width={30} height={30} loading="lazy" style={S.crumbIcon} />
           )}<span style={S.dim}>{catalog.dsm_chapter_title}</span></>
         )}
       </nav>
@@ -504,7 +504,7 @@ function Shell({ course, children }) {
 
 const S = {
   eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)' },
-  crumbIcon: { verticalAlign: 'middle', borderRadius: 6, border: '1px solid var(--bd)', background: '#fff', objectFit: 'contain', marginRight: 5 },
+  crumbIcon: { verticalAlign: 'middle', borderRadius: 8, border: '1px solid var(--bd)', background: '#fff', objectFit: 'contain', marginRight: 5 },
   crumbs: { fontSize: 13, color: 'var(--tx2)', margin: '10px 0 6px' },
   title: { fontFamily: SERIF, fontSize: 34, color: 'var(--tx)', margin: '4px 0 6px', lineHeight: 1.15 },
   metaLine: { fontFamily: MONO, fontSize: 12, letterSpacing: 0.5, textTransform: 'uppercase', color: 'var(--tx2)' },
