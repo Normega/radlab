@@ -1779,3 +1779,52 @@ Where World Psychiatry has no matching review, other fully open-access venues ca
 **F1000Research** (already used for `gambling-disorder`), **BMC Psychiatry**, **Frontiers in
 Psychiatry** — and the **`debate` page type** remains the right vehicle for a dispute that deserves
 its own page rather than a section.
+
+### 18.5 Progress log — `contested` campaign
+
+| Page | Source | Verified |
+|---|---|---|
+| `posttraumatic-stress-disorder` | Bryant (2019), *World Psychiatry* 18(3):259-269 | ✔ PMC6732680 |
+| `bipolar-i-disorder` | McIntyre et al. (2022), *World Psychiatry* 21(3):364-387 | ✔ PMC9453915 |
+| `bipolar-ii-disorder` | Berk et al. (2025), *World Psychiatry* 24(2):175-189 | ✔ PMC12079553 |
+
+**`bipolar-ii-disorder` was one of §8.2's six known stubs and more than doubled** (2,428 → 5,601
+chars). The stub problem is closing from the `contested` direction rather than the coverage one.
+
+**Findings worth carrying:**
+
+- **Bipolar II is not milder.** Berk et al. state it directly: contrary to perception, patients carry
+  high depressive burden, poor functioning and poor outcomes, and **suicide rates are equivalent to
+  or higher than bipolar I**. The disorder is defined by an *absence* (of full mania) and the absence
+  reads as lesser severity, which it is not.
+- **Diagnostic reliability, side by side:** bipolar I **0.56**, bipolar II **0.40**, major depressive
+  disorder **0.28** in DSM-5 field trials. The most-diagnosed condition in the course is the least
+  reliably diagnosed.
+- **The four-day hypomania threshold is a committee judgement, not a finding.** A two-day threshold
+  was proposed and **supported by family-history data**, then rejected over false-positive risk.
+- **Underdiagnosis has a pharmacological cost.** Half of bipolar II cases were previously
+  undiagnosed, **median delay almost eight years** — and since antidepressants carry switch risk while
+  mood stabilisers are first-line, eight years treated as unipolar depression is eight years of the
+  wrong first-line drug. The clearest case in the corpus of a reliability problem with a direct
+  treatment consequence.
+- **Bipolar/borderline overlap is larger than either page suggested alone:** ~70% of bipolar patients
+  have borderline traits, ~20% meet full criteria. McIntyre et al.'s remedy is procedural — **assess
+  personality during euthymic periods**.
+
+### 18.6 Where World Psychiatry has no review — an open candidate question
+
+**There is no World Psychiatry state-of-the-art review for OCD.** Searching surfaced four
+alternatives, and the choice is a real trade-off rather than an obvious pick:
+
+| Candidate | Licence | Assessment |
+|---|---|---|
+| **Stein (2019)**, *Indian Journal of Psychiatry* 61(S1):S4-S8 | **CC BY-NC-SA** — the most permissive available | Author **chaired the DSM-5 OCRD workgroup**. But it is a supplement editorial, thinner than Bryant or Berk. Has the classification dispute and the **DSM-5 prioritises validity / ICD-11 prioritises clinical utility** framing, which generalises well beyond OCD |
+| **Abramowitz et al. (2026)**, *BMJ* state-of-the-art review | Unverified | Abramowitz is a major OCD figure; BMJ reviews are strong. Accessibility not yet confirmed |
+| *Neuroscience & Biobehavioral Reviews* (2025) state-of-the-art review | Likely paywalled | ScienceDirect; abstract only from the search |
+| *Frontiers in Psychiatry* (2023), treatment-resistant OCD | CC BY | Open, but **treatment-focused rather than contested-focused** |
+
+**Recommendation: Stein (2019) as the licence-safe base, supplemented if Abramowitz proves
+accessible.** The general rule this establishes: **where the ideal journal has no matching review,
+prefer a permissively licensed piece by an author who shaped the classification over a paywalled
+review by a stranger to it** — provenance and reuse rights both improve, and the thinner content is
+visible as declared gaps rather than hidden.
