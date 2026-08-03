@@ -4434,7 +4434,7 @@ Live state: **170 pages with bodies**, 0 red links, 0 blue links to an empty pag
 
 Method, recipe and the two SQL traps are recorded as run plan §9. Live state: **186 pages with bodies**, 660 wikilinks, 3 red links (all pointing at real catalogue slugs not yet written — `adhd`, `conduct-disorder`, `brief-psychotic-disorder`), 0 duplicate headings, 0 off-catalogue disorders, queue clear. Catalogue 130 rows: Tier A **40/54**, Tier B 14/46, foundations 13/14, overviews 1/16. Six lectures now have complete Tier A coverage — L3, L4, L5, L9 and L11 outright, L8 at 4 of 5.
 
-### Collapsible sections in the wiki reader (2026-08-03)
+### Collapsible sections: chapter groups on the index, `##` sections on the page (2026-08-03)
 
 **Pages outgrew the scroll.** The reference pages now run 8,000-20,000 characters with six to eleven
 `##` sections, so every section folds from its own heading, with **Collapse all / Expand all** and an
@@ -4478,6 +4478,17 @@ duplicate `##` *and* `###` headings, a `##` inside a fenced code block, a page w
 an empty body. The checks that matter: **section ids match the table of contents, every heading inside
 a slice resolves to the id the contents links to, no content line is lost, and every anchor is owned by
 a section or the preamble.**
+
+**The index folds too, and it is the one that was actually asked for.** `/academic/fieldguide/wiki`
+groups the catalogue into **twenty DSM diagnostic classes**, each an `<h2>` — a long scroll to reach
+the one you want. Those chapter headings now fold, with the same Collapse all / Expand all control
+beside the "show unwritten entries" checkbox. **Folds are keyed by DSM chapter number, not by
+position**, because flipping that checkbox changes which groups are visible; keyed by index, it would
+fold a different chapter than the one clicked.
+
+The two are separate components — `WikiIndex.jsx` folds chapter groups, `WikiPage.jsx` folds `##`
+sections — and only the second has the anchor problem above, because only the second renders slices of
+markdown.
 
 ### Lecture 10 goes clear, and a deliberately-omitted chapter gets a page (2026-08-03)
 
@@ -5346,7 +5357,7 @@ Five self-contained prototype experiences for the Come, See sense-foraging platf
 - [x] **WP4e — Lecture 10 neurocognitive sweep** (2026-08-03, run plan §21). Nine sources, eight pages, two new (`neurocognitive-disorder-with-lewy-bodies`, `substance-medication-induced-neurocognitive-disorder`); `treatment` gaps 23 → 18. **Adds a standing check to WP4b below**: the stale Alzheimer's treatment section had *no declared gap*, so the review pass must ask "what is the newest source, and has the field moved?" — not only "what does this page say it is missing?" Remaining in the chapter: `neurocognitive-disorder-other-aetiologies` (one slug covering Parkinson's, Huntington's, HIV and prion disease — needs roughly one source per aetiology, so a small batch of its own) and `neurocognitive-disorder-with-lewy-bodies` etiology.
 - [x] **WP4f — neurocognitive chapter complete** (2026-08-03, run plan §22). **13 pages, zero declared gaps — the first finished DSM chapter in the corpus.** Closed with Outeiro et al. 2019, Jurcau et al. 2024, Anderson et al. 2018 and Vastag et al. 2022, including the last unwritten catalogue page (`neurocognitive-disorder-other-aetiologies`). Two reusable findings: a **composite page may use its own `##` scheme** (gap derivation keys on any `##` heading, so per-disease sections give per-disease gaps), and a **multi-source page needs one accepted version per source** to list them all under *Built from*.
 - [x] **WP4g — Lecture 10 clear + elimination disorders overview** (2026-08-03, run plan §23). `communication-disorders` closed its four gaps from four CC BY sources (5 sources, 0 gaps). **`elimination-disorders` added as an explicitly out-of-scope chapter overview** — DSM ch.11 is `taught = false` in `dsm_chapters`, so the page states that plainly and is catalogued with `lecture = NULL`; catalogue 130 → 131. **Open follow-up:** DSM **ch.20 (Other Mental Disorders)** is the other `taught = false` chapter and still has no page — decide whether it warrants the same treatment. Encopresis remains a declared gap on the new page (no encopresis-specific source used).
-- [x] **WP2a — collapsible sections in the wiki reader** (2026-08-03, §29a). Every `##` folds from its heading; Collapse all / Expand all above the body; contents clicks and `#section` deep links unfold the owning section before scrolling, including for a nested `###`. New `splitSections()` in `wikiText.js` and a `lineOffset`/`headingIds` pair on `WikiMarkdown` — **the constraint to remember is that rendering a slice renumbers its lines**, so anchors must be resolved against ids computed over the whole body or every section link breaks silently.
+- [x] **WP2a — collapsible sections in the wiki reader** (2026-08-03, §29a). **Index:** the twenty DSM chapter groups fold, keyed by chapter number so the "show unwritten entries" toggle can't fold the wrong one. **Page:** every `##` folds from its heading; Collapse all / Expand all above the body; contents clicks and `#section` deep links unfold the owning section before scrolling, including for a nested `###`. New `splitSections()` in `wikiText.js` and a `lineOffset`/`headingIds` pair on `WikiMarkdown` — **the constraint to remember is that rendering a slice renumbers its lines**, so anchors must be resolved against ids computed over the whole body or every section link breaks silently.
 - [ ] **WP4b — the review pass.** Modules 01–12, 14 and 15 were written source-first, before catalogue-first existed, and have not been re-read against the catalogue. Run plan §8.2's six stubs are the known cases — the mood block (`bipolar-i-disorder` 2,845 chars, `bipolar-ii-disorder` 1,914, `persistent-depressive-disorder`) is the one that bites, since Module 04 has already run and nothing scheduled will revisit it. Module 16's corpus check already turned up an unknown case (a broken `[[abnormal-behavior]]` link on `historical-traditions`, fixed), which is the argument for doing this properly rather than opportunistically.
 - [ ] Roster & enrollment (**WP5**, now sequenced ahead of student submission — §2a of the plan): CSV upload, `identity.roster` + status flow, bulk/per-row invite via Resend SMTP, magic-link enrollment, QR self-match form + unmatched queue, `api/roster-check.js`, Lecture Lounge integration. The schedule's real risk: it gates submissions, has a hard week-1 deadline, and its Lecture Lounge integration is the only work in the plan touching the **main** project's auth path (a magic-link user with no `ripples.name` currently routes into Ripple onboarding).
 

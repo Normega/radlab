@@ -7,6 +7,9 @@ import { TIER_LABEL, TIER_HELP } from './tiers'
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
 
+// Shared empty set, so "nothing is folded" is referentially stable.
+const EMPTY = new Set()
+
 // Page types that aren't part of the taxonomy catalogue — what papers and
 // (from WP6) students contribute, as opposed to the course scaffold.
 const CONTRIB_TYPES = [
@@ -107,6 +110,15 @@ export default function WikiIndex() {
     () => (pages ?? []).filter(p => !catalogSlugs.has(p.slug)),
     [pages, catalogSlugs])
 
+  // Folded chapters, keyed by DSM chapter number rather than by position, so
+  // flipping "show unwritten entries" — which changes which groups appear —
+  // doesn't fold a different chapter than the one that was clicked.
+  const [folded, setFolded] = useState(EMPTY)
+  const visibleGroups = useMemo(
+    () => chapterGroups.filter(g => showEmpty || g.readable > 0),
+    [chapterGroups, showEmpty])
+  const allFolded = visibleGroups.length > 0 && visibleGroups.every(g => folded.has(g.number))
+
   if (pages === null) {
     return <Shell course={course}><p style={S.sub}>Loading…</p></Shell>
   }
@@ -162,20 +174,58 @@ export default function WikiIndex() {
             and pointers to related disorders. Both are taught; only the page length differs.
           </p>
 
-          <label style={S.toggle}>
-            <input type="checkbox" checked={showEmpty} onChange={e => setShowEmpty(e.target.checked)} />
-            Show catalogue entries that aren't written yet
-          </label>
+          <div style={S.controlRow}>
+            <label style={S.toggle}>
+              <input type="checkbox" checked={showEmpty} onChange={e => setShowEmpty(e.target.checked)} />
+              Show catalogue entries that aren't written yet
+            </label>
 
-          {chapterGroups.filter(g => showEmpty || g.readable > 0).map(g => (
+            {/* Twenty diagnostic classes is a long scroll to reach the one you
+                want. Chapters fold from their own heading; everything starts
+                open, because a browse page that opens closed hides what it is
+                for and find-in-page can't see an unmounted grid. */}
+            {visibleGroups.length > 1 && (
+              <div style={S.foldBar}>
+                <button
+                  type="button"
+                  style={S.foldBtn}
+                  onClick={() => setFolded(allFolded ? EMPTY : new Set(visibleGroups.map(g => g.number)))}
+                >
+                  {allFolded ? 'Expand all' : 'Collapse all'}
+                </button>
+                <span style={S.foldCount}>
+                  {folded.size > 0
+                    ? `${folded.size} of ${visibleGroups.length} folded`
+                    : `${visibleGroups.length} chapters`}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {visibleGroups.map(g => {
+            const isFolded = folded.has(g.number)
+            return (
             <section key={g.number} style={{ marginTop: 26 }}>
               <h2 style={S.h2}>
-                {g.number > 0 && <span style={S.chNum}>{g.number}</span>}
-                {g.title}
-                <span style={S.chCount}>{g.readable} of {g.rows.length}</span>
+                <button
+                  type="button"
+                  onClick={() => setFolded(prev => {
+                    const next = new Set(prev)
+                    if (next.has(g.number)) next.delete(g.number); else next.add(g.number)
+                    return next
+                  })}
+                  aria-expanded={!isFolded}
+                  aria-controls={`chapter-${g.number}`}
+                  style={S.chToggle}
+                >
+                  <span aria-hidden="true" style={{ ...S.caret, transform: isFolded ? 'rotate(-90deg)' : 'none' }}>▾</span>
+                  {g.number > 0 && <span style={S.chNum}>{g.number}</span>}
+                  <span>{g.title}</span>
+                  <span style={S.chCount}>{g.readable} of {g.rows.length}</span>
+                </button>
               </h2>
-              <div style={S.grid}>
-                {g.rows.filter(row => showEmpty || bySlug.has(row.slug)).map(row => {
+              <div id={`chapter-${g.number}`} hidden={isFolded} style={isFolded ? undefined : S.grid}>
+                {!isFolded && g.rows.filter(row => showEmpty || bySlug.has(row.slug)).map(row => {
                   const page = bySlug.get(row.slug)
                   // A catalogue row with no readable page is shown, not
                   // hidden: it is the course outline, so its holes are part of
@@ -206,7 +256,8 @@ export default function WikiIndex() {
                 })}
               </div>
             </section>
-          ))}
+            )
+          })}
 
           {contributed.length > 0 && (
             <section style={{ marginTop: 34 }}>
@@ -307,6 +358,15 @@ const S = {
   chCount: { fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx2)' },
   legend: { fontSize: 13, color: 'var(--tx2)', lineHeight: 1.6, margin: '16px 0 0', maxWidth: '78ch' },
   toggle: { display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 13, color: 'var(--tx2)', marginTop: 10, cursor: 'pointer' },
+
+  controlRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap' },
+  foldBar: { display: 'flex', alignItems: 'center', gap: 10, marginTop: 10 },
+  foldBtn: { fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', padding: '5px 12px', borderRadius: 16, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx2)', cursor: 'pointer' },
+  foldCount: { fontFamily: MONO, fontSize: 11, letterSpacing: 0.5, color: 'var(--tx2)' },
+  // The h2 keeps the heading semantics; the button inside takes the click, so a
+  // screen reader still hears a heading rather than only a control.
+  chToggle: { display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap', width: '100%', textAlign: 'left', padding: 0, border: 'none', background: 'none', cursor: 'pointer', fontFamily: SERIF, fontSize: 20, color: 'var(--tx)' },
+  caret: { flexShrink: 0, fontSize: 12, color: 'var(--pk)', transition: 'transform .15s ease', display: 'inline-block' },
   typeLabel: { fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx2)', margin: '0 0 6px' },
 
   grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 230px), 1fr))', gap: 10 },
