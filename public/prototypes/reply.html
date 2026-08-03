@@ -485,9 +485,9 @@ let rings=[];
 let stars=[];
 function seedStars(){
   stars=[];
-  for(let i=0;i<170;i++){
+  for(let i=0;i<240;i++){
     stars.push({x:Math.random()*W,y:Math.random()*H*0.5,r:Math.random()<0.12?1.8:1,
-      a:0.25+Math.random()*0.65,s:0.4+Math.random()*2,p:Math.random()*7});
+      a:0.35+Math.random()*0.65,s:0.4+Math.random()*2,p:Math.random()*7});
   }
 }
 function render(t){
@@ -518,7 +518,7 @@ function render(t){
   // ridges, back to front; trusted voices rim-light their ridge
   for(let L=ridges.length-1;L>=0;L--){
     const rd=ridges[L];
-    const shade=[[26,30,58],[19,22,46],[13,15,34],[8,9,22]][L];
+    const shade=[[33,38,70],[25,29,57],[18,21,44],[12,14,30]][L];
     ctx.fillStyle=css(shade);
     ctx.beginPath();
     ctx.moveTo(0,H);

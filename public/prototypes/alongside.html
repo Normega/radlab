@@ -463,8 +463,8 @@ function render(t){
       const px=bx+Math.sin(t*0.9+f.ph)*f.off;
       const py=by+Math.cos(t*0.7+f.ph)*f.off*0.6;
       const blink=Math.max(0,Math.sin(t*1.6+f.ph*3));
-      ctx.fillStyle=`rgba(215,255,170,${0.55*blink*f.a})`;
-      ctx.beginPath();ctx.arc(sx(px),sy(py),1.7,0,7);ctx.fill();
+      ctx.fillStyle=`rgba(215,255,170,${0.72*blink*f.a})`;
+      ctx.beginPath();ctx.arc(sx(px),sy(py),2.1,0,7);ctx.fill();
     }
   }
   // ending fireflies orbit the player
@@ -528,7 +528,7 @@ function drawSites(t){
       }
     } else if(s.kind==='glowtree'){
       const x=sx(s.x),y=sy(s.y);
-      ctx.strokeStyle='rgba(30,26,40,0.95)';ctx.lineWidth=7;
+      ctx.strokeStyle='rgba(58,52,76,0.95)';ctx.lineWidth=7;
       ctx.beginPath();ctx.moveTo(x,y+30);ctx.quadraticCurveTo(x-6,y-40,x-2,y-90);ctx.stroke();
       ctx.lineWidth=3;
       ctx.beginPath();ctx.moveTo(x-2,y-60);ctx.quadraticCurveTo(x+30,y-95,x+48,y-108);ctx.stroke();
