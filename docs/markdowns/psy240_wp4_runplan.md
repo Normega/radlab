@@ -2255,3 +2255,109 @@ page, and §19.8 already flagged its open-access literature as thin.
 
 **Live: 250 pages, 1,343 wikilinks, 127 ingest jobs, 79 empty sections, 0 published.** Gaps now
 `contested` 20, `treatment` 18, `etiology` 15, `epidemiology` 8.
+
+---
+
+## 22. The neurocognitive chapter closes — 13 pages, zero declared gaps
+
+**Every page in DSM-5-TR Chapter 17 now has every section filled.** Four more sources finished it:
+Outeiro et al. (2019) for Lewy body pathogenesis and Parkinson's disease dementia, Jurcau et al. (2024)
+for prion disease, Anderson et al. (2018) for Huntington's, Vastag et al. (2022) for HIV.
+
+| Page | Chars | Gaps |
+|---|---|---|
+| `neurocognitive-disorders` (overview) | 15,362 | none |
+| `delirium` | 11,274 | none |
+| `major-neurocognitive-disorder` | 7,669 | none |
+| `mild-neurocognitive-disorder` | 5,536 | none |
+| `neurocognitive-disorder-due-to-alzheimers-disease` | 17,937 | none |
+| `vascular-neurocognitive-disorder` | 9,181 | none |
+| `neurocognitive-disorder-with-lewy-bodies` | 14,097 | none |
+| `frontotemporal-neurocognitive-disorder` | 8,402 | none |
+| `neurocognitive-disorder-due-to-traumatic-brain-injury` | 8,253 | none |
+| `substance-medication-induced-neurocognitive-disorder` | 12,235 | none |
+| `neurocognitive-disorder-other-aetiologies` | 20,411 | none |
+| `dementia-versus-neurocognitive-disorder-terminology` | 2,631 | none |
+
+### 22.1 A composite page can use its own section scheme
+
+**`neurocognitive-disorder-other-aetiologies` is one catalogue slug covering four unrelated diseases** —
+Parkinson's, Huntington's, HIV and prion disease. Forcing them through the standard
+Presentation/Diagnosis/Epidemiology/Etiology/Treatment/Contested scheme would have produced six sections
+each containing four disconnected paragraphs.
+
+**It uses `##` headings per disease instead, and the gap machinery works better that way, not worse.**
+`extract_page_sections()` keys on **any** `##` heading, so before the diseases were written the page's
+`needs` read:
+
+```
+hiv-associated-neurocognitive-disorder | huntingtons-disease |
+parkinsons-disease-dementia | what-is-contested-across-these-four
+```
+
+Each unwritten aetiology surfaced as its own named gap and closed independently. **Where a page is a
+container rather than a disorder, name the sections after its contents.** The standard six are a default
+for single-disorder pages, not a schema.
+
+### 22.2 Building a four-source page in four versions
+
+Provenance joins version → job, so a page needs one accepted version per source to list them all under
+*Built from* (§19.3). For a page assembled from four sources that means **four sequential versions**,
+each replacing a placeholder block:
+
+1. **v1** creates the page with the frame, the prion section written, and the other three as
+   `> **Needs research:** not yet written from a source.`
+2. **v2, v3, v4** each `replace()` exactly one placeholder block with its disease.
+
+**Every intermediate state is internally honest** — the page always declares exactly what it is missing
+— and the final page carries **4 sources**. The alternative, one version citing four sources, would
+have attributed everything to one job.
+
+### 22.3 The finding the chapter kept producing
+
+**Removing the pathological protein has now failed to help in three separate diseases**, and putting
+them on adjacent pages makes it visible:
+
+| Disease | Intervention | Result |
+|---|---|---|
+| Prion disease | **PRN100** anti-PrP antibody | **cleared the abnormal protein**, no effect on clinical progression |
+| Alzheimer's disease | lecanemab, donanemab | amyloid cleared; differences **below the threshold of perception** |
+| Lewy body disease | — | **Lewy body density does not correlate** with duration, onset, fluctuations, hallucinations, delusions, falls, parkinsonism or cognitive decline |
+
+Either the visible aggregate is not the toxic agent in any of them, or by the time it is visible the
+damage is done. The Lewy body literature has the sharpest version: *in vitro*, **fibril uptake is
+associated with a protective outcome** while **monomer and oligomer uptake triggers apoptosis** — which
+would make the structure the disease is named after the brain's defence.
+
+**And the four "known cause" diseases show that certainty about aetiology does not deliver treatment.**
+Huntington's has a single identified autosomal dominant mutation, testable years before onset, and its
+management guidance is **expert consensus** because there are *"insufficient data for evidence-based
+guidelines."* Prion disease is understood in molecular detail and **every therapeutic attempt has
+failed**.
+
+### 22.4 Other things worth teaching from these four
+
+- **Two dementias separated by a stopwatch.** DLB and Parkinson's disease dementia are distinguished by
+  the **one-year rule** — which symptom set was noticed first — on a boundary its own authors call
+  arbitrary, with **end-stage neuropathology that may be identical**.
+- **Criteria that manufacture cases.** The **Frascati criteria** for HAND put the cutoff at 1 SD across
+  multiple domains, and **15-22% of people without HIV test positive** on extensive batteries; 20% of a
+  simulated normal population falls below threshold. Antiretroviral therapy left **overall prevalence
+  steady at 30-60%** while shifting almost all of it to the asymptomatic end (**HAD 2%** in CHARTER).
+- **Check whether a prescribed drug is causing the symptom before treating it.** The Huntington
+  guidance for apathy says to **reduce SSRIs and neuroleptics first** — apathy from an SSRI looks
+  exactly like apathy from the disease. Likewise anxiety versus **akathisia**.
+- **In rapidly progressive dementia the expensive error is missing the reversible mimic** — autoimmune
+  encephalitis (responds well to immunotherapy; antibodies **initially negative in up to 50%**),
+  lithium toxicity, hepatic encephalopathy, hypoglycaemia, and **thiamine deficiency, whose MRI can show
+  the same cortical ribboning as CJD**.
+- **A diagnostic test can get worse as the disease progresses.** CJD's MRI signal **fades** with
+  neuronal loss and the EEG changes **disappear in late stages** — both most useful when the diagnosis
+  is least obvious.
+
+### 22.5 What is left outside the chapter
+
+**`communication-disorders`** sits in Lecture 10 but belongs to the neurodevelopmental chapter; it
+still has four gaps and thin open-access literature (§19.8).
+
+**Live: 251 pages, 1,353 wikilinks, 132 ingest jobs, 78 empty sections, 0 published.**
