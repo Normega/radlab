@@ -11,6 +11,9 @@ const SERIF = '"DM Serif Display", Georgia, serif'
 // Shared empty set, so "nothing is folded" is referentially stable.
 const EMPTY = new Set()
 
+// Browse modes. Cards is first because it is the default.
+const VIEWS = [['cards','Cards'], ['list','List']]
+
 // Page types that aren't part of the taxonomy catalogue — what papers and
 // (from WP6) students contribute, as opposed to the course scaffold.
 const CONTRIB_TYPES = [
@@ -120,6 +123,21 @@ export default function WikiIndex() {
     [chapterGroups, showEmpty])
   const allFolded = visibleGroups.length > 0 && visibleGroups.every(g => folded.has(g.number))
 
+  const [view, setView] = useState('cards')
+
+  // Opening a chapter card is the bridge between the two views: it switches to
+  // list, folds everything except the chapter asked for, and scrolls to it.
+  // Anything else — opening in place, or arriving in list with all twenty open —
+  // loses the thing the click was for.
+  const openChapter = useCallback((number) => {
+    setView('list')
+    setFolded(new Set(chapterGroups.map(g => g.number).filter(n => n !== number)))
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      document.getElementById(`chapter-heading-${number}`)
+        ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }))
+  }, [chapterGroups])
+
   if (pages === null) {
     return <Shell course={course}><p style={S.sub}>Loading…</p></Shell>
   }
@@ -181,29 +199,74 @@ export default function WikiIndex() {
               Show catalogue entries that aren't written yet
             </label>
 
-            {/* Twenty diagnostic classes is a long scroll to reach the one you
-                want. Chapters fold from their own heading; everything starts
-                open, because a browse page that opens closed hides what it is
-                for and find-in-page can't see an unmounted grid. */}
-            {visibleGroups.length > 1 && (
-              <div style={S.foldBar}>
-                <button
-                  type="button"
-                  style={S.foldBtn}
-                  onClick={() => setFolded(allFolded ? EMPTY : new Set(visibleGroups.map(g => g.number)))}
-                >
-                  {allFolded ? 'Expand all' : 'Collapse all'}
-                </button>
-                <span style={S.foldCount}>
-                  {folded.size > 0
-                    ? `${folded.size} of ${visibleGroups.length} folded`
-                    : `${visibleGroups.length} chapters`}
-                </span>
+            <div style={S.foldBar}>
+              {/* Cards is the default: twenty chapters as one screen of icons is
+                  a faster way in than twenty stacked headings, and it is the only
+                  place the artwork does real work. List is the same content with
+                  the pages showing. */}
+              <div style={S.seg} role="group" aria-label="Browse view">
+                {VIEWS.map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    aria-pressed={view === key}
+                    onClick={() => setView(key)}
+                    style={{ ...S.segBtn, ...(view === key ? S.segBtnOn : null) }}
+                  >
+                    {label}
+                  </button>
+                ))}
               </div>
-            )}
+
+              {/* Folding only means something once the pages are on screen, so
+                  these appear in list view only. Opening a chapter card is the
+                  other way in: it switches to list with just that one open. */}
+              {view === 'list' && visibleGroups.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    style={S.foldBtn}
+                    onClick={() => setFolded(allFolded ? EMPTY : new Set(visibleGroups.map(g => g.number)))}
+                  >
+                    {allFolded ? 'Expand all' : 'Collapse all'}
+                  </button>
+                  <span style={S.foldCount}>
+                    {folded.size > 0
+                      ? `${folded.size} of ${visibleGroups.length} folded`
+                      : `${visibleGroups.length} chapters`}
+                  </span>
+                </>
+              )}
+              {view === 'cards' && (
+                <span style={S.foldCount}>{visibleGroups.length} chapters</span>
+              )}
+            </div>
           </div>
 
-          {visibleGroups.map(g => {
+          {view === 'cards' && (
+            <div style={S.chGrid}>
+              {visibleGroups.map(g => (
+                <button
+                  key={g.number}
+                  type="button"
+                  onClick={() => openChapter(g.number)}
+                  style={{ ...S.chCard, ...(g.readable === 0 ? S.chCardEmpty : null) }}
+                >
+                  {g.number > 0 && <span style={S.chCardNum}>{g.number}</span>}
+                  {chapterIcon(g.number) && (
+                    <img src={chapterIcon(g.number)} alt="" aria-hidden="true"
+                         width={96} height={96} loading="lazy" style={S.chCardIcon} />
+                  )}
+                  <span style={S.chCardTitle}>{g.title}</span>
+                  {/* Pushed to the bottom so counts line up across a row whose
+                      titles wrap to different numbers of lines. */}
+                  <span style={S.chCardCount}>{g.readable} of {g.rows.length}</span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {view === 'list' && visibleGroups.map(g => {
             const isFolded = folded.has(g.number)
             return (
             <section key={g.number} style={{ marginTop: 16 }}>
@@ -381,6 +444,16 @@ const S = {
   toggle: { display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 13, color: 'var(--tx2)', marginTop: 10, cursor: 'pointer' },
 
   controlRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap' },
+  seg: { display: 'inline-flex', border: '1px solid var(--bd)', borderRadius: 16, overflow: 'hidden', background: 'var(--bgc)' },
+  segBtn: { fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', padding: '6px 14px', border: 'none', background: 'none', color: 'var(--tx2)', cursor: 'pointer' },
+  segBtnOn: { background: 'var(--pk)', color: '#fff' },
+  chGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 178px), 1fr))', gap: 12, marginTop: 4 },
+  chCard: { position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 8, background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 14, padding: '16px 12px 14px', cursor: 'pointer', color: 'inherit', font: 'inherit' },
+  chCardEmpty: { opacity: 0.55, borderStyle: 'dashed' },
+  chCardNum: { position: 'absolute', top: 8, left: 10, fontFamily: MONO, fontSize: 11, color: 'var(--tx2)' },
+  chCardIcon: { objectFit: 'contain' },
+  chCardTitle: { fontFamily: SERIF, fontSize: 15, lineHeight: 1.25, color: 'var(--tx)' },
+  chCardCount: { marginTop: 'auto', paddingTop: 4, fontFamily: MONO, fontSize: 10, letterSpacing: 0.5, textTransform: 'uppercase', color: 'var(--tx2)' },
   foldBar: { display: 'flex', alignItems: 'center', gap: 10, marginTop: 10 },
   foldBtn: { fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', padding: '5px 12px', borderRadius: 16, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx2)', cursor: 'pointer' },
   foldCount: { fontFamily: MONO, fontSize: 11, letterSpacing: 0.5, color: 'var(--tx2)' },
