@@ -82,6 +82,69 @@ export function extractHeadings(body) {
   return out
 }
 
+// Splits a body into its `##` sections so the reader can collapse them.
+//
+// Ids come from extractHeadings() rather than being re-slugified here, because
+// that function de-duplicates repeated headings (`presentation`,
+// `presentation-2`) and the collapsible heading has to carry the *same* id the
+// table of contents links to. Pass the headings you already computed.
+//
+// Two things each section carries beyond its markdown:
+//
+//   startLine  1-based line of its first content line in the *whole* body.
+//              wikiMarkdown takes this as `lineOffset` so anchors inside a
+//              slice still resolve against ids numbered against the whole page.
+//   anchorIds  every heading id inside the section, its own included. A link to
+//              a `###` anchor has to be able to open the `##` that contains it,
+//              or a table-of-contents click on a collapsed section goes nowhere.
+//
+// The first entry is the preamble — the H1 and anything before the first `##`.
+// It has a null id and is never collapsible: a page whose title folds away
+// reads as broken. It is omitted entirely when empty.
+export function splitSections(body, headings) {
+  const all = headings ?? extractHeadings(body)
+  const idByLine = new Map(all.map(h => [h.line, h.id]))
+  const lines = (body ?? '').replace(/\r/g, '').split('\n')
+  const out = []
+  let cur = { id: null, title: null, startLine: 1, lines: [] }
+  let inFence = false
+
+  lines.forEach((line, i) => {
+    if (/^\s*(```|~~~)/.test(line)) inFence = !inFence
+    if (!inFence && /^##[ \t]+\S/.test(line)) {
+      out.push(cur)
+      cur = {
+        id: idByLine.get(i + 1) ?? slugifyHeading(line.replace(/^##[ \t]+/, '')),
+        title: line.replace(/^##[ \t]+/, '').replace(/\s*#*\s*$/, '').replace(/[*_`]/g, '').trim(),
+        startLine: i + 2,
+        lines: [],
+      }
+      return
+    }
+    cur.lines.push(line)
+  })
+  out.push(cur)
+
+  return out
+    .map(s => {
+      const end = s.startLine + s.lines.length - 1
+      // Leading blank lines are dropped, and startLine moves with them: the
+      // offset has to describe the markdown actually handed to the renderer, or
+      // every anchor inside the section is looked up one line short.
+      let lead = 0
+      while (lead < s.lines.length && s.lines[lead].trim() === '') lead++
+      return {
+        id: s.id,
+        title: s.title,
+        startLine: s.startLine + lead,
+        markdown: s.lines.slice(lead).join('\n').replace(/\s+$/, ''),
+        anchorIds: [s.id, ...all.filter(h => h.line >= s.startLine && h.line <= end).map(h => h.id)]
+          .filter(Boolean),
+      }
+    })
+    .filter(s => s.id !== null || s.markdown !== '')
+}
+
 // Note the split on '#' — `slug.md#section` is an internal target even though
 // it doesn't end in `.md`. The database rule stops at the hash for the same
 // reason (`\]\(([^)\s#]+\.md)`); testing the raw href instead sent every

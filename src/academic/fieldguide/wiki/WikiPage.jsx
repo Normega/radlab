@@ -1,13 +1,17 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useOutletContext, useParams, useLocation } from 'react-router-dom'
 import { WikiMarkdown } from './wikiMarkdown'
-import { WIKI_BASE, splitFrontmatter, extractHeadings } from './wikiText'
+import { WIKI_BASE, splitFrontmatter, extractHeadings, splitSections } from './wikiText'
 import { useWikiCourse } from './useWikiCourse'
 import { useWideLayout } from './useWideLayout'
 import { TIER_LABEL, TIER_HELP } from './tiers'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
+
+// One shared empty set, so "nothing is folded" is referentially stable and
+// doesn't re-run the memos that read it.
+const EMPTY = new Set()
 
 // One wiki page (WP2). Everything here is a read — the write path is the
 // review queue, and wiki_pages has no authenticated write policies at all.
@@ -109,15 +113,70 @@ export default function WikiPage() {
 
   const { meta, body } = useMemo(() => splitFrontmatter(page?.content), [page?.content])
   const toc = useMemo(() => extractHeadings(body), [body])
+  const sections = useMemo(() => splitSections(body, toc), [body, toc])
+  const headingIds = useMemo(() => new Map(toc.map(h => [h.line, h.id])), [toc])
+
+  // Which `##` section contains each anchor, so a link to a `###` inside a
+  // folded section can open the section before scrolling to it.
+  const sectionOfAnchor = useMemo(() => {
+    const m = new Map()
+    for (const s of sections) {
+      if (!s.id) continue
+      for (const a of s.anchorIds) m.set(a, s.id)
+    }
+    return m
+  }, [sections])
+
+  // Collapsed by id, not by index: an edit that adds a section shouldn't fold a
+  // different one. Empty means everything is open, which is the default — a
+  // reference page that starts folded hides the thing it was opened for, and
+  // find-in-page can't see text that isn't rendered.
+  //
+  // Stamped with the slug it belongs to, the same way `loaded` is above, so
+  // navigating to another page starts unfolded without an effect having to
+  // reset it — and folds never leak from the page they were made on.
+  const [folds, setFolds] = useState({ slug: null, ids: EMPTY })
+  const collapsed = folds.slug === slug ? folds.ids : EMPTY
+  const setCollapsed = useCallback((next) => {
+    setFolds(prev => ({
+      slug,
+      ids: typeof next === 'function' ? next(prev.slug === slug ? prev.ids : EMPTY) : next,
+    }))
+  }, [slug])
+
+  const collapsible = sections.filter(s => s.id)
+  const allCollapsed = collapsible.length > 0 && collapsible.every(s => collapsed.has(s.id))
+
+  const reveal = useCallback((anchor) => {
+    const owner = sectionOfAnchor.get(anchor)
+    if (owner) setCollapsed(prev => {
+      if (!prev.has(owner)) return prev
+      const next = new Set(prev)
+      next.delete(owner)
+      return next
+    })
+  }, [sectionOfAnchor, setCollapsed])
 
   // Arriving from a [[page#section]] link: the target heading doesn't exist
-  // until the body has rendered, so the browser's own hash handling has
-  // already given up by then.
+  // until the body has rendered, so the browser's own hash handling has already
+  // given up by then. Unfolding and scrolling both happen in animation frames
+  // rather than in the effect body — the first frame opens the section that owns
+  // the anchor, the second scrolls once that render has laid out.
   useEffect(() => {
     if (!hash || !page?.content) return
-    const el = document.getElementById(hash.slice(1))
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }, [hash, page?.content])
+    const anchor = hash.slice(1)
+    let second
+    const first = requestAnimationFrame(() => {
+      reveal(anchor)
+      second = requestAnimationFrame(() => {
+        document.getElementById(anchor)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      })
+    })
+    return () => {
+      cancelAnimationFrame(first)
+      if (second) cancelAnimationFrame(second)
+    }
+  }, [hash, page?.content, reveal])
 
   if (page === undefined) return <Shell course={course}><p style={S.sub}>Loading…</p></Shell>
 
@@ -248,6 +307,10 @@ export default function WikiPage() {
             <p style={S.tocLabel}>On this page</p>
             {toc.map((h, i) => (
               <a key={`${h.id}-${i}`} href={`#${h.id}`}
+                 // Same-page hashes don't re-fire the hash effect when the hash
+                 // is unchanged, so the reveal is done here too — otherwise
+                 // clicking a folded section twice does nothing the second time.
+                 onClick={() => reveal(h.id)}
                  style={{ ...S.tocLink, paddingLeft: h.depth === 3 ? 12 : 0, opacity: h.depth === 3 ? 0.8 : 1 }}>
                 {h.text}
               </a>
@@ -256,9 +319,72 @@ export default function WikiPage() {
         )}
 
         <article style={{ minWidth: 0 }}>
-          {page.content
-            ? <WikiMarkdown content={page.content} pages={pages} />
-            : <p style={S.sub}>This page is a stub — it exists so links to it resolve, but nothing has been written into it yet.</p>}
+          {!page.content && (
+            <p style={S.sub}>This page is a stub — it exists so links to it resolve, but nothing has been written into it yet.</p>
+          )}
+
+          {/* The preamble — the body's H1 and anything above the first `##` —
+              never folds, and sits above the controls so the page still opens
+              with its title rather than with a toolbar. */}
+          {sections.filter(s => !s.id).map((s, i) => (
+            <WikiMarkdown key={`pre-${i}`} content={s.markdown} pages={pages}
+                          lineOffset={s.startLine - 1} headingIds={headingIds} />
+          ))}
+
+          {/* Sections fold at `##` only. Going deeper would let a reader hide a
+              `###` inside an open `##`, which reads as content having gone
+              missing rather than as a fold. One section, or none, gets no
+              controls — a toggle with nothing to toggle is noise. */}
+          {collapsible.length > 1 && (
+            <div style={S.foldBar}>
+              <button
+                type="button"
+                style={S.foldBtn}
+                onClick={() => setCollapsed(allCollapsed ? EMPTY : new Set(collapsible.map(s => s.id)))}
+              >
+                {allCollapsed ? 'Expand all' : 'Collapse all'}
+              </button>
+              <span style={S.foldCount}>
+                {collapsed.size > 0
+                  ? `${collapsed.size} of ${collapsible.length} folded`
+                  : `${collapsible.length} sections`}
+              </span>
+            </div>
+          )}
+
+          {collapsible.map(s => {
+            const folded = collapsed.has(s.id)
+            return (
+              <section key={s.id} style={S.foldSection}>
+                <h2 id={s.id} style={S.foldHeadingWrap}>
+                  <button
+                    type="button"
+                    onClick={() => setCollapsed(prev => {
+                      const next = new Set(prev)
+                      if (next.has(s.id)) next.delete(s.id); else next.add(s.id)
+                      return next
+                    })}
+                    aria-expanded={!folded}
+                    aria-controls={`section-body-${s.id}`}
+                    style={S.foldHeading}
+                  >
+                    <span aria-hidden="true" style={{ ...S.caret, transform: folded ? 'rotate(-90deg)' : 'none' }}>▾</span>
+                    <span>{s.title}</span>
+                  </button>
+                </h2>
+                {/* Folded content is unmounted, not hidden: find-in-page can't
+                    see it either way, and unmounting keeps a 20,000-character
+                    page from rendering markdown nobody is reading. Everything
+                    starts open, so this only costs what the reader chose. */}
+                <div id={`section-body-${s.id}`} hidden={folded}>
+                  {!folded && (
+                    <WikiMarkdown content={s.markdown} pages={pages}
+                                  lineOffset={s.startLine - 1} headingIds={headingIds} />
+                  )}
+                </div>
+              </section>
+            )
+          })}
 
           {/* Self-declared gaps. Shown to everyone deliberately: for a student
               this is the assignment list, and a wiki that says what it doesn't
@@ -394,6 +520,16 @@ const S = {
   criteriaNote: { display: 'block', fontSize: 12, color: 'var(--tx2)', marginTop: 4 },
 
   layout: { display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 28, marginTop: 22, alignItems: 'start' },
+  foldBar: { display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', margin: '0 0 4px' },
+  foldBtn: { fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', padding: '5px 12px', borderRadius: 16, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx2)', cursor: 'pointer' },
+  foldCount: { fontFamily: MONO, fontSize: 11, letterSpacing: 0.5, color: 'var(--tx2)' },
+  foldSection: { borderTop: '1px solid var(--bd)', marginTop: 18 },
+  // The h2 keeps the anchor id and the document outline; the button inside it
+  // is what takes the click, so the heading stays a heading to a screen reader.
+  foldHeadingWrap: { margin: 0, scrollMarginTop: 20 },
+  foldHeading: { display: 'flex', alignItems: 'baseline', gap: 8, width: '100%', textAlign: 'left', padding: '14px 0 6px', border: 'none', background: 'none', cursor: 'pointer', fontFamily: SERIF, fontSize: 23, lineHeight: 1.2, color: 'var(--tx)' },
+  caret: { flexShrink: 0, fontSize: 13, color: 'var(--pk)', transition: 'transform .15s ease', display: 'inline-block' },
+
   toc: { position: 'sticky', top: 16, alignSelf: 'start', borderLeft: '2px solid var(--bd)', paddingLeft: 12 },
   tocLabel: { fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx2)', margin: '0 0 6px' },
   tocLink: { display: 'block', fontSize: 13, color: 'var(--tx2)', textDecoration: 'none', padding: '3px 0' },

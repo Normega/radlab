@@ -24,27 +24,39 @@ const textOf = (node) => Children.toArray(node)
 /**
  * Renders a wiki page body.
  *
- * @param content  raw page content, frontmatter included
- * @param pages    Map slug → { title }, of pages THIS READER can see. A link
- *                 to a slug outside the map renders as unresolved — which for
- *                 a student legitimately includes pages that exist but are
- *                 still drafts. That is the honest state either way: the page
- *                 is not there to read.
+ * @param content     raw page content, frontmatter included
+ * @param pages       Map slug → { title }, of pages THIS READER can see. A link
+ *                    to a slug outside the map renders as unresolved — which for
+ *                    a student legitimately includes pages that exist but are
+ *                    still drafts. That is the honest state either way: the page
+ *                    is not there to read.
+ * @param lineOffset  when `content` is a slice of a larger body (a collapsible
+ *                    section), the number of lines that precede it. Anchor ids
+ *                    are looked up by absolute line, so a slice would otherwise
+ *                    give its headings the ids belonging to the top of the page.
+ *                    A non-zero offset also means "this is not a whole
+ *                    document", so no frontmatter is stripped from it.
+ * @param headingIds  Map absolute line → id, from extractHeadings() over the
+ *                    whole body. Optional; without it the ids are derived from
+ *                    `content` alone, which is right for a whole page.
  */
-export function WikiMarkdown({ content, pages }) {
-  const { body } = useMemo(() => splitFrontmatter(content), [content])
+export function WikiMarkdown({ content, pages, lineOffset = 0, headingIds }) {
+  const { body } = useMemo(
+    () => (lineOffset ? { body: content ?? '' } : splitFrontmatter(content)),
+    [content, lineOffset])
   const source = useMemo(() => expandWikilinks(body), [body])
 
   // Anchor ids, keyed by source line so the heading and the table of contents
   // agree even when the same heading text appears more than once. expandWikilinks
   // only ever substitutes within a line, so line numbers survive it.
   const idByLine = useMemo(
-    () => new Map(extractHeadings(body).map(h => [h.line, h.id])),
-    [body])
+    () => headingIds ?? new Map(extractHeadings(body).map(h => [h.line, h.id])),
+    [headingIds, body])
   const headingId = useCallback(
     (node, children) =>
-      idByLine.get(node?.position?.start?.line) ?? slugifyHeading(textOf(children)),
-    [idByLine])
+      idByLine.get((node?.position?.start?.line ?? 0) + lineOffset)
+        ?? slugifyHeading(textOf(children)),
+    [idByLine, lineOffset])
 
   const components = useMemo(() => ({
     h1: ({ node, children }) => <h2 id={headingId(node, children)} style={M.h2}>{children}</h2>,
