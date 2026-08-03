@@ -1876,3 +1876,160 @@ chapter as the first behavioural addiction. The most authoritative recent review
 its newest and most disputed part.
 
 **Progress: `contested` 47 → 43 empty.**
+
+---
+
+## 19. The `contested` campaign completes Tier A — 24 pages, 20 journal sources, one session
+
+**Result: `contested` empty 47 → 21, and Tier A `contested` is 0.** Every page the catalogue marks as
+central now has a contested section. What remains is 19 Tier B pages, `substance-intoxication`
+(foundation) and `sleep-wake-disorders` (overview).
+
+### 19.1 What was written
+
+| Page | Source | Closed |
+|---|---|---|
+| `functional-neurological-symptom-disorder` | Stone et al. 2024, *World Psychiatry* | etiology, contested |
+| `insomnia-disorder` | Krystal, Prather & Ashbrook 2019, *World Psychiatry* | contested |
+| `prolonged-grief-disorder` | Prigerson & Maciejewski 2024 + Reed et al. 2022 | etiology, treatment, contested (enriched) |
+| `internet-gaming-disorder` | Reed et al. 2022, *World Psychiatry* | contested (enriched) |
+| `generalized-anxiety-disorder` | Gray et al. 2024 (WHO), *World Psychiatry* | contested |
+| `panic-disorder` | Gray et al. 2024 (WHO) | contested |
+| `disruptive-mood-dysregulation-disorder` | Leibenluft 2017, *World Psychiatry* | diagnosis, epidemiology (partial), etiology, treatment, contested |
+| `stimulant-use-disorder` | Newcorn 2025, *World Psychiatry* | contested |
+| `separation-anxiety-disorder` | Silove, Manicavasagar & Pini 2016 | contested |
+| `obsessive-compulsive-disorder` | Cervin et al. 2022 + Cervin et al. 2025 | contested |
+| `neurocognitive-disorder-due-to-alzheimers-disease` | Ravona-Springer et al. 2003, *Dialogues Clin Neurosci* | contested |
+| `vascular-neurocognitive-disorder` | Ravona-Springer et al. 2003 | contested |
+| `binge-eating-disorder` | Amianto et al. 2015, *BMC Psychiatry* | contested |
+| `adjustment-disorders` | Zapata-Ospina et al. 2023, *Front Psychiatry* | treatment, contested |
+| `delirium` | Sepulveda et al. 2016, *BMC Psychiatry* | contested |
+| `delusional-disorder` | Gonzalez-Rodriguez & Seeman 2022, *World J Psychiatry* | etiology, treatment, contested |
+| `narcolepsy` | Quaedackers, Pillen & Overeem 2021, *Nat Sci Sleep* | epidemiology, contested |
+| `illness-anxiety-disorder` | Lebel et al. 2020, *PLOS ONE* | contested |
+| `dissociative-amnesia` | Taib et al. 2023, *Front Psychiatry* | contested |
+| `dissociative-identity-disorder` | Brand et al. 2016, *Harvard Rev Psychiatry* | contested |
+| `substance-withdrawal` | Jesse et al. 2017, *Acta Neurol Scand* | epidemiology, etiology, contested |
+| `agoraphobia` | Roest et al. 2019, *Depress Anxiety* | contested |
+| `erectile-disorder` | Dewitte et al. 2021, *Sexual Medicine* (ESSM) | contested |
+| `specific-phobia` | Thng et al. 2020, *F1000Research* | contested |
+
+### 19.2 The search method that made this affordable
+
+**Batch the Europe PMC API over a topic list, then fetch only the shortlist.** One shell loop over
+15-20 topics with `JOURNAL:"..." AND TITLE:"..." AND OPEN_ACCESS:Y`, printing `pmcid | year | journal |
+title`, turns a per-page search problem into one call per batch. Only shortlisted candidates get a
+WebFetch — and **the fetch is still mandatory before writing** (§18.3), because a search result gives a
+title, not a verified citation and not a licence.
+
+```
+curl -sG "https://www.ebi.ac.uk/europepmc/webservices/rest/search" \
+  --data-urlencode 'query=JOURNAL:"World Psychiatry" AND TITLE:"delirium" AND OPEN_ACCESS:Y' \
+  --data-urlencode 'format=json' --data-urlencode 'pageSize=10' --data-urlencode 'sort=CITED desc'
+```
+
+**World Psychiatry alone does not cover the course.** Searching 17 topics against it returned nothing
+for phobia, dissociation, delirium, Alzheimer's, narcolepsy, adjustment disorder, PMDD, schizoaffective
+or delusional disorder. Widening to `BMC Psychiatry`, `Frontiers in Psychiatry`, `PLOS ONE`,
+`F1000Research`, `Dialogues in Clinical Neuroscience`, `Depression and Anxiety`, `Nature and Science of
+Sleep` and `World Journal of Psychiatry` closed almost all of them. **Search the topic, not the
+journal.**
+
+### 19.3 One source, two pages, two job rows
+
+Ravona-Springer et al. (2003) answers the separability question for **both**
+`neurocognitive-disorder-due-to-alzheimers-disease` and `vascular-neurocognitive-disorder`; Reed et al.
+(2022) covers gaming disorder and prolonged grief; Gray et al. (2024) covers GAD and panic.
+
+**Create one `ingest_jobs` row per (source, target page).** `wiki_page_provenance` joins version → job,
+so a single job row would attribute the source to only one page. `ingest_jobs_target_slug_ck` requires
+`target_slug` when `source_type='reference'`, which enforces this anyway.
+
+**Two sources on one page needs two versions, accepted in sequence.** `review_proposal` writes the
+version's content wholesale, so two pending versions on the same page would have the second overwrite
+the first from a stale base. `obsessive-compulsive-disorder` was done this way — benchmarks accepted
+first, then the MCID section appended under its own job.
+
+### 19.4 Licence variants encountered, and what each permits
+
+| Licence | Seen on | Handling |
+|---|---|---|
+| **CC BY 4.0** | Gray (WHO), Amianto, Zapata-Ospina, Sepulveda, Lebel, Taib, Thng | remixable with attribution |
+| **CC BY-NC 4.0** | Gonzalez-Rodriguez & Seeman, Roest | remixable, non-commercial |
+| **CC BY-NC 3.0** | Quaedackers (Dove) | remixable, non-commercial |
+| **CC BY-NC-ND 4.0** | Ravona-Springer, Brand, Jesse, Dewitte | **no derivatives** — cite and paraphrase only |
+| **WPA copyright, free to read** | most *World Psychiatry* items | cite and paraphrase only |
+
+**A WHO-authored article in a copyrighted journal can still be CC BY** — Gray et al. is © World Health
+Organization, licensed by the authors, in a journal whose other content is not. **Check per article,
+never per journal.**
+
+### 19.5 Sources that are parties to the dispute — now a pattern, not an exception
+
+§18.8 recorded this for Volkow on addiction. It recurred twice:
+
+- **Brand et al. (2016) on `dissociative-identity-disorder`** — the authors are advocates of the trauma
+  model and authors of the treatment guidelines the paper defends. The page **states that in the
+  running text before presenting the evidence**, names the design limits of the outcome studies it
+  cites (within-patient, uncontrolled, non-randomised), and flags what the paper does not weigh: the
+  costs of *over*diagnosis, and the interpretive choice involved in classifying cultural possession
+  states as DID variants.
+- **Dewitte et al. (2021) on `erectile-disorder`** — an ESSM position statement arguing for the
+  psychosocial approach it represents. Handled the same way; its strongest evidence (the >50%
+  first-year discontinuation rate for medical aids) survives the framing.
+
+**The rule: name the authorship position in the page text, then use the source's own numbers.** A
+source that is a participant is still usable; a source presented as neutral when it is not is a
+misrepresentation.
+
+### 19.6 Say how big the evidence base is before saying what it found
+
+Three pages this round would have been misleading without a size statement in front of the findings:
+
+- **`adjustment-disorders`** — the seven phenomenological differences between adjustment disorder and a
+  depressive episode come from a **qualitative study of four people**, all highly educated, all
+  Colombian, interviewed retrospectively. The table is on the page; so is the *n*, in bold, immediately
+  after it, described as a hypothesis worth testing rather than an established discriminant.
+- **`dissociative-amnesia`** — the neuroimaging findings come from **22 studies, 49 patients, one
+  prospective controlled study, mean quality 4.9/10**. Stated before any finding.
+- **`specific-phobia`** — the large effect sizes come overwhelmingly from **community volunteers** (3
+  of 33 studies used clinical samples) in a population defined by *not* seeking treatment.
+
+**A finding without its denominator reads as settled.** Same discipline as §16's "count hits in the
+body, not the references".
+
+### 19.7 What the campaign found that is worth teaching
+
+Recurring across pages, and useful as course material rather than page filler:
+
+- **Prevalence is a property of the manual.** Delirium in the same 200 patients: **28% (DSM-III-R),
+  27% (DSM-5), 21% (DSM-IV), 16% (ICD-10)**. Agoraphobia: prevalence essentially unchanged between
+  DSM-IV and DSM-5 while **43% of cases are recognised by one manual and not the other**. PTSD (§18):
+  42% concordance.
+- **Reliability and accuracy trade off.** DSM-5's delirium criteria have the best inter-rater
+  reliability of four systems and slightly lower accuracy; *disorganised thinking* was dropped after
+  DSM-III-R **to improve reliability among non-psychiatrists** and performed well phenomenologically.
+  Same structure in DSM-5's collapse of primary/secondary insomnia, made because **the mechanism is
+  poorly understood**, not because the distinction had been disproved.
+- **Thresholds that govern who gets treated are often arbitrary.** The Y-BOCS **16** used as
+  trial-entry criterion across the OCD literature has **no empirical basis**; the empirically derived
+  severe threshold of 30 has PPV 43-49%, leading its own authors to say that rationing specialist
+  treatment by it **should be questioned**.
+- **A treatment that separates two conditions is better evidence of distinctness than a criteria set
+  that asserts it** — interpersonal psychotherapy and nortriptyline both treat bereavement-related
+  depression and **not** grief.
+- **Adherence data undercut efficacy data.** More than 50% of couples discontinue medical aids for
+  erectile dysfunction within a year, mostly for non-pharmacological reasons.
+
+### 19.8 What remains
+
+**21 `contested` gaps**: 19 Tier B, plus `substance-intoxication` (foundation) and
+`sleep-wake-disorders` (overview). Corpus-wide, also 23 `treatment`, 14 `etiology` and 8
+`epidemiology` sections empty.
+
+The Tier B remainder is genuinely harder. `communication-disorders`,
+`disinhibited-social-engagement-disorder` and `psychological-factors-affecting-other-medical-conditions`
+have thin open-access review literature, and several of the rest are better served by a targeted search
+per page than by another batch sweep.
+
+**Live: 247 pages, 1,286 wikilinks, 114 ingest jobs, 0 published, queue clear.**

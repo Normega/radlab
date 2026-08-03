@@ -64,15 +64,15 @@ cases. Module 16's corpus check already turned up one unknown case — a broken 
 
 Everything is merged and pushed to `main`; nothing sits on a branch.
 
-## 2. Live database state (radlab-academic, 2026-08-02, after the full source sweep)
+## 2. Live database state (radlab-academic, 2026-08-02, after the contested campaign)
 
 ```
-244 pages with bodies       0 published — no student can see anything yet
-1,168 wikilinks             0 proposals pending — review queue clear
-15 red links                0 blue links to an empty page
+247 pages with bodies       0 published — no student can see anything yet
+1,286 wikilinks             0 proposals pending — review queue clear
+11 red links                0 blue links to an empty page
 0 duplicate headings        0 off-catalogue disorder pages
-130 catalogue rows          83 ingest jobs
-123 empty sections         182 annotations
+130 catalogue rows         114 ingest jobs
+84 empty sections           0 Tier A pages with an empty Contested section
 ```
 
 **Catalogue coverage: Tier A 54/54, foundations 14/14, overviews 16/16 — all complete. Tier B 33/46 is the only incomplete tier.**
