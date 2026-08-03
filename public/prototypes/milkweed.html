@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Milkweed</title>
+<style>
+  html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#1a1420;}
+  canvas{display:block;touch-action:none;cursor:default;}
+  #intro{
+    position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    pointer-events:none;z-index:5;
+    font-family:Georgia,'Times New Roman',serif;font-style:italic;
+    color:rgba(250,242,228,0.9);font-size:clamp(16px,2.6vw,22px);
+    text-shadow:0 1px 8px rgba(40,20,0,0.5);
+    opacity:0;transition:opacity 3s ease;
+  }
+  #tune{
+    position:fixed;top:8px;right:8px;z-index:10;display:none;
+    background:rgba(20,14,24,0.88);border:1px solid rgba(255,255,255,0.15);
+    border-radius:8px;padding:10px 14px;font-family:ui-monospace,monospace;font-size:11px;
+    color:#e8dcc8;min-width:220px;
+  }
+  #tune label{display:block;margin:6px 0 2px;}
+  #tune input{width:100%;}
+  #hint{position:fixed;bottom:6px;right:10px;z-index:6;font-family:ui-monospace,monospace;
+    font-size:10px;color:rgba(255,255,255,0.18);pointer-events:none;}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="intro">The pods are ripe. The wind is patient.</div>
+<div id="hint">t&nbsp;·&nbsp;tuning</div>
+<div id="tune">
+  <label>wind base (px/s) <span id="v_wind"></span></label><input type="range" id="s_wind" min="10" max="120" step="2">
+  <label>gust strength <span id="v_gust"></span></label><input type="range" id="s_gust" min="0" max="2" step="0.05">
+  <label>held wilt time (s) <span id="v_wilt"></span></label><input type="range" id="s_wilt" min="2" max="20" step="0.5">
+  <label>touch disturbance radius <span id="v_repel"></span></label><input type="range" id="s_repel" min="20" max="160" step="5">
+</div>
+<script>
+'use strict';
+/* ============================================================
+   MILKWEED — letting go.
+   A hillside at golden hour. Pods crack open crisply (task mode,
+   done well). Seeds ride your finger like a comet — but held
+   seeds dim, and only released seeds ignite and join the wind.
+   Touching flying seeds knocks them from the current.
+   The wind pops pods on its own. Nothing is counted.
+   ============================================================ */
+
+const P = {
+  windBase: 42,        // px/s rightward drift
+  gustAmp: 0.9,        // curl-noise gust strength
+  wiltTau: 7,          // seconds held before a seed fully dims
+  repelR: 70,          // px, pointer disturbance radius for flying seeds
+  duration: 280,       // dusk finale begins here
+};
+
+const cv=document.getElementById('c');
+const ctx=cv.getContext('2d');
+let W=0,H=0,DPR=1;
+
+function resize(){
+  DPR=Math.min(window.devicePixelRatio||1,2);
+  W=window.innerWidth;H=window.innerHeight;
+  cv.width=W*DPR;cv.height=H*DPR;cv.style.width=W+'px';cv.style.height=H+'px';
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  buildWorld();
+}
+
+// --- noise / wind field -----------------------------------------------------
+function hash2(x,y){ const s=Math.sin(x*127.1+y*311.7)*43758.5453; return s-Math.floor(s); }
+function vnoise(x,y){
+  const xi=Math.floor(x),yi=Math.floor(y),xf=x-xi,yf=y-yi;
+  const u=xf*xf*(3-2*xf), v=yf*yf*(3-2*yf);
+  const a=hash2(xi,yi),b=hash2(xi+1,yi),c=hash2(xi,yi+1),d=hash2(xi+1,yi+1);
+  return a+(b-a)*u+(c-a)*v+(a-b-c+d)*u*v;
+}
+// curl of a scalar noise field -> divergence-free-ish wind
+function windVec(x,y,t){
+  const s=0.0035, ts=0.05, e=1.5;
+  const px=x*s, py=y*s+t*ts*0.3, pt=t*ts;
+  const n1=vnoise(px,py+e*s)+0.5*vnoise(px*2+pt,py*2);
+  const n2=vnoise(px,py-e*s)+0.5*vnoise(px*2+pt,py*2-e*s*2);
+  const n3=vnoise(px+e*s,py)+0.5*vnoise(px*2+e*s*2+pt,py*2);
+  const n4=vnoise(px-e*s,py)+0.5*vnoise(px*2-e*s*2+pt,py*2);
+  const gust=gustEnv(t);
+  const amp=P.gustAmp*46*gust;
+  return [
+    P.windBase*(0.7+0.5*gust) + (n1-n2)/(2*e*s)*amp*s,
+    -18*Math.sin(t*0.13+x*0.002)*gust*0.4 - (n3-n4)/(2*e*s)*amp*s*0.8,
+  ];
+}
+// slow gust envelope: calm <-> breezy, plus finale rise
+let gustPhase=Math.random()*100;
+function gustEnv(t){
+  const base=0.55+0.45*Math.sin(t*0.11+gustPhase)+0.3*Math.sin(t*0.031+1.7);
+  const finale=t>P.duration? Math.min(1.6,(t-P.duration)/25):0;
+  return Math.max(0.15,base*0.8)+finale;
+}
+
+// --- world geometry ---------------------------------------------------------
+let pods=[], grassBlades=[], farHillY=null, nearHillY=null;
+function nearHill(x){ // player's slope, left-weighted
+  return H*0.72 + H*0.13*Math.pow(Math.max(0,(x/W-0.05)),1.5) + Math.sin(x*0.01)*6;
+}
+function farHill(x){ // rises on the right — where seeds land
+  const k=(x/W-0.55)/0.45;
+  return H*0.86 - (k>0? H*0.34*k*k :0) + Math.sin(x*0.008+2)*5;
+}
+function buildWorld(){
+  // pods along the near slope, clustered left/centre
+  if(pods.length===0){
+    const n=9;
+    for(let i=0;i<n;i++){
+      const fx=0.06+0.42*(i/(n-1))+ (hash2(i,7)-0.5)*0.04;
+      const x=fx*W;
+      const baseY=nearHill(x);
+      const h=H*(0.10+hash2(i,3)*0.07);
+      pods.push({
+        x, baseY, h,
+        lean:(hash2(i,11)-0.5)*0.5,
+        open:false, openAt:0, seedsLeft:14+Math.floor(hash2(i,5)*8),
+        popAnim:0, swayPh:hash2(i,13)*7,
+      });
+    }
+  } else {
+    for(const p of pods){ p.baseY=nearHill(p.x); }
+  }
+  grassBlades=[];
+  for(let i=0;i<260;i++){
+    const x=Math.random()*W;
+    const onFar=Math.random()<0.35;
+    const y=onFar? farHill(x): nearHill(x)+Math.random()*(H-nearHill(x))*0.5;
+    if(onFar && farHill(x)>H*0.9) continue;
+    grassBlades.push({x,y,len:8+Math.random()*20,ph:Math.random()*7,far:onFar,w:0.8+Math.random()*1.4});
+  }
+}
+
+// --- seeds ------------------------------------------------------------------
+// states: 'held' | 'fly' | 'tumble' | 'landed' | 'bloom'
+let seeds=[], blooms=[], streaks=[], puffs=[];
+function makeSeed(x,y,state){
+  return {
+    x,y,state,
+    vx:0,vy:0,
+    spin:Math.random()*7, spinV:(Math.random()-0.5)*2,
+    heldAt:0, heldFor:0, wilt:0, flare:0,
+    landDepth:Math.random()*46,
+    driftK:0.45+Math.random()*0.5,   // seeds loiter and swirl at their own pace
+    holdIdx:0, // order in the held comet
+    jitPh:Math.random()*7,
+    tumbleT:0,
+    murmur:false,
+  };
+}
+
+// held seeds follow the pointer as a comet
+let held=[], pointer={x:0,y:0,down:false};
+
+function popPod(p,byWind){
+  if(p.open) return;
+  p.open=true; p.openAt=T(); p.popAnim=1;
+  sfxPop(byWind?0.5:1);
+  // a few seeds escape immediately on the pop — crisp, generous
+  const burst=byWind?5:3;
+  for(let i=0;i<burst && p.seedsLeft>0;i++){
+    p.seedsLeft--;
+    const s=makeSeed(p.x+(Math.random()-0.5)*10, p.baseY-p.h+(Math.random()-0.5)*8,'fly');
+    s.vx=(Math.random()-0.5)*30; s.vy=-20-Math.random()*30; s.flare=0.6;
+    seeds.push(s);
+  }
+  for(let i=0;i<10;i++){
+    puffs.push({x:p.x,y:p.baseY-p.h,vx:(Math.random()-0.5)*50,vy:-Math.random()*40,r:2+Math.random()*4,a:0.5,t:0});
+  }
+}
+
+function tryGrab(x,y){
+  // touching an open pod gathers a few seeds onto the finger
+  for(const p of pods){
+    const px=p.x, py=p.baseY-p.h;
+    if(p.open && p.seedsLeft>0 && Math.hypot(x-px,y-py)<44){
+      const n=Math.min(p.seedsLeft, 4+Math.floor(Math.random()*3));
+      for(let i=0;i<n;i++){
+        p.seedsLeft--;
+        const s=makeSeed(px+(Math.random()-0.5)*12, py+(Math.random()-0.5)*12,'held');
+        s.heldAt=T(); s.holdIdx=held.length;
+        held.push(s); seeds.push(s);
+      }
+      sfxGather();
+      return true;
+    }
+  }
+  return false;
+}
+
+function releaseHeld(){
+  if(held.length===0) return;
+  const t=T();
+  for(const s of held){
+    s.state='fly';
+    s.flare=1;                 // ignition — the moment of letting go is the bright one
+    s.wilt*=0.4;               // release restores most of the life
+    s.vx=pointer.vx*0.25+(Math.random()-0.5)*20;
+    s.vy=pointer.vy*0.25-24-Math.random()*20;
+  }
+  sfxRelease(held.length);
+  held=[];
+}
+
+// --- gifts ------------------------------------------------------------------
+let murmuration={active:false,until:0,cx:0,cy:0,ph:0,nextCheck:30};
+function maybeMurmur(t){
+  if(murmuration.active){
+    if(t>murmuration.until){ murmuration.active=false; for(const s of seeds) s.murmur=false; }
+    return;
+  }
+  if(t<murmuration.nextCheck) return;
+  murmuration.nextCheck=t+8+Math.random()*8;
+  const flying=seeds.filter(s=>s.state==='fly');
+  if(flying.length>=6 && Math.random()<0.75){
+    murmuration.active=true;
+    murmuration.until=t+9;
+    murmuration.ph=Math.random()*7;
+    for(const s of flying) if(Math.random()<0.85){ s.murmur=true; s.mPh=Math.random()*2; }
+    murmuration.nextCheck=t+9+14;   // a rest after the figure — gifts stay rare
+    sfxChord([0,4,7]);
+  }
+}
+function murmurPoint(t){
+  const a=t*0.5+murmuration.ph;
+  return [W*0.55+Math.sin(a)*W*0.22, H*0.34+Math.sin(a*1.7+1)*H*0.16];
+}
+
+// --- input ------------------------------------------------------------------
+cv.addEventListener('pointerdown',e=>{
+  pointer.down=true; pointer.x=e.clientX; pointer.y=e.clientY; pointer.vx=0; pointer.vy=0;
+  pointer.lastT=performance.now();
+  cv.setPointerCapture(e.pointerId);
+  startAudio();
+  // pods pop on a firm tap
+  for(const p of pods){
+    if(!p.open && Math.hypot(e.clientX-p.x, e.clientY-(p.baseY-p.h))<40){ popPod(p,false); return; }
+  }
+  tryGrab(e.clientX,e.clientY);
+});
+cv.addEventListener('pointermove',e=>{
+  const now=performance.now();
+  const dt=Math.max(1,(now-(pointer.lastT||now)))/1000;
+  pointer.vx=(e.clientX-pointer.x)/dt; pointer.vy=(e.clientY-pointer.y)/dt;
+  pointer.x=e.clientX; pointer.y=e.clientY; pointer.lastT=now;
+  if(pointer.down && held.length===0){
+    // dragging across a pod also gathers
+    tryGrab(e.clientX,e.clientY);
+  }
+});
+window.addEventListener('pointerup',()=>{ pointer.down=false; releaseHeld(); });
+window.addEventListener('pointercancel',()=>{ pointer.down=false; releaseHeld(); });
+
+// --- audio ------------------------------------------------------------------
+let AC=null, master=null, windG=null, windF=null, started=false;
+function startAudio(){
+  if(started) return; started=true;
+  try{
+    AC=new (window.AudioContext||window.webkitAudioContext)();
+    master=AC.createGain(); master.gain.value=0.5; master.connect(AC.destination);
+    const buf=AC.createBuffer(1,AC.sampleRate*4,AC.sampleRate);
+    const d=buf.getChannelData(0);
+    for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+    const n=AC.createBufferSource(); n.buffer=buf; n.loop=true;
+    windF=AC.createBiquadFilter(); windF.type='bandpass'; windF.frequency.value=300; windF.Q.value=0.5;
+    windG=AC.createGain(); windG.gain.value=0.06;
+    n.connect(windF); windF.connect(windG); windG.connect(master);
+    n.start();
+  }catch(e){}
+}
+function sfxPop(vol){
+  if(!AC) return;
+  const t0=AC.currentTime;
+  const o=AC.createOscillator(),g=AC.createGain();
+  o.type='triangle';
+  o.frequency.setValueAtTime(320,t0);
+  o.frequency.exponentialRampToValueAtTime(90,t0+0.09);
+  g.gain.setValueAtTime(0.22*vol,t0);
+  g.gain.exponentialRampToValueAtTime(0.001,t0+0.12);
+  o.connect(g);g.connect(master);o.start(t0);o.stop(t0+0.13);
+  // husk crack: tiny noise tick
+  const nb=AC.createBuffer(1,AC.sampleRate*0.05,AC.sampleRate);
+  const nd=nb.getChannelData(0);
+  for(let i=0;i<nd.length;i++) nd[i]=(Math.random()*2-1)*(1-i/nd.length);
+  const ns=AC.createBufferSource(); ns.buffer=nb;
+  const nf=AC.createBiquadFilter(); nf.type='highpass'; nf.frequency.value=1800;
+  const ng=AC.createGain(); ng.gain.value=0.15*vol;
+  ns.connect(nf);nf.connect(ng);ng.connect(master);ns.start(t0);
+}
+function sfxFlutter(){
+  // a knocked-down seed: dry rustle, not a chime — disturbance must not
+  // reward the ear
+  if(!AC) return;
+  const t0=AC.currentTime;
+  const nb=AC.createBuffer(1,AC.sampleRate*0.12,AC.sampleRate);
+  const nd=nb.getChannelData(0);
+  for(let i=0;i<nd.length;i++) nd[i]=(Math.random()*2-1)*(1-i/nd.length)*Math.sin(i*0.01);
+  const ns=AC.createBufferSource(); ns.buffer=nb;
+  const bf=AC.createBiquadFilter(); bf.type='bandpass'; bf.frequency.value=900; bf.Q.value=1.2;
+  const ng=AC.createGain(); ng.gain.value=0.05;
+  ns.connect(bf);bf.connect(ng);ng.connect(master);ns.start(t0);
+}
+function sfxGather(){
+  if(!AC) return;
+  const t0=AC.currentTime;
+  const o=AC.createOscillator(),g=AC.createGain();
+  o.type='sine'; o.frequency.setValueAtTime(900,t0);
+  o.frequency.exponentialRampToValueAtTime(1400,t0+0.08);
+  g.gain.setValueAtTime(0.05,t0); g.gain.exponentialRampToValueAtTime(0.001,t0+0.1);
+  o.connect(g);g.connect(master);o.start(t0);o.stop(t0+0.11);
+}
+function sfxRelease(n){
+  if(!AC) return;
+  const t0=AC.currentTime;
+  const notes=[1568,1760,2093,2349];
+  for(let i=0;i<Math.min(4,Math.ceil(n/3));i++){
+    const o=AC.createOscillator(),g=AC.createGain();
+    o.type='sine'; o.frequency.value=notes[i%notes.length]*(1+(Math.random()-0.5)*0.01);
+    const st=t0+i*0.07;
+    g.gain.setValueAtTime(0,st);
+    g.gain.linearRampToValueAtTime(0.04,st+0.02);
+    g.gain.exponentialRampToValueAtTime(0.001,st+0.5);
+    o.connect(g);g.connect(master);o.start(st);o.stop(st+0.55);
+  }
+}
+const SCALE=[262,294,330,392,440,523,587,659]; // C pentatonic-ish
+function sfxChord(iv){
+  if(!AC) return;
+  const t0=AC.currentTime;
+  for(let i=0;i<iv.length;i++){
+    const o=AC.createOscillator(),g=AC.createGain();
+    o.type='sine'; o.frequency.value=SCALE[iv[i]%SCALE.length];
+    g.gain.setValueAtTime(0,t0);
+    g.gain.linearRampToValueAtTime(0.035,t0+1.2);
+    g.gain.exponentialRampToValueAtTime(0.001,t0+4);
+    o.connect(g);g.connect(master);o.start(t0);o.stop(t0+4.2);
+  }
+}
+function sfxBloom(){
+  if(!AC) return;
+  const t0=AC.currentTime;
+  const f=SCALE[3+Math.floor(Math.random()*5)]*2;
+  const o=AC.createOscillator(),g=AC.createGain();
+  o.type='sine'; o.frequency.value=f;
+  g.gain.setValueAtTime(0,t0);
+  g.gain.linearRampToValueAtTime(0.06,t0+0.03);
+  g.gain.exponentialRampToValueAtTime(0.001,t0+1.8);
+  const o2=AC.createOscillator(),g2=AC.createGain();
+  o2.type='sine'; o2.frequency.value=f*1.5;
+  g2.gain.setValueAtTime(0,t0+0.05);
+  g2.gain.linearRampToValueAtTime(0.025,t0+0.1);
+  g2.gain.exponentialRampToValueAtTime(0.001,t0+1.4);
+  o.connect(g);g.connect(master);o.start(t0);o.stop(t0+2);
+  o2.connect(g2);g2.connect(master);o2.start(t0);o2.stop(t0+1.6);
+}
+
+// --- timeline ---------------------------------------------------------------
+let nextWindPop=28, liftedAll=false;
+function timeline(t,dt){
+  // wind pops a pod on its own — it happens without you
+  if(t>nextWindPop){
+    nextWindPop=t+24+Math.random()*22;
+    const closed=pods.filter(p=>!p.open);
+    if(closed.length>0) popPod(closed[Math.floor(Math.random()*closed.length)],true);
+  }
+  // ambient drifters from off-screen — the world was already foraging;
+  // gusts deliver flurries, so breezes are watchable weather
+  if(Math.random()<dt*0.18*gustEnv(t)){
+    const s=makeSeed(-10,H*(0.2+Math.random()*0.45),'fly');
+    s.flare=0.3; seeds.push(s);
+  }
+  // spent pods quietly re-ripen — discovered, never announced
+  for(const p of pods){
+    if(p.open&&p.seedsLeft<=0&&!p.emptyAt) p.emptyAt=t;
+    if(p.emptyAt&&t>p.emptyAt+80&&p.seedsLeft<8&&Math.random()<dt*0.09){ p.seedsLeft++; }
+  }
+  // finale: one rising gust lifts everything that has landed — a single
+  // held image of the field letting go
+  if(!liftedAll && t>P.duration+22){
+    liftedAll=true;
+    for(const s of seeds){
+      if(s.state==='landed'){ s.state='fly'; s.vy=-40-Math.random()*40; s.flare=0.6; }
+    }
+  }
+  // ...and remaining pods let go on their own
+  if(t>P.duration+15 && Math.random()<dt*1.0){
+    const closed=pods.filter(p=>!p.open);
+    if(closed.length) popPod(closed[0],true);
+    else {
+      const withSeeds=pods.filter(p=>p.seedsLeft>0);
+      if(withSeeds.length){
+        const p=withSeeds[0]; p.seedsLeft--;
+        const s=makeSeed(p.x,p.baseY-p.h,'fly'); s.flare=0.5; seeds.push(s);
+      }
+    }
+  }
+  maybeMurmur(t);
+  if(windG&&AC){
+    const g=gustEnv(t);
+    windG.gain.setTargetAtTime(0.03+g*0.05,AC.currentTime,0.4);
+    windF.frequency.setTargetAtTime(220+g*260,AC.currentTime,0.5);
+  }
+}
+
+// --- update -----------------------------------------------------------------
+function update(t,dt){
+  timeline(t,dt);
+
+  // wind streak particles (make the invisible current visible, sparsely)
+  if(Math.random()<dt*8){
+    streaks.push({x:Math.random()*W,y:Math.random()*H*0.75,life:0,max:1.2+Math.random()});
+  }
+  for(let i=streaks.length-1;i>=0;i--){
+    const s=streaks[i];
+    const v=windVec(s.x,s.y,t);
+    s.x+=v[0]*dt*1.6; s.y+=v[1]*dt*1.6; s.life+=dt;
+    if(s.life>s.max||s.x>W+20) streaks.splice(i,1);
+  }
+
+  for(let i=puffs.length-1;i>=0;i--){
+    const p=puffs[i];
+    p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=30*dt;p.t+=dt;p.a-=dt*0.8;
+    if(p.a<=0)puffs.splice(i,1);
+  }
+
+  const mp=murmuration.active? murmurPoint(t):null;
+
+  for(let i=seeds.length-1;i>=0;i--){
+    const s=seeds[i];
+    if(s.state==='held'){
+      // comet-follow: each held seed springs toward a point trailing the pointer
+      const lag=1+s.holdIdx*0.55;
+      const tx=pointer.x - (pointer.vx||0)*0.010*lag;
+      const ty=pointer.y - (pointer.vy||0)*0.010*lag + s.holdIdx*2.2;
+      s.vx+=(tx-s.x)*dt*26/lag; s.vy+=(ty-s.y)*dt*26/lag;
+      s.vx*=Math.pow(0.002,dt); s.vy*=Math.pow(0.002,dt);
+      s.x+=s.vx*dt*3; s.y+=s.vy*dt*3;
+      s.wilt=Math.min(1,s.wilt+dt/P.wiltTau);
+      s.heldFor+=dt;
+      // held long past wilting, a seed slips free on its own — the world
+      // resolves the grasp; release is taught by physics, not patience
+      if(s.heldFor>P.wiltTau*2){
+        const hi=held.indexOf(s);
+        if(hi>=0) held.splice(hi,1);
+        s.state='tumble'; s.tumbleT=1.2+Math.random();
+      }
+    }
+    else if(s.state==='fly'){
+      const v=windVec(s.x,s.y,t);
+      let ax=(v[0]*s.driftK-s.vx)*1.1, ay=(v[1]-s.vy)*1.1;
+      // gentle buoyant wobble
+      ay+=Math.sin(t*2.2+s.jitPh)*9;
+      // murmuration attraction — phase-offset targets trail the figure into
+      // a ribbon rather than a clump
+      if(s.murmur&&mp){
+        const tp=murmurPoint(t-(s.mPh||0));
+        ax+=(tp[0]-s.x)*0.7; ay+=(tp[1]-s.y)*0.7;
+      }
+      // pointer disturbance: reaching in knocks seeds off the current.
+      // Touch only — a hovering cursor is a gaze, and gazing must be free.
+      if(pointer.down){
+        const d=Math.hypot(s.x-pointer.x,s.y-pointer.y);
+        if(d<P.repelR){
+          const k=(1-d/P.repelR);
+          ax+=(s.x-pointer.x)/Math.max(8,d)*380*k;
+          ay+=(s.y-pointer.y)/Math.max(8,d)*380*k;
+          if(k>0.35&&s.state==='fly'){ s.state='tumble'; s.tumbleT=1.6+Math.random(); sfxFlutter(); }
+        }
+      }
+      s.vx+=ax*dt; s.vy+=ay*dt;
+      s.x+=s.vx*dt; s.y+=s.vy*dt;
+      s.spin+=s.spinV*dt;
+      s.flare=Math.max(0,s.flare-dt*0.7);
+      s.wilt=Math.max(0,s.wilt-dt*0.05);
+      // landing on the far slope — each seed settles a different depth into
+      // the hill face, so blooms scatter across the slope, not along its rim
+      if(s.x>W*0.55){
+        const hy=farHill(s.x)+s.landDepth*(1-(farHill(s.x)/H));
+        if(s.y>hy-3){
+          s.state='landed'; s.y=hy; s.vx=0; s.vy=0;
+          if(Math.random()<0.4){
+            const b={x:s.x,y:hy,at:t+1+Math.random()*2,r:0,hue:30+Math.random()*40,opened:false};
+            blooms.push(b);
+          }
+          if(s.y>H) s.y=H-2;
+        }
+      }
+      if(s.x>W+30||s.y<-40){ seeds.splice(i,1); continue; }
+    }
+    else if(s.state==='tumble'){
+      // knocked out of the current: heavier, falling, slowly recovers
+      s.vy+=140*dt; s.vx*=Math.pow(0.3,dt);
+      s.x+=s.vx*dt; s.y+=s.vy*dt;
+      s.spin+=s.spinV*4*dt;
+      s.tumbleT-=dt;
+      const hy=s.x>W*0.55? farHill(s.x): nearHill(s.x);
+      if(s.y>hy){ s.state='landed'; s.y=hy; }
+      else if(s.tumbleT<=0){ s.state='fly'; s.vy*=0.3; }
+    }
+    else if(s.state==='landed'){
+      // rests; occasionally the wind takes it again
+      if(Math.random()<dt*0.02*gustEnv(t)){ s.state='fly'; s.vy=-30; s.flare=0.3; }
+    }
+  }
+
+  // blooms open when their time comes
+  for(const b of blooms){
+    if(!b.opened&&t>b.at){ b.opened=true; sfxBloom(); }
+    if(b.opened) b.r=Math.min(1,b.r+dt*0.8);
+    // after dusk a bloom sometimes looses a glowing seed of its own —
+    // what you released comes back as new drift
+    if(b.opened&&b.r>=1&&skyPhase(t)>0.5&&Math.random()<dt*0.012){
+      const s=makeSeed(b.x,b.y-6,'fly');
+      s.flare=0.8; s.vy=-40-Math.random()*20; s.vx=-10+Math.random()*20;
+      seeds.push(s);
+    }
+  }
+
+  for(const p of pods){ p.popAnim=Math.max(0,p.popAnim-dt*2.2); }
+}
+
+// --- render -----------------------------------------------------------------
+function skyPhase(t){ return smooth01(clamp((t-120)/140,0,1)); } // 0 golden -> 1 night
+function render(t){
+  const k=skyPhase(t);
+  // sky
+  const g=ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,css(lerpC([94,80,150],[10,14,38],k)));
+  g.addColorStop(0.45,css(lerpC([196,120,96],[24,22,54],k)));
+  g.addColorStop(0.8,css(lerpC([238,178,102],[40,32,64],k)));
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+
+  // sun low on the left, setting
+  const sunY=H*0.62+k*H*0.3;
+  if(k<0.9){
+    const sg=ctx.createRadialGradient(W*0.18,sunY,4,W*0.18,sunY,H*0.4);
+    sg.addColorStop(0,`rgba(255,214,140,${0.8*(1-k)})`);
+    sg.addColorStop(0.2,`rgba(255,180,110,${0.35*(1-k)})`);
+    sg.addColorStop(1,'rgba(255,180,110,0)');
+    ctx.fillStyle=sg; ctx.fillRect(0,0,W,H);
+    ctx.fillStyle=`rgba(255,236,190,${0.9*(1-k)})`;
+    ctx.beginPath();ctx.arc(W*0.18,sunY,Math.min(W,H)*0.05,0,7);ctx.fill();
+  }
+  // stars at night
+  if(k>0.5){
+    const a=(k-0.5)/0.5;
+    for(const st of stars){
+      const tw=0.6+0.4*Math.sin(t*st.s+st.p);
+      ctx.fillStyle=`rgba(240,240,255,${st.a*tw*a})`;
+      ctx.fillRect(st.x,st.y,st.r,st.r);
+    }
+  }
+
+  // wind streaks
+  ctx.lineWidth=1;
+  for(const s of streaks){
+    const a=Math.sin(Math.PI*s.life/s.max)*0.10;
+    const v=windVec(s.x,s.y,t);
+    const l=Math.min(30,Math.hypot(v[0],v[1])*0.3);
+    const n=Math.hypot(v[0],v[1])||1;
+    ctx.strokeStyle=`rgba(255,244,220,${a})`;
+    ctx.beginPath();ctx.moveTo(s.x,s.y);ctx.lineTo(s.x+v[0]/n*l,s.y+v[1]/n*l);ctx.stroke();
+  }
+
+  // far hill
+  ctx.fillStyle=css(lerpC([120,86,92],[26,24,48],k));
+  ctx.beginPath();ctx.moveTo(0,H);
+  for(let x=0;x<=W;x+=8) ctx.lineTo(x,farHill(x));
+  ctx.lineTo(W,H);ctx.closePath();ctx.fill();
+
+  // blooms on the far slope
+  for(const b of blooms){
+    if(!b.opened) continue;
+    const r=b.r*6;
+    const glow=k>0.4? (k-0.4)/0.6:0;
+    if(glow>0){
+      const bg=ctx.createRadialGradient(b.x,b.y-3,0,b.x,b.y-3,r*4);
+      bg.addColorStop(0,`rgba(255,220,150,${0.25*glow*b.r})`);
+      bg.addColorStop(1,'rgba(255,220,150,0)');
+      ctx.fillStyle=bg;ctx.beginPath();ctx.arc(b.x,b.y-3,r*4,0,7);ctx.fill();
+    }
+    ctx.save();ctx.translate(b.x,b.y-3);
+    for(let i=0;i<5;i++){
+      const a=i/5*Math.PI*2+b.r;
+      ctx.fillStyle=`hsla(${b.hue},70%,${70+glow*15}%,${0.85*b.r})`;
+      ctx.beginPath();
+      ctx.ellipse(Math.cos(a)*r*0.6,Math.sin(a)*r*0.6,r*0.55,r*0.3,a,0,7);
+      ctx.fill();
+    }
+    ctx.fillStyle=`hsla(45,90%,${75+glow*15}%,${b.r})`;
+    ctx.beginPath();ctx.arc(0,0,r*0.32,0,7);ctx.fill();
+    ctx.restore();
+  }
+
+  // near hill
+  const ng2=ctx.createLinearGradient(0,H*0.6,0,H);
+  ng2.addColorStop(0,css(lerpC([106,96,60],[20,22,40],k)));
+  ng2.addColorStop(1,css(lerpC([64,58,40],[12,14,28],k)));
+  ctx.fillStyle=ng2;
+  ctx.beginPath();ctx.moveTo(0,H);
+  for(let x=0;x<=W;x+=8) ctx.lineTo(x,nearHill(x));
+  ctx.lineTo(W,H);ctx.closePath();ctx.fill();
+
+  // grass
+  for(const b of grassBlades){
+    const v=windVec(b.x,b.y,t);
+    const sway=(v[0]-P.windBase*0.5)*0.06+Math.sin(t*1.7+b.ph)*2;
+    const col=b.far? lerpC([90,72,70],[22,20,42],k): lerpC([54,58,34],[14,16,30],k);
+    ctx.strokeStyle=`rgba(${col[0]|0},${col[1]|0},${col[2]|0},0.9)`;
+    ctx.lineWidth=b.w;
+    ctx.beginPath();
+    ctx.moveTo(b.x,b.y);
+    ctx.quadraticCurveTo(b.x+sway*0.4,b.y-b.len*0.6,b.x+sway,b.y-b.len);
+    ctx.stroke();
+  }
+
+  // pods
+  for(const p of pods){
+    const v=windVec(p.x,p.baseY-p.h,t);
+    const sway=(v[0]-P.windBase*0.5)*0.05+Math.sin(t*1.3+p.swayPh)*2;
+    const topX=p.x+sway+p.lean*12, topY=p.baseY-p.h;
+    const stemC=css(lerpC([74,84,48],[20,24,36],skyPhase(t)));
+    ctx.strokeStyle=stemC; ctx.lineWidth=2.4;
+    ctx.beginPath();
+    ctx.moveTo(p.x,p.baseY);
+    ctx.quadraticCurveTo(p.x+p.lean*8,p.baseY-p.h*0.55,topX,topY);
+    ctx.stroke();
+    const pop=p.popAnim;
+    ctx.save();ctx.translate(topX,topY);ctx.rotate(p.lean*0.4+pop*0.15);
+    const sc=1+pop*0.35;
+    ctx.scale(sc,sc);
+    if(!p.open){
+      const podC=lerpC([124,118,80],[36,36,52],skyPhase(t));
+      ctx.fillStyle=css(podC);
+      ctx.beginPath();ctx.ellipse(0,0,7,13,0.1,0,7);ctx.fill();
+      ctx.strokeStyle='rgba(0,0,0,0.25)';ctx.lineWidth=0.8;
+      ctx.beginPath();ctx.moveTo(0,-12);ctx.quadraticCurveTo(2.5,0,0,12);ctx.stroke();
+    } else {
+      // split husk
+      const podC=lerpC([112,100,70],[32,32,48],skyPhase(t));
+      ctx.fillStyle=css(podC);
+      ctx.save();ctx.rotate(-0.45);ctx.beginPath();ctx.ellipse(-4,0,3.5,13,0,0,7);ctx.fill();ctx.restore();
+      ctx.save();ctx.rotate(0.45);ctx.beginPath();ctx.ellipse(4,0,3.5,13,0,0,7);ctx.fill();ctx.restore();
+      // floss remaining
+      if(p.seedsLeft>0){
+        const dens=p.seedsLeft/20;
+        const fg=ctx.createRadialGradient(0,0,0,0,0,10);
+        fg.addColorStop(0,`rgba(255,250,240,${0.85*dens+0.1})`);
+        fg.addColorStop(1,'rgba(255,250,240,0)');
+        ctx.fillStyle=fg;
+        ctx.beginPath();ctx.arc(0,0,10,0,7);ctx.fill();
+      }
+    }
+    ctx.restore();
+  }
+
+  // puffs
+  for(const p of puffs){
+    ctx.fillStyle=`rgba(250,246,235,${Math.max(0,p.a)})`;
+    ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,7);ctx.fill();
+  }
+
+  // seeds
+  for(const s of seeds){
+    drawSeed(s,t,k);
+  }
+
+  // fireflies at night on the near slope
+  if(k>0.75){
+    const a=(k-0.75)/0.25;
+    for(let i=0;i<10;i++){
+      const fx=(hash2(i,21)*W+Math.sin(t*0.4+i)*40)%W;
+      const fy=nearHill(fx)-10-hash2(i,23)*40+Math.sin(t*0.9+i*2)*8;
+      const blink=Math.max(0,Math.sin(t*1.2+i*2.6));
+      ctx.fillStyle=`rgba(220,255,160,${0.7*a*blink})`;
+      ctx.beginPath();ctx.arc(fx,fy,1.6,0,7);ctx.fill();
+    }
+  }
+
+  vignette();
+}
+
+function drawSeed(s,t,k){
+  const wl=s.wilt;
+  const flare=s.flare;
+  // color: warm white -> grey with wilt; flare pushes to bright gold-white
+  const base=lerpC(lerpC([252,248,238],[150,148,150],wl),[255,240,200],Math.min(1,flare));
+  const alpha=0.9-wl*0.35+flare*0.1;
+  ctx.save();
+  ctx.translate(s.x,s.y);
+  ctx.rotate(s.spin);
+  if(flare>0.02){
+    const fg=ctx.createRadialGradient(0,0,0,0,0,14*flare+4);
+    fg.addColorStop(0,`rgba(255,236,180,${0.5*flare})`);
+    fg.addColorStop(1,'rgba(255,236,180,0)');
+    ctx.fillStyle=fg;ctx.beginPath();ctx.arc(0,0,14*flare+4,0,7);ctx.fill();
+  }
+  // filaments — against the bright daylight sky, a dark understroke keeps
+  // cruising seeds (and the murmuration) legible; it fades out by dusk
+  const droop=wl*0.5;
+  const dl=Math.max(0,(0.45-k)/0.45);
+  if(dl>0.05){
+    ctx.strokeStyle=`rgba(64,54,44,${0.4*dl*alpha})`;
+    ctx.lineWidth=1.7;
+    for(let i=0;i<6;i++){
+      const a=i/6*Math.PI*2;
+      const l=4.5-(i%2)*1;
+      ctx.beginPath();ctx.moveTo(0,0);
+      ctx.lineTo(Math.cos(a)*l,Math.sin(a)*l+droop*2);ctx.stroke();
+    }
+  }
+  ctx.strokeStyle=`rgba(${base[0]|0},${base[1]|0},${base[2]|0},${alpha*0.8})`;
+  ctx.lineWidth=0.8;
+  for(let i=0;i<6;i++){
+    const a=i/6*Math.PI*2;
+    const l=4.5-(i%2)*1;
+    ctx.beginPath();
+    ctx.moveTo(0,0);
+    ctx.lineTo(Math.cos(a)*l,Math.sin(a)*l+droop*2);
+    ctx.stroke();
+  }
+  // seed body, darker under daylight
+  const bd=1-dl*0.45;
+  ctx.fillStyle=`rgba(${(base[0]*0.7*bd)|0},${(base[1]*0.62*bd)|0},${(base[2]*0.5*bd)|0},${alpha})`;
+  ctx.beginPath();ctx.ellipse(0,1.5,1.4,2.2,0,0,7);ctx.fill();
+  ctx.restore();
+}
+
+function vignette(){
+  const g=ctx.createRadialGradient(W/2,H/2,Math.min(W,H)*0.5,W/2,H/2,Math.max(W,H)*0.8);
+  g.addColorStop(0,'rgba(10,8,16,0)');
+  g.addColorStop(1,'rgba(10,8,16,0.4)');
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+}
+
+let stars=[];
+function seedStars(){
+  stars=[];
+  for(let i=0;i<110;i++){
+    stars.push({x:Math.random()*W,y:Math.random()*H*0.55,r:Math.random()<0.15?2:1,
+      a:0.3+Math.random()*0.6,s:0.5+Math.random()*2,p:Math.random()*7});
+  }
+}
+
+// --- loop -------------------------------------------------------------------
+const t0=performance.now();
+let skew=0;
+function T(){ return (performance.now()-t0)/1000+skew; }
+let prev=performance.now(), lastFrameAt=performance.now();
+function frame(now){
+  DBG.frames++;
+  const dt=Math.min(0.05,(now-prev)/1000); prev=now;
+  const t=T();
+  update(t,dt);
+  render(t);
+  lastFrameAt=now;
+  requestAnimationFrame(frame);
+}
+setInterval(()=>{ if(performance.now()-lastFrameAt>500) frame(performance.now()); },250);
+
+// --- helpers ----------------------------------------------------------------
+function clamp(v,a,b){return v<a?a:(v>b?b:v);}
+function lerp(a,b,k){return a+(b-a)*k;}
+function smooth01(k){k=clamp(k,0,1);return k*k*(3-2*k);}
+function lerpC(a,b,k){return [lerp(a[0],b[0],k),lerp(a[1],b[1],k),lerp(a[2],b[2],k)];}
+function css(c){return `rgb(${c[0]|0},${c[1]|0},${c[2]|0})`;}
+
+// --- tuning -----------------------------------------------------------------
+const panel=document.getElementById('tune');
+window.addEventListener('keydown',e=>{ if(e.key==='t') panel.style.display=panel.style.display==='block'?'none':'block'; });
+function bind(id,key,fmt){
+  const s=document.getElementById('s_'+id),v=document.getElementById('v_'+id);
+  s.value=P[key]; v.textContent=fmt(P[key]);
+  s.addEventListener('input',()=>{P[key]=parseFloat(s.value);v.textContent=fmt(P[key]);});
+}
+bind('wind','windBase',x=>x|0);
+bind('gust','gustAmp',x=>x.toFixed(2));
+bind('wilt','wiltTau',x=>x.toFixed(1));
+bind('repel','repelR',x=>x|0);
+
+// --- debug API --------------------------------------------------------------
+const DBG={frames:0};
+window.__milkweed={
+  P, DBG,
+  get t(){return T();},
+  skipTo(sec){ skew=sec-(performance.now()-t0)/1000; return 'now t='+T(); },
+  counts(){
+    const c={held:0,fly:0,tumble:0,landed:0};
+    for(const s of seeds) c[s.state]=(c[s.state]||0)+1;
+    return {...c, blooms:blooms.filter(b=>b.opened).length, podsOpen:pods.filter(p=>p.open).length,
+            podsTotal:pods.length, seedsTotal:seeds.length, murmuration:murmuration.active};
+  },
+  pods(){ return pods.map((p,i)=>({i,x:p.x|0,y:(p.baseY-p.h)|0,open:p.open,seedsLeft:p.seedsLeft})); },
+  popPod(i){ popPod(pods[i],false); return pods[i].open; },
+  grab(i){ const p=pods[i]; pointer.x=p.x; pointer.y=p.baseY-p.h; pointer.down=true; return tryGrab(p.x,p.baseY-p.h); },
+  dragTo(x,y,ms){ // virtual-clock drag of held seeds
+    const steps=Math.max(2,Math.floor(ms/16));
+    const x0=pointer.x,y0=pointer.y;
+    for(let i=1;i<=steps;i++){
+      const k=i/steps;
+      pointer.vx=(x-x0)/(ms/1000); pointer.vy=(y-y0)/(ms/1000);
+      pointer.x=x0+(x-x0)*k; pointer.y=y0+(y-y0)*k;
+      update(T(),0.016);
+    }
+    return 'dragged';
+  },
+  release(){ pointer.down=false; releaseHeld(); return 'released'; },
+  disturb(x,y,ms){ // hold the pointer near flying seeds
+    pointer.x=x;pointer.y=y;pointer.down=true;pointer.lastT=performance.now();
+    const steps=Math.max(2,Math.floor(ms/16));
+    for(let i=0;i<steps;i++) update(T(),0.016);
+    pointer.down=false;
+    return 'disturbed';
+  },
+  step(sims){ for(let i=0;i<sims;i++){ skew+=0.016; update(T(),0.016); } return 'stepped to t='+T().toFixed(1); },
+  seeds(){ return seeds.slice(0,50).map(s=>({state:s.state,x:s.x|0,y:s.y|0,wilt:+s.wilt.toFixed(2)})); },
+};
+
+// --- go ---------------------------------------------------------------------
+if(!/dev/.test(location.search)) document.getElementById('hint').style.display='none';
+resize(); seedStars();
+window.addEventListener('resize',resize);
+const intro=document.getElementById('intro');
+setTimeout(()=>{intro.style.opacity=1;},600);
+setTimeout(()=>{intro.style.opacity=0;},6500);
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

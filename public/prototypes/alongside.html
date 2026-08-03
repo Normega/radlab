@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Alongside</title>
+<style>
+  html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#070a12;}
+  canvas{display:block;touch-action:none;cursor:pointer;}
+  #intro{
+    position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    pointer-events:none;z-index:5;
+    font-family:Georgia,'Times New Roman',serif;font-style:italic;
+    color:rgba(225,232,248,0.85);font-size:clamp(16px,2.6vw,22px);
+    text-shadow:0 1px 8px rgba(0,0,0,0.6);
+    opacity:0;transition:opacity 3s ease;text-align:center;padding:0 24px;
+  }
+  #tune{
+    position:fixed;top:8px;right:8px;z-index:10;display:none;
+    background:rgba(8,10,18,0.9);border:1px solid rgba(255,255,255,0.14);
+    border-radius:8px;padding:10px 14px;font-family:ui-monospace,monospace;font-size:11px;
+    color:#c8d0e8;min-width:230px;
+  }
+  #tune label{display:block;margin:6px 0 2px;}
+  #tune input{width:100%;}
+  #hint{position:fixed;bottom:6px;right:10px;z-index:6;font-family:ui-monospace,monospace;
+    font-size:10px;color:rgba(255,255,255,0.16);pointer-events:none;}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="intro">Something is moving through the meadow.<br>Hold to walk. There is no hurry.</div>
+<div id="hint">t&nbsp;·&nbsp;tuning</div>
+<div id="tune">
+  <label>companion band near (px) <span id="v_near"></span></label><input type="range" id="s_near" min="40" max="180" step="5">
+  <label>companion band far (px) <span id="v_far"></span></label><input type="range" id="s_far" min="200" max="500" step="10">
+  <label>bond growth /s <span id="v_grow"></span></label><input type="range" id="s_grow" min="0.005" max="0.08" step="0.005">
+  <label>player speed (px/s) <span id="v_pspd"></span></label><input type="range" id="s_pspd" min="60" max="260" step="10">
+</div>
+<script>
+'use strict';
+/* ============================================================
+   ALONGSIDE — follow without catching.
+   A creature of light drifts through a night meadow. Rush it
+   and it dissolves to mist and reforms elsewhere — costless.
+   Drift beside it at its pace and it warms, then leads, past
+   things worth seeing. Fireflies gathering between you are
+   the only sign. Nothing is scored.
+   ============================================================ */
+
+const P = {
+  nearR: 95,        // closer than this = too close
+  farR: 300,        // companion band outer edge
+  loseR: 520,       // beyond this bond slowly fades
+  bondGrow: 0.028,  // per second in the companion band at matched pace
+  playerSpd: 150,   // px/s
+  wispSpd: 78,      // creature baseline drift px/s
+};
+
+const WORLD={w:2600,h:1800};
+const cv=document.getElementById('c');
+const ctx=cv.getContext('2d');
+let W=0,H=0,DPR=1;
+function resize(){
+  DPR=Math.min(window.devicePixelRatio||1,2);
+  W=window.innerWidth;H=window.innerHeight;
+  cv.width=W*DPR;cv.height=H*DPR;cv.style.width=W+'px';cv.style.height=H+'px';
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+}
+
+// --- world dressing ---------------------------------------------------------
+function hash1(n){const s=Math.sin(n*127.1)*43758.5453;return s-Math.floor(s);}
+let tufts=[],stones=[],flowersWild=[];
+(function dress(){
+  for(let i=0;i<420;i++){
+    tufts.push({x:hash1(i*3+1)*WORLD.w,y:hash1(i*3+2)*WORLD.h,n:2+Math.floor(hash1(i)*4),
+      ph:hash1(i*7)*7,h:8+hash1(i*5)*16});
+  }
+  for(let i=0;i<26;i++){
+    stones.push({x:hash1(i*11+5)*WORLD.w,y:hash1(i*11+6)*WORLD.h,r:6+hash1(i*13)*16,tone:hash1(i*17)});
+  }
+  for(let i=0;i<70;i++){
+    flowersWild.push({x:hash1(i*23+9)*WORLD.w,y:hash1(i*23+10)*WORLD.h,ph:hash1(i*29)*7});
+  }
+})();
+
+// savoring sites — on the wisp's tour route; each also stirs on its own
+const sites=[
+  {kind:'foxfire', x:WORLD.w*0.28,y:WORLD.h*0.30, r:180, lit:0, selfNext:20,
+    shrooms:Array.from({length:9},(_,i)=>({dx:(hash1(i*31)-0.5)*220,dy:(hash1(i*37)-0.5)*160,ph:hash1(i*41)*7}))},
+  {kind:'pond', x:WORLD.w*0.70,y:WORLD.h*0.36, r:200, lit:0, selfNext:35, ripples:[], surfaceAt:0},
+  {kind:'flowers', x:WORLD.w*0.62,y:WORLD.h*0.74, r:190, lit:0, selfNext:50,
+    blooms:Array.from({length:12},(_,i)=>({dx:(hash1(i*43)-0.5)*260,dy:(hash1(i*47)-0.5)*180,ph:hash1(i*53)*7,open:0}))},
+  {kind:'glowtree', x:WORLD.w*0.24,y:WORLD.h*0.72, r:170, lit:0, selfNext:65,
+    worms:Array.from({length:14},(_,i)=>({dx:(hash1(i*59)-0.5)*120,dy:-20-hash1(i*61)*130,ph:hash1(i*67)*7}))},
+];
+const clearing={x:WORLD.w*0.47,y:WORLD.h*0.52,r:160};
+
+// --- actors -----------------------------------------------------------------
+const player={x:WORLD.w*0.45,y:WORLD.h*0.55,vx:0,vy:0,spd:0,accel:0,trail:[]};
+const wisp={
+  x:WORLD.w*0.52,y:WORLD.h*0.47,vx:0,vy:0,spd:0,
+  state:'wander',           // wander | lead | wait | settle | gone
+  mist:0,                    // >0 while dissolved
+  target:null, tourIdx:-1,
+  pauseT:0, look:0, mothT:0,
+  particles:Array.from({length:14},(_,i)=>({a:i/14*Math.PI*2,r:8+hash1(i*71)*10,ph:hash1(i*73)*7})),
+};
+let bond=0, settleTimer=0, meadowBloom=0, endFireflies=[], inBandFor=0;
+let fireflies=[];
+const cam={x:player.x,y:player.y};
+let pointer={x:0,y:0,down:false};
+
+// --- input ------------------------------------------------------------------
+cv.addEventListener('pointerdown',e=>{pointer.down=true;pointer.x=e.clientX;pointer.y=e.clientY;startAudio();cv.setPointerCapture(e.pointerId);});
+cv.addEventListener('pointermove',e=>{pointer.x=e.clientX;pointer.y=e.clientY;});
+window.addEventListener('pointerup',()=>{pointer.down=false;});
+window.addEventListener('pointercancel',()=>{pointer.down=false;});
+
+// --- wisp brain -------------------------------------------------------------
+function pickWanderTarget(){
+  return [WORLD.w*(0.15+Math.random()*0.7), WORLD.h*(0.15+Math.random()*0.7)];
+}
+function wispUpdate(t,dt){
+  const w=wisp;
+  if(w.state==='gone') return;
+  if(w.mist>0){
+    w.mist=Math.max(0,w.mist-dt);
+    // the mist drifts toward where it will reform — a breadcrumb, so losing
+    // it is a beat, not a blackout
+    if(w.reform){ w.x+=(w.reform[0]-w.x)*dt*0.8; w.y+=(w.reform[1]-w.y)*dt*0.8; }
+    if(w.mist<=0){
+      if(w.reform){ w.x=w.reform[0]; w.y=w.reform[1]; w.reform=null; }
+      w.vx=0;w.vy=0;
+    }
+    return;
+  }
+  const d=Math.hypot(player.x-w.x,player.y-w.y);
+
+  // too close — it dissolves. Not a punishment; simply how it is. But it
+  // reforms within sight (screen-scaled), and never while settled: a settled
+  // creature that lets you walk right up is the final statement of trust.
+  if(d<P.nearR&&meadowBloom===0&&w.state!=='settle'){
+    w.mist=2.6;
+    const a=Math.random()*Math.PI*2;
+    const R=Math.min(W,H)*0.38;
+    w.reform=[clamp(player.x+Math.cos(a)*R,100,WORLD.w-100),
+              clamp(player.y+Math.sin(a)*R,100,WORLD.h-100)];
+    bond*=0.86;
+    sfxMist();
+    return;
+  }
+
+  // state transitions
+  if(w.state==='wander'&&bond>0.35){
+    w.state='lead';
+    // resume from the first unvisited site, not the top of the tour
+    const next=sites.findIndex(s=>s.lit<0.5&&!s.visited);
+    w.tourIdx=w.tourIdx<0?(next<0?0:next):w.tourIdx;
+    w.target=null;
+  }
+  if(w.state==='lead'&&bond<0.18){ w.state='wander'; w.target=null; }
+
+  // meaningless play: sometimes it chases a moth in a loop
+  if(w.mothT>0){
+    w.mothT-=dt;
+    const a=t*3.1;
+    w.vx+= (Math.cos(a)*90-w.vx)*dt*3;
+    w.vy+= (Math.sin(a*1.3)*70-w.vy)*dt*3;
+    w.x+=w.vx*dt; w.y+=w.vy*dt;
+    return;
+  }
+  if(Math.random()<dt*0.02&&(w.state==='wander'||w.state==='lead')){ w.mothT=4+Math.random()*2; }
+
+  // sometimes it stops and looks at you — a beat, nothing more
+  if(w.look>0){
+    w.look-=dt;
+    w.vx*=Math.pow(0.05,dt); w.vy*=Math.pow(0.05,dt);
+    w.x+=w.vx*dt;w.y+=w.vy*dt;
+    return;
+  }
+  if(Math.random()<dt*0.015&&d<P.farR*1.4){ w.look=1.6+Math.random()*1.4; }
+
+  // choose target
+  if(w.state==='wander'){
+    if(!w.target||Math.hypot(w.target[0]-w.x,w.target[1]-w.y)<40) w.target=pickWanderTarget();
+  } else if(w.state==='lead'){
+    // it keeps you company: waits if you fall behind — and the shared
+    // moments wait with it (no lingering-out sites alone)
+    if(d>P.farR*1.5){
+      w.vx*=Math.pow(0.04,dt); w.vy*=Math.pow(0.04,dt);
+      w.x+=w.vx*dt;w.y+=w.vy*dt;
+      return;
+    }
+    if(w.tourIdx>=sites.length){
+      w.target=[clearing.x,clearing.y];
+      if(Math.hypot(clearing.x-w.x,clearing.y-w.y)<50){ w.state='settle'; }
+    } else {
+      const s=sites[w.tourIdx];
+      w.target=[s.x,s.y];
+      if(Math.hypot(s.x-w.x,s.y-w.y)<70){
+        // linger at the site until it's had its moment, then move on
+        w.pauseT+=dt;
+        if(w.pauseT>7){ w.pauseT=0; s.visited=true; w.tourIdx++; }
+      }
+    }
+  } else if(w.state==='settle'){
+    w.vx*=Math.pow(0.05,dt);w.vy*=Math.pow(0.05,dt);
+    w.x+=w.vx*dt;w.y+=w.vy*dt;
+    // if the player circles without settling, it models the answer:
+    // nestling lower, glow sinking toward the grass
+    w.nestle=(w.nestle||0)+dt;
+    return;
+  }
+
+  // move toward target at a drifting pace; unease when you dart
+  const dart=player.accel>560;
+  const spd=P.wispSpd*(w.state==='lead'?1.12:1)*(dart?1.5:1);
+  if(w.target){
+    const dx=w.target[0]-w.x,dy=w.target[1]-w.y;
+    const l=Math.hypot(dx,dy)||1;
+    // meander: a sideways breathing drift laid over the heading
+    const mx=Math.sin(t*0.6+1)*30, my=Math.cos(t*0.47)*30;
+    w.vx+=((dx/l*spd+mx)-w.vx)*dt*1.6;
+    w.vy+=((dy/l*spd+my)-w.vy)*dt*1.6;
+  }
+  w.x+=w.vx*dt; w.y+=w.vy*dt;
+  w.spd=Math.hypot(w.vx,w.vy);
+}
+
+// --- bond -------------------------------------------------------------------
+function bondUpdate(t,dt){
+  if(meadowBloom>0&&meadowBloom<1) meadowBloom=Math.min(1,meadowBloom+dt*0.12);
+  for(const f of endFireflies){ f.mig=Math.min(1,f.mig+dt*0.08); }
+  if(wisp.mist>0||wisp.state==='gone') return;
+  const d=Math.hypot(player.x-wisp.x,player.y-wisp.y);
+  const paceMatch=Math.abs(player.spd-wisp.spd)<45;
+  const calm=player.accel<560;
+  // dwell: companionship is time spent alongside, not transit through the
+  // band — a chase that clips the band earns nothing
+  if(d>=P.nearR&&d<=P.farR) inBandFor+=dt; else inBandFor=0;
+  if(inBandFor>1.8&&paceMatch&&calm){
+    bond=Math.min(1,bond+P.bondGrow*dt);
+  } else if(player.accel>560&&pointer.down){
+    bond=Math.max(0,bond-0.06*dt);
+  } else if(d>P.loseR){
+    bond=Math.max(0,bond-0.006*dt);
+  }
+  // fireflies gather between you — the only sign
+  const want=Math.floor(bond*14);
+  while(fireflies.length<want){
+    fireflies.push({k:Math.random(),off:(Math.random()-0.5)*70,ph:Math.random()*7,a:0});
+  }
+  if(fireflies.length>want&&Math.random()<dt*2) fireflies.pop();
+  for(const f of fireflies){ f.a=Math.min(1,f.a+dt*0.5); }
+
+  // settling together at the clearing
+  if(wisp.state==='settle'){
+    const nearClearing=Math.hypot(player.x-clearing.x,player.y-clearing.y)<clearing.r*1.4;
+    if(nearClearing&&player.spd<28){ settleTimer+=dt; } else { settleTimer=Math.max(0,settleTimer-dt*0.5); }
+    if(settleTimer>8&&meadowBloom===0){ meadowBloom=0.001; sfxBloom(); }
+  }
+  if(meadowBloom>0.9&&wisp.state==='settle'){
+    // the wisp dissolves into fireflies that stay with you
+    wisp.state='gone';
+    for(let i=0;i<22;i++){
+      endFireflies.push({a:Math.random()*7,r:30+Math.random()*90,ph:Math.random()*7,cx:wisp.x,cy:wisp.y,mig:0});
+    }
+  }
+}
+
+// --- sites ------------------------------------------------------------------
+function sitesUpdate(t,dt){
+  for(const s of sites){
+    const dw=Math.hypot(wisp.x-s.x,wisp.y-s.y);
+    const dp=Math.hypot(player.x-s.x,player.y-s.y);
+    const both=dw<s.r&&dp<s.r*1.5&&wisp.mist<=0;
+    // full light when visited together; a low self-stirring otherwise
+    const target=both? 1: 0;
+    s.lit+= (target-s.lit)*dt*(both?0.5:0.08);
+    // it also happens without you, quietly
+    if(t>s.selfNext){
+      s.selfNext=t+40+Math.random()*40;
+      s.selfPulse=1;
+    }
+    s.selfPulse=Math.max(0,(s.selfPulse||0)-dt*0.15);
+    if(s.kind==='pond'){
+      if(both&&t>s.surfaceAt){
+        s.surfaceAt=t+6+Math.random()*8;
+        s.ripples.push({r:6,a:0.6});
+        sfxSurface();
+      }
+      if(s.selfPulse>0.9) s.ripples.push({r:6,a:0.3});
+      for(let i=s.ripples.length-1;i>=0;i--){
+        const r=s.ripples[i]; r.r+=dt*40; r.a-=dt*0.25;
+        if(r.a<=0) s.ripples.splice(i,1);
+      }
+    }
+    if(s.kind==='flowers'){
+      for(const b of s.blooms){ b.open+=((s.lit>0.5?1:s.selfPulse*0.4)-b.open)*dt*0.4; }
+    }
+  }
+}
+
+// --- player -----------------------------------------------------------------
+function playerUpdate(dt){
+  let tx=0,ty=0,want=false;
+  if(pointer.down){
+    // pointer in screen space -> world direction
+    const wx=cam.x+(pointer.x-W/2), wy=cam.y+(pointer.y-H/2);
+    const dx=wx-player.x,dy=wy-player.y;
+    const l=Math.hypot(dx,dy);
+    if(l>14){ tx=dx/l*P.playerSpd; ty=dy/l*P.playerSpd; want=true; }
+  }
+  const ovx=player.vx,ovy=player.vy;
+  player.vx+=(tx-player.vx)*dt*(want?3.2:4.5);
+  player.vy+=(ty-player.vy)*dt*(want?3.2:4.5);
+  const ox=player.x,oy=player.y;
+  player.x=clamp(player.x+player.vx*dt,60,WORLD.w-60);
+  player.y=clamp(player.y+player.vy*dt,60,WORLD.h-60);
+  // speed from actual displacement — a wall-pinned player is genuinely still
+  player.spd=Math.hypot(player.x-ox,player.y-oy)/Math.max(dt,0.001);
+  player.accel=Math.hypot(player.vx-ovx,player.vy-ovy)/Math.max(dt,0.001);
+  player.trail.push([player.x,player.y,0.5]);
+  if(player.trail.length>26)player.trail.shift();
+  for(const p of player.trail)p[2]-=dt*0.5;
+  cam.x+=(player.x-cam.x)*dt*2.4;
+  cam.y+=(player.y-cam.y)*dt*2.4;
+}
+
+// --- audio ------------------------------------------------------------------
+let AC=null,master=null,padG=null,cricketsG=null,started=false;
+function startAudio(){
+  if(started)return;started=true;
+  try{
+    AC=new (window.AudioContext||window.webkitAudioContext)();
+    master=AC.createGain();master.gain.value=0.5;master.connect(AC.destination);
+    // crickets
+    const co=AC.createOscillator();co.type='sine';co.frequency.value=4100;
+    const sh=AC.createGain();sh.gain.value=0;
+    const cl=AC.createOscillator();cl.type='square';cl.frequency.value=11;
+    const clG=AC.createGain();clG.gain.value=0.5;
+    cl.connect(clG);clG.connect(sh.gain);
+    cricketsG=AC.createGain();cricketsG.gain.value=0.008;
+    co.connect(sh);sh.connect(cricketsG);cricketsG.connect(master);
+    co.start();cl.start();
+    // bond pad: two soft detuned sines; steadier with bond, never louder than soft
+    padG=AC.createGain();padG.gain.value=0;
+    const f=110;
+    for(const det of [0,0.5]){
+      const o=AC.createOscillator();o.type='sine';o.frequency.value=f+det;
+      const g=AC.createGain();g.gain.value=0.5;
+      o.connect(g);g.connect(padG);o.start();
+    }
+    padG.connect(master);
+  }catch(e){}
+}
+function audioUpdate(dt){
+  if(!AC)return;
+  padG.gain.setTargetAtTime(bond*0.028,AC.currentTime,1.2);
+}
+function sfxMist(){
+  if(!AC)return;
+  const t0=AC.currentTime;
+  const buf=AC.createBuffer(1,AC.sampleRate*0.5,AC.sampleRate);
+  const d=buf.getChannelData(0);
+  for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*(1-i/d.length);
+  const n=AC.createBufferSource();n.buffer=buf;
+  const f=AC.createBiquadFilter();f.type='highpass';f.frequency.value=2000;
+  const g=AC.createGain();g.gain.value=0.06;
+  n.connect(f);f.connect(g);g.connect(master);n.start(t0);
+}
+function sfxSurface(){
+  if(!AC)return;
+  const t0=AC.currentTime;
+  const o=AC.createOscillator(),g=AC.createGain();
+  o.type='sine';o.frequency.setValueAtTime(180,t0);
+  o.frequency.exponentialRampToValueAtTime(90,t0+0.4);
+  g.gain.setValueAtTime(0,t0);g.gain.linearRampToValueAtTime(0.08,t0+0.05);
+  g.gain.exponentialRampToValueAtTime(0.001,t0+0.5);
+  o.connect(g);g.connect(master);o.start(t0);o.stop(t0+0.55);
+}
+function sfxBloom(){
+  if(!AC)return;
+  const t0=AC.currentTime;
+  const fs=[220,277,330,440];
+  fs.forEach((f,i)=>{
+    const o=AC.createOscillator(),g=AC.createGain();
+    o.type='sine';o.frequency.value=f;
+    g.gain.setValueAtTime(0,t0+i*0.3);
+    g.gain.linearRampToValueAtTime(0.03,t0+i*0.3+1.5);
+    g.gain.exponentialRampToValueAtTime(0.001,t0+i*0.3+6);
+    o.connect(g);g.connect(master);o.start(t0+i*0.3);o.stop(t0+i*0.3+6.2);
+  });
+}
+
+// --- render -----------------------------------------------------------------
+function sx(x){return x-cam.x+W/2;}
+function sy(y){return y-cam.y+H/2;}
+function inView(x,y,m){return x>cam.x-W/2-m&&x<cam.x+W/2+m&&y>cam.y-H/2-m&&y<cam.y+H/2+m;}
+
+function render(t){
+  // ground
+  const g=ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,'#0a0e1c');
+  g.addColorStop(1,'#0d1220');
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  // moonlight patches
+  const mg=ctx.createRadialGradient(sx(WORLD.w*0.5),sy(WORLD.h*0.4),60,sx(WORLD.w*0.5),sy(WORLD.h*0.4),900);
+  mg.addColorStop(0,'rgba(70,84,120,0.16)');
+  mg.addColorStop(1,'rgba(70,84,120,0)');
+  ctx.fillStyle=mg;ctx.fillRect(0,0,W,H);
+
+  // meadow bloom lightens everything, gently
+  if(meadowBloom>0){
+    ctx.fillStyle=`rgba(120,140,190,${meadowBloom*0.10})`;
+    ctx.fillRect(0,0,W,H);
+  }
+
+  // stones
+  for(const s of stones){
+    if(!inView(s.x,s.y,60))continue;
+    ctx.fillStyle=`rgba(${34+s.tone*14|0},${40+s.tone*12|0},${58+s.tone*10|0},0.9)`;
+    ctx.beginPath();ctx.ellipse(sx(s.x),sy(s.y),s.r,s.r*0.62,0,0,7);ctx.fill();
+  }
+  // wild flowers (closed at night, half-glow in bloom)
+  for(const f of flowersWild){
+    if(!inView(f.x,f.y,40))continue;
+    const open=meadowBloom;
+    ctx.fillStyle=`rgba(${150+open*70|0},${140+open*60|0},${190+open*40|0},${0.25+open*0.5})`;
+    ctx.beginPath();ctx.arc(sx(f.x),sy(f.y),1.5+open*2.2,0,7);ctx.fill();
+  }
+  // grass tufts, swaying; those near the player ripple
+  for(const tf of tufts){
+    if(!inView(tf.x,tf.y,60))continue;
+    const dP=Math.hypot(player.x-tf.x,player.y-tf.y);
+    const ripple=dP<70? (1-dP/70)*Math.min(1,player.spd/60)*6:0;
+    const swy=Math.sin(t*1.1+tf.ph)*2+ripple*Math.sin(t*7+tf.ph);
+    ctx.strokeStyle=`rgba(52,66,72,${0.75+meadowBloom*0.1})`;
+    ctx.lineWidth=1.1;
+    for(let i=0;i<tf.n;i++){
+      const bx=sx(tf.x)+i*3-tf.n*1.5, by=sy(tf.y);
+      ctx.beginPath();ctx.moveTo(bx,by);
+      ctx.quadraticCurveTo(bx+swy*0.5,by-tf.h*0.6,bx+swy,by-tf.h);
+      ctx.stroke();
+    }
+  }
+
+  drawSites(t);
+
+  // player trail (grass-light wake)
+  for(const p of player.trail){
+    if(p[2]<=0)continue;
+    ctx.fillStyle=`rgba(230,220,180,${p[2]*0.06})`;
+    ctx.beginPath();ctx.arc(sx(p[0]),sy(p[1]),7,0,7);ctx.fill();
+  }
+  // fireflies between you and the wisp — they hover through the mist, so
+  // the bond sign never blacks out
+  if(wisp.state!=='gone'){
+    for(const f of fireflies){
+      const bx=player.x+(wisp.x-player.x)*f.k;
+      const by=player.y+(wisp.y-player.y)*f.k;
+      const px=bx+Math.sin(t*0.9+f.ph)*f.off;
+      const py=by+Math.cos(t*0.7+f.ph)*f.off*0.6;
+      const blink=Math.max(0,Math.sin(t*1.6+f.ph*3));
+      ctx.fillStyle=`rgba(215,255,170,${0.72*blink*f.a})`;
+      ctx.beginPath();ctx.arc(sx(px),sy(py),2.1,0,7);ctx.fill();
+    }
+  }
+  // ending fireflies orbit the player
+  for(const f of endFireflies){
+    const cx0=f.cx+(player.x-f.cx)*f.mig, cy0=f.cy+(player.y-f.cy)*f.mig;
+    const px=cx0+Math.cos(t*0.5+f.a)*f.r, py=cy0+Math.sin(t*0.5+f.a)*f.r*0.7;
+    const blink=0.4+0.6*Math.max(0,Math.sin(t*1.3+f.ph));
+    ctx.fillStyle=`rgba(215,255,170,${0.6*blink})`;
+    ctx.beginPath();ctx.arc(sx(px),sy(py),1.8,0,7);ctx.fill();
+  }
+
+  drawWisp(t);
+  drawPlayer(t);
+  vignette();
+}
+
+function drawSites(t){
+  for(const s of sites){
+    if(!inView(s.x,s.y,320))continue;
+    const lit=Math.max(s.lit,(s.selfPulse||0)*0.4);
+    if(s.kind==='foxfire'){
+      for(const m of s.shrooms){
+        const x=sx(s.x+m.dx),y=sy(s.y+m.dy);
+        const a=lit*(0.5+0.5*Math.sin(t*0.9+m.ph));
+        if(a>0.02){
+          const gg=ctx.createRadialGradient(x,y,0,x,y,26);
+          gg.addColorStop(0,`rgba(120,235,190,${a*0.5})`);
+          gg.addColorStop(1,'rgba(120,235,190,0)');
+          ctx.fillStyle=gg;ctx.beginPath();ctx.arc(x,y,26,0,7);ctx.fill();
+        }
+        ctx.fillStyle=`rgba(${90+lit*60|0},${120+lit*115|0},${110+lit*80|0},0.85)`;
+        ctx.beginPath();ctx.arc(x,y,3.2,0,7);ctx.fill();
+        ctx.fillRect(x-0.8,y,1.6,5);
+      }
+    } else if(s.kind==='pond'){
+      ctx.fillStyle=`rgba(24,34,58,0.9)`;
+      ctx.beginPath();ctx.ellipse(sx(s.x),sy(s.y),150,86,0,0,7);ctx.fill();
+      ctx.strokeStyle=`rgba(140,170,220,${0.12+lit*0.2})`;
+      ctx.lineWidth=1;
+      ctx.beginPath();ctx.ellipse(sx(s.x),sy(s.y),150,86,0,0,7);ctx.stroke();
+      // moon shard on the water
+      ctx.fillStyle=`rgba(200,214,245,${0.10+lit*0.22})`;
+      ctx.beginPath();ctx.ellipse(sx(s.x)+30,sy(s.y)-10,26,9,0.3,0,7);ctx.fill();
+      for(const r of s.ripples){
+        ctx.strokeStyle=`rgba(170,200,240,${r.a})`;
+        ctx.beginPath();ctx.ellipse(sx(s.x)+20,sy(s.y)-6,r.r,r.r*0.5,0,0,7);ctx.stroke();
+      }
+    } else if(s.kind==='flowers'){
+      for(const b of s.blooms){
+        const x=sx(s.x+b.dx),y=sy(s.y+b.dy);
+        const open=b.open;
+        ctx.save();ctx.translate(x,y);
+        for(let i=0;i<5;i++){
+          const a=i/5*Math.PI*2;
+          ctx.fillStyle=`rgba(${190+open*50|0},${150+open*60|0},${210},${0.25+open*0.6})`;
+          ctx.beginPath();
+          ctx.ellipse(Math.cos(a)*3*open,Math.sin(a)*3*open,2.5+open*2.5,1.2+open*1.4,a,0,7);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+    } else if(s.kind==='glowtree'){
+      const x=sx(s.x),y=sy(s.y);
+      ctx.strokeStyle='rgba(58,52,76,0.95)';ctx.lineWidth=7;
+      ctx.beginPath();ctx.moveTo(x,y+30);ctx.quadraticCurveTo(x-6,y-40,x-2,y-90);ctx.stroke();
+      ctx.lineWidth=3;
+      ctx.beginPath();ctx.moveTo(x-2,y-60);ctx.quadraticCurveTo(x+30,y-95,x+48,y-108);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(x-3,y-80);ctx.quadraticCurveTo(x-34,y-108,x-52,y-118);ctx.stroke();
+      for(const wm of s.worms){
+        const wx=x+wm.dx,wy=y+wm.dy;
+        const a=lit*(0.4+0.6*Math.max(0,Math.sin(t*0.8+wm.ph)));
+        if(a>0.02){
+          ctx.fillStyle=`rgba(180,240,150,${a*0.8})`;
+          ctx.beginPath();ctx.arc(wx,wy,1.6,0,7);ctx.fill();
+        }
+      }
+    }
+  }
+}
+
+function drawWisp(t){
+  const w=wisp;
+  if(w.state==='gone')return;
+  // settled and unjoined, it nestles: glow sinking into the grass — modelling
+  // the stillness it is waiting to share
+  const nestle=w.state==='settle'? clamp(((w.nestle||0)-20)/15,0,1):0;
+  const x=sx(w.x),y=sy(w.y)+nestle*9;
+  const mist=w.mist>0? clamp(w.mist/2.6,0,1):0;
+  const expand=(mist>0? (1-mist)*3+1:1)*(1-nestle*0.4);
+  const alpha=(mist>0? mist*0.5:0.9)*(1-nestle*0.35);
+  // heart glow — steadier with bond (stability over brightness)
+  const jitter=(1-bond)*2.2;
+  const hx=x+Math.sin(t*7.3)*jitter, hy=y+Math.cos(t*6.1)*jitter;
+  const gg=ctx.createRadialGradient(hx,hy,0,hx,hy,46);
+  gg.addColorStop(0,`rgba(190,220,255,${0.5*alpha})`);
+  gg.addColorStop(0.4,`rgba(150,190,250,${0.18*alpha})`);
+  gg.addColorStop(1,'rgba(150,190,250,0)');
+  ctx.fillStyle=gg;ctx.beginPath();ctx.arc(hx,hy,46,0,7);ctx.fill();
+  ctx.fillStyle=`rgba(235,244,255,${0.9*alpha})`;
+  ctx.beginPath();ctx.arc(hx,hy,3.4,0,7);ctx.fill();
+  // particle veil
+  for(const p of w.particles){
+    const r=(p.r+Math.sin(t*1.3+p.ph)*3)*expand;
+    const px=x+Math.cos(p.a+t*0.7)*r, py=y+Math.sin(p.a+t*0.7)*r*0.8;
+    ctx.fillStyle=`rgba(200,224,255,${(0.35+0.25*Math.sin(t*2+p.ph))*alpha})`;
+    ctx.beginPath();ctx.arc(px,py,1.5,0,7);ctx.fill();
+  }
+  // when it looks at you, the glow leans your way — barely
+  if(w.look>0){
+    const dx=player.x-w.x,dy=player.y-w.y;const l=Math.hypot(dx,dy)||1;
+    ctx.fillStyle=`rgba(210,232,255,${0.25})`;
+    ctx.beginPath();ctx.arc(x+dx/l*10,y+dy/l*10,2,0,7);ctx.fill();
+  }
+}
+
+function drawPlayer(t){
+  const x=sx(player.x),y=sy(player.y);
+  const gg=ctx.createRadialGradient(x,y,0,x,y,34);
+  gg.addColorStop(0,'rgba(255,226,170,0.55)');
+  gg.addColorStop(0.5,'rgba(255,200,130,0.15)');
+  gg.addColorStop(1,'rgba(255,200,130,0)');
+  ctx.fillStyle=gg;ctx.beginPath();ctx.arc(x,y,34,0,7);ctx.fill();
+  ctx.fillStyle='rgba(255,240,210,0.95)';
+  ctx.beginPath();ctx.arc(x,y,3.6,0,7);ctx.fill();
+}
+
+function vignette(){
+  const g=ctx.createRadialGradient(W/2,H/2,Math.min(W,H)*0.42,W/2,H/2,Math.max(W,H)*0.78);
+  g.addColorStop(0,'rgba(3,4,10,0)');
+  g.addColorStop(1,'rgba(3,4,10,0.55)');
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+}
+
+// --- loop -------------------------------------------------------------------
+const t0=performance.now();
+let skew=0;
+function T(){return (performance.now()-t0)/1000+skew;}
+let prev=performance.now(),lastFrameAt=performance.now();
+const DBG={frames:0};
+function frame(now){
+  DBG.frames++;
+  const dt=Math.min(0.05,(now-prev)/1000);prev=now;
+  step(T(),dt);
+  render(T());
+  lastFrameAt=now;
+  requestAnimationFrame(frame);
+}
+function step(t,dt){
+  playerUpdate(dt);
+  wispUpdate(t,dt);
+  bondUpdate(t,dt);
+  sitesUpdate(t,dt);
+  audioUpdate(dt);
+}
+setInterval(()=>{if(performance.now()-lastFrameAt>500)frame(performance.now());},250);
+
+// --- helpers ----------------------------------------------------------------
+function clamp(v,a,b){return v<a?a:(v>b?b:v);}
+
+// --- tuning -----------------------------------------------------------------
+const panel=document.getElementById('tune');
+window.addEventListener('keydown',e=>{if(e.key==='t')panel.style.display=panel.style.display==='block'?'none':'block';});
+function bind(id,key,fmt){
+  const s=document.getElementById('s_'+id),v=document.getElementById('v_'+id);
+  s.value=P[key];v.textContent=fmt(P[key]);
+  s.addEventListener('input',()=>{P[key]=parseFloat(s.value);v.textContent=fmt(P[key]);});
+}
+bind('near','nearR',x=>x|0);
+bind('far','farR',x=>x|0);
+bind('grow','bondGrow',x=>x.toFixed(3));
+bind('pspd','playerSpd',x=>x|0);
+
+// --- debug API --------------------------------------------------------------
+window.__alongside={
+  P,DBG,
+  get t(){return T();},
+  skipTo(sec){skew=sec-(performance.now()-t0)/1000;return 'now t='+T();},
+  get bond(){return bond;},
+  state(){return {wisp:{x:wisp.x|0,y:wisp.y|0,state:wisp.state,mist:+wisp.mist.toFixed(2),tourIdx:wisp.tourIdx,spd:+wisp.spd.toFixed(0)},
+    player:{x:player.x|0,y:player.y|0,spd:+player.spd.toFixed(0)},
+    bond:+bond.toFixed(3),fireflies:fireflies.length,settleTimer:+settleTimer.toFixed(1),meadowBloom:+meadowBloom.toFixed(2),
+    sites:sites.map(s=>({kind:s.kind,lit:+s.lit.toFixed(2)}))};},
+  teleport(x,y){player.x=x;player.y=y;cam.x=x;cam.y=y;return 'ok';},
+  setPointer(x,y,down){pointer.x=x;pointer.y=y;pointer.down=down;return 'ok';},
+  // simulate n steps of 16ms with the pointer where it is
+  step(n){for(let i=0;i<n;i++){skew+=0.016;step_(T(),0.016);}return 't='+T().toFixed(1);},
+  // convenience: accompany the wisp at given offset for n steps
+  accompany(n,dist){
+    dist=dist||180;
+    for(let i=0;i<n;i++){
+      skew+=0.016;
+      const a=Math.atan2(player.y-wisp.y,player.x-wisp.x);
+      const gx=wisp.x+Math.cos(a)*dist, gy=wisp.y+Math.sin(a)*dist;
+      // aim the pointer softly toward the goal point
+      pointer.down=true;
+      pointer.x=W/2+(gx-player.x)*0.8;
+      pointer.y=H/2+(gy-player.y)*0.8;
+      step_(T(),0.016);
+    }
+    pointer.down=false;
+    return 'accompanied, bond='+bond.toFixed(3);
+  },
+  rush(n){ // charge straight at the wisp
+    for(let i=0;i<n;i++){
+      skew+=0.016;
+      pointer.down=true;
+      pointer.x=W/2+(wisp.x-player.x); pointer.y=H/2+(wisp.y-player.y);
+      step_(T(),0.016);
+    }
+    pointer.down=false;
+    return 'rushed, mist='+wisp.mist.toFixed(2)+' bond='+bond.toFixed(3);
+  },
+};
+const step_=step;
+
+// --- go ---------------------------------------------------------------------
+if(!/dev/.test(location.search)) document.getElementById('hint').style.display='none';
+resize();
+window.addEventListener('resize',resize);
+const intro=document.getElementById('intro');
+setTimeout(()=>{intro.style.opacity=1;},600);
+setTimeout(()=>{intro.style.opacity=0;},7000);
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

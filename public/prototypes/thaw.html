@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Thaw</title>
+<style>
+  html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#0b0e1a;}
+  canvas{display:block;touch-action:none;cursor:crosshair;}
+  #intro{
+    position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    pointer-events:none;z-index:5;
+    font-family:Georgia,'Times New Roman',serif;font-style:italic;
+    color:rgba(235,238,250,0.85);font-size:clamp(16px,2.6vw,22px);
+    text-shadow:0 1px 8px rgba(0,0,0,0.5);
+    opacity:0;transition:opacity 3s ease;
+  }
+  #tune{
+    position:fixed;top:8px;right:8px;z-index:10;display:none;
+    background:rgba(10,12,24,0.85);border:1px solid rgba(255,255,255,0.15);
+    border-radius:8px;padding:10px 14px;font-family:ui-monospace,monospace;font-size:11px;
+    color:#cbd2ea;min-width:220px;
+  }
+  #tune label{display:block;margin:6px 0 2px;}
+  #tune input{width:100%;}
+  #hint{
+    position:fixed;bottom:6px;right:10px;z-index:6;
+    font-family:ui-monospace,monospace;font-size:10px;color:rgba(255,255,255,0.18);
+    pointer-events:none;
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="intro">Evening. The glass has fogged over.</div>
+<div id="hint">t&nbsp;·&nbsp;tuning</div>
+<div id="tune">
+  <label>refog rate <span id="v_refog"></span></label><input type="range" id="s_refog" min="0" max="0.02" step="0.0005">
+  <label>gentle speed max (px/s) <span id="v_gentle"></span></label><input type="range" id="s_gentle" min="100" max="900" step="10">
+  <label>smear speed min (px/s) <span id="v_smear"></span></label><input type="range" id="s_smear" min="500" max="2500" step="25">
+  <label>brush radius <span id="v_brush"></span></label><input type="range" id="s_brush" min="14" max="90" step="2">
+  <label>breath sensitivity <span id="v_breath"></span></label><input type="range" id="s_breath" min="0" max="2" step="0.05">
+</div>
+<script>
+'use strict';
+/* ============================================================
+   THAW — receiving impressions.
+   A fogged window at dusk; a winter garden beneath.
+   Slow gentle contact lets the world come through; speed smears.
+   Nothing is scored. Events happen whether or not you watch.
+   ============================================================ */
+
+const P = {                       // tunables
+  refog: 0.012,                   // fog regrowth per second (alpha)
+  vGentle: 380,                   // px/s under which strokes clear well
+  vSmear: 1100,                   // px/s over which strokes add fog
+  brushR: 46,                     // stamp radius, css px
+  breathGain: 0.8,                // how quickly hurry fogs the bottom
+  duration: 300,                  // session seconds until the cold clears the pane
+};
+
+const cv = document.getElementById('c');
+const ctx = cv.getContext('2d');
+let W=0, H=0, DPR=1;
+
+// --- offscreen layers -----------------------------------------------------
+const sceneC = document.createElement('canvas');  const sctx = sceneC.getContext('2d');
+const softC  = document.createElement('canvas');  const softx = softC.getContext('2d');   // half-res soft base
+const fogC   = document.createElement('canvas');  const fctx = fogC.getContext('2d');     // frost alpha map
+const maskC  = document.createElement('canvas');  const mctx = maskC.getContext('2d');    // sharp scene minus fog
+const FOG_SCALE = 0.35;
+
+function resize(){
+  DPR = Math.min(window.devicePixelRatio||1, 2);
+  W = window.innerWidth; H = window.innerHeight;
+  cv.width = W*DPR; cv.height = H*DPR; cv.style.width=W+'px'; cv.style.height=H+'px';
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  sceneC.width=W; sceneC.height=H;
+  maskC.width=W; maskC.height=H;
+  softC.width=Math.ceil(W/2); softC.height=Math.ceil(H/2);
+  const fw=Math.ceil(W*FOG_SCALE), fh=Math.ceil(H*FOG_SCALE);
+  // preserve fog on resize where possible
+  DBG.resizes++;
+  const keep = fogInited ? (()=>{const t=document.createElement('canvas');t.width=fogC.width;t.height=fogC.height;t.getContext('2d').drawImage(fogC,0,0);return t;})() : null;
+  fogC.width=fw; fogC.height=fh;
+  if(keep){ fctx.drawImage(keep,0,0,fw,fh); } else { initFog(); fogInited=true; }
+  buildWorld();
+}
+
+// --- frost ----------------------------------------------------------------
+let fogInited=false;
+const DBG={resizes:0,initFogRuns:0,frames:0};
+function initFog(){
+  DBG.initFogRuns++;
+  const w=fogC.width, h=fogC.height;
+  fctx.globalCompositeOperation='source-over';
+  fctx.clearRect(0,0,w,h);
+  fctx.fillStyle='rgba(255,255,255,1)';
+  fctx.fillRect(0,0,w,h);
+  // crystalline unevenness
+  for(let i=0;i<900;i++){
+    fctx.fillStyle=`rgba(255,255,255,${Math.random()*0.1})`;
+    const r=Math.random()*8+1;
+    fctx.beginPath();fctx.arc(Math.random()*w,Math.random()*h,r,0,7);fctx.fill();
+  }
+  fctx.globalCompositeOperation='destination-out';
+  for(let i=0;i<250;i++){
+    fctx.fillStyle=`rgba(0,0,0,${Math.random()*0.06})`;
+    const r=Math.random()*10+2;
+    fctx.beginPath();fctx.arc(Math.random()*w,Math.random()*h,r,0,7);fctx.fill();
+  }
+  fctx.globalCompositeOperation='source-over';
+}
+
+// canvas compositing quantizes to 1/255 per fill — tiny per-frame alphas
+// round to zero, so regrowth must accumulate as a debt and fire in steps
+let refogDebt=0;
+function refog(dt, amount){
+  refogDebt+=amount*dt;
+  if(refogDebt<0.02) return;
+  fctx.globalCompositeOperation='source-over';
+  fctx.fillStyle=`rgba(255,255,255,${Math.min(1,refogDebt)})`;
+  fctx.fillRect(0,0,fogC.width,fogC.height);
+  refogDebt=0;
+}
+
+// breath bloom from the bottom edge when the hands hurry (debt-stepped
+// past the 1/255 quantization floor, same as refog)
+let breathDebt=0;
+function breathe(dt, strength){
+  if(strength<=0.003) return;
+  breathDebt+=Math.min(0.9,strength)*dt*2.2;
+  if(breathDebt<0.03) return;
+  const h=fogC.height, w=fogC.width;
+  const g=fctx.createLinearGradient(0,h,0,h*0.45);
+  g.addColorStop(0,`rgba(255,255,255,${Math.min(1,breathDebt)})`);
+  g.addColorStop(1,'rgba(255,255,255,0)');
+  fctx.globalCompositeOperation='source-over';
+  fctx.fillStyle=g;
+  fctx.fillRect(0,0,w,h);
+  // at high heat the whole rim mists faintly, so hurry is visible anywhere
+  if(strength>0.7){
+    const rg=fctx.createRadialGradient(w/2,h/2,Math.min(w,h)*0.35,w/2,h/2,Math.min(w,h)*0.72);
+    rg.addColorStop(0,'rgba(255,255,255,0)');
+    rg.addColorStop(1,`rgba(255,255,255,${Math.min(0.6,breathDebt*0.6)})`);
+    fctx.fillStyle=rg;
+    fctx.fillRect(0,0,w,h);
+  }
+  breathDebt=0;
+}
+
+function stampClear(x,y,strength,r){
+  const s=FOG_SCALE;
+  fctx.globalCompositeOperation='destination-out';
+  const g=fctx.createRadialGradient(x*s,y*s,0,x*s,y*s,r*s);
+  g.addColorStop(0,`rgba(0,0,0,${strength})`);
+  g.addColorStop(0.7,`rgba(0,0,0,${strength*0.5})`);
+  g.addColorStop(1,'rgba(0,0,0,0)');
+  fctx.fillStyle=g;
+  fctx.beginPath();fctx.arc(x*s,y*s,r*s,0,7);fctx.fill();
+  fctx.globalCompositeOperation='source-over';
+}
+
+function stampSmear(x,y,dx,dy,r){
+  const s=FOG_SCALE;
+  const len=Math.hypot(dx,dy)||1;
+  const nx=dx/len, ny=dy/len;
+  fctx.globalCompositeOperation='source-over';
+  // compacted wet streak: on full frost a fast swipe still leaves a visible
+  // mark (darker, like crystals crushed to water film) — speed always answers
+  fctx.fillStyle='rgba(150,162,186,0.16)';
+  fctx.beginPath();
+  fctx.ellipse(x*s,y*s, r*1.6*s, r*0.55*s, Math.atan2(ny,nx), 0, 7);
+  fctx.fill();
+  // streaky white deposit, elongated along motion
+  for(let i=0;i<3;i++){
+    const off=(i-1)*r*0.4;
+    fctx.fillStyle=`rgba(255,255,255,${0.10+Math.random()*0.08})`;
+    fctx.beginPath();
+    fctx.ellipse((x+(-ny*off))*s,(y+(nx*off))*s, r*1.4*s, r*0.5*s, Math.atan2(ny,nx), 0, 7);
+    fctx.fill();
+  }
+}
+
+// --- the world beneath -----------------------------------------------------
+// static silhouettes generated once per resize
+let trees=[], fence=[], house=null, groundY=0;
+function buildWorld(){
+  groundY = H*0.78;
+  // trees: recursive bare branches
+  trees=[];
+  const treeXs=[W*0.13, W*0.82, W*0.94];
+  for(const tx of treeXs){
+    const segs=[];
+    const grow=(x,y,ang,len,w,depth)=>{
+      if(depth<=0||len<4) return;
+      const x2=x+Math.cos(ang)*len, y2=y+Math.sin(ang)*len;
+      segs.push([x,y,x2,y2,w]);
+      const n=depth>3?2:(Math.random()<0.7?2:1);
+      for(let i=0;i<n;i++){
+        grow(x2,y2, ang+(Math.random()-0.5)*0.9, len*(0.68+Math.random()*0.14), w*0.66, depth-1);
+      }
+    };
+    grow(tx, groundY+6, -Math.PI/2+(Math.random()-0.5)*0.15, H*0.11, 7, 7);
+    trees.push(segs);
+  }
+  // fence
+  fence=[];
+  const fy=groundY+H*0.02;
+  for(let x=W*0.28;x<W*0.72;x+=W*0.045){ fence.push(x); }
+  house={x:W*0.62, y:groundY-H*0.135, w:W*0.13, h:H*0.135};
+}
+
+// snow
+let snowNear=[], snowFar=[];
+function ensureSnow(nNear,nFar){
+  while(snowNear.length<nNear) snowNear.push({x:Math.random()*W,y:Math.random()*H,v:28+Math.random()*30,ph:Math.random()*7,r:1.4+Math.random()*1.4});
+  while(snowFar.length<nFar)  snowFar.push({x:Math.random()*W,y:Math.random()*H,v:12+Math.random()*14,ph:Math.random()*7,r:0.7+Math.random()*0.8});
+  if(snowNear.length>nNear) snowNear.length=nNear;
+  if(snowFar.length>nFar)  snowFar.length=nFar;
+}
+
+// timeline events
+const EV = {
+  cardinalIn: 55, cardinalOut: 92,
+  hareAt: 118,
+  moonAt: 130,
+  windowAt: 175,
+  owlAt: 235,
+};
+
+function skyColors(t){
+  // dusk -> night
+  const k = smooth01(clamp((t-10)/160,0,1));
+  const top   = lerpC([38,42,84],[8,10,26],k);
+  const mid   = lerpC([96,66,98],[16,18,42],k);
+  const low   = lerpC([176,110,110],[30,26,52],k);
+  return {top,mid,low,k};
+}
+
+function drawScene(t, dt){
+  const S=sctx;
+  const {top,mid,low,k}=skyColors(t);
+  const g=S.createLinearGradient(0,0,0,groundY);
+  g.addColorStop(0,css(top)); g.addColorStop(0.55,css(mid)); g.addColorStop(1,css(low));
+  S.fillStyle=g; S.fillRect(0,0,W,groundY+2);
+
+  // stars
+  if(k>0.45){
+    const a=(k-0.45)/0.55;
+    S.save(); S.globalAlpha=a*0.9;
+    for(const st of stars){
+      const tw=0.6+0.4*Math.sin(t*st.s+st.p);
+      S.fillStyle=`rgba(235,240,255,${st.a*tw})`;
+      S.fillRect(st.x,st.y,st.r,st.r);
+    }
+    S.restore();
+  }
+
+  // moon
+  if(t>EV.moonAt){
+    const mp=clamp((t-EV.moonAt)/50,0,1);
+    const mx=W*0.72, my=lerp(groundY*0.55, H*0.16, smooth01(mp));
+    const mr=Math.min(W,H)*0.045;
+    const mg=S.createRadialGradient(mx,my,mr*0.2,mx,my,mr*3.2);
+    mg.addColorStop(0,'rgba(240,238,220,0.55)');mg.addColorStop(1,'rgba(240,238,220,0)');
+    S.fillStyle=mg;S.beginPath();S.arc(mx,my,mr*3.2,0,7);S.fill();
+    S.fillStyle='#efe9d4';S.beginPath();S.arc(mx,my,mr,0,7);S.fill();
+    S.fillStyle='rgba(190,186,168,0.5)';
+    S.beginPath();S.arc(mx-mr*0.3,my-mr*0.2,mr*0.18,0,7);S.fill();
+    S.beginPath();S.arc(mx+mr*0.25,my+mr*0.3,mr*0.12,0,7);S.fill();
+    moonPos=[mx,my,mr];
+  }
+
+  // owl silhouette across the moon
+  if(t>EV.owlAt && t<EV.owlAt+9 && moonPos){
+    const p=(t-EV.owlAt)/9;
+    const ox=lerp(W+40,-60,p), oy=moonPos[1]+Math.sin(p*Math.PI*2)*18 - 10;
+    S.fillStyle='rgba(10,10,18,0.9)';
+    const flap=Math.sin(t*9)*0.6;
+    S.save();S.translate(ox,oy);
+    S.beginPath();
+    S.ellipse(0,0,13,5,0,0,7);
+    S.moveTo(0,0);S.quadraticCurveTo(-16,-8-8*flap,-30,-2-14*flap);S.quadraticCurveTo(-14,4,0,2);
+    S.moveTo(0,0);S.quadraticCurveTo(16,-8-8*flap,30,-2-14*flap);S.quadraticCurveTo(14,4,0,2);
+    S.fill();S.restore();
+  }
+
+  // snow ground
+  const gg=S.createLinearGradient(0,groundY,0,H);
+  const gTop=lerpC([222,222,238],[70,76,120],k*0.85);
+  const gBot=lerpC([200,202,226],[42,46,84],k*0.85);
+  gg.addColorStop(0,css(gTop)); gg.addColorStop(1,css(gBot));
+  S.fillStyle=gg; S.fillRect(0,groundY,W,H-groundY);
+  // drift bumps
+  S.fillStyle=`rgba(255,255,255,${0.25-0.18*k})`;
+  for(let i=0;i<5;i++){
+    S.beginPath();
+    S.ellipse(W*(0.1+i*0.2), groundY+8+i*3, W*0.14, 8, 0, 0, 7);
+    S.fill();
+  }
+
+  // house
+  const hh=house;
+  S.fillStyle=`rgba(22,20,34,${0.92})`;
+  S.beginPath();
+  S.rect(hh.x,hh.y,hh.w,hh.h);
+  S.moveTo(hh.x-hh.w*0.08,hh.y);
+  S.lineTo(hh.x+hh.w*0.5,hh.y-hh.h*0.5);
+  S.lineTo(hh.x+hh.w*1.08,hh.y);
+  S.closePath(); S.fill();
+  // chimney + smoke
+  S.fillRect(hh.x+hh.w*0.72, hh.y-hh.h*0.42, hh.w*0.12, hh.h*0.3);
+  for(let i=0;i<5;i++){
+    const sp=(t*0.25+i*0.8)%4;
+    S.fillStyle=`rgba(200,200,210,${0.10*(1-sp/4)})`;
+    S.beginPath();
+    S.arc(hh.x+hh.w*0.78+Math.sin(t*0.7+i)*6+sp*4, hh.y-hh.h*0.45-sp*14, 4+sp*3.4,0,7);
+    S.fill();
+  }
+  // window — lights late, non-contingently
+  if(t>EV.windowAt){
+    const wa=smooth01(clamp((t-EV.windowAt)/6,0,1));
+    const wx=hh.x+hh.w*0.22, wy=hh.y+hh.h*0.3, ww=hh.w*0.24, wh=hh.h*0.34;
+    const wg=S.createRadialGradient(wx+ww/2,wy+wh/2,2,wx+ww/2,wy+wh/2,ww*2.4);
+    wg.addColorStop(0,`rgba(255,196,110,${0.5*wa})`);wg.addColorStop(1,'rgba(255,196,110,0)');
+    S.fillStyle=wg;S.fillRect(wx-ww*2,wy-wh*2,ww*5,wh*5);
+    S.fillStyle=`rgba(255,206,130,${0.92*wa})`;
+    S.fillRect(wx,wy,ww,wh);
+    S.strokeStyle='rgba(22,20,34,0.9)';S.lineWidth=2;
+    S.strokeRect(wx,wy,ww,wh);
+    S.beginPath();S.moveTo(wx+ww/2,wy);S.lineTo(wx+ww/2,wy+wh);S.moveTo(wx,wy+wh/2);S.lineTo(wx+ww,wy+wh/2);S.stroke();
+  }
+
+  // trees
+  S.strokeStyle=`rgba(18,16,30,0.95)`;
+  S.lineCap='round';
+  for(const segs of trees){
+    for(const [x1,y1,x2,y2,w] of segs){
+      S.lineWidth=w;
+      const sway=Math.sin(t*0.6+x1*0.01)*(w<2?1.6:0.3);
+      S.beginPath();S.moveTo(x1,y1);S.lineTo(x2+sway,y2);S.stroke();
+    }
+  }
+
+  // fence
+  S.strokeStyle='rgba(24,22,38,0.9)'; S.lineWidth=3;
+  const fy=groundY+H*0.02;
+  S.beginPath();
+  for(const x of fence){ S.moveTo(x,fy);S.lineTo(x,fy-H*0.05); }
+  S.moveTo(fence[0],fy-H*0.04);S.lineTo(fence[fence.length-1],fy-H*0.04);
+  S.moveTo(fence[0],fy-H*0.015);S.lineTo(fence[fence.length-1],fy-H*0.015);
+  S.stroke();
+  // snow caps on posts
+  S.fillStyle=`rgba(240,242,255,${0.8-0.4*k})`;
+  for(const x of fence){ S.beginPath();S.ellipse(x,fy-H*0.05,3.4,1.8,0,0,7);S.fill(); }
+
+  // the cardinal — arrives, sits, tilts its head, leaves. Red is the only saturated thing.
+  if(t>EV.cardinalIn && t<EV.cardinalOut+6){
+    drawCardinal(S,t);
+  }
+
+  // the hare
+  if(t>EV.hareAt && t<EV.hareAt+14){
+    drawHare(S,t-EV.hareAt);
+  }
+  // its prints linger in the snow, softening as fresh snow fills them
+  for(const pr of harePrints){
+    const age=t-pr.at;
+    const a=Math.max(0,0.30*(1-age/90));
+    if(a<=0) continue;
+    S.fillStyle=`rgba(60,66,110,${a})`;
+    S.beginPath();S.ellipse(pr.x,pr.y,3.2,1.6,0,0,7);S.fill();
+  }
+
+  // snowfall — begins almost at once; the first minute must not be empty
+  const snowAmt = t<8?0 : t<20? (t-8)/12*1.6 : (t<150?1.6: Math.min(2.6,(t-150)/40+1.6));
+  ensureSnow(Math.floor(60*snowAmt), Math.floor(90*snowAmt));
+  S.fillStyle='rgba(245,247,255,0.9)';
+  for(const f of snowFar){
+    f.y+=f.v*dt; f.x+=Math.sin(t*0.8+f.ph)*10*dt;
+    if(f.y>H){f.y=-4;f.x=Math.random()*W;}
+    S.globalAlpha=0.5;
+    S.fillRect(f.x,f.y,f.r,f.r);
+  }
+  for(const f of snowNear){
+    f.y+=f.v*dt; f.x+=Math.sin(t*0.7+f.ph)*16*dt;
+    if(f.y>H){f.y=-4;f.x=Math.random()*W;}
+    S.globalAlpha=0.85;
+    S.beginPath();S.arc(f.x,f.y,f.r,0,7);S.fill();
+  }
+  S.globalAlpha=1;
+}
+
+let moonPos=null;
+let stars=[];
+function seedStars(){
+  stars=[];
+  for(let i=0;i<130;i++){
+    stars.push({x:Math.random()*W,y:Math.random()*H*0.6,r:Math.random()<0.15?2:1,
+      a:0.3+Math.random()*0.7,s:0.5+Math.random()*2,p:Math.random()*7});
+  }
+}
+
+function drawCardinal(S,t){
+  const perchX=fence[Math.floor(fence.length*0.4)], perchY=groundY+H*0.02-H*0.05;
+  let x,y,a=1;
+  const tIn=EV.cardinalIn, tOut=EV.cardinalOut;
+  if(t<tIn+3){ // flying in from left
+    const p=smooth01((t-tIn)/3);
+    x=lerp(-30,perchX,p); y=lerp(H*0.3,perchY-6,p)+Math.sin(t*10)*3*(1-p);
+  } else if(t<tOut){
+    x=perchX; y=perchY-6+Math.sin(t*2.2)*0.6;
+  } else { // departing
+    const p=smooth01((t-tOut)/4);
+    x=lerp(perchX,W+40,p); y=lerp(perchY-6,H*0.2,p)+Math.sin(t*10)*3*p;
+    a=1-p*0.2;
+  }
+  const tilt = (t>tIn+8 && Math.sin(t*0.5)>0.86)?0.35:0;
+  S.save();S.translate(x,y);S.globalAlpha=a;S.rotate(tilt*0.4);
+  // tail
+  S.fillStyle='#8d2f35';
+  S.beginPath();S.ellipse(-9,3,7,2.6,-0.5,0,7);S.fill();
+  // body
+  S.fillStyle='#c0392b';
+  S.beginPath();S.ellipse(0,0,7.5,6,0,0,7);S.fill();
+  // head + crest
+  S.beginPath();S.arc(5.6,-5,4.2,0,7);S.fill();
+  S.beginPath();S.moveTo(4,-8.4);S.lineTo(6.8,-12.4);S.lineTo(8.4,-8);S.closePath();S.fill();
+  // mask + beak
+  S.fillStyle='#2b1214';S.beginPath();S.arc(7,-4.6,1.9,0,7);S.fill();
+  S.fillStyle='#e2a04a';S.beginPath();S.moveTo(9,-5.4);S.lineTo(12.4,-4.4);S.lineTo(9,-3.2);S.closePath();S.fill();
+  S.restore();
+}
+
+let harePrints=[], lastPrintT=-9;
+function drawHare(S,tt){
+  const p=tt/14;
+  const x=lerp(W*1.05,-W*0.08,p);
+  const hop=Math.abs(Math.sin(tt*3.2));
+  const y=groundY+H*0.055 - hop*hop*16;
+  // each landing leaves prints in the snow — memory in the world, not a hoard
+  if(hop<0.12&&tt-lastPrintT>0.4){
+    lastPrintT=tt;
+    harePrints.push({x:x+6,y:groundY+H*0.058,at:T()});
+    harePrints.push({x:x-7,y:groundY+H*0.062,at:T()});
+  }
+  S.save();S.translate(x,y);S.scale(-1,1);
+  S.fillStyle='rgba(226,228,240,0.92)';
+  S.beginPath();S.ellipse(0,0,13,8,Math.sin(tt*3.2)*0.12,0,7);S.fill();     // body
+  S.beginPath();S.arc(11,-5,5,0,7);S.fill();                                 // head
+  S.beginPath();S.ellipse(12,-12,1.8,5.5,0.25,0,7);S.fill();                 // ear
+  S.beginPath();S.ellipse(9.4,-12,1.8,5.5,-0.05,0,7);S.fill();               // ear
+  S.beginPath();S.arc(-11,-2,3,0,7);S.fill();                                // tail
+  S.restore();
+}
+
+// --- input -----------------------------------------------------------------
+let pointerDown=false, lastPt=null, lastT=0, breathHeat=0, squeak=0, lastMoveAt=0;
+cv.addEventListener('pointerdown',e=>{
+  pointerDown=true; lastPt=[e.clientX,e.clientY]; lastT=performance.now();
+  cv.setPointerCapture(e.pointerId);
+  startAudio();
+});
+cv.addEventListener('pointermove',e=>{
+  if(!pointerDown) return;
+  processMove(e.clientX,e.clientY,performance.now());
+});
+function processMove(x,y,now){
+  const dtms=Math.max(1,now-lastT);
+  const dx=x-lastPt[0], dy=y-lastPt[1];
+  const dist=Math.hypot(dx,dy);
+  const speed=dist/(dtms/1000);
+  // stamp along segment
+  const steps=Math.max(1,Math.floor(dist/(P.brushR*0.35)));
+  for(let i=1;i<=steps;i++){
+    const px=lastPt[0]+dx*i/steps, py=lastPt[1]+dy*i/steps;
+    if(speed<P.vGentle){
+      // low ceiling: even a perfect pass takes 2-4 wipes — the image comes
+      // through gradually rather than the surface being deleted
+      const st=0.11*(1-speed/(P.vGentle*1.35));
+      stampClear(px,py,Math.max(0.03,st),P.brushR);
+      squeak=Math.min(1,squeak+0.08);
+    } else if(speed>P.vSmear){
+      stampSmear(px,py,dx,dy,P.brushR*0.8);
+      breathHeat=Math.min(1.6,breathHeat+0.05*P.breathGain);
+    } else {
+      const k=(speed-P.vGentle)/(P.vSmear-P.vGentle); // fades from weak clear to nothing
+      const st=0.10*(1-k);
+      if(st>0.015) stampClear(px,py,st,P.brushR*0.9);
+    }
+  }
+  if(speed>P.vSmear*0.7) breathHeat=Math.min(1.6,breathHeat+0.01*P.breathGain);
+  lastPt=[x,y]; lastT=now; lastMoveAt=now;
+}
+window.addEventListener('pointerup',()=>{pointerDown=false;lastPt=null;});
+window.addEventListener('pointercancel',()=>{pointerDown=false;lastPt=null;});
+
+// --- audio -----------------------------------------------------------------
+let AC=null, outsideLP=null, windGain=null, started=false;
+function startAudio(){
+  if(started) return; started=true;
+  try{
+    AC=new (window.AudioContext||window.webkitAudioContext)();
+    const master=AC.createGain(); master.gain.value=0.5; master.connect(AC.destination);
+    // outside bus: everything beyond the glass passes a lowpass whose cutoff follows clearness
+    outsideLP=AC.createBiquadFilter(); outsideLP.type='lowpass'; outsideLP.frequency.value=420; outsideLP.Q.value=0.4;
+    outsideLP.connect(master);
+    // wind: filtered noise with slow gust LFO
+    const buf=AC.createBuffer(1,AC.sampleRate*4,AC.sampleRate);
+    const d=buf.getChannelData(0);
+    for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+    const noise=AC.createBufferSource(); noise.buffer=buf; noise.loop=true;
+    const bp=AC.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=380; bp.Q.value=0.6;
+    windGain=AC.createGain(); windGain.gain.value=0.05;
+    noise.connect(bp); bp.connect(windGain); windGain.connect(outsideLP);
+    noise.start();
+    const lfo=AC.createOscillator(); lfo.frequency.value=0.07;
+    const lfoG=AC.createGain(); lfoG.gain.value=0.03;
+    lfo.connect(lfoG); lfoG.connect(windGain.gain); lfo.start();
+    // occasional cardinal chirps while it's present
+    setInterval(()=>{
+      if(!AC) return;
+      const t=T();
+      if(t>EV.cardinalIn+6 && t<EV.cardinalOut && Math.random()<0.5) chirp();
+      // heard before seen: a chirp through the glass invites clearing toward it
+      else if(t>EV.cardinalIn-14 && t<EV.cardinalIn-4 && Math.random()<0.35) chirp();
+      if(!hootDone && t>EV.owlAt-6){ hootDone=true; hoot(); }
+    }, 3500);
+  }catch(e){/* audio is optional */}
+}
+let hootDone=false;
+function hoot(){
+  const t0=AC.currentTime;
+  for(const [dt0,f] of [[0,310],[0.5,260]]){
+    const o=AC.createOscillator(),g=AC.createGain();
+    o.type='sine';
+    o.frequency.setValueAtTime(f,t0+dt0);
+    o.frequency.exponentialRampToValueAtTime(f*0.93,t0+dt0+0.35);
+    g.gain.setValueAtTime(0,t0+dt0);
+    g.gain.linearRampToValueAtTime(0.09,t0+dt0+0.08);
+    g.gain.exponentialRampToValueAtTime(0.001,t0+dt0+0.45);
+    o.connect(g);g.connect(outsideLP);
+    o.start(t0+dt0);o.stop(t0+dt0+0.5);
+  }
+}
+function chirp(){
+  const t0=AC.currentTime;
+  for(let i=0;i<3;i++){
+    const o=AC.createOscillator(), g=AC.createGain();
+    o.type='sine';
+    const st=t0+i*0.16;
+    o.frequency.setValueAtTime(2900,st);
+    o.frequency.exponentialRampToValueAtTime(2100,st+0.09);
+    g.gain.setValueAtTime(0,st);
+    g.gain.linearRampToValueAtTime(0.12,st+0.02);
+    g.gain.exponentialRampToValueAtTime(0.001,st+0.14);
+    o.connect(g);g.connect(outsideLP);
+    o.start(st);o.stop(st+0.16);
+  }
+}
+// glass squeak on gentle rubbing — tactile, quiet
+let squeakOsc=null,squeakGain=null;
+function updateSqueak(dt){
+  if(!AC) return;
+  if(!squeakOsc){
+    squeakOsc=AC.createOscillator();squeakOsc.type='triangle';squeakOsc.frequency.value=1400;
+    squeakGain=AC.createGain();squeakGain.gain.value=0;
+    const f=AC.createBiquadFilter();f.type='bandpass';f.frequency.value=1500;f.Q.value=8;
+    squeakOsc.connect(f);f.connect(squeakGain);squeakGain.connect(AC.destination);
+    squeakOsc.start();
+  }
+  squeak=Math.max(0,squeak-dt*2.2);
+  const target=squeak*0.015;
+  squeakGain.gain.setTargetAtTime(target,AC.currentTime,0.05);
+  squeakOsc.frequency.setTargetAtTime(1250+Math.random()*420,AC.currentTime,0.06);
+}
+
+// clearness estimate (for audio filter + ending) — sampled coarsely, cheap
+let clearFrac=0, lastSample=0;
+function sampleClearness(now){
+  if(now-lastSample<1000) return;
+  lastSample=now;
+  try{
+    const w=32,h=20;
+    const tmp=sampleClearness.tmp||(sampleClearness.tmp=document.createElement('canvas'));
+    tmp.width=w;tmp.height=h;
+    const tc=tmp.getContext('2d',{willReadFrequently:true});
+    tc.clearRect(0,0,w,h);
+    tc.drawImage(fogC,0,0,w,h);
+    const px=tc.getImageData(0,0,w,h).data;
+    let sum=0;
+    for(let i=3;i<px.length;i+=4) sum+=px[i];
+    clearFrac=1-(sum/255/(w*h));
+  }catch(e){}
+  if(outsideLP) outsideLP.frequency.setTargetAtTime(300+clearFrac*5200, AC.currentTime, 0.6);
+}
+
+// --- ending: the cold takes the pane ---------------------------------------
+function coldClear(t,dt){
+  if(t<P.duration) return;
+  const p=Math.min(1,(t-P.duration)/45);
+  // erode from edges inward — inset travels the FULL radius so the pane
+  // center thaws too, and a late whole-pane fade guarantees completion
+  const w=fogC.width,h=fogC.height;
+  fctx.globalCompositeOperation='destination-out';
+  const inset=p*Math.min(w,h)*1.25;
+  const g=fctx.createRadialGradient(w/2,h/2,Math.max(2,Math.min(w,h)*0.85-inset),w/2,h/2,Math.max(3,Math.min(w,h)*1.15-inset));
+  g.addColorStop(0,'rgba(0,0,0,0)');
+  g.addColorStop(1,`rgba(0,0,0,${dt*1.6})`);
+  fctx.fillStyle=g;fctx.fillRect(0,0,w,h);
+  if(p>0.8){
+    fctx.fillStyle=`rgba(0,0,0,${dt*0.9*(p-0.8)/0.2})`;
+    fctx.fillRect(0,0,w,h);
+  }
+  fctx.globalCompositeOperation='source-over';
+}
+
+// --- main loop --------------------------------------------------------------
+const t0=performance.now();
+function T(){ return (performance.now()-t0)/1000 + (typeof skew==='number'?skew:0); }
+let prev=performance.now();
+function frame(now){
+  DBG.frames++;
+  const dt=Math.min(0.05,(now-prev)/1000); prev=now;
+  const t=T();
+
+  drawScene(t,dt);
+
+  // fog dynamics
+  const endPhase = t>P.duration;
+  // hand-warmth: a resting fingertip melts a soft opening — stillness is
+  // rewarded above even slowness
+  if(pointerDown&&lastPt&&performance.now()-lastMoveAt>350){
+    stampClear(lastPt[0],lastPt[1],0.9*dt,P.brushR*0.62);
+  }
+  refog(dt, endPhase?0:P.refog);
+  breathHeat=Math.max(0,breathHeat-dt*0.25);
+  breathe(dt, endPhase?0:breathHeat*0.35);
+  coldClear(t,dt);
+
+  // soft (frosted) base: half-res upscale of the scene, lifted toward white
+  softx.drawImage(sceneC,0,0,softC.width,softC.height);
+  softx.fillStyle='rgba(228,232,246,0.35)';
+  softx.fillRect(0,0,softC.width,softC.height);
+
+  ctx.imageSmoothingEnabled=true;
+  ctx.clearRect(0,0,W,H);
+  ctx.filter='blur(5px)';
+  ctx.drawImage(softC,0,0,W,H);
+  ctx.filter='none';
+
+  // sharp scene where the glass is clear
+  mctx.globalCompositeOperation='source-over';
+  mctx.clearRect(0,0,W,H);
+  mctx.drawImage(sceneC,0,0);
+  mctx.globalCompositeOperation='destination-out';
+  mctx.drawImage(fogC,0,0,W,H);
+  mctx.globalCompositeOperation='source-over';
+  ctx.drawImage(maskC,0,0);
+
+  // frost itself, softly white over the blurred base
+  ctx.save();
+  ctx.globalAlpha=0.5;
+  ctx.drawImage(fogC,0,0,W,H);
+  ctx.restore();
+
+  // window frame vignette
+  frameVignette();
+
+  updateSqueak(dt);
+  sampleClearness(now);
+
+  lastFrameAt=now;
+  requestAnimationFrame(frame);
+}
+
+// headless watchdog: keep the world alive when rAF is throttled (hidden tab,
+// un-composited pane) so automated playtests and background time still work
+let lastFrameAt=performance.now();
+setInterval(()=>{
+  if(performance.now()-lastFrameAt>500) frame(performance.now());
+},250);
+
+function frameVignette(){
+  const g=ctx.createRadialGradient(W/2,H/2,Math.min(W,H)*0.42,W/2,H/2,Math.max(W,H)*0.75);
+  g.addColorStop(0,'rgba(8,8,16,0)');
+  g.addColorStop(1,'rgba(8,8,16,0.55)');
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle='rgba(30,26,40,0.9)';
+  ctx.lineWidth=10;
+  ctx.strokeRect(3,3,W-6,H-6);
+}
+
+// --- helpers ---------------------------------------------------------------
+function clamp(v,a,b){return v<a?a:(v>b?b:v);}
+function lerp(a,b,k){return a+(b-a)*k;}
+function smooth01(k){k=clamp(k,0,1);return k*k*(3-2*k);}
+function lerpC(a,b,k){return [lerp(a[0],b[0],k),lerp(a[1],b[1],k),lerp(a[2],b[2],k)];}
+function css(c){return `rgb(${c[0]|0},${c[1]|0},${c[2]|0})`;}
+
+// --- tuning panel ----------------------------------------------------------
+const panel=document.getElementById('tune');
+window.addEventListener('keydown',e=>{
+  if(e.key==='t') panel.style.display=panel.style.display==='block'?'none':'block';
+});
+function bind(id,key,fmt){
+  const s=document.getElementById('s_'+id), v=document.getElementById('v_'+id);
+  s.value=P[key];
+  v.textContent=fmt(P[key]);
+  s.addEventListener('input',()=>{P[key]=parseFloat(s.value);v.textContent=fmt(P[key]);});
+}
+bind('refog','refog',x=>x.toFixed(4));
+bind('gentle','vGentle',x=>x|0);
+bind('smear','vSmear',x=>x|0);
+bind('brush','brushR',x=>x|0);
+bind('breath','breathGain',x=>x.toFixed(2));
+
+// --- debug API for playtesting ---------------------------------------------
+window.__thaw = {
+  P,
+  get t(){ return T(); },
+  get clearFrac(){ return clearFrac; },
+  get breathHeat(){ return breathHeat; },
+  EV,
+  // synthetic stroke with a virtual clock — immune to background-tab timer
+  // throttling, so tested speeds are exactly as specified
+  stroke(x1,y1,x2,y2,ms){
+    const steps=Math.max(2,Math.floor(ms/16));
+    let vnow=performance.now();
+    pointerDown=true; lastPt=[x1,y1]; lastT=vnow;
+    for(let i=1;i<=steps;i++){
+      const k=i/steps;
+      vnow+=16;
+      processMove(x1+(x2-x1)*k, y1+(y2-y1)*k, vnow);
+    }
+    pointerDown=false; lastPt=null;
+    return `stroked ${Math.hypot(x2-x1,y2-y1)|0}px over ${ms}ms (${(Math.hypot(x2-x1,y2-y1)/(ms/1000))|0}px/s)`;
+  },
+  skipTo(sec){ /* jump the session clock */ skew = sec - (performance.now()-t0)/1000; return 'now t='+T(); },
+  sampleNow(){ lastSample=0; sampleClearness(performance.now()+2000); return clearFrac; },
+  fogCanvas(){ return fogC; },
+  DBG,
+  resetFog(){ initFog(); },
+};
+let skew=0;
+
+// --- go --------------------------------------------------------------------
+if(!/dev/.test(location.search)) document.getElementById('hint').style.display='none';
+resize();
+seedStars();
+window.addEventListener('resize',resize);
+const intro=document.getElementById('intro');
+setTimeout(()=>{intro.style.opacity=1;},600);
+setTimeout(()=>{intro.style.opacity=0;},6500);
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

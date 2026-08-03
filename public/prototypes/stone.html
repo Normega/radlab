@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Stone</title>
+<style>
+  html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#101820;}
+  canvas{display:block;touch-action:none;cursor:pointer;}
+  #intro{
+    position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    pointer-events:none;z-index:5;
+    font-family:Georgia,'Times New Roman',serif;font-style:italic;
+    color:rgba(230,238,240,0.88);font-size:clamp(16px,2.6vw,22px);
+    text-shadow:0 1px 8px rgba(0,0,0,0.55);
+    opacity:0;transition:opacity 3s ease;text-align:center;padding:0 24px;
+  }
+  #tune{
+    position:fixed;top:8px;right:8px;z-index:10;display:none;
+    background:rgba(8,14,18,0.9);border:1px solid rgba(255,255,255,0.14);
+    border-radius:8px;padding:10px 14px;font-family:ui-monospace,monospace;font-size:11px;
+    color:#c6d4d8;min-width:230px;
+  }
+  #tune label{display:block;margin:6px 0 2px;}
+  #tune input{width:100%;}
+  #hint{position:fixed;bottom:6px;right:10px;z-index:6;font-family:ui-monospace,monospace;
+    font-size:10px;color:rgba(255,255,255,0.16);pointer-events:none;}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="intro">You are a stone in a stream.<br>The afternoon is long. Things will come.</div>
+<div id="hint">t&nbsp;·&nbsp;tuning</div>
+<div id="tune">
+  <label>visitor interval (s) <span id="v_visit"></span></label><input type="range" id="s_visit" min="6" max="40" step="1">
+  <label>attend radius (px) <span id="v_att"></span></label><input type="range" id="s_att" min="40" max="200" step="5">
+  <label>disturbance decay (s) <span id="v_ddec"></span></label><input type="range" id="s_ddec" min="4" max="40" step="1">
+  <label>minnow stillness (s) <span id="v_minn"></span></label><input type="range" id="s_minn" min="5" max="60" step="1">
+</div>
+<script>
+'use strict';
+/* ============================================================
+   STONE — hosting.
+   You are a stone in a stream. Stillness is load-bearing, not
+   waiting: things arrive and use you. One gesture — a slow
+   press near a visitor — is attention; detail deepens, sound
+   comes forward, they linger. Taps ripple the water and lift
+   them; they circle back. Nothing accumulates.
+   ============================================================ */
+
+const P = {
+  visitEvery: 16,      // mean seconds between visitor arrivals
+  attendR: 110,        // px, how near a hold must be to attend a visitor
+  distDecay: 14,       // seconds for one tap's disturbance to fade
+  minnowStill: 22,     // seconds of calm water before minnows shelter
+  duration: 280,       // nightfall completes near here
+};
+
+const cv=document.getElementById('c');
+const ctx=cv.getContext('2d');
+let W=0,H=0,DPR=1;
+function resize(){
+  DPR=Math.min(window.devicePixelRatio||1,2);
+  W=window.innerWidth;H=window.innerHeight;
+  cv.width=W*DPR;cv.height=H*DPR;cv.style.width=W+'px';cv.style.height=H+'px';
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  layout();
+}
+let stream={top:0,bot:0}, stone={x:0,y:0,rx:0,ry:0};
+function layout(){
+  stream.top=H*0.30; stream.bot=H*0.86;
+  stone.x=W*0.44; stone.y=H*0.60;
+  stone.rx=Math.min(W,H)*0.11; stone.ry=Math.min(W,H)*0.075;
+}
+function eddyX(){return stone.x+stone.rx*1.7;}  // downstream shelter
+
+// --- time of day ------------------------------------------------------------
+function dayK(t){ return smooth01(clamp(t/P.duration,0,1)); } // 0 afternoon -> 1 night
+
+// --- disturbance ------------------------------------------------------------
+let disturbance=0, stillFor=0;
+
+// --- ripples & flow ---------------------------------------------------------
+let ripples=[], flecks=[];
+function addRipple(x,y,big){
+  ripples.push({x,y,r:4,a:big?0.5:0.3,v:big?55:35});
+}
+function ensureFlecks(){
+  while(flecks.length<70){
+    flecks.push({x:Math.random()*W,y:stream.top+Math.random()*(stream.bot-stream.top),l:6+Math.random()*14,a:0.05+Math.random()*0.1});
+  }
+}
+function flowAt(x,y){
+  // stream speed: fastest mid-channel, slow near banks, sheltered behind the stone
+  const mid=(stream.top+stream.bot)/2, half=(stream.bot-stream.top)/2;
+  let v=60*(1-Math.pow(Math.abs(y-mid)/half,2))+14;
+  // eddy: behind the stone the water curls and slows
+  const ex=eddyX(), ey=stone.y;
+  const dEddy=Math.hypot(x-ex,y-ey);
+  if(dEddy<stone.rx*1.6){
+    const k=1-dEddy/(stone.rx*1.6);
+    v*=(1-k*0.85);
+    return [v, Math.sin(dEddy*0.09+x*0.02)*k*18];
+  }
+  // deflection around the stone
+  const dS=Math.hypot(x-stone.x,y-stone.y);
+  if(dS<stone.rx*2.2&&x<stone.x+stone.rx){
+    const k=1-dS/(stone.rx*2.2);
+    return [v*(1+k*0.4), (y>stone.y?1:-1)*k*36];
+  }
+  return [v,0];
+}
+
+// --- visitors ---------------------------------------------------------------
+let visitors=[], eventLog=[], nextVisitAt=6;
+let minnows={present:false,school:[],sinceScatter:0};
+let attendHold={active:false,x:0,y:0,heldMs:0,target:null};
+let sunPatch={active:false,until:0};
+let mossWarm=0;
+
+const VKIND={
+  dragonfly:{phase:[0,0.6]}, leaves:{phase:[0,0.9]}, strider:{phase:[0,0.7]},
+  dipper:{phase:[0.1,0.65]}, frog:{phase:[0.45,0.95]}, sun:{phase:[0,0.35]},
+  firefly:{phase:[0.8,1]}, moths:{phase:[0.78,1]}, fishrise:{phase:[0.6,1]},
+};
+
+function spawnVisitor(t){
+  const k=dayK(t);
+  const options=Object.keys(VKIND).filter(kind=>{
+    const [a,b]=VKIND[kind].phase; return k>=a&&k<=b;
+  }).filter(kind=>!visitors.some(v=>v.kind===kind)&&!(kind==='sun'&&sunPatch.active));
+  if(options.length===0) return;
+  const kind=options[Math.floor(Math.random()*options.length)];
+  eventLog.push({t:+t.toFixed(1),kind,ev:'arrive'});
+  if(kind==='sun'){ sunPatch.active=true; sunPatch.until=t+24; return; }
+  const v={kind,state:'arriving',t0:t,x:-30,y:stone.y,stay:0,attended:0,detail:0,ph:Math.random()*7};
+  switch(kind){
+    case 'dragonfly': v.x=W+30; v.y=stream.top-40; v.stay=12+Math.random()*10; break;
+    case 'leaves': v.x=-30; v.y=stone.y-14; v.leaves=Array.from({length:4},(_,i)=>({x:-30-i*36,y:stone.y-20+Math.random()*24,spin:Math.random()*7,snag:0,free:false})); v.stay=999; break;
+    case 'strider': v.x=eddyX()+60; v.y=stone.y+30; v.stay=25+Math.random()*15; break;
+    case 'dipper': v.x=-30; v.y=stream.top-30; v.stay=16+Math.random()*8; v.dove=false; v.gotFish=false; break;
+    case 'frog': v.x=stone.x-stone.rx*2.6; v.y=stone.y+stone.ry*2.4; v.stay=14+Math.random()*10; break;
+    case 'firefly': v.x=W*0.7; v.y=stream.top-60; v.stay=999; break;
+    case 'moths': v.x=stone.x; v.y=stone.y-stone.ry-24; v.stay=30+Math.random()*20;
+      v.wings=Array.from({length:3},(_,i)=>({ph:Math.random()*7,r:18+Math.random()*16})); break;
+    case 'fishrise': v.x=W*(0.15+Math.random()*0.6); v.y=stone.y+(Math.random()-0.5)*40; v.stay=7; v.rose=false; break;
+  }
+  visitors.push(v);
+}
+
+function visitorUpdate(t,dt){
+  dayKMemo=dayK(t);   // authoritative here, not in render — headless-safe
+  // scheduler
+  if(t>nextVisitAt){
+    nextVisitAt=t+P.visitEvery*(0.6+Math.random()*0.8);
+    spawnVisitor(t);
+  }
+  if(eventLog.length>400) eventLog.splice(0,eventLog.length-400);
+  if(sunPatch.active){
+    mossWarm=Math.min(1,mossWarm+dt*0.08);
+    if(t>sunPatch.until){ sunPatch.active=false; }
+  } else mossWarm=Math.max(0.25*dayKMemo,mossWarm-dt*0.02);
+
+  for(let i=visitors.length-1;i>=0;i--){
+    const v=visitors[i];
+    const age=t-v.t0;
+    const isAttended=attendHold.active&&attendHold.target===v;
+    v.detail+=((isAttended?1:0)-v.detail)*dt*1.2;
+    if(isAttended) v.attended+=dt;
+
+    if(v.kind==='dragonfly'){
+      const perch=[stone.x-stone.rx*0.3,stone.y-stone.ry-4];
+      if(v.state==='arriving'){
+        v.x+=(perch[0]-v.x)*dt*1.4; v.y+=(perch[1]-v.y)*dt*1.4+Math.sin(t*9)*1.5;
+        if(Math.hypot(v.x-perch[0],v.y-perch[1])<6){ v.state='perched'; eventLog.push({t:+t.toFixed(1),kind:v.kind,ev:'land'}); }
+      } else if(v.state==='perched'){
+        v.x=perch[0];v.y=perch[1];
+        // attention makes it comfortable — but never captive
+        const stayFor=v.stay+Math.min(v.attended,20)*1.6;
+        if(disturbance>0.9){ v.state='startled'; v.st=t; }
+        else if(age>stayFor){ v.state='leaving'; }
+      } else if(v.state==='startled'){
+        // a loop over the water, patient enough to outlast any tantrum's decay
+        const a=(t-v.st)*2.4;
+        v.x=stone.x+Math.cos(a)*90; v.y=stone.y-70+Math.sin(a*1.4)*36;
+        if(t-v.st>4&&disturbance<0.4){ v.state='arriving'; }
+        else if(t-v.st>4+P.distDecay*1.6){ v.state='leaving'; }
+      } else if(v.state==='leaving'){
+        v.x+=90*dt; v.y-=44*dt;
+        if(v.x>W+40){ visitors.splice(i,1); eventLog.push({t:+t.toFixed(1),kind:v.kind,ev:'leave'}); }
+      }
+    }
+    else if(v.kind==='leaves'){
+      let allGone=true;
+      for(const L of v.leaves){
+        if(L.x>W+40) continue;
+        allGone=false;
+        const [fx,fy]=flowAt(L.x,L.y);
+        if(!L.free&&!L.snagT&&Math.hypot(L.x-stone.x,L.y-(stone.y-6))<stone.rx*1.05&&L.x<stone.x){
+          L.snagT=t; eventLog.push({t:+t.toFixed(1),kind:'leaf',ev:'snag'});
+        }
+        if(L.snagT&&!L.free){
+          // it rides the eddy in slow circles, then the stream takes it back
+          const a=(t-L.snagT)*0.9;
+          L.x=eddyX()+Math.cos(a)*stone.rx*0.8;
+          L.y=stone.y+Math.sin(a)*stone.ry*0.9;
+          L.spin+=dt*2;
+          if(t-L.snagT>7+hash1(L.spin)*6){ L.free=true; }
+        } else {
+          L.x+=fx*dt; L.y+=fy*dt+Math.sin(t+L.spin)*4*dt; L.spin+=dt*0.8;
+        }
+      }
+      if(allGone){ visitors.splice(i,1); }
+    }
+    else if(v.kind==='strider'){
+      // works the eddy in darting arcs; skitters when disturbed
+      const ex=eddyX(), ey=stone.y+10;
+      if(!v.goal||Math.hypot(v.x-v.goal[0],v.y-v.goal[1])<4||Math.random()<dt*1.2){
+        const r=stone.rx*(0.4+Math.random()*0.9)*(disturbance>0.6?2.2:1);
+        const a=Math.random()*Math.PI*2;
+        v.goal=[ex+Math.cos(a)*r, ey+Math.sin(a)*r*0.6];
+      }
+      const sp=disturbance>0.6?170:60;
+      v.x+=(v.goal[0]-v.x)*dt*sp/30; v.y+=(v.goal[1]-v.y)*dt*sp/30;
+      if(Math.random()<dt*3) addRipple(v.x,v.y,false);
+      if(age>v.stay+Math.min(v.attended,15)*0.5){ visitors.splice(i,1); eventLog.push({t:+t.toFixed(1),kind:v.kind,ev:'leave'}); }
+    }
+    else if(v.kind==='dipper'){
+      const perch=[stone.x+stone.rx*0.45,stone.y-stone.ry-6];
+      if(v.state==='arriving'){
+        v.x+=(perch[0]-v.x)*dt*1.6; v.y+=(perch[1]-v.y)*dt*1.6;
+        if(Math.hypot(v.x-perch[0],v.y-perch[1])<7){ v.state='perched'; v.bobPh=0; eventLog.push({t:+t.toFixed(1),kind:v.kind,ev:'land'}); }
+      } else if(v.state==='perched'){
+        v.x=perch[0];v.y=perch[1];v.bobPh=(v.bobPh||0)+dt*5;
+        const fishBeat=v.gotFish&&t-v.fishT<2.2;   // the payoff always plays out
+        if(disturbance>1.1&&!fishBeat){ v.state='leaving'; }
+        else if(!v.dove&&age>Math.max(v.stay*2,30)){ v.state='leaving'; }  // may leave undived
+        else if(!v.dove&&age>5&&Math.random()<dt*0.25){
+          v.state='diving'; v.st=t; v.dove=true;
+          eventLog.push({t:+t.toFixed(1),kind:v.kind,ev:'dive'});
+          addRipple(perch[0]+14,stone.y+4,true); sfxPlop();
+        }
+        else if(v.dove&&age>v.stay+Math.min(v.attended,15)*0.8&&!fishBeat){ v.state='leaving'; }
+      } else if(v.state==='diving'){
+        const p=(t-v.st)/2.4;
+        if(p<0.5){ v.y=perch[1]+p*2*(stone.y+8-perch[1]); v.x=perch[0]+14*p*2; }
+        else { v.y=stone.y+8-(p-0.5)*2*(stone.y+8-perch[1]); v.x=perch[0]+14*(2-p*2); }
+        if(p>=1){ v.state='perched'; v.gotFish=true; v.fishT=t; addRipple(v.x,stone.y+4,false); }
+      } else if(v.state==='leaving'){
+        v.x+=110*dt; v.y-=60*dt;
+        if(v.x>W+40){ visitors.splice(i,1); eventLog.push({t:+t.toFixed(1),kind:v.kind,ev:'leave'}); }
+      }
+    }
+    else if(v.kind==='frog'){
+      // eyes surface, watch, sink — watched-back, they linger
+      const stayFor=v.stay+Math.min(v.attended,12)*0.5;
+      v.up=age<2? age/2 : (age>stayFor-2? Math.max(0,(stayFor-age)/2):1);
+      if(disturbance>0.9) v.stay=Math.min(v.stay,age+1.5);
+      if(age>stayFor){ visitors.splice(i,1); eventLog.push({t:+t.toFixed(1),kind:v.kind,ev:'sink'}); }
+    }
+    else if(v.kind==='firefly'){
+      const perch=[stone.x+stone.rx*0.1,stone.y-stone.ry-10];
+      if(v.state==='arriving'){
+        v.x+=(perch[0]-v.x+Math.sin(t*1.7)*30)*dt*0.5;
+        v.y+=(perch[1]-v.y+Math.cos(t*1.3)*20)*dt*0.5;
+        if(Math.hypot(v.x-perch[0],v.y-perch[1])<8){ v.state='landed'; eventLog.push({t:+t.toFixed(1),kind:v.kind,ev:'land'}); }
+      } else { v.x=perch[0];v.y=perch[1]; }
+      // the firefly stays. It is the last visitor.
+    }
+    else if(v.kind==='moths'){
+      // moths work the firefly's glow (or the moon on the water); attention
+      // draws their orbits in close
+      if(age>v.stay&&!isAttended){ visitors.splice(i,1); eventLog.push({t:+t.toFixed(1),kind:v.kind,ev:'leave'}); }
+    }
+    else if(v.kind==='fishrise'){
+      if(!v.rose&&age>1){ v.rose=true; addRipple(v.x,v.y,true); if(Math.random()<0.6) sfxPlop(); }
+      if(age>v.stay){ visitors.splice(i,1); }
+    }
+  }
+
+  // minnows: shelter in your eddy only after the water has been calm a while;
+  // at night they stay on as moonlit glints — the stillness sign never sleeps
+  if(!minnows.present&&stillFor>P.minnowStill){
+    minnows.present=true;
+    minnows.school=Array.from({length:6},(_,i)=>({a:Math.random()*7,r:8+Math.random()*22,ph:Math.random()*7}));
+    eventLog.push({t:+t.toFixed(1),kind:'minnows',ev:'shelter'});
+  }
+  if(minnows.present&&disturbance>0.5){
+    minnows.present=false; minnows.sinceScatter=t; stillFor=0;
+    eventLog.push({t:+t.toFixed(1),kind:'minnows',ev:'scatter'});
+  }
+}
+let dayKMemo=0;
+
+// --- attend gesture ---------------------------------------------------------
+function findAttendTarget(x,y){
+  // a hold deep in the eddy means the minnows, even with a strider about
+  if(minnows.present&&Math.hypot(x-eddyX(),y-stone.y)<P.attendR*0.5) return 'minnows';
+  let best=null,bd=P.attendR;
+  for(const v of visitors){
+    let vx=v.x,vy=v.y;
+    if(v.kind==='leaves'){
+      const s=v.leaves.find(L=>L.snagT&&!L.free);
+      if(!s) continue; vx=s.x;vy=s.y;
+    }
+    const d=Math.hypot(x-vx,y-vy);
+    if(d<bd){bd=d;best=v;}
+  }
+  if(!best&&minnows.present&&Math.hypot(x-eddyX(),y-stone.y)<P.attendR) best='minnows';
+  return best;
+}
+
+// --- input ------------------------------------------------------------------
+let pDown=false,pMoved=0,pStart=null,pT0=0;
+cv.addEventListener('pointerdown',e=>{
+  pDown=true;pMoved=0;pStart=[e.clientX,e.clientY];pT0=performance.now();
+  startAudio();
+  cv.setPointerCapture(e.pointerId);
+});
+cv.addEventListener('pointermove',e=>{
+  if(!pDown)return;
+  pMoved+=Math.hypot(e.movementX||0,e.movementY||0);
+  if(attendHold.active){attendHold.x=e.clientX;attendHold.y=e.clientY;
+    attendHold.target=findAttendTarget(e.clientX,e.clientY)||attendHold.target;}
+  else if(pMoved>140){
+    // a fast drag stirs the water (if it touches the water)
+    if(e.clientY>stream.top&&e.clientY<stream.bot){
+      disturbance=Math.min(2,disturbance+(disturbance>1.2?0.18:0.35));
+      addRipple(e.clientX,e.clientY,true);
+    }
+    pMoved=0;
+  }
+});
+window.addEventListener('pointerup',e=>{
+  if(!pDown)return;
+  pDown=false;
+  const held=performance.now()-pT0;
+  if(attendHold.active){ attendHold.active=false; attendHold.target=null; return; }
+  if(held<260&&pMoved<24){
+    // a tap on the water answers with a ripple; taps on the bank are just
+    // taps. Past a tantrum threshold each tap adds less — saturation, not
+    // escalation
+    if(pStart[1]>stream.top&&pStart[1]<stream.bot){
+      disturbance=Math.min(2,disturbance+(disturbance>1.2?0.28:0.55));
+      addRipple(pStart[0],pStart[1],true); sfxPlop();
+    }
+  }
+});
+window.addEventListener('pointercancel',()=>{pDown=false;attendHold.active=false;attendHold.target=null;});
+// hold detection: after 300ms without much movement, it becomes attention
+setInterval(()=>{
+  if(pDown&&!attendHold.active&&performance.now()-pT0>300&&pMoved<24){
+    attendHold.active=true;attendHold.heldMs=0;
+    attendHold.x=pStart[0];attendHold.y=pStart[1];
+    attendHold.target=findAttendTarget(pStart[0],pStart[1]);
+  }
+},80);
+
+// --- audio ------------------------------------------------------------------
+let AC=null,master=null,streamG=null,streamLP=null,cricketsG=null,started=false;
+function startAudio(){
+  if(started)return;started=true;
+  try{
+    AC=new (window.AudioContext||window.webkitAudioContext)();
+    master=AC.createGain();master.gain.value=0.55;master.connect(AC.destination);
+    // stream: two bandpassed noise layers with slow burble modulation
+    const buf=AC.createBuffer(1,AC.sampleRate*4,AC.sampleRate);
+    const d=buf.getChannelData(0);
+    for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+    streamLP=AC.createBiquadFilter();streamLP.type='lowpass';streamLP.frequency.value=5000;
+    streamG=AC.createGain();streamG.gain.value=0.10;
+    streamG.connect(streamLP);streamLP.connect(master);
+    for(const [f,q,g0] of [[700,0.8,0.6],[1900,1.2,0.35]]){
+      const n=AC.createBufferSource();n.buffer=buf;n.loop=true;n.playbackRate.value=0.9+Math.random()*0.2;
+      const bp=AC.createBiquadFilter();bp.type='bandpass';bp.frequency.value=f;bp.Q.value=q;
+      const g=AC.createGain();g.gain.value=g0;
+      const lfo=AC.createOscillator();lfo.frequency.value=0.13+Math.random()*0.2;
+      const lg=AC.createGain();lg.gain.value=g0*0.35;
+      lfo.connect(lg);lg.connect(g.gain);
+      n.connect(bp);bp.connect(g);g.connect(streamG);
+      n.start();lfo.start();
+    }
+    // random burble blips
+    setInterval(()=>{ if(AC&&Math.random()<0.6) sfxBlip(); },900);
+    // crickets, for dusk
+    const co=AC.createOscillator();co.type='sine';co.frequency.value=4200;
+    const sh=AC.createGain();sh.gain.value=0;
+    const cl=AC.createOscillator();cl.type='square';cl.frequency.value=12;
+    const clG=AC.createGain();clG.gain.value=0.5;
+    cl.connect(clG);clG.connect(sh.gain);
+    cricketsG=AC.createGain();cricketsG.gain.value=0;
+    co.connect(sh);sh.connect(cricketsG);cricketsG.connect(master);
+    co.start();cl.start();
+  }catch(e){}
+}
+function audioUpdate(t){
+  if(!AC)return;
+  const k=dayK(t);
+  cricketsG.gain.setTargetAtTime(k>0.5?(k-0.5)*0.022:0,AC.currentTime,1.5);
+  // attending narrows the world a little: stream softens under your focus
+  streamG.gain.setTargetAtTime(attendHold.active?0.065:0.10,AC.currentTime,0.5);
+  streamLP.frequency.setTargetAtTime(attendHold.active?2600:5000,AC.currentTime,0.5);
+}
+function sfxBlip(){
+  const t0=AC.currentTime;
+  const o=AC.createOscillator(),g=AC.createGain();
+  o.type='sine';
+  const f=300+Math.random()*500;
+  o.frequency.setValueAtTime(f,t0);
+  o.frequency.exponentialRampToValueAtTime(f*1.6,t0+0.06);
+  g.gain.setValueAtTime(0,t0);g.gain.linearRampToValueAtTime(0.02+Math.random()*0.02,t0+0.02);
+  g.gain.exponentialRampToValueAtTime(0.001,t0+0.09);
+  o.connect(g);g.connect(master);o.start(t0);o.stop(t0+0.1);
+}
+function sfxPlop(){
+  if(!AC)return;
+  const t0=AC.currentTime;
+  const o=AC.createOscillator(),g=AC.createGain();
+  o.type='sine';
+  o.frequency.setValueAtTime(420,t0);
+  o.frequency.exponentialRampToValueAtTime(140,t0+0.12);
+  g.gain.setValueAtTime(0,t0);g.gain.linearRampToValueAtTime(0.12,t0+0.015);
+  g.gain.exponentialRampToValueAtTime(0.001,t0+0.16);
+  o.connect(g);g.connect(master);o.start(t0);o.stop(t0+0.18);
+}
+
+// --- render -----------------------------------------------------------------
+function render(t,dt){
+  const k=dayK(t); dayKMemo=k;
+  // banks
+  const bank=lerpC([104,112,74],[22,28,40],k);
+  ctx.fillStyle=css(bank);ctx.fillRect(0,0,W,H);
+  const bankFar=lerpC([88,98,66],[18,24,36],k);
+  ctx.fillStyle=css(bankFar);ctx.fillRect(0,0,W,stream.top);
+  // water
+  const wcol1=lerpC([70,104,118],[16,22,38],k);
+  const wcol2=lerpC([54,84,100],[10,16,30],k);
+  const wg=ctx.createLinearGradient(0,stream.top,0,stream.bot);
+  wg.addColorStop(0,css(wcol1));wg.addColorStop(1,css(wcol2));
+  ctx.fillStyle=wg;ctx.fillRect(0,stream.top,W,stream.bot-stream.top);
+  // sun glitter path in the afternoon
+  if(k<0.55){
+    const a=(0.55-k)/0.55*0.14;
+    for(let i=0;i<26;i++){
+      const gx=(hash1(i*3+1)*W+t*30*(0.5+hash1(i)))%W;
+      const gy=stream.top+hash1(i*5+2)*(stream.bot-stream.top);
+      const tw=Math.max(0,Math.sin(t*(1+hash1(i))+i));
+      ctx.fillStyle=`rgba(255,240,200,${a*tw})`;
+      ctx.fillRect(gx,gy,3,1.4);
+    }
+  }
+  // moon path at night
+  if(k>0.6){
+    const a=(k-0.6)/0.4*0.10;
+    for(let i=0;i<18;i++){
+      const gx=W*0.55+((hash1(i*7)*140+t*18*(0.5+hash1(i)))%140);
+      const gy=stream.top+hash1(i*9+4)*(stream.bot-stream.top);
+      const tw=Math.max(0,Math.sin(t*(0.8+hash1(i))+i*2));
+      ctx.fillStyle=`rgba(210,224,255,${a*tw})`;
+      ctx.fillRect(gx,gy,2.6,1.2);
+    }
+  }
+  // flow flecks
+  ensureFlecks();
+  for(const f of flecks){
+    const [fx,fy]=flowAt(f.x,f.y);
+    f.x+=fx*dt; f.y+=fy*dt;
+    if(f.x>W+20){f.x=-10;f.y=stream.top+Math.random()*(stream.bot-stream.top);}
+    ctx.strokeStyle=`rgba(220,236,240,${f.a*(1-k*0.5)})`;
+    ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(f.x,f.y);ctx.lineTo(f.x-f.l,f.y);ctx.stroke();
+  }
+  // eddy swirl hint
+  ctx.strokeStyle=`rgba(200,220,228,${0.07*(1-k*0.4)})`;
+  ctx.lineWidth=1;
+  for(let i=0;i<3;i++){
+    const a0=t*0.8+i*2.1;
+    ctx.beginPath();
+    ctx.ellipse(eddyX(),stone.y,stone.rx*(0.5+i*0.25),stone.ry*(0.5+i*0.25),0,a0,a0+2.2);
+    ctx.stroke();
+  }
+  // minnows in the eddy — moonlit glints at night; attention draws the
+  // school in close
+  if(minnows.present){
+    const minAtt=attendHold.active&&attendHold.target==='minnows'?0.55:1;
+    for(const m of minnows.school){
+      const mx=eddyX()+Math.cos(t*0.7+m.a)*m.r*minAtt;
+      const my=stone.y+Math.sin(t*0.9+m.a)*m.r*0.5*minAtt;
+      ctx.save();ctx.translate(mx,my);
+      ctx.rotate(Math.atan2(Math.cos(t*0.9+m.a),(-Math.sin(t*0.7+m.a))||0.01));
+      const glint=k>0.6? Math.max(0,Math.sin(t*2.3+m.ph))*(k-0.6)/0.4:0;
+      ctx.fillStyle=`rgba(${190+glint*50|0},${205+glint*35|0},${190+glint*60|0},${0.4-k*0.15+glint*0.45+(minAtt<1?0.15:0)})`;
+      ctx.beginPath();ctx.ellipse(0,0,4.5,1.4,0,0,7);ctx.fill();
+      ctx.restore();
+    }
+  }
+  // frog eyes
+  for(const v of visitors){
+    if(v.kind!=='frog')continue;
+    const up=v.up||0;
+    ctx.fillStyle=`rgba(60,80,52,${0.9*up})`;
+    for(const off of [-7,7]){
+      ctx.beginPath();ctx.ellipse(v.x+off,v.y-up*5,5,4*up+0.5,0,0,7);ctx.fill();
+    }
+    ctx.fillStyle=`rgba(16,18,10,${0.9*up})`;
+    for(const off of [-7,7]){
+      ctx.beginPath();ctx.arc(v.x+off,v.y-up*5-1,1.6*up,0,7);ctx.fill();
+    }
+    if(v.detail>0.05){
+      // attended: the gold rim of the eye
+      ctx.strokeStyle=`rgba(220,190,90,${v.detail*0.8*up})`;
+      ctx.lineWidth=1;
+      for(const off of [-7,7]){ctx.beginPath();ctx.arc(v.x+off,v.y-up*5-1,2.6,0,7);ctx.stroke();}
+    }
+  }
+  // ripples
+  for(let i=ripples.length-1;i>=0;i--){
+    const r=ripples[i];r.r+=r.v*dt;r.a-=dt*0.35;
+    if(r.a<=0){ripples.splice(i,1);continue;}
+    ctx.strokeStyle=`rgba(225,240,244,${r.a})`;
+    ctx.lineWidth=1.2;
+    ctx.beginPath();ctx.ellipse(r.x,r.y,r.r,r.r*0.45,0,0,7);ctx.stroke();
+  }
+  // leaves
+  for(const v of visitors){
+    if(v.kind!=='leaves')continue;
+    for(const L of v.leaves){
+      if(L.free&&L.x>W+40)continue;
+      ctx.save();ctx.translate(L.x,L.y);ctx.rotate(L.spin);
+      const lc=lerpC([170,120,50],[80,60,40],k);
+      ctx.fillStyle=`rgba(${lc[0]|0},${lc[1]|0},${lc[2]|0},0.9)`;
+      ctx.beginPath();ctx.ellipse(0,0,7,3.4,0,0,7);ctx.fill();
+      ctx.strokeStyle='rgba(60,40,20,0.5)';ctx.lineWidth=0.7;
+      ctx.beginPath();ctx.moveTo(-7,0);ctx.lineTo(7,0);ctx.stroke();
+      // attended while snagged: the vein-lattice comes through
+      if(v.detail>0.1&&L.snagT&&!L.free){
+        ctx.strokeStyle=`rgba(230,200,120,${v.detail*0.7})`;
+        ctx.lineWidth=0.5;
+        for(const va of [-0.5,-0.25,0.25,0.5]){
+          ctx.beginPath();ctx.moveTo(-4,0);ctx.lineTo(4,va*6);ctx.stroke();
+        }
+      }
+      ctx.restore();
+    }
+  }
+  // the stone (you)
+  const sc=lerpC([120,118,112],[38,42,52],k);
+  const sg=ctx.createRadialGradient(stone.x-stone.rx*0.3,stone.y-stone.ry*0.5,4,stone.x,stone.y,stone.rx*1.4);
+  sg.addColorStop(0,css(lerpC([150,146,138],[52,56,66],k)));
+  sg.addColorStop(1,css(sc));
+  ctx.fillStyle=sg;
+  ctx.beginPath();ctx.ellipse(stone.x,stone.y-stone.ry*0.4,stone.rx,stone.ry*1.15,0,0,7);ctx.fill();
+  // waterline against the stone
+  ctx.strokeStyle=`rgba(230,242,246,${0.25-k*0.12})`;
+  ctx.lineWidth=2;
+  ctx.beginPath();ctx.ellipse(stone.x,stone.y+stone.ry*0.28,stone.rx*1.02,stone.ry*0.5,0,Math.PI*0.05,Math.PI*0.95);ctx.stroke();
+  // moss patch, warming in the sun
+  const mossC=lerpC([86,110,60],[130,150,70],mossWarm);
+  ctx.fillStyle=`rgba(${mossC[0]|0},${mossC[1]|0},${mossC[2]|0},${0.7})`;
+  ctx.beginPath();ctx.ellipse(stone.x-stone.rx*0.35,stone.y-stone.ry*0.9,stone.rx*0.4,stone.ry*0.34,0.4,0,7);ctx.fill();
+  if(sunPatch.active){
+    const pg=ctx.createRadialGradient(stone.x-stone.rx*0.3,stone.y-stone.ry*0.9,2,stone.x-stone.rx*0.3,stone.y-stone.ry*0.9,stone.rx*0.9);
+    pg.addColorStop(0,`rgba(255,236,170,${0.20*(1-k)})`);
+    pg.addColorStop(1,'rgba(255,236,170,0)');
+    ctx.fillStyle=pg;ctx.beginPath();ctx.arc(stone.x-stone.rx*0.3,stone.y-stone.ry*0.9,stone.rx*0.9,0,7);ctx.fill();
+  }
+  // dragonfly & dipper & firefly (drawn over stone)
+  for(const v of visitors){
+    if(v.kind==='dragonfly') drawDragonfly(v,t,k);
+    else if(v.kind==='dipper') drawDipper(v,t,k);
+    else if(v.kind==='strider') drawStrider(v,t,k);
+    else if(v.kind==='firefly') drawFirefly(v,t,k);
+    else if(v.kind==='moths'){
+      // moths work the glow above the stone; attention draws their orbits in
+      for(const m of v.wings){
+        const r=m.r*(1-v.detail*0.45);
+        const mx=v.x+Math.cos(t*1.5+m.ph)*r;
+        const my=v.y+Math.sin(t*1.9+m.ph)*r*0.6;
+        const flut=Math.sin(t*26+m.ph)*0.5;
+        ctx.fillStyle=`rgba(210,205,190,${0.35+v.detail*0.3})`;
+        ctx.save();ctx.translate(mx,my);ctx.rotate(flut);
+        ctx.beginPath();ctx.ellipse(-1.2,0,2,1,0,0,7);ctx.fill();
+        ctx.beginPath();ctx.ellipse(1.2,0,2,1,0,0,7);ctx.fill();
+        ctx.restore();
+      }
+    }
+    else if(v.kind==='fishrise'&&v.rose&&t-v.t0<3.4){
+      // a dark back breaks the moon-path, and is gone
+      const p=(t-v.t0-1)/2.4;
+      ctx.fillStyle=`rgba(30,38,46,${0.7*Math.sin(Math.PI*clamp(p,0,1))})`;
+      ctx.beginPath();ctx.ellipse(v.x,v.y-3,9,3.2,0,Math.PI,0);ctx.fill();
+    }
+  }
+  // attention halo
+  if(attendHold.active){
+    const a=0.10;
+    const gg=ctx.createRadialGradient(attendHold.x,attendHold.y,0,attendHold.x,attendHold.y,P.attendR*0.8);
+    gg.addColorStop(0,`rgba(255,244,214,${a})`);
+    gg.addColorStop(1,'rgba(255,244,214,0)');
+    ctx.fillStyle=gg;
+    ctx.beginPath();ctx.arc(attendHold.x,attendHold.y,P.attendR*0.8,0,7);ctx.fill();
+  }
+  // reeds on the near bank
+  for(let i=0;i<24;i++){
+    const rx=(i/24)*W+hash1(i)*30;
+    const ry=stream.bot+6+hash1(i*3)*20;
+    const sway=Math.sin(t*0.9+i)*3;
+    ctx.strokeStyle=css(lerpC([76,88,48],[16,22,30],k));
+    ctx.lineWidth=1.6;
+    ctx.beginPath();ctx.moveTo(rx,ry);
+    ctx.quadraticCurveTo(rx+sway*0.5,ry-22,rx+sway,ry-40-hash1(i*7)*18);
+    ctx.stroke();
+  }
+  // stars
+  if(k>0.62){
+    const a=(k-0.62)/0.38;
+    for(const st of stars){
+      const tw=0.6+0.4*Math.sin(t*st.s+st.p);
+      ctx.fillStyle=`rgba(228,236,255,${st.a*tw*a})`;
+      ctx.fillRect(st.x,st.y,st.r,st.r);
+    }
+  }
+  vignette();
+}
+function drawDragonfly(v,t,k){
+  ctx.save();ctx.translate(v.x,v.y);
+  const flying=v.state!=='perched';
+  const wingBeat=flying? Math.sin(t*40)*0.9: Math.sin(t*2)*0.06;
+  // wings — attended detail shows the veins
+  for(const s of [-1,1]){
+    ctx.save();ctx.rotate(s*(0.5+wingBeat*0.5));
+    ctx.fillStyle=`rgba(200,225,240,${0.35+v.detail*0.25})`;
+    ctx.beginPath();ctx.ellipse(s*9,-2,10,3,s*0.2,0,7);ctx.fill();
+    ctx.beginPath();ctx.ellipse(s*8,1,8.5,2.6,s*0.05,0,7);ctx.fill();
+    if(v.detail>0.15){
+      ctx.strokeStyle=`rgba(120,160,190,${v.detail*0.7})`;
+      ctx.lineWidth=0.5;
+      for(let i=1;i<4;i++){ctx.beginPath();ctx.moveTo(s*2,-2);ctx.lineTo(s*(2+i*4),-3+i*0.6);ctx.stroke();}
+    }
+    ctx.restore();
+  }
+  ctx.fillStyle=`rgba(60,120,150,0.95)`;
+  ctx.beginPath();ctx.ellipse(0,2,1.6,7,0,0,7);ctx.fill();
+  ctx.fillStyle=`rgba(70,140,170,0.95)`;
+  ctx.beginPath();ctx.arc(0,-5,2.4,0,7);ctx.fill();
+  ctx.restore();
+}
+function drawDipper(v,t,k){
+  ctx.save();ctx.translate(v.x,v.y);
+  const bob=v.state==='perched'? Math.abs(Math.sin((v.bobPh||0)))*3:0;
+  ctx.translate(0,bob);
+  ctx.fillStyle='rgba(72,58,52,0.98)';
+  ctx.beginPath();ctx.ellipse(0,0,8,5.6,0,0,7);ctx.fill();          // body
+  ctx.beginPath();ctx.arc(6,-4,3.6,0,7);ctx.fill();                  // head
+  ctx.fillStyle='rgba(230,228,220,0.95)';
+  ctx.beginPath();ctx.ellipse(2,1,3.6,2.6,0.3,0,7);ctx.fill();       // white bib
+  ctx.fillStyle='rgba(40,32,28,1)';
+  ctx.beginPath();ctx.moveTo(9,-4.4);ctx.lineTo(12.4,-3.8);ctx.lineTo(9,-2.9);ctx.closePath();ctx.fill();
+  if(v.gotFish&&T()-v.fishT<2.2){
+    ctx.fillStyle='rgba(200,210,200,0.9)';
+    ctx.beginPath();ctx.ellipse(11.6,-3.4,2.6,0.9,0.3,0,7);ctx.fill();
+  }
+  if(v.detail>0.15){
+    // attended: you can see its heartbeat in the throat
+    const pulse=0.5+0.5*Math.sin(t*9);
+    ctx.fillStyle=`rgba(210,160,150,${v.detail*0.5*pulse})`;
+    ctx.beginPath();ctx.arc(4.6,-1.4,1.3,0,7);ctx.fill();
+  }
+  ctx.restore();
+}
+function drawStrider(v,t,k){
+  ctx.save();ctx.translate(v.x,v.y);
+  ctx.strokeStyle=`rgba(70,66,54,0.8)`;
+  ctx.lineWidth=0.8;
+  for(const a of [-0.7,-0.2,0.4,0.9]){
+    ctx.beginPath();ctx.moveTo(0,0);
+    ctx.lineTo(Math.cos(a)*8,Math.sin(a)*4);
+    ctx.stroke();
+    ctx.beginPath();ctx.moveTo(0,0);
+    ctx.lineTo(-Math.cos(a)*8,Math.sin(a)*4);
+    ctx.stroke();
+    // dimples where feet press the water
+    if(v.detail>0.1){
+      ctx.strokeStyle=`rgba(220,236,240,${v.detail*0.4})`;
+      ctx.beginPath();ctx.ellipse(Math.cos(a)*8,Math.sin(a)*4+1,2,0.8,0,0,7);ctx.stroke();
+      ctx.strokeStyle=`rgba(70,66,54,0.8)`;
+    }
+  }
+  ctx.fillStyle='rgba(60,56,44,0.95)';
+  ctx.beginPath();ctx.ellipse(0,0,2.6,1.1,0,0,7);ctx.fill();
+  ctx.restore();
+}
+function drawFirefly(v,t,k){
+  // attended, it answers: the slow blink becomes a call-and-response double
+  const base=Math.max(0,Math.sin(t*1.1+1));
+  const answer=v.detail>0.1? Math.max(0,Math.sin(t*1.1+1-0.9))*v.detail:0;
+  const blink=0.35+0.65*Math.max(base,answer);
+  const gg=ctx.createRadialGradient(v.x,v.y,0,v.x,v.y,16);
+  gg.addColorStop(0,`rgba(215,255,170,${0.5*blink})`);
+  gg.addColorStop(1,'rgba(215,255,170,0)');
+  ctx.fillStyle=gg;ctx.beginPath();ctx.arc(v.x,v.y,16,0,7);ctx.fill();
+  ctx.fillStyle=`rgba(230,255,190,${0.85*blink+0.1})`;
+  ctx.beginPath();ctx.arc(v.x,v.y,1.8,0,7);ctx.fill();
+}
+function vignette(){
+  const g=ctx.createRadialGradient(W/2,H/2,Math.min(W,H)*0.44,W/2,H/2,Math.max(W,H)*0.8);
+  g.addColorStop(0,'rgba(4,6,8,0)');
+  g.addColorStop(1,'rgba(4,6,8,0.5)');
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+}
+let stars=[];
+function seedStars(){
+  stars=[];
+  for(let i=0;i<90;i++){
+    stars.push({x:Math.random()*W,y:Math.random()*stream.top,r:Math.random()<0.15?1.8:1,
+      a:0.3+Math.random()*0.6,s:0.5+Math.random()*2,p:Math.random()*7});
+  }
+}
+
+// --- loop -------------------------------------------------------------------
+const t0=performance.now();
+let skew=0;
+function T(){return (performance.now()-t0)/1000+skew;}
+let prev=performance.now(),lastFrameAt=performance.now();
+const DBG={frames:0};
+function frame(now){
+  DBG.frames++;
+  const dt=Math.min(0.05,(now-prev)/1000);prev=now;
+  const t=T();
+  disturbance=Math.max(0,disturbance-dt/P.distDecay*1.2);
+  if(disturbance<0.25) stillFor+=dt; else stillFor=0;
+  if(attendHold.active) attendHold.heldMs+=dt*1000;
+  visitorUpdate(t,dt);
+  render(t,dt);
+  audioUpdate(t);
+  lastFrameAt=now;
+  requestAnimationFrame(frame);
+}
+setInterval(()=>{if(performance.now()-lastFrameAt>500)frame(performance.now());},250);
+
+// --- helpers ----------------------------------------------------------------
+function clamp(v,a,b){return v<a?a:(v>b?b:v);}
+function lerp(a,b,k){return a+(b-a)*k;}
+function smooth01(k){k=clamp(k,0,1);return k*k*(3-2*k);}
+function lerpC(a,b,k){return [lerp(a[0],b[0],k),lerp(a[1],b[1],k),lerp(a[2],b[2],k)];}
+function css(c){return `rgb(${c[0]|0},${c[1]|0},${c[2]|0})`;}
+function hash1(n){const s=Math.sin(n*127.1)*43758.5453;return s-Math.floor(s);}
+
+// --- tuning -----------------------------------------------------------------
+const panel=document.getElementById('tune');
+window.addEventListener('keydown',e=>{if(e.key==='t')panel.style.display=panel.style.display==='block'?'none':'block';});
+function bind(id,key,fmt){
+  const s=document.getElementById('s_'+id),v=document.getElementById('v_'+id);
+  s.value=P[key];v.textContent=fmt(P[key]);
+  s.addEventListener('input',()=>{P[key]=parseFloat(s.value);v.textContent=fmt(P[key]);});
+}
+bind('visit','visitEvery',x=>x|0);
+bind('att','attendR',x=>x|0);
+bind('ddec','distDecay',x=>x|0);
+bind('minn','minnowStill',x=>x|0);
+
+// --- debug API --------------------------------------------------------------
+window.__stone={
+  P,DBG,
+  get t(){return T();},
+  skipTo(sec){skew=sec-(performance.now()-t0)/1000;nextVisitAt=Math.min(nextVisitAt,T()+8);return 'now t='+T();},
+  get disturbance(){return disturbance;},
+  get stillFor(){return stillFor;},
+  visitors(){return visitors.map(v=>({kind:v.kind,state:v.state,x:v.x|0,y:v.y|0,attended:+(v.attended||0).toFixed(1)}));},
+  minnows(){return {present:minnows.present};},
+  log(){return eventLog.slice(-25);},
+  tap(x,y){
+    disturbance=Math.min(2,disturbance+0.55);
+    if(y>stream.top&&y<stream.bot) addRipple(x,y,true);
+    return {disturbance:+disturbance.toFixed(2)};
+  },
+  attend(x,y,on){
+    attendHold.active=!!on;
+    if(on){attendHold.x=x;attendHold.y=y;attendHold.target=findAttendTarget(x,y);}
+    else attendHold.target=null;
+    return {target:attendHold.target==='minnows'?'minnows':(attendHold.target?attendHold.target.kind:null)};
+  },
+  step(n){
+    for(let i=0;i<n;i++){
+      skew+=0.016;
+      disturbance=Math.max(0,disturbance-0.016/P.distDecay*1.2);
+      if(disturbance<0.25)stillFor+=0.016;else stillFor=0;
+      visitorUpdate(T(),0.016);
+    }
+    return 't='+T().toFixed(1);
+  },
+  stonePos(){return {x:stone.x,y:stone.y,rx:stone.rx,eddyX:eddyX()};},
+};
+
+// --- go ---------------------------------------------------------------------
+if(!/dev/.test(location.search)) document.getElementById('hint').style.display='none';
+resize();seedStars();
+window.addEventListener('resize',resize);
+const intro=document.getElementById('intro');
+setTimeout(()=>{intro.style.opacity=1;},600);
+setTimeout(()=>{intro.style.opacity=0;},7000);
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
