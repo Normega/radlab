@@ -2559,3 +2559,100 @@ review entirely**, so it needs its own search rather than another read-across.
 
 **Live: 252 pages, 1,383 wikilinks, 146 ingest jobs, 67 empty sections, 0 published.** Major-tier gaps
 **16 across 11 pages**; corpus-wide `contested` 19, `etiology` 11, `treatment` 11, `epidemiology` 7.
+
+---
+
+## 25. `law-and-ethics` — the Canadian content, and the piece that could not be sourced
+
+**Both declared gaps on the foundation page are closed.** `canadian-law-and-other-jurisdictions` from
+the National Trajectory Project; `professional-ethics-codes-and-boundaries` from the Canadian Academy
+of Psychiatry and the Law guidelines. The page is now **21,025 characters with three sources and no
+declared gaps** — but one thing it still needs is recorded prominently rather than quietly closed.
+
+### 25.1 The search finding: this article does not exist where we look
+
+The brief was "an article outlining how the Canadian mental health and justice system differs from the
+US". **There isn't one in the biomedical literature.** Searching Europe PMC across NCRMD, forensic
+psychiatry, civil commitment, duty to warn, insanity defence, mental health law and health-system
+comparison returned **no Canada-versus-US comparative paper**. Comparative mental-health *law*
+scholarship lives in law journals — CanLII, *Health Law Journal*, *McGill Journal of Law and Health* —
+which are **not indexed in PubMed or Europe PMC**.
+
+**One near-miss is worth recording as a warning.** *"Cross-Cultural Notions of Risk and Liberty: A
+Comparison of Involuntary Psychiatric Hospitalization…"* (Hotzy et al., 2018) reads from its title like
+exactly the paper wanted. It compares **New York and Zurich**. Canada appears nowhere in it. **Fetch
+before assuming from a title** — §18.3 again, this time on the search side rather than the citation
+side.
+
+**The route taken instead was Canadian primary sources rather than a comparison**, which is arguably
+better for a Canadian course: the page now states Canadian law directly and lets the US material
+already on the page provide the contrast.
+
+### 25.2 What Canadian NCRMD data actually shows
+
+**Section 16 of the *Criminal Code*** replaced the insanity verdict in 1992; **Canada has no "guilty
+but mentally ill" verdict**, which several US states do. The structural difference is what follows the
+verdict: a **provincial or territorial Review Board**, operating under **federal** provisions but
+**provincially administered**, reviewing each disposition **at least yearly**, with three options —
+detention, conditional discharge, absolute discharge.
+
+**The National Trajectory Project followed 1,800 people** found NCRMD 2000-2005 across Quebec (1,094),
+Ontario (484) and British Columbia (222). Its findings run against the public image of the verdict:
+
+| | |
+|---|---|
+| Homicide and attempted murder | **under 7%** of all NCRMD verdicts |
+| Largest offence categories | threats **27.4%**, assaults **26.5%**, property **16.9%** |
+| Victims: family or partner | **33.7%** |
+| Victims: stranger | **22.7%** |
+| Homicide/attempted murder victims who were family or partners | **60.8%** |
+| Psychotic-spectrum diagnosis | **70.9%** |
+| Prior psychiatric hospitalisation | **72%** |
+
+**The NCRMD population is mostly people with psychosis, already known to services, who threatened or
+assaulted someone close to them** — a different clinical and policy problem from the one the insanity
+defence is usually argued about.
+
+**Provincial variation is large and the authors decline to explain it.** Quebec has the highest verdict
+rate and the *lowest* median offence severity; Ontario the highest homicide proportion (11.6%); BC the
+highest substance-use comorbidity. Whether that is legal interpretation, service availability or
+genuinely different populations is **unresolved** — and the files themselves differ in completeness
+(education missing from **44.1%** of Quebec records against **5.4%** in BC). **A national figure
+conceals three systems**, which is the transferable point.
+
+### 25.3 Forensic ethics is a different ethics
+
+The CAPL guidelines (Ramshaw et al., 2024, CC BY 4.0) supply the professional-standards gap, and the
+substantive idea is a **role separation the page had not made**: the forensic assessor is **not** the
+treating clinician, and must be **objective and independent of the retaining party** — the lawyer,
+court or insurer who commissioned the assessment.
+
+**Consent inverts.** Before beginning, the assessor must explain the reason for the assessment, their
+own role, and **the limits to confidentiality**. In a forensic assessment the person is often not the
+client and the usual promise does not hold; saying so in advance *is* the ethical requirement.
+
+### 25.4 What could not be sourced, and was not faked
+
+**Smith v Jones (1999 SCC) has no source in the corpus.** CanLII **403s automated fetches**, and per the
+standing instruction (memory: ask when a download fails rather than substitute) the case was **not
+written from memory**. The page therefore still declares the gap — now stated as **the single most
+important correction it needs**: *Smith v Jones* framed disclosure as a public-safety **exception to
+privilege** on a three-part test, a **permission** to disclose, against the affirmative **duty** to warn
+that *Tarasoff* imposed.
+
+**The CAPL guidelines cannot close it either, and the page says so.** They **explicitly decline to
+address duty to warn or duty to protect, and cite no Canadian case law at all**. Recording that is more
+useful than silently leaving the gap, because it tells the next session that the obvious Canadian
+professional-standards document is not the answer.
+
+**Also corrected: an overstatement of mine.** I had described this page as documenting a California
+decision as the duty-to-warn rule in a way that would "actively mislead" a Toronto student. That was
+too strong — the page **already carried a detailed Needs-research block** naming the Canadian
+counterparts including the *Smith v Jones* distinction. It was a **declared gap, not a silent error**.
+
+### 25.5 Still open on this page
+
+Provincial **Mental Health Acts** for civil committal, including Ontario's **Form 1**; **fitness to
+stand trial** under Canadian law; ***Smith v Jones***; and on the ethics side the **CPA Code of
+Ethics**, provincial **mandated reporting**, sexual boundary violations and the disciplinary
+mechanisms, record-keeping, and telehealth. None of these is in a source obtained so far.
