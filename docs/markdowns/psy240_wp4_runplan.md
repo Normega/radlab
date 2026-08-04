@@ -3141,7 +3141,8 @@ lesson for red-set work.
 **What was obtainable.** Tufford & Lee (2018) is genuinely Ontario: **439 Ontario social workers**,
 three vignettes. The finding is that **an unconditional legal duty is conditionally obeyed** — only
 **48.8–79.8%** said they would *definitely* report depending on scenario, so **a fifth to just over
-half** were uncertain or would not. And the top-rated influence was not the law: ** was the #1 factor for 77.7%**, while acknowledging a **regulator's** requirements was
+half** were uncertain or would not. And the top-rated influence was not the law: **"opinion of your
+colleague(s)" was the #1 factor for 77.7%**, while acknowledging a **regulator's** requirements was
 the strongest statistical predictor (9–100× odds). Both effects point at a **professional community**
 rather than the statute as what actually moves clinicians. Compounding it: the workers **most
 confident** about reporting were **least likely to consult**.
