@@ -2946,3 +2946,49 @@ A patient self-medicating melatonin at the wrong hour moves their clock the wron
 Pages **259 → 262**; wikilinks 1,426 → 1,443; jobs 169 → 175; **unwritten catalogue pages 3 → 0**; **red links 1 → 0**; major-tier gaps **9 across 8 pages → 8 across 7**; empty sections 68 → 72 and annotations 300 → 303, both rising because three new pages carry honestly declared gaps.
 
 **What this means for sequencing.** Content is no longer the binding constraint. Eight major-tier gaps remain across seven pages (`illness-anxiety-disorder` ×2, `functional-neurological-symptom-disorder`, `adjustment-disorders`, `exhibitionistic-disorder`, `integrative-model`, `research-methods`, `elimination-disorders`), and after those the work is **WP4b's review pass** and **publishing** — which carries the `student-support-resources` verification obligation. The 303 in-prose annotations across ~140 pages (§27.5) are the long tail and are not going to be closed by this kind of sweep.
+
+---
+
+## 29. The red set — gaps that must not be student work, and who closes them
+
+With the catalogue complete (§28), the remaining backlog is **303 in-prose annotations** and **8 derived gaps**. Planning WP6 (student submission) forced a triage, and the useful axis turned out **not** to be difficulty.
+
+**The sorting question is: what happens if this is answered wrongly and nobody catches it?**
+
+| Tier | Rule | Examples |
+|---|---|---|
+| **Green** — student-owned | a wrong answer is *visibly* wrong or harmless | prevalence figures, Canadian rates, "has the field moved", historical and policy context, measurement instruments |
+| **Amber** — student-drafted, staff-verified | a wrong answer is *plausible-looking* | effect sizes, characterising a contested literature, saying who disagrees with whom |
+| **Red** — never student work | a wrong answer reads as **clinical instruction** or creates **compliance exposure** | dosing and tapering, consent requirements, crisis resources, forensic standards, **all licence determinations** |
+
+Difficulty and risk come apart. Several red items are *easy* — a student could close the benzodiazepine tapering annotation competently from a guideline in an hour. The problem is the artefact: a confident tapering schedule in a wiki other students read **is** clinical guidance whatever disclaimer sits above it, and benzodiazepine withdrawal can kill people.
+
+### 29.1 The red set, enumerated
+
+Eleven items across ten pages, found by pattern-matching the annotation corpus for dosing, tapering, withdrawal management, consent, contraindications, antidotes, overdose, crisis resources, mandated reporting, civil commitment, sentencing, fitness to stand trial and codes of ethics.
+
+| Page | Ask | Route |
+|---|---|---|
+| `sedative-hypnotic-anxiolytic` | tapering, dependence and withdrawal management, flumazenil | **closed** (Pottie et al. 2018, Canadian) — flumazenil still open |
+| `opioid-use-disorder` | buprenorphine/naloxone, take-home naloxone, Canadian guideline | **closed** (Bruneau et al. 2018 CRISM, CMAJ) |
+| `opioid-use-disorder` | Canadian prevalence, PHAC opioid-toxicity deaths, fentanyl | open — PHAC surveillance |
+| `alcohol-use-disorder` | delirium tremens: timing, incidence, mortality treated vs not | open — **PMC6084325** identified |
+| `electroconvulsive-therapy` | guideline positions on indications, consent, maintenance | open — **PMC10096214** identified |
+| `substance-related-and-addictive-disorders` | harm reduction, supervised consumption, naloxone distribution | open — **PMC5437687** (Canadian) identified |
+| `ejaculation-and-orgasmic-disorders` | SSRI dose timing, switching, augmentation | open — **PMC3108697** identified |
+| `levodopa` | dosing evidence, motor fluctuations with prolonged use | open |
+| `paraphilic-disorders` / `sexual-sadism-and-masochism` | forensic use in sentencing and civil commitment | **needs a source Norm obtains** |
+| `law-and-ethics` | CPA Code of Ethics, mandated reporting, Mental Health Acts, Form 1 | **needs a source Norm obtains** |
+| `student-support-resources` | verification of every number and URL | **not a literature task** — staff verification, each term |
+
+### 29.2 Closed this pass, and the register they are written in
+
+Both closures state at the top that the section **reports what a guideline recommends and is course reference material, not clinical instruction**. Writing in reporting register — *the guideline says X* rather than *do X* — is the thing that makes this material safe to carry at all, and it should be the house convention for anything in the red set.
+
+**`sedative-hypnotic-anxiolytic` (Pottie et al. 2018, College of Family Physicians of Canada).** The finding worth keeping is an apparent contradiction that is not one: a **strong** recommendation to taper in adults 65+ resting on **low-quality** evidence, because the strength derives from the **harms of continued use** rather than from trials showing deprescribing works. Recommendation strength is not a restatement of evidence quality — a clean worked example for [[evidence-based-practice]]. Also: **no trials compare tapering schedules to each other**; switching to a long-acting agent has not been shown to help; **60–80%** stop after a deprescribing intervention against **10–20%** with usual care; withdrawal is milder than its reputation (no overall difference in symptom scores vs continuation; seizures do not appear to occur *with* tapering); melatonin does not improve cessation; and CBT's advantage does not survive to 3 or 12 months. Scope caveat recorded on the page: the guideline covers people prescribed these drugs **for insomnia**, not the misuse population the Epidemiology section describes.
+
+**`opioid-use-disorder` (Bruneau et al. 2018, CRISM/CMAJ).** **Buprenorphine–naloxone is first-line** (strong, high) — a break from ASAM and WHO, which treated it and methadone as equivalent — on safety grounds including UK data putting it at **six times safer than methadone for overdose**. The counter-intuitive recommendation to teach is **strongly against withdrawal management alone**, which raises relapse, transmission and overdose death because tolerance falls faster than supply. Psychosocial treatment is recommended **but explicitly decoupled from access to medication** — a 2011 Cochrane review of 35 RCTs found no added benefit for retention, abstinence or relapse. Canadian regulatory asymmetry worth knowing: **methadone requires a Health Canada exemption everywhere, buprenorphine–naloxone does not in most provinces**, so the safer drug is also the more accessible one.
+
+### 29.3 Standing rule this establishes
+
+**Red-set material is written in reporting register, carries an explicit not-clinical-instruction note, and states the guideline's own scope** — because the commonest way to mislead here is not to get a fact wrong but to apply a guideline to a population it excludes.
