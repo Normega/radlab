@@ -208,6 +208,99 @@ body {
 }
 .contact-cta:hover { opacity: 0.7; }
 
+/* Brand assets page (hidden, unlinked) */
+.brand-page__header { margin-bottom: 2.5rem; }
+
+.brand-page__title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 2rem;
+  font-weight: 400;
+  color: var(--tx);
+  margin: 0 0 0.5rem;
+}
+
+.brand-page__subtitle { font-size: 0.9375rem; color: var(--tx2); line-height: 1.6; max-width: 640px; margin: 0; }
+
+.brand-section-note { font-size: 0.8125rem; color: var(--tx2); margin: -0.5rem 0 1rem; }
+
+.brand-asset-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1.25rem; }
+
+.brand-asset-card {
+  background: var(--bgc);
+  border-radius: 12px;
+  border: 1px solid var(--bd);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.brand-asset-card__preview {
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.brand-asset-card__preview img { max-width: 100%; max-height: 100%; object-fit: contain; }
+
+.brand-asset-card__meta { padding: 0.875rem 1rem 1rem; display: flex; flex-direction: column; gap: 0.25rem; }
+
+.brand-asset-card__label { font-size: 0.875rem; font-weight: 600; color: var(--tx); }
+
+.brand-asset-card__note { font-size: 0.75rem; color: var(--tx2); line-height: 1.4; }
+
+.brand-asset-card__download {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--pk);
+  text-decoration: none;
+  margin-top: 0.5rem;
+}
+.brand-asset-card__download:hover { text-decoration: underline; }
+
+.brand-swatch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 1rem; }
+
+.brand-swatch {
+  border: 1px solid var(--bd);
+  border-radius: 12px;
+  height: 96px;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: pointer;
+  font-family: 'Space Mono', monospace;
+  text-align: left;
+}
+
+.brand-swatch__hex { font-size: 0.75rem; font-weight: 700; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.35); align-self: flex-end; }
+
+.brand-swatch__label { font-size: 0.6875rem; line-height: 1.4; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.35); }
+
+.brand-font-list { display: flex; flex-direction: column; gap: 1px; background: var(--bd); border-radius: 12px; overflow: hidden; }
+
+.brand-font-row {
+  background: var(--bgc);
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.brand-font-row__meta { display: flex; flex-direction: column; gap: 0.25rem; }
+
+.brand-font-row__name { font-family: 'DM Serif Display', serif; font-size: 1.1rem; color: var(--pk); text-decoration: none; }
+.brand-font-row__name:hover { text-decoration: underline; }
+
+.brand-font-row__detail { font-size: 0.75rem; color: var(--tx2); font-family: 'DM Sans', system-ui, sans-serif; }
+
+.brand-font-row__specimen { font-size: 1.5rem; color: var(--tx); }
+
 /* Farm Joy game backgrounds — fills a position:absolute container */
 .absolute-fill {
   position: absolute;
