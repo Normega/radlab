@@ -1142,11 +1142,15 @@ function TriggerMapBlock({ step, values, onChange }) {
 
 // ── BodyDiagramBlock ──────────────────────────────────────────────────────────
 
+// Five-stage silhouette artwork (public/assets/bodymap/stage1-5.png):
+// baseline → gut glow (body) → +heart (feelings) → +brain (thoughts) → full aura (behaviour).
+// `dot` positions the active-field pulse over the matching region; behaviour has
+// no dot — completing it reveals the stage-5 aura itself.
 const BODY_HOTSPOTS = [
-  { id: 'body',     label: 'My body feels:',        cx: 65, cy: 145 },
-  { id: 'chest',    label: 'I have emotions like:',  cx: 65, cy: 95  },
-  { id: 'head',     label: 'I start thinking:',      cx: 65, cy: 28  },
-  { id: 'behavior', label: 'I behave this way:',     cx: null, cy: null },  // full-width below
+  { id: 'body',     label: 'My body feels:',        dot: { left: '55%', top: '44%' } },
+  { id: 'chest',    label: 'I have emotions like:', dot: { left: '46%', top: '28%' } },
+  { id: 'head',     label: 'I start thinking:',     dot: { left: '42%', top: '7%'  } },
+  { id: 'behavior', label: 'I behave this way:',    dot: null },  // full-width below
 ]
 
 function BodyDiagramBlock({ step, values, onChange }) {
@@ -1158,11 +1162,11 @@ function BodyDiagramBlock({ step, values, onChange }) {
     behavior: (values.head ?? '').trim().length > 0,
   }
 
-  function dotState(id) {
-    if ((values[id] ?? '').trim()) return 'done'
-    if (unlocked[id]) return 'active'
-    return 'locked'
-  }
+  // Stage 1 (baseline) through 5 (full aura) — fields unlock sequentially,
+  // so the filled count is the stage offset.
+  const filled = ['body', 'chest', 'head', 'behavior'].filter(k => (values[k] ?? '').trim()).length
+  const stage  = 1 + filled
+  const active = BODY_HOTSPOTS.find(h => unlocked[h.id] && !(values[h.id] ?? '').trim())
 
   return (
     <div>
@@ -1171,91 +1175,43 @@ function BodyDiagramBlock({ step, values, onChange }) {
 
       <style>{`
         @keyframes bodyDotPulse {
-          0%   { r: 9; opacity: 0.8; }
-          70%  { r: 14; opacity: 0; }
-          100% { r: 9; opacity: 0; }
+          0%   { transform: scale(1);   opacity: 0.9; }
+          70%  { transform: scale(1.7); opacity: 0.25; }
+          100% { transform: scale(1);   opacity: 0.9; }
         }
       `}</style>
 
-      {/* Layout: SVG left + three field pairs right */}
+      {/* Layout: staged silhouette left + three field pairs right */}
       <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
 
-        {/* Body figure SVG */}
-        <svg viewBox="0 0 130 300" width="100" height="230" style={{ flexShrink: 0 }}>
-          {/* Legs */}
-          <line x1="55" y1="192" x2="42" y2="290" stroke="#1a9e9e" strokeWidth="8" strokeLinecap="round"/>
-          <line x1="75" y1="192" x2="88" y2="290" stroke="#1a9e9e" strokeWidth="8" strokeLinecap="round"/>
-          {/* Arms */}
-          <line x1="45" y1="78"  x2="16" y2="165" stroke="#1a9e9e" strokeWidth="8" strokeLinecap="round"/>
-          <line x1="85" y1="78"  x2="114" y2="165" stroke="#1a9e9e" strokeWidth="8" strokeLinecap="round"/>
-          {/* Silhouette: head, short neck, shoulders and torso as one continuous outline */}
-          <path
-            d="M 77 44
-               C 74 50 74 55 80 59
-               C 90 62 93 70 93 82
-               C 93 130 91 165 88 190
-               C 87 197 82 200 65 200
-               C 48 200 43 197 42 190
-               C 39 165 37 130 37 82
-               C 37 70 40 62 50 59
-               C 56 55 56 50 53 44
-               A 20 20 0 1 1 77 44
-               Z"
-            fill="#f0fafa" stroke="#1a9e9e" strokeWidth="2" strokeLinejoin="round"
-          />
-
-          {/* Behavior accent lines — motion marks around the figure */}
-          {(() => {
-            const state = dotState('behavior')
-            const color = state === 'done' ? 'var(--pk)' : state === 'active' ? '#f59e0b' : '#ddd'
-            return (
-              <g stroke={color} strokeWidth="3.5" strokeLinecap="round" opacity={state === 'locked' ? 0.3 : 1}>
-                {state === 'active' && (
-                  <animate attributeName="opacity" values="1;0.35;1" dur="1.4s" repeatCount="indefinite"/>
-                )}
-                <line x1="34" y1="52"  x2="24"  y2="42"/>
-                <line x1="96" y1="52"  x2="106" y2="42"/>
-                <line x1="10" y1="190" x2="3"   y2="202"/>
-                <line x1="120" y1="190" x2="127" y2="202"/>
-                <line x1="30" y1="296" x2="42"  y2="298"/>
-                <line x1="100" y1="296" x2="88"  y2="298"/>
-              </g>
-            )
-          })()}
-
-          {/* Hotspot dots: thoughts in head, feelings in chest, sensations in body */}
-          {BODY_HOTSPOTS.filter(h => h.cx !== null).map(h => {
-            const state = dotState(h.id)
-            const color = state === 'done' ? 'var(--pk)' : state === 'active' ? '#f59e0b' : '#ddd'
-            return (
-              <g key={h.id}>
-                {state === 'active' && (
-                  <circle cx={h.cx} cy={h.cy} r="9" fill="#f59e0b" opacity="0.3">
-                    <animate attributeName="r"       values="9;14;9" dur="1.4s" repeatCount="indefinite"/>
-                    <animate attributeName="opacity" values="0.8;0;0" dur="1.4s" repeatCount="indefinite"/>
-                  </circle>
-                )}
-                {/* Feelings get a larger radiating ring in the chest */}
-                {h.id === 'chest' && (
-                  <circle
-                    cx={h.cx} cy={h.cy} r="14"
-                    fill="none" stroke={color} strokeWidth="2"
-                    opacity={state === 'locked' ? 0.3 : 0.7}
-                  />
-                )}
-                <circle
-                  cx={h.cx} cy={h.cy} r="7"
-                  fill={color}
-                  opacity={state === 'locked' ? 0.3 : 1}
-                />
-              </g>
-            )
-          })}
-        </svg>
+        {/* Body figure: five stage images stacked, crossfading as fields complete */}
+        <div style={{ position: 'relative', width: 120, height: 220, flexShrink: 0 }}>
+          {[1, 2, 3, 4, 5].map(n => (
+            <img
+              key={n}
+              src={`/assets/bodymap/stage${n}.png`}
+              alt=""
+              draggable={false}
+              style={{
+                position: 'absolute', inset: 0, width: '100%', height: '100%',
+                objectFit: 'contain', borderRadius: 8,
+                opacity: n === stage ? 1 : 0, transition: 'opacity 0.6s ease',
+              }}
+            />
+          ))}
+          {active?.dot && (
+            <div style={{
+              position: 'absolute', left: active.dot.left, top: active.dot.top,
+              width: 14, height: 14, marginLeft: -7, marginTop: -7, borderRadius: '50%',
+              background: '#f59e0b', boxShadow: '0 0 8px 2px rgba(245,158,11,0.6)',
+              animation: 'bodyDotPulse 1.4s ease-in-out infinite',
+            }} />
+          )}
+        </div>
 
         {/* Fields: body, chest, head */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {BODY_HOTSPOTS.filter(h => h.cx !== null).map(h => (
+          {BODY_HOTSPOTS.filter(h => h.dot !== null).map(h => (
             <div
               key={h.id}
               style={{
