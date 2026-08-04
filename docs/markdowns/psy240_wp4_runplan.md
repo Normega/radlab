@@ -3035,3 +3035,100 @@ continuously. The section states its retrieval date inline and tells the reader 
 **Two off-catalogue red links were introduced and caught** by the standing check
 (`stimulant-related-disorders` → `stimulant-use-disorder`; `wernicke-korsakoff-syndrome`, which has no
 page or catalogue row, → `substance-medication-induced-neurocognitive-disorder`). Back to zero.
+
+---
+
+## 30. `law-and-ethics` gets its Canadian half — the biggest single red item
+
+Three sources from `PSY240resources/`, three job rows, three accepted versions. The page went
+**25.2k → 37.4k chars**, and the declared gap *"professional ethics codes and boundaries"* closed.
+
+### 30.1 The correctness problem this fixes
+
+`## Civil commitment` was **entirely US** — *parens patriae*, a petition to a court, two examiners, a
+formal hearing, a judge, commitments of **six months to a year**. For a Toronto course that is not a
+gap, it is a **wrong answer by omission**: a student would have finished the section expecting a
+courtroom that does not exist in Ontario.
+
+| | US model, as the textbook has it | **Ontario, Form 1** |
+|---|---|---|
+| Who initiates | family/clinician **petitions a court** | **one physician**, need not be a psychiatrist |
+| Who authorises | a **judge**, after a hearing | **the physician's signature** |
+| Duration | typically **6–12 months** | **up to 72 hours** of assessment |
+| Review before detention | a hearing | **none** |
+
+**The teachable point is not that Ontario is faster. It is that the safeguard sits in a different
+place.** Ontario places review *after* detention — the Consent and Capacity Board reviews the Form 3
+involuntary admission — where the US model places judicial review *before* it. The two systems trade
+**speed of intervention against pre-deprivation review** in opposite directions, and a student should
+be able to say what each buys and what each costs rather than assuming the familiar one is right.
+
+Two facts recorded plainly because they are easy to miss: **a person on a Form 1 receives no rights
+advice and cannot appeal or challenge the Form 1** to the CCB (they may speak to a lawyer). Rights
+advice attaches at the Form 3 stage.
+
+### 30.2 Box B, and a ground that does not require predicting harm
+
+The OHA/Borden Ladner Gervais FAQ supplies the statutory layer the Ministry's patient-facing guide
+omits: **s. 15** authority; a **personally conducted, non-delegable examination within seven days**;
+the requirement to **distinguish one's own observations from second-hand reports** in the
+documentation; and the two alternative criteria.
+
+- **Box A** — the **"serious harm test"**, s. 15(1). The dangerousness framing the rest of the page uses.
+- **Box B** — s. 15(1.1), authorising involuntary admission of **incapable persons with recurrent
+  mental disorders that have responded to treatment in the past.**
+
+**Box B is the find.** It permits detention of someone **not currently dangerous**, on the strength of
+a known illness with a known treatment response — a **prevention-of-deterioration** ground rather than
+a harm-prevention one. It therefore **sidesteps the prediction problem** set out in the very next
+section of the page by not requiring a prediction of harm at all. Whether that is humane or an
+expansion of coercion beyond dangerousness is left open on the page as a question, not resolved.
+
+Also recorded: **police custody is not detention authority.** A person brought in under **s. 17**
+without a Form 1 or Form 2 is **not automatically a "psychiatric patient"**, and there is no automatic
+power to detain or restrain them.
+
+### 30.3 The CPA Code's exception clause lands exactly on *Smith v Jones*
+
+The **Canadian Code of Ethics for Psychologists (4th ed., 2017)** does something most codes do not:
+it **ranks its four principles by the weight each should be given when they conflict.**
+
+**Principle I, Respect for the Dignity of Persons and Peoples, takes the highest weight — "except in
+circumstances in which there is a clear and imminent danger of bodily harm to someone."**
+
+That is the **same threshold** the Supreme Court of Canada set in *Smith v Jones* for displacing
+solicitor-client privilege, already documented on this page (§25). The ethics code and the case law
+converge on one narrow trigger, so a clinician at that decision point is **not choosing between law
+and ethics** — both point the same way. This is the strongest cross-link the page has.
+
+Second finding: **Principle IV, Responsibility to Society, ranks last, and the Code says why.** Where
+individual welfare conflicts with societal benefit one looks for ways to serve society that do not
+violate dignity — and "if this is not possible, the dignity, well-being and best interests of persons
+and peoples … **should not be sacrificed to a vision of the greater good of society.**" An explicit
+refusal of utilitarian override, and the sentence to quote against every tension on the page.
+
+Third: the Code **judges deliberation, not only outcome.** A psychologist who can demonstrate that
+every reasonable effort was made to apply the Code, where resolution finally depended on personal
+conscience, is **deemed to have followed it** — and complaints are adjudicated by asking whether the
+person "conscientiously engaged in an ethical decision-making process and acted in good faith."
+
+**Scope facts worth not getting wrong**: the Code binds CPA members while **provincial regulators**
+define misconduct, reportability and discipline, so *unethical* and *professional misconduct* are
+related but non-identical categories; it governs professional conduct rather than private life; and it
+**applies regardless of modality including telephone, text, audio and video** — which answers the
+telehealth item the old marker flagged as uncovered.
+
+**Vocabulary it contributes to the rest of the page:** *contract examinee* and *retaining party* name
+the forensic role distinction already described; and its dependence grading makes
+**involuntarily committed patients the worked example of "fully dependent"** — so the person on a
+Form 1 is, by the profession's own definition, in the most dependent category it recognises. That link
+was not visible until both sources were on the page together.
+
+### 30.4 State
+
+Page 25.2k → **37.4k chars**, 10 sections, **0 empty**, annotations **2 → 1** (mandated reporting,
+sexual boundary violations and the College disciplinary process remain). Licence note: the CPA Code
+grants **permission to copy for educational use**; the Ontario guide is © King's Printer for Ontario;
+the OHA FAQ states it is general information and **not legal advice**, and that where legislation
+conflicts with a summary the legislation prevails — mirrored on the page. A **verify-before-publishing**
+marker was added for the Psychiatric Patient Advocate Office number, per §29.3.
