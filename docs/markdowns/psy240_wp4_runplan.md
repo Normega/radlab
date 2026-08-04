@@ -3439,3 +3439,95 @@ service.
 are now **excluded** rather than flagged — this is a UTM course, the UTSC number could not be verified,
 and a student on another campus is better served by the tri-campus portal or NAVI than by a number
 transcribed here on a guess. The page states the exclusion and the reason.
+
+---
+
+## 33. The main eight, part one — two Tier A gaps close
+
+Major-tier gaps **8 → 6**. Two closed from CC BY sources; five researched and triaged, with three
+handed back to Norm as research missions (§33.3).
+
+### 33.1 `functional-neurological-symptom-disorder` — treatment
+
+Gilmour et al. (2020), *J Neurol*, CC BY. **The distinctive feature is that the explanation is itself
+the treatment** — naming the condition, describing malfunction rather than damage ("software rather
+than hardware"), and *demonstrating* it with Hoover's sign or distractibility so the patient sees the
+movement happen. A systematic review found **roughly half of patients had reduction or cessation of
+attacks after being given the diagnosis of functional seizures.**
+
+**Two numbers that must be read together, and this is the transferable lesson.** An intensive 5-day
+outpatient physiotherapy programme achieved **good outcome in 70% at six months** — while a feasibility
+study of the same approach found **only 29% of 210 patients were eligible**, with exclusions for pain,
+fatigue, or psychological symptoms needing treatment first. The strong result belongs to a selected
+quarter. **Always pair an efficacy figure with its eligibility figure.**
+
+Cleanest comparison in the FND literature:
+
+| Arm | Reduction in seizure frequency |
+|---|---|
+| CBT + sertraline | 59% |
+| **CBT alone** | **51%** |
+| **Sertraline alone** | **27%** |
+
+The CBT-only arm did *better* on secondary outcomes than the combination, plausibly because medication
+side effects land badly in a somatically-focused population. Relatedly, **deprescribing is active
+treatment** here — stopping antiepileptics without ongoing indication, opioids, and ineffective
+psychotropics.
+
+Prognosis stated plainly: **20 of 24 studies found more than a third of patients still symptomatic at
+follow-up, at the same or worse severity.** And the finding that most damages the classic conversion
+account: **14–77% of FND patients report no stressful life events at all**, and such events are common
+in people without FND. **A trauma history is neither necessary nor sufficient.**
+
+### 33.2 `adjustment-disorders` — etiology
+
+Kazlauskas et al. (2018), CC BY. **ICD-11 rebuilding the category is what makes an aetiology askable.**
+DSM-5 has a residual definition with subtypes and no specified symptoms; ICD-11 places it in
+*Disorders Specifically Associated with Stress*, drops subtypes, and requires two positive symptoms —
+**preoccupation with the stressor** and **failure to adapt**. A category defined by what it is *not*
+cannot have causes of its own.
+
+The finding worth teaching is a **dissociation from PTSD**: after a disaster, **physical proximity to
+the event predicted PTSD but not adjustment disorder**, while **previous stressful experiences
+predicted adjustment disorder**. PTSD tracked how close you were; adjustment disorder tracked what you
+had already been through.
+
+**What is missing is more striking than what was found.** The review reports **no systematic
+investigation of personality, social support quality, or coping strategies** — the three things a
+textbook would list first. And the phenotype itself is unstable: three validation studies produced
+**two-factor (Lithuania)**, **six-factor (Germany)** and **unidimensional (Switzerland)** solutions, so
+the review concludes the data "do not provide enough support for the ICD-11 definition of AjD symptom
+structure." **Aetiology is under-determined here because the construct is.**
+
+### 33.3 What could not be closed, and why
+
+Searching was done before writing, so these are evidence-based conclusions about the state of the
+literature rather than unattempted work.
+
+- **`exhibitionistic-disorder` etiology — a genuine open-access desert.** Europe PMC returns
+  essentially nothing usable: a **1966** hypnosis paper, a **1960** reciprocal-inhibition paper, and a
+  single bupropion case report. A companion search on paraphilia aetiology generally returned
+  **zero results**. This is not a search-strategy failure — the open-access literature does not exist.
+  Needs a library-gated source.
+- **`research-methods` evaluating-the-evidence-base — partially sourceable, and partial would be
+  worse.** Publication-bias sources are available, but the annotation asks for meta-analysis, network
+  meta-analysis, IPD synthesis, preregistration, blinding standards, allegiance effects and the
+  replication crisis. No single open methods reference spans that; assembling it from six fragments
+  would produce a worse section than one good textbook chapter.
+- **`illness-anxiety-disorder` — treatment is sourceable, aetiology is not.** An internet-versus
+  face-to-face CBT randomised trial is available for treatment; searches for the cognitive model,
+  mechanisms and maintenance returned mostly instrument-validation papers and COVID-era samples.
+- **`integrative-model` comparative-evidence — sourceable, queued.** An IPD meta-analysis of combined
+  treatment versus psychotherapy, and a comparative efficacy-and-acceptability study, were located and
+  answer the ask directly.
+- **`elimination-disorders` encopresis — sourceable, queued.** A Cochrane review of behavioural and
+  cognitive interventions for faecal incontinence in children, plus a chronic functional constipation
+  and encopresis paper, were located.
+
+### 33.4 Process note — the backtick trap, fourth occurrence
+
+Inlining markdown containing backticks into a bash-embedded `python -c` broke again, this time
+silently enough that the commit went through against the *previous* commit. **The rule already recorded
+was not followed**: prose containing backticks goes through the **Write tool to a file**, and the shell
+only ever *reads* that file. Recording the count because the pattern is clearly not being learned from
+a single mention.
