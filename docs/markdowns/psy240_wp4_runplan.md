@@ -3132,3 +3132,33 @@ grants **permission to copy for educational use**; the Ontario guide is © King'
 the OHA FAQ states it is general information and **not legal advice**, and that where legislation
 conflicts with a summary the legislation prevails — mirrored on the page. A **verify-before-publishing**
 marker was added for the Psychiatric Patient Advocate Office number, per §29.3.
+
+### 30.5 Mandated reporting — the practice half lands, the statute does not
+
+Norm asked for provincial mandated reporting. The result splits cleanly, and the split is itself the
+lesson for red-set work.
+
+**What was obtainable.** Tufford & Lee (2018) is genuinely Ontario: **439 Ontario social workers**,
+three vignettes. The finding is that **an unconditional legal duty is conditionally obeyed** — only
+**48.8–79.8%** said they would *definitely* report depending on scenario, so **a fifth to just over
+half** were uncertain or would not. And the top-rated influence was not the law: ** was the #1 factor for 77.7%**, while acknowledging a **regulator's** requirements was
+the strongest statistical predictor (9–100× odds). Both effects point at a **professional community**
+rather than the statute as what actually moves clinicians. Compounding it: the workers **most
+confident** about reporting were **least likely to consult**.
+
+**What was not obtainable, and was not faked.** The paper is built on **2010 Ontario legislation under
+the former *Child and Family Services Act***, and even notes the age of a child in need of protection
+"may" rise from 16 to 18 — which the ***Child, Youth and Family Services Act, 2017*** then did. So
+the behavioural findings stand and **the statutory details in the source have expired**. The page says
+so explicitly.
+
+Ontario **e-Laws did not return statutory text** to an automated fetch. Rather than reconstruct
+s. 125 from memory — precisely the red-set failure mode described in §29 — the statutory half was left
+as a narrowed annotation and referred back to Norm. **For legal material, a plausible paraphrase is
+worse than an admitted gap**, because a reader cannot tell the difference.
+
+Still open and specified: **CYFSA 2017 s. 125** (who must report, threshold, whether the duty is
+ongoing, professional penalty, whether it overrides privilege); the **elder abuse** position, where
+Ontario duties attach to **long-term care and retirement home** settings rather than to
+community-dwelling adults — a point a US-trained reader will get wrong; **RHPA** mandatory reporting of
+sexual abuse of a patient; and the **College of Psychologists of Ontario** disciplinary process.
