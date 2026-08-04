@@ -3409,3 +3409,33 @@ Checked before deleting rather than after: the account was **not** the corpus's 
 the reviewer identity used by `review_proposal()` (that is `norman.farb@utoronto.ca`), and had **zero**
 rows in `enrollments`, `wiki_page_versions`, `ingest_jobs` and `wiki_pages`. Deleted. Two accounts
 remain — `norman.farb@utoronto.ca` (instructor) and `kavabee@gmail.com` (TA).
+
+### 32.5 Correction: PSY240 is a UTM course, and that changes more than the campus numbers
+
+The version in 32.1 was built tri-campus-first, which was wrong. Norm supplied UTM's own
+**Mental health and crisis supports** page, now the **primary** `canonical_source`, with the Student
+Life page demoted to a secondary source for tri-campus and community services.
+
+**The real correction is not the campus phone numbers — it is that Mississauga is in Peel Region, not
+Toronto.** A whole layer of the page pointed at the wrong municipality:
+
+| Need | Was listed | Now leads |
+|---|---|---|
+| Regional crisis line | Toronto Distress Centres | **Crisis Support Peel Dufferin** 905-278-9036 / 1-888-811-2222, and **Spectra** 905-459-7777 |
+| Sexual assault care centre | Women's College Hospital, downtown | **Trillium Health Partners**, 100 Queensway W, Mississauga — 905-848-7493 |
+| Rape crisis centre | Toronto Rape Crisis Centre | **Peel Rape Crisis Centre** 905-273-9442 |
+
+A UTM student in crisis following the old ordering would have been sent to services an hour away.
+**Campus is not a cosmetic attribute of a resource page**; it determines which regional health system
+the reader actually falls under. The page now says so explicitly in its opening lines.
+
+New from UTM's own page, none of which appeared on the tri-campus one: the **Residence Don on Duty**
+(289-805-0580) for after-hours emergencies in residence; **Hope for Wellness** (1-855-242-3310), 24/7
+for Indigenous people across Canada; **ONTX** text/call 258258, 2 p.m.–2 a.m.; the **Equity, Diversity
+& Inclusion Office** (905-569-4916); and **NAVI**, U of T's virtual assistant for finding the right
+service.
+
+**The UTSC blocker resolved itself by being unnecessary.** St. George and UTSC campus-safety numbers
+are now **excluded** rather than flagged — this is a UTM course, the UTSC number could not be verified,
+and a student on another campus is better served by the tri-campus portal or NAVI than by a number
+transcribed here on a guess. The page states the exclusion and the reason.
