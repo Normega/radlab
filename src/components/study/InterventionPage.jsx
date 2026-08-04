@@ -1143,7 +1143,7 @@ function TriggerMapBlock({ step, values, onChange }) {
 // ── BodyDiagramBlock ──────────────────────────────────────────────────────────
 
 const BODY_HOTSPOTS = [
-  { id: 'body',     label: 'My body feels:',        cx: 65, cy: 130 },
+  { id: 'body',     label: 'My body feels:',        cx: 65, cy: 145 },
   { id: 'chest',    label: 'I have emotions like:',  cx: 65, cy: 95  },
   { id: 'head',     label: 'I start thinking:',      cx: 65, cy: 28  },
   { id: 'behavior', label: 'I behave this way:',     cx: null, cy: null },  // full-width below
@@ -1183,17 +1183,26 @@ function BodyDiagramBlock({ step, values, onChange }) {
         {/* Body figure SVG */}
         <svg viewBox="0 0 130 300" width="100" height="230" style={{ flexShrink: 0 }}>
           {/* Legs */}
-          <line x1="55" y1="200" x2="40" y2="290" stroke="#1a9e9e" strokeWidth="8" strokeLinecap="round"/>
-          <line x1="75" y1="200" x2="90" y2="290" stroke="#1a9e9e" strokeWidth="8" strokeLinecap="round"/>
+          <line x1="55" y1="192" x2="42" y2="290" stroke="#1a9e9e" strokeWidth="8" strokeLinecap="round"/>
+          <line x1="75" y1="192" x2="88" y2="290" stroke="#1a9e9e" strokeWidth="8" strokeLinecap="round"/>
           {/* Arms */}
-          <line x1="47" y1="95"  x2="15" y2="170" stroke="#1a9e9e" strokeWidth="8" strokeLinecap="round"/>
-          <line x1="83" y1="95"  x2="115" y2="170" stroke="#1a9e9e" strokeWidth="8" strokeLinecap="round"/>
-          {/* Neck — connects head to torso (drawn under both so the fills cap its ends) */}
-          <line x1="65" y1="42" x2="65" y2="88" stroke="#1a9e9e" strokeWidth="8" strokeLinecap="round"/>
-          {/* Body torso */}
-          <ellipse cx="65" cy="140" rx="28" ry="60" fill="#f0fafa" stroke="#1a9e9e" strokeWidth="2"/>
-          {/* Head */}
-          <circle  cx="65" cy="28" r="22" fill="#f0fafa" stroke="#1a9e9e" strokeWidth="2"/>
+          <line x1="45" y1="78"  x2="16" y2="165" stroke="#1a9e9e" strokeWidth="8" strokeLinecap="round"/>
+          <line x1="85" y1="78"  x2="114" y2="165" stroke="#1a9e9e" strokeWidth="8" strokeLinecap="round"/>
+          {/* Silhouette: head, short neck, shoulders and torso as one continuous outline */}
+          <path
+            d="M 77 44
+               C 74 50 74 55 80 59
+               C 90 62 93 70 93 82
+               C 93 130 91 165 88 190
+               C 87 197 82 200 65 200
+               C 48 200 43 197 42 190
+               C 39 165 37 130 37 82
+               C 37 70 40 62 50 59
+               C 56 55 56 50 53 44
+               A 20 20 0 1 1 77 44
+               Z"
+            fill="#f0fafa" stroke="#1a9e9e" strokeWidth="2" strokeLinejoin="round"
+          />
 
           {/* Behavior accent lines — motion marks around the figure */}
           {(() => {
@@ -1204,8 +1213,8 @@ function BodyDiagramBlock({ step, values, onChange }) {
                 {state === 'active' && (
                   <animate attributeName="opacity" values="1;0.35;1" dur="1.4s" repeatCount="indefinite"/>
                 )}
-                <line x1="22" y1="66"  x2="12"  y2="56"/>
-                <line x1="108" y1="66" x2="118" y2="56"/>
+                <line x1="34" y1="52"  x2="24"  y2="42"/>
+                <line x1="96" y1="52"  x2="106" y2="42"/>
                 <line x1="10" y1="190" x2="3"   y2="202"/>
                 <line x1="120" y1="190" x2="127" y2="202"/>
                 <line x1="30" y1="296" x2="42"  y2="298"/>
