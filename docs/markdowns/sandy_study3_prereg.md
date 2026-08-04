@@ -28,7 +28,7 @@ Brief state ratings (stress, negative/positive emotionality, predicted/experienc
 - **H2A.** Higher discrepancy perfectionism and higher rumination each predict higher post-task effort ratings.
 - **H2B.** Higher burnout predicts lower post-task effort ratings.
 - **H2C.** Higher discrepancy perfectionism, rumination, and burnout each predict greater within-person variability across the three Aptitude Suite task percentile scores (uneven effort allocation), controlling for mean performance.
-- **H2D** *(exploratory — see §5.6)*. The same traits predict a steeper decline in ColourMax per-image performance (precision/coverage) from earlier- to later-positioned images.
+- **H2D** *(exploratory — see §5.7)*. The same traits predict a steeper decline in ColourMax per-image performance (precision/coverage) from earlier- to later-positioned images.
 
 **H3 — Anticipatory stress and negative emotionality.**
 
@@ -99,7 +99,7 @@ A pilot of N = 20 (10 per arm) **is worth running**, but not to estimate effect-
 3. **DV variance for H2C** — SD and skew of the within-person percentile-variability index.
 4. **Trait intercorrelations** — discrepancy × rumination × burnout collinearity (expected r = .4–.6); VIFs for the H2C model.
 5. **Platform-metric reliability** — split-half consistency of per-image precision/coverage; percentile-score behavior of the Aptitude Suite scoring curve at realistic performance levels.
-6. **Feasibility** — completion time vs. the 45–60 min estimate, dropout points, manipulation comprehension (see B2), data completeness of every variable named in §4 in the actual export (`/admin/export` participant master).
+6. **Feasibility** — completion time vs. the 45–60 min estimate, dropout points, data completeness of every variable named in §4 in the actual export (`/admin/export` participant master).
 
 These parameters feed the simulation-based power analysis for the Dirichlet and mixed models, and fix the final N. If pilot-informed simulations show the H1 interactions need N = 300 for the moderation sizes the lab considers minimally interesting, that decision is made **before** registration, not after.
 
@@ -174,7 +174,7 @@ Condition coded control = −0.5, redemption = +0.5. All continuous trait predic
 `effort ~ trait_z + task + (1 | id)` — H2A fits discrepancy and rumination in separate models (2 critical tests); H2B fits burnout (1 critical test). Critical terms: trait coefficients (H2A positive, H2B negative). **[DECISION D5]** Random intercepts only: with two observations per participant, random slopes (`(Task | id)` in the working doc) are unidentified.
 
 **H2C** (1 model, 3 critical tests):
-`aptitude_SD ~ discrepancy_z + rumination_z + burnout_z + mean_percentile_z` (lm). Critical terms: the three trait coefficients (all predicted positive). Mean percentile is a forced covariate (mean–variance confound). The working doc's full 3-way-interaction version of this model is exploratory (§5.6). VIFs reported; if any trait VIF > 5, each trait is additionally reported from its own single-trait model as a sensitivity analysis (the joint model remains confirmatory).
+`aptitude_SD ~ discrepancy_z + rumination_z + burnout_z + mean_percentile_z` (lm). Critical terms: the three trait coefficients (all predicted positive). Mean percentile is a forced covariate (mean–variance confound). The working doc's full 3-way-interaction version of this model is exploratory (§5.7). VIFs reported; if any trait VIF > 5, each trait is additionally reported from its own single-trait model as a sensitivity analysis (the joint model remains confirmatory).
 
 **H3A** (2 models, 4 critical tests): pre-task ratings from both tasks stacked (2 obs/participant),
 `preDV ~ discrepancy_z + predicted_efficacy_z + task + condition + (1 | id)`, for preDV ∈ {stress, negative emotionality}. The pre-task observation for the Aptitude Suite is T0; for ColourMax it is T1 — the post-Aptitude rating taken **before** score feedback and framing (**D9**), paired with the pre-ColourMax predicted-efficacy slider. Critical terms: discrepancy (positive) and predicted efficacy (negative) in each model. Condition is retained as a covariate because the ColourMax predicted-efficacy slider (though not the T1 affect ratings) falls after the framing display. *Construct note:* T1 reflects the state carried into the ColourMax segment rather than informed anticipation (participants have not yet been told about the bonus round); the task fixed effect absorbs the mean difference between a cold start (T0) and a post-performance state (T1).
