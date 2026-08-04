@@ -3254,3 +3254,99 @@ verify-before-publishing marker points at ontario.ca instead, per §29.3.
 
 Still open on this page: the **College of Psychologists of Ontario** disciplinary process and
 record-keeping standards (CRPO's differ), and the **CMA/CPA psychiatric** codes alongside the APA one.
+
+---
+
+## 31. The amber queue clears
+
+Three sources, three pages, all from the amber tier of the §29 triage — plausible-looking wrong answers
+rather than dangerous ones, so drafted here and left for staff verification.
+
+### 31.1 `electroconvulsive-therapy` — and a jurisdiction warning that is not a formality
+
+Thirthalli et al. (2023), *Indian Journal of Psychiatry*, CC BY-NC-SA. **The technical content travels;
+the consent framework does not.** The guideline's consent procedures follow **India's Mental Health
+Care Act 2017**; Ontario runs through the *Health Care Consent Act, 1996* and the Consent and Capacity
+Board. The page says so in a box before anything else, and this is now the standing pattern for
+foreign guidelines: **separate the transferable from the jurisdictional explicitly.**
+
+Findings worth keeping:
+
+- **ECT is framed as first-line for psychiatric emergencies** across diagnoses — high suicidality,
+  catatonia, severe physical debilitation — not as a last resort.
+- **No formal grading system is used**, and the guideline explains why the evidence looks thin: sham
+  control is largely unavailable "due to ethical and pragmatic considerations." You cannot ethically
+  give someone a fake course of anaesthesia and seizures. Read beside `tobacco-use-disorder`
+  (136 trials, GRADE high), this is a case where **the gold-standard design is closed to the
+  intervention**, which is different from nobody having tried.
+- **Every configuration that spares memory costs efficacy or a higher dose.** Bitemporal is effective
+  and most cognitively costly; right unilateral needs 4–6× seizure threshold; ultrabrief pulse
+  compromises efficacy and needs ~6× threshold. There is no free setting.
+- **Courses "should not be prefixed"** but planned dynamically — which constrains what can honestly be
+  promised to a patient about duration.
+- **The honesty problem the guideline names itself:** retrograde amnesia is "one of the most distressing
+  adverse effects, which is **difficult to measure using objective cognitive tests**", so subjective
+  report must be given weight alongside testing. **The harm patients report most is the one instruments
+  capture least**, and a purely test-based safety account will understate it.
+
+### 31.2 `substance-related-and-addictive-disorders` — harm reduction, and evidence adjudicated by a court
+
+Kerr, Mitra, Kennedy & McNeil (2017), *Harm Reduction Journal*, CC BY. Harm reduction is the organising
+framework of Canadian drug policy and the chapter's US-derived source does not mention it.
+
+- **Insite** opened September 2003 under a **s. 56 exemption to the *Controlled Drugs and Substances
+  Act*** — the federal government disapplying its own drug law. Background: mid-1990s Vancouver had
+  **19% HIV incidence among people who inject drugs** and **300+ fatal overdoses a year** in BC.
+- **The Supreme Court of Canada ruled 9–0 in 2011** that refusing the exemption "contravened the
+  principles of fundamental justice," finding Insite "has been proven to save lives with no discernable
+  negative impact on ... public safety and health objectives." **A public-health intervention whose
+  evidence base was adjudicated by the country's highest court** — which is why this belongs on
+  `law-and-ethics` as much as here.
+- Over 40 peer-reviewed studies: reduced overdose mortality, reduced syringe sharing, **increased uptake
+  of detoxification and addiction treatment**, reduced public disorder, **no increase in crime, no
+  promotion of injecting initiation**, and cost-*saving*. The treatment-uptake finding is the one that
+  answers the standard objection.
+- **Politics, not evidence, governs expansion.** After losing at the Supreme Court the federal
+  government imposed **26 conditions** on new sites; a later government cut these to **five**. Because
+  health is provincial but the exemption is federal, provincial health decisions are "subjugated to the
+  whims of municipal, provincial, and federal politicians."
+- Still unmet: **30–40 people leave Insite daily without injecting** because of wait times, and
+  **assisted injection is prohibited** although up to a third of local people who inject need help —
+  disproportionately women, for whom needing assistance raises HIV, overdose and violence risk.
+
+Flagged as a **2017 source**: the holding and the evidence are durable, the site counts and statute are
+not.
+
+### 31.3 `ejaculation-and-orgasmic-disorders` — the prevalence depends on whether you ask
+
+Higgins, Nash & Lynch (2010), open access. The headline is methodological: estimates run **30–73%**,
+and the spread is driven less by drugs than by **question format** — spontaneous reporting substantially
+underestimates, direct asking gives 25–73% for SSRIs. Historically, reports were rare in the 1960s–70s
+partly through "an assumption that people with mental health problems were asexual."
+
+- Range across agents is wide enough to be a prescribing decision: **citalopram 72.7%** and paroxetine
+  70.7% against **bupropion 10–25%** and **moclobemide 3.9%**. Head to head, sertraline produced
+  orgasmic dysfunction in **61% of men and 41% of women** versus **10% and 7%** on bupropion.
+- **Only ~10% remit spontaneously**, so "wait, it will settle" is wrong for nine patients in ten.
+- **A behavioural intervention defeated by pharmacokinetics:** drug holidays improved matters on
+  sertraline and paroxetine and **failed on fluoxetine**, whose long half-life means the drug is still
+  present. The authors also note the cost — scheduling sex invites performance anxiety, and
+  "**timetabling is no substitute for romance**."
+- Buspirone and amantadine were **no better than placebo**; ginkgo evidence conflicts; bupropion SR and
+  sildenafil have supporting trials.
+- **The attribution problem is unresolved and serious:** depression itself reduces libido, and **over
+  40% of men and 50% of women reported decreased sexual interest *before* treatment began.** Most
+  studies lack baseline assessment, so the effect cannot be cleanly assigned to the drug.
+- **Persistence after stopping**: a case report of **genital anaesthesia six years after sertraline
+  discontinuation**, and **no systematic data on rates at all**. One case is not a rate — but the
+  absence of any rate is itself the finding.
+
+Verdict worth quoting for `evidence-based-practice`: management "is still an art rather than a
+science," and the evidence is "insufficient to formulate a clinical guideline."
+
+### 31.4 State
+
+Pages 262, ingest jobs 189, **red links 0**. One off-catalogue red link (`catatonia`, which has no page
+and no catalogue row) was introduced and caught by the standing check, repointed to
+`psychosis-and-the-schizophrenia-spectrum`. Empty sections 70; annotations 302 — both roughly flat,
+because each closure here also left a narrowed successor annotation.
