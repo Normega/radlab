@@ -3350,3 +3350,62 @@ Pages 262, ingest jobs 189, **red links 0**. One off-catalogue red link (`catato
 and no catalogue row) was introduced and caught by the standing check, repointed to
 `psychosis-and-the-schizophrenia-spectrum`. Empty sections 70; annotations 302 — both roughly flat,
 because each closure here also left a narrowed successor annotation.
+
+---
+
+## 32. Crisis resources refreshed, and a canonical source recorded
+
+### 32.1 `student-support-resources` rebuilt from U of T's own page
+
+Norm supplied **U of T Student Life, "Support when you feel distressed"** and asked that it be saved as
+a reference so the page can be re-checked term to term. It is now recorded **in the frontmatter as
+`canonical_source`**, in the provenance job row, and in the verification block at the foot of the page.
+**This is the pattern for any live-data page**: name one authoritative source and point the recheck at
+it, rather than leaving a future session to re-derive where the numbers came from.
+
+Compiled date moved **2026-07-20 → 2026-08-04**. Added, none of which the page previously had:
+
+- **Campus Safety, 24/7** — St. George 416-978-2222, UTM 905-569-4333, plus the St. George Special
+  Constable Service (416-978-2323) for students with **nowhere to stay overnight**, which is a
+  practical need the page had no answer for.
+- **Six further 24/7 crisis lines** — Gerstein Centre, Distress Centres of Greater Toronto, Spectra,
+  Crisis Support Peel Dufferin, and the outside-North-America number for TELUS Health
+  (001-416-380-6578, **146 languages**).
+- **Identity-specific services** — Anishnawbe Health Toronto, Black Youth Helpline, LGBTQ Youthline,
+  Assaulted Women's Helpline. The rationale is stated on the page: some people would rather talk to a
+  service that already understands their situation.
+- **Sexual violence** — the U of T Sexual Violence Prevention & Support Centre, Toronto Rape Crisis
+  Centre, and the three 24/7 Sexual Assault / Domestic Violence Care Centres with addresses.
+- **ConnexOntario** cross-linked from `substance-use-disorder` and `gambling-disorder`, since it is the
+  operative line for this course's substance chapter.
+
+### 32.2 Two numbers deliberately withheld — the verification rule doing real work
+
+**The UTSC Campus Safety emergency number extracted as identical to St. George's** (416-978-2222).
+That is far more likely an extraction artefact than a real shared number. It was **left out of the
+page** with a note explaining why, rather than published on the chance it was right. Likewise the
+academic-support and housing numbers from the same source were excluded — **one was visibly truncated**
+(a nine-digit "905-828-385"), and they are not crisis resources.
+
+**This is the §29 red-set rule applied to its most consequential page.** A wrong crisis number is worse
+than no crisis number, because a reader cannot tell the difference and will act on it in the worst
+possible moment. Both omissions are recorded on the page as items to resolve before publish, not as
+silent gaps.
+
+### 32.3 Confirmed numbers promoted from markers to content
+
+Norm confirmed the **PPAO at 1-800-578-2343**, and supplied **Elder Abuse Prevention Ontario**
+(**1-833-916-6728** toll-free, **416-916-6728** office, https://eapon.ca/). Both are now on
+`law-and-ethics` with a *(confirmed 2026-08-04)* stamp rather than a verify-before-publishing marker.
+
+A distinction added at the same time, because it is easy to get wrong in a crisis: **EAPO is an
+information and referral service, not a reporting line.** Where the mandatory duty applies the report
+goes to the **Long-Term Care Action Line** or the **Retirement Homes Regulatory Authority**; where
+there is an immediate safety concern, to police.
+
+### 32.4 `norman@radlab.zone` dropped
+
+Checked before deleting rather than after: the account was **not** the corpus's `created_by`, **not**
+the reviewer identity used by `review_proposal()` (that is `norman.farb@utoronto.ca`), and had **zero**
+rows in `enrollments`, `wiki_page_versions`, `ingest_jobs` and `wiki_pages`. Deleted. Two accounts
+remain — `norman.farb@utoronto.ca` (instructor) and `kavabee@gmail.com` (TA).
