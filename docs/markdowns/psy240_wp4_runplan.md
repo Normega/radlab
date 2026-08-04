@@ -2992,3 +2992,46 @@ Both closures state at the top that the section **reports what a guideline recom
 ### 29.3 Standing rule this establishes
 
 **Red-set material is written in reporting register, carries an explicit not-clinical-instruction note, and states the guideline's own scope** — because the commonest way to mislead here is not to get a fact wrong but to apply a guideline to a population it excludes.
+
+### 29.4 Norm supplied the five documents the red set was blocked on (2026-08-03)
+
+All five asks in §29.1 arrived in `PSY240resources/`:
+
+| Ask | File |
+|---|---|
+| CPA Code of Ethics | `CPA_Code_2017_4thEd.pdf` |
+| Ontario Mental Health Act / Form 1 | `moh-information-guide-application-for-psychiatric-assessment-form-1-en-2024-05-21.pdf`, `Form 1 Assessments Under the Mental Health Act.pdf` |
+| Canadian forensic paraphilias | `canada forensic paraphilias.pdf`, `Evidence-based-practice-in-the-evaluation-and-treatment-of-sexual-offenders.pdf` |
+| PHAC opioid surveillance | `Key findings_ Opioid- and Stimulant-related Harms in Canada — Canada.ca.pdf`, `HealthInfobase-SubstanceHarmsData.zip` |
+| `student-support-resources` | *(correctly none — a staff verification task, not a literature one)* |
+
+A HiTOP primer (Conway et al. 2022, *Clinical Psychological Science*) also arrived — **newer than the
+2019 source used for `alternatives-to-categorical-diagnosis` in §26**, and worth checking against it
+when the currency audit runs.
+
+**Closed from these plus the amber queue:**
+
+- **`opioid-use-disorder` — the Canadian toxic drug crisis** (PHAC, page dated 2026-06-15, data to
+  Dec 2025). **56,631 apparent opioid toxicity deaths since 2016.** The finding is in reading four
+  indicators together: deaths (**▼23%**), hospitalisations (▼12%) and ED visits (▼5%) are all falling
+  while **EMS responses are up 9%** — consistent with more overdoses being reversed in the community,
+  which is what the CRISM take-home naloxone recommendation aims at. A single indicator tells the
+  wrong story either way. Also: **70% of 2025 opioid deaths also involved a stimulant**, so these are
+  now majority polysubstance deaths; **82% involved non-pharmaceutical opioids**; and hospitalised
+  patients are a different population from the dead (60+ is the largest hospitalisation age group at
+  28%, while deaths concentrate at 30–49).
+- **`alcohol-use-disorder` — withdrawal and delirium tremens** (Jesse et al. 2017, CC BY-NC-ND). The
+  GABA-downregulation/NMDA-upregulation mechanism; the **48–72 hour** DT window, which is why a patient
+  stable at twelve hours is not past the risk; **up to 30% progression to DT after a withdrawal
+  seizure**; and the mortality gap — comparable to severe malignant disease untreated, **~1% or less
+  with early detection**. Contested: a Cochrane review of 56 studies and 4,076 participants found **no
+  sufficient evidence** for any antiepileptic over benzodiazepines despite widespread use, and α-2
+  agonists treat the visible autonomic symptoms while **not preventing DT or seizures**.
+
+**Surveillance data needs a staleness marker.** The PHAC figures are from a live page that updates
+continuously. The section states its retrieval date inline and tells the reader to re-check each term
+— the same treatment `student-support-resources` gets, and the right default for any live-data source.
+
+**Two off-catalogue red links were introduced and caught** by the standing check
+(`stimulant-related-disorders` → `stimulant-use-disorder`; `wernicke-korsakoff-syndrome`, which has no
+page or catalogue row, → `substance-medication-induced-neurocognitive-disorder`). Back to zero.
