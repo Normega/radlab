@@ -20,6 +20,7 @@ import ErrorBoundary     from './components/ErrorBoundary'
 import Landing from './pages/Landing'
 
 const SessionEntry  = lazy(() => import('./pages/SessionEntry'))
+const BrandAssets   = lazy(() => import('./pages/BrandAssets'))
 const StudyJoin     = lazy(() => import('./pages/StudyJoin'))
 const PlatformPage  = lazy(() => import('./pages/PlatformPage'))
 const Login         = lazy(() => import('./pages/Login'))
@@ -490,6 +491,9 @@ export default function App() {
 
           {/* Standalone participant link — no nav or auth guard */}
           <Route path="/s/:token" element={<SessionEntry />} />
+
+          {/* Brand/press-kit page — logos, crests, palette, fonts. Not linked in nav, direct URL only. */}
+          <Route path="/brand" element={<BrandAssets />} />
 
           {/* Dev-only test harness — component guards with import.meta.env.DEV */}
           <Route path="/dev/video-test" element={<VideoTest />} />
