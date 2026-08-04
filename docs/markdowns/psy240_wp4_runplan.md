@@ -3163,3 +3163,94 @@ ongoing, professional penalty, whether it overrides privilege); the **elder abus
 Ontario duties attach to **long-term care and retirement home** settings rather than to
 community-dwelling adults — a point a US-trained reader will get wrong; **RHPA** mandatory reporting of
 sexual abuse of a patient; and the **College of Psychologists of Ontario** disciplinary process.
+
+### 30.6 The statutory half arrives — and the Ontario reporting map is complete
+
+Norm supplied the three primary sources the §30.5 gap named: **CYFSA 2017 s. 125** (Ontario e-Laws),
+the Government of Ontario **elder abuse** page, and **CRPO's mandatory reporting** article with its
+*Disclosing Information to Prevent Harm* guideline. `law-and-ethics` is now **57.8k chars, 10 sections,
+0 empty, 1 annotation**, up from 25.2k at the start of §30.
+
+**The payoff for waiting: an error I had already made was caught by the statute.** In §30.5 I wrote
+that CYFSA "raised the age of a child in need of protection from 16 to 18." That is true of the
+*protection* age and **false of the reporting duty** — s. 125(4) says subsections (1) and (2) **do not
+apply to a child who is 16 or 17**, for whom reporting is *permissive*. Two different ages, trivially
+conflated, and a page that got it wrong would have told a psychologist they were legally obliged to
+report a 17-year-old. **This is the concrete vindication of the §29 rule**: had the statute been
+paraphrased from memory the error would have shipped, and no reader could have detected it.
+
+#### The three findings
+
+**1. The statute anticipated the research finding.** s. 125(3): a person with the duty "shall make the
+report **directly** to the society and **shall not rely on any other person to report on the person's
+behalf**." Set that against Tufford & Lee, where **77.7% of Ontario social workers rated a colleague's
+opinion their number one influence**. The legislature wrote a non-delegation rule against precisely the
+behaviour the survey documents. CRPO says the same thing from the other side — "another person having
+made a report does not relieve an individual of their own reporting obligation."
+
+**2. One section, three different answers on confidentiality.**
+
+| Protection | Effect of CYFSA s. 125 |
+|---|---|
+| Confidentiality and privilege generally | **overridden** — s. 125(10) |
+| **PHIPA** | **overridden** — s. 125(12) |
+| **Solicitor–client privilege** | **preserved** — s. 125(11) |
+
+Lawyers appear in the s. 125(6) list of professionals who commit an offence by not reporting, yet
+their privilege survives the section intact. The tension is resolved by the **common law**, not the
+statute: ***Smith v Jones*** carved the narrow public-safety exception. **The legislature preserved the
+privilege; the Court made the exception** — and both halves are now on the page.
+
+**3. Ontario runs three reporting modalities at once, and the elder-abuse one inverts US expectations.**
+
+| Situation | Modality |
+|---|---|
+| Child in need of protection (CYFSA s. 125) | **mandatory**, offence for professionals, $5,000 fine |
+| Sexual abuse of a client by a regulated health professional (RHPA) | **mandatory** |
+| Preventing serious bodily harm (PHIPA) | **permissive** — *may* disclose |
+| Elder abuse, **community-dwelling** | **no duty** |
+| Elder abuse, **retirement or long-term care home** | **mandatory** |
+
+**The elder-abuse duty attaches to the setting, not the person.** Ontario's own wording: "You must
+report abuse when the victim lives in a retirement home or a long-term care home." So a clinician with
+a strong suspicion about a 14-year-old has an immediate, non-delegable, privilege-overriding duty; the
+same clinician with the same suspicion about a 74-year-old living at home has **none**. The
+justification is capacity and autonomy, and Ontario handles the rest through capacity law and the
+Public Guardian and Trustee rather than through reporting. **Financial abuse** is the category with no
+child-protection analogue, and the warning signs Ontario lists first — depression, fear, anxiety,
+detachment, social withdrawal — are a psychologist's caseload. **The person best placed to notice is
+the person with no obligation to act.**
+
+#### Detail worth keeping
+
+- **s. 125(1) binds everyone**; the **offence** in s. 125(5) binds only the professionals listed in
+  s. 125(6) — which **names the psychologist explicitly**, alongside lawyers, teachers, religious
+  officials, peace officers and coroners. Volunteers are excluded from "youth and recreation worker"
+  (s. 125(7)).
+- **Five of the thirteen grounds are risk-based** ("there is a risk that the child is likely to…"), so
+  with a *suspicion* threshold the statute is built to fire before harm, not after.
+- **Emotional harm has a clinical operational definition** — serious anxiety, depression, withdrawal,
+  self-destructive or aggressive behaviour, or delayed development. Those are close to the reasons a
+  child is referred to a psychologist at all.
+- **PHIPA's elements track *Smith v Jones* but not exactly.** The Court asked for clarity, seriousness
+  and **imminence**; PHIPA asks for an identifiable person or group, serious bodily harm, and
+  **significant risk** — magnitude and likelihood rather than urgency. "Serious bodily harm" expressly
+  includes **psychological** injury.
+- CRPO's reflection questions end with one that appears in no statute: **if disclosure is not required
+  by law, would disclosing put the client or third party at risk?** Breaking confidence can itself
+  create danger.
+
+#### Process notes
+
+**The anchor-matching failure recurred.** A `replace()` targeting an annotation failed silently because
+the anchor spanned a line break that the earlier edit had introduced (`**elder abuse**` ended a line;
+the anchor assumed it did not). Caught by the length delta being +161 rather than +6,000, then fixed by
+querying the exact stored text before re-issuing. **Check the delta against the expected size, not just
+against zero.**
+
+**Live-source staleness:** the elder-abuse page carries an "updated" date and a long list of helplines.
+Bodies are named on the page and **numbers deliberately are not transcribed** — a
+verify-before-publishing marker points at ontario.ca instead, per §29.3.
+
+Still open on this page: the **College of Psychologists of Ontario** disciplinary process and
+record-keeping standards (CRPO's differ), and the **CMA/CPA psychiatric** codes alongside the APA one.
