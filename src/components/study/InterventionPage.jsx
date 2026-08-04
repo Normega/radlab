@@ -1188,14 +1188,36 @@ function BodyDiagramBlock({ step, values, onChange }) {
           {/* Arms */}
           <line x1="47" y1="95"  x2="15" y2="170" stroke="#1a9e9e" strokeWidth="8" strokeLinecap="round"/>
           <line x1="83" y1="95"  x2="115" y2="170" stroke="#1a9e9e" strokeWidth="8" strokeLinecap="round"/>
+          {/* Neck — connects head to torso (drawn under both so the fills cap its ends) */}
+          <line x1="65" y1="42" x2="65" y2="88" stroke="#1a9e9e" strokeWidth="8" strokeLinecap="round"/>
           {/* Body torso */}
           <ellipse cx="65" cy="140" rx="28" ry="60" fill="#f0fafa" stroke="#1a9e9e" strokeWidth="2"/>
           {/* Head */}
           <circle  cx="65" cy="28" r="22" fill="#f0fafa" stroke="#1a9e9e" strokeWidth="2"/>
 
-          {/* Hotspot dots (body, chest, head) */}
+          {/* Behavior accent lines — motion marks around the figure */}
+          {(() => {
+            const state = dotState('behavior')
+            const color = state === 'done' ? 'var(--pk)' : state === 'active' ? '#f59e0b' : '#ddd'
+            return (
+              <g stroke={color} strokeWidth="3.5" strokeLinecap="round" opacity={state === 'locked' ? 0.3 : 1}>
+                {state === 'active' && (
+                  <animate attributeName="opacity" values="1;0.35;1" dur="1.4s" repeatCount="indefinite"/>
+                )}
+                <line x1="22" y1="66"  x2="12"  y2="56"/>
+                <line x1="108" y1="66" x2="118" y2="56"/>
+                <line x1="10" y1="190" x2="3"   y2="202"/>
+                <line x1="120" y1="190" x2="127" y2="202"/>
+                <line x1="30" y1="296" x2="42"  y2="298"/>
+                <line x1="100" y1="296" x2="88"  y2="298"/>
+              </g>
+            )
+          })()}
+
+          {/* Hotspot dots: thoughts in head, feelings in chest, sensations in body */}
           {BODY_HOTSPOTS.filter(h => h.cx !== null).map(h => {
             const state = dotState(h.id)
+            const color = state === 'done' ? 'var(--pk)' : state === 'active' ? '#f59e0b' : '#ddd'
             return (
               <g key={h.id}>
                 {state === 'active' && (
@@ -1204,9 +1226,17 @@ function BodyDiagramBlock({ step, values, onChange }) {
                     <animate attributeName="opacity" values="0.8;0;0" dur="1.4s" repeatCount="indefinite"/>
                   </circle>
                 )}
+                {/* Feelings get a larger radiating ring in the chest */}
+                {h.id === 'chest' && (
+                  <circle
+                    cx={h.cx} cy={h.cy} r="14"
+                    fill="none" stroke={color} strokeWidth="2"
+                    opacity={state === 'locked' ? 0.3 : 0.7}
+                  />
+                )}
                 <circle
                   cx={h.cx} cy={h.cy} r="7"
-                  fill={state === 'done' ? 'var(--pk)' : state === 'active' ? '#f59e0b' : '#ddd'}
+                  fill={color}
                   opacity={state === 'locked' ? 0.3 : 1}
                 />
               </g>
