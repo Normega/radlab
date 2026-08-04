@@ -61,7 +61,7 @@ Brief state ratings (stress, negative/positive emotionality, predicted/experienc
 
 Note the deliberate ordering: **trait questionnaires are administered after the tasks**, to avoid priming perfectionism/rumination content before the behavioral measures. A randomization check (§5.5) tests whether condition leaked into trait reports.
 
-**Randomization.** Simple individual-level randomization, 1:1 allocation, executed server-side by the platform's permuted-block randomizer (`draw_assignment`: seeded permuted blocks per slot, concurrency-locked, idempotent per participant; audit trail in `participant_assignments`). The operative slot is `framing` with arms `control` / `redemption`. Assignment occurs at session entry after consent, before any study content. **[BUILD B3]** The study currently also carries a vestigial `condition` slot (control/treatment) left over from the platform randomizer pilot; it gates no content and will be ignored in analysis (or removed by duplicating the study before launch).
+**Randomization.** Simple individual-level randomization, 1:1 allocation, executed server-side by the platform's permuted-block randomizer (`draw_assignment`: seeded permuted blocks per slot, concurrency-locked, idempotent per participant; audit trail in `participant_assignments`). The operative slot is `framing` with arms `control` / `redemption`. Assignment occurs at session entry after consent, before any study content. The study also carries a vestigial `condition` slot (control/treatment) left over from the platform randomizer pilot. It is retained as-is (**[DECISION D11]**): the draw is server-side, no session content references it, and participants see no trace of it — its only artifacts are an inert row per participant in `participant_assignments` and an unused export column. Analysis uses the `framing` slot exclusively.
 
 ---
 
@@ -221,7 +221,7 @@ No outlier removal on legitimate values. Prespecified robustness: every confirma
 ### 5.5 Quality/manipulation checks
 
 - **Randomization check:** arm balance from `assignment_balance`; trait means compared across arms (|d| > 0.2 on discrepancy, rumination, or burnout is flagged as a caveat on all H1 interpretations, since traits are measured post-manipulation).
-- **Manipulation check [BUILD B2]:** one item before debrief — "During the colouring task, did you believe your score would count toward your overall score?" (yes/no/unsure). Primary analyses are intention-to-treat on the full valid sample; a per-protocol sensitivity analysis restricted to manipulation-check passers (redemption-yes, control-no) is exploratory.
+- **Manipulation check:** none (**[DECISION D10]**). The framing is enacted rather than merely asserted — the redemption arm is shown its ColourMax points being added to an updated overall score at the end of the task, and the control arm is told before the task that it will not count — so a belief probe would be redundant. All analyses are intention-to-treat on the full valid sample.
 - **Positive control:** predicted relative performance (pre) should correlate with experienced relative performance (post) within task, r > .2 — a sanity check that the sliders measure something; failure triggers a data-quality investigation before any hypothesis test is interpreted.
 
 ### 5.6 Missing data
@@ -261,11 +261,14 @@ Sliders/VAS and questionnaires are required fields in the platform flow, so item
 - **D8** — H1B uses ANCOVA on post-ColourMax NA with the post-Aptitude NA rating (taken pre-feedback, pre-framing) as baseline covariate.
 - **D9** — (2026-08-04, Norm) No pre-ColourMax affect sliders are added; the post-Aptitude ratings (pre-feedback, pre-framing) serve as the ColourMax affect baseline. Rationale: no hypothesis requires isolating the framing display's own effect on mood; re-asking the same three items ~2 minutes apart invites demand effects; and a pre-manipulation baseline keeps the H3 "pre" measures uncontaminated by condition. Consequence: three affect timepoints (T0/T1/T2), so H3B is a three-point trajectory model rather than stacked pre/post pairs (which would duplicate T1 across two rows and understate SEs).
 
+- **D10** — (2026-08-04, Norm) No manipulation-check item. The framing is enacted by the score displays themselves (redemption sees points counted; control is told they won't count), so a belief probe is redundant. Intention-to-treat throughout.
+- **D11** — (2026-08-04, Norm) The vestigial `condition` slot stays; it is participant-invisible and analysis ignores it. No study duplication.
+
 **Build changes needed before launch:**
 
 - ~~**B1**~~ — *Withdrawn per D9* (was: insert pre-ColourMax affect sliders). No build change needed for H3.
-- **B2** — Add the manipulation-check item (§5.5) before the debrief step.
-- **B3** — Remove the vestigial `condition` assignment slot (requires duplicating the study, since the slot is locked by pilot draws) or leave it documented as inert; analysis uses the `framing` slot only either way.
+- ~~**B2**~~ — *Withdrawn per D10* (was: manipulation-check item).
+- ~~**B3**~~ — *Resolved per D11* (slot stays, documented as inert).
 - **B4** — Verify in the pilot export that every §4 variable lands in `/admin/export`'s participant master with the expected `_t<n>` occurrence suffixes (pre/post repeated slugs).
 
 ---
