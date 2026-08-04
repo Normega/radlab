@@ -32,8 +32,8 @@ Brief state ratings (stress, negative/positive emotionality, predicted/experienc
 
 **H3 — Anticipatory stress and negative emotionality.**
 
-- **H3A.** Higher discrepancy perfectionism and lower pre-task predicted self-efficacy each predict greater pre-task (anticipatory) stress and negative emotionality.
-- **H3B.** Higher discrepancy perfectionism predicts a greater pre-to-post increase in stress and negative emotionality across tasks.
+- **H3A.** Higher discrepancy perfectionism and lower pre-task predicted self-efficacy each predict greater pre-task stress and negative emotionality (the state immediately preceding each task segment).
+- **H3B.** Higher discrepancy perfectionism predicts a steeper increase in stress and negative emotionality across the session's three affect timepoints (pre-Aptitude → post-Aptitude/pre-ColourMax → post-ColourMax).
 
 **[DECISION D1]** The working doc's H1B specified a three-way interaction (discrepancy × rumination × condition). A three-way interaction between two correlated, imperfectly reliable continuous traits and a binary factor is realistically detectable only at N ≥ ~800 (see §3.4); at N = 200 a null would be uninterpretable. H1B is therefore specified here as two 2-way moderation models (one per trait), and the three-way term is demoted to the exploratory set (§5.6).
 
@@ -53,7 +53,7 @@ Brief state ratings (stress, negative/positive emotionality, predicted/experienc
 2. **Aptitude Suite** (8 min, three tasks, free switching, live percentile display)
 3. Post-task ratings (effort 0–100; stress; negative; positive; experienced relative performance 0–100)
 4. Score feedback display (predicted vs. observed percentile) → task satisfaction VAS → **framing display (manipulation)** → bonus-round instructions
-5. Pre-ColourMax ratings (predicted relative performance; **[BUILD B1]** stress, negative, positive — to be added, see §7)
+5. Pre-ColourMax rating (predicted relative performance). No additional affect ratings are inserted here: the post-Aptitude stress/negative/positive ratings (taken before feedback and framing) serve as the pre-ColourMax affect baseline (**[DECISION D9]**)
 6. **ColourMax** (5 min, 5 images)
 7. Post-task ratings (satisfaction; effort; stress; negative; positive; experienced relative performance) → condition-gated score display
 8. Questionnaire battery: APS-R, BAT-Student, PANAS, RRQ-rumination, GSE, DASS-21, SCS-26
@@ -125,9 +125,9 @@ These parameters feed the simulation-based power analysis for the Dirichlet and 
 
 **Measured variables — state (around each task; platform slugs in parentheses).**
 
-- Stress: 6-point emoji VAS (`vas_stress`), pre/post each task
-- Negative emotionality: 0–100 slider (`slider_negative_emotionality`), pre/post each task
-- Positive emotionality: 0–100 slider (`slider_positive_emotionality`), pre/post each task
+- Stress: 6-point emoji VAS (`vas_stress`), three timepoints — T0 pre-Aptitude, T1 post-Aptitude (before feedback/framing; doubles as the pre-ColourMax baseline), T2 post-ColourMax
+- Negative emotionality: 0–100 slider (`slider_negative_emotionality`), same three timepoints
+- Positive emotionality: 0–100 slider (`slider_positive_emotionality`), same three timepoints
 - Predicted relative performance ("How well do you think you will do relative to others on the next task?"): 0–100 slider (`slider_predicted_efficacy`), before each task
 - Experienced relative performance: 0–100 slider (`slider_post_efficacy`), after each task
 - Effort ("How much effort did you put into the task?"): 0–100 slider (`slider_how_much_effort_did_you_put_into_the_task`), after each task
@@ -177,10 +177,10 @@ Condition coded control = −0.5, redemption = +0.5. All continuous trait predic
 `aptitude_SD ~ discrepancy_z + rumination_z + burnout_z + mean_percentile_z` (lm). Critical terms: the three trait coefficients (all predicted positive). Mean percentile is a forced covariate (mean–variance confound). The working doc's full 3-way-interaction version of this model is exploratory (§5.6). VIFs reported; if any trait VIF > 5, each trait is additionally reported from its own single-trait model as a sensitivity analysis (the joint model remains confirmatory).
 
 **H3A** (2 models, 4 critical tests): pre-task ratings from both tasks stacked (2 obs/participant),
-`preDV ~ discrepancy_z + predicted_efficacy_z + task + (1 | id)`, for preDV ∈ {stress, negative emotionality}. Critical terms: discrepancy (positive) and predicted efficacy (negative) in each model. **[BUILD B1]** This model requires the pre-ColourMax stress/NA ratings that are not yet in the build; they are to be inserted between the bonus-round display and the predicted-efficacy slider. Because they fall after the framing display, condition is included as a covariate in H3 models (and condition × task as an exploratory term). If B1 is not implemented, H3A reduces to a single-task (Aptitude Suite) cross-sectional regression and H3B to the Aptitude task only — the registration must then be edited accordingly before launch.
+`preDV ~ discrepancy_z + predicted_efficacy_z + task + condition + (1 | id)`, for preDV ∈ {stress, negative emotionality}. The pre-task observation for the Aptitude Suite is T0; for ColourMax it is T1 — the post-Aptitude rating taken **before** score feedback and framing (**D9**), paired with the pre-ColourMax predicted-efficacy slider. Critical terms: discrepancy (positive) and predicted efficacy (negative) in each model. Condition is retained as a covariate because the ColourMax predicted-efficacy slider (though not the T1 affect ratings) falls after the framing display. *Construct note:* T1 reflects the state carried into the ColourMax segment rather than informed anticipation (participants have not yet been told about the bonus round); the task fixed effect absorbs the mean difference between a cold start (T0) and a post-performance state (T1).
 
-**H3B** (2 models, 2 critical tests): pre and post ratings for both tasks stacked (4 obs/participant),
-`DV ~ time * discrepancy_z + task + condition + (1 | id)`, time coded pre = 0, post = 1, for DV ∈ {stress, negative emotionality}. Critical term: time × discrepancy interaction (predicted positive: steeper pre-to-post increase at higher discrepancy).
+**H3B** (2 models, 2 critical tests): all three affect timepoints stacked (3 obs/participant),
+`DV ~ time_c * discrepancy_z + condition + (1 | id)`, time coded 0 (T0), 1 (T1), 2 (T2), for DV ∈ {stress, negative emotionality}. Critical term: time × discrepancy interaction (predicted positive: steeper escalation across the session at higher discrepancy). Because T1 doubles as post-Aptitude and pre-ColourMax, the pre/post pairs of the working doc's specification would duplicate the T1 observation in two rows and understate standard errors; the three-point trajectory model uses each rating exactly once. Segment-specific effects (T0→T1 vs. T1→T2, the latter including feedback + framing + task) are reported as exploratory contrasts. **[DECISION D9]**
 
 ### 5.2 Transformations
 
@@ -235,7 +235,7 @@ Sliders/VAS and questionnaires are required fields in the platform flow, so item
 - Dirichlet component-wise effects (which images absorb time under high discrepancy).
 - Task-switch count and per-task time allocation in the Aptitude Suite as behavioral perfectionism signatures (parallels to H1C within the first task).
 - Belief-updating: (post − pre efficacy) and its relation to observed percentile and traits; satisfaction as a function of predicted−observed gap.
-- Condition effects on H3 anticipatory ratings (pre-ColourMax measures are post-framing by design).
+- Framing effects on affect itself: condition main effect on T2 stress/NA adjusting for T1 (available directly from the H1B ANCOVA structure; no dedicated measurement needed).
 - High Standards and Order APS-R subscales, SCS, DASS-21, GSE, PANAS as alternative predictors/covariates.
 
 ---
@@ -259,10 +259,11 @@ Sliders/VAS and questionnaires are required fields in the platform flow, so item
 - **D6** — Two-tailed p-values + sign requirement, rather than one-tailed tests.
 - **D7** — H1C primary test is the scalar concentration index (entropy-based; zero-safe), Dirichlet regression secondary. The working doc's "more time on each image" is not jointly possible under a fixed time budget; concentration is the coherent reading.
 - **D8** — H1B uses ANCOVA on post-ColourMax NA with the post-Aptitude NA rating (taken pre-feedback, pre-framing) as baseline covariate.
+- **D9** — (2026-08-04, Norm) No pre-ColourMax affect sliders are added; the post-Aptitude ratings (pre-feedback, pre-framing) serve as the ColourMax affect baseline. Rationale: no hypothesis requires isolating the framing display's own effect on mood; re-asking the same three items ~2 minutes apart invites demand effects; and a pre-manipulation baseline keeps the H3 "pre" measures uncontaminated by condition. Consequence: three affect timepoints (T0/T1/T2), so H3B is a three-point trajectory model rather than stacked pre/post pairs (which would duplicate T1 across two rows and understate SEs).
 
 **Build changes needed before launch:**
 
-- **B1** — Insert pre-ColourMax stress + negative + positive sliders between the bonus-round display (order 14) and the predicted-efficacy slider (order 15). Without them, H3A/H3B lose the repeated-task design and must be rewritten (§5.1 H3A).
+- ~~**B1**~~ — *Withdrawn per D9* (was: insert pre-ColourMax affect sliders). No build change needed for H3.
 - **B2** — Add the manipulation-check item (§5.5) before the debrief step.
 - **B3** — Remove the vestigial `condition` assignment slot (requires duplicating the study, since the slot is locked by pilot draws) or leave it documented as inert; analysis uses the `framing` slot only either way.
 - **B4** — Verify in the pilot export that every §4 variable lands in `/admin/export`'s participant master with the expected `_t<n>` occurrence suffixes (pre/post repeated slugs).
@@ -316,12 +317,15 @@ m_h2a_r <- lmer(effort ~ rum_z  + task + (1 | id), data = long_post)
 m_h2b   <- lmer(effort ~ burn_z + task + (1 | id), data = long_post)
 m_h2c   <- lm(aptitude_sd ~ disc_z + rum_z + burn_z + mean_pct_z, data = df)
 
+# long_pre: 2 rows/id — task AS uses T0 ratings, task CM uses T1 (post-AS,
+# pre-feedback/framing) ratings, each paired with that task's predicted-efficacy slider
 m_h3a_s <- lmer(stress ~ disc_z + pred_eff_z + task + condition_c + (1 | id),
-                data = dplyr::filter(long, time == "pre"))
+                data = long_pre)
 m_h3a_n <- lmer(na     ~ disc_z + pred_eff_z + task + condition_c + (1 | id),
-                data = dplyr::filter(long, time == "pre"))
-m_h3b_s <- lmer(stress ~ time_c * disc_z + task + condition_c + (1 | id), data = long)
-m_h3b_n <- lmer(na     ~ time_c * disc_z + task + condition_c + (1 | id), data = long)
+                data = long_pre)
+# long3: 3 rows/id — time_c = 0 (T0), 1 (T1), 2 (T2); each rating used exactly once
+m_h3b_s <- lmer(stress ~ time_c * disc_z + condition_c + (1 | id), data = long3)
+m_h3b_n <- lmer(na     ~ time_c * disc_z + condition_c + (1 | id), data = long3)
 
 ## FDR over the 17 prespecified p-values ---------
 crit <- tibble::tribble(
