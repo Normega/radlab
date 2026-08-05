@@ -260,3 +260,31 @@ reverted afterwards (role back to `ta`, page back to `draft`, 0 published, no le
 Same test established the **publish-all-at-once requirement**: with one page published, **all 13 of
 its outbound links appeared broken to the student**, because `wiki_links` is member-readable while
 unpublished targets are not.
+
+`20260805_page_gaps.sql` — **applied live via MCP `apply_migration` 2026-08-05 (two calls: tables +
+policies, then `populate_page_gaps()`), populated and verified.** Creates `page_gaps`, `gap_claims`,
+the `open_gaps` view and `populate_page_gaps(course_id)`.
+
+**The unit is the ask, not the annotation.** Measured before building: 301 `Needs research` markers,
+averaging **2.39 distinct asks each** (215 of 301 contain more than one, written as "X; Y; and Z").
+One row per annotation gives a pool of 301 — under half of what 200 students × 3 contributions needs.
+Split on asks it is **675**, plus **62** empty sections = **737 gaps**.
+
+Identity survives re-parsing via `(page_id, ask_hash)`, md5 of the normalised ask, so a claim is not
+lost when neighbouring prose is edited. `populate_page_gaps()` is idempotent: re-running refreshes
+`last_seen_at`, inserts new asks, and **never deletes** (that would orphan claims) — disappeared asks
+surface in `stale_gaps` for staff to retire.
+
+RLS: gaps follow page visibility (`members read gaps on published pages`), so a student is never
+offered work on a page they cannot read; students see and write only their own claims.
+
+**Difficulty is auto-seeded and needs a human pass — it is a triage aid, not a classification.** The
+regex produced false positives in both directions: "the opioid crisis" matched the crisis-line rule
+(red → green), "hours-per-week dose-response" and receptor pharmacology matched drug dosing
+(red → amber), while "Canadian reporting duties" was let through as green when mandated reporting is a
+legal standard (green → red). Those four rules were corrected in place; the residue is unaudited.
+Final seed: **green 134, amber 597, red 6**.
+
+Capacity: green gaps set to **2**, since prevalence and rates asks legitimately take more than one
+source (different populations, criteria, years). **Student slots 865** against 600 required, and
+**green slots 268** against 200 students needing a scaffolded first task.
