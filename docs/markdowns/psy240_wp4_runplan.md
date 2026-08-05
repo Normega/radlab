@@ -3627,3 +3627,87 @@ non-inferiority at follow-up.**
 | `research-methods` | evaluating-the-evidence-base | **Norm's mission 2** — one methods reference, not six fragments |
 
 Pages 262, ingest jobs 196, red links 0.
+
+---
+
+## 35. Mission 1 delivered — `exhibitionistic-disorder` etiology closes
+
+Norm supplied the sources the §33.3 search could not reach. Major-tier gaps **3 → 2**.
+
+**Two sources, deliberately paired across 45 years:**
+
+| Source | Role | Licence |
+|---|---|---|
+| Wdowiak et al. (2025), *J Education, Health and Sport* 77:56926 | current neurobiology, prevalence, contemporary forms | **CC BY-NC-SA 4.0** |
+| Blair & Lanyon (1981), *Psychological Bulletin* 89(3), 439–463 | the methodological critique | **© APA, all rights reserved** — paraphrase and cite only, recorded in the job row |
+
+A third, O'Donohue & Schewe (eds.), *Handbook of Sexual Assault and Sexual Assault Prevention*
+(Springer), is in `I:\Shared drives\ComeSee\PSY240\` and **not yet used** — earmarked for the
+`paraphilic-disorders` annotation on **prevention and non-offending help-seekers**, which is a better
+fit than aetiology.
+
+### 35.1 The finding that justified the pairing
+
+**The 2025 review says the aetiology of specific paraphilias "remains relatively poorly understood."
+The 1981 review said "no empirical support exists for any particular etiological theory."**
+**Forty-five years, same verdict.** Neither sentence means much alone; together they establish that
+this is a *stable* state of the field rather than a temporary gap, which is exactly what the page
+needed to be able to say.
+
+### 35.2 Substantive content now on the page
+
+- **A circularity in the manuals.** On DSM-5 and ICD-11 assumptions, "a logical risk factor for
+  exhibitionistic disorder is the manifestation of exhibitionistic behaviors." The best-established
+  predictor of the disorder is the behaviour defining it — a fact about the classification, not causes.
+- **A real cognitive account**: the person exposing **perceives the observer's shock or surprise as
+  sexual interest**, which reinforces the behaviour. Testable, and about appraisal rather than the act.
+- **The dual-circuit model**: impulsivity via an action-outcome system in the **ventral striatum**,
+  compulsivity via a habituation system in the **dorsal striatum**, with behaviours migrating
+  ventral → dorsal through neuroplasticity and becoming habitual. **It explains how a behaviour becomes
+  compulsive, not why the behaviour is exhibitionistic** — the same limitation already recorded at
+  `paraphilic-disorders`.
+- **Acquired cases carry the strongest causal evidence** — adrenoleukodystrophy, post-stroke paraphilia
+  with frontal/frontostriatal/temporal involvement, temporal lobe epilepsy, frontotemporal dementia,
+  Parkinson's, and antipsychotic-induced hypersexuality. The page states the limit explicitly: these
+  support **disinhibition**, and a stroke producing exhibitionism at 70 is not a model of a paraphilia
+  at 25.
+
+### 35.3 The number that reframes the sex difference
+
+Exhibitionistic disorder is conventionally **2–4% of men** and "extremely rare" in women. In Joyal et
+al.'s representative sample of ~1,000, the gap depends entirely on which behaviour is asked about:
+
+| | Men | Women |
+|---|---|---|
+| Past experience of exposing to a stranger | 7.8% | 2.7% |
+| **Past involvement in "expanded" exhibitionism** (sex in front of others / where being seen is likely) | **32.6%** | **29.4%** |
+
+**For the broader behaviour the sex difference nearly vanishes.** The male predominance is therefore a
+property of the **narrow, non-consensual** form — not of exhibitionistic interest as such. This also
+closes the older annotation asking to reconcile "much less common in women" with a 2:1 survey ratio:
+the two figures describe different behaviours.
+
+### 35.4 The methodological layer, and why the classic personality picture is not a finding
+
+Blair & Lanyon's value is their account of **why the evidence cannot support conclusions**. Almost all
+descriptive studies drew subjects from people **arrested and convicted**, who are "already an
+unrepresentative sample of the universe of sex offenders." So the familiar picture — timidity, lack of
+aggressiveness, perceived inferiority, heterosexual immaturity, puritanical family attitudes to sex —
+**describes the subset who were caught, convicted and referred**, in the theoretical vocabulary of its
+period. Add unstandardised interviews, terms used differently by different authors, and — with two
+exceptions — **no non-deviant control groups at all**.
+
+Also preserved: the category is **defined by context rather than by the act**, its boundaries drawn by
+listing exclusions (mutual intimacy, medical examination, nudist colony; public urination excluded as
+non-sexual). That is the same structural feature recorded for `pyromania` — **the diagnosis is what
+remains once the ordinary explanations are removed.**
+
+**The standing gap is now precisely stated**: no study exists of people with exhibitionistic interests
+**who have not been arrested**, which is the sample the entire literature lacks.
+
+### 35.5 Remaining
+
+| Page | Gap | Status |
+|---|---|---|
+| `illness-anxiety-disorder` | etiology | Norm's mission 3 — cognitive model / maintenance mechanisms |
+| `research-methods` | evaluating-the-evidence-base | Norm's mission 2 — one methods reference |
