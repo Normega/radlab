@@ -3711,3 +3711,41 @@ remains once the ordinary explanations are removed.**
 |---|---|---|
 | `illness-anxiety-disorder` | etiology | Norm's mission 3 — cognitive model / maintenance mechanisms |
 | `research-methods` | evaluating-the-evidence-base | Norm's mission 2 — one methods reference |
+
+### 35.6 The Handbook applied to `paraphilic-disorders` — the category that is missing
+
+O'Donohue & Schewe (2019), *Handbook of Sexual Assault and Sexual Assault Prevention* (Springer,
+all rights reserved — paraphrase and cite only). Used from the **editors' Introduction**, which turned
+out to carry a live argument about this chapter that no journal search had surfaced.
+
+**The argument is about a category that is absent rather than one that is present.** There is **no
+DSM-5 diagnostic category for a rapist**, and the editors argue there should be, reasoning through
+DSM-5's own six-part definition of mental disorder: **if pedophilic disorder satisfies those criteria,
+some form of "willingness to rape or arousal to rape" ought to as well.**
+
+**The page does not adopt that conclusion — it locates the disagreement.** Criterion 5 of the same
+definition requires that a disorder be "**not solely a result of social deviance or conflicts with
+society**", which is precisely the case a rapist diagnosis would test. So the dispute is not
+evidential: it is whether **arousal to non-consent can be specified as a psychological pattern
+distinct from the offending itself**. If it cannot, the category is social deviance wearing a
+diagnosis; if it can, excluding it while retaining pedophilic disorder is inconsistent. Both readings
+survive on the criteria as written, and the page says so rather than choosing. This is the same
+definition-by-exclusion structure already recorded at `pyromania` and `exhibitionistic-disorder`.
+
+**The consequence is concrete and is the reason the debate is not academic.** With no such category,
+people who rape **cannot receive third-party payment for therapy** — insurers reimburse against
+diagnoses. The editors place this inside a broader claim that the field is "grossly underfunded", with
+**too little spent on rehabilitating perpetrators** specifically.
+
+**That is a worked instance of a claim this corpus otherwise makes in the abstract.**
+`diagnosis-and-classification` records that satisfying insurers is one of the functions a
+classification serves; here the mechanism runs **in reverse** — the *absence* of a code withdraws a
+service. Classification as infrastructure rather than description, demonstrated rather than asserted.
+
+**Identified and not yet used, both in the same volume**: **Kaylor & Jeglic** on exhibitionism
+prevalence and offender rehabilitation, and **Heffernan & Ward (ch. 31)** on the **Good Lives Model**
+and rehabilitation of people convicted of sexual offending — the most direct available route into the
+rehabilitation half of the `paraphilic-disorders` annotation, and into the treatment annotation on
+`exhibitionistic-disorder`.
+
+Jobs 196 → 199; red links 0.
