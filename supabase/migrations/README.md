@@ -234,3 +234,29 @@ Storage config (not schema, applied live via MCP `execute_sql` 2026-07-25): the 
 bucket's `allowed_mime_types` gained `audio/mpeg` (was image-types-only:
 `image/png,jpeg,gif,webp,svg+xml`) so Tune's `.mp3` clips can be uploaded to `public-assets/tune-audio/`.
 `file_size_limit` unchanged at 5 MB (every trimmed clip is well under). Image uploads unaffected.
+
+
+---
+
+## radlab-academic project (`qldgwpneygvgcvexlduz`) — separate from everything above
+
+`20260805_wiki_provenance_readable_by_members.sql` — **applied live via MCP `apply_migration`
+2026-08-05, verified.** Adds two additive `select` policies so course **members** (not just staff) can
+read the rows behind `wiki_page_provenance`: accepted versions of **published** pages
+(`wiki_page_versions`), and the `ingest_jobs` rows those versions cite. Drafts, pending/rejected
+proposals and unrelated jobs remain staff-only; no existing policy was altered or dropped.
+
+**Why:** the view is correctly `security_invoker=true`, but both underlying tables carried staff-only
+read policies, so a student would have seen every page render with an **empty sources panel** — the
+corpus's attribution claim invisible to the audience it exists for. Staff never hit it because staff
+satisfy the staff policy.
+
+**Verified 2026-08-05 by RLS test**, not by inspection: one page published, the TA enrolment
+temporarily set to `student`, `SET LOCAL ROLE authenticated` with that user's JWT claims. Result —
+1 page visible (0 drafts), provenance present with **5 sources**, and scoping correct: only **10**
+versions and **5** jobs visible, i.e. exactly those belonging to the published page. Test state fully
+reverted afterwards (role back to `ta`, page back to `draft`, 0 published, no leftover fixtures).
+
+Same test established the **publish-all-at-once requirement**: with one page published, **all 13 of
+its outbound links appeared broken to the student**, because `wiki_links` is member-readable while
+unpublished targets are not.
