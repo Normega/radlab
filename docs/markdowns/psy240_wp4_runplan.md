@@ -3531,3 +3531,99 @@ silently enough that the commit went through against the *previous* commit. **Th
 was not followed**: prose containing backticks goes through the **Write tool to a file**, and the shell
 only ever *reads* that file. Recording the count because the pattern is clearly not being learned from
 a single mention.
+
+---
+
+## 34. The main eight, part two — down to three
+
+Major-tier gaps **6 → 3**. Three more closed. The remainder are exactly the three handed to Norm as
+research missions in §33.3, so **the corpus is now blocked on library access rather than on effort.**
+
+### 34.1 A near-miss caught by fetching before writing
+
+The source queued in §33.3 for `integrative-model` — Weitz et al., *BMJ Open* 2017, an individual
+patient data meta-analysis of combined treatment versus psychotherapy — turned out to be a
+**protocol paper with no results at all.** Title, journal and abstract all read like a findings paper.
+Had it been cited from the search listing, the page would have carried effect sizes that do not exist.
+**Confirming a source reports results is a separate check from confirming it is relevant**, and the
+search interface does not distinguish them.
+
+### 34.2 `elimination-disorders` — encopresis
+
+Brazzelli et al. (2011), Cochrane, 21 trials and 1,371 children. **The first job is correcting the
+intuition the name invites**: a child repeatedly soiling looks like a behaviour problem, and mostly is
+not. Faecal incontinence "develops as a result of faecal constipation or faecal retention, often
+potentiated by phobic conditioning, and is manifested as **overflow** soiling." Chronic constipation
+distends the rectum, **rectal sensation is reduced by accommodation**, and soft stool leaks past the
+retained mass — frequently without the child feeling it coming. Defaecation having become painful, the
+child withholds: **pain → withholding → constipation → more pain.**
+
+| Comparison | Result |
+|---|---|
+| **Biofeedback added to conventional treatment** | **OR 1.11** (0.78–1.58) for persisting symptoms at 12 months; **OR 1.31** (0.80–2.15) at 18 months |
+| **Behaviour modification added to laxatives** | soiling reduced, **OR 0.14** (0.04–0.51) at 3 months, **OR 0.20** (0.06–0.65) at 12 months |
+
+**The biofeedback row is the corpus's cleanest surrogate-outcome failure.** Biofeedback demonstrably
+produces **normal defaecation dynamics** in the short term — and does not produce **continence**. The
+physiological measure moved; the outcome that matters to the child did not. The point estimate is
+above 1, i.e. slightly *worse*. Meanwhile the positive result rests on **a single small trial**, so
+what can be said is that the psychological and medical components work *together*, not that either
+works alone. Sixteen of 21 trials had unclear allocation concealment.
+
+### 34.3 `integrative-model` — comparative evidence
+
+Xiang et al. (2022), CC BY: 14 RCTs, 1,325 participants, combined pharmacotherapy plus psychotherapy
+versus other active treatments for depression in children and adolescents. **Remission OR 1.37
+(0.93–2.04), n.s.; symptom change SMD −0.07 (−0.32 to 0.19), n.s.**
+
+**The paper reports statistical power per outcome, which most meta-analyses do not, and the numbers
+reframe every null in it**: 93% for remission but **6%** for symptom change, **5%** for acceptability,
+**16%** for suicidality. **A null at 5% power is an absence of information, not a finding.** Only the
+remission comparison could have detected what it was looking for.
+
+Then two patterns that should stop a reader believing the positive subgroup signals:
+
+| Split | Combined therapy superior? |
+|---|---|
+| USA studies | **OR 1.90** (1.33–2.73) — yes |
+| Non-USA | OR 0.62 (0.32–1.17) — no |
+| **High risk of bias** | **OR 1.89** (1.19–3.01) — yes |
+| **Low risk of bias** | OR 1.39 (0.40–4.86) — **no** |
+
+**The benefit appears in the studies most likely to be wrong and vanishes in the studies most likely
+to be right** — the signature of bias producing an effect rather than detecting one. Only 21.4% of
+trials were at low risk. The page's conclusion is deliberately narrow: the integrative model remains a
+good account of **aetiology** whose **therapeutic** corollary is *untested* rather than confirmed.
+
+### 34.4 `illness-anxiety-disorder` — treatment
+
+Axelsson et al. (2020), *JAMA Psychiatry* — **note the licence: © AMA, all rights reserved**, free to
+read in PMC but **not openly licensed**, so paraphrase-and-cite only. Recorded in the job row.
+
+204 adults, Stockholm primary care, 12 weeks of internet CBT versus face-to-face CBT, non-inferiority
+design. **Within-group d = 1.76 in both arms; between-group d = 0.00.** Response 76% vs 74%.
+
+**Those two effect sizes side by side are the best teaching pair in the corpus for the difference
+between "does this work?" and "does this work better?"** The treatment did a great deal; the delivery
+format did nothing.
+
+The resource result is the policy-relevant one: **10.0 minutes of therapist time per patient per week
+versus 45.6 — 78% less** — therapist cost $454 versus $2,059, net societal cost $3,854 lower. Where
+clinician hours are the binding constraint, that is a larger effect on population outcomes than most
+drug comparisons.
+
+Two complications kept on the page: **alliance was rated significantly lower online (32.3 vs 36.3) and
+outcomes were identical anyway**, which cuts against alliance-drives-outcome; and at 12 months the
+difference was **2.4 points (−0.4 to 5.1)**, "clinically but not statistically significant", with
+face-to-face better on general anxiety and depression long term — in a trial **not powered to test
+non-inferiority at follow-up.**
+
+### 34.5 What remains
+
+| Page | Gap | Status |
+|---|---|---|
+| `illness-anxiety-disorder` | etiology | **Norm's mission 3** — cognitive model / maintenance mechanisms |
+| `exhibitionistic-disorder` | etiology | **Norm's mission 1** — open-access desert |
+| `research-methods` | evaluating-the-evidence-base | **Norm's mission 2** — one methods reference, not six fragments |
+
+Pages 262, ingest jobs 196, red links 0.
