@@ -3888,3 +3888,89 @@ accuracy about it**), and all three identify the same missing design — prospec
 these mechanisms precede the disorder.
 
 State: `illness-anxiety-disorder` 25.1k chars, 0 empty sections. Jobs 202, red links 0.
+
+---
+
+## 37. Mission 2 delivered — **the major tier is closed**
+
+Tolin, McKay, Forman, Klonsky & Thombs (2015), *Clinical Psychology: Science and Practice* 22(4),
+317–338 (APA/Wiley, all rights reserved — paraphrase and cite only). Norm's methods reference turned
+out to be a better fit than the brief asked for: rather than a catalogue of synthesis techniques, it is
+an argument *about how bodies of evidence should be appraised*, worked through a live failure.
+
+```
+major-tier gaps      0
+red links            0
+unwritten catalogue  0
+empty sections      62
+pages              262      jobs 203
+```
+
+**Every Tier A, foundation and overview page in the corpus now has prose in every section.**
+
+### 37.1 The example that makes the section work
+
+Under the criteria that governed "empirically supported treatment" designations for two decades, a
+treatment counted as **well established** on the strength of **two** independently conducted,
+well-designed studies. Tolin et al. spell out what that permits:
+
+> **If two studies find a treatment efficacious, five find it no better than placebo, and ten find it
+> *worse* than placebo, the treatment still qualifies as "well established."**
+
+**Two positives out of seventeen** — and they add that "this is not a hypothetical scenario." A rule
+that counts only the wins will certify almost anything studied often enough. This is the clearest
+single demonstration in the corpus of why **appraising a literature is a different skill from
+appraising a study**, which was exactly what the gap asked for.
+
+### 37.2 The idea the rest of the corpus was already using without naming
+
+> **Separate the strength of the effect from the strength of the evidence.**
+
+They are independent: a large effect can rest on weak evidence, and a well-evidenced treatment can
+have a small effect. Any label that collapses them — "well established", "evidence-based" — discards
+the information a reader needs.
+
+**This retroactively names a practice already running through the corpus.** Reporting statistical power
+alongside a null (`integrative-model`), risk-of-bias subgroups alongside a positive subgroup result
+(`integrative-model`), eligibility rates alongside efficacy (`functional-neurological-symptom-disorder`),
+and confidence-interval width alongside a point estimate (`tobacco-use-disorder`) are all instances of
+the same move. The page now supplies the vocabulary.
+
+**It also explains a pattern that recurs in the guideline pages**: GRADE is why a guideline reports
+**recommendation strength separately from evidence quality**, and therefore why
+`sedative-hypnotic-anxiolytic-related-disorders` can carry a **strong** recommendation resting on
+**low-quality** evidence without contradiction — cross-linked in both directions.
+
+### 37.3 Vocabulary the page previously lacked
+
+- **Risk of bias in design** — allocation concealment, blinding and randomisation influence effect
+  estimates **particularly where outcomes are subjective, which is the case in most trials of
+  psychological treatment.**
+- **Allegiance effect** — carefully formulated in the source as "not necessarily … bias; however, it is
+  a risk factor that has been shown empirically to be associated with some probability of bias."
+- **Financial conflict of interest** — demonstrated in pharmaceutical publication bias, and **harder to
+  identify** in psychological treatment research.
+- **Registration** as the partial remedy for publication bias, with the caveat that "poor adherence to
+  registration policies and poor quality of trial registrations have been problematic."
+
+**And a corrective worth having** on the efficacy-versus-effectiveness worry: among outpatients deemed
+ineligible for depression trials, the commonest exclusion reasons were **partial remission and
+insufficient severity**, and **none were excluded for comorbidity**. The generalisation problem is real
+but it is not the one usually asserted.
+
+### 37.4 The substantive proposal
+
+Stop treating **symptom reduction** as the primary outcome. Functional impairment is a leading reason
+people seek treatment, and symptom and functional change can come apart — a treatment may reliably move
+a symptom score while leaving someone unable to work. Named measures: Sheehan Disability Scale, Work
+and Social Adjustment Scale, Range of Impaired Functioning Tool. The replacement process is
+**systematic review of all evidence** (relevance, fidelity, risk of bias, multiple outcomes) followed by
+**committee appraisal using GRADE**.
+
+Scale, for context: PsycINFO citations for "randomized controlled trial" ran **20** (1995) → **123**
+(2000) → **427** (2005) → **950** (2010). The appraisal problem grew because the evidence did.
+
+### 37.5 Note
+
+One off-catalogue red link (`[[blinding]]`) was introduced and caught by the standing check; the
+reference was removed rather than a stub created. Back to zero.
