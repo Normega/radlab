@@ -3843,3 +3843,48 @@ Worth remembering for any shared-drive source with non-ASCII characters in its n
 
 State: `illness-anxiety-disorder` 21.3k chars, 0 empty sections, 0 red links. **One major-tier gap
 remains corpus-wide.**
+
+### 36.6 The third source lands — and corrects a claim the first one implied
+
+Leonidou & Panayiotou (2018), *J Psychosomatic Research* 111:100–115 (Elsevier, all rights reserved —
+paraphrase and cite only). A systematic review of **62 studies, 1990–2016**, testing the
+cognitive-behavioural model's mechanisms: **21 correlational and 41 experimental**.
+
+**That balance corrects an impression §36.3 could leave.** Fergus & Asmundson repeatedly say no study
+has tested these factors as **risk factors** using longitudinal or experimental designs — a claim about
+*prospective prediction*. It is not that the mechanisms have gone unmanipulated: two-thirds of this
+review's studies used experimental paradigms. **The field has tested whether the mechanisms operate;
+it has largely not tested whether they come first.** Those are different questions, and the page now
+draws the distinction explicitly rather than letting one source's framing stand unqualified. **Reading
+three sources on one gap is what surfaced it** — a single review would have been taken at its word.
+
+Verdict: findings "partly support the cognitive-behavioral model, but several of its hypothetical
+mechanisms only receive weak support due to the **scarcity of relevant studies**."
+
+**A measurement problem worth teaching well beyond this disorder.** Explicit and implicit evaluation
+tasks diverge, and the authors offer a deflationary reading of part of the explicit effect: people
+high in illness anxiety may **present symptoms negatively in order to elicit reassurance**. If so, an
+explicit rating scale is partly measuring a **reassurance-seeking behaviour** rather than a cognitive
+bias — **the safety behaviour contaminating the instrument meant to detect the belief it maintains.**
+
+**Two structural criticisms of the literature**: emotion processing and emotion regulation in illness
+anxiety are "a field still in its infancy" with "a general dearth of experimental studies"; and "most
+studies examined mechanisms that underlie IA **separately** and only a few focused on the interaction
+between them." The model is a **chain** — belief → misappraisal → safety behaviour → maintained belief
+— but has mostly been tested one link at a time. **A set of individually supported links is not a
+demonstrated loop.**
+
+Sampling: **34 of 62 studies used students**. Most were low risk of bias; nine moderate for
+uncontrolled confounders. Unpublished and non-English work was excluded, so publication bias is not
+ruled out.
+
+Treatment position recorded for the section above: **CBT is the most widely examined and empirically
+supported approach**; **MBCT and ACT have only preliminary support**; Attentional Bias Modification
+targets a specific mechanism from this model and **warrants further testing rather than adoption**.
+
+**Convergence across the three sources**, which is why using all three was worth it: all identify the
+same interoception paradox from independent directions (**more attention to the body, not more
+accuracy about it**), and all three identify the same missing design — prospective tests of whether
+these mechanisms precede the disorder.
+
+State: `illness-anxiety-disorder` 25.1k chars, 0 empty sections. Jobs 202, red links 0.
