@@ -3749,3 +3749,97 @@ rehabilitation half of the `paraphilic-disorders` annotation, and into the treat
 `exhibitionistic-disorder`.
 
 Jobs 196 → 199; red links 0.
+
+---
+
+## 36. Mission 3 delivered — `illness-anxiety-disorder` etiology closes
+
+Norm supplied three sources; two are ingested here and the third is queued. **Major-tier gaps 2 → 1.**
+The only remaining one is `research-methods: evaluating-the-evidence-base`.
+
+### 36.1 The cognitive model, and where it is borrowed from
+
+Fergus & Asmundson (2019), ch. 4 of *The Clinician's Guide to Treating Health Anxiety* (Elsevier,
+all rights reserved — paraphrase and cite only). Warwick & Salkovskis (1990) built the first
+influential model **directly on Clark's (1986) cognitive model of panic**:
+
+> learning experiences → health-related dysfunctional beliefs → misappraisal of innocuous bodily
+> states → health anxiety
+
+**The maintenance step is the explanatory one.** Safety behaviours — avoidance, self-inspection,
+reassurance-seeking — reduce anxiety in the moment and thereby **prevent the belief from ever being
+disconfirmed**. The relief is real and it is the mechanism. Same architecture as panic and OCD, which
+is what makes the model portable and also what makes specificity hard to demonstrate.
+
+### 36.2 Three findings worth teaching
+
+**Heritability moves with how you carve the phenotype.** Twin estimates run **54–69%** when health
+anxiety is treated as a **category** (severe vs not) and **10–37%** when treated as a **continuum**.
+The categorical figures are on a par with neuroticism's, which is exactly why it is unresolved whether
+what is inherited is nonspecific negative affect or something health-specific. A clean instance of the
+`diagnosis-and-classification` argument appearing inside a heritability estimate.
+
+**Health anxiety is associated with *lowered* interoceptive accuracy.** Grossi et al. (2017) report
+reduced connectivity between the extrastriate body area and somatosensory regions, read as impaired
+multisensory integration — and stronger EBA connectivity with amygdala and hippocampus. **People
+preoccupied with bodily sensations are, if anything, worse at detecting them accurately.** The
+disorder is heightened bodily *interpretation*, not heightened bodily *perception*.
+
+**It is not about likelihood.** Fergus and Asmundson conclude health anxiety "does not appear to
+broadly relate to the tendency to overestimate the likelihood of experiencing *any* health problem
+but, rather, seems most related to **catastrophic explanations**." Salkovskis & Warwick's four beliefs
+make the point concrete — likelihood, **awfulness**, **inability to cope**, and **inadequacy of
+medical resources**. The last two are why a negative test result so often fails to reassure: if the
+belief is that medicine could not help anyway, the result does not address it.
+
+### 36.3 The methodological through-line, stated by the authors themselves
+
+The chapter says **three separate times** that the causal evidence is missing: the lone longitudinal
+study of anxiety sensitivity **casts doubt on whether it confers risk at all**; "no known published
+study has yet examined IU as a potential risk factor … using a longitudinal or experimental design";
+and the same sentence again for Salkovskis & Warwick's four beliefs.
+
+And beneath the best-evidenced factor there is a **circularity**: dysfunctional beliefs show
+associations "nearly uniformly moderate to large", but the authors flag an issue of **description
+versus explanation** — the belief measures **substantially overlap in content with the health anxiety
+measures** they predict. A large correlation between two instruments asking similar questions is not a
+mechanism. **The model is coherent, well supported cross-sectionally, and largely untested causally**
+— a different claim from the one a textbook diagram implies.
+
+### 36.4 Intrusive thoughts — the difference is not having them
+
+Arnáez et al. (2021), *Psychology and Psychotherapy* 94:63–80: **264 non-clinical participants** with
+a recent upsetting illness-related intrusive thought against **31 patients** meeting DSM-5 criteria —
+a small clinical group, stated as such on the page.
+
+Illness-related intrusive thoughts were **common in both groups**, differing in **intensity rather
+than kind**, and are described as a **dimensional cognitive experience** running from normality into
+psychopathology. What distinguishes patients is **interpretation and response, not occurrence** — the
+importance of these thoughts "does not lie in the frequency with which they are experienced, but in
+the way they are appraised."
+
+**Two appraisals mediated the relationship**: **overestimation of threat**, and **thought-action
+fusion of the probability type** — the belief that *having* the thought makes the feared outcome more
+likely. The second is notable because its content is about the thinking rather than the body, which
+ties it to the metacognitive layer and to `obsessive-compulsive-disorder`.
+
+**The OCD contrast is where the differential diagnosis lives**: illness intrusions are more
+**egosyntonic**, and OCD patients score higher on responsibility, disapproval, egodystonicity, guilt
+and neutralising. Cross-culturally, illness intrusions caused **similar disturbance despite occurring
+less frequently** than obsessional ones.
+
+**One belief explains why reassurance fails structurally**: **dichotomous thinking about health**, in
+which health is the *absolute absence of any physical symptom or bodily sensation*. On that
+definition nobody is ever healthy and no test can establish that they are.
+
+### 36.5 Notes
+
+A **filename encoding failure** blocked the Arnáez PDF — the accented character in the path could not
+be opened by the extractor. Resolved by copying to an ASCII filename in scratch before reading.
+Worth remembering for any shared-drive source with non-ASCII characters in its name.
+
+**Still queued:** the third supplied source, a 2018 *Psychosomatic Medicine* paper on responses to
+**health-threatening information**, is not yet ingested and is recorded as an annotation on the page.
+
+State: `illness-anxiety-disorder` 21.3k chars, 0 empty sections, 0 red links. **One major-tier gap
+remains corpus-wide.**
