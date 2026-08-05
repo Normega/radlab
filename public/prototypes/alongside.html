@@ -93,6 +93,48 @@ const GRASS_SRC=[
 ];
 const GRASS=GRASS_SRC.map(v=>v.map(d=>new Path2D(d)));
 
+// Palette. Night is carried by VALUE (everything stays dark) rather than by
+// draining the colour out — so the meadow keeps real green and reads as a
+// living place after dark. Moonlight stays blue; the contrast between cool
+// light and green growth is what makes it feel nocturnal rather than grey.
+// Light sources are still the only genuinely saturated things on screen.
+const PAL={
+  groundTop:'#091620', groundBot:'#0d211d',
+  grass:'58,92,74',                 // moonlit green, was 52,66,72 blue-grey
+  moon:'74,96,124',
+  bloomTint:'128,168,170',
+};
+
+// Stones (stones.svg, 96x64, centre-anchored at 48,32, pre-squashed). Three
+// tones each — shadow body, lit top, moonlight accent — so they have form
+// instead of reading as flat holes.
+function ell(cx,cy,rx,ry,rot){const p=new Path2D();p.ellipse(cx,cy,rx,ry,rot||0,0,7);return p;}
+const STONE=[
+  [{p:ell(48,32,36,21),f:'34,40,48',a:1},
+   {p:ell(46,30,30,17),f:'48,56,68',a:1},
+   {p:new Path2D('M 22 28 C 26 18, 50 14, 68 20 C 52 16, 32 20, 22 28 Z'),f:'70,84,120',a:0.4}],
+  [{p:ell(42,34,28,16),f:'34,40,48',a:1},
+   {p:ell(40,32,23,13),f:'45,54,66',a:1},
+   {p:ell(64,28,16,10),f:'34,40,48',a:1},
+   {p:ell(63,27,13,8),f:'52,62,76',a:1}],
+  [{p:new Path2D('M 16 32 C 16 18, 80 18, 80 32 C 80 46, 16 46, 16 32 Z'),f:'34,40,48',a:1},
+   {p:new Path2D('M 20 31 C 20 20, 76 20, 76 31 C 76 41, 20 41, 20 31 Z'),f:'48,56,68',a:1},
+   {p:ell(36,25,12,4),f:'70,84,120',a:0.3}],
+  [{p:new Path2D('M 24 32 C 20 20, 72 16, 76 32 C 80 48, 30 46, 24 32 Z'),f:'34,40,48',a:1},
+   {p:new Path2D('M 27 31 C 24 22, 68 19, 72 31 C 75 43, 32 42, 27 31 Z'),f:'46,55,67',a:1}],
+];
+
+// Wild flower (wildflower.svg, 32x32, bottom-centre anchored at 16,32).
+// Closed all game; opens only in the finale. Its core is the traveller's own
+// gold — the meadow answers in the player's colour.
+const FLOWER={
+  stalk:new Path2D('M 16 32 C 15 24, 17 18, 16 14'),
+  budOuter:ell(16,13,3,3), budInner:ell(16,13,1.8,1.8),
+  petals:[ell(16,8,2.5,4), ell(21,12,2.5,4,72*Math.PI/180), ell(19,18,2.5,4,144*Math.PI/180),
+          ell(13,18,2.5,4,216*Math.PI/180), ell(11,12,2.5,4,288*Math.PI/180)],
+  core:ell(16,13,2.2,2.2),
+};
+
 let tufts=[],stones=[],flowersWild=[];
 (function dress(){
   for(let i=0;i<420;i++){
@@ -103,10 +145,13 @@ let tufts=[],stones=[],flowersWild=[];
       ph:hash1(i*7)*7});
   }
   for(let i=0;i<26;i++){
-    stones.push({x:hash1(i*11+5)*WORLD.w,y:hash1(i*11+6)*WORLD.h,r:6+hash1(i*13)*16,tone:hash1(i*17)});
+    stones.push({x:hash1(i*11+5)*WORLD.w,y:hash1(i*11+6)*WORLD.h,r:6+hash1(i*13)*16,
+      v:Math.floor(hash1(i*23+11)*STONE.length), flip:hash1(i*29+3)<0.5?-1:1,
+      tone:hash1(i*17)});
   }
   for(let i=0;i<70;i++){
-    flowersWild.push({x:hash1(i*23+9)*WORLD.w,y:hash1(i*23+10)*WORLD.h,ph:hash1(i*29)*7});
+    flowersWild.push({x:hash1(i*23+9)*WORLD.w,y:hash1(i*23+10)*WORLD.h,
+      s:0.38+hash1(i*31+13)*0.22, flip:hash1(i*37+5)<0.5?-1:1, ph:hash1(i*29)*7});
   }
 })();
 
@@ -519,37 +564,44 @@ function inView(x,y,m){return x>cam.x-W/2-m&&x<cam.x+W/2+m&&y>cam.y-H/2-m&&y<cam
 function render(t){
   // ground
   const g=ctx.createLinearGradient(0,0,0,H);
-  g.addColorStop(0,'#0a0e1c');
-  g.addColorStop(1,'#0d1220');
+  g.addColorStop(0,PAL.groundTop);
+  g.addColorStop(1,PAL.groundBot);
   ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
   // moonlight patches
   const mg=ctx.createRadialGradient(sx(WORLD.w*0.5),sy(WORLD.h*0.4),60,sx(WORLD.w*0.5),sy(WORLD.h*0.4),900);
-  mg.addColorStop(0,'rgba(70,84,120,0.16)');
-  mg.addColorStop(1,'rgba(70,84,120,0)');
+  mg.addColorStop(0,`rgba(${PAL.moon},0.17)`);
+  mg.addColorStop(1,`rgba(${PAL.moon},0)`);
   ctx.fillStyle=mg;ctx.fillRect(0,0,W,H);
 
   // meadow bloom lightens everything, gently
   if(meadowBloom>0){
-    ctx.fillStyle=`rgba(120,140,190,${meadowBloom*0.10})`;
+    ctx.fillStyle=`rgba(${PAL.bloomTint},${meadowBloom*0.10})`;
     ctx.fillRect(0,0,W,H);
   }
 
-  // stones
+  // stones — three tones apiece, so they sit in the grass instead of on it
   for(const s of stones){
     if(!inView(s.x,s.y,60))continue;
-    ctx.fillStyle=`rgba(${34+s.tone*14|0},${40+s.tone*12|0},${58+s.tone*10|0},0.9)`;
-    ctx.beginPath();ctx.ellipse(sx(s.x),sy(s.y),s.r,s.r*0.62,0,0,7);ctx.fill();
+    const sc=s.r/36;
+    ctx.save();
+    ctx.translate(sx(s.x),sy(s.y));
+    ctx.scale(sc*s.flip,sc);
+    ctx.translate(-48,-32);
+    for(const part of STONE[s.v]){
+      ctx.fillStyle=`rgba(${part.f},${part.a*0.94})`;
+      ctx.fill(part.p);
+    }
+    ctx.restore();
   }
-  // wild flowers (closed at night, half-glow in bloom)
+  // wild flowers — a closed bud all game; only the finale opens them, and
+  // they open into the traveller's own gold
   for(const f of flowersWild){
     if(!inView(f.x,f.y,40))continue;
-    const open=meadowBloom;
-    ctx.fillStyle=`rgba(${150+open*70|0},${140+open*60|0},${190+open*40|0},${0.25+open*0.5})`;
-    ctx.beginPath();ctx.arc(sx(f.x),sy(f.y),1.5+open*2.2,0,7);ctx.fill();
+    drawFlower(sx(f.x),sy(f.y),f.s,f.flip,meadowBloom,t,f.ph);
   }
   // grass tufts, swaying; those near the player ripple. Each blade carries its
   // own phase, so a tuft bends like grass rather than turning like a signpost.
-  ctx.fillStyle=`rgba(52,66,72,${0.75+meadowBloom*0.1})`;
+  ctx.fillStyle=`rgba(${PAL.grass},${0.78+meadowBloom*0.12})`;
   for(const tf of tufts){
     if(!inView(tf.x,tf.y,60))continue;
     const dP=Math.hypot(player.x-tf.x,player.y-tf.y);
@@ -603,6 +655,33 @@ function render(t){
   drawWisp(t);
   drawPlayer(t);
   vignette();
+}
+
+// a wild flower: stalk, then the bud dissolving into open petals as the
+// meadow blooms. Nothing here is interactive — it is only the world noticing.
+function drawFlower(X,Y,s,flip,open,t,ph){
+  ctx.save();
+  ctx.translate(X,Y);
+  ctx.rotate(Math.sin(t*0.9+ph)*0.03);
+  ctx.scale(s*flip,s);
+  ctx.translate(-16,-32);
+  ctx.strokeStyle=`rgba(${PAL.grass},0.85)`;
+  ctx.lineWidth=1.5;
+  ctx.stroke(FLOWER.stalk);
+  if(open<0.98){
+    ctx.fillStyle=`rgba(150,140,180,${0.35*(1-open)})`; ctx.fill(FLOWER.budOuter);
+    ctx.fillStyle=`rgba(184,168,224,${0.5*(1-open)})`;  ctx.fill(FLOWER.budInner);
+  }
+  if(open>0.02){
+    ctx.save();
+    ctx.translate(16,13); ctx.scale(open,open); ctx.translate(-16,-13);
+    ctx.fillStyle=`rgba(184,168,224,${0.85*open})`;
+    for(const p of FLOWER.petals) ctx.fill(p);
+    ctx.fillStyle=`rgba(255,226,170,${open})`;
+    ctx.fill(FLOWER.core);
+    ctx.restore();
+  }
+  ctx.restore();
 }
 
 function drawSites(t){
