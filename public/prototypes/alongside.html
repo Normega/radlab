@@ -70,11 +70,37 @@ function resize(){
 
 // --- world dressing ---------------------------------------------------------
 function hash1(n){const s=Math.sin(n*127.1)*43758.5453;return s-Math.floor(s);}
+
+// Grass tufts, authored as SVG (grasspack.svg, 80x64, bottom-centre anchored
+// at 40,64) and inlined as path data so the prototype stays one self-contained
+// file with no fetches. Each blade is a separate path, which is what lets them
+// sway independently — a rigidly rotating tuft loses the ripple entirely.
+const GRASS_SRC=[
+  ['M 38 64 C 36 40, 24 20, 32 8 C 36 2, 42 10, 39 18 C 36 26, 42 42, 42 64 Z',
+   'M 37 64 C 28 46, 12 34, 8 26 C 16 28, 30 42, 38 64 Z',
+   'M 40 64 C 46 48, 58 36, 66 30 C 58 40, 48 52, 42 64 Z'],
+  ['M 37 64 C 34 38, 22 18, 28 10 C 33 5, 38 18, 41 64 Z',
+   'M 39 64 C 44 44, 56 28, 62 22 C 54 34, 45 48, 41 64 Z'],
+  ['M 38 64 C 36 40, 30 18, 38 6 C 42 18, 41 40, 42 64 Z',
+   'M 36 64 C 26 44, 10 32, 6 22 C 16 26, 28 42, 37 64 Z',
+   'M 40 64 C 46 48, 58 34, 68 28 C 58 38, 46 52, 42 64 Z',
+   'M 39 64 C 42 52, 50 42, 56 38 C 48 46, 43 54, 41 64 Z'],
+  ['M 38 64 C 36 36, 26 14, 34 4 C 38 14, 41 38, 42 64 Z',
+   'M 36 64 C 28 46, 14 36, 10 28 C 18 32, 30 46, 37 64 Z',
+   'M 37 64 C 32 50, 22 40, 18 34 C 24 40, 34 50, 38 64 Z',
+   'M 40 64 C 46 48, 60 36, 70 30 C 60 40, 48 52, 42 64 Z',
+   'M 40 64 C 44 52, 52 42, 58 38 C 50 46, 44 54, 41 64 Z'],
+];
+const GRASS=GRASS_SRC.map(v=>v.map(d=>new Path2D(d)));
+
 let tufts=[],stones=[],flowersWild=[];
 (function dress(){
   for(let i=0;i<420;i++){
-    tufts.push({x:hash1(i*3+1)*WORLD.w,y:hash1(i*3+2)*WORLD.h,n:2+Math.floor(hash1(i)*4),
-      ph:hash1(i*7)*7,h:8+hash1(i*5)*16});
+    tufts.push({x:hash1(i*3+1)*WORLD.w,y:hash1(i*3+2)*WORLD.h,
+      v:Math.floor(hash1(i*13+3)*GRASS.length),      // which tuft shape
+      s:0.26+hash1(i*5)*0.30,                        // 17-36 px tall
+      flip:hash1(i*19+7)<0.5?-1:1,                   // mirrored, so 4 shapes read as 8
+      ph:hash1(i*7)*7});
   }
   for(let i=0;i<26;i++){
     stones.push({x:hash1(i*11+5)*WORLD.w,y:hash1(i*11+6)*WORLD.h,r:6+hash1(i*13)*16,tone:hash1(i*17)});
@@ -521,19 +547,26 @@ function render(t){
     ctx.fillStyle=`rgba(${150+open*70|0},${140+open*60|0},${190+open*40|0},${0.25+open*0.5})`;
     ctx.beginPath();ctx.arc(sx(f.x),sy(f.y),1.5+open*2.2,0,7);ctx.fill();
   }
-  // grass tufts, swaying; those near the player ripple
+  // grass tufts, swaying; those near the player ripple. Each blade carries its
+  // own phase, so a tuft bends like grass rather than turning like a signpost.
+  ctx.fillStyle=`rgba(52,66,72,${0.75+meadowBloom*0.1})`;
   for(const tf of tufts){
     if(!inView(tf.x,tf.y,60))continue;
     const dP=Math.hypot(player.x-tf.x,player.y-tf.y);
-    const ripple=dP<70? (1-dP/70)*Math.min(1,player.spd/60)*6:0;
-    const swy=Math.sin(t*1.1+tf.ph)*2+ripple*Math.sin(t*7+tf.ph);
-    ctx.strokeStyle=`rgba(52,66,72,${0.75+meadowBloom*0.1})`;
-    ctx.lineWidth=1.1;
-    for(let i=0;i<tf.n;i++){
-      const bx=sx(tf.x)+i*3-tf.n*1.5, by=sy(tf.y);
-      ctx.beginPath();ctx.moveTo(bx,by);
-      ctx.quadraticCurveTo(bx+swy*0.5,by-tf.h*0.6,bx+swy,by-tf.h);
-      ctx.stroke();
+    const ripple=dP<70? (1-dP/70)*Math.min(1,player.spd/60):0;
+    const wind=Math.sin(t*1.1+tf.ph)*0.055;
+    const X=sx(tf.x), Y=sy(tf.y);
+    const blades=GRASS[tf.v];
+    for(let b=0;b<blades.length;b++){
+      const lag=0.72+0.28*Math.sin(b*2.3+tf.ph);        // outer blades trail
+      const ang=(wind+ripple*0.22*Math.sin(t*7+tf.ph+b))*lag;
+      ctx.save();
+      ctx.translate(X,Y);
+      ctx.rotate(ang);
+      ctx.scale(tf.s*tf.flip,tf.s);
+      ctx.translate(-40,-64);
+      ctx.fill(blades[b]);
+      ctx.restore();
     }
   }
 
