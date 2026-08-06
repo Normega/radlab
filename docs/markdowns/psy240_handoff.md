@@ -185,11 +185,10 @@ exists, `gap_claims` stays empty and §1 stays true.
 **Ordered by what blocks what.**
 
 1. **Build the student submission form** (§6). Blocks the entire contribution model.
-2. **Write the missing migration file.** `gap_review_queue`, `precheck_submission()`,
-   `run_precheck()`, `submission_review_queue`, and the `gap_claims` submission columns **exist only
-   in the live database**. `supabase/migrations/README.md` references a
-   `20260806_gap_submission_precheck.sql` that **was never created on disk**. This is the same class
-   of risk as CLAUDE.md's unmerged-branch rule: live but not durable.
+2. ~~Write the missing migration file.~~ **Done 2026-08-06** —
+   `supabase/migrations/20260806_gap_submission_precheck.sql` now exists, was written by transcribing
+   the live definitions back out of the database, and was re-applied. Transcribing it exposed two
+   regex bugs that would have blocked every student submission on day one; see §10 and the manifest.
 3. **Publish — and it must be all 260 drafts at once.** With a single page published, all 13 of its
    outbound links render as broken to a student, because `wiki_links` is member-readable while
    *unpublished targets are not*. A partial publish looks like a broken site.
@@ -274,6 +273,17 @@ Corpus-shape rules; they apply regardless of who writes the page.
 - `\yAct\y` matched **"Acceptance and Commitment Therapy"** (4 false positives). "crisis" matched "the
   opioid crisis"; "capacity" matched "capacity for temporary suppression". **Anchor legal terms to
   their neighbours.**
+- **In Postgres ARE, `\b` is the BACKSPACE character, not a word boundary — the word boundary is
+  `\y`.** Five of `precheck_submission()`'s ten clinical-instruction patterns were written with `\b`
+  and could never match; "start with 20 mg daily" passed the rule built to stop it.
+- **`'\\s+'` in a standard-conforming string is an escaped literal backslash**, not whitespace. It
+  matched nothing, so the same function's word count returned **1 for any input** — every submission
+  would have been blocked as `too_short`.
+- **Assert on the value inside a finding, not on the finding's presence.** Both bugs above survived a
+  deliberate fixture test: the good fixture raised `too_short`, recorded at the time as "59 words
+  against a 60-word floor". It was not 59, it was 1. **A check firing where you expected it to fire is
+  correct output from broken logic just as often as it is a pass.** Found later by transcribing
+  `pg_get_functiondef()` output into a migration file — reading the stored source is a cheap audit.
 
 **SQL / Postgres**
 

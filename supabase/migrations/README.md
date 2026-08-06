@@ -321,10 +321,16 @@ sleepwalking defence), `psychopharmacology` (deprescribing), `suicide-and-self-h
 hospitalisation). Final: **green 134 / 268 slots, amber 592, red 11.** Remaining to review: 11
 `MAYBE NOT GREEN` and 1 `MAYBE NOT RED`, neither of which is a safety question.
 
-`20260806_gap_submission_precheck.sql` — **applied live 2026-08-06, tested with fixtures, fixtures
-removed.** Adds submission fields to `gap_claims` (`submitted_text`, `source_doi`, `source_url`,
-`limitation`, `precheck`, `precheck_at`), the functions `precheck_submission()` / `run_precheck()`,
-and the `submission_review_queue` view.
+`20260806_gap_submission_precheck.sql` — **applied live 2026-08-06; file written and re-applied with
+two regex fixes later the same day.** Adds submission fields to `gap_claims` (`submitted_text`,
+`source_doi`, `source_url`, `limitation`, `precheck`, `precheck_at`), the functions
+`precheck_submission()` / `run_precheck()`, and the `submission_review_queue` / `gap_review_queue`
+views.
+
+> **This ran for a day with no migration file.** The objects were created live via MCP; the file was
+> written afterwards by transcribing `pg_get_functiondef()` / `pg_get_viewdef()` back out of the
+> database. Transcribing them is what exposed the two bugs below — reading the stored source is a
+> cheaper audit than it looks.
 
 **Why it exists.** At 200 students × 3 contributions the irreducible human step — opening the source
 and confirming it says what the student claims — runs to **50–100 hours a term**. The precheck removes
@@ -353,12 +359,40 @@ be automated.
 `## `-delimited chunks of page content: **666 of 737 gaps anchor to a section**, the remaining 71 link
 to the page top. `review_url_full` is the absolute form.
 
-**Verified with two deliberate fixtures.** A bad submission (modafinil "200 mg daily as first-line
-treatment… patients should be titrated", a 320-character quotation, 19 words, empty limitation) raised
-**all four planted findings plus a duplicate-source warning**. A well-formed one raised only
-`too_short` at 59 words against a 60-word floor — and a **genuine** `duplicate_source`, correctly
-noticing that its DOI was already cited on `alcohol-use-disorder`. Both fixtures deleted; `gap_claims`
-back to 0.
+### Two bugs, found by transcribing the function rather than by testing it
+
+Neither had reached a student — `gap_claims` was still empty — but both would have fired on day one.
+
+**1. The word count never worked.** The split pattern was written `'\\s+'`, which in a
+standard-conforming string is an escaped literal backslash followed by `s`. It matched nothing, so
+`regexp_split_to_array` returned **one element for any input**. Every submission would have been
+blocked with `too_short: 1 words. Minimum 60.` — the precheck would have rejected the entire class —
+and every one would also have warned `thin_limitation`, since `1 < 8`.
+
+**2. Five of the ten `clinical_instruction` patterns were dead.** They used `\b` as a word boundary.
+**In Postgres ARE `\b` is the backspace character**; the word boundary is `\y`. So `\d+\s?mg\b`,
+`\bdosage\b`, `\bdosing\b`, `\btitrat` and `\btaper\b` could never match. Only the plain-text
+alternatives (`first-line treatment`, `patients should`, …) were live — which is why the original
+fixture appeared to work.
+
+**Why the original fixture test missed both.** The bad submission raised its `clinical_instruction`
+finding on `first-line treatment`, a *surviving* alternative, so the four dead patterns behind it went
+unnoticed. And the good submission raised `too_short`, which was recorded here as *"59 words against a
+60-word floor"* — a boundary condition, entirely plausible. **It was not 59. It was 1.** The check
+fired for a believable reason and a wrong one at the same time.
+
+> **Lesson worth carrying: assert on the value in the finding, not on the finding's presence.** A
+> check that fires where you expected it to fire tells you almost nothing — `too_short` was *correct
+> output from broken logic*. Reading `1 words` instead of `59 words` in the detail string would have
+> caught it a day earlier.
+
+**Re-verified after the fix**, with the same two-fixture shape: a well-formed submission (~90 words,
+valid DOI, real limitation) now returns `[]` — **a clean pass, which was previously impossible** — and
+one ending "Start with 20 mg daily and titrate upward" is correctly blocked as `clinical_instruction`,
+which it previously was not. Both fixtures deleted; `gap_claims` back to 0.
+
+Note `gap_claims` carries a unique constraint on `(gap_id, person_id)` — one claim per student per gap.
+Fixtures must therefore target two different gaps.
 
 **What precheck cannot do**, stated in the view comment so nobody assumes otherwise: confirm the source
 actually says what the student claims. That remains the human step, and it is the whole job.
