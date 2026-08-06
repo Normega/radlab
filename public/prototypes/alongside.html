@@ -84,6 +84,26 @@ function grad(key,r,stops){
   return GRAD[key]=g;
 }
 function pth(d){return new Path2D(d);}
+// bark reads as brown rounded wood; foliage as its own deeper green, lit from
+// the upper left so each leaf-mass has a lit crown and a shaded underside
+// instead of the whole tree being one flat silhouette
+function barkGrad(){
+  if(GRAD.bark)return GRAD.bark;
+  const g=ctx.createLinearGradient(-12,0,12,0);
+  g.addColorStop(0,'rgb(64,46,33)');
+  g.addColorStop(0.45,'rgb(46,33,24)');
+  g.addColorStop(1,'rgb(28,20,15)');
+  return GRAD.bark=g;
+}
+function leafGrad(r){
+  const k='leaf'+r;
+  if(GRAD[k])return GRAD[k];
+  const g=ctx.createRadialGradient(-r*0.32,-r*0.36,r*0.06,0,0,r);
+  g.addColorStop(0,'rgb(58,96,64)');
+  g.addColorStop(0.55,'rgb(38,68,48)');
+  g.addColorStop(1,'rgb(22,42,31)');
+  return GRAD[k]=g;
+}
 
 // mushrooms.svg — three caps, stem base at (12,19), glow centred near the cap
 const SHROOM=[
@@ -128,8 +148,12 @@ const POND={
 const TREE={
   trunk:pth('M -12,0 C -8,-30 -3.5,-60 -3.5,-120 L -3.5,-120 C -25,-125 -40,-150 -52,-118 C -40,-110 -20,-105 -2,-100 C 0,-115 15,-130 48,-108 C 30,-100 15,-95 3.5,-80 C 3.5,-40 8,-20 12,0 Z'),
   canopy:[[0,-140,45],[-40,-125,35],[40,-120,35],[-25,-160,30],[25,-160,30],[0,-175,25]],
+  // the four lowest authored worms sat on or past the foliage edge — two of
+  // them hung in open air below the tree — so they are drawn up into the
+  // leaves. Glowworms live in the canopy, not under it.
   worms:[[-35,-150],[-15,-170],[20,-165],[42,-135],[-45,-120],[-10,-135],[15,-140],
-         [35,-110],[-25,-105],[0,-110],[-50,-95],[22,-90],[-12,-85],[48,-80]],
+         [35,-110],[-25,-105],[0,-110],[-46,-108],[26,-106],[-16,-112],[44,-104]],
+  bark:[pth('M -6,-12 C -5,-42 -4,-72 -4,-98'),pth('M 5,-8 C 4,-34 2,-58 2,-76')],
 };
 
 // flowers.svg — a true 6-frame opening sequence, authored 48x48 with the stem
@@ -929,9 +953,16 @@ function drawSites(t){
       ctx.save();
       ctx.translate(sx(s.x),sy(s.y)+22);
       ctx.scale(0.9,0.9);
-      ctx.fillStyle='rgba(58,52,76,1)';
+      ctx.fillStyle=barkGrad();
       ctx.fill(TREE.trunk);
-      for(const c of TREE.canopy){ctx.beginPath();ctx.arc(c[0],c[1],c[2],0,7);ctx.fill();}
+      ctx.strokeStyle='rgba(22,15,11,0.5)';ctx.lineWidth=1.2;
+      for(const b of TREE.bark) ctx.stroke(b);
+      for(const c of TREE.canopy){
+        ctx.save();ctx.translate(c[0],c[1]);
+        ctx.fillStyle=leafGrad(c[2]);
+        ctx.beginPath();ctx.arc(0,0,c[2],0,7);ctx.fill();
+        ctx.restore();
+      }
       if(lit>0.02){                              // the canopy holds the light
         ctx.save();ctx.translate(0,-135);
         ctx.globalAlpha=lit;
