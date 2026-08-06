@@ -19,6 +19,7 @@
  *   owl_barn         player-paced crossing, no fixed trial count
  *   farm_joy         3 rounds, 12 required selections of 24 veggies
  *   delve / tune     open-ended by design (no win state, user ends it)
+ *   alongside        open-ended; its arc runs ~5 min but the player ends it
  *
  * `trials: null` renders as an em dash, not "N/A" — a card should not say
  * nothing twice.
@@ -143,6 +144,17 @@ export const GAMES = [
     to: '/games/tune',
     badge: 'Attention · Sense foraging',
     desc: 'A world of sound waits in a soft haze. Rest your attention near a voice and it clarifies as the rest softens back.',
+    category: 'attention',
+    bucket: 'open',
+    duration: null,
+    trials: null,
+  },
+  {
+    slug: 'alongside',
+    title: 'Alongside',
+    to: '/games/alongside',
+    badge: 'Attention · Sense foraging',
+    desc: 'A creature of light drifts through a night meadow. It cannot be caught — but it can be kept company, and it knows where the good places are.',
     category: 'attention',
     bucket: 'open',
     duration: null,
