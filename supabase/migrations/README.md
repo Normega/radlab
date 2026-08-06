@@ -288,3 +288,35 @@ Final seed: **green 134, amber 597, red 6**.
 Capacity: green gaps set to **2**, since prevalence and rates asks legitimately take more than one
 source (different populations, criteria, years). **Student slots 865** against 600 required, and
 **green slots 268** against 200 students needing a scaffolded first task.
+
+`gap_review_queue` view — **applied live 2026-08-06.** Surfaces only the *boundary* cases in the
+auto-seeded `page_gaps.difficulty` classification, so reviewing it is a **17-row job rather than a
+737-row one**. Rows with a null `review_reason` need no attention.
+
+```sql
+select slug, difficulty, ask, review_reason
+from gap_review_queue where review_reason is not null
+order by review_reason, slug;
+```
+
+Four reasons, in priority order — the first three are the direction that matters:
+
+| review_reason | what it catches |
+|---|---|
+| `MAYBE RED: reads as clinical instruction` | dosing, taper, deprescribing, antidote, overdose, withdrawal management |
+| `MAYBE RED: legal or forensic standard` | statute, sentencing, civil commitment, criminal responsibility, duty to warn, forensic use/criteria/status |
+| `MAYBE RED: crisis resource or coercive practice` | crisis line, helpline, safety plan, restraint, seclusion |
+| `MAYBE NOT GREEN: conceptual, not a lookup` | mechanism, why, whether, debate, critique, theory |
+| `MAYBE NOT RED: no clinical or legal trigger` | over-flagged red, wasting capacity |
+
+**Regex caution recorded in the view comment: do not use `\yAct\y`** — it matches **Acceptance and
+Commitment Therapy** and produced four false positives on the first pass. The word "capacity" likewise
+matches "the capacity for temporary suppression" on `tic-disorders`, and "crisis" matches "the opioid
+crisis". Anchor legal terms to their neighbours rather than matching them alone.
+
+**Review pass 2026-08-06:** 5 rows reclassified **to red** (the conservative direction) —
+`tarasoff-duty-to-warn` (what a warning must contain), `intermittent-explosive-disorder` (criminal
+responsibility), `parasomnias` and `sleep-wake-disorders` (forensic sleep-medicine criteria and the
+sleepwalking defence), `psychopharmacology` (deprescribing), `suicide-and-self-harm` (involuntary
+hospitalisation). Final: **green 134 / 268 slots, amber 592, red 11.** Remaining to review: 11
+`MAYBE NOT GREEN` and 1 `MAYBE NOT RED`, neither of which is a safety question.
