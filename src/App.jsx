@@ -91,6 +91,7 @@ const AcademicHome         = lazy(() => import('./academic/AcademicHome'))
 const FieldGuideStaffRoute = lazy(() => import('./academic/fieldguide/FieldGuideStaffRoute'))
 const IngestPortal         = lazy(() => import('./academic/fieldguide/IngestPortal'))
 const ReviewQueue          = lazy(() => import('./academic/fieldguide/ReviewQueue'))
+const SubmissionsQueue     = lazy(() => import('./academic/fieldguide/SubmissionsQueue'))
 // The wiki reader takes any active enrollment, not just staff — students read
 // through the same components, and RLS decides what comes back.
 const FieldGuideMemberRoute = lazy(() => import('./academic/fieldguide/FieldGuideMemberRoute'))
@@ -564,6 +565,10 @@ export default function App() {
             <Route element={<FieldGuideStaffRoute />}>
               <Route path="/academic/fieldguide/ingest" element={<IngestPortal />} />
               <Route path="/academic/fieldguide/review" element={<ReviewQueue />} />
+              {/* Student contributions. Deliberately its own route and chunk:
+                  /review is the staff authoring path, this is the student one,
+                  and TAs who live here should never need the ingest portal. */}
+              <Route path="/academic/fieldguide/submissions" element={<SubmissionsQueue />} />
             </Route>
             {/* The wiki itself — same login, member-level gate. */}
             <Route element={<FieldGuideMemberRoute />}>
