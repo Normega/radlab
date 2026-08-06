@@ -3974,3 +3974,117 @@ Scale, for context: PsycINFO citations for "randomized controlled trial" ran **2
 
 One off-catalogue red link (`[[blinding]]`) was introduced and caught by the standing check; the
 reference was removed rather than a stub created. Back to zero.
+
+## 38. WP6 plan — how staff and students read, flag, and fill the guide
+
+Planned 2026-08-06, after the precheck migration was recovered from the live database. Three decisions
+were taken by Norm at the outset and constrain everything below:
+
+| decision | choice |
+|---|---|
+| publishing vs staff review | **risk-order, then publish** — read the highest-risk pages, publish all 260 at once, review the rest in place during term |
+| first student submission | **must be a green gap** — enforced, not merely recommended |
+| unsubmitted claim TTL | **14 days**, warning at day 10 |
+
+### 38.1 What the gap corpus actually looks like
+
+Measured, not assumed:
+
+| | |
+|---|---|
+| gaps, open | **737** across **145 pages** — so **117 of 262 pages carry no gap at all** |
+| by origin | **675 authored annotations**, 62 derived empty sections |
+| by page type | **629 on `disorder` pages (85%)**, 75 concept, 30 treatment, 2 debate, 1 study |
+| by difficulty | amber 592 (cap 1) · green 134 (cap 2) · red 11 |
+| slots | **860** excluding red, against **600** required submissions |
+| concentration | **56 pages carry 6 or more gaps** |
+
+Two consequences worth stating plainly. First, **the catalogue is authored, not derived** — 92% of gaps
+are `> **Needs research:**` lines a human wrote, so the asks are already specific and do not need
+rewriting for students. Second, **student work will pile onto disorder pages**; the concept and
+treatment pages are nearly untouched by the assignment and will need staff attention instead.
+
+### 38.2 The blocker: there is no course-structure axis
+
+Students navigate by week. The database does not know what a week is.
+
+`reference_worklist` has `lecture`, `dsm_chapter`, `chapter_title`, `chapter_sort` — but it was the
+WP2/WP4 catalogue tracker and **the corpus outgrew it**:
+
+- **118 of the 145 gap-bearing pages are not in `reference_worklist` at all.**
+- Of the 27 that are, only lectures **3–9** appear. Lectures 1, 2, and 10 onward are absent.
+- **535 of 737 gaps (73%) have no lecture**, including **113 of the 134 greens** — i.e. almost all of
+  the scaffolded first-assignment work is unreachable by the axis students would use to find it.
+
+Sorting 145 pages alphabetically is not a substitute. A student asked to contribute against week 4
+cannot act on a list that starts at `acute-stress-disorder`.
+
+**Division of labour.** DSM chapter is derivable — 85% of gaps are on disorder pages and DSM-5-TR
+chapter membership is well-defined, so it can be classified mechanically and spot-checked. **Lecture
+order is not derivable from anything in the repo**; it is the syllabus, and only Norm has it.
+
+> **Norm's task, and it is the one thing blocking the student browser:** the lecture list — number,
+> title, and roughly which topics each covers. Slug-level precision is not needed; topic names are
+> enough to map onto pages. Twelve lines of text is sufficient.
+
+### 38.3 Build order
+
+**Phase A — course structure.** A `course_structure` table (lecture number, title, ordinal) plus a
+`page_lectures` join, since a page can legitimately serve two weeks. Populate DSM chapter mechanically
+across all 262 pages; populate lecture from Norm's list. This is what unblocks Phase B.
+
+**Phase B — the student gap browser** (`/academic/fieldguide/gaps`). Browse by lecture, then DSM
+chapter, then difficulty. Each row shows the ask, the page, and **remaining capacity** — not just
+capacity, or the board will look open when it is full. Red gaps appear **dimmed and labelled staff-only
+rather than hidden**: the map should be honest about why a student cannot take them, and the precheck
+blocks them anyway. This is the planning surface, and it must exist before the form is useful — a
+student cannot submit against a gap they cannot find.
+
+**Phase C — the submission form.** Claim → write → `run_precheck()` → submit. Three rules from §38's
+decisions:
+- **Green-first is enforced at claim time**, not at submit time. Blocking at submit wastes the work.
+- **Claims expire 14 days after `claimed_at`** if `submitted_at` is null, with a warning at day 10.
+  Expiry returns the slot to the pool. Needed schema: `claimed_at`, `expires_at`, `expiry_warned_at`.
+- **Remaining capacity must count live claims, not just accepted ones** — otherwise two students write
+  the same gap and one wastes a week.
+
+Scarcity is the reason all three matter: **860 slots against 600 submissions is 1.43× headroom, and
+green is 1.34×** (268 slots, 200 students). There is no room for hoarding.
+
+**Phase D — staff review.** Three separable capabilities, in value order:
+
+1. **Inline gap rendering in `WikiPage`.** Gaps are drawn from `page_gaps` at their anchored section
+   (666 of 737 anchor; the rest sit at page top). This single change serves both audiences — students
+   see what is missing while reading, staff see what is flagged while reviewing — and it is the
+   prerequisite for flagging from the reader.
+2. **Flag from the reader.** Staff insert into `page_gaps` directly with `kind='staff'`, rather than
+   editing a `> **Needs research:**` line into prose. **This decouples flagging from page content
+   entirely**, so no flag ever touches provenance. `populate_page_gaps()` never deletes, so authored
+   and staff-inserted gaps coexist safely, and reclassifying difficulty is an `UPDATE` rather than a
+   prose edit. `gap_review_queue`'s MAYBE rows feed straight into this surface.
+3. **A `page_reviews` stamp** — page, reviewer, reviewed_at, verdict, notes — so 262 pages are not
+   re-read, and so coverage is measurable during term.
+
+**The correction path is the open design problem here.** `edit_page` is prohibited for content carrying
+provenance, which means a TA who spots a factual error currently has **no legitimate way to fix it**.
+Recommended: a version with `action='update'` marked as a *staff correction* rather than a source
+ingest, so page history records who changed what and why without pretending the change came from a
+source. Attribution stays truthful, which is the entire point of the provenance design. This needs
+building before staff review starts, or reviewers will reach for `edit_page`.
+
+**Phase E — publish.** All 260 drafts at once, after the risk-ordered subset in Phase D is clean.
+Partial publishing is not an option: with one page live, all of its outbound links render broken to a
+student, because `wiki_links` is member-readable while unpublished targets are not.
+
+### 38.4 Risk order for the pre-publish read
+
+Full coverage is **~44 hours** at ten minutes a page — not available before term. The subset that
+must be read first, in order:
+
+1. The **11 red gaps** and the pages holding them — clinical instruction and legal standards.
+2. **`law-and-ethics` and the crisis-resource pages** — where an error is most costly and most public.
+3. The **56 pages carrying 6+ gaps** — heavily scaffolded, most exposed to student traffic.
+4. **Tier A and foundation disorder pages** — highest readership.
+
+The 117 gap-free pages are the *lowest* priority for this pass, not the highest: nothing about them
+invites student edits, so an error there ages quietly rather than propagating.
