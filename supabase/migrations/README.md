@@ -320,3 +320,45 @@ responsibility), `parasomnias` and `sleep-wake-disorders` (forensic sleep-medici
 sleepwalking defence), `psychopharmacology` (deprescribing), `suicide-and-self-harm` (involuntary
 hospitalisation). Final: **green 134 / 268 slots, amber 592, red 11.** Remaining to review: 11
 `MAYBE NOT GREEN` and 1 `MAYBE NOT RED`, neither of which is a safety question.
+
+`20260806_gap_submission_precheck.sql` — **applied live 2026-08-06, tested with fixtures, fixtures
+removed.** Adds submission fields to `gap_claims` (`submitted_text`, `source_doi`, `source_url`,
+`limitation`, `precheck`, `precheck_at`), the functions `precheck_submission()` / `run_precheck()`,
+and the `submission_review_queue` view.
+
+**Why it exists.** At 200 students × 3 contributions the irreducible human step — opening the source
+and confirming it says what the student claims — runs to **50–100 hours a term**. The precheck removes
+the mechanical failures before a human reads anything, so that time goes to the judgment that cannot
+be automated.
+
+**Nine checks**, in the order they fire:
+
+| code | severity | catches |
+|---|---|---|
+| `red_gap` | block | a red-classified gap reaching the student path at all |
+| `no_identifier` | block | citation with no DOI or URL — unresolvable, therefore uncheckable |
+| `doi_malformed` | warn | DOI that is not shaped like a DOI |
+| `clinical_instruction` | block | **the likeliest novice failure** — dose, mg, titrate, taper, "first-line", "should be given" |
+| `legal_assertion` | warn | "is required by law", "must report", "is a criminal offence" |
+| `quote_too_long` / `quote_long` | block / warn | fair dealing — longest quoted run over 300 / 150 chars |
+| `too_short` / `too_long` | block / warn | under 60 words / over 400 |
+| `no_limitation` / `thin_limitation` | block / warn | the "what this source cannot tell us" field |
+| `duplicate_source` / `duplicate_claim_source` | warn / block | DOI already cited on the page, or already used by another submission for the same gap |
+
+**`route` tells a TA where to spend attention**: `BLOCKED` needs no reading at all (send back),
+`light check` is a green gap that passed (confirm the number matches), `full read` is everything else.
+
+**Clickable review links.** `review_url` resolves to the exact section a gap sits in —
+`/academic/fieldguide/wiki/<slug>#<section>`. Section was backfilled by locating each ask inside the
+`## `-delimited chunks of page content: **666 of 737 gaps anchor to a section**, the remaining 71 link
+to the page top. `review_url_full` is the absolute form.
+
+**Verified with two deliberate fixtures.** A bad submission (modafinil "200 mg daily as first-line
+treatment… patients should be titrated", a 320-character quotation, 19 words, empty limitation) raised
+**all four planted findings plus a duplicate-source warning**. A well-formed one raised only
+`too_short` at 59 words against a 60-word floor — and a **genuine** `duplicate_source`, correctly
+noticing that its DOI was already cited on `alcohol-use-disorder`. Both fixtures deleted; `gap_claims`
+back to 0.
+
+**What precheck cannot do**, stated in the view comment so nobody assumes otherwise: confirm the source
+actually says what the student claims. That remains the human step, and it is the whole job.
