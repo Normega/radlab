@@ -362,3 +362,29 @@ back to 0.
 
 **What precheck cannot do**, stated in the view comment so nobody assumes otherwise: confirm the source
 actually says what the student claims. That remains the human step, and it is the whole job.
+
+`20260806_staff_read_enrolled_people.sql` — **applied live 2026-08-06 (three MCP calls as each fault
+revealed the next), verified by RLS test.** Fixes "permission denied for table people" on
+`/academic/fieldguide/submissions`, introduced the same day by `submission_review_queue` joining
+`identity.people` to show whose submission a row is.
+
+**Three faults, each hidden behind the one in front of it:**
+
+1. **Grant.** `identity.people` had SELECT granted to `postgres` only, so client queries failed on
+   privileges *before* RLS was consulted — hence "permission denied" rather than an empty result. The
+   pre-existing `read own person row` policy had **never been reachable from the client**; nothing had
+   queried the table until now.
+2. **Schema usage.** The table grant is unreachable without `usage on schema identity`. USAGE confers
+   nothing by itself — every table there still needs its own grant plus RLS, and only `people` has one.
+3. **Nested RLS.** The first staff policy tested `enrollments` directly, but that table carries
+   `read own enrollments`, so the EXISTS subquery could only ever see the caller's own row. **A
+   reviewer saw exactly one name — their own — and every submission would have rendered with a blank
+   student.** Fixed with `shares_staffed_course()`, SECURITY DEFINER, for the same reason
+   `is_course_member` / `is_course_staff` are: an authorisation check must see rows the caller cannot.
+
+**Verified with `SET LOCAL ROLE authenticated`**, not by inspection: instructor → **2 rows** (self plus
+the TA in the same course); student → **1 row** (self only). Test enrolment flip reverted.
+
+**Lesson worth carrying:** a policy whose predicate reads another RLS-protected table silently
+under-matches. It does not error — it returns too little, which looks like missing data rather than a
+permissions bug. Any new policy that joins `enrollments` should go through a definer helper.
