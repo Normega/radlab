@@ -95,14 +95,57 @@ function barkGrad(){
   g.addColorStop(1,'rgb(28,20,15)');
   return GRAD.bark=g;
 }
-function leafGrad(r){
-  const k='leaf'+r;
+const LEAF_TINTS=[
+  ['rgb(58,96,64)','rgb(38,68,48)','rgb(22,42,31)'],
+  ['rgb(50,88,60)','rgb(32,60,44)','rgb(19,37,28)'],
+  ['rgb(64,100,68)','rgb(43,74,51)','rgb(25,46,34)'],
+];
+function leafGrad(r,tint){
+  const k='leaf'+r+'_'+(tint||0);
   if(GRAD[k])return GRAD[k];
+  const c=LEAF_TINTS[tint||0];
   const g=ctx.createRadialGradient(-r*0.32,-r*0.36,r*0.06,0,0,r);
-  g.addColorStop(0,'rgb(58,96,64)');
-  g.addColorStop(0.55,'rgb(38,68,48)');
-  g.addColorStop(1,'rgb(22,42,31)');
+  g.addColorStop(0,c[0]);
+  g.addColorStop(0.55,c[1]);
+  g.addColorStop(1,c[2]);
   return GRAD[k]=g;
+}
+// one tree, drawn anywhere: the tour's glowtree and the ordinary trees
+// scattered through the meadow are the same plant, lit differently
+function drawTree(X,Y,s,flip,tint,lit,worms,wormBase,t,seed){
+  ctx.save();
+  ctx.translate(X,Y);
+  ctx.scale(s*flip,s);
+  ctx.fillStyle=barkGrad();
+  ctx.fill(TREE.trunk);
+  ctx.strokeStyle='rgba(22,15,11,0.5)';ctx.lineWidth=1.2/s;
+  for(const b of TREE.bark) ctx.stroke(b);
+  for(const c of TREE.canopy){
+    ctx.save();ctx.translate(c[0],c[1]);
+    ctx.fillStyle=leafGrad(c[2],tint);
+    ctx.beginPath();ctx.arc(0,0,c[2],0,7);ctx.fill();
+    ctx.restore();
+  }
+  if(lit>0.02){                                // the canopy holds the light
+    ctx.save();ctx.translate(0,-135);
+    ctx.globalAlpha=lit;
+    ctx.fillStyle=grad('canopy',65,[[0,'rgba(180,240,150,0.22)'],[1,'rgba(180,240,150,0)']]);
+    ctx.beginPath();ctx.arc(0,0,65,0,7);ctx.fill();
+    ctx.restore();
+  }
+  for(let i=0;i<worms.length;i++){
+    const w=worms[i];
+    const a=Math.max(wormBase,lit)*(0.4+0.6*Math.max(0,Math.sin(t*0.8+i*1.7+seed)));
+    if(a<=0.02) continue;
+    ctx.save();ctx.translate(w[0],w[1]);
+    ctx.globalAlpha=a;
+    ctx.fillStyle=grad('worm',7,[[0,'rgba(180,240,150,1)'],[0.5,'rgba(180,240,150,0.45)'],[1,'rgba(180,240,150,0)']]);
+    ctx.beginPath();ctx.arc(0,0,7,0,7);ctx.fill();
+    ctx.fillStyle='rgba(240,255,210,1)';
+    ctx.beginPath();ctx.arc(0,0,1.6,0,7);ctx.fill();
+    ctx.restore();
+  }
+  ctx.restore();
 }
 
 // mushrooms.svg — three caps, stem base at (12,19), glow centred near the cap
@@ -278,7 +321,7 @@ const FLOWER={
   core:ell(16,13,2.2,2.2),
 };
 
-let tufts=[],stones=[],flowersWild=[];
+let tufts=[],stones=[],flowersWild=[],trees=[];
 (function dress(){
   for(let i=0;i<420;i++){
     tufts.push({x:hash1(i*3+1)*WORLD.w,y:hash1(i*3+2)*WORLD.h,
@@ -298,6 +341,28 @@ let tufts=[],stones=[],flowersWild=[];
   }
 })();
 
+// ordinary trees through the meadow — most of the world is not a destination,
+// and a place with only four landmarks reads as a stage set. They keep clear
+// of the tour sites and the clearing so nothing important ends up hidden
+// behind a trunk. (Planted after `sites`/`clearing` exist, further down.)
+function plantTrees(){
+  for(let i=0;i<60&&trees.length<18;i++){
+    const x=140+hash1(i*41+17)*(WORLD.w-280);
+    const y=200+hash1(i*43+19)*(WORLD.h-300);
+    let clear=Math.hypot(x-clearing.x,y-clearing.y)>340;
+    for(const s of sites) if(Math.hypot(x-s.x,y-s.y)<300) clear=false;
+    for(const o of trees) if(Math.hypot(x-o.x,y-o.y)<210) clear=false;
+    if(!clear) continue;
+    trees.push({x,y,
+      s:0.46+hash1(i*47+7)*0.44, flip:hash1(i*53+3)<0.5?-1:1,
+      tint:Math.floor(hash1(i*59+11)*LEAF_TINTS.length),
+      seed:hash1(i*61+5)*7,
+      // one or two dormant glowworms apiece, the way the spec sheet's dark
+      // state has them — the tour tree is the one that truly lights
+      worms:hash1(i*67+13)<0.45?[[-10,-135]]:[[-10,-135],[15,-140]]});
+  }
+}
+
 // savoring sites — on the wisp's tour route; each also stirs on its own
 const sites=[
   {kind:'foxfire', x:WORLD.w*0.28,y:WORLD.h*0.30, r:180, lit:0, selfNext:20,
@@ -309,6 +374,7 @@ const sites=[
     worms:Array.from({length:14},(_,i)=>({dx:(hash1(i*59)-0.5)*120,dy:-20-hash1(i*61)*130,ph:hash1(i*67)*7}))},
 ];
 const clearing={x:WORLD.w*0.47,y:WORLD.h*0.52,r:160};
+plantTrees();
 
 // --- actors -----------------------------------------------------------------
 const player={x:WORLD.w*0.45,y:WORLD.h*0.55,vx:0,vy:0,spd:0,accel:0,trail:[]};
@@ -321,6 +387,7 @@ const wisp={
   particles:Array.from({length:14},(_,i)=>({a:i/14*Math.PI*2,r:8+hash1(i*71)*10,ph:hash1(i*73)*7})),
 };
 let bond=0, settleTimer=0, meadowBloom=0, endFireflies=[], inBandFor=0;
+let cloakGlow=0;   // the cloak stirs when it wakes a place on its own
 let fireflies=[];
 const cam={x:player.x,y:player.y};
 let pointer={x:0,y:0,down:false};
@@ -485,13 +552,20 @@ function bondUpdate(t,dt){
 
 // --- sites ------------------------------------------------------------------
 function sitesUpdate(t,dt){
+  cloakGlow=Math.max(0,cloakGlow-dt*0.5);
   for(const s of sites){
     const dw=Math.hypot(wisp.x-s.x,wisp.y-s.y);
     const dp=Math.hypot(player.x-s.x,player.y-s.y);
-    const both=dw<s.r&&dp<s.r*1.5&&wisp.mist<=0;
+    // While the wisp is here, a place only wakes for the two of you together.
+    // Afterwards — wearing the cloak of fireflies it left behind — you can
+    // wake them alone. Nothing says so; you find it out by wandering back.
+    const alone=wisp.state==='gone';
+    const both=alone? dp<s.r*1.2
+                    : (dw<s.r&&dp<s.r*1.5&&wisp.mist<=0);
     // full light when visited together; a low self-stirring otherwise
     const target=both? 1: 0;
-    s.lit+= (target-s.lit)*dt*(both?0.5:0.08);
+    s.lit+= (target-s.lit)*dt*(both?(alone?0.4:0.5):0.08);
+    if(both&&alone) cloakGlow=Math.min(1,cloakGlow+dt*0.8);
     // it also happens without you, quietly
     if(t>s.selfNext){
       s.selfNext=t+40+Math.random()*40;
@@ -770,6 +844,12 @@ function render(t){
     }
   }
 
+  // the meadow's own trees, behind the tour's set pieces
+  for(const tr of trees){
+    if(!inView(tr.x,tr.y,260))continue;
+    drawTree(sx(tr.x),sy(tr.y),tr.s,tr.flip,tr.tint,0,tr.worms,0.22,t,tr.seed);
+  }
+
   drawSites(t);
 
   // player trail (grass-light wake)
@@ -791,13 +871,15 @@ function render(t){
       ctx.beginPath();ctx.arc(sx(px),sy(py),2.1,0,7);ctx.fill();
     }
   }
-  // ending fireflies orbit the player
+  // ending fireflies orbit the player, and lean outward when the cloak is
+  // waking a place — the light you were given doing the work
   for(const f of endFireflies){
     const cx0=f.cx+(player.x-f.cx)*f.mig, cy0=f.cy+(player.y-f.cy)*f.mig;
-    const px=cx0+Math.cos(t*0.5+f.a)*f.r, py=cy0+Math.sin(t*0.5+f.a)*f.r*0.7;
+    const rr=f.r*(1+cloakGlow*0.35);
+    const px=cx0+Math.cos(t*0.5+f.a)*rr, py=cy0+Math.sin(t*0.5+f.a)*rr*0.7;
     const blink=0.4+0.6*Math.max(0,Math.sin(t*1.3+f.ph));
-    ctx.fillStyle=`rgba(215,255,170,${0.6*blink})`;
-    ctx.beginPath();ctx.arc(sx(px),sy(py),1.8,0,7);ctx.fill();
+    ctx.fillStyle=`rgba(215,255,170,${(0.6+cloakGlow*0.3)*blink})`;
+    ctx.beginPath();ctx.arc(sx(px),sy(py),1.8+cloakGlow*0.7,0,7);ctx.fill();
   }
 
   drawWisp(t);
@@ -950,39 +1032,7 @@ function drawSites(t){
         ctx.restore();
       }
     } else if(s.kind==='glowtree'){
-      ctx.save();
-      ctx.translate(sx(s.x),sy(s.y)+22);
-      ctx.scale(0.9,0.9);
-      ctx.fillStyle=barkGrad();
-      ctx.fill(TREE.trunk);
-      ctx.strokeStyle='rgba(22,15,11,0.5)';ctx.lineWidth=1.2;
-      for(const b of TREE.bark) ctx.stroke(b);
-      for(const c of TREE.canopy){
-        ctx.save();ctx.translate(c[0],c[1]);
-        ctx.fillStyle=leafGrad(c[2]);
-        ctx.beginPath();ctx.arc(0,0,c[2],0,7);ctx.fill();
-        ctx.restore();
-      }
-      if(lit>0.02){                              // the canopy holds the light
-        ctx.save();ctx.translate(0,-135);
-        ctx.globalAlpha=lit;
-        ctx.fillStyle=grad('canopy',65,[[0,'rgba(180,240,150,0.22)'],[1,'rgba(180,240,150,0)']]);
-        ctx.beginPath();ctx.arc(0,0,65,0,7);ctx.fill();
-        ctx.restore();
-      }
-      for(let i=0;i<TREE.worms.length;i++){
-        const w=TREE.worms[i];
-        const a=Math.max(0.14,lit)*(0.4+0.6*Math.max(0,Math.sin(t*0.8+i*1.7)));
-        if(a<=0.02) continue;
-        ctx.save();ctx.translate(w[0],w[1]);
-        ctx.globalAlpha=a;
-        ctx.fillStyle=grad('worm',7,[[0,'rgba(180,240,150,1)'],[0.5,'rgba(180,240,150,0.45)'],[1,'rgba(180,240,150,0)']]);
-        ctx.beginPath();ctx.arc(0,0,7,0,7);ctx.fill();
-        ctx.fillStyle='rgba(240,255,210,1)';
-        ctx.beginPath();ctx.arc(0,0,1.6,0,7);ctx.fill();
-        ctx.restore();
-      }
-      ctx.restore();
+      drawTree(sx(s.x),sy(s.y)+22,0.9,1,0,lit,TREE.worms,0.14,t,0);
     }
   }
 }
@@ -1086,6 +1136,8 @@ window.__alongside={
   skipTo(sec){skew=sec-(performance.now()-t0)/1000;return 'now t='+T();},
   get bond(){return bond;},
   get harmony(){return harmony;},
+  trees(){return trees.map(t=>({x:t.x|0,y:t.y|0,s:+t.s.toFixed(2),tint:t.tint,worms:t.worms.length}));},
+  get cloakGlow(){return cloakGlow;},
   audio(){const k=clamp(harmony/0.8,0,1),tune=k*k*(3-2*k);
     const ratio=AUD.ratio||1.5;
     return {started, harmony:+harmony.toFixed(3), tune:+tune.toFixed(3),
