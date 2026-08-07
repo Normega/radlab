@@ -403,13 +403,15 @@ async function missedSessionState(
   }
   if (streak < MAX_ACK_STREAK) return 'ack'
 
-  // The lapsed offer fires at most once per day. In a several-times-a-day
-  // study, an earlier same-day row that was actually emailed already carried
-  // it (or would have), and repeating "are we wasting each other's time"
-  // three times a day turns a reality check into pestering. Later sends that
-  // day fall back to generic copy — not the warm ack, which the streak has
-  // already outgrown. A suppressed/blocked same-day row (attempts 0) doesn't
-  // count: no email went out, so nothing was offered yet.
+  // The lapsed offer rides only the FIRST emailed send of a day. Repeating
+  // "are we wasting each other's time" three times a day turns a reality
+  // check into pestering. Later sends that day fall back to generic copy —
+  // not the warm ack, which the streak has already outgrown. Note the guard
+  // is positional, not "was it offered": if the streak crosses MAX_ACK_STREAK
+  // mid-day, the day's earlier sends carried the ack, not the offer, and the
+  // first offer still waits for the next day's first send — a few hours'
+  // delay, accepted for the simpler rule. A suppressed/blocked same-day row
+  // (attempts 0) doesn't count: no email went out.
   const offeredToday = prior.some(
     (r) => r.scheduled_date === row.scheduled_date && (r.attempts ?? 0) >= 1,
   )
