@@ -15,6 +15,7 @@ export default function Withdraw() {
   const [studyName, setStudyName] = useState('this study')
   const [busy, setBusy] = useState(false)
   const [note, setNote] = useState('')
+  const [unsubMsg, setUnsubMsg] = useState(null)
 
   useEffect(() => {
     async function peek() {
@@ -34,6 +35,27 @@ export default function Withdraw() {
     }
     peek()
   }, [token])
+
+  // The lighter exit — stop study emails, keep the enrollment. Same
+  // click-gating rationale as withdrawal: this page is reached from email
+  // links, so nothing may act on load.
+  async function stopEmails() {
+    setBusy(true)
+    setUnsubMsg(null)
+    try {
+      const { data, error } = await supabase.functions.invoke('handle_unsubscribe', {
+        body: { token },
+      })
+      if (!error && data?.status === 'success')                  setState('unsub_done')
+      else if (!error && data?.status === 'already_unsubscribed') setUnsubMsg("You're already unsubscribed from this study's emails.")
+      else if (!error && data?.status === 'blocked')             setUnsubMsg('Email reminders are part of your participation agreement for this study, so they can’t be turned off on their own. If you no longer wish to take part, you can formally withdraw above, or contact your researcher.')
+      else                                                       setUnsubMsg('Something went wrong — please try again or contact your researcher.')
+    } catch {
+      setUnsubMsg('Something went wrong — please try again or contact your researcher.')
+    } finally {
+      setBusy(false)
+    }
+  }
 
   async function confirmWithdraw() {
     setBusy(true)
@@ -90,6 +112,28 @@ export default function Withdraw() {
             <button style={S.withdrawBtn} onClick={confirmWithdraw} disabled={busy}>
               {busy ? 'Withdrawing…' : 'Yes, withdraw me from the study'}
             </button>
+            <div style={S.divider} />
+            <p style={S.altText}>
+              Just want fewer emails? You can stop study emails without
+              withdrawing — though session invitations arrive by email, so you
+              won't receive new session links.
+            </p>
+            <button style={S.stopEmailsBtn} onClick={stopEmails} disabled={busy}>
+              Stop study emails, stay enrolled
+            </button>
+            {unsubMsg && <p style={S.unsubMsg}>{unsubMsg}</p>}
+          </>
+        )}
+
+        {state === 'unsub_done' && (
+          <>
+            <h1 style={S.heading}>Study emails stopped</h1>
+            <p style={S.body}>
+              You'll no longer receive emails for {studyName}, and you remain
+              enrolled. Any session link you already have keeps working until it
+              expires. If you change your mind and want the emails back, contact
+              your researcher.
+            </p>
           </>
         )}
 
@@ -218,6 +262,34 @@ const S = {
     fontWeight: 600,
     fontFamily: 'inherit',
     cursor: 'pointer',
+  },
+  divider: {
+    marginTop: 28,
+    borderTop: '1px solid #f2e4ea',
+  },
+  altText: {
+    marginTop: 16,
+    fontSize: '0.875rem',
+    lineHeight: 1.6,
+    color: '#777',
+  },
+  stopEmailsBtn: {
+    marginTop: 12,
+    padding: '10px 18px',
+    borderRadius: 8,
+    border: '1px solid #d8dadd',
+    background: '#fff',
+    color: '#555',
+    fontSize: '0.875rem',
+    fontWeight: 600,
+    fontFamily: 'inherit',
+    cursor: 'pointer',
+  },
+  unsubMsg: {
+    marginTop: 12,
+    fontSize: '0.875rem',
+    lineHeight: 1.6,
+    color: '#8a5568',
   },
   footer: {
     marginTop: 32,
