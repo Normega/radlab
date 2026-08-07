@@ -39,6 +39,16 @@
 gaps, the precheck, the review queue, the capacity arithmetic — is infrastructure waiting on it. See
 §6 for the contract it has to satisfy.
 
+**Update 2026-08-07:** the browse axis that gated the form is now built. The 2026F calendar was
+restructured with Norm and locked into the database (`20260807_course_structure.sql`): 11 rebalanced
+content lectures + Oct 14 midterm, Wednesdays Sept 9 → Dec 2. `course_structure` (14 rows),
+`page_lectures` (259 of 260 drafts mapped; `elimination-disorders` out by design), and the
+`gaps_by_lecture` view — every lecture carries 19–121 open gaps. Taxonomy §2a is the prose record.
+Deadlines already placed on the calendar: green submission Oct 7, ambers Nov 11 and Nov 27. One
+scarcity fact for the browser copy: pre-midterm lectures hold only 38 green gaps (76 slots), so the
+green deadline must allow claiming from any lecture. Next builds: the gap browser (Phase B), then the
+form (Phase C, green-first enforced at claim time, 14-day TTL).
+
 ---
 
 ## 2. Live state — verified 2026-08-06

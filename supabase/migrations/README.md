@@ -398,6 +398,29 @@ Fixtures must therefore target two different gaps.
 **What precheck cannot do**, stated in the view comment so nobody assumes otherwise: confirm the source
 actually says what the student claims. That remains the human step, and it is the whole job.
 
+`20260807_course_structure.sql` — **applied via MCP `apply_migration` 2026-08-07, verified by count
+and unmapped-drafts check.** The 2026F calendar as data, and the page→lecture mapping that gives
+students a by-week axis into the Field Guide (WP6 Phase A; taxonomy §2a is the prose record).
+
+- **`course_structure`** — 14 rows: 11 content lectures, the Oct 14 midterm (+ RCT onboarding), the
+  Oct 28 reading week, the exam-period row. `week_no` (1–14, calendar) and `lecture_no` (1–11,
+  content) **diverge after the midterm** — L6 is week 7; both are stored, neither derived. RCT arc
+  and deadline notes live in `note`.
+- **`page_lectures`** — 266 rows mapping **259 of 260 draft pages** (verified: the single unmapped
+  draft is `elimination-disorders`, out-of-scope by design). Seven pages double-mapped for
+  taught-in-both reasons recorded inline (tics L3+L9, RAD/DSED L4+L9, schizotypal PD L10+L11,
+  psychodynamic psychotherapy L1+L2, Little Albert L1+L3, student support L1+L5). Inserted by slug
+  join against `wiki_pages` — a typo'd slug drops the row rather than erroring, which is why the
+  verification step counts uniques against drafts.
+- **`gaps_by_lecture`** — `security_invoker=true` view feeding the Phase B student browser. Verified:
+  every lecture carries 19–121 open gaps; per-lecture totals sum above 737 because double-mapped
+  pages' gaps appear under both lectures, which is intended (a gap findable from either week).
+- RLS per the standard pattern: members read, staff manage, both tables.
+
+Planning fact recorded here because the browser copy depends on it: **pre-midterm lectures (L1–5)
+hold only 38 green gaps = 76 slots** against ~200 students needing a green first task by Oct 7 — the
+green deadline must allow claiming from any lecture, not only material taught so far.
+
 `20260806_staff_read_enrolled_people.sql` — **applied live 2026-08-06 (three MCP calls as each fault
 revealed the next), verified by RLS test.** Fixes "permission denied for table people" on
 `/academic/fieldguide/submissions`, introduced the same day by `submission_review_queue` joining

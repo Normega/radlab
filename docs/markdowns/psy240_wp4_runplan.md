@@ -4029,9 +4029,16 @@ order is not derivable from anything in the repo**; it is the syllabus, and only
 
 ### 38.3 Build order
 
-**Phase A — course structure.** A `course_structure` table (lecture number, title, ordinal) plus a
-`page_lectures` join, since a page can legitimately serve two weeks. Populate DSM chapter mechanically
-across all 262 pages; populate lecture from Norm's list. This is what unblocks Phase B.
+**Phase A — course structure. ✅ Done 2026-08-07** (`20260807_course_structure.sql`, applied and
+verified). The blocker resolved differently than planned: instead of Norm supplying a list against
+last year's lectures, the calendar itself was **restructured in conversation** — 11 content lectures
++ midterm week, dated against the real term (Wednesdays 09:00–12:00, Sept 9 → Dec 2, reading week
+Oct 28), with the RCT arc (onboarding at the midterm, design intro Oct 21, debrief Dec 2) pinning the
+midterm to Oct 14. Taxonomy §2a is the durable record. `course_structure` (14 rows) +
+`page_lectures` (266 rows; 259 of 260 drafts, `elimination-disorders` unmapped by design; 7 pages
+double-mapped) + the `gaps_by_lecture` view. Every lecture now has 19–121 open gaps. One scarcity
+note for Phase B copy: pre-midterm lectures hold only 38 green gaps (76 slots), so the green deadline
+must allow claiming from any lecture.
 
 **Phase B — the student gap browser** (`/academic/fieldguide/gaps`). Browse by lecture, then DSM
 chapter, then difficulty. Each row shows the ask, the page, and **remaining capacity** — not just
