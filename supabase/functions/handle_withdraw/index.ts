@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json().catch(() => ({}))
-    const { token, confirm } = body
+    const { token, confirm, note } = body
 
     if (!token) {
       return json({ error: 'token is required' }, 400)
@@ -88,10 +88,23 @@ Deno.serve(async (req) => {
       return json({ status: 'ok_to_withdraw', study_name: studyName })
     }
 
+    // Optional participant-supplied reason from the confirmation page.
+    // Trimmed and capped — this is a courtesy note, not a survey response,
+    // and an unbounded text column fed from an unauthenticated endpoint is
+    // an invitation to abuse. Empty string stores as null.
+    const withdrawalNote = typeof note === 'string'
+      ? note.trim().slice(0, 500) || null
+      : null
+
     const reason = 'Participant withdrew via the email withdrawal link.'
     const { error: enrollErr } = await db
       .from('study_enrollments')
-      .update({ status: 'withdrawn', withdrawal_reason: reason, withdrawn_at: new Date().toISOString() })
+      .update({
+        status: 'withdrawn',
+        withdrawal_reason: reason,
+        withdrawal_note: withdrawalNote,
+        withdrawn_at: new Date().toISOString(),
+      })
       .eq('id', enrollment.id)
     if (enrollErr) throw enrollErr
 

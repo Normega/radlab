@@ -14,6 +14,7 @@ export default function Withdraw() {
   const [state, setState] = useState('loading')
   const [studyName, setStudyName] = useState('this study')
   const [busy, setBusy] = useState(false)
+  const [note, setNote] = useState('')
 
   useEffect(() => {
     async function peek() {
@@ -38,7 +39,7 @@ export default function Withdraw() {
     setBusy(true)
     try {
       const { data, error } = await supabase.functions.invoke('handle_withdraw', {
-        body: { token, confirm: true },
+        body: { token, confirm: true, note: note.trim() || undefined },
       })
       if (!error && data?.status === 'success')            setState('success')
       else if (!error && data?.status === 'already_withdrawn') setState('already')
@@ -74,6 +75,18 @@ export default function Withdraw() {
               If you have questions about credit or compensation, please contact
               your researcher before withdrawing.
             </p>
+            <label style={S.noteLabel}>
+              If you're comfortable sharing, we'd value knowing why — it helps us
+              design studies that fit people's lives better. (Optional.)
+              <textarea
+                style={S.noteBox}
+                value={note}
+                onChange={e => setNote(e.target.value)}
+                maxLength={500}
+                rows={3}
+                placeholder="Your reason (optional)"
+              />
+            </label>
             <button style={S.withdrawBtn} onClick={confirmWithdraw} disabled={busy}>
               {busy ? 'Withdrawing…' : 'Yes, withdraw me from the study'}
             </button>
@@ -173,6 +186,26 @@ const S = {
     lineHeight: 1.7,
     color: '#555',
     margin: 0,
+  },
+  noteLabel: {
+    display: 'block',
+    marginTop: 24,
+    fontSize: '0.875rem',
+    lineHeight: 1.6,
+    color: '#555',
+  },
+  noteBox: {
+    display: 'block',
+    width: '100%',
+    boxSizing: 'border-box',
+    marginTop: 8,
+    padding: '10px 12px',
+    borderRadius: 8,
+    border: '1px solid #e5d5dc',
+    fontSize: '0.9375rem',
+    fontFamily: 'inherit',
+    color: '#1c1c1e',
+    resize: 'vertical',
   },
   withdrawBtn: {
     marginTop: 28,
