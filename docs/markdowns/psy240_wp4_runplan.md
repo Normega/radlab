@@ -4088,3 +4088,159 @@ must be read first, in order:
 
 The 117 gap-free pages are the *lowest* priority for this pass, not the highest: nothing about them
 invites student edits, so an error there ages quietly rather than propagating.
+
+---
+
+## 39. WP7 plan — quizzes and tests run off the Field Guide
+
+Planned 2026-08-07 in conversation with Norm. Nothing here is built. Decisions below are his and
+constrain the design; the schema sketch and integrity posture are the recommended implementation.
+WP7 does not block WP6 — the submission form remains the critical path — but the two share one
+dependency: **WP6 Phase A's `course_structure` / `page_lectures` axis is also the test blueprint's
+organizing axis.** Build it once, for both.
+
+### 39.1 Decisions taken
+
+| decision | choice |
+|---|---|
+| weekly quiz grading | **participation, not performance** — credit for completion, immediate feedback |
+| quiz feedback | **must deep-link into the Field Guide** — each item keys to a page/section, feedback links `/academic/fieldguide/wiki/<slug>#<section>` |
+| deadline policy | full credit on time; **+1 week full credit via standing accommodation row**; after that a **75%-capped late tier**; automated, identical for everyone, visible in the UI |
+| late-tier hard close | **the midterm date** for first-half quizzes; **Dec 8** (last day of classes / participation deadline) for second-half |
+| drop-lowest policy | **none** — the 75% tier is the forgiveness mechanism |
+| midterm | **in-class**, with test-centre and makeup sittings as additional windows on the same test |
+| test accommodations | per-student rows (`time_multiplier`, `extra_minutes`), **assignable any time during term, evaluated at attempt start** |
+| device policy | laptops preferred, **phones allowed** — every item authored mobile-first; monitoring degrades gracefully and the mode is recorded per attempt |
+| content lock (midterm) | **T−2 weeks, immediately after that week's lecture** — full publication freeze, not a snapshot with live drift |
+| content lock (final) | **Dec 8**, fused with the participation deadline; exam date is registrar-set, ≥1 week later |
+| during a lock | submissions continue; staff **accept without publishing**; batch publish after the test |
+
+### 39.2 Term rhythm
+
+Two cycles, one asymmetry. The midterm cycle has **decoupled dates** because lectures outlast the
+lock; the final cycle **fuses everything on Dec 8** because lectures end first.
+
+```
+Midterm cycle:
+  weekly quizzes + submissions throughout
+  T−2 wk   lecture, then LOCK — text final, study period opens, submissions continue
+  T−1 wk   lecture + last first-half quiz (compressed: full credit through the day
+           before the midterm; its 75% tier never opens)
+  T        MIDTERM — all first-half quizzes hard-close
+  T+1 day  batch publish the accepted backlog
+
+Final cycle:
+  weekly quizzes + submissions resume
+  ~Dec 2   last lecture (normal quiz window — a full week remains)
+  Dec 8    last day of classes: second-half quizzes hard-close, guide LOCKS,
+           study period opens   ← single fused date
+  TBD      FINAL (registrar; ≥1 week after Dec 8; window row created when known)
+  after    batch publish — the closing act of the term's guide
+```
+
+Assumption to confirm with Norm: the three-article submission deadline is also Dec 8 (he called it
+"the last day of classes participation deadline"). If so, everything student-submittable shares that
+date.
+
+### 39.3 Why participation grading, structurally
+
+Retrieval practice pays on the *doing*, not the stakes — and low stakes removes the incentive to
+cheat, which means **weekly quizzes need no lockdown at all**: open book, any device, no fullscreen,
+no focus monitoring, no flags. The entire proctoring surface shrinks to the midterm and final. The
+quiz runner therefore ships **early and simple** while the test runner gets the careful work.
+
+Second structural payoff: **the quizzes pilot the test item bank.** Items keyed to pages accumulate
+per-item difficulty and discrimination from hundreds of low-stakes responses before anything
+performance-graded uses them. Flawed items get caught where they cost nothing.
+
+Deadline mechanics that make the policy self-serve (the goal is that Norm stops being the appeals
+court — the answer to every extension email is "the system already gives you the late option"):
+
+- Accommodation = a **standing row** (`deadline_extension_days`, default 7), applied silently to
+  every quiz deadline for that student. Never re-requested, never re-granted.
+- A few hours of **silent grace** at each deadline (display 11:59 p.m., enforce ~3 a.m.) deletes the
+  11:59-vs-12:02 dispute class.
+- Every quiz card shows the student's **own** dates, accommodation included, with state: open (full
+  credit) → late (75% cap) → closed.
+
+### 39.4 Integrity posture — deterrence and detection, never prevention
+
+A browser can require fullscreen, log `visibilitychange`/`blur`, suppress copy/paste/print,
+watermark the screen with the student's name, randomize item and option order, deliver one question
+per screen with no back-navigation, and keep the answer key server-side. It **cannot** stop a phone
+beside the laptop, a photo of the screen, or a second person. Camera lockdown (Proctorio et al.) is
+ruled out — privacy/accessibility mess, wrong fit for U of T.
+
+Therefore: **integrity events are flags for human review, never auto-fails.** In the hall, the
+primary integrity layer is invigilators' eyes. The strongest technical defense is **per-student item
+sampling from pools keyed to blueprint cells** (page/lecture × difficulty): neighbours see different
+items in different orders, and makeup sittings stop needing a hand-built Form B — leakage between
+sittings is inherently limited. The quizzes provide the pool depth to afford this.
+
+Device reality: iOS Safari has no fullscreen API for page content; mobile browsers background
+aggressively (an incoming call fires the same events as tab-switching). So: feature-detect at
+launch, run full monitoring where supported, degrade to visibility-logging on phones, and **record
+the monitoring mode on the attempt** so flags are read in context. A student taking the test *on*
+their phone has, usefully, occupied the most common cheating device.
+
+Mobile-first item constraints (enforced from quiz one, so the midterm inherits mobile-ready items):
+MC and short-typed formats only; no drag-and-drop or matrix items; vignettes short or collapsible;
+16px+ text, thumb-sized targets; every template verified at a real 375px viewport (note: headless
+Chrome on this machine clamps windows ~500px — verify on a real device or proper emulation).
+
+**The single most important engineering requirement:** 200 devices on hall wifi at minute zero.
+Every answer autosaves to localStorage first and syncs opportunistically with retries; the server
+applies grace for sync latency at the deadline. A crashed tab or dropped connection must be a
+non-event.
+
+### 39.5 Schema sketch (radlab-academic)
+
+- `assessments` — quiz or test; open/close, base duration (tests), lecture linkage via Phase A.
+- `assessment_items` — keyed to `page_id` (+ section anchor); answer key **server-side only**; pool
+  membership per blueprint cell; stores the page version id it was written against.
+- `test_windows` — a test has many (main sitting, test centre, makeups); students assigned to one,
+  default main.
+- `accommodations` — per student per course: `deadline_extension_days` (quizzes),
+  `time_multiplier` + `extra_minutes` (tests), notes, granted_by/at. Evaluated at deadline/attempt
+  time, so a letter arriving the night before is one INSERT.
+- `attempts` — one per student per assessment; server-stamped `started_at`; **deadline computed
+  server-side at start**: `started_at + duration × multiplier + extra_minutes`. Client timer is
+  display only. Staff can extend a live attempt (accommodation discovered mid-sitting, dead laptop).
+- `attempt_answers` — autosaved per item, server-timestamped, rejected past deadline (+grace).
+- `attempt_events` — focus loss, fullscreen exit, copy attempt, with durations and monitoring mode.
+
+RLS: own-rows for students; **every staff view goes through a `shares_staffed_course()`-style
+SECURITY DEFINER helper** — the §10 nested-RLS lesson applies verbatim, since staff views here join
+`enrollments` again. Grading via SECURITY DEFINER RPC so the key never crosses the wire.
+
+Also needed: a **live staff console** for sittings — who has started, time remaining, flags,
+extend/restart. It will be used within the first ten minutes of a 200-person sitting.
+
+### 39.6 Lock mechanics
+
+The freeze is real, not editorial fiction: **the text students can read is the text they are tested
+on, byte for byte.** A snapshot-with-drift design (test keyed to an edition while the live site
+moves) recreates the unfairness it exists to prevent, and is rejected.
+
+- A course-level `publish_locked` flag the review UI respects. `review_proposal(p_publish)` already
+  separates acceptance from publication, so staff keep reviewing and accepting during the lock —
+  students get decisions on time — and accepted versions queue unpublished.
+- **Stamp the edition anyway** (set of published version ids at lock time): one insert, and appeals
+  get "this item was written against this exact text."
+- **Emergency correction path**: a logged bypass for a dangerous factual error (crisis resources,
+  legal standards) during a lock, plus a check of whether any live item touches the corrected page.
+  The path must exist or someone will quietly reach for `edit_page`.
+
+### 39.7 Build order
+
+1. **Quiz runner** — no lockdown, participation credit, feedback deep-links, deadline/accommodation
+   engine. Ships first; every later piece reuses its item and attempt tables.
+2. **Item bank + blueprint surface** — items keyed to pages, pools per blueprint cell, per-item
+   stats from quiz responses. Depends on WP6 Phase A for the lecture axis.
+3. **Test runner** — windows, per-student sampling, server-side timing, offline-tolerant autosave,
+   monitoring with graceful degradation, staff console.
+4. **Lock tooling** — `publish_locked`, edition stamp, emergency path.
+
+Open items: registrar's exam date (create the window row when known); whether the midterm/final
+include short typed answers (raises a grading-workflow question); how much of the item bank Norm
+authors directly vs. reviews from drafts generated against guide pages.

@@ -202,6 +202,10 @@ exists, `gap_claims` stays empty and §1 stays true.
    replaced it) but students will hit it. See §11.
 8. **Consider a page-level content flag** for suicide, self-harm, and eating-disorder pages —
    pastoral, not classificatory. Norm has not decided on this.
+9. **WP7 — quizzes and tests run off the guide** (run plan §39, planned 2026-08-07): weekly
+   participation-graded quizzes with feedback deep-linked into guide pages, an in-class midterm and
+   a final with per-student accommodation overrides, and a publication lock before each test. The
+   quiz runner is the first build; it shares WP6 Phase A's `course_structure` axis.
 
 **The 62 empty sections are deliberate**, not debt: they are the visible surface students contribute
 into. Do not "fix" them.
@@ -354,7 +358,7 @@ Verified with `SET LOCAL ROLE authenticated`, not by inspection: instructor → 
 
 | | |
 |---|---|
-| Run plan (the reference) | `docs/markdowns/psy240_wp4_runplan.md` — §9 is the method; §26–§37 are this phase |
+| Run plan (the reference) | `docs/markdowns/psy240_wp4_runplan.md` — §9 is the method; §26–§37 are this phase; §38 is WP6; §39 is WP7 (assessment) |
 | This handoff | `docs/markdowns/psy240_handoff.md` |
 | Architecture record | `website.md` — **must be checked on every merge to main** (CLAUDE.md) |
 | Migrations | `supabase/migrations/` + `README.md` applied-status manifest |
