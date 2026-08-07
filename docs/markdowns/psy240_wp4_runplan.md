@@ -4040,12 +4040,17 @@ double-mapped) + the `gaps_by_lecture` view. Every lecture now has 19–121 open
 note for Phase B copy: pre-midterm lectures hold only 38 green gaps (76 slots), so the green deadline
 must allow claiming from any lecture.
 
-**Phase B — the student gap browser** (`/academic/fieldguide/gaps`). Browse by lecture, then DSM
-chapter, then difficulty. Each row shows the ask, the page, and **remaining capacity** — not just
-capacity, or the board will look open when it is full. Red gaps appear **dimmed and labelled staff-only
-rather than hidden**: the map should be honest about why a student cannot take them, and the precheck
-blocks them anyway. This is the planning surface, and it must exist before the form is useful — a
-student cannot submit against a gap they cannot find.
+**Phase B — the student gap browser. ✅ Built 2026-08-07** (`src/academic/fieldguide/GapBrowser.jsx`,
+`/academic/fieldguide/gaps`, member-gated, own lazy chunk). Backed by one rpc — `gap_board()`
+(`20260807_gap_board.sql`), a SECURITY DEFINER function because remaining capacity counts *all*
+students' active claims while `gap_claims` RLS correctly shows a student only their own; it returns
+counts, never names, and is gated inside by `is_course_member()`. Verified: member → 760 rows / 11
+lectures / 268 green slots; non-member → 0 rows. The board groups by lecture with dates, collapsible;
+search or a difficulty filter auto-expands (hunting vs browsing); shows **remaining** capacity — not
+raw capacity, or the board looks open when full; reds **dimmed and labelled staff-only rather than
+hidden**; greens labelled as the first-assignment tier claimable from any lecture, with the Oct 7 /
+Nov 11 / Nov 27 deadlines in the header copy. Read-only until Phase C: the footer says claiming opens
+with the submission form, and steers students to read the pages their shortlisted gaps sit on.
 
 **Phase C — the submission form.** Claim → write → `run_precheck()` → submit. Three rules from §38's
 decisions:

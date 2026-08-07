@@ -100,6 +100,7 @@ const SubmissionsQueue     = lazy(() => import('./academic/fieldguide/Submission
 const FieldGuideMemberRoute = lazy(() => import('./academic/fieldguide/FieldGuideMemberRoute'))
 const WikiIndex            = lazy(() => import('./academic/fieldguide/wiki/WikiIndex'))
 const WikiPage             = lazy(() => import('./academic/fieldguide/wiki/WikiPage'))
+const GapBrowser           = lazy(() => import('./academic/fieldguide/GapBrowser'))
 
 // Research admin section — separate partition from Lecture Lounge.
 const AdminLayout   = lazy(() => import('./layouts/AdminLayout'))
@@ -584,6 +585,10 @@ export default function App() {
             <Route element={<FieldGuideMemberRoute />}>
               <Route path="/academic/fieldguide/wiki" element={<WikiIndex />} />
               <Route path="/academic/fieldguide/wiki/:slug" element={<WikiPage />} />
+              {/* The gap browser: students plan their research assignment here.
+                  Member-level on purpose — the board is part of reading the
+                  guide, not part of submitting to it. */}
+              <Route path="/academic/fieldguide/gaps" element={<GapBrowser />} />
             </Route>
           </Route>
 

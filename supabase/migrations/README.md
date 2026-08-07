@@ -421,6 +421,24 @@ Planning fact recorded here because the browser copy depends on it: **pre-midter
 hold only 38 green gaps = 76 slots** against ~200 students needing a green first task by Oct 7 — the
 green deadline must allow claiming from any lecture, not only material taught so far.
 
+`20260807_gap_board.sql` — **applied via MCP `apply_migration` 2026-08-07, verified under two JWTs.**
+One function, `gap_board()`: the single read behind the student gap browser
+(`/academic/fieldguide/gaps`, WP6 Phase B).
+
+**Why SECURITY DEFINER and not a view.** Remaining capacity = capacity minus *all* students' active
+claims, but `gap_claims` RLS correctly lets a student read only their own rows. A `security_invoker`
+view would silently under-count — the nested-RLS failure mode again (it returns too little, it does
+not error) — and a definer *view* is against house rules. So: a definer function gated inside by
+`is_course_member()`, returning **counts only, never names**. `my_status` is the caller's own claim
+state, which is theirs to see. `withdrawn` is excluded from the active count everywhere, which is
+also how the future 14-day claim TTL will free abandoned holds without this function changing.
+
+**Verified**, not inspected: as norman.farb (member) → **760 rows, 11 lectures, 268 green slots
+open**; as an authenticated non-member UUID → **0 rows**.
+
+Rows are 760 rather than 737 because double-mapped pages surface their gaps under both lectures —
+intended: a gap should be findable from either week it is taught in.
+
 `20260806_staff_read_enrolled_people.sql` — **applied live 2026-08-06 (three MCP calls as each fault
 revealed the next), verified by RLS test.** Fixes "permission denied for table people" on
 `/academic/fieldguide/submissions`, introduced the same day by `submission_review_queue` joining
