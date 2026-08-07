@@ -11,7 +11,9 @@
 // session; check_schedule decides both whether it applies and which kind, since
 // that derivation needs the study's design_graph (see _shared/criticalSession.ts).
 // A first send whose preceding session went unused additionally leads with a
-// short, non-punitive acknowledgment (see followsMissedSession below).
+// short, non-punitive acknowledgment — or, at MAX_ACK_STREAK+ consecutive
+// misses, a get-back-on-track note with a formal-withdrawal offer (see
+// missedSessionState below).
 
 import { createClient, SupabaseClient } from 'npm:@supabase/supabase-js@2'
 import { Resend } from 'npm:resend'
@@ -179,10 +181,12 @@ Deno.serve(async (req) => {
     const siteUrl = Deno.env.get('SITE_URL') ?? 'https://radlab.zone'
     const linkUrl = `${siteUrl}/s/${token}`
 
-    // 6. Generate unsubscribe URL (omitted for test sends)
+    // 6. Generate unsubscribe URL (omitted for test sends). The token is the
+    // permanent per-participant/study one — the withdrawal link below reuses it.
+    let unsubToken: string | null = null
     let unsubscribeUrl: string | null = null
     if (!isTest) {
-      const unsubToken = await getOrCreateUnsubscribeToken(db, row.participant_id, row.study_id)
+      unsubToken = await getOrCreateUnsubscribeToken(db, row.participant_id, row.study_id)
       unsubscribeUrl = `${siteUrl}/unsubscribe/${unsubToken}`
     }
 
@@ -203,19 +207,30 @@ Deno.serve(async (req) => {
     // email that gives them the next one. Skipped for test sends (no real
     // history to reason about) and for reminders (renderEmail's reminder
     // lead-in takes precedence — see MISSED_INTRO there).
-    const afterMissed = !isTest && !is_reminder && !final_notice && await followsMissedSession(db, row)
+    const missState: MissState = !isTest && !is_reminder && !final_notice
+      ? await missedSessionState(db, row)
+      : 'none'
+    const afterMissed = missState === 'ack'
+    const lapsed = missState === 'lapsed'
+
+    // The withdrawal offer that rides the lapsed email. Reuses the permanent
+    // per-participant/study token the unsubscribe link is built from — the
+    // route decides the action, and /withdraw requires an explicit confirm
+    // click before anything changes (safe against link-scanner prefetch).
+    const withdrawUrl = lapsed && unsubToken ? `${siteUrl}/withdraw/${unsubToken}` : null
 
     // Response rate so far — on reminders and on the email that follows a
-    // missed session, i.e. only where the participant has lapsed and we're
-    // already writing about it. Never on a plain first send: there the number
-    // changes nothing and reads as a running score. Only computed once there's
-    // enough history for it to mean anything (see checkInProgress). It also
-    // selects the missed-session lead-in, so a low rate doesn't get told the
-    // miss was "occasional" (see LOW_RATE_PCT in emailTemplate.ts).
+    // missed session (single miss or lapsed streak), i.e. only where the
+    // participant has lapsed and we're already writing about it. Never on a
+    // plain first send: there the number changes nothing and reads as a
+    // running score. Only computed once there's enough history for it to mean
+    // anything (see checkInProgress). It also selects the missed-session
+    // lead-in, so a low rate doesn't get told the miss was "occasional" (see
+    // LOW_RATE_PCT in emailTemplate.ts).
     // Never computed for a final notice — renderEmail suppresses the line there
     // anyway, so the query would be pure waste on the one send that is timing-
     // critical (it fires within a 12 h deadline window).
-    const progress = !isTest && !final_notice && (is_reminder || afterMissed)
+    const progress = !isTest && !final_notice && (is_reminder || afterMissed || lapsed)
       ? await checkInProgress(db, row)
       : null
 
@@ -231,6 +246,8 @@ Deno.serve(async (req) => {
       is_test:         isTest,
       is_reminder:     !!is_reminder,
       after_missed:    afterMissed,
+      lapsed,
+      withdraw_url:    withdrawUrl,
       final_notice:    final_notice ?? null,
       session_label:   sessionLabel,
       progress,
@@ -291,16 +308,27 @@ function scheduleKey(date: string, time: string | null): string {
   return `${date}T${time ?? '00:00:00'}`
 }
 
-// Beyond this many consecutive misses, stop acknowledging. Someone who has
-// missed four in a row has disengaged, and a warm "no problem" on every email
-// starts to read as tone-deaf rather than kind — that case belongs to the
-// adherence-withdrawal path, not to more cheerful copy.
+// Beyond this many consecutive misses, stop the warm single-miss ack. Someone
+// who has missed four in a row has disengaged, and a warm "no problem" on every
+// email starts to read as tone-deaf rather than kind. Instead of falling back
+// to generic copy (which read as the system not noticing), that case now gets
+// the lapsed tier: a plain get-back-on-track note plus a formal-withdrawal
+// offer (see LAPSED_INTRO in emailTemplate.ts and the /withdraw page).
 const MAX_ACK_STREAK = 4
 
+// What the immediately-preceding schedule rows say about this send:
+//   'none'   — previous session wasn't a miss (or there's no history)
+//   'ack'    — previous session was missed, streak below MAX_ACK_STREAK:
+//              lead with the warm single-miss acknowledgment
+//   'lapsed' — MAX_ACK_STREAK+ consecutive misses: lead with the
+//              get-back-on-track + withdrawal-offer copy
+type MissState = 'none' | 'ack' | 'lapsed'
+
 /**
- * True when the session immediately before this one closed unused — i.e. the
+ * Whether the session immediately before this one closed unused — i.e. the
  * participant was emailed a link (attempts >= 1), never completed it, and its
- * window has since closed.
+ * window has since closed — and if so, whether the miss streak is short enough
+ * for the warm ack ('ack') or long enough for the withdrawal offer ('lapsed').
  *
  * A miss is defined by the CLOSED WINDOW, not by status === 'missed'. The
  * 'missed' label is only applied by check_schedule step 0b, which considers
@@ -318,10 +346,10 @@ const MAX_ACK_STREAK = 4
  * received would only confuse them. A row whose link is still live isn't a miss
  * yet: the participant can still do it, and the reminder pass covers that.
  */
-async function followsMissedSession(
+async function missedSessionState(
   db: SupabaseClient,
   row: { id: string; participant_id: string; study_id: string; scheduled_date: string; send_time: string | null },
-): Promise<boolean> {
+): Promise<MissState> {
   const { data, error } = await db
     .from('participant_schedule')
     .select('id, scheduled_date, send_time, status, attempts')
@@ -335,14 +363,14 @@ async function followsMissedSession(
 
   if (error) {
     console.warn('missed-session lookup failed:', error.message)
-    return false
+    return 'none'
   }
 
   // The date-only filter above keeps same-day siblings scheduled later than
   // this row (3-check-ins-a-day studies), so drop them by full key.
   const thisKey = scheduleKey(row.scheduled_date, row.send_time)
   const prior = (data ?? []).filter((r) => scheduleKey(r.scheduled_date, r.send_time) < thisKey)
-  if (prior.length === 0) return false
+  if (prior.length === 0) return 'none'
 
   // Which of those rows still have an openable link? Same liveness test as the
   // link reuse check above — status 'active' and not past expires_at.
@@ -353,7 +381,7 @@ async function followsMissedSession(
 
   if (linkErr) {
     console.warn('missed-session link lookup failed:', linkErr.message)
-    return false
+    return 'none'
   }
 
   const nowMs = Date.now()
@@ -366,14 +394,14 @@ async function followsMissedSession(
   const isMiss = (r: { id: string; status: string; attempts: number | null }) =>
     r.status !== 'completed' && (r.attempts ?? 0) >= 1 && !stillOpen.has(r.id)
 
-  if (!isMiss(prior[0])) return false
+  if (!isMiss(prior[0])) return 'none'
 
   let streak = 0
   for (const r of prior) {
     if (!isMiss(r)) break
     streak++
   }
-  return streak < MAX_ACK_STREAK
+  return streak < MAX_ACK_STREAK ? 'ack' : 'lapsed'
 }
 
 // Below this many closed check-ins the number is noise, and worse than noise

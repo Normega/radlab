@@ -14,6 +14,15 @@ export function renderEmail(vars: {
   is_test?: boolean
   is_reminder?: boolean
   after_missed?: boolean
+  // Four or more consecutive missed sessions (see send_message's
+  // MAX_ACK_STREAK). Mutually exclusive with after_missed — send_message sets
+  // one or the other, never both. Selects the get-back-on-track lead-in and
+  // the formal-withdrawal offer instead of the warm single-miss ack.
+  lapsed?: boolean
+  // Self-serve withdrawal link (/withdraw/{token}); only provided on lapsed
+  // sends. The page it opens requires an explicit confirmation click, so this
+  // link itself is safe against inbox link-scanner prefetch.
+  withdraw_url?: string | null
   // The deadline-anchored last-chance reminder on a critical session (see
   // criticalSession.ts). Its value names which consequence is true, so the
   // copy can only ever state one the code will actually apply.
@@ -69,7 +78,9 @@ export function renderEmail(vars: {
     : MISSED_INTRO
   const intro = vars.final_notice
     ? finalNoticeIntro(vars.final_notice, vars.session_label, vars.expires_hours)
-    : vars.is_reminder ? REMINDER_INTRO : vars.after_missed ? missedIntro : null
+    : vars.is_reminder ? REMINDER_INTRO
+    : vars.lapsed ? LAPSED_INTRO
+    : vars.after_missed ? missedIntro : null
 
   // Response rate — on reminders and on missed-session emails, i.e. only where
   // the participant has actually lapsed and we're already writing about it.
@@ -81,7 +92,7 @@ export function renderEmail(vars: {
   // Suppressed on the final notice: that email is about one deadline and one
   // action, and a completion percentage beside a "this is your last chance"
   // paragraph reads as a verdict on the participant rather than context.
-  const progressLine = !vars.final_notice && (vars.is_reminder || vars.after_missed) && vars.progress
+  const progressLine = !vars.final_notice && (vars.is_reminder || vars.after_missed || vars.lapsed) && vars.progress
     ? progressSentence(vars.progress)
     : null
 
@@ -103,18 +114,30 @@ export function renderEmail(vars: {
     ? `<p style="margin:8px 0 0 0;font-size:11px;color:#abadb0;"><a href="${vars.unsubscribe_url}" style="color:#abadb0;">Unsubscribe from study emails</a></p>`
     : ''
 
+  // Withdrawal offer — the "link at the bottom of this email" LAPSED_INTRO
+  // points at. Inside the card rather than the footer: it's an offer the
+  // lead-in makes, not boilerplate — but quieter than body copy, because the
+  // hoped-for outcome is still the session button above it.
+  const withdrawHtml = vars.withdraw_url
+    ? `<p style="margin:16px 0 0 0;font-size:12px;color:#6b6e73;">If you'd prefer to formally withdraw from the study, <a href="${vars.withdraw_url}" style="color:#f068a4;">you can do that here</a> — you'll be asked to confirm before anything changes.</p>`
+    : ''
+
   // Build full HTML email
   const html = HTML_WRAPPER
     .replace('{{email_body_html}}', bodyHtml)
     .replace(/\{\{link_url\}\}/g, vars.link_url)
     .replace(/\{\{expires_hours\}\}/g, String(vars.expires_hours))
+    .replace('{{withdraw_html}}', withdrawHtml)
     .replace('{{unsubscribe_footer_html}}', unsubscribeHtml)
 
   // Plain-text fallback (Resend sends both)
+  const withdrawText = vars.withdraw_url
+    ? `\n\nTo formally withdraw from the study (you'll be asked to confirm): ${vars.withdraw_url}`
+    : ''
   const unsubscribeText = vars.unsubscribe_url
     ? `\n\nTo unsubscribe from study emails: ${vars.unsubscribe_url}`
     : ''
-  const text = `${bodyText}\n\nBegin session: ${vars.link_url}${unsubscribeText}`
+  const text = `${bodyText}\n\nBegin session: ${vars.link_url}${withdrawText}${unsubscribeText}`
 
   return { subject, html, text }
 }
@@ -302,6 +325,19 @@ const LOW_RATE_PCT = 50
 // entirely, and a reproach is what tips them over.
 const MISSED_INTRO_LOW_RATE = `We noticed your last session's window closed before you got to it. We know it hasn't been easy to keep up lately — there's still nothing to make up, and every check-in you do adds something. Here's the next one whenever you're ready.`
 
+// ─── Lapsed lead-in ──────────────────────────────────────────────────────────
+// The third tier: at MAX_ACK_STREAK (4+) consecutive misses the warm ack above
+// stops being credible, and before this existed the email just went generic —
+// which read as the system not noticing at all. This one names the streak
+// plainly and offers a real choice: get back on track (the button below), or
+// formally withdraw (the link withdrawHtml renders at the bottom of the card).
+//
+// Deliberately NOT an ultimatum: no deadline, no consequence, and the emails
+// keep coming if they do nothing. It's a reality check with a well-intentioned
+// participant about whether the study still fits — an honest exit offered
+// kindly beats a slow fade of ignored emails, for them and for the data.
+const LAPSED_INTRO = `We noticed you've missed a few check-ins in a row — that's okay, and there's nothing to make up. Now is a great time to get back on track, and your next check-in is below. On the other hand, if the study no longer fits your circumstances, you're welcome to formally withdraw using the link at the bottom of this email. Either way, we're glad to have you for whatever part of the study you can do.`
+
 // ─── Response-rate line ───────────────────────────────────────────────────────
 // Deliberately DESCRIPTIVE, not normative: it reports what the participant has
 // done and never names a pass threshold, so the same sentence is true for a
@@ -335,7 +371,8 @@ University of Toronto Mississauga`
 // ─── HTML wrapper ─────────────────────────────────────────────────────────────
 // Table-based layout for email client compatibility.
 // Placeholders replaced at render time:
-//   {{email_body_html}}, {{link_url}}, {{expires_hours}}, {{unsubscribe_footer_html}}
+//   {{email_body_html}}, {{link_url}}, {{expires_hours}}, {{withdraw_html}},
+//   {{unsubscribe_footer_html}}
 
 const HTML_WRAPPER = `<!DOCTYPE html>
 <html>
@@ -376,6 +413,8 @@ const HTML_WRAPPER = `<!DOCTYPE html>
 
               <!-- Expiry notice -->
               <p style="margin:24px 0 0 0;font-size:12px;color:#abadb0;border-top:1px solid #f5f5f5;padding-top:16px;">This link expires in {{expires_hours}} hours and is personal to you — please don't share it.</p>
+
+              {{withdraw_html}}
 
             </td>
           </tr>
