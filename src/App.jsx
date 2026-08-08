@@ -101,6 +101,7 @@ const FieldGuideMemberRoute = lazy(() => import('./academic/fieldguide/FieldGuid
 const WikiIndex            = lazy(() => import('./academic/fieldguide/wiki/WikiIndex'))
 const WikiPage             = lazy(() => import('./academic/fieldguide/wiki/WikiPage'))
 const GapBrowser           = lazy(() => import('./academic/fieldguide/GapBrowser'))
+const FieldGuideHome       = lazy(() => import('./academic/fieldguide/FieldGuideHome'))
 
 // Research admin section — separate partition from Lecture Lounge.
 const AdminLayout   = lazy(() => import('./layouts/AdminLayout'))
@@ -583,6 +584,10 @@ export default function App() {
             </Route>
             {/* The wiki itself — same login, member-level gate. */}
             <Route element={<FieldGuideMemberRoute />}>
+              {/* The front door. One url to give a TA or a student: staff see
+                  the queues with live counts, members see the two student
+                  surfaces — RLS decides which counts even return. */}
+              <Route path="/academic/fieldguide" element={<FieldGuideHome />} />
               <Route path="/academic/fieldguide/wiki" element={<WikiIndex />} />
               <Route path="/academic/fieldguide/wiki/:slug" element={<WikiPage />} />
               {/* The gap browser: students plan their research assignment here.
