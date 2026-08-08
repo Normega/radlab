@@ -4138,9 +4138,8 @@ Final cycle:
   after    batch publish — the closing act of the term's guide
 ```
 
-Assumption to confirm with Norm: the three-article submission deadline is also Dec 8 (he called it
-"the last day of classes participation deadline"). If so, everything student-submittable shares that
-date.
+Confirmed by Norm 2026-08-08: **all participation coursework — quizzes and the three article
+submissions — is due Dec 8.** Everything student-submittable shares that date.
 
 ### 39.3 Why participation grading, structurally
 
