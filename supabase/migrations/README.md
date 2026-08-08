@@ -439,6 +439,29 @@ open**; as an authenticated non-member UUID → **0 rows**.
 Rows are 760 rather than 737 because double-mapped pages surface their gaps under both lectures —
 intended: a gap should be findable from either week it is taught in.
 
+`20260808_gap_triage_adjudicated.sql` — **applied 2026-08-08 (as `…adjudicated` + `…adjudicated_p2`
+on the server; one file here because it is one decision), verified: `gap_review_queue` flags 13 → 0.**
+Norm adjudicated every flagged row, accepting all recommendations.
+
+- **10 greens demoted to amber** — multi-part/conceptual asks a light-check TA cannot verify against
+  one figure. **Capacity 2 retained** on all ten (Norm's call): capacity means *how many independent
+  contributions the ask can absorb*, orthogonal to difficulty — a green at 2 collects **convergent**
+  evidence (two sources, same lookup; `duplicate_claim_source` already forces the second student onto
+  a different source), a multi-part amber at 2 collects **complementary** evidence (one facet each).
+- **1 green kept** — `vascular-neurocognitive-disorder` ("does midlife BP lowering reduce dementia
+  incidence"): reads conceptual, but SPRINT MIND and successor meta-analyses answer it from one
+  source. Marked `adjudicated: keep green` in notes.
+- **Both reds kept** — the two MAYBE NOT RED flags were regex blind spots, not misclassifications:
+  "Canadian **reporting duties**" is mandatory-reporting law and "**involuntary hospitalisation**"
+  is civil-commitment territory. Both phrases added to the view's not-red trigger list.
+- **Adjudication override added to the view**: `notes ~* 'adjudicated: keep'` returns NULL before any
+  heuristic fires, so a settled human decision is never re-flagged. Anyone re-triaging later: mark
+  the row, don't fight the regex.
+
+Board after: **green 124 gaps / 248 slots** (headroom 1.24× for ~200 students' first task),
+**amber 602 / 612**, red 11, total slots unchanged at 860. Demotions are audit-trailed in
+`page_gaps.notes`.
+
 `20260806_staff_read_enrolled_people.sql` — **applied live 2026-08-06 (three MCP calls as each fault
 revealed the next), verified by RLS test.** Fixes "permission denied for table people" on
 `/academic/fieldguide/submissions`, introduced the same day by `submission_review_queue` joining

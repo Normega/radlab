@@ -202,8 +202,12 @@ exists, `gap_claims` stays empty and §1 stays true.
 3. **Publish — and it must be all 260 drafts at once.** With a single page published, all 13 of its
    outbound links render as broken to a student, because `wiki_links` is member-readable while
    *unpublished targets are not*. A partial publish looks like a broken site.
-4. **Adjudicate the 11 `MAYBE NOT GREEN` rows + 1 `MAYBE NOT RED`.** Norm: *"i'm happy to work through
-   the rows."* These are difficulty-tier judgements, not content work.
+4. ~~Adjudicate the flagged difficulty rows.~~ **Done 2026-08-08** — Norm adjudicated all 13 flags
+   (`20260808_gap_triage_adjudicated.sql`): 10 greens demoted to amber **keeping capacity 2**
+   (complementary sources, one facet each — capacity is orthogonal to difficulty), 1 kept green
+   (vascular NCD — SPRINT MIND answers it single-source), both reds kept (regex blind spots, now
+   patched). `gap_review_queue` is at 0 flags and respects `adjudicated: keep` in notes. Board:
+   green 124/248, amber 602/612, red 11.
 5. **Two unused Handbook chapters** — Kaylor & Jeglic (exhibitionism rehabilitation) and Heffernan &
    Ward ch. 31 (Good Lives Model). Both would close open treatment annotations on
    `exhibitionistic-disorder` and `paraphilic-disorders`.
