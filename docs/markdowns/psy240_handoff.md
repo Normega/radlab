@@ -32,8 +32,12 @@
 
 - `gap_claims` has **0 rows**. The two test fixtures used to verify the precheck were deleted after
   the check passed.
-- **There is no student-facing submission form.** The submissions queue is the *receiving* end of a
-  pipeline whose *sending* end does not exist yet.
+- ~~There is no student-facing submission form.~~ **Built 2026-08-08** — the gap browser
+  (`/academic/fieldguide/gaps`) now carries the whole claim → draft → submit flow
+  (`20260808_claim_flow.sql` + `GapBrowser.jsx`). The queue stays empty only until students exist
+  and pages are published. Green-first is enforced at claim time (both halves), claims expire after
+  14 days, `submit_claim()` refuses on precheck blocks, and two RLS holes (self-grading, direct
+  insert) were closed with column grants + a guard trigger — details in the migrations manifest.
 
 **Building that form is the single most important remaining task.** Everything else — 737 catalogued
 gaps, the precheck, the review queue, the capacity arithmetic — is infrastructure waiting on it. See

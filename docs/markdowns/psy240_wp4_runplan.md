@@ -4052,13 +4052,24 @@ hidden**; greens labelled as the first-assignment tier claimable from any lectur
 Nov 11 / Nov 27 deadlines in the header copy. Read-only until Phase C: the footer says claiming opens
 with the submission form, and steers students to read the pages their shortlisted gaps sit on.
 
-**Phase C — the submission form.** Claim → write → `run_precheck()` → submit. Three rules from §38's
-decisions:
-- **Green-first is enforced at claim time**, not at submit time. Blocking at submit wastes the work.
-- **Claims expire 14 days after `claimed_at`** if `submitted_at` is null, with a warning at day 10.
-  Expiry returns the slot to the pool. Needed schema: `claimed_at`, `expires_at`, `expiry_warned_at`.
-- **Remaining capacity must count live claims, not just accepted ones** — otherwise two students write
-  the same gap and one wastes a week.
+**Phase C — the submission form. ✅ Built 2026-08-08** (`20260808_claim_flow.sql` + GapBrowser claim
+panel; the browser and form are one surface). All three rules landed server-side, plus two the plan
+didn't know it needed:
+- Green-first enforced at claim time, **both halves** — first claim must be green AND amber stays
+  locked until a green is submitted/accepted.
+- 14-day TTL: `expires_at` stamped by `claim_gap()`; counts ignore expired claims immediately (lazy),
+  `expire_claims()` sweeps them to withdrawn (hygiene). Day-10 warning email deferred — rides
+  existing touchpoints when built, not a new mail class.
+- Remaining capacity is a live count (claimed-unexpired + submitted + accepted).
+- **Found while building: two real RLS holes** — `members update own claims` allowed
+  `status='accepted'` self-grading and precheck forgery; `members create own claims` allowed direct
+  inserts past every rule. Closed with column grants (precheck fields are function-only now) + a
+  guard trigger (non-staff writes only through `claim_gap()`/`submit_claim()`, signalled by a
+  transaction-local flag; staff untouched). Full student-lifecycle test battery in the manifest.
+- `submit_claim()` runs the precheck first and **refuses to submit on block findings** — the claim
+  stays `claimed`, so a mechanical fault costs an edit, not the claim. `check_doi()` runs on paste
+  (debounced) so a redundant source is discovered before 150 words are written, and
+  `gap_page_sources()` shows what the page already cites at the moment of choosing.
 
 Scarcity is the reason all three matter: **860 slots against 600 submissions is 1.43× headroom, and
 green is 1.34×** (268 slots, 200 students). There is no room for hoarding.

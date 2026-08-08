@@ -462,6 +462,48 @@ Board after: **green 124 gaps / 248 slots** (headroom 1.24× for ~200 students' 
 **amber 602 / 612**, red 11, total slots unchanged at 860. Demotions are audit-trailed in
 `page_gaps.notes`.
 
+`20260808_claim_flow.sql` — **applied via MCP `apply_migration` 2026-08-08, verified by a full
+student-lifecycle test battery under a throwaway student account (created via a real `auth.users`
+insert so `handle_new_user` ran, deleted after).** WP6 Phase C, server side: claiming, drafting,
+submitting. Every rule Norm decided is enforced in the database, not the client.
+
+**Two live security holes this closes** (found by reading the RLS policies before building):
+`members update own claims` let a student set `status='accepted'` on their own row — self-grading —
+or overwrite `precheck` with `[]`; `members create own claims` let a student INSERT directly,
+bypassing capacity, green-first, and the red block. Three-layer fix:
+
+1. **Column grants**: `UPDATE` on `gap_claims` revoked and re-granted on a named column list —
+   `precheck`/`precheck_at` are now writable only by definer functions running as table owner.
+   (Verified: student UPDATE of precheck → `42501 permission denied` before RLS is even consulted.)
+2. **Guard trigger** (`gap_claims_guard`, BEFORE INSERT OR UPDATE, SECURITY DEFINER so its
+   page_gaps read survives student RLS): staff pass untouched (SubmissionsQueue accept/send-back
+   unaffected); non-staff inserts and withdrawn→claimed revivals require the transaction-local
+   `radlab.claim_flow` flag that only `claim_gap()` sets; claimed→submitted requires the flag that
+   only `submit_claim()` sets, **so the precheck is unskippable**; submitted and accepted rows are
+   locked to students entirely.
+3. **Definer functions as the only doors**: `claim_gap()` (red block → capacity live-count →
+   green-first both halves: first claim must be green AND amber locked until a green is
+   submitted/accepted → max 2 unsubmitted claims → insert-or-revive with `expires_at = now()+14d`);
+   `submit_claim()` (runs `precheck_submission` FIRST — any `block` finding records the precheck and
+   leaves the claim in `claimed`, so a fault costs an edit, not the claim); `check_doi(gap, doi)`
+   (the immediate check: malformed / already-cited-on-page / already-used-for-gap, run on paste);
+   `gap_page_sources(gap)` (what the page already cites, shown at the moment of choosing);
+   `expire_claims()` (hygiene sweep, staff-scoped — counts already ignore expired rows, so nothing
+   breaks if it never runs).
+
+`gap_board()` regained with three new columns (`my_claim_id`, `my_expires_at`, and expiry-aware
+`claims_active`/`remaining`).
+
+**Test battery, all passed**: amber-first → `green_first`; red → `red_gap`; green claim → ok with
++14d expiry; duplicate claim → `already_claimed`; direct INSERT → trigger raise; self-accept →
+trigger raise; precheck forgery → column grant denial; direct `status='submitted'` → trigger raise
+naming `submit_claim()`; submit with "Clinicians should titrate stimulants starting at 20 mg daily"
+→ `blocked` (clinical_instruction — the `\y` fix earning its keep), claim stayed `claimed`; clean
+resubmit → ok, `[]` findings; post-submit edit → locked; two ambers claimed after green submitted,
+third → `too_many_open`; withdraw → slot freed in `gap_board` immediately; `check_doi` under a
+*different* person's JWT → `duplicate_claim_source` block on the used DOI, warn on malformed, `[]`
+on clean. Fixtures fully deleted (claims 0, fixture people 0).
+
 `20260806_staff_read_enrolled_people.sql` — **applied live 2026-08-06 (three MCP calls as each fault
 revealed the next), verified by RLS test.** Fixes "permission denied for table people" on
 `/academic/fieldguide/submissions`, introduced the same day by `submission_review_queue` joining
