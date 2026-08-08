@@ -4240,6 +4240,31 @@ moves) recreates the unfairness it exists to prevent, and is rejected.
    monitoring with graceful degradation, staff console.
 4. **Lock tooling** — `publish_locked`, edition stamp, emergency path.
 
-Open items: registrar's exam date (create the window row when known); whether the midterm/final
-include short typed answers (raises a grading-workflow question); how much of the item bank Norm
-authors directly vs. reviews from drafts generated against guide pages.
+Open items: registrar's exam date (create the window row when known); open short answer is
+undecided — Norm will likely keep it **at least for the final** (§39.8) and it is the only
+hand-graded element anywhere in the design; how much of the item bank Norm authors directly vs.
+reviews from drafts generated against guide pages.
+
+### 39.8 Item formats (decided 2026-08-08)
+
+Norm's prior format set was MC + term/definition matching + a few short answers. The decided lineup
+keeps MC as the backbone and upgrades the rest, filtered through the standing constraints:
+auto-gradable at N≈200, works at 375px, samples from pools.
+
+| format | where | notes |
+|---|---|---|
+| multiple choice | quizzes + tests | the backbone, ~half the test |
+| **extended matching (EMQ)** | quizzes + tests | replaces classic matching. One reusable option list (e.g. 8 disorders), several independent vignette stems answered from it. Tests differential diagnosis directly; 8 plausible options crush guessing; each stem is one tappable screen — no drag-and-drop. Term/definition matching converts the same way (definition as stem, term list as options). Stems within a set are interchangeable, so EMQ sets sample per-student cleanly. |
+| **very short answer (VSA)** | quizzes + tests | replaces most short answer. 1–3 typed words; auto-accept against a normalized known-variants list; unmatched tail goes to a staff adjudication queue whose accepted variants train the list. **Run VSA from quiz one** so the variant lists are trained on low-stakes responses before anything performance-graded uses them. Kills MC's recognition-over-recall cue problem. |
+| **stepped case vignettes** | tests (centrepiece) | vignette → question → reveal more → "does this change your answer?" → rule-out. Each step auto-gradable MC. No-back-navigation is pedagogically load-bearing here (can't revise the intake after the reveal), and it fits one-question-per-screen exactly. |
+| **two-tier (answer + justification)** | quizzes + tests | linked MC pair: answer, then "which best supports it?" Scored paired (both = full, answer-only = partial). Cheap depth signal, fully auto-graded. |
+| **"spot the limitation"** | quizzes + tests | 3-sentence study description → MC on the biggest threat to the conclusion. Same skill as the required limitation field in gap submissions — coursework trains it, test measures it; "Needs research" asks are raw material for stems. |
+| **confidence ratings** | **quizzes only** — Norm's call | one tap after each answer, formative not scored. Two payoffs: (a) **reflect-back to the student** — "here are your lowest-confidence questions" as a personal study list, deep-linked to the guide pages; (b) item-quality signal — right-answer/low-confidence flags a badly worded item for the bank. Not on tests: confidence-scored exams are a grade-disputes factory. |
+| **spaced retrieval seeding** | quizzes | blueprint rule, not a format: every weekly quiz samples 2–3 items from *earlier* weeks' pools. With items pooled by lecture this is a sampling parameter. |
+| open short answer | **undecided; likely final only** | the sole hand-graded element in the design. If kept, it needs a grading workflow (assignment to markers, rubric, moderation) — scoped only if/when Norm confirms. |
+| ordering/ranking | **rejected** | fights the phone constraint (drag), and partial-credit scoring of orderings is a disputes factory. EMQ + stepped vignettes cover the ground. |
+
+Proposed midterm mix (starting point, not binding): MC ~50% · EMQ 2–3 sets ~20% · stepped
+vignettes ×2 ~15% · VSA ~10% · spot-the-limitation ~5%. Weekly quizzes use the identical formats
+plus confidence ratings and spaced seeding, so by test day every format is familiar, mobile-verified,
+and its pool is calibrated.
