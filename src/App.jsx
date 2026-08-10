@@ -102,6 +102,7 @@ const WikiIndex            = lazy(() => import('./academic/fieldguide/wiki/WikiI
 const WikiPage             = lazy(() => import('./academic/fieldguide/wiki/WikiPage'))
 const GapBrowser           = lazy(() => import('./academic/fieldguide/GapBrowser'))
 const FieldGuideHome       = lazy(() => import('./academic/fieldguide/FieldGuideHome'))
+const CorrectionsFeed      = lazy(() => import('./academic/fieldguide/CorrectionsFeed'))
 
 // Research admin section — separate partition from Lecture Lounge.
 const AdminLayout   = lazy(() => import('./layouts/AdminLayout'))
@@ -581,6 +582,8 @@ export default function App() {
                   /review is the staff authoring path, this is the student one,
                   and TAs who live here should never need the ingest portal. */}
               <Route path="/academic/fieldguide/submissions" element={<SubmissionsQueue />} />
+              {/* The audit trail auto-apply corrections are traded against. */}
+              <Route path="/academic/fieldguide/corrections" element={<CorrectionsFeed />} />
             </Route>
             {/* The wiki itself — same login, member-level gate. */}
             <Route element={<FieldGuideMemberRoute />}>

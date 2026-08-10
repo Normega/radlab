@@ -4088,12 +4088,22 @@ green is 1.34×** (268 slots, 200 students). There is no room for hoarding.
 3. **A `page_reviews` stamp** — page, reviewer, reviewed_at, verdict, notes — so 262 pages are not
    re-read, and so coverage is measurable during term.
 
-**The correction path is the open design problem here.** `edit_page` is prohibited for content carrying
-provenance, which means a TA who spots a factual error currently has **no legitimate way to fix it**.
-Recommended: a version with `action='update'` marked as a *staff correction* rather than a source
-ingest, so page history records who changed what and why without pretending the change came from a
-source. Attribution stays truthful, which is the entire point of the provenance design. This needs
-building before staff review starts, or reviewers will reach for `edit_page`.
+**The correction path — ✅ resolved 2026-08-10** (`20260810_correction_guards.sql`), and the answer
+inverted the plan: `edit_page` **already was** the correction path — staff-gated, snapshot trigger
+keeping numbered history, note landing on the version row, no `job_id` so it can never pollute
+provenance. What it lacked was guards, so the fix hardened the existing door rather than cutting a
+second one. The taxonomy that governs it: a correction may change *how* the page says something
+(typo, transcription fidelity, structure) — never *what it claims*; a changed claim needs a source,
+which means the ingest path. Decisions (Norm): **auto-apply with an audit feed** (2-person staff;
+countersigning would bottleneck), **quiet visibility** (no banner, history on request), and a
+**magnitude tripwire** to his spec — ignore |Δ|≤3; trip at ratio ≥√10 (~3.16×) or |Δ|≥10, so 11→12%
+passes and 11→21% or 11→3% demand a *verified against source* statement; years 1900–2099 excluded.
+Guards now in `edit_page()`: required note, section-list guard with explicit override (the
+`## Contested` lesson, now unrepeatable by hand), annotation-removal guard (annotations are
+catalogued gaps), and the tripwire. `corrections_feed` view + `/academic/fieldguide/corrections` +
+a home-page card ("N this week") complete the trade. Verified live: all guard paths exercised on
+`little-albert-study`, page restored byte-identical, and the feed retroactively surfaces the WP-era
+staff edits with their notes back to 2026-08-02.
 
 **Phase E — publish.** All 260 drafts at once, after the risk-ordered subset in Phase D is clean.
 Partial publishing is not an option: with one page live, all of its outbound links render broken to a

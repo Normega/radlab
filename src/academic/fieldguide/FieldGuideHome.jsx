@@ -31,7 +31,9 @@ export default function FieldGuideHome() {
       courseClient.from('wiki_pages').select('id', { count: 'exact', head: true })
         .eq('status', 'published'),
       courseClient.from('wiki_pages').select('id', { count: 'exact', head: true }),
-    ]).then(([subs, proposals, gapFlags, expiring, published, pages]) => {
+      courseClient.from('corrections_feed').select('version_id', { count: 'exact', head: true })
+        .gt('created_at', new Date(Date.now() - 7 * 86400000).toISOString()),
+    ]).then(([subs, proposals, gapFlags, expiring, published, pages, corrections]) => {
       if (!live) return
       const routes = {}
       for (const r of subs.data ?? []) routes[r.route] = (routes[r.route] ?? 0) + 1
@@ -43,6 +45,7 @@ export default function FieldGuideHome() {
         expiring: expiring.count ?? 0,
         published: published.count ?? 0,
         pages: pages.count ?? 0,
+        corrections7d: corrections.count ?? 0,
       })
     })
     return () => { live = false }
@@ -77,6 +80,9 @@ export default function FieldGuideHome() {
               <Card to="/academic/fieldguide/review" title="Ingest proposals"
                     badge={c ? `${c.proposals} pending` : '…'}
                     body="Staff authoring path: proposed page versions awaiting accept/reject. Every accepted version carries provenance." />
+              <Card to="/academic/fieldguide/corrections" title="Corrections"
+                    badge={c ? `${c.corrections7d} this week` : '…'}
+                    body="The audit feed: every staff edit with its required note. Corrections apply immediately; this is the review." />
               <Card to="/academic/fieldguide/ingest" title="Ingest portal"
                     body="Upload a source, propose pages from it." />
             </div>

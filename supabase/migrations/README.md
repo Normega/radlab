@@ -504,6 +504,44 @@ third → `too_many_open`; withdraw → slot freed in `gap_board` immediately; `
 *different* person's JWT → `duplicate_claim_source` block on the used DOI, warn on malformed, `[]`
 on clean. Fixtures fully deleted (claims 0, fixture people 0).
 
+`20260810_correction_guards.sql` — **applied 2026-08-10 (one message-format fix re-applied in the
+same session: RAISE placeholders are bare `%`, not `%s`), verified by exercising every guard path
+live.** The staff correction path (WP6 Phase D, first half).
+
+**The design discovery:** `edit_page()` already *was* the correction path — staff-gated, snapshot
+trigger keeping numbered history, note attached to the version row, and `job_id IS NULL` so a staff
+edit can never appear in a page's "Built from" list. This migration hardens that existing door
+instead of cutting a second one. The governing rule (run plan §38 Phase D): a correction changes
+*how* the page says something, never *what it claims* — changed claims need a source, i.e. the
+ingest path.
+
+Decisions (Norm, 2026-08-10): **auto-apply + audit feed**, **quiet visibility**, **magnitude
+tripwire** to his spec ("11%→12% shouldn't matter; →21% or →3% should; half an order of magnitude").
+
+- **`numeric_shift_check(old, new)`** — pairs vanished numbers with appeared numbers in document
+  order; per pair: |Δ|≤3 passes ("a few points of variance"), then trips at ratio ≥√10 (~3.16×) OR
+  |Δ|≥10 (11→21 is a different claim at only 1.9×). Years 1900–2099 excluded (citation edits);
+  unpaired numbers reported but never trip — whether a *new* number is a new claim is the form's
+  question, not a regex's. Verified against all eight spec cases including n=1234→134 (trip) and
+  0.5→1.9 (pass).
+- **`edit_page()` re-created with guards** (old 3-arg signature **dropped** — two overloads would
+  make every named-arg PostgREST call ambiguous): note now REQUIRED; section-list guard (removing a
+  `##` heading blocks without the explicit `p_allow_structure` override — the `## Contested` lesson
+  encoded); annotation-removal guard (a `> **Needs research:**` line is a catalogued gap); the
+  tripwire (block until `p_verified` is supplied, which is then appended to the note as
+  "verified against source: …").
+- **`corrections_feed`** — security_invoker view over job-less accepted versions with notes;
+  **retroactively covers the WP-era staff edits back to 2026-08-02**, notes intact.
+
+Client: WikiPage's editor reveals the matching remedy on refusal (verified-input on NUMERIC SHIFT,
+override checkbox on STRUCTURE), save disabled without a note; `/academic/fieldguide/corrections`
+lists the feed; the home page gains a Corrections card with a this-week count.
+
+**Live verification** on `little-albert-study`: no-note → refused; 40→12 without verification →
+refused listing `40→12 (Δ28, ×3.33)`; same edit with a verification statement → accepted, note
+carries it; section removal → refused naming the section; final edit restored the page
+**byte-identical** to its pre-test body (proven by comparing against the v2 version row).
+
 `20260806_staff_read_enrolled_people.sql` — **applied live 2026-08-06 (three MCP calls as each fault
 revealed the next), verified by RLS test.** Fixes "permission denied for table people" on
 `/academic/fieldguide/submissions`, introduced the same day by `submission_review_queue` joining
