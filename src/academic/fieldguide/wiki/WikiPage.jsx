@@ -298,18 +298,27 @@ export default function WikiPage() {
               Structure change intended — I mean to remove that section or annotation
             </label>
           )}
-          <div style={{ display: 'flex', gap: 10, marginTop: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-            <button style={S.primary} disabled={saving || draft === page.content || !note.trim()} onClick={save}>
-              {saving ? 'Saving…' : 'Save changes'}
-            </button>
-            <button style={S.secondary} disabled={saving} onClick={() => { setEditing(false); setDraft('') }}>
-              Cancel
-            </button>
-            <span style={S.dim}>
-              {draft.length.toLocaleString()} chars
-              {draft === page.content && ' · unchanged'}
-            </span>
-          </div>
+          {/* Why the save is unavailable, said plainly. A disabled button that
+              looks enabled and explains nothing reads as a broken page. */}
+          {(() => {
+            const blocked = saving ? null
+              : draft === page.content ? 'Nothing has changed yet.'
+              : !note.trim() ? 'Add a note first — it is what the corrections feed shows.'
+              : null
+            return (
+              <div style={{ display: 'flex', gap: 10, marginTop: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+                <button style={blocked ? S.primaryOff : S.primary} disabled={saving || Boolean(blocked)} onClick={save}>
+                  {saving ? 'Saving…' : 'Save changes'}
+                </button>
+                <button style={S.secondary} disabled={saving} onClick={() => { setEditing(false); setDraft('') }}>
+                  Cancel
+                </button>
+                {blocked
+                  ? <span style={S.blockedHint}>{blocked}</span>
+                  : <span style={S.dim}>{draft.length.toLocaleString()} chars</span>}
+              </div>
+            )
+          })()}
         </section>
       )}
 
@@ -580,6 +589,12 @@ const S = {
   noteInput: { width: '100%', boxSizing: 'border-box', marginTop: 10, fontSize: 14, padding: '9px 11px', borderRadius: 8, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx)' },
   saveNotice: { marginTop: 12, fontFamily: MONO, fontSize: 13, color: 'var(--pk)', lineHeight: 1.5 },
   primary: { fontSize: 14, fontWeight: 600, padding: '9px 16px', borderRadius: 24, border: 'none', background: 'var(--pk)', color: '#fff', cursor: 'pointer' },
+  // Disabled twin of `primary`. Buttons carry inline styles here, so `:disabled`
+  // in a stylesheet would never reach them — the greyed state has to be a style
+  // object the render picks, and `cursor: not-allowed` is what makes it read as
+  // deliberate rather than dead.
+  primaryOff: { fontSize: 14, fontWeight: 600, padding: '9px 16px', borderRadius: 24, border: 'none', background: 'var(--bd)', color: 'var(--tx2)', cursor: 'not-allowed' },
+  blockedHint: { fontSize: 13, color: 'var(--tx2)', fontStyle: 'italic' },
   secondary: { fontSize: 14, fontWeight: 600, padding: '9px 16px', borderRadius: 24, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx)', cursor: 'pointer' },
 
   chips: { display: 'flex', flexWrap: 'wrap', gap: 8 },
