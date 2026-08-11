@@ -48,10 +48,29 @@ const SECRET_PATTERNS = [
     (m) => `${m.split(/[:=]/)[0].trim()}=[redacted]`],
 ]
 
+// The pattern list above can only catch secrets that announce themselves with a
+// known prefix. This catches the two it cannot: our own credentials, by exact
+// match, because the server is the one place that knows them.
+//
+// Not hypothetical. The session that built this feature discusses the push token
+// in prose, so capturing it would have published a working write-credential to
+// whichever student it was shared with — a random base64 string no prefix rule
+// will ever match. Any transcript where the operator pasted or discussed these
+// values has the same problem.
+//
+// Split across a run of text is not covered, and neither is any other secret the
+// author happens to type. Redaction stays a backstop; the real protection is that
+// tool output is never collected at all.
+function selfSecrets() {
+  return [process.env.WORKBENCH_PUSH_TOKEN, process.env.SUPABASE_SERVICE_KEY]
+    .filter((v) => typeof v === 'string' && v.length >= 12)
+}
+
 function scrub(text) {
   if (typeof text !== 'string' || !text) return text
   let out = text
   for (const [re, replacement] of SECRET_PATTERNS) out = out.replace(re, replacement)
+  for (const secret of selfSecrets()) out = out.split(secret).join('[credential-redacted]')
   return out
 }
 
