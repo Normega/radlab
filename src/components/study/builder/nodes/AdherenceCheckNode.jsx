@@ -1,9 +1,13 @@
 import { Handle, Position } from '@xyflow/react'
+import { DEFAULT_ADHERENCE_ON_FAIL } from '../../../../lib/experimentGraph'
 
 export default function AdherenceCheckNode({ data, selected }) {
   const phaseLabel = data.phase === 'phase2' ? 'Phase 2' : data.phase === 'phase1' ? 'Phase 1' : '(no phase)'
   const minRequired = data.min_required ?? 10
   const ofTotal = data.of_total ?? 12
+  // Undefined is the 'withdraw' default — every check authored before the
+  // property existed enforced, so absence must not read as permissive.
+  const enforcing = (data.on_fail ?? DEFAULT_ADHERENCE_ON_FAIL) === 'withdraw'
 
   return (
     <div style={{ ...S.node, ...(selected ? S.selected : {}) }}>
@@ -17,7 +21,11 @@ export default function AdherenceCheckNode({ data, selected }) {
       <div style={S.label}>{data.label || 'Untitled'}</div>
       <div style={{ ...S.meta, color: data.phase ? 'var(--tx2)' : '#e04' }}>{phaseLabel}</div>
       <div style={S.meta}>Requires ≥ {minRequired} of {ofTotal} sessions completed</div>
-      <div style={S.warn}>Fails → participant withdrawn + termination email</div>
+      <div style={{ ...S.warn, ...(enforcing ? null : S.note) }}>
+        {enforcing
+          ? 'Below minimum → participant withdrawn + termination email'
+          : 'Below minimum → recorded only; participant continues (intention-to-treat)'}
+      </div>
 
       {data.isLocked && <div style={S.lockBadge}>locked</div>}
     </div>
@@ -66,6 +74,11 @@ const S = {
     color: '#a15c00',
     marginTop: 6,
     lineHeight: 1.4,
+  },
+  // Non-enforcing: same line, no warning colour — nothing happens to the
+  // participant, so it shouldn't read like a consequence.
+  note: {
+    color: 'var(--tx2, #6b6c70)',
   },
   lockBadge: {
     position: 'absolute',

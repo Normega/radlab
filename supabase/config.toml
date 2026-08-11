@@ -3,7 +3,7 @@
 # This file exists for ONE reason: to pin each Edge Function's `verify_jwt`.
 #
 # Without it, `supabase functions deploy <name>` defaults to verify_jwt = true.
-# Seven of the ten functions below run with it FALSE — they are called by
+# Most of the functions below run with it FALSE — they are called by
 # pg_cron, by server-side code, or by unauthenticated links — so a deploy that
 # forgot `--no-verify-jwt` silently flipped them to JWT-required and broke the
 # caller. That is not hypothetical: it is why the 2026-07-30 redeploy had to
@@ -38,6 +38,12 @@ verify_jwt = false
 
 # ── Called from unauthenticated public links ───────────────────────────────
 [functions.handle_unsubscribe]
+verify_jwt = false
+
+[functions.handle_withdraw]
+# Peek + confirm for the /withdraw/{token} page. Called via
+# supabase.functions.invoke from an unauthenticated participant page, so the
+# gateway must not demand a user JWT; the token in the body is the credential.
 verify_jwt = false
 
 [functions.handle_ripple_unsubscribe]

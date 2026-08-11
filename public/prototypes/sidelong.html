@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Sidelong</title>
+<style>
+  html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#04060c;}
+  canvas{display:block;touch-action:none;cursor:none;}
+  #intro{
+    position:fixed;left:0;right:0;bottom:12%;text-align:center;
+    pointer-events:none;z-index:5;padding:0 24px;
+    font-family:Georgia,'Times New Roman',serif;font-style:italic;
+    color:rgba(224,231,248,0.82);font-size:clamp(15px,2.4vw,21px);line-height:1.55;
+    text-shadow:0 1px 10px rgba(0,0,0,0.75);
+    opacity:0;transition:opacity 3.2s ease;
+  }
+  #tune{
+    position:fixed;top:8px;right:8px;z-index:10;display:none;
+    background:rgba(6,9,20,0.88);border:1px solid rgba(255,255,255,0.15);
+    border-radius:8px;padding:10px 14px;font-family:ui-monospace,monospace;font-size:11px;
+    color:#cbd2ea;min-width:230px;
+  }
+  #tune label{display:block;margin:6px 0 2px;}
+  #tune input{width:100%;}
+  #hint{
+    position:fixed;bottom:6px;right:10px;z-index:6;
+    font-family:ui-monospace,monospace;font-size:10px;color:rgba(255,255,255,0.18);
+    pointer-events:none;
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="intro"></div>
+<div id="hint">t&nbsp;·&nbsp;tuning</div>
+<div id="tune">
+  <label>extinguish radius <span id="v_ext"></span></label><input type="range" id="s_ext" min="30" max="220" step="5">
+  <label>band inner <span id="v_rise"></span></label><input type="range" id="s_rise" min="120" max="420" step="10">
+  <label>band outer <span id="v_fall"></span></label><input type="range" id="s_fall" min="300" max="900" step="20">
+  <label>far floor <span id="v_floor"></span></label><input type="range" id="s_floor" min="0" max="1" step="0.05">
+  <label>stillness ceiling (px/s) <span id="v_still"></span></label><input type="range" id="s_still" min="20" max="400" step="10">
+  <label>field open tau (s) <span id="v_open"></span></label><input type="range" id="s_open" min="1" max="20" step="0.5">
+  <label>field close tau (s) <span id="v_close"></span></label><input type="range" id="s_close" min="1" max="20" step="0.5">
+</div>
+<script>
+'use strict';
+/* ============================================================
+   SIDELONG — averted vision. The anti-Delve.
+
+   Compendium §4, dynamic 1: peripheral things extinguish under
+   direct fixation and bloom under soft stable gaze. Gaze stability
+   is the global driver; darting dims the whole field. An anchor
+   (the moon) gives the eyes somewhere soft to sit.
+
+   The pointer stands in for the gaze. Faint stars are only ever
+   visible BESIDE it — which is true of the real eye, where rod
+   density peaks well off the fovea. Look straight at a faint star
+   and it goes out; that is the physics, not a penalty.
+
+   Nothing is scored. Nothing can be done wrong. The sky turns,
+   meteors fall and the night birds call whether or not you attend.
+
+   The gift is retrospective: constellations that link themselves
+   out of stars you found sidelong stay lit afterwards, even under
+   direct fixation. Nothing announces this.
+   ============================================================ */
+
+const REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const P = {                      // tunables (live-editable via the panel)
+  // The band must be narrow RELATIVE TO THE SCREEN. Set wide enough that a
+  // single resting point can find most of the sky, the whole practice
+  // collapses: a first pass with farEnd at 1150 put every pixel of a 1384px
+  // viewport inside the findable zone, and one minute of parking on the moon
+  // found 762 of 940 stars. Travel has to be what opens the rest.
+  extR:      92,                 // px: inside this a faint star is fully out
+  riseR:     215,                // px: by here the averted band is at full strength
+  fallR:     380,                // px: plateau ends, sensitivity declines
+  farEnd:    620,                // px: decline bottoms out
+  farFloor:  0.22,               // sensitivity in the far periphery (never zero)
+  stillMax:  140,                // px/s of smoothed gaze speed = fully "darting"
+  tauOpen:   7.0,                // s: field opens this slowly
+  tauClose:  3.4,                // s: and closes faster, so darting is legible
+  tauStar:   3.6,                // s: a faint star blooms this slowly
+  tauOut:    0.9,                // s: and goes out this fast under fixation
+  // A star counts as found only well above the far-periphery ceiling, so
+  // finding is a fact about the averted band, not about having the sky in
+  // view at all. Together with seenHold this is the pacing dial: at 0.52/1.6
+  // the whole sky and all nine figures were spent by t=106s of a 300s arc.
+  seenLevel: 0.72,               // visibility a star must hold to count as found
+  seenHold:  2.2,                // s it must hold it
+  settleT:   1.8,                // s resting on the moon before the assist engages
+  duration:  270,                // s until the sky finishes itself
+};
+
+// ── canvas ──────────────────────────────────────────────────────────────────
+const cv  = document.getElementById('c');
+const ctx = cv.getContext('2d');
+let W = 0, H = 0, DPR = 1;
+
+// The sky is authored once in fixed sky units and cover-fitted to the viewport,
+// so a resize never regenerates stars and never loses what has been found.
+const SKY_W = 2400, SKY_H = 1500;
+let sk = 1, skOffX = 0, skOffY = 0;
+function toScreenX(sx){ return sx * sk + skOffX; }
+function toScreenY(sy){ return sy * sk + skOffY; }
+
+const milky   = document.createElement('canvas'); const mctx = milky.getContext('2d');
+const horizon = document.createElement('canvas'); const hctx = horizon.getContext('2d');
+let milkyD = 0;
+// The band is baked at a fraction of display size — it is nothing but soft
+// cloud, so the upscale is invisible and the buffer stays a few MB rather
+// than the ~56 MB a full-size pole-centred canvas would need.
+const MILKY_SCALE = 0.4;
+
+function resize(){
+  // Measured: sim is 0.14 ms/frame at 1694 stars and render is ~13.5 ms, so
+  // the whole cost is fill rate across four full-screen passes (ground, band,
+  // horizon, vignette) — not the star count. Clamping DPR is therefore the
+  // one lever that matters. Delve clamps harder still, at 1.5.
+  DPR = Math.min(window.devicePixelRatio || 1, 1.75);
+  W = window.innerWidth; H = window.innerHeight;
+  cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+  cv.style.width = W + 'px'; cv.style.height = H + 'px';
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+
+  sk = Math.max(W / SKY_W, H / SKY_H);
+  skOffX = (W - SKY_W * sk) / 2;
+  skOffY = (H - SKY_H * sk) / 2;
+
+  buildHorizon();
+  buildMilky();
+
+  // Cached, not rebuilt per frame: createRadialGradient/createLinearGradient
+  // are not free, and three of them ran on every single frame.
+  groundGrad = ctx.createLinearGradient(0, 0, 0, H);
+  groundGrad.addColorStop(0, '#05070f');
+  groundGrad.addColorStop(0.65, '#04060c');
+  groundGrad.addColorStop(1, '#060810');
+
+  vignetteGrad = ctx.createRadialGradient(W/2, H/2, Math.min(W,H)*0.40, W/2, H/2, Math.max(W,H)*0.78);
+  vignetteGrad.addColorStop(0, 'rgba(3,5,10,0)');
+  vignetteGrad.addColorStop(1, 'rgba(3,5,10,0.5)');
+
+  DBG.resizes++;
+}
+let groundGrad = null, vignetteGrad = null;
+
+// ── the sky ─────────────────────────────────────────────────────────────────
+// Every star is stored polar about a pole in sky space, so the whole field
+// wheels with one angle — the night turning without you.
+const POLE = { x: SKY_W * 0.10, y: -SKY_H * 0.62 };
+// The compendium's world-drift: the environment migrates past an anchored
+// player. At 1.5°/min this was decorative and the sky was a fixed board that
+// an unhurried player stripped bare by t=151s of a 270s arc, leaving the whole
+// second half flat. At 5°/min a session turns ~25°, which at typical star radii
+// is ~380px — a full band-width of sky that was never in view arrives, and
+// figures rise. Still only ~1.3 px/s: felt over a minute, invisible per frame.
+const OMEGA = REDUCED ? 0 : (5.0 * Math.PI / 180) / 60;   // 5°/min
+
+const MOON = { sx: SKY_W * 0.26, sy: SKY_H * 0.26, r: 26 };
+// The band is anchored at a point in the sky and wheels about the pole with
+// everything else. Anchoring it AT the pole would swing it off-screen.
+const BAND = { sx: SKY_W * 0.55, sy: SKY_H * 0.42 };
+
+// the moon's halo, baked once — it only ever changes scale
+const MOON_GLOW_R = MOON.r * 7;
+const moonGlow = document.createElement('canvas');
+(function(){
+  const d = Math.ceil(MOON_GLOW_R * 2);
+  moonGlow.width = d; moonGlow.height = d;
+  const c = moonGlow.getContext('2d');
+  const g = c.createRadialGradient(d/2, d/2, MOON.r * 0.7, d/2, d/2, MOON_GLOW_R);
+  g.addColorStop(0, 'rgba(214,226,255,0.30)');
+  g.addColorStop(0.35, 'rgba(180,198,244,0.09)');
+  g.addColorStop(1, 'rgba(150,172,232,0)');
+  c.fillStyle = g;
+  c.fillRect(0, 0, d, d);
+})();
+
+let stars = [];        // { r, th, size, hue, bright, vis, seen, seenFor, claimed, tw }
+let consts = [];       // { idx:[], linked, link, chimed }
+let skyAngle = 0;
+
+function rnd(a, b){ return a + Math.random() * (b - a); }
+
+function seedSky(){
+  stars = [];
+  // Authored well past the sky edges: this margin is not just anti-rim, it is
+  // the reserve of unseen sky that rotation feeds into view. Counts scale with
+  // the area so density stays what it was at M=220 / 940 faint.
+  const M = 560;
+  const N_FAINT = 1570, N_BRIGHT = 124;
+
+  function place(bright){
+    const sx = rnd(-M, SKY_W + M), sy = rnd(-M, SKY_H + M);
+    const dx = sx - POLE.x, dy = sy - POLE.y;
+    stars.push({
+      r: Math.hypot(dx, dy),
+      th: Math.atan2(dy, dx),
+      size: bright ? rnd(1.5, 3.1) : rnd(0.65, 1.75),
+      hue: Math.random() < 0.72 ? 0 : (Math.random() < 0.5 ? 1 : -1),  // 0 white, 1 warm, -1 blue
+      bright,
+      vis: bright ? 0.8 : 0,
+      seen: false, seenFor: 0, claimed: false,
+      tw: Math.random() * 6.283, twRate: rnd(0.6, 2.1),
+    });
+  }
+  for (let i = 0; i < N_BRIGHT; i++) place(true);
+  for (let i = 0; i < N_FAINT;  i++) place(false);
+
+  seedConstellations();
+}
+
+// Figures across the sky. One sits close enough to the moon that it can only
+// be finished by looking away from it — the anchor has its own blind spot.
+// The last five are authored OUTSIDE the initially visible sky (fractions
+// beyond 0..1): they rise during the session as the field turns, which is what
+// gives the second half anything to do. Whichever never rise simply stay
+// unfound; nothing forces them into view.
+const SEEDS = [
+  [0.24, 0.15], [0.45, 0.36], [0.12, 0.60], [0.60, 0.14],
+  [0.82, 0.30], [0.36, 0.74], [0.88, 0.68],
+  [1.14, 0.22], [1.20, 0.62], [-0.16, 0.30], [0.66, 1.16], [0.20, -0.18],
+];
+
+// A figure that has linked can be read by looking STRAIGHT at one of its
+// stars — the one act that until then put stars out. Nothing says so; it is
+// found by testing whether the rule still holds. This is the compendium's
+// interdependence loop: what receptivity found becomes usable afterwards,
+// retrospectively, never advertised. It is also what the second half of the
+// session is made of — more figures alone left t=134 onward flat.
+const NAMES = [
+  'the Spilled Cup', 'the Long Walk', 'the Heron', 'the Bent Nail',
+  'the Ferryman', 'the Two Sisters', 'the Sleeping Dog', 'the Well',
+  'the Kite', 'the Fox', 'the Lamp', 'the Old Road',
+];
+
+function seedConstellations(){
+  consts = [];
+  const used = new Set();
+  for (const [fx, fy] of SEEDS){
+    const cx = SKY_W * fx, cy = SKY_H * fy;
+    // gather faint, unclaimed stars near the seed, nearest first
+    const pool = [];
+    for (let i = 0; i < stars.length; i++){
+      const s = stars[i];
+      if (s.bright || used.has(i)) continue;
+      const d = Math.hypot(starSkyX(s) - cx, starSkyY(s) - cy);
+      // Compact enough to read as a figure. A wider gather (420) made each
+      // one sprawl across most of the frame in long straight segments — a
+      // wireframe rather than a shape you could recognise again.
+      if (d < 230) pool.push([d, i]);
+    }
+    pool.sort((a, b) => a[0] - b[0]);
+    // spread the picks through the pool rather than taking the tightest clump
+    const want = Math.floor(rnd(5, 7.99));
+    const stride = Math.max(1, Math.floor(pool.length / want));
+    const take = [];
+    for (let k = 0; k < pool.length && take.length < want; k += stride) take.push(pool[k]);
+    if (take.length < 5) continue;
+
+    // chain them nearest-neighbour so the figure draws as a path, not a fan
+    let idx = take.map(p => p[1]);
+    idx.forEach(i => used.add(i));
+    const chain = [idx.shift()];
+    while (idx.length){
+      const last = stars[chain[chain.length - 1]];
+      let best = 0, bestD = Infinity;
+      for (let j = 0; j < idx.length; j++){
+        const s = stars[idx[j]];
+        const d = Math.hypot(starSkyX(s) - starSkyX(last), starSkyY(s) - starSkyY(last));
+        if (d < bestD){ bestD = d; best = j; }
+      }
+      chain.push(idx.splice(best, 1)[0]);
+    }
+    consts.push({
+      idx: chain, linked: 0, link: false,
+      name: NAMES[consts.length % NAMES.length], named: false,
+    });
+  }
+}
+
+// has any of this figure's stars risen into view?
+function onScreen(c){
+  for (const i of c.idx){
+    const s = stars[i];
+    if (s.x > -60 && s.x < W + 60 && s.y > -60 && s.y < H + 60) return true;
+  }
+  return false;
+}
+
+// sky-space position at zero rotation (authoring only)
+function starSkyX(s){ return POLE.x + s.r * Math.cos(s.th); }
+function starSkyY(s){ return POLE.y + s.r * Math.sin(s.th); }
+
+// ── milky way + horizon (baked once per resize) ─────────────────────────────
+function buildMilky(){
+  // sized so that, upscaled, the band spans the viewport diagonal with room
+  // for its anchor to sit off-screen
+  milkyD = Math.ceil(Math.hypot(W, H) * 1.7 * MILKY_SCALE);
+  milky.width = milkyD; milky.height = milkyD;
+  mctx.clearRect(0, 0, milkyD, milkyD);
+  mctx.save();
+  mctx.translate(milkyD / 2, milkyD / 2);
+  mctx.rotate(-0.55);
+  // a soft band of overlapping clouds, denser at the spine
+  for (let i = 0; i < 340; i++){
+    const x = rnd(-milkyD * 0.55, milkyD * 0.55);
+    const spread = milkyD * 0.075 * (1 + Math.abs(x) / (milkyD * 0.6));
+    const y = (Math.random() + Math.random() + Math.random() - 1.5) * spread;
+    const r = rnd(18, 82);
+    const a = rnd(0.010, 0.036) * (1 - Math.abs(y) / (spread * 2.4));
+    if (a <= 0) continue;
+    const g = mctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, `rgba(196,208,246,${a})`);
+    g.addColorStop(1, 'rgba(196,208,246,0)');
+    mctx.fillStyle = g;
+    mctx.beginPath(); mctx.arc(x, y, r, 0, 6.284); mctx.fill();
+  }
+  // dust lanes bitten back out of the spine
+  mctx.globalCompositeOperation = 'destination-out';
+  for (let i = 0; i < 60; i++){
+    const x = rnd(-milkyD * 0.5, milkyD * 0.5);
+    const y = rnd(-milkyD * 0.05, milkyD * 0.05);
+    const r = rnd(14, 60);
+    const g = mctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, `rgba(0,0,0,${rnd(0.15, 0.5)})`);
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    mctx.fillStyle = g;
+    mctx.beginPath(); mctx.arc(x, y, r, 0, 6.284); mctx.fill();
+  }
+  mctx.globalCompositeOperation = 'source-over';
+  mctx.restore();
+}
+
+function buildHorizon(){
+  horizon.width = Math.max(1, W); horizon.height = Math.max(1, H);
+  hctx.clearRect(0, 0, W, H);
+  // Sits low: this is a sky, and the first pass left a seventh of the frame as
+  // dead black foreground under the treeline.
+  const base = H * 0.955;
+
+  // far ridge — barely a shade off the near one, or it reads as pale lumps
+  // floating above the trees rather than as distance
+  hctx.fillStyle = '#06080f';
+  ridge(base - H * 0.042, H * 0.016, 0.0035, 0.7);
+  hctx.fillStyle = '#04060c';
+  ridge(base, H * 0.012, 0.0021, 1.9);
+
+  function ridge(y0, amp, freq, phase){
+    hctx.beginPath();
+    hctx.moveTo(0, H);
+    for (let x = 0; x <= W; x += 6){
+      const y = y0
+        + Math.sin(x * freq + phase) * amp
+        + Math.sin(x * freq * 2.7 + phase * 3.1) * amp * 0.35;
+      hctx.lineTo(x, y);
+    }
+    hctx.lineTo(W, H);
+    hctx.closePath();
+    hctx.fill();
+  }
+
+  // Conifers along the near ridge. Seeded, not Math.random: this rebuilds on
+  // every resize, and a treeline that reshuffles when the window changes reads
+  // as a different place.
+  let seed = 20260811;
+  const srnd = (a, b) => {
+    seed = (seed * 1664525 + 1013904223) >>> 0;
+    return a + (seed / 4294967296) * (b - a);
+  };
+  hctx.fillStyle = '#04060c';
+  let x = -20;
+  while (x < W + 20){
+    x += srnd(22, 96);
+    const h = srnd(H * 0.024, H * 0.058);
+    const w = h * srnd(0.26, 0.40);
+    const y = base + Math.sin(x * 0.0021 + 1.9) * H * 0.012 - 2;
+    // three tapering tiers rather than one isoceles triangle — a single
+    // triangle per tree read as bunting, not as a treeline
+    for (let k = 0; k < 3; k++){
+      const top = y - h + (h * 0.30) * k;
+      const half = w * (1 - k * 0.26);
+      const foot = top + h * 0.46;
+      hctx.beginPath();
+      hctx.moveTo(x, top);
+      hctx.lineTo(x + half, foot);
+      hctx.lineTo(x - half, foot);
+      hctx.closePath();
+      hctx.fill();
+    }
+    hctx.fillRect(x - 1, y - h * 0.2, 2, h * 0.22);
+  }
+}
+
+// ── star sprite ─────────────────────────────────────────────────────────────
+const SPR = 48;
+const sprite = document.createElement('canvas');
+sprite.width = SPR; sprite.height = SPR;
+(function(){
+  const c = sprite.getContext('2d');
+  const g = c.createRadialGradient(SPR/2, SPR/2, 0, SPR/2, SPR/2, SPR/2);
+  // A tight core with a small halo. The first pass ran the falloff out to 36%
+  // of the sprite, which at render size made every star a soft bubble rather
+  // than a point of light.
+  g.addColorStop(0.00, 'rgba(255,255,255,1)');
+  g.addColorStop(0.08, 'rgba(255,255,255,0.95)');
+  g.addColorStop(0.20, 'rgba(255,255,255,0.34)');
+  g.addColorStop(0.46, 'rgba(255,255,255,0.06)');
+  g.addColorStop(1.00, 'rgba(255,255,255,0)');
+  c.fillStyle = g;
+  c.fillRect(0, 0, SPR, SPR);
+})();
+
+// ── gaze ────────────────────────────────────────────────────────────────────
+// The pointer is the gaze. It starts on the moon, so the sky is already alive
+// before anything is touched, and eases back there when the pointer leaves.
+let gx = 0, gy = 0, gTargetX = 0, gTargetY = 0;
+let pointerHere = false, touchDown = false;
+let rawSpeed = 0, smoothSpeed = 0, lastGx = 0, lastGy = 0;
+let settled = 0;
+
+function moonX(){ return toScreenX(MOON.sx); }
+function moonY(){ return toScreenY(MOON.sy); }
+
+cv.addEventListener('pointerdown', e => {
+  touchDown = true; pointerHere = true;
+  gTargetX = e.clientX; gTargetY = e.clientY;
+  try { cv.setPointerCapture(e.pointerId); } catch (_) {}
+  startAudio();
+});
+cv.addEventListener('pointermove', e => {
+  if (e.pointerType === 'touch' && !touchDown) return;
+  pointerHere = true;
+  gTargetX = e.clientX; gTargetY = e.clientY;
+});
+function release(){ touchDown = false; pointerHere = false; }
+cv.addEventListener('pointerup', release);
+cv.addEventListener('pointercancel', release);
+cv.addEventListener('pointerleave', () => { pointerHere = false; });
+
+// ── field ───────────────────────────────────────────────────────────────────
+let fieldOpen = 0;
+let stillFrac = 0;          // running share of session time spent steady
+let openSum = 0, sampleT = 0;
+let chimeGate = 0;
+const EV = [];              // event log for playtesting
+
+function avert(d){
+  if (d < P.extR) return 0;
+  if (d < P.riseR) return smooth01((d - P.extR) / (P.riseR - P.extR));
+  if (d < P.fallR) return 1;
+  const k = smooth01((d - P.fallR) / (P.farEnd - P.fallR));
+  return 1 + (P.farFloor - 1) * k;
+}
+
+// ── simulation ──────────────────────────────────────────────────────────────
+let simT = 0;
+const DBG = { frames: 0, resizes: 0, chimes: 0 };
+const meteors = [];
+let nextMeteor = 14, nextOwl = 22;
+let firstLight = 0;
+let nameHold = 0, nameShow = null, nameAlpha = 0;
+
+function advance(dt){
+  simT += dt;
+  skyAngle += OMEGA * dt;
+
+  // gaze eases toward the pointer, or home to the moon when it is gone
+  const tx = pointerHere ? gTargetX : moonX();
+  const ty = pointerHere ? gTargetY : moonY();
+  const ease = pointerHere ? 1 - Math.pow(0.001, dt) : 1 - Math.pow(0.35, dt);
+  gx += (tx - gx) * ease;
+  gy += (ty - gy) * ease;
+
+  // Smoothed speed, not instantaneous — the Alongside lesson: anyone holding
+  // still is always correcting, so a single twitch must not read as darting.
+  rawSpeed = Math.hypot(gx - lastGx, gy - lastGy) / Math.max(dt, 1e-4);
+  lastGx = gx; lastGy = gy;
+  smoothSpeed += (rawSpeed - smoothSpeed) * Math.min(1, dt / 1.2);
+
+  const steady = 1 - clamp(smoothSpeed / P.stillMax, 0, 1);
+  stillFrac += ((steady > 0.5 ? 1 : 0) - stillFrac) * Math.min(1, dt / Math.max(simT, 8));
+
+  // settling assist: rest near the moon and the last of the opening completes
+  // itself — you come near it and it arrives (compendium §2)
+  const onMoon = Math.hypot(gx - moonX(), gy - moonY()) < MOON.r * 2.6 && steady > 0.6;
+  // Capped, or it banks: an uncapped pool of settled seconds kept the assist
+  // pinned at full for a minute after leaving the moon, so a darting player
+  // still held a wide-open field and the global driver did nothing at all.
+  settled = onMoon
+    ? Math.min(P.settleT + 3, settled + dt)
+    : Math.max(0, settled - dt * 1.5);
+  const assist = settled > P.settleT ? smooth01((settled - P.settleT) / 3) : 0;
+
+  // The assist completes the LAST of the distance; it does not replace the
+  // driver. Someone who is darting cannot be carried to an open field.
+  const want = steady > 0.62 ? Math.max(steady, assist) : steady;
+  const tau = want > fieldOpen ? P.tauOpen : P.tauClose;
+  fieldOpen += (want - fieldOpen) * Math.min(1, dt / tau);
+
+  openSum += fieldOpen * dt; sampleT += dt;
+
+  // finale: past the arc the horizon takes on first light and the sky
+  // finishes its own figures, so every way of playing reaches an ending
+  if (simT > P.duration) firstLight = Math.min(1, firstLight + dt / 40);
+
+  // stars
+  const now = simT;
+  for (let i = 0; i < stars.length; i++){
+    const s = stars[i];
+    const a = skyAngle + s.th;
+    const sx = toScreenX(POLE.x + s.r * Math.cos(a));
+    const sy = toScreenY(POLE.y + s.r * Math.sin(a));
+    s.x = sx; s.y = sy;
+
+    // Off-screen stars are the rotation reserve — roughly a third of the field
+    // at any moment. They cannot be seen or found, so skip the avert maths and
+    // let them sit dark; they then bloom as they rise, which is the better
+    // behaviour anyway.
+    if (sx < -80 || sx > W + 80 || sy < -80 || sy > H + 80){
+      if (s.vis > 0) s.vis = Math.max(0, s.vis - dt);
+      continue;
+    }
+
+    if (s.bright){
+      s.vis += (0.72 + 0.28 * fieldOpen - s.vis) * Math.min(1, dt / 3);
+      continue;
+    }
+
+    const d = Math.hypot(sx - gx, sy - gy);
+    // a claimed star keeps most of itself even under direct fixation — what
+    // receptivity found stays found
+    const av = s.claimed ? Math.max(avert(d), 0.82) : avert(d);
+    const target = fieldOpen * av;
+    const k = target < s.vis ? P.tauOut : P.tauStar;
+    s.vis += (target - s.vis) * Math.min(1, dt / k);
+
+    if (!s.seen){
+      s.seenFor = s.vis > P.seenLevel ? s.seenFor + dt : 0;
+      if (s.seenFor > P.seenHold){
+        s.seen = true;
+        chime();
+        EV.push({ t: +now.toFixed(2), e: 'star', x: sx | 0, y: sy | 0 });
+      }
+    }
+  }
+
+  // constellations link themselves once every one of their stars has been found
+  for (const c of consts){
+    if (!c.link){
+      let all = true;
+      for (const i of c.idx) if (!stars[i].seen){ all = false; break; }
+      // The finale links whatever is left, one figure at a time — but only
+      // figures that actually rose into view. Closing a figure that is still
+      // below the horizon would draw its lines off-screen and claim credit
+      // for sky the player was never shown.
+      if (!all && firstLight > 0 && simT > P.duration + 4 * consts.indexOf(c) && onScreen(c)){
+        for (const i of c.idx) stars[i].seen = true;
+        all = true;
+      }
+      if (all){
+        c.link = true;
+        EV.push({ t: +now.toFixed(2), e: 'constellation' });
+        linkChord();
+      }
+    } else if (c.linked < 1){
+      c.linked = Math.min(1, c.linked + dt / 3);
+      if (c.linked > 0.35) for (const i of c.idx) stars[i].claimed = true;
+    }
+  }
+
+  // Reading a figure. Only a linked figure's own claimed stars answer to
+  // direct fixation, so this can never be stumbled into before there is
+  // something to read.
+  let hit = null;
+  for (const c of consts){
+    if (!c.link || c.linked < 1) continue;
+    for (const i of c.idx){
+      const s = stars[i];
+      if (s.claimed && Math.hypot(s.x - gx, s.y - gy) < P.extR){ hit = { c, s }; break; }
+    }
+    if (hit) break;
+  }
+  if (hit && steady > 0.45){
+    nameHold += dt;
+    if (nameHold > 1.2){
+      nameShow = hit;
+      if (!hit.c.named){
+        hit.c.named = true;
+        EV.push({ t: +simT.toFixed(2), e: 'named', name: hit.c.name });
+        linkChord();
+      }
+    }
+  } else {
+    nameHold = 0;
+    if (!hit) nameShow = null;
+  }
+  nameAlpha += ((nameShow ? 1 : 0) - nameAlpha) * Math.min(1, dt / 0.7);
+
+  // things that happen without you
+  nextMeteor -= dt;
+  if (nextMeteor <= 0){
+    nextMeteor = rnd(11, 34);
+    // down and to the left, always — sin is negative across this arc, so -sin
+    // gives a downward vy and the streak falls rather than rising
+    const ang = rnd(3.35, 4.35), sp = rnd(320, 700);
+    meteors.push({
+      x: rnd(W * 0.25, W * 1.1), y: rnd(-40, H * 0.45),
+      vx: Math.cos(ang) * sp, vy: -Math.sin(ang) * sp,
+      life: 0, span: rnd(0.7, 1.5),
+    });
+  }
+  for (let i = meteors.length - 1; i >= 0; i--){
+    const m = meteors[i];
+    m.life += dt;
+    m.x += m.vx * dt; m.y += m.vy * dt;
+    if (m.life > m.span) meteors.splice(i, 1);
+  }
+  nextOwl -= dt;
+  if (nextOwl <= 0){ nextOwl = rnd(26, 62); owl(); }
+
+  chimeGate = Math.max(0, chimeGate - dt);
+  updateAudio();
+  sayings();
+}
+
+// ── render ──────────────────────────────────────────────────────────────────
+function render(){
+  // ground
+  ctx.fillStyle = groundGrad;
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.globalCompositeOperation = 'lighter';
+
+  // milky way — present regardless, but it is the largest averted object there
+  // is, so how much of it arrives follows the field
+  const bdx = BAND.sx - POLE.x, bdy = BAND.sy - POLE.y;
+  const br = Math.hypot(bdx, bdy), ba = Math.atan2(bdy, bdx) + skyAngle;
+  ctx.save();
+  ctx.globalAlpha = 0.30 + 0.70 * fieldOpen;
+  ctx.translate(toScreenX(POLE.x + br * Math.cos(ba)), toScreenY(POLE.y + br * Math.sin(ba)));
+  ctx.rotate(skyAngle);
+  ctx.scale(1 / MILKY_SCALE, 1 / MILKY_SCALE);
+  ctx.drawImage(milky, -milkyD / 2, -milkyD / 2);
+  ctx.restore();
+
+  // constellation lines, under the stars
+  for (const c of consts){
+    if (c.linked <= 0) continue;
+    const n = c.idx.length;
+    // Barely there until read. At 0.15 flat, a sky with nine linked figures
+    // was a wireframe web; the figures should be a thing you half-see until
+    // you attend to one, at which point that one comes forward.
+    const lit = nameShow && nameShow.c === c ? 1 + 2.6 * nameAlpha : 1;
+    ctx.strokeStyle = `rgba(150,178,236,${0.085 * c.linked * lit})`;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let j = 0; j < n - 1; j++){
+      const a = stars[c.idx[j]], b = stars[c.idx[j + 1]];
+      const k = clamp(c.linked * (n - 1) - j, 0, 1);
+      if (k <= 0) break;
+      // guard: never draw a segment long enough to read as a stray ruled line
+      if (Math.hypot(b.x - a.x, b.y - a.y) > 300) continue;
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(a.x + (b.x - a.x) * k, a.y + (b.y - a.y) * k);
+    }
+    ctx.stroke();
+  }
+
+  // stars
+  const breath = REDUCED ? 0 : Math.sin(simT * (2 * Math.PI / 4)) * 0.5 + 0.5;  // the 4 s phasic clock, low amplitude
+  for (let i = 0; i < stars.length; i++){
+    const s = stars[i];
+    if (s.vis < 0.02) continue;
+    if (s.x < -40 || s.x > W + 40 || s.y < -40 || s.y > H + 40) continue;
+    const tw = REDUCED ? 1 : 1 + Math.sin(simT * s.twRate + s.tw) * 0.10;
+    const a = clamp(s.vis * tw * (0.94 + 0.06 * breath), 0, 1);
+    const r = s.size * (2.0 + 1.1 * s.vis);
+    ctx.globalAlpha = a;
+    ctx.drawImage(sprite, s.x - r, s.y - r, r * 2, r * 2);
+    if (s.hue !== 0 && s.vis > 0.4){
+      ctx.globalAlpha = a * 0.32;
+      ctx.fillStyle = s.hue > 0 ? '#ffd9ac' : '#a8c6ff';
+      ctx.beginPath(); ctx.arc(s.x, s.y, r * 0.5, 0, 6.284); ctx.fill();
+    }
+  }
+  ctx.globalAlpha = 1;
+
+  // meteors — bright enough to catch in the corner of the eye
+  for (const m of meteors){
+    const k = m.life / m.span;
+    const fade = Math.sin(Math.PI * clamp(k, 0, 1));
+    const tx = m.x - m.vx * 0.16, ty = m.y - m.vy * 0.16;
+    const lg = ctx.createLinearGradient(m.x, m.y, tx, ty);
+    lg.addColorStop(0, `rgba(232,240,255,${0.85 * fade})`);
+    lg.addColorStop(1, 'rgba(232,240,255,0)');
+    ctx.strokeStyle = lg;
+    ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.moveTo(m.x, m.y); ctx.lineTo(tx, ty); ctx.stroke();
+  }
+
+  // the moon — the easy thing to look at, and the only soft place to sit.
+  // Leaves the context on source-over: its maria are darker than the sky and
+  // would brighten rather than darken under additive blending.
+  drawMoon();
+
+  // horizon, and first light in the finale
+  if (firstLight > 0){
+    const fg = ctx.createLinearGradient(0, H * 0.72, 0, H);
+    fg.addColorStop(0, 'rgba(70,84,132,0)');
+    fg.addColorStop(1, `rgba(112,126,180,${0.30 * firstLight})`);
+    ctx.fillStyle = fg;
+    ctx.fillRect(0, H * 0.72, W, H * 0.28);
+  }
+  ctx.drawImage(horizon, 0, 0);
+
+  // the name of whatever is being read, set beside the star rather than on it
+  if (nameAlpha > 0.01 && nameShow){
+    ctx.font = 'italic 15px Georgia, "Times New Roman", serif';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = `rgba(206,218,248,${0.72 * nameAlpha})`;
+    const nx = Math.min(nameShow.s.x + 22, W - 190);
+    ctx.fillText(nameShow.c.name, nx, nameShow.s.y + 5);
+  }
+
+  // where the eye is — dim on purpose; a bright cursor would pull the fovea
+  ctx.strokeStyle = 'rgba(190,205,240,0.13)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(gx, gy, 13, 0, 6.284); ctx.stroke();
+
+  // vignette
+  ctx.fillStyle = vignetteGrad;
+  ctx.fillRect(0, 0, W, H);
+}
+
+function drawMoon(){
+  const x = moonX(), y = moonY();
+  const pulse = REDUCED ? 1 : 1 + Math.sin(simT * (2 * Math.PI / 4)) * 0.035;
+  const R = MOON_GLOW_R * pulse;
+  ctx.drawImage(moonGlow, x - R, y - R, R * 2, R * 2);
+
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.fillStyle = 'rgba(236,242,255,0.95)';
+  ctx.beginPath(); ctx.arc(x, y, MOON.r, 0, 6.284); ctx.fill();
+  // maria, so it reads as a body rather than a lamp
+  ctx.fillStyle = 'rgba(198,210,238,0.55)';
+  ctx.beginPath(); ctx.arc(x - MOON.r*0.28, y - MOON.r*0.20, MOON.r*0.30, 0, 6.284); ctx.fill();
+  ctx.beginPath(); ctx.arc(x + MOON.r*0.24, y + MOON.r*0.26, MOON.r*0.21, 0, 6.284); ctx.fill();
+  ctx.beginPath(); ctx.arc(x + MOON.r*0.05, y - MOON.r*0.42, MOON.r*0.14, 0, 6.284); ctx.fill();
+}
+
+// ── copy (placeholder — pending Norm's voice pass) ──────────────────────────
+const introEl = document.getElementById('intro');
+const LINES = [
+  { t: 1.5,  out: 9.5,  s: 'The moon is the easy thing to look at.' },
+  { t: 16,   out: 25,   s: 'The faint ones are never where you point.' },
+  { t: 306,  out: 322,  s: 'They were out the whole time.' },
+];
+let lineIdx = 0, lineOut = 0;
+function sayings(){
+  const L = LINES[lineIdx];
+  if (L && simT >= L.t && introEl.textContent !== L.s){
+    introEl.textContent = L.s;
+    introEl.style.opacity = 1;
+    lineOut = L.out;
+  }
+  if (lineOut && simT >= lineOut){
+    introEl.style.opacity = 0;
+    lineOut = 0;
+    lineIdx++;
+  }
+}
+
+// ── audio ───────────────────────────────────────────────────────────────────
+// Quiet, and never a loudness reward: the field opens a filter, not a fader.
+// No beating pairs, no gated high tones — both were aversive in earlier builds.
+let AC = null, master = null, padLP = null, chimeBus = null, started = false;
+function startAudio(){
+  if (started) return; started = true;
+  try {
+    AC = new (window.AudioContext || window.webkitAudioContext)();
+    master = AC.createGain(); master.gain.value = 0.42; master.connect(AC.destination);
+
+    padLP = AC.createBiquadFilter();
+    padLP.type = 'lowpass'; padLP.frequency.value = 300; padLP.Q.value = 0.5;
+    padLP.connect(master);
+
+    // an open fifth plus its octave — no minor second anywhere, nothing beats
+    [73.42, 110.0, 146.83, 220.0].forEach((f, i) => {
+      const o = AC.createOscillator();
+      o.type = i < 2 ? 'sine' : 'triangle';
+      o.frequency.value = f;
+      const g = AC.createGain();
+      g.gain.value = [0.20, 0.13, 0.07, 0.035][i];
+      // slow independent drift so the pad never sits perfectly still
+      const lfo = AC.createOscillator(); lfo.frequency.value = 0.03 + i * 0.011;
+      const lg = AC.createGain(); lg.gain.value = g.gain.value * 0.28;
+      lfo.connect(lg); lg.connect(g.gain); lfo.start();
+      o.connect(g); g.connect(padLP); o.start();
+    });
+
+    // night air
+    const buf = AC.createBuffer(1, AC.sampleRate * 4, AC.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    const noise = AC.createBufferSource(); noise.buffer = buf; noise.loop = true;
+    const bp = AC.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 460; bp.Q.value = 0.5;
+    const ng = AC.createGain(); ng.gain.value = 0.030;
+    const nl = AC.createOscillator(); nl.frequency.value = 0.05;
+    const nlg = AC.createGain(); nlg.gain.value = 0.018;
+    nl.connect(nlg); nlg.connect(ng.gain); nl.start();
+    noise.connect(bp); bp.connect(ng); ng.connect(master); noise.start();
+
+    chimeBus = AC.createGain(); chimeBus.gain.value = 0.5; chimeBus.connect(master);
+  } catch (_) { AC = null; }
+}
+
+function updateAudio(){
+  if (!AC || !padLP) return;
+  const want = 300 + 1250 * fieldOpen;
+  padLP.frequency.setTargetAtTime(want, AC.currentTime, 1.2);
+}
+
+const PENT = [523.25, 587.33, 698.46, 783.99, 880.0, 1046.5];
+function ping(f, when, dur, level){
+  if (!AC || !chimeBus) return;
+  const o = AC.createOscillator(); o.type = 'sine'; o.frequency.value = f;
+  const g = AC.createGain();
+  g.gain.setValueAtTime(0.0001, when);
+  g.gain.exponentialRampToValueAtTime(level, when + 0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001, when + dur);
+  o.connect(g); g.connect(chimeBus);
+  o.start(when); o.stop(when + dur + 0.05);
+}
+function chime(){
+  DBG.chimes++;
+  if (!AC || chimeGate > 0) return;
+  chimeGate = 0.9;                                  // rate-limited: a gift, not a counter
+  ping(PENT[(Math.random() * PENT.length) | 0], AC.currentTime, 2.4, 0.045);
+}
+function linkChord(){
+  if (!AC) return;
+  const t = AC.currentTime;
+  [0, 2, 4].forEach((n, i) => ping(PENT[n], t + i * 0.16, 3.2, 0.05));
+}
+function owl(){
+  if (!AC) return;
+  const t = AC.currentTime;
+  [0, 0.42].forEach((off, i) => {
+    const o = AC.createOscillator(); o.type = 'sine';
+    o.frequency.setValueAtTime(i ? 300 : 340, t + off);
+    o.frequency.exponentialRampToValueAtTime(i ? 268 : 300, t + off + 0.30);
+    const g = AC.createGain();
+    g.gain.setValueAtTime(0.0001, t + off);
+    g.gain.exponentialRampToValueAtTime(0.030, t + off + 0.06);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + off + 0.44);
+    o.connect(g); g.connect(master);
+    o.start(t + off); o.stop(t + off + 0.5);
+  });
+}
+
+// ── helpers ─────────────────────────────────────────────────────────────────
+function clamp(v, a, b){ return v < a ? a : (v > b ? b : v); }
+function smooth01(k){ k = clamp(k, 0, 1); return k * k * (3 - 2 * k); }
+
+// ── loop ────────────────────────────────────────────────────────────────────
+let prev = performance.now();
+let lastFrameAt = performance.now();
+function frame(now){
+  DBG.frames++;
+  const dt = Math.min(0.05, (now - prev) / 1000);
+  prev = now;
+  advance(dt);
+  render();
+  lastFrameAt = now;
+  requestAnimationFrame(frame);
+}
+// headless watchdog: keeps the world running when rAF is throttled (hidden tab
+// or an un-composited pane), so automated playtests still advance
+setInterval(() => {
+  if (performance.now() - lastFrameAt > 500){
+    prev = performance.now() - 16;
+    frame(performance.now());
+  }
+}, 250);
+
+// ── tuning panel ────────────────────────────────────────────────────────────
+const panel = document.getElementById('tune');
+window.addEventListener('keydown', e => {
+  if (e.key === 't') panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+});
+function bind(id, key, fmt){
+  const s = document.getElementById('s_' + id), v = document.getElementById('v_' + id);
+  s.value = P[key];
+  v.textContent = fmt(P[key]);
+  s.addEventListener('input', () => { P[key] = parseFloat(s.value); v.textContent = fmt(P[key]); });
+}
+bind('ext',   'extR',     x => x | 0);
+bind('rise',  'riseR',    x => x | 0);
+bind('fall',  'fallR',    x => x | 0);
+bind('floor', 'farFloor', x => x.toFixed(2));
+bind('still', 'stillMax', x => x | 0);
+bind('open',  'tauOpen',  x => x.toFixed(1));
+bind('close', 'tauClose', x => x.toFixed(1));
+
+// ── debug API for playtesting ───────────────────────────────────────────────
+// Sim state accrues from dt only, so step() is a true synchronous clock.
+window.__sidelong = {
+  P, EV, DBG,
+  get t(){ return simT; },
+  get fieldOpen(){ return fieldOpen; },
+  get smoothSpeed(){ return smoothSpeed; },
+  get stillFrac(){ return stillFrac; },
+  get meanOpen(){ return sampleT > 0 ? openSum / sampleT : 0; },
+  get gaze(){ return [gx | 0, gy | 0]; },
+  get settled(){ return settled; },
+  get visible(){ return stars.filter(s => !s.bright && s.vis > 0.5).length; },
+  get found(){ return stars.filter(s => s.seen).length; },
+  get linked(){ return consts.filter(c => c.link).length; },
+  get figures(){ return consts.length; },
+  // what a session would record, if this were the shipped game
+  get summary(){
+    return {
+      durationS: +simT.toFixed(1),
+      stillFrac: +stillFrac.toFixed(3),
+      meanOpen: +(sampleT > 0 ? openSum / sampleT : 0).toFixed(3),
+      starsFound: stars.filter(s => s.seen).length,
+      figuresLinked: consts.filter(c => c.link).length,
+      figuresRead: consts.filter(c => c.named).length,
+    };
+  },
+  get named(){ return consts.filter(c => c.named).map(c => c.name); },
+  // screen position of a claimed star belonging to a linked, unread figure
+  aClaimedStar(){
+    for (const c of consts){
+      if (!c.link || c.linked < 1 || c.named) continue;
+      for (const i of c.idx){
+        const s = stars[i];
+        if (s.claimed && s.x > 40 && s.x < W - 40 && s.y > 40 && s.y < H - 40){
+          return { x: s.x | 0, y: s.y | 0, figure: c.name, vis: +s.vis.toFixed(3) };
+        }
+      }
+    }
+    return null;
+  },
+  // the visibility profile as a function of distance from the gaze — this is
+  // the whole dynamic, so it is measurable rather than a matter of taste
+  profile(bins = 8, span = 800){
+    const out = [];
+    for (let b = 0; b < bins; b++){
+      const r0 = span * b / bins, r1 = span * (b + 1) / bins;
+      let n = 0, sum = 0;
+      for (const s of stars){
+        if (s.bright) continue;
+        const d = Math.hypot(s.x - gx, s.y - gy);
+        if (d >= r0 && d < r1){ n++; sum += s.vis; }
+      }
+      out.push({ px: `${r0 | 0}-${r1 | 0}`, n, meanVis: n ? +(sum / n).toFixed(3) : null });
+    }
+    return out;
+  },
+  // track one specific star, to watch it go out under direct fixation
+  nearestFaint(x, y){
+    let best = null, bd = Infinity;
+    for (const s of stars){
+      if (s.bright) continue;
+      const d = Math.hypot(s.x - x, s.y - y);
+      if (d < bd){ bd = d; best = s; }
+    }
+    return best ? { d: +bd.toFixed(1), vis: +best.vis.toFixed(3), seen: best.seen, claimed: best.claimed, _s: null } : null;
+  },
+  visOf(x, y){
+    let best = null, bd = Infinity;
+    for (const s of stars){
+      if (s.bright) continue;
+      const d = Math.hypot(s.x - x, s.y - y);
+      if (d < bd){ bd = d; best = s; }
+    }
+    return best ? +best.vis.toFixed(3) : null;
+  },
+  // synthetic gaze through the real input path
+  look(x, y){ pointerHere = true; gTargetX = x; gTargetY = y; return [x, y]; },
+  lookMoon(){ return this.look(moonX(), moonY()); },
+  // move the gaze at an exact speed on the virtual clock, immune to throttling
+  sweep(x1, y1, x2, y2, ms){
+    const steps = Math.max(2, Math.round(ms / 16));
+    pointerHere = true;
+    // seed lastG* too, or the teleport to the start point registers as one
+    // enormous frame of speed and poisons the smoothed reading
+    gTargetX = x1; gTargetY = y1; gx = lastGx = x1; gy = lastGy = y1;
+    for (let i = 1; i <= steps; i++){
+      const k = i / steps;
+      gTargetX = x1 + (x2 - x1) * k;
+      gTargetY = y1 + (y2 - y1) * k;
+      advance(0.016);
+    }
+    render();
+    const dist = Math.hypot(x2 - x1, y2 - y1);
+    return `swept ${dist | 0}px over ${ms}ms (${(dist / (ms / 1000)) | 0}px/s)`;
+  },
+  // hold the gaze still at a point for n seconds of world time
+  rest(x, y, sec){
+    if (x != null) this.look(x, y);
+    gx = lastGx = gTargetX; gy = lastGy = gTargetY;
+    for (let i = 0; i < Math.round(sec / 0.016); i++) advance(0.016);
+    render();
+    return this.summary;
+  },
+  step(n = 1, dt = 1 / 60){ for (let i = 0; i < n; i++) advance(dt); render(); return simT; },
+  // sim and render costed separately, so tuning aims at the real hot spot
+  bench(n = 200){
+    const a0 = performance.now(); for (let i = 0; i < n; i++) advance(1 / 60);
+    const a1 = performance.now(); for (let i = 0; i < n; i++) render();
+    const a2 = performance.now();
+    return {
+      simMs: +((a1 - a0) / n).toFixed(2),
+      renderMs: +((a2 - a1) / n).toFixed(2),
+      stars: stars.length, visibleFaint: stars.filter(s => !s.bright && s.vis > 0.5).length,
+    };
+  },
+  skipTo(sec){ const n = Math.max(0, Math.round((sec - simT) / 0.05)); for (let i = 0; i < n; i++) advance(0.05); render(); return simT; },
+  reseed(){ seedSky(); return stars.length; },
+};
+
+// ── go ──────────────────────────────────────────────────────────────────────
+if (!/dev/.test(location.search)) document.getElementById('hint').style.display = 'none';
+resize();
+seedSky();
+gx = gTargetX = lastGx = moonX();
+gy = gTargetY = lastGy = moonY();
+window.addEventListener('resize', resize);
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

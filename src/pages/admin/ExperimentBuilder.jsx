@@ -16,6 +16,7 @@ import {
   chainOrder, topLevelNodes, entryNode, toSlots, mergeInto,
   findOwningBlock, findOwningCounterbalance,
   insertAfter, lastNodeInTimepointGroup,
+  DEFAULT_ADHERENCE_ON_FAIL,
 } from '../../lib/experimentGraph'
 import TimepointNode    from '../../components/study/builder/nodes/TimepointNode'
 import SessionNode      from '../../components/study/builder/nodes/SessionNode'
@@ -403,11 +404,30 @@ function EditPanel({ nodeId, graph, sessionTemplates, isLocked, onChange, onRemo
           )}
           {field('Minimum required sessions', input(node.min_required, 'min_required', 'number', { min: 0 }))}
           {field('Out of total sessions', input(node.of_total, 'of_total', 'number', { min: 1 }))}
+          {field('Below the minimum',
+            <select
+              style={P.input}
+              value={node.on_fail ?? DEFAULT_ADHERENCE_ON_FAIL}
+              disabled={isLocked}
+              onChange={e => onChange(nodeId, { on_fail: e.target.value })}
+            >
+              <option value="withdraw">Withdraw the participant</option>
+              <option value="continue">Continue — record only</option>
+            </select>
+          )}
           <div style={{ fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 12, color: 'var(--tx2)', marginTop: 2 }}>
-            Evaluated once every upstream session in the phase has resolved (completed or missed). A
-            participant below the minimum is withdrawn — their enrollment status becomes "withdrawn",
-            any active session link is revoked, and they receive a termination email. Counts completed
-            daily training sessions in the selected phase (Liliana-specific metric).
+            Evaluated once every upstream session in the phase has resolved (completed or missed).
+            Counts completed daily training sessions in the selected phase (Liliana-specific metric).
+            {(node.on_fail ?? DEFAULT_ADHERENCE_ON_FAIL) === 'withdraw' ? (
+              <> A participant below the minimum is <strong>withdrawn</strong> — their enrollment status
+              becomes "withdrawn", any active session link is revoked, and they receive a termination
+              email.</>
+            ) : (
+              <> A participant below the minimum <strong>continues unaffected</strong> — everything
+              downstream, including the final assessment, is still delivered. The threshold becomes an
+              analysis criterion (per-protocol) rather than a gate, so intention-to-treat analysis stays
+              possible. Only unsubscribing or withdrawing ends participation.</>
+            )}
           </div>
         </>
       )}
@@ -692,7 +712,9 @@ export default function ExperimentBuilder() {
   function handleAddAdherenceCheck() {
     mutate(g => {
       const after = insertionPoint(g, selectedId)
-      const data  = { id: newId(), type: 'adherence_check', label: 'Adherence Check', phase: 'phase1', min_required: 10, of_total: 12 }
+      // on_fail written explicitly rather than left to the default, so a
+      // graph always states what its checks do rather than implying it.
+      const data  = { id: newId(), type: 'adherence_check', label: 'Adherence Check', phase: 'phase1', min_required: 10, of_total: 12, on_fail: DEFAULT_ADHERENCE_ON_FAIL }
       return after ? insertAfter(g, after, data) : addNode(g, data)
     }, { resetLayout: true })
   }

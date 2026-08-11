@@ -3254,3 +3254,870 @@ verify-before-publishing marker points at ontario.ca instead, per §29.3.
 
 Still open on this page: the **College of Psychologists of Ontario** disciplinary process and
 record-keeping standards (CRPO's differ), and the **CMA/CPA psychiatric** codes alongside the APA one.
+
+---
+
+## 31. The amber queue clears
+
+Three sources, three pages, all from the amber tier of the §29 triage — plausible-looking wrong answers
+rather than dangerous ones, so drafted here and left for staff verification.
+
+### 31.1 `electroconvulsive-therapy` — and a jurisdiction warning that is not a formality
+
+Thirthalli et al. (2023), *Indian Journal of Psychiatry*, CC BY-NC-SA. **The technical content travels;
+the consent framework does not.** The guideline's consent procedures follow **India's Mental Health
+Care Act 2017**; Ontario runs through the *Health Care Consent Act, 1996* and the Consent and Capacity
+Board. The page says so in a box before anything else, and this is now the standing pattern for
+foreign guidelines: **separate the transferable from the jurisdictional explicitly.**
+
+Findings worth keeping:
+
+- **ECT is framed as first-line for psychiatric emergencies** across diagnoses — high suicidality,
+  catatonia, severe physical debilitation — not as a last resort.
+- **No formal grading system is used**, and the guideline explains why the evidence looks thin: sham
+  control is largely unavailable "due to ethical and pragmatic considerations." You cannot ethically
+  give someone a fake course of anaesthesia and seizures. Read beside `tobacco-use-disorder`
+  (136 trials, GRADE high), this is a case where **the gold-standard design is closed to the
+  intervention**, which is different from nobody having tried.
+- **Every configuration that spares memory costs efficacy or a higher dose.** Bitemporal is effective
+  and most cognitively costly; right unilateral needs 4–6× seizure threshold; ultrabrief pulse
+  compromises efficacy and needs ~6× threshold. There is no free setting.
+- **Courses "should not be prefixed"** but planned dynamically — which constrains what can honestly be
+  promised to a patient about duration.
+- **The honesty problem the guideline names itself:** retrograde amnesia is "one of the most distressing
+  adverse effects, which is **difficult to measure using objective cognitive tests**", so subjective
+  report must be given weight alongside testing. **The harm patients report most is the one instruments
+  capture least**, and a purely test-based safety account will understate it.
+
+### 31.2 `substance-related-and-addictive-disorders` — harm reduction, and evidence adjudicated by a court
+
+Kerr, Mitra, Kennedy & McNeil (2017), *Harm Reduction Journal*, CC BY. Harm reduction is the organising
+framework of Canadian drug policy and the chapter's US-derived source does not mention it.
+
+- **Insite** opened September 2003 under a **s. 56 exemption to the *Controlled Drugs and Substances
+  Act*** — the federal government disapplying its own drug law. Background: mid-1990s Vancouver had
+  **19% HIV incidence among people who inject drugs** and **300+ fatal overdoses a year** in BC.
+- **The Supreme Court of Canada ruled 9–0 in 2011** that refusing the exemption "contravened the
+  principles of fundamental justice," finding Insite "has been proven to save lives with no discernable
+  negative impact on ... public safety and health objectives." **A public-health intervention whose
+  evidence base was adjudicated by the country's highest court** — which is why this belongs on
+  `law-and-ethics` as much as here.
+- Over 40 peer-reviewed studies: reduced overdose mortality, reduced syringe sharing, **increased uptake
+  of detoxification and addiction treatment**, reduced public disorder, **no increase in crime, no
+  promotion of injecting initiation**, and cost-*saving*. The treatment-uptake finding is the one that
+  answers the standard objection.
+- **Politics, not evidence, governs expansion.** After losing at the Supreme Court the federal
+  government imposed **26 conditions** on new sites; a later government cut these to **five**. Because
+  health is provincial but the exemption is federal, provincial health decisions are "subjugated to the
+  whims of municipal, provincial, and federal politicians."
+- Still unmet: **30–40 people leave Insite daily without injecting** because of wait times, and
+  **assisted injection is prohibited** although up to a third of local people who inject need help —
+  disproportionately women, for whom needing assistance raises HIV, overdose and violence risk.
+
+Flagged as a **2017 source**: the holding and the evidence are durable, the site counts and statute are
+not.
+
+### 31.3 `ejaculation-and-orgasmic-disorders` — the prevalence depends on whether you ask
+
+Higgins, Nash & Lynch (2010), open access. The headline is methodological: estimates run **30–73%**,
+and the spread is driven less by drugs than by **question format** — spontaneous reporting substantially
+underestimates, direct asking gives 25–73% for SSRIs. Historically, reports were rare in the 1960s–70s
+partly through "an assumption that people with mental health problems were asexual."
+
+- Range across agents is wide enough to be a prescribing decision: **citalopram 72.7%** and paroxetine
+  70.7% against **bupropion 10–25%** and **moclobemide 3.9%**. Head to head, sertraline produced
+  orgasmic dysfunction in **61% of men and 41% of women** versus **10% and 7%** on bupropion.
+- **Only ~10% remit spontaneously**, so "wait, it will settle" is wrong for nine patients in ten.
+- **A behavioural intervention defeated by pharmacokinetics:** drug holidays improved matters on
+  sertraline and paroxetine and **failed on fluoxetine**, whose long half-life means the drug is still
+  present. The authors also note the cost — scheduling sex invites performance anxiety, and
+  "**timetabling is no substitute for romance**."
+- Buspirone and amantadine were **no better than placebo**; ginkgo evidence conflicts; bupropion SR and
+  sildenafil have supporting trials.
+- **The attribution problem is unresolved and serious:** depression itself reduces libido, and **over
+  40% of men and 50% of women reported decreased sexual interest *before* treatment began.** Most
+  studies lack baseline assessment, so the effect cannot be cleanly assigned to the drug.
+- **Persistence after stopping**: a case report of **genital anaesthesia six years after sertraline
+  discontinuation**, and **no systematic data on rates at all**. One case is not a rate — but the
+  absence of any rate is itself the finding.
+
+Verdict worth quoting for `evidence-based-practice`: management "is still an art rather than a
+science," and the evidence is "insufficient to formulate a clinical guideline."
+
+### 31.4 State
+
+Pages 262, ingest jobs 189, **red links 0**. One off-catalogue red link (`catatonia`, which has no page
+and no catalogue row) was introduced and caught by the standing check, repointed to
+`psychosis-and-the-schizophrenia-spectrum`. Empty sections 70; annotations 302 — both roughly flat,
+because each closure here also left a narrowed successor annotation.
+
+---
+
+## 32. Crisis resources refreshed, and a canonical source recorded
+
+### 32.1 `student-support-resources` rebuilt from U of T's own page
+
+Norm supplied **U of T Student Life, "Support when you feel distressed"** and asked that it be saved as
+a reference so the page can be re-checked term to term. It is now recorded **in the frontmatter as
+`canonical_source`**, in the provenance job row, and in the verification block at the foot of the page.
+**This is the pattern for any live-data page**: name one authoritative source and point the recheck at
+it, rather than leaving a future session to re-derive where the numbers came from.
+
+Compiled date moved **2026-07-20 → 2026-08-04**. Added, none of which the page previously had:
+
+- **Campus Safety, 24/7** — St. George 416-978-2222, UTM 905-569-4333, plus the St. George Special
+  Constable Service (416-978-2323) for students with **nowhere to stay overnight**, which is a
+  practical need the page had no answer for.
+- **Six further 24/7 crisis lines** — Gerstein Centre, Distress Centres of Greater Toronto, Spectra,
+  Crisis Support Peel Dufferin, and the outside-North-America number for TELUS Health
+  (001-416-380-6578, **146 languages**).
+- **Identity-specific services** — Anishnawbe Health Toronto, Black Youth Helpline, LGBTQ Youthline,
+  Assaulted Women's Helpline. The rationale is stated on the page: some people would rather talk to a
+  service that already understands their situation.
+- **Sexual violence** — the U of T Sexual Violence Prevention & Support Centre, Toronto Rape Crisis
+  Centre, and the three 24/7 Sexual Assault / Domestic Violence Care Centres with addresses.
+- **ConnexOntario** cross-linked from `substance-use-disorder` and `gambling-disorder`, since it is the
+  operative line for this course's substance chapter.
+
+### 32.2 Two numbers deliberately withheld — the verification rule doing real work
+
+**The UTSC Campus Safety emergency number extracted as identical to St. George's** (416-978-2222).
+That is far more likely an extraction artefact than a real shared number. It was **left out of the
+page** with a note explaining why, rather than published on the chance it was right. Likewise the
+academic-support and housing numbers from the same source were excluded — **one was visibly truncated**
+(a nine-digit "905-828-385"), and they are not crisis resources.
+
+**This is the §29 red-set rule applied to its most consequential page.** A wrong crisis number is worse
+than no crisis number, because a reader cannot tell the difference and will act on it in the worst
+possible moment. Both omissions are recorded on the page as items to resolve before publish, not as
+silent gaps.
+
+### 32.3 Confirmed numbers promoted from markers to content
+
+Norm confirmed the **PPAO at 1-800-578-2343**, and supplied **Elder Abuse Prevention Ontario**
+(**1-833-916-6728** toll-free, **416-916-6728** office, https://eapon.ca/). Both are now on
+`law-and-ethics` with a *(confirmed 2026-08-04)* stamp rather than a verify-before-publishing marker.
+
+A distinction added at the same time, because it is easy to get wrong in a crisis: **EAPO is an
+information and referral service, not a reporting line.** Where the mandatory duty applies the report
+goes to the **Long-Term Care Action Line** or the **Retirement Homes Regulatory Authority**; where
+there is an immediate safety concern, to police.
+
+### 32.4 `norman@radlab.zone` dropped
+
+Checked before deleting rather than after: the account was **not** the corpus's `created_by`, **not**
+the reviewer identity used by `review_proposal()` (that is `norman.farb@utoronto.ca`), and had **zero**
+rows in `enrollments`, `wiki_page_versions`, `ingest_jobs` and `wiki_pages`. Deleted. Two accounts
+remain — `norman.farb@utoronto.ca` (instructor) and `kavabee@gmail.com` (TA).
+
+### 32.5 Correction: PSY240 is a UTM course, and that changes more than the campus numbers
+
+The version in 32.1 was built tri-campus-first, which was wrong. Norm supplied UTM's own
+**Mental health and crisis supports** page, now the **primary** `canonical_source`, with the Student
+Life page demoted to a secondary source for tri-campus and community services.
+
+**The real correction is not the campus phone numbers — it is that Mississauga is in Peel Region, not
+Toronto.** A whole layer of the page pointed at the wrong municipality:
+
+| Need | Was listed | Now leads |
+|---|---|---|
+| Regional crisis line | Toronto Distress Centres | **Crisis Support Peel Dufferin** 905-278-9036 / 1-888-811-2222, and **Spectra** 905-459-7777 |
+| Sexual assault care centre | Women's College Hospital, downtown | **Trillium Health Partners**, 100 Queensway W, Mississauga — 905-848-7493 |
+| Rape crisis centre | Toronto Rape Crisis Centre | **Peel Rape Crisis Centre** 905-273-9442 |
+
+A UTM student in crisis following the old ordering would have been sent to services an hour away.
+**Campus is not a cosmetic attribute of a resource page**; it determines which regional health system
+the reader actually falls under. The page now says so explicitly in its opening lines.
+
+New from UTM's own page, none of which appeared on the tri-campus one: the **Residence Don on Duty**
+(289-805-0580) for after-hours emergencies in residence; **Hope for Wellness** (1-855-242-3310), 24/7
+for Indigenous people across Canada; **ONTX** text/call 258258, 2 p.m.–2 a.m.; the **Equity, Diversity
+& Inclusion Office** (905-569-4916); and **NAVI**, U of T's virtual assistant for finding the right
+service.
+
+**The UTSC blocker resolved itself by being unnecessary.** St. George and UTSC campus-safety numbers
+are now **excluded** rather than flagged — this is a UTM course, the UTSC number could not be verified,
+and a student on another campus is better served by the tri-campus portal or NAVI than by a number
+transcribed here on a guess. The page states the exclusion and the reason.
+
+---
+
+## 33. The main eight, part one — two Tier A gaps close
+
+Major-tier gaps **8 → 6**. Two closed from CC BY sources; five researched and triaged, with three
+handed back to Norm as research missions (§33.3).
+
+### 33.1 `functional-neurological-symptom-disorder` — treatment
+
+Gilmour et al. (2020), *J Neurol*, CC BY. **The distinctive feature is that the explanation is itself
+the treatment** — naming the condition, describing malfunction rather than damage ("software rather
+than hardware"), and *demonstrating* it with Hoover's sign or distractibility so the patient sees the
+movement happen. A systematic review found **roughly half of patients had reduction or cessation of
+attacks after being given the diagnosis of functional seizures.**
+
+**Two numbers that must be read together, and this is the transferable lesson.** An intensive 5-day
+outpatient physiotherapy programme achieved **good outcome in 70% at six months** — while a feasibility
+study of the same approach found **only 29% of 210 patients were eligible**, with exclusions for pain,
+fatigue, or psychological symptoms needing treatment first. The strong result belongs to a selected
+quarter. **Always pair an efficacy figure with its eligibility figure.**
+
+Cleanest comparison in the FND literature:
+
+| Arm | Reduction in seizure frequency |
+|---|---|
+| CBT + sertraline | 59% |
+| **CBT alone** | **51%** |
+| **Sertraline alone** | **27%** |
+
+The CBT-only arm did *better* on secondary outcomes than the combination, plausibly because medication
+side effects land badly in a somatically-focused population. Relatedly, **deprescribing is active
+treatment** here — stopping antiepileptics without ongoing indication, opioids, and ineffective
+psychotropics.
+
+Prognosis stated plainly: **20 of 24 studies found more than a third of patients still symptomatic at
+follow-up, at the same or worse severity.** And the finding that most damages the classic conversion
+account: **14–77% of FND patients report no stressful life events at all**, and such events are common
+in people without FND. **A trauma history is neither necessary nor sufficient.**
+
+### 33.2 `adjustment-disorders` — etiology
+
+Kazlauskas et al. (2018), CC BY. **ICD-11 rebuilding the category is what makes an aetiology askable.**
+DSM-5 has a residual definition with subtypes and no specified symptoms; ICD-11 places it in
+*Disorders Specifically Associated with Stress*, drops subtypes, and requires two positive symptoms —
+**preoccupation with the stressor** and **failure to adapt**. A category defined by what it is *not*
+cannot have causes of its own.
+
+The finding worth teaching is a **dissociation from PTSD**: after a disaster, **physical proximity to
+the event predicted PTSD but not adjustment disorder**, while **previous stressful experiences
+predicted adjustment disorder**. PTSD tracked how close you were; adjustment disorder tracked what you
+had already been through.
+
+**What is missing is more striking than what was found.** The review reports **no systematic
+investigation of personality, social support quality, or coping strategies** — the three things a
+textbook would list first. And the phenotype itself is unstable: three validation studies produced
+**two-factor (Lithuania)**, **six-factor (Germany)** and **unidimensional (Switzerland)** solutions, so
+the review concludes the data "do not provide enough support for the ICD-11 definition of AjD symptom
+structure." **Aetiology is under-determined here because the construct is.**
+
+### 33.3 What could not be closed, and why
+
+Searching was done before writing, so these are evidence-based conclusions about the state of the
+literature rather than unattempted work.
+
+- **`exhibitionistic-disorder` etiology — a genuine open-access desert.** Europe PMC returns
+  essentially nothing usable: a **1966** hypnosis paper, a **1960** reciprocal-inhibition paper, and a
+  single bupropion case report. A companion search on paraphilia aetiology generally returned
+  **zero results**. This is not a search-strategy failure — the open-access literature does not exist.
+  Needs a library-gated source.
+- **`research-methods` evaluating-the-evidence-base — partially sourceable, and partial would be
+  worse.** Publication-bias sources are available, but the annotation asks for meta-analysis, network
+  meta-analysis, IPD synthesis, preregistration, blinding standards, allegiance effects and the
+  replication crisis. No single open methods reference spans that; assembling it from six fragments
+  would produce a worse section than one good textbook chapter.
+- **`illness-anxiety-disorder` — treatment is sourceable, aetiology is not.** An internet-versus
+  face-to-face CBT randomised trial is available for treatment; searches for the cognitive model,
+  mechanisms and maintenance returned mostly instrument-validation papers and COVID-era samples.
+- **`integrative-model` comparative-evidence — sourceable, queued.** An IPD meta-analysis of combined
+  treatment versus psychotherapy, and a comparative efficacy-and-acceptability study, were located and
+  answer the ask directly.
+- **`elimination-disorders` encopresis — sourceable, queued.** A Cochrane review of behavioural and
+  cognitive interventions for faecal incontinence in children, plus a chronic functional constipation
+  and encopresis paper, were located.
+
+### 33.4 Process note — the backtick trap, fourth occurrence
+
+Inlining markdown containing backticks into a bash-embedded `python -c` broke again, this time
+silently enough that the commit went through against the *previous* commit. **The rule already recorded
+was not followed**: prose containing backticks goes through the **Write tool to a file**, and the shell
+only ever *reads* that file. Recording the count because the pattern is clearly not being learned from
+a single mention.
+
+---
+
+## 34. The main eight, part two — down to three
+
+Major-tier gaps **6 → 3**. Three more closed. The remainder are exactly the three handed to Norm as
+research missions in §33.3, so **the corpus is now blocked on library access rather than on effort.**
+
+### 34.1 A near-miss caught by fetching before writing
+
+The source queued in §33.3 for `integrative-model` — Weitz et al., *BMJ Open* 2017, an individual
+patient data meta-analysis of combined treatment versus psychotherapy — turned out to be a
+**protocol paper with no results at all.** Title, journal and abstract all read like a findings paper.
+Had it been cited from the search listing, the page would have carried effect sizes that do not exist.
+**Confirming a source reports results is a separate check from confirming it is relevant**, and the
+search interface does not distinguish them.
+
+### 34.2 `elimination-disorders` — encopresis
+
+Brazzelli et al. (2011), Cochrane, 21 trials and 1,371 children. **The first job is correcting the
+intuition the name invites**: a child repeatedly soiling looks like a behaviour problem, and mostly is
+not. Faecal incontinence "develops as a result of faecal constipation or faecal retention, often
+potentiated by phobic conditioning, and is manifested as **overflow** soiling." Chronic constipation
+distends the rectum, **rectal sensation is reduced by accommodation**, and soft stool leaks past the
+retained mass — frequently without the child feeling it coming. Defaecation having become painful, the
+child withholds: **pain → withholding → constipation → more pain.**
+
+| Comparison | Result |
+|---|---|
+| **Biofeedback added to conventional treatment** | **OR 1.11** (0.78–1.58) for persisting symptoms at 12 months; **OR 1.31** (0.80–2.15) at 18 months |
+| **Behaviour modification added to laxatives** | soiling reduced, **OR 0.14** (0.04–0.51) at 3 months, **OR 0.20** (0.06–0.65) at 12 months |
+
+**The biofeedback row is the corpus's cleanest surrogate-outcome failure.** Biofeedback demonstrably
+produces **normal defaecation dynamics** in the short term — and does not produce **continence**. The
+physiological measure moved; the outcome that matters to the child did not. The point estimate is
+above 1, i.e. slightly *worse*. Meanwhile the positive result rests on **a single small trial**, so
+what can be said is that the psychological and medical components work *together*, not that either
+works alone. Sixteen of 21 trials had unclear allocation concealment.
+
+### 34.3 `integrative-model` — comparative evidence
+
+Xiang et al. (2022), CC BY: 14 RCTs, 1,325 participants, combined pharmacotherapy plus psychotherapy
+versus other active treatments for depression in children and adolescents. **Remission OR 1.37
+(0.93–2.04), n.s.; symptom change SMD −0.07 (−0.32 to 0.19), n.s.**
+
+**The paper reports statistical power per outcome, which most meta-analyses do not, and the numbers
+reframe every null in it**: 93% for remission but **6%** for symptom change, **5%** for acceptability,
+**16%** for suicidality. **A null at 5% power is an absence of information, not a finding.** Only the
+remission comparison could have detected what it was looking for.
+
+Then two patterns that should stop a reader believing the positive subgroup signals:
+
+| Split | Combined therapy superior? |
+|---|---|
+| USA studies | **OR 1.90** (1.33–2.73) — yes |
+| Non-USA | OR 0.62 (0.32–1.17) — no |
+| **High risk of bias** | **OR 1.89** (1.19–3.01) — yes |
+| **Low risk of bias** | OR 1.39 (0.40–4.86) — **no** |
+
+**The benefit appears in the studies most likely to be wrong and vanishes in the studies most likely
+to be right** — the signature of bias producing an effect rather than detecting one. Only 21.4% of
+trials were at low risk. The page's conclusion is deliberately narrow: the integrative model remains a
+good account of **aetiology** whose **therapeutic** corollary is *untested* rather than confirmed.
+
+### 34.4 `illness-anxiety-disorder` — treatment
+
+Axelsson et al. (2020), *JAMA Psychiatry* — **note the licence: © AMA, all rights reserved**, free to
+read in PMC but **not openly licensed**, so paraphrase-and-cite only. Recorded in the job row.
+
+204 adults, Stockholm primary care, 12 weeks of internet CBT versus face-to-face CBT, non-inferiority
+design. **Within-group d = 1.76 in both arms; between-group d = 0.00.** Response 76% vs 74%.
+
+**Those two effect sizes side by side are the best teaching pair in the corpus for the difference
+between "does this work?" and "does this work better?"** The treatment did a great deal; the delivery
+format did nothing.
+
+The resource result is the policy-relevant one: **10.0 minutes of therapist time per patient per week
+versus 45.6 — 78% less** — therapist cost $454 versus $2,059, net societal cost $3,854 lower. Where
+clinician hours are the binding constraint, that is a larger effect on population outcomes than most
+drug comparisons.
+
+Two complications kept on the page: **alliance was rated significantly lower online (32.3 vs 36.3) and
+outcomes were identical anyway**, which cuts against alliance-drives-outcome; and at 12 months the
+difference was **2.4 points (−0.4 to 5.1)**, "clinically but not statistically significant", with
+face-to-face better on general anxiety and depression long term — in a trial **not powered to test
+non-inferiority at follow-up.**
+
+### 34.5 What remains
+
+| Page | Gap | Status |
+|---|---|---|
+| `illness-anxiety-disorder` | etiology | **Norm's mission 3** — cognitive model / maintenance mechanisms |
+| `exhibitionistic-disorder` | etiology | **Norm's mission 1** — open-access desert |
+| `research-methods` | evaluating-the-evidence-base | **Norm's mission 2** — one methods reference, not six fragments |
+
+Pages 262, ingest jobs 196, red links 0.
+
+---
+
+## 35. Mission 1 delivered — `exhibitionistic-disorder` etiology closes
+
+Norm supplied the sources the §33.3 search could not reach. Major-tier gaps **3 → 2**.
+
+**Two sources, deliberately paired across 45 years:**
+
+| Source | Role | Licence |
+|---|---|---|
+| Wdowiak et al. (2025), *J Education, Health and Sport* 77:56926 | current neurobiology, prevalence, contemporary forms | **CC BY-NC-SA 4.0** |
+| Blair & Lanyon (1981), *Psychological Bulletin* 89(3), 439–463 | the methodological critique | **© APA, all rights reserved** — paraphrase and cite only, recorded in the job row |
+
+A third, O'Donohue & Schewe (eds.), *Handbook of Sexual Assault and Sexual Assault Prevention*
+(Springer), is in `I:\Shared drives\ComeSee\PSY240\` and **not yet used** — earmarked for the
+`paraphilic-disorders` annotation on **prevention and non-offending help-seekers**, which is a better
+fit than aetiology.
+
+### 35.1 The finding that justified the pairing
+
+**The 2025 review says the aetiology of specific paraphilias "remains relatively poorly understood."
+The 1981 review said "no empirical support exists for any particular etiological theory."**
+**Forty-five years, same verdict.** Neither sentence means much alone; together they establish that
+this is a *stable* state of the field rather than a temporary gap, which is exactly what the page
+needed to be able to say.
+
+### 35.2 Substantive content now on the page
+
+- **A circularity in the manuals.** On DSM-5 and ICD-11 assumptions, "a logical risk factor for
+  exhibitionistic disorder is the manifestation of exhibitionistic behaviors." The best-established
+  predictor of the disorder is the behaviour defining it — a fact about the classification, not causes.
+- **A real cognitive account**: the person exposing **perceives the observer's shock or surprise as
+  sexual interest**, which reinforces the behaviour. Testable, and about appraisal rather than the act.
+- **The dual-circuit model**: impulsivity via an action-outcome system in the **ventral striatum**,
+  compulsivity via a habituation system in the **dorsal striatum**, with behaviours migrating
+  ventral → dorsal through neuroplasticity and becoming habitual. **It explains how a behaviour becomes
+  compulsive, not why the behaviour is exhibitionistic** — the same limitation already recorded at
+  `paraphilic-disorders`.
+- **Acquired cases carry the strongest causal evidence** — adrenoleukodystrophy, post-stroke paraphilia
+  with frontal/frontostriatal/temporal involvement, temporal lobe epilepsy, frontotemporal dementia,
+  Parkinson's, and antipsychotic-induced hypersexuality. The page states the limit explicitly: these
+  support **disinhibition**, and a stroke producing exhibitionism at 70 is not a model of a paraphilia
+  at 25.
+
+### 35.3 The number that reframes the sex difference
+
+Exhibitionistic disorder is conventionally **2–4% of men** and "extremely rare" in women. In Joyal et
+al.'s representative sample of ~1,000, the gap depends entirely on which behaviour is asked about:
+
+| | Men | Women |
+|---|---|---|
+| Past experience of exposing to a stranger | 7.8% | 2.7% |
+| **Past involvement in "expanded" exhibitionism** (sex in front of others / where being seen is likely) | **32.6%** | **29.4%** |
+
+**For the broader behaviour the sex difference nearly vanishes.** The male predominance is therefore a
+property of the **narrow, non-consensual** form — not of exhibitionistic interest as such. This also
+closes the older annotation asking to reconcile "much less common in women" with a 2:1 survey ratio:
+the two figures describe different behaviours.
+
+### 35.4 The methodological layer, and why the classic personality picture is not a finding
+
+Blair & Lanyon's value is their account of **why the evidence cannot support conclusions**. Almost all
+descriptive studies drew subjects from people **arrested and convicted**, who are "already an
+unrepresentative sample of the universe of sex offenders." So the familiar picture — timidity, lack of
+aggressiveness, perceived inferiority, heterosexual immaturity, puritanical family attitudes to sex —
+**describes the subset who were caught, convicted and referred**, in the theoretical vocabulary of its
+period. Add unstandardised interviews, terms used differently by different authors, and — with two
+exceptions — **no non-deviant control groups at all**.
+
+Also preserved: the category is **defined by context rather than by the act**, its boundaries drawn by
+listing exclusions (mutual intimacy, medical examination, nudist colony; public urination excluded as
+non-sexual). That is the same structural feature recorded for `pyromania` — **the diagnosis is what
+remains once the ordinary explanations are removed.**
+
+**The standing gap is now precisely stated**: no study exists of people with exhibitionistic interests
+**who have not been arrested**, which is the sample the entire literature lacks.
+
+### 35.5 Remaining
+
+| Page | Gap | Status |
+|---|---|---|
+| `illness-anxiety-disorder` | etiology | Norm's mission 3 — cognitive model / maintenance mechanisms |
+| `research-methods` | evaluating-the-evidence-base | Norm's mission 2 — one methods reference |
+
+### 35.6 The Handbook applied to `paraphilic-disorders` — the category that is missing
+
+O'Donohue & Schewe (2019), *Handbook of Sexual Assault and Sexual Assault Prevention* (Springer,
+all rights reserved — paraphrase and cite only). Used from the **editors' Introduction**, which turned
+out to carry a live argument about this chapter that no journal search had surfaced.
+
+**The argument is about a category that is absent rather than one that is present.** There is **no
+DSM-5 diagnostic category for a rapist**, and the editors argue there should be, reasoning through
+DSM-5's own six-part definition of mental disorder: **if pedophilic disorder satisfies those criteria,
+some form of "willingness to rape or arousal to rape" ought to as well.**
+
+**The page does not adopt that conclusion — it locates the disagreement.** Criterion 5 of the same
+definition requires that a disorder be "**not solely a result of social deviance or conflicts with
+society**", which is precisely the case a rapist diagnosis would test. So the dispute is not
+evidential: it is whether **arousal to non-consent can be specified as a psychological pattern
+distinct from the offending itself**. If it cannot, the category is social deviance wearing a
+diagnosis; if it can, excluding it while retaining pedophilic disorder is inconsistent. Both readings
+survive on the criteria as written, and the page says so rather than choosing. This is the same
+definition-by-exclusion structure already recorded at `pyromania` and `exhibitionistic-disorder`.
+
+**The consequence is concrete and is the reason the debate is not academic.** With no such category,
+people who rape **cannot receive third-party payment for therapy** — insurers reimburse against
+diagnoses. The editors place this inside a broader claim that the field is "grossly underfunded", with
+**too little spent on rehabilitating perpetrators** specifically.
+
+**That is a worked instance of a claim this corpus otherwise makes in the abstract.**
+`diagnosis-and-classification` records that satisfying insurers is one of the functions a
+classification serves; here the mechanism runs **in reverse** — the *absence* of a code withdraws a
+service. Classification as infrastructure rather than description, demonstrated rather than asserted.
+
+**Identified and not yet used, both in the same volume**: **Kaylor & Jeglic** on exhibitionism
+prevalence and offender rehabilitation, and **Heffernan & Ward (ch. 31)** on the **Good Lives Model**
+and rehabilitation of people convicted of sexual offending — the most direct available route into the
+rehabilitation half of the `paraphilic-disorders` annotation, and into the treatment annotation on
+`exhibitionistic-disorder`.
+
+Jobs 196 → 199; red links 0.
+
+---
+
+## 36. Mission 3 delivered — `illness-anxiety-disorder` etiology closes
+
+Norm supplied three sources; two are ingested here and the third is queued. **Major-tier gaps 2 → 1.**
+The only remaining one is `research-methods: evaluating-the-evidence-base`.
+
+### 36.1 The cognitive model, and where it is borrowed from
+
+Fergus & Asmundson (2019), ch. 4 of *The Clinician's Guide to Treating Health Anxiety* (Elsevier,
+all rights reserved — paraphrase and cite only). Warwick & Salkovskis (1990) built the first
+influential model **directly on Clark's (1986) cognitive model of panic**:
+
+> learning experiences → health-related dysfunctional beliefs → misappraisal of innocuous bodily
+> states → health anxiety
+
+**The maintenance step is the explanatory one.** Safety behaviours — avoidance, self-inspection,
+reassurance-seeking — reduce anxiety in the moment and thereby **prevent the belief from ever being
+disconfirmed**. The relief is real and it is the mechanism. Same architecture as panic and OCD, which
+is what makes the model portable and also what makes specificity hard to demonstrate.
+
+### 36.2 Three findings worth teaching
+
+**Heritability moves with how you carve the phenotype.** Twin estimates run **54–69%** when health
+anxiety is treated as a **category** (severe vs not) and **10–37%** when treated as a **continuum**.
+The categorical figures are on a par with neuroticism's, which is exactly why it is unresolved whether
+what is inherited is nonspecific negative affect or something health-specific. A clean instance of the
+`diagnosis-and-classification` argument appearing inside a heritability estimate.
+
+**Health anxiety is associated with *lowered* interoceptive accuracy.** Grossi et al. (2017) report
+reduced connectivity between the extrastriate body area and somatosensory regions, read as impaired
+multisensory integration — and stronger EBA connectivity with amygdala and hippocampus. **People
+preoccupied with bodily sensations are, if anything, worse at detecting them accurately.** The
+disorder is heightened bodily *interpretation*, not heightened bodily *perception*.
+
+**It is not about likelihood.** Fergus and Asmundson conclude health anxiety "does not appear to
+broadly relate to the tendency to overestimate the likelihood of experiencing *any* health problem
+but, rather, seems most related to **catastrophic explanations**." Salkovskis & Warwick's four beliefs
+make the point concrete — likelihood, **awfulness**, **inability to cope**, and **inadequacy of
+medical resources**. The last two are why a negative test result so often fails to reassure: if the
+belief is that medicine could not help anyway, the result does not address it.
+
+### 36.3 The methodological through-line, stated by the authors themselves
+
+The chapter says **three separate times** that the causal evidence is missing: the lone longitudinal
+study of anxiety sensitivity **casts doubt on whether it confers risk at all**; "no known published
+study has yet examined IU as a potential risk factor … using a longitudinal or experimental design";
+and the same sentence again for Salkovskis & Warwick's four beliefs.
+
+And beneath the best-evidenced factor there is a **circularity**: dysfunctional beliefs show
+associations "nearly uniformly moderate to large", but the authors flag an issue of **description
+versus explanation** — the belief measures **substantially overlap in content with the health anxiety
+measures** they predict. A large correlation between two instruments asking similar questions is not a
+mechanism. **The model is coherent, well supported cross-sectionally, and largely untested causally**
+— a different claim from the one a textbook diagram implies.
+
+### 36.4 Intrusive thoughts — the difference is not having them
+
+Arnáez et al. (2021), *Psychology and Psychotherapy* 94:63–80: **264 non-clinical participants** with
+a recent upsetting illness-related intrusive thought against **31 patients** meeting DSM-5 criteria —
+a small clinical group, stated as such on the page.
+
+Illness-related intrusive thoughts were **common in both groups**, differing in **intensity rather
+than kind**, and are described as a **dimensional cognitive experience** running from normality into
+psychopathology. What distinguishes patients is **interpretation and response, not occurrence** — the
+importance of these thoughts "does not lie in the frequency with which they are experienced, but in
+the way they are appraised."
+
+**Two appraisals mediated the relationship**: **overestimation of threat**, and **thought-action
+fusion of the probability type** — the belief that *having* the thought makes the feared outcome more
+likely. The second is notable because its content is about the thinking rather than the body, which
+ties it to the metacognitive layer and to `obsessive-compulsive-disorder`.
+
+**The OCD contrast is where the differential diagnosis lives**: illness intrusions are more
+**egosyntonic**, and OCD patients score higher on responsibility, disapproval, egodystonicity, guilt
+and neutralising. Cross-culturally, illness intrusions caused **similar disturbance despite occurring
+less frequently** than obsessional ones.
+
+**One belief explains why reassurance fails structurally**: **dichotomous thinking about health**, in
+which health is the *absolute absence of any physical symptom or bodily sensation*. On that
+definition nobody is ever healthy and no test can establish that they are.
+
+### 36.5 Notes
+
+A **filename encoding failure** blocked the Arnáez PDF — the accented character in the path could not
+be opened by the extractor. Resolved by copying to an ASCII filename in scratch before reading.
+Worth remembering for any shared-drive source with non-ASCII characters in its name.
+
+**Still queued:** the third supplied source, a 2018 *Psychosomatic Medicine* paper on responses to
+**health-threatening information**, is not yet ingested and is recorded as an annotation on the page.
+
+State: `illness-anxiety-disorder` 21.3k chars, 0 empty sections, 0 red links. **One major-tier gap
+remains corpus-wide.**
+
+### 36.6 The third source lands — and corrects a claim the first one implied
+
+Leonidou & Panayiotou (2018), *J Psychosomatic Research* 111:100–115 (Elsevier, all rights reserved —
+paraphrase and cite only). A systematic review of **62 studies, 1990–2016**, testing the
+cognitive-behavioural model's mechanisms: **21 correlational and 41 experimental**.
+
+**That balance corrects an impression §36.3 could leave.** Fergus & Asmundson repeatedly say no study
+has tested these factors as **risk factors** using longitudinal or experimental designs — a claim about
+*prospective prediction*. It is not that the mechanisms have gone unmanipulated: two-thirds of this
+review's studies used experimental paradigms. **The field has tested whether the mechanisms operate;
+it has largely not tested whether they come first.** Those are different questions, and the page now
+draws the distinction explicitly rather than letting one source's framing stand unqualified. **Reading
+three sources on one gap is what surfaced it** — a single review would have been taken at its word.
+
+Verdict: findings "partly support the cognitive-behavioral model, but several of its hypothetical
+mechanisms only receive weak support due to the **scarcity of relevant studies**."
+
+**A measurement problem worth teaching well beyond this disorder.** Explicit and implicit evaluation
+tasks diverge, and the authors offer a deflationary reading of part of the explicit effect: people
+high in illness anxiety may **present symptoms negatively in order to elicit reassurance**. If so, an
+explicit rating scale is partly measuring a **reassurance-seeking behaviour** rather than a cognitive
+bias — **the safety behaviour contaminating the instrument meant to detect the belief it maintains.**
+
+**Two structural criticisms of the literature**: emotion processing and emotion regulation in illness
+anxiety are "a field still in its infancy" with "a general dearth of experimental studies"; and "most
+studies examined mechanisms that underlie IA **separately** and only a few focused on the interaction
+between them." The model is a **chain** — belief → misappraisal → safety behaviour → maintained belief
+— but has mostly been tested one link at a time. **A set of individually supported links is not a
+demonstrated loop.**
+
+Sampling: **34 of 62 studies used students**. Most were low risk of bias; nine moderate for
+uncontrolled confounders. Unpublished and non-English work was excluded, so publication bias is not
+ruled out.
+
+Treatment position recorded for the section above: **CBT is the most widely examined and empirically
+supported approach**; **MBCT and ACT have only preliminary support**; Attentional Bias Modification
+targets a specific mechanism from this model and **warrants further testing rather than adoption**.
+
+**Convergence across the three sources**, which is why using all three was worth it: all identify the
+same interoception paradox from independent directions (**more attention to the body, not more
+accuracy about it**), and all three identify the same missing design — prospective tests of whether
+these mechanisms precede the disorder.
+
+State: `illness-anxiety-disorder` 25.1k chars, 0 empty sections. Jobs 202, red links 0.
+
+---
+
+## 37. Mission 2 delivered — **the major tier is closed**
+
+Tolin, McKay, Forman, Klonsky & Thombs (2015), *Clinical Psychology: Science and Practice* 22(4),
+317–338 (APA/Wiley, all rights reserved — paraphrase and cite only). Norm's methods reference turned
+out to be a better fit than the brief asked for: rather than a catalogue of synthesis techniques, it is
+an argument *about how bodies of evidence should be appraised*, worked through a live failure.
+
+```
+major-tier gaps      0
+red links            0
+unwritten catalogue  0
+empty sections      62
+pages              262      jobs 203
+```
+
+**Every Tier A, foundation and overview page in the corpus now has prose in every section.**
+
+### 37.1 The example that makes the section work
+
+Under the criteria that governed "empirically supported treatment" designations for two decades, a
+treatment counted as **well established** on the strength of **two** independently conducted,
+well-designed studies. Tolin et al. spell out what that permits:
+
+> **If two studies find a treatment efficacious, five find it no better than placebo, and ten find it
+> *worse* than placebo, the treatment still qualifies as "well established."**
+
+**Two positives out of seventeen** — and they add that "this is not a hypothetical scenario." A rule
+that counts only the wins will certify almost anything studied often enough. This is the clearest
+single demonstration in the corpus of why **appraising a literature is a different skill from
+appraising a study**, which was exactly what the gap asked for.
+
+### 37.2 The idea the rest of the corpus was already using without naming
+
+> **Separate the strength of the effect from the strength of the evidence.**
+
+They are independent: a large effect can rest on weak evidence, and a well-evidenced treatment can
+have a small effect. Any label that collapses them — "well established", "evidence-based" — discards
+the information a reader needs.
+
+**This retroactively names a practice already running through the corpus.** Reporting statistical power
+alongside a null (`integrative-model`), risk-of-bias subgroups alongside a positive subgroup result
+(`integrative-model`), eligibility rates alongside efficacy (`functional-neurological-symptom-disorder`),
+and confidence-interval width alongside a point estimate (`tobacco-use-disorder`) are all instances of
+the same move. The page now supplies the vocabulary.
+
+**It also explains a pattern that recurs in the guideline pages**: GRADE is why a guideline reports
+**recommendation strength separately from evidence quality**, and therefore why
+`sedative-hypnotic-anxiolytic-related-disorders` can carry a **strong** recommendation resting on
+**low-quality** evidence without contradiction — cross-linked in both directions.
+
+### 37.3 Vocabulary the page previously lacked
+
+- **Risk of bias in design** — allocation concealment, blinding and randomisation influence effect
+  estimates **particularly where outcomes are subjective, which is the case in most trials of
+  psychological treatment.**
+- **Allegiance effect** — carefully formulated in the source as "not necessarily … bias; however, it is
+  a risk factor that has been shown empirically to be associated with some probability of bias."
+- **Financial conflict of interest** — demonstrated in pharmaceutical publication bias, and **harder to
+  identify** in psychological treatment research.
+- **Registration** as the partial remedy for publication bias, with the caveat that "poor adherence to
+  registration policies and poor quality of trial registrations have been problematic."
+
+**And a corrective worth having** on the efficacy-versus-effectiveness worry: among outpatients deemed
+ineligible for depression trials, the commonest exclusion reasons were **partial remission and
+insufficient severity**, and **none were excluded for comorbidity**. The generalisation problem is real
+but it is not the one usually asserted.
+
+### 37.4 The substantive proposal
+
+Stop treating **symptom reduction** as the primary outcome. Functional impairment is a leading reason
+people seek treatment, and symptom and functional change can come apart — a treatment may reliably move
+a symptom score while leaving someone unable to work. Named measures: Sheehan Disability Scale, Work
+and Social Adjustment Scale, Range of Impaired Functioning Tool. The replacement process is
+**systematic review of all evidence** (relevance, fidelity, risk of bias, multiple outcomes) followed by
+**committee appraisal using GRADE**.
+
+Scale, for context: PsycINFO citations for "randomized controlled trial" ran **20** (1995) → **123**
+(2000) → **427** (2005) → **950** (2010). The appraisal problem grew because the evidence did.
+
+### 37.5 Note
+
+One off-catalogue red link (`[[blinding]]`) was introduced and caught by the standing check; the
+reference was removed rather than a stub created. Back to zero.
+
+## 38. WP6 plan — how staff and students read, flag, and fill the guide
+
+Planned 2026-08-06, after the precheck migration was recovered from the live database. Three decisions
+were taken by Norm at the outset and constrain everything below:
+
+| decision | choice |
+|---|---|
+| publishing vs staff review | **risk-order, then publish** — read the highest-risk pages, publish all 260 at once, review the rest in place during term |
+| first student submission | **must be a green gap** — enforced, not merely recommended |
+| unsubmitted claim TTL | **14 days**, warning at day 10 |
+
+### 38.1 What the gap corpus actually looks like
+
+Measured, not assumed:
+
+| | |
+|---|---|
+| gaps, open | **737** across **145 pages** — so **117 of 262 pages carry no gap at all** |
+| by origin | **675 authored annotations**, 62 derived empty sections |
+| by page type | **629 on `disorder` pages (85%)**, 75 concept, 30 treatment, 2 debate, 1 study |
+| by difficulty | amber 592 (cap 1) · green 134 (cap 2) · red 11 |
+| slots | **860** excluding red, against **600** required submissions |
+| concentration | **56 pages carry 6 or more gaps** |
+
+Two consequences worth stating plainly. First, **the catalogue is authored, not derived** — 92% of gaps
+are `> **Needs research:**` lines a human wrote, so the asks are already specific and do not need
+rewriting for students. Second, **student work will pile onto disorder pages**; the concept and
+treatment pages are nearly untouched by the assignment and will need staff attention instead.
+
+### 38.2 The blocker: there is no course-structure axis
+
+Students navigate by week. The database does not know what a week is.
+
+`reference_worklist` has `lecture`, `dsm_chapter`, `chapter_title`, `chapter_sort` — but it was the
+WP2/WP4 catalogue tracker and **the corpus outgrew it**:
+
+- **118 of the 145 gap-bearing pages are not in `reference_worklist` at all.**
+- Of the 27 that are, only lectures **3–9** appear. Lectures 1, 2, and 10 onward are absent.
+- **535 of 737 gaps (73%) have no lecture**, including **113 of the 134 greens** — i.e. almost all of
+  the scaffolded first-assignment work is unreachable by the axis students would use to find it.
+
+Sorting 145 pages alphabetically is not a substitute. A student asked to contribute against week 4
+cannot act on a list that starts at `acute-stress-disorder`.
+
+**Division of labour.** DSM chapter is derivable — 85% of gaps are on disorder pages and DSM-5-TR
+chapter membership is well-defined, so it can be classified mechanically and spot-checked. **Lecture
+order is not derivable from anything in the repo**; it is the syllabus, and only Norm has it.
+
+> **Norm's task, and it is the one thing blocking the student browser:** the lecture list — number,
+> title, and roughly which topics each covers. Slug-level precision is not needed; topic names are
+> enough to map onto pages. Twelve lines of text is sufficient.
+
+### 38.3 Build order
+
+**Phase A — course structure. ✅ Done 2026-08-07** (`20260807_course_structure.sql`, applied and
+verified). The blocker resolved differently than planned: instead of Norm supplying a list against
+last year's lectures, the calendar itself was **restructured in conversation** — 11 content lectures
++ midterm week, dated against the real term (Wednesdays 09:00–12:00, Sept 9 → Dec 2, reading week
+Oct 28), with the RCT arc (onboarding at the midterm, design intro Oct 21, debrief Dec 2) pinning the
+midterm to Oct 14. Taxonomy §2a is the durable record. `course_structure` (14 rows) +
+`page_lectures` (266 rows; 259 of 260 drafts, `elimination-disorders` unmapped by design; 7 pages
+double-mapped) + the `gaps_by_lecture` view. Every lecture now has 19–121 open gaps. One scarcity
+note for Phase B copy: pre-midterm lectures hold only 38 green gaps (76 slots), so the green deadline
+must allow claiming from any lecture.
+
+**Phase B — the student gap browser. ✅ Built 2026-08-07** (`src/academic/fieldguide/GapBrowser.jsx`,
+`/academic/fieldguide/gaps`, member-gated, own lazy chunk). Backed by one rpc — `gap_board()`
+(`20260807_gap_board.sql`), a SECURITY DEFINER function because remaining capacity counts *all*
+students' active claims while `gap_claims` RLS correctly shows a student only their own; it returns
+counts, never names, and is gated inside by `is_course_member()`. Verified: member → 760 rows / 11
+lectures / 268 green slots; non-member → 0 rows. The board groups by lecture with dates, collapsible;
+search or a difficulty filter auto-expands (hunting vs browsing); shows **remaining** capacity — not
+raw capacity, or the board looks open when full; reds **dimmed and labelled staff-only rather than
+hidden**; greens labelled as the first-assignment tier claimable from any lecture, with the Oct 7 /
+Nov 11 / Nov 27 deadlines in the header copy. Read-only until Phase C: the footer says claiming opens
+with the submission form, and steers students to read the pages their shortlisted gaps sit on.
+
+**Phase C — the submission form. ✅ Built 2026-08-08** (`20260808_claim_flow.sql` + GapBrowser claim
+panel; the browser and form are one surface). All three rules landed server-side, plus two the plan
+didn't know it needed:
+- Green-first enforced at claim time, **both halves** — first claim must be green AND amber stays
+  locked until a green is submitted/accepted.
+- 14-day TTL: `expires_at` stamped by `claim_gap()`; counts ignore expired claims immediately (lazy),
+  `expire_claims()` sweeps them to withdrawn (hygiene). Day-10 warning email deferred — rides
+  existing touchpoints when built, not a new mail class.
+- Remaining capacity is a live count (claimed-unexpired + submitted + accepted).
+- **Found while building: two real RLS holes** — `members update own claims` allowed
+  `status='accepted'` self-grading and precheck forgery; `members create own claims` allowed direct
+  inserts past every rule. Closed with column grants (precheck fields are function-only now) + a
+  guard trigger (non-staff writes only through `claim_gap()`/`submit_claim()`, signalled by a
+  transaction-local flag; staff untouched). Full student-lifecycle test battery in the manifest.
+- `submit_claim()` runs the precheck first and **refuses to submit on block findings** — the claim
+  stays `claimed`, so a mechanical fault costs an edit, not the claim. `check_doi()` runs on paste
+  (debounced) so a redundant source is discovered before 150 words are written, and
+  `gap_page_sources()` shows what the page already cites at the moment of choosing.
+
+Scarcity is the reason all three matter: **860 slots against 600 submissions is 1.43× headroom, and
+green is 1.34×** (268 slots, 200 students). There is no room for hoarding.
+
+**Phase D — staff review.** Three separable capabilities, in value order:
+
+1. **Inline gap rendering in `WikiPage`.** Gaps are drawn from `page_gaps` at their anchored section
+   (666 of 737 anchor; the rest sit at page top). This single change serves both audiences — students
+   see what is missing while reading, staff see what is flagged while reviewing — and it is the
+   prerequisite for flagging from the reader.
+2. **Flag from the reader.** Staff insert into `page_gaps` directly with `kind='staff'`, rather than
+   editing a `> **Needs research:**` line into prose. **This decouples flagging from page content
+   entirely**, so no flag ever touches provenance. `populate_page_gaps()` never deletes, so authored
+   and staff-inserted gaps coexist safely, and reclassifying difficulty is an `UPDATE` rather than a
+   prose edit. `gap_review_queue`'s MAYBE rows feed straight into this surface.
+3. **A `page_reviews` stamp** — page, reviewer, reviewed_at, verdict, notes — so 262 pages are not
+   re-read, and so coverage is measurable during term.
+
+**The correction path — ✅ resolved 2026-08-10** (`20260810_correction_guards.sql`), and the answer
+inverted the plan: `edit_page` **already was** the correction path — staff-gated, snapshot trigger
+keeping numbered history, note landing on the version row, no `job_id` so it can never pollute
+provenance. What it lacked was guards, so the fix hardened the existing door rather than cutting a
+second one. The taxonomy that governs it: a correction may change *how* the page says something
+(typo, transcription fidelity, structure) — never *what it claims*; a changed claim needs a source,
+which means the ingest path. Decisions (Norm): **auto-apply with an audit feed** (2-person staff;
+countersigning would bottleneck), **quiet visibility** (no banner, history on request), and a
+**magnitude tripwire** to his spec — ignore |Δ|≤3; trip at ratio ≥√10 (~3.16×) or |Δ|≥10, so 11→12%
+passes and 11→21% or 11→3% demand a *verified against source* statement; years 1900–2099 excluded.
+Guards now in `edit_page()`: required note, section-list guard with explicit override (the
+`## Contested` lesson, now unrepeatable by hand), annotation-removal guard (annotations are
+catalogued gaps), and the tripwire. `corrections_feed` view + `/academic/fieldguide/corrections` +
+a home-page card ("N this week") complete the trade. Verified live: all guard paths exercised on
+`little-albert-study`, page restored byte-identical, and the feed retroactively surfaces the WP-era
+staff edits with their notes back to 2026-08-02.
+
+**Phase E — publish.** All 260 drafts at once, after the risk-ordered subset in Phase D is clean.
+Partial publishing is not an option: with one page live, all of its outbound links render broken to a
+student, because `wiki_links` is member-readable while unpublished targets are not.
+
+### 38.4 Risk order for the pre-publish read
+
+Full coverage is **~44 hours** at ten minutes a page — not available before term. The subset that
+must be read first, in order:
+
+1. The **11 red gaps** and the pages holding them — clinical instruction and legal standards.
+2. **`law-and-ethics` and the crisis-resource pages** — where an error is most costly and most public.
+3. The **56 pages carrying 6+ gaps** — heavily scaffolded, most exposed to student traffic.
+4. **Tier A and foundation disorder pages** — highest readership.
+
+The 117 gap-free pages are the *lowest* priority for this pass, not the highest: nothing about them
+invites student edits, so an error there ages quietly rather than propagating.

@@ -1,345 +1,381 @@
-# PSY240 Field Guide — session handoff
+# PSY240 Field Guide — handoff to a new session
 
-> Rewritten 2026-08-02, after Module 16 closed the textbook sweep and the companion volume closed
-> 34 of the 36 gaps it left. Read this **plus**
-> `psy240_wiki_plan.md` (architecture + sequencing), `psy240_taxonomy.md` (the catalogue) and
-> **`psy240_wp4_runplan.md`** — the operational manual: **§9 is the working method**, **§10 is the
-> brief for new sources**, §8 the gap map, §6 the sixteen citations. This file is the *state of play
-> and open threads*; those three are the durable record. If they disagree with this file, they win —
-> this one goes stale fastest.
+> Rewritten 2026-08-06. Live state verified against `radlab-academic` at time of writing.
+> The companion document is `docs/markdowns/psy240_wp4_runplan.md` — this file is the orientation,
+> the run plan is the reference. Read §0–§2 here before doing anything.
 
 ---
 
-## 0. What the next session is for
+## 0. Read this first — the three things that will bite you
 
-**The textbook is finished. The work is now (a) second sources and (b) the review pass.**
+1. **There are two Supabase MCP servers and they are not interchangeable.**
+   `supabase-academic` = **radlab-academic** (`qldgwpneygvgcvexlduz`) — the Field Guide. Everything in
+   this document happens there.
+   `supabase` = the **main radlab project** — the participant-facing site, studies, games, real
+   research data. **Never write to it for Field Guide work.** Norm's standing instruction, verbatim:
+   *"please don't get rid of my superuser account at radlab.zone though!"* When a destructive
+   operation is unavoidable, **target by id, never by email** — the same address exists in both
+   projects and an email-keyed `DELETE` will hit the wrong one.
 
-All sixteen modules are ingested. Every Tier A page the WSU textbook can support exists. What
-remains is not more of the same sweep — it is four specific things, and run plan **§10** is the
-brief for them. In yield order:
+2. **Prose containing backticks must go through the Write tool to a file.** The shell may only *read*
+   that file. Inlining markdown into a bash-embedded `python -c` or `node -e` broke **five separate
+   times** this project, and once committed silently against the wrong parent. This is not a style
+   preference; it is the single most expensive recurring mistake in the log.
 
-1. ~~Ingest *Behavioral Disorders of Childhood*~~ — **done 2026-08-02.** It filled Etiology and
-   Treatment on **17 of the 18** Module 16 pages (all but `communication-disorders`, which has no
-   chapter there either), taking corpus empty sections **142 → 108** and annotations **60 → 79**.
-   Run plan §10.4 records the method and what it did *not* fix. Two consequences carry forward:
-   `contested` is still empty on nine pages, and the companion's treatment sections are **entirely
-   US-institutional**, so the Canadian requirement below is now sharper, not softer.
-2. ~~Tier A~~ — **complete at 54/54.** `gambling-disorder` was the last, written from Menchón et al.
-   (2018, CC BY) plus the NRC (1999) criteria history (§14). Overviews are complete at 16/16.
-3. ~~`suicide-and-self-harm`~~ — **done from Davies ch 22 (§15).** ⚠ **One urgent follow-up:** the page
-   gives the US crisis line (988) only. The **Canadian 9-8-8 Suicide Crisis Helpline** and provincial
-   services must be added **with number and hours verified before anything is published** — it is the
-   one line a student in distress might act on.
-4. ~~The 13 unwritten overviews~~ — **10 done 2026-08-02**, taking overviews 3/16 → 13/16 with
-   zero empty sections (run plan §10.5). The remaining three — `sleep-wake-disorders`,
-   `paraphilic-disorders`, `sexual-dysfunctions` — are **blocked by item 2**: every one of their
-   member pages is unwritten, so there is nothing to map. Check member coverage before scheduling
-   an overview.
-
-**Norm is supplying additional open-licensed material, including a Canadian text.** Run plan §10.2
-lists where a US source is not merely foreign but *wrong for the course*: duty to warn (Tarasoff vs
-*Smith v Jones*), all conduct/disruptive prevalence, provincial rather than US special-education
-identification, CADDRA/CANMAT practice guidance, fetal alcohol spectrum disorder (absent from the
-WSU book entirely), and Canadian suicide statistics.
-
-**The review pass Norm asked for is still outstanding.** Modules 01–12, 14 and 15 were written
-source-first, before the catalogue-first method existed. Run plan §8.2's six stubs are the known
-cases. Module 16's corpus check already turned up one unknown case — a broken wikilink on
-`historical-traditions`, now fixed — which is evidence the pass is worth running properly.
+3. **Publishing is all-or-nothing and has not happened yet.** 262 pages, **0 published**. See §7.
 
 ---
 
-## 1. Where the work stands
+## 1. Why `/academic/fieldguide/submissions` says "nothing awaiting review"
 
-| WP | State |
-|---|---|
-| WP0 decisions | ✔ done |
-| WP1 schema | ✔ done, applied live |
-| WP2 reader UI | ✔ done, click-tested, deployed — `/academic/fieldguide/wiki` |
-| WP3 seed + review path + review UI + `reference` mode | ✔ done, heavily exercised |
-| **WP4 content sprint** | **Module sweep ✔ complete — all 16 modules in.** ▶ now: second sources (run plan §10), the reference pass, and the review pass |
-| WP5 roster & enrollment | ✘ not started. Email path configured; **one decision left** (§5) |
-| WP6 student submission | ✘ not started — the ingest GUI is earmarked for it |
-| WP7 export mirror | ✘ not started |
+**This is correct behaviour, not a bug.** Two independent reasons:
 
-Everything is merged and pushed to `main`; nothing sits on a branch.
+- `gap_claims` has **0 rows**. The two test fixtures used to verify the precheck were deleted after
+  the check passed.
+- ~~There is no student-facing submission form.~~ **Built 2026-08-08** — the gap browser
+  (`/academic/fieldguide/gaps`) now carries the whole claim → draft → submit flow
+  (`20260808_claim_flow.sql` + `GapBrowser.jsx`). The queue stays empty only until students exist
+  and pages are published. Green-first is enforced at claim time (both halves), claims expire after
+  14 days, `submit_claim()` refuses on precheck blocks, and two RLS holes (self-grading, direct
+  insert) were closed with column grants + a guard trigger — details in the migrations manifest.
 
-## 2. Live database state (radlab-academic, 2026-08-03, after the sleep bundle — **the catalogue is complete**)
+**Building that form is the single most important remaining task.** Everything else — 737 catalogued
+gaps, the precheck, the review queue, the capacity arithmetic — is infrastructure waiting on it. See
+§6 for the contract it has to satisfy.
+
+**Update 2026-08-07:** the browse axis that gated the form is now built. The 2026F calendar was
+restructured with Norm and locked into the database (`20260807_course_structure.sql`): 11 rebalanced
+content lectures + Oct 14 midterm, Wednesdays Sept 9 → Dec 2. `course_structure` (14 rows),
+`page_lectures` (259 of 260 drafts mapped; `elimination-disorders` out by design), and the
+`gaps_by_lecture` view — every lecture carries 19–121 open gaps. Taxonomy §2a is the prose record.
+Deadlines already placed on the calendar: green submission Oct 7, ambers Nov 11 and Nov 27. One
+scarcity fact for the browser copy: pre-midterm lectures hold only 38 green gaps (76 slots), so the
+green deadline must allow claiming from any lecture. Next builds: the gap browser (Phase B), then the
+form (Phase C, green-first enforced at claim time, 14-day TTL).
+
+---
+
+## 2. Live state — verified 2026-08-06
 
 ```
-262 pages with bodies       0 published — no student can see anything yet
-1,443 wikilinks             0 proposals pending — review queue clear
-0 red links                 244 of 244 link targets resolve
-0 duplicate headings        0 off-catalogue disorder pages
-131 catalogue rows         175 ingest jobs
-131 catalogue written       0 catalogue pages left to write
-72 empty sections           major-tier gaps: 8 across 7 pages
-303 annotations             (see the correction below — count directly, not via the view)
+pages            262   (all written; 0 red links — 244/244 link targets resolve)
+published          0   ← nothing is visible to students yet
+wiki_links      1477
+ingest_jobs      203
+page_gaps        737   (666 anchored to a section; 71 page-level)
+student slots    860   (green 134 gaps · amber 592 · red 11)
+gap_claims         0
+empty sections    62   (deliberate — see §7)
+major-tier gaps    0   ← was 8; all closed
+unwritten pages    0
 ```
 
-**Catalogue coverage: Tier A 54/54, foundations 14/14, overviews 16/16 — all complete. Tier B 33/46 is the only incomplete tier.**
+Enrolments (all `active`):
 
-Tier A by lecture — L3 **10/10**, L4 **4/4**, L5 **4/4**, L6 3/5, L7 **0/5**, L8 4/5, L9 **2/2**,
-L10 **9/9**, L11 **10/10**. Six lectures complete. **Every remaining Tier A gap is a page the
-textbook does not cover** — the list is closed and is item 2 above.
-
-All 19 red links point at real catalogue slugs not yet written (`suicide-and-self-harm` ×7 inbound,
-`brief-psychotic-disorder`, `hypersomnolence-disorder`, `kleptomania`, `pyromania`). A red link to
-an unwritten catalogue page is the designed state; a red link to a *non*-catalogue slug is a defect,
-and there are now none.
-
-**Empty sections went 95 → 142 → 108 in one day, and both moves were correct.** Module 16 added 36
-holes that were its declared scope limit rather than an extraction failure (§4, run plan §9.7); the
-companion volume then closed 34 of them (run plan §10.4). **Watch annotations, not just empty
-sections** — instructor-sized holes become present prose carrying student-sized asks.
-
-**Correction (2026-08-03): every annotation figure previously quoted here was a filtered subset.**
-`reference_worklist.annotation_count` only counts annotations on pages that still have a derived
-gap, so a page that closes its last empty section drops out of the view and its
-`> **Needs research:**` markers stop being counted. The view reports **33**; the corpus actually
-holds **298 across 139 pages** — more than half of it. Derived-gap tracking is unaffected and
-remains sound, but closing the last major-tier gaps will not empty the backlog. Count directly:
-`SELECT sum((length(content)-length(replace(content,'Needs research:','')))/length('Needs research:')) FROM wiki_pages WHERE content IS NOT NULL;`
-
-Nothing has ever been published. Every accept is *accept as draft* — no students are enrolled, so
-publishing buys nothing and is the harder direction to reverse.
-
-**The catalogue closed on 2026-08-03.** All 131 catalogue slugs have bodies and all 244 distinct
-wikilink targets resolve — the red-link count, a working signal since WP2, is zero for the first
-time. Verify with:
-
-```sql
-SELECT (SELECT count(*) FROM disorders) AS rows,
-       (SELECT count(*) FROM disorders d JOIN wiki_pages p ON p.slug=d.slug
-         WHERE p.content IS NOT NULL) AS written,
-       (SELECT count(DISTINCT l.target_slug) FROM wiki_links l
-         LEFT JOIN wiki_pages p ON p.slug=l.target_slug WHERE p.id IS NULL) AS red;
-```
-
-**Content is no longer the binding constraint, and that changes what the next session is for.** Nine pages hold
-the last 13 gaps (§6). Once they are done, "what to write next" stops being the question and
-**publishing** becomes it — which carries the `student-support-resources` verification obligation
-(every phone number and URL re-checked before students get access, and each term). Two things to
-settle before a first publish: whether Tier B's 10 unwritten pages should land first, and that
-**`norman@radlab.zone` has no enrollment** — it authenticates and is then denied. `kavabee@gmail.com`
-is ta/active and `norman.farb@utoronto.ca` is instructor/active.
-
-## 3. How to work on this
-
-**Use the `supabase-academic` MCP server** — it points at `qldgwpneygvgcvexlduz`. The plain
-`supabase` server is the **main** radlab project; querying it for `wiki_pages` fails in a way that
-looks exactly like a failed migration. This has cost time twice.
-
-**The MCP's `execute_sql` intermittently returns "Failed to execute SQL query"** on valid SQL. It is
-transient — retry the same query. Do not start debugging the SQL.
-
-**Two extractors, one converter.** `scripts/lib/pressbooks-md.mjs` holds the HTML→markdown logic;
-both extractors use it, so two source formats cannot drift apart.
-
-- **`scripts/wsu-module-extract.mjs`** — slices a module out of a Pressbooks **XHTML export**
-  (the parent book). `--list` prints every chapter's byte offset and size. `WSU_BOOK_HTML` repoints it.
-- **`scripts/pressbooks-wxr-extract.mjs`** — extracts chapters from a Pressbooks **WXR** export
-  (`.xml`), for books that publish no XHTML. `--list` lists chapters; `--out DIR` writes one `.md` each.
-
-Both convert `<img>` to a visible `[[IMAGE: file]]` marker — **do not reimplement that casually**, it
-is what stops a figure vanishing silently. Read any marker off the native PDF page with the Read tool.
-
-**If a source will not download, stop and ask Norm.** Standing rule from 2026-08-02: the companion
-volume's XHTML export 500s, and rather than asking, the session built a nine-page live scraper as a
-workaround. Norm had the WXR and the PDF and supplied both. The WXR is also strictly better — one
-local file, reproducible, no site dependency.
-
-**Read-only check scripts** live in `supabase/checks/` — `wp1_verify.sql`, `wp1_ingest_smoke.sql`,
-`wp3_review_state.sql`, **`wiki_merge_health.sql`**, and the ⚠ dangerous
-`wp3_reset_review_state.sql`.
-
-**Migrations** go in `supabase/migrations/` as `YYYYMMDD_description.sql`, are applied via MCP
-`apply_migration`, and get a row in `supabase/migrations/README.md` with evidence. Add the row.
-
-**`npm run dev` cannot run the Field Guide** — the client fetches its Supabase config from
-`GET /api/ingest`, which only exists on Vercel. Use a deploy.
-
-### The write path (all staff-only SECURITY DEFINER functions)
-
-`wiki_pages` has **no authenticated write policies**. Everything goes through one of these, each
-with an internal `is_course_staff()` check:
-
-| Function | Purpose |
-|---|---|
-| `review_proposal(version_id, decision, content, publish)` | Accept/reject a *pending* proposal. **Pass `false` for publish** — accepts are drafts |
-| `edit_page(page_id, content, note)` | Correct an accepted page. History automatic; note required |
-| `rename_page(page_id, new_slug, new_title)` | Move to a different slug; rebinds links, reports what it orphaned |
-| `archive_page` / `restore_page` / `unpublish_page` | Retire, un-retire, unpublish. Reason mandatory |
-
-Impersonate the instructor inside a transaction:
-`SET LOCAL request.jwt.claims = '{"sub":"3cad8ace-5c5f-41d4-b624-4da49e0e375d","role":"authenticated"}'`
-(that is `auth_user_id`; the `identity.people` id is `45db45f9-eebb-4d1b-991d-1829cdb71c2a`, which is
-what `created_by` columns want). Accepting a batch is a `DO` block looping `review_proposal()`; make
-it `RAISE EXCEPTION` with a count first to dry-run it, then swap to `RAISE NOTICE` to commit.
-
-### Two derived signals, and the difference between them
-
-- **`needs`** — sections that are **empty**, no prose at all. Instructor work.
-- **`annotations`** — sections with real content that still carry a `Needs research` line naming a
-  sub-gap. Computed on the fly by `extract_page_annotations(content)`. **Student work.**
-
-Both come from one parser (`extract_page_sections`) so they cannot drift. **A section whose only
-content is a `> **Needs research:**` blockquote still counts as empty** — the marker does not supply
-prose. That is deliberate and useful: it lets an instructor gap say what is missing without
-reclassifying itself as student work. Currently **142 empty sections and 60 annotations**.
-`reference_worklist` and `wiki_gap_report` expose both.
-
-## 4. The method — read run plan §9 before writing anything
-
-Short version, because getting it wrong breaks the licence:
-
-- Write into `ingest_jobs` + `kind='proposed'` versions + `review_proposal()`. **Never `edit_page()`
-  for new content** — `wiki_page_provenance` joins on `kind='proposed'` and `job_id`, so an
-  `edit_page` write shows **no sources** under *Built from*. (`edit_page()` is right for *fixing* an
-  accepted page, as with the `historical-traditions` link.)
-- **HTML primary, native PDF for images**, via `scripts/wsu-module-extract.mjs`.
-- **Catalogue-first.** Pull the lecture's slugs, tiers and existing `needs` *before* writing. This is
-  what eliminated the whole class of carve and slug failures in run plan §8. It also means
-  **declining** material: Module 16 covers pica, rumination, enuresis, encopresis and stereotypic
-  movement disorder at length, none of which has a catalogue slug, so none got a page.
-- Run the run plan §8 checks before accepting; close the job afterwards.
-
-**Know which kind of gap you are looking at** — three classes look identical in a count and have
-different remedies:
-
-| Class | Example | Remedy |
+| email | role | notes |
 |---|---|---|
-| Not in the source at all | `gambling-disorder` in Module 11 | A different source (§4 / §10.1b) |
-| Present but carved differently | alcohol/cannabis/opioid/stimulant in Module 11 | Reference mode against the same source |
-| **Out of the source's declared scope** | Module 16's etiology and treatment | The companion volume that holds it |
+| `norman.farb@utoronto.ca` | instructor | primary |
+| `norman@radlab.zone` | instructor | re-signed up 2026-08-06 after account reset; auto-enrolled via `invites` |
+| `kavabee@gmail.com` | ta | |
 
-## 5. Open decisions
+**Capacity check for ~200 students × 3 articles = 600 submissions:** 860 slots available, so there is
+headroom. The 134 green gaps at capacity 2 give **268 slots**, enough that every student's *first*
+submission can be a scaffolded one.
 
-1. ~~Roster ownership~~ — **R3** (radlab-academic owns it; Lecture Lounge verifies via
-   `api/roster-check.js`).
-2. **How PSY240 students avoid Ripple onboarding — still open.** Verified 2026-07-30: `/class/:slug`
-   is wrapped in `AuthRoute`, not `ProtectedRoute`, so it never passes through the onboarding chain,
-   and magic-link signup gets a `profiles` row from the `on_auth_user_created` trigger. **The
-   decision reduces to which `emailRedirectTo` the invite uses.** The genuine main-project work in
-   WP5 is the R3 **auto-verify** — a roster hit setting `utoronto_verified_at`.
-3. ~~Roster CSV source~~ — **Quercus**.
-4. ~~Resend~~ — **done**.
-5. **Does a linked debate page discharge a `contested` gap?** Raised by Module 06, unresolved — run
-   plan §8.8 states both options. It changes what the student list contains, so settle it before
-   publishing that list.
-6. **Are the study pages worth keeping?** Eleven per-module `fundamentals-psychological-disorders-*`
-   pages exist with **zero inbound links each**, while the journal-article study pages have 2–4.
-   They are a pipeline artefact — **direct parse does not create them**, so Modules 13 and 16 have
-   none, and the set is now permanently incomplete (missing 2, 3, 13, 15, 16). Either backfill or
-   retire; leaving eleven of sixteen is the one option with nothing to recommend it.
-7. **New — do pica, rumination, enuresis, encopresis and stereotypic movement disorder belong in the
-   catalogue?** Module 16 covers all five substantively and none has a slug, so the material was
-   deliberately dropped. That is correct under catalogue-first, and it is also the catalogue's call
-   to revisit, not the sweep's. Cheap to add if wanted; the source text is already extracted.
+---
 
-Also open, not blocking: the **CDDR licence variant**, and **plan open question 12** — frontmatter
-`related:` entries never reach `wiki_links`, so "0 off-catalogue red links" certifies the body graph
-only.
+## 3. What this is
 
-## 6. What is left to write
+A course reference wiki for **PSY240, abnormal psychology, University of Toronto Mississauga**. Not
+St. George — UTM-specific resources (crisis supports especially) are the priority and were sourced
+deliberately.
 
-**The major tier is down to 9 pages and 13 gaps**, and the list is closed:
+262 pages built from the DSM-5-TR, the course textbook, and ~200 ingested sources, each page carrying
+machine-derived provenance back to the job that produced it. Students will contribute peer-reviewed
+sources against catalogued gaps.
 
-| Page | Tier | Missing |
-|---|---|---|
-| `illness-anxiety-disorder` | A | etiology, treatment |
-| `functional-neurological-symptom-disorder` | A | treatment |
-| `adjustment-disorders` | A | etiology |
-| `exhibitionistic-disorder` | A | etiology |
-| `integrative-model` | foundation | comparative-evidence |
-| `research-methods` | foundation | evaluating-the-evidence-base |
-| `elimination-disorders` | overview | encopresis |
+**Excluded by instruction:** DSM-5-TR **Chapter 20** (Other Mental Disorders) — *"let's leave chapter
+20 out."*
 
-**Nothing is left to write from scratch.** Eight gaps across seven existing pages, then the work is
-**WP4b's review pass** and **publishing**. Three of the four Tier A gaps are single sections needing
-one targeted search each; `integrative-model` and `research-methods` are bespoke conceptual
-sections of the kind `alternatives-to-categorical-diagnosis` turned out to be (run plan §26).
+**Student contribution categories** (Norm's design, keep them separate):
+- **Mandatory:** 3 peer-reviewed research articles.
+- **Separate participation category:** original artwork, and links to works of art (visual, audio,
+  film) the student thinks are relevant. Not a substitute for the three articles.
 
-`transvestic-disorder` needs its own search — it is **absent from the paraphilias pharmacological
-review entirely** (run plan §24).
+---
 
-Older brief, largely worked through — run plan **§10**. In one line each:
+## 4. The method — direct parse
 
-- **The companion volume** — closes 36 etiology/treatment gaps across Module 16's 18 pages.
-- **8 Tier A pages with no textbook source** — L7 entire (`erectile-disorder`,
-  `female-sexual-interest-arousal-disorder`, `gender-dysphoria`, `exhibitionistic-disorder`,
-  `pedophilic-disorder`), `insomnia-disorder`, `narcolepsy`, `gambling-disorder`. L7 also holds the
-  two pages the taxonomy flagged for **rewrite-level** review at ~30 min each.
-- **`suicide-and-self-harm`** — 7 inbound red links, no source in the textbook.
-- **13 overviews** — reference pass. The three that exist came out at 9.4k–15.2k chars with zero
-  empty sections, so the pattern holds.
-- **The mood block.** `bipolar-i-disorder` (2,845 chars), `bipolar-ii-disorder` (1,914) and
-  `persistent-depressive-disorder` are thin and **Module 04 has already run** — nothing scheduled
-  will revisit them. Top of the core-text list in run plan §8.6.
-- **The review pass** on Modules 01–12, 14, 15.
+Full detail in run plan **§9**. The short version, and the rules that make it safe:
 
-**`adhd` held up.** It was the last abbreviated catalogue slug, kept deliberately because the
-abbreviation is canonical in the field — unlike `-ncd`, retired on 2026-08-02 after three runs
-missed it. Module 16 hit it correctly, so the judgement stands.
+1. Insert an `ingest_jobs` row for the source.
+2. Insert a `kind='proposed'` version carrying that `job_id`.
+3. Accept it via `review_proposal(p_version_id, p_decision, p_content, p_publish)`.
 
-## 7. Lessons that still bind
+**Non-negotiables:**
 
-These were paid for. Direct parse removes the *cause* of several, but the corpus-shape rules apply
-regardless of who writes the page.
+- **One accepted version per source.** Never combine two sources into one version — it breaks
+  `wiki_page_provenance` and the page's citations become unattributable. This was violated once
+  (`kleptomania`), and fixing it required rejecting the version, which **deleted the shell page**.
+- `review_proposal()` needs a JWT identity **in the same MCP call**:
+  ```sql
+  SELECT set_config('request.jwt.claims',
+    '{"sub":"3cad8ace-5c5f-41d4-b624-4da49e0e375d","role":"authenticated"}', true);
+  ```
+- `wiki_page_versions.action` is `'new' | 'update' | 'replace'` — **not** `'create'`.
+- Rejecting the **only** version of a new page returns `page_dropped: true` and deletes the shell.
+- **`edit_page` is prohibited for content that should carry provenance.** Attribution is derived from
+  the ingest record, so a citation stays correctable at the job and every page rebuilds from it.
+  `edit_page` severs that.
 
-- **One gap, one page.** After Module 02 both `models-of-psychopathology` and `integrative-model`
-  declared the same missing diathesis-stress material, so `reference_worklist` counted one hole
-  against two pages. A gap belongs on the page whose subject it is.
-- **A source can fail to support a catalogue page at all** — and it can also *declare* that it will
-  not. `integrative-model` is the first kind (the textbook states no formal integrative framework).
-  Module 16's etiology and treatment are the second, and the difference matters: the second names
-  its own remedy. Both are honest states, not defects.
-- **Check a supporting page against later catalogue targets before accepting it.** Module 03's first
-  run invented `classification-systems`, a strict subset of `diagnosis-and-classification`. Archived
-  afterwards.
-- **`archive_page` does not rebind inbound links** the way `rename_page` does. Retarget every
-  inbound reference *first*, then archive. In that order.
-- **Gaps are derived from the page body**, never frontmatter.
-- **Review-then-edit is the working division of labour.** Norm runs ingest and triage in the portal;
-  Claude reviews afterwards and applies trims. Handing over a *prose list* of edits to re-key was
-  tried once and produced a page with deleted headings but surviving body paragraphs. Prefer
-  `position()`/`substr()` splicing over retyping long bodies — a missed anchor raises instead of
-  silently writing something mangled.
-- **Attribution must not depend on the model.** It is derived from the ingest record via
-  `wiki_page_provenance`, so a citation is correctable after the fact **at the job**, and every page
-  built from it updates itself. This is the whole reason §4's `edit_page` prohibition matters.
+**IDs you will need:**
 
-## 8. Gotchas that cost time
+| what | value |
+|---|---|
+| `course_id` | `35e9842a-51a5-4f1e-aa5f-3a52f938196f` |
+| `created_by` (person_id) | `45db45f9-eebb-4d1b-991d-1829cdb71c2a` |
+| jwt `sub` (auth id) | `3cad8ace-5c5f-41d4-b624-4da49e0e375d` |
 
-- **`update` proposals are DELTAS** — accepting one verbatim replaces the page with the addendum.
-  Guarded server-side and pre-merged in the UI, but if you call `review_proposal()` yourself,
-  **pass the merged content, not the delta**. This truncated `biofeedback` 2,428 → 1,565 chars.
-- **`ingest_jobs.status` has no `'running'` value** — the check constraint allows only `uploaded`,
-  `processing`, `done`, `failed`.
-- **Views default to security-definer in Postgres.** Every view over a roster-gated table must set
-  `security_invoker=true`. Narrow privileged reads are SECURITY DEFINER *functions* with a
-  membership check, never views.
-- **`CREATE OR REPLACE VIEW` cannot reorder or rename existing columns** — new ones append last.
-- **A data-modifying CTE's rows are invisible to the rest of the same statement**, and the
-  Management API returns only the last statement's result set. Create shells in one statement,
-  insert versions in the next.
+---
+
+## 5. Derived gaps vs annotations — the distinction that matters
+
+Two different things both look like "a gap":
+
+- **Derived**: `extract_page_sections()` keys on any `##` heading; `extract_page_needs()` returns
+  sections with **no prose**. Purely structural.
+- **Annotated**: a `> **Needs research:**` line inside prose. **Invisible to the extractor** — the
+  section has prose, so it reads as filled.
+
+`page_gaps` (see §6) unifies both. Note that **`reference_worklist.annotation_count` under-reports** —
+it showed 33 when the corpus actually held **302 annotations across 139 pages**, because the view only
+counts annotations on pages that still have *derived* gaps. Don't trust it as a total.
+
+---
+
+## 6. The contribution pipeline — built, live, and half-connected
+
+### Schema (`supabase/migrations/20260805_page_gaps.sql`, applied)
+
+- **`page_gaps`** — 737 rows. Keyed on `(page_id, ask_hash)` where `ask_hash` is md5 of the normalised
+  ask, so **claims survive prose edits to the surrounding page**.
+- **`gap_claims`** — a student claiming a gap and submitting against it.
+- **`open_gaps`** — the view students browse.
+- **`populate_page_gaps(course_id)`** — idempotent, **never deletes**. Asks that vanish surface in
+  `stale_gaps` for a human to adjudicate rather than disappearing.
+
+Difficulty tiers: **green** (scaffolded, capacity 2), **amber**, **red** (hard; not counted toward
+student slots).
+
+### Precheck and review (applied live — ⚠ **no migration file on disk**, see §7)
+
+- **`precheck_submission()` / `run_precheck()`** — mechanical validation before a human looks.
+- **`submission_review_queue`** — staff view; joins `identity.people` for the student's name.
+- **`gap_review_queue`** — staff view over gaps.
+- `gap_claims` gained: `submitted_text`, `source_doi`, `source_url`, `limitation`, `precheck`,
+  `precheck_at`.
+
+### UI
+
+`src/academic/fieldguide/SubmissionsQueue.jsx` → `/academic/fieldguide/submissions`. Groups by
+`route`: **BLOCKED** / warnings / full read / light check. `review_url` deep-links to
+`/academic/fieldguide/wiki/<slug>#<section>` in a new tab. Accept / send-back write only to
+`gap_claims.status`.
+
+**Why the precheck exists:** 600 submissions × 5–10 min of TA time = **50–100 hours per term**. The
+precheck strips mechanical failures (no DOI, dead URL, wrong page, non-peer-reviewed) before a human
+spends attention on them.
+
+### What is missing
+
+**The student-facing form.** It needs to: let a student browse `open_gaps`, claim one (respecting
+`capacity`), submit text + DOI/URL + a stated limitation, and trigger `run_precheck()`. Until it
+exists, `gap_claims` stays empty and §1 stays true.
+
+---
+
+## 7. What is left before the term
+
+**Ordered by what blocks what.**
+
+1. **Build the student submission form** (§6). Blocks the entire contribution model.
+2. ~~Write the missing migration file.~~ **Done 2026-08-06** —
+   `supabase/migrations/20260806_gap_submission_precheck.sql` now exists, was written by transcribing
+   the live definitions back out of the database, and was re-applied. Transcribing it exposed two
+   regex bugs that would have blocked every student submission on day one; see §10 and the manifest.
+3. **Publish — and it must be all 260 drafts at once.** With a single page published, all 13 of its
+   outbound links render as broken to a student, because `wiki_links` is member-readable while
+   *unpublished targets are not*. A partial publish looks like a broken site.
+4. ~~Adjudicate the flagged difficulty rows.~~ **Done 2026-08-08** — Norm adjudicated all 13 flags
+   (`20260808_gap_triage_adjudicated.sql`): 10 greens demoted to amber **keeping capacity 2**
+   (complementary sources, one facet each — capacity is orthogonal to difficulty), 1 kept green
+   (vascular NCD — SPRINT MIND answers it single-source), both reds kept (regex blind spots, now
+   patched). `gap_review_queue` is at 0 flags and respects `adjudicated: keep` in notes. Board:
+   green 124/248, amber 602/612, red 11.
+5. **Two unused Handbook chapters** — Kaylor & Jeglic (exhibitionism rehabilitation) and Heffernan &
+   Ward ch. 31 (Good Lives Model). Both would close open treatment annotations on
+   `exhibitionistic-disorder` and `paraphilic-disorders`.
+6. **Currency audit**, including swapping in the **HiTOP 2022 primer**.
+7. **Test the ingest pipeline deliberately.** It is no longer exercised by module runs (direct parse
+   replaced it) but students will hit it. See §11.
+8. **Consider a page-level content flag** for suicide, self-harm, and eating-disorder pages —
+   pastoral, not classificatory. Norm has not decided on this.
+
+**The 62 empty sections are deliberate**, not debt: they are the visible surface students contribute
+into. Do not "fix" them.
+
+---
+
+## 8. Standing instructions from Norm
+
+Preserve these verbatim in spirit:
+
+- *"from now on if you have trouble downloading something that would make you compromise your
+  approach, please stop and ask me"* — **do not substitute a degraded workaround.** Ask.
+- *"please don't get rid of my superuser account at radlab.zone"* (§0).
+- *"let's leave chapter 20 out."*
+- **Review-then-edit** is the division of labour: Norm runs ingest and triage in the UI; Claude applies
+  the content cuts via the API. Handing him a *prose list of edits to retype* was tried once and
+  produced a page with deleted headings but surviving body paragraphs.
+- Report what is now **checkable on the live site** after each step — or say plainly that it's
+  backend-only.
+
+---
+
+## 9. Lessons that still bind
+
+Corpus-shape rules; they apply regardless of who writes the page.
+
+- **One gap, one page.** A gap belongs on the page whose subject it is. After Module 02 both
+  `models-of-psychopathology` and `integrative-model` declared the same missing diathesis-stress
+  material, and `reference_worklist` counted one hole twice.
+- **A source can fail to support a catalogue page at all — and it can also *declare* that it will
+  not.** `integrative-model` is the first kind (the textbook states no formal framework); Module 16's
+  etiology and treatment are the second. The difference matters: the second **names its own remedy**.
+  Both are honest states, not defects.
+- **Check a supporting page against later catalogue targets before accepting it.** Module 03 invented
+  `classification-systems`, a strict subset of `diagnosis-and-classification`. Archived after.
+- **`archive_page` does not rebind inbound links** the way `rename_page` does. Retarget every inbound
+  reference **first**, then archive.
+- **Gaps derive from the page body, never frontmatter.**
+- **Off-catalogue red links get introduced constantly.** Nine were caught this project
+  (`opioid-related-disorders`, `alcohol-related-disorders`, `placebo-effect`, `comorbidity`,
+  `stimulant-related-disorders`, `wernicke-korsakoff-syndrome`, `catatonia`, `stress-and-coping`,
+  `blinding`). **Run the red-link check after every content batch** — it is how the corpus reached
+  0 red links and how it stays there.
+- **"Reports results" is a separate check from "is relevant."** Weitz et al. *BMJ Open* 2017 was a
+  **protocol with no results** despite a findings-shaped title. Confirm a source has findings before
+  citing findings from it.
+- **Verify legal and statutory claims against the statute.** I wrote that CYFSA raised the *reporting*
+  age 16→18; it raised the *protection* age. s.125(4) says the mandatory reporting duty **does not
+  apply to a child who is 16 or 17.** Norm caught it.
+
+---
+
+## 10. Gotchas that cost time
+
+**Editing and anchors**
+
+- **When a replacement spans a heading, assert on `extract_page_sections()`' section list, not on
+  length.** A `replace()` spanning `## Contested` deleted the heading; the length delta looked fine
+  because the insert dwarfed the loss.
+- **Check the delta against the *expected* size, not just against zero.** A CRPO replace was a no-op
+  (+161 chars where +6,000 was expected) because a prior edit had introduced a line break inside the
+  anchor. Nonzero is not success.
+- Prefer `position()`/`substr()` splicing over retyping long bodies — a missed anchor raises instead
+  of silently writing something mangled.
+- **The working copy is CRLF** (`core.autocrlf`). `\n`-based anchors in scripts fail silently.
+
+**Regex over prose**
+
+- `\yAct\y` matched **"Acceptance and Commitment Therapy"** (4 false positives). "crisis" matched "the
+  opioid crisis"; "capacity" matched "capacity for temporary suppression". **Anchor legal terms to
+  their neighbours.**
+- **In Postgres ARE, `\b` is the BACKSPACE character, not a word boundary — the word boundary is
+  `\y`.** Five of `precheck_submission()`'s ten clinical-instruction patterns were written with `\b`
+  and could never match; "start with 20 mg daily" passed the rule built to stop it.
+- **`'\\s+'` in a standard-conforming string is an escaped literal backslash**, not whitespace. It
+  matched nothing, so the same function's word count returned **1 for any input** — every submission
+  would have been blocked as `too_short`.
+- **Assert on the value inside a finding, not on the finding's presence.** Both bugs above survived a
+  deliberate fixture test: the good fixture raised `too_short`, recorded at the time as "59 words
+  against a 60-word floor". It was not 59, it was 1. **A check firing where you expected it to fire is
+  correct output from broken logic just as often as it is a pass.** Found later by transcribing
+  `pg_get_functiondef()` output into a migration file — reading the stored source is a cheap audit.
+
+**SQL / Postgres**
+
+- **`update` proposals are DELTAS.** Accepting one verbatim replaces the page with the addendum. The
+  UI pre-merges, but calling `review_proposal()` yourself means **passing merged content**. This
+  truncated `biofeedback` 2,428 → 1,565 chars.
+- **`ingest_jobs.status`** allows only `uploaded | processing | done | failed` — there is no
+  `'running'`.
+- **Views default to security-definer.** Every view over a roster-gated table must set
+  `security_invoker=true`. Narrow privileged reads are SECURITY DEFINER **functions** with a
+  membership check — never views.
+- **`CREATE OR REPLACE VIEW` cannot reorder or rename existing columns**; new ones append last.
+- **A data-modifying CTE's rows are invisible to the rest of the same statement**, and the Management
+  API returns only the last statement's result set. Create shells in one call, insert versions in the
+  next.
 - **`FROM a, b JOIN c ON … a.col` does not parse** — `JOIN` binds tighter than the comma. Use
   `CROSS JOIN`.
 - **`wiki_pages_bind_links()` only binds, never unbinds** — hence `rename_page` cleaning up after
-  itself and reporting orphans. `link_disorder_page()` has the same gap.
-- **DOI slugs are opaque** — harvest them, never compute them. `wp1_verify.sql` check 5 guards it.
-- **The working copy is CRLF** (`core.autocrlf`). `\n`-based anchors in scripts fail silently.
-- **Content with backticks must go through a file**, not an inline shell string — command
-  substitution eats it. Dollar-quoted SQL through the MCP is fine and is how the module batches go in.
+  itself. `link_disorder_page()` has the same gap.
+- **DOI slugs are opaque** — harvest them, never compute them. `wp1_verify.sql` check 5 guards this.
 
-## 9. Infrastructure that is done and shouldn't be re-litigated
+**RLS — the expensive one**
 
-- **Model: `claude-opus-5`** at **`effort: medium`** — measured better than `high` here, not merely
-  cheaper (run plan §5). A refusal retries once on `claude-opus-4-8`; the syllabus is full of
-  material that can false-positive a safety classifier.
+**A policy whose predicate reads another RLS-protected table silently under-matches. It does not
+error; it returns too little**, which reads as missing data rather than a permissions bug.
+
+"permission denied for table people" was **three faults stacked**, each hidden by the one in front:
+
+1. **Grant** — `identity.people` had SELECT for `postgres` only, so queries failed on *privileges*
+   before RLS was consulted. The pre-existing `read own person row` policy had **never been reachable
+   from the client**.
+2. **Schema usage** — the table grant is unreachable without `usage on schema identity`.
+3. **Nested RLS** — the first staff policy read `enrollments` directly, but that table carries
+   `read own enrollments`, so the EXISTS subquery saw only the caller's own row. **A reviewer would
+   have seen exactly one name — their own — and every submission would have rendered with a blank
+   student.** Fixed with `shares_staffed_course()`, SECURITY DEFINER.
+
+Verified with `SET LOCAL ROLE authenticated`, not by inspection: instructor → 2 rows, student → 1 row.
+**Any new policy that joins `enrollments` should go through a definer helper.**
+
+**Files**
+
+- **Non-ASCII filenames fail to open** (an `Arnáez` PDF). Copy to an ASCII name first.
+
+---
+
+## 11. Infrastructure that is done — don't re-litigate
+
+- **Model: `claude-opus-5` at `effort: medium`** — measured better than `high` here, not merely
+  cheaper (run plan §5). A refusal retries once on `claude-opus-4-8`; the syllabus is full of material
+  that can false-positive a safety classifier.
 - **The 300s Vercel ceiling is real** — Hobby plan, cannot be raised. Direct parse sidesteps it.
-- **Guards that took real incidents to build**, all still live and all still wanted for WP6:
-  `reconcileCollidingUpdate`, the placeholder-aware wiki index, the reject-drops-the-shell fix, and
-  `wiki_merge_health.sql`. **The pipeline is no longer exercised by module runs** and needs a
-  deliberate test pass before students touch it.
-- **Email:** radlab-academic sends via Resend SMTP.
+- **Guards built from real incidents**, all live and all still wanted: `reconcileCollidingUpdate`, the
+  placeholder-aware wiki index, the reject-drops-the-shell fix, `wiki_merge_health.sql`. **The ingest
+  pipeline is no longer exercised by module runs** — it needs a deliberate test pass before students
+  touch it (§7 item 7).
+- **Email:** radlab-academic sends via **Resend SMTP**. Auth templates live in a dashboard text box
+  with no history — `supabase/auth-templates/` is the source of truth. **Edit the file, then paste
+  into the dashboard**, never the reverse. The Field Guide template is table-wrapped because U of T
+  mail is Outlook/Exchange, which ignores `max-width` and `margin: 0 auto` on a div.
+- **`handle_new_user()`** on `auth.users` creates the `identity.people` row, enrols from
+  `public.invites` where `consumed_at is null`, and marks the invite consumed. To let someone re-sign
+  up, delete the auth user **by id** and **un-consume the invite**.
+
+---
+
+## 12. Where things live
+
+| | |
+|---|---|
+| Run plan (the reference) | `docs/markdowns/psy240_wp4_runplan.md` — §9 is the method; §26–§37 are this phase |
+| This handoff | `docs/markdowns/psy240_handoff.md` |
+| Architecture record | `website.md` — **must be checked on every merge to main** (CLAUDE.md) |
+| Migrations | `supabase/migrations/` + `README.md` applied-status manifest |
+| Auth templates | `supabase/auth-templates/` |
+| Staff review UI | `src/academic/fieldguide/SubmissionsQueue.jsx` |
+| Routes | `src/App.jsx` — every page `lazy()`-loaded (CLAUDE.md) |

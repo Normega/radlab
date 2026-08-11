@@ -58,6 +58,65 @@
 
 ---
 
+## 2a. 2026F structure — locked 2026-08-07 (supersedes §2 for the current term)
+
+§2 above is the **Fall 2025 record** — keep it; it documents what the decks actually covered and it
+is where the restructure below started. The 2026F term runs on the table in this section, and the
+**database is the source of truth**: `course_structure` (14 rows) and `page_lectures` (266 rows,
+259 of 260 draft pages) in radlab-academic, applied by `20260807_course_structure.sql`.
+
+Wednesdays 09:00–12:00. Twelve meetings, **11 content lectures + midterm, zero slack** — a cancelled
+class has no recovery slot. Lecture numbers and week numbers diverge after the midterm (L6 = week 7);
+store both, never derive one from the other.
+
+| Wk | Date | L | Title | RCT arc |
+|---|---|---|---|---|
+| 1 | Sept 9 | 1 | What is Abnormal? History and Models | |
+| 2 | Sept 16 | 2 | Assessment, Diagnosis, and Research Foundations | methods survival kit |
+| 3 | Sept 23 | 3 | Anxiety and Obsessive-Compulsive Related | |
+| 4 | Sept 30 | 4 | Trauma, Dissociation, and Somatic Symptom | |
+| 5 | Oct 7 | 5 | Mood Disorders and Suicide | *green submission due* |
+| 6 | Oct 14 | — | **Midterm** (wks 1–5) + RCT onboarding | consent, setup, baseline, one guided session |
+| 7 | Oct 21 | 6 | Sex, Gender, and Paraphilic | **design intro ~45 min**; daily practice begins |
+| 8 | Oct 28 | — | *Reading week* | daily practice continues (highest-attrition window) |
+| 9 | Nov 4 | 7 | Eating and Sleep-Wake | adherence check-in |
+| 10 | Nov 11 | 8 | Externalizing: Substance Use and Impulse Control | *amber 1 due*; Remembrance Day silence 11:00 |
+| 11 | Nov 18 | 9 | Neurodevelopmental and Neurocognitive | |
+| 12 | Nov 25 | 10 | Personality Disorders, Clinical Psych and the Law | data collection ends |
+| 13 | Dec 2 | 11 | Psychosis and Schizophrenia | **debrief 30–60 min**; *amber 2 due Nov 27* |
+| 14 | Dec 10+ | — | Final exam, centrally scheduled | |
+
+**What changed from Fall 2025, and why:**
+
+1. **No standalone methods lecture — the methods arc is distributed.** W2 teaches the survival kit
+   (reliability/validity, RCT logic, effect size); the W7 RCT intro teaches design properly at the
+   moment it is about the students themselves; the W13 debrief is the appraisal capstone on their own
+   data. Spaced instead of lumped, and it returns the slot that made 12 lectures not fit.
+2. **DSM ch. 15 reunited in L8.** ODD and conduct disorder join IED/kleptomania/pyromania in the
+   externalizing week instead of splitting across L8/L10 as in 2025.
+3. **Somatic moves to L4** (conversion/FND beside dissociation, not appended to anxiety), **suicide
+   moves to L5** with mood. Every DSM chapter is now whole within one lecture, so browsing by chapter
+   and by week agree.
+4. **Psychosis is the capstone (L13)** and hosts the RCT debrief — the same pairing as 2025's L9
+   (psychosis + RCT initial results), moved to where the debrief arithmetic puts it.
+5. **Personality + Law keeps its pairing but gets an undiluted week 12**, not the final-week
+   exam-prep squeeze.
+
+**Constraint that fixed the dates:** debrief 5 teaching weeks after intro → intro must be Oct 21
+(last class before reading week), so the midterm is Oct 14. Reading week is the free analysis buffer:
+data Oct 22–Nov 25, findings ready for Dec 2.
+
+**Page mapping notes:** seven pages serve two lectures (`tic-disorders` L3+L9,
+`reactive-attachment-disorder` and `disinhibited-social-engagement-disorder` L4+L9,
+`schizotypal-personality-disorder` L10+L11, `psychodynamic-psychotherapy` L1+L2,
+`little-albert-study` L1+L3, `student-support-resources` L1+L5). `elimination-disorders` is unmapped
+by design — out-of-scope chapter, and its page says so. The `gaps_by_lecture` view feeds the student
+gap browser; every lecture has 19–121 open gaps. **Pre-midterm lectures hold only 38 green gaps
+(76 slots) for 200 students**, so the Oct 7 green deadline must allow claiming from any lecture, not
+only material taught so far — the browser copy should say this explicitly.
+
+---
+
 ## 3. What is *not* in this course
 
 Recorded so the taxonomy's omissions are deliberate rather than accidental: **elimination

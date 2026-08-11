@@ -155,6 +155,8 @@ truth — the live schema is. Evidence below is either `history: <recorded name>
 | `20260730_delete_own_account.sql` | live (applied 2026-07-30 by Claude via MCP `apply_migration`, name `delete_own_account`, so there **is** a `schema_migrations` record). Adds `delete_own_account()` for the new Settings page — self-serve deletion keyed on `auth.uid()` with **no target argument**, so it cannot be pointed at another account. **Public tier only**: refuses super admins, refuses any `role <> 'public'` (a participant's rows are study data and withdrawal is RA-mediated; a lab member authors content whose FKs are `NO ACTION` against `profiles`), and refuses anyone holding `study_enrollments` / `participant_schedule` / `participant_links` / `participant_assignments` rows so a future enrolled public account gets an explanation instead of a raw FK error. Delete list derived by enumerating every `public` table with a `user_id`/`profile_id` column against its FK delete action; it also covers three tables with **no** FK at all (`pond_watch_results`, `zerin_daily_checkins`) that would otherwise be left holding a dangling `user_id`. Grants: `authenticated` only, `anon` revoked — verified via `has_function_privilege`. **Note a pre-existing gap this surfaced**: `admin_delete_user` has not been updated since 2026-07-12 and is now missing deletes for `equity_census_responses`, `breath_guardian_sessions`, `pond_watch_results`, `zerin_daily_checkins`, `ripple_unsubscribe_tokens`, plus every participant/lab-authored table (`study_enrollments`, `participant_*`, `liliana_participants`, `message_log`, `classes.created_by`, `displays.created_by`, `slider_scales`, `vas_scales`, `vas_packages`) — so admin deletion of a participant or lab member will raise an FK error. Not fixed here; deleting a lab member's authored content is a separate decision. |
 | `20260730_admin_delete_user_refresh.sql` | live (applied 2026-07-30 by Claude via MCP `apply_migration`, name `admin_delete_user_refresh`, so there **is** a `schema_migrations` record). Fixes the gap recorded in the row above: the delete list had not moved since 2026-07-12 and every table added since — plus every participant and lab-authored table that was never in it — holds a `NO ACTION` FK to `profiles`, so `DELETE FROM profiles` raised a constraint violation and aborted the RPC. Admin deletion only ever worked on accounts that had done almost nothing. Adds the 9 missing personal/game tables and the 9 missing participant tables. **Two policy calls**: (1) *participant data is deleted* — the 2026-07-12 header wanted to "preserve data even if a profile is removed", but a `NO ACTION` FK cannot preserve anything, it only makes the delete fail; if a participant's data must outlive them, withdraw the enrollment instead of deleting the account. (2) *lab-authored content is preserved, authorship detached* — `classes`/`displays`/`slider_scales`/`study_consent_forms`/`study_enrollments.enrolled_by` get `created_by = NULL`, matching the `SET NULL` FKs `questionnaires`/`studies`/`study_protocols`/`video_library` already have; `vas_scales.created_by` and `vas_packages.created_by` are `NOT NULL` so those rows are **reassigned to the acting super admin** and the count is returned as `reassigned_vas_rows`. **Ordering fix worth keeping**: `equity_census_responses` holds `NO ACTION` FKs to *both* `participant_schedule` and `study_enrollments`, so it must be deleted before the study-participation block — the first draft had it after and would have aborted. Verified by two dry runs on live data, each a `DO` block ending in `RAISE` so the whole thing rolls back: the participant with the most `participant_schedule` rows deleted cleanly to `profiles`+`auth.users`, and a lab member with authored content deleted cleanly with `vas_reassigned=1`. Counts confirmed unchanged either side (185 profiles / 185 auth.users) and the lab member still owns their VAS scale. `is_super_admin()` null-safety from 20260729 untouched; guards (super admin only, never self, never another super admin) unchanged. |
 | `20260730_drop_profiles_reminder_frequency.sql` | live (applied 2026-07-30 by Claude via MCP `apply_migration`, name `drop_profiles_reminder_frequency`, so there **is** a `schema_migrations` record). Drops `profiles.reminder_frequency`, the column behind the Dashboard's `// Reminders` control — a control **nothing ever read**. The `// TODO: reminder emails via Edge Function + Resend` beside it was never built; the engine that does exist (`ripple_reminder`) reads `ripples.reminder_enabled`/`reminder_time`. The UI was removed with the §12b account rework, leaving the column referenced by nothing. Verified before dropping: no function, view, materialized view or index references it, and the repo has only prose mentions. Data at drop: 182 of 184 profiles held the `'none'` default; exactly two had set anything else (one `weekly`, one `biweekly`), and neither ever received an email because no sender existed. Those two values were deliberately **not** migrated into `ripples.reminder_enabled` — enabling somebody's email from a preference they gave a control that visibly did nothing is precisely the opt-in `ripple_spec` §5 guards against; the `weekly` user already has real reminders enabled, and the `biweekly` user has no `ripples` row at all. |
+| `20260807_withdrawal_note.sql` | live (applied 2026-08-07 by Claude via MCP `apply_migration`, name `withdrawal_note`, so there **is** a `schema_migrations` record). Adds `study_enrollments.withdrawal_note text` — the optional free-text reason a participant gives on the `/withdraw/{token}` confirmation page, written by `handle_withdraw` (service role, trimmed + capped at 500 chars, empty → null). Deliberately separate from `withdrawal_reason`, which stays the system's classification string. No RLS change (service-role writes; lab reads via existing policies). Displayed in `EnrollmentPanel` under the withdrawn status badge. Verified post-apply via `information_schema.columns`. |
+| `20260811_adherence_on_fail.sql` | live (applied 2026-08-11 by Claude via MCP `apply_migration`, name `adherence_on_fail`, so there **is** a `schema_migrations` record). Two parts. (1) Sets `on_fail` on every `adherence_check` node in every `design_graph` that has one — `'continue'` on the phase-2 checks, explicit `'withdraw'` on phase 1 — which today is exactly `ac_p1`/`ac_p2` on the two Liliana studies (DRY RUN + Live Test). Scoped by node shape rather than hardcoded study ids; `WITH ORDINALITY … ORDER BY` preserves node order, which `entryNode()` and the builder layout both read. (2) Creates the `liliana_phase_adherence` view (`security_invoker`) — one row per participant per authored check, counting completed `liliana_day_data` rows by module phase, i.e. exactly what `countCompletedPhaseDays()` counts. Verified post-apply: all four nodes carry the intended `on_fail`, and the view returns the expected split (Live Test's 7/12 phase-2 participant is `meets_criterion=false`, `on_fail=continue`). |
 
 ## radlab-academic project migrations
 
@@ -234,3 +236,370 @@ Storage config (not schema, applied live via MCP `execute_sql` 2026-07-25): the 
 bucket's `allowed_mime_types` gained `audio/mpeg` (was image-types-only:
 `image/png,jpeg,gif,webp,svg+xml`) so Tune's `.mp3` clips can be uploaded to `public-assets/tune-audio/`.
 `file_size_limit` unchanged at 5 MB (every trimmed clip is well under). Image uploads unaffected.
+
+
+---
+
+## radlab-academic project (`qldgwpneygvgcvexlduz`) — separate from everything above
+
+`20260805_wiki_provenance_readable_by_members.sql` — **applied live via MCP `apply_migration`
+2026-08-05, verified.** Adds two additive `select` policies so course **members** (not just staff) can
+read the rows behind `wiki_page_provenance`: accepted versions of **published** pages
+(`wiki_page_versions`), and the `ingest_jobs` rows those versions cite. Drafts, pending/rejected
+proposals and unrelated jobs remain staff-only; no existing policy was altered or dropped.
+
+**Why:** the view is correctly `security_invoker=true`, but both underlying tables carried staff-only
+read policies, so a student would have seen every page render with an **empty sources panel** — the
+corpus's attribution claim invisible to the audience it exists for. Staff never hit it because staff
+satisfy the staff policy.
+
+**Verified 2026-08-05 by RLS test**, not by inspection: one page published, the TA enrolment
+temporarily set to `student`, `SET LOCAL ROLE authenticated` with that user's JWT claims. Result —
+1 page visible (0 drafts), provenance present with **5 sources**, and scoping correct: only **10**
+versions and **5** jobs visible, i.e. exactly those belonging to the published page. Test state fully
+reverted afterwards (role back to `ta`, page back to `draft`, 0 published, no leftover fixtures).
+
+Same test established the **publish-all-at-once requirement**: with one page published, **all 13 of
+its outbound links appeared broken to the student**, because `wiki_links` is member-readable while
+unpublished targets are not.
+
+`20260805_page_gaps.sql` — **applied live via MCP `apply_migration` 2026-08-05 (two calls: tables +
+policies, then `populate_page_gaps()`), populated and verified.** Creates `page_gaps`, `gap_claims`,
+the `open_gaps` view and `populate_page_gaps(course_id)`.
+
+**The unit is the ask, not the annotation.** Measured before building: 301 `Needs research` markers,
+averaging **2.39 distinct asks each** (215 of 301 contain more than one, written as "X; Y; and Z").
+One row per annotation gives a pool of 301 — under half of what 200 students × 3 contributions needs.
+Split on asks it is **675**, plus **62** empty sections = **737 gaps**.
+
+Identity survives re-parsing via `(page_id, ask_hash)`, md5 of the normalised ask, so a claim is not
+lost when neighbouring prose is edited. `populate_page_gaps()` is idempotent: re-running refreshes
+`last_seen_at`, inserts new asks, and **never deletes** (that would orphan claims) — disappeared asks
+surface in `stale_gaps` for staff to retire.
+
+RLS: gaps follow page visibility (`members read gaps on published pages`), so a student is never
+offered work on a page they cannot read; students see and write only their own claims.
+
+**Difficulty is auto-seeded and needs a human pass — it is a triage aid, not a classification.** The
+regex produced false positives in both directions: "the opioid crisis" matched the crisis-line rule
+(red → green), "hours-per-week dose-response" and receptor pharmacology matched drug dosing
+(red → amber), while "Canadian reporting duties" was let through as green when mandated reporting is a
+legal standard (green → red). Those four rules were corrected in place; the residue is unaudited.
+Final seed: **green 134, amber 597, red 6**.
+
+Capacity: green gaps set to **2**, since prevalence and rates asks legitimately take more than one
+source (different populations, criteria, years). **Student slots 865** against 600 required, and
+**green slots 268** against 200 students needing a scaffolded first task.
+
+`gap_review_queue` view — **applied live 2026-08-06.** Surfaces only the *boundary* cases in the
+auto-seeded `page_gaps.difficulty` classification, so reviewing it is a **17-row job rather than a
+737-row one**. Rows with a null `review_reason` need no attention.
+
+```sql
+select slug, difficulty, ask, review_reason
+from gap_review_queue where review_reason is not null
+order by review_reason, slug;
+```
+
+Four reasons, in priority order — the first three are the direction that matters:
+
+| review_reason | what it catches |
+|---|---|
+| `MAYBE RED: reads as clinical instruction` | dosing, taper, deprescribing, antidote, overdose, withdrawal management |
+| `MAYBE RED: legal or forensic standard` | statute, sentencing, civil commitment, criminal responsibility, duty to warn, forensic use/criteria/status |
+| `MAYBE RED: crisis resource or coercive practice` | crisis line, helpline, safety plan, restraint, seclusion |
+| `MAYBE NOT GREEN: conceptual, not a lookup` | mechanism, why, whether, debate, critique, theory |
+| `MAYBE NOT RED: no clinical or legal trigger` | over-flagged red, wasting capacity |
+
+**Regex caution recorded in the view comment: do not use `\yAct\y`** — it matches **Acceptance and
+Commitment Therapy** and produced four false positives on the first pass. The word "capacity" likewise
+matches "the capacity for temporary suppression" on `tic-disorders`, and "crisis" matches "the opioid
+crisis". Anchor legal terms to their neighbours rather than matching them alone.
+
+**Review pass 2026-08-06:** 5 rows reclassified **to red** (the conservative direction) —
+`tarasoff-duty-to-warn` (what a warning must contain), `intermittent-explosive-disorder` (criminal
+responsibility), `parasomnias` and `sleep-wake-disorders` (forensic sleep-medicine criteria and the
+sleepwalking defence), `psychopharmacology` (deprescribing), `suicide-and-self-harm` (involuntary
+hospitalisation). Final: **green 134 / 268 slots, amber 592, red 11.** Remaining to review: 11
+`MAYBE NOT GREEN` and 1 `MAYBE NOT RED`, neither of which is a safety question.
+
+`20260806_gap_submission_precheck.sql` — **applied live 2026-08-06; file written and re-applied with
+two regex fixes later the same day.** Adds submission fields to `gap_claims` (`submitted_text`,
+`source_doi`, `source_url`, `limitation`, `precheck`, `precheck_at`), the functions
+`precheck_submission()` / `run_precheck()`, and the `submission_review_queue` / `gap_review_queue`
+views.
+
+> **This ran for a day with no migration file.** The objects were created live via MCP; the file was
+> written afterwards by transcribing `pg_get_functiondef()` / `pg_get_viewdef()` back out of the
+> database. Transcribing them is what exposed the two bugs below — reading the stored source is a
+> cheaper audit than it looks.
+
+**Why it exists.** At 200 students × 3 contributions the irreducible human step — opening the source
+and confirming it says what the student claims — runs to **50–100 hours a term**. The precheck removes
+the mechanical failures before a human reads anything, so that time goes to the judgment that cannot
+be automated.
+
+**Nine checks**, in the order they fire:
+
+| code | severity | catches |
+|---|---|---|
+| `red_gap` | block | a red-classified gap reaching the student path at all |
+| `no_identifier` | block | citation with no DOI or URL — unresolvable, therefore uncheckable |
+| `doi_malformed` | warn | DOI that is not shaped like a DOI |
+| `clinical_instruction` | block | **the likeliest novice failure** — dose, mg, titrate, taper, "first-line", "should be given" |
+| `legal_assertion` | warn | "is required by law", "must report", "is a criminal offence" |
+| `quote_too_long` / `quote_long` | block / warn | fair dealing — longest quoted run over 300 / 150 chars |
+| `too_short` / `too_long` | block / warn | under 60 words / over 400 |
+| `no_limitation` / `thin_limitation` | block / warn | the "what this source cannot tell us" field |
+| `duplicate_source` / `duplicate_claim_source` | warn / block | DOI already cited on the page, or already used by another submission for the same gap |
+
+**`route` tells a TA where to spend attention**: `BLOCKED` needs no reading at all (send back),
+`light check` is a green gap that passed (confirm the number matches), `full read` is everything else.
+
+**Clickable review links.** `review_url` resolves to the exact section a gap sits in —
+`/academic/fieldguide/wiki/<slug>#<section>`. Section was backfilled by locating each ask inside the
+`## `-delimited chunks of page content: **666 of 737 gaps anchor to a section**, the remaining 71 link
+to the page top. `review_url_full` is the absolute form.
+
+### Two bugs, found by transcribing the function rather than by testing it
+
+Neither had reached a student — `gap_claims` was still empty — but both would have fired on day one.
+
+**1. The word count never worked.** The split pattern was written `'\\s+'`, which in a
+standard-conforming string is an escaped literal backslash followed by `s`. It matched nothing, so
+`regexp_split_to_array` returned **one element for any input**. Every submission would have been
+blocked with `too_short: 1 words. Minimum 60.` — the precheck would have rejected the entire class —
+and every one would also have warned `thin_limitation`, since `1 < 8`.
+
+**2. Five of the ten `clinical_instruction` patterns were dead.** They used `\b` as a word boundary.
+**In Postgres ARE `\b` is the backspace character**; the word boundary is `\y`. So `\d+\s?mg\b`,
+`\bdosage\b`, `\bdosing\b`, `\btitrat` and `\btaper\b` could never match. Only the plain-text
+alternatives (`first-line treatment`, `patients should`, …) were live — which is why the original
+fixture appeared to work.
+
+**Why the original fixture test missed both.** The bad submission raised its `clinical_instruction`
+finding on `first-line treatment`, a *surviving* alternative, so the four dead patterns behind it went
+unnoticed. And the good submission raised `too_short`, which was recorded here as *"59 words against a
+60-word floor"* — a boundary condition, entirely plausible. **It was not 59. It was 1.** The check
+fired for a believable reason and a wrong one at the same time.
+
+> **Lesson worth carrying: assert on the value in the finding, not on the finding's presence.** A
+> check that fires where you expected it to fire tells you almost nothing — `too_short` was *correct
+> output from broken logic*. Reading `1 words` instead of `59 words` in the detail string would have
+> caught it a day earlier.
+
+**Re-verified after the fix**, with the same two-fixture shape: a well-formed submission (~90 words,
+valid DOI, real limitation) now returns `[]` — **a clean pass, which was previously impossible** — and
+one ending "Start with 20 mg daily and titrate upward" is correctly blocked as `clinical_instruction`,
+which it previously was not. Both fixtures deleted; `gap_claims` back to 0.
+
+Note `gap_claims` carries a unique constraint on `(gap_id, person_id)` — one claim per student per gap.
+Fixtures must therefore target two different gaps.
+
+**What precheck cannot do**, stated in the view comment so nobody assumes otherwise: confirm the source
+actually says what the student claims. That remains the human step, and it is the whole job.
+
+`20260807_course_structure.sql` — **applied via MCP `apply_migration` 2026-08-07, verified by count
+and unmapped-drafts check.** The 2026F calendar as data, and the page→lecture mapping that gives
+students a by-week axis into the Field Guide (WP6 Phase A; taxonomy §2a is the prose record).
+
+- **`course_structure`** — 14 rows: 11 content lectures, the Oct 14 midterm (+ RCT onboarding), the
+  Oct 28 reading week, the exam-period row. `week_no` (1–14, calendar) and `lecture_no` (1–11,
+  content) **diverge after the midterm** — L6 is week 7; both are stored, neither derived. RCT arc
+  and deadline notes live in `note`.
+- **`page_lectures`** — 266 rows mapping **259 of 260 draft pages** (verified: the single unmapped
+  draft is `elimination-disorders`, out-of-scope by design). Seven pages double-mapped for
+  taught-in-both reasons recorded inline (tics L3+L9, RAD/DSED L4+L9, schizotypal PD L10+L11,
+  psychodynamic psychotherapy L1+L2, Little Albert L1+L3, student support L1+L5). Inserted by slug
+  join against `wiki_pages` — a typo'd slug drops the row rather than erroring, which is why the
+  verification step counts uniques against drafts.
+- **`gaps_by_lecture`** — `security_invoker=true` view feeding the Phase B student browser. Verified:
+  every lecture carries 19–121 open gaps; per-lecture totals sum above 737 because double-mapped
+  pages' gaps appear under both lectures, which is intended (a gap findable from either week).
+- RLS per the standard pattern: members read, staff manage, both tables.
+
+Planning fact recorded here because the browser copy depends on it: **pre-midterm lectures (L1–5)
+hold only 38 green gaps = 76 slots** against ~200 students needing a green first task by Oct 7 — the
+green deadline must allow claiming from any lecture, not only material taught so far.
+
+`20260807_gap_board.sql` — **applied via MCP `apply_migration` 2026-08-07, verified under two JWTs.**
+One function, `gap_board()`: the single read behind the student gap browser
+(`/academic/fieldguide/gaps`, WP6 Phase B).
+
+**Why SECURITY DEFINER and not a view.** Remaining capacity = capacity minus *all* students' active
+claims, but `gap_claims` RLS correctly lets a student read only their own rows. A `security_invoker`
+view would silently under-count — the nested-RLS failure mode again (it returns too little, it does
+not error) — and a definer *view* is against house rules. So: a definer function gated inside by
+`is_course_member()`, returning **counts only, never names**. `my_status` is the caller's own claim
+state, which is theirs to see. `withdrawn` is excluded from the active count everywhere, which is
+also how the future 14-day claim TTL will free abandoned holds without this function changing.
+
+**Verified**, not inspected: as norman.farb (member) → **760 rows, 11 lectures, 268 green slots
+open**; as an authenticated non-member UUID → **0 rows**.
+
+Rows are 760 rather than 737 because double-mapped pages surface their gaps under both lectures —
+intended: a gap should be findable from either week it is taught in.
+
+`20260808_gap_triage_adjudicated.sql` — **applied 2026-08-08 (as `…adjudicated` + `…adjudicated_p2`
+on the server; one file here because it is one decision), verified: `gap_review_queue` flags 13 → 0.**
+Norm adjudicated every flagged row, accepting all recommendations.
+
+- **10 greens demoted to amber** — multi-part/conceptual asks a light-check TA cannot verify against
+  one figure. **Capacity 2 retained** on all ten (Norm's call): capacity means *how many independent
+  contributions the ask can absorb*, orthogonal to difficulty — a green at 2 collects **convergent**
+  evidence (two sources, same lookup; `duplicate_claim_source` already forces the second student onto
+  a different source), a multi-part amber at 2 collects **complementary** evidence (one facet each).
+- **1 green kept** — `vascular-neurocognitive-disorder` ("does midlife BP lowering reduce dementia
+  incidence"): reads conceptual, but SPRINT MIND and successor meta-analyses answer it from one
+  source. Marked `adjudicated: keep green` in notes.
+- **Both reds kept** — the two MAYBE NOT RED flags were regex blind spots, not misclassifications:
+  "Canadian **reporting duties**" is mandatory-reporting law and "**involuntary hospitalisation**"
+  is civil-commitment territory. Both phrases added to the view's not-red trigger list.
+- **Adjudication override added to the view**: `notes ~* 'adjudicated: keep'` returns NULL before any
+  heuristic fires, so a settled human decision is never re-flagged. Anyone re-triaging later: mark
+  the row, don't fight the regex.
+
+Board after: **green 124 gaps / 248 slots** (headroom 1.24× for ~200 students' first task),
+**amber 602 / 612**, red 11, total slots unchanged at 860. Demotions are audit-trailed in
+`page_gaps.notes`.
+
+`20260808_claim_flow.sql` — **applied via MCP `apply_migration` 2026-08-08, verified by a full
+student-lifecycle test battery under a throwaway student account (created via a real `auth.users`
+insert so `handle_new_user` ran, deleted after).** WP6 Phase C, server side: claiming, drafting,
+submitting. Every rule Norm decided is enforced in the database, not the client.
+
+**Two live security holes this closes** (found by reading the RLS policies before building):
+`members update own claims` let a student set `status='accepted'` on their own row — self-grading —
+or overwrite `precheck` with `[]`; `members create own claims` let a student INSERT directly,
+bypassing capacity, green-first, and the red block. Three-layer fix:
+
+1. **Column grants**: `UPDATE` on `gap_claims` revoked and re-granted on a named column list —
+   `precheck`/`precheck_at` are now writable only by definer functions running as table owner.
+   (Verified: student UPDATE of precheck → `42501 permission denied` before RLS is even consulted.)
+2. **Guard trigger** (`gap_claims_guard`, BEFORE INSERT OR UPDATE, SECURITY DEFINER so its
+   page_gaps read survives student RLS): staff pass untouched (SubmissionsQueue accept/send-back
+   unaffected); non-staff inserts and withdrawn→claimed revivals require the transaction-local
+   `radlab.claim_flow` flag that only `claim_gap()` sets; claimed→submitted requires the flag that
+   only `submit_claim()` sets, **so the precheck is unskippable**; submitted and accepted rows are
+   locked to students entirely.
+3. **Definer functions as the only doors**: `claim_gap()` (red block → capacity live-count →
+   green-first both halves: first claim must be green AND amber locked until a green is
+   submitted/accepted → max 2 unsubmitted claims → insert-or-revive with `expires_at = now()+14d`);
+   `submit_claim()` (runs `precheck_submission` FIRST — any `block` finding records the precheck and
+   leaves the claim in `claimed`, so a fault costs an edit, not the claim); `check_doi(gap, doi)`
+   (the immediate check: malformed / already-cited-on-page / already-used-for-gap, run on paste);
+   `gap_page_sources(gap)` (what the page already cites, shown at the moment of choosing);
+   `expire_claims()` (hygiene sweep, staff-scoped — counts already ignore expired rows, so nothing
+   breaks if it never runs).
+
+`gap_board()` regained with three new columns (`my_claim_id`, `my_expires_at`, and expiry-aware
+`claims_active`/`remaining`).
+
+**Test battery, all passed**: amber-first → `green_first`; red → `red_gap`; green claim → ok with
++14d expiry; duplicate claim → `already_claimed`; direct INSERT → trigger raise; self-accept →
+trigger raise; precheck forgery → column grant denial; direct `status='submitted'` → trigger raise
+naming `submit_claim()`; submit with "Clinicians should titrate stimulants starting at 20 mg daily"
+→ `blocked` (clinical_instruction — the `\y` fix earning its keep), claim stayed `claimed`; clean
+resubmit → ok, `[]` findings; post-submit edit → locked; two ambers claimed after green submitted,
+third → `too_many_open`; withdraw → slot freed in `gap_board` immediately; `check_doi` under a
+*different* person's JWT → `duplicate_claim_source` block on the used DOI, warn on malformed, `[]`
+on clean. Fixtures fully deleted (claims 0, fixture people 0).
+
+`20260810_correction_guards.sql` — **applied 2026-08-10 (one message-format fix re-applied in the
+same session: RAISE placeholders are bare `%`, not `%s`), verified by exercising every guard path
+live.** The staff correction path (WP6 Phase D, first half).
+
+**The design discovery:** `edit_page()` already *was* the correction path — staff-gated, snapshot
+trigger keeping numbered history, note attached to the version row, and `job_id IS NULL` so a staff
+edit can never appear in a page's "Built from" list. This migration hardens that existing door
+instead of cutting a second one. The governing rule (run plan §38 Phase D): a correction changes
+*how* the page says something, never *what it claims* — changed claims need a source, i.e. the
+ingest path.
+
+Decisions (Norm, 2026-08-10): **auto-apply + audit feed**, **quiet visibility**, **magnitude
+tripwire** to his spec ("11%→12% shouldn't matter; →21% or →3% should; half an order of magnitude").
+
+- **`numeric_shift_check(old, new)`** — pairs vanished numbers with appeared numbers in document
+  order; per pair: |Δ|≤3 passes ("a few points of variance"), then trips at ratio ≥√10 (~3.16×) OR
+  |Δ|≥10 (11→21 is a different claim at only 1.9×). Years 1900–2099 excluded (citation edits);
+  unpaired numbers reported but never trip — whether a *new* number is a new claim is the form's
+  question, not a regex's. Verified against all eight spec cases including n=1234→134 (trip) and
+  0.5→1.9 (pass).
+- **`edit_page()` re-created with guards** (old 3-arg signature **dropped** — two overloads would
+  make every named-arg PostgREST call ambiguous): note now REQUIRED; section-list guard (removing a
+  `##` heading blocks without the explicit `p_allow_structure` override — the `## Contested` lesson
+  encoded); annotation-removal guard (a `> **Needs research:**` line is a catalogued gap); the
+  tripwire (block until `p_verified` is supplied, which is then appended to the note as
+  "verified against source: …").
+- **`corrections_feed`** — security_invoker view over job-less accepted versions with notes;
+  **retroactively covers the WP-era staff edits back to 2026-08-02**, notes intact.
+
+Client: WikiPage's editor reveals the matching remedy on refusal (verified-input on NUMERIC SHIFT,
+override checkbox on STRUCTURE), save disabled without a note; `/academic/fieldguide/corrections`
+lists the feed; the home page gains a Corrections card with a this-week count.
+
+**Live verification** on `little-albert-study`: no-note → refused; 40→12 without verification →
+refused listing `40→12 (Δ28, ×3.33)`; same edit with a verification statement → accepted, note
+carries it; section removal → refused naming the section; final edit restored the page
+**byte-identical** to its pre-test body (proven by comparing against the v2 version row).
+
+`20260806_staff_read_enrolled_people.sql` — **applied live 2026-08-06 (three MCP calls as each fault
+revealed the next), verified by RLS test.** Fixes "permission denied for table people" on
+`/academic/fieldguide/submissions`, introduced the same day by `submission_review_queue` joining
+`identity.people` to show whose submission a row is.
+
+**Three faults, each hidden behind the one in front of it:**
+
+1. **Grant.** `identity.people` had SELECT granted to `postgres` only, so client queries failed on
+   privileges *before* RLS was consulted — hence "permission denied" rather than an empty result. The
+   pre-existing `read own person row` policy had **never been reachable from the client**; nothing had
+   queried the table until now.
+2. **Schema usage.** The table grant is unreachable without `usage on schema identity`. USAGE confers
+   nothing by itself — every table there still needs its own grant plus RLS, and only `people` has one.
+3. **Nested RLS.** The first staff policy tested `enrollments` directly, but that table carries
+   `read own enrollments`, so the EXISTS subquery could only ever see the caller's own row. **A
+   reviewer saw exactly one name — their own — and every submission would have rendered with a blank
+   student.** Fixed with `shares_staffed_course()`, SECURITY DEFINER, for the same reason
+   `is_course_member` / `is_course_staff` are: an authorisation check must see rows the caller cannot.
+
+**Verified with `SET LOCAL ROLE authenticated`**, not by inspection: instructor → **2 rows** (self plus
+the TA in the same course); student → **1 row** (self only). Test enrolment flip reverted.
+
+**Lesson worth carrying:** a policy whose predicate reads another RLS-protected table silently
+under-matches. It does not error — it returns too little, which looks like missing data rather than a
+permissions bug. Any new policy that joins `enrollments` should go through a definer helper.
+
+---
+
+`20260811_workbench_sessions.sql` — **applied 2026-08-11 via MCP `apply_migration` (name
+`workbench_sessions`), visibility verified live under `SET LOCAL ROLE authenticated` against three
+real accounts.** The Workbench: sharing Claude Code sessions with lab members (website.md §32).
+
+Creates `claude_sessions`, `claude_session_turns`, `claude_session_shares`, `claude_project_shares`,
+the `can_view_claude_session(uuid)` visibility helper, and `workbench_shareable_members()`.
+
+**The gate that matters is not the role.** `profiles.role = 'lab'` already grants `/admin/*`, so every
+student in the lab holds it — gating the Workbench on lab role would have shown all of Norm's captured
+sessions to all of them while looking like access control. The share tables are the entire access
+story, and both guards (`WorkbenchRoute`, `WorkbenchAdminRoute`) are written on that assumption.
+
+`can_view_claude_session()` is SECURITY DEFINER for the reason `20260806_staff_read_enrolled_people`
+and `20260807_gap_board` both record: it resolves `project_key` by reading `claude_sessions`, which is
+the table being policed, so an invoker-rights version would recurse or silently return nothing.
+
+**Verified 2026-08-11** with a seeded real session (8 turns), impersonating Norm (super admin), Jaafar
+and sandy (both `role='lab'`, neither super admin), counts captured to a scratch table because MCP
+does not surface `RAISE NOTICE`:
+
+| Probe | Result |
+|---|---|
+| Before any share — Jaafar | **0** sessions, **0** turns |
+| Session shared with Jaafar — Jaafar | **1** session, **8** turns |
+| Same moment — sandy (unshared, also `role='lab'`) | **0** sessions, **0** turns |
+| Norm, holding no share row at all | **1** session (super-admin policy) |
+| Standing project rule added for sandy | **1** session, **8** turns — no per-session row needed |
+| sandy reading `claude_session_shares` | **0** rows — a member cannot learn who else holds a session |
+| Jaafar inserting his own share row | **blocked, SQLSTATE 42501** |
+
+Probe table dropped and both test share rows deleted afterwards; the seeded session remains, shared
+with nobody.

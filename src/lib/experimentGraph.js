@@ -5,6 +5,14 @@
 
 export const newId = () => Math.random().toString(36).slice(2, 11)
 
+/**
+ * What an adherence_check does when the participant is below its minimum.
+ * Mirrors AdherenceOnFail in _shared/materializeSchedule.ts, which is where
+ * it is actually acted on — keep the two lists in step.
+ */
+export const ADHERENCE_ON_FAIL = ['withdraw', 'continue']
+export const DEFAULT_ADHERENCE_ON_FAIL = 'withdraw'
+
 // ─── Topology ───────────────────────────────────────────────────────────────
 
 /** Set of node ids that are children inside a block. */
@@ -194,6 +202,10 @@ export function validate(graph) {
         errors.push(`Adherence Check "${n.label || n.id}" needs a positive integer total.`)
       if (Number.isInteger(n.min_required) && Number.isInteger(n.of_total) && n.min_required > n.of_total)
         errors.push(`Adherence Check "${n.label || n.id}" minimum (${n.min_required}) can't exceed its total (${n.of_total}).`)
+      // Undefined is the 'withdraw' default (the behaviour every check had
+      // before the property existed); anything else is an authoring mistake.
+      if (n.on_fail != null && !ADHERENCE_ON_FAIL.includes(n.on_fail))
+        errors.push(`Adherence Check "${n.label || n.id}" has an unknown below-minimum action "${n.on_fail}".`)
     }
   }
 

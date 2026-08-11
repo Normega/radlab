@@ -451,6 +451,7 @@ Deno.serve(async (req) => {
     let advanced = 0
     let withdrawn = 0
     let completedStudies = 0
+    let adherenceShortfalls = 0
 
     if (graphStudies && graphStudies.length > 0) {
       const graphStudyIds = graphStudies.map((s) => s.id)
@@ -508,6 +509,20 @@ Deno.serve(async (req) => {
             }
           }
 
+          // Below the threshold on a check authored `on_fail: 'continue'` —
+          // no side effect by design (the participant keeps the rest of the
+          // study, including the final assessment), but the pass is otherwise
+          // silent about it, and there is no withdrawal_reason to read it off
+          // later. Logged, not persisted: the analysis-time classification
+          // comes from liliana_phase_adherence, which recounts.
+          for (const s of result.adherenceShortfalls ?? []) {
+            adherenceShortfalls++
+            console.log(
+              `adherence shortfall (not enforced) participant ${participantId} study ${studyId} ` +
+              `node ${s.nodeId} ${s.phase}: ${s.completed}/${s.ofTotal}, minimum ${s.minRequired}`,
+            )
+          }
+
           // Whole study finished (final assessment completed) — mark the
           // enrollment. The status filter makes this idempotent across
           // ticks and never touches withdrawn enrollments.
@@ -531,7 +546,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    return json({ processed, suppressed, deferred, failed, missed, reminded, finalNotices, advanced, withdrawn, completed: completedStudies })
+    return json({ processed, suppressed, deferred, failed, missed, reminded, finalNotices, advanced, withdrawn, completed: completedStudies, adherenceShortfalls })
 
   } catch (err) {
     console.error('check_schedule unexpected error:', err)

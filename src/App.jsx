@@ -8,6 +8,8 @@ import AdminRoute        from './components/AdminRoute'
 import TalksRoute        from './components/TalksRoute'
 import ClassAdminRoute   from './academic/lecture-lounge/ClassAdminRoute'
 import LectureLoungeAdminRoute from './academic/lecture-lounge/LectureLoungeAdminRoute'
+import WorkbenchRoute    from './workbench/WorkbenchRoute'
+import WorkbenchAdminRoute from './workbench/WorkbenchAdminRoute'
 import ErrorBoundary     from './components/ErrorBoundary'
 
 // Route-level code-splitting: every page below is its own chunk, fetched on
@@ -20,6 +22,7 @@ import ErrorBoundary     from './components/ErrorBoundary'
 import Landing from './pages/Landing'
 
 const SessionEntry  = lazy(() => import('./pages/SessionEntry'))
+const BrandAssets   = lazy(() => import('./pages/BrandAssets'))
 const StudyJoin     = lazy(() => import('./pages/StudyJoin'))
 const PlatformPage  = lazy(() => import('./pages/PlatformPage'))
 const Login         = lazy(() => import('./pages/Login'))
@@ -33,6 +36,7 @@ const MyRipplePage   = lazy(() => import('./pages/MyRipplePage'))
 const SettingsPage   = lazy(() => import('./pages/SettingsPage'))
 const AvatarEditor   = lazy(() => import('./components/Avatar/AvatarEditor'))
 const Unsubscribe    = lazy(() => import('./pages/Unsubscribe'))
+const Withdraw       = lazy(() => import('./pages/Withdraw'))
 const ConsentPage    = lazy(() => import('./pages/ConsentPage'))
 const Verified       = lazy(() => import('./pages/Verified'))
 
@@ -51,6 +55,7 @@ const FaceRead      = lazy(() => import('./games/FaceRead/FaceRead'))
 const Drift         = lazy(() => import('./games/Drift/Drift'))
 const Delve         = lazy(() => import('./games/Delve/Delve'))
 const Tune          = lazy(() => import('./games/Tune/Tune'))
+const Alongside     = lazy(() => import('./games/Alongside/Alongside'))
 const FarmJoy       = lazy(() => import('./games/FarmJoy/FarmJoy'))
 const BreathBelt    = lazy(() => import('./games/BreathBelt/BreathBelt'))
 const BreathGuardian = lazy(() => import('./games/BreathGuardian/BreathGuardian'))
@@ -69,6 +74,7 @@ const UiKit     = lazy(() => import('./pages/dev/UiKit'))
 const OnboardingPreview = lazy(() => import('./pages/dev/OnboardingPreview'))
 const InsightsPreview   = lazy(() => import('./pages/dev/InsightsPreview'))
 const BodyDiagramPreview = lazy(() => import('./pages/dev/BodyDiagramPreview'))
+const AlongsidePreview  = lazy(() => import('./pages/dev/AlongsidePreview'))
 const Keynote   = lazy(() => import('./pages/keynote/Keynote'))
 const ToniJuly2026 = lazy(() => import('./pages/toni-july-2026/ToniJuly2026'))
 const Talks     = lazy(() => import('./pages/talks/Talks'))
@@ -90,11 +96,22 @@ const AcademicHome         = lazy(() => import('./academic/AcademicHome'))
 const FieldGuideStaffRoute = lazy(() => import('./academic/fieldguide/FieldGuideStaffRoute'))
 const IngestPortal         = lazy(() => import('./academic/fieldguide/IngestPortal'))
 const ReviewQueue          = lazy(() => import('./academic/fieldguide/ReviewQueue'))
+const SubmissionsQueue     = lazy(() => import('./academic/fieldguide/SubmissionsQueue'))
 // The wiki reader takes any active enrollment, not just staff — students read
 // through the same components, and RLS decides what comes back.
 const FieldGuideMemberRoute = lazy(() => import('./academic/fieldguide/FieldGuideMemberRoute'))
 const WikiIndex            = lazy(() => import('./academic/fieldguide/wiki/WikiIndex'))
 const WikiPage             = lazy(() => import('./academic/fieldguide/wiki/WikiPage'))
+const GapBrowser           = lazy(() => import('./academic/fieldguide/GapBrowser'))
+const FieldGuideHome       = lazy(() => import('./academic/fieldguide/FieldGuideHome'))
+const CorrectionsFeed      = lazy(() => import('./academic/fieldguide/CorrectionsFeed'))
+
+// Workbench — shared Claude Code sessions. Its own partition again: own guards
+// (WorkbenchRoute / WorkbenchAdminRoute), own chrome (plain Nav, not AdminLayout),
+// own ErrorBoundary. Deliberately not under /admin, because the audience is lab
+// members reading Norm's work, not researchers administering studies.
+const WorkbenchPage      = lazy(() => import('./workbench/WorkbenchPage'))
+const WorkbenchAdminPage = lazy(() => import('./workbench/WorkbenchAdminPage'))
 
 // Research admin section — separate partition from Lecture Lounge.
 const AdminLayout   = lazy(() => import('./layouts/AdminLayout'))
@@ -438,6 +455,12 @@ export default function App() {
             </ProtectedRoute>
           } />
 
+          <Route path="/games/alongside" element={
+            <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome} needsRippleName={needsRippleName}>
+              <Alongside session={session} />
+            </ProtectedRoute>
+          } />
+
           <Route path="/games/farm-joy" element={
             <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome} needsRippleName={needsRippleName}>
               <FarmJoy session={session} />
@@ -491,6 +514,9 @@ export default function App() {
           {/* Standalone participant link — no nav or auth guard */}
           <Route path="/s/:token" element={<SessionEntry />} />
 
+          {/* Brand/press-kit page — logos, crests, palette, fonts. Not linked in nav, direct URL only. */}
+          <Route path="/brand" element={<BrandAssets />} />
+
           {/* Dev-only test harness — component guards with import.meta.env.DEV */}
           <Route path="/dev/video-test" element={<VideoTest />} />
           <Route path="/dev/audio-test" element={<AudioTest />} />
@@ -501,6 +527,7 @@ export default function App() {
           {/* Dashboard Insights widget with synthetic data (?state=rich|sparse|empty) */}
           <Route path="/dev/insights-preview" element={<InsightsPreview />} />
           <Route path="/dev/body-diagram-preview" element={<BodyDiagramPreview />} />
+          <Route path="/dev/alongside-preview" element={<AlongsidePreview />} />
           {/* Breath-signal instrumentation for biofeedback game dev; ?sim=1 for beltless */}
           <Route path="/dev/breath-lab" element={<BreathLab />} />
 
@@ -536,6 +563,24 @@ export default function App() {
             Student-facing /class/:slug URLs deliberately stay short — they
             are typed from projector QR codes and baked into sent emails.
           */}
+          {/* Workbench — Claude Code sessions Norm shares with lab members.
+              Partitioned like Lecture Lounge: own guards, own chrome, own
+              boundary. /workbench/admin is super-admin-only and sits *inside*
+              the member guard's sibling, not nested under it, so the two
+              guards stay independently readable.
+              Route order matters only nominally — React Router ranks the
+              static "admin" segment above the :sessionId param. */}
+          <Route element={<ErrorBoundary label="Workbench"><Outlet /></ErrorBoundary>}>
+            <Route element={<WorkbenchAdminRoute session={session} superAdmin={superAdmin} />}>
+              <Route path="/workbench/admin" element={<WorkbenchAdminPage session={session} />} />
+              <Route path="/workbench/admin/:sessionId" element={<WorkbenchAdminPage session={session} />} />
+            </Route>
+            <Route element={<WorkbenchRoute session={session} />}>
+              <Route path="/workbench" element={<WorkbenchPage session={session} />} />
+              <Route path="/workbench/:sessionId" element={<WorkbenchPage session={session} />} />
+            </Route>
+          </Route>
+
           <Route element={<ErrorBoundary label="Academic"><Outlet /></ErrorBoundary>}>
             <Route path="/class/verify" element={<ClassVerifyEmail />} />
             <Route path="/class/:slug" element={
@@ -560,16 +605,33 @@ export default function App() {
             <Route element={<FieldGuideStaffRoute />}>
               <Route path="/academic/fieldguide/ingest" element={<IngestPortal />} />
               <Route path="/academic/fieldguide/review" element={<ReviewQueue />} />
+              {/* Student contributions. Deliberately its own route and chunk:
+                  /review is the staff authoring path, this is the student one,
+                  and TAs who live here should never need the ingest portal. */}
+              <Route path="/academic/fieldguide/submissions" element={<SubmissionsQueue />} />
+              {/* The audit trail auto-apply corrections are traded against. */}
+              <Route path="/academic/fieldguide/corrections" element={<CorrectionsFeed />} />
             </Route>
             {/* The wiki itself — same login, member-level gate. */}
             <Route element={<FieldGuideMemberRoute />}>
+              {/* The front door. One url to give a TA or a student: staff see
+                  the queues with live counts, members see the two student
+                  surfaces — RLS decides which counts even return. */}
+              <Route path="/academic/fieldguide" element={<FieldGuideHome />} />
               <Route path="/academic/fieldguide/wiki" element={<WikiIndex />} />
               <Route path="/academic/fieldguide/wiki/:slug" element={<WikiPage />} />
+              {/* The gap browser: students plan their research assignment here.
+                  Member-level on purpose — the board is part of reading the
+                  guide, not part of submitting to it. */}
+              <Route path="/academic/fieldguide/gaps" element={<GapBrowser />} />
             </Route>
           </Route>
 
           {/* Unsubscribe — no auth or layout */}
           <Route path="/unsubscribe/:token" element={<Unsubscribe />} />
+
+          {/* Formal study withdrawal (from lapsed session emails) — no auth or layout */}
+          <Route path="/withdraw/:token" element={<Withdraw />} />
 
           {/* Admin section — role-gated */}
           <Route element={<AdminRoute session={session} role={role} superAdmin={superAdmin} />}>

@@ -68,21 +68,300 @@ function resize(){
   ctx.setTransform(DPR,0,0,DPR,0,0);
 }
 
+// --- site art ----------------------------------------------------------------
+// Lifted from mushrooms.svg / pond.svg / flowers.svg / glowtree.svg /
+// clearing.svg. Those files are spec sheets — labelled demo states on a
+// backing rect — so only the <defs> geometry is taken and the presentation
+// chrome dropped. Radial gradients are built once at the local origin and
+// reused for every instance, since the context is translated to each sprite
+// before filling; rebuilding them per instance per frame is the easy way to
+// make a scene like this crawl.
+const GRAD={};
+function grad(key,r,stops){
+  if(GRAD[key])return GRAD[key];
+  const g=ctx.createRadialGradient(0,0,0,0,0,r);
+  for(const s of stops) g.addColorStop(s[0],s[1]);
+  return GRAD[key]=g;
+}
+function pth(d){return new Path2D(d);}
+// bark reads as brown rounded wood; foliage as its own deeper green, lit from
+// the upper left so each leaf-mass has a lit crown and a shaded underside
+// instead of the whole tree being one flat silhouette
+function barkGrad(){
+  if(GRAD.bark)return GRAD.bark;
+  const g=ctx.createLinearGradient(-12,0,12,0);
+  g.addColorStop(0,'rgb(64,46,33)');
+  g.addColorStop(0.45,'rgb(46,33,24)');
+  g.addColorStop(1,'rgb(28,20,15)');
+  return GRAD.bark=g;
+}
+const LEAF_TINTS=[
+  ['rgb(58,96,64)','rgb(38,68,48)','rgb(22,42,31)'],
+  ['rgb(50,88,60)','rgb(32,60,44)','rgb(19,37,28)'],
+  ['rgb(64,100,68)','rgb(43,74,51)','rgb(25,46,34)'],
+];
+function leafGrad(r,tint){
+  const k='leaf'+r+'_'+(tint||0);
+  if(GRAD[k])return GRAD[k];
+  const c=LEAF_TINTS[tint||0];
+  const g=ctx.createRadialGradient(-r*0.32,-r*0.36,r*0.06,0,0,r);
+  g.addColorStop(0,c[0]);
+  g.addColorStop(0.55,c[1]);
+  g.addColorStop(1,c[2]);
+  return GRAD[k]=g;
+}
+// one tree, drawn anywhere: the tour's glowtree and the ordinary trees
+// scattered through the meadow are the same plant, lit differently
+function drawTree(X,Y,s,flip,tint,lit,worms,wormBase,t,seed){
+  ctx.save();
+  ctx.translate(X,Y);
+  ctx.scale(s*flip,s);
+  ctx.fillStyle=barkGrad();
+  ctx.fill(TREE.trunk);
+  ctx.strokeStyle='rgba(22,15,11,0.5)';ctx.lineWidth=1.2/s;
+  for(const b of TREE.bark) ctx.stroke(b);
+  for(const c of TREE.canopy){
+    ctx.save();ctx.translate(c[0],c[1]);
+    ctx.fillStyle=leafGrad(c[2],tint);
+    ctx.beginPath();ctx.arc(0,0,c[2],0,7);ctx.fill();
+    ctx.restore();
+  }
+  if(lit>0.02){                                // the canopy holds the light
+    ctx.save();ctx.translate(0,-135);
+    ctx.globalAlpha=lit;
+    ctx.fillStyle=grad('canopy',65,[[0,'rgba(180,240,150,0.22)'],[1,'rgba(180,240,150,0)']]);
+    ctx.beginPath();ctx.arc(0,0,65,0,7);ctx.fill();
+    ctx.restore();
+  }
+  for(let i=0;i<worms.length;i++){
+    const w=worms[i];
+    const a=Math.max(wormBase,lit)*(0.4+0.6*Math.max(0,Math.sin(t*0.8+i*1.7+seed)));
+    if(a<=0.02) continue;
+    ctx.save();ctx.translate(w[0],w[1]);
+    ctx.globalAlpha=a;
+    ctx.fillStyle=grad('worm',7,[[0,'rgba(180,240,150,1)'],[0.5,'rgba(180,240,150,0.45)'],[1,'rgba(180,240,150,0)']]);
+    ctx.beginPath();ctx.arc(0,0,7,0,7);ctx.fill();
+    ctx.fillStyle='rgba(240,255,210,1)';
+    ctx.beginPath();ctx.arc(0,0,1.6,0,7);ctx.fill();
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+// mushrooms.svg — three caps, stem base at (12,19), glow centred near the cap
+const SHROOM=[
+  {gx:12,gy:14,cap:pth('M 8.8,14 A 3.2,3.2 0 0,1 15.2,14 Z'),capF:'120,210,150',
+   stem:[11.2,14,1.6,5],stemF:'80,140,105'},
+  {gx:12,gy:13,cap:pth('M 8.2,14 L 12,10 L 15.8,14 L 14.5,14.5 L 12,12.5 L 9.5,14.5 Z'),capF:'90,235,180',
+   stem:[11.2,13.5,1.6,5.5],stemF:'75,125,110'},
+  {gx:11,gy:14,cap:pth('M 8,13 A 3.2,3.2 0 0,1 14.4,13 Z'),capF:'150,220,110',capRot:-15,capPivot:[11.2,13],
+   stemPath:pth('M 11.5,19 Q 10,15 11.2,13'),stemF:'90,150,120'},
+];
+function drawShroom(v,lit,pulse){
+  const s=SHROOM[v];
+  if(lit>0.02){
+    ctx.save();ctx.translate(s.gx,s.gy);
+    ctx.globalAlpha=lit*pulse;
+    ctx.fillStyle=grad('foxfire',26,[[0,'rgba(120,235,190,0.85)'],[0.45,'rgba(120,235,190,0.35)'],[1,'rgba(120,235,190,0)']]);
+    ctx.beginPath();ctx.arc(0,0,26,0,7);ctx.fill();
+    ctx.restore();
+  }
+  const b=0.45+0.55*lit;                       // unlit caps are present, not absent
+  if(s.stemPath){
+    ctx.strokeStyle=`rgba(${s.stemF},${0.9*b})`;ctx.lineWidth=1.6;ctx.lineCap='round';
+    ctx.stroke(s.stemPath);
+  } else {
+    ctx.fillStyle=`rgba(${s.stemF},${0.95*b})`;
+    ctx.fillRect(s.stem[0],s.stem[1],s.stem[2],s.stem[3]);
+  }
+  ctx.save();
+  if(s.capRot){ctx.translate(s.capPivot[0],s.capPivot[1]);ctx.rotate(s.capRot*Math.PI/180);
+    ctx.translate(-s.capPivot[0],-s.capPivot[1]);}
+  ctx.fillStyle=`rgba(${s.capF},${0.95*b})`;
+  ctx.fill(s.cap);
+  ctx.restore();
+}
+
+// pond.svg — organic basin, soft rim, moon-glint, scalable ripple ring
+const POND={
+  basin:pth('M -160,0 C -160,-65 -90,-92 0,-92 C 100,-92 160,-60 160,0 C 160,65 80,92 0,92 C -100,92 -160,65 -160,0 Z'),
+};
+
+// glowtree.svg — silhouette, canopy backlight, 14 glowworm positions
+const TREE={
+  trunk:pth('M -12,0 C -8,-30 -3.5,-60 -3.5,-120 L -3.5,-120 C -25,-125 -40,-150 -52,-118 C -40,-110 -20,-105 -2,-100 C 0,-115 15,-130 48,-108 C 30,-100 15,-95 3.5,-80 C 3.5,-40 8,-20 12,0 Z'),
+  canopy:[[0,-140,45],[-40,-125,35],[40,-120,35],[-25,-160,30],[25,-160,30],[0,-175,25]],
+  // the four lowest authored worms sat on or past the foliage edge — two of
+  // them hung in open air below the tree — so they are drawn up into the
+  // leaves. Glowworms live in the canopy, not under it.
+  worms:[[-35,-150],[-15,-170],[20,-165],[42,-135],[-45,-120],[-10,-135],[15,-140],
+         [35,-110],[-25,-105],[0,-110],[-46,-108],[26,-106],[-16,-112],[44,-104]],
+  bark:[pth('M -6,-12 C -5,-42 -4,-72 -4,-98'),pth('M 5,-8 C 4,-34 2,-58 2,-76')],
+};
+
+// flowers.svg — a true 6-frame opening sequence, authored 48x48 with the stem
+// base at (24,42). Discrete frames, because that is what a keyframe sequence
+// is: the bloom unfurls in steps, the way stop-motion does.
+function pet(cx,cy,rx,ry,deg){const p=new Path2D();p.ellipse(cx,cy,rx,ry,(deg||0)*Math.PI/180,0,7);return p;}
+const FRAMES=[
+  {stem:28,shapes:[{p:pth('M 24,16 C 18,20 18,30 24,30 C 30,30 30,20 24,16 Z'),f:'200,160,195',a:0.9}]},
+  {stem:28,shapes:[{p:pth('M 24,18 C 16,21 17,29 24,29 C 31,29 32,21 24,18 Z'),f:'200,160,195',a:0.9},
+                   {p:pth('M 21,17 C 22,22 26,22 27,17'),s:'230,190,215',w:1}]},
+  {stem:26,shapes:[{p:pet(24,18,2.5,5),f:'215,170,205',a:0.9},
+                   {p:pet(19.5,22,2.2,4.5,-35),f:'215,170,205',a:0.9},
+                   {p:pet(28.5,22,2.2,4.5,35),f:'215,170,205',a:0.9}]},
+  {stem:25,core:2,shapes:[{p:pet(24,17,3,6),f:'225,175,210',a:0.9},
+                   {p:pet(30,21,3,5.5,60),f:'225,175,210',a:0.9},
+                   {p:pet(18,21,3,5.5,-60),f:'225,175,210',a:0.9},
+                   {p:pet(28,28,2.8,5,130),f:'225,175,210',a:0.9},
+                   {p:pet(20,28,2.8,5,-130),f:'225,175,210',a:0.9}]},
+  {stem:24,core:2.8,shapes:[{p:pet(24,15.5,3.5,6.5),f:'230,180,215',a:0.9},
+                   {p:pet(32,21.5,3.5,6.5,72),f:'230,180,215',a:0.9},
+                   {p:pet(29,30.5,3.5,6.5,144),f:'230,180,215',a:0.9},
+                   {p:pet(19,30.5,3.5,6.5,216),f:'230,180,215',a:0.9},
+                   {p:pet(16,21.5,3.5,6.5,288),f:'230,180,215',a:0.9}]},
+  {stem:24,core:3.5,shapes:[{p:pet(24,14,4,7),f:'235,185,220',a:0.95},
+                   {p:pet(33.5,20.9,4,7,72),f:'235,185,220',a:0.95},
+                   {p:pet(29.8,32,4,7,144),f:'235,185,220',a:0.95},
+                   {p:pet(18.2,32,4,7,216),f:'235,185,220',a:0.95},
+                   {p:pet(14.5,20.9,4,7,288),f:'235,185,220',a:0.95}]},
+];
+function drawBloom(open){
+  const F=FRAMES[Math.max(0,Math.min(5,Math.round(open*5)))];
+  ctx.strokeStyle='rgba(90,135,100,0.9)';ctx.lineWidth=1.5;ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(24,42);ctx.lineTo(24,F.stem);ctx.stroke();
+  for(const s of F.shapes){
+    if(s.s){ctx.strokeStyle=`rgba(${s.s},1)`;ctx.lineWidth=s.w;ctx.stroke(s.p);}
+    else{ctx.fillStyle=`rgba(${s.f},${s.a})`;ctx.fill(s.p);}
+  }
+  if(F.core){ctx.fillStyle='rgba(240,215,140,0.95)';
+    ctx.beginPath();ctx.arc(24,24,F.core,0,7);ctx.fill();}
+}
+
+// clearing.svg — the one place in the meadow that had no art at all, and the
+// place the whole ending happens. Fairy ring, bare earth, a soft landing spot.
+const CLEAR={
+  turf:pth('M -220,-30 C -200,-150 200,-150 220,-20 C 230,120 -200,160 -220,-30 Z'),
+  soilEdge:pth('M -150,-10 C -140,-80 -60,-105 0,-105 C 80,-105 150,-70 150,0 C 150,75 70,105 0,105 C -80,105 -150,70 -150,-10 Z'),
+  soilPad:pth('M -135,-5 C -125,-68 -50,-90 0,-90 C 70,-90 135,-60 135,0 C 135,65 60,90 0,90 C -70,90 -135,60 -135,-5 Z'),
+  pebbles:[[-60,-30,3,2],[70,20,4,2.5],[-40,45,2.5,1.8],[50,-40,3.5,2],[10,-60,2,1.5]],
+  ring:[[0,-80,0],[-45,-74,1],[45,-74,0],[-85,-55,0],[85,-55,1],[-115,-20,1],[115,-20,0],
+        [-120,20,0],[120,20,1],[-90,55,1],[90,55,0],[-50,75,0],[50,75,1],[0,82,0]],
+  tufts:[[-180,-80,1.2],[160,-90,1.1],[-150,90,1.3],[170,70,1],[0,-135,1.2],[-50,125,1.1]],
+  tuft:[pth('M 0,0 C -2,-5 -4,-8 -7,-9'),pth('M 0,0 C 0,-6 0,-10 1,-12'),pth('M 0,0 C 2,-5 5,-8 8,-9')],
+  spores:[[-20,-15,1.2],[25,-20,1.5],[15,18,1],[-30,22,1.4],[5,-35,0.8]],
+  shroomStem:pth('M -1,2 L -1,7 A 1,1 0 0 0 1,7 L 1,2 Z'),
+  shroomCap:pth('M -4.5,2 A 4.5,4.5 0 0,1 4.5,2 Z'),
+};
+
 // --- world dressing ---------------------------------------------------------
 function hash1(n){const s=Math.sin(n*127.1)*43758.5453;return s-Math.floor(s);}
-let tufts=[],stones=[],flowersWild=[];
+
+// Grass tufts, authored as SVG (grasspack.svg, 80x64, bottom-centre anchored
+// at 40,64) and inlined as path data so the prototype stays one self-contained
+// file with no fetches. Each blade is a separate path, which is what lets them
+// sway independently — a rigidly rotating tuft loses the ripple entirely.
+const GRASS_SRC=[
+  ['M 38 64 C 36 40, 24 20, 32 8 C 36 2, 42 10, 39 18 C 36 26, 42 42, 42 64 Z',
+   'M 37 64 C 28 46, 12 34, 8 26 C 16 28, 30 42, 38 64 Z',
+   'M 40 64 C 46 48, 58 36, 66 30 C 58 40, 48 52, 42 64 Z'],
+  ['M 37 64 C 34 38, 22 18, 28 10 C 33 5, 38 18, 41 64 Z',
+   'M 39 64 C 44 44, 56 28, 62 22 C 54 34, 45 48, 41 64 Z'],
+  ['M 38 64 C 36 40, 30 18, 38 6 C 42 18, 41 40, 42 64 Z',
+   'M 36 64 C 26 44, 10 32, 6 22 C 16 26, 28 42, 37 64 Z',
+   'M 40 64 C 46 48, 58 34, 68 28 C 58 38, 46 52, 42 64 Z',
+   'M 39 64 C 42 52, 50 42, 56 38 C 48 46, 43 54, 41 64 Z'],
+  ['M 38 64 C 36 36, 26 14, 34 4 C 38 14, 41 38, 42 64 Z',
+   'M 36 64 C 28 46, 14 36, 10 28 C 18 32, 30 46, 37 64 Z',
+   'M 37 64 C 32 50, 22 40, 18 34 C 24 40, 34 50, 38 64 Z',
+   'M 40 64 C 46 48, 60 36, 70 30 C 60 40, 48 52, 42 64 Z',
+   'M 40 64 C 44 52, 52 42, 58 38 C 50 46, 44 54, 41 64 Z'],
+];
+const GRASS=GRASS_SRC.map(v=>v.map(d=>new Path2D(d)));
+
+// Palette. Night is carried by VALUE (everything stays dark) rather than by
+// draining the colour out — so the meadow keeps real green and reads as a
+// living place after dark. Moonlight stays blue; the contrast between cool
+// light and green growth is what makes it feel nocturnal rather than grey.
+// Light sources are still the only genuinely saturated things on screen.
+const PAL={
+  groundTop:'#091620', groundBot:'#0d211d',
+  grass:'58,92,74',                 // moonlit green, was 52,66,72 blue-grey
+  moon:'74,96,124',
+  bloomTint:'128,168,170',
+};
+
+// Stones (stones.svg, 96x64, centre-anchored at 48,32, pre-squashed). Three
+// tones each — shadow body, lit top, moonlight accent — so they have form
+// instead of reading as flat holes.
+function ell(cx,cy,rx,ry,rot){const p=new Path2D();p.ellipse(cx,cy,rx,ry,rot||0,0,7);return p;}
+const STONE=[
+  [{p:ell(48,32,36,21),f:'34,40,48',a:1},
+   {p:ell(46,30,30,17),f:'48,56,68',a:1},
+   {p:new Path2D('M 22 28 C 26 18, 50 14, 68 20 C 52 16, 32 20, 22 28 Z'),f:'70,84,120',a:0.4}],
+  [{p:ell(42,34,28,16),f:'34,40,48',a:1},
+   {p:ell(40,32,23,13),f:'45,54,66',a:1},
+   {p:ell(64,28,16,10),f:'34,40,48',a:1},
+   {p:ell(63,27,13,8),f:'52,62,76',a:1}],
+  [{p:new Path2D('M 16 32 C 16 18, 80 18, 80 32 C 80 46, 16 46, 16 32 Z'),f:'34,40,48',a:1},
+   {p:new Path2D('M 20 31 C 20 20, 76 20, 76 31 C 76 41, 20 41, 20 31 Z'),f:'48,56,68',a:1},
+   {p:ell(36,25,12,4),f:'70,84,120',a:0.3}],
+  [{p:new Path2D('M 24 32 C 20 20, 72 16, 76 32 C 80 48, 30 46, 24 32 Z'),f:'34,40,48',a:1},
+   {p:new Path2D('M 27 31 C 24 22, 68 19, 72 31 C 75 43, 32 42, 27 31 Z'),f:'46,55,67',a:1}],
+];
+
+// Wild flower (wildflower.svg, 32x32, bottom-centre anchored at 16,32).
+// Closed all game; opens only in the finale. Its core is the traveller's own
+// gold — the meadow answers in the player's colour.
+const FLOWER={
+  stalk:new Path2D('M 16 32 C 15 24, 17 18, 16 14'),
+  budOuter:ell(16,13,3,3), budInner:ell(16,13,1.8,1.8),
+  petals:[ell(16,8,2.5,4), ell(21,12,2.5,4,72*Math.PI/180), ell(19,18,2.5,4,144*Math.PI/180),
+          ell(13,18,2.5,4,216*Math.PI/180), ell(11,12,2.5,4,288*Math.PI/180)],
+  core:ell(16,13,2.2,2.2),
+};
+
+let tufts=[],stones=[],flowersWild=[],trees=[];
 (function dress(){
   for(let i=0;i<420;i++){
-    tufts.push({x:hash1(i*3+1)*WORLD.w,y:hash1(i*3+2)*WORLD.h,n:2+Math.floor(hash1(i)*4),
-      ph:hash1(i*7)*7,h:8+hash1(i*5)*16});
+    tufts.push({x:hash1(i*3+1)*WORLD.w,y:hash1(i*3+2)*WORLD.h,
+      v:Math.floor(hash1(i*13+3)*GRASS.length),      // which tuft shape
+      s:0.26+hash1(i*5)*0.30,                        // 17-36 px tall
+      flip:hash1(i*19+7)<0.5?-1:1,                   // mirrored, so 4 shapes read as 8
+      ph:hash1(i*7)*7});
   }
   for(let i=0;i<26;i++){
-    stones.push({x:hash1(i*11+5)*WORLD.w,y:hash1(i*11+6)*WORLD.h,r:6+hash1(i*13)*16,tone:hash1(i*17)});
+    stones.push({x:hash1(i*11+5)*WORLD.w,y:hash1(i*11+6)*WORLD.h,r:6+hash1(i*13)*16,
+      v:Math.floor(hash1(i*23+11)*STONE.length), flip:hash1(i*29+3)<0.5?-1:1,
+      tone:hash1(i*17)});
   }
   for(let i=0;i<70;i++){
-    flowersWild.push({x:hash1(i*23+9)*WORLD.w,y:hash1(i*23+10)*WORLD.h,ph:hash1(i*29)*7});
+    flowersWild.push({x:hash1(i*23+9)*WORLD.w,y:hash1(i*23+10)*WORLD.h,
+      s:0.38+hash1(i*31+13)*0.22, flip:hash1(i*37+5)<0.5?-1:1, ph:hash1(i*29)*7});
   }
 })();
+
+// ordinary trees through the meadow — most of the world is not a destination,
+// and a place with only four landmarks reads as a stage set. They keep clear
+// of the tour sites and the clearing so nothing important ends up hidden
+// behind a trunk. (Planted after `sites`/`clearing` exist, further down.)
+function plantTrees(){
+  for(let i=0;i<60&&trees.length<18;i++){
+    const x=140+hash1(i*41+17)*(WORLD.w-280);
+    const y=200+hash1(i*43+19)*(WORLD.h-300);
+    let clear=Math.hypot(x-clearing.x,y-clearing.y)>340;
+    for(const s of sites) if(Math.hypot(x-s.x,y-s.y)<300) clear=false;
+    for(const o of trees) if(Math.hypot(x-o.x,y-o.y)<210) clear=false;
+    if(!clear) continue;
+    trees.push({x,y,
+      s:0.46+hash1(i*47+7)*0.44, flip:hash1(i*53+3)<0.5?-1:1,
+      tint:Math.floor(hash1(i*59+11)*LEAF_TINTS.length),
+      seed:hash1(i*61+5)*7,
+      // one or two dormant glowworms apiece, the way the spec sheet's dark
+      // state has them — the tour tree is the one that truly lights
+      worms:hash1(i*67+13)<0.45?[[-10,-135]]:[[-10,-135],[15,-140]]});
+  }
+}
 
 // savoring sites — on the wisp's tour route; each also stirs on its own
 const sites=[
@@ -95,6 +374,7 @@ const sites=[
     worms:Array.from({length:14},(_,i)=>({dx:(hash1(i*59)-0.5)*120,dy:-20-hash1(i*61)*130,ph:hash1(i*67)*7}))},
 ];
 const clearing={x:WORLD.w*0.47,y:WORLD.h*0.52,r:160};
+plantTrees();
 
 // --- actors -----------------------------------------------------------------
 const player={x:WORLD.w*0.45,y:WORLD.h*0.55,vx:0,vy:0,spd:0,accel:0,trail:[]};
@@ -107,6 +387,7 @@ const wisp={
   particles:Array.from({length:14},(_,i)=>({a:i/14*Math.PI*2,r:8+hash1(i*71)*10,ph:hash1(i*73)*7})),
 };
 let bond=0, settleTimer=0, meadowBloom=0, endFireflies=[], inBandFor=0;
+let cloakGlow=0;   // the cloak stirs when it wakes a place on its own
 let fireflies=[];
 const cam={x:player.x,y:player.y};
 let pointer={x:0,y:0,down:false};
@@ -271,13 +552,20 @@ function bondUpdate(t,dt){
 
 // --- sites ------------------------------------------------------------------
 function sitesUpdate(t,dt){
+  cloakGlow=Math.max(0,cloakGlow-dt*0.5);
   for(const s of sites){
     const dw=Math.hypot(wisp.x-s.x,wisp.y-s.y);
     const dp=Math.hypot(player.x-s.x,player.y-s.y);
-    const both=dw<s.r&&dp<s.r*1.5&&wisp.mist<=0;
+    // While the wisp is here, a place only wakes for the two of you together.
+    // Afterwards — wearing the cloak of fireflies it left behind — you can
+    // wake them alone. Nothing says so; you find it out by wandering back.
+    const alone=wisp.state==='gone';
+    const both=alone? dp<s.r*1.2
+                    : (dw<s.r&&dp<s.r*1.5&&wisp.mist<=0);
     // full light when visited together; a low self-stirring otherwise
     const target=both? 1: 0;
-    s.lit+= (target-s.lit)*dt*(both?0.5:0.08);
+    s.lit+= (target-s.lit)*dt*(both?(alone?0.4:0.5):0.08);
+    if(both&&alone) cloakGlow=Math.min(1,cloakGlow+dt*0.8);
     // it also happens without you, quietly
     if(t>s.selfNext){
       s.selfNext=t+40+Math.random()*40;
@@ -493,48 +781,73 @@ function inView(x,y,m){return x>cam.x-W/2-m&&x<cam.x+W/2+m&&y>cam.y-H/2-m&&y<cam
 function render(t){
   // ground
   const g=ctx.createLinearGradient(0,0,0,H);
-  g.addColorStop(0,'#0a0e1c');
-  g.addColorStop(1,'#0d1220');
+  g.addColorStop(0,PAL.groundTop);
+  g.addColorStop(1,PAL.groundBot);
   ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
   // moonlight patches
   const mg=ctx.createRadialGradient(sx(WORLD.w*0.5),sy(WORLD.h*0.4),60,sx(WORLD.w*0.5),sy(WORLD.h*0.4),900);
-  mg.addColorStop(0,'rgba(70,84,120,0.16)');
-  mg.addColorStop(1,'rgba(70,84,120,0)');
+  mg.addColorStop(0,`rgba(${PAL.moon},0.17)`);
+  mg.addColorStop(1,`rgba(${PAL.moon},0)`);
   ctx.fillStyle=mg;ctx.fillRect(0,0,W,H);
 
   // meadow bloom lightens everything, gently
   if(meadowBloom>0){
-    ctx.fillStyle=`rgba(120,140,190,${meadowBloom*0.10})`;
+    ctx.fillStyle=`rgba(${PAL.bloomTint},${meadowBloom*0.10})`;
     ctx.fillRect(0,0,W,H);
   }
 
-  // stones
+  drawClearing(t);   // terrain: under everything that grows on it
+
+  // stones — three tones apiece, so they sit in the grass instead of on it
   for(const s of stones){
     if(!inView(s.x,s.y,60))continue;
-    ctx.fillStyle=`rgba(${34+s.tone*14|0},${40+s.tone*12|0},${58+s.tone*10|0},0.9)`;
-    ctx.beginPath();ctx.ellipse(sx(s.x),sy(s.y),s.r,s.r*0.62,0,0,7);ctx.fill();
+    const sc=s.r/36;
+    ctx.save();
+    ctx.translate(sx(s.x),sy(s.y));
+    ctx.scale(sc*s.flip,sc);
+    ctx.translate(-48,-32);
+    for(const part of STONE[s.v]){
+      ctx.fillStyle=`rgba(${part.f},${part.a*0.94})`;
+      ctx.fill(part.p);
+    }
+    ctx.restore();
   }
-  // wild flowers (closed at night, half-glow in bloom)
+  // wild flowers — a closed bud all game; only the finale opens them, and
+  // they open into the traveller's own gold
   for(const f of flowersWild){
     if(!inView(f.x,f.y,40))continue;
-    const open=meadowBloom;
-    ctx.fillStyle=`rgba(${150+open*70|0},${140+open*60|0},${190+open*40|0},${0.25+open*0.5})`;
-    ctx.beginPath();ctx.arc(sx(f.x),sy(f.y),1.5+open*2.2,0,7);ctx.fill();
+    if(Math.hypot(f.x-clearing.x,f.y-clearing.y)<150)continue;
+    drawFlower(sx(f.x),sy(f.y),f.s,f.flip,meadowBloom,t,f.ph);
   }
-  // grass tufts, swaying; those near the player ripple
+  // grass tufts, swaying; those near the player ripple. Each blade carries its
+  // own phase, so a tuft bends like grass rather than turning like a signpost.
+  ctx.fillStyle=`rgba(${PAL.grass},${0.78+meadowBloom*0.12})`;
   for(const tf of tufts){
     if(!inView(tf.x,tf.y,60))continue;
+    // a clearing is only a clearing if nothing is growing in it
+    if(Math.hypot(tf.x-clearing.x,tf.y-clearing.y)<150)continue;
     const dP=Math.hypot(player.x-tf.x,player.y-tf.y);
-    const ripple=dP<70? (1-dP/70)*Math.min(1,player.spd/60)*6:0;
-    const swy=Math.sin(t*1.1+tf.ph)*2+ripple*Math.sin(t*7+tf.ph);
-    ctx.strokeStyle=`rgba(52,66,72,${0.75+meadowBloom*0.1})`;
-    ctx.lineWidth=1.1;
-    for(let i=0;i<tf.n;i++){
-      const bx=sx(tf.x)+i*3-tf.n*1.5, by=sy(tf.y);
-      ctx.beginPath();ctx.moveTo(bx,by);
-      ctx.quadraticCurveTo(bx+swy*0.5,by-tf.h*0.6,bx+swy,by-tf.h);
-      ctx.stroke();
+    const ripple=dP<70? (1-dP/70)*Math.min(1,player.spd/60):0;
+    const wind=Math.sin(t*1.1+tf.ph)*0.055;
+    const X=sx(tf.x), Y=sy(tf.y);
+    const blades=GRASS[tf.v];
+    for(let b=0;b<blades.length;b++){
+      const lag=0.72+0.28*Math.sin(b*2.3+tf.ph);        // outer blades trail
+      const ang=(wind+ripple*0.22*Math.sin(t*7+tf.ph+b))*lag;
+      ctx.save();
+      ctx.translate(X,Y);
+      ctx.rotate(ang);
+      ctx.scale(tf.s*tf.flip,tf.s);
+      ctx.translate(-40,-64);
+      ctx.fill(blades[b]);
+      ctx.restore();
     }
+  }
+
+  // the meadow's own trees, behind the tour's set pieces
+  for(const tr of trees){
+    if(!inView(tr.x,tr.y,260))continue;
+    drawTree(sx(tr.x),sy(tr.y),tr.s,tr.flip,tr.tint,0,tr.worms,0.22,t,tr.seed);
   }
 
   drawSites(t);
@@ -558,13 +871,15 @@ function render(t){
       ctx.beginPath();ctx.arc(sx(px),sy(py),2.1,0,7);ctx.fill();
     }
   }
-  // ending fireflies orbit the player
+  // ending fireflies orbit the player, and lean outward when the cloak is
+  // waking a place — the light you were given doing the work
   for(const f of endFireflies){
     const cx0=f.cx+(player.x-f.cx)*f.mig, cy0=f.cy+(player.y-f.cy)*f.mig;
-    const px=cx0+Math.cos(t*0.5+f.a)*f.r, py=cy0+Math.sin(t*0.5+f.a)*f.r*0.7;
+    const rr=f.r*(1+cloakGlow*0.35);
+    const px=cx0+Math.cos(t*0.5+f.a)*rr, py=cy0+Math.sin(t*0.5+f.a)*rr*0.7;
     const blink=0.4+0.6*Math.max(0,Math.sin(t*1.3+f.ph));
-    ctx.fillStyle=`rgba(215,255,170,${0.6*blink})`;
-    ctx.beginPath();ctx.arc(sx(px),sy(py),1.8,0,7);ctx.fill();
+    ctx.fillStyle=`rgba(215,255,170,${(0.6+cloakGlow*0.3)*blink})`;
+    ctx.beginPath();ctx.arc(sx(px),sy(py),1.8+cloakGlow*0.7,0,7);ctx.fill();
   }
 
   drawWisp(t);
@@ -572,66 +887,152 @@ function render(t){
   vignette();
 }
 
+// The clearing: bare earth inside a fairy ring, at the heart of the meadow.
+// The spec sheet's white centre dot is a settling target — that is UI, and the
+// game has none, so it is dropped; the soft landing glow says the same thing
+// diegetically. Nothing here is a prompt: the ring simply grows here.
+function drawClearing(t){
+  if(!inView(clearing.x,clearing.y,420))return;
+  const X=sx(clearing.x),Y=sy(clearing.y);
+  ctx.save();
+  ctx.translate(X,Y);
+  ctx.scale(0.85,0.85);
+  // turf shelf the clearing sits in
+  ctx.fillStyle='#15241b';
+  ctx.beginPath();ctx.ellipse(0,0,230,170,0,0,7);ctx.fill();
+  ctx.fillStyle='#1a2d22';
+  ctx.fill(CLEAR.turf);
+  ctx.strokeStyle='rgba(45,80,55,0.9)';ctx.lineWidth=1.2;ctx.lineCap='round';
+  for(const g of CLEAR.tufts){
+    ctx.save();ctx.translate(g[0],g[1]);ctx.scale(g[2],g[2]);
+    for(const p of CLEAR.tuft) ctx.stroke(p);
+    ctx.restore();
+  }
+  // earth
+  ctx.fillStyle='rgba(35,24,18,0.5)';
+  ctx.fill(CLEAR.soilEdge);
+  ctx.fillStyle=grad('soil',135,[[0,'rgba(78,60,48,0.95)'],[0.6,'rgba(52,38,30,0.9)'],
+    [0.85,'rgba(34,25,20,0.8)'],[1,'rgba(21,36,27,0)']]);
+  ctx.fill(CLEAR.soilPad);
+  ctx.fillStyle='rgba(25,18,14,0.6)';
+  for(const p of CLEAR.pebbles){ctx.beginPath();ctx.ellipse(p[0],p[1],p[2],p[3],0,0,7);ctx.fill();}
+  // the landing spot warms as the two of you settle into it
+  const land=0.28+0.72*Math.max(meadowBloom,Math.min(1,settleTimer/8));
+  ctx.save();ctx.scale(1,0.58);ctx.globalAlpha=land;
+  ctx.fillStyle=grad('landing',55,[[0,'rgba(180,240,200,0.5)'],[0.4,'rgba(120,235,190,0.25)'],[1,'rgba(120,235,190,0)']]);
+  ctx.beginPath();ctx.arc(0,0,55,0,7);ctx.fill();
+  ctx.restore();
+  ctx.fillStyle=`rgba(220,255,230,${0.10+0.20*land})`;
+  ctx.beginPath();ctx.ellipse(0,0,20,12,0,0,7);ctx.fill();
+  // fairy ring — dim all game, kindling with the bloom
+  const ringLit=0.34+0.66*meadowBloom;
+  for(let i=0;i<CLEAR.ring.length;i++){
+    const m=CLEAR.ring[i];
+    const puls=0.65+0.35*Math.sin(t*0.7+i*0.9);
+    ctx.save();ctx.translate(m[0],m[1]);
+    ctx.save();ctx.globalAlpha=ringLit*puls;
+    ctx.fillStyle=grad('fairy',14,[[0,'rgba(120,235,190,0.85)'],[0.5,'rgba(120,235,190,0.3)'],[1,'rgba(120,235,190,0)']]);
+    ctx.beginPath();ctx.arc(0,0,14,0,7);ctx.fill();
+    ctx.restore();
+    const alt=m[2];
+    ctx.fillStyle=alt?'rgb(210,190,200)':'rgb(180,200,175)';
+    ctx.fill(CLEAR.shroomStem);
+    ctx.fillStyle=alt?'rgb(210,160,210)':'rgb(110,225,165)';
+    ctx.fill(CLEAR.shroomCap);
+    ctx.fillStyle=alt?'rgb(160,120,160)':'rgb(80,170,125)';
+    ctx.beginPath();ctx.ellipse(0,2,4.5,1.2,0,0,7);ctx.fill();
+    ctx.restore();
+  }
+  // spores adrift over the earth
+  for(let i=0;i<CLEAR.spores.length;i++){
+    const p=CLEAR.spores[i];
+    const dy=Math.sin(t*0.5+i*1.6)*7, dx=Math.cos(t*0.34+i*2.1)*5;
+    ctx.fillStyle=`rgba(180,240,190,${0.45+0.3*Math.sin(t*0.9+i)})`;
+    ctx.beginPath();ctx.arc(p[0]+dx,p[1]+dy,p[2],0,7);ctx.fill();
+  }
+  ctx.restore();
+}
+
+// a wild flower: stalk, then the bud dissolving into open petals as the
+// meadow blooms. Nothing here is interactive — it is only the world noticing.
+function drawFlower(X,Y,s,flip,open,t,ph){
+  ctx.save();
+  ctx.translate(X,Y);
+  ctx.rotate(Math.sin(t*0.9+ph)*0.03);
+  ctx.scale(s*flip,s);
+  ctx.translate(-16,-32);
+  ctx.strokeStyle=`rgba(${PAL.grass},0.85)`;
+  ctx.lineWidth=1.5;
+  ctx.stroke(FLOWER.stalk);
+  if(open<0.98){
+    ctx.fillStyle=`rgba(150,140,180,${0.35*(1-open)})`; ctx.fill(FLOWER.budOuter);
+    ctx.fillStyle=`rgba(184,168,224,${0.5*(1-open)})`;  ctx.fill(FLOWER.budInner);
+  }
+  if(open>0.02){
+    ctx.save();
+    ctx.translate(16,13); ctx.scale(open,open); ctx.translate(-16,-13);
+    ctx.fillStyle=`rgba(184,168,224,${0.85*open})`;
+    for(const p of FLOWER.petals) ctx.fill(p);
+    ctx.fillStyle=`rgba(255,226,170,${open})`;
+    ctx.fill(FLOWER.core);
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
 function drawSites(t){
   for(const s of sites){
     if(!inView(s.x,s.y,320))continue;
     const lit=Math.max(s.lit,(s.selfPulse||0)*0.4);
     if(s.kind==='foxfire'){
-      for(const m of s.shrooms){
-        const x=sx(s.x+m.dx),y=sy(s.y+m.dy);
-        const a=lit*(0.5+0.5*Math.sin(t*0.9+m.ph));
-        if(a>0.02){
-          const gg=ctx.createRadialGradient(x,y,0,x,y,26);
-          gg.addColorStop(0,`rgba(120,235,190,${a*0.5})`);
-          gg.addColorStop(1,'rgba(120,235,190,0)');
-          ctx.fillStyle=gg;ctx.beginPath();ctx.arc(x,y,26,0,7);ctx.fill();
-        }
-        ctx.fillStyle=`rgba(${90+lit*60|0},${120+lit*115|0},${110+lit*80|0},0.85)`;
-        ctx.beginPath();ctx.arc(x,y,3.2,0,7);ctx.fill();
-        ctx.fillRect(x-0.8,y,1.6,5);
+      for(let i=0;i<s.shrooms.length;i++){
+        const m=s.shrooms[i];
+        ctx.save();
+        ctx.translate(sx(s.x+m.dx),sy(s.y+m.dy));
+        ctx.scale(1.4,1.4);
+        ctx.translate(-12,-19);                 // stem base is the anchor
+        drawShroom(i%SHROOM.length,lit,0.5+0.5*Math.sin(t*0.9+m.ph));
+        ctx.restore();
       }
     } else if(s.kind==='pond'){
-      ctx.fillStyle=`rgba(24,34,58,0.9)`;
-      ctx.beginPath();ctx.ellipse(sx(s.x),sy(s.y),150,86,0,0,7);ctx.fill();
-      ctx.strokeStyle=`rgba(140,170,220,${0.12+lit*0.2})`;
-      ctx.lineWidth=1;
-      ctx.beginPath();ctx.ellipse(sx(s.x),sy(s.y),150,86,0,0,7);ctx.stroke();
-      // moon shard on the water
-      ctx.fillStyle=`rgba(200,214,245,${0.10+lit*0.22})`;
-      ctx.beginPath();ctx.ellipse(sx(s.x)+30,sy(s.y)-10,26,9,0.3,0,7);ctx.fill();
+      ctx.save();
+      ctx.translate(sx(s.x),sy(s.y));
+      // soft rim halo, faked with a gradient rather than a blur filter —
+      // ctx.filter is costly and still patchy on mobile Safari
+      ctx.save();ctx.scale(1,0.575);
+      ctx.fillStyle=grad('pondRim',178,[[0.82,'rgba(140,170,220,0)'],[0.92,'rgba(140,170,220,0.20)'],[1,'rgba(140,170,220,0)']]);
+      ctx.beginPath();ctx.arc(0,0,178,0,7);ctx.fill();
+      ctx.restore();
+      ctx.fillStyle=grad('pondWater',125,[[0,'rgba(35,48,80,0.9)'],[0.7,'rgba(24,34,58,0.95)'],[1,'rgba(14,20,34,1)']]);
+      ctx.fill(POND.basin);
+      ctx.strokeStyle=`rgba(140,170,220,${0.32+lit*0.25})`;ctx.lineWidth=1.5;
+      ctx.stroke(POND.basin);
+      // moon-glint, and the rings a rising fish leaves behind it
+      ctx.save();
+      ctx.translate(30,-10);
       for(const r of s.ripples){
-        ctx.strokeStyle=`rgba(170,200,240,${r.a})`;
-        ctx.beginPath();ctx.ellipse(sx(s.x)+20,sy(s.y)-6,r.r,r.r*0.5,0,0,7);ctx.stroke();
+        ctx.strokeStyle=`rgba(200,214,245,${r.a})`;ctx.lineWidth=1.2;
+        ctx.beginPath();ctx.ellipse(0,0,r.r*1.6,r.r*0.82,0,0,7);ctx.stroke();
       }
+      ctx.rotate(17.2*Math.PI/180);
+      ctx.fillStyle=`rgba(200,214,245,${0.55+lit*0.35})`;
+      ctx.beginPath();ctx.ellipse(0,0,13,4.5,0,0,7);ctx.fill();
+      ctx.fillStyle=`rgba(255,255,255,${0.6+lit*0.4})`;
+      ctx.beginPath();ctx.ellipse(0,0,6.5,2,0,0,7);ctx.fill();
+      ctx.restore();
+      ctx.restore();
     } else if(s.kind==='flowers'){
       for(const b of s.blooms){
-        const x=sx(s.x+b.dx),y=sy(s.y+b.dy);
-        const open=b.open;
-        ctx.save();ctx.translate(x,y);
-        for(let i=0;i<5;i++){
-          const a=i/5*Math.PI*2;
-          ctx.fillStyle=`rgba(${190+open*50|0},${150+open*60|0},${210},${0.25+open*0.6})`;
-          ctx.beginPath();
-          ctx.ellipse(Math.cos(a)*3*open,Math.sin(a)*3*open,2.5+open*2.5,1.2+open*1.4,a,0,7);
-          ctx.fill();
-        }
+        ctx.save();
+        ctx.translate(sx(s.x+b.dx),sy(s.y+b.dy));
+        ctx.rotate(Math.sin(t*0.8+b.ph)*0.035);
+        ctx.scale(0.62,0.62);
+        ctx.translate(-24,-42);                 // stem base is the anchor
+        drawBloom(b.open);
         ctx.restore();
       }
     } else if(s.kind==='glowtree'){
-      const x=sx(s.x),y=sy(s.y);
-      ctx.strokeStyle='rgba(58,52,76,0.95)';ctx.lineWidth=7;
-      ctx.beginPath();ctx.moveTo(x,y+30);ctx.quadraticCurveTo(x-6,y-40,x-2,y-90);ctx.stroke();
-      ctx.lineWidth=3;
-      ctx.beginPath();ctx.moveTo(x-2,y-60);ctx.quadraticCurveTo(x+30,y-95,x+48,y-108);ctx.stroke();
-      ctx.beginPath();ctx.moveTo(x-3,y-80);ctx.quadraticCurveTo(x-34,y-108,x-52,y-118);ctx.stroke();
-      for(const wm of s.worms){
-        const wx=x+wm.dx,wy=y+wm.dy;
-        const a=lit*(0.4+0.6*Math.max(0,Math.sin(t*0.8+wm.ph)));
-        if(a>0.02){
-          ctx.fillStyle=`rgba(180,240,150,${a*0.8})`;
-          ctx.beginPath();ctx.arc(wx,wy,1.6,0,7);ctx.fill();
-        }
-      }
+      drawTree(sx(s.x),sy(s.y)+22,0.9,1,0,lit,TREE.worms,0.14,t,0);
     }
   }
 }
@@ -735,6 +1136,8 @@ window.__alongside={
   skipTo(sec){skew=sec-(performance.now()-t0)/1000;return 'now t='+T();},
   get bond(){return bond;},
   get harmony(){return harmony;},
+  trees(){return trees.map(t=>({x:t.x|0,y:t.y|0,s:+t.s.toFixed(2),tint:t.tint,worms:t.worms.length}));},
+  get cloakGlow(){return cloakGlow;},
   audio(){const k=clamp(harmony/0.8,0,1),tune=k*k*(3-2*k);
     const ratio=AUD.ratio||1.5;
     return {started, harmony:+harmony.toFixed(3), tune:+tune.toFixed(3),
