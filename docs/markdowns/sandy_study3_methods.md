@@ -243,15 +243,197 @@ Carried to the message accompanying this step; recorded here so the log is self-
 | I7 | Sliders live in `questionnaire_responses`, not `vas_responses` | Prereg §4 wording | no — will edit prereg |
 | I8 | H1C DV requires event-log reconstruction; no stored field | Prereg §4 indices + analysis code | no — documented §1.3 |
 | I9 | ColourMax rows lack `study_id`; Aptitude logs no task-switch event | Platform hygiene; blocks per-task dwell as an H2C alternative | no — noted for platform |
+| I10 | Effort ICC ≈ 0 (−0.18) → the H2A/H2B random-intercept model will be singular | Prereg §5.1 H2A/H2B model form | **yes** |
+| I11 | 1/340 rating writes silently lost → prereg §5.6 "structurally impossible" is false | Prereg §5.6 missing-data rule | no — will edit prereg |
+| I12 | Stress floor (45% at scale minimum at T0) trips the >30% boundary rule | Prereg §5.2 → Tobit + ordinal refits indicated | no — already prespecified |
+| I13 | Word Probe target word not logged on failed rounds | Blocks retrospective partial-credit validation | no — noted for platform |
 
 ---
 
-## Step 2 — Merge plan (pending)
+## Step 1b — Follow-ups on the two defects (2026-08-11)
 
-## Step 3 — Nuisance-parameter extraction (pending)
+### Would partial credit rescue Word Probe?
 
-## Step 4 — Simulation design (pending)
+Norm asked what partial credit would do to the distribution. **Letter-level credit
+cannot be back-computed from the pilot**: the target word is logged only for *solved*
+rounds (`round_solve`'s value is the winning guess); a failed round logs the sixth wrong
+guess, and an in-progress round logs nothing terminal. Green/yellow counts are therefore
+unrecoverable for exactly the rounds partial credit would score. *Going forward, logging
+the answer and per-guess green/yellow counts on `round_fail` would make this checkable.*
 
-## Step 5 — Power analysis and prereg integration (pending)
+What the pilot **can** answer is whether the zero-scorers were engaged — which decides
+whether any scoring change helps:
 
-## Step 6 — Reproducible repository (pending)
+- 14/20 scored exactly 0. Of those, **11 submitted at least one valid guess** (median 4;
+  one made 25). Only **3 never guessed at all**. 9/14 made ≥3 valid guesses and 5/14
+  completed at least one full six-guess failed round.
+- So the modal zero-scorer was **actively trying and receiving nothing** — the worst case
+  for a study about effort and its feedback.
+
+Schemes computable from the existing log, with the midpoint retuned to the resulting scale:
+
+| Scheme | median pct | mean pct | at zero | distinct values | knock-on Aptitude `avg_pct` |
+|---|---|---|---|---|---|
+| current (mid 15, k .12) | 0 | 8.6 | **14/20** | 7 | mean 39.2 |
+| +1 per valid guess (mid 8, k .25) | 32 | 42.1 | 3/20 | 10 | mean 50.4 |
+| +2 per failed round (mid 6, k .30) | 20.5 | 24.4 | 9/20 | 7 | mean 44.5 |
+| 2×solve + 1 per guess (mid 10, k .20) | 27 | 40.0 | 3/20 | 12 | mean 49.7 |
+
+Recommended: **2×solve + 1 per valid guess**, because "+1 per valid guess" alone inverts
+the speed incentive (solving on guess 1 scores 6+1=7, the same as solving on guess 6 at
+1+6=7, and only one point above failing outright at 0+6=6). Doubling the solve bonus keeps
+the ordering strictly monotone — solve-on-1 = 13, solve-on-6 = 8, fail = 6 — while giving
+partial credit for genuine attempts. It also lands overall `avg_pct` near 50, where a
+percentile-feedback task should sit.
+
+### Revised redemption rule (Norm's decision)
+
+`shown = max(aptitude_pct, mean(aptitude_pct, colourmax_pct))` — the mean, floored so a
+"redemption" can never lower the participant's standing.
+
+| | old (sum) | new rule |
+|---|---|---|
+| median | 114.8 | 57.4 |
+| max | 169.7 | 84.8 |
+| exceeding 100 | **13/20** | **0/20** |
+
+The floor binds for 1/20 (the one participant whose ColourMax percentile fell below their
+Aptitude percentile); they are shown no change rather than a loss. Mean apparent gain
+15.9 points (median 17.2, max 28.4) — a visible, credible improvement.
+
+---
+
+## Step 2 — De-identified analysis dataset
+
+**Script**: `scripts/02_build_dataset.py`. **Shape** (Norm's choice): wide primary table
+plus two long tables.
+
+| File | Rows | Grain |
+|---|---|---|
+| `data/participants.csv` | 21 × 95 cols | one per participant |
+| `data/ratings_long.csv` | 343 | participant × rating occasion |
+| `data/images_long.csv` | 100 | participant × ColourMax image |
+| `data_raw/_crosswalk.csv` | 21 | pid ↔ profile_id (**gitignored, never committed**) |
+
+**De-identification.** Prolific IDs and profile UUIDs stay in `data_raw/`, which
+`.gitignore` excludes wholesale. Participants are relabelled `P01…P21`, ordered by a
+salted SHA-256 of the profile id so the label sequence carries no enrolment-time
+information. Free-text equity-census fields (`*_other`, `*_specify`, `feedback`) are
+dropped; only closed-response categories survive. All absolute timestamps are dropped —
+only within-session durations remain.
+
+**Study scoping.** `questionnaire_responses` and `vas_responses` carry no `study_id`, so
+rows are admitted only if the participant appears in this study's `participant_step_timings`
+*and* the response falls inside that participant's session window (first step entry to last
+step exit + 5 min tolerance). This replaces the master table's unreliable `_t<n>` suffixes.
+
+**Repeated measures are labelled by administration order** within the session, mapped to
+the delivered 34-step sequence: stress/negative/positive affect → T0, T1, T2;
+predicted efficacy → pre_AS, pre_CM; experienced efficacy, effort, satisfaction →
+post_AS, post_CM. Rows where `serves_as_pre_cm` is true are the T1 readings that prereg
+**D9** designates as the ColourMax affect baseline.
+
+**Result**: **20 of 21 analysis-ready** (11 redemption / 9 control). The excluded
+participant did not reach the debrief. No missing values on any key analysis variable.
+
+### ⚠ New finding: rating writes can silently fail
+
+P06 completed all 34 steps and reached the debrief, and their step-timing row shows the
+post-ColourMax `vas_stress` step was presented and answered in 2.8 s — but **no row exists
+in `vas_responses`**. Every other rating for that participant landed.
+
+Rate: **1 of 340 expected rating writes lost (0.29%)**. This falsifies prereg §5.6's claim
+that "item-level missingness within completed steps is structurally impossible." The
+prereg needs a real missing-data rule for state ratings; §5.6 will be revised. Same class
+as the swallowed-error pattern in the repo's CLAUDE.md (a failed insert logged to
+`console.warn` and never surfaced), though at 0.3% it is not analysis-threatening.
+
+---
+
+## Step 3 — Nuisance-parameter extraction
+
+**Script**: `scripts/03_nuisance_params.py` → `output/nuisance_params.json`,
+`output/nuisance_report.txt`.
+
+**Firewall enforced in code.** `condition` is `pop()`ed off the frame before any statistic
+is computed, so no H1 effect size can be produced even accidentally. A `guard()` function
+raises on any attempt to correlate a trait predictor, or pre-task predicted efficacy, with
+an outcome — i.e. every quantity that one of the 17 confirmatory tests estimates. What the
+pilot is permitted to supply: dispersion, distribution shape, ICC, covariate–outcome
+correlations, predictor intercorrelations, reliability, and zero structure.
+
+### Parameters that matter, and what they imply
+
+**Reliability is excellent** — APS-R Discrepancy α = .928, RRQ Rumination α = .925,
+BAT core-23 α = .951. Attenuation from trait measurement error is therefore modest; the
+limiting reliability is the single-item slider DVs, which cannot be estimated from one
+administration.
+
+**⚠ Trait predictors are strongly intercorrelated**: discrepancy–burnout **r = .711**,
+discrepancy–rumination .528, rumination–burnout .460 (VIFs 1.41–2.26). The prereg's
+VIF > 5 trigger will not fire, but H2C's three trait coefficients are substantially
+confounded, inflating their standard errors by roughly 1.2–1.5×. This is now built into
+the power simulation rather than assumed away.
+
+**⚠ Effort ratings have a ceiling and near-zero between-person consistency.**
+`effort_post_AS` mean 86.4 with 25% exactly at 100; `effort_post_CM` mean 83.9, skew
+−2.69, 20% at ceiling. ICC across the two administrations is **−0.18** (satisfaction
+−0.09). A negative ICC means the two effort ratings share essentially no between-person
+variance, so `effort ~ trait + task + (1|id)` will estimate a zero random-intercept
+variance and return singular fits. See Open issue I10.
+
+**⚠ Stress has a floor**: 45% of participants sat at the scale minimum at T0 (20% at T1,
+32% at T2). This *does* trip the prereg's ">30% at a boundary" rule, so the Tobit
+sensitivity analysis and the prespecified ordinal (`clm`) refit are both indicated for
+stress DVs.
+
+**Affect ICCs support the H3 models**: positive affect .865, stress .597, negative
+affect .459 across the three timepoints.
+
+**Covariate strengths**: cor(NA_T1, NA_T2) = .474 (the H1B baseline adjustment removes
+~22% of outcome variance); cor(Aptitude mean pct, Aptitude SD) = .288 (the H2C forced
+covariate).
+
+**ColourMax composition**: mean time proportions by slot **[.380, .318, .119, .094, .088]**
+— a steep position gradient, with images 1–2 absorbing 70% of the budget. Method-of-moments
+Dirichlet precision s = 10.4. Concentration index mean .255, SD .167, skew .25.
+
+**Feasibility**: session median 30.8 min (IQR 28.4–35.3).
+
+---
+
+## Step 4 — Power simulation design
+
+**Script**: `R/04_power_simulation.R` (R 4.6.0; `MASS`, `lme4`, `lmerTest`, `jsonlite`).
+
+**The whole 17-test family is simulated jointly**, so Benjamini–Hochberg power is evaluated
+as it will actually be applied (prereg §5.3) rather than test-by-test. Each replicate
+generates one complete study, fits all 17 preregistered models, applies BH across the 17
+p-values, and records which survive.
+
+Design choices:
+
+- Traits are drawn multivariate-normal with the **observed** trait correlation matrix, and
+  pre-task predicted efficacy is drawn correlated with discrepancy at the observed
+  r = −.625, so H2C and H3A inherit their real collinearity penalty.
+- Outcomes are generated on a latent scale with pilot means/SDs and then **censored the way
+  the instruments censor them** — sliders clipped to 0–100 (reproducing the effort
+  ceiling), stress rounded and clipped to the 6-point emoji scale (reproducing its floor).
+- Effect sizes come **only** from a swept grid, never from the pilot: main effects are
+  parameterised as partial correlations, interactions as the difference in trait slope
+  between arms (Δr), swept over δ ∈ {.15, .20, .25, .30, .35, .40} × N ∈ {150, 200, 250,
+  300, 400}.
+- H1A/H1B/H1C/H2C are `lm`. For H2A/H2B/H3A the trait predictors are between-person and
+  the design is balanced, so the coefficient test is algebraically identical to a
+  regression on person means; the script **validates this against `lmer`** before use
+  (agreement confirmed: .930 vs .945 power at 200 replicates). H3B's time × discrepancy
+  term is within-person and is fitted with `lmerTest::lmer` directly.
+- A δ = 0 cell provides a Type-I / BH false-positive check.
+
+## Step 5 — Power analysis and prereg integration (running)
+
+## Step 6 — Reproducible repository (in progress — `F:\gits\sandy_study3`)
+
+Structure: `data_raw/` (gitignored), `data/` (de-identified, versioned), `scripts/`,
+`R/`, `output/`, `docs/`. Scoring keys exported from the platform to
+`scripts/scoring_keys.json` so scale scoring is re-derivable without database access.
