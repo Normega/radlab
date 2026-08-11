@@ -502,6 +502,69 @@ output/                    nuisance params, power grid, summaries
 de-identified tables for UUID and 24-hex Prolific-ID patterns returns no matches; no
 absolute timestamps and no free-text demographic fields survive.
 
+---
+
+## Step 7 — Both defects fixed and verified (2026-08-11)
+
+Norm approved **N = 300** and both code fixes.
+
+### Word Probe — partial credit + recalibration
+
+- `src/games/AptitudeSuite/hooks/useWordProbe.js`: every valid guess now earns **+1**, so
+  genuine attempts move the score without a solve. The solve bonus doubles to
+  `2 × (7 − guesses)`.
+- `src/games/AptitudeSuite/constants.js`: `WORDPROBE_MIDPOINT` 15 → **10**,
+  `WORDPROBE_K` 0.12 → **0.20**.
+
+Per-round totals are `n + 2(7 − n) = 14 − n` for a solve on guess *n*, against 6 for a
+failed round — strictly decreasing in guesses used, and always above failing:
+
+| outcome | solve@1 | @2 | @3 | @4 | @5 | @6 | fail |
+|---|---|---|---|---|---|---|---|
+| points | 13 | 12 | 11 | 10 | 9 | 8 | 6 |
+
+*(An assertion in the verification script initially fired here — it had encoded the
+per-round total as `1 + 2(7−n)`, forgetting that each of the n guesses earns its own
+point. The scheme was correct; the check was wrong. Worth recording, because the wrong
+formula would have shown solve-on-6 = 3 < fail = 6, i.e. rewarding giving up.)*
+
+### Redemption score
+
+`src/pages/SessionEntry.jsx`: `redemption_score` changes from
+`aptitude_pct + colourmax_pct` to `max(aptitude_pct, mean(aptitude_pct, colourmax_pct))`.
+
+### Verification — replay against the real pilot log
+
+`scripts/06_verify_fixes.py`. The replay first reconstructs the **old** score from
+`aptitude_events` and checks it against the stored `wordprobe_score`: **20/20 exact
+matches**, so the reconstruction is trusted before evaluating the new scheme.
+
+| | before | after |
+|---|---|---|
+| Word Probe stuck at percentile 0 | 14/20 | **3/20** |
+| Word Probe median percentile | 0 | **31** |
+| Word Probe distinct percentile values | 7 | **12** |
+| Aptitude `avg_pct` (mean / median) | 39.2 / 36.5 | **50.4 / 47.3** |
+| subtask median percentiles (ana/flu/wp) | 56 / 60 / 0 | **56 / 60 / 31** |
+| redemption value above 100 | 14/20 | **0/20** |
+| redemption value (median / max) | 130.2 / 184.3 | **65.1 / 92.2** |
+| participants shown a decrease | — | **0/20** (floor guarantees it) |
+
+`npm run build` clean.
+
+**Trade-off worth naming**: fixing Word Probe raises the Aptitude baseline from ~39 to
+~50, which *shrinks* the apparent redemption from a mean of 15.9 points to **10.9**
+(median 8.2, max 27.8) because ColourMax (~70) is now a smaller jump from a higher floor.
+That is the correct trade — the inflated gain was an artefact of a broken subtask — and
+what matters for H1 is the contrast between arms, not the absolute size, since the control
+arm still receives no revision at all. Flagged in case the manipulation should be
+strengthened another way.
+
+**Scale break**: raw `wordprobe_score` is on a new scale from 2026-08-11. Pilot and
+main-study values must not be pooled. Recorded in `website.md` §22.
+
+---
+
 ⚠ **Re-identification caveat for any public release.** `participants.csv` retains nine
 closed-response demographic fields (age, gender identity, race/ethnicity, sexual
 orientation, Indigenous identity, disability, trans identity, parent education,
