@@ -568,3 +568,38 @@ the TA in the same course); student → **1 row** (self only). Test enrolment fl
 **Lesson worth carrying:** a policy whose predicate reads another RLS-protected table silently
 under-matches. It does not error — it returns too little, which looks like missing data rather than a
 permissions bug. Any new policy that joins `enrollments` should go through a definer helper.
+
+---
+
+`20260811_workbench_sessions.sql` — **applied 2026-08-11 via MCP `apply_migration` (name
+`workbench_sessions`), visibility verified live under `SET LOCAL ROLE authenticated` against three
+real accounts.** The Workbench: sharing Claude Code sessions with lab members (website.md §32).
+
+Creates `claude_sessions`, `claude_session_turns`, `claude_session_shares`, `claude_project_shares`,
+the `can_view_claude_session(uuid)` visibility helper, and `workbench_shareable_members()`.
+
+**The gate that matters is not the role.** `profiles.role = 'lab'` already grants `/admin/*`, so every
+student in the lab holds it — gating the Workbench on lab role would have shown all of Norm's captured
+sessions to all of them while looking like access control. The share tables are the entire access
+story, and both guards (`WorkbenchRoute`, `WorkbenchAdminRoute`) are written on that assumption.
+
+`can_view_claude_session()` is SECURITY DEFINER for the reason `20260806_staff_read_enrolled_people`
+and `20260807_gap_board` both record: it resolves `project_key` by reading `claude_sessions`, which is
+the table being policed, so an invoker-rights version would recurse or silently return nothing.
+
+**Verified 2026-08-11** with a seeded real session (8 turns), impersonating Norm (super admin), Jaafar
+and sandy (both `role='lab'`, neither super admin), counts captured to a scratch table because MCP
+does not surface `RAISE NOTICE`:
+
+| Probe | Result |
+|---|---|
+| Before any share — Jaafar | **0** sessions, **0** turns |
+| Session shared with Jaafar — Jaafar | **1** session, **8** turns |
+| Same moment — sandy (unshared, also `role='lab'`) | **0** sessions, **0** turns |
+| Norm, holding no share row at all | **1** session (super-admin policy) |
+| Standing project rule added for sandy | **1** session, **8** turns — no per-session row needed |
+| sandy reading `claude_session_shares` | **0** rows — a member cannot learn who else holds a session |
+| Jaafar inserting his own share row | **blocked, SQLSTATE 42501** |
+
+Probe table dropped and both test share rows deleted afterwards; the seeded session remains, shared
+with nobody.

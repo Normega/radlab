@@ -8,6 +8,8 @@ import AdminRoute        from './components/AdminRoute'
 import TalksRoute        from './components/TalksRoute'
 import ClassAdminRoute   from './academic/lecture-lounge/ClassAdminRoute'
 import LectureLoungeAdminRoute from './academic/lecture-lounge/LectureLoungeAdminRoute'
+import WorkbenchRoute    from './workbench/WorkbenchRoute'
+import WorkbenchAdminRoute from './workbench/WorkbenchAdminRoute'
 import ErrorBoundary     from './components/ErrorBoundary'
 
 // Route-level code-splitting: every page below is its own chunk, fetched on
@@ -103,6 +105,13 @@ const WikiPage             = lazy(() => import('./academic/fieldguide/wiki/WikiP
 const GapBrowser           = lazy(() => import('./academic/fieldguide/GapBrowser'))
 const FieldGuideHome       = lazy(() => import('./academic/fieldguide/FieldGuideHome'))
 const CorrectionsFeed      = lazy(() => import('./academic/fieldguide/CorrectionsFeed'))
+
+// Workbench — shared Claude Code sessions. Its own partition again: own guards
+// (WorkbenchRoute / WorkbenchAdminRoute), own chrome (plain Nav, not AdminLayout),
+// own ErrorBoundary. Deliberately not under /admin, because the audience is lab
+// members reading Norm's work, not researchers administering studies.
+const WorkbenchPage      = lazy(() => import('./workbench/WorkbenchPage'))
+const WorkbenchAdminPage = lazy(() => import('./workbench/WorkbenchAdminPage'))
 
 // Research admin section — separate partition from Lecture Lounge.
 const AdminLayout   = lazy(() => import('./layouts/AdminLayout'))
@@ -554,6 +563,24 @@ export default function App() {
             Student-facing /class/:slug URLs deliberately stay short — they
             are typed from projector QR codes and baked into sent emails.
           */}
+          {/* Workbench — Claude Code sessions Norm shares with lab members.
+              Partitioned like Lecture Lounge: own guards, own chrome, own
+              boundary. /workbench/admin is super-admin-only and sits *inside*
+              the member guard's sibling, not nested under it, so the two
+              guards stay independently readable.
+              Route order matters only nominally — React Router ranks the
+              static "admin" segment above the :sessionId param. */}
+          <Route element={<ErrorBoundary label="Workbench"><Outlet /></ErrorBoundary>}>
+            <Route element={<WorkbenchAdminRoute session={session} superAdmin={superAdmin} />}>
+              <Route path="/workbench/admin" element={<WorkbenchAdminPage session={session} />} />
+              <Route path="/workbench/admin/:sessionId" element={<WorkbenchAdminPage session={session} />} />
+            </Route>
+            <Route element={<WorkbenchRoute session={session} />}>
+              <Route path="/workbench" element={<WorkbenchPage session={session} />} />
+              <Route path="/workbench/:sessionId" element={<WorkbenchPage session={session} />} />
+            </Route>
+          </Route>
+
           <Route element={<ErrorBoundary label="Academic"><Outlet /></ErrorBoundary>}>
             <Route path="/class/verify" element={<ClassVerifyEmail />} />
             <Route path="/class/:slug" element={
