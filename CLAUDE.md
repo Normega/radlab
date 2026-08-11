@@ -112,6 +112,44 @@ Rationale: website.md is the context handed to every new working session; a stal
 
 ---
 
+## Workbench — sharing this session with lab members
+
+Norm can publish a Claude Code session to `/workbench`, where lab members he names can read it.
+**Capture is per-session and off by default.** Creating the config file arms nothing; a session
+publishes only when it is explicitly opted in.
+
+**When Norm says any of these — "share this session", "push this to the workbench", "start
+backing this up", "let the lab see this" — run:**
+
+```bash
+node scripts/workbench-share.mjs on <session-id>     # start (also: off, status)
+```
+
+`/workbench` is a slash command that does the same thing; `.claude/commands/workbench.md` carries
+the full procedure and the caveats worth repeating back to him.
+
+**The session id is the UUID in your own scratchpad directory path** — the same UUID as your
+transcript filename. Do **not** take the newest `.jsonl` in the project directory: Norm runs
+several sessions on this repo at once, so that is regularly a *different* session, and opting the
+wrong one in publishes work he did not choose to share.
+
+Three things to tell him when turning it on: the whole session publishes **from its start**, not
+from that moment; it is visible to nobody until he shares it at `/workbench/admin`; and `off`
+stops future pushes but does **not** unpublish what already went.
+
+**What travels**: his prompts, your prose, and a one-line headline per tool call. Never tool
+output — no file contents, no query results, no diffs, no thinking. That is the property the
+whole feature rests on, so do not add tool output to the payload without a redaction review; it
+is also ~98% of a raw transcript, so it would cost ~50x the storage.
+
+Prose, however, is sent **verbatim**. The endpoint redacts its own credentials and common key
+shapes as a backstop, not a guarantee. If a session contains a password, a participant name, or
+anything else typed as ordinary text, say so *before* opting it in.
+
+Full design: website.md §29c.
+
+---
+
 ## Branch policy — finish the branch, and merge before you deploy
 
 **Work on `main` directly for small, verifiable changes.** Branches earn their keep when work is risky or genuinely parallel; for "fix it, verify it live, move on" they add a merge step and a chance to forget.

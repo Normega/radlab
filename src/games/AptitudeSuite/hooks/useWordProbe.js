@@ -90,9 +90,17 @@ export function useWordProbe() {
     setGuesses(newGuesses);
     setInput('');
 
+    // Partial credit: every valid guess earns 1 point, so genuine attempts move the
+    // score even when the round is never solved. Solving pays 2*(7 - guesses) on top,
+    // which keeps the ordering strictly monotone and preserves the speed incentive:
+    // solve-on-1 = 13, solve-on-6 = 8, fail-after-6 = 6.
+    // Before this, 14/20 pilot participants scored exactly 0 while 11 of them were
+    // actively guessing — see docs/markdowns/sandy_study3_methods.md 1.8.
+    setScore(s => s + 1);
+
     const solved = scored.every(g => g.status === 'green');
     if (solved) {
-      const pts = 7 - newGuesses.length; // guess 1 = 6 pts, guess 6 = 1 pt
+      const pts = 2 * (7 - newGuesses.length); // guess 1 = 12 pts, guess 6 = 2 pts
       setScore(s => s + pts);
       nextRound(answer, true);
       return 'round_solve';
