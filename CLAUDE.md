@@ -150,6 +150,33 @@ Full design: website.md §29c.
 
 ---
 
+## Never `git add -A` — other sessions share this working tree
+
+Norm runs several Claude Code sessions against this checkout at once. `git add -A` therefore stages
+**their** uncommitted work along with yours.
+
+**Stage explicit paths.** `git add website.md src/foo.jsx`, never `-A`, never `.`, never `-u`.
+
+It is not a hypothetical tidiness rule. On 2026-08-11 an `add -A` swept up another session's
+*in-progress merge* of `claude/sandy-study-3-prereg-5a335c`, whose `website.md` header conflict was
+still unresolved. The commit therefore (a) silently became a **merge commit**, (b) published
+`<<<<<<<` / `>>>>>>>` markers in website.md to `main`, which auto-deploys, and (c) attributed ~1,000
+lines of someone else's study documentation to a commit message about slash commands. Nothing was
+lost, but `main` carried a corrupted architecture record until it was noticed.
+
+Two habits that would each have caught it:
+
+- **`git status` before staging**, and if files you did not touch appear, stage only yours.
+- **`git show --stat HEAD` after committing.** The file list is the cheapest possible check that you
+  committed what you thought you committed — the merge-commit parents and the foreign files were
+  both visible there immediately.
+
+Also note `git pull --ff-only` printing *"fatal: Exiting because of an unresolved conflict"*: that is
+not about the pull, it means the index **already** holds unmerged paths from another session. Stop
+and look; do not stage past it.
+
+---
+
 ## Branch policy — finish the branch, and merge before you deploy
 
 **Work on `main` directly for small, verifiable changes.** Branches earn their keep when work is risky or genuinely parallel; for "fix it, verify it live, move on" they add a merge step and a chance to forget.
