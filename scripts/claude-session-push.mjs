@@ -22,13 +22,25 @@
 // a script on a laptop and the server is the actual trust boundary.
 //
 // ---------------------------------------------------------------------------
-// Turning it on
+// Turning it on — capture is per session and off by default
 // ---------------------------------------------------------------------------
-// Capture is off unless ~/.claude/workbench.json exists:
+// Two independent things must both be true before a single turn is sent:
 //
-//   { "endpoint": "https://radlab.zone/api/session-push", "token": "<secret>" }
+//  1. ~/.claude/workbench.json exists — WHERE and HOW to push:
+//       { "endpoint": "https://radlab.zone/api/session-push",
+//         "token": "<secret>", "projects": ["f:/gits/radlab_project/radlab"] }
 //
-// No config file → this script exits 0 and does nothing. That is what makes the
+//  2. This session has been opted in — WHETHER to push:
+//       node scripts/workbench-share.mjs on <session-id>
+//
+// Neither implies the other, and the config file deliberately cannot turn capture
+// on by itself. An earlier version had only (1), which meant that creating the
+// config started recording every session in the repo forever; Norm caught it
+// before it shipped to his machine. "Nobody can see it yet" is not the same
+// promise as "it was never recorded", and only the second is worth making about
+// someone's own working notes.
+//
+// Missing either → this script exits 0 and does nothing. That is what makes the
 // checked-in .claude/settings.json safe for anyone else who clones the repo: they
 // get the hook registration and no capture, rather than a confusing failure.
 //
@@ -41,6 +53,7 @@ import path from 'node:path'
 
 const CONFIG_PATH = path.join(homedir(), '.claude', 'workbench.json')
 const STATE_DIR = path.join(homedir(), '.claude', 'workbench-state')
+const OPTIN_DIR = path.join(homedir(), '.claude', 'workbench-optin')
 
 // Set WORKBENCH_DEBUG=1 to see why a push did not happen. This script is
 // deliberately silent on every failure path (it must never disrupt a session),
@@ -304,6 +317,22 @@ async function main() {
   if (!sessionId || !transcriptPath) { dbg('payload missing session_id/transcript_path'); return }
 
   const isEnd = payload.hook_event_name === 'SessionEnd'
+
+  // ---- The opt-in gate ----------------------------------------------------
+  // Capture is per session and off by default. Nothing is read, distilled or
+  // sent unless this session has a marker, written by scripts/workbench-share.mjs
+  // when Norm says "share this session".
+  //
+  // The first design captured every session in an allowed project automatically
+  // and relied on the share step to control who could *see* it. Norm's objection
+  // was the right one: that is continuous background recording of all his work in
+  // the repo, and "nobody can see it yet" is not the same promise as "it was never
+  // recorded". So `workbench.json` now says only where and how to push — never
+  // whether.
+  if (!existsSync(path.join(OPTIN_DIR, `${sessionId}.json`))) {
+    dbg('session not opted in:', sessionId, '\u2014 run scripts/workbench-share.mjs on', sessionId)
+    return
+  }
 
   // A project allowlist in the config file is a second switch, independent of
   // which repos carry a .claude/settings.json. Either can turn a project off;
