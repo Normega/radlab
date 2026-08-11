@@ -20,6 +20,36 @@ and computational reproducibility. Updated after each step. Companion to
 
 ---
 
+## Decision index (D1–D14)
+
+The preregistration was cleaned of inline decision markup on 2026-08-11 so that it reads as
+a formal document; the decisions are absorbed into its prose and summarised in its
+Appendix B. The numbered index below is retained here as the audit trail, and is what the
+`D<n>` references throughout this log point to.
+
+| # | Decision | Date / source |
+|---|---|---|
+| D1 | H1B's three-way interaction (discrepancy × rumination × condition) demoted to exploratory; H1B is two 2-way moderations, one per trait | 2026-08-04, power rationale |
+| D2 | Sampling is Prolific post-secondary students (resolving a UTM-vs-Prolific contradiction in the working doc) | 2026-08-04 |
+| D3 | State affect uses the built single-item sliders, not PANAS state subscales; PANAS is trait-battery only; the "Brief Inventory of Perceived Stress" reference is dropped | 2026-08-04 |
+| D4 | `multRepl` is sourced from `zCompositions`, not `compositions` | 2026-08-04 |
+| D5 | Random intercepts only; `(Task \| id)` random slopes are unidentified with 2 obs/cell | 2026-08-04 |
+| D6 | Two-tailed p-values plus a sign requirement, rather than one-tailed tests | 2026-08-04 |
+| D7 | H1C's primary test is the scalar entropy-based concentration index; Dirichlet regression is secondary. "More time on each image" is not jointly possible under a fixed budget | 2026-08-04; confirmed by pilot zero structure |
+| D8 | H1B is an ANCOVA on post-ColourMax NA with the post-Aptitude (pre-feedback, pre-framing) rating as baseline covariate | 2026-08-04 |
+| D9 | No pre-ColourMax affect sliders; the post-Aptitude ratings serve as the ColourMax baseline. Consequence: three affect timepoints, so H3B is a three-point trajectory model | 2026-08-04, Norm |
+| D10 | No manipulation-check item; the framing is enacted by the score displays themselves. Intention-to-treat throughout | 2026-08-04, Norm |
+| D11 | The vestigial `condition` assignment slot stays; participant-invisible and ignored in analysis | 2026-08-04, Norm |
+| D12 | Target N = 300 valid sessions, set by the simulation-based power analysis | 2026-08-11, Norm |
+| D13 | Singular random-intercept fits in H2A/H2B are anticipated and reported, not re-specified | 2026-08-11 |
+| D14 | Scale scoring reads `questionnaires.definition.scoring.subscales[]`; item-level `reverse` flags are null throughout and must be ignored. Burnout = mean of the 23 BAT-C core items | 2026-08-11 |
+
+Build items B1–B3 were withdrawn or resolved (per D9, D10, D11). B4 (export field
+verification) completed 2026-08-06. B5 (Word Probe recalibration and redemption-score fix)
+completed and verified live 2026-08-11 — see Step 7.
+
+---
+
 ## Step 1 — Data review against the preregistration
 
 **Date**: 2026-08-11. **Scripts**: `inventory.py`, `inventory2.py`, `inventory3.py`,
