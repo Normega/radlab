@@ -71,37 +71,137 @@ Note the deliberate ordering: **trait questionnaires are administered after the 
 
 **Data collection procedures.** Participants recruited via Prolific. Inclusion: fluent English; currently enrolled post-secondary student (Prolific prescreen); normal or corrected-to-normal vision; desktop/laptop required (ColourMax requires mouse input; enforced by Prolific device filter and platform check). Exclusion at recruitment: Prolific prescreen for active suicidal ideation (given DASS-21 content). Compensation at or above Prolific's recommended hourly rate for a 45–60 min session. **[DECISION D2]** The working doc named UTM undergraduates in one place and Prolific in another; this draft specifies Prolific with a post-secondary-student prescreen. If SONA/UTM recruitment is used instead or additionally, the sampling section must be revised before registration.
 
-**Sample size.** Target **N = 200 valid sessions** (~100 per arm) after exclusions (§5.4). Recruitment continues until 200 valid sessions are reached; no interim hypothesis tests (stopping rule is a fixed valid-N count, checked on completed data only).
+**Session duration.** Measured in the pilot at a **median of 30.8 minutes** (IQR 28.4–35.3;
+sum of step durations), not the 45–60 minutes originally estimated. Longest components:
+Aptitude Suite 8.8 min, ColourMax 5.3 min, questionnaire battery ~11.5 min. Recruitment
+materials and the Prolific pay rate are set against a **35-minute** estimate.
 
-### 3.4 Sample size rationale (power analysis)
+**Sample size.** See §3.4 — the target is set by the simulation-based power analysis.
 
-All confirmatory tests are single-degree-of-freedom coefficient tests in (mixed) linear models. Analytic power at N = 200, two-tailed:
+### 3.4 Sample size rationale (simulation-based power analysis)
 
-| Scenario | Per-test α | Detectable effect at 80% power |
-|---|---|---|
-| Uncorrected | .05 | f² = .039 (ΔR² ≈ 3.8%, partial r ≈ .20) |
-| BH-FDR, mid-case (≈half of family true) | ~.025 | f² ≈ .048 (partial r ≈ .21) |
-| BH-FDR, worst case (one true effect in 17) | .0029 | f² ≈ .073 (partial r ≈ .26) |
+Power was estimated by Monte Carlo simulation of the **entire 17-test family jointly**, so
+that Benjamini–Hochberg power is evaluated as it will actually be applied (§5.3) rather
+than test-by-test. Each of 2,000 replicates per design cell generates a complete study,
+fits all 17 preregistered models, applies BH across the 17 p-values, and records which
+survive. Code: `R/04_power_simulation.R`; results: `output/power_grid.csv`.
 
-Interpretation by test type:
+**Realism comes from the N = 20 pilot, effect sizes do not.** The simulation takes from
+the pilot only nuisance parameters — outcome dispersion and distribution shape, the
+observed trait correlation matrix (discrepancy–burnout **r = .71**, discrepancy–rumination
+.53, rumination–burnout .46), cor(discrepancy, pre-task predicted efficacy) = **−.63**,
+within-person ICCs (stress .60, negative affect .46, positive affect .87), the H1B baseline
+covariate correlation (.47), and the instruments' censoring (0–100 sliders clipped,
+reproducing the observed effort ceiling; stress rounded to its 6-point scale, reproducing
+its floor). Effect magnitudes are swept over a grid and never estimated from the pilot
+(§3.5). Type-I control was verified at δ = 0: uncorrected rejection .052, BH rejection .004.
 
-- **Trait main effects (H2A, H2B, H3A):** simple/partial correlations of r ≈ .20–.26 are detectable. Meta-analytic trait–outcome correlations for perfectionism/rumination with effort and affect outcomes are typically r = .2–.4, so these tests are adequately powered at N = 200 even under FDR correction.
-- **Framing × trait interactions (H1A–H1C):** an interaction of f² = .039 corresponds, at balanced n = 100/arm, to a between-arm difference in trait–outcome correlation of about Δr ≈ .38 (e.g., r ≈ .02 in control vs. r ≈ .40 in redemption). That is a *large* moderation. Moderation effects half that size (Δr ≈ .19) would have ~30% power. **We therefore treat N = 200 as powered for strong moderation only**; if resources allow, N = 300 (Δr ≈ .31 detectable) materially improves the H1 family. This is stated openly rather than assumed away.
-- **Three-way trait × trait × condition interactions:** attenuation from trait unreliability compounds multiplicatively in product terms; realistic effective sizes are f² < .01, requiring N ≥ 800. This is why D1 demotes the three-way to exploratory.
-- **H1C Dirichlet regression and H3 mixed models:** no closed-form power exists; power will be estimated by Monte Carlo simulation using pilot-informed nuisance parameters (§3.5), with the simulation code and results attached to the final registration. The scalar concentration-index test for H1C (§5.1) carries the analytic figures above and is the primary H1C test precisely so that H1C's confirmatory status does not rest on simulation assumptions.
+δ denotes a standardised effect: for main effects a partial correlation; for interactions
+the **difference in trait slope between arms (Δr)**.
 
-### 3.5 Pilot (N = 20) — what it is for and what it is not for
+**Detectable effect at 80% BH-corrected power:**
 
-A pilot of N = 20 (10 per arm) **is worth running**, but not to estimate effect-size priors: with N = 20 the 95% CI on a correlation spans roughly ±.45, so any observed pilot effect is uninformative about the true effect and using it to power the main study would be circular. The pilot instead estimates **nuisance parameters and feasibility**, which N = 20 estimates usefully:
+| Test family | N=150 | N=200 | N=250 | N=300 | N=400 |
+|---|---|---|---|---|---|
+| H1A framing × trait | >.40 | >.40 | .38 | .34 | .30 |
+| H1B framing × trait | >.40 | .37 | .33 | .30 | .26 |
+| H1C framing × trait | >.40 | >.40 | .37 | .34 | .29 |
+| H2A/H2B trait main effects | .26 | .23 | .20 | .18 | .16 |
+| H2C variance | .33 | .28 | .25 | .23 | .20 |
+| H3A anticipatory | .32 | .28 | .25 | .23 | .20 |
+| H3B trajectory | .20 | .18 | .16 | .15 | .15 |
 
-1. **ColourMax zero structure** — proportion of participants with 0 s on ≥1 image; informs the H1C zero-handling choice (entropy index needs none; Dirichlet `multRepl` detection limit) and whether skipping is rare noise or a structural behavior.
-2. **Distributions and ceilings** — effort/NA/PA/efficacy sliders (0–100), stress (1–6): floor/ceiling rates, variance, skew. Determines whether the prespecified transformation rules (§5.2) will trigger.
-3. **DV variance for H2C** — SD and skew of the within-person percentile-variability index.
-4. **Trait intercorrelations** — discrepancy × rumination × burnout collinearity (expected r = .4–.6); VIFs for the H2C model.
-5. **Platform-metric reliability** — split-half consistency of per-image precision/coverage; percentile-score behavior of the Aptitude Suite scoring curve at realistic performance levels.
-6. **Feasibility** — completion time vs. the 45–60 min estimate, dropout points, data completeness of every variable named in §4 in the actual export (`/admin/export` participant master).
+Three things follow, and the third is the important one.
 
-These parameters feed the simulation-based power analysis for the Dirichlet and mixed models, and fix the final N. If pilot-informed simulations show the H1 interactions need N = 300 for the moderation sizes the lab considers minimally interesting, that decision is made **before** registration, not after.
+1. **Everything except H1 is comfortably powered at modest N.** H2A/H2B detect partial
+   r = .23 at N = 200; H3B detects r = .18 (three timepoints make the within-person
+   time × trait contrast the most efficient test in the family); H2C and H3A detect
+   r ≈ .25 at N = 250 despite the trait collinearity penalty. These sit inside the range
+   typically reported for perfectionism and rumination with effort and affect outcomes.
+2. **The multiple-comparison correction is nearly free.** Averaged across the family, BH
+   costs 1–4 percentage points of power at N ≥ 200 for δ ≥ .25 (e.g. at N = 250, δ = .25:
+   .79 uncorrected vs. .76 corrected). Shrinking the confirmatory family to buy power would
+   therefore gain almost nothing; the 17-test structure is not what limits this study.
+3. **The H1 framing × trait interactions are the binding constraint, and they are hard.**
+   Detecting a between-arm slope difference of Δr = .30 — already a *large* moderation —
+   needs N ≈ 300 for H1B and N ≈ 400 for H1A and H1C. A more typical moderation of
+   Δr ≈ .20 would need roughly N ≈ 800, and Δr ≈ .15 is out of reach entirely. This is
+   intrinsic to between-subjects moderation of a continuous trait, not a defect of the
+   design or the correction.
+
+**Target: N = 300 valid sessions** (~150 per arm) after exclusions (§5.4) — **[DECISION D12]**.
+The rationale is explicitly a compromise: it brings H1B to 80% power for Δr = .30, leaves
+H1A and H1C at 68–71% power there, and gives ≥ 95% power to every H2 and H3 test at
+δ = .25. N = 400 would raise the H1 family to Δr ≈ .26–.30 at a third more cost; N = 200
+would leave the study's headline hypothesis powered only for moderation of Δr ≈ .40.
+
+**Stated plainly, so that the result is interpretable either way:** a null H1 result at
+N = 300 rules out *large* moderation of trait–behaviour links by redemptive framing. It
+does not rule out the small-to-moderate moderation that would be the more typical finding
+in this literature. H2 and H3 are the parts of this study that will yield decisive
+evidence at achievable sample sizes.
+
+Two design changes identified in the pilot (methods log §1.8, §1.9) act on the *numerator*
+rather than the sample size, and are the more efficient route to H1 sensitivity: the
+Word Probe recalibration removes an artefact that deflates the score feedback the
+manipulation is built on, and the redemption-score fix removes an incoherent >100
+"percentile" seen by 13 of 20 pilot participants. Both plausibly strengthen the
+manipulation and so the moderation being tested.
+
+**Not covered by these figures:** the H1C Dirichlet regression (secondary; `DirichletReg`
+was not available in the analysis environment and the test is not in the confirmatory
+family) and the exploratory analyses of §5.7. The confirmatory H1C test is the scalar
+concentration index precisely so that H1C's status does not rest on the compositional model.
+
+### 3.5 Pilot (N = 20) — completed 2026-08-06
+
+A Prolific pilot of N = 22 enrolled / **20 with complete sessions** (11 redemption,
+9 control) was run before registration. It was **not** used to estimate effect-size
+priors: at N = 20 the 95% CI on a correlation spans roughly ±.45, so any observed pilot
+effect is uninformative and using it to power the main study would be circular.
+
+**The firewall is enforced in code, not by convention.** In `scripts/03_nuisance_params.py`
+the condition column is removed from the data frame before any statistic is computed, and
+a guard function raises an error on any attempt to associate a trait predictor — or
+pre-task predicted efficacy — with an outcome, i.e. on every quantity that one of the 17
+confirmatory tests estimates. No H1, H2 or H3 effect size exists anywhere in the pilot
+output.
+
+What the pilot did establish, and what each result changed:
+
+1. **ColourMax zero structure.** 9/20 participants (45%) left ≥1 image with zero dwell
+   time; 13/20 (65%) left ≥1 image uncoloured. Zeros are structural, not noise — which
+   confirms **D7** (the entropy-based concentration index, defined at zero without
+   imputation, as the primary H1C test) and makes the Dirichlet secondary analysis
+   genuinely sensitive to its detection-limit choice.
+2. **Distributions and censoring.** Effort ratings are ceilinged (25% at 100 post-Aptitude,
+   20% post-ColourMax, skew −2.7) and stress is floored (45% at the scale minimum at T0).
+   The stress floor trips the §5.2 >30%-at-a-boundary rule, so the Tobit sensitivity
+   analysis and the ordinal (`clm`) refit are both expected to fire. Both censoring
+   patterns are reproduced in the power simulation.
+3. **H2C dependent variable.** Within-person SD of the three subtask percentiles:
+   mean 36.4, SD 16.8, skew −0.71 — so the §5.2 log-transform rule (right skew) will
+   *not* apply, contrary to the original expectation.
+4. **Trait intercorrelations.** Discrepancy–burnout **r = .71**, discrepancy–rumination
+   .53, rumination–burnout .46 (VIFs 1.4–2.3). Below the §5.1 VIF > 5 trigger, but high
+   enough to inflate H2C standard errors by 1.2–1.5×; now built into the power simulation.
+5. **Reliability.** APS-R Discrepancy α = .93, RRQ Rumination α = .93, BAT core-23 α = .95.
+   Trait attenuation is therefore minor; the single-item slider DVs are the limiting
+   reliability and cannot be estimated from one administration.
+6. **Within-person dependence.** Stress ICC .60, negative affect .46, positive affect .87
+   across the three timepoints — these drive the H3 models' efficiency. Effort ICC was
+   −0.18 across its two administrations (see **D13**).
+7. **Feasibility.** Median session 30.8 min (IQR 28.4–35.3), not 45–60. Rating-write loss
+   0.29% (§5.6). Every variable in §4 was located in the export, though three required
+   different sources than assumed and ColourMax time-per-image had to be reconstructed
+   from the event log (§4 indices).
+8. **Two measurement defects** were found and are documented in the methods log §1.8–1.9:
+   the Word Probe percentile curve (median displayed percentile 0, against 56 and 60 for
+   the other two subtasks) and the redemption score displayed as a sum of two percentiles
+   (>100 for 13/20). Both bear on the manipulation itself rather than on the analysis.
+
+Pilot data are excluded from all confirmatory analyses and are not pooled with the
+registered sample.
 
 ---
 
@@ -115,7 +215,7 @@ These parameters feed the simulation-based power analysis for the Dirichlet and 
 |---|---|---|
 | Discrepancy perfectionism | APS-R (`aps-r`), 23 items, 1–7 | Mean of the 12 Discrepancy-subscale items (primary trait predictor). High Standards and Order subscales scored but exploratory only. |
 | Rumination | RRQ rumination subscale (`rrq-rumination`), 12 items, 1–5 | Mean of 12 items |
-| Burnout | BAT-Student (`bat-student`), 23 items, 1–5 (never–always) | Total mean (core dimensions); subscales exploratory |
+| Burnout | BAT-Student (`bat-student`), **33 items**, 1–5 (never–always) | Mean of the **23 BAT-C core items** (Exhaustion 8, Mental Distance 5, Cognitive Impairment 5, Emotional Impairment 5) — the preregistered burnout predictor. The 10 BAT-S secondary items (Psychological, Psychosomatic Complaints) are exploratory. |
 | Trait self-efficacy | GSE (`gse`), 10 items, 1–4 | Mean; exploratory covariate only |
 | Mood | DASS-21 (`dass-21`) | Subscale sums ×2; exploratory covariates |
 | Self-compassion | SCS-26 (`scs-26`) | Standard subscale/total scoring; exploratory |
@@ -124,6 +224,11 @@ These parameters feed the simulation-based power analysis for the Dirichlet and 
 **[DECISION D3]** State affect around tasks is measured with the built single-item sliders, not PANAS state subscales (the working doc referenced PANAS state pre/post per task, which is not in the build and would add ~8 administrations). PANAS appears once, in the trait battery. The single reference to a "Brief Inventory of Perceived Stress" in the doc's indices is replaced by the built single-item stress VAS.
 
 **Measured variables — state (around each task; platform slugs in parentheses).**
+*Storage note (confirmed against the pilot export): only the two 6-point emoji scales
+(stress, task satisfaction) are stored in `vas_responses`. Every single-item 0–100 slider
+is stored as a row in `questionnaire_responses` under its own slug, with the value in a
+`{"value": n}` payload. Scale scoring keys, including reverse-keyed items, live in
+`questionnaires.definition.scoring.subscales[]` and not on the item objects.*
 
 - Stress: 6-point emoji VAS (`vas_stress`), three timepoints — T0 pre-Aptitude, T1 post-Aptitude (before feedback/framing; doubles as the pre-ColourMax baseline), T2 post-ColourMax
 - Negative emotionality: 0–100 slider (`slider_negative_emotionality`), same three timepoints
@@ -141,7 +246,7 @@ These parameters feed the simulation-based power analysis for the Dirichlet and 
 
 **Indices (computed).**
 
-- **Time-allocation proportions:** p_i = t_i / Σt_i over the five images (denominator = the participant's actual total, not the nominal 300 s).
+- **Time-allocation proportions:** p_i = t_i / Σt_i over the five images (denominator = the participant's actual total, not the nominal 300 s). *Per-image time is not a stored field: it is reconstructed from the `page_switch` events in `aptitude_events` (each carrying `{from, to}` and a wall-clock `elapsed_ms`), bracketed by `session_start` and `game_end`, with the initial page being image 1. The `results.toolTimeByPage` field is brush-contact time, not dwell time, and is **not** used. Validated on the pilot: reconstructed totals summed to 301.0 s (SD 1.9) against the 300 s budget for all 20 participants. Because `elapsed_ms` is wall-clock while the in-game countdown is a throttleable `setInterval`, any session whose reconstructed total falls outside 290–320 s is flagged and excluded (§5.4 criterion 6).*
 - **Allocation concentration (H1C primary DV):** 1 − H/log(5), where H = −Σ p_i·log(p_i) (Shannon entropy; 0·log 0 ≡ 0). Ranges 0 (perfectly even fifths) to 1 (all time on one image). Defined for zeros without imputation.
 - **Aptitude variability (H2C DV):** SD of the three Aptitude Suite task percentile scores within participant; mean of the three as its covariate.
 - **Pre–post change scores (descriptive/plots only):** post − pre for stress, NA, PA, efficacy. Confirmatory H3B models use the stacked pre/post ratings, not difference scores.
@@ -172,6 +277,17 @@ Condition coded control = −0.5, redemption = +0.5. All continuous trait predic
 
 **H2A/H2B** (one stacked model each): effort ratings from both tasks (2 obs/participant),
 `effort ~ trait_z + task + (1 | id)` — H2A fits discrepancy and rumination in separate models (2 critical tests); H2B fits burnout (1 critical test). Critical terms: trait coefficients (H2A positive, H2B negative). **[DECISION D5]** Random intercepts only: with two observations per participant, random slopes (`(Task | id)` in the working doc) are unidentified.
+
+**[DECISION D13 — singular-fit rule]** The pilot estimated the effort ICC at −0.18 across
+the two administrations, i.e. no detectable between-person consistency (though at n = 20
+with two observations this estimate is very imprecise and is not distinguishable from
+zero, or from .3). If the random-intercept variance is estimated at or near zero and
+`lmer` reports a singular fit, the model is **not** re-specified: a zero intercept variance
+means the two occasions are effectively independent, the fixed-effect test for a
+between-person trait predictor remains valid, and `lmer` reduces to the correct OLS
+solution of its own accord. The singular-fit warning and the estimated intercept variance
+are reported. This is prespecified so that an anticipated warning cannot become a
+post-hoc excuse for changing the model.
 
 **H2C** (1 model, 3 critical tests):
 `aptitude_SD ~ discrepancy_z + rumination_z + burnout_z + mean_percentile_z` (lm). Critical terms: the three trait coefficients (all predicted positive). Mean percentile is a forced covariate (mean–variance confound). The working doc's full 3-way-interaction version of this model is exploratory (§5.7). VIFs reported; if any trait VIF > 5, each trait is additionally reported from its own single-trait model as a sensitivity analysis (the joint model remains confirmatory).
@@ -226,7 +342,21 @@ No outlier removal on legitimate values. Prespecified robustness: every confirma
 
 ### 5.6 Missing data
 
-Sliders/VAS and questionnaires are required fields in the platform flow, so item-level missingness within completed steps is structurally impossible; missingness arises only from dropout or technical failure and is handled by §5.4 (complete-case per model, counts reported). Questionnaire scale scores require ≥ 80% of subscale items (platform enforces 100%; the rule exists for defensive scoring only).
+Sliders, VAS items and questionnaires are required fields in the platform flow, so a
+participant cannot advance past a step without answering it. Missingness therefore arises
+from three sources: dropout (§5.4 criterion 1), technical failure (§5.4 criterion 6), and
+**silent write loss** — a completed step whose response row never reaches the database.
+The pilot observed write loss at **1 of 340 rating writes (0.29%)**: one participant
+completed the post-ColourMax stress step (2.8 s recorded in `participant_step_timings`)
+with no corresponding `vas_responses` row.
+
+Rule: models are fitted on complete cases, with the number of contributing observations
+reported per model. A participant missing a single occasion of a repeated state rating is
+retained for the occasions they do have in the mixed models (H2A/H2B, H3A, H3B), which
+tolerate unbalanced data, and is dropped only from those single-DV models that require the
+missing value. The realised write-loss rate is reported alongside the exclusion counts. No
+imputation is performed. Questionnaire scale scores require ≥ 80% of subscale items
+(platform enforces 100%; the rule exists for defensive scoring only).
 
 ### 5.7 Exploratory analyses (declared, uncorrected)
 
@@ -263,6 +393,9 @@ Sliders/VAS and questionnaires are required fields in the platform flow, so item
 
 - **D10** — (2026-08-04, Norm) No manipulation-check item. The framing is enacted by the score displays themselves (redemption sees points counted; control is told they won't count), so a belief probe is redundant. Intention-to-treat throughout.
 - **D11** — (2026-08-04, Norm) The vestigial `condition` slot stays; it is participant-invisible and analysis ignores it. No study duplication.
+- **D12** — (2026-08-11) Target **N = 300** valid sessions, set by the simulation-based power analysis (§3.4). Chosen as the point where H1B reaches 80% power for a large moderation (Δr = .30) while every H2/H3 test exceeds 95% power at δ = .25. The H1 family remains powered for large moderation only; this is stated in §3.4 rather than assumed away.
+- **D13** — (2026-08-11) Singular random-intercept fits in H2A/H2B are anticipated (pilot effort ICC ≈ 0) and are reported rather than re-specified. See §5.1.
+- **D14** — (2026-08-11) Scale scoring reads `questionnaires.definition.scoring.subscales[]` (item-level `reverse` flags are null throughout and must be ignored). Burnout = mean of the 23 BAT-C core items. Verified: RRQ reverses `rrs_6/9/10`; SCS reverses Self-Judgment, Isolation, Over-Identification; APS-R has no reverse items.
 
 **Build changes needed before launch:**
 

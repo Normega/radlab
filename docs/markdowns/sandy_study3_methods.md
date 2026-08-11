@@ -430,10 +430,80 @@ Design choices:
   term is within-person and is fitted with `lmerTest::lmer` directly.
 - A δ = 0 cell provides a Type-I / BH false-positive check.
 
-## Step 5 — Power analysis and prereg integration (running)
+## Step 5 — Power analysis results and prereg integration
 
-## Step 6 — Reproducible repository (in progress — `F:\gits\sandy_study3`)
+**Scripts**: `R/04_power_simulation.R` (2,000 replicates × 5 sample sizes × 6 effect
+sizes), `scripts/05_power_summary.py`. **Outputs**: `output/power_grid.csv`,
+`output/power_null.csv`, `output/power_summary.txt`.
 
-Structure: `data_raw/` (gitignored), `data/` (de-identified, versioned), `scripts/`,
-`R/`, `output/`, `docs/`. Scoring keys exported from the platform to
-`scripts/scoring_keys.json` so scale scoring is re-derivable without database access.
+**Runtime optimisation, validated.** A first run was on track for ~2.5 h because H3B's
+`lmer` fit dominated. Under a random-intercept model the person intercept is constant
+within person, so the time × discrepancy contrast is carried entirely by within-person
+variation and is reproduced by regressing each person's OLS time-slope on discrepancy.
+`R/_validate_h3b_shortcut.R` confirms this against `lmerTest` across ICC .2/.5/.8 and
+δ ∈ {0, .25}: power agreement within .006 (e.g. .970 vs .967), cor(log p) ≥ .96, and
+**58× faster**. The same person-mean equivalence for the between-person predictors in
+H2A/H2B/H3A is validated inline at every run (.930 vs .945).
+
+**Type-I control** at δ = 0: uncorrected rejection .052, BH rejection .004.
+
+### Detectable effect at 80% BH-corrected power
+
+| Test family | N=150 | N=200 | N=250 | N=300 | N=400 |
+|---|---|---|---|---|---|
+| H1A framing × trait | >.40 | >.40 | .38 | .34 | .30 |
+| H1B framing × trait | >.40 | .37 | .33 | .30 | .26 |
+| H1C framing × trait | >.40 | >.40 | .37 | .34 | .29 |
+| H2A/H2B trait main | .26 | .23 | .20 | .18 | .16 |
+| H2C variance | .33 | .28 | .25 | .23 | .20 |
+| H3A anticipatory | .32 | .28 | .25 | .23 | .20 |
+| H3B trajectory | .20 | .18 | .16 | .15 | .15 |
+
+Findings:
+
+- **H1 is the binding constraint.** Δr = .30 — a large moderation — needs N ≈ 300 (H1B) to
+  400 (H1A, H1C). A typical Δr ≈ .20 would need N ≈ 800.
+- **H2 and H3 are comfortable.** H3B is the most efficient test in the family (r = .18 at
+  N = 200) because three timepoints make the within-person contrast cheap; H2A/H2B reach
+  r = .23 at N = 200 even with the effort ceiling.
+- **BH is nearly free** — 1–4 points of power at N ≥ 200, δ ≥ .25. Trimming the
+  confirmatory family to buy power would gain almost nothing.
+- The earlier analytic estimate in the prereg (Δr ≈ .38 detectable at N = 200) was
+  slightly optimistic; the simulation puts it beyond .40 once BH, censoring and trait
+  collinearity are included.
+
+**Prereg updated**: §3.4 rewritten around the simulation; §3.5 rewritten as a completed
+pilot with the firewall described; new decisions **D12** (N = 300), **D13** (singular-fit
+rule for H2A/H2B), **D14** (scoring-key source). Also corrected: BAT-Student item count
+(§4), slider storage location (§4), ColourMax time reconstruction (§4 indices), session
+duration (§3), missing-data rule (§5.6).
+
+## Step 6 — Reproducible repository
+
+**`F:\gits\sandy_study3`** — git-initialised, first commit `a8ae1d4`.
+
+```
+README.md                  orientation, reproduction steps, firewall description
+docs/prereg.md             preregistration (synced from the radlab repo)
+docs/methods.md            this log
+scripts/01_inventory.py    pilot data review
+scripts/02_build_dataset.py  raw -> de-identified tables
+scripts/03_nuisance_params.py  nuisance parameters, firewall enforced
+scripts/05_power_summary.py    power tables
+scripts/scoring_keys.json  scoring keys exported from the platform
+R/04_power_simulation.R    joint 17-test power simulation
+R/_validate_h3b_shortcut.R validation of the fast path
+data/                      participants.csv, ratings_long.csv, images_long.csv
+data_raw/                  platform export + crosswalk — GITIGNORED
+output/                    nuisance params, power grid, summaries
+```
+
+**Verified**: `git ls-files data_raw` returns 0 files. A regex sweep of all three
+de-identified tables for UUID and 24-hex Prolific-ID patterns returns no matches; no
+absolute timestamps and no free-text demographic fields survive.
+
+⚠ **Re-identification caveat for any public release.** `participants.csv` retains nine
+closed-response demographic fields (age, gender identity, race/ethnicity, sexual
+orientation, Indigenous identity, disability, trans identity, parent education,
+racialized). In a 20-person table these are jointly identifying. Before the repo is made
+public the demographic block should be dropped or coarsened; it is safe within the lab.
