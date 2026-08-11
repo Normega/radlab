@@ -3178,6 +3178,23 @@ enforcing default still withdraws and still materializes nothing; `continue` on 
 participant yields no withdrawal, a reported shortfall, and the final assessment on the same date;
 an adherent participant is unaffected by the setting).
 
+*Proven on live data the same day.* Live Test participant SONA `909095` had completed their
+day-28 Phase 2 session at 13:53 UTC and was withdrawn by the 14:00 tick — seven minutes later, on
+7 of 12 — with a termination email. The rule change doesn't reinstate anyone retroactively, so the
+enrollment was reset by hand (status `enrolled`, `withdrawal_reason`/`withdrawn_at` cleared, the
+`liliana_participants.dropped_out` mirror cleared; no link revocation to undo, their last link was
+already `used`). Norm's call, and scoped to this one participant — the five withdrawn
+`ext-sona-dryrun-*` accounts were left alone, being slated for deletion. The **16:00 UTC cron tick
+then materialized `s_final`** for them (2026-08-12, study day 29, `pending`, 72 h link) with no
+re-withdrawal and no second termination email, which is the end-to-end confirmation that the
+deployed `continue` path works on a real participant rather than only in the fixture.
+
+**Phase 1 still gates**, deliberately (Norm's call, asked and answered at the time): it decides who
+enters Phase 2 at all, and the three-arm midpoint draw balancing among people who actually did the
+Phase 1 practices is what the manipulation rests on. `ac_p1: withdraw` is now written explicitly on
+both graphs rather than inherited from the default, so the asymmetry is a stated decision and not an
+oversight.
+
 **Contact-email collection (2026-07-16)** — critical gap found by Norm: the study never collected
 a participant email address, yet its entire delivery model is email. `auto-enroll` creates external
 (SONA/Prolific) accounts with a synthetic, undeliverable auth email
