@@ -42,6 +42,14 @@ import path from 'node:path'
 const CONFIG_PATH = path.join(homedir(), '.claude', 'workbench.json')
 const STATE_DIR = path.join(homedir(), '.claude', 'workbench-state')
 
+// Set WORKBENCH_DEBUG=1 to see why a push did not happen. This script is
+// deliberately silent on every failure path (it must never disrupt a session),
+// which makes "nothing appeared on the site" indistinguishable from "capture is
+// off" without it.
+const dbg = process.env.WORKBENCH_DEBUG
+  ? (...args) => console.error('[workbench]', ...args)
+  : () => {}
+
 const MIN_INTERVAL_MS = 4000   // debounce; SessionEnd always pushes
 const MAX_BODY_CHARS = 4000
 const MAX_TOOLS_PER_TURN = 40
@@ -269,29 +277,31 @@ async function readStdin() {
 }
 
 async function main() {
-  if (!existsSync(CONFIG_PATH)) return            // capture not enabled here
+  if (!existsSync(CONFIG_PATH)) { dbg('no config at', CONFIG_PATH); return }
 
   let config
   try {
     config = JSON.parse(readFileSync(CONFIG_PATH, 'utf8'))
-  } catch {
+  } catch (err) {
+    dbg('config at', CONFIG_PATH, 'is not valid JSON:', err?.message)
     return
   }
   const endpoint = process.env.WORKBENCH_ENDPOINT || config.endpoint
   const token = process.env.WORKBENCH_PUSH_TOKEN || config.token
-  if (!endpoint || !token) return
+  if (!endpoint || !token) { dbg('config missing endpoint or token'); return }
 
   let payload
   try {
     payload = JSON.parse(await readStdin())
-  } catch {
+  } catch (err) {
+    dbg('hook payload on stdin is not valid JSON:', err?.message)
     return
   }
 
   const sessionId = payload.session_id
   const transcriptPath = payload.transcript_path
   const cwd = payload.cwd || process.cwd()
-  if (!sessionId || !transcriptPath) return
+  if (!sessionId || !transcriptPath) { dbg('payload missing session_id/transcript_path'); return }
 
   const isEnd = payload.hook_event_name === 'SessionEnd'
 
@@ -303,18 +313,18 @@ async function main() {
     const allowed = config.projects.some(
       (p) => projectKey === String(p).replace(/\\/g, '/').replace(/\/+$/, '').toLowerCase()
     )
-    if (!allowed) return
+    if (!allowed) { dbg('project not in allowlist:', projectKey); return }
   }
 
   const state = readState(sessionId)
-  if (!isEnd && Date.now() - (state.last_push ?? 0) < MIN_INTERVAL_MS) return
+  if (!isEnd && Date.now() - (state.last_push ?? 0) < MIN_INTERVAL_MS) { dbg('debounced'); return }
 
   const { turns, title } = distil(transcriptPath, cwd)
-  if (!turns.length) return
+  if (!turns.length) { dbg('distilled 0 turns from', transcriptPath); return }
 
   const from = (state.max_seq ?? -1) + 1
   const fresh = turns.filter((t) => t.seq >= from).slice(0, MAX_TURNS_PER_PUSH)
-  if (!fresh.length && !isEnd) return
+  if (!fresh.length && !isEnd) { dbg('nothing new above seq', state.max_seq); return }
 
   const bodyPayload = {
     session_id: sessionId,
@@ -327,12 +337,14 @@ async function main() {
   }
   if (isEnd) bodyPayload.ended_reason = payload.reason || 'other'
 
+  dbg('posting', fresh.length, 'turns to', endpoint)
   const res = await fetch(endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
     body: JSON.stringify(bodyPayload),
   })
 
+  dbg('response', res.status)
   if (!res.ok) {
     // Reset the high-water mark so the next turn retries this range rather than
     // skipping past it. Silent gaps are worse than duplicate work.
@@ -353,6 +365,11 @@ async function main() {
 const invokedDirectly =
   process.argv[1] && path.resolve(process.argv[1]) === path.resolve(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'))
 
+dbg('invokedDirectly =', invokedDirectly, '| argv[1] =', process.argv[1])
 if (invokedDirectly) {
-  main().catch(() => {}).finally(() => process.exit(0))
+  // The catch stays swallowing — this must never disrupt a session — but it
+  // reports under WORKBENCH_DEBUG. Without that, an exception anywhere in main()
+  // is indistinguishable from "capture is off", which cost an hour the first
+  // time.
+  main().catch((err) => dbg('threw:', err?.stack || err)).finally(() => process.exit(0))
 }
