@@ -308,12 +308,27 @@ async function main() {
   // A project allowlist in the config file is a second switch, independent of
   // which repos carry a .claude/settings.json. Either can turn a project off;
   // both must be on for anything to be captured.
-  const projectKey = cwd.replace(/\\/g, '/').replace(/\/+$/, '').toLowerCase()
+  //
+  // Matching is by path *boundary*, not equality, so a session run in a git
+  // worktree under an allowed repo counts. The first version compared for
+  // equality and silently declined every worktree session — and since worktrees
+  // are checkouts of the same repo they carry .claude/settings.json too, the hook
+  // fired and then quietly did nothing, which is the worst shape a bug can take
+  // here. `norm + '/'` rather than a bare startsWith, so that an allowed
+  // `…/radlab` does not also swallow the sibling `…/radlab-academic-wt`.
+  //
+  // The matched root becomes the project_key, not the literal cwd: a standing
+  // "everything in radlab goes to this person" rule should cover work done in a
+  // worktree of radlab, otherwise the rule silently misses sessions and reads as
+  // broken. The exact directory is still recorded in `cwd`, so nothing is lost.
+  const normalize = (v) => String(v).replace(/\\/g, '/').replace(/\/+$/, '').toLowerCase()
+  let projectKey = normalize(cwd)
   if (Array.isArray(config.projects) && config.projects.length) {
-    const allowed = config.projects.some(
-      (p) => projectKey === String(p).replace(/\\/g, '/').replace(/\/+$/, '').toLowerCase()
-    )
-    if (!allowed) { dbg('project not in allowlist:', projectKey); return }
+    const root = config.projects
+      .map(normalize)
+      .find((r) => projectKey === r || projectKey.startsWith(r + '/'))
+    if (!root) { dbg('project not in allowlist:', projectKey); return }
+    projectKey = root
   }
 
   const state = readState(sessionId)
