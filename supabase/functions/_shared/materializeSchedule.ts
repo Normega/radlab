@@ -42,7 +42,24 @@ export interface GraphNode {
   phase?: string // adherence_check — 'phase1' | 'phase2', matches intervention_modules.phase
   min_required?: number // adherence_check
   of_total?: number // adherence_check, informational only (shown in the withdrawal reason)
+  // adherence_check — what a below-minimum count actually does. 'withdraw'
+  // (the default, and the historical behaviour) formally withdraws the
+  // participant; 'continue' records the shortfall and walks on, so the rest
+  // of the study is still delivered and the criterion becomes an analysis
+  // classification rather than a gate. See ADHERENCE_ON_FAIL.
+  on_fail?: AdherenceOnFail
 }
+
+// Deliberately a graph-level property rather than a global switch: whether a
+// missed adherence threshold ends participation is a per-study design
+// decision, and two checks in the same graph can differ (Liliana's phase-1
+// check still withdraws — it decides who enters phase 2 — while its phase-2
+// check only records, so everyone who reaches phase 2 is offered the final
+// assessment and intention-to-treat analysis is possible alongside
+// per-protocol).
+export type AdherenceOnFail = 'withdraw' | 'continue'
+export const ADHERENCE_ON_FAIL: AdherenceOnFail[] = ['withdraw', 'continue']
+export const DEFAULT_ADHERENCE_ON_FAIL: AdherenceOnFail = 'withdraw'
 
 export interface AdherenceWithdrawal {
   // 'adherence': failed an adherence_check node's completed-session count.
@@ -56,6 +73,20 @@ export interface AdherenceWithdrawal {
   minRequired?: number // adherence only
   ofTotal?: number // adherence only
   gateLabel?: string // missed_assessment only — the gating session's label
+}
+
+// A below-minimum adherence_check that did NOT withdraw, because the node is
+// `on_fail: 'continue'`. Reported so the pass is auditable in the cron logs —
+// the fact is otherwise invisible, there being no withdrawal_reason to read
+// it off. Not persisted: the durable per-protocol classification is derived
+// at analysis time from the same counts (`liliana_phase_adherence`), which
+// stays correct if a session is completed after the check has run.
+export interface AdherenceShortfall {
+  nodeId: string
+  phase: string
+  completed: number
+  minRequired: number
+  ofTotal: number
 }
 
 export interface GraphEdge {
@@ -148,6 +179,10 @@ export interface MaterializeResult {
   inserted: number
   stoppedAt: string | null
   withdrawal: AdherenceWithdrawal | null
+  // Adherence checks the participant was below the minimum on but which are
+  // authored `on_fail: 'continue'`, so the walk carried on. Empty in the
+  // withdraw case — a check either ends the walk or is recorded here.
+  adherenceShortfalls: AdherenceShortfall[]
   // True when the walk ran off the end of the graph with nothing upstream
   // actionable and the final session completed — i.e. the participant has
   // finished the whole study. The caller marks the enrollment 'completed'.
@@ -273,6 +308,7 @@ export async function materializeSchedule(
   let lastSessionNodeKey: string | undefined
   let stoppedAt: string | null = null
   let withdrawal: AdherenceWithdrawal | null = null
+  const adherenceShortfalls: AdherenceShortfall[] = []
   // Days by which this participant's calendar runs ahead of the graph's
   // nominal day_offsets (negative = behind) — see the timepoint and randomize
   // branches below. Zero for everyone who completes a gating assessment on the
@@ -463,11 +499,20 @@ export async function materializeSchedule(
       }
       const minRequired = node.min_required ?? 10
       const ofTotal = node.of_total ?? 12
-      const completed = await countCompletedPhaseDays(db, participantId, studyId, node.phase ?? 'phase1')
+      const phase = node.phase ?? 'phase1'
+      const completed = await countCompletedPhaseDays(db, participantId, studyId, phase)
       if (completed < minRequired) {
-        withdrawal = { kind: 'adherence', nodeId: node.id, phase: node.phase ?? 'phase1', completed, minRequired, ofTotal }
-        stoppedAt = node.id
-        break
+        // 'continue' (see AdherenceOnFail): the threshold is an analysis
+        // criterion, not a gate — record the shortfall and deliver the rest
+        // of the study anyway. Everything downstream, notably the final
+        // assessment, is materialized exactly as for an adherent participant.
+        if ((node.on_fail ?? DEFAULT_ADHERENCE_ON_FAIL) === 'continue') {
+          adherenceShortfalls.push({ nodeId: node.id, phase, completed, minRequired, ofTotal })
+        } else {
+          withdrawal = { kind: 'adherence', nodeId: node.id, phase, completed, minRequired, ofTotal }
+          stoppedAt = node.id
+          break
+        }
       }
       cur = graph.edges.find((e) => e.from === cur)?.to ?? null
 
@@ -483,7 +528,7 @@ export async function materializeSchedule(
     cur === null && stoppedAt === null && withdrawal === null &&
     !anyUpstreamActionable && lastSessionStatus === 'completed'
 
-  if (inserts.length === 0) return { inserted: 0, stoppedAt, withdrawal, completedStudy }
+  if (inserts.length === 0) return { inserted: 0, stoppedAt, withdrawal, completedStudy, adherenceShortfalls }
 
   const insertRows = inserts.map((row, i) => {
     const session = sessionByNodeKey.get(row.nodeKey)
@@ -528,5 +573,5 @@ export async function materializeSchedule(
     })
   }
 
-  return { inserted: insertRows.length, stoppedAt, withdrawal, completedStudy }
+  return { inserted: insertRows.length, stoppedAt, withdrawal, completedStudy, adherenceShortfalls }
 }
