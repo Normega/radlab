@@ -6140,7 +6140,7 @@ Visibility proved live under `SET LOCAL ROLE authenticated` against three real a
 - [x] Schema + RLS (`20260811_workbench_sessions.sql`), visibility proved live against three real accounts (2026-08-11)
 - [x] Distiller + `Stop`/`SessionEnd` hook, opt-in per repo via `~/.claude/workbench.json`
 - [x] `/workbench` member view and `/workbench/admin` console, own chunks, own ErrorBoundary
-- [ ] **Set `SUPABASE_SERVICE_KEY` and `WORKBENCH_PUSH_TOKEN` in Vercel** — the endpoint 500s with a named `missing` list until both exist
+- [ ] **Set `SUPABASE_SERVICE_KEY` and `WORKBENCH_PUSH_TOKEN` in Vercel** — the endpoint 500s with a named `missing` list until both exist. **`SUPABASE_SERVICE_KEY` must be a new-scheme `sb_secret_…` key** (Settings → API Keys → Create new secret key), *not* the legacy `service_role` JWT on the Settings → API page: this project has migrated, its legacy `anon` key reports `disabled: true`, and the app already runs on `sb_publishable_…`. Copying the legacy JWT fails authentication and reads as a bug in the endpoint. `WORKBENCH_PUSH_TOKEN` is one long-lived shared secret for the machine, not per session — sessions are identified by the `session_id` in each payload.
 - [ ] **First real end-to-end push** — nothing has travelled through `api/session-push.js` yet; the seeded session was inserted directly
 - [ ] Review the first few captured sessions before sharing any of them, per the handoff brief's advice
 - [ ] Decide whether a shared session should ever be revocable *retroactively* — today un-sharing hides future reads but the student may already have read it
