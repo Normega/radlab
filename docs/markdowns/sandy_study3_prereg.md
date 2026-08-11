@@ -13,7 +13,7 @@
 - **Control**: "You've finished Aptitude Suite. The next activity will begin shortly. Note that this activity will not count toward your overall score."
 - **Redemption**: "Good news: you now have a chance to raise your percentage!" — and, at the end of ColourMax, a combined "new overall score."
 
-Brief state ratings (stress, negative/positive emotionality, predicted/experienced performance relative to others, effort, satisfaction) are collected around each task. A trait questionnaire battery (APS-R, BAT-Student, PANAS, RRQ-rumination, GSE, DASS-21, SCS-26), demographics (U of T Student Equity Census), and a debrief close the session. The session is single-shot, fully online, desktop-required, ~45–60 minutes.
+Brief state ratings (stress, negative/positive emotionality, predicted/experienced performance relative to others, effort, satisfaction) are collected around each task. A trait questionnaire battery (APS-R, BAT-Student, PANAS, RRQ-rumination, GSE, DASS-21, SCS-26), demographics (U of T Student Equity Census), and a debrief close the session. The session is single-shot, fully online, desktop-required, and takes ~35 minutes (pilot median 30.8; §3).
 
 **Hypotheses.** Three hypothesis families, all directional. The specific statistical test for each is given in §5; the confirmatory test family is enumerated in §5.3.
 
@@ -35,7 +35,7 @@ Brief state ratings (stress, negative/positive emotionality, predicted/experienc
 - **H3A.** Higher discrepancy perfectionism and lower pre-task predicted self-efficacy each predict greater pre-task stress and negative emotionality (the state immediately preceding each task segment).
 - **H3B.** Higher discrepancy perfectionism predicts a steeper increase in stress and negative emotionality across the session's three affect timepoints (pre-Aptitude → post-Aptitude/pre-ColourMax → post-ColourMax).
 
-**[DECISION D1]** The working doc's H1B specified a three-way interaction (discrepancy × rumination × condition). A three-way interaction between two correlated, imperfectly reliable continuous traits and a binary factor is realistically detectable only at N ≥ ~800 (see §3.4); at N = 200 a null would be uninterpretable. H1B is therefore specified here as two 2-way moderation models (one per trait), and the three-way term is demoted to the exploratory set (§5.6).
+**[DECISION D1]** The working doc's H1B specified a three-way interaction (discrepancy × rumination × condition). A three-way interaction between two correlated, imperfectly reliable continuous traits and a binary factor is realistically detectable only at N ≥ ~800 (see §3.4) — and the pilot's observed discrepancy–rumination correlation of .53 makes the product term worse, not better; at the registered N a null would be uninterpretable. H1B is therefore specified here as two 2-way moderation models (one per trait), and the three-way term is demoted to the exploratory set (§5.6).
 
 ---
 
