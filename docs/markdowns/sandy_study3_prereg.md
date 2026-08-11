@@ -35,7 +35,7 @@ Brief state ratings (stress, negative/positive emotionality, predicted/experienc
 - **H3A.** Higher discrepancy perfectionism and lower pre-task predicted self-efficacy each predict greater pre-task stress and negative emotionality (the state immediately preceding each task segment).
 - **H3B.** Higher discrepancy perfectionism predicts a steeper increase in stress and negative emotionality across the session's three affect timepoints (pre-Aptitude → post-Aptitude/pre-ColourMax → post-ColourMax).
 
-**[DECISION D1]** The working doc's H1B specified a three-way interaction (discrepancy × rumination × condition). A three-way interaction between two correlated, imperfectly reliable continuous traits and a binary factor is realistically detectable only at N ≥ ~800 (see §3.4) — and the pilot's observed discrepancy–rumination correlation of .53 makes the product term worse, not better; at the registered N a null would be uninterpretable. H1B is therefore specified here as two 2-way moderation models (one per trait), and the three-way term is demoted to the exploratory set (§5.6).
+**[DECISION D1]** The working doc's H1B specified a three-way interaction (discrepancy × rumination × condition). A three-way interaction between two correlated, imperfectly reliable continuous traits and a binary factor is realistically detectable only at N ≥ ~800 (see §3.4) — and the pilot's observed discrepancy–rumination correlation of .53 makes the product term worse, not better; at the registered N a null would be uninterpretable. H1B is therefore specified here as two 2-way moderation models (one per trait), and the three-way term is demoted to the exploratory set (§5.7).
 
 ---
 
@@ -67,9 +67,9 @@ Note the deliberate ordering: **trait questionnaires are administered after the 
 
 ## 3. Sampling Plan
 
-**Existing data.** Registration prior to creation of data. No data for the confirmatory sample have been collected. A pilot (N = 20; §3.5) will be collected **before** final registration to estimate nuisance parameters; pilot data will not be included in confirmatory analyses and no hypothesis tests will be run on the pilot.
+**Existing data.** Registration prior to creation of the confirmatory data. No data for the confirmatory sample have been collected. A pilot (N = 20) **was** collected on 2026-08-06, before registration, to estimate nuisance parameters only (§3.5); no hypothesis test was run on it, no effect size was estimated from it, and it is not pooled with the registered sample.
 
-**Data collection procedures.** Participants recruited via Prolific. Inclusion: fluent English; currently enrolled post-secondary student (Prolific prescreen); normal or corrected-to-normal vision; desktop/laptop required (ColourMax requires mouse input; enforced by Prolific device filter and platform check). Exclusion at recruitment: Prolific prescreen for active suicidal ideation (given DASS-21 content). Compensation at or above Prolific's recommended hourly rate for a 45–60 min session. **[DECISION D2]** The working doc named UTM undergraduates in one place and Prolific in another; this draft specifies Prolific with a post-secondary-student prescreen. If SONA/UTM recruitment is used instead or additionally, the sampling section must be revised before registration.
+**Data collection procedures.** Participants recruited via Prolific. Inclusion: fluent English; currently enrolled post-secondary student (Prolific prescreen); normal or corrected-to-normal vision; desktop/laptop required (ColourMax requires mouse input; enforced by Prolific device filter and platform check). Exclusion at recruitment: Prolific prescreen for active suicidal ideation (given DASS-21 content). Compensation at or above Prolific's recommended hourly rate for a 35-minute session (see Session duration below). **[DECISION D2]** The working doc named UTM undergraduates in one place and Prolific in another; this draft specifies Prolific with a post-secondary-student prescreen. If SONA/UTM recruitment is used instead or additionally, the sampling section must be revised before registration.
 
 **Session duration.** Measured in the pilot at a **median of 30.8 minutes** (IQR 28.4–35.3;
 sum of step durations), not the 45–60 minutes originally estimated. Longest components:
@@ -207,7 +207,7 @@ registered sample.
 
 ## 4. Variables
 
-**Manipulated variable.** ColourMax framing (control vs. redemption), operationalized by the two framing displays quoted in §1 and by the condition-gated end-of-task score display (redemption arm additionally sees "your new overall score is {Aptitude percentile + ColourMax percentile}"). Server-side assignment record: `participant_assignments`, slot `framing`.
+**Manipulated variable.** ColourMax framing (control vs. redemption), operationalized by the two framing displays quoted in §1 and by the condition-gated end-of-task score display (the redemption arm additionally sees "your new overall score is {redemption_score}"). Since 2026-08-11 `redemption_score` is `max(aptitude_pct, mean(aptitude_pct, colourmax_pct))` — the mean of the two percentiles, floored at the Aptitude percentile so the bonus round can never lower a participant's standing. It was previously the arithmetic *sum*, which exceeded 100 for 13 of 20 pilot participants; see methods log §1.9. Server-side assignment record: `participant_assignments`, slot `framing`.
 
 **Measured variables — trait (questionnaire battery, post-task).**
 
@@ -318,7 +318,7 @@ post-hoc excuse for changing the model.
   - H2C: 3 (discrepancy; rumination; burnout)
   - H3A: 4 (2 predictors × 2 DVs)
   - H3B: 2 (time × discrepancy for 2 DVs)
-- Everything else (simple slopes, Dirichlet omnibus and components, secondary/tertiary models, subscales, robustness refits, §5.6) is explicitly non-confirmatory and reported without correction as exploratory.
+- Everything else (simple slopes, Dirichlet omnibus and components, secondary/tertiary models, subscales, robustness refits, §5.7) is explicitly non-confirmatory and reported without correction as exploratory.
 - Mixed-model p-values: Satterthwaite. Effect sizes: standardized β with 95% CI for every confirmatory coefficient; f² for lm terms.
 
 ### 5.4 Data inclusion and exclusion
@@ -372,7 +372,7 @@ imputation is performed. Questionnaire scale scores require ≥ 80% of subscale 
 
 ## 6. Other — known context
 
-- The displayed Aptitude Suite "percentile" is generated by the platform's scoring curve (designed for diminishing returns near the top), not a live empirical percentile of prior participants; the redemption arm's "new overall score" is the sum of two percentile-type quantities. Both are part of the deception covered in the debrief; the debrief form and REB protocol must describe them accurately.
+- The displayed Aptitude Suite "percentile" is generated by the platform's scoring curve (designed for diminishing returns near the top), not a live empirical percentile of prior participants; the redemption arm's "new overall score" is a floored mean of two percentile-type quantities (§4). Both are part of the deception covered in the debrief; the debrief form and REB protocol must describe them accurately. The Word Probe subtask's curve was recalibrated on 2026-08-11 after the pilot showed it assigned the 0th percentile to 14 of 20 participants (methods log §1.8); raw `wordprobe_score` is on a new scale from that date and must not be pooled across it.
 - Pilot data (N = 20) precede registration and are excluded from all confirmatory analyses; the final registration will report which nuisance-parameter estimates were taken from the pilot and attach the simulation-based power analysis for the Dirichlet and mixed models.
 
 ---
