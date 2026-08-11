@@ -155,12 +155,11 @@ study session window*, never by the master's `_t<n>` columns.
 - **The H1C concentration index is well behaved**: mean 0.255, SD 0.167, range 0.015–0.577,
   skew +0.25. Approximately symmetric; the prereg §5.2 transformation rule (|skew| > 2)
   will not trigger.
-- ⚠ **Word Probe has a severe floor.** Across the cohort, `wordprobe_pct` had median 0,
-  mean 8.6, 75th percentile 16.3 (vs. anagram mean 52.1, fluency mean 57.1). Most
-  participants scored zero on the Wordle-style task. See §Open issues — this materially
-  affects H2C, whose DV is the within-person SD of the three subtask percentiles
-  (observed mean SD = 36.4 on a 0–100 scale, largely manufactured by one floored task
-  rather than by differential effort allocation).
+- ⚠⚠ **Word Probe's percentile curve is mis-calibrated** (see §1.8) — median displayed
+  percentile 0 against 56 (anagram) and 60 (fluency). This deflates `avg_pct`, the number
+  the manipulation is built on, and inflates the H2C variance DV.
+- ⚠⚠ **The redemption arm's "new overall score" exceeds 100** for 13/20 participants
+  (see §1.9).
 - **Session length is ~30 minutes, not 45–60.** Summed step durations: median 30.0 min,
   mean 31.7, IQR 28.0–35.0. Longest steps: Aptitude Suite 8.8 min, ColourMax 5.3 min,
   questionnaire battery ~11.5 min total. The prereg's stated duration and the Prolific
@@ -168,19 +167,82 @@ study session window*, never by the master's `_t<n>` columns.
 - ColourMax session integrity: 20/20 have non-null `results`, `session_end`, and `avg_pct`.
   (Across the full export 7/52 sessions lacked `game_end`; all were dev sessions.)
 
-### 1.7 Open issues raised for discussion
+### 1.8 Word Probe percentile calibration (measurement defect)
+
+All three Aptitude subtasks map a raw score to a displayed percentile through the same
+logistic, `logisticPercentile(score, midpoint, k)` in `src/games/AptitudeSuite/constants.js`,
+which returns a hard 0 whenever `score <= 0`. Two of the three are well calibrated against
+the pilot; the third is not.
+
+| Task | midpoint | k | score needed for p50 | observed median score | observed median percentile |
+|---|---|---|---|---|---|
+| Anagram | 5 | 0.55 | 5 | 5.5 | **56** |
+| Fluency | 7.5 | 0.45 | 8 | 8.5 | **60** |
+| Word Probe | 15 | 0.12 | 15 | **0** | **0** |
+
+Word Probe awards `7 − n_guesses` per solved word (guess 1 = 6 points … guess 6 = 1), so
+the 15 points needed for the median require roughly **4–7 solved Wordles** inside an
+8-minute budget shared with two other tasks. Observed raw-score distribution across the
+20 pilot participants: **0 (×14), 1, 2, 3, 4, 13, 17**.
+
+Consequences:
+
+1. **`avg_pct` — the number the whole manipulation rests on — is deflated by roughly a
+   third.** Participants are instructed to "aim for the top 10%" and the cohort averaged
+   the 39th percentile (mean 39.2, median 36.5). The predicted-vs-observed gap that the
+   score-feedback display presents is therefore systematically inflated by an artifact.
+2. **H2C's DV is contaminated.** With one subtask pinned at 0 and two near 50–60, the
+   within-person SD across the three percentiles (observed mean 36.4) largely encodes
+   *how well the other two went*, not uneven effort allocation. The preregistered
+   `mean_percentile_z` covariate does not fully absorb a structural floor.
+3. **Recalibration alone is necessary but not sufficient.** 70% of participants scored
+   exactly 0, and no monotone rescaling can discriminate within a tied group. Making Word
+   Probe informative additionally requires partial credit (e.g. points for letters
+   revealed, or for reaching ≥3 greens in a round) so that effort moves the score without
+   a solve.
+
+Illustrative recalibrations (`midpoint`, `k`) mapping scores 0/2/4/6/10/15/20/30:
+
+- `mid=4, k=0.30` → 0, 35, 50, 64, 85, 95, 98, 99
+- `mid=6, k=0.22` → 0, 29, 39, 50, 70, 87, 95, 98
+- (anagram, for reference: 0, 16, 36, 63, 93, 99, 99, 99)
+
+### 1.9 Redemption score display (manipulation-integrity defect)
+
+The redemption arm's ColourMax display reads: *"Because this was a bonus round, your new
+overall score is {{game.color_max.redemption_score}}"*, where `redemption_score` is
+precomputed in `SessionEntry.jsx` as **`aptitude_suite.avg_pct + color_max.avg_pct`** —
+the arithmetic *sum* of two percentiles (`website.md` §24a).
+
+Across the 20 pilot participants that quantity has median **114.8**, max **169.7**, and
+**exceeds 100 for 13/20**. Participants who have just been told they are ranked against
+others and should aim for the top 10% are shown a "score" of, e.g., 169.67.
+
+This sits at the exact centre of the experimental manipulation. Risks: it undercuts the
+credibility of the percentile cover story, may cue participants that the feedback is
+fabricated (compromising the deception the debrief is written around), and adds
+interpretation noise to every post-ColourMax rating.
+
+A mean rather than a sum would be coherent and still delivers a substantial apparent gain,
+because ColourMax scores far higher than Aptitude in practice (ColourMax `avg_pct`
+mean 70.6 vs. Aptitude 39.2): a participant at 39 would see roughly 55 as their revised
+standing — an improvement that is both credible and visible.
+
+### 1.10 Open issues raised for discussion
 
 Carried to the message accompanying this step; recorded here so the log is self-contained.
 
-| # | Issue | Bearing |
-|---|---|---|
-| I1 | Word Probe floor effect contaminates the H2C variance DV | Prereg §5.1 H2C; possibly task calibration before launch |
-| I2 | Session ~30 min vs. 45–60 min stated | Prereg §2/§3 and participant payment |
-| I3 | BAT-Student 33 items vs. 23 stated | Prereg §4 measures table |
-| I4 | Sliders sourced from `questionnaire_responses`, not `vas_responses` | Prereg §4 wording |
-| I5 | H1C DV requires event-log reconstruction; no stored field | Prereg §4 indices + analysis code |
-| I6 | Analysis repo location (blocked from creating `F:\gits\sandy_study3`) | Step 6 |
-| I7 | ColourMax rows lack `study_id` | Platform fix, not analysis-blocking |
+| # | Issue | Bearing | Needs Norm |
+|---|---|---|---|
+| I1 | Word Probe percentile mis-calibration (§1.8) | Manipulation fidelity; H2C DV; possible build change | **yes** |
+| I2 | Redemption score displayed as a sum > 100 (§1.9) | Manipulation integrity; possible build change | **yes** |
+| I3 | Analysis repo location (blocked from creating `F:\gits\sandy_study3`) | Step 6 | **yes** |
+| I4 | Merge structure — one wide table vs. related tidy tables | Step 2 | **yes** |
+| I5 | Session ~30 min vs. 45–60 min stated | Prereg §2/§3 and Prolific pay rate | no — will edit prereg |
+| I6 | BAT-Student 33 items vs. 23 stated; core 23 scored | Prereg §4 measures table | no — will edit prereg |
+| I7 | Sliders live in `questionnaire_responses`, not `vas_responses` | Prereg §4 wording | no — will edit prereg |
+| I8 | H1C DV requires event-log reconstruction; no stored field | Prereg §4 indices + analysis code | no — documented §1.3 |
+| I9 | ColourMax rows lack `study_id`; Aptitude logs no task-switch event | Platform hygiene; blocks per-task dwell as an H2C alternative | no — noted for platform |
 
 ---
 
