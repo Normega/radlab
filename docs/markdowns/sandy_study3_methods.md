@@ -565,8 +565,13 @@ main-study values must not be pooled. Recorded in `website.md` §22.
 
 ---
 
-⚠ **Re-identification caveat for any public release.** `participants.csv` retains nine
+**Re-identification risk closed (2026-08-11).** `participants.csv` originally carried nine
 closed-response demographic fields (age, gender identity, race/ethnicity, sexual
 orientation, Indigenous identity, disability, trans identity, parent education,
-racialized). In a 20-person table these are jointly identifying. Before the repo is made
-public the demographic block should be dropped or coarsened; it is safe within the lab.
+racialized) which are jointly identifying in a 20-person table. Row-level demographics are
+now **never written to any versioned file**. `02_build_dataset.py` §6 emits only
+`output/demographics_summary.txt`: age as median and range, and category counts with
+**cells below 5 suppressed** as a total rather than printed, so the sample can still be
+described without disclosing intersections. `participants.csv` is now 21 × 86 (was 21 × 95)
+and contains no `dem_*` column. Nothing downstream used them — `03_nuisance_params.py`
+re-runs unchanged.
