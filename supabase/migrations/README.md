@@ -543,6 +543,35 @@ refused listing `40→12 (Δ28, ×3.33)`; same edit with a verification statemen
 carries it; section removal → refused naming the section; final edit restored the page
 **byte-identical** to its pre-test body (proven by comparing against the v2 version row).
 
+`20260811_wp7_curated_gaps.sql` — **applied 2026-08-11 via MCP `apply_migration` (name
+`20260811_wp7_curated_gaps`), verified by reading the six rows back and re-counting the corpus.**
+Data only, no DDL. Six `kind='curated'` gaps from the WP7 item-format audit (run plan §39.10): exam
+questions were written against real guide pages and the locked study text could not answer them.
+
+**Why they had to be curated rather than derived:** all six sit in sections that already contain
+prose, so `extract_page_needs()` reads them as filled and `populate_page_gaps()` can never produce
+them. This is the §5 annotated-vs-derived problem in a third form — a section can be full and still
+be missing the thing the chapter depends on.
+
+**First use of `kind='curated'`** (the check constraint allowed it; 0 rows before). It is the
+staff-flagging route from run plan §38.3 Phase D: recorded against the page without touching page
+content, so no flag passes through provenance. `populate_page_gaps()` is unaffected — it only writes
+`annotation` and `empty_section` rows and never deletes — and `ask_hash` follows the function's own
+convention for prose asks, `md5(lower(ask))`, so the unique index behaves. Idempotent via
+`ON CONFLICT (page_id, ask_hash) DO NOTHING`.
+
+Rows: `schizophrenia`/etiology — the dopamine hypothesis (green, the mechanism is assumed
+chapter-wide and stated nowhere) and longitudinal brain change (amber);
+`positive-and-negative-symptoms` — how the distinction maps onto prodromal/active/residual (amber;
+the corpus currently implies the *opposite* of the usual teaching claim); `brain-reward-system` —
+neuroadaptation and wanting-vs-liking (green) and human evidence for the reward account (amber);
+`law-and-ethics` — duty where the risk is to the patient rather than a third party (**red**: Tarasoff
+and Smith v. Jones are both third-party doctrines, this is provincial statute, and the corpus has
+been wrong about a statutory threshold once already).
+
+Corpus after: **743 open gaps · 126 green · 605 amber · 12 red · 867 student slots** (from 737/860).
+All four pages are lecture-mapped (8, 10, 11), so the rows are reachable in the student gap browser.
+
 `20260806_staff_read_enrolled_people.sql` — **applied live 2026-08-06 (three MCP calls as each fault
 revealed the next), verified by RLS test.** Fixes "permission denied for table people" on
 `/academic/fieldguide/submissions`, introduced the same day by `submission_review_queue` joining

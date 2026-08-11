@@ -4333,3 +4333,123 @@ of the sequence rather than rendering them empty. The mockup does this by markin
 `quizOnly` and filtering the list, which also keeps the progress count and "n of N" honest. Same
 principle as the feedback rule: a test screen that exists but is suppressed is a screen that will
 eventually leak.
+
+### 39.10 Short answer, and what auditing four real exam questions found (2026-08-11)
+
+Norm supplied four structured short-answer questions from previous years — the format he has used
+for the midterm (choose 2 of 4) and final (3 of 4). Each is a stem plus five one-mark parts with
+focused sub-questions, answerable in point form. Two separate things came out of examining them: a
+verdict on the format, and a **content audit that turned up six holes in the guide**, now catalogued
+(see 39.10.3).
+
+#### 39.10.1 The format verdict
+
+**Keep short answer, final only, one or two questions.** Its defensible function is narrow but real:
+it is the only place a student *produces* rather than *selects*, and the only assessment that cannot
+be reached by elimination. It is also the only hand-graded element anywhere in the design, so it
+should be the smallest part of the paper that still does that job.
+
+What is genuinely good in Norm's version, and should carry over:
+
+- **Transparent per-mark structure.** The student sees where each mark lives, which removes most
+  disputes and keeps marking consistent across TAs.
+- **Point form permitted.** Strips writing fluency as a confound — a real fairness gain in a large
+  UTM cohort.
+- **An internal difficulty gradient.** Parts A–B bank marks for basic knowledge; D–E discriminate.
+
+The one substantive critique: **the decomposition supplies the integration.** Listing parts A–E hands
+the student the outline of the integrative argument, so they fill slots rather than seeing that (for
+instance) symptom categories, time course and neurobiology connect. It tests five pieces of knowledge
+in an integrative-looking wrapper. Fix: keep A–C as scaffolded cheap marks, then make the final two
+marks **unscaffolded and synthetic** — *"a family member says the medication has stopped working;
+using your answers above, give a more accurate account"* — so the student assembles the argument
+rather than completing it.
+
+**On choice (2 of 4, 3 of 4).** A real trade-off, not a mistake. It costs comparability (different
+students answer different questions of different difficulty) and lets people skip whole topics; it
+buys anxiety reduction and forgiveness for a bad night. Keep it, but build the four to a **common
+blueprint** (2 recall marks, 1 pattern mark, 2 mechanism marks) so they are closer to
+interchangeable. Note that with per-student sampling on the auto-graded portion, the choice is doing
+anxiety work rather than coverage work — worth being explicit that this is what it is for.
+
+**Marking cost.** Parts A and B are already one-to-three-word answers with finite variant lists —
+that is a VSA. Auto-grade the front half, hand-mark the mechanism parts only: roughly a 40% cut with
+instant partial feedback on the recall marks. The format is already decomposed into the shape that
+machine-grades.
+
+#### 39.10.2 Format verdict per question — one part in fifteen needs prose
+
+| question | verdict |
+|---|---|
+| **Q1 schizophrenia** (symptom categories → course → neurobiology) | Fully convertible. A/B → VSA; C/D/E → MC or two-tier. |
+| **Q2 eating / substance / gambling** (shared features, reward, recovery) | Fully convertible, and the best two-tier material in the set — C and E are both "is this claim accurate, and why" pairs. **Needs no short answer.** |
+| **Q3 sexual dysfunction / paraphilia / gender dysphoria** | A–C auto-gradable and well supported. **E genuinely needs prose** — see below. |
+| **Q4 confidentiality vs. duty to protect** | Needs no short answer, and **wants to become a stepped vignette**: it is already a case with a decision point, so the vignette can withhold the structure (fixing the critique above) and force commitment before each reveal. |
+
+**Q3E is the one part that requires prose**, and not merely because the answer is long. The question
+asks a student to respond to *"gender dysphoria should not be in the DSM because being transgender is
+not a mental disorder,"* weighing harms and benefits. There is no defensible single key, and **an MC
+key would be the wrong instrument on principle** — it is a live public controversy concerning a
+marginalised group, and manufacturing a correct answer would be worse pedagogy and worse ethics than
+letting students argue it. The guide equips it unusually well: distress-not-identity as the diagnostic
+hinge, the 0.6% transgender vs 0.01% diagnosed gap, the social-vs-biological dispute, the
+marginalisation confound, and — the sharpest single fact for the "benefits" side — the **post-transition
+specifier**, which exists so that a diagnosis lapsing on successful treatment does not remove access
+to the treatment that made it lapse.
+
+**Q2D should be reframed rather than dropped.** It asks what neuroscience tells us about reward
+processing; the honest answer from this corpus is "less than you would think," because
+`brain-reward-system` states that no human imaging, lesion or neurochemical evidence is cited and
+carries an explicit caution that its source contradicts itself on the *direction* of neurotransmitter
+change. Turned into a **spot-the-limitation** item — *what can we legitimately claim, given what this
+evidence base contains* — it becomes a stronger question than the original.
+
+#### 39.10.3 The content audit — six curated gaps, applied
+
+Writing items against the guide is also a guide audit, and it found holes that no existing mechanism
+would have surfaced. **All six sit in sections that already contain prose**, so `extract_page_needs()`
+reads them as filled and `populate_page_gaps()` can never derive them — the §5 annotated-vs-derived
+problem in a third form. They were inserted as `kind='curated'`, the first use of that kind and the
+staff-flagging route described in §38.3 Phase D: recorded against the page without touching page
+content, so no flag passes through provenance.
+
+Migration: `supabase/migrations/20260811_wp7_curated_gaps.sql`, applied 2026-08-11.
+
+| page | section | what is missing | difficulty |
+|---|---|---|---|
+| `schizophrenia` | etiology | **the dopamine hypothesis.** Neurobiology here is structural only; the spectrum page carries the one-line stub "Dopaminergic accounts, which the treatment section below depends on". Treatment explains antipsychotics *by* dopamine, so the mechanism is assumed chapter-wide and stated nowhere. | green |
+| `schizophrenia` | etiology | **longitudinal brain change.** The imaging findings are cross-sectional group differences; nothing licenses a claim about progressive change or early-vs-late neurobiology. | amber |
+| `positive-and-negative-symptoms` | why-the-distinction-has-prognostic-teeth | **the phase mapping.** This page says negative symptoms precede and outlast positive ones; `schizophrenia` describes prodromal/active/residual separately. Neither joins them — so "positive symptoms dominate the acute phase" is unsupported, and the one sentence connecting them reads the *other* way. | amber |
+| `brain-reward-system` | the-model | **neuroadaptation.** Only a positive-reinforcement model is present, which cannot explain continued use as pleasure declines and reads as support for the folk view the course sets out to correct. | green |
+| `brain-reward-system` | what-is-missing | **human evidence** for the reward account — the page says itself that none is cited. | amber |
+| `law-and-ethics` | confidentiality-privileged-communication-and-the-duty-to-warn | **duty where the risk is to the patient.** Tarasoff and Smith v. Jones are third-party doctrines; neither this page nor `suicide-and-self-harm` states what applies when a competent patient discloses suicidal intent. Red: provincial statute, and the corpus has been wrong about a statutory threshold once already. | **red** |
+
+Corpus after: **743 open gaps · 126 green · 605 amber · 12 red · 867 student slots.** All four pages
+are lecture-mapped (8, 10, 11), so the new gaps are reachable in the student browser.
+
+Two of these are good student-submission targets rather than work for Norm — the dopamine hypothesis
+and the neuroadaptation account are both green, well-covered in the review literature, and each closes
+a hole that an exam question actually hit.
+
+#### 39.10.4 The generalisation
+
+Two questions audited in detail, the same shape both times: **integrative items outrun the guide at the
+mechanism and professional-practice layers**, while definitional, classificatory and evidential parts
+survive intact. That is not bad luck — it is what the guide is made of, being built page-by-page from
+open textbook sources that are strong on description and diagnosis, thin on mechanism, and silent on
+what a clinician does on a Tuesday.
+
+Two consequences worth carrying:
+
+1. **Write the items before the lock, not after.** Item-writing is the only process that reads the
+   guide the way a student under time pressure will, and it is currently the only thing that finds
+   holes inside prose-bearing sections.
+2. **Q4's gap is the one to close before the material is examinable at all.** The other five weaken
+   individual questions; that one means a whole question rests on a doctrine the guide does not carry,
+   in a jurisdiction it explicitly flags as absent.
+
+One item of good news from the audit: **Q2E is the best-supported question in the whole set.**
+`substance-use-disorder` answers "once an addict, always an addict" with lifetime remission figures
+(cocaine 99.2%, cannabis 97.2%, alcohol 90.6%, nicotine 83.7%), the hyperbolic shape of relapse risk,
+and an explicit argument that those numbers are hard to reconcile with "chronic relapsing brain
+disease." Keep that part exactly as written.
