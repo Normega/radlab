@@ -32,8 +32,7 @@ const ROUTES = [
 const SEV = { block: '#c0392b', warn: '#b8860b' }
 
 export default function SubmissionsQueue() {
-  const { courseClient, staffEnrollments } = useOutletContext()
-  const courseId = staffEnrollments[0]?.course_id
+  const { courseClient } = useOutletContext()
   const [rows, setRows] = useState(null)      // null = loading
   const [openId, setOpenId] = useState(null)
   const [busyId, setBusyId] = useState(null)

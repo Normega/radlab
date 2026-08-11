@@ -4029,24 +4029,47 @@ order is not derivable from anything in the repo**; it is the syllabus, and only
 
 ### 38.3 Build order
 
-**Phase A — course structure.** A `course_structure` table (lecture number, title, ordinal) plus a
-`page_lectures` join, since a page can legitimately serve two weeks. Populate DSM chapter mechanically
-across all 262 pages; populate lecture from Norm's list. This is what unblocks Phase B.
+**Phase A — course structure. ✅ Done 2026-08-07** (`20260807_course_structure.sql`, applied and
+verified). The blocker resolved differently than planned: instead of Norm supplying a list against
+last year's lectures, the calendar itself was **restructured in conversation** — 11 content lectures
++ midterm week, dated against the real term (Wednesdays 09:00–12:00, Sept 9 → Dec 2, reading week
+Oct 28), with the RCT arc (onboarding at the midterm, design intro Oct 21, debrief Dec 2) pinning the
+midterm to Oct 14. Taxonomy §2a is the durable record. `course_structure` (14 rows) +
+`page_lectures` (266 rows; 259 of 260 drafts, `elimination-disorders` unmapped by design; 7 pages
+double-mapped) + the `gaps_by_lecture` view. Every lecture now has 19–121 open gaps. One scarcity
+note for Phase B copy: pre-midterm lectures hold only 38 green gaps (76 slots), so the green deadline
+must allow claiming from any lecture.
 
-**Phase B — the student gap browser** (`/academic/fieldguide/gaps`). Browse by lecture, then DSM
-chapter, then difficulty. Each row shows the ask, the page, and **remaining capacity** — not just
-capacity, or the board will look open when it is full. Red gaps appear **dimmed and labelled staff-only
-rather than hidden**: the map should be honest about why a student cannot take them, and the precheck
-blocks them anyway. This is the planning surface, and it must exist before the form is useful — a
-student cannot submit against a gap they cannot find.
+**Phase B — the student gap browser. ✅ Built 2026-08-07** (`src/academic/fieldguide/GapBrowser.jsx`,
+`/academic/fieldguide/gaps`, member-gated, own lazy chunk). Backed by one rpc — `gap_board()`
+(`20260807_gap_board.sql`), a SECURITY DEFINER function because remaining capacity counts *all*
+students' active claims while `gap_claims` RLS correctly shows a student only their own; it returns
+counts, never names, and is gated inside by `is_course_member()`. Verified: member → 760 rows / 11
+lectures / 268 green slots; non-member → 0 rows. The board groups by lecture with dates, collapsible;
+search or a difficulty filter auto-expands (hunting vs browsing); shows **remaining** capacity — not
+raw capacity, or the board looks open when full; reds **dimmed and labelled staff-only rather than
+hidden**; greens labelled as the first-assignment tier claimable from any lecture, with the Oct 7 /
+Nov 11 / Nov 27 deadlines in the header copy. Read-only until Phase C: the footer says claiming opens
+with the submission form, and steers students to read the pages their shortlisted gaps sit on.
 
-**Phase C — the submission form.** Claim → write → `run_precheck()` → submit. Three rules from §38's
-decisions:
-- **Green-first is enforced at claim time**, not at submit time. Blocking at submit wastes the work.
-- **Claims expire 14 days after `claimed_at`** if `submitted_at` is null, with a warning at day 10.
-  Expiry returns the slot to the pool. Needed schema: `claimed_at`, `expires_at`, `expiry_warned_at`.
-- **Remaining capacity must count live claims, not just accepted ones** — otherwise two students write
-  the same gap and one wastes a week.
+**Phase C — the submission form. ✅ Built 2026-08-08** (`20260808_claim_flow.sql` + GapBrowser claim
+panel; the browser and form are one surface). All three rules landed server-side, plus two the plan
+didn't know it needed:
+- Green-first enforced at claim time, **both halves** — first claim must be green AND amber stays
+  locked until a green is submitted/accepted.
+- 14-day TTL: `expires_at` stamped by `claim_gap()`; counts ignore expired claims immediately (lazy),
+  `expire_claims()` sweeps them to withdrawn (hygiene). Day-10 warning email deferred — rides
+  existing touchpoints when built, not a new mail class.
+- Remaining capacity is a live count (claimed-unexpired + submitted + accepted).
+- **Found while building: two real RLS holes** — `members update own claims` allowed
+  `status='accepted'` self-grading and precheck forgery; `members create own claims` allowed direct
+  inserts past every rule. Closed with column grants (precheck fields are function-only now) + a
+  guard trigger (non-staff writes only through `claim_gap()`/`submit_claim()`, signalled by a
+  transaction-local flag; staff untouched). Full student-lifecycle test battery in the manifest.
+- `submit_claim()` runs the precheck first and **refuses to submit on block findings** — the claim
+  stays `claimed`, so a mechanical fault costs an edit, not the claim. `check_doi()` runs on paste
+  (debounced) so a redundant source is discovered before 150 words are written, and
+  `gap_page_sources()` shows what the page already cites at the moment of choosing.
 
 Scarcity is the reason all three matter: **860 slots against 600 submissions is 1.43× headroom, and
 green is 1.34×** (268 slots, 200 students). There is no room for hoarding.
@@ -4065,12 +4088,22 @@ green is 1.34×** (268 slots, 200 students). There is no room for hoarding.
 3. **A `page_reviews` stamp** — page, reviewer, reviewed_at, verdict, notes — so 262 pages are not
    re-read, and so coverage is measurable during term.
 
-**The correction path is the open design problem here.** `edit_page` is prohibited for content carrying
-provenance, which means a TA who spots a factual error currently has **no legitimate way to fix it**.
-Recommended: a version with `action='update'` marked as a *staff correction* rather than a source
-ingest, so page history records who changed what and why without pretending the change came from a
-source. Attribution stays truthful, which is the entire point of the provenance design. This needs
-building before staff review starts, or reviewers will reach for `edit_page`.
+**The correction path — ✅ resolved 2026-08-10** (`20260810_correction_guards.sql`), and the answer
+inverted the plan: `edit_page` **already was** the correction path — staff-gated, snapshot trigger
+keeping numbered history, note landing on the version row, no `job_id` so it can never pollute
+provenance. What it lacked was guards, so the fix hardened the existing door rather than cutting a
+second one. The taxonomy that governs it: a correction may change *how* the page says something
+(typo, transcription fidelity, structure) — never *what it claims*; a changed claim needs a source,
+which means the ingest path. Decisions (Norm): **auto-apply with an audit feed** (2-person staff;
+countersigning would bottleneck), **quiet visibility** (no banner, history on request), and a
+**magnitude tripwire** to his spec — ignore |Δ|≤3; trip at ratio ≥√10 (~3.16×) or |Δ|≥10, so 11→12%
+passes and 11→21% or 11→3% demand a *verified against source* statement; years 1900–2099 excluded.
+Guards now in `edit_page()`: required note, section-list guard with explicit override (the
+`## Contested` lesson, now unrepeatable by hand), annotation-removal guard (annotations are
+catalogued gaps), and the tripwire. `corrections_feed` view + `/academic/fieldguide/corrections` +
+a home-page card ("N this week") complete the trade. Verified live: all guard paths exercised on
+`little-albert-study`, page restored byte-identical, and the feed retroactively surfaces the WP-era
+staff edits with their notes back to 2026-08-02.
 
 **Phase E — publish.** All 260 drafts at once, after the risk-ordered subset in Phase D is clean.
 Partial publishing is not an option: with one page live, all of its outbound links render broken to a

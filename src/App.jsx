@@ -8,6 +8,8 @@ import AdminRoute        from './components/AdminRoute'
 import TalksRoute        from './components/TalksRoute'
 import ClassAdminRoute   from './academic/lecture-lounge/ClassAdminRoute'
 import LectureLoungeAdminRoute from './academic/lecture-lounge/LectureLoungeAdminRoute'
+import WorkbenchRoute    from './workbench/WorkbenchRoute'
+import WorkbenchAdminRoute from './workbench/WorkbenchAdminRoute'
 import ErrorBoundary     from './components/ErrorBoundary'
 
 // Route-level code-splitting: every page below is its own chunk, fetched on
@@ -34,6 +36,7 @@ const MyRipplePage   = lazy(() => import('./pages/MyRipplePage'))
 const SettingsPage   = lazy(() => import('./pages/SettingsPage'))
 const AvatarEditor   = lazy(() => import('./components/Avatar/AvatarEditor'))
 const Unsubscribe    = lazy(() => import('./pages/Unsubscribe'))
+const Withdraw       = lazy(() => import('./pages/Withdraw'))
 const ConsentPage    = lazy(() => import('./pages/ConsentPage'))
 const Verified       = lazy(() => import('./pages/Verified'))
 
@@ -99,6 +102,16 @@ const SubmissionsQueue     = lazy(() => import('./academic/fieldguide/Submission
 const FieldGuideMemberRoute = lazy(() => import('./academic/fieldguide/FieldGuideMemberRoute'))
 const WikiIndex            = lazy(() => import('./academic/fieldguide/wiki/WikiIndex'))
 const WikiPage             = lazy(() => import('./academic/fieldguide/wiki/WikiPage'))
+const GapBrowser           = lazy(() => import('./academic/fieldguide/GapBrowser'))
+const FieldGuideHome       = lazy(() => import('./academic/fieldguide/FieldGuideHome'))
+const CorrectionsFeed      = lazy(() => import('./academic/fieldguide/CorrectionsFeed'))
+
+// Workbench — shared Claude Code sessions. Its own partition again: own guards
+// (WorkbenchRoute / WorkbenchAdminRoute), own chrome (plain Nav, not AdminLayout),
+// own ErrorBoundary. Deliberately not under /admin, because the audience is lab
+// members reading Norm's work, not researchers administering studies.
+const WorkbenchPage      = lazy(() => import('./workbench/WorkbenchPage'))
+const WorkbenchAdminPage = lazy(() => import('./workbench/WorkbenchAdminPage'))
 
 // Research admin section — separate partition from Lecture Lounge.
 const AdminLayout   = lazy(() => import('./layouts/AdminLayout'))
@@ -550,6 +563,24 @@ export default function App() {
             Student-facing /class/:slug URLs deliberately stay short — they
             are typed from projector QR codes and baked into sent emails.
           */}
+          {/* Workbench — Claude Code sessions Norm shares with lab members.
+              Partitioned like Lecture Lounge: own guards, own chrome, own
+              boundary. /workbench/admin is super-admin-only and sits *inside*
+              the member guard's sibling, not nested under it, so the two
+              guards stay independently readable.
+              Route order matters only nominally — React Router ranks the
+              static "admin" segment above the :sessionId param. */}
+          <Route element={<ErrorBoundary label="Workbench"><Outlet /></ErrorBoundary>}>
+            <Route element={<WorkbenchAdminRoute session={session} superAdmin={superAdmin} />}>
+              <Route path="/workbench/admin" element={<WorkbenchAdminPage session={session} />} />
+              <Route path="/workbench/admin/:sessionId" element={<WorkbenchAdminPage session={session} />} />
+            </Route>
+            <Route element={<WorkbenchRoute session={session} />}>
+              <Route path="/workbench" element={<WorkbenchPage session={session} />} />
+              <Route path="/workbench/:sessionId" element={<WorkbenchPage session={session} />} />
+            </Route>
+          </Route>
+
           <Route element={<ErrorBoundary label="Academic"><Outlet /></ErrorBoundary>}>
             <Route path="/class/verify" element={<ClassVerifyEmail />} />
             <Route path="/class/:slug" element={
@@ -578,16 +609,29 @@ export default function App() {
                   /review is the staff authoring path, this is the student one,
                   and TAs who live here should never need the ingest portal. */}
               <Route path="/academic/fieldguide/submissions" element={<SubmissionsQueue />} />
+              {/* The audit trail auto-apply corrections are traded against. */}
+              <Route path="/academic/fieldguide/corrections" element={<CorrectionsFeed />} />
             </Route>
             {/* The wiki itself — same login, member-level gate. */}
             <Route element={<FieldGuideMemberRoute />}>
+              {/* The front door. One url to give a TA or a student: staff see
+                  the queues with live counts, members see the two student
+                  surfaces — RLS decides which counts even return. */}
+              <Route path="/academic/fieldguide" element={<FieldGuideHome />} />
               <Route path="/academic/fieldguide/wiki" element={<WikiIndex />} />
               <Route path="/academic/fieldguide/wiki/:slug" element={<WikiPage />} />
+              {/* The gap browser: students plan their research assignment here.
+                  Member-level on purpose — the board is part of reading the
+                  guide, not part of submitting to it. */}
+              <Route path="/academic/fieldguide/gaps" element={<GapBrowser />} />
             </Route>
           </Route>
 
           {/* Unsubscribe — no auth or layout */}
           <Route path="/unsubscribe/:token" element={<Unsubscribe />} />
+
+          {/* Formal study withdrawal (from lapsed session emails) — no auth or layout */}
+          <Route path="/withdraw/:token" element={<Withdraw />} />
 
           {/* Admin section — role-gated */}
           <Route element={<AdminRoute session={session} role={role} superAdmin={superAdmin} />}>

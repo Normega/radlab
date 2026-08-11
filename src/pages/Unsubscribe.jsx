@@ -1,24 +1,12 @@
 import { useState, useEffect } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 
 const STATES = {
   loading: null,
-  success: {
-    heading: "You've been unsubscribed",
-    body: "You'll no longer receive email reminders for this study. You can still participate by clicking any session links you receive.",
-  },
-  blocked: {
-    heading: 'Email reminders are required for this study',
-    body: "Email reminders are part of your participation agreement for this study. If you'd like to withdraw from the study entirely, please contact your researcher directly.",
-  },
   invalid: {
     heading: 'This link is not valid',
     body: 'If you need help, please contact your researcher.',
-  },
-  already: {
-    heading: 'Already unsubscribed',
-    body: "You've already been unsubscribed from email reminders for this study.",
   },
   ripple_success: {
     heading: 'Ripple reminders off',
@@ -32,12 +20,15 @@ const STATES = {
 
 export default function Unsubscribe() {
   const { token } = useParams()
+  const navigate = useNavigate()
   const [state, setState] = useState('loading')
 
   useEffect(() => {
     async function run() {
       try {
-        // Try Ripple first — returns { status: 'token_not_found' } (200) if not a Ripple token
+        // Try Ripple first — returns { status: 'token_not_found' } (200) if not
+        // a Ripple token. Ripple unsubscribes stay act-on-load: reversible from
+        // the profile, and a different product from study participation.
         const { data: rData, error: rErr } = await supabase.functions.invoke('handle_ripple_unsubscribe', {
           body: { token },
         })
@@ -48,24 +39,19 @@ export default function Unsubscribe() {
           return
         }
 
-        // Not a Ripple token — fall back to participant study unsubscribe
-        const { data, error } = await supabase.functions.invoke('handle_unsubscribe', {
-          body: { token },
-        })
-        if (error) {
-          setState('invalid')
-          return
-        }
-        if (data?.status === 'success')                    setState('success')
-        else if (data?.status === 'blocked')               setState('blocked')
-        else if (data?.status === 'already_unsubscribed')  setState('already')
-        else                                               setState('invalid')
+        // Not a Ripple token — a STUDY unsubscribe. Deliberately no action
+        // here (this page used to unsubscribe on load, which both acted on
+        // mail-scanner prefetches and skipped the withdraw conversation):
+        // hand off to /withdraw/{token}, where stopping emails and formally
+        // withdrawing are both explicit button clicks. Same token, validated
+        // by that page's peek.
+        navigate(`/withdraw/${token}`, { replace: true })
       } catch {
         setState('invalid')
       }
     }
     run()
-  }, [token])
+  }, [token, navigate])
 
   const content = STATES[state]
 

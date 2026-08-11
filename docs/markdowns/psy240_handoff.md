@@ -32,12 +32,26 @@
 
 - `gap_claims` has **0 rows**. The two test fixtures used to verify the precheck were deleted after
   the check passed.
-- **There is no student-facing submission form.** The submissions queue is the *receiving* end of a
-  pipeline whose *sending* end does not exist yet.
+- ~~There is no student-facing submission form.~~ **Built 2026-08-08** — the gap browser
+  (`/academic/fieldguide/gaps`) now carries the whole claim → draft → submit flow
+  (`20260808_claim_flow.sql` + `GapBrowser.jsx`). The queue stays empty only until students exist
+  and pages are published. Green-first is enforced at claim time (both halves), claims expire after
+  14 days, `submit_claim()` refuses on precheck blocks, and two RLS holes (self-grading, direct
+  insert) were closed with column grants + a guard trigger — details in the migrations manifest.
 
 **Building that form is the single most important remaining task.** Everything else — 737 catalogued
 gaps, the precheck, the review queue, the capacity arithmetic — is infrastructure waiting on it. See
 §6 for the contract it has to satisfy.
+
+**Update 2026-08-07:** the browse axis that gated the form is now built. The 2026F calendar was
+restructured with Norm and locked into the database (`20260807_course_structure.sql`): 11 rebalanced
+content lectures + Oct 14 midterm, Wednesdays Sept 9 → Dec 2. `course_structure` (14 rows),
+`page_lectures` (259 of 260 drafts mapped; `elimination-disorders` out by design), and the
+`gaps_by_lecture` view — every lecture carries 19–121 open gaps. Taxonomy §2a is the prose record.
+Deadlines already placed on the calendar: green submission Oct 7, ambers Nov 11 and Nov 27. One
+scarcity fact for the browser copy: pre-midterm lectures hold only 38 green gaps (76 slots), so the
+green deadline must allow claiming from any lecture. Next builds: the gap browser (Phase B), then the
+form (Phase C, green-first enforced at claim time, 14-day TTL).
 
 ---
 
@@ -192,8 +206,12 @@ exists, `gap_claims` stays empty and §1 stays true.
 3. **Publish — and it must be all 260 drafts at once.** With a single page published, all 13 of its
    outbound links render as broken to a student, because `wiki_links` is member-readable while
    *unpublished targets are not*. A partial publish looks like a broken site.
-4. **Adjudicate the 11 `MAYBE NOT GREEN` rows + 1 `MAYBE NOT RED`.** Norm: *"i'm happy to work through
-   the rows."* These are difficulty-tier judgements, not content work.
+4. ~~Adjudicate the flagged difficulty rows.~~ **Done 2026-08-08** — Norm adjudicated all 13 flags
+   (`20260808_gap_triage_adjudicated.sql`): 10 greens demoted to amber **keeping capacity 2**
+   (complementary sources, one facet each — capacity is orthogonal to difficulty), 1 kept green
+   (vascular NCD — SPRINT MIND answers it single-source), both reds kept (regex blind spots, now
+   patched). `gap_review_queue` is at 0 flags and respects `adjudicated: keep` in notes. Board:
+   green 124/248, amber 602/612, red 11.
 5. **Two unused Handbook chapters** — Kaylor & Jeglic (exhibitionism rehabilitation) and Heffernan &
    Ward ch. 31 (Good Lives Model). Both would close open treatment annotations on
    `exhibitionistic-disorder` and `paraphilic-disorders`.

@@ -45,6 +45,13 @@ export default function WikiPage() {
   const [note, setNote] = useState('')
   const [saving, setSaving] = useState(false)
   const [saveNotice, setSaveNotice] = useState(null)
+  // Correction guards (see 20260810_correction_guards.sql). These two fields
+  // stay hidden until the server refuses a save: the tripwire's
+  // verified-against-source input appears on a NUMERIC SHIFT refusal, the
+  // override checkbox on a STRUCTURE refusal. Guards live server-side; the
+  // client only reveals the matching remedy.
+  const [verified, setVerified] = useState('')
+  const [allowStructure, setAllowStructure] = useState(false)
   const [reloadKey, setReloadKey] = useState(0)
 
   // undefined = still loading, null = nothing this reader can see at this slug
@@ -100,11 +107,15 @@ export default function WikiPage() {
       p_page_id: page.id,
       p_content: draft,
       p_note: note || null,
+      p_verified: verified || null,
+      p_allow_structure: allowStructure,
     })
     setSaving(false)
     if (error) return setSaveNotice(error.message)
     setEditing(false)
     setDraft('')
+    setVerified('')
+    setAllowStructure(false)
     setSaveNotice(
       `Saved as v${data.current_version} · ${data.links_extracted} link${data.links_extracted === 1 ? '' : 's'}` +
       ` · ${data.needs?.length ? `still needs: ${data.needs.join(', ')}` : 'no declared gaps'}`
@@ -262,26 +273,52 @@ export default function WikiPage() {
           />
           <input
             style={S.noteInput}
-            placeholder="What changed, and why (optional, but it's what version history will show)"
+            placeholder="What changed, and why (required — it's what the corrections feed shows)"
             value={note}
             onChange={e => setNote(e.target.value)}
           />
           <p style={S.sub}>
-            Gaps and links are re-derived on save: removing a <code style={S.code}>&gt; **Needs
-            research:**</code> line closes that gap, and adding a wikilink adds a graph edge.
+            A correction changes <em>how</em> the page says something — typo, grammar, transcription
+            fidelity, structure. If it changes <em>what the page claims</em>, that needs a source:
+            ingest it instead. Gaps and links are re-derived on save: removing a{' '}
+            <code style={S.code}>&gt; **Needs research:**</code> line closes that gap.
           </p>
-          <div style={{ display: 'flex', gap: 10, marginTop: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-            <button style={S.primary} disabled={saving || draft === page.content} onClick={save}>
-              {saving ? 'Saving…' : 'Save changes'}
-            </button>
-            <button style={S.secondary} disabled={saving} onClick={() => { setEditing(false); setDraft('') }}>
-              Cancel
-            </button>
-            <span style={S.dim}>
-              {draft.length.toLocaleString()} chars
-              {draft === page.content && ' · unchanged'}
-            </span>
-          </div>
+          {saveNotice?.includes('NUMERIC SHIFT') && (
+            <input
+              style={S.noteInput}
+              placeholder="Verified against source — say where you checked (e.g. 'Davies ch 12, table 2')"
+              value={verified}
+              onChange={e => setVerified(e.target.value)}
+            />
+          )}
+          {saveNotice?.includes('STRUCTURE:') && (
+            <label style={{ ...S.sub, display: 'flex', gap: 8, alignItems: 'center', marginTop: 8, cursor: 'pointer' }}>
+              <input type="checkbox" checked={allowStructure}
+                     onChange={e => setAllowStructure(e.target.checked)} />
+              Structure change intended — I mean to remove that section or annotation
+            </label>
+          )}
+          {/* Why the save is unavailable, said plainly. A disabled button that
+              looks enabled and explains nothing reads as a broken page. */}
+          {(() => {
+            const blocked = saving ? null
+              : draft === page.content ? 'Nothing has changed yet.'
+              : !note.trim() ? 'Add a note first — it is what the corrections feed shows.'
+              : null
+            return (
+              <div style={{ display: 'flex', gap: 10, marginTop: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+                <button style={blocked ? S.primaryOff : S.primary} disabled={saving || Boolean(blocked)} onClick={save}>
+                  {saving ? 'Saving…' : 'Save changes'}
+                </button>
+                <button style={S.secondary} disabled={saving} onClick={() => { setEditing(false); setDraft('') }}>
+                  Cancel
+                </button>
+                {blocked
+                  ? <span style={S.blockedHint}>{blocked}</span>
+                  : <span style={S.dim}>{draft.length.toLocaleString()} chars</span>}
+              </div>
+            )
+          })()}
         </section>
       )}
 
@@ -552,6 +589,12 @@ const S = {
   noteInput: { width: '100%', boxSizing: 'border-box', marginTop: 10, fontSize: 14, padding: '9px 11px', borderRadius: 8, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx)' },
   saveNotice: { marginTop: 12, fontFamily: MONO, fontSize: 13, color: 'var(--pk)', lineHeight: 1.5 },
   primary: { fontSize: 14, fontWeight: 600, padding: '9px 16px', borderRadius: 24, border: 'none', background: 'var(--pk)', color: '#fff', cursor: 'pointer' },
+  // Disabled twin of `primary`. Buttons carry inline styles here, so `:disabled`
+  // in a stylesheet would never reach them — the greyed state has to be a style
+  // object the render picks, and `cursor: not-allowed` is what makes it read as
+  // deliberate rather than dead.
+  primaryOff: { fontSize: 14, fontWeight: 600, padding: '9px 16px', borderRadius: 24, border: 'none', background: 'var(--bd)', color: 'var(--tx2)', cursor: 'not-allowed' },
+  blockedHint: { fontSize: 13, color: 'var(--tx2)', fontStyle: 'italic' },
   secondary: { fontSize: 14, fontWeight: 600, padding: '9px 16px', borderRadius: 24, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx)', cursor: 'pointer' },
 
   chips: { display: 'flex', flexWrap: 'wrap', gap: 8 },

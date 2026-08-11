@@ -182,11 +182,12 @@ function throughMidpoint(t0, midDate, midStatus = 'completed') {
 }
 
 async function run(t0, schedule, opts = {}) {
-  const db = makeDb({ schedule, draws: DRAWS, ...opts })
+  const { graph = GRAPH, ...dbOpts } = opts
+  const db = makeDb({ schedule, draws: DRAWS, ...dbOpts })
   const result = await materializeSchedule(db, {
     participantId: 'p1',
     studyId: 'study1',
-    graph: GRAPH,
+    graph,
     t0Date: t0,
     baselineSendTime: '06:00',
   })
@@ -331,4 +332,88 @@ function plan(db) {
   assert.equal(result.stoppedAt, 'ac_p1')
 }
 
-console.log('materializeSchedule: 8/8 calendar checks passed')
+// ─── Adherence gate: withdraw vs. record-only ────────────────────────────────
+// The Phase 2 check is authored `on_fail: 'continue'` on the live Liliana
+// graphs (2026-08-11) so that everyone who reaches Phase 2 is offered the
+// final assessment, making intention-to-treat analysis possible alongside
+// per-protocol. These two cases run the same participant — 7 of 12 Phase 2
+// days done — through both settings.
+
+/** Everything through a finished Phase 2 in which only `done` days completed. */
+function throughPhase2(t0, done) {
+  const schedule = throughMidpoint(t0, addDays(t0, 15))
+  for (let i = 1; i <= 12; i++) {
+    const completed = i <= done
+    schedule.push(row(
+      `s_p2_nr${i}`,
+      addDays(t0, 15 + i),
+      completed ? 'completed' : 'missed',
+      completed ? completedAt(addDays(t0, 15 + i)) : null,
+    ))
+  }
+  return schedule
+}
+
+// 7. Default (no on_fail authored): below the minimum still withdraws, and the
+//    final assessment is never materialized. The behaviour every check had
+//    before the property existed — absence must not read as permissive.
+{
+  const t0 = addDays(labToday(), -28)
+  const { db, result } = await run(t0, throughPhase2(t0, 7), {
+    assignments: [{ node_id: 'rnd_mid', value: 'feedback_choice' }],
+    phaseDays: { phase1: 12, phase2: 7 },
+  })
+
+  assert.equal(db.inserted.length, 0, 'nothing materializes past an enforcing gate')
+  assert.deepEqual(result.withdrawal, {
+    kind: 'adherence', nodeId: 'ac_p2', phase: 'phase2',
+    completed: 7, minRequired: 10, ofTotal: 12,
+  })
+  assert.deepEqual(result.adherenceShortfalls, [], 'an enforced failure is a withdrawal, not a shortfall')
+}
+
+// 8. on_fail 'continue': the same participant keeps the final assessment. The
+//    shortfall is reported (so the cron log records it) and nothing else about
+//    the walk changes — same date, same study day, no withdrawal.
+{
+  const t0 = addDays(labToday(), -28)
+  const graph = {
+    nodes: GRAPH.nodes.map((n) => n.id === 'ac_p2' ? { ...n, on_fail: 'continue' } : n),
+    edges: GRAPH.edges,
+  }
+  const { db, result } = await run(t0, throughPhase2(t0, 7), {
+    graph,
+    assignments: [{ node_id: 'rnd_mid', value: 'feedback_choice' }],
+    phaseDays: { phase1: 12, phase2: 7 },
+  })
+  const final = plan(db)
+
+  assert.equal(result.withdrawal, null, '7 of 12 no longer ends participation')
+  assert.deepEqual(result.adherenceShortfalls, [{
+    nodeId: 'ac_p2', phase: 'phase2', completed: 7, minRequired: 10, ofTotal: 12,
+  }])
+  assert.equal(final.length, 1, 'the final assessment is materialized')
+  assert.equal(final[0].nodeKey, 's_final')
+  assert.equal(final[0].date, addDays(t0, 28), 'on the same day an adherent participant would get it')
+}
+
+// 9. And an adherent participant is entirely unaffected by the setting: no
+//    shortfall recorded, same single final row.
+{
+  const t0 = addDays(labToday(), -28)
+  const graph = {
+    nodes: GRAPH.nodes.map((n) => n.id === 'ac_p2' ? { ...n, on_fail: 'continue' } : n),
+    edges: GRAPH.edges,
+  }
+  const { db, result } = await run(t0, throughPhase2(t0, 11), {
+    graph,
+    assignments: [{ node_id: 'rnd_mid', value: 'feedback_choice' }],
+    phaseDays: { phase1: 12, phase2: 11 },
+  })
+
+  assert.equal(result.withdrawal, null)
+  assert.deepEqual(result.adherenceShortfalls, [])
+  assert.equal(plan(db).length, 1)
+}
+
+console.log('materializeSchedule: 11/11 calendar + adherence checks passed')

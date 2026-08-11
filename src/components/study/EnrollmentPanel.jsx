@@ -66,7 +66,7 @@ function useEnrollments(studyId) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('study_enrollments')
-        .select('id, profile_id, external_id, contact_email, enrolled_at, consent_date, status, notes, profiles!profile_id(display_name)')
+        .select('id, profile_id, external_id, contact_email, enrolled_at, consent_date, status, notes, withdrawal_reason, withdrawal_note, profiles!profile_id(display_name)')
         .eq('study_id', studyId)
         .order('enrolled_at', { ascending: false })
       if (error) throw error
@@ -215,7 +215,14 @@ export default function EnrollmentPanel({ study }) {
                     <td style={S.td}><span style={S.mono}>{e.contact_email || '—'}</span></td>
                     <td style={S.td}><span style={S.mono}>{fmtDate(e.enrolled_at)}</span></td>
                     <td style={S.td}><span style={S.mono}>{fmtDate(e.consent_date)}</span></td>
-                    <td style={S.td}><StatusBadge status={e.status} /></td>
+                    <td style={S.td}>
+                      <span title={e.withdrawal_reason || undefined}>
+                        <StatusBadge status={e.status} />
+                      </span>
+                      {e.withdrawal_note && (
+                        <div style={S.withdrawalNote}>&ldquo;{e.withdrawal_note}&rdquo;</div>
+                      )}
+                    </td>
                     <td style={S.td}>
                       <div style={S.actions}>
                         {e.status !== 'withdrawn' && (
@@ -335,6 +342,7 @@ const S = {
   tr:              { borderBottom: '1px solid var(--bd)' },
   td:              { padding: '12px 16px', verticalAlign: 'middle' },
   mono:            { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx2)' },
+  withdrawalNote:  { marginTop: 4, fontSize: 12, fontStyle: 'italic', color: 'var(--tx3)', maxWidth: 220 },
   actions:         { display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' },
   actionBtn:       { background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: 'var(--pk)', padding: 0, fontFamily: '"DM Sans",system-ui,sans-serif', fontWeight: 600 },
   sessionChip:     { display: 'flex', alignItems: 'center', gap: 7, background: '#fff', border: '1px solid var(--bd)', borderRadius: 8, padding: '6px 10px' },
