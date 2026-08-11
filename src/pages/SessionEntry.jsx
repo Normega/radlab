@@ -326,13 +326,21 @@ export default function SessionEntry() {
           const next = { ...prev }
           for (const [type, slug, vals] of entries) {
             let v = vals
-            // redemption_score = aptitude_suite.avg_pct + color_max.avg_pct, only
-            // derivable once both games have reported — no {{}} arithmetic support,
-            // so it's precomputed here as a plain step output instead.
+            // redemption_score: the participant's revised standing after the bonus
+            // round, only derivable once both games have reported — no {{}} arithmetic
+            // support, so it's precomputed here as a plain step output instead.
+            //
+            // It is the MEAN of the two percentiles, floored at the Aptitude percentile
+            // so a "redemption" can never lower where the participant stands. Summing
+            // them (the original) produced a "percentile" above 100 for 13 of 20 pilot
+            // participants, median 115 and max 170 — incoherent for people who were
+            // just told they were ranked against others, and a threat to the cover
+            // story the debrief is written around. See sandy_study3_methods.md 1.9.
             if (type === 'game' && slug === 'color_max' && v.avg_pct != null) {
               const aptitudePct = prev.game?.aptitude_suite?.avg_pct
               if (aptitudePct != null) {
-                v = { ...v, redemption_score: +(aptitudePct + v.avg_pct).toFixed(2) }
+                const combined = (aptitudePct + v.avg_pct) / 2
+                v = { ...v, redemption_score: +Math.max(aptitudePct, combined).toFixed(2) }
               }
             }
             next[type] = { ...(next[type] ?? {}), [slug]: v }

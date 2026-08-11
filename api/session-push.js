@@ -48,10 +48,29 @@ const SECRET_PATTERNS = [
     (m) => `${m.split(/[:=]/)[0].trim()}=[redacted]`],
 ]
 
+// The pattern list above can only catch secrets that announce themselves with a
+// known prefix. This catches the two it cannot: our own credentials, by exact
+// match, because the server is the one place that knows them.
+//
+// Not hypothetical. The session that built this feature discusses the push token
+// in prose, so capturing it would have published a working write-credential to
+// whichever student it was shared with — a random base64 string no prefix rule
+// will ever match. Any transcript where the operator pasted or discussed these
+// values has the same problem.
+//
+// Split across a run of text is not covered, and neither is any other secret the
+// author happens to type. Redaction stays a backstop; the real protection is that
+// tool output is never collected at all.
+function selfSecrets() {
+  return [process.env.WORKBENCH_PUSH_TOKEN, process.env.SUPABASE_SERVICE_KEY]
+    .filter((v) => typeof v === 'string' && v.length >= 12)
+}
+
 function scrub(text) {
   if (typeof text !== 'string' || !text) return text
   let out = text
   for (const [re, replacement] of SECRET_PATTERNS) out = out.replace(re, replacement)
+  for (const secret of selfSecrets()) out = out.split(secret).join('[credential-redacted]')
   return out
 }
 
@@ -99,6 +118,16 @@ export default async function handler(req, res) {
     auth: { persistSession: false, autoRefreshToken: false },
   })
 
+  // This project has migrated to Supabase's new API key scheme, so the legacy
+  // `service_role` JWT still displayed on Settings → API is dead. Pasting it
+  // produces "Legacy API keys are disabled" from PostgREST, which names the
+  // problem but not the fix, and reads as a fault in this endpoint rather than a
+  // wrong value in an env var. It has cost two rounds already — so say the fix.
+  const explainKey = (message) =>
+    /legacy api key/i.test(message ?? '')
+      ? `${message} — SUPABASE_SERVICE_KEY looks like the legacy service_role JWT. This project uses the new key scheme: create a secret key (Supabase → Settings → API Keys → Create new secret key), which starts with "sb_secret_", and redeploy.`
+      : message
+
   // ---- GET: resync ---------------------------------------------------------
   if (req.method === 'GET') {
     const sessionId = req.query?.session_id
@@ -111,7 +140,7 @@ export default async function handler(req, res) {
       .eq('session_id', sessionId)
       .order('seq', { ascending: false })
       .limit(1)
-    if (error) return res.status(500).json({ error: error.message })
+    if (error) return res.status(500).json({ error: explainKey(error.message) })
     return res.status(200).json({ session_id: sessionId, max_seq: data?.[0]?.seq ?? -1 })
   }
 
@@ -189,7 +218,7 @@ export default async function handler(req, res) {
     .from('claude_sessions')
     .upsert(sessionRow, { onConflict: 'id' })
   if (sessionError) {
-    return res.status(500).json({ error: `session upsert failed: ${sessionError.message}` })
+    return res.status(500).json({ error: explainKey(`session upsert failed: ${sessionError.message}`) })
   }
 
   // ---- Append the turns ----------------------------------------------------
@@ -201,7 +230,7 @@ export default async function handler(req, res) {
       .from('claude_session_turns')
       .upsert(turns, { onConflict: 'session_id,seq', ignoreDuplicates: true })
     if (turnError) {
-      return res.status(500).json({ error: `turn insert failed: ${turnError.message}` })
+      return res.status(500).json({ error: explainKey(`turn insert failed: ${turnError.message}`) })
     }
   }
 
