@@ -4292,7 +4292,7 @@ auto-gradable at N≈200, works at 375px, samples from pools.
 | **stepped case vignettes** | tests (centrepiece) | vignette → question → reveal more → "does this change your answer?" → rule-out. Each step auto-gradable MC. No-back-navigation is pedagogically load-bearing here (can't revise the intake after the reveal), and it fits one-question-per-screen exactly. |
 | **two-tier (answer + justification)** | quizzes + tests | linked MC pair: answer, then "which best supports it?" Scored paired (both = full, answer-only = partial). Cheap depth signal, fully auto-graded. |
 | **"spot the limitation"** | quizzes + tests | 3-sentence study description → MC on the biggest threat to the conclusion. Same skill as the required limitation field in gap submissions — coursework trains it, test measures it; "Needs research" asks are raw material for stems. |
-| **confidence ratings** | **quizzes only** — Norm's call | one tap after each answer, formative not scored. Two payoffs: (a) **reflect-back to the student** — "here are your lowest-confidence questions" as a personal study list, deep-linked to the guide pages; (b) item-quality signal — right-answer/low-confidence flags a badly worded item for the bank. Not on tests: confidence-scored exams are a grade-disputes factory. |
+| **confidence ratings** | **quizzes only** — Norm's call | one tap, formative not scored. **Sequence is load-bearing: answer → confidence → feedback.** Asked after the verdict it is a memory of being right, not a prediction, and the calibration signal is destroyed (see §39.9). The runner must therefore also withhold answer-key colouring on the options until confidence is in, not merely the rationale text. Skippable, so it never hard-blocks feedback. Two payoffs: (a) **reflect-back to the student** — "here are your lowest-confidence questions" as a personal study list, deep-linked to the guide pages; (b) item-quality signal — right-answer/low-confidence flags a badly worded item for the bank. Not on tests: confidence-scored exams are a grade-disputes factory, and **the reflect-back screen does not exist in a sitting at all.** |
 | **spaced retrieval seeding** | quizzes | blueprint rule, not a format: every weekly quiz samples 2–3 items from *earlier* weeks' pools. With items pooled by lecture this is a sampling parameter. |
 | open short answer | **undecided; likely final only** | the sole hand-graded element in the design. If kept, it needs a grading workflow (assignment to markers, rubric, moderation) — scoped only if/when Norm confirms. |
 | ordering/ranking | **rejected** | fights the phone constraint (drag), and partial-credit scoring of orderings is a disputes factory. EMQ + stepped vignettes cover the ground. |
@@ -4301,3 +4301,35 @@ Proposed midterm mix (starting point, not binding): MC ~50% · EMQ 2–3 sets ~2
 vignettes ×2 ~15% · VSA ~10% · spot-the-limitation ~5%. Weekly quizzes use the identical formats
 plus confidence ratings and spaced seeding, so by test day every format is familiar, mobile-verified,
 and its pool is calibrated.
+
+### 39.9 The quiz screen sequence (decided 2026-08-11)
+
+Working mockup: **https://claude.ai/code/artifact/9ea496d2-ff12-41b9-90db-3eac3ea781b8** — seven
+formats on real guide content, quiz/midterm mode toggle, built and tapped through on mobile. Norm's
+review of it settled two runner behaviours that are easy to get wrong in implementation.
+
+**1. Answer → confidence → feedback, in that order.** Norm: *"clicking after feedback seems a bit out
+of order."* It is worse than out of order — it is the difference between a prediction and a memory.
+A confidence rating collected after the verdict is contaminated by hindsight, so it measures nothing
+and both payoffs in §39.8 evaporate: the student's "least sure" study list becomes a list of what they
+got wrong (which the score already tells them), and the right-answer/low-confidence item-quality
+signal cannot exist at all, because nobody reports low confidence in an answer they have just been
+told was correct.
+
+Two implementation consequences:
+
+- **Withhold the answer key, not just the rationale.** Colouring the options right/wrong on click
+  reveals the verdict before the confidence tap even if the explanation is still hidden. Between
+  answering and rating, the runner shows only *which option was picked*, styled neutrally — the same
+  presentation the midterm uses. This applies to typed (VSA) items too: the accepted/sent-for-review
+  verdict waits for the rating.
+- **Make it skippable.** A confidence tap that hard-blocks feedback turns a formative aid into a toll
+  gate. A skip control shows the answer immediately and records no rating.
+
+**2. Nothing confidence-related exists in a sitting.** Norm, on the mockup's final screen: *"I'm
+assuming that wouldn't happen on a real test."* Correct. The reflect-back study list is not merely
+hidden in test mode — it is **not part of the test at all**, so the runner filters those screens out
+of the sequence rather than rendering them empty. The mockup does this by marking the screen
+`quizOnly` and filtering the list, which also keeps the progress count and "n of N" honest. Same
+principle as the feedback rule: a test screen that exists but is suppressed is a screen that will
+eventually leak.
