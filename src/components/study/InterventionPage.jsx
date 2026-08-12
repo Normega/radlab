@@ -37,6 +37,26 @@ function buildScreens(module) {
   ]
 }
 
+// ── Conditional steps (show_if) ───────────────────────────────────────────────
+//
+// A step may declare `show_if: { key, equals | not_equals | min }`, naming an
+// EARLIER step's `key`. Unmet condition → the screen is never rendered, never
+// gated on, and saves no `intervention_responses` row: a skipped follow-up is
+// absent from the data rather than present-and-blank, so "did not qualify" and
+// "left it empty" stay distinguishable at analysis.
+//
+// Before this existed, the Graduation Day follow-ups carried a `_note` field
+// saying they were conditional on the likelihood item. `_note` is inert prose —
+// nothing read it — so every participant answered "When will you practice?"
+// including those who had just said they never would (found 2026-08-12).
+function evalShowIf(cond, answer) {
+  if (!cond) return true
+  if (cond.equals     !== undefined) return answer === cond.equals
+  if (cond.not_equals !== undefined) return answer !== cond.not_equals
+  if (cond.min        !== undefined) return answer != null && Number(answer) >= cond.min
+  return true
+}
+
 function initialNextEnabled(screen, demoMode) {
   if (ALWAYS_ENABLED.has(screen.type)) return true
   if (screen.type === 'video') return demoMode
@@ -111,8 +131,38 @@ export default function InterventionPage({
   // quality_explorer
   const [qualityState, setQualityState] = useState({})  // {stepIdx: {quality, slider_value, sliderMoved, description}}
 
+  // ── show_if resolution ────────────────────────────────────────────────────
+  // Conditions name a step by its authored `key`, not its position, so
+  // inserting or reordering steps in a module definition can't silently
+  // re-point a condition at the wrong question.
+  const stepKeyIndex = {}
+  ;(module.steps ?? []).forEach((s, i) => { if (s.key) stepKeyIndex[s.key] = i })
+
+  function answerForKey(key) {
+    const idx = stepKeyIndex[key]
+    if (idx === undefined) return undefined
+    switch (module.steps[idx]?.type) {
+      case 'training_response': return trainingSelected[idx]?.selected
+      case 'thought_choice':    return thoughtChoice[idx]
+      case 'prompt_response':   return responses[idx]
+      case 'slider':            return sliderValues[idx]
+      default:                  return undefined
+    }
+  }
+
+  const screenVisible = s => evalShowIf(s.show_if, s.show_if && answerForKey(s.show_if.key))
+
+  /** Next screen the participant should actually see, or -1 if none remain. */
+  function nextVisibleIndex(from) {
+    for (let i = from + 1; i < screens.length; i++) if (screenVisible(screens[i])) return i
+    return -1
+  }
+
   const current = screens[screenIndex]
-  const isLast  = screenIndex === screens.length - 1
+  // "Last" means no *visible* screen remains — not the end of the array. With a
+  // skipped tail the array's final index is unreachable, and comparing against
+  // it would leave the participant on a Next button that goes nowhere.
+  const isLast  = nextVisibleIndex(screenIndex) === -1
 
   // ── Gate re-evaluation on screen change ───────────────────────────────────
 
@@ -226,7 +276,7 @@ export default function InterventionPage({
       }
       onComplete()
     } else {
-      setScreenIndex(i => i + 1)
+      setScreenIndex(nextVisibleIndex(screenIndex))
     }
   }
 
@@ -406,9 +456,10 @@ export default function InterventionPage({
           {module.subtitle && <div style={S.daySubtitle}>{module.subtitle}</div>}
         </div>
 
-        {/* Step pips */}
+        {/* Step pips — only screens this participant will actually see, so a
+            skipped branch doesn't leave dots that never fill. */}
         <div style={S.pips}>
-          {screens.map((_, i) => (
+          {screens.map((s, i) => ({ s, i })).filter(({ s, i }) => i === screenIndex || screenVisible(s)).map(({ i }) => (
             <div key={i} style={{
               ...S.pip,
               background: i < screenIndex ? 'var(--pk)' : i === screenIndex ? 'var(--tx)' : '#ddd',
