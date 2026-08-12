@@ -60,6 +60,13 @@ export const gradStudents = [
     links: [],
   },
   {
+    name: "Gerold Song",
+    role: "UX/UI Designer",
+    photo: "/images/people/gerold.jpg",
+    bio: "Gerold completed his BA in Psychology at the University of Waterloo and is currently pursuing a Master of Information at the University of Toronto focusing on UX Design and Data Science. His interests in psychology and mindfulness informs his desire to design accessible, human-centric health and wellbeing solutions, currently taking shape through a platform design project for RADlab. His hobbies include staying active, speciality coffee, and cooking for his friends.",
+    links: [],
+  },
+  {
     name: "Jaafar Al-Tabakchali",
     role: "Undergraduate Student",
     photo: "/images/people/jaafar.jpg",
