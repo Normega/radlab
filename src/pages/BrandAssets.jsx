@@ -413,12 +413,20 @@ export default function BrandAssets() {
           content column. This is an open design question, not a violation.
         </Gap>
 
-        <Gap title="Two known documentation conflicts">
-          The Figma style tile&rsquo;s Body table lists 12&nbsp;/&nbsp;14&nbsp;/&nbsp;12 with roles
-          copied from the Display table; the written spec says 16&nbsp;/&nbsp;14&nbsp;/&nbsp;12,
-          which is what this page and the code follow. Separately, the developer spec describes a
-          Figma <code>Demo</code> page as the source of truth for navigation wiring, and that page
-          is no longer in the file.
+        <Gap title="Precedence — the written spec is authoritative">
+          Where the Figma Style Tile and the written spec disagree, <strong>the written spec
+          wins</strong> (Norm, 2026-08-12). The tile&rsquo;s Body table lists
+          12&nbsp;/&nbsp;14&nbsp;/&nbsp;12 with its roles copied from the Display table above it;
+          the spec says 16&nbsp;/&nbsp;14&nbsp;/&nbsp;12, which is what this page and the code
+          follow, and the current Figma has it corrected. Per-screen CSS still wins over both
+          where a screen deliberately differs &mdash; the About page&rsquo;s Large Hero is the
+          standing example.
+        </Gap>
+
+        <Gap title="One stale pointer">
+          The developer spec names a Figma <code>Demo</code> page as the source of truth for
+          navigation wiring. That page is no longer in the file, so a navigation question can no
+          longer be settled by following the spec there.
         </Gap>
       </section>
 
