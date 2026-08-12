@@ -2515,7 +2515,7 @@ Participant-facing content pages placeable as session steps: instructions, condi
 
 **No arithmetic in `{{}}` (confirmed 2026-07-16)**: `interpolate()`'s regex (`DisplayStepWrapper.jsx`) only matches a single dotted path — `{{a + b}}`-style expressions don't match at all and render as literal un-interpolated text. A live display (`colourmax_display_t2`) had exactly this bug, authored before anyone checked. Derived two-variable quantities (e.g. ColourMax's `redemption_score`) are instead precomputed as a plain step output in `SessionEntry.jsx`'s `handleStepComplete` once both producing steps have run, then referenced as a normal single `{{game.color_max.redemption_score}}` token — no engine changes. If a future display needs arithmetic the engine doesn't support, prefer this precompute pattern over extending the regex, unless a real need for general in-template expressions emerges.
 
-**Admin**: `/admin/displays` (list) + `/admin/displays/new|:id` (editor: name, auto-slug locked after create, text blocks with per-block showIf inputs, variable pill picker). AdminLayout nav regrouped: Sessions/Studies top-level, then an **Elements** section (Games, Screeners, Questionnaires, Rating Scales, Displays, Videos, Audio), then Training/Compensation/Export.
+**Admin**: `/admin/displays` (list) + `/admin/displays/new|:id` (editor: name, auto-slug locked after create, text blocks with per-block showIf inputs, variable pill picker). AdminLayout nav regrouped: Sessions/Studies top-level, then an **Elements** section (Games, Screeners, Questionnaires, Rating Scales, Displays, Videos, Audio), then Training/Compensation/Export (Workbench appended to that last group 2026-08-11, and a super-admin-only block — Users, Diagnostics, Workbench admin — below a divider; see §29c).
 
 **Sandy study 3 wiring**: session = `slider_predicted_efficacy` → Aptitude Suite → display referencing `{{slider.predicted_efficacy.value}}` and `{{game.aptitude_suite.avg_pct}}`, with condition-gated blocks. Extended with a "bonus round": `slider_predicted_efficacy` → ColorMax → `colourmax_display_t2`, gated on a `framing` slot (`control`/`redemption` arms) referencing `{{game.color_max.avg_pct}}` and, in the redemption arm, `{{game.color_max.redemption_score}}` (see the no-arithmetic note above).
 
@@ -6008,6 +6008,8 @@ Lab members get a page showing the Claude Code sessions Norm has explicitly shar
 
 **Routes**: `/workbench` (member view) · `/workbench/:sessionId` · `/workbench/admin` (Norm's console) · `/workbench/admin/:sessionId`
 **Files**: `src/workbench/` (`WorkbenchRoute.jsx`, `WorkbenchAdminRoute.jsx`, `WorkbenchPage.jsx`, `WorkbenchAdminPage.jsx`, `SessionTranscript.jsx`) · `api/session-push.js` · `scripts/claude-session-push.mjs` · `.claude/settings.json` · `supabase/migrations/20260811_workbench_sessions.sql`
+
+**Discoverability (2026-08-11)**: both routes are linked from the `/admin` sidebar, which is where lab members already are — `Workbench` in the last unheadered group (with `end` on the `NavLink`, so it does not also highlight on the admin path), and `Workbench admin` in the super-admin block. That block now renders under a hairline rule (`S.divider`, drawn from `section.divider`) so the super-only tier reads as a separate tier rather than three more entries on the same list. The links are UX only; `/workbench/admin` is still gated by `WorkbenchAdminRoute` and by `is_super_admin()` in RLS.
 
 ### The three decisions that shape everything else
 

@@ -29,18 +29,26 @@ const NAV_SECTIONS = [
       { to: '/admin/training',        label: 'Training'       },
       { to: '/admin/compensation',    label: 'Compensation'   },
       { to: '/admin/export',          label: 'Export'         },
+      // Outside /admin — the Workbench is its own partition, open to any
+      // signed-in lab member. Linked from here because that is where the
+      // people who read shared sessions already are. `end` so it does not
+      // also light up on /workbench/admin, which has its own entry below.
+      { to: '/workbench',             label: 'Workbench', end: true },
     ],
   },
 ]
 
-// Super-admin-only entries — appended to the nav when superAdmin is true.
-// The pages behind them enforce the real gate server-side (RPCs raise
-// 'forbidden' for non-supers); hiding the link is just tidiness.
+// Super-admin-only entries — appended to the nav when superAdmin is true,
+// under a rule so it reads as a separate tier rather than more of the same
+// list. The pages behind them enforce the real gate server-side (RPCs raise
+// 'forbidden' for non-supers); hiding the links is just tidiness.
 const SUPER_ADMIN_SECTION = {
   header: null,
+  divider: true,
   items: [
-    { to: '/admin/users',       label: 'Users'       },
-    { to: '/admin/diagnostics', label: 'Diagnostics' },
+    { to: '/admin/users',       label: 'Users'           },
+    { to: '/admin/diagnostics', label: 'Diagnostics'     },
+    { to: '/workbench/admin',   label: 'Workbench admin' },
   ],
 }
 
@@ -78,6 +86,7 @@ function Sidebar({ session, superAdmin, onClose }) {
           const isCollapsed   = section.header && collapsed[section.header] && !sectionActive
           return (
             <div key={si} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {section.divider && <div style={S.divider} />}
               {section.header && (
                 <button
                   type="button"
@@ -89,10 +98,11 @@ function Sidebar({ session, superAdmin, onClose }) {
                   {section.header}
                 </button>
               )}
-              {!isCollapsed && section.items.map(({ to, label }) => (
+              {!isCollapsed && section.items.map(({ to, label, end }) => (
                 <NavLink
                   key={to}
                   to={to}
+                  end={end}
                   style={({ isActive }) => ({
                     ...S.navLink,
                     ...(section.header ? S.navIndent : {}),
@@ -191,6 +201,10 @@ const S = {
     transition: 'transform 0.15s', flexShrink: 0,
   },
   navIndent: { paddingLeft: 22 },
+  divider: {
+    height: 1, background: 'var(--bd)',
+    margin: '4px 12px 10px',
+  },
   navLink: {
     display: 'block', padding: '9px 12px', borderRadius: 8,
     fontFamily: '"DM Sans",system-ui,sans-serif',
