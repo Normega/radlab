@@ -72,3 +72,22 @@ join wiki_pages p
 left join disorders d
   on d.slug = v.slug
 on conflict (page_id, ask_hash) do nothing;
+
+-- ---------------------------------------------------------------------------
+-- Second pass, same day: the 2025 Test 1 short-answer audit (run plan §39.10).
+-- One further hole, from the depression/anxiety question's brain-network part.
+-- Applied via MCP apply_migration as `20260811_wp7_curated_gaps_dmn`.
+-- ---------------------------------------------------------------------------
+
+insert into page_gaps (course_id, page_id, slug, kind, section, ask, ask_hash, tier, difficulty, capacity, notes)
+select
+  p.course_id, p.id, p.slug, 'curated', 'etiology',
+  v.ask, md5(lower(v.ask)), d.tier, 'green', 2,
+  'Added 2026-08-11 by the WP7 item-format audit (run plan §39.10): a 2025 Test 1 short-answer part asked for this and the corpus cannot answer it.'
+from (values
+  ('major-depressive-disorder',
+   'the large-scale brain-network account of depression and anxiety — the default mode network, its role in self-referential and autobiographical processing, and its relation to rumination. "Default mode network" appears on none of the 262 pages, and "salience network" on only one ([[diagnosis-and-classification]], in an RDoC context), while rumination is named as a symptom on fifteen pages with no network-level account behind it. The same gap serves [[generalized-anxiety-disorder]] and the anxiety chapter, but the material belongs here.')
+) as v(slug, ask)
+join wiki_pages p on p.slug = v.slug and p.course_id = '35e9842a-51a5-4f1e-aa5f-3a52f938196f'
+left join disorders d on d.slug = v.slug
+on conflict (page_id, ask_hash) do nothing;
