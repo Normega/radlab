@@ -208,22 +208,194 @@ body {
 }
 .contact-cta:hover { opacity: 0.7; }
 
-/* Brand assets page (hidden, unlinked) */
+/* ── /brand — design system + brand assets (hidden, unlinked) ───────────────
+   This page documents the design system, so it must itself obey it: every
+   font-size below is a step of the 12/14/16/20/28/36 scale, every radius is
+   24 (clickable) or 12 (label/card), and every colour is a token. If you are
+   editing this block and reach for 13px or #f5f5f5, that is the drift the
+   page exists to describe. */
 .brand-page__header { margin-bottom: 2.5rem; }
 
 .brand-page__title {
   font-family: 'DM Serif Display', serif;
-  font-size: 2rem;
+  font-size: 36px;
   font-weight: 400;
+  line-height: 1.2;
   color: var(--tx);
-  margin: 0 0 0.5rem;
+  margin: 0 0 8px;
 }
 
-.brand-page__subtitle { font-size: 0.9375rem; color: var(--tx2); line-height: 1.6; max-width: 640px; margin: 0; }
+.brand-page__subtitle { font-size: 16px; color: var(--tx2); line-height: 1.5; max-width: 640px; margin: 0; }
 
-.brand-section-note { font-size: 0.8125rem; color: var(--tx2); margin: -0.5rem 0 1rem; }
+.brand-heading {
+  font-family: 'DM Serif Display', serif;
+  font-size: 28px;
+  font-weight: 400;
+  color: var(--tx);
+  margin: 0 0 20px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--bd);
+}
 
-.brand-asset-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1.25rem; }
+.brand-subheading {
+  font-family: 'Space Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tx2);
+  margin: 28px 0 12px;
+}
+
+.brand-section-note { font-size: 14px; line-height: 1.5; color: var(--tx2); margin: -8px 0 16px; max-width: 680px; }
+.brand-section-note code { font-family: 'Space Mono', monospace; font-size: 12px; }
+
+/* Colour swatches — text colour is set inline from the swatch's own luminance */
+.brand-swatch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+
+.brand-swatch {
+  border: 1px solid var(--bd);
+  border-radius: 12px;
+  min-height: 116px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: pointer;
+  font-family: 'Space Mono', monospace;
+  text-align: left;
+}
+
+.brand-swatch__hex { font-size: 12px; align-self: flex-end; }
+.brand-swatch__label { font-size: 12px; line-height: 1.45; }
+.brand-swatch__use { display: block; font-family: 'DM Sans', system-ui, sans-serif; font-size: 12px; opacity: 0.75; }
+
+/* Border tokens are rgba — shown as borders, since a fill swatch would read as white */
+.brand-border-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+
+.brand-border-card {
+  background: var(--bgc);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.brand-border-card__name  { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--tx); }
+.brand-border-card__value { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--tx2); word-break: break-all; }
+.brand-border-card__use   { font-size: 12px; color: var(--tx2); }
+
+/* Type scale */
+.brand-type-block {
+  background: var(--bgc);
+  border: 1px solid var(--bd);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 12px;
+}
+
+.brand-type-block__family {
+  font-family: 'Space Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tx2);
+  margin: 0 0 4px;
+}
+
+.brand-type-block__stack { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--tx2); margin: 0 0 12px; }
+
+.brand-type-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 16px;
+  align-items: baseline;
+  padding: 14px 0;
+  border-top: 1px solid var(--bd);
+}
+.brand-type-row:first-of-type { border-top: none; padding-top: 4px; }
+
+.brand-type-row__sample { color: var(--tx); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.brand-type-row__meta   { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--tx2); text-align: right; white-space: nowrap; }
+.brand-type-row__role   { display: block; font-family: 'DM Sans', system-ui, sans-serif; font-size: 12px; color: var(--tx2); }
+
+/* Radii demos — the fixed-height demo row keeps every caption on one baseline */
+.brand-radii { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; }
+.brand-radii__item { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.brand-radii__demo { min-height: 72px; display: flex; align-items: center; }
+.brand-radii__caption { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--tx2); }
+
+.brand-demo-btn {
+  background: var(--pk);
+  color: #fff;
+  border: none;
+  border-radius: 24px;
+  padding: 12px 24px;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: default;
+}
+.brand-demo-btn--outline { background: transparent; color: var(--pkd); border: 1px solid var(--pkbs); }
+
+.brand-demo-label {
+  display: inline-block;
+  background: var(--bgp);
+  color: var(--pkd);
+  border-radius: 12px;
+  padding: 6px 12px;
+  font-family: 'Space Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.brand-demo-card {
+  background: var(--bgc);
+  border: 1px solid var(--bd);
+  border-radius: 12px;
+  padding: 20px 24px;
+  font-size: 14px;
+  color: var(--tx2);
+  min-width: 180px;
+}
+
+.brand-demo-avatar { width: 48px; height: 48px; border-radius: 50%; background: var(--bgp); border: 1px solid var(--pkb); }
+
+/* Status lists (components, known gaps) */
+.brand-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 1px; background: var(--bd); border-radius: 12px; overflow: hidden; }
+
+.brand-list__row {
+  background: var(--bgc);
+  padding: 12px 16px;
+  display: flex;
+  gap: 16px;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.brand-list__name { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--tx); }
+.brand-list__note { font-size: 12px; color: var(--tx2); flex: 1 1 240px; }
+
+.brand-status { font-family: 'Space Mono', monospace; font-size: 12px; padding: 2px 10px; border-radius: 12px; white-space: nowrap; }
+.brand-status--built   { background: var(--bgp); color: var(--pkd); }
+.brand-status--pending { background: var(--bg); color: var(--tx2); border: 1px solid var(--bd); }
+
+.brand-gap {
+  background: var(--bgc);
+  border: 1px solid var(--bd);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 12px;
+}
+.brand-gap__title { font-size: 14px; font-weight: 600; color: var(--tx); margin: 0 0 6px; }
+.brand-gap__body  { font-size: 14px; line-height: 1.5; color: var(--tx2); margin: 0; }
+.brand-gap__body code { font-family: 'Space Mono', monospace; font-size: 12px; }
+
+/* Assets */
+.brand-asset-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
 
 .brand-asset-card {
   background: var(--bgc);
@@ -239,67 +411,49 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1.5rem;
+  padding: 24px;
 }
 
 .brand-asset-card__preview img { max-width: 100%; max-height: 100%; object-fit: contain; }
 
-.brand-asset-card__meta { padding: 0.875rem 1rem 1rem; display: flex; flex-direction: column; gap: 0.25rem; }
+.brand-asset-card__meta { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 4px; }
 
-.brand-asset-card__label { font-size: 0.875rem; font-weight: 600; color: var(--tx); }
+.brand-asset-card__label { font-size: 14px; font-weight: 600; color: var(--tx); }
 
-.brand-asset-card__note { font-size: 0.75rem; color: var(--tx2); line-height: 1.4; }
+.brand-asset-card__note { font-size: 12px; color: var(--tx2); line-height: 1.45; }
 
 .brand-asset-card__download {
   font-family: 'Space Mono', monospace;
-  font-size: 0.6875rem;
+  font-size: 12px;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--pk);
   text-decoration: none;
-  margin-top: 0.5rem;
+  margin-top: 8px;
 }
 .brand-asset-card__download:hover { text-decoration: underline; }
 
-.brand-swatch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 1rem; }
-
-.brand-swatch {
-  border: 1px solid var(--bd);
-  border-radius: 12px;
-  height: 96px;
-  padding: 0.75rem;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  cursor: pointer;
-  font-family: 'Space Mono', monospace;
-  text-align: left;
-}
-
-.brand-swatch__hex { font-size: 0.75rem; font-weight: 700; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.35); align-self: flex-end; }
-
-.brand-swatch__label { font-size: 0.6875rem; line-height: 1.4; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.35); }
-
+/* Fonts */
 .brand-font-list { display: flex; flex-direction: column; gap: 1px; background: var(--bd); border-radius: 12px; overflow: hidden; }
 
 .brand-font-row {
   background: var(--bgc);
-  padding: 1.25rem 1.5rem;
+  padding: 20px 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1.5rem;
+  gap: 24px;
   flex-wrap: wrap;
 }
 
-.brand-font-row__meta { display: flex; flex-direction: column; gap: 0.25rem; }
+.brand-font-row__meta { display: flex; flex-direction: column; gap: 4px; }
 
-.brand-font-row__name { font-family: 'DM Serif Display', serif; font-size: 1.1rem; color: var(--pk); text-decoration: none; }
+.brand-font-row__name { font-family: 'DM Serif Display', serif; font-size: 20px; color: var(--pk); text-decoration: none; }
 .brand-font-row__name:hover { text-decoration: underline; }
 
-.brand-font-row__detail { font-size: 0.75rem; color: var(--tx2); font-family: 'DM Sans', system-ui, sans-serif; }
+.brand-font-row__detail { font-size: 12px; color: var(--tx2); font-family: 'DM Sans', system-ui, sans-serif; }
 
-.brand-font-row__specimen { font-size: 1.5rem; color: var(--tx); }
+.brand-font-row__specimen { font-size: 28px; color: var(--tx); }
 
 /* Farm Joy game backgrounds — fills a position:absolute container */
 .absolute-fill {
