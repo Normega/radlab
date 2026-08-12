@@ -4573,3 +4573,150 @@ fullscreen exit, heartbeat loss, a failed integrity check — converts a network
 the front of the room. Every measure above either logs or refuses a single write; **none of them
 terminates a sitting.** That is deliberate, and it is the line to hold when the temptation arises to
 make a flag consequential in software.
+
+### 39.12 The assessment blueprint (decided 2026-08-12)
+
+Norm: weekly quizzes need **no security at all** — collaboration is fine — but a quiz item must
+**never reappear on the midterm or final**. And: plan the whole slate now, revise later if student
+submissions turn up something worth examining.
+
+#### 39.12.1 Partition items, not content
+
+The instinct to "partition content" is the one thing to resist. **Content overlap between quizzes and
+tests is the entire point** — the quiz's job is retrieval practice on exactly what the test examines,
+and the spaced-retrieval seeding rule (§39.8) depends on it. Disjoint *content* would turn weekly
+quizzes into busywork and delete the strongest pedagogical argument for having them.
+
+What must never repeat is the **item**, and the rule follows from one fact: since collaboration is
+permitted, **a quiz item is public the moment it is served** — permanently, including for future
+years. Exposure burns an item. So:
+
+- **Quiz pool** — burn-on-use, consumed at ~77 items/year, never eligible for a test. Re-serving an
+  already-exposed item in a *later quiz* is fine and is how spaced seeding works.
+- **Test pools (midterm, final)** — sealed. An item that has ever been served in a quiz can never
+  enter one.
+
+**Enforce this in the schema, not by discipline.** `assessment_items` carries an exposure state;
+serving an item in a quiz stamps it `exposed` irreversibly (trigger, not application code); a test
+blueprint may draw only from `sealed`. The failure mode is not Norm reusing an item by accident — it
+is the **sibling**: the same fact, reworded, generated from the same page section. So the exposure
+ledger keys on **(page_id, section, fact tested)**, not on item text, and the authoring surface must
+show "this cell was already used in quiz 4."
+
+**A specific trap: double-mapped pages.** Six pages sit in two lectures at once —
+`little-albert-study` (L1, L3), `psychodynamic-psychotherapy` (L1, L2), `tic-disorders` (L3, L9),
+`reactive-attachment-disorder` / `disinhibited-social-engagement-disorder` (L4, L9),
+`schizotypal-personality-disorder` (L10, L11), `student-support-resources` (L1, L5). An item drawn
+for one lecture's cell will look unused when the *other* lecture's blueprint is filled. Keying
+exposure on page rather than lecture is what prevents this; keying on lecture would reintroduce it.
+
+#### 39.12.2 What the disjointness rule costs
+
+Stated plainly, because §39.4 argued the opposite. The original case was that quizzes pilot the item
+bank — flawed items caught where they cost nothing, per-item difficulty and discrimination
+accumulating before anything graded uses them. **Item-level disjointness kills that for test items
+specifically: they go into the midterm cold.**
+
+What survives is not nothing: format piloting (students meet every format before it counts), mobile
+verification, runner shakedown at low stakes, and **VSA variant-list training — which transfers,
+because accepted variants attach to the answer concept, not to the item that asked for it.**
+
+The mitigation is ordinary psychometrics: keep per-item stats on the midterm and be willing to drop
+an item with negative discrimination after the sitting. Worth deciding *before* the sitting that this
+is the policy, so it is not a concession made under complaint.
+
+#### 39.12.3 Coverage, from the real calendar
+
+| | lectures | authored from |
+|---|---|---|
+| **Midterm** — Oct 14 | **1–5**: models/history · assessment, diagnosis & methods · anxiety+OCD · trauma/dissociation/somatic · mood+suicide | sealed pool, sampled per student |
+| **Final** — Dec 10+ | **cumulative, weighted to 6–11** (Norm's call): ~70% second half, ~30% lectures 1–5 | single paper form, no sampling |
+
+The cumulative choice has a direct cost worth restating: **every lectures 1–5 item on the final must
+be newly authored**, because the midterm's are burned. That is the ~12 items in the budget below that
+a second-half-only final would not need.
+
+#### 39.12.4 Item budget — 221 items
+
+| block | items | notes |
+|---|---|---|
+| quizzes 1–11 | **77** (7 fresh × 11) | burn-on-use; plus 2–3 reseeded already-exposed items per quiz, which cost no authoring |
+| midterm sealed pool | **100** | 40 served per student at ~2.5× depth per cell |
+| final, auto-scored | **40** | 28 from lectures 6–11, 12 from lectures 1–5 |
+| final, short answer | **4 questions** | choose 3 of 4, five marks each, common blueprint (2 recall · 1 pattern · 2 mechanism) |
+
+Per-lecture allocation, weighted by content mass rather than page count alone:
+
+| lecture | pages | midterm pool | final auto | quiz |
+|---|---|---|---|---|
+| 1 — what is abnormal, models | 17 | 16 | 2 | 7 |
+| 2 — assessment, diagnosis, methods | 29 | 20 | 3 | 7 |
+| 3 — anxiety + OCD | 30 | 22 | 2 | 7 |
+| 4 — trauma, dissociation, somatic | 33 | 22 | 3 | 7 |
+| 5 — mood + suicide | 26 | 20 | 2 | 7 |
+| 6 — sex, gender, paraphilic | 14 | — | 4 | 7 |
+| 7 — eating + sleep-wake | 17 | — | 4 | 7 |
+| 8 — substance + impulse control | 35 | — | 6 | 7 |
+| 9 — neurodevelopmental + neurocognitive | 29 | — | 6 | 7 |
+| 10 — personality, clinical psych & law | 21 | — | 4 | 7 |
+| 11 — psychosis + schizophrenia | 15 | — | 4 | 7 |
+
+Format mix inside the midterm pool follows §39.8's proposed proportions: MC 50 · EMQ ~20 (3 sets of
+~7 stems off shared option lists) · stepped vignettes ~15 (3 vignettes × 5 steps) · VSA 10 ·
+spot-the-limitation 5.
+
+#### 39.12.5 Three things the page inventory dictates
+
+Pulled from `page_lectures` × `wiki_pages`, and each one constrains authoring before a single item is
+written:
+
+1. **Lecture 6 cannot currently support half the formats.** It is the only lecture in the course
+   with **nothing but `disorder` pages** — 14 of them, no concept, no treatment, no study, no debate —
+   and it carries **121 open gaps, the highest density in the course at 8.6 per page** against a
+   course mean near 2.9. Mechanism items, treatment items and evidence items have nothing to stand on
+   there. It is also the most sensitive content in the syllabus and holds the one short-answer part
+   (Q3E, gender dysphoria) that §39.10.2 found genuinely requires prose. **This is where item-writing
+   will break first**, and it sits in the final's 70%, so it needs the earliest look of any
+   second-half lecture.
+2. **Lecture 2 is the best-equipped lecture in the course for `spot the limitation`** — it carries
+   `allegiance-effect`, `dodo-bird-verdict`, `file-drawer-problem`, `expectancy-effect`,
+   `equivalence-vs-superiority-testing`, `network-meta-analysis`, `effect-size`,
+   `single-subject-experimental-design` and `treatments-that-harm`. Give it a disproportionate share
+   of that format; it doubles as scaffolding for the RCT assignment, which lands the same term.
+3. **EMQ cannot run on lectures 1 or 2.** Extended matching needs an option list of confusable
+   diagnoses; neither lecture has a single `disorder` page. All midterm EMQ sets therefore live in
+   lectures 3, 4 and 5 — which is fine, since those are the three richest differential-diagnosis
+   lectures in the first half.
+
+#### 39.12.6 Student submissions are a hazard to items, not only a source of them
+
+Norm's expectation that new material arrives as students deposit papers is right, and the interesting
+half is the one that runs the other way: **an item written in August against a page can be silently
+invalidated when an accepted submission changes that page in October.**
+
+§39.5 already stores the page version an item was written against. What is missing is the alarm:
+**publishing a new version of a page must flag every item keyed to that page for re-verification.**
+One trigger, one staff queue. Without it the drift is discovered during the sitting, which is the
+worst available time. This is a build requirement, not a process suggestion — process will not catch
+it at 221 items.
+
+The renewable-source half is real too, and it has a natural home: **newly ingested material goes to
+quizzes freely** (they are burned anyway, and the pool is consumed at ~77/year), and to a test only
+if it arrived before that test's lock and was never quizzed.
+
+#### 39.12.7 Authoring order — which inverts the software build order
+
+Norm's call on authoring: **Claude drafts, Norm reviews and cuts.** Drafts are generated against
+locked guide sections with page/section keys attached, so the drafting pass *is* the guide audit
+(§39.10.4).
+
+Content authoring does **not** follow §39.7's build order. The software ships the quiz runner first;
+the *content* must start with the midterm, because the midterm's lock comes first:
+
+| window | block | why then |
+|---|---|---|
+| **now → Sept 30** | midterm pool (100) **+ quizzes 1–5 (35)** — authored together | the T−2 lock is Sept 30. Authoring them together is the only way disjointness is *provable* rather than asserted, and audit findings on lectures 1–5 need lead time to fix |
+| Oct → Nov | quizzes 6–11 (42) | each due the week of its lecture |
+| Nov → the print date | final: 40 auto + 4 short answer | the binding deadline is printing, not the exam date (§39.2) |
+
+135 items before Sept 30 is the real deadline in this plan, and it is seven weeks out.
