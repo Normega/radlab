@@ -4141,8 +4141,11 @@ organizing axis.** Build it once, for both.
 | deadline policy | full credit on time; **+1 week full credit via standing accommodation row**; after that a **75%-capped late tier**; automated, identical for everyone, visible in the UI |
 | late-tier hard close | **the midterm date** for first-half quizzes; **Dec 8** (last day of classes / participation deadline) for second-half |
 | drop-lowest policy | **none** — the 75% tier is the forgiveness mechanism |
-| midterm | **in-class**, with test-centre and makeup sittings as additional windows on the same test |
-| test accommodations | per-student rows (`time_multiplier`, `extra_minutes`), **assignable any time during term, evaluated at attempt start** |
+| midterm | **in-class and on-screen**, with test-centre and makeup sittings as additional windows on the same test |
+| final | **pencil and paper** (decided 2026-08-12), registrar-administered — no digital runner, no software accommodations, no sampling |
+| short answer | **final only, on paper.** None on the midterm — every midterm item is auto-graded |
+| midterm security | **as much as the two device classes will both bear**, phone and laptop, with server-side layers carrying the weight (§39.11) |
+| test accommodations | per-student rows (`time_multiplier`, `extra_minutes`), **assignable any time during term, evaluated at attempt start** — midterm only; the final's accommodations are the registrar's |
 | device policy | laptops preferred, **phones allowed** — every item authored mobile-first; monitoring degrades gracefully and the mode is recorded per attempt |
 | content lock (midterm) | **T−2 weeks, immediately after that week's lecture** — full publication freeze, not a snapshot with live drift |
 | content lock (final) | **Dec 8**, fused with the participation deadline; exam date is registrar-set, ≥1 week later |
@@ -4167,9 +4170,16 @@ Final cycle:
   ~Dec 2   last lecture (normal quiz window — a full week remains)
   Dec 8    last day of classes: second-half quizzes hard-close, guide LOCKS,
            study period opens   ← single fused date
-  TBD      FINAL (registrar; ≥1 week after Dec 8; window row created when known)
+  TBD      FINAL — pencil and paper, registrar-administered, ≥1 week after Dec 8
   after    batch publish — the closing act of the term's guide
 ```
+
+One consequence of the paper final (2026-08-12): **the lock's real deadline is the print deadline,
+not the exam date.** The paper is typeset and sent to printing days before the sitting, so the text
+students are examined on freezes when the paper goes to print. Dec 8 still works as the announced
+lock — it is on or before any plausible print date — but the *binding* date is printing, and if the
+guide were ever unlocked between Dec 8 and the exam the paper would silently drift out of sync with
+it. Keep them fused.
 
 Confirmed by Norm 2026-08-08: **all participation coursework — quizzes and the three article
 submissions — is due Dec 8.** Everything student-submittable shares that date.
@@ -4269,14 +4279,16 @@ moves) recreates the unfairness it exists to prevent, and is rejected.
    engine. Ships first; every later piece reuses its item and attempt tables.
 2. **Item bank + blueprint surface** — items keyed to pages, pools per blueprint cell, per-item
    stats from quiz responses. Depends on WP6 Phase A for the lecture axis.
-3. **Test runner** — windows, per-student sampling, server-side timing, offline-tolerant autosave,
-   monitoring with graceful degradation, staff console.
+3. **Midterm runner** — windows, per-student sampling, server-side timing, offline-tolerant autosave,
+   monitoring with graceful degradation, staff console. **Serves the midterm only** (§39.11.1): the
+   final is on paper, so this is one sitting on one date, not a reusable exam-period system.
 4. **Lock tooling** — `publish_locked`, edition stamp, emergency path.
+5. **Print export from the item bank** — the paper final's only dependency on any of this.
 
-Open items: registrar's exam date (create the window row when known); open short answer is
-undecided — Norm will likely keep it **at least for the final** (§39.8) and it is the only
-hand-graded element anywhere in the design; how much of the item bank Norm authors directly vs.
-reviews from drafts generated against guide pages.
+Open items: how much of the item bank Norm authors directly vs. reviews from drafts generated against
+guide pages. *(Settled since planning: short answer is final-only and on paper (§39.11), which
+cancels the hand-grading surface entirely; the registrar's exam date no longer needs a window row,
+since nothing digital runs that day.)*
 
 ### 39.8 Item formats (decided 2026-08-08)
 
@@ -4289,12 +4301,12 @@ auto-gradable at N≈200, works at 375px, samples from pools.
 | multiple choice | quizzes + tests | the backbone, ~half the test |
 | **extended matching (EMQ)** | quizzes + tests | replaces classic matching. One reusable option list (e.g. 8 disorders), several independent vignette stems answered from it. Tests differential diagnosis directly; 8 plausible options crush guessing; each stem is one tappable screen — no drag-and-drop. Term/definition matching converts the same way (definition as stem, term list as options). Stems within a set are interchangeable, so EMQ sets sample per-student cleanly. |
 | **very short answer (VSA)** | quizzes + tests | replaces most short answer. 1–3 typed words; auto-accept against a normalized known-variants list; unmatched tail goes to a staff adjudication queue whose accepted variants train the list. **Run VSA from quiz one** so the variant lists are trained on low-stakes responses before anything performance-graded uses them. Kills MC's recognition-over-recall cue problem. |
-| **stepped case vignettes** | tests (centrepiece) | vignette → question → reveal more → "does this change your answer?" → rule-out. Each step auto-gradable MC. No-back-navigation is pedagogically load-bearing here (can't revise the intake after the reveal), and it fits one-question-per-screen exactly. |
+| **stepped case vignettes** | tests (centrepiece) | vignette → question → reveal more → "does this change your answer?" → rule-out. Each step auto-gradable MC. No-back-navigation is pedagogically load-bearing here (can't revise the intake after the reveal), and it fits one-question-per-screen exactly. **On the paper final this property does not survive** — see §39.11.2. |
 | **two-tier (answer + justification)** | quizzes + tests | linked MC pair: answer, then "which best supports it?" Scored paired (both = full, answer-only = partial). Cheap depth signal, fully auto-graded. |
 | **"spot the limitation"** | quizzes + tests | 3-sentence study description → MC on the biggest threat to the conclusion. Same skill as the required limitation field in gap submissions — coursework trains it, test measures it; "Needs research" asks are raw material for stems. |
 | **confidence ratings** | **quizzes only** — Norm's call | one tap, formative not scored. **Sequence is load-bearing: answer → confidence → feedback.** Asked after the verdict it is a memory of being right, not a prediction, and the calibration signal is destroyed (see §39.9). The runner must therefore also withhold answer-key colouring on the options until confidence is in, not merely the rationale text. Skippable, so it never hard-blocks feedback. Two payoffs: (a) **reflect-back to the student** — "here are your lowest-confidence questions" as a personal study list, deep-linked to the guide pages; (b) item-quality signal — right-answer/low-confidence flags a badly worded item for the bank. Not on tests: confidence-scored exams are a grade-disputes factory, and **the reflect-back screen does not exist in a sitting at all.** |
 | **spaced retrieval seeding** | quizzes | blueprint rule, not a format: every weekly quiz samples 2–3 items from *earlier* weeks' pools. With items pooled by lecture this is a sampling parameter. |
-| open short answer | **undecided; likely final only** | the sole hand-graded element in the design. If kept, it needs a grading workflow (assignment to markers, rubric, moderation) — scoped only if/when Norm confirms. |
+| open short answer | **decided 2026-08-12: final only, on paper** | the sole hand-graded element in the design, and now the sole element outside software entirely. No digital grading workflow is needed — marking is scripts, markers and a rubric, as it has always been. **None on the midterm**, so every midterm item is auto-graded and the sitting produces a score without a marking queue. |
 | ordering/ranking | **rejected** | fights the phone constraint (drag), and partial-credit scoring of orderings is a disputes factory. EMQ + stepped vignettes cover the ground. |
 
 Proposed midterm mix (starting point, not binding): MC ~50% · EMQ 2–3 sets ~20% · stepped
@@ -4453,3 +4465,111 @@ One item of good news from the audit: **Q2E is the best-supported question in th
 (cocaine 99.2%, cannabis 97.2%, alcohol 90.6%, nicotine 83.7%), the hyperbolic shape of relapse risk,
 and an explicit argument that those numbers are hard to reconcile with "chronic relapsing brain
 disease." Keep that part exactly as written.
+
+### 39.11 Paper final, screen midterm (decided 2026-08-12)
+
+Norm: the final will most likely be **pencil and paper**, keeping short answer there (and keeping the
+stepped/iterative questions in some form); **no short answer on the midterm**; and the midterm should
+carry **as many security features as possible, working on both phone and laptop**.
+
+#### 39.11.1 What this removes from the build
+
+The decision is a larger simplification than it looks, because it collapses two proctored sittings
+into one and takes the only hand-graded element out of software altogether:
+
+- **Only one digital sitting exists.** Everything in §39.5 about `test_windows`, per-student sampling,
+  server-side timing, monitoring and the live staff console serves the **midterm alone**. The exam
+  period needs nothing from us.
+- **No hand-grading workflow, ever.** §39.8 scoped a marker-assignment / rubric / moderation surface
+  "if short answer is kept." It is kept — on paper — so that surface is **cancelled**, not deferred.
+  Marking is scripts and markers, as it has always been.
+- **No software accommodations for the final.** `time_multiplier` / `extra_minutes` are midterm-only;
+  the registrar and the test centre own the final's accommodations, as they own the sitting.
+- **The midterm returns a score with no marking queue behind it**, since every item on it is
+  auto-graded. Grades can be released as fast as Norm wants to release them.
+
+What the paper final still needs from the system is narrow and worth naming so it does not get lost:
+the **item bank must export to print**. Items are authored and calibrated in the bank against page
+versions; the final draws from the same pool and the same blueprint, then leaves as a document. That
+is one export path, not a runner.
+
+#### 39.11.2 The one property that does not survive paper
+
+Stepped vignettes work on paper — they are an old paper format — **except for the part that made them
+worth choosing**. On screen, "commit before the reveal" is enforced: the server refuses to accept a
+revised answer to step 1 once step 2 has been served. On paper, a student can read all four steps
+before writing anything, and the item degrades into an ordinary multi-part question that has helpfully
+told them the answer's shape in advance — the exact critique §39.10.1 makes of the current
+short-answer format.
+
+Three ways to respond, in descending order of how well they work:
+
+1. **Score the steps for consistency, not just correctness.** Award part of the mark for whether the
+   later answer *engages* the revision — "what in the new information changed your answer, or why did
+   it not?" A student who read ahead and wrote one coherent answer cannot fake having revised.
+2. **Separate the reveal physically** — steps on separate sheets, or a fold-under panel, with the
+   instruction not to look ahead. Enforcement is invigilation and it is imperfect, but it raises the
+   cost and makes the intent explicit.
+3. **Accept the degradation on paper and keep the enforced version on the midterm**, where it works
+   properly. The midterm is where the format earns its keep.
+
+Recommendation: **1 plus 3.** Option 2 adds printing and handling complexity in a large hall for a
+guarantee it does not actually deliver.
+
+#### 39.11.3 Midterm security — what each layer is worth
+
+The posture from §39.4 is unchanged (deterrence and detection, never prevention; flags are for human
+review, never auto-fails). What follows is the concrete lineup, sorted by **whether a determined
+student can defeat it**, because that is the distinction that matters and it does not track how
+impressive a feature looks.
+
+**Layer 1 — server-side. Device-independent; a modified client cannot defeat any of these.** This
+layer carries the real weight, and it works identically on a phone and a laptop because the client is
+not being trusted with anything.
+
+- **Answer key never leaves the server.** Grading through a SECURITY DEFINER RPC. Nothing in the page
+  source, nothing in a network response, contains a correct answer.
+- **Per-student sampling from blueprint pools.** The strongest single measure: neighbours see
+  different items, so shoulder-surfing and messaging return wrong answers rather than right ones. It
+  also retires the hand-built Form B for makeup sittings.
+- **Per-student option order**, so even a shared item is not a shared "answer C".
+- **One item per screen, no back-navigation, enforced server-side** — the server rejects a write to an
+  item already advanced past. Hiding a Back button is not the same thing.
+- **Server-stamped timing.** `deadline = started_at + duration × multiplier + extra_minutes`, computed
+  at attempt start; the client timer is decoration. Answers are server-timestamped and rejected past
+  the deadline plus sync grace.
+- **Resume is deterministic.** A reload returns the same sampled items in the same order — a student
+  cannot reroll into an easier set by crashing the tab.
+- **One attempt per student per window**, staff reset only.
+- **Response-time analytics.** Implausibly fast correct answers on items the cohort finds hard is the
+  one detection signal that needs no client cooperation at all.
+
+**Layer 2 — client deterrents. Full on laptop, partial on phone, all defeatable, all raise the cost.**
+
+- **Moving watermark: name and student number**, low-opacity, diagonal, repositioned every few
+  seconds. This is the **best phone-compatible measure on the list** — it cannot stop a photo of the
+  screen, it makes the photo *attributable to the person who took it*, which is what actually
+  deters circulation. Identical behaviour on both device classes.
+- **Fullscreen required, exits logged** — desktop browsers only. **iOS Safari has no fullscreen API
+  for page content**, so this simply does not exist on a large fraction of phones; the runner must
+  feature-detect and degrade rather than block entry.
+- **Visibility / blur logging with durations** — works on both, but on a phone an incoming call fires
+  the same event as tab-switching, so phone flags are noisier and must not be read on the same scale.
+- **Copy / cut / paste / context-menu / print suppression, text selection off** — both classes,
+  trivially bypassable, still worth having.
+- **Monitoring mode recorded on the attempt**, so a flag count is always read against its own device
+  class. Without this the phone cohort looks guilty as a group.
+
+**Layer 3 — the hall.** Invigilators remain the primary integrity layer, and Layer 1's sampling is
+what makes their job tractable. Add a stated device policy (screen face-up and visible from the
+aisle) and an honour statement at attempt start.
+
+**Explicitly not doing:** camera proctoring, keystroke biometrics, a mandatory lockdown-browser
+install, IP allow-listing (campus NAT makes it meaningless), and any auto-fail.
+
+**The constraint that overrides all of the above:** §39.4's reliability requirement. Two hundred
+devices join at minute zero, and any security feature that *ends or blocks an attempt* on a signal —
+fullscreen exit, heartbeat loss, a failed integrity check — converts a network hiccup into a queue at
+the front of the room. Every measure above either logs or refuses a single write; **none of them
+terminates a sitting.** That is deliberate, and it is the line to hold when the temptation arises to
+make a flag consequential in software.
