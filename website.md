@@ -2787,6 +2787,25 @@ Live Test study (Self-Compassion arm, Graduation Day): No jumps straight to "add
 Yes shows the likelihood slider and all four intention follow-ups, and the pips and the
 "Complete Practice" button are correct on both paths.
 
+### Slider point labels
+
+A `slider` step may carry `point_labels` — one word per scale point, ascending — rendered beneath
+each tick by `NoDefaultSlider`'s `pointLabels` prop. The geometry lives in `NoDefaultSlider`
+(not the caller) because placing labels means reproducing the half-handle inset the ticks already
+use, and two copies of that would drift. A `point_labels` array whose length doesn't match the
+tick count is **dropped rather than rendered**: a frequency scale silently shifted by one point is
+worse than an unlabelled one. `min_label`/`max_label` remain the fallback, and `SliderBlock`
+suppresses them when `point_labels` is present so the ends aren't printed twice.
+
+**Why (2026-08-13):** gating the Graduation Day likelihood item behind the yes/no changed *who
+sees it* — it is now asked only of participants who already answered Yes, so "Never" at the
+bottom was no longer a reachable answer and read as a contradiction to the answer they had just
+given. The span is now `Rarely · Occasionally · Sometimes · Often · Very often · Almost always`
+(`20260813_graduation_day_slider_anchors.sql`). Vague quantifiers rather than concrete rates
+("about once a week") because the item asks how *likely* someone is to practise, not how often —
+converting it to a frequency measure is a separate decision for Liliana. A worked example of a
+general point: **changing who is asked a question changes what its anchors should say.**
+
 ### Seeding a test participant mid-protocol
 
 Parking a synthetic participant on a late session (to test one screen without walking 27 sessions)

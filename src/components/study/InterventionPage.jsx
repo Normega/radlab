@@ -856,13 +856,20 @@ function SliderBlock({ step, value, onChange }) {
           value={value}
           onChange={onChange}
           ariaLabel={step.prompt}
+          pointLabels={step.point_labels ?? null}
         />
-        <div style={S.sliderLabels}>
-          <span style={{ whiteSpace: 'pre-line' }}>{step.min_label}</span>
+        {/* With point_labels the span is already worded under every tick, so
+            repeating the ends here would print each twice. The numeric readout
+            stays either way — it is the only confirmation of *which* point is
+            selected once the labels are the anchors. */}
+        <div style={step.point_labels ? { ...S.sliderLabels, justifyContent: 'center' } : S.sliderLabels}>
+          {!step.point_labels && <span style={{ whiteSpace: 'pre-line' }}>{step.min_label}</span>}
           <span style={{ ...S.sliderVal, color: answered ? undefined : '#b0b0b8' }}>
             {answered ? value : '—'}
           </span>
-          <span style={{ whiteSpace: 'pre-line', textAlign: 'right' }}>{step.max_label}</span>
+          {!step.point_labels && (
+            <span style={{ whiteSpace: 'pre-line', textAlign: 'right' }}>{step.max_label}</span>
+          )}
         </div>
       </div>
       {!answered && (
