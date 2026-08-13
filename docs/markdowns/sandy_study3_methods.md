@@ -43,6 +43,8 @@ Appendix B. The numbered index below is retained here as the audit trail, and is
 | D12 | Target N = 300 valid sessions, set by the simulation-based power analysis | 2026-08-11, Norm |
 | D13 | Singular random-intercept fits in H2A/H2B are anticipated and reported, not re-specified | 2026-08-11 |
 | D14 | Scale scoring reads `questionnaires.definition.scoring.subscales[]`; item-level `reverse` flags are null throughout and must be ignored. Burnout = mean of the 23 BAT-C core items | 2026-08-11 |
+| D15 | Five-item pre-consent screener, all items required, **no "unsure" option**. The platform supports a third state (Zerin's distress item uses one), but that exists because a phase-2 questionnaire follows and can adjudicate an ambivalent answer. With no phase 2 there is nowhere for "unsure" to resolve to, so it would be an unresolvable state rather than a kindness | 2026-08-13, Norm |
+| D16 | Eligibility is **not** enforced through Prolific custom prescreening. A Prolific prescreener is itself a small paid study with its own completion path, which would mean running a second study to gate the first. The criteria are stated in the Prolific listing instead, and enforced by the in-session screener at session entry. Accepted cost: a screened-out participant has already taken a slot, so the screen-out page asks them to return the submission | 2026-08-13, Norm |
 
 Build items B1–B3 were withdrawn or resolved (per D9, D10, D11). B4 (export field
 verification) completed 2026-08-06. B5 (Word Probe recalibration and redemption-score fix)

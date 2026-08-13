@@ -150,8 +150,15 @@ with the registered sample.
 ### 3.2 Data collection procedures
 
 Participants are recruited via Prolific. Enrolment status — currently enrolled as a
-post-secondary student — is set through Prolific's own prescreening, and the study listing
-states the time commitment, the desktop requirement, and the nature of the tasks.
+post-secondary student — is set through Prolific's standard prescreening fields, and the
+study listing states the eligibility criteria below, the time commitment, the desktop
+requirement, and the nature of the tasks.
+
+The criteria are deliberately **not** implemented as Prolific custom prescreening
+questions. A custom prescreener on that platform is itself a short paid study with its own
+completion path, so gating this study that way would mean running a second study in front
+of it. The criteria are published in the listing so that participants can self-select
+before accepting, and are then enforced at session entry by the screener described next.
 
 **Eligibility screener.** Every participant then passes through a five-item pre-consent
 screener hosted on the study platform, before the consent form and before any study
