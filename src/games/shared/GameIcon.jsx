@@ -1,13 +1,7 @@
 import { useId } from 'react'
 
 /**
- * Game icons — trial set of three (2026-08-13).
- *
- * Drawn to test whether a house style holds up before committing to all ten, or
- * briefing a specialist. The three deliberately pose different problems:
- *   pond_watch — harvested from the game's own Duck (PondWatch.jsx)
- *   delve      — abstract; the mechanic has no object to draw
- *   owl_barn   — figurative, and must survive at 24px where a bird usually dies
+ * Game icons — the full set (2026-08-13).
  *
  * GRAMMAR (the part that matters more than any single drawing):
  *   - 48×48 viewBox, so one drawing serves 24 / 60 / 116 px.
@@ -15,10 +9,22 @@ import { useId } from 'react'
  *     a 24px badge becomes a 7px slab at 116px; fills scale exactly.
  *   - A soft tinted plate (var(--bgp)) behind every subject, which is what makes
  *     the set read as a set, and echoes GameIntro's numbered circles.
- *   - Each subject keeps its OWN game's colours rather than the brand pink.
- *     The duck is pink because Pond Watch's duck is pink — a player meets the
- *     icon seconds before the thing itself, and they should match.
  *   - Nothing below ~2px at the 48 grid, or it disappears in the 24px badge.
+ *
+ * COLOUR (Claude's call, flagged for Norm — the set works but the rule is a
+ * judgement, not a spec): each icon takes its palette from ITS OWN GAME's art
+ * rather than the brand pink. The duck is pink because Pond Watch's duck is
+ * pink; a player meets the icon seconds before the thing itself. The tradeoff
+ * is that the set is NOT one hue ramp, so it is checked for adjacent-hue
+ * separation instead — no two neighbours in the catalog order share a hue.
+ * The alternative (one hue per category) was rejected because Attention holds
+ * five of the ten games and they would have been indistinguishable.
+ *
+ * THE ABSTRACT ONES (Delve, Tune, Alongside) have no object to draw. Rather
+ * than diagram the mechanic — the first Delve draft did, and produced a
+ * bullseye, the exact reading Delve is built against — each got a *thing from
+ * its world*: the image under the haze, one lit voice among dimmed ones, a mote
+ * above grass. Delve still dies at 24px; see its note.
  *
  * Sizes in use: 116 (Figma GameCard slot), 60 (GameIntro step icons), 24 (badges).
  */
@@ -26,6 +32,13 @@ import { useId } from 'react'
 const PLATE = 'var(--bgp)'
 
 function Frame({ size, plate, label, children }) {
+  // Everything is clipped to the plate circle, whether or not the plate is
+  // drawn. The object icons (duck, owl, face) sit inside it anyway and are
+  // untouched; the scene icons (Ebb & Flow's waves, Alongside's meadow, Farm
+  // Joy's soil) run edge to edge by construction and spilled out of the disc
+  // into rectangles without this — obvious at 116px, and it broke the set's
+  // silhouette in the badge row.
+  const uid = useId().replace(/:/g, '')
   return (
     <svg
       width={size} height={size} viewBox="0 0 48 48"
@@ -34,17 +47,107 @@ function Frame({ size, plate, label, children }) {
       aria-hidden={label ? undefined : true}
       style={{ display: 'block', flexShrink: 0 }}
     >
-      {plate && <circle cx="24" cy="24" r="24" fill={PLATE} />}
-      {children}
+      <defs>
+        <clipPath id={`gi-clip-${uid}`}>
+          <circle cx="24" cy="24" r="24" />
+        </clipPath>
+      </defs>
+      <g clipPath={`url(#gi-clip-${uid})`}>
+        {plate && <circle cx="24" cy="24" r="24" fill={PLATE} />}
+        {children}
+      </g>
     </svg>
   )
 }
 
-/* ── Pond Watch ──────────────────────────────────────────────────────────────
-   Harvested from the in-game Duck: same pink, same silhouette logic (body
-   ellipse, round head, stub bill), reduced to what survives at 24px. The wing
-   highlight and the notched tail of the original both vanish at that size, so
-   they are gone; the two ripples are new, and do the work the water used to. */
+/* ── Still Water — the feeling wheel and its two axes ─────────────────────────
+   Harvested from the game's own intro diagram, including its colours: gold for
+   Sad↔Excited, purple for Calm↔Tense. The bars are rotated rects, not strokes,
+   so they thicken with the icon. */
+export function StillWaterIcon({ size = 48, plate = true }) {
+  return (
+    <Frame size={size} plate={plate} label="Still Water">
+      <circle cx="24" cy="24" r="15.5" fill="#e8d0e0" />
+      <circle cx="24" cy="24" r="12.5" fill="#fdf6fa" />
+      <rect x="22.5" y="11" width="3" height="26" rx="1.5" transform="rotate(45 24 24)" fill="#c4a000" opacity="0.85" />
+      <rect x="22.5" y="11" width="3" height="26" rx="1.5" transform="rotate(-45 24 24)" fill="#804080" opacity="0.85" />
+      <circle cx="24" cy="24" r="3.4" fill="#fcf0f5" />
+      <circle cx="30.5" cy="17.5" r="2.6" fill="#c04a82" />
+    </Frame>
+  )
+}
+
+/* ── Face Read — a face mid-expression ───────────────────────────────────────
+   The one icon that must not be neutral: the game is naming a feeling, so the
+   brows do the work. Warm skin tone from the avatar palette. */
+export function FaceReadIcon({ size = 48, plate = true }) {
+  return (
+    <Frame size={size} plate={plate} label="Face Read">
+      <circle cx="24" cy="24" r="14.5" fill="#f2c9a4" />
+      <rect x="13.6" y="16.4" width="8.2" height="2.6" rx="1.3" transform="rotate(-11 17.7 17.7)" fill="#8a5a3a" />
+      <rect x="26.2" y="16.4" width="8.2" height="2.6" rx="1.3" transform="rotate(11 30.3 17.7)" fill="#8a5a3a" />
+      <circle cx="18.6" cy="23.2" r="2.4" fill="#1c1c1e" />
+      <circle cx="29.4" cy="23.2" r="2.4" fill="#1c1c1e" />
+      <path d="M17.5 29.5 Q24 35.5 30.5 29.5 Q24 32 17.5 29.5 Z" fill="#a8452f" />
+    </Frame>
+  )
+}
+
+/* ── Contact — the Ripple, and the aura that answers a synced breath ─────────
+   Teal rather than pink: Contact is the one game whose whole subject is the
+   creature, and the aura is the feedback the player is actually reading. */
+export function FirstContactIcon({ size = 48, plate = true }) {
+  return (
+    <Frame size={size} plate={plate} label="Contact">
+      <circle cx="24" cy="25" r="19" fill="#4fb3ba" opacity="0.16" />
+      <circle cx="24" cy="25" r="14.5" fill="#4fb3ba" opacity="0.24" />
+      <ellipse cx="24" cy="26" rx="10.5" ry="10" fill="#3f9ea8" />
+      <ellipse cx="24" cy="18.5" rx="7.2" ry="6" fill="#4fb3ba" />
+      <circle cx="21" cy="18" r="1.9" fill="#0f3b40" />
+      <circle cx="27" cy="18" r="1.9" fill="#0f3b40" />
+      <circle cx="21.6" cy="17.3" r="0.7" fill="#fff" />
+      <circle cx="27.6" cy="17.3" r="0.7" fill="#fff" />
+    </Frame>
+  )
+}
+
+/* ── Ebb & Flow — two breaths, one fuller than the other ─────────────────────
+   The game is detecting a *change* in rhythm, so the two waves are deliberately
+   not identical: the lower one is shallower. Blue, to sit apart from Contact's
+   teal even though they are the same family of game. */
+export function EbbFlowIcon({ size = 48, plate = true }) {
+  return (
+    <Frame size={size} plate={plate} label="Ebb & Flow">
+      <path d="M5 22 Q13.5 12 24 20 Q34.5 28 43 19 L43 26 Q34.5 35 24 27 Q13.5 19 5 29 Z" fill="#4a92c8" />
+      <path d="M5 33 Q13.5 28 24 32.5 Q34.5 37 43 32 L43 37 Q34.5 42 24 37.5 Q13.5 33 5 38 Z" fill="#8fc0dd" />
+    </Frame>
+  )
+}
+
+/* ── Drift — an interval, marked at both ends ────────────────────────────────
+   The ring is an even-odd path, not a disc with a plate-coloured hole punched
+   in it, so it stays transparent when the plate is off. The two dots are the
+   two tones; the arc between them is the duration being felt. */
+export function DriftIcon({ size = 48, plate = true }) {
+  return (
+    <Frame size={size} plate={plate} label="Drift">
+      <path
+        fillRule="evenodd"
+        d="M24 9 a15 15 0 1 1 -0.01 0 Z M24 14.2 a9.8 9.8 0 1 0 0.01 0 Z"
+        fill="#b9a6e0"
+      />
+      <circle cx="24" cy="11.6" r="3.5" fill="#6e56a8" />
+      <circle cx="35.5" cy="30.5" r="3.5" fill="#6e56a8" />
+      <circle cx="24" cy="24" r="2.6" fill="#6e56a8" opacity="0.4" />
+    </Frame>
+  )
+}
+
+/* ── Pond Watch — the game's own duck ────────────────────────────────────────
+   Harvested from PondWatch.jsx: same pink, same silhouette logic (body ellipse,
+   round head, stub bill), reduced to what survives at 24px. The wing highlight
+   and notched tail of the original both vanish at that size, so they are gone;
+   the two ripples are new, and do the work the water used to. */
 export function PondWatchIcon({ size = 48, plate = true }) {
   return (
     <Frame size={size} plate={plate} label="Pond Watch">
@@ -60,13 +163,15 @@ export function PondWatchIcon({ size = 48, plate = true }) {
   )
 }
 
-/* ── Delve ───────────────────────────────────────────────────────────────────
-   No object to draw — the game is haze that clears where attention rests.
-   First attempt drew concentric rings around a bright centre, which is a
-   TARGET: the one reading the game is built against, since aiming at a spot is
-   exactly what does not work in it. Redrawn so the haze lies over a real image
-   and one soft, off-centre patch has cleared — the image is what's revealed,
-   not a bullseye, and nothing marks the clear patch as somewhere you aimed. */
+/* ── Delve — an image under haze, one patch cleared ──────────────────────────
+   Three drafts. The first drew concentric rings around a bright centre, which
+   is a TARGET — the one reading the game is built against, since aiming at a
+   spot is exactly what does not work in it. The second put opaque haze over a
+   landscape, so only the cleared patch showed and the whole thing read as an
+   egg. This one keeps the haze translucent so the image is faintly present
+   everywhere, with the clear patch off the sun and onto the horizon.
+   KNOWN LIMIT: works at 116, passable at 60, mush at 24. A scene cannot survive
+   badge size. If Delve ever needs a 24px mark it needs a different drawing. */
 export function DelveIcon({ size = 48, plate = true }) {
   // Unique per instance: the mask and clip ids collide if the icon renders twice.
   const uid = useId().replace(/:/g, '')
@@ -86,27 +191,73 @@ export function DelveIcon({ size = 48, plate = true }) {
         </clipPath>
       </defs>
       <g clipPath={`url(#dlv-clip-${uid})`}>
-        {/* The image under the haze — a fragment, never fully shown */}
         <rect width="48" height="48" fill="#f0e0c8" />
         <circle cx="33" cy="14" r="5" fill="#e8a848" />
         <path d="M0 30 Q10 19 19 27 Q28 35 37 26 Q43 21 48 25 L48 48 L0 48 Z" fill="#7a9a58" />
         <path d="M0 38 Q12 31 24 37 Q36 43 48 37 L48 48 L0 48 Z" fill="#4f6b3c" />
-        {/*
-          Haze is translucent, not a lid: the image has to be faintly present
-          everywhere, or the cleared patch reads as the only content and the
-          whole thing turns into an egg. Second correction on this one drawing.
-        */}
         <rect width="48" height="48" fill="#cfc4cd" opacity="0.88" mask={`url(#dlv-mask-${uid})`} />
       </g>
     </Frame>
   )
 }
 
-/* ── Owl Barn ────────────────────────────────────────────────────────────────
-   The hard one. A whole owl at 24px turns to mush, so this is only the face:
-   two big discs and two tufts, which is the most recognisable 3 % of a bird.
-   Night amber rather than pink, because the barn is dark and the game is heard
-   before it is seen. */
+/* ── Tune — one voice clear, the rest softened back ──────────────────────────
+   Not a speaker, a note, or a waveform: those say "audio", and Tune is not
+   about audio, it is about one thing coming forward while the others recede.
+   So — three voices, one lit and two dimmed. That IS the mechanic, drawn with
+   objects rather than diagrammed. */
+export function TuneIcon({ size = 48, plate = true }) {
+  return (
+    <Frame size={size} plate={plate} label="Tune">
+      <circle cx="30" cy="19.5" r="10.5" fill="#8f7fd8" opacity="0.22" />
+      <circle cx="30" cy="19.5" r="6.6" fill="#8f7fd8" opacity="0.3" />
+      <circle cx="30" cy="19.5" r="4.4" fill="#5f49bc" />
+      <circle cx="14.5" cy="30" r="3.6" fill="#8f7fd8" opacity="0.42" />
+      <circle cx="24" cy="36.5" r="2.8" fill="#8f7fd8" opacity="0.32" />
+      <circle cx="15" cy="16" r="2.6" fill="#8f7fd8" opacity="0.28" />
+    </Frame>
+  )
+}
+
+/* ── Alongside — the mote, and the meadow it will not be caught in ───────────
+   Night green so it reads as the same world as the game, with the light warm
+   against it. The grass blades are tapered fills, not strokes, so they keep
+   their point at 116px. */
+export function AlongsideIcon({ size = 48, plate = true }) {
+  return (
+    <Frame size={size} plate={plate} label="Alongside">
+      <path d="M0 32 Q12 27 24 30 Q36 33 48 29 L48 48 L0 48 Z" fill="#2f4a34" />
+      <path d="M12 44 Q11 34 15.5 27 Q14 35 14.5 44 Z" fill="#3d6042" />
+      <path d="M22 45 Q22.5 35 27 29 Q24.5 37 24.5 45 Z" fill="#3d6042" />
+      <path d="M33 44 Q33.5 36 37.5 31 Q35 37 35.5 44 Z" fill="#3d6042" />
+      <circle cx="29" cy="17" r="9" fill="#f2e7b0" opacity="0.22" />
+      <circle cx="29" cy="17" r="5.4" fill="#f2e7b0" opacity="0.4" />
+      <circle cx="29" cy="17" r="3.1" fill="#fdf6d8" />
+    </Frame>
+  )
+}
+
+/* ── Farm Joy — a plant pulled, root and all ─────────────────────────────────
+   The root is the whole point: in Farm Joy you pull the plant up to find out
+   which value it was. A leaf above the soil would say "gardening"; a plant with
+   its root showing says "you took it out to look at it". */
+export function FarmJoyIcon({ size = 48, plate = true }) {
+  return (
+    <Frame size={size} plate={plate} label="Farm Joy">
+      <path d="M6 34 Q24 29.5 42 34 L42 41 Q24 36.5 6 41 Z" fill="#7a5a3a" />
+      <path d="M22.6 12 h2.8 a1.4 1.4 0 0 1 1.4 1.4 v22 a1.4 1.4 0 0 1 -1.4 1.4 h-2.8 a1.4 1.4 0 0 1 -1.4 -1.4 v-22 a1.4 1.4 0 0 1 1.4 -1.4 Z" fill="#4f7a3a" />
+      <path d="M23 20 Q13 18 11.5 9.5 Q21 10.5 23 20 Z" fill="#6aa04a" />
+      <path d="M25 17 Q35 14.5 37 6.5 Q27 8 25 17 Z" fill="#7bb257" />
+      <path d="M23.5 37 Q21 42 17 44.5 Q22 42.5 23.5 40 Z" fill="#c9a15e" />
+      <path d="M24.5 37 Q27 42.5 31 45 Q26 43 24.5 40 Z" fill="#c9a15e" />
+    </Frame>
+  )
+}
+
+/* ── Owl Barn (in development) ───────────────────────────────────────────────
+   A whole owl at 24px turns to mush, so this is only the face: two big discs
+   and two tufts, the most recognisable 3 % of a bird. Night amber, because the
+   barn is dark and the game is heard before it is seen. */
 export function OwlBarnIcon({ size = 48, plate = true }) {
   return (
     <Frame size={size} plate={plate} label="Owl Barn">
@@ -123,8 +274,49 @@ export function OwlBarnIcon({ size = 48, plate = true }) {
   )
 }
 
-export const TRIAL_ICONS = [
-  { slug: 'pond_watch', title: 'Pond Watch', note: 'harvested from the game’s own duck', Icon: PondWatchIcon },
-  { slug: 'delve',      title: 'Delve',      note: 'abstract — the mechanic, not an object', Icon: DelveIcon },
-  { slug: 'owl_barn',   title: 'Owl Barn',   note: 'figurative — the 24px stress test', Icon: OwlBarnIcon },
-]
+/* ── Breath Guardian (in development) ────────────────────────────────────────
+   Shield with the breath running through it, not across it: the game is holding
+   to raise the shield and releasing to let the world in, so the wave has to
+   pass the barrier rather than bounce off it. */
+export function BreathGuardianIcon({ size = 48, plate = true }) {
+  const uid = useId().replace(/:/g, '')
+  return (
+    <Frame size={size} plate={plate} label="Breath Guardian">
+      <defs>
+        <clipPath id={`bg-clip-${uid}`}>
+          <path d="M24 7 L38.5 13 V25.5 Q38.5 36.5 24 42 Q9.5 36.5 9.5 25.5 V13 Z" />
+        </clipPath>
+      </defs>
+      <path d="M24 7 L38.5 13 V25.5 Q38.5 36.5 24 42 Q9.5 36.5 9.5 25.5 V13 Z" fill="#5b7fa8" />
+      <g clipPath={`url(#bg-clip-${uid})`}>
+        <path d="M5 24 Q14 15 24 22 Q34 29 43 21 L43 29 Q34 37 24 30 Q14 23 5 32 Z" fill="#a8c8e0" opacity="0.85" />
+      </g>
+    </Frame>
+  )
+}
+
+/**
+ * Registry, in catalog order (src/data/games.js), so the adjacent-hue check
+ * above is checked against the order players actually see.
+ */
+export const GAME_ICONS = {
+  still_water:     StillWaterIcon,
+  face_read:       FaceReadIcon,
+  first_contact:   FirstContactIcon,
+  ebb_flow:        EbbFlowIcon,
+  drift:           DriftIcon,
+  pond_watch:      PondWatchIcon,
+  delve:           DelveIcon,
+  tune:            TuneIcon,
+  alongside:       AlongsideIcon,
+  farm_joy:        FarmJoyIcon,
+  // In development — not in GAMES, but /prototypes and /admin/games list them.
+  owl_barn:        OwlBarnIcon,
+  breath_guardian: BreathGuardianIcon,
+}
+
+/** Dispatcher: <GameIcon slug="delve" size={60} />. Renders nothing if unknown. */
+export default function GameIcon({ slug, size = 48, plate = true }) {
+  const Icon = GAME_ICONS[slug]
+  return Icon ? <Icon size={size} plate={plate} /> : null
+}
