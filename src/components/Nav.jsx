@@ -158,8 +158,8 @@ export default function Nav({ session }) {
 }
 
 // ── ACCOUNT MENU ──────────────────────────────────────────────────────────
-// Avatar button + dropdown (My Ripple / Profile / Settings / Sign out).
-// Closes on outside click, on Escape, and on route change.
+// Avatar button + dropdown (My Ripple / Account / Sign out). Closes on
+// outside click, on Escape, and on route change.
 //
 // Rendered TWICE — once in the desktop bar, once in the mobile bar — with one
 // copy always `display:none`. Each instance therefore owns its `open` state
@@ -174,17 +174,24 @@ export default function Nav({ session }) {
 // copy you actually opened has a listener at all.
 
 const MENU_ITEMS = [
-  { to: '/ripple',   label: 'My Ripple' },
-  { to: '/profile',  label: 'Profile' },
-  { to: '/settings', label: 'Settings' },
+  { to: '/ripple',  label: 'My Ripple' },
+  { to: '/account', label: 'Account' },
 ]
 
 // Link or button depending on whether `to` is given, with a hover fill —
 // inline styles can't express :hover, and a menu without hover feedback reads
-// as inert.
-function MenuItem({ to, onClick, style, children }) {
+// as inert. `active` mirrors ButtonNav's own default/active split (Figma's
+// New Header/DropdownOverlay notes, 2026-08-13): Text/Secondary by default,
+// Text/Main when the item matches the current route, same as the pills
+// outside the overlay. Sign out keeps its own color regardless of active.
+function MenuItem({ to, active = false, onClick, style, children }) {
   const [hover, setHover] = useState(false)
-  const s = { ...S.menuItem, ...style, ...(hover ? S.menuItemHover : {}) }
+  const s = {
+    ...S.menuItem,
+    color: active ? 'var(--tx)' : 'var(--tx2)',
+    ...style,
+    ...(hover ? S.menuItemHover : {}),
+  }
   const handlers = {
     onMouseEnter: () => setHover(true),
     onMouseLeave: () => setHover(false),
@@ -232,8 +239,10 @@ function AccountMenu({ onSignOut, trigger }) {
 
       {open && (
         <div style={S.menu} role="menu">
+          {/* Prefix match, not exact — /account has no sub-routes today, but
+              stays active on any it grows (2026-08-13 review decision). */}
           {MENU_ITEMS.map(({ to, label }) => (
-            <MenuItem key={to} to={to}>{label}</MenuItem>
+            <MenuItem key={to} to={to} active={pathname.startsWith(to)}>{label}</MenuItem>
           ))}
           <div style={S.menuDivider} />
           <MenuItem onClick={onSignOut} style={S.menuSignOut}>Sign out</MenuItem>
