@@ -1,25 +1,36 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import Nav from '../components/Nav'
+import EyebrowLabel from '../components/ui/EyebrowLabel'
+import PrimaryCTA from '../components/ui/PrimaryCTA'
+import { useDisplayName } from '../hooks/useDisplayName'
 
-// ── SettingsPage (/settings) ──────────────────────────────────────────────
-// Account mechanics: how often the Ripple prompts you, whether it emails, and
-// the two destructive-ish account actions. Created 2026-07-30 in Norm's
-// account-menu IA rework.
+// ── AccountPage (/account) ────────────────────────────────────────────────
+// Replaces the old /profile + /settings split (2026-08-13 Account/My Ripple
+// redesign, Figma "Revised Account Screens"). Who you are, account mechanics,
+// password, deletion — everything that isn't the Ripple itself, which stays
+// on /ripple under the "avatar → ripple, everything else → account" rule.
 //
-// The prompt/reminder controls moved here verbatim from the old /profile.
-// The Dashboard's separate `// Reminders` block (profiles.reminder_frequency,
-// none/weekly/biweekly/monthly) was NOT migrated — it was deleted. Nothing has
-// ever read that column: the live reminder engine is the `ripple_reminder`
-// Edge Function, which reads ripples.reminder_enabled / reminder_time. Anyone
-// who set "Weekly" there had been getting nothing since it shipped.
+// Points & Progress and the Unlock Tracker moved OUT to /ripple — they gate
+// avatar customization, which makes them avatar-related under the same rule,
+// not account facts. User ID was dropped from Account Details: nothing in the
+// app ever asks a user to quote it, and Email already serves as the
+// human-usable identifier if the lab needs to find someone's account.
+//
+// Check-in reminders are no longer toggle-able here at all: the on-platform
+// nudge (GamesPage's CheckinReminder, Dashboard's RippleSection) is now
+// unconditional — it just checks whether today's check-in happened, the same
+// way GamesPage's always did. This page's "Check-in reminders" toggle
+// controls EMAIL reminders only (ripples.reminder_enabled/prompt_cadence/
+// reminder_time), read by the ripple_reminder Edge Function.
 
-const CADENCES = [
-  { key: 'every_login', label: 'Every login' },
-  { key: 'daily',       label: 'Once daily' },
-  { key: 'weekly',      label: 'Weekly' },
-  { key: 'never',       label: 'Never' },
+const EMAIL_CADENCES = [
+  { key: 'daily',            label: 'Daily' },
+  { key: 'every_other_day',  label: 'Every other day' },
+  { key: 'weekly',           label: 'Weekly' },
+  { key: 'every_other_week', label: 'Every other week' },
 ]
 
 const TIMES = [
@@ -28,128 +39,200 @@ const TIMES = [
   { key: 'evening', label: 'Evening', sub: '7 PM' },
 ]
 
-export default function SettingsPage({ session }) {
-  const userId = session?.user?.id
-  const email  = session?.user?.email
+const ROLE_META = {
+  lab:         { label: 'Lab Member',        bg: '#EDE9FE', color: '#6D28D9' },
+  participant: { label: 'Participant',       bg: '#DBEAFE', color: '#1D4ED8' },
+  public:      { label: 'Public Researcher', bg: 'var(--bgp)', color: 'var(--pkd)' },
+}
+
+export default function AccountPage({ session }) {
+  const user        = session?.user
+  const userId      = user?.id
+  const queryClient = useQueryClient()
+
+  const [editing,   setEditing]   = useState(false)
+  const [nameInput, setNameInput] = useState('')
+  const [saving,    setSaving]    = useState(false)
+  const [saveError, setSaveError] = useState(null)
+
+  // `displayName` is what to render (with fallbacks); `storedName` is the raw
+  // profiles.display_name — null until never set — which is what the rename
+  // form must edit and compare against, so an unnamed account doesn't come
+  // pre-filled with its own email local-part.
+  const { displayName, data: storedName } = useDisplayName(user)
+
+  const { data: profile } = useQuery({
+    queryKey: ['profile', userId],
+    queryFn: async () => {
+      const { data } = await supabase.from('profiles')
+        .select('role, super_admin').eq('id', userId).maybeSingle()
+      return data
+    },
+    enabled: !!userId,
+  })
 
   const [ripple,    setRipple]    = useState(null)
-  const [role,      setRole]      = useState(null)
-  const [saveError, setSaveError] = useState(null)
+  const [rippleErr, setRippleErr] = useState(null)
 
   useEffect(() => {
     if (!userId) return
     let cancelled = false
-    Promise.all([
-      supabase.from('ripples')
-        .select('check_in_enabled, prompt_cadence, reminder_enabled, reminder_time')
-        .eq('user_id', userId).maybeSingle(),
-      supabase.from('profiles').select('role, super_admin').eq('id', userId).maybeSingle(),
-    ]).then(([{ data: r }, { data: p }]) => {
-      if (cancelled) return
-      setRipple(r ?? {})
-      setRole(p ?? {})
-    })
+    supabase.from('ripples')
+      .select('reminder_enabled, prompt_cadence, reminder_time')
+      .eq('user_id', userId).maybeSingle()
+      .then(({ data }) => { if (!cancelled) setRipple(data ?? {}) })
     return () => { cancelled = true }
   }, [userId])
 
   // UPSERT, not update — a plain .update().eq('user_id', …) matches zero rows
-  // for anyone without a `ripples` row and reports success anyway (180 of 186
-  // profiles had no row when this was found, 2026-07-30).
+  // for anyone without a `ripples` row and reports success anyway (see the
+  // 2026-07-30 note this carries forward from the old SettingsPage).
   async function patchRipple(patch) {
     const { error } = await supabase.from('ripples')
       .upsert({ user_id: userId, ...patch }, { onConflict: 'user_id' })
     if (error) {
       console.error('ripples upsert:', error)
-      setSaveError('Could not save that — please try again.')
+      setRippleErr('Could not save that — please try again.')
       return
     }
-    setSaveError(null)
+    setRippleErr(null)
     setRipple(r => ({ ...r, ...patch }))
   }
 
-  const enabled      = ripple?.check_in_enabled !== false
-  const cadence      = ripple?.prompt_cadence ?? 'daily'
+  const role     = profile?.role || 'public'
+  const roleMeta = ROLE_META[role] || ROLE_META.public
+
   const reminderOn   = ripple?.reminder_enabled === true
+  const cadence      = ripple?.prompt_cadence ?? 'daily'
   const reminderTime = ripple?.reminder_time ?? 'morning'
+
+  // `profiles.display_name` is the one store anything reads (useDisplayName),
+  // so this is the only write that matters — invalidating the shared key
+  // updates the greeting, the Nav initial and the admin sidebar at once.
+  //
+  // UPDATE, not upsert: profiles has no INSERT policy for `authenticated` (the
+  // row comes from the signup trigger), and .update() matching zero rows
+  // reports success — so .select() is what proves it landed.
+  async function saveName() {
+    const name = nameInput.trim()
+    if (!name || name === storedName) { setEditing(false); return }
+    setSaving(true)
+
+    const { data: rows, error: dbErr } = await supabase.from('profiles')
+      .update({ display_name: name }).eq('id', userId).select('display_name')
+
+    if (dbErr || !rows?.length) {
+      console.error('profiles display_name update:', dbErr ?? 'no row matched')
+      setSaveError('Could not save that — please try again.')
+      setSaving(false)
+      return
+    }
+
+    queryClient.invalidateQueries({ queryKey: ['display-name', userId] })
+
+    const { error: authErr } = await supabase.auth.updateUser({ data: { display_name: name } })
+    if (authErr) console.error('auth updateUser display_name seed:', authErr)
+
+    setSaveError(null)
+    setEditing(false)
+    setSaving(false)
+  }
+
+  const memberSince = user?.created_at
+    ? new Date(user.created_at).toLocaleDateString('en-CA', { year: 'numeric', month: 'long', day: 'numeric' })
+    : '—'
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
       <Nav session={session} />
       <div style={S.wrap}>
 
-        <p style={S.eyebrow}>Settings</p>
-        <h1 style={S.title}>Settings</h1>
+        <h1 style={S.title}>Account</h1>
 
-        {/* ── Check-ins ─────────────────────────────────────────── */}
-        <p style={S.secLabel}>// Check-ins</p>
+        {/* ── Account details ───────────────────────────────────── */}
+        <div style={S.secLabel}><EyebrowLabel variant="white">Account Details</EyebrowLabel></div>
         <div style={S.card}>
-          <ToggleRow
-            title="Daily check-in"
-            desc={enabled
-              ? 'Active — your streak and history are tracking.'
-              : 'Paused — your data is safe and your streak is saved.'}
-            on={enabled}
-            disabled={!ripple}
-            onToggle={() => patchRipple({ check_in_enabled: !enabled })}
-          />
-
-          {ripple && enabled && (
-            <div style={S.subSection}>
-              <p style={S.subLabel}>Prompt frequency</p>
-              <ChipRow
-                options={CADENCES}
-                value={cadence}
-                onChange={key => patchRipple({ prompt_cadence: key })}
-              />
-            </div>
-          )}
-        </div>
-
-        {/* ── Email reminders ───────────────────────────────────── */}
-        <p style={{ ...S.secLabel, marginTop: 40 }}>// Email reminders</p>
-        <div style={S.card}>
-          {enabled && cadence !== 'never' ? (
-            <>
-              <ToggleRow
-                title="Reminder emails"
-                desc={reminderOn ? 'Sending at your chosen time.' : 'Off — no reminder emails.'}
-                on={reminderOn}
-                disabled={!ripple}
-                onToggle={() => patchRipple({ reminder_enabled: !reminderOn })}
-              />
-              {reminderOn && (
-                <div style={S.subSection}>
-                  <p style={S.subLabel}>Time of day (Toronto)</p>
-                  <ChipRow
-                    options={TIMES}
-                    value={reminderTime}
-                    onChange={key => patchRipple({ reminder_time: key })}
-                  />
-                </div>
-              )}
-            </>
-          ) : (
-            <p style={S.mutedNote}>
-              {enabled
-                ? 'Prompt frequency is set to Never, so no reminders are sent.'
-                : 'Check-ins are paused, so no reminders are sent.'}
-            </p>
-          )}
-
-          {/* A write that fails must say so — these controls spent their whole
-              life reporting success they never had. */}
+          <div style={{ ...S.row, borderBottom: '1px solid var(--bd)' }}>
+            <span style={S.rowLabel}>Display Name</span>
+            {editing ? (
+              <div style={S.editRow}>
+                <input
+                  autoFocus
+                  value={nameInput}
+                  onChange={e => setNameInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') saveName(); if (e.key === 'Escape') setEditing(false) }}
+                  style={S.nameInput}
+                  maxLength={60}
+                  aria-label="Your name"
+                />
+                <button onClick={saveName} disabled={saving} style={S.btnSmall}>{saving ? '…' : 'Save'}</button>
+                <button onClick={() => setEditing(false)} style={S.btnGhost}>Cancel</button>
+              </div>
+            ) : (
+              <div style={S.editRow}>
+                <span style={S.rowVal}>{displayName}</span>
+                <PrimaryCTA
+                  onClick={() => { setNameInput(storedName ?? displayName); setEditing(true); setSaveError(null) }}
+                  style={S.btnRename}
+                >
+                  Rename
+                </PrimaryCTA>
+              </div>
+            )}
+          </div>
+          <Row label="Email"        val={user?.email} />
+          <Row label="Account type" val={roleMeta.label} />
+          <Row label="Member since" val={memberSince} last />
           {saveError && <p style={S.error}>{saveError}</p>}
         </div>
 
+        {/* ── Notifications ──────────────────────────────────────── */}
+        <div style={{ ...S.secLabel, marginTop: 40 }}><EyebrowLabel variant="white">Notifications</EyebrowLabel></div>
+        <div style={S.card}>
+          <ToggleRow
+            title="Check-in reminders"
+            desc={reminderOn ? 'Sending at your chosen time.' : 'Off — no reminder emails.'}
+            on={reminderOn}
+            disabled={!ripple}
+            onToggle={() => patchRipple({ reminder_enabled: !reminderOn })}
+          />
+          {reminderOn && (
+            <div style={S.subSection}>
+              <p style={S.subLabel}>Email frequency</p>
+              <ChipRow
+                options={EMAIL_CADENCES}
+                value={cadence}
+                onChange={key => patchRipple({ prompt_cadence: key })}
+              />
+              <p style={{ ...S.subLabel, marginTop: 14 }}>Time of day (Toronto)</p>
+              <ChipRow
+                options={TIMES}
+                value={reminderTime}
+                onChange={key => patchRipple({ reminder_time: key })}
+              />
+            </div>
+          )}
+          {rippleErr && <p style={S.error}>{rippleErr}</p>}
+        </div>
+
         {/* ── Password ──────────────────────────────────────────── */}
-        <p style={{ ...S.secLabel, marginTop: 40 }}>// Password</p>
-        <ChangePassword email={email} />
+        <div style={{ ...S.secLabel, marginTop: 40 }}><EyebrowLabel variant="white">Change Password</EyebrowLabel></div>
+        <ChangePassword email={user?.email} />
 
         {/* ── Danger zone ───────────────────────────────────────── */}
-        <p style={{ ...S.secLabel, marginTop: 40 }}>// Danger zone</p>
-        <DeleteAccount email={email} role={role} />
+        <div style={{ ...S.secLabel, marginTop: 40 }}><EyebrowLabel variant="white">Delete Account</EyebrowLabel></div>
+        <DeleteAccount email={user?.email} role={profile} />
 
       </div>
+    </div>
+  )
+}
+
+function Row({ label, val, mono = false, last = false }) {
+  return (
+    <div style={{ ...S.row, borderBottom: last ? 'none' : '1px solid var(--bd)' }}>
+      <span style={S.rowLabel}>{label}</span>
+      <span style={{ ...S.rowVal, ...(mono ? { fontFamily: MONO } : {}) }}>{val ?? '—'}</span>
     </div>
   )
 }
@@ -285,7 +368,9 @@ function Field({ label, type, value, onChange, hint, autoComplete }) {
 // Calls delete_own_account() (migration 20260730_delete_own_account.sql):
 // SECURITY DEFINER, keyed on auth.uid(), no target argument, public tier only.
 // Participants and lab members are refused server-side; we also hide the
-// control for them rather than let them find out by pressing it.
+// control for them rather than let them find out by pressing it. Confirmation
+// is typing your own email, not a generic "Are you sure?" — kept deliberately
+// stronger than the Figma note during the 2026-08-13 review.
 
 function DeleteAccount({ email, role }) {
   const navigate = useNavigate()
@@ -296,7 +381,7 @@ function DeleteAccount({ email, role }) {
 
   const isPublic = role?.role === 'public' && role?.super_admin !== true
 
-  if (role === null) return <div style={S.card}><p style={S.mutedNote}>…</p></div>
+  if (role === undefined || role === null) return <div style={S.card}><p style={S.mutedNote}>…</p></div>
 
   if (!isPublic) {
     return (
@@ -372,15 +457,33 @@ const SERIF = '"DM Serif Display", Georgia, serif'
 const SANS  = '"DM Sans", system-ui, sans-serif'
 
 const S = {
-  wrap:    { maxWidth: 720, margin: '0 auto', padding: '40px 24px 72px' },
-  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)', marginBottom: 8 },
-  title:   { fontFamily: SERIF, fontSize: 'clamp(28px, 4vw, 36px)', color: 'var(--tx)', letterSpacing: -0.5, marginBottom: 28 },
+  wrap:  { maxWidth: 720, margin: '0 auto', padding: '40px 24px 72px' },
+  title: { fontFamily: SERIF, fontSize: 'clamp(28px, 4vw, 36px)', color: 'var(--tx)', letterSpacing: -0.5, marginBottom: 28 },
 
-  secLabel: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--gy)', marginBottom: 14 },
+  secLabel: { marginBottom: 14 },
   card: {
     background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 12,
     padding: 24, display: 'flex', flexDirection: 'column', gap: 14,
   },
+
+  row:      { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, padding: '12px 0' },
+  rowLabel: { fontFamily: MONO, fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--gy)' },
+  rowVal:   { fontFamily: SANS, fontSize: 14, color: 'var(--tx)', textAlign: 'right', wordBreak: 'break-word' },
+  editRow:  { display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', justifyContent: 'flex-end' },
+
+  nameInput: {
+    fontFamily: SANS, fontSize: 16, padding: '8px 12px', minWidth: 0, width: 180,
+    borderRadius: 8, border: '1px solid var(--bds)', background: 'var(--bgc)', color: 'var(--tx)',
+  },
+  btnSmall: {
+    fontFamily: SANS, fontWeight: 600, fontSize: 14, padding: '8px 14px', borderRadius: 24,
+    background: 'var(--pk)', color: '#fff', border: 'none', cursor: 'pointer',
+  },
+  btnGhost: {
+    alignSelf: 'flex-start', fontFamily: SANS, fontWeight: 600, fontSize: 14,
+    background: 'none', border: 'none', color: 'var(--tx2)', cursor: 'pointer', padding: '10px 4px',
+  },
+  btnRename: { padding: '6px 14px', fontSize: 13, borderRadius: 20 },
 
   toggleRow:   { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16 },
   toggleTitle: { fontFamily: SANS, fontWeight: 600, fontSize: 16, color: 'var(--tx)', margin: 0 },
@@ -423,10 +526,6 @@ const S = {
     alignSelf: 'flex-start', fontFamily: SANS, fontWeight: 600, fontSize: 16,
     padding: '10px 16px', borderRadius: 24, border: '1px solid var(--err-bd)',
     background: 'var(--err-bg)', color: 'var(--err-tx)', cursor: 'pointer',
-  },
-  btnGhost: {
-    alignSelf: 'flex-start', fontFamily: SANS, fontWeight: 600, fontSize: 14,
-    background: 'none', border: 'none', color: 'var(--tx2)', cursor: 'pointer', padding: '10px 4px',
   },
   btnDisabled: { background: 'var(--gy)', color: '#fff', borderColor: 'var(--gy)', cursor: 'default' },
 

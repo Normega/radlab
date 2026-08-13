@@ -39,8 +39,9 @@ export default function Dashboard({ session }) {
         </div>
 
         {/* Today's check-in — Ripple beside a bar of the day's fields. The
-            "settings →" link that used to sit here is gone: /settings is in the
-            avatar menu (§12b), and it read as a setting for the check-in. */}
+            "settings →" link that used to sit here is gone: reminder settings
+            are in the avatar menu under Account, and it read as a setting for
+            the check-in. */}
         <div style={{ marginBottom: 16 }}>
           <EyebrowLabel variant="white">Today&rsquo;s check-in</EyebrowLabel>
         </div>
@@ -91,12 +92,13 @@ export default function Dashboard({ session }) {
         <YourStats userId={user?.id} />
 
         {/*
-          `// Account` moved to /profile and `// Reminders` was deleted outright
-          (2026-07-30 account-menu IA rework). The reminders block wrote
-          profiles.reminder_frequency, which nothing has ever read — the live
-          engine is the ripple_reminder Edge Function reading
-          ripples.reminder_enabled / reminder_time, now surfaced on /settings.
-          The dashboard is the daily view: Ripple, Games, stats.
+          `// Account` moved to /profile (since merged into /account, 2026-08-13)
+          and `// Reminders` was deleted outright (2026-07-30 account-menu IA
+          rework). The reminders block wrote profiles.reminder_frequency, which
+          nothing has ever read — the live engine is the ripple_reminder Edge
+          Function reading ripples.reminder_enabled / prompt_cadence /
+          reminder_time, now surfaced on /account. The dashboard is the daily
+          view: Ripple, Games, stats.
 
           Merge note: main wrapped this block's write in the new dbWrite()
           helper the same day. Deleted rather than kept — dbWrite surfaces a
@@ -252,7 +254,16 @@ function YourStats({ userId }) {
         .select('game_name, started_at')
         .eq('user_id', userId)
         .not('ended_at', 'is', null),
-    ]).then(([{ data: profile }, { data: sessions }]) => {
+      // Best streak + total check-ins — moved here from MyRipplePage's "Together
+      // so far" section (2026-08-13 Account/My Ripple redesign): those numbers
+      // read as user insights, which is what this section is for.
+      supabase.from('ripples')
+        .select('streak_best')
+        .eq('user_id', userId).maybeSingle(),
+      supabase.from('ripple_checkins')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId),
+    ]).then(([{ data: profile }, { data: sessions }, { data: ripple }, { count: checkinCount }]) => {
       const sess    = sessions ?? []
       const swCount = profile?.still_water_sessions ?? 0
       const games   = new Set(sess.map(s => s.game_name))
@@ -265,6 +276,8 @@ function YourStats({ userId }) {
         points:        profile?.points ?? 0,
         gamesExplored: games.size,
         firstPlayed:   earliest,
+        bestStreak:    ripple?.streak_best ?? 0,
+        checkins:      checkinCount ?? 0,
       })
     })
   }, [userId])
@@ -294,6 +307,8 @@ function YourStats({ userId }) {
         { label: 'sessions',       value: stats.totalSessions },
         { label: 'points',         value: stats.points },
         { label: 'games explored', value: stats.gamesExplored },
+        { label: 'best streak',    value: `${stats.bestStreak}d` },
+        { label: 'check-ins',      value: stats.checkins },
         ...(daysInLab != null ? [{ label: 'days in lab', value: daysInLab }] : []),
       ]} />
     </div>
@@ -678,59 +693,18 @@ function ContactCard({ userId }) {
 }
 
 // ── RIPPLE SECTION ────────────────────────────────────────────────────────────
-// Fetches check_in_enabled once and gates the full Ripple section.
+// Always renders (2026-08-13 Account/My Ripple redesign): the on-platform
+// check-in nudge is no longer settings-controlled — same principle GamesPage's
+// CheckinReminder already followed — so there's nothing left to gate on here.
+// check_in_enabled and prompt_cadence are no longer read; prompt_cadence now
+// governs email cadence only (Notifications, /account), and reading it here
+// would have wrongly coupled a user's email-frequency choice to whether their
+// Dashboard greets them.
 
 function RippleSection({ userId }) {
-  const [config, setConfig] = useState(null)
-
-  useEffect(() => {
-    if (!userId) return
-    Promise.all([
-      supabase.from('ripples')
-        .select('check_in_enabled, prompt_cadence, last_checkin_on')
-        .eq('user_id', userId).maybeSingle(),
-      supabase.from('ripple_checkins')
-        .select('local_date')
-        .eq('user_id', userId)
-        .order('local_date', { ascending: false })
-        .limit(1),
-    ]).then(([{ data: r }, { data: ci }]) => {
-      const lastCheckinOn = r?.last_checkin_on ?? ci?.[0]?.local_date ?? null
-      setConfig(r
-        ? { enabled: r.check_in_enabled !== false, cadence: r.prompt_cadence ?? 'daily', lastCheckinOn }
-        : { enabled: true, cadence: 'daily', lastCheckinOn }
-      )
-    })
-  }, [userId])
-
-  if (config === null) return null
-
-  if (!config.enabled) return (
-    <div style={{ fontFamily: MONO, fontSize: 12, color: 'var(--tx3)', padding: '4px 0 20px', letterSpacing: '0.04em' }}>
-      Check-ins are paused.{' '}
-      <Link to="/settings" style={{ color: 'var(--pk)', textDecoration: 'none' }}>Manage →</Link>
-    </div>
-  )
-
-  // Decide whether to show the greeting/prompt based on cadence
-  const pad = n => String(n).padStart(2, '0')
-  const now = new Date()
-  const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
-  const daysSinceLast = config.lastCheckinOn
-    ? Math.round((new Date(todayStr + 'T00:00:00') - new Date(config.lastCheckinOn + 'T00:00:00')) / 86400000)
-    : null
-
-  const showGreeting = (() => {
-    if (config.cadence === 'never')       return false
-    if (config.cadence === 'every_login') return true
-    if (config.cadence === 'daily')       return daysSinceLast === null || daysSinceLast >= 1
-    if (config.cadence === 'weekly')      return daysSinceLast === null || daysSinceLast >= 7
-    return true
-  })()
-
   return (
     <>
-      {showGreeting && <RippleGreeting userId={userId} />}
+      <RippleGreeting userId={userId} />
       <RippleCard userId={userId} />
     </>
   )

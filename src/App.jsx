@@ -31,9 +31,8 @@ const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
 const ResetPassword  = lazy(() => import('./pages/ResetPassword'))
 const Dashboard      = lazy(() => import('./pages/Dashboard'))
 const GamesPage      = lazy(() => import('./pages/GamesPage'))
-const ProfilePage    = lazy(() => import('./pages/ProfilePage'))
+const AccountPage    = lazy(() => import('./pages/AccountPage'))
 const MyRipplePage   = lazy(() => import('./pages/MyRipplePage'))
-const SettingsPage   = lazy(() => import('./pages/SettingsPage'))
 const AvatarEditor   = lazy(() => import('./components/Avatar/AvatarEditor'))
 const Unsubscribe    = lazy(() => import('./pages/Unsubscribe'))
 const Withdraw       = lazy(() => import('./pages/Withdraw'))
@@ -197,7 +196,7 @@ function UnlockGuard({ unlocked, to, from, children }) {
 
 // Requires auth + onboarding + avatar. New public users (no consent/demographics
 // on record and no avatar yet) are routed through /welcome first (Ripple WP1);
-// existing users with an avatar keep the old /profile/avatar path until the
+// existing users with an avatar keep the old /ripple/avatar path until the
 // WP2 migration beat lands.
 function ProtectedRoute({ session, hasAvatar, needsWelcome, needsRippleName, children }) {
   if (session === undefined) return null                          // auth loading
@@ -205,13 +204,36 @@ function ProtectedRoute({ session, hasAvatar, needsWelcome, needsRippleName, chi
   if (needsWelcome === undefined) return null                    // role/onboarding check in progress
   if (needsWelcome) return <Navigate to="/welcome" replace />
   if (hasAvatar === undefined) return null                       // avatar check in progress
-  if (hasAvatar === false) return <Navigate to="/profile/avatar" replace />
+  if (hasAvatar === false) return <Navigate to="/ripple/avatar" replace />
   if (needsRippleName === undefined) return null                 // ripple name check in progress
   if (needsRippleName) return <Navigate to="/ripple/name" replace />
   return children
 }
 
-// Requires auth only — used for /profile/avatar so the guard doesn't loop.
+// Dashboard only (2026-08-13 Account/My Ripple redesign): a user who has
+// never completed a single check-in doesn't see the Dashboard at all — before
+// this, WelcomeFlow's Finish screen offered "Go to Dashboard" right beside
+// "Check-in with [Name]" as an equally valid choice, so a brand-new user could
+// skip check-in entirely. Everyone else's Dashboard access is unaffected, and
+// this check is Dashboard-specific — Games/Account/My Ripple never gate on it.
+// "Never checked in" ≠ "not checked in today": the on-platform nudge for that
+// (GamesPage's CheckinReminder, Dashboard's RippleCard CTA) is unconditional
+// and unrelated to this one-time gate.
+function DashboardRoute({ session, hasAvatar, needsWelcome, needsRippleName, neverCheckedIn, children }) {
+  if (session === undefined) return null
+  if (!session) return <Navigate to="/login" replace />
+  if (needsWelcome === undefined) return null
+  if (needsWelcome) return <Navigate to="/welcome" replace />
+  if (hasAvatar === undefined) return null
+  if (hasAvatar === false) return <Navigate to="/ripple/avatar" replace />
+  if (needsRippleName === undefined) return null
+  if (needsRippleName) return <Navigate to="/ripple/name" replace />
+  if (neverCheckedIn === undefined) return null
+  if (neverCheckedIn) return <Navigate to="/checkin" replace />
+  return children
+}
+
+// Requires auth only — used for /ripple/avatar so the guard doesn't loop.
 function AuthRoute({ session, children }) {
   if (session === undefined) return null
   if (!session) return <Navigate to="/login" replace />
@@ -233,10 +255,18 @@ export default function App() {
   const [stillWaterPlayed,     setStillWaterPlayed]     = useState(undefined)
   const [onboardingComplete,   setOnboardingComplete]   = useState(undefined)
   const [rippleNamed,          setRippleNamed]          = useState(undefined)
+  const [neverCheckedIn,       setNeverCheckedIn]       = useState(undefined)
 
   async function checkRippleName(userId) {
     const { data } = await supabase.from('ripples').select('name').eq('user_id', userId).maybeSingle()
     setRippleNamed(!!(data?.name))
+  }
+
+  // Dashboard-only gate (DashboardRoute) — see its comment for why "ever"
+  // and not "today".
+  async function checkFirstCheckin(userId) {
+    const { data } = await supabase.from('ripples').select('last_checkin_on').eq('user_id', userId).maybeSingle()
+    setNeverCheckedIn(!data?.last_checkin_on)
   }
 
   async function fetchRole(userId) {
@@ -268,14 +298,14 @@ export default function App() {
     supabase.auth.getSession().then(({ data }) => {
       const s = data.session ?? null
       setSession(s)
-      if (s) { fetchRole(s.user.id); checkAvatar(s.user.id) }
-      else   { setRole(null); setSuperAdmin(false); setHasAvatar(undefined); setFirstContactComplete(undefined); setStillWaterPlayed(undefined); setOnboardingComplete(undefined); setRippleNamed(undefined) }
+      if (s) { fetchRole(s.user.id); checkAvatar(s.user.id); checkFirstCheckin(s.user.id) }
+      else   { setRole(null); setSuperAdmin(false); setHasAvatar(undefined); setFirstContactComplete(undefined); setStillWaterPlayed(undefined); setOnboardingComplete(undefined); setRippleNamed(undefined); setNeverCheckedIn(undefined) }
     })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
       const sess = s ?? null
       setSession(sess)
-      if (sess) { fetchRole(sess.user.id); checkAvatar(sess.user.id) }
-      else      { setRole(null); setSuperAdmin(false); setHasAvatar(undefined); setFirstContactComplete(undefined); setStillWaterPlayed(undefined); setOnboardingComplete(undefined); setRippleNamed(undefined) }
+      if (sess) { fetchRole(sess.user.id); checkAvatar(sess.user.id); checkFirstCheckin(sess.user.id) }
+      else      { setRole(null); setSuperAdmin(false); setHasAvatar(undefined); setFirstContactComplete(undefined); setStillWaterPlayed(undefined); setOnboardingComplete(undefined); setRippleNamed(undefined); setNeverCheckedIn(undefined) }
     })
     return () => subscription.unsubscribe()
   }, [])
@@ -324,9 +354,9 @@ export default function App() {
           <Route path="/verified" element={<Verified session={session} />} />
 
           <Route path="/dashboard" element={
-            <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome} needsRippleName={needsRippleName}>
+            <DashboardRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome} needsRippleName={needsRippleName} neverCheckedIn={neverCheckedIn}>
               <Dashboard session={session} />
-            </ProtectedRoute>
+            </DashboardRoute>
           } />
 
           {/*
@@ -339,11 +369,13 @@ export default function App() {
           <Route path="/games" element={<GamesPage session={session} />} />
 
           {/*
-            The three destinations of the header's avatar menu (2026-07-30 IA
-            rework): /ripple = the Ripple itself, /profile = who you are and
-            what you've earned, /settings = prompts, reminders, password,
-            deletion. /ripple is distinct from the /ripple/name migration beat
-            below, which is an onboarding step, not a destination.
+            The two destinations of the header's avatar menu (2026-08-13
+            Account/My Ripple redesign, merged from three): /ripple = the
+            Ripple itself plus what customizing it has earned, /account = who
+            you are, account mechanics, password, deletion. Split by the
+            "avatar → ripple, everything else → account" rule. /ripple is
+            distinct from the /ripple/name migration beat below, which is an
+            onboarding step, not a destination.
           */}
           <Route path="/ripple" element={
             <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome} needsRippleName={needsRippleName}>
@@ -351,17 +383,16 @@ export default function App() {
             </ProtectedRoute>
           } />
 
-          <Route path="/profile" element={
+          <Route path="/account" element={
             <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome} needsRippleName={needsRippleName}>
-              <ProfilePage session={session} />
+              <AccountPage session={session} />
             </ProtectedRoute>
           } />
 
-          <Route path="/settings" element={
-            <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome} needsRippleName={needsRippleName}>
-              <SettingsPage session={session} />
-            </ProtectedRoute>
-          } />
+          {/* Old routes from the pre-2026-08-13 three-way split — kept as
+              redirects for anyone with an open tab or a bookmark. */}
+          <Route path="/profile" element={<Navigate to="/account" replace />} />
+          <Route path="/settings" element={<Navigate to="/account" replace />} />
 
           {/*
             Ripple — public-tier onboarding/login concierge. Own partition per
@@ -382,17 +413,19 @@ export default function App() {
             } />
             <Route path="/checkin" element={
               <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome} needsRippleName={needsRippleName}>
-                <CheckinFlow session={session} context="manual" showNav={true} />
+                <CheckinFlow session={session} context="manual" showNav={true} onComplete={() => setNeverCheckedIn(false)} />
               </ProtectedRoute>
             } />
           </Route>
 
-          {/* AuthRoute (no avatar guard) — this IS the onboarding screen */}
-          <Route path="/profile/avatar" element={
+          {/* AuthRoute (no avatar guard) — this IS the onboarding screen.
+              Path renamed from /profile/avatar 2026-08-13 (avatar → ripple). */}
+          <Route path="/ripple/avatar" element={
             <AuthRoute session={session}>
               <AvatarEditor session={session} setHasAvatar={setHasAvatar} />
             </AuthRoute>
           } />
+          <Route path="/profile/avatar" element={<Navigate to="/ripple/avatar" replace />} />
 
           <Route path="/games/pond-watch" element={
             <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome} needsRippleName={needsRippleName}>

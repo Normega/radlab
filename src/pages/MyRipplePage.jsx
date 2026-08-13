@@ -2,17 +2,32 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Nav from '../components/Nav'
+import EyebrowLabel from '../components/ui/EyebrowLabel'
+import PrimaryCTA from '../components/ui/PrimaryCTA'
 import RippleAvatar from '../ripple/RippleAvatar'
 import { useAvatarConfig } from '../hooks/useAvatarConfig'
 
 // ── MyRipplePage (/ripple) ────────────────────────────────────────────────
 // The Ripple itself: what it looks like, what it's called, how the two of you
-// are doing. Split out of the old do-everything /profile 2026-07-30 (Norm's
-// account-menu IA rework) — account facts moved to /profile, and every
-// prompt/reminder control moved to /settings.
+// are doing, and what customizing it has unlocked. Split out of the old
+// do-everything /profile 2026-07-30 (Norm's account-menu IA rework); merged
+// with Points & Progress / Unlock Tracker 2026-08-13 (Account/My Ripple
+// redesign) — those gate avatar customization, so they're avatar-related
+// under the "avatar → ripple, everything else → account" rule, not account
+// facts. Account facts and reminder/password/deletion mechanics live on
+// /account.
 //
-// Customization lives at /profile/avatar (AvatarEditor), which is also the
+// Customization lives at /ripple/avatar (AvatarEditor), which is also the
 // first-login avatar step, so it stays its own route rather than inlining here.
+
+const UNLOCK_MILESTONES = [
+  { pts: 50,  label: 'Ears & species',  icon: '👂' },
+  { pts: 100, label: 'Nose styles',     icon: '👃' },
+  { pts: 150, label: 'Hair',            icon: '💇' },
+  { pts: 200, label: 'Mouth styles',    icon: '😄' },
+  { pts: 300, label: 'Auras & extras',  icon: '✨' },
+  { pts: 500, label: 'Scars & marks',   icon: '🔱' },
+]
 
 export default function MyRipplePage({ session }) {
   const userId = session?.user?.id
@@ -20,7 +35,7 @@ export default function MyRipplePage({ session }) {
   const { data: avatarData } = useAvatarConfig(userId)
 
   const [ripple,       setRipple]       = useState(null)
-  const [checkinCount, setCheckinCount] = useState(null)
+  const [points,       setPoints]       = useState(null)
   const [editing,      setEditing]      = useState(false)
   const [nameInput,    setNameInput]    = useState('')
   const [saving,       setSaving]       = useState(false)
@@ -31,18 +46,28 @@ export default function MyRipplePage({ session }) {
     let cancelled = false
     Promise.all([
       supabase.from('ripples')
-        .select('name, streak_current, streak_best, last_checkin_on')
+        .select('name, last_checkin_on')
         .eq('user_id', userId).maybeSingle(),
-      supabase.from('ripple_checkins')
-        .select('local_date', { count: 'exact', head: true })
-        .eq('user_id', userId),
-    ]).then(([{ data: r }, { count }]) => {
+      supabase.from('profiles')
+        .select('points')
+        .eq('id', userId).maybeSingle(),
+    ]).then(([{ data: r }, { data: p }]) => {
       if (cancelled) return
       setRipple(r ?? {})
-      setCheckinCount(count ?? 0)
+      setPoints(p?.points ?? 0)
     })
     return () => { cancelled = true }
   }, [userId])
+
+  // Progress bar spans the gap between the milestone just passed and the next.
+  const nextIdx       = points == null ? -1 : UNLOCK_MILESTONES.findIndex(m => m.pts > points)
+  const nextMilestone = nextIdx >= 0 ? UNLOCK_MILESTONES[nextIdx] : null
+  const prevPts       = nextMilestone
+    ? (UNLOCK_MILESTONES[nextIdx - 1]?.pts ?? 0)
+    : (UNLOCK_MILESTONES[UNLOCK_MILESTONES.length - 1]?.pts ?? 0)
+  const progressPct   = nextMilestone
+    ? Math.round((((points ?? 0) - prevPts) / (nextMilestone.pts - prevPts)) * 100)
+    : 100
 
   // UPSERT, not update — see the note that used to live on ProfilePage: a
   // plain .update().eq('user_id', …) matches zero rows for anyone without a
@@ -104,12 +129,12 @@ export default function MyRipplePage({ session }) {
               <div style={S.nameRow}>
                 <span style={S.rippleName}>{ripple?.name ?? (ripple === null ? '…' : 'Unnamed')}</span>
                 {ripple && (
-                  <button
+                  <PrimaryCTA
                     onClick={() => { setNameInput(ripple?.name ?? ''); setEditing(true) }}
-                    style={S.btnGhost}
+                    style={S.btnRename}
                   >
                     Rename
-                  </button>
+                  </PrimaryCTA>
                 )}
               </div>
             )}
@@ -119,30 +144,66 @@ export default function MyRipplePage({ session }) {
               any time — nothing is locked in.
             </p>
 
-            <Link to="/profile/avatar" style={S.editBtn}>Customize appearance</Link>
+            <Link to="/ripple/avatar" style={S.editBtn}>Customize appearance</Link>
 
             {saveError && <p style={S.error}>{saveError}</p>}
           </div>
         </div>
 
-        {/* ── Together so far ───────────────────────────────────── */}
-        <p style={S.secLabel}>// Together so far</p>
+        {/* ── Progress tracker ──────────────────────────────────── */}
+        {/* Points & Progress + Unlock Tracker, moved here from the old
+            /profile (2026-08-13): both gate avatar customization, so they're
+            avatar-related, not account facts. */}
+        <div style={S.secLabel}><EyebrowLabel variant="white">Progress Tracker</EyebrowLabel></div>
         <div style={S.card}>
-          <div style={S.statRow}>
-            {[
-              { label: 'current streak', value: `${ripple?.streak_current ?? 0}d` },
-              { label: 'best streak',    value: `${ripple?.streak_best    ?? 0}d` },
-              { label: 'check-ins',      value: checkinCount ?? '—' },
-            ].map(({ label, value }) => (
-              <div key={label}>
-                <div style={S.statLabel}>{label}</div>
-                <div style={S.statValue}>{value}</div>
-              </div>
-            ))}
+          <div style={S.pointsRow}>
+            <span style={S.pointsNum}>{points ?? 0}</span>
+            <span style={S.pointsUnit}>points</span>
           </div>
+          {nextMilestone ? (
+            <>
+              <div style={S.progressTrack}>
+                <div style={{ ...S.progressFill, width: `${progressPct}%` }} />
+              </div>
+              <p style={S.progressNote}>
+                <span style={{ fontFamily: MONO, color: 'var(--pk)' }}>{nextMilestone.pts - (points ?? 0)} pts</span>
+                {' until '}
+                <strong>{nextMilestone.icon} {nextMilestone.label}</strong>
+                {' unlocks'}
+              </p>
+            </>
+          ) : (
+            <p style={S.progressNote}>All features unlocked!</p>
+          )}
+
+          <div style={S.unlockList}>
+            {UNLOCK_MILESTONES.map((m, i) => {
+              const unlocked = (points ?? 0) >= m.pts
+              return (
+                <div
+                  key={m.pts}
+                  style={{
+                    ...S.unlockRow,
+                    opacity: unlocked ? 1 : 0.42,
+                    borderBottom: i < UNLOCK_MILESTONES.length - 1 ? '1px solid var(--bd)' : 'none',
+                  }}
+                >
+                  <span style={{ fontSize: 18 }}>{m.icon}</span>
+                  <div style={S.unlockInfo}>
+                    <span style={{ ...S.unlockLabel, color: unlocked ? 'var(--tx)' : 'var(--gy)' }}>
+                      {m.label}
+                    </span>
+                    {unlocked && <span style={S.unlockedTag}>Unlocked</span>}
+                  </div>
+                  <span style={S.unlockPts}>{m.pts} pts</span>
+                </div>
+              )
+            })}
+          </div>
+
           <p style={S.cardFoot}>
             How often your Ripple prompts you — and whether it emails —
-            lives in <Link to="/settings" style={S.inlineLink}>Settings</Link>.
+            lives in <Link to="/account" style={S.inlineLink}>Account</Link>.
           </p>
         </div>
 
@@ -182,19 +243,34 @@ const S = {
     fontFamily: MONO, fontSize: 12, color: 'var(--pk)', background: 'none',
     border: 'none', cursor: 'pointer', padding: 0, letterSpacing: '0.05em',
   },
+  btnRename: { padding: '6px 14px', fontSize: 13, borderRadius: 20 },
   editBtn: {
     display: 'inline-block', fontFamily: SANS, fontWeight: 600, fontSize: 14,
     padding: '10px 16px', borderRadius: 24,
     background: 'var(--bgp)', color: 'var(--pkd)', textDecoration: 'none',
   },
 
-  secLabel: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--gy)', marginBottom: 14 },
+  secLabel: { marginBottom: 14 },
   card: { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 12, padding: 24 },
-  statRow:   { display: 'flex', gap: 40, flexWrap: 'wrap' },
-  statLabel: { fontFamily: MONO, fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--gy)', marginBottom: 4 },
-  statValue: { fontFamily: MONO, fontSize: 20, color: 'var(--tx)' },
   cardFoot:  { fontFamily: SANS, fontSize: 14, color: 'var(--tx2)', margin: '18px 0 0', paddingTop: 16, borderTop: '1px solid var(--bd)' },
   inlineLink:{ color: 'var(--pk)' },
+
+  pointsRow:  { display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 14 },
+  pointsNum:  { fontFamily: MONO, fontSize: 36, color: 'var(--tx)' },
+  pointsUnit: { fontFamily: MONO, fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--gy)' },
+  progressTrack: { height: 8, borderRadius: 4, background: 'var(--bgp)', overflow: 'hidden' },
+  progressFill:  { height: '100%', background: 'var(--pk)', borderRadius: 4, transition: 'width 0.3s' },
+  progressNote:  { fontFamily: SANS, fontSize: 14, color: 'var(--tx2)', marginTop: 10 },
+
+  unlockList:  { marginTop: 24, borderTop: '1px solid var(--bd)' },
+  unlockRow:   { display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0' },
+  unlockInfo:  { flex: 1, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' },
+  unlockLabel: { fontFamily: SANS, fontSize: 14 },
+  unlockedTag: {
+    fontFamily: MONO, fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.06em',
+    color: 'var(--pkd)', background: 'var(--bgp)', padding: '2px 8px', borderRadius: 12,
+  },
+  unlockPts: { fontFamily: MONO, fontSize: 12, color: 'var(--gy)' },
 
   error: { fontFamily: SANS, fontSize: 13, color: 'var(--err-tx)', margin: 0 },
 }
