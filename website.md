@@ -2752,6 +2752,34 @@ would. The intent was in the data from the start and only the mechanism was miss
 the failure mode this section exists to prevent: **a condition written as a comment is not a
 condition.** See §26a and `20260812_graduation_day_practice_gate.sql`.
 
+**Verified end to end 2026-08-13** — both branches walked through a real participant link on the
+Live Test study (Self-Compassion arm, Graduation Day): No jumps straight to "additional comments",
+Yes shows the likelihood slider and all four intention follow-ups, and the pips and the
+"Complete Practice" button are correct on both paths.
+
+### Seeding a test participant mid-protocol
+
+Parking a synthetic participant on a late session (to test one screen without walking 27 sessions)
+takes four steps that are **not** obvious, each found by hitting it:
+
+1. **Seed `liliana_day_data`, not just `participant_schedule.completed_at`.** The adherence gate
+   reads completed `liliana_day_data` rows joined to `intervention_modules` by phase — a different
+   table from the one that records session completion. A participant whose schedule is fully
+   completed but who has no day-data reads as `0/12` and the `ac_p1` check **withdraws them
+   outright** (with a termination email). Two tables have to agree for a participant to count as
+   adherent, and only one of them is the obvious one.
+2. **Stamp the screener and consent.** `SessionEntry` runs both gates on *every* link, not just the
+   first: a passing `screener_results` row, then `study_enrollments.consent_date`. A real
+   participant clears both at baseline; a fabricated one lands on the pre-consent screener on
+   whatever session you point them at.
+3. **Expire the enrollment link.** `check_schedule` step 2b defers a row while the participant holds
+   an active link anywhere else, so the link issued at enrollment silently blocks the send you want.
+4. **Phase 2 re-anchors to when the fork resolves**, not to its nominal `day_offset`, so back-dating
+   the Phase 1 calendar does not back-date Phase 2 — slide the arm separately after it materializes.
+
+Steps 1 and 2 are both cases of the same thing: participant state lives in more tables than the
+schedule, and skipping the journey skips the rows the journey would have written.
+
 ### Owl assets
 
 10 transparent PNGs stored at `public/assets/owls/{key}.png`. Valid keys:
