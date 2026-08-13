@@ -145,7 +145,7 @@ const BUILT_COMPONENTS = [
 // instance is currently hand-styled, which is where new drift enters.
 const UNBUILT_COMPONENTS = [
   ['Header',          'Designed as one component; the live site mounts Nav.jsx per page in 20+ files'],
-  ['ToggleSwitch',    'Added to Figma late; /settings ships its own'],
+  ['ToggleSwitch',    'Added to Figma late; /account ships its own'],
   ['ToggleSetting',   'Row wrapper for a labelled toggle'],
   ['SettingOptions',  'Grouped settings block'],
   ['Dropdown',        'No shared select anywhere in the app'],

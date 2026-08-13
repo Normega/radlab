@@ -4,14 +4,23 @@
 // Active send windows (America/Toronto):
 //   morning = 8 AM, midday = 12 PM, evening = 7 PM
 //
+// prompt_cadence is now an EMAIL-only cadence (2026-08-13 Account/My Ripple
+// redesign — the on-platform check-in nudge is unconditional and no longer
+// reads this column at all). "Every other day/week" reuse this same hourly
+// job rather than needing dedicated cron infrastructure, the same way
+// "weekly" always has: it's just a wider day-count threshold below, evaluated
+// every send window like every other cadence.
+//
 // Eligible recipients: ripples rows where
-//   reminder_enabled = true AND check_in_enabled = true
+//   reminder_enabled = true
 //   prompt_cadence != 'never'
 //   reminder_time matches the current window
 //   last_reminder_sent_on != today (dedup: one send per calendar day max)
 //   hasn't checked in per cadence:
 //     every_login / daily → last_checkin_on < today
+//     every_other_day → last_checkin_on < 2 days ago (or null)
 //     weekly → last_checkin_on < 7 days ago (or null)
+//     every_other_week → last_checkin_on < 14 days ago (or null)
 
 import { createClient, SupabaseClient } from 'npm:@supabase/supabase-js@2'
 import { Resend } from 'npm:resend'
@@ -142,12 +151,12 @@ Deno.serve(async (req) => {
       return json({ sent: 0, skipped: 0, reason: `no_window_at_hour_${hour}` })
     }
 
-    // Fetch window-matched candidates
+    // Fetch window-matched candidates. check_in_enabled is no longer filtered
+    // on (2026-08-13): the app can't set it false anymore, so it's always true.
     const { data: candidates, error: fetchErr } = await db
       .from('ripples')
       .select('user_id, prompt_cadence, last_checkin_on, last_reminder_sent_on')
       .eq('reminder_enabled', true)
-      .eq('check_in_enabled', true)
       .eq('reminder_time', activeWindow)
       .neq('prompt_cadence', 'never')
 
@@ -163,7 +172,9 @@ Deno.serve(async (req) => {
 
       const days = daysBetween(r.last_checkin_on, today)
       if (r.prompt_cadence === 'every_login' || r.prompt_cadence === 'daily') return days >= 1
-      if (r.prompt_cadence === 'weekly') return days >= 7
+      if (r.prompt_cadence === 'every_other_day')  return days >= 2
+      if (r.prompt_cadence === 'weekly')           return days >= 7
+      if (r.prompt_cadence === 'every_other_week') return days >= 14
       return false
     })
 
