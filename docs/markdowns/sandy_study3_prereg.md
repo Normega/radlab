@@ -149,10 +149,40 @@ with the registered sample.
 
 ### 3.2 Data collection procedures
 
-Participants are recruited via Prolific. Inclusion criteria: fluent English; currently
-enrolled as a post-secondary student (Prolific prescreen); normal or corrected-to-normal
-vision; access to a desktop or laptop, since ColourMax requires mouse input. Exclusion at
-recruitment: Prolific prescreen for active suicidal ideation, given the DASS-21 content.
+Participants are recruited via Prolific. Enrolment status — currently enrolled as a
+post-secondary student — is set through Prolific's own prescreening, and the study listing
+states the time commitment, the desktop requirement, and the nature of the tasks.
+
+**Eligibility screener.** Every participant then passes through a five-item pre-consent
+screener hosted on the study platform, before the consent form and before any study
+content. All five statements must be endorsed:
+
+1. I can fluently read and write in English.
+2. I have normal or corrected-to-normal vision.
+3. I consider myself to be in good enough mental health to reflect briefly on my mood and
+   stress levels.
+4. I am willing to complete the word puzzles and colouring activity in one 35-minute
+   sitting.
+5. I am not currently experiencing depression, anxiety, or effects of trauma severe enough
+   that taking part would be upsetting to me or disruptive to my ability to function.
+
+Endorsing fewer than five is terminal: the participant is shown a screen-out page, is asked
+to return their Prolific submission, and reaches neither the consent form nor any study
+task. That page lists free crisis and student-support services, since items 3 and 5 can
+surface distress. Item 1 covers language, item 2 vision, and item 4 both the time
+commitment and the device requirement (ColourMax needs a mouse or trackpad).
+
+Items 3 and 5 replace what an earlier version of this document described as a Prolific
+prescreen for active suicidal ideation. The criterion is now the participant's own
+judgement about whether taking part would be upsetting or disruptive, asked immediately
+before consent rather than at recruitment — a lower bar to answer honestly, and one that
+reaches every participant rather than only those whose Prolific profile carries the
+relevant prescreen answer.
+
+Screener responses are stored per item in `screener_results`, so the number screened out,
+and which criterion was responsible, are reportable alongside the exclusion counts in §5.4.
+Screen-outs never enter the sample and do not count toward the N = 300 target.
+
 Compensation is at or above Prolific's recommended hourly rate for a 35-minute session.
 
 Session duration was measured in the pilot at a median of 30.8 minutes (IQR 28.4–35.3).

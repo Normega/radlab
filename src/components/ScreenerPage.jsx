@@ -47,6 +47,13 @@ export default function ScreenerPage({ study, participant, supabaseClient, onPas
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
     .map(q => q.questionnaire_slug)
 
+  // Phase-1-only screeners (Sandy study 3) declare no phase-2 questionnaires:
+  // eligibility is a set of self-report criteria, not a distress-band gate. They
+  // go straight from the criteria to the outcome card, and their pass copy comes
+  // from phase1.pass_message rather than phase2.outcomes.pass — whose defaults
+  // talk about emotional distress and would be nonsense here.
+  const hasPhase2 = phase2Slugs.length > 0
+
   const [phase,         setPhase]         = useState('description')
   const [eligAnswers,   setEligAnswers]   = useState({})
   const [eligResult,    setEligResult]    = useState(null)
@@ -59,7 +66,16 @@ export default function ScreenerPage({ study, participant, supabaseClient, onPas
   // onComplete closure reads a stable ref across phase-transition renders.
   const q2ResponsesRef = useRef({})
 
-  const meta = PHASE_META[phase] ?? { step: 'Step 3 of 4', prog: 75 }
+  const metaBase = PHASE_META[phase] ?? { step: 'Step 3 of 4', prog: 75 }
+  // A phase-1-only screener has one step fewer. Relabel and rescale rather than
+  // forking PHASE_META, so the two shapes can't drift apart.
+  const meta = hasPhase2
+    ? metaBase
+    : {
+        ...metaBase,
+        step: phase === 'outcome' ? 'Step 3 of 3' : metaBase.step.replace(' of 4', ' of 3'),
+        prog: phase === 'description' ? 33 : phase === 'eligibility' ? 66 : 100,
+      }
 
   // Pre-load questionnaire definitions so there's no lag when phase 2 starts.
   useEffect(() => {
@@ -97,7 +113,16 @@ export default function ScreenerPage({ study, participant, supabaseClient, onPas
   function checkEligibility() {
     const allPass = phase1Items.every((item, i) => itemPasses(item, eligAnswers[i]))
     if (allPass) {
-      setEligResult('pass')
+      if (hasPhase2) {
+        setEligResult('pass')
+      } else {
+        // Nothing further to administer — this is the terminal pass. phase2_passed
+        // and phase2_outcome stay null, which is what "no phase 2 was run" means;
+        // they are not false, which would read as a phase-2 screen-out.
+        saveResult(true, null, null)
+        setOutcome('pass')
+        setPhase('outcome')
+      }
     } else {
       saveResult(false, null, null)
       setOutcome('fail_phase1')
@@ -189,12 +214,19 @@ export default function ScreenerPage({ study, participant, supabaseClient, onPas
     }
     const outcomes = screener?.phase2?.outcomes ?? {}
     if (outcome === 'pass') {
-      const o = outcomes.pass ?? {}
+      // Phase-1-only screeners take their pass copy from phase1.pass_message;
+      // the phase-2 defaults below describe an emotional-distress gate that a
+      // criteria-only screener never ran.
+      const o = hasPhase2 ? (outcomes.pass ?? {}) : (screener?.phase1?.pass_message ?? {})
       return {
         cardStyle: { background: 'var(--bgp)', border: '1.5px solid var(--pkbs)' },
         icon: '✅',
-        heading: o.heading ?? 'You appear to be a good candidate for this study.',
-        body:    o.body    ?? 'Based on your responses, you seem to be experiencing a level of emotional distress that this study is designed to support. Press Next to continue to the consent form and baseline survey.',
+        heading: o.heading ?? (hasPhase2
+          ? 'You appear to be a good candidate for this study.'
+          : 'You meet the eligibility criteria.'),
+        body:    o.body    ?? (hasPhase2
+          ? 'Based on your responses, you seem to be experiencing a level of emotional distress that this study is designed to support. Press Next to continue to the consent form and baseline survey.'
+          : 'Press Next to continue to the consent form and begin the session.'),
         showResources: false, showContinue: true, resources: [],
       }
     }
@@ -330,7 +362,12 @@ export default function ScreenerPage({ study, participant, supabaseClient, onPas
         <div style={{ ...S.outcomeCard, ...cardStyle }}>
           <div style={S.outcomeIcon}>{icon}</div>
           <div style={S.outcomeHeading}>{heading}</div>
-          <div style={S.outcomeBody}>{body}</div>
+          {/* Outcome bodies accept the same lab-authored HTML as the description
+              steps and info boxes above (bold, <br>). Definitions come from
+              migrations, never from participants, so the trust model is identical.
+              The existing Liliana and Zerin bodies are plain prose and render
+              byte-identically through this path. */}
+          <div style={S.outcomeBody} dangerouslySetInnerHTML={{ __html: body }} />
         </div>
         {showResources && resources.length > 0 && (
           <div style={{ marginTop: 20 }}>
