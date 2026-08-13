@@ -173,10 +173,14 @@ content. All five statements must be endorsed:
 5. I am not currently experiencing depression, anxiety, or effects of trauma severe enough
    that taking part would be upsetting to me or disruptive to my ability to function.
 
-Endorsing fewer than five is terminal: the participant is shown a screen-out page, is asked
-to return their Prolific submission, and reaches neither the consent form nor any study
-task. That page lists free crisis and student-support services, since items 3 and 5 can
-surface distress. Item 1 covers language, item 2 vision, and item 4 both the time
+Endorsing fewer than five is terminal: the participant is shown a screen-out page and
+reaches neither the consent form nor any study task. That page states that their answers do
+not meet the eligibility criteria **set out in the study description**, asks them to return
+their Prolific submission, and notes that returning costs them nothing and does not affect
+their approval rating. Naming the description is deliberate — the criteria are published in
+the listing before anyone accepts, so the screen-out is a stated rule the participant could
+have checked in advance rather than a judgement made about them at this point. The page also
+lists free crisis and student-support services, since items 3 and 5 can surface distress. Item 1 covers language, item 2 vision, and item 4 both the time
 commitment and the device requirement (ColourMax needs a mouse or trackpad).
 
 Items 3 and 5 replace what an earlier version of this document described as a Prolific
