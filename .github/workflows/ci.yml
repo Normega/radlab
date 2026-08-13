@@ -1,7 +1,7 @@
 # The repo's first CI workflow (2026-07-30). Deliberately small.
 #
-# It runs the test suite and the production build on every push to main and
-# every PR. The suite's newest member is supabase/functions/verifyJwtConfig
+# It runs the test suite and the production build on every push to main or
+# dev (the live staging branch — see CLAUDE.md "Live dev site") and every PR. The suite's newest member is supabase/functions/verifyJwtConfig
 # .test.mjs, which is the reason this file exists: config.toml pins each Edge
 # Function's verify_jwt, but nothing stopped someone adding a function and
 # forgetting the entry — which deploys it JWT-required and silently breaks its
@@ -34,7 +34,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
   pull_request:
 
 jobs:
