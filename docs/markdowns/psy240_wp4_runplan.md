@@ -4086,7 +4086,9 @@ green is 1.34×** (268 slots, 200 students). There is no room for hoarding.
    and staff-inserted gaps coexist safely, and reclassifying difficulty is an `UPDATE` rather than a
    prose edit. `gap_review_queue`'s MAYBE rows feed straight into this surface.
 3. **A `page_reviews` stamp** — page, reviewer, reviewed_at, verdict, notes — so 262 pages are not
-   re-read, and so coverage is measurable during term.
+   re-read, and so coverage is measurable during term. *(Stakes raised 2026-08-13: the stamp is now
+   also the examinability gate — §39.12.8 makes it the prerequisite for authoring any test item
+   against a section — and the input to the class changelog's examinability marker, §39.12.9.)*
 
 **The correction path — ✅ resolved 2026-08-10** (`20260810_correction_guards.sql`), and the answer
 inverted the plan: `edit_page` **already was** the correction path — staff-gated, snapshot trigger
@@ -4720,3 +4722,72 @@ the *content* must start with the midterm, because the midterm's lock comes firs
 | Nov → the print date | final: 40 auto + 4 short answer | the binding deadline is printing, not the exam date (§39.2) |
 
 135 items before Sept 30 is the real deadline in this plan, and it is seven weeks out.
+
+#### 39.12.8 The verified-stamp prerequisite (decided 2026-08-13)
+
+The question that settled it: is it safer to build only on the core textbook and keep student
+submissions out of the item bank entirely? The answer adopted is **provenance, not source**:
+
+> **An item may only be authored against a page section whose current version carries a staff
+> review stamp** (`page_reviews`, WP6 Phase D).
+
+Why not "core textbook only": that rule is simultaneously stricter than needed and weaker in the one
+place it matters. The §39.10.3 audit showed the thinnest guide material is sometimes the most
+important — `schizophrenia` explains antipsychotics *by* a dopamine mechanism it never states, and
+that hole will most likely be filled by a student submission. A source-based rule would leave the
+mechanism layer of the best-formed lecture permanently unexaminable. The stamp rule keeps the safety
+and removes the dead end: an accepted submission becomes testable when staff verify it — because it
+was checked, not because of who wrote it.
+
+What the rule buys:
+
+- **The midterm needs no rule at all — it is core-only by arithmetic.** Lock Sept 30, first
+  submission deadline Oct 7: the earliest student work is due a week after the text freezes.
+- **The QA gradient is respected.** The precheck + volume review pipeline is adequate for a shared
+  reference; it is not the standard behind an appealed exam question. The stamp inserts exactly one
+  additional human read, on exactly the sections that carry marks.
+- **The incentive stays clean, and can be said to students plainly:** *your contributions are graded
+  as participation, not as exam content.* Without this, contributing becomes "writing the exam for
+  200 peers," with the strategic behaviour and disputes that implies.
+- **The pre-publish read and item authoring become one activity.** Norm reads in risk order, stamps
+  as he goes, and items draw from stamped sections — the two jobs reinforce instead of competing for
+  the same hours.
+- **The staleness queue (§39.12.6) quiets.** If items key only to stamped sections and most student
+  submissions land elsewhere, most publishes never touch item-bearing text. The re-verification
+  trigger still must exist — staff corrections move pages too — but it stops being noise.
+
+Enforcement is one check in the authoring surface: an item draft against an unstamped section is
+blocked with "stamp the section first," the same shape as every other guard in this system.
+
+#### 39.12.9 "What we've learned since September" — the class changelog (proposed 2026-08-13)
+
+Norm's ask: a page showing how the guide has grown through class participation — both as a visible
+collective achievement and as an **update surface for students who studied early** (a small group,
+but real).
+
+The data already exists; this is a rendering problem. Accepted `wiki_page_versions` rows since term
+start split cleanly by origin: rows with a `job_id` are **student submissions** (the ingest path),
+job-less rows with notes are **staff corrections** (already surfaced by `corrections_feed`). A
+member-visible page at `/academic/fieldguide/whats-new`:
+
+- **Grouped by week, newest first**, each entry: page title (deep-linked), which ask the submission
+  filled (from the resolved gap), and the source added. The gap's `ask` text is the natural one-line
+  summary of *what the guide now knows that it didn't* — no editorial writing required.
+- **A running counter as the header** — "N contributions from this class have closed N gaps since
+  Sept 9" — the collective-achievement framing, cheap and honest.
+- **An examinability marker, honestly placed.** Where an updated section has since been staff-stamped
+  (§39.12.8), the entry says so. This is the piece early studiers actually need: not "something
+  changed" but **"this change is now part of what can be examined."** Unstamped changes are labelled
+  as reference-only. Without this distinction the page would quietly imply that everything new is
+  testable, which §39.12.8 just made false.
+- **Attribution is opt-in or anonymous** — "a student contribution," with named credit only by
+  explicit consent. Contributions are coursework; publishing coursework under a name is not a
+  default.
+- **The lock applies.** During a publish freeze the page shows accepted-but-unpublished work as
+  "N contributions queued, publishing after the midterm" rather than listing content students cannot
+  yet read — same accept-without-publishing mechanics as §39.6, and the queue count keeps the
+  momentum visible even mid-lock.
+
+Build cost is one view (accepted versions joined to resolved gaps and `page_reviews`) plus one page
+component in the existing Field Guide chrome. Natural build slot: alongside WP6 Phase D, since it
+reads the same stamp table Phase D creates.
