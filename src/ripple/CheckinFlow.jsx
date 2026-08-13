@@ -508,7 +508,14 @@ function SuggestionStep({ compositeLabel, onGoToGame, onSkip }) {
 
 // ── CheckinFlow ───────────────────────────────────────────────────────────────
 
-export default function CheckinFlow({ session, context = 'manual', onComplete, showNav = false }) {
+// onComplete: flow-control OVERRIDE — when set, finishing the flow calls it
+// INSTEAD of navigating to /dashboard (for embedding in a larger flow).
+// onCheckedIn: pure notification — fires when the check-in save lands, never
+// changes where the flow goes. App.jsx uses it to clear the never-checked-in
+// Dashboard gate. These were one prop briefly (2026-08-13) and that broke
+// "Maybe later": passing a state-setter as onComplete silently swallowed the
+// navigate. Keep them separate.
+export default function CheckinFlow({ session, context = 'manual', onComplete, onCheckedIn, showNav = false }) {
   const db      = globalSupabase
   const userId  = session?.user?.id ?? null
   const navigate = useNavigate()
@@ -583,7 +590,7 @@ export default function CheckinFlow({ session, context = 'manual', onComplete, s
     setRewardData(null)
     const formattedItems = drawnItems.length > 0 ? formatItemResponses(drawnItems, itemResponses) : null
     saveCheckin({ supabase: db, userId, context, p1Sel, p2Sel, composite, items: formattedItems, nextItemState, prevIntentionOutcome })
-      .then(reward => { setRewardData(reward); setSaveDone(true) })
+      .then(reward => { setRewardData(reward); setSaveDone(true); if (onCheckedIn) onCheckedIn() })
       .catch(err => { console.warn('saveCheckin:', err); setSaveDone(true) })
   }, [phase]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -731,8 +738,11 @@ const S = {
     border: '1.5px solid', borderRadius: 20, padding: '7px 14px',
     fontFamily: SANS, fontSize: 13, cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap',
   },
+  // Formal button, not a bare text link (policy, 2026-08-13): every option in
+  // a choice pair is a real button — the non-suggested one is just grayer.
   skipLink: {
-    fontFamily: MONO, fontSize: 12, color: '#abadb0', background: 'none',
-    border: 'none', cursor: 'pointer', letterSpacing: '0.05em', padding: '0 8px', flexShrink: 0,
+    background: 'white', color: '#6b6c70', border: '1.5px solid #E8D0E0',
+    borderRadius: 12, padding: 14, fontFamily: MONO, fontSize: 13, fontWeight: 700,
+    letterSpacing: '0.05em', cursor: 'pointer', flexShrink: 0,
   },
 }

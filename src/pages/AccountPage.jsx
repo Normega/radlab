@@ -479,9 +479,12 @@ const S = {
     fontFamily: SANS, fontWeight: 600, fontSize: 14, padding: '8px 14px', borderRadius: 24,
     background: 'var(--pk)', color: '#fff', border: 'none', cursor: 'pointer',
   },
+  // Formal button, not a bare text link (policy, 2026-08-13): every option in
+  // a choice pair is a real button — the non-suggested one is just grayer.
   btnGhost: {
     alignSelf: 'flex-start', fontFamily: SANS, fontWeight: 600, fontSize: 14,
-    background: 'none', border: 'none', color: 'var(--tx2)', cursor: 'pointer', padding: '10px 4px',
+    background: 'var(--bgc)', border: '1px solid var(--bds)', borderRadius: 24,
+    color: 'var(--tx2)', cursor: 'pointer', padding: '8px 14px',
   },
   btnRename: { padding: '6px 14px', fontSize: 13, borderRadius: 20 },
 

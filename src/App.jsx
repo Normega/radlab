@@ -414,7 +414,10 @@ export default function App() {
             } />
             <Route path="/checkin" element={
               <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome} needsRippleName={needsRippleName}>
-                <CheckinFlow session={session} context="manual" showNav={true} onComplete={() => setNeverCheckedIn(false)} />
+                {/* onCheckedIn, NOT onComplete: onComplete overrides the
+                    flow's exit navigation, which is how "Maybe later" briefly
+                    went dead (2026-08-13). */}
+                <CheckinFlow session={session} context="manual" showNav={true} onCheckedIn={() => setNeverCheckedIn(false)} />
               </ProtectedRoute>
             } />
           </Route>
