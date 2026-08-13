@@ -396,9 +396,12 @@ export default function BrandAssets() {
         </Gap>
 
         <Gap title="Weights — fully migrated">
-          <code>font-weight: 500</code> is at zero occurrences site-wide, down from 135; only
-          400/600 are loaded for DM Sans, matching the spec. Eight uses of weight 800 remain in
-          one game, where the browser synthesises a faux bold.
+          <code>font-weight: 500</code> is at zero occurrences site-wide, down from 135 — in CSS
+          and in SVG presentation attributes alike. The last four hid as <code>fontWeight="500"</code>{' '}
+          on Still Water&rsquo;s wheel diagram, where a CSS-shaped search could not see them; they
+          were the only ones left (2026-08-13). Only 400/600 are loaded for DM Sans, matching the
+          spec. Eight uses of weight 800 remain in one game, where the browser synthesises a faux
+          bold.
         </Gap>
 
         <Gap title="Radii — carried by the primitives">

@@ -71,6 +71,7 @@ const VideoTest = lazy(() => import('./pages/dev/VideoTest'))
 const AudioTest = lazy(() => import('./pages/dev/AudioTest'))
 const UiKit     = lazy(() => import('./pages/dev/UiKit'))
 const GameIntroPreview = lazy(() => import('./pages/dev/GameIntroPreview'))
+const GameIconTrial = lazy(() => import('./pages/dev/GameIconTrial'))
 const OnboardingPreview = lazy(() => import('./pages/dev/OnboardingPreview'))
 const InsightsPreview   = lazy(() => import('./pages/dev/InsightsPreview'))
 const BodyDiagramPreview = lazy(() => import('./pages/dev/BodyDiagramPreview'))
@@ -559,6 +560,7 @@ export default function App() {
           <Route path="/dev/ui-kit" element={<UiKit />} />
           {/* Every game's instruction screen in one place (the games are auth-gated) */}
           <Route path="/dev/game-intros" element={<GameIntroPreview />} />
+          <Route path="/dev/game-icons" element={<GameIconTrial />} />
           {/* Phase 4 onboarding step previews (?step=welcome|data|demographics|ripple|finish) */}
           <Route path="/dev/onboarding-preview" element={<OnboardingPreview />} />
           {/* Dashboard Insights widget with synthetic data (?state=rich|sparse|empty) */}
