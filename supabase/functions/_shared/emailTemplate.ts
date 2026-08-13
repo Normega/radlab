@@ -5,7 +5,12 @@
 
 export function renderEmail(vars: {
   first_name: string
+  // Position in the protocol (1-based), NOT elapsed days — see the derivation
+  // in send_message. Renders as "Study Day 26 of 27".
   study_day: number | null
+  // Total sessions in the protocol. Null for studies with no compiled day
+  // numbers, in which case the copy degrades to a bare "Study Day N".
+  study_day_total?: number | null
   link_url: string
   expires_hours: number
   custom_subject: string | null
@@ -37,12 +42,23 @@ export function renderEmail(vars: {
   // which missed-session lead-in is used (see LOW_RATE_PCT).
   progress?: { completed: number; total: number; pct: number } | null
 }): { subject: string; html: string; text: string } {
-  // {{study_day}} resolves to the integer, or "your study" for single-shot rows
+  // {{study_day}} resolves to the integer, or "your study" for single-shot rows.
+  // {{study_day_of_total}} adds the " of N" suffix when a total is known, so a
+  // study without compiled day numbers degrades to a bare day number rather
+  // than rendering "Day 5 of null".
   const studyDayStr = vars.study_day != null ? String(vars.study_day) : 'your study'
+  const studyDayOfTotalStr = vars.study_day != null && vars.study_day_total != null
+    ? `${vars.study_day} of ${vars.study_day_total}`
+    : studyDayStr
 
   function resolve(template: string): string {
     return template
       .replace(/\{\{first_name\}\}/g, vars.first_name)
+      // Longest key first: {{study_day}} is a prefix of {{study_day_total}} and
+      // {{study_day_of_total}}, so replacing it first would eat the prefix of
+      // the others and leave a dangling "_total}}" in the copy.
+      .replace(/\{\{study_day_of_total\}\}/g, studyDayOfTotalStr)
+      .replace(/\{\{study_day_total\}\}/g, vars.study_day_total != null ? String(vars.study_day_total) : '')
       .replace(/\{\{study_day\}\}/g, studyDayStr)
       .replace(/\{\{link_url\}\}/g, vars.link_url)
       .replace(/\{\{expires_hours\}\}/g, String(vars.expires_hours))
@@ -358,7 +374,7 @@ function progressSentence(p: { completed: number; total: number; pct: number }):
 
 const DEFAULT_BODY = `Hi!
 
-Your session for Study Day {{study_day}} is ready.
+Your session for Study Day {{study_day_of_total}} is ready.
 
 Click the button below to begin. This link is personal to you — please don't share it.
 

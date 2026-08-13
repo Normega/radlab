@@ -23,6 +23,43 @@ const BASE = {
 
 const WITHDRAW_URL = 'https://radlab.zone/withdraw/unsub123'
 
+// ── Study-day rendering ───────────────────────────────────────────────────────
+// The default copy reads as progress ("Day 26 of 27"), not as a calendar date.
+// The prefix-collision case is the one that actually bites: {{study_day}} is a
+// prefix of both other keys, so a naive replace order leaves "_of_total}}" in
+// the participant's email.
+
+test('default body renders study day as a position out of the total', () => {
+  const { text } = renderEmail({ ...BASE, study_day: 26, study_day_total: 27 })
+  assert.match(text, /Study Day 26 of 27 is ready/)
+})
+
+test('no total known — copy degrades to a bare day number, never "of null"', () => {
+  const { text } = renderEmail({ ...BASE, study_day: 5, study_day_total: null })
+  assert.match(text, /Study Day 5 is ready/)
+  // Scoped to the sentence — a bare /of / would match "University of Toronto"
+  // in the signature block.
+  assert.doesNotMatch(text, /Study Day 5 of/)
+  assert.doesNotMatch(text, /null|undefined/)
+})
+
+test('single-shot row with no day number still reads sensibly', () => {
+  const { text } = renderEmail({ ...BASE, study_day: null, study_day_total: null })
+  assert.match(text, /Study Day your study is ready/)
+  assert.doesNotMatch(text, /null|undefined/)
+})
+
+test('all three day placeholders resolve; none leaves a fragment behind', () => {
+  const { text } = renderEmail({
+    ...BASE,
+    study_day: 26,
+    study_day_total: 27,
+    custom_body: 'day={{study_day}} total={{study_day_total}} both={{study_day_of_total}}',
+  })
+  assert.match(text, /day=26 total=27 both=26 of 27/)
+  assert.doesNotMatch(text, /_total\}\}|_of_total\}\}|\{\{/)
+})
+
 test('lapsed send leads with the get-back-on-track copy and carries the withdrawal link', () => {
   const { html, text } = renderEmail({
     ...BASE,

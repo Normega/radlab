@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../../lib/supabase'
 
-const EMAIL_VARS = ['{{first_name}}', '{{study_day}}', '{{link_url}}', '{{expires_hours}}']
+const EMAIL_VARS = ['{{first_name}}', '{{study_day_of_total}}', '{{study_day}}', '{{study_day_total}}', '{{link_url}}', '{{expires_hours}}']
 
 function useContactSettings(studyId) {
   return useQuery({
@@ -71,8 +71,13 @@ export default function ContactSettingsModal({ studyId, onClose }) {
     onError: (e) => setError(e.message),
   })
 
+  // Longest key first — {{study_day}} is a prefix of the other two, so
+  // replacing it first would leave "_of_total}}" behind (same ordering the
+  // server-side resolver in emailTemplate.ts relies on).
   const previewHtml = (emailBody || '')
     .replace(/{{first_name}}/g, 'Alex')
+    .replace(/{{study_day_of_total}}/g, '1 of 27')
+    .replace(/{{study_day_total}}/g, '27')
     .replace(/{{study_day}}/g, '1')
     .replace(/{{link_url}}/g, 'https://radlab.zone/s/example-token')
     .replace(/{{expires_hours}}/g, String(reminderIntervalHours || 48))
@@ -167,7 +172,7 @@ export default function ContactSettingsModal({ studyId, onClose }) {
                   style={{ ...S.input, minHeight: 120, resize: 'vertical' }}
                   value={emailBody}
                   onChange={e => setEmailBody(e.target.value)}
-                  placeholder="Hi! Your Study Day {{study_day}} session is ready: {{link_url}}"
+                  placeholder="Hi! Your Study Day {{study_day_of_total}} session is ready: {{link_url}}"
                 />
               </div>
 

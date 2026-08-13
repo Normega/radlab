@@ -94,14 +94,52 @@ Deno.serve(async (req) => {
     // Assessment") — the same source renderTerminationEmail names it by.
     let expiresHours = 48
     let sessionLabel: string | null = null
+    let sessionDayNumber: number | null = null
     if (row.study_session_id) {
       const { data: session } = await db
         .from('study_sessions')
-        .select('link_expires_hours, label')
+        .select('link_expires_hours, label, day_number')
         .eq('id', row.study_session_id)
         .single()
       if (session?.link_expires_hours) expiresHours = session.link_expires_hours
-      sessionLabel = session?.label ?? null
+      sessionLabel     = session?.label ?? null
+      sessionDayNumber = session?.day_number ?? null
+    }
+
+    // ── Protocol position, NOT elapsed days ───────────────────────────────────
+    //
+    // `participant_schedule.study_day` is date-derived (days since the
+    // participant's t0, plus one), so any real-world slippage inflates it: a
+    // participant who uses the full 3-day midpoint window, or whose Phase 2
+    // re-anchors when their fork resolves, gets emailed a number that climbs
+    // past the protocol's own day map. Observed 2026-08-13 — a session the
+    // protocol calls Day 28 rendered as "Study Day 39".
+    //
+    // Participants read this as progress ("how far through am I?"), not as a
+    // calendar, so it is computed as a position: rank this session's
+    // `day_number` among the study's DISTINCT day_numbers, out of how many
+    // there are. Distinct because parallel arms share day_numbers — Phase 2
+    // Day 1 exists three times, once per condition — and a participant
+    // traverses exactly one of them, so counting rows would treble the total
+    // and make it differ by arm. Derived entirely from the compiled
+    // `study_sessions`, so it is identical for every participant regardless of
+    // arm, and immune to date drift.
+    let dayOrdinal: number | null = null
+    let dayTotal:   number | null = null
+    if (sessionDayNumber != null) {
+      const { data: allSessions } = await db
+        .from('study_sessions')
+        .select('day_number')
+        .eq('study_id', row.study_id)
+        .not('day_number', 'is', null)
+
+      const days = [...new Set((allSessions ?? []).map(s => s.day_number as number))]
+        .sort((a, b) => a - b)
+      const idx = days.indexOf(sessionDayNumber)
+      if (idx !== -1) {
+        dayOrdinal = idx + 1
+        dayTotal   = days.length
+      }
     }
 
     // Per-study custom email subject/body (nullable — null uses default template).
@@ -237,7 +275,12 @@ Deno.serve(async (req) => {
     // 7. Render email (subject + HTML + plain text)
     const { subject, html, text } = renderEmail({
       first_name:      firstName,
-      study_day:       row.study_day,
+      // Protocol position, not the date-derived participant_schedule.study_day
+      // (see the dayOrdinal derivation above). Falls back to the elapsed
+      // counter only when the study has no compiled day_numbers to rank
+      // against, so single-shot studies behave exactly as before.
+      study_day:       dayOrdinal ?? row.study_day,
+      study_day_total: dayTotal,
       link_url:        linkUrl,
       expires_hours:   displayExpiresHours,
       custom_subject:  customSubject,
