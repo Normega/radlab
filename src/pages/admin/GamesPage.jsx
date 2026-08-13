@@ -7,9 +7,17 @@ const GAMES = [
   { name: 'Drift',         slug: 'drift',           badge: 'Time perception',              public: true  },
   { name: 'First Contact', slug: 'first-contact',  badge: 'Breath sync',                  public: true  },
   { name: 'Pond Watch',    slug: 'pond-watch',     badge: 'Go/No-Go · Reaction time',    public: true  },
-  { name: 'Owl Barn',      slug: 'owl-barn',       badge: 'Hearing · Rhythm · Strategy', public: true  },
   { name: 'Farm Joy',      slug: 'farm-joy',       badge: 'Values clarification',         public: true  },
   { name: 'Ebb & Flow',    slug: 'ebb-flow',       badge: 'Interoception · Breath sync',  public: true  },
+  { name: 'Delve',         slug: 'delve',          badge: 'Attention · Sense foraging',   public: true  },
+  { name: 'Tune',          slug: 'tune',           badge: 'Attention · Sense foraging',   public: true  },
+  { name: 'Alongside',     slug: 'alongside',      badge: 'Attention · Sense foraging',   public: true  },
+  // ── In development ─────────────────────────────────────────────────────
+  // Routes are live and still record data, but these are deliberately absent
+  // from src/data/games.js, so they appear on neither /games nor the About
+  // carousel (Norm, 2026-08-13). Also linked from /prototypes/.
+  { name: 'Owl Barn',        slug: 'owl-barn',        badge: 'Hearing · Rhythm · Strategy',     public: false, dev: true },
+  { name: 'Breath Guardian', slug: 'breath-guardian', badge: 'Breath regulation · Boundaries',  public: false, dev: true },
   // ── Study / researcher tools ───────────────────────────────────────────
   // `timed: true` = game has a session countdown; shows a Quick demo link
   // that launches it with the timer cut to 20s (?demo=1)
@@ -21,7 +29,8 @@ const GAMES = [
 
 export default function GamesPage() {
   const publicGames = GAMES.filter(g => g.public)
-  const studyGames  = GAMES.filter(g => !g.public)
+  const devGames    = GAMES.filter(g => !g.public && g.dev)
+  const studyGames  = GAMES.filter(g => !g.public && !g.dev)
 
   return (
     <div>
@@ -29,6 +38,7 @@ export default function GamesPage() {
       <p style={S.sub}>All tasks available on the platform. Click Review to run any game as a participant would see it.</p>
 
       <Section title="Public — available to all participants" games={publicGames} />
+      <Section title="In development — route live, not listed on /games" games={devGames} />
       <Section title="Study & researcher tools" games={studyGames} />
     </div>
   )

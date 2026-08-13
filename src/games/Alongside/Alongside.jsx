@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import Nav from '../../components/Nav'
+import GameIntro from '../shared/GameIntro'
 import { supabase } from '../../lib/supabase'
 import { createAlongside } from './engine'
 
@@ -38,48 +39,26 @@ async function endSession(sessionId) {
 
 function IntroScreen({ onStart }) {
   return (
-    <div style={{ maxWidth: 380, textAlign: 'center', padding: '0 16px' }}>
-      <p style={S.eyebrow}>RADlab · Come, See</p>
-      <h1 style={S.h1}>Alongside.</h1>
-      <p style={S.sub}>
-        Something is moving through the meadow.<br />
-        This is a practice in keeping company — not in catching anything.
-      </p>
-
-      <div style={S.card}>
-        {[
-          {
-            n: 1,
-            title: 'Hold to walk',
-            body: 'Press and hold anywhere; you drift toward it. Let go to stop. There is nowhere you need to be.',
-          },
-          {
-            n: 2,
-            title: 'It cannot be caught',
-            body: 'Go straight at the light and it scatters into mist and gathers again further off. Nothing is lost when it does — it simply will not be held.',
-          },
-          {
-            n: 3,
-            title: 'Walk beside it instead',
-            body: 'Stay near, at its pace, and something settles between you. Listen for it: your two notes drift into tune when you have it.',
-          },
-        ].map(({ n, title, body }) => (
-          <div key={n} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-            <div style={S.num}>{n}</div>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: '#1c1c1e', marginBottom: 2 }}>{title}</div>
-              <div style={{ fontSize: 12, color: '#888', lineHeight: 1.5 }}>{body}</div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <p style={{ ...S.sub, marginBottom: 18, fontSize: 12 }}>
-        Sound on, if you can — most of what tells you how you are doing is in it.
-        Take about five minutes, or leave whenever you like.
-      </p>
-      <button style={S.btnPrimary} onClick={onStart}>Begin &rarr;</button>
-    </div>
+    <GameIntro
+      title="Alongside."
+      lead={<>Something is moving through the meadow.<br />This is a practice in keeping company — not in catching anything.</>}
+      steps={[
+        {
+          title: 'Hold to walk',
+          body: 'Press and hold anywhere; you drift toward it. Let go to stop. There is nowhere you need to be.',
+        },
+        {
+          title: 'It cannot be caught',
+          body: 'Go straight at the light and it scatters into mist and gathers again further off. Nothing is lost when it does — it simply will not be held.',
+        },
+        {
+          title: 'Walk beside it instead',
+          body: 'Stay near, at its pace, and something settles between you. Listen for it: your two notes drift into tune when you have it.',
+        },
+      ]}
+      note={<>Sound on, if you can — most of what tells you how you are doing is in it. Take about five minutes, or leave whenever you like.</>}
+      onStart={onStart}
+    />
   )
 }
 

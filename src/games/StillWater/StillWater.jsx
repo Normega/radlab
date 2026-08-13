@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useAvatarConfig } from '../../hooks/useAvatarConfig'
 import { Link, useSearchParams } from 'react-router-dom'
 import Nav from '../../components/Nav'
+import GameIntro from '../shared/GameIntro'
 import { supabase as globalSupabase } from '../../lib/supabase'
 import { dbWrite } from '../../lib/dbWrite'
 import { EMOTIONS, INTENSITY_LABELS, computeRating, getCompositeLabel, LABEL_TO_ID,
@@ -53,21 +54,24 @@ function IntroScreen({ onStart, bouncedFrom }) {
   const lerp = (a, b, t) => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t })
 
   return (
-    <div style={{ maxWidth: 380, textAlign: 'center', padding: '0 16px' }}>
-      {/* Redirect banner when UnlockGuard bounced the user here */}
-      {bouncedFrom && (
+    <GameIntro
+      /* Redirect banner when UnlockGuard bounced the user here */
+      banner={bouncedFrom && (
         <p style={S.redirectNote}>
           Complete Still Water before beginning {bouncedFrom.title}.
         </p>
       )}
-      <p style={S.eyebrow}>RADlab · Come, See</p>
-      <h1 style={S.introH1}>How are you arriving?</h1>
-      <p style={S.introSub}>
-        Two quick questions about how you feel.<br />
-        We'll combine your answers into one picture.
-      </p>
-
-      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 24 }}>
+      title="How are you arriving?"
+      lead={<>Two quick questions about how you feel.<br />We'll combine your answers into one picture.</>}
+      /* The two axes are colour-coded to the wheel below, so the step numbers
+         carry the same colours — meaning, not decoration. */
+      steps={[
+        { numBg: '#FFF0B8', numColor: '#D88000', title: 'Sad to Excited', body: 'How good or energised are you feeling?' },
+        { numBg: '#EDE0F4', numColor: '#804080', title: 'Calm to Tense',  body: 'How settled or on-edge are you feeling?' },
+      ]}
+      onStart={onStart}
+      visual={
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 24 }}>
         <svg viewBox="-12 0 208 184" width="208" height="184">
           <defs>
             <marker id="a1e" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><path d="M 0 0 L 8 3 L 0 6 z" fill="#C4A000" /></marker>
@@ -90,25 +94,9 @@ function IntroScreen({ onStart, bouncedFrom }) {
           <text x={SE.x + 7}  y={SE.y + 14} fontSize="12" fill="#804080" fontFamily="DM Sans,sans-serif" fontWeight="500">Calm</text>
           <circle cx={CX2} cy={CY2} r="4.5" fill="#FCF0F5" stroke="#d0b8c8" strokeWidth="1.2" />
         </svg>
-      </div>
-
-      <div style={S.introCard}>
-        {[
-          { n: 1, bg: '#FFF0B8', c: '#D88000', title: 'Sad to Excited', body: 'How good or energised are you feeling?' },
-          { n: 2, bg: '#EDE0F4', c: '#804080', title: 'Calm to Tense',  body: 'How settled or on-edge are you feeling?' },
-        ].map(({ n, bg, c, title, body }) => (
-          <div key={n} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-            <div style={{ background: bg, borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontFamily: 'Space Mono,monospace', fontSize: 12, color: c, fontWeight: 700 }}>{n}</div>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: '#1c1c1e', marginBottom: 2 }}>{title}</div>
-              <div style={{ fontSize: 12, color: '#888', lineHeight: 1.5 }}>{body}</div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <button style={S.btnPrimary} onClick={onStart}>Begin →</button>
-    </div>
+        </div>
+      }
+    />
   )
 }
 

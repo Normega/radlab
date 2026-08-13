@@ -20,6 +20,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase as globalSupabase } from '../lib/supabase'
+import GameIntro from './shared/GameIntro'
 
 // ─── CONFIG ──────────────────────────────────────────────────────────────────
 
@@ -540,29 +541,33 @@ export default function PondWatch({
       {/* ── INSTRUCTIONS ── */}
       {phase === PHASE.INSTRUCTIONS && (
         <div style={S.screen}>
-          <div style={S.card}>
-            <p style={S.eyebrow}>Pond Watch</p>
-            <h2 style={S.title}>Watch the pond.<br/>React to ducks.</h2>
-            <div style={S.ruleRow}>
-              <svg width="60" height="60" viewBox="0 0 100 100"><Duck/></svg>
-              <div>
-                <p style={S.ruleHead}>Duck → respond</p>
-                <p style={S.ruleSub}>Press <kbd style={S.kbd}>space</kbd> or tap the button</p>
-              </div>
-            </div>
-            <div style={S.ruleRow}>
-              <svg width="60" height="60" viewBox="0 0 100 100"><Heron/></svg>
-              <svg width="60" height="60" viewBox="0 0 100 100"><Frog/></svg>
-              <div>
-                <p style={S.ruleHead}>Anything else → wait</p>
-                <p style={S.ruleSub}>Heron, frog, fish, or ripple — stay still</p>
-              </div>
-            </div>
-            <p style={S.meta}>{CFG.TRIAL_COUNT} trials · about 5 minutes</p>
-            <button style={S.btnPrimary} onClick={startCountdown}>
-              Start watching
-            </button>
-          </div>
+          <GameIntro
+            maxWidth={460}
+            title={<>Watch the pond.<br />React to ducks.</>}
+            lead={<>One creature means go, everything else means hold.<br />Your brain will try to answer for you.</>}
+            /* The animals ARE the instruction here — a numbered list would make
+               the player learn a name instead of a shape. */
+            steps={[
+              {
+                icon: <svg width="60" height="60" viewBox="0 0 100 100" style={{ flexShrink: 0 }}><Duck /></svg>,
+                title: 'Duck → respond',
+                body: <>Press <kbd style={S.kbd}>space</kbd> or tap the button.</>,
+              },
+              {
+                icon: (
+                  <span style={{ display: 'flex', flexShrink: 0 }}>
+                    <svg width="60" height="60" viewBox="0 0 100 100"><Heron /></svg>
+                    <svg width="60" height="60" viewBox="0 0 100 100"><Frog /></svg>
+                  </span>
+                ),
+                title: 'Anything else → wait',
+                body: 'Heron, frog, fish, or ripple — stay still.',
+              },
+            ]}
+            note={`${CFG.TRIAL_COUNT} trials · about 5 minutes`}
+            cta="Start watching"
+            onStart={startCountdown}
+          />
         </div>
       )}
 

@@ -1,3 +1,12 @@
+import GameIntro from '../../shared/GameIntro'
+
+/**
+ * Farm Joy's intro sits on the farm scene itself rather than the page ground,
+ * so it takes GameIntro's dark tone. The three steps are the game's own
+ * sentence broken apart — it previously ran as one paragraph with no card,
+ * which was the only intro on the platform with no instructions in it.
+ * (Reorganised 2026-08-13; wording is Farm Joy's own, pending Norm's copy pass.)
+ */
 export default function Intro({ onStart }) {
   return (
     <div style={{
@@ -5,38 +14,21 @@ export default function Intro({ onStart }) {
       justifyContent: 'center', height: '100%', padding: '32px 24px',
       textAlign: 'center', gap: 20,
     }}>
-      {/* Soil emoji stand-in until veggie PNGs arrive */}
-      <div style={{ fontSize: 64, lineHeight: 1 }}>🌱</div>
-
-      <div>
-        <p style={{ fontFamily: 'Space Mono,monospace', fontSize: 11, letterSpacing: '0.12em',
-          textTransform: 'uppercase', color: 'var(--tx3)', marginBottom: 8 }}>
-          RADlab · Farm Joy
-        </p>
-        <h1 style={{ fontFamily: 'DM Serif Display,serif', fontSize: 30,
-          color: '#fff', margin: 0, lineHeight: 1.2 }}>
-          What do you want to grow?
-        </h1>
-      </div>
-
-      <p style={{ fontFamily: 'DM Sans,sans-serif', fontSize: 16, color: 'rgba(255,255,255,0.85)',
-        maxWidth: 320, lineHeight: 1.6, margin: 0 }}>
-        Pull plants from the field. Each one reveals a value. Keep what feels
-        right, compost what doesn't. Narrow down to what you most want to
-        cultivate — then harvest.
-      </p>
-
-      <button
-        onClick={onStart}
-        style={{
-          marginTop: 8, padding: '14px 40px',
-          background: 'var(--pk)', color: '#fff', border: 'none',
-          borderRadius: 999, fontSize: 16, fontFamily: 'DM Sans,sans-serif',
-          fontWeight: 600, cursor: 'pointer', letterSpacing: '0.02em',
-        }}
-      >
-        Visit the farm
-      </button>
+      <GameIntro
+        tone="dark"
+        eyebrow="RADlab · Farm Joy"
+        title="What do you want to grow?"
+        lead="Pull plants from the field. Each one reveals a value."
+        /* Soil emoji stand-in until veggie PNGs arrive */
+        visual={<div style={{ fontSize: 64, lineHeight: 1, marginBottom: 20 }}>🌱</div>}
+        steps={[
+          { title: 'Pull a plant', body: 'Every plant in the field hides a value. Pull it up to see which one.' },
+          { title: 'Keep or compost', body: 'Keep what feels right. Compost what doesn’t. There is no wrong answer here.' },
+          { title: 'Narrow it down', body: 'Round by round the field thins, until what’s left is what you most want to cultivate — then harvest.' },
+        ]}
+        cta="Visit the farm"
+        onStart={onStart}
+      />
     </div>
   )
 }

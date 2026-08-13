@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Come, See — sketchbook</title>
+<title>RADlab — prototypes</title>
 <style>
   :root{color-scheme:dark;}
   html,body{margin:0;padding:0;min-height:100%;background:#0b0e18;color:#dde2f0;
@@ -11,6 +11,10 @@
   .wrap{max-width:680px;margin:0 auto;padding:48px 24px 80px;}
   h1{font-weight:normal;font-size:26px;letter-spacing:0.04em;margin:0 0 4px;}
   .sub{color:#8a93b0;font-style:italic;font-size:15px;margin:0 0 40px;}
+  h2{font-weight:normal;font-size:20px;letter-spacing:0.03em;margin:0 0 4px;
+    padding-top:8px;}
+  .rule{border:0;border-top:1px solid rgba(255,255,255,0.09);margin:56px 0 40px;}
+  .secsub{color:#8a93b0;font-style:italic;font-size:14.5px;margin:0 0 28px;line-height:1.5;}
   a.card{display:block;text-decoration:none;color:inherit;
     border:1px solid rgba(255,255,255,0.10);border-radius:12px;
     padding:20px 22px;margin:0 0 18px;transition:border-color 0.25s ease, background 0.25s ease;
@@ -26,8 +30,11 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>Come, See — sketchbook</h1>
-  <p class="sub">Six small experiences, each three to five minutes. Sound on, if you can. Nothing can be done wrong.</p>
+  <h1>RADlab — prototypes</h1>
+  <p class="sub">Work in progress. Nothing here is finished, and nothing here is scored.</p>
+
+  <h2>Come, See — sketchbook</h2>
+  <p class="secsub">Six small experiences, each three to five minutes. Sound on, if you can. Nothing can be done wrong.</p>
 
   <a class="card" href="thaw.html">
     <div class="dyn"><span class="dot" style="background:#9fb6d8"></span>receiving impressions</div>
@@ -72,6 +79,27 @@
     nothing is scored, counted, or displayed. Append <code>?dev</code> for the tuning
     panel (or press <code>t</code>). All copy is placeholder.
   </p>
+
+  <hr class="rule">
+
+  <h2>In development</h2>
+  <p class="secsub">
+    Platform games pulled back off the catalog for more work (2026-08-13). These are
+    built on the site rather than here, so they open in the app and still record what
+    you do &mdash; they are simply not listed on <code>/games</code> until they are ready.
+  </p>
+
+  <a class="card" href="/games/owl-barn">
+    <div class="dyn"><span class="dot" style="background:#c9b48a"></span>hearing · rhythm · strategy</div>
+    <div class="name">Owl Barn</div>
+    <p class="inv">Cross a dark barn while owls hoot overhead. Read the silence &mdash; 3 taps or 8.</p>
+  </a>
+
+  <a class="card" href="/games/breath-guardian">
+    <div class="dyn"><span class="dot" style="background:#8fb8d8"></span>breath regulation · boundaries</div>
+    <div class="name">Breath Guardian</div>
+    <p class="inv">Hold to breathe in and raise the shield; release to breathe out and welcome the world through.</p>
+  </a>
 </div>
 </body>
 </html>

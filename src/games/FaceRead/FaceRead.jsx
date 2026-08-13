@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useAvatarConfig } from '../../hooks/useAvatarConfig'
 import { Link } from 'react-router-dom'
 import Nav from '../../components/Nav'
+import GameIntro from '../shared/GameIntro'
 import { supabase } from '../../lib/supabase'
 import { dbWrite } from '../../lib/dbWrite'
 import { EMOTIONS } from '../StillWater/constants'
@@ -103,49 +104,34 @@ function IntroScreen({ onStart, skinColor, eyeColor, hairStyle = 'none', hairCol
     { eid: 4, zone: 0 },  // Still mild
   ]
   return (
-    <div style={{ maxWidth: 380, textAlign: 'center', padding: '0 16px' }}>
-      <p style={S.eyebrow}>RADlab · Come, See</p>
-      <h1 style={S.introH1}>Read the face.</h1>
-      <p style={S.introSub}>
-        A face will shift into an expression.<br />
-        Match it on the wheel — emotion and intensity.
-      </p>
-
-      <div style={{ display: 'flex', justifyContent: 'center', gap: 24, marginBottom: 24 }}>
-        {demos.map(({ eid, zone }) => {
-          const em = EMOTIONS.find(e => e.id === eid)
-          return (
-            <div key={eid} style={{ textAlign: 'center' }}>
-              <AURenderer
-                size={80}
-                position={EXPRESSION_TABLE[em.name]?.[ZONE_NAMES[zone]] ?? NEUTRAL_POS}
-                glowColor={em.outer}
-                skinColor={skinColor} eyeColor={eyeColor}
-                hairStyle={hairStyle} hairColor={hairColor}
-              />
-              <div style={{ fontFamily: 'DM Sans,sans-serif', fontSize: 12, color: '#abadb0', marginTop: 4 }}>{em.name}</div>
-            </div>
-          )
-        })}
-      </div>
-
-      <div style={S.introCard}>
-        {[
-          { n: 1, title: 'Watch the face', body: 'It animates from neutral to an emotion over about a second.' },
-          { n: 2, title: 'Pick the match', body: 'Tap the wheel sector — ring position sets intensity (inner = mild, outer = strong).' },
-        ].map(({ n, title, body }) => (
-          <div key={n} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-            <div style={{ background: '#F4E0F0', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontFamily: 'Space Mono,monospace', fontSize: 12, color: '#f068a4', fontWeight: 700 }}>{n}</div>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: '#1c1c1e', marginBottom: 2 }}>{title}</div>
-              <div style={{ fontSize: 12, color: '#888', lineHeight: 1.5 }}>{body}</div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <button style={S.btnPrimary} onClick={onStart}>Begin →</button>
-    </div>
+    <GameIntro
+      title="Read the face."
+      lead={<>A face will shift into an expression.<br />Match it on the wheel — emotion and intensity.</>}
+      steps={[
+        { title: 'Watch the face', body: 'It animates from neutral to an emotion over about a second.' },
+        { title: 'Pick the match', body: 'Tap the wheel sector — ring position sets intensity (inner = mild, outer = strong).' },
+      ]}
+      onStart={onStart}
+      visual={
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 24, marginBottom: 24 }}>
+          {demos.map(({ eid, zone }) => {
+            const em = EMOTIONS.find(e => e.id === eid)
+            return (
+              <div key={eid} style={{ textAlign: 'center' }}>
+                <AURenderer
+                  size={80}
+                  position={EXPRESSION_TABLE[em.name]?.[ZONE_NAMES[zone]] ?? NEUTRAL_POS}
+                  glowColor={em.outer}
+                  skinColor={skinColor} eyeColor={eyeColor}
+                  hairStyle={hairStyle} hairColor={hairColor}
+                />
+                <div style={{ fontFamily: '"DM Sans", system-ui, sans-serif', fontSize: 12, color: 'var(--gy)', marginTop: 4 }}>{em.name}</div>
+              </div>
+            )
+          })}
+        </div>
+      }
+    />
   )
 }
 

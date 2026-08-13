@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import Nav from '../../components/Nav'
+import GameIntro from '../shared/GameIntro'
 import { supabase } from '../../lib/supabase'
 import { dbWrite } from '../../lib/dbWrite'
 import { EMOTIONS } from '../StillWater/constants'
@@ -151,32 +152,16 @@ function ProgressPips({ current, total }) {
 
 function IntroScreen({ onStart }) {
   return (
-    <div style={{ maxWidth: 380, textAlign: 'center', padding: '0 16px' }}>
-      <p style={S.eyebrow}>RADlab · Come, See</p>
-      <h1 style={S.h1}>Drift.</h1>
-      <p style={S.sub}>
-        Time dilates with emotional state.<br />
-        This measures how you feel time — right now.
-      </p>
-
-      <div style={S.card}>
-        {[
-          { n: 1, title: 'Watch and listen', body: 'A soft tone marks the start. A face breathes while you wait. A second tone marks the end.' },
-          { n: 2, title: 'Reproduce it', body: 'Press once to start. Press again when you feel the same duration has passed. Don\'t count seconds.' },
-          { n: 3, title: 'Trust your felt sense', body: 'Your ratio — reproduced ÷ actual — reflects where your nervous system is right now.' },
-        ].map(({ n, title, body }) => (
-          <div key={n} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-            <div style={{ background: '#F4E0F0', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontFamily: 'Space Mono,monospace', fontSize: 12, color: '#f068a4', fontWeight: 700 }}>{n}</div>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: '#1c1c1e', marginBottom: 2 }}>{title}</div>
-              <div style={{ fontSize: 12, color: '#888', lineHeight: 1.5 }}>{body}</div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <button style={S.btnPrimary} onClick={onStart}>Begin →</button>
-    </div>
+    <GameIntro
+      title="Drift."
+      lead={<>Time dilates with emotional state.<br />This measures how you feel time — right now.</>}
+      steps={[
+        { title: 'Watch and listen', body: 'A soft tone marks the start. A face breathes while you wait. A second tone marks the end.' },
+        { title: 'Reproduce it', body: 'Press once to start. Press again when you feel the same duration has passed. Don\'t count seconds.' },
+        { title: 'Trust your felt sense', body: 'Your ratio — reproduced ÷ actual — reflects where your nervous system is right now.' },
+      ]}
+      onStart={onStart}
+    />
   )
 }
 

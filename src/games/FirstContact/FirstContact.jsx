@@ -1,6 +1,7 @@
 ﻿import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Nav from '../../components/Nav';
+import GameIntro from '../shared/GameIntro';
 import { supabase, saveFirstContactSession } from '../../lib/supabase';
 import { useAvatarConfig } from '../../hooks/useAvatarConfig';
 import SyncAura from '../../components/SyncAura';
@@ -218,20 +219,29 @@ export default function FirstContact({ session, onComplete }) {
 
       <div style={S.wrap}>
 
-        {/* Redirect banner when UnlockGuard bounced the user here */}
-        {bouncedFrom && phase === 'INTRO' && (
-          <p style={S.redirectNote}>
-            Complete Contact before beginning {bouncedFrom.title}.
-          </p>
-        )}
-
-        {/* INTRO: narrative copy */}
+        {/*
+          INTRO header only — deliberately no step card and no CTA here.
+          The avatar below stays mounted from INTRO through SYNCING (its
+          animation and controlRef reset if it remounts), so this screen cannot
+          be wrapped whole in GameIntro the way the others are; the Begin button
+          stays where it is, under the Ripple. Contact also has no instructions
+          to list — you begin breathing and it answers — so the step card is
+          genuinely absent here rather than missing. The nbsp holds the line's
+          height while the profile loads, so the avatar does not jump.
+        */}
         {phase === 'INTRO' && (
-          <p style={S.introText}>
-            {profile === undefined
+          <GameIntro
+            title="Contact."
+            lead={profile === undefined
               ? ' '
               : isReturning ? COPY.intro_returning : COPY.intro_first}
-          </p>
+            ctaHidden
+            banner={bouncedFrom && (
+              <p style={S.redirectNote}>
+                Complete Contact before beginning {bouncedFrom.title}.
+              </p>
+            )}
+          />
         )}
 
         {/* Avatar — always visible across all phases */}

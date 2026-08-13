@@ -80,13 +80,8 @@ export default function Dashboard({ session }) {
             <FarmJoyCard userId={user?.id} />
           </div>
           <ContactCard userId={user?.id} />
-          <GameCard
-            title="Owl Barn"
-            tag="Auditory detection · Timing"
-            desc="A dark barn fills with sounds. Read the hoots, pace your steps, and make it to the other side without getting swooped."
-            status="Play now →"
-            to="/games/owl-barn"
-          />
+          {/* Owl Barn's card was here; pulled 2026-08-13 when it went back to
+              in-development (see src/data/games.js). The route still works. */}
         </div>
 
         {/* Stats */}

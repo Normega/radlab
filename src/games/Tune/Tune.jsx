@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import Nav from '../../components/Nav'
+import GameIntro from '../shared/GameIntro'
 import { supabase } from '../../lib/supabase'
 import { dbWrite } from '../../lib/dbWrite'
 import {
@@ -59,32 +60,16 @@ function fmtDuration(ms) {
 
 function IntroScreen({ onStart }) {
   return (
-    <div style={{ maxWidth: 380, textAlign: 'center', padding: '0 16px' }}>
-      <p style={S.eyebrow}>RADlab · Come, See</p>
-      <h1 style={S.h1}>Tune.</h1>
-      <p style={S.sub}>
-        A world of sound waits in a soft haze.<br />
-        This is a practice in letting attention settle — listening, not searching.
-      </p>
-
-      <div style={S.card}>
-        {[
-          { n: 1, title: 'Rest, don’t hunt', body: 'Let your cursor settle near a glowing point — or rest a finger on the screen. Held still, that sound clarifies and steps forward.' },
-          { n: 2, title: 'The rest softens back', body: 'As one voice comes clear, the others recede around it. Drift on and the whole mix returns.' },
-          { n: 3, title: 'Nothing to complete', body: 'Wander between scenes if you like. Stay as long as you please — a quiet finish button waits in the corner. Headphones help.' },
-        ].map(({ n, title, body }) => (
-          <div key={n} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-            <div style={{ background: '#F4E0F0', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontFamily: 'Space Mono,monospace', fontSize: 12, color: '#f068a4', fontWeight: 700 }}>{n}</div>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: '#1c1c1e', marginBottom: 2 }}>{title}</div>
-              <div style={{ fontSize: 12, color: '#888', lineHeight: 1.5 }}>{body}</div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <button style={S.btnPrimary} onClick={onStart}>Begin →</button>
-    </div>
+    <GameIntro
+      title="Tune."
+      lead={<>A world of sound waits in a soft haze.<br />This is a practice in letting attention settle — listening, not searching.</>}
+      steps={[
+        { title: 'Rest, don’t hunt', body: 'Let your cursor settle near a glowing point — or rest a finger on the screen. Held still, that sound clarifies and steps forward.' },
+        { title: 'The rest softens back', body: 'As one voice comes clear, the others recede around it. Drift on and the whole mix returns.' },
+        { title: 'Nothing to complete', body: 'Wander between scenes if you like. Stay as long as you please — a quiet finish button waits in the corner. Headphones help.' },
+      ]}
+      onStart={onStart}
+    />
   )
 }
 

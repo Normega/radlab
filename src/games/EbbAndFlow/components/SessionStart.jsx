@@ -1,5 +1,6 @@
 ﻿import { GAME_MODES } from '../constants';
 import ModeSelector from './ModeSelector';
+import GameIntro from '../../shared/GameIntro';
 
 // ── SessionStart ──────────────────────────────────────────────────────────
 // Props:
@@ -14,59 +15,53 @@ export default function SessionStart({ totalTrials = 0, totalScore = 0, sessionS
   const mode = GAME_MODES[selectedMode];
 
   return (
-    <div style={S.wrap}>
-      {/* Header */}
-      <p style={S.eyebrow}>Ebb &amp; Flow</p>
-      <h1 style={S.title}>Breathe in.<br />Notice the shift.</h1>
-      <p style={S.sub}>
-        Follow your Ripple's breath. When the rhythm changes, tell us what you sensed.
-        The subtler the detection, the more points you earn.
-      </p>
-
-      {/* Stats row */}
-      <div style={S.statsRow}>
-        <div style={S.stat}>
-          <span style={S.statNum}>{totalTrials}</span>
-          <span style={S.statLabel}>trials</span>
-        </div>
-        <div style={S.stat}>
-          <span style={S.statNum}>{totalScore}</span>
-          <span style={S.statLabel}>total pts</span>
-        </div>
-        {sessionScore > 0 && (
-          <div style={S.stat}>
-            <span style={{ ...S.statNum, color: 'var(--pk)' }}>+{sessionScore}</span>
-            <span style={S.statLabel}>last session</span>
+    <GameIntro
+      maxWidth={440}
+      title={<>Breathe in.<br />Notice the shift.</>}
+      lead={<>Follow your Ripple&rsquo;s breath. When the rhythm changes, tell us what you sensed.<br />The subtler the detection, the more points you earn.</>}
+      /* Ebb &amp; Flow is the one game here that carries progress into its own
+         intro — the run count and score are what unlock the subtler modes, so
+         they belong above the instructions rather than after them. */
+      visual={
+        <>
+          <div style={S.statsRow}>
+            <div style={S.stat}>
+              <span style={S.statNum}>{totalTrials}</span>
+              <span style={S.statLabel}>trials</span>
+            </div>
+            <div style={S.stat}>
+              <span style={S.statNum}>{totalScore}</span>
+              <span style={S.statLabel}>total pts</span>
+            </div>
+            {sessionScore > 0 && (
+              <div style={S.stat}>
+                <span style={{ ...S.statNum, color: 'var(--pk)' }}>+{sessionScore}</span>
+                <span style={S.statLabel}>last session</span>
+              </div>
+            )}
           </div>
-        )}
-      </div>
 
-      {/* Mode selector */}
-      <ModeSelector
-        selectedMode={selectedMode}
-        totalTrials={totalTrials}
-        onSelect={onSelectMode}
-      />
-
-      {/* Instructions summary */}
-      <div style={S.instructCard}>
-        <p style={S.instructTitle}>How it works</p>
-        <ol style={S.steps}>
-          <li>Your Ripple will breathe — follow its rhythm. Let your own breath sync up.</li>
-          <li>Hold the attunement button while you inhale. Release when you exhale.</li>
-          <li>On some trials the pace will shift. After each 4-breath sequence, tell us what you noticed.</li>
-          <li>Rate your confidence and how activated you feel.</li>
-        </ol>
-        <p style={S.modeNote}>
+          <ModeSelector
+            selectedMode={selectedMode}
+            totalTrials={totalTrials}
+            onSelect={onSelectMode}
+          />
+        </>
+      }
+      steps={[
+        { title: 'Follow the rhythm', body: 'Your Ripple will breathe — let your own breath sync up with it.' },
+        { title: 'Hold on the inhale', body: 'Hold the attunement button while you breathe in. Release when you breathe out.' },
+        { title: 'Say what shifted', body: 'On some trials the pace changes. After each 4-breath sequence, tell us what you noticed — then rate your confidence and how activated you feel.' },
+      ]}
+      note={
+        <>
           <strong>{mode.label} mode</strong> — animation scale {Math.round(mode.scaleAmplitude * 100)}%.
           {selectedMode !== 'empath' && ' Subtler modes unlock as you practice.'}
-        </p>
-      </div>
-
-      <button style={S.beginBtn} onClick={onBegin}>
-        Begin session →
-      </button>
-    </div>
+        </>
+      }
+      cta="Begin session →"
+      onStart={onBegin}
+    />
   );
 }
 

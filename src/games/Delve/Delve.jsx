@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import Nav from '../../components/Nav'
+import GameIntro from '../shared/GameIntro'
 import { supabase } from '../../lib/supabase'
 import { dbWrite } from '../../lib/dbWrite'
 import defaultBg from './assets/default-background.jpg'
@@ -105,32 +106,16 @@ function fmtDuration(ms) {
 
 function IntroScreen({ onStart }) {
   return (
-    <div style={{ maxWidth: 380, textAlign: 'center', padding: '0 16px' }}>
-      <p style={S.eyebrow}>RADlab · Come, See</p>
-      <h1 style={S.h1}>Delve.</h1>
-      <p style={S.sub}>
-        An image waits behind haze.<br />
-        This is a practice in letting attention settle — not in finding anything.
-      </p>
-
-      <div style={S.card}>
-        {[
-          { n: 1, title: 'Rest, don’t search', body: 'Let your cursor settle somewhere — or rest a finger on the screen. Held still, that spot slowly comes clear.' },
-          { n: 2, title: 'Movement reveals nothing', body: 'Quick scanning keeps the haze in place. There is no correct place to look.' },
-          { n: 3, title: 'Nothing to complete', body: 'What you’ve seen drifts back to haze after a while. Stay as long as you like — a quiet finish button waits in the corner.' },
-        ].map(({ n, title, body }) => (
-          <div key={n} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-            <div style={{ background: '#F4E0F0', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontFamily: 'Space Mono,monospace', fontSize: 12, color: '#f068a4', fontWeight: 700 }}>{n}</div>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: '#1c1c1e', marginBottom: 2 }}>{title}</div>
-              <div style={{ fontSize: 12, color: '#888', lineHeight: 1.5 }}>{body}</div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <button style={S.btnPrimary} onClick={onStart}>Begin →</button>
-    </div>
+    <GameIntro
+      title="Delve."
+      lead={<>An image waits behind haze.<br />This is a practice in letting attention settle — not in finding anything.</>}
+      steps={[
+        { title: 'Rest, don’t search', body: 'Let your cursor settle somewhere — or rest a finger on the screen. Held still, that spot slowly comes clear.' },
+        { title: 'Movement reveals nothing', body: 'Quick scanning keeps the haze in place. There is no correct place to look.' },
+        { title: 'Nothing to complete', body: 'What you’ve seen drifts back to haze after a while. Stay as long as you like — a quiet finish button waits in the corner.' },
+      ]}
+      onStart={onStart}
+    />
   )
 }
 

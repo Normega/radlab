@@ -13,16 +13,22 @@
  *   face_read        TRIAL_COUNT = 10                       (FaceRead.jsx:11)
  *   first_contact    MIN_CYCLES_BEFORE_COMPLETE = 4 × 4 s   (FirstContact/constants.js)
  *   ebb_flow         MIN_TRIALS_PER_SESSION = 10, 4 breaths × 4 s + 0.8 s ITI
- *   breath_guardian  FREE 30 s + WAVE 75 s + SELF 60 s = 165 s
  *   drift            TARGETS_MS = 6 intervals summing 60 s + reproductions
  *   pond_watch       TRIAL_COUNT = 60 × (~2 s ITI + 0.8 s + 0.65 s)
- *   owl_barn         player-paced crossing, no fixed trial count
  *   farm_joy         3 rounds, 12 required selections of 24 veggies
  *   delve / tune     open-ended by design (no win state, user ends it)
  *   alongside        open-ended; its arc runs ~5 min but the player ends it
  *
  * `trials: null` renders as an em dash, not "N/A" — a card should not say
  * nothing twice.
+ *
+ * NOT IN THIS CATALOG (Norm, 2026-08-13): **Owl Barn** and **Breath Guardian**
+ * were pulled back to in-development — they need more work before participants
+ * meet them. Their routes in `App.jsx` are still live and their tables still
+ * collect data; they are simply not listed here, so they appear on neither
+ * `/games` nor the About-page carousel. They are linked from the "In
+ * development" section of `/prototypes/` and from `/admin/games`. Re-adding an
+ * entry here is all it takes to put either back on the catalog.
  */
 
 export const CATEGORIES = [
@@ -94,18 +100,6 @@ export const GAMES = [
     unlock: { requires: 'first_contact', label: 'Contact' },
   },
   {
-    slug: 'breath_guardian',
-    title: 'Breath Guardian',
-    to: '/games/breath-guardian',
-    badge: 'Breath regulation · Boundaries',
-    desc: 'Hold to breathe in and raise the shield; release to breathe out and welcome the world through.',
-    category: 'breath',
-    bucket: 'medium',
-    duration: '~3 min',
-    trials: null,
-    unlock: { requires: 'first_contact', label: 'Contact' },
-  },
-  {
     slug: 'drift',
     title: 'Drift',
     to: '/games/drift',
@@ -161,17 +155,6 @@ export const GAMES = [
     trials: null,
   },
   {
-    slug: 'owl_barn',
-    title: 'Owl Barn',
-    to: '/games/owl-barn',
-    badge: 'Hearing · Rhythm · Strategy',
-    desc: 'Cross a dark barn while owls hoot overhead. Read the silence — 3 taps or 8.',
-    category: 'attention',
-    bucket: 'medium',
-    duration: '~3 min',
-    trials: null,
-  },
-  {
     slug: 'farm_joy',
     title: 'Farm Joy',
     to: '/games/farm-joy',
@@ -184,9 +167,25 @@ export const GAMES = [
   },
 ]
 
-/** Look a game up by its slug (`ebb_flow`). */
+/**
+ * Live routes deliberately absent from GAMES (see the header note) — in
+ * development, listed on `/prototypes/` and `/admin/games` only.
+ *
+ * They are still named here because the lookups below feed the unlock-bounce
+ * banner: Breath Guardian sits behind Contact, so a participant who opens it
+ * early gets redirected, and "Complete Contact before beginning ___" needs a
+ * title to fill in. Without this the banner silently renders nothing.
+ */
+export const DEV_GAMES = [
+  { slug: 'owl_barn',        title: 'Owl Barn',        to: '/games/owl-barn',        inDevelopment: true },
+  { slug: 'breath_guardian', title: 'Breath Guardian', to: '/games/breath-guardian', inDevelopment: true },
+]
+
+/** Look a game up by its slug (`ebb_flow`). Catalog first, then in-development. */
 export function gameBySlug(slug) {
-  return GAMES.find(g => g.slug === slug) ?? null
+  return GAMES.find(g => g.slug === slug)
+    ?? DEV_GAMES.find(g => g.slug === slug)
+    ?? null
 }
 
 /**
@@ -195,7 +194,10 @@ export function gameBySlug(slug) {
  */
 export function gameByRouteSlug(routeSlug) {
   if (!routeSlug) return null
-  return GAMES.find(g => g.to === `/games/${routeSlug}`) ?? null
+  const path = `/games/${routeSlug}`
+  return GAMES.find(g => g.to === path)
+    ?? DEV_GAMES.find(g => g.to === path)
+    ?? null
 }
 
 /**
