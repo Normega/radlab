@@ -33,7 +33,8 @@ export default function FieldGuideHome() {
       courseClient.from('wiki_pages').select('id', { count: 'exact', head: true }),
       courseClient.from('corrections_feed').select('version_id', { count: 'exact', head: true })
         .gt('created_at', new Date(Date.now() - 7 * 86400000).toISOString()),
-    ]).then(([subs, proposals, gapFlags, expiring, published, pages, corrections]) => {
+      courseClient.from('page_reviews').select('page_id'),
+    ]).then(([subs, proposals, gapFlags, expiring, published, pages, corrections, reviews]) => {
       if (!live) return
       const routes = {}
       for (const r of subs.data ?? []) routes[r.route] = (routes[r.route] ?? 0) + 1
@@ -46,6 +47,7 @@ export default function FieldGuideHome() {
         published: published.count ?? 0,
         pages: pages.count ?? 0,
         corrections7d: corrections.count ?? 0,
+        reviewed: new Set((reviews.data ?? []).map(r => r.page_id)).size,
       })
     })
     return () => { live = false }
@@ -68,6 +70,8 @@ export default function FieldGuideHome() {
                 body="262 pages: disorders, concepts, treatments, debates — every claim carries its sources." />
           <Card to="/academic/fieldguide/gaps" title="Research gaps"
                 body="Where the guide names its own missing evidence. Claim a gap, find a source, report what it found — and what it cannot tell us." />
+          <Card to="/academic/fieldguide/whats-new" title="What we've learned"
+                body="The guide grows as the class fills it. Every accepted contribution since September, newest first — and whether it's examinable yet." />
         </div>
 
         {isStaff && (
@@ -89,6 +93,7 @@ export default function FieldGuideHome() {
             {c && (
               <p style={S.statusLine}>
                 {c.published} of {c.pages} pages published
+                {' · '}{c.reviewed} reviewed
                 {' · '}{c.gapFlags === 0 ? 'gap triage clear' : `${c.gapFlags} gap flags to adjudicate`}
                 {' · '}{c.expiring === 0 ? 'no claims expiring soon' : `${c.expiring} claim${c.expiring === 1 ? '' : 's'} expiring within 3 days`}
               </p>

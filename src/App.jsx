@@ -105,6 +105,7 @@ const WikiPage             = lazy(() => import('./academic/fieldguide/wiki/WikiP
 const GapBrowser           = lazy(() => import('./academic/fieldguide/GapBrowser'))
 const FieldGuideHome       = lazy(() => import('./academic/fieldguide/FieldGuideHome'))
 const CorrectionsFeed      = lazy(() => import('./academic/fieldguide/CorrectionsFeed'))
+const WhatsNew             = lazy(() => import('./academic/fieldguide/WhatsNew'))
 
 // Workbench — shared Claude Code sessions. Its own partition again: own guards
 // (WorkbenchRoute / WorkbenchAdminRoute), own chrome (plain Nav, not AdminLayout),
@@ -624,6 +625,9 @@ export default function App() {
                   Member-level on purpose — the board is part of reading the
                   guide, not part of submitting to it. */}
               <Route path="/academic/fieldguide/gaps" element={<GapBrowser />} />
+              {/* The class changelog: what the guide has learned since term
+                  start, with the examinable/reference distinction per entry. */}
+              <Route path="/academic/fieldguide/whats-new" element={<WhatsNew />} />
             </Route>
           </Route>
 

@@ -10,6 +10,14 @@ import { chapterIcon } from './chapterIcons'
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
 
+// Same palette as GapBrowser's DIFF map, so a gap reads as the same object in
+// the reader and on the board.
+const DIFF = {
+  green: { colour: '#2e7d32', label: 'green — good first contribution' },
+  amber: { colour: '#b8860b', label: 'amber — staff-verified evidence' },
+  red:   { colour: '#c0392b', label: 'red — staff only' },
+}
+
 // One shared empty set, so "nothing is folded" is referentially stable and
 // doesn't re-run the memos that read it.
 const EMPTY = new Set()
@@ -38,6 +46,14 @@ export default function WikiPage() {
   const [outbound, setOutbound] = useState([])
   const [provenance, setProvenance] = useState(null)
   const [catalog, setCatalog] = useState(null)
+  // Open gaps on this page, drawn from page_gaps rather than parsed from the
+  // body — the catalogue is the source of truth, and RLS already decides who
+  // sees them (members: published pages only; staff: everything).
+  const [gaps, setGaps] = useState([])
+  // Latest review stamp. Staff-only by RLS — a member's query returns empty
+  // and the bar simply doesn't render, same pattern as the staff tiles on the
+  // home page.
+  const [review, setReview] = useState(null)
 
   // Staff editing
   const [editing, setEditing] = useState(false)
@@ -73,7 +89,7 @@ export default function WikiPage() {
       // The link-resolution set is whatever this reader can see, which is the
       // honest basis for colouring a wikilink: a link to a page that exists
       // but is still a draft is, for a student, a link to nothing readable.
-      const [{ data: all }, { data: back }, { data: out }, { data: prov }, { data: cat }] = await Promise.all([
+      const [{ data: all }, { data: back }, { data: out }, { data: prov }, { data: cat }, { data: gp }, { data: rev }] = await Promise.all([
         courseClient.from('wiki_pages').select('slug, title, type, status').eq('course_id', courseId),
         courseClient.from('wiki_links')
           .select('id, source:wiki_pages!wiki_links_source_page_id_fkey!inner(slug, title, type, status)')
@@ -84,6 +100,12 @@ export default function WikiPage() {
         courseClient.from('disorder_criteria_links')
           .select('criteria_url, dsm_chapter, dsm_chapter_title, tier, lecture')
           .eq('course_id', courseId).eq('slug', slug).maybeSingle(),
+        courseClient.from('page_gaps')
+          .select('id, kind, section, ask, difficulty, capacity, status')
+          .eq('page_id', row.id).eq('status', 'open'),
+        courseClient.from('page_reviews')
+          .select('version, verdict, reviewed_at')
+          .eq('page_id', row.id).order('reviewed_at', { ascending: false }).limit(1).maybeSingle(),
       ])
       if (cancelled) return
       setPages(new Map((all ?? []).map(p => [p.slug, p])))
@@ -92,6 +114,8 @@ export default function WikiPage() {
       setOutbound(out ?? [])
       setProvenance(prov ?? null)
       setCatalog(cat ?? null)
+      setGaps(gp ?? [])
+      setReview(rev ?? null)
     })()
 
     return () => { cancelled = true }
@@ -138,6 +162,55 @@ export default function WikiPage() {
     }
     return m
   }, [sections])
+
+  // Gaps grouped by the `##` section that anchors them. A gap whose section
+  // doesn't match any current heading id (renamed heading, or no anchor at
+  // all) falls through to the page-level list rather than vanishing — an ask
+  // that loses its anchor is still an ask.
+  const { gapsBySection, unanchoredGaps } = useMemo(() => {
+    const ids = new Set(sections.map(s => s.id).filter(Boolean))
+    const by = new Map()
+    const loose = []
+    for (const g of gaps) {
+      if (g.section && ids.has(g.section)) {
+        if (!by.has(g.section)) by.set(g.section, [])
+        by.get(g.section).push(g)
+      } else loose.push(g)
+    }
+    return { gapsBySection: by, unanchoredGaps: loose }
+  }, [gaps, sections])
+
+  // The review stamp (Phase D). One call, three consequences: coverage is
+  // recorded, the current version becomes item-eligible (§39.12.8), and the
+  // page's accepted changes show as examinable in What's new. The bar states
+  // the middle one because it is the consequence with stakes.
+  const [stampNote, setStampNote] = useState('')
+  const [stamping, setStamping] = useState(false)
+  const stamp = async (verdict) => {
+    setStamping(true)
+    const { error } = await courseClient.rpc('stamp_page', {
+      p_page_id: page.id, p_verdict: verdict, p_note: stampNote || null,
+    })
+    setStamping(false)
+    if (error) return setSaveNotice(error.message)
+    setStampNote('')
+    setSaveNotice(verdict === 'clear'
+      ? `Stamped clear at v${page.current_version} — this version is now item-eligible.`
+      : `Stamped needs-work at v${page.current_version}.`)
+    setReloadKey(k => k + 1)
+  }
+
+  // Flag-from-reader (Phase D): a staff observation becomes a page_gaps row,
+  // never a prose edit — no flag passes through provenance. The RPC owns the
+  // ask_hash convention so a reworded duplicate still dedups.
+  const flagGap = async (section, ask, difficulty) => {
+    const { error } = await courseClient.rpc('flag_gap', {
+      p_page_id: page.id, p_section: section, p_ask: ask, p_difficulty: difficulty,
+    })
+    if (error) return error.message
+    setReloadKey(k => k + 1)
+    return null
+  }
 
   // Collapsed by id, not by index: an edit that adds a section shouldn't fold a
   // different one. Empty means everything is open, which is the default — a
@@ -322,6 +395,35 @@ export default function WikiPage() {
         </section>
       )}
 
+      {/* The review stamp bar. Reading a page and stamping it are one motion —
+          this is what turns Norm's risk-ordered pre-publish read from "make a
+          list" into "flag as you go". Members never see it: page_reviews is
+          staff-only under RLS, so `review` stays null for them and isStaff
+          gates the render anyway. */}
+      {isStaff && !editing && (
+        <div style={S.stampBar}>
+          <span style={S.stampState}>
+            {review
+              ? review.version < page.current_version
+                ? <>stamped <b>{review.verdict}</b> at v{review.version} — <b style={{ color: 'var(--pk)' }}>stale</b>, page is now v{page.current_version}</>
+                : <>stamped <b>{review.verdict}</b> at v{review.version} · {new Date(review.reviewed_at).toLocaleDateString()}</>
+              : 'not yet reviewed'}
+          </span>
+          <input
+            style={S.stampNote}
+            placeholder="Stamp note (optional for clear, say what for needs-work)"
+            value={stampNote}
+            onChange={e => setStampNote(e.target.value)}
+          />
+          <button style={S.stampBtn} disabled={stamping} onClick={() => stamp('clear')}>
+            {stamping ? '…' : `Stamp clear · v${page.current_version}`}
+          </button>
+          <button style={S.stampBtnOff} disabled={stamping} onClick={() => stamp('needs_work')}>
+            Needs work
+          </button>
+        </div>
+      )}
+
       {/* Staff see drafts; the badge is there so nobody reviews a page
           believing students are already reading it. */}
       {page.status !== 'published' && (
@@ -421,24 +523,41 @@ export default function WikiPage() {
                     starts open, so this only costs what the reader chose. */}
                 <div id={`section-body-${s.id}`} hidden={folded}>
                   {!folded && (
-                    <WikiMarkdown content={s.markdown} pages={pages}
-                                  lineOffset={s.startLine - 1} headingIds={headingIds} />
+                    <>
+                      <WikiMarkdown content={s.markdown} pages={pages}
+                                    lineOffset={s.startLine - 1} headingIds={headingIds} />
+                      <GapList gaps={gapsBySection.get(s.id)} section={s.id}
+                               isStaff={isStaff} onFlag={flagGap} />
+                    </>
                   )}
                 </div>
               </section>
             )
           })}
 
-          {/* Self-declared gaps. Shown to everyone deliberately: for a student
-              this is the assignment list, and a wiki that says what it doesn't
-              know teaches something a confident one doesn't. */}
-          {page.needs?.length > 0 && (
+          {/* Page-level gaps: asks with no section anchor, or whose heading was
+              renamed out from under them. Shown to everyone deliberately — for
+              a student this is the assignment list, and a wiki that says what
+              it doesn't know teaches something a confident one doesn't. The
+              per-section asks render inline above; this box carries the rest,
+              plus the flag control for a page-wide observation. */}
+          {(unanchoredGaps.length > 0 || isStaff) && (
             <section style={S.needsBox}>
               <h2 style={S.sectionH}>What this page still needs</h2>
-              <p style={S.sub}>
-                Sections this page declares it can't yet support from its sources:{' '}
-                <b>{page.needs.join(', ')}</b>.
-              </p>
+              {gaps.length > 0 && (
+                <p style={S.sub}>
+                  {gaps.length} open ask{gaps.length === 1 ? '' : 's'} on this page
+                  {gapsBySection.size > 0 && ' — most shown inline at their sections'}
+                  . <Link to="/academic/fieldguide/gaps" style={S.link}>Claim one on the gap board →</Link>
+                </p>
+              )}
+              <GapList gaps={unanchoredGaps} section={null} isStaff={isStaff} onFlag={flagGap} />
+              {gaps.length === 0 && page.needs?.length > 0 && (
+                <p style={S.sub}>
+                  Sections this page declares it can't yet support from its sources:{' '}
+                  <b>{page.needs.join(', ')}</b>.
+                </p>
+              )}
             </section>
           )}
 
@@ -528,6 +647,97 @@ function relatedSlugs(meta) {
   return out
 }
 
+// The inline gap list (Phase D). Renders under a section's prose: each open
+// ask as a coloured row, plus the staff flag control. For a non-staff reader
+// a gapless section renders nothing at all — most sections are fine, and
+// saying so everywhere would drown the ones that aren't. Staff always get
+// the flag control: the whole point of flag-from-reader is that the
+// observation is made where it happens, mid-read.
+function GapList({ gaps, section, isStaff, onFlag }) {
+  const [open, setOpen] = useState(false)
+  const [ask, setAsk] = useState('')
+  const [difficulty, setDifficulty] = useState('amber')
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState(null)
+
+  const rows = gaps ?? []
+  if (rows.length === 0 && !isStaff) return null
+
+  const submit = async () => {
+    setBusy(true)
+    setErr(null)
+    const message = await onFlag(section, ask, difficulty)
+    setBusy(false)
+    if (message) return setErr(message)
+    setAsk('')
+    setOpen(false)
+  }
+
+  return (
+    <div style={G.wrap}>
+      {rows.map(g => {
+        const d = DIFF[g.difficulty] ?? DIFF.amber
+        return (
+          <div key={g.id} style={G.row}>
+            <span aria-hidden="true" style={{ ...G.dot, background: d.colour }} />
+            <span style={{ ...G.rowText, opacity: g.difficulty === 'red' ? 0.65 : 1 }}>
+              <span style={{ ...G.diffTag, color: d.colour }}>{d.label}</span>
+              {' '}{g.ask}
+            </span>
+          </div>
+        )
+      })}
+      {isStaff && !open && (
+        <button style={G.flagBtn} onClick={() => setOpen(true)}>
+          + flag a gap{section ? ' in this section' : ''}
+        </button>
+      )}
+      {isStaff && open && (
+        <div style={G.form}>
+          <textarea
+            style={G.askInput}
+            placeholder="What is missing? Written as an ask a student (or future staff) can act on — it lands on the gap board verbatim."
+            value={ask}
+            onChange={e => setAsk(e.target.value)}
+          />
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            <select style={G.diffSelect} value={difficulty} onChange={e => setDifficulty(e.target.value)}>
+              <option value="green">green — lookup, students can own it (2 claims)</option>
+              <option value="amber">amber — needs judgment, staff-verified</option>
+              <option value="red">red — staff only</option>
+            </select>
+            <button style={G.flagGo} disabled={busy || ask.trim().length < 26} onClick={submit}>
+              {busy ? '…' : 'Flag it'}
+            </button>
+            <button style={G.flagCancel} disabled={busy} onClick={() => { setOpen(false); setErr(null) }}>
+              Cancel
+            </button>
+            {ask.trim().length > 0 && ask.trim().length < 26 && (
+              <span style={G.hint}>a little more — the ask is the whole brief</span>
+            )}
+          </div>
+          {err && <p style={{ ...G.hint, color: 'var(--pk)' }}>{err}</p>}
+        </div>
+      )}
+    </div>
+  )
+}
+
+const G = {
+  wrap: { margin: '10px 0 4px' },
+  row: { display: 'flex', gap: 8, alignItems: 'baseline', padding: '5px 0' },
+  dot: { flexShrink: 0, width: 8, height: 8, borderRadius: '50%', position: 'relative', top: -1 },
+  rowText: { fontSize: 13.5, color: 'var(--tx2)', lineHeight: 1.5 },
+  diffTag: { fontFamily: MONO, fontSize: 10.5, letterSpacing: 0.5, textTransform: 'uppercase' },
+  flagBtn: { marginTop: 4, fontFamily: MONO, fontSize: 11, letterSpacing: 0.5, padding: '3px 10px', borderRadius: 14, border: '1px dashed var(--bd)', background: 'none', color: 'var(--tx2)', cursor: 'pointer' },
+  form: { marginTop: 8, display: 'flex', flexDirection: 'column', gap: 8 },
+  askInput: { width: '100%', boxSizing: 'border-box', minHeight: 64, resize: 'vertical', fontSize: 13.5, lineHeight: 1.5, padding: '8px 10px', borderRadius: 8, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx)' },
+  diffSelect: { fontSize: 13, padding: '6px 8px', borderRadius: 8, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx)' },
+  flagGo: { fontSize: 13, fontWeight: 600, padding: '6px 14px', borderRadius: 18, border: 'none', background: 'var(--pk)', color: '#fff', cursor: 'pointer' },
+  flagCancel: { fontSize: 13, padding: '6px 12px', borderRadius: 18, border: '1px solid var(--bd)', background: 'none', color: 'var(--tx2)', cursor: 'pointer' },
+  hint: { fontSize: 12, color: 'var(--tx2)', fontStyle: 'italic' },
+}
+
 function Shell({ course, children }) {
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '28px 16px 64px' }}>
@@ -557,6 +767,12 @@ const S = {
   code: { fontFamily: MONO, fontSize: 13 },
 
   draftBanner: { marginTop: 14, padding: '10px 12px', borderRadius: 8, background: 'rgba(214,51,132,.07)', border: '1px solid rgba(214,51,132,.28)', fontSize: 13, color: 'var(--tx)' },
+
+  stampBar: { display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', marginTop: 14, padding: '10px 12px', borderRadius: 10, background: 'var(--bgc)', border: '1px solid var(--bd)' },
+  stampState: { fontFamily: MONO, fontSize: 12, color: 'var(--tx2)', flex: '0 0 auto' },
+  stampNote: { flex: '1 1 220px', fontSize: 13, padding: '6px 10px', borderRadius: 8, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx)' },
+  stampBtn: { fontSize: 12.5, fontWeight: 600, padding: '6px 13px', borderRadius: 18, border: 'none', background: '#2e7d32', color: '#fff', cursor: 'pointer', whiteSpace: 'nowrap' },
+  stampBtnOff: { fontSize: 12.5, fontWeight: 600, padding: '6px 13px', borderRadius: 18, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx2)', cursor: 'pointer', whiteSpace: 'nowrap' },
 
   criteria: { display: 'block', marginTop: 16, padding: '14px 16px', borderRadius: 12, background: 'var(--bgc)', border: '1px solid var(--bd)', textDecoration: 'none' },
   criteriaLabel: { display: 'block', fontFamily: MONO, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--pk)' },

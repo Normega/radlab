@@ -4074,7 +4074,13 @@ didn't know it needed:
 Scarcity is the reason all three matter: **860 slots against 600 submissions is 1.43× headroom, and
 green is 1.34×** (268 slots, 200 students). There is no room for hoarding.
 
-**Phase D — staff review.** Three separable capabilities, in value order:
+**Phase D — staff review. ✅ Built 2026-08-13** (`20260813_page_reviews.sql` + `WikiPage.jsx` +
+`WhatsNew.jsx`). All three capabilities below, plus the §39.12.9 class changelog at
+`/academic/fieldguide/whats-new` (built here because it reads the same stamp table): inline gaps at
+their anchored sections with unanchored asks falling through to the page-level box; `flag_gap()`
+from the reader (kind `'staff'`, RPC-owned ask_hash); `stamp_page()` with a stamp bar in the reader
+showing current/stale state and a reviewed-count on the home status line. RPCs verified live under
+Norm's JWT and refused for a non-staff sub. Original scope, for the record:
 
 1. **Inline gap rendering in `WikiPage`.** Gaps are drawn from `page_gaps` at their anchored section
    (666 of 737 anchor; the rest sit at page top). This single change serves both audiences — students
