@@ -194,7 +194,7 @@ Rule of thumb: touches `supabase/` → `main`. Touches only `src/`, `public/`, `
 
 Two cautions. Don't casually exercise data-writing or destructive flows on the dev site — it writes to production tables. And treat `dev` as a promotion queue: if Norm rejects something sitting on it, revert it *on `dev`* promptly so it doesn't block promoting everyone else's approved work.
 
-**Setup status (2026-08-13** — delete this paragraph when all four are done**):** branch created, CI runs on `dev` pushes. Still Norm's, in the dashboards: (a) Vercel → Settings → Domains: assign `dev.radlab.zone` to the `dev` branch, plus the DNS record at Namecheap; (b) Vercel env vars: everything (`VITE_SUPABASE_*` and the serverless secrets) enabled for the **Preview** environment; (c) Supabase Auth → Redirect URLs: add the dev origin; (d) Deployment Protection off (or deliberately on as a login wall). Until (b), dev builds may boot unconfigured.
+**Setup status: complete (2026-08-14).** Norm did the four dashboard steps (domain + DNS, Preview env vars, Supabase auth redirect, deployment protection), and `dev.radlab.zone` resolves to Vercel's edge. One caveat: sessions cannot reach the domain through the sandbox egress proxy, so no session has seen the dev site actually load — if it ever boots unconfigured (blank page, Supabase errors), the first suspect is the Preview-environment env vars, which only take effect on builds made after they were set. Delete this paragraph once someone has seen the dev site working in a browser.
 
 ---
 
