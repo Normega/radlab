@@ -239,9 +239,12 @@ const S = {
     fontFamily: SANS, fontWeight: 600, fontSize: 14, padding: '8px 14px', borderRadius: 24,
     background: 'var(--pk)', color: '#fff', border: 'none', cursor: 'pointer',
   },
+  // Formal button, not a bare text link (policy, 2026-08-13): every option in
+  // a choice pair is a real button — the non-suggested one is just grayer.
   btnGhost: {
-    fontFamily: MONO, fontSize: 12, color: 'var(--pk)', background: 'none',
-    border: 'none', cursor: 'pointer', padding: 0, letterSpacing: '0.05em',
+    fontFamily: SANS, fontWeight: 600, fontSize: 14, color: 'var(--tx2)',
+    background: 'var(--bgc)', border: '1px solid var(--bds)', borderRadius: 24,
+    cursor: 'pointer', padding: '8px 14px',
   },
   btnRename: { padding: '6px 14px', fontSize: 13, borderRadius: 20 },
   editBtn: {

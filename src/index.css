@@ -537,3 +537,30 @@ body {
   outline: 2px solid var(--pk);
   outline-offset: 6px;
 }
+
+/* Per-point labels (NoDefaultSlider pointLabels). The slider grows to make room
+   rather than the labels overlapping the track. Two lines of wrap is the design
+   budget — "Almost always" wraps on a narrow phone, which is why the height is
+   generous and the labels are top-aligned to a common baseline. */
+.ndslider--labelled { height: 76px; }
+.ndslider__labels {
+  position: absolute;
+  left: 0; right: 0; top: 40px;
+  height: 36px;
+  pointer-events: none;   /* the invisible range input above owns all input */
+}
+.ndslider__label {
+  position: absolute;
+  top: 0;
+  /* Wide enough for a word, narrow enough that neighbours don't collide at
+     360px. Interior labels centre on their tick, so this is split either side. */
+  max-width: 66px;
+  font-size: 11px;
+  line-height: 1.25;
+  color: #6b6c70;
+  overflow-wrap: anywhere;
+}
+.ndslider__label.is-selected {
+  color: var(--tx);
+  font-weight: 600;
+}

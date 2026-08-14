@@ -88,10 +88,10 @@ function IntroScreen({ onStart, bouncedFrom }) {
                 x2={lerp(NW, SE, trim / 100).x} y2={lerp(NW, SE, trim / 100).y}
             stroke="#804080" strokeWidth="2.2" opacity="0.75"
             markerEnd="url(#a2e)" markerStart="url(#a2s)" />
-          <text x={NE.x + 7}  y={NE.y + 1}  fontSize="12" fill="#C4A000" fontFamily="DM Sans,sans-serif" fontWeight="500">Excited</text>
-          <text x={SW.x - 7}  y={SW.y + 12} fontSize="12" fill="#C4A000" fontFamily="DM Sans,sans-serif" fontWeight="500" textAnchor="end">Sad</text>
-          <text x={NW.x - 7}  y={NW.y + 1}  fontSize="12" fill="#804080" fontFamily="DM Sans,sans-serif" fontWeight="500" textAnchor="end">Tense</text>
-          <text x={SE.x + 7}  y={SE.y + 14} fontSize="12" fill="#804080" fontFamily="DM Sans,sans-serif" fontWeight="500">Calm</text>
+          <text x={NE.x + 7}  y={NE.y + 1}  fontSize="12" fill="#C4A000" fontFamily="DM Sans,sans-serif" fontWeight="600">Excited</text>
+          <text x={SW.x - 7}  y={SW.y + 12} fontSize="12" fill="#C4A000" fontFamily="DM Sans,sans-serif" fontWeight="600" textAnchor="end">Sad</text>
+          <text x={NW.x - 7}  y={NW.y + 1}  fontSize="12" fill="#804080" fontFamily="DM Sans,sans-serif" fontWeight="600" textAnchor="end">Tense</text>
+          <text x={SE.x + 7}  y={SE.y + 14} fontSize="12" fill="#804080" fontFamily="DM Sans,sans-serif" fontWeight="600">Calm</text>
           <circle cx={CX2} cy={CY2} r="4.5" fill="#FCF0F5" stroke="#d0b8c8" strokeWidth="1.2" />
         </svg>
         </div>

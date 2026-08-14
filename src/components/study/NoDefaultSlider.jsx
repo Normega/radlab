@@ -34,6 +34,11 @@ export default function NoDefaultSlider({
   onChange,
   ariaLabel,
   disabled = false,
+  // Optional word per scale point, in ascending order (length must equal the
+  // number of ticks). Rendered beneath the track at the tick positions, using
+  // this component's own geometry — computing it in the caller would duplicate
+  // the half-handle inset and drift the moment either side changed.
+  pointLabels = null,
 }) {
   const inputRef = useRef(null)
   const answered = value != null
@@ -77,8 +82,13 @@ export default function NoDefaultSlider({
     for (let v = min; v <= max; v += step) ticks.push(((v - min) / span) * 100)
   }
 
+  // Only render labels we can actually place — one per tick. A mismatched
+  // array is dropped rather than rendered against the wrong points, because a
+  // frequency scale silently shifted by one is worse than an unlabelled one.
+  const labels = pointLabels && pointLabels.length === ticks.length ? pointLabels : null
+
   return (
-    <div className="ndslider">
+    <div className={labels ? 'ndslider ndslider--labelled' : 'ndslider'}>
       <input
         ref={inputRef}
         className="ndslider__input"
@@ -105,6 +115,30 @@ export default function NoDefaultSlider({
           </>
         )}
       </div>
+      {labels && (
+        <div className="ndslider__labels">
+          {labels.map((label, i) => {
+            const selected = answered && min + i * step === value
+            // The end labels anchor to the container edges instead of centring
+            // on their tick: a centred first label would hang off the left of
+            // the card, and the browser would clip it rather than wrap.
+            const isFirst = i === 0
+            const isLast  = i === labels.length - 1
+            const pos = isFirst ? { left: 0, textAlign: 'left' }
+                      : isLast  ? { right: 0, textAlign: 'right' }
+                      : { left: at(ticks[i]), transform: 'translateX(-50%)', textAlign: 'center' }
+            return (
+              <span
+                key={i}
+                className={selected ? 'ndslider__label is-selected' : 'ndslider__label'}
+                style={pos}
+              >
+                {label}
+              </span>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }
