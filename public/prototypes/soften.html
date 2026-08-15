@@ -139,6 +139,72 @@ const FIGS = [
   { key: 'heron', name: 'the heron',          cx: 980,  cy: 205, r: 230, found: false, prog: 0, revealed: 0, night: true },
 ];
 
+// ── an imported low-frequency figure ────────────────────────────────────────
+// Any image from anywhere — an AI generator, a photo, a sketch — can become a
+// hidden figure: downsampled to a few dozen pixels it IS a low-frequency
+// image (its high frequencies are gone by construction), and smoothly
+// upscaled into the sky it hides under the same detail and grain as the
+// authored figures. Baked into the SHARP scene before the blur, so the
+// honesty property holds: softening reveals it, never adds it.
+// Dev mode: drag-and-drop an image onto the page. Script: __soften.embedImage(src, opts).
+let LF_PLATE = null;   // tiny feathered canvas
+let LF_OPTS  = null;   // { cx, cy, w, h, strength, name } in scene units
+
+function setLFImage(img, opts = {}){
+  const w = opts.w ?? 620;
+  const h = w * (img.height / img.width);
+  // downsample hard — this is the step that guarantees low-frequency-only
+  const tiny = document.createElement('canvas');
+  const tw = 48, th = Math.max(8, Math.round(tw * (h / w)));
+  tiny.width = tw; tiny.height = th;
+  const tc = tiny.getContext('2d');
+  tc.imageSmoothingEnabled = true; tc.imageSmoothingQuality = 'high';
+  tc.drawImage(img, 0, 0, tw, th);
+  // feather the edges, or the plate reads as a rectangular tonal patch
+  const fx = tc.createLinearGradient(0, 0, tw, 0);
+  const fy = tc.createLinearGradient(0, 0, 0, th);
+  for (const [g, span] of [[fx, tw], [fy, th]]){
+    g.addColorStop(0, 'rgba(0,0,0,1)');
+    g.addColorStop(0.22, 'rgba(0,0,0,0)');
+    g.addColorStop(0.78, 'rgba(0,0,0,0)');
+    g.addColorStop(1, 'rgba(0,0,0,1)');
+  }
+  tc.globalCompositeOperation = 'destination-out';
+  tc.fillStyle = fx; tc.fillRect(0, 0, tw, th);
+  tc.fillStyle = fy; tc.fillRect(0, 0, tw, th);
+  tc.globalCompositeOperation = 'source-over';
+
+  LF_PLATE = tiny;
+  LF_OPTS = {
+    cx: opts.cx ?? 1450, cy: opts.cy ?? 250, w, h,
+    strength: opts.strength ?? 0.34,
+    name: opts.name ?? 'the visitor',
+  };
+  // the imported figure is findable like the authored ones
+  let f = FIGS.find(f => f.key === 'visitor');
+  if (!f){ f = { key: 'visitor', found: false, prog: 0, revealed: 0 }; FIGS.splice(4, 0, f); }
+  f.name = LF_OPTS.name;
+  f.cx = LF_OPTS.cx; f.cy = LF_OPTS.cy;
+  f.r = Math.max(w, h) * 0.42;
+  f.found = false; f.prog = 0; f.revealed = 0;
+  buildScene();
+}
+
+function drawLFPlate(c, strength){
+  if (!LF_PLATE || !LF_OPTS) return;
+  c.save();
+  // luminosity blend imprints the image's FORM in the sky's own hue — the
+  // shape arrives without the palette breaking; falls back to plain alpha
+  // where the blend mode is unsupported
+  c.globalCompositeOperation = 'luminosity';
+  c.globalAlpha = strength;
+  c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
+  c.drawImage(LF_PLATE, LF_OPTS.cx - LF_OPTS.w / 2, LF_OPTS.cy - LF_OPTS.h / 2, LF_OPTS.w, LF_OPTS.h);
+  c.globalCompositeOperation = 'source-over';
+  c.globalAlpha = 1;
+  c.restore();
+}
+
 // Deterministic scatter for detail passes — the valley must not reshuffle on
 // resize, or it reads as a different place.
 let seed = 20260815;
@@ -326,6 +392,20 @@ function paintDetail(c){
     c.arc(x + 5, y, 2.4, Math.PI * 1.1, Math.PI * 1.9);
     c.stroke();
   }
+
+  // fine grain over the whole scene — the high-frequency mask that lets a
+  // full-strength low-frequency figure sit unnoticed in the sharp view (film
+  // grain is the classic HF masker in hybrid-image work). Paired light/dark
+  // speckle averages to nothing under the blur, so it costs the soft view
+  // nothing at all.
+  for (let i = 0; i < 5200; i++){
+    const x = srnd(0, SC_W), y = srnd(0, SC_H);
+    const light = srnd(0, 1) < 0.5;
+    c.fillStyle = light
+      ? `rgba(232,222,228,${srnd(0.03, 0.09)})`
+      : `rgba(8,8,18,${srnd(0.04, 0.12)})`;
+    c.fillRect(x, y, srnd(1.4, 3), srnd(1.4, 3));
+  }
 }
 
 // The figure masses again, softly emphasised — drawn only into the soft bake
@@ -392,16 +472,23 @@ function buildScene(){
 
   sctx.setTransform(DPR * sk, 0, 0, DPR * sk, DPR * offX, DPR * offY);
   paintBase(sctx);
-  paintFigureEmphasis(sctx, 1, 0.30);   // masses present but faint under the detail
+  // The figures go into the SHARP bake at full, final strength — they are in
+  // the pixels the whole time. The first build drew them faint here and then
+  // re-drew them boosted onto the soft bake, which made the reveal a fade-in
+  // of content the sharp image never contained: an overlay arriving, not a
+  // thing that was there all along. A true hybrid image adds nothing on
+  // blur — softening only ever REMOVES. So the low-frequency figure hides
+  // behind two honest mechanisms instead: gestalt camouflage (its masses ARE
+  // ridge, cloud, hedge, shadow — parsed as landscape) and high-frequency
+  // masking (detail and grain drawn across its boundaries).
+  paintFigureEmphasis(sctx, 1, 0.85);
+  drawLFPlate(sctx, LF_OPTS ? LF_OPTS.strength : 0);
   paintDetail(sctx);
   sctx.setTransform(1, 0, 0, 1, 0, 0);
 
-  // soft bake = the sharp bake with its detail blurred away, plus the masses
-  // given the nudge that lets the gestalt assemble
+  // soft bake = a blur of the sharp bake, and nothing else. Every pixel of
+  // the reveal is derived from pixels the player was already looking at.
   blurInto(softC, sharpC, 9);
-  fctx.setTransform(DPR * sk, 0, 0, DPR * sk, DPR * offX, DPR * offY);
-  paintFigureEmphasis(fctx, 1, 1);
-  fctx.setTransform(1, 0, 0, 1, 0, 0);
 }
 
 // ── stars (night only) ──────────────────────────────────────────────────────
@@ -550,7 +637,10 @@ function render(){
   for (const f of FIGS){
     if (f.night) continue;
     const a = Math.max(f.found ? 0.5 : 0, f.revealed * 0.4) * (1 - S * 0.55);
-    if (a > 0.01) paintFigureMassOne(ctx, f, a);
+    if (a > 0.01){
+      if (f.key === 'visitor') drawLFPlate(ctx, 0.5 * a);
+      else paintFigureMassOne(ctx, f, a);
+    }
   }
   ctx.restore();
 
@@ -828,6 +918,17 @@ window.__soften = {
   },
   // screen position of a figure's centre, for aiming synthetic gazes
   figAt(key){ const f = FIGS.find(f => f.key === key); return f ? { x: sx(f.cx) | 0, y: sy(f.cy) | 0, r: (f.r * sk) | 0 } : null; },
+  // hide any image in the sky as a low-frequency figure (data URI or URL).
+  // opts: { cx, cy, w, strength, name } in scene units.
+  embedImage(src, opts){
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => { setLFImage(img, opts); resolve({ ok: true, figure: LF_OPTS.name, at: [LF_OPTS.cx, LF_OPTS.cy] }); };
+      img.onerror = reject;
+      img.src = src;
+    });
+  },
   // synthetic input through the real handlers' state
   look(x, y){ pointerHere = true; gTX = x; gTY = y; return [x, y]; },
   press(){ holding = true; return true; },
@@ -865,7 +966,22 @@ window.__soften = {
 };
 
 // ── go ──────────────────────────────────────────────────────────────────────
-if (!/dev/.test(location.search)) document.getElementById('hint').style.display = 'none';
+if (!/dev/.test(location.search)){
+  document.getElementById('hint').style.display = 'none';
+} else {
+  // dev affordance: drop any image onto the page and it becomes the hidden
+  // figure — iterate on generated images without touching the code
+  document.getElementById('hint').innerHTML = 't&nbsp;·&nbsp;tuning&nbsp;&nbsp;·&nbsp;&nbsp;drop an image to hide it';
+  window.addEventListener('dragover', e => e.preventDefault());
+  window.addEventListener('drop', e => {
+    e.preventDefault();
+    const file = e.dataTransfer.files && e.dataTransfer.files[0];
+    if (!file || !/^image\//.test(file.type)) return;
+    const rd = new FileReader();
+    rd.onload = () => window.__soften.embedImage(rd.result);
+    rd.readAsDataURL(file);
+  });
+}
 resize();
 gx = gTX = lastGx = W / 2;
 gy = gTY = lastGy = H / 2;
