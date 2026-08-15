@@ -254,11 +254,26 @@ export function takeHome(allRows, today = dayKey()) {
     return vs.length ? vs.reduce((a, b) => a + b, 0) / vs.length : null
   }
 
-  const recent = meanValence(allRows.filter(r => daysAgo(r.local_date, today) < 7))
-  const prior  = meanValence(allRows.filter(r => {
+  // Mean circumplex position of a period — the wheel's trend arrow is drawn
+  // between these two, so the graphic corroborates the sentence from the SAME
+  // numbers rather than a parallel computation that could disagree with it.
+  const meanXY = rs => {
+    const pts = rs.filter(r => r.composite_x != null && r.composite_y != null)
+    if (!pts.length) return null
+    return {
+      x: pts.reduce((s, r) => s + r.composite_x, 0) / pts.length,
+      y: pts.reduce((s, r) => s + r.composite_y, 0) / pts.length,
+    }
+  }
+
+  const recentRows = allRows.filter(r => daysAgo(r.local_date, today) < 7)
+  const priorRows  = allRows.filter(r => {
     const d = daysAgo(r.local_date, today)
     return d >= 7 && d < 28
-  }))
+  })
+
+  const recent = meanValence(recentRows)
+  const prior  = meanValence(priorRows)
 
   return {
     total:  allRows.length,
@@ -266,6 +281,8 @@ export function takeHome(allRows, today = dayKey()) {
     recent,                                              // mean valence, last 7 days (or null)
     prior,                                               // mean valence, days 7–27 (or null)
     delta:  recent != null && prior != null ? recent - prior : null,
+    recentXY: meanXY(recentRows),                        // mean wheel position, last 7 days
+    priorXY:  meanXY(priorRows),                         // mean wheel position, days 7–27
   }
 }
 

@@ -123,11 +123,14 @@ function takeHomeSentence(th) {
     n >= 4 ? `You’ve checked in ${n} of the last 14 days` :
              `You’ve checked in ${n === 1 ? 'once' : n === 2 ? 'twice' : '3 times'} these past two weeks`
 
+  // Mood clauses speak the wheel's own axis — pleasant ↔ unpleasant — so the
+  // sentence and the trend arrow describe the same movement in the same words.
+  // ("Heavier" was tried and read as intensity, not valence — Norm 2026-08-15.)
   let mood
-  if (th.delta != null && th.delta >= 0.15)       mood = 'and your mood has been lifting'
-  else if (th.delta != null && th.delta <= -0.15) mood = 'and your mood has been getting heavier'
+  if (th.delta != null && th.delta >= 0.15)       mood = 'and your mood has been shifting toward the pleasant side'
+  else if (th.delta != null && th.delta <= -0.15) mood = 'and your mood has been shifting toward the unpleasant side'
   else if (th.recent != null && th.recent >= 0.15)  mood = 'and your mood has been consistently pleasant'
-  else if (th.recent != null && th.recent <= -0.15) mood = 'and your mood has been consistently heavy'
+  else if (th.recent != null && th.recent <= -0.15) mood = 'and your mood has been consistently unpleasant'
   else if (th.recent != null)                       mood = 'and your mood has held steady'
   else                                              mood = null
 
@@ -170,7 +173,7 @@ function EmotionBody({ checkins, windowId, streak }) {
   ) : (
     <div style={S.mapRow}>
       <div style={{ flexShrink: 0 }}>
-        <CircumplexHistory summary={summary} />
+        <CircumplexHistory summary={summary} th={th} />
         <p style={S.figCaption}>Where you&rsquo;ve been landing</p>
       </div>
       <div style={S.sideCol}>
@@ -213,7 +216,7 @@ function wedgePath(k) {
   return `M ${ix1} ${iy1} L ${ox1} ${oy1} A ${CR} ${CR} 0 0 0 ${ox2} ${oy2} L ${ix2} ${iy2} A ${CHOLE} ${CHOLE} 0 0 1 ${ix1} ${iy1} Z`
 }
 
-function CircumplexHistory({ summary }) {
+function CircumplexHistory({ summary, th }) {
   const { weights, max } = summary.sectors
   const halfLife = summary.window.halfLife
 
@@ -293,7 +296,55 @@ function CircumplexHistory({ summary }) {
           <title>{`${d.date} — ${d.label}`}</title>
         </circle>
       ))}
+
+      <TrendMark th={th} />
     </svg>
+  )
+}
+
+// ── Trend mark ────────────────────────────────────────────────────────────────
+// The sentence's corroboration, drawn from the SAME takeHome() numbers: a pink
+// arrow from the mean position of days 7–27 to the mean of the last 7 days.
+// If the two means sit on top of each other (the "held steady" case) — or
+// there's no earlier period to compare against — it collapses to a ring around
+// the recent mean: "your mood has centred here".
+
+function TrendMark({ th }) {
+  if (!th?.recentXY) return null
+
+  const rx = CC + th.recentXY.x * CR
+  const ry = CC - th.recentXY.y * CR   // maths y-up into SVG y-down, as ever
+
+  const ring = (
+    <circle cx={rx} cy={ry} r={8} fill="none" stroke="var(--pk)" strokeWidth={2.5} opacity={0.9}>
+      <title>Your average mood, last 7 days</title>
+    </circle>
+  )
+
+  if (!th.priorXY) return ring
+
+  const px = CC + th.priorXY.x * CR
+  const py = CC - th.priorXY.y * CR
+  const dx = rx - px, dy = ry - py
+  const len = Math.hypot(dx, dy)
+  if (len < 10) return ring   // means overlap — an arrow this short reads as noise
+
+  // Shaft stops short of the tip so the head doesn't sit on a doubled line.
+  const ang = Math.atan2(dy, dx)
+  const sx  = rx - 9 * Math.cos(ang)
+  const sy  = ry - 9 * Math.sin(ang)
+  const headAt = (a, r_) => `${rx + r_ * Math.cos(a)},${ry + r_ * Math.sin(a)}`
+  const head = `${rx},${ry} ${headAt(ang + Math.PI - 0.45, 10)} ${headAt(ang + Math.PI + 0.45, 10)}`
+
+  return (
+    <g opacity={0.9}>
+      <title>Average mood: previous three weeks → last 7 days</title>
+      {/* white halo keeps the arrow legible over weighted wedges */}
+      <line x1={px} y1={py} x2={sx} y2={sy} stroke="var(--bgc)" strokeWidth={6} strokeLinecap="round" />
+      <line x1={px} y1={py} x2={sx} y2={sy} stroke="var(--pk)" strokeWidth={2.5} strokeLinecap="round" />
+      <polygon points={head} fill="var(--pk)" stroke="var(--bgc)" strokeWidth={1} />
+      <circle cx={px} cy={py} r={3.5} fill="var(--bgc)" stroke="var(--pk)" strokeWidth={2} />
+    </g>
   )
 }
 
