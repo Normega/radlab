@@ -99,14 +99,16 @@ function TimeFilter({ value, onChange }) {
 }
 
 // ── Take-home sentence ────────────────────────────────────────────────────────
-// Copy register: non-striving, non-punitive. A quiet stretch is stated as a
-// fact with an open door, never as a failing. Two clauses — consistency, then
-// mood — joined into one sentence when both exist.
+// Copy register: non-striving, non-punitive — but DEFINITIVE (Norm,
+// 2026-08-15): no hedges like "fairly" / "mostly" / "now and then". The
+// consistency clause states the actual count; the mood clause commits to one
+// of five readings. A quiet stretch is still stated as a fact with an open
+// door, never as a failing.
 
 function takeHomeSentence(th) {
   // Brand-new: not enough to characterize anything yet.
   if (th.total < 3) {
-    return 'You’re just getting started — a few more check-ins and your patterns will start to show.'
+    return 'You’re just getting started — a few more check-ins and your patterns will show.'
   }
 
   // Nothing in two weeks: consistency is the whole story; a mood clause built
@@ -115,17 +117,18 @@ function takeHomeSentence(th) {
     return 'It’s been quiet here lately — your Ripple picks up wherever you left off.'
   }
 
+  const n = th.days14
   const consistency =
-    th.days14 >= 9 ? 'You’ve been checking in steadily' :
-    th.days14 >= 4 ? 'You’ve checked in now and then these past two weeks' :
-                     'A couple of check-ins these past two weeks'
+    n >= 9 ? `You’ve checked in ${n} of the last 14 days — a steady rhythm` :
+    n >= 4 ? `You’ve checked in ${n} of the last 14 days` :
+             `You’ve checked in ${n === 1 ? 'once' : n === 2 ? 'twice' : '3 times'} these past two weeks`
 
   let mood
   if (th.delta != null && th.delta >= 0.15)       mood = 'and your mood has been lifting'
-  else if (th.delta != null && th.delta <= -0.15) mood = 'and things have been sitting heavier lately'
-  else if (th.recent != null && th.recent >= 0.15)  mood = 'and it’s mostly found you on the pleasant side'
-  else if (th.recent != null && th.recent <= -0.15) mood = 'and it’s often found you on the heavier side'
-  else if (th.recent != null)                       mood = 'and your mood has held fairly steady'
+  else if (th.delta != null && th.delta <= -0.15) mood = 'and your mood has been getting heavier'
+  else if (th.recent != null && th.recent >= 0.15)  mood = 'and your mood has been consistently pleasant'
+  else if (th.recent != null && th.recent <= -0.15) mood = 'and your mood has been consistently heavy'
+  else if (th.recent != null)                       mood = 'and your mood has held steady'
   else                                              mood = null
 
   return mood ? `${consistency}, ${mood}.` : `${consistency}.`
@@ -147,7 +150,7 @@ function EmotionBody({ checkins, windowId, streak }) {
       <p style={S.emptyTitle}>Nothing to see yet.</p>
       <p style={S.emptySub}>
         Your first check-in starts the picture. A few days in, this fills with how
-        your feeling shifts — and what it tends to settle into.
+        your feeling shifts — and where it settles.
       </p>
       <Link to="/checkin" style={S.emptyCta}>Check in →</Link>
     </div>
