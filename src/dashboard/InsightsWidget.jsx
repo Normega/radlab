@@ -179,7 +179,9 @@ function EmotionBody({ checkins, windowId, streak }) {
     </div>
   ) : (
     <div style={S.mapRow}>
-      <div style={{ flexShrink: 0 }}>
+      {/* mx-auto md:mx-0 — when the row wraps on mobile the wheel centers in
+          its own line; from md up it sits flush left beside the sentence. */}
+      <div className="mx-auto md:mx-0" style={{ flexShrink: 0 }}>
         <CircumplexHistory summary={summary} th={th} />
         <p style={S.figCaption}>Where you&rsquo;ve been landing</p>
       </div>
