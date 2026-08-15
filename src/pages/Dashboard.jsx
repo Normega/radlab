@@ -10,7 +10,6 @@ import RippleAvatar from '../ripple/RippleAvatar'
 import { useAvatarConfig } from '../hooks/useAvatarConfig'
 import { useDisplayName } from '../hooks/useDisplayName'
 import { EMOTIONS, LABEL_TO_ID } from '../games/StillWater/constants'
-import { greetingFor } from '../ripple/greetings'
 
 const todayLong = () =>
   new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
@@ -696,89 +695,16 @@ function ContactCard({ userId }) {
 // Always renders (2026-08-13 Account/My Ripple redesign): the on-platform
 // check-in nudge is no longer settings-controlled — same principle GamesPage's
 // CheckinReminder already followed — so there's nothing left to gate on here.
-// check_in_enabled and prompt_cadence are no longer read; prompt_cadence now
-// governs email cadence only (Notifications, /account), and reading it here
-// would have wrongly coupled a user's email-frequency choice to whether their
-// Dashboard greets them.
+//
+// RippleGreeting (the contextual serif line that sat above the card) was
+// removed 2026-08-15: the Insights widget now leads with a take-home sentence
+// doing the same job better, and two stacked data-aware greetings — three
+// counting "Hey, {name}" — were part of the clutter Norm called out. Its
+// arousal-trend/greetingFor machinery went with it; src/ripple/greetings.js
+// is now unreferenced (kept in case a login-prompt use returns).
 
 function RippleSection({ userId }) {
-  return (
-    <>
-      <RippleGreeting userId={userId} />
-      <RippleCard userId={userId} />
-    </>
-  )
-}
-
-// ── RIPPLE GREETING ───────────────────────────────────────────────────────────
-
-function RippleGreeting({ userId }) {
-  const [greeting, setGreeting] = useState(null)
-  const [visible,  setVisible]  = useState(false)
-
-  useEffect(() => {
-    if (!userId) return
-    Promise.all([
-      supabase.from('ripples')
-        .select('streak_current, last_checkin_on')
-        .eq('user_id', userId).maybeSingle(),
-      supabase.from('ripple_checkins')
-        .select('composite_label, composite_y, local_date')
-        .eq('user_id', userId)
-        .order('local_date', { ascending: false })
-        .limit(7),
-    ]).then(([{ data: ripple }, { data: checkins }]) => {
-      const pad = n => String(n).padStart(2, '0')
-      const now = new Date()
-      const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
-
-      // Days since last check-in — fall back to ripple_checkins if ripples.last_checkin_on is stale
-      const lastDate = ripple?.last_checkin_on ?? checkins?.[0]?.local_date ?? null
-      let daysSinceLast = null
-      if (lastDate) {
-        if (lastDate === todayStr) {
-          daysSinceLast = 0
-        } else {
-          const diffMs = new Date(todayStr + 'T00:00:00') - new Date(lastDate + 'T00:00:00')
-          daysSinceLast = Math.round(diffMs / 86400000)
-        }
-      }
-
-      // Arousal trend from last 7 composite_y values.
-      // composite_y > 0 = high arousal (excited/tense side); < 0 = low arousal
-      // (calm/sad side). This was asserted the other way round until 2026-07-30,
-      // so the greeting told wired-up users they were running low and vice versa.
-      const ys = (checkins ?? []).map(r => r.composite_y).filter(v => v != null)
-      const meanY = ys.length ? ys.reduce((a, b) => a + b, 0) / ys.length : 0
-      const arousalTrend = meanY > 0.15 ? 'high' : meanY < -0.15 ? 'low' : 'neutral'
-
-      setGreeting(greetingFor({
-        compositeLabel: checkins?.[0]?.composite_label ?? null,
-        streakDays:     ripple?.streak_current ?? 0,
-        daysSinceLast,
-        arousalTrend,
-      }))
-      setTimeout(() => setVisible(true), 80)
-    })
-  }, [userId])
-
-  if (!greeting) return null
-
-  return (
-    <div style={{
-      marginBottom: 20,
-      opacity:   visible ? 1 : 0,
-      transform: visible ? 'none' : 'translateY(6px)',
-      transition: 'opacity 0.5s ease, transform 0.5s ease',
-    }}>
-      <p style={{ fontFamily: SERIF, fontSize: 22, color: 'var(--tx)', fontWeight: 400, margin: '0 0 4px' }}>
-        {greeting.headline}
-      </p>
-      <p style={{ fontFamily: MONO, fontSize: 12, color: 'var(--tx3)', margin: 0, letterSpacing: '0.04em' }}>
-        {greeting.sub}
-      </p>
-    </div>
-  )
+  return <RippleCard userId={userId} />
 }
 
 // ── RIPPLE FACE ───────────────────────────────────────────────────────────────

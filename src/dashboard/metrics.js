@@ -231,6 +231,44 @@ export function intensityOf(r) {
   return Math.min(1, Math.sqrt(paOf(r) ** 2 + naOf(r) ** 2) / Math.SQRT2)
 }
 
+// ── Take-home ─────────────────────────────────────────────────────────────────
+// The numbers behind the dashboard's leading sentence (Norm, 2026-08-15):
+// one clause about whether we're getting good check-in data, one about where
+// the mood has been heading. Deliberately independent of the widget's time
+// filter — the sentence is about *now*, so its windows are fixed: consistency
+// over the last 14 days, trend as the last 7 days against the 21 before them.
+//
+// Valence is composite_x directly (the pleasant↔unpleasant axis), not PA —
+// PA is the sad↔excited diagonal, which folds arousal into the number and
+// would call a calm contented stretch "flat".
+
+export const valenceOf = r => (r.composite_x != null ? r.composite_x : null)
+
+export function takeHome(allRows, today = dayKey()) {
+  const days14 = new Set(
+    allRows.filter(r => daysAgo(r.local_date, today) < 14).map(r => r.local_date)
+  ).size
+
+  const meanValence = rs => {
+    const vs = rs.map(valenceOf).filter(v => v != null)
+    return vs.length ? vs.reduce((a, b) => a + b, 0) / vs.length : null
+  }
+
+  const recent = meanValence(allRows.filter(r => daysAgo(r.local_date, today) < 7))
+  const prior  = meanValence(allRows.filter(r => {
+    const d = daysAgo(r.local_date, today)
+    return d >= 7 && d < 28
+  }))
+
+  return {
+    total:  allRows.length,
+    days14,                                              // distinct check-in days, last 14
+    recent,                                              // mean valence, last 7 days (or null)
+    prior,                                               // mean valence, days 7–27 (or null)
+    delta:  recent != null && prior != null ? recent - prior : null,
+  }
+}
+
 // ── Summary ───────────────────────────────────────────────────────────────────
 // One call that produces everything the Emotion tab renders, so the component
 // stays a renderer and this stays the place where the numbers are decided.
