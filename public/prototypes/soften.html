@@ -326,6 +326,20 @@ function paintDetail(c){
     c.arc(x + 5, y, 2.4, Math.PI * 1.1, Math.PI * 1.9);
     c.stroke();
   }
+
+  // fine grain over the whole scene — the high-frequency mask that lets a
+  // full-strength low-frequency figure sit unnoticed in the sharp view (film
+  // grain is the classic HF masker in hybrid-image work). Paired light/dark
+  // speckle averages to nothing under the blur, so it costs the soft view
+  // nothing at all.
+  for (let i = 0; i < 5200; i++){
+    const x = srnd(0, SC_W), y = srnd(0, SC_H);
+    const light = srnd(0, 1) < 0.5;
+    c.fillStyle = light
+      ? `rgba(232,222,228,${srnd(0.03, 0.09)})`
+      : `rgba(8,8,18,${srnd(0.04, 0.12)})`;
+    c.fillRect(x, y, srnd(1.4, 3), srnd(1.4, 3));
+  }
 }
 
 // The figure masses again, softly emphasised — drawn only into the soft bake
@@ -392,16 +406,22 @@ function buildScene(){
 
   sctx.setTransform(DPR * sk, 0, 0, DPR * sk, DPR * offX, DPR * offY);
   paintBase(sctx);
-  paintFigureEmphasis(sctx, 1, 0.30);   // masses present but faint under the detail
+  // The figures go into the SHARP bake at full, final strength — they are in
+  // the pixels the whole time. The first build drew them faint here and then
+  // re-drew them boosted onto the soft bake, which made the reveal a fade-in
+  // of content the sharp image never contained: an overlay arriving, not a
+  // thing that was there all along. A true hybrid image adds nothing on
+  // blur — softening only ever REMOVES. So the low-frequency figure hides
+  // behind two honest mechanisms instead: gestalt camouflage (its masses ARE
+  // ridge, cloud, hedge, shadow — parsed as landscape) and high-frequency
+  // masking (detail and grain drawn across its boundaries).
+  paintFigureEmphasis(sctx, 1, 0.85);
   paintDetail(sctx);
   sctx.setTransform(1, 0, 0, 1, 0, 0);
 
-  // soft bake = the sharp bake with its detail blurred away, plus the masses
-  // given the nudge that lets the gestalt assemble
+  // soft bake = a blur of the sharp bake, and nothing else. Every pixel of
+  // the reveal is derived from pixels the player was already looking at.
   blurInto(softC, sharpC, 9);
-  fctx.setTransform(DPR * sk, 0, 0, DPR * sk, DPR * offX, DPR * offY);
-  paintFigureEmphasis(fctx, 1, 1);
-  fctx.setTransform(1, 0, 0, 1, 0, 0);
 }
 
 // ── stars (night only) ──────────────────────────────────────────────────────
