@@ -229,7 +229,7 @@ function CircumplexHistory({ summary, th }) {
   // Chronological (rows arrive ordered by local_date ascending), coords only.
   const dots = summary.rows
     .filter(r => r.composite_x != null && r.composite_y != null)
-    .map((r, i, arr) => {
+    .map(r => {
       // Age proxy from position in sequence would lie across gaps, so weight by
       // real calendar age — same decay the sector fills use.
       const age = (new Date(summary.rows[summary.rows.length - 1].local_date) - new Date(r.local_date)) / 86_400_000
@@ -240,7 +240,6 @@ function CircumplexHistory({ summary, th }) {
         w,
         label: r.composite_label ?? 'neutral',
         date:  r.local_date,
-        isLast: i === arr.length - 1,
       }
     })
 
@@ -284,11 +283,16 @@ function CircumplexHistory({ summary, th }) {
       {/* No per-point trail (tried, cut — Norm 2026-08-15: with the aggregate
           trend arrow present, raw segment lines between individual check-ins
           just tangled the middle of the wheel). TrendMark is the only line. */}
+      {/* One color, one rule (Norm, 2026-08-15): every dot is radlab fuchsia,
+          and recency alone does the talking — size and opacity both decay with
+          age, so the most recent check-in is simply the biggest, most solid
+          dot rather than a special-cased black one. Sector identity stays on
+          the wedges. */}
       {dots.map((d, i) => (
         <circle key={i} cx={d.x} cy={d.y}
-          r={d.isLast ? 5 : 2 + 2.5 * d.w}
-          fill={d.isLast ? 'var(--tx)' : SECTOR_COLOR[d.label]}
-          opacity={d.isLast ? 0.9 : 0.2 + 0.55 * d.w}>
+          r={2 + 3 * d.w}
+          fill="var(--pk)"
+          opacity={0.18 + 0.62 * d.w}>
           <title>{`${d.date} — ${d.label}`}</title>
         </circle>
       ))}
