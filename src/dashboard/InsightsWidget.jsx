@@ -199,7 +199,6 @@ function EmotionBody({ checkins, windowId, streak }) {
 // put alert check-ins in the calm corner on the old dashboard.
 
 const CD = 232, CC = 116, CR = 98, CHOLE = 15
-const TRAIL = 6  // how many most-recent check-ins the trajectory line joins
 
 function polar(r, deg) {
   const rad = (deg * Math.PI) / 180
@@ -238,8 +237,6 @@ function CircumplexHistory({ summary, th }) {
       }
     })
 
-  const trail = dots.slice(-TRAIL)
-
   return (
     <svg width={CD} height={CD} viewBox={`0 0 ${CD} ${CD}`} style={{ display: 'block' }}>
       {SECTORS.map((name, k) => {
@@ -277,17 +274,9 @@ function CircumplexHistory({ summary, th }) {
         )
       })}
 
-      {/* trajectory trail: segments fade in toward now, under the dots */}
-      {trail.slice(1).map((d, i) => {
-        const prev = trail[i]
-        const t = (i + 1) / (trail.length - 1)   // 0 → oldest segment, 1 → newest
-        return (
-          <line key={`t${i}`} x1={prev.x} y1={prev.y} x2={d.x} y2={d.y}
-            stroke="var(--tx)" strokeWidth={1.25} strokeLinecap="round"
-            opacity={0.08 + 0.3 * t} />
-        )
-      })}
-
+      {/* No per-point trail (tried, cut — Norm 2026-08-15: with the aggregate
+          trend arrow present, raw segment lines between individual check-ins
+          just tangled the middle of the wheel). TrendMark is the only line. */}
       {dots.map((d, i) => (
         <circle key={i} cx={d.x} cy={d.y}
           r={d.isLast ? 5 : 2 + 2.5 * d.w}
