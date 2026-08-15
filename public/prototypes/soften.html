@@ -111,9 +111,15 @@ function resize(){
   cv.style.width = W + 'px'; cv.style.height = H + 'px';
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
 
-  sk = Math.max(W / SC_W, H / SC_H);
+  // Cover-fit, but never crop the visible slice below ~1250 scene units of
+  // width: a straight cover on a portrait phone showed 29% of the valley and
+  // put nearly every figure off-screen. When the cap letterboxes the scene
+  // vertically, the bake extends sky above and meadow below, and the horizon
+  // is pinned at 58% of the screen height.
+  const cover = Math.max(W / SC_W, H / SC_H);
+  sk = Math.max(W / SC_W, Math.min(cover, W / 1250));
   offX = (W - SC_W * sk) / 2;
-  offY = (H - SC_H * sk) / 2;
+  offY = SC_H * sk < H ? H * 0.58 - 830 * sk : (H - SC_H * sk) / 2;
 
   buildScene();
 
@@ -160,13 +166,43 @@ function setLFImage(img, opts = {}){
   const tc = tiny.getContext('2d');
   tc.imageSmoothingEnabled = true; tc.imageSmoothingQuality = 'high';
   tc.drawImage(img, 0, 0, tw, th);
-  // feather the edges, or the plate reads as a rectangular tonal patch
+
+  // Translate the image into the valley's own language. Imprinting raw
+  // luminance carried the image's BACKGROUND too — a uniform pale frame that
+  // read as a rectangular slab in the sky. So: estimate the background as the
+  // mean border luminance, then keep only DEVIATION from it — transparent
+  // where the image matches its own ground, dark mass where darker, light
+  // mass where lighter, in the same two tones as the authored figures. Any
+  // picture on a plain ground becomes a figure and nothing else.
+  try {
+    const id = tc.getImageData(0, 0, tw, th);
+    const d = id.data;
+    const lum = i => (0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]) / 255;
+    let sum = 0, n = 0;
+    for (let x = 0; x < tw; x++){ sum += lum(4 * x) + lum(4 * ((th - 1) * tw + x)); n += 2; }
+    for (let y = 0; y < th; y++){ sum += lum(4 * y * tw) + lum(4 * (y * tw + tw - 1)); n += 2; }
+    const bg = sum / n;
+    // imported figures live in the sky, so they speak cloud: shaded gray
+    // where the image is darker than its own ground, cloud-white where
+    // lighter — the duck is a cloud that happens to be a duck, not a shadow
+    const DARK = opts.dark ?? [152, 144, 166], LIGHT = opts.light ?? [238, 228, 232];
+    for (let i = 0; i < d.length; i += 4){
+      const dev = lum(i) - bg;
+      const k = Math.min(1, Math.abs(dev) / 0.45);
+      const col = dev < 0 ? DARK : LIGHT;
+      d[i] = col[0]; d[i + 1] = col[1]; d[i + 2] = col[2];
+      d[i + 3] = Math.round(d[i + 3] * (k * k * (3 - 2 * k)));
+    }
+    tc.putImageData(id, 0, 0);
+  } catch (_) { /* tainted canvas (cross-origin without CORS): keep raw pixels */ }
+
+  // and feather the edges regardless, so nothing hints at the frame
   const fx = tc.createLinearGradient(0, 0, tw, 0);
   const fy = tc.createLinearGradient(0, 0, 0, th);
-  for (const [g, span] of [[fx, tw], [fy, th]]){
+  for (const g of [fx, fy]){
     g.addColorStop(0, 'rgba(0,0,0,1)');
-    g.addColorStop(0.22, 'rgba(0,0,0,0)');
-    g.addColorStop(0.78, 'rgba(0,0,0,0)');
+    g.addColorStop(0.18, 'rgba(0,0,0,0)');
+    g.addColorStop(0.82, 'rgba(0,0,0,0)');
     g.addColorStop(1, 'rgba(0,0,0,1)');
   }
   tc.globalCompositeOperation = 'destination-out';
@@ -193,14 +229,11 @@ function setLFImage(img, opts = {}){
 function drawLFPlate(c, strength){
   if (!LF_PLATE || !LF_OPTS) return;
   c.save();
-  // luminosity blend imprints the image's FORM in the sky's own hue — the
-  // shape arrives without the palette breaking; falls back to plain alpha
-  // where the blend mode is unsupported
-  c.globalCompositeOperation = 'luminosity';
+  // the plate already carries the figure tones and its own alpha — plain
+  // draw, like any authored mass
   c.globalAlpha = strength;
   c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
   c.drawImage(LF_PLATE, LF_OPTS.cx - LF_OPTS.w / 2, LF_OPTS.cy - LF_OPTS.h / 2, LF_OPTS.w, LF_OPTS.h);
-  c.globalCompositeOperation = 'source-over';
   c.globalAlpha = 1;
   c.restore();
 }
@@ -237,20 +270,20 @@ function paintBase(c){
   sky.addColorStop(0.55, '#5c4668');
   sky.addColorStop(1, '#a06a6a');
   c.fillStyle = sky;
-  c.fillRect(0, 0, SC_W, SC_H);
+  c.fillRect(0, -3000, SC_W, 3000 + SC_H);   // sky continues above the authored frame
 
   // far ridge, plain — depth for the giant to sleep against
   c.fillStyle = '#4a4162';
   c.beginPath(); c.moveTo(0, 700);
   for (let x = 0; x <= SC_W; x += 12)
     c.lineTo(x, 640 + Math.sin(x * 0.0027 + 0.7) * 42 + Math.sin(x * 0.0009) * 30);
-  c.lineTo(SC_W, SC_H); c.lineTo(0, SC_H); c.closePath(); c.fill();
+  c.lineTo(SC_W, SC_H + 3000); c.lineTo(0, SC_H + 3000); c.closePath(); c.fill();
 
   // the near ridge — which is also the giant
   c.fillStyle = '#38314e';
   c.beginPath(); c.moveTo(0, ridgeY(0));
   for (let x = 0; x <= SC_W; x += 8) c.lineTo(x, ridgeY(x));
-  c.lineTo(SC_W, SC_H); c.lineTo(0, SC_H); c.closePath(); c.fill();
+  c.lineTo(SC_W, SC_H + 3000); c.lineTo(0, SC_H + 3000); c.closePath(); c.fill();
 
   // meadow below the ridge
   const mg = c.createLinearGradient(0, 830, 0, SC_H);
@@ -259,7 +292,7 @@ function paintBase(c){
   c.fillStyle = mg;
   c.beginPath(); c.moveTo(0, ridgeY(0) + 4);
   for (let x = 0; x <= SC_W; x += 8) c.lineTo(x, ridgeY(x) + 4);
-  c.lineTo(SC_W, SC_H); c.lineTo(0, SC_H); c.closePath(); c.fill();
+  c.lineTo(SC_W, SC_H + 3000); c.lineTo(0, SC_H + 3000); c.closePath(); c.fill();
 
   // cloudbank — which is also the whale (body, fluke, flipper as three
   // masses; decoy clouds around it so the sky is not only whale)
@@ -507,7 +540,7 @@ const HERON = [
 (function(){
   seed = 99;
   for (let i = 0; i < 210; i++){
-    STARS.push({ x: srnd(0, SC_W), y: srnd(0, 760), r: srnd(0.6, 1.7), tw: srnd(0, 6.28), rate: srnd(0.5, 1.8), heron: false });
+    STARS.push({ x: srnd(0, SC_W), y: srnd(-700, 760), r: srnd(0.6, 1.7), tw: srnd(0, 6.28), rate: srnd(0.5, 1.8), heron: false });
   }
   for (const [hx, hy] of HERON){
     STARS.push({ x: hx + srnd(-4, 4), y: hy + srnd(-4, 4), r: 2.1, tw: srnd(0, 6.28), rate: srnd(0.4, 0.9), heron: true });
@@ -578,7 +611,7 @@ function advance(dt){
   let gazeFig = null;
   for (const f of FIGS){
     const d = Math.hypot(sx(f.cx) - gx, sy(f.cy) - gy);
-    const near = d < f.r * sk;
+    const near = d < Math.max(f.r * sk, 90);   // floor: a figure is never smaller than a thumb
     const visible = f.night ? nightness > 0.5 : true;
     if (near && visible) gazeFig = gazeFig || f;
     if (f.found) continue;
@@ -702,7 +735,7 @@ function render(){
   // the moon clears the chest of the giant at the very end — Sidelong's moon,
   // seen from the valley below
   if (moonUp > 0){
-    const mx = sx(1780), my = sy(760) - moonUp * 210 * sk;
+    const mx = Math.min(sx(1780), W - 60), my = sy(760) - moonUp * 210 * sk;
     const R = 22 * sk;
     const g = ctx.createRadialGradient(mx, my, R * 0.6, mx, my, R * 5);
     g.addColorStop(0, `rgba(214,226,255,${0.25 * moonUp})`);
@@ -987,6 +1020,13 @@ gx = gTX = lastGx = W / 2;
 gy = gTY = lastGy = H / 2;
 window.addEventListener('resize', resize);
 requestAnimationFrame(frame);
+
+// The default imported figure: Pond Watch's duck, swimming in the clouds —
+// painted grayscale, downsampled to 48x30 (that downsample IS what makes it
+// a low-frequency image), and inlined so the file stays self-contained. It
+// hides in the sky like everything else; a dropped image replaces it.
+const DUCK_LF = 'data:image/png;base64,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';
+window.__soften.embedImage(DUCK_LF, { name: 'the duck', cx: 1430, cy: 240, w: 660, strength: 0.68 });
 </script>
 </body>
 </html>
