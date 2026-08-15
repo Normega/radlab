@@ -839,6 +839,8 @@ a true badge, they need a different, non-scene drawing — or the badge size is 
 Not yet wired into the game cards or `GameIntro`; the component exists and is reviewed, and
 placing it is a separate decision.
 
+**To commission a better set**: `resources/designhandoff/RADlab-Game-Icon-Brief.md` is a handoff brief for an external vector service or illustrator — the shared house style, the SVG technical spec, a copy-paste prompt per game with its exact palette and its *must avoid* list (Delve must not become a bullseye, Tune must not become a musical note), the three known-hard scene icons, and an acceptance checklist whose last item is the one that matters: all twelve rendered in a row at 24px, distinguishable at a glance. It names the existing hand-drawn set as the floor to beat, not the target.
+
 ### Card interaction
 
 The Figma removes the old always-visible `PLAY NOW` footer bar in favour of a hover-only "Play now →". Since hover does not exist on touch, the card itself is the `<Link>` and the hover pill is a veil layered on top — the card is tappable and keyboard-focusable either way, and the veil also fades in on `:focus`.
