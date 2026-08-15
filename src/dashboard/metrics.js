@@ -20,6 +20,8 @@
 // negate it: y = centre - composite_y * R. Forgetting that draws an alert
 // check-in in the corner labelled "calm".
 
+import { EMOTIONS } from '../games/StillWater/constants'
+
 export const paOf = r => (r.pos_rating - 4) / 3   // -1 = sad,  +1 = excited
 export const naOf = r => (r.neg_rating - 4) / 3   // -1 = calm, +1 = tense
 
@@ -130,16 +132,16 @@ export function followThrough(rows) {
 
 // ── Sector distribution ───────────────────────────────────────────────────────
 // The 8 labels come from getCompositeLabel(); 'neutral' is the dead zone inside
-// r < 0.15. Colours follow the four quadrant families already used across the
-// app rather than inventing a ninth palette.
+// r < 0.15. Colours are the Still Water instrument's own wedge colours (each
+// emotion its own hue), derived from EMOTIONS so they can never drift from the
+// wheel users actually tap — which is also the palette senseforaging.com's
+// /preview/session wheel ports. Replaced the earlier four-quadrant-family
+// palette 2026-08-15 (Norm): the history wheel should look like the check-in.
 
 export const SECTORS = ['Good', 'Excited', 'Alert', 'Tense', 'Bad', 'Sad', 'Still', 'Calm']
 
 export const SECTOR_COLOR = {
-  Good:    '#f068a4', Excited: '#f068a4',   // pleasant
-  Alert:   '#9b6bb5', Tense:   '#9b6bb5',   // activated
-  Bad:     '#4888cc', Sad:     '#4888cc',   // unpleasant
-  Still:   '#2a9d8f', Calm:    '#2a9d8f',   // settled
+  ...Object.fromEntries(EMOTIONS.map(e => [e.name, e.outer])),
   neutral: '#a8a4b0',
 }
 
