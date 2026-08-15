@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Wallflower</title>
+<style>
+  html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#0a0d12;}
+  canvas{display:block;touch-action:none;cursor:none;}
+  #intro{
+    position:fixed;left:0;right:0;bottom:12%;text-align:center;
+    pointer-events:none;z-index:5;padding:0 24px;
+    font-family:Georgia,'Times New Roman',serif;font-style:italic;
+    color:rgba(226,236,232,0.82);font-size:clamp(15px,2.4vw,21px);line-height:1.55;
+    text-shadow:0 1px 10px rgba(0,0,0,0.75);
+    opacity:0;transition:opacity 3.2s ease;
+  }
+  #tune{
+    position:fixed;top:8px;right:8px;z-index:10;display:none;
+    background:rgba(8,12,14,0.9);border:1px solid rgba(255,255,255,0.15);
+    border-radius:8px;padding:10px 14px;font-family:ui-monospace,monospace;font-size:11px;
+    color:#cfe2d8;min-width:230px;
+  }
+  #tune label{display:block;margin:6px 0 2px;}
+  #tune input{width:100%;}
+  #hint{
+    position:fixed;bottom:6px;right:10px;z-index:6;
+    font-family:ui-monospace,monospace;font-size:10px;color:rgba(255,255,255,0.18);
+    pointer-events:none;
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="intro"></div>
+<div id="hint">t&nbsp;·&nbsp;tuning</div>
+<div id="tune">
+  <label>fovea radius (px) <span id="v_fov"></span></label><input type="range" id="s_fov" min="60" max="320" step="10">
+  <label>company band outer (px) <span id="v_band"></span></label><input type="range" id="s_band" min="300" max="1000" step="20">
+  <label>ease rate (per s) <span id="v_ease"></span></label><input type="range" id="s_ease" min="0.01" max="0.2" step="0.005">
+  <label>watch drain (per s) <span id="v_drain"></span></label><input type="range" id="s_drain" min="0.05" max="1" step="0.05">
+  <label>chase ceiling (px/s) <span id="v_chase"></span></label><input type="range" id="s_chase" min="100" max="600" step="20">
+  <label>approach floor (px) <span id="v_near"></span></label><input type="range" id="s_near" min="120" max="400" step="10">
+</div>
+<script>
+'use strict';
+/* ============================================================
+   WALLFLOWER — motion lives only where you are not looking.
+
+   The peripheral-drift family (Rotating Snakes, the scintillating
+   grid, Troxler): the visual field is full of motion that direct
+   fixation stops dead. Here that is the physics, not an illusion:
+   small dancers spin and travel ONLY while unwatched. Fixate one
+   and it stops — not punished, just still, the way a shy thing
+   goes still when noticed. Look away and it stirs again.
+
+   Keeping quiet company is what courts them: near, but not looked
+   at. A dancer that has been danced beside long enough comes
+   nearer of its own accord, and when it fully trusts, it blooms —
+   it stamps a flower of light into the grass. The flowers are the
+   inversion: they hold still, they are made of everything the
+   dance drew while you weren't watching, and they can be looked
+   at directly for as long as you like. What moved only in the
+   corner of your eye becomes, afterwards, a thing for the centre.
+
+   Chasing empties the field: hunt with the gaze and the dancers
+   drift away and go still. Nothing is scored. The dance happens
+   whether or not you attend, and at the end of the night the
+   dancers gather and leave one last figure in the grass together.
+   ============================================================ */
+
+const REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const P = {
+  fovR:      150,    // px: inside this a dancer is fully watched, and still
+  softR:     300,    // px: watchedness fades to zero by here
+  bandR:     680,    // px: company band — near enough to be danced beside
+  easeRate:  0.055,  // per s of unwatched company
+  drainRate: 0.12,   // per s while directly watched — a glance forgives, a stare costs
+  chaseMax:  300,    // px/s smoothed gaze speed = hunting; the field retreats
+  // Must sit OUTSIDE softR: the first tuning had trust walking dancers into
+  // the watched band, where proximity to a merely-resting gaze read as being
+  // stared at — trust drained, the dancer froze, and frozen meant unable to
+  // leave. A death spiral shaped exactly like a shy creature's real dilemma,
+  // but not the one we meant to build.
+  nearFloor: 330,    // px: how close a trusting dancer will orbit
+  spinMax:   2.6,    // rad/s petal spin, unwatched
+  duration:  280,    // s: then the gathering
+};
+
+// ── canvas ──────────────────────────────────────────────────────────────────
+const cv  = document.getElementById('c');
+const ctx = cv.getContext('2d');
+let W = 0, H = 0, DPR = 1;
+
+// trails are the memory of the piece — never cleared, resized by copy
+const trailC = document.createElement('canvas');
+const tctx = trailC.getContext('2d');
+
+let groundGrad = null, vignetteGrad = null;
+
+function resize(){
+  DPR = Math.min(window.devicePixelRatio || 1, 1.75);
+  W = window.innerWidth; H = window.innerHeight;
+  const keep = document.createElement('canvas');
+  if (trailC.width > 0){ keep.width = trailC.width; keep.height = trailC.height; keep.getContext('2d').drawImage(trailC, 0, 0); }
+  cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+  cv.style.width = W + 'px'; cv.style.height = H + 'px';
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  trailC.width = cv.width; trailC.height = cv.height;
+  tctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  if (keep.width > 0) tctx.drawImage(keep, 0, 0, W, H);
+
+  groundGrad = ctx.createLinearGradient(0, 0, 0, H);
+  groundGrad.addColorStop(0, '#0b0f15');
+  groundGrad.addColorStop(0.7, '#0a0d12');
+  groundGrad.addColorStop(1, '#0c1010');
+
+  vignetteGrad = ctx.createRadialGradient(W/2, H/2, Math.min(W,H)*0.42, W/2, H/2, Math.max(W,H)*0.78);
+  vignetteGrad.addColorStop(0, 'rgba(4,6,8,0)');
+  vignetteGrad.addColorStop(1, 'rgba(4,6,8,0.5)');
+
+  buildGrass();
+  DBG.resizes++;
+}
+
+// sparse grass, seeded so the clearing does not reshuffle on resize
+const grassC = document.createElement('canvas');
+function buildGrass(){
+  grassC.width = Math.max(1, Math.round(W * DPR)); grassC.height = Math.max(1, Math.round(H * DPR));
+  const g = grassC.getContext('2d');
+  g.setTransform(DPR, 0, 0, DPR, 0, 0);
+  let seed = 20260815;
+  const srnd = (a, b) => { seed = (seed * 1664525 + 1013904223) >>> 0; return a + (seed / 4294967296) * (b - a); };
+  g.strokeStyle = 'rgba(46,66,52,0.5)';
+  g.lineWidth = 1.4;
+  for (let i = 0; i < 520; i++){
+    const x = srnd(0, W), y = srnd(0, H);
+    const h = srnd(5, 14);
+    g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + srnd(-3, 3), y - h * 0.6, x + srnd(-5, 5), y - h); g.stroke();
+  }
+  g.fillStyle = 'rgba(90,110,84,0.25)';
+  for (let i = 0; i < 40; i++){
+    g.beginPath(); g.arc(srnd(0, W), srnd(0, H), srnd(0.8, 1.8), 0, 6.284); g.fill();
+  }
+}
+
+// ── the dancers ─────────────────────────────────────────────────────────────
+// Pastel petal-rings. Each has a home it wanders about; ease pulls the home
+// toward the gaze's neighbourhood — near, never onto it.
+const TINTS = [
+  [244, 196, 210], [196, 224, 244], [210, 240, 200], [242, 228, 184],
+  [224, 202, 246], [190, 238, 230], [246, 210, 186], [214, 220, 248],
+];
+let dancers = [];
+function seedDancers(){
+  dancers = [];
+  const n = 8;
+  for (let i = 0; i < n; i++){
+    const a = (i / n) * 6.283 + 0.4;
+    dancers.push({
+      x: W / 2 + Math.cos(a) * Math.min(W, H) * 0.36,
+      y: H / 2 + Math.sin(a) * Math.min(W, H) * 0.36,
+      hx: 0, hy: 0,               // wander home (set below)
+      ph: Math.random() * 6.283,  // petal phase
+      wph: Math.random() * 6.283, // wander phase
+      spin: 0,                    // current petal spin rad/s
+      watched: 0,                 // smoothed watchedness
+      ease: 0,                    // trust, 0..1
+      bloomed: false,
+      petals: 5 + (i % 3),
+      r: 16 + (i % 3) * 3,        // petal orbit radius
+      tint: TINTS[i % TINTS.length],
+      stampAcc: 0,
+      gather: 0,                  // finale convergence
+    });
+  }
+  for (const d of dancers){ d.hx = d.x; d.hy = d.y; }
+}
+
+// ── gaze ────────────────────────────────────────────────────────────────────
+let gx = 0, gy = 0, gTX = 0, gTY = 0;
+let pointerHere = false;
+let rawSpeed = 0, smoothSpeed = 0, lastGx = 0, lastGy = 0;
+
+cv.addEventListener('pointerdown', e => {
+  pointerHere = true; gTX = e.clientX; gTY = e.clientY;
+  startAudio();
+});
+cv.addEventListener('pointermove', e => {
+  pointerHere = true; gTX = e.clientX; gTY = e.clientY;
+});
+cv.addEventListener('pointerleave', () => { pointerHere = false; });
+
+// ── simulation ──────────────────────────────────────────────────────────────
+let simT = 0;
+let hush = 0;                  // the field's response to being hunted
+let bloomCount = 0;
+let gatherT = 0;               // finale progress
+let nextGust = 18;
+const EV = [];
+const DBG = { frames: 0, resizes: 0 };
+
+function smooth01(k){ k = k < 0 ? 0 : (k > 1 ? 1 : k); return k * k * (3 - 2 * k); }
+function clamp(v, a, b){ return v < a ? a : (v > b ? b : v); }
+
+// Radii scale with the screen — the Sidelong lesson (§29b): a band authored
+// wider than the viewport puts the whole dynamic off-screen on a phone.
+function scScale(){ return clamp(Math.min(W, H) / 800, 0.45, 1); }
+
+// rank of dancer i by distance to the gaze, among in-band dancers this frame
+let rankOrder = [];
+function companyRank(i){ return rankOrder.indexOf(i); }
+
+function advance(dt){
+  simT += dt;
+  const SC = scScale();
+  const fovR = P.fovR * SC, softR = P.softR * SC, bandR = P.bandR * SC, nearFloor = P.nearFloor * SC;
+  rankOrder = dancers
+    .map((d, i) => [Math.hypot(d.x - gx, d.y - gy), i])
+    .filter(([dd]) => dd > softR && dd < bandR)
+    .sort((a, b) => a[0] - b[0])
+    .map(([, i]) => i);
+
+  const ease = 1 - Math.pow(0.002, dt);
+  if (pointerHere){ gx += (gTX - gx) * ease; gy += (gTY - gy) * ease; }
+  rawSpeed = Math.hypot(gx - lastGx, gy - lastGy) / Math.max(dt, 1e-4);
+  lastGx = gx; lastGy = gy;
+  smoothSpeed += (rawSpeed - smoothSpeed) * Math.min(1, dt / 1.1);
+
+  // hunting is a whole-field event: the dancers do not distinguish which of
+  // them is being chased, they all feel the weather of it
+  const hunting = clamp(smoothSpeed / P.chaseMax, 0, 1);
+  hush += (hunting - hush) * Math.min(1, dt / (hunting > hush ? 1.6 : 6));
+
+  const finale = simT > P.duration;
+  if (finale) gatherT = Math.min(1, gatherT + dt / 14);
+
+  for (let i = 0; i < dancers.length; i++){
+    const d = dancers[i];
+    const dist = Math.hypot(d.x - gx, d.y - gy);
+
+    // watchedness: 1 in the fovea, 0 beyond softR — smoothed, because a
+    // saccade across a dancer should not read as being stared at
+    const wTarget = 1 - smooth01((dist - fovR) / (softR - fovR));
+    d.watched += (wTarget - d.watched) * Math.min(1, dt / (wTarget > d.watched ? 0.35 : 1.4));
+
+    // the whole dynamic in one line: motion is what unwatchedness permits
+    const spinTarget = P.spinMax * (1 - d.watched) * (1 - hush * 0.7) * (0.75 + 0.25 * Math.sin(simT * 0.4 + i));
+    d.spin += (spinTarget - d.spin) * Math.min(1, dt / 0.5);
+    d.ph += d.spin * dt * (REDUCED ? 0.4 : 1);
+
+    // company: near but unwatched accrues trust; being looked at drains it.
+    // (Nothing drains just for distance — absence is neutral, staring is not.)
+    // Trust comes faster the nearer the company — and only the closest few
+    // are being kept company at all. Without both, a gaze parked anywhere
+    // courted the entire clearing at once and bloomed all eight dancers by
+    // mid-session, beating every active player — the Sidelong parking
+    // failure, wearing flowers.
+    const inBand = dist > softR && dist < bandR;
+    if (!finale){
+      if (inBand && d.watched < 0.25 && companyRank(i) < 3){
+        const prox = 1 - smooth01((dist - softR) / (bandR - softR)) * 0.85;
+        d.ease = Math.min(1, d.ease + P.easeRate * dt * (1 - hush) * prox);
+      }
+      if (d.watched > 0.6) d.ease = Math.max(0, d.ease - P.drainRate * dt);
+    }
+
+    // wander: the home breathes around; trust walks the home toward the gaze
+    // neighbourhood (near, never onto); hush walks it away
+    d.wph += dt * (0.15 + 0.05 * (i % 3));
+    const orbitR = nearFloor + (1 - d.ease) * 260 * SC;
+    const toG = Math.atan2(d.hy - gy, d.hx - gx);
+    const wantX = gx + Math.cos(toG + Math.sin(d.wph) * 0.7) * (orbitR + hush * 240);
+    const wantY = gy + Math.sin(toG + Math.sin(d.wph) * 0.7) * (orbitR + hush * 240);
+    // pull strength follows trust — an unmoved dancer just breathes in place
+    const pull = 0.02 + d.ease * 0.10;
+    d.hx += (wantX - d.hx) * Math.min(1, dt * pull * 6);
+    d.hy += (wantY - d.hy) * Math.min(1, dt * pull * 6);
+
+    // the finale gathers everyone, trusting or not — the night ends the same
+    // night for the whole clearing
+    let tx, ty;
+    if (finale){
+      d.gather = Math.min(1, d.gather + dt / 10);
+      const ga = (i / dancers.length) * 6.283 + simT * 0.12;
+      const gr = Math.min(W, H) * 0.22;
+      tx = W / 2 + Math.cos(ga) * gr;
+      ty = H / 2 + Math.sin(ga) * gr;
+    } else {
+      tx = d.hx + Math.cos(d.wph * 1.7 + i) * 40;
+      ty = d.hy + Math.sin(d.wph * 1.3 + i * 2) * 32;
+    }
+    // wander targets stay on-screen, or dancers press against the position
+    // clamp and slide along it, stamping a trail frame around the viewport
+    tx = clamp(tx, 70, W - 70); ty = clamp(ty, 70, H - 70);
+    // dancers travel only while spinning — stillness is stillness all the way
+    // down, which is what makes freezing legible rather than mysterious. The
+    // finale overrules shyness: a player staring at the gathering must not be
+    // able to stall the ending.
+    const mob = finale ? Math.max(clamp(d.spin / P.spinMax, 0, 1), gatherT) : clamp(d.spin / P.spinMax, 0, 1);
+    const step = Math.min(1, dt * (0.5 + d.gather * 1.5)) * mob;
+    d.x += (tx - d.x) * step;
+    d.y += (ty - d.y) * step;
+
+    // a stared-at dancer edges away — slowly, still frozen mid-pose. This is
+    // also the escape hatch: freezing alone would let a parked gaze pin one
+    // in the watched zone forever.
+    if (d.watched > 0.7 && !finale){
+      const away = Math.atan2(d.y - gy, d.x - gx);
+      d.x += Math.cos(away) * 26 * d.watched * dt;
+      d.y += Math.sin(away) * 26 * d.watched * dt;
+    }
+
+    // keep on screen
+    d.x = clamp(d.x, 40, W - 40); d.y = clamp(d.y, 40, H - 40);
+
+    // trails: spinning petals stamp faint light into the grass. This is the
+    // record direct gaze will be allowed to read later.
+    d.stampAcc += d.spin * dt;
+    if (d.stampAcc > 0.55 && d.x > 60 && d.x < W - 60 && d.y > 60 && d.y < H - 60){
+      d.stampAcc = 0;
+      const [r1, g1, b1] = d.tint;
+      for (let k2 = 0; k2 < d.petals; k2++){
+        const a2 = d.ph + (k2 / d.petals) * 6.283;
+        tctx.fillStyle = `rgba(${r1},${g1},${b1},${0.028 + d.ease * 0.03})`;
+        tctx.beginPath();
+        tctx.arc(d.x + Math.cos(a2) * d.r, d.y + Math.sin(a2) * d.r * 0.85, 1.6, 0, 6.284);
+        tctx.fill();
+      }
+    }
+
+    // bloom: full trust leaves a flower — stamped once, permanent, still
+    if (!d.bloomed && d.ease >= 1){
+      d.bloomed = true;
+      bloomCount++;
+      stampFlower(d);
+      EV.push({ t: +simT.toFixed(2), e: 'bloom', at: [d.x | 0, d.y | 0] });
+      bloomChord(i);
+    }
+  }
+
+  // the gathering leaves the last figure: one shared ring, stamped slowly
+  if (finale && gatherT > 0.5){
+    for (const d of dancers){
+      if (Math.random() < dt * 6){
+        const [r1, g1, b1] = d.tint;
+        tctx.fillStyle = `rgba(${r1},${g1},${b1},0.05)`;
+        tctx.beginPath(); tctx.arc(d.x, d.y, 2, 0, 6.284); tctx.fill();
+      }
+    }
+  }
+
+  // a breeze crosses the clearing without asking anyone
+  nextGust -= dt;
+  if (nextGust <= 0){ nextGust = 18 + Math.random() * 26; EV.push({ t: +simT.toFixed(2), e: 'gust' }); }
+
+  updateAudio();
+  sayings();
+}
+
+// a bloom is a one-time flower pressed into the trail layer
+function stampFlower(d){
+  const [r1, g1, b1] = d.tint;
+  for (let ring = 0; ring < 3; ring++){
+    const rr = d.r * (0.7 + ring * 0.75);
+    const n = d.petals * (ring + 1);
+    for (let k = 0; k < n; k++){
+      const a = (k / n) * 6.283 + ring * 0.35;
+      tctx.fillStyle = `rgba(${r1},${g1},${b1},${0.16 - ring * 0.04})`;
+      tctx.beginPath();
+      tctx.arc(d.x + Math.cos(a) * rr, d.y + Math.sin(a) * rr * 0.9, 2.2 - ring * 0.4, 0, 6.284);
+      tctx.fill();
+    }
+  }
+  tctx.fillStyle = `rgba(255,252,240,0.22)`;
+  tctx.beginPath(); tctx.arc(d.x, d.y, 2.6, 0, 6.284); tctx.fill();
+}
+
+// ── render ──────────────────────────────────────────────────────────────────
+function render(){
+  DBG.frames++;
+  ctx.fillStyle = groundGrad;
+  ctx.fillRect(0, 0, W, H);
+  ctx.drawImage(grassC, 0, 0, W, H);
+
+  // the record of the dance — under the dancers, over the grass
+  ctx.drawImage(trailC, 0, 0, W, H);
+
+  ctx.globalCompositeOperation = 'lighter';
+
+  for (const d of dancers){
+    const [r1, g1, b1] = d.tint;
+    // a watched dancer dims and tucks — visibly "gone still", not vanished
+    const alive = 1 - d.watched * 0.55;
+    const tuck = 1 - d.watched * 0.3;
+    // core
+    const cg = ctx.createRadialGradient(d.x, d.y, 0, d.x, d.y, 26);
+    cg.addColorStop(0, `rgba(${r1},${g1},${b1},${0.30 * alive})`);
+    cg.addColorStop(1, `rgba(${r1},${g1},${b1},0)`);
+    ctx.fillStyle = cg;
+    ctx.beginPath(); ctx.arc(d.x, d.y, 26, 0, 6.284); ctx.fill();
+    ctx.fillStyle = `rgba(255,252,244,${0.75 * alive})`;
+    ctx.beginPath(); ctx.arc(d.x, d.y, 2.2, 0, 6.284); ctx.fill();
+    // petals
+    for (let k = 0; k < d.petals; k++){
+      const a = d.ph + (k / d.petals) * 6.283;
+      const px = d.x + Math.cos(a) * d.r * tuck;
+      const py = d.y + Math.sin(a) * d.r * 0.85 * tuck;
+      ctx.fillStyle = `rgba(${r1},${g1},${b1},${(0.5 + 0.3 * d.ease) * alive})`;
+      ctx.beginPath(); ctx.arc(px, py, 2.4 + d.ease * 0.8, 0, 6.284); ctx.fill();
+    }
+  }
+
+  ctx.globalCompositeOperation = 'source-over';
+
+  // the gaze — dim on purpose
+  ctx.strokeStyle = 'rgba(214,232,224,0.13)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(gx, gy, 13, 0, 6.284); ctx.stroke();
+
+  ctx.fillStyle = vignetteGrad;
+  ctx.fillRect(0, 0, W, H);
+}
+
+// ── copy (placeholder — pending Norm's voice pass) ──────────────────────────
+const introEl = document.getElementById('intro');
+const LINES = [
+  { t: 1.5, out: 10,  s: 'Something is dancing out there. It stops when you look.' },
+  { t: 15,  out: 26,  s: 'Stay near instead, and keep your eyes somewhere else.' },
+  { t: 296, out: 312, s: 'Look now. They left you the whole dance.' },
+];
+let lineIdx = 0, lineOut = 0;
+function sayings(){
+  const L = LINES[lineIdx];
+  if (L && simT >= L.t && introEl.textContent !== L.s){
+    introEl.textContent = L.s;
+    introEl.style.opacity = 1;
+    lineOut = L.out;
+  }
+  if (lineOut && simT >= lineOut){
+    introEl.style.opacity = 0;
+    lineOut = 0;
+    lineIdx++;
+  }
+}
+
+// ── audio ───────────────────────────────────────────────────────────────────
+// The house grammar: quiet, filter not fader. The aggregate of unwatched
+// motion opens the lowpass — the clearing is audibly more alive the less it
+// is being stared at, which is the dynamic, said in sound.
+let AC = null, master = null, padLP = null, chimeBus = null, whirrG = null, started = false;
+function startAudio(){
+  if (started) return; started = true;
+  try {
+    AC = new (window.AudioContext || window.webkitAudioContext)();
+    master = AC.createGain(); master.gain.value = 0.4; master.connect(AC.destination);
+
+    padLP = AC.createBiquadFilter();
+    padLP.type = 'lowpass'; padLP.frequency.value = 300; padLP.Q.value = 0.5;
+    padLP.connect(master);
+
+    // open fifth on A
+    [55.0, 110.0, 164.81, 220.0].forEach((f, i) => {
+      const o = AC.createOscillator();
+      o.type = i < 2 ? 'sine' : 'triangle';
+      o.frequency.value = f;
+      const g = AC.createGain();
+      g.gain.value = [0.18, 0.13, 0.06, 0.03][i];
+      const lfo = AC.createOscillator(); lfo.frequency.value = 0.03 + i * 0.012;
+      const lg = AC.createGain(); lg.gain.value = g.gain.value * 0.26;
+      lfo.connect(lg); lg.connect(g.gain); lfo.start();
+      o.connect(g); g.connect(padLP); o.start();
+    });
+
+    // the dance itself, heard: soft filtered noise whose gain follows spin
+    const buf = AC.createBuffer(1, AC.sampleRate * 4, AC.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    const noise = AC.createBufferSource(); noise.buffer = buf; noise.loop = true;
+    const bp = AC.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 620; bp.Q.value = 0.7;
+    whirrG = AC.createGain(); whirrG.gain.value = 0.0;
+    noise.connect(bp); bp.connect(whirrG); whirrG.connect(master); noise.start();
+
+    chimeBus = AC.createGain(); chimeBus.gain.value = 0.5; chimeBus.connect(master);
+  } catch (_) { AC = null; }
+}
+
+function updateAudio(){
+  if (!AC || !padLP) return;
+  let spinSum = 0;
+  for (const d of dancers) spinSum += d.spin;
+  const life = clamp(spinSum / (dancers.length * P.spinMax), 0, 1);
+  padLP.frequency.setTargetAtTime(300 + 1100 * life, AC.currentTime, 1.4);
+  if (whirrG) whirrG.gain.setTargetAtTime(0.022 * life, AC.currentTime, 0.8);
+}
+
+const PENT = [440.0, 493.88, 587.33, 659.25, 740.0, 880.0];
+function bloomChord(i){
+  if (!AC || !chimeBus) return;
+  const t = AC.currentTime;
+  [0, 2].forEach((n, k) => {
+    const o = AC.createOscillator(); o.type = 'sine';
+    o.frequency.value = PENT[(i + n) % PENT.length];
+    const g = AC.createGain();
+    g.gain.setValueAtTime(0.0001, t + k * 0.18);
+    g.gain.exponentialRampToValueAtTime(0.045, t + k * 0.18 + 0.03);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + k * 0.18 + 3.0);
+    o.connect(g); g.connect(chimeBus);
+    o.start(t + k * 0.18); o.stop(t + k * 0.18 + 3.1);
+  });
+}
+
+// ── loop ────────────────────────────────────────────────────────────────────
+let prev = performance.now();
+let lastFrameAt = performance.now();
+function frame(now){
+  const dt = Math.min(0.05, (now - prev) / 1000);
+  prev = now;
+  advance(dt);
+  render();
+  lastFrameAt = now;
+  requestAnimationFrame(frame);
+}
+setInterval(() => {
+  if (performance.now() - lastFrameAt > 500){
+    prev = performance.now() - 16;
+    frame(performance.now());
+  }
+}, 250);
+
+// ── tuning panel ────────────────────────────────────────────────────────────
+const panel = document.getElementById('tune');
+window.addEventListener('keydown', e => {
+  if (e.key === 't') panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+});
+function bind(id, key, fmt){
+  const s = document.getElementById('s_' + id), v = document.getElementById('v_' + id);
+  s.value = P[key];
+  v.textContent = fmt(P[key]);
+  s.addEventListener('input', () => { P[key] = parseFloat(s.value); v.textContent = fmt(P[key]); });
+}
+bind('fov',   'fovR',      x => x | 0);
+bind('band',  'bandR',     x => x | 0);
+bind('ease',  'easeRate',  x => x.toFixed(3));
+bind('drain', 'drainRate', x => x.toFixed(2));
+bind('chase', 'chaseMax',  x => x | 0);
+bind('near',  'nearFloor', x => x | 0);
+
+// ── debug API for playtesting ───────────────────────────────────────────────
+window.__wallflower = {
+  P, EV, DBG,
+  get t(){ return simT; },
+  get hush(){ return +hush.toFixed(3); },
+  get smoothSpeed(){ return smoothSpeed | 0; },
+  get gaze(){ return [gx | 0, gy | 0]; },
+  get blooms(){ return bloomCount; },
+  get dancers(){ return dancers.map(d => ({
+    x: d.x | 0, y: d.y | 0, spin: +d.spin.toFixed(2), watched: +d.watched.toFixed(2),
+    ease: +d.ease.toFixed(3), bloomed: d.bloomed,
+  })); },
+  get summary(){
+    return {
+      durationS: +simT.toFixed(1),
+      blooms: bloomCount,
+      meanEase: +(dancers.reduce((s, d) => s + d.ease, 0) / dancers.length).toFixed(3),
+      gathered: +gatherT.toFixed(2),
+    };
+  },
+  nearest(){ let best = null, bd = 1e9; for (const d of dancers){ const k = Math.hypot(d.x - gx, d.y - gy); if (k < bd){ bd = k; best = d; } } return best ? { x: best.x | 0, y: best.y | 0, d: bd | 0, spin: +best.spin.toFixed(2), watched: +best.watched.toFixed(2), ease: +best.ease.toFixed(3) } : null; },
+  look(x, y){ pointerHere = true; gTX = x; gTY = y; return [x, y]; },
+  rest(x, y, sec){
+    if (x != null) this.look(x, y);
+    gx = lastGx = gTX; gy = lastGy = gTY;
+    for (let i = 0; i < Math.round(sec / 0.016); i++) advance(0.016);
+    render();
+    return this.summary;
+  },
+  sweep(x1, y1, x2, y2, ms){
+    const steps = Math.max(2, Math.round(ms / 16));
+    pointerHere = true;
+    gTX = x1; gTY = y1; gx = lastGx = x1; gy = lastGy = y1;
+    for (let i = 1; i <= steps; i++){
+      const k = i / steps;
+      gTX = x1 + (x2 - x1) * k;
+      gTY = y1 + (y2 - y1) * k;
+      advance(0.016);
+    }
+    render();
+    return { hush: +hush.toFixed(3), smoothSpeed: smoothSpeed | 0 };
+  },
+  step(n = 1, dt = 1 / 60){ for (let i = 0; i < n; i++) advance(dt); render(); return simT; },
+  skipTo(sec){ const n = Math.max(0, Math.round((sec - simT) / 0.05)); for (let i = 0; i < n; i++) advance(0.05); render(); return simT; },
+  bench(n = 200){
+    const a0 = performance.now(); for (let i = 0; i < n; i++) advance(1 / 60);
+    const a1 = performance.now(); for (let i = 0; i < n; i++) render();
+    const a2 = performance.now();
+    return { simMs: +((a1 - a0) / n).toFixed(2), renderMs: +((a2 - a1) / n).toFixed(2) };
+  },
+};
+
+// ── go ──────────────────────────────────────────────────────────────────────
+if (!/dev/.test(location.search)) document.getElementById('hint').style.display = 'none';
+resize();
+seedDancers();
+gx = gTX = lastGx = W / 2;
+gy = gTY = lastGy = H / 2;
+window.addEventListener('resize', resize);
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

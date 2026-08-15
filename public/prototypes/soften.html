@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Soften</title>
+<style>
+  html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#241f33;}
+  canvas{display:block;touch-action:none;cursor:none;}
+  #intro{
+    position:fixed;left:0;right:0;bottom:12%;text-align:center;
+    pointer-events:none;z-index:5;padding:0 24px;
+    font-family:Georgia,'Times New Roman',serif;font-style:italic;
+    color:rgba(248,238,228,0.85);font-size:clamp(15px,2.4vw,21px);line-height:1.55;
+    text-shadow:0 1px 10px rgba(0,0,0,0.65);
+    opacity:0;transition:opacity 3.2s ease;
+  }
+  #tune{
+    position:fixed;top:8px;right:8px;z-index:10;display:none;
+    background:rgba(20,14,28,0.9);border:1px solid rgba(255,255,255,0.15);
+    border-radius:8px;padding:10px 14px;font-family:ui-monospace,monospace;font-size:11px;
+    color:#e2d6ca;min-width:230px;
+  }
+  #tune label{display:block;margin:6px 0 2px;}
+  #tune input{width:100%;}
+  #hint{
+    position:fixed;bottom:6px;right:10px;z-index:6;
+    font-family:ui-monospace,monospace;font-size:10px;color:rgba(255,255,255,0.18);
+    pointer-events:none;
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="intro"></div>
+<div id="hint">t&nbsp;·&nbsp;tuning</div>
+<div id="tune">
+  <label>soften ramp tau (s) <span id="v_up"></span></label><input type="range" id="s_up" min="0.5" max="5" step="0.1">
+  <label>sharpen snap tau (s) <span id="v_down"></span></label><input type="range" id="s_down" min="0.1" max="2" step="0.05">
+  <label>strain ceiling (px/s) <span id="v_strain"></span></label><input type="range" id="s_strain" min="60" max="500" step="10">
+  <label>settle time (s) <span id="v_settle"></span></label><input type="range" id="s_settle" min="1" max="8" step="0.25">
+  <label>night soft floor <span id="v_floor"></span></label><input type="range" id="s_floor" min="0" max="1" step="0.05">
+  <label>dusk length (s) <span id="v_dusk"></span></label><input type="range" id="s_dusk" min="60" max="400" step="10">
+</div>
+<script>
+'use strict';
+/* ============================================================
+   SOFTEN — seeing at low spatial frequency. The squint family.
+
+   Hybrid images (Oliva & Schyns), pointillism, the designer's
+   squint test: some things exist only at low spatial frequency,
+   and sharp attention to detail is exactly what hides them.
+   Here the verb is DEFOCUS, not aversion — a held, patient act,
+   like letting the eyelids droop. Press and hold, and the scene
+   runs together; scan hard and it stays a list of objects.
+
+   Two honesties anchor it. Scotopic vision is genuinely
+   low-acuity, so as night falls the world softens itself for
+   everyone — what the player practiced is what the dark does
+   anyway. And a found figure stays found: once you have seen
+   the face in the hillside you cannot unsee it, which is true
+   of real hybrid images, so recognition is the one thing that
+   survives sharpening. That is the interdependence loop again:
+   what softness found remains usable under the hardest gaze.
+
+   Nothing is scored. Dusk deepens, birds settle, the moon rises
+   whether or not you attend. A player who never touches the
+   screen still gets the night's own reveal.
+   ============================================================ */
+
+const REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const P = {
+  tauUp:     1.9,    // s: softness arrives slowly — eyelids drooping, not a toggle
+  tauDown:   0.4,    // s: and sharpness snaps back, because opening your eyes is fast
+  strainMax: 220,    // px/s smoothed gaze speed: hunting while holding breaks the squint
+  settleT:   2.8,    // s a figure must be held in soft view to settle
+  softSee:   0.55,   // softness above which figures can settle
+  nightFloor:0.55,   // how soft the world becomes on its own at full night
+  duskT:     230,    // s to full night
+  duration:  300,    // s: past this, the dark reveals whatever was never found
+};
+
+// ── canvas ──────────────────────────────────────────────────────────────────
+const cv  = document.getElementById('c');
+const ctx = cv.getContext('2d');
+let W = 0, H = 0, DPR = 1;
+
+// The valley is authored in fixed scene units and cover-fitted, so a resize
+// never moves a figure out from under a settling gaze.
+const SC_W = 2000, SC_H = 1250;
+let sk = 1, offX = 0, offY = 0;
+function sx(x){ return x * sk + offX; }
+function sy(y){ return y * sk + offY; }
+
+// Two bakes of the same valley: one with all its high-frequency detail, one
+// with the detail blurred away and the figure masses gently emphasised. The
+// whole mechanic is a crossfade between them — defocus is whole-field, so a
+// single global alpha does it, and the per-frame cost is two full-screen
+// draws rather than a live blur.
+const sharpC = document.createElement('canvas'); const sctx = sharpC.getContext('2d');
+const softC  = document.createElement('canvas'); const fctx = softC.getContext('2d');
+const tmpC   = document.createElement('canvas');
+
+let groundGrad = null, vignetteGrad = null;
+
+function resize(){
+  DPR = Math.min(window.devicePixelRatio || 1, 1.75);
+  W = window.innerWidth; H = window.innerHeight;
+  cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+  cv.style.width = W + 'px'; cv.style.height = H + 'px';
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+
+  sk = Math.max(W / SC_W, H / SC_H);
+  offX = (W - SC_W * sk) / 2;
+  offY = (H - SC_H * sk) / 2;
+
+  buildScene();
+
+  vignetteGrad = ctx.createRadialGradient(W/2, H/2, Math.min(W,H)*0.42, W/2, H/2, Math.max(W,H)*0.80);
+  vignetteGrad.addColorStop(0, 'rgba(10,8,16,0)');
+  vignetteGrad.addColorStop(1, 'rgba(10,8,16,0.45)');
+
+  DBG.resizes++;
+}
+
+// ── the figures ─────────────────────────────────────────────────────────────
+// Each is a cluster of soft masses that IS part of the landscape: the ridge
+// is the giant, the cloudbank is the whale. In the sharp bake the same masses
+// are present but broken — detail drawn across their boundaries so the eye
+// parses trees and billows, not the gestalt. In the soft bake the detail is
+// gone and the masses get a nudge of contrast, and the shape assembles.
+// `night` marks the one figure that exists only in stars.
+const FIGS = [
+  { key: 'giant', name: 'the sleeping giant', cx: 1430, cy: 700, r: 300, found: false, prog: 0, revealed: 0 },
+  { key: 'whale', name: 'the whale',          cx: 560,  cy: 300, r: 250, found: false, prog: 0, revealed: 0 },
+  { key: 'hare',  name: 'the hare',           cx: 545,  cy: 690, r: 190, found: false, prog: 0, revealed: 0 },
+  { key: 'fox',   name: 'the fox',            cx: 1360, cy: 1030, r: 210, found: false, prog: 0, revealed: 0 },
+  { key: 'heron', name: 'the heron',          cx: 980,  cy: 205, r: 230, found: false, prog: 0, revealed: 0, night: true },
+];
+
+// Deterministic scatter for detail passes — the valley must not reshuffle on
+// resize, or it reads as a different place.
+let seed = 20260815;
+function srnd(a, b){
+  seed = (seed * 1664525 + 1013904223) >>> 0;
+  return a + (seed / 4294967296) * (b - a);
+}
+
+// ── scene bake ──────────────────────────────────────────────────────────────
+// The ridgeline: a profile. Face across x 1150–1750 (brow, nose, lips, chin),
+// chest rolling away to the right edge. Everywhere else, ordinary hills.
+function ridgeY(x){
+  let y = 810
+    + Math.sin(x * 0.004 + 1.2) * 26
+    + Math.sin(x * 0.0016 + 4.0) * 40;
+  const bump = (cx, w, h) => { const k = (x - cx) / w; if (Math.abs(k) < 1) y -= h * (0.5 + 0.5 * Math.cos(k * Math.PI)); };
+  bump(1180, 150, 55);   // brow
+  bump(1330, 90, 30);    // eye hollow sits after the brow falls
+  bump(1430, 95, 105);   // nose
+  bump(1560, 70, 34);    // lips
+  bump(1660, 90, 52);    // chin
+  bump(1870, 260, 85);   // chest
+  return y;
+}
+
+function paintBase(c){
+  // dusk sky, baked at mid-violet; the per-frame grade carries it gold→night
+  const sky = c.createLinearGradient(0, 0, 0, SC_H * 0.75);
+  sky.addColorStop(0, '#2c2a4e');
+  sky.addColorStop(0.55, '#5c4668');
+  sky.addColorStop(1, '#a06a6a');
+  c.fillStyle = sky;
+  c.fillRect(0, 0, SC_W, SC_H);
+
+  // far ridge, plain — depth for the giant to sleep against
+  c.fillStyle = '#4a4162';
+  c.beginPath(); c.moveTo(0, 700);
+  for (let x = 0; x <= SC_W; x += 12)
+    c.lineTo(x, 640 + Math.sin(x * 0.0027 + 0.7) * 42 + Math.sin(x * 0.0009) * 30);
+  c.lineTo(SC_W, SC_H); c.lineTo(0, SC_H); c.closePath(); c.fill();
+
+  // the near ridge — which is also the giant
+  c.fillStyle = '#38314e';
+  c.beginPath(); c.moveTo(0, ridgeY(0));
+  for (let x = 0; x <= SC_W; x += 8) c.lineTo(x, ridgeY(x));
+  c.lineTo(SC_W, SC_H); c.lineTo(0, SC_H); c.closePath(); c.fill();
+
+  // meadow below the ridge
+  const mg = c.createLinearGradient(0, 830, 0, SC_H);
+  mg.addColorStop(0, '#2e3140');
+  mg.addColorStop(1, '#20242f');
+  c.fillStyle = mg;
+  c.beginPath(); c.moveTo(0, ridgeY(0) + 4);
+  for (let x = 0; x <= SC_W; x += 8) c.lineTo(x, ridgeY(x) + 4);
+  c.lineTo(SC_W, SC_H); c.lineTo(0, SC_H); c.closePath(); c.fill();
+
+  // cloudbank — which is also the whale (body, fluke, flipper as three
+  // masses; decoy clouds around it so the sky is not only whale)
+  function puff(x, y, r, a){
+    const g = c.createRadialGradient(x, y, r * 0.15, x, y, r);
+    g.addColorStop(0, `rgba(196,168,178,${a})`);
+    g.addColorStop(1, 'rgba(196,168,178,0)');
+    c.fillStyle = g;
+    c.beginPath(); c.arc(x, y, r, 0, 6.284); c.fill();
+  }
+  puff(520, 300, 150, 0.5); puff(650, 320, 120, 0.45);            // whale body
+  puff(400, 270, 95, 0.42);                                        // head
+  puff(760, 250, 62, 0.4); puff(810, 210, 52, 0.42);               // fluke, raised
+  puff(560, 380, 55, 0.35);                                        // flipper
+  puff(1150, 180, 90, 0.3); puff(1650, 240, 110, 0.28);            // decoys
+  puff(230, 150, 80, 0.26); puff(940, 120, 70, 0.24);
+
+  // hedgerow — which is also the hare (two ear lumps and an arched back)
+  function blob(x, y, rx, ry, col){
+    c.fillStyle = col;
+    c.beginPath(); c.ellipse(x, y, rx, ry, 0, 0, 6.284); c.fill();
+  }
+  const HG = '#252b33';
+  blob(560, 760, 190, 75, HG);                                      // back
+  blob(430, 700, 55, 95, HG);                                       // near ear
+  blob(520, 680, 45, 105, HG);                                      // far ear
+  blob(690, 770, 90, 60, HG);                                       // haunch
+  blob(880, 800, 120, 55, HG);                                      // plain hedge, decoy
+  blob(140, 790, 110, 60, HG);
+
+  // meadow shadow — which is also the fox, curled, tail swept round
+  c.fillStyle = 'rgba(26,28,38,0.85)';
+  c.beginPath(); c.ellipse(1360, 1040, 200, 95, -0.18, 0, 6.284); c.fill();
+  c.beginPath(); c.ellipse(1490, 990, 80, 48, 0.5, 0, 6.284); c.fill();   // head tucked
+  c.beginPath(); c.ellipse(1250, 1105, 130, 42, 0.28, 0, 6.284); c.fill();// tail sweep
+  c.beginPath(); c.ellipse(950, 1090, 140, 55, 0.1, 0, 6.284); c.fill();  // decoy shadow
+}
+
+// High-frequency detail, drawn ONLY into the sharp bake — and deliberately
+// across the figure boundaries, because detail crossing an edge is what
+// breaks a gestalt. This is the layer the blur (and the night) removes.
+function paintDetail(c){
+  seed = 20260815;
+
+  // trees along the near ridge, clustered on the face so the profile reads
+  // as "hill with trees" until it doesn't
+  for (let i = 0; i < 46; i++){
+    const x = srnd(0, SC_W);
+    const y = ridgeY(x);
+    const h = srnd(26, 60) * (x > 1100 && x < 1750 ? 1.15 : 1);
+    const w = h * srnd(0.3, 0.45);
+    c.fillStyle = '#232030';
+    for (let k = 0; k < 3; k++){
+      const top = y - h + (h * 0.3) * k;
+      const half = w * (1 - k * 0.25);
+      c.beginPath();
+      c.moveTo(x, top); c.lineTo(x + half, top + h * 0.45); c.lineTo(x - half, top + h * 0.45);
+      c.closePath(); c.fill();
+    }
+    c.fillRect(x - 1.5, y - h * 0.16, 3, h * 0.2);
+  }
+
+  // cloud billow edges — bright scallops cutting across the whale's outline.
+  // Sampled AROUND the puff masses, never in open sky: a scallop with no
+  // cloud under it reads as a floating bracket, which the first bake proved.
+  const PUFFS = [
+    [520, 300, 150], [650, 320, 120], [400, 270, 95], [760, 250, 62],
+    [810, 210, 52], [560, 380, 55], [1150, 180, 90], [1650, 240, 110],
+    [230, 150, 80], [940, 120, 70],
+  ];
+  c.strokeStyle = 'rgba(232,204,196,0.45)';
+  c.lineWidth = 3;
+  for (let i = 0; i < 46; i++){
+    const p = PUFFS[(srnd(0, PUFFS.length)) | 0];
+    const a0 = srnd(0, 6.28);
+    const x = p[0] + Math.cos(a0) * p[2] * srnd(0.15, 0.7);
+    const y = p[1] + Math.sin(a0) * p[2] * srnd(0.15, 0.55);
+    const r = srnd(12, 34);
+    c.beginPath(); c.arc(x, y, r, Math.PI * srnd(0.9, 1.15), Math.PI * srnd(1.75, 2.0)); c.stroke();
+  }
+
+  // hedge leaf scribble — dense, and clustered ON the hedge masses so the
+  // blobs read as foliage; sparse arcs over bare ground read as doodles
+  const HEDGES = [
+    [560, 760, 190, 75], [430, 700, 55, 95], [520, 680, 45, 105],
+    [690, 770, 90, 60], [880, 800, 120, 55], [140, 790, 110, 60],
+  ];
+  c.strokeStyle = 'rgba(62,72,66,0.8)';
+  c.lineWidth = 2;
+  for (let i = 0; i < 340; i++){
+    const hg = HEDGES[(srnd(0, HEDGES.length)) | 0];
+    const a0 = srnd(0, 6.28), k = Math.sqrt(srnd(0, 1));
+    const x = hg[0] + Math.cos(a0) * hg[2] * k;
+    const yy = hg[1] + Math.sin(a0) * hg[3] * k;
+    const r = srnd(3, 9);
+    c.beginPath(); c.arc(x, yy, r, srnd(0, 3), srnd(3.5, 6.2)); c.stroke();
+  }
+  // a lighter leaf-glint pass along the hedge tops
+  c.strokeStyle = 'rgba(104,112,92,0.35)';
+  c.lineWidth = 1.6;
+  for (let i = 0; i < 90; i++){
+    const hg = HEDGES[(srnd(0, HEDGES.length)) | 0];
+    const a0 = srnd(3.4, 6.0);
+    const x = hg[0] + Math.cos(a0) * hg[2] * srnd(0.5, 0.95);
+    const yy = hg[1] + Math.sin(a0) * hg[3] * srnd(0.5, 0.95);
+    c.beginPath(); c.arc(x, yy, srnd(2.5, 6), srnd(0, 3), srnd(3.5, 6.2)); c.stroke();
+  }
+
+  // meadow grass strokes, rows of them, some crossing the fox
+  c.strokeStyle = 'rgba(64,72,74,0.55)';
+  c.lineWidth = 1.6;
+  for (let i = 0; i < 400; i++){
+    const x = srnd(0, SC_W), y = srnd(870, SC_H);
+    const h2 = srnd(8, 22) * (y / SC_H);
+    c.beginPath(); c.moveTo(x, y); c.quadraticCurveTo(x + srnd(-4, 4), y - h2 * 0.6, x + srnd(-7, 7), y - h2); c.stroke();
+  }
+  // seed heads
+  c.fillStyle = 'rgba(120,116,96,0.5)';
+  for (let i = 0; i < 60; i++){
+    const x = srnd(0, SC_W), y = srnd(880, SC_H);
+    c.beginPath(); c.arc(x, y - srnd(14, 26), srnd(1.5, 3), 0, 6.284); c.fill();
+  }
+
+  // settling birds — specks near the clouds
+  c.fillStyle = 'rgba(30,26,40,0.8)';
+  for (let i = 0; i < 9; i++){
+    const x = srnd(200, 1700), y = srnd(120, 420);
+    c.beginPath();
+    c.arc(x, y, 2.4, Math.PI * 1.1, Math.PI * 1.9);
+    c.arc(x + 5, y, 2.4, Math.PI * 1.1, Math.PI * 1.9);
+    c.stroke();
+  }
+}
+
+// The figure masses again, softly emphasised — drawn only into the soft bake
+// (and reused per frame for found-figure persistence). `a` scales contrast.
+function paintFigureEmphasis(c, scale, a){
+  c.save();
+  if (scale !== 1) c.scale(scale, scale);
+
+  function mass(x, y, rx, ry, rot, dark, k){
+    const g = c.createRadialGradient(x, y, Math.min(rx, ry) * 0.2, x, y, Math.max(rx, ry));
+    const col = dark ? '20,18,30' : '226,204,206';
+    g.addColorStop(0, `rgba(${col},${k * a})`);
+    g.addColorStop(1, `rgba(${col},0)`);
+    c.fillStyle = g;
+    c.save(); c.translate(x, y); c.rotate(rot); c.scale(rx / Math.max(rx, ry), ry / Math.max(rx, ry));
+    c.beginPath(); c.arc(0, 0, Math.max(rx, ry), 0, 6.284); c.fill();
+    c.restore();
+  }
+
+  // whale: one connected body, light against the dusk
+  mass(560, 310, 240, 90, 0.05, false, 0.30);
+  mass(395, 280, 90, 62, -0.1, false, 0.26);
+  mass(788, 228, 62, 48, 0.5, false, 0.30);
+  mass(566, 385, 55, 26, 0.3, false, 0.22);
+  // the giant: brow shadow, the long line of the face, a settled chest
+  mass(1215, 745, 120, 55, 0.05, true, 0.34);
+  mass(1435, 690, 70, 46, 0.1, true, 0.30);
+  mass(1610, 760, 130, 50, 0.06, true, 0.30);
+  mass(1865, 800, 200, 70, 0.02, true, 0.26);
+  // hare: ears joined to the arch of the back
+  mass(470, 685, 70, 110, -0.12, true, 0.32);
+  mass(560, 755, 170, 70, 0.05, true, 0.28);
+  // fox: body and tail one warm curl
+  mass(1360, 1035, 190, 85, -0.18, true, 0.34);
+  mass(1255, 1100, 120, 40, 0.28, true, 0.30);
+
+  c.restore();
+}
+
+// A cheap, dependency-free blur: downsample and re-upscale. Bilinear smoothing
+// does the rounding; two passes make it gaussian-ish. Chosen over ctx.filter
+// so the bake behaves identically in every browser and in headless playtests.
+const tmpC2 = document.createElement('canvas');
+function blurInto(dst, src, k){
+  const dw = Math.max(1, Math.round(src.width / k));
+  const dh = Math.max(1, Math.round(src.height / k));
+  tmpC.width = dw; tmpC.height = dh;
+  const t = tmpC.getContext('2d');
+  t.imageSmoothingEnabled = true; t.imageSmoothingQuality = 'high';
+  t.drawImage(src, 0, 0, dw, dh);
+  tmpC2.width = Math.max(1, Math.round(dw / 2)); tmpC2.height = Math.max(1, Math.round(dh / 2));
+  const t2 = tmpC2.getContext('2d');
+  t2.imageSmoothingEnabled = true; t2.imageSmoothingQuality = 'high';
+  t2.drawImage(tmpC, 0, 0, tmpC2.width, tmpC2.height);
+  const d = dst.getContext('2d');
+  d.imageSmoothingEnabled = true; d.imageSmoothingQuality = 'high';
+  d.clearRect(0, 0, dst.width, dst.height);
+  d.drawImage(tmpC2, 0, 0, dst.width, dst.height);
+}
+
+function buildScene(){
+  sharpC.width = Math.max(1, Math.round(W * DPR)); sharpC.height = Math.max(1, Math.round(H * DPR));
+  softC.width = sharpC.width; softC.height = sharpC.height;
+
+  sctx.setTransform(DPR * sk, 0, 0, DPR * sk, DPR * offX, DPR * offY);
+  paintBase(sctx);
+  paintFigureEmphasis(sctx, 1, 0.30);   // masses present but faint under the detail
+  paintDetail(sctx);
+  sctx.setTransform(1, 0, 0, 1, 0, 0);
+
+  // soft bake = the sharp bake with its detail blurred away, plus the masses
+  // given the nudge that lets the gestalt assemble
+  blurInto(softC, sharpC, 9);
+  fctx.setTransform(DPR * sk, 0, 0, DPR * sk, DPR * offX, DPR * offY);
+  paintFigureEmphasis(fctx, 1, 1);
+  fctx.setTransform(1, 0, 0, 1, 0, 0);
+}
+
+// ── stars (night only) ──────────────────────────────────────────────────────
+// A modest field, plus the heron — the one figure that was never in the land
+// at all. It links this valley to Sidelong's sky: the same bird, one night
+// over. Its stars are placed on the outline and revealed by the same softness
+// as everything else, but only once dark.
+const STARS = [];
+const HERON = [
+  [880, 120], [935, 150], [975, 190], [1000, 240],   // neck curve
+  [1030, 270], [1080, 280], [1130, 262],             // body
+  [1180, 300], [1205, 340],                          // trailing legs
+  [1055, 215], [1105, 190],                          // folded wing
+  [852, 132],                                        // beak
+];
+(function(){
+  seed = 99;
+  for (let i = 0; i < 210; i++){
+    STARS.push({ x: srnd(0, SC_W), y: srnd(0, 760), r: srnd(0.6, 1.7), tw: srnd(0, 6.28), rate: srnd(0.5, 1.8), heron: false });
+  }
+  for (const [hx, hy] of HERON){
+    STARS.push({ x: hx + srnd(-4, 4), y: hy + srnd(-4, 4), r: 2.1, tw: srnd(0, 6.28), rate: srnd(0.4, 0.9), heron: true });
+  }
+})();
+
+// ── gaze + softness ─────────────────────────────────────────────────────────
+let gx = 0, gy = 0, gTX = 0, gTY = 0;
+let holding = false, pointerHere = false;
+let rawSpeed = 0, smoothSpeed = 0, lastGx = 0, lastGy = 0;
+let soft = 0;                 // the held softness
+let S = 0;                    // effective softness (held, minus strain, or the night's own)
+let heldFor = 0;
+
+cv.addEventListener('pointerdown', e => {
+  holding = true; pointerHere = true;
+  gTX = e.clientX; gTY = e.clientY;
+  try { cv.setPointerCapture(e.pointerId); } catch (_) {}
+  startAudio();
+});
+cv.addEventListener('pointermove', e => {
+  pointerHere = true;
+  gTX = e.clientX; gTY = e.clientY;
+});
+function release(){ holding = false; }
+cv.addEventListener('pointerup', release);
+cv.addEventListener('pointercancel', release);
+cv.addEventListener('pointerleave', () => { pointerHere = false; holding = false; });
+
+// ── simulation ──────────────────────────────────────────────────────────────
+let simT = 0;
+let nightness = 0;
+let moonUp = 0;
+let softSum = 0, heldSum = 0, sampleT = 0;
+let nameShow = null, nameAlpha = 0, nameT = 0;
+let nextBird = 6;
+const EV = [];
+const DBG = { frames: 0, resizes: 0 };
+
+function advance(dt){
+  simT += dt;
+
+  // gaze eases to the pointer; with no pointer it rests where it was
+  const ease = 1 - Math.pow(0.002, dt);
+  if (pointerHere){ gx += (gTX - gx) * ease; gy += (gTY - gy) * ease; }
+  rawSpeed = Math.hypot(gx - lastGx, gy - lastGy) / Math.max(dt, 1e-4);
+  lastGx = gx; lastGy = gy;
+  smoothSpeed += (rawSpeed - smoothSpeed) * Math.min(1, dt / 1.0);
+
+  // dusk is not contingent on anything
+  nightness = clamp((simT - 60) / P.duskT, 0, 1);
+  if (simT > P.duration - 50) moonUp = clamp((simT - (P.duration - 50)) / 60, 0, 1);
+
+  // softness: held softness ramps slowly and collapses under strain; the
+  // night contributes its own floor, because scotopic vision is genuinely
+  // low-acuity — what the player practices is what the dark does anyway
+  const strain = clamp(smoothSpeed / P.strainMax, 0, 1);
+  const wantSoft = holding ? (1 - strain * 0.8) : 0;
+  const tau = wantSoft > soft ? P.tauUp : P.tauDown;
+  soft += (wantSoft - soft) * Math.min(1, dt / tau);
+  S = Math.max(soft, nightness * P.nightFloor);
+
+  if (holding) heldFor += dt; else heldFor = 0;
+  softSum += S * dt; heldSum += (holding ? 1 : 0) * dt; sampleT += dt;
+
+  // settling: a figure held in soft view assembles; a found figure stays
+  // found (once seen, it cannot be unseen — true of real hybrid images)
+  let gazeFig = null;
+  for (const f of FIGS){
+    const d = Math.hypot(sx(f.cx) - gx, sy(f.cy) - gy);
+    const near = d < f.r * sk;
+    const visible = f.night ? nightness > 0.5 : true;
+    if (near && visible) gazeFig = gazeFig || f;
+    if (f.found) continue;
+    if (near && visible && S > P.softSee){
+      f.prog = Math.min(1, f.prog + dt / P.settleT);
+      if (f.prog >= 1){
+        f.found = true;
+        EV.push({ t: +simT.toFixed(2), e: 'found', name: f.name });
+        settleChord();
+      }
+    } else {
+      f.prog = Math.max(0, f.prog - dt * 0.12);
+    }
+  }
+
+  // the name of what is being seen, softly, once it is a thing to see
+  if (gazeFig && gazeFig.found && S > 0.35){
+    nameShow = gazeFig; nameT += dt;
+  } else { nameT = 0; nameShow = S > 0.35 ? nameShow : null; }
+  nameAlpha += (((nameShow && nameT > 0.6) ? 1 : 0) - nameAlpha) * Math.min(1, dt / 0.8);
+
+  // past the arc, the dark reveals whatever was never found — staggered, one
+  // figure at a time, so the ending is a slow gift rather than a flourish
+  if (simT > P.duration){
+    FIGS.forEach((f, i) => {
+      if (!f.found && simT > P.duration + 8 * i){
+        f.revealed = Math.min(1, f.revealed + dt / 6);
+        if (f.revealed >= 1 && !f.revEv){ f.revEv = true; EV.push({ t: +simT.toFixed(2), e: 'night-reveal', name: f.name }); }
+      }
+    });
+  }
+
+  // birds settle to roost through the gold, and go quiet
+  nextBird -= dt;
+  if (nextBird <= 0){ nextBird = 6 + Math.random() * 10; if (nightness < 0.55) birdCall(); }
+
+  updateAudio(dt);
+  sayings();
+}
+
+// ── render ──────────────────────────────────────────────────────────────────
+let warmGrad = null, warmGradH = 0;
+function render(){
+  DBG.frames++;
+  // the two bakes, crossfaded by softness — the entire mechanic in two draws
+  ctx.drawImage(sharpC, 0, 0, W, H);
+  if (S > 0.005){
+    ctx.globalAlpha = S;
+    ctx.drawImage(softC, 0, 0, W, H);
+    ctx.globalAlpha = 1;
+  }
+
+  // found figures persist at any sharpness; night-revealed ones arrive dim
+  ctx.save();
+  ctx.setTransform(DPR * sk, 0, 0, DPR * sk, DPR * offX, DPR * offY);
+  for (const f of FIGS){
+    if (f.night) continue;
+    const a = Math.max(f.found ? 0.5 : 0, f.revealed * 0.4) * (1 - S * 0.55);
+    if (a > 0.01) paintFigureMassOne(ctx, f, a);
+  }
+  ctx.restore();
+
+  // the dusk grade: gold that drains, night that pools
+  const gold = Math.max(0, 1 - nightness * 1.6) * 0.26;
+  if (gold > 0.01){
+    if (!warmGrad || warmGradH !== H){
+      warmGrad = ctx.createLinearGradient(0, H * 0.3, 0, H * 0.78);
+      warmGrad.addColorStop(0, 'rgba(255,178,102,0)');
+      warmGrad.addColorStop(1, 'rgba(255,158,92,1)');
+      warmGradH = H;
+    }
+    ctx.globalAlpha = gold;
+    ctx.fillStyle = warmGrad;
+    ctx.fillRect(0, 0, W, H);
+    ctx.globalAlpha = 1;
+  }
+  if (nightness > 0){
+    ctx.fillStyle = `rgba(10,10,26,${0.52 * nightness})`;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  // stars arrive with the dark; the heron's are brighter as it is found
+  if (nightness > 0.25){
+    const heronF = FIGS[4];
+    const skyA = (nightness - 0.25) / 0.75;
+    ctx.globalCompositeOperation = 'lighter';
+    for (const st of STARS){
+      const twk = REDUCED ? 1 : 1 + Math.sin(simT * st.rate + st.tw) * 0.25;
+      let a = 0.5 * skyA * twk;
+      let r = st.r;
+      if (st.heron){
+        const lift = Math.max(heronF.prog, heronF.found ? 1 : 0, heronF.revealed);
+        a = skyA * (0.25 + 0.75 * lift) * twk;
+        r = st.r * (1 + 0.5 * lift);
+      }
+      if (sy(st.y) > ridgeY(st.x) * sk + offY) continue;
+      ctx.globalAlpha = clamp(a, 0, 1);
+      ctx.fillStyle = '#dfe6ff';
+      ctx.beginPath(); ctx.arc(sx(st.x), sy(st.y), r * sk, 0, 6.284); ctx.fill();
+    }
+    // the heron's linking lines, only as it settles
+    const lift = Math.max(heronF.prog * 0.7, heronF.found ? 1 : 0, heronF.revealed);
+    if (lift > 0.05){
+      ctx.globalAlpha = 0.22 * lift * skyA;
+      ctx.strokeStyle = '#b9c8f0';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      for (let i = 0; i < 9; i++){
+        const a2 = HERON[i], b2 = HERON[i + 1] || HERON[i];
+        ctx.moveTo(sx(a2[0]), sy(a2[1])); ctx.lineTo(sx(b2[0]), sy(b2[1]));
+      }
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  // the moon clears the chest of the giant at the very end — Sidelong's moon,
+  // seen from the valley below
+  if (moonUp > 0){
+    const mx = sx(1780), my = sy(760) - moonUp * 210 * sk;
+    const R = 22 * sk;
+    const g = ctx.createRadialGradient(mx, my, R * 0.6, mx, my, R * 5);
+    g.addColorStop(0, `rgba(214,226,255,${0.25 * moonUp})`);
+    g.addColorStop(1, 'rgba(214,226,255,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(mx, my, R * 5, 0, 6.284); ctx.fill();
+    ctx.fillStyle = `rgba(236,242,255,${0.92 * moonUp})`;
+    ctx.beginPath(); ctx.arc(mx, my, R, 0, 6.284); ctx.fill();
+    ctx.fillStyle = `rgba(198,210,238,${0.5 * moonUp})`;
+    ctx.beginPath(); ctx.arc(mx - R * 0.28, my - R * 0.2, R * 0.3, 0, 6.284); ctx.fill();
+    ctx.beginPath(); ctx.arc(mx + R * 0.22, my + R * 0.26, R * 0.2, 0, 6.284); ctx.fill();
+  }
+
+  // the name, set quietly near the figure
+  if (nameAlpha > 0.01 && nameShow){
+    ctx.font = 'italic 16px Georgia, "Times New Roman", serif';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = `rgba(240,232,224,${0.7 * nameAlpha})`;
+    ctx.fillText(nameShow.name, sx(nameShow.cx), sy(nameShow.cy - nameShow.r) - 8);
+  }
+
+  // the gaze — dim; when softening, the ring relaxes wider and fainter, the
+  // one mechanical readout, drawn as the eye rather than as a meter
+  const ringR = 13 + S * 26;
+  ctx.strokeStyle = `rgba(240,228,214,${0.14 * (1 - S * 0.6)})`;
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(gx, gy, ringR, 0, 6.284); ctx.stroke();
+
+  ctx.fillStyle = vignetteGrad;
+  ctx.fillRect(0, 0, W, H);
+}
+
+// one figure's masses, for persistence — same geometry as the emphasis pass
+function paintFigureMassOne(c, f, a){
+  const parts = {
+    whale: [[560,310,240,90,0.05,false],[395,280,90,62,-0.1,false],[788,228,62,48,0.5,false],[566,385,55,26,0.3,false]],
+    giant: [[1215,745,120,55,0.05,true],[1435,690,70,46,0.1,true],[1610,760,130,50,0.06,true],[1865,800,200,70,0.02,true]],
+    hare:  [[470,685,70,110,-0.12,true],[560,755,170,70,0.05,true]],
+    fox:   [[1360,1035,190,85,-0.18,true],[1255,1100,120,40,0.28,true]],
+  }[f.key];
+  if (!parts) return;
+  for (const [x, y, rx, ry, rot, dark] of parts){
+    const g = c.createRadialGradient(x, y, Math.min(rx, ry) * 0.2, x, y, Math.max(rx, ry));
+    const col = dark ? '20,18,30' : '226,204,206';
+    g.addColorStop(0, `rgba(${col},${0.3 * a})`);
+    g.addColorStop(1, `rgba(${col},0)`);
+    c.fillStyle = g;
+    c.save(); c.translate(x, y); c.rotate(rot); c.scale(rx / Math.max(rx, ry), ry / Math.max(rx, ry));
+    c.beginPath(); c.arc(0, 0, Math.max(rx, ry), 0, 6.284); c.fill();
+    c.restore();
+  }
+}
+
+// ── copy (placeholder — pending Norm's voice pass) ──────────────────────────
+const introEl = document.getElementById('intro');
+const LINES = [
+  { t: 1.5, out: 10,  s: 'Evening comes on. Nothing here needs looking at hard.' },
+  { t: 15,  out: 26,  s: 'Press and hold, and let your eyes half-close. The shapes will run together.' },
+  { t: 336, out: 352, s: 'They were in the hills all day.' },
+];
+let lineIdx = 0, lineOut = 0;
+function sayings(){
+  const L = LINES[lineIdx];
+  if (L && simT >= L.t && introEl.textContent !== L.s){
+    introEl.textContent = L.s;
+    introEl.style.opacity = 1;
+    lineOut = L.out;
+  }
+  if (lineOut && simT >= lineOut){
+    introEl.style.opacity = 0;
+    lineOut = 0;
+    lineIdx++;
+  }
+}
+
+// ── audio ───────────────────────────────────────────────────────────────────
+// The Sidelong grammar: quiet, filter not fader, nothing beating, nothing
+// gated and high. Softness opens the lowpass — as the eyes let go, the ear
+// admits more — and the birds settle as the gold drains.
+let AC = null, master = null, padLP = null, chimeBus = null, started = false;
+function startAudio(){
+  if (started) return; started = true;
+  try {
+    AC = new (window.AudioContext || window.webkitAudioContext)();
+    master = AC.createGain(); master.gain.value = 0.4; master.connect(AC.destination);
+
+    padLP = AC.createBiquadFilter();
+    padLP.type = 'lowpass'; padLP.frequency.value = 280; padLP.Q.value = 0.5;
+    padLP.connect(master);
+
+    // an open fifth on G — a tone down from Sidelong's, the valley under its sky
+    [49.0, 98.0, 146.83, 196.0].forEach((f, i) => {
+      const o = AC.createOscillator();
+      o.type = i < 2 ? 'sine' : 'triangle';
+      o.frequency.value = f;
+      const g = AC.createGain();
+      g.gain.value = [0.18, 0.14, 0.06, 0.03][i];
+      const lfo = AC.createOscillator(); lfo.frequency.value = 0.028 + i * 0.013;
+      const lg = AC.createGain(); lg.gain.value = g.gain.value * 0.26;
+      lfo.connect(lg); lg.connect(g.gain); lfo.start();
+      o.connect(g); g.connect(padLP); o.start();
+    });
+
+    // evening air
+    const buf = AC.createBuffer(1, AC.sampleRate * 4, AC.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    const noise = AC.createBufferSource(); noise.buffer = buf; noise.loop = true;
+    const bp = AC.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 420; bp.Q.value = 0.5;
+    const ng = AC.createGain(); ng.gain.value = 0.028;
+    noise.connect(bp); bp.connect(ng); ng.connect(master); noise.start();
+
+    chimeBus = AC.createGain(); chimeBus.gain.value = 0.5; chimeBus.connect(master);
+  } catch (_) { AC = null; }
+}
+
+function updateAudio(){
+  if (!AC || !padLP) return;
+  padLP.frequency.setTargetAtTime(280 + 1150 * S, AC.currentTime, 1.4);
+}
+
+const PENT = [392.0, 440.0, 523.25, 587.33, 659.25, 784.0];
+function ping(f, when, dur, level){
+  if (!AC || !chimeBus) return;
+  const o = AC.createOscillator(); o.type = 'sine'; o.frequency.value = f;
+  const g = AC.createGain();
+  g.gain.setValueAtTime(0.0001, when);
+  g.gain.exponentialRampToValueAtTime(level, when + 0.03);
+  g.gain.exponentialRampToValueAtTime(0.0001, when + dur);
+  o.connect(g); g.connect(chimeBus);
+  o.start(when); o.stop(when + dur + 0.05);
+}
+function settleChord(){
+  if (!AC) return;
+  const t = AC.currentTime;
+  [0, 2, 4].forEach((n, i) => ping(PENT[n], t + i * 0.2, 3.4, 0.045));
+}
+function birdCall(){
+  if (!AC) return;
+  const t = AC.currentTime;
+  const f0 = 900 + Math.random() * 500;
+  const o = AC.createOscillator(); o.type = 'sine';
+  o.frequency.setValueAtTime(f0, t);
+  o.frequency.exponentialRampToValueAtTime(f0 * 1.25, t + 0.09);
+  o.frequency.exponentialRampToValueAtTime(f0 * 0.9, t + 0.2);
+  const g = AC.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(0.016 * (1 - nightness), t + 0.04);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.26);
+  o.connect(g); g.connect(master);
+  o.start(t); o.stop(t + 0.3);
+}
+
+// ── helpers ─────────────────────────────────────────────────────────────────
+function clamp(v, a, b){ return v < a ? a : (v > b ? b : v); }
+
+// ── loop ────────────────────────────────────────────────────────────────────
+let prev = performance.now();
+let lastFrameAt = performance.now();
+function frame(now){
+  const dt = Math.min(0.05, (now - prev) / 1000);
+  prev = now;
+  advance(dt);
+  render();
+  lastFrameAt = now;
+  requestAnimationFrame(frame);
+}
+setInterval(() => {
+  if (performance.now() - lastFrameAt > 500){
+    prev = performance.now() - 16;
+    frame(performance.now());
+  }
+}, 250);
+
+// ── tuning panel ────────────────────────────────────────────────────────────
+const panel = document.getElementById('tune');
+window.addEventListener('keydown', e => {
+  if (e.key === 't') panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+});
+function bind(id, key, fmt){
+  const s = document.getElementById('s_' + id), v = document.getElementById('v_' + id);
+  s.value = P[key];
+  v.textContent = fmt(P[key]);
+  s.addEventListener('input', () => { P[key] = parseFloat(s.value); v.textContent = fmt(P[key]); });
+}
+bind('up',     'tauUp',      x => x.toFixed(1));
+bind('down',   'tauDown',    x => x.toFixed(2));
+bind('strain', 'strainMax',  x => x | 0);
+bind('settle', 'settleT',    x => x.toFixed(2));
+bind('floor',  'nightFloor', x => x.toFixed(2));
+bind('dusk',   'duskT',      x => x | 0);
+
+// ── debug API for playtesting ───────────────────────────────────────────────
+// Sim state accrues from dt only, so step() is a true synchronous clock.
+window.__soften = {
+  P, EV, DBG,
+  get t(){ return simT; },
+  get S(){ return S; },
+  get soft(){ return soft; },
+  get nightness(){ return nightness; },
+  get smoothSpeed(){ return smoothSpeed; },
+  get holding(){ return holding; },
+  get gaze(){ return [gx | 0, gy | 0]; },
+  get figures(){ return FIGS.map(f => ({ key: f.key, name: f.name, prog: +f.prog.toFixed(3), found: f.found, revealed: +f.revealed.toFixed(3) })); },
+  get summary(){
+    return {
+      durationS: +simT.toFixed(1),
+      meanSoft: +(sampleT > 0 ? softSum / sampleT : 0).toFixed(3),
+      heldFrac: +(sampleT > 0 ? heldSum / sampleT : 0).toFixed(3),
+      found: FIGS.filter(f => f.found).map(f => f.name),
+      revealedByNight: FIGS.filter(f => !f.found && f.revealed >= 1).map(f => f.name),
+    };
+  },
+  // screen position of a figure's centre, for aiming synthetic gazes
+  figAt(key){ const f = FIGS.find(f => f.key === key); return f ? { x: sx(f.cx) | 0, y: sy(f.cy) | 0, r: (f.r * sk) | 0 } : null; },
+  // synthetic input through the real handlers' state
+  look(x, y){ pointerHere = true; gTX = x; gTY = y; return [x, y]; },
+  press(){ holding = true; return true; },
+  releaseHold(){ holding = false; return false; },
+  // hold the gaze still at a point for n seconds of world time
+  rest(x, y, sec){
+    if (x != null) this.look(x, y);
+    gx = lastGx = gTX; gy = lastGy = gTY;
+    for (let i = 0; i < Math.round(sec / 0.016); i++) advance(0.016);
+    render();
+    return this.summary;
+  },
+  // move the gaze at an exact speed on the virtual clock
+  sweep(x1, y1, x2, y2, ms){
+    const steps = Math.max(2, Math.round(ms / 16));
+    pointerHere = true;
+    gTX = x1; gTY = y1; gx = lastGx = x1; gy = lastGy = y1;
+    for (let i = 1; i <= steps; i++){
+      const k = i / steps;
+      gTX = x1 + (x2 - x1) * k;
+      gTY = y1 + (y2 - y1) * k;
+      advance(0.016);
+    }
+    render();
+    return { S: +S.toFixed(3), smoothSpeed: smoothSpeed | 0 };
+  },
+  step(n = 1, dt = 1 / 60){ for (let i = 0; i < n; i++) advance(dt); render(); return simT; },
+  skipTo(sec){ const n = Math.max(0, Math.round((sec - simT) / 0.05)); for (let i = 0; i < n; i++) advance(0.05); render(); return simT; },
+  bench(n = 200){
+    const a0 = performance.now(); for (let i = 0; i < n; i++) advance(1 / 60);
+    const a1 = performance.now(); for (let i = 0; i < n; i++) render();
+    const a2 = performance.now();
+    return { simMs: +((a1 - a0) / n).toFixed(2), renderMs: +((a2 - a1) / n).toFixed(2) };
+  },
+};
+
+// ── go ──────────────────────────────────────────────────────────────────────
+if (!/dev/.test(location.search)) document.getElementById('hint').style.display = 'none';
+resize();
+gx = gTX = lastGx = W / 2;
+gy = gTY = lastGy = H / 2;
+window.addEventListener('resize', resize);
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
