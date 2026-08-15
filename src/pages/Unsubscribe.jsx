@@ -10,7 +10,7 @@ const STATES = {
   },
   ripple_success: {
     heading: 'Ripple reminders off',
-    body: "You'll no longer receive check-in reminder emails. You can still check in any time from your dashboard, and can re-enable reminders from your profile.",
+    body: "You'll no longer receive check-in reminder emails. You can still check in any time from your dashboard, and can re-enable reminders from your Account.",
   },
   ripple_already: {
     heading: 'Already unsubscribed',

@@ -54,6 +54,15 @@ function pickRandom(current) {
 
 const SES_PROMPT = 'Imagine a ladder that represents where people stand in society. At the top are people who are the best off — those with the most money, most education, and the best jobs. At the bottom are people who are the worst off. Where would you place yourself on this ladder?'
 
+// Email reminder cadences — must match AccountPage's EMAIL_CADENCES and the
+// ripples.prompt_cadence CHECK constraint (20260813_ripple_cadence_expand.sql).
+const EMAIL_FREQS = [
+  ['daily',            'Daily'],
+  ['every_other_day',  'Every other day'],
+  ['weekly',           'Weekly'],
+  ['every_other_week', 'Every other week'],
+]
+
 // devInitialStep: DEV-only escape hatch for /dev/onboarding-preview — forces the
 // flow to open on a given step so each screen can be eyeballed without a session.
 export default function WelcomeFlow({ session, onComplete, devInitialStep }) {
@@ -88,7 +97,7 @@ export default function WelcomeFlow({ session, onComplete, devInitialStep }) {
   // time before finishing. Writes ripples.reminder_* + prompt_cadence, the
   // exact fields the live WP6 reminder engine reads.)
   const [remindersOn,  setRemindersOn]  = useState(true)
-  const [reminderFreq, setReminderFreq] = useState('daily')   // 'daily' | 'weekly'
+  const [reminderFreq, setReminderFreq] = useState('daily')   // EMAIL_FREQS key
   const [reminderTime, setReminderTime] = useState('morning') // 'morning' | 'midday' | 'evening'
 
   async function load() {
@@ -136,7 +145,7 @@ export default function WelcomeFlow({ session, onComplete, devInitialStep }) {
     // is opted-in — only override when a deliberate choice was stored).
     if (rippleRow && rippleRow.reminder_enabled === true) {
       setRemindersOn(true)
-      setReminderFreq(rippleRow.prompt_cadence === 'weekly' ? 'weekly' : 'daily')
+      setReminderFreq(EMAIL_FREQS.some(([k]) => k === rippleRow.prompt_cadence) ? rippleRow.prompt_cadence : 'daily')
       setReminderTime(rippleRow.reminder_time ?? 'morning')
     }
 
@@ -265,8 +274,9 @@ export default function WelcomeFlow({ session, onComplete, devInitialStep }) {
     if (busy) return
     setBusy(true); setError(null)
 
-    // Opted out → reminder_enabled false, cadence untouched (prompt_cadence
-    // also drives the on-site check-in prompt, which stays at its default).
+    // Opted out → reminder_enabled false, cadence untouched. prompt_cadence is
+    // email-only since 2026-08-13 (the on-site check-in nudge no longer reads
+    // it), so leaving it alone costs nothing.
     const patch = remindersOn
       ? { reminder_enabled: true, reminder_time: reminderTime, prompt_cadence: reminderFreq }
       : { reminder_enabled: false }
@@ -527,7 +537,7 @@ export default function WelcomeFlow({ session, onComplete, devInitialStep }) {
               {name} reflects you best when check-ins happen regularly — a minute
               most days is plenty. To help the habit take hold, we&rsquo;ll send a
               gentle morning email reminder. You&rsquo;re in control: adjust or turn
-              it off here, or later from your profile.
+              it off here, or anytime in your Account.
             </p>
 
             <div style={S.habitCard}>
@@ -540,7 +550,7 @@ export default function WelcomeFlow({ session, onComplete, devInitialStep }) {
                   <div style={S.habitGroup}>
                     <p style={S.pickerLabel}>How often</p>
                     <div style={S.pillRow}>
-                      {[['daily', 'Daily'], ['weekly', 'Weekly']].map(([val, label]) => (
+                      {EMAIL_FREQS.map(([val, label]) => (
                         <button
                           key={val}
                           onClick={() => setReminderFreq(val)}

@@ -194,7 +194,16 @@ export default function AccountPage({ session }) {
             desc={reminderOn ? 'Sending at your chosen time.' : 'Off — no reminder emails.'}
             on={reminderOn}
             disabled={!ripple}
-            onToggle={() => patchRipple({ reminder_enabled: !reminderOn })}
+            // Enabling also normalizes a legacy cadence ('never'/'every_login',
+            // retired 2026-08-13) to 'daily' — otherwise the toggle flips on
+            // with no chip selected, and a stored 'never' means the send engine
+            // skips the user even though the UI says reminders are on.
+            onToggle={() => patchRipple(reminderOn
+              ? { reminder_enabled: false }
+              : {
+                  reminder_enabled: true,
+                  ...(EMAIL_CADENCES.some(c => c.key === cadence) ? {} : { prompt_cadence: 'daily' }),
+                })}
           />
           {reminderOn && (
             <div style={S.subSection}>
