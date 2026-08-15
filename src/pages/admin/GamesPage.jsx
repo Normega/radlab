@@ -12,6 +12,7 @@ const GAMES = [
   { name: 'Delve',         slug: 'delve',          badge: 'Attention · Sense foraging',   public: true  },
   { name: 'Tune',          slug: 'tune',           badge: 'Attention · Sense foraging',   public: true  },
   { name: 'Alongside',     slug: 'alongside',      badge: 'Attention · Sense foraging',   public: true  },
+  { name: 'Sidelong',      slug: 'sidelong',       badge: 'Attention · Sense foraging',   public: true  },
   // ── In development ─────────────────────────────────────────────────────
   // Routes are live and still record data, but these are deliberately absent
   // from src/data/games.js, so they appear on neither /games nor the About
