@@ -123,16 +123,23 @@ function takeHomeSentence(th) {
     n >= 4 ? `You’ve checked in ${n} of the last 14 days` :
              `You’ve checked in ${n === 1 ? 'once' : n === 2 ? 'twice' : '3 times'} these past two weeks`
 
-  // Mood clauses speak the wheel's own axis — pleasant ↔ unpleasant — so the
-  // sentence and the trend arrow describe the same movement in the same words.
-  // ("Heavier" was tried and read as intensity, not valence — Norm 2026-08-15.)
-  let mood
-  if (th.delta != null && th.delta >= 0.15)       mood = 'and your mood has been shifting toward the pleasant side'
-  else if (th.delta != null && th.delta <= -0.15) mood = 'and your mood has been shifting toward the unpleasant side'
-  else if (th.recent != null && th.recent >= 0.15)  mood = 'and your mood has been consistently pleasant'
-  else if (th.recent != null && th.recent <= -0.15) mood = 'and your mood has been consistently unpleasant'
-  else if (th.recent != null)                       mood = 'and your mood has held steady'
-  else                                              mood = null
+  // Mood clause: WHERE THEY ARE ON AVERAGE first (28-day mean), then a drift
+  // clause only when a recent drift actually exists (Norm, 2026-08-15). Both
+  // speak the wheel's own axis — pleasant ↔ unpleasant — so the sentence and
+  // the trend arrow describe the same movement in the same words. ("Heavier"
+  // was tried and read as intensity, not valence.)
+  let mood = null
+  if (th.overall != null) {
+    const level =
+      th.overall >= 0.15  ? 'your mood has averaged on the pleasant side' :
+      th.overall <= -0.15 ? 'your mood has averaged on the unpleasant side' :
+                            'your mood has centred near neutral'
+    const drift =
+      th.delta != null && th.delta >= 0.15  ? ', with a recent drift toward the pleasant side' :
+      th.delta != null && th.delta <= -0.15 ? ', with a recent drift toward the unpleasant side' :
+      ''
+    mood = `and ${level}${drift}`
+  }
 
   return mood ? `${consistency}, ${mood}.` : `${consistency}.`
 }

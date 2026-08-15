@@ -274,12 +274,14 @@ export function takeHome(allRows, today = dayKey()) {
     return d >= 7 && d < 28
   })
 
-  const recent = meanValence(recentRows)
-  const prior  = meanValence(priorRows)
+  const recent  = meanValence(recentRows)
+  const prior   = meanValence(priorRows)
+  const overall = meanValence([...recentRows, ...priorRows])   // whole 28-day span
 
   return {
     total:  allRows.length,
     days14,                                              // distinct check-in days, last 14
+    overall,                                             // mean valence, last 28 days (or null)
     recent,                                              // mean valence, last 7 days (or null)
     prior,                                               // mean valence, days 7–27 (or null)
     delta:  recent != null && prior != null ? recent - prior : null,
