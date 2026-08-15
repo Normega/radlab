@@ -153,28 +153,31 @@ function EmotionBody({ checkins, windowId, streak }) {
     </div>
   )
 
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+  // Wheel left, sentence beside it (Norm, 2026-08-15) — the two elements read
+  // as one unit rather than a headline over an illustration. Wraps on narrow
+  // screens, sentence dropping below the wheel.
+  return summary.count === 0 ? (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       <p style={S.headline}>{takeHomeSentence(th)}</p>
-
-      {summary.count === 0 ? (
-        <p style={S.muted}>
-          No check-ins in this window — you have {checkins.length} in total.
-          Widen the time filter to see them on the wheel.
-        </p>
-      ) : (
-        <div style={S.mapRow}>
-          <div style={{ flexShrink: 0 }}>
-            <CircumplexHistory summary={summary} />
-            <p style={S.figCaption}>Where you&rsquo;ve been landing</p>
-          </div>
-          <div style={S.statCol}>
-            <Stat label="check-ins" value={summary.count} />
-            {streak > 0 && <Stat label="day streak" value={streak} />}
-            {summary.mode && <Stat label="most often" value={summary.mode.toLowerCase()} />}
-          </div>
+      <p style={S.muted}>
+        No check-ins in this window — you have {checkins.length} in total.
+        Widen the time filter to see them on the wheel.
+      </p>
+    </div>
+  ) : (
+    <div style={S.mapRow}>
+      <div style={{ flexShrink: 0 }}>
+        <CircumplexHistory summary={summary} />
+        <p style={S.figCaption}>Where you&rsquo;ve been landing</p>
+      </div>
+      <div style={S.sideCol}>
+        <p style={S.headline}>{takeHomeSentence(th)}</p>
+        <div style={S.statRow}>
+          <Stat label="check-ins" value={summary.count} />
+          {streak > 0 && <Stat label="day streak" value={streak} />}
+          {summary.mode && <Stat label="most often" value={summary.mode.toLowerCase()} />}
         </div>
-      )}
+      </div>
     </div>
   )
 }
@@ -346,8 +349,9 @@ const S = {
     color: 'var(--tx)', lineHeight: 1.45, margin: 0, maxWidth: 640,
   },
 
-  mapRow:  { display: 'flex', gap: 28, flexWrap: 'wrap', alignItems: 'center' },
-  statCol: { display: 'flex', flexDirection: 'column', gap: 16, minWidth: 110 },
+  mapRow:  { display: 'flex', gap: 32, flexWrap: 'wrap', alignItems: 'center' },
+  sideCol: { flex: '1 1 300px', display: 'flex', flexDirection: 'column', gap: 18, minWidth: 260 },
+  statRow: { display: 'flex', gap: 28, flexWrap: 'wrap' },
 
   figCaption: { fontFamily: MONO, fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--tx3)', textAlign: 'center', margin: '4px 0 0' },
 
