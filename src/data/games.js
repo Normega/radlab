@@ -18,6 +18,7 @@
  *   farm_joy         3 rounds, 12 required selections of 24 veggies
  *   delve / tune     open-ended by design (no win state, user ends it)
  *   alongside        open-ended; its arc runs ~5 min but the player ends it
+ *   sidelong         open-ended; its arc runs ~4.5 min but the player ends it
  *
  * `trials: null` renders as an em dash, not "N/A" — a card should not say
  * nothing twice.
@@ -149,6 +150,17 @@ export const GAMES = [
     to: '/games/alongside',
     badge: 'Attention · Sense foraging',
     desc: 'A creature of light drifts through a night meadow. It cannot be caught — but it can be kept company, and it knows where the good places are.',
+    category: 'attention',
+    bucket: 'open',
+    duration: null,
+    trials: null,
+  },
+  {
+    slug: 'sidelong',
+    title: 'Sidelong',
+    to: '/games/sidelong',
+    badge: 'Attention · Sense foraging',
+    desc: 'A night sky where the faint stars are never where you point. Rest your gaze and they bloom beside it — look straight at one and it goes out.',
     category: 'attention',
     bucket: 'open',
     duration: null,

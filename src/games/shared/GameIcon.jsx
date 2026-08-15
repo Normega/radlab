@@ -237,6 +237,35 @@ export function AlongsideIcon({ size = 48, plate = true }) {
   )
 }
 
+/* ── Sidelong — the moon, and the faint ones beside it ───────────────────────
+   The mechanic cannot be drawn (an icon of *not looking at* has no way to draw
+   the not), so like the other abstract ones this is a thing from its world:
+   the moon as the resting place, and a small linked figure off beside it —
+   the gift, not the rule. Night indigo, so it sits apart from Alongside's
+   night green; the constellation lines are the one permitted stroke, secondary
+   to the star dots that carry the shape at badge size. */
+export function SidelongIcon({ size = 48, plate = true }) {
+  return (
+    <Frame size={size} plate={plate} label="Sidelong">
+      <rect width="48" height="48" fill="#141c36" />
+      <ellipse cx="30" cy="30" rx="20" ry="7" transform="rotate(-32 30 30)" fill="#8fa2d8" opacity="0.14" />
+      <circle cx="14.5" cy="13.5" r="6.2" fill="#ecf2ff" />
+      <circle cx="12.6" cy="12.2" r="1.9" fill="#c6d2ee" opacity="0.8" />
+      <circle cx="16.6" cy="15.6" r="1.3" fill="#c6d2ee" opacity="0.7" />
+      <path d="M27 33.5 L32.5 28.5 L38 30.5 L41 24.5" stroke="#96b2ec" strokeWidth="1.1" opacity="0.5" fill="none" />
+      <circle cx="27" cy="33.5" r="1.7" fill="#dfe8ff" />
+      <circle cx="32.5" cy="28.5" r="2.1" fill="#f4f8ff" />
+      <circle cx="38" cy="30.5" r="1.5" fill="#dfe8ff" />
+      <circle cx="41" cy="24.5" r="1.8" fill="#eef4ff" />
+      <circle cx="25" cy="12" r="1.2" fill="#b9c8f2" opacity="0.75" />
+      <circle cx="34" cy="16.5" r="1.4" fill="#cdd9f8" opacity="0.8" />
+      <circle cx="10" cy="30" r="1.2" fill="#b9c8f2" opacity="0.6" />
+      <circle cx="17" cy="38" r="1.4" fill="#cdd9f8" opacity="0.7" />
+      <circle cx="41" cy="10" r="1.1" fill="#b9c8f2" opacity="0.6" />
+    </Frame>
+  )
+}
+
 /* ── Farm Joy — a plant pulled, root and all ─────────────────────────────────
    The root is the whole point: in Farm Joy you pull the plant up to find out
    which value it was. A leaf above the soil would say "gardening"; a plant with
@@ -309,6 +338,7 @@ export const GAME_ICONS = {
   delve:           DelveIcon,
   tune:            TuneIcon,
   alongside:       AlongsideIcon,
+  sidelong:        SidelongIcon,
   farm_joy:        FarmJoyIcon,
   // In development — not in GAMES, but /prototypes and /admin/games list them.
   owl_barn:        OwlBarnIcon,

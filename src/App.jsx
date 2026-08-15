@@ -55,6 +55,7 @@ const Drift         = lazy(() => import('./games/Drift/Drift'))
 const Delve         = lazy(() => import('./games/Delve/Delve'))
 const Tune          = lazy(() => import('./games/Tune/Tune'))
 const Alongside     = lazy(() => import('./games/Alongside/Alongside'))
+const Sidelong      = lazy(() => import('./games/Sidelong/Sidelong'))
 const FarmJoy       = lazy(() => import('./games/FarmJoy/FarmJoy'))
 const BreathBelt    = lazy(() => import('./games/BreathBelt/BreathBelt'))
 const BreathGuardian = lazy(() => import('./games/BreathGuardian/BreathGuardian'))
@@ -76,6 +77,7 @@ const OnboardingPreview = lazy(() => import('./pages/dev/OnboardingPreview'))
 const InsightsPreview   = lazy(() => import('./pages/dev/InsightsPreview'))
 const BodyDiagramPreview = lazy(() => import('./pages/dev/BodyDiagramPreview'))
 const AlongsidePreview  = lazy(() => import('./pages/dev/AlongsidePreview'))
+const SidelongPreview   = lazy(() => import('./pages/dev/SidelongPreview'))
 const Keynote   = lazy(() => import('./pages/keynote/Keynote'))
 const ToniJuly2026 = lazy(() => import('./pages/toni-july-2026/ToniJuly2026'))
 const Talks     = lazy(() => import('./pages/talks/Talks'))
@@ -500,6 +502,12 @@ export default function App() {
             </ProtectedRoute>
           } />
 
+          <Route path="/games/sidelong" element={
+            <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome} needsRippleName={needsRippleName}>
+              <Sidelong session={session} />
+            </ProtectedRoute>
+          } />
+
           <Route path="/games/farm-joy" element={
             <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome} needsRippleName={needsRippleName}>
               <FarmJoy session={session} />
@@ -570,6 +578,7 @@ export default function App() {
           <Route path="/dev/insights-preview" element={<InsightsPreview />} />
           <Route path="/dev/body-diagram-preview" element={<BodyDiagramPreview />} />
           <Route path="/dev/alongside-preview" element={<AlongsidePreview />} />
+          <Route path="/dev/sidelong-preview" element={<SidelongPreview />} />
           {/* Breath-signal instrumentation for biofeedback game dev; ?sim=1 for beltless */}
           <Route path="/dev/breath-lab" element={<BreathLab />} />
 
