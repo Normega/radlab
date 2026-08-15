@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useAvatarConfig } from '../hooks/useAvatarConfig'
 import {
   EMOTIONS, INTENSITY_LABELS, computeRating, getCompositeLabel, LABEL_TO_ID,
@@ -519,6 +519,10 @@ export default function CheckinFlow({ session, context = 'manual', onComplete, o
   const db      = globalSupabase
   const userId  = session?.user?.id ?? null
   const navigate = useNavigate()
+  // ?from=dashboard — set by DashboardRoute when it bounces a never-checked-in
+  // user here, so the page can explain the redirect instead of appearing out
+  // of nowhere. Same pattern as the game pages' ?from= unlock bounces.
+  const fromDashboard = new URLSearchParams(useLocation().search).get('from') === 'dashboard'
 
   const [phase,            setPhase]            = useState('phase1')
   const [p1Sel,            setP1Sel]            = useState(null)
@@ -661,6 +665,15 @@ export default function CheckinFlow({ session, context = 'manual', onComplete, o
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       padding: '24px 16px', userSelect: 'none',
     }}>
+      {phase === 'phase1' && fromDashboard && (
+        <p style={{
+          fontFamily: SANS, fontSize: 14, color: '#6b6c70', margin: '0 0 18px',
+          background: 'white', border: '1.5px solid #E8D0E0', borderRadius: 12,
+          padding: '10px 16px', textAlign: 'center',
+        }}>
+          First things first — a one-minute check-in, then your dashboard is ready.
+        </p>
+      )}
       {phase === 'phase1' && (
         <RatingStep phase={1} activeIds={[1, 5]}
           labels={{ left: 'Sad', right: 'Excited', question: 'How good or energised do you feel?' }}

@@ -10,7 +10,6 @@ import FillableBox from '../components/ui/FillableBox'
 import Checkbox from '../components/ui/Checkbox'
 import OnboardingNavigation from '../components/ui/OnboardingNavigation'
 import PrimaryCTA from '../components/ui/PrimaryCTA'
-import SecondaryCTA from '../components/ui/SecondaryCTA'
 
 // ── WelcomeFlow ───────────────────────────────────────────────────────────────
 // Route: /welcome — public-tier onboarding, rebuilt for Onboarding Redesign v1
@@ -614,16 +613,20 @@ export default function WelcomeFlow({ session, onComplete, devInitialStep }) {
                 <RippleAvatar skinColor={skin.hex} eyeColor={eye.hex} size={140} />
               </div>
               <p style={{ ...S.body, flex: 1, minWidth: 220 }}>
-                Time for you and your Ripple to start exploring. Complete a
-                check-in now, or take a look at our platform and games at your
-                own pace.
+                One first check-in with {name} — a minute, two questions — and
+                your dashboard opens up from there.
               </p>
             </div>
 
             {error && <p style={S.errBox}>{error}</p>}
 
+            {/* Single CTA (2026-08-15). "Go to Dashboard" used to sit beside
+                this as an equal option, but since the never-checked-in gate
+                (App.jsx DashboardRoute) it silently bounced every brand-new
+                user to /checkin anyway — a button that promises a destination
+                it can't deliver. The check-in IS the way to the dashboard now,
+                so the copy above says so and the one button goes there. */}
             <div style={S.finishCtas}>
-              <SecondaryCTA onClick={() => finalFinish('/dashboard')}>Go to Dashboard</SecondaryCTA>
               <PrimaryCTA onClick={() => finalFinish('/checkin')} disabled={busy}>
                 {busy ? 'One sec…' : `Check-in with ${name} →`}
               </PrimaryCTA>

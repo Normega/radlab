@@ -230,7 +230,9 @@ function DashboardRoute({ session, hasAvatar, needsWelcome, needsRippleName, nev
   if (needsRippleName === undefined) return null
   if (needsRippleName) return <Navigate to="/ripple/name" replace />
   if (neverCheckedIn === undefined) return null
-  if (neverCheckedIn) return <Navigate to="/checkin" replace />
+  // ?from=dashboard so CheckinFlow can say why the user landed here — the
+  // same courtesy UnlockGuard extends for the game-prerequisite bounces.
+  if (neverCheckedIn) return <Navigate to="/checkin?from=dashboard" replace />
   return children
 }
 
