@@ -111,9 +111,15 @@ function resize(){
   cv.style.width = W + 'px'; cv.style.height = H + 'px';
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
 
-  sk = Math.max(W / SC_W, H / SC_H);
+  // Cover-fit, but never crop the visible slice below ~1250 scene units of
+  // width: a straight cover on a portrait phone showed 29% of the valley and
+  // put nearly every figure off-screen. When the cap letterboxes the scene
+  // vertically, the bake extends sky above and meadow below, and the horizon
+  // is pinned at 58% of the screen height.
+  const cover = Math.max(W / SC_W, H / SC_H);
+  sk = Math.max(W / SC_W, Math.min(cover, W / 1250));
   offX = (W - SC_W * sk) / 2;
-  offY = (H - SC_H * sk) / 2;
+  offY = SC_H * sk < H ? H * 0.58 - 830 * sk : (H - SC_H * sk) / 2;
 
   buildScene();
 
@@ -176,7 +182,10 @@ function setLFImage(img, opts = {}){
     for (let x = 0; x < tw; x++){ sum += lum(4 * x) + lum(4 * ((th - 1) * tw + x)); n += 2; }
     for (let y = 0; y < th; y++){ sum += lum(4 * y * tw) + lum(4 * (y * tw + tw - 1)); n += 2; }
     const bg = sum / n;
-    const DARK = [20, 18, 30], LIGHT = [226, 204, 206];
+    // imported figures live in the sky, so they speak cloud: shaded gray
+    // where the image is darker than its own ground, cloud-white where
+    // lighter — the duck is a cloud that happens to be a duck, not a shadow
+    const DARK = opts.dark ?? [152, 144, 166], LIGHT = opts.light ?? [238, 228, 232];
     for (let i = 0; i < d.length; i += 4){
       const dev = lum(i) - bg;
       const k = Math.min(1, Math.abs(dev) / 0.45);
@@ -261,20 +270,20 @@ function paintBase(c){
   sky.addColorStop(0.55, '#5c4668');
   sky.addColorStop(1, '#a06a6a');
   c.fillStyle = sky;
-  c.fillRect(0, 0, SC_W, SC_H);
+  c.fillRect(0, -3000, SC_W, 3000 + SC_H);   // sky continues above the authored frame
 
   // far ridge, plain — depth for the giant to sleep against
   c.fillStyle = '#4a4162';
   c.beginPath(); c.moveTo(0, 700);
   for (let x = 0; x <= SC_W; x += 12)
     c.lineTo(x, 640 + Math.sin(x * 0.0027 + 0.7) * 42 + Math.sin(x * 0.0009) * 30);
-  c.lineTo(SC_W, SC_H); c.lineTo(0, SC_H); c.closePath(); c.fill();
+  c.lineTo(SC_W, SC_H + 3000); c.lineTo(0, SC_H + 3000); c.closePath(); c.fill();
 
   // the near ridge — which is also the giant
   c.fillStyle = '#38314e';
   c.beginPath(); c.moveTo(0, ridgeY(0));
   for (let x = 0; x <= SC_W; x += 8) c.lineTo(x, ridgeY(x));
-  c.lineTo(SC_W, SC_H); c.lineTo(0, SC_H); c.closePath(); c.fill();
+  c.lineTo(SC_W, SC_H + 3000); c.lineTo(0, SC_H + 3000); c.closePath(); c.fill();
 
   // meadow below the ridge
   const mg = c.createLinearGradient(0, 830, 0, SC_H);
@@ -283,7 +292,7 @@ function paintBase(c){
   c.fillStyle = mg;
   c.beginPath(); c.moveTo(0, ridgeY(0) + 4);
   for (let x = 0; x <= SC_W; x += 8) c.lineTo(x, ridgeY(x) + 4);
-  c.lineTo(SC_W, SC_H); c.lineTo(0, SC_H); c.closePath(); c.fill();
+  c.lineTo(SC_W, SC_H + 3000); c.lineTo(0, SC_H + 3000); c.closePath(); c.fill();
 
   // cloudbank — which is also the whale (body, fluke, flipper as three
   // masses; decoy clouds around it so the sky is not only whale)
@@ -531,7 +540,7 @@ const HERON = [
 (function(){
   seed = 99;
   for (let i = 0; i < 210; i++){
-    STARS.push({ x: srnd(0, SC_W), y: srnd(0, 760), r: srnd(0.6, 1.7), tw: srnd(0, 6.28), rate: srnd(0.5, 1.8), heron: false });
+    STARS.push({ x: srnd(0, SC_W), y: srnd(-700, 760), r: srnd(0.6, 1.7), tw: srnd(0, 6.28), rate: srnd(0.5, 1.8), heron: false });
   }
   for (const [hx, hy] of HERON){
     STARS.push({ x: hx + srnd(-4, 4), y: hy + srnd(-4, 4), r: 2.1, tw: srnd(0, 6.28), rate: srnd(0.4, 0.9), heron: true });
@@ -602,7 +611,7 @@ function advance(dt){
   let gazeFig = null;
   for (const f of FIGS){
     const d = Math.hypot(sx(f.cx) - gx, sy(f.cy) - gy);
-    const near = d < f.r * sk;
+    const near = d < Math.max(f.r * sk, 90);   // floor: a figure is never smaller than a thumb
     const visible = f.night ? nightness > 0.5 : true;
     if (near && visible) gazeFig = gazeFig || f;
     if (f.found) continue;
@@ -726,7 +735,7 @@ function render(){
   // the moon clears the chest of the giant at the very end — Sidelong's moon,
   // seen from the valley below
   if (moonUp > 0){
-    const mx = sx(1780), my = sy(760) - moonUp * 210 * sk;
+    const mx = Math.min(sx(1780), W - 60), my = sy(760) - moonUp * 210 * sk;
     const R = 22 * sk;
     const g = ctx.createRadialGradient(mx, my, R * 0.6, mx, my, R * 5);
     g.addColorStop(0, `rgba(214,226,255,${0.25 * moonUp})`);
