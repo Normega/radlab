@@ -177,9 +177,30 @@ and look; do not stage past it.
 
 ---
 
+## Live dev site — push to `dev`, promote to `main` on approval
+
+The platform has a web-facing staging site. `main` is production (`radlab.zone`, auto-deploys on every push); **`dev`** is a long-lived staging branch that Vercel builds as a preview deployment on every push — reachable anywhere at **`dev.radlab.zone`** once the domain is assigned (until then, via the deployment's `*-git-dev-*.vercel.app` URL in the Vercel dashboard). Vercel serves every preview deployment with `X-Robots-Tag: noindex`, so the dev site is world-reachable but never search-indexed — no robots.txt to maintain, nothing to drift.
+
+**The loop:**
+
+1. Frontend work lands on `dev` — commit there directly, or merge a feature branch into `dev`. Do not push it to `main`.
+2. Norm reviews it live on the dev URL.
+3. Promotion is a git merge, nothing else: merge `dev` into `main` and push (doing the website.md check as part of that merge). **Never** use Vercel's "Promote to Production" on a dev build — production must always be exactly what `main` holds, or the silently-reverted-deploy hazard (Branch policy, below) returns.
+4. After promoting — and after anything that goes to `main` directly — sync back: merge `main` into `dev` and push. `dev` should never trail `main` for long.
+
+**The exception that matters — anything touching Supabase does not wait on `dev`.** The dev site talks to the *production* Supabase project: same database, same auth, same Edge Functions. There is no staging backend. A migration applied via MCP or an Edge Function deployed with the CLI is live for real participants the moment it happens, whichever branch the file sits on. So schema/Edge Function work and the frontend code coupled to it go to `main` together, at the time they are applied — exactly as Branch policy below says. Only pure-frontend work — UI, copy, layout, routes against the existing schema — waits on `dev` for approval.
+
+Rule of thumb: touches `supabase/` → `main`. Touches only `src/`, `public/`, `api/`, docs → `dev` first. (`api/` serverless functions are safe on `dev`: they deploy per-branch with the Vercel build, so the preview runs its own copy.)
+
+Two cautions. Don't casually exercise data-writing or destructive flows on the dev site — it writes to production tables. And treat `dev` as a promotion queue: if Norm rejects something sitting on it, revert it *on `dev`* promptly so it doesn't block promoting everyone else's approved work.
+
+**Setup status: complete (2026-08-14).** Norm did the four dashboard steps (domain + DNS, Preview env vars, Supabase auth redirect, deployment protection), and `dev.radlab.zone` resolves to Vercel's edge. One caveat: sessions cannot reach the domain through the sandbox egress proxy, so no session has seen the dev site actually load — if it ever boots unconfigured (blank page, Supabase errors), the first suspect is the Preview-environment env vars, which only take effect on builds made after they were set. Delete this paragraph once someone has seen the dev site working in a browser.
+
+---
+
 ## Branch policy — finish the branch, and merge before you deploy
 
-**Work on `main` directly for small, verifiable changes.** Branches earn their keep when work is risky or genuinely parallel; for "fix it, verify it live, move on" they add a merge step and a chance to forget.
+**Frontend work goes to `dev` first** (see *Live dev site* above); direct-to-`main` is for Supabase-coupled changes and the merges that promote `dev`. Feature branches beyond `dev` earn their keep when work is risky or genuinely parallel; for "fix it, verify it live, move on" they add a merge step and a chance to forget.
 
 **If you do create a branch, end the task by merging it to `main` and deleting it** — or delete it unmerged if the work was abandoned. Do not leave it for later; later is how 52 branches accumulate.
 
