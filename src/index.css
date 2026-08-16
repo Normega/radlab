@@ -542,10 +542,20 @@ body {
    rather than the labels overlapping the track. Two lines of wrap is the design
    budget — "Almost always" wraps on a narrow phone, which is why the height is
    generous and the labels are top-aligned to a common baseline. */
-.ndslider--labelled { height: 76px; }
+.ndslider--labelled { height: 84px; }
+/* The track is centred in its layer (top: 50%), so the layer must KEEP the
+   unlabelled 40px height — letting it stretch with the container re-centres the
+   track downward, straight onto the labels. That is what "the line overlaps the
+   text" was (2026-08-16). Both the visual and the invisible input are pinned,
+   so the hit area stays on the track rather than drifting below it. */
+.ndslider--labelled .ndslider__visual,
+.ndslider--labelled .ndslider__input {
+  height: 40px;
+  bottom: auto;
+}
 .ndslider__labels {
   position: absolute;
-  left: 0; right: 0; top: 40px;
+  left: 0; right: 0; top: 48px;   /* 40px slider + 8px clear of the 24px thumb */
   height: 36px;
   pointer-events: none;   /* the invisible range input above owns all input */
 }
