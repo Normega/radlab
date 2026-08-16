@@ -27,12 +27,23 @@ import {
 
 // devRows: DEV-only escape hatch for /dev/insights-preview — supplies synthetic
 // check-ins so every state can be eyeballed without an account with history.
-export default function InsightsWidget({ userId, devRows, initialWindow = 'month' }) {
+//
+// games + renderGame (2026-08-16, Norm: "fold games completely into the same
+// card"): when provided, the nav grows a Check-ins | Games tab pair, and the
+// Games tab renders renderGame(selectedId) — one game at a time, picked from a
+// dropdown that replaces the time filter on that tab. The game card components
+// stay owned by Dashboard.jsx; the `.embedded-game-card` wrapper (index.css)
+// flattens their own card chrome since this widget already supplies it.
+export default function InsightsWidget({ userId, devRows, initialWindow = 'month', initialView = 'checkins', games = null, renderGame = null }) {
+  const [view,     setView]     = useState(initialView)
+  const [gameId,   setGameId]   = useState(games?.[0]?.id ?? null)
   const [windowId, setWindowId] = useState(initialWindow)
   const [fetched,  setFetched]  = useState(null)
   const [streak,   setStreak]   = useState(null)
 
   const checkins = devRows ?? fetched
+  const hasGames = !!(games?.length && renderGame)
+  const gamesView = hasGames && view === 'games'
 
   useEffect(() => {
     if (devRows || !userId) return
@@ -53,12 +64,29 @@ export default function InsightsWidget({ userId, devRows, initialWindow = 'month
   return (
     <div style={S.widget}>
       <div style={S.nav}>
-        <p style={S.navLabel}>Your check-ins</p>
-        <TimeFilter value={windowId} onChange={setWindowId} />
+        {hasGames ? (
+          <div style={S.tabRow}>
+            <button onClick={() => setView('checkins')} style={{ ...S.tab, ...(view === 'checkins' ? S.tabActive : {}) }}>
+              Check-ins
+            </button>
+            <button onClick={() => setView('games')} style={{ ...S.tab, ...(view === 'games' ? S.tabActive : {}) }}>
+              Games
+            </button>
+          </div>
+        ) : (
+          <p style={S.navLabel}>Your check-ins</p>
+        )}
+        {gamesView
+          ? <Picker options={games} value={gameId} onChange={setGameId} />
+          : <TimeFilter value={windowId} onChange={setWindowId} />}
       </div>
-      <div style={S.body}>
-        <EmotionBody checkins={checkins} windowId={windowId} streak={streak} />
-      </div>
+      {gamesView ? (
+        <div className="embedded-game-card">{renderGame(gameId)}</div>
+      ) : (
+        <div style={S.body}>
+          <EmotionBody checkins={checkins} windowId={windowId} streak={streak} />
+        </div>
+      )}
     </div>
   )
 }
@@ -90,6 +118,45 @@ function TimeFilter({ value, onChange }) {
               style={{ ...S.filterItem, color: w.id === value ? 'var(--pk)' : 'var(--tx2)' }}
             >
               {w.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Generic picker ────────────────────────────────────────────────────────────
+// Same dropdown chrome as TimeFilter, for arbitrary {id, label} options — the
+// Games tab's selector.
+
+function Picker({ options, value, onChange }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+
+  useEffect(() => {
+    if (!open) return
+    const onDown = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [open])
+
+  const current = options.find(o => o.id === value)
+
+  return (
+    <div ref={ref} style={{ position: 'relative', flexShrink: 0 }}>
+      <button onClick={() => setOpen(o => !o)} style={S.filterBtn}>
+        {current?.label ?? '—'} <span style={{ opacity: 0.5 }}>▾</span>
+      </button>
+      {open && (
+        <div style={S.filterMenu}>
+          {options.map(o => (
+            <button
+              key={o.id}
+              onClick={() => { onChange(o.id); setOpen(false) }}
+              style={{ ...S.filterItem, color: o.id === value ? 'var(--pk)' : 'var(--tx2)' }}
+            >
+              {o.label}
             </button>
           ))}
         </div>
@@ -380,6 +447,13 @@ const S = {
     fontFamily: MONO, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase',
     color: 'var(--tx3)', margin: 0,
   },
+  tabRow: { display: 'flex', gap: 2, flexWrap: 'wrap' },
+  tab: {
+    padding: '8px 14px', borderRadius: 24, border: 'none', background: 'transparent',
+    fontFamily: SANS, fontWeight: 600, fontSize: 14, color: 'var(--tx2)',
+    cursor: 'pointer', whiteSpace: 'nowrap', transition: 'color 0.15s, background 0.15s',
+  },
+  tabActive: { color: 'var(--tx)', background: 'var(--bgp)' },
 
   filterBtn: {
     padding: '8px 14px', borderRadius: 24, border: '1px solid var(--bgp)',

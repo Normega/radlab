@@ -1,5 +1,5 @@
 ﻿import { Link } from 'react-router-dom'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import Nav from '../components/Nav'
 import EyebrowLabel from '../components/ui/EyebrowLabel'
@@ -19,7 +19,6 @@ export default function Dashboard({ session }) {
   // Reads profiles.display_name, not user_metadata — see useDisplayName for
   // why the greeting used to lag behind a rename.
   const { displayName } = useDisplayName(user)
-  const [game, setGame] = useState('still_water')
 
   // handleSignOut + useNavigate removed 2026-07-30: dead since the account-menu
   // IA rework moved signing out into the avatar dropdown. Nothing rendered it.
@@ -47,27 +46,22 @@ export default function Dashboard({ session }) {
         </div>
         <RippleSection userId={user?.id} />
 
-        {/* Insights — the single dashboard widget (Redesign v2, Figma 4082:2349).
-            Emotion is wired; the other three categories land one at a time. */}
+        {/* Insights — THE dashboard card (Redesign v2, folded further
+            2026-08-16 per Norm): check-ins and per-game stats are two tabs of
+            one card. The widget owns the tab/selector state; the per-game
+            card components below are passed in via renderGame and every one
+            stays reachable — the v2 condition ("per-game stats visible
+            somewhere") holds with a single card on the page. Owl Barn's card
+            was pulled 2026-08-13 when it went back to in-development (see
+            src/data/games.js); the route still works. */}
         <div style={{ marginTop: 40, marginBottom: 16 }}>
           <EyebrowLabel variant="white">Insights</EyebrowLabel>
         </div>
-        <InsightsWidget userId={user?.id} />
-
-        {/* Game stats — one card at a time behind a selector menu (Norm,
-            2026-08-15: the insight card is the dashboard's one main card; the
-            eight-card wall was the clutter). The per-game card components are
-            unchanged — this renders exactly one of them, chosen from the
-            dropdown beside the section label. The v2 design's condition for
-            removing the grid ("only place per-game stats are visible, nothing
-            to replace it") is met by keeping every card reachable, just not
-            all at once. Owl Barn's card was pulled 2026-08-13 when it went
-            back to in-development (see src/data/games.js); the route works. */}
-        <div style={S.gameHead}>
-          <EyebrowLabel variant="white">Games</EyebrowLabel>
-          <GameMenu value={game} onChange={setGame} />
-        </div>
-        <SelectedGameCard game={game} userId={user?.id} />
+        <InsightsWidget
+          userId={user?.id}
+          games={GAMES_MENU}
+          renderGame={id => <SelectedGameCard game={id} userId={user?.id} />}
+        />
 
         {/* Stats */}
         <div style={{ marginTop: 40, marginBottom: 16 }}>
@@ -94,12 +88,13 @@ export default function Dashboard({ session }) {
   )
 }
 
-// ── GAME MENU ─────────────────────────────────────────────────────────────────
-// Selector for which single game card renders. Same dropdown pattern as the
-// Insights widget's time filter. The full-width cards (Pond Watch, Farm Joy)
-// were always happy at full width; the small ones simply stretch.
+// ── GAME CARDS REGISTRY ───────────────────────────────────────────────────────
+// Which single game card renders inside the Insights widget's Games tab. The
+// widget owns the picker UI; these exports are what it picks from. Also
+// imported by /dev/insights-preview. The full-width cards (Pond Watch, Farm
+// Joy) were always happy at full width; the small ones simply stretch.
 
-const GAMES_MENU = [
+export const GAMES_MENU = [
   { id: 'still_water', label: 'Still Water' },
   { id: 'face_read',   label: 'Face Read' },
   { id: 'drift',       label: 'Drift' },
@@ -110,42 +105,7 @@ const GAMES_MENU = [
   { id: 'contact',     label: 'Contact' },
 ]
 
-function GameMenu({ value, onChange }) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef(null)
-
-  useEffect(() => {
-    if (!open) return
-    const onDown = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
-    document.addEventListener('mousedown', onDown)
-    return () => document.removeEventListener('mousedown', onDown)
-  }, [open])
-
-  const current = GAMES_MENU.find(g => g.id === value)
-
-  return (
-    <div ref={ref} style={{ position: 'relative', flexShrink: 0 }}>
-      <button onClick={() => setOpen(o => !o)} style={S.gameMenuBtn}>
-        {current?.label ?? 'Pick a game'} <span style={{ opacity: 0.5 }}>▾</span>
-      </button>
-      {open && (
-        <div style={S.gameMenuList}>
-          {GAMES_MENU.map(g => (
-            <button
-              key={g.id}
-              onClick={() => { onChange(g.id); setOpen(false) }}
-              style={{ ...S.gameMenuItem, color: g.id === value ? 'var(--pk)' : 'var(--tx2)' }}
-            >
-              {g.label}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
-function SelectedGameCard({ game, userId }) {
+export function SelectedGameCard({ game, userId }) {
   switch (game) {
     case 'face_read':  return <FaceReadCard userId={userId} />
     case 'drift':      return <DriftCard userId={userId} />
@@ -940,26 +900,6 @@ const S = {
     display: 'flex', alignItems: 'center', gap: 28, flexWrap: 'wrap',
     background: 'var(--bgc)', border: '1px solid var(--pkbs)',
     borderRadius: 24, padding: '18px 22px',
-  },
-  gameHead: {
-    marginTop: 40, marginBottom: 16, display: 'flex', alignItems: 'center',
-    justifyContent: 'space-between', gap: 12, flexWrap: 'wrap',
-  },
-  gameMenuBtn: {
-    padding: '8px 14px', borderRadius: 24, border: '1px solid var(--bgp)',
-    background: 'var(--bgc)', fontFamily: MONO, fontSize: 11, letterSpacing: '0.08em',
-    textTransform: 'uppercase', color: 'var(--tx2)', cursor: 'pointer', whiteSpace: 'nowrap',
-  },
-  gameMenuList: {
-    position: 'absolute', right: 0, top: 'calc(100% + 6px)', zIndex: 20,
-    background: 'var(--bgc)', border: '1px solid var(--bgp)', borderRadius: 12,
-    padding: 6, minWidth: 160, boxShadow: '0 8px 28px rgba(0,0,0,0.10)',
-    display: 'flex', flexDirection: 'column',
-  },
-  gameMenuItem: {
-    textAlign: 'left', padding: '8px 10px', borderRadius: 8, border: 'none',
-    background: 'transparent', fontFamily: MONO, fontSize: 11, letterSpacing: '0.08em',
-    textTransform: 'uppercase', cursor: 'pointer',
   },
   gameCard: { background: 'var(--bgc)', border: '1px solid var(--pkbs)', borderRadius: 16, overflow: 'hidden', display: 'flex', flexDirection: 'column' },
   gameCardMuted: { border: '1px solid var(--bd)' },

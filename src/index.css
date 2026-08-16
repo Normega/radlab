@@ -564,3 +564,23 @@ body {
   color: var(--tx);
   font-weight: 600;
 }
+
+/* ── Insights widget: embedded game card ──────────────────────────────────────
+   The Games tab of the dashboard Insights widget renders one of Dashboard.jsx's
+   per-game cards inside the widget's own bordered surface. The widget supplies
+   the card chrome, so the game card's own flattens away — border/background/
+   radius off the outer div only; everything inside (stat clusters, sparklines,
+   the Play footer's top border) is untouched. */
+.embedded-game-card {
+  /* Clip the card's square-cornered footer strip to the widget's rounded
+     bottom corners. */
+  overflow: hidden;
+  border-radius: 0 0 16px 16px;
+}
+.embedded-game-card > div {
+  /* !important: the card's chrome is inline styles (S.gameCard), which beat
+     any stylesheet specificity — this rule loses silently without it. */
+  border: none !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+}

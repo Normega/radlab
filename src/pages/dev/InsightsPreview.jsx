@@ -1,6 +1,6 @@
 import { useSearchParams } from 'react-router-dom'
 import InsightsWidget from '../../dashboard/InsightsWidget'
-import { RippleFace, RippleCard } from '../Dashboard'
+import { RippleFace, RippleCard, GAMES_MENU, SelectedGameCard } from '../Dashboard'
 import { dayKey } from '../../dashboard/metrics'
 
 /**
@@ -121,7 +121,16 @@ export default function InsightsPreview() {
           }} />
         </div>
 
-        <InsightsWidget devRows={rows} initialWindow={window} />
+        {/* games/renderGame with no userId: each game card shows its empty /
+            description state — enough to eyeball the folded Games tab layout.
+            ?view=games opens on the Games tab (headless screenshots can't click). */}
+        <InsightsWidget
+          devRows={rows}
+          initialWindow={window}
+          initialView={params.get('view') === 'games' ? 'games' : 'checkins'}
+          games={GAMES_MENU}
+          renderGame={id => <SelectedGameCard game={id} userId={null} />}
+        />
       </div>
     </div>
   )
