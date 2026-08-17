@@ -3118,6 +3118,50 @@ researchers), and it carried both paraphilia asks on its own:
 Red set after this pass: **5** — the two above, plus ECT/Ontario-consent, Tarasoff implementation,
 and involuntary-hospitalisation evidence (the latter two are literature searches, not documents).
 
+### 29.8 The forensic five close — Norm supplied both documents (2026-08-17)
+
+Both landed in `I:\Shared drives\ComeSee\PSY240` within a day of the flag.
+
+**`sleep-wake-disorders` (v5) — "The sleepwalking defence: *R v Parks*".** The SCC scan
+(1992 CanLII 78) is an **image PDF whose only text layer is the CanLII watermark** — every page
+extracted exactly 20 characters — so it was read visually, the `reference_pdf_reading_lessons` route
+ladder working as intended. The subsection is the best available demonstration of a claim this course
+makes repeatedly: **a diagnostic category and a legal category are not the same object.** Parks drove
+23 km asleep, killed his mother-in-law, injured his father-in-law and drove to a police station; five
+defence experts went uncontradicted, the Crown calling none. The case turned not on whether he was
+asleep but on whether **somnambulism is a "disease of the mind"** — and the Court's answer is the
+teaching point: *that phrase is a legal term, not a medical term of art*, carrying a policy component
+(scope of exemption, protection of the public), so **a trial judge cannot rely blindly on medical
+opinion.** The **internal cause** theory was held unhelpful here because *"the distinction between
+internal and external causes is blurred during sleep"*. Acquittal upheld — and stated at its true
+width: the Court said sleepwalking **on different evidence might** be found a disease of the mind, so
+*Parks* is a burden-of-proof outcome, not a classification of the parasomnia. The later automatism
+line (*R v Stone*, 1999) is **not** in the corpus and the page says so.
+
+**`pedophilic-disorder` (v5) — "Reporting duties in Ontario".** From the consolidated **CYFSA
+s. 125**. Written around the four things practitioners get wrong: the threshold is **reasonable
+grounds to suspect**, not proof (the society assesses, s. 126); the report must be made **personally
+and directly**, since s. 125(3) forbids relying on anyone else to report on your behalf — telling a
+supervisor is not compliance; the duty is **continuing** (s. 125(2)); and it **does not bind for
+16–17-year-olds** (s. 125(4)), which is stated precisely, given §29's note that the corpus has been
+wrong about a statutory age threshold once already. On confidentiality the section speaks for itself:
+it applies **"although the information reported may be confidential or privileged"** (s. 125(10)),
+**prevails over PHIPA** (s. 125(12)), and preserves **only solicitor-client privilege** (s. 125(11))
+— *a lawyer's privilege survives; a psychologist's confidentiality does not.* Psychologists are named
+in the offence provision; the fine is up to $5,000.
+
+**One cross-link written to keep the hub honest.** `law-and-ethics` (v16) had been given a
+duty/permission/power triptych in §29.6, which a reader would fairly take as exhaustive. The CYFSA
+duty is a **fourth instrument and the only true duty binding a psychologist**, so the hub now carries
+a short paragraph saying so and pointing at the full treatment.
+
+**Red set: 3.** Corpus **740 open · 129 green · 608 amber · 3 red**. What remains is the ECT Ontario
+consent pathway (another Ontario document — HCCA / Consent and Capacity Board), plus two literature
+searches that need no one's help: Tarasoff implementation variation, and the involuntary-
+hospitalisation evidence on `suicide-and-self-harm`. Three new student-tier asks were derived from
+the residuals, one of them the natural sequel to the CYFSA work: **how the duty is framed outside
+Ontario** (green — child protection is provincial, and the corpus now carries one province).
+
 **Surveillance data needs a staleness marker.** The PHAC figures are from a live page that updates
 continuously. The section states its retrieval date inline and tells the reader to re-check each term
 — the same treatment `student-support-resources` gets, and the right default for any live-data source.
