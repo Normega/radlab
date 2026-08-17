@@ -3215,6 +3215,50 @@ which is the right document — but **cpso.on.ca 403s automated fetch**, exactly
 canada.ca, CanLII, Wiley and PhilArchive have. Printing it to PDF into
 `I:\Shared drives\ComeSee\PSY240` closes the red set; the pattern has now worked three times.
 
+### 29.10 The red set closes — 12 of 12 (2026-08-17)
+
+Norm supplied the CPSO guide within the hour, and `electroconvulsive-therapy` (v5) gained **"The
+Ontario consent pathway"**. It is the fourth document request in three days and the fourth to land;
+that loop — *Claude names the exact document, Norm fetches it, Claude writes it up* — is now the
+established way past the institutional 403 wall, and is worth keeping as the default rather than
+degrading to a weaker open-access substitute.
+
+**A scope note is doing real work in this one.** The CPSO guide is **general to all treatment and
+says nothing about ECT**, so the section states that plainly and presents the framework ECT *sits
+inside* rather than pretending to an ECT protocol. What it supplies is exactly what the Indian
+guideline structurally could not: the four elements of valid consent; the **two-prong capacity
+test** (understand *and* appreciate) with capacity **decision- and time-specific** and **presumed —
+including for minors**, so a capable minor consents personally, which is the sharp contrast with the
+Indian scheme's layered minor safeguard already on the page; the nine-step **SDM hierarchy**; and the
+rule clinicians most often get wrong — an SDM does **not** substitute their own judgement but must
+follow the **most recent capable wish expressed at 16 or older**, reaching *best interests* only when
+no applicable wish exists.
+
+Two hooks tie the statute back to the clinical content already on the page. The duty to disclose
+**alternatives and the consequences of refusal** makes the efficacy-versus-cognition trade-off a
+*legal* requirement, not merely good practice. And the best-interests test's final factor — **whether
+a less restrictive or less intrusive treatment would be as beneficial** — is the statutory hook on
+which ECT's intrusiveness hangs.
+
+**The CCB appears at three points**, which answers the ask directly: it can **appoint a
+representative** as SDM; where a physician becomes aware of an application or potential application,
+**HCCA s. 18 governs when treatment may begin**, so a pending capacity challenge constrains starting
+a course; and a physician who believes an SDM has not complied may **apply to the Board** (in an
+emergency, a non-compliant refusal may be acted on directly under s. 21). Emergency provisions are
+recorded with the limit that matters most: **a prior capable refusal still binds.**
+
+**Red set: 0 of 12.** Corpus **742 open · 133 green · 608 amber · 0 red**, and the residual asks from
+this pass all came back green or amber — including the ECT one worth naming, since it is the honest
+remainder of this closure: **whether Ontario imposes any ECT-specific requirement beyond the general
+HCCA pathway** (a hospital policy, an OHA or CAMH protocol, or the Mental Health Act's treatment
+provisions would settle it).
+
+**What the red set cost, for the record.** Twelve gaps, five days, four documents from Norm, eleven
+sources, and no student ever exposed to a clinical-instruction or legal-standard ask. §29's founding
+argument — that difficulty and risk come apart, and the sorting question is *what happens if this is
+answered wrongly and nobody catches it* — held all the way through: several of these were easy, and
+every one of them would have been the wrong thing to hand a second-year student.
+
 **Surveillance data needs a staleness marker.** The PHAC figures are from a live page that updates
 continuously. The section states its retrieval date inline and tells the reader to re-check each term
 — the same treatment `student-support-resources` gets, and the right default for any live-data source.
