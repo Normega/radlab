@@ -3082,6 +3082,42 @@ defence and reporting duties); `suicide-and-self-harm` **involuntary-hospitalisa
 (needs the equivocal-evidence literature — Large/Ryan-style prospective work); and
 `tarasoff-duty-to-warn` **implementation variation** (needs a US duty-to-protect review).
 
+### 29.7 The forensic five: three closed, two blocked on documents (2026-08-16)
+
+`canada forensic paraphilias.pdf` turned out to be **Marshall & Kingston (2018), Diagnostic Issues
+in the Paraphilias** (Curr Psychiatry Rep 20:54, Crown copyright — two Canadian forensic
+researchers), and it carried both paraphilia asks on its own:
+
+- **`paraphilic-disorders` (v6)** — "The forensic stakes: sentencing and civil commitment": US SVP
+  laws using paraphilic diagnoses as the requisite "mental condition" for indefinite confinement;
+  Levenson's field reliability (**pedophilia κ=0.65 · exhibitionism 0.47 · paraphilia NOS 0.36 ·
+  sexual sadism 0.30**) against the **κ≥0.9** standard for very important decisions; the undefined
+  "substantial objective evidence" denial clause; and the prognostic asymmetry — the pedophilia
+  diagnosis predicts reoffending **only in untreated men** (23.8% vs 12%; treated 5.9% vs 7.8% ns),
+  i.e. exactly the population that reaches commitment hearings.
+- **`sexual-sadism-and-masochism-disorders` (v3)** — "The diagnosis in court": the Canadian
+  National-Parole-Board studies — sadist verdict blocks parole, yet the examiners' "non-sadists"
+  showed **greater** arousal to violent-rape depictions and had **more often tortured their
+  victims**; 12 files to 15 international experts → **κ=0.14**; no centre adhered to DSM criteria;
+  the SeSaS as the empirically derived, dimensionally scorable alternative. The page's existing
+  "category drawn from an apprehended sample" caution now has its evidence.
+- **`intermittent-explosive-disorder` (v4)** — criminal-responsibility paragraph from Nichol's
+  *Mental Disorders and the Criminal Justice System* (Open Oregon, CC BY-NC): the diagnosis looks
+  tailor-made for the **irresistible impulse test** and is served by none of it — the test is
+  criticised as too broad ("mere low self-control") and infrequently used, and statutes like Or.
+  Rev. Stat. § 161.295 exclude disorders **consisting essentially of repeated antisocial conduct**
+  from grounding any insanity defence at all.
+
+**The two that need documents Norm can get** (every host involved 403s automated fetch):
+
+| gap | what is needed |
+|---|---|
+| `sleep-wake-disorders` — the sleepwalking defence | **R v Parks, [1992] 2 S.C.R. 871** (CanLII: `1992canlii78`) — the SCC sleepwalking-homicide acquittal, non-insane automatism; ideally also **R v Stone, [1999] 2 S.C.R. 290**, which reframed the automatism analysis. Same shape as the Smith v Jones PDF already in `PSY240resources/`. The CJS textbook has zero automatism content. |
+| `pedophilic-disorder` — Canadian reporting duties | An Ontario **duty-to-report** document: the CYFSA s.125 provision (child in need of protection; applies to professionals; overrides confidentiality) — ontario.ca's "Report child abuse and neglect" page printed to PDF, or the ministry's professional duty-to-report sheet. No source in the corpus or the resources folder covers it. |
+
+Red set after this pass: **5** — the two above, plus ECT/Ontario-consent, Tarasoff implementation,
+and involuntary-hospitalisation evidence (the latter two are literature searches, not documents).
+
 **Surveillance data needs a staleness marker.** The PHAC figures are from a live page that updates
 continuously. The section states its retrieval date inline and tells the reader to re-check each term
 — the same treatment `student-support-resources` gets, and the right default for any live-data source.
