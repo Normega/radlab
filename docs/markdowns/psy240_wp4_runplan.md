@@ -3162,6 +3162,59 @@ hospitalisation evidence on `suicide-and-self-harm`. Three new student-tier asks
 the residuals, one of them the natural sequel to the CYFSA work: **how the duty is framed outside
 Ontario** (green — child protection is provincial, and the corpus now carries one province).
 
+### 29.9 The two searches land; red set reaches 1 (2026-08-17)
+
+**`tarasoff-duty-to-warn` (v3)** — the `clinical implementation and evidence` section existed as a
+heading with no prose (a derived `empty_section` gap) and is now written from Johnson, Persad &
+Sisti (2014, *JAAPL* 42(4):469–477) with StatPearls corroborating the counts. The section's argument
+is that **"the Tarasoff rule" names something that exists uniformly only in California**: **23**
+states impose a mandatory statutory duty, **10** a common-law duty, **11** are *permissive* —
+protecting a clinician who warns while imposing no obligation — and **6** have neither statute nor
+case law. Trigger conditions vary (identifiable victim, imminence — variously defined, seriousness),
+and Tarasoff I's duty to *warn* versus Tarasoff II's duty to *protect* changes what discharges it,
+since protecting can be done without a confidentiality breach.
+
+**The finding worth teaching is about the rule's users, not the rule**: **76% of surveyed
+psychologists chose the wrong description of their own state's duty-to-protect law, though 87% had
+received Tarasoff training** — and only **3% of surveyed police**, a routine recipient of warnings,
+had heard of the doctrine. A rule four-fifths of its subjects misunderstand is not doing the work
+its defenders claim for it. On costs, StatPearls' "double-edged sword" framing gives the predicted
+defensive response — over-disclosure and **more involuntary commitments** — which lands on the
+therapeutic relationship and on help-seeking, i.e. the *Smith v Jones* dissent's argument arriving
+from the American side.
+
+**`suicide-and-self-harm` (v3) — "Involuntary hospitalisation as prevention".** Written from Chung
+et al. (2017, *JAMA Psychiatry*), Kallert et al. (2008) and Jordan & McNiel (2020). The numbers:
+post-discharge suicide pooled at **484 per 100,000 person-years across 100 studies and 17,857
+suicides**, rising to **1,132 (95% CI 874–1,467) in the first three months**; involuntarily admitted
+patients **over-represented among suicides** (52–78% in three studies), with lower treatment
+satisfaction and elevated treatment-related stress; and **perceived coercion at admission predicting
+increased post-discharge suicide attempts**.
+
+The section's discipline is refusing the easy reading. Those figures are compatible with *selection*
+(hospitals admit the highest-risk people) and with *iatrogenesis* (discharge is itself dangerous),
+and **the observational designs cannot separate them** — people are detained *because* they are
+judged high-risk, which is confounding by indication on the outcome's strongest predictor, and the
+randomised design that would settle it is ethically unavailable. So the honest summary is **not
+"involuntary hospitalisation does not work" but "the study that could show whether it works cannot
+be run, and the observational evidence does not favour it"** — with three practice implications that
+follow anyway (the post-discharge window deserves matched follow-up intensity; coercion's costs are
+measurable, making least-restrictive an evidential and not merely ethical preference; and the
+mechanism is carrying more evidential weight than the literature supports — the same error the page
+already records in the abandonment of no-harm contracts).
+
+**Red set: 1.** Corpus **740 open · 131 green · 608 amber · 1 red**. Four of the residual asks came
+back **green**, which is the intended behaviour of the whole pipeline: staff close what only staff
+may close, and the ordinary follow-up questions land back on the student board.
+
+**The last red is blocked, and it is a document request.** `electroconvulsive-therapy` wants the
+**Ontario** consent pathway including the Consent and Capacity Board's role where capacity is
+disputed. Norm proposed the CPSO's *Guide to the Health Care Consent Act*
+(`cpso.on.ca/physicians/policies-guidance/policies/consent-to-treatment/guide-to-the-health-care-consent-act`),
+which is the right document — but **cpso.on.ca 403s automated fetch**, exactly as ontario.ca,
+canada.ca, CanLII, Wiley and PhilArchive have. Printing it to PDF into
+`I:\Shared drives\ComeSee\PSY240` closes the red set; the pattern has now worked three times.
+
 **Surveillance data needs a staleness marker.** The PHAC figures are from a live page that updates
 continuously. The section states its retrieval date inline and tells the reader to re-check each term
 — the same treatment `student-support-resources` gets, and the right default for any live-data source.
