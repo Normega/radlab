@@ -3052,6 +3052,36 @@ Every mission with a source now waits on the same two steps: **MCP reconnect →
 direct-parse path in reporting register (§29.3), then re-run the reconciliation** so closed-in-prose
 reds retire from the open set rather than lingering as stale rows.
 
+### 29.6 Reconciliation and the first four closures (2026-08-16)
+
+The MCP reconnect made the reconciliation possible, and its first finding was that **§29.1's list
+was already historical**: everything closed in prose (opioid, alcohol DT, PE pharmacotherapy, harm
+reduction) had been retired when the corpus re-derived on 2026-08-05, so missions M2 and M3
+dissolved on contact — their verified sources (Kerr 2017 + the PHAC 2025 SCS review; the 2022 PE
+review) go to the amber queue instead. The **live red set was 12**, clustering as: a **forensic
+cluster** (paraphilic-disorders, sexual-sadism-and-masochism, intermittent-explosive-disorder,
+the sleepwalking defence on sleep-wake-disorders, Tarasoff implementation, pedophilic-disorder
+reporting duties), an **Ontario cluster** (ECT consent/CCB, duty-to-patient, involuntary
+hospitalisation on suicide-and-self-harm), plus levodopa, flumazenil, and deprescribing.
+
+**Closed 2026-08-16, all via direct-parse ingest, all accepted with `p_publish := false`:**
+
+| page | what was written | source |
+|---|---|---|
+| `levodopa` (v2) | Evidence section: LEAP delayed-start — no disease modification, **and no dyskinesia/fluctuation difference at 80 weeks or 5 years**, the anti-levodopa-phobia result; residual ask (effect sizes, agonist comparison) re-annotated and re-derived **amber** | Verschuur 2019 NEJM; Frequin 2024 Mov Disord |
+| `sedative-hypnotic-anxiolytic-related-disorders` (v4, v5) | Two subsections. Flumazenil: 994-patient meta — AE risk ratio **2.85**, SAEs = convulsions + supraventricular arrhythmias, "the patients most likely to be offered the antidote are the ones most likely to be harmed by it." Misuse-population dependence: triage by risk, ≥10-week reduction, taper+psychology beats taper alone, staged dispensing — **and the diazepam-substitution divergence from Pottie flagged as a scope lesson, not a contradiction** | Penninga 2016 BCPT; Brett & Murnion 2015 Aust Prescr |
+| `law-and-ethics` (v15) | "When the risk is to the patient": Form 1 mechanics (s.15 MHA, Box A/B, 7-day validity, 72-hour Schedule 1 window, Form 42, three exits, the no-appeal asymmetry, HCCA s.7 common-law gap-filler), closed with the **duty / permission / power** triptych across jurisdictions. The curated red retired; the *evidence* question stays open on suicide-and-self-harm | the two Ontario Form 1 documents from §29.4 — already in the page's sources, never written up: exactly the §39.10 audit finding |
+| `psychopharmacology` (v2) | Deprescribing paragraph as the polypharmacy counterpart (strong-rec-on-low-quality-evidence example, 30% of LTC seniors, 60–80% vs 10–20%), full treatment cross-linked; the two non-red asks in the same annotation preserved and re-derived (**Canadian coverage ask came back green** — correctly, it is a lookup) | Pottie 2018, already in corpus |
+
+Corpus after: **red 8 · total open 742**. The remaining eight and their routes: ECT **Ontario
+consent pathway** (needs an Ontario/HCCA-CCB source — narrower than M1's IPS guideline, which goes
+to the general Guidelines section instead); the **forensic five**, where the likely sources are
+already in `PSY240resources/` (`canada forensic paraphilias.pdf`, the sexual-offenders EBP PDF, and
+the *Mental Disorders and the Criminal Justice System* open textbook for IED, the sleepwalking
+defence and reporting duties); `suicide-and-self-harm` **involuntary-hospitalisation evidence**
+(needs the equivocal-evidence literature — Large/Ryan-style prospective work); and
+`tarasoff-duty-to-warn` **implementation variation** (needs a US duty-to-protect review).
+
 **Surveillance data needs a staleness marker.** The PHAC figures are from a live page that updates
 continuously. The section states its retrieval date inline and tells the reader to re-check each term
 — the same treatment `student-support-resources` gets, and the right default for any live-data source.
