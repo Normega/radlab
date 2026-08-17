@@ -194,7 +194,7 @@ Rule of thumb: touches `supabase/` → `main`. Touches only `src/`, `public/`, `
 
 Two cautions. Don't casually exercise data-writing or destructive flows on the dev site — it writes to production tables. And treat `dev` as a promotion queue: if Norm rejects something sitting on it, revert it *on `dev`* promptly so it doesn't block promoting everyone else's approved work.
 
-**Setup status: complete (2026-08-14).** Norm did the four dashboard steps (domain + DNS, Preview env vars, Supabase auth redirect, deployment protection), and `dev.radlab.zone` resolves to Vercel's edge. One caveat: sessions cannot reach the domain through the sandbox egress proxy, so no session has seen the dev site actually load — if it ever boots unconfigured (blank page, Supabase errors), the first suspect is the Preview-environment env vars, which only take effect on builds made after they were set. Delete this paragraph once someone has seen the dev site working in a browser.
+**Setup status: complete and confirmed working (2026-08-16).** Norm did the four dashboard steps (domain + DNS, Preview env vars, Supabase auth redirect, deployment protection), and the loop has now been used end to end for real: a CSS fix was pushed to `dev`, reviewed on `dev.radlab.zone` through a live participant link, and promoted to `main` on approval. Note that participant session links work on the dev host — same token, same Supabase — so a participant-facing screen can be reviewed there without touching production. Sessions still cannot reach the domain through the sandbox egress proxy, so Claude cannot see the dev site itself; a human has to look.
 
 ---
 
