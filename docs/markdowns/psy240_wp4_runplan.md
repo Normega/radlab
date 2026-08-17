@@ -3028,6 +3028,30 @@ when the currency audit runs.
   sufficient evidence** for any antiepileptic over benzodiazepines despite widespread use, and α-2
   agonists treat the visible autonomic symptoms while **not preventing DT or seizures**.
 
+### 29.5 Search missions — the red set refreshed and re-sourced (2026-08-15)
+
+Norm's ask: turn the remaining reds into search missions and work the list. The search half ran
+2026-08-15 (web); the ingest half is queued behind the Supabase MCP, which was disconnected that
+session. One correction to §29.1 worth preserving: **PMC3108697 was miscatalogued** — it is
+antidepressant-*induced* sexual dysfunction (Higgins 2010), not SSRI treatment of PE, so that
+mission needed a fresh source, found below.
+
+| # | Gap | Source status after the search pass |
+|---|---|---|
+| M1 | ECT: indications, consent, maintenance | **verified**: PMC10096214 = Indian Psychiatric Society *Clinical Practice Guidelines for the Use of ECT* (Thirthalli et al. 2023, Indian J Psychiatry, CC BY-NC-SA). Covers all three asks: first-line for emergency indications (suicidality, catatonia), written consent after shared decision-making with substitute-consent provisions, maintenance to 6+ months tapering twice-weekly → monthly. Not Canadian — pair with a CANMAT/CPA position statement at ingest if one is open-access, else report the IPS guideline with its jurisdiction stated (§29.3 scope rule). |
+| M2 | Harm reduction, supervised consumption, naloxone | **verified + upgraded**: PMC5437687 = Kerr et al. 2017 *Supervised injection facilities in Canada: past, present, and future* (Harm Reduct J, **CC BY 4.0**) for the model and history; pair with **PHAC HPCDP 45(9) Sept 2025**, *Supervised consumption sites and population-level overdose mortality: systematic review of recent evidence 2016–2024* — Canadian, current, in PHAC's own journal — for the mortality evidence. canada.ca 403s automated fetch; retrieve via the PMC mirror or by hand. |
+| M3 | PE: SSRI dose timing, switching, augmentation | **candidate replaced**: *Current and emerging treatment options for premature ejaculation* (2022, World J Mens Health / Sexual Medicine sphere, open access; PubMed 36008555) — daily SSRI vs on-demand dapoxetine/clomipramine, topical anaesthetics. Verify licence at ingest. 2023 recommendations confirm dapoxetine first-line on-demand. |
+| M4 | Levodopa: dosing evidence, motor fluctuations | **sourced**: the **LEAP trial** (NEJM 2019, delayed-start, 300/75 mg/day) — no disease-modifying effect, and critically **no difference in dyskinesia or fluctuations at 80 weeks**, i.e. against "levodopa phobia"; plus the **5-year follow-up** (Frequin et al. 2024, Mov Disord): dyskinesia 46/160 early vs 62/161 delayed, p=.06 — earlier start does not buy later motor complications. NEJM is closed; the 2024 follow-up is the ingest candidate (licence check at ingest). |
+| M5 | Flumazenil (the §29.1 remnant) | **sourced**: PMC12241894 (2025 rapid review, open access): competitive GABA-A antagonist; **not first-line in undifferentiated or mixed overdose** — precipitates seizures/dysrhythmias, worst with TCA co-ingestion and chronic benzodiazepine dependence; AHA position = low-risk cases only (paediatric exploratory ingestion, iatrogenic procedural oversedation). Exactly the §29.3 reporting-register shape. |
+| M6 | Duty where risk is to the patient (curated red, 2026-08-11) | **no search needed — ingest-from-existing**: Norm's Form 1 PDFs (§29.4) carry the Ontario MHA risk-to-self criteria, and the CPA Code the ethics half. The ask closes from documents already in `PSY240resources/`. |
+| M7 | Forensic paraphilias in sentencing/civil commitment | **needs DB reconciliation** (MCP): §25.3 ingested forensic-ethics material from the same PDFs; whether the gap rows on both pages are still open is a live-DB question. |
+| M8 | `student-support-resources` verification | **pending MCP** for the page's URL/number list; then WebFetch each URL, Norm (or a human) dials the numbers. Termly, per §29.2. |
+| M9 | PHAC surveillance re-check | **blocked on automation**: canada.ca 403s WebFetch. Either Norm pulls the current quarterly release by hand before Sept 9 or it rides the M2 retrieval. |
+
+Every mission with a source now waits on the same two steps: **MCP reconnect → ingest via the
+direct-parse path in reporting register (§29.3), then re-run the reconciliation** so closed-in-prose
+reds retire from the open set rather than lingering as stale rows.
+
 **Surveillance data needs a staleness marker.** The PHAC figures are from a live page that updates
 continuously. The section states its retrieval date inline and tells the reader to re-check each term
 — the same treatment `student-support-resources` gets, and the right default for any live-data source.
