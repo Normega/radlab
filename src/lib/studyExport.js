@@ -775,10 +775,12 @@ const COLUMN_NOTES = [
 
 function describeColumn(col) {
   for (const [re, note] of COLUMN_NOTES) if (re.test(col)) return note
-  const m = col.match(/^([a-z0-9]+)_(baseline|midpoint|final|x\d+)_(.+)$/)
+  const m = col.match(/^([a-z0-9]+)_(screener|baseline|midpoint|final|x\d+)_(.+)$/)
   if (m) {
-    const when = m[2].startsWith('x')
-      ? `an unplanned extra administration (#${m[2].slice(1)})`
+    // `screener` is not a session — it runs at intake, before consent — so it
+    // gets its own phrasing rather than being called "the screener session".
+    const when = m[2] === 'screener' ? 'the intake screener, before consent'
+      : m[2].startsWith('x') ? `an unplanned extra administration (#${m[2].slice(1)})`
       : `the ${m[2]} session`
     return `${m[1].toUpperCase()} item ${m[3]}, collected at ${when}.`
   }
