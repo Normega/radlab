@@ -5,6 +5,7 @@ import { zipSync, strToU8 } from 'fflate'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import {
   fetchStudyData, fetchParticipantData, buildMasterTable, hasPhysio, toCsv,
+  withParticipantKey, buildCodebook,
 } from '../../lib/studyExport'
 
 // ── CSV helpers ──────────────────────────────────────────────────────────────
@@ -435,9 +436,18 @@ function StudyExportSection() {
     setZipBusy(true)
     setStatus('Building zip…')
     try {
+      // Every table leads with participant_external_id so the files can actually
+      // be joined to the master (each table otherwise names its participant
+      // column differently, and two of them use the same name for different ids).
+      const ctx  = studyData.context
+      const rbt  = studyData.resultsByTable
       const files = [
         { filename: '_participant_master.csv', content: toCsv(master) },
-        ...tables.map(t => ({ filename: `${t.table}.csv`, content: toCsv(t.rows) })),
+        { filename: '_codebook.csv',           content: toCsv(buildCodebook(ctx, rbt, master)) },
+        ...tables.map(t => ({
+          filename: `${t.table}.csv`,
+          content: toCsv(withParticipantKey(t, t.rows, ctx, rbt)),
+        })),
       ]
       downloadZip(`${studyName}_study_export.zip`, files)
       setStatus(`Done — master + ${tables.length} table${tables.length !== 1 ? 's' : ''} exported.`)
