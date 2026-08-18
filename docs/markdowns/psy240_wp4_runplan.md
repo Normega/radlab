@@ -3259,6 +3259,43 @@ argument — that difficulty and risk come apart, and the sorting question is *w
 answered wrongly and nobody catches it* — held all the way through: several of these were easy, and
 every one of them would have been the wrong thing to hand a second-year student.
 
+### 29.11 The two termly checks run (2026-08-17)
+
+The last two items on the §29.1 list were never literature tasks — they are **standing verifications**,
+and this is the first time they have actually been run. Both were done with `curl` rather than the
+WebFetch tool, which turned out to matter: **health-infobase.canada.ca serves fine to curl** and had
+only ever 403'd the fetcher. The institutional-403 wall is narrower than three days of failures
+suggested, and the right first move on a blocked host is now *try the other client*, then ask Norm.
+
+**`student-support-resources` — 5 links live, 16 numbers confirmed, 2 wrong, 8 unverifiable.**
+All five URLs return HTTP 200 with no redirect. Sixteen numbers were confirmed against the service's
+own site. **Two were wrong, and both mattered:**
+
+| | was | is |
+|---|---|---|
+| **UTM Campus Safety** | 905-569-4333, in the *immediate danger* table | **Emergency 416-978-2222 / 911** and **General 905-828-5200**, which is what Campus Safety publishes on its own Contact Us page. `905-569-4333` survives on the UTM site in exactly one place — an ECSpeRT summer-hours news blurb — and is not what Campus Safety gives as its contact. |
+| **LGBT YouthLine** | 1-800-268-9688, "24/7" | **1-888-687-9688**, text **647-694-4275**, **Sunday–Friday 4:00–9:30 p.m. ET**, under 30. Both halves were wrong: an old number, and a **24/7 claim for a service that is closed most of the day** — the more dangerous of the two errors, since it sends someone to an unanswered line at 3 a.m. rather than to a wrong one. |
+
+Applied through `edit_page()` with the required note, and **the magnitude tripwire fired** — correctly,
+since every changed digit-string is a phone number — so the correction carries a *verified against
+source* statement naming both pages and the retrieval date. That is the guard from §38.3 doing exactly
+the job it was built for, on the one page where a stale detail could cause direct harm.
+
+**Eight numbers could not be machine-verified** because the host blocked or would not resolve:
+ConnexOntario, Spectra, Peel Rape Crisis Centre, Crisis Support Peel Dufferin, Trillium SA/DVCC,
+Toronto Rape Crisis, Anishnawbe Health, and the U of T SVPS Centre. **They were left in place, not
+removed** — a homepage that refuses a scripted request is no evidence a crisis line is wrong, and
+stripping working services would degrade the page for students. They are recorded in a new
+verification stamp on the page itself and **need a human to dial them before term.**
+
+**`opioid-use-disorder` PHAC figures — verified current, no change.** The live Health Infobase page
+still reads **"Last updated: 2026-06-15"**, covering **January 2016 to December 2025** — the exact
+retrieval date and window the page states. Every cited figure re-confirmed against source: **56,631**
+apparent opioid toxicity deaths since 2016, **82%** involving non-pharmaceutical opioids, **70%** also
+involving a stimulant, and **60+** as the largest hospitalisation age group at **28%**. The staleness
+marker added in §29.4 did its job — it prompted a check that found nothing to change, which is the
+outcome a staleness marker is *supposed* to produce most of the time.
+
 **Surveillance data needs a staleness marker.** The PHAC figures are from a live page that updates
 continuously. The section states its retrieval date inline and tells the reader to re-check each term
 — the same treatment `student-support-resources` gets, and the right default for any live-data source.
