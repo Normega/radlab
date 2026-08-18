@@ -155,7 +155,7 @@ function timepointToken(label, dayNumber) {
 }
 
 export async function resolveStudyContext(studyId) {
-  const [enrollments, gameSessions, lilParts, vasScales, schedule, sessions] = await Promise.all([
+  const [enrollments, gameSessions, lilParts, vasScales, schedule, sessions, studyRow] = await Promise.all([
     pageAll((f, t) => supabase.from('study_enrollments')
       .select('profile_id, external_id, enrolled_at, consent_date, status')
       .eq('study_id', studyId).range(f, t)),
@@ -176,6 +176,9 @@ export async function resolveStudyContext(studyId) {
     pageAll((f, t) => supabase.from('study_sessions')
       .select('id, label, day_number, session_template_id')
       .eq('study_id', studyId).range(f, t)).catch(() => []),
+    // The screener administers questionnaires too, BEFORE any session exists.
+    supabase.from('studies').select('screener_id, screener').eq('id', studyId).maybeSingle()
+      .then(r => r.data ?? null).catch(() => null),
   ])
 
   // Which assessment sessions administer which questionnaire, in day order.
@@ -195,8 +198,38 @@ export async function resolveStudyContext(studyId) {
       if (!n.questionnaire_id) continue
       ;(byTemplate[n.session_template_id] ??= []).push(slugById.get(n.questionnaire_id))
     }
+    // The screener runs at intake, before consent and before any session, and
+    // writes ordinary `questionnaire_responses` rows. Liliana's study screens on
+    // GAD-7 and PHQ-8, so those instruments have THREE collection points
+    // (screener → midpoint → final) while only two appear in the session
+    // templates. Omitting the screener shifted every later label by one: the
+    // intake response was named `_midpoint` and the midpoint response `_final`,
+    // for a participant who never sat a final assessment at all. Found
+    // 2026-08-18 when a participant whose Final Assessment status was 'missed'
+    // still exported `gad7_final_*` values.
+    const screenerSlugs = []
+    {
+      let def = null
+      if (studyRow?.screener_id) {
+        const { data } = await supabase.from('screeners').select('definition')
+          .eq('id', studyRow.screener_id).maybeSingle()
+        def = data?.definition ?? null
+      }
+      def = def ?? studyRow?.screener ?? null
+      const walk = node => {
+        if (!node || typeof node !== 'object') return
+        if (Array.isArray(node)) { node.forEach(walk); return }
+        if (typeof node.questionnaire_slug === 'string') screenerSlugs.push(node.questionnaire_slug)
+        Object.values(node).forEach(walk)
+      }
+      walk(def)
+    }
+
     const ordered = [...sessions].sort((a, b) => (a.day_number ?? 0) - (b.day_number ?? 0))
     const acc = {}
+    // Screener first, once per slug however many times it appears in the
+    // screener definition (it is asked in both screener phases).
+    for (const slug of [...new Set(screenerSlugs)]) (acc[slug] ??= []).push('screener')
     for (const s of ordered) {
       for (const slug of byTemplate[s.session_template_id] ?? []) {
         if (!slug) continue
@@ -612,7 +645,7 @@ export function buildMasterTable(context, resultsByTable) {
   const qWide   = questionnaireWideByProfile(resultsByTable.questionnaire_responses ?? [], context)
   const vasWide = vasWideByProfile(resultsByTable.vas_responses ?? [], context.vasScaleSlugById ?? new Map(), context)
 
-  return context.enrollments.map(e => {
+  const built = context.enrollments.map(e => {
     const pid = e.profile_id
     const row = {
       participant_external_id: e.external_id,
@@ -633,6 +666,66 @@ export function buildMasterTable(context, resultsByTable) {
     }
     return row
   })
+
+  return orderMasterColumns(built)
+}
+
+// ── Deterministic master column order ─────────────────────────────────────────
+//
+// `toCsv` unions keys in first-appearance order, which for the master means the
+// VAS block emerges in whatever order rows happened to supply it — d1, d18, d20,
+// d21, d24 … Liliana navigates this file by column letter (her notes cite
+// "columns OL:OM"), so a jumbled order is not cosmetic: it makes neighbouring
+// columns unrelated and invites exactly the positional misreading that the
+// day-indexed naming was meant to end.
+//
+// Groups run identity → intake → instruments → ratings → counts, and within a
+// group sort by the thing a reader scans for: instrument then timepoint then
+// item, scale then DAY (numeric, so d2 precedes d18) then pre before post.
+const TIMEPOINT_ORDER = { screener: 0, baseline: 1, midpoint: 2, final: 3 }
+
+function masterColumnRank(col) {
+  const lead = ['participant_external_id', 'profile_id', 'enrolled_at', 'consent_date', 'status']
+  const i = lead.indexOf(col)
+  if (i !== -1) return [0, i, '', 0, 0]
+  if (col.endsWith('_n'))            return [9, 0, col, 0, 0]
+  if (col.startsWith('dem_'))        return [1, 0, col, 0, 0]
+  if (col.startsWith('ldem_'))       return [2, 0, col, 0, 0]
+  if (col.startsWith('eq_'))         return [3, 0, col, 0, 0]
+  if (col.startsWith('screener_'))   return [4, 0, col, 0, 0]
+  if (col.startsWith('comp_'))       return [8, 0, col, 0, 0]
+
+  // vas_<scale>[_pre|_post]_d<day>  /  vas_<scale>_unscheduled_<n>
+  let m = col.match(/^vas_(.+?)(?:_(pre|post))?_d(\d+)$/)
+  if (m) return [7, 0, m[1], Number(m[3]), m[2] === 'post' ? 1 : 0]
+  m = col.match(/^vas_(.+?)_unscheduled_(\d+)$/)
+  if (m) return [7, 1, m[1], Number(m[2]), 0]
+
+  // <instrument>_<timepoint>_<item>
+  m = col.match(/^([a-z0-9]+)_(screener|baseline|midpoint|final|x\d+)_(.+)$/)
+  if (m) {
+    const tp = TIMEPOINT_ORDER[m[2]] ?? 4 + Number(m[2].slice(1) || 0)
+    const itemNum = Number(m[3])
+    return [6, 0, m[1], tp * 1000 + (Number.isFinite(itemNum) ? itemNum : 999), 0]
+  }
+  return [5, 0, col, 0, 0]
+}
+
+export function orderMasterColumns(rows) {
+  if (!rows.length) return rows
+  const cols = new Set()
+  for (const r of rows) Object.keys(r).forEach(c => cols.add(c))
+  const sorted = [...cols].sort((a, b) => {
+    const ra = masterColumnRank(a), rb = masterColumnRank(b)
+    for (let i = 0; i < ra.length; i++) {
+      if (ra[i] === rb[i]) continue
+      return typeof ra[i] === 'string' ? String(ra[i]).localeCompare(String(rb[i])) : ra[i] - rb[i]
+    }
+    return a.localeCompare(b)
+  })
+  // Objects preserve string-key insertion order, so rebuilding in sorted order
+  // is what actually fixes the CSV header.
+  return rows.map(r => Object.fromEntries(sorted.map(c => [c, r[c]])))
 }
 
 // ── Stable participant key on every file ──────────────────────────────────────
