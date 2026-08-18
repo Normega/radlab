@@ -89,6 +89,8 @@ export default function FieldGuideHome() {
                     body="The audit feed: every staff edit with its required note. Corrections apply immediately; this is the review." />
               <Card to="/academic/fieldguide/ingest" title="Ingest portal"
                     body="Upload a source, propose pages from it." />
+              <Card to="/academic/fieldguide/roster" title="Roster"
+                    body="Import the ACORN CSV, send invites, watch enrollment land. The join-page QR for lecture slides points at /academic/fieldguide/join." />
             </div>
             {c && (
               <p style={S.statusLine}>

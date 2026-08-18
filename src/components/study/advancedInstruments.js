@@ -32,6 +32,15 @@ export const ADVANCED_INSTRUMENTS = [
     load: () => import('./EquityCensusStep'),
   },
   {
+    key: 'liliana_demographics',
+    name: 'Liliana Study 3 Demographics',
+    description: 'The full demographic battery for Liliana Study 3 (7 sections, 23 questions): age, gender identity, trans identity, sexual orientation, race/ethnocultural identity, religion + religiosity, disability, and — the part no other instrument on the platform collects — Academic Life (student status, domestic/international, residence, living arrangement, campus, faculty, parental education) and Work & Finances (paid work hours, country of birth, primary language, household income, marital status, employment). Identity questions reuse the Equity Census option sets and wording verbatim, so the two cannot drift apart.',
+    source: 'src/components/study/LilianaDemographicsStep.jsx',
+    table: 'liliana_demographics',
+    previewable: true,
+    load: () => import('./LilianaDemographicsStep'),
+  },
+  {
     key: 'compensation',
     name: 'Compensation Form',
     description: 'End-of-session compensation election: e-transfer email or SONA credit ID. Submissions are reviewed at /admin/compensation.',

@@ -78,6 +78,7 @@ export const EXPORT_TABLES = [
   { table: 'participant_audio_events',   category: 'Audio',       label: 'Audio — Events',             strategy: 'parent', parentTable: 'participant_audio_sessions', parentCol: 'session_id' },
   // Forms / bespoke
   { table: 'equity_census_responses',  category: 'Forms',         label: 'Equity Census',              strategy: 'profile',  col: 'user_id' },
+  { table: 'liliana_demographics',     category: 'Forms',         label: 'Liliana Demographics',       strategy: 'profile',  col: 'user_id' },
   { table: 'participant_compensation', category: 'Forms',         label: 'Compensation',               strategy: 'study',    ownerSpace: 'external', ownerCol: 'participant_id' },
   { table: 'zerin_daily_checkins',     category: 'Forms',         label: 'Zerin Daily Check-ins',      strategy: 'study',    ownerSpace: 'profile',  ownerCol: 'user_id' },
   // Timing / assignment
@@ -141,8 +142,20 @@ const uniq = arr => [...new Set(arr.filter(v => v != null))]
 // ── Study resolution ──────────────────────────────────────────────────────────
 // One round of lookups shared by every table fetch.
 
+// Turn a session label into a short, stable column token.
+//   "Baseline" → baseline · "Midpoint Assessment" → midpoint
+//   "Final Assessment" → final · "P1 Reappraisal D2" → p1_reappraisal_d2
+function timepointToken(label, dayNumber) {
+  const s = String(label ?? '').toLowerCase()
+  if (s.includes('baseline')) return 'baseline'
+  if (s.includes('midpoint')) return 'midpoint'
+  if (s.includes('final'))    return 'final'
+  const cleaned = s.replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')
+  return cleaned || `d${dayNumber ?? 0}`
+}
+
 export async function resolveStudyContext(studyId) {
-  const [enrollments, gameSessions, lilParts, vasScales] = await Promise.all([
+  const [enrollments, gameSessions, lilParts, vasScales, schedule, sessions] = await Promise.all([
     pageAll((f, t) => supabase.from('study_enrollments')
       .select('profile_id, external_id, enrolled_at, consent_date, status')
       .eq('study_id', studyId).range(f, t)),
@@ -154,14 +167,54 @@ export async function resolveStudyContext(studyId) {
     // Reference lookup so vas_responses (which stores scale_id) can be reported
     // under human-readable slugs in the master. Small table; tolerate absence.
     supabase.from('vas_scales').select('id, slug').then(r => r.data ?? []).catch(() => []),
+    // The schedule is what turns a rating into a STUDY DAY. Without it the
+    // master can only count occurrences, which is what made the old _t<n>
+    // columns drift apart (see vasWideByProfile).
+    pageAll((f, t) => supabase.from('participant_schedule')
+      .select('id, participant_id, study_day, study_session_id')
+      .eq('study_id', studyId).range(f, t)).catch(() => []),
+    pageAll((f, t) => supabase.from('study_sessions')
+      .select('id, label, day_number, session_template_id')
+      .eq('study_id', studyId).range(f, t)).catch(() => []),
   ])
 
+  // Which assessment sessions administer which questionnaire, in day order.
+  // questionnaire_responses carries no session link (session_id is null on
+  // every row), so the master infers a response's timepoint from the study
+  // DESIGN: the nth time a participant answers instrument X is the nth session
+  // in the protocol that administers X.
+  const templateIds = uniq(sessions.map(s => s.session_template_id))
+  let slugTimepoints = new Map()
+  try {
+    const nodes = await fetchByIn('session_template_nodes', 'session_template_id', templateIds)
+    const qIds  = uniq(nodes.map(n => n.questionnaire_id))
+    const qRows = await fetchByIn('questionnaires', 'id', qIds)
+    const slugById = new Map(qRows.map(q => [q.id, q.slug]))
+    const byTemplate = {}
+    for (const n of nodes) {
+      if (!n.questionnaire_id) continue
+      ;(byTemplate[n.session_template_id] ??= []).push(slugById.get(n.questionnaire_id))
+    }
+    const ordered = [...sessions].sort((a, b) => (a.day_number ?? 0) - (b.day_number ?? 0))
+    const acc = {}
+    for (const s of ordered) {
+      for (const slug of byTemplate[s.session_template_id] ?? []) {
+        if (!slug) continue
+        ;(acc[slug] ??= []).push(timepointToken(s.label, s.day_number))
+      }
+    }
+    slugTimepoints = new Map(Object.entries(acc))
+  } catch { /* design lookup is best-effort; falls back to occurrence numbering */ }
+
   const externalToProfile = new Map()
+  const profileToExternal = new Map()
   for (const e of enrollments) {
     if (e.external_id != null) externalToProfile.set(e.external_id, e.profile_id ?? null)
+    if (e.profile_id != null)  profileToExternal.set(e.profile_id, e.external_id ?? null)
   }
   const gameSessionById = new Map(gameSessions.map(s => [s.id, s]))
   const lilPartById     = new Map(lilParts.map(p => [p.id, p]))
+  const sessionById     = new Map(sessions.map(s => [s.id, s]))
 
   return {
     studyId,
@@ -171,8 +224,12 @@ export async function resolveStudyContext(studyId) {
     gameSessionIds: gameSessions.map(s => s.id),
     lilPartIds:     lilParts.map(p => p.id),
     externalToProfile,
+    profileToExternal,
     gameSessionById,
     lilPartById,
+    sessionById,
+    scheduleById:     new Map(schedule.map(r => [r.id, r])),
+    slugTimepoints,
     vasScaleSlugById: new Map(vasScales.map(s => [s.id, s.slug])),
   }
 }
@@ -365,6 +422,20 @@ function mergeEquityCensus(target, srcRow) {
 }
 
 // Checklist questionnaire items store an object; export the weighted value.
+// Same flattening as mergeEquityCensus but under a caller-chosen prefix, for
+// any instrument that stores its answers as a `responses` jsonb blob rather
+// than as top-level columns. Arrays join to "a; b" so a multi-select stays
+// readable in a spreadsheet; nested objects (e.g. race sub-specifications)
+// serialise to JSON rather than being dropped.
+function mergeJsonResponses(target, prefix, srcRow) {
+  if (!srcRow?.responses) return
+  for (const [k, v] of Object.entries(srcRow.responses)) {
+    target[`${prefix}_${k}`] = Array.isArray(v) ? v.join('; ')
+      : (v && typeof v === 'object') ? JSON.stringify(v)
+      : (v ?? '')
+  }
+}
+
 function responseScalar(v) {
   return (v && typeof v === 'object') ? (v.response_value ?? JSON.stringify(v)) : v
 }
@@ -377,34 +448,51 @@ function normalizeSlug(slug) {
     .replace(/-/g, '')
 }
 
-// Which slugs are administered more than once to any single participant. When a
-// slug repeats, EVERY occurrence (for every participant) gets a _t<n> suffix so
-// columns stay aligned across the sample; single-administration instruments stay
-// unsuffixed. `slugOf(row)` extracts the comparison slug. Rows must be pre-sorted
-// chronologically so occurrence n follows administration order.
-function repeatedSlugSet(rows, slugOf) {
-  const perProfileSlug = {}
-  for (const r of rows) {
-    if (r.user_id == null) continue
-    const k = `${r.user_id} ${slugOf(r)}`
-    perProfileSlug[k] = (perProfileSlug[k] ?? 0) + 1
+// Near-simultaneous duplicate submissions of the same instrument. A double-fire
+// (double click, re-render, retried save) lands two rows seconds apart; left in,
+// each shifts the timepoint index of every LATER response for that participant,
+// so one stray click silently mislabels the rest of their record. Observed live:
+// a BFI-2-S submitted twice 643 ms apart made one participant look like they had
+// three baseline administrations. Keeps the LAST row of a burst — the most
+// complete, if the participant edited and resubmitted.
+const DUPLICATE_WINDOW_MS = 120_000
+
+function dropDuplicateSubmissions(rows, keyOf, timeOf) {
+  const sorted = [...rows].sort((a, b) => timeOf(a) - timeOf(b))
+  const out = []
+  const lastIdxFor = new Map()
+  for (const r of sorted) {
+    const k = keyOf(r)
+    const prevIdx = lastIdxFor.get(k)
+    if (prevIdx != null && timeOf(r) - timeOf(out[prevIdx]) < DUPLICATE_WINDOW_MS) {
+      out[prevIdx] = r          // same burst → keep the later row
+    } else {
+      lastIdxFor.set(k, out.length)
+      out.push(r)
+    }
   }
-  const max = {}
-  for (const [k, n] of Object.entries(perProfileSlug)) {
-    const slug = k.slice(k.indexOf(' ') + 1)
-    max[slug] = Math.max(max[slug] ?? 0, n)
-  }
-  return new Set(Object.keys(max).filter(s => max[s] > 1))
+  return out
 }
 
-// Wide questionnaire block, keyed by profile_id → { <slug>[_t<n>]_<item>: value }.
-// Sliders live here too (slug `slider_*`, response { value }); they are treated
-// exactly like questionnaires. A repeated instrument (a slider asked pre/mid/post,
-// or a questionnaire re-administered across days) is disambiguated by _t<n> in
-// completion order rather than clobbering into one column.
-function questionnaireWideByProfile(qRows) {
-  const rows = [...qRows].sort((a, b) => new Date(a.completed_at ?? 0) - new Date(b.completed_at ?? 0))
-  const repeated = repeatedSlugSet(rows, r => r.questionnaire_slug)
+// Wide questionnaire block, keyed by profile_id → { <slug>_<timepoint>_<item> }.
+//
+// Columns are named for the STUDY TIMEPOINT a response belongs to
+// (`gad7_midpoint_1`, `bfi2s_baseline_7`), not for how many times that
+// participant happened to answer. The previous scheme suffixed `_t<n>` by
+// occurrence, which meant `gad7_t1` was the MIDPOINT — GAD-7 is not administered
+// at baseline — and any participant who missed or repeated a session had every
+// later column shifted relative to everyone else's.
+//
+// `questionnaire_responses.session_id` is null on every row, so the timepoint is
+// inferred from the study DESIGN: `ctx.slugTimepoints` lists, in day order, the
+// sessions that administer each instrument, and the nth response maps to the nth
+// such session. That is exact whenever a participant's responses are in protocol
+// order, which is why duplicates are dropped first. Responses beyond the designed
+// number of administrations fall back to `_x<n>` rather than inventing a
+// timepoint they cannot be shown to belong to.
+function questionnaireWideByProfile(qRows, ctx) {
+  const time = r => new Date(r.completed_at ?? 0).getTime()
+  const rows = dropDuplicateSubmissions(qRows, r => `${r.user_id}::${r.questionnaire_slug}`, time)
   const byProfile = {}
   const occ = {}
   for (const r of rows) {
@@ -412,8 +500,13 @@ function questionnaireWideByProfile(qRows) {
     if (pid == null) continue
     if (!byProfile[pid]) byProfile[pid] = {}
     const slug = r.questionnaire_slug
-    const n    = (occ[`${pid} ${slug}`] = (occ[`${pid} ${slug}`] ?? 0) + 1)
-    const prefix = repeated.has(slug) ? `${normalizeSlug(slug)}_t${n}` : normalizeSlug(slug)
+    const key  = `${pid}::${slug}`
+    const n    = (occ[key] = (occ[key] ?? 0) + 1)
+    const tps  = ctx?.slugTimepoints?.get(slug) ?? []
+    const label = tps[n - 1] ?? `x${n}`
+    // Even a single-administration instrument names its timepoint, so a column
+    // is self-describing without consulting the protocol.
+    const prefix = `${normalizeSlug(slug)}_${label}`
     for (const [rawKey, val] of Object.entries(r.responses ?? {})) {
       const cleanKey = rawKey.replace(/^item_/, '')
       const m = cleanKey.match(/(\d+)$/)
@@ -424,22 +517,54 @@ function questionnaireWideByProfile(qRows) {
   return byProfile
 }
 
-// Wide VAS block, keyed by profile_id → { vas_<slug>[_t<n>]: value }. vas_responses
-// is multi-row (a scale can be asked repeatedly), so it isn't a single-row
-// broadcast table — same _t<n> occurrence scheme as questionnaires/sliders.
-function vasWideByProfile(vasRows, scaleSlugById) {
-  const slugOf = r => normalizeSlug(scaleSlugById.get(r.scale_id) ?? r.scale_id ?? 'unknown')
-  const rows = [...vasRows].sort((a, b) => new Date(a.responded_at ?? 0) - new Date(b.responded_at ?? 0))
-  const repeated = repeatedSlugSet(rows, slugOf)
+// Wide VAS block, keyed by profile_id → { vas_<slug>[_pre|_post]_d<day> }.
+//
+// Named by the STUDY DAY the rating was given on and by which side of the
+// practice it came from. Both are exact rather than inferred: `vas_responses`
+// carries `schedule_id` (→ `participant_schedule.study_day`) and `package_slug`
+// (pre/post) since WP-L1.
+//
+// This replaces `_t<n>` occurrence numbering, which was actively misleading on
+// longitudinal data. `stress` is asked twice a day and `sleep` once, so their
+// indices desynchronised immediately; and every partially-completed session — a
+// participant who did the pre check-in and abandoned before the post — pushed
+// the daily and post-only scales further out of step. In the live test one
+// participant had 20 `sleep` ratings against 16 `helpful`, so `vas_sleep_t20`
+// and `vas_helpful_t16` were the same day while sharing no index. Read as days,
+// those columns silently mismatched rows.
+//
+// Rows whose `schedule_id` is not in this study are DROPPED: `vas_responses` is
+// fetched by user_id, so a participant enrolled in two studies would otherwise
+// have the other study's ratings merged into this export.
+function vasWideByProfile(vasRows, scaleSlugById, ctx) {
   const byProfile = {}
-  const occ = {}
-  for (const r of rows) {
+  const unscheduled = []
+  for (const r of vasRows) {
     const pid = r.user_id
     if (pid == null) continue
+    const sched = r.schedule_id ? ctx?.scheduleById?.get(r.schedule_id) : null
+    if (r.schedule_id && !sched) continue          // belongs to another study
+    if (!sched) { unscheduled.push(r); continue }  // pre-WP-L1 row, handled below
+
+    const slug  = normalizeSlug(scaleSlugById.get(r.scale_id) ?? r.scale_id ?? 'unknown')
+    const pkg   = String(r.package_slug ?? '')
+    const phase = pkg.includes('pre') ? '_pre' : pkg.includes('post') ? '_post' : ''
     if (!byProfile[pid]) byProfile[pid] = {}
-    const slug = slugOf(r)
-    const n    = (occ[`${pid} ${slug}`] = (occ[`${pid} ${slug}`] ?? 0) + 1)
-    byProfile[pid][repeated.has(slug) ? `vas_${slug}_t${n}` : `vas_${slug}`] = r.value
+    byProfile[pid][`vas_${slug}${phase}_d${sched.study_day}`] = r.value
+  }
+
+  // Legacy rows with no schedule link cannot be placed on a day. They keep
+  // occurrence numbering under an explicit `_unscheduled_` marker so they can
+  // never be mistaken for day-indexed columns.
+  const occ = {}
+  const byTime = unscheduled.sort((a, b) => new Date(a.responded_at ?? 0) - new Date(b.responded_at ?? 0))
+  for (const r of byTime) {
+    const pid  = r.user_id
+    const slug = normalizeSlug(scaleSlugById.get(r.scale_id) ?? r.scale_id ?? 'unknown')
+    const key  = `${pid}::${slug}`
+    const n    = (occ[key] = (occ[key] ?? 0) + 1)
+    if (!byProfile[pid]) byProfile[pid] = {}
+    byProfile[pid][`vas_${slug}_unscheduled_${n}`] = r.value
   }
   return byProfile
 }
@@ -481,15 +606,16 @@ export function buildMasterTable(context, resultsByTable) {
 
   const dem  = firstRowByProfile(entryOf('demographics'),         resultsByTable.demographics ?? [],         context, byId)
   const eq   = firstRowByProfile(entryOf('equity_census_responses'), resultsByTable.equity_census_responses ?? [], context, byId)
+  const ldem = firstRowByProfile(entryOf('liliana_demographics'), resultsByTable.liliana_demographics ?? [], context, byId)
   const scr  = firstRowByProfile(entryOf('screener_results'),     resultsByTable.screener_results ?? [],     context, byId)
   const comp = firstRowByProfile(entryOf('participant_compensation'), resultsByTable.participant_compensation ?? [], context, byId)
-  const qWide   = questionnaireWideByProfile(resultsByTable.questionnaire_responses ?? [])
-  const vasWide = vasWideByProfile(resultsByTable.vas_responses ?? [], context.vasScaleSlugById ?? new Map())
+  const qWide   = questionnaireWideByProfile(resultsByTable.questionnaire_responses ?? [], context)
+  const vasWide = vasWideByProfile(resultsByTable.vas_responses ?? [], context.vasScaleSlugById ?? new Map(), context)
 
   return context.enrollments.map(e => {
     const pid = e.profile_id
     const row = {
-      participant_id: e.external_id,
+      participant_external_id: e.external_id,
       profile_id:     e.profile_id,
       enrolled_at:    e.enrolled_at,
       consent_date:   e.consent_date,
@@ -497,6 +623,7 @@ export function buildMasterTable(context, resultsByTable) {
     }
     mergePrefixed(row, 'dem',      dem.get(pid))
     mergeEquityCensus(row,         eq.get(pid))
+    mergeJsonResponses(row, 'ldem', ldem.get(pid))
     mergePrefixed(row, 'screener', scr.get(pid))
     Object.assign(row, qWide[pid]   ?? {})
     Object.assign(row, vasWide[pid] ?? {})
@@ -506,6 +633,82 @@ export function buildMasterTable(context, resultsByTable) {
     }
     return row
   })
+}
+
+// ── Stable participant key on every file ──────────────────────────────────────
+//
+// Each table names its participant column after whatever key it happens to hold:
+// `user_id` (profile uuid) in demographics, `participant_id` (profile uuid) in
+// video sessions, `participant_id` (liliana_participants.id — a DIFFERENT id) in
+// liliana_day_data. Three different identifiers, two of them under the same
+// column name, none of them the id a researcher recognises. Joining files by
+// `participant_id` therefore produced nonsense.
+//
+// Every exported table now leads with `participant_external_id`, the SONA/
+// Prolific id that also keys the master. Original columns are left untouched.
+export function withParticipantKey(entry, rows, context, resultsByTable) {
+  const byId = {}
+  for (const [table, rs] of Object.entries(resultsByTable ?? {})) {
+    byId[table] = new Map(rs.map(r => [r.id, r]))
+  }
+  return rows.map(row => {
+    const pid = rowOwnerProfileId(entry, row, context, byId)
+    return { participant_external_id: context.profileToExternal?.get(pid) ?? null, ...row }
+  })
+}
+
+// ── Codebook ──────────────────────────────────────────────────────────────────
+//
+// The export shipped no data dictionary, so every column had to be reverse
+// engineered from its name — which is how `_t<n>` came to be read as a study
+// timepoint. This emits one row per column of the master plus a description of
+// each table file.
+const COLUMN_NOTES = [
+  [/^participant_external_id$/, 'SONA/Prolific participant id. Join key across every file in this export.'],
+  [/^profile_id$/,              'Internal account uuid. Stable but not meaningful outside the platform.'],
+  [/^enrolled_at$/,             'Timestamp the participant was enrolled in this study.'],
+  [/^consent_date$/,            'Timestamp consent was recorded. Blank = consent not yet given.'],
+  [/^status$/,                  'Enrollment status: enrolled | withdrawn.'],
+  [/^dem_/,                     'Demographics item (age, gender, racialized, ses_ladder).'],
+  [/^screener_/,                'Eligibility screener outcome and answers.'],
+  [/^comp_/,                    'Compensation / credit record.'],
+  [/^eq_/,                      'Equity census intake item.'],
+  [/_n$/,                       'PARTICIPATION COUNT — how many rows this participant contributed to that table. A completeness diagnostic, not a measure.'],
+  [/^vas_.*_pre_d\d+$/,         'Momentary rating, PRE-practice check-in, on the given study day (1-6).'],
+  [/^vas_.*_post_d\d+$/,        'Momentary rating, POST-practice check-in, on the given study day (1-6).'],
+  [/^vas_.*_d\d+$/,             'Momentary rating on the given study day (1-6). No pre/post phase (single-scale step).'],
+  [/^vas_.*_unscheduled_\d+$/,  'Rating with no schedule link (predates schedule linkage). Occurrence-numbered; day unknown.'],
+]
+
+function describeColumn(col) {
+  for (const [re, note] of COLUMN_NOTES) if (re.test(col)) return note
+  const m = col.match(/^([a-z0-9]+)_(baseline|midpoint|final|x\d+)_(.+)$/)
+  if (m) {
+    const when = m[2].startsWith('x')
+      ? `an unplanned extra administration (#${m[2].slice(1)})`
+      : `the ${m[2]} session`
+    return `${m[1].toUpperCase()} item ${m[3]}, collected at ${when}.`
+  }
+  return ''
+}
+
+export function buildCodebook(context, resultsByTable, masterRows) {
+  const out = []
+  const cols = new Set()
+  for (const r of masterRows) Object.keys(r).forEach(c => cols.add(c))
+  for (const c of cols) {
+    out.push({ file: '_participant_master.csv', column: c, description: describeColumn(c) })
+  }
+  for (const entry of EXPORT_TABLES) {
+    const n = resultsByTable?.[entry.table]?.length ?? 0
+    if (!n) continue
+    out.push({
+      file: `${entry.table}.csv`,
+      column: '(whole file)',
+      description: `${entry.label} — ${n} row(s). One row per record, not per participant; join to the master on participant_external_id.`,
+    })
+  }
+  return out
 }
 
 // ── CSV ───────────────────────────────────────────────────────────────────────

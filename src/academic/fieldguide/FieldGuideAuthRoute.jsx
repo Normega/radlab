@@ -51,14 +51,29 @@ export default function FieldGuideAuthRoute({ roles, deniedTitle, deniedBody }) 
     let cancelled = false
     // RLS restricts enrollments to the caller's own rows; courses are
     // readable by any authenticated user, so the join resolves client-side.
-    client
+    const fetchEnrollments = () => client
       .from('enrollments')
       .select('id, role, status, course_id, courses ( code, name, term )')
       .eq('status', 'active')
       .in('role', roles)
-      .then(({ data, error }) => {
-        if (!cancelled) setEnrollments(error ? [] : (data ?? []))
-      })
+
+    fetchEnrollments().then(async ({ data, error }) => {
+      if (cancelled) return
+      if (!error && !(data ?? []).length) {
+        // WP5: a session with no enrollment is the state a roster student is
+        // in the moment they click their emailed link. That click proved the
+        // mailbox, which is exactly what `enrolled` means (plan §2a.4) — so
+        // try the roster match once before showing "Not enrolled".
+        const { data: r } = await client.rpc('enroll_from_roster')
+        if (cancelled) return
+        if (r?.enrolled) {
+          const retry = await fetchEnrollments()
+          if (!cancelled) setEnrollments(retry.error ? [] : (retry.data ?? []))
+          return
+        }
+      }
+      setEnrollments(error ? [] : (data ?? []))
+    })
     return () => { cancelled = true }
   }, [client, session, roles])
 
@@ -152,6 +167,13 @@ function CourseLogin({ client }) {
       <button style={S.linkBtn} onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setNotice(null) }}>
         {mode === 'signin' ? 'Invited but no account yet? Sign up' : 'Already registered? Sign in'}
       </button>
+      {/* WP5: students never need this form at all — their whole flow is
+          email links. Point them at the join page before they try to invent
+          a password. */}
+      <p style={{ ...S.sub, marginTop: 14 }}>
+        <b>PSY240 student?</b> You don't need a password — get a sign-in link at{' '}
+        <a href="/academic/fieldguide/join" style={{ color: 'var(--pk)', textDecoration: 'none' }}>the join page</a>.
+      </p>
     </Shell>
   )
 }
