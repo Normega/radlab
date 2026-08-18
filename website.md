@@ -2593,14 +2593,50 @@ Registered instruments:
 |---|---|---|---|
 | `demographics` | `DemographicsStep.jsx` — age, gender (free text), racialized identity, MacArthur SES ladder | `demographics` | yes |
 | `equity_census` | `EquityCensusStep.jsx` — full 2025-2026 U of T Student Equity Census (below) | `equity_census_responses` | yes |
+| `liliana_demographics` | `LilianaDemographicsStep.jsx` — Liliana Study 3 full battery, 7 sections / 23 questions (below) | `liliana_demographics` | yes |
 | `compensation` | `CompensationStep.jsx` — pay (e-transfer email) vs SONA credit | `participant_compensation` | yes |
 | `consent` / `debrief` | per-study HTML renderers | — | no (content lives on the study) |
 | `midpoint` | `MidpointStep.jsx` (Liliana Study 3, §26a) | see §26a | no (needs live session context) |
 | `belt_setup` | `PhysioSetupStep.jsx` | — | no (needs hardware) |
 
-Preview safety: `DemographicsStep`, `CompensationStep`, and `EquityCensusStep` accept a
+Preview safety: `DemographicsStep`, `CompensationStep`, `EquityCensusStep` and
+`LilianaDemographicsStep` accept a
 `previewMode` prop — submit calls `onComplete` without any database insert. `AdvancedInstrumentPreview`
 passes a null-id stand-in enrollment and shows a "Preview complete — nothing was written" screen.
+
+### Liliana Study 3 Demographics (`liliana_demographics`, 2026-08-18)
+
+The full battery from Liliana's approved design (`demographics-preview.html`, 18 June 2026):
+7 sections, 23 questions — About You · Gender & Orientation · Race & Ethnicity · Religion &
+Spirituality · Disability · Academic Life · Work & Finances. Paged with a per-section gate, so
+nobody advances past a half-answered question (a "please specify" choice is incomplete until its
+box has text). Two conditionals: disability types appear only on *yes*, job type only when they
+have a job.
+
+**Why a third demographics instrument.** Neither existing one matched the design, and Study 3's
+baseline was authored against the thinnest of them:
+
+- `demographics` collects four items. **Liliana's baseline used this**, which is why the live-test
+  export carried only `dem_age` / `dem_gender` / `dem_racialized` / `dem_ses_ladder` and most of
+  the designed battery was never collected at all.
+- `equity_census_responses` covers identity thoroughly but the U of T census has **no Academic Life
+  or Work & Finances section** — no student status, campus, faculty, living arrangement, household
+  income, country of birth, primary language, marital status or employment.
+
+Widening the census was rejected: it is a faithful reproduction of a published instrument and
+changing its question set would make it no longer that. Instead the identity questions **import the
+census's exported option sets and controls** (`GENDER_OPTIONS`, `RACE_OPTIONS`, `CheckGroup`,
+`RaceGroup`, …), so the shared wording and its definitions cannot drift between the two, and the
+sections the census lacks are defined locally.
+
+**Open for Liliana's review:** the preview offered no "Prefer not to answer" on several questions.
+Since every shared identity set carries one, PNA was added to household income and marital status;
+disability yes/no and employment follow the preview as designed. Age follows the preview's 17–25 +
+"Other (please specify)" rather than the census's numeric entry, and is stored as a **number**
+whenever it parses so analysis never has to unpick an option token.
+
+**This cannot be collected retroactively.** The live-test participants have only the four-item
+version; that is the ceiling on their demographic data.
 
 ### U of T Student Equity Census (`equity_census`, 2026-07-13)
 

@@ -78,6 +78,7 @@ export const EXPORT_TABLES = [
   { table: 'participant_audio_events',   category: 'Audio',       label: 'Audio — Events',             strategy: 'parent', parentTable: 'participant_audio_sessions', parentCol: 'session_id' },
   // Forms / bespoke
   { table: 'equity_census_responses',  category: 'Forms',         label: 'Equity Census',              strategy: 'profile',  col: 'user_id' },
+  { table: 'liliana_demographics',     category: 'Forms',         label: 'Liliana Demographics',       strategy: 'profile',  col: 'user_id' },
   { table: 'participant_compensation', category: 'Forms',         label: 'Compensation',               strategy: 'study',    ownerSpace: 'external', ownerCol: 'participant_id' },
   { table: 'zerin_daily_checkins',     category: 'Forms',         label: 'Zerin Daily Check-ins',      strategy: 'study',    ownerSpace: 'profile',  ownerCol: 'user_id' },
   // Timing / assignment
@@ -421,6 +422,20 @@ function mergeEquityCensus(target, srcRow) {
 }
 
 // Checklist questionnaire items store an object; export the weighted value.
+// Same flattening as mergeEquityCensus but under a caller-chosen prefix, for
+// any instrument that stores its answers as a `responses` jsonb blob rather
+// than as top-level columns. Arrays join to "a; b" so a multi-select stays
+// readable in a spreadsheet; nested objects (e.g. race sub-specifications)
+// serialise to JSON rather than being dropped.
+function mergeJsonResponses(target, prefix, srcRow) {
+  if (!srcRow?.responses) return
+  for (const [k, v] of Object.entries(srcRow.responses)) {
+    target[`${prefix}_${k}`] = Array.isArray(v) ? v.join('; ')
+      : (v && typeof v === 'object') ? JSON.stringify(v)
+      : (v ?? '')
+  }
+}
+
 function responseScalar(v) {
   return (v && typeof v === 'object') ? (v.response_value ?? JSON.stringify(v)) : v
 }
@@ -591,6 +606,7 @@ export function buildMasterTable(context, resultsByTable) {
 
   const dem  = firstRowByProfile(entryOf('demographics'),         resultsByTable.demographics ?? [],         context, byId)
   const eq   = firstRowByProfile(entryOf('equity_census_responses'), resultsByTable.equity_census_responses ?? [], context, byId)
+  const ldem = firstRowByProfile(entryOf('liliana_demographics'), resultsByTable.liliana_demographics ?? [], context, byId)
   const scr  = firstRowByProfile(entryOf('screener_results'),     resultsByTable.screener_results ?? [],     context, byId)
   const comp = firstRowByProfile(entryOf('participant_compensation'), resultsByTable.participant_compensation ?? [], context, byId)
   const qWide   = questionnaireWideByProfile(resultsByTable.questionnaire_responses ?? [], context)
@@ -607,6 +623,7 @@ export function buildMasterTable(context, resultsByTable) {
     }
     mergePrefixed(row, 'dem',      dem.get(pid))
     mergeEquityCensus(row,         eq.get(pid))
+    mergeJsonResponses(row, 'ldem', ldem.get(pid))
     mergePrefixed(row, 'screener', scr.get(pid))
     Object.assign(row, qWide[pid]   ?? {})
     Object.assign(row, vasWide[pid] ?? {})

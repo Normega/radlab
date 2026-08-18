@@ -11,10 +11,10 @@ import { supabase as globalSupabase } from '../../lib/supabase'
 // Registered in src/components/study/advancedInstruments.js — keep that entry
 // in sync if this instrument's name, storage, or delivery changes.
 
-const PNA = 'prefer_not_to_answer'
+export const PNA = 'prefer_not_to_answer'
 
 // ── Q1 Gender identity ──────────────────────────────────────────────────────
-const GENDER_OPTIONS = [
+export const GENDER_OPTIONS = [
   { value: 'genderfluid', label: 'Genderfluid', def: 'Gender fluidity conveys a wider, more flexible range of gender expression, with interests and behaviors that may change from day to day. Gender fluid people do not feel confined by restrictive boundaries of stereotypical expectations of women or men. In other words, they may feel they are a woman some days and a man on others, or possibly feel that neither term describes them accurately.' },
   { value: 'genderqueer', label: 'Genderqueer', def: 'Individuals who do not follow gender stereotypes based on the sex they were assigned at birth. They may identify and express themselves as "feminine men" or "masculine women" or as androgynous, outside of the categories "boy/man" and "girl/woman."' },
   { value: 'man', label: 'Man (cis, trans)', def: 'A person whose gender identity may correspond with social expectations associated with being a man and/or masculine. People who identify as men may be cis (gender identity ‘matches’ birth assigned sex) or trans (gender identity is different from birth assigned sex).' },
@@ -26,9 +26,9 @@ const GENDER_OPTIONS = [
   { value: PNA, label: 'Prefer not to answer', exclusive: true },
 ]
 
-const TRANS_DEF = 'A person who identifies as trans or as a part of a trans community could identify with a gender other than the one assigned to them at birth, might have a gender identity and/or gender expression which differs from the stereotypical masculine and feminine norms, or other analogous identities or experiences. Trans can be an umbrella term to include a broad array of people including those who identify as trans, transgender, transsexual, genderqueer, gender fluid, nonbinary, or another term.'
+export const TRANS_DEF = 'A person who identifies as trans or as a part of a trans community could identify with a gender other than the one assigned to them at birth, might have a gender identity and/or gender expression which differs from the stereotypical masculine and feminine norms, or other analogous identities or experiences. Trans can be an umbrella term to include a broad array of people including those who identify as trans, transgender, transsexual, genderqueer, gender fluid, nonbinary, or another term.'
 
-const TRANS_OPTIONS = [
+export const TRANS_OPTIONS = [
   { value: 'yes', label: 'Yes' },
   { value: 'no', label: 'No' },
   { value: 'not_sure', label: 'Not sure' },
@@ -36,7 +36,7 @@ const TRANS_OPTIONS = [
 ]
 
 // ── Q2 Sexual orientation ───────────────────────────────────────────────────
-const ORIENTATION_OPTIONS = [
+export const ORIENTATION_OPTIONS = [
   { value: 'asexual', label: 'Asexual', def: 'A person who experiences little or no sexual attraction to people of any gender.' },
   { value: 'bisexual', label: 'Bisexual', def: 'A person who is attracted to people of more than one gender.' },
   { value: 'gay', label: 'Gay', def: 'A person who is attracted to people of the same gender.' },
@@ -51,9 +51,9 @@ const ORIENTATION_OPTIONS = [
 ]
 
 // ── Q3 Disability ───────────────────────────────────────────────────────────
-const DISABILITY_DEF = 'Persons with disabilities include those who may experience barriers to full participation in University life as a result of long-term, temporary, or episodic physical, mental/emotional, sensory, or learning disabilities, including those caused by chronic health conditions. It should also be noted that the social model of disability recognizes that disability is not created by any medical or physical condition, but rather by societal barriers. A disability may be evident or non-evident.'
+export const DISABILITY_DEF = 'Persons with disabilities include those who may experience barriers to full participation in University life as a result of long-term, temporary, or episodic physical, mental/emotional, sensory, or learning disabilities, including those caused by chronic health conditions. It should also be noted that the social model of disability recognizes that disability is not created by any medical or physical condition, but rather by societal barriers. A disability may be evident or non-evident.'
 
-const DISABILITY_TYPE_OPTIONS = [
+export const DISABILITY_TYPE_OPTIONS = [
   { value: 'adhd', label: 'Attention deficit and hyperactivity disorder (ADHD)' },
   { value: 'asd', label: 'Autism spectrum disorder (ASD)' },
   { value: 'chronic_health', label: "Chronic health condition (e.g., Auto-immune conditions, Crohn's disease, diabetes, cancer, etc.)" },
@@ -84,7 +84,7 @@ const INDIGENOUS_ID_OPTIONS = [
 // ── Q5 Racial and/or ethnocultural identity ─────────────────────────────────
 const RACIALIZED_DEF = 'The Ontario Human Rights Commission defines racialization as a process by which societies construct races as real, different and unequal in ways that matter and affect economic, political and social life.'
 
-const RACE_OPTIONS = [
+export const RACE_OPTIONS = [
   {
     value: 'asian', label: 'Asian',
     children: [
@@ -167,7 +167,7 @@ const RACE_OPTIONS = [
 ]
 
 // ── Q6 Religion ─────────────────────────────────────────────────────────────
-const RELIGION_OPTIONS = [
+export const RELIGION_OPTIONS = [
   { value: 'agnosticism', label: 'Agnosticism' },
   { value: 'atheism', label: 'Atheism' },
   { value: 'bahai', label: "Bahá'í Faith" },
@@ -189,7 +189,7 @@ const RELIGION_OPTIONS = [
 ]
 
 // ── Q7 Parental education ───────────────────────────────────────────────────
-const PARENT_EDU_OPTIONS = [
+export const PARENT_EDU_OPTIONS = [
   { value: 'less_than_high_school', label: 'Less than high school' },
   { value: 'high_school', label: 'Graduated high school' },
   { value: 'some_college', label: 'Attended College/CEGEP but did not earn a certificate, diploma or degree' },
@@ -208,7 +208,7 @@ const PARENT_EDU_OPTIONS = [
 // ── Shared multi-select toggle logic ─────────────────────────────────────────
 // Exclusive options ("prefer not to answer") clear everything else; selecting
 // anything else clears the exclusive option.
-function toggleMulti(options, selected, value) {
+export function toggleMulti(options, selected, value) {
   const opt = options.find(o => o.value === value)
   if (selected.includes(value)) return selected.filter(v => v !== value)
   if (opt?.exclusive) return [value]
@@ -572,7 +572,7 @@ export default function EquityCensusStep({ enrollment, scheduleId, onComplete, s
 }
 
 // ── Multi-select checkbox group with optional definitions + specify boxes ────
-function CheckGroup({ options, selected, onToggle, specifyText, onSpecify }) {
+export function CheckGroup({ options, selected, onToggle, specifyText, onSpecify }) {
   return (
     <div style={S.radioCol}>
       {options.map(opt => (
@@ -605,7 +605,7 @@ function CheckGroup({ options, selected, onToggle, specifyText, onSpecify }) {
 }
 
 // ── Single-select button row (matches DemographicsStep style) ────────────────
-function ButtonRow({ options, value, onChange }) {
+export function ButtonRow({ options, value, onChange }) {
   return (
     <div style={S.optionRow}>
       {options.map(opt => (
@@ -624,7 +624,7 @@ function ButtonRow({ options, value, onChange }) {
 // ── Hierarchical race/ethnocultural group ────────────────────────────────────
 // Parent checkboxes reveal sub-option checkboxes; children stored as
 // "parent:child". Deselecting a parent removes its children.
-function RaceGroup({ options, selected, setSelected, specify, onSpecify }) {
+export function RaceGroup({ options, selected, setSelected, specify, onSpecify }) {
   function toggleParent(opt) {
     setSelected(prev => {
       if (prev.includes(opt.value)) {
