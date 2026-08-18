@@ -109,6 +109,8 @@ const GapBrowser           = lazy(() => import('./academic/fieldguide/GapBrowser
 const FieldGuideHome       = lazy(() => import('./academic/fieldguide/FieldGuideHome'))
 const CorrectionsFeed      = lazy(() => import('./academic/fieldguide/CorrectionsFeed'))
 const WhatsNew             = lazy(() => import('./academic/fieldguide/WhatsNew'))
+const RosterAdmin          = lazy(() => import('./academic/fieldguide/RosterAdmin'))
+const FieldGuideJoin       = lazy(() => import('./academic/fieldguide/Join'))
 
 // Workbench — shared Claude Code sessions. Its own partition again: own guards
 // (WorkbenchRoute / WorkbenchAdminRoute), own chrome (plain Nav, not AdminLayout),
@@ -664,7 +666,13 @@ export default function App() {
               <Route path="/academic/fieldguide/submissions" element={<SubmissionsQueue />} />
               {/* The audit trail auto-apply corrections are traded against. */}
               <Route path="/academic/fieldguide/corrections" element={<CorrectionsFeed />} />
+              {/* WP5: roster import, invites, unmatched-attempt queue. */}
+              <Route path="/academic/fieldguide/roster" element={<RosterAdmin />} />
             </Route>
+            {/* WP5: the QR / self-serve sign-in door. Deliberately outside
+                both guards — its entire audience is people with no session
+                yet, and it holds no data of its own. */}
+            <Route path="/academic/fieldguide/join" element={<FieldGuideJoin />} />
             {/* The wiki itself — same login, member-level gate. */}
             <Route element={<FieldGuideMemberRoute />}>
               {/* The front door. One url to give a TA or a student: staff see
