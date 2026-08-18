@@ -4,7 +4,7 @@ import { supabase as globalSupabase } from '../../lib/supabase'
 import QuestionnaireRenderer from '../questionnaire/QuestionnaireRenderer'
 import { useSubmitLock } from '../../lib/useSubmitLock'
 
-export default function QuestionnaireStepWrapper({ slug, enrollment, stepIndex, totalSteps, onComplete, supabaseClient, isSimMode = false, demoMode = false }) {
+export default function QuestionnaireStepWrapper({ slug, enrollment, scheduleId, stepIndex, totalSteps, onComplete, supabaseClient, isSimMode = false, demoMode = false }) {
   // In a participant session the caller passes the participant-authenticated
   // client; reads/writes must use it so RLS (auth.uid() = user_id) is satisfied.
   // Falls back to the global client for non-session contexts (e.g. preview).
@@ -85,6 +85,11 @@ export default function QuestionnaireStepWrapper({ slug, enrollment, stepIndex, 
         const { error } = await db.from('questionnaire_responses').insert({
           user_id:            enrollment.profile_id ?? enrollment.user_id,
           questionnaire_slug: slug,
+          // Records WHICH session collected this, so the export no longer has
+          // to infer the timepoint from protocol order. Null is meaningful and
+          // correct for the screener, which runs pre-consent and is not a
+          // scheduled session.
+          schedule_id:        scheduleId ?? null,
           responses,
           completed_at:       new Date().toISOString(),
         })

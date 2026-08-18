@@ -112,6 +112,7 @@ export default function StepDispatcher({ node, enrollment, scheduleId, studyDay 
       <QuestionnaireStepWrapper
         slug={subcategory}
         enrollment={enrollment}
+        scheduleId={scheduleId}
         stepIndex={stepIndex}
         totalSteps={totalSteps}
         onComplete={onComplete}

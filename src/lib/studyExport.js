@@ -535,8 +535,18 @@ function questionnaireWideByProfile(qRows, ctx) {
     const slug = r.questionnaire_slug
     const key  = `${pid}::${slug}`
     const n    = (occ[key] = (occ[key] ?? 0) + 1)
+
+    // RECORDED beats inferred. Since 20260818_questionnaire_schedule_link a
+    // response carries the schedule row that collected it, so the timepoint is
+    // read off the session rather than guessed from protocol order. Inference
+    // only covers rows predating that column, and rows that legitimately have
+    // no session — screener responses, which run pre-consent.
+    const sched   = r.schedule_id ? ctx?.scheduleById?.get(r.schedule_id) : null
+    const session = sched ? ctx?.sessionById?.get(sched.study_session_id) : null
     const tps  = ctx?.slugTimepoints?.get(slug) ?? []
-    const label = tps[n - 1] ?? `x${n}`
+    const label = session
+      ? timepointToken(session.label, session.day_number)
+      : (tps[n - 1] ?? `x${n}`)
     // Even a single-administration instrument names its timepoint, so a column
     // is self-describing without consulting the protocol.
     const prefix = `${normalizeSlug(slug)}_${label}`

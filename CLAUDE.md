@@ -60,6 +60,43 @@ Discovered May 2026: `stillwater_responses` had an anon-only INSERT policy; `dri
 
 ---
 
+## Participant data logging — four rules for every study
+
+These began as fixes to Liliana Study 3, but none of them is study-specific. Each was a
+*category* of defect that any study on the platform could reproduce, so they are policy.
+
+**1. A response records WHERE it came from, not just when.** Every participant-data table
+carries a `schedule_id` referencing `participant_schedule` (use `ON DELETE SET NULL` — deleting
+a schedule row must never delete collected answers). `vas_responses` has had this since WP-L1;
+`questionnaire_responses` gained it 2026-08-18. Without it the export can only guess a
+timepoint from the order responses arrived, which breaks the moment anyone repeats, skips, or
+re-enters a session.
+
+**2. Terminal submits are guarded twice.** A synchronous ref lock in the client
+(`src/lib/useSubmitLock.js` — a `saving` *state* flag is a race, not a lock, because
+`setSaving(true)` lands only on re-render) **and** a database guard. The client layer is per
+component instance and cannot survive a remount, so it alone is not enough: the duplicate that
+prompted this was 643 ms apart, too slow for a double-click and too fast for a human. Release
+the lock on failure, never on success — a completed submit must not repeat, but a failed one
+must stay retryable.
+
+**3. Export column names must come from recorded facts.** Never from occurrence order. `_t3`
+meaning "the third time this person answered" silently drifts apart from `_t3` on any other
+scale, and reads as a timepoint to everyone who opens the file. Name columns from the study day
+or the session (`vas_stress_pre_d7`, `gad7_midpoint_3`).
+
+**4. Never assert a label you cannot demonstrate.** Where a fact genuinely isn't recorded, fall
+back to something visibly non-committal (`_x2`, `_unscheduled_1`) rather than inventing a
+plausible one. A confidently wrong label is worse than an obviously vague one: the export once
+emitted `gad7_final_*` for a participant whose final assessment was never sat.
+
+**The through-line:** every one of these was invisible in the app and only showed up in the
+exported data, months later, to the person trying to analyse it. Data-logging defects do not
+announce themselves — so prefer the recorded fact over the clever inference, and check new
+instruments against these four before a study recruits, not after.
+
+---
+
 ## Migration convention
 
 All Supabase migrations live in `.\supabase\migrations\` and are named `YYYYMMDD_description.sql` (e.g. `20260606_compensation_form.sql`). **Never write migration SQL to the project root.** Run migrations manually in the Supabase SQL editor, or via the Supabase MCP `apply_migration` tool.
