@@ -25,7 +25,7 @@
 // income and marital status, the two most sensitive of them. Disability yes/no
 // and employment follow the preview as designed. Flagged for Liliana.
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase as globalSupabase } from '../../lib/supabase'
 import {
   PNA, GENDER_OPTIONS, TRANS_OPTIONS, TRANS_DEF, ORIENTATION_OPTIONS,
@@ -190,6 +190,7 @@ export default function LilianaDemographicsStep({
 
   const [specify, setSpecify] = useState({})
   const [saving, setSaving] = useState(false)
+  const submittingRef = useRef(false)
   const [error, setError] = useState(null)
 
   const setSpecifyText = (k, t) => setSpecify(prev => ({ ...prev, [k]: t }))
@@ -320,10 +321,18 @@ export default function LilianaDemographicsStep({
     if (!sectionValid[sec] || saving) return
     if (!isLast) { setSec(s => s + 1); window.scrollTo?.(0, 0); return }
     if (previewMode) { onComplete({ preview: true, responses: buildResponses() }); return }
+    // Ref, not just `saving`: setSaving(true) does not take effect until React
+    // re-renders, so two events dispatched in the same tick both read
+    // saving === false and both insert. Written synchronously, so the second
+    // call sees the lock the first one set. Released only on failure — a
+    // completed submit must never repeat, but a failed one must be retryable.
+    if (submittingRef.current) return
+    submittingRef.current = true
     setSaving(true); setError(null)
     const { error: dbErr } = await insertResponses(buildResponses())
     setSaving(false)
     if (dbErr) {
+      submittingRef.current = false
       setError('Could not save — please try again.')
       console.error('liliana demographics insert:', dbErr)
       return

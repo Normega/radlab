@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase as globalSupabase } from '../../lib/supabase'
 
 const SES_PROMPT = `Imagine a ladder that represents where people stand in society. At the top are people who are the best off — those with the most money, most education, and the best jobs. At the bottom are people who are the worst off — those with the least money, least education, and the worst or no job. Where would you place yourself on this ladder?`
@@ -11,6 +11,7 @@ export default function DemographicsStep({ enrollment, scheduleId, onComplete, s
   const [racialized, setRacialized] = useState(null)   // 'yes' | 'no' | 'prefer_not_to_answer'
   const [sesLadder,  setSesLadder]  = useState(null)   // 1–10
   const [saving,     setSaving]     = useState(false)
+  const submittingRef = useRef(false)
   const [error,      setError]      = useState(null)
 
   // Sim mode: auto-fill fields then submit
@@ -46,6 +47,13 @@ export default function DemographicsStep({ enrollment, scheduleId, onComplete, s
   async function handleSubmit() {
     if (!canSubmit || saving) return
     if (previewMode) { onComplete({ preview: true }); return }
+    // Ref, not just `saving`: setSaving(true) does not take effect until React
+    // re-renders, so two events dispatched in the same tick both read
+    // saving === false and both insert. Written synchronously, so the second
+    // call sees the lock the first one set. Released only on failure — a
+    // completed submit must never repeat, but a failed one must be retryable.
+    if (submittingRef.current) return
+    submittingRef.current = true
     setSaving(true)
     setError(null)
     const { error: dbErr } = await db.from('demographics').insert({
@@ -58,7 +66,7 @@ export default function DemographicsStep({ enrollment, scheduleId, onComplete, s
       ses_ladder:    sesLadder,
     })
     setSaving(false)
-    if (dbErr) { setError('Could not save — please try again.'); console.error('demographics insert:', dbErr); return }
+    if (dbErr) { submittingRef.current = false; setError('Could not save — please try again.'); console.error('demographics insert:', dbErr); return }
     onComplete({})
   }
 

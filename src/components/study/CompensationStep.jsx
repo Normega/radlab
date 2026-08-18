@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase as globalSupabase } from '../../lib/supabase'
 
 export default function CompensationStep({ enrollment, onComplete, supabaseClient, isSimMode = false, previewMode = false }) {
@@ -8,6 +8,7 @@ export default function CompensationStep({ enrollment, onComplete, supabaseClien
   const [email,   setEmail]   = useState('')
   const [sonaId,  setSonaId]  = useState('')
   const [saving,  setSaving]  = useState(false)
+  const submittingRef = useRef(false)
   const [error,   setError]   = useState(null)
 
   useEffect(() => {
@@ -35,6 +36,13 @@ export default function CompensationStep({ enrollment, onComplete, supabaseClien
   async function handleSubmit() {
     if (!canSubmit || saving) return
     if (previewMode) { onComplete({ preview: true }); return }
+    // Ref, not just `saving`: setSaving(true) does not take effect until React
+    // re-renders, so two events dispatched in the same tick both read
+    // saving === false and both insert. Written synchronously, so the second
+    // call sees the lock the first one set. Released only on failure — a
+    // completed submit must never repeat, but a failed one must be retryable.
+    if (submittingRef.current) return
+    submittingRef.current = true
     setSaving(true)
     setError(null)
 
@@ -51,6 +59,7 @@ export default function CompensationStep({ enrollment, onComplete, supabaseClien
     const { error: dbErr } = await db.from('participant_compensation').insert(payload)
     setSaving(false)
     if (dbErr) {
+      submittingRef.current = false
       setError('Could not save — please try again.')
       console.error('compensation insert:', dbErr)
       return

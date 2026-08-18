@@ -2604,6 +2604,31 @@ Preview safety: `DemographicsStep`, `CompensationStep`, `EquityCensusStep` and
 `previewMode` prop — submit calls `onComplete` without any database insert. `AdvancedInstrumentPreview`
 passes a null-id stand-in enrollment and shows a "Preview complete — nothing was written" screen.
 
+### Submit guards (2026-08-18)
+
+Participant data steps are guarded in **two layers**, because they fail differently.
+
+**Client — `useSubmitLock` (`src/lib/useSubmitLock.js`).** Every form step guarded its insert with
+a `saving` state flag, which is a race rather than a lock: `setSaving(true)` does not take effect
+until React re-renders, so two events in the same tick both read `saving === false` and both
+insert. The hook holds a **ref**, written synchronously, so the second call sees the lock the first
+one set. It releases only on failure — a completed submit must never repeat, but a failed one has
+to stay retryable or the participant is stranded on a dead button. Applied to
+`QuestionnaireStepWrapper` (which had **no** guard at all — the site that produced the observed
+duplicate), `DemographicsStep`, `EquityCensusStep`, `CompensationStep` and
+`LilianaDemographicsStep`.
+
+**Database — `20260818_questionnaire_submit_guard.sql`.** The client layer is per component
+instance and therefore cannot survive a **remount**, which is the likelier cause of what was
+actually observed: a BFI-2-S submitted twice 643 ms apart, too slow for same-tick batching and far
+too fast for a human. A BEFORE INSERT trigger collapses a repeat of
+`(user_id, questionnaire_slug)` inside 10 seconds into the existing row, keeping the newer
+responses. The hook stops the client making the request; the trigger stops the row existing.
+
+**Why it mattered more than a stray row:** the export names questionnaire columns by which
+administration a response is, so a single double-fire made that participant look like they had
+three baseline administrations and shifted the timepoint label of every later response they gave.
+
 ### Liliana Study 3 Demographics (`liliana_demographics`, 2026-08-18)
 
 The full battery from Liliana's approved design (`demographics-preview.html`, 18 June 2026):

@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import { supabase as globalSupabase } from '../../lib/supabase'
 import QuestionnaireRenderer from '../questionnaire/QuestionnaireRenderer'
+import { useSubmitLock } from '../../lib/useSubmitLock'
 
 export default function QuestionnaireStepWrapper({ slug, enrollment, stepIndex, totalSteps, onComplete, supabaseClient, isSimMode = false, demoMode = false }) {
   // In a participant session the caller passes the participant-authenticated
@@ -60,6 +61,8 @@ export default function QuestionnaireStepWrapper({ slug, enrollment, stepIndex, 
     onComplete({ carried_forward: true, slug })
   }, [carried]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  const { submit } = useSubmitLock()
+
   if (carried) return <div style={S.loading}>Loading…</div>
 
   if (isLoading) return <div style={S.loading}>Loading questionnaire…</div>
@@ -71,18 +74,31 @@ export default function QuestionnaireStepWrapper({ slug, enrollment, stepIndex, 
     return <div style={S.err}>Questionnaire "{slug}" is not configured (no items). Check its definition in the admin library.</div>
   }
 
+  // This wrapper had NO guard: QuestionnaireRenderer refuses to fire onComplete
+  // twice per mount, but a remount re-arms it, and the insert here would then
+  // run again. That is how one participant's BFI-2-S landed twice 643 ms apart,
+  // which the export then read as two separate baseline administrations.
   async function handleComplete(result) {
     const { responses } = result
-    if (!demoMode) {
-      const { error } = await db.from('questionnaire_responses').insert({
-        user_id:            enrollment.profile_id ?? enrollment.user_id,
-        questionnaire_slug: slug,
-        responses,
-        completed_at:       new Date().toISOString(),
-      })
-      if (error) console.error('questionnaire_responses insert:', error)
-    }
-    onComplete({ responses_count: Object.keys(responses).length })
+    const { skipped } = await submit(async () => {
+      if (!demoMode) {
+        const { error } = await db.from('questionnaire_responses').insert({
+          user_id:            enrollment.profile_id ?? enrollment.user_id,
+          questionnaire_slug: slug,
+          responses,
+          completed_at:       new Date().toISOString(),
+        })
+        // Thrown rather than logged-and-continued so the lock releases and the
+        // participant can retry; advancing on a failed save would lose the data
+        // silently, which is worse than showing the question again.
+        if (error) throw error
+      }
+      onComplete({ responses_count: Object.keys(responses).length })
+    }).catch(err => {
+      console.error('questionnaire_responses insert:', err)
+      return { skipped: false }
+    })
+    if (skipped) console.warn('questionnaire submit ignored — already submitted:', slug)
   }
 
   return (
