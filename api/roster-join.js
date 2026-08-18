@@ -87,7 +87,7 @@ export default async function handler(req, res) {
     const link = linkData?.properties?.action_link
     if (!link) throw new Error('no action_link')
 
-    const fromEmail = process.env.FROM_EMAIL || 'RADlab courses <research@radlab.zone>'
+    const fromEmail = process.env.FROM_EMAIL || 'PSY240 Field Guide <fieldguide@course.radlab.zone>'
     const first = row.full_name.split(' ')[0]
     const rsp = await fetch('https://api.resend.com/emails', {
       method: 'POST',

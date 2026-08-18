@@ -108,7 +108,7 @@ export default async function handler(req, res) {
   const origin = process.env.SITE_URL || 'https://radlab.zone'
   const redirectTo = `${origin}/academic/fieldguide/wiki`
   const joinUrl = `${origin}/academic/fieldguide/join`
-  const fromEmail = process.env.FROM_EMAIL || 'RADlab courses <research@radlab.zone>'
+  const fromEmail = process.env.FROM_EMAIL || 'PSY240 Field Guide <fieldguide@course.radlab.zone>'
 
   const sent = []
   const failed = []
