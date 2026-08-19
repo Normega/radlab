@@ -21,6 +21,7 @@ const NAV_SECTIONS = [
       { to: '/admin/displays',        label: 'Displays'       },
       { to: '/admin/videos',          label: 'Videos'         },
       { to: '/admin/audio',           label: 'Audio'          },
+      { to: '/admin/instruments',     label: 'Instrument Styles' },
     ],
   },
   {

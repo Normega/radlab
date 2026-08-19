@@ -594,3 +594,12 @@ body {
   background: transparent !important;
   border-radius: 0 !important;
 }
+
+/* ── Instrument Styles page: sample stages ────────────────────────────────────
+   Instrument screens size themselves to the viewport (minHeight: 60-70vh,
+   centered) because they normally own the page. Inside a showcase stage that
+   turns each sample into a scrollable void, so collapse them to content
+   height. !important: their sizing is inline styles. */
+.spec-stage > div {
+  min-height: unset !important;
+}
