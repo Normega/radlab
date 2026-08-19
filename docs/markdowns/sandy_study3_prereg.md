@@ -532,8 +532,15 @@ data-quality problem and triggers investigation before any hypothesis test is in
 Sliders, rating scales and questionnaires are required fields in the platform flow, so a
 participant cannot advance past a step without answering it. Missingness therefore arises
 from three sources: dropout (§5.4, criterion 1), technical failure (§5.4, criterion 6), and
-silent write loss — a completed step whose response never reaches the database. The pilot
-observed write loss at 1 of 340 rating writes (0.29%).
+silent write loss — a completed step whose response never reaches the database. **The pilot
+observed no write loss: all 340 expected rating writes were present.** An earlier version of
+this document reported a rate of 1 in 340; that was an analysis artefact, not a platform
+fault, and is corrected here. `vas_responses.responded_at` is stamped by the participant's
+own device, and one pilot participant's clock ran 265 seconds slow, which placed their first
+stress rating outside a time window built from server-stamped step timings. Ratings are
+therefore matched to the step that presented them rather than scoped by a time window, which
+removes the dependence on the client clock and makes a genuine missing row distinguishable
+from a clock offset.
 
 Models are fitted on complete cases, with the number of contributing observations reported
 per model. A participant missing a single occasion of a repeated state rating is retained
@@ -683,8 +690,11 @@ is now defined by an event-log reconstruction, validated in the pilot against th
 300-second budget.
 
 **Missing data.** The original draft asserted that item-level missingness was structurally
-impossible. The pilot falsified this: one rating write in 340 was silently lost despite the
-step being completed. §5.6 now specifies a rule for it.
+impossible. §5.6 now specifies a rule for the three ways it can nonetheless arise. The pilot
+initially appeared to show one lost rating write in 340; on re-examination during analysis-code
+development that proved to be an artefact of scoping ratings by a time window against a
+client-stamped timestamp, and no write was in fact lost. The rule stands, because genuine
+write loss remains possible; the reported rate does not.
 
 **Feasibility.** Session duration was measured at a median of 30.8 minutes rather than the
 45–60 minutes originally estimated, and the compensation rate is set accordingly.
