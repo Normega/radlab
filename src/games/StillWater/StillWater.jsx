@@ -101,10 +101,22 @@ function IntroScreen({ onStart, bouncedFrom }) {
 }
 
 // ─── RATING SCREEN ────────────────────────────────────────────────────────────
+// The tap IS the answer (Norm, 2026-08-19): no Next button. A short beat after
+// the last tap lets a mis-tap on the dense wheel be corrected by tapping again
+// — each tap resets the timer; lingering commits. Mirrors CheckinFlow's
+// RatingStep, which made the same change the same day.
+
+const AUTO_ADVANCE_MS = 700
 
 function RatingScreen({ phase, activeIds, labels, onConfirm, skinColor, eyeColor, hairStyle = 'none', hairColor = '#784421' }) {
   const [sel, setSel] = useState(null)
   const [hov, setHov] = useState(null)
+
+  useEffect(() => {
+    if (!sel) return
+    const t = setTimeout(() => onConfirm(sel), AUTO_ADVANCE_MS)
+    return () => clearTimeout(t)
+  }, [sel]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleZone = useCallback(({ emotion, zone }) => {
     const { rating, x, y } = computeRating(phase, emotion.id, zone)
@@ -174,11 +186,6 @@ function RatingScreen({ phase, activeIds, labels, onConfirm, skinColor, eyeColor
         <span style={{ fontFamily: 'DM Sans,sans-serif', fontSize: 12, color: '#888', width: 48, flexShrink: 0 }}>{labels.right}</span>
       </div>
 
-      {sel && (
-        <button style={{ ...S.btnPrimary, width: 308 }} onClick={() => onConfirm(sel)}>
-          {phase === 1 ? 'Next →' : 'See my result →'}
-        </button>
-      )}
     </div>
   )
 }

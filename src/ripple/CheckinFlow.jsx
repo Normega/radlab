@@ -141,10 +141,22 @@ async function saveIntention(supabase, userId, text, localDate) {
 }
 
 // ── RatingStep ────────────────────────────────────────────────────────────────
+// The tap IS the answer (Norm, 2026-08-19): no Next button. A short beat after
+// the last tap lets a mis-tap on the dense wheel (8 wedges × 3 rings + neutral)
+// be corrected by tapping again — each tap resets the timer; lingering commits.
+// The beat also leaves a moment to see the face react before the screen moves.
+
+const AUTO_ADVANCE_MS = 700
 
 function RatingStep({ phase, activeIds, labels, skinColor, eyeColor, species, hairStyle, hairColor, onConfirm }) {
   const [sel, setSel] = useState(null)
   const [hov, setHov] = useState(null)
+
+  useEffect(() => {
+    if (!sel) return
+    const t = setTimeout(() => onConfirm(sel), AUTO_ADVANCE_MS)
+    return () => clearTimeout(t)
+  }, [sel]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleZone = useCallback(({ emotion, zone }) => {
     const { rating, x, y } = computeRating(phase, emotion.id, zone)
@@ -217,11 +229,6 @@ function RatingStep({ phase, activeIds, labels, skinColor, eyeColor, species, ha
         <span style={{ fontFamily: SANS, fontSize: 12, color: '#888', width: 48, flexShrink: 0 }}>{labels.right}</span>
       </div>
 
-      {sel && (
-        <button style={{ ...S.btn, width: 308 }} onClick={() => onConfirm(sel)}>
-          Next →
-        </button>
-      )}
     </div>
   )
 }
