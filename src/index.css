@@ -603,3 +603,45 @@ body {
 .spec-stage > div {
   min-height: unset !important;
 }
+
+/* ── Dana composable-surveys proposal: slider chrome ───────────────────────────
+   Used by the PROPOSED samples on /admin/instruments (proposedInstruments.jsx).
+   Track fill driven by the --fill custom property set inline per instance.
+   Thumb/track are pseudo-elements, hence CSS rather than inline styles. */
+.dana-range {
+  --fill: 50%;
+  width: 100%;
+  height: 28px;
+  margin: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  cursor: pointer;
+  touch-action: pan-y;
+}
+.dana-range::-webkit-slider-runnable-track {
+  height: 7px;
+  border-radius: 999px;
+  background: linear-gradient(to right,
+    var(--pk) 0%, var(--pk) var(--fill),
+    #E8DCE2 var(--fill), #E8DCE2 100%);
+}
+.dana-range::-moz-range-track { height: 7px; border-radius: 999px; background: #E8DCE2; }
+.dana-range::-moz-range-progress { height: 7px; border-radius: 999px; background: var(--pk); }
+.dana-range::-webkit-slider-thumb {
+  width: 24px; height: 24px; margin-top: -8.5px;
+  appearance: none; -webkit-appearance: none;
+  border: 3px solid var(--pk); border-radius: 50%;
+  background: var(--bgc);
+  box-shadow: 0 2px 8px rgba(74, 36, 55, 0.14);
+}
+.dana-range::-moz-range-thumb {
+  width: 20px; height: 20px;
+  border: 3px solid var(--pk); border-radius: 50%;
+  background: var(--bgc);
+  box-shadow: 0 2px 8px rgba(74, 36, 55, 0.14);
+}
+.dana-range:focus-visible { outline: none; }
+.dana-range:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 4px rgba(240, 104, 164, 0.18), 0 2px 8px rgba(74, 36, 55, 0.14);
+}

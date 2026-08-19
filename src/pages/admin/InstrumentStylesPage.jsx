@@ -12,6 +12,9 @@ import WellnessTipStep from '../../components/study/WellnessTipStep'
 import { OwlScreen } from '../../components/study/InterventionPage'
 import FillableBox from '../../components/ui/FillableBox'
 import Checkbox from '../../components/ui/Checkbox'
+import {
+  ProposedLikert, ProposedSlider, ProposedMultipleChoice, ProposedOpenList, ProposedHierarchy,
+} from './proposedInstruments'
 
 // ── InstrumentStylesPage (/admin/instruments) ─────────────────────────────────
 // A live style inventory of the participant-facing instrument components
@@ -51,7 +54,8 @@ export default function InstrumentStylesPage() {
         <Spec
           title="Likert item"
           file="src/components/questionnaire/LikertItem.jsx"
-          notes="The core questionnaire item: stem + labelled option buttons. Variants not shown: auto-advance (selection commits without a Next), endpoint-only labels (numbers with anchors at the ends), and image labels."
+          notes="Current: vertical, every point labelled, one item per screen. Proposed (Dana's composable-surveys package): horizontal 7-box row, anchors under the endpoints only, several items per page with ITEM eyebrows. These are the two classic administrations — the review question is which is the default and whether orientation becomes an instrument parameter."
+          proposed={<ProposedLikert />}
         >
           <LikertSample />
         </Spec>
@@ -59,10 +63,32 @@ export default function InstrumentStylesPage() {
         <Spec
           title="Slider (no-default)"
           file="src/components/study/NoDefaultSlider.jsx"
-          notes="The standard slider: unanswered until touched (no default thumb — avoids anchoring), point labels when the scale has ≤12 ticks. Shown inside the card chrome its study consumers wrap it in."
+          notes="Current: unanswered until touched — no thumb drawn, avoiding midpoint anchoring. Proposed: thicker track, ring thumb, sparse numbered anchors, and a VALUE readout that stays '—' until touched. Open question: the proposed version shows the thumb at midpoint before any interaction (faithful to the prototype); her React package reuses NoDefaultSlider, so chrome and no-thumb behavior can be combined."
+          proposed={<ProposedSlider />}
         >
           <SliderSample />
         </Spec>
+
+        <Spec
+          title="Multiple choice (proposed addition)"
+          file="composable-surveys: MultipleChoiceQuestion"
+          notes="The platform has no generic single-select multiple-choice instrument — demographics and screeners each hand-roll their own. Options can be plain, or carry inline text/number entry with prefix/suffix and bounds (select the first option to see it)."
+          proposed={<ProposedMultipleChoice />}
+        />
+
+        <Spec
+          title="Open text list + contribution ratings (proposed addition)"
+          file="composable-surveys: OpenTextListQuestion"
+          notes="Participant-generated factors with a per-factor rating: typing text reveals a contribution slider beneath that row, and filling the last row grows a new one. Word-capped with a live counter. Nothing like it exists on the platform."
+          proposed={<ProposedOpenList />}
+        />
+
+        <Spec
+          title="Hierarchical belief question (proposed addition)"
+          file="composable-surveys: HierarchicalBeliefQuestion"
+          notes="A belief hierarchy shown whole, indented by level; participants select every level that changed, and each selected level reveals a signed direction slider. Built for feedback-appraisal work but generalizes to any nested-construct rating."
+          proposed={<ProposedHierarchy />}
+        />
 
         <Spec
           title="Questionnaire instruction screen"
@@ -272,7 +298,8 @@ function PrimitivesSample() {
 
 // ── Spec — one instrument section ─────────────────────────────────────────────
 // `proposed`: mount a proposed redesign here and the section becomes a
-// side-by-side CURRENT / PROPOSED comparison. Absent, current spans full width.
+// side-by-side CURRENT / PROPOSED comparison. With no children at all, the
+// CURRENT column states there is no current equivalent — a proposed addition.
 
 function Spec({ title, file, notes, tall = false, children, proposed = null }) {
   return (
@@ -285,7 +312,11 @@ function Spec({ title, file, notes, tall = false, children, proposed = null }) {
       <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
         <div style={{ flex: '1 1 420px', minWidth: 0 }}>
           <p style={S.stageCaption}>Current</p>
-          <div className="spec-stage" style={{ ...S.stage, ...(tall ? S.stageTall : {}) }}>{children}</div>
+          {children ? (
+            <div className="spec-stage" style={{ ...S.stage, ...(tall ? S.stageTall : {}) }}>{children}</div>
+          ) : (
+            <div style={S.noCurrent}>No current equivalent — this is a proposed addition.</div>
+          )}
         </div>
         {proposed && (
           <div style={{ flex: '1 1 420px', minWidth: 0 }}>
@@ -325,6 +356,12 @@ const S = {
   stageCaption: {
     fontFamily: MONO, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase',
     color: 'var(--gy)', margin: '0 0 6px',
+  },
+  noCurrent: {
+    border: '1.5px dashed var(--bds)', borderRadius: 12, minHeight: 120,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    fontFamily: SANS, fontSize: 13, color: 'var(--gy)', fontStyle: 'italic',
+    padding: 20, textAlign: 'center',
   },
   // overflow hidden also confines ProgressLabel's position: sticky.
   stage: {
