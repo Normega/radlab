@@ -884,3 +884,39 @@ Study record: `active`, external enrolment on, screener attached.
   and per-subtask dwell would lose its final segment.
 - **The first confirmatory export should be spot-checked for `task_focus` rows** before
   relying on the per-subtask columns at all.
+
+---
+
+## Step 11 — The analysis code joins the repository (2026-08-19)
+
+The registered analysis pipeline lived on the shared drive at
+`I:\Shared drives\Sandy\Study3\Scripts\`, outside version control, while the analysis
+repository held the pilot prep, the de-identified tables and the power analysis. The one
+piece of code that produces the study's *results* was the piece with no history, no way to
+tell which copy was current, and nothing to stop two edited copies drifting apart.
+
+It now lives at `<repo>/analysis/` (commit `a5d21c2`). The shared-drive folder keeps `output/`
+and gains a README pointing at the repo.
+
+Two things had to change for it to run there:
+
+**Data path resolution.** `DATA_DIR` was `dirname(SCRIPT_DIR)/Data`, which is the shared-drive
+layout. It now tries `data_raw/` (the repo) and then `Data/` (the shared drive) and takes the
+first that exists, so a copy in either place works without configuration.
+
+**The crosswalk could have been committed.** `run_all.R` writes
+`output/PRIVATE_crosswalk.csv`, which maps study-local `pid` labels back to Prolific ids and
+profile UUIDs. The repo's top-level `output/` **is** tracked (power-analysis results), so a
+blanket ignore was wrong and a scoped one was needed: `analysis/output/` plus a `PRIVATE_*`
+rule for wherever else it might be written. Verified with `git check-ignore` and by confirming
+`git status` reports nothing from that directory.
+
+Verified running from the new location: 21 enrolled, 20 analysis-ready, 17/17 critical terms,
+write loss 0 of 340 — identical to the shared-drive run — and the focus validator's 13
+assertions pass.
+
+**Open, and it matters for Sandy:** the analysis repository is **local only** — it has no
+remote. Moving the code into it therefore put it somewhere Sandy cannot reach. The pointer
+README says so explicitly rather than implying a clone will work. Pushing the repo to a
+private host is the obvious next step; it also means the analysis code stops existing on
+exactly one machine.
