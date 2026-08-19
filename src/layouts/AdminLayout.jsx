@@ -11,17 +11,29 @@ const NAV_SECTIONS = [
       { to: '/admin/studies',         label: 'Studies'        },
     ],
   },
+  // 'Elements' split into Instruments and Media (Norm, 2026-08-19). The three
+  // entries under /admin/instruments/* are the composable-surveys adoptions —
+  // each links to a status page with the live sample until Dana's package is
+  // integrated. `end` on Instrument Styles so it doesn't also light up on them.
   {
-    header: 'Elements',
+    header: 'Instruments',
     items: [
-      { to: '/admin/games',           label: 'Games'          },
+      { to: '/admin/instruments',     label: 'Instrument Styles', end: true },
       { to: '/admin/screeners',       label: 'Screeners'      },
       { to: '/admin/questionnaires',  label: 'Questionnaires' },
       { to: '/admin/vas',             label: 'Rating Scales'  },
       { to: '/admin/displays',        label: 'Displays'       },
+      { to: '/admin/instruments/multiple-choice', label: 'Multiple Choice' },
+      { to: '/admin/instruments/open-list',       label: 'Open Text Lists' },
+      { to: '/admin/instruments/hierarchy',       label: 'Belief Hierarchies' },
+    ],
+  },
+  {
+    header: 'Media',
+    items: [
+      { to: '/admin/games',           label: 'Games'          },
       { to: '/admin/videos',          label: 'Videos'         },
       { to: '/admin/audio',           label: 'Audio'          },
-      { to: '/admin/instruments',     label: 'Instrument Styles' },
     ],
   },
   {

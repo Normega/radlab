@@ -70,23 +70,26 @@ export default function InstrumentStylesPage() {
         </Spec>
 
         <Spec
-          title="Multiple choice (proposed addition)"
+          title="Multiple choice"
           file="composable-surveys: MultipleChoiceQuestion"
-          notes="The platform has no generic single-select multiple-choice instrument — demographics and screeners each hand-roll their own. Options can be plain, or carry inline text/number entry with prefix/suffix and bounds (select the first option to see it)."
+          notes="Adopted 2026-08-19 (has its own sidebar entry under Instruments). The platform never had a generic single-select multiple-choice instrument — demographics and screeners each hand-roll their own. Options can be plain, or carry inline text/number entry with prefix/suffix and bounds (select the first option to see it)."
+          proposedCaption="Adopted — implementation pending"
           proposed={<ProposedMultipleChoice />}
         />
 
         <Spec
-          title="Open text list + contribution ratings (proposed addition)"
+          title="Open text list + contribution ratings"
           file="composable-surveys: OpenTextListQuestion"
-          notes="Participant-generated factors with a per-factor rating: typing text reveals a contribution slider beneath that row, and filling the last row grows a new one. Word-capped with a live counter. Nothing like it exists on the platform."
+          notes="Adopted 2026-08-19 (has its own sidebar entry under Instruments). Participant-generated factors with a per-factor rating: typing text reveals a contribution slider beneath that row, and filling the last row grows a new one. Word-capped with a live counter."
+          proposedCaption="Adopted — implementation pending"
           proposed={<ProposedOpenList />}
         />
 
         <Spec
-          title="Hierarchical belief question (proposed addition)"
+          title="Hierarchical belief question"
           file="composable-surveys: HierarchicalBeliefQuestion"
-          notes="A belief hierarchy shown whole, indented by level; participants select every level that changed, and each selected level reveals a signed direction slider. Built for feedback-appraisal work but generalizes to any nested-construct rating."
+          notes="Adopted 2026-08-19 (has its own sidebar entry under Instruments). A belief hierarchy shown whole, indented by level; participants select every level that changed, and each selected level reveals a signed direction slider. Generalizes to any nested-construct rating."
+          proposedCaption="Adopted — implementation pending"
           proposed={<ProposedHierarchy />}
         />
 
@@ -301,7 +304,7 @@ function PrimitivesSample() {
 // side-by-side CURRENT / PROPOSED comparison. With no children at all, the
 // CURRENT column states there is no current equivalent — a proposed addition.
 
-function Spec({ title, file, notes, tall = false, children, proposed = null }) {
+function Spec({ title, file, notes, tall = false, children, proposed = null, proposedCaption = 'Proposed' }) {
   return (
     <section>
       <div style={S.specHead}>
@@ -315,12 +318,12 @@ function Spec({ title, file, notes, tall = false, children, proposed = null }) {
           {children ? (
             <div className="spec-stage" style={{ ...S.stage, ...(tall ? S.stageTall : {}) }}>{children}</div>
           ) : (
-            <div style={S.noCurrent}>No current equivalent — this is a proposed addition.</div>
+            <div style={S.noCurrent}>No current equivalent — new instrument type.</div>
           )}
         </div>
         {proposed && (
           <div style={{ flex: '1 1 420px', minWidth: 0 }}>
-            <p style={{ ...S.stageCaption, color: 'var(--pk)' }}>Proposed</p>
+            <p style={{ ...S.stageCaption, color: 'var(--pk)' }}>{proposedCaption}</p>
             <div className="spec-stage" style={{ ...S.stage, ...(tall ? S.stageTall : {}), borderColor: 'var(--pkbs)' }}>{proposed}</div>
           </div>
         )}
