@@ -20,7 +20,7 @@ and computational reproducibility. Updated after each step. Companion to
 
 ---
 
-## Decision index (D1–D18)
+## Decision index (D1–D19)
 
 The preregistration was cleaned of inline decision markup on 2026-08-11 so that it reads as
 a formal document; the decisions are absorbed into its prose and summarised in its
@@ -47,6 +47,7 @@ Appendix B. The numbered index below is retained here as the audit trail, and is
 | D16 | Eligibility is **not** enforced through Prolific custom prescreening. A Prolific prescreener is itself a small paid study with its own completion path, which would mean running a second study to gate the first. The criteria are stated in the Prolific listing instead, and enforced by the in-session screener at session entry. Accepted cost: a screened-out participant has already taken a slot, so the screen-out page asks them to return the submission | 2026-08-13, Norm |
 | D17 | Aptitude per-subtask time is derived from **focus**, and stays exploratory. The three subtasks are on screen simultaneously, so unlike ColourMax there is no navigation act to log; focus is the only observable signal and it bounds engagement rather than measuring attention. The interaction-derived `task_switch_count` (which the pilot and power analysis rest on) is reported separately and not merged with it | 2026-08-19 |
 | D18 | Test accounts are excluded via the enrolment's `is_test` flag as criterion 0, ahead of every behavioural criterion. Enrolment status cannot identify them, because genuine participants withdraw too. Exports predating the column read as “none flagged” and remove nobody | 2026-08-19 |
+| D19 | The pilot/confirmatory boundary is the **enrolment date**, declared per run via `SANDY3_COHORT_START`, and a confirmatory run refuses to start without it. Nothing in the data separates the two cohorts — same study id, same Prolific id pattern, both real participants — and the pilot ran the pre-2026-08-11 instrument, so its percentiles are not on the same scale | 2026-08-19 |
 
 Build items B1–B3 were withdrawn or resolved (per D9, D10, D11). B4 (export field
 verification) completed 2026-08-06. B5 (Word Probe recalibration and redemption-score fix)
@@ -810,3 +811,76 @@ token session. It is the same `logEvent('aptitude_suite', ...)` call on the same
 path as `session_start`, which did write — so it is verified by identical path, not by
 observation. Worth confirming on the first confirmatory participant, where its absence would
 show as `apt_has_game_end = FALSE`.
+
+---
+
+## Step 10 — Launch readiness check (2026-08-19)
+
+Asked to confirm the study was ready to run on the full sample. Most of it was; one thing
+was not, and it would not have announced itself.
+
+### 10.1 The blocking defect: nothing separated the pilot from the confirmatory sample
+
+The preregistration has said since §3.1 that the pilot "will not be pooled with the
+registered sample." The commitment existed. The **enforcement did not**.
+
+The pilot participants were recruited on Prolific into the *same study id*. Their ids match
+`PROLIFIC_ID_RE` exactly like every future participant, their enrolment status is identical,
+and `is_test` is false because they were real participants. `RESTRICT_TO_PROLIFIC_IDS` — the
+only cohort filter in the pipeline — keeps every one of them. So
+`SANDY3_CONFIRMATORY=true Rscript run_all.R` over a full export would have silently analysed
+20 pilot participants as confirmatory data, and nothing in the output would have said so.
+
+**A second reason makes this substantive rather than procedural**, and it holds regardless of
+what the registration says: the pilot ran a *different instrument*. The Word Probe
+recalibration (midpoint 15 → 10, k 0.12 → 0.20) and partial credit, and the floored
+redemption score, all shipped in `1b00da7` on 2026-08-11 — after the pilot sessions of 08-04
+and 08-06. Under the old curve 14 of 20 pilot participants scored exactly zero on the Word
+Probe. Those percentiles are not on the same scale as the registered sample, and the
+redemption manipulation is computed from them. Pooling would have distorted the Aptitude
+distribution and the manipulation built on top of it.
+
+### 10.2 The fix, fail-closed
+
+`SANDY3_COHORT_START` (a date) now bounds the cohort, and a confirmatory run **refuses to
+start without it** — the same posture as `PILOT_SAFE_MODE`, and for the same reason: a
+safety property that depends on remembering a flag is not a safety property. In pilot/safe
+mode it is optional and, unset, keeps everything, which is what reproducing the pilot needs.
+
+All three paths were exercised:
+
+| Invocation | Result |
+|---|---|
+| Pilot default, no boundary | unchanged — 21 enrolled, 20 analysis-ready |
+| `SANDY3_CONFIRMATORY=true`, no cohort start | **refused**, with the reason |
+| Boundary 2026-08-20, safe mode | dropped all 31 pre-cutoff, then stopped — correct today, since no confirmatory participant exists yet |
+
+### 10.3 What was verified live in production
+
+Not inferred from the repo — fetched from `radlab.zone` and checked in the deployed bundles:
+
+- `AptitudeSuite-CT-Efx6z.js` contains all six instrumentation markers (`task_focus`,
+  `aptitude_suite`, `window_blur`, `window_focus`, `session_start`, `game_end`).
+- The recalibrated curve is live and the old one is gone: `k = .2` and midpoint `10` present,
+  `.12` and `15` absent.
+- Partial credit is live: `2*(7-c.length)`.
+- The floored redemption score is live in `SessionEntry-COD2g5OC.js`:
+  `redemption_score:+Math.max(n…`.
+
+Note for future checks: `git branch -r --contains 1b00da7` does **not** list `origin/main`,
+which looks alarming and is not. That commit reached main by another route, so its patch-id
+differs — the caveat CLAUDE.md already records about `git cherry` overstating things. The
+file contents on `origin/main`, and the deployed bundle, are the authority.
+
+Study record: `active`, external enrolment on, screener attached.
+
+### 10.4 Carried into launch as watch items, not blockers
+
+- **The §5.5 positive control fails for the Aptitude Suite** in the pilot (§8.5). The Word
+  Probe defect is a plausible cause and may now clear, but §5.5 makes this a
+  stop-and-investigate before interpreting any hypothesis test. Check it on the first ~30
+  participants, not at the end.
+- **`game_end` has not been observed** (§9.6). It would show as `apt_has_game_end = FALSE`,
+  and per-subtask dwell would lose its final segment.
+- **The first confirmatory export should be spot-checked for `task_focus` rows** before
+  relying on the per-subtask columns at all.

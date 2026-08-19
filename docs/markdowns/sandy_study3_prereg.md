@@ -147,6 +147,16 @@ registration, and was used to estimate nuisance parameters only (§3.4). No hypo
 was conducted on the pilot, no effect size was estimated from it, and it will not be pooled
 with the registered sample.
 
+Separation is enforced in code rather than left to care. The pilot participants were
+recruited on Prolific into the same study record, so no identifier, status or flag
+distinguishes them; the boundary is the enrolment date, and the analysis pipeline refuses to
+run a confirmatory analysis unless that date is declared (`SANDY3_COHORT_START`). A second
+reason makes the boundary substantive rather than procedural: the pilot ran an earlier
+version of the Aptitude Suite. The Word Probe recalibration and partial-credit scoring, and
+the floored redemption score (Appendix B), shipped on 2026-08-11, after the pilot sessions.
+Pilot percentiles are therefore not on the same scale as the registered sample and could not
+be pooled even if the registration permitted it.
+
 ### 3.2 Data collection procedures
 
 Participants are recruited via Prolific. Enrolment status — currently enrolled as a
