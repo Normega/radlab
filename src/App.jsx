@@ -110,6 +110,7 @@ const FieldGuideHome       = lazy(() => import('./academic/fieldguide/FieldGuide
 const CorrectionsFeed      = lazy(() => import('./academic/fieldguide/CorrectionsFeed'))
 const WhatsNew             = lazy(() => import('./academic/fieldguide/WhatsNew'))
 const RosterAdmin          = lazy(() => import('./academic/fieldguide/RosterAdmin'))
+const ReadingQueue         = lazy(() => import('./academic/fieldguide/ReadingQueue'))
 const FieldGuideJoin       = lazy(() => import('./academic/fieldguide/Join'))
 
 // Workbench — shared Claude Code sessions. Its own partition again: own guards
@@ -668,6 +669,9 @@ export default function App() {
               <Route path="/academic/fieldguide/corrections" element={<CorrectionsFeed />} />
               {/* WP5: roster import, invites, unmatched-attempt queue. */}
               <Route path="/academic/fieldguide/roster" element={<RosterAdmin />} />
+              {/* The pre-publish read, as a queue: risk-ordered pages, stamp
+                  state, and a continue button. Stamping happens on the pages. */}
+              <Route path="/academic/fieldguide/read" element={<ReadingQueue />} />
             </Route>
             {/* WP5: the QR / self-serve sign-in door. Deliberately outside
                 both guards — its entire audience is people with no session

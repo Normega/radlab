@@ -186,6 +186,9 @@ export default function WikiPage() {
   // the middle one because it is the consequence with stakes.
   const [stampNote, setStampNote] = useState('')
   const [stamping, setStamping] = useState(false)
+  // After a stamp, hand the reader the next unreviewed page in risk order —
+  // the reading queue's whole point is that "what next?" is never a decision.
+  const [nextUp, setNextUp] = useState(null)
   const stamp = async (verdict) => {
     setStamping(true)
     const { error } = await courseClient.rpc('stamp_page', {
@@ -198,6 +201,11 @@ export default function WikiPage() {
       ? `Stamped clear at v${page.current_version} — this version is now item-eligible.`
       : `Stamped needs-work at v${page.current_version}.`)
     setReloadKey(k => k + 1)
+    if (courseId) {
+      const { data: wl } = await courseClient.rpc('review_worklist', { p_course_id: courseId })
+      const nxt = (wl ?? []).find(r => !r.reviewed_current && r.slug !== page.slug)
+      setNextUp(nxt ?? false) // false = queue is clear
+    }
   }
 
   // Flag-from-reader (Phase D): a staff observation becomes a page_gaps row,
@@ -421,6 +429,15 @@ export default function WikiPage() {
           <button style={S.stampBtnOff} disabled={stamping} onClick={() => stamp('needs_work')}>
             Needs work
           </button>
+          {nextUp && (
+            <Link to={`${WIKI_BASE}/${nextUp.slug}`} style={S.stampNext}
+                  onClick={() => setNextUp(null)}>
+              Next unreviewed → {nextUp.title}
+            </Link>
+          )}
+          {nextUp === false && (
+            <span style={S.stampState}>the reading queue is clear ✓</span>
+          )}
         </div>
       )}
 
@@ -772,6 +789,7 @@ const S = {
   stampState: { fontFamily: MONO, fontSize: 12, color: 'var(--tx2)', flex: '0 0 auto' },
   stampNote: { flex: '1 1 220px', fontSize: 13, padding: '6px 10px', borderRadius: 8, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx)' },
   stampBtn: { fontSize: 12.5, fontWeight: 600, padding: '6px 13px', borderRadius: 18, border: 'none', background: '#2e7d32', color: '#fff', cursor: 'pointer', whiteSpace: 'nowrap' },
+  stampNext: { fontSize: 13, fontWeight: 600, color: 'var(--pk)', textDecoration: 'none', whiteSpace: 'nowrap' },
   stampBtnOff: { fontSize: 12.5, fontWeight: 600, padding: '6px 13px', borderRadius: 18, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx2)', cursor: 'pointer', whiteSpace: 'nowrap' },
 
   criteria: { display: 'block', marginTop: 16, padding: '14px 16px', borderRadius: 12, background: 'var(--bgc)', border: '1px solid var(--bd)', textDecoration: 'none' },

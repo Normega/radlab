@@ -91,6 +91,9 @@ export default function FieldGuideHome() {
                     body="Upload a source, propose pages from it." />
               <Card to="/academic/fieldguide/roster" title="Roster"
                     body="Import the ACORN CSV, send invites, watch enrollment land. The join-page QR for lecture slides points at /academic/fieldguide/join." />
+              <Card to="/academic/fieldguide/read" title="Reading queue"
+                    badge={c ? `${c.reviewed} reviewed` : '…'}
+                    body="The pre-publish read in risk order. Read, stamp on the page, and the stamp bar hands you the next one — a stamp also makes the page item-eligible for tests." />
             </div>
             {c && (
               <p style={S.statusLine}>
