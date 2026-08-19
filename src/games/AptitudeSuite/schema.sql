@@ -23,11 +23,16 @@ CREATE TABLE aptitude_sessions (
 CREATE TABLE aptitude_events (
   id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   session_id     uuid REFERENCES aptitude_sessions(id) ON DELETE CASCADE,
-  task           text NOT NULL CHECK (task IN ('anagram','fluency','wordprobe')),
+  -- Widened live for ColourMax ('color_max') and again for suite-level events
+  -- ('aptitude_suite'); see supabase/migrations/20260819_aptitude_suite_focus_events.sql
+  task           text NOT NULL CHECK (task IN ('anagram','fluency','wordprobe','color_max','aptitude_suite')),
   event_type     text NOT NULL,
   -- anagram: 'solve' | 'skip' | 'wrong_guess'
   -- fluency: 'submit_valid' | 'submit_invalid' | 'submit_duplicate'
   -- wordprobe: 'guess_valid' | 'guess_invalid' | 'round_solve' | 'round_fail'
+  -- aptitude_suite: 'session_start' | 'game_end' | 'window_blur' | 'window_focus'
+  -- any subtask: 'task_focus' (value = {from, to}) - focus transitions, from
+  --   which per-subtask dwell is reconstructed
   value          text,
   score_at_time  integer,
   pct_at_time    integer,

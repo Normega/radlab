@@ -31,6 +31,11 @@ export default function AptitudeSuite({
   const lastActiveTask  = useRef(null);
   const taskSwitchCount = useRef(0);
 
+  // Which subtask currently holds focus. All three boxes are on screen at once,
+  // so this is the only observable signal of where the participant is working -
+  // there is no page to leave, and therefore no navigation event to log.
+  const focusedTask     = useRef(null);
+
   const anagram   = useAnagram();
   const fluency   = useFluency();
   const wordProbe = useWordProbe();
@@ -59,6 +64,9 @@ export default function AptitudeSuite({
       .single();
     if (error) { console.error('aptitude_sessions insert failed', error); return; }
     sessionIdRef.current = data.id;
+    // Anchors the event timeline at elapsed_ms 0, so focus segments can be
+    // closed against a known start the way ColourMax's page segments are.
+    logEvent('aptitude_suite', 'session_start', null, null, null);
   }
 
   function logEvent(task, event_type, value, scoreAtTime, pctAtTime) {
@@ -111,6 +119,9 @@ export default function AptitudeSuite({
   // ── Timer ─────────────────────────────────────────────────────────────────
 
   const handleExpire = useCallback(() => {
+    // Closes the final focus segment. Logged before finalise so the timeline is
+    // complete even if the session update later fails.
+    logEvent('aptitude_suite', 'game_end', null, null, null);
     setSaving(true);
     const { anagram: a, fluency: f, wordProbe: w } = scoresRef.current;
     finaliseSession(
@@ -155,12 +166,44 @@ export default function AptitudeSuite({
 
   // ── Task interaction tracking ─────────────────────────────────────────────
 
+  // Interaction-derived switch count. Deliberately unchanged: task_switch_count
+  // is already stored, already in the preregistration, and already present in
+  // the pilot data, so its meaning must stay comparable across the change.
   const handleInteract = useCallback((task) => {
     if (lastActiveTask.current && lastActiveTask.current !== task) {
       taskSwitchCount.current += 1;
     }
     lastActiveTask.current = task;
   }, []);
+
+  // Focus-derived transitions. Each event names the subtask being entered and
+  // carries the one being left, so per-subtask dwell is the gap between
+  // consecutive events - the same reconstruction ColourMax's page_switch
+  // supports. Repeat focus on the already-focused box is not an event.
+  const handleFocusTask = useCallback((task) => {
+    if (focusedTask.current === task) return;
+    const from = focusedTask.current;
+    focusedTask.current = task;
+    logEvent(task, 'task_focus', JSON.stringify({ from, to: task }), null, null);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Time with the tab backgrounded would otherwise be charged to whichever
+  // subtask happened to hold focus. Bracketing it lets the analysis subtract it
+  // rather than silently inflating one subtask's dwell.
+  useEffect(() => {
+    if (phase !== 'active') return;
+    // Guard on the target: a focus event that bubbles up from an element would
+    // otherwise be recorded as the whole window regaining focus, and the
+    // analysis would subtract an away-interval that never happened.
+    const onBlur  = (e) => { if (e.target === window) logEvent('aptitude_suite', 'window_blur',  null, null, null); };
+    const onFocus = (e) => { if (e.target === window) logEvent('aptitude_suite', 'window_focus', null, null, null); };
+    window.addEventListener('blur',  onBlur);
+    window.addEventListener('focus', onFocus);
+    return () => {
+      window.removeEventListener('blur',  onBlur);
+      window.removeEventListener('focus', onFocus);
+    };
+  }, [phase]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Wrap submit callbacks to also fire log events
   const anagramWithLog = {
@@ -363,21 +406,37 @@ export default function AptitudeSuite({
       }}
         className="aptitude-grid"
       >
-        <AnagramBox
-          hook={anagramWithLog}
-          onInteract={handleInteract}
-          disabled={!timer.running}
-        />
-        <WordProbeBox
-          hook={wordProbeWithLog}
-          onInteract={handleInteract}
-          disabled={!timer.running}
-        />
-        <FluencyBox
-          hook={fluencyWithLog}
-          onInteract={handleInteract}
-          disabled={!timer.running}
-        />
+        {/* display:contents keeps these wrappers out of the grid layout - the
+            boxes remain the grid items - while still receiving focus and
+            pointer events as they bubble. Capture phase is used so a click
+            anywhere in a box counts, not only on its input. */}
+        <div style={{ display: 'contents' }}
+             onFocusCapture={() => handleFocusTask('anagram')}
+             onMouseDownCapture={() => handleFocusTask('anagram')}>
+          <AnagramBox
+            hook={anagramWithLog}
+            onInteract={handleInteract}
+            disabled={!timer.running}
+          />
+        </div>
+        <div style={{ display: 'contents' }}
+             onFocusCapture={() => handleFocusTask('wordprobe')}
+             onMouseDownCapture={() => handleFocusTask('wordprobe')}>
+          <WordProbeBox
+            hook={wordProbeWithLog}
+            onInteract={handleInteract}
+            disabled={!timer.running}
+          />
+        </div>
+        <div style={{ display: 'contents' }}
+             onFocusCapture={() => handleFocusTask('fluency')}
+             onMouseDownCapture={() => handleFocusTask('fluency')}>
+          <FluencyBox
+            hook={fluencyWithLog}
+            onInteract={handleInteract}
+            disabled={!timer.running}
+          />
+        </div>
       </div>
 
       <style>{`

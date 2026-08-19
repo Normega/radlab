@@ -20,7 +20,7 @@ and computational reproducibility. Updated after each step. Companion to
 
 ---
 
-## Decision index (D1–D14)
+## Decision index (D1–D18)
 
 The preregistration was cleaned of inline decision markup on 2026-08-11 so that it reads as
 a formal document; the decisions are absorbed into its prose and summarised in its
@@ -45,6 +45,8 @@ Appendix B. The numbered index below is retained here as the audit trail, and is
 | D14 | Scale scoring reads `questionnaires.definition.scoring.subscales[]`; item-level `reverse` flags are null throughout and must be ignored. Burnout = mean of the 23 BAT-C core items | 2026-08-11 |
 | D15 | Five-item pre-consent screener, all items required, **no "unsure" option**. The platform supports a third state (Zerin's distress item uses one), but that exists because a phase-2 questionnaire follows and can adjudicate an ambivalent answer. With no phase 2 there is nowhere for "unsure" to resolve to, so it would be an unresolvable state rather than a kindness | 2026-08-13, Norm |
 | D16 | Eligibility is **not** enforced through Prolific custom prescreening. A Prolific prescreener is itself a small paid study with its own completion path, which would mean running a second study to gate the first. The criteria are stated in the Prolific listing instead, and enforced by the in-session screener at session entry. Accepted cost: a screened-out participant has already taken a slot, so the screen-out page asks them to return the submission | 2026-08-13, Norm |
+| D17 | Aptitude per-subtask time is derived from **focus**, and stays exploratory. The three subtasks are on screen simultaneously, so unlike ColourMax there is no navigation act to log; focus is the only observable signal and it bounds engagement rather than measuring attention. The interaction-derived `task_switch_count` (which the pilot and power analysis rest on) is reported separately and not merged with it | 2026-08-19 |
+| D18 | Test accounts are excluded via the enrolment's `is_test` flag as criterion 0, ahead of every behavioural criterion. Enrolment status cannot identify them, because genuine participants withdraw too. Exports predating the column read as “none flagged” and remove nobody | 2026-08-19 |
 
 Build items B1–B3 were withdrawn or resolved (per D9, D10, D11). B4 (export field
 verification) completed 2026-08-06. B5 (Word Probe recalibration and redemption-score fix)
@@ -681,7 +683,9 @@ them — but it is on the record here rather than not.
 | 7 | DASS-21 and PANAS scored as means, not the published sums | Sums (DASS ×2), prorated for partial completion |
 | 8 | Unordered `slice(1)` when picking a game session | Ordered by `session_start` |
 
-### 8.4 The one platform-logging gap
+### 8.4 The one platform-logging gap — closed in Step 9
+
+*(Written 2026-08-19; closed the same day by Step 9, which added the missing events. The finding is kept as written because it is what motivated the instrumentation.)*
 
 **Aptitude Suite per-task time cannot be derived.** Prereg §4.4 names "time per task" and
 §5.7 names per-task time allocation as exploratory. The Aptitude Suite emits no
@@ -699,3 +703,110 @@ The §5.5 positive control **fails for the Aptitude Suite** (ColourMax passes) i
 Probe scoring defect (14 of 20 scoring exactly zero, fixed 2026-08-11) is a plausible cause
 and it may clear, but this should be checked on the first ~30 confirmatory participants
 rather than at the end.
+
+---
+
+## Step 9 — Closing the Aptitude timing gap (2026-08-19)
+
+Step 8.4 found the one measure the preregistration named but the platform did not log:
+per-subtask time within the Aptitude Suite. This step adds it.
+
+### 9.1 Why it is not a ColourMax analogue
+
+The obvious move was to copy ColourMax's `page_switch`. That turns out not to transfer.
+ColourMax shows **one image at a time**, so moving between images is a navigation act with an
+unambiguous before and after, and logging it is exact. The Aptitude Suite renders all three
+subtasks **simultaneously** in a three-column grid — there is no navigation, and therefore no
+event to log.
+
+What remains observable is **focus**: which subtask holds the keyboard. That is a weaker
+signal, and the weakness is not fixable by better instrumentation — a participant can read
+one box while another holds focus. So per-subtask time is recorded as a bound on engagement,
+not a measurement of attention, and it stays exploratory (prereg §5.7) however cleanly it
+patterns (D17).
+
+### 9.2 What was added
+
+Four event types on `aptitude_events`, and a migration widening the `task` CHECK constraint
+to accept `'aptitude_suite'` for the session-scoped ones:
+
+| Event | Task | Purpose |
+|---|---|---|
+| `session_start` | `aptitude_suite` | Opens the timeline (ColourMax already had this) |
+| `game_end` | `aptitude_suite` | Closes the final focus segment |
+| `task_focus` | the subtask | Focus acquisition, valued `{from, to}` |
+| `window_blur` / `window_focus` | `aptitude_suite` | Time outside the window, subtracted |
+
+The blur pair matters more than it looks. Without it a participant who tabs away for four
+minutes has that time charged in full to whichever subtask last held focus, which would be
+the single largest source of error in the measure.
+
+`task_switch_count` was deliberately **left untouched**. It is interaction-derived, it is what
+the pilot and the power analysis were built on, and changing its definition mid-study would
+break continuity with both. The focus-derived transition count is a separate column.
+
+### 9.3 Two implementation traps
+
+**The wrappers that did nothing.** The first attempt wrapped each subtask box in a
+`display: contents` div carrying `onFocusCapture`. It produced zero rows. A DOM probe
+confirmed the wrappers rendered correctly, which was misleading — the fault was in the
+*test*, which dispatched a non-bubbling `focus` event. React's synthetic `onFocus` is built
+on `focusin`. Re-testing with `focusin` produced a clean chain on the first run:
+
+```
+anagram    {"from":null,       "to":"anagram"}      88686
+wordprobe  {"from":"anagram",  "to":"wordprobe"}    90860
+fluency    {"from":"wordprobe","to":"fluency"}      94845
+anagram    {"from":"fluency",  "to":"anagram"}      97861
+```
+
+Dwell is the gap between consecutive events: 2174, 3985, 3016 ms against held intervals of
+2000, 3000, 2500. The lesson is that a negative result from a synthetic-event test is not
+evidence of a broken handler until the event type is the one React actually listens for.
+
+**Window listeners catch bubbling element focus.** The same flawed test produced four
+spurious `window_focus` rows, because a bubbling `focus` event reaches `window` and the
+listener could not tell it from the window genuinely regaining focus. Real element focus does
+not bubble, so this was an artefact — but the failure mode is real, and an away-interval that
+never happened would be subtracted from a dwell segment. Both listeners now check
+`e.target === window`.
+
+### 9.4 Analysis side
+
+`01_load_and_build.R` gains `reconstruct_apt_focus()`, mirroring the ColourMax reconstruction:
+segments run focus-to-focus, closed by `game_end`, with blur intervals subtracted. A blur never
+followed by a focus runs to the end of the session rather than being dropped. It yields
+per-subtask dwell, a transition count, a lead-in before first focus, total away time, and the
+same zero-safe entropy concentration index used for H1C — here 1 − H/log(3).
+
+Verified by `_validate_apt_focus.R`, which checks the function against a hand-computed
+timeline (13 assertions, all passing), including the open-blur case and the pilot case of no
+`task_focus` events at all, which must return NULL rather than error. The pilot export runs
+unchanged through the full pipeline: 21 enrolled, 20 analysis-ready, 17/17 critical terms,
+write loss 0 of 340.
+
+### 9.5 A second gap found while cleaning up
+
+The test account created to verify all this exposed something worse than itself: **the R
+pipeline had no `is_test` filter**. The platform export has carried the flag for some time and
+even ships a codebook note telling analysts to exclude it — the analysis code simply never
+read it. A staff test account would have entered the confirmatory sample carrying fabricated
+ratings, caught only by the `RESTRICT_TO_PROLIFIC_IDS` heuristic, which is not a guarantee and
+would not hold for non-Prolific recruitment.
+
+Now exclusion criterion 0, ahead of every behavioural criterion, because these were never
+participants (D18). The test enrolment was flagged `is_test` and annotated rather than
+deleted, and its participant link revoked.
+
+### 9.6 Verified, and not
+
+Confirmed live, through a real participant session against the dev server: `session_start`,
+`task_focus` (all four transitions, correct `{from, to}` payloads and plausible gaps),
+`window_blur`, `window_focus`, and the CHECK constraint accepting `'aptitude_suite'`.
+
+**Not separately exercised: `game_end`.** It fires only on timer expiry (8 minutes), demo mode
+is disabled in study mode, and navigating away to reach a shortened standalone run ended the
+token session. It is the same `logEvent('aptitude_suite', ...)` call on the same constraint
+path as `session_start`, which did write — so it is verified by identical path, not by
+observation. Worth confirming on the first confirmatory participant, where its absence would
+show as `apt_has_game_end = FALSE`.

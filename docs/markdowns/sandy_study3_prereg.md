@@ -324,7 +324,19 @@ is `participant_assignments`, slot `framing`.
 ### 4.4 Behavioural measures
 
 **Aptitude Suite**: per-task raw scores and percentile ranks for the three subtasks; the
-overall percentile displayed to participants; task-switch count; time per task.
+overall percentile displayed to participants; task-switch count; time per subtask.
+
+Time per subtask requires comment, because the Aptitude Suite differs from ColourMax in a
+way that limits what it can measure. ColourMax presents one image at a time, so moving
+between images is a navigation act and is logged as such. The Aptitude Suite presents all
+three subtasks on screen at once, so there is no navigation event to record: which subtask
+holds keyboard focus is the only observable signal of where the participant is working.
+Focus is therefore a proxy for engagement, not a measurement of attention — a participant
+can read one box while another holds focus — and per-subtask times are treated as
+exploratory throughout (§5.7). Two events bound the estimate: focus acquisitions
+(`task_focus`, carrying the subtask moved from and to) and window blur/focus, so that time
+spent outside the browser window is subtracted rather than attributed to whichever subtask
+last held focus.
 
 **ColourMax**: time spent on each of the five images; per-image coverage (percentage of
 colourable pixels coloured) and precision (percentage coloured correctly within
@@ -353,6 +365,13 @@ scores serves as its covariate.
 
 **ColourMax precision** (H1C secondary dependent variable). Mean precision across images
 that received any colouring.
+
+**Subtask allocation concentration** (exploratory; §5.7). The same entropy index applied to
+the Aptitude Suite, 1 − H/log(3) over the three per-subtask focus times, running from 0
+(effort divided evenly across the three subtasks) to 1 (all effort on one). It is reported
+alongside the count of focus transitions. This is deliberately *not* the confirmatory
+`task_switch_count`, which is derived from interaction events and is the quantity the pilot
+and the power analysis were built on; the two are reported separately rather than merged.
 
 **Change scores.** Post minus pre for stress, negative affect, positive affect and
 efficacy, used for description and plotting only; the confirmatory models use the stacked
@@ -489,7 +508,11 @@ for least-squares terms.
 ### 5.4 Data inclusion and exclusion
 
 The unit of analysis is a valid completed session. Criteria are applied in order, and counts
-are reported for each:
+are reported for each. A prior criterion removes accounts that were never participants:
+enrolments flagged as test accounts on the platform (staff exercising the study end to end)
+are dropped before any criterion below is applied, and are reported as their own line in the
+exclusion table. The flag is authoritative — filtering on enrolment status does not identify
+them, because genuine participants withdraw too.
 
 1. **Incomplete session** — did not reach the debrief step: excluded.
 2. **Duplicate participation** — the same Prolific ID or platform participant across
@@ -560,8 +583,14 @@ Declared in advance, reported without correction, and not treated as confirmator
   on the three traits.
 - Dirichlet component-wise effects, identifying which images absorb time under high
   discrepancy perfectionism.
-- Task-switch count and per-task time allocation within the Aptitude Suite as behavioural
-  signatures of perfectionism, paralleling H1C within the first task.
+- Task-switch count and per-subtask time allocation within the Aptitude Suite as
+  behavioural signatures of perfectionism, paralleling H1C within the first task. Two
+  distinct quantities are reported and not merged: the interaction-derived
+  `task_switch_count`, which the pilot and power analysis were built on, and the
+  focus-derived per-subtask times added on 2026-08-19 (§4.4), from which a three-way
+  allocation concentration index and a count of focus transitions are computed. Because the
+  three subtasks are visible simultaneously, focus bounds engagement rather than measuring
+  attention, so these remain exploratory regardless of how strongly they pattern.
 - Belief updating: the change from predicted to experienced efficacy, its relation to
   observed percentile and to the traits, and satisfaction as a function of the
   predicted-minus-observed gap.
