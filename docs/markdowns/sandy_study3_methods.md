@@ -615,8 +615,9 @@ re-runs unchanged.
 
 ## Step 8 — Preregistered analysis code, and a retraction (2026-08-19)
 
-**Location**: `I:\Shared drives\Sandy\Study3\Scripts\` (R; `run_all.R` orchestrates
-`00_config` → `05_exploratory`). Runs from the `/admin/export` zip with no manual
+**Location**: written to `I:\Shared drives\Sandy\Study3\Scripts\`; **moved into the analysis
+repository at `<repo>/analysis/` on 2026-08-19 — see Step 11**. (R; `run_all.R` orchestrates
+`00_config` → `05_exploratory`.) Runs from the `/admin/export` zip with no manual
 preprocessing. Independently audited by a sub-agent against the pilot export.
 
 ### 8.1 Retraction: there was no write loss
