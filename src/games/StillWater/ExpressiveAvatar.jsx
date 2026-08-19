@@ -10,7 +10,7 @@ export default function ExpressiveAvatar({
   arousal   = 0,
   intensityT = 1,
   pupilTier = 1,
-  glowColor = null,
+  // glowColor prop retired 2026-08-19 (mood ring removed); ignored if passed.
 }) {
   const uid = useId().replace(/:/g, '')
   const sk = skinColor
@@ -56,7 +56,7 @@ export default function ExpressiveAvatar({
         <clipPath id={`${uid}rc`}><circle cx="124" cy="100" r="17" /></clipPath>
       </defs>
 
-      {glowColor && <ellipse cx="100" cy="105" rx="69" ry="73" fill="none" stroke={glowColor} strokeWidth="6" opacity="0.22" />}
+      {/* glowColor ring removed 2026-08-19 (Norm) — prop accepted, nothing rendered. */}
       <ellipse cx="100" cy="105" rx="64" ry="68" fill={`url(#${uid}h)`} />
 
       {/* Left eye */}

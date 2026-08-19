@@ -9,7 +9,7 @@ const LID_TOP_Y = 83
 
 export default function AURenderer({
   position  = NEUTRAL_POS,
-  glowColor = null,
+  // glowColor prop retired 2026-08-19 (mood ring removed); ignored if passed.
   size      = 148,
   skinColor = '#FDBCB4',
   eyeColor  = '#4A90D9',
@@ -104,7 +104,7 @@ export default function AURenderer({
         <filter id={`${uid}b`}><feGaussianBlur stdDeviation="1.2" /></filter>
       </defs>
 
-      {glowColor && <ellipse cx="100" cy="105" rx="69" ry="73" fill="none" stroke={glowColor} strokeWidth="6" opacity="0.22" />}
+      {/* glowColor ring removed 2026-08-19 (Norm) — prop accepted, nothing rendered. */}
       {hairStyle !== 'none' && HAIR_BACK_STYLES.includes(hairStyle) && (
         <g key={`hb-${hairStyle}-${hairColor}`}
            ref={el => {

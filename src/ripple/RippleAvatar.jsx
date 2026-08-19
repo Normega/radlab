@@ -34,7 +34,8 @@ export default function RippleAvatar({
   arousal    = 0,
   intensityT = 1,
   pupilTier  = 1,
-  glowColor  = null,
+  // glowColor prop retired 2026-08-19 (the mood ring it drew is gone) —
+  // callers may still pass it; it lands in props unused.
 }) {
   const uid = useId().replace(/:/g, '')
 
@@ -136,10 +137,10 @@ export default function RippleAvatar({
         )}
       </defs>
 
-      {glowColor && (
-        <ellipse cx="100" cy="105" rx={headRx + 5} ry={headRy + 5}
-          fill="none" stroke={glowColor} strokeWidth="6" opacity="0.22" />
-      )}
+      {/* glowColor ring removed 2026-08-19 (Norm: "remove the circle behind
+          the face") — the prop is still accepted so call sites compile, but
+          nothing renders from it. Mood color lives in the expression and the
+          callers' soft drop-shadows now. */}
 
       {/* Hair back — behind everything */}
       {hairStyle !== 'none' && needsBack && (
