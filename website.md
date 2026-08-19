@@ -2604,6 +2604,31 @@ Preview safety: `DemographicsStep`, `CompensationStep`, `EquityCensusStep` and
 `previewMode` prop — submit calls `onComplete` without any database insert. `AdvancedInstrumentPreview`
 passes a null-id stand-in enrollment and shows a "Preview complete — nothing was written" screen.
 
+### Test participants are flagged, not hidden (2026-08-18)
+
+`study_enrollments.is_test` marks an account created for testing rather than recruitment, and the
+master export carries it as a column (`20260818_test_participant_flag.sql`).
+
+**Why it was needed:** Claude seeded test participants directly into the live study — to give
+Liliana a midpoint to review and Norm a Day 12 link to click — and those accounts were
+indistinguishable from real ones in the export. They carry fabricated ratings and day rows, they
+inflate every `_n` participation count, and **filtering on `status` does not catch them**, because
+real participants withdraw too. Liliana's report that `session_name` "looks a little odd" turned
+out to be exactly this: all 218 app-written rows read `Phase 1 · Day 2`; the 58 that read
+`reappraisal-phase1-day1` were seeded, because the seeding scripts set `session_name` to the module
+id on the assumption nothing read it.
+
+**Flag rather than delete.** Some test accounts hold both fabricated rows and genuine click-through
+data from real browser testing, so deleting by participant would destroy the evidence that the
+session flow works, and deleting by row needs a judgement per row. Marking the enrollment is
+reversible and puts the distinction *in* the export rather than relying on whoever created the
+accounts to remember.
+
+**The general lesson, which is now rule 1's companion in CLAUDE.md:** seeding data into a live
+study is a normal part of building one, but seeded rows must be identifiable from the data alone.
+Anything written for testing carries a marker (`data->>'seeded'` on day rows, `is_test` on the
+enrollment) so that a year later nobody has to reconstruct who was real.
+
 ### Questionnaire → session link (2026-08-18)
 
 `questionnaire_responses.schedule_id` records which session collected a response

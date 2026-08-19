@@ -157,7 +157,7 @@ function timepointToken(label, dayNumber) {
 export async function resolveStudyContext(studyId) {
   const [enrollments, gameSessions, lilParts, vasScales, schedule, sessions, studyRow] = await Promise.all([
     pageAll((f, t) => supabase.from('study_enrollments')
-      .select('profile_id, external_id, enrolled_at, consent_date, status')
+      .select('profile_id, external_id, enrolled_at, consent_date, status, is_test')
       .eq('study_id', studyId).range(f, t)),
     pageAll((f, t) => supabase.from('game_sessions')
       .select('id, user_id').eq('study_id', studyId).range(f, t)),
@@ -660,6 +660,10 @@ export function buildMasterTable(context, resultsByTable) {
     const row = {
       participant_external_id: e.external_id,
       profile_id:     e.profile_id,
+      // Test accounts are indistinguishable from real participants otherwise —
+      // they carry fabricated ratings and inflate every _n count, and filtering
+      // on `status` does not catch them because real participants withdraw too.
+      is_test:        e.is_test ?? false,
       enrolled_at:    e.enrolled_at,
       consent_date:   e.consent_date,
       status:         e.status,
@@ -695,7 +699,7 @@ export function buildMasterTable(context, resultsByTable) {
 const TIMEPOINT_ORDER = { screener: 0, baseline: 1, midpoint: 2, final: 3 }
 
 function masterColumnRank(col) {
-  const lead = ['participant_external_id', 'profile_id', 'enrolled_at', 'consent_date', 'status']
+  const lead = ['participant_external_id', 'profile_id', 'is_test', 'enrolled_at', 'consent_date', 'status']
   const i = lead.indexOf(col)
   if (i !== -1) return [0, i, '', 0, 0]
   if (col.endsWith('_n'))            return [9, 0, col, 0, 0]
@@ -769,6 +773,7 @@ export function withParticipantKey(entry, rows, context, resultsByTable) {
 const COLUMN_NOTES = [
   [/^participant_external_id$/, 'SONA/Prolific participant id. Join key across every file in this export.'],
   [/^profile_id$/,              'Internal account uuid. Stable but not meaningful outside the platform.'],
+  [/^is_test$/,                 'TRUE = account created for testing, not recruitment. Its data is fabricated or exercised by staff. EXCLUDE these rows from analysis — filtering on `status` will not catch them, because real participants withdraw too.'],
   [/^enrolled_at$/,             'Timestamp the participant was enrolled in this study.'],
   [/^consent_date$/,            'Timestamp consent was recorded. Blank = consent not yet given.'],
   [/^status$/,                  'Enrollment status: enrolled | withdrawn.'],
