@@ -276,7 +276,7 @@ Carried to the message accompanying this step; recorded here so the log is self-
 | I8 | H1C DV requires event-log reconstruction; no stored field | Prereg §4 indices + analysis code | no — documented §1.3 |
 | I9 | ColourMax rows lack `study_id`; Aptitude logs no task-switch event | Platform hygiene; blocks per-task dwell as an H2C alternative | no — noted for platform |
 | I10 | Effort ICC ≈ 0 (−0.18) → the H2A/H2B random-intercept model will be singular | Prereg §5.1 H2A/H2B model form | **yes** |
-| I11 | 1/340 rating writes silently lost → prereg §5.6 "structurally impossible" is false | Prereg §5.6 missing-data rule | no — will edit prereg |
+| I11 | ~~1/340 rating writes silently lost~~ **RETRACTED 2026-08-19** — no write was lost; it was a client-clock/time-window artefact in my own ETL (see Step 8) | Prereg §5.6 corrected | no |
 | I12 | Stress floor (45% at scale minimum at T0) trips the >30% boundary rule | Prereg §5.2 → Tobit + ordinal refits indicated | no — already prespecified |
 | I13 | Word Probe target word not logged on failed rounds | Blocks retrospective partial-credit validation | no — noted for platform |
 
@@ -607,3 +607,95 @@ now **never written to any versioned file**. `02_build_dataset.py` §6 emits onl
 described without disclosing intersections. `participants.csv` is now 21 × 86 (was 21 × 95)
 and contains no `dem_*` column. Nothing downstream used them — `03_nuisance_params.py`
 re-runs unchanged.
+
+---
+
+## Step 8 — Preregistered analysis code, and a retraction (2026-08-19)
+
+**Location**: `I:\Shared drives\Sandy\Study3\Scripts\` (R; `run_all.R` orchestrates
+`00_config` → `05_exploratory`). Runs from the `/admin/export` zip with no manual
+preprocessing. Independently audited by a sub-agent against the pilot export.
+
+### 8.1 Retraction: there was no write loss
+
+**Issue I11 is withdrawn.** The pilot did *not* lose a rating write. All 340 expected
+writes are present.
+
+What happened: `vas_responses.responded_at` is stamped by the **participant's own device**,
+while `participant_step_timings` is server-stamped. One pilot participant's clock ran
+**265 seconds slow** (uniform across all five of their VAS rows, SD 0.9 s). My Python ETL
+scoped ratings to a time window built from step timings, so that participant's first stress
+rating fell before `t_start` and was dropped. Worse than the loss itself: occasion was then
+assigned by rank order, so every later reading for that measure shifted up a slot — their
+T1 was silently relabelled T0 and their T2 became missing.
+
+Verified by matching each of that participant's five VAS rows to the step that presented
+it: five steps presented, five rows written, offsets −264 to −266 s.
+
+At N = 300 this would have hit roughly 5% of participants (1 of 21 in the pilot), silently
+corrupting the H3 trajectory for each. It is the most consequential defect found in this
+whole build, and it was in *my* code, not the platform's.
+
+**Fix**: ratings are no longer scoped by time at all. Each rating row is matched to its
+`participant_step_timings` row — server-clocked, study-tagged — by within-participant rank,
+and the timepoint comes from the step's position. The pipeline now reports 0 of 340 lost,
+and a genuine missing row is distinguishable from a clock offset because the integrity check
+compares steps *presented* against rows *written*.
+
+Prereg §5.6 and Appendix B corrected. The missing-data rule stands, because genuine write
+loss remains possible; the reported rate does not.
+
+### 8.2 The firewall had to be built twice
+
+The first version inferred `PILOT_SAFE_MODE` from whether the export path contained
+"pilot". The audit showed that failed for the documented default invocation (`Rscript
+run_all.R`), where the path is the *Data directory* and the pilot zip is only discovered
+later inside `read_export()` — so the registration's central commitment was one careless
+command from being void. It now **fails closed**: safe mode is on unless
+`SANDY3_CONFIRMATORY=true` is set explicitly.
+
+A second gap: redaction initially applied only at the CSV writer, so `confirmatory` and
+`MODELS` still held every estimate in memory and one `View()` would have breached it.
+`redact_in_memory()` now runs after 04/05 (which legitimately need the fitted objects) and
+clears the estimates from the tables and releases the models.
+
+A third: the effect-size columns added for §5.3 (`std_beta`, `ci_lo`, `ci_hi`, `f2`) were
+not in `INFERENTIAL_COLS`, and reached disk. That list is now deliberately over-inclusive,
+with a comment saying why.
+
+**Note for the confirmatory run**: I did run the confirmatory family on the pilot once,
+before the firewall existed, and saw the results. They are not recorded anywhere and the
+analysis plan was already registered and locked, so no analytic choice was made in light of
+them — but it is on the record here rather than not.
+
+### 8.3 Other defects found by the audit and fixed
+
+| # | Defect | Fix |
+|---|---|---|
+| 1 | §5.4 criterion 3 excluded on zero *score*, not zero *responses* — a participant who tries everything and scores nothing was dropped from all 17 tests (one pilot participant scored 1 across 25 logged responses) | Engagement now counted from `aptitude_events` response events |
+| 2 | Criterion 6 (dwell reconstruction) gated H1A and H1B, which do not use dwell | Now gates H1C only; `h1c_analysis_ready` is separate |
+| 3 | Exclusion table counted each criterion independently, so one participant failing five criteria read as five exclusions | Counts are now sequential, as §5.4 requires |
+| 4 | §5.2 transformation rule fitted the transformed model but never made it confirmatory (the rule *fires* on the pilot) | Transformed fit replaces the row and BH is recomputed across all 17 |
+| 5 | Winsorized BH ran over the 8 least-squares tests alone, not the 17-test family | Winsorized p-values substituted into the 17-vector, adjusted once |
+| 6 | §5.3 standardized β, 95% CI and f² were not produced at all | Added for every confirmatory coefficient |
+| 7 | DASS-21 and PANAS scored as means, not the published sums | Sums (DASS ×2), prorated for partial completion |
+| 8 | Unordered `slice(1)` when picking a game session | Ordered by `session_start` |
+
+### 8.4 The one platform-logging gap
+
+**Aptitude Suite per-task time cannot be derived.** Prereg §4.4 names "time per task" and
+§5.7 names per-task time allocation as exploratory. The Aptitude Suite emits no
+task-switch event — only `solve`/`skip`/`wrong_guess`, `submit_*`, `guess_*`, `round_*` —
+so there is nothing to bracket. `task_switch_count` is stored on the session row, but the
+transitions are not. ColourMax has exactly the counterpart needed (`page_switch`).
+
+Everything else in §4 is logged and derived: verified column by column, non-missing for all
+20 analysis-ready participants, including all 100 per-image ColourMax rows.
+
+### 8.5 Data-quality signal to watch at launch
+
+The §5.5 positive control **fails for the Aptitude Suite** (ColourMax passes) in the pilot.
+§5.5 makes that a stop-and-investigate before interpreting any hypothesis test. The Word
+Probe scoring defect (14 of 20 scoring exactly zero, fixed 2026-08-11) is a plausible cause
+and it may clear, but this should be checked on the first ~30 confirmatory participants
+rather than at the end.
