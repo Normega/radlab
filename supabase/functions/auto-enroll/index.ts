@@ -76,11 +76,20 @@ Deno.serve(async (req) => {
     // 1. Verify the study exists and permits external enrollment from this source.
     const { data: study, error: studyErr } = await admin
       .from('studies')
-      .select('id, allow_external_enrollment, external_enrollment_source, design_graph')
+      .select('id, active, allow_external_enrollment, external_enrollment_source, design_graph')
       .eq('id', study_id)
       .single()
 
     if (studyErr || !study) return json({ error: 'Study not found.' }, 404)
+
+    // `studies.active` was decorative until 2026-08-18 — nothing read it but an
+    // admin dashboard counter — so a study Norm believed he had archived kept
+    // accepting joins. Someone enrolled in a superseded dry-run study the
+    // morning it was found. Checked before allow_external_enrollment so the
+    // clearer message wins.
+    if (study.active === false) {
+      return json({ error: 'This study is no longer accepting participants.' }, 403)
+    }
 
     if (!study.allow_external_enrollment) {
       return json({ error: 'This study is not open for external enrollment.' }, 403)

@@ -137,6 +137,19 @@ Deno.serve(async (req) => {
       (withdrawnEnrollments ?? []).map((w) => `${w.profile_id}:${w.study_id}`),
     )
 
+    // 0d. Inactive studies. `studies.active` used to be decorative — nothing
+    // read it but an admin dashboard counter — so "archiving" a study changed a
+    // label while the 06:00 cron kept emailing its participants. Found
+    // 2026-08-18: a superseded dry-run study was still sending daily sessions to
+    // three people, one of whom had joined it that morning, after Norm believed
+    // he had archived it. Honored by every pass below, exactly like
+    // withdrawnSet.
+    const { data: inactiveStudies } = await db
+      .from('studies')
+      .select('id')
+      .eq('active', false)
+    const inactiveSet = new Set((inactiveStudies ?? []).map((s) => s.id))
+
     // 1. Fetch pending rows scheduled today or earlier (date-only filter; the
     // send_time cutoff is applied below since Postgres can't compare it
     // against "now" without knowing which rows are for today).
@@ -155,7 +168,8 @@ Deno.serve(async (req) => {
     const dueRows = (candidateRows ?? []).filter(
       (r) =>
         scheduleKey(r.scheduled_date, r.send_time) <= nowKey &&
-        !withdrawnSet.has(`${r.participant_id}:${r.study_id}`),
+        !withdrawnSet.has(`${r.participant_id}:${r.study_id}`) &&
+        !inactiveSet.has(r.study_id),
     )
 
     let processed = 0
@@ -354,6 +368,7 @@ Deno.serve(async (req) => {
 
           for (const row of remRows) {
             if (withdrawnSet.has(`${row.participant_id}:${row.study_id}`)) continue
+            if (inactiveSet.has(row.study_id)) continue
             const study = remStudyMap.get(row.study_id)
             if (!study || study.reminders_enabled === false) continue
 
@@ -476,6 +491,9 @@ Deno.serve(async (req) => {
 
       for (const [key, entry] of byParticipantStudy) {
         if (withdrawnSet.has(key)) continue
+        // key is `${participant_id}:${study_id}` — studyId is not destructured
+        // until below, so read it off the key here.
+        if (inactiveSet.has(key.split(':')[1])) continue
 
         const hasOutstanding = entry.statuses.some((s) => s === 'unlocked' || s === 'pending' || s === 'link_sent')
         const hasCompleted = entry.statuses.some((s) => s === 'completed')

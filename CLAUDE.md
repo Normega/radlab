@@ -60,6 +60,36 @@ Discovered May 2026: `stillwater_responses` had an anon-only INSERT policy; `dri
 
 ---
 
+## Disabling a study — `active` is the switch, and it now works
+
+Setting `studies.active = false` stops the study: `auto-enroll` refuses new joins, and
+`check_schedule` skips it for sends, reminders and the fork-advance pass.
+
+**This was not true until 2026-08-18.** `active` was read by nothing but a counter on the admin
+dashboard, so "archiving" a study changed a label while the 06:00 cron kept emailing its
+participants. Found when a superseded dry-run study was still running daily sessions for three
+people — one of whom had joined it that morning, months after Norm believed he had archived it.
+
+Turning the flag off stops *future* work but does not retract what is already in flight. To
+disable a study properly:
+
+```sql
+UPDATE studies SET active = false, allow_external_enrollment = false, reminders_enabled = false
+ WHERE id = '…';
+-- rows already scheduled will otherwise sit waiting; 'missed' is the status the
+-- scheduler itself uses for rows that can no longer be completed
+UPDATE participant_schedule SET status = 'missed'
+ WHERE study_id = '…' AND completed_at IS NULL AND status NOT IN ('missed','blocked');
+-- and a link already sitting in someone's inbox still opens
+UPDATE participant_links SET status='expired', ended_reason='admin_revoked', ended_at=now()
+ WHERE study_id = '…' AND status='active';
+```
+
+Do **not** withdraw the enrollments as a way of stopping a study unless you mean it: withdrawal is
+participant-facing and `processAdherenceWithdrawal` emails them.
+
+---
+
 ## Participant data logging — four rules for every study
 
 These began as fixes to Liliana Study 3, but none of them is study-specific. Each was a
