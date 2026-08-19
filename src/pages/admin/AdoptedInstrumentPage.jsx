@@ -1,5 +1,8 @@
 import { useParams, Link } from 'react-router-dom'
-import { ProposedMultipleChoice, ProposedOpenList, ProposedHierarchy } from './proposedInstruments'
+import {
+  ProposedMultipleChoice, ProposedOpenList, ProposedHierarchy,
+  AdoptedLikertSlider, AdoptedNumericSlider,
+} from './proposedInstruments'
 
 // ── AdoptedInstrumentPage (/admin/instruments/:slug) ──────────────────────────
 // One page per instrument type adopted from Dana's composable-surveys package
@@ -10,6 +13,18 @@ import { ProposedMultipleChoice, ProposedOpenList, ProposedHierarchy } from './p
 // authoring home and the demo sample retires.
 
 const ADOPTED = {
+  'likert-slider': {
+    title: 'Likert slider',
+    source: 'NoDefaultSlider + composable-surveys SliderQuestion chrome',
+    C: AdoptedLikertSlider,
+    blurb: 'The discrete slider: stepped scale with point labels and no numeric readout — the label is the value. Dana’s track/thumb chrome combined with the platform’s no-default behavior (no thumb until the first touch).',
+  },
+  'numeric-slider': {
+    title: 'Numeric slider',
+    source: 'NoDefaultSlider + composable-surveys SliderQuestion chrome',
+    C: AdoptedNumericSlider,
+    blurb: 'The continuous slider: 0–100 with sparse numbered anchors and a VALUE readout that stays “—” until touched. Same chrome and no-default behavior as the Likert slider; the readout is what separates them.',
+  },
   'multiple-choice': {
     title: 'Multiple choice',
     source: 'MultipleChoiceQuestion',

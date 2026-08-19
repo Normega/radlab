@@ -13,7 +13,8 @@ import { OwlScreen } from '../../components/study/InterventionPage'
 import FillableBox from '../../components/ui/FillableBox'
 import Checkbox from '../../components/ui/Checkbox'
 import {
-  ProposedLikert, ProposedSlider, ProposedMultipleChoice, ProposedOpenList, ProposedHierarchy,
+  ProposedLikert, AdoptedLikertSlider, AdoptedNumericSlider,
+  ProposedMultipleChoice, ProposedOpenList, ProposedHierarchy,
 } from './proposedInstruments'
 
 // ── InstrumentStylesPage (/admin/instruments) ─────────────────────────────────
@@ -61,12 +62,23 @@ export default function InstrumentStylesPage() {
         </Spec>
 
         <Spec
-          title="Slider (no-default)"
-          file="src/components/study/NoDefaultSlider.jsx"
-          notes="Current: unanswered until touched — no thumb drawn, avoiding midpoint anchoring. Proposed: thicker track, ring thumb, sparse numbered anchors, and a VALUE readout that stays '—' until touched. Open question: the proposed version shows the thumb at midpoint before any interaction (faithful to the prototype); her React package reuses NoDefaultSlider, so chrome and no-thumb behavior can be combined."
-          proposed={<ProposedSlider />}
+          title="Likert slider"
+          file="src/components/study/NoDefaultSlider.jsx → Dana chrome"
+          notes="Adopted 2026-08-19 (own sidebar entry under Instruments). Sliders split into two instruments; this is the discrete one — stepped scale with point labels, no numeric readout (the label is the value). Dana's track/thumb chrome combined with the platform's no-default behavior: no thumb until the first touch."
+          proposedCaption="Adopted — implementation pending"
+          proposed={<AdoptedLikertSlider />}
         >
           <SliderSample />
+        </Spec>
+
+        <Spec
+          title="Numeric slider"
+          file="src/components/study/NoDefaultSlider.jsx → Dana chrome"
+          notes="Adopted 2026-08-19 (own sidebar entry under Instruments). The continuous one — 0–100 with sparse numbered anchors and a VALUE readout that stays '—' until touched. Same Dana chrome, same no-default behavior."
+          proposedCaption="Adopted — implementation pending"
+          proposed={<AdoptedNumericSlider />}
+        >
+          <NumericSliderSample />
         </Spec>
 
         <Spec
@@ -255,6 +267,28 @@ function SliderSample() {
           ariaLabel="How often did you notice this feeling today?"
           pointLabels={['Never', 'Rarely', 'Sometimes', 'Often', 'Very often', 'Almost always']}
         />
+      </div>
+    </div>
+  )
+}
+
+function NumericSliderSample() {
+  const [v, setV] = useState(null)
+  return (
+    <div style={{ maxWidth: 560, margin: '0 auto', padding: '24px 20px 28px' }}>
+      {/* The same NoDefaultSlider on a 0–100 span — above 12 ticks it draws no
+          point labels, which is exactly the current numeric-slider experience. */}
+      <div style={{ background: 'var(--bg)', border: '1px solid var(--bd)', borderRadius: 12, padding: '24px 24px 18px' }}>
+        <p style={{ fontFamily: '"DM Sans", system-ui, sans-serif', fontSize: 'var(--fs-body)', color: 'var(--tx)', margin: '0 0 18px' }}>
+          To what extent does pursuing this goal feel like your own choice?
+        </p>
+        <NoDefaultSlider
+          min={0} max={100} value={v} onChange={setV}
+          ariaLabel="To what extent does pursuing this goal feel like your own choice?"
+        />
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: '"DM Sans", system-ui, sans-serif', fontSize: 11, color: 'var(--tx2)', marginTop: 6 }}>
+          <span>Not at all my choice</span><span>Completely my choice</span>
+        </div>
       </div>
     </div>
   )

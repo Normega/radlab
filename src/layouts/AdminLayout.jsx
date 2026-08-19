@@ -23,6 +23,8 @@ const NAV_SECTIONS = [
       { to: '/admin/questionnaires',  label: 'Questionnaires' },
       { to: '/admin/vas',             label: 'Rating Scales'  },
       { to: '/admin/displays',        label: 'Displays'       },
+      { to: '/admin/instruments/likert-slider',   label: 'Likert Sliders' },
+      { to: '/admin/instruments/numeric-slider',  label: 'Numeric Sliders' },
       { to: '/admin/instruments/multiple-choice', label: 'Multiple Choice' },
       { to: '/admin/instruments/open-list',       label: 'Open Text Lists' },
       { to: '/admin/instruments/hierarchy',       label: 'Belief Hierarchies' },

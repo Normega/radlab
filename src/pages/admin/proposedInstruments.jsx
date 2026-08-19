@@ -52,15 +52,18 @@ export function ProposedLikert() {
   )
 }
 
-// ── Proposed slider: thick track, ring thumb, VALUE readout ───────────────────
-// Faithful to the prototype INCLUDING the visible midpoint thumb before any
-// interaction (value stays "—" until touched). Whether that survives review
-// is the open question flagged in the section notes — our NoDefaultSlider
-// hides the thumb entirely to avoid midpoint anchoring.
+// ── Adopted sliders (Norm, 2026-08-19): two instruments, one chrome ───────────
+// Decision: sliders split into a LIKERT slider (discrete steps, point labels,
+// no numeric readout — the label is the value) and a NUMERIC slider
+// (continuous, sparse numbered anchors, VALUE readout). Both wear Dana's
+// track/thumb chrome, combined with the platform's no-default behavior: no
+// thumb until the first touch (`is-untouched` in index.css), the same
+// anti-anchoring stance NoDefaultSlider has always taken — which her package
+// planned to reuse anyway. The VALUE box shows "—" until touched.
 
-export function ProposedSlider() {
+export function AdoptedNumericSlider() {
   const [touched, setTouched] = useState(false)
-  const [v, setV] = useState(50)
+  const [v, setV] = useState(0)
   return (
     <div style={P.pad}>
       <div style={P.card}>
@@ -72,10 +75,9 @@ export function ProposedSlider() {
           <div style={{ minWidth: 0, paddingTop: 9 }}>
             <input
               type="range" min={0} max={100} step={1} value={v}
-              className="dana-range"
-              style={{ '--fill': `${v}%` }}
+              className={`dana-range${touched ? '' : ' is-untouched'}`}
+              style={{ '--fill': touched ? `${v}%` : '0%' }}
               onChange={e => { setV(Number(e.target.value)); setTouched(true) }}
-              onPointerDown={() => setTouched(true)}
               aria-label="Own choice rating"
             />
             <div style={{ position: 'relative', minHeight: 44, marginTop: 8, fontSize: 12, lineHeight: 1.35, color: 'var(--tx2)' }}>
@@ -96,6 +98,41 @@ export function ProposedSlider() {
               {touched ? v : '—'}
             </span>
           </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+const LIKERT_SLIDER_LABELS = ['Never', 'Rarely', 'Sometimes', 'Often', 'Very often', 'Almost always']
+
+export function AdoptedLikertSlider() {
+  const [touched, setTouched] = useState(false)
+  const [v, setV] = useState(1)
+  return (
+    <div style={P.pad}>
+      <div style={P.card}>
+        <p style={P.stem}>How often did you notice this feeling today?</p>
+        <input
+          type="range" min={1} max={6} step={1} value={v}
+          className={`dana-range${touched ? '' : ' is-untouched'}`}
+          style={{ '--fill': touched ? `${((v - 1) / 5) * 100}%` : '0%' }}
+          onChange={e => { setV(Number(e.target.value)); setTouched(true) }}
+          aria-label="How often did you notice this feeling today?"
+        />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, minmax(0, 1fr))', marginTop: 8 }}>
+          {LIKERT_SLIDER_LABELS.map((label, i) => {
+            const sel = touched && v === i + 1
+            return (
+              <span key={label} style={{
+                fontFamily: SANS, fontSize: 11, lineHeight: 1.3, textAlign: 'center',
+                color: sel ? 'var(--tx)' : 'var(--tx2)', fontWeight: sel ? 600 : 400,
+                overflowWrap: 'anywhere', padding: '0 2px',
+              }}>
+                {label}
+              </span>
+            )
+          })}
         </div>
       </div>
     </div>
