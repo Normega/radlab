@@ -254,8 +254,8 @@ function AccountMenu({ onSignOut, trigger }) {
 
 const S = {
   nav: {
-    background: 'rgba(252,240,245,0.97)',
-    borderBottom: '1px solid var(--bgp)',
+    background: 'rgba(247,220,234,0.97)', /* rose band — #F7DCEA, matches the Landing nav/footer */
+    borderBottom: '1px solid var(--bd)',
     position: 'sticky', top: 0, zIndex: 10,
     backdropFilter: 'blur(8px)',
   },
