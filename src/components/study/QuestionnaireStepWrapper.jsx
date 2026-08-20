@@ -61,7 +61,10 @@ export default function QuestionnaireStepWrapper({ slug, enrollment, scheduleId,
     onComplete({ carried_forward: true, slug })
   }, [carried]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const { submit } = useSubmitLock()
+  // Keyed by slug: one wrapper instance can be handed a second questionnaire
+  // without remounting, and a lock still held from the first would swallow
+  // the second's submit AND its onComplete, hanging the session outright.
+  const { submit } = useSubmitLock(slug)
 
   if (carried) return <div style={S.loading}>Loading…</div>
 

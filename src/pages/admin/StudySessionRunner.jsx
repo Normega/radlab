@@ -204,7 +204,13 @@ export default function StudySessionRunner() {
 
           <div style={S.stepContent}>
             {node ? (
+              // key: adjacent steps of the same category (two questionnaires in
+              // a row -- here PANAS then PHQ-4) must not share a component
+              // instance. Without it the wrapper's submit lock carried over from
+              // PANAS and froze two live sessions on PHQ-4 (2026-08-20).
+              // SessionEntry and SessionDemoModal already key their own.
               <StepDispatcher
+                key={currentStep}
                 node={node}
                 enrollment={enrollment}
                 scheduleId={scheduleRow?.id}
