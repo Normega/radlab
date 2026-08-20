@@ -46,7 +46,7 @@ const S = {
     position: 'sticky',
     top: 0,
     zIndex: 100,
-    background: 'rgba(255,255,255,0.97)', /* white band — matches Nav + Landing */
+    background: 'rgba(247,220,234,0.97)', /* rose band — #F7DCEA, matches Nav + Landing */
     backdropFilter: 'blur(8px)',
     borderBottom: '1px solid rgba(180,100,140,0.13)',
     display: 'flex',

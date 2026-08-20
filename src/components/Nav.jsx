@@ -254,7 +254,7 @@ function AccountMenu({ onSignOut, trigger }) {
 
 const S = {
   nav: {
-    background: 'rgba(255,255,255,0.97)', /* white band — matches Landing + LabLayout */
+    background: 'rgba(247,220,234,0.97)', /* rose band — #F7DCEA, matches the Landing nav/footer */
     borderBottom: '1px solid var(--bd)',
     position: 'sticky', top: 0, zIndex: 10,
     backdropFilter: 'blur(8px)',

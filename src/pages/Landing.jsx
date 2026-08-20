@@ -93,8 +93,8 @@ export default function Landing({ session }) {
         <FeaturedMedia />
       </Suspense>
 
-      {/* FOOTER — white band (--bgc): header and footer share the card surface,
-          so the page reads white / pink field / white with the cards in between */}
+      {/* FOOTER — rose band (#F7DCEA, landing-local): header and footer share it
+          so the page reads rose / base / rose — --bgp was too close to base to read */}
       <footer style={S.footer} className="px-5 md:px-[52px]">
         <div style={S.footerText}>
           <img src="/RADlab_Logo_light.svg" alt="" aria-hidden="true" style={S.footerLogo} />
@@ -170,7 +170,7 @@ const S = {
 
   nav: {
     display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0',
-    borderBottom: '1px solid var(--bd)', background: 'rgba(255,255,255,0.97)', /* white band — matches Nav + LabLayout */
+    borderBottom: '1px solid var(--bd)', background: 'rgba(247,220,234,0.97)', /* rose band — #F7DCEA, landing-local */
     position: 'sticky', top: 0, zIndex: 10,
     backdropFilter: 'blur(8px)',
   },
@@ -203,7 +203,7 @@ const S = {
   chip:      { fontFamily: MONO, fontSize: '0.75rem', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '5px 11px', borderRadius: 20, transition: 'background 0.28s, color 0.28s' },
   cardCta:   { marginTop: 8, fontFamily: MONO, fontSize: '0.8125rem', letterSpacing: '0.1em', textTransform: 'uppercase', transition: 'color 0.28s' },
 
-  footer:     { marginTop: 'auto', paddingTop: 30, paddingBottom: 30, background: 'var(--bgc)', borderTop: '1px solid var(--bd)', /* white band — matches the nav */ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, position: 'relative', zIndex: 1 },
+  footer:     { marginTop: 'auto', paddingTop: 30, paddingBottom: 30, background: '#F7DCEA', borderTop: '1px solid var(--bd)', /* rose band — matches the nav */ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, position: 'relative', zIndex: 1 },
   footerText: { fontFamily: MONO, fontSize: '0.75rem', color: 'var(--gy)', letterSpacing: '0.06em', display: 'flex', alignItems: 'center' },
   footerLogo: { height: 26, width: 'auto', display: 'block', marginRight: 12 },
 
