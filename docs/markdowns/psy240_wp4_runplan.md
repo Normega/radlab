@@ -4385,6 +4385,38 @@ staff edits with their notes back to 2026-08-02.
 Partial publishing is not an option: with one page live, all of its outbound links render broken to a
 student, because `wiki_links` is member-readable while unpublished targets are not.
 
+### 38.5 Student error detection (decided and built 2026-08-20)
+
+Norm's question — should students be able to report chapter-specific errors or contradictory
+evidence? — resolved into a distinction and a build. **Two kinds of finding, one table
+(`page_reports`), students report and never edit:**
+
+- **`error`** — typo, mismatched number, cross-page inconsistency; no source required. First
+  verified report of an error earns a **small participation credit** (Norm's call).
+- **`contradiction`** — the student has a peer-reviewed source that disagrees with the page.
+  Not an error report but a contribution: staff verify, **convert it to an amber gap** seeded from
+  the report (one click on the queue), and the student claims and submits it through the normal
+  pipeline — precheck, capacity, review, provenance, examinability stamp all reused. **The
+  submission counts toward the required three articles** (Norm's call): a verified contradiction is
+  the hardest kind of contribution, requiring close reading and literature search both.
+
+Mechanics: `report_page_issue()` (member-gated, 30-char floor, citation required for
+contradictions, five-open-reports flood valve), `resolve_page_report()` (staff; `fixed` /
+`converted` / `dismissed`, and dismissal requires nothing but always carries a note **because
+silence teaches students not to report**). Own-rows RLS means the student sees the resolution under
+the form they filed from — the loop that makes reporting feel worthwhile. Surfaces: a "Report an
+issue" control on every wiki page (`ReportIssue.jsx`), staff triage at
+`/academic/fieldguide/reports` (`ReportsQueue.jsx`), a home card with the open count.
+
+Same-day register sweep from Norm's read: the ingest-era **editor-addressed warnings** were
+re-addressed to readers (`pedophilic-disorder`, `paraphilic-disorders`, `gender-dysphoria`), the
+duplicated top-of-page Source warning banner on `pedophilic-disorder` was removed (its substance
+lives reader-addressed in Contested), and the anonymous "the chapter" references were **named and
+linked** (Goerling & Wolfe 2022, ch. 16 of *Introduction to Human Sexuality*) with the frame
+generalised to "source material", since only one of several sources is implicated. Standing rule
+from the exchange: **stamp = certify, never edit; a warning worth showing students is content; one
+that talks to editors is removed by the review and recorded in history.**
+
 ### 38.4 Risk order for the pre-publish read
 
 Full coverage is **~44 hours** at ten minutes a page — not available before term. The subset that

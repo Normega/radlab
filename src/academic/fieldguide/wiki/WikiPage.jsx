@@ -6,6 +6,7 @@ import { useWikiCourse } from './useWikiCourse'
 import { useWideLayout } from './useWideLayout'
 import { TIER_LABEL, TIER_HELP } from './tiers'
 import { chapterIcon } from './chapterIcons'
+import ReportIssue from './ReportIssue'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -577,6 +578,11 @@ export default function WikiPage() {
               )}
             </section>
           )}
+
+          {/* Student error detection: report, never edit. Rendered for every
+              member; staff triage lands on /academic/fieldguide/reports. */}
+          <ReportIssue courseClient={courseClient} pageId={page.id}
+                       sections={collapsible.map(s => ({ id: s.id, title: s.title }))} />
 
           {related.length > 0 && (
             <section style={S.section}>

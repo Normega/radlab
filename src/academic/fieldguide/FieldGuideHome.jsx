@@ -34,7 +34,9 @@ export default function FieldGuideHome() {
       courseClient.from('corrections_feed').select('version_id', { count: 'exact', head: true })
         .gt('created_at', new Date(Date.now() - 7 * 86400000).toISOString()),
       courseClient.from('page_reviews').select('page_id'),
-    ]).then(([subs, proposals, gapFlags, expiring, published, pages, corrections, reviews]) => {
+      courseClient.from('page_reports').select('id', { count: 'exact', head: true })
+        .eq('status', 'open'),
+    ]).then(([subs, proposals, gapFlags, expiring, published, pages, corrections, reviews, reports]) => {
       if (!live) return
       const routes = {}
       for (const r of subs.data ?? []) routes[r.route] = (routes[r.route] ?? 0) + 1
@@ -48,6 +50,7 @@ export default function FieldGuideHome() {
         pages: pages.count ?? 0,
         corrections7d: corrections.count ?? 0,
         reviewed: new Set((reviews.data ?? []).map(r => r.page_id)).size,
+        reports: reports.count ?? 0,
       })
     })
     return () => { live = false }
@@ -91,6 +94,9 @@ export default function FieldGuideHome() {
                     body="Upload a source, propose pages from it." />
               <Card to="/academic/fieldguide/roster" title="Roster"
                     body="Import the ACORN CSV, send invites, watch enrollment land. The join-page QR for lecture slides points at /academic/fieldguide/join." />
+              <Card to="/academic/fieldguide/reports" title="Student reports"
+                    badge={c ? `${c.reports} open` : '…'}
+                    body="Errors and contradictions students found while reading. Fix, convert a verified contradiction into a claimable gap, or dismiss with a note." />
               <Card to="/academic/fieldguide/read" title="Reading queue"
                     badge={c ? `${c.reviewed} reviewed` : '…'}
                     body="The pre-publish read in risk order. Read, stamp on the page, and the stamp bar hands you the next one — a stamp also makes the page item-eligible for tests." />
