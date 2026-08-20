@@ -62,7 +62,8 @@
   "outlet": "Ten Percent Happier",
   "url": "https://podcasts.apple.com/ca/podcast/how-to-escape-your-brains-default-mode-network-zindel/id1087147821?i=1000656659419",
   "date": "2024",
-  "logo": "/images/media/tenpercent.jpeg"
+  "logo": "/images/media/tenpercent.jpeg",
+  "featured": true
 },
 {
   "type": "podcast",
@@ -78,7 +79,8 @@
   "outlet": "Hidden Brain",
   "url": "https://www.hiddenbrain.org/podcast/changing-our-mental-maps/",
   "date": "2024",
-  "logo": "/images/media/HiddenBrainsq.webp"
+  "logo": "/images/media/HiddenBrainsq.webp",
+  "featured": true
 },
 {
   "type": "podcast",
@@ -175,7 +177,8 @@
   "outlet": "Future Mending Radio",
   "url": "https://www.buzzsprout.com/2396702/episodes/19661024-how-to-toggle-your-brain",
   "date": "2026",
-  "logo": "/images/media/futuremending.jpeg"
+  "logo": "/images/media/futuremending.jpeg",
+  "featured": true
 },
 
 {
