@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
+import { CLONE_NODE_SELECT, cloneNodeRows } from '../../lib/templateNodes'
 import SessionDemoModal from '../../components/study/SessionDemoModal'
 
 function useSessions() {
@@ -143,16 +144,16 @@ export default function SessionLibrary() {
         .single()
       if (cloneErr) throw cloneErr
 
-      const { data: fullNodes } = await supabase
+      // Both the select and the copy come from templateNodes.js: this pair
+      // used to be written out by hand and drifted, so a clone kept only
+      // activity_id and quietly emptied every uploaded-questionnaire and
+      // training-module step it touched.
+      const { data: fullNodes, error: readErr } = await supabase
         .from('session_template_nodes')
-        .select('order_index, activity_id, label')
+        .select(CLONE_NODE_SELECT)
         .eq('session_template_id', original.id)
-      const finalNodes = (fullNodes ?? []).map(n => ({
-        session_template_id: clone.id,
-        order_index: n.order_index,
-        activity_id: n.activity_id,
-        label: n.label,
-      }))
+      if (readErr) throw readErr
+      const finalNodes = cloneNodeRows(fullNodes, clone.id)
       if (finalNodes.length) {
         const { error: nodesErr } = await supabase.from('session_template_nodes').insert(finalNodes)
         if (nodesErr) throw nodesErr
