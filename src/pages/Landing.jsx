@@ -1,5 +1,9 @@
-import { useState } from 'react'
+import { useState, lazy, Suspense } from 'react'
 import { Link } from 'react-router-dom'
+
+// Lazy so media.json rides in its own chunk rather than the entry bundle every
+// visitor downloads — Landing itself stays a static import (see CLAUDE.md).
+const FeaturedMedia = lazy(() => import('../components/FeaturedMedia'))
 
 export default function Landing({ session }) {
   const platformHref = session ? '/dashboard' : '/platform'
@@ -82,6 +86,12 @@ export default function Landing({ session }) {
           />
         </div>
       </section>
+
+      {/* RECENT MEDIA — below the hub cards; its own Suspense so a slow chunk
+          never swaps out the whole page via the router-level fallback */}
+      <Suspense fallback={null}>
+        <FeaturedMedia />
+      </Suspense>
 
       {/* FOOTER */}
       <footer style={S.footer} className="px-5 md:px-[52px]">
