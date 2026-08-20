@@ -93,14 +93,13 @@ export default function Landing({ session }) {
         <FeaturedMedia />
       </Suspense>
 
-      {/* FOOTER — dark band: the page's one at-rest use of the ink that otherwise
-          only appears on hub-card hover; gives the pink field a floor */}
+      {/* FOOTER — tint band (--bgp): header and footer share the tint so the
+          page reads tint / base / tint, banding within the pink system */}
       <footer style={S.footer} className="px-5 md:px-[52px]">
         <div style={S.footerText}>
-          {/* White-outline logo variant — the brand page's designated dark-background mark */}
-          <img src="/RADlab_Logo.svg" alt="" aria-hidden="true" style={S.footerLogo} />
+          <img src="/RADlab_Logo_light.svg" alt="" aria-hidden="true" style={S.footerLogo} />
           <PulseDot />
-          <strong style={{ color: '#fff' }}>RADlab</strong>&nbsp;·&nbsp;University of Toronto Mississauga
+          <strong style={{ color: 'var(--tx)' }}>RADlab</strong>&nbsp;·&nbsp;University of Toronto Mississauga
         </div>
         <div style={S.footerText}>radlab.zone</div>
       </footer>
@@ -171,7 +170,7 @@ const S = {
 
   nav: {
     display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0',
-    borderBottom: '1px solid var(--bd)', background: 'rgba(252,240,245,0.97)',
+    borderBottom: '1px solid var(--bd)', background: 'rgba(251,234,243,0.97)', /* --bgp tint */
     position: 'sticky', top: 0, zIndex: 10,
     backdropFilter: 'blur(8px)',
   },
@@ -204,8 +203,8 @@ const S = {
   chip:      { fontFamily: MONO, fontSize: '0.75rem', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '5px 11px', borderRadius: 20, transition: 'background 0.28s, color 0.28s' },
   cardCta:   { marginTop: 8, fontFamily: MONO, fontSize: '0.8125rem', letterSpacing: '0.1em', textTransform: 'uppercase', transition: 'color 0.28s' },
 
-  footer:     { marginTop: 'auto', paddingTop: 30, paddingBottom: 30, background: 'var(--tx)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, position: 'relative', zIndex: 1 },
-  footerText: { fontFamily: MONO, fontSize: '0.75rem', color: 'rgba(255,255,255,0.48)', letterSpacing: '0.06em', display: 'flex', alignItems: 'center' },
+  footer:     { marginTop: 'auto', paddingTop: 30, paddingBottom: 30, background: 'var(--bgp)', borderTop: '1px solid var(--bd)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, position: 'relative', zIndex: 1 },
+  footerText: { fontFamily: MONO, fontSize: '0.75rem', color: 'var(--gy)', letterSpacing: '0.06em', display: 'flex', alignItems: 'center' },
   footerLogo: { height: 26, width: 'auto', display: 'block', marginRight: 12 },
 
   pulse: {
