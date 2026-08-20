@@ -921,3 +921,43 @@ remote. Moving the code into it therefore put it somewhere Sandy cannot reach. T
 README says so explicitly rather than implying a clone will work. Pushing the repo to a
 private host is the obvious next step; it also means the analysis code stops existing on
 exactly one machine.
+
+---
+
+## Step 12 — Private repository, and what the audit caught (2026-08-20)
+
+The analysis repository is now private on GitHub:
+<https://github.com/Normega/sandy-study-3> (33 files, `master`, confirmed `private: true`).
+Sandy needs a collaborator invite; the shared-drive pointer carries the clone URL.
+
+**The push was blocked first.** Auditing what would actually be published found
+`output/fix_verification.csv` carrying a `user_id` column of **20 platform profile UUIDs**
+joined to each participant's task scores. The profile UUID is the participant key — the
+identifier `PRIVATE_crosswalk.csv` exists to protect — so this was identifiable participant
+data sitting in a *versioned* directory, and it had been there since the fix-verification
+work of 2026-08-11.
+
+It survived earlier review because it looks innocuous. `data/` was carefully de-identified
+and demographics were reduced to aggregates; `output/` was treated as "results", and results
+felt safe. Nothing in the pipeline enforced that assumption.
+
+Three things followed, in order:
+
+1. **The artefact**: the column is replaced by opaque `case_NN` labels. The file verifies a
+   per-row claim — replay matches stored, recalibration moves the score as intended — not a
+   per-person one, so nothing is lost.
+2. **The generator**: `06_verify_fixes.py` now de-identifies before writing, so a re-run
+   cannot reintroduce it. Fixing only the artefact would have left the defect live.
+3. **The history**: because a push publishes every commit, the earlier form was removed from
+   history with `filter-branch` before the first push. Safe precisely because the repo had
+   never been pushed — no clone existed to diverge. A full bundle was taken first.
+
+A full-history sweep now finds three UUIDs total: the study id and the two VAS scale ids.
+Both are instrument identifiers. No Prolific id appears anywhere.
+
+**The generalisable point**, and the reason this is written up rather than quietly fixed:
+de-identification was applied to the directory that was *obviously* participant data, and
+skipped for the one that merely contained it. The rule worth carrying to the next study is
+that no versioned file may hold a participant key, whatever directory it sits in — and that
+the check belongs at the moment of first publication, when the cost of finding it is a
+history rewrite rather than a disclosure.
