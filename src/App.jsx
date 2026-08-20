@@ -134,6 +134,7 @@ const QuestionnaireUpload  = lazy(() => import('./pages/admin/QuestionnaireUploa
 const QuestionnairePreview = lazy(() => import('./pages/admin/QuestionnairePreview'))
 const AdvancedInstrumentPreview = lazy(() => import('./pages/admin/AdvancedInstrumentPreview'))
 const InstrumentStylesPage = lazy(() => import('./pages/admin/InstrumentStylesPage'))
+const AdoptedInstrumentPage = lazy(() => import('./pages/admin/AdoptedInstrumentPage'))
 const DataExportPage       = lazy(() => import('./pages/admin/DataExportPage'))
 const CompensationPage     = lazy(() => import('./pages/admin/CompensationPage'))
 const VideoLibrary         = lazy(() => import('./pages/admin/VideoLibrary'))
@@ -742,6 +743,7 @@ export default function App() {
               <Route path="/admin/displays/:id"        element={<DisplayEditorPage />} />
               <Route path="/admin/screeners"           element={<ScreenerLibraryPage />} />
               <Route path="/admin/instruments"         element={<InstrumentStylesPage />} />
+              <Route path="/admin/instruments/:slug"   element={<AdoptedInstrumentPage />} />
               {/* Super-admin only — RPCs enforce server-side, page shows 'forbidden' otherwise */}
               <Route path="/admin/users"               element={<UserAdminPage />} />
               <Route path="/admin/diagnostics"         element={<Diagnostics />} />

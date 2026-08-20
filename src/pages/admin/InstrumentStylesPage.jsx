@@ -12,6 +12,10 @@ import WellnessTipStep from '../../components/study/WellnessTipStep'
 import { OwlScreen } from '../../components/study/InterventionPage'
 import FillableBox from '../../components/ui/FillableBox'
 import Checkbox from '../../components/ui/Checkbox'
+import {
+  ProposedLikert, AdoptedLikertSlider, AdoptedNumericSlider,
+  ProposedMultipleChoice, ProposedOpenList, ProposedHierarchy,
+} from './proposedInstruments'
 
 // ── InstrumentStylesPage (/admin/instruments) ─────────────────────────────────
 // A live style inventory of the participant-facing instrument components
@@ -51,18 +55,55 @@ export default function InstrumentStylesPage() {
         <Spec
           title="Likert item"
           file="src/components/questionnaire/LikertItem.jsx"
-          notes="The core questionnaire item: stem + labelled option buttons. Variants not shown: auto-advance (selection commits without a Next), endpoint-only labels (numbers with anchors at the ends), and image labels."
+          notes="Current: vertical, every point labelled, one item per screen. Proposed (Dana's composable-surveys package): horizontal 7-box row, anchors under the endpoints only, several items per page with ITEM eyebrows. These are the two classic administrations — the review question is which is the default and whether orientation becomes an instrument parameter."
+          proposed={<ProposedLikert />}
         >
           <LikertSample />
         </Spec>
 
         <Spec
-          title="Slider (no-default)"
-          file="src/components/study/NoDefaultSlider.jsx"
-          notes="The standard slider: unanswered until touched (no default thumb — avoids anchoring), point labels when the scale has ≤12 ticks. Shown inside the card chrome its study consumers wrap it in."
+          title="Likert slider"
+          file="src/components/study/NoDefaultSlider.jsx → Dana chrome"
+          notes="Adopted 2026-08-19 (own sidebar entry under Instruments). Sliders split into two instruments; this is the discrete one — stepped scale with point labels, no numeric readout (the label is the value). Dana's track/thumb chrome combined with the platform's no-default behavior: no thumb until the first touch."
+          proposedCaption="Adopted — implementation pending"
+          proposed={<AdoptedLikertSlider />}
         >
           <SliderSample />
         </Spec>
+
+        <Spec
+          title="Numeric slider"
+          file="src/components/study/NoDefaultSlider.jsx → Dana chrome"
+          notes="Adopted 2026-08-19 (own sidebar entry under Instruments). The continuous one — 0–100 with sparse numbered anchors and a VALUE readout that stays '—' until touched. Same Dana chrome, same no-default behavior."
+          proposedCaption="Adopted — implementation pending"
+          proposed={<AdoptedNumericSlider />}
+        >
+          <NumericSliderSample />
+        </Spec>
+
+        <Spec
+          title="Multiple choice"
+          file="composable-surveys: MultipleChoiceQuestion"
+          notes="Adopted 2026-08-19 (has its own sidebar entry under Instruments). The platform never had a generic single-select multiple-choice instrument — demographics and screeners each hand-roll their own. Options can be plain, or carry inline text/number entry with prefix/suffix and bounds (select the first option to see it)."
+          proposedCaption="Adopted — implementation pending"
+          proposed={<ProposedMultipleChoice />}
+        />
+
+        <Spec
+          title="Open text list + contribution ratings"
+          file="composable-surveys: OpenTextListQuestion"
+          notes="Adopted 2026-08-19 (has its own sidebar entry under Instruments). Participant-generated factors with a per-factor rating: typing text reveals a contribution slider beneath that row, and filling the last row grows a new one. Word-capped with a live counter."
+          proposedCaption="Adopted — implementation pending"
+          proposed={<ProposedOpenList />}
+        />
+
+        <Spec
+          title="Hierarchical belief question"
+          file="composable-surveys: HierarchicalBeliefQuestion"
+          notes="Adopted 2026-08-19 (has its own sidebar entry under Instruments). A belief hierarchy shown whole, indented by level; participants select every level that changed, and each selected level reveals a signed direction slider. Generalizes to any nested-construct rating."
+          proposedCaption="Adopted — implementation pending"
+          proposed={<ProposedHierarchy />}
+        />
 
         <Spec
           title="Questionnaire instruction screen"
@@ -231,6 +272,28 @@ function SliderSample() {
   )
 }
 
+function NumericSliderSample() {
+  const [v, setV] = useState(null)
+  return (
+    <div style={{ maxWidth: 560, margin: '0 auto', padding: '24px 20px 28px' }}>
+      {/* The same NoDefaultSlider on a 0–100 span — above 12 ticks it draws no
+          point labels, which is exactly the current numeric-slider experience. */}
+      <div style={{ background: 'var(--bg)', border: '1px solid var(--bd)', borderRadius: 12, padding: '24px 24px 18px' }}>
+        <p style={{ fontFamily: '"DM Sans", system-ui, sans-serif', fontSize: 'var(--fs-body)', color: 'var(--tx)', margin: '0 0 18px' }}>
+          To what extent does pursuing this goal feel like your own choice?
+        </p>
+        <NoDefaultSlider
+          min={0} max={100} value={v} onChange={setV}
+          ariaLabel="To what extent does pursuing this goal feel like your own choice?"
+        />
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: '"DM Sans", system-ui, sans-serif', fontSize: 11, color: 'var(--tx2)', marginTop: 6 }}>
+          <span>Not at all my choice</span><span>Completely my choice</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function ChecklistSample() {
   const [resp, setResp] = useState({})
   return (
@@ -272,9 +335,10 @@ function PrimitivesSample() {
 
 // ── Spec — one instrument section ─────────────────────────────────────────────
 // `proposed`: mount a proposed redesign here and the section becomes a
-// side-by-side CURRENT / PROPOSED comparison. Absent, current spans full width.
+// side-by-side CURRENT / PROPOSED comparison. With no children at all, the
+// CURRENT column states there is no current equivalent — a proposed addition.
 
-function Spec({ title, file, notes, tall = false, children, proposed = null }) {
+function Spec({ title, file, notes, tall = false, children, proposed = null, proposedCaption = 'Proposed' }) {
   return (
     <section>
       <div style={S.specHead}>
@@ -285,11 +349,15 @@ function Spec({ title, file, notes, tall = false, children, proposed = null }) {
       <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
         <div style={{ flex: '1 1 420px', minWidth: 0 }}>
           <p style={S.stageCaption}>Current</p>
-          <div className="spec-stage" style={{ ...S.stage, ...(tall ? S.stageTall : {}) }}>{children}</div>
+          {children ? (
+            <div className="spec-stage" style={{ ...S.stage, ...(tall ? S.stageTall : {}) }}>{children}</div>
+          ) : (
+            <div style={S.noCurrent}>No current equivalent — new instrument type.</div>
+          )}
         </div>
         {proposed && (
           <div style={{ flex: '1 1 420px', minWidth: 0 }}>
-            <p style={{ ...S.stageCaption, color: 'var(--pk)' }}>Proposed</p>
+            <p style={{ ...S.stageCaption, color: 'var(--pk)' }}>{proposedCaption}</p>
             <div className="spec-stage" style={{ ...S.stage, ...(tall ? S.stageTall : {}), borderColor: 'var(--pkbs)' }}>{proposed}</div>
           </div>
         )}
@@ -325,6 +393,12 @@ const S = {
   stageCaption: {
     fontFamily: MONO, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase',
     color: 'var(--gy)', margin: '0 0 6px',
+  },
+  noCurrent: {
+    border: '1.5px dashed var(--bds)', borderRadius: 12, minHeight: 120,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    fontFamily: SANS, fontSize: 13, color: 'var(--gy)', fontStyle: 'italic',
+    padding: 20, textAlign: 'center',
   },
   // overflow hidden also confines ProgressLabel's position: sticky.
   stage: {
