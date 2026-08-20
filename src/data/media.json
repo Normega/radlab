@@ -169,6 +169,14 @@
   "date": "2026",
   "logo": "/images/media/pausetoelevate.webp"
 },
+{
+  "type": "podcast",
+  "title": "How to Toggle Your Brain",
+  "outlet": "Future Mending Radio",
+  "url": "https://www.buzzsprout.com/2396702/episodes/19661024-how-to-toggle-your-brain",
+  "date": "2026",
+  "logo": "/images/media/futuremending.jpeg"
+},
 
 {
   "type": "video",
