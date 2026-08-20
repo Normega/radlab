@@ -560,6 +560,13 @@ sample.
 experienced relative performance after it, within task, at r > .2. Failure indicates a
 data-quality problem and triggers investigation before any hypothesis test is interpreted.
 
+> *Amended 2026-08-20, before any confirmatory data existed — see Appendix C1.* The check
+> above is unchanged and is reported as registered. Its stated inference does not hold for
+> the Aptitude Suite, which is designed to break the association it tests: a low correlation
+> there is what a working manipulation produces. Appendix C1 fixes, in advance, three
+> diagnostics and the reading of each outcome. The registered inference stands unchanged for
+> ColourMax.
+
 ### 5.6 Missing data
 
 Sliders, rating scales and questionnaires are required fields in the platform flow, so a
@@ -749,3 +756,84 @@ subtasks comparably scaled. Separately, the revised score shown to the redemptio
 the arithmetic sum of two percentiles and exceeded 100 for 13 of 20 pilot participants; it
 is now the floored mean described in §4.1. Both changes were verified by replaying the pilot
 event log before release.
+
+---
+
+## Appendix C — Amendments after registration
+
+Changes made after the preregistration was submitted. Each records what changed, when, and
+what data existed at the time. **No registered analysis is altered by anything in this
+appendix**; the entries below add interpretation and diagnostics around checks that remain
+exactly as registered.
+
+### C1. Interpretation of the §5.5 positive control for the Aptitude Suite
+
+**Date: 2026-08-20. Confirmatory participants enrolled at the time of writing: none.**
+
+**What is unchanged.** The registered check stands and is reported exactly as specified:
+within each task, the correlation between predicted relative performance before the task and
+experienced relative performance after it, expected at r > .2, reported for the Aptitude
+Suite and for ColourMax.
+
+**What is amended.** §5.5 states that failure of this check "indicates a data-quality
+problem." That inference does not hold for the Aptitude Suite, and the registration should
+not have attached it there.
+
+The Aptitude Suite is built to break the association the check tests. Participants are
+instructed to aim for the top 10% (§1.2) and watch a live percentile display for eight
+minutes, so by design most of them end the task having visibly fallen short of the stated
+target. The prediction is made before they have touched the task and can only reflect prior
+self-belief; the experienced rating is made after sustained, specific performance feedback.
+The better that feedback works, the more the experienced rating reflects the score on screen
+rather than the earlier prediction — so a **low correlation is what a functioning
+manipulation produces**, and the registered inference reads success as failure.
+
+ColourMax is not a comparable reference point. Its prediction is collected after Aptitude
+Suite feedback (§2.3, step 5), so prediction and experience there share a common cause — the
+participant's newly calibrated estimate of their own standing — which inflates the
+correlation. The contrast between the two tasks is uninformed versus informed prediction, not
+clean versus faulty data.
+
+**Why this is not a licence to ignore the check.** A low correlation is now consistent with
+two very different situations: the measure is broken, or the manipulation worked. The
+registered statistic cannot separate them, so failure no longer *establishes* a data-quality
+problem but equally no longer *excludes* one. Three diagnostics, with thresholds fixed here
+in advance, do separate them:
+
+| | Diagnostic | Passes if |
+|---|---|---|
+| **D1** | Experienced rating tracks the percentile actually displayed (`apt_avg_pct`) | r > .2 |
+| **D2** | Experienced rating is not degenerate | SD > 5 and no single value held by >50% of responses |
+| **D3** | Prediction coheres with trait self-efficacy (GSE) | r > .1 |
+
+D1 is the discriminating test: a working slider must respond to the feedback in front of it
+even once it has decoupled from prior belief. The reading is fixed in advance:
+
+- **Positive control fails, D1 passes** → measurement is sound; the prediction was overwritten
+  by feedback. This is the design working. Proceed, and report both results.
+- **Positive control fails, D1 fails** → the rating tracks nothing observable. This is the
+  genuine data-quality alarm, and §5.5's stop-and-investigate applies: check step and
+  occasion matching before interpreting any hypothesis test.
+- **ColourMax positive control fails** → treated as §5.5 originally specifies. There is no
+  design-based explanation for that task.
+
+**Status in the pilot.** Run on the N = 20 pilot with the firewall up, so pass/fail only and
+no estimate inspected or recorded: the Aptitude positive control fails, and **D1, D2 and D3
+all pass**. The experienced rating tracked the displayed percentile even in the pilot, where
+the Word Probe scoring defect (Appendix B) was still present and had compressed that
+displayed percentile. The measurement chain is therefore sound end to end, and the Aptitude
+decoupling sits between prediction and experience rather than in the instrumentation. This
+is reported as a boolean gate under the same discipline already applied to the registered
+positive control; no correlation was estimated or examined.
+
+**Consequence for the interim check.** The interim data-quality gate at approximately 30
+confirmatory participants is to be run in the pipeline's default firewall mode, which reports
+these gates as pass/fail while suppressing every hypothesis test. Running it in confirmatory
+mode would print the full 17-test family at n ≈ 30 and is not a permitted way to perform this
+check.
+
+**Why this was amended before data collection rather than after.** Two accounts predicted the
+pilot failure — the Word Probe defect, corrected before launch, and the design argument above.
+They make opposite predictions about whether the registered correlation recovers in the
+confirmatory sample. Fixing the interpretation now, with no confirmatory data in existence,
+keeps that a prediction rather than an explanation offered after the fact.

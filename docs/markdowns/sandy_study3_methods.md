@@ -20,7 +20,7 @@ and computational reproducibility. Updated after each step. Companion to
 
 ---
 
-## Decision index (D1–D19)
+## Decision index (D1–D20)
 
 The preregistration was cleaned of inline decision markup on 2026-08-11 so that it reads as
 a formal document; the decisions are absorbed into its prose and summarised in its
@@ -48,6 +48,7 @@ Appendix B. The numbered index below is retained here as the audit trail, and is
 | D17 | Aptitude per-subtask time is derived from **focus**, and stays exploratory. The three subtasks are on screen simultaneously, so unlike ColourMax there is no navigation act to log; focus is the only observable signal and it bounds engagement rather than measuring attention. The interaction-derived `task_switch_count` (which the pilot and power analysis rest on) is reported separately and not merged with it | 2026-08-19 |
 | D18 | Test accounts are excluded via the enrolment's `is_test` flag as criterion 0, ahead of every behavioural criterion. Enrolment status cannot identify them, because genuine participants withdraw too. Exports predating the column read as “none flagged” and remove nobody | 2026-08-19 |
 | D19 | The pilot/confirmatory boundary is the **enrolment date**, declared per run via `SANDY3_COHORT_START`, and a confirmatory run refuses to start without it. Nothing in the data separates the two cohorts — same study id, same Prolific id pattern, both real participants — and the pilot ran the pre-2026-08-11 instrument, so its percentiles are not on the same scale | 2026-08-19 |
+| D20 | The §5.5 positive control is **reported as registered but reinterpreted** for the Aptitude Suite: that task is designed to break the prediction–experience link it tests, so a low r is what a working manipulation produces. Three diagnostics fixed in advance separate a measurement fault from a successful manipulation, D1 (does the rating track the percentile actually shown) being the discriminating one. Amended before any confirmatory participant existed | 2026-08-20 |
 
 Build items B1–B3 were withdrawn or resolved (per D9, D10, D11). B4 (export field
 verification) completed 2026-08-06. B5 (Word Probe recalibration and redemption-score fix)
@@ -961,3 +962,81 @@ skipped for the one that merely contained it. The rule worth carrying to the nex
 that no versioned file may hold a participant key, whatever directory it sits in — and that
 the check belongs at the moment of first publication, when the cost of finding it is a
 history rewrite rather than a disclosure.
+
+---
+
+## Step 13 — What a designed failure does to a positive control (2026-08-20)
+
+Norm asked whether the §5.5 positive control is really a validity threat given that the
+Aptitude Suite is designed to provoke a failure experience. It is not, and the check as
+registered had the inference backwards.
+
+### 13.1 The argument
+
+§1.2 tells participants to **aim for the top 10%** and runs a live percentile display for
+eight minutes. Most therefore end the task having visibly fallen short — that shortfall is
+what makes "redemption" mean anything. Against that design:
+
+- the **prediction** (step 1) is made with no task experience and can only carry prior
+  self-belief;
+- the **experienced rating** (step 3) follows eight minutes of specific, continuous feedback.
+
+The stronger the feedback, the more the second rating reflects the score on screen and the
+less it reflects the first. A low correlation is the signature of a manipulation that
+worked. The registered clause — "failure indicates a data-quality problem" — reads that
+success as a fault.
+
+**ColourMax was never a comparable control.** Its prediction is collected *after* Aptitude
+feedback (§2.3 step 5), so prediction and experience share a common cause: the participant's
+freshly calibrated sense of where they stand. Uninformed versus informed prediction. Its
+passing while Aptitude failed needs no data-quality explanation at all, which also means it
+was never evidence that Aptitude ought to pass.
+
+This revises Step 8.5 and what was said earlier in this session. The Word Probe defect was
+offered as the leading explanation of the pilot failure; the design account needs no defect
+whatsoever, and the two make **opposite predictions** about whether the registered
+correlation recovers now that the recalibration is live.
+
+### 13.2 Why the check still could not simply be dropped
+
+A low r had become consistent with two opposite situations — broken measure, or working
+manipulation — and the registered statistic cannot tell them apart. Failure no longer
+*establishes* a data-quality problem, but it equally no longer *excludes* one. Dropping the
+gate would have traded a misleading alarm for no alarm.
+
+Three diagnostics, thresholds fixed in advance, do discriminate. D1 is the load-bearing one:
+a working slider must respond to the feedback in front of it even once it has decoupled from
+prior belief. The 2×2 reading is stated by the pipeline itself rather than left to whoever
+opens the CSV.
+
+### 13.3 The pilot answer, and a small vindication of the firewall
+
+All three diagnostics **pass** on the pilot while the registered control fails — booleans
+only, no estimate inspected or recorded. So the experienced rating tracked the displayed
+percentile even in the pilot, *where the Word Probe defect was still compressing that very
+percentile*. The measurement chain is sound end to end; the decoupling sits between
+prediction and experience, exactly where the design puts it.
+
+### 13.4 The firewall nearly leaked again
+
+A new table of correlations is precisely the case the `INFERENTIAL_COLS` comment warns
+about, and it would have slipped through: `redact()` drops a fixed column list, and
+`redact_in_memory()` walks a fixed table list — the new table was in neither. Under the
+firewall its correlations would have survived in memory and reached disk. Fixed by naming
+the column `diag_value` (not `value`, which is a legitimate data column in `ratings_long`),
+declaring it inferential, and adding `pc_diagnostics` to the release list. Third time this
+mechanism has needed extending; the lesson is that its safety depends on two lists that a
+new table joins neither of by default.
+
+### 13.5 Timing, which is the part that matters
+
+Amended with **zero confirmatory participants enrolled**. The same reasoning offered after
+seeing a disappointing confirmatory r would be indistinguishable from rationalising it,
+however sound. The amendment is Appendix C1 of the preregistration — a new appendix, so the
+registered §5.5 text stays visible as registered and the change sits beside it rather than
+replacing it. §5.5 carries a signpost to C1 so a reader of the registered clause cannot miss
+the amendment.
+
+The interim gate at ~30 participants must be run in **default firewall mode**: it reports
+these gates as pass/fail while suppressing all 17 tests. Running it confirmatory would print
+the full family at n ≈ 30, which is not a permitted way to perform a data-quality check.
