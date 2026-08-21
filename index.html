@@ -5,6 +5,22 @@
     <link rel="icon" type="image/svg+xml" href="/RADlab_Logo_light.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>RADlab — Regulatory & Affective Dynamics Lab</title>
+
+    <!-- Search snippet + social-share unfurls (Slack, iMessage, LinkedIn, X, …).
+         Crawlers don't run JS, so this static card serves every route; a
+         per-route card would need prerendering or edge middleware (see
+         website.md). If og.png is ever redesigned, rename it (og-v2.png…) —
+         platforms cache unfurls by URL. -->
+    <meta name="description" content="The Regulatory & Affective Dynamics Lab at the University of Toronto — psychology experiments designed to feel like play." />
+    <meta property="og:title" content="RADlab — Regulatory & Affective Dynamics Lab" />
+    <meta property="og:description" content="The Regulatory & Affective Dynamics Lab at the University of Toronto — psychology experiments designed to feel like play." />
+    <meta property="og:image" content="https://radlab.zone/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:url" content="https://radlab.zone/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="RADlab" />
+    <meta name="twitter:card" content="summary_large_image" />
   </head>
   <body>
     <div id="root"></div>
