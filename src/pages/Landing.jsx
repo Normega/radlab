@@ -20,7 +20,7 @@ export default function Landing({ session }) {
           <div className="h-8 md:h-10" style={{ display: 'flex', alignItems: 'center' }}>
             <img src="/RADlab_Logo.svg" style={{ height: '100%', display: 'block' }} alt="RADlab logo" />
           </div>
-          <span style={S.wordmark}>RAD<b style={{ color: '#f4a8cb', fontWeight: 400 }}>lab</b></span>
+          <span style={S.wordmark}>RAD<b style={{ color: 'var(--pk)', fontWeight: 400 }}>lab</b></span>
         </Link>
         <a href="https://www.utoronto.ca/" target="_blank" rel="noopener noreferrer" style={S.uoftLink}>
           <img src="/UofT_Logo.svg" style={{ height: 42, width: 'auto', display: 'block' }} alt="University of Toronto" />
@@ -93,12 +93,11 @@ export default function Landing({ session }) {
         <FeaturedMedia />
       </Suspense>
 
-      {/* FOOTER — gray band (#6B6C70, --tx2): matches the site-wide gray header */}
+      {/* FOOTER */}
       <footer style={S.footer} className="px-5 md:px-[52px]">
         <div style={S.footerText}>
-          <img src="/RADlab_Logo.svg" alt="" aria-hidden="true" style={S.footerLogo} />
           <PulseDot />
-          <strong style={{ color: '#fff' }}>RADlab</strong>&nbsp;·&nbsp;University of Toronto Mississauga
+          <strong style={{ color: 'var(--tx)' }}>RADlab</strong>&nbsp;·&nbsp;University of Toronto Mississauga
         </div>
         <div style={S.footerText}>radlab.zone</div>
       </footer>
@@ -169,13 +168,13 @@ const S = {
 
   nav: {
     display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0',
-    borderBottom: '1px solid rgba(255,255,255,0.14)', background: 'rgba(107,108,112,0.97)', /* gray band — #6B6C70 (--tx2), matches Nav + LabLayout */
+    borderBottom: '1px solid var(--pkbs)', /* visible divider in place of a band */ background: 'rgba(252,240,245,0.97)',
     position: 'sticky', top: 0, zIndex: 10,
     backdropFilter: 'blur(8px)',
   },
   brand:    { display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' },
   uoftLink: { display: 'flex', alignItems: 'center', flexShrink: 0 },
-  wordmark: { fontFamily: SERIF, fontSize: 'clamp(22px, 5vw, 36px)', letterSpacing: -0.5, color: '#fff', lineHeight: 1 },
+  wordmark: { fontFamily: SERIF, fontSize: 'clamp(22px, 5vw, 36px)', letterSpacing: -0.5, color: 'var(--tx)', lineHeight: 1 },
 
   // Horizontal padding lives in responsive classNames (px-5 md:px-[52px]) —
   // vertical padding must stay longhand or the inline shorthand zeroes the class px
@@ -202,9 +201,8 @@ const S = {
   chip:      { fontFamily: MONO, fontSize: '0.75rem', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '5px 11px', borderRadius: 20, transition: 'background 0.28s, color 0.28s' },
   cardCta:   { marginTop: 8, fontFamily: MONO, fontSize: '0.8125rem', letterSpacing: '0.1em', textTransform: 'uppercase', transition: 'color 0.28s' },
 
-  footer:     { marginTop: 'auto', paddingTop: 30, paddingBottom: 30, background: '#6B6C70', /* gray band — matches the nav */ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, position: 'relative', zIndex: 1 },
-  footerText: { fontFamily: MONO, fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)', letterSpacing: '0.06em', display: 'flex', alignItems: 'center' },
-  footerLogo: { height: 26, width: 'auto', display: 'block', marginRight: 12 },
+  footer:     { marginTop: 'auto', paddingTop: 26, paddingBottom: 26, borderTop: '1px solid var(--pkbs)', /* visible divider, matches the nav */ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, position: 'relative', zIndex: 1 },
+  footerText: { fontFamily: MONO, fontSize: '0.75rem', color: 'var(--gy)', letterSpacing: '0.06em', display: 'flex', alignItems: 'center' },
 
   pulse: {
     display: 'inline-block', width: 6, height: 6, background: 'var(--pk)',
