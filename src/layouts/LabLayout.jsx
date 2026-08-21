@@ -46,8 +46,9 @@ const S = {
     position: 'sticky',
     top: 0,
     zIndex: 100,
-    background: '#ffffff',
-    borderBottom: '1px solid rgba(180,100,140,0.13)',
+    background: 'rgba(252,240,245,0.97)', /* base — matches Nav + Landing */
+    backdropFilter: 'blur(8px)',
+    borderBottom: '1px solid rgba(240,104,164,0.35)', /* visible divider (--pkbs) */
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',

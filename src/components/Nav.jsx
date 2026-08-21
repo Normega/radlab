@@ -255,7 +255,7 @@ function AccountMenu({ onSignOut, trigger }) {
 const S = {
   nav: {
     background: 'rgba(252,240,245,0.97)',
-    borderBottom: '1px solid var(--bgp)',
+    borderBottom: '1px solid var(--pkbs)', /* visible divider, matches Landing + LabLayout */
     position: 'sticky', top: 0, zIndex: 10,
     backdropFilter: 'blur(8px)',
   },
