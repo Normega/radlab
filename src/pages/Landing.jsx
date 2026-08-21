@@ -9,6 +9,14 @@ export default function Landing({ session }) {
   const platformHref = session ? '/dashboard' : '/platform'
   const platformCta  = session ? 'Go to dashboard →' : 'Enter the platform →'
 
+  // Footer mirrors the hub cards — same four destinations, same names.
+  const footerLinks = [
+    { to: platformHref, label: 'Come, See' },
+    { href: 'http://www.utmap.org', label: 'UTMaps' },
+    { to: '/lab/about', label: 'People & Research' },
+    { href: 'https://www.betterineverysense.com', label: 'Book' },
+  ]
+
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
 
@@ -93,18 +101,16 @@ export default function Landing({ session }) {
         <FeaturedMedia />
       </Suspense>
 
-      {/* FOOTER — links row first, so the bottom of the page offers somewhere
-          to go; identity row below it */}
+      {/* FOOTER — one line: the hub cards' four destinations as links (same
+          names, same targets — Come, See resolves per session like the card),
+          identity right; wraps on narrow screens */}
       <footer style={S.footer} className="px-5 md:px-[52px]">
         <div style={S.footerLinks}>
-          {FOOTER_LINKS.map(l => <FooterLink key={l.to} {...l} />)}
+          {footerLinks.map(l => <FooterLink key={l.label} {...l} />)}
         </div>
-        <div style={S.footerRow}>
-          <div style={S.footerText}>
-            <PulseDot />
-            <strong style={{ color: 'var(--tx)' }}>RADlab</strong>&nbsp;·&nbsp;University of Toronto Mississauga
-          </div>
-          <div style={S.footerText}>radlab.zone</div>
+        <div style={S.footerText}>
+          <PulseDot />
+          <strong style={{ color: 'var(--tx)' }}>RADlab</strong>&nbsp;·&nbsp;University of Toronto Mississauga
         </div>
       </footer>
 
@@ -156,23 +162,13 @@ function HubCard({ tag, title, desc, chips, cta, href, internal, newTab }) {
 
 // ─── FOOTER LINKS ────────────────────────────────────────────────────────────
 
-const FOOTER_LINKS = [
-  { to: '/platform',    label: 'Platform' },
-  { to: '/lab/about',   label: 'Lab' },
-  { to: '/lab/media',   label: 'Media' },
-  { to: '/lab/contact', label: 'Contact' },
-]
-
-function FooterLink({ to, label }) {
+function FooterLink({ to, href, label }) {
   const [hov, setHov] = useState(false)
-  return (
-    <Link to={to}
-      style={{ ...S.footerLink, color: hov ? 'var(--pk)' : 'var(--gy)' }}
-      onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
-    >
-      {label}
-    </Link>
-  )
+  const style = { ...S.footerLink, color: hov ? 'var(--pk)' : 'var(--gy)' }
+  const hover = { onMouseEnter: () => setHov(true), onMouseLeave: () => setHov(false) }
+  return to
+    ? <Link to={to} style={style} {...hover}>{label}</Link>
+    : <a href={href} target="_blank" rel="noopener noreferrer" style={style} {...hover}>{label}</a>
 }
 
 // ─── PULSE DOT ───────────────────────────────────────────────────────────────
@@ -228,8 +224,7 @@ const S = {
   chip:      { fontFamily: MONO, fontSize: '0.75rem', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '5px 11px', borderRadius: 20, transition: 'background 0.28s, color 0.28s' },
   cardCta:   { marginTop: 8, fontFamily: MONO, fontSize: '0.8125rem', letterSpacing: '0.1em', textTransform: 'uppercase', transition: 'color 0.28s' },
 
-  footer:     { marginTop: 'auto', paddingTop: 22, paddingBottom: 24, borderTop: '1px solid var(--pkbs)', /* visible divider, matches the nav */ display: 'flex', flexDirection: 'column', gap: 14, position: 'relative', zIndex: 1 },
-  footerRow:  { display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 },
+  footer:     { marginTop: 'auto', paddingTop: 24, paddingBottom: 24, borderTop: '1px solid var(--pkbs)', /* visible divider, matches the nav */ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px 20px', position: 'relative', zIndex: 1 },
   footerLinks: { display: 'flex', flexWrap: 'wrap', gap: '10px 26px' },
   footerLink: { fontFamily: MONO, fontSize: '0.75rem', letterSpacing: '0.1em', textTransform: 'uppercase', textDecoration: 'none', transition: 'color 0.15s ease' },
   footerText: { fontFamily: MONO, fontSize: '0.75rem', color: 'var(--gy)', letterSpacing: '0.06em', display: 'flex', alignItems: 'center' },

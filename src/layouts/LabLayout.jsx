@@ -1,10 +1,11 @@
 import { NavLink, Outlet, Link } from 'react-router-dom'
 
+// Mirrors the Landing hub cards — same four destinations, same names.
 const FOOTER_LINKS = [
-  { to: '/platform',    label: 'Platform' },
-  { to: '/lab/about',   label: 'Lab' },
-  { to: '/lab/media',   label: 'Media' },
-  { to: '/lab/contact', label: 'Contact' },
+  { to: '/platform', label: 'Come, See' },
+  { href: 'http://www.utmap.org', label: 'UTMaps' },
+  { to: '/lab/about', label: 'People & Research' },
+  { href: 'https://www.betterineverysense.com', label: 'Book' },
 ]
 
 const NAV_LINKS = [
@@ -43,11 +44,12 @@ export default function LabLayout() {
       </main>
       <footer style={S.footer}>
         <div style={S.footerLinks}>
-          {FOOTER_LINKS.map(({ to, label }) => (
-            <Link key={to} to={to} style={S.footerLink}>{label}</Link>
-          ))}
+          {FOOTER_LINKS.map(({ to, href, label }) => to
+            ? <Link key={label} to={to} style={S.footerLink}>{label}</Link>
+            : <a key={label} href={href} target="_blank" rel="noopener noreferrer" style={S.footerLink}>{label}</a>
+          )}
         </div>
-        © RADlab · University of Toronto Mississauga
+        <span style={{ whiteSpace: 'nowrap' }}>© RADlab · University of Toronto Mississauga</span>
       </footer>
     </div>
   )
@@ -86,8 +88,8 @@ const S = {
     borderBottom: '2px solid #f068a4',
   },
   footerLinks: {
-    display: 'flex', justifyContent: 'center', flexWrap: 'wrap',
-    gap: '10px 26px', marginBottom: 12,
+    display: 'flex', flexWrap: 'wrap',
+    gap: '10px 26px',
   },
   footerLink: {
     fontFamily: '"Space Mono", "Courier New", monospace',
@@ -95,8 +97,9 @@ const S = {
     color: '#abadb0', textDecoration: 'none',
   },
   footer: {
-    textAlign: 'center',
-    padding: '1.5rem',
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+    flexWrap: 'wrap', gap: '12px 20px',
+    padding: '1.25rem 2rem',
     fontSize: 13,
     color: '#abadb0',
     fontFamily: '"DM Sans", system-ui, sans-serif',
