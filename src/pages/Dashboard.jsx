@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import Nav from '../components/Nav'
+import SiteFooter from '../components/SiteFooter'
 import EyebrowLabel from '../components/ui/EyebrowLabel'
 import PrimaryCTA from '../components/ui/PrimaryCTA'
 import InsightsWidget from '../dashboard/InsightsWidget'
@@ -24,7 +25,7 @@ export default function Dashboard({ session }) {
   // IA rework moved signing out into the avatar dropdown. Nothing rendered it.
 
   return (
-    <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
+    <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Nav session={session} />
 
       <div style={S.wrap}>
@@ -84,6 +85,8 @@ export default function Dashboard({ session }) {
           reader has ever had.
         */}
       </div>
+
+      <SiteFooter session={session} />
     </div>
   )
 }

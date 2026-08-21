@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Nav from '../components/Nav'
+import SiteFooter from '../components/SiteFooter'
 import EyebrowLabel from '../components/ui/EyebrowLabel'
 import PrimaryCTA from '../components/ui/PrimaryCTA'
 import { supabase } from '../lib/supabase'
@@ -33,7 +34,7 @@ export default function GamesPage({ session }) {
   const sections = groupGames(sortBy)
 
   return (
-    <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
+    <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Nav session={session} />
 
       <div style={S.wrap}>
@@ -81,6 +82,8 @@ export default function GamesPage({ session }) {
           </section>
         ))}
       </div>
+
+      <SiteFooter session={session} />
     </div>
   )
 }

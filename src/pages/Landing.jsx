@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 // Lazy so media.json rides in its own chunk rather than the entry bundle every
 // visitor downloads — Landing itself stays a static import (see CLAUDE.md).
 const FeaturedMedia = lazy(() => import('../components/FeaturedMedia'))
+import SiteFooter from '../components/SiteFooter'
 
 export default function Landing({ session }) {
   const platformHref = session ? '/dashboard' : '/platform'
@@ -93,14 +94,8 @@ export default function Landing({ session }) {
         <FeaturedMedia />
       </Suspense>
 
-      {/* FOOTER */}
-      <footer style={S.footer} className="px-5 md:px-[52px]">
-        <div style={S.footerText}>
-          <PulseDot />
-          <strong style={{ color: 'var(--tx)' }}>RADlab</strong>&nbsp;·&nbsp;University of Toronto Mississauga
-        </div>
-        <div style={S.footerText}>radlab.zone</div>
-      </footer>
+      {/* FOOTER — shared SiteFooter (extracted when platform pages gained it) */}
+      <SiteFooter session={session} />
 
     </div>
   )
@@ -146,12 +141,6 @@ function HubCard({ tag, title, desc, chips, cta, href, internal, newTab }) {
       <p style={{ ...S.cardCta, color: hovered ? '#f4a8cb' : 'var(--pk)' }}>{cta}</p>
     </El>
   )
-}
-
-// ─── PULSE DOT ───────────────────────────────────────────────────────────────
-
-function PulseDot() {
-  return <span style={S.pulse} />
 }
 
 // ─── STYLES ──────────────────────────────────────────────────────────────────
@@ -201,12 +190,4 @@ const S = {
   chip:      { fontFamily: MONO, fontSize: '0.75rem', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '5px 11px', borderRadius: 20, transition: 'background 0.28s, color 0.28s' },
   cardCta:   { marginTop: 8, fontFamily: MONO, fontSize: '0.8125rem', letterSpacing: '0.1em', textTransform: 'uppercase', transition: 'color 0.28s' },
 
-  footer:     { marginTop: 'auto', paddingTop: 26, paddingBottom: 26, borderTop: '1px solid var(--pkbs)', /* visible divider, matches the nav */ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, position: 'relative', zIndex: 1 },
-  footerText: { fontFamily: MONO, fontSize: '0.75rem', color: 'var(--gy)', letterSpacing: '0.06em', display: 'flex', alignItems: 'center' },
-
-  pulse: {
-    display: 'inline-block', width: 6, height: 6, background: 'var(--pk)',
-    borderRadius: '50%', marginRight: 7, verticalAlign: 'middle',
-    animation: 'hub-pulse 2.6s ease-in-out infinite',
-  },
 }

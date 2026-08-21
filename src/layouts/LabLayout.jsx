@@ -1,5 +1,13 @@
 import { NavLink, Outlet, Link } from 'react-router-dom'
 
+// Mirrors the Landing hub cards — same four destinations, same names.
+const FOOTER_LINKS = [
+  { to: '/platform', label: 'Come, See' },
+  { href: 'http://www.utmap.org', label: 'UTMaps' },
+  { to: '/lab/about', label: 'People & Research' },
+  { href: 'https://www.betterineverysense.com', label: 'Book' },
+]
+
 const NAV_LINKS = [
   { to: '/lab/about', label: 'About' },
   { to: '/lab/people', label: 'People' },
@@ -35,7 +43,13 @@ export default function LabLayout() {
         <Outlet />
       </main>
       <footer style={S.footer}>
-        © RADlab · University of Toronto Mississauga
+        <div style={S.footerLinks}>
+          {FOOTER_LINKS.map(({ to, href, label }) => to
+            ? <Link key={label} to={to} style={S.footerLink}>{label}</Link>
+            : <a key={label} href={href} target="_blank" rel="noopener noreferrer" style={S.footerLink}>{label}</a>
+          )}
+        </div>
+        <span style={{ whiteSpace: 'nowrap' }}>© RADlab · University of Toronto Mississauga</span>
       </footer>
     </div>
   )
@@ -73,9 +87,19 @@ const S = {
     color: '#f068a4',
     borderBottom: '2px solid #f068a4',
   },
+  footerLinks: {
+    display: 'flex', flexWrap: 'wrap',
+    gap: '10px 26px',
+  },
+  footerLink: {
+    fontFamily: '"Space Mono", "Courier New", monospace',
+    fontSize: '0.75rem', letterSpacing: '0.1em', textTransform: 'uppercase',
+    color: '#abadb0', textDecoration: 'none',
+  },
   footer: {
-    textAlign: 'center',
-    padding: '1.5rem',
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+    flexWrap: 'wrap', gap: '12px 20px',
+    padding: '1.25rem 2rem',
     fontSize: 13,
     color: '#abadb0',
     fontFamily: '"DM Sans", system-ui, sans-serif',

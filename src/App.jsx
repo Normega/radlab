@@ -67,6 +67,7 @@ const Mirror        = lazy(() => import('./games/Mirror/Mirror'))
 const BreathBeltDemo  = lazy(() => import('./games/BreathBelt/BreathBeltDemo'))
 const PacerOpenerDemo = lazy(() => import('./games/BreathBelt/PacerOpenerDemo'))
 const BreathLab        = lazy(() => import('./games/shared/breath/BreathLab'))
+const FreeBreath       = lazy(() => import('./games/FreeBreath/FreeBreath'))
 
 const VideoTest = lazy(() => import('./pages/dev/VideoTest'))
 const AudioTest = lazy(() => import('./pages/dev/AudioTest'))
@@ -589,6 +590,8 @@ export default function App() {
           <Route path="/dev/sidelong-preview" element={<SidelongPreview />} />
           {/* Breath-signal instrumentation for biofeedback game dev; ?sim=1 for beltless */}
           <Route path="/dev/breath-lab" element={<BreathLab />} />
+          {/* Free-breathing prototype — self-paced pacer + breath-shape graph; no auth, writes nothing */}
+          <Route path="/dev/free-breath" element={<FreeBreath />} />
 
           {/* Conference demo — no auth, writes nothing; ?sim=1 for beltless rehearsal */}
           <Route path="/demo/breath-belt" element={<BreathBeltDemo />} />

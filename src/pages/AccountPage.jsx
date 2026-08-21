@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import Nav from '../components/Nav'
+import SiteFooter from '../components/SiteFooter'
 import EyebrowLabel from '../components/ui/EyebrowLabel'
 import PrimaryCTA from '../components/ui/PrimaryCTA'
 import { useDisplayName } from '../hooks/useDisplayName'
@@ -143,7 +144,7 @@ export default function AccountPage({ session }) {
     : '—'
 
   return (
-    <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
+    <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Nav session={session} />
       <div style={S.wrap}>
 
@@ -233,6 +234,8 @@ export default function AccountPage({ session }) {
         <DeleteAccount email={user?.email} role={profile} />
 
       </div>
+
+      <SiteFooter session={session} />
     </div>
   )
 }

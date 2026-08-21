@@ -1,4 +1,5 @@
 import Nav from '../components/Nav'
+import SiteFooter from '../components/SiteFooter'
 import EyebrowLabel from '../components/ui/EyebrowLabel'
 import PrimaryCTA from '../components/ui/PrimaryCTA'
 import SecondaryCTA from '../components/ui/SecondaryCTA'
@@ -33,7 +34,7 @@ export default function PlatformPage({ session }) {
   const playTarget = session ? '/games' : '/signup'
 
   return (
-    <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
+    <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Nav session={session} />
 
       {/* HERO — centered, white band */}
@@ -133,16 +134,8 @@ export default function PlatformPage({ session }) {
         </div>
       </section>
 
-      {/* FOOTER */}
-      <div style={S.footer}>
-        <div style={{ ...S.inner, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <img src="/RADlab_Logo.svg" alt="RADlab" style={{ height: 40, width: 'auto', display: 'block' }} />
-            <span style={S.footerTxt}>RADlab · Regulatory &amp; Affective Dynamics Lab · University of Toronto</span>
-          </div>
-          <span style={S.footerTxt}>Built with Supabase &amp; Vercel</span>
-        </div>
-      </div>
+      {/* FOOTER — shared SiteFooter replaced the bespoke logo/"Built with" band 2026-08-21 */}
+      <SiteFooter session={session} />
     </div>
   )
 }
@@ -374,6 +367,4 @@ const S = {
   bannerTitle: { fontFamily: SERIF, fontWeight: 400, fontSize: 'clamp(24px, 3vw, 32px)', color: '#fff', margin: 0, lineHeight: 1.4 },
   bannerSub:   { fontSize: 14, fontFamily: SANS, color: '#fff', opacity: 0.9, margin: '0 0 14px' },
 
-  footer: { background: 'var(--bgp)', padding: '24px' },
-  footerTxt: { fontFamily: MONO, fontSize: 12, color: 'var(--tx2)', letterSpacing: 0.5 },
 }
