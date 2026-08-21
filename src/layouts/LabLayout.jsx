@@ -1,5 +1,12 @@
 import { NavLink, Outlet, Link } from 'react-router-dom'
 
+const FOOTER_LINKS = [
+  { to: '/platform',    label: 'Platform' },
+  { to: '/lab/about',   label: 'Lab' },
+  { to: '/lab/media',   label: 'Media' },
+  { to: '/lab/contact', label: 'Contact' },
+]
+
 const NAV_LINKS = [
   { to: '/lab/about', label: 'About' },
   { to: '/lab/people', label: 'People' },
@@ -35,6 +42,11 @@ export default function LabLayout() {
         <Outlet />
       </main>
       <footer style={S.footer}>
+        <div style={S.footerLinks}>
+          {FOOTER_LINKS.map(({ to, label }) => (
+            <Link key={to} to={to} style={S.footerLink}>{label}</Link>
+          ))}
+        </div>
         © RADlab · University of Toronto Mississauga
       </footer>
     </div>
@@ -72,6 +84,15 @@ const S = {
   linkActive: {
     color: '#f068a4',
     borderBottom: '2px solid #f068a4',
+  },
+  footerLinks: {
+    display: 'flex', justifyContent: 'center', flexWrap: 'wrap',
+    gap: '10px 26px', marginBottom: 12,
+  },
+  footerLink: {
+    fontFamily: '"Space Mono", "Courier New", monospace',
+    fontSize: '0.75rem', letterSpacing: '0.1em', textTransform: 'uppercase',
+    color: '#abadb0', textDecoration: 'none',
   },
   footer: {
     textAlign: 'center',

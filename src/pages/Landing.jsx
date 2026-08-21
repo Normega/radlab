@@ -93,13 +93,19 @@ export default function Landing({ session }) {
         <FeaturedMedia />
       </Suspense>
 
-      {/* FOOTER */}
+      {/* FOOTER — links row first, so the bottom of the page offers somewhere
+          to go; identity row below it */}
       <footer style={S.footer} className="px-5 md:px-[52px]">
-        <div style={S.footerText}>
-          <PulseDot />
-          <strong style={{ color: 'var(--tx)' }}>RADlab</strong>&nbsp;·&nbsp;University of Toronto Mississauga
+        <div style={S.footerLinks}>
+          {FOOTER_LINKS.map(l => <FooterLink key={l.to} {...l} />)}
         </div>
-        <div style={S.footerText}>radlab.zone</div>
+        <div style={S.footerRow}>
+          <div style={S.footerText}>
+            <PulseDot />
+            <strong style={{ color: 'var(--tx)' }}>RADlab</strong>&nbsp;·&nbsp;University of Toronto Mississauga
+          </div>
+          <div style={S.footerText}>radlab.zone</div>
+        </div>
       </footer>
 
     </div>
@@ -145,6 +151,27 @@ function HubCard({ tag, title, desc, chips, cta, href, internal, newTab }) {
       )}
       <p style={{ ...S.cardCta, color: hovered ? '#f4a8cb' : 'var(--pk)' }}>{cta}</p>
     </El>
+  )
+}
+
+// ─── FOOTER LINKS ────────────────────────────────────────────────────────────
+
+const FOOTER_LINKS = [
+  { to: '/platform',    label: 'Platform' },
+  { to: '/lab/about',   label: 'Lab' },
+  { to: '/lab/media',   label: 'Media' },
+  { to: '/lab/contact', label: 'Contact' },
+]
+
+function FooterLink({ to, label }) {
+  const [hov, setHov] = useState(false)
+  return (
+    <Link to={to}
+      style={{ ...S.footerLink, color: hov ? 'var(--pk)' : 'var(--gy)' }}
+      onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+    >
+      {label}
+    </Link>
   )
 }
 
@@ -201,7 +228,10 @@ const S = {
   chip:      { fontFamily: MONO, fontSize: '0.75rem', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '5px 11px', borderRadius: 20, transition: 'background 0.28s, color 0.28s' },
   cardCta:   { marginTop: 8, fontFamily: MONO, fontSize: '0.8125rem', letterSpacing: '0.1em', textTransform: 'uppercase', transition: 'color 0.28s' },
 
-  footer:     { marginTop: 'auto', paddingTop: 26, paddingBottom: 26, borderTop: '1px solid var(--pkbs)', /* visible divider, matches the nav */ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, position: 'relative', zIndex: 1 },
+  footer:     { marginTop: 'auto', paddingTop: 22, paddingBottom: 24, borderTop: '1px solid var(--pkbs)', /* visible divider, matches the nav */ display: 'flex', flexDirection: 'column', gap: 14, position: 'relative', zIndex: 1 },
+  footerRow:  { display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 },
+  footerLinks: { display: 'flex', flexWrap: 'wrap', gap: '10px 26px' },
+  footerLink: { fontFamily: MONO, fontSize: '0.75rem', letterSpacing: '0.1em', textTransform: 'uppercase', textDecoration: 'none', transition: 'color 0.15s ease' },
   footerText: { fontFamily: MONO, fontSize: '0.75rem', color: 'var(--gy)', letterSpacing: '0.06em', display: 'flex', alignItems: 'center' },
 
   pulse: {
