@@ -66,19 +66,25 @@ export default function Nav({ session }) {
 
   const isActive = (path) => location.pathname === path
 
+  // Light-on-dark pill colors for the gray band — ButtonNav/SecondaryCTA are
+  // shared primitives with light-ground defaults, so overrides ride the style prop.
+  const pill      = (active) => ({ color: active ? '#fff' : 'rgba(255,255,255,0.85)' })
+  const pillInert = { color: 'rgba(255,255,255,0.45)' }
+  const loginCta  = { border: '1px solid rgba(255,255,255,0.6)', color: '#fff' }
+
   // The three always-present nav items (consistent-header rule).
   const navItems = session ? (
     <>
-      <ButtonNav to="/dashboard" active={isActive('/dashboard')} onClick={() => setOpen(false)}>Dashboard</ButtonNav>
-      <ButtonNav to="/games"     active={isActive('/games')}     onClick={() => setOpen(false)}>Games</ButtonNav>
-      <ButtonNav to="/platform"  active={isActive('/platform')}  onClick={() => setOpen(false)}>About</ButtonNav>
-      {isAdmin && <ButtonNav to="/admin" active={location.pathname.startsWith('/admin')}>Admin</ButtonNav>}
+      <ButtonNav to="/dashboard" active={isActive('/dashboard')} style={pill(isActive('/dashboard'))} onClick={() => setOpen(false)}>Dashboard</ButtonNav>
+      <ButtonNav to="/games"     active={isActive('/games')}     style={pill(isActive('/games'))}     onClick={() => setOpen(false)}>Games</ButtonNav>
+      <ButtonNav to="/platform"  active={isActive('/platform')}  style={pill(isActive('/platform'))}  onClick={() => setOpen(false)}>About</ButtonNav>
+      {isAdmin && <ButtonNav to="/admin" active={location.pathname.startsWith('/admin')} style={pill(location.pathname.startsWith('/admin'))}>Admin</ButtonNav>}
     </>
   ) : (
     <>
-      <ButtonNav inert>Dashboard</ButtonNav>
-      <ButtonNav to="/games" active={isActive('/games')} onClick={() => setOpen(false)}>Games</ButtonNav>
-      <ButtonNav to="/platform" active={isActive('/platform')} onClick={() => setOpen(false)}>About</ButtonNav>
+      <ButtonNav inert style={pillInert}>Dashboard</ButtonNav>
+      <ButtonNav to="/games" active={isActive('/games')} style={pill(isActive('/games'))} onClick={() => setOpen(false)}>Games</ButtonNav>
+      <ButtonNav to="/platform" active={isActive('/platform')} style={pill(isActive('/platform'))} onClick={() => setOpen(false)}>About</ButtonNav>
     </>
   )
 
@@ -105,7 +111,7 @@ export default function Nav({ session }) {
           <div className="h-8 md:h-10" style={{ display: 'flex', alignItems: 'center' }}>
             <img src="/RADlab_Logo.svg" style={{ height: '100%', display: 'block' }} alt="RADlab logo" />
           </div>
-          <span style={S.wordmark}>RAD<b style={{ color: 'var(--pk)', fontWeight: 400 }}>lab</b></span>
+          <span style={S.wordmark}>RAD<b style={{ color: '#f4a8cb', fontWeight: 400 }}>lab</b></span>
         </Link>
 
         {/* Desktop: full pill nav */}
@@ -113,7 +119,7 @@ export default function Nav({ session }) {
           {navItems}
           {session ? avatarMenu : (
             <>
-              <SecondaryCTA to="/login">Log in</SecondaryCTA>
+              <SecondaryCTA to="/login" style={loginCta}>Log in</SecondaryCTA>
               <PrimaryCTA to="/signup">Join free</PrimaryCTA>
             </>
           )}
@@ -149,7 +155,7 @@ export default function Nav({ session }) {
         <div style={S.drawer} className="md:hidden">
           {navItems}
           {!session && (
-            <SecondaryCTA to="/login" onClick={() => setOpen(false)} style={{ alignSelf: 'stretch' }}>Log in</SecondaryCTA>
+            <SecondaryCTA to="/login" onClick={() => setOpen(false)} style={{ ...loginCta, alignSelf: 'stretch' }}>Log in</SecondaryCTA>
           )}
         </div>
       )}
@@ -254,8 +260,8 @@ function AccountMenu({ onSignOut, trigger }) {
 
 const S = {
   nav: {
-    background: 'rgba(255,255,255,0.97)', /* white band — matches Landing + LabLayout */
-    borderBottom: '1px solid var(--bd)',
+    background: 'rgba(107,108,112,0.97)', /* gray band — #6B6C70 (--tx2), matches Landing + LabLayout */
+    borderBottom: '1px solid rgba(255,255,255,0.14)',
     position: 'sticky', top: 0, zIndex: 10,
     backdropFilter: 'blur(8px)',
   },
@@ -271,7 +277,7 @@ const S = {
     fontFamily: '"DM Serif Display", Georgia, serif',
     fontSize: 'clamp(22px, 5vw, 36px)',
     letterSpacing: -0.5,
-    color: 'var(--tx)',
+    color: '#fff', /* gray band: light-on-dark */
     lineHeight: 1,
   },
   links: { alignItems: 'center', gap: 10 },
@@ -279,7 +285,7 @@ const S = {
     width: 44, height: 44, padding: 0,
     display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
     background: 'transparent', border: 'none', borderRadius: 24,
-    color: 'var(--tx2)', cursor: 'pointer',
+    color: 'rgba(255,255,255,0.85)', cursor: 'pointer',
   },
   drawer: {
     display: 'flex', flexDirection: 'column', alignItems: 'stretch',

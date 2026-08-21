@@ -17,7 +17,7 @@ export default function LabLayout() {
           <div style={{ height: 32, display: 'flex', alignItems: 'center' }}>
             <img src="/RADlab_Logo.svg" style={{ height: '100%', display: 'block' }} alt="RADlab logo" />
           </div>
-          <span style={S.wordmark}>RAD<b style={{ color: '#f068a4', fontWeight: 400 }}>lab</b></span>
+          <span style={S.wordmark}>RAD<b style={{ color: '#f4a8cb', fontWeight: 400 }}>lab</b></span>
         </Link>
         <div style={S.links}>
           {NAV_LINKS.map(({ to, label }) => (
@@ -46,9 +46,9 @@ const S = {
     position: 'sticky',
     top: 0,
     zIndex: 100,
-    background: 'rgba(255,255,255,0.97)', /* white band — matches Nav + Landing */
+    background: 'rgba(107,108,112,0.97)', /* gray band — #6B6C70 (--tx2), matches Nav + Landing */
     backdropFilter: 'blur(8px)',
-    borderBottom: '1px solid rgba(180,100,140,0.13)',
+    borderBottom: '1px solid rgba(255,255,255,0.14)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -57,12 +57,12 @@ const S = {
     gap: 16,
   },
   brand: { display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', flexShrink: 0 },
-  wordmark: { fontFamily: '"DM Serif Display", Georgia, serif', fontSize: 22, letterSpacing: -0.5, color: '#1c1c1e', lineHeight: 1 },
+  wordmark: { fontFamily: '"DM Serif Display", Georgia, serif', fontSize: 22, letterSpacing: -0.5, color: '#fff', lineHeight: 1 },
   links: { display: 'flex', gap: '1.5rem', alignItems: 'center', flexWrap: 'wrap' },
   link: {
     fontFamily: '"DM Sans", system-ui, sans-serif',
     fontSize: 14,
-    color: '#6b6c70',
+    color: 'rgba(255,255,255,0.85)',
     textDecoration: 'none',
     paddingBottom: 2,
     borderBottom: '2px solid transparent',
@@ -70,8 +70,8 @@ const S = {
     whiteSpace: 'nowrap',
   },
   linkActive: {
-    color: '#f068a4',
-    borderBottom: '2px solid #f068a4',
+    color: '#f4a8cb',
+    borderBottom: '2px solid #f4a8cb',
   },
   footer: {
     textAlign: 'center',
