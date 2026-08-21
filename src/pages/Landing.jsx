@@ -4,18 +4,11 @@ import { Link } from 'react-router-dom'
 // Lazy so media.json rides in its own chunk rather than the entry bundle every
 // visitor downloads — Landing itself stays a static import (see CLAUDE.md).
 const FeaturedMedia = lazy(() => import('../components/FeaturedMedia'))
+import SiteFooter from '../components/SiteFooter'
 
 export default function Landing({ session }) {
   const platformHref = session ? '/dashboard' : '/platform'
   const platformCta  = session ? 'Go to dashboard →' : 'Enter the platform →'
-
-  // Footer mirrors the hub cards — same four destinations, same names.
-  const footerLinks = [
-    { to: platformHref, label: 'Come, See' },
-    { href: 'http://www.utmap.org', label: 'UTMaps' },
-    { to: '/lab/about', label: 'People & Research' },
-    { href: 'https://www.betterineverysense.com', label: 'Book' },
-  ]
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
@@ -101,18 +94,8 @@ export default function Landing({ session }) {
         <FeaturedMedia />
       </Suspense>
 
-      {/* FOOTER — one line: the hub cards' four destinations as links (same
-          names, same targets — Come, See resolves per session like the card),
-          identity right; wraps on narrow screens */}
-      <footer style={S.footer} className="px-5 md:px-[52px]">
-        <div style={S.footerLinks}>
-          {footerLinks.map(l => <FooterLink key={l.label} {...l} />)}
-        </div>
-        <div style={S.footerText}>
-          <PulseDot />
-          <strong style={{ color: 'var(--tx)' }}>RADlab</strong>&nbsp;·&nbsp;University of Toronto Mississauga
-        </div>
-      </footer>
+      {/* FOOTER — shared SiteFooter (extracted when platform pages gained it) */}
+      <SiteFooter session={session} />
 
     </div>
   )
@@ -158,23 +141,6 @@ function HubCard({ tag, title, desc, chips, cta, href, internal, newTab }) {
       <p style={{ ...S.cardCta, color: hovered ? '#f4a8cb' : 'var(--pk)' }}>{cta}</p>
     </El>
   )
-}
-
-// ─── FOOTER LINKS ────────────────────────────────────────────────────────────
-
-function FooterLink({ to, href, label }) {
-  const [hov, setHov] = useState(false)
-  const style = { ...S.footerLink, color: hov ? 'var(--pk)' : 'var(--gy)' }
-  const hover = { onMouseEnter: () => setHov(true), onMouseLeave: () => setHov(false) }
-  return to
-    ? <Link to={to} style={style} {...hover}>{label}</Link>
-    : <a href={href} target="_blank" rel="noopener noreferrer" style={style} {...hover}>{label}</a>
-}
-
-// ─── PULSE DOT ───────────────────────────────────────────────────────────────
-
-function PulseDot() {
-  return <span style={S.pulse} />
 }
 
 // ─── STYLES ──────────────────────────────────────────────────────────────────
@@ -224,14 +190,4 @@ const S = {
   chip:      { fontFamily: MONO, fontSize: '0.75rem', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '5px 11px', borderRadius: 20, transition: 'background 0.28s, color 0.28s' },
   cardCta:   { marginTop: 8, fontFamily: MONO, fontSize: '0.8125rem', letterSpacing: '0.1em', textTransform: 'uppercase', transition: 'color 0.28s' },
 
-  footer:     { marginTop: 'auto', paddingTop: 24, paddingBottom: 24, borderTop: '1px solid var(--pkbs)', /* visible divider, matches the nav */ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px 20px', position: 'relative', zIndex: 1 },
-  footerLinks: { display: 'flex', flexWrap: 'wrap', gap: '10px 26px' },
-  footerLink: { fontFamily: MONO, fontSize: '0.75rem', letterSpacing: '0.1em', textTransform: 'uppercase', textDecoration: 'none', transition: 'color 0.15s ease' },
-  footerText: { fontFamily: MONO, fontSize: '0.75rem', color: 'var(--gy)', letterSpacing: '0.06em', display: 'flex', alignItems: 'center' },
-
-  pulse: {
-    display: 'inline-block', width: 6, height: 6, background: 'var(--pk)',
-    borderRadius: '50%', marginRight: 7, verticalAlign: 'middle',
-    animation: 'hub-pulse 2.6s ease-in-out infinite',
-  },
 }

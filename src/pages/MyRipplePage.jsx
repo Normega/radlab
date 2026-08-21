@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Nav from '../components/Nav'
+import SiteFooter from '../components/SiteFooter'
 import EyebrowLabel from '../components/ui/EyebrowLabel'
 import PrimaryCTA from '../components/ui/PrimaryCTA'
 import RippleAvatar from '../ripple/RippleAvatar'
@@ -94,7 +95,7 @@ export default function MyRipplePage({ session }) {
   const eyeColor  = avatarData?.eye_color  || '#4A90D9'
 
   return (
-    <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
+    <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Nav session={session} />
       <div style={S.wrap}>
 
@@ -208,6 +209,8 @@ export default function MyRipplePage({ session }) {
         </div>
 
       </div>
+
+      <SiteFooter session={session} />
     </div>
   )
 }
