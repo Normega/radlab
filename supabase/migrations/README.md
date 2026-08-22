@@ -651,3 +651,4 @@ does not surface `RAISE NOTICE`:
 
 Probe table dropped and both test share rows deleted afterwards; the seeded session remains, shared
 with nobody.
+| `20260822_avatar_png_bucket.sql` | live (applied 2026-08-22 by Claude via MCP `apply_migration`, name `avatar_png_bucket`, so there is a `schema_migrations` row). Creates the public `avatar-png` storage bucket plus storage.objects policies (own-file write for authenticated users at `{uid}.png`, any-file write for lab admins — the backfill page) and a lab-admin SELECT policy on `public.avatars`, which was own-rows-only. Groundwork for showing the Ripple avatar in reminder emails: client rasterizes the avatar SVG to PNG on save and uploads here; `ripple_reminder` will reference the public URL. |
