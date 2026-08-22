@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { CONSENT_VERSION, TOS_VERSION, CONSENT_DOC, TOS_DOC } from './consentDocs'
@@ -10,6 +10,7 @@ import FillableBox from '../components/ui/FillableBox'
 import Checkbox from '../components/ui/Checkbox'
 import OnboardingNavigation from '../components/ui/OnboardingNavigation'
 import PrimaryCTA from '../components/ui/PrimaryCTA'
+import { uploadAvatarPng } from '../lib/avatarPng'
 
 // ── WelcomeFlow ───────────────────────────────────────────────────────────────
 // Route: /welcome — public-tier onboarding, rebuilt for Onboarding Redesign v1
@@ -90,6 +91,8 @@ export default function WelcomeFlow({ session, onComplete, devInitialStep }) {
   const [skin,       setSkin]       = useState(SKIN_COLORS[1])  // Peach default
   const [eye,        setEye]        = useState(EYE_COLORS[3])   // Sky Blue default
   const [rippleName, setRippleName] = useState(() => pickRandom(''))
+  // Raster target for the email PNG (see persistRipple) — always mounted.
+  const pngRasterRef = useRef(null)
 
   // Habit step state (reminder prefs — Norm 2026-07-17: users start OPTED IN
   // to daily morning emails; this screen lets them opt out or change frequency/
@@ -184,6 +187,10 @@ export default function WelcomeFlow({ session, onComplete, devInitialStep }) {
       { onConflict: 'user_id' }
     )
     if (avatarErr) return avatarErr
+
+    // Raster for reminder emails — non-fatal; the hidden copy is aura-free.
+    uploadAvatarPng(pngRasterRef.current?.querySelector('svg'), userId)
+      .then(r => { if (!r.ok) console.warn('WelcomeFlow: avatar png upload failed', r.error) })
 
     const { error: nameErr } = await supabase.from('ripples')
       .upsert({ user_id: userId, name: rippleName.trim() }, { onConflict: 'user_id' })
@@ -322,6 +329,10 @@ export default function WelcomeFlow({ session, onComplete, devInitialStep }) {
   return (
     <div style={S.page}>
       <Nav session={session} />
+      {/* Off-screen avatar copy, rasterized to PNG on Ripple save for reminder emails */}
+      <div ref={pngRasterRef} aria-hidden="true" style={{ position: 'absolute', left: -9999, top: 0, width: 224, height: 224, overflow: 'hidden' }}>
+        <RippleAvatar skinColor={skin.hex} eyeColor={eye.hex} species="human" size={224} />
+      </div>
       <div style={S.wrap}>
 
         {step === STEPS.LOADING && <p style={S.muted}>Loading…</p>}

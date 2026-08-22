@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react'
+﻿import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
@@ -10,6 +10,7 @@ import { HAIR_STYLES, HAIR_COLORS } from '../../assets/hair/hairStyles'
 import { getUnlockedSpecies } from '../../lib/avatar-unlocks'
 import SyncAura from '../SyncAura'
 import { AURA_COLORS } from '../../lib/auraUtils'
+import { uploadAvatarPng } from '../../lib/avatarPng'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -270,6 +271,11 @@ export default function AvatarEditor({ session, setHasAvatar }) {
     }
   }
 
+  // Off-screen aura-free copy of the avatar, rasterized to PNG on save for
+  // reminder emails (see lib/avatarPng.js). Serialization happens synchronously
+  // inside uploadAvatarPng, so the post-save navigation can't race it.
+  const pngRef = useRef(null)
+
   async function handleSave() {
     if (!userId || saving) return
     setSaving(true)
@@ -281,6 +287,8 @@ export default function AvatarEditor({ session, setHasAvatar }) {
     setSaving(false)
     if (error) { console.error('AvatarEditor: save failed', error); return }
     setSaved(true)
+    uploadAvatarPng(pngRef.current?.querySelector('svg'), userId)
+      .then(r => { if (!r.ok) console.warn('AvatarEditor: avatar png upload failed', r.error) })
     queryClient.invalidateQueries({ queryKey: ['avatar', userId] })
     if (setHasAvatar) setHasAvatar(true)
     // → My Ripple, not /profile: since the 2026-07-30 IA rework the Ripple's
@@ -314,6 +322,9 @@ export default function AvatarEditor({ session, setHasAvatar }) {
 
           {/* Left: avatar preview + unlock panel */}
           <div style={S.previewCol}>
+            <div ref={pngRef} aria-hidden="true" style={{ position: 'absolute', left: -9999, top: 0, width: 224, height: 224, overflow: 'hidden' }}>
+              <RippleAvatar skinColor={skin.hex} eyeColor={eye.hex} species={species} hairStyle={hairStyle} hairColor={hairColor} size={224} />
+            </div>
             <div style={S.previewBox}>
               <div key={bump} style={{ animation: 'popIn 0.32s ease both' }}>
                 {auraFeatureUnlocked && auraEnabled ? (
