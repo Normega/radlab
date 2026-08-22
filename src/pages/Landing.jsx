@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom'
 // visitor downloads — Landing itself stays a static import (see CLAUDE.md).
 const FeaturedMedia = lazy(() => import('../components/FeaturedMedia'))
 import SiteFooter from '../components/SiteFooter'
+import PrimaryCTA from '../components/ui/PrimaryCTA'
 
 export default function Landing({ session }) {
   const platformHref = session ? '/dashboard' : '/platform'
@@ -45,6 +46,10 @@ export default function Landing({ session }) {
         <p style={S.sub} className="mx-auto md:mx-0">
           We study how people sense, regulate, and adapt — through rigorous experiments designed to feel like play.
         </p>
+        {/* Primary path — same session-aware target as the Come, See card */}
+        <div style={{ marginTop: 26 }}>
+          <PrimaryCTA to={platformHref} style={{ padding: '12px 26px' }}>{platformCta}</PrimaryCTA>
+        </div>
       </section>
 
       {/* HUB CARDS — 1 col on mobile, 2 from md up */}
