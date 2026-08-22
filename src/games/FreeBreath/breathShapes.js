@@ -12,16 +12,62 @@
 //   exh  — total time the exhale control was held
 //   rest — un-held time after the exhale, until the next inhale (or Finish)
 //
-// Staccato input (release + re-press of the same control) sums into the same
-// phase; the gaps land in the adjacent pause. A breath closes when the next
-// inhale begins, or at Finish. An inhale never followed by an exhale is not a
-// breath and is dropped.
+// The raw log is normalized before parsing (Norm, 2026-08-22):
+//   - A raise shorter than MERGE_GAP_MS between two holds of the same phase is
+//     an accidental key-up: the gap and both holds merge into one hold, so its
+//     time counts as breathing, not as pause.
+//   - An in/out hold shorter than MIN_HOLD_MS is a slip, not a phase: it
+//     becomes pause, so rapid in/out flicker never mints a breath. (The face
+//     still answers every press — animation reads the live control state, not
+//     this parser.)
+// Longer gaps between same-phase holds stay real pauses and land in the
+// adjacent hold/rest. A breath closes when the next inhale begins, or at
+// Finish. An inhale never followed by an exhale is not a breath and is
+// dropped.
+
+export const MERGE_GAP_MS = 300
+export const MIN_HOLD_MS  = 300
+
+// One pass, two jobs: fuse adjacent same-phase segments, and absorb a
+// sub-MERGE_GAP_MS pause sitting between two holds of the same phase.
+function coalesce(segments) {
+  const out = []
+  for (const s of segments) {
+    const prev  = out[out.length - 1]
+    const prev2 = out[out.length - 2]
+    if (prev && prev.phase === s.phase) {
+      prev.t1 = s.t1
+      continue
+    }
+    if (s.phase !== 'pause' && prev && prev2 &&
+        prev.phase === 'pause' && prev.t1 - prev.t0 < MERGE_GAP_MS &&
+        prev2.phase === s.phase) {
+      out.pop()
+      prev2.t1 = s.t1
+      continue
+    }
+    out.push({ ...s })
+  }
+  return out
+}
+
+function demoteShortHolds(segments) {
+  return segments.map(s =>
+    s.phase !== 'pause' && s.t1 - s.t0 < MIN_HOLD_MS ? { ...s, phase: 'pause' } : s)
+}
+
+// coalesce → demote → coalesce: the first pass rescues rapid same-key tapping
+// into one long hold before the length test; the last stitches holds back
+// together around a demoted slip (out · blip-in · out becomes one exhale).
+export function normalizeSegments(segments) {
+  return coalesce(demoteShortHolds(coalesce(segments)))
+}
 
 export function parseBreaths(segments) {
   const breaths = []
   let cur = null
 
-  for (const s of segments) {
+  for (const s of normalizeSegments(segments)) {
     const dur = (s.t1 - s.t0) / 1000
     if (dur <= 0) continue
 
