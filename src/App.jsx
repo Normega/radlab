@@ -3,6 +3,7 @@ import { lazy, Suspense, useEffect, useState } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { supabase, savePondWatchSession, saveEbbFlowSession } from './lib/supabase'
 import Nav              from './components/Nav'
+import RouteTitle       from './components/RouteTitle'
 import AuraFilterDef     from './components/AuraFilterDef'
 import AdminRoute        from './components/AdminRoute'
 import TalksRoute        from './components/TalksRoute'
@@ -353,6 +354,7 @@ export default function App() {
       <AuraFilterDef />
       <BrowserRouter>
         <ScrollToTop />
+        <RouteTitle />
         <Suspense fallback={<RouteFallback />}>
         <Routes>
           <Route path="/"         element={<Landing session={session} />} />
