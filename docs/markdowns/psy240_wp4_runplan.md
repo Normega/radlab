@@ -4385,6 +4385,58 @@ staff edits with their notes back to 2026-08-02.
 Partial publishing is not an option: with one page live, all of its outbound links render broken to a
 student, because `wiki_links` is member-readable while unpublished targets are not.
 
+### 38.6 The accuracy audit — 116 pages, 166 findings (2026-08-23)
+
+Norm's ask: run a single accuracy reviewer over the reading queue; correct what is clearly wrong and
+fixable, delete what is wrong and peripheral, flag what is wrong and central; and keep a record of
+pass-or-revise for every page. Ten subagents, one concern, bands 1–3 (the pre-publish set), batched
+by character volume rather than page count.
+
+**Result: 32 pass · 16 revised · 68 flagged · 166 findings** (40 corrected, 14 removed, 112 flagged).
+**52 mechanical fixes applied across 45 pages** the same day; two did not apply (one already fixed by
+hand, one whose anchor text had moved).
+
+**The three dispositions, and the limit that shaped them.** A reviewer that cannot read the source
+PDFs can only catch what is checkable internally, so "correct it" is narrower than it sounds: the
+`55.6% of n=75` case is unresolvable *because* you cannot tell whether the n or the percentage is
+wrong. Corrections were therefore confined to internal contradictions where the page settles it,
+arithmetic that does not sum, and imperative-voice clinical instruction rewritten into reporting
+register. Everything source-dependent was flagged. The applied edits went through `edit_page` with
+`p_verified` stating plainly that the check was against **the page's own figures and not the external
+source** — the tripwire doing its job rather than being talked past.
+
+**Four findings that justify the exercise:**
+
+1. **Clinical instruction on a page the red set never saw.** `substance-intoxication` carries bare
+   dosing directives (naloxone to 15 mg, dextrose 50–100 mL of 50%, IM haloperidol) and an antidote
+   table pairing **flumazenil with solvents/inhalants**, where it has no mechanism at all. The page
+   has *zero* red gaps, because §29 triaged what pages **lack**, not what they **contain**. That is a
+   standing blind spot in gap-derived triage, and only a content audit could close it.
+2. **A reversed mechanism propagated across two pages** — alcohol "blocking GABA's inhibitory
+   signalling" on `alcohol-use-disorder` and `substance-related-and-addictive-disorders`, each then
+   attributing "the familiar relaxing effect" to it, which blocking inhibition cannot produce. Stated
+   correctly on `sedative-hypnotic-anxiolytic-related-disorders` three clicks away. Both corrected.
+3. **`sources:` frontmatter is systematically incomplete, and it is a defect, not a convention** —
+   `erectile-disorder` and `diagnosis-and-classification` declare properly, which is the positive
+   control. Elsewhere: verbatim quotation from undeclared works, and three pages whose
+   section-carrying source *postdates* the only one listed. Part of the cause is **malformed YAML**
+   (a closed inline array followed by stray `  - ` lines), which silently voids entries — that is why
+   `social-anxiety-disorder` had Barlow 2020 in its frontmatter and not in its source list.
+4. **The failure mode is the confident summary sentence, not the data.** Tables reconcile; the
+   sentence generalising from them does not — "10:1 female to male" over figures showing 3–4:1, an
+   NNT of "11 to 56" from a table implying 12–46, two Cluster A pages each claiming the widest
+   prevalence spread. The ECT line *"every configuration that spares memory costs either efficacy or
+   a higher stimulus dose"* is the same error, written by Claude, contradicted by its own table's
+   bifrontal row. **The sentence a student would underline is the sentence most likely to be wrong.**
+
+**Method notes worth keeping.** Two agents independently raised a frontmatter-clobber alarm about
+`update` deltas that turned out to be a false positive — `mergeDraft()` strips the addendum's YAML —
+which is the panel reasoning correctly from evidence it could not check, and the reason a human
+verifies before acting. One agent reported a full table but wrote only 4 of its 12 rows, so **the
+record, not the report, is the source of truth**; the gap was found by querying for pages with no
+audit row and re-run. `audit_summary()` marks an audit **stale** once the page changes, so the 46
+pages edited in the fix pass now correctly report their audits as overtaken.
+
 ### 38.5 Student error detection (decided and built 2026-08-20)
 
 Norm's question — should students be able to report chapter-specific errors or contradictory
