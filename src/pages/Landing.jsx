@@ -29,13 +29,13 @@ export default function Landing({ session }) {
         </a>
       </nav>
 
-      {/* HERO — centers on mobile, left-aligned from md up */}
-      <section style={S.hero} className="px-5 md:px-[52px] text-center md:text-left">
+      {/* HERO — centered lockup over the card grid, mirroring the og card */}
+      <section style={S.hero} className="px-5 md:px-[52px] text-center">
         <p className="hidden md:block" style={S.eyebrow}>
           <a href="https://www.utoronto.ca" target="_blank" rel="noopener noreferrer" style={S.eyebrowLink}>University of Toronto</a>
           &nbsp;·&nbsp; Department of Psychology
         </p>
-        <div className="flex flex-col items-center md:flex-row md:items-center" style={{ gap: 12, marginBottom: 22 }}>
+        <div className="flex flex-col items-center md:flex-row md:items-center md:justify-center" style={{ gap: 12, marginBottom: 22 }}>
           {/* Explicit style height — Tailwind preflight overrides the height attribute on imgs */}
           <img src="/RADlab_Logo.svg" alt="" aria-hidden="true" className="h-16 md:h-20" style={S.heroLogo} />
           <h1 style={S.h1}>
@@ -43,7 +43,7 @@ export default function Landing({ session }) {
             <em style={{ fontStyle: 'italic', color: 'var(--pk)' }}>Dynamics</em>
           </h1>
         </div>
-        <p style={S.sub} className="mx-auto md:mx-0">
+        <p style={S.sub} className="mx-auto">
           We study how people sense, regulate, and adapt — through rigorous experiments designed to feel like play.
         </p>
         {/* Primary path — same session-aware target as the Come, See card */}
@@ -172,12 +172,12 @@ const S = {
 
   // Horizontal padding lives in responsive classNames (px-5 md:px-[52px]) —
   // vertical padding must stay longhand or the inline shorthand zeroes the class px
-  hero:      { paddingTop: 64, paddingBottom: 40, maxWidth: 860, position: 'relative', zIndex: 1 },
+  hero:      { paddingTop: 60, paddingBottom: 40, maxWidth: 1080, position: 'relative', zIndex: 1 }, /* matches the card grid width so the lockup centers over the cards */
   eyebrow:   { fontFamily: MONO, fontSize: '0.8125rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--pk)', marginBottom: 20 },
   eyebrowLink: { color: 'var(--pk)', textDecoration: 'none', borderBottom: '1px solid rgba(240,104,164,0.35)' },
   heroBrand: {},
   heroLogo:  { flexShrink: 0, display: 'block', width: 'auto' },
-  h1:        { fontFamily: SERIF, fontSize: 'clamp(2.1rem, 8.5vw, 4rem)', lineHeight: 1.08, color: 'var(--tx)', margin: 0 },
+  h1:        { fontFamily: SERIF, fontSize: 'clamp(2.1rem, 8.5vw, 4rem)', lineHeight: 1.08, color: 'var(--tx)', margin: 0, textAlign: 'left' }, /* two lines stay a ragged-left lockup inside the centered row */
   sub:       { fontSize: '1rem', color: 'var(--gy)', lineHeight: 1.7, maxWidth: 500, fontWeight: 400 },
 
   hubSection: { paddingTop: 40, paddingBottom: 90, position: 'relative', zIndex: 1 },
