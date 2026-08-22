@@ -44,7 +44,7 @@ export default function ReadingQueue() {
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '32px 20px 80px' }}>
       <div style={{ maxWidth: 880, margin: '0 auto' }}>
-        <p style={S.eyebrow}>Field Guide · staff</p>
+        <p style={S.eyebrow}><Link to="/academic/fieldguide" style={S.eyebrowLink}>Field Guide</Link> · staff</p>
         <h1 style={S.title}>The reading queue</h1>
         <p style={S.sub}>
           Read in this order, stamp on the page (the bar under the title), and the stamp bar offers
@@ -108,6 +108,7 @@ export default function ReadingQueue() {
 
 const S = {
   eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)' },
+  eyebrowLink: { color: 'inherit', textDecoration: 'none' },
   title: { fontFamily: SERIF, fontSize: 28, color: 'var(--tx)', margin: '2px 0 8px' },
   sub: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.6, maxWidth: '68ch' },
   dim: { color: 'var(--tx2)', fontWeight: 400, fontSize: 13 },

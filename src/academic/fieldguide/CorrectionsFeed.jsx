@@ -28,7 +28,7 @@ export default function CorrectionsFeed() {
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '32px 20px 80px' }}>
       <div style={{ maxWidth: 940, margin: '0 auto' }}>
-        <p style={S.eyebrow}>Field Guide</p>
+        <p style={S.eyebrow}><Link to="/academic/fieldguide" style={S.eyebrowLink}>Field Guide</Link></p>
         <h1 style={S.title}>Corrections</h1>
         <p style={S.sub}>
           Every staff edit, newest first: who, what page, which version, and the required note saying
@@ -61,6 +61,7 @@ export default function CorrectionsFeed() {
 
 const S = {
   eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)' },
+  eyebrowLink: { color: 'inherit', textDecoration: 'none' },
   title: { fontFamily: SERIF, fontSize: 28, color: 'var(--tx)', margin: '2px 0 4px' },
   sub: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.6, maxWidth: 680 },
   notice: { color: 'var(--pk)', marginTop: 14, fontFamily: MONO, fontSize: 13 },

@@ -86,7 +86,7 @@ export default function SubmissionsQueue() {
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '32px 20px 80px' }}>
       <div style={{ maxWidth: 940, margin: '0 auto' }}>
-        <p style={S.eyebrow}>Field Guide</p>
+        <p style={S.eyebrow}><Link to="/academic/fieldguide" style={S.eyebrowLink}>Field Guide</Link></p>
         <h1 style={S.title}>Student submissions</h1>
         <p style={S.sub}>
           Mechanical faults are caught before you read anything. What is left is the one question
@@ -207,6 +207,7 @@ export default function SubmissionsQueue() {
 
 const S = {
   eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)' },
+  eyebrowLink: { color: 'inherit', textDecoration: 'none' },
   title: { fontFamily: SERIF, fontSize: 28, color: 'var(--tx)', margin: '2px 0 4px' },
   sub: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.5 },
   dim: { color: 'var(--tx2)', fontWeight: 400 },

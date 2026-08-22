@@ -60,7 +60,7 @@ export default function WhatsNew() {
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '32px 20px 80px' }}>
       <div style={{ maxWidth: 780, margin: '0 auto' }}>
-        <p style={S.eyebrow}>Field Guide{course?.code ? ` · ${course.code}` : ''}</p>
+        <p style={S.eyebrow}><Link to="/academic/fieldguide" style={S.eyebrowLink}>Field Guide</Link>{course?.code ? ` · ${course.code}` : ''}</p>
         <h1 style={S.title}>What we've learned since September</h1>
         <p style={S.sub}>
           The guide the term started with is not the guide you're reading. Every accepted
@@ -127,6 +127,7 @@ export default function WhatsNew() {
 
 const S = {
   eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)' },
+  eyebrowLink: { color: 'inherit', textDecoration: 'none' },
   title: { fontFamily: SERIF, fontSize: 30, color: 'var(--tx)', margin: '4px 0 8px', lineHeight: 1.15 },
   sub: { fontSize: 14.5, color: 'var(--tx2)', lineHeight: 1.6, maxWidth: '62ch' },
   counter: { fontFamily: MONO, fontSize: 13, color: 'var(--tx)', marginTop: 12 },

@@ -765,7 +765,7 @@ function Shell({ course, children }) {
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '28px 16px 64px' }}>
       <div style={{ maxWidth: 980, margin: '0 auto' }}>
-        <p style={S.eyebrow}>Field Guide{course?.code ? ` · ${course.code}` : ''}</p>
+        <p style={S.eyebrow}><Link to="/academic/fieldguide" style={S.eyebrowLink}>Field Guide</Link>{course?.code ? ` · ${course.code}` : ''}</p>
         {children}
       </div>
     </div>
@@ -774,6 +774,7 @@ function Shell({ course, children }) {
 
 const S = {
   eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)' },
+  eyebrowLink: { color: 'inherit', textDecoration: 'none' },
   crumbIcon: { verticalAlign: 'middle', borderRadius: 8, border: '1px solid var(--bd)', background: '#fff', objectFit: 'contain', marginRight: 5 },
   crumbs: { fontSize: 13, color: 'var(--tx2)', margin: '10px 0 6px' },
   title: { fontFamily: SERIF, fontSize: 34, color: 'var(--tx)', margin: '4px 0 6px', lineHeight: 1.15 },
