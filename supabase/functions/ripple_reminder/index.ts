@@ -313,8 +313,8 @@ Regulatory and Affective Dynamics Lab · University of Toronto Mississauga`
             <td style="background-color:#ffffff;border-radius:12px;padding:40px;box-shadow:0 1px 4px rgba(0,0,0,0.06);">
 
               <table cellpadding="0" cellspacing="0" width="100%"><tr>${vars.avatarUrl ? `
-                <td width="72" valign="top" style="padding:2px 16px 0 0;">
-                  <img src="${vars.avatarUrl}" width="56" height="56" alt="Your Ripple" style="display:block;width:56px;height:56px;border-radius:12px;" />
+                <td width="116" valign="top" style="padding:0 20px 0 0;">
+                  <img src="${vars.avatarUrl}" width="96" height="96" alt="Your Ripple" style="display:block;width:96px;height:96px;border-radius:16px;" />
                 </td>` : ''}
                 <td valign="top">
                   <p style="margin:0 0 8px 0;font-size:15px;color:#1c1c1e;line-height:1.6;">Hi!</p>
