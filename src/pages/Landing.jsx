@@ -54,7 +54,7 @@ export default function Landing({ session }) {
 
       {/* HUB CARDS — 1 col on mobile, 2 from md up */}
       <section style={S.hubSection} className="px-5 md:px-[52px]">
-        <div className="grid grid-cols-1 md:grid-cols-2 w-full" style={{ gap: 20, maxWidth: 1080 }}>
+        <div className="grid grid-cols-1 md:grid-cols-2 w-full mx-auto" style={{ gap: 20, maxWidth: 1080 }}>
           <HubCard
             tag="Game Platform"
             title="Come, See"
@@ -172,7 +172,7 @@ const S = {
 
   // Horizontal padding lives in responsive classNames (px-5 md:px-[52px]) —
   // vertical padding must stay longhand or the inline shorthand zeroes the class px
-  hero:      { paddingTop: 60, paddingBottom: 40, maxWidth: 1080, position: 'relative', zIndex: 1 }, /* matches the card grid width so the lockup centers over the cards */
+  hero:      { paddingTop: 60, paddingBottom: 40, maxWidth: 1080, marginInline: 'auto', width: '100%', position: 'relative', zIndex: 1 }, /* content column centers in the viewport */
   eyebrow:   { fontFamily: MONO, fontSize: '0.8125rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--pk)', marginBottom: 20 },
   eyebrowLink: { color: 'var(--pk)', textDecoration: 'none', borderBottom: '1px solid rgba(240,104,164,0.35)' },
   heroBrand: {},

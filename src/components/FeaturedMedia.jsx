@@ -57,7 +57,7 @@ const S = {
 
   head: {
     display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
-    flexWrap: 'wrap', gap: 10, marginBottom: 18, maxWidth: 1080,
+    flexWrap: 'wrap', gap: 10, marginBottom: 18, maxWidth: 1080, marginInline: 'auto',
   },
   eyebrow: {
     fontFamily: MONO, fontSize: '0.75rem', letterSpacing: '0.13em',
@@ -69,7 +69,7 @@ const S = {
     borderBottom: '1px solid var(--pkb)',
   },
 
-  grid: { gap: 14, maxWidth: 1080 },
+  grid: { gap: 14, maxWidth: 1080, marginInline: 'auto' },
 
   tile: {
     display: 'flex', alignItems: 'center', gap: 14,
