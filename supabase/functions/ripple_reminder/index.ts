@@ -245,7 +245,18 @@ async function deliverRippleEmail(opts: {
   const unsubToken     = await getOrCreateRippleUnsubscribeToken(db, userId)
   const unsubscribeUrl = `${siteUrl}/unsubscribe/${unsubToken}`
 
-  const { subject, html, text } = renderRippleEmail({ checkinUrl, unsubscribeUrl })
+  // Ripple avatar raster (2026-08-22): the client uploads a PNG of the user's
+  // avatar to the public avatar-png bucket on every avatar save (plus a one-time
+  // backfill). HEAD-checked per recipient so a missing file renders the email
+  // without the avatar column rather than as a broken image.
+  let avatarUrl: string | null = null
+  try {
+    const { data: pub } = db.storage.from('avatar-png').getPublicUrl(`${userId}.png`)
+    const head = await fetch(pub.publicUrl, { method: 'HEAD' })
+    if (head.ok) avatarUrl = pub.publicUrl
+  } catch (_) { /* no avatar column, never a blocked send */ }
+
+  const { subject, html, text } = renderRippleEmail({ checkinUrl, unsubscribeUrl, avatarUrl })
 
   const { error: sendErr } = await resend.emails.send({ from: fromEmail, to, subject, html, text })
   if (sendErr) {
@@ -259,6 +270,7 @@ async function deliverRippleEmail(opts: {
 function renderRippleEmail(vars: {
   checkinUrl: string
   unsubscribeUrl: string
+  avatarUrl?: string | null
 }): { subject: string; html: string; text: string } {
   const subject = 'Your Ripple check-in — how are you arriving today?'
 
@@ -300,9 +312,16 @@ Regulatory and Affective Dynamics Lab · University of Toronto Mississauga`
           <tr>
             <td style="background-color:#ffffff;border-radius:12px;padding:40px;box-shadow:0 1px 4px rgba(0,0,0,0.06);">
 
-              <p style="margin:0 0 8px 0;font-size:15px;color:#1c1c1e;line-height:1.6;">Hi!</p>
-              <p style="margin:0 0 16px 0;font-size:15px;color:#1c1c1e;line-height:1.6;">Just a gentle nudge — how are you arriving today?</p>
-              <p style="margin:0 0 32px 0;font-size:15px;color:#555;line-height:1.6;">Your Ripple is ready when you are.</p>
+              <table cellpadding="0" cellspacing="0" width="100%"><tr>${vars.avatarUrl ? `
+                <td width="72" valign="top" style="padding:2px 16px 0 0;">
+                  <img src="${vars.avatarUrl}" width="56" height="56" alt="Your Ripple" style="display:block;width:56px;height:56px;border-radius:12px;" />
+                </td>` : ''}
+                <td valign="top">
+                  <p style="margin:0 0 8px 0;font-size:15px;color:#1c1c1e;line-height:1.6;">Hi!</p>
+                  <p style="margin:0 0 16px 0;font-size:15px;color:#1c1c1e;line-height:1.6;">Just a gentle nudge — how are you arriving today?</p>
+                  <p style="margin:0 0 32px 0;font-size:15px;color:#555;line-height:1.6;">Your Ripple is ready when you are.</p>
+                </td>
+              </tr></table>
 
               <table cellpadding="0" cellspacing="0"><tr>
                 <td style="background-color:#f068a4;border-radius:8px;">
