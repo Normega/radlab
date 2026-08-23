@@ -32,7 +32,7 @@ const ROUTES = [
 const SEV = { block: '#c0392b', warn: '#b8860b' }
 
 export default function SubmissionsQueue() {
-  const { courseClient } = useOutletContext()
+  const { courseClient, session, staffEnrollments } = useOutletContext()
   const [rows, setRows] = useState(null)      // null = loading
   const [openId, setOpenId] = useState(null)
   const [busyId, setBusyId] = useState(null)
@@ -73,9 +73,34 @@ export default function SubmissionsQueue() {
     setBusyId(row.claim_id); setNotice(null)
     const patch = { status, note, resolved_at: status === 'accepted' ? new Date().toISOString() : null }
     const { error } = await courseClient.from('gap_claims').update(patch).eq('id', row.claim_id)
+    if (error) { setBusyId(null); return setNotice(error.message) }
+
+    // Tell the student. The decision is already written, so a mail failure
+    // must not read as the decision failing — it is reported as its own line.
+    // Without this the send-back note reaches nobody: it lands on the gap
+    // board, and no student refreshes a board on the off-chance.
+    let mail = ''
+    try {
+      const rsp = await fetch('/api/claim-notify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          claim_id: row.claim_id,
+          course_id: staffEnrollments[0]?.course_id,
+        }),
+      })
+      const out = await rsp.json().catch(() => ({}))
+      mail = rsp.ok && out.sent ? ' · student emailed'
+           : ` · EMAIL FAILED (${out.error ?? rsp.status}) — tell them directly`
+    } catch (e) {
+      mail = ` · EMAIL FAILED (${e.message}) — tell them directly`
+    }
+
     setBusyId(null)
-    if (error) return setNotice(error.message)
-    setNotice(status === 'accepted' ? `Accepted — ${row.page_slug}` : `Sent back — ${row.page_slug}`)
+    setNotice((status === 'accepted' ? `Accepted — ${row.page_slug}` : `Sent back — ${row.page_slug}`) + mail)
     load()
   }
 
