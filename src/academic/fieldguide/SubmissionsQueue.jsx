@@ -36,6 +36,7 @@ export default function SubmissionsQueue() {
   const [rows, setRows] = useState(null)      // null = loading
   const [openId, setOpenId] = useState(null)
   const [busyId, setBusyId] = useState(null)
+  const [untold, setUntold] = useState([])
   const [notice, setNotice] = useState(null)
 
   const load = useCallback(async () => {
@@ -48,6 +49,36 @@ export default function SubmissionsQueue() {
   }, [courseClient])
 
   useEffect(() => { load() }, [load])
+
+  // Decisions the student was never told about — a failed send leaves the
+  // decision standing and the student waiting, with nothing on screen to say
+  // so. This strip is the only place that surfaces it.
+  const loadUntold = useCallback(() => {
+    courseClient.from('unnotified_decisions').select('*')
+      .then(({ data }) => setUntold(data ?? []))
+  }, [courseClient])
+  useEffect(() => { loadUntold() }, [loadUntold])
+
+  // Send (or re-send) the decision email for one claim. Returns a suffix for
+  // the notice line.
+  const notify = useCallback(async (claimId) => {
+    try {
+      const rsp = await fetch('/api/claim-notify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ claim_id: claimId, course_id: staffEnrollments[0]?.course_id }),
+      })
+      const out = await rsp.json().catch(() => ({}))
+      return rsp.ok && out.sent
+        ? ' · student emailed'
+        : ` · EMAIL FAILED (${out.error ?? rsp.status}) — retry from "Not yet told" below`
+    } catch (e) {
+      return ` · EMAIL FAILED (${e.message}) — retry from "Not yet told" below`
+    }
+  }, [session, staffEnrollments])
 
   const recheck = async (row) => {
     setBusyId(row.claim_id); setNotice(null)
@@ -79,29 +110,18 @@ export default function SubmissionsQueue() {
     // must not read as the decision failing — it is reported as its own line.
     // Without this the send-back note reaches nobody: it lands on the gap
     // board, and no student refreshes a board on the off-chance.
-    let mail = ''
-    try {
-      const rsp = await fetch('/api/claim-notify', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          claim_id: row.claim_id,
-          course_id: staffEnrollments[0]?.course_id,
-        }),
-      })
-      const out = await rsp.json().catch(() => ({}))
-      mail = rsp.ok && out.sent ? ' · student emailed'
-           : ` · EMAIL FAILED (${out.error ?? rsp.status}) — tell them directly`
-    } catch (e) {
-      mail = ` · EMAIL FAILED (${e.message}) — tell them directly`
-    }
-
+    const mail = await notify(row.claim_id)
     setBusyId(null)
     setNotice((status === 'accepted' ? `Accepted — ${row.page_slug}` : `Sent back — ${row.page_slug}`) + mail)
-    load()
+    load(); loadUntold()
+  }
+
+  const resend = async (row) => {
+    setBusyId(row.claim_id); setNotice(null)
+    const mail = await notify(row.claim_id)
+    setBusyId(null)
+    setNotice(`${row.page_slug} → ${row.student_email}${mail}`)
+    loadUntold()
   }
 
   const grouped = ROUTES.map(([key, label, hint, colour]) => ({
@@ -126,6 +146,30 @@ export default function SubmissionsQueue() {
             Nothing awaiting review. Submissions appear here once a student marks a claimed gap as
             submitted.
           </p>
+        )}
+
+        {untold.length > 0 && (
+          <section style={S.untoldBox}>
+            <h2 style={{ ...S.h2, color: '#c0392b', marginTop: 0 }}>
+              Not yet told <span style={S.dim}>· {untold.length}</span>
+            </h2>
+            <p style={{ ...S.sub, fontSize: 13 }}>
+              These decisions are recorded, but the notification email did not send — so the student
+              is still waiting. Resend, or tell them directly.
+            </p>
+            {untold.map(u => (
+              <div key={u.claim_id} style={S.untoldRow}>
+                <span style={{ fontFamily: MONO, fontSize: 12.5 }}>
+                  {u.status === 'accepted' ? 'accepted' : 'sent back'} · {u.page_title ?? u.page_slug}
+                </span>
+                <span style={S.dim}>{u.student_email}</span>
+                <button style={S.resendBtn} disabled={busyId === u.claim_id}
+                        onClick={() => resend(u)}>
+                  {busyId === u.claim_id ? 'sending…' : 'resend'}
+                </button>
+              </div>
+            ))}
+          </section>
         )}
 
         {grouped.map(g => (
@@ -231,6 +275,9 @@ export default function SubmissionsQueue() {
 }
 
 const S = {
+  untoldBox: { border: '1px solid #c0392b', borderRadius: 12, padding: '12px 16px', margin: '18px 0' },
+  untoldRow: { display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', padding: '5px 0', borderBottom: '1px dotted var(--bd)' },
+  resendBtn: { marginLeft: 'auto', fontFamily: MONO, fontSize: 11, padding: '4px 12px', borderRadius: 14, border: '1px solid #c0392b', background: 'none', color: '#c0392b', cursor: 'pointer' },
   eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)' },
   eyebrowLink: { color: 'inherit', textDecoration: 'none' },
   title: { fontFamily: SERIF, fontSize: 28, color: 'var(--tx)', margin: '2px 0 4px' },
