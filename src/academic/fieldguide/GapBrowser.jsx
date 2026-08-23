@@ -96,6 +96,20 @@ export default function GapBrowser() {
     return next
   })
 
+  // Jump from "Your claims" to the gap itself. Expanding alone was not enough:
+  // the row lives inside a lecture group collapsed by default, so nothing
+  // rendered to expand. Open the owning lecture first, expand the gap, then
+  // scroll once React has laid the row out — two frames, the same shape as the
+  // wiki reader's [[page#section]] handling.
+  const reveal = useCallback((r) => {
+    setOpen(prev => prev.has(r.lecture_no) ? prev : new Set(prev).add(r.lecture_no))
+    setExpanded(r.gap_id)
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      document.getElementById(`gap-${r.gap_id}`)
+        ?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }))
+  }, [])
+
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '32px 20px 80px' }}>
       <div style={{ maxWidth: 940, margin: '0 auto' }}>
@@ -123,7 +137,7 @@ export default function GapBrowser() {
           <div style={S.mineStrip}>
             <p style={S.colLabel}>Your claims</p>
             {mine.map(r => (
-              <button key={r.gap_id} style={S.mineRow} onClick={() => setExpanded(r.gap_id)}>
+              <button key={r.gap_id} style={S.mineRow} onClick={() => reveal(r)} title="Show this gap in the list below">
                 <span style={{ ...S.badge, color: DIFF[r.difficulty].colour, border: `1px solid ${DIFF[r.difficulty].colour}` }}>
                   {r.difficulty}
                 </span>
@@ -193,7 +207,14 @@ function GapRow({ row: r, expanded, onToggle, courseClient, reload }) {
   const red = r.difficulty === 'red'
   const full = !red && r.remaining === 0 && !r.my_status
   return (
-    <article style={{ ...S.gap, opacity: red ? 0.55 : full ? 0.65 : 1 }}>
+    // id is the scroll target for the "Your claims" jump; scrollMarginTop keeps
+    // the row clear of the viewport edge when it lands.
+    <article id={`gap-${r.gap_id}`}
+             style={{
+               ...S.gap,
+               opacity: red ? 0.55 : full ? 0.65 : 1,
+               ...(expanded ? S.gapActive : null),
+             }}>
       <button style={S.gapHead} onClick={onToggle}>
         <div style={S.gapTop}>
           <span style={{ ...S.badge, color: d.colour, border: `1px solid ${d.colour}` }}>{d.label}</span>
@@ -429,6 +450,7 @@ const S = {
   link: { fontSize: 13, color: 'var(--pk)' },
   notice: { color: 'var(--pk)', marginTop: 10, fontFamily: MONO, fontSize: 13 },
 
+  gapActive: { borderColor: 'var(--pk)', boxShadow: '0 0 0 1px var(--pk)' },
   mineStrip: { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 12, padding: '10px 14px', margin: '14px 0 4px' },
   mineRow: { width: '100%', display: 'flex', gap: 10, alignItems: 'baseline', padding: '5px 0', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' },
 
@@ -442,7 +464,7 @@ const S = {
   metaLine: { display: 'block', fontFamily: MONO, fontSize: 12, color: 'var(--tx2)', marginTop: 2, textAlign: 'left' },
   chev: { color: 'var(--tx2)', fontSize: 13, flexShrink: 0 },
 
-  gap: { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 10, marginTop: 8 },
+  gap: { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 10, marginTop: 8, scrollMarginTop: 80 },
   gapHead: { width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: '10px 14px', textAlign: 'left' },
   gapTop: { display: 'flex', gap: 10, alignItems: 'baseline', flexWrap: 'wrap' },
   badge: { fontFamily: MONO, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', padding: '2px 8px', borderRadius: 20, flexShrink: 0 },
