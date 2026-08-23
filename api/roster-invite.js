@@ -91,15 +91,18 @@ export default async function handler(req, res) {
     auth: { persistSession: false, autoRefreshToken: false },
   })
 
-  // Targets: never dropped, never over the lifetime cap. `all` means everyone
-  // not yet enrolled — re-inviting an enrolled student is a per-row action.
-  let q = service.schema('identity').from('roster')
-    .select('id, full_name, email, status, invite_count')
-    .eq('course_id', course_id)
-    .neq('status', 'dropped')
-    .lt('invite_count', INVITE_LIFETIME_CAP)
-  q = all ? q.in('status', ['added', 'invited', 'bounced']) : q.in('id', roster_ids)
-  const { data: targets, error: tErr } = await q.order('full_name').limit(BATCH_CAP + 1)
+  // Targets, via a SECURITY DEFINER rpc rather than a direct table read:
+  // identity is NOT on PostgREST's exposed-schema list (that is where the PII
+  // lives), so `.schema('identity')` fails with "Invalid schema". The rpc
+  // enforces the same rules — never dropped, never over the lifetime cap,
+  // `all` meaning everyone not yet enrolled.
+  const { data: targets, error: tErr } = await service.rpc('roster_invite_targets', {
+    p_course_id: course_id,
+    p_ids: all ? null : roster_ids,
+    p_all: !!all,
+    p_cap: INVITE_LIFETIME_CAP,
+    p_limit: BATCH_CAP + 1,
+  })
   if (tErr) return res.status(500).json({ error: `Roster read failed: ${tErr.message}` })
 
   const batch = (targets ?? []).slice(0, BATCH_CAP)
@@ -135,12 +138,7 @@ export default async function handler(req, res) {
       })
       if (!rsp.ok) throw new Error(`Resend ${rsp.status}: ${(await rsp.text()).slice(0, 200)}`)
 
-      await service.schema('identity').from('roster').update({
-        status: row.status === 'enrolled' ? 'enrolled' : 'invited',
-        invited_at: row.invite_count === 0 ? new Date().toISOString() : undefined,
-        last_invited_at: new Date().toISOString(),
-        invite_count: row.invite_count + 1,
-      }).eq('id', row.id)
+      await service.rpc('roster_mark_invited', { p_id: row.id })
 
       sent.push(row.email)
     } catch (e) {

@@ -51,15 +51,14 @@ export default async function handler(req, res) {
     .update(String(req.headers['x-forwarded-for'] ?? '').split(',')[0].trim())
     .digest('hex').slice(0, 16)
 
-  const { data: row } = await service.schema('identity').from('roster')
-    .select('id, full_name, email, status, invite_count, last_invited_at')
-    .eq('email_match_key', key)
-    .neq('status', 'dropped')
-    .limit(1).maybeSingle()
+  // Via rpc: identity is not exposed to PostgREST (see roster-invite.js).
+  const { data: found } = await service.rpc('roster_find_by_key', { p_match_key: key })
+  const row = Array.isArray(found) ? found[0] : found
 
   if (!row) {
-    await service.schema('identity').from('roster_match_attempts')
-      .insert({ submitted: raw, match_key: key, ip_hash: ipHash })
+    await service.rpc('roster_log_attempt', {
+      p_submitted: raw, p_match_key: key, p_ip_hash: ipHash,
+    })
     return res.status(200).json({ matched: false })
   }
 
@@ -101,12 +100,7 @@ export default async function handler(req, res) {
     })
     if (!rsp.ok) throw new Error(`Resend ${rsp.status}`)
 
-    await service.schema('identity').from('roster').update({
-      status: row.status === 'enrolled' ? 'enrolled' : 'invited',
-      invited_at: row.invite_count === 0 ? new Date().toISOString() : undefined,
-      last_invited_at: new Date().toISOString(),
-      invite_count: row.invite_count + 1,
-    }).eq('id', row.id)
+    await service.rpc('roster_mark_invited', { p_id: row.id })
 
     return res.status(200).json({ matched: true })
   } catch (e) {
