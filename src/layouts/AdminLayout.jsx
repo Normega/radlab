@@ -21,13 +21,18 @@ const NAV_SECTIONS = [
       { to: '/admin/instruments',     label: 'Instrument Styles', end: true },
       { to: '/admin/screeners',       label: 'Screeners'      },
       { to: '/admin/questionnaires',  label: 'Questionnaires' },
-      { to: '/admin/vas',             label: 'Rating Scales'  },
+      // Rating Scales split apart (Norm, 2026-08-24): VAS and Numeric Sliders
+      // each own their list on an /admin/instruments/:slug page; packages
+      // became Assessments below. The legacy /admin/vas library stays
+      // routable for CRUD flows — these pages link into it.
+      { to: '/admin/instruments/vas',             label: 'VAS' },
       { to: '/admin/displays',        label: 'Displays'       },
       { to: '/admin/instruments/likert-slider',   label: 'Likert Sliders' },
       { to: '/admin/instruments/numeric-slider',  label: 'Numeric Sliders' },
       { to: '/admin/instruments/multiple-choice', label: 'Multiple Choice' },
       { to: '/admin/instruments/open-list',       label: 'Open Text Lists' },
       { to: '/admin/instruments/hierarchy',       label: 'Belief Hierarchies' },
+      { to: '/admin/instruments/assessments',     label: 'Assessments' },
     ],
   },
   {
