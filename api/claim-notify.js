@@ -132,8 +132,20 @@ export default async function handler(req, res) {
       body: JSON.stringify({ from: fromEmail, to: c.student_email, subject, text, html }),
     })
     if (!rsp.ok) throw new Error(`Resend ${rsp.status}: ${(await rsp.text()).slice(0, 200)}`)
-    await service.rpc('mark_claim_notified', { p_claim_id: claim_id })
-    return res.status(200).json({ sent: true, to: c.student_email })
+
+    // supabase-js rpc reports failure in `error`, it does not throw — so an
+    // unchecked call here reported success while the stamp silently failed,
+    // which is how the guard rejection stayed invisible. The mail is already
+    // gone at this point, so a stamp failure is reported as its own state
+    // rather than as a send failure: re-sending would mail the student twice.
+    const { error: stampErr } = await service.rpc('mark_claim_notified', { p_claim_id: claim_id })
+    if (stampErr) {
+      return res.status(200).json({
+        sent: true, stamped: false, to: c.student_email,
+        warning: `Email sent, but could not record it: ${stampErr.message}. It will keep showing as "not yet told".`,
+      })
+    }
+    return res.status(200).json({ sent: true, stamped: true, to: c.student_email })
   } catch (e) {
     return res.status(500).json({ error: `Could not send: ${e.message}` })
   }

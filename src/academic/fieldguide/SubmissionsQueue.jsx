@@ -72,6 +72,11 @@ export default function SubmissionsQueue() {
         body: JSON.stringify({ claim_id: claimId, course_id: staffEnrollments[0]?.course_id }),
       })
       const out = await rsp.json().catch(() => ({}))
+      if (rsp.ok && out.sent && out.stamped === false) {
+        // Mail delivered but the record did not stick — do NOT invite a resend,
+        // that would mail the student a second time.
+        return ` · emailed, but NOT RECORDED (${out.warning ?? 'unknown'})`
+      }
       return rsp.ok && out.sent
         ? ' · student emailed'
         : ` · EMAIL FAILED (${out.error ?? rsp.status}) — retry from "Not yet told" below`
