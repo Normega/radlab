@@ -3,7 +3,7 @@ import GameIntro from '../shared/GameIntro'
 import PrimaryCTA from '../../components/ui/PrimaryCTA'
 import ContactAvatar from '../FirstContact/components/ContactAvatar'
 import BreathShapeChart, { MiniShape } from './BreathShapeChart'
-import { parseBreaths, meanBreath, maxDuration } from './breathShapes'
+import { parseBreaths, meanBreath, maxDuration, MIN_HOLD_MS } from './breathShapes'
 
 // ── FreeBreath ──────────────────────────────────────────────────────────────
 // Come, See prototype — free breathing, no pacer. The player drives the face:
@@ -32,11 +32,19 @@ const OUTER_SCALE = 0.22  // extra growth on top of the avatar's built-in 15%
 const STATE_LABEL = { in: 'breathing in', out: 'breathing out', pause: 'still' }
 const STATE_COLOR = { in: AMBER, out: BLUE, pause: 'var(--gy)' }
 
+const TARGET_BREATHS = 8
+const HINT_MS = 3500
+const HINT_COPY = {
+  in:  'Remember, hold down the button for the whole inhalation.',
+  out: 'Remember, hold down the button for the whole exhalation.',
+}
+
 export default function FreeBreath() {
   const [screen, setScreen]         = useState('INTRO')
   const [control, setControlState]  = useState('pause')
   const [breathCount, setBreathCount] = useState(0)
   const [breaths, setBreaths]       = useState([])
+  const [hint, setHint]             = useState(null)   // 'in' | 'out' | null
 
   const fullnessRef = useRef(0)        // 0 empty … 1 full
   const controlRef  = useRef('pause')
@@ -47,6 +55,8 @@ export default function FreeBreath() {
 
   const avatarControlRef = useRef(null)
   const outerRef         = useRef(null)
+  const pressAtRef       = useRef({})    // kind → performance.now() at press
+  const hintTimerRef     = useRef(null)
 
   // ── Control changes → segment log ─────────────────────────────────────
   const applyControl = useCallback((next) => {
@@ -71,14 +81,26 @@ export default function FreeBreath() {
   }, [])
 
   const press = useCallback((kind) => {
+    pressAtRef.current[kind] = performance.now()
     heldRef.current = [...heldRef.current.filter(k => k !== kind), kind]
     applyControl(kind)
   }, [applyControl])
 
+  // A release under MIN_HOLD_MS is the same tap the parser discards — coach
+  // it; a full hold clears any standing reminder (they've got it).
   const release = useCallback((kind) => {
     heldRef.current = heldRef.current.filter(k => k !== kind)
     const held = heldRef.current
     applyControl(held.length ? held[held.length - 1] : 'pause')
+
+    const heldFor = performance.now() - (pressAtRef.current[kind] ?? 0)
+    if (hintTimerRef.current) clearTimeout(hintTimerRef.current)
+    if (heldFor < MIN_HOLD_MS) {
+      setHint(kind)
+      hintTimerRef.current = setTimeout(() => setHint(null), HINT_MS)
+    } else {
+      setHint(null)
+    }
   }, [applyControl])
 
   const releaseAll = useCallback(() => {
@@ -155,8 +177,12 @@ export default function FreeBreath() {
     setControlState('pause')
     setBreathCount(0)
     setBreaths([])
+    if (hintTimerRef.current) clearTimeout(hintTimerRef.current)
+    setHint(null)
     setScreen('BREATHING')
   }
+
+  useEffect(() => () => { if (hintTimerRef.current) clearTimeout(hintTimerRef.current) }, [])
 
   function finishSession() {
     const t = performance.now()
@@ -188,7 +214,7 @@ export default function FreeBreath() {
               { title: 'Breathe out', body: 'Hold O (or the blue button) for as long as your exhale lasts. The face empties.' },
               { title: 'Rest',        body: 'Hold nothing between breaths. The pauses are part of the shape too.' },
             ]}
-            note="Breathe as long as you like. One full breath — in and out — is enough to draw its shape."
+            note="Take eight breaths, at your own pace. Every one is drawn as a shape at the end."
             cta="Begin →"
             onStart={begin}
           />
@@ -209,15 +235,27 @@ export default function FreeBreath() {
               {STATE_LABEL[control]}
             </div>
 
+            <p style={{ ...S.hintLine, color: hint ? STATE_COLOR[hint] : 'transparent', opacity: hint ? 1 : 0 }}>
+              {hint ? HINT_COPY[hint] : ' '}
+            </p>
+
             <div style={S.holdRow}>
               <HoldButton kind="in"  label="Inhale" hint="hold I" color={AMBER} active={control === 'in'}  onPress={press} onRelease={release} />
               <HoldButton kind="out" label="Exhale" hint="hold O" color={BLUE}  active={control === 'out'} onPress={press} onRelease={release} />
             </div>
 
+            <div style={S.dotRow}>
+              {Array.from({ length: TARGET_BREATHS }, (_, i) => (
+                <span key={i} style={{ ...S.dot, ...(i < breathCount ? S.dotDone : null) }} />
+              ))}
+            </div>
+
             <p style={S.countLine}>
               {breathCount === 0
-                ? 'One full breath — in and out — draws the first shape.'
-                : `${breathCount} ${breathCount === 1 ? 'breath' : 'breaths'} recorded.`}
+                ? 'Eight breaths, at your own pace.'
+                : breathCount < TARGET_BREATHS
+                  ? `${breathCount} of ${TARGET_BREATHS} breaths.`
+                  : `${breathCount === TARGET_BREATHS ? 'Eight' : breathCount} breaths — finish when you are ready.`}
             </p>
 
             <button
@@ -302,9 +340,22 @@ const S = {
     textTransform: 'uppercase', height: 16, userSelect: 'none',
   },
 
+  hintLine: {
+    fontFamily: SANS, fontSize: 13, textAlign: 'center', margin: 0,
+    minHeight: 18, maxWidth: 360, transition: 'opacity 0.25s ease',
+    userSelect: 'none',
+  },
+
   holdRow: {
     display: 'flex', gap: 16, width: '100%', maxWidth: 400, marginTop: 6,
   },
+
+  dotRow: { display: 'flex', gap: 8, marginTop: 2 },
+  dot: {
+    width: 9, height: 9, borderRadius: '50%',
+    border: '1.5px solid var(--pk)', opacity: 0.35, boxSizing: 'border-box',
+  },
+  dotDone: { background: 'var(--pk)', opacity: 1 },
   hold: {
     flex: 1, minHeight: 76, borderRadius: 16, borderWidth: 2, borderStyle: 'solid',
     display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
