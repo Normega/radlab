@@ -120,14 +120,24 @@ export function AdoptedLikertSlider() {
           onChange={e => { setV(Number(e.target.value)); setTouched(true) }}
           aria-label="How often did you notice this feeling today?"
         />
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, minmax(0, 1fr))', marginTop: 8 }}>
+        {/* Labels sit AT the snap positions (Norm, 2026-08-24): interior ones
+            centered on their track fraction, the two ends flush left/right to
+            the line — a plain N-column grid centers every label in its cell,
+            which drifts from where the thumb actually lands. */}
+        <div style={{ position: 'relative', minHeight: 32, marginTop: 8 }}>
           {LIKERT_SLIDER_LABELS.map((label, i) => {
+            const n = LIKERT_SLIDER_LABELS.length
             const sel = touched && v === i + 1
+            const pos =
+              i === 0     ? { left: 0, textAlign: 'left' } :
+              i === n - 1 ? { right: 0, textAlign: 'right' } :
+              { left: `${(i / (n - 1)) * 100}%`, transform: 'translateX(-50%)', textAlign: 'center' }
             return (
               <span key={label} style={{
-                fontFamily: SANS, fontSize: 11, lineHeight: 1.3, textAlign: 'center',
+                position: 'absolute', top: 0, width: '17%', ...pos,
+                fontFamily: SANS, fontSize: 11, lineHeight: 1.3,
                 color: sel ? 'var(--tx)' : 'var(--tx2)', fontWeight: sel ? 600 : 400,
-                overflowWrap: 'anywhere', padding: '0 2px',
+                overflowWrap: 'anywhere',
               }}>
                 {label}
               </span>
