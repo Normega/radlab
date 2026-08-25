@@ -3,10 +3,8 @@ import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import VasRenderer from '../../components/vas/VasRenderer'
-import {
-  ProposedMultipleChoice, ProposedOpenList, ProposedHierarchy,
-  AdoptedLikertSlider, AdoptedNumericSlider,
-} from './proposedInstruments'
+import SurveyComponentRenderer from '../../components/questionnaire/composable/SurveyComponentRenderer'
+import '../../components/questionnaire/composable/composableSurvey.css'
 
 // ── AdoptedInstrumentPage (/admin/instruments/:slug) ──────────────────────────
 // One page per instrument type: status chips, description, a live sample, and
@@ -15,6 +13,112 @@ import {
 // numeric sliders each own their list here, packages became Assessments).
 // The legacy /admin/vas library remains routable for CRUD flows and previews;
 // these pages link into it rather than duplicating it.
+//
+// Since 2026-08-25 the interactive samples for the adopted types render the
+// PRODUCTION components (src/components/questionnaire/composable/, ported from
+// Dana's package), not the proposedInstruments.jsx review demos — those remain
+// only on the Instrument Styles comparison page. The demo configs below mirror
+// the seeds in 20260825_composable_instrument_seeds.sql; step 5 of the
+// integration replaces them with composable_instruments DB rows.
+
+const DEMO_CONFIGS = {
+  likert_slider: {
+    id: 'demo_noticing_frequency',
+    type: 'likert_slider',
+    question: 'How often did you notice this feeling today?',
+    min: 1, max: 6, step: 1,
+    labels: [
+      { value: 1, label: 'Never' },
+      { value: 2, label: 'Rarely' },
+      { value: 3, label: 'Sometimes' },
+      { value: 4, label: 'Often' },
+      { value: 5, label: 'Very often' },
+      { value: 6, label: 'Almost always' },
+    ],
+  },
+  numeric_slider: {
+    id: 'demo_goal_choice',
+    type: 'slider',
+    question: 'To what extent does pursuing this goal feel like your own choice, rather than something you feel pressured or required to pursue?',
+    min: 0, max: 100, step: 1,
+    labels: [
+      { value: 0,   label: 'It does not feel like my own choice' },
+      { value: 50,  label: 'It partly feels like my own choice' },
+      { value: 100, label: 'It feels completely like my own choice' },
+    ],
+  },
+  multiple_choice: {
+    id: 'demo_target_grade',
+    type: 'multiple_choice',
+    question: 'What final grade are you aiming to achieve in this course?',
+    required: true,
+    options: [
+      { id: 'specific_grade', label: 'I am aiming for a specific final grade.',
+        response_type: 'number', placeholder: '85', suffix: '%', min: 0, max: 100, step: 1 },
+      { id: 'pass_only', label: 'I do not have a specific target grade, as long as I pass.',
+        response_type: 'plain' },
+    ],
+  },
+  open_list: {
+    id: 'demo_outcome_attribution',
+    type: 'open_text_list',
+    question: 'What do you think caused this outcome? Please list all the factors that you think contributed, and indicate how much each factor contributed.',
+    required: true,
+    initial_boxes: 3,
+    max_words: 5,
+    example_placeholder: 'Ex. I need better study strategies…',
+    minimum_required_responses: 1,
+    slider: {
+      question: 'How much did this factor contribute?',
+      min: 0, max: 100, step: 1,
+      labels: [
+        { value: 0, label: 'Did not contribute' },
+        { value: 100, label: 'Contributed completely' },
+      ],
+    },
+  },
+  hierarchy: {
+    id: 'demo_feedback_beliefs',
+    type: 'hierarchical_belief',
+    question: 'How much did this feedback change your belief about…',
+    instruction: 'Select all of the beliefs that changed. You can select more than one.',
+    allow_none_selected: true,
+    beliefs: [
+      { id: 'skill_specific',    depth: 0, level: 'Skill-specific',                  text: 'My understanding of the specific topic or skill assessed' },
+      { id: 'strategy_specific', depth: 1, level: 'Strategy-specific',               text: 'Whether my current study strategy works for this course' },
+      { id: 'meta_strategy',     depth: 2, level: 'Meta-strategy specific',          text: 'Whether my current strategy for managing my time, effort, and study process works for this course' },
+      { id: 'course_efficacy',   depth: 3, level: 'Course-specific · self-efficacy', text: 'My ability to succeed in this subject area' },
+      { id: 'domain_efficacy',   depth: 4, level: 'Domain-specific · self-efficacy', text: 'My ability to succeed in this domain' },
+      { id: 'self_global',       depth: 5, level: 'Self-global · self-efficacy',     text: 'My general competence / self-worth' },
+    ],
+    slider: {
+      question: 'Did this belief change in a positive or negative direction?',
+      min: -50, max: 50, step: 1,
+      labels: [
+        { value: -50, label: 'Negative change' },
+        { value: 0,   label: 'No directional change' },
+        { value: 50,  label: 'Positive change' },
+      ],
+    },
+  },
+}
+
+// Interactive stage around one production component: local state, nothing
+// saved — the same controlled contract the session runtime will use.
+function DemoStage({ config }) {
+  const [value, setValue] = useState(undefined)
+  return (
+    <div style={{ padding: '20px 20px 24px' }} className="cs-page">
+      <SurveyComponentRenderer config={config} value={value} onChange={setValue} />
+    </div>
+  )
+}
+
+const LikertSliderSample   = () => <DemoStage config={DEMO_CONFIGS.likert_slider} />
+const NumericSliderSample  = () => <DemoStage config={DEMO_CONFIGS.numeric_slider} />
+const MultipleChoiceSample = () => <DemoStage config={DEMO_CONFIGS.multiple_choice} />
+const OpenListSample       = () => <DemoStage config={DEMO_CONFIGS.open_list} />
+const HierarchySample      = () => <DemoStage config={DEMO_CONFIGS.hierarchy} />
 
 const CHIP = {
   green: { color: '#1E7A55', background: '#E2F4EA', border: '1px solid #BFE5D0' },
@@ -24,18 +128,18 @@ const CHIP = {
 const PAGES = {
   'likert-slider': {
     title: 'Likert slider',
-    source: 'NoDefaultSlider + composable-surveys SliderQuestion chrome',
-    chips: [{ label: 'Adopted 2026-08-19', tone: 'green' }, { label: 'Implementation pending', tone: 'pink' }],
-    C: AdoptedLikertSlider,
+    source: 'composable/LikertSliderQuestion.jsx + NoDefaultSlider',
+    chips: [{ label: 'Adopted 2026-08-19', tone: 'green' }, { label: 'Session runtime pending', tone: 'pink' }],
+    C: LikertSliderSample,
     blurb: 'The discrete slider: stepped scale with point labels and no numeric readout — the label is the value. Dana’s track/thumb chrome combined with the platform’s no-default behavior (no thumb until the first touch).',
-    note: 'The interactive sample is the review demo. The production component ships with the composable-surveys package integration.',
+    note: 'The interactive sample is the production component (ported 2026-08-25). It becomes runnable in sessions when the dispatch step of the integration lands.',
   },
   'numeric-slider': {
     title: 'Numeric slider',
-    source: 'NoDefaultSlider + composable-surveys SliderQuestion chrome',
-    chips: [{ label: 'Official format · adopted 2026-08-19', tone: 'green' }, { label: 'Value readout pending', tone: 'pink' }],
-    C: AdoptedNumericSlider,
-    blurb: 'The continuous slider: numeric range with sparse anchors and a VALUE readout that stays “—” until touched. This is the official format (Norm, 2026-08-24). The track/thumb chrome shipped platform-wide 2026-08-25 — every existing slider below already wears it (click a row to view); the VALUE readout and numbered anchors arrive with the composable integration.',
+    source: 'composable/SliderQuestion.jsx + NoDefaultSlider',
+    chips: [{ label: 'Official format · adopted 2026-08-19', tone: 'green' }, { label: 'Session runtime pending', tone: 'pink' }],
+    C: NumericSliderSample,
+    blurb: 'The continuous slider: numeric range with sparse anchors and a VALUE readout that stays “—” until touched. This is the official format (Norm, 2026-08-24). The track/thumb chrome shipped platform-wide 2026-08-25, and the sample and the library rows below now render through the production SliderQuestion component. Existing rows show start/end anchors derived from their min/max labels; a middle anchor appears once a row defines `anchors`.',
     note: null,
     library: {
       table: 'slider_scales', title: 'Existing numeric sliders',
@@ -72,44 +176,44 @@ const PAGES = {
   },
   'multiple-choice': {
     title: 'Multiple choice',
-    source: 'composable-surveys: MultipleChoiceQuestion',
-    chips: [{ label: 'Adopted 2026-08-19', tone: 'green' }, { label: 'Implementation pending', tone: 'pink' }],
-    C: ProposedMultipleChoice,
+    source: 'composable/MultipleChoiceQuestion.jsx',
+    chips: [{ label: 'Adopted 2026-08-19', tone: 'green' }, { label: 'Session runtime pending', tone: 'pink' }],
+    C: MultipleChoiceSample,
     blurb: 'Single-select multiple choice, where an option can be plain or carry inline text/number entry with prefix/suffix and bounds. Fills a real gap: the platform has never had a generic MC instrument.',
-    note: 'The interactive sample is the review demo. The production component ships with the composable-surveys package integration.',
+    note: 'The interactive sample is the production component (ported 2026-08-25). It becomes runnable in sessions when the dispatch step of the integration lands.',
     library: {
       title: 'Existing multiple-choice questions',
       static: [{ id: 'demo-mc', name: 'Target grade (demo)', slug: 'demo' }],
       row: r => ({ name: r.name, meta: 'demo instance' }),
-      preview: () => <ProposedMultipleChoice />,
+      preview: () => <MultipleChoiceSample />,
     },
   },
   'open-list': {
     title: 'Open text list + contribution ratings',
-    source: 'composable-surveys: OpenTextListQuestion',
-    chips: [{ label: 'Adopted 2026-08-19', tone: 'green' }, { label: 'Implementation pending', tone: 'pink' }],
-    C: ProposedOpenList,
+    source: 'composable/OpenTextListQuestion.jsx',
+    chips: [{ label: 'Adopted 2026-08-19', tone: 'green' }, { label: 'Session runtime pending', tone: 'pink' }],
+    C: OpenListSample,
     blurb: 'Participant-generated factors with a per-factor rating: typing text reveals a contribution slider beneath that row, filling the last row grows a new one, and entries are word-capped with a live counter.',
-    note: 'The interactive sample is the review demo. The production component ships with the composable-surveys package integration.',
+    note: 'The interactive sample is the production component (ported 2026-08-25). It becomes runnable in sessions when the dispatch step of the integration lands.',
     library: {
       title: 'Existing open text lists',
       static: [{ id: 'demo-ol', name: 'Outcome attribution factors (demo)', slug: 'demo' }],
       row: r => ({ name: r.name, meta: 'demo instance' }),
-      preview: () => <ProposedOpenList />,
+      preview: () => <OpenListSample />,
     },
   },
   'hierarchy': {
     title: 'Hierarchical belief question',
-    source: 'composable-surveys: HierarchicalBeliefQuestion',
-    chips: [{ label: 'Adopted 2026-08-19', tone: 'green' }, { label: 'Implementation pending', tone: 'pink' }],
-    C: ProposedHierarchy,
+    source: 'composable/HierarchicalBeliefQuestion.jsx',
+    chips: [{ label: 'Adopted 2026-08-19', tone: 'green' }, { label: 'Session runtime pending', tone: 'pink' }],
+    C: HierarchySample,
     blurb: 'A belief hierarchy shown whole, indented by level. Participants select every level that changed; each selected level reveals a signed direction slider. Generalizes to any nested-construct rating.',
-    note: 'The interactive sample is the review demo. The production component ships with the composable-surveys package integration.',
+    note: 'The interactive sample is the production component (ported 2026-08-25). It becomes runnable in sessions when the dispatch step of the integration lands.',
     library: {
       title: 'Existing belief hierarchies',
       static: [{ id: 'demo-bh', name: 'Feedback belief hierarchy (demo)', slug: 'demo' }],
       row: r => ({ name: r.name, meta: 'demo instance' }),
-      preview: () => <ProposedHierarchy />,
+      preview: () => <HierarchySample />,
     },
   },
 }
@@ -233,19 +337,26 @@ function Library({ cfg }) {
 }
 
 // In-place viewer for an authored numeric slider — renders through the SAME
-// template component as the sample above (Norm, 2026-08-25: the template is
+// production component as the sample above (Norm, 2026-08-25: the template is
 // enforced), so prior sliders get the white card, anchors, and VALUE box.
+// A row's `anchors` jsonb (20260825_composable_instruments.sql) is the full
+// anchor spec; rows without one fall back to start/end from min/max labels.
 function SliderPreview({ row }) {
+  const min = row.min ?? 0
+  const max = row.max ?? 100
   return (
-    <AdoptedNumericSlider
-      question={row.prompt}
-      min={row.min ?? 0}
-      max={row.max ?? 100}
-      anchors={[
-        { at: 'start', value: row.min ?? 0,   label: row.min_label ?? '' },
-        { at: 'end',   value: row.max ?? 100, label: row.max_label ?? '' },
-      ]}
-    />
+    <DemoStage config={{
+      id: `slider_${row.slug}`,
+      type: 'slider',
+      question: row.prompt,
+      min,
+      max,
+      step: row.step ?? 1,
+      labels: row.anchors ?? [
+        { value: min, label: row.min_label ?? '' },
+        { value: max, label: row.max_label ?? '' },
+      ],
+    }} />
   )
 }
 
