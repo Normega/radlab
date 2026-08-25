@@ -3,7 +3,6 @@ import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import VasRenderer from '../../components/vas/VasRenderer'
-import NoDefaultSlider from '../../components/study/NoDefaultSlider'
 import {
   ProposedMultipleChoice, ProposedOpenList, ProposedHierarchy,
   AdoptedLikertSlider, AdoptedNumericSlider,
@@ -233,19 +232,20 @@ function Library({ cfg }) {
   )
 }
 
-// In-place viewer for an authored numeric slider, rendered in the official
-// chrome (NoDefaultSlider — whose track/thumb now carry the adopted styling
-// platform-wide via index.css).
+// In-place viewer for an authored numeric slider — renders through the SAME
+// template component as the sample above (Norm, 2026-08-25: the template is
+// enforced), so prior sliders get the white card, anchors, and VALUE box.
 function SliderPreview({ row }) {
-  const [v, setV] = useState(null)
   return (
-    <div style={{ maxWidth: 620, margin: '0 auto', padding: '24px 20px 26px' }}>
-      <p style={{ fontFamily: SANS, fontSize: 15, color: 'var(--tx)', margin: '0 0 18px' }}>{row.prompt}</p>
-      <NoDefaultSlider min={row.min ?? 0} max={row.max ?? 100} value={v} onChange={setV} ariaLabel={row.prompt} />
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: SANS, fontSize: 11, color: 'var(--tx2)', marginTop: 6 }}>
-        <span>{row.min_label ?? row.min}</span><span>{row.max_label ?? row.max}</span>
-      </div>
-    </div>
+    <AdoptedNumericSlider
+      question={row.prompt}
+      min={row.min ?? 0}
+      max={row.max ?? 100}
+      anchors={[
+        { at: 'start', value: row.min ?? 0,   label: row.min_label ?? '' },
+        { at: 'end',   value: row.max ?? 100, label: row.max_label ?? '' },
+      ]}
+    />
   )
 }
 

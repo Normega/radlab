@@ -61,40 +61,51 @@ export function ProposedLikert() {
 // anti-anchoring stance NoDefaultSlider has always taken — which her package
 // planned to reuse anyway. The VALUE box shows "—" until touched.
 
-export function AdoptedNumericSlider() {
+// Parameterized so it IS the template (Norm, 2026-08-25): existing authored
+// sliders render through this same component — white card, anchors, VALUE box
+// — with their own question/range/labels. No props = the demo content.
+export function AdoptedNumericSlider({
+  question = 'To what extent does pursuing this goal feel like your own choice, rather than something you feel pressured or required to pursue?',
+  min = 0,
+  max = 100,
+  anchors = [
+    { at: 'start',  value: 0,   label: 'It does not feel like my own choice' },
+    { at: 'middle', value: 50,  label: 'It partly feels like my own choice' },
+    { at: 'end',    value: 100, label: 'It feels completely like my own choice' },
+  ],
+} = {}) {
   const [touched, setTouched] = useState(false)
-  const [v, setV] = useState(0)
+  const [v, setV] = useState(min)
+  const pct = ((v - min) / (max - min || 1)) * 100
   return (
     <div style={P.pad}>
       <div style={P.card}>
-        <p style={P.stem}>
-          To what extent does pursuing this goal feel like your own choice, rather than something
-          you feel pressured or required to pursue?
-        </p>
+        <p style={P.stem}>{question}</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 92px', gap: 24, alignItems: 'start' }}>
           <div style={{ minWidth: 0, paddingTop: 9 }}>
             {/* touched flips on pointerdown/keydown, not only change: clicking
-                exactly where the internal value already sits (the 0 end) fires
-                no change event, which made the endpoint unselectable first. */}
+                exactly where the internal value already sits (the min end)
+                fires no change event, which made it unselectable first. */}
             <input
-              type="range" min={0} max={100} step={1} value={v}
+              type="range" min={min} max={max} step={1} value={v}
               className={`dana-range${touched ? '' : ' is-untouched'}`}
-              style={{ '--fill': touched ? `${v}%` : '0%' }}
+              style={{ '--fill': touched ? `${pct}%` : '0%' }}
               onChange={e => { setV(Number(e.target.value)); setTouched(true) }}
               onPointerDown={() => setTouched(true)}
               onKeyDown={() => setTouched(true)}
-              aria-label="Own choice rating"
+              aria-label={question}
             />
             <div style={{ position: 'relative', minHeight: 44, marginTop: 8, fontSize: 12, lineHeight: 1.35, color: 'var(--tx2)' }}>
-              <span style={{ ...P.anchor, left: 0, textAlign: 'left' }}>
-                <strong style={P.anchorNum}>0</strong>It does not feel like my own choice
-              </span>
-              <span style={{ ...P.anchor, left: '50%', transform: 'translateX(-50%)', textAlign: 'center', width: '24%' }}>
-                <strong style={P.anchorNum}>50</strong>It partly feels like my own choice
-              </span>
-              <span style={{ ...P.anchor, right: 0, textAlign: 'right' }}>
-                <strong style={P.anchorNum}>100</strong>It feels completely like my own choice
-              </span>
+              {anchors.filter(a => a.label != null || a.value != null).map(a => (
+                <span key={a.at} style={{
+                  ...P.anchor,
+                  ...(a.at === 'start'  ? { left: 0, textAlign: 'left' } :
+                      a.at === 'end'    ? { right: 0, textAlign: 'right' } :
+                      { left: '50%', transform: 'translateX(-50%)', textAlign: 'center', width: '24%' }),
+                }}>
+                  <strong style={P.anchorNum}>{a.value}</strong>{a.label}
+                </span>
+              ))}
             </div>
           </div>
           <div style={P.valuePanel}>
