@@ -6549,6 +6549,17 @@ Visibility proved live under `SET LOCAL ROLE authenticated` against three real a
 
 ## 31. Roadmap
 
+### NEXT UP — Composable-surveys integration (handoff, 2026-08-25)
+
+**Goal**: make the five adopted instruments genuinely runnable in sessions, so every "implementation pending" chip comes off and the session-builder picker fully mirrors the admin sidebar (separate VAS / Likert Sliders / Numeric Sliders / Multiple Choice / Open Text Lists / Belief Hierarchies / Assessments categories — no more combined "VAS & Sliders").
+
+**Source package**: `I:\Shared drives\Dana\Dana React Components\radlab-composable-surveys\` — read `IMPLEMENTATION_BLUEPRINT.md` and `INTEGRATION.md` first; React components in `src/components/questionnaire/composable/`; examples in `examples/`. Her package reuses our `NoDefaultSlider` and react-markdown, palette maps 1:1 to our tokens. Additive via `questionnaire_type: "composable"` — existing questionnaires untouched.
+
+**Decisions already made (do not relitigate)**: five instruments adopted (both sliders, MC, open list, hierarchy); numeric-slider format is official (white card, sparse numbered anchors, VALUE box "—" until touched); slider track/thumb chrome already shipped platform-wide via `.ndslider` CSS; no-default behavior everywhere (no thumb until touch; interaction not value-change is the answer trigger — see the endpoint-selection bug note in `proposedInstruments.jsx`); Likert slider = labels center-anchored at snap fractions, track inset, no value box; Likert ITEM (7-box vs vertical) is still an OPEN comparison — leave it.
+
+**Work plan**: (1) port her components in, wired to our primitives + the template props shape in `src/pages/admin/proposedInstruments.jsx` (AdoptedNumericSlider is the enforced template pattern); (2) migrations for instrument definitions + responses per her blueprint (remember RLS policies — see CLAUDE.md; Supabase-touching work goes straight to main); (3) StepDispatcher dispatch + save paths; (4) seed `activities` rows so the picker's PENDING rows (SessionBuilder.jsx `PENDING_INSTRUMENTS`) become real and the picker categories split; (5) swap the static demo instances on `/admin/instruments/:slug` (AdoptedInstrumentPage.jsx) for DB rows; (6) flip the chips.
+
+
 > Rewritten 2026-07-02 against actual codebase state; replaces the stale "Open Next Steps." Completed history lives in git.
 
 ### P0 — Liliana's longitudinal study (pretest August, recruit September)
