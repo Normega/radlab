@@ -57,8 +57,10 @@ export default function SliderCreatePage() {
       })
       if (err) throw new Error(err.message)
 
+      // 'numeric_slider' since the composable-instruments split (2026-08-25) —
+      // the picker and dispatcher treat it and legacy 'vas' rows identically.
       const { error: actErr } = await supabase.from('activities').insert({
-        category:    'vas',
+        category:    'numeric_slider',
         subcategory: `slider_${slug.trim()}`,
         label:       `Slider – ${prompt.trim().slice(0, 60)}`,
         description: `${minLabel.trim()} → ${maxLabel.trim()} (${min}–${max})`,

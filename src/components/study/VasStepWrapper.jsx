@@ -7,7 +7,9 @@ import { useSubmitLock } from '../../lib/useSubmitLock'
 import '../questionnaire/composable/composableSurvey.css'
 
 /**
- * Mounts inside StepDispatcher for steps with category === 'vas'.
+ * Mounts inside StepDispatcher for steps with category 'vas' — or its
+ * post-split aliases 'numeric_slider' / 'assessment' (2026-08-25), which carry
+ * the same subcategory prefixes and behave identically here.
  *
  * subcategory formats:
  *   vas_{slug}      → single VAS scale

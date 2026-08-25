@@ -101,8 +101,10 @@ export default function VasPackageBuilder() {
       })
       if (pkgErr) throw pkgErr
 
+      // 'assessment' since the composable-instruments split (2026-08-25) —
+      // the picker and dispatcher treat it and legacy 'vas' rows identically.
       const { error: actErr } = await supabase.from('activities').insert({
-        category:    'vas',
+        category:    'assessment',
         subcategory: `vas_pkg_${slug}`,
         label:       `VAS Bundle – ${name.trim()}`,
         description: description.trim() || null,

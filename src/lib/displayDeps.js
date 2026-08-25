@@ -41,7 +41,10 @@ export function extractDeps(blocks) {
 export function itemProduces(category, subcategory) {
   if (!subcategory) return null
   if (category === 'game') return { type: 'game', slug: subcategory }
-  if (category === 'vas') {
+  // 'numeric_slider' and 'assessment' are the categories the 2026-08-25 seeds
+  // migration splits out of 'vas'; the subcategory prefixes are unchanged, so
+  // all three category names resolve producers identically.
+  if (category === 'vas' || category === 'numeric_slider' || category === 'assessment') {
     if (subcategory.startsWith('slider_'))  return { type: 'slider', slug: subcategory.slice(7) }
     if (subcategory.startsWith('vas_pkg_')) return { type: 'pkg',    slug: subcategory.slice(8) }
     if (subcategory.startsWith('vas_'))     return { type: 'vas',    slug: subcategory.slice(4) }

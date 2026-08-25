@@ -253,8 +253,9 @@ function PackageRow({ pkg, scales, onPreview }) {
 
   const del = useMutation({
     mutationFn: async () => {
+      // 'assessment' after the 2026-08-25 seeds migration, 'vas' before it.
       await supabase.from('activities').delete()
-        .eq('category', 'vas').eq('subcategory', `vas_pkg_${pkg.slug}`)
+        .in('category', ['vas', 'assessment']).eq('subcategory', `vas_pkg_${pkg.slug}`)
       const { error } = await supabase.from('vas_packages').delete().eq('id', pkg.id)
       if (error) throw error
     },
@@ -306,8 +307,9 @@ function SliderRow({ slider, onPreview }) {
 
   const del = useMutation({
     mutationFn: async () => {
+      // 'numeric_slider' after the 2026-08-25 seeds migration, 'vas' before it.
       await supabase.from('activities').delete()
-        .eq('category', 'vas').eq('subcategory', `slider_${slider.slug}`)
+        .in('category', ['vas', 'numeric_slider']).eq('subcategory', `slider_${slider.slug}`)
       const { error } = await supabase.from('slider_scales').delete().eq('id', slider.id)
       if (error) throw error
     },

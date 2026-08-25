@@ -11,24 +11,48 @@ import { CSS } from '@dnd-kit/utilities'
 import { supabase } from '../../lib/supabase'
 import { checkSequence, unmetMessage } from '../../lib/displayDeps'
 
-const CATEGORY_ORDER  = ['game', 'questionnaire', 'vas', 'display', 'video', 'form', 'physio', 'training', 'midpoint', 'assessment_leadin', 'daily_welcome', 'daily_farewell']
-const CATEGORY_LABELS = { game: 'Games', questionnaire: 'Questionnaires', vas: 'VAS & Sliders', display: 'Displays', form: 'Forms', physio: 'Physio', training: 'Training Modules', midpoint: 'Midpoint', video: 'Videos', assessment_leadin: 'Assessment Lead-ins', daily_welcome: 'Daily Welcome', daily_farewell: 'Daily Farewell' }
+const CATEGORY_ORDER  = ['game', 'questionnaire', 'vas', 'display', 'likert_slider', 'numeric_slider', 'multiple_choice', 'open_list', 'hierarchy', 'assessment', 'video', 'form', 'physio', 'training', 'midpoint', 'assessment_leadin', 'daily_welcome', 'daily_farewell']
+const CATEGORY_LABELS = {
+  game: 'Games', questionnaire: 'Questionnaires', vas: 'VAS', display: 'Displays',
+  likert_slider: 'Likert Sliders', numeric_slider: 'Numeric Sliders',
+  multiple_choice: 'Multiple Choice', open_list: 'Open Text Lists',
+  hierarchy: 'Belief Hierarchies', assessment: 'Assessments',
+  form: 'Forms', physio: 'Physio', training: 'Training Modules', midpoint: 'Midpoint',
+  video: 'Videos', assessment_leadin: 'Assessment Lead-ins',
+  daily_welcome: 'Daily Welcome', daily_farewell: 'Daily Farewell',
+}
 
 // Picker sections mirror the admin sidebar hierarchy (Norm, 2026-08-25):
-// Instruments, Media, then the study-flow steps. Categories missing from a
-// session's data simply don't render; unknown categories fall into Steps.
+// Instruments (in the sidebar's own order — the combined "VAS & Sliders" split
+// into VAS / Likert Sliders / Numeric Sliders / Multiple Choice / Open Text
+// Lists / Belief Hierarchies / Assessments), Media, then the study-flow steps.
+// Categories missing from a session's data simply don't render; unknown
+// categories fall into Steps.
 const PICKER_SECTIONS = [
-  { header: 'Instruments', cats: ['questionnaire', 'vas', 'display'] },
+  { header: 'Instruments', cats: ['questionnaire', 'vas', 'display', 'likert_slider', 'numeric_slider', 'multiple_choice', 'open_list', 'hierarchy', 'assessment'] },
   { header: 'Media',       cats: ['game', 'video'] },
   { header: 'Study steps', cats: ['form', 'physio', 'training', 'midpoint', 'assessment_leadin', 'daily_welcome', 'daily_farewell'] },
 ]
 
-// Adopted composable instruments with no runtime yet (integration pending) —
-// visible in the picker so the hierarchy matches the sidebar and they become
-// importable the day the composable-surveys package lands, but disabled so no
-// one builds a session step that can't run. Likert/numeric sliders are NOT
-// here: they already run as slider elements under VAS & Sliders.
-const PENDING_INSTRUMENTS = ['Multiple Choice', 'Open Text Lists', 'Belief Hierarchies']
+// Adopted instrument categories whose library may still be empty (the seeds
+// migration is applied after promotion — see 20260825_composable_instrument_
+// seeds.sql). An empty one renders as a disabled "pending" row so the picker
+// hierarchy always matches the sidebar; the placeholder retires itself the
+// moment a real instrument of that category exists.
+const PENDING_CATEGORIES = ['likert_slider', 'multiple_choice', 'open_list', 'hierarchy']
+
+// Display category for the picker: numeric sliders and assessment packages
+// are recategorized by the seeds migration, but rows created before it (or by
+// a create-flow that still writes category 'vas') carry the old category with
+// the same subcategory prefix — so the split is derived, not trusted to the
+// stored value.
+function displayCategory(act) {
+  if (act.category === 'vas') {
+    if (act.subcategory?.startsWith('slider_'))  return 'numeric_slider'
+    if (act.subcategory?.startsWith('vas_pkg_')) return 'assessment'
+  }
+  return act.category
+}
 
 function useActivities() {
   return useQuery({
@@ -174,7 +198,7 @@ export default function SessionBuilder() {
       questionnaire_id:  n.questionnaire_id ?? null,
       module_id:         n.module_id        ?? null,
       label:             n.activities?.label ?? n.questionnaires?.name ?? n.label,
-      category:          n.module_id ? 'training' : (n.activities?.category ?? 'questionnaire'),
+      category:          n.module_id ? 'training' : (n.activities ? displayCategory(n.activities) : 'questionnaire'),
       subcategory:       n.activities?.subcategory ?? null,
       estimated_minutes: n.activities?.estimated_minutes ?? null,
     })))
@@ -225,7 +249,7 @@ export default function SessionBuilder() {
         questionnaire_id:  null,
         module_id:         null,
         label:             act.label,
-        category:          act.category,
+        category:          displayCategory(act),
         subcategory:       act.subcategory ?? null,
         estimated_minutes: act.estimated_minutes,
       }])
@@ -249,9 +273,11 @@ export default function SessionBuilder() {
   })
 
   // Contents of any VAS packages in the sequence, resolved to typed slugs,
-  // so packaged sliders/scales count as variable producers.
+  // so packaged sliders/scales count as variable producers. Matched on the
+  // vas_pkg_ prefix alone: the stored category is 'vas' before the seeds
+  // migration and 'assessment' after it, and the prefix is stable across both.
   const pkgSlugs = [...new Set(
-    sequence.filter(i => i.category === 'vas' && i.subcategory?.startsWith('vas_pkg_'))
+    sequence.filter(i => i.subcategory?.startsWith('vas_pkg_'))
             .map(i => i.subcategory.slice(8))
   )].sort()
   const { data: pkgContentsMap = {} } = useQuery({
@@ -370,7 +396,7 @@ export default function SessionBuilder() {
 
   // Build the grouped picker: activities + uploaded questionnaires + training modules.
   const grouped = CATEGORY_ORDER.reduce((acc, cat) => {
-    const actItems = activities.filter(a => a.category === cat)
+    const actItems = activities.filter(a => displayCategory(a) === cat)
     if (cat === 'questionnaire') {
       const uploadedItems = uploadedQuestionnaires.map(q => ({
         _source: 'uploaded', id: q.id, label: q.name, slug: q.slug,
@@ -481,10 +507,10 @@ export default function SessionBuilder() {
                       ))}
                     </div>
                   ))}
-                  {isInstruments && PENDING_INSTRUMENTS.map(label => (
-                    <div key={label} style={{ ...S.actBtn, opacity: 0.5, cursor: 'default' }}
-                      title="Adopted — importable once the composable-surveys integration lands">
-                      <span style={S.actLabel}>{label}</span>
+                  {isInstruments && PENDING_CATEGORIES.filter(c => !grouped[c]?.length).map(cat => (
+                    <div key={cat} style={{ ...S.actBtn, opacity: 0.5, cursor: 'default' }}
+                      title="Adopted — importable once an instrument of this type exists in the library">
+                      <span style={S.actLabel}>{CATEGORY_LABELS[cat]}</span>
                       <span style={{
                         fontFamily: '"Space Mono", monospace', fontSize: 9, letterSpacing: '0.06em',
                         textTransform: 'uppercase', color: 'var(--pkd)', background: 'var(--bgp)',
