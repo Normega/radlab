@@ -217,7 +217,7 @@ function Library({ cfg }) {
         const isOpen = open === r.id
         return (
           <div key={r.id}>
-            <button style={{ ...S.row, width: '100%', cursor: 'pointer', border: isOpen ? '1px solid var(--pkbs)' : '1px solid var(--bd)' }}
+            <button style={{ ...S.row, width: '100%', cursor: 'pointer', textAlign: 'left', border: isOpen ? '1px solid var(--pkbs)' : '1px solid var(--bd)' }}
               onClick={() => setOpen(isOpen ? null : r.id)}>
               {inner}
               <span style={{ ...S.rowMeta, marginLeft: 'auto' }}>{isOpen ? 'Hide ▲' : 'View ▼'}</span>
