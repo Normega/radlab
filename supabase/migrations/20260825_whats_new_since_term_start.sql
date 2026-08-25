@@ -1,0 +1,17 @@
+-- whats_new was returning the corpus's whole build history.
+--
+-- Harmless while nothing was published; wrong the moment it was. The page is
+-- titled "What we've learned since September" and shows what THIS CLASS added
+-- during term — but with 268 pages live it returned 400 rows of pre-term staff
+-- ingest, which is meaningless to a student and a false claim about who did
+-- the work.
+--
+-- The boundary comes from the data, not a constant: the first lecture
+-- meeting_date in course_structure. Before that the feed is empty, which is
+-- correct — WhatsNew.jsx already renders "Nothing yet — the term's first
+-- accepted contribution will start the timeline."
+--
+-- Full body as applied lives in the server migration
+-- `whats_new_since_term_start`; it differs from the 20260813 version only by
+-- the term_start CTE and the `coalesce(v.reviewed_at, v.created_at) >= t.d`
+-- predicate.
