@@ -12,7 +12,23 @@ import { supabase } from '../../lib/supabase'
 import { checkSequence, unmetMessage } from '../../lib/displayDeps'
 
 const CATEGORY_ORDER  = ['game', 'questionnaire', 'vas', 'display', 'video', 'form', 'physio', 'training', 'midpoint', 'assessment_leadin', 'daily_welcome', 'daily_farewell']
-const CATEGORY_LABELS = { game: 'Games', questionnaire: 'Questionnaires', vas: 'Rating Scales', display: 'Displays', form: 'Forms', physio: 'Physio', training: 'Training Modules', midpoint: 'Midpoint', video: 'Videos', assessment_leadin: 'Assessment Lead-ins', daily_welcome: 'Daily Welcome', daily_farewell: 'Daily Farewell' }
+const CATEGORY_LABELS = { game: 'Games', questionnaire: 'Questionnaires', vas: 'VAS & Sliders', display: 'Displays', form: 'Forms', physio: 'Physio', training: 'Training Modules', midpoint: 'Midpoint', video: 'Videos', assessment_leadin: 'Assessment Lead-ins', daily_welcome: 'Daily Welcome', daily_farewell: 'Daily Farewell' }
+
+// Picker sections mirror the admin sidebar hierarchy (Norm, 2026-08-25):
+// Instruments, Media, then the study-flow steps. Categories missing from a
+// session's data simply don't render; unknown categories fall into Steps.
+const PICKER_SECTIONS = [
+  { header: 'Instruments', cats: ['questionnaire', 'vas', 'display'] },
+  { header: 'Media',       cats: ['game', 'video'] },
+  { header: 'Study steps', cats: ['form', 'physio', 'training', 'midpoint', 'assessment_leadin', 'daily_welcome', 'daily_farewell'] },
+]
+
+// Adopted composable instruments with no runtime yet (integration pending) —
+// visible in the picker so the hierarchy matches the sidebar and they become
+// importable the day the composable-surveys package lands, but disabled so no
+// one builds a session step that can't run. Likert/numeric sliders are NOT
+// here: they already run as slider elements under VAS & Sliders.
+const PENDING_INSTRUMENTS = ['Multiple Choice', 'Open Text Lists', 'Belief Hierarchies']
 
 function useActivities() {
   return useQuery({
@@ -425,30 +441,61 @@ export default function SessionBuilder() {
         <div style={S.panel}>
           <p style={S.panelTitle}>Activities</p>
           {empty && <p style={S.muted}>No activities in the database yet.</p>}
-          {Object.entries(grouped).map(([cat, items]) => (
-            <div key={cat} style={{ marginBottom: 16 }}>
-              <button style={S.catToggle} onClick={() => toggleCat(cat)}>
-                <span>{CATEGORY_LABELS[cat] ?? cat}</span>
-                <span style={S.catChevron}>{collapsedCats.has(cat) ? '▶' : '▼'}</span>
-              </button>
-              {!collapsedCats.has(cat) && items.map(act => (
-                <button
-                  key={`${act._source ?? 'act'}-${act.id}`}
-                  style={S.actBtn}
-                  onClick={() => addItem(act)}
-                >
-                  <span style={S.actLabel}>{act.label}</span>
-                  {act._source === 'uploaded' && (
-                    <span style={S.uploadedTag}>uploaded</span>
-                  )}
-                  {act.estimated_minutes ? (
-                    <span style={S.actMin}>{act.estimated_minutes}m</span>
-                  ) : null}
-                  <span style={S.actAdd}>+</span>
-                </button>
-              ))}
-            </div>
-          ))}
+          {(() => {
+            const placed = new Set(PICKER_SECTIONS.flatMap(s => s.cats))
+            const strays = Object.keys(grouped).filter(c => !placed.has(c))
+            const sections = PICKER_SECTIONS.map((s, i) =>
+              i === PICKER_SECTIONS.length - 1 ? { ...s, cats: [...s.cats, ...strays] } : s)
+            return sections.map(section => {
+              const present = section.cats.filter(c => grouped[c]?.length)
+              const isInstruments = section.header === 'Instruments'
+              if (!present.length && !isInstruments) return null
+              return (
+                <div key={section.header} style={{ marginBottom: 20 }}>
+                  <p style={{
+                    fontFamily: '"Space Mono", monospace', fontSize: 10, letterSpacing: '0.1em',
+                    textTransform: 'uppercase', color: 'var(--gy)', margin: '0 0 8px',
+                    borderBottom: '1px solid var(--bd)', paddingBottom: 4,
+                  }}>{section.header}</p>
+                  {present.map(cat => (
+                    <div key={cat} style={{ marginBottom: 16 }}>
+                      <button style={S.catToggle} onClick={() => toggleCat(cat)}>
+                        <span>{CATEGORY_LABELS[cat] ?? cat}</span>
+                        <span style={S.catChevron}>{collapsedCats.has(cat) ? '▶' : '▼'}</span>
+                      </button>
+                      {!collapsedCats.has(cat) && grouped[cat].map(act => (
+                        <button
+                          key={`${act._source ?? 'act'}-${act.id}`}
+                          style={S.actBtn}
+                          onClick={() => addItem(act)}
+                        >
+                          <span style={S.actLabel}>{act.label}</span>
+                          {act._source === 'uploaded' && (
+                            <span style={S.uploadedTag}>uploaded</span>
+                          )}
+                          {act.estimated_minutes ? (
+                            <span style={S.actMin}>{act.estimated_minutes}m</span>
+                          ) : null}
+                          <span style={S.actAdd}>+</span>
+                        </button>
+                      ))}
+                    </div>
+                  ))}
+                  {isInstruments && PENDING_INSTRUMENTS.map(label => (
+                    <div key={label} style={{ ...S.actBtn, opacity: 0.5, cursor: 'default' }}
+                      title="Adopted — importable once the composable-surveys integration lands">
+                      <span style={S.actLabel}>{label}</span>
+                      <span style={{
+                        fontFamily: '"Space Mono", monospace', fontSize: 9, letterSpacing: '0.06em',
+                        textTransform: 'uppercase', color: 'var(--pkd)', background: 'var(--bgp)',
+                        padding: '2px 7px', borderRadius: 10, flexShrink: 0,
+                      }}>pending</span>
+                    </div>
+                  ))}
+                </div>
+              )
+            })
+          })()}
         </div>
 
         {/* Sequence */}
