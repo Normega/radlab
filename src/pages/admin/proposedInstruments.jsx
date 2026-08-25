@@ -73,11 +73,16 @@ export function AdoptedNumericSlider() {
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 92px', gap: 24, alignItems: 'start' }}>
           <div style={{ minWidth: 0, paddingTop: 9 }}>
+            {/* touched flips on pointerdown/keydown, not only change: clicking
+                exactly where the internal value already sits (the 0 end) fires
+                no change event, which made the endpoint unselectable first. */}
             <input
               type="range" min={0} max={100} step={1} value={v}
               className={`dana-range${touched ? '' : ' is-untouched'}`}
               style={{ '--fill': touched ? `${v}%` : '0%' }}
               onChange={e => { setV(Number(e.target.value)); setTouched(true) }}
+              onPointerDown={() => setTouched(true)}
+              onKeyDown={() => setTouched(true)}
               aria-label="Own choice rating"
             />
             <div style={{ position: 'relative', minHeight: 44, marginTop: 8, fontSize: 12, lineHeight: 1.35, color: 'var(--tx2)' }}>
@@ -119,11 +124,17 @@ export function AdoptedLikertSlider() {
             other label — have room to extend past the track. One rule for all
             N labels means the spacing between them is exactly track/(N−1). */}
         <div style={{ padding: '0 48px' }}>
+          {/* touched flips on pointerdown/keydown, not only change: the
+              untouched input's internal value sits at 1, so clicking "Never"
+              fires no change event — the min was unselectable first (Norm
+              caught this live, 2026-08-25). */}
           <input
             type="range" min={1} max={6} step={1} value={v}
             className={`dana-range${touched ? '' : ' is-untouched'}`}
             style={{ '--fill': touched ? `${((v - 1) / 5) * 100}%` : '0%' }}
             onChange={e => { setV(Number(e.target.value)); setTouched(true) }}
+            onPointerDown={() => setTouched(true)}
+            onKeyDown={() => setTouched(true)}
             aria-label="How often did you notice this feeling today?"
           />
           <div style={{ position: 'relative', minHeight: 32, marginTop: 8 }}>
@@ -246,6 +257,7 @@ export function ProposedOpenList() {
                     className="dana-range"
                     style={{ flex: 1, '--fill': `${r.contribution ?? 50}%` }}
                     onChange={e => setRows(prev => prev.map((row, j) => j === i ? { ...row, contribution: Number(e.target.value), touched: true } : row))}
+                    onPointerDown={() => setRows(prev => prev.map((row, j) => j === i ? { ...row, contribution: row.contribution ?? 50, touched: true } : row))}
                     aria-label={`Contribution of factor ${i + 1}`}
                   />
                   <span style={{ fontFamily: MONO, fontSize: 13, color: r.touched ? 'var(--pkd)' : 'var(--gy)', width: 28, textAlign: 'right' }}>
@@ -314,6 +326,7 @@ export function ProposedHierarchy() {
                         className="dana-range"
                         style={{ flex: 1, '--fill': `${(s.direction + 50)}%` }}
                         onChange={e => setState(prev => ({ ...prev, [b.id]: { ...prev[b.id], direction: Number(e.target.value), touched: true } }))}
+                        onPointerDown={() => setState(prev => ({ ...prev, [b.id]: { ...prev[b.id], touched: true } }))}
                         aria-label={`Direction of change for ${b.level}`}
                       />
                       <span style={{ fontFamily: MONO, fontSize: 13, color: s.touched ? 'var(--pkd)' : 'var(--gy)', width: 34, textAlign: 'right' }}>
