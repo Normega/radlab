@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import RichText from './RichText'
 import SurveyPageRenderer from './SurveyPageRenderer'
 import {
@@ -14,6 +14,7 @@ export default function ComposableQuestionnaireRenderer({
   onComplete,
   onBack,
   previewMode = false,
+  isSimMode = false,
 }) {
   const hasInstructions = Boolean(questionnaire.instructions?.trim())
   const [showInstructions, setShowInstructions] = useState(hasInstructions)
@@ -47,6 +48,17 @@ export default function ComposableQuestionnaireRenderer({
       derivedScores: {},
     })
   }
+
+  // RADlab addition: sim-mode auto-complete, mirroring the legacy player —
+  // without it a dry-run study stalls on its first composable questionnaire.
+  // Responses stay at their defaults (null/[]); sim exercises flow, not data.
+  const finishRef = useRef(null)
+  useEffect(() => { finishRef.current = finish })
+  useEffect(() => {
+    if (!isSimMode) return
+    const t = setTimeout(() => finishRef.current?.(), 400)
+    return () => clearTimeout(t)
+  }, [isSimMode])
 
   function next() {
     if (!pageIsComplete(page, responses)) return

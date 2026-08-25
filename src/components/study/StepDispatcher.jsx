@@ -12,6 +12,7 @@ import GameStepWrapper          from './GameStepWrapper'
 import PhysioSetupStep          from './PhysioSetupStep'
 import TrainingStepWrapper      from './TrainingStepWrapper'
 import VasStepWrapper          from './VasStepWrapper'
+import ComposableInstrumentStepWrapper from './ComposableInstrumentStepWrapper'
 import MidpointStep            from './MidpointStep'
 import VideoStepWrapper        from './VideoStepWrapper'
 import AssessmentLeadInStep    from './AssessmentLeadInStep'
@@ -151,9 +152,33 @@ export default function StepDispatcher({ node, enrollment, scheduleId, studyDay 
     )
   }
 
-  if (category === 'vas') {
+  // 'numeric_slider' and 'assessment' are the categories the seeds migration
+  // (20260825_composable_instrument_seeds.sql, held) splits out of 'vas' —
+  // same rows, same subcategory prefixes (slider_* / vas_pkg_*), so all three
+  // route to the same wrapper. This dispatch handling BOTH names is the
+  // precondition for applying that migration.
+  if (category === 'vas' || category === 'numeric_slider' || category === 'assessment') {
     return (
       <VasStepWrapper
+        subcategory={subcategory}
+        enrollment={enrollment}
+        scheduleId={scheduleId}
+        stepIndex={stepIndex}
+        totalSteps={totalSteps}
+        onComplete={onComplete}
+        supabaseClient={supabaseClient}
+        isSimMode={isSimMode}
+        demoMode={demoMode}
+      />
+    )
+  }
+
+  // Standalone composable instruments (subcategory = composable_instruments
+  // slug). Demo mode renders the real component with zero writes, like
+  // questionnaires and VAS.
+  if (['likert_slider', 'multiple_choice', 'open_list', 'hierarchy'].includes(category)) {
+    return (
+      <ComposableInstrumentStepWrapper
         subcategory={subcategory}
         enrollment={enrollment}
         scheduleId={scheduleId}

@@ -3,6 +3,8 @@
 // Shared helpers for building the flat slide sequence and resolving
 // per-item scale labels. Used by QuestionnaireRenderer and admin pages.
 
+import { validateComposableDefinition } from './composable/composableQuestionnaireUtils'
+
 // True when the definition is a checklist-type questionnaire (independently
 // endorsed items with fixed point values). Absent questionnaire_type = likert.
 export function isChecklistType(questionnaire) {
@@ -219,6 +221,11 @@ export function computeDerivedScores(questionnaire, subscaleScores) {
 export function validateDefinition(def) {
   const errors = [];
   if (!def || typeof def !== 'object') return ['Not a valid JSON object.'];
+  // Composable (page-based) questionnaires have their own schema and validator;
+  // everything below this line is the legacy likert/checklist shape.
+  if (def.questionnaire_type === 'composable') {
+    return validateComposableDefinition(def);
+  }
   if (!def.slug || typeof def.slug !== 'string') errors.push('Missing or invalid "slug".');
   if (!def.name || typeof def.name !== 'string') errors.push('Missing or invalid "name".');
   if (!def.instructions || typeof def.instructions !== 'string') errors.push('Missing "instructions".');

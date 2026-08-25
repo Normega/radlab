@@ -9,9 +9,25 @@ import { buildSlides, prevNavigableIndex, effectiveLabels, isEndpointOnly,
          isChecklistType, checklistItemResponse,
          normalizeChecklistResponses, computeChecklistTotal } from './questionnaireUtils';
 
+import ComposableQuestionnaireRenderer from './composable/ComposableQuestionnaireRenderer';
+
 const FADE_MS = 150; // slide transition duration
 
 // ── QuestionnaireRenderer ──────────────────────────────────────────────────
+//
+// Hook-free dispatcher (Dana's INTEGRATION.md §2): composable (page-based)
+// definitions go to ComposableQuestionnaireRenderer; everything else — likert,
+// checklist, and definitions with no questionnaire_type — renders through the
+// legacy player below, unchanged. A conditional return INSIDE the hook-heavy
+// legacy body would break the Rules of Hooks, hence the split.
+export default function QuestionnaireRenderer(props) {
+  if (props.questionnaire?.questionnaire_type === 'composable') {
+    return <ComposableQuestionnaireRenderer {...props} />;
+  }
+  return <LegacyQuestionnaireRenderer {...props} />;
+}
+
+// ── LegacyQuestionnaireRenderer ────────────────────────────────────────────
 //
 // Full questionnaire player. Builds a flat slide sequence from the definition,
 // manages responses, handles back navigation, and fires onComplete when done.
@@ -24,7 +40,7 @@ const FADE_MS = 150; // slide transition duration
 //   onBack          — optional () => void — called if back pressed on instruction slide
 //   previewMode     — bool — shows "Preview complete" at end instead of calling onComplete
 
-export default function QuestionnaireRenderer({
+function LegacyQuestionnaireRenderer({
   questionnaire,
   partNumber  = 1,
   totalParts  = 1,

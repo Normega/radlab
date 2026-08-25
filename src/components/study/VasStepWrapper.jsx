@@ -2,7 +2,9 @@ import { useState, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { supabase as globalSupabase } from '../../lib/supabase'
 import VasRenderer from '../vas/VasRenderer'
-import NoDefaultSlider from './NoDefaultSlider'
+import SliderQuestion from '../questionnaire/composable/SliderQuestion'
+import { useSubmitLock } from '../../lib/useSubmitLock'
+import '../questionnaire/composable/composableSurvey.css'
 
 /**
  * Mounts inside StepDispatcher for steps with category === 'vas'.
@@ -133,6 +135,7 @@ export default function VasStepWrapper({
       <StudySliderBlock
         scale={sliderScale}
         userId={demoMode ? null : userId}
+        scheduleId={scheduleId}
         db={db}
         onComplete={value => onComplete?.({ slider_slug: slug, value })}
       />
@@ -196,6 +199,7 @@ export default function VasStepWrapper({
         key={currentItem.id}
         scale={currentItem.data}
         userId={demoMode ? null : userId}
+        scheduleId={scheduleId}
         db={db}
         partNumber={pkgIndex + 1}
         totalParts={pkgItems.length}
@@ -222,76 +226,95 @@ export default function VasStepWrapper({
 }
 
 // ── StudySliderBlock ──────────────────────────────────────────────────────────
+// Renders through the production SliderQuestion component (2026-08-25), so
+// participants see the enforced numeric-slider template — white card, sparse
+// numbered anchors, VALUE box "—" until touched — exactly what the admin
+// library previews. Rows without an `anchors` spec fall back to start/end
+// anchors from their min/max labels.
+//
+// Save path fixed in the same pass (CLAUDE.md participant-data rules): the
+// insert now records schedule_id (it never did — every prior slider response
+// is un-attributable to a session), and the `saving` state flag became a
+// useSubmitLock ref (a state flag is a race, not a lock). The insert error is
+// also checked now: it used to be discarded, advancing the participant past a
+// silently lost response.
 
-function StudySliderBlock({ scale, userId, db, onComplete, partNumber, totalParts }) {
-  // null until chosen. This block already gated Submit on a `touched` flag, but
-  // its handle still rested at the midpoint, so selecting the midpoint took an
-  // extra move away and back — a native range fires no change event when the
-  // value is unchanged. NoDefaultSlider draws no handle until there is a value
-  // and commits on pointer-down, so every option costs the same one gesture.
-  const [value,   setValue]   = useState(null)
-  const [saving,  setSaving]  = useState(false)
+function StudySliderBlock({ scale, userId, scheduleId = null, db, onComplete, partNumber, totalParts }) {
+  const [value, setValue]         = useState(null)
+  const [saveError, setSaveError] = useState(null)
+  const { submit, busy } = useSubmitLock(scale.slug)
   const touched = value != null
 
   async function handleSubmit() {
-    if (!touched || saving) return
-    setSaving(true)
-    if (userId) {
-      await db.from('questionnaire_responses').insert({
-        user_id:            userId,
-        questionnaire_slug: `slider_${scale.slug}`,
-        responses:          { value },
-        completed_at:       new Date().toISOString(),
-      })
-    }
-    onComplete(value)
+    if (!touched || busy) return
+    setSaveError(null)
+    await submit(async () => {
+      if (userId) {
+        const { error } = await db.from('questionnaire_responses').insert({
+          user_id:            userId,
+          questionnaire_slug: `slider_${scale.slug}`,
+          schedule_id:        scheduleId ?? null,
+          responses:          { value },
+          completed_at:       new Date().toISOString(),
+        })
+        // Thrown so the lock releases and the participant can retry —
+        // advancing on a failed save loses the response silently.
+        if (error) throw error
+      }
+      onComplete(value)
+    }).catch(err => {
+      console.error('slider questionnaire_responses insert:', err)
+      setSaveError(err.message)
+    })
   }
+
+  const min = scale.min ?? 0
+  const max = scale.max ?? 100
 
   return (
     <div style={SS.wrap}>
       {partNumber != null && totalParts != null && (
         <p style={SS.partLabel}>{partNumber} of {totalParts}</p>
       )}
-      <p style={SS.prompt}>{scale.prompt}</p>
-      <div style={SS.sliderWrap}>
-        <NoDefaultSlider
-          min={scale.min}
-          max={scale.max}
+      <div className="cs-page">
+        <SliderQuestion
+          config={{
+            id:       `slider_${scale.slug}`,
+            question: scale.prompt,
+            min,
+            max,
+            step:     scale.step ?? 1,
+            labels:   scale.anchors ?? [
+              { value: min, label: scale.min_label ?? '' },
+              { value: max, label: scale.max_label ?? '' },
+            ],
+          }}
           value={value}
           onChange={setValue}
-          ariaLabel={scale.prompt}
-          disabled={saving}
         />
-        <div style={{ ...SS.labels, color: touched ? 'var(--tx2)' : 'var(--gy)' }}>
-          <span>{scale.min_label}</span>
-          {touched
-            ? <span style={SS.val}>{value}</span>
-            : <span style={SS.valEmpty}>—</span>
-          }
-          <span>{scale.max_label}</span>
-        </div>
       </div>
-      <button
-        style={{ ...SS.btn, opacity: touched && !saving ? 1 : 0.4, cursor: touched && !saving ? 'pointer' : 'not-allowed' }}
-        onClick={handleSubmit}
-        disabled={!touched || saving}
-      >
-        {saving ? 'Saving…' : 'Submit'}
-      </button>
+      {saveError && (
+        <p style={SS.errMsg}>Could not save your response: {saveError}. Please try again.</p>
+      )}
+      <div style={SS.btnRow}>
+        <button
+          type="button"
+          className="cs-primary-button"
+          disabled={!touched || busy}
+          onClick={handleSubmit}
+        >
+          {busy ? 'Saving…' : 'Submit'}
+        </button>
+      </div>
     </div>
   )
 }
 
 const SS = {
-  wrap:      { padding: '40px 32px', maxWidth: 560, margin: '0 auto', fontFamily: '"DM Sans",system-ui,sans-serif' },
+  wrap:      { padding: '40px 24px 60px', maxWidth: 860, margin: '0 auto', fontFamily: '"DM Sans",system-ui,sans-serif' },
   partLabel: { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', margin: '0 0 16px' },
-  prompt:    { fontSize: 18, fontWeight: 600, color: 'var(--tx)', margin: '0 0 24px', lineHeight: 1.5 },
-  sliderWrap: { background: 'var(--bg)', border: '1px solid var(--bd)', borderRadius: 12, padding: '24px 24px 18px', marginBottom: 28 },
-  slider:    { width: '100%', height: 8, cursor: 'pointer', marginBottom: 14, display: 'block' },
-  labels:    { display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13 },
-  val:       { fontSize: 28, fontWeight: 600, color: 'var(--pk)' },
-  valEmpty:  { fontSize: 28, fontWeight: 400, color: 'var(--gy)' },
-  btn:       { background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 10, padding: '13px 32px', fontSize: 15, fontWeight: 600, fontFamily: '"DM Sans",system-ui,sans-serif', transition: 'opacity 0.15s' },
+  btnRow:    { display: 'flex', justifyContent: 'flex-end', marginTop: 24 },
+  errMsg:    { fontSize: 13, color: 'var(--err-tx)', background: 'var(--err-bg)', border: '1px solid var(--err-bd)', borderRadius: 8, padding: '8px 14px', marginTop: 16 },
 }
 
 const S = {

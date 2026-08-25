@@ -71,10 +71,16 @@ export default function QuestionnaireStepWrapper({ slug, enrollment, scheduleId,
   if (isLoading) return <div style={S.loading}>Loading questionnaire…</div>
   if (error)     return <div style={S.err}>Could not load questionnaire "{slug}": {error.message}</div>
 
-  // A definition with no items would crash the renderer — surface a legible
+  // An unconfigured definition would crash the renderer — surface a legible
   // message instead so the session can be diagnosed rather than blanking out.
-  if (!Array.isArray(q?.definition?.items) || q.definition.items.length === 0) {
-    return <div style={S.err}>Questionnaire "{slug}" is not configured (no items). Check its definition in the admin library.</div>
+  // Type-aware: legacy questionnaires are item-based, composable ones are
+  // page-based (the renderer dispatches on questionnaire_type).
+  const isComposable = q?.definition?.questionnaire_type === 'composable'
+  const isConfigured = isComposable
+    ? Array.isArray(q?.definition?.pages) && q.definition.pages.length > 0
+    : Array.isArray(q?.definition?.items) && q.definition.items.length > 0
+  if (!isConfigured) {
+    return <div style={S.err}>Questionnaire "{slug}" is not configured (no {isComposable ? 'pages' : 'items'}). Check its definition in the admin library.</div>
   }
 
   // This wrapper had NO guard: QuestionnaireRenderer refuses to fire onComplete
