@@ -5,6 +5,14 @@ import { Link } from 'react-router-dom'
 
 const TALKS = [
   {
+    to: '/adobe-aug-2026',
+    kicker: 'Adobe L&D leaders · August 2026',
+    title: 'Sense Foraging for Growth',
+    sub: 'The brain science of behaviour change — a Q&A companion deck with two whole-room exercises (breath check, Drift).',
+    tags: ['Sense foraging', 'Interoception', 'Behaviour change'],
+    accent: '#f068a4',
+  },
+  {
     to: '/toni-july-2026',
     kicker: 'ToNI Users Meeting · July 2026',
     title: 'From DICOMs to denoised fMRI',
