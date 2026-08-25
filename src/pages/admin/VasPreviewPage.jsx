@@ -33,7 +33,7 @@ export default function VasPreviewPage() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['vas-scales'] })
-      navigate('/admin/vas')
+      navigate('/admin/instruments/vas')
     },
   })
 
@@ -49,7 +49,7 @@ export default function VasPreviewPage() {
           <p style={S.sub}>{scale.question}</p>
         </div>
         <div style={S.headerActions}>
-          <button style={S.backBtn} onClick={() => navigate('/admin/vas')}>← Library</button>
+          <button style={S.backBtn} onClick={() => navigate('/admin/instruments/vas')}>← Library</button>
         </div>
       </div>
 

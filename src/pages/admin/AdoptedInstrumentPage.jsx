@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import VasRenderer from '../../components/vas/VasRenderer'
+import NoDefaultSlider from '../../components/study/NoDefaultSlider'
 import {
   ProposedMultipleChoice, ProposedOpenList, ProposedHierarchy,
   AdoptedLikertSlider, AdoptedNumericSlider,
@@ -32,14 +34,15 @@ const PAGES = {
   'numeric-slider': {
     title: 'Numeric slider',
     source: 'NoDefaultSlider + composable-surveys SliderQuestion chrome',
-    chips: [{ label: 'Official format · adopted 2026-08-19', tone: 'green' }, { label: 'Chrome rollout pending', tone: 'pink' }],
+    chips: [{ label: 'Official format · adopted 2026-08-19', tone: 'green' }, { label: 'Value readout pending', tone: 'pink' }],
     C: AdoptedNumericSlider,
-    blurb: 'The continuous slider: numeric range with sparse anchors and a VALUE readout that stays “—” until touched. This is the official numeric-slider format (Norm, 2026-08-24); the sliders listed below render in the legacy chrome until the rollout.',
+    blurb: 'The continuous slider: numeric range with sparse anchors and a VALUE readout that stays “—” until touched. This is the official format (Norm, 2026-08-24). The track/thumb chrome shipped platform-wide 2026-08-25 — every existing slider below already wears it (click a row to view); the VALUE readout and numbered anchors arrive with the composable integration.',
     note: null,
     library: {
       table: 'slider_scales', title: 'Existing numeric sliders',
       newLink: '/admin/sliders/new', newLabel: '+ New Slider',
       row: r => ({ name: r.prompt || r.slug, meta: `${r.min}–${r.max}${r.min_label ? ` · ${r.min_label} → ${r.max_label ?? ''}` : ''}` }),
+      preview: r => <SliderPreview row={r} />,
     },
   },
   'vas': {
@@ -75,6 +78,12 @@ const PAGES = {
     C: ProposedMultipleChoice,
     blurb: 'Single-select multiple choice, where an option can be plain or carry inline text/number entry with prefix/suffix and bounds. Fills a real gap: the platform has never had a generic MC instrument.',
     note: 'The interactive sample is the review demo. The production component ships with the composable-surveys package integration.',
+    library: {
+      title: 'Existing multiple-choice questions',
+      static: [{ id: 'demo-mc', name: 'Target grade (demo)', slug: 'demo' }],
+      row: r => ({ name: r.name, meta: 'demo instance' }),
+      preview: () => <ProposedMultipleChoice />,
+    },
   },
   'open-list': {
     title: 'Open text list + contribution ratings',
@@ -83,6 +92,12 @@ const PAGES = {
     C: ProposedOpenList,
     blurb: 'Participant-generated factors with a per-factor rating: typing text reveals a contribution slider beneath that row, filling the last row grows a new one, and entries are word-capped with a live counter.',
     note: 'The interactive sample is the review demo. The production component ships with the composable-surveys package integration.',
+    library: {
+      title: 'Existing open text lists',
+      static: [{ id: 'demo-ol', name: 'Outcome attribution factors (demo)', slug: 'demo' }],
+      row: r => ({ name: r.name, meta: 'demo instance' }),
+      preview: () => <ProposedOpenList />,
+    },
   },
   'hierarchy': {
     title: 'Hierarchical belief question',
@@ -91,6 +106,12 @@ const PAGES = {
     C: ProposedHierarchy,
     blurb: 'A belief hierarchy shown whole, indented by level. Participants select every level that changed; each selected level reveals a signed direction slider. Generalizes to any nested-construct rating.',
     note: 'The interactive sample is the review demo. The production component ships with the composable-surveys package integration.',
+    library: {
+      title: 'Existing belief hierarchies',
+      static: [{ id: 'demo-bh', name: 'Feedback belief hierarchy (demo)', slug: 'demo' }],
+      row: r => ({ name: r.name, meta: 'demo instance' }),
+      preview: () => <ProposedHierarchy />,
+    },
   },
 }
 
@@ -156,8 +177,10 @@ function LiveVasSample() {
 // ── Library — the existing authored items of this type ────────────────────────
 
 function Library({ cfg }) {
+  const [open, setOpen] = useState(null)
   const { data = [], isLoading, error } = useQuery({
-    queryKey: ['instrument-lib', cfg.table],
+    queryKey: ['instrument-lib', cfg.table ?? 'static'],
+    enabled: !!cfg.table,
     queryFn: async () => {
       const { data, error } = await supabase
         .from(cfg.table).select('*')
@@ -166,35 +189,62 @@ function Library({ cfg }) {
       return data ?? []
     },
   })
+  const rows = cfg.static ?? data
+  const ready = cfg.static || (!isLoading && !error)
 
   return (
     <div>
       <div style={S.divider} />
       <div style={S.libHead}>
-        <h2 style={S.libTitle}>{cfg.title}{!isLoading && !error ? ` (${data.length})` : ''}</h2>
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          <Link to={cfg.newLink} style={S.newBtn}>{cfg.newLabel}</Link>
-          <Link to="/admin/vas" style={S.link}>Full library →</Link>
-        </div>
+        <h2 style={S.libTitle}>{cfg.title}{ready ? ` (${rows.length})` : ''}</h2>
+        {cfg.newLink && <Link to={cfg.newLink} style={S.newBtn}>{cfg.newLabel}</Link>}
       </div>
-      {isLoading && <p style={S.muted}>Loading…</p>}
-      {error && <p style={S.muted}>Could not load the list.</p>}
-      {!isLoading && !error && data.length === 0 && <p style={S.muted}>Nothing here yet.</p>}
-      {data.map(r => {
+      {!cfg.static && isLoading && <p style={S.muted}>Loading…</p>}
+      {!cfg.static && error && <p style={S.muted}>Could not load the list.</p>}
+      {ready && rows.length === 0 && <p style={S.muted}>Nothing here yet.</p>}
+      {ready && rows.map(r => {
         const { name, meta } = cfg.row(r)
         const inner = (
           <>
             <span style={S.rowName}>{name}</span>
             <span style={S.rowMeta}>{meta}</span>
-            <code style={S.rowSlug}>{r.slug}</code>
+            {r.slug && <code style={S.rowSlug}>{r.slug}</code>}
           </>
         )
-        return cfg.itemLink ? (
+        if (cfg.itemLink) return (
           <Link key={r.id} to={cfg.itemLink(r)} style={{ ...S.row, textDecoration: 'none' }}>{inner}</Link>
-        ) : (
-          <div key={r.id} style={S.row}>{inner}</div>
+        )
+        // Expandable in-place preview — click the row to view the instance.
+        const isOpen = open === r.id
+        return (
+          <div key={r.id}>
+            <button style={{ ...S.row, width: '100%', cursor: 'pointer', border: isOpen ? '1px solid var(--pkbs)' : '1px solid var(--bd)' }}
+              onClick={() => setOpen(isOpen ? null : r.id)}>
+              {inner}
+              <span style={{ ...S.rowMeta, marginLeft: 'auto' }}>{isOpen ? 'Hide ▲' : 'View ▼'}</span>
+            </button>
+            {isOpen && cfg.preview && (
+              <div className="spec-stage" style={{ ...S.stage, margin: '0 0 12px' }}>{cfg.preview(r)}</div>
+            )}
+          </div>
         )
       })}
+    </div>
+  )
+}
+
+// In-place viewer for an authored numeric slider, rendered in the official
+// chrome (NoDefaultSlider — whose track/thumb now carry the adopted styling
+// platform-wide via index.css).
+function SliderPreview({ row }) {
+  const [v, setV] = useState(null)
+  return (
+    <div style={{ maxWidth: 620, margin: '0 auto', padding: '24px 20px 26px' }}>
+      <p style={{ fontFamily: SANS, fontSize: 15, color: 'var(--tx)', margin: '0 0 18px' }}>{row.prompt}</p>
+      <NoDefaultSlider min={row.min ?? 0} max={row.max ?? 100} value={v} onChange={setV} ariaLabel={row.prompt} />
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: SANS, fontSize: 11, color: 'var(--tx2)', marginTop: 6 }}>
+        <span>{row.min_label ?? row.min}</span><span>{row.max_label ?? row.max}</span>
+      </div>
     </div>
   )
 }

@@ -496,19 +496,22 @@ body {
   inset: 0;
   pointer-events: none;
 }
+/* Track/fill/thumb tinted to the adopted Dana chrome (2026-08-25) — this is
+   what "update all existing sliders to the new format" means chrome-wise:
+   every NoDefaultSlider consumer platform-wide picks it up from here. */
 .ndslider__track {
   position: absolute;
   left: 0; right: 0; top: 50%;
   transform: translateY(-50%);
-  height: 8px;
+  height: 7px;
   border-radius: 999px;
-  background: rgba(0, 0, 0, 0.09);
+  background: #E8DCE2;
 }
 .ndslider__fill {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  height: 8px;
+  height: 7px;
   border-radius: 999px;
   background: var(--pk);
 }
@@ -530,7 +533,7 @@ body {
   border-radius: 50%;
   background: #fff;
   border: 3px solid var(--pk);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 2px 8px rgba(74, 36, 55, 0.14);
 }
 /* Keyboard focus ring, drawn on the visual layer since the input is invisible */
 .ndslider__input:focus-visible + .ndslider__visual .ndslider__track {
