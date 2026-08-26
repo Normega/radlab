@@ -49,6 +49,24 @@
   --err-bg: #FCEBEB;
   --err-bd: #F09595;
   --err-tx: #A32D2D;
+  /* Adopted 2026-08-26 from the Figma design-system expansion (Brand_Aug26_2026.fig).
+     Spacing: the only legal values for padding and gaps. */
+  --sp-4:  4px;
+  --sp-8:  8px;
+  --sp-16: 16px;
+  --sp-24: 24px;
+  --sp-32: 32px;
+  --sp-40: 40px;
+  --sp-48: 48px;
+  --sp-64: 64px;
+  /* Overlays: Scrim = neutral/400 @ 55% (locked/gated content), Wash = pink/50 @ 70% (hover wash) */
+  --ov-scrim: rgba(171, 173, 176, 0.55);
+  --ov-wash:  rgba(252, 240, 245, 0.70);
+  /* The only shadow in the system: Elevation/Hover */
+  --sh-hover: 0 0 20px rgba(0, 0, 0, 0.12);
+  /* Shared content containers: lg = grids & data, sm = forms & prose. Nav is full-bleed. */
+  --container-lg: 1120px;
+  --container-sm: 840px;
 }
 
 body {
@@ -454,6 +472,58 @@ body {
 .brand-font-row__detail { font-size: 12px; color: var(--tx2); font-family: 'DM Sans', system-ui, sans-serif; }
 
 .brand-font-row__specimen { font-size: 28px; color: var(--tx); }
+
+/* Semantic colour groups (2026-08-26 expansion) */
+.brand-sem-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.brand-sem-card { display: flex; flex-direction: column; gap: 4px; }
+.brand-sem-card__chip { height: 48px; border-radius: 12px; border: 1px solid var(--bd); }
+.brand-sem-card__name { font-size: 12px; font-weight: 600; color: var(--tx); }
+.brand-sem-card__alias { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--tx2); }
+.brand-sem-card__use { font-size: 12px; color: var(--tx2); line-height: 1.45; }
+
+/* Spacing scale bars */
+.brand-space-rows { display: flex; flex-direction: column; gap: 12px; }
+.brand-space-row { display: flex; align-items: center; gap: 16px; }
+.brand-space-row__name { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--tx); width: 96px; }
+.brand-space-row__bar { height: 16px; background: var(--pk); }
+.brand-space-row__px { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--tx2); }
+
+/* Stroke demos */
+.brand-stroke-row { display: flex; align-items: center; gap: 16px; margin-bottom: 12px; }
+.brand-stroke-row__name { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--tx); width: 176px; }
+.brand-stroke-row__line { flex: 1; background: var(--pk); }
+
+/* Effects demos */
+.brand-fx-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+.brand-fx-card { display: flex; flex-direction: column; gap: 8px; }
+.brand-fx-card__stage { background: var(--bg); border-radius: 12px; padding: 24px; }
+.brand-fx-card__demo {
+  position: relative; overflow: hidden; background: var(--bgc); border: 1px solid var(--bd);
+  border-radius: 12px; height: 96px; display: flex; align-items: center; justify-content: center;
+  font-size: 14px; color: var(--tx2);
+}
+.brand-fx-card__demo--elevated { box-shadow: var(--sh-hover); border-color: transparent; }
+.brand-fx-card__veil { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+.brand-fx-card__name { font-size: 12px; font-weight: 600; color: var(--tx); }
+.brand-fx-card__note { font-size: 12px; color: var(--tx2); line-height: 1.45; }
+
+/* Layout container diagrams — proportional to a 1440 design frame */
+.brand-layout-diagram { background: var(--bg); border-radius: 12px; padding: 12px 0; margin: 8px 0 4px; }
+.brand-layout-diagram__inner {
+  height: 40px; margin: 0 auto; background: var(--bgc); border: 1px solid var(--pkbs);
+  border-radius: 12px; display: flex; align-items: center; justify-content: center;
+  font-family: 'Space Mono', monospace; font-size: 12px; color: var(--pkd);
+}
+.brand-layout-caption { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--tx); margin: 12px 0 0; }
+.brand-layout-note { font-size: 12px; color: var(--tx2); margin: 4px 0 0; }
+.brand-rules-box { background: var(--bgp); border-radius: 12px; padding: 16px 20px; margin-top: 20px; }
+.brand-rules-box__title { font-size: 14px; font-weight: 600; color: var(--pkd); margin: 0 0 4px; }
+.brand-rules-box__body { font-size: 14px; color: var(--pkd); margin: 0; }
+.brand-bp-row { display: flex; gap: 16px; padding: 10px 0; border-top: 1px solid var(--bd); }
+.brand-bp-row:first-of-type { border-top: none; }
+.brand-bp-row__range { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--pkd); width: 96px; flex-shrink: 0; }
+.brand-bp-row__gutter { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--tx); width: 64px; flex-shrink: 0; }
+.brand-bp-row__note { font-size: 12px; color: var(--tx2); }
 
 /* Farm Joy game backgrounds — fills a position:absolute container */
 .absolute-fill {
