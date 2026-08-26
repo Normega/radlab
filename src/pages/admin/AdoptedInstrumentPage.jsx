@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import VasRenderer from '../../components/vas/VasRenderer'
 import SurveyComponentRenderer from '../../components/questionnaire/composable/SurveyComponentRenderer'
+import { DB_COMPONENT_TYPE } from '../../components/questionnaire/composable/componentRegistry'
 import '../../components/questionnaire/composable/composableSurvey.css'
 
 // ── AdoptedInstrumentPage (/admin/instruments/:slug) ──────────────────────────
@@ -14,97 +15,30 @@ import '../../components/questionnaire/composable/composableSurvey.css'
 // The legacy /admin/vas library remains routable for CRUD flows and previews;
 // these pages link into it rather than duplicating it.
 //
-// Since 2026-08-25 the interactive samples for the adopted types render the
-// PRODUCTION components (src/components/questionnaire/composable/, ported from
-// Dana's package), not the proposedInstruments.jsx review demos — those remain
-// only on the Instrument Styles comparison page. The demo configs below mirror
-// the seeds in 20260825_composable_instrument_seeds.sql; step 5 of the
-// integration replaces them with composable_instruments DB rows.
+// The samples and libraries for the four composable types render REAL
+// composable_instruments rows through the PRODUCTION components (step 5 of
+// the integration, 2026-08-25) — the same rows a session step loads, so what
+// this page shows is by definition what a participant gets. The review demos
+// remain only on the Instrument Styles comparison page.
 
-const DEMO_CONFIGS = {
-  likert_slider: {
-    id: 'demo_noticing_frequency',
-    type: 'likert_slider',
-    question: 'How often did you notice this feeling today?',
-    min: 1, max: 6, step: 1,
-    labels: [
-      { value: 1, label: 'Never' },
-      { value: 2, label: 'Rarely' },
-      { value: 3, label: 'Sometimes' },
-      { value: 4, label: 'Often' },
-      { value: 5, label: 'Very often' },
-      { value: 6, label: 'Almost always' },
-    ],
-  },
-  numeric_slider: {
-    id: 'demo_goal_choice',
-    type: 'slider',
-    question: 'To what extent does pursuing this goal feel like your own choice, rather than something you feel pressured or required to pursue?',
-    min: 0, max: 100, step: 1,
-    labels: [
-      { value: 0,   label: 'It does not feel like my own choice' },
-      { value: 50,  label: 'It partly feels like my own choice' },
-      { value: 100, label: 'It feels completely like my own choice' },
-    ],
-  },
-  multiple_choice: {
-    id: 'demo_target_grade',
-    type: 'multiple_choice',
-    question: 'What final grade are you aiming to achieve in this course?',
-    required: true,
-    options: [
-      { id: 'specific_grade', label: 'I am aiming for a specific final grade.',
-        response_type: 'number', placeholder: '85', suffix: '%', min: 0, max: 100, step: 1 },
-      { id: 'pass_only', label: 'I do not have a specific target grade, as long as I pass.',
-        response_type: 'plain' },
-    ],
-  },
-  open_list: {
-    id: 'demo_outcome_attribution',
-    type: 'open_text_list',
-    question: 'What do you think caused this outcome? Please list all the factors that you think contributed, and indicate how much each factor contributed.',
-    required: true,
-    initial_boxes: 3,
-    max_words: 5,
-    example_placeholder: 'Ex. I need better study strategies…',
-    minimum_required_responses: 1,
-    slider: {
-      question: 'How much did this factor contribute?',
-      min: 0, max: 100, step: 1,
-      labels: [
-        { value: 0, label: 'Did not contribute' },
-        { value: 100, label: 'Contributed completely' },
-      ],
-    },
-  },
-  hierarchy: {
-    id: 'demo_feedback_beliefs',
-    type: 'hierarchical_belief',
-    question: 'How much did this feedback change your belief about…',
-    instruction: 'Select all of the beliefs that changed. You can select more than one.',
-    allow_none_selected: true,
-    beliefs: [
-      { id: 'skill_specific',    depth: 0, level: 'Skill-specific',                  text: 'My understanding of the specific topic or skill assessed' },
-      { id: 'strategy_specific', depth: 1, level: 'Strategy-specific',               text: 'Whether my current study strategy works for this course' },
-      { id: 'meta_strategy',     depth: 2, level: 'Meta-strategy specific',          text: 'Whether my current strategy for managing my time, effort, and study process works for this course' },
-      { id: 'course_efficacy',   depth: 3, level: 'Course-specific · self-efficacy', text: 'My ability to succeed in this subject area' },
-      { id: 'domain_efficacy',   depth: 4, level: 'Domain-specific · self-efficacy', text: 'My ability to succeed in this domain' },
-      { id: 'self_global',       depth: 5, level: 'Self-global · self-efficacy',     text: 'My general competence / self-worth' },
-    ],
-    slider: {
-      question: 'Did this belief change in a positive or negative direction?',
-      min: -50, max: 50, step: 1,
-      labels: [
-        { value: -50, label: 'Negative change' },
-        { value: 0,   label: 'No directional change' },
-        { value: 50,  label: 'Positive change' },
-      ],
-    },
-  },
+// The numeric-slider sample keeps a canonical demo config: numeric sliders
+// live in slider_scales (listed below it), and no authored row carries a
+// middle anchor yet — the demo is the one place the full official format
+// (sparse three-anchor spec) is always visible.
+const NUMERIC_SLIDER_DEMO = {
+  id: 'demo_goal_choice',
+  type: 'slider',
+  question: 'To what extent does pursuing this goal feel like your own choice, rather than something you feel pressured or required to pursue?',
+  min: 0, max: 100, step: 1,
+  labels: [
+    { value: 0,   label: 'It does not feel like my own choice' },
+    { value: 50,  label: 'It partly feels like my own choice' },
+    { value: 100, label: 'It feels completely like my own choice' },
+  ],
 }
 
 // Interactive stage around one production component: local state, nothing
-// saved — the same controlled contract the session runtime will use.
+// saved — the same controlled contract the session runtime uses.
 function DemoStage({ config }) {
   const [value, setValue] = useState(undefined)
   return (
@@ -114,11 +48,56 @@ function DemoStage({ config }) {
   )
 }
 
-const LikertSliderSample   = () => <DemoStage config={DEMO_CONFIGS.likert_slider} />
-const NumericSliderSample  = () => <DemoStage config={DEMO_CONFIGS.numeric_slider} />
-const MultipleChoiceSample = () => <DemoStage config={DEMO_CONFIGS.multiple_choice} />
-const OpenListSample       = () => <DemoStage config={DEMO_CONFIGS.open_list} />
-const HierarchySample      = () => <DemoStage config={DEMO_CONFIGS.hierarchy} />
+const instrumentConfig = r => ({ id: r.slug, type: DB_COMPONENT_TYPE[r.type], ...r.config })
+
+// Live sample for a composable type: the first instrument of that type in the
+// library, rendered through the production component (same pattern as the VAS
+// sample below).
+function InstrumentSample({ type }) {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['composable-instrument-first', type],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('composable_instruments').select('*').eq('type', type)
+        .order('created_at', { ascending: true }).limit(1)
+      if (error) throw error
+      return data?.[0] ?? null
+    },
+  })
+  if (isLoading) return <p style={S.muted}>Loading sample instrument…</p>
+  if (error || !data) return <p style={S.muted}>No instrument of this type in the library yet — the sample renders the first one once it exists.</p>
+  // The page already wraps samples in the spec-stage box.
+  return <DemoStage config={instrumentConfig(data)} />
+}
+
+const LikertSliderSample   = () => <InstrumentSample type="likert_slider" />
+const NumericSliderSample  = () => <DemoStage config={NUMERIC_SLIDER_DEMO} />
+const MultipleChoiceSample = () => <InstrumentSample type="multiple_choice" />
+const OpenListSample       = () => <InstrumentSample type="open_list" />
+const HierarchySample      = () => <InstrumentSample type="hierarchy" />
+
+// One-line library row summary per composable type, from the stored config.
+function instrumentMeta(r) {
+  const c = r.config ?? {}
+  switch (r.type) {
+    case 'likert_slider':   return `${(c.labels ?? []).length} points`
+    case 'multiple_choice': return `${(c.options ?? []).length} options`
+    case 'open_list':       return `min ${c.minimum_required_responses ?? 1} response${(c.minimum_required_responses ?? 1) === 1 ? '' : 's'}${c.max_words != null ? ` · ${c.max_words}-word cap` : ''}`
+    case 'hierarchy':       return `${(c.beliefs ?? []).length} levels`
+    default:                return r.type
+  }
+}
+
+// Shared library config for the four composable types.
+function composableLibrary(type, title) {
+  return {
+    table: 'composable_instruments',
+    type,
+    title,
+    row: r => ({ name: r.label, meta: instrumentMeta(r) }),
+    preview: r => <DemoStage config={instrumentConfig(r)} />,
+  }
+}
 
 const CHIP = {
   green: { color: '#1E7A55', background: '#E2F4EA', border: '1px solid #BFE5D0' },
@@ -129,17 +108,18 @@ const PAGES = {
   'likert-slider': {
     title: 'Likert slider',
     source: 'composable/LikertSliderQuestion.jsx + NoDefaultSlider',
-    chips: [{ label: 'Adopted 2026-08-19', tone: 'green' }, { label: 'Session runtime pending', tone: 'pink' }],
+    chips: [{ label: 'Adopted 2026-08-19', tone: 'green' }, { label: 'Live in sessions · 2026-08-25', tone: 'green' }],
     C: LikertSliderSample,
     blurb: 'The discrete slider: stepped scale with point labels and no numeric readout — the label is the value. Dana’s track/thumb chrome combined with the platform’s no-default behavior (no thumb until the first touch).',
-    note: 'The interactive sample is the production component (ported 2026-08-25). It becomes runnable in sessions when the dispatch step of the integration lands.',
+    note: 'The sample is the first Likert slider in the library, rendered by the production component — the exact step a participant gets. Add instances to sessions from the session builder’s Instruments picker.',
+    library: composableLibrary('likert_slider', 'Existing Likert sliders'),
   },
   'numeric-slider': {
     title: 'Numeric slider',
     source: 'composable/SliderQuestion.jsx + NoDefaultSlider',
-    chips: [{ label: 'Official format · adopted 2026-08-19', tone: 'green' }, { label: 'Session runtime pending', tone: 'pink' }],
+    chips: [{ label: 'Official format · adopted 2026-08-19', tone: 'green' }, { label: 'Live in sessions · 2026-08-25', tone: 'green' }],
     C: NumericSliderSample,
-    blurb: 'The continuous slider: numeric range with sparse anchors and a VALUE readout that stays “—” until touched. This is the official format (Norm, 2026-08-24). The track/thumb chrome shipped platform-wide 2026-08-25, and the sample and the library rows below now render through the production SliderQuestion component. Existing rows show start/end anchors derived from their min/max labels; a middle anchor appears once a row defines `anchors`.',
+    blurb: 'The continuous slider: numeric range with sparse anchors and a VALUE readout that stays “—” until touched. This is the official format (Norm, 2026-08-24), and it is what sessions render: participant slider steps go through the same production SliderQuestion component as the sample and the library rows below. Existing rows show start/end anchors derived from their min/max labels; a middle anchor appears once a row defines `anchors`.',
     note: null,
     library: {
       table: 'slider_scales', title: 'Existing numeric sliders',
@@ -177,44 +157,29 @@ const PAGES = {
   'multiple-choice': {
     title: 'Multiple choice',
     source: 'composable/MultipleChoiceQuestion.jsx',
-    chips: [{ label: 'Adopted 2026-08-19', tone: 'green' }, { label: 'Session runtime pending', tone: 'pink' }],
+    chips: [{ label: 'Adopted 2026-08-19', tone: 'green' }, { label: 'Live in sessions · 2026-08-25', tone: 'green' }],
     C: MultipleChoiceSample,
     blurb: 'Single-select multiple choice, where an option can be plain or carry inline text/number entry with prefix/suffix and bounds. Fills a real gap: the platform has never had a generic MC instrument.',
-    note: 'The interactive sample is the production component (ported 2026-08-25). It becomes runnable in sessions when the dispatch step of the integration lands.',
-    library: {
-      title: 'Existing multiple-choice questions',
-      static: [{ id: 'demo-mc', name: 'Target grade (demo)', slug: 'demo' }],
-      row: r => ({ name: r.name, meta: 'demo instance' }),
-      preview: () => <MultipleChoiceSample />,
-    },
+    note: 'The sample is the first multiple-choice instrument in the library, rendered by the production component — the exact step a participant gets. Add instances to sessions from the session builder’s Instruments picker.',
+    library: composableLibrary('multiple_choice', 'Existing multiple-choice questions'),
   },
   'open-list': {
     title: 'Open text list + contribution ratings',
     source: 'composable/OpenTextListQuestion.jsx',
-    chips: [{ label: 'Adopted 2026-08-19', tone: 'green' }, { label: 'Session runtime pending', tone: 'pink' }],
+    chips: [{ label: 'Adopted 2026-08-19', tone: 'green' }, { label: 'Live in sessions · 2026-08-25', tone: 'green' }],
     C: OpenListSample,
     blurb: 'Participant-generated factors with a per-factor rating: typing text reveals a contribution slider beneath that row, filling the last row grows a new one, and entries are word-capped with a live counter.',
-    note: 'The interactive sample is the production component (ported 2026-08-25). It becomes runnable in sessions when the dispatch step of the integration lands.',
-    library: {
-      title: 'Existing open text lists',
-      static: [{ id: 'demo-ol', name: 'Outcome attribution factors (demo)', slug: 'demo' }],
-      row: r => ({ name: r.name, meta: 'demo instance' }),
-      preview: () => <OpenListSample />,
-    },
+    note: 'The sample is the first open text list in the library, rendered by the production component — the exact step a participant gets. Add instances to sessions from the session builder’s Instruments picker.',
+    library: composableLibrary('open_list', 'Existing open text lists'),
   },
   'hierarchy': {
     title: 'Hierarchical belief question',
     source: 'composable/HierarchicalBeliefQuestion.jsx',
-    chips: [{ label: 'Adopted 2026-08-19', tone: 'green' }, { label: 'Session runtime pending', tone: 'pink' }],
+    chips: [{ label: 'Adopted 2026-08-19', tone: 'green' }, { label: 'Live in sessions · 2026-08-25', tone: 'green' }],
     C: HierarchySample,
     blurb: 'A belief hierarchy shown whole, indented by level. Participants select every level that changed; each selected level reveals a signed direction slider. Generalizes to any nested-construct rating.',
-    note: 'The interactive sample is the production component (ported 2026-08-25). It becomes runnable in sessions when the dispatch step of the integration lands.',
-    library: {
-      title: 'Existing belief hierarchies',
-      static: [{ id: 'demo-bh', name: 'Feedback belief hierarchy (demo)', slug: 'demo' }],
-      row: r => ({ name: r.name, meta: 'demo instance' }),
-      preview: () => <HierarchySample />,
-    },
+    note: 'The sample is the first belief hierarchy in the library, rendered by the production component — the exact step a participant gets. Add instances to sessions from the session builder’s Instruments picker.',
+    library: composableLibrary('hierarchy', 'Existing belief hierarchies'),
   },
 }
 
@@ -282,12 +247,13 @@ function LiveVasSample() {
 function Library({ cfg }) {
   const [open, setOpen] = useState(null)
   const { data = [], isLoading, error } = useQuery({
-    queryKey: ['instrument-lib', cfg.table ?? 'static'],
+    // cfg.type in the key: composable types share one table, split by filter.
+    queryKey: ['instrument-lib', cfg.table ?? 'static', cfg.type ?? null],
     enabled: !!cfg.table,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from(cfg.table).select('*')
-        .order('created_at', { ascending: false })
+      let q = supabase.from(cfg.table).select('*')
+      if (cfg.type) q = q.eq('type', cfg.type)
+      const { data, error } = await q.order('created_at', { ascending: false })
       if (error) throw error
       return data ?? []
     },

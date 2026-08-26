@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { supabase as globalSupabase } from '../../lib/supabase'
 import SurveyComponentRenderer from '../questionnaire/composable/SurveyComponentRenderer'
-import { responseIsComplete } from '../questionnaire/composable/componentRegistry'
+import { responseIsComplete, DB_COMPONENT_TYPE } from '../questionnaire/composable/componentRegistry'
 import { useSubmitLock } from '../../lib/useSubmitLock'
 import '../questionnaire/composable/composableSurvey.css'
 
@@ -20,14 +20,6 @@ import '../questionnaire/composable/composableSurvey.css'
  * export names columns from recorded facts (rule 3).
  */
 
-// DB `composable_instruments.type` → component registry type. The DB names
-// follow the admin sidebar; the registry names are Dana's package contract.
-const COMPONENT_TYPE = {
-  likert_slider:   'likert_slider',
-  multiple_choice: 'multiple_choice',
-  open_list:       'open_text_list',
-  hierarchy:       'hierarchical_belief',
-}
 
 export default function ComposableInstrumentStepWrapper({
   subcategory,            // instrument slug
@@ -71,7 +63,7 @@ export default function ComposableInstrumentStepWrapper({
   if (error)       return <div style={S.err}>Could not load instrument "{slug}": {error.message}</div>
   if (!instrument) return <div style={S.err}>Instrument "{slug}" not found.</div>
 
-  const componentType = COMPONENT_TYPE[instrument.type]
+  const componentType = DB_COMPONENT_TYPE[instrument.type]
   if (!componentType) {
     return <div style={S.err}>Instrument "{slug}" has unknown type "{instrument.type}".</div>
   }

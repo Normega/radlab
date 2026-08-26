@@ -53,6 +53,16 @@ export function getComponentDefinition(type) {
   return COMPONENT_TYPES[type] ?? null
 }
 
+// RADlab addition: composable_instruments.type (DB names follow the admin
+// sidebar) → component registry type (Dana's package contract). Used by the
+// session step wrapper and the admin instrument pages.
+export const DB_COMPONENT_TYPE = {
+  likert_slider:   'likert_slider',
+  multiple_choice: 'multiple_choice',
+  open_list:       'open_text_list',
+  hierarchy:       'hierarchical_belief',
+}
+
 export function responseIsComplete(config, value) {
   const type = config.type
   const required = config.required !== false

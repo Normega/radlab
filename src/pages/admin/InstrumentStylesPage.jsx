@@ -5,17 +5,15 @@ import InstructionScreen from '../../components/questionnaire/InstructionScreen'
 import ScaleChangeScreen from '../../components/questionnaire/ScaleChangeScreen'
 import ChecklistScreen from '../../components/questionnaire/ChecklistScreen'
 import ProgressLabel from '../../components/questionnaire/ProgressLabel'
-import NoDefaultSlider from '../../components/study/NoDefaultSlider'
 import DebriefStep from '../../components/study/DebriefStep'
 import MoodCheckinStep from '../../components/study/MoodCheckinStep'
 import WellnessTipStep from '../../components/study/WellnessTipStep'
 import { OwlScreen } from '../../components/study/InterventionPage'
 import FillableBox from '../../components/ui/FillableBox'
 import Checkbox from '../../components/ui/Checkbox'
-import {
-  ProposedLikert, AdoptedLikertSlider, AdoptedNumericSlider,
-  ProposedMultipleChoice, ProposedOpenList, ProposedHierarchy,
-} from './proposedInstruments'
+import SurveyComponentRenderer from '../../components/questionnaire/composable/SurveyComponentRenderer'
+import '../../components/questionnaire/composable/composableSurvey.css'
+import { ProposedLikert } from './proposedInstruments'
 
 // ── InstrumentStylesPage (/admin/instruments) ─────────────────────────────────
 // A live style inventory of the participant-facing instrument components
@@ -63,47 +61,43 @@ export default function InstrumentStylesPage() {
 
         <Spec
           title="Likert slider"
-          file="src/components/study/NoDefaultSlider.jsx → Dana chrome"
-          notes="Adopted 2026-08-19 (own sidebar entry under Instruments). Sliders split into two instruments; this is the discrete one — stepped scale with point labels, no numeric readout (the label is the value). Dana's track/thumb chrome combined with the platform's no-default behavior: no thumb until the first touch."
-          proposedCaption="Adopted — implementation pending"
-          proposed={<AdoptedLikertSlider />}
+          file="src/components/questionnaire/composable/LikertSliderQuestion.jsx"
+          notes="Adopted 2026-08-19, live in sessions since 2026-08-25 (own sidebar entry under Instruments). Sliders split into two instruments; this is the discrete one — stepped scale with labels centered on their snap positions, no numeric readout (the label is the value). Dana's track/thumb chrome combined with the platform's no-default behavior: no thumb until the first touch."
         >
-          <SliderSample />
+          <CsSample config={CS_SAMPLES.likert_slider} />
         </Spec>
 
         <Spec
           title="Numeric slider"
-          file="src/components/study/NoDefaultSlider.jsx → Dana chrome"
-          notes="Adopted 2026-08-19 (own sidebar entry under Instruments). The continuous one — 0–100 with sparse numbered anchors and a VALUE readout that stays '—' until touched. Same Dana chrome, same no-default behavior."
-          proposedCaption="Adopted — implementation pending"
-          proposed={<AdoptedNumericSlider />}
+          file="src/components/questionnaire/composable/SliderQuestion.jsx"
+          notes="Adopted 2026-08-19 as the official format, live in sessions since 2026-08-25 (own sidebar entry under Instruments). The continuous one — 0–100 with sparse numbered anchors and a VALUE readout that stays '—' until touched. Same Dana chrome, same no-default behavior."
         >
-          <NumericSliderSample />
+          <CsSample config={CS_SAMPLES.numeric_slider} />
         </Spec>
 
         <Spec
           title="Multiple choice"
-          file="composable-surveys: MultipleChoiceQuestion"
-          notes="Adopted 2026-08-19 (has its own sidebar entry under Instruments). The platform never had a generic single-select multiple-choice instrument — demographics and screeners each hand-roll their own. Options can be plain, or carry inline text/number entry with prefix/suffix and bounds (select the first option to see it)."
-          proposedCaption="Adopted — implementation pending"
-          proposed={<ProposedMultipleChoice />}
-        />
+          file="src/components/questionnaire/composable/MultipleChoiceQuestion.jsx"
+          notes="Adopted 2026-08-19, live in sessions since 2026-08-25 (own sidebar entry under Instruments). The platform never had a generic single-select multiple-choice instrument — demographics and screeners each hand-roll their own. Options can be plain, or carry inline text/number entry with prefix/suffix and bounds (select the first option to see it)."
+        >
+          <CsSample config={CS_SAMPLES.multiple_choice} />
+        </Spec>
 
         <Spec
           title="Open text list + contribution ratings"
-          file="composable-surveys: OpenTextListQuestion"
-          notes="Adopted 2026-08-19 (has its own sidebar entry under Instruments). Participant-generated factors with a per-factor rating: typing text reveals a contribution slider beneath that row, and filling the last row grows a new one. Word-capped with a live counter."
-          proposedCaption="Adopted — implementation pending"
-          proposed={<ProposedOpenList />}
-        />
+          file="src/components/questionnaire/composable/OpenTextListQuestion.jsx"
+          notes="Adopted 2026-08-19, live in sessions since 2026-08-25 (own sidebar entry under Instruments). Participant-generated factors with a per-factor rating: typing text reveals a contribution slider beneath that row, and filling the last row grows a new one. Word-capped with a live counter."
+        >
+          <CsSample config={CS_SAMPLES.open_list} />
+        </Spec>
 
         <Spec
           title="Hierarchical belief question"
-          file="composable-surveys: HierarchicalBeliefQuestion"
-          notes="Adopted 2026-08-19 (has its own sidebar entry under Instruments). A belief hierarchy shown whole, indented by level; participants select every level that changed, and each selected level reveals a signed direction slider. Generalizes to any nested-construct rating."
-          proposedCaption="Adopted — implementation pending"
-          proposed={<ProposedHierarchy />}
-        />
+          file="src/components/questionnaire/composable/HierarchicalBeliefQuestion.jsx"
+          notes="Adopted 2026-08-19, live in sessions since 2026-08-25 (own sidebar entry under Instruments). A belief hierarchy shown whole, indented by level; participants select every level that changed, and each selected level reveals a signed direction slider. Generalizes to any nested-construct rating."
+        >
+          <CsSample config={CS_SAMPLES.hierarchy} />
+        </Spec>
 
         <Spec
           title="Questionnaire instruction screen"
@@ -252,44 +246,84 @@ function LikertSample() {
   )
 }
 
-function SliderSample() {
-  const [v, setV] = useState(null)
-  return (
-    <div style={{ maxWidth: 560, margin: '0 auto', padding: '24px 20px 28px' }}>
-      {/* The card chrome study consumers give the slider (VasStepWrapper's
-          StudySliderBlock) — the slider itself is the bare block inside. */}
-      <div style={{ background: 'var(--bg)', border: '1px solid var(--bd)', borderRadius: 12, padding: '24px 24px 18px' }}>
-        <p style={{ fontFamily: '"DM Sans", system-ui, sans-serif', fontSize: 'var(--fs-body)', color: 'var(--tx)', margin: '0 0 18px' }}>
-          How often did you notice this feeling today?
-        </p>
-        <NoDefaultSlider
-          min={1} max={6} value={v} onChange={setV}
-          ariaLabel="How often did you notice this feeling today?"
-          pointLabels={['Never', 'Rarely', 'Sometimes', 'Often', 'Very often', 'Almost always']}
-        />
-      </div>
-    </div>
-  )
+// The five adopted composable instruments, rendered by the ACTUAL production
+// components (per this page's rule). Sample content mirrors the seeded demo
+// instances; the live library instances are on /admin/instruments/:slug.
+const CS_SAMPLES = {
+  likert_slider: {
+    id: 'style_likert_slider', type: 'likert_slider',
+    question: 'How often did you notice this feeling today?',
+    min: 1, max: 6, step: 1,
+    labels: [
+      { value: 1, label: 'Never' }, { value: 2, label: 'Rarely' },
+      { value: 3, label: 'Sometimes' }, { value: 4, label: 'Often' },
+      { value: 5, label: 'Very often' }, { value: 6, label: 'Almost always' },
+    ],
+  },
+  numeric_slider: {
+    id: 'style_numeric_slider', type: 'slider',
+    question: 'To what extent does pursuing this goal feel like your own choice?',
+    min: 0, max: 100, step: 1,
+    labels: [
+      { value: 0,   label: 'It does not feel like my own choice' },
+      { value: 50,  label: 'It partly feels like my own choice' },
+      { value: 100, label: 'It feels completely like my own choice' },
+    ],
+  },
+  multiple_choice: {
+    id: 'style_mc', type: 'multiple_choice', required: true,
+    question: 'What final grade are you aiming to achieve in this course?',
+    options: [
+      { id: 'specific_grade', label: 'I am aiming for a specific final grade.',
+        response_type: 'number', placeholder: '85', suffix: '%', min: 0, max: 100, step: 1 },
+      { id: 'pass_only', label: 'I do not have a specific target grade, as long as I pass.',
+        response_type: 'plain' },
+    ],
+  },
+  open_list: {
+    id: 'style_open_list', type: 'open_text_list', required: true,
+    question: 'What do you think caused this outcome? Please list all the factors that you think contributed, and indicate how much each factor contributed.',
+    initial_boxes: 3, max_words: 5,
+    example_placeholder: 'Ex. I need better study strategies…',
+    minimum_required_responses: 1,
+    slider: {
+      question: 'How much did this factor contribute?',
+      min: 0, max: 100, step: 1,
+      labels: [
+        { value: 0, label: 'Did not contribute' },
+        { value: 100, label: 'Contributed completely' },
+      ],
+    },
+  },
+  hierarchy: {
+    id: 'style_hierarchy', type: 'hierarchical_belief', allow_none_selected: true,
+    question: 'How much did this feedback change your belief about…',
+    instruction: 'Select all of the beliefs that changed. You can select more than one.',
+    beliefs: [
+      { id: 'skill_specific',    depth: 0, level: 'Skill-specific',                  text: 'My understanding of the specific topic or skill assessed' },
+      { id: 'strategy_specific', depth: 1, level: 'Strategy-specific',               text: 'Whether my current study strategy works for this course' },
+      { id: 'meta_strategy',     depth: 2, level: 'Meta-strategy specific',          text: 'Whether my current strategy for managing my time, effort, and study process works for this course' },
+      { id: 'course_efficacy',   depth: 3, level: 'Course-specific · self-efficacy', text: 'My ability to succeed in this subject area' },
+      { id: 'domain_efficacy',   depth: 4, level: 'Domain-specific · self-efficacy', text: 'My ability to succeed in this domain' },
+      { id: 'self_global',       depth: 5, level: 'Self-global · self-efficacy',     text: 'My general competence / self-worth' },
+    ],
+    slider: {
+      question: 'Did this belief change in a positive or negative direction?',
+      min: -50, max: 50, step: 1,
+      labels: [
+        { value: -50, label: 'Negative change' },
+        { value: 0,   label: 'No directional change' },
+        { value: 50,  label: 'Positive change' },
+      ],
+    },
+  },
 }
 
-function NumericSliderSample() {
-  const [v, setV] = useState(null)
+function CsSample({ config }) {
+  const [value, setValue] = useState(undefined)
   return (
-    <div style={{ maxWidth: 560, margin: '0 auto', padding: '24px 20px 28px' }}>
-      {/* The same NoDefaultSlider on a 0–100 span — above 12 ticks it draws no
-          point labels, which is exactly the current numeric-slider experience. */}
-      <div style={{ background: 'var(--bg)', border: '1px solid var(--bd)', borderRadius: 12, padding: '24px 24px 18px' }}>
-        <p style={{ fontFamily: '"DM Sans", system-ui, sans-serif', fontSize: 'var(--fs-body)', color: 'var(--tx)', margin: '0 0 18px' }}>
-          To what extent does pursuing this goal feel like your own choice?
-        </p>
-        <NoDefaultSlider
-          min={0} max={100} value={v} onChange={setV}
-          ariaLabel="To what extent does pursuing this goal feel like your own choice?"
-        />
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: '"DM Sans", system-ui, sans-serif', fontSize: 11, color: 'var(--tx2)', marginTop: 6 }}>
-          <span>Not at all my choice</span><span>Completely my choice</span>
-        </div>
-      </div>
+    <div style={{ padding: '20px 20px 24px' }} className="cs-page">
+      <SurveyComponentRenderer config={config} value={value} onChange={setValue} />
     </div>
   )
 }
