@@ -1,30 +1,32 @@
 -- Composable-surveys integration, step 2b: seeds + picker category split.
---
--- ⚠ APPLY ORDER: this one is COUPLED to the frontend, unlike 2a. It creates
--- activities rows with NEW category values and recategorizes the existing
--- slider/package rows, so StepDispatcher and SessionBuilder must already
--- handle those categories when it runs. Apply at handoff step 4 time, after
--- the dispatcher/picker code is live on main — a live participant session
--- dispatching an activity whose category the deployed dispatcher doesn't know
--- renders "Unknown activity type".
+-- (Applied after the steps 1-4 promote reached production, per the apply-order
+-- warning: StepDispatcher/SessionBuilder must know the new categories first.)
 --
 -- Two things happen here:
 --
--- 1. The four demo instances currently hardcoded on /admin/instruments/:slug
---    (AdoptedInstrumentPage's `static` library rows + proposedInstruments.jsx
---    demo content) become real composable_instruments rows, each with an
---    activities row so the session-builder picker's PENDING chips become
---    importable steps. Configs are in Dana's component-config contract shape
---    so they feed her components verbatim.
+-- 1. The four demo instances hardcoded on /admin/instruments/:slug become
+--    real composable_instruments rows, each with an activities row so the
+--    session-builder picker's PENDING chips become importable steps. Configs
+--    are in Dana's component-config contract shape.
 --
--- 2. The picker category split (handoff goal: mirror the admin sidebar, no
---    more combined "VAS & Sliders"): existing activities rows keyed
---    slider_* / vas_pkg_* under category 'vas' move to 'numeric_slider' /
---    'assessment'. Subcategory prefixes are untouched — VasStepWrapper keys
---    on those and keeps working; only the grouping label moves. New categories
---    for the new types: 'likert_slider', 'multiple_choice', 'open_list',
---    'hierarchy' (subcategory = the composable_instruments slug, no prefix —
---    the category already disambiguates).
+-- 2. The picker category split (mirror the admin sidebar, no more combined
+--    "VAS & Sliders"): existing activities rows keyed slider_* / vas_pkg_*
+--    under category 'vas' move to 'numeric_slider' / 'assessment'.
+--    Subcategory prefixes are untouched — VasStepWrapper keys on those.
+
+-- ── Widen the activities category check ──────────────────────────────────────
+-- activities_category_check enumerates every allowed category (found on first
+-- apply attempt — the insert below tripped it). Recreated with the five new
+-- categories appended; nothing existing changes meaning.
+
+ALTER TABLE activities DROP CONSTRAINT activities_category_check;
+ALTER TABLE activities ADD CONSTRAINT activities_category_check CHECK (category = ANY (ARRAY[
+  'form'::text, 'game'::text, 'questionnaire'::text, 'physio'::text, 'training'::text,
+  'vas'::text, 'display'::text, 'midpoint'::text, 'video'::text, 'assessment_leadin'::text,
+  'daily_welcome'::text, 'daily_farewell'::text,
+  'likert_slider'::text, 'numeric_slider'::text, 'multiple_choice'::text,
+  'open_list'::text, 'hierarchy'::text, 'assessment'::text
+]));
 
 -- ── Demo instances → real library rows ───────────────────────────────────────
 
