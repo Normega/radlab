@@ -110,7 +110,10 @@ export default function NoDefaultSlider({
         ))}
         {answered && (
           <>
-            <div className="ndslider__fill" style={{ left: '12px', width: `calc(${at(pct)} - 12px)` }} />
+            {/* Fill runs from the track's true left edge to the thumb centre.
+                Starting it at the half-handle inset left a bare 12px notch at
+                the left end of an otherwise-filled line (Norm, 2026-08-25). */}
+            <div className="ndslider__fill" style={{ left: 0, width: at(pct) }} />
             <div className="ndslider__thumb" style={{ left: at(pct) }} />
           </>
         )}
