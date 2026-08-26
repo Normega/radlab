@@ -22,18 +22,38 @@ const CONTRIB_TYPES = [
   ['treatment', 'Treatments'],
   ['debate', 'Debates'],
   ['lecture', 'Lectures'],
+  ['foundation', 'Foundations'],
+  ['practical', 'Practicals'],
 ]
+
+// Card meta for week-anchored pages, which have no tier: the page type is the
+// most useful one-word orientation ('concept' is the default and stays quiet).
+const TYPE_LABEL = {
+  foundation: 'foundation',
+  practical: 'practical companion',
+  concept: '',
+}
 
 // Field Guide index (WP2). Browse is organised by DSM-5-TR diagnostic class
 // because that is the course's content anchor (taxonomy §1) — not by page
 // type, which is an implementation detail of how a page got here.
+//
+// PSY240 is the only course with a disorders catalogue, so it is the only
+// course that browses that way. Every other course (PSY309 onward) anchors on
+// its meeting calendar instead: one band per content lecture from
+// course_structure, pages attached via page_lectures — the scope decision that
+// wiki pages must be clearly linked to their week.
 export default function WikiIndex() {
   const { courseClient, session, enrollments, isStaff } = useOutletContext()
   const { courseId, select, courses, course } = useWikiCourse(enrollments)
+  const weekAnchored = !!course && course.code !== 'PSY240'
 
   const [pages, setPages] = useState(null)      // null = loading
   const [catalog, setCatalog] = useState([])
   const [chapters, setChapters] = useState([])
+  const [meetings, setMeetings] = useState([])          // course_structure rows (week anchor)
+  const [pageLectures, setPageLectures] = useState([])  // page_id → lecture_no (week anchor)
+  const [shellSlugs, setShellSlugs] = useState(EMPTY)   // catalogue shells: no body yet
   const [q, setQ] = useState('')
   const [results, setResults] = useState(null)  // null = not searching
   const [searching, setSearching] = useState(false)
@@ -43,23 +63,48 @@ export default function WikiIndex() {
   const [showEmpty, setShowEmpty] = useState(isStaff)
 
   useEffect(() => {
-    if (!courseId) return
+    if (!courseId || !course) return
     let cancelled = false
     ;(async () => {
-      const [{ data: p }, { data: g }, { data: ch }] = await Promise.all([
-        courseClient.from('wiki_pages')
-          .select('slug, title, type, summary, status, needs')
-          .eq('course_id', courseId).order('title'),
-        courseClient.from('wiki_gap_report').select('*').eq('course_id', courseId),
-        courseClient.from('dsm_chapters').select('number, title, taught').order('number'),
-      ])
-      if (cancelled) return
-      setPages(p ?? [])
-      setCatalog(g ?? [])
-      setChapters(ch ?? [])
+      if (weekAnchored) {
+        const [{ data: p }, { data: pl }, { data: cs }, { data: sh }] = await Promise.all([
+          courseClient.from('wiki_pages')
+            .select('id, slug, title, type, summary, status, needs')
+            .eq('course_id', courseId).order('title'),
+          courseClient.from('page_lectures')
+            .select('page_id, lecture_no').eq('course_id', courseId),
+          courseClient.from('course_structure')
+            .select('week_no, meeting_date, kind, lecture_no, title')
+            .eq('course_id', courseId).order('week_no'),
+          // A shell is a catalogue slug awaiting its first draft. Staff see it
+          // as "not written yet"; a member's RLS never returns drafts at all,
+          // so for students this set is simply empty.
+          courseClient.from('wiki_pages')
+            .select('slug').eq('course_id', courseId).is('content', null),
+        ])
+        if (cancelled) return
+        setPages(p ?? [])
+        setPageLectures(pl ?? [])
+        setMeetings(cs ?? [])
+        setShellSlugs(new Set((sh ?? []).map(r => r.slug)))
+        setCatalog([]); setChapters([])
+      } else {
+        const [{ data: p }, { data: g }, { data: ch }] = await Promise.all([
+          courseClient.from('wiki_pages')
+            .select('slug, title, type, summary, status, needs')
+            .eq('course_id', courseId).order('title'),
+          courseClient.from('wiki_gap_report').select('*').eq('course_id', courseId),
+          courseClient.from('dsm_chapters').select('number, title, taught').order('number'),
+        ])
+        if (cancelled) return
+        setPages(p ?? [])
+        setCatalog(g ?? [])
+        setChapters(ch ?? [])
+        setMeetings([]); setPageLectures([]); setShellSlugs(EMPTY)
+      }
     })()
     return () => { cancelled = true }
-  }, [courseClient, courseId])
+  }, [courseClient, courseId, course, weekAnchored])
 
   // Postgres full-text over title + summary + content (the generated
   // search_vector column). websearch syntax so quoted phrases and -exclusions
@@ -110,17 +155,53 @@ export default function WikiIndex() {
     return groups
   }, [chapters, catalog, bySlug])
 
-  const contributed = useMemo(
-    () => (pages ?? []).filter(p => !catalogSlugs.has(p.slug)),
-    [pages, catalogSlugs])
+  // Week-anchored grouping: one band per content lecture, in calendar order.
+  // A page mapped to two lectures appears under both — that is the mapping
+  // table's own semantics, not a bug to dedupe.
+  const weekGroups = useMemo(() => {
+    if (!weekAnchored) return []
+    const byId = new Map((pages ?? []).map(p => [p.id, p]))
+    return meetings
+      .filter(m => m.kind === 'lecture' && m.lecture_no != null)
+      .map(m => {
+        const rows = pageLectures
+          .filter(l => l.lecture_no === m.lecture_no)
+          .map(l => byId.get(l.page_id))
+          .filter(Boolean)
+          // Practical companions close out their week; content pages lead.
+          .sort((a, b) => ((a.type === 'practical' ? 1 : 0) - (b.type === 'practical' ? 1 : 0))
+            || a.title.localeCompare(b.title))
+        return {
+          number: m.week_no,
+          badge: `W${m.week_no}`,
+          title: m.title,
+          subtitle: m.meeting_date,
+          rows,
+          readable: rows.filter(r => !shellSlugs.has(r.slug)).length,
+        }
+      })
+      .filter(g => g.rows.length > 0)
+  }, [weekAnchored, pages, meetings, pageLectures, shellSlugs])
+
+  const groups = weekAnchored ? weekGroups : chapterGroups
+
+  const contributed = useMemo(() => {
+    if (weekAnchored) {
+      // Off-calendar pages: anything ingest or a student contributes that no
+      // lecture has claimed yet.
+      const mapped = new Set(pageLectures.map(l => l.page_id))
+      return (pages ?? []).filter(p => !mapped.has(p.id))
+    }
+    return (pages ?? []).filter(p => !catalogSlugs.has(p.slug))
+  }, [weekAnchored, pages, pageLectures, catalogSlugs])
 
   // Folded chapters, keyed by DSM chapter number rather than by position, so
   // flipping "show unwritten entries" — which changes which groups appear —
   // doesn't fold a different chapter than the one that was clicked.
   const [folded, setFolded] = useState(EMPTY)
   const visibleGroups = useMemo(
-    () => chapterGroups.filter(g => showEmpty || g.readable > 0),
-    [chapterGroups, showEmpty])
+    () => groups.filter(g => showEmpty || g.readable > 0),
+    [groups, showEmpty])
   const allFolded = visibleGroups.length > 0 && visibleGroups.every(g => folded.has(g.number))
 
   const [view, setView] = useState('cards')
@@ -131,12 +212,12 @@ export default function WikiIndex() {
   // loses the thing the click was for.
   const openChapter = useCallback((number) => {
     setView('list')
-    setFolded(new Set(chapterGroups.map(g => g.number).filter(n => n !== number)))
+    setFolded(new Set(groups.map(g => g.number).filter(n => n !== number)))
     requestAnimationFrame(() => requestAnimationFrame(() => {
       document.getElementById(`chapter-heading-${number}`)
         ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }))
-  }, [chapterGroups])
+  }, [groups])
 
   if (pages === null) {
     return <Shell course={course}><p style={S.sub}>Loading…</p></Shell>
@@ -147,7 +228,12 @@ export default function WikiIndex() {
            courses={courses} courseId={courseId} onSelectCourse={select}>
       <div style={S.statRow}>
         <Stat n={pages.length} label={isStaff ? 'pages you can read' : 'pages'} accent />
-        <Stat n={catalog.filter(c => bySlug.has(c.slug)).length + ' / ' + catalog.length} label="catalogue covered" />
+        <Stat
+          n={weekAnchored
+            ? (pages.length - shellSlugs.size) + ' / ' + pages.length
+            : catalog.filter(c => bySlug.has(c.slug)).length + ' / ' + catalog.length}
+          label="catalogue covered"
+        />
         <Stat n={contributed.length} label="contributed pages" />
       </div>
 
@@ -187,11 +273,18 @@ export default function WikiIndex() {
 
           {/* A legend, not just the hover text on each card: `title` does
               nothing on a touch device, and this wiki is read on phones. */}
-          <p style={S.legend}>
-            <b>Central to the course</b> — full page, covering presentation through to open debates.{' '}
-            <b>Supporting page</b> — shorter: a description, a link to the official DSM-5-TR criteria,
-            and pointers to related disorders. Both are taught; only the page length differs.
-          </p>
+          {weekAnchored ? (
+            <p style={S.legend}>
+              Pages are grouped by <b>course week</b> — each band is one lecture, and its pages are
+              that week's reading. Practical companions sit with the week their assignment is due.
+            </p>
+          ) : (
+            <p style={S.legend}>
+              <b>Central to the course</b> — full page, covering presentation through to open debates.{' '}
+              <b>Supporting page</b> — shorter: a description, a link to the official DSM-5-TR criteria,
+              and pointers to related disorders. Both are taught; only the page length differs.
+            </p>
+          )}
 
           <div style={S.controlRow}>
             <label style={S.toggle}>
@@ -233,12 +326,12 @@ export default function WikiIndex() {
                   <span style={S.foldCount}>
                     {folded.size > 0
                       ? `${folded.size} of ${visibleGroups.length} folded`
-                      : `${visibleGroups.length} chapters`}
+                      : `${visibleGroups.length} ${weekAnchored ? 'weeks' : 'chapters'}`}
                   </span>
                 </>
               )}
               {view === 'cards' && (
-                <span style={S.foldCount}>{visibleGroups.length} chapters</span>
+                <span style={S.foldCount}>{visibleGroups.length} {weekAnchored ? 'weeks' : 'chapters'}</span>
               )}
             </div>
           </div>
@@ -252,12 +345,13 @@ export default function WikiIndex() {
                   onClick={() => openChapter(g.number)}
                   style={{ ...S.chCard, ...(g.readable === 0 ? S.chCardEmpty : null) }}
                 >
-                  {g.number > 0 && <span style={S.chCardNum}>{g.number}</span>}
-                  {chapterIcon(g.number) && (
+                  {(g.badge || g.number > 0) && <span style={S.chCardNum}>{g.badge ?? g.number}</span>}
+                  {!weekAnchored && chapterIcon(g.number) && (
                     <img src={chapterIcon(g.number)} alt="" aria-hidden="true"
                          width={96} height={96} loading="lazy" style={S.chCardIcon} />
                   )}
                   <span style={S.chCardTitle}>{g.title}</span>
+                  {g.subtitle && <span style={S.chCardDate}>{g.subtitle}</span>}
                   {/* Pushed to the bottom so counts line up across a row whose
                       titles wrap to different numbers of lines. */}
                   <span style={S.chCardCount}>{g.readable} of {g.rows.length}</span>
@@ -291,22 +385,47 @@ export default function WikiIndex() {
                 >
                   {/* Decorative: the chapter is named right beside it, so an
                       alt text would only make a screen reader say it twice. */}
-                  {chapterIcon(g.number) && (
+                  {!weekAnchored && chapterIcon(g.number) && (
                     <img src={chapterIcon(g.number)} alt="" aria-hidden="true"
                          width={46} height={46} loading="lazy" style={S.chIcon} />
                   )}
-                  {g.number > 0 && <span style={S.chNum}>{g.number}</span>}
+                  {(g.badge || g.number > 0) && <span style={S.chNum}>{g.badge ?? g.number}</span>}
                   {/* Title and count share a wrapping row, so a long chapter
                       name breaks before it collides with the count. */}
                   <span style={S.chTitles}>
                     <span style={S.chTitle}>{g.title}</span>
+                    {g.subtitle && <span style={S.chCount}>{g.subtitle}</span>}
                     <span style={S.chCount}>{g.readable} of {g.rows.length}</span>
                   </span>
                   <span aria-hidden="true" style={{ ...S.caret, transform: isFolded ? 'rotate(-90deg)' : 'none' }}>▾</span>
                 </button>
               </h2>
               <div id={`chapter-${g.number}`} hidden={isFolded} style={isFolded ? undefined : S.grid}>
-                {!isFolded && g.rows.filter(row => showEmpty || bySlug.has(row.slug)).map(row => {
+                {/* Week rows ARE pages — the shells double as the catalogue,
+                    so "not written yet" is a page with no body rather than a
+                    catalogue row with no page. */}
+                {!isFolded && weekAnchored && g.rows.filter(row => showEmpty || !shellSlugs.has(row.slug)).map(row => {
+                  if (shellSlugs.has(row.slug)) {
+                    return (
+                      <span key={row.slug} style={{ ...S.card, ...S.cardEmpty }}>
+                        <span style={S.cardTitle}>{row.title}</span>
+                        <span style={S.cardMeta}>not written yet</span>
+                      </span>
+                    )
+                  }
+                  return (
+                    <Link key={row.slug} to={`${WIKI_BASE}/${row.slug}`} style={S.card}>
+                      <span style={S.cardTitle}>{row.title}</span>
+                      <span style={S.cardMeta}>
+                        {row.status !== 'published' && <b style={{ color: 'var(--pk)' }}>draft · </b>}
+                        {row.needs?.length > 0
+                          ? `needs ${row.needs.length} section${row.needs.length === 1 ? '' : 's'}`
+                          : (TYPE_LABEL[row.type] ?? row.type)}
+                      </span>
+                    </Link>
+                  )
+                })}
+                {!isFolded && !weekAnchored && g.rows.filter(row => showEmpty || bySlug.has(row.slug)).map(row => {
                   const page = bySlug.get(row.slug)
                   // A catalogue row with no readable page is shown, not
                   // hidden: it is the course outline, so its holes are part of
@@ -454,6 +573,7 @@ const S = {
   chCardNum: { position: 'absolute', top: 8, left: 10, fontFamily: MONO, fontSize: 11, color: 'var(--tx2)' },
   chCardIcon: { objectFit: 'contain' },
   chCardTitle: { fontFamily: SERIF, fontSize: 15, lineHeight: 1.25, color: 'var(--tx)' },
+  chCardDate: { fontFamily: MONO, fontSize: 10, letterSpacing: 0.5, color: 'var(--tx2)' },
   chCardCount: { marginTop: 'auto', paddingTop: 4, fontFamily: MONO, fontSize: 10, letterSpacing: 0.5, textTransform: 'uppercase', color: 'var(--tx2)' },
   foldBar: { display: 'flex', alignItems: 'center', gap: 10, marginTop: 10 },
   foldBtn: { fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', padding: '5px 12px', borderRadius: 16, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx2)', cursor: 'pointer' },
