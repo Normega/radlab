@@ -90,6 +90,7 @@ const Talks     = lazy(() => import('./pages/talks/Talks'))
 // from the rest of the app, wrapped in its own error boundary below so a
 // crash here can't blank the rest of the site.
 const ClassRoom        = lazy(() => import('./academic/lecture-lounge/ClassRoom'))
+const WeeklyWall       = lazy(() => import('./academic/lecture-lounge/WeeklyWall'))
 const ClassVerifyEmail = lazy(() => import('./academic/lecture-lounge/ClassVerifyEmail'))
 const ClassConsole     = lazy(() => import('./academic/lecture-lounge/ClassConsole'))
 const ClassRemote      = lazy(() => import('./academic/lecture-lounge/ClassRemote'))
@@ -654,6 +655,11 @@ export default function App() {
             <Route path="/class/:slug" element={
               <AuthRoute session={session}>
                 <ClassRoom session={session} />
+              </AuthRoute>
+            } />
+            <Route path="/class/:slug/wall/:checkinId" element={
+              <AuthRoute session={session}>
+                <WeeklyWall session={session} />
               </AuthRoute>
             } />
             <Route element={<ClassAdminRoute session={session} />}>

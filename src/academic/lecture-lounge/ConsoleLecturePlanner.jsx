@@ -122,7 +122,7 @@ function ActivitiesEditor({ activities, onChange, promptText, onPromptTextChange
 }
 
 function emptyCheckinForm(nextPosition) {
-  return { position: nextPosition, activities: [], promptText: '', autoCloseSeconds: '', quizItems: [] }
+  return { position: nextPosition, activities: [], promptText: '', autoCloseSeconds: '', quizItems: [], weekly: false }
 }
 
 function quizItemsValid(items) {
@@ -137,9 +137,21 @@ function CheckinForm({ initial, onSave, onCancel }) {
 
   function submit(e) {
     e.preventDefault()
+    if (form.weekly) {
+      // Weekly wall: always exactly one prompt activity, never auto-closed —
+      // it stays open until the instructor closes it from this console.
+      onSave({
+        position: Number(form.position) || 0,
+        kind: 'weekly',
+        config: { activities: ['prompt'], prompt_text: form.promptText },
+        auto_close_seconds: null,
+      })
+      return
+    }
     const isQuiz = form.activities.includes('quiz')
     onSave({
       position: Number(form.position) || 0,
+      kind: 'live',
       config: {
         activities: form.activities,
         ...(form.activities.includes('prompt') ? { prompt_text: form.promptText } : {}),
@@ -150,49 +162,84 @@ function CheckinForm({ initial, onSave, onCancel }) {
     })
   }
 
+  const saveDisabled = form.weekly ? !form.promptText.trim() : form.activities.length === 0 || !quizOk
+
   return (
     <form onSubmit={submit} style={S.checkinForm}>
+      <label style={S.weeklyToggle}>
+        <input type="checkbox" checked={form.weekly} onChange={(e) => set('weekly', e.target.checked)} style={{ marginRight: 6 }} />
+        Question of the week (asynchronous wall — stays open between lectures, students answer from home)
+      </label>
       <div style={S.fieldRow}>
         <div>
           <label style={S.fieldLabel}>Position</label>
           <input type="number" value={form.position} onChange={(e) => set('position', e.target.value)} style={{ ...S.input, width: 70 }} />
         </div>
-        <div>
-          <label style={S.fieldLabel}>Auto-close (seconds, optional)</label>
-          <input type="number" value={form.autoCloseSeconds} onChange={(e) => set('autoCloseSeconds', e.target.value)} style={{ ...S.input, width: 140 }} placeholder="none" />
-        </div>
+        {!form.weekly && (
+          <div>
+            <label style={S.fieldLabel}>Auto-close (seconds, optional)</label>
+            <input type="number" value={form.autoCloseSeconds} onChange={(e) => set('autoCloseSeconds', e.target.value)} style={{ ...S.input, width: 140 }} placeholder="none" />
+          </div>
+        )}
       </div>
-      <ActivitiesEditor
-        activities={form.activities}
-        onChange={(v) => set('activities', v)}
-        promptText={form.promptText}
-        onPromptTextChange={(v) => set('promptText', v)}
-        quizItems={form.quizItems}
-        onQuizItemsChange={(v) => set('quizItems', v)}
-      />
+      {form.weekly ? (
+        <div style={{ marginTop: 10 }}>
+          <label style={S.fieldLabel}>Question of the week</label>
+          <textarea
+            value={form.promptText}
+            onChange={(e) => set('promptText', e.target.value)}
+            placeholder="e.g. Which criterion for abnormality do you find least convincing, and why?"
+            style={{ ...S.input, width: '100%', boxSizing: 'border-box', minHeight: 60, resize: 'vertical' }}
+          />
+        </div>
+      ) : (
+        <ActivitiesEditor
+          activities={form.activities}
+          onChange={(v) => set('activities', v)}
+          promptText={form.promptText}
+          onPromptTextChange={(v) => set('promptText', v)}
+          quizItems={form.quizItems}
+          onQuizItemsChange={(v) => set('quizItems', v)}
+        />
+      )}
       <div style={S.formBtnRow}>
-        <button type="submit" style={S.primaryBtnSm} disabled={form.activities.length === 0 || !quizOk}>Save check-in</button>
+        <button type="submit" style={S.primaryBtnSm} disabled={saveDisabled}>Save check-in</button>
         <button type="button" style={S.ghostBtnSm} onClick={onCancel}>Cancel</button>
       </div>
     </form>
   )
 }
 
-function CheckinRow({ checkin, onEdit, onDelete }) {
+function CheckinRow({ checkin, classSlug, onEdit, onDelete, onSetStatus }) {
   const activities = checkin.config?.activities ?? []
+  const weekly = checkin.kind === 'weekly'
   return (
     <div style={S.checkinRow}>
       <span style={S.checkinPos}>#{checkin.position}</span>
-      <span style={S.checkinSummary}>{activities.map((a) => ACTIVITY_DEFS.find((d) => d.key === a)?.label ?? a).join(' → ') || '(no activities)'}</span>
+      {weekly && <span style={S.weeklyBadge}>weekly</span>}
+      <span style={S.checkinSummary}>
+        {weekly
+          ? (checkin.config?.prompt_text || '(no question yet)')
+          : activities.map((a) => ACTIVITY_DEFS.find((d) => d.key === a)?.label ?? a).join(' → ') || '(no activities)'}
+      </span>
       {checkin.auto_close_seconds != null && <span style={S.autoCloseBadge}>{checkin.auto_close_seconds}s auto-close</span>}
       <span style={S.statusBadge}>{checkin.status}</span>
+      {weekly && checkin.status !== 'open' && (
+        <button style={S.linkBtn} onClick={() => onSetStatus(checkin.id, 'open')}>Open</button>
+      )}
+      {weekly && checkin.status === 'open' && (
+        <button style={S.linkBtn} onClick={() => onSetStatus(checkin.id, 'closed')}>Close</button>
+      )}
+      {weekly && checkin.status !== 'planned' && (
+        <a style={S.linkBtn} href={`/class/${classSlug}/wall/${checkin.id}`} target="_blank" rel="noreferrer">Wall</a>
+      )}
       <button style={S.linkBtn} onClick={onEdit}>Edit</button>
       <button style={S.linkBtnDanger} onClick={onDelete}>Delete</button>
     </div>
   )
 }
 
-function LectureCard({ lecture, checkins, expanded, onToggle, onEditLecture, onDeleteLecture, onCreateCheckin, onUpdateCheckin, onDeleteCheckin }) {
+function LectureCard({ lecture, checkins, classSlug, expanded, onToggle, onEditLecture, onDeleteLecture, onCreateCheckin, onUpdateCheckin, onDeleteCheckin, onSetCheckinStatus }) {
   const [editing, setEditing] = useState(false)
   const [editForm, setEditForm] = useState({ number: lecture.number ?? '', title: lecture.title ?? '', lecture_date: lecture.lecture_date ?? '' })
   const [creatingCheckin, setCreatingCheckin] = useState(false)
@@ -245,12 +292,17 @@ function LectureCard({ lecture, checkins, expanded, onToggle, onEditLecture, onD
                   position: c.position, activities: c.config?.activities ?? [],
                   promptText: c.config?.prompt_text ?? '', autoCloseSeconds: c.auto_close_seconds ?? '',
                   quizItems: (c.config?.quiz_items ?? []).map((qi) => ({ ...qi, correct: c.quizAnswerKey?.[qi.id] ?? 0 })),
+                  weekly: c.kind === 'weekly',
                 }}
                 onSave={async (patch) => { if (await onUpdateCheckin(c.id, patch)) setEditingCheckinId(null) }}
                 onCancel={() => setEditingCheckinId(null)}
               />
             ) : (
-              <CheckinRow key={c.id} checkin={c} onEdit={() => setEditingCheckinId(c.id)} onDelete={() => onDeleteCheckin(c.id)} />
+              <CheckinRow
+                key={c.id} checkin={c} classSlug={classSlug}
+                onEdit={() => setEditingCheckinId(c.id)} onDelete={() => onDeleteCheckin(c.id)}
+                onSetStatus={onSetCheckinStatus}
+              />
             )
           )}
 
@@ -379,6 +431,15 @@ export default function ConsoleLecturePlanner({ classInfo }) {
     const ok = await run(() => supabase.from('checkins').delete().eq('id', id))
     if (ok) reload()
   }
+  // Weekly walls are opened and closed from the console (they never enter the
+  // remote's live queue) — stamp the same timestamps the remote would.
+  async function setCheckinStatus(id, status) {
+    const stamp = status === 'open'
+      ? { status, opened_at: new Date().toISOString() }
+      : { status, closed_at: new Date().toISOString() }
+    const ok = await run(() => supabase.from('checkins').update(stamp).eq('id', id))
+    if (ok) reload()
+  }
 
   if (lectures === undefined) return <p style={S.loading}>Loading…</p>
 
@@ -398,10 +459,11 @@ export default function ConsoleLecturePlanner({ classInfo }) {
 
       {lectures.map((l) => (
         <LectureCard
-          key={l.id} lecture={l} checkins={checkinsByLecture[l.id]}
+          key={l.id} lecture={l} checkins={checkinsByLecture[l.id]} classSlug={classInfo.slug}
           expanded={expandedId === l.id} onToggle={() => setExpandedId(expandedId === l.id ? null : l.id)}
           onEditLecture={editLecture} onDeleteLecture={deleteLecture}
           onCreateCheckin={createCheckin} onUpdateCheckin={updateCheckin} onDeleteCheckin={deleteCheckin}
+          onSetCheckinStatus={setCheckinStatus}
         />
       ))}
 
@@ -449,6 +511,8 @@ const S = {
   checkinSummary: { flex: 1, fontSize: 13, color: 'var(--tx)' },
   autoCloseBadge: { fontFamily: MONO, fontSize: 11, color: 'var(--pkd)', background: 'var(--pkb)', padding: '2px 8px', borderRadius: 6 },
   statusBadge: { fontFamily: MONO, fontSize: 11, color: 'var(--tx3)', textTransform: 'uppercase' },
+  weeklyBadge: { fontFamily: MONO, fontSize: 11, color: '#fff', background: 'var(--pk)', padding: '2px 8px', borderRadius: 6, textTransform: 'uppercase' },
+  weeklyToggle: { display: 'block', fontFamily: MONO, fontSize: 12, color: 'var(--tx2)', marginBottom: 10, cursor: 'pointer' },
   linkBtn: { background: 'none', border: 'none', color: 'var(--pk)', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', padding: 0 },
   linkBtnDanger: { background: 'none', border: 'none', color: '#c04a4a', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', padding: 0 },
 

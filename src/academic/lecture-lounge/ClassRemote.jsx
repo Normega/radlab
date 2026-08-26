@@ -73,7 +73,9 @@ export default function ClassRemote({ session }) {
 
   async function loadCheckins(lectureId) {
     const { data } = await supabase
-      .from('checkins').select('*, class_questions(*)').eq('lecture_id', lectureId).order('position', { ascending: true })
+      .from('checkins').select('*, class_questions(*)').eq('lecture_id', lectureId)
+      .neq('kind', 'weekly') // weekly walls are opened/closed from the console, not driven live
+      .order('position', { ascending: true })
     const rows = data ?? []
     applyCheckinsData(rows)
     loadFollowUps(rows)
