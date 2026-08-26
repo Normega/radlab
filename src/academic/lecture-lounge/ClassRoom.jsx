@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAvatarConfig } from '../../hooks/useAvatarConfig'
 import Nav from '../../components/Nav'
@@ -114,6 +114,7 @@ export default function ClassRoom({ session }) {
       .select('id, status, config, lecture_id, lectures!inner(class_id)')
       .eq('lectures.class_id', classInfo.id)
       .neq('status', 'planned')
+      .neq('kind', 'weekly') // weekly walls live on their own page, never in the live flow
       .is('dismissed_at', null)
       .order('created_at', { ascending: false })
       .limit(1)
@@ -124,6 +125,40 @@ export default function ClassRoom({ session }) {
       })
     return () => { cancelled = true }
   }, [classInfo?.id]) // eslint-disable-line react-hooks/exhaustive-deps -- only the id should re-trigger this, not every field on classInfo
+
+  // Question of the Week: the currently-open weekly check-in, if any, plus
+  // its wall summary (count + whether this student has answered) from the
+  // get_weekly_wall RPC. DB-driven, no broadcast involvement — a student
+  // opening the page from home mid-week sees the card with no live session.
+  const [weekly, setWeekly] = useState(null)
+  useEffect(() => {
+    if (!classInfo || !membership) return
+    let cancelled = false
+    ;(async () => {
+      const { data } = await supabase
+        .from('checkins')
+        .select('id, config, lectures!inner(class_id)')
+        .eq('lectures.class_id', classInfo.id)
+        .eq('kind', 'weekly')
+        .eq('status', 'open')
+        .is('dismissed_at', null)
+        .order('created_at', { ascending: false })
+        .limit(1)
+      const row = data?.[0]
+      if (cancelled || !row) { if (!cancelled) setWeekly(null); return }
+      // rpc reports failure in `error`, not by throwing — a failed summary
+      // still renders the card, just without count/answered detail.
+      const { data: wall, error } = await supabase.rpc('get_weekly_wall', { p_checkin_id: row.id })
+      if (cancelled) return
+      setWeekly({
+        id: row.id,
+        prompt: row.config?.prompt_text ?? 'This week’s question',
+        count: error ? null : wall?.count,
+        answered: error ? false : !!(wall?.my_response && wall.my_response.trim()),
+      })
+    })()
+    return () => { cancelled = true }
+  }, [classInfo?.id, membership]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Live updates via the class broadcast channel — remote pushes state,
   // screen/student are consumers only.
@@ -312,6 +347,20 @@ export default function ClassRoom({ session }) {
             )}
 
             {renderCheckinArea()}
+
+            {weekly && (
+              <Link to={`/class/${slug}/wall/${weekly.id}`} style={S.weeklyCard}>
+                <p style={S.weeklyEyebrow}>Question of the week</p>
+                <p style={S.weeklyPrompt}>{weekly.prompt}</p>
+                <p style={S.weeklyMeta}>
+                  {weekly.answered
+                    ? `You've answered — see the wall (${weekly.count ?? '…'}) →`
+                    : weekly.count
+                    ? `${weekly.count} ${weekly.count === 1 ? 'answer' : 'answers'} on the wall — add yours →`
+                    : 'Be the first on the wall →'}
+                </p>
+              </Link>
+            )}
           </>
         )}
       </div>
@@ -332,6 +381,13 @@ const S = {
     background: 'var(--pk)', color: '#fff', fontSize: 15, fontWeight: 600,
     cursor: 'pointer', fontFamily: 'inherit',
   },
+  weeklyCard: {
+    display: 'block', textDecoration: 'none', marginTop: 16, textAlign: 'left',
+    background: 'var(--bgp)', border: '1px solid var(--pkb)', borderRadius: 14, padding: '16px 20px',
+  },
+  weeklyEyebrow: { fontFamily: MONO, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)', marginBottom: 6 },
+  weeklyPrompt: { fontFamily: SERIF, fontSize: 18, color: 'var(--tx)', lineHeight: 1.35, marginBottom: 6 },
+  weeklyMeta: { fontFamily: MONO, fontSize: 12, color: 'var(--tx2)' },
   banner: { background: 'var(--bgp)', border: '1px solid var(--pkb)', borderRadius: 12, padding: '14px 18px', marginBottom: 16 },
   bannerForm: {},
   bannerText: { fontSize: 13, color: 'var(--tx2)', marginBottom: 10 },
