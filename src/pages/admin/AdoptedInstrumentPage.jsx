@@ -151,7 +151,12 @@ const PAGES = {
     library: {
       table: 'vas_packages', title: 'Existing assessments',
       newLink: '/admin/vas/packages/new', newLabel: '+ New Package',
-      row: r => ({ name: r.slug, meta: `${(r.scale_ids ?? []).length} scale${(r.scale_ids ?? []).length === 1 ? '' : 's'}` }),
+      // items is the mixed-content list; legacy VAS-only packages have only scale_ids.
+      row: r => {
+        const n = (r.items ?? r.scale_ids ?? []).length
+        return { name: r.name || r.slug, meta: `${n} item${n === 1 ? '' : 's'}` }
+      },
+      preview: r => <PackagePreview pkg={r} />,
     },
   },
   'multiple-choice': {
@@ -302,27 +307,83 @@ function Library({ cfg }) {
   )
 }
 
+// slider_scales row → production SliderQuestion config. A row's `anchors`
+// jsonb (20260825_composable_instruments.sql) is the full anchor spec; rows
+// without one fall back to start/end from min/max labels.
+function sliderRowConfig(row) {
+  const min = row.min ?? 0
+  const max = row.max ?? 100
+  return {
+    id: `slider_${row.slug}`,
+    type: 'slider',
+    question: row.prompt,
+    min,
+    max,
+    step: row.step ?? 1,
+    labels: row.anchors ?? [
+      { value: min, label: row.min_label ?? '' },
+      { value: max, label: row.max_label ?? '' },
+    ],
+  }
+}
+
 // In-place viewer for an authored numeric slider — renders through the SAME
 // production component as the sample above (Norm, 2026-08-25: the template is
 // enforced), so prior sliders get the white card, anchors, and VALUE box.
-// A row's `anchors` jsonb (20260825_composable_instruments.sql) is the full
-// anchor spec; rows without one fall back to start/end from min/max labels.
 function SliderPreview({ row }) {
-  const min = row.min ?? 0
-  const max = row.max ?? 100
+  return <DemoStage config={sliderRowConfig(row)} />
+}
+
+// In-place viewer for an assessment (VAS package): every item of the bundle,
+// in its stored order, rendered by the component a participant gets — VAS
+// items through VasRenderer in preview mode, sliders through the production
+// SliderQuestion. Legacy packages with only scale_ids are VAS-only.
+function PackagePreview({ pkg }) {
+  const itemList = pkg.items ?? (pkg.scale_ids ?? []).map(id => ({ type: 'vas', id }))
+  const vasIds    = itemList.filter(x => x.type !== 'slider').map(x => x.id)
+  const sliderIds = itemList.filter(x => x.type === 'slider').map(x => x.id)
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['pkg-preview', pkg.id],
+    queryFn: async () => {
+      const [vas, sliders] = await Promise.all([
+        vasIds.length
+          ? supabase.from('vas_scales').select('*').in('id', vasIds).then(r => { if (r.error) throw r.error; return r.data ?? [] })
+          : [],
+        sliderIds.length
+          ? supabase.from('slider_scales').select('*').in('id', sliderIds).then(r => { if (r.error) throw r.error; return r.data ?? [] })
+          : [],
+      ])
+      return { vas, sliders }
+    },
+  })
+
+  if (isLoading) return <p style={{ ...S.muted, padding: 16 }}>Loading package items…</p>
+  if (error)     return <p style={{ ...S.muted, padding: 16 }}>Could not load the package items.</p>
+  if (!itemList.length) return <p style={{ ...S.muted, padding: 16 }}>This package has no items configured.</p>
+
   return (
-    <DemoStage config={{
-      id: `slider_${row.slug}`,
-      type: 'slider',
-      question: row.prompt,
-      min,
-      max,
-      step: row.step ?? 1,
-      labels: row.anchors ?? [
-        { value: min, label: row.min_label ?? '' },
-        { value: max, label: row.max_label ?? '' },
-      ],
-    }} />
+    <div style={{ padding: '4px 0 12px' }}>
+      {itemList.map((it, i) => {
+        const isSlider = it.type === 'slider'
+        const row = (isSlider ? data.sliders : data.vas).find(s => s.id === it.id)
+        if (!row) return (
+          <p key={`${it.id}-${i}`} style={{ ...S.muted, padding: '0 16px' }}>
+            Item {i + 1}: its {isSlider ? 'slider' : 'VAS'} row no longer exists.
+          </p>
+        )
+        return (
+          <div key={`${it.id}-${i}`}>
+            <p style={S.pkgItemLabel}>{i + 1} of {itemList.length} · {isSlider ? 'Numeric slider' : 'VAS'}</p>
+            {isSlider
+              ? <DemoStage config={sliderRowConfig(row)} />
+              /* the bare spec-stage class collapses VasRenderer's full-viewport
+                 min-height (the .spec-stage > div rule in index.css) */
+              : <div className="spec-stage"><VasRenderer scale={row} userId={null} previewMode onComplete={() => {}} /></div>}
+          </div>
+        )
+      })}
+    </div>
   )
 }
 
@@ -365,6 +426,10 @@ const S = {
     padding: '10px 14px', marginBottom: 8, maxWidth: 860,
   },
   rowName: { fontFamily: SANS, fontWeight: 600, fontSize: 14, color: 'var(--tx)', flex: '1 1 260px', minWidth: 0 },
+  pkgItemLabel: {
+    fontFamily: MONO, fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase',
+    color: 'var(--gy)', margin: '14px 20px 0', paddingTop: 10, borderTop: '1px solid var(--bd)',
+  },
   rowMeta: { fontFamily: SANS, fontSize: 12.5, color: 'var(--tx2)' },
   rowSlug: { fontFamily: MONO, fontSize: 11, color: 'var(--gy)' },
   muted:   { fontFamily: SANS, fontSize: 13, color: 'var(--tx2)', margin: '4px 0 0' },
