@@ -47,6 +47,12 @@ export default function WikiPage() {
   const [outbound, setOutbound] = useState([])
   const [provenance, setProvenance] = useState(null)
   const [catalog, setCatalog] = useState(null)
+  // Which lecture week(s) this page belongs to, from page_lectures joined to
+  // the course calendar. The crumb renders only when there is no DSM-chapter
+  // crumb — so PSY240 disorder pages look exactly as before, while
+  // week-anchored courses (and PSY240's own concept pages) get their calendar
+  // context instead.
+  const [lectureCrumbs, setLectureCrumbs] = useState([])
   // Open gaps on this page, drawn from page_gaps rather than parsed from the
   // body — the catalogue is the source of truth, and RLS already decides who
   // sees them (members: published pages only; staff: everything).
@@ -90,7 +96,7 @@ export default function WikiPage() {
       // The link-resolution set is whatever this reader can see, which is the
       // honest basis for colouring a wikilink: a link to a page that exists
       // but is still a draft is, for a student, a link to nothing readable.
-      const [{ data: all }, { data: back }, { data: out }, { data: prov }, { data: cat }, { data: gp }, { data: rev }] = await Promise.all([
+      const [{ data: all }, { data: back }, { data: out }, { data: prov }, { data: cat }, { data: gp }, { data: rev }, { data: pls }, { data: cal }] = await Promise.all([
         courseClient.from('wiki_pages').select('slug, title, type, status').eq('course_id', courseId),
         courseClient.from('wiki_links')
           .select('id, source:wiki_pages!wiki_links_source_page_id_fkey!inner(slug, title, type, status)')
@@ -107,6 +113,10 @@ export default function WikiPage() {
         courseClient.from('page_reviews')
           .select('version, verdict, reviewed_at')
           .eq('page_id', row.id).order('reviewed_at', { ascending: false }).limit(1).maybeSingle(),
+        courseClient.from('page_lectures').select('lecture_no').eq('page_id', row.id),
+        courseClient.from('course_structure')
+          .select('week_no, lecture_no, title')
+          .eq('course_id', courseId).eq('kind', 'lecture'),
       ])
       if (cancelled) return
       setPages(new Map((all ?? []).map(p => [p.slug, p])))
@@ -117,6 +127,10 @@ export default function WikiPage() {
       setCatalog(cat ?? null)
       setGaps(gp ?? [])
       setReview(rev ?? null)
+      setLectureCrumbs((pls ?? [])
+        .map(l => (cal ?? []).find(m => m.lecture_no === l.lecture_no))
+        .filter(Boolean)
+        .sort((a, b) => a.week_no - b.week_no))
     })()
 
     return () => { cancelled = true }
@@ -300,6 +314,9 @@ export default function WikiPage() {
                  width={30} height={30} loading="lazy" style={S.crumbIcon} />
           )}<span style={S.dim}>{catalog.dsm_chapter_title}</span></>
         )}
+        {!catalog?.dsm_chapter_title && lectureCrumbs.map(m => (
+          <span key={m.week_no}> · <span style={S.dim}>Week {m.week_no} — {m.title}</span></span>
+        ))}
       </nav>
 
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
