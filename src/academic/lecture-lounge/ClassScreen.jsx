@@ -33,6 +33,7 @@ export default function ClassScreen() {
       .select('id, status, config, lecture_id, lectures!inner(class_id)')
       .eq('lectures.class_id', classInfo.id)
       .neq('status', 'planned')
+      .neq('kind', 'weekly') // weekly walls never reach the projector
       .is('dismissed_at', null)
       .order('created_at', { ascending: false })
       .limit(1)
