@@ -77,6 +77,7 @@ export default function WikiPage() {
   const [verified, setVerified] = useState('')
   const [allowStructure, setAllowStructure] = useState(false)
   const [reloadKey, setReloadKey] = useState(0)
+  const [publishing, setPublishing] = useState(false)
 
   // undefined = still loading, null = nothing this reader can see at this slug
   const page = loaded.slug === slug ? loaded.row : undefined
@@ -160,6 +161,18 @@ export default function WikiPage() {
       `Saved as v${data.current_version} · ${data.links_extracted} link${data.links_extracted === 1 ? '' : 's'}` +
       ` · ${data.needs?.length ? `still needs: ${data.needs.join(', ')}` : 'no declared gaps'}`
     )
+    setReloadKey(k => k + 1)
+  }
+
+  // Direct publish (20260826 migration): the write primitive review_proposal
+  // cannot provide, for pages that never came through an ingest proposal —
+  // which is every fresh-authored PSY309 page. Staff-gated server-side.
+  const publishNow = async () => {
+    setPublishing(true)
+    const { error } = await courseClient.rpc('publish_page', { p_page_id: page.id })
+    setPublishing(false)
+    if (error) return setSaveNotice(error.message)
+    setSaveNotice('Published — this page is now live for readers.')
     setReloadKey(k => k + 1)
   }
 
@@ -468,7 +481,11 @@ export default function WikiPage() {
       {page.status !== 'published' && (
         <p style={S.draftBanner}>
           <b>{page.status}</b> — not visible to students.{' '}
-          {isStaff && <Link to="/academic/fieldguide/review" style={S.link}>Publish it from the review queue →</Link>}
+          {isStaff && page.content && (
+            <button style={S.publishBtn} disabled={publishing} onClick={publishNow}>
+              {publishing ? 'Publishing…' : 'Publish this page'}
+            </button>
+          )}
         </p>
       )}
 
@@ -665,6 +682,13 @@ export default function WikiPage() {
           )}
         </article>
       </div>
+
+      <p style={S.licenseFoot}>
+        This guide is free and open under{' '}
+        <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" style={S.link}
+           target="_blank" rel="noreferrer">CC BY-NC-SA 4.0</a>
+        {' '}· this page's sources are credited in its Sources and attribution section.
+      </p>
     </Shell>
   )
 }
@@ -811,6 +835,8 @@ const S = {
   link: { color: 'var(--pk)', textDecoration: 'none' },
   code: { fontFamily: MONO, fontSize: 13 },
 
+  publishBtn: { fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', padding: '4px 12px', borderRadius: 14, border: 'none', background: 'var(--pk)', color: '#fff', cursor: 'pointer' },
+  licenseFoot: { fontSize: 12, color: 'var(--tx2)', marginTop: 40, borderTop: '1px solid var(--bd)', paddingTop: 12 },
   draftBanner: { marginTop: 14, padding: '10px 12px', borderRadius: 8, background: 'rgba(214,51,132,.07)', border: '1px solid rgba(214,51,132,.28)', fontSize: 13, color: 'var(--tx)' },
 
   stampBar: { display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', marginTop: 14, padding: '10px 12px', borderRadius: 10, background: 'var(--bgc)', border: '1px solid var(--bd)' },

@@ -506,6 +506,11 @@ function Shell({ course, session, client, isStaff, courses, courseId, onSelectCo
             <h1 style={S.title}>{course?.name ?? 'Course wiki'}</h1>
             {course && <p style={S.sub}>{course.code} · {course.term}</p>}
           </div>
+          {!session && (
+            <div style={{ textAlign: 'right' }}>
+              <Link to="/academic/fieldguide/review" style={S.link}>Staff sign in</Link>
+            </div>
+          )}
           {session && (
             <div style={{ textAlign: 'right' }}>
               <p style={{ ...S.sub, fontSize: 12 }}>{session.user.email}</p>
@@ -530,6 +535,17 @@ function Shell({ course, session, client, isStaff, courses, courseId, onSelectCo
         )}
 
         {children}
+
+        {/* Share-alike lives here: the guide is built on CC-licensed open
+            texts, so its own license is part of the page, not a footnote in a
+            repo nobody visits. Per-page source credit is in each page's
+            Sources and attribution section. */}
+        <p style={S.licenseFoot}>
+          This guide is free and open under{' '}
+          <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" style={S.link}
+             target="_blank" rel="noreferrer">CC BY-NC-SA 4.0</a>
+          {' '}· sources credited on every page.
+        </p>
       </div>
     </div>
   )
@@ -595,6 +611,7 @@ const S = {
   cardTitle: { fontSize: 15, color: 'var(--tx)', lineHeight: 1.3 },
   cardMeta: { fontFamily: MONO, fontSize: 11, letterSpacing: 0.5, textTransform: 'uppercase', color: 'var(--tx2)' },
 
+  licenseFoot: { fontSize: 12, color: 'var(--tx2)', marginTop: 44, borderTop: '1px solid var(--bd)', paddingTop: 12 },
   resultCard: { display: 'flex', flexDirection: 'column', gap: 3, background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 10, padding: '12px 14px', marginBottom: 8, textDecoration: 'none' },
   resultTitle: { fontFamily: SERIF, fontSize: 18, color: 'var(--tx)' },
   resultMeta: { fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx2)' },

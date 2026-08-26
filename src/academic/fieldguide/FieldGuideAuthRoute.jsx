@@ -25,7 +25,7 @@ const WIKI_AFTER_CONFIRM = '/academic/fieldguide/wiki'
 // Role is a coarse gate only. What a reader actually sees is decided by RLS:
 // `members read published pages` vs `staff read all pages`, so the reader UI
 // is written once and the database draws the line.
-export default function FieldGuideAuthRoute({ roles, deniedTitle, deniedBody }) {
+export default function FieldGuideAuthRoute({ roles, deniedTitle, deniedBody, publicAccess = false }) {
   const [client, setClient] = useState(null)
   const [clientErr, setClientErr] = useState(null)
   const [session, setSession] = useState(undefined)     // undefined = loading
@@ -45,6 +45,20 @@ export default function FieldGuideAuthRoute({ roles, deniedTitle, deniedBody }) 
       .catch(err => setClientErr(err.message))
     return () => sub?.unsubscribe()
   }, [])
+
+  // Public-course lookup (D2, 2026-08-25): a public course's published pages
+  // are world-readable, so under a publicAccess guard the login form is the
+  // *fallback*, shown only when there is nothing public to read. RLS decides
+  // everything content-level; this guard only decides whether to demand a
+  // session before rendering the reader at all.
+  const [publicCourses, setPublicCourses] = useState(undefined) // undefined = loading
+  useEffect(() => {
+    if (!publicAccess || !client) return
+    let cancelled = false
+    client.from('courses').select('id, code, name, term').eq('is_public', true)
+      .then(({ data }) => { if (!cancelled) setPublicCourses(data ?? []) })
+    return () => { cancelled = true }
+  }, [client, publicAccess])
 
   useEffect(() => {
     if (!client || !session) return
@@ -89,11 +103,49 @@ export default function FieldGuideAuthRoute({ roles, deniedTitle, deniedBody }) 
   if (!client || session === undefined) {
     return <Shell><p style={S.sub}>Loading…</p></Shell>
   }
-  if (!session) return <CourseLogin client={client} />
+
+  // Anyone not signed in: show the public reader if a public course exists,
+  // the login form otherwise. Visitor "enrollments" are synthesized so the
+  // reader's course machinery (useWikiCourse and friends) needs no anon path
+  // of its own — RLS returns published pages only.
+  const asVisitors = (cs) => cs.map(c => ({
+    id: `public-${c.id}`, role: 'visitor', status: 'active', course_id: c.id,
+    courses: { code: c.code, name: c.name, term: c.term },
+  }))
+  if (!session) {
+    if (publicAccess) {
+      if (publicCourses === undefined) return <Shell><p style={S.sub}>Loading…</p></Shell>
+      if (publicCourses.length) {
+        return (
+          <Outlet context={{
+            courseClient: client,
+            session: null,
+            staffEnrollments: [],
+            enrollments: asVisitors(publicCourses),
+            isStaff: false,
+          }} />
+        )
+      }
+    }
+    return <CourseLogin client={client} />
+  }
   if (enrollments === undefined) {
     return <Shell><p style={S.sub}>Checking access…</p></Shell>
   }
   if (!enrollments.length) {
+    // A signed-in account with no enrollment still gets the public reader
+    // (their session simply matches the same anon-grade policies).
+    if (publicAccess && publicCourses?.length) {
+      return (
+        <Outlet context={{
+          courseClient: client,
+          session,
+          staffEnrollments: [],
+          enrollments: asVisitors(publicCourses),
+          isStaff: false,
+        }} />
+      )
+    }
     return (
       <Shell>
         <h1 style={S.title}>{deniedTitle}</h1>
@@ -106,12 +158,18 @@ export default function FieldGuideAuthRoute({ roles, deniedTitle, deniedBody }) 
   // `staffEnrollments` is the name the ingest portal and review queue already
   // read from context; under the member guard it is the caller's enrollments
   // whatever their role, and `isStaff` says which.
+  // An enrolled reader also sees public courses they are NOT enrolled in
+  // (e.g., a PSY240 student browsing the public PSY309 guide). Staff status
+  // and staffEnrollments stay strictly the real enrollments.
+  const extraPublic = publicAccess && publicCourses?.length
+    ? asVisitors(publicCourses.filter(c => !enrollments.some(e => e.course_id === c.id)))
+    : []
   return (
     <Outlet context={{
       courseClient: client,
       session,
       staffEnrollments: enrollments,
-      enrollments,
+      enrollments: [...enrollments, ...extraPublic],
       isStaff: enrollments.some(e => e.role === 'ta' || e.role === 'instructor'),
     }} />
   )
