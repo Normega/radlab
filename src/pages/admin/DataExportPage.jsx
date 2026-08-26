@@ -421,6 +421,7 @@ function StudyExportSection() {
   const tables      = studyData?.tables ?? []
   const errors      = studyData?.errors ?? []
   const enrollments = studyData?.context?.enrollments ?? []
+  const skipped     = studyData?.skipped ?? []
   const master = useMemo(
     () => (studyData ? buildMasterTable(studyData.context, studyData.resultsByTable) : []),
     [studyData],
@@ -504,6 +505,14 @@ function StudyExportSection() {
                 ⚠ {errors.length} table{errors.length !== 1 ? 's' : ''} could not be read
                 ({errors.map(e => e.table).join(', ')}). If these should hold data, the
                 lab-read RLS migration (20260723_export_lab_read_policies) may not be applied yet.
+              </p>
+            )}
+            {skipped.length > 0 && (
+              <p style={S.dim}>
+                Left out: {skipped.map(t => t.label).join(', ')} — these tables are scoped to a
+                participant rather than to a study, so they would otherwise return everything
+                those people ever played elsewhere on the platform. This study's step log shows
+                it never ran {skipped.length !== 1 ? 'those games' : 'that game'}.
               </p>
             )}
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
