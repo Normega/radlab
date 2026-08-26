@@ -43,21 +43,27 @@ system and demonstrates every effect and container live. Rule for all future tok
 website.md §9 together.** A token that exists in three of the four places is drift with a
 head start.
 
-## Phase 1 — measure on every build (the ratchet)
+## Phase 1 — measure on every build (the ratchet) ✅ (2026-08-26)
 
-Turn the drift audit's one-off regex inventory into `scripts/design-audit.mjs`, run as
-`npm run audit:design`:
+Implemented as `scripts/design-audit.mjs`:
 
-- Counts, per category: font-sizes off the six steps (13px broken out), font-sizes below 12,
-  hard-coded token hexes, off-palette hexes, off-system radii, non-scale padding/gap literals.
-  Same exclusions as the 2026-08-12 audit (game-internal artwork sanctioned).
-- Writes `design-audit/baseline.json`; the check **fails only if a count exceeds the
-  committed baseline** — a ratchet, not a wall. Existing debt doesn't block anyone; *new*
-  debt does. When a migration lands, the baseline is re-committed lower and can't rise again.
-- Wire-up: a separate script invoked alongside `npm run build` locally and in the Vercel
-  build (warn-only on Vercel for the first month, then failing). The `/brand` drift numbers
-  get refreshed from this script's output instead of hand-run regexes — which also satisfies
-  the "re-measure or delete" rule for the page's dated claims.
+- `npm run audit:design` — report with per-category counts and worst-offender files.
+- `npm run audit:design:check` — compares against the committed
+  `design-audit/baseline.json` and **fails only if a count exceeds the baseline** — a
+  ratchet, not a wall. Existing debt doesn't block anyone; *new* debt does.
+- `npm run audit:design:update` — re-commits the baseline lower after a migration lands,
+  so the gain can't be given back.
+- Categories: off-scale font-sizes (13px and sub-12 broken out), off-system radii,
+  hard-coded token hexes, off-palette hexes, off-scale padding/gap/margin. Ratcheted scope
+  is `src/` minus sanctioned content (games per the 2026-08-12 ruling, plus avatar colour
+  palettes and talk-deck graphics — their colours are content, not UI).
+- Baseline at adoption: 13px 326 · sub-12px 372 · other off-scale 228 · radii 579 ·
+  token hexes 194 · off-palette 544 · spacing 1,712. Type-scale compliance 45%.
+- `/brand`'s drift numbers now cite this script's output (dated), satisfying the
+  "re-measure or delete" rule.
+
+Still open from this phase: running `audit:design:check` in the Vercel build (warn-only
+first, failing after a month). Until then it's a local/pre-promotion command.
 
 ## Phase 2 — shared primitives for the drift hotspots
 

@@ -589,9 +589,13 @@ export default function BrandAssets() {
         <h2 className="brand-heading">Implementation status</h2>
         <p className="brand-section-note">
           What the system specifies is above; what the codebase actually does is below.
-          Drift measured 2026-08-12 by regex inventory over 337 source files
-          (<code>design-audit/DRIFT-REPORT-2026-08-12.md</code>). Game-internal artwork is a
-          sanctioned exception throughout and is excluded where noted.
+          Drift measured 2026-08-26 by <code>npm run audit:design</code>{' '}
+          (<code>scripts/design-audit.mjs</code>, 374 files), which now also runs as a ratchet:
+          <code> audit:design:check</code> fails any change that pushes a count above the
+          committed <code>design-audit/baseline.json</code>. Sanctioned content — game artwork,
+          avatar colour palettes, talk-deck graphics — is reported but never ratcheted. The
+          2026-08-12 hand-run audit remains in <code>design-audit/</code>; its counts used
+          different exclusions and are not 1:1 comparable.
         </p>
 
         <Gap title="The 2026-08-26 expansion — adopted with four exclusions">
@@ -605,18 +609,19 @@ export default function BrandAssets() {
           spec wins.
         </Gap>
 
-        <Gap title="Type scale — 44% compliant, and slipping">
-          Of ~1,985 font-size declarations, 876 land on the six steps. 13px alone accounts for
-          401, despite a ruling to migrate 13&nbsp;&rarr;&nbsp;14; 372 declarations sit below the
-          12px floor, concentrated in admin. Both numbers have grown since the July audit,
-          because the rule is documented but not enforced by tooling.
+        <Gap title="Type scale — 45% compliant, now ratcheted">
+          Of 1,669 font-size declarations in ratcheted scope, 743 land on the six steps.
+          13px alone accounts for 326, despite a ruling to migrate 13&nbsp;&rarr;&nbsp;14;
+          372 declarations sit below the 12px floor, concentrated in admin. These counts grew
+          for months while the rule was documented but untooled &mdash; as of 2026-08-26 the
+          ratchet fails any commit that increases them.
         </Gap>
 
         <Gap title="Colour — token layer sound, literals not cleaned up">
-          803 occurrences hard-code one of the token values instead of referencing it. That is
-          cosmetic rather than visible drift. Genuinely off-palette values outside the games
-          are down to 82 occurrences, nearly all admin status tints awaiting success and
-          warning semantics.
+          194 occurrences hard-code a token value instead of referencing it &mdash; cosmetic
+          rather than visible drift. 544 hexes are genuinely off-palette; the single worst
+          file is admin&rsquo;s TrainingUpload (68), and the bulk are admin status tints
+          awaiting success and warning semantics.
         </Gap>
 
         <Gap title="Weights — fully migrated">
@@ -629,16 +634,19 @@ export default function BrandAssets() {
         </Gap>
 
         <Gap title="Radii — carried by the primitives">
-          24px went from 3 uses to 38 as the button primitives landed. The long tail of 8/10/16px
-          cards persists in admin and game chrome and migrates opportunistically.
+          24px went from 3 uses to 38 as the button primitives landed (2026-08-12). The long
+          tail of 8/10/16px cards persists &mdash; 579 off-system radius declarations in
+          ratcheted scope &mdash; and migrates opportunistically, now without being allowed
+          to grow.
         </Gap>
 
         <Gap title="Spacing & layout — scale adopted, not yet implemented">
           The spacing scale and the two shared containers exist as tokens as of 2026-08-26, but
           no page uses them yet: Dashboard is 1100px wide, Games 1024, About 1200, Talks 960,
-          this page 900. Moving between pages still shifts the content column. Migration order
-          is in <code>docs/markdowns/brand_enforcement_plan.md</code> — this stops being an open
-          design question and becomes ordinary unfinished work.
+          this page 900. Moving between pages still shifts the content column, and 1,712
+          off-scale padding/gap/margin values mark the migration&rsquo;s starting line.
+          Migration order is in <code>docs/markdowns/brand_enforcement_plan.md</code> — this
+          stops being an open design question and becomes ordinary unfinished work.
         </Gap>
 
         <Gap title="Precedence — the written spec is authoritative">
