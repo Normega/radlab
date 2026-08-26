@@ -4,6 +4,7 @@ import { WIKI_BASE } from './wikiText'
 import { useWikiCourse } from './useWikiCourse'
 import { TIER_LABEL, TIER_HELP } from './tiers'
 import { chapterIcon } from './chapterIcons'
+import { weekIcon } from './weekIcons'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -346,8 +347,9 @@ export default function WikiIndex() {
                   style={{ ...S.chCard, ...(g.readable === 0 ? S.chCardEmpty : null) }}
                 >
                   {(g.badge || g.number > 0) && <span style={S.chCardNum}>{g.badge ?? g.number}</span>}
-                  {!weekAnchored && chapterIcon(g.number) && (
-                    <img src={chapterIcon(g.number)} alt="" aria-hidden="true"
+                  {(weekAnchored ? weekIcon(course?.code, g.number) : chapterIcon(g.number)) && (
+                    <img src={weekAnchored ? weekIcon(course?.code, g.number) : chapterIcon(g.number)}
+                         alt="" aria-hidden="true"
                          width={96} height={96} loading="lazy" style={S.chCardIcon} />
                   )}
                   <span style={S.chCardTitle}>{g.title}</span>
@@ -385,8 +387,9 @@ export default function WikiIndex() {
                 >
                   {/* Decorative: the chapter is named right beside it, so an
                       alt text would only make a screen reader say it twice. */}
-                  {!weekAnchored && chapterIcon(g.number) && (
-                    <img src={chapterIcon(g.number)} alt="" aria-hidden="true"
+                  {(weekAnchored ? weekIcon(course?.code, g.number) : chapterIcon(g.number)) && (
+                    <img src={weekAnchored ? weekIcon(course?.code, g.number) : chapterIcon(g.number)}
+                         alt="" aria-hidden="true"
                          width={46} height={46} loading="lazy" style={S.chIcon} />
                   )}
                   {(g.badge || g.number > 0) && <span style={S.chNum}>{g.badge ?? g.number}</span>}

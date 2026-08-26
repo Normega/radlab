@@ -6,6 +6,7 @@ import { useWikiCourse } from './useWikiCourse'
 import { useWideLayout } from './useWideLayout'
 import { TIER_LABEL, TIER_HELP } from './tiers'
 import { chapterIcon } from './chapterIcons'
+import { weekIcon } from './weekIcons'
 import ReportIssue from './ReportIssue'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
@@ -315,7 +316,10 @@ export default function WikiPage() {
           )}<span style={S.dim}>{catalog.dsm_chapter_title}</span></>
         )}
         {!catalog?.dsm_chapter_title && lectureCrumbs.map(m => (
-          <span key={m.week_no}> · <span style={S.dim}>Week {m.week_no} — {m.title}</span></span>
+          <span key={m.week_no}> · {weekIcon(course?.code, m.week_no) && (
+            <img src={weekIcon(course?.code, m.week_no)} alt="" aria-hidden="true"
+                 width={30} height={30} loading="lazy" style={S.crumbIcon} />
+          )}<span style={S.dim}>Week {m.week_no} — {m.title}</span></span>
         ))}
       </nav>
 
