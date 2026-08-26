@@ -34,6 +34,14 @@ const IN_CHUNK = 100
 //   'liliana'  → participant_id → liliana_participants  → .in('participant_id', lilPartIds)
 //   'parent'   → session_id → another fetched table     → .in(parentCol, parentRowIds)
 //
+// games: for a table scoped by PROFILE rather than by study, the game slugs it
+//   belongs to. A profile-scoped table returns every row that participant ever
+//   created anywhere on the platform, so a study that never ran the game still
+//   received its data -- Sandy Study 3 exports arrived carrying Still Water and
+//   FarmJoy. When the study's own step log proves it never delivered that game,
+//   the table is skipped. Tables scoped by 'study', 'session' or 'parent' need
+//   no such field: they are already bounded by the study.
+//
 // ownerSpace/ownerCol: how to attribute a row back to a participant profile_id
 // (used by the combined master to compute per-participant counts). Defaults are
 // derived from strategy; only 'study' tables must declare it explicitly.
@@ -45,7 +53,7 @@ export const EXPORT_TABLES = [
   { table: 'trials',                   category: 'Games',         label: 'Trials (generic)',           strategy: 'session' },
   { table: 'performance',              category: 'Games',         label: 'Performance (generic)',      strategy: 'session' },
   // Per-game tables
-  { table: 'stillwater_responses',     category: 'Games',         label: 'Still Water',                strategy: 'profile',  col: 'user_id' },
+  { table: 'stillwater_responses',     category: 'Games',         label: 'Still Water',                strategy: 'profile',  col: 'user_id', games: ['stillwater', 'still_water'] },
   { table: 'drift_trials',             category: 'Games',         label: 'Drift — Trials',             strategy: 'session' },
   { table: 'drift_performance',        category: 'Games',         label: 'Drift — Performance',        strategy: 'session' },
   { table: 'face_read_trials',         category: 'Games',         label: 'FaceRead — Trials',          strategy: 'session' },
@@ -53,9 +61,9 @@ export const EXPORT_TABLES = [
   { table: 'farm_joy_trials',          category: 'Games',         label: 'FarmJoy — Trials',           strategy: 'session' },
   { table: 'farm_joy_performance',     category: 'Games',         label: 'FarmJoy — Performance',      strategy: 'session' },
   { table: 'farm_joy_feedback',        category: 'Games',         label: 'FarmJoy — Feedback',         strategy: 'session' },
-  { table: 'farm_joy_value_history',   category: 'Games',         label: 'FarmJoy — Value History',    strategy: 'profile',  col: 'user_id' },
-  { table: 'word_max_sessions',        category: 'Games',         label: 'WordMax — Sessions',         strategy: 'profile',  col: 'user_id' },
-  { table: 'aptitude_sessions',        category: 'Games',         label: 'Aptitude / ColorMax — Sessions', strategy: 'profile', col: 'user_id' },
+  { table: 'farm_joy_value_history',   category: 'Games',         label: 'FarmJoy — Value History',    strategy: 'profile',  col: 'user_id', games: ['farm_joy', 'farmjoy'] },
+  { table: 'word_max_sessions',        category: 'Games',         label: 'WordMax — Sessions',         strategy: 'profile',  col: 'user_id', games: ['word_max', 'wordmax'] },
+  { table: 'aptitude_sessions',        category: 'Games',         label: 'Aptitude / ColorMax — Sessions', strategy: 'profile', col: 'user_id', games: ['aptitude_suite', 'color_max'] },
   { table: 'aptitude_events',          category: 'Games',         label: 'Aptitude / ColorMax — Events',   strategy: 'parent', parentTable: 'aptitude_sessions',        parentCol: 'session_id' },
   { table: 'breath_guardian_sessions', category: 'Games',         label: 'Breath Guardian — Sessions', strategy: 'session' },
   { table: 'pond_watch_results',       category: 'Games',         label: 'Pond Watch',                 strategy: 'study',    ownerSpace: 'profile',  ownerCol: 'user_id' },
@@ -155,7 +163,7 @@ function timepointToken(label, dayNumber) {
 }
 
 export async function resolveStudyContext(studyId) {
-  const [enrollments, gameSessions, lilParts, vasScales, schedule, sessions, studyRow] = await Promise.all([
+  const [enrollments, gameSessions, lilParts, vasScales, schedule, sessions, studyRow, stepRows] = await Promise.all([
     pageAll((f, t) => supabase.from('study_enrollments')
       .select('profile_id, external_id, enrolled_at, consent_date, status, is_test')
       .eq('study_id', studyId).range(f, t)),
@@ -179,6 +187,11 @@ export async function resolveStudyContext(studyId) {
     // The screener administers questionnaires too, BEFORE any session exists.
     supabase.from('studies').select('screener_id, screener').eq('id', studyId).maybeSingle()
       .then(r => r.data ?? null).catch(() => null),
+    // What this study actually put in front of participants. The step log is
+    // the authority: it is written per delivered step and carries the study id,
+    // so it states the study's activity list as a fact rather than a guess.
+    pageAll((f, t) => supabase.from('participant_step_timings')
+      .select('category, subcategory').eq('study_id', studyId).range(f, t)).catch(() => []),
   ])
 
   // Which assessment sessions administer which questionnaire, in day order.
@@ -249,8 +262,16 @@ export async function resolveStudyContext(studyId) {
   const lilPartById     = new Map(lilParts.map(p => [p.id, p]))
   const sessionById     = new Map(sessions.map(s => [s.id, s]))
 
+  // A study with no step timings at all is not step-delivered, so its activity
+  // list is unknown and nothing may be skipped on the strength of it.
+  const stepGameSlugs = new Set(
+    stepRows.filter(r => r.category === 'game' && r.subcategory).map(r => r.subcategory),
+  )
+
   return {
     studyId,
+    hasStepLog: stepRows.length > 0,
+    stepGameSlugs,
     enrollments,
     profileIds:     uniq(enrollments.map(e => e.profile_id)),
     externalIds:    uniq(enrollments.map(e => e.external_id)),
@@ -295,9 +316,21 @@ export async function fetchStudyData(studyId, onProgress = () => {}) {
   const resultsByTable = {}
   const errors = []
 
+  // Drop profile-scoped game tables for games this study never ran. Skipped
+  // before fetching, so the export is faster as well as cleaner. Guarded on
+  // hasStepLog: without a step log we cannot prove a game was NOT delivered,
+  // and silently dropping real data is far worse than carrying extra columns.
+  const skipped = []
+  const wanted = EXPORT_TABLES.filter(entry => {
+    if (!entry.games || !context.hasStepLog) return true
+    if (entry.games.some(g => context.stepGameSlugs.has(g))) return true
+    skipped.push({ table: entry.table, label: entry.label, games: entry.games })
+    return false
+  })
+
   // Parents (everything non-'parent') first, so 'parent' tables can resolve ids.
-  const parents  = EXPORT_TABLES.filter(e => e.strategy !== 'parent')
-  const children = EXPORT_TABLES.filter(e => e.strategy === 'parent')
+  const parents  = wanted.filter(e => e.strategy !== 'parent')
+  const children = wanted.filter(e => e.strategy === 'parent')
 
   async function run(entry) {
     onProgress(`Fetching ${entry.label}…`)
@@ -312,11 +345,11 @@ export async function fetchStudyData(studyId, onProgress = () => {}) {
   await Promise.all(parents.map(run))
   await Promise.all(children.map(run))
 
-  const tables = EXPORT_TABLES
+  const tables = wanted
     .map(entry => ({ ...entry, rows: resultsByTable[entry.table] ?? [] }))
     .filter(t => t.rows.length > 0)
 
-  return { context, tables, errors, resultsByTable }
+  return { context, tables, errors, resultsByTable, skipped }
 }
 
 // Whether the study has any physio (BreathBelt) rows — drives the Physio button.
