@@ -158,7 +158,7 @@ export default function SubmissionsQueue() {
             <h2 style={{ ...S.h2, color: '#c0392b', marginTop: 0 }}>
               Not yet told <span style={S.dim}>· {untold.length}</span>
             </h2>
-            <p style={{ ...S.sub, fontSize: 13 }}>
+            <p style={{ ...S.sub, fontSize: 14 }}>
               These decisions are recorded, but the notification email did not send — so the student
               is still waiting. Resend, or tell them directly.
             </p>
@@ -182,7 +182,7 @@ export default function SubmissionsQueue() {
             <h2 style={{ ...S.h2, color: g.colour }}>
               {g.label} <span style={S.dim}>· {g.items.length}</span>
             </h2>
-            <p style={{ ...S.sub, fontSize: 13 }}>{g.hint}</p>
+            <p style={{ ...S.sub, fontSize: 14 }}>{g.hint}</p>
 
             {g.items.map(row => {
               const open = openId === row.claim_id
@@ -224,7 +224,7 @@ export default function SubmissionsQueue() {
                                   {f.severity}
                                 </span>{' '}
                                 <code style={{ fontFamily: MONO, fontSize: 12 }}>{f.code}</code>
-                                <span style={{ display: 'block', fontSize: 13, marginTop: 3 }}>{f.detail}</span>
+                                <span style={{ display: 'block', fontSize: 14, marginTop: 3 }}>{f.detail}</span>
                               </li>
                             ))}
                           </ul>
@@ -288,8 +288,8 @@ const S = {
   title: { fontFamily: SERIF, fontSize: 28, color: 'var(--tx)', margin: '2px 0 4px' },
   sub: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.5 },
   dim: { color: 'var(--tx2)', fontWeight: 400 },
-  link: { fontSize: 13, color: 'var(--pk)' },
-  notice: { color: 'var(--pk)', marginTop: 14, fontFamily: MONO, fontSize: 13, lineHeight: 1.5 },
+  link: { fontSize: 14, color: 'var(--pk)' },
+  notice: { color: 'var(--pk)', marginTop: 14, fontFamily: MONO, fontSize: 14, lineHeight: 1.5 },
 
   h2: { fontFamily: SERIF, fontSize: 20, margin: '30px 0 2px' },
 
@@ -297,7 +297,7 @@ const S = {
   cardHead: { width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, padding: '12px 14px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tx)' },
   slug: { display: 'block', fontFamily: MONO, fontSize: 14, color: 'var(--tx)', overflowWrap: 'anywhere' },
   metaLine: { display: 'block', fontSize: 12, color: 'var(--tx2)', marginTop: 2 },
-  chev: { color: 'var(--tx2)', fontSize: 13 },
+  chev: { color: 'var(--tx2)', fontSize: 14 },
   badge: { fontFamily: MONO, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', padding: '2px 6px', borderRadius: 20 },
 
   finding: { border: '1px solid', borderRadius: 8, padding: '7px 10px', marginBottom: 6, color: 'var(--tx)' },

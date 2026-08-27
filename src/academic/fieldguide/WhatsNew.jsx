@@ -130,8 +130,8 @@ const S = {
   eyebrowLink: { color: 'inherit', textDecoration: 'none' },
   title: { fontFamily: SERIF, fontSize: 30, color: 'var(--tx)', margin: '4px 0 8px', lineHeight: 1.15 },
   sub: { fontSize: 14.5, color: 'var(--tx2)', lineHeight: 1.6, maxWidth: '62ch' },
-  counter: { fontFamily: MONO, fontSize: 13, color: 'var(--tx)', marginTop: 12 },
-  keyLine: { fontSize: 13, color: 'var(--tx2)', lineHeight: 1.6, marginTop: 14, padding: '10px 12px', borderRadius: 10, background: 'var(--bgc)', border: '1px solid var(--bd)', maxWidth: '70ch' },
+  counter: { fontFamily: MONO, fontSize: 14, color: 'var(--tx)', marginTop: 12 },
+  keyLine: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.6, marginTop: 14, padding: '10px 12px', borderRadius: 10, background: 'var(--bgc)', border: '1px solid var(--bd)', maxWidth: '70ch' },
 
   week: { marginTop: 28 },
   weekH: { fontFamily: SERIF, fontSize: 19, color: 'var(--tx)', margin: '0 0 10px', paddingBottom: 6, borderBottom: '1px solid var(--bd)' },

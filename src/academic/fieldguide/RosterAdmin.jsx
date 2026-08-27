@@ -225,7 +225,7 @@ export default function RosterAdmin() {
             <p style={S.sub}>Someone used the join form with an address that isn't on the roster — usually a personal email, sometimes a late enrolment.</p>
             {attempts.map(a => (
               <div key={a.id} style={S.attemptRow}>
-                <span style={{ fontFamily: MONO, fontSize: 13 }}>{a.submitted}</span>
+                <span style={{ fontFamily: MONO, fontSize: 14 }}>{a.submitted}</span>
                 <span style={S.dim}>{new Date(a.submitted_at).toLocaleString()}</span>
                 <button style={S.tiny} onClick={() => resolveAttempt(a.id)}>Resolve</button>
               </div>
@@ -292,10 +292,10 @@ const S = {
   sub: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.6, maxWidth: 720 },
   dim: { color: 'var(--tx2)', fontSize: 12 },
   code: { fontFamily: MONO, fontSize: 12.5 },
-  notice: { marginTop: 12, fontFamily: MONO, fontSize: 13, color: 'var(--pk)', lineHeight: 1.5 },
+  notice: { marginTop: 12, fontFamily: MONO, fontSize: 14, color: 'var(--pk)', lineHeight: 1.5 },
   h2: { fontFamily: SERIF, fontSize: 19, color: 'var(--tx)', margin: '0 0 8px' },
   panel: { marginTop: 18, padding: '16px 18px', borderRadius: 12, background: 'var(--bgc)', border: '1px solid var(--bd)' },
-  select: { fontSize: 13, padding: '5px 8px', borderRadius: 8, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx)' },
+  select: { fontSize: 14, padding: '5px 8px', borderRadius: 8, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx)' },
   primary: { fontSize: 13.5, fontWeight: 600, padding: '8px 16px', borderRadius: 20, border: 'none', background: 'var(--pk)', color: '#fff', cursor: 'pointer' },
   secondary: { fontSize: 13.5, fontWeight: 600, padding: '8px 16px', borderRadius: 20, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx)', cursor: 'pointer' },
   bar: { display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', margin: '22px 0 10px' },

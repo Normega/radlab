@@ -165,7 +165,7 @@ const S = {
   grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 12, marginTop: 14 },
   card: { display: 'flex', flexDirection: 'column', gap: 6, background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 12, padding: '16px 18px', textDecoration: 'none' },
   cardTitle: { fontFamily: SERIF, fontSize: 18, color: 'var(--tx)', display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' },
-  cardBody: { fontSize: 13, color: 'var(--tx2)', lineHeight: 1.55 },
+  cardBody: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.55 },
   badge: { fontFamily: MONO, fontSize: 11, color: 'var(--pk)', border: '1px solid var(--pk)', borderRadius: 20, padding: '2px 10px', whiteSpace: 'nowrap' },
 
   statusLine: { fontFamily: MONO, fontSize: 12, color: 'var(--tx2)', marginTop: 14, lineHeight: 1.6 },

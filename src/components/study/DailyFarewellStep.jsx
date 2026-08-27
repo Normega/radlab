@@ -151,7 +151,7 @@ const M = {
   sectionHeader: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 },
   sectionIcon: {
     width: 26, height: 26, borderRadius: '50%', background: 'var(--bgp)',
-    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 13,
+    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 14,
   },
   sectionTitle: {
     fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase',
@@ -159,7 +159,7 @@ const M = {
   },
   contactBlock: {
     background: 'var(--bg)', border: '1px solid var(--bd)', borderLeft: '3px solid var(--tx)',
-    borderRadius: '0 8px 8px 0', padding: '12px 14px', fontSize: 13, lineHeight: 1.6,
+    borderRadius: '0 8px 8px 0', padding: '12px 14px', fontSize: 14, lineHeight: 1.6,
     color: 'var(--tx)', marginBottom: 14, fontFamily: FONT,
   },
   link: { color: 'var(--pkd)', textDecoration: 'none', fontWeight: 600 },
@@ -168,7 +168,7 @@ const M = {
     padding: '14px 16px', marginBottom: 10,
   },
   resourceName: { fontSize: 14, fontWeight: 600, color: 'var(--tx)', marginBottom: 4, fontFamily: FONT },
-  resourceDesc: { fontSize: 13, color: 'var(--tx2)', lineHeight: 1.55, marginBottom: 10, fontFamily: FONT },
+  resourceDesc: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.55, marginBottom: 10, fontFamily: FONT },
   resourceLinks: { display: 'flex', flexWrap: 'wrap', gap: 8 },
   resourceLink: {
     display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600,

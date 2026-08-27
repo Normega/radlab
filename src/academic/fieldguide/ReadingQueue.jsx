@@ -79,7 +79,7 @@ export default function ReadingQueue() {
                     {bands[n].filter(r => r.reviewed_current).length} / {bands[n].length}
                   </span>
                 </h2>
-                <p style={{ ...S.sub, fontSize: 13 }}>{BAND[n].note}</p>
+                <p style={{ ...S.sub, fontSize: 14 }}>{BAND[n].note}</p>
                 <div style={{ marginTop: 8 }}>
                   {bands[n].map(r => (
                     <Link key={r.slug} to={`${WIKI_BASE}/${r.slug}`} style={S.row}>
@@ -111,7 +111,7 @@ const S = {
   eyebrowLink: { color: 'inherit', textDecoration: 'none' },
   title: { fontFamily: SERIF, fontSize: 28, color: 'var(--tx)', margin: '2px 0 8px' },
   sub: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.6, maxWidth: '68ch' },
-  dim: { color: 'var(--tx2)', fontWeight: 400, fontSize: 13 },
+  dim: { color: 'var(--tx2)', fontWeight: 400, fontSize: 14 },
   h2: { fontFamily: SERIF, fontSize: 20, color: 'var(--tx)', margin: '0 0 4px', display: 'flex', alignItems: 'baseline', gap: 10 },
   count: { fontFamily: MONO, fontSize: 12, color: 'var(--tx2)' },
   progressBox: { marginTop: 18, padding: '16px 18px', borderRadius: 12, background: 'var(--bgc)', border: '1px solid var(--bd)' },

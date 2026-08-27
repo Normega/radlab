@@ -357,7 +357,7 @@ const S = {
     background: 'rgba(240,236,238,0.88)',
   },
   lockText: {
-    fontFamily: MONO, fontSize: 13, letterSpacing: 0.5,
+    fontFamily: MONO, fontSize: 14, letterSpacing: 0.5,
     textTransform: 'uppercase', color: 'var(--tx2)', textAlign: 'center',
     padding: '0 16px',
   },

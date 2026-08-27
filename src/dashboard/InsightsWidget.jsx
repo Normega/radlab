@@ -493,5 +493,5 @@ const S = {
   emptySub:   { fontFamily: SANS, fontSize: 14, color: 'var(--tx2)', maxWidth: 420, margin: '0 auto 16px', lineHeight: 1.6 },
   emptyCta:   { fontFamily: MONO, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--pk)', textDecoration: 'none' },
 
-  muted: { fontFamily: SANS, fontSize: 13, color: 'var(--tx3)', margin: 0, lineHeight: 1.6 },
+  muted: { fontFamily: SANS, fontSize: 14, color: 'var(--tx3)', margin: 0, lineHeight: 1.6 },
 }

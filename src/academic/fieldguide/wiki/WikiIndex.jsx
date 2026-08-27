@@ -563,8 +563,8 @@ const S = {
   eyebrowLink: { color: 'inherit', textDecoration: 'none' },
   title: { fontFamily: SERIF, fontSize: 30, color: 'var(--tx)', margin: '2px 0 4px' },
   sub: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.55 },
-  link: { fontSize: 13, color: 'var(--pk)', textDecoration: 'none' },
-  linkBtn: { fontSize: 13, color: 'var(--pk)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0 },
+  link: { fontSize: 14, color: 'var(--pk)', textDecoration: 'none' },
+  linkBtn: { fontSize: 14, color: 'var(--pk)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0 },
 
   statRow: { display: 'flex', gap: 10, marginTop: 18, flexWrap: 'wrap' },
   stat: { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 12, padding: '12px 18px', display: 'flex', flexDirection: 'column', minWidth: 130 },
@@ -579,8 +579,8 @@ const S = {
   chIcon: { flexShrink: 0, borderRadius: 9, objectFit: 'contain' },
   chNum: { fontFamily: MONO, fontSize: 12, color: 'var(--tx2)', border: '1px solid var(--bd)', borderRadius: 6, padding: '1px 6px' },
   chCount: { fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx2)' },
-  legend: { fontSize: 13, color: 'var(--tx2)', lineHeight: 1.6, margin: '16px 0 0', maxWidth: '78ch' },
-  toggle: { display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 13, color: 'var(--tx2)', marginTop: 10, cursor: 'pointer' },
+  legend: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.6, margin: '16px 0 0', maxWidth: '78ch' },
+  toggle: { display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 14, color: 'var(--tx2)', marginTop: 10, cursor: 'pointer' },
 
   controlRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap' },
   seg: { display: 'inline-flex', border: '1px solid var(--bd)', borderRadius: 16, overflow: 'hidden', background: 'var(--bgc)' },
@@ -602,7 +602,7 @@ const S = {
   band: { display: 'flex', alignItems: 'center', gap: 12, width: '100%', boxSizing: 'border-box', background: 'var(--bgc)', border: '1px solid var(--bds)', borderRadius: 12, padding: '7px 14px 7px 7px', textAlign: 'left', cursor: 'pointer', color: 'var(--tx)' },
   chTitles: { display: 'flex', alignItems: 'baseline', gap: 9, flexWrap: 'wrap', minWidth: 0 },
   chTitle: { fontFamily: SERIF, fontSize: 20, lineHeight: 1.15 },
-  caret: { flexShrink: 0, fontSize: 13, color: 'var(--pk)', marginLeft: 'auto', paddingLeft: 8, transition: 'transform .15s ease', display: 'inline-block' },
+  caret: { flexShrink: 0, fontSize: 14, color: 'var(--pk)', marginLeft: 'auto', paddingLeft: 8, transition: 'transform .15s ease', display: 'inline-block' },
   typeLabel: { fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx2)', margin: '0 0 6px' },
 
   grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 230px), 1fr))', gap: 10 },

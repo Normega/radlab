@@ -249,7 +249,7 @@ const S = {
     background: 'var(--bgc)', border: '1px solid var(--bds)', borderRadius: 24,
     cursor: 'pointer', padding: '8px 14px',
   },
-  btnRename: { padding: '6px 14px', fontSize: 13, borderRadius: 20 },
+  btnRename: { padding: '6px 14px', fontSize: 14, borderRadius: 20 },
   editBtn: {
     display: 'inline-block', fontFamily: SANS, fontWeight: 600, fontSize: 14,
     padding: '10px 16px', borderRadius: 24,
@@ -278,5 +278,5 @@ const S = {
   },
   unlockPts: { fontFamily: MONO, fontSize: 12, color: 'var(--gy)' },
 
-  error: { fontFamily: SANS, fontSize: 13, color: 'var(--err-tx)', margin: 0 },
+  error: { fontFamily: SANS, fontSize: 14, color: 'var(--err-tx)', margin: 0 },
 }

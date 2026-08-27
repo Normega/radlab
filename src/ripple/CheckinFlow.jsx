@@ -748,7 +748,7 @@ const S = {
   eyebrow:   { fontFamily: MONO, fontSize: 12, color: '#abadb0', letterSpacing: '0.12em', textTransform: 'uppercase', margin: '0 0 6px' },
   ratingQ:   { fontFamily: SERIF, fontSize: 20, color: '#1c1c1e', fontWeight: 400, margin: 0 },
   faceCard:  { background: 'white', borderRadius: 18, padding: '12px 10px 10px', boxShadow: '0 2px 18px rgba(180,120,160,0.10)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 },
-  btn:       { background: '#f068a4', color: 'white', border: 'none', borderRadius: 12, padding: 14, fontFamily: MONO, fontSize: 13, fontWeight: 700, letterSpacing: '0.05em', cursor: 'pointer', boxShadow: '0 4px 20px rgba(240,104,164,0.30)' },
+  btn:       { background: '#f068a4', color: 'white', border: 'none', borderRadius: 12, padding: 14, fontFamily: MONO, fontSize: 14, fontWeight: 700, letterSpacing: '0.05em', cursor: 'pointer', boxShadow: '0 4px 20px rgba(240,104,164,0.30)' },
   optionBtn: {
     background: 'white', border: '1.5px solid #E8D0E0', borderRadius: 12, padding: '12px 24px',
     fontFamily: SANS, fontSize: 15, color: '#1c1c1e', cursor: 'pointer', width: '100%',
@@ -756,13 +756,13 @@ const S = {
   },
   pillBtn: {
     border: '1.5px solid', borderRadius: 20, padding: '7px 14px',
-    fontFamily: SANS, fontSize: 13, cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap',
+    fontFamily: SANS, fontSize: 14, cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap',
   },
   // Formal button, not a bare text link (policy, 2026-08-13): every option in
   // a choice pair is a real button — the non-suggested one is just grayer.
   skipLink: {
     background: 'white', color: '#6b6c70', border: '1.5px solid #E8D0E0',
-    borderRadius: 12, padding: 14, fontFamily: MONO, fontSize: 13, fontWeight: 700,
+    borderRadius: 12, padding: 14, fontFamily: MONO, fontSize: 14, fontWeight: 700,
     letterSpacing: '0.05em', cursor: 'pointer', flexShrink: 0,
   },
 }

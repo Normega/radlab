@@ -910,7 +910,7 @@ const S = {
   gameBadge: { display: 'inline-block', fontFamily: MONO, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', padding: '3px 9px', borderRadius: 5, background: 'var(--bgp)', color: 'var(--pkd)', border: '1px solid var(--pkb)', marginBottom: 10 },
   gameBadgeMuted: { background: 'var(--bg)', color: 'var(--tx3)', border: '1px solid var(--bd)' },
   gameTitle: { fontFamily: SERIF, fontSize: 24, color: 'var(--tx)', marginBottom: 8 },
-  gameDesc:  { fontSize: 13, color: 'var(--tx2)', lineHeight: 1.6 },
+  gameDesc:  { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.6 },
   gameStatus: { padding: '12px 24px', background: 'var(--bgp)', borderTop: '1px solid var(--pkb)', fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)' },
   gameStatusMuted: { background: 'var(--bg)', borderColor: 'var(--bd)', color: 'var(--tx3)' },
   statsPlaceholder: { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 16, padding: '40px 32px', textAlign: 'center' },

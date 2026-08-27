@@ -141,7 +141,7 @@ export default function GapBrowser() {
                 <span style={{ ...S.badge, color: DIFF[r.difficulty].colour, border: `1px solid ${DIFF[r.difficulty].colour}` }}>
                   {r.difficulty}
                 </span>
-                <span style={{ fontFamily: MONO, fontSize: 13, color: 'var(--tx)' }}>{r.slug}</span>
+                <span style={{ fontFamily: MONO, fontSize: 14, color: 'var(--tx)' }}>{r.slug}</span>
                 <span style={{ fontFamily: MONO, fontSize: 12, color: 'var(--tx2)', marginLeft: 'auto' }}>
                   {r.my_status === 'claimed'
                     ? `draft — ${daysLeft(r.my_expires_at)} days left`
@@ -284,9 +284,9 @@ function GapDetail({ row: r, courseClient, reload }) {
       {/* What the page already cites — visible at the moment of choosing, so
           "bring something the page does not have" is a prompt, not a gotcha. */}
       <p style={S.colLabel}>This page already cites</p>
-      {sources === null && <p style={{ ...S.sub, fontSize: 13 }}>Loading…</p>}
+      {sources === null && <p style={{ ...S.sub, fontSize: 14 }}>Loading…</p>}
       {sources !== null && sources.length === 0 && (
-        <p style={{ ...S.sub, fontSize: 13 }}>Nothing yet — you would be its first source.</p>
+        <p style={{ ...S.sub, fontSize: 14 }}>Nothing yet — you would be its first source.</p>
       )}
       {sources !== null && sources.length > 0 && (
         <ul style={S.srcList}>
@@ -300,10 +300,10 @@ function GapDetail({ row: r, courseClient, reload }) {
         </button>
       )}
       {!isMine && !red && r.remaining === 0 && (
-        <p style={{ ...S.sub, fontSize: 13 }}>Fully claimed — slots reopen if a claim expires.</p>
+        <p style={{ ...S.sub, fontSize: 14 }}>Fully claimed — slots reopen if a claim expires.</p>
       )}
       {red && (
-        <p style={{ ...S.sub, fontSize: 13 }}>
+        <p style={{ ...S.sub, fontSize: 14 }}>
           Staff-written territory: clinical or legal content is not student work.
         </p>
       )}
@@ -313,13 +313,13 @@ function GapDetail({ row: r, courseClient, reload }) {
                    reload={reload} onRelease={doRelease} />
       )}
       {isMine && r.my_status === 'submitted' && (
-        <p style={{ ...S.sub, fontSize: 13 }}>
+        <p style={{ ...S.sub, fontSize: 14 }}>
           Submitted — awaiting review. It is locked while a reviewer reads it; if it comes back,
           it reopens here with their note.
         </p>
       )}
       {isMine && r.my_status === 'accepted' && (
-        <p style={{ ...S.sub, fontSize: 13, color: DIFF.green.colour }}>Accepted ✓</p>
+        <p style={{ ...S.sub, fontSize: 14, color: DIFF.green.colour }}>Accepted ✓</p>
       )}
 
       {msg && <p style={S.notice}>{msg}</p>}
@@ -416,14 +416,14 @@ function ClaimForm({ claim, row: r, courseClient, reload, onRelease }) {
               <span style={{ ...S.badge, color: SEV[f.severity], border: `1px solid ${SEV[f.severity]}` }}>
                 {f.severity}
               </span>{' '}
-              <span style={{ fontSize: 13 }}>{f.detail}</span>
+              <span style={{ fontSize: 14 }}>{f.detail}</span>
             </li>
           ))}
         </ul>
       )}
 
       {claim.note && (
-        <p style={{ ...S.sub, fontSize: 13, marginTop: 10 }}>
+        <p style={{ ...S.sub, fontSize: 14, marginTop: 10 }}>
           <strong>Reviewer note:</strong> {claim.note}
         </p>
       )}
@@ -447,8 +447,8 @@ const S = {
   title: { fontFamily: SERIF, fontSize: 28, color: 'var(--tx)', margin: '2px 0 4px' },
   sub: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.6 },
   dim: { color: 'var(--tx2)', fontWeight: 400, fontSize: 12, textTransform: 'none', letterSpacing: 0 },
-  link: { fontSize: 13, color: 'var(--pk)' },
-  notice: { color: 'var(--pk)', marginTop: 10, fontFamily: MONO, fontSize: 13 },
+  link: { fontSize: 14, color: 'var(--pk)' },
+  notice: { color: 'var(--pk)', marginTop: 10, fontFamily: MONO, fontSize: 14 },
 
   gapActive: { borderColor: 'var(--pk)', boxShadow: '0 0 0 1px var(--pk)' },
   mineStrip: { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 12, padding: '10px 14px', margin: '14px 0 4px' },
@@ -462,24 +462,24 @@ const S = {
   lectureHead: { width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, padding: '14px 2px 6px', background: 'none', border: 'none', borderBottom: '1px solid var(--bd)', cursor: 'pointer', marginTop: 18 },
   lectureTitle: { display: 'block', fontFamily: SERIF, fontSize: 19, color: 'var(--tx)', textAlign: 'left' },
   metaLine: { display: 'block', fontFamily: MONO, fontSize: 12, color: 'var(--tx2)', marginTop: 2, textAlign: 'left' },
-  chev: { color: 'var(--tx2)', fontSize: 13, flexShrink: 0 },
+  chev: { color: 'var(--tx2)', fontSize: 14, flexShrink: 0 },
 
   gap: { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 10, marginTop: 8, scrollMarginTop: 80 },
   gapHead: { width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: '10px 14px', textAlign: 'left' },
   gapTop: { display: 'flex', gap: 10, alignItems: 'baseline', flexWrap: 'wrap' },
   badge: { fontFamily: MONO, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', padding: '2px 8px', borderRadius: 20, flexShrink: 0 },
-  pageName: { fontFamily: MONO, fontSize: 13, color: 'var(--pk)', overflowWrap: 'anywhere' },
+  pageName: { fontFamily: MONO, fontSize: 14, color: 'var(--pk)', overflowWrap: 'anywhere' },
   capacity: { fontFamily: MONO, fontSize: 12, color: 'var(--tx2)', marginLeft: 'auto', flexShrink: 0 },
   ask: { fontSize: 14, color: 'var(--tx)', lineHeight: 1.55, margin: '7px 0 0' },
 
   colLabel: { fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx2)', margin: '0 0 6px' },
   srcList: { margin: '0 0 12px', paddingLeft: 18 },
-  srcItem: { fontSize: 13, color: 'var(--tx2)', lineHeight: 1.55, marginBottom: 3 },
+  srcItem: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.55, marginBottom: 3 },
 
   fieldLabel: { display: 'block', fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx2)', margin: '12px 0 4px' },
   input: { width: '100%', fontSize: 14, fontFamily: MONO, padding: '8px 12px', borderRadius: 8, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx)', boxSizing: 'border-box' },
   textarea: { width: '100%', fontSize: 14, lineHeight: 1.55, padding: '10px 12px', borderRadius: 8, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx)', boxSizing: 'border-box', resize: 'vertical' },
-  findingLine: { fontSize: 13, margin: '5px 0 0', lineHeight: 1.5 },
+  findingLine: { fontSize: 14, margin: '5px 0 0', lineHeight: 1.5 },
   findingCard: { border: '1px solid', borderRadius: 8, padding: '7px 10px', marginBottom: 6, color: 'var(--tx)' },
 
   actions: { display: 'flex', gap: 10, marginTop: 14, flexWrap: 'wrap', alignItems: 'center' },

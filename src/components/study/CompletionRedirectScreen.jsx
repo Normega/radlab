@@ -117,7 +117,7 @@ const S = {
     cursor: 'pointer',
   },
   note: {
-    fontSize: 13,
+    fontSize: 14,
     lineHeight: 1.6,
     color: 'var(--tx3)',
     margin: '18px 0 0',

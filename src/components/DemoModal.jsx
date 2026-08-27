@@ -33,7 +33,7 @@ export default function DemoModal({ title, subtitle = 'Preview only — no data 
         onClick={e => e.stopPropagation()}
       >
         <div>
-          <p style={{ fontFamily: 'DM Sans', fontSize: 13, fontWeight: 600, color: '#fff', margin: '0 0 2px' }}>
+          <p style={{ fontFamily: 'DM Sans', fontSize: 14, fontWeight: 600, color: '#fff', margin: '0 0 2px' }}>
             {title}
           </p>
           <p style={{ fontFamily: 'Space Mono', fontSize: 11, color: 'rgba(255,255,255,0.45)', margin: 0 }}>
@@ -45,7 +45,7 @@ export default function DemoModal({ title, subtitle = 'Preview only — no data 
           style={{
             background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
             borderRadius: 8, padding: '6px 14px', cursor: 'pointer',
-            fontFamily: 'DM Sans', fontSize: 13, color: '#fff',
+            fontFamily: 'DM Sans', fontSize: 14, color: '#fff',
           }}
         >
           ✕ Close

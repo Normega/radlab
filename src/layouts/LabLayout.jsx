@@ -100,7 +100,7 @@ const S = {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
     flexWrap: 'wrap', gap: '12px 20px',
     padding: '1.25rem 2rem',
-    fontSize: 13,
+    fontSize: 14,
     color: '#abadb0',
     fontFamily: '"DM Sans", system-ui, sans-serif',
     borderTop: '1px solid rgba(180,100,140,0.13)',

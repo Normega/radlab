@@ -77,7 +77,7 @@ const S = {
     marginTop: 8,
     padding: '12px 28px', borderRadius: 12,
     background: 'var(--pk)', color: '#fff', border: 'none',
-    fontFamily: MONO, fontSize: 13, fontWeight: 700, letterSpacing: '0.05em',
+    fontFamily: MONO, fontSize: 14, fontWeight: 700, letterSpacing: '0.05em',
     cursor: 'pointer', boxShadow: '0 4px 20px rgba(240,104,164,0.30)',
   },
   hint: {

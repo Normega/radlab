@@ -1172,7 +1172,7 @@ function TriggerMapBlock({ step, values, onChange }) {
                 onClick={() => setOpenId(isOpen ? null : cat.id)}
               >
                 <span>{cat.icon}</span>
-                <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: 'var(--tx)', fontFamily: FONT }}>{cat.label}</span>
+                <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: 'var(--tx)', fontFamily: FONT }}>{cat.label}</span>
                 <span style={{ ...S.triggerArrow, ...(isOpen ? S.triggerArrowOpen : {}) }}>▶</span>
               </div>
               {isOpen && (
@@ -1389,7 +1389,7 @@ function QualityExplorerBlock({ step, state, onChange }) {
           {/* Description — fades in after slider moved */}
           {sliderMoved && (
             <div style={{ marginTop: 14 }}>
-              <p style={{ fontSize: 13, color: 'var(--tx2)', marginBottom: 6, fontFamily: FONT }}>
+              <p style={{ fontSize: 14, color: 'var(--tx2)', marginBottom: 6, fontFamily: FONT }}>
                 {step.describe_prompt ?? 'Describe this quality in your own words.'}
               </p>
               <input
@@ -1475,7 +1475,7 @@ const S = {
     fontSize: 15, fontWeight: 600, color: 'var(--tx)', marginTop: 2,
   },
   daySubtitle: {
-    fontSize: 13, color: 'var(--tx2)', marginTop: 2,
+    fontSize: 14, color: 'var(--tx2)', marginTop: 2,
   },
 
   // ── Step pips
@@ -1587,7 +1587,7 @@ const S = {
     margin: '0 0 4px',
   },
   exampleText: {
-    fontSize: 13, lineHeight: 1.6, color: 'var(--tx2)',
+    fontSize: 14, lineHeight: 1.6, color: 'var(--tx2)',
     fontStyle: 'italic', margin: 0,
   },
   textarea: {
@@ -1670,7 +1670,7 @@ const S = {
     fontFamily: FONT,
   },
   timerSublabel: {
-    fontSize: 13, color: 'var(--tx2)', textAlign: 'center', fontFamily: FONT,
+    fontSize: 14, color: 'var(--tx2)', textAlign: 'center', fontFamily: FONT,
   },
   timerTrack: {
     width: 160, height: 4, background: 'var(--bd)', borderRadius: 2, overflow: 'hidden', marginTop: 8,
@@ -1682,7 +1682,7 @@ const S = {
   // ── Training response (single-select)
   scenarioBox: {
     background: 'var(--bgp)', borderLeft: '3px solid var(--pk)', borderRadius: 6,
-    padding: '10px 14px', fontSize: 13, color: 'var(--tx2)', marginBottom: 14,
+    padding: '10px 14px', fontSize: 14, color: 'var(--tx2)', marginBottom: 14,
     fontFamily: FONT,
   },
   mcOption: {
@@ -1724,7 +1724,7 @@ const S = {
     fontSize: 14, fontWeight: 600, color: 'var(--tx)', marginBottom: 4, fontFamily: FONT,
   },
   distDesc: {
-    fontSize: 13, color: 'var(--tx2)', marginBottom: 4, fontFamily: FONT,
+    fontSize: 14, color: 'var(--tx2)', marginBottom: 4, fontFamily: FONT,
   },
   distExample: {
     fontSize: 12, color: 'var(--tx2)', fontStyle: 'italic', fontFamily: FONT,
@@ -1749,7 +1749,7 @@ const S = {
     marginBottom: 16,
   },
   thoughtSliderLabel: {
-    fontSize: 13, fontWeight: 600, color: 'var(--tx)',
+    fontSize: 14, fontWeight: 600, color: 'var(--tx)',
     marginBottom: 6, display: 'flex', justifyContent: 'space-between', fontFamily: FONT,
   },
 
@@ -1788,7 +1788,7 @@ const S = {
   triggerTextarea: {
     width: '100%', boxSizing: 'border-box',
     border: '1px solid var(--bds)', borderRadius: 6,
-    padding: '8px 10px', fontSize: 13, fontFamily: FONT,
+    padding: '8px 10px', fontSize: 14, fontFamily: FONT,
     resize: 'none', height: 68, outline: 'none',
     color: 'var(--tx)', background: '#fff',
   },
@@ -1799,7 +1799,7 @@ const S = {
   },
   qualityBtn: {
     padding: '7px 14px', border: '1.5px solid var(--bds)', borderRadius: 16,
-    fontSize: 13, fontWeight: 600, color: 'var(--tx)', background: '#fff',
+    fontSize: 14, fontWeight: 600, color: 'var(--tx)', background: '#fff',
     cursor: 'pointer', fontFamily: FONT,
   },
   qualityBtnActive: {

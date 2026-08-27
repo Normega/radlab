@@ -87,7 +87,7 @@ export default function Join() {
           </>
         )}
 
-        <p style={{ ...S.sub, marginTop: 26, fontSize: 13 }}>
+        <p style={{ ...S.sub, marginTop: 26, fontSize: 14 }}>
           Staff sign in with their password at <Link to="/academic/fieldguide" style={S.link}>the Field Guide home</Link>.
         </p>
       </div>

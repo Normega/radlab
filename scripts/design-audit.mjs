@@ -38,7 +38,7 @@ const TOKEN_HEXES = new Set([
 const HEX_EXEMPT = new Set(['pages/BrandAssets.jsx'])
 // Content, not UI: game artwork (2026-08-12 ruling), avatar colour palettes,
 // one-off talk-deck graphics. Reported but never ratcheted.
-const SANCTIONED_DIRS = ['games/', 'components/Avatar/', 'pages/toni-july-2026/', 'pages/keynote/']
+const SANCTIONED_DIRS = ['games/', 'components/Avatar/', 'pages/toni-july-2026/', 'pages/keynote/', 'pages/adobe-aug-2026/']
 
 const files = []
 ;(function walk(dir) {

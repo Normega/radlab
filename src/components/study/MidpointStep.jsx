@@ -575,7 +575,7 @@ const M = {
     color: 'var(--tx2)', marginBottom: 10, fontFamily: '"DM Sans", system-ui, sans-serif',
   },
   resultRow: {
-    display: 'flex', alignItems: 'center', gap: 10, fontSize: 13,
+    display: 'flex', alignItems: 'center', gap: 10, fontSize: 14,
     color: 'var(--tx)', marginBottom: 6, fontFamily: '"DM Sans", system-ui, sans-serif',
   },
   resultNum: { fontWeight: 600, color: 'var(--pk)', minWidth: 24 },
@@ -590,7 +590,7 @@ const M = {
     fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em',
     color: 'var(--pk)', fontFamily: '"DM Sans", system-ui, sans-serif',
   },
-  heroSub:   { fontSize: 13, color: 'var(--tx2)', marginTop: 2, fontFamily: '"DM Sans", system-ui, sans-serif' },
+  heroSub:   { fontSize: 14, color: 'var(--tx2)', marginTop: 2, fontFamily: '"DM Sans", system-ui, sans-serif' },
   heroTitle: { fontSize: 24, fontWeight: 600, color: 'var(--tx)', marginTop: 6, fontFamily: '"DM Sans", system-ui, sans-serif' },
   heroDesc:  { fontSize: 13.5, color: 'var(--tx2)', marginTop: 6, lineHeight: 1.5, fontFamily: '"DM Sans", system-ui, sans-serif' },
   messageBox: {

@@ -725,10 +725,10 @@ const S = {
     fontFamily: '"DM Serif Display",Georgia,serif',
     fontSize: 21, fontWeight: 400, color: 'var(--tx)', margin: 0,
   },
-  optional: { fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 13, color: 'var(--tx3)' },
+  optional: { fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 14, color: 'var(--tx3)' },
   qLabel: { fontSize: 15, fontWeight: 600, color: 'var(--tx)', lineHeight: 1.5 },
   defBlock: {
-    fontSize: 13, color: 'var(--tx2)', lineHeight: 1.6, margin: 0,
+    fontSize: 14, color: 'var(--tx2)', lineHeight: 1.6, margin: 0,
     background: 'var(--bg)', border: '1px solid var(--bd)', borderRadius: 10, padding: '12px 14px',
   },
 
@@ -786,6 +786,6 @@ const S = {
     fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 16, fontWeight: 600,
     transition: 'opacity 0.15s',
   },
-  hint: { fontSize: 13, color: 'var(--tx3)', margin: '-30px 0 0', lineHeight: 1.5 },
+  hint: { fontSize: 14, color: 'var(--tx3)', margin: '-30px 0 0', lineHeight: 1.5 },
   error: { fontSize: 14, color: 'var(--err-tx)', margin: 0 },
 }

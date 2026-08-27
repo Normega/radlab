@@ -385,10 +385,10 @@ const S = {
   title: { fontFamily: SERIF, fontSize: 28, color: 'var(--tx)', margin: '2px 0 4px' },
   sub: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.5 },
   dim: { color: 'var(--tx2)', fontWeight: 400 },
-  link: { fontSize: 13, color: 'var(--pk)' },
-  linkBtn: { fontSize: 13, color: 'var(--pk)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0 },
+  link: { fontSize: 14, color: 'var(--pk)' },
+  linkBtn: { fontSize: 14, color: 'var(--pk)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0 },
   input: { fontSize: 15, padding: '8px 10px', borderRadius: 8, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx)' },
-  notice: { ...{ fontSize: 14, lineHeight: 1.5 }, color: 'var(--pk)', marginTop: 14, fontFamily: MONO, fontSize: 13 },
+  notice: { ...{ fontSize: 14, lineHeight: 1.5 }, color: 'var(--pk)', marginTop: 14, fontFamily: MONO, fontSize: 14 },
 
   h2: { fontFamily: SERIF, fontSize: 20, color: 'var(--tx)', margin: '30px 0 4px' },
 
@@ -401,10 +401,10 @@ const S = {
   cardHead: { width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, padding: '12px 14px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tx)' },
   slug: { display: 'block', fontFamily: MONO, fontSize: 14, color: 'var(--tx)', overflowWrap: 'anywhere' },
   metaLine: { display: 'block', fontSize: 12, color: 'var(--tx2)', marginTop: 2 },
-  chev: { color: 'var(--tx2)', fontSize: 13 },
+  chev: { color: 'var(--tx2)', fontSize: 14 },
   badge: { fontFamily: MONO, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', padding: '3px 7px', borderRadius: 20 },
-  mergeFlag: { margin: '0 14px 12px', padding: '8px 10px', borderRadius: 8, background: 'rgba(214,51,132,.07)', border: '1px solid rgba(214,51,132,.28)', color: 'var(--tx)', fontSize: 13, lineHeight: 1.45 },
-  rewriteFlag: { margin: '0 14px 12px', padding: '8px 10px', borderRadius: 8, background: 'rgba(192,57,43,.08)', border: '1px solid rgba(192,57,43,.25)', color: '#c0392b', fontSize: 13, lineHeight: 1.45 },
+  mergeFlag: { margin: '0 14px 12px', padding: '8px 10px', borderRadius: 8, background: 'rgba(214,51,132,.07)', border: '1px solid rgba(214,51,132,.28)', color: 'var(--tx)', fontSize: 14, lineHeight: 1.45 },
+  rewriteFlag: { margin: '0 14px 12px', padding: '8px 10px', borderRadius: 8, background: 'rgba(192,57,43,.08)', border: '1px solid rgba(192,57,43,.25)', color: '#c0392b', fontSize: 14, lineHeight: 1.45 },
 
   split: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 12 },
   colLabel: { fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx2)', margin: '0 0 6px' },

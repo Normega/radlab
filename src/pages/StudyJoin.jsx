@@ -78,5 +78,5 @@ const S = {
   loadingTitle: { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 22, color: 'var(--tx)', margin: '0 0 8px' },
   errorTitle:   { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 20, color: 'var(--tx)', margin: '0 0 12px' },
   errorBody:    { fontSize: 14, color: '#b91c1c', fontFamily: '"DM Sans",system-ui,sans-serif', margin: '0 0 12px', lineHeight: 1.5 },
-  hint:         { fontSize: 13, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif', margin: 0 },
+  hint:         { fontSize: 14, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif', margin: 0 },
 }

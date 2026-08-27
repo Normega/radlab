@@ -800,9 +800,9 @@ const G = {
   flagBtn: { marginTop: 4, fontFamily: MONO, fontSize: 11, letterSpacing: 0.5, padding: '3px 10px', borderRadius: 14, border: '1px dashed var(--bd)', background: 'none', color: 'var(--tx2)', cursor: 'pointer' },
   form: { marginTop: 8, display: 'flex', flexDirection: 'column', gap: 8 },
   askInput: { width: '100%', boxSizing: 'border-box', minHeight: 64, resize: 'vertical', fontSize: 13.5, lineHeight: 1.5, padding: '8px 10px', borderRadius: 8, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx)' },
-  diffSelect: { fontSize: 13, padding: '6px 8px', borderRadius: 8, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx)' },
-  flagGo: { fontSize: 13, fontWeight: 600, padding: '6px 14px', borderRadius: 18, border: 'none', background: 'var(--pk)', color: '#fff', cursor: 'pointer' },
-  flagCancel: { fontSize: 13, padding: '6px 12px', borderRadius: 18, border: '1px solid var(--bd)', background: 'none', color: 'var(--tx2)', cursor: 'pointer' },
+  diffSelect: { fontSize: 14, padding: '6px 8px', borderRadius: 8, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx)' },
+  flagGo: { fontSize: 14, fontWeight: 600, padding: '6px 14px', borderRadius: 18, border: 'none', background: 'var(--pk)', color: '#fff', cursor: 'pointer' },
+  flagCancel: { fontSize: 14, padding: '6px 12px', borderRadius: 18, border: '1px solid var(--bd)', background: 'none', color: 'var(--tx2)', cursor: 'pointer' },
   hint: { fontSize: 12, color: 'var(--tx2)', fontStyle: 'italic' },
 }
 
@@ -821,7 +821,7 @@ const S = {
   eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)' },
   eyebrowLink: { color: 'inherit', textDecoration: 'none' },
   crumbIcon: { verticalAlign: 'middle', borderRadius: 8, border: '1px solid var(--bd)', background: '#fff', objectFit: 'contain', marginRight: 5 },
-  crumbs: { fontSize: 13, color: 'var(--tx2)', margin: '10px 0 6px' },
+  crumbs: { fontSize: 14, color: 'var(--tx2)', margin: '10px 0 6px' },
   title: { fontFamily: SERIF, fontSize: 34, color: 'var(--tx)', margin: '4px 0 6px', lineHeight: 1.15 },
   metaLine: { fontFamily: MONO, fontSize: 12, letterSpacing: 0.5, textTransform: 'uppercase', color: 'var(--tx2)' },
   summary: { fontSize: 17, color: 'var(--tx2)', lineHeight: 1.6, margin: '12px 0 0', maxWidth: '62ch' },
@@ -831,19 +831,19 @@ const S = {
   prevalenceText: { flex: '1 1 200px', fontSize: 14, color: 'var(--tx)', lineHeight: 1.5 },
 
   sub: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.55 },
-  dim: { color: 'var(--tx2)', fontSize: 13 },
+  dim: { color: 'var(--tx2)', fontSize: 14 },
   link: { color: 'var(--pk)', textDecoration: 'none' },
-  code: { fontFamily: MONO, fontSize: 13 },
+  code: { fontFamily: MONO, fontSize: 14 },
 
   publishBtn: { fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', padding: '4px 12px', borderRadius: 14, border: 'none', background: 'var(--pk)', color: '#fff', cursor: 'pointer' },
   licenseFoot: { fontSize: 12, color: 'var(--tx2)', marginTop: 40, borderTop: '1px solid var(--bd)', paddingTop: 12 },
-  draftBanner: { marginTop: 14, padding: '10px 12px', borderRadius: 8, background: 'rgba(214,51,132,.07)', border: '1px solid rgba(214,51,132,.28)', fontSize: 13, color: 'var(--tx)' },
+  draftBanner: { marginTop: 14, padding: '10px 12px', borderRadius: 8, background: 'rgba(214,51,132,.07)', border: '1px solid rgba(214,51,132,.28)', fontSize: 14, color: 'var(--tx)' },
 
   stampBar: { display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', marginTop: 14, padding: '10px 12px', borderRadius: 10, background: 'var(--bgc)', border: '1px solid var(--bd)' },
   stampState: { fontFamily: MONO, fontSize: 12, color: 'var(--tx2)', flex: '0 0 auto' },
-  stampNote: { flex: '1 1 220px', fontSize: 13, padding: '6px 10px', borderRadius: 8, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx)' },
+  stampNote: { flex: '1 1 220px', fontSize: 14, padding: '6px 10px', borderRadius: 8, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx)' },
   stampBtn: { fontSize: 12.5, fontWeight: 600, padding: '6px 13px', borderRadius: 18, border: 'none', background: '#2e7d32', color: '#fff', cursor: 'pointer', whiteSpace: 'nowrap' },
-  stampNext: { fontSize: 13, fontWeight: 600, color: 'var(--pk)', textDecoration: 'none', whiteSpace: 'nowrap' },
+  stampNext: { fontSize: 14, fontWeight: 600, color: 'var(--pk)', textDecoration: 'none', whiteSpace: 'nowrap' },
   stampBtnOff: { fontSize: 12.5, fontWeight: 600, padding: '6px 13px', borderRadius: 18, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx2)', cursor: 'pointer', whiteSpace: 'nowrap' },
 
   criteria: { display: 'block', marginTop: 16, padding: '14px 16px', borderRadius: 12, background: 'var(--bgc)', border: '1px solid var(--bd)', textDecoration: 'none' },
@@ -860,32 +860,32 @@ const S = {
   // is what takes the click, so the heading stays a heading to a screen reader.
   foldHeadingWrap: { margin: 0, scrollMarginTop: 20 },
   foldHeading: { display: 'flex', alignItems: 'baseline', gap: 8, width: '100%', textAlign: 'left', padding: '14px 0 6px', border: 'none', background: 'none', cursor: 'pointer', fontFamily: SERIF, fontSize: 23, lineHeight: 1.2, color: 'var(--tx)' },
-  caret: { flexShrink: 0, fontSize: 13, color: 'var(--pk)', transition: 'transform .15s ease', display: 'inline-block' },
+  caret: { flexShrink: 0, fontSize: 14, color: 'var(--pk)', transition: 'transform .15s ease', display: 'inline-block' },
 
   toc: { position: 'sticky', top: 16, alignSelf: 'start', borderLeft: '2px solid var(--bd)', paddingLeft: 12 },
   tocLabel: { fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx2)', margin: '0 0 6px' },
-  tocLink: { display: 'block', fontSize: 13, color: 'var(--tx2)', textDecoration: 'none', padding: '3px 0' },
+  tocLink: { display: 'block', fontSize: 14, color: 'var(--tx2)', textDecoration: 'none', padding: '3px 0' },
 
   section: { marginTop: 30, paddingTop: 18, borderTop: '1px solid var(--bd)' },
   sectionH: { fontFamily: SERIF, fontSize: 18, color: 'var(--tx)', margin: '0 0 8px' },
   needsBox: { marginTop: 30, padding: '14px 16px', borderRadius: 12, background: 'var(--bgc)', border: '1px solid var(--bd)' },
 
-  editBtn: { flexShrink: 0, marginTop: 8, fontSize: 13, fontWeight: 600, padding: '7px 14px', borderRadius: 20, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx)', cursor: 'pointer' },
+  editBtn: { flexShrink: 0, marginTop: 8, fontSize: 14, fontWeight: 600, padding: '7px 14px', borderRadius: 20, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx)', cursor: 'pointer' },
   editBox: { marginTop: 16, padding: 16, borderRadius: 12, background: 'var(--bgc)', border: '1px solid var(--bd)' },
   colLabel: { fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx2)', margin: '0 0 8px' },
   editArea: { width: '100%', boxSizing: 'border-box', minHeight: 420, resize: 'vertical', fontFamily: MONO, fontSize: 12.5, lineHeight: 1.55, padding: 12, borderRadius: 8, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx)' },
   noteInput: { width: '100%', boxSizing: 'border-box', marginTop: 10, fontSize: 14, padding: '9px 11px', borderRadius: 8, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx)' },
-  saveNotice: { marginTop: 12, fontFamily: MONO, fontSize: 13, color: 'var(--pk)', lineHeight: 1.5 },
+  saveNotice: { marginTop: 12, fontFamily: MONO, fontSize: 14, color: 'var(--pk)', lineHeight: 1.5 },
   primary: { fontSize: 14, fontWeight: 600, padding: '9px 16px', borderRadius: 24, border: 'none', background: 'var(--pk)', color: '#fff', cursor: 'pointer' },
   // Disabled twin of `primary`. Buttons carry inline styles here, so `:disabled`
   // in a stylesheet would never reach them — the greyed state has to be a style
   // object the render picks, and `cursor: not-allowed` is what makes it read as
   // deliberate rather than dead.
   primaryOff: { fontSize: 14, fontWeight: 600, padding: '9px 16px', borderRadius: 24, border: 'none', background: 'var(--bd)', color: 'var(--tx2)', cursor: 'not-allowed' },
-  blockedHint: { fontSize: 13, color: 'var(--tx2)', fontStyle: 'italic' },
+  blockedHint: { fontSize: 14, color: 'var(--tx2)', fontStyle: 'italic' },
   secondary: { fontSize: 14, fontWeight: 600, padding: '9px 16px', borderRadius: 24, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx)', cursor: 'pointer' },
 
   chips: { display: 'flex', flexWrap: 'wrap', gap: 8 },
-  chip: { fontSize: 13, padding: '5px 11px', borderRadius: 20, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx)', textDecoration: 'none' },
+  chip: { fontSize: 14, padding: '5px 11px', borderRadius: 20, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx)', textDecoration: 'none' },
   chipDim: { color: 'var(--tx2)', fontFamily: MONO, fontSize: 12 },
 }

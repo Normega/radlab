@@ -71,7 +71,7 @@ export default function ChecklistScreen({ items, responses, onChange }) {
                   justifyContent: 'center',
                   transition:     'background 150ms ease, border-color 150ms ease',
                   color:          '#fff',
-                  fontSize:       13,
+                  fontSize:       14,
                   lineHeight:     1,
                 }}
               >
