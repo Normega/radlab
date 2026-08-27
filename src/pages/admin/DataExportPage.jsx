@@ -776,7 +776,7 @@ const S = {
     background: 'none', border: 'none', borderBottom: '1px solid var(--bd)',
     cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif',
   },
-  dropId:     { fontFamily: '"Space Mono",monospace', fontSize: 13, color: 'var(--tx)' },
+  dropId:     { fontFamily: '"Space Mono",monospace', fontSize: 14, color: 'var(--tx)' },
   dropStudies:{ fontSize: 12, color: 'var(--tx3)' },
 
   badge: {
@@ -796,7 +796,7 @@ const S = {
     background: 'var(--pkb)', color: 'var(--pk)',
     border: '1px solid var(--pk)', borderRadius: 8,
     padding: '6px 14px', cursor: 'pointer',
-    fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 13, fontWeight: 600,
+    fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 14, fontWeight: 600,
   },
 
   select: {
@@ -814,14 +814,14 @@ const S = {
     borderBottom: '1px solid var(--bd)', background: '#fafafa', whiteSpace: 'nowrap',
   },
   tr:     { borderBottom: '1px solid var(--bd)' },
-  td:     { padding: '7px 12px', fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 13, color: 'var(--tx)', whiteSpace: 'nowrap' },
+  td:     { padding: '7px 12px', fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 14, color: 'var(--tx)', whiteSpace: 'nowrap' },
   tdMono: { padding: '7px 12px', fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx)', whiteSpace: 'nowrap' },
-  msg:    { padding: '16px 20px', margin: 0, fontSize: 13, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif' },
+  msg:    { padding: '16px 20px', margin: 0, fontSize: 14, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif' },
   chartLabel: { margin: '0 0 6px', fontSize: 11, fontFamily: '"Space Mono",monospace', color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.05em' },
 
   dim:  { margin: 0, fontSize: 12, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif' },
   mono: { margin: 0, fontSize: 12, color: 'var(--tx2)', fontFamily: '"Space Mono",monospace' },
-  err:  { margin: 0, fontSize: 13, color: '#dc2626', fontFamily: '"DM Sans",system-ui,sans-serif' },
+  err:  { margin: 0, fontSize: 14, color: '#dc2626', fontFamily: '"DM Sans",system-ui,sans-serif' },
   warn: {
     margin: 0, fontSize: 12, color: '#92400e', background: '#fef3c7',
     border: '1px solid #fcd34d', borderRadius: 8, padding: '8px 12px',
@@ -839,6 +839,6 @@ const S = {
   linkBtn: {
     background: 'none', border: '1px solid var(--bd)', borderRadius: 8,
     padding: '6px 12px', cursor: 'pointer', color: 'var(--tx2)',
-    fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 13, fontWeight: 600,
+    fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 14, fontWeight: 600,
   },
 }

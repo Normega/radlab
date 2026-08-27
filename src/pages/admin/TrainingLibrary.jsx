@@ -203,7 +203,7 @@ export default function TrainingLibrary() {
                       </>
                     ) : (
                       <>
-                        <span style={{ fontFamily: 'DM Sans', fontSize: 13, color: 'var(--tx2)' }}>Delete?</span>
+                        <span style={{ fontFamily: 'DM Sans', fontSize: 14, color: 'var(--tx2)' }}>Delete?</span>
                         <button onClick={() => setConfirmDelete(null)} style={S.ghostBtn}>Cancel</button>
                         <button
                           onClick={() => deleteMutation.mutate(mod)}
@@ -253,7 +253,7 @@ const S = {
     fontFamily: '"DM Serif Display",Georgia,serif',
     fontSize: 28, fontWeight: 400, color: 'var(--tx)', margin: '0 0 4px',
   },
-  sub: { fontFamily: 'DM Sans', fontSize: 13, color: 'var(--tx3)', margin: 0 },
+  sub: { fontFamily: 'DM Sans', fontSize: 14, color: 'var(--tx3)', margin: 0 },
   meta: { fontFamily: 'Space Mono', fontSize: 12, color: 'var(--tx3)', margin: 0 },
   primaryBtn: {
     background: 'var(--pk)', color: '#fff', border: 'none',
@@ -303,7 +303,7 @@ const S = {
     textTransform: 'uppercase', letterSpacing: '0.04em',
   },
   lessonDay: {
-    fontFamily: 'Space Mono', fontSize: 13, fontWeight: 700, color: 'var(--tx)',
+    fontFamily: 'Space Mono', fontSize: 14, fontWeight: 700, color: 'var(--tx)',
   },
   moduleTitle: {
     fontFamily: 'DM Sans', fontSize: 14, fontWeight: 600,

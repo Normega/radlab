@@ -87,6 +87,6 @@ const S = {
   rowName:   { fontSize: 15, fontWeight: 600, color: 'var(--tx)', fontFamily: '"DM Sans",system-ui,sans-serif' },
   rowMeta:   { fontSize: 12, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif', marginTop: 2 },
   mono:      { fontFamily: '"Space Mono",monospace' },
-  link:      { fontSize: 13, color: 'var(--pkd)', fontFamily: '"DM Sans",system-ui,sans-serif' },
-  deleteBtn: { fontSize: 13, color: '#e04', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: '"DM Sans",system-ui,sans-serif' },
+  link:      { fontSize: 14, color: 'var(--pkd)', fontFamily: '"DM Sans",system-ui,sans-serif' },
+  deleteBtn: { fontSize: 14, color: '#e04', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: '"DM Sans",system-ui,sans-serif' },
 }

@@ -76,7 +76,7 @@ const S = {
   kicker: { fontFamily: '"Space Mono",monospace', fontSize: 12, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--pkd)' },
   h1: { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 'clamp(34px,6vw,56px)', fontWeight: 400, margin: '6px 0 8px', lineHeight: 1.05 },
   lead: { fontSize: 'clamp(15px,2vw,19px)', color: 'var(--tx2)', margin: 0 },
-  back: { fontFamily: '"Space Mono",monospace', fontSize: 13, color: 'var(--tx2)', textDecoration: 'none', border: '1px solid var(--bd)', borderRadius: 999, padding: '8px 16px', background: '#fff', whiteSpace: 'nowrap' },
+  back: { fontFamily: '"Space Mono",monospace', fontSize: 14, color: 'var(--tx2)', textDecoration: 'none', border: '1px solid var(--bd)', borderRadius: 999, padding: '8px 16px', background: '#fff', whiteSpace: 'nowrap' },
 
   grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 20 },
   card: { display: 'flex', flexDirection: 'column', background: '#fff', border: '1px solid var(--bd)', borderRadius: 16, overflow: 'hidden', textDecoration: 'none', color: 'inherit', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', transition: 'transform 0.15s ease, box-shadow 0.15s ease' },
@@ -87,7 +87,7 @@ const S = {
   cardSub: { fontSize: 15, color: 'var(--tx2)', margin: 0, lineHeight: 1.45 },
   tags: { display: 'flex', gap: 7, flexWrap: 'wrap', marginTop: 14 },
   tag: { fontSize: 12, color: 'var(--pkd)', background: 'var(--pkb)', borderRadius: 999, padding: '4px 11px' },
-  open: { fontFamily: '"Space Mono",monospace', fontSize: 13, fontWeight: 700, padding: '0 22px 20px' },
+  open: { fontFamily: '"Space Mono",monospace', fontSize: 14, fontWeight: 700, padding: '0 22px 20px' },
 
   foot: { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', marginTop: 30, lineHeight: 1.6, maxWidth: 640 },
 }

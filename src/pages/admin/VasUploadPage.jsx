@@ -304,11 +304,11 @@ const S = {
   thumbImg:     { width: 52, height: 52, objectFit: 'contain', borderRadius: 6 },
   anchorInput:  { width: '100%', fontSize: 11, fontFamily: '"DM Sans",system-ui,sans-serif', border: '1px solid var(--bd)', borderRadius: 6, padding: '4px 6px', textAlign: 'center', boxSizing: 'border-box' },
 
-  previewToggle: { background: 'none', border: '1px solid var(--bd)', borderRadius: 8, padding: '7px 14px', fontSize: 13, cursor: 'pointer', color: 'var(--tx2)', fontFamily: '"DM Sans",system-ui,sans-serif', marginBottom: 16 },
+  previewToggle: { background: 'none', border: '1px solid var(--bd)', borderRadius: 8, padding: '7px 14px', fontSize: 14, cursor: 'pointer', color: 'var(--tx2)', fontFamily: '"DM Sans",system-ui,sans-serif', marginBottom: 16 },
   previewWrap:   { border: '1px solid var(--bd)', borderRadius: 12, overflow: 'hidden', marginBottom: 20 },
 
-  uploadMsg: { fontSize: 13, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif', margin: '8px 0' },
-  errMsg:    { fontSize: 13, color: '#e04', background: '#fff0f0', border: '1px solid #fcc', borderRadius: 8, padding: '8px 14px', margin: '12px 0' },
+  uploadMsg: { fontSize: 14, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif', margin: '8px 0' },
+  errMsg:    { fontSize: 14, color: '#e04', background: '#fff0f0', border: '1px solid #fcc', borderRadius: 8, padding: '8px 14px', margin: '12px 0' },
 
   actions:   { display: 'flex', gap: 10, marginTop: 8 },
   uploadBtn: { background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 9, padding: '10px 22px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },

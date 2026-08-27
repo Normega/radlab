@@ -271,7 +271,7 @@ export function ProposedOpenList() {
                     onPointerDown={() => setRows(prev => prev.map((row, j) => j === i ? { ...row, contribution: row.contribution ?? 50, touched: true } : row))}
                     aria-label={`Contribution of factor ${i + 1}`}
                   />
-                  <span style={{ fontFamily: MONO, fontSize: 13, color: r.touched ? 'var(--pkd)' : 'var(--gy)', width: 28, textAlign: 'right' }}>
+                  <span style={{ fontFamily: MONO, fontSize: 14, color: r.touched ? 'var(--pkd)' : 'var(--gy)', width: 28, textAlign: 'right' }}>
                     {r.touched ? r.contribution : '—'}
                   </span>
                 </div>
@@ -309,7 +309,7 @@ export function ProposedHierarchy() {
   return (
     <div style={P.pad}>
       <p style={P.pageQ}>How much did this feedback change your belief about…</p>
-      <p style={{ fontFamily: SANS, fontSize: 13, color: 'var(--tx2)', margin: '0 0 14px' }}>
+      <p style={{ fontFamily: SANS, fontSize: 14, color: 'var(--tx2)', margin: '0 0 14px' }}>
         Select all of the beliefs that changed. You can select more than one.
       </p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -340,7 +340,7 @@ export function ProposedHierarchy() {
                         onPointerDown={() => setState(prev => ({ ...prev, [b.id]: { ...prev[b.id], touched: true } }))}
                         aria-label={`Direction of change for ${b.level}`}
                       />
-                      <span style={{ fontFamily: MONO, fontSize: 13, color: s.touched ? 'var(--pkd)' : 'var(--gy)', width: 34, textAlign: 'right' }}>
+                      <span style={{ fontFamily: MONO, fontSize: 14, color: s.touched ? 'var(--pkd)' : 'var(--gy)', width: 34, textAlign: 'right' }}>
                         {s.touched ? (s.direction > 0 ? `+${s.direction}` : s.direction) : '—'}
                       </span>
                     </div>

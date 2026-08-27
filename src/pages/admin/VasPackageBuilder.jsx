@@ -345,7 +345,7 @@ function SliderPreview({ scale, partNumber, totalParts, onComplete }) {
                    accentColor: touched ? 'var(--pk)' : '#c0bdb8' }}
         />
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                      fontSize: 13, color: touched ? 'var(--tx2)' : '#b0ada8' }}>
+                      fontSize: 14, color: touched ? 'var(--tx2)' : '#b0ada8' }}>
           <span>{scale.min_label}</span>
           {touched
             ? <span style={{ fontSize: 24, fontWeight: 600, color: 'var(--pk)' }}>{value}</span>
@@ -372,7 +372,7 @@ const S = {
   h1:   { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 28, fontWeight: 400, color: 'var(--tx)', margin: '0 0 6px' },
   sub:  { fontSize: 14, color: 'var(--tx2)', margin: '0 0 28px' },
   muted:  { fontSize: 14, color: 'var(--tx3)', margin: '8px 0' },
-  errMsg: { fontSize: 13, color: '#e04', background: '#fff0f0', border: '1px solid #fcc', borderRadius: 8, padding: '8px 14px', marginBottom: 16 },
+  errMsg: { fontSize: 14, color: '#e04', background: '#fff0f0', border: '1px solid #fcc', borderRadius: 8, padding: '8px 14px', marginBottom: 16 },
   hint:   { fontSize: 12, color: 'var(--tx3)', margin: '4px 0 0' },
   code:   { fontFamily: '"Space Mono",monospace', fontSize: 11 },
 
@@ -413,6 +413,6 @@ const S = {
   previewCount:     { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', margin: 0 },
   previewList:      { margin: '0 0 12px', paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 6 },
   previewItem:      { display: 'flex', alignItems: 'center', gap: 6, listStyle: 'decimal' },
-  startPreviewBtn:  { background: 'none', border: '1px solid var(--pk)', borderRadius: 8, padding: '8px 16px', fontSize: 13, cursor: 'pointer', color: 'var(--pk)', fontFamily: '"DM Sans",system-ui,sans-serif', alignSelf: 'flex-start' },
+  startPreviewBtn:  { background: 'none', border: '1px solid var(--pk)', borderRadius: 8, padding: '8px 16px', fontSize: 14, cursor: 'pointer', color: 'var(--pk)', fontFamily: '"DM Sans",system-ui,sans-serif', alignSelf: 'flex-start' },
   resetPreviewBtn:  { background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif', margin: '8px 0 0' },
 }

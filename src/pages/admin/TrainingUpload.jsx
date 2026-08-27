@@ -283,7 +283,7 @@ export default function TrainingUpload() {
         <button onClick={() => fileInputRef.current?.click()} style={S.chooseBtn}>
           Choose .json file
         </button>
-        <p style={{ fontFamily: 'DM Sans', fontSize: 13, color: 'var(--tx3)', margin: 0 }}>
+        <p style={{ fontFamily: 'DM Sans', fontSize: 14, color: 'var(--tx3)', margin: 0 }}>
           or paste JSON below
         </p>
       </div>
@@ -312,7 +312,7 @@ export default function TrainingUpload() {
             {errors.length} validation error{errors.length > 1 ? 's' : ''}
           </p>
           {errors.map((e, i) => (
-            <p key={i} style={{ fontFamily: 'DM Sans', fontSize: 13, color: '#8b4513', margin: '2px 0' }}>· {e}</p>
+            <p key={i} style={{ fontFamily: 'DM Sans', fontSize: 14, color: '#8b4513', margin: '2px 0' }}>· {e}</p>
           ))}
         </div>
       )}
@@ -342,7 +342,7 @@ export default function TrainingUpload() {
 
       {/* Save error */}
       {save.isError && (
-        <p style={{ color: '#c0392b', fontFamily: 'DM Sans', fontSize: 13, margin: '8px 0' }}>
+        <p style={{ color: '#c0392b', fontFamily: 'DM Sans', fontSize: 14, margin: '8px 0' }}>
           {save.error?.message?.includes('duplicate') || save.error?.message?.includes('unique')
             ? `A module with id "${parsed?.module_id}" already exists.`
             : `Save failed: ${save.error?.message}`}
@@ -540,9 +540,9 @@ function PreviewRow({ label, value, mono }) {
 
 const S = {
   h1: { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 24, fontWeight: 400, color: 'var(--tx)', margin: 0 },
-  backBtn: { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 8, padding: '6px 14px', cursor: 'pointer', fontFamily: 'DM Sans', fontSize: 13, color: 'var(--tx2)' },
+  backBtn: { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 8, padding: '6px 14px', cursor: 'pointer', fontFamily: 'DM Sans', fontSize: 14, color: 'var(--tx2)' },
   fileStrip: { background: 'var(--bgc)', border: '1px dashed var(--bds)', borderRadius: 12, padding: '16px 20px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 16 },
-  chooseBtn: { background: 'var(--bgp)', border: '1px solid var(--pkbs)', borderRadius: 8, padding: '8px 16px', cursor: 'pointer', fontFamily: 'DM Sans', fontSize: 13, color: 'var(--pkd)' },
+  chooseBtn: { background: 'var(--bgp)', border: '1px solid var(--pkbs)', borderRadius: 8, padding: '8px 16px', cursor: 'pointer', fontFamily: 'DM Sans', fontSize: 14, color: 'var(--pkd)' },
   textarea: { width: '100%', minHeight: 260, boxSizing: 'border-box', fontFamily: 'Space Mono', fontSize: 12, color: 'var(--tx)', background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 12, padding: 16, resize: 'vertical', lineHeight: 1.6, outline: 'none' },
   errorBox: { background: '#fff5f0', border: '1px solid #e67e22', borderRadius: 10, padding: '12px 16px', margin: '12px 0' },
   previewBox: { background: 'var(--bgp)', border: '1px solid var(--pkb)', borderRadius: 10, padding: '14px 16px', margin: '12px 0' },

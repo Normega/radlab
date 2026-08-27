@@ -275,7 +275,7 @@ const ROLE_COLORS = {
 const S = {
   h1:    { fontFamily: '"DM Serif Display", Georgia, serif', fontSize: 28, color: 'var(--tx)', margin: 0 },
   sub:   { fontSize: 14, color: 'var(--tx2)', marginTop: 6 },
-  muted: { fontSize: 13, color: 'var(--tx3)' },
+  muted: { fontSize: 14, color: 'var(--tx3)' },
 
   tabBar: { display: 'flex', gap: 8, marginBottom: 22, borderBottom: '1px solid var(--bd)', paddingBottom: 0 },
   tabBtn: {
@@ -292,7 +292,7 @@ const S = {
   },
 
   tableWrap: { border: '1px solid var(--bds)', borderRadius: 12, overflowX: 'auto', background: 'var(--bgc)' },
-  table:     { width: '100%', borderCollapse: 'collapse', fontSize: 13 },
+  table:     { width: '100%', borderCollapse: 'collapse', fontSize: 14 },
   th: {
     textAlign: 'left', padding: '10px 14px', fontFamily: MONO, fontSize: 11,
     letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--tx3)',
@@ -304,7 +304,7 @@ const S = {
     display: 'flex', alignItems: 'center', gap: 10, background: 'none',
     border: 'none', padding: '6px 0', cursor: 'pointer', marginBottom: 8, width: '100%',
   },
-  sectionCount: { fontSize: 13, color: 'var(--tx3)', fontFamily: MONO },
+  sectionCount: { fontSize: 14, color: 'var(--tx3)', fontFamily: MONO },
   chevron: { fontSize: 14, color: 'var(--tx3)', marginLeft: 'auto' },
 
   roleBadge: {
@@ -329,7 +329,7 @@ const S = {
   },
 
   errBox: {
-    fontSize: 13, color: '#A32D2D', background: '#FCEBEB',
+    fontSize: 14, color: '#A32D2D', background: '#FCEBEB',
     border: '1px solid #F09595', borderRadius: 8, padding: '10px 14px',
     margin: '0 0 16px',
   },

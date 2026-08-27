@@ -514,10 +514,10 @@ function Toggle({ on, onChange }) {
 
 const S = {
   header:         { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 24, flexWrap: 'wrap' },
-  backLink:       { fontSize: 13, color: 'var(--tx2)', textDecoration: 'none', display: 'inline-block', marginBottom: 8 },
+  backLink:       { fontSize: 14, color: 'var(--tx2)', textDecoration: 'none', display: 'inline-block', marginBottom: 8 },
   h1:             { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 26, fontWeight: 400, color: 'var(--tx)', margin: 0 },
   muted:          { fontSize: 14, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif' },
-  errMsg:         { fontSize: 13, color: '#e04', background: '#fff0f0', border: '1px solid #fcc', borderRadius: 8, padding: '8px 14px', marginBottom: 16 },
+  errMsg:         { fontSize: 14, color: '#e04', background: '#fff0f0', border: '1px solid #fcc', borderRadius: 8, padding: '8px 14px', marginBottom: 16 },
   card:           { background: '#fff', border: '1px solid var(--bd)', borderRadius: 10, padding: '24px', display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 620 },
   fieldGroup:     { display: 'flex', flexDirection: 'column', gap: 8 },
   fieldLabel:     { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' },
@@ -530,9 +530,9 @@ const S = {
   toggleRow:      { display: 'flex', alignItems: 'center', gap: 10 },
   toggleLabel:    { fontSize: 14, color: 'var(--tx)', fontFamily: '"DM Sans",system-ui,sans-serif' },
   varPill:        { fontFamily: '"Space Mono",monospace', fontSize: 11, background: 'var(--bgc)', border: '1px solid var(--pkb)', borderRadius: 6, padding: '3px 8px', color: 'var(--pkd)', cursor: 'pointer' },
-  previewBtn:     { fontSize: 13, color: 'var(--pkd)', background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', textDecoration: 'underline' },
+  previewBtn:     { fontSize: 14, color: 'var(--pkd)', background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', textDecoration: 'underline' },
   slotDelete:     { background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tx3)', fontSize: 14, padding: '26px 4px 0', flexShrink: 0 },
   slotDepWarn:    { display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12, color: '#9a6b1f', background: '#fdf6ec', border: '1px solid #f0d9b0', borderRadius: 8, padding: '10px 14px', fontFamily: '"DM Sans",system-ui,sans-serif', lineHeight: 1.5 },
-  addSlotBtn:     { alignSelf: 'flex-start', fontSize: 13, color: 'var(--pkd)', background: '#fff', border: '1px dashed var(--pkb)', borderRadius: 8, padding: '7px 14px', cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
+  addSlotBtn:     { alignSelf: 'flex-start', fontSize: 14, color: 'var(--pkd)', background: '#fff', border: '1px dashed var(--pkb)', borderRadius: 8, padding: '7px 14px', cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
   btnPrimary:     { display: 'inline-block', background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
 }

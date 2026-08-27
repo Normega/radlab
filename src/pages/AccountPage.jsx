@@ -498,7 +498,7 @@ const S = {
     background: 'var(--bgc)', border: '1px solid var(--bds)', borderRadius: 24,
     color: 'var(--tx2)', cursor: 'pointer', padding: '8px 14px',
   },
-  btnRename: { padding: '6px 14px', fontSize: 13, borderRadius: 20 },
+  btnRename: { padding: '6px 14px', fontSize: 14, borderRadius: 20 },
 
   toggleRow:   { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16 },
   toggleTitle: { fontFamily: SANS, fontWeight: 600, fontSize: 16, color: 'var(--tx)', margin: 0 },
@@ -525,7 +525,7 @@ const S = {
 
   field:      { display: 'flex', flexDirection: 'column', gap: 6 },
   fieldLabel: { fontFamily: MONO, fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--gy)' },
-  fieldHint:  { fontFamily: SANS, fontSize: 13, color: 'var(--err-tx)' },
+  fieldHint:  { fontFamily: SANS, fontSize: 14, color: 'var(--err-tx)' },
   input: {
     fontFamily: SANS, fontSize: 16, padding: '10px 12px', minHeight: 40,
     borderRadius: 8, border: '1px solid var(--bds)',
@@ -552,5 +552,5 @@ const S = {
 
   mutedNote:   { fontFamily: SANS, fontSize: 14, color: 'var(--tx2)', margin: 0 },
   successNote: { fontFamily: SANS, fontSize: 14, color: 'var(--tx)', margin: 0 },
-  error:       { fontFamily: SANS, fontSize: 13, color: 'var(--err-tx)', margin: 0 },
+  error:       { fontFamily: SANS, fontSize: 14, color: 'var(--err-tx)', margin: 0 },
 }

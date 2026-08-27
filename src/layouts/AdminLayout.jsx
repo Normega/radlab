@@ -245,13 +245,13 @@ const S = {
     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
   },
   backLink: {
-    display: 'block', fontSize: 13, color: 'var(--tx2)',
+    display: 'block', fontSize: 14, color: 'var(--tx2)',
     textDecoration: 'none', marginBottom: 8,
     fontFamily: '"DM Sans",system-ui,sans-serif',
   },
   signOut: {
     background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-    fontSize: 13, color: 'var(--gy)',
+    fontSize: 14, color: 'var(--gy)',
     fontFamily: '"DM Sans",system-ui,sans-serif',
   },
   mobilebar: {

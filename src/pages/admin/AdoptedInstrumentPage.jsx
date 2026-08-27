@@ -403,8 +403,8 @@ const S = {
     padding: '3px 10px', borderRadius: 12,
   },
   blurb:      { fontFamily: SANS, fontSize: 14, color: 'var(--tx)', lineHeight: 1.6, margin: '0 0 10px', maxWidth: 680 },
-  statusNote: { fontFamily: SANS, fontSize: 13, color: 'var(--tx2)', lineHeight: 1.6, margin: '0 0 18px', maxWidth: 680 },
-  link:       { color: 'var(--pk)', fontFamily: SANS, fontSize: 13 },
+  statusNote: { fontFamily: SANS, fontSize: 14, color: 'var(--tx2)', lineHeight: 1.6, margin: '0 0 18px', maxWidth: 680 },
+  link:       { color: 'var(--pk)', fontFamily: SANS, fontSize: 14 },
   stage: {
     background: 'var(--bg)', border: '1px solid var(--bd)', borderRadius: 12,
     overflow: 'hidden', position: 'relative', maxWidth: 860,
@@ -417,7 +417,7 @@ const S = {
   },
   libTitle: { fontFamily: SERIF, fontSize: 20, fontWeight: 400, color: 'var(--tx)', margin: 0 },
   newBtn: {
-    fontFamily: SANS, fontWeight: 600, fontSize: 13, padding: '6px 12px',
+    fontFamily: SANS, fontWeight: 600, fontSize: 14, padding: '6px 12px',
     background: 'var(--pk)', color: '#fff', borderRadius: 20, textDecoration: 'none',
   },
   row: {
@@ -432,5 +432,5 @@ const S = {
   },
   rowMeta: { fontFamily: SANS, fontSize: 12.5, color: 'var(--tx2)' },
   rowSlug: { fontFamily: MONO, fontSize: 11, color: 'var(--gy)' },
-  muted:   { fontFamily: SANS, fontSize: 13, color: 'var(--tx2)', margin: '4px 0 0' },
+  muted:   { fontFamily: SANS, fontSize: 14, color: 'var(--tx2)', margin: '4px 0 0' },
 }

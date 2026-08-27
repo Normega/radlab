@@ -375,7 +375,7 @@ const S = {
   title: { fontFamily: SERIF, fontSize: 28, color: 'var(--tx)', marginBottom: 8 },
   sub: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.5 },
   wallWrap: { marginTop: 24 },
-  error: { fontSize: 13, color: '#c04a4a', marginTop: 8 },
+  error: { fontSize: 14, color: '#c04a4a', marginTop: 8 },
   primaryBtn: {
     marginTop: 20, padding: '12px 28px', borderRadius: 10, border: 'none',
     background: 'var(--pk)', color: '#fff', fontSize: 15, fontWeight: 600,
@@ -390,7 +390,7 @@ const S = {
   weeklyMeta: { fontFamily: MONO, fontSize: 12, color: 'var(--tx2)' },
   banner: { background: 'var(--bgp)', border: '1px solid var(--pkb)', borderRadius: 12, padding: '14px 18px', marginBottom: 16 },
   bannerForm: {},
-  bannerText: { fontSize: 13, color: 'var(--tx2)', marginBottom: 10 },
+  bannerText: { fontSize: 14, color: 'var(--tx2)', marginBottom: 10 },
   bannerRow: { display: 'flex', gap: 8 },
   emailInput: {
     flex: 1, padding: '9px 12px', borderRadius: 8, border: '1px solid var(--bds)',
@@ -398,6 +398,6 @@ const S = {
   },
   bannerBtn: {
     padding: '9px 18px', borderRadius: 8, border: 'none', background: 'var(--pk)',
-    color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+    color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
   },
 }

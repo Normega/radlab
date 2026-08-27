@@ -210,7 +210,7 @@ const S = {
   chevron:      { fontFamily: '"Space Mono",monospace', fontSize: 10, color: 'var(--tx3)', width: 12, flexShrink: 0 },
   folderName:   { fontFamily: '"Space Mono",monospace', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--tx)', fontWeight: 700 },
   folderCount:  { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)' },
-  exportLink:   { fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 13, color: 'var(--pk)', textDecoration: 'none', whiteSpace: 'nowrap' },
+  exportLink:   { fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 14, color: 'var(--pk)', textDecoration: 'none', whiteSpace: 'nowrap' },
   tableWrap: { overflowX: 'auto', background: '#fff' },
   table:     { width: '100%', borderCollapse: 'collapse' },
   th:        { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', textAlign: 'left', padding: '10px 16px', borderBottom: '1px solid var(--bd)', textTransform: 'uppercase', letterSpacing: '0.06em' },
@@ -220,5 +220,5 @@ const S = {
   srcChip:   { marginLeft: 8, fontFamily: '"Space Mono",monospace', fontSize: 10, background: 'var(--pkb)', color: 'var(--pk)', borderRadius: 5, padding: '1px 6px', textTransform: 'uppercase' },
   optOutChip:{ marginLeft: 8, fontFamily: '"Space Mono",monospace', fontSize: 10, background: '#fef3e8', color: '#7d4f00', borderRadius: 5, padding: '1px 6px' },
   actions:   { display: 'flex', gap: 12, alignItems: 'center' },
-  actionBtn: { background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: 'var(--pk)', padding: 0, textDecoration: 'none', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
+  actionBtn: { background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: 'var(--pk)', padding: 0, textDecoration: 'none', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
 }

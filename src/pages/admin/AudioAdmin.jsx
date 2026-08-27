@@ -185,7 +185,7 @@ function FolderTab({ label, count, active, onClick }) {
         background: active ? 'var(--pkb)' : 'var(--bgc)',
         border: `1px solid ${active ? 'var(--pkbs)' : 'var(--bd)'}`,
         borderRadius: 20, padding: '5px 14px', cursor: 'pointer',
-        fontFamily: 'DM Sans', fontSize: 13,
+        fontFamily: 'DM Sans', fontSize: 14,
         fontWeight: active ? 600 : 400,
         color: active ? 'var(--pkd)' : 'var(--tx2)',
         display: 'flex', alignItems: 'center', gap: 6,
@@ -246,7 +246,7 @@ function AudioRow({ audio, confirmDelete, onConfirmDelete, onDelete, deleting, o
           </>
         ) : (
           <>
-            <span style={{ fontFamily: 'DM Sans', fontSize: 13, color: 'var(--tx2)' }}>Delete?</span>
+            <span style={{ fontFamily: 'DM Sans', fontSize: 14, color: 'var(--tx2)' }}>Delete?</span>
             <button onClick={() => onConfirmDelete(null)} style={S.ghostBtn}>Cancel</button>
             <button
               onClick={onDelete}
@@ -297,7 +297,7 @@ function PreviewModal({ audio, onClose }) {
             style={{
               background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
               borderRadius: 8, padding: '6px 14px', cursor: 'pointer',
-              fontFamily: 'DM Sans', fontSize: 13, color: '#fff',
+              fontFamily: 'DM Sans', fontSize: 14, color: '#fff',
             }}
           >
             ✕ Close
@@ -318,7 +318,7 @@ const S = {
     color: 'var(--tx)', margin: '0 0 4px',
   },
   sub: {
-    fontFamily: 'DM Sans', fontSize: 13,
+    fontFamily: 'DM Sans', fontSize: 14,
     color: 'var(--tx3)', margin: 0,
   },
   meta: {
