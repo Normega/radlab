@@ -652,11 +652,10 @@ export default function App() {
 
           <Route element={<ErrorBoundary label="Academic"><Outlet /></ErrorBoundary>}>
             <Route path="/class/verify" element={<ClassVerifyEmail />} />
-            <Route path="/class/:slug" element={
-              <AuthRoute session={session}>
-                <ClassRoom session={session} />
-              </AuthRoute>
-            } />
+            {/* No auth guard: logged-out visitors get ClassRoom's own
+                class-branded join card (sign in / create account inline),
+                so the class context is never lost to a /login bounce. */}
+            <Route path="/class/:slug" element={<ClassRoom session={session} />} />
             <Route path="/class/:slug/wall/:checkinId" element={
               <AuthRoute session={session}>
                 <WeeklyWall session={session} />

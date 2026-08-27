@@ -70,7 +70,11 @@ export default function ClassRoom({ session }) {
   // the other.
   useEffect(() => {
     let cancelled = false
-    supabase.from('classes').select('id, name, slug').eq('slug', slug).maybeSingle().then(({ data }) => {
+    // Via RPC rather than a table read: this page now renders for logged-out
+    // visitors (the class-branded join card), and `classes` is readable by
+    // authenticated only. class_public_info exposes exactly id/name/
+    // field_guide_url for one slug, callable by anon.
+    supabase.rpc('class_public_info', { p_slug: slug }).then(({ data }) => {
       if (!cancelled) setClassInfo(data ?? null)
     })
     return () => { cancelled = true }
@@ -254,7 +258,7 @@ export default function ClassRoom({ session }) {
     setVerifySent(true)
   }
 
-  if (classInfo === undefined || (classInfo && membership === undefined)) {
+  if (session === undefined || classInfo === undefined || (session && classInfo && membership === undefined)) {
     return <div style={{ background: 'var(--bg)', minHeight: '100vh' }}><Nav session={session} /></div>
   }
 
@@ -305,20 +309,36 @@ export default function ClassRoom({ session }) {
     )
   }
 
+  const fieldGuideCard = classInfo.field_guide_url ? (
+    <a href={classInfo.field_guide_url} style={S.fgCard}>
+      <p style={S.fgEyebrow}>Course textbook</p>
+      <p style={S.fgTitle}>The Field Guide to Abnormal Psychology</p>
+      <p style={S.fgMeta}>Free, built for this course — sign in with your utoronto email →</p>
+    </a>
+  ) : null
+
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
       <Nav session={session} />
       <div style={S.wrap}>
-        {!membership ? (
-          <div style={S.card}>
-            <p style={S.eyebrow}>Lecture Lounge</p>
-            <h1 style={S.title}>{classInfo.name}</h1>
-            <p style={S.sub}>Join to respond to live check-ins during class.</p>
-            {joinError && <p style={S.error}>{joinError}</p>}
-            <button style={S.primaryBtn} onClick={handleJoin} disabled={joining}>
-              {joining ? 'Joining…' : 'Join class'}
-            </button>
-          </div>
+        {!session ? (
+          <>
+            <ClassAuthCard classInfo={classInfo} slug={slug} />
+            {fieldGuideCard}
+          </>
+        ) : !membership ? (
+          <>
+            <div style={S.card}>
+              <p style={S.eyebrow}>Lecture Lounge</p>
+              <h1 style={S.title}>{classInfo.name}</h1>
+              <p style={S.sub}>Join to respond to live check-ins during class.</p>
+              {joinError && <p style={S.error}>{joinError}</p>}
+              <button style={S.primaryBtn} onClick={handleJoin} disabled={joining}>
+                {joining ? 'Joining…' : 'Join class'}
+              </button>
+            </div>
+            {fieldGuideCard}
+          </>
         ) : (
           <>
             {!utorontoVerifiedAt && (
@@ -361,9 +381,97 @@ export default function ClassRoom({ session }) {
                 </p>
               </Link>
             )}
+
+            {fieldGuideCard}
           </>
         )}
       </div>
+    </div>
+  )
+}
+
+// Class-branded auth for logged-out visitors — sign in or create an account
+// without ever leaving /class/:slug, so the class context is never lost (the
+// old AuthRoute bounce sent students to the generic /login with no way back,
+// and new signups fell into the Ripple welcome flow). Sign-in resolves via
+// App's onAuthStateChange — this page re-renders as the join view. Sign-up
+// follows the platform's confirm-email flow, but with emailRedirectTo set
+// back HERE, so the confirmation click lands the student on the class page
+// already signed in.
+function ClassAuthCard({ classInfo, slug }) {
+  const [mode, setMode] = useState('signup') // most first-time visitors are new students
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState(null)
+  const [confirmSent, setConfirmSent] = useState(false)
+
+  async function submit(e) {
+    e.preventDefault()
+    if (busy) return
+    setBusy(true)
+    setError(null)
+    if (mode === 'signin') {
+      const { error: err } = await supabase.auth.signInWithPassword({ email, password })
+      if (err) { setBusy(false); setError(err.message) }
+      // on success: stay busy — the session change re-renders the whole page
+      return
+    }
+    const { error: err } = await supabase.auth.signUp({
+      email, password,
+      options: { emailRedirectTo: `${window.location.origin}/class/${slug}` },
+    })
+    setBusy(false)
+    if (err) { setError(err.message); return }
+    setConfirmSent(true)
+  }
+
+  if (confirmSent) {
+    return (
+      <div style={S.card}>
+        <p style={S.eyebrow}>Lecture Lounge</p>
+        <h1 style={S.title}>Check your email</h1>
+        <p style={S.sub}>
+          We sent a confirmation link to <strong>{email}</strong>. Clicking it brings you
+          straight back here, signed in and ready to join {classInfo.name}.
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div style={S.card}>
+      <p style={S.eyebrow}>Lecture Lounge</p>
+      <h1 style={S.title}>{classInfo.name}</h1>
+      <p style={S.sub}>
+        {mode === 'signup'
+          ? 'Create your account to join the class — check-ins, polls, and the question of the week.'
+          : 'Sign in to join the class.'}
+      </p>
+      <form onSubmit={submit} style={{ marginTop: 18 }}>
+        <input
+          type="email" placeholder="you@mail.utoronto.ca" value={email}
+          onChange={(e) => setEmail(e.target.value)} style={S.authInput} autoComplete="email"
+        />
+        <input
+          type="password" placeholder={mode === 'signup' ? 'Choose a password' : 'Password'} value={password}
+          onChange={(e) => setPassword(e.target.value)} style={S.authInput}
+          autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+        />
+        {error && <p style={S.error}>{error}</p>}
+        <button type="submit" style={{ ...S.primaryBtn, width: '100%', marginTop: 12 }} disabled={busy || !email || !password}>
+          {busy ? 'One moment…' : mode === 'signup' ? 'Create account' : 'Sign in'}
+        </button>
+      </form>
+      <p style={{ ...S.sub, marginTop: 14 }}>
+        {mode === 'signup' ? (
+          <>Already have a radlab account?{' '}
+            <button style={S.authSwitch} onClick={() => { setMode('signin'); setError(null) }}>Sign in</button></>
+        ) : (
+          <>New here?{' '}
+            <button style={S.authSwitch} onClick={() => { setMode('signup'); setError(null) }}>Create an account</button></>
+        )}
+      </p>
     </div>
   )
 }
@@ -381,6 +489,18 @@ const S = {
     background: 'var(--pk)', color: '#fff', fontSize: 15, fontWeight: 600,
     cursor: 'pointer', fontFamily: 'inherit',
   },
+  authInput: {
+    width: '100%', boxSizing: 'border-box', padding: '11px 14px', borderRadius: 10,
+    border: '1px solid var(--bds)', fontSize: 15, fontFamily: 'inherit', marginTop: 10,
+  },
+  authSwitch: { border: 'none', background: 'none', color: 'var(--pk)', cursor: 'pointer', fontSize: 'inherit', fontFamily: 'inherit', textDecoration: 'underline', padding: 0 },
+  fgCard: {
+    display: 'block', textDecoration: 'none', marginTop: 16, textAlign: 'left',
+    background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 14, padding: '16px 20px',
+  },
+  fgEyebrow: { fontFamily: MONO, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)', marginBottom: 6 },
+  fgTitle: { fontFamily: SERIF, fontSize: 18, color: 'var(--tx)', lineHeight: 1.35, marginBottom: 6 },
+  fgMeta: { fontFamily: MONO, fontSize: 12, color: 'var(--tx2)' },
   weeklyCard: {
     display: 'block', textDecoration: 'none', marginTop: 16, textAlign: 'left',
     background: 'var(--bgp)', border: '1px solid var(--pkb)', borderRadius: 14, padding: '16px 20px',

@@ -15,11 +15,30 @@ export default function ClassVerifyEmail() {
   // purely for the "back to class" deep link, not for the RPC itself.
   const slug = searchParams.get('slug')
   const [result, setResult] = useState(() => (!token ? { error: 'not_found' } : undefined)) // undefined=loading
+  // null = no bridge outcome to show; 'sent' | 'already' otherwise
+  const [fieldGuide, setFieldGuide] = useState(null)
 
   useEffect(() => {
     if (!token) return
     supabase.rpc('verify_utoronto_email', { p_token: token }).then(({ data, error }) => {
       setResult(error ? { error: 'not_found' } : data)
+      // The Field Guide bridge: the student has just proven control of this
+      // address, so fire the guide's roster-join for it. Roster-matched
+      // students get their Field Guide sign-in link in the same inbox
+      // they're standing in; unmatched addresses (e.g. a class without a
+      // guide roster) send nothing. Best-effort by design — a bridge
+      // failure must never dampen the verification success screen.
+      if (data?.ok && data?.email) {
+        fetch('/api/roster-join', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: data.email }),
+        }).then(async (r) => {
+          const body = await r.json().catch(() => ({}))
+          if (r.ok && body.matched) setFieldGuide('sent')
+          else if (r.status === 429 && body.matched) setFieldGuide('already')
+        }).catch(() => {})
+      }
     })
   }, [token])
 
@@ -32,6 +51,18 @@ export default function ClassVerifyEmail() {
           <>
             <h1 style={S.title}>Email verified</h1>
             <p style={S.sub}>You're all set — this covers every class you join with this account.</p>
+            {fieldGuide === 'sent' && (
+              <p style={S.sub}>
+                <strong>One more email is on its way</strong> — your sign-in link for the course
+                Field Guide (your textbook), sent to the same address. One click and you're in.
+              </p>
+            )}
+            {fieldGuide === 'already' && (
+              <p style={S.sub}>
+                Your Field Guide sign-in link was already sent to this address — check your
+                inbox (and spam).
+              </p>
+            )}
             {slug && (
               <Link to={`/class/${slug}`} style={S.link}>Back to class →</Link>
             )}
