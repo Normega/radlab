@@ -15,31 +15,45 @@ export default function ClassVerifyEmail() {
   // purely for the "back to class" deep link, not for the RPC itself.
   const slug = searchParams.get('slug')
   const [result, setResult] = useState(() => (!token ? { error: 'not_found' } : undefined)) // undefined=loading
-  // null = no bridge outcome to show; 'sent' | 'already' otherwise
+  // { url } = show the Continue button; 'sent' | 'already' = email fallback copy; null = nothing
   const [fieldGuide, setFieldGuide] = useState(null)
 
   useEffect(() => {
     if (!token) return
-    supabase.rpc('verify_utoronto_email', { p_token: token }).then(({ data, error }) => {
-      setResult(error ? { error: 'not_found' } : data)
-      // The Field Guide bridge: the student has just proven control of this
-      // address, so fire the guide's roster-join for it. Roster-matched
-      // students get their Field Guide sign-in link in the same inbox
-      // they're standing in; unmatched addresses (e.g. a class without a
-      // guide roster) send nothing. Best-effort by design — a bridge
-      // failure must never dampen the verification success screen.
-      if (data?.ok && data?.email) {
-        fetch('/api/roster-join', {
+    // Verification now runs through /api/fieldguide-continue, which consumes
+    // the same single-use token server-side and — when the verified address
+    // matches the Field Guide roster — returns a ready magic link, so the
+    // success screen can offer "Continue to the Field Guide" with no second
+    // email. The token click is the proof of address control either way.
+    ;(async () => {
+      try {
+        const r = await fetch('/api/fieldguide-continue', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: data.email }),
-        }).then(async (r) => {
-          const body = await r.json().catch(() => ({}))
-          if (r.ok && body.matched) setFieldGuide('sent')
-          else if (r.status === 429 && body.matched) setFieldGuide('already')
-        }).catch(() => {})
+          body: JSON.stringify({ token }),
+        })
+        if (!r.ok && r.status !== 200) throw new Error(`endpoint ${r.status}`)
+        const data = await r.json()
+        setResult(data?.ok ? data : (data ?? { error: 'not_found' }))
+        if (data?.ok && data?.fieldGuideUrl) setFieldGuide({ url: data.fieldGuideUrl })
+      } catch {
+        // Endpoint unreachable — fall back to the direct RPC (verification
+        // must never depend on the bridge) and the emailed-link bridge.
+        const { data, error } = await supabase.rpc('verify_utoronto_email', { p_token: token })
+        setResult(error ? { error: 'not_found' } : data)
+        if (data?.ok && data?.email) {
+          fetch('/api/roster-join', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: data.email }),
+          }).then(async (r) => {
+            const body = await r.json().catch(() => ({}))
+            if (r.ok && body.matched) setFieldGuide('sent')
+            else if (r.status === 429 && body.matched) setFieldGuide('already')
+          }).catch(() => {})
+        }
       }
-    })
+    })()
   }, [token])
 
   return (
@@ -51,6 +65,14 @@ export default function ClassVerifyEmail() {
           <>
             <h1 style={S.title}>Email verified</h1>
             <p style={S.sub}>You're all set — this covers every class you join with this account.</p>
+            {fieldGuide?.url && (
+              <>
+                <p style={S.sub}>
+                  Your course textbook is ready too — no second email needed.
+                </p>
+                <a href={fieldGuide.url} style={S.fgButton}>Continue to the Field Guide →</a>
+              </>
+            )}
             {fieldGuide === 'sent' && (
               <p style={S.sub}>
                 <strong>One more email is on its way</strong> — your sign-in link for the course
@@ -91,4 +113,8 @@ const S = {
   title: { fontFamily: SERIF, fontSize: 26, color: 'var(--tx)', marginBottom: 8 },
   sub: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.5 },
   link: { display: 'inline-block', marginTop: 16, fontSize: 14, color: 'var(--pk)', fontWeight: 600, textDecoration: 'none' },
+  fgButton: {
+    display: 'inline-block', marginTop: 12, padding: '11px 24px', borderRadius: 22,
+    background: 'var(--pk)', color: '#fff', fontSize: 14, fontWeight: 600, textDecoration: 'none',
+  },
 }

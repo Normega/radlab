@@ -309,11 +309,24 @@ export default function ClassRoom({ session }) {
     )
   }
 
+  // Session-aware textbook card: the Field Guide is a separate Supabase
+  // project, but it shares this origin — its session sits in localStorage
+  // under courseClient's storageKey. If one is present, skip the join door
+  // and link straight into the wiki (an expired session just bounces to the
+  // join door anyway, so a stale token costs one extra hop, not a dead end).
+  const hasFieldGuideSession = (() => {
+    try { return !!JSON.parse(localStorage.getItem('radlab-academic-auth'))?.access_token }
+    catch { return false }
+  })()
   const fieldGuideCard = classInfo.field_guide_url ? (
-    <a href={classInfo.field_guide_url} style={S.fgCard}>
+    <a href={hasFieldGuideSession ? '/academic/fieldguide/wiki' : classInfo.field_guide_url} style={S.fgCard}>
       <p style={S.fgEyebrow}>Course textbook</p>
       <p style={S.fgTitle}>The Field Guide to Abnormal Psychology</p>
-      <p style={S.fgMeta}>Free, built for this course — sign in with your utoronto email →</p>
+      <p style={S.fgMeta}>
+        {hasFieldGuideSession
+          ? 'You’re signed in — open the Field Guide →'
+          : 'Free, built for this course — sign in with your utoronto email →'}
+      </p>
     </a>
   ) : null
 
