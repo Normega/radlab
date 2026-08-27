@@ -589,7 +589,7 @@ export default function BrandAssets() {
         <h2 className="brand-heading">Implementation status</h2>
         <p className="brand-section-note">
           What the system specifies is above; what the codebase actually does is below.
-          Drift measured 2026-08-26 by <code>npm run audit:design</code>{' '}
+          Drift measured 2026-08-27 by <code>npm run audit:design</code>{' '}
           (<code>scripts/design-audit.mjs</code>, 374 files), which now also runs as a ratchet:
           <code> audit:design:check</code> fails any change that pushes a count above the
           committed <code>design-audit/baseline.json</code>. Sanctioned content — game artwork,
@@ -609,17 +609,18 @@ export default function BrandAssets() {
           spec wins.
         </Gap>
 
-        <Gap title="Type scale — 45% compliant, now ratcheted">
-          Of 1,669 font-size declarations in ratcheted scope, 743 land on the six steps.
-          13px alone accounts for 326, despite a ruling to migrate 13&nbsp;&rarr;&nbsp;14;
-          372 declarations sit below the 12px floor, concentrated in admin. These counts grew
-          for months while the rule was documented but untooled &mdash; as of 2026-08-26 the
-          ratchet fails any commit that increases them.
+        <Gap title="Type scale — 64% compliant and ratcheted">
+          Of 1,676 font-size declarations in ratcheted scope, 1,072 land on the six steps.
+          The 13&nbsp;&rarr;&nbsp;14 migration completed 2026-08-27 (324 replacements; 13px
+          site-wide is now <strong>zero</strong>, locked by the ratchet). 374 declarations
+          still sit below the 12px floor and 230 elsewhere off-scale, concentrated in admin.
+          These counts grew for months while the rule was documented but untooled &mdash; the
+          ratchet now fails any commit that increases them.
         </Gap>
 
         <Gap title="Colour — token layer sound, literals not cleaned up">
-          194 occurrences hard-code a token value instead of referencing it &mdash; cosmetic
-          rather than visible drift. 544 hexes are genuinely off-palette; the single worst
+          187 occurrences hard-code a token value instead of referencing it &mdash; cosmetic
+          rather than visible drift. 540 hexes are genuinely off-palette; the single worst
           file is admin&rsquo;s TrainingUpload (68), and the bulk are admin status tints
           awaiting success and warning semantics.
         </Gap>

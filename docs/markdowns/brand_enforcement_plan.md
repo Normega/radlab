@@ -105,10 +105,12 @@ unless Norm asks.
 
 ## Phase 4 — the two standing migrations
 
-- **13px → 14px** (401 occurrences, ruling already exists). Mechanical; do it
-  surface-by-surface right after Phase 1 lands so the ratchet locks each batch in.
-- **Sub-12px cleanup** (372 occurrences, concentrated in admin). Admin is lab-facing, so
-  it's lower stakes but the same rule; batch it behind the 13px pass.
+- **13px → 14px** ✅ (2026-08-27). 324 mechanical replacements via a codemod mirroring the
+  audit's font-size regex, two batches (participant/student surfaces, then admin/lab).
+  Site-scope 13px is zero and the ratchet holds it there. Type-scale compliance 45% → 64%.
+- **Sub-12px cleanup** (374 occurrences, concentrated in admin). Admin is lab-facing, so
+  it's lower stakes but the same rule. Unlike the 13px pass this one reflows dense admin
+  tables, so it goes surface-by-surface with eyes on each.
 
 ## Cadence and governance
 
