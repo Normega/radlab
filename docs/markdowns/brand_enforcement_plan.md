@@ -108,9 +108,15 @@ unless Norm asks.
 - **13px → 14px** ✅ (2026-08-27). 324 mechanical replacements via a codemod mirroring the
   audit's font-size regex, two batches (participant/student surfaces, then admin/lab).
   Site-scope 13px is zero and the ratchet holds it there. Type-scale compliance 45% → 64%.
-- **Sub-12px cleanup** (374 occurrences, concentrated in admin). Admin is lab-facing, so
-  it's lower stakes but the same rule. Unlike the 13px pass this one reflows dense admin
-  tables, so it goes surface-by-surface with eyes on each.
+- **Sub-12px cleanup** ✅ (2026-08-30). 332 replacements in three review batches
+  (participant surfaces / academic / admin). Zero remaining, ratchet-locked. Two findings
+  along the way, both now encoded in the audit: rem-valued sizes are converted (0.75rem = 12px
+  was being miscounted as sub-12), and SVG <code>&lt;text&gt;</code> is skipped entirely —
+  its sizes are viewBox coordinates that scale with the drawing (Dashboard's wheel and
+  sparkline labels were false positives).
+- **Next: other off-scale sizes** (257 — 15/17/18/22px and rem equivalents). The least
+  mechanical slice: each needs a judgment call between neighbouring steps, so it migrates
+  surface-by-surface, not by codemod.
 
 ## Cadence and governance
 

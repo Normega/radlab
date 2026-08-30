@@ -589,7 +589,7 @@ export default function BrandAssets() {
         <h2 className="brand-heading">Implementation status</h2>
         <p className="brand-section-note">
           What the system specifies is above; what the codebase actually does is below.
-          Drift measured 2026-08-27 by <code>npm run audit:design</code>{' '}
+          Drift measured 2026-08-30 by <code>npm run audit:design</code>{' '}
           (<code>scripts/design-audit.mjs</code>, 374 files), which now also runs as a ratchet:
           <code> audit:design:check</code> fails any change that pushes a count above the
           committed <code>design-audit/baseline.json</code>. Sanctioned content — game artwork,
@@ -609,13 +609,14 @@ export default function BrandAssets() {
           spec wins.
         </Gap>
 
-        <Gap title="Type scale — 64% compliant and ratcheted">
-          Of 1,676 font-size declarations in ratcheted scope, 1,072 land on the six steps.
-          The 13&nbsp;&rarr;&nbsp;14 migration completed 2026-08-27 (324 replacements; 13px
-          site-wide is now <strong>zero</strong>, locked by the ratchet). 374 declarations
-          still sit below the 12px floor and 230 elsewhere off-scale, concentrated in admin.
-          These counts grew for months while the rule was documented but untooled &mdash; the
-          ratchet now fails any commit that increases them.
+        <Gap title="Type scale — 85% compliant and ratcheted">
+          Of 1,701 font-size declarations in ratcheted scope, 1,444 land on the six steps.
+          The 13&nbsp;&rarr;&nbsp;14 migration completed 2026-08-27 (324 replacements) and the
+          sub-12px cleanup completed 2026-08-30 (332 replacements): both counts are now{' '}
+          <strong>zero</strong>, locked by the ratchet. What remains is 257 declarations at
+          other off-scale sizes (15/17/18/22px and rem equivalents) &mdash; the last and least
+          mechanical slice, since some sit mid-hierarchy and need a judgment call between the
+          neighbouring steps.
         </Gap>
 
         <Gap title="Colour — token layer sound, literals not cleaned up">
