@@ -287,12 +287,12 @@ const S = {
   legend: { fontSize: 12, color: 'var(--tx3)', marginTop: 8 },
   legendSelf: { display: 'inline-block', width: 9, height: 9, borderRadius: '50%', background: 'var(--pk)', marginRight: 4 },
   legendOther: { display: 'inline-block', width: 9, height: 9, borderRadius: '50%', background: 'var(--gy)', marginRight: 4, marginLeft: 10 },
-  subLabel: { fontFamily: MONO, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--tx3)', marginBottom: 10 },
+  subLabel: { fontFamily: MONO, fontSize: 12, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--tx3)', marginBottom: 10 },
   pacingWrap: { display: 'flex', gap: 10, alignItems: 'flex-end', justifyContent: 'center', position: 'relative', paddingBottom: 20 },
   pacingCol: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', width: 36, height: 70 },
   pacingFill: { width: '100%', background: 'var(--pk)', borderRadius: 4, minHeight: 2 },
-  pacingCount: { fontSize: 11, color: 'var(--tx3)', marginTop: 4, fontFamily: MONO },
-  pacingLabels: { position: 'absolute', bottom: 0, left: 0, right: 0, display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--tx3)' },
+  pacingCount: { fontSize: 12, color: 'var(--tx3)', marginTop: 4, fontFamily: MONO },
+  pacingLabels: { position: 'absolute', bottom: 0, left: 0, right: 0, display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--tx3)' },
   myQuestionStatus: { fontSize: 12, color: 'var(--tx2)', marginBottom: 10 },
   questionRow: {
     display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
@@ -314,5 +314,5 @@ const S = {
   }),
   quizResultBarTrack: { flex: 1, height: 10, borderRadius: 5, background: 'var(--bg)', overflow: 'hidden' },
   quizResultBarFill: (correct) => ({ height: '100%', borderRadius: 5, background: correct ? '#1a8a4a' : 'var(--pk)' }),
-  quizResultCount: { fontFamily: MONO, fontSize: 11, color: 'var(--tx3)', width: 18, textAlign: 'right' },
+  quizResultCount: { fontFamily: MONO, fontSize: 12, color: 'var(--tx3)', width: 18, textAlign: 'right' },
 }

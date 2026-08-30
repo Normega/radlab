@@ -134,7 +134,7 @@ const STATUS_COLOUR = {
 const S = {
   wrap: { marginTop: 26, paddingTop: 16, borderTop: '1px solid var(--bd)' },
   opener: { fontFamily: MONO, fontSize: 12, letterSpacing: 0.5, padding: '7px 14px', borderRadius: 18, border: '1px dashed var(--bd)', background: 'none', color: 'var(--tx2)', cursor: 'pointer' },
-  label: { fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx2)', margin: '0 0 8px' },
+  label: { fontFamily: MONO, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx2)', margin: '0 0 8px' },
   kindBtn: { fontSize: 14, padding: '7px 14px', borderRadius: 18, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx2)', cursor: 'pointer' },
   kindOn: { borderColor: 'var(--pk)', color: 'var(--tx)', background: 'rgba(214,51,132,.07)' },
   hint: { fontSize: 12.5, color: 'var(--tx2)', lineHeight: 1.5, margin: '0 0 8px', maxWidth: '62ch' },
@@ -146,7 +146,7 @@ const S = {
   cancel: { fontSize: 13.5, padding: '7px 13px', borderRadius: 18, border: '1px solid var(--bd)', background: 'none', color: 'var(--tx2)', cursor: 'pointer' },
   notice: { marginTop: 10, fontFamily: MONO, fontSize: 12.5, color: 'var(--pk)' },
   mineRow: { display: 'flex', gap: 10, alignItems: 'baseline', padding: '5px 0', borderBottom: '1px dotted var(--bd)' },
-  status: { fontFamily: MONO, fontSize: 10.5, letterSpacing: 0.5, textTransform: 'uppercase', flexShrink: 0 },
+  status: { fontFamily: MONO, fontSize: 12, letterSpacing: 0.5, textTransform: 'uppercase', flexShrink: 0 },
   mineBody: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.45 },
   resolution: { color: 'var(--tx)' },
 }

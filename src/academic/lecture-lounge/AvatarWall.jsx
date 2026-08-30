@@ -59,7 +59,7 @@ const S = {
   grid: { display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center', maxWidth: 360, margin: '0 auto' },
   slot: (arriving) => ({ animation: arriving ? 'lecture-lounge-avatar-in 0.5s ease-out' : 'none' }),
   empty: { fontSize: 14, color: 'var(--tx3)', textAlign: 'center' },
-  count: { fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx3)', textAlign: 'center', marginBottom: 10 },
+  count: { fontFamily: MONO, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx3)', textAlign: 'center', marginBottom: 10 },
 }
 
 if (typeof document !== 'undefined' && !document.getElementById('lecture-lounge-avatar-in-kf')) {

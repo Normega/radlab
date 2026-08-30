@@ -796,8 +796,8 @@ const G = {
   row: { display: 'flex', gap: 8, alignItems: 'baseline', padding: '5px 0' },
   dot: { flexShrink: 0, width: 8, height: 8, borderRadius: '50%', position: 'relative', top: -1 },
   rowText: { fontSize: 13.5, color: 'var(--tx2)', lineHeight: 1.5 },
-  diffTag: { fontFamily: MONO, fontSize: 10.5, letterSpacing: 0.5, textTransform: 'uppercase' },
-  flagBtn: { marginTop: 4, fontFamily: MONO, fontSize: 11, letterSpacing: 0.5, padding: '3px 10px', borderRadius: 14, border: '1px dashed var(--bd)', background: 'none', color: 'var(--tx2)', cursor: 'pointer' },
+  diffTag: { fontFamily: MONO, fontSize: 12, letterSpacing: 0.5, textTransform: 'uppercase' },
+  flagBtn: { marginTop: 4, fontFamily: MONO, fontSize: 12, letterSpacing: 0.5, padding: '3px 10px', borderRadius: 14, border: '1px dashed var(--bd)', background: 'none', color: 'var(--tx2)', cursor: 'pointer' },
   form: { marginTop: 8, display: 'flex', flexDirection: 'column', gap: 8 },
   askInput: { width: '100%', boxSizing: 'border-box', minHeight: 64, resize: 'vertical', fontSize: 13.5, lineHeight: 1.5, padding: '8px 10px', borderRadius: 8, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx)' },
   diffSelect: { fontSize: 14, padding: '6px 8px', borderRadius: 8, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx)' },
@@ -827,7 +827,7 @@ const S = {
   summary: { fontSize: 17, color: 'var(--tx2)', lineHeight: 1.6, margin: '12px 0 0', maxWidth: '62ch' },
 
   prevalence: { display: 'flex', gap: 10, alignItems: 'baseline', flexWrap: 'wrap', margin: '14px 0 0', padding: '10px 14px', borderRadius: 10, background: 'var(--bgc)', border: '1px solid var(--bd)', maxWidth: '62ch' },
-  prevalenceLabel: { flex: '0 0 auto', fontFamily: MONO, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--pk)', textDecoration: 'none' },
+  prevalenceLabel: { flex: '0 0 auto', fontFamily: MONO, fontSize: 12, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--pk)', textDecoration: 'none' },
   prevalenceText: { flex: '1 1 200px', fontSize: 14, color: 'var(--tx)', lineHeight: 1.5 },
 
   sub: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.55 },
@@ -835,7 +835,7 @@ const S = {
   link: { color: 'var(--pk)', textDecoration: 'none' },
   code: { fontFamily: MONO, fontSize: 14 },
 
-  publishBtn: { fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', padding: '4px 12px', borderRadius: 14, border: 'none', background: 'var(--pk)', color: '#fff', cursor: 'pointer' },
+  publishBtn: { fontFamily: MONO, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', padding: '4px 12px', borderRadius: 14, border: 'none', background: 'var(--pk)', color: '#fff', cursor: 'pointer' },
   licenseFoot: { fontSize: 12, color: 'var(--tx2)', marginTop: 40, borderTop: '1px solid var(--bd)', paddingTop: 12 },
   draftBanner: { marginTop: 14, padding: '10px 12px', borderRadius: 8, background: 'rgba(214,51,132,.07)', border: '1px solid rgba(214,51,132,.28)', fontSize: 14, color: 'var(--tx)' },
 
@@ -847,14 +847,14 @@ const S = {
   stampBtnOff: { fontSize: 12.5, fontWeight: 600, padding: '6px 13px', borderRadius: 18, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx2)', cursor: 'pointer', whiteSpace: 'nowrap' },
 
   criteria: { display: 'block', marginTop: 16, padding: '14px 16px', borderRadius: 12, background: 'var(--bgc)', border: '1px solid var(--bd)', textDecoration: 'none' },
-  criteriaLabel: { display: 'block', fontFamily: MONO, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--pk)' },
+  criteriaLabel: { display: 'block', fontFamily: MONO, fontSize: 12, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--pk)' },
   criteriaText: { display: 'block', fontSize: 15, color: 'var(--tx)', marginTop: 4 },
   criteriaNote: { display: 'block', fontSize: 12, color: 'var(--tx2)', marginTop: 4 },
 
   layout: { display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 28, marginTop: 22, alignItems: 'start' },
   foldBar: { display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', margin: '0 0 4px' },
-  foldBtn: { fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', padding: '5px 12px', borderRadius: 16, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx2)', cursor: 'pointer' },
-  foldCount: { fontFamily: MONO, fontSize: 11, letterSpacing: 0.5, color: 'var(--tx2)' },
+  foldBtn: { fontFamily: MONO, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', padding: '5px 12px', borderRadius: 16, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx2)', cursor: 'pointer' },
+  foldCount: { fontFamily: MONO, fontSize: 12, letterSpacing: 0.5, color: 'var(--tx2)' },
   foldSection: { borderTop: '1px solid var(--bd)', marginTop: 18 },
   // The h2 keeps the anchor id and the document outline; the button inside it
   // is what takes the click, so the heading stays a heading to a screen reader.
@@ -863,7 +863,7 @@ const S = {
   caret: { flexShrink: 0, fontSize: 14, color: 'var(--pk)', transition: 'transform .15s ease', display: 'inline-block' },
 
   toc: { position: 'sticky', top: 16, alignSelf: 'start', borderLeft: '2px solid var(--bd)', paddingLeft: 12 },
-  tocLabel: { fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx2)', margin: '0 0 6px' },
+  tocLabel: { fontFamily: MONO, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx2)', margin: '0 0 6px' },
   tocLink: { display: 'block', fontSize: 14, color: 'var(--tx2)', textDecoration: 'none', padding: '3px 0' },
 
   section: { marginTop: 30, paddingTop: 18, borderTop: '1px solid var(--bd)' },
@@ -872,7 +872,7 @@ const S = {
 
   editBtn: { flexShrink: 0, marginTop: 8, fontSize: 14, fontWeight: 600, padding: '7px 14px', borderRadius: 20, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx)', cursor: 'pointer' },
   editBox: { marginTop: 16, padding: 16, borderRadius: 12, background: 'var(--bgc)', border: '1px solid var(--bd)' },
-  colLabel: { fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx2)', margin: '0 0 8px' },
+  colLabel: { fontFamily: MONO, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx2)', margin: '0 0 8px' },
   editArea: { width: '100%', boxSizing: 'border-box', minHeight: 420, resize: 'vertical', fontFamily: MONO, fontSize: 12.5, lineHeight: 1.55, padding: 12, borderRadius: 8, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx)' },
   noteInput: { width: '100%', boxSizing: 'border-box', marginTop: 10, fontSize: 14, padding: '9px 11px', borderRadius: 8, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx)' },
   saveNotice: { marginTop: 12, fontFamily: MONO, fontSize: 14, color: 'var(--pk)', lineHeight: 1.5 },

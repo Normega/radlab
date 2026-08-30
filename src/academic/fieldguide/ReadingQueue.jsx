@@ -122,5 +122,5 @@ const S = {
   row: { display: 'flex', alignItems: 'baseline', gap: 10, padding: '6px 4px', borderBottom: '1px dotted var(--bd)', textDecoration: 'none' },
   dot: { flexShrink: 0, width: 9, height: 9, borderRadius: '50%', position: 'relative', top: -1 },
   rowTitle: { fontSize: 14.5, color: 'var(--tx)', flex: '1 1 auto' },
-  rowMeta: { fontFamily: MONO, fontSize: 11, color: 'var(--tx2)', whiteSpace: 'nowrap' },
+  rowMeta: { fontFamily: MONO, fontSize: 12, color: 'var(--tx2)', whiteSpace: 'nowrap' },
 }

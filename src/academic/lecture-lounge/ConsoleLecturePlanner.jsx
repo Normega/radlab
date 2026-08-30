@@ -504,21 +504,21 @@ const S = {
   lectureActions: { display: 'flex', gap: 12, padding: '12px 0 4px' },
   lectureEditForm: { display: 'flex', gap: 8, alignItems: 'center', padding: '12px 0', flexWrap: 'wrap' },
 
-  subLabel: { fontFamily: MONO, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--tx3)', margin: '16px 0 8px' },
+  subLabel: { fontFamily: MONO, fontSize: 12, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--tx3)', margin: '16px 0 8px' },
 
   checkinRow: { display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8, background: 'var(--bg)', marginBottom: 6, flexWrap: 'wrap' },
   checkinPos: { fontFamily: MONO, fontSize: 12, color: 'var(--tx3)' },
   checkinSummary: { flex: 1, fontSize: 14, color: 'var(--tx)' },
-  autoCloseBadge: { fontFamily: MONO, fontSize: 11, color: 'var(--pkd)', background: 'var(--pkb)', padding: '2px 8px', borderRadius: 6 },
-  statusBadge: { fontFamily: MONO, fontSize: 11, color: 'var(--tx3)', textTransform: 'uppercase' },
-  weeklyBadge: { fontFamily: MONO, fontSize: 11, color: '#fff', background: 'var(--pk)', padding: '2px 8px', borderRadius: 6, textTransform: 'uppercase' },
+  autoCloseBadge: { fontFamily: MONO, fontSize: 12, color: 'var(--pkd)', background: 'var(--pkb)', padding: '2px 8px', borderRadius: 6 },
+  statusBadge: { fontFamily: MONO, fontSize: 12, color: 'var(--tx3)', textTransform: 'uppercase' },
+  weeklyBadge: { fontFamily: MONO, fontSize: 12, color: '#fff', background: 'var(--pk)', padding: '2px 8px', borderRadius: 6, textTransform: 'uppercase' },
   weeklyToggle: { display: 'block', fontFamily: MONO, fontSize: 12, color: 'var(--tx2)', marginBottom: 10, cursor: 'pointer' },
   linkBtn: { background: 'none', border: 'none', color: 'var(--pk)', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', padding: 0 },
   linkBtnDanger: { background: 'none', border: 'none', color: '#c04a4a', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', padding: 0 },
 
   checkinForm: { background: 'var(--bg)', borderRadius: 10, padding: 14, marginBottom: 8 },
   fieldRow: { display: 'flex', gap: 20, marginBottom: 10 },
-  fieldLabel: { display: 'block', fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx3)', marginBottom: 4 },
+  fieldLabel: { display: 'block', fontFamily: MONO, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx3)', marginBottom: 4 },
   input: { padding: '7px 10px', borderRadius: 7, border: '1px solid var(--bds)', fontSize: 14, fontFamily: 'inherit' },
 
   activityRow: { display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 4 },
@@ -532,11 +532,11 @@ const S = {
   quizOptionRow: { display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 },
 
   orderList: { marginTop: 10 },
-  orderLabel: { fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx3)', marginBottom: 4 },
+  orderLabel: { fontFamily: MONO, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx3)', marginBottom: 4 },
   orderRow: { display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, padding: '3px 0' },
   orderIndex: { fontFamily: MONO, color: 'var(--tx3)', width: 16 },
   orderName: { flex: 1, color: 'var(--tx)' },
-  orderBtn: { border: '1px solid var(--bds)', background: 'var(--bgc)', borderRadius: 5, width: 22, height: 22, cursor: 'pointer', fontSize: 11 },
+  orderBtn: { border: '1px solid var(--bds)', background: 'var(--bgc)', borderRadius: 5, width: 22, height: 22, cursor: 'pointer', fontSize: 12 },
 
   formBtnRow: { display: 'flex', gap: 8, marginTop: 12 },
   primaryBtnSm: { padding: '7px 16px', borderRadius: 8, border: 'none', background: 'var(--pk)', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' },

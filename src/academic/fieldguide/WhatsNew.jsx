@@ -137,9 +137,9 @@ const S = {
   weekH: { fontFamily: SERIF, fontSize: 19, color: 'var(--tx)', margin: '0 0 10px', paddingBottom: 6, borderBottom: '1px solid var(--bd)' },
   entry: { padding: '10px 0', borderBottom: '1px dotted var(--bd)' },
   entryTop: { display: 'flex', gap: 10, alignItems: 'baseline', flexWrap: 'wrap' },
-  originTag: { fontFamily: MONO, fontSize: 10.5, letterSpacing: 0.5, textTransform: 'uppercase', border: '1px solid', borderRadius: 12, padding: '1px 8px', whiteSpace: 'nowrap' },
+  originTag: { fontFamily: MONO, fontSize: 12, letterSpacing: 0.5, textTransform: 'uppercase', border: '1px solid', borderRadius: 12, padding: '1px 8px', whiteSpace: 'nowrap' },
   pageLink: { fontSize: 15, fontWeight: 600, color: 'var(--tx)', textDecoration: 'none' },
-  examTag: { fontFamily: MONO, fontSize: 10.5, letterSpacing: 0.5, textTransform: 'uppercase', color: '#2e7d32', border: '1px solid #2e7d32', borderRadius: 12, padding: '1px 8px', whiteSpace: 'nowrap' },
-  refTag: { fontFamily: MONO, fontSize: 10.5, letterSpacing: 0.5, textTransform: 'uppercase', color: 'var(--tx2)', border: '1px solid var(--bd)', borderRadius: 12, padding: '1px 8px', whiteSpace: 'nowrap' },
+  examTag: { fontFamily: MONO, fontSize: 12, letterSpacing: 0.5, textTransform: 'uppercase', color: '#2e7d32', border: '1px solid #2e7d32', borderRadius: 12, padding: '1px 8px', whiteSpace: 'nowrap' },
+  refTag: { fontFamily: MONO, fontSize: 12, letterSpacing: 0.5, textTransform: 'uppercase', color: 'var(--tx2)', border: '1px solid var(--bd)', borderRadius: 12, padding: '1px 8px', whiteSpace: 'nowrap' },
   entryBody: { fontSize: 13.5, color: 'var(--tx2)', lineHeight: 1.55, margin: '6px 0 0', maxWidth: '68ch' },
 }

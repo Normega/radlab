@@ -359,10 +359,10 @@ export default function ClassRemote({ session }) {
 
 const S = {
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '20px 20px 8px', gap: 12 },
-  eyebrow: { fontFamily: MONO, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--pk)', marginBottom: 4 },
+  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--pk)', marginBottom: 4 },
   h1: { fontFamily: SERIF, fontSize: 22, color: 'var(--tx)' },
   connBadge: (status) => ({
-    fontFamily: MONO, fontSize: 11, padding: '4px 10px', borderRadius: 20, whiteSpace: 'nowrap',
+    fontFamily: MONO, fontSize: 12, padding: '4px 10px', borderRadius: 20, whiteSpace: 'nowrap',
     background: status === 'live' ? '#e5f7ee' : '#fdf2e5', color: status === 'live' ? '#1a8a4a' : '#b8760f',
   }),
   wrap: { maxWidth: 480, margin: '0 auto', padding: '12px 16px 40px' },
@@ -373,7 +373,7 @@ const S = {
   pos: { fontFamily: MONO, fontSize: 12, color: 'var(--tx3)' },
   activities: { flex: 1, fontSize: 15, color: 'var(--tx)', fontWeight: 600 },
   statusBadge: (status) => ({
-    fontFamily: MONO, fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, padding: '3px 8px', borderRadius: 6,
+    fontFamily: MONO, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, padding: '3px 8px', borderRadius: 6,
     background: status === 'open' ? 'var(--pkb)' : status === 'results_ready' ? '#e5f7ee' : 'var(--bg)',
     color: status === 'open' ? 'var(--pkd)' : status === 'results_ready' ? '#1a8a4a' : 'var(--tx3)',
   }),
@@ -391,7 +391,7 @@ const S = {
   },
   doneLabel: { fontSize: 14, color: 'var(--tx3)', padding: '10px 0' },
   questionsWrap: { marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--bd)' },
-  questionsLabel: { fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx3)', marginBottom: 8 },
+  questionsLabel: { fontFamily: MONO, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx3)', marginBottom: 8 },
   noQuestions: { fontSize: 14, color: 'var(--tx3)' },
   questionRow: { background: 'var(--bg)', borderRadius: 10, padding: '10px 12px', marginBottom: 8 },
   questionTextRow: { display: 'flex', justifyContent: 'space-between', gap: 10, marginBottom: 8 },
@@ -402,5 +402,5 @@ const S = {
     padding: '7px 14px', borderRadius: 8, border: 'none', background: 'var(--pk)',
     color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
   },
-  answeredLabel: { fontFamily: MONO, fontSize: 11, color: 'var(--tx3)' },
+  answeredLabel: { fontFamily: MONO, fontSize: 12, color: 'var(--tx3)' },
 }

@@ -227,7 +227,7 @@ const S = {
   avatarSlot: { flexShrink: 0 },
   responseText: { fontSize: 14.5, color: 'var(--tx)', lineHeight: 1.5, whiteSpace: 'pre-wrap', overflowWrap: 'break-word' },
   responseMetaRow: { display: 'flex', gap: 10, alignItems: 'center', marginTop: 6 },
-  mineBadge: { fontFamily: MONO, fontSize: 11, color: 'var(--pk)' },
-  removedBadge: { fontFamily: MONO, fontSize: 11, color: '#c04a4a' },
+  mineBadge: { fontFamily: MONO, fontSize: 12, color: 'var(--pk)' },
+  removedBadge: { fontFamily: MONO, fontSize: 12, color: '#c04a4a' },
   error: { fontSize: 14, color: '#c04a4a', marginTop: 8 },
 }

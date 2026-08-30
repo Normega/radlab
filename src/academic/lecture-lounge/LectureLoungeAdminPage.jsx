@@ -275,7 +275,7 @@ const S = {
   emptyHint: { fontSize: 14, color: 'var(--tx2)', margin: 0 },
   tableWrap: { overflowX: 'auto', borderRadius: 10, border: '1px solid var(--bd)', background: 'var(--bgc)' },
   table: { width: '100%', borderCollapse: 'collapse' },
-  th: { fontFamily: MONO, fontSize: 11, color: 'var(--tx3)', textAlign: 'left', padding: '10px 16px', borderBottom: '1px solid var(--bd)', textTransform: 'uppercase', letterSpacing: '0.06em' },
+  th: { fontFamily: MONO, fontSize: 12, color: 'var(--tx3)', textAlign: 'left', padding: '10px 16px', borderBottom: '1px solid var(--bd)', textTransform: 'uppercase', letterSpacing: '0.06em' },
   tr: { borderBottom: '1px solid var(--bd)' },
   td: { padding: '12px 16px', verticalAlign: 'middle' },
   expandCell: { padding: '12px 16px 20px', background: 'var(--bg)', borderBottom: '1px solid var(--bd)' },

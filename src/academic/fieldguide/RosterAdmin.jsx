@@ -302,8 +302,8 @@ const S = {
   chip: { fontFamily: MONO, fontSize: 12, padding: '5px 12px', borderRadius: 16, border: '1px solid var(--bd)', background: 'var(--bgc)', cursor: 'pointer' },
   chipOn: { borderColor: 'var(--pk)', background: 'rgba(214,51,132,.08)' },
   table: { width: '100%', borderCollapse: 'collapse', fontSize: 14 },
-  th: { textAlign: 'left', fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx2)', padding: '8px 10px', borderBottom: '1px solid var(--bd)' },
+  th: { textAlign: 'left', fontFamily: MONO, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx2)', padding: '8px 10px', borderBottom: '1px solid var(--bd)' },
   td: { padding: '8px 10px', borderBottom: '1px solid var(--bd)', color: 'var(--tx)' },
-  tiny: { fontFamily: MONO, fontSize: 11, padding: '3px 10px', marginRight: 6, borderRadius: 12, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx2)', cursor: 'pointer' },
+  tiny: { fontFamily: MONO, fontSize: 12, padding: '3px 10px', marginRight: 6, borderRadius: 12, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx2)', cursor: 'pointer' },
   attemptRow: { display: 'flex', gap: 14, alignItems: 'center', padding: '6px 0', borderBottom: '1px dotted var(--bd)' },
 }
