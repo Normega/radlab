@@ -123,7 +123,7 @@ export default function ComposableInstrumentStepWrapper({
 
 const S = {
   wrap:      { padding: '40px 24px 60px', maxWidth: 860, margin: '0 auto', fontFamily: '"DM Sans",system-ui,sans-serif' },
-  partLabel: { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', margin: '0 0 16px' },
+  partLabel: { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', margin: '0 0 16px' },
   btnRow:    { display: 'flex', justifyContent: 'flex-end', marginTop: 24 },
   errMsg:    { fontSize: 14, color: 'var(--err-tx)', background: 'var(--err-bg)', border: '1px solid var(--err-bd)', borderRadius: 8, padding: '8px 14px', marginTop: 16 },
   loading:   { padding: 40, textAlign: 'center', fontFamily: '"DM Sans",system-ui,sans-serif', color: 'var(--tx2)', fontSize: 15 },

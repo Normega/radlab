@@ -205,7 +205,7 @@ function RatingStep({ phase, activeIds, labels, skinColor, eyeColor, species, ha
                   {sel.neutral ? 'neutral' : EMOTIONS.find(e => e.id === sel.emotionId)?.name}
                 </div>
                 {!sel.neutral && (
-                  <div style={{ fontFamily: MONO, fontSize: 11, color: '#abadb0', marginTop: 1, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+                  <div style={{ fontFamily: MONO, fontSize: 12, color: '#abadb0', marginTop: 1, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
                     {INTENSITY_LABELS[sel.zone + 1]}
                   </div>
                 )}
@@ -245,7 +245,7 @@ function ItemStep({ item, value, onChange, onConfirm, isLast }) {
 
       <div style={{ width: 308, display: 'flex', flexDirection: 'column', gap: 6 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ fontFamily: SANS, fontSize: 11, color: '#888', width: 60, textAlign: 'right', flexShrink: 0, lineHeight: 1.2 }}>{item.left}</span>
+          <span style={{ fontFamily: SANS, fontSize: 12, color: '#888', width: 60, textAlign: 'right', flexShrink: 0, lineHeight: 1.2 }}>{item.left}</span>
           <div style={{ flex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative' }}>
             <div style={{ position: 'absolute', left: 0, right: 0, top: '50%', height: 2, background: '#E8D0E0', transform: 'translateY(-50%)', borderRadius: 1 }} />
             {[1, 2, 3, 4, 5, 6, 7].map(d => {
@@ -262,7 +262,7 @@ function ItemStep({ item, value, onChange, onConfirm, isLast }) {
               )
             })}
           </div>
-          <span style={{ fontFamily: SANS, fontSize: 11, color: '#888', width: 60, flexShrink: 0, lineHeight: 1.2 }}>{item.right}</span>
+          <span style={{ fontFamily: SANS, fontSize: 12, color: '#888', width: 60, flexShrink: 0, lineHeight: 1.2 }}>{item.right}</span>
         </div>
       </div>
 

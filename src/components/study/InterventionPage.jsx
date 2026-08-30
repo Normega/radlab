@@ -1440,7 +1440,7 @@ const S = {
     display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1,
   },
   stepLabel: {
-    fontSize: 10, fontWeight: 600, letterSpacing: '0.04em',
+    fontSize: 12, fontWeight: 600, letterSpacing: '0.04em',
     textTransform: 'uppercase', marginBottom: 8, whiteSpace: 'nowrap',
   },
   stepTrack: {
@@ -1461,7 +1461,7 @@ const S = {
     display: 'inline-flex', alignItems: 'center', gap: 6,
     background: 'var(--bgp)', border: '1px solid #ddd',
     borderRadius: 6, padding: '4px 10px',
-    fontSize: 11, fontWeight: 600, color: 'var(--tx2)',
+    fontSize: 12, fontWeight: 600, color: 'var(--tx2)',
     textTransform: 'uppercase', letterSpacing: '0.05em',
     marginBottom: 10,
   },
@@ -1519,7 +1519,7 @@ const S = {
     marginBottom: 10,
   },
   videoNote: {
-    fontSize: 11, color: 'var(--gy)', marginTop: 8, textAlign: 'center',
+    fontSize: 12, color: 'var(--gy)', marginTop: 8, textAlign: 'center',
   },
 
   // ── Audio
@@ -1543,7 +1543,7 @@ const S = {
     fontSize: 12, fontFamily: FONT, whiteSpace: 'nowrap',
   },
   audioNote: {
-    fontSize: 11, color: 'var(--gy)', marginTop: 8, textAlign: 'center',
+    fontSize: 12, color: 'var(--gy)', marginTop: 8, textAlign: 'center',
   },
 
   // ── Text block
@@ -1582,7 +1582,7 @@ const S = {
     marginBottom: 12,
   },
   exampleLabel: {
-    fontSize: 11, fontWeight: 600, textTransform: 'uppercase',
+    fontSize: 12, fontWeight: 600, textTransform: 'uppercase',
     letterSpacing: '0.04em', color: 'var(--tx2)',
     margin: '0 0 4px',
   },
@@ -1639,7 +1639,7 @@ const S = {
   },
   sliderEnds: {
     display: 'flex', justifyContent: 'space-between',
-    fontSize: 10, color: 'var(--tx2)', marginTop: 2, fontFamily: FONT,
+    fontSize: 12, color: 'var(--tx2)', marginTop: 2, fontFamily: FONT,
   },
 
   // ── MultiResponse
@@ -1648,7 +1648,7 @@ const S = {
   },
   inputNum: {
     width: 24, height: 24, borderRadius: '50%',
-    background: 'var(--bgp)', fontSize: 11, fontWeight: 600, color: 'var(--tx2)',
+    background: 'var(--bgp)', fontSize: 12, fontWeight: 600, color: 'var(--tx2)',
     display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
     fontFamily: FONT,
   },
@@ -1776,7 +1776,7 @@ const S = {
     background: 'var(--bgp)',
   },
   triggerArrow: {
-    fontSize: 11, color: 'var(--tx2)',
+    fontSize: 12, color: 'var(--tx2)',
     transition: 'transform 0.2s',
   },
   triggerArrowOpen: {

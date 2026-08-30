@@ -188,7 +188,7 @@ const S = {
     display: 'flex', flexDirection: 'column', gap: 24,
   },
   eyebrow: {
-    fontFamily: MONO, fontSize: 11, letterSpacing: '0.12em',
+    fontFamily: MONO, fontSize: 12, letterSpacing: '0.12em',
     textTransform: 'uppercase', color: 'var(--pk)', margin: 0,
   },
   title: {

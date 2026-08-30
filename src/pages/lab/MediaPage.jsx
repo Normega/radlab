@@ -117,7 +117,7 @@ export default function MediaPage() {
 const S = {
   eyebrow: {
     fontFamily: '"Space Mono", monospace',
-    fontSize: '0.7rem',
+    fontSize: '0.75rem',
     letterSpacing: '0.08em',
     textTransform: 'uppercase',
     color: '#f068a4',
@@ -239,7 +239,7 @@ const S = {
   },
   cardMeta: {
     fontFamily: '"Space Mono", monospace',
-    fontSize: '0.7rem',
+    fontSize: '0.75rem',
     color: '#abadb0',
     letterSpacing: '0.04em',
     margin: 0,

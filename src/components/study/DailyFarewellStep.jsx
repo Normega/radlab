@@ -154,7 +154,7 @@ const M = {
     display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 14,
   },
   sectionTitle: {
-    fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase',
+    fontSize: 12, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase',
     color: 'var(--tx2)', fontFamily: FONT,
   },
   contactBlock: {
@@ -176,5 +176,5 @@ const M = {
     borderRadius: 6, padding: '5px 10px', fontFamily: FONT,
   },
   addressNote: { fontSize: 12, color: 'var(--tx2)', marginTop: 10, lineHeight: 1.6, fontFamily: FONT },
-  footerNote: { textAlign: 'center', fontSize: 11, color: 'var(--gy)', marginTop: 10, fontFamily: FONT },
+  footerNote: { textAlign: 'center', fontSize: 12, color: 'var(--gy)', marginTop: 10, fontFamily: FONT },
 }

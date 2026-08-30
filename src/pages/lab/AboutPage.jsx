@@ -123,7 +123,7 @@ const S = {
   hero: { paddingBottom: '0.5rem' },
   eyebrow: {
     fontFamily: '"Space Mono", monospace',
-    fontSize: '0.7rem',
+    fontSize: '0.75rem',
     letterSpacing: '0.08em',
     textTransform: 'uppercase',
     color: 'var(--tx3, #abadb0)',

@@ -81,7 +81,7 @@ const S = {
     cursor: 'pointer', boxShadow: '0 4px 20px rgba(240,104,164,0.30)',
   },
   hint: {
-    fontFamily: MONO, fontSize: 11, letterSpacing: '0.08em',
+    fontFamily: MONO, fontSize: 12, letterSpacing: '0.08em',
     color: 'var(--tx3)', margin: 0, textTransform: 'uppercase',
   },
 }

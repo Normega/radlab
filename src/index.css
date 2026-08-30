@@ -638,7 +638,7 @@ body {
   /* Wide enough for a word, narrow enough that neighbours don't collide at
      360px. Interior labels centre on their tick, so this is split either side. */
   max-width: 66px;
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.25;
   color: #6b6c70;
   overflow-wrap: anywhere;

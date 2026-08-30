@@ -71,7 +71,7 @@ function hit(scope, rel, category, n = 1) {
   }
 }
 
-const FONT_RE = /(?:font-size\s*:\s*|fontSize\s*[:=]\s*[{'"]?\s*)(\d+(?:\.\d+)?)(px)?/g
+const FONT_RE = /(?:font-size\s*:\s*|fontSize\s*[:=]\s*[{'"]?\s*)(\d+(?:\.\d+)?)(px|rem)?/g
 const RADIUS_RE = /(?:border-radius\s*:\s*|borderRadius\s*[:=]\s*[{'"]?\s*)(\d+(?:\.\d+)?)(px)?/g
 const HEX_RE = /#[0-9a-fA-F]{6}\b/g
 const SPACE_RE = /(?:\b(?:padding|margin|gap|row-gap|column-gap)(?:-(?:top|right|bottom|left|inline|block))?\s*:|\b(?:padding|margin|gap|rowGap|columnGap|marginTop|marginRight|marginBottom|marginLeft|paddingTop|paddingRight|paddingBottom|paddingLeft|marginInline|paddingInline|marginBlock|paddingBlock)\s*[:=])([^;\n}]*)/g
@@ -85,10 +85,13 @@ for (const file of files) {
   for (const line of lines) {
     const isTokenDef = /^\s*--[\w-]+\s*:/.test(line)
 
+    // SVG <text> sizes are viewBox coordinates, not CSS px — scaled with the drawing
+    const svgText = /<text\b/.test(line)
     for (const m of line.matchAll(FONT_RE)) {
-      const px = parseFloat(m[1])
+      if (svgText) continue
       // bare numbers in JSX styles are px; CSS needs the unit — require it there
       if (!m[2] && /font-size/.test(m[0])) continue
+      const px = m[2] === 'rem' ? parseFloat(m[1]) * 16 : parseFloat(m[1])
       if (px === HERO_PX) continue // sanctioned Display/Hero
       if (TYPE_SCALE.has(px)) hit(scope, rel, 'font-size: on scale')
       else if (px === 13) hit(scope, rel, 'font-size: off-scale 13px')

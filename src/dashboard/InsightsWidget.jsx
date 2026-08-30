@@ -342,7 +342,7 @@ function CircumplexHistory({ summary, th }) {
         const [x, y] = polar(CR - 16, deg)
         return (
           <text key={label} x={x} y={y} textAnchor="middle" dominantBaseline="middle"
-            fontSize={9} fontFamily="DM Sans, sans-serif" fill="var(--tx2)"
+            fontSize={12} fontFamily="DM Sans, sans-serif" fill="var(--tx2)"
             stroke="var(--bgc)" strokeWidth={2.5} paintOrder="stroke">
             {label.toLowerCase()}
           </text>
@@ -444,7 +444,7 @@ const S = {
     gap: 12, padding: '10px 20px', borderBottom: '1px solid var(--bd)', flexWrap: 'wrap',
   },
   navLabel: {
-    fontFamily: MONO, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase',
+    fontFamily: MONO, fontSize: 12, letterSpacing: '0.1em', textTransform: 'uppercase',
     color: 'var(--tx3)', margin: 0,
   },
   tabRow: { display: 'flex', gap: 2, flexWrap: 'wrap' },
@@ -457,7 +457,7 @@ const S = {
 
   filterBtn: {
     padding: '8px 14px', borderRadius: 24, border: '1px solid var(--bgp)',
-    background: 'var(--bg)', fontFamily: MONO, fontSize: 11, letterSpacing: '0.08em',
+    background: 'var(--bg)', fontFamily: MONO, fontSize: 12, letterSpacing: '0.08em',
     textTransform: 'uppercase', color: 'var(--tx2)', cursor: 'pointer', whiteSpace: 'nowrap',
   },
   filterMenu: {
@@ -468,7 +468,7 @@ const S = {
   },
   filterItem: {
     textAlign: 'left', padding: '8px 10px', borderRadius: 8, border: 'none',
-    background: 'transparent', fontFamily: MONO, fontSize: 11, letterSpacing: '0.08em',
+    background: 'transparent', fontFamily: MONO, fontSize: 12, letterSpacing: '0.08em',
     textTransform: 'uppercase', cursor: 'pointer',
   },
 
@@ -483,15 +483,15 @@ const S = {
   sideCol: { flex: '1 1 300px', display: 'flex', flexDirection: 'column', gap: 18, minWidth: 260 },
   statRow: { display: 'flex', gap: 28, flexWrap: 'wrap' },
 
-  figCaption: { fontFamily: MONO, fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--tx3)', textAlign: 'center', margin: '4px 0 0' },
+  figCaption: { fontFamily: MONO, fontSize: 12, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--tx3)', textAlign: 'center', margin: '4px 0 0' },
 
-  statLabel: { fontFamily: MONO, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--tx3)' },
+  statLabel: { fontFamily: MONO, fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--tx3)' },
   statValue: { fontFamily: MONO, fontSize: 15, color: 'var(--tx)', fontWeight: 700 },
 
   empty:      { textAlign: 'center', padding: '38px 20px' },
   emptyTitle: { fontFamily: SERIF, fontSize: 21, color: 'var(--tx)', margin: '0 0 8px' },
   emptySub:   { fontFamily: SANS, fontSize: 14, color: 'var(--tx2)', maxWidth: 420, margin: '0 auto 16px', lineHeight: 1.6 },
-  emptyCta:   { fontFamily: MONO, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--pk)', textDecoration: 'none' },
+  emptyCta:   { fontFamily: MONO, fontSize: 12, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--pk)', textDecoration: 'none' },
 
   muted: { fontFamily: SANS, fontSize: 14, color: 'var(--tx3)', margin: 0, lineHeight: 1.6 },
 }

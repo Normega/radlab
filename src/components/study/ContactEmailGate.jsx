@@ -114,7 +114,7 @@ const S = {
     display: 'flex', flexDirection: 'column', gap: 20,
   },
   eyebrow: {
-    fontFamily: MONO, fontSize: 11, letterSpacing: '0.12em',
+    fontFamily: MONO, fontSize: 12, letterSpacing: '0.12em',
     textTransform: 'uppercase', color: 'var(--pk)', margin: 0,
   },
   title: {
@@ -126,7 +126,7 @@ const S = {
 
   fieldCol:   { display: 'flex', flexDirection: 'column', gap: 6 },
   fieldLabel: {
-    fontFamily: MONO, fontSize: 11, letterSpacing: '0.08em',
+    fontFamily: MONO, fontSize: 12, letterSpacing: '0.08em',
     textTransform: 'uppercase', color: 'var(--tx2)',
   },
   input: {

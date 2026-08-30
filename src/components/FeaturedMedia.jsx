@@ -89,7 +89,7 @@ const S = {
   },
   body: { display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 },
   outlet: {
-    fontFamily: MONO, fontSize: '0.6875rem', letterSpacing: '0.1em',
+    fontFamily: MONO, fontSize: '0.75rem', letterSpacing: '0.1em',
     textTransform: 'uppercase', transition: 'color 0.28s',
   },
   title: {

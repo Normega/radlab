@@ -169,7 +169,7 @@ export default function MoodCheckinStep({
 const S = {
   wrap:      { display: 'flex', justifyContent: 'center', alignItems: 'flex-start', padding: '40px 24px', minHeight: '60vh' },
   card:      { background: '#fff', border: '1px solid var(--bd)', borderRadius: 14, padding: '36px 32px', maxWidth: 540, width: '100%' },
-  eyebrow:   { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 10px' },
+  eyebrow:   { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 10px' },
   heading:   { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 26, fontWeight: 400, color: 'var(--tx)', margin: '0 0 6px' },
   scaleHint: { fontSize: 14, color: 'var(--tx2)', margin: '0 0 18px', fontFamily: '"DM Sans",system-ui,sans-serif' },
   ratingRow: { display: 'flex', gap: 8, justifyContent: 'space-between' },

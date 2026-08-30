@@ -169,7 +169,7 @@ const S = {
   optionLabel:{ fontSize: 15, fontWeight: 600, color: 'var(--tx)', fontFamily: '"DM Sans",system-ui,sans-serif', marginBottom: 2 },
   optionDesc: { fontSize: 14, color: 'var(--tx2)', fontFamily: '"DM Sans",system-ui,sans-serif' },
   fieldWrap:  { display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 20 },
-  fieldLabel: { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' },
+  fieldLabel: { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' },
   input:      { fontSize: 15, fontFamily: '"DM Sans",system-ui,sans-serif', border: '1px solid var(--bd)', borderRadius: 8, padding: '10px 14px', color: 'var(--tx)', background: '#fff', width: '100%', boxSizing: 'border-box' },
   infoNote:   { fontSize: 14, color: 'var(--tx2)', fontFamily: '"DM Sans",system-ui,sans-serif', margin: '6px 0 0', lineHeight: 1.55 },
   errMsg:     { fontSize: 14, color: '#e04', background: 'var(--err-bg)', border: '1px solid #fcc', borderRadius: 8, padding: '8px 14px', marginBottom: 12 },

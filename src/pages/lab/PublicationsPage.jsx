@@ -67,5 +67,5 @@ export default function PublicationsPage() {
 const S = {
   entry: { paddingBottom: '1.25rem', borderBottom: '1px solid rgba(180,100,140,0.1)' },
   apa: { fontSize: '0.875rem', lineHeight: 1.7, color: '#1c1c1e', margin: 0 },
-  annotation: { fontSize: '0.8125rem', color: '#6b6c70', lineHeight: 1.6, margin: '0.5rem 0 0', fontStyle: 'italic' },
+  annotation: { fontSize: '0.875rem', color: '#6b6c70', lineHeight: 1.6, margin: '0.5rem 0 0', fontStyle: 'italic' },
 }

@@ -36,7 +36,7 @@ export default function DemoModal({ title, subtitle = 'Preview only — no data 
           <p style={{ fontFamily: 'DM Sans', fontSize: 14, fontWeight: 600, color: '#fff', margin: '0 0 2px' }}>
             {title}
           </p>
-          <p style={{ fontFamily: 'Space Mono', fontSize: 11, color: 'rgba(255,255,255,0.45)', margin: 0 }}>
+          <p style={{ fontFamily: 'Space Mono', fontSize: 12, color: 'rgba(255,255,255,0.45)', margin: 0 }}>
             {subtitle}
           </p>
         </div>

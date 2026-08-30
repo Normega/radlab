@@ -110,7 +110,7 @@ const S = {
     width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
     gap: 12, padding: '0 16px 10px',
   },
-  stripText: { fontFamily: 'Space Mono, monospace', fontSize: 11, color: 'rgba(255,255,255,0.7)' },
+  stripText: { fontFamily: 'Space Mono, monospace', fontSize: 12, color: 'rgba(255,255,255,0.7)' },
   skipBtn: {
     background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
     borderRadius: 8, padding: '4px 12px', cursor: 'pointer',

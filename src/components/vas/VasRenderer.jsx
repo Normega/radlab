@@ -130,7 +130,7 @@ const S = {
   },
   eyebrow: {
     fontFamily: '"Space Mono",monospace',
-    fontSize: 11, color: 'var(--pk)',
+    fontSize: 12, color: 'var(--pk)',
     textTransform: 'uppercase', letterSpacing: '0.08em',
     margin: '0 0 16px',
   },
@@ -162,7 +162,7 @@ const S = {
   },
   anchorLabel: {
     fontFamily: '"DM Sans",system-ui,sans-serif',
-    fontSize: '0.7rem', color: 'var(--tx3)',
+    fontSize: '0.75rem', color: 'var(--tx3)',
     textAlign: 'center', lineHeight: 1.3,
     display: 'block',
   },
