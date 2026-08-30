@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PSY309 · L3 · Exploring Measurement</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&family=Source+Sans+3:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="./slides.css">
+</head>
+<body>
+<div id="deck">
+
+<section data-kind="title">
+  <p class="kicker">PSY309H5 F · Lecture 3 · 22 September 2026</p>
+  <h1>Exploring Measurement</h1>
+  <p class="lead">Is it consistent? Is it measuring what you think? And who did you ask?</p>
+  <p class="small" style="margin-top:3vmin">Today this room becomes a measuring instrument, and then you take it apart.</p>
+</section>
+
+<section>
+  <p class="kicker">Check in</p>
+  <h1>Open the dashboard</h1>
+  <p class="url" style="font-family:'JetBrains Mono',monospace;font-size:3.4vmin;color:var(--accent);font-weight:600">radlab.zone/class/psy309</p>
+  <p class="lead">Practical 1 is marked — feedback on Quercus. Two things the class did well, one thing to fix.</p>
+  <aside class="notes"><p>Check-in position 1. Be specific in the Practical 1 feedback: name the two most common strengths and the single most common problem (usually: describing a review article as if it were empirical, or no APA formatting). Three minutes, no more.</p></aside>
+</section>
+
+<section data-kind="divider">
+  <p class="kicker">Part one</p>
+  <h1>What kind of number is that?</h1>
+</section>
+
+<section>
+  <h1>Scales of measurement</h1>
+  <table>
+    <tr><th>Scale</th><th>What the levels are</th><th>Legal moves</th></tr>
+    <tr><td class="rowhead">Categorical</td><td>Names. Program, condition, language.</td><td>Count, compare frequencies</td></tr>
+    <tr><td class="rowhead">Ordinal</td><td>Ranks, unequal spacing</td><td>Median, rank statistics</td></tr>
+    <tr><td class="rowhead">Interval</td><td>Equal spacing, no true zero</td><td>Mean, SD, differences</td></tr>
+    <tr><td class="rowhead">Ratio</td><td>Equal spacing <em>and</em> a true zero</td><td>All of the above, plus ratios</td></tr>
+  </table>
+  <p class="hidden-until"><strong>The classic crime:</strong> a mean of a categorical variable. "Average program of study = 2.4" — a number with the appearance and nutritional value of information.</p>
+  <aside class="notes"><p>Keep this fast; it's in the Field Guide. The part worth your voice is the Likert slide next.</p></aside>
+</section>
+
+<section>
+  <h1>The Likert question — psychology's worst-kept secret</h1>
+  <p>A 1-to-7 agreement scale is <strong>ordinal</strong> by the strict rules. Who certified that 5→6 is the same distance as 6→7?</p>
+  <p class="hidden-until">And yet we routinely average Likert <em>items</em> into scale scores and analyze them as quantitative.</p>
+  <div class="box hidden-until">
+    <p><strong>The defensible version:</strong> a <em>multi-item scale</em> — seven items averaged — behaves far more like a continuous quantity than any single item does.</p>
+    <p>Know both the rule and the working convention, and know which one you're invoking. Single item: be humble. Validated multi-item scale: proceed with a clear conscience.</p>
+  </div>
+</section>
+
+<section>
+  <h1>Where this stops being philosophy</h1>
+  <p class="lead">In R, scale type is a data type — and mismatches produce two classic disasters.</p>
+  <ul>
+    <li><strong>The polite disaster:</strong> categories stored as numbers. R computes a nonsense mean without complaint.</li>
+    <li><strong>The loud disaster:</strong> numbers stored as text. Your correlation errors out, or a plot orders "10" before "9".</li>
+  </ul>
+  <div class="box hidden-until">
+    <p>Half of practical debugging is <code>str(mydata)</code> — asking R what scale it <em>thinks</em> each column is.</p>
+  </div>
+</section>
+
+<section>
+  <h1>Three ways to measure anything</h1>
+  <div class="cols">
+    <div>
+      <p><strong>Self-report</strong> — asking people.<br><span class="small">Superpower: access to inner experience. Distortion: people can't always know, and don't always tell.</span></p>
+      <p><strong>Observation</strong> — watching behaviour.<br><span class="small">Superpower: the behaviour–report gap. Distortion: observers bend, and the observed perform.</span></p>
+    </div>
+    <div>
+      <p><strong>Physiology</strong> — recording the body.<br><span class="small">Superpower: independent of self-knowledge and self-presentation. Distortion: rarely construct-specific — heart rate reads the same for anxiety, excitement, caffeine, and stairs.</span></p>
+      <div class="box hidden-until">
+        <p><strong>Convergence.</strong> Every window distorts, so look through more than one. When they disagree, you've learned something real.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h1>Reliability: does the measure agree with itself?</h1>
+  <p class="big">A bathroom scale reading 68, then 74, then 61 kg in one minute has a problem — and you can diagnose it without knowing your true weight.</p>
+  <ul class="hidden-until">
+    <li><strong>Test–retest</strong> — across <em>time</em>. Only meaningful if theory says the thing is stable.</li>
+    <li><strong>Interrater</strong> — across <em>observers</em>. Wherever human judgment enters, this is the whole ballgame.</li>
+    <li><strong>Internal consistency</strong> — across <em>items</em>. Cronbach's alpha; ~.70+ for research use.</li>
+  </ul>
+  <p class="hidden-until"><strong>All three are the same machinery:</strong> correlation, applied to pairs of scores.</p>
+  <aside class="notes"><p>Point forward: interrater reliability is not abstract for them — five peers will rate their poster in December, and the fairness of that grade depends on it. We come back to this on the last day.</p></aside>
+</section>
+
+<section data-kind="activity">
+  <p class="kicker">Exercise A · 25 minutes</p>
+  <h1>Build a bad questionnaire, then fix it</h1>
+  <ol>
+    <li><strong>8 min.</strong> Write <strong>four deliberately terrible items</strong> measuring student wellbeing. Use at least three different diseases.</li>
+    <li><strong>8 min.</strong> Swap with the next team. Diagnose each one <em>by name</em>, then repair it.</li>
+    <li><strong>9 min.</strong> Best repairs on screen.</li>
+  </ol>
+  <div class="box warn">
+    <p><strong>The bestiary:</strong> leading · double-barrelled · negated (or doubly) · vague quantifier · jargon · loaded framing · broken response scale</p>
+    <p class="small">The item should look <em>reasonable to a participant</em> and still corrupt the data. Merely rude doesn't count.</p>
+  </div>
+  <aside class="notes"><p>Check-in position 2. Expect the funniest items to also be the most precisely diagnosed — that's not a coincidence, and it's why writing bad items beats critiquing published ones.</p></aside>
+</section>
+
+<section data-kind="break">
+  <p class="kicker">Break 1 · ten minutes</p>
+  <h1>Check in</h1>
+  <p class="url">radlab.zone/class/psy309</p>
+  <div class="qbox">
+    <p><strong>The material:</strong> what's one idea from the first hour that clicked — and one that didn't?</p>
+    <p><strong>You:</strong> how engaged have you felt so far, and what would help?</p>
+  </div>
+  <aside class="notes"><p>Check-in position 20.</p></aside>
+</section>
+
+<section data-kind="activity">
+  <p class="kicker">Exercise B · 40 minutes</p>
+  <h1>The class as instrument</h1>
+  <p class="big">You're about to answer a short scale. Then you're going to compute its reliability — on the data this room just produced.</p>
+  <aside class="notes"><p>Before opening the check-in, read the governance statement on the next slide OUT LOUD. Thirty seconds of admin, five minutes of ethics teaching, and skipping it is the one thing that would make this exercise a bad idea.</p></aside>
+</section>
+
+<section>
+  <p class="kicker">Before we collect anything</p>
+  <h1>What this data is, and isn't</h1>
+  <div class="box">
+    <p class="big" style="font-size:3vmin;font-weight:400">"This is <strong>course activity data</strong>, not research data. It's anonymous — I get a table of numbers with no names attached. It stays in this course. It will not be analysed as research, and if it ever were, that would need an REB protocol and your consent first.</p>
+    <p class="big" style="font-size:3vmin;font-weight:400">You watched us apply that exact reasoning to four protocols last week. This is what it looks like when it's our turn."</p>
+  </div>
+  <p class="small hidden-until">Prefer not to answer? Sit it out — you still do the analysis on the class file, which is the graded skill anyway.</p>
+</section>
+
+<section data-kind="activity">
+  <h1>Seven items, 1–7</h1>
+  <p class="url" style="font-family:'JetBrains Mono',monospace;font-size:3.4vmin;color:var(--do);font-weight:600">radlab.zone/class/psy309</p>
+  <p class="lead">Answer honestly. There are no right answers here — literally; this check-in has no answer key.</p>
+  <p class="small">While you answer, I'm exporting the results so we can analyse them in five minutes.</p>
+  <aside class="notes"><p>Open check-in position 3 (7-item quiz, 7-minute countdown). <strong>Never press reveal.</strong> While they answer, run the export SQL from L3_class_scale.md and upload the CSV as class_scale.csv to the cloud R project.</p></aside>
+</section>
+
+<section data-kind="activity">
+  <h1>Now take it apart</h1>
+  <div class="cols">
+    <div>
+      <p>Open <code>L3_reliability.R</code> in the cloud project.</p>
+      <ol>
+        <li>Describe before you analyse</li>
+        <li>Inter-item correlation matrix</li>
+        <li>Cronbach's alpha, computed by hand</li>
+        <li>Item–total correlations</li>
+        <li>Drop the weak items, recompute</li>
+      </ol>
+    </div>
+    <div>
+      <div class="box warn">
+        <p><strong>Base R only.</strong> Nothing to install.</p>
+        <p class="small">If the export misbehaves, the script picks up a stand-in file automatically. Same story, different numbers.</p>
+      </div>
+      <p class="small hidden-until"><strong>Two before me</strong> — ask your neighbours first. TAs are circulating.</p>
+    </div>
+  </div>
+  <aside class="notes"><p>20 minutes on the script. Don't preview the finding — let the item-total correlations do the talking.</p></aside>
+</section>
+
+<section>
+  <h1>What did you find?</h1>
+  <ul>
+    <li class="hidden-until"><strong>Alpha across all seven:</strong> around .70. Published value for this scale: <strong>≈.87.</strong> Why is ours worse?</li>
+    <li class="hidden-until"><strong>Item–total correlations:</strong> two items near zero, the rest .6–.7.</li>
+    <li class="hidden-until"><strong>Drop those two:</strong> alpha jumps to <strong>≈.88</strong>. Right onto the published value.</li>
+  </ul>
+  <div class="box warn hidden-until">
+    <p><strong>The reveal.</strong> Items 4 and 6 — "I usually get enough sleep" and "I enjoy cold weather" — were never part of the scale. Readable, answerable, sensible-looking items measuring something else.</p>
+    <p class="big" style="font-size:3vmin">The reliability statistics found them without being told.</p>
+  </div>
+  <aside class="notes"><p>Reveal one line at a time. The moment students realize two items were planted is the moment internal consistency stops being a formula.</p></aside>
+</section>
+
+<section>
+  <h1>Debrief</h1>
+  <ul>
+    <li>Did <em>alpha</em> tell you which items were the problem? <span class="hidden-until">No — alpha is one number. The <strong>item–total correlations</strong> did. This is why "α = .82" alone is a thin report.</span></li>
+    <li>If we'd never included the ringers, would alpha have told you the scale was good? <span class="hidden-until">It would have told you the items <em>hang together</em>. Which is not the same as measuring what you meant.</span></li>
+    <li class="hidden-until"><strong>A tarot deck read consistently is reliable.</strong></li>
+  </ul>
+  <p class="hidden-until lead">Reliability is the floor, not the ceiling. The harder question is next.</p>
+</section>
+
+<section data-kind="break">
+  <p class="kicker">Break 2 · ten minutes</p>
+  <h1>Check in</h1>
+  <p class="url">radlab.zone/class/psy309</p>
+  <div class="qbox">
+    <p><strong>The material:</strong> what's one question you still have about today, now that you've worked with it?</p>
+    <p><strong>You:</strong> how has your engagement changed since the first break — and what changed it?</p>
+  </div>
+  <aside class="notes"><p>Check-in position 40.</p></aside>
+</section>
+
+<section data-kind="divider">
+  <p class="kicker">Part three</p>
+  <h1>Valid — and for whom?</h1>
+</section>
+
+<section>
+  <h1>Measurement validity comes in grades</h1>
+  <div class="cols">
+    <div>
+      <p class="small"><strong>Subjective (judgment, no data yet):</strong></p>
+      <p><strong>Face</strong> — does it look right?<br>
+         <strong>Content</strong> — does it cover all the parts your definition names?</p>
+    </div>
+    <div>
+      <p class="small"><strong>Empirical (data required):</strong></p>
+      <p><strong>Criterion</strong> — does it predict relevant behaviour? <em>(known-groups: does it separate groups it obviously should?)</em><br>
+         <strong>Convergent</strong> — correlates with kindred measures<br>
+         <strong>Discriminant</strong> — <em>doesn't</em> correlate with things theory says are different</p>
+    </div>
+  </div>
+  <div class="box hidden-until">
+    <p><strong>Discriminant is the underrated one.</strong> Plenty of "new" constructs turn out to be old constructs in new fonts.</p>
+  </div>
+</section>
+
+<section>
+  <h1>The one-way street</h1>
+  <p class="big">A measure can be reliable without being valid — but it cannot be valid without being reliable.</p>
+  <p class="lead">An unreliable measure is mostly noise, and noise can't be measuring the construct. Or anything else.</p>
+  <p class="hidden-until">Examiners find this pairing as irresistible as I do.</p>
+</section>
+
+<section>
+  <h1>The observer is part of the instrument</h1>
+  <div class="cols">
+    <div>
+      <p><strong>Observer bias</strong> — coders see what they expect. Rats labelled "maze-bright" ran faster for students timing them, though the labels were random. <span class="small">(Rosenthal &amp; Fode, 1963)</span></p>
+      <p><strong>Observer effects</strong> — expectations change the behaviour itself.</p>
+    </div>
+    <div class="hidden-until">
+      <div class="box warn">
+        <p><strong>Clever Hans</strong> could do arithmetic — tapping out answers to astonished crowds. Pfungst (1911) found the trick: the questioner tensed as Hans approached the right count, and relaxed when he hit it.</p>
+        <p>Hans couldn't add. He could read humans magnificently. When the questioner didn't know the answer, the genius evaporated.</p>
+      </div>
+    </div>
+  </div>
+  <p class="hidden-until"><strong>The fix, and it's cheap:</strong> masking. A coder who doesn't know the condition can't bend toward it.</p>
+  <aside class="notes"><p>Clever Hans is the cheapest mnemonic in the course — one horse, both observer problems. It returns at full scale in L7 as blinding.</p></aside>
+</section>
+
+<section>
+  <h1>Who did you ask?</h1>
+  <ul>
+    <li><strong>Convenience sampling</strong> — whoever's easy to reach. Easy-to-reach people differ in exactly the ways that make them easy to reach.</li>
+    <li><strong>Self-selection</strong> — whoever volunteers. Strong feelings volunteer; indifference scrolls past.</li>
+  </ul>
+  <div class="box hidden-until">
+    <p class="big" style="font-size:3.2vmin">External validity comes from <em>how</em> you sampled, not <em>how many</em>.</p>
+    <p>A random sample of 1,000 supports ±3%. A convenience sample of 100,000 supports nothing — its errors don't cancel with size, they entrench.</p>
+  </div>
+  <p class="hidden-until"><strong>Two randoms, never blur them:</strong> random <em>sampling</em> = who gets in (external validity). Random <em>assignment</em> = who gets which condition (internal validity). Favourite exam trap.</p>
+  <aside class="notes"><p>Flag the two-randoms distinction hard. It separates students who memorized from students who understood, which is why we keep asking it.</p></aside>
+</section>
+
+<section data-kind="activity">
+  <p class="kicker">Due Friday 2 October</p>
+  <h1>Practical 2 — Measurement</h1>
+  <ul>
+    <li>Your construct, with a real <strong>conceptual definition</strong></li>
+    <li>An <strong>operationalization</strong>, and the case for it</li>
+    <li><strong>Reliability evidence</strong> — alpha, test–retest. You now know what those numbers feel like from the inside.</li>
+    <li><strong>Validity evidence</strong> — the pattern: face, content, criterion, convergent, discriminant</li>
+  </ul>
+  <p class="small">Scale-development papers are organized under exactly these headings. Raid them.</p>
+</section>
+
+<section data-kind="break">
+  <p class="kicker">Last thing</p>
+  <h1>Check out</h1>
+  <p class="url">radlab.zone/class/psy309</p>
+  <div class="qbox">
+    <p>Question box. Next week: correlation — and the first of two weeks where R does real work.</p>
+  </div>
+  <aside class="notes"><p>Check-in position 5. Assign Week 4 reading.</p></aside>
+</section>
+
+</div>
+<div id="bar"></div><div id="num"></div><div id="clock"></div>
+<div id="help"><kbd>→</kbd> next · <kbd>←</kbd> back · <kbd>f</kbd> fullscreen · <kbd>n</kbd> notes<br><kbd>o</kbd> overview · <kbd>t</kbd> timer · <kbd>?</kbd> help</div>
+<script src="./slides.js"></script>
+</body>
+</html>

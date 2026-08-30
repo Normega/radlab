@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PSY309 · L4 · Research Design Theory</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&family=Source+Sans+3:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="./slides.css">
+</head>
+<body>
+<div id="deck">
+
+<section data-kind="title">
+  <p class="kicker">PSY309H5 F · Lecture 4 · 29 September 2026</p>
+  <h1>Research Design Theory</h1>
+  <p class="lead">Correlation: what it buys you, what it can't, and what's hiding behind it</p>
+  <p class="small" style="margin-top:3vmin"><strong>Practical 2 due Friday. Test 1 is next week.</strong></p>
+</section>
+
+<section>
+  <p class="kicker">Check in</p>
+  <h1>Open the dashboard</h1>
+  <p class="url" style="font-family:'JetBrains Mono',monospace;font-size:3.4vmin;color:var(--accent);font-weight:600">radlab.zone/class/psy309</p>
+  <p class="lead">Test 1 is next Tuesday, in this room, starting at 9:15. We'll spend fifteen minutes on it before you leave today.</p>
+  <aside class="notes"><p>Check-in position 1. Say the test logistics now AND at the end — anxiety in week 4 is mostly about not knowing the format.</p></aside>
+</section>
+
+<section data-kind="divider">
+  <p class="kicker">Part one</p>
+  <h1>Two things that travel together</h1>
+</section>
+
+<section>
+  <h1>Plot it before you compute anything</h1>
+  <p class="lead">Everything the correlation summarizes is visible in the scatterplot — and some things it <em>hides</em> are visible only there.</p>
+  <ul>
+    <li><strong>Positive</strong> — uphill drift. More commute, more fatigue.</li>
+    <li><strong>Negative</strong> — downhill. More sleep, less irritability.</li>
+    <li><strong>Zero</strong> — a shapeless cloud.</li>
+  </ul>
+  <p class="hidden-until"><strong>Plot first. Always.</strong> It's how you catch the pathologies before they catch you.</p>
+</section>
+
+<section>
+  <h1>Reading r</h1>
+  <div class="cols">
+    <div>
+      <p><strong>Sign</strong> = direction. <strong>Magnitude</strong> = strength. They are independent.</p>
+      <p class="big" style="font-size:3.4vmin">r = −.45 is <em>stronger</em> than r = +.20.</p>
+      <p class="small">Students lose easy marks reading negative correlations as weak ones. Don't be in that scatterplot.</p>
+    </div>
+    <div>
+      <p><strong>Calibration:</strong> ~.10 small · ~.30 medium · ~.50 large</p>
+      <p>Real published psychology lives mostly between <strong>.10 and .40</strong>.</p>
+      <div class="box hidden-until">
+        <p><strong>r² — the deflator.</strong> A genuine, medium r = .30 explains <strong>9%</strong> of the variance. 91% of why people differ is untouched by the headline.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h1>Interrogating an association</h1>
+  <p class="lead">Three validities apply in force. The fourth waits by the door.</p>
+  <ul>
+    <li><strong>Construct — twice.</strong> Two measured variables, two sets of questions. And unreliability <em>shrinks</em> observed correlations: noise in either measure drags r toward zero.</li>
+    <li><strong>Statistical.</strong> How strong? How precise? Outliers? Restriction of range? Linear at all?</li>
+    <li><strong>External.</strong> An association in first-year volunteers is, so far, an association in people like that.</li>
+    <li class="hidden-until"><strong>Internal — the moment the language drifts causal.</strong> "Linked to" becomes "may fuel" becomes "is driving," and now you owe direction and third variables.</li>
+  </ul>
+</section>
+
+<section>
+  <h1>Three ways a correlation lies to you</h1>
+  <div class="cols">
+    <div>
+      <p><strong>Outliers.</strong> In a small sample, one extreme point — extreme on <em>both</em> variables — grabs the line like a lever. Detectable exactly one way: looking.</p>
+      <p><strong>Restriction of range.</strong> Study grades and admission scores in a selective program and you've thrown away the variation that carried the relationship. The r looks weak because of who you selected.</p>
+    </div>
+    <div>
+      <p><strong>Nonlinearity.</strong> r sees straight lines only. Stress and performance rise, plateau, reverse — a story that can flatten to r ≈ 0 in the statistic while being obvious in the plot.</p>
+      <div class="box warn hidden-until">
+        <p>All three arguments end the same way: <strong>look at your data.</strong></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section data-kind="break">
+  <p class="kicker">Break 1 · ten minutes</p>
+  <h1>Check in</h1>
+  <p class="url">radlab.zone/class/psy309</p>
+  <div class="qbox">
+    <p><strong>The material:</strong> what's one idea from the first hour that clicked — and one that didn't?</p>
+    <p><strong>You:</strong> how engaged have you felt so far, and what would help?</p>
+  </div>
+  <aside class="notes"><p>Check-in position 20.</p></aside>
+</section>
+
+<section data-kind="activity">
+  <p class="kicker">Exercise A · 10 minutes</p>
+  <h1>Guess the correlation</h1>
+  <p class="url" style="font-family:'JetBrains Mono',monospace;font-size:3vmin;color:var(--do)">guessthecorrelation.com</p>
+  <p class="lead">Five rounds, called out loud, before the reveal.</p>
+  <p class="hidden-until">Most people systematically <strong>overestimate</strong> how strong a visible relationship is — which is exactly why r = .30 sounds disappointing when it's a perfectly normal finding.</p>
+  <aside class="notes"><p>End by putting a real published scatterplot on screen and asking for a guess. It will look like noise. It is r ≈ .35. That moment recalibrates the rest of the term.</p></aside>
+</section>
+
+<section data-kind="activity">
+  <p class="kicker">Exercise B · 20 minutes</p>
+  <h1>Spurious pairs</h1>
+  <p class="big">Six real correlations. For each: what third variable could produce this, without either causing the other?</p>
+  <p class="small">Teams propose; class votes on the most plausible.</p>
+  <aside class="notes"><p>Check-in position 2. Do NOT warn them that two of the six have no third variable at all. That discovery is the exercise.</p></aside>
+</section>
+
+<section>
+  <h2>The six</h2>
+  <ol>
+    <li>Ice cream sales &amp; drowning deaths</li>
+    <li>Shoe size &amp; reading ability (children 4–12)</li>
+    <li>Firefighters sent to a fire &amp; damage caused</li>
+    <li>National chocolate consumption &amp; Nobel laureates per capita <span class="small">(r ≈ .79, ~20 countries — a real paper)</span></li>
+    <li>US margarine consumption &amp; the divorce rate in Maine <span class="small">(r ≈ .99)</span></li>
+    <li>Films Nicolas Cage appeared in &amp; swimming-pool drownings <span class="small">(r ≈ .67)</span></li>
+  </ol>
+  <p class="hidden-until"><strong>1–4 have a third variable</strong> — summer, age, fire size, national wealth. <span class="small">(#4 also: r = .79 on 20 points is far less impressive than it sounds.)</span></p>
+  <p class="hidden-until big" style="color:var(--do)">5 and 6 have <em>nothing</em>. Both series happen to drift; with tens of thousands of time series, near-perfect correlations appear by chance.</p>
+  <aside class="notes"><p>Don't accept the first laugh on 5 and 6. Push until someone says: nobody proposed a mechanism, they searched thousands of pairs until something lined up. Then name it — with enough comparisons, impressive correlations appear from nothing. That's the multiplicity problem, and it's the same mechanism as p-hacking in November.</p></aside>
+</section>
+
+<section data-kind="activity">
+  <p class="kicker">Exercise C · 30 minutes · cloud R</p>
+  <h1>Manufacture a confound</h1>
+  <p class="big">Build a world where A and B have <em>nothing</em> to do with each other — then watch a strong, significant correlation appear between them.</p>
+  <pre>C &lt;- rnorm(n)
+A &lt;- 0.65 * C + sqrt(1 - 0.65^2) * rnorm(n)
+B &lt;- 0.65 * C + sqrt(1 - 0.65^2) * rnorm(n)
+# There is NO arrow from A to B. You just built it.</pre>
+  <p class="small">Open <code>L4_confound.R</code> in the cloud project.</p>
+  <aside class="notes"><p>Check-in position 3. Expected: r(A,B) ≈ .40, p &lt; .001. Then lm(B ~ A + C) and A's estimate collapses to ~0, non-significant. Both on the fallback slide if the cloud misbehaves.</p></aside>
+</section>
+
+<section>
+  <h1>What happened</h1>
+  <ul>
+    <li class="hidden-until"><strong>r(A, B) ≈ .40, p &lt; .001.</strong> If you found this in real data, you'd write a paper.</li>
+    <li class="hidden-until"><strong>Control for C:</strong> A's estimate collapses to about zero, non-significant.</li>
+  </ul>
+  <div class="box warn hidden-until">
+    <p><strong>The part that should worry you.</strong> Regression removed the confound because <em>you knew to measure C</em>.</p>
+    <p>In real correlational data, how would you know a C exists? And what could you do at the <strong>design</strong> stage — before any data — that handles every possible C at once, including the ones nobody has thought of?</p>
+  </div>
+  <p class="hidden-until lead">Hold that question. The answer arrives in two weeks.</p>
+</section>
+
+<section data-kind="break">
+  <p class="kicker">Break 2 · ten minutes</p>
+  <h1>Check in</h1>
+  <p class="url">radlab.zone/class/psy309</p>
+  <div class="qbox">
+    <p><strong>The material:</strong> what's one question you still have about today, now that you've worked with it?</p>
+    <p><strong>You:</strong> how has your engagement changed since the first break — and what changed it?</p>
+  </div>
+  <aside class="notes"><p>Check-in position 40.</p></aside>
+</section>
+
+<section data-kind="divider">
+  <p class="kicker">Part three</p>
+  <h1>Three jobs a third variable can hold</h1>
+</section>
+
+<section>
+  <h1>The cheat sheet</h1>
+  <table>
+    <tr><th>Role</th><th>Where it sits</th><th>Question</th><th>Model</th></tr>
+    <tr><td class="rowhead">Moderator</td><td><em>Beside</em> the relationship</td><td><strong>When / for whom?</strong></td><td><code>Y ~ X * M</code></td></tr>
+    <tr><td class="rowhead">Mediator</td><td><em>On the path</em> X → Y</td><td><strong>Why?</strong></td><td><code>Y ~ X + M</code></td></tr>
+    <tr><td class="rowhead">Confound</td><td><em>Outside</em>, driving both</td><td><strong>Is it real at all?</strong></td><td><code>Y ~ X + C</code></td></tr>
+  </table>
+  <p class="hidden-until big" style="font-size:3.2vmin">Moderation = <em>when</em>. Mediation = <em>why</em>. Confound = <em>controlling for</em>.</p>
+  <p class="hidden-until small">The arrows are the whole game: moderators receive no arrow from X; mediators do; confounds send arrows to both and receive none.</p>
+</section>
+
+<section>
+  <h1>Moderation: the relationship has boundaries</h1>
+  <p>Social media use and anxiety: r = .35 in first-years, r = .05 in fourth-years.</p>
+  <p class="big hidden-until">Not a contradiction to be averaged away — a finding.</p>
+  <ul class="hidden-until">
+    <li>The test: can you honestly say "the relationship between A and B <strong>depends on</strong> M"?</li>
+    <li>Seen as: non-parallel slopes when you plot each group separately.</li>
+    <li>External validity, made quantitative — "does this generalize?" is "is population membership a moderator?"</li>
+  </ul>
+  <div class="box warn hidden-until">
+    <p>Test enough subgroups and something will "moderate" by luck. A moderator <em>predicted in advance</em> is worth many discovered after the fact.</p>
+  </div>
+</section>
+
+<section>
+  <h1>Mediation: the mechanism</h1>
+  <p>Exercise predicts lower stress. <em>Why?</em> Perhaps exercise improves sleep, and sleep is what lowers stress.</p>
+  <div class="cols">
+    <div>
+      <p><strong>Three paths:</strong></p>
+      <p><em>c</em> — total effect (X → Y)<br>
+         <em>a</em> — X → M<br>
+         <em>b</em> — M → Y, holding X constant<br>
+         <strong>indirect = a × b</strong> · direct = <em>c′</em></p>
+    </div>
+    <div class="hidden-until">
+      <div class="box warn">
+        <p><strong>Don't control your mechanism away.</strong> Adding covariates is virtue against confounds and vandalism against mechanisms.</p>
+        <p>Whether a variable is off-path (control it) or on-path (analyse it) is a <em>theory</em> decision made before the model — not something the output announces.</p>
+      </div>
+    </div>
+  </div>
+  <p class="small hidden-until">Expect <em>partial</em> mediation. A mechanism carrying 40% of an effect is a win, not a failure to reach 100%.</p>
+</section>
+
+<section>
+  <h1>When you can't experiment, recruit time</h1>
+  <ul>
+    <li><strong>Cross-sectional</strong> — everyone measured once. A snapshot; every correlation in it is directionless.</li>
+    <li><strong>Longitudinal</strong> — the same people, repeatedly. Now you can order events.</li>
+    <li><strong>Cross-lagged panel</strong> — does phone use at T1 predict sleep problems at T2 more strongly than the reverse?</li>
+  </ul>
+  <div class="box warn hidden-until">
+    <p><strong>Autocorrelation is the elephant.</strong> Each variable's best predictor is itself, earlier. An analysis that doesn't hold each variable's own stability constant hands the cross-lags credit that belongs to persistence.</p>
+    <p class="small">Time strengthens the causal case. Only random assignment closes it.</p>
+  </div>
+</section>
+
+<section>
+  <p class="kicker">Next Tuesday, 9:15 sharp</p>
+  <h1>Test 1</h1>
+  <div class="cols">
+    <div>
+      <ul>
+        <li>In this room, on Quercus, closed book</li>
+        <li>~40 multiple choice + ~4 short answer</li>
+        <li>Two hours; the two sections are roughly half each</li>
+        <li>Covers weeks 1–4</li>
+      </ul>
+    </div>
+    <div>
+      <div class="box">
+        <p><strong>"Source your points."</strong> Short answers earn marks for <em>naming</em> the specific validity, bias, principle or threat — and saying what evidence would settle it.</p>
+        <p class="small">"That seems flawed" earns what "that seems unethical" earns: zero.</p>
+      </div>
+    </div>
+  </div>
+  <aside class="notes"><p>Check-in position 4 (question box) — take test questions live for ten minutes. The Field Guide weeks 1–4 are the study guide; say that explicitly.</p></aside>
+</section>
+
+<section data-kind="break">
+  <p class="kicker">Last thing</p>
+  <h1>Check out</h1>
+  <p class="url">radlab.zone/class/psy309</p>
+  <div class="qbox">
+    <p>Question box — especially test questions. Good luck Tuesday. Practical 2 is due Friday first.</p>
+  </div>
+  <aside class="notes"><p>Check-in position 5.</p></aside>
+</section>
+
+</div>
+<div id="bar"></div><div id="num"></div><div id="clock"></div>
+<div id="help"><kbd>→</kbd> next · <kbd>←</kbd> back · <kbd>f</kbd> fullscreen · <kbd>n</kbd> notes<br><kbd>o</kbd> overview · <kbd>t</kbd> timer · <kbd>?</kbd> help</div>
+<script src="./slides.js"></script>
+</body>
+</html>

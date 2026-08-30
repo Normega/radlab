@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PSY309 · L6 · Describing Data</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&family=Source+Sans+3:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="./slides.css">
+</head>
+<body>
+<div id="deck">
+
+<section data-kind="title">
+  <p class="kicker">PSY309H5 F · Lecture 5 · 13 October 2026</p>
+  <h1>Describing Data</h1>
+  <p class="lead">How much, how precise, and how often you'd be wrong</p>
+  <p class="small" style="margin-top:3vmin"><strong>Practical 3 due Friday.</strong> Today: the most important hour of the term.</p>
+  <aside class="notes"><p>That last claim is not hype — say it and mean it. The sampling-distribution exercise is the one students describe back to you in April.</p></aside>
+</section>
+
+<section>
+  <p class="kicker">Check in</p>
+  <h1>Test 1 debrief</h1>
+  <p class="url" style="font-family:'JetBrains Mono',monospace;font-size:3vmin;color:var(--accent);font-weight:600">radlab.zone/class/psy309</p>
+  <ul>
+    <li>The distribution — and what it means</li>
+    <li>The two questions the class found hardest</li>
+    <li>Appeals: in writing, to the course email, explaining what deserved more and why</li>
+  </ul>
+  <aside class="notes"><p>Check-in position 1. Twenty minutes maximum. Show the histogram; name the two hardest items and re-teach them properly — that is worth more than any general reassurance.</p></aside>
+</section>
+
+<section data-kind="divider">
+  <p class="kicker">Part one</p>
+  <h1>Describe before you analyse</h1>
+</section>
+
+<section>
+  <h1>Shape first, then centre, then spread</h1>
+  <div class="cols">
+    <div>
+      <p><strong>Shape.</strong> Symmetric? Skewed with a long tail? <strong>Bimodal</strong> — two humps, usually two populations wearing one label?</p>
+      <p class="small">Plot it before you summarize it. Every summary statistic assumes you know the shape.</p>
+    </div>
+    <div>
+      <p><strong>Centre.</strong> Mean is a balance point — one four-hour commute drags it. Median ignores how extreme the extremes are. Mode is the only centre for categories.</p>
+      <p class="small hidden-until">The <em>gap</em> between mean and median is information: a mean well above the median announces a right tail before you've plotted anything.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h1>Variability is not noise around the real answer</h1>
+  <p class="big">Two classes both average 72%. One spans 70–74. The other spans 40–100.</p>
+  <p class="lead">These are utterly different courses. Spread is <strong>half the description</strong>, not an afterthought.</p>
+  <ul class="hidden-until">
+    <li><strong>SD</strong> — roughly the typical distance from the mean, in the variable's own units</li>
+    <li><strong>z-score</strong> — subtract the mean, divide by SD: position in your own distribution</li>
+  </ul>
+  <p class="hidden-until">That z-score move is about to reappear twice: as Cohen's <em>d</em>, and as a standardized beta. One idea, three costumes.</p>
+</section>
+
+<section>
+  <h1>Effect size: the question significance doesn't answer</h1>
+  <p class="big">"The difference was statistically significant" doesn't say how <em>big</em> it was.</p>
+  <div class="cols">
+    <div>
+      <p><strong>Cohen's d</strong> — the difference between two means, in SD units.</p>
+      <p class="small">0.2 small · 0.5 medium · 0.8 large. Most published psychology: d = 0.2 to 0.6.</p>
+    </div>
+    <div>
+      <p><strong>r and r²</strong> — for associations. <strong>η²</strong> — variance explained by a factor.</p>
+      <p class="small">Benchmarks are conversation-starters, not verdicts. A "small" d = 0.2 on university retention, applied to every student in Ontario, is enormous.</p>
+    </div>
+  </div>
+  <div class="box hidden-until">
+    <p><strong>Every effect size on this slide is the same fraction: signal over noise.</strong> How big the difference is, relative to how much people vary anyway.</p>
+  </div>
+</section>
+
+<section>
+  <h1>Confidence intervals: how sure, not just how much</h1>
+  <p class="big">r = .32, 95% CI [.21, .43] &nbsp;is knowledge.<br>r = .32, 95% CI [.02, .62] &nbsp;is a shrug in APA format.</p>
+  <ul class="hidden-until">
+    <li><strong>Width is precision.</strong> A wide interval means the study genuinely cannot tell you whether the effect is trivial or substantial.</li>
+    <li><strong>Zero matters.</strong> An interval excluding zero is significance, read off the interval.</li>
+    <li><strong>It brackets the population value</strong>, not the people. 95% CI ≠ 95% of participants.</li>
+  </ul>
+  <p class="small hidden-until">Precision improves with √n: quadrupling your sample halves the interval. Which is why precision gets expensive fast.</p>
+</section>
+
+<section data-kind="break">
+  <p class="kicker">Break 1 · ten minutes</p>
+  <h1>Check in</h1>
+  <p class="url">radlab.zone/class/psy309</p>
+  <div class="qbox">
+    <p><strong>The material:</strong> what's one idea from the first hour that clicked — and one that didn't?</p>
+    <p><strong>You:</strong> how engaged have you felt so far, and what would help?</p>
+  </div>
+  <aside class="notes"><p>Check-in position 20. Come back on time — the next block needs its full forty-five minutes.</p></aside>
+</section>
+
+<section data-kind="divider">
+  <p class="kicker">Part two</p>
+  <h1>This room is a sampling distribution</h1>
+</section>
+
+<section data-kind="activity">
+  <p class="kicker">Exercise · 45 minutes</p>
+  <h1>Everyone runs the same study</h1>
+  <div class="cols">
+    <div>
+      <p>Open <code>L5_sampling.R</code>. Replace <code>my_seed</code> with your student number.</p>
+      <pre>true_r &lt;- 0.30   # a real effect
+n      &lt;- 20     # an ordinary
+                 # student project</pre>
+    </div>
+    <div>
+      <div class="box warn">
+        <p class="big" style="font-size:3vmin">The world is <strong>identical</strong> for every person in this room.</p>
+        <p>The only thing that differs is which sample you happened to draw.</p>
+      </div>
+    </div>
+  </div>
+  <aside class="notes"><p>Say the framing sentence twice. Everything depends on them believing the world is the same — otherwise the spread reads as "some people did it wrong."</p></aside>
+</section>
+
+<section data-kind="activity">
+  <h1>Round 1 — submit your r</h1>
+  <p class="url" style="font-family:'JetBrains Mono',monospace;font-size:3.4vmin;color:var(--do);font-weight:600">radlab.zone/class/psy309</p>
+  <p class="big">Pick the bin your observed r falls into. Then the exact value in the next one.</p>
+  <p class="small">Don't scroll past Part 1 in the script yet.</p>
+  <aside class="notes"><p>Check-ins at positions 2 (bins — instant distribution) and 3 (exact values). Do not reveal the quiz; it has no answer key.</p></aside>
+</section>
+
+<section>
+  <h1>Look at what this room just produced</h1>
+  <table>
+    <tr><th></th><th>What we see</th></tr>
+    <tr><td class="rowhead">Observed r across the class</td><td>roughly <strong>−.15 to .66</strong></td></tr>
+    <tr><td class="rowhead">Fraction reaching significance</td><td>about <strong>1 in 4</strong></td></tr>
+    <tr><td class="rowhead">The truth</td><td class="margin"><strong>.30 — for every single person</strong></td></tr>
+  </table>
+  <p class="hidden-until big" style="margin-top:2vmin">Who found nothing? Who found a large effect? <em>Who was right?</em></p>
+  <p class="hidden-until lead">Everyone. You all ran the same correct study on the same real effect.</p>
+  <aside class="notes"><p>Let the silence sit after "who was right?" before answering. This is the moment.</p></aside>
+</section>
+
+<section data-kind="activity">
+  <h1>Round 2 — the same study, bigger</h1>
+  <p class="big">n = 200. Run Part 2. Submit again.</p>
+  <p class="hidden-until">The cloud collapses to roughly <strong>.17 – .42</strong>, and essentially everyone is significant.</p>
+  <p class="hidden-until lead">Precision is bought with n. There is no other currency.</p>
+  <aside class="notes"><p>Check-in position 4.</p></aside>
+</section>
+
+<section>
+  <h1>Round 3 — be the whole class by yourself</h1>
+  <p>Part 3 runs <strong>10,000 studies</strong> of the same world. Two numbers come out.</p>
+  <ul>
+    <li class="hidden-until"><strong>Power at n = 20 is about 25%.</strong> In a world where the effect is definitely real, three quarters of these studies conclude "no effect."</li>
+    <li class="hidden-until"><strong>Among the studies that reached significance, the mean r is .55</strong> — nearly double the truth.</li>
+  </ul>
+  <div class="box warn hidden-until">
+    <p class="big" style="font-size:3.2vmin">Significance filtering doesn't just lose real effects. It <em>exaggerates</em> the ones it keeps.</p>
+  </div>
+  <aside class="notes"><p>Reveal one at a time. The second number is the winner's curse, and they derived it — do not let it go by as a bullet.</p></aside>
+</section>
+
+<section>
+  <h1>Three things you now know from your own data</h1>
+  <ol>
+    <li><strong>A single non-significant result is nearly uninformative</strong> when power is low. "We found no effect" often means "we ran a study that couldn't find effects."</li>
+    <li class="hidden-until"><strong>Published effects run hot.</strong> Remember week 1: replications average about half the original effect size. You just explained why.</li>
+    <li class="hidden-until"><strong>This is why you do a power analysis before collecting data</strong> — and why Practical 3 asks for a literature-derived effect size, not a hopeful guess.</li>
+  </ol>
+  <aside class="notes"><p>Put the week-1 calibration quiz slide back up for point 2. The loop closing visibly is the payoff for having planted it.</p></aside>
+</section>
+
+<section data-kind="break">
+  <p class="kicker">Break 2 · ten minutes</p>
+  <h1>Check in</h1>
+  <p class="url">radlab.zone/class/psy309</p>
+  <div class="qbox">
+    <p><strong>The material:</strong> what's one question you still have about today, now that you've worked with it?</p>
+    <p><strong>You:</strong> how has your engagement changed since the first break — and what changed it?</p>
+  </div>
+  <aside class="notes"><p>Check-in position 40.</p></aside>
+</section>
+
+<section data-kind="divider">
+  <p class="kicker">Part three</p>
+  <h1>Two ways to be wrong</h1>
+</section>
+
+<section>
+  <h1>Cry wolf, or sleep through it</h1>
+  <table>
+    <tr><th></th><th>There IS an effect</th><th>There is NO effect</th></tr>
+    <tr><td class="rowhead">You say yes</td><td class="margin">Correct — <strong>power</strong></td><td><strong>Type I</strong> — false positive</td></tr>
+    <tr><td class="rowhead">You say no</td><td><strong>Type II</strong> — false negative</td><td class="margin">Correct</td></tr>
+  </table>
+  <p class="hidden-until"><strong>Alpha (.05)</strong> = your tolerance for crying wolf. <strong>Power (aim ≥ .80)</strong> = your chance of catching a real wolf.</p>
+  <p class="hidden-until small">Power rises with effect size, sample size, and less noise. You just watched all three.</p>
+</section>
+
+<section>
+  <h1>Which error is worse? It depends what's at stake</h1>
+  <div class="cols">
+    <div>
+      <p><strong>Criminal trials</strong> are engineered against false positives. "Beyond a reasonable doubt" accepts that some guilty people walk, because convicting the innocent is judged the worse error.</p>
+    </div>
+    <div>
+      <p><strong>Airport security</strong> runs the other way — a thousand flagged water bottles rather than one missed threat. So does screening for treatable disease.</p>
+    </div>
+  </div>
+  <div class="box hidden-until">
+    <p>Your research has stakes too, quieter ones: a false positive sends a literature chasing a phantom; a false negative buries a real phenomenon.</p>
+    <p><strong>Asking which error is the greater danger <em>in your study</em> is a sign of methodological adulthood.</strong> Practical 5 asks you directly.</p>
+  </div>
+</section>
+
+<section>
+  <h1>You have been preregistering all term</h1>
+  <p class="lead">Across the practicals you choose a question, define measures, name a manipulation, predict an effect size from literature, and specify your analysis — <strong>all before any data exist.</strong></p>
+  <p class="big hidden-until">In modern research that document has a name.</p>
+  <ul class="hidden-until">
+    <li>It doesn't solve fraud. It solves <strong>flexibility in honest hands</strong> — the dozens of defensible choices made <em>after</em> seeing results.</li>
+    <li>The line it draws: <strong>confirmatory</strong> (you predicted it) vs <strong>exploratory</strong> (you noticed it). Both are legitimate. Dressing the second as the first is not.</li>
+  </ul>
+  <p class="small hidden-until">In November you'll see exactly how much that flexibility is worth. Bring a strong stomach.</p>
+</section>
+
+<section data-kind="activity">
+  <p class="kicker">Due Friday 16 October</p>
+  <h1>Practical 3 — Manipulations and Covariates</h1>
+  <ul>
+    <li>Propose your <strong>manipulation</strong> — the two conditions, what participants actually experience</li>
+    <li>Choose your <strong>continuous covariate</strong>, with a theoretical reason and a predicted direction</li>
+    <li>Start hunting <strong>effect sizes</strong> in the literature: Cohen's <em>d</em>, η², beta — or best, the change in DV units</li>
+  </ul>
+  <div class="box hidden-until">
+    <p>Can't ethically assign the full-strength version of your cause? Design the watered-down assignable version — <strong>and say what was lost.</strong> That reasoning earns marks here and again in your final paper.</p>
+  </div>
+</section>
+
+<section data-kind="break">
+  <p class="kicker">Last thing</p>
+  <h1>Check out</h1>
+  <p class="url">radlab.zone/class/psy309</p>
+  <div class="qbox">
+    <p>Question box. Next week: the design that answers the question you've been holding since week 4 — what do you do about the confounds you never thought of?</p>
+  </div>
+  <aside class="notes"><p>Check-in position 5.</p></aside>
+</section>
+
+</div>
+<div id="bar"></div><div id="num"></div><div id="clock"></div>
+<div id="help"><kbd>→</kbd> next · <kbd>←</kbd> back · <kbd>f</kbd> fullscreen · <kbd>n</kbd> notes<br><kbd>o</kbd> overview · <kbd>t</kbd> timer · <kbd>?</kbd> help</div>
+<script src="./slides.js"></script>
+</body>
+</html>

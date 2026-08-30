@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PSY309 · L11 · Open Work / Open Science</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&family=Source+Sans+3:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="./slides.css">
+</head>
+<body>
+<div id="deck">
+
+<section data-kind="title">
+  <p class="kicker">PSY309H5 F · Lecture 9 · 24 November 2026</p>
+  <h1>Open Science</h1>
+  <p class="lead">What happened when psychology checked its own work — and what it changed</p>
+  <p class="small" style="margin-top:3vmin"><strong>Practical 5 due Friday. Poster due Monday at noon.</strong></p>
+</section>
+
+<section>
+  <p class="kicker">Check in</p>
+  <h1>Open the dashboard</h1>
+  <p class="url" style="font-family:'JetBrains Mono',monospace;font-size:3.4vmin;color:var(--accent);font-weight:600">radlab.zone/class/psy309</p>
+  <p class="lead">Test 2 is marked — brief debrief. Then six days that contain everything you have left.</p>
+  <aside class="notes"><p>Check-in position 1. Keep the debrief to ten minutes; the deadlines matter more today.</p></aside>
+</section>
+
+<section data-kind="divider">
+  <p class="kicker">Part one</p>
+  <h1>One study is one study</h1>
+</section>
+
+<section>
+  <h1>Three kinds of "again"</h1>
+  <ul>
+    <li><strong>Direct replication</strong> — same method, new participants. Tests one thing: <em>was it real, or noise?</em> This is the kind with teeth.</li>
+    <li><strong>Conceptual replication</strong> — same hypothesis, different operationalizations. Success is strong construct-validity evidence. Failure is ambiguous — wrong theory, or wrong translation?</li>
+    <li><strong>Replication-plus-extension</strong> — confirm the base camp, push one ridge further. The workhorse of normal science.</li>
+  </ul>
+  <div class="box warn hidden-until">
+    <p>A literature full of "supportive" conceptual replications and <em>zero</em> direct ones can keep a weak finding alive indefinitely. Nobody ever re-checked the original.</p>
+  </div>
+</section>
+
+<section>
+  <h1>What happened when psychology checked</h1>
+  <p>100 published studies from top journals, directly replicated with original materials and decent power.</p>
+  <ul>
+    <li class="hidden-until"><strong>About a third</strong> produced a significant effect in the same direction.</li>
+    <li class="hidden-until">Those that did were, on average, <strong>about half their original size</strong>.</li>
+  </ul>
+  <p class="small hidden-until">Open Science Collaboration (2015), <em>Science</em></p>
+  <div class="box hidden-until">
+    <p><strong>You saw both numbers in week 1. In October you derived the second one yourselves</strong> — significance filtering exaggerates what it keeps.</p>
+  </div>
+  <p class="hidden-until"><strong>Multi-lab projects filled in the texture:</strong> lab-to-lab variation is usually <em>smaller</em> than the gap between original and replication. So the shortfall isn't mostly context sensitivity. The originals ran hot.</p>
+  <aside class="notes"><p>Put the L6 winner's-curse histogram back up. The loop closing — week 1 quiz → October simulation → today's number — is the argument that this course was built as one thing.</p></aside>
+</section>
+
+<section>
+  <h1>Reading a failed replication</h1>
+  <p class="lead">Calibration, not cynicism.</p>
+  <ul>
+    <li>It doesn't <em>prove</em> the original false — but it moves the honest estimate toward zero.</li>
+    <li>"The replication must have been done wrong" is a hypothesis, not a rebuttal — especially when they used the original materials at triple the sample size.</li>
+    <li>Context sensitivity is real but must be <strong>argued</strong>: "the effect requires condition X" predicts a moderated pattern, which is testable.</li>
+  </ul>
+  <p class="hidden-until big" style="font-size:3vmin">The mature reading of any single exciting finding: <em>interesting, pending replication.</em></p>
+</section>
+
+<section>
+  <h1>Meta-analysis: the literature as a dataset</h1>
+  <p>Treat each <em>study</em> as a data point. Extract every effect size, weight by precision, pool.</p>
+  <ul>
+    <li>Gives an overall estimate <em>with its own confidence interval</em></li>
+    <li>Measures <strong>heterogeneity</strong> — do these effects vary more than sampling error explains?</li>
+    <li>Chases that variance with <strong>moderator analyses</strong> — often the most informative table in the paper</li>
+  </ul>
+  <p class="hidden-until">The closest thing science has to seeing the whole web of evidence in one figure. <strong>Form opinions from reviews, not from single studies.</strong></p>
+</section>
+
+<section>
+  <h1>The file drawer</h1>
+  <p class="big">Meta-analysis can only pool what was <em>published</em>. And publication has a strong preference.</p>
+  <p class="lead">Significant, positive, novel results got in. Null results went into the drawer. Pool a literature filtered that way and the estimate is honestly computed and systematically inflated.</p>
+  <div class="box warn hidden-until">
+    <p><strong>The case where we could open the drawer.</strong> Antidepressant trials registered with the FDA — where <em>every</em> trial legally exists on record.</p>
+    <p>Of the trials the FDA judged positive, nearly all were published. Of the negative ones, most were unpublished — or published spun as positive. The published literature said the effects were substantially larger than the full record did.</p>
+    <p class="small">Turner et al. (2008), <em>NEJM</em>. Same drugs, same trials. The difference was which studies you were allowed to see.</p>
+  </div>
+</section>
+
+<section data-kind="activity">
+  <p class="kicker">Exercise · 35 minutes</p>
+  <h1>Find me a significant effect</h1>
+  <div class="cols">
+    <div>
+      <p>Data from a study of a new <strong>focus training</strong> intervention. 120 students, randomly assigned to treatment or control.</p>
+      <p class="big">Your job: find a statistically significant effect.</p>
+    </div>
+    <div>
+      <div class="box warn">
+        <p><strong>Legal moves:</strong></p>
+        <p class="small">· Three outcome measures — try another<br>
+        · Exclude outliers beyond 1.5 SD<br>
+        · Look at subgroups (year, gender)<br>
+        · Control for baseline<br>
+        · Combine any of the above</p>
+        <p class="small">All of these are things published researchers do. None of them is lying.</p>
+      </div>
+    </div>
+  </div>
+  <p class="small">Open <code>L9_phack.R</code>. Go.</p>
+  <aside class="notes"><p>Check-in position 2. Do NOT hint. Let the room get loud — that's the exercise working. Circulate and listen for "try dropping the outliers" and "what if it only works for juniors?" — you'll quote those back.</p></aside>
+</section>
+
+<section data-kind="activity">
+  <h1>Submit your finding</h1>
+  <p class="url" style="font-family:'JetBrains Mono',monospace;font-size:3.4vmin;color:var(--do);font-weight:600">radlab.zone/class/psy309</p>
+  <ul>
+    <li>Outcome variable · subgroup · exclusions · your p-value</li>
+    <li><strong>And the sentence you'd put in your abstract.</strong> Make it sound good.</li>
+  </ul>
+  <p class="small hidden-until">You're allowed to be proud of it.</p>
+  <aside class="notes"><p>Ask for the abstract sentence sincerely. The pride is the point — it makes the next slide land.</p></aside>
+</section>
+
+<section>
+  <h1>How many of you found something?</h1>
+  <p class="big hidden-until">Most of the room.</p>
+  <div class="box warn hidden-until">
+    <p class="big" style="font-size:3.6vmin">There is no treatment effect.</p>
+    <p class="big" style="font-size:3.6vmin">There was never a treatment effect.</p>
+    <p class="big" style="font-size:3.6vmin">Every number in that file is noise.</p>
+  </div>
+  <p class="hidden-until lead">The honest analysis — first outcome, everyone, no exclusions — comes back null. Whatever you found, you found in nothing.</p>
+  <p class="small hidden-until">And the most impressive result in that dataset (p = .003) requires <em>both</em> a subgroup <em>and</em> outlier exclusion. Whoever hunted hardest got the best "finding."</p>
+  <aside class="notes"><p>Deliver the three lines flatly, one at a time. Do not soften them and do not rush to the reassurance — the discomfort is the mechanism.</p></aside>
+</section>
+
+<section>
+  <h1>Let's count the damage</h1>
+  <table>
+    <tr><th>Analysis strategy</th><th>False positive rate</th></tr>
+    <tr><td class="rowhead">Honest: one outcome, everyone, no exclusions</td><td class="hidden-until"><strong>~5%</strong> — the alpha we all agreed on</td></tr>
+    <tr><td class="rowhead">After hunting</td><td class="hidden-until"><strong style="color:var(--do)">well over 30%</strong></td></tr>
+  </table>
+  <p class="hidden-until big" style="font-size:3.2vmin">So what did <em>your</em> p &lt; .05 actually mean?</p>
+</section>
+
+<section>
+  <h1>Three things to be clear about</h1>
+  <ol>
+    <li><strong>Nobody in this room cheated.</strong> Every move on that list is defensible in isolation, and every one appears in published papers.</li>
+    <li class="hidden-until"><strong>The problem is the bookkeeping, not the morals.</strong> Choices made <em>after seeing the data</em> detach the p-value from what it claims to mean.</li>
+    <li class="hidden-until"><strong>You now know the feeling from the inside</strong> — the small pull toward the analysis that worked.</li>
+  </ol>
+  <p class="hidden-until big">That feeling is what a preregistration protects you from. And you're about to write one.</p>
+</section>
+
+<section>
+  <h1>The names, and the antidotes</h1>
+  <div class="cols">
+    <div>
+      <p><strong>p-hacking</strong> — trying analytic paths until one crosses .05, then reporting that path as the only road contemplated.</p>
+      <p><strong>HARKing</strong> — hypothesizing after results are known; writing an unexpected pattern up as the prediction all along.</p>
+      <p class="small">The exploratory finding is fine. Laundering it into a confirmation is the crime.</p>
+    </div>
+    <div>
+      <div class="box">
+        <p><strong>Preregistration</strong> — locks the path before data exist</p>
+        <p><strong>Open data and materials</strong> — flexibility can't hide when anyone can re-run it</p>
+        <p><strong>Registered reports</strong> — acceptance before results; nothing to steer toward</p>
+        <p><strong>Effect sizes and intervals</strong> instead of the p-threshold fetish</p>
+      </div>
+    </div>
+  </div>
+  <p class="hidden-until small">None of these requires anyone to become more virtuous. They re-engineer the situation so ordinary humans produce honest bookkeeping — the same philosophy as blinding.</p>
+</section>
+
+<section data-kind="break">
+  <p class="kicker">Break 1 · ten minutes</p>
+  <h1>Check in</h1>
+  <p class="url">radlab.zone/class/psy309</p>
+  <div class="qbox">
+    <p><strong>The material:</strong> what's one idea from the first hour that clicked — and one that didn't?</p>
+    <p><strong>You:</strong> how engaged have you felt so far, and what would help?</p>
+  </div>
+  <aside class="notes"><p>Check-in position 20. Expect strong responses today — read two aloud when you return.</p></aside>
+</section>
+
+<section data-kind="divider">
+  <p class="kicker">Part two</p>
+  <h1>Whose psychology is it?</h1>
+</section>
+
+<section>
+  <h1>WEIRD</h1>
+  <p>Psychology's evidence base is built overwhelmingly on people from <strong>W</strong>estern, <strong>E</strong>ducated, <strong>I</strong>ndustrialized, <strong>R</strong>ich, <strong>D</strong>emocratic societies — and disproportionately on the strangest subpopulation within them: university undergraduates in psychology courses.</p>
+  <p class="hidden-until">And on many measured dimensions, WEIRD people are not a neutral default. They're a global <strong>outlier</strong>. <span class="small">(Henrich, Heine &amp; Norenzayan, 2010)</span></p>
+</section>
+
+<section>
+  <h1>Not even perception is safe</h1>
+  <p>The Müller-Lyer illusion — two equal lines, arrow-tails making one look longer — feels like raw hardware.</p>
+  <p class="hidden-until">Its strength <strong>varies dramatically across societies</strong>: strong among people raised amid carpentered right angles, nearly absent in some other visual environments.</p>
+  <div class="box warn hidden-until">
+    <p class="big" style="font-size:3vmin">If line-length illusions are culturally tuned, the burden of proof shifts for everything above them.</p>
+    <p>"Human psychology" claims built on Ontario undergraduates are, until checked, claims about Ontario undergraduates.</p>
+  </div>
+</section>
+
+<section>
+  <h1>Two modes — the distinction that resolves it</h1>
+  <div class="cols">
+    <div>
+      <p><strong>Generalization mode.</strong> The study exists to estimate a fact about a population. Representative sampling is the whole ballgame — the claim <em>is</em> "this holds out there."</p>
+      <p class="small">Frequency claims live here permanently. So does anything feeding policy.</p>
+    </div>
+    <div>
+      <p><strong>Theory-testing mode.</strong> The study exists to put a theory at risk: if mechanism M is real, effect E should appear under conditions C.</p>
+      <p class="small">The sample needs to be a fair arena for the mechanism, not a miniature of humanity. The lab's artificiality is the <em>feature</em>.</p>
+    </div>
+  </div>
+  <p class="hidden-until big" style="font-size:3vmin">Most unfair criticism — and unearned praise — comes from grading a study against the wrong mode's contract.</p>
+  <p class="hidden-until small">"Only 40 undergraduates in a lab!" is devastating for a prevalence estimate and often beside the point for a mechanism test.</p>
+</section>
+
+<section>
+  <h1>The fine print on theory-testing mode</h1>
+  <p>It licenses testing the theory on a narrow sample. It does <strong>not</strong> license quietly universalizing the result.</p>
+  <p class="hidden-until">And if the theory itself claims universality, then whether the mechanism appears elsewhere becomes a <em>theory-relevant prediction</em> — so cross-population checks stop being courtesy and become the next test.</p>
+  <p class="hidden-until lead">Modern journals increasingly ask for a <strong>constraints on generality</strong> statement: who, where, when this should hold. Your final paper's discussion is exactly that.</p>
+</section>
+
+<section data-kind="break">
+  <p class="kicker">Break 2 · ten minutes</p>
+  <h1>Check in</h1>
+  <p class="url">radlab.zone/class/psy309</p>
+  <div class="qbox">
+    <p><strong>The material:</strong> what's one question you still have about today, now that you've worked with it?</p>
+    <p><strong>You:</strong> how has your engagement changed since the first break — and what changed it?</p>
+  </div>
+  <aside class="notes"><p>Check-in position 40.</p></aside>
+</section>
+
+<section data-kind="activity">
+  <p class="kicker">Lab block · 30 minutes</p>
+  <h1>Write your preregistration</h1>
+  <p class="big">Practical 5, started here, while you're still slightly rattled. Which is the correct state.</p>
+  <ul>
+    <li>Your hypotheses — stated, in advance</li>
+    <li>The <strong>single primary DV</strong></li>
+    <li>Exclusion rules, fixed now</li>
+    <li>Subgroup analyses declared as <strong>exploratory</strong></li>
+    <li>The analysis plan</li>
+  </ul>
+  <div class="box warn">
+    <p><strong>Name the three decisions</strong> you're fixing in advance so nobody — including you — can do to your study what you just did to that dataset.</p>
+  </div>
+  <aside class="notes"><p>Check-in position 3. TAs circulating. This is the strongest half-hour of Practical 5 they will get.</p></aside>
+</section>
+
+<section>
+  <h1>Six days, three deadlines</h1>
+  <table>
+    <tr><th>When</th><th>What</th></tr>
+    <tr><td class="rowhead">Friday 27 Nov, 11:59pm</td><td>Practical 5</td></tr>
+    <tr><td class="rowhead">Monday 30 Nov, <strong>noon</strong></td><td>Poster + narration (.pptx with recordings)</td></tr>
+    <tr><td class="rowhead">Tuesday 1 Dec, in class</td><td>Peer review — bring nothing, we do it here</td></tr>
+  </table>
+  <div class="box warn hidden-until">
+    <p><strong>Test-record one slide tonight.</strong> The classic failure isn't the poster — it's audio that didn't attach, discovered at 11:50 on Monday morning.</p>
+  </div>
+</section>
+
+<section data-kind="break">
+  <p class="kicker">Last thing</p>
+  <h1>Check out</h1>
+  <p class="url">radlab.zone/class/psy309</p>
+  <div class="qbox">
+    <p>Question box — poster questions especially. Next week is the last class, and you'll spend most of it reviewing each other's work.</p>
+  </div>
+  <aside class="notes"><p>Check-in position 4.</p></aside>
+</section>
+
+</div>
+<div id="bar"></div><div id="num"></div><div id="clock"></div>
+<div id="help"><kbd>→</kbd> next · <kbd>←</kbd> back · <kbd>f</kbd> fullscreen · <kbd>n</kbd> notes<br><kbd>o</kbd> overview · <kbd>t</kbd> timer · <kbd>?</kbd> help</div>
+<script src="./slides.js"></script>
+</body>
+</html>

@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PSY309 · L9 · Mixed Models</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&family=Source+Sans+3:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="./slides.css">
+</head>
+<body>
+<div id="deck">
+
+<section data-kind="title">
+  <p class="kicker">PSY309H5 F · Lecture 8 · 10 November 2026</p>
+  <h1>Mixed Models</h1>
+  <p class="lead">People differ more in where they start than in how much you can move them</p>
+  <p class="small" style="margin-top:3vmin"><strong>Test 2 is next week.</strong> The second half of today is review.</p>
+  <aside class="notes"><p>Say the review framing at the start — it changes how they attend to the sorting drill.</p></aside>
+</section>
+
+<section>
+  <p class="kicker">Check in</p>
+  <h1>Open the dashboard</h1>
+  <p class="url" style="font-family:'JetBrains Mono',monospace;font-size:3.4vmin;color:var(--accent);font-weight:600">radlab.zone/class/psy309</p>
+  <ul>
+    <li>Test 2 next Tuesday, 9:15, this room, same format</li>
+    <li>It focuses on weeks 6–10, but earlier material can reappear</li>
+    <li>Practical 5 lands Nov 27; poster Nov 30</li>
+  </ul>
+  <aside class="notes"><p>Check-in position 1.</p></aside>
+</section>
+
+<section data-kind="divider">
+  <p class="kicker">Part one</p>
+  <h1>Refusing to choose</h1>
+</section>
+
+<section>
+  <h1>The design of nearly every clinical trial</h1>
+  <p class="lead">Take the within-versus-between trade-off — and refuse to choose.</p>
+  <p class="big hidden-until">A <strong>mixed design</strong> has at least one between-subjects factor and at least one within-subjects factor.</p>
+  <p class="hidden-until">People randomized to <em>groups</em> (between). Everyone measured over <em>time</em> (within). Understand one mixed design deeply and you can read most of the intervention literature.</p>
+</section>
+
+<section>
+  <h1>Time × Group</h1>
+  <p>Randomize to a mindfulness programme or a waitlist (between). Measure wellbeing before and after (within). Now run the factorial checklist — and watch what each effect <em>means</em>:</p>
+  <ul>
+    <li class="hidden-until"><strong>Main effect of Time</strong> — everyone changed. On its own, uninteresting: maturation, history and regression rolled together with any treatment effect.</li>
+    <li class="hidden-until"><strong>Main effect of Group</strong> — the groups differ on average. Also not the story: with random assignment, baseline equality is expected.</li>
+    <li class="hidden-until"><strong>The Time × Group interaction</strong> — <em>did the groups change differently?</em></li>
+  </ul>
+  <div class="box warn hidden-until">
+    <p class="big" style="font-size:3.2vmin">That cell is the finding. A clinical trial's entire causal claim lives in one interaction.</p>
+    <p class="small">Which is why "interaction trumps main effects" isn't pedantry — it's the difference between "people felt better in November" and "the programme worked."</p>
+  </div>
+</section>
+
+<section>
+  <h1>How it's written</h1>
+  <pre>Wellbeing ~ Time * Group + (1|Participant)</pre>
+  <div class="cols">
+    <div>
+      <p><strong>Fixed effects</strong> — Time, Group, their interaction. The questions you're asking.</p>
+    </div>
+    <div>
+      <p><strong>Random effect</strong> — <code>(1|Participant)</code>. The design's within-ness, formally acknowledged.</p>
+    </div>
+  </div>
+  <p class="hidden-until lead">That last term gets its own section after the break. First: a dataset that should disturb you.</p>
+</section>
+
+<section>
+  <h1>Reading the graph</h1>
+  <p class="big">Two lines over time.</p>
+  <ul>
+    <li><strong>Parallel</strong> — both groups drift alike. No treatment effect, whatever the slopes.</li>
+    <li><strong>Converging or diverging</strong> — the interaction. The finding.</li>
+  </ul>
+  <p class="hidden-until">Once you have this template, intervention studies read at a glance — <em>and so do their abuses</em>. A single improving line with no comparison group is the one-group pretest/posttest again, with better production values.</p>
+</section>
+
+<section data-kind="activity">
+  <p class="kicker">Exercise A · 25 minutes · cloud R</p>
+  <h1>Build Simpson's Paradox</h1>
+  <p class="big">Studying more will make grades <em>worse</em> — while, inside every single department, studying more makes them <em>better</em>.</p>
+  <p class="lead">Both statements, true of the same data.</p>
+  <p class="small">Open <code>L8_simpsons.R</code>.</p>
+  <aside class="notes"><p>Check-in position 2. Hold the pooled scatterplot on screen, with its confident downward line, BEFORE the colours go on. Ask what a news story would say. Then colour by department.</p></aside>
+</section>
+
+<section>
+  <h1>Same data, opposite sign</h1>
+  <table>
+    <tr><th></th><th>Correlation of hours studied with grades</th></tr>
+    <tr><td class="rowhead">All students pooled</td><td class="hidden-until"><strong style="color:var(--do)">−0.67</strong></td></tr>
+    <tr><td class="rowhead">Department A</td><td class="hidden-until">+0.68</td></tr>
+    <tr><td class="rowhead">Department B</td><td class="hidden-until">+0.81</td></tr>
+    <tr><td class="rowhead">Department C</td><td class="hidden-until">+0.63</td></tr>
+  </table>
+  <p class="hidden-until">The trick is that departments differ in <em>two ways at once</em>: some students study more, and those same departments grade harder.</p>
+  <p class="hidden-until big" style="font-size:3vmin">Three positive numbers, one negative number, one dataset. <em>Which one is "the" answer?</em></p>
+</section>
+
+<section>
+  <h1>Neither number is "the" answer</h1>
+  <div class="cols">
+    <div>
+      <p><strong>A student asks:</strong> "Should I study more?"</p>
+      <p class="small">A <em>within</em>-department question. The answer is yes — emphatically.</p>
+    </div>
+    <div>
+      <p><strong>A dean asks:</strong> "If students across the university studied more, would average grades rise?"</p>
+      <p class="small">A <em>between</em>-department question, tangled up with who studies where.</p>
+    </div>
+  </div>
+  <div class="box hidden-until">
+    <p>The paradox isn't that the numbers disagree. It's that we casually assume <strong>one number could answer both questions.</strong></p>
+    <p class="small">The repair is structural: model the grouping. <code>(1|Department)</code> is, quite literally, Simpson insurance.</p>
+  </div>
+  <aside class="notes"><p>The person-level version matters for psychology's soul: a variable's relationship ACROSS people and WITHIN a person are different facts. Most theories are about the within-person one; most data are between-person.</p></aside>
+</section>
+
+<section data-kind="break">
+  <p class="kicker">Break 1 · ten minutes</p>
+  <h1>Check in</h1>
+  <p class="url">radlab.zone/class/psy309</p>
+  <div class="qbox">
+    <p><strong>The material:</strong> what's one idea from the first hour that clicked — and one that didn't?</p>
+    <p><strong>You:</strong> how engaged have you felt so far, and what would help?</p>
+  </div>
+  <aside class="notes"><p>Check-in position 20.</p></aside>
+</section>
+
+<section data-kind="divider">
+  <p class="kicker">Part two</p>
+  <h1>Everyone starts somewhere different</h1>
+</section>
+
+<section>
+  <h1>The picture that explains everything</h1>
+  <p class="lead">Plot each participant's scores across the study as their own thin line. Forty lines.</p>
+  <ul>
+    <li>The lines <strong>start at wildly different heights.</strong> Some people are simply happier, calmer, faster, more anxious — before anyone manipulates anything.</li>
+    <li>The lines <strong>slope more similarly than they start.</strong> Your manipulation's push is usually modest compared to the standing differences between people.</li>
+  </ul>
+  <p class="hidden-until big" style="font-size:3vmin">Think of something where people's baselines vary more than any experiment could move them. Almost everything you care about qualifies.</p>
+</section>
+
+<section>
+  <h1>Fixed and random, in one sentence each</h1>
+  <div class="cols">
+    <div>
+      <p><strong>Fixed effects</strong> are the questions you're asking — the average slope, the group difference, the interaction. Assumed to be the same process for everyone; estimated once.</p>
+    </div>
+    <div>
+      <p><strong>Random effects</strong> acknowledge that each participant carries their own baseline. <code>(1|Participant)</code> says: give every person their own intercept, and <em>don't charge those differences against the treatment's account.</em></p>
+    </div>
+  </div>
+  <p class="hidden-until small">That's the examinable core. No <code>lmer()</code> on the test.</p>
+</section>
+
+<section>
+  <h1>What acknowledging baselines buys</h1>
+  <ul>
+    <li><strong>Power.</strong> Baseline differences are usually the biggest source of variance; giving them their own term removes them from the noise your effect must shout over. <span class="small">Same magic as the within-subjects design — expressed as a model instead of a procedure.</span></li>
+    <li class="hidden-until"><strong>Honesty about repeated measures.</strong> Two measurements from the same person are not two independent people. Treating them as such counts evidence twice and shrinks p-values fraudulently.</li>
+    <li class="hidden-until"><strong>Simpson insurance.</strong> Modelling within-person effects separately from between-person differences is exactly the disaggregation you just watched.</li>
+  </ul>
+  <p class="hidden-until small">A paired t-test is secretly a tiny mixed model. So is every "each person is their own control" argument you've met.</p>
+</section>
+
+<section>
+  <h1>Why this is now psychology's default</h1>
+  <p>Once you see <code>(1|Participant)</code>, you see the pattern everywhere: students in classrooms, trials in subjects, patients in clinics, measurements in days.</p>
+  <p class="big hidden-until">Real data comes in clusters whose members resemble each other. The model that admits it wins.</p>
+  <p class="small hidden-until">You won't fit these this term. But when your thesis dataset arrives with repeated measures — and it will — you'll recognize the shape and know why the analysis looks like that.</p>
+</section>
+
+<section data-kind="activity">
+  <p class="kicker">Exercise B · 25 minutes · Test 2 prep</p>
+  <h1>Sort the third variable</h1>
+  <p class="big">Ten scenarios. Mediator, moderator, or confound?</p>
+  <div class="cols">
+    <div>
+      <p><strong>The mnemonic:</strong><br>
+      Moderation = <em>when / for whom</em><br>
+      Mediation = <em>why</em><br>
+      Confound = <em>controlling for</em></p>
+    </div>
+    <div>
+      <div class="box warn">
+        <p><strong>The test that decides it — the arrows:</strong></p>
+        <p class="small">Mediator: receives an arrow from X.<br>
+        Confound: sends arrows to both X and Y, receives none.<br>
+        Moderator: receives nothing; changes the size of X→Y across its own levels.</p>
+      </div>
+    </div>
+  </div>
+  <p class="small">Vote first, justify second. Five rounds of two.</p>
+  <aside class="notes"><p>Check-in position 3 — this quiz DOES have an answer key; reveal after each round. Budget the last eight minutes for items 9 and 10.</p></aside>
+</section>
+
+<section>
+  <p class="kicker">The two that matter</p>
+  <h1>Item 9 — the expensive mistake</h1>
+  <p>Poverty predicts poorer health. A researcher notes poverty produces <strong>chronic stress</strong>, controls for chronic stress, finds the poverty–health link shrinks sharply, and concludes poverty matters less than believed.</p>
+  <p class="hidden-until big" style="color:var(--do)">Chronic stress is a <em>mediator</em> being treated as a confound.</p>
+  <p class="hidden-until">Controlling it away doesn't purify the estimate — it amputates the explanation and then reports the effect as small. With real policy consequences.</p>
+  <p class="small hidden-until">What should they have run instead? A mediation analysis: how much of poverty's effect travels <em>through</em> stress.</p>
+</section>
+
+<section>
+  <p class="kicker">The two that matter</p>
+  <h1>Item 10 — the honest complication</h1>
+  <p>Students who attend office hours earn better grades. <strong>Conscientiousness</strong> predicts attending office hours — and studying more, submitting on time, asking for help.</p>
+  <p class="hidden-until">Confound. <em>But push on it:</em> if conscientious students <em>benefit more</em> from office hours than others do, it's also a moderator.</p>
+  <div class="box hidden-until">
+    <p class="big" style="font-size:3vmin">A variable's role is a claim about causal structure, not a property of the variable.</p>
+    <p>The same variable can play different roles in different questions. Which is why the arrows are the whole game.</p>
+  </div>
+</section>
+
+<section data-kind="break">
+  <p class="kicker">Break 2 · ten minutes</p>
+  <h1>Check in</h1>
+  <p class="url">radlab.zone/class/psy309</p>
+  <div class="qbox">
+    <p><strong>The material:</strong> what's one question you still have about today, now that you've worked with it?</p>
+    <p><strong>You:</strong> how has your engagement changed since the first break — and what changed it?</p>
+  </div>
+  <aside class="notes"><p>Check-in position 40.</p></aside>
+</section>
+
+<section data-kind="divider">
+  <p class="kicker">Part three</p>
+  <h1>Test 2</h1>
+</section>
+
+<section>
+  <h1>What's on it, and what earns marks</h1>
+  <div class="cols">
+    <div>
+      <p><strong>Focus: weeks 6–10.</strong> Describing data, effect sizes, CIs, power · experiments and their threats · factorial designs and interactions · quasi-experiments and small-N · mixed models, at the level of the last hour.</p>
+      <p class="small">Earlier material can reappear — especially the claims and validities.</p>
+    </div>
+    <div>
+      <div class="box">
+        <p><strong>Reliably present question families:</strong></p>
+        <p class="small">· Read a 2 × 2 grid, name the effects<br>
+        · A study finds no difference — give three distinct reasons<br>
+        · Sort a third variable, <em>with the arrows</em><br>
+        · Name the specific threat in a scenario and the design feature that fixes it</p>
+      </div>
+    </div>
+  </div>
+  <p class="hidden-until"><strong>Precision is the currency.</strong> "Selection effect from self-selected groups" beats "something's off about the groups" — every time, by a mark.</p>
+  <aside class="notes"><p>Check-in position 4 for questions. Then work one short-answer live on the board, out loud, showing how you'd earn each point. That demonstration is worth more than any list of tips.</p></aside>
+</section>
+
+<section data-kind="break">
+  <p class="kicker">Last thing</p>
+  <h1>Check out</h1>
+  <p class="url">radlab.zone/class/psy309</p>
+  <div class="qbox">
+    <p>Question box — test questions especially. Good luck Tuesday. After that: what happens when a whole field checks its own work.</p>
+  </div>
+</section>
+
+</div>
+<div id="bar"></div><div id="num"></div><div id="clock"></div>
+<div id="help"><kbd>→</kbd> next · <kbd>←</kbd> back · <kbd>f</kbd> fullscreen · <kbd>n</kbd> notes<br><kbd>o</kbd> overview · <kbd>t</kbd> timer · <kbd>?</kbd> help</div>
+<script src="./slides.js"></script>
+</body>
+</html>
