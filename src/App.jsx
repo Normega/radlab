@@ -95,6 +95,7 @@ const ClassVerifyEmail = lazy(() => import('./academic/lecture-lounge/ClassVerif
 const ClassConsole     = lazy(() => import('./academic/lecture-lounge/ClassConsole'))
 const ClassRemote      = lazy(() => import('./academic/lecture-lounge/ClassRemote'))
 const ClassScreen      = lazy(() => import('./academic/lecture-lounge/ClassScreen'))
+const ClassSlides      = lazy(() => import('./academic/lecture-lounge/ClassSlides'))
 const LectureLoungeAdminPage = lazy(() => import('./academic/lecture-lounge/LectureLoungeAdminPage'))
 const AcademicHome         = lazy(() => import('./academic/AcademicHome'))
 // Field Guide auths against the separate radlab-academic Supabase project;
@@ -665,6 +666,7 @@ export default function App() {
               <Route path="/class/:slug/console" element={<ClassConsole session={session} />} />
               <Route path="/class/:slug/remote" element={<ClassRemote session={session} />} />
               <Route path="/class/:slug/screen" element={<ClassScreen />} />
+              <Route path="/class/:slug/slides" element={<ClassSlides />} />
             </Route>
             <Route element={<LectureLoungeAdminRoute session={session} role={role} superAdmin={superAdmin} />}>
               <Route path="/academic/lecture-lounge/admin" element={<LectureLoungeAdminPage session={session} />} />

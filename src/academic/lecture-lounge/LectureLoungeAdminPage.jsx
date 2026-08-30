@@ -104,6 +104,7 @@ function ClassRow({ cls, expanded, onToggle, onDelete }) {
           <div style={S.actions}>
             <button style={S.actionBtn} onClick={onToggle}>{expanded ? 'Hide instructors' : 'Instructors'}</button>
             <Link to={`/class/${cls.slug}/console`} style={S.actionBtn}>Console</Link>
+            <Link to={`/class/${cls.slug}/slides`} style={S.actionBtn}>Slides</Link>
             <Link to={`/class/${cls.slug}`} style={S.actionBtn}>Join page</Link>
             <QrDownloadButton
               value={`${window.location.origin}/class/${cls.slug}`}
