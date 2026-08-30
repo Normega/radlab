@@ -99,6 +99,18 @@ td.margin { background:var(--accent-soft); font-weight:700; }
 .hidden-until { visibility:hidden; }
 .hidden-until.shown { visibility:visible; }
 
+/* ---- inline SVG diagrams ----
+   Authored with a viewBox and no fixed width/height so they scale with the
+   projector like everything else. Text inside inherits the deck's face; emoji
+   need their own stack or Windows renders them as boxes. Elements inside an
+   SVG can carry .hidden-until, which is how a diagram's answer labels stay
+   hidden until the second press. */
+.svgwrap { display:flex; justify-content:center; margin:1.4vmin 0; }
+.svgwrap svg { width:100%; height:auto; max-width:92%; max-height:52vh; }
+.svgwrap svg text { font-family:"Source Sans 3","Segoe UI",system-ui,sans-serif; }
+.svgwrap svg .emoji { font-family:"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji","Segoe UI Symbol",sans-serif; }
+@media print { .svgwrap svg { max-height:11cm; } }
+
 /* ---- figure / image ---- */
 img.fig { max-width:100%; max-height:56vh; object-fit:contain; border-radius:6px; }
 figcaption { font-size:1.9vmin; color:var(--muted); margin-top:1vmin; }
