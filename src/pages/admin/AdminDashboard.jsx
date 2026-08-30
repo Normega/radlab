@@ -116,7 +116,7 @@ const S = {
   },
   countLabel: {
     fontFamily: '"Space Mono",monospace',
-    fontSize: 11, color: 'var(--tx3)',
+    fontSize: 12, color: 'var(--tx3)',
     textTransform: 'uppercase', letterSpacing: '0.06em',
   },
   count: {

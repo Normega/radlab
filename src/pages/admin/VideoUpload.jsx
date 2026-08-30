@@ -239,7 +239,7 @@ export default function VideoUpload() {
             <p style={{ fontFamily: 'DM Sans', fontSize: 14, fontWeight: 600, color: 'var(--tx)', margin: '0 0 4px' }}>
               {file.name}
             </p>
-            <p style={{ fontFamily: 'Space Mono', fontSize: 11, color: 'var(--tx3)', margin: '0 0 8px' }}>
+            <p style={{ fontFamily: 'Space Mono', fontSize: 12, color: 'var(--tx3)', margin: '0 0 8px' }}>
               {fmtSize(file.size)}
               {meta?.duration != null && ` · ${Math.floor(meta.duration / 60)}:${(meta.duration % 60).toString().padStart(2, '0')}`}
               {meta?.width && ` · ${meta.width}×${meta.height}`}
@@ -300,7 +300,7 @@ export default function VideoUpload() {
             )}
           </div>
           {effectiveFolder && (
-            <p style={{ fontFamily: 'Space Mono', fontSize: 11, color: 'var(--tx3)', margin: '4px 0 0' }}>
+            <p style={{ fontFamily: 'Space Mono', fontSize: 12, color: 'var(--tx3)', margin: '4px 0 0' }}>
               Storage path prefix: {folderSlug(effectiveFolder)}/
             </p>
           )}
@@ -324,7 +324,7 @@ export default function VideoUpload() {
             <span style={{ fontFamily: 'DM Sans', fontSize: 14, color: 'var(--tx2)' }}>
               {uploadDone ? 'Complete' : 'Uploading…'}
             </span>
-            <span style={{ fontFamily: 'Space Mono', fontSize: 11, color: 'var(--tx3)' }}>{progress}%</span>
+            <span style={{ fontFamily: 'Space Mono', fontSize: 12, color: 'var(--tx3)' }}>{progress}%</span>
           </div>
           <div style={S.progressTrack}>
             <div style={{
@@ -398,7 +398,7 @@ function PreflightPanel({ checks, override, onOverride }) {
       padding: '14px 16px',
     }}>
       <p style={{
-        fontFamily: 'Space Mono', fontSize: 11,
+        fontFamily: 'Space Mono', fontSize: 12,
         color: allPass ? '#1EA878' : '#8b6000',
         textTransform: 'uppercase', letterSpacing: '0.06em',
         margin: '0 0 10px',
@@ -410,7 +410,7 @@ function PreflightPanel({ checks, override, onOverride }) {
         {rows.map(row => (
           <div key={row.label} style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
             <span style={{
-              fontFamily: 'Space Mono', fontSize: 10,
+              fontFamily: 'Space Mono', fontSize: 12,
               color: row.pass ? '#1EA878' : row.hard ? '#c0392b' : '#b07800',
               width: 14, flexShrink: 0, textAlign: 'center',
             }}>
@@ -432,14 +432,14 @@ function PreflightPanel({ checks, override, onOverride }) {
       {hardFail && (
         <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid rgba(0,0,0,0.07)' }}>
           <p style={{ fontFamily: 'DM Sans', fontSize: 12, color: 'var(--tx2)', margin: '0 0 8px' }}>
-            Run <code style={{ fontFamily: 'Space Mono', fontSize: 11, background: 'rgba(0,0,0,0.06)', padding: '1px 5px', borderRadius: 4 }}>encode_study_clip.ps1</code> on this file to produce a correctly encoded version, then upload the result.
+            Run <code style={{ fontFamily: 'Space Mono', fontSize: 12, background: 'rgba(0,0,0,0.06)', padding: '1px 5px', borderRadius: 4 }}>encode_study_clip.ps1</code> on this file to produce a correctly encoded version, then upload the result.
           </p>
           {!override ? (
             <button onClick={() => onOverride(true)} style={S.overrideBtn}>
               Upload anyway
             </button>
           ) : (
-            <p style={{ fontFamily: 'Space Mono', fontSize: 11, color: '#8b6000', margin: 0 }}>
+            <p style={{ fontFamily: 'Space Mono', fontSize: 12, color: '#8b6000', margin: 0 }}>
               ⚠ Override active — upload will proceed despite failed checks
             </p>
           )}
@@ -490,7 +490,7 @@ const S = {
   },
   fieldWrap:     { display: 'flex', flexDirection: 'column', gap: 6 },
   label: {
-    fontFamily: 'Space Mono', fontSize: 11,
+    fontFamily: 'Space Mono', fontSize: 12,
     color: 'var(--tx2)', textTransform: 'uppercase', letterSpacing: '0.05em',
   },
   input: {

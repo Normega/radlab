@@ -212,7 +212,7 @@ export default function Diagnostics() {
                   {r.status_code ?? r.error_msg ?? '—'}
                 </td>
                 <td style={S.td}>{r.target_guess ?? <span style={S.muted}>unattributed</span>}</td>
-                <td style={{ ...S.td, fontFamily: '"Space Mono",monospace', fontSize: 11 }}>{r.snippet}</td>
+                <td style={{ ...S.td, fontFamily: '"Space Mono",monospace', fontSize: 12 }}>{r.snippet}</td>
               </tr>
             ))}
             {(http.rows ?? []).length === 0 && (
@@ -238,13 +238,13 @@ const S = {
   cardBad:   { borderColor: '#f3c9c9' },
   cardHead:  { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 12 },
   cardTitle: { fontFamily: '"Space Mono",monospace', fontSize: 14, fontWeight: 700, color: 'var(--tx)' },
-  badge:     { fontFamily: '"Space Mono",monospace', fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', padding: '3px 8px', borderRadius: 999 },
+  badge:     { fontFamily: '"Space Mono",monospace', fontSize: 12, fontWeight: 700, letterSpacing: '0.06em', padding: '3px 8px', borderRadius: 999 },
   grid:      { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: '10px 16px' },
   stat:      { display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 },
-  statLabel: { fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 11, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.05em' },
+  statLabel: { fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 12, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.05em' },
   statValue: { fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 14, fontWeight: 600, color: 'var(--tx)', overflow: 'hidden', textOverflow: 'ellipsis' },
   tableWrap: { overflowX: 'auto', border: '1px solid var(--bd)', borderRadius: 12, background: '#fff' },
   table:     { width: '100%', borderCollapse: 'collapse', minWidth: 520 },
-  th:        { textAlign: 'left', fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 11, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '10px 12px', borderBottom: '1px solid var(--bd)', whiteSpace: 'nowrap' },
+  th:        { textAlign: 'left', fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 12, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '10px 12px', borderBottom: '1px solid var(--bd)', whiteSpace: 'nowrap' },
   td:        { fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 14, color: 'var(--tx)', padding: '9px 12px', borderBottom: '1px solid var(--bd)', verticalAlign: 'top' },
 }

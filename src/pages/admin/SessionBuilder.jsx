@@ -479,7 +479,7 @@ export default function SessionBuilder() {
               return (
                 <div key={section.header} style={{ marginBottom: 20 }}>
                   <p style={{
-                    fontFamily: '"Space Mono", monospace', fontSize: 10, letterSpacing: '0.1em',
+                    fontFamily: '"Space Mono", monospace', fontSize: 12, letterSpacing: '0.1em',
                     textTransform: 'uppercase', color: 'var(--gy)', margin: '0 0 8px',
                     borderBottom: '1px solid var(--bd)', paddingBottom: 4,
                   }}>{section.header}</p>
@@ -512,7 +512,7 @@ export default function SessionBuilder() {
                       title="Adopted — importable once an instrument of this type exists in the library">
                       <span style={S.actLabel}>{CATEGORY_LABELS[cat]}</span>
                       <span style={{
-                        fontFamily: '"Space Mono", monospace', fontSize: 9, letterSpacing: '0.06em',
+                        fontFamily: '"Space Mono", monospace', fontSize: 12, letterSpacing: '0.06em',
                         textTransform: 'uppercase', color: 'var(--pkd)', background: 'var(--bgp)',
                         padding: '2px 7px', borderRadius: 10, flexShrink: 0,
                       }}>pending</span>
@@ -557,32 +557,32 @@ const S = {
   muted:        { fontSize: 14, color: 'var(--tx3)', margin: '8px 0' },
   errMsg:       { fontSize: 14, color: '#e04', background: '#fff0f0', border: '1px solid #fcc', borderRadius: 8, padding: '8px 14px', marginBottom: 16 },
   fields:       { background: '#fff', border: '1px solid var(--bd)', borderRadius: 10, padding: '18px 20px', marginBottom: 20 },
-  fieldLabel:   { display: 'block', fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 },
+  fieldLabel:   { display: 'block', fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 },
   input:        { width: '100%', fontSize: 14, fontFamily: '"DM Sans",system-ui,sans-serif', border: '1px solid var(--bd)', borderRadius: 8, padding: '8px 12px', color: 'var(--tx)', background: '#fff', boxSizing: 'border-box' },
   columns:      { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 },
   panel:        { background: '#fff', border: '1px solid var(--bd)', borderRadius: 10, padding: '18px 16px', minHeight: 200 },
-  panelTitle:   { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 14px' },
-  catLabel:     { fontFamily: '"Space Mono",monospace', fontSize: 10, color: 'var(--pk)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 6px' },
-  catToggle:    { display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', background: 'none', border: 'none', padding: '0 0 6px', cursor: 'pointer', fontFamily: '"Space Mono",monospace', fontSize: 10, color: 'var(--pk)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 },
-  catChevron:   { fontSize: 8, opacity: 0.7 },
+  panelTitle:   { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 14px' },
+  catLabel:     { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--pk)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 6px' },
+  catToggle:    { display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', background: 'none', border: 'none', padding: '0 0 6px', cursor: 'pointer', fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--pk)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 },
+  catChevron:   { fontSize: 12, opacity: 0.7 },
   actBtn:       { display: 'flex', alignItems: 'center', gap: 8, width: '100%', background: 'none', border: '1px solid var(--bd)', borderRadius: 8, padding: '7px 10px', cursor: 'pointer', marginBottom: 5, textAlign: 'left' },
   actLabel:     { flex: 1, fontSize: 14, color: 'var(--tx)', fontFamily: '"DM Sans",system-ui,sans-serif' },
-  uploadedTag:  { fontSize: 10, color: 'var(--tx3)', fontFamily: '"Space Mono",monospace', border: '1px solid var(--bd)', borderRadius: 4, padding: '1px 5px', flexShrink: 0 },
-  actMin:       { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)' },
+  uploadedTag:  { fontSize: 12, color: 'var(--tx3)', fontFamily: '"Space Mono",monospace', border: '1px solid var(--bd)', borderRadius: 4, padding: '1px 5px', flexShrink: 0 },
+  actMin:       { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)' },
   actAdd:       { fontSize: 16, color: 'var(--pk)', fontWeight: 600, lineHeight: 1 },
   seqItemWrap:  { marginBottom: 6 },
   seqItem:      { display: 'flex', alignItems: 'center', gap: 8, background: 'var(--pkb)', border: '1px solid var(--bd)', borderRadius: 8, padding: '7px 10px', cursor: 'default' },
   seqItemWarn:  { border: '1px solid #e8a33d', background: '#fdf6ec' },
   depWarnBox:   { background: '#fdf6ec', border: '1px solid #f0d9b0', borderTop: 'none', borderRadius: '0 0 8px 8px', padding: '6px 10px', margin: '0 4px' },
-  depWarnLine:  { fontSize: 11, color: '#9a6b1f', fontFamily: '"DM Sans",system-ui,sans-serif', lineHeight: 1.5 },
-  depSlotLine:  { fontSize: 11, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif', padding: '4px 10px 0', lineHeight: 1.5 },
+  depWarnLine:  { fontSize: 12, color: '#9a6b1f', fontFamily: '"DM Sans",system-ui,sans-serif', lineHeight: 1.5 },
+  depSlotLine:  { fontSize: 12, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif', padding: '4px 10px 0', lineHeight: 1.5 },
   dragHandle:   { fontSize: 16, color: 'var(--tx3)', cursor: 'grab', userSelect: 'none', flexShrink: 0 },
   seqLabel:     { fontSize: 14, color: 'var(--tx)', fontFamily: '"DM Sans",system-ui,sans-serif', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
-  seqCat:       { fontSize: 11, color: 'var(--tx3)', fontFamily: '"Space Mono",monospace', display: 'block' },
-  seqMin:       { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', flexShrink: 0 },
+  seqCat:       { fontSize: 12, color: 'var(--tx3)', fontFamily: '"Space Mono",monospace', display: 'block' },
+  seqMin:       { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', flexShrink: 0 },
   removeBtn:    { background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--tx3)', padding: '0 2px', lineHeight: 1, flexShrink: 0 },
   totalRow:     { display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--bd)', marginTop: 12, paddingTop: 10 },
-  totalLabel:   { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' },
+  totalLabel:   { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' },
   totalVal:     { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx)', fontWeight: 700 },
   btnPrimary:   { display: 'inline-block', background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
 }

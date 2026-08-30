@@ -116,7 +116,7 @@ function TypeBadge({ type }) {
   const s = styles[type] ?? { bg: '#f4f4f5', color: '#52525b' }
   return (
     <span style={{
-      fontFamily: '"Space Mono",monospace', fontSize: 10,
+      fontFamily: '"Space Mono",monospace', fontSize: 12,
       borderRadius: 6, padding: '2px 7px',
       background: s.bg, color: s.color,
     }}>
@@ -148,9 +148,9 @@ const S = {
   emptyHint:  { fontSize: 14, color: 'var(--tx2)', margin: 0 },
   tableWrap:  { overflowX: 'auto', borderRadius: 10, border: '1px solid var(--bd)', background: '#fff' },
   table:      { width: '100%', borderCollapse: 'collapse' },
-  th:         { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', textAlign: 'left', padding: '10px 16px', borderBottom: '1px solid var(--bd)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap' },
+  th:         { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', textAlign: 'left', padding: '10px 16px', borderBottom: '1px solid var(--bd)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap' },
   tr:         { borderBottom: '1px solid var(--bd)' },
   td:         { padding: '11px 16px', verticalAlign: 'middle' },
   studyName:  { fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 14, color: 'var(--tx)' },
-  mono:       { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx2)' },
+  mono:       { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx2)' },
 }

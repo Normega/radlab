@@ -221,8 +221,8 @@ function PhysioPreviewChart({ data }) {
         <ResponsiveContainer width="100%" height={140}>
           <LineChart data={accel}>
             <XAxis dataKey={accelXCol} hide />
-            <YAxis width={40} tick={{ fontSize: 10 }} />
-            <Tooltip contentStyle={{ fontSize: 11 }} />
+            <YAxis width={40} tick={{ fontSize: 12 }} />
+            <Tooltip contentStyle={{ fontSize: 12 }} />
             <Line type="monotone" dataKey={accelYCol} dot={false} stroke="var(--pk)" strokeWidth={1} />
           </LineChart>
         </ResponsiveContainer>
@@ -232,8 +232,8 @@ function PhysioPreviewChart({ data }) {
         <ResponsiveContainer width="100%" height={140}>
           <LineChart data={hr}>
             <XAxis dataKey={hrXCol} hide />
-            <YAxis width={40} tick={{ fontSize: 10 }} />
-            <Tooltip contentStyle={{ fontSize: 11 }} />
+            <YAxis width={40} tick={{ fontSize: 12 }} />
+            <Tooltip contentStyle={{ fontSize: 12 }} />
             <Line type="monotone" dataKey={hrYCol} dot={false} stroke="#16a34a" strokeWidth={1} />
           </LineChart>
         </ResponsiveContainer>
@@ -791,7 +791,7 @@ const S = {
     padding: '14px 20px', borderBottom: '1px solid var(--bd)',
   },
   sectionTitle:  { fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 15, fontWeight: 600, color: 'var(--tx)' },
-  sectionCount:  { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)' },
+  sectionCount:  { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)' },
   csvBtn: {
     background: 'var(--pkb)', color: 'var(--pk)',
     border: '1px solid var(--pk)', borderRadius: 8,
@@ -809,15 +809,15 @@ const S = {
   table:     { width: '100%', borderCollapse: 'collapse', fontSize: 12 },
   th: {
     padding: '7px 12px', textAlign: 'left',
-    fontFamily: '"Space Mono",monospace', fontSize: 10,
+    fontFamily: '"Space Mono",monospace', fontSize: 12,
     color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.05em',
     borderBottom: '1px solid var(--bd)', background: '#fafafa', whiteSpace: 'nowrap',
   },
   tr:     { borderBottom: '1px solid var(--bd)' },
   td:     { padding: '7px 12px', fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 14, color: 'var(--tx)', whiteSpace: 'nowrap' },
-  tdMono: { padding: '7px 12px', fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx)', whiteSpace: 'nowrap' },
+  tdMono: { padding: '7px 12px', fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx)', whiteSpace: 'nowrap' },
   msg:    { padding: '16px 20px', margin: 0, fontSize: 14, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif' },
-  chartLabel: { margin: '0 0 6px', fontSize: 11, fontFamily: '"Space Mono",monospace', color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.05em' },
+  chartLabel: { margin: '0 0 6px', fontSize: 12, fontFamily: '"Space Mono",monospace', color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.05em' },
 
   dim:  { margin: 0, fontSize: 12, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif' },
   mono: { margin: 0, fontSize: 12, color: 'var(--tx2)', fontFamily: '"Space Mono",monospace' },
@@ -828,12 +828,12 @@ const S = {
     fontFamily: '"DM Sans",system-ui,sans-serif', lineHeight: 1.4,
   },
   catHead: {
-    margin: '22px 0 8px', fontSize: 11, fontWeight: 700,
+    margin: '22px 0 8px', fontSize: 12, fontWeight: 700,
     fontFamily: '"Space Mono",monospace', color: 'var(--tx2)',
     textTransform: 'uppercase', letterSpacing: '0.08em',
   },
   tableName: {
-    fontFamily: '"Space Mono",monospace', fontSize: 10, color: 'var(--tx3)',
+    fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)',
     background: '#f3f4f6', borderRadius: 4, padding: '2px 6px',
   },
   linkBtn: {

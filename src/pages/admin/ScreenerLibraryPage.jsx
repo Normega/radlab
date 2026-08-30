@@ -123,7 +123,7 @@ const S = {
   cardName:     { fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 15, fontWeight: 600, color: 'var(--tx)', marginBottom: 6 },
   cardMeta:     { display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' },
   cardDesc:     { fontSize: 14, color: 'var(--tx2)', margin: '8px 0 0', lineHeight: 1.5, fontFamily: '"DM Sans",system-ui,sans-serif' },
-  slug:         { fontFamily: '"Space Mono",monospace', fontSize: 11, background: 'var(--pkb)', color: 'var(--pk)', borderRadius: 6, padding: '2px 7px' },
+  slug:         { fontFamily: '"Space Mono",monospace', fontSize: 12, background: 'var(--pkb)', color: 'var(--pk)', borderRadius: 6, padding: '2px 7px' },
   sep:          { color: 'var(--tx3)', fontSize: 12 },
   metaText:     { fontSize: 14, color: 'var(--tx2)', fontFamily: '"DM Sans",system-ui,sans-serif' },
   cardActions:  { display: 'flex', gap: 10, alignItems: 'center', flexShrink: 0 },
@@ -133,7 +133,7 @@ const S = {
   jsonPre:      { margin: 0, padding: '16px 20px', fontSize: 12, lineHeight: 1.6, color: '#2c2c2a', fontFamily: '"Space Mono",monospace', overflowX: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-word' },
   previewOverlay: { position: 'fixed', inset: 0, zIndex: 200, display: 'flex', flexDirection: 'column', overflowY: 'auto' },
   previewBar:   { background: '#f0ede8', borderBottom: '1px solid #e0ddd8', padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, position: 'sticky', top: 0, zIndex: 201 },
-  previewBadge: { fontFamily: '"Space Mono",monospace', fontSize: 11, color: '#5f5e5a', display: 'flex', alignItems: 'center', gap: 6 },
+  previewBadge: { fontFamily: '"Space Mono",monospace', fontSize: 12, color: '#5f5e5a', display: 'flex', alignItems: 'center', gap: 6 },
   previewDot:   { display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: '#639922' },
   closeBtn:     { background: 'none', border: '1px solid #d0cdc8', borderRadius: 6, padding: '5px 12px', fontSize: 12, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', color: '#5f5e5a' },
 }

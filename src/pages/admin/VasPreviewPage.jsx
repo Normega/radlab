@@ -109,7 +109,7 @@ export default function VasPreviewPage() {
 function MetaItem({ label, value }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-      <span style={{ fontFamily: '"Space Mono",monospace', fontSize: 10, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</span>
+      <span style={{ fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</span>
       <span style={{ fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 14, color: 'var(--tx)' }}>{value}</span>
     </div>
   )

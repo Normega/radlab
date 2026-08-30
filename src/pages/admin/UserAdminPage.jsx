@@ -294,7 +294,7 @@ const S = {
   tableWrap: { border: '1px solid var(--bds)', borderRadius: 12, overflowX: 'auto', background: 'var(--bgc)' },
   table:     { width: '100%', borderCollapse: 'collapse', fontSize: 14 },
   th: {
-    textAlign: 'left', padding: '10px 14px', fontFamily: MONO, fontSize: 11,
+    textAlign: 'left', padding: '10px 14px', fontFamily: MONO, fontSize: 12,
     letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--tx3)',
     borderBottom: '1px solid var(--bds)', whiteSpace: 'nowrap',
   },
@@ -314,7 +314,7 @@ const S = {
   roleBadgeFallback: { background: 'var(--bgp)', color: 'var(--tx2)', borderColor: 'var(--bds)' },
   superBadge: {
     marginLeft: 8, padding: '1px 8px', borderRadius: 999, fontFamily: MONO,
-    fontSize: 10, background: '#FFF4D6', color: '#8A6D00', border: '1px solid #EDD98F',
+    fontSize: 12, background: '#FFF4D6', color: '#8A6D00', border: '1px solid #EDD98F',
   },
 
   smallBtn: {

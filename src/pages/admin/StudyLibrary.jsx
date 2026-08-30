@@ -196,14 +196,14 @@ function DeliveryBadge({ mode }) {
   }
   const c = map[mode] ?? { label: mode ?? '—', bg: '#f4f4f5', color: '#52525b' }
   return (
-    <span style={{ fontFamily: '"Space Mono",monospace', fontSize: 10, background: c.bg, color: c.color, borderRadius: 6, padding: '2px 7px', whiteSpace: 'nowrap' }}>
+    <span style={{ fontFamily: '"Space Mono",monospace', fontSize: 12, background: c.bg, color: c.color, borderRadius: 6, padding: '2px 7px', whiteSpace: 'nowrap' }}>
       {c.label}
     </span>
   )
 }
 
 function Chip({ children }) {
-  return <span style={{ fontFamily: '"Space Mono",monospace', fontSize: 11, background: 'var(--pkb)', color: 'var(--pk)', borderRadius: 6, padding: '2px 7px' }}>{children}</span>
+  return <span style={{ fontFamily: '"Space Mono",monospace', fontSize: 12, background: 'var(--pkb)', color: 'var(--pk)', borderRadius: 6, padding: '2px 7px' }}>{children}</span>
 }
 
 function fmtDate(ts) {
@@ -219,14 +219,14 @@ const S = {
   label: { fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 14, fontWeight: 600, color: 'var(--tx)' },
   proto: { fontSize: 14, color: 'var(--tx2)', fontFamily: '"DM Sans",system-ui,sans-serif' },
   pct: { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx)' },
-  archivedBadge: { display: 'inline-block', marginLeft: 8, fontFamily: '"Space Mono",monospace', fontSize: 10, background: '#f4f4f5', color: 'var(--tx3)', borderRadius: 6, padding: '2px 6px' },
-  inPersonBadge: { display: 'inline-block', marginLeft: 8, fontFamily: '"Space Mono",monospace', fontSize: 10, background: '#fdf2f8', color: 'var(--pk)', borderRadius: 6, padding: '2px 6px' },
+  archivedBadge: { display: 'inline-block', marginLeft: 8, fontFamily: '"Space Mono",monospace', fontSize: 12, background: '#f4f4f5', color: 'var(--tx3)', borderRadius: 6, padding: '2px 6px' },
+  inPersonBadge: { display: 'inline-block', marginLeft: 8, fontFamily: '"Space Mono",monospace', fontSize: 12, background: '#fdf2f8', color: 'var(--pk)', borderRadius: 6, padding: '2px 6px' },
   empty: { textAlign: 'center', padding: '48px 0' },
   emptyText: { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 20, color: 'var(--tx)', margin: '0 0 8px' },
   emptyHint: { fontSize: 14, color: 'var(--tx2)', margin: '0 0 24px' },
   tableWrap: { overflowX: 'auto', borderRadius: 10, border: '1px solid var(--bd)', background: '#fff' },
   table: { width: '100%', borderCollapse: 'collapse' },
-  th: { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', textAlign: 'left', padding: '10px 16px', borderBottom: '1px solid var(--bd)', textTransform: 'uppercase', letterSpacing: '0.06em' },
+  th: { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', textAlign: 'left', padding: '10px 16px', borderBottom: '1px solid var(--bd)', textTransform: 'uppercase', letterSpacing: '0.06em' },
   tr: { borderBottom: '1px solid var(--bd)' },
   td: { padding: '12px 16px', verticalAlign: 'middle' },
   actions: { display: 'flex', gap: 10, alignItems: 'center' },

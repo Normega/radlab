@@ -209,7 +209,7 @@ function FolderTab({ label, count, active, onClick }) {
         color: active ? '#fff' : 'var(--tx3)',
         borderRadius: 10,
         padding: '1px 7px',
-        fontSize: 11,
+        fontSize: 12,
         fontFamily: 'Space Mono',
       }}>
         {count}
@@ -323,7 +323,7 @@ function PreviewModal({ video, onClose }) {
               {video.title}
             </p>
             <p style={{
-              fontFamily: 'Space Mono', fontSize: 11,
+              fontFamily: 'Space Mono', fontSize: 12,
               color: 'rgba(255,255,255,0.45)', margin: 0,
             }}>
               Preview — no session data recorded
@@ -386,7 +386,7 @@ const S = {
     textAlign: 'center',
   },
   folderHeading: {
-    fontFamily: 'Space Mono', fontSize: 11,
+    fontFamily: 'Space Mono', fontSize: 12,
     color: 'var(--tx3)', textTransform: 'uppercase',
     letterSpacing: '0.06em', margin: '0 0 8px',
   },
@@ -421,7 +421,7 @@ const S = {
     fontStyle: 'italic',
   },
   storagePath: {
-    fontFamily: 'Space Mono', fontSize: 11,
+    fontFamily: 'Space Mono', fontSize: 12,
     color: 'var(--gy)', margin: '4px 0 0',
     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
   },

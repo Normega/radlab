@@ -196,7 +196,7 @@ function FolderTab({ label, count, active, onClick }) {
         background: active ? 'var(--pk)' : 'var(--bg)',
         color: active ? '#fff' : 'var(--tx3)',
         borderRadius: 10, padding: '1px 7px',
-        fontSize: 11, fontFamily: 'Space Mono',
+        fontSize: 12, fontFamily: 'Space Mono',
       }}>
         {count}
       </span>
@@ -288,7 +288,7 @@ function PreviewModal({ audio, onClose }) {
             <p style={{ fontFamily: 'DM Sans', fontSize: 15, fontWeight: 600, color: '#fff', margin: '0 0 2px' }}>
               {audio.title}
             </p>
-            <p style={{ fontFamily: 'Space Mono', fontSize: 11, color: 'rgba(255,255,255,0.45)', margin: 0 }}>
+            <p style={{ fontFamily: 'Space Mono', fontSize: 12, color: 'rgba(255,255,255,0.45)', margin: 0 }}>
               Preview — no session data recorded
             </p>
           </div>
@@ -341,7 +341,7 @@ const S = {
     borderRadius: 14, padding: 40, textAlign: 'center',
   },
   folderHeading: {
-    fontFamily: 'Space Mono', fontSize: 11,
+    fontFamily: 'Space Mono', fontSize: 12,
     color: 'var(--tx3)', textTransform: 'uppercase',
     letterSpacing: '0.06em', margin: '0 0 8px',
   },
@@ -370,7 +370,7 @@ const S = {
     color: 'var(--tx2)', margin: '0 0 2px',
   },
   storagePath: {
-    fontFamily: 'Space Mono', fontSize: 11,
+    fontFamily: 'Space Mono', fontSize: 12,
     color: 'var(--gy)', margin: '4px 0 0',
     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
   },

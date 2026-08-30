@@ -172,7 +172,7 @@ export default function AnonymousLinkPanel({ study, qc }) {
                     <td style={S.td}>
                       {!isRevoked && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span style={{ ...S.mono, fontSize: 11, maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          <span style={{ ...S.mono, fontSize: 12, maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {url}
                           </span>
                           <button style={S.copyBtn} onClick={() => copyLink(l.token)}>
@@ -212,7 +212,7 @@ function StatusBadge({ status }) {
   }
   const c = map[status] ?? map.expired
   return (
-    <span style={{ fontFamily: '"Space Mono",monospace', fontSize: 10, borderRadius: 6, padding: '2px 7px', background: c.bg, color: c.color }}>
+    <span style={{ fontFamily: '"Space Mono",monospace', fontSize: 12, borderRadius: 6, padding: '2px 7px', background: c.bg, color: c.color }}>
       {status}
     </span>
   )
@@ -227,7 +227,7 @@ const S = {
   sectionTitle:  { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 20, fontWeight: 400, color: 'var(--tx)', margin: '0 0 16px' },
   generateRow:   { display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 16 },
   generateCard:  { background: '#fff', border: '1px solid var(--bd)', borderRadius: 10, padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 10, flex: 1, minWidth: 220 },
-  cardLabel:     { fontFamily: '"Space Mono",monospace', fontSize: 10, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' },
+  cardLabel:     { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' },
   btnPrimary:    { background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
   input:         { fontSize: 14, fontFamily: '"DM Sans",system-ui,sans-serif', border: '1px solid var(--bd)', borderRadius: 7, padding: '7px 10px', color: 'var(--tx)', background: '#fff', minWidth: 90 },
   errMsg:        { fontSize: 14, color: '#e04', background: '#fff0f0', border: '1px solid #fcc', borderRadius: 8, padding: '8px 14px', marginBottom: 12 },
@@ -236,10 +236,10 @@ const S = {
   emptyText:     { fontSize: 14, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif', margin: 0 },
   tableWrap:     { overflowX: 'auto', borderRadius: 10, border: '1px solid var(--bd)', background: '#fff' },
   table:         { width: '100%', borderCollapse: 'collapse' },
-  th:            { fontFamily: '"Space Mono",monospace', fontSize: 10, color: 'var(--tx3)', textAlign: 'left', padding: '10px 14px', borderBottom: '1px solid var(--bd)', textTransform: 'uppercase', letterSpacing: '0.06em' },
+  th:            { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', textAlign: 'left', padding: '10px 14px', borderBottom: '1px solid var(--bd)', textTransform: 'uppercase', letterSpacing: '0.06em' },
   tr:            { borderBottom: '1px solid var(--bd)' },
   td:            { padding: '11px 14px', verticalAlign: 'middle', fontSize: 14, color: 'var(--tx)', fontFamily: '"DM Sans",system-ui,sans-serif' },
   mono:          { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx2)' },
-  copyBtn:       { background: 'none', border: '1px solid var(--bd)', borderRadius: 6, padding: '3px 8px', fontSize: 11, cursor: 'pointer', color: 'var(--pk)', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
+  copyBtn:       { background: 'none', border: '1px solid var(--bd)', borderRadius: 6, padding: '3px 8px', fontSize: 12, cursor: 'pointer', color: 'var(--pk)', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
   revokeBtn:     { background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--tx3)', padding: 0, fontFamily: '"DM Sans",system-ui,sans-serif' },
 }

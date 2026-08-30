@@ -234,7 +234,7 @@ const S = {
   fullScreen:       { position: 'fixed', inset: 0, background: '#FCF0F5', display: 'flex', flexDirection: 'column', zIndex: 200, overflowY: 'auto' },
   progressBarWrap:  { height: 4, background: '#e9d5e4', flexShrink: 0 },
   progressBarFill:  { height: '100%', background: 'var(--pk)', transition: 'width 0.4s ease' },
-  stepLabel:        { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', textAlign: 'center', padding: '8px 24px 0', margin: 0, flexShrink: 0 },
+  stepLabel:        { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', textAlign: 'center', padding: '8px 24px 0', margin: 0, flexShrink: 0 },
   stepContent:      { flex: 1, overflowY: 'auto' },
   loadingText:      { textAlign: 'center', padding: '80px 24px', fontSize: 16, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif' },
   completeBox:      { maxWidth: 480, margin: 'auto', padding: '60px 32px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, textAlign: 'center' },

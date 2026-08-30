@@ -421,11 +421,11 @@ const S = {
 
   specHead:  { display: 'flex', alignItems: 'baseline', gap: 12, flexWrap: 'wrap', marginBottom: 4 },
   specTitle: { fontFamily: SERIF, fontSize: 19, fontWeight: 400, color: 'var(--tx)', margin: 0 },
-  specFile:  { fontFamily: MONO, fontSize: 11, color: 'var(--tx2)', background: 'var(--bgp)', padding: '2px 8px', borderRadius: 8, wordBreak: 'break-all' },
+  specFile:  { fontFamily: MONO, fontSize: 12, color: 'var(--tx2)', background: 'var(--bgp)', padding: '2px 8px', borderRadius: 8, wordBreak: 'break-all' },
   specNotes: { fontFamily: SANS, fontSize: 14, color: 'var(--tx2)', lineHeight: 1.55, margin: '0 0 12px', maxWidth: 720 },
 
   stageCaption: {
-    fontFamily: MONO, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase',
+    fontFamily: MONO, fontSize: 12, letterSpacing: '0.1em', textTransform: 'uppercase',
     color: 'var(--gy)', margin: '0 0 6px',
   },
   noCurrent: {

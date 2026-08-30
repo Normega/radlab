@@ -211,13 +211,13 @@ const S = {
   },
   navHeader: {
     display: 'flex', alignItems: 'center', gap: 6,
-    fontFamily: '"Space Mono",monospace', fontSize: 10,
+    fontFamily: '"Space Mono",monospace', fontSize: 12,
     color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.08em',
     padding: '6px 12px 2px',
     background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%',
   },
   chevron: {
-    display: 'inline-block', fontSize: 9,
+    display: 'inline-block', fontSize: 12,
     transition: 'transform 0.15s', flexShrink: 0,
   },
   navIndent: { paddingLeft: 22 },

@@ -319,7 +319,7 @@ export default function SessionLibrary() {
 }
 
 function Chip({ children }) {
-  return <span style={{ fontFamily: '"Space Mono",monospace', fontSize: 11, background: 'var(--pkb)', color: 'var(--pk)', borderRadius: 6, padding: '2px 7px' }}>{children}</span>
+  return <span style={{ fontFamily: '"Space Mono",monospace', fontSize: 12, background: 'var(--pkb)', color: 'var(--pk)', borderRadius: 6, padding: '2px 7px' }}>{children}</span>
 }
 
 function fmtDate(ts) {
@@ -338,13 +338,13 @@ const S = {
   emptyHint: { fontSize: 14, color: 'var(--tx2)', margin: '0 0 24px' },
   folderBlock:   { borderRadius: 10, border: '1px solid var(--bd)', overflow: 'hidden' },
   folderHeader:  { width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', background: 'var(--bgp)', border: 'none', cursor: 'pointer', textAlign: 'left' },
-  folderChevron: { fontFamily: '"Space Mono",monospace', fontSize: 10, color: 'var(--tx3)', width: 12, flexShrink: 0 },
+  folderChevron: { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', width: 12, flexShrink: 0 },
   folderName:    { fontFamily: '"Space Mono",monospace', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--tx)', fontWeight: 700, flex: 1 },
-  folderCount:   { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)' },
+  folderCount:   { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)' },
   folderInput:   { padding: '7px 12px', borderRadius: 8, border: '1px solid var(--bds)', background: 'var(--bgc)', fontSize: 14, color: 'var(--tx)', outline: 'none', fontFamily: '"DM Sans",system-ui,sans-serif', width: 180 },
   tableWrap: { overflowX: 'auto', background: '#fff' },
   table:     { width: '100%', borderCollapse: 'collapse' },
-  th:        { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', textAlign: 'left', padding: '10px 16px', borderBottom: '1px solid var(--bd)', textTransform: 'uppercase', letterSpacing: '0.06em' },
+  th:        { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', textAlign: 'left', padding: '10px 16px', borderBottom: '1px solid var(--bd)', textTransform: 'uppercase', letterSpacing: '0.06em' },
   tr:        { borderBottom: '1px solid var(--bd)' },
   td:        { padding: '12px 16px', verticalAlign: 'middle' },
   actions:   { display: 'flex', gap: 10, alignItems: 'center' },

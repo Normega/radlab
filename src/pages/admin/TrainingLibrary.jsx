@@ -130,8 +130,8 @@ export default function TrainingLibrary() {
         <p style={{ fontFamily: 'DM Sans', fontSize: 12, color: 'var(--tx3)', margin: '8px 2px 0' }}>
           These screens wrap every practice module: Welcome → Check-in → Practice → Check-in → Farewell.
           Check-in contents render live from the VAS packages{' '}
-          <span style={{ fontFamily: 'Space Mono', fontSize: 11 }}>liliana_pre_intervention_ratings</span> /{' '}
-          <span style={{ fontFamily: 'Space Mono', fontSize: 11 }}>liliana_post_intervention_ratings</span>{' '}
+          <span style={{ fontFamily: 'Space Mono', fontSize: 12 }}>liliana_pre_intervention_ratings</span> /{' '}
+          <span style={{ fontFamily: 'Space Mono', fontSize: 12 }}>liliana_post_intervention_ratings</span>{' '}
           — edit those at /admin/vas; the demo here can't drift from what participants see.
         </p>
       </div>
@@ -277,7 +277,7 @@ const S = {
     width: 8, height: 8, borderRadius: '50%', background: '#639922', flexShrink: 0,
   },
   conditionLabel: {
-    fontFamily: 'Space Mono', fontSize: 11, color: 'var(--tx2)',
+    fontFamily: 'Space Mono', fontSize: 12, color: 'var(--tx2)',
     textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700,
   },
   conditionCount: {
@@ -299,7 +299,7 @@ const S = {
     borderRadius: 8, padding: '5px 6px',
   },
   lessonPhase: {
-    fontFamily: 'Space Mono', fontSize: 9, color: 'var(--pk)',
+    fontFamily: 'Space Mono', fontSize: 12, color: 'var(--pk)',
     textTransform: 'uppercase', letterSpacing: '0.04em',
   },
   lessonDay: {
@@ -318,10 +318,10 @@ const S = {
     fontFamily: 'DM Sans', fontSize: 12, color: 'var(--tx3)', margin: 0,
   },
   moduleId: {
-    fontFamily: 'Space Mono', fontSize: 10, color: 'var(--gy)',
+    fontFamily: 'Space Mono', fontSize: 12, color: 'var(--gy)',
   },
   videoPath: {
-    fontFamily: 'Space Mono', fontSize: 10, color: 'var(--tx2)',
+    fontFamily: 'Space Mono', fontSize: 12, color: 'var(--tx2)',
     margin: '1px 0', letterSpacing: '0.02em',
   },
   demoBtn: {

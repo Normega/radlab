@@ -292,17 +292,17 @@ const S = {
   form: { background: '#fff', border: '1px solid var(--bd)', borderRadius: 12, padding: '24px 22px' },
   formHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
   formMeta: { display: 'flex', alignItems: 'center', gap: 10, margin: 0 },
-  chip:     { fontFamily: '"Space Mono",monospace', fontSize: 11, background: 'var(--bgp)', color: 'var(--pk)', border: '1px solid var(--pkb)', borderRadius: 5, padding: '2px 7px' },
-  metaText: { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)' },
+  chip:     { fontFamily: '"Space Mono",monospace', fontSize: 12, background: 'var(--bgp)', color: 'var(--pk)', border: '1px solid var(--pkb)', borderRadius: 5, padding: '2px 7px' },
+  metaText: { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)' },
   resetBtn: { background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif' },
 
-  label: { display: 'block', fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 },
+  label: { display: 'block', fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 },
   input: { width: '100%', fontSize: 14, fontFamily: '"DM Sans",system-ui,sans-serif', border: '1px solid var(--bd)', borderRadius: 8, padding: '8px 12px', color: 'var(--tx)', background: '#fff', boxSizing: 'border-box' },
 
   anchorsGrid:  { display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 8, marginBottom: 20 },
   anchorCell:   { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 },
   thumbImg:     { width: 52, height: 52, objectFit: 'contain', borderRadius: 6 },
-  anchorInput:  { width: '100%', fontSize: 11, fontFamily: '"DM Sans",system-ui,sans-serif', border: '1px solid var(--bd)', borderRadius: 6, padding: '4px 6px', textAlign: 'center', boxSizing: 'border-box' },
+  anchorInput:  { width: '100%', fontSize: 12, fontFamily: '"DM Sans",system-ui,sans-serif', border: '1px solid var(--bd)', borderRadius: 6, padding: '4px 6px', textAlign: 'center', boxSizing: 'border-box' },
 
   previewToggle: { background: 'none', border: '1px solid var(--bd)', borderRadius: 8, padding: '7px 14px', fontSize: 14, cursor: 'pointer', color: 'var(--tx2)', fontFamily: '"DM Sans",system-ui,sans-serif', marginBottom: 16 },
   previewWrap:   { border: '1px solid var(--bd)', borderRadius: 12, overflow: 'hidden', marginBottom: 20 },
