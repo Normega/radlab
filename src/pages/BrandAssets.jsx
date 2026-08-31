@@ -589,7 +589,7 @@ export default function BrandAssets() {
         <h2 className="brand-heading">Implementation status</h2>
         <p className="brand-section-note">
           What the system specifies is above; what the codebase actually does is below.
-          Drift measured 2026-08-30 by <code>npm run audit:design</code>{' '}
+          Drift measured 2026-08-31 by <code>npm run audit:design</code>{' '}
           (<code>scripts/design-audit.mjs</code>, 374 files), which now also runs as a ratchet:
           <code> audit:design:check</code> fails any change that pushes a count above the
           committed <code>design-audit/baseline.json</code>. Sanctioned content — game artwork,
@@ -645,7 +645,7 @@ export default function BrandAssets() {
         <Gap title="Spacing & layout — scale adopted, not yet implemented">
           The spacing scale and the two shared containers exist as tokens as of 2026-08-26, but
           no page uses them yet: Dashboard is 1100px wide, Games 1024, About 1200, Talks 960,
-          this page 900. Moving between pages still shifts the content column, and 1,712
+          this page 900. Moving between pages still shifts the content column, and 1,351
           off-scale padding/gap/margin values mark the migration&rsquo;s starting line.
           Migration order is in <code>docs/markdowns/brand_enforcement_plan.md</code> — this
           stops being an open design question and becomes ordinary unfinished work.

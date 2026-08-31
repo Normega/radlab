@@ -63,7 +63,22 @@ Implemented as `scripts/design-audit.mjs`:
   "re-measure or delete" rule.
 
 Still open from this phase: running `audit:design:check` in the Vercel build (warn-only
-first, failing after a month). Until then it's a local/pre-promotion command.
+first, failing after a month). Until then it's a local/pre-promotion command — and
+2026-08-31 showed the cost of that gap: a dozen commits from concurrent sessions landed on
+`dev` between two of my own runs, three of them carrying drift nobody checked. The check
+caught it, but only because someone happened to run it.
+
+**Two corrections the ratchet earned on itself (2026-08-31).** Both were found because the
+check failed on a new page that turned out to be nearly clean:
+
+- *Greedy spacing capture.* `padding: 24, flex: '1 1 480px'` was read as a 480px pad, and
+  `margin: '…', borderTop: '1px solid …'` as a 1px one — in a JS object literal the value
+  ends at the next `key:`, not at a semicolon. Fixing it removed **373 phantom counts**
+  (spacing 1,724 → 1,351). A metric that miscounts is worse than no metric: it spends
+  attention on work that doesn't exist.
+- *Fix, don't fold.* The genuine new drift (five values on the lecture-slides index) was
+  brought into compliance rather than absorbed into the baseline. Re-baselining upward is
+  for work that predates the ratchet; for anything after it, the default is to fix.
 
 ## Phase 2 — shared primitives for the drift hotspots
 

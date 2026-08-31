@@ -115,7 +115,13 @@ for (const file of files) {
     }
 
     for (const m of line.matchAll(SPACE_RE)) {
-      for (const v of m[1].matchAll(/(\d+(?:\.\d+)?)px/g)) {
+      // In a JS object literal the value ends at the next `key:`, not at a
+      // semicolon — without this the capture swallows neighbouring properties
+      // and counts their pixels as spacing (`padding: 24, flex: '1 1 480px'`
+      // was reporting a 480px pad; `margin: '…', borderTop: '1px solid …'` a 1px one).
+      const cut = m[1].search(/[,{]\s*[\w-]+\s*:/)
+      const value = cut >= 0 ? m[1].slice(0, cut) : m[1]
+      for (const v of value.matchAll(/(\d+(?:\.\d+)?)px/g)) {
         const px = parseFloat(v[1])
         if (!SPACE_SCALE.has(px)) hit(scope, rel, 'spacing: off-scale px')
       }
