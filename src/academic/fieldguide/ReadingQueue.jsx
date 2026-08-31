@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useOutletContext } from 'react-router-dom'
 import { WIKI_BASE } from './wiki/wikiText'
+import { staffedCourses } from './staffCourses.js'
+import CoursePicker from './CoursePicker.jsx'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -18,7 +20,11 @@ const BAND = {
 
 export default function ReadingQueue() {
   const { courseClient, staffEnrollments } = useOutletContext()
-  const courseId = staffEnrollments[0]?.course_id
+  // Was staffEnrollments[0] — the caller's first enrollment by array position,
+  // which for anyone staffing two courses silently pinned this queue to one of
+  // them with no way to reach the other.
+  const courses = useMemo(() => staffedCourses(staffEnrollments), [staffEnrollments])
+  const [courseId, setCourseId] = useState(courses[0]?.course_id)
   const [rows, setRows] = useState(null)
 
   useEffect(() => {
@@ -53,6 +59,8 @@ export default function ReadingQueue() {
           version becomes <b>item-eligible</b> for tests, and its accepted changes show as
           examinable in What's new. Editing a page un-stamps it, on purpose.
         </p>
+
+        <CoursePicker courses={courses} value={courseId} onChange={setCourseId} style={S.picker} />
 
         {rows === null ? <p style={S.sub}>Loading…</p> : (
           <>
@@ -111,6 +119,7 @@ const S = {
   eyebrowLink: { color: 'inherit', textDecoration: 'none' },
   title: { fontFamily: SERIF, fontSize: 28, color: 'var(--tx)', margin: '2px 0 8px' },
   sub: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.6, maxWidth: '68ch' },
+  picker: { marginTop: 14, fontSize: 14, padding: '6px 9px', borderRadius: 8, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx)' },
   dim: { color: 'var(--tx2)', fontWeight: 400, fontSize: 14 },
   h2: { fontFamily: SERIF, fontSize: 20, color: 'var(--tx)', margin: '0 0 4px', display: 'flex', alignItems: 'baseline', gap: 10 },
   count: { fontFamily: MONO, fontSize: 12, color: 'var(--tx2)' },

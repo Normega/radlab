@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, Navigate, useOutletContext, useParams } from 'react-router-dom'
-import { rosterPath, staffedCourses, resolveCourse } from './rosterCourse.js'
+import { rosterPath, staffedCourses, resolveCourse } from './staffCourses.js'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -88,7 +88,7 @@ export default function RosterAdmin() {
   const { courseClient, staffEnrollments, session } = useOutletContext()
   const { courseCode } = useParams()
 
-  // Both resolved in rosterCourse.js, where they are unit-tested. The rule
+  // Both resolved in staffCourses.js, where they are unit-tested. The rule
   // that matters: a code that does not resolve gives null, never a fallback to
   // some other course this person staffs — the next click here can be a
   // several-hundred-row import or a bulk invite.
