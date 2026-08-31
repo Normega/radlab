@@ -260,7 +260,7 @@ async function deliverRippleEmail(opts: {
   const { subject, html, text } = renderRippleEmail({ checkinUrl, unsubscribeUrl, avatarUrl })
 
   const { error: sendErr } = await resend.emails.send({
-    from: fromEmail, reply_to: RESEARCH_REPLY_TO, to, subject, html, text,
+    from: fromEmail, replyTo: RESEARCH_REPLY_TO, to, subject, html, text,
   })
   if (sendErr) {
     return { ok: false, error: sendErr.message ?? String(sendErr) }
