@@ -18,6 +18,7 @@ const SERIF = '"DM Serif Display", Georgia, serif'
 // half-written degrades to the list of dates it already was.
 const DECKS = {
   psy309: { dir: '/psy309', file: (n) => `L${n}.html` },
+  psy240: { dir: '/psy240', file: (n) => `L${n}.html` },
 }
 
 export default function ClassSlides() {
@@ -44,14 +45,21 @@ export default function ClassSlides() {
     return () => { cancelled = true }
   }, [slug])
 
-  // Which decks actually exist. A HEAD per lecture is cheap and keeps the
-  // manifest honest without a second place to update when a deck is written.
+  // Which decks actually exist — probed rather than listed in a manifest, so
+  // writing a deck is the only step needed to publish it.
+  //
+  // A HEAD (or a bare GET) cannot answer this: vercel.json rewrites every
+  // unmatched path to /index.html, so a missing deck returns 200 with the SPA
+  // in it and every lecture looks available. Instead we read the first bytes
+  // and look for the deck marker. Range keeps it to ~2KB per lecture where the
+  // CDN honours it, and a server that ignores Range just sends more.
   useEffect(() => {
     if (!deck || !lectures.length) return
     let cancelled = false
     Promise.all(lectures.map(l =>
-      fetch(`${deck.dir}/${deck.file(l.number)}`, { method: 'HEAD' })
-        .then(r => (r.ok ? l.number : null))
+      fetch(`${deck.dir}/${deck.file(l.number)}`, { headers: { Range: 'bytes=0-2047' } })
+        .then(r => (r.ok ? r.text() : ''))
+        .then(t => (t.includes('id="deck"') ? l.number : null))
         .catch(() => null)
     )).then(found => {
       if (!cancelled) setAvailable(new Set(found.filter(n => n != null)))

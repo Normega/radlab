@@ -1,0 +1,166 @@
+/* PSY240 lecture slideshow engine — shared stylesheet.
+   Sibling copy of public/psy309/slides.css; only the palette below differs
+   (PSY240 runs a warmer accent so the two courses read apart on a projector).
+   Fix engine bugs in both.
+   One <section> per slide. See slides.js for the keyboard contract.
+
+   Designed for a bright lecture room on a projector: light ground, heavy
+   type, high contrast, nothing below ~24px. Print styles at the bottom
+   produce a handout (one slide per page, notes included). */
+
+:root {
+  --ground:#FCFBF8; --ink:#141B22; --muted:#5C6773;
+  --accent:#8B2E5C;        /* PSY240 clinical plum — the only palette change */
+  --do:#B5540F;            /* activity orange; ALSO drives .box.warn, so it must stay
+                              a caution colour — a "safe" hue here makes warnings read
+                              as reassurance */
+  --do-soft:#FBEDE0;
+  --accent-soft:#F7E9F0;
+  --line:#DCE2E6;
+  --slide-pad: 4.5vmin;
+}
+
+* { box-sizing:border-box; }
+html,body { margin:0; height:100%; background:#20262C; }
+body {
+  font-family:"Source Sans 3","Segoe UI",system-ui,sans-serif;
+  color:var(--ink);
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ---- deck + slide frame ---- */
+#deck { position:relative; width:100vw; height:100vh; overflow:hidden; }
+section {
+  position:absolute; inset:0; display:none;
+  padding:var(--slide-pad) calc(var(--slide-pad) * 1.4);
+  background:var(--ground);
+  flex-direction:column; justify-content:center;
+  container-type:inline-size;
+}
+section.current { display:flex; }
+
+/* ---- type ---- */
+h1 { font-family:"Fraunces",Georgia,serif; font-weight:600; font-size:5.2vmin; line-height:1.08; margin:0 0 2vmin; text-wrap:balance; }
+h2 { font-family:"Fraunces",Georgia,serif; font-weight:600; font-size:4vmin; line-height:1.12; margin:0 0 2vmin; text-wrap:balance; }
+p, li { font-size:2.7vmin; line-height:1.5; margin:0 0 1.4vmin; max-width:46ch; }
+ul,ol { padding-left:3vmin; margin:0 0 1.5vmin; }
+li { margin-bottom:1.1vmin; }
+strong { color:var(--accent); }
+em { font-style:italic; }
+a { color:var(--accent); }
+.big { font-size:4.4vmin; line-height:1.25; max-width:24ch; font-weight:600; }
+.lead { font-size:3.2vmin; color:var(--muted); max-width:40ch; }
+.small { font-size:2.1vmin; color:var(--muted); }
+code { font-family:"JetBrains Mono",ui-monospace,monospace; font-size:.86em; background:#EEF2F4; padding:.1em .35em; border-radius:4px; }
+pre { font-family:"JetBrains Mono",ui-monospace,monospace; font-size:2.1vmin; line-height:1.5; background:#F2F5F7; border-left:4px solid var(--accent); padding:2vmin 2.4vmin; border-radius:6px; overflow-x:auto; max-width:100%; }
+
+/* ---- eyebrow / kicker ---- */
+.kicker { font-family:"JetBrains Mono",ui-monospace,monospace; font-size:1.9vmin; letter-spacing:.18em; text-transform:uppercase; color:var(--accent); margin:0 0 1.6vmin; font-weight:600; }
+section[data-kind="activity"] .kicker { color:var(--do); }
+
+/* ---- layouts ---- */
+.cols { display:grid; grid-template-columns:1fr 1fr; gap:4vmin; align-items:start; }
+.cols.narrow-left { grid-template-columns:.8fr 1.2fr; }
+.stack { display:flex; flex-direction:column; gap:1.6vmin; }
+.center { align-items:center; text-align:center; }
+.center p, .center li { max-width:none; }
+
+/* ---- title slide ---- */
+section[data-kind="title"] { background:linear-gradient(150deg,#FCFBF8 0%,#EFF3F6 100%); }
+section[data-kind="title"] h1 { font-size:7vmin; }
+section[data-kind="title"] .lead { font-size:3vmin; }
+
+/* ---- section divider ---- */
+section[data-kind="divider"] { background:var(--accent); }
+section[data-kind="divider"] h1, section[data-kind="divider"] p { color:#fff; }
+section[data-kind="divider"] .kicker { color:#BBD7EA; }
+
+/* ---- activity slides ---- */
+section[data-kind="activity"] { background:var(--do-soft); }
+section[data-kind="activity"] h1 { color:#7A3A0B; }
+
+/* ---- break / check-in slides ---- */
+section[data-kind="break"] { background:var(--ink); }
+section[data-kind="break"] h1 { color:#fff; font-size:6vmin; }
+section[data-kind="break"] p, section[data-kind="break"] li { color:#D8E0E7; font-size:3vmin; }
+section[data-kind="break"] .kicker { color:#7FB2D8; }
+section[data-kind="break"] .qbox { background:rgba(255,255,255,.08); border-left:5px solid #7FB2D8; padding:2.4vmin 3vmin; border-radius:8px; margin-top:2vmin; }
+section[data-kind="break"] .qbox p { margin:0 0 1vmin; }
+section[data-kind="break"] .url { font-family:"JetBrains Mono",ui-monospace,monospace; color:#FFF; font-size:3vmin; letter-spacing:.02em; }
+
+/* ---- callout box ---- */
+.box { background:var(--accent-soft); border-left:5px solid var(--accent); padding:2.2vmin 2.8vmin; border-radius:8px; }
+.box.warn { background:var(--do-soft); border-left-color:var(--do); }
+.box p:last-child, .box ul:last-child { margin-bottom:0; }
+
+/* ---- data tables (cell-mean grids etc.) ---- */
+table { border-collapse:collapse; font-size:2.5vmin; margin:1vmin 0; }
+th,td { border:1px solid var(--line); padding:1.1vmin 2vmin; text-align:center; font-variant-numeric:tabular-nums; }
+th { background:#EFF3F6; font-weight:700; font-size:2.2vmin; }
+td.rowhead, th.rowhead { text-align:left; font-weight:700; background:#F7F9FA; }
+td.margin { background:var(--accent-soft); font-weight:700; }
+
+/* ---- reveal-on-click (answers) ---- */
+.hidden-until { visibility:hidden; }
+.hidden-until.shown { visibility:visible; }
+
+/* ---- inline SVG diagrams ----
+   Authored with a viewBox and no fixed width/height so they scale with the
+   projector like everything else. Text inside inherits the deck's face; emoji
+   need their own stack or Windows renders them as boxes. Elements inside an
+   SVG can carry .hidden-until, which is how a diagram's answer labels stay
+   hidden until the second press. */
+.svgwrap { display:flex; justify-content:center; margin:1.4vmin 0; }
+.svgwrap svg { width:100%; height:auto; max-width:92%; max-height:52vh; }
+.svgwrap svg text { font-family:"Source Sans 3","Segoe UI",system-ui,sans-serif; }
+.svgwrap svg .emoji { font-family:"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji","Segoe UI Symbol",sans-serif; }
+@media print { .svgwrap svg { max-height:11cm; } }
+
+/* ---- figure / image ---- */
+img.fig { max-width:100%; max-height:56vh; object-fit:contain; border-radius:6px; }
+figcaption { font-size:1.9vmin; color:var(--muted); margin-top:1vmin; }
+
+/* ---- chrome ---- */
+#bar { position:fixed; left:0; bottom:0; height:5px; background:var(--accent); width:0; transition:width .18s ease; z-index:10; }
+#num { position:fixed; right:2vmin; bottom:1.6vmin; font-family:"JetBrains Mono",ui-monospace,monospace; font-size:1.7vmin; color:var(--muted); z-index:10; }
+#clock { position:fixed; left:2vmin; bottom:1.6vmin; font-family:"JetBrains Mono",ui-monospace,monospace; font-size:1.7vmin; color:var(--muted); z-index:10; }
+section[data-kind="break"] ~ #num { color:#889; }
+#help { position:fixed; inset:auto 2vmin 4vmin auto; background:rgba(20,27,34,.94); color:#fff; padding:2vmin 2.6vmin; border-radius:10px; font-size:1.9vmin; line-height:1.7; display:none; z-index:20; }
+#help.on { display:block; }
+#help kbd { font-family:"JetBrains Mono",monospace; background:rgba(255,255,255,.16); padding:.1em .45em; border-radius:4px; }
+
+/* ---- speaker notes ---- */
+.notes { display:none; }
+body.notes-on .notes {
+  display:block; position:fixed; left:0; right:0; bottom:0; max-height:34vh; overflow-y:auto;
+  background:#141B22; color:#DCE4EA; padding:2vmin 3vmin; font-size:2vmin; line-height:1.55; z-index:15;
+  border-top:3px solid var(--accent);
+}
+body.notes-on .notes p { max-width:70ch; margin:0 0 .8vmin; color:#DCE4EA; }
+body.notes-on section { padding-bottom:36vh; }
+
+/* ---- overview grid ---- */
+body.overview #deck { overflow-y:auto; display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:10px; padding:16px; background:#20262C; height:100vh; }
+body.overview section { position:relative; inset:auto; display:flex !important; height:180px; padding:14px; border-radius:6px; cursor:pointer; overflow:hidden; transform:none; }
+body.overview section * { pointer-events:none; }
+body.overview h1 { font-size:17px; } body.overview h2 { font-size:15px; }
+body.overview p, body.overview li, body.overview td, body.overview th { font-size:10px; }
+body.overview .kicker { font-size:8px; }
+body.overview section.current { outline:3px solid #6FA8D4; }
+body.overview .notes { display:none !important; }
+
+/* ---- print: one slide per page, notes included ---- */
+@media print {
+  html,body { background:#fff; height:auto; }
+  #deck { position:static; width:auto; height:auto; overflow:visible; }
+  section { position:static; display:flex !important; height:auto; min-height:auto;
+    page-break-after:always; break-after:page; border-bottom:1px solid #ccc; padding:2cm 2cm 1cm; }
+  h1 { font-size:24pt; } h2 { font-size:19pt; }
+  p,li,td,th { font-size:12pt; max-width:none; }
+  .kicker { font-size:9pt; }
+  .notes { display:block !important; position:static; background:#F4F6F8; color:#333; border-top:1px solid #bbb;
+    margin-top:1cm; padding:.6cm; font-size:10pt; max-height:none; }
+  .notes p { color:#333; }
+  #bar,#num,#help,#clock { display:none; }
+  .hidden-until { visibility:visible; }
+}
