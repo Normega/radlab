@@ -88,7 +88,7 @@ export default function RosterAdmin() {
   const { courseClient, staffEnrollments, session } = useOutletContext()
   const { courseCode } = useParams()
 
-  // Both resolved in rosterCourse.js, where they are unit-tested. The rule
+  // Both resolved in staffCourses.js, where they are unit-tested. The rule
   // that matters: a code that does not resolve gives null, never a fallback to
   // some other course this person staffs — the next click here can be a
   // several-hundred-row import or a bulk invite.
