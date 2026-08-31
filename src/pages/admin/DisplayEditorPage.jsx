@@ -152,7 +152,7 @@ export default function DisplayEditorPage() {
         <div style={S.fieldGroup}>
           <label style={S.fieldLabel}>Slug {isEdit ? '(locked)' : '*'}</label>
           <input
-            style={{ ...S.input, opacity: isEdit ? 0.55 : 1, fontFamily: '"Space Mono",monospace', fontSize: 13 }}
+            style={{ ...S.input, opacity: isEdit ? 0.55 : 1, fontFamily: '"Space Mono",monospace', fontSize: 14 }}
             value={slug}
             disabled={isEdit}
             onChange={e => { setSlug(slugify(e.target.value)); setSlugTouched(true) }}
@@ -363,30 +363,30 @@ const P = {
   tabs:        { display: 'flex', borderBottom: '1px solid var(--bd)', background: 'var(--bgp)' },
   tab:         { flex: 1, padding: '8px 10px', fontSize: 12, fontFamily: '"DM Sans",system-ui,sans-serif', color: 'var(--tx2)', background: 'none', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap' },
   tabActive:   { color: 'var(--pkd)', fontWeight: 600, background: '#fff' },
-  filter:      { margin: '10px 12px 0', width: 'calc(100% - 24px)', boxSizing: 'border-box', fontSize: 13, fontFamily: '"DM Sans",system-ui,sans-serif', border: '1px solid var(--bd)', borderRadius: 7, padding: '6px 10px' },
+  filter:      { margin: '10px 12px 0', width: 'calc(100% - 24px)', boxSizing: 'border-box', fontSize: 14, fontFamily: '"DM Sans",system-ui,sans-serif', border: '1px solid var(--bd)', borderRadius: 7, padding: '6px 10px' },
   body:        { display: 'flex', flexDirection: 'column', gap: 4, padding: 12, maxHeight: 240, overflowY: 'auto' },
-  pill:        { alignSelf: 'flex-start', fontFamily: '"Space Mono",monospace', fontSize: 11, background: 'var(--bgc)', border: '1px solid var(--pkb)', borderRadius: 6, padding: '3px 8px', color: 'var(--pkd)', cursor: 'pointer' },
+  pill:        { alignSelf: 'flex-start', fontFamily: '"Space Mono",monospace', fontSize: 12, background: 'var(--bgc)', border: '1px solid var(--pkb)', borderRadius: 6, padding: '3px 8px', color: 'var(--pkd)', cursor: 'pointer' },
   elementRow:  { display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2, width: '100%', textAlign: 'left', background: 'none', border: '1px solid transparent', borderRadius: 8, padding: '7px 10px', cursor: 'pointer' },
-  elementLabel:{ fontSize: 13, color: 'var(--tx)', fontFamily: '"DM Sans",system-ui,sans-serif' },
-  elementSlug: { fontFamily: '"Space Mono",monospace', fontSize: 10, color: 'var(--pkd)' },
+  elementLabel:{ fontSize: 14, color: 'var(--tx)', fontFamily: '"DM Sans",system-ui,sans-serif' },
+  elementSlug: { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--pkd)' },
   backBtn:     { alignSelf: 'flex-start', fontSize: 12, color: 'var(--tx2)', background: 'none', border: 'none', cursor: 'pointer', padding: '0 0 6px', fontFamily: '"DM Sans",system-ui,sans-serif' },
   hint:        { fontSize: 12, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif', margin: 0 },
 }
 
 const S = {
   header:     { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 24, flexWrap: 'wrap' },
-  backLink:   { fontSize: 13, color: 'var(--tx2)', textDecoration: 'none', display: 'inline-block', marginBottom: 8 },
+  backLink:   { fontSize: 14, color: 'var(--tx2)', textDecoration: 'none', display: 'inline-block', marginBottom: 8 },
   h1:         { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 26, fontWeight: 400, color: 'var(--tx)', margin: 0 },
   sub:        { fontSize: 14, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif', margin: 0 },
-  errMsg:     { fontSize: 13, color: '#e04', background: '#fff0f0', border: '1px solid #fcc', borderRadius: 8, padding: '8px 14px', marginBottom: 16 },
+  errMsg:     { fontSize: 14, color: '#e04', background: '#fff0f0', border: '1px solid #fcc', borderRadius: 8, padding: '8px 14px', marginBottom: 16 },
   card:       { background: '#fff', border: '1px solid var(--bd)', borderRadius: 10, padding: 24, display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 680 },
   fieldGroup: { display: 'flex', flexDirection: 'column', gap: 8 },
-  fieldLabel: { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' },
+  fieldLabel: { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' },
   input:      { fontSize: 14, fontFamily: '"DM Sans",system-ui,sans-serif', border: '1px solid var(--bd)', borderRadius: 8, padding: '8px 12px', color: 'var(--tx)', background: '#fff', width: '100%', boxSizing: 'border-box' },
-  varPill:    { fontFamily: '"Space Mono",monospace', fontSize: 11, background: 'var(--bgc)', border: '1px solid var(--pkb)', borderRadius: 6, padding: '3px 8px', color: 'var(--pkd)', cursor: 'pointer' },
+  varPill:    { fontFamily: '"Space Mono",monospace', fontSize: 12, background: 'var(--bgc)', border: '1px solid var(--pkb)', borderRadius: 6, padding: '3px 8px', color: 'var(--pkd)', cursor: 'pointer' },
   blockCard:  { display: 'flex', flexDirection: 'column', gap: 12, background: 'var(--bgp)', border: '1px solid var(--pkb)', borderRadius: 10, padding: '16px 18px' },
-  blockTitle: { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--pkd)', textTransform: 'uppercase', letterSpacing: '0.06em' },
-  deleteBtn:  { fontSize: 13, color: '#e04', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: '"DM Sans",system-ui,sans-serif' },
-  addBtn:     { alignSelf: 'flex-start', fontSize: 13, color: 'var(--pkd)', background: '#fff', border: '1px dashed var(--pkb)', borderRadius: 8, padding: '7px 14px', cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
+  blockTitle: { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--pkd)', textTransform: 'uppercase', letterSpacing: '0.06em' },
+  deleteBtn:  { fontSize: 14, color: '#e04', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: '"DM Sans",system-ui,sans-serif' },
+  addBtn:     { alignSelf: 'flex-start', fontSize: 14, color: 'var(--pkd)', background: '#fff', border: '1px dashed var(--pkb)', borderRadius: 8, padding: '7px 14px', cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
   btnPrimary: { display: 'inline-block', background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
 }

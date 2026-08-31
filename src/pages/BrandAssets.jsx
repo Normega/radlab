@@ -4,9 +4,18 @@ import { useState } from 'react'
  * /brand — the RADlab design system and brand assets, in one hidden, unlinked page.
  *
  * Source of truth for the tokens below: src/index.css (:root) and tailwind.config.js,
- * which mirror resources/designhandoff/RADlab-Onboarding-Redesign-V1-Dev-Spec.md §1
- * and the gate rulings in design-audit/DRIFT-REPORT.md §9. website.md §9 summarises
- * the same set in prose. If you change a token, change it in all of those places.
+ * which mirror resources/designhandoff/RADlab-Onboarding-Redesign-V1-Dev-Spec.md §1,
+ * the gate rulings in design-audit/DRIFT-REPORT.md §9, and the 2026-08-26 adoption of
+ * the expanded Figma system (Brand_Aug26_2026.fig, "RADLAB Official Design System").
+ * website.md §9 summarises the same set in prose. If you change a token, change it in
+ * all of those places.
+ *
+ * The 2026-08-26 adoption took the Figma expansion's additions (semantic colour layer,
+ * named type styles, spacing scale, effects, layout containers) but kept four settled
+ * rulings where the Figma conflicted: the 12px type floor (no Body/XS 10px), the
+ * 12/24/50% radii rule (no radius/sm 8px), the six-step type scale (no 24px steps),
+ * and the translucent rgba border tokens (no opaque border aliases). See the
+ * "Implementation status" section below and docs/markdowns/brand_enforcement_plan.md.
  *
  * The "Implementation status" section is deliberately honest about what the live
  * site does versus what the system specifies — see design-audit/DRIFT-REPORT-2026-08-12.md
@@ -18,47 +27,95 @@ const SERIF = "'DM Serif Display', Georgia, serif"
 const SANS  = "'DM Sans', system-ui, sans-serif"
 const MONO  = "'Space Mono', 'Courier New', monospace"
 
-// The eight tokens of the core palette (Dev Spec §1.1).
-const CORE_COLORS = [
-  { token: '--bg',  tw: 'base',            hex: '#FCF0F5', label: 'Base',             use: 'Page background' },
-  { token: '--bgc', tw: 'surface',         hex: '#FFFFFF', label: 'Surface',          use: 'Cards, modals, inputs' },
-  { token: '--bgp', tw: 'tint',            hex: '#FBEAF3', label: 'Tint',             use: 'Subtle section fills' },
-  { token: '--pk',  tw: 'primary',         hex: '#F068A4', label: 'Primary',          use: 'CTA fill, active accents' },
-  { token: '--pkd', tw: 'primary-dark',    hex: '#C04A82', label: 'Primary dark',     use: 'Hover and pressed states' },
-  { token: '--tx',  tw: 'text-main',       hex: '#1C1C1E', label: 'Text — main',      use: 'Headings and body copy' },
-  { token: '--tx2', tw: 'text-secondary',  hex: '#6B6C70', label: 'Text — secondary', use: 'Supporting copy' },
-  { token: '--gy',  tw: 'text-muted',      hex: '#ABADB0', label: 'Text — muted',     use: 'Placeholders, disabled text' },
+// Primitives — the raw values. Semantic tokens below alias these; use the semantic
+// token in code, the primitive name when talking to design.
+const PRIMITIVES = [
+  { name: 'pink/50',     hex: '#FCF0F5', token: '--bg' },
+  { name: 'pink/100',    hex: '#FBEAF3', token: '--bgp' },
+  { name: 'pink/500',    hex: '#F068A4', token: '--pk' },
+  { name: 'pink/700',    hex: '#C04A82', token: '--pkd' },
+  { name: 'neutral/0',   hex: '#FFFFFF', token: '--bgc' },
+  { name: 'neutral/400', hex: '#ABADB0', token: '--gy' },
+  { name: 'neutral/600', hex: '#6B6C70', token: '--tx2' },
+  { name: 'neutral/900', hex: '#1C1C1E', token: '--tx' },
+  { name: 'red/50',      hex: '#FCEBEB', token: '--err-bg' },
+  { name: 'red/300',     hex: '#F09595', token: '--err-bd' },
+  { name: 'red/700',     hex: '#A32D2D', token: '--err-tx' },
 ]
 
-// Semantic set — promoted from the auth-page error boxes (DRIFT-REPORT §9 Q2).
-const SEMANTIC_COLORS = [
-  { token: '--err-bg', tw: 'error-bg',     hex: '#FCEBEB', label: 'Error — background', use: 'Error box fill' },
-  { token: '--err-bd', tw: 'error-border', hex: '#F09595', label: 'Error — border',     use: 'Error box border' },
-  { token: '--err-tx', tw: 'error-text',   hex: '#A32D2D', label: 'Error — text',       use: 'Error message text' },
+// Semantic layer (2026-08-26 expansion) — role-named aliases onto the primitives.
+const SEMANTIC_GROUPS = [
+  {
+    group: 'Background',
+    items: [
+      { name: 'Base',    alias: 'pink/50',     css: '#FCF0F5', token: '--bg',     use: 'Page background' },
+      { name: 'Surface', alias: 'neutral/0',   css: '#FFFFFF', token: '--bgc',    use: 'Cards, modals, inputs' },
+      { name: 'Tint',    alias: 'pink/100',    css: '#FBEAF3', token: '--bgp',    use: 'Subtle section fills' },
+      { name: 'Error',   alias: 'red/50',      css: '#FCEBEB', token: '--err-bg', use: 'Error box fill' },
+    ],
+  },
+  {
+    group: 'Text',
+    items: [
+      { name: 'Main',        alias: 'neutral/900', css: '#1C1C1E', token: '--tx',     use: 'Headings and body copy' },
+      { name: 'Secondary',   alias: 'neutral/600', css: '#6B6C70', token: '--tx2',    use: 'Supporting copy' },
+      { name: 'Muted',       alias: 'neutral/400', css: '#ABADB0', token: '--gy',     use: 'Placeholders, disabled text' },
+      { name: 'Accent',      alias: 'pink/700',    css: '#C04A82', token: '--pkd',    use: 'Links, text on pink grounds' },
+      { name: 'Accent Soft', alias: 'pink/500',    css: '#F068A4', token: '--pk',     use: 'Decorative accent text' },
+      { name: 'On Action',   alias: 'neutral/0',   css: '#FFFFFF', token: '--bgc',    use: 'Text on filled CTAs' },
+      { name: 'Error',       alias: 'red/700',     css: '#A32D2D', token: '--err-tx', use: 'Error message text' },
+    ],
+  },
+  {
+    group: 'Action',
+    items: [
+      { name: 'Default',  alias: 'pink/500',    css: '#F068A4', token: '--pk',  use: 'CTA fill, active accents' },
+      { name: 'Emphasis', alias: 'pink/700',    css: '#C04A82', token: '--pkd', use: 'Hover and pressed states' },
+      { name: 'Disabled', alias: 'neutral/400', css: '#ABADB0', token: '--gy',  use: 'Inactive controls' },
+    ],
+  },
+  {
+    group: 'Icon',
+    items: [
+      { name: 'Default',   alias: 'neutral/600', css: '#6B6C70', token: '--tx2', use: 'Standard icons' },
+      { name: 'Accent',    alias: 'pink/700',    css: '#C04A82', token: '--pkd', use: 'Active or highlighted icons' },
+      { name: 'On Action', alias: 'neutral/0',   css: '#FFFFFF', token: '--bgc', use: 'Icons on filled CTAs' },
+    ],
+  },
+  {
+    group: 'Overlay',
+    items: [
+      { name: 'Scrim', alias: 'neutral/400 @ 55%', css: 'rgba(171,173,176,0.55)', token: '--ov-scrim', use: 'Locked or gated content' },
+      { name: 'Wash',  alias: 'pink/50 @ 70%',     css: 'rgba(252,240,245,0.70)', token: '--ov-wash',  use: 'Hover wash over cards' },
+    ],
+  },
 ]
 
-// Sanctioned supplements: the eight core tokens define no border colours, so these
-// four exist to stop every surface inventing its own. No Tailwind keys — CSS vars only.
+// Borders keep the translucent supplements — the 2026-08-26 ruling declined the
+// Figma expansion's opaque border aliases so borders keep blending over any ground.
 const BORDER_TOKENS = [
-  { token: '--bd',   value: 'rgba(180, 100, 140, 0.13)', label: 'Border — default',     use: 'Default card and panel border' },
-  { token: '--bds',  value: 'rgba(180, 100, 140, 0.25)', label: 'Border — strong',      use: 'Emphasised dividers, menus' },
-  { token: '--pkb',  value: 'rgba(240, 104, 164, 0.18)', label: 'Border — pink subtle', use: 'Tinted panels, avatar rings' },
-  { token: '--pkbs', value: 'rgba(240, 104, 164, 0.35)', label: 'Border — pink strong', use: 'Outline buttons, active edges' },
+  { token: '--bd',     value: 'rgba(180, 100, 140, 0.13)', label: 'Border — default',     use: 'Default card and panel border' },
+  { token: '--bds',    value: 'rgba(180, 100, 140, 0.25)', label: 'Border — strong',      use: 'Emphasised dividers, menus' },
+  { token: '--pkb',    value: 'rgba(240, 104, 164, 0.18)', label: 'Border — pink subtle', use: 'Tinted panels, avatar rings' },
+  { token: '--pkbs',   value: 'rgba(240, 104, 164, 0.35)', label: 'Border — pink strong', use: 'Outline buttons, active edges' },
+  { token: '--err-bd', value: '#F09595',                   label: 'Border — error',       use: 'Error box border (opaque, red/300)' },
 ]
 
-// Type scale (Dev Spec §1.2): three families, three steps each, drawn from the
-// shared scale 12 / 14 / 16 / 20 / 28 / 36.
+// Named type styles (2026-08-26 expansion), constrained to the six-step scale
+// 12 / 14 / 16 / 20 / 28 / 36 — plus Display/Hero, the one sanctioned exception.
+// Not adopted from the Figma: Heading/3 24, Body/XL Emphasis 24 (off-scale),
+// Body/XS 10 (below the 12px floor).
 const TYPE_BLOCKS = [
   {
     family: 'DM Serif Display',
     role: 'Display',
     stack: SERIF,
     weights: '400 only — the family ships one weight; never declare heavier',
-    sample: 'Regulatory & Affective Dynamics',
     steps: [
-      { px: 36, weight: 400, role: 'Hero / modal title' },
-      { px: 28, weight: 400, role: 'Section / results title' },
-      { px: 20, weight: 400, role: 'Card / inline title' },
+      { name: 'Display/Hero', px: 72, weight: 400, sample: 'How sharp is your mind?', role: 'Homepage hero. One per site — the sanctioned exception to the scale' },
+      { name: 'Heading/1',    px: 36, weight: 400, sample: 'Meet your Ripple',        role: 'Page titles and the RADlab wordmark' },
+      { name: 'Heading/2',    px: 28, weight: 400, sample: 'Still Water',             role: 'Serif focal text: game titles, auth headings, standout lines' },
+      { name: 'Heading/4',    px: 20, weight: 400, sample: 'Weekly reflection',       role: 'Card and inline titles' },
     ],
   },
   {
@@ -66,25 +123,42 @@ const TYPE_BLOCKS = [
     role: 'Body',
     stack: SANS,
     weights: '400 and 600',
-    sample: 'The quick brown fox studies affective regulation.',
     steps: [
-      { px: 16, weight: '400 / 600', role: 'Default body copy' },
-      { px: 14, weight: '400 / 600', role: 'Secondary body, nav links, CTA labels, eyebrows' },
-      { px: 12, weight: '400 / 600', role: 'Captions and fine print' },
+      { name: 'Body/L Emphasis', px: 16, weight: 600, sample: 'Dashboard',                       role: 'Button labels, nav items, table row labels' },
+      { name: 'Body/L',          px: 16, weight: 400, sample: 'Ears & species',                  role: 'Body copy in cards and list rows' },
+      { name: 'Body/M',          px: 14, weight: 400, sample: 'example@email.com',               role: 'Values in key–value rows and field content' },
+      { name: 'Body/S Emphasis', px: 12, weight: 600, sample: 'Rename',                          role: 'Inline links and checkbox labels' },
+      { name: 'Body/S',          px: 12, weight: 400, sample: 'It takes one minute to reset.',   role: 'Helper and description text beneath headings' },
     ],
   },
   {
     family: 'Space Mono',
-    role: 'Utility',
+    role: 'Label',
     stack: MONO,
     weights: '400 (700 for game and admin data readouts only)',
-    sample: 'PRINCIPAL INVESTIGATOR · 00:42:18 · TAG',
     steps: [
-      { px: 20, weight: 400, role: 'Large numeric display — timer, stat' },
-      { px: 14, weight: 400, role: 'Inline data values' },
-      { px: 12, weight: 400, role: 'Tags, role labels, timestamps' },
+      { name: 'Label/XL Bold', px: 20, weight: 700, sample: 'DAILY REMINDERS ON', role: 'Data readouts and onboarding emphasis. Use sparingly' },
+      { name: 'Label/XL',      px: 20, weight: 400, sample: 'TODAY’S CHECK-IN',   role: 'Page-level section eyebrow labels' },
+      { name: 'Label/L',       px: 14, weight: 400, sample: 'ACCOUNT DETAILS',    role: 'Section-level eyebrow labels' },
+      { name: 'Label/M',       px: 12, weight: 400, sample: 'UNLOCKED',           role: 'Card-level eyebrow labels and metadata' },
     ],
   },
+]
+
+// Spacing scale (2026-08-26 expansion): the only legal values for padding and gaps.
+const SPACE_STEPS = [4, 8, 16, 24, 32, 40, 48, 64]
+
+// Layout containers (2026-08-26 expansion), drawn proportionally to a 1440 frame.
+const CONTAINERS = [
+  { name: 'container/lg · 1120px', width: 1120, token: '--container-lg', note: 'Grids and data: Games, Dashboard, About. Leaves 160px per side at 1440.' },
+  { name: 'container/sm · 840px',  width: 840,  token: '--container-sm', note: 'Forms and prose: Account, My Ripple, Onboarding. Leaves 300px per side at 1440.' },
+  { name: 'full-bleed · 1440px',   width: 1440, token: null,             note: 'Navigation only. Spans the full width and aligns to neither container.' },
+]
+
+const BREAKPOINTS = [
+  { range: '≥ 1280',     gutter: 'flex', note: 'Designed state. Containers at full width; the gutter absorbs the remainder.' },
+  { range: '768 – 1279', gutter: '32',   note: 'Both containers go fluid. Game cards 2-up. Dashboard panels stack.' },
+  { range: '< 768',      gutter: '16',   note: 'Single column throughout. Nav collapses to a menu.' },
 ]
 
 const LOGOS = [
@@ -142,7 +216,9 @@ const BUILT_COMPONENTS = [
 ]
 
 // Designed in Figma, with no shared primitive in src/components/ui/ — each live
-// instance is currently hand-styled, which is where new drift enters.
+// instance is currently hand-styled, which is where new drift enters. The
+// 2026-08 Figma expansion redesigned most of these across eight component
+// sections plus revised Account/Games/Dashboard test screens.
 const UNBUILT_COMPONENTS = [
   ['Header',          'Designed as one component; the live site mounts Nav.jsx per page in 20+ files'],
   ['ToggleSwitch',    'Added to Figma late; /account ships its own'],
@@ -162,7 +238,7 @@ function luminance(hex) {
   return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b)
 }
 
-function CopyableSwatch({ token, tw, hex, label, use }) {
+function CopyableSwatch({ token, name, hex }) {
   const [copied, setCopied] = useState(false)
   // Pick whichever ink actually contrasts better, rather than painting white with
   // a shadow everywhere — half this palette is near-white. 0.179 is the crossover
@@ -179,10 +255,21 @@ function CopyableSwatch({ token, tw, hex, label, use }) {
     <button onClick={copy} className="brand-swatch" style={{ background: hex, color: ink }} title={`Copy ${hex}`}>
       <span className="brand-swatch__hex">{copied ? 'copied!' : hex}</span>
       <span className="brand-swatch__label">
-        {label}<br />{token}{tw ? ` · ${tw}` : ''}
-        <span className="brand-swatch__use">{use}</span>
+        {name}
+        <span className="brand-swatch__use">{token}</span>
       </span>
     </button>
+  )
+}
+
+function SemanticCard({ name, alias, css, token, use }) {
+  return (
+    <div className="brand-sem-card">
+      <div className="brand-sem-card__chip" style={{ background: css }} />
+      <span className="brand-sem-card__name">{name}</span>
+      <span className="brand-sem-card__alias">→ {alias} · {token}</span>
+      <span className="brand-sem-card__use">{use}</span>
+    </div>
   )
 }
 
@@ -228,9 +315,9 @@ export default function BrandAssets() {
       <div className="brand-page__header">
         <h1 className="brand-page__title">RADlab Design System</h1>
         <p className="brand-page__subtitle">
-          The colour, type and shape rules the platform is built on, plus the logo and crest
-          files for press, partners and collaborators. This page isn&rsquo;t linked from the
-          site &mdash; bookmark or share the URL directly.
+          The colour, type, spacing, shape and layout rules the platform is built on, plus
+          the logo and crest files for press, partners and collaborators. This page
+          isn&rsquo;t linked from the site &mdash; bookmark or share the URL directly.
         </p>
       </div>
 
@@ -238,31 +325,32 @@ export default function BrandAssets() {
       <section className="lab-section">
         <h2 className="brand-heading">Colour</h2>
         <p className="brand-section-note">
-          Click any swatch to copy its hex. Each is available as a CSS custom property
-          (<code>var(--pk)</code>) and, for the core and semantic sets, as a Tailwind key
-          (<code>bg-primary</code>). Prefer the token over the literal &mdash; the point of
-          a token is that it can be changed in one place.
+          Two layers. <strong>Primitives</strong> are the raw values, named for what they are.
+          <strong> Semantic tokens</strong> alias a primitive and are named for what they do
+          &mdash; code should reach for the semantic token (<code>var(--pk)</code>, Tailwind{' '}
+          <code>bg-primary</code>), so a value can change in one place. Click any primitive
+          to copy its hex.
         </p>
 
-        <p className="brand-subheading">Core palette &mdash; the eight</p>
+        <p className="brand-subheading">Primitives &mdash; raw values</p>
         <div className="brand-swatch-grid">
-          {CORE_COLORS.map((c) => <CopyableSwatch key={c.token} {...c} />)}
+          {PRIMITIVES.map((c) => <CopyableSwatch key={c.name} {...c} />)}
         </div>
 
-        <p className="brand-subheading">Semantic &mdash; errors</p>
-        <p className="brand-section-note">
-          The only semantic set that exists. There are no success, warning or info tokens,
-          which is why admin status colours are currently invented per surface.
-        </p>
-        <div className="brand-swatch-grid">
-          {SEMANTIC_COLORS.map((c) => <CopyableSwatch key={c.token} {...c} />)}
-        </div>
+        {SEMANTIC_GROUPS.map((g) => (
+          <div key={g.group}>
+            <p className="brand-subheading">{g.group}</p>
+            <div className="brand-sem-grid">
+              {g.items.map((item) => <SemanticCard key={g.group + item.name} {...item} />)}
+            </div>
+          </div>
+        ))}
 
-        <p className="brand-subheading">Borders &mdash; sanctioned supplements</p>
+        <p className="brand-subheading">Borders &mdash; translucent by ruling</p>
         <p className="brand-section-note">
-          Translucent, so they are shown as borders rather than fills. These are not part of
-          the original eight; they were added because the palette defines no border colour and
-          every surface was otherwise inventing one.
+          Border tokens stay translucent so they blend over any ground &mdash; the 2026-08-26
+          adoption declined the Figma expansion&rsquo;s opaque border aliases. Shown as borders
+          rather than fills. CSS vars only, no Tailwind keys.
         </p>
         <div className="brand-border-grid">
           {BORDER_TOKENS.map((b) => (
@@ -278,19 +366,23 @@ export default function BrandAssets() {
         <p className="brand-section-note" style={{ marginTop: 20 }}>
           <strong>Deprecated:</strong> <code>--tx3</code> was a near-duplicate muted grey
           (<code>#A8A9AD</code>). It now resolves to <code>#ABADB0</code> and is an alias of
-          text-muted &mdash; use <code>--gy</code> in new code.
+          text-muted &mdash; use <code>--gy</code> in new code. <strong>Still missing:</strong>{' '}
+          success and warning semantics &mdash; error is the only status set, which is why
+          admin status colours are currently invented per surface.
         </p>
       </section>
 
-      {/* ── Type scale ─────────────────────────────────────────────────────── */}
+      {/* ── Type styles ────────────────────────────────────────────────────── */}
       <section className="lab-section">
-        <h2 className="brand-heading">Type scale</h2>
+        <h2 className="brand-heading">Type styles</h2>
         <p className="brand-section-note">
-          Six steps &mdash; <strong>12 / 14 / 16 / 20 / 28 / 36 px</strong> &mdash; shared across
-          three families, each drawing three of them. 150% line-height, 0% letter-spacing.
-          <strong> 12px is a hard floor</strong> (WCAG); nothing on a participant-facing surface
-          should be smaller. The one sanctioned exception is the About page&rsquo;s Large Hero.
-          Samples below are rendered at their true size.
+          Named styles on the shared scale <strong>12 / 14 / 16 / 20 / 28 / 36 px</strong>,
+          150% line-height, 0% letter-spacing. <strong>12px is a hard floor</strong> (WCAG);
+          nothing participant-facing goes smaller. <code>Display/Hero</code> is the one
+          sanctioned exception to the scale &mdash; one per site. Samples render at true size.
+          Not adopted from the 2026-08 Figma expansion: <code>Heading/3</code> and{' '}
+          <code>Body/XL Emphasis</code> (24px is off-scale) and <code>Body/XS</code> (10px is
+          below the floor).
         </p>
 
         {TYPE_BLOCKS.map((block) => (
@@ -298,15 +390,15 @@ export default function BrandAssets() {
             <p className="brand-type-block__family">{block.role} &mdash; {block.family}</p>
             <p className="brand-type-block__stack">{block.weights}</p>
             {block.steps.map((step) => (
-              <div key={step.px} className="brand-type-row">
+              <div key={step.name} className="brand-type-row">
                 <span
                   className="brand-type-row__sample"
-                  style={{ fontFamily: block.stack, fontSize: step.px, fontWeight: 400 }}
+                  style={{ fontFamily: block.stack, fontSize: step.px, fontWeight: step.weight }}
                 >
-                  {block.sample}
+                  {step.sample}
                 </span>
                 <span className="brand-type-row__meta">
-                  {step.px}px · {step.weight}
+                  {step.name} · {step.px}px · {step.weight}
                   <span className="brand-type-row__role">{step.role}</span>
                 </span>
               </div>
@@ -315,13 +407,33 @@ export default function BrandAssets() {
         ))}
       </section>
 
+      {/* ── Spacing ────────────────────────────────────────────────────────── */}
+      <section className="lab-section">
+        <h2 className="brand-heading">Spacing</h2>
+        <p className="brand-section-note">
+          Eight steps, and <strong>only these eight values are legal for padding and gaps</strong>.
+          Available as CSS custom properties (<code>var(--sp-16)</code>). Adopted 2026-08-26;
+          existing surfaces migrate opportunistically.
+        </p>
+        <div className="brand-space-rows">
+          {SPACE_STEPS.map((px) => (
+            <div key={px} className="brand-space-row">
+              <span className="brand-space-row__name">space/{px}</span>
+              <div className="brand-space-row__bar" style={{ width: px }} />
+              <span className="brand-space-row__px">{px}px</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* ── Shape ──────────────────────────────────────────────────────────── */}
       <section className="lab-section">
         <h2 className="brand-heading">Shape</h2>
         <p className="brand-section-note">
           Radius encodes clickability. <strong>24px means you can click it</strong>; 12px means
-          you cannot. Nothing else, so that the affordance stays legible. Available as Tailwind
-          <code> rounded-btn</code> and <code>rounded-card</code>.
+          you cannot; 50% is avatars and dots. Nothing else, so the affordance stays legible
+          &mdash; the 2026-08-26 adoption declined an 8px small radius for this reason.
+          Available as Tailwind <code>rounded-btn</code> and <code>rounded-card</code>.
         </p>
         <div className="brand-radii">
           <div className="brand-radii__item">
@@ -345,6 +457,104 @@ export default function BrandAssets() {
             <span className="brand-radii__caption">50% &mdash; avatars, dots</span>
           </div>
         </div>
+
+        <p className="brand-subheading">Strokes</p>
+        <div>
+          <div className="brand-stroke-row">
+            <span className="brand-stroke-row__name">stroke/hairline · 1px</span>
+            <div className="brand-stroke-row__line" style={{ height: 1 }} />
+          </div>
+          <div className="brand-stroke-row">
+            <span className="brand-stroke-row__name">stroke/strong · 2px</span>
+            <div className="brand-stroke-row__line" style={{ height: 2 }} />
+          </div>
+        </div>
+      </section>
+
+      {/* ── Effects ────────────────────────────────────────────────────────── */}
+      <section className="lab-section">
+        <h2 className="brand-heading">Effects</h2>
+        <p className="brand-section-note">
+          One shadow and two overlays. Anything else is off-system.
+        </p>
+        <div className="brand-fx-grid">
+          <div className="brand-fx-card">
+            <div className="brand-fx-card__stage">
+              <div className="brand-fx-card__demo brand-fx-card__demo--elevated">Hovered card</div>
+            </div>
+            <span className="brand-fx-card__name">Elevation/Hover</span>
+            <span className="brand-fx-card__note">
+              Even drop shadow, 0/0/20 at 12% (<code>var(--sh-hover)</code>). The only shadow
+              in the system.
+            </span>
+          </div>
+          <div className="brand-fx-card">
+            <div className="brand-fx-card__stage">
+              <div className="brand-fx-card__demo">
+                Card content
+                <div className="brand-fx-card__veil" style={{ background: 'var(--ov-wash)' }} />
+              </div>
+            </div>
+            <span className="brand-fx-card__name">Overlay/Wash</span>
+            <span className="brand-fx-card__note">
+              Pink wash at 70% (<code>var(--ov-wash)</code>) over a hovered card. Content stays
+              legible beneath it.
+            </span>
+          </div>
+          <div className="brand-fx-card">
+            <div className="brand-fx-card__stage">
+              <div className="brand-fx-card__demo">
+                Locked content
+                <div className="brand-fx-card__veil" style={{ background: 'var(--ov-scrim)' }} />
+              </div>
+            </div>
+            <span className="brand-fx-card__name">Overlay/Scrim</span>
+            <span className="brand-fx-card__note">
+              Grey wash at 55% (<code>var(--ov-scrim)</code>) over locked or gated content.
+            </span>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Layout ─────────────────────────────────────────────────────────── */}
+      <section className="lab-section">
+        <h2 className="brand-heading">Layout</h2>
+        <p className="brand-section-note">
+          Content sits in one of two centred containers; the gutter is whatever space remains,
+          not a fixed value. Diagrams are proportional to a 1440px frame. Adopted 2026-08-26 as
+          the target &mdash; live pages still vary (see Implementation status).
+        </p>
+        {CONTAINERS.map((c) => (
+          <div key={c.name}>
+            <p className="brand-layout-caption">{c.name}{c.token ? <> · <code>var({c.token})</code></> : null}</p>
+            <div className="brand-layout-diagram">
+              <div className="brand-layout-diagram__inner" style={{ width: `${(c.width / 1440) * 100}%` }}>
+                {c.width}px
+              </div>
+            </div>
+            <p className="brand-layout-note">{c.note}</p>
+          </div>
+        ))}
+        <div className="brand-rules-box">
+          <p className="brand-rules-box__title">The two rules that always apply</p>
+          <p className="brand-rules-box__body">
+            Content never exceeds its container width. &middot; The gutter never drops below 16px.
+          </p>
+        </div>
+
+        <p className="brand-subheading">Breakpoints &middot; gutter</p>
+        <div>
+          {BREAKPOINTS.map((b) => (
+            <div key={b.range} className="brand-bp-row">
+              <span className="brand-bp-row__range">{b.range}</span>
+              <span className="brand-bp-row__gutter">{b.gutter}</span>
+              <span className="brand-bp-row__note">{b.note}</span>
+            </div>
+          ))}
+        </div>
+        <p className="brand-section-note" style={{ marginTop: 12 }}>
+          Breakpoint values are developer-facing and intentionally not stored as design tokens.
+        </p>
       </section>
 
       {/* ── Components ─────────────────────────────────────────────────────── */}
@@ -354,7 +564,9 @@ export default function BrandAssets() {
           Shared primitives live in <code>src/components/ui/</code> and are rendered in every
           variant at <code>/dev/ui-kit</code>. The second list is designed in Figma but has no
           shared implementation, so each live instance is hand-styled &mdash; the main route by
-          which new drift enters.
+          which new drift enters. The 2026-08 Figma expansion redesigned these across eight
+          component sections with revised Account, Games and Dashboard screens; build-out order
+          is in <code>docs/markdowns/brand_enforcement_plan.md</code>.
         </p>
 
         <p className="brand-subheading">Built</p>
@@ -377,22 +589,41 @@ export default function BrandAssets() {
         <h2 className="brand-heading">Implementation status</h2>
         <p className="brand-section-note">
           What the system specifies is above; what the codebase actually does is below.
-          Measured 2026-08-12 by regex inventory over 337 source files
-          (<code>design-audit/DRIFT-REPORT-2026-08-12.md</code>). Game-internal artwork is a
-          sanctioned exception throughout and is excluded where noted.
+          Drift measured 2026-08-30 by <code>npm run audit:design</code>{' '}
+          (<code>scripts/design-audit.mjs</code>, 374 files), which now also runs as a ratchet:
+          <code> audit:design:check</code> fails any change that pushes a count above the
+          committed <code>design-audit/baseline.json</code>. Sanctioned content — game artwork,
+          avatar colour palettes, talk-deck graphics — is reported but never ratcheted. The
+          2026-08-12 hand-run audit remains in <code>design-audit/</code>; its counts used
+          different exclusions and are not 1:1 comparable.
         </p>
 
-        <Gap title="Type scale — 44% compliant, and slipping">
-          Of ~1,985 font-size declarations, 876 land on the six steps. 13px alone accounts for
-          401, despite a ruling to migrate 13&nbsp;&rarr;&nbsp;14; 372 declarations sit below the
-          12px floor, concentrated in admin. Both numbers have grown since the July audit,
-          because the rule is documented but not enforced by tooling.
+        <Gap title="The 2026-08-26 expansion — adopted with four exclusions">
+          The expanded Figma system (&ldquo;RADLAB Official Design System&rdquo;) contributed
+          the semantic colour layer, named type styles, the spacing scale, effects and layout
+          containers. Four of its proposals conflicted with settled rulings and were declined
+          (Norm, 2026-08-26): <code>Body/XS</code> at 10px (below the 12px floor),{' '}
+          <code>radius/sm</code> at 8px (radius encodes clickability), 24px type steps
+          (off the six-step scale), and opaque border aliases (borders stay translucent).
+          Precedence is unchanged: where Figma and the written spec disagree, the written
+          spec wins.
+        </Gap>
+
+        <Gap title="Type scale — 85% compliant and ratcheted">
+          Of 1,701 font-size declarations in ratcheted scope, 1,444 land on the six steps.
+          The 13&nbsp;&rarr;&nbsp;14 migration completed 2026-08-27 (324 replacements) and the
+          sub-12px cleanup completed 2026-08-30 (332 replacements): both counts are now{' '}
+          <strong>zero</strong>, locked by the ratchet. What remains is 257 declarations at
+          other off-scale sizes (15/17/18/22px and rem equivalents) &mdash; the last and least
+          mechanical slice, since some sit mid-hierarchy and need a judgment call between the
+          neighbouring steps.
         </Gap>
 
         <Gap title="Colour — token layer sound, literals not cleaned up">
-          803 occurrences hard-code one of the token values instead of referencing it. That is
-          cosmetic rather than visible drift. Genuinely off-palette values outside the games
-          are down to 82 occurrences, nearly all admin status tints awaiting a semantic set.
+          187 occurrences hard-code a token value instead of referencing it &mdash; cosmetic
+          rather than visible drift. 540 hexes are genuinely off-palette; the single worst
+          file is admin&rsquo;s TrainingUpload (68), and the bulk are admin status tints
+          awaiting success and warning semantics.
         </Gap>
 
         <Gap title="Weights — fully migrated">
@@ -405,31 +636,26 @@ export default function BrandAssets() {
         </Gap>
 
         <Gap title="Radii — carried by the primitives">
-          24px went from 3 uses to 38 as the button primitives landed. The long tail of 8/10/16px
-          cards persists in admin and game chrome and migrates opportunistically.
+          24px went from 3 uses to 38 as the button primitives landed (2026-08-12). The long
+          tail of 8/10/16px cards persists &mdash; 579 off-system radius declarations in
+          ratcheted scope &mdash; and migrates opportunistically, now without being allowed
+          to grow.
         </Gap>
 
-        <Gap title="Spacing — no scale exists yet">
-          The system defines colour, type and shape, but <strong>no spacing or layout scale</strong>.
-          Consequently the main pages do not share a container: Dashboard is 1100px wide,
-          Games 1024, About 1200, Talks 960, this page 900. Moving between them shifts the
-          content column. This is an open design question, not a violation.
+        <Gap title="Spacing & layout — scale adopted, not yet implemented">
+          The spacing scale and the two shared containers exist as tokens as of 2026-08-26, but
+          no page uses them yet: Dashboard is 1100px wide, Games 1024, About 1200, Talks 960,
+          this page 900. Moving between pages still shifts the content column, and 1,712
+          off-scale padding/gap/margin values mark the migration&rsquo;s starting line.
+          Migration order is in <code>docs/markdowns/brand_enforcement_plan.md</code> — this
+          stops being an open design question and becomes ordinary unfinished work.
         </Gap>
 
         <Gap title="Precedence — the written spec is authoritative">
-          Where the Figma Style Tile and the written spec disagree, <strong>the written spec
-          wins</strong> (Norm, 2026-08-12). The tile&rsquo;s Body table lists
-          12&nbsp;/&nbsp;14&nbsp;/&nbsp;12 with its roles copied from the Display table above it;
-          the spec says 16&nbsp;/&nbsp;14&nbsp;/&nbsp;12, which is what this page and the code
-          follow, and the current Figma has it corrected. Per-screen CSS still wins over both
-          where a screen deliberately differs &mdash; the About page&rsquo;s Large Hero is the
-          standing example.
-        </Gap>
-
-        <Gap title="One stale pointer">
-          The developer spec names a Figma <code>Demo</code> page as the source of truth for
-          navigation wiring. That page is no longer in the file, so a navigation question can no
-          longer be settled by following the spec there.
+          Where the Figma and the written spec disagree, <strong>the written spec wins</strong>{' '}
+          (Norm, 2026-08-12; reaffirmed 2026-08-26). Per-screen CSS still wins over both where a
+          screen deliberately differs &mdash; the About page&rsquo;s Large Hero was the standing
+          example, now formalised as <code>Display/Hero</code>.
         </Gap>
       </section>
 

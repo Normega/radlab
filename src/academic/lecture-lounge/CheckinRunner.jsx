@@ -184,8 +184,8 @@ const S = {
   stepWrap: { display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '24px 20px', maxWidth: 380, margin: '0 auto' },
   eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)', marginBottom: 6 },
   title: { fontFamily: SERIF, fontSize: 22, color: 'var(--tx)', marginBottom: 20 },
-  hint: { fontSize: 13, color: 'var(--tx3)' },
-  errorText: { fontSize: 13, color: '#c04a4a', marginBottom: 12 },
+  hint: { fontSize: 14, color: 'var(--tx3)' },
+  errorText: { fontSize: 14, color: '#c04a4a', marginBottom: 12 },
   textarea: {
     width: '100%', padding: '12px 14px', borderRadius: 10, border: '1px solid var(--bds)',
     fontSize: 15, fontFamily: 'inherit', resize: 'vertical', marginBottom: 16, boxSizing: 'border-box',

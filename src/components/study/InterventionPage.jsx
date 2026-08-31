@@ -1172,7 +1172,7 @@ function TriggerMapBlock({ step, values, onChange }) {
                 onClick={() => setOpenId(isOpen ? null : cat.id)}
               >
                 <span>{cat.icon}</span>
-                <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: 'var(--tx)', fontFamily: FONT }}>{cat.label}</span>
+                <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: 'var(--tx)', fontFamily: FONT }}>{cat.label}</span>
                 <span style={{ ...S.triggerArrow, ...(isOpen ? S.triggerArrowOpen : {}) }}>▶</span>
               </div>
               {isOpen && (
@@ -1389,7 +1389,7 @@ function QualityExplorerBlock({ step, state, onChange }) {
           {/* Description — fades in after slider moved */}
           {sliderMoved && (
             <div style={{ marginTop: 14 }}>
-              <p style={{ fontSize: 13, color: 'var(--tx2)', marginBottom: 6, fontFamily: FONT }}>
+              <p style={{ fontSize: 14, color: 'var(--tx2)', marginBottom: 6, fontFamily: FONT }}>
                 {step.describe_prompt ?? 'Describe this quality in your own words.'}
               </p>
               <input
@@ -1440,7 +1440,7 @@ const S = {
     display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1,
   },
   stepLabel: {
-    fontSize: 10, fontWeight: 600, letterSpacing: '0.04em',
+    fontSize: 12, fontWeight: 600, letterSpacing: '0.04em',
     textTransform: 'uppercase', marginBottom: 8, whiteSpace: 'nowrap',
   },
   stepTrack: {
@@ -1461,7 +1461,7 @@ const S = {
     display: 'inline-flex', alignItems: 'center', gap: 6,
     background: 'var(--bgp)', border: '1px solid #ddd',
     borderRadius: 6, padding: '4px 10px',
-    fontSize: 11, fontWeight: 600, color: 'var(--tx2)',
+    fontSize: 12, fontWeight: 600, color: 'var(--tx2)',
     textTransform: 'uppercase', letterSpacing: '0.05em',
     marginBottom: 10,
   },
@@ -1475,7 +1475,7 @@ const S = {
     fontSize: 15, fontWeight: 600, color: 'var(--tx)', marginTop: 2,
   },
   daySubtitle: {
-    fontSize: 13, color: 'var(--tx2)', marginTop: 2,
+    fontSize: 14, color: 'var(--tx2)', marginTop: 2,
   },
 
   // ── Step pips
@@ -1519,7 +1519,7 @@ const S = {
     marginBottom: 10,
   },
   videoNote: {
-    fontSize: 11, color: 'var(--gy)', marginTop: 8, textAlign: 'center',
+    fontSize: 12, color: 'var(--gy)', marginTop: 8, textAlign: 'center',
   },
 
   // ── Audio
@@ -1543,7 +1543,7 @@ const S = {
     fontSize: 12, fontFamily: FONT, whiteSpace: 'nowrap',
   },
   audioNote: {
-    fontSize: 11, color: 'var(--gy)', marginTop: 8, textAlign: 'center',
+    fontSize: 12, color: 'var(--gy)', marginTop: 8, textAlign: 'center',
   },
 
   // ── Text block
@@ -1582,12 +1582,12 @@ const S = {
     marginBottom: 12,
   },
   exampleLabel: {
-    fontSize: 11, fontWeight: 600, textTransform: 'uppercase',
+    fontSize: 12, fontWeight: 600, textTransform: 'uppercase',
     letterSpacing: '0.04em', color: 'var(--tx2)',
     margin: '0 0 4px',
   },
   exampleText: {
-    fontSize: 13, lineHeight: 1.6, color: 'var(--tx2)',
+    fontSize: 14, lineHeight: 1.6, color: 'var(--tx2)',
     fontStyle: 'italic', margin: 0,
   },
   textarea: {
@@ -1639,7 +1639,7 @@ const S = {
   },
   sliderEnds: {
     display: 'flex', justifyContent: 'space-between',
-    fontSize: 10, color: 'var(--tx2)', marginTop: 2, fontFamily: FONT,
+    fontSize: 12, color: 'var(--tx2)', marginTop: 2, fontFamily: FONT,
   },
 
   // ── MultiResponse
@@ -1648,7 +1648,7 @@ const S = {
   },
   inputNum: {
     width: 24, height: 24, borderRadius: '50%',
-    background: 'var(--bgp)', fontSize: 11, fontWeight: 600, color: 'var(--tx2)',
+    background: 'var(--bgp)', fontSize: 12, fontWeight: 600, color: 'var(--tx2)',
     display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
     fontFamily: FONT,
   },
@@ -1670,7 +1670,7 @@ const S = {
     fontFamily: FONT,
   },
   timerSublabel: {
-    fontSize: 13, color: 'var(--tx2)', textAlign: 'center', fontFamily: FONT,
+    fontSize: 14, color: 'var(--tx2)', textAlign: 'center', fontFamily: FONT,
   },
   timerTrack: {
     width: 160, height: 4, background: 'var(--bd)', borderRadius: 2, overflow: 'hidden', marginTop: 8,
@@ -1682,7 +1682,7 @@ const S = {
   // ── Training response (single-select)
   scenarioBox: {
     background: 'var(--bgp)', borderLeft: '3px solid var(--pk)', borderRadius: 6,
-    padding: '10px 14px', fontSize: 13, color: 'var(--tx2)', marginBottom: 14,
+    padding: '10px 14px', fontSize: 14, color: 'var(--tx2)', marginBottom: 14,
     fontFamily: FONT,
   },
   mcOption: {
@@ -1724,7 +1724,7 @@ const S = {
     fontSize: 14, fontWeight: 600, color: 'var(--tx)', marginBottom: 4, fontFamily: FONT,
   },
   distDesc: {
-    fontSize: 13, color: 'var(--tx2)', marginBottom: 4, fontFamily: FONT,
+    fontSize: 14, color: 'var(--tx2)', marginBottom: 4, fontFamily: FONT,
   },
   distExample: {
     fontSize: 12, color: 'var(--tx2)', fontStyle: 'italic', fontFamily: FONT,
@@ -1749,7 +1749,7 @@ const S = {
     marginBottom: 16,
   },
   thoughtSliderLabel: {
-    fontSize: 13, fontWeight: 600, color: 'var(--tx)',
+    fontSize: 14, fontWeight: 600, color: 'var(--tx)',
     marginBottom: 6, display: 'flex', justifyContent: 'space-between', fontFamily: FONT,
   },
 
@@ -1776,7 +1776,7 @@ const S = {
     background: 'var(--bgp)',
   },
   triggerArrow: {
-    fontSize: 11, color: 'var(--tx2)',
+    fontSize: 12, color: 'var(--tx2)',
     transition: 'transform 0.2s',
   },
   triggerArrowOpen: {
@@ -1788,7 +1788,7 @@ const S = {
   triggerTextarea: {
     width: '100%', boxSizing: 'border-box',
     border: '1px solid var(--bds)', borderRadius: 6,
-    padding: '8px 10px', fontSize: 13, fontFamily: FONT,
+    padding: '8px 10px', fontSize: 14, fontFamily: FONT,
     resize: 'none', height: 68, outline: 'none',
     color: 'var(--tx)', background: '#fff',
   },
@@ -1799,7 +1799,7 @@ const S = {
   },
   qualityBtn: {
     padding: '7px 14px', border: '1.5px solid var(--bds)', borderRadius: 16,
-    fontSize: 13, fontWeight: 600, color: 'var(--tx)', background: '#fff',
+    fontSize: 14, fontWeight: 600, color: 'var(--tx)', background: '#fff',
     cursor: 'pointer', fontFamily: FONT,
   },
   qualityBtnActive: {

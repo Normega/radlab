@@ -210,9 +210,9 @@ const S = {
     padding: '10px 16px', borderRadius: 10, border: '1px solid var(--bds)', background: 'transparent',
     color: 'var(--tx2)', fontSize: 14, cursor: 'pointer', fontFamily: 'inherit',
   },
-  linkBtn: { border: 'none', background: 'none', color: 'var(--pk)', fontSize: 13, cursor: 'pointer', padding: 0, fontFamily: 'inherit', textDecoration: 'underline' },
+  linkBtn: { border: 'none', background: 'none', color: 'var(--pk)', fontSize: 14, cursor: 'pointer', padding: 0, fontFamily: 'inherit', textDecoration: 'underline' },
   linkBtnDanger: { border: 'none', background: 'none', color: '#c04a4a', fontSize: 12, cursor: 'pointer', padding: 0, fontFamily: MONO },
-  mineNote: { fontSize: 13, color: 'var(--tx2)', margin: '14px 0' },
+  mineNote: { fontSize: 14, color: 'var(--tx2)', margin: '14px 0' },
   lockedCard: {
     background: 'var(--bgc)', border: '1px dashed var(--bds)', borderRadius: 14,
     padding: '28px 20px', textAlign: 'center', marginTop: 18,
@@ -227,7 +227,7 @@ const S = {
   avatarSlot: { flexShrink: 0 },
   responseText: { fontSize: 14.5, color: 'var(--tx)', lineHeight: 1.5, whiteSpace: 'pre-wrap', overflowWrap: 'break-word' },
   responseMetaRow: { display: 'flex', gap: 10, alignItems: 'center', marginTop: 6 },
-  mineBadge: { fontFamily: MONO, fontSize: 11, color: 'var(--pk)' },
-  removedBadge: { fontFamily: MONO, fontSize: 11, color: '#c04a4a' },
-  error: { fontSize: 13, color: '#c04a4a', marginTop: 8 },
+  mineBadge: { fontFamily: MONO, fontSize: 12, color: 'var(--pk)' },
+  removedBadge: { fontFamily: MONO, fontSize: 12, color: '#c04a4a' },
+  error: { fontSize: 14, color: '#c04a4a', marginTop: 8 },
 }

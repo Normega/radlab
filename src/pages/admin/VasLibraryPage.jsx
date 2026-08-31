@@ -328,7 +328,7 @@ function SliderRow({ slider, onPreview }) {
         <span style={S.badge}>{slider.min}–{slider.max}</span>
       </div>
       <p style={S.rowQuestion}>{slider.prompt}</p>
-      <p style={{ ...S.rowQuestion, fontSize: 11, color: 'var(--tx3)' }}>
+      <p style={{ ...S.rowQuestion, fontSize: 12, color: 'var(--tx3)' }}>
         {slider.min_label} → {slider.max_label}
       </p>
       <div style={S.rowMeta}>
@@ -393,27 +393,27 @@ const S = {
 
   section:       { marginBottom: 40 },
   sectionHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
-  sectionTitle:  { fontFamily: '"Space Mono",monospace', fontSize: 11, fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 },
-  newBtn:        { background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', textDecoration: 'none', display: 'inline-block' },
+  sectionTitle:  { fontFamily: '"Space Mono",monospace', fontSize: 12, fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 },
+  newBtn:        { background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', textDecoration: 'none', display: 'inline-block' },
   table:         { background: '#fff', border: '1px solid var(--bd)', borderRadius: 12, overflow: 'hidden' },
 
   row:      { padding: '14px 18px', borderBottom: '1px solid var(--bd)', display: 'flex', flexDirection: 'column', gap: 6 },
   rowMain:  { display: 'flex', alignItems: 'center', gap: 8 },
-  rowQuestion: { fontSize: 13, color: 'var(--tx2)', margin: 0, fontFamily: '"DM Sans",system-ui,sans-serif' },
+  rowQuestion: { fontSize: 14, color: 'var(--tx2)', margin: 0, fontFamily: '"DM Sans",system-ui,sans-serif' },
   rowMeta:  { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   rowActions: { display: 'flex', alignItems: 'center', gap: 8 },
-  metaText: { fontFamily: '"Space Mono",monospace', fontSize: 10, color: 'var(--tx3)' },
+  metaText: { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)' },
 
-  chip:      { fontFamily: '"Space Mono",monospace', fontSize: 11, background: 'var(--bgp)', color: 'var(--pk)', border: '1px solid var(--pkb)', borderRadius: 5, padding: '2px 7px' },
-  scaleChip: { fontFamily: '"Space Mono",monospace', fontSize: 10, background: 'var(--bg)', color: 'var(--tx3)', border: '1px solid var(--bd)', borderRadius: 4, padding: '1px 6px' },
-  badge:     { fontFamily: '"Space Mono",monospace', fontSize: 10, background: 'var(--bg)', color: 'var(--tx3)', border: '1px solid var(--bd)', borderRadius: 4, padding: '2px 6px' },
+  chip:      { fontFamily: '"Space Mono",monospace', fontSize: 12, background: 'var(--bgp)', color: 'var(--pk)', border: '1px solid var(--pkb)', borderRadius: 5, padding: '2px 7px' },
+  scaleChip: { fontFamily: '"Space Mono",monospace', fontSize: 12, background: 'var(--bg)', color: 'var(--tx3)', border: '1px solid var(--bd)', borderRadius: 4, padding: '1px 6px' },
+  badge:     { fontFamily: '"Space Mono",monospace', fontSize: 12, background: 'var(--bg)', color: 'var(--tx3)', border: '1px solid var(--bd)', borderRadius: 4, padding: '2px 6px' },
 
   previewBtn:     { background: 'none', border: '1px solid var(--bd)', borderRadius: 7, padding: '5px 12px', fontSize: 12, cursor: 'pointer', color: 'var(--tx2)', fontFamily: '"DM Sans",system-ui,sans-serif' },
   deleteBtn:      { background: 'none', border: 'none', padding: '4px 8px', fontSize: 12, cursor: 'pointer', color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif' },
   deleteConfirmBtn: { background: '#e04', color: '#fff', border: 'none', borderRadius: 6, padding: '5px 10px', fontSize: 12, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
   cancelBtn:      { background: 'none', border: '1px solid var(--bd)', borderRadius: 6, padding: '5px 10px', fontSize: 12, cursor: 'pointer', color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif' },
   confirmMsg:     { fontSize: 12, color: '#e04', fontFamily: '"DM Sans",system-ui,sans-serif' },
-  lockedMsg:      { fontSize: 11, color: 'var(--tx3)', fontFamily: '"Space Mono",monospace' },
+  lockedMsg:      { fontSize: 12, color: 'var(--tx3)', fontFamily: '"Space Mono",monospace' },
 
   overlay:   { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '32px 16px' },
   modalWrap: { position: 'relative', width: '100%', maxWidth: 720 },

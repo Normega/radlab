@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PSY309 · L3 · Exploring Measurement</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&family=Source+Sans+3:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="./slides.css">
+</head>
+<body>
+<div id="deck">
+
+<section data-kind="title">
+  <p class="kicker">PSY309H5 F · Lecture 3 · 22 September 2026</p>
+  <h1>Exploring Measurement</h1>
+  <p class="lead">Is it consistent? Is it measuring what you think? And who did you ask?</p>
+  <p class="small" style="margin-top:3vmin">Today this room becomes a measuring instrument, and then you take it apart.</p>
+</section>
+
+<section>
+  <p class="kicker">Check in</p>
+  <h1>Open the dashboard</h1>
+  <p class="url" style="font-family:'JetBrains Mono',monospace;font-size:3.4vmin;color:var(--accent);font-weight:600">radlab.zone/class/psy309</p>
+  <p class="lead">Practical 1 is marked — feedback on Quercus. Two things the class did well, one thing to fix.</p>
+  <aside class="notes"><p>Check-in position 1. Be specific in the Practical 1 feedback: name the two most common strengths and the single most common problem (usually: describing a review article as if it were empirical, or no APA formatting). Three minutes, no more.</p></aside>
+</section>
+
+<section data-kind="divider">
+  <p class="kicker">Part one</p>
+  <h1>What kind of number is that?</h1>
+</section>
+
+<section>
+  <h1>Scales of measurement</h1>
+  <table>
+    <tr><th>Scale</th><th>What the levels are</th><th>Legal moves</th></tr>
+    <tr><td class="rowhead">Categorical</td><td>Names. Program, condition, language.</td><td>Count, compare frequencies</td></tr>
+    <tr><td class="rowhead">Ordinal</td><td>Ranks, unequal spacing</td><td>Median, rank statistics</td></tr>
+    <tr><td class="rowhead">Interval</td><td>Equal spacing, no true zero</td><td>Mean, SD, differences</td></tr>
+    <tr><td class="rowhead">Ratio</td><td>Equal spacing <em>and</em> a true zero</td><td>All of the above, plus ratios</td></tr>
+  </table>
+  <p class="hidden-until"><strong>The classic crime:</strong> a mean of a categorical variable. "Average program of study = 2.4" — a number with the appearance and nutritional value of information.</p>
+  <aside class="notes"><p>Keep this fast; it's in the Field Guide. The part worth your voice is the Likert slide next.</p></aside>
+</section>
+
+<section>
+  <h1>The Likert question — psychology's worst-kept secret</h1>
+  <p>A 1-to-7 agreement scale is <strong>ordinal</strong> by the strict rules. Who certified that 5→6 is the same distance as 6→7?</p>
+  <p class="hidden-until">And yet we routinely average Likert <em>items</em> into scale scores and analyze them as quantitative.</p>
+  <div class="box hidden-until">
+    <p><strong>The defensible version:</strong> a <em>multi-item scale</em> — seven items averaged — behaves far more like a continuous quantity than any single item does.</p>
+    <p>Know both the rule and the working convention, and know which one you're invoking. Single item: be humble. Validated multi-item scale: proceed with a clear conscience.</p>
+  </div>
+</section>
+
+<section>
+  <h1>Where this stops being philosophy</h1>
+  <p class="lead">In R, scale type is a data type — and mismatches produce two classic disasters.</p>
+  <ul>
+    <li><strong>The polite disaster:</strong> categories stored as numbers. R computes a nonsense mean without complaint.</li>
+    <li><strong>The loud disaster:</strong> numbers stored as text. Your correlation errors out, or a plot orders "10" before "9".</li>
+  </ul>
+  <div class="box hidden-until">
+    <p>Half of practical debugging is <code>str(mydata)</code> — asking R what scale it <em>thinks</em> each column is.</p>
+  </div>
+</section>
+
+<section>
+  <h1>Three ways to measure anything</h1>
+  <div class="cols">
+    <div>
+      <p><strong>Self-report</strong> — asking people.<br><span class="small">Superpower: access to inner experience. Distortion: people can't always know, and don't always tell.</span></p>
+      <p><strong>Observation</strong> — watching behaviour.<br><span class="small">Superpower: the behaviour–report gap. Distortion: observers bend, and the observed perform.</span></p>
+    </div>
+    <div>
+      <p><strong>Physiology</strong> — recording the body.<br><span class="small">Superpower: independent of self-knowledge and self-presentation. Distortion: rarely construct-specific — heart rate reads the same for anxiety, excitement, caffeine, and stairs.</span></p>
+      <div class="box hidden-until">
+        <p><strong>Convergence.</strong> Every window distorts, so look through more than one. When they disagree, you've learned something real.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h1>Reliability: does the measure agree with itself?</h1>
+  <p class="big">A bathroom scale reading 68, then 74, then 61 kg in one minute has a problem — and you can diagnose it without knowing your true weight.</p>
+  <ul class="hidden-until">
+    <li><strong>Test–retest</strong> — across <em>time</em>. Only meaningful if theory says the thing is stable.</li>
+    <li><strong>Interrater</strong> — across <em>observers</em>. Wherever human judgment enters, this is the whole ballgame.</li>
+    <li><strong>Internal consistency</strong> — across <em>items</em>. Cronbach's alpha; ~.70+ for research use.</li>
+  </ul>
+  <div class="svgwrap hidden-until"><svg viewBox="0 0 560 215" role="img" aria-labelledby="rel-t rel-d"><title id="rel-t">Test-retest reliability shown as two scatterplots</title><desc id="rel-d">On the left, time one and time two scores line up tightly along the diagonal. On the right, they form a shapeless cloud.</desc><rect x="26" y="32" width="220" height="150" rx="6" fill="#FFFFFF" stroke="#DCE2E6"/><line x1="38" y1="151" x2="234" y2="60" stroke="#0CA678" stroke-width="2.5" opacity=".85"/><circle cx="147.9" cy="114.7" r="3.1" fill="#0CA678" opacity=".62"/><circle cx="222.4" cy="88.6" r="3.1" fill="#0CA678" opacity=".62"/><circle cx="214.8" cy="61.7" r="3.1" fill="#0CA678" opacity=".62"/><circle cx="117.3" cy="108.7" r="3.1" fill="#0CA678" opacity=".62"/><circle cx="129.2" cy="123.4" r="3.1" fill="#0CA678" opacity=".62"/><circle cx="116.3" cy="94.9" r="3.1" fill="#0CA678" opacity=".62"/><circle cx="178.0" cy="70.4" r="3.1" fill="#0CA678" opacity=".62"/><circle cx="142.8" cy="93.0" r="3.1" fill="#0CA678" opacity=".62"/><circle cx="187.9" cy="71.9" r="3.1" fill="#0CA678" opacity=".62"/><circle cx="42.1" cy="143.0" r="3.1" fill="#0CA678" opacity=".62"/><circle cx="234.0" cy="75.5" r="3.1" fill="#0CA678" opacity=".62"/><circle cx="140.5" cy="94.5" r="3.1" fill="#0CA678" opacity=".62"/><circle cx="184.2" cy="70.6" r="3.1" fill="#0CA678" opacity=".62"/><circle cx="138.3" cy="135.6" r="3.1" fill="#0CA678" opacity=".62"/><circle cx="124.6" cy="107.7" r="3.1" fill="#0CA678" opacity=".62"/><circle cx="172.0" cy="91.6" r="3.1" fill="#0CA678" opacity=".62"/><circle cx="192.3" cy="63.1" r="3.1" fill="#0CA678" opacity=".62"/><circle cx="134.6" cy="115.4" r="3.1" fill="#0CA678" opacity=".62"/><circle cx="137.4" cy="106.8" r="3.1" fill="#0CA678" opacity=".62"/><circle cx="184.5" cy="74.8" r="3.1" fill="#0CA678" opacity=".62"/><circle cx="97.0" cy="143.4" r="3.1" fill="#0CA678" opacity=".62"/><circle cx="60.8" cy="138.7" r="3.1" fill="#0CA678" opacity=".62"/><circle cx="168.1" cy="91.3" r="3.1" fill="#0CA678" opacity=".62"/><circle cx="108.3" cy="114.3" r="3.1" fill="#0CA678" opacity=".62"/><circle cx="38.0" cy="170.0" r="3.1" fill="#0CA678" opacity=".62"/><circle cx="100.2" cy="108.8" r="3.1" fill="#0CA678" opacity=".62"/><circle cx="119.7" cy="106.1" r="3.1" fill="#0CA678" opacity=".62"/><circle cx="78.9" cy="141.7" r="3.1" fill="#0CA678" opacity=".62"/><circle cx="62.1" cy="137.4" r="3.1" fill="#0CA678" opacity=".62"/><circle cx="148.0" cy="79.6" r="3.1" fill="#0CA678" opacity=".62"/><circle cx="196.4" cy="44.0" r="3.1" fill="#0CA678" opacity=".62"/><circle cx="132.8" cy="135.3" r="3.1" fill="#0CA678" opacity=".62"/><circle cx="104.1" cy="110.0" r="3.1" fill="#0CA678" opacity=".62"/><circle cx="167.6" cy="82.1" r="3.1" fill="#0CA678" opacity=".62"/><circle cx="186.3" cy="81.1" r="3.1" fill="#0CA678" opacity=".62"/><circle cx="129.1" cy="127.9" r="3.1" fill="#0CA678" opacity=".62"/><circle cx="176.6" cy="63.9" r="3.1" fill="#0CA678" opacity=".62"/><circle cx="204.6" cy="90.5" r="3.1" fill="#0CA678" opacity=".62"/><circle cx="134.3" cy="98.7" r="3.1" fill="#0CA678" opacity=".62"/><circle cx="100.2" cy="105.2" r="3.1" fill="#0CA678" opacity=".62"/><circle cx="165.5" cy="117.7" r="3.1" fill="#0CA678" opacity=".62"/><circle cx="159.9" cy="99.2" r="3.1" fill="#0CA678" opacity=".62"/><circle cx="207.7" cy="89.6" r="3.1" fill="#0CA678" opacity=".62"/><circle cx="73.7" cy="137.5" r="3.1" fill="#0CA678" opacity=".62"/><circle cx="108.8" cy="96.9" r="3.1" fill="#0CA678" opacity=".62"/><text x="136" y="24" text-anchor="middle" font-size="14" font-weight="bold" fill="#141B22">Reliable</text><text x="136" y="199" text-anchor="middle" font-size="12" fill="#5C6773">r = .88 &#183; rank order holds</text><rect x="300" y="32" width="220" height="150" rx="6" fill="#FFFFFF" stroke="#DCE2E6"/><line x1="312" y1="108" x2="508" y2="112" stroke="#E03131" stroke-width="2.5" opacity=".85"/><circle cx="421.9" cy="53.1" r="3.1" fill="#E03131" opacity=".62"/><circle cx="496.4" cy="154.5" r="3.1" fill="#E03131" opacity=".62"/><circle cx="488.8" cy="120.9" r="3.1" fill="#E03131" opacity=".62"/><circle cx="391.3" cy="93.6" r="3.1" fill="#E03131" opacity=".62"/><circle cx="403.2" cy="67.5" r="3.1" fill="#E03131" opacity=".62"/><circle cx="390.3" cy="101.7" r="3.1" fill="#E03131" opacity=".62"/><circle cx="452.0" cy="129.2" r="3.1" fill="#E03131" opacity=".62"/><circle cx="416.8" cy="102.8" r="3.1" fill="#E03131" opacity=".62"/><circle cx="461.9" cy="107.5" r="3.1" fill="#E03131" opacity=".62"/><circle cx="316.1" cy="126.4" r="3.1" fill="#E03131" opacity=".62"/><circle cx="508.0" cy="123.7" r="3.1" fill="#E03131" opacity=".62"/><circle cx="414.5" cy="100.4" r="3.1" fill="#E03131" opacity=".62"/><circle cx="458.2" cy="98.6" r="3.1" fill="#E03131" opacity=".62"/><circle cx="412.3" cy="114.3" r="3.1" fill="#E03131" opacity=".62"/><circle cx="398.6" cy="119.2" r="3.1" fill="#E03131" opacity=".62"/><circle cx="446.0" cy="145.1" r="3.1" fill="#E03131" opacity=".62"/><circle cx="466.3" cy="120.5" r="3.1" fill="#E03131" opacity=".62"/><circle cx="408.6" cy="77.6" r="3.1" fill="#E03131" opacity=".62"/><circle cx="411.4" cy="117.2" r="3.1" fill="#E03131" opacity=".62"/><circle cx="458.5" cy="148.4" r="3.1" fill="#E03131" opacity=".62"/><circle cx="371.0" cy="77.5" r="3.1" fill="#E03131" opacity=".62"/><circle cx="334.8" cy="103.7" r="3.1" fill="#E03131" opacity=".62"/><circle cx="442.1" cy="48.9" r="3.1" fill="#E03131" opacity=".62"/><circle cx="382.3" cy="112.7" r="3.1" fill="#E03131" opacity=".62"/><circle cx="312.0" cy="134.1" r="3.1" fill="#E03131" opacity=".62"/><circle cx="374.2" cy="156.4" r="3.1" fill="#E03131" opacity=".62"/><circle cx="393.7" cy="75.7" r="3.1" fill="#E03131" opacity=".62"/><circle cx="352.9" cy="44.0" r="3.1" fill="#E03131" opacity=".62"/><circle cx="336.1" cy="142.1" r="3.1" fill="#E03131" opacity=".62"/><circle cx="422.0" cy="129.2" r="3.1" fill="#E03131" opacity=".62"/><circle cx="470.4" cy="89.3" r="3.1" fill="#E03131" opacity=".62"/><circle cx="406.8" cy="135.8" r="3.1" fill="#E03131" opacity=".62"/><circle cx="378.1" cy="122.5" r="3.1" fill="#E03131" opacity=".62"/><circle cx="441.6" cy="118.9" r="3.1" fill="#E03131" opacity=".62"/><circle cx="460.3" cy="101.7" r="3.1" fill="#E03131" opacity=".62"/><circle cx="403.1" cy="81.3" r="3.1" fill="#E03131" opacity=".62"/><circle cx="450.6" cy="107.5" r="3.1" fill="#E03131" opacity=".62"/><circle cx="478.6" cy="79.3" r="3.1" fill="#E03131" opacity=".62"/><circle cx="408.3" cy="124.0" r="3.1" fill="#E03131" opacity=".62"/><circle cx="374.2" cy="105.8" r="3.1" fill="#E03131" opacity=".62"/><circle cx="439.5" cy="170.0" r="3.1" fill="#E03131" opacity=".62"/><circle cx="433.9" cy="150.9" r="3.1" fill="#E03131" opacity=".62"/><circle cx="481.7" cy="82.6" r="3.1" fill="#E03131" opacity=".62"/><circle cx="347.7" cy="134.4" r="3.1" fill="#E03131" opacity=".62"/><circle cx="382.8" cy="97.9" r="3.1" fill="#E03131" opacity=".62"/><text x="410" y="24" text-anchor="middle" font-size="14" font-weight="bold" fill="#141B22">Unreliable</text><text x="410" y="199" text-anchor="middle" font-size="12" fill="#5C6773">r = .18 &#183; mostly noise</text><text x="136" y="207" text-anchor="middle" font-size="11" fill="#5C6773">score at time 1 &#8594; time 2</text><text x="410" y="207" text-anchor="middle" font-size="11" fill="#5C6773">score at time 1 &#8594; time 2</text></svg></div>
+  <p class="hidden-until"><strong>All three are the same machinery:</strong> correlation, applied to pairs of scores — time 1 with time 2, rater A with rater B, item with item.</p>
+  <aside class="notes"><p>Point forward: interrater reliability is not abstract for them — five peers will rate their poster in December, and the fairness of that grade depends on it. We come back to this on the last day.</p></aside>
+</section>
+
+<section data-kind="activity">
+  <p class="kicker">Exercise A · 25 minutes</p>
+  <h1>Build a bad questionnaire, then fix it</h1>
+  <ol>
+    <li><strong>8 min.</strong> Write <strong>four deliberately terrible items</strong> measuring student wellbeing. Use at least three different diseases.</li>
+    <li><strong>8 min.</strong> Swap with the next team. Diagnose each one <em>by name</em>, then repair it.</li>
+    <li><strong>9 min.</strong> Best repairs on screen.</li>
+  </ol>
+  <div class="box warn">
+    <p><strong>The bestiary:</strong> leading · double-barrelled · negated (or doubly) · vague quantifier · jargon · loaded framing · broken response scale</p>
+    <p class="small">The item should look <em>reasonable to a participant</em> and still corrupt the data. Merely rude doesn't count.</p>
+  </div>
+  <aside class="notes"><p>Check-in position 2. Expect the funniest items to also be the most precisely diagnosed — that's not a coincidence, and it's why writing bad items beats critiquing published ones.</p></aside>
+</section>
+
+<section data-kind="break">
+  <p class="kicker">Break 1 · ten minutes</p>
+  <h1>Check in</h1>
+  <p class="url">radlab.zone/class/psy309</p>
+  <div class="qbox">
+    <p><strong>The material:</strong> what's one idea from the first hour that clicked — and one that didn't?</p>
+    <p><strong>You:</strong> how engaged have you felt so far, and what would help?</p>
+  </div>
+  <aside class="notes"><p>Check-in position 20.</p></aside>
+</section>
+
+<section data-kind="activity">
+  <p class="kicker">Exercise B · 40 minutes</p>
+  <h1>The class as instrument</h1>
+  <p class="big">You're about to answer a short scale. Then you're going to compute its reliability — on the data this room just produced.</p>
+  <aside class="notes"><p>Before opening the check-in, read the governance statement on the next slide OUT LOUD. Thirty seconds of admin, five minutes of ethics teaching, and skipping it is the one thing that would make this exercise a bad idea.</p></aside>
+</section>
+
+<section>
+  <p class="kicker">Before we collect anything</p>
+  <h1>What this data is, and isn't</h1>
+  <div class="box">
+    <p class="big" style="font-size:3vmin;font-weight:400">"This is <strong>course activity data</strong>, not research data. It's anonymous — I get a table of numbers with no names attached. It stays in this course. It will not be analysed as research, and if it ever were, that would need an REB protocol and your consent first.</p>
+    <p class="big" style="font-size:3vmin;font-weight:400">You watched us apply that exact reasoning to four protocols last week. This is what it looks like when it's our turn."</p>
+  </div>
+  <p class="small hidden-until">Prefer not to answer? Sit it out — you still do the analysis on the class file, which is the graded skill anyway.</p>
+</section>
+
+<section data-kind="activity">
+  <h1>Seven items, 1–7</h1>
+  <p class="url" style="font-family:'JetBrains Mono',monospace;font-size:3.4vmin;color:var(--do);font-weight:600">radlab.zone/class/psy309</p>
+  <p class="lead">Answer honestly. There are no right answers here — literally; this check-in has no answer key.</p>
+  <p class="small">While you answer, I'm exporting the results so we can analyse them in five minutes.</p>
+  <aside class="notes"><p>Open check-in position 3 (7-item quiz, 7-minute countdown). <strong>Never press reveal.</strong> While they answer, run the export SQL from L3_class_scale.md and upload the CSV as class_scale.csv to the cloud R project.</p></aside>
+</section>
+
+<section data-kind="activity">
+  <h1>Now take it apart</h1>
+  <div class="cols">
+    <div>
+      <p>Open <code>L3_reliability.R</code> in the cloud project.</p>
+      <ol>
+        <li>Describe before you analyse</li>
+        <li>Inter-item correlation matrix</li>
+        <li>Cronbach's alpha, computed by hand</li>
+        <li>Item–total correlations</li>
+        <li>Drop the weak items, recompute</li>
+      </ol>
+    </div>
+    <div>
+      <div class="box warn">
+        <p><strong>Base R only.</strong> Nothing to install.</p>
+        <p class="small">If the export misbehaves, the script picks up a stand-in file automatically. Same story, different numbers.</p>
+      </div>
+      <p class="small hidden-until"><strong>Two before me</strong> — ask your neighbours first. TAs are circulating.</p>
+    </div>
+  </div>
+  <aside class="notes"><p>20 minutes on the script. Don't preview the finding — let the item-total correlations do the talking.</p></aside>
+</section>
+
+<section>
+  <h1>What did you find?</h1>
+  <ul>
+    <li class="hidden-until"><strong>Alpha across all seven:</strong> around .70. Published value for this scale: <strong>≈.87.</strong> Why is ours worse?</li>
+    <li class="hidden-until"><strong>Item–total correlations:</strong> two items near zero, the rest .6–.7.</li>
+    <li class="hidden-until"><strong>Drop those two:</strong> alpha jumps to <strong>≈.88</strong>. Right onto the published value.</li>
+  </ul>
+  <div class="box warn hidden-until">
+    <p><strong>The reveal.</strong> Items 4 and 6 — "I usually get enough sleep" and "I enjoy cold weather" — were never part of the scale. Readable, answerable, sensible-looking items measuring something else.</p>
+    <p class="big" style="font-size:3vmin">The reliability statistics found them without being told.</p>
+  </div>
+  <aside class="notes"><p>Reveal one line at a time. The moment students realize two items were planted is the moment internal consistency stops being a formula.</p></aside>
+</section>
+
+<section>
+  <h1>Debrief</h1>
+  <ul>
+    <li>Did <em>alpha</em> tell you which items were the problem? <span class="hidden-until">No — alpha is one number. The <strong>item–total correlations</strong> did. This is why "α = .82" alone is a thin report.</span></li>
+    <li>If we'd never included the ringers, would alpha have told you the scale was good? <span class="hidden-until">It would have told you the items <em>hang together</em>. Which is not the same as measuring what you meant.</span></li>
+    <li class="hidden-until"><strong>A tarot deck read consistently is reliable.</strong></li>
+  </ul>
+  <p class="hidden-until lead">Reliability is the floor, not the ceiling. The harder question is next.</p>
+</section>
+
+<section data-kind="break">
+  <p class="kicker">Break 2 · ten minutes</p>
+  <h1>Check in</h1>
+  <p class="url">radlab.zone/class/psy309</p>
+  <div class="qbox">
+    <p><strong>The material:</strong> what's one question you still have about today, now that you've worked with it?</p>
+    <p><strong>You:</strong> how has your engagement changed since the first break — and what changed it?</p>
+  </div>
+  <aside class="notes"><p>Check-in position 40.</p></aside>
+</section>
+
+<section data-kind="divider">
+  <p class="kicker">Part three</p>
+  <h1>Valid — and for whom?</h1>
+</section>
+
+<section>
+  <h1>Measurement validity comes in grades</h1>
+  <div class="cols">
+    <div>
+      <p class="small"><strong>Subjective (judgment, no data yet):</strong></p>
+      <p><strong>Face</strong> — does it look right?<br>
+         <strong>Content</strong> — does it cover all the parts your definition names?</p>
+    </div>
+    <div>
+      <p class="small"><strong>Empirical (data required):</strong></p>
+      <p><strong>Criterion</strong> — does it predict relevant behaviour? <em>(known-groups: does it separate groups it obviously should?)</em><br>
+         <strong>Convergent</strong> — correlates with kindred measures<br>
+         <strong>Discriminant</strong> — <em>doesn't</em> correlate with things theory says are different</p>
+    </div>
+  </div>
+  <div class="box hidden-until">
+    <p><strong>Discriminant is the underrated one.</strong> Plenty of "new" constructs turn out to be old constructs in new fonts.</p>
+  </div>
+</section>
+
+<section>
+  <h1>The one-way street</h1>
+  <p class="big">A measure can be reliable without being valid — but it cannot be valid without being reliable.</p>
+  <div class="svgwrap"><svg viewBox="0 0 600 220" role="img" aria-labelledby="tg-t tg-d"><title id="tg-t">Reliability and validity as four targets</title><desc id="tg-d">Reliable but not valid: tight cluster away from the centre. Valid and reliable: tight cluster on the centre. Neither: scattered and off-centre. And a cluster that is neither tight nor centred.</desc><circle cx="90" cy="90" r="62" fill="#FFFFFF" stroke="#DCE2E6" stroke-width="1.5"/><circle cx="90" cy="90" r="38" fill="none" stroke="#DCE2E6" stroke-width="1.5"/><circle cx="90" cy="90" r="16" fill="#E7F0F7" stroke="#1F5C8B" stroke-width="1.5"/><circle cx="118.1" cy="68.3" r="4.2" fill="#B5540F" opacity=".85"/><circle cx="113.3" cy="74.3" r="4.2" fill="#B5540F" opacity=".85"/><circle cx="110.6" cy="75.4" r="4.2" fill="#B5540F" opacity=".85"/><circle cx="105.9" cy="75.3" r="4.2" fill="#B5540F" opacity=".85"/><circle cx="109.4" cy="86.0" r="4.2" fill="#B5540F" opacity=".85"/><circle cx="112.7" cy="74.9" r="4.2" fill="#B5540F" opacity=".85"/><text x="90" y="174" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#141B22">Reliable, not valid</text><text x="90" y="190" text-anchor="middle" font-size="11.5" fill="#5C6773">consistent &#183; consistently wrong</text><circle cx="240" cy="90" r="62" fill="#FFFFFF" stroke="#DCE2E6" stroke-width="1.5"/><circle cx="240" cy="90" r="38" fill="none" stroke="#DCE2E6" stroke-width="1.5"/><circle cx="240" cy="90" r="16" fill="#E7F0F7" stroke="#1F5C8B" stroke-width="1.5"/><circle cx="239.0" cy="87.7" r="4.2" fill="#0CA678" opacity=".85"/><circle cx="236.3" cy="88.6" r="4.2" fill="#0CA678" opacity=".85"/><circle cx="241.7" cy="89.2" r="4.2" fill="#0CA678" opacity=".85"/><circle cx="243.4" cy="89.3" r="4.2" fill="#0CA678" opacity=".85"/><circle cx="240.1" cy="95.4" r="4.2" fill="#0CA678" opacity=".85"/><circle cx="241.9" cy="88.2" r="4.2" fill="#0CA678" opacity=".85"/><text x="240" y="174" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#141B22">Reliable and valid</text><text x="240" y="190" text-anchor="middle" font-size="11.5" fill="#5C6773">what you want</text><circle cx="390" cy="90" r="62" fill="#FFFFFF" stroke="#DCE2E6" stroke-width="1.5"/><circle cx="390" cy="90" r="38" fill="none" stroke="#DCE2E6" stroke-width="1.5"/><circle cx="390" cy="90" r="16" fill="#E7F0F7" stroke="#1F5C8B" stroke-width="1.5"/><circle cx="405.6" cy="87.0" r="4.2" fill="#E03131" opacity=".85"/><circle cx="433.2" cy="76.5" r="4.2" fill="#E03131" opacity=".85"/><circle cx="404.8" cy="93.0" r="4.2" fill="#E03131" opacity=".85"/><circle cx="396.5" cy="76.2" r="4.2" fill="#E03131" opacity=".85"/><circle cx="419.5" cy="87.5" r="4.2" fill="#E03131" opacity=".85"/><circle cx="409.2" cy="88.7" r="4.2" fill="#E03131" opacity=".85"/><text x="390" y="174" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#141B22">Neither</text><text x="390" y="190" text-anchor="middle" font-size="11.5" fill="#5C6773">noisy and off-target</text><circle cx="540" cy="90" r="62" fill="#FFFFFF" stroke="#DCE2E6" stroke-width="1.5"/><circle cx="540" cy="90" r="38" fill="none" stroke="#DCE2E6" stroke-width="1.5"/><circle cx="540" cy="90" r="16" fill="#E7F0F7" stroke="#1F5C8B" stroke-width="1.5"/><circle cx="500.4" cy="104.3" r="4.2" fill="#5C6773" opacity=".85"/><circle cx="526.6" cy="66.6" r="4.2" fill="#5C6773" opacity=".85"/><circle cx="543.9" cy="99.8" r="4.2" fill="#5C6773" opacity=".85"/><circle cx="533.8" cy="74.9" r="4.2" fill="#5C6773" opacity=".85"/><circle cx="540.4" cy="89.3" r="4.2" fill="#5C6773" opacity=".85"/><circle cx="559.7" cy="100.5" r="4.2" fill="#5C6773" opacity=".85"/><text x="540" y="174" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#141B22">Unreliable</text><text x="540" y="190" text-anchor="middle" font-size="11.5" fill="#5C6773">centred on average, useless per person</text></svg></div>
+  <p class="lead hidden-until">An unreliable measure is mostly noise, and noise can't be measuring the construct. Or anything else.</p>
+  <p class="hidden-until">Examiners find this pairing as irresistible as I do.</p>
+</section>
+
+<section>
+  <h1>The observer is part of the instrument</h1>
+  <div class="cols">
+    <div>
+      <p><strong>Observer bias</strong> — coders see what they expect. Rats labelled "maze-bright" ran faster for students timing them, though the labels were random. <span class="small">(Rosenthal &amp; Fode, 1963)</span></p>
+      <p><strong>Observer effects</strong> — expectations change the behaviour itself.</p>
+    </div>
+    <div class="hidden-until">
+      <div class="box warn">
+        <p><strong>Clever Hans</strong> could do arithmetic — tapping out answers to astonished crowds. Pfungst (1911) found the trick: the questioner tensed as Hans approached the right count, and relaxed when he hit it.</p>
+        <p>Hans couldn't add. He could read humans magnificently. When the questioner didn't know the answer, the genius evaporated.</p>
+      </div>
+    </div>
+  </div>
+  <p class="hidden-until"><strong>The fix, and it's cheap:</strong> masking. A coder who doesn't know the condition can't bend toward it.</p>
+  <aside class="notes"><p>Clever Hans is the cheapest mnemonic in the course — one horse, both observer problems. It returns at full scale in L7 as blinding.</p></aside>
+</section>
+
+<section>
+  <h1>Who did you ask?</h1>
+  <ul>
+    <li><strong>Convenience sampling</strong> — whoever's easy to reach. Easy-to-reach people differ in exactly the ways that make them easy to reach.</li>
+    <li><strong>Self-selection</strong> — whoever volunteers. Strong feelings volunteer; indifference scrolls past.</li>
+  </ul>
+  <div class="svgwrap hidden-until"><svg viewBox="0 0 600 210" role="img" aria-labelledby="sm-t sm-d">
+<title id="sm-t">A biased sample and a representative sample drawn from the same population</title>
+<desc id="sm-d">Both samples come from the same mixed population, but the biased sample draws only from one corner of it while the representative sample draws evenly from across it.</desc>
+<rect x="14" y="26" width="200" height="150" rx="10" fill="#F4F7F9" stroke="#DCE2E6" stroke-width="2"/>
+<text x="114" y="18" text-anchor="middle" font-size="13" font-weight="bold" fill="#141B22">POPULATION</text>
+<circle cx="28" cy="42" r="6" fill="#1F5C8B" opacity=".62"/><circle cx="49" cy="42" r="6" fill="#B5540F" opacity=".62"/><circle cx="70" cy="42" r="6" fill="#0CA678" opacity=".62"/><circle cx="91" cy="42" r="6" fill="#5C6773" opacity=".62"/><circle cx="112" cy="42" r="6" fill="#1F5C8B" opacity=".62"/><circle cx="133" cy="42" r="6" fill="#B5540F" opacity=".62"/><circle cx="154" cy="42" r="6" fill="#0CA678" opacity=".62"/><circle cx="175" cy="42" r="6" fill="#5C6773" opacity=".62"/><circle cx="196" cy="42" r="6" fill="#1F5C8B" opacity=".62"/><circle cx="28" cy="64" r="6" fill="#B5540F" opacity=".62"/><circle cx="49" cy="64" r="6" fill="#0CA678" opacity=".62"/><circle cx="70" cy="64" r="6" fill="#5C6773" opacity=".62"/><circle cx="91" cy="64" r="6" fill="#1F5C8B" opacity=".62"/><circle cx="112" cy="64" r="6" fill="#B5540F" opacity=".62"/><circle cx="133" cy="64" r="6" fill="#0CA678" opacity=".62"/><circle cx="154" cy="64" r="6" fill="#5C6773" opacity=".62"/><circle cx="175" cy="64" r="6" fill="#1F5C8B" opacity=".62"/><circle cx="196" cy="64" r="6" fill="#B5540F" opacity=".62"/><circle cx="28" cy="86" r="6" fill="#0CA678" opacity=".62"/><circle cx="49" cy="86" r="6" fill="#5C6773" opacity=".62"/><circle cx="70" cy="86" r="6" fill="#1F5C8B" opacity=".62"/><circle cx="91" cy="86" r="6" fill="#B5540F" opacity=".62"/><circle cx="112" cy="86" r="6" fill="#0CA678" opacity=".62"/><circle cx="133" cy="86" r="6" fill="#5C6773" opacity=".62"/><circle cx="154" cy="86" r="6" fill="#1F5C8B" opacity=".62"/><circle cx="175" cy="86" r="6" fill="#B5540F" opacity=".62"/><circle cx="196" cy="86" r="6" fill="#0CA678" opacity=".62"/><circle cx="28" cy="108" r="6" fill="#5C6773" opacity=".62"/><circle cx="49" cy="108" r="6" fill="#1F5C8B" opacity=".62"/><circle cx="70" cy="108" r="6" fill="#B5540F" opacity=".62"/><circle cx="91" cy="108" r="6" fill="#0CA678" opacity=".62"/><circle cx="112" cy="108" r="6" fill="#5C6773" opacity=".62"/><circle cx="133" cy="108" r="6" fill="#1F5C8B" opacity=".62"/><circle cx="154" cy="108" r="6" fill="#B5540F" opacity=".62"/><circle cx="175" cy="108" r="6" fill="#0CA678" opacity=".62"/><circle cx="196" cy="108" r="6" fill="#5C6773" opacity=".62"/><circle cx="28" cy="130" r="6" fill="#1F5C8B" opacity=".62"/><circle cx="49" cy="130" r="6" fill="#B5540F" opacity=".62"/><circle cx="70" cy="130" r="6" fill="#0CA678" opacity=".62"/><circle cx="91" cy="130" r="6" fill="#5C6773" opacity=".62"/><circle cx="112" cy="130" r="6" fill="#1F5C8B" opacity=".62"/><circle cx="133" cy="130" r="6" fill="#B5540F" opacity=".62"/><circle cx="154" cy="130" r="6" fill="#0CA678" opacity=".62"/><circle cx="175" cy="130" r="6" fill="#5C6773" opacity=".62"/><circle cx="196" cy="130" r="6" fill="#1F5C8B" opacity=".62"/><circle cx="28" cy="152" r="6" fill="#B5540F" opacity=".62"/><circle cx="49" cy="152" r="6" fill="#0CA678" opacity=".62"/><circle cx="70" cy="152" r="6" fill="#5C6773" opacity=".62"/><circle cx="91" cy="152" r="6" fill="#1F5C8B" opacity=".62"/><circle cx="112" cy="152" r="6" fill="#B5540F" opacity=".62"/><circle cx="133" cy="152" r="6" fill="#0CA678" opacity=".62"/><circle cx="154" cy="152" r="6" fill="#5C6773" opacity=".62"/><circle cx="175" cy="152" r="6" fill="#1F5C8B" opacity=".62"/><circle cx="196" cy="152" r="6" fill="#B5540F" opacity=".62"/>
+<text x="300" y="86" text-anchor="middle" font-size="12" fill="#5C6773">draw a sample</text>
+<line x1="228" y1="96" x2="372" y2="60" stroke="#E03131" stroke-width="2.5"/>
+<polygon points="378,58 366,55 369,66" fill="#E03131"/>
+<line x1="228" y1="106" x2="372" y2="146" stroke="#0CA678" stroke-width="2.5"/>
+<polygon points="378,148 366,140 369,151" fill="#0CA678"/>
+<rect x="386" y="18" width="200" height="72" rx="10" fill="#FFF5F5" stroke="#E03131" stroke-width="2" stroke-dasharray="6,5"/>
+<text x="486" y="36" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#E03131">BIASED &#8212; convenience</text>
+<circle cx="404" cy="60" r="6" fill="#1F5C8B" opacity=".7"/><circle cx="421" cy="60" r="6" fill="#1F5C8B" opacity=".7"/><circle cx="438" cy="60" r="6" fill="#1F5C8B" opacity=".7"/><circle cx="455" cy="60" r="6" fill="#1F5C8B" opacity=".7"/><circle cx="472" cy="60" r="6" fill="#1F5C8B" opacity=".7"/><circle cx="489" cy="60" r="6" fill="#1F5C8B" opacity=".7"/><circle cx="506" cy="60" r="6" fill="#1F5C8B" opacity=".7"/><circle cx="523" cy="60" r="6" fill="#1F5C8B" opacity=".7"/><circle cx="540" cy="60" r="6" fill="#1F5C8B" opacity=".7"/><circle cx="557" cy="60" r="6" fill="#1F5C8B" opacity=".7"/>
+<text x="486" y="82" text-anchor="middle" font-size="11" fill="#E03131">only the easy-to-reach corner</text>
+<rect x="386" y="110" width="200" height="80" rx="10" fill="#E3FAF3" stroke="#0CA678" stroke-width="2"/>
+<text x="486" y="128" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#0CA678">REPRESENTATIVE &#8212; random</text>
+<circle cx="404" cy="152" r="6" fill="#1F5C8B" opacity=".7"/><circle cx="421" cy="152" r="6" fill="#B5540F" opacity=".7"/><circle cx="438" cy="152" r="6" fill="#0CA678" opacity=".7"/><circle cx="455" cy="152" r="6" fill="#5C6773" opacity=".7"/><circle cx="472" cy="152" r="6" fill="#1F5C8B" opacity=".7"/><circle cx="489" cy="152" r="6" fill="#B5540F" opacity=".7"/><circle cx="506" cy="152" r="6" fill="#0CA678" opacity=".7"/><circle cx="523" cy="152" r="6" fill="#5C6773" opacity=".7"/><circle cx="540" cy="152" r="6" fill="#1F5C8B" opacity=".7"/><circle cx="557" cy="152" r="6" fill="#B5540F" opacity=".7"/>
+<text x="486" y="176" text-anchor="middle" font-size="11" fill="#0CA678">the population&#8217;s mix, in miniature</text>
+</svg></div>
+  <div class="box hidden-until">
+    <p class="big" style="font-size:3.2vmin">External validity comes from <em>how</em> you sampled, not <em>how many</em>.</p>
+    <p>A random sample of 1,000 supports ±3%. A convenience sample of 100,000 supports nothing — its errors don't cancel with size, they entrench.</p>
+  </div>
+  <p class="hidden-until"><strong>Two randoms, never blur them:</strong> random <em>sampling</em> = who gets in (external validity). Random <em>assignment</em> = who gets which condition (internal validity). Favourite exam trap.</p>
+  <aside class="notes"><p>Flag the two-randoms distinction hard. It separates students who memorized from students who understood, which is why we keep asking it.</p></aside>
+</section>
+
+<section data-kind="activity">
+  <p class="kicker">Due Friday 2 October</p>
+  <h1>Practical 2 — Measurement</h1>
+  <ul>
+    <li>Your construct, with a real <strong>conceptual definition</strong></li>
+    <li>An <strong>operationalization</strong>, and the case for it</li>
+    <li><strong>Reliability evidence</strong> — alpha, test–retest. You now know what those numbers feel like from the inside.</li>
+    <li><strong>Validity evidence</strong> — the pattern: face, content, criterion, convergent, discriminant</li>
+  </ul>
+  <p class="small">Scale-development papers are organized under exactly these headings. Raid them.</p>
+</section>
+
+<section data-kind="break">
+  <p class="kicker">Last thing</p>
+  <h1>Check out</h1>
+  <p class="url">radlab.zone/class/psy309</p>
+  <div class="qbox">
+    <p>Question box. Next week: correlation — and the first of two weeks where R does real work.</p>
+  </div>
+  <aside class="notes"><p>Check-in position 5. Assign Week 4 reading.</p></aside>
+</section>
+
+</div>
+<div id="bar"></div><div id="num"></div><div id="clock"></div>
+<div id="help"><kbd>→</kbd> next · <kbd>←</kbd> back · <kbd>f</kbd> fullscreen · <kbd>n</kbd> notes<br><kbd>o</kbd> overview · <kbd>t</kbd> timer · <kbd>?</kbd> help</div>
+<script src="./slides.js"></script>
+</body>
+</html>

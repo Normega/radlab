@@ -283,7 +283,7 @@ export default function TrainingUpload() {
         <button onClick={() => fileInputRef.current?.click()} style={S.chooseBtn}>
           Choose .json file
         </button>
-        <p style={{ fontFamily: 'DM Sans', fontSize: 13, color: 'var(--tx3)', margin: 0 }}>
+        <p style={{ fontFamily: 'DM Sans', fontSize: 14, color: 'var(--tx3)', margin: 0 }}>
           or paste JSON below
         </p>
       </div>
@@ -312,7 +312,7 @@ export default function TrainingUpload() {
             {errors.length} validation error{errors.length > 1 ? 's' : ''}
           </p>
           {errors.map((e, i) => (
-            <p key={i} style={{ fontFamily: 'DM Sans', fontSize: 13, color: '#8b4513', margin: '2px 0' }}>· {e}</p>
+            <p key={i} style={{ fontFamily: 'DM Sans', fontSize: 14, color: '#8b4513', margin: '2px 0' }}>· {e}</p>
           ))}
         </div>
       )}
@@ -342,7 +342,7 @@ export default function TrainingUpload() {
 
       {/* Save error */}
       {save.isError && (
-        <p style={{ color: '#c0392b', fontFamily: 'DM Sans', fontSize: 13, margin: '8px 0' }}>
+        <p style={{ color: '#c0392b', fontFamily: 'DM Sans', fontSize: 14, margin: '8px 0' }}>
           {save.error?.message?.includes('duplicate') || save.error?.message?.includes('unique')
             ? `A module with id "${parsed?.module_id}" already exists.`
             : `Save failed: ${save.error?.message}`}
@@ -382,20 +382,20 @@ function VideoCheckPanel({ checks, checking, override, onOverride }) {
 
   return (
     <div style={{ background: bgColor, border: `1px solid ${borderColor}`, borderRadius: 12, padding: '14px 16px', margin: '12px 0' }}>
-      <p style={{ fontFamily: 'Space Mono', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 10px', color: allFound ? '#1EA878' : '#8b6000' }}>
+      <p style={{ fontFamily: 'Space Mono', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 10px', color: allFound ? '#1EA878' : '#8b6000' }}>
         {checking ? 'Checking videos in bucket…' : allFound ? '✓ All videos found in bucket' : 'Video file check'}
       </p>
 
       {checks !== null && checks.map(c => (
         <div key={c.video_id} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 8 }}>
-          <span style={{ fontFamily: 'Space Mono', fontSize: 11, color: c.found ? '#1EA878' : '#c0392b', flexShrink: 0, width: 14, textAlign: 'center' }}>
+          <span style={{ fontFamily: 'Space Mono', fontSize: 12, color: c.found ? '#1EA878' : '#c0392b', flexShrink: 0, width: 14, textAlign: 'center' }}>
             {c.found ? '✓' : '✗'}
           </span>
           <div style={{ minWidth: 0 }}>
-            <p style={{ fontFamily: 'Space Mono', fontSize: 11, color: 'var(--tx)', margin: '0 0 1px', wordBreak: 'break-all' }}>
+            <p style={{ fontFamily: 'Space Mono', fontSize: 12, color: 'var(--tx)', margin: '0 0 1px', wordBreak: 'break-all' }}>
               {c.video_id}
             </p>
-            <p style={{ fontFamily: 'DM Sans', fontSize: 11, color: c.found ? 'var(--tx3)' : '#c0392b', margin: 0 }}>
+            <p style={{ fontFamily: 'DM Sans', fontSize: 12, color: c.found ? 'var(--tx3)' : '#c0392b', margin: 0 }}>
               {c.found
                 ? `found at videos/${c.bucket_path}`
                 : `not found at videos/${c.bucket_path} — upload this file before delivery`}
@@ -408,7 +408,7 @@ function VideoCheckPanel({ checks, checking, override, onOverride }) {
         <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(0,0,0,0.07)' }}>
           <p style={{ fontFamily: 'DM Sans', fontSize: 12, color: 'var(--tx2)', margin: '0 0 8px' }}>
             Upload the missing file{checks.filter(c => !c.found).length > 1 ? 's' : ''} to{' '}
-            <code style={{ fontFamily: 'Space Mono', fontSize: 11, background: 'rgba(0,0,0,0.06)', padding: '1px 5px', borderRadius: 4 }}>
+            <code style={{ fontFamily: 'Space Mono', fontSize: 12, background: 'rgba(0,0,0,0.06)', padding: '1px 5px', borderRadius: 4 }}>
               videos/liliana/
             </code>{' '}
             before delivering this module.
@@ -420,7 +420,7 @@ function VideoCheckPanel({ checks, checking, override, onOverride }) {
       )}
 
       {hasMissing && override && (
-        <p style={{ fontFamily: 'Space Mono', fontSize: 11, color: '#8b6000', margin: '8px 0 0' }}>
+        <p style={{ fontFamily: 'Space Mono', fontSize: 12, color: '#8b6000', margin: '8px 0 0' }}>
           ⚠ Override active — import will proceed; upload missing videos before delivery
         </p>
       )}
@@ -448,20 +448,20 @@ function AudioCheckPanel({ checks, checking, override, onOverride }) {
 
   return (
     <div style={{ background: bgColor, border: `1px solid ${borderColor}`, borderRadius: 12, padding: '14px 16px', margin: '12px 0' }}>
-      <p style={{ fontFamily: 'Space Mono', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 10px', color: allFound ? '#1EA878' : '#8b6000' }}>
+      <p style={{ fontFamily: 'Space Mono', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 10px', color: allFound ? '#1EA878' : '#8b6000' }}>
         {checking ? 'Checking audio in library…' : allFound ? '✓ All audio found in library' : 'Audio file check'}
       </p>
 
       {checks !== null && checks.map(c => (
         <div key={c.audio_id} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 8 }}>
-          <span style={{ fontFamily: 'Space Mono', fontSize: 11, color: c.found ? '#1EA878' : '#c0392b', flexShrink: 0, width: 14, textAlign: 'center' }}>
+          <span style={{ fontFamily: 'Space Mono', fontSize: 12, color: c.found ? '#1EA878' : '#c0392b', flexShrink: 0, width: 14, textAlign: 'center' }}>
             {c.found ? '✓' : '✗'}
           </span>
           <div style={{ minWidth: 0 }}>
-            <p style={{ fontFamily: 'Space Mono', fontSize: 11, color: 'var(--tx)', margin: '0 0 1px', wordBreak: 'break-all' }}>
+            <p style={{ fontFamily: 'Space Mono', fontSize: 12, color: 'var(--tx)', margin: '0 0 1px', wordBreak: 'break-all' }}>
               {c.audio_id}
             </p>
-            <p style={{ fontFamily: 'DM Sans', fontSize: 11, color: c.found ? 'var(--tx3)' : '#c0392b', margin: 0 }}>
+            <p style={{ fontFamily: 'DM Sans', fontSize: 12, color: c.found ? 'var(--tx3)' : '#c0392b', margin: 0 }}>
               {c.found
                 ? `found in audio library — "${c.title}"`
                 : 'not found in audio library — upload via Admin → Audio before delivery'}
@@ -483,7 +483,7 @@ function AudioCheckPanel({ checks, checking, override, onOverride }) {
       )}
 
       {hasMissing && override && (
-        <p style={{ fontFamily: 'Space Mono', fontSize: 11, color: '#8b6000', margin: '8px 0 0' }}>
+        <p style={{ fontFamily: 'Space Mono', fontSize: 12, color: '#8b6000', margin: '8px 0 0' }}>
           ⚠ Override active — import will proceed; upload missing audio before delivery
         </p>
       )}
@@ -497,7 +497,7 @@ function ModulePreview({ module }) {
   const steps = module.steps ?? []
   return (
     <div style={S.previewBox}>
-      <p style={{ fontFamily: 'Space Mono', fontSize: 11, color: 'var(--pk)', margin: '0 0 10px' }}>
+      <p style={{ fontFamily: 'Space Mono', fontSize: 12, color: 'var(--pk)', margin: '0 0 10px' }}>
         ✓ Valid module
       </p>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 20px', marginBottom: 12 }}>
@@ -510,14 +510,14 @@ function ModulePreview({ module }) {
         <PreviewRow label="Lead-in owl"  value={module.lead_in.owl}  mono />
         <PreviewRow label="Lead-out owl" value={module.lead_out.owl} mono />
       </div>
-      <p style={{ fontFamily: 'Space Mono', fontSize: 10, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '10px 0 6px' }}>
+      <p style={{ fontFamily: 'Space Mono', fontSize: 12, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '10px 0 6px' }}>
         {steps.length} step{steps.length !== 1 ? 's' : ''}
       </p>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
         {steps.map((s, i) => {
           const col = STEP_TYPE_COLORS[s.type] ?? { bg: '#f0ede8', color: '#5f5e5a' }
           return (
-            <span key={i} style={{ background: col.bg, color: col.color, borderRadius: 6, padding: '3px 10px', fontFamily: 'Space Mono', fontSize: 11 }}>
+            <span key={i} style={{ background: col.bg, color: col.color, borderRadius: 6, padding: '3px 10px', fontFamily: 'Space Mono', fontSize: 12 }}>
               {i + 1}. {s.type}{s.video_id ? ` — ${s.video_id}` : s.audio_id ? ` — ${s.audio_id}` : ''}
             </span>
           )
@@ -530,7 +530,7 @@ function ModulePreview({ module }) {
 function PreviewRow({ label, value, mono }) {
   return (
     <div>
-      <span style={{ fontFamily: 'Space Mono', fontSize: 10, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}: </span>
+      <span style={{ fontFamily: 'Space Mono', fontSize: 12, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}: </span>
       <span style={{ fontFamily: mono ? 'Space Mono' : 'DM Sans', fontSize: mono ? 11 : 13, color: 'var(--tx)' }}>{value}</span>
     </div>
   )
@@ -540,9 +540,9 @@ function PreviewRow({ label, value, mono }) {
 
 const S = {
   h1: { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 24, fontWeight: 400, color: 'var(--tx)', margin: 0 },
-  backBtn: { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 8, padding: '6px 14px', cursor: 'pointer', fontFamily: 'DM Sans', fontSize: 13, color: 'var(--tx2)' },
+  backBtn: { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 8, padding: '6px 14px', cursor: 'pointer', fontFamily: 'DM Sans', fontSize: 14, color: 'var(--tx2)' },
   fileStrip: { background: 'var(--bgc)', border: '1px dashed var(--bds)', borderRadius: 12, padding: '16px 20px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 16 },
-  chooseBtn: { background: 'var(--bgp)', border: '1px solid var(--pkbs)', borderRadius: 8, padding: '8px 16px', cursor: 'pointer', fontFamily: 'DM Sans', fontSize: 13, color: 'var(--pkd)' },
+  chooseBtn: { background: 'var(--bgp)', border: '1px solid var(--pkbs)', borderRadius: 8, padding: '8px 16px', cursor: 'pointer', fontFamily: 'DM Sans', fontSize: 14, color: 'var(--pkd)' },
   textarea: { width: '100%', minHeight: 260, boxSizing: 'border-box', fontFamily: 'Space Mono', fontSize: 12, color: 'var(--tx)', background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 12, padding: 16, resize: 'vertical', lineHeight: 1.6, outline: 'none' },
   errorBox: { background: '#fff5f0', border: '1px solid #e67e22', borderRadius: 10, padding: '12px 16px', margin: '12px 0' },
   previewBox: { background: 'var(--bgp)', border: '1px solid var(--pkb)', borderRadius: 10, padding: '14px 16px', margin: '12px 0' },

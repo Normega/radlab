@@ -314,7 +314,7 @@ function StatusBadge({ status }) {
   }
   const c = map[status] ?? map.enrolled
   return (
-    <span style={{ fontFamily: '"Space Mono",monospace', fontSize: 10, borderRadius: 6, padding: '2px 7px', background: c.bg, color: c.color }}>
+    <span style={{ fontFamily: '"Space Mono",monospace', fontSize: 12, borderRadius: 6, padding: '2px 7px', background: c.bg, color: c.color }}>
       {status}
     </span>
   )
@@ -330,23 +330,23 @@ const S = {
   sectionTitle:    { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 20, fontWeight: 400, color: 'var(--tx)', margin: 0 },
   btnPrimary:      { display: 'inline-block', background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
   enrollForm:      { display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16, background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 10, padding: '16px 20px' },
-  fieldLabel:      { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' },
+  fieldLabel:      { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' },
   input:           { fontSize: 14, fontFamily: '"DM Sans",system-ui,sans-serif', border: '1px solid var(--bd)', borderRadius: 8, padding: '8px 12px', color: 'var(--tx)', background: '#fff', minWidth: 160 },
-  errMsg:          { fontSize: 13, color: '#e04', background: '#fff0f0', border: '1px solid #fcc', borderRadius: 8, padding: '8px 14px', margin: 0 },
+  errMsg:          { fontSize: 14, color: '#e04', background: '#fff0f0', border: '1px solid #fcc', borderRadius: 8, padding: '8px 14px', margin: 0 },
   muted:           { fontSize: 14, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif' },
   empty:           { textAlign: 'center', padding: '32px 0' },
   emptyText:       { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 16, color: 'var(--tx)', margin: 0 },
   tableWrap:       { overflowX: 'auto', borderRadius: 10, border: '1px solid var(--bd)', background: '#fff' },
   table:           { width: '100%', borderCollapse: 'collapse' },
-  th:              { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', textAlign: 'left', padding: '10px 16px', borderBottom: '1px solid var(--bd)', textTransform: 'uppercase', letterSpacing: '0.06em' },
+  th:              { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', textAlign: 'left', padding: '10px 16px', borderBottom: '1px solid var(--bd)', textTransform: 'uppercase', letterSpacing: '0.06em' },
   tr:              { borderBottom: '1px solid var(--bd)' },
   td:              { padding: '12px 16px', verticalAlign: 'middle' },
   mono:            { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx2)' },
   withdrawalNote:  { marginTop: 4, fontSize: 12, fontStyle: 'italic', color: 'var(--tx3)', maxWidth: 220 },
   actions:         { display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' },
-  actionBtn:       { background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: 'var(--pk)', padding: 0, fontFamily: '"DM Sans",system-ui,sans-serif', fontWeight: 600 },
+  actionBtn:       { background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: 'var(--pk)', padding: 0, fontFamily: '"DM Sans",system-ui,sans-serif', fontWeight: 600 },
   sessionChip:     { display: 'flex', alignItems: 'center', gap: 7, background: '#fff', border: '1px solid var(--bd)', borderRadius: 8, padding: '6px 10px' },
-  sessionChipLabel:{ fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx2)' },
+  sessionChipLabel:{ fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx2)' },
   runBtn:          { background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 6, padding: '3px 9px', fontSize: 12, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', fontWeight: 600 },
-  doneLabel:       { fontFamily: '"Space Mono",monospace', fontSize: 11, color: '#15803d' },
+  doneLabel:       { fontFamily: '"Space Mono",monospace', fontSize: 12, color: '#15803d' },
 }

@@ -196,14 +196,14 @@ function DeliveryBadge({ mode }) {
   }
   const c = map[mode] ?? { label: mode ?? '—', bg: '#f4f4f5', color: '#52525b' }
   return (
-    <span style={{ fontFamily: '"Space Mono",monospace', fontSize: 10, background: c.bg, color: c.color, borderRadius: 6, padding: '2px 7px', whiteSpace: 'nowrap' }}>
+    <span style={{ fontFamily: '"Space Mono",monospace', fontSize: 12, background: c.bg, color: c.color, borderRadius: 6, padding: '2px 7px', whiteSpace: 'nowrap' }}>
       {c.label}
     </span>
   )
 }
 
 function Chip({ children }) {
-  return <span style={{ fontFamily: '"Space Mono",monospace', fontSize: 11, background: 'var(--pkb)', color: 'var(--pk)', borderRadius: 6, padding: '2px 7px' }}>{children}</span>
+  return <span style={{ fontFamily: '"Space Mono",monospace', fontSize: 12, background: 'var(--pkb)', color: 'var(--pk)', borderRadius: 6, padding: '2px 7px' }}>{children}</span>
 }
 
 function fmtDate(ts) {
@@ -217,30 +217,30 @@ const S = {
   muted: { fontSize: 14, color: 'var(--tx3)' },
   mono: { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)' },
   label: { fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 14, fontWeight: 600, color: 'var(--tx)' },
-  proto: { fontSize: 13, color: 'var(--tx2)', fontFamily: '"DM Sans",system-ui,sans-serif' },
+  proto: { fontSize: 14, color: 'var(--tx2)', fontFamily: '"DM Sans",system-ui,sans-serif' },
   pct: { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx)' },
-  archivedBadge: { display: 'inline-block', marginLeft: 8, fontFamily: '"Space Mono",monospace', fontSize: 10, background: '#f4f4f5', color: 'var(--tx3)', borderRadius: 6, padding: '2px 6px' },
-  inPersonBadge: { display: 'inline-block', marginLeft: 8, fontFamily: '"Space Mono",monospace', fontSize: 10, background: '#fdf2f8', color: 'var(--pk)', borderRadius: 6, padding: '2px 6px' },
+  archivedBadge: { display: 'inline-block', marginLeft: 8, fontFamily: '"Space Mono",monospace', fontSize: 12, background: '#f4f4f5', color: 'var(--tx3)', borderRadius: 6, padding: '2px 6px' },
+  inPersonBadge: { display: 'inline-block', marginLeft: 8, fontFamily: '"Space Mono",monospace', fontSize: 12, background: '#fdf2f8', color: 'var(--pk)', borderRadius: 6, padding: '2px 6px' },
   empty: { textAlign: 'center', padding: '48px 0' },
   emptyText: { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 20, color: 'var(--tx)', margin: '0 0 8px' },
   emptyHint: { fontSize: 14, color: 'var(--tx2)', margin: '0 0 24px' },
   tableWrap: { overflowX: 'auto', borderRadius: 10, border: '1px solid var(--bd)', background: '#fff' },
   table: { width: '100%', borderCollapse: 'collapse' },
-  th: { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', textAlign: 'left', padding: '10px 16px', borderBottom: '1px solid var(--bd)', textTransform: 'uppercase', letterSpacing: '0.06em' },
+  th: { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', textAlign: 'left', padding: '10px 16px', borderBottom: '1px solid var(--bd)', textTransform: 'uppercase', letterSpacing: '0.06em' },
   tr: { borderBottom: '1px solid var(--bd)' },
   td: { padding: '12px 16px', verticalAlign: 'middle' },
   actions: { display: 'flex', gap: 10, alignItems: 'center' },
-  actionBtn: { background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: 'var(--tx2)', padding: 0, textDecoration: 'none', fontFamily: '"DM Sans",system-ui,sans-serif' },
-  deleteBtn: { background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: '#c0392b', padding: 0, fontFamily: '"DM Sans",system-ui,sans-serif' },
+  actionBtn: { background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: 'var(--tx2)', padding: 0, textDecoration: 'none', fontFamily: '"DM Sans",system-ui,sans-serif' },
+  deleteBtn: { background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: '#c0392b', padding: 0, fontFamily: '"DM Sans",system-ui,sans-serif' },
   btnPrimary: { display: 'inline-block', background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer', textDecoration: 'none', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
   overlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 },
   dialog: { background: '#fff', borderRadius: 14, padding: '28px 32px', maxWidth: 420, width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.18)' },
   dialogTitle: { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 20, fontWeight: 400, color: 'var(--tx)', margin: '0 0 12px' },
   dialogBody: { fontSize: 14, color: 'var(--tx2)', margin: '0 0 24px', lineHeight: 1.6 },
-  fieldLabel: { display: 'block', fontSize: 13, color: 'var(--tx2)', fontFamily: '"DM Sans",system-ui,sans-serif', margin: '0 0 20px' },
+  fieldLabel: { display: 'block', fontSize: 14, color: 'var(--tx2)', fontFamily: '"DM Sans",system-ui,sans-serif', margin: '0 0 20px' },
   textInput: { display: 'block', width: '100%', marginTop: 6, padding: '9px 12px', fontSize: 14, borderRadius: 8, border: '1px solid var(--bd)', fontFamily: '"DM Sans",system-ui,sans-serif', boxSizing: 'border-box' },
   dialogActions: { display: 'flex', justifyContent: 'flex-end', gap: 10 },
   cancelBtn: { background: 'none', border: '1px solid var(--bd)', borderRadius: 8, padding: '8px 18px', fontSize: 14, cursor: 'pointer', color: 'var(--tx2)', fontFamily: '"DM Sans",system-ui,sans-serif' },
   confirmDeleteBtn: { background: '#c0392b', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 18px', fontSize: 14, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', fontWeight: 600 },
-  dialogError: { fontSize: 13, color: '#c0392b', margin: '12px 0 0', fontFamily: '"DM Sans",system-ui,sans-serif' },
+  dialogError: { fontSize: 14, color: '#c0392b', margin: '12px 0 0', fontFamily: '"DM Sans",system-ui,sans-serif' },
 }

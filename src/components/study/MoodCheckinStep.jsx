@@ -169,9 +169,9 @@ export default function MoodCheckinStep({
 const S = {
   wrap:      { display: 'flex', justifyContent: 'center', alignItems: 'flex-start', padding: '40px 24px', minHeight: '60vh' },
   card:      { background: '#fff', border: '1px solid var(--bd)', borderRadius: 14, padding: '36px 32px', maxWidth: 540, width: '100%' },
-  eyebrow:   { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 10px' },
+  eyebrow:   { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 10px' },
   heading:   { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 26, fontWeight: 400, color: 'var(--tx)', margin: '0 0 6px' },
-  scaleHint: { fontSize: 13, color: 'var(--tx2)', margin: '0 0 18px', fontFamily: '"DM Sans",system-ui,sans-serif' },
+  scaleHint: { fontSize: 14, color: 'var(--tx2)', margin: '0 0 18px', fontFamily: '"DM Sans",system-ui,sans-serif' },
   ratingRow: { display: 'flex', gap: 8, justifyContent: 'space-between' },
   ratingBtn: { flex: 1, aspectRatio: '1 / 1', minWidth: 0, border: '1.5px solid', borderRadius: 10, fontSize: 17, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', transition: 'all 0.12s' },
   anchorRow: { display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif', margin: '6px 2px 24px' },
@@ -180,6 +180,6 @@ const S = {
   dirBtn:    { flex: 1, border: '1.5px solid', borderRadius: 10, padding: '12px 10px', fontSize: 14, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', transition: 'all 0.12s' },
   reasonWrap:{ marginTop: 22 },
   textarea:  { width: '100%', boxSizing: 'border-box', fontSize: 15, fontFamily: '"DM Sans",system-ui,sans-serif', border: '1px solid var(--bd)', borderRadius: 8, padding: '10px 14px', color: 'var(--tx)', background: '#fff', resize: 'vertical', lineHeight: 1.5 },
-  errMsg:    { fontSize: 13, color: '#e04', background: 'var(--err-bg)', border: '1px solid #fcc', borderRadius: 8, padding: '8px 14px', margin: '16px 0 0' },
+  errMsg:    { fontSize: 14, color: '#e04', background: 'var(--err-bg)', border: '1px solid #fcc', borderRadius: 8, padding: '8px 14px', margin: '16px 0 0' },
   btn:       { display: 'block', width: '100%', background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 9, padding: '13px 20px', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', marginTop: 24 },
 }

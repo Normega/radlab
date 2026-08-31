@@ -52,7 +52,7 @@ const S = {
   },
   chip: {
     fontFamily: '"Space Mono", monospace',
-    fontSize: 10,
+    fontSize: 12,
     color: 'var(--tx3, #abadb0)',
     textTransform: 'uppercase',
     letterSpacing: '0.06em',
@@ -67,7 +67,7 @@ const S = {
   },
   meta: {
     fontFamily: '"Space Mono", monospace',
-    fontSize: 11,
+    fontSize: 12,
     color: 'var(--tx2, #6b6c70)',
     marginTop: 2,
   },
@@ -75,7 +75,7 @@ const S = {
     position: 'absolute',
     top: 8, right: 10,
     fontFamily: '"Space Mono", monospace',
-    fontSize: 9,
+    fontSize: 12,
     color: 'var(--gy, #abadb0)',
     textTransform: 'uppercase',
     letterSpacing: '0.05em',

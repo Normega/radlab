@@ -160,7 +160,7 @@ export default function StudyDetail() {
             {fmtDate(study?.created_at)}
           </p>
         </div>
-        <Link to={`/admin/studies/${id}/edit`} style={{ ...S.btnPrimary, textDecoration: 'none', fontSize: 13, padding: '7px 14px' }}>
+        <Link to={`/admin/studies/${id}/edit`} style={{ ...S.btnPrimary, textDecoration: 'none', fontSize: 14, padding: '7px 14px' }}>
           Edit Study
         </Link>
       </div>
@@ -202,8 +202,8 @@ function EmailPrefsCard({ study }) {
   if (!study) return null
   return (
     <div style={{ marginTop: 32, background: 'var(--bgp)', border: '1px solid var(--pkb)', borderRadius: 10, padding: '16px 20px', maxWidth: 520 }}>
-      <div style={{ fontFamily: '"Space Mono",monospace', fontSize: 10, color: 'var(--pkd)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Email preferences</div>
-      <div style={{ fontSize: 13, color: 'var(--tx2)', display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <div style={{ fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--pkd)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Email preferences</div>
+      <div style={{ fontSize: 14, color: 'var(--tx2)', display: 'flex', flexDirection: 'column', gap: 4 }}>
         <span>Allow restart: <strong>{study.allow_restart ? 'yes' : 'no'}</strong></span>
         <span>Reminders: <strong>{study.reminders_enabled ? `every ${study.reminder_interval_days ?? '?'} days, max ${study.reminder_max ?? '?'}` : 'off'}</strong></span>
         {study.email_subject && <span>Subject: <strong>{study.email_subject}</strong></span>}
@@ -551,7 +551,7 @@ function ScreenerSection({ study, qc }) {
   return (
     <div style={{ marginTop: 40 }}>
       <h2 style={S.sectionTitle}>Screener</h2>
-      <p style={{ fontSize: 13, color: 'var(--tx2)', margin: '4px 0 14px', fontFamily: '"DM Sans",system-ui,sans-serif' }}>
+      <p style={{ fontSize: 14, color: 'var(--tx2)', margin: '4px 0 14px', fontFamily: '"DM Sans",system-ui,sans-serif' }}>
         Pre-consent eligibility gate shown to participants before the consent form.
       </p>
 
@@ -559,9 +559,9 @@ function ScreenerSection({ study, qc }) {
         {attached ? (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
             <div>
-              <div style={{ fontFamily: '"Space Mono",monospace', fontSize: 10, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Active screener</div>
+              <div style={{ fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Active screener</div>
               <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--tx)', fontFamily: '"DM Sans",system-ui,sans-serif' }}>{attached.name}</div>
-              <div style={{ fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--pk)', marginTop: 2 }}>{attached.slug}</div>
+              <div style={{ fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--pk)', marginTop: 2 }}>{attached.slug}</div>
             </div>
             <button
               style={{ ...S.actionBtn, color: '#c0392b', opacity: saving ? 0.5 : 1 }}
@@ -572,7 +572,7 @@ function ScreenerSection({ study, qc }) {
             </button>
           </div>
         ) : (
-          <p style={{ fontSize: 13, color: 'var(--tx2)', margin: 0, fontFamily: '"DM Sans",system-ui,sans-serif' }}>
+          <p style={{ fontSize: 14, color: 'var(--tx2)', margin: 0, fontFamily: '"DM Sans",system-ui,sans-serif' }}>
             No screener attached — participants proceed directly to the consent form.
           </p>
         )}
@@ -590,7 +590,7 @@ function ScreenerSection({ study, qc }) {
               ))}
             </select>
             <button
-              style={{ ...S.btnPrimary, fontSize: 13, padding: '7px 16px', opacity: (!selectedId || saving) ? 0.5 : 1 }}
+              style={{ ...S.btnPrimary, fontSize: 14, padding: '7px 16px', opacity: (!selectedId || saving) ? 0.5 : 1 }}
               onClick={attach}
               disabled={!selectedId || saving}
             >
@@ -672,13 +672,13 @@ function ConsentFormSection({ study, qc }) {
             checked={study?.consent_required ?? true}
             onChange={e => toggleConsentRequired(e.target.checked)}
           />
-          <span style={{ fontSize: 13, color: 'var(--tx2)' }}>Require consent before sessions</span>
+          <span style={{ fontSize: 14, color: 'var(--tx2)' }}>Require consent before sessions</span>
         </label>
       </div>
 
       {form ? (
         <div style={S.formCard}>
-          <p style={{ fontSize: 13, color: 'var(--tx2)', margin: 0 }}>
+          <p style={{ fontSize: 14, color: 'var(--tx2)', margin: 0 }}>
             Active form — uploaded {fmtDate(form.uploaded_at)}
           </p>
           <div style={{ display: 'flex', gap: 10, marginTop: 12, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -688,7 +688,7 @@ function ConsentFormSection({ study, qc }) {
             </button>
             <input ref={fileRef} type="file" accept=".docx" style={{ display: 'none' }} onChange={handleFileChange} />
             <button
-              style={{ ...S.btnPrimary, fontSize: 13, padding: '7px 14px', opacity: uploading ? 0.7 : 1 }}
+              style={{ ...S.btnPrimary, fontSize: 14, padding: '7px 14px', opacity: uploading ? 0.7 : 1 }}
               onClick={() => fileRef.current?.click()}
               disabled={uploading}
             >
@@ -794,14 +794,14 @@ function DebriefFormSection({ study, qc }) {
 
       {form ? (
         <div style={S.formCard}>
-          <p style={{ fontSize: 13, color: 'var(--tx2)', margin: 0 }}>
+          <p style={{ fontSize: 14, color: 'var(--tx2)', margin: 0 }}>
             Active form — uploaded {fmtDate(form.uploaded_at)}
           </p>
           <div style={{ display: 'flex', gap: 10, marginTop: 12, flexWrap: 'wrap', alignItems: 'center' }}>
             <button style={S.actionBtn} onClick={() => setPreviewOpen(true)}>Preview</button>
             <input ref={fileRef} type="file" accept=".docx" style={{ display: 'none' }} onChange={handleFileChange} />
             <button
-              style={{ ...S.btnPrimary, fontSize: 13, padding: '7px 14px', opacity: uploading ? 0.7 : 1 }}
+              style={{ ...S.btnPrimary, fontSize: 14, padding: '7px 14px', opacity: uploading ? 0.7 : 1 }}
               onClick={() => fileRef.current?.click()}
               disabled={uploading}
             >
@@ -961,7 +961,7 @@ function ExternalEnrollmentPanel({ study, qc }) {
                   onChange={e => setRedirectUrl(e.target.value)}
                 />
                 <button
-                  style={{ ...S.btnPrimary, fontSize: 13, padding: '7px 14px', opacity: urlSaving ? 0.7 : 1 }}
+                  style={{ ...S.btnPrimary, fontSize: 14, padding: '7px 14px', opacity: urlSaving ? 0.7 : 1 }}
                   onClick={saveRedirectUrl}
                   disabled={urlSaving}
                 >
@@ -1016,15 +1016,15 @@ const EE = {
   toggleLabel: { fontSize: 14, color: 'var(--tx)', fontFamily: '"DM Sans",system-ui,sans-serif' },
   saving:      { fontSize: 12, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif' },
   fieldGroup:  { marginTop: 20, paddingTop: 20, borderTop: '1px solid var(--bd)' },
-  fieldLabel:  { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 },
-  optional:    { textTransform: 'none', color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 11 },
+  fieldLabel:  { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 },
+  optional:    { textTransform: 'none', color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 12 },
   radioRow:    { display: 'flex', gap: 20 },
   radioLabel:  { display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 14, color: 'var(--tx)', fontFamily: '"DM Sans",system-ui,sans-serif' },
   urlRow:      { display: 'flex', gap: 10 },
-  urlInput:    { flex: 1, fontSize: 13, fontFamily: '"DM Sans",system-ui,sans-serif', border: '1px solid var(--bd)', borderRadius: 8, padding: '7px 12px', color: 'var(--tx)', background: '#fff' },
+  urlInput:    { flex: 1, fontSize: 14, fontFamily: '"DM Sans",system-ui,sans-serif', border: '1px solid var(--bd)', borderRadius: 8, padding: '7px 12px', color: 'var(--tx)', background: '#fff' },
   hint:        { fontSize: 12, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif', margin: '6px 0 0' },
   linkRow:     { display: 'flex', alignItems: 'center', gap: 10 },
-  linkLabel:   { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', width: 56, flexShrink: 0 },
+  linkLabel:   { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', width: 56, flexShrink: 0 },
   linkInput:   { flex: 1, fontSize: 12, fontFamily: '"Space Mono",monospace', border: '1px solid var(--bd)', borderRadius: 7, padding: '6px 10px', color: 'var(--tx2)', background: 'var(--bgc)', cursor: 'text' },
   copyBtn:     { background: 'none', border: '1px solid var(--bd)', borderRadius: 6, padding: '5px 10px', fontSize: 12, cursor: 'pointer', color: 'var(--pk)', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
 }
@@ -1041,14 +1041,14 @@ function StatusBadge({ status }) {
   }
   const c = colors[status] ?? colors.pending
   return (
-    <span style={{ fontFamily: '"Space Mono",monospace', fontSize: 10, borderRadius: 6, padding: '2px 7px', background: c.bg, color: c.color }}>
+    <span style={{ fontFamily: '"Space Mono",monospace', fontSize: 12, borderRadius: 6, padding: '2px 7px', background: c.bg, color: c.color }}>
       {status}
     </span>
   )
 }
 
 function Chip({ children }) {
-  return <span style={{ fontFamily: '"Space Mono",monospace', fontSize: 11, background: 'var(--pkb)', color: 'var(--pk)', borderRadius: 6, padding: '2px 7px' }}>{children}</span>
+  return <span style={{ fontFamily: '"Space Mono",monospace', fontSize: 12, background: 'var(--pkb)', color: 'var(--pk)', borderRadius: 6, padding: '2px 7px' }}>{children}</span>
 }
 
 function fmtDate(ts) {
@@ -1057,30 +1057,30 @@ function fmtDate(ts) {
 }
 
 const S = {
-  backLink:      { fontSize: 13, color: 'var(--tx2)', textDecoration: 'none', display: 'inline-block', marginBottom: 8 },
-  backLinkBtn:   { background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: 'var(--tx2)', padding: 0, marginBottom: 12, fontFamily: '"DM Sans",system-ui,sans-serif' },
+  backLink:      { fontSize: 14, color: 'var(--tx2)', textDecoration: 'none', display: 'inline-block', marginBottom: 8 },
+  backLinkBtn:   { background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: 'var(--tx2)', padding: 0, marginBottom: 12, fontFamily: '"DM Sans",system-ui,sans-serif' },
   h1:            { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 26, fontWeight: 400, color: 'var(--tx)', margin: '0 0 6px' },
-  sub:           { fontSize: 13, color: 'var(--tx2)', margin: 0, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
+  sub:           { fontSize: 14, color: 'var(--tx2)', margin: 0, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
   sep:           { color: 'var(--tx3)' },
-  typePill:      { fontFamily: '"Space Mono",monospace', fontSize: 10, background: 'var(--pkb)', color: 'var(--pk)', borderRadius: 6, padding: '2px 7px' },
+  typePill:      { fontFamily: '"Space Mono",monospace', fontSize: 12, background: 'var(--pkb)', color: 'var(--pk)', borderRadius: 6, padding: '2px 7px' },
   sectionTitle:  { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 20, fontWeight: 400, color: 'var(--tx)', margin: 0 },
   muted:         { fontSize: 14, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif' },
   empty:         { textAlign: 'center', padding: '40px 0' },
   emptyText:     { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 18, color: 'var(--tx)', margin: '0 0 6px' },
-  emptyHint:     { fontSize: 13, color: 'var(--tx2)', margin: 0 },
+  emptyHint:     { fontSize: 14, color: 'var(--tx2)', margin: 0 },
   addForm:       { display: 'flex', gap: 10, marginBottom: 12, flexWrap: 'wrap' },
   input:         { fontSize: 14, fontFamily: '"DM Sans",system-ui,sans-serif', border: '1px solid var(--bd)', borderRadius: 8, padding: '8px 12px', color: 'var(--tx)', background: '#fff', minWidth: 240 },
-  errMsg:        { fontSize: 13, color: '#e04', background: '#fff0f0', border: '1px solid #fcc', borderRadius: 8, padding: '8px 14px', marginBottom: 12 },
-  successMsg:    { fontSize: 13, color: '#15803d', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '8px 14px', marginBottom: 12 },
+  errMsg:        { fontSize: 14, color: '#e04', background: '#fff0f0', border: '1px solid #fcc', borderRadius: 8, padding: '8px 14px', marginBottom: 12 },
+  successMsg:    { fontSize: 14, color: '#15803d', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '8px 14px', marginBottom: 12 },
   tableWrap:     { overflowX: 'auto', borderRadius: 10, border: '1px solid var(--bd)', background: '#fff' },
   table:         { width: '100%', borderCollapse: 'collapse' },
-  th:            { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', textAlign: 'left', padding: '10px 16px', borderBottom: '1px solid var(--bd)', textTransform: 'uppercase', letterSpacing: '0.06em' },
+  th:            { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', textAlign: 'left', padding: '10px 16px', borderBottom: '1px solid var(--bd)', textTransform: 'uppercase', letterSpacing: '0.06em' },
   tr:            { borderBottom: '1px solid var(--bd)' },
   td:            { padding: '12px 16px', verticalAlign: 'middle' },
   pName:         { fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 14, fontWeight: 600, color: 'var(--tx)' },
-  mono:          { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)' },
+  mono:          { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)' },
   actions:       { display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' },
-  actionBtn:     { background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: 'var(--tx2)', padding: 0, fontFamily: '"DM Sans",system-ui,sans-serif' },
+  actionBtn:     { background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: 'var(--tx2)', padding: 0, fontFamily: '"DM Sans",system-ui,sans-serif' },
   btnPrimary:    { display: 'inline-block', background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
   overlay:       { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center' },
   dialog:        { background: '#fff', borderRadius: 14, padding: '28px 32px', maxWidth: 440, width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,0.18)' },

@@ -114,7 +114,7 @@ const S = {
     display: 'flex', flexDirection: 'column', gap: 20,
   },
   eyebrow: {
-    fontFamily: MONO, fontSize: 11, letterSpacing: '0.12em',
+    fontFamily: MONO, fontSize: 12, letterSpacing: '0.12em',
     textTransform: 'uppercase', color: 'var(--pk)', margin: 0,
   },
   title: {
@@ -122,11 +122,11 @@ const S = {
     color: 'var(--tx)', margin: 0, letterSpacing: -0.5,
   },
   body:      { fontSize: 15, color: 'var(--tx2)', lineHeight: 1.6, margin: 0, fontFamily: SANS },
-  bodyMuted: { fontSize: 13, color: 'var(--tx3)', lineHeight: 1.6, margin: 0, fontFamily: SANS },
+  bodyMuted: { fontSize: 14, color: 'var(--tx3)', lineHeight: 1.6, margin: 0, fontFamily: SANS },
 
   fieldCol:   { display: 'flex', flexDirection: 'column', gap: 6 },
   fieldLabel: {
-    fontFamily: MONO, fontSize: 11, letterSpacing: '0.08em',
+    fontFamily: MONO, fontSize: 12, letterSpacing: '0.08em',
     textTransform: 'uppercase', color: 'var(--tx2)',
   },
   input: {
@@ -140,13 +140,13 @@ const S = {
     alignSelf: 'flex-start',
     padding: '13px 32px', borderRadius: 12,
     background: 'var(--pk)', color: '#fff', border: 'none',
-    fontFamily: MONO, fontSize: 13, fontWeight: 700, letterSpacing: '0.05em',
+    fontFamily: MONO, fontSize: 14, fontWeight: 700, letterSpacing: '0.05em',
     cursor: 'pointer', boxShadow: '0 4px 20px rgba(240,104,164,0.35)',
     transition: 'opacity 0.15s',
   },
 
   errBox: {
-    fontSize: 13, color: '#e04', background: 'var(--err-bg)',
+    fontSize: 14, color: '#e04', background: 'var(--err-bg)',
     border: '1px solid #fcc', borderRadius: 8, padding: '10px 16px', margin: 0,
   },
 }

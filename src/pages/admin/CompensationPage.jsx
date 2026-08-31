@@ -116,7 +116,7 @@ function TypeBadge({ type }) {
   const s = styles[type] ?? { bg: '#f4f4f5', color: '#52525b' }
   return (
     <span style={{
-      fontFamily: '"Space Mono",monospace', fontSize: 10,
+      fontFamily: '"Space Mono",monospace', fontSize: 12,
       borderRadius: 6, padding: '2px 7px',
       background: s.bg, color: s.color,
     }}>
@@ -137,20 +137,20 @@ function fmtTime(ts) {
 
 const S = {
   header:     { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 28, flexWrap: 'wrap' },
-  backLink:   { fontSize: 13, color: 'var(--tx2)', textDecoration: 'none', display: 'inline-block', marginBottom: 8 },
+  backLink:   { fontSize: 14, color: 'var(--tx2)', textDecoration: 'none', display: 'inline-block', marginBottom: 8 },
   h1:         { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 26, fontWeight: 400, color: 'var(--tx)', margin: '0 0 4px' },
   sub:        { fontSize: 14, color: 'var(--tx2)', margin: 0 },
   csvBtn:     { background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap', alignSelf: 'flex-end' },
-  errMsg:     { fontSize: 13, color: '#e04', background: '#fff0f0', border: '1px solid #fcc', borderRadius: 8, padding: '8px 14px', marginBottom: 16 },
+  errMsg:     { fontSize: 14, color: '#e04', background: '#fff0f0', border: '1px solid #fcc', borderRadius: 8, padding: '8px 14px', marginBottom: 16 },
   muted:      { fontSize: 14, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif' },
   empty:      { textAlign: 'center', padding: '60px 0' },
   emptyTitle: { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 20, color: 'var(--tx)', margin: '0 0 8px' },
   emptyHint:  { fontSize: 14, color: 'var(--tx2)', margin: 0 },
   tableWrap:  { overflowX: 'auto', borderRadius: 10, border: '1px solid var(--bd)', background: '#fff' },
   table:      { width: '100%', borderCollapse: 'collapse' },
-  th:         { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', textAlign: 'left', padding: '10px 16px', borderBottom: '1px solid var(--bd)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap' },
+  th:         { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', textAlign: 'left', padding: '10px 16px', borderBottom: '1px solid var(--bd)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap' },
   tr:         { borderBottom: '1px solid var(--bd)' },
   td:         { padding: '11px 16px', verticalAlign: 'middle' },
   studyName:  { fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 14, color: 'var(--tx)' },
-  mono:       { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx2)' },
+  mono:       { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx2)' },
 }

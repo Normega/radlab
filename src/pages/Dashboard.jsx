@@ -376,7 +376,7 @@ function StatCluster({ stats }) {
     <div style={{ display: 'flex', gap: 20, marginBottom: 10, flexWrap: 'wrap' }}>
       {stats.map(({ label, value }) => (
         <div key={label}>
-          <div style={{ fontFamily: MONO, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--tx3)', marginBottom: 1 }}>{label}</div>
+          <div style={{ fontFamily: MONO, fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--tx3)', marginBottom: 1 }}>{label}</div>
           <div style={{ fontFamily: MONO, fontSize: 15, color: 'var(--tx)', fontWeight: 700 }}>{value ?? '—'}</div>
         </div>
       ))}
@@ -559,7 +559,7 @@ function PondWatchCard({ userId }) {
                 { label: 'sessions',     value: rows.length },
               ].map(({ label, value }) => (
                 <div key={label}>
-                  <div style={{ fontFamily: MONO, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--tx3)', marginBottom: 1 }}>{label}</div>
+                  <div style={{ fontFamily: MONO, fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--tx3)', marginBottom: 1 }}>{label}</div>
                   <div style={{ fontFamily: MONO, fontSize: 15, color: 'var(--tx)', fontWeight: 700 }}>{value ?? '—'}</div>
                 </div>
               ))}
@@ -624,7 +624,7 @@ function FarmJoyCard({ userId }) {
               const t = times_planted / maxPlanted
               return (
                 <span key={value_word} style={{
-                  fontFamily: MONO, fontSize: 11, padding: '4px 10px', borderRadius: 8,
+                  fontFamily: MONO, fontSize: 12, padding: '4px 10px', borderRadius: 8,
                   background: `rgba(74,154,106,${0.08 + 0.17 * t})`,
                   color: `rgba(22,90,46,${0.5 + 0.5 * t})`,
                   border: `1px solid rgba(74,154,106,${0.2 + 0.4 * t})`,
@@ -695,7 +695,7 @@ function ContactCard({ userId }) {
           <div style={{ display: 'flex', gap: 16, alignItems: 'center', marginTop: 8 }}>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
               <ContactSyncArc value={lastSync} />
-              <span style={{ fontFamily: MONO, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--tx3)' }}>last sync</span>
+              <span style={{ fontFamily: MONO, fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--tx3)' }}>last sync</span>
             </div>
             <StatCluster stats={[
               { label: 'sessions', value: sessions },
@@ -851,7 +851,7 @@ export function RippleCard({ userId, devState }) {
 function CheckinField({ label, value, italic = false }) {
   return (
     <div style={{ minWidth: 110, maxWidth: 320 }}>
-      <EyebrowLabel style={{ fontSize: 11, padding: '4px 8px' }}>{label}</EyebrowLabel>
+      <EyebrowLabel style={{ fontSize: 12, padding: '4px 8px' }}>{label}</EyebrowLabel>
       <div style={{
         fontFamily: SERIF, fontSize: 17, color: 'var(--tx)', marginTop: 8,
         lineHeight: 1.35, fontStyle: italic ? 'italic' : 'normal',
@@ -910,7 +910,7 @@ const S = {
   gameBadge: { display: 'inline-block', fontFamily: MONO, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', padding: '3px 9px', borderRadius: 5, background: 'var(--bgp)', color: 'var(--pkd)', border: '1px solid var(--pkb)', marginBottom: 10 },
   gameBadgeMuted: { background: 'var(--bg)', color: 'var(--tx3)', border: '1px solid var(--bd)' },
   gameTitle: { fontFamily: SERIF, fontSize: 24, color: 'var(--tx)', marginBottom: 8 },
-  gameDesc:  { fontSize: 13, color: 'var(--tx2)', lineHeight: 1.6 },
+  gameDesc:  { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.6 },
   gameStatus: { padding: '12px 24px', background: 'var(--bgp)', borderTop: '1px solid var(--pkb)', fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)' },
   gameStatusMuted: { background: 'var(--bg)', borderColor: 'var(--bd)', color: 'var(--tx3)' },
   statsPlaceholder: { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 16, padding: '40px 32px', textAlign: 'center' },

@@ -157,7 +157,7 @@ export function AdoptedLikertSlider() {
                   position: 'absolute', top: 0, width: 96,
                   left: `${(i / (n - 1)) * 100}%`, transform: 'translateX(-50%)',
                   textAlign: 'center',
-                  fontFamily: SANS, fontSize: 11, lineHeight: 1.3,
+                  fontFamily: SANS, fontSize: 12, lineHeight: 1.3,
                   color: sel ? 'var(--tx)' : 'var(--tx2)', fontWeight: sel ? 600 : 400,
                 }}>
                   {label}
@@ -250,7 +250,7 @@ export function ProposedOpenList() {
                 aria-label={`Factor ${i + 1}`}
               />
               <span style={{
-                fontFamily: MONO, fontSize: 10, letterSpacing: '0.06em', flexShrink: 0,
+                fontFamily: MONO, fontSize: 12, letterSpacing: '0.06em', flexShrink: 0,
                 color: wordCount(r.text) > MAX_WORDS ? 'var(--err-tx)' : 'var(--gy)',
               }}>
                 {wordCount(r.text)}/{MAX_WORDS} words
@@ -271,7 +271,7 @@ export function ProposedOpenList() {
                     onPointerDown={() => setRows(prev => prev.map((row, j) => j === i ? { ...row, contribution: row.contribution ?? 50, touched: true } : row))}
                     aria-label={`Contribution of factor ${i + 1}`}
                   />
-                  <span style={{ fontFamily: MONO, fontSize: 13, color: r.touched ? 'var(--pkd)' : 'var(--gy)', width: 28, textAlign: 'right' }}>
+                  <span style={{ fontFamily: MONO, fontSize: 14, color: r.touched ? 'var(--pkd)' : 'var(--gy)', width: 28, textAlign: 'right' }}>
                     {r.touched ? r.contribution : '—'}
                   </span>
                 </div>
@@ -309,7 +309,7 @@ export function ProposedHierarchy() {
   return (
     <div style={P.pad}>
       <p style={P.pageQ}>How much did this feedback change your belief about…</p>
-      <p style={{ fontFamily: SANS, fontSize: 13, color: 'var(--tx2)', margin: '0 0 14px' }}>
+      <p style={{ fontFamily: SANS, fontSize: 14, color: 'var(--tx2)', margin: '0 0 14px' }}>
         Select all of the beliefs that changed. You can select more than one.
       </p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -340,11 +340,11 @@ export function ProposedHierarchy() {
                         onPointerDown={() => setState(prev => ({ ...prev, [b.id]: { ...prev[b.id], touched: true } }))}
                         aria-label={`Direction of change for ${b.level}`}
                       />
-                      <span style={{ fontFamily: MONO, fontSize: 13, color: s.touched ? 'var(--pkd)' : 'var(--gy)', width: 34, textAlign: 'right' }}>
+                      <span style={{ fontFamily: MONO, fontSize: 14, color: s.touched ? 'var(--pkd)' : 'var(--gy)', width: 34, textAlign: 'right' }}>
                         {s.touched ? (s.direction > 0 ? `+${s.direction}` : s.direction) : '—'}
                       </span>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: SANS, fontSize: 11, color: 'var(--gy)', marginTop: 4 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: SANS, fontSize: 12, color: 'var(--gy)', marginTop: 4 }}>
                       <span>Negative change</span><span>No directional change</span><span>Positive change</span>
                     </div>
                   </div>
@@ -354,7 +354,7 @@ export function ProposedHierarchy() {
           )
         })}
       </div>
-      <p style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--gy)', margin: '12px 0 0' }}>
+      <p style={{ fontFamily: MONO, fontSize: 12, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--gy)', margin: '12px 0 0' }}>
         {nSel === 0 ? 'No beliefs selected' : `${nSel} belief${nSel === 1 ? '' : 's'} selected`}
       </p>
     </div>
@@ -379,7 +379,7 @@ const P = {
   },
   itemEyebrow: {
     display: 'block', marginBottom: 6, color: 'var(--pkd)', fontFamily: MONO,
-    fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase',
+    fontSize: 12, letterSpacing: '0.08em', textTransform: 'uppercase',
   },
   stem: { margin: '0 0 17px', color: 'var(--tx)', fontFamily: SANS, fontSize: 17, fontWeight: 600, lineHeight: 1.45 },
 
@@ -394,16 +394,16 @@ const P = {
     boxShadow: '0 0 0 2px rgba(240, 104, 164, 0.10)', transform: 'translateY(-1px)',
   },
   likertValue: { fontFamily: MONO, fontSize: 18, lineHeight: 1 },
-  likertLabel: { minHeight: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: SANS, fontSize: 11, lineHeight: 1.35 },
+  likertLabel: { minHeight: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: SANS, fontSize: 12, lineHeight: 1.35 },
 
   anchor:    { position: 'absolute', top: 0, width: '22%', maxWidth: 165, fontFamily: SANS },
-  anchorNum: { display: 'block', marginBottom: 2, color: 'var(--tx)', fontFamily: MONO, fontSize: 11, fontWeight: 400 },
+  anchorNum: { display: 'block', marginBottom: 2, color: 'var(--tx)', fontFamily: MONO, fontSize: 12, fontWeight: 400 },
   valuePanel: {
     minHeight: 76, padding: '12px 10px', display: 'flex', flexDirection: 'column',
     alignItems: 'center', justifyContent: 'center', textAlign: 'center',
     background: 'var(--bgp)', border: '1px solid rgba(240, 104, 164, 0.20)', borderRadius: 12,
   },
-  valueCaption: { marginBottom: 5, color: 'var(--gy)', fontFamily: MONO, fontSize: 9, letterSpacing: '0.08em', textTransform: 'uppercase' },
+  valueCaption: { marginBottom: 5, color: 'var(--gy)', fontFamily: MONO, fontSize: 12, letterSpacing: '0.08em', textTransform: 'uppercase' },
   valueNumber:  { fontFamily: MONO, fontSize: 25, lineHeight: 1 },
 
   mcRow: {
@@ -440,7 +440,7 @@ const P = {
   },
   checkBoxSel: { background: 'var(--pk)', borderColor: 'var(--pk)' },
   beliefLevel: {
-    fontFamily: MONO, fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase',
+    fontFamily: MONO, fontSize: 12, letterSpacing: '0.06em', textTransform: 'uppercase',
     color: 'var(--pkd)', flexShrink: 0, width: 118, lineHeight: 1.4,
   },
 }

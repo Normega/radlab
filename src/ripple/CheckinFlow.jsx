@@ -205,7 +205,7 @@ function RatingStep({ phase, activeIds, labels, skinColor, eyeColor, species, ha
                   {sel.neutral ? 'neutral' : EMOTIONS.find(e => e.id === sel.emotionId)?.name}
                 </div>
                 {!sel.neutral && (
-                  <div style={{ fontFamily: MONO, fontSize: 11, color: '#abadb0', marginTop: 1, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+                  <div style={{ fontFamily: MONO, fontSize: 12, color: '#abadb0', marginTop: 1, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
                     {INTENSITY_LABELS[sel.zone + 1]}
                   </div>
                 )}
@@ -245,7 +245,7 @@ function ItemStep({ item, value, onChange, onConfirm, isLast }) {
 
       <div style={{ width: 308, display: 'flex', flexDirection: 'column', gap: 6 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ fontFamily: SANS, fontSize: 11, color: '#888', width: 60, textAlign: 'right', flexShrink: 0, lineHeight: 1.2 }}>{item.left}</span>
+          <span style={{ fontFamily: SANS, fontSize: 12, color: '#888', width: 60, textAlign: 'right', flexShrink: 0, lineHeight: 1.2 }}>{item.left}</span>
           <div style={{ flex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative' }}>
             <div style={{ position: 'absolute', left: 0, right: 0, top: '50%', height: 2, background: '#E8D0E0', transform: 'translateY(-50%)', borderRadius: 1 }} />
             {[1, 2, 3, 4, 5, 6, 7].map(d => {
@@ -262,7 +262,7 @@ function ItemStep({ item, value, onChange, onConfirm, isLast }) {
               )
             })}
           </div>
-          <span style={{ fontFamily: SANS, fontSize: 11, color: '#888', width: 60, flexShrink: 0, lineHeight: 1.2 }}>{item.right}</span>
+          <span style={{ fontFamily: SANS, fontSize: 12, color: '#888', width: 60, flexShrink: 0, lineHeight: 1.2 }}>{item.right}</span>
         </div>
       </div>
 
@@ -748,7 +748,7 @@ const S = {
   eyebrow:   { fontFamily: MONO, fontSize: 12, color: '#abadb0', letterSpacing: '0.12em', textTransform: 'uppercase', margin: '0 0 6px' },
   ratingQ:   { fontFamily: SERIF, fontSize: 20, color: '#1c1c1e', fontWeight: 400, margin: 0 },
   faceCard:  { background: 'white', borderRadius: 18, padding: '12px 10px 10px', boxShadow: '0 2px 18px rgba(180,120,160,0.10)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 },
-  btn:       { background: '#f068a4', color: 'white', border: 'none', borderRadius: 12, padding: 14, fontFamily: MONO, fontSize: 13, fontWeight: 700, letterSpacing: '0.05em', cursor: 'pointer', boxShadow: '0 4px 20px rgba(240,104,164,0.30)' },
+  btn:       { background: '#f068a4', color: 'white', border: 'none', borderRadius: 12, padding: 14, fontFamily: MONO, fontSize: 14, fontWeight: 700, letterSpacing: '0.05em', cursor: 'pointer', boxShadow: '0 4px 20px rgba(240,104,164,0.30)' },
   optionBtn: {
     background: 'white', border: '1.5px solid #E8D0E0', borderRadius: 12, padding: '12px 24px',
     fontFamily: SANS, fontSize: 15, color: '#1c1c1e', cursor: 'pointer', width: '100%',
@@ -756,13 +756,13 @@ const S = {
   },
   pillBtn: {
     border: '1.5px solid', borderRadius: 20, padding: '7px 14px',
-    fontFamily: SANS, fontSize: 13, cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap',
+    fontFamily: SANS, fontSize: 14, cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap',
   },
   // Formal button, not a bare text link (policy, 2026-08-13): every option in
   // a choice pair is a real button — the non-suggested one is just grayer.
   skipLink: {
     background: 'white', color: '#6b6c70', border: '1.5px solid #E8D0E0',
-    borderRadius: 12, padding: 14, fontFamily: MONO, fontSize: 13, fontWeight: 700,
+    borderRadius: 12, padding: 14, fontFamily: MONO, fontSize: 14, fontWeight: 700,
     letterSpacing: '0.05em', cursor: 'pointer', flexShrink: 0,
   },
 }

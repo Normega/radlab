@@ -6,6 +6,7 @@ import { useWikiCourse } from './useWikiCourse'
 import { useWideLayout } from './useWideLayout'
 import { TIER_LABEL, TIER_HELP } from './tiers'
 import { chapterIcon } from './chapterIcons'
+import { weekIcon } from './weekIcons'
 import ReportIssue from './ReportIssue'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
@@ -47,6 +48,12 @@ export default function WikiPage() {
   const [outbound, setOutbound] = useState([])
   const [provenance, setProvenance] = useState(null)
   const [catalog, setCatalog] = useState(null)
+  // Which lecture week(s) this page belongs to, from page_lectures joined to
+  // the course calendar. The crumb renders only when there is no DSM-chapter
+  // crumb — so PSY240 disorder pages look exactly as before, while
+  // week-anchored courses (and PSY240's own concept pages) get their calendar
+  // context instead.
+  const [lectureCrumbs, setLectureCrumbs] = useState([])
   // Open gaps on this page, drawn from page_gaps rather than parsed from the
   // body — the catalogue is the source of truth, and RLS already decides who
   // sees them (members: published pages only; staff: everything).
@@ -70,6 +77,7 @@ export default function WikiPage() {
   const [verified, setVerified] = useState('')
   const [allowStructure, setAllowStructure] = useState(false)
   const [reloadKey, setReloadKey] = useState(0)
+  const [publishing, setPublishing] = useState(false)
 
   // undefined = still loading, null = nothing this reader can see at this slug
   const page = loaded.slug === slug ? loaded.row : undefined
@@ -90,7 +98,7 @@ export default function WikiPage() {
       // The link-resolution set is whatever this reader can see, which is the
       // honest basis for colouring a wikilink: a link to a page that exists
       // but is still a draft is, for a student, a link to nothing readable.
-      const [{ data: all }, { data: back }, { data: out }, { data: prov }, { data: cat }, { data: gp }, { data: rev }] = await Promise.all([
+      const [{ data: all }, { data: back }, { data: out }, { data: prov }, { data: cat }, { data: gp }, { data: rev }, { data: pls }, { data: cal }] = await Promise.all([
         courseClient.from('wiki_pages').select('slug, title, type, status').eq('course_id', courseId),
         courseClient.from('wiki_links')
           .select('id, source:wiki_pages!wiki_links_source_page_id_fkey!inner(slug, title, type, status)')
@@ -107,6 +115,10 @@ export default function WikiPage() {
         courseClient.from('page_reviews')
           .select('version, verdict, reviewed_at')
           .eq('page_id', row.id).order('reviewed_at', { ascending: false }).limit(1).maybeSingle(),
+        courseClient.from('page_lectures').select('lecture_no').eq('page_id', row.id),
+        courseClient.from('course_structure')
+          .select('week_no, lecture_no, title')
+          .eq('course_id', courseId).eq('kind', 'lecture'),
       ])
       if (cancelled) return
       setPages(new Map((all ?? []).map(p => [p.slug, p])))
@@ -117,6 +129,10 @@ export default function WikiPage() {
       setCatalog(cat ?? null)
       setGaps(gp ?? [])
       setReview(rev ?? null)
+      setLectureCrumbs((pls ?? [])
+        .map(l => (cal ?? []).find(m => m.lecture_no === l.lecture_no))
+        .filter(Boolean)
+        .sort((a, b) => a.week_no - b.week_no))
     })()
 
     return () => { cancelled = true }
@@ -145,6 +161,18 @@ export default function WikiPage() {
       `Saved as v${data.current_version} · ${data.links_extracted} link${data.links_extracted === 1 ? '' : 's'}` +
       ` · ${data.needs?.length ? `still needs: ${data.needs.join(', ')}` : 'no declared gaps'}`
     )
+    setReloadKey(k => k + 1)
+  }
+
+  // Direct publish (20260826 migration): the write primitive review_proposal
+  // cannot provide, for pages that never came through an ingest proposal —
+  // which is every fresh-authored PSY309 page. Staff-gated server-side.
+  const publishNow = async () => {
+    setPublishing(true)
+    const { error } = await courseClient.rpc('publish_page', { p_page_id: page.id })
+    setPublishing(false)
+    if (error) return setSaveNotice(error.message)
+    setSaveNotice('Published — this page is now live for readers.')
     setReloadKey(k => k + 1)
   }
 
@@ -300,6 +328,12 @@ export default function WikiPage() {
                  width={30} height={30} loading="lazy" style={S.crumbIcon} />
           )}<span style={S.dim}>{catalog.dsm_chapter_title}</span></>
         )}
+        {!catalog?.dsm_chapter_title && lectureCrumbs.map(m => (
+          <span key={m.week_no}> · {weekIcon(course?.code, m.week_no) && (
+            <img src={weekIcon(course?.code, m.week_no)} alt="" aria-hidden="true"
+                 width={30} height={30} loading="lazy" style={S.crumbIcon} />
+          )}<span style={S.dim}>Week {m.week_no} — {m.title}</span></span>
+        ))}
       </nav>
 
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
@@ -447,7 +481,11 @@ export default function WikiPage() {
       {page.status !== 'published' && (
         <p style={S.draftBanner}>
           <b>{page.status}</b> — not visible to students.{' '}
-          {isStaff && <Link to="/academic/fieldguide/review" style={S.link}>Publish it from the review queue →</Link>}
+          {isStaff && page.content && (
+            <button style={S.publishBtn} disabled={publishing} onClick={publishNow}>
+              {publishing ? 'Publishing…' : 'Publish this page'}
+            </button>
+          )}
         </p>
       )}
 
@@ -644,6 +682,13 @@ export default function WikiPage() {
           )}
         </article>
       </div>
+
+      <p style={S.licenseFoot}>
+        This guide is free and open under{' '}
+        <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" style={S.link}
+           target="_blank" rel="noreferrer">CC BY-NC-SA 4.0</a>
+        {' '}· this page's sources are credited in its Sources and attribution section.
+      </p>
     </Shell>
   )
 }
@@ -751,13 +796,13 @@ const G = {
   row: { display: 'flex', gap: 8, alignItems: 'baseline', padding: '5px 0' },
   dot: { flexShrink: 0, width: 8, height: 8, borderRadius: '50%', position: 'relative', top: -1 },
   rowText: { fontSize: 13.5, color: 'var(--tx2)', lineHeight: 1.5 },
-  diffTag: { fontFamily: MONO, fontSize: 10.5, letterSpacing: 0.5, textTransform: 'uppercase' },
-  flagBtn: { marginTop: 4, fontFamily: MONO, fontSize: 11, letterSpacing: 0.5, padding: '3px 10px', borderRadius: 14, border: '1px dashed var(--bd)', background: 'none', color: 'var(--tx2)', cursor: 'pointer' },
+  diffTag: { fontFamily: MONO, fontSize: 12, letterSpacing: 0.5, textTransform: 'uppercase' },
+  flagBtn: { marginTop: 4, fontFamily: MONO, fontSize: 12, letterSpacing: 0.5, padding: '3px 10px', borderRadius: 14, border: '1px dashed var(--bd)', background: 'none', color: 'var(--tx2)', cursor: 'pointer' },
   form: { marginTop: 8, display: 'flex', flexDirection: 'column', gap: 8 },
   askInput: { width: '100%', boxSizing: 'border-box', minHeight: 64, resize: 'vertical', fontSize: 13.5, lineHeight: 1.5, padding: '8px 10px', borderRadius: 8, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx)' },
-  diffSelect: { fontSize: 13, padding: '6px 8px', borderRadius: 8, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx)' },
-  flagGo: { fontSize: 13, fontWeight: 600, padding: '6px 14px', borderRadius: 18, border: 'none', background: 'var(--pk)', color: '#fff', cursor: 'pointer' },
-  flagCancel: { fontSize: 13, padding: '6px 12px', borderRadius: 18, border: '1px solid var(--bd)', background: 'none', color: 'var(--tx2)', cursor: 'pointer' },
+  diffSelect: { fontSize: 14, padding: '6px 8px', borderRadius: 8, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx)' },
+  flagGo: { fontSize: 14, fontWeight: 600, padding: '6px 14px', borderRadius: 18, border: 'none', background: 'var(--pk)', color: '#fff', cursor: 'pointer' },
+  flagCancel: { fontSize: 14, padding: '6px 12px', borderRadius: 18, border: '1px solid var(--bd)', background: 'none', color: 'var(--tx2)', cursor: 'pointer' },
   hint: { fontSize: 12, color: 'var(--tx2)', fontStyle: 'italic' },
 }
 
@@ -776,69 +821,71 @@ const S = {
   eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)' },
   eyebrowLink: { color: 'inherit', textDecoration: 'none' },
   crumbIcon: { verticalAlign: 'middle', borderRadius: 8, border: '1px solid var(--bd)', background: '#fff', objectFit: 'contain', marginRight: 5 },
-  crumbs: { fontSize: 13, color: 'var(--tx2)', margin: '10px 0 6px' },
+  crumbs: { fontSize: 14, color: 'var(--tx2)', margin: '10px 0 6px' },
   title: { fontFamily: SERIF, fontSize: 34, color: 'var(--tx)', margin: '4px 0 6px', lineHeight: 1.15 },
   metaLine: { fontFamily: MONO, fontSize: 12, letterSpacing: 0.5, textTransform: 'uppercase', color: 'var(--tx2)' },
   summary: { fontSize: 17, color: 'var(--tx2)', lineHeight: 1.6, margin: '12px 0 0', maxWidth: '62ch' },
 
   prevalence: { display: 'flex', gap: 10, alignItems: 'baseline', flexWrap: 'wrap', margin: '14px 0 0', padding: '10px 14px', borderRadius: 10, background: 'var(--bgc)', border: '1px solid var(--bd)', maxWidth: '62ch' },
-  prevalenceLabel: { flex: '0 0 auto', fontFamily: MONO, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--pk)', textDecoration: 'none' },
+  prevalenceLabel: { flex: '0 0 auto', fontFamily: MONO, fontSize: 12, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--pk)', textDecoration: 'none' },
   prevalenceText: { flex: '1 1 200px', fontSize: 14, color: 'var(--tx)', lineHeight: 1.5 },
 
   sub: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.55 },
-  dim: { color: 'var(--tx2)', fontSize: 13 },
+  dim: { color: 'var(--tx2)', fontSize: 14 },
   link: { color: 'var(--pk)', textDecoration: 'none' },
-  code: { fontFamily: MONO, fontSize: 13 },
+  code: { fontFamily: MONO, fontSize: 14 },
 
-  draftBanner: { marginTop: 14, padding: '10px 12px', borderRadius: 8, background: 'rgba(214,51,132,.07)', border: '1px solid rgba(214,51,132,.28)', fontSize: 13, color: 'var(--tx)' },
+  publishBtn: { fontFamily: MONO, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', padding: '4px 12px', borderRadius: 14, border: 'none', background: 'var(--pk)', color: '#fff', cursor: 'pointer' },
+  licenseFoot: { fontSize: 12, color: 'var(--tx2)', marginTop: 40, borderTop: '1px solid var(--bd)', paddingTop: 12 },
+  draftBanner: { marginTop: 14, padding: '10px 12px', borderRadius: 8, background: 'rgba(214,51,132,.07)', border: '1px solid rgba(214,51,132,.28)', fontSize: 14, color: 'var(--tx)' },
 
   stampBar: { display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', marginTop: 14, padding: '10px 12px', borderRadius: 10, background: 'var(--bgc)', border: '1px solid var(--bd)' },
   stampState: { fontFamily: MONO, fontSize: 12, color: 'var(--tx2)', flex: '0 0 auto' },
-  stampNote: { flex: '1 1 220px', fontSize: 13, padding: '6px 10px', borderRadius: 8, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx)' },
+  stampNote: { flex: '1 1 220px', fontSize: 14, padding: '6px 10px', borderRadius: 8, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx)' },
   stampBtn: { fontSize: 12.5, fontWeight: 600, padding: '6px 13px', borderRadius: 18, border: 'none', background: '#2e7d32', color: '#fff', cursor: 'pointer', whiteSpace: 'nowrap' },
-  stampNext: { fontSize: 13, fontWeight: 600, color: 'var(--pk)', textDecoration: 'none', whiteSpace: 'nowrap' },
+  stampNext: { fontSize: 14, fontWeight: 600, color: 'var(--pk)', textDecoration: 'none', whiteSpace: 'nowrap' },
   stampBtnOff: { fontSize: 12.5, fontWeight: 600, padding: '6px 13px', borderRadius: 18, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx2)', cursor: 'pointer', whiteSpace: 'nowrap' },
 
   criteria: { display: 'block', marginTop: 16, padding: '14px 16px', borderRadius: 12, background: 'var(--bgc)', border: '1px solid var(--bd)', textDecoration: 'none' },
-  criteriaLabel: { display: 'block', fontFamily: MONO, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--pk)' },
+  criteriaLabel: { display: 'block', fontFamily: MONO, fontSize: 12, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--pk)' },
   criteriaText: { display: 'block', fontSize: 15, color: 'var(--tx)', marginTop: 4 },
   criteriaNote: { display: 'block', fontSize: 12, color: 'var(--tx2)', marginTop: 4 },
 
   layout: { display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 28, marginTop: 22, alignItems: 'start' },
   foldBar: { display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', margin: '0 0 4px' },
-  foldBtn: { fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', padding: '5px 12px', borderRadius: 16, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx2)', cursor: 'pointer' },
-  foldCount: { fontFamily: MONO, fontSize: 11, letterSpacing: 0.5, color: 'var(--tx2)' },
+  foldBtn: { fontFamily: MONO, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', padding: '5px 12px', borderRadius: 16, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx2)', cursor: 'pointer' },
+  foldCount: { fontFamily: MONO, fontSize: 12, letterSpacing: 0.5, color: 'var(--tx2)' },
   foldSection: { borderTop: '1px solid var(--bd)', marginTop: 18 },
   // The h2 keeps the anchor id and the document outline; the button inside it
   // is what takes the click, so the heading stays a heading to a screen reader.
   foldHeadingWrap: { margin: 0, scrollMarginTop: 20 },
   foldHeading: { display: 'flex', alignItems: 'baseline', gap: 8, width: '100%', textAlign: 'left', padding: '14px 0 6px', border: 'none', background: 'none', cursor: 'pointer', fontFamily: SERIF, fontSize: 23, lineHeight: 1.2, color: 'var(--tx)' },
-  caret: { flexShrink: 0, fontSize: 13, color: 'var(--pk)', transition: 'transform .15s ease', display: 'inline-block' },
+  caret: { flexShrink: 0, fontSize: 14, color: 'var(--pk)', transition: 'transform .15s ease', display: 'inline-block' },
 
   toc: { position: 'sticky', top: 16, alignSelf: 'start', borderLeft: '2px solid var(--bd)', paddingLeft: 12 },
-  tocLabel: { fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx2)', margin: '0 0 6px' },
-  tocLink: { display: 'block', fontSize: 13, color: 'var(--tx2)', textDecoration: 'none', padding: '3px 0' },
+  tocLabel: { fontFamily: MONO, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx2)', margin: '0 0 6px' },
+  tocLink: { display: 'block', fontSize: 14, color: 'var(--tx2)', textDecoration: 'none', padding: '3px 0' },
 
   section: { marginTop: 30, paddingTop: 18, borderTop: '1px solid var(--bd)' },
   sectionH: { fontFamily: SERIF, fontSize: 18, color: 'var(--tx)', margin: '0 0 8px' },
   needsBox: { marginTop: 30, padding: '14px 16px', borderRadius: 12, background: 'var(--bgc)', border: '1px solid var(--bd)' },
 
-  editBtn: { flexShrink: 0, marginTop: 8, fontSize: 13, fontWeight: 600, padding: '7px 14px', borderRadius: 20, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx)', cursor: 'pointer' },
+  editBtn: { flexShrink: 0, marginTop: 8, fontSize: 14, fontWeight: 600, padding: '7px 14px', borderRadius: 20, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx)', cursor: 'pointer' },
   editBox: { marginTop: 16, padding: 16, borderRadius: 12, background: 'var(--bgc)', border: '1px solid var(--bd)' },
-  colLabel: { fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx2)', margin: '0 0 8px' },
+  colLabel: { fontFamily: MONO, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx2)', margin: '0 0 8px' },
   editArea: { width: '100%', boxSizing: 'border-box', minHeight: 420, resize: 'vertical', fontFamily: MONO, fontSize: 12.5, lineHeight: 1.55, padding: 12, borderRadius: 8, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx)' },
   noteInput: { width: '100%', boxSizing: 'border-box', marginTop: 10, fontSize: 14, padding: '9px 11px', borderRadius: 8, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx)' },
-  saveNotice: { marginTop: 12, fontFamily: MONO, fontSize: 13, color: 'var(--pk)', lineHeight: 1.5 },
+  saveNotice: { marginTop: 12, fontFamily: MONO, fontSize: 14, color: 'var(--pk)', lineHeight: 1.5 },
   primary: { fontSize: 14, fontWeight: 600, padding: '9px 16px', borderRadius: 24, border: 'none', background: 'var(--pk)', color: '#fff', cursor: 'pointer' },
   // Disabled twin of `primary`. Buttons carry inline styles here, so `:disabled`
   // in a stylesheet would never reach them — the greyed state has to be a style
   // object the render picks, and `cursor: not-allowed` is what makes it read as
   // deliberate rather than dead.
   primaryOff: { fontSize: 14, fontWeight: 600, padding: '9px 16px', borderRadius: 24, border: 'none', background: 'var(--bd)', color: 'var(--tx2)', cursor: 'not-allowed' },
-  blockedHint: { fontSize: 13, color: 'var(--tx2)', fontStyle: 'italic' },
+  blockedHint: { fontSize: 14, color: 'var(--tx2)', fontStyle: 'italic' },
   secondary: { fontSize: 14, fontWeight: 600, padding: '9px 16px', borderRadius: 24, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx)', cursor: 'pointer' },
 
   chips: { display: 'flex', flexWrap: 'wrap', gap: 8 },
-  chip: { fontSize: 13, padding: '5px 11px', borderRadius: 20, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx)', textDecoration: 'none' },
+  chip: { fontSize: 14, padding: '5px 11px', borderRadius: 20, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx)', textDecoration: 'none' },
   chipDim: { color: 'var(--tx2)', fontFamily: MONO, fontSize: 12 },
 }

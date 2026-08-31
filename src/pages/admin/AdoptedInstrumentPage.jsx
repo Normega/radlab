@@ -395,16 +395,16 @@ const S = {
   title: { fontFamily: SERIF, fontSize: 28, fontWeight: 400, color: 'var(--tx)', margin: '0 0 12px' },
   statusRow: { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 14 },
   chip: {
-    fontFamily: MONO, fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase',
+    fontFamily: MONO, fontSize: 12, letterSpacing: '0.06em', textTransform: 'uppercase',
     padding: '3px 10px', borderRadius: 12,
   },
   sourceChip: {
-    fontFamily: MONO, fontSize: 11, color: 'var(--tx2)', background: 'var(--bgp)',
+    fontFamily: MONO, fontSize: 12, color: 'var(--tx2)', background: 'var(--bgp)',
     padding: '3px 10px', borderRadius: 12,
   },
   blurb:      { fontFamily: SANS, fontSize: 14, color: 'var(--tx)', lineHeight: 1.6, margin: '0 0 10px', maxWidth: 680 },
-  statusNote: { fontFamily: SANS, fontSize: 13, color: 'var(--tx2)', lineHeight: 1.6, margin: '0 0 18px', maxWidth: 680 },
-  link:       { color: 'var(--pk)', fontFamily: SANS, fontSize: 13 },
+  statusNote: { fontFamily: SANS, fontSize: 14, color: 'var(--tx2)', lineHeight: 1.6, margin: '0 0 18px', maxWidth: 680 },
+  link:       { color: 'var(--pk)', fontFamily: SANS, fontSize: 14 },
   stage: {
     background: 'var(--bg)', border: '1px solid var(--bd)', borderRadius: 12,
     overflow: 'hidden', position: 'relative', maxWidth: 860,
@@ -417,7 +417,7 @@ const S = {
   },
   libTitle: { fontFamily: SERIF, fontSize: 20, fontWeight: 400, color: 'var(--tx)', margin: 0 },
   newBtn: {
-    fontFamily: SANS, fontWeight: 600, fontSize: 13, padding: '6px 12px',
+    fontFamily: SANS, fontWeight: 600, fontSize: 14, padding: '6px 12px',
     background: 'var(--pk)', color: '#fff', borderRadius: 20, textDecoration: 'none',
   },
   row: {
@@ -427,10 +427,10 @@ const S = {
   },
   rowName: { fontFamily: SANS, fontWeight: 600, fontSize: 14, color: 'var(--tx)', flex: '1 1 260px', minWidth: 0 },
   pkgItemLabel: {
-    fontFamily: MONO, fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase',
+    fontFamily: MONO, fontSize: 12, letterSpacing: '0.08em', textTransform: 'uppercase',
     color: 'var(--gy)', margin: '14px 20px 0', paddingTop: 10, borderTop: '1px solid var(--bd)',
   },
   rowMeta: { fontFamily: SANS, fontSize: 12.5, color: 'var(--tx2)' },
-  rowSlug: { fontFamily: MONO, fontSize: 11, color: 'var(--gy)' },
-  muted:   { fontFamily: SANS, fontSize: 13, color: 'var(--tx2)', margin: '4px 0 0' },
+  rowSlug: { fontFamily: MONO, fontSize: 12, color: 'var(--gy)' },
+  muted:   { fontFamily: SANS, fontSize: 14, color: 'var(--tx2)', margin: '4px 0 0' },
 }

@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PSY309 · L9 · Mixed Models</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&family=Source+Sans+3:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="./slides.css">
+</head>
+<body>
+<div id="deck">
+
+<section data-kind="title">
+  <p class="kicker">PSY309H5 F · Lecture 8 · 10 November 2026</p>
+  <h1>Mixed Models</h1>
+  <p class="lead">People differ more in where they start than in how much you can move them</p>
+  <p class="small" style="margin-top:3vmin"><strong>Test 2 is next week.</strong> The second half of today is review.</p>
+  <aside class="notes"><p>Say the review framing at the start — it changes how they attend to the sorting drill.</p></aside>
+</section>
+
+<section>
+  <p class="kicker">Check in</p>
+  <h1>Open the dashboard</h1>
+  <p class="url" style="font-family:'JetBrains Mono',monospace;font-size:3.4vmin;color:var(--accent);font-weight:600">radlab.zone/class/psy309</p>
+  <ul>
+    <li>Test 2 next Tuesday, 9:15, this room, same format</li>
+    <li>It focuses on weeks 6–10, but earlier material can reappear</li>
+    <li>Practical 5 lands Nov 27; poster Nov 30</li>
+  </ul>
+  <aside class="notes"><p>Check-in position 1.</p></aside>
+</section>
+
+<section data-kind="divider">
+  <p class="kicker">Part one</p>
+  <h1>Refusing to choose</h1>
+</section>
+
+<section>
+  <h1>The design of nearly every clinical trial</h1>
+  <p class="lead">Take the within-versus-between trade-off — and refuse to choose.</p>
+  <p class="big hidden-until">A <strong>mixed design</strong> has at least one between-subjects factor and at least one within-subjects factor.</p>
+  <p class="hidden-until">People randomized to <em>groups</em> (between). Everyone measured over <em>time</em> (within). Understand one mixed design deeply and you can read most of the intervention literature.</p>
+</section>
+
+<section>
+  <h1>Time × Group</h1>
+  <p>Randomize to a mindfulness programme or a waitlist (between). Measure wellbeing before and after (within). Now run the factorial checklist — and watch what each effect <em>means</em>:</p>
+  <ul>
+    <li class="hidden-until"><strong>Main effect of Time</strong> — everyone changed. On its own, uninteresting: maturation, history and regression rolled together with any treatment effect.</li>
+    <li class="hidden-until"><strong>Main effect of Group</strong> — the groups differ on average. Also not the story: with random assignment, baseline equality is expected.</li>
+    <li class="hidden-until"><strong>The Time × Group interaction</strong> — <em>did the groups change differently?</em></li>
+  </ul>
+  <div class="svgwrap hidden-until"><svg viewBox="0 0 340 215" role="img" aria-labelledby="tg-t tg-d"><title id="tg-t">A clinical trial as two lines over time</title><desc id="tg-d">Both groups start level; the treatment line rises steeply while the waitlist line barely moves.</desc><line x1="42" y1="22" x2="42" y2="175" stroke="#DCE2E6"/><line x1="42" y1="175" x2="244" y2="175" stroke="#141B22" stroke-width="1.5"/><polyline points="42,124 244,63" fill="none" stroke="#1F5C8B" stroke-width="3.5"/><circle cx="42" cy="124" r="5" fill="#1F5C8B"/><circle cx="244" cy="63" r="5" fill="#1F5C8B"/><text x="253" y="67" font-size="12.5" font-weight="bold" fill="#1F5C8B">Treatment</text><polyline points="42,129 244,119" fill="none" stroke="#B5540F" stroke-width="3.5"/><circle cx="42" cy="129" r="5" fill="#B5540F"/><circle cx="244" cy="119" r="5" fill="#B5540F"/><text x="253" y="123" font-size="12.5" font-weight="bold" fill="#B5540F">Waitlist</text><text x="42" y="195" text-anchor="middle" font-size="12" fill="#141B22">Pre</text><text x="244" y="195" text-anchor="middle" font-size="12" fill="#141B22">Post</text><text x="12" y="98" font-size="11.5" fill="#5C6773" transform="rotate(-90 12 98)" text-anchor="middle">wellbeing</text></svg></div>
+  <div class="box warn hidden-until">
+    <p class="big" style="font-size:3.2vmin">That cell is the finding. A clinical trial's entire causal claim lives in one interaction.</p>
+    <p class="small">Which is why "interaction trumps main effects" isn't pedantry — it's the difference between "people felt better in November" and "the programme worked."</p>
+  </div>
+</section>
+
+<section>
+  <h1>How it's written</h1>
+  <pre>Wellbeing ~ Time * Group + (1|Participant)</pre>
+  <div class="cols">
+    <div>
+      <p><strong>Fixed effects</strong> — Time, Group, their interaction. The questions you're asking.</p>
+    </div>
+    <div>
+      <p><strong>Random effect</strong> — <code>(1|Participant)</code>. The design's within-ness, formally acknowledged.</p>
+    </div>
+  </div>
+  <p class="hidden-until lead">That last term gets its own section after the break. First: a dataset that should disturb you.</p>
+</section>
+
+<section>
+  <h1>Reading the graph</h1>
+  <p class="big">Two lines over time.</p>
+  <ul>
+    <li><strong>Parallel</strong> — both groups drift alike. No treatment effect, whatever the slopes.</li>
+    <li><strong>Converging or diverging</strong> — the interaction. The finding.</li>
+  </ul>
+  <p class="hidden-until">Once you have this template, intervention studies read at a glance — <em>and so do their abuses</em>. A single improving line with no comparison group is the one-group pretest/posttest again, with better production values.</p>
+</section>
+
+<section data-kind="activity">
+  <p class="kicker">Exercise A · 25 minutes · cloud R</p>
+  <h1>Build Simpson's Paradox</h1>
+  <p class="big">Studying more will make grades <em>worse</em> — while, inside every single department, studying more makes them <em>better</em>.</p>
+  <p class="lead">Both statements, true of the same data.</p>
+  <p class="small">Open <code>L8_simpsons.R</code>.</p>
+  <aside class="notes"><p>Check-in position 2. Hold the pooled scatterplot on screen, with its confident downward line, BEFORE the colours go on. Ask what a news story would say. Then colour by department.</p></aside>
+</section>
+
+<section>
+  <h1>Same data, opposite sign</h1>
+  <table>
+    <tr><th></th><th>Correlation of hours studied with grades</th></tr>
+    <tr><td class="rowhead">All students pooled</td><td class="hidden-until"><strong style="color:var(--do)">−0.67</strong></td></tr>
+    <tr><td class="rowhead">Department A</td><td class="hidden-until">+0.68</td></tr>
+    <tr><td class="rowhead">Department B</td><td class="hidden-until">+0.81</td></tr>
+    <tr><td class="rowhead">Department C</td><td class="hidden-until">+0.63</td></tr>
+  </table>
+  <div class="svgwrap hidden-until"><svg viewBox="0 0 600 235" role="img" aria-labelledby="sp-t sp-d"><title id="sp-t">Simpson's paradox in one dataset</title><desc id="sp-d">Pooled, hours studied and grades are strongly negatively related. Split by department, the relationship is positive inside each of the three departments.</desc><rect x="22" y="34" width="250" height="160" rx="6" fill="#FFFFFF" stroke="#DCE2E6"/><line x1="34" y1="82" x2="260" y2="164" stroke="#5C6773" stroke-width="2.5" opacity=".85"/><circle cx="166.0" cy="179.2" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="228.6" cy="133.2" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="187.6" cy="157.8" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="162.7" cy="158.0" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="145.1" cy="182.0" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="203.8" cy="168.9" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="199.6" cy="148.4" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="183.9" cy="144.5" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="226.8" cy="145.4" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="162.3" cy="157.1" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="190.0" cy="181.1" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="232.1" cy="133.8" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="191.5" cy="159.8" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="217.7" cy="146.4" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="150.8" cy="173.6" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="195.0" cy="146.7" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="215.1" cy="149.0" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="220.4" cy="126.8" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="241.5" cy="160.2" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="236.3" cy="157.7" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="194.2" cy="173.5" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="215.4" cy="139.7" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="235.7" cy="138.5" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="229.6" cy="148.6" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="228.9" cy="152.2" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="200.6" cy="152.6" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="187.7" cy="151.8" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="241.3" cy="132.0" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="238.2" cy="136.5" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="260.0" cy="132.3" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="242.9" cy="143.6" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="183.8" cy="147.2" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="190.3" cy="158.5" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="178.5" cy="164.8" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="220.1" cy="154.5" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="195.1" cy="141.6" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="173.2" cy="165.0" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="224.2" cy="148.8" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="198.2" cy="164.0" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="214.6" cy="147.6" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="134.5" cy="132.2" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="117.9" cy="141.8" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="138.0" cy="117.5" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="156.9" cy="102.8" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="140.4" cy="127.2" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="110.1" cy="132.0" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="116.4" cy="122.8" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="120.3" cy="136.2" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="181.6" cy="102.2" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="177.3" cy="92.7" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="143.9" cy="110.1" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="107.3" cy="156.6" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="119.3" cy="140.5" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="130.7" cy="130.6" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="127.9" cy="132.6" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="153.5" cy="129.9" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="106.1" cy="142.9" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="184.6" cy="106.4" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="157.2" cy="111.2" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="170.3" cy="116.0" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="106.5" cy="142.8" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="128.5" cy="131.2" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="115.0" cy="127.8" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="142.3" cy="116.8" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="152.4" cy="117.1" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="159.5" cy="111.0" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="182.4" cy="114.0" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="140.9" cy="132.8" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="108.9" cy="152.1" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="125.7" cy="110.7" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="131.1" cy="151.2" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="167.2" cy="109.5" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="145.5" cy="126.9" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="112.5" cy="151.0" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="163.7" cy="110.9" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="149.4" cy="109.3" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="138.6" cy="138.6" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="118.4" cy="125.8" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="118.1" cy="138.4" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="115.1" cy="148.0" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="66.4" cy="87.0" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="54.7" cy="102.1" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="63.0" cy="73.9" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="50.0" cy="96.8" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="69.2" cy="93.0" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="40.6" cy="102.1" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="74.5" cy="83.2" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="115.4" cy="86.2" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="34.0" cy="101.2" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="91.3" cy="75.5" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="105.2" cy="77.3" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="85.4" cy="86.5" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="64.2" cy="83.9" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="95.9" cy="96.1" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="59.9" cy="88.6" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="114.7" cy="87.3" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="98.3" cy="85.2" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="86.7" cy="85.1" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="99.5" cy="79.2" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="124.0" cy="63.5" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="49.1" cy="77.2" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="66.9" cy="78.2" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="95.5" cy="94.3" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="70.0" cy="86.4" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="127.9" cy="46.0" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="74.5" cy="102.4" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="73.5" cy="89.8" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="92.0" cy="79.6" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="80.9" cy="81.3" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="126.4" cy="66.1" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="81.3" cy="105.7" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="53.4" cy="101.5" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="84.0" cy="65.8" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="64.9" cy="95.0" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="90.2" cy="65.9" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="69.6" cy="78.9" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="60.9" cy="94.8" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="80.9" cy="84.7" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="57.9" cy="89.6" r="3.1" fill="#5C6773" opacity=".62"/><circle cx="112.6" cy="56.6" r="3.1" fill="#5C6773" opacity=".62"/><text x="147" y="26" text-anchor="middle" font-size="14" font-weight="bold" fill="#141B22">Pooled</text><text x="147" y="211" text-anchor="middle" font-size="12" fill="#5C6773">r = -0.65</text><rect x="304" y="34" width="272" height="160" rx="6" fill="#FFFFFF" stroke="#DCE2E6"/><text x="440" y="26" text-anchor="middle" font-size="14" font-weight="bold" fill="#141B22">By department</text><line x1="438" y1="173" x2="564" y2="134" stroke="#E03131" stroke-width="3"/><circle cx="460.8" cy="179.2" r="2.8" fill="#E03131" opacity=".6"/><circle cx="529.5" cy="133.2" r="2.8" fill="#E03131" opacity=".6"/><circle cx="484.5" cy="157.8" r="2.8" fill="#E03131" opacity=".6"/><circle cx="457.3" cy="158.0" r="2.8" fill="#E03131" opacity=".6"/><circle cx="437.9" cy="182.0" r="2.8" fill="#E03131" opacity=".6"/><circle cx="502.3" cy="168.9" r="2.8" fill="#E03131" opacity=".6"/><circle cx="497.7" cy="148.4" r="2.8" fill="#E03131" opacity=".6"/><circle cx="480.5" cy="144.5" r="2.8" fill="#E03131" opacity=".6"/><circle cx="527.5" cy="145.4" r="2.8" fill="#E03131" opacity=".6"/><circle cx="456.8" cy="157.1" r="2.8" fill="#E03131" opacity=".6"/><circle cx="487.1" cy="181.1" r="2.8" fill="#E03131" opacity=".6"/><circle cx="533.4" cy="133.8" r="2.8" fill="#E03131" opacity=".6"/><circle cx="488.9" cy="159.8" r="2.8" fill="#E03131" opacity=".6"/><circle cx="517.6" cy="146.4" r="2.8" fill="#E03131" opacity=".6"/><circle cx="444.2" cy="173.6" r="2.8" fill="#E03131" opacity=".6"/><circle cx="492.7" cy="146.7" r="2.8" fill="#E03131" opacity=".6"/><circle cx="514.7" cy="149.0" r="2.8" fill="#E03131" opacity=".6"/><circle cx="520.5" cy="126.8" r="2.8" fill="#E03131" opacity=".6"/><circle cx="543.7" cy="160.2" r="2.8" fill="#E03131" opacity=".6"/><circle cx="538.0" cy="157.7" r="2.8" fill="#E03131" opacity=".6"/><circle cx="491.7" cy="173.5" r="2.8" fill="#E03131" opacity=".6"/><circle cx="515.0" cy="139.7" r="2.8" fill="#E03131" opacity=".6"/><circle cx="537.3" cy="138.5" r="2.8" fill="#E03131" opacity=".6"/><circle cx="530.6" cy="148.6" r="2.8" fill="#E03131" opacity=".6"/><circle cx="529.9" cy="152.2" r="2.8" fill="#E03131" opacity=".6"/><circle cx="498.9" cy="152.6" r="2.8" fill="#E03131" opacity=".6"/><circle cx="484.7" cy="151.8" r="2.8" fill="#E03131" opacity=".6"/><circle cx="543.5" cy="132.0" r="2.8" fill="#E03131" opacity=".6"/><circle cx="540.1" cy="136.5" r="2.8" fill="#E03131" opacity=".6"/><circle cx="564.0" cy="132.3" r="2.8" fill="#E03131" opacity=".6"/><circle cx="545.3" cy="143.6" r="2.8" fill="#E03131" opacity=".6"/><circle cx="480.3" cy="147.2" r="2.8" fill="#E03131" opacity=".6"/><circle cx="487.6" cy="158.5" r="2.8" fill="#E03131" opacity=".6"/><circle cx="474.6" cy="164.8" r="2.8" fill="#E03131" opacity=".6"/><circle cx="520.2" cy="154.5" r="2.8" fill="#E03131" opacity=".6"/><circle cx="492.8" cy="141.6" r="2.8" fill="#E03131" opacity=".6"/><circle cx="468.8" cy="165.0" r="2.8" fill="#E03131" opacity=".6"/><circle cx="524.7" cy="148.8" r="2.8" fill="#E03131" opacity=".6"/><circle cx="496.2" cy="164.0" r="2.8" fill="#E03131" opacity=".6"/><circle cx="514.2" cy="147.6" r="2.8" fill="#E03131" opacity=".6"/><line x1="395" y1="144" x2="481" y2="101" stroke="#1F5C8B" stroke-width="3"/><circle cx="426.2" cy="132.2" r="2.8" fill="#1F5C8B" opacity=".6"/><circle cx="408.0" cy="141.8" r="2.8" fill="#1F5C8B" opacity=".6"/><circle cx="430.1" cy="117.5" r="2.8" fill="#1F5C8B" opacity=".6"/><circle cx="450.9" cy="102.8" r="2.8" fill="#1F5C8B" opacity=".6"/><circle cx="432.8" cy="127.2" r="2.8" fill="#1F5C8B" opacity=".6"/><circle cx="399.5" cy="132.0" r="2.8" fill="#1F5C8B" opacity=".6"/><circle cx="406.4" cy="122.8" r="2.8" fill="#1F5C8B" opacity=".6"/><circle cx="410.7" cy="136.2" r="2.8" fill="#1F5C8B" opacity=".6"/><circle cx="477.9" cy="102.2" r="2.8" fill="#1F5C8B" opacity=".6"/><circle cx="473.2" cy="92.7" r="2.8" fill="#1F5C8B" opacity=".6"/><circle cx="436.6" cy="110.1" r="2.8" fill="#1F5C8B" opacity=".6"/><circle cx="396.4" cy="156.6" r="2.8" fill="#1F5C8B" opacity=".6"/><circle cx="409.6" cy="140.5" r="2.8" fill="#1F5C8B" opacity=".6"/><circle cx="422.1" cy="130.6" r="2.8" fill="#1F5C8B" opacity=".6"/><circle cx="419.1" cy="132.6" r="2.8" fill="#1F5C8B" opacity=".6"/><circle cx="447.1" cy="129.9" r="2.8" fill="#1F5C8B" opacity=".6"/><circle cx="395.1" cy="142.9" r="2.8" fill="#1F5C8B" opacity=".6"/><circle cx="481.2" cy="106.4" r="2.8" fill="#1F5C8B" opacity=".6"/><circle cx="451.2" cy="111.2" r="2.8" fill="#1F5C8B" opacity=".6"/><circle cx="465.5" cy="116.0" r="2.8" fill="#1F5C8B" opacity=".6"/><circle cx="395.5" cy="142.8" r="2.8" fill="#1F5C8B" opacity=".6"/><circle cx="419.7" cy="131.2" r="2.8" fill="#1F5C8B" opacity=".6"/><circle cx="404.9" cy="127.8" r="2.8" fill="#1F5C8B" opacity=".6"/><circle cx="434.8" cy="116.8" r="2.8" fill="#1F5C8B" opacity=".6"/><circle cx="445.9" cy="117.1" r="2.8" fill="#1F5C8B" opacity=".6"/><circle cx="453.7" cy="111.0" r="2.8" fill="#1F5C8B" opacity=".6"/><circle cx="478.9" cy="114.0" r="2.8" fill="#1F5C8B" opacity=".6"/><circle cx="433.4" cy="132.8" r="2.8" fill="#1F5C8B" opacity=".6"/><circle cx="398.2" cy="152.1" r="2.8" fill="#1F5C8B" opacity=".6"/><circle cx="416.6" cy="110.7" r="2.8" fill="#1F5C8B" opacity=".6"/><circle cx="422.5" cy="151.2" r="2.8" fill="#1F5C8B" opacity=".6"/><circle cx="462.2" cy="109.5" r="2.8" fill="#1F5C8B" opacity=".6"/><circle cx="438.4" cy="126.9" r="2.8" fill="#1F5C8B" opacity=".6"/><circle cx="402.2" cy="151.0" r="2.8" fill="#1F5C8B" opacity=".6"/><circle cx="458.3" cy="110.9" r="2.8" fill="#1F5C8B" opacity=".6"/><circle cx="442.7" cy="109.3" r="2.8" fill="#1F5C8B" opacity=".6"/><circle cx="430.7" cy="138.6" r="2.8" fill="#1F5C8B" opacity=".6"/><circle cx="408.7" cy="125.8" r="2.8" fill="#1F5C8B" opacity=".6"/><circle cx="408.3" cy="138.4" r="2.8" fill="#1F5C8B" opacity=".6"/><circle cx="405.0" cy="148.0" r="2.8" fill="#1F5C8B" opacity=".6"/><line x1="316" y1="101" x2="419" y2="68" stroke="#0CA678" stroke-width="3"/><circle cx="351.5" cy="87.0" r="2.8" fill="#0CA678" opacity=".6"/><circle cx="338.8" cy="102.1" r="2.8" fill="#0CA678" opacity=".6"/><circle cx="347.8" cy="73.9" r="2.8" fill="#0CA678" opacity=".6"/><circle cx="333.6" cy="96.8" r="2.8" fill="#0CA678" opacity=".6"/><circle cx="354.6" cy="93.0" r="2.8" fill="#0CA678" opacity=".6"/><circle cx="323.3" cy="102.1" r="2.8" fill="#0CA678" opacity=".6"/><circle cx="360.4" cy="83.2" r="2.8" fill="#0CA678" opacity=".6"/><circle cx="405.4" cy="86.2" r="2.8" fill="#0CA678" opacity=".6"/><circle cx="316.0" cy="101.2" r="2.8" fill="#0CA678" opacity=".6"/><circle cx="378.8" cy="75.5" r="2.8" fill="#0CA678" opacity=".6"/><circle cx="394.1" cy="77.3" r="2.8" fill="#0CA678" opacity=".6"/><circle cx="372.4" cy="86.5" r="2.8" fill="#0CA678" opacity=".6"/><circle cx="349.1" cy="83.9" r="2.8" fill="#0CA678" opacity=".6"/><circle cx="383.9" cy="96.1" r="2.8" fill="#0CA678" opacity=".6"/><circle cx="344.4" cy="88.6" r="2.8" fill="#0CA678" opacity=".6"/><circle cx="404.5" cy="87.3" r="2.8" fill="#0CA678" opacity=".6"/><circle cx="386.5" cy="85.2" r="2.8" fill="#0CA678" opacity=".6"/><circle cx="373.8" cy="85.1" r="2.8" fill="#0CA678" opacity=".6"/><circle cx="387.9" cy="79.2" r="2.8" fill="#0CA678" opacity=".6"/><circle cx="414.8" cy="63.5" r="2.8" fill="#0CA678" opacity=".6"/><circle cx="332.6" cy="77.2" r="2.8" fill="#0CA678" opacity=".6"/><circle cx="352.1" cy="78.2" r="2.8" fill="#0CA678" opacity=".6"/><circle cx="383.4" cy="94.3" r="2.8" fill="#0CA678" opacity=".6"/><circle cx="355.5" cy="86.4" r="2.8" fill="#0CA678" opacity=".6"/><circle cx="419.0" cy="46.0" r="2.8" fill="#0CA678" opacity=".6"/><circle cx="360.4" cy="102.4" r="2.8" fill="#0CA678" opacity=".6"/><circle cx="359.3" cy="89.8" r="2.8" fill="#0CA678" opacity=".6"/><circle cx="379.6" cy="79.6" r="2.8" fill="#0CA678" opacity=".6"/><circle cx="367.5" cy="81.3" r="2.8" fill="#0CA678" opacity=".6"/><circle cx="417.4" cy="66.1" r="2.8" fill="#0CA678" opacity=".6"/><circle cx="367.9" cy="105.7" r="2.8" fill="#0CA678" opacity=".6"/><circle cx="337.3" cy="101.5" r="2.8" fill="#0CA678" opacity=".6"/><circle cx="370.8" cy="65.8" r="2.8" fill="#0CA678" opacity=".6"/><circle cx="349.9" cy="95.0" r="2.8" fill="#0CA678" opacity=".6"/><circle cx="377.7" cy="65.9" r="2.8" fill="#0CA678" opacity=".6"/><circle cx="355.1" cy="78.9" r="2.8" fill="#0CA678" opacity=".6"/><circle cx="345.5" cy="94.8" r="2.8" fill="#0CA678" opacity=".6"/><circle cx="367.4" cy="84.7" r="2.8" fill="#0CA678" opacity=".6"/><circle cx="342.3" cy="89.6" r="2.8" fill="#0CA678" opacity=".6"/><circle cx="402.3" cy="56.6" r="2.8" fill="#0CA678" opacity=".6"/><text x="440" y="211" text-anchor="middle" font-size="12" fill="#5C6773">r = +.68, +.81, +.63 &#8212; every department positive</text><text x="147" y="211" text-anchor="middle" font-size="12" fill="#5C6773">hours studied &#8594; grade</text></svg></div>
+  <p class="hidden-until">The trick is that departments differ in <em>two ways at once</em>: some students study more, and those same departments grade harder.</p>
+  <p class="hidden-until big" style="font-size:3vmin">Three positive numbers, one negative number, one dataset. <em>Which one is "the" answer?</em></p>
+</section>
+
+<section>
+  <h1>Neither number is "the" answer</h1>
+  <div class="cols">
+    <div>
+      <p><strong>A student asks:</strong> "Should I study more?"</p>
+      <p class="small">A <em>within</em>-department question. The answer is yes — emphatically.</p>
+    </div>
+    <div>
+      <p><strong>A dean asks:</strong> "If students across the university studied more, would average grades rise?"</p>
+      <p class="small">A <em>between</em>-department question, tangled up with who studies where.</p>
+    </div>
+  </div>
+  <div class="box hidden-until">
+    <p>The paradox isn't that the numbers disagree. It's that we casually assume <strong>one number could answer both questions.</strong></p>
+    <p class="small">The repair is structural: model the grouping. <code>(1|Department)</code> is, quite literally, Simpson insurance.</p>
+  </div>
+  <aside class="notes"><p>The person-level version matters for psychology's soul: a variable's relationship ACROSS people and WITHIN a person are different facts. Most theories are about the within-person one; most data are between-person.</p></aside>
+</section>
+
+<section data-kind="break">
+  <p class="kicker">Break 1 · ten minutes</p>
+  <h1>Check in</h1>
+  <p class="url">radlab.zone/class/psy309</p>
+  <div class="qbox">
+    <p><strong>The material:</strong> what's one idea from the first hour that clicked — and one that didn't?</p>
+    <p><strong>You:</strong> how engaged have you felt so far, and what would help?</p>
+  </div>
+  <aside class="notes"><p>Check-in position 20.</p></aside>
+</section>
+
+<section data-kind="divider">
+  <p class="kicker">Part two</p>
+  <h1>Everyone starts somewhere different</h1>
+</section>
+
+<section>
+  <h1>The picture that explains everything</h1>
+  <p class="lead">Plot each participant's scores across the study as their own thin line. Forty lines.</p>
+  <ul>
+    <li>The lines <strong>start at wildly different heights.</strong> Some people are simply happier, calmer, faster, more anxious — before anyone manipulates anything.</li>
+    <li>The lines <strong>slope more similarly than they start.</strong> Your manipulation's push is usually modest compared to the standing differences between people.</li>
+  </ul>
+  <div class="svgwrap hidden-until"><svg viewBox="0 0 560 210" role="img" aria-labelledby="sg-t sg-d"><title id="sg-t">Forty individual trajectories</title><desc id="sg-d">Each person's line starts at a very different height, but almost all of them rise by a similar small amount.</desc><line x1="60" y1="30" x2="60" y2="170" stroke="#DCE2E6"/><line x1="60" y1="170" x2="500" y2="170" stroke="#141B22" stroke-width="1.5"/><line x1="120" y1="94" x2="440" y2="90" stroke="#1F5C8B" stroke-width="1.6" opacity=".42"/><line x1="120" y1="85" x2="440" y2="77" stroke="#1F5C8B" stroke-width="1.6" opacity=".42"/><line x1="120" y1="139" x2="440" y2="135" stroke="#1F5C8B" stroke-width="1.6" opacity=".42"/><line x1="120" y1="97" x2="440" y2="92" stroke="#1F5C8B" stroke-width="1.6" opacity=".42"/><line x1="120" y1="100" x2="440" y2="96" stroke="#1F5C8B" stroke-width="1.6" opacity=".42"/><line x1="120" y1="82" x2="440" y2="75" stroke="#1F5C8B" stroke-width="1.6" opacity=".42"/><line x1="120" y1="99" x2="440" y2="91" stroke="#1F5C8B" stroke-width="1.6" opacity=".42"/><line x1="120" y1="91" x2="440" y2="86" stroke="#1F5C8B" stroke-width="1.6" opacity=".42"/><line x1="120" y1="93" x2="440" y2="88" stroke="#1F5C8B" stroke-width="1.6" opacity=".42"/><line x1="120" y1="82" x2="440" y2="77" stroke="#1F5C8B" stroke-width="1.6" opacity=".42"/><line x1="120" y1="104" x2="440" y2="99" stroke="#1F5C8B" stroke-width="1.6" opacity=".42"/><line x1="120" y1="76" x2="440" y2="70" stroke="#1F5C8B" stroke-width="1.6" opacity=".42"/><line x1="120" y1="109" x2="440" y2="103" stroke="#1F5C8B" stroke-width="1.6" opacity=".42"/><line x1="120" y1="89" x2="440" y2="83" stroke="#1F5C8B" stroke-width="1.6" opacity=".42"/><line x1="120" y1="92" x2="440" y2="85" stroke="#1F5C8B" stroke-width="1.6" opacity=".42"/><line x1="120" y1="57" x2="440" y2="52" stroke="#1F5C8B" stroke-width="1.6" opacity=".42"/><line x1="120" y1="110" x2="440" y2="106" stroke="#1F5C8B" stroke-width="1.6" opacity=".42"/><line x1="120" y1="88" x2="440" y2="80" stroke="#1F5C8B" stroke-width="1.6" opacity=".42"/><line x1="120" y1="102" x2="440" y2="98" stroke="#1F5C8B" stroke-width="1.6" opacity=".42"/><line x1="120" y1="116" x2="440" y2="109" stroke="#1F5C8B" stroke-width="1.6" opacity=".42"/><line x1="120" y1="85" x2="440" y2="78" stroke="#1F5C8B" stroke-width="1.6" opacity=".42"/><line x1="120" y1="113" x2="440" y2="107" stroke="#1F5C8B" stroke-width="1.6" opacity=".42"/><line x1="120" y1="98" x2="440" y2="91" stroke="#1F5C8B" stroke-width="1.6" opacity=".42"/><line x1="120" y1="83" x2="440" y2="76" stroke="#1F5C8B" stroke-width="1.6" opacity=".42"/><line x1="120" y1="86" x2="440" y2="80" stroke="#1F5C8B" stroke-width="1.6" opacity=".42"/><line x1="120" y1="94" x2="440" y2="87" stroke="#1F5C8B" stroke-width="1.6" opacity=".42"/><line x1="120" y1="129" x2="440" y2="124" stroke="#1F5C8B" stroke-width="1.6" opacity=".42"/><line x1="120" y1="109" x2="440" y2="104" stroke="#1F5C8B" stroke-width="1.6" opacity=".42"/><line x1="120" y1="106" x2="440" y2="97" stroke="#1F5C8B" stroke-width="1.6" opacity=".42"/><line x1="120" y1="117" x2="440" y2="110" stroke="#1F5C8B" stroke-width="1.6" opacity=".42"/><line x1="120" y1="134" x2="440" y2="128" stroke="#1F5C8B" stroke-width="1.6" opacity=".42"/><line x1="120" y1="97" x2="440" y2="90" stroke="#1F5C8B" stroke-width="1.6" opacity=".42"/><line x1="120" y1="86" x2="440" y2="79" stroke="#1F5C8B" stroke-width="1.6" opacity=".42"/><line x1="120" y1="107" x2="440" y2="102" stroke="#1F5C8B" stroke-width="1.6" opacity=".42"/><line x1="120" y1="83" x2="440" y2="77" stroke="#1F5C8B" stroke-width="1.6" opacity=".42"/><line x1="120" y1="126" x2="440" y2="121" stroke="#1F5C8B" stroke-width="1.6" opacity=".42"/><line x1="120" y1="118" x2="440" y2="112" stroke="#1F5C8B" stroke-width="1.6" opacity=".42"/><line x1="120" y1="97" x2="440" y2="90" stroke="#1F5C8B" stroke-width="1.6" opacity=".42"/><line x1="120" y1="109" x2="440" y2="102" stroke="#1F5C8B" stroke-width="1.6" opacity=".42"/><line x1="120" y1="87" x2="440" y2="82" stroke="#1F5C8B" stroke-width="1.6" opacity=".42"/><text x="120" y="188" text-anchor="middle" font-size="12" fill="#141B22">Pre</text><text x="440" y="188" text-anchor="middle" font-size="12" fill="#141B22">Post</text><text x="30" y="100" font-size="11.5" fill="#5C6773" transform="rotate(-90 30 100)" text-anchor="middle">outcome</text><text x="512" y="60" font-size="11.5" fill="#5C6773">baselines</text><text x="512" y="76" font-size="11.5" fill="#5C6773">spread wide</text><text x="512" y="130" font-size="11.5" font-weight="bold" fill="#0CA678">slopes</text><text x="512" y="146" font-size="11.5" font-weight="bold" fill="#0CA678">nearly alike</text></svg></div>
+  <p class="hidden-until big" style="font-size:3vmin">Think of something where people's baselines vary more than any experiment could move them. Almost everything you care about qualifies.</p>
+</section>
+
+<section>
+  <h1>Fixed and random, in one sentence each</h1>
+  <div class="cols">
+    <div>
+      <p><strong>Fixed effects</strong> are the questions you're asking — the average slope, the group difference, the interaction. Assumed to be the same process for everyone; estimated once.</p>
+    </div>
+    <div>
+      <p><strong>Random effects</strong> acknowledge that each participant carries their own baseline. <code>(1|Participant)</code> says: give every person their own intercept, and <em>don't charge those differences against the treatment's account.</em></p>
+    </div>
+  </div>
+  <p class="hidden-until small">That's the examinable core. No <code>lmer()</code> on the test.</p>
+</section>
+
+<section>
+  <h1>What acknowledging baselines buys</h1>
+  <ul>
+    <li><strong>Power.</strong> Baseline differences are usually the biggest source of variance; giving them their own term removes them from the noise your effect must shout over. <span class="small">Same magic as the within-subjects design — expressed as a model instead of a procedure.</span></li>
+    <li class="hidden-until"><strong>Honesty about repeated measures.</strong> Two measurements from the same person are not two independent people. Treating them as such counts evidence twice and shrinks p-values fraudulently.</li>
+    <li class="hidden-until"><strong>Simpson insurance.</strong> Modelling within-person effects separately from between-person differences is exactly the disaggregation you just watched.</li>
+  </ul>
+  <p class="hidden-until small">A paired t-test is secretly a tiny mixed model. So is every "each person is their own control" argument you've met.</p>
+</section>
+
+<section>
+  <h1>Why this is now psychology's default</h1>
+  <p>Once you see <code>(1|Participant)</code>, you see the pattern everywhere: students in classrooms, trials in subjects, patients in clinics, measurements in days.</p>
+  <p class="big hidden-until">Real data comes in clusters whose members resemble each other. The model that admits it wins.</p>
+  <p class="small hidden-until">You won't fit these this term. But when your thesis dataset arrives with repeated measures — and it will — you'll recognize the shape and know why the analysis looks like that.</p>
+</section>
+
+<section data-kind="activity">
+  <p class="kicker">Exercise B · 25 minutes · Test 2 prep</p>
+  <h1>Sort the third variable</h1>
+  <p class="big">Ten scenarios. Mediator, moderator, or confound?</p>
+  <div class="cols">
+    <div>
+      <p><strong>The mnemonic:</strong><br>
+      Moderation = <em>when / for whom</em><br>
+      Mediation = <em>why</em><br>
+      Confound = <em>controlling for</em></p>
+    </div>
+    <div>
+      <div class="box warn">
+        <p><strong>The test that decides it — the arrows:</strong></p>
+        <p class="small">Mediator: receives an arrow from X.<br>
+        Confound: sends arrows to both X and Y, receives none.<br>
+        Moderator: receives nothing; changes the size of X→Y across its own levels.</p>
+      </div>
+    </div>
+  </div>
+  <p class="small">Vote first, justify second. Five rounds of two.</p>
+  <aside class="notes"><p>Check-in position 3 — this quiz DOES have an answer key; reveal after each round. Budget the last eight minutes for items 9 and 10.</p></aside>
+</section>
+
+<section>
+  <p class="kicker">The two that matter</p>
+  <h1>Item 9 — the expensive mistake</h1>
+  <p>Poverty predicts poorer health. A researcher notes poverty produces <strong>chronic stress</strong>, controls for chronic stress, finds the poverty–health link shrinks sharply, and concludes poverty matters less than believed.</p>
+  <p class="hidden-until big" style="color:var(--do)">Chronic stress is a <em>mediator</em> being treated as a confound.</p>
+  <p class="hidden-until">Controlling it away doesn't purify the estimate — it amputates the explanation and then reports the effect as small. With real policy consequences.</p>
+  <p class="small hidden-until">What should they have run instead? A mediation analysis: how much of poverty's effect travels <em>through</em> stress.</p>
+</section>
+
+<section>
+  <p class="kicker">The two that matter</p>
+  <h1>Item 10 — the honest complication</h1>
+  <p>Students who attend office hours earn better grades. <strong>Conscientiousness</strong> predicts attending office hours — and studying more, submitting on time, asking for help.</p>
+  <p class="hidden-until">Confound. <em>But push on it:</em> if conscientious students <em>benefit more</em> from office hours than others do, it's also a moderator.</p>
+  <div class="box hidden-until">
+    <p class="big" style="font-size:3vmin">A variable's role is a claim about causal structure, not a property of the variable.</p>
+    <p>The same variable can play different roles in different questions. Which is why the arrows are the whole game.</p>
+  </div>
+</section>
+
+<section data-kind="break">
+  <p class="kicker">Break 2 · ten minutes</p>
+  <h1>Check in</h1>
+  <p class="url">radlab.zone/class/psy309</p>
+  <div class="qbox">
+    <p><strong>The material:</strong> what's one question you still have about today, now that you've worked with it?</p>
+    <p><strong>You:</strong> how has your engagement changed since the first break — and what changed it?</p>
+  </div>
+  <aside class="notes"><p>Check-in position 40.</p></aside>
+</section>
+
+<section data-kind="divider">
+  <p class="kicker">Part three</p>
+  <h1>Test 2</h1>
+</section>
+
+<section>
+  <h1>What's on it, and what earns marks</h1>
+  <div class="cols">
+    <div>
+      <p><strong>Focus: weeks 6–10.</strong> Describing data, effect sizes, CIs, power · experiments and their threats · factorial designs and interactions · quasi-experiments and small-N · mixed models, at the level of the last hour.</p>
+      <p class="small">Earlier material can reappear — especially the claims and validities.</p>
+    </div>
+    <div>
+      <div class="box">
+        <p><strong>Reliably present question families:</strong></p>
+        <p class="small">· Read a 2 × 2 grid, name the effects<br>
+        · A study finds no difference — give three distinct reasons<br>
+        · Sort a third variable, <em>with the arrows</em><br>
+        · Name the specific threat in a scenario and the design feature that fixes it</p>
+      </div>
+    </div>
+  </div>
+  <p class="hidden-until"><strong>Precision is the currency.</strong> "Selection effect from self-selected groups" beats "something's off about the groups" — every time, by a mark.</p>
+  <aside class="notes"><p>Check-in position 4 for questions. Then work one short-answer live on the board, out loud, showing how you'd earn each point. That demonstration is worth more than any list of tips.</p></aside>
+</section>
+
+<section data-kind="break">
+  <p class="kicker">Last thing</p>
+  <h1>Check out</h1>
+  <p class="url">radlab.zone/class/psy309</p>
+  <div class="qbox">
+    <p>Question box — test questions especially. Good luck Tuesday. After that: what happens when a whole field checks its own work.</p>
+  </div>
+</section>
+
+</div>
+<div id="bar"></div><div id="num"></div><div id="clock"></div>
+<div id="help"><kbd>→</kbd> next · <kbd>←</kbd> back · <kbd>f</kbd> fullscreen · <kbd>n</kbd> notes<br><kbd>o</kbd> overview · <kbd>t</kbd> timer · <kbd>?</kbd> help</div>
+<script src="./slides.js"></script>
+</body>
+</html>

@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PSY309 · L12 · Poster Review Day</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&family=Source+Sans+3:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="./slides.css">
+</head>
+<body>
+<div id="deck">
+
+<section data-kind="title">
+  <p class="kicker">PSY309H5 F · Lecture 10 · 1 December 2026</p>
+  <h1>Poster Review Day</h1>
+  <p class="lead">You're the reviewers now</p>
+  <p class="small" style="margin-top:3vmin">Last class. <strong>Peer review due Friday. Final paper due Tuesday 8 Dec.</strong></p>
+</section>
+
+<section>
+  <p class="kicker">Check in</p>
+  <h1>How today works</h1>
+  <p class="url" style="font-family:'JetBrains Mono',monospace;font-size:3vmin;color:var(--accent);font-weight:600">radlab.zone/class/psy309</p>
+  <ol>
+    <li><strong>Calibration</strong> — we all review the same poster and argue about the numbers (20 min)</li>
+    <li><strong>Peer review</strong> — your five assigned posters, here, with TAs around (60 min)</li>
+    <li><strong>The final paper</strong> — section by section, and the RMarkdown mechanics</li>
+  </ol>
+  <aside class="notes"><p>Check-in position 1. Calibration and peer review come FIRST — peer review has a hard deadline and benefits from everyone doing it in the same room while calibration is fresh. Do not reverse this.</p></aside>
+</section>
+
+<section data-kind="divider">
+  <p class="kicker">Part one</p>
+  <h1>What does a 7 mean?</h1>
+</section>
+
+<section>
+  <h1>Why we calibrate before we grade</h1>
+  <p>Five randomly assigned classmates determine about <strong>half</strong> of each poster's grade.</p>
+  <p class="big hidden-until">Those five have never agreed on what a 7 means.</p>
+  <div class="box hidden-until">
+    <p>Pooling only helps if the raters are measuring the same thing. Otherwise you're averaging noise and calling it a grade.</p>
+    <p><strong>In week 3 you computed interrater reliability as an abstraction.</strong> Today you <em>are</em> the raters, the stakes are your classmates' marks, and the same statistic decides whether this is fair.</p>
+  </div>
+  <aside class="notes"><p>Say this out loud before starting. It converts the exercise from an administrative warm-up into the term's closing argument.</p></aside>
+</section>
+
+<section data-kind="activity">
+  <p class="kicker">Everyone, same poster · 8 minutes</p>
+  <h1>Review this one</h1>
+  <p class="big">Score <strong>engaging</strong> and <strong>informative</strong>, each out of 10. One strength, one improvement.</p>
+  <p class="url" style="font-family:'JetBrains Mono',monospace;font-size:3vmin;color:var(--do);font-weight:600">radlab.zone/class/psy309</p>
+  <p class="small">Same task as the real thing. Be as specific as you'd want a reviewer to be about yours.</p>
+  <aside class="notes"><p>Check-in position 2. Play the calibration poster in full before opening the check-in — five minutes of watching, then eight of scoring.</p></aside>
+</section>
+
+<section>
+  <h1>Look at the spread</h1>
+  <p class="big hidden-until">Same poster. Scores from about 4 to 9.</p>
+  <ul class="hidden-until">
+    <li>Who gave it a 9? <em>Say why.</em></li>
+    <li>Who gave it a 5? <em>Say why.</em></li>
+  </ul>
+  <div class="box warn hidden-until">
+    <p class="big" style="font-size:3.2vmin">Are you disagreeing about the <em>poster</em>, or about what the <em>numbers</em> mean?</p>
+    <p>Almost always the second. That distinction is the entire content of interrater reliability — discovered, rather than defined.</p>
+  </div>
+  <aside class="notes"><p>Take the 9 first, then the 5. Let them hear each other's reasoning before you put the rubric up.</p></aside>
+</section>
+
+<section>
+  <h1>What the numbers mean — agreed, now</h1>
+  <table>
+    <tr><th>Score</th><th>Engaging</th><th>Informative</th></tr>
+    <tr><td class="rowhead">9–10</td><td>I'd stop at this poster at a conference and stay for the whole thing</td><td>I could explain their design, result and its limits to someone else afterwards</td></tr>
+    <tr><td class="rowhead">7–8</td><td>Held my attention; clear hook, clean figure</td><td>I understood the study; one or two things I'd ask about</td></tr>
+    <tr><td class="rowhead">5–6</td><td>I followed it, but drifted; dense or flat in places</td><td>The claim is there but the design or numbers are hazy</td></tr>
+    <tr><td class="rowhead">3–4</td><td>Hard to stay with; text-heavy or disorganized</td><td>I can't reconstruct what they did</td></tr>
+    <tr><td class="rowhead">1–2</td><td>I stopped paying attention</td><td>I don't know what was studied</td></tr>
+  </table>
+  <aside class="notes"><p>Leave this slide up for the whole peer-review block — press 'o' to come back to it if you navigate away.</p></aside>
+</section>
+
+<section>
+  <h1>Two rules before you start</h1>
+  <ul>
+    <li><strong>Judge the communication, not the result.</strong> A modest or null-shaped finding presented honestly can outscore an oversold one. You've spent a term learning what over-claiming looks like — this is where that counts.</li>
+    <li><strong>Use the range.</strong> Scoring everything an 8 isn't kindness, it's abdication — and it's visible, since divergent scores get checked against the group average.</li>
+  </ul>
+  <p class="hidden-until small">Your own peer-review grade depends on being <em>useful</em>: specific comments, defensible scores. Not harsh, not generous — useful.</p>
+</section>
+
+<section data-kind="activity">
+  <p class="kicker">60 minutes · the real thing</p>
+  <h1>Your five posters</h1>
+  <div class="cols">
+    <div>
+      <p>On Quercus. For each:</p>
+      <ul>
+        <li>Watch it properly — it's five minutes, give it five minutes</li>
+        <li>Score engaging and informative</li>
+        <li><strong>One specific strength</strong></li>
+        <li><strong>One constructive improvement</strong></li>
+      </ul>
+    </div>
+    <div>
+      <div class="box warn">
+        <p><strong>"Great job!" is not a comment.</strong> What, exactly, worked?</p>
+        <p><strong>Criticize the poster, not the study.</strong> "Their sample was small" → did the poster <em>acknowledge</em> that limitation?</p>
+      </div>
+    </div>
+  </div>
+  <p class="small">Anonymous to the author. Be honest — and remember anonymity is for candour, not cruelty.</p>
+  <aside class="notes"><p>Circulate and read over shoulders for the two failure modes. Due Friday 11:59pm; the expectation is about an hour of class time.</p></aside>
+</section>
+
+<section data-kind="break">
+  <p class="kicker">Break 1 · ten minutes</p>
+  <h1>Check in</h1>
+  <p class="url">radlab.zone/class/psy309</p>
+  <div class="qbox">
+    <p><strong>The material:</strong> what's one idea from reviewing that clicked — and one that didn't?</p>
+    <p><strong>You:</strong> how engaged have you felt so far, and what would help?</p>
+  </div>
+  <aside class="notes"><p>Check-in position 20.</p></aside>
+</section>
+
+<section data-kind="divider">
+  <p class="kicker">Part two</p>
+  <h1>The last thing you'll write</h1>
+</section>
+
+<section>
+  <h1>The final paper, section by section</h1>
+  <div class="cols">
+    <div>
+      <p><strong>Introduction</strong> (~500–1000 words). A funnel. Introduce IV, DV, covariate and the literature linking them. The last paragraph states your purpose and <em>names your operationalized variables</em>.</p>
+      <p><strong>Method.</strong> Subheadings: Participants, Materials, Procedure, Statistical Analyses. Enough detail to recreate the simulated data — or actually run the study.</p>
+    </div>
+    <div>
+      <p><strong>Results.</strong> Under subheadings: figure with caption → the statistics → a plain-sentence interpretation linking numbers to figure. Effect sizes and intervals, not just tests. Say <em>why</em> each follow-up analysis is run.</p>
+      <p><strong>Discussion.</strong> Interpret against your introduction's literature. Then the honesty budget.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h1>The discussion is where the term pays off</h1>
+  <ul>
+    <li>Which <strong>validities</strong> did your design trade away?</li>
+    <li>Your <strong>constraints on generality</strong> — who, where, when should this hold?</li>
+    <li>What did <strong>categorizing your continuous covariate</strong> add — and what did it cost — compared with keeping it continuous?</li>
+  </ul>
+  <p class="hidden-until big" style="font-size:3vmin">Naming your own study's limits precisely is not weakness. It's the thing that separates a research paper from an advertisement.</p>
+</section>
+
+<section>
+  <h1>RMarkdown, in practice</h1>
+  <ul>
+    <li><strong>Show the analysis code</strong> — it's part of the science being demonstrated.</li>
+    <li><strong>Hide the plumbing</strong> — figure-generation and wrangling can run with <code>echo=FALSE</code>; describe the process in the Method.</li>
+    <li><strong>Set a seed.</strong> Every knit reproduces identical numbers.</li>
+    <li><strong>Knit early and often.</strong></li>
+  </ul>
+  <div class="box warn hidden-until">
+    <p>The classic disaster is a document that knits on Monday and dies at 11:40pm Thursday over an image path or a missing package.</p>
+    <p><strong>Watch:</strong> I'm going to break one now and fix it in front of you.</p>
+  </div>
+  <aside class="notes"><p>Actually do this live — open a minimal .Rmd, knit to .docx, break it (bad image path), fix it. Two minutes, worth more than any slide saying "knit early."</p></aside>
+</section>
+
+<section>
+  <h1>Reuse is the design, not an offence</h1>
+  <p class="big">Your practicals were the paper, drafted in five instalments.</p>
+  <p>P1 stated the question. P2 fixed the measures. P3 the manipulation and covariate. P4–P5 the predicted effects and the analysis plan.</p>
+  <p class="hidden-until lead">You have been writing a preregistration all term. Now you run it.</p>
+  <p class="hidden-until"><strong>Revision is expected</strong> — the practicals were written toward feedback, the paper toward a reader. But you're assembling and polishing, not starting over. Plagiarism rules govern <em>other people's</em> words. Your own prior work in this course is yours to build with.</p>
+  <aside class="notes"><p>Say this explicitly and out loud. Students ask it every single year, and the ones who don't ask sometimes rewrite everything from scratch for no reason.</p></aside>
+</section>
+
+<section data-kind="break">
+  <p class="kicker">Break 2 · ten minutes</p>
+  <h1>Check in</h1>
+  <p class="url">radlab.zone/class/psy309</p>
+  <div class="qbox">
+    <p><strong>The material:</strong> what's one question you still have about the final paper?</p>
+    <p><strong>You:</strong> how has your engagement changed since the first break — and what changed it?</p>
+  </div>
+  <aside class="notes"><p>Check-in position 40.</p></aside>
+</section>
+
+<section data-kind="activity">
+  <p class="kicker">Open work · until 11:45</p>
+  <h1>Finish something while help is in the room</h1>
+  <ul>
+    <li>Finish your peer reviews</li>
+    <li>Knit your paper skeleton — <em>today</em>, not Monday</li>
+    <li>Ask the question you've been saving</li>
+  </ul>
+  <p class="small">TAs circulating. This is the last time this room, these people, and this help are in the same place.</p>
+  <aside class="notes"><p>Check-in position 3 (question box).</p></aside>
+</section>
+
+<section>
+  <h1>Deadlines, plainly</h1>
+  <table>
+    <tr><th>When</th><th>What</th></tr>
+    <tr><td class="rowhead">Friday 4 Dec, 11:59pm</td><td>Peer review (5 posters)</td></tr>
+    <tr><td class="rowhead">Tuesday 8 Dec, 11:59pm</td><td><strong>Final paper</strong> — knitted .docx, on Quercus</td></tr>
+    <tr><td class="rowhead">—</td><td><strong>There is no final exam.</strong> You're done when the paper is in.</td></tr>
+  </table>
+  <p class="small">Late penalty 10% per calendar day. If something goes wrong, email me <em>before</em> the deadline, not three weeks after.</p>
+</section>
+
+<section>
+  <h1>One last thing</h1>
+  <p class="big">In September you could read a headline.</p>
+  <p class="big hidden-until">Now you can find the study behind it, name what kind of claim it's making, work out whether the design can pay for it, notice what the sample won't carry, design a study of your own, simulate it, analyse it, and say honestly what it can't tell you.</p>
+  <p class="lead hidden-until">And this morning you did the last part of the job — you judged someone else's science, carefully, on criteria you agreed on out loud.</p>
+  <p class="hidden-until big" style="color:var(--accent)">That's the whole thing. Thank you — it's been a genuine pleasure.</p>
+  <aside class="notes"><p>Do the logistics BEFORE this slide so the course doesn't end on a deadline. Then say this, and mean it, and let them go.</p></aside>
+</section>
+
+<section data-kind="break">
+  <p class="kicker">Check out</p>
+  <h1>Last one</h1>
+  <p class="url">radlab.zone/class/psy309</p>
+  <div class="qbox">
+    <p>What's the most useful thing you learned in this course — and what should I change for next year?</p>
+  </div>
+  <p class="small" style="margin-top:2vmin;color:#9AA8B4">I read all of these. Several things in this course exist because a student wrote one.</p>
+  <aside class="notes"><p>Check-in position 4. The last claim is true — make sure it stays true.</p></aside>
+</section>
+
+</div>
+<div id="bar"></div><div id="num"></div><div id="clock"></div>
+<div id="help"><kbd>→</kbd> next · <kbd>←</kbd> back · <kbd>f</kbd> fullscreen · <kbd>n</kbd> notes<br><kbd>o</kbd> overview · <kbd>t</kbd> timer · <kbd>?</kbd> help</div>
+<script src="./slides.js"></script>
+</body>
+</html>

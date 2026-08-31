@@ -95,7 +95,7 @@ const S = {
   },
   heading: { fontSize: 20, fontWeight: 600, color: 'var(--tx)', margin: '0 0 16px' },
   note: {
-    fontSize: 13, color: 'var(--tx3)', margin: '12px 0 0', textAlign: 'center',
+    fontSize: 14, color: 'var(--tx3)', margin: '12px 0 0', textAlign: 'center',
   },
   btn: {
     display: 'block', width: '100%', marginTop: 16,

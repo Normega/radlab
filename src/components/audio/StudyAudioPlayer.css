@@ -185,7 +185,7 @@
 
 .sap-time {
   font-family: 'Space Mono', monospace;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   color: #abadb0;
   white-space: nowrap;
   min-width: 3.5ch;
@@ -198,6 +198,6 @@
 
 .sap-time-sep {
   font-family: 'Space Mono', monospace;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   color: rgba(171, 173, 176, 0.5);
 }

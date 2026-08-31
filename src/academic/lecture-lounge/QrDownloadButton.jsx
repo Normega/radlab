@@ -52,5 +52,5 @@ export default function QrDownloadButton({ value, filename, size = 512, label = 
 }
 
 const S = {
-  btn: { background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: 'var(--tx2)', padding: 0, fontFamily: '"DM Sans",system-ui,sans-serif' },
+  btn: { background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: 'var(--tx2)', padding: 0, fontFamily: '"DM Sans",system-ui,sans-serif' },
 }

@@ -109,7 +109,7 @@ const S = {
     display: 'flex', flexDirection: 'column', gap: 24, alignItems: 'flex-start',
   },
   eyebrow: {
-    fontFamily: MONO, fontSize: 11, letterSpacing: '0.12em',
+    fontFamily: MONO, fontSize: 12, letterSpacing: '0.12em',
     textTransform: 'uppercase', color: 'var(--pk)', margin: 0,
   },
   title: {
@@ -137,12 +137,12 @@ const S = {
   btn: {
     padding: '13px 32px', borderRadius: 12,
     background: 'var(--pk)', color: '#fff', border: 'none',
-    fontFamily: MONO, fontSize: 13, fontWeight: 700, letterSpacing: '0.05em',
+    fontFamily: MONO, fontSize: 14, fontWeight: 700, letterSpacing: '0.05em',
     cursor: 'pointer', boxShadow: '0 4px 20px rgba(240,104,164,0.35)',
     transition: 'opacity 0.15s',
   },
   err: {
-    fontSize: 13, color: '#e04', background: '#fff0f0',
+    fontSize: 14, color: '#e04', background: '#fff0f0',
     border: '1px solid #fcc', borderRadius: 8, padding: '10px 16px', margin: 0,
   },
 }

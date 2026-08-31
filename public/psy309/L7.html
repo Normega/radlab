@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PSY309 · L7 · Research Designs</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&family=Source+Sans+3:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="./slides.css">
+</head>
+<body>
+<div id="deck">
+
+<section data-kind="title">
+  <p class="kicker">PSY309H5 F · Lecture 6 · 20 October 2026</p>
+  <h1>Research Designs</h1>
+  <p class="lead">The machine that buys causal claims</p>
+  <p class="small" style="margin-top:3vmin">Reading week is next. <strong>Practical 4 is due the Friday you get back.</strong></p>
+</section>
+
+<section>
+  <p class="kicker">Check in</p>
+  <h1>Open the dashboard</h1>
+  <p class="url" style="font-family:'JetBrains Mono',monospace;font-size:3.4vmin;color:var(--accent);font-weight:600">radlab.zone/class/psy309</p>
+  <p class="lead">Two weeks ago you built a fake correlation out of a confound and asked: what do you do about the C you never measured?</p>
+  <p class="big hidden-until">Today's answer.</p>
+  <aside class="notes"><p>Check-in position 1.</p></aside>
+</section>
+
+<section data-kind="divider">
+  <p class="kicker">Part one</p>
+  <h1>Three debts, and who pays them</h1>
+</section>
+
+<section>
+  <h1>What "A causes B" owes you</h1>
+  <ul>
+    <li><strong>Covariance</strong> — A and B travel together. <span class="small">Any correlation can pay this.</span></li>
+    <li><strong>Temporal precedence</strong> — A comes before B. <span class="small">Longitudinal designs can partly pay this.</span></li>
+    <li><strong>Internal validity</strong> — nothing else explains the link. <span class="small">Correlational research can chip away, never retire it — you cannot control for what you didn't measure.</span></li>
+  </ul>
+  <p class="big hidden-until">The experiment pays all three, with two structural moves.</p>
+</section>
+
+<section>
+  <p class="kicker">Move one</p>
+  <h1>Manipulation</h1>
+  <p class="big">You <em>set</em> the causal variable instead of measuring it.</p>
+  <p class="lead">Assign this participant to caffeine, that one to decaf.</p>
+  <div class="box hidden-until">
+    <p><strong>This buys temporal precedence outright.</strong> You created A at a known moment, then measured B after it.</p>
+    <p>No cross-lagged inference. No "which came first." You were there — you did it.</p>
+  </div>
+</section>
+
+<section>
+  <p class="kicker">Move two · the crown jewel</p>
+  <h1>Random assignment</h1>
+  <p>Any pre-existing difference between your groups — age, personality, sleep, wealth, genetics, <em>things nobody has named</em> — is a potential selection effect.</p>
+  <div class="box hidden-until">
+    <p class="big" style="font-size:3.2vmin">A coin flip severs <strong>every one of those links at once.</strong></p>
+    <p>Whatever a person brings with them, chance distributes it evenly across conditions — <em>on average</em>. Any single randomization can be unlucky; the <em>procedure</em> has no systematic direction.</p>
+  </div>
+  <div class="svgwrap hidden-until"><svg viewBox="0 0 620 230" role="img" aria-labelledby="ra-t ra-d">
+<title id="ra-t">What random assignment does to pre-existing differences</title>
+<desc id="ra-d">On the left, self-selection lets many background variables travel with the condition. On the right, a coin flip cuts every one of those links at once.</desc>
+<rect x="10" y="26" width="290" height="182" rx="10" fill="#FFF5F5" stroke="#E03131" stroke-width="2"/>
+<text x="155" y="48" text-anchor="middle" font-size="14" font-weight="bold" fill="#E03131">SELF-SELECTED</text>
+<rect x="34" y="60" width="90" height="30" rx="15" fill="#FFFFFF" stroke="#E03131"/><text x="79" y="80" text-anchor="middle" font-size="11.5" fill="#E03131">motivation</text>
+<rect x="34" y="98" width="90" height="30" rx="15" fill="#FFFFFF" stroke="#E03131"/><text x="79" y="118" text-anchor="middle" font-size="11.5" fill="#E03131">sleep</text>
+<rect x="34" y="136" width="90" height="30" rx="15" fill="#FFFFFF" stroke="#E03131"/><text x="79" y="156" text-anchor="middle" font-size="11.5" fill="#E03131">? unknown</text>
+<circle cx="228" cy="113" r="34" fill="#E7F0F7" stroke="#1F5C8B" stroke-width="2"/>
+<text x="228" y="110" text-anchor="middle" font-size="12" font-weight="bold" fill="#1F5C8B">CONDITION</text>
+<text x="228" y="126" text-anchor="middle" font-size="11" fill="#5C6773">&#8594; outcome</text>
+<line x1="126" y1="75" x2="192" y2="100" stroke="#E03131" stroke-width="2.5"/><line x1="126" y1="113" x2="192" y2="108" stroke="#E03131" stroke-width="2.5"/><line x1="126" y1="151" x2="192" y2="116" stroke="#E03131" stroke-width="2.5"/>
+<text x="155" y="196" text-anchor="middle" font-size="11.5" fill="#E03131">everything they brought rides along</text>
+
+<rect x="320" y="26" width="290" height="182" rx="10" fill="#E3FAF3" stroke="#0CA678" stroke-width="2"/>
+<text x="465" y="48" text-anchor="middle" font-size="14" font-weight="bold" fill="#0CA678">RANDOMLY ASSIGNED</text>
+<rect x="344" y="60" width="90" height="30" rx="15" fill="#FFFFFF" stroke="#DCE2E6"/><text x="389" y="80" text-anchor="middle" font-size="11.5" fill="#5C6773">motivation</text>
+<rect x="344" y="98" width="90" height="30" rx="15" fill="#FFFFFF" stroke="#DCE2E6"/><text x="389" y="118" text-anchor="middle" font-size="11.5" fill="#5C6773">sleep</text>
+<rect x="344" y="136" width="90" height="30" rx="15" fill="#FFFFFF" stroke="#DCE2E6"/><text x="389" y="156" text-anchor="middle" font-size="11.5" fill="#5C6773">? unknown</text>
+<circle cx="538" cy="113" r="34" fill="#E7F0F7" stroke="#1F5C8B" stroke-width="2"/>
+<text x="538" y="110" text-anchor="middle" font-size="12" font-weight="bold" fill="#1F5C8B">CONDITION</text>
+<text x="538" y="126" text-anchor="middle" font-size="11" fill="#5C6773">&#8594; outcome</text>
+<line x1="436" y1="75" x2="502" y2="100" stroke="#DCE2E6" stroke-width="2" stroke-dasharray="3,5"/><line x1="436" y1="113" x2="502" y2="108" stroke="#DCE2E6" stroke-width="2" stroke-dasharray="3,5"/><line x1="436" y1="151" x2="502" y2="116" stroke="#DCE2E6" stroke-width="2" stroke-dasharray="3,5"/>
+<g><line x1="462" y1="80" x2="478" y2="96" stroke="#0CA678" stroke-width="3"/><line x1="478" y1="80" x2="462" y2="96" stroke="#0CA678" stroke-width="3"/></g><g><line x1="462" y1="118" x2="478" y2="134" stroke="#0CA678" stroke-width="3"/><line x1="478" y1="118" x2="462" y2="134" stroke="#0CA678" stroke-width="3"/></g><g><line x1="462" y1="156" x2="478" y2="172" stroke="#0CA678" stroke-width="3"/><line x1="478" y1="156" x2="462" y2="172" stroke="#0CA678" stroke-width="3"/></g>
+<text x="465" y="196" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#0CA678">every link cut at once &#8212; even the unnamed one</text>
+</svg></div>
+  <p class="hidden-until lead">This is why one experiment can outrank a hundred regressions. Regression evicts the third variables someone thought to measure. <strong>Random assignment evicts them all — including the unimagined ones.</strong></p>
+  <aside class="notes"><p>Say this slowly. Five minutes of talking, not a bullet. Explicitly connect back to the L4 R exercise: you removed a confound because you knew to measure C. This handles the ones you don't know about.</p></aside>
+</section>
+
+<section>
+  <h1>Two randoms, never blur them</h1>
+  <table>
+    <tr><th></th><th>Governs</th><th>Buys</th></tr>
+    <tr><td class="rowhead">Random <strong>sampling</strong></td><td>Who gets <em>in</em></td><td>External validity</td></tr>
+    <tr><td class="rowhead">Random <strong>assignment</strong></td><td>Who gets <em>which condition</em></td><td>Internal validity</td></tr>
+  </table>
+  <p class="hidden-until">Independent: a study can have both, either, or neither. A convenience sample, randomly assigned, supports a causal claim about <em>somebody</em> while leaving "about whom?" open.</p>
+</section>
+
+<section>
+  <h1>The comparison group is not optional</h1>
+  <p class="big">An experiment without one is personal experience wearing a lab coat.</p>
+  <p>"Everyone improved after the intervention" means nothing without knowing what happened to people who didn't get it.</p>
+  <ul class="hidden-until">
+    <li><strong>No-treatment control</strong></li>
+    <li><strong>Placebo control</strong> — everything except the active ingredient</li>
+    <li><strong>Another active condition</strong> — "compared to the current best method," often the more interesting question</li>
+  </ul>
+  <p class="hidden-until"><strong>Choosing the comparison is choosing the claim.</strong> Caffeine-vs-decaf and caffeine-vs-nothing answer different questions.</p>
+</section>
+
+<section>
+  <h1>Three job titles</h1>
+  <div class="cols">
+    <div>
+      <p><strong>IV</strong> — what you manipulate. Its levels are the <em>conditions</em>. Caffeine/decaf is one IV with two conditions, not two IVs.</p>
+      <p><strong>DV</strong> — what you measure. Everything from the measurement weeks applies: reliability, validity, scale.</p>
+    </div>
+    <div>
+      <p><strong>Control variables</strong> — what you hold constant. Same room, same time, same script.</p>
+      <div class="box warn hidden-until">
+        <p>A <strong>control variable</strong> (held constant) is not a <strong>control group</strong> (a level of the IV). The group experiences a condition; control variables experience nothing at all.</p>
+      </div>
+    </div>
+  </div>
+  <p class="small hidden-until"><strong>Manipulation check:</strong> did your "stress condition" actually make anyone stressed? Its absence is a standing weakness to flag.</p>
+</section>
+
+<section data-kind="break">
+  <p class="kicker">Break 1 · ten minutes</p>
+  <h1>Check in</h1>
+  <p class="url">radlab.zone/class/psy309</p>
+  <div class="qbox">
+    <p><strong>The material:</strong> what's one idea from the first hour that clicked — and one that didn't?</p>
+    <p><strong>You:</strong> how engaged have you felt so far, and what would help?</p>
+  </div>
+  <aside class="notes"><p>Check-in position 20.</p></aside>
+</section>
+
+<section data-kind="activity">
+  <p class="kicker">Exercise · 30 minutes</p>
+  <h1>Break This Study</h1>
+  <p class="big">A protocol with five things wrong with it. Find them.</p>
+  <div class="cols">
+    <div>
+      <p>For each problem:</p>
+      <ol>
+        <li><strong>Name it precisely</strong> — the technical term</li>
+        <li>Which validity it threatens</li>
+        <li>How you'd fix it</li>
+      </ol>
+    </div>
+    <div>
+      <div class="box warn">
+        <p><strong>Scoring:</strong> 1 point per fault found. <strong>2 points if named precisely.</strong></p>
+        <p class="small">"Something's off about the groups" = 1.<br>"Selection effect from self-selected sessions" = 2.</p>
+      </div>
+    </div>
+  </div>
+  <aside class="notes"><p>Check-in position 2, 20-minute countdown. The protocol is on Quercus. Announce the scoring up front — it is the cheapest way to move a class from vague critique to the vocabulary the test rewards.</p></aside>
+</section>
+
+<section>
+  <h2>Does background music improve studying?</h2>
+  <p class="small">60 students from a third-year psych course signed up via a shared sheet listing two sessions and chose whichever suited their timetable. The <strong>Tuesday 9am</strong> session became the <em>music</em> group (n = 31); <strong>Thursday 4pm</strong> became <em>silence</em> (n = 29).</p>
+  <p class="small">The music group studied in the department lounge — sofas, natural light — with instrumental music. The silence group used a standard classroom. Same chapter, 30 minutes.</p>
+  <p class="small">After studying, a 10-question quiz written by the researcher. Mean <strong>9.1 / 10</strong>; 22 participants scored a perfect 10.</p>
+  <p class="small">The researcher ran both sessions, greeted participants, <strong>explained the hypothesis that "music helps you focus,"</strong> and marked the quizzes.</p>
+  <p class="small"><strong>Result:</strong> music 9.4 vs silence 8.8, p = .04. Conclusion: install speakers in study spaces university-wide.</p>
+  <aside class="notes"><p>Leave this on screen for the full 20 minutes. Circulate. Don't confirm finds — say "write it down precisely."</p></aside>
+</section>
+
+<section>
+  <h1>The five</h1>
+  <ol>
+    <li class="hidden-until"><strong>Selection effect</strong> — participants chose their session. 9am people differ from 4pm people.</li>
+    <li class="hidden-until"><strong>Design confound</strong> — the music group also got the comfortable lounge.</li>
+    <li class="hidden-until"><strong>Ceiling effect</strong> — mean 9.1/10, 22 perfect scores. No room to differ.</li>
+    <li class="hidden-until"><strong>Demand characteristics + no masking</strong> — he told them the hypothesis, then marked the quizzes himself.</li>
+    <li class="hidden-until"><strong>A second design confound</strong> — time of day is perfectly confounded with condition.</li>
+  </ol>
+  <p class="small hidden-until">Bonus credit: over-generalization to the whole university · p = .04 with no effect size or CI · a home-made, unvalidated quiz.</p>
+  <p class="hidden-until big" style="font-size:3vmin">Now: <em>if you fix everything, what does the study cost?</em></p>
+  <aside class="notes"><p>That last question is the real content. Same room, same time, random assignment, masked marking, harder test — a much more expensive study answering a narrower question. That trade IS experimental design.</p></aside>
+</section>
+
+<section data-kind="break">
+  <p class="kicker">Break 2 · ten minutes</p>
+  <h1>Check in</h1>
+  <p class="url">radlab.zone/class/psy309</p>
+  <div class="qbox">
+    <p><strong>The material:</strong> what's one question you still have about today, now that you've worked with it?</p>
+    <p><strong>You:</strong> how has your engagement changed since the first break — and what changed it?</p>
+  </div>
+  <aside class="notes"><p>Check-in position 40.</p></aside>
+</section>
+
+<section data-kind="divider">
+  <p class="kicker">Part three</p>
+  <h1>Everything else that can go wrong</h1>
+</section>
+
+<section>
+  <h1>Within or between?</h1>
+  <div class="cols">
+    <div>
+      <p><strong>Between-groups.</strong> Different people, different conditions. Safe from contamination; mandatory when one condition spoils the other.</p>
+      <p class="small">The bill: people differ enormously, and all of it lands in your noise term.</p>
+    </div>
+    <div>
+      <p><strong>Within-groups.</strong> Everyone does everything; each person is their own control.</p>
+      <p class="small">Maria's caffeinated RT is compared to <em>Maria's</em> decaf RT. Her chronic speed subtracts itself out — far less noise, far fewer participants.</p>
+    </div>
+  </div>
+  <div class="svgwrap hidden-until"><svg viewBox="0 0 600 210" role="img" aria-labelledby="wb-t wb-d">
+<title id="wb-t">Between-groups and within-groups designs</title>
+<desc id="wb-d">In a between design, different people take different conditions. In a within design, every person takes both, in counterbalanced order.</desc>
+<text x="150" y="24" text-anchor="middle" font-size="14" font-weight="bold" fill="#141B22">BETWEEN</text>
+<circle cx="60" cy="60" r="11" fill="#1F5C8B" opacity=".75"/><circle cx="90" cy="60" r="11" fill="#1F5C8B" opacity=".75"/><circle cx="120" cy="60" r="11" fill="#1F5C8B" opacity=".75"/><circle cx="150" cy="60" r="11" fill="#1F5C8B" opacity=".75"/>
+<circle cx="60" cy="110" r="11" fill="#B5540F" opacity=".75"/><circle cx="90" cy="110" r="11" fill="#B5540F" opacity=".75"/><circle cx="120" cy="110" r="11" fill="#B5540F" opacity=".75"/><circle cx="150" cy="110" r="11" fill="#B5540F" opacity=".75"/>
+<rect x="196" y="46" width="66" height="28" rx="6" fill="#E7F0F7" stroke="#1F5C8B"/><text x="229" y="65" text-anchor="middle" font-size="11.5" fill="#1F5C8B">cond A</text>
+<rect x="196" y="96" width="66" height="28" rx="6" fill="#FBEDE0" stroke="#B5540F"/><text x="229" y="115" text-anchor="middle" font-size="11.5" fill="#B5540F">cond B</text>
+<text x="150" y="160" text-anchor="middle" font-size="11.5" fill="#5C6773">different people &#183; safe from carryover</text>
+<text x="150" y="178" text-anchor="middle" font-size="11.5" fill="#E03131">all their differences land in your noise</text>
+<line x1="300" y1="20" x2="300" y2="192" stroke="#DCE2E6" stroke-width="1.5"/>
+<text x="450" y="24" text-anchor="middle" font-size="14" font-weight="bold" fill="#141B22">WITHIN</text>
+<circle cx="360" cy="85" r="11" fill="#0CA678" opacity=".75"/><circle cx="390" cy="85" r="11" fill="#0CA678" opacity=".75"/><circle cx="420" cy="85" r="11" fill="#0CA678" opacity=".75"/><circle cx="450" cy="85" r="11" fill="#0CA678" opacity=".75"/>
+<rect x="496" y="46" width="66" height="28" rx="6" fill="#E7F0F7" stroke="#1F5C8B"/><text x="529" y="65" text-anchor="middle" font-size="11.5" fill="#1F5C8B">cond A</text>
+<rect x="496" y="96" width="66" height="28" rx="6" fill="#FBEDE0" stroke="#B5540F"/><text x="529" y="115" text-anchor="middle" font-size="11.5" fill="#B5540F">cond B</text>
+<line x1="478" y1="80" x2="492" y2="64" stroke="#0CA678" stroke-width="2.5"/>
+<line x1="478" y1="90" x2="492" y2="106" stroke="#0CA678" stroke-width="2.5"/>
+<text x="450" y="160" text-anchor="middle" font-size="11.5" fill="#5C6773">same people, both conditions</text>
+<text x="450" y="178" text-anchor="middle" font-size="11.5" fill="#0CA678">each person is their own control</text>
+</svg></div>
+  <div class="box warn hidden-until">
+    <p><strong>The bill: order effects.</strong> Practice, fatigue, carryover. Same order for everyone = order is confounded with condition.</p>
+    <p><strong>Counterbalance:</strong> half get A→B, half B→A. Order effects still exist but no longer line up with condition — the same move randomization performs on selection effects.</p>
+  </div>
+  <p class="small hidden-until"><strong>Within if you can, between if you must.</strong></p>
+</section>
+
+<section>
+  <h1>The impostor</h1>
+  <p class="big">Measure. Treat. Measure again. Celebrate the improvement.</p>
+  <p class="lead">The design of every testimonial and too many program evaluations.</p>
+  <p class="hidden-until">It <em>looks</em> within-subjects but has <strong>no comparison condition</strong> — so everything else that happened between the two measurements is fully confounded with the treatment.</p>
+  <p class="hidden-until"><strong>The repair is the answer to most problems in this course:</strong> add a control group who gets both measurements without the treatment.</p>
+</section>
+
+<section>
+  <h1>The rogues' gallery</h1>
+  <ul>
+    <li><strong>Maturation</strong> — they were going to change anyway</li>
+    <li><strong>History</strong> — something else happened to everyone</li>
+    <li><strong>Regression to the mean</strong> — select on extremity and the average drifts to the middle with no intervention at all</li>
+    <li><strong>Attrition</strong> — the leavers take their scores with them</li>
+    <li><strong>Testing &amp; instrumentation</strong> — the measure changed, not the person</li>
+  </ul>
+  <div class="box hidden-until">
+    <p><strong>The master key:</strong> would this threat affect a control group equally? If yes, the comparison design handles it. If no — you've found the interesting weakness.</p>
+  </div>
+  <p class="small hidden-until"><strong>Over-learn regression to the mean.</strong> "We treated the most severe cases and they improved" is the weakest sentence in program evaluation, and it follows you into every domain that selects on extremes.</p>
+</section>
+
+<section>
+  <h1>Minds that know things</h1>
+  <div class="cols">
+    <div>
+      <p><strong>Placebo effects</strong> — expecting improvement produces some. Real machinery, not faking.</p>
+      <p><strong>Demand characteristics</strong> — participants read what the study wants and oblige.</p>
+      <p><strong>Experimenter expectancy</strong> — Clever Hans, at full scale.</p>
+    </div>
+    <div>
+      <div class="box hidden-until">
+        <p><strong>Blinding.</strong> Single: participants don't know. Double: nor do the people running sessions and scoring outcomes.</p>
+        <p class="small">Same move as random assignment — take the knowledge away from anyone whose behaviour could carry it. In any Method section, "double-blind, placebo-controlled" is two structural safeguards being claimed.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h1>When nothing happens</h1>
+  <p class="lead">Three suspects before you conclude "no effect" — check the phone before deciding nobody's calling.</p>
+  <ol>
+    <li><strong>The manipulation was too weak.</strong> $0 vs $1 when it takes $20 to move anyone.</li>
+    <li><strong>The DV couldn't register it.</strong> Ceiling, floor, or a scale too coarse.</li>
+    <li><strong>Noise buried it.</strong> Too few participants, unreliable measures, a between design where individual differences swamp the signal.</li>
+  </ol>
+  <p class="hidden-until"><strong>Rule those out and a null becomes evidence.</strong> "d = 0.02, 95% CI [−.08, .12]" says: if there's an effect, it's trivial. That's a real scientific claim.</p>
+  <p class="small hidden-until">Never "we proved there is no effect." You saw in October what low power does to null results.</p>
+</section>
+
+<section data-kind="activity">
+  <p class="kicker">Lab block · 30 minutes</p>
+  <h1>Your own design</h1>
+  <div class="box warn">
+    <p class="big" style="font-size:3vmin">Apply the checklist you just used to <em>your</em> proposed experiment.</p>
+    <p>Name one design confound a skeptic would raise about your procedure — and how you've eliminated it.</p>
+  </div>
+  <p class="small">TAs circulating. That paragraph, written now with help available, is the strongest paragraph in most final papers.</p>
+  <aside class="notes"><p>Check-in position 3.</p></aside>
+</section>
+
+<section>
+  <p class="kicker">Reading week</p>
+  <h1>Before you go</h1>
+  <ul>
+    <li><strong>Practical 4 is due the Friday you get back</strong> (Nov 6) — not the week after.</li>
+    <li><strong>Before the break:</strong> choose your effect size from the literature. That's the thinking part.</li>
+    <li><strong>After the break:</strong> the simulation. That's the typing part.</li>
+  </ul>
+  <p class="hidden-until lead">The students who lose Practical 4 are the ones who assume the break is free time.</p>
+</section>
+
+<section data-kind="break">
+  <p class="kicker">Last thing</p>
+  <h1>Check out</h1>
+  <p class="url">radlab.zone/class/psy309</p>
+  <div class="qbox">
+    <p>Question box. Have a real break — and pick your effect size before you switch off.</p>
+  </div>
+  <aside class="notes"><p>Check-in position 4.</p></aside>
+</section>
+
+</div>
+<div id="bar"></div><div id="num"></div><div id="clock"></div>
+<div id="help"><kbd>→</kbd> next · <kbd>←</kbd> back · <kbd>f</kbd> fullscreen · <kbd>n</kbd> notes<br><kbd>o</kbd> overview · <kbd>t</kbd> timer · <kbd>?</kbd> help</div>
+<script src="./slides.js"></script>
+</body>
+</html>

@@ -102,7 +102,7 @@ export default function InsightsPreview() {
                 devAvatar={{ skin_color: '#FDBCB4', eye_color: '#4A90D9', species: 'human' }}
                 last={{ composite_label: label, composite_x: 0.6, composite_y: 0.6 }}
               />
-              <div style={{ fontFamily: '"Space Mono", monospace', fontSize: 9, color: 'var(--tx3)', marginTop: 4, textTransform: 'uppercase' }}>
+              <div style={{ fontFamily: '"Space Mono", monospace', fontSize: 12, color: 'var(--tx3)', marginTop: 4, textTransform: 'uppercase' }}>
                 {label}
               </div>
             </div>

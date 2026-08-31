@@ -523,7 +523,7 @@ export default function SessionEntry() {
         <div style={{ height: 4, background: '#e9d5e4', flexShrink: 0 }}>
           <div style={{ height: '100%', background: 'var(--pk)', width: `${progressPct}%`, transition: 'width 0.4s ease' }} />
         </div>
-        <p style={{ fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', textAlign: 'center', padding: '8px 24px 0', margin: 0, flexShrink: 0 }}>
+        <p style={{ fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', textAlign: 'center', padding: '8px 24px 0', margin: 0, flexShrink: 0 }}>
           Step {currentIndex + 1} of {totalSteps}
         </p>
         <div style={{ flex: 1, overflowY: 'auto' }}>

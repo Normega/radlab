@@ -156,7 +156,7 @@ const S = {
   h2: { fontFamily: SERIF, fontSize: 20, color: 'var(--tx)', margin: '22px 0 10px' },
   card: { padding: '12px 14px', borderRadius: 10, background: 'var(--bgc)', border: '1px solid var(--bd)', marginBottom: 10 },
   cardTop: { display: 'flex', gap: 10, alignItems: 'baseline', flexWrap: 'wrap' },
-  kind: { fontFamily: MONO, fontSize: 10.5, letterSpacing: 0.5, textTransform: 'uppercase' },
+  kind: { fontFamily: MONO, fontSize: 12, letterSpacing: 0.5, textTransform: 'uppercase' },
   pageLink: { fontSize: 14, fontWeight: 600, color: 'var(--tx)', textDecoration: 'none', flex: '1 1 auto' },
   body: { fontSize: 13.5, color: 'var(--tx)', lineHeight: 1.5, margin: '8px 0 0' },
   citation: { fontSize: 12.5, color: 'var(--tx2)', fontFamily: MONO, margin: '6px 0 0' },

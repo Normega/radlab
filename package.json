@@ -7,6 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
+    "audit:design": "node scripts/design-audit.mjs",
+    "audit:design:check": "node scripts/design-audit.mjs --check",
+    "audit:design:update": "node scripts/design-audit.mjs --update",
     "test": "node --experimental-strip-types --test \"src/**/*.test.mjs\" \"supabase/**/*.test.mjs\"",
     "preview": "vite preview"
   },

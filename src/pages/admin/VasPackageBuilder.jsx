@@ -328,7 +328,7 @@ function SliderPreview({ scale, partNumber, totalParts, onComplete }) {
 
   return (
     <div style={{ fontFamily: '"DM Sans",system-ui,sans-serif' }}>
-      <p style={{ fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', marginBottom: 14 }}>
+      <p style={{ fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', marginBottom: 14 }}>
         {partNumber} of {totalParts}
       </p>
       <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--tx)', marginBottom: 16, lineHeight: 1.5 }}>
@@ -345,7 +345,7 @@ function SliderPreview({ scale, partNumber, totalParts, onComplete }) {
                    accentColor: touched ? 'var(--pk)' : '#c0bdb8' }}
         />
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                      fontSize: 13, color: touched ? 'var(--tx2)' : '#b0ada8' }}>
+                      fontSize: 14, color: touched ? 'var(--tx2)' : '#b0ada8' }}>
           <span>{scale.min_label}</span>
           {touched
             ? <span style={{ fontSize: 24, fontWeight: 600, color: 'var(--pk)' }}>{value}</span>
@@ -372,26 +372,26 @@ const S = {
   h1:   { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 28, fontWeight: 400, color: 'var(--tx)', margin: '0 0 6px' },
   sub:  { fontSize: 14, color: 'var(--tx2)', margin: '0 0 28px' },
   muted:  { fontSize: 14, color: 'var(--tx3)', margin: '8px 0' },
-  errMsg: { fontSize: 13, color: '#e04', background: '#fff0f0', border: '1px solid #fcc', borderRadius: 8, padding: '8px 14px', marginBottom: 16 },
+  errMsg: { fontSize: 14, color: '#e04', background: '#fff0f0', border: '1px solid #fcc', borderRadius: 8, padding: '8px 14px', marginBottom: 16 },
   hint:   { fontSize: 12, color: 'var(--tx3)', margin: '4px 0 0' },
-  code:   { fontFamily: '"Space Mono",monospace', fontSize: 11 },
+  code:   { fontFamily: '"Space Mono",monospace', fontSize: 12 },
 
   columns: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, alignItems: 'start' },
   panel:   { background: '#fff', border: '1px solid var(--bd)', borderRadius: 12, padding: '20px 18px' },
-  panelTitle: { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 14px' },
+  panelTitle: { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 14px' },
 
-  label: { display: 'block', fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 },
+  label: { display: 'block', fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 },
   input: { width: '100%', fontSize: 14, fontFamily: '"DM Sans",system-ui,sans-serif', border: '1px solid var(--bd)', borderRadius: 8, padding: '8px 12px', color: 'var(--tx)', background: '#fff', boxSizing: 'border-box' },
 
-  sectionHeader: { fontFamily: '"Space Mono",monospace', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--tx3)', padding: '6px 0 4px', borderBottom: '1px solid var(--bd)', marginBottom: 4 },
+  sectionHeader: { fontFamily: '"Space Mono",monospace', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--tx3)', padding: '6px 0 4px', borderBottom: '1px solid var(--bd)', marginBottom: 4 },
 
   scaleRow:   { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '7px 0', borderBottom: '1px solid var(--bd)' },
   checkLabel: { display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', flex: 1, minWidth: 0 },
-  chip:       { fontFamily: '"Space Mono",monospace', fontSize: 10, background: 'var(--bgp)', color: 'var(--pk)', border: '1px solid var(--pkb)', borderRadius: 4, padding: '2px 6px', flexShrink: 0 },
+  chip:       { fontFamily: '"Space Mono",monospace', fontSize: 12, background: 'var(--bgp)', color: 'var(--pk)', border: '1px solid var(--pkb)', borderRadius: 4, padding: '2px 6px', flexShrink: 0 },
   chipSlider: { background: '#eef4ff', color: '#3b6db0', borderColor: 'rgba(59,109,176,0.25)' },
   typeTag:    (type) => ({
     fontFamily: '"Space Mono",monospace',
-    fontSize: 9,
+    fontSize: 12,
     fontWeight: 700,
     textTransform: 'uppercase',
     letterSpacing: '0.04em',
@@ -403,16 +403,16 @@ const S = {
   }),
   scaleQ:     { fontSize: 12, color: 'var(--tx2)', fontFamily: '"DM Sans",system-ui,sans-serif', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
   reorder:    { display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 },
-  orderBadge: { fontFamily: '"Space Mono",monospace', fontSize: 10, color: 'var(--tx3)', minWidth: 20, textAlign: 'center' },
-  arrowBtn:   { background: 'none', border: '1px solid var(--bd)', borderRadius: 4, width: 22, height: 22, fontSize: 11, cursor: 'pointer', color: 'var(--tx2)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 },
+  orderBadge: { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', minWidth: 20, textAlign: 'center' },
+  arrowBtn:   { background: 'none', border: '1px solid var(--bd)', borderRadius: 4, width: 22, height: 22, fontSize: 12, cursor: 'pointer', color: 'var(--tx2)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 },
 
   saveBtn:   { background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 9, padding: '10px 22px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
   cancelBtn: { background: 'none', border: '1px solid var(--bd)', borderRadius: 9, padding: '10px 16px', fontSize: 14, cursor: 'pointer', color: 'var(--tx2)', fontFamily: '"DM Sans",system-ui,sans-serif' },
 
   previewSummary:   { display: 'flex', flexDirection: 'column', gap: 10 },
-  previewCount:     { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', margin: 0 },
+  previewCount:     { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', margin: 0 },
   previewList:      { margin: '0 0 12px', paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 6 },
   previewItem:      { display: 'flex', alignItems: 'center', gap: 6, listStyle: 'decimal' },
-  startPreviewBtn:  { background: 'none', border: '1px solid var(--pk)', borderRadius: 8, padding: '8px 16px', fontSize: 13, cursor: 'pointer', color: 'var(--pk)', fontFamily: '"DM Sans",system-ui,sans-serif', alignSelf: 'flex-start' },
+  startPreviewBtn:  { background: 'none', border: '1px solid var(--pk)', borderRadius: 8, padding: '8px 16px', fontSize: 14, cursor: 'pointer', color: 'var(--pk)', fontFamily: '"DM Sans",system-ui,sans-serif', alignSelf: 'flex-start' },
   resetPreviewBtn:  { background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif', margin: '8px 0 0' },
 }

@@ -173,7 +173,7 @@ const S = {
   // Horizontal padding lives in responsive classNames (px-5 md:px-[52px]) —
   // vertical padding must stay longhand or the inline shorthand zeroes the class px
   hero:      { paddingTop: 60, paddingBottom: 40, maxWidth: 1080, marginInline: 'auto', width: '100%', position: 'relative', zIndex: 1 }, /* content column centers in the viewport */
-  eyebrow:   { fontFamily: MONO, fontSize: '0.8125rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--pk)', marginBottom: 20 },
+  eyebrow:   { fontFamily: MONO, fontSize: '0.875rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--pk)', marginBottom: 20 },
   eyebrowLink: { color: 'var(--pk)', textDecoration: 'none', borderBottom: '1px solid rgba(240,104,164,0.35)' },
   heroBrand: {},
   heroLogo:  { flexShrink: 0, display: 'block', width: 'auto' },
@@ -193,6 +193,6 @@ const S = {
   cardDesc:  { fontSize: '0.875rem', lineHeight: 1.65, fontWeight: 400, flex: 1, transition: 'color 0.28s' },
   chips:     { display: 'flex', flexWrap: 'wrap', gap: 7, marginTop: 4 },
   chip:      { fontFamily: MONO, fontSize: '0.75rem', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '5px 11px', borderRadius: 20, transition: 'background 0.28s, color 0.28s' },
-  cardCta:   { marginTop: 8, fontFamily: MONO, fontSize: '0.8125rem', letterSpacing: '0.1em', textTransform: 'uppercase', transition: 'color 0.28s' },
+  cardCta:   { marginTop: 8, fontFamily: MONO, fontSize: '0.875rem', letterSpacing: '0.1em', textTransform: 'uppercase', transition: 'color 0.28s' },
 
 }

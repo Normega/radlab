@@ -146,7 +146,7 @@ const M = {
   redLink: { color: 'var(--tx2)', borderBottom: '1px dotted var(--tx2)', cursor: 'help' },
   quote: { margin: '0 0 12px', padding: '8px 14px', borderLeft: '3px solid var(--bd)', color: 'var(--tx2)' },
   gapQuote: { margin: '0 0 12px', padding: '10px 14px', borderLeft: '3px solid var(--pk)', background: 'rgba(214,51,132,.06)', borderRadius: '0 8px 8px 0', color: 'var(--tx)', fontSize: 14 },
-  codeInline: { fontFamily: MONO, fontSize: 13, background: 'var(--bg)', border: '1px solid var(--bd)', borderRadius: 4, padding: '1px 5px' },
+  codeInline: { fontFamily: MONO, fontSize: 14, background: 'var(--bg)', border: '1px solid var(--bd)', borderRadius: 4, padding: '1px 5px' },
   pre: { margin: '0 0 12px', overflowX: 'auto' },
   table: { borderCollapse: 'collapse', fontSize: 14, minWidth: 'min(100%, 420px)' },
   th: { textAlign: 'left', padding: '7px 10px', borderBottom: '2px solid var(--bd)', fontFamily: MONO, fontSize: 12, letterSpacing: 0.5, textTransform: 'uppercase', color: 'var(--tx2)' },

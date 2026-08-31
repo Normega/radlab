@@ -1,0 +1,491 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PSY309 · L1 · Psychological Thinking</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&family=Source+Sans+3:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="./slides.css">
+</head>
+<body>
+<div id="deck">
+
+<section data-kind="title">
+  <p class="kicker">PSY309H5 F · Lecture 1 · 8 September 2026</p>
+  <h1>Psychological Thinking</h1>
+  <p class="lead">Norman Farb · Experimental Design and Theory</p>
+  <p class="small" style="margin-top:3vmin">Three hours. Two breaks. One question: how do we know anything about people?</p>
+  <aside class="notes"><p>Doors open 9:00. Start properly at 9:05 — people are still finding the room in week 1. Don't apologize for the length of the block; name it instead: three hours, two breaks, and roughly half of it is you doing things rather than me talking.</p></aside>
+</section>
+
+<section>
+  <p class="kicker">Check in</p>
+  <h1>First: get on the dashboard</h1>
+  <div class="cols">
+    <div>
+      <p class="url" style="font-family:'JetBrains Mono',monospace;font-size:3vmin;color:var(--accent);font-weight:600">radlab.zone/class/psy309</p>
+      <ol>
+        <li>Make a free account (any email)</li>
+        <li>Open the link · tap <strong>Join class</strong></li>
+        <li>Verify your <strong>UofT email</strong> when asked</li>
+      </ol>
+      <div class="box" style="margin-top:2vmin">
+        <p class="small"><strong>Why step 3 matters:</strong> your participation credit links to that verified address automatically. Skip it and you can still play along — but we can't award you anything.</p>
+      </div>
+    </div>
+    <div class="center">
+      <img class="fig" src="./assets/psy309-qr.png" alt="QR code linking to radlab.zone/class/psy309">
+      <figcaption>Scan me</figcaption>
+    </div>
+  </div>
+  <aside class="notes"><p>Do this NOW, live, all of it. Ten minutes spent here in week 1 saves you forty emails in December from students who never verified. Walk the room. TAs on the floor.</p><p>Open check-in #1 (mood + pacing + the opening prompt) while they're setting up.</p></aside>
+</section>
+
+<section>
+  <p class="kicker">Housekeeping</p>
+  <h1>Three things, then we start</h1>
+  <ul>
+    <li><strong>Teams.</strong> You're in a team of four for the whole term. Find them now — you'll work with them most weeks.</li>
+    <li><strong>"Two before me."</strong> In lab blocks, ask two neighbours before flagging a TA. You'll solve most things faster, and the queue stays short.</li>
+    <li><strong>Cloud R.</strong> Open <code>datatools.utoronto.ca</code> and sign in once, today. Nothing to run yet — I just want the broken accounts found now, not in week 6.</li>
+  </ul>
+  <aside class="notes"><p>Assign teams by seating block; don't spend more than three minutes. Write the team numbers on the board — they're also the pair numbers for today's relay.</p></aside>
+</section>
+
+<section data-kind="divider">
+  <p class="kicker">Part one</p>
+  <h1>Why we don't just trust experience</h1>
+</section>
+
+<section>
+  <h1>"I tried it and it worked."</h1>
+  <p class="big">The most persuasive sentence in the English language.</p>
+  <p class="lead">Today's job is to make you permanently suspicious of it — including when you're the one saying it.</p>
+  <aside class="notes"><p>Ask for examples out loud before moving on: supplements, study techniques, sleep hacks, breakup advice. Get three from the room. You'll use them later.</p></aside>
+</section>
+
+<section>
+  <p class="kicker">Defect one</p>
+  <h1>Experience has no comparison group</h1>
+  <p>You start a greens powder in September. By October you feel better. <strong>Better <em>compared to what?</em></strong></p>
+  <div class="svgwrap hidden-until">
+    <svg viewBox="0 0 600 220" role="img" aria-labelledby="cg-t cg-d">
+      <title id="cg-t">Observed reality versus the missing comparison group</title>
+      <desc id="cg-d">Two panels. The left, solid, shows you taking a greens powder and feeling better. The right, dashed, shows the version of you who did not, labelled "does not exist".</desc>
+      <rect x="30" y="30" width="240" height="160" rx="10" fill="#e3faf3" stroke="#0ca678" stroke-width="2"/>
+      <text x="150" y="60" text-anchor="middle" font-weight="bold" fill="#0ca678" font-size="16">OBSERVED REALITY</text>
+      <text x="150" y="95" text-anchor="middle" fill="#2b8a3e" font-size="14">You + Greens Powder</text>
+      <text x="150" y="132" text-anchor="middle" font-size="28" class="emoji">&#10145; &#128522;</text>
+      <text x="150" y="168" text-anchor="middle" fill="#495057" font-size="12">"I feel better in Oct!"</text>
+
+      <text x="300" y="120" text-anchor="middle" font-weight="bold" fill="#adb5bd" font-size="20">VS</text>
+
+      <rect x="330" y="30" width="240" height="160" rx="10" fill="#fff5f5" stroke="#ff6b6b" stroke-width="2" stroke-dasharray="6,6"/>
+      <text x="450" y="60" text-anchor="middle" font-weight="bold" fill="#e03131" font-size="16">MISSING COMPARISON</text>
+      <text x="450" y="95" text-anchor="middle" fill="#c92a2a" font-size="14">Parallel Universe You</text>
+      <text x="450" y="132" text-anchor="middle" font-size="28" class="emoji">&#10145; &#10067;</text>
+      <text x="450" y="168" text-anchor="middle" fill="#c92a2a" font-size="12" font-style="italic">[ Does Not Exist ]</text>
+    </svg>
+  </div>
+  <p class="hidden-until">You cannot see what would have happened anyway. <strong>A comparison group is how research sees it for you.</strong></p>
+  <aside class="notes"><p>Ask "compared to what?" and let the room answer before revealing the diagram. The right-hand panel is dashed for a reason: point at it and say the person on that side is the entire problem.</p><p>Then the next slide shows what happens when a whole policy field runs for thirty years without one.</p></aside>
+</section>
+
+<section>
+  <p class="kicker">Defect one &middot; in the world</p>
+  <h1>Thirty years on a missing comparison</h1>
+  <div class="box warn">
+    <p><strong>Scared Straight.</strong> At-risk teens taken into prisons to be frightened out of crime. Spread across North America for decades on everyone's testimony: the teens seemed shaken, the organizers felt effective.</p>
+    <p class="hidden-until">Randomized studies eventually supplied the missing comparison group. The programmes <strong>slightly increased</strong> later offending.</p>
+    <p class="small hidden-until">Petrosino, Turpin-Petrosino &amp; Buehler (2003), Cochrane Review</p>
+  </div>
+  <p class="big hidden-until">Experience said it worked. The comparison said it caused harm.</p>
+  <aside class="notes"><p>Let them sit with the setup before the result. Everyone in that story - teens, organizers, judges - was sincere, and sincerity is not a research method.</p></aside>
+</section>
+
+<section>
+  <p class="kicker">Defect two</p>
+  <h1>Experience is confounded</h1>
+  <p>Even when the change is real, <em>everything changed at once.</em></p>
+  <div class="svgwrap">
+    <svg viewBox="0 0 550 240" role="img" aria-labelledby="cf-t cf-d">
+      <title id="cf-t">Four possible causes converging on one outcome</title>
+      <desc id="cf-d">Feeling better sits at the centre, with lines running to four candidate explanations: greens powder, end-of-September stress, a better sleep routine, and more sunlight.</desc>
+      <line x1="275" y1="120" x2="100" y2="50" stroke="#ff8787" stroke-width="3"/>
+      <line x1="275" y1="120" x2="450" y2="50" stroke="#ff8787" stroke-width="3"/>
+      <line x1="275" y1="120" x2="100" y2="190" stroke="#ff8787" stroke-width="3"/>
+      <line x1="275" y1="120" x2="450" y2="190" stroke="#ff8787" stroke-width="3"/>
+
+      <circle cx="275" cy="120" r="45" fill="#74c0fc"/>
+      <text x="275" y="115" text-anchor="middle" fill="#1864ab" font-weight="bold" font-size="13">Feeling</text>
+      <text x="275" y="132" text-anchor="middle" fill="#1864ab" font-weight="bold" font-size="13">Better</text>
+
+      <rect x="30" y="30" width="140" height="40" rx="20" fill="#ffe3e3"/>
+      <text x="100" y="55" text-anchor="middle" fill="#c92a2a" font-size="13">Greens Powder?</text>
+      <rect x="380" y="30" width="140" height="40" rx="20" fill="#ffe3e3"/>
+      <text x="450" y="55" text-anchor="middle" fill="#c92a2a" font-size="13">End of Sept Stress?</text>
+      <rect x="30" y="170" width="140" height="40" rx="20" fill="#ffe3e3"/>
+      <text x="100" y="195" text-anchor="middle" fill="#c92a2a" font-size="13">Better Sleep Routine?</text>
+      <rect x="380" y="170" width="140" height="40" rx="20" fill="#ffe3e3"/>
+      <text x="450" y="195" text-anchor="middle" fill="#c92a2a" font-size="13">More Sunlight?</text>
+    </svg>
+  </div>
+  <p class="hidden-until"><strong>A confound is an alternative explanation tangled around the thing you're crediting.</strong> Life doesn't run controlled trials on itself &mdash; it changes many variables at once and lets you take credit on behalf of your favourite.</p>
+  <aside class="notes"><p>This is the concept the whole course keeps returning to. Name it now, lightly; L4 does third variables properly and L6 does design confounds.</p></aside>
+</section>
+
+<section>
+  <p class="kicker">Defect two, continued</p>
+  <h1>Research untangles on purpose</h1>
+  <p>Generations of intuition said venting anger releases it &mdash; the kettle metaphor. Bushman (2002) randomized angered participants to three conditions. <strong>Which came out most aggressive?</strong></p>
+  <div class="svgwrap">
+    <svg viewBox="0 0 600 180" role="img" aria-labelledby="bu-t bu-d">
+      <title id="bu-t">Bushman (2002): three conditions and their outcomes</title>
+      <desc id="bu-d">Sitting quietly, punching a bag as exercise, and punching a bag while picturing the person who insulted you. The third condition produced the highest aggression.</desc>
+      <rect x="10" y="20" width="180" height="140" rx="8" fill="#e7f5ff" stroke="#339af0" stroke-width="2"/>
+      <text x="100" y="50" text-anchor="middle" font-weight="bold" fill="#1864ab" font-size="14">1. Sit Quietly</text>
+      <text x="100" y="97" text-anchor="middle" font-size="30" class="emoji">&#129496;</text>
+      <g class="hidden-until"><text x="100" y="137" text-anchor="middle" fill="#2b8a3e" font-weight="bold" font-size="13">Lowest Aggression</text></g>
+
+      <rect x="210" y="20" width="180" height="140" rx="8" fill="#fff9db" stroke="#fcc419" stroke-width="2"/>
+      <text x="300" y="50" text-anchor="middle" font-weight="bold" fill="#f59f00" font-size="14">2. Punch Bag (Exercise)</text>
+      <text x="300" y="97" text-anchor="middle" font-size="30" class="emoji">&#129354;</text>
+      <g class="hidden-until"><text x="300" y="137" text-anchor="middle" fill="#e67700" font-weight="bold" font-size="13">Moderate Aggression</text></g>
+
+      <rect x="410" y="20" width="180" height="140" rx="8" fill="#fff5f5" stroke="#ff6b6b" stroke-width="2"/>
+      <text x="500" y="45" text-anchor="middle" font-weight="bold" fill="#e03131" font-size="14">3. Punch Bag</text>
+      <text x="500" y="63" text-anchor="middle" fill="#e03131" font-size="11">(picturing the person)</text>
+      <text x="500" y="102" text-anchor="middle" font-size="30" class="emoji">&#128293;&#129354;</text>
+      <g class="hidden-until"><text x="500" y="139" text-anchor="middle" fill="#c92a2a" font-weight="bold" font-size="13">HIGHEST Aggression</text></g>
+    </svg>
+  </div>
+  <p class="big hidden-until" style="color:var(--accent)">The venters were the <em>most</em> aggressive &mdash; not the least.</p>
+  <p class="hidden-until">The kettle metaphor was a good story. The comparison groups were better.</p>
+  <aside class="notes"><p>The three conditions appear with their verdicts hidden. Take a show of hands on each before pressing on: most will guess sitting quietly was worst, or that venting helped. Then reveal all three verdicts at once.</p><p>This is the same item that opens the calibration quiz in forty minutes, and it lands harder the second time. Do not tell them that now.</p></aside>
+</section>
+
+<section>
+  <p class="kicker">Defect three</p>
+  <h1>Research is probabilistic — and that's not a weakness</h1>
+  <p class="big">"My grandmother smoked a pack a day and lived to 94."</p>
+  <p>True. And it refutes nothing.</p>
+  <ul>
+    <li>Findings describe what happens <strong>more often, on average</strong> — not to every person every time.</li>
+    <li>Smoking raises the probability of lung cancer enormously. It does not <em>schedule</em> it.</li>
+    <li>Your grandmother isn't a counterexample. She's one of the data points the probability already includes.</li>
+  </ul>
+  <div class="svgwrap hidden-until"><svg viewBox="0 0 368 161" role="img" aria-labelledby="prob-t prob-d"><title id="prob-t">One hundred lifelong smokers</title><desc id="prob-d">A grid of one hundred dots; about sixteen are highlighted to show that most lifelong smokers do not develop lung cancer, while the risk is enormously raised.</desc><circle cx="22" cy="38" r="5.8" fill="#B5540F"/><circle cx="40" cy="38" r="5.8" fill="#B5540F"/><circle cx="56" cy="38" r="5.8" fill="#B5540F"/><circle cx="74" cy="38" r="5.8" fill="#B5540F"/><circle cx="90" cy="38" r="5.8" fill="#B5540F"/><circle cx="108" cy="38" r="5.8" fill="#B5540F"/><circle cx="124" cy="38" r="5.8" fill="#B5540F"/><circle cx="142" cy="38" r="5.8" fill="#B5540F"/><circle cx="158" cy="38" r="5.8" fill="#B5540F"/><circle cx="176" cy="38" r="5.8" fill="#B5540F"/><circle cx="192" cy="38" r="5.8" fill="#B5540F"/><circle cx="210" cy="38" r="5.8" fill="#B5540F"/><circle cx="226" cy="38" r="5.8" fill="#B5540F"/><circle cx="244" cy="38" r="5.8" fill="#B5540F"/><circle cx="260" cy="38" r="5.8" fill="#B5540F"/><circle cx="278" cy="38" r="5.8" fill="#B5540F"/><circle cx="294" cy="38" r="5.8" fill="#C7D0D8"/><circle cx="312" cy="38" r="5.8" fill="#C7D0D8"/><circle cx="328" cy="38" r="5.8" fill="#C7D0D8"/><circle cx="346" cy="38" r="5.8" fill="#C7D0D8"/><circle cx="22" cy="56" r="5.8" fill="#C7D0D8"/><circle cx="40" cy="56" r="5.8" fill="#C7D0D8"/><circle cx="56" cy="56" r="5.8" fill="#C7D0D8"/><circle cx="74" cy="56" r="5.8" fill="#C7D0D8"/><circle cx="90" cy="56" r="5.8" fill="#C7D0D8"/><circle cx="108" cy="56" r="5.8" fill="#C7D0D8"/><circle cx="124" cy="56" r="5.8" fill="#C7D0D8"/><circle cx="142" cy="56" r="5.8" fill="#C7D0D8"/><circle cx="158" cy="56" r="5.8" fill="#C7D0D8"/><circle cx="176" cy="56" r="5.8" fill="#C7D0D8"/><circle cx="192" cy="56" r="5.8" fill="#C7D0D8"/><circle cx="210" cy="56" r="5.8" fill="#C7D0D8"/><circle cx="226" cy="56" r="5.8" fill="#C7D0D8"/><circle cx="244" cy="56" r="5.8" fill="#C7D0D8"/><circle cx="260" cy="56" r="5.8" fill="#C7D0D8"/><circle cx="278" cy="56" r="5.8" fill="#C7D0D8"/><circle cx="294" cy="56" r="5.8" fill="#C7D0D8"/><circle cx="312" cy="56" r="5.8" fill="#C7D0D8"/><circle cx="328" cy="56" r="5.8" fill="#C7D0D8"/><circle cx="346" cy="56" r="5.8" fill="#C7D0D8"/><circle cx="22" cy="72" r="5.8" fill="#C7D0D8"/><circle cx="40" cy="72" r="5.8" fill="#C7D0D8"/><circle cx="56" cy="72" r="5.8" fill="#C7D0D8"/><circle cx="74" cy="72" r="5.8" fill="#C7D0D8"/><circle cx="90" cy="72" r="5.8" fill="#C7D0D8"/><circle cx="108" cy="72" r="5.8" fill="#C7D0D8"/><circle cx="124" cy="72" r="5.8" fill="#C7D0D8"/><circle cx="142" cy="72" r="5.8" fill="#C7D0D8"/><circle cx="158" cy="72" r="5.8" fill="#C7D0D8"/><circle cx="176" cy="72" r="5.8" fill="#C7D0D8"/><circle cx="192" cy="72" r="5.8" fill="#C7D0D8"/><circle cx="210" cy="72" r="5.8" fill="#C7D0D8"/><circle cx="226" cy="72" r="5.8" fill="#C7D0D8"/><circle cx="244" cy="72" r="5.8" fill="#C7D0D8"/><circle cx="260" cy="72" r="5.8" fill="#C7D0D8"/><circle cx="278" cy="72" r="5.8" fill="#C7D0D8"/><circle cx="294" cy="72" r="5.8" fill="#C7D0D8"/><circle cx="312" cy="72" r="5.8" fill="#C7D0D8"/><circle cx="328" cy="72" r="5.8" fill="#C7D0D8"/><circle cx="346" cy="72" r="5.8" fill="#C7D0D8"/><circle cx="22" cy="90" r="5.8" fill="#C7D0D8"/><circle cx="40" cy="90" r="5.8" fill="#C7D0D8"/><circle cx="56" cy="90" r="5.8" fill="#C7D0D8"/><circle cx="74" cy="90" r="5.8" fill="#C7D0D8"/><circle cx="90" cy="90" r="5.8" fill="#C7D0D8"/><circle cx="108" cy="90" r="5.8" fill="#C7D0D8"/><circle cx="124" cy="90" r="5.8" fill="#C7D0D8"/><circle cx="142" cy="90" r="5.8" fill="#C7D0D8"/><circle cx="158" cy="90" r="5.8" fill="#C7D0D8"/><circle cx="176" cy="90" r="5.8" fill="#C7D0D8"/><circle cx="192" cy="90" r="5.8" fill="#C7D0D8"/><circle cx="210" cy="90" r="5.8" fill="#C7D0D8"/><circle cx="226" cy="90" r="5.8" fill="#C7D0D8"/><circle cx="244" cy="90" r="5.8" fill="#C7D0D8"/><circle cx="260" cy="90" r="5.8" fill="#C7D0D8"/><circle cx="278" cy="90" r="5.8" fill="#C7D0D8"/><circle cx="294" cy="90" r="5.8" fill="#C7D0D8"/><circle cx="312" cy="90" r="5.8" fill="#C7D0D8"/><circle cx="328" cy="90" r="5.8" fill="#C7D0D8"/><circle cx="346" cy="90" r="5.8" fill="#C7D0D8"/><circle cx="22" cy="106" r="5.8" fill="#C7D0D8"/><circle cx="40" cy="106" r="5.8" fill="#C7D0D8"/><circle cx="56" cy="106" r="5.8" fill="#C7D0D8"/><circle cx="74" cy="106" r="5.8" fill="#C7D0D8"/><circle cx="90" cy="106" r="5.8" fill="#C7D0D8"/><circle cx="108" cy="106" r="5.8" fill="#C7D0D8"/><circle cx="124" cy="106" r="5.8" fill="#C7D0D8"/><circle cx="142" cy="106" r="5.8" fill="#C7D0D8"/><circle cx="158" cy="106" r="5.8" fill="#C7D0D8"/><circle cx="176" cy="106" r="5.8" fill="#C7D0D8"/><circle cx="192" cy="106" r="5.8" fill="#C7D0D8"/><circle cx="210" cy="106" r="5.8" fill="#C7D0D8"/><circle cx="226" cy="106" r="5.8" fill="#C7D0D8"/><circle cx="244" cy="106" r="5.8" fill="#C7D0D8"/><circle cx="260" cy="106" r="5.8" fill="#C7D0D8"/><circle cx="278" cy="106" r="5.8" fill="#C7D0D8"/><circle cx="294" cy="106" r="5.8" fill="#C7D0D8"/><circle cx="312" cy="106" r="5.8" fill="#C7D0D8"/><circle cx="328" cy="106" r="5.8" fill="#C7D0D8"/><circle cx="346" cy="106" r="5.8" fill="#C7D0D8"/><rect x="14" y="129" width="12" height="12" rx="3" fill="#B5540F"/><text x="32" y="139" font-size="12" fill="#141B22">Develop lung cancer</text><rect x="202" y="129" width="12" height="12" rx="3" fill="#C7D0D8"/><text x="220" y="139" font-size="12" fill="#5C6773">Do not</text></svg></div>
+  <p class="small hidden-until">Roughly one in six lifelong smokers develops lung cancer. Most do not — and the risk is still enormous. Your grandmother is one of these dots, not a counterexample to them.</p>
+  <p class="hidden-until"><strong>It cuts both ways:</strong> an exception doesn't overturn a finding — and a finding doesn't promise you individual results.</p>
+  <aside class="notes"><p>Worth being careful here: students often hear "probabilistic" as "unreliable." Frame it as precision about what is being claimed, not hedging.</p></aside>
+</section>
+
+<section>
+  <h1>So why does experience feel so convincing?</h1>
+  <p class="big">Because your mind is an enthusiastic pattern-detector with no quality-control department.</p>
+  <p class="lead">Five specific failure modes — in the reading, and in the quiz you're about to take.</p>
+  <div class="box hidden-until">
+    <p>Research methods are not a set of rules for distrusting <em>other people</em>. They're prosthetics for the places where every mind, including yours, reliably fails.</p>
+  </div>
+  <aside class="notes"><p>This is the thesis of the course. Say it slowly. Then break.</p></aside>
+</section>
+
+<section data-kind="break">
+  <p class="kicker">Break 1 · ten minutes</p>
+  <h1>Check in</h1>
+  <p class="url">radlab.zone/class/psy309</p>
+  <div class="qbox">
+    <p><strong>The material:</strong> what's one idea from the first hour that clicked — and one that didn't?</p>
+    <p><strong>You:</strong> how engaged have you felt so far, and what would help?</p>
+  </div>
+  <p class="small" style="margin-top:2vmin;color:#9AA8B4">Back at the top of the hour. Coffee is downstairs.</p>
+  <aside class="notes"><p>Open check-in at position 20. Read a couple of responses aloud when you restart — it tells them the answers are actually read, which is what keeps response rates up all term.</p></aside>
+</section>
+
+<section data-kind="divider">
+  <p class="kicker">Part two</p>
+  <h1>How good is your intuition?</h1>
+</section>
+
+<section data-kind="activity">
+  <p class="kicker">Exercise A · 15 minutes</p>
+  <h1>Calibration quiz</h1>
+  <p class="big">Five real findings. Commit to an answer before you see anyone else's.</p>
+  <ul>
+    <li>Answer all five on the dashboard</li>
+    <li>We'll look at the class distribution <em>before</em> the answer</li>
+    <li>Then: why did you answer that?</li>
+  </ul>
+  <aside class="notes"><p>Open the quiz check-in (position 2). Give ~3 min per item in the discussion. The "why" is the content — the wrong reasons are what you're teaching into.</p></aside>
+</section>
+
+<section>
+  <p class="kicker">Item 1</p>
+  <h2>After being insulted, which group was <em>most</em> aggressive?</h2>
+  <ol>
+    <li>Sat quietly for two minutes</li>
+    <li>Punched a bag as exercise</li>
+    <li>Punched a bag while picturing the person</li>
+    <li>No meaningful difference</li>
+  </ol>
+  <p class="hidden-until big" style="color:var(--do)">→ 3. The catharsis group. (Bushman, 2002)</p>
+  <aside class="notes"><p>They saw this an hour ago. If the room gets it right, say so — that's learning, visible, in one session.</p></aside>
+</section>
+
+<section>
+  <p class="kicker">Item 2</p>
+  <h2>100 studies from top journals, directly replicated. What fraction found a significant effect in the same direction?</h2>
+  <ol>
+    <li>About a third</li>
+    <li>About 85%</li>
+    <li>About 10%</li>
+    <li>About 65%</li>
+  </ol>
+  <p class="hidden-until big" style="color:var(--do)">→ 1. About a third. (Open Science Collaboration, 2015)</p>
+  <p class="hidden-until">Replication effect sizes averaged about <strong>half</strong> the originals. Remember that number — in October you'll derive it yourselves.</p>
+  <aside class="notes"><p>Plant the flag for L5 and L9 here. Do not editorialize about "psychology is broken" — the framing is that the field checked, which most fields haven't.</p></aside>
+</section>
+
+<section>
+  <p class="kicker">Item 3</p>
+  <h2>~400 students had their daily conversations recorded and words counted. What did they find?</h2>
+  <ol>
+    <li>Women spoke roughly three times as many words</li>
+    <li>No meaningful difference</li>
+    <li>Women spoke somewhat more</li>
+    <li>Men spoke somewhat more</li>
+  </ol>
+  <p class="hidden-until big" style="color:var(--do)">→ 2. No meaningful difference. (Mehl et al., 2007)</p>
+  <p class="hidden-until">≈16,215 words/day for women; ≈15,669 for men. <strong>Where did you first hear the 20,000-vs-7,000 claim?</strong></p>
+  <aside class="notes"><p>That last question is the one to actually ask the room. Answers will be: a book, a documentary, a friend, "everyone knows." That list is exactly the sources hierarchy you teach after the next break.</p></aside>
+</section>
+
+<section>
+  <p class="kicker">Item 4</p>
+  <h2>The marshmallow test, retested in a larger and more diverse sample with family background controlled:</h2>
+  <ol>
+    <li>Stronger than the original</li>
+    <li>About the same</li>
+    <li>Reversed</li>
+    <li>Less than half as strong, and largely explained by family background</li>
+  </ol>
+  <p class="hidden-until big" style="color:var(--do)">→ 4. (Watts, Duncan &amp; Quan, 2018)</p>
+  <p class="hidden-until">A third variable was doing much of the work. That's Lecture 4, arriving early.</p>
+  <aside class="notes"><p>Worth naming that the original finding is still taught, still in TED talks, still in parenting books. Findings outlive their evidence in the culture.</p></aside>
+</section>
+
+<section>
+  <p class="kicker">Item 5</p>
+  <h2>Seventeen labs re-ran the "pen in your teeth makes cartoons funnier" study with a pre-registered protocol. What happened?</h2>
+  <ol>
+    <li>It replicated strongly</li>
+    <li>It failed to replicate</li>
+    <li>It replicated weakly but consistently</li>
+    <li>The effect reversed</li>
+  </ol>
+  <p class="hidden-until big" style="color:var(--do)">→ 2. It failed to replicate. (Wagenmakers et al., 2016)</p>
+  <p class="hidden-until"><strong>Pre-registered.</strong> Hold that word — it's the fix, and it's what your practical assignments quietly are.</p>
+  <aside class="notes"><p>First mention of preregistration. Say the word, don't explain it yet. L5 and L9 do the work.</p></aside>
+</section>
+
+<section>
+  <h1>Debrief</h1>
+  <ul>
+    <li><strong>Who got 4 or 5?</strong> Usually almost nobody.</li>
+    <li><strong>Which felt most obviously right — and was wrong?</strong></li>
+    <li><strong>Where did the wrong answers come from?</strong></li>
+  </ul>
+  <div class="box hidden-until">
+    <p>Intuition is a fast, confident, systematically biased instrument. So we built a slower one. This course is how it works.</p>
+  </div>
+  <aside class="notes"><p>Take the third question seriously — the answers ARE the next teaching block. Hand off into "where science lives" directly from whatever they say.</p></aside>
+</section>
+
+<section data-kind="activity">
+  <p class="kicker">Exercise B · 35 minutes</p>
+  <h1>Trace the Claim</h1>
+  <p class="big">Your pair gets a psychology news article. Find the paper behind it.</p>
+  <div class="cols">
+    <div>
+      <ol>
+        <li>Read the article. Write its claim in one sentence.</li>
+        <li>Find the actual paper (the Journal Reference is at the bottom).</li>
+        <li>Read the abstract, skim the Method.</li>
+      </ol>
+    </div>
+    <div>
+      <div class="box warn">
+        <p><strong>Submit four things:</strong></p>
+        <p>1. Claim type — frequency / association / causal<br>
+           2. N in the paper<br>
+           3. Design — what was measured, what manipulated<br>
+           4. One thing the headline changed. <em>Quote it.</em></p>
+      </div>
+    </div>
+  </div>
+  <p class="small">Paywall? Go through <code>library.utoronto.ca</code> — you almost certainly have access.</p>
+  <aside class="notes"><p>25 min work, 10 min debrief. Article links are on Quercus by pair number. Open check-in position 3 with the countdown so the clock isn't your job.</p><p>Circulate for: reading only the news article; can't find the paper (point at Journal Reference); paywall panic (do the proxy once at the front); confident causal claim from a survey (say nothing — save it for debrief).</p></aside>
+</section>
+
+<section>
+  <h1>What we found</h1>
+  <p class="lead">Three pairs, in this order:</p>
+  <ol>
+    <li>One where <strong>the headline was fair</strong></li>
+    <li>One where <strong>an association became causal</strong></li>
+    <li>One where <strong>the sample won't carry the claim</strong></li>
+  </ol>
+  <p class="hidden-until">You just found a claim, traced it to its evidence, classified it, and asked whether the evidence supports it.</p>
+  <p class="hidden-until big">That's the whole course. On day one.</p>
+  <aside class="notes"><p>Pick the three pairs while circulating, not on the fly. Starting with a fair headline is important — this is not a media witch hunt.</p></aside>
+</section>
+
+<section data-kind="break">
+  <p class="kicker">Break 2 · ten minutes</p>
+  <h1>Check in</h1>
+  <p class="url">radlab.zone/class/psy309</p>
+  <div class="qbox">
+    <p><strong>The material:</strong> what's one question you still have about today, now that you've worked with it?</p>
+    <p><strong>You:</strong> how has your engagement changed since the first break — and what changed it?</p>
+  </div>
+  <aside class="notes"><p>Check-in position 40. This is the one that tells you whether the exercise landed — read a few before starting part three.</p></aside>
+</section>
+
+<section data-kind="divider">
+  <p class="kicker">Part three</p>
+  <h1>Where science actually lives</h1>
+</section>
+
+<section>
+  <h1>The habitat</h1>
+  <div class="cols">
+    <div>
+      <p><strong>Journal articles</strong> — first-hand, peer-reviewed, the primary source.</p>
+      <ul>
+        <li><strong>Empirical:</strong> new data. Abstract → Intro → Method → Results → Discussion.</li>
+        <li><strong>Review:</strong> synthesizes many studies. A <em>meta-analysis</em> does it statistically.</li>
+      </ul>
+    </div>
+    <div>
+      <p class="small">Also real, in descending order of filtration:</p>
+      <ul>
+        <li class="small">Chapters in edited books</li>
+        <li class="small">Preprints (no filter yet — read accordingly)</li>
+        <li class="small">Conference posters — science in progress, like yours in December</li>
+      </ul>
+    </div>
+  </div>
+  <div class="svgwrap hidden-until"><svg viewBox="0 0 620 250" role="img" aria-labelledby="hab-t hab-d">
+<title id="hab-t">Sources of scientific information, by how much filtering they have had</title>
+<desc id="hab-d">A ladder from peer-reviewed journal articles at the top, through preprints and conference posters, to journalism and unsourced content at the bottom.</desc>
+<rect x="30" y="14" width="470" height="42" rx="7" fill="#E7F0F7" stroke="#1F5C8B" stroke-width="2"/>
+<text x="46" y="34" font-size="14" font-weight="bold" fill="#1F5C8B">Peer-reviewed journal articles</text>
+<text x="46" y="50" font-size="11.5" fill="#5C6773">empirical (new data) &#183; review / meta-analysis (synthesis)</text>
+<rect x="30" y="64" width="430" height="34" rx="7" fill="#EFF3F6" stroke="#DCE2E6" stroke-width="1.5"/>
+<text x="46" y="85" font-size="13" fill="#141B22">Book chapters &#183; scholarly books</text>
+<rect x="30" y="106" width="390" height="34" rx="7" fill="#EFF3F6" stroke="#DCE2E6" stroke-width="1.5"/>
+<text x="46" y="127" font-size="13" fill="#141B22">Preprints &#183; conference posters &#8212; real, but unfiltered</text>
+<rect x="30" y="148" width="350" height="34" rx="7" fill="#FBEDE0" stroke="#B5540F" stroke-width="1.5"/>
+<text x="46" y="169" font-size="13" fill="#B5540F">Journalism &#8212; a pointer to evidence, not evidence</text>
+<rect x="30" y="190" width="300" height="34" rx="7" fill="#FFF5F5" stroke="#E03131" stroke-width="1.5" stroke-dasharray="5,4"/>
+<text x="46" y="211" font-size="13" fill="#E03131">Content that names no study at all</text>
+<line x1="530" y1="20" x2="530" y2="218" stroke="#5C6773" stroke-width="1.5"/>
+<polygon points="530,14 526,24 534,24" fill="#5C6773"/>
+<text x="545" y="60" font-size="12" font-weight="bold" fill="#5C6773" transform="rotate(90 545 60)">MORE FILTERED</text>
+<text x="558" y="14" font-size="11" fill="#5C6773"></text>
+</svg></div>
+  <aside class="notes"><p>Keep this brisk — it's in the Field Guide. Reveal the ladder and make one point with it: every step down is a step further from the data, and the bottom rung isn't misreporting the evidence, it's declining to have any.</p><p>The part worth your voice is the next slide.</p></aside>
+</section>
+
+<section>
+  <h1>Peer review is a filter, not an oracle</h1>
+  <ul>
+    <li>It means qualified skeptics thought it was worth publishing.</li>
+    <li>It does <strong>not</strong> mean the finding is true — reviewers don't re-run studies.</li>
+    <li>One study is one study, wherever it's published. <em>(You saw the replication number.)</em></li>
+  </ul>
+  <div class="box warn hidden-until">
+    <p><strong>Predatory journals</strong> mimic real ones and will publish nearly anything for a fee. The tell: they seem <em>delighted</em> to have you. Real peer review is never delighted.</p>
+  </div>
+  <aside class="notes"><p>The predatory-journal line reliably gets a laugh and reliably sticks. Mention that they'll start getting these spam invitations the moment they publish anything.</p></aside>
+</section>
+
+<section>
+  <h1>Reading a paper in three passes</h1>
+  <ul>
+    <li><strong>Pass 1 — triage (2 min).</strong> Abstract, figures, first paragraph of the Discussion. Most papers exit your life here. That's the system working.</li>
+    <li><strong>Pass 2 — comprehension (15–20 min).</strong> Aims paragraph, then Method, then Results with the figures beside you.</li>
+    <li><strong>Pass 3 — interrogation.</strong> What kind of claim, and does the design pay for it? <em>That's what this course trains.</em></li>
+  </ul>
+  <div class="svgwrap hidden-until"><svg viewBox="0 0 600 190" role="img" aria-labelledby="pas-t pas-d">
+<title id="pas-t">Reading a paper in three passes</title>
+<desc id="pas-d">Pass one triage takes two minutes on many papers; pass two comprehension takes fifteen to twenty on a few; pass three interrogation takes as long as it takes on fewer still.</desc>
+<polygon points="20,20 580,20 470,80 130,80" fill="#E7F0F7" stroke="#1F5C8B" stroke-width="2"/>
+<text x="300" y="45" text-anchor="middle" font-size="15" font-weight="bold" fill="#1F5C8B">PASS 1 &#183; TRIAGE &#183; 2 min</text>
+<text x="300" y="65" text-anchor="middle" font-size="12" fill="#141B22">Abstract &#8594; figures &#8594; first paragraph of the Discussion</text>
+<polygon points="130,86 470,86 400,140 200,140" fill="#EFF3F6" stroke="#DCE2E6" stroke-width="2"/>
+<text x="300" y="110" text-anchor="middle" font-size="15" font-weight="bold" fill="#141B22">PASS 2 &#183; COMPREHENSION &#183; 15&#8211;20 min</text>
+<text x="300" y="130" text-anchor="middle" font-size="12" fill="#141B22">Aims &#8594; Method &#8594; Results, with the figures beside you</text>
+<polygon points="200,146 400,146 360,182 240,182" fill="#FBEDE0" stroke="#B5540F" stroke-width="2"/>
+<text x="300" y="163" text-anchor="middle" font-size="14" font-weight="bold" fill="#B5540F">PASS 3 &#183; INTERROGATION</text>
+<text x="300" y="177" text-anchor="middle" font-size="11.5" fill="#B5540F">what this course trains</text>
+</svg></div>
+  <p class="hidden-until"><strong>It is normal to understand 60% on pass two.</strong> Read for the design and the direction. The design is usually simpler than the notation.</p>
+  <aside class="notes"><p>Say the 60% line with conviction — a lot of students privately believe everyone else is reading these fluently.</p></aside>
+</section>
+
+<section data-kind="activity">
+  <p class="kicker">Due Friday 18 September, 11:59pm</p>
+  <h1>Practical 1</h1>
+  <div class="cols">
+    <div>
+      <ul>
+        <li><strong>Choose a topic</strong> (0.5)</li>
+        <li><strong>Brief literature review</strong> (1.5)</li>
+        <li><strong>Reflect on the process</strong> (0.5)</li>
+      </ul>
+      <p class="small">Full details on Quercus. Companion guide in the Field Guide.</p>
+    </div>
+    <div>
+      <div class="box">
+        <p><strong>Choose with the end in mind.</strong> This topic becomes your measures, your manipulation, your poster, and your final paper.</p>
+        <p class="small">Test: can you imagine it as <em>two variables</em>? "Sleep" is a subject. "Does sleep quality relate to exam anxiety, and could a sleep intervention reduce it?" is a project.</p>
+      </div>
+    </div>
+  </div>
+  <aside class="notes"><p>Several pairs found a workable topic during the relay without being told to. Point that out — it converts today's exercise into this week's homework.</p></aside>
+</section>
+
+<section>
+  <h1>Before next week</h1>
+  <ul>
+    <li><strong>Read Week 2</strong> in the Field Guide — ethics, TCPS2, and the two frameworks the whole course runs on: three claims, four validities.</li>
+    <li><strong>Start Practical 1.</strong> Choosing the topic is the slow part; do it this week.</li>
+    <li><strong>Verify your UofT email</strong> if you haven't.</li>
+  </ul>
+  <p class="lead" style="margin-top:2vmin">radlab.zone/academic/fieldguide</p>
+  <aside class="notes"><p>Final check-in (position 4) — pacing + question box. Ask explicitly for questions they didn't want to raise out loud; those are the ones worth opening next week with.</p></aside>
+</section>
+
+<section data-kind="break">
+  <p class="kicker">Last thing</p>
+  <h1>Check out</h1>
+  <p class="url">radlab.zone/class/psy309</p>
+  <div class="qbox">
+    <p>Any question you didn't want to ask out loud — put it in the question box. I'll open next week with a few of them.</p>
+  </div>
+  <aside class="notes"><p>Don't run over. Ending on time in week 1 sets an expectation you'll be glad of in November.</p></aside>
+</section>
+
+</div>
+<div id="bar"></div>
+<div id="num"></div>
+<div id="clock"></div>
+<div id="help">
+  <kbd>→</kbd> next · <kbd>←</kbd> back · <kbd>f</kbd> fullscreen · <kbd>n</kbd> notes<br>
+  <kbd>o</kbd> overview · <kbd>t</kbd> timer · <kbd>?</kbd> this help
+</div>
+<script src="./slides.js"></script>
+</body>
+</html>

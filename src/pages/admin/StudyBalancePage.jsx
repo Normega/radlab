@@ -198,15 +198,15 @@ export default function StudyBalancePage() {
 }
 
 const S = {
-  backLink:  { fontSize: 13, color: 'var(--tx2)', textDecoration: 'none', display: 'inline-block', marginBottom: 8 },
+  backLink:  { fontSize: 14, color: 'var(--tx2)', textDecoration: 'none', display: 'inline-block', marginBottom: 8 },
   h1:        { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 26, fontWeight: 400, color: 'var(--tx)', margin: '0 0 6px' },
-  sub:       { fontSize: 13, color: 'var(--tx2)', margin: '0 0 28px' },
+  sub:       { fontSize: 14, color: 'var(--tx2)', margin: '0 0 28px' },
   muted:     { fontSize: 14, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif' },
   card:      { background: '#fff', border: '1px solid var(--bd)', borderRadius: 10, padding: '18px 20px', marginBottom: 20, maxWidth: 620 },
-  cardTitle: { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--pkd)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 },
+  cardTitle: { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--pkd)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 },
   table:     { width: '100%', borderCollapse: 'collapse' },
-  th:        { fontFamily: '"Space Mono",monospace', fontSize: 10, color: 'var(--tx3)', textAlign: 'left', padding: '6px 10px', borderBottom: '1px solid var(--bd)', textTransform: 'uppercase', letterSpacing: '0.05em' },
+  th:        { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', textAlign: 'left', padding: '6px 10px', borderBottom: '1px solid var(--bd)', textTransform: 'uppercase', letterSpacing: '0.05em' },
   tr:        { borderBottom: '1px solid var(--bd)' },
-  td:        { padding: '8px 10px', fontSize: 13, fontFamily: '"DM Sans",system-ui,sans-serif', color: 'var(--tx)' },
+  td:        { padding: '8px 10px', fontSize: 14, fontFamily: '"DM Sans",system-ui,sans-serif', color: 'var(--tx)' },
   mono:      { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx2)' },
 }

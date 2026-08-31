@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PSY309 · L8 · Advanced Designs</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&family=Source+Sans+3:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="./slides.css">
+</head>
+<body>
+<div id="deck">
+
+<section data-kind="title">
+  <p class="kicker">PSY309H5 F · Lecture 7 · 3 November 2026</p>
+  <h1>Advanced Designs</h1>
+  <p class="lead">When one variable isn't enough — and when the world won't let you randomize</p>
+  <p class="small" style="margin-top:3vmin">Welcome back. <strong>Practical 4 due this Friday.</strong></p>
+</section>
+
+<section>
+  <p class="kicker">Check in</p>
+  <h1>Open the dashboard</h1>
+  <p class="url" style="font-family:'JetBrains Mono',monospace;font-size:3.4vmin;color:var(--accent);font-weight:600">radlab.zone/class/psy309</p>
+  <p class="lead">Practical 4 is due Friday. Who has their effect size? Who needs ten minutes with a TA today?</p>
+  <aside class="notes"><p>Check-in position 1. Take a genuine show of hands on the effect size — it tells you how much of the lab block to protect.</p></aside>
+</section>
+
+<section data-kind="divider">
+  <p class="kicker">Part one</p>
+  <h1>Two variables at once</h1>
+</section>
+
+<section>
+  <h1>The interesting questions are a size up</h1>
+  <p>One IV answers "does X matter?" But:</p>
+  <ul>
+    <li>Does X matter <strong>for everyone</strong>?</li>
+    <li><strong>Under all conditions</strong>?</li>
+    <li>More than Y?</li>
+  </ul>
+  <p class="big hidden-until">Cross two IVs and you get a grid. That's a factorial design.</p>
+</section>
+
+<section>
+  <h1>Anatomy</h1>
+  <div class="cols">
+    <div>
+      <p>Study technique (retrieval vs re-reading) × testing delay (immediate vs one week) = a <strong>2 × 2</strong>: four <strong>cells</strong>.</p>
+      <p class="small">Each number in the notation is a factor; its value is the number of levels; the product is the cell count. A 3 × 2 has six cells. A 2 × 2 × 2 has eight.</p>
+    </div>
+    <div>
+      <div class="box">
+        <p><strong>Read "a 2 × 3 factorial" and you already know the shape</strong> before the paragraph ends.</p>
+        <p class="small">Each factor can independently be within- or between-subjects. One of each is a <em>mixed</em> design — next week.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h1>Why cross factors at all?</h1>
+  <ul>
+    <li><strong>Efficiency</strong> — one study, two questions, same participants.</li>
+    <li><strong>Testing limits</strong> — cross your treatment with a <em>participant variable</em> (age group, experience, your covariate) and you're asking whether the effect holds across kinds of people. External validity, interrogated <em>inside</em> the experiment.</li>
+    <li><strong>Testing theories</strong> — if your theory says the effect works <em>through</em> mechanism M, it predicts the effect appears where M can operate and vanishes where it can't. Only a crossed design can check that.</li>
+  </ul>
+  <div class="box warn hidden-until">
+    <p>Careful: in that middle case the treatment factor is <em>manipulated</em> and the participant factor is <em>measured</em>. Causal language applies to the first and not the second.</p>
+  </div>
+</section>
+
+<section>
+  <h1>What a factorial buys that two studies don't</h1>
+  <p>Run "does technique matter?" and "does delay matter?" separately and something is invisible in both:</p>
+  <p class="big hidden-until">Whether technique's effect <em>depends on</em> delay.</p>
+  <p class="hidden-until lead">That dependence — the <strong>interaction</strong> — is the factorial design's exclusive product. And in psychology it's usually the finding.</p>
+</section>
+
+<section>
+  <h1>Reading the grid</h1>
+  <table>
+    <tr><th></th><th>Immediate</th><th>One week</th><th>row mean</th></tr>
+    <tr><td class="rowhead">Retrieval practice</td><td>80</td><td>76</td><td class="margin">78</td></tr>
+    <tr><td class="rowhead">Re-reading</td><td>78</td><td>58</td><td class="margin">68</td></tr>
+    <tr><td class="rowhead">column mean</td><td class="margin">79</td><td class="margin">67</td><td></td></tr>
+  </table>
+  <ul>
+    <li class="hidden-until"><strong>Main effects: read the margins.</strong> Technique 78 vs 68. Delay 79 vs 67.</li>
+    <li class="hidden-until"><strong>Interaction: a difference in differences.</strong> Technique's effect is +2 immediately, +18 after a week. They differ → interaction.</li>
+  </ul>
+  <p class="hidden-until small"><strong>The frame:</strong> "There is a main effect of ___ such that ___ is higher than ___" — and never mention the other factor in a main-effect sentence.</p>
+</section>
+
+<section>
+  <h1>When both appear, the interaction wins</h1>
+  <p>"Retrieval practice is better overall" is true — and misleading. It's <em>barely</em> better immediately and <em>massively</em> better delayed.</p>
+  <p class="hidden-until"><strong>An interaction qualifies the main effects.</strong> Report it first, and let the simple effects tell the honest story.</p>
+  <div class="box warn hidden-until">
+    <p>This is the trap headline-writers fall into in reverse: reporting the average effect of an intervention that helps one group and does nothing for another.</p>
+  </div>
+  <p class="small hidden-until">Parallel lines = no interaction. Non-parallel = interaction. Crossover = the dramatic special case.</p>
+</section>
+
+<section data-kind="activity">
+  <p class="kicker">Exercise · 30 minutes</p>
+  <h1>Interaction Studio</h1>
+  <p class="big">Six rounds. 90 seconds each. Sketch the graph, write the three findings.</p>
+  <ol>
+    <li>Main effect of A?</li>
+    <li>Main effect of B?</li>
+    <li>Interaction — and if yes, say it in <em>simple effects</em>?</li>
+  </ol>
+  <aside class="notes"><p>Check-in position 2 for rounds 3 and 6. Reveal by DRAWING the lines on the board each round — the visual-to-verbal translation is the skill. Keep a team scoreboard if the room enjoys it.</p></aside>
+</section>
+
+<section>
+  <p class="kicker">Round 1 · warm-up</p>
+  <table>
+    <tr><th></th><th>Immediate</th><th>One week</th><th>row</th></tr>
+    <tr><td class="rowhead">Retrieval</td><td>70</td><td>60</td><td class="margin">65</td></tr>
+    <tr><td class="rowhead">Re-reading</td><td>50</td><td>40</td><td class="margin">45</td></tr>
+    <tr><td class="rowhead">column</td><td class="margin">60</td><td class="margin">50</td><td></td></tr>
+  </table>
+  <div class="svgwrap hidden-until"><svg viewBox="0 0 330 210" role="img" aria-labelledby="ln1-t ln1-d"><title id="ln1-t">Round one plotted</title><desc id="ln1-d">Two parallel descending lines.</desc><line x1="42" y1="22" x2="42" y2="170" stroke="#DCE2E6"/><line x1="42" y1="170" x2="234" y2="170" stroke="#141B22" stroke-width="1.5"/><polyline points="42,71 234,96" fill="none" stroke="#1F5C8B" stroke-width="3.5"/><circle cx="42" cy="71" r="5" fill="#1F5C8B"/><circle cx="234" cy="96" r="5" fill="#1F5C8B"/><text x="243" y="100" font-size="12.5" font-weight="bold" fill="#1F5C8B">Retrieval</text><polyline points="42,121 234,145" fill="none" stroke="#B5540F" stroke-width="3.5"/><circle cx="42" cy="121" r="5" fill="#B5540F"/><circle cx="234" cy="145" r="5" fill="#B5540F"/><text x="243" y="149" font-size="12.5" font-weight="bold" fill="#B5540F">Re-reading</text><text x="42" y="190" text-anchor="middle" font-size="12" fill="#141B22">Immediate</text><text x="234" y="190" text-anchor="middle" font-size="12" fill="#141B22">One week</text><text x="12" y="96" font-size="11.5" fill="#5C6773" transform="rotate(-90 12 96)" text-anchor="middle">exam score</text></svg></div>
+  <p class="hidden-until">Both main effects. Simple effects <strong>+10 and +10</strong> — identical, so <strong>no interaction</strong>. Parallel lines.</p>
+</section>
+
+<section>
+  <p class="kicker">Round 3 · the one that earns the session</p>
+  <table>
+    <tr><th></th><th>On phone</th><th>Not on phone</th><th>row</th></tr>
+    <tr><td class="rowhead">Younger drivers</td><td>80</td><td>40</td><td class="margin">60</td></tr>
+    <tr><td class="rowhead">Older drivers</td><td>40</td><td>80</td><td class="margin">60</td></tr>
+    <tr><td class="rowhead">column</td><td class="margin">60</td><td class="margin">60</td><td></td></tr>
+  </table>
+  <p class="hidden-until"><strong>No main effect of either factor</strong> — every margin is 60. And a <strong>large interaction</strong>: +40 and −40.</p>
+  <div class="svgwrap hidden-until"><svg viewBox="0 0 330 210" role="img" aria-labelledby="ln3-t ln3-d"><title id="ln3-t">Round three plotted</title><desc id="ln3-d">Two lines crossing in an X shape.</desc><line x1="42" y1="22" x2="42" y2="170" stroke="#DCE2E6"/><line x1="42" y1="170" x2="234" y2="170" stroke="#141B22" stroke-width="1.5"/><polyline points="42,47 234,145" fill="none" stroke="#1F5C8B" stroke-width="3.5"/><circle cx="42" cy="47" r="5" fill="#1F5C8B"/><circle cx="234" cy="145" r="5" fill="#1F5C8B"/><text x="243" y="149" font-size="12.5" font-weight="bold" fill="#1F5C8B">Younger</text><polyline points="42,145 234,47" fill="none" stroke="#B5540F" stroke-width="3.5"/><circle cx="42" cy="145" r="5" fill="#B5540F"/><circle cx="234" cy="47" r="5" fill="#B5540F"/><text x="243" y="51" font-size="12.5" font-weight="bold" fill="#B5540F">Older</text><text x="42" y="190" text-anchor="middle" font-size="12" fill="#141B22">On phone</text><text x="234" y="190" text-anchor="middle" font-size="12" fill="#141B22">Not on phone</text><text x="12" y="96" font-size="11.5" fill="#5C6773" transform="rotate(-90 12 96)" text-anchor="middle">accidents</text></svg></div>
+  <p class="hidden-until big" style="color:var(--do)">A researcher reporting only main effects would conclude nothing happens here. The opposite of the truth.</p>
+  <aside class="notes"><p>Pause here. Ask: what would this study's abstract say if the authors only reported main effects? Then: how often do you think that happens?</p></aside>
+</section>
+
+<section>
+  <p class="kicker">Round 6 · the trap</p>
+  <table>
+    <tr><th></th><th>Level 1</th><th>Level 2</th><th>row</th></tr>
+    <tr><td class="rowhead">Treatment</td><td>65</td><td>63</td><td class="margin">64</td></tr>
+    <tr><td class="rowhead">Control</td><td>63</td><td>61</td><td class="margin">62</td></tr>
+    <tr><td class="rowhead">column</td><td class="margin">64</td><td class="margin">62</td><td></td></tr>
+  </table>
+  <p class="hidden-until">Tiny, perfectly consistent differences. No interaction.</p>
+  <p class="hidden-until big" style="color:var(--do)">The right answer isn't "small main effects." It's <em>"I can't tell from cell means alone."</em></p>
+  <div class="svgwrap hidden-until"><svg viewBox="0 0 330 210" role="img" aria-labelledby="ln6-t ln6-d"><title id="ln6-t">Round six plotted</title><desc id="ln6-d">Two nearly flat, nearly overlapping lines.</desc><line x1="42" y1="22" x2="42" y2="170" stroke="#DCE2E6"/><line x1="42" y1="170" x2="234" y2="170" stroke="#141B22" stroke-width="1.5"/><polyline points="42,84 234,89" fill="none" stroke="#1F5C8B" stroke-width="3.5"/><circle cx="42" cy="84" r="5" fill="#1F5C8B"/><circle cx="234" cy="89" r="5" fill="#1F5C8B"/><text x="243" y="93" font-size="12.5" font-weight="bold" fill="#1F5C8B">Treatment</text><polyline points="42,89 234,94" fill="none" stroke="#B5540F" stroke-width="3.5"/><circle cx="42" cy="89" r="5" fill="#B5540F"/><circle cx="234" cy="94" r="5" fill="#B5540F"/><text x="243" y="98" font-size="12.5" font-weight="bold" fill="#B5540F">Control</text><text x="42" y="190" text-anchor="middle" font-size="12" fill="#141B22">Level 1</text><text x="234" y="190" text-anchor="middle" font-size="12" fill="#141B22">Level 2</text><text x="12" y="96" font-size="11.5" fill="#5C6773" transform="rotate(-90 12 96)" text-anchor="middle">outcome</text></svg></div>
+  <p class="hidden-until lead">Without SDs, confidence intervals, or n, these numbers are uninterpretable. <strong>A table of means is not a result.</strong></p>
+</section>
+
+<section data-kind="break">
+  <p class="kicker">Break 1 · ten minutes</p>
+  <h1>Check in</h1>
+  <p class="url">radlab.zone/class/psy309</p>
+  <div class="qbox">
+    <p><strong>The material:</strong> what's one idea from the first hour that clicked — and one that didn't?</p>
+    <p><strong>You:</strong> how engaged have you felt so far, and what would help?</p>
+  </div>
+  <aside class="notes"><p>Check-in position 20.</p></aside>
+</section>
+
+<section data-kind="divider">
+  <p class="kicker">Part two</p>
+  <h1>Up a level, and out into the world</h1>
+</section>
+
+<section>
+  <h1>Three-way designs</h1>
+  <p>A 2 × 2 × 2 has eight cells and <strong>seven</strong> testable effects: three main effects, three two-way interactions, and one three-way.</p>
+  <div class="box hidden-until">
+    <p><strong>The recursive question.</strong> A main effect asks: is there an overall difference? A two-way asks: is the effect different across levels of another factor? A three-way asks: <em>is the two-way interaction itself different across levels of the third?</em></p>
+    <p class="small">Reading method: draw the A × B graph <strong>twice</strong>, once per level of C, and compare the panels.</p>
+  </div>
+  <p class="hidden-until"><strong>And know when to stop.</strong> A four-way design tests fifteen effects; a significant four-way interaction means "the pattern of the pattern of the pattern differs" — a sentence nobody can hold.</p>
+  <p class="hidden-until big" style="font-size:3vmin">Parsimony: the simplest design that answers the question is the best design.</p>
+</section>
+
+<section>
+  <h1>When you can't randomize</h1>
+  <p class="lead">You cannot assign countries to organ-donation policies, teenagers to watching a show, or patients to having had surgery.</p>
+  <p class="big hidden-until">A <strong>quasi-experiment</strong> keeps the comparison structure and gives up random assignment.</p>
+  <p class="hidden-until">So the question, every time: <em>who ended up in which group, and why?</em></p>
+</section>
+
+<section>
+  <h1>A continuum, not a category</h1>
+  <ul>
+    <li><strong>Policy as experimenter.</strong> European organ-donor rates track whether the form's default is donor or non-donor. Nobody randomized nations — but the "assignment" is a bureaucratic accident plausibly unrelated to citizens' attitudes. <span class="small">(Johnson &amp; Goldstein, 2003)</span></li>
+    <li><strong>History as experimenter.</strong> Youth suicide rates before and after a show's release — an interrupted time series. <span class="small">(Bridge et al., 2019)</span></li>
+    <li><strong>Self-selection as experimenter.</strong> People who chose cosmetic surgery vs people who only considered it. Assignment made by the people being studied.</li>
+  </ul>
+  <p class="hidden-until"><strong>Placing a study on that continuum is the skill.</strong> Not dismissal ("just correlational"), not credulity ("there was a comparison group!") — <em>how close was this to random, and what did the authors do about the gap?</em></p>
+</section>
+
+<section>
+  <h1>Why respect them</h1>
+  <div class="cols">
+    <div>
+      <p>Because the alternative to an imperfect answer is often <strong>no answer</strong>.</p>
+      <p>Quasi-experiments trade internal validity for <em>reach</em>: real policies, real disasters, real populations, at scales no lab touches.</p>
+    </div>
+    <div>
+      <p>Their external validity is often superb precisely because nothing was artificial.</p>
+      <p class="hidden-until small">And sometimes they're the <em>ethical</em> design: you cannot assign people to trauma, but you can learn carefully from trauma that occurred.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h1>Small-N: the other bargain</h1>
+  <p>Study <strong>a few individuals intensively</strong>, treat each as their own experiment, present each person's data in full.</p>
+  <ul class="hidden-until">
+    <li><strong>Stable-baseline</strong> — measure until it's flat, then intervene. The baseline's stability is the argument.</li>
+    <li><strong>Multiple-baseline</strong> — stagger the intervention across people or settings. A history explanation would need one coincidence per participant.</li>
+    <li><strong>Reversal (ABAB)</strong> — introduce, withdraw, reintroduce. Only suits effects that <em>can</em> reverse; you can't ABAB a skill.</li>
+  </ul>
+  <div class="box hidden-until">
+    <p><strong>H.M.</strong> lost the ability to form new explicit memories — yet improved at motor tasks he never remembered doing. One patient, studied for decades, split memory into systems. <strong>N = 1.</strong></p>
+    <p class="small">Control and measurement density can substitute for headcount when the phenomenon is robust within individuals.</p>
+  </div>
+</section>
+
+<section data-kind="break">
+  <p class="kicker">Break 2 · ten minutes</p>
+  <h1>Check in</h1>
+  <p class="url">radlab.zone/class/psy309</p>
+  <div class="qbox">
+    <p><strong>The material:</strong> what's one question you still have about today, now that you've worked with it?</p>
+    <p><strong>You:</strong> how has your engagement changed since the first break — and what changed it?</p>
+  </div>
+  <aside class="notes"><p>Check-in position 40.</p></aside>
+</section>
+
+<section data-kind="activity">
+  <p class="kicker">Lab block · 35 minutes</p>
+  <h1>Your data, as a 2 × 2</h1>
+  <div class="cols">
+    <div>
+      <p>Take your Practical 4 simulated data. Split the covariate at its median. Plot the DV by your two groups.</p>
+      <pre>d$cov_cat &lt;- cut(d$cov,
+  breaks = c(-Inf, median(d$cov), Inf),
+  labels = c("Lower","Higher"))</pre>
+    </div>
+    <div>
+      <div class="box warn">
+        <p><strong>Then write the sentence:</strong> does your manipulation look like it works equally at both levels of your covariate?</p>
+        <p class="small">That's the interaction you'll test in Practical 5. This is the dry run.</p>
+      </div>
+    </div>
+  </div>
+  <aside class="notes"><p>Check-in position 3. TAs circulating. This is also the room to catch anyone whose Practical 4 isn't started — Friday is three days away.</p></aside>
+</section>
+
+<section data-kind="activity">
+  <p class="kicker">Coming up</p>
+  <h1>Practical 5 is the factorial one</h1>
+  <p class="lead">The covariate you've carried since Practical 3 is about to become a factor.</p>
+  <ul>
+    <li>A causal theory for your manipulation — the mechanism, not just the prediction</li>
+    <li>Literature with <strong>effect sizes</strong></li>
+    <li>A <strong>moderation story</strong>: does the manipulation work equally at all covariate levels?</li>
+    <li>Categorize the covariate, plot it, analyse it — and argue about what categorizing <em>cost</em> you</li>
+  </ul>
+  <p class="small">Due Nov 27. Test 2 comes first, on Nov 17.</p>
+</section>
+
+<section data-kind="break">
+  <p class="kicker">Last thing</p>
+  <h1>Check out</h1>
+  <p class="url">radlab.zone/class/psy309</p>
+  <div class="qbox">
+    <p>Question box. Next week: mixed models — and a dataset where studying more makes your grades worse and better at the same time.</p>
+  </div>
+  <aside class="notes"><p>Check-in position 4.</p></aside>
+</section>
+
+</div>
+<div id="bar"></div><div id="num"></div><div id="clock"></div>
+<div id="help"><kbd>→</kbd> next · <kbd>←</kbd> back · <kbd>f</kbd> fullscreen · <kbd>n</kbd> notes<br><kbd>o</kbd> overview · <kbd>t</kbd> timer · <kbd>?</kbd> help</div>
+<script src="./slides.js"></script>
+</body>
+</html>

@@ -218,7 +218,7 @@ export default function AudioUpload() {
             <p style={{ fontFamily: 'DM Sans', fontSize: 14, fontWeight: 600, color: 'var(--tx)', margin: '0 0 4px' }}>
               {file.name}
             </p>
-            <p style={{ fontFamily: 'Space Mono', fontSize: 11, color: 'var(--tx3)', margin: '0 0 8px' }}>
+            <p style={{ fontFamily: 'Space Mono', fontSize: 12, color: 'var(--tx3)', margin: '0 0 8px' }}>
               {fmtSize(file.size)}
               {meta?.duration != null && ` · ${Math.floor(meta.duration / 60)}:${(meta.duration % 60).toString().padStart(2, '0')}`}
             </p>
@@ -238,7 +238,7 @@ export default function AudioUpload() {
             <p style={{ fontFamily: 'DM Sans', fontSize: 15, color: 'var(--tx2)', margin: '8px 0 4px' }}>
               Drag & drop an audio file here
             </p>
-            <p style={{ fontFamily: 'DM Sans', fontSize: 13, color: 'var(--tx3)', margin: 0 }}>
+            <p style={{ fontFamily: 'DM Sans', fontSize: 14, color: 'var(--tx3)', margin: 0 }}>
               or click to browse · mp3 only
             </p>
           </div>
@@ -278,7 +278,7 @@ export default function AudioUpload() {
             )}
           </div>
           {effectiveFolder && (
-            <p style={{ fontFamily: 'Space Mono', fontSize: 11, color: 'var(--tx3)', margin: '4px 0 0' }}>
+            <p style={{ fontFamily: 'Space Mono', fontSize: 12, color: 'var(--tx3)', margin: '4px 0 0' }}>
               Storage path prefix: audio/{folderSlug(effectiveFolder)}/
             </p>
           )}
@@ -290,10 +290,10 @@ export default function AudioUpload() {
       {uploading && (
         <div style={{ marginTop: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-            <span style={{ fontFamily: 'DM Sans', fontSize: 13, color: 'var(--tx2)' }}>
+            <span style={{ fontFamily: 'DM Sans', fontSize: 14, color: 'var(--tx2)' }}>
               {uploadDone ? 'Complete' : 'Uploading…'}
             </span>
-            <span style={{ fontFamily: 'Space Mono', fontSize: 11, color: 'var(--tx3)' }}>{progress}%</span>
+            <span style={{ fontFamily: 'Space Mono', fontSize: 12, color: 'var(--tx3)' }}>{progress}%</span>
           </div>
           <div style={S.progressTrack}>
             <div style={{
@@ -336,7 +336,7 @@ function PreflightPanel({ check }) {
       padding: '14px 16px',
     }}>
       <p style={{
-        fontFamily: 'Space Mono', fontSize: 11,
+        fontFamily: 'Space Mono', fontSize: 12,
         color: allPass ? '#1EA878' : '#8b6000',
         textTransform: 'uppercase', letterSpacing: '0.06em',
         margin: '0 0 10px',
@@ -346,7 +346,7 @@ function PreflightPanel({ check }) {
 
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
         <span style={{
-          fontFamily: 'Space Mono', fontSize: 10,
+          fontFamily: 'Space Mono', fontSize: 12,
           color: bitrateOk ? '#1EA878' : '#b07800',
           width: 14, flexShrink: 0, textAlign: 'center',
         }}>
@@ -375,7 +375,7 @@ const S = {
   backBtn: {
     background: 'var(--bgc)', border: '1px solid var(--bd)',
     borderRadius: 8, padding: '6px 14px', cursor: 'pointer',
-    fontFamily: 'DM Sans', fontSize: 13, color: 'var(--tx2)',
+    fontFamily: 'DM Sans', fontSize: 14, color: 'var(--tx2)',
   },
   dropZone: {
     border: '2px dashed', borderRadius: 14, padding: '36px 24px',
@@ -401,7 +401,7 @@ const S = {
   },
   fieldWrap: { display: 'flex', flexDirection: 'column', gap: 6 },
   label: {
-    fontFamily: 'Space Mono', fontSize: 11,
+    fontFamily: 'Space Mono', fontSize: 12,
     color: 'var(--tx2)', textTransform: 'uppercase', letterSpacing: '0.05em',
   },
   input: {
@@ -415,7 +415,7 @@ const S = {
   errorBox: {
     background: '#fff5f0', border: '1px solid #e67e22',
     borderRadius: 10, padding: '12px 16px',
-    fontFamily: 'DM Sans', fontSize: 13, color: '#8b4513',
+    fontFamily: 'DM Sans', fontSize: 14, color: '#8b4513',
   },
   primaryBtn: {
     background: 'var(--pk)', color: '#fff', border: 'none',

@@ -197,7 +197,7 @@ function FolderTab({ label, count, active, onClick }) {
         padding: '5px 14px',
         cursor: 'pointer',
         fontFamily: 'DM Sans',
-        fontSize: 13,
+        fontSize: 14,
         fontWeight: active ? 600 : 400,
         color: active ? 'var(--pkd)' : 'var(--tx2)',
         display: 'flex', alignItems: 'center', gap: 6,
@@ -209,7 +209,7 @@ function FolderTab({ label, count, active, onClick }) {
         color: active ? '#fff' : 'var(--tx3)',
         borderRadius: 10,
         padding: '1px 7px',
-        fontSize: 11,
+        fontSize: 12,
         fontFamily: 'Space Mono',
       }}>
         {count}
@@ -269,7 +269,7 @@ function VideoRow({ video, confirmDelete, onConfirmDelete, onDelete, deleting, o
           </>
         ) : (
           <>
-            <span style={{ fontFamily: 'DM Sans', fontSize: 13, color: 'var(--tx2)' }}>Delete?</span>
+            <span style={{ fontFamily: 'DM Sans', fontSize: 14, color: 'var(--tx2)' }}>Delete?</span>
             <button onClick={() => onConfirmDelete(null)} style={S.ghostBtn}>Cancel</button>
             <button
               onClick={onDelete}
@@ -323,7 +323,7 @@ function PreviewModal({ video, onClose }) {
               {video.title}
             </p>
             <p style={{
-              fontFamily: 'Space Mono', fontSize: 11,
+              fontFamily: 'Space Mono', fontSize: 12,
               color: 'rgba(255,255,255,0.45)', margin: 0,
             }}>
               Preview — no session data recorded
@@ -334,7 +334,7 @@ function PreviewModal({ video, onClose }) {
             style={{
               background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
               borderRadius: 8, padding: '6px 14px', cursor: 'pointer',
-              fontFamily: 'DM Sans', fontSize: 13, color: '#fff',
+              fontFamily: 'DM Sans', fontSize: 14, color: '#fff',
             }}
           >
             ✕ Close
@@ -362,7 +362,7 @@ const S = {
     color: 'var(--tx)', margin: '0 0 4px',
   },
   sub: {
-    fontFamily: 'DM Sans', fontSize: 13,
+    fontFamily: 'DM Sans', fontSize: 14,
     color: 'var(--tx3)', margin: 0,
   },
   meta: {
@@ -386,7 +386,7 @@ const S = {
     textAlign: 'center',
   },
   folderHeading: {
-    fontFamily: 'Space Mono', fontSize: 11,
+    fontFamily: 'Space Mono', fontSize: 12,
     color: 'var(--tx3)', textTransform: 'uppercase',
     letterSpacing: '0.06em', margin: '0 0 8px',
   },
@@ -421,7 +421,7 @@ const S = {
     fontStyle: 'italic',
   },
   storagePath: {
-    fontFamily: 'Space Mono', fontSize: 11,
+    fontFamily: 'Space Mono', fontSize: 12,
     color: 'var(--gy)', margin: '4px 0 0',
     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
   },

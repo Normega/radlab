@@ -95,7 +95,7 @@ const S = {
   section:      { marginBottom: 40 },
   sectionTitle: {
     fontFamily: '"Space Mono",monospace',
-    fontSize: 11, fontWeight: 700,
+    fontSize: 12, fontWeight: 700,
     color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.08em',
     margin: '0 0 14px',
   },
@@ -118,7 +118,7 @@ const S = {
 
   badge: {
     fontFamily: '"Space Mono",monospace',
-    fontSize: 10, color: 'var(--tx3)',
+    fontSize: 12, color: 'var(--tx3)',
     textTransform: 'uppercase', letterSpacing: '0.06em',
   },
   gameName: {
@@ -138,14 +138,14 @@ const S = {
   },
   reviewLink: {
     display: 'block', padding: '10px 18px', flex: 1,
-    fontFamily: '"Space Mono",monospace', fontSize: 11,
+    fontFamily: '"Space Mono",monospace', fontSize: 12,
     letterSpacing: '0.1em', textTransform: 'uppercase',
     color: 'var(--pk)', textDecoration: 'none',
   },
   demoLink: {
     display: 'block', padding: '10px 18px',
     borderLeft: '1px solid var(--pkb)',
-    fontFamily: '"Space Mono",monospace', fontSize: 11,
+    fontFamily: '"Space Mono",monospace', fontSize: 12,
     letterSpacing: '0.1em', textTransform: 'uppercase',
     color: 'var(--tx3)', textDecoration: 'none',
     whiteSpace: 'nowrap',

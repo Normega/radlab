@@ -129,6 +129,6 @@ const S = {
   },
   errorBox: {
     background: 'var(--err-bg)', border: '1px solid var(--err-bd)', borderRadius: 12,
-    padding: '10px 14px', fontSize: 13, color: 'var(--err-tx)', width: '100%', boxSizing: 'border-box',
+    padding: '10px 14px', fontSize: 14, color: 'var(--err-tx)', width: '100%', boxSizing: 'border-box',
   },
 }

@@ -85,7 +85,7 @@ const S = {
   },
   errorBox: {
     background: 'var(--err-bg)', border: '1px solid var(--err-bd)', borderRadius: 12,
-    padding: '10px 14px', fontSize: 13, color: 'var(--err-tx)', width: '100%', boxSizing: 'border-box',
+    padding: '10px 14px', fontSize: 14, color: 'var(--err-tx)', width: '100%', boxSizing: 'border-box',
   },
   footer: { textAlign: 'center', fontSize: 12, fontWeight: 600, color: 'var(--tx2)', margin: '8px 0 0' },
   footerLink: { color: 'var(--pk)', textDecoration: 'none', fontWeight: 600 },

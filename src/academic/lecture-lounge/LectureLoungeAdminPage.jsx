@@ -104,6 +104,7 @@ function ClassRow({ cls, expanded, onToggle, onDelete }) {
           <div style={S.actions}>
             <button style={S.actionBtn} onClick={onToggle}>{expanded ? 'Hide instructors' : 'Instructors'}</button>
             <Link to={`/class/${cls.slug}/console`} style={S.actionBtn}>Console</Link>
+            <Link to={`/class/${cls.slug}/slides`} style={S.actionBtn}>Slides</Link>
             <Link to={`/class/${cls.slug}`} style={S.actionBtn}>Join page</Link>
             <QrDownloadButton
               value={`${window.location.origin}/class/${cls.slug}`}
@@ -275,27 +276,27 @@ const S = {
   emptyHint: { fontSize: 14, color: 'var(--tx2)', margin: 0 },
   tableWrap: { overflowX: 'auto', borderRadius: 10, border: '1px solid var(--bd)', background: 'var(--bgc)' },
   table: { width: '100%', borderCollapse: 'collapse' },
-  th: { fontFamily: MONO, fontSize: 11, color: 'var(--tx3)', textAlign: 'left', padding: '10px 16px', borderBottom: '1px solid var(--bd)', textTransform: 'uppercase', letterSpacing: '0.06em' },
+  th: { fontFamily: MONO, fontSize: 12, color: 'var(--tx3)', textAlign: 'left', padding: '10px 16px', borderBottom: '1px solid var(--bd)', textTransform: 'uppercase', letterSpacing: '0.06em' },
   tr: { borderBottom: '1px solid var(--bd)' },
   td: { padding: '12px 16px', verticalAlign: 'middle' },
   expandCell: { padding: '12px 16px 20px', background: 'var(--bg)', borderBottom: '1px solid var(--bd)' },
   actions: { display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' },
-  actionBtn: { background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: 'var(--tx2)', padding: 0, textDecoration: 'none', fontFamily: '"DM Sans",system-ui,sans-serif' },
-  deleteBtn: { background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: '#c0392b', padding: 0, fontFamily: '"DM Sans",system-ui,sans-serif' },
+  actionBtn: { background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: 'var(--tx2)', padding: 0, textDecoration: 'none', fontFamily: '"DM Sans",system-ui,sans-serif' },
+  deleteBtn: { background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: '#c0392b', padding: 0, fontFamily: '"DM Sans",system-ui,sans-serif' },
   btnPrimary: { display: 'inline-block', background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
-  btnSmall: { background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 8, padding: '7px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' },
-  cancelBtn: { background: 'none', border: '1px solid var(--bd)', borderRadius: 8, padding: '7px 16px', fontSize: 13, cursor: 'pointer', color: 'var(--tx2)', fontFamily: 'inherit' },
+  btnSmall: { background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 8, padding: '7px 16px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' },
+  cancelBtn: { background: 'none', border: '1px solid var(--bd)', borderRadius: 8, padding: '7px 16px', fontSize: 14, cursor: 'pointer', color: 'var(--tx2)', fontFamily: 'inherit' },
   createForm: { display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' },
   addForm: { display: 'flex', gap: 8, marginTop: 10 },
-  input: { padding: '7px 10px', borderRadius: 7, border: '1px solid var(--bds)', fontSize: 13, fontFamily: 'inherit' },
+  input: { padding: '7px 10px', borderRadius: 7, border: '1px solid var(--bds)', fontSize: 14, fontFamily: 'inherit' },
   adminList: { listStyle: 'none', padding: 0, margin: 0 },
-  adminItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', fontSize: 13, color: 'var(--tx)', maxWidth: 340 },
-  errorText: { fontSize: 13, color: '#c0392b', margin: '8px 0 0' },
+  adminItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', fontSize: 14, color: 'var(--tx)', maxWidth: 340 },
+  errorText: { fontSize: 14, color: '#c0392b', margin: '8px 0 0' },
   overlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 },
   dialog: { background: '#fff', borderRadius: 14, padding: '28px 32px', maxWidth: 420, width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.18)' },
   dialogTitle: { fontFamily: SERIF, fontSize: 20, fontWeight: 400, color: 'var(--tx)', margin: '0 0 12px' },
   dialogBody: { fontSize: 14, color: 'var(--tx2)', margin: '0 0 24px', lineHeight: 1.6 },
   dialogActions: { display: 'flex', justifyContent: 'flex-end', gap: 10 },
   confirmDeleteBtn: { background: '#c0392b', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 18px', fontSize: 14, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', fontWeight: 600 },
-  dialogError: { fontSize: 13, color: '#c0392b', margin: '12px 0 0', fontFamily: '"DM Sans",system-ui,sans-serif' },
+  dialogError: { fontSize: 14, color: '#c0392b', margin: '12px 0 0', fontFamily: '"DM Sans",system-ui,sans-serif' },
 }

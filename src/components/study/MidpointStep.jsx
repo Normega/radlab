@@ -528,12 +528,12 @@ const M = {
   feedbackBadge: {
     position: 'absolute', top: -9, left: 12,
     background: 'var(--bds)', color: 'var(--tx2)', borderRadius: 8,
-    fontSize: 11, fontWeight: 600, padding: '2px 8px',
+    fontSize: 12, fontWeight: 600, padding: '2px 8px',
     fontFamily: '"DM Sans", system-ui, sans-serif',
   },
   feedbackBadgeTop: { background: 'var(--pkd)', color: '#fff' },
   topTag: {
-    marginLeft: 8, fontSize: 11, fontWeight: 600, color: 'var(--pkd)',
+    marginLeft: 8, fontSize: 12, fontWeight: 600, color: 'var(--pkd)',
     background: 'var(--bgp)', borderRadius: 6, padding: '2px 7px',
     verticalAlign: 'middle',
   },
@@ -561,7 +561,7 @@ const M = {
   arrowBtn: {
     width: 28, height: 28, border: '1px solid var(--bds)', borderRadius: 6,
     background: 'var(--bgp)', cursor: 'pointer', display: 'flex',
-    alignItems: 'center', justifyContent: 'center', fontSize: 11, color: 'var(--tx)',
+    alignItems: 'center', justifyContent: 'center', fontSize: 12, color: 'var(--tx)',
   },
   arrowBtnOff: { opacity: 0.25, cursor: 'default' },
   dragHandle: { display: 'flex', flexDirection: 'column', gap: 4, flexShrink: 0, padding: '4px 2px', opacity: 0.35 },
@@ -571,11 +571,11 @@ const M = {
     padding: '14px 16px',
   },
   resultTitle: {
-    fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em',
+    fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em',
     color: 'var(--tx2)', marginBottom: 10, fontFamily: '"DM Sans", system-ui, sans-serif',
   },
   resultRow: {
-    display: 'flex', alignItems: 'center', gap: 10, fontSize: 13,
+    display: 'flex', alignItems: 'center', gap: 10, fontSize: 14,
     color: 'var(--tx)', marginBottom: 6, fontFamily: '"DM Sans", system-ui, sans-serif',
   },
   resultNum: { fontWeight: 600, color: 'var(--pk)', minWidth: 24 },
@@ -587,10 +587,10 @@ const M = {
   },
   heroOwl:     { width: 96, height: 96, objectFit: 'contain', marginBottom: 8 },
   heroEyebrow: {
-    fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em',
+    fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em',
     color: 'var(--pk)', fontFamily: '"DM Sans", system-ui, sans-serif',
   },
-  heroSub:   { fontSize: 13, color: 'var(--tx2)', marginTop: 2, fontFamily: '"DM Sans", system-ui, sans-serif' },
+  heroSub:   { fontSize: 14, color: 'var(--tx2)', marginTop: 2, fontFamily: '"DM Sans", system-ui, sans-serif' },
   heroTitle: { fontSize: 24, fontWeight: 600, color: 'var(--tx)', marginTop: 6, fontFamily: '"DM Sans", system-ui, sans-serif' },
   heroDesc:  { fontSize: 13.5, color: 'var(--tx2)', marginTop: 6, lineHeight: 1.5, fontFamily: '"DM Sans", system-ui, sans-serif' },
   messageBox: {
@@ -610,7 +610,7 @@ const M = {
     padding: '16px 18px',
   },
   expectTitle: {
-    fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em',
+    fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em',
     color: 'var(--tx2)', marginBottom: 8, fontFamily: '"DM Sans", system-ui, sans-serif',
   },
 }

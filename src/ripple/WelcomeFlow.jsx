@@ -755,9 +755,9 @@ const S = {
   finishRow:  { display: 'flex', alignItems: 'center', gap: 28, flexWrap: 'wrap', width: '100%' },
   finishCtas: { display: 'flex', gap: 12, flexWrap: 'wrap', alignSelf: 'stretch', justifyContent: 'flex-end' },
 
-  muted:  { fontSize: 13, color: 'var(--gy)', margin: 0, fontFamily: SANS },
+  muted:  { fontSize: 14, color: 'var(--gy)', margin: 0, fontFamily: SANS },
   errBox: {
-    fontSize: 13, color: 'var(--err-tx)', background: 'var(--err-bg)',
+    fontSize: 14, color: 'var(--err-tx)', background: 'var(--err-bg)',
     border: '1px solid var(--err-bd)', borderRadius: 12, padding: '10px 16px', margin: 0,
     width: '100%', boxSizing: 'border-box',
   },
