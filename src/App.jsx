@@ -684,8 +684,15 @@ export default function App() {
               <Route path="/academic/fieldguide/submissions" element={<SubmissionsQueue />} />
               {/* The audit trail auto-apply corrections are traded against. */}
               <Route path="/academic/fieldguide/corrections" element={<CorrectionsFeed />} />
-              {/* WP5: roster import, invites, unmatched-attempt queue. */}
+              {/* WP5: roster import, invites, unmatched-attempt queue.
+                  Course-specific by URL, not by dropdown: this page bulk-imports
+                  a few hundred students and bulk-emails them, and a picker with
+                  an arbitrary default still lets that land on the wrong course
+                  if nobody looks at it. The bare path resolves the choice
+                  (straight through when you staff one course, a chooser when you
+                  staff several) rather than defaulting to one. */}
               <Route path="/academic/fieldguide/roster" element={<RosterAdmin />} />
+              <Route path="/academic/fieldguide/roster/:courseCode" element={<RosterAdmin />} />
               {/* The pre-publish read, as a queue: risk-ordered pages, stamp
                   state, and a continue button. Stamping happens on the pages. */}
               <Route path="/academic/fieldguide/read" element={<ReadingQueue />} />

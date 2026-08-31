@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Link, useOutletContext } from 'react-router-dom'
+import { Link, Navigate, useOutletContext, useParams } from 'react-router-dom'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -53,9 +53,67 @@ const guessCol = (headers, patterns) => {
   return idx >= 0 ? idx : ''
 }
 
+const rosterPath = (code) => `/academic/fieldguide/roster/${String(code).toLowerCase()}`
+
+// Page chrome for the two pre-roster states (choose a course / unknown course),
+// so they sit on the same background and rails as the roster itself.
+function Frame({ children }) {
+  return (
+    <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '32px 20px 80px' }}>
+      <div style={{ maxWidth: 1060, margin: '0 auto' }}>
+        <p style={S.eyebrow}><Link to="/academic/fieldguide" style={S.eyebrowLink}>Field Guide</Link> · staff</p>
+        {children}
+      </div>
+    </div>
+  )
+}
+
+// The courses this person can actually open a roster for. Shown by both
+// pre-roster states, which differ only in why they are asking.
+function CourseList({ courses }) {
+  return (
+    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 18 }}>
+      {courses.map(e => (
+        <Link key={e.course_id} to={rosterPath(e.courses.code)} style={S.courseBtn}>
+          {e.courses.code}
+          <span style={S.courseBtnSub}>
+            {e.courses.name}{e.courses.term ? ` · ${e.courses.term}` : ''}
+          </span>
+        </Link>
+      ))}
+    </div>
+  )
+}
+
 export default function RosterAdmin() {
   const { courseClient, staffEnrollments, session } = useOutletContext()
-  const course = staffEnrollments[0]
+  const { courseCode } = useParams()
+
+  // One entry per course the caller staffs. Deduped because a person can hold
+  // more than one enrollment in the same course (ta AND instructor), and that
+  // would otherwise show as two identical choices.
+  const courses = useMemo(() => {
+    const byCode = new Map()
+    for (const e of staffEnrollments) {
+      const code = e.courses?.code
+      if (code && !byCode.has(code)) byCode.set(code, e)
+    }
+    return [...byCode.values()]
+      .sort((a, b) => a.courses.code.localeCompare(b.courses.code))
+  }, [staffEnrollments])
+
+  // Resolved from the URL and nothing else. The previous `staffEnrollments[0]`
+  // silently picked a course by array position, which made PSY309's roster
+  // unreachable and made which course you were editing depend on row order.
+  // A miss resolves to null and is reported; it must never fall back to a
+  // course the URL did not name, because the next click might be a 300-student
+  // import or a bulk invite.
+  const course = useMemo(() => {
+    if (!courseCode) return null
+    const want = courseCode.trim().toLowerCase()
+    return courses.find(e => e.courses.code.toLowerCase() === want) ?? null
+  }, [courseCode, courses])
+
   const courseId = course?.course_id
 
   const [rows, setRows] = useState(null)
@@ -175,11 +233,57 @@ export default function RosterAdmin() {
     setReload(k => k + 1)
   }
 
+  // ── Course resolution, before any roster is shown ────────────────────────
+  // Every hook above runs unconditionally; these returns sit below all of them
+  // so hook order is identical on every render.
+
+  // No course named. Staff exactly one and there is nothing to choose, so go
+  // straight through and keep the old bookmark working. Staff several and the
+  // choice IS the point of this route, so it gets made, not defaulted.
+  if (!courseCode) {
+    if (courses.length === 1) return <Navigate to={rosterPath(courses[0].courses.code)} replace />
+    return (
+      <Frame>
+        <h1 style={S.title}>Roster</h1>
+        <p style={S.sub}>
+          {courses.length
+            ? 'Which course? The roster page imports and emails in bulk, so it works on one named course at a time.'
+            : 'You do not staff any course, so there is no roster to manage.'}
+        </p>
+        <CourseList courses={courses} />
+      </Frame>
+    )
+  }
+
+  // Named a course the caller does not staff, or that does not exist. Say so
+  // rather than quietly showing a different course's roster.
+  if (!course) {
+    return (
+      <Frame>
+        <h1 style={S.title}>Roster</h1>
+        <p style={S.sub}>
+          No course with the code <code style={S.code}>{courseCode}</code> is one you staff.
+          {courses.length ? ' You have staff access to:' : ' You do not staff any course.'}
+        </p>
+        <CourseList courses={courses} />
+      </Frame>
+    )
+  }
+
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '32px 20px 80px' }}>
       <div style={{ maxWidth: 1060, margin: '0 auto' }}>
         <p style={S.eyebrow}><Link to="/academic/fieldguide" style={S.eyebrowLink}>Field Guide</Link> · staff</p>
-        <h1 style={S.title}>Roster{course?.courses ? ` · ${course.courses.code}` : ''}</h1>
+        <h1 style={S.title}>Roster · {course.courses.code}</h1>
+        {courses.length > 1 && (
+          <p style={S.sub}>
+            {courses.filter(e => e.course_id !== course.course_id).map(e => (
+              <Link key={e.course_id} to={rosterPath(e.courses.code)} style={S.switchLink}>
+                Switch to {e.courses.code}
+              </Link>
+            ))}
+          </p>
+        )}
         <p style={S.sub}>
           Import the ACORN CSV, invite, watch enrollment. <b>Enrolled</b> means the student clicked
           their emailed link — it can't be set by hand, and re-importing a CSV never regresses it.
@@ -306,4 +410,12 @@ const S = {
   td: { padding: '8px 10px', borderBottom: '1px solid var(--bd)', color: 'var(--tx)' },
   tiny: { fontFamily: MONO, fontSize: 11, padding: '3px 10px', marginRight: 6, borderRadius: 12, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx2)', cursor: 'pointer' },
   attemptRow: { display: 'flex', gap: 14, alignItems: 'center', padding: '6px 0', borderBottom: '1px dotted var(--bd)' },
+  courseBtn: {
+    display: 'flex', flexDirection: 'column', gap: 3, minWidth: 190,
+    fontFamily: MONO, fontSize: 15, fontWeight: 600, color: 'var(--tx)',
+    textDecoration: 'none', padding: '14px 18px', borderRadius: 12,
+    background: 'var(--bgc)', border: '1px solid var(--bd)',
+  },
+  courseBtnSub: { fontFamily: 'inherit', fontSize: 12, fontWeight: 400, color: 'var(--tx2)' },
+  switchLink: { fontFamily: MONO, fontSize: 12.5, color: 'var(--pk)', textDecoration: 'none', marginRight: 14 },
 }
