@@ -20,6 +20,14 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
 }[c]))
 
+// The From address sits on course.radlab.zone, which has no MX, so a reply to
+// it hard-bounces. These apex addresses are real Workspace mailboxes. Unknown
+// codes fall back to the lab address rather than guessing a course — see
+// supabase/functions/_shared/replyTo.ts for the full rationale.
+const COURSE_REPLY_TO = { psy240: 'psy240@radlab.zone', psy309: 'psy309@radlab.zone' }
+const replyToFor = (code) =>
+  COURSE_REPLY_TO[String(code ?? '').trim().toLowerCase()] ?? 'research@radlab.zone'
+
 function compose({ name, status, note, pageTitle, ask, origin, difficulty }) {
   const board = `${origin}/academic/fieldguide/gaps`
   const first = String(name).split(' ')[0]
@@ -119,6 +127,9 @@ export default async function handler(req, res) {
 
   const origin = process.env.SITE_URL || 'https://radlab.zone'
   const fromEmail = process.env.FROM_EMAIL || 'PSY240 Field Guide <fieldguide@course.radlab.zone>'
+  // Best-effort: a lookup failure costs the course-specific reply address,
+  // never the decision message the student is owed.
+  const { data: course } = await service.from('courses').select('code').eq('id', course_id).single()
   const { subject, text, html } = compose({
     name: c.student_name, status: c.status, note: c.note,
     pageTitle: c.page_title ?? c.page_slug, ask: c.ask,
@@ -129,7 +140,7 @@ export default async function handler(req, res) {
     const rsp = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { Authorization: `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: fromEmail, to: c.student_email, subject, text, html }),
+      body: JSON.stringify({ from: fromEmail, reply_to: replyToFor(course?.code), to: c.student_email, subject, text, html }),
     })
     if (!rsp.ok) throw new Error(`Resend ${rsp.status}: ${(await rsp.text()).slice(0, 200)}`)
 

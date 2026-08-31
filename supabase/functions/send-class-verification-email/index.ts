@@ -17,6 +17,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { Resend } from 'npm:resend'
 import { renderClassVerifyEmail } from '../_shared/classVerifyEmail.ts'
+import { courseReplyTo } from '../_shared/replyTo.ts'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -118,7 +119,9 @@ Deno.serve(async (req) => {
   const resend    = new Resend(Deno.env.get('RESEND_API_KEY'))
   const fromEmail = Deno.env.get('FROM_EMAIL') ?? 'research@radlab.zone'
 
-  const { error: sendErr } = await resend.emails.send({ from: fromEmail, to: email, subject, html, text })
+  const { error: sendErr } = await resend.emails.send({
+    from: fromEmail, reply_to: courseReplyTo(cls.slug), to: email, subject, html, text,
+  })
 
   if (sendErr) {
     console.error('Resend error:', sendErr)

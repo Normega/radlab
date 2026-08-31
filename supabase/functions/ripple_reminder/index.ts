@@ -25,6 +25,7 @@
 import { createClient, SupabaseClient } from 'npm:@supabase/supabase-js@2'
 import { Resend } from 'npm:resend'
 import { getOrCreateRippleUnsubscribeToken } from '../_shared/rippleUnsubscribeToken.ts'
+import { RESEARCH_REPLY_TO } from '../_shared/replyTo.ts'
 
 const TZ = 'America/Toronto'
 const WINDOW_HOURS: Record<string, number> = { morning: 8, midday: 12, evening: 19 }
@@ -258,7 +259,9 @@ async function deliverRippleEmail(opts: {
 
   const { subject, html, text } = renderRippleEmail({ checkinUrl, unsubscribeUrl, avatarUrl })
 
-  const { error: sendErr } = await resend.emails.send({ from: fromEmail, to, subject, html, text })
+  const { error: sendErr } = await resend.emails.send({
+    from: fromEmail, reply_to: RESEARCH_REPLY_TO, to, subject, html, text,
+  })
   if (sendErr) {
     return { ok: false, error: sendErr.message ?? String(sendErr) }
   }

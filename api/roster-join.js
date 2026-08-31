@@ -24,6 +24,14 @@ const LIFETIME_SEND_CAP = 50 // covers a whole term of sign-ins
 const normalize = (e) =>
   String(e ?? '').trim().toLowerCase().replace(/@(mail\.|alum\.)?utoronto\.ca$/, '@utoronto.ca')
 
+// The From address sits on course.radlab.zone, which has no MX, so a reply to
+// it hard-bounces. These apex addresses are real Workspace mailboxes. Unknown
+// codes fall back to the lab address rather than guessing a course — see
+// supabase/functions/_shared/replyTo.ts for the full rationale.
+const COURSE_REPLY_TO = { psy240: 'psy240@radlab.zone', psy309: 'psy309@radlab.zone' }
+const replyToFor = (code) =>
+  COURSE_REPLY_TO[String(code ?? '').trim().toLowerCase()] ?? 'research@radlab.zone'
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' })
 
@@ -87,12 +95,15 @@ export default async function handler(req, res) {
     if (!link) throw new Error('no action_link')
 
     const fromEmail = process.env.FROM_EMAIL || 'PSY240 Field Guide <fieldguide@course.radlab.zone>'
+    // Best-effort: a lookup failure costs the course-specific reply address,
+    // never the sign-in link the student is waiting on.
+    const { data: courseCode } = await service.rpc('roster_course_code', { p_id: row.id })
     const first = row.full_name.split(' ')[0]
     const rsp = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { Authorization: `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: fromEmail, to: row.email,
+        from: fromEmail, reply_to: replyToFor(courseCode), to: row.email,
         subject: 'Your Field Guide sign-in link',
         text: `Hi ${first},\n\nHere is your sign-in link for the course Field Guide:\n${link}\n\nIf you didn't request this, you can ignore it.`,
         html: `<p>Hi ${first},</p><p><a href="${link}" style="display:inline-block;padding:10px 22px;border-radius:22px;background:#d63384;color:#fff;text-decoration:none;font-weight:600">Sign in to the Field Guide</a></p><p style="color:#666;font-size:13px">If you didn't request this, you can ignore it.</p>`,
