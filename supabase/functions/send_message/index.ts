@@ -315,7 +315,9 @@ Deno.serve(async (req) => {
 
     const { data: sendData, error: sendErr } = await resend.emails.send({
       from: fromEmail,
-      reply_to: RESEARCH_REPLY_TO,
+      // camelCase: the SDK maps replyTo -> reply_to on the wire and drops
+      // unrecognised keys silently. See _shared/replyTo.ts.
+      replyTo: RESEARCH_REPLY_TO,
       to,
       subject,
       html,

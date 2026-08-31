@@ -120,7 +120,7 @@ Deno.serve(async (req) => {
   const fromEmail = Deno.env.get('FROM_EMAIL') ?? 'research@radlab.zone'
 
   const { error: sendErr } = await resend.emails.send({
-    from: fromEmail, reply_to: courseReplyTo(cls.slug), to: email, subject, html, text,
+    from: fromEmail, replyTo: courseReplyTo(cls.slug), to: email, subject, html, text,
   })
 
   if (sendErr) {

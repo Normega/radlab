@@ -96,7 +96,7 @@ export async function processAdherenceWithdrawal(
   const fromEmail = Deno.env.get('FROM_EMAIL') ?? 'research@radlab.zone'
 
   const { error: sendErr } = await resend.emails.send({
-    from: fromEmail, reply_to: RESEARCH_REPLY_TO, to, subject, html, text,
+    from: fromEmail, replyTo: RESEARCH_REPLY_TO, to, subject, html, text,
   })
 
   await logTerminationMessage(db, participantId, sendErr ? 'failed' : 'sent', isTest)
