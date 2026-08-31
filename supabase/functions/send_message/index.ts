@@ -21,6 +21,7 @@ import { renderEmail } from '../_shared/emailTemplate.ts'
 import { getOrCreateUnsubscribeToken } from '../_shared/unsubscribeToken.ts'
 import { issueLink } from '../_shared/issueLink.ts'
 import { resolveParticipantEmail } from '../_shared/participantEmail.ts'
+import { studyDayPosition, scheduleRank } from '../_shared/studyDayPosition.ts'
 import { RESEARCH_REPLY_TO } from '../_shared/replyTo.ts'
 
 const CORS = {
@@ -107,41 +108,39 @@ Deno.serve(async (req) => {
       sessionDayNumber = session?.day_number ?? null
     }
 
-    // ── Protocol position, NOT elapsed days ───────────────────────────────────
+    // ── The participant's own position, NOT the protocol's ───────────────────
     //
-    // `participant_schedule.study_day` is date-derived (days since the
-    // participant's t0, plus one), so any real-world slippage inflates it: a
-    // participant who uses the full 3-day midpoint window, or whose Phase 2
-    // re-anchors when their fork resolves, gets emailed a number that climbs
-    // past the protocol's own day map. Observed 2026-08-13 — a session the
-    // protocol calls Day 28 rendered as "Study Day 39".
+    // Which session number the participant is told they are on. Derived in
+    // _shared/studyDayPosition.ts, whose header carries the two wrong answers
+    // that shipped before it: the date-derived participant_schedule.study_day
+    // (inflated by any real-world slippage), and the rank of this session's
+    // day_number among the study's distinct day_numbers (canonical, so it
+    // disagrees with every participant whose counterbalance drew a non-
+    // canonical block order — observed 2026-08-31 as a first email reading
+    // "Study Day 10 of 27").
     //
-    // Participants read this as progress ("how far through am I?"), not as a
-    // calendar, so it is computed as a position: rank this session's
-    // `day_number` among the study's DISTINCT day_numbers, out of how many
-    // there are. Distinct because parallel arms share day_numbers — Phase 2
-    // Day 1 exists three times, once per condition — and a participant
-    // traverses exactly one of them, so counting rows would treble the total
-    // and make it differ by arm. Derived entirely from the compiled
-    // `study_sessions`, so it is identical for every participant regardless of
-    // arm, and immune to date drift.
-    let dayOrdinal: number | null = null
-    let dayTotal:   number | null = null
-    if (sessionDayNumber != null) {
-      const { data: allSessions } = await db
-        .from('study_sessions')
-        .select('day_number')
-        .eq('study_id', row.study_id)
-        .not('day_number', 'is', null)
+    // Counting the participant's own schedule rows needs all of them, not just
+    // the ones already sent: position is a rank within the whole materialized
+    // schedule. Bounded by the protocol length (~30 rows), so it is ranked here
+    // rather than pushed into a filter the ordering would have to be duplicated
+    // in.
+    const { data: ownRows } = await db
+      .from('participant_schedule')
+      .select('id, scheduled_date, send_time')
+      .eq('participant_id', row.participant_id)
+      .eq('study_id', row.study_id)
 
-      const days = [...new Set((allSessions ?? []).map(s => s.day_number as number))]
-        .sort((a, b) => a - b)
-      const idx = days.indexOf(sessionDayNumber)
-      if (idx !== -1) {
-        dayOrdinal = idx + 1
-        dayTotal   = days.length
-      }
-    }
+    const { data: allSessions } = await db
+      .from('study_sessions')
+      .select('day_number')
+      .eq('study_id', row.study_id)
+      .not('day_number', 'is', null)
+
+    const { ordinal: dayOrdinal, total: dayTotal } = studyDayPosition({
+      studyDayNumbers: (allSessions ?? []).map(s => s.day_number as number),
+      position: ownRows ? scheduleRank(ownRows, row.id) : null,
+      sessionDayNumber: sessionDayNumber,
+    })
 
     // Per-study custom email subject/body (nullable — null uses default template).
     const { data: study } = await db
@@ -276,10 +275,9 @@ Deno.serve(async (req) => {
     // 7. Render email (subject + HTML + plain text)
     const { subject, html, text } = renderEmail({
       first_name:      firstName,
-      // Protocol position, not the date-derived participant_schedule.study_day
-      // (see the dayOrdinal derivation above). Falls back to the elapsed
-      // counter only when the study has no compiled day_numbers to rank
-      // against, so single-shot studies behave exactly as before.
+      // The participant's own position (see the derivation above). Falls back
+      // to the elapsed counter only when neither their schedule nor a compiled
+      // day map could be read, so single-shot studies behave exactly as before.
       study_day:       dayOrdinal ?? row.study_day,
       study_day_total: dayTotal,
       link_url:        linkUrl,
