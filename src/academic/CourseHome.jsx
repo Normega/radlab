@@ -161,12 +161,12 @@ function Shell({ code, children }) {
 
 const S = {
   eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)' },
-  title: { fontFamily: SERIF, fontSize: 30, color: 'var(--tx)', margin: '4px 0 4px' },
+  title: { fontFamily: SERIF, fontSize: 28, color: 'var(--tx)', margin: '4px 0 4px' },
   sub: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.55 },
-  code: { fontFamily: MONO, fontSize: 13 },
-  card: { display: 'block', background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 16, padding: '18px 20px', marginTop: 16, textDecoration: 'none' },
+  code: { fontFamily: MONO, fontSize: 12 },
+  card: { display: 'block', background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 12, padding: '16px 16px', marginTop: 16, textDecoration: 'none' },
   cardTitle: { fontFamily: SERIF, fontSize: 20, color: 'var(--tx)', marginBottom: 4 },
-  staffGrid: { display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 },
-  staffBtn: { fontFamily: MONO, fontSize: 12.5, padding: '7px 14px', borderRadius: 16, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx)', textDecoration: 'none' },
-  backLink: { fontFamily: MONO, fontSize: 13, color: 'var(--pk)', textDecoration: 'none' },
+  staffGrid: { display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 },
+  staffBtn: { fontFamily: MONO, fontSize: 12, padding: '8px 16px', borderRadius: 24, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx)', textDecoration: 'none' },
+  backLink: { fontFamily: MONO, fontSize: 12, color: 'var(--pk)', textDecoration: 'none' },
 }

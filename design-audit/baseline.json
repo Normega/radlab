@@ -4,10 +4,10 @@
   "counts": {
     "font-size: off-scale 13px": 0,
     "font-size: below 12px floor": 0,
-    "font-size: other off-scale": 257,
-    "radius: off-system": 582,
+    "font-size: other off-scale": 256,
+    "radius: off-system": 581,
     "hex: token value hard-coded": 187,
     "hex: off-palette": 540,
-    "spacing: off-scale px": 1349
+    "spacing: off-scale px": 1347
   }
 }

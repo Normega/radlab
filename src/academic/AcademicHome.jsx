@@ -118,9 +118,9 @@ export default function AcademicHome({ session, role, superAdmin }) {
 
 const S = {
   eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)' },
-  title: { fontFamily: SERIF, fontSize: 32, color: 'var(--tx)', margin: '2px 0 6px' },
+  title: { fontFamily: SERIF, fontSize: 36, color: 'var(--tx)', margin: '2px 0 6px' },
   sub: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.5 },
-  code: { fontFamily: MONO, fontSize: 12.5 },
-  card: { display: 'block', background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 16, padding: '18px 20px', marginTop: 16, textDecoration: 'none' },
+  code: { fontFamily: MONO, fontSize: 12 },
+  card: { display: 'block', background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 12, padding: '16px 16px', marginTop: 16, textDecoration: 'none' },
   cardTitle: { fontFamily: SERIF, fontSize: 20, color: 'var(--tx)', marginBottom: 4 },
 }
