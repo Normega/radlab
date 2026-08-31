@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
+import { loungePath } from '../courseRoutes'
 import Nav from '../../components/Nav'
 import QrDownloadButton from './QrDownloadButton'
 
@@ -103,11 +104,11 @@ function ClassRow({ cls, expanded, onToggle, onDelete }) {
         <td style={S.td}>
           <div style={S.actions}>
             <button style={S.actionBtn} onClick={onToggle}>{expanded ? 'Hide instructors' : 'Instructors'}</button>
-            <Link to={`/class/${cls.slug}/console`} style={S.actionBtn}>Console</Link>
-            <Link to={`/class/${cls.slug}/slides`} style={S.actionBtn}>Slides</Link>
-            <Link to={`/class/${cls.slug}`} style={S.actionBtn}>Join page</Link>
+            <Link to={`${loungePath(cls.slug)}/console`} style={S.actionBtn}>Console</Link>
+            <Link to={`${loungePath(cls.slug)}/slides`} style={S.actionBtn}>Slides</Link>
+            <Link to={loungePath(cls.slug)} style={S.actionBtn}>Join page</Link>
             <QrDownloadButton
-              value={`${window.location.origin}/class/${cls.slug}`}
+              value={`${window.location.origin}${loungePath(cls.slug)}`}
               filename={`${cls.slug}-join-qr.png`}
               label="Download QR"
               style={S.actionBtn}
@@ -179,9 +180,12 @@ export default function LectureLoungeAdminPage({ session }) {
       <div style={S.page}>
         <div style={S.header}>
           <div>
-            <p style={S.eyebrow}>Lecture Lounge admin</p>
+            <p style={S.eyebrow}>Academic admin</p>
             <h1 style={S.h1}>Classes</h1>
-            <p style={S.sub}>Create classes and manage their instructors.</p>
+            <p style={S.sub}>
+              Create classes and manage their instructors. A class slug is the lowercase
+              course code (psy240), which is also its URL: /academic/&lt;slug&gt;.
+            </p>
           </div>
           <button style={S.btnPrimary} onClick={() => setCreating(true)}>+ New class</button>
         </div>
@@ -233,6 +237,21 @@ export default function LectureLoungeAdminPage({ session }) {
             </table>
           </div>
         )}
+
+        {/* Cross-course Field Guide staff tools. These are the surfaces that
+            span courses (ingest and review carry their own course pickers);
+            per-course queues live on each course's home page. Legacy paths on
+            purpose until the course-scoped Field Guide routes ship — they
+            will keep working afterward as resolving shims. */}
+        <div style={{ marginTop: 36 }}>
+          <p style={S.eyebrow}>Field Guide tools</p>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 10 }}>
+            <Link to="/academic/fieldguide/ingest" style={S.actionBtn}>Ingest portal</Link>
+            <Link to="/academic/fieldguide/review" style={S.actionBtn}>Review queue</Link>
+            <Link to="/academic/fieldguide/submissions" style={S.actionBtn}>Student submissions</Link>
+            <Link to="/academic/fieldguide/corrections" style={S.actionBtn}>Corrections feed</Link>
+          </div>
+        </div>
 
         {pendingDelete && (
           <div style={S.overlay} onClick={() => setPendingDelete(null)}>

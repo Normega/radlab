@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
+import { loungePath } from '../courseRoutes'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -231,7 +232,7 @@ function CheckinRow({ checkin, classSlug, onEdit, onDelete, onSetStatus }) {
         <button style={S.linkBtn} onClick={() => onSetStatus(checkin.id, 'closed')}>Close</button>
       )}
       {weekly && checkin.status !== 'planned' && (
-        <a style={S.linkBtn} href={`/class/${classSlug}/wall/${checkin.id}`} target="_blank" rel="noreferrer">Wall</a>
+        <a style={S.linkBtn} href={`${loungePath(classSlug)}/wall/${checkin.id}`} target="_blank" rel="noreferrer">Wall</a>
       )}
       <button style={S.linkBtn} onClick={onEdit}>Edit</button>
       <button style={S.linkBtnDanger} onClick={onDelete}>Delete</button>
