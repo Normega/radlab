@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, Navigate, useOutletContext, useParams } from 'react-router-dom'
-import { rosterPath, staffedCourses, resolveCourse } from './rosterCourse.js'
+import { rosterPath, staffedCourses, resolveCourse } from './staffCourses.js'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'

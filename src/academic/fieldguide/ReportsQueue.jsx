@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useOutletContext } from 'react-router-dom'
 import { WIKI_BASE } from './wiki/wikiText'
+import { staffedCourses } from './staffCourses.js'
+import CoursePicker from './CoursePicker.jsx'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -16,7 +18,11 @@ const SERIF = '"DM Serif Display", Georgia, serif'
 //   Dismiss    — with a note, because silence teaches students not to report.
 export default function ReportsQueue() {
   const { courseClient, staffEnrollments } = useOutletContext()
-  const courseId = staffEnrollments[0]?.course_id
+  // Was staffEnrollments[0] — the caller's first enrollment by array position,
+  // which for anyone staffing two courses silently pinned this queue to one of
+  // them with no way to reach the other.
+  const courses = useMemo(() => staffedCourses(staffEnrollments), [staffEnrollments])
+  const [courseId, setCourseId] = useState(courses[0]?.course_id)
   const [rows, setRows] = useState(null)
   const [showResolved, setShowResolved] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -89,6 +95,8 @@ export default function ReportsQueue() {
           amber gap the student can claim (their submission counts toward the three);
           <b> Dismiss</b> always carries a note, because silence teaches students not to report.
         </p>
+        <CoursePicker courses={courses} value={courseId} onChange={setCourseId} style={S.picker} />
+
         {notice && <p style={S.notice}>{notice}</p>}
 
         <h2 style={S.h2}>Open ({open.length})</h2>
@@ -142,6 +150,7 @@ const S = {
   eyebrowLink: { color: 'inherit', textDecoration: 'none' },
   title: { fontFamily: SERIF, fontSize: 28, color: 'var(--tx)', margin: '2px 0 8px' },
   sub: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.6, maxWidth: '68ch' },
+  picker: { marginTop: 14, fontSize: 13, padding: '6px 9px', borderRadius: 8, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx)' },
   dim: { color: 'var(--tx2)', fontSize: 12, fontFamily: MONO },
   notice: { marginTop: 10, fontFamily: MONO, fontSize: 12.5, color: 'var(--pk)' },
   h2: { fontFamily: SERIF, fontSize: 20, color: 'var(--tx)', margin: '22px 0 10px' },

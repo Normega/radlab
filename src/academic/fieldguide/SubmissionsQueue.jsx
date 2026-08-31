@@ -32,7 +32,9 @@ const ROUTES = [
 const SEV = { block: '#c0392b', warn: '#b8860b' }
 
 export default function SubmissionsQueue() {
-  const { courseClient, session, staffEnrollments } = useOutletContext()
+  // No staffEnrollments here on purpose: this queue spans courses and takes
+  // each decision's course from its own row. See notify() below.
+  const { courseClient, session } = useOutletContext()
   const [rows, setRows] = useState(null)      // null = loading
   const [openId, setOpenId] = useState(null)
   const [busyId, setBusyId] = useState(null)
@@ -61,7 +63,19 @@ export default function SubmissionsQueue() {
 
   // Send (or re-send) the decision email for one claim. Returns a suffix for
   // the notice line.
-  const notify = useCallback(async (claimId) => {
+  //
+  // The course comes from the ROW, not from the caller's enrollments. This
+  // queue is deliberately not course-filtered — it selects the view with no
+  // course predicate and lets RLS scope it — so someone staffing PSY240 and
+  // PSY309 sees both courses interleaved in one list. The old
+  // `staffEnrollments[0]?.course_id` therefore stamped every notification with
+  // whichever course happened to sort first, which with course-routed Reply-To
+  // could address a PSY309 student's reply to psy240@radlab.zone. A picker
+  // would not fix it either: the reviewer would have to keep it in sync with
+  // whichever row they were acting on. Both views feeding this now carry
+  // course_id (20260831_submission_queue_course_id).
+  const notify = useCallback(async (claimId, courseId) => {
+    if (!courseId) return ' · EMAIL NOT SENT (row has no course — reload the page)'
     try {
       const rsp = await fetch('/api/claim-notify', {
         method: 'POST',
@@ -69,7 +83,7 @@ export default function SubmissionsQueue() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ claim_id: claimId, course_id: staffEnrollments[0]?.course_id }),
+        body: JSON.stringify({ claim_id: claimId, course_id: courseId }),
       })
       const out = await rsp.json().catch(() => ({}))
       if (rsp.ok && out.sent && out.stamped === false) {
@@ -83,7 +97,7 @@ export default function SubmissionsQueue() {
     } catch (e) {
       return ` · EMAIL FAILED (${e.message}) — retry from "Not yet told" below`
     }
-  }, [session, staffEnrollments])
+  }, [session])
 
   const recheck = async (row) => {
     setBusyId(row.claim_id); setNotice(null)
@@ -115,7 +129,7 @@ export default function SubmissionsQueue() {
     // must not read as the decision failing — it is reported as its own line.
     // Without this the send-back note reaches nobody: it lands on the gap
     // board, and no student refreshes a board on the off-chance.
-    const mail = await notify(row.claim_id)
+    const mail = await notify(row.claim_id, row.course_id)
     setBusyId(null)
     setNotice((status === 'accepted' ? `Accepted — ${row.page_slug}` : `Sent back — ${row.page_slug}`) + mail)
     load(); loadUntold()
@@ -123,7 +137,7 @@ export default function SubmissionsQueue() {
 
   const resend = async (row) => {
     setBusyId(row.claim_id); setNotice(null)
-    const mail = await notify(row.claim_id)
+    const mail = await notify(row.claim_id, row.course_id)
     setBusyId(null)
     setNotice(`${row.page_slug} → ${row.student_email}${mail}`)
     loadUntold()

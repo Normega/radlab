@@ -1,4 +1,4 @@
-// Run directly:  node src/academic/fieldguide/rosterCourse.test.mjs
+// Run directly:  node src/academic/fieldguide/staffCourses.test.mjs
 //
 // The invariant under test is a safety property, not a formatting one: a
 // course code that does not resolve must return null rather than some other
@@ -10,7 +10,7 @@
 // "which course?" by array position.
 
 import assert from 'node:assert/strict'
-import { rosterPath, staffedCourses, resolveCourse } from './rosterCourse.js'
+import { rosterPath, staffedCourses, resolveCourse } from './staffCourses.js'
 
 let pass = 0
 const check = (name, fn) => { fn(); pass++; void name }
@@ -74,4 +74,4 @@ check('resolving against no staffed courses is null, not a crash', () => {
   assert.equal(resolveCourse(undefined, 'psy240'), null)
 })
 
-console.log(`rosterCourse: ${pass}/${pass} checks passed`)
+console.log(`staffCourses: ${pass}/${pass} checks passed`)
