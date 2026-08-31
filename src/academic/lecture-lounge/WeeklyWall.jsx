@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
+import { normalizeCourseCode, loungePath } from '../courseRoutes'
 import Nav from '../../components/Nav'
 import RippleAvatar from '../../ripple/RippleAvatar'
 
@@ -15,7 +16,8 @@ const SERIF = '"DM Serif Display", Georgia, serif'
 // so nothing on this page can connect a response to a person — or one
 // person's responses to each other across weeks.
 export default function WeeklyWall({ session }) {
-  const { slug, checkinId } = useParams()
+  const { courseCode, slug: slugParam, checkinId } = useParams()
+  const slug = normalizeCourseCode(courseCode ?? slugParam)
   const userId = session?.user?.id
 
   const [wall, setWall] = useState(undefined)      // undefined = loading
@@ -182,7 +184,7 @@ function Shell({ slug, session, children }) {
     <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
       <Nav session={session} />
       <div style={S.wrap}>
-        <Link to={`/class/${slug}`} style={S.backLink}>← back to class</Link>
+        <Link to={loungePath(slug)} style={S.backLink}>← back to class</Link>
         {children}
       </div>
     </div>

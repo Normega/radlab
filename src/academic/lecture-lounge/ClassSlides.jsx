@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
+import { normalizeCourseCode, loungePath } from '../courseRoutes'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -22,7 +23,8 @@ const DECKS = {
 }
 
 export default function ClassSlides() {
-  const { slug } = useParams()
+  const { courseCode, slug: slugParam } = useParams()
+  const slug = normalizeCourseCode(courseCode ?? slugParam)
   const deck = DECKS[slug]
 
   const [cls, setCls] = useState(undefined)   // undefined = loading, null = none
@@ -106,11 +108,11 @@ export default function ClassSlides() {
       </div>
 
       <p style={{ ...S.sub, marginTop: 26 }}>
-        <Link to={`/class/${slug}/console`} style={S.link}>Console</Link>
+        <Link to={`${loungePath(slug)}/console`} style={S.link}>Console</Link>
         {' · '}
-        <Link to={`/class/${slug}/remote`} style={S.link}>Remote</Link>
+        <Link to={`${loungePath(slug)}/remote`} style={S.link}>Remote</Link>
         {' · '}
-        <Link to={`/class/${slug}/screen`} style={S.link}>Projector screen</Link>
+        <Link to={`${loungePath(slug)}/screen`} style={S.link}>Projector screen</Link>
       </p>
     </Shell>
   )

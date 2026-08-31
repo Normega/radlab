@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
+import { normalizeCourseCode, loungePath } from '../courseRoutes'
 import { useAvatarConfig } from '../../hooks/useAvatarConfig'
 import Nav from '../../components/Nav'
 import CheckinRunner from './CheckinRunner'
@@ -32,7 +33,11 @@ const BROADCAST_EVENTS = ['staged', 'open', 'closed', 'results_ready']
 // by broadcasts on the class's Realtime channel, with a DB fetch on mount
 // so a refresh or reconnect restores state without waiting for a broadcast.
 export default function ClassRoom({ session }) {
-  const { slug } = useParams()
+  // Mounted at BOTH /academic/:courseCode/lounge (canonical) and /class/:slug
+  // (permanent alias — printed QR codes and sent signup confirmations land
+  // there). Same token either way: classes.slug === lowercase(courses.code).
+  const { courseCode, slug: slugParam } = useParams()
+  const slug = normalizeCourseCode(courseCode ?? slugParam)
   const userId = session?.user?.id
 
   const [classInfo, setClassInfo] = useState(undefined) // undefined=loading, null=not found
@@ -382,7 +387,7 @@ export default function ClassRoom({ session }) {
             {renderCheckinArea()}
 
             {weekly && (
-              <Link to={`/class/${slug}/wall/${weekly.id}`} style={S.weeklyCard}>
+              <Link to={`${loungePath(slug)}/wall/${weekly.id}`} style={S.weeklyCard}>
                 <p style={S.weeklyEyebrow}>Question of the week</p>
                 <p style={S.weeklyPrompt}>{weekly.prompt}</p>
                 <p style={S.weeklyMeta}>

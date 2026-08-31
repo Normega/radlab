@@ -86,7 +86,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Separate product, separate route/layout/bundle — not part of this admin section. */}
-      <Link to="/academic/lecture-lounge/admin" style={S.externalLink}>Lecture Lounge admin (classes & instructors) →</Link>
+      <Link to="/academic/admin" style={S.externalLink}>Academic admin (classes, instructors, Field Guide tools) →</Link>
     </div>
   )
 }

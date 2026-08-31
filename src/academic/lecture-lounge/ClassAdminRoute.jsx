@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Navigate, Outlet, useParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
+import { normalizeCourseCode, loungePath } from '../courseRoutes'
 
-// Per-class admin gate for /class/:slug/console, /remote, /screen.
+// Per-class admin gate for /academic/:courseCode/lounge/{console,remote,
+// screen,slides}. The URL carries the course code, which by convention IS the
+// class slug (classes.slug === lowercase(courses.code)).
 // Mirrors AdminRoute's shape but authorization is scoped to one class
 // (class_admins row) rather than the lab-wide profiles.role check —
 // lab/super_admin still passes too, matching the "classes: admins update"
@@ -15,7 +18,8 @@ import { supabase } from '../../lib/supabase'
 // passed down via Outlet context so console/remote/screen don't each repeat
 // the same "class by slug" fetch this route already did.
 export default function ClassAdminRoute({ session }) {
-  const { slug } = useParams()
+  const { courseCode, slug: slugParam } = useParams()
+  const slug = normalizeCourseCode(courseCode ?? slugParam)
   const [state, setState] = useState({ status: 'loading', cls: null })
 
   useEffect(() => {
@@ -50,6 +54,6 @@ export default function ClassAdminRoute({ session }) {
   if (!session) return <Navigate to="/login" replace />
   if (state.status === 'loading') return null
   if (state.status === 'not_found') return <Navigate to="/dashboard" replace />
-  if (state.status === 'forbidden') return <Navigate to={`/class/${slug}`} replace />
+  if (state.status === 'forbidden') return <Navigate to={loungePath(slug)} replace />
   return <Outlet context={state.cls} />
 }

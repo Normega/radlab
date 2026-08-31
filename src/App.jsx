@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation, useParams } from 'react-router-dom'
+import { loungePath } from './academic/courseRoutes'
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { supabase, savePondWatchSession, saveEbbFlowSession } from './lib/supabase'
@@ -98,6 +99,7 @@ const ClassScreen      = lazy(() => import('./academic/lecture-lounge/ClassScree
 const ClassSlides      = lazy(() => import('./academic/lecture-lounge/ClassSlides'))
 const LectureLoungeAdminPage = lazy(() => import('./academic/lecture-lounge/LectureLoungeAdminPage'))
 const AcademicHome         = lazy(() => import('./academic/AcademicHome'))
+const CourseHome           = lazy(() => import('./academic/CourseHome'))
 // Field Guide auths against the separate radlab-academic Supabase project;
 // its guard carries that login flow, so it's lazy like the pages (unlike the
 // small static guards above).
@@ -252,6 +254,15 @@ function DashboardRoute({ session, hasAvatar, needsWelcome, needsRippleName, nev
 }
 
 // Requires auth only — used for /ripple/avatar so the guard doesn't loop.
+// Legacy /class/:slug/<sub> → /academic/:slug/lounge/<sub>. The slug IS the
+// lowercase course code by convention (classes.slug === lc(courses.code)), so
+// it can be interpolated straight into the course path.
+function LegacyLoungeRedirect({ sub = '' }) {
+  const { slug, checkinId } = useParams()
+  const to = `${loungePath(slug)}${sub}${checkinId ? `/${checkinId}` : ''}`
+  return <Navigate to={to} replace />
+}
+
 function AuthRoute({ session, children }) {
   if (session === undefined) return null
   if (!session) return <Navigate to="/login" replace />
@@ -654,27 +665,49 @@ export default function App() {
 
           <Route element={<ErrorBoundary label="Academic"><Outlet /></ErrorBoundary>}>
             <Route path="/class/verify" element={<ClassVerifyEmail />} />
-            {/* No auth guard: logged-out visitors get ClassRoom's own
-                class-branded join card (sign in / create account inline),
-                so the class context is never lost to a /login bounce. */}
+            {/* LIVE ALIAS, FOREVER — not a redirect. /class/:slug is printed
+                on projector QR codes, embedded as PNG QRs in slide decks, and
+                is the emailRedirectTo of every sent signup confirmation. An
+                alias (same component, both paths) means token consumption
+                never races a client-side redirect. The canonical path is
+                /academic/:courseCode/lounge; ClassRoom accepts either param.
+                No auth guard: logged-out visitors get ClassRoom's own
+                class-branded join card, so class context is never lost. */}
             <Route path="/class/:slug" element={<ClassRoom session={session} />} />
-            <Route path="/class/:slug/wall/:checkinId" element={
+            <Route path="/academic/:courseCode/lounge" element={<ClassRoom session={session} />} />
+            <Route path="/academic/:courseCode/lounge/wall/:checkinId" element={
               <AuthRoute session={session}>
                 <WeeklyWall session={session} />
               </AuthRoute>
             } />
             <Route element={<ClassAdminRoute session={session} />}>
-              <Route path="/class/:slug/console" element={<ClassConsole session={session} />} />
-              <Route path="/class/:slug/remote" element={<ClassRemote session={session} />} />
-              <Route path="/class/:slug/screen" element={<ClassScreen />} />
-              <Route path="/class/:slug/slides" element={<ClassSlides />} />
+              <Route path="/academic/:courseCode/lounge/console" element={<ClassConsole session={session} />} />
+              <Route path="/academic/:courseCode/lounge/remote" element={<ClassRemote session={session} />} />
+              <Route path="/academic/:courseCode/lounge/screen" element={<ClassScreen />} />
+              <Route path="/academic/:courseCode/lounge/slides" element={<ClassSlides />} />
             </Route>
+            {/* Legacy lounge sub-paths: staff bookmarks and in-session links,
+                not auth landings — safe to redirect (unlike /class/:slug). */}
+            <Route path="/class/:slug/wall/:checkinId" element={<LegacyLoungeRedirect sub="/wall" />} />
+            <Route path="/class/:slug/console" element={<LegacyLoungeRedirect sub="/console" />} />
+            <Route path="/class/:slug/remote" element={<LegacyLoungeRedirect sub="/remote" />} />
+            <Route path="/class/:slug/screen" element={<LegacyLoungeRedirect sub="/screen" />} />
+            <Route path="/class/:slug/slides" element={<LegacyLoungeRedirect sub="/slides" />} />
             <Route element={<LectureLoungeAdminRoute session={session} role={role} superAdmin={superAdmin} />}>
-              <Route path="/academic/lecture-lounge/admin" element={<LectureLoungeAdminPage session={session} />} />
+              <Route path="/academic/admin" element={<LectureLoungeAdminPage session={session} />} />
             </Route>
-            {/* Pre-partition URL, keep redirecting for at least two terms */}
-            <Route path="/lecture-lounge/admin" element={<Navigate to="/academic/lecture-lounge/admin" replace />} />
-            <Route path="/academic" element={<AcademicHome />} />
+            {/* Superseded admin URLs — staff bookmarks only. The oldest one
+                (/lecture-lounge/admin) predates the academic partition; keep
+                all of these redirecting for at least two terms. */}
+            <Route path="/academic/lecture-lounge/admin" element={<Navigate to="/academic/admin" replace />} />
+            <Route path="/lecture-lounge/admin" element={<Navigate to="/academic/admin" replace />} />
+            <Route path="/academic" element={<AcademicHome session={session} role={role} superAdmin={superAdmin} />} />
+            {/* The course home: one URL per course for students and staff
+                alike. Unguarded — it must render for a logged-out student
+                holding nothing but a QR scan. Static siblings (admin,
+                fieldguide, lecture-lounge) outrank the param by router
+                ranking, so they never collide with a course code. */}
+            <Route path="/academic/:courseCode" element={<CourseHome role={role} superAdmin={superAdmin} />} />
             {/* Field Guide — auth against the radlab-academic project lives
                 inside FieldGuideStaffRoute (course login + staff enrollment
                 check), not the main-site session. */}
