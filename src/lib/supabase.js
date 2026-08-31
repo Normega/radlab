@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { mainClientDetectsSessionAt } from './authDetectRoutes.js'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -9,16 +10,17 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 // The Field Guide authenticates against a DIFFERENT Supabase project
 // (radlab-academic, see src/academic/courseClient.js). Its confirmation links
-// land under /academic/…, carrying a token this project cannot use — and this
-// client, with URL detection on by default, would try to consume it anyway:
-// either writing another project's session into this one's storage, or eating
-// a single-use code before the academic client can exchange it. Detection is
-// left on everywhere else, because the main site's own /verified and
-// /reset-password flows depend on it.
+// land on Field Guide routes, carrying a token this project cannot use — and
+// this client, with URL detection on by default, would try to consume it
+// anyway: either writing another project's session into this one's storage,
+// or eating a single-use code before the academic client can exchange it.
+// Which routes count as "Field Guide" is a route-shape rule, not a prefix —
+// /academic/:course/lounge is a MAIN-project surface — so the decision lives
+// in authDetectRoutes.js, where it is unit-tested.
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     detectSessionInUrl:
-      typeof window === 'undefined' || !window.location.pathname.startsWith('/academic'),
+      typeof window === 'undefined' || mainClientDetectsSessionAt(window.location.pathname),
   },
 })
 
