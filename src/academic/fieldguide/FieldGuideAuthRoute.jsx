@@ -71,6 +71,17 @@ export default function FieldGuideAuthRoute({ roles, deniedTitle, deniedBody, pu
       .eq('status', 'active')
       .in('role', roles)
 
+    // Sorted by course code, client-side. PostgREST cannot order on an
+    // embedded table without version-specific option names, and consumers
+    // that read staffEnrollments[0] were otherwise picking whichever row
+    // Postgres happened to return — which for anyone staffing two courses
+    // (both of Norm's identities staff PSY240 and PSY309) is arbitrary, and
+    // can change after any update to those rows. Ordering here does not make
+    // [0] *correct*, it only makes it stable; pages where the course matters
+    // resolve it explicitly (see RosterAdmin).
+    const byCourseCode = (a, b) =>
+      String(a.courses?.code ?? '').localeCompare(String(b.courses?.code ?? ''))
+
     fetchEnrollments().then(async ({ data, error }) => {
       if (cancelled) return
       if (!error && !(data ?? []).length) {
@@ -82,11 +93,11 @@ export default function FieldGuideAuthRoute({ roles, deniedTitle, deniedBody, pu
         if (cancelled) return
         if (r?.enrolled) {
           const retry = await fetchEnrollments()
-          if (!cancelled) setEnrollments(retry.error ? [] : (retry.data ?? []))
+          if (!cancelled) setEnrollments(retry.error ? [] : (retry.data ?? []).slice().sort(byCourseCode))
           return
         }
       }
-      setEnrollments(error ? [] : (data ?? []))
+      setEnrollments(error ? [] : (data ?? []).slice().sort(byCourseCode))
     })
     return () => { cancelled = true }
   }, [client, session, roles])
