@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, Navigate, useOutletContext, useParams } from 'react-router-dom'
+import { rosterPath, staffedCourses, resolveCourse } from './rosterCourse.js'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -53,8 +54,6 @@ const guessCol = (headers, patterns) => {
   return idx >= 0 ? idx : ''
 }
 
-const rosterPath = (code) => `/academic/fieldguide/roster/${String(code).toLowerCase()}`
-
 // Page chrome for the two pre-roster states (choose a course / unknown course),
 // so they sit on the same background and rails as the roster itself.
 function Frame({ children }) {
@@ -89,30 +88,12 @@ export default function RosterAdmin() {
   const { courseClient, staffEnrollments, session } = useOutletContext()
   const { courseCode } = useParams()
 
-  // One entry per course the caller staffs. Deduped because a person can hold
-  // more than one enrollment in the same course (ta AND instructor), and that
-  // would otherwise show as two identical choices.
-  const courses = useMemo(() => {
-    const byCode = new Map()
-    for (const e of staffEnrollments) {
-      const code = e.courses?.code
-      if (code && !byCode.has(code)) byCode.set(code, e)
-    }
-    return [...byCode.values()]
-      .sort((a, b) => a.courses.code.localeCompare(b.courses.code))
-  }, [staffEnrollments])
-
-  // Resolved from the URL and nothing else. The previous `staffEnrollments[0]`
-  // silently picked a course by array position, which made PSY309's roster
-  // unreachable and made which course you were editing depend on row order.
-  // A miss resolves to null and is reported; it must never fall back to a
-  // course the URL did not name, because the next click might be a 300-student
-  // import or a bulk invite.
-  const course = useMemo(() => {
-    if (!courseCode) return null
-    const want = courseCode.trim().toLowerCase()
-    return courses.find(e => e.courses.code.toLowerCase() === want) ?? null
-  }, [courseCode, courses])
+  // Both resolved in rosterCourse.js, where they are unit-tested. The rule
+  // that matters: a code that does not resolve gives null, never a fallback to
+  // some other course this person staffs — the next click here can be a
+  // several-hundred-row import or a bulk invite.
+  const courses = useMemo(() => staffedCourses(staffEnrollments), [staffEnrollments])
+  const course  = useMemo(() => resolveCourse(courses, courseCode), [courses, courseCode])
 
   const courseId = course?.course_id
 
