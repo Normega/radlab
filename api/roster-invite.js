@@ -24,6 +24,14 @@ export const maxDuration = 300
 const BATCH_CAP = 60
 const INVITE_LIFETIME_CAP = 10 // per row, for the staff-triggered path
 
+// The From address sits on course.radlab.zone, which has no MX, so a reply to
+// it hard-bounces. These apex addresses are real Workspace mailboxes. Unknown
+// codes fall back to the lab address rather than guessing a course — see
+// supabase/functions/_shared/replyTo.ts for the full rationale.
+const COURSE_REPLY_TO = { psy240: 'psy240@radlab.zone', psy309: 'psy309@radlab.zone' }
+const replyToFor = (code) =>
+  COURSE_REPLY_TO[String(code ?? '').trim().toLowerCase()] ?? 'research@radlab.zone'
+
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
 }[c]))
@@ -134,7 +142,7 @@ export default async function handler(req, res) {
       const rsp = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: { Authorization: `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ from: fromEmail, to: row.email, subject, text, html }),
+        body: JSON.stringify({ from: fromEmail, reply_to: replyToFor(courseCode), to: row.email, subject, text, html }),
       })
       if (!rsp.ok) throw new Error(`Resend ${rsp.status}: ${(await rsp.text()).slice(0, 200)}`)
 

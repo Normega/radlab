@@ -21,6 +21,7 @@ import { renderEmail } from '../_shared/emailTemplate.ts'
 import { getOrCreateUnsubscribeToken } from '../_shared/unsubscribeToken.ts'
 import { issueLink } from '../_shared/issueLink.ts'
 import { resolveParticipantEmail } from '../_shared/participantEmail.ts'
+import { RESEARCH_REPLY_TO } from '../_shared/replyTo.ts'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -314,6 +315,7 @@ Deno.serve(async (req) => {
 
     const { data: sendData, error: sendErr } = await resend.emails.send({
       from: fromEmail,
+      reply_to: RESEARCH_REPLY_TO,
       to,
       subject,
       html,

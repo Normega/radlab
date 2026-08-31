@@ -14,6 +14,7 @@ import { SupabaseClient } from 'npm:@supabase/supabase-js@2'
 import { Resend } from 'npm:resend'
 import { renderTerminationEmail } from './emailTemplate.ts'
 import { resolveParticipantEmail } from './participantEmail.ts'
+import { RESEARCH_REPLY_TO } from './replyTo.ts'
 import type { AdherenceWithdrawal } from './materializeSchedule.ts'
 
 export async function processAdherenceWithdrawal(
@@ -94,7 +95,9 @@ export async function processAdherenceWithdrawal(
   const resend = new Resend(Deno.env.get('RESEND_API_KEY'))
   const fromEmail = Deno.env.get('FROM_EMAIL') ?? 'research@radlab.zone'
 
-  const { error: sendErr } = await resend.emails.send({ from: fromEmail, to, subject, html, text })
+  const { error: sendErr } = await resend.emails.send({
+    from: fromEmail, reply_to: RESEARCH_REPLY_TO, to, subject, html, text,
+  })
 
   await logTerminationMessage(db, participantId, sendErr ? 'failed' : 'sent', isTest)
 
