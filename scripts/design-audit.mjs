@@ -131,7 +131,11 @@ for (const file of files) {
 
 // ── report ──────────────────────────────────────────────────────────────────
 const RATCHETED = Object.keys(newCounts()).filter((c) => c !== 'font-size: on scale')
-const mode = process.argv.includes('--check') ? 'check'
+// --warn checks and reports but always exits 0. This is what runs in the build
+// (npm prebuild), so a drift regression is loud on every deploy without a stale
+// baseline ever being able to block one. See the flip date in the plan.
+const warnOnly = process.argv.includes('--warn')
+const mode = (process.argv.includes('--check') || warnOnly) ? 'check'
   : process.argv.includes('--update') ? 'update' : 'report'
 
 const pad = (s, n) => String(s).padEnd(n)
@@ -168,7 +172,7 @@ if (mode === 'update') {
 if (mode === 'check') {
   if (!existsSync(BASELINE_PATH)) {
     console.error('\nno baseline — run npm run audit:design:update first')
-    process.exit(1)
+    process.exit(warnOnly ? 0 : 1)
   }
   // strip a UTF-8 BOM — Windows editors and PowerShell redirects add one
   const baseline = JSON.parse(readFileSync(BASELINE_PATH, 'utf8').replace(/^﻿/, ''))
@@ -185,7 +189,10 @@ if (mode === 'check') {
   }
   if (failed) {
     console.error('\nNew design drift introduced — fix it or (for a sanctioned exception) update the baseline deliberately.')
-    process.exit(1)
+    if (warnOnly) {
+      console.error('(warn-only: the build continues. Run npm run audit:design to see the offending files.)')
+    }
+    process.exit(warnOnly ? 0 : 1)
   }
   console.log('\nratchet holds.')
 }

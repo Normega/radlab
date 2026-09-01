@@ -62,11 +62,22 @@ Implemented as `scripts/design-audit.mjs`:
 - `/brand`'s drift numbers now cite this script's output (dated), satisfying the
   "re-measure or delete" rule.
 
-Still open from this phase: running `audit:design:check` in the Vercel build (warn-only
-first, failing after a month). Until then it's a local/pre-promotion command — and
-2026-08-31 showed the cost of that gap: a dozen commits from concurrent sessions landed on
-`dev` between two of my own runs, three of them carrying drift nobody checked. The check
-caught it, but only because someone happened to run it.
+**Running automatically since 2026-08-31.** `prebuild` in `package.json` runs
+`design-audit.mjs --warn` before every `vite build`, so it fires on every local build and on
+every Vercel deploy of both branches. `--warn` reports a regression and **exits 0**: the
+build continues. That is deliberate for now — a failing gate on `main` would mean a stale
+baseline could block a production deploy, and the ratchet is not yet trusted enough to hold
+that power.
+
+*Flip to failing on 2026-10-01* (change `--warn` to `--check` in the `prebuild` script), once
+a month of deploys has shown the warning is accurate and the noise level is right. Two things
+to confirm before flipping: no false positives have appeared in that month, and every session
+working on this repo knows `audit:design:update` is how a legitimate change gets recorded.
+
+Why it matters that this became automatic: on 2026-08-31 a dozen commits from concurrent
+sessions landed on `dev` between two manual runs, three of them carrying drift — including
+13px creeping back after that migration had reached zero. The check caught all of it, but
+only because someone happened to run it. It now runs whether anyone remembers or not.
 
 **Two corrections the ratchet earned on itself (2026-08-31).** Both were found because the
 check failed on a new page that turned out to be nearly clean:
