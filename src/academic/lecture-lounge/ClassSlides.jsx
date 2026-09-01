@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
+// Cross-partition import, deliberately: weekIcons is a pure asset registry
+// (a glob over src/assets/week-icons/) with no fieldguide behavior attached.
+import { weekIcon } from '../fieldguide/wiki/weekIcons'
 import { normalizeCourseCode, loungePath } from '../courseRoutes'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
@@ -18,7 +21,13 @@ const SERIF = '"DM Serif Display", Georgia, serif'
 // A lecture with no deck file simply shows no link — a term whose decks are
 // half-written degrades to the list of dates it already was.
 const DECKS = {
-  psy309: { dir: '/psy309', file: (n) => `L${n}.html` },
+  psy309: {
+    dir: '/psy309',
+    file: (n) => `L${n}.html`,
+    // Lecture numbers count the 12 meetings; week icons are keyed by calendar
+    // week, which also counts reading week (between lectures 7 and 8).
+    iconWeek: (n) => (n <= 7 ? n : n + 1),
+  },
   psy240: { dir: '/psy240', file: (n) => `L${n}.html` },
 }
 
@@ -88,9 +97,16 @@ export default function ClassSlides() {
           const has = available?.has(l.number)
           const isNext = l.lecture_date >= today
           const href = deck ? `${deck.dir}/${deck.file(l.number)}` : null
+          const icon = deck?.iconWeek ? weekIcon(slug, deck.iconWeek(l.number)) : null
           const card = (
             <>
-              <span style={S.num}>{String(l.number).padStart(2, '0')}</span>
+              <span style={S.cardTop}>
+                <span style={S.num}>{String(l.number).padStart(2, '0')}</span>
+                {icon && (
+                  <img src={icon} alt="" aria-hidden="true" width={52} height={52}
+                       loading="lazy" style={S.icon} />
+                )}
+              </span>
               <span style={S.cardTitle}>{l.title}</span>
               <span style={S.meta}>
                 {l.lecture_date}
@@ -141,6 +157,8 @@ const S = {
   cardNext: { borderColor: 'var(--pk)' },
   cardEmpty: { opacity: 0.5, borderStyle: 'dashed' },
   num: { fontFamily: MONO, fontSize: 12, color: 'var(--tx2)', letterSpacing: 1 },
+  cardTop: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 },
+  icon: { borderRadius: 8, objectFit: 'contain', marginTop: -4, marginRight: -4 },
   cardTitle: { fontFamily: SERIF, fontSize: 20, color: 'var(--tx)', lineHeight: 1.25 },
   meta: { fontFamily: MONO, fontSize: 12, letterSpacing: .5, textTransform: 'uppercase', color: 'var(--tx2)' },
 }
