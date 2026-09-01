@@ -4,9 +4,10 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 
 import {
-  WIKI_BASE, splitFrontmatter, slugifyHeading, extractHeadings, expandWikilinks,
+  splitFrontmatter, slugifyHeading, extractHeadings, expandWikilinks,
   isInternalTarget, humanize,
 } from './wikiText'
+import { useWikiBase } from './useWikiBase'
 
 // Rendering half of the Field Guide wiki. The link rules it honours live in
 // wikiText.js, next to the note about keeping them in step with the database's
@@ -41,6 +42,7 @@ const textOf = (node) => Children.toArray(node)
  *                    `content` alone, which is right for a whole page.
  */
 export function WikiMarkdown({ content, pages, lineOffset = 0, headingIds }) {
+  const WIKI_BASE = useWikiBase() // course-scoped; template usages unchanged
   const { body } = useMemo(
     () => (lineOffset ? { body: content ?? '' } : splitFrontmatter(content)),
     [content, lineOffset])
@@ -115,8 +117,10 @@ export function WikiMarkdown({ content, pages, lineOffset = 0, headingIds }) {
       )
     },
     // headingId carries this page's anchors — a components object memoized
-    // without it would keep an earlier page's.
-  }), [pages, headingId])
+    // without it would keep an earlier page's. WIKI_BASE is per-course now,
+    // so it is a dependency too: without it, navigating between courses
+    // could render course A's link base on course B's page.
+  }), [pages, headingId, WIKI_BASE])
 
   return (
     <div style={M.root}>

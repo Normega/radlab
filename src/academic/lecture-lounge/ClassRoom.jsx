@@ -324,7 +324,7 @@ export default function ClassRoom({ session }) {
     catch { return false }
   })()
   const fieldGuideCard = classInfo.field_guide_url ? (
-    <a href={hasFieldGuideSession ? '/academic/fieldguide/wiki' : classInfo.field_guide_url} style={S.fgCard}>
+    <a href={hasFieldGuideSession ? `/academic/${slug}/wiki` : classInfo.field_guide_url} style={S.fgCard}>
       <p style={S.fgEyebrow}>Course textbook</p>
       <p style={S.fgTitle}>The Field Guide to Abnormal Psychology</p>
       <p style={S.fgMeta}>

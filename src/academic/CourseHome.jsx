@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { getCourseClient } from './courseClient'
-import { normalizeCourseCode, loungePath, pickNewestTerm } from './courseRoutes'
+import { normalizeCourseCode, loungePath, joinPath, wikiBase, courseSubPath, pickNewestTerm } from './courseRoutes'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -102,14 +102,17 @@ export default function CourseHome({ role, superAdmin }) {
         </Link>
       )}
 
-      {/* Legacy Field Guide paths on purpose: the course-scoped Field Guide
-          routes land in the next phase; these keep working afterward. */}
-      <Link to="/academic/fieldguide/wiki" style={S.card}>
+      <Link to={wikiBase(code)} style={S.card}>
         <h2 style={S.cardTitle}>Field Guide</h2>
         <p style={S.sub}>The course reference wiki — read it, report errors, claim gaps.</p>
       </Link>
-      {!fgSession && (
-        <Link to="/academic/fieldguide/join" style={S.card}>
+      {fgSession ? (
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
+          <Link to={courseSubPath(code, 'gaps')} style={S.staffBtn}>Gap board</Link>
+          <Link to={courseSubPath(code, 'whats-new')} style={S.staffBtn}>What's new</Link>
+        </div>
+      ) : (
+        <Link to={joinPath(code)} style={S.card}>
           <h2 style={S.cardTitle}>Sign in to the Field Guide</h2>
           <p style={S.sub}>On the roster? Enter your U of T email and a sign-in link comes to your inbox.</p>
         </Link>
@@ -125,13 +128,13 @@ export default function CourseHome({ role, superAdmin }) {
               <Link to={`${loungePath(code)}/screen`} style={S.staffBtn}>Screen</Link>
               <Link to={`${loungePath(code)}/slides`} style={S.staffBtn}>Slides</Link>
             </>}
-            <Link to="/academic/fieldguide/submissions" style={S.staffBtn}>Submissions</Link>
-            <Link to="/academic/fieldguide/reports" style={S.staffBtn}>Reports</Link>
-            <Link to={`/academic/fieldguide/roster/${code}`} style={S.staffBtn}>Roster</Link>
-            <Link to="/academic/fieldguide/review" style={S.staffBtn}>Review</Link>
-            <Link to="/academic/fieldguide/read" style={S.staffBtn}>Reading queue</Link>
-            <Link to="/academic/fieldguide/corrections" style={S.staffBtn}>Corrections</Link>
-            <Link to="/academic/fieldguide/ingest" style={S.staffBtn}>Ingest</Link>
+            <Link to={courseSubPath(code, 'submissions')} style={S.staffBtn}>Submissions</Link>
+            <Link to={courseSubPath(code, 'reports')} style={S.staffBtn}>Reports</Link>
+            <Link to={courseSubPath(code, 'roster')} style={S.staffBtn}>Roster</Link>
+            <Link to={courseSubPath(code, 'review')} style={S.staffBtn}>Review</Link>
+            <Link to={courseSubPath(code, 'read')} style={S.staffBtn}>Reading queue</Link>
+            <Link to={courseSubPath(code, 'corrections')} style={S.staffBtn}>Corrections</Link>
+            <Link to={courseSubPath(code, 'ingest')} style={S.staffBtn}>Ingest</Link>
           </div>
         </div>
       )}

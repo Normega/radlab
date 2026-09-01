@@ -1,8 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useOutletContext } from 'react-router-dom'
-import { WIKI_BASE } from './wiki/wikiText'
-import { staffedCourses } from './staffCourses.js'
-import CoursePicker from './CoursePicker.jsx'
+import { useWikiBase, useCoursePaths } from './wiki/useWikiBase'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -17,12 +15,13 @@ const SERIF = '"DM Serif Display", Georgia, serif'
 //                submission counts toward the required three articles.
 //   Dismiss    — with a note, because silence teaches students not to report.
 export default function ReportsQueue() {
-  const { courseClient, staffEnrollments } = useOutletContext()
-  // Was staffEnrollments[0] — the caller's first enrollment by array position,
-  // which for anyone staffing two courses silently pinned this queue to one of
-  // them with no way to reach the other.
-  const courses = useMemo(() => staffedCourses(staffEnrollments), [staffEnrollments])
-  const [courseId, setCourseId] = useState(courses[0]?.course_id)
+  const WIKI_BASE = useWikiBase() // course-scoped; template usages unchanged
+  const { courseClient, course: urlCourse } = useOutletContext()
+  const paths = useCoursePaths()
+  // Course from the URL via the guard — the in-page picker is gone because
+  // switching course is now navigation, and a picker could contradict the
+  // address bar.
+  const courseId = urlCourse?.course_id
   const [rows, setRows] = useState(null)
   const [showResolved, setShowResolved] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -87,7 +86,7 @@ export default function ReportsQueue() {
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '32px 20px 80px' }}>
       <div style={{ maxWidth: 880, margin: '0 auto' }}>
-        <p style={S.eyebrow}><Link to="/academic/fieldguide" style={S.eyebrowLink}>Field Guide</Link> · staff</p>
+        <p style={S.eyebrow}><Link to={paths.home} style={S.eyebrowLink}>Field Guide</Link> · staff</p>
         <h1 style={S.title}>Student reports</h1>
         <p style={S.sub}>
           Errors and contradictions students found while reading. <b>Fixed</b> = you applied it via
@@ -95,8 +94,6 @@ export default function ReportsQueue() {
           amber gap the student can claim (their submission counts toward the three);
           <b> Dismiss</b> always carries a note, because silence teaches students not to report.
         </p>
-        <CoursePicker courses={courses} value={courseId} onChange={setCourseId} style={S.picker} />
-
         {notice && <p style={S.notice}>{notice}</p>}
 
         <h2 style={S.h2}>Open ({open.length})</h2>

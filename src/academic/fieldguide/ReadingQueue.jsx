@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useOutletContext } from 'react-router-dom'
-import { WIKI_BASE } from './wiki/wikiText'
-import { staffedCourses } from './staffCourses.js'
-import CoursePicker from './CoursePicker.jsx'
+import { useWikiBase, useCoursePaths } from './wiki/useWikiBase'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -19,12 +17,13 @@ const BAND = {
 }
 
 export default function ReadingQueue() {
-  const { courseClient, staffEnrollments } = useOutletContext()
-  // Was staffEnrollments[0] — the caller's first enrollment by array position,
-  // which for anyone staffing two courses silently pinned this queue to one of
-  // them with no way to reach the other.
-  const courses = useMemo(() => staffedCourses(staffEnrollments), [staffEnrollments])
-  const [courseId, setCourseId] = useState(courses[0]?.course_id)
+  const WIKI_BASE = useWikiBase() // course-scoped; template usages unchanged
+  const { courseClient, course: urlCourse } = useOutletContext()
+  const paths = useCoursePaths()
+  // Course from the URL via the guard — the in-page picker is gone because
+  // switching course is now navigation, and a picker could contradict the
+  // address bar.
+  const courseId = urlCourse?.course_id
   const [rows, setRows] = useState(null)
 
   useEffect(() => {
@@ -50,7 +49,7 @@ export default function ReadingQueue() {
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '32px 20px 80px' }}>
       <div style={{ maxWidth: 880, margin: '0 auto' }}>
-        <p style={S.eyebrow}><Link to="/academic/fieldguide" style={S.eyebrowLink}>Field Guide</Link> · staff</p>
+        <p style={S.eyebrow}><Link to={paths.home} style={S.eyebrowLink}>Field Guide</Link> · staff</p>
         <h1 style={S.title}>The reading queue</h1>
         <p style={S.sub}>
           Read in this order, stamp on the page (the bar under the title), and the stamp bar offers
@@ -60,7 +59,6 @@ export default function ReadingQueue() {
           examinable in What's new. Editing a page un-stamps it, on purpose.
         </p>
 
-        <CoursePicker courses={courses} value={courseId} onChange={setCourseId} style={S.picker} />
 
         {rows === null ? <p style={S.sub}>Loading…</p> : (
           <>

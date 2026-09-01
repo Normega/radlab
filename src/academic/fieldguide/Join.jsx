@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
+import { normalizeCourseCode, coursePath } from '../courseRoutes'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -14,6 +15,13 @@ const SERIF = '"DM Serif Display", Georgia, serif'
 // student comes back here any time, enters their email, and gets a fresh
 // link. No passwords exist on this path at all.
 export default function Join() {
+  // Mounted at BOTH /academic/:courseCode/join (canonical) and the immortal
+  // /academic/fieldguide/join (printed on lecture-slide QR codes and in every
+  // invite email — that mount never sunsets). The course only affects the
+  // header and the staff link; the roster match itself is by email, and the
+  // server resolves each row's own course.
+  const { courseCode } = useParams()
+  const code = normalizeCourseCode(courseCode)
   const [email, setEmail] = useState('')
   const [busy, setBusy] = useState(false)
   const [state, setState] = useState(null) // null | 'sent' | 'unmatched' | {error}
@@ -41,7 +49,7 @@ export default function Join() {
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '48px 20px' }}>
       <div style={{ maxWidth: 480, margin: '0 auto' }}>
-        <p style={S.eyebrow}>PSY240 · Field Guide</p>
+        <p style={S.eyebrow}>{code ? code.toUpperCase() : 'PSY240'} · Field Guide</p>
         <h1 style={S.title}>Join the Field Guide</h1>
 
         {state === 'sent' ? (
@@ -88,7 +96,7 @@ export default function Join() {
         )}
 
         <p style={{ ...S.sub, marginTop: 26, fontSize: 14 }}>
-          Staff sign in with their password at <Link to="/academic/fieldguide" style={S.link}>the Field Guide home</Link>.
+          Staff sign in with their password at <Link to={code ? coursePath(code) : '/academic/fieldguide'} style={S.link}>the Field Guide home</Link>.
         </p>
       </div>
     </div>

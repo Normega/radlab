@@ -113,7 +113,7 @@ const FieldGuideMemberRoute = lazy(() => import('./academic/fieldguide/FieldGuid
 const WikiIndex            = lazy(() => import('./academic/fieldguide/wiki/WikiIndex'))
 const WikiPage             = lazy(() => import('./academic/fieldguide/wiki/WikiPage'))
 const GapBrowser           = lazy(() => import('./academic/fieldguide/GapBrowser'))
-const FieldGuideHome       = lazy(() => import('./academic/fieldguide/FieldGuideHome'))
+const LegacyFieldGuideRedirect = lazy(() => import('./academic/fieldguide/LegacyFieldGuideRedirect'))
 const CorrectionsFeed      = lazy(() => import('./academic/fieldguide/CorrectionsFeed'))
 const WhatsNew             = lazy(() => import('./academic/fieldguide/WhatsNew'))
 const RosterAdmin          = lazy(() => import('./academic/fieldguide/RosterAdmin'))
@@ -709,50 +709,70 @@ export default function App() {
             <Route path="/academic/:courseCode" element={<CourseHome role={role} superAdmin={superAdmin} />} />
             {/* Field Guide — auth against the radlab-academic project lives
                 inside FieldGuideStaffRoute (course login + staff enrollment
-                check), not the main-site session. */}
+                check), not the main-site session. Canonical routes carry the
+                course code; the guard enforces that the caller can address
+                that course. Legacy /academic/fieldguide/* mounts are
+                RESOLVING SHIMS under the same guards: the guard consumes any
+                auth token in the URL first, then the shim picks the course
+                (hint → single → chooser) — several legacy URLs are baked
+                into sent emails, so the shims never sunset. */}
             <Route element={<FieldGuideStaffRoute />}>
-              <Route path="/academic/fieldguide/ingest" element={<IngestPortal />} />
-              <Route path="/academic/fieldguide/review" element={<ReviewQueue />} />
+              <Route path="/academic/:courseCode/ingest" element={<IngestPortal />} />
+              <Route path="/academic/:courseCode/review" element={<ReviewQueue />} />
               {/* Student contributions. Deliberately its own route and chunk:
                   /review is the staff authoring path, this is the student one,
                   and TAs who live here should never need the ingest portal. */}
-              <Route path="/academic/fieldguide/submissions" element={<SubmissionsQueue />} />
+              <Route path="/academic/:courseCode/submissions" element={<SubmissionsQueue />} />
               {/* The audit trail auto-apply corrections are traded against. */}
-              <Route path="/academic/fieldguide/corrections" element={<CorrectionsFeed />} />
-              {/* WP5: roster import, invites, unmatched-attempt queue.
-                  Course-specific by URL, not by dropdown: this page bulk-imports
-                  a few hundred students and bulk-emails them, and a picker with
-                  an arbitrary default still lets that land on the wrong course
-                  if nobody looks at it. The bare path resolves the choice
-                  (straight through when you staff one course, a chooser when you
-                  staff several) rather than defaulting to one. */}
-              <Route path="/academic/fieldguide/roster" element={<RosterAdmin />} />
-              <Route path="/academic/fieldguide/roster/:courseCode" element={<RosterAdmin />} />
+              <Route path="/academic/:courseCode/corrections" element={<CorrectionsFeed />} />
+              {/* WP5: roster import, invites, unmatched-attempt queue. The
+                  course is always in the URL — this page bulk-imports a few
+                  hundred students and bulk-emails them, and RosterAdmin
+                  refuses to resolve a course it wasn't explicitly given. */}
+              <Route path="/academic/:courseCode/roster" element={<RosterAdmin />} />
               {/* The pre-publish read, as a queue: risk-ordered pages, stamp
                   state, and a continue button. Stamping happens on the pages. */}
-              <Route path="/academic/fieldguide/read" element={<ReadingQueue />} />
+              <Route path="/academic/:courseCode/read" element={<ReadingQueue />} />
               {/* Student error/contradiction reports, staff triage. */}
-              <Route path="/academic/fieldguide/reports" element={<ReportsQueue />} />
+              <Route path="/academic/:courseCode/reports" element={<ReportsQueue />} />
+              {/* Legacy staff URLs. RosterAdmin keeps its own chooser (it
+                  predates the course-scoped scheme and already resolves the
+                  bare path safely); the rest go through the shim. */}
+              <Route path="/academic/fieldguide/roster" element={<RosterAdmin />} />
+              <Route path="/academic/fieldguide/roster/:courseCode" element={<RosterAdmin />} />
+              <Route path="/academic/fieldguide/ingest" element={<LegacyFieldGuideRedirect target={(c) => `/academic/${c}/ingest`} />} />
+              <Route path="/academic/fieldguide/review" element={<LegacyFieldGuideRedirect target={(c) => `/academic/${c}/review`} />} />
+              <Route path="/academic/fieldguide/submissions" element={<LegacyFieldGuideRedirect target={(c) => `/academic/${c}/submissions`} />} />
+              <Route path="/academic/fieldguide/corrections" element={<LegacyFieldGuideRedirect target={(c) => `/academic/${c}/corrections`} />} />
+              <Route path="/academic/fieldguide/read" element={<LegacyFieldGuideRedirect target={(c) => `/academic/${c}/read`} />} />
+              <Route path="/academic/fieldguide/reports" element={<LegacyFieldGuideRedirect target={(c) => `/academic/${c}/reports`} />} />
             </Route>
             {/* WP5: the QR / self-serve sign-in door. Deliberately outside
                 both guards — its entire audience is people with no session
-                yet, and it holds no data of its own. */}
+                yet, and it holds no data of its own. The legacy path is
+                IMMORTAL: it is printed on lecture-slide QR codes and in every
+                invite email body, so it stays a live mount, never a shim. */}
+            <Route path="/academic/:courseCode/join" element={<FieldGuideJoin />} />
             <Route path="/academic/fieldguide/join" element={<FieldGuideJoin />} />
             {/* The wiki itself — same login, member-level gate. */}
             <Route element={<FieldGuideMemberRoute />}>
-              {/* The front door. One url to give a TA or a student: staff see
-                  the queues with live counts, members see the two student
-                  surfaces — RLS decides which counts even return. */}
-              <Route path="/academic/fieldguide" element={<FieldGuideHome />} />
-              <Route path="/academic/fieldguide/wiki" element={<WikiIndex />} />
-              <Route path="/academic/fieldguide/wiki/:slug" element={<WikiPage />} />
+              <Route path="/academic/:courseCode/wiki" element={<WikiIndex />} />
+              <Route path="/academic/:courseCode/wiki/:slug" element={<WikiPage />} />
               {/* The gap browser: students plan their research assignment here.
                   Member-level on purpose — the board is part of reading the
                   guide, not part of submitting to it. */}
-              <Route path="/academic/fieldguide/gaps" element={<GapBrowser />} />
+              <Route path="/academic/:courseCode/gaps" element={<GapBrowser />} />
               {/* The class changelog: what the guide has learned since term
                   start, with the examinable/reference distinction per entry. */}
-              <Route path="/academic/fieldguide/whats-new" element={<WhatsNew />} />
+              <Route path="/academic/:courseCode/whats-new" element={<WhatsNew />} />
+              {/* Legacy member URLs — /wiki is the redirectTo inside every
+                  magic link ever emailed; /gaps and /whats-new are in sent
+                  claim-decision emails. Immortal shims. */}
+              <Route path="/academic/fieldguide" element={<LegacyFieldGuideRedirect target={(c) => `/academic/${c}`} />} />
+              <Route path="/academic/fieldguide/wiki" element={<LegacyFieldGuideRedirect target={(c) => `/academic/${c}/wiki`} />} />
+              <Route path="/academic/fieldguide/wiki/:slug" element={<LegacyFieldGuideRedirect target={(c, p) => `/academic/${c}/wiki/${p.slug}`} />} />
+              <Route path="/academic/fieldguide/gaps" element={<LegacyFieldGuideRedirect target={(c) => `/academic/${c}/gaps`} />} />
+              <Route path="/academic/fieldguide/whats-new" element={<LegacyFieldGuideRedirect target={(c) => `/academic/${c}/whats-new`} />} />
             </Route>
           </Route>
 

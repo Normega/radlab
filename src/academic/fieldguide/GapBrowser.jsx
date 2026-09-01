@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useOutletContext } from 'react-router-dom'
+import { useWikiBase, useCoursePaths } from './wiki/useWikiBase'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -27,6 +28,7 @@ const daysLeft = ts => ts ? Math.max(0, Math.ceil((new Date(ts) - Date.now()) / 
 const wordCount = t => (t ?? '').trim().split(/\s+/).filter(Boolean).length
 
 export default function GapBrowser() {
+  const paths = useCoursePaths()
   const { courseClient } = useOutletContext()
   const [rows, setRows] = useState(null)        // null = loading
   const [notice, setNotice] = useState(null)
@@ -113,7 +115,7 @@ export default function GapBrowser() {
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '32px 20px 80px' }}>
       <div style={{ maxWidth: 940, margin: '0 auto' }}>
-        <p style={S.eyebrow}><Link to="/academic/fieldguide" style={S.eyebrowLink}>Field Guide</Link></p>
+        <p style={S.eyebrow}><Link to={paths.home} style={S.eyebrowLink}>Field Guide</Link></p>
         <h1 style={S.title}>Research gaps</h1>
         <p style={S.sub}>
           Every gap below is a place the Field Guide names its own missing evidence. Your assignment
@@ -234,6 +236,7 @@ function GapRow({ row: r, expanded, onToggle, courseClient, reload }) {
 }
 
 function GapDetail({ row: r, courseClient, reload }) {
+  const WIKI_BASE = useWikiBase()
   const [sources, setSources] = useState(null)
   const [claim, setClaim] = useState(null)       // own gap_claims row when mine
   const [msg, setMsg] = useState(null)
@@ -275,7 +278,7 @@ function GapDetail({ row: r, courseClient, reload }) {
   return (
     <div style={{ padding: '0 14px 14px' }}>
       <p style={{ margin: '0 0 10px' }}>
-        <a href={`/academic/fieldguide/wiki/${r.slug}${r.section ? `#${r.section}` : ''}`}
+        <a href={`${WIKI_BASE}/${r.slug}${r.section ? `#${r.section}` : ''}`}
            target="_blank" rel="noopener noreferrer" style={S.link}>
           Read {r.slug}{r.section ? ` › ${r.section}` : ''} in the wiki ↗
         </a>

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useOutletContext } from 'react-router-dom'
 import { useWikiCourse } from './wiki/useWikiCourse'
-import { WIKI_BASE } from './wiki/wikiText'
+import { useWikiBase, useCoursePaths } from './wiki/useWikiBase'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -23,6 +23,8 @@ const ORIGIN = {
 }
 
 export default function WhatsNew() {
+  const WIKI_BASE = useWikiBase() // course-scoped; template usages unchanged
+  const paths = useCoursePaths()
   const { courseClient, enrollments } = useOutletContext()
   const { courseId, course } = useWikiCourse(enrollments)
   const [rows, setRows] = useState(null)
@@ -60,7 +62,7 @@ export default function WhatsNew() {
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '32px 20px 80px' }}>
       <div style={{ maxWidth: 780, margin: '0 auto' }}>
-        <p style={S.eyebrow}><Link to="/academic/fieldguide" style={S.eyebrowLink}>Field Guide</Link>{course?.code ? ` · ${course.code}` : ''}</p>
+        <p style={S.eyebrow}><Link to={paths.home} style={S.eyebrowLink}>Field Guide</Link>{course?.code ? ` · ${course.code}` : ''}</p>
         <h1 style={S.title}>What we've learned since September</h1>
         <p style={S.sub}>
           The guide the term started with is not the guide you're reading. Every accepted

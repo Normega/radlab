@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Link, Outlet, useParams } from 'react-router-dom'
 import { getCourseClient } from '../courseClient'
+import { normalizeCourseCode, resolveEnrolledCourse, courseSubPath } from '../courseRoutes'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -26,6 +27,10 @@ const WIKI_AFTER_CONFIRM = '/academic/fieldguide/wiki'
 // `members read published pages` vs `staff read all pages`, so the reader UI
 // is written once and the database draws the line.
 export default function FieldGuideAuthRoute({ roles, deniedTitle, deniedBody, publicAccess = false }) {
+  // Course-scoped mounts (/academic/:courseCode/…) carry the course in the
+  // URL; legacy /academic/fieldguide/* mounts don't (their shims resolve it).
+  const { courseCode: courseCodeParam } = useParams()
+  const courseCode = normalizeCourseCode(courseCodeParam)
   const [client, setClient] = useState(null)
   const [clientErr, setClientErr] = useState(null)
   const [session, setSession] = useState(undefined)     // undefined = loading
@@ -115,6 +120,19 @@ export default function FieldGuideAuthRoute({ roles, deniedTitle, deniedBody, pu
     return <Shell><p style={S.sub}>Loading…</p></Shell>
   }
 
+  // Course-in-URL enforcement, applied to every Outlet below. When the mount
+  // carries :courseCode, the caller must be able to address THAT course
+  // (enrollment or public-visitor row); an unresolvable code gets an explicit
+  // denial listing the courses they can open — never a silent swap to one of
+  // them (the courseRoutes invariant). Legacy no-param mounts pass
+  // course: null and their shims do the resolving.
+  const renderOutlet = (ctx) => {
+    if (!courseCode) return <Outlet context={{ ...ctx, course: null, courseCode: null }} />
+    const course = resolveEnrolledCourse(ctx.enrollments, courseCode)
+    if (!course) return <CourseDenied code={courseCode} enrollments={ctx.enrollments} />
+    return <Outlet context={{ ...ctx, course, courseCode }} />
+  }
+
   // Anyone not signed in: show the public reader if a public course exists,
   // the login form otherwise. Visitor "enrollments" are synthesized so the
   // reader's course machinery (useWikiCourse and friends) needs no anon path
@@ -127,15 +145,13 @@ export default function FieldGuideAuthRoute({ roles, deniedTitle, deniedBody, pu
     if (publicAccess) {
       if (publicCourses === undefined) return <Shell><p style={S.sub}>Loading…</p></Shell>
       if (publicCourses.length) {
-        return (
-          <Outlet context={{
-            courseClient: client,
-            session: null,
-            staffEnrollments: [],
-            enrollments: asVisitors(publicCourses),
-            isStaff: false,
-          }} />
-        )
+        return renderOutlet({
+          courseClient: client,
+          session: null,
+          staffEnrollments: [],
+          enrollments: asVisitors(publicCourses),
+          isStaff: false,
+        })
       }
     }
     return <CourseLogin client={client} />
@@ -147,15 +163,13 @@ export default function FieldGuideAuthRoute({ roles, deniedTitle, deniedBody, pu
     // A signed-in account with no enrollment still gets the public reader
     // (their session simply matches the same anon-grade policies).
     if (publicAccess && publicCourses?.length) {
-      return (
-        <Outlet context={{
-          courseClient: client,
-          session,
-          staffEnrollments: [],
-          enrollments: asVisitors(publicCourses),
-          isStaff: false,
-        }} />
-      )
+      return renderOutlet({
+        courseClient: client,
+        session,
+        staffEnrollments: [],
+        enrollments: asVisitors(publicCourses),
+        isStaff: false,
+      })
     }
     return (
       <Shell>
@@ -175,14 +189,42 @@ export default function FieldGuideAuthRoute({ roles, deniedTitle, deniedBody, pu
   const extraPublic = publicAccess && publicCourses?.length
     ? asVisitors(publicCourses.filter(c => !enrollments.some(e => e.course_id === c.id)))
     : []
+  return renderOutlet({
+    courseClient: client,
+    session,
+    staffEnrollments: enrollments,
+    enrollments: [...enrollments, ...extraPublic],
+    isStaff: enrollments.some(e => e.role === 'ta' || e.role === 'instructor'),
+  })
+}
+
+// The URL names a course this caller cannot address. List the ones they can,
+// linking each to the SAME surface (segment) they were trying to reach.
+function CourseDenied({ code, enrollments }) {
+  const seen = new Map()
+  for (const e of enrollments ?? []) {
+    const c = e?.courses?.code
+    if (c && !seen.has(c)) seen.set(c, e.courses)
+  }
+  const options = [...seen.values()].sort((a, b) => a.code.localeCompare(b.code))
+  // /academic/:courseCode/<segment>/… → keep the segment, drop the rest.
+  const segment = window.location.pathname.split('/').filter(Boolean)[2] ?? 'wiki'
   return (
-    <Outlet context={{
-      courseClient: client,
-      session,
-      staffEnrollments: enrollments,
-      enrollments: [...enrollments, ...extraPublic],
-      isStaff: enrollments.some(e => e.role === 'ta' || e.role === 'instructor'),
-    }} />
+    <Shell>
+      <h1 style={S.title}>No access to {code.toUpperCase()}</h1>
+      <p style={S.sub}>
+        {options.length
+          ? 'This account has no access to that course. You can open:'
+          : 'This account has no course access at all.'}
+      </p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 14 }}>
+        {options.map(c => (
+          <Link key={c.code} to={courseSubPath(c.code, segment)} style={S.primary}>
+            {c.code}{c.term ? ` · ${c.term}` : ''}
+          </Link>
+        ))}
+      </div>
+    </Shell>
   )
 }
 
@@ -264,6 +306,6 @@ const S = {
   title: { fontFamily: SERIF, fontSize: 26, color: 'var(--tx)', marginBottom: 8 },
   sub: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.5 },
   input: { fontSize: 16, padding: '10px 12px', borderRadius: 8, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx)' },
-  primary: { fontSize: 15, fontWeight: 600, padding: '10px 12px', borderRadius: 24, border: 'none', background: 'var(--pk)', color: '#fff', cursor: 'pointer' },
+  primary: { fontSize: 15, fontWeight: 600, padding: '10px 12px', borderRadius: 24, border: 'none', background: 'var(--pk)', color: '#fff', cursor: 'pointer', textDecoration: 'none' },
   linkBtn: { marginTop: 14, fontSize: 14, color: 'var(--pk)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' },
 }

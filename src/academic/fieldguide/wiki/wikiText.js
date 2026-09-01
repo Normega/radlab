@@ -15,7 +15,11 @@
 // with anything carrying a scheme (http:, mailto:) or a path separator
 // skipped. If you change one side, change the other.
 
-export const WIKI_BASE = '/academic/fieldguide/wiki'
+// WIKI_BASE moved: the wiki is course-scoped (/academic/:courseCode/wiki), so
+// the base is per-course — components get it from useWikiBase() and the
+// legacy constant path lives on only as a redirect shim in App.jsx. Do not
+// re-add a constant here; a hardcoded base is how course A's links end up on
+// course B's pages.
 
 // The ingest prompt emits a small, flat YAML block: scalars plus inline
 // `[a, b, c]` lists. Parsing only that shape (rather than pulling in a YAML
