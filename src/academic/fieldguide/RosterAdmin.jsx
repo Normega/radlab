@@ -108,6 +108,11 @@ export default function RosterAdmin() {
   // CSV import state
   const [csv, setCsv] = useState(null)       // { headers, data }
   const [map, setMap] = useState({ name: '', email: '', num: '' })
+  // Reconcile diff from the last import: { absent: [...], returned: [...] }.
+  // Lives only until applied or dismissed — it describes ONE upload, and going
+  // stale is worse than going away (roster_bulk_status still guards a stale
+  // restore server-side, but a stale absent list would read as current).
+  const [recon, setRecon] = useState(null)
 
   useEffect(() => {
     if (!courseId) return
@@ -162,6 +167,28 @@ export default function RosterAdmin() {
     if (error) return setNotice(error.message)
     setNotice(`Imported: ${data.inserted} new, ${data.updated} updated, ${data.skipped} skipped.`)
     setCsv(null)
+    setRecon((data.absent?.length || data.returned?.length)
+      ? { absent: data.absent ?? [], returned: data.returned ?? [] }
+      : null)
+    setReload(k => k + 1)
+  }
+
+  // Apply one side of the reconcile diff (absent → dropped, returned → added).
+  const applyRecon = async (side, ids, status) => {
+    setBusy(true)
+    const { data: n, error } = await courseClient.rpc('roster_bulk_status', {
+      p_course_id: courseId,
+      p_ids: ids,
+      p_status: status,
+      p_note: `reconcile ${new Date().toISOString().slice(0, 10)}: ${side === 'absent' ? 'absent from upload' : 'returned in upload'}`,
+    })
+    setBusy(false)
+    if (error) return setNotice(error.message)
+    setNotice(`${status === 'dropped' ? 'Dropped' : 'Restored'} ${n} student${n === 1 ? '' : 's'}.`)
+    setRecon(r => {
+      const next = { ...r, [side]: [] }
+      return next.absent.length || next.returned.length ? next : null
+    })
     setReload(k => k + 1)
   }
 
@@ -304,6 +331,71 @@ export default function RosterAdmin() {
           )}
         </section>
 
+        {/* ── Reconcile against the last upload ── */}
+        {recon && (
+          <section style={{ ...S.panel, borderColor: 'var(--pkbs)' }}>
+            <h2 style={S.h2}>Reconcile against this upload</h2>
+            <p style={S.sub}>
+              Differences between the roster and the CSV you just imported. Applying is
+              reversible per student from the table below; dismissing changes nothing.
+            </p>
+
+            {recon.absent.length > 0 && (
+              <div style={{ marginTop: 16 }}>
+                <p style={S.reconHead}>
+                  Not in this CSV ({recon.absent.length}) — likely dropped the course
+                </p>
+                <div style={S.reconList}>
+                  {recon.absent.map(r => (
+                    <span key={r.id} style={S.reconRow}>
+                      {r.full_name}
+                      <span style={S.dim}> {r.email}</span>
+                      {r.status === 'enrolled' && <span style={S.enrolledFlag}> enrolled</span>}
+                    </span>
+                  ))}
+                </div>
+                {recon.absent.some(r => r.status === 'enrolled') && (
+                  <p style={{ ...S.sub, marginTop: 8 }}>
+                    <b>enrolled</b> students here already use the Field Guide. Dropping stops
+                    new sign-in links; it does not end an existing session.
+                  </p>
+                )}
+                <button style={{ ...S.secondary, marginTop: 8 }} disabled={busy}
+                        onClick={() => applyRecon('absent', recon.absent.map(r => r.id), 'dropped')}>
+                  Mark {recon.absent.length} as dropped
+                </button>
+              </div>
+            )}
+
+            {recon.returned.length > 0 && (
+              <div style={{ marginTop: 16 }}>
+                <p style={S.reconHead}>
+                  Back in this CSV ({recon.returned.length}) — dropped earlier, re-enrolled since
+                </p>
+                <div style={S.reconList}>
+                  {recon.returned.map(r => (
+                    <span key={r.id} style={S.reconRow}>
+                      {r.full_name}<span style={S.dim}> {r.email}</span>
+                    </span>
+                  ))}
+                </div>
+                <p style={{ ...S.sub, marginTop: 8 }}>
+                  While marked dropped they cannot sign in — restoring puts them back at
+                  “added”, ready to invite.
+                </p>
+                <button style={{ ...S.secondary, marginTop: 8 }} disabled={busy}
+                        onClick={() => applyRecon('returned', recon.returned.map(r => r.id), 'added')}>
+                  Restore {recon.returned.length} to added
+                </button>
+              </div>
+            )}
+
+            <button style={{ ...S.tiny, marginTop: 16 }} onClick={() => setRecon(null)}>
+              Dismiss
+            </button>
+          </section>
+        )}
+
         {/* ── Unmatched attempts ── */}
         {attempts.length > 0 && (
           <section style={{ ...S.panel, borderColor: '#b8860b' }}>
@@ -392,6 +484,13 @@ const S = {
   td: { padding: '8px 10px', borderBottom: '1px solid var(--bd)', color: 'var(--tx)' },
   tiny: { fontFamily: MONO, fontSize: 12, padding: '3px 10px', marginRight: 6, borderRadius: 12, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx2)', cursor: 'pointer' },
   attemptRow: { display: 'flex', gap: 14, alignItems: 'center', padding: '6px 0', borderBottom: '1px dotted var(--bd)' },
+  reconHead: { fontFamily: MONO, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx)', margin: '0 0 8px' },
+  reconList: {
+    display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 240, overflowY: 'auto',
+    background: 'var(--bg)', border: '1px solid var(--bd)', borderRadius: 12, padding: '8px 16px',
+  },
+  reconRow: { fontSize: 14, color: 'var(--tx)' },
+  enrolledFlag: { fontFamily: MONO, fontSize: 12, color: STATUS_COLOUR.enrolled },
   courseBtn: {
     display: 'flex', flexDirection: 'column', gap: 4, minWidth: 190,
     fontFamily: MONO, fontSize: 16, fontWeight: 600, color: 'var(--tx)',
