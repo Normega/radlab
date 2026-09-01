@@ -1,20 +1,25 @@
-// v1 — create/edit a display element: ordered text blocks with optional
-// per-block condition visibility (showIf) and {{variable}} insertion pills.
+// v2 — create/edit a display element: ordered markdown text blocks with
+// optional per-block condition visibility (showIf), {{variable}} insertion
+// pills, and a per-block live preview.
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { GAME_OUTPUTS, GAME_LABELS } from '../../lib/elementOutputs'
+import DisplayMarkdown from '../../components/study/DisplayMarkdown'
+import DisplayPreviewModal from './DisplayPreviewModal'
 
 const slugify = s => s.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '')
 
 const parseArms = text => (text ?? '').split(',').map(a => a.trim()).filter(Boolean)
 
 // Editor block <-> stored block. Stored: { type:'text', text, showIf:{slot,in}|null }
+// `preview` is editor-only UI state; toStored never reads it.
 const toEditor = b => ({
   text:       b.text ?? '',
   showIfSlot: b.showIf?.slot ?? '',
   showIfArms: (b.showIf?.in ?? []).join(', '),
+  preview:    false,
 })
 const toStored = b => ({
   type: 'text',
@@ -36,6 +41,7 @@ export default function DisplayEditorPage() {
   const [blocks,     setBlocks]     = useState([{ text: '', showIfSlot: '', showIfArms: '' }])
   const [focusedIdx, setFocusedIdx] = useState(0)
   const [error,      setError]      = useState(null)
+  const [showPreview,setShowPreview]= useState(false)
 
   const { data: existing, isLoading } = useQuery({
     queryKey: ['display-edit', id],
@@ -124,14 +130,27 @@ export default function DisplayEditorPage() {
           <Link to="/admin/displays" style={S.backLink}>← Displays</Link>
           <h1 style={S.h1}>{isEdit ? 'Edit Display' : 'New Display'}</h1>
         </div>
-        <button
-          style={{ ...S.btnPrimary, opacity: save.isPending ? 0.7 : 1 }}
-          onClick={() => { setError(null); save.mutate() }}
-          disabled={save.isPending}
-        >
-          {save.isPending ? 'Saving…' : isEdit ? 'Save changes' : 'Create display'}
-        </button>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button type="button" style={S.btnSecondary} onClick={() => setShowPreview(true)}>
+            Preview
+          </button>
+          <button
+            style={{ ...S.btnPrimary, opacity: save.isPending ? 0.7 : 1 }}
+            onClick={() => { setError(null); save.mutate() }}
+            disabled={save.isPending}
+          >
+            {save.isPending ? 'Saving…' : isEdit ? 'Save changes' : 'Create display'}
+          </button>
+        </div>
       </div>
+
+      {showPreview && (
+        <DisplayPreviewModal
+          name={name}
+          blocks={blocks.map(toStored)}
+          onClose={() => setShowPreview(false)}
+        />
+      )}
 
       {error && <p style={S.errMsg}>{error}</p>}
 
@@ -187,8 +206,28 @@ export default function DisplayEditorPage() {
               value={block.text}
               onFocus={() => setFocusedIdx(i)}
               onChange={e => setBlocks(bs => bs.map((b, j) => j === i ? { ...b, text: e.target.value } : b))}
-              placeholder={'You predicted you would do better than {{slider.predicted_efficacy.value}}% of people.\nYou actually scored better than {{game.aptitude_suite.avg_pct}}% of people.'}
+              placeholder={'## Your results\n\nYou predicted you would do better than **{{slider.predicted_efficacy.value}}%** of people.\nYou actually scored better than **{{game.aptitude_suite.avg_pct}}%** of people.'}
             />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
+              <p style={S.mdHint}>
+                Markdown: **bold**, *italic*, ## heading, - list, [link](https://…), &gt; callout.
+                A newline is a line break; a blank line starts a new paragraph.
+              </p>
+              <button
+                type="button"
+                style={S.previewBtn}
+                onClick={() => setBlocks(bs => bs.map((b, j) => j === i ? { ...b, preview: !b.preview } : b))}
+              >
+                {block.preview ? 'Hide preview' : 'Preview'}
+              </button>
+            </div>
+            {block.preview && (
+              <div style={S.previewBox}>
+                {block.text.trim()
+                  ? <DisplayMarkdown text={block.text} />
+                  : <p style={{ ...S.sub, fontSize: 13 }}>(Nothing to preview yet.)</p>}
+              </div>
+            )}
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
               <div style={{ ...S.fieldGroup, flex: '0 0 160px' }}>
                 <label style={S.fieldLabel}>Show only if slot (optional)</label>
@@ -388,5 +427,9 @@ const S = {
   blockTitle: { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--pkd)', textTransform: 'uppercase', letterSpacing: '0.06em' },
   deleteBtn:  { fontSize: 14, color: '#e04', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: '"DM Sans",system-ui,sans-serif' },
   addBtn:     { alignSelf: 'flex-start', fontSize: 14, color: 'var(--pkd)', background: '#fff', border: '1px dashed var(--pkb)', borderRadius: 8, padding: '7px 14px', cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
+  mdHint:     { fontSize: 12, color: 'var(--tx3)', fontFamily: '"Space Mono",monospace', margin: 0, flex: 1, minWidth: 220 },
+  previewBtn: { fontSize: 13, color: 'var(--pkd)', background: '#fff', border: '1px solid var(--pkb)', borderRadius: 7, padding: '4px 12px', cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
+  previewBox: { background: '#fff', border: '1px solid var(--bd)', borderRadius: 8, padding: '16px 18px' },
   btnPrimary: { display: 'inline-block', background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
+  btnSecondary:{ display: 'inline-block', background: '#fff', color: 'var(--pkd)', border: '1px solid var(--pkb)', borderRadius: 9, padding: '9px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
 }

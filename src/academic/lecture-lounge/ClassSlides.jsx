@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
+// Cross-partition import, deliberately: weekIcons is a pure asset registry
+// (a glob over src/assets/week-icons/) with no fieldguide behavior attached.
+import { weekIcon } from '../fieldguide/wiki/weekIcons'
 import { normalizeCourseCode, loungePath } from '../courseRoutes'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
@@ -18,7 +21,13 @@ const SERIF = '"DM Serif Display", Georgia, serif'
 // A lecture with no deck file simply shows no link — a term whose decks are
 // half-written degrades to the list of dates it already was.
 const DECKS = {
-  psy309: { dir: '/psy309', file: (n) => `L${n}.html` },
+  psy309: {
+    dir: '/psy309',
+    file: (n) => `L${n}.html`,
+    // Lecture numbers count the 12 meetings; week icons are keyed by calendar
+    // week, which also counts reading week (between lectures 7 and 8).
+    iconWeek: (n) => (n <= 7 ? n : n + 1),
+  },
   psy240: { dir: '/psy240', file: (n) => `L${n}.html` },
 }
 
@@ -88,14 +97,22 @@ export default function ClassSlides() {
           const has = available?.has(l.number)
           const isNext = l.lecture_date >= today
           const href = deck ? `${deck.dir}/${deck.file(l.number)}` : null
+          const icon = deck?.iconWeek ? weekIcon(slug, deck.iconWeek(l.number)) : null
           const card = (
             <>
-              <span style={S.num}>{String(l.number).padStart(2, '0')}</span>
-              <span style={S.cardTitle}>{l.title}</span>
-              <span style={S.meta}>
-                {l.lecture_date}
-                {available && !has && ' · not written yet'}
+              <span style={S.cardBody}>
+                <span style={S.num}>{String(l.number).padStart(2, '0')}</span>
+                <span style={S.cardTitle}>{l.title}</span>
+                <span style={S.meta}>
+                  {l.lecture_date}
+                  {available && !has && ' · not written yet'}
+                </span>
               </span>
+              {icon && (
+                <span style={S.iconCell} aria-hidden="true">
+                  <img src={icon} alt="" loading="lazy" style={S.icon} />
+                </span>
+              )}
             </>
           )
           return has ? (
@@ -137,10 +154,15 @@ const S = {
   link: { color: 'var(--pk)', textDecoration: 'none' },
   kbd: { fontFamily: MONO, fontSize: 12, background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 12, padding: '1px 5px' },
   grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 250px), 1fr))', gap: 12, marginTop: 20 },
-  card: { display: 'flex', flexDirection: 'column', gap: 5, background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 12, padding: '15px 17px', textDecoration: 'none', position: 'relative' },
+  card: { display: 'flex', flexDirection: 'row', alignItems: 'stretch', gap: 14, background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 12, padding: '15px 17px', textDecoration: 'none', position: 'relative' },
   cardNext: { borderColor: 'var(--pk)' },
   cardEmpty: { opacity: 0.5, borderStyle: 'dashed' },
   num: { fontFamily: MONO, fontSize: 12, color: 'var(--tx2)', letterSpacing: 1 },
+  cardBody: { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 5 },
+  // The cell stretches to the full height of the text column; the absolutely
+  // positioned img fills it, so the icon is always as tall as the card content.
+  iconCell: { position: 'relative', width: 84, flexShrink: 0, margin: '-5px -7px -5px 0' },
+  icon: { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', borderRadius: 8 },
   cardTitle: { fontFamily: SERIF, fontSize: 20, color: 'var(--tx)', lineHeight: 1.25 },
   meta: { fontFamily: MONO, fontSize: 12, letterSpacing: .5, textTransform: 'uppercase', color: 'var(--tx2)' },
 }

@@ -1,10 +1,13 @@
-// v1 — display element library: list, create link, delete.
+// v2 — display element library: list, preview, create link, delete.
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
+import DisplayPreviewModal from './DisplayPreviewModal'
 
 export default function DisplaysPage() {
   const qc = useQueryClient()
+  const [previewDisplay, setPreviewDisplay] = useState(null)
 
   const { data: displays, isLoading } = useQuery({
     queryKey: ['displays-list'],
@@ -59,6 +62,7 @@ export default function DisplaysPage() {
               </div>
             </div>
             <div style={{ display: 'flex', gap: 12, flexShrink: 0 }}>
+              <button style={S.previewBtn} onClick={() => setPreviewDisplay(d)}>Preview</button>
               <Link to={`/admin/displays/${d.id}`} style={S.link}>Edit</Link>
               <button
                 style={S.deleteBtn}
@@ -74,6 +78,14 @@ export default function DisplaysPage() {
           </div>
         ))}
       </div>
+
+      {previewDisplay && (
+        <DisplayPreviewModal
+          name={previewDisplay.name}
+          blocks={previewDisplay.blocks}
+          onClose={() => setPreviewDisplay(null)}
+        />
+      )}
     </div>
   )
 }
@@ -88,5 +100,6 @@ const S = {
   rowMeta:   { fontSize: 12, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif', marginTop: 2 },
   mono:      { fontFamily: '"Space Mono",monospace' },
   link:      { fontSize: 14, color: 'var(--pkd)', fontFamily: '"DM Sans",system-ui,sans-serif' },
+  previewBtn:{ fontSize: 14, color: 'var(--pkd)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: '"DM Sans",system-ui,sans-serif' },
   deleteBtn: { fontSize: 14, color: '#e04', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: '"DM Sans",system-ui,sans-serif' },
 }
