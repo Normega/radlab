@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "node scripts/design-audit.mjs --warn",
     "build": "vite build",
     "lint": "eslint .",
     "audit:design": "node scripts/design-audit.mjs",

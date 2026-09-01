@@ -117,7 +117,7 @@ const S = {
   eyebrowLink: { color: 'inherit', textDecoration: 'none' },
   title: { fontFamily: SERIF, fontSize: 28, color: 'var(--tx)', margin: '2px 0 8px' },
   sub: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.6, maxWidth: '68ch' },
-  picker: { marginTop: 14, fontSize: 14, padding: '6px 9px', borderRadius: 8, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx)' },
+  picker: { marginTop: 16, fontSize: 14, padding: '8px 8px', borderRadius: 12, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx)' },
   dim: { color: 'var(--tx2)', fontWeight: 400, fontSize: 14 },
   h2: { fontFamily: SERIF, fontSize: 20, color: 'var(--tx)', margin: '0 0 4px', display: 'flex', alignItems: 'baseline', gap: 10 },
   count: { fontFamily: MONO, fontSize: 12, color: 'var(--tx2)' },

@@ -132,15 +132,15 @@ function Shell({ title, children }) {
 
 const S = {
   eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)' },
-  h1: { fontFamily: SERIF, fontSize: 30, color: 'var(--tx)', margin: '2px 0 10px' },
+  h1: { fontFamily: SERIF, fontSize: 28, color: 'var(--tx)', margin: '2px 0 10px' },
   sub: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.6, maxWidth: '74ch' },
   link: { color: 'var(--pk)', textDecoration: 'none' },
-  kbd: { fontFamily: MONO, fontSize: 12, background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 4, padding: '1px 5px' },
+  kbd: { fontFamily: MONO, fontSize: 12, background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 12, padding: '1px 5px' },
   grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 250px), 1fr))', gap: 12, marginTop: 20 },
   card: { display: 'flex', flexDirection: 'column', gap: 5, background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 12, padding: '15px 17px', textDecoration: 'none', position: 'relative' },
   cardNext: { borderColor: 'var(--pk)' },
   cardEmpty: { opacity: 0.5, borderStyle: 'dashed' },
-  num: { fontFamily: MONO, fontSize: 11, color: 'var(--tx2)', letterSpacing: 1 },
-  cardTitle: { fontFamily: SERIF, fontSize: 18, color: 'var(--tx)', lineHeight: 1.25 },
-  meta: { fontFamily: MONO, fontSize: 11, letterSpacing: .5, textTransform: 'uppercase', color: 'var(--tx2)' },
+  num: { fontFamily: MONO, fontSize: 12, color: 'var(--tx2)', letterSpacing: 1 },
+  cardTitle: { fontFamily: SERIF, fontSize: 20, color: 'var(--tx)', lineHeight: 1.25 },
+  meta: { fontFamily: MONO, fontSize: 12, letterSpacing: .5, textTransform: 'uppercase', color: 'var(--tx2)' },
 }

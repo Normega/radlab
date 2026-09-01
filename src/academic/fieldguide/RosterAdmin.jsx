@@ -59,7 +59,7 @@ const guessCol = (headers, patterns) => {
 // so they sit on the same background and rails as the roster itself.
 function Frame({ children }) {
   return (
-    <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '32px 20px 80px' }}>
+    <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '32px 16px 64px' }}>
       <div style={{ maxWidth: 1060, margin: '0 auto' }}>
         <p style={S.eyebrow}><Link to="/academic/fieldguide" style={S.eyebrowLink}>Field Guide</Link> · staff</p>
         {children}
@@ -72,7 +72,7 @@ function Frame({ children }) {
 // pre-roster states, which differ only in why they are asking.
 function CourseList({ courses }) {
   return (
-    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 18 }}>
+    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 16 }}>
       {courses.map(e => (
         <Link key={e.course_id} to={rosterPath(e.courses.code)} style={S.courseBtn}>
           {e.courses.code}
@@ -253,7 +253,7 @@ export default function RosterAdmin() {
   }
 
   return (
-    <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '32px 20px 80px' }}>
+    <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '32px 16px 64px' }}>
       <div style={{ maxWidth: 1060, margin: '0 auto' }}>
         <p style={S.eyebrow}><Link to={coursePath(course.courses.code)} style={S.eyebrowLink}>Field Guide</Link> · staff</p>
         <h1 style={S.title}>Roster · {course.courses.code}</h1>
@@ -284,7 +284,7 @@ export default function RosterAdmin() {
           ) : (
             <>
               <p style={S.sub}>{csv.data.length} data rows. Which column is which?</p>
-              <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', margin: '10px 0' }}>
+              <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', margin: '8px 0' }}>
                 {[['name', 'Full name'], ['email', 'Email'], ['num', 'Student number (optional)']].map(([k, label]) => (
                   <label key={k} style={S.sub}>
                     {label}{' '}
@@ -393,11 +393,11 @@ const S = {
   tiny: { fontFamily: MONO, fontSize: 12, padding: '3px 10px', marginRight: 6, borderRadius: 12, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx2)', cursor: 'pointer' },
   attemptRow: { display: 'flex', gap: 14, alignItems: 'center', padding: '6px 0', borderBottom: '1px dotted var(--bd)' },
   courseBtn: {
-    display: 'flex', flexDirection: 'column', gap: 3, minWidth: 190,
-    fontFamily: MONO, fontSize: 15, fontWeight: 600, color: 'var(--tx)',
-    textDecoration: 'none', padding: '14px 18px', borderRadius: 12,
+    display: 'flex', flexDirection: 'column', gap: 4, minWidth: 190,
+    fontFamily: MONO, fontSize: 16, fontWeight: 600, color: 'var(--tx)',
+    textDecoration: 'none', padding: '16px 16px', borderRadius: 12,
     background: 'var(--bgc)', border: '1px solid var(--bd)',
   },
   courseBtnSub: { fontFamily: 'inherit', fontSize: 12, fontWeight: 400, color: 'var(--tx2)' },
-  switchLink: { fontFamily: MONO, fontSize: 12.5, color: 'var(--pk)', textDecoration: 'none', marginRight: 14 },
+  switchLink: { fontFamily: MONO, fontSize: 12, color: 'var(--pk)', textDecoration: 'none', marginRight: 16 },
 }
