@@ -22,9 +22,9 @@ const enr = (code, role = 'instructor', name = `${code} course`, term = '2026F')
 
 const BOTH = [enr('PSY309'), enr('PSY240')] // deliberately not in code order
 
-check('rosterPath lowercases the code', () => {
-  assert.equal(rosterPath('PSY240'), '/academic/fieldguide/roster/psy240')
-  assert.equal(rosterPath('psy309'), '/academic/fieldguide/roster/psy309')
+check('rosterPath lowercases the code into the course-scoped path', () => {
+  assert.equal(rosterPath('PSY240'), '/academic/psy240/roster')
+  assert.equal(rosterPath('psy309'), '/academic/psy309/roster')
 })
 
 check('staffedCourses sorts by course code', () => {

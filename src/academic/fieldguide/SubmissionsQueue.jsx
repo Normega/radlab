@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useOutletContext } from 'react-router-dom'
+import { useCoursePaths } from './wiki/useWikiBase'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -35,6 +36,7 @@ export default function SubmissionsQueue() {
   // No staffEnrollments here on purpose: this queue spans courses and takes
   // each decision's course from its own row. See notify() below.
   const { courseClient, session } = useOutletContext()
+  const paths = useCoursePaths()
   const [rows, setRows] = useState(null)      // null = loading
   const [openId, setOpenId] = useState(null)
   const [busyId, setBusyId] = useState(null)
@@ -150,12 +152,12 @@ export default function SubmissionsQueue() {
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '32px 20px 80px' }}>
       <div style={{ maxWidth: 940, margin: '0 auto' }}>
-        <p style={S.eyebrow}><Link to="/academic/fieldguide" style={S.eyebrowLink}>Field Guide</Link></p>
+        <p style={S.eyebrow}><Link to={paths.home} style={S.eyebrowLink}>Field Guide</Link></p>
         <h1 style={S.title}>Student submissions</h1>
         <p style={S.sub}>
           Mechanical faults are caught before you read anything. What is left is the one question
           precheck cannot answer: <strong>does the source actually say this?</strong>{' '}
-          <Link to="/academic/fieldguide/review" style={S.link}>Ingest proposals are reviewed separately →</Link>
+          <Link to={paths.sub('review')} style={S.link}>Ingest proposals are reviewed separately →</Link>
         </p>
 
         {rows === null && <p style={{ ...S.sub, marginTop: 20 }}>Loading…</p>}

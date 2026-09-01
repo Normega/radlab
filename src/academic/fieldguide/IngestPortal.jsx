@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useOutletContext } from 'react-router-dom'
+import { useWikiBase, useCoursePaths } from './wiki/useWikiBase'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -10,8 +11,13 @@ const SERIF = '"DM Serif Display", Georgia, serif'
 // polling ingest_jobs (staff-read RLS), so a long model call never leaves
 // the UI hanging on a request.
 export default function IngestPortal() {
-  const { courseClient, session, staffEnrollments } = useOutletContext()
-  const [courseId, setCourseId] = useState(staffEnrollments[0]?.course_id)
+  const WIKI_BASE = useWikiBase()
+  const paths = useCoursePaths()
+  // Course comes from the URL via the guard — the old internal picker
+  // (useState(staffEnrollments[0])) could contradict the course in the
+  // address bar. Switching course = navigating.
+  const { courseClient, session, course: urlCourse } = useOutletContext()
+  const courseId = urlCourse?.course_id
   const [file, setFile] = useState(null)
   // Native is the confirmed course default (2026-07-24 four-paper mode test:
   // content parity, but native has no text-layer dependency — see website.md
@@ -43,7 +49,7 @@ export default function IngestPortal() {
   const [openJob, setOpenJob] = useState(null)
   const fileInput = useRef(null)
 
-  const course = staffEnrollments.find(e => e.course_id === courseId)?.courses
+  const course = urlCourse?.courses
 
   const loadJobs = async () => {
     const { data } = await courseClient
@@ -163,27 +169,17 @@ export default function IngestPortal() {
       <div style={{ maxWidth: 860, margin: '0 auto' }}>
         <header style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
           <div>
-            <p style={S.eyebrow}><Link to="/academic/fieldguide" style={S.eyebrowLink}>Field Guide</Link></p>
+            <p style={S.eyebrow}><Link to={paths.home} style={S.eyebrowLink}>Field Guide</Link></p>
             <h1 style={S.title}>Ingest portal</h1>
             {course && <p style={S.sub}>{course.code} · {course.name} ({course.term})</p>}
           </div>
           <div style={{ textAlign: 'right' }}>
             <p style={{ ...S.sub, fontSize: 12 }}>{session.user.email}</p>
-            <Link to="/academic/fieldguide/wiki" style={{ fontSize: 14, color: 'var(--pk)' }}>Wiki</Link>
-            <Link to="/academic/fieldguide/review" style={{ fontSize: 14, color: 'var(--pk)', marginLeft: 10 }}>Review queue</Link>
+            <Link to={WIKI_BASE} style={{ fontSize: 14, color: 'var(--pk)' }}>Wiki</Link>
+            <Link to={paths.sub('review')} style={{ fontSize: 14, color: 'var(--pk)', marginLeft: 10 }}>Review queue</Link>
             <button style={{ ...S.linkBtn, marginLeft: 10 }} onClick={() => courseClient.auth.signOut()}>Sign out</button>
           </div>
         </header>
-
-        {staffEnrollments.length > 1 && (
-          <select style={{ ...S.input, marginTop: 12 }} value={courseId} onChange={e => setCourseId(e.target.value)}>
-            {staffEnrollments.map(e => (
-              <option key={e.course_id} value={e.course_id}>
-                {e.courses?.code} — {e.courses?.name}
-              </option>
-            ))}
-          </select>
-        )}
 
         <form onSubmit={submit} style={S.card}>
           <input ref={fileInput} style={{ fontSize: 14, color: 'var(--tx)' }} type="file" accept="application/pdf,.pdf"

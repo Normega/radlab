@@ -115,7 +115,13 @@ for (const file of files) {
     }
 
     for (const m of line.matchAll(SPACE_RE)) {
-      for (const v of m[1].matchAll(/(\d+(?:\.\d+)?)px/g)) {
+      // In a JS object literal the value ends at the next `key:`, not at a
+      // semicolon — without this the capture swallows neighbouring properties
+      // and counts their pixels as spacing (`padding: 24, flex: '1 1 480px'`
+      // was reporting a 480px pad; `margin: '…', borderTop: '1px solid …'` a 1px one).
+      const cut = m[1].search(/[,{]\s*[\w-]+\s*:/)
+      const value = cut >= 0 ? m[1].slice(0, cut) : m[1]
+      for (const v of value.matchAll(/(\d+(?:\.\d+)?)px/g)) {
         const px = parseFloat(v[1])
         if (!SPACE_SCALE.has(px)) hit(scope, rel, 'spacing: off-scale px')
       }
@@ -125,7 +131,11 @@ for (const file of files) {
 
 // ── report ──────────────────────────────────────────────────────────────────
 const RATCHETED = Object.keys(newCounts()).filter((c) => c !== 'font-size: on scale')
-const mode = process.argv.includes('--check') ? 'check'
+// --warn checks and reports but always exits 0. This is what runs in the build
+// (npm prebuild), so a drift regression is loud on every deploy without a stale
+// baseline ever being able to block one. See the flip date in the plan.
+const warnOnly = process.argv.includes('--warn')
+const mode = (process.argv.includes('--check') || warnOnly) ? 'check'
   : process.argv.includes('--update') ? 'update' : 'report'
 
 const pad = (s, n) => String(s).padEnd(n)
@@ -162,7 +172,7 @@ if (mode === 'update') {
 if (mode === 'check') {
   if (!existsSync(BASELINE_PATH)) {
     console.error('\nno baseline — run npm run audit:design:update first')
-    process.exit(1)
+    process.exit(warnOnly ? 0 : 1)
   }
   // strip a UTF-8 BOM — Windows editors and PowerShell redirects add one
   const baseline = JSON.parse(readFileSync(BASELINE_PATH, 'utf8').replace(/^﻿/, ''))
@@ -179,7 +189,10 @@ if (mode === 'check') {
   }
   if (failed) {
     console.error('\nNew design drift introduced — fix it or (for a sanctioned exception) update the baseline deliberately.')
-    process.exit(1)
+    if (warnOnly) {
+      console.error('(warn-only: the build continues. Run npm run audit:design to see the offending files.)')
+    }
+    process.exit(warnOnly ? 0 : 1)
   }
   console.log('\nratchet holds.')
 }

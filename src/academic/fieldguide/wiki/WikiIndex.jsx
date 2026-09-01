@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useOutletContext } from 'react-router-dom'
-import { WIKI_BASE } from './wikiText'
+import { useWikiBase, useCoursePaths } from './useWikiBase'
 import { useWikiCourse } from './useWikiCourse'
 import { TIER_LABEL, TIER_HELP } from './tiers'
 import { chapterIcon } from './chapterIcons'
@@ -45,6 +45,7 @@ const TYPE_LABEL = {
 // course_structure, pages attached via page_lectures — the scope decision that
 // wiki pages must be clearly linked to their week.
 export default function WikiIndex() {
+  const WIKI_BASE = useWikiBase() // course-scoped; template usages unchanged
   const { courseClient, session, enrollments, isStaff } = useOutletContext()
   const { courseId, select, courses, course } = useWikiCourse(enrollments)
   const weekAnchored = !!course && course.code !== 'PSY240'
@@ -497,18 +498,19 @@ export default function WikiIndex() {
 }
 
 function Shell({ course, session, client, isStaff, courses, courseId, onSelectCourse, children }) {
+  const paths = useCoursePaths()
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '28px 16px 64px' }}>
       <div style={{ maxWidth: 980, margin: '0 auto' }}>
         <header style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
           <div>
-            <p style={S.eyebrow}><Link to="/academic/fieldguide" style={S.eyebrowLink}>Field Guide</Link></p>
+            <p style={S.eyebrow}><Link to={paths.home} style={S.eyebrowLink}>Field Guide</Link></p>
             <h1 style={S.title}>{course?.name ?? 'Course wiki'}</h1>
             {course && <p style={S.sub}>{course.code} · {course.term}</p>}
           </div>
           {!session && (
             <div style={{ textAlign: 'right' }}>
-              <Link to="/academic/fieldguide/review" style={S.link}>Staff sign in</Link>
+              <Link to={paths.sub('review')} style={S.link}>Staff sign in</Link>
             </div>
           )}
           {session && (
@@ -516,9 +518,9 @@ function Shell({ course, session, client, isStaff, courses, courseId, onSelectCo
               <p style={{ ...S.sub, fontSize: 12 }}>{session.user.email}</p>
               {isStaff && (
                 <>
-                  <Link to="/academic/fieldguide/review" style={S.link}>Review queue</Link>
+                  <Link to={paths.sub('review')} style={S.link}>Review queue</Link>
                   {' · '}
-                  <Link to="/academic/fieldguide/ingest" style={S.link}>Ingest</Link>
+                  <Link to={paths.sub('ingest')} style={S.link}>Ingest</Link>
                   {' · '}
                 </>
               )}
@@ -527,6 +529,8 @@ function Shell({ course, session, client, isStaff, courses, courseId, onSelectCo
           )}
         </header>
 
+        {/* Course switcher — now navigation: onSelectCourse routes to the
+            same surface under the other course's URL. */}
         {courses?.length > 1 && (
           <select style={{ ...S.search, marginTop: 12, marginBottom: 0 }} value={courseId}
                   onChange={e => onSelectCourse(e.target.value)}>

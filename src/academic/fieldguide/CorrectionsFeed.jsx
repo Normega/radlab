@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useOutletContext } from 'react-router-dom'
+import { useWikiBase, useCoursePaths } from './wiki/useWikiBase'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -10,6 +11,8 @@ const SERIF = '"DM Serif Display", Georgia, serif'
 // button: open the page's history, re-save the prior body — a revert is itself
 // a correction and gets its own note.
 export default function CorrectionsFeed() {
+  const WIKI_BASE = useWikiBase()
+  const paths = useCoursePaths()
   const { courseClient } = useOutletContext()
   const [rows, setRows] = useState(null)
   const [notice, setNotice] = useState(null)
@@ -28,7 +31,7 @@ export default function CorrectionsFeed() {
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '32px 20px 80px' }}>
       <div style={{ maxWidth: 940, margin: '0 auto' }}>
-        <p style={S.eyebrow}><Link to="/academic/fieldguide" style={S.eyebrowLink}>Field Guide</Link></p>
+        <p style={S.eyebrow}><Link to={paths.home} style={S.eyebrowLink}>Field Guide</Link></p>
         <h1 style={S.title}>Corrections</h1>
         <p style={S.sub}>
           Every staff edit, newest first: who, what page, which version, and the required note saying
@@ -44,7 +47,7 @@ export default function CorrectionsFeed() {
         {rows?.map(r => (
           <article key={r.version_id} style={S.card}>
             <div style={S.head}>
-              <Link to={`/academic/fieldguide/wiki/${r.slug}`} style={S.slug}>{r.slug}</Link>
+              <Link to={`${WIKI_BASE}/${r.slug}`} style={S.slug}>{r.slug}</Link>
               <span style={S.meta}>
                 v{r.version} · {r.editor} · {new Date(r.created_at).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })}
               </span>

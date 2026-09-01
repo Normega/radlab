@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useOutletContext, useParams, useLocation } from 'react-router-dom'
 import { WikiMarkdown } from './wikiMarkdown'
-import { WIKI_BASE, splitFrontmatter, extractHeadings, splitSections } from './wikiText'
+import { splitFrontmatter, extractHeadings, splitSections } from './wikiText'
+import { useWikiBase, useCoursePaths } from './useWikiBase'
 import { useWikiCourse } from './useWikiCourse'
 import { useWideLayout } from './useWideLayout'
 import { TIER_LABEL, TIER_HELP } from './tiers'
@@ -33,6 +34,8 @@ const EMPTY = new Set()
 // on this page filters by status defensively, because the place to enforce
 // that is the database, and it already does.
 export default function WikiPage() {
+  const WIKI_BASE = useWikiBase() // course-scoped; template usages unchanged
+  const paths = useCoursePaths()
   const { courseClient, enrollments, isStaff } = useOutletContext()
   const { courseId, course } = useWikiCourse(enrollments)
   const { slug } = useParams()
@@ -604,7 +607,7 @@ export default function WikiPage() {
                 <p style={S.sub}>
                   {gaps.length} open ask{gaps.length === 1 ? '' : 's'} on this page
                   {gapsBySection.size > 0 && ' — most shown inline at their sections'}
-                  . <Link to="/academic/fieldguide/gaps" style={S.link}>Claim one on the gap board →</Link>
+                  . <Link to={paths.sub('gaps')} style={S.link}>Claim one on the gap board →</Link>
                 </p>
               )}
               <GapList gaps={unanchoredGaps} section={null} isStaff={isStaff} onFlag={flagGap} />
@@ -807,10 +810,11 @@ const G = {
 }
 
 function Shell({ course, children }) {
+  const paths = useCoursePaths()
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '28px 16px 64px' }}>
       <div style={{ maxWidth: 980, margin: '0 auto' }}>
-        <p style={S.eyebrow}><Link to="/academic/fieldguide" style={S.eyebrowLink}>Field Guide</Link>{course?.code ? ` · ${course.code}` : ''}</p>
+        <p style={S.eyebrow}><Link to={paths.home} style={S.eyebrowLink}>Field Guide</Link>{course?.code ? ` · ${course.code}` : ''}</p>
         {children}
       </div>
     </div>

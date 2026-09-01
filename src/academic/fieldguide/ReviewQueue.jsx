@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useOutletContext } from 'react-router-dom'
+import { useWikiBase, useCoursePaths } from './wiki/useWikiBase'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -13,8 +14,13 @@ const SERIF = '"DM Serif Display", Georgia, serif'
 // no authenticated write policies, so there is no client-side path that could
 // publish without the staff check inside that function.
 export default function ReviewQueue() {
-  const { courseClient, session, staffEnrollments } = useOutletContext()
-  const [courseId, setCourseId] = useState(staffEnrollments[0]?.course_id)
+  // Course comes from the URL via the guard — the old internal picker
+  // (useState(staffEnrollments[0])) could contradict the course in the
+  // address bar, which is exactly the wrong-course class of bug the
+  // course-scoped routes exist to end. Switching course = navigating.
+  const { courseClient, session, course: urlCourse } = useOutletContext()
+  const courseId = urlCourse?.course_id
+  const WIKI_BASE = useWikiBase()
   const [rows, setRows] = useState(null)   // null = loading
   const [shelf, setShelf] = useState([])   // pages that already carry accepted content
   const [counts, setCounts] = useState(null)
@@ -23,7 +29,7 @@ export default function ReviewQueue() {
   const [busyId, setBusyId] = useState(null)
   const [notice, setNotice] = useState(null)
 
-  const course = staffEnrollments.find(e => e.course_id === courseId)?.courses
+  const course = urlCourse?.courses
 
   const load = useCallback(async () => {
     if (!courseId) return
@@ -96,8 +102,7 @@ export default function ReviewQueue() {
   }
 
   return (
-    <Page course={course} session={session} client={courseClient}
-          staffEnrollments={staffEnrollments} courseId={courseId} setCourseId={setCourseId}>
+    <Page course={course} session={session} client={courseClient}>
       <div style={S.statRow}>
         <Stat n={rows.length} label="awaiting review" accent />
         <Stat n={counts?.published ?? 0} label="published" />
@@ -278,7 +283,7 @@ export default function ReviewQueue() {
                 <span style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
                   {/* Rendered, as a student sees it — the check that raw
                       markdown in a textarea can't give you. */}
-                  <Link to={`/academic/fieldguide/wiki/${page.slug}`} style={S.link}>View</Link>
+                  <Link to={`${WIKI_BASE}/${page.slug}`} style={S.link}>View</Link>
                   <Badge kind={page.status === 'published' ? 'update' : 'first'}>{page.status}</Badge>
                   {page.status === 'published' && (
                     <button style={S.danger} onClick={() => unpublish(page)}>Unpublish</button>
@@ -327,31 +332,25 @@ function mergeDraft(row) {
   return `${row.current_content.trimEnd()}\n\n${withoutFrontmatter.trimStart()}`
 }
 
-function Page({ course, session, client, children, staffEnrollments, courseId, setCourseId }) {
+function Page({ course, session, client, children }) {
+  const WIKI_BASE = useWikiBase()
+  const paths = useCoursePaths()
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '32px 16px' }}>
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
         <header style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
           <div>
-            <p style={S.eyebrow}><Link to="/academic/fieldguide" style={S.eyebrowLink}>Field Guide</Link></p>
+            <p style={S.eyebrow}><Link to={paths.home} style={S.eyebrowLink}>Field Guide</Link></p>
             <h1 style={S.title}>Review queue</h1>
             {course && <p style={S.sub}>{course.code} · {course.name} ({course.term})</p>}
           </div>
           <div style={{ textAlign: 'right' }}>
             <p style={{ ...S.sub, fontSize: 12 }}>{session.user.email}</p>
-            <Link to="/academic/fieldguide/wiki" style={S.link}>Wiki</Link>
-            <Link to="/academic/fieldguide/ingest" style={{ ...S.link, marginLeft: 10 }}>Ingest portal</Link>
+            <Link to={WIKI_BASE} style={S.link}>Wiki</Link>
+            <Link to={paths.sub('ingest')} style={{ ...S.link, marginLeft: 10 }}>Ingest portal</Link>
             <button style={{ ...S.linkBtn, marginLeft: 10 }} onClick={() => client.auth.signOut()}>Sign out</button>
           </div>
         </header>
-
-        {staffEnrollments?.length > 1 && (
-          <select style={{ ...S.input, marginTop: 12 }} value={courseId} onChange={e => setCourseId(e.target.value)}>
-            {staffEnrollments.map(e => (
-              <option key={e.course_id} value={e.course_id}>{e.courses?.code} — {e.courses?.name}</option>
-            ))}
-          </select>
-        )}
 
         {children}
       </div>

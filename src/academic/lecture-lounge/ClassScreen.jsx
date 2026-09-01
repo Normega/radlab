@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import QRCode from 'react-qr-code'
 import { supabase } from '../../lib/supabase'
+import { loungePath } from '../courseRoutes'
 import ResultsView from './ResultsView'
 import AvatarWall from './AvatarWall'
 import { useClassPresence } from './useClassPresence'
@@ -109,7 +110,7 @@ export default function ClassScreen() {
 
   if (!classInfo) return <div style={S.stage} />
 
-  const joinUrl = `${window.location.origin}/class/${classInfo.slug}`
+  const joinUrl = `${window.location.origin}${loungePath(classInfo.slug)}`
 
   if (liveCheckin?.status === 'results_ready') {
     return (

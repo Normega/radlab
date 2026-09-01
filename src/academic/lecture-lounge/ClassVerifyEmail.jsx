@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
+import { loungePath } from '../courseRoutes'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -86,7 +87,7 @@ export default function ClassVerifyEmail() {
               </p>
             )}
             {slug && (
-              <Link to={`/class/${slug}`} style={S.link}>Back to class →</Link>
+              <Link to={loungePath(slug)} style={S.link}>Back to class →</Link>
             )}
           </>
         )}

@@ -18,8 +18,11 @@
 // it), so it takes the course from the row being acted on instead — see the
 // 20260831_submission_queue_course_id migration.
 
+// Canonical since the course-scoped route scheme: /academic/:code/roster.
+// (The old /academic/fieldguide/roster/:code mount still resolves as a legacy
+// route, but nothing should generate new links to it.)
 export const rosterPath = (code) =>
-  `/academic/fieldguide/roster/${String(code).toLowerCase()}`
+  `/academic/${String(code).toLowerCase()}/roster`
 
 // One entry per course, sorted by code. Deduped because one person can hold
 // two enrollments in the same course (ta AND instructor), which would

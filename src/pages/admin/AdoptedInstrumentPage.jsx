@@ -88,12 +88,17 @@ function instrumentMeta(r) {
   }
 }
 
-// Shared library config for the four composable types.
-function composableLibrary(type, title) {
+// Shared library config for the four composable types. newLink points at the
+// authoring page added 2026-08-31 — until then these types had no create path
+// at all (their rows were seeded by migration), which is why only the numeric
+// slider, VAS and package libraries carried a "+ New" button.
+function composableLibrary(type, title, pageSlug, newLabel) {
   return {
     table: 'composable_instruments',
     type,
     title,
+    newLink: `/admin/instruments/${pageSlug}/new`,
+    newLabel,
     row: r => ({ name: r.label, meta: instrumentMeta(r) }),
     preview: r => <DemoStage config={instrumentConfig(r)} />,
   }
@@ -111,8 +116,8 @@ const PAGES = {
     chips: [{ label: 'Adopted 2026-08-19', tone: 'green' }, { label: 'Live in sessions · 2026-08-25', tone: 'green' }],
     C: LikertSliderSample,
     blurb: 'The discrete slider: stepped scale with point labels and no numeric readout — the label is the value. Dana’s track/thumb chrome combined with the platform’s no-default behavior (no thumb until the first touch).',
-    note: 'The sample is the first Likert slider in the library, rendered by the production component — the exact step a participant gets. Add instances to sessions from the session builder’s Instruments picker.',
-    library: composableLibrary('likert_slider', 'Existing Likert sliders'),
+    note: 'The sample is the first Likert slider in the library, rendered by the production component — the exact step a participant gets. Use + New below to author another; add instances to sessions from the session builder’s Instruments picker.',
+    library: composableLibrary('likert_slider', 'Existing Likert sliders', 'likert-slider', '+ New Likert Slider'),
   },
   'numeric-slider': {
     title: 'Numeric slider',
@@ -165,8 +170,8 @@ const PAGES = {
     chips: [{ label: 'Adopted 2026-08-19', tone: 'green' }, { label: 'Live in sessions · 2026-08-25', tone: 'green' }],
     C: MultipleChoiceSample,
     blurb: 'Single-select multiple choice, where an option can be plain or carry inline text/number entry with prefix/suffix and bounds. Fills a real gap: the platform has never had a generic MC instrument.',
-    note: 'The sample is the first multiple-choice instrument in the library, rendered by the production component — the exact step a participant gets. Add instances to sessions from the session builder’s Instruments picker.',
-    library: composableLibrary('multiple_choice', 'Existing multiple-choice questions'),
+    note: 'The sample is the first multiple-choice instrument in the library, rendered by the production component — the exact step a participant gets. Use + New below to author another; add instances to sessions from the session builder’s Instruments picker.',
+    library: composableLibrary('multiple_choice', 'Existing multiple-choice questions', 'multiple-choice', '+ New Question'),
   },
   'open-list': {
     title: 'Open text list + contribution ratings',
@@ -174,8 +179,8 @@ const PAGES = {
     chips: [{ label: 'Adopted 2026-08-19', tone: 'green' }, { label: 'Live in sessions · 2026-08-25', tone: 'green' }],
     C: OpenListSample,
     blurb: 'Participant-generated factors with a per-factor rating: typing text reveals a contribution slider beneath that row, filling the last row grows a new one, and entries are word-capped with a live counter.',
-    note: 'The sample is the first open text list in the library, rendered by the production component — the exact step a participant gets. Add instances to sessions from the session builder’s Instruments picker.',
-    library: composableLibrary('open_list', 'Existing open text lists'),
+    note: 'The sample is the first open text list in the library, rendered by the production component — the exact step a participant gets. Use + New below to author another; add instances to sessions from the session builder’s Instruments picker.',
+    library: composableLibrary('open_list', 'Existing open text lists', 'open-list', '+ New Open List'),
   },
   'hierarchy': {
     title: 'Hierarchical belief question',
@@ -183,8 +188,8 @@ const PAGES = {
     chips: [{ label: 'Adopted 2026-08-19', tone: 'green' }, { label: 'Live in sessions · 2026-08-25', tone: 'green' }],
     C: HierarchySample,
     blurb: 'A belief hierarchy shown whole, indented by level. Participants select every level that changed; each selected level reveals a signed direction slider. Generalizes to any nested-construct rating.',
-    note: 'The sample is the first belief hierarchy in the library, rendered by the production component — the exact step a participant gets. Add instances to sessions from the session builder’s Instruments picker.',
-    library: composableLibrary('hierarchy', 'Existing belief hierarchies'),
+    note: 'The sample is the first belief hierarchy in the library, rendered by the production component — the exact step a participant gets. Use + New below to author another; add instances to sessions from the session builder’s Instruments picker.',
+    library: composableLibrary('hierarchy', 'Existing belief hierarchies', 'hierarchy', '+ New Hierarchy'),
   },
 }
 
