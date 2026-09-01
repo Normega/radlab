@@ -270,7 +270,7 @@ function NumField({ label, value, onChange, ...rest }) {
   )
 }
 
-function RowList({ title, hint, items, onAdd, addLabel, children }) {
+function RowList({ title, hint, items, onAdd, addLabel }) {
   return (
     <div style={{ marginBottom: 16 }}>
       <label style={S.label}>{title}</label>
