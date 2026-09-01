@@ -39,14 +39,16 @@ export default function AcademicHome({ session, role, superAdmin }) {
     return next
   })
 
-  // Main project: my classes.
+  // Main project: my classes. Archived ones are unlisted here (20260831) —
+  // they stay reachable by direct URL and visible in /academic/admin, so this
+  // filter is about the directory, not about access.
   useEffect(() => {
     if (!session?.user?.id) return
     let cancelled = false
-    supabase.from('class_members').select('classes ( slug, name )')
+    supabase.from('class_members').select('classes ( slug, name, archived )')
       .then(({ data }) => {
         if (cancelled) return
-        merge((data ?? []).filter(r => r.classes)
+        merge((data ?? []).filter(r => r.classes && !r.classes.archived)
           .map(r => ({ code: r.classes.slug, name: r.classes.name, term: null })))
       })
     return () => { cancelled = true }

@@ -14,10 +14,23 @@ function useClasses() {
   return useQuery({
     queryKey: ['classes-list'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('classes').select('id, name, slug, created_at').order('created_at', { ascending: false })
+      const { data, error } = await supabase.from('classes').select('id, name, slug, created_at, archived').order('created_at', { ascending: false })
       if (error) throw error
       return data
     },
+  })
+}
+
+// Archived classes are unlisted in the /academic directory but stay reachable
+// by URL and listed here — this is where an archive gets undone (20260831).
+function useSetArchived() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, archived }) => {
+      const { error } = await supabase.from('classes').update({ archived }).eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['classes-list'] }),
   })
 }
 
@@ -84,7 +97,7 @@ function useRemoveClassAdmin(classId) {
   })
 }
 
-function ClassRow({ cls, expanded, onToggle, onDelete }) {
+function ClassRow({ cls, expanded, onToggle, onDelete, onSetArchived }) {
   const { data: admins, isLoading } = useClassAdmins(cls.id, expanded)
   const addAdmin = useAddClassAdmin(cls.id)
   const removeAdmin = useRemoveClassAdmin(cls.id)
@@ -98,7 +111,10 @@ function ClassRow({ cls, expanded, onToggle, onDelete }) {
   return (
     <>
       <tr style={S.tr}>
-        <td style={S.td}><span style={S.label}>{cls.name}</span></td>
+        <td style={S.td}>
+          <span style={S.label}>{cls.name}</span>
+          {cls.archived && <span style={S.archivedChip}>archived</span>}
+        </td>
         <td style={S.td}><span style={S.mono}>{cls.slug}</span></td>
         <td style={S.td}><span style={S.mono}>{new Date(cls.created_at).toLocaleDateString()}</span></td>
         <td style={S.td}>
@@ -113,6 +129,13 @@ function ClassRow({ cls, expanded, onToggle, onDelete }) {
               label="Download QR"
               style={S.actionBtn}
             />
+            <button style={S.actionBtn}
+              title={cls.archived
+                ? 'List this class again in the /academic directory'
+                : 'Hide from the /academic directory. Stays reachable by URL and listed here.'}
+              onClick={() => onSetArchived(cls, !cls.archived)}>
+              {cls.archived ? 'Un-archive' : 'Archive'}
+            </button>
             <button style={S.deleteBtn} onClick={() => onDelete(cls)}>Delete</button>
           </div>
         </td>
@@ -162,6 +185,7 @@ export default function LectureLoungeAdminPage({ session }) {
   const { data: classes, isLoading } = useClasses()
   const createClass = useCreateClass()
   const deleteClass = useDeleteClass()
+  const setArchived = useSetArchived()
   const [expandedId, setExpandedId] = useState(null)
   const [pendingDelete, setPendingDelete] = useState(null)
   const [creating, setCreating] = useState(false)
@@ -231,6 +255,7 @@ export default function LectureLoungeAdminPage({ session }) {
                     key={cls.id} cls={cls} expanded={expandedId === cls.id}
                     onToggle={() => setExpandedId(expandedId === cls.id ? null : cls.id)}
                     onDelete={setPendingDelete}
+                    onSetArchived={(c, archived) => setArchived.mutate({ id: c.id, archived })}
                   />
                 ))}
               </tbody>
@@ -290,6 +315,10 @@ const S = {
   muted: { fontSize: 14, color: 'var(--tx3)' },
   mono: { fontFamily: MONO, fontSize: 12, color: 'var(--tx3)' },
   label: { fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 14, fontWeight: 600, color: 'var(--tx)' },
+  archivedChip: {
+    fontFamily: MONO, fontSize: 12, color: 'var(--tx2)', background: 'var(--bgp)',
+    borderRadius: 12, padding: '0 8px', marginLeft: 8, whiteSpace: 'nowrap',
+  },
   empty: { textAlign: 'center', padding: '48px 0' },
   emptyText: { fontFamily: SERIF, fontSize: 20, color: 'var(--tx)', margin: '0 0 8px' },
   emptyHint: { fontSize: 14, color: 'var(--tx2)', margin: 0 },
