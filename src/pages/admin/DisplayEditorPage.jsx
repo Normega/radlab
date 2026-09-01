@@ -7,6 +7,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { GAME_OUTPUTS, GAME_LABELS } from '../../lib/elementOutputs'
 import DisplayMarkdown from '../../components/study/DisplayMarkdown'
+import DisplayPreviewModal from './DisplayPreviewModal'
 
 const slugify = s => s.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '')
 
@@ -40,6 +41,7 @@ export default function DisplayEditorPage() {
   const [blocks,     setBlocks]     = useState([{ text: '', showIfSlot: '', showIfArms: '' }])
   const [focusedIdx, setFocusedIdx] = useState(0)
   const [error,      setError]      = useState(null)
+  const [showPreview,setShowPreview]= useState(false)
 
   const { data: existing, isLoading } = useQuery({
     queryKey: ['display-edit', id],
@@ -128,14 +130,27 @@ export default function DisplayEditorPage() {
           <Link to="/admin/displays" style={S.backLink}>← Displays</Link>
           <h1 style={S.h1}>{isEdit ? 'Edit Display' : 'New Display'}</h1>
         </div>
-        <button
-          style={{ ...S.btnPrimary, opacity: save.isPending ? 0.7 : 1 }}
-          onClick={() => { setError(null); save.mutate() }}
-          disabled={save.isPending}
-        >
-          {save.isPending ? 'Saving…' : isEdit ? 'Save changes' : 'Create display'}
-        </button>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button type="button" style={S.btnSecondary} onClick={() => setShowPreview(true)}>
+            Preview
+          </button>
+          <button
+            style={{ ...S.btnPrimary, opacity: save.isPending ? 0.7 : 1 }}
+            onClick={() => { setError(null); save.mutate() }}
+            disabled={save.isPending}
+          >
+            {save.isPending ? 'Saving…' : isEdit ? 'Save changes' : 'Create display'}
+          </button>
+        </div>
       </div>
+
+      {showPreview && (
+        <DisplayPreviewModal
+          name={name}
+          blocks={blocks.map(toStored)}
+          onClose={() => setShowPreview(false)}
+        />
+      )}
 
       {error && <p style={S.errMsg}>{error}</p>}
 
@@ -416,4 +431,5 @@ const S = {
   previewBtn: { fontSize: 13, color: 'var(--pkd)', background: '#fff', border: '1px solid var(--pkb)', borderRadius: 7, padding: '4px 12px', cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
   previewBox: { background: '#fff', border: '1px solid var(--bd)', borderRadius: 8, padding: '16px 18px' },
   btnPrimary: { display: 'inline-block', background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
+  btnSecondary:{ display: 'inline-block', background: '#fff', color: 'var(--pkd)', border: '1px solid var(--pkb)', borderRadius: 9, padding: '9px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
 }
