@@ -49,7 +49,7 @@ export default function Join() {
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '48px 20px' }}>
       <div style={{ maxWidth: 480, margin: '0 auto' }}>
-        <p style={S.eyebrow}>{code ? code.toUpperCase() : 'PSY240'} · Field Guide</p>
+        <p style={S.eyebrow}>{code ? `${code.toUpperCase()} · ` : ''}Field Guide</p>
         <h1 style={S.title}>Join the Field Guide</h1>
 
         {state === 'sent' ? (
