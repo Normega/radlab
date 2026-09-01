@@ -28,7 +28,12 @@ const DECKS = {
     // week, which also counts reading week (between lectures 7 and 8).
     iconWeek: (n) => (n <= 7 ? n : n + 1),
   },
-  psy240: { dir: '/psy240', file: (n) => `L${n}.html` },
+  psy240: {
+    dir: '/psy240',
+    file: (n) => `L${n}.html`,
+    // Same shape as psy309: reading week sits between meeting days 7 and 8.
+    iconWeek: (n) => (n <= 7 ? n : n + 1),
+  },
 }
 
 export default function ClassSlides() {
