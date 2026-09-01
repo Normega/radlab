@@ -225,7 +225,7 @@ export default function DisplayEditorPage() {
               <div style={S.previewBox}>
                 {block.text.trim()
                   ? <DisplayMarkdown text={block.text} />
-                  : <p style={{ ...S.sub, fontSize: 13 }}>(Nothing to preview yet.)</p>}
+                  : <p style={{ ...S.sub, fontSize: 14 }}>(Nothing to preview yet.)</p>}
               </div>
             )}
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
@@ -428,8 +428,8 @@ const S = {
   deleteBtn:  { fontSize: 14, color: '#e04', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: '"DM Sans",system-ui,sans-serif' },
   addBtn:     { alignSelf: 'flex-start', fontSize: 14, color: 'var(--pkd)', background: '#fff', border: '1px dashed var(--pkb)', borderRadius: 8, padding: '7px 14px', cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
   mdHint:     { fontSize: 12, color: 'var(--tx3)', fontFamily: '"Space Mono",monospace', margin: 0, flex: 1, minWidth: 220 },
-  previewBtn: { fontSize: 13, color: 'var(--pkd)', background: '#fff', border: '1px solid var(--pkb)', borderRadius: 7, padding: '4px 12px', cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
-  previewBox: { background: '#fff', border: '1px solid var(--bd)', borderRadius: 8, padding: '16px 18px' },
+  previewBtn: { fontSize: 14, color: 'var(--pkd)', background: '#fff', border: '1px solid var(--pkb)', borderRadius: 24, padding: '4px 16px', cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
+  previewBox: { background: '#fff', border: '1px solid var(--bd)', borderRadius: 12, padding: '16px 16px' },
   btnPrimary: { display: 'inline-block', background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
   btnSecondary:{ display: 'inline-block', background: '#fff', color: 'var(--pkd)', border: '1px solid var(--pkb)', borderRadius: 9, padding: '9px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
 }

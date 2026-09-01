@@ -53,13 +53,14 @@ const M = {
   overlay:     { position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.88)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 16px' },
   frame:       { width: '100%', maxWidth: 760, maxHeight: '100%', display: 'flex', flexDirection: 'column' },
   header:      { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12 },
-  title:       { fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 15, fontWeight: 600, color: '#fff', margin: '0 0 2px' },
+  title:       { fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 16, fontWeight: 600, color: '#fff', margin: '0 0 4px' },
   subtitle:    { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'rgba(255,255,255,0.45)', margin: 0 },
-  closeBtn:    { background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 8, padding: '6px 14px', cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 14, color: '#fff', whiteSpace: 'nowrap' },
-  screen:      { background: 'var(--bg, #fff)', borderRadius: 14, overflowY: 'auto' },
+  closeBtn:    { background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 24, padding: '8px 16px', cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 14, color: '#fff', whiteSpace: 'nowrap' },
+  screen:      { background: 'var(--bg, #fff)', borderRadius: 12, overflowY: 'auto' },
   // Mirrors DisplayStepWrapper's S.wrap so the preview is an honest rendering.
-  wrap:        { padding: '48px 32px', maxWidth: 640, margin: '0 auto', fontFamily: '"DM Sans",system-ui,sans-serif', display: 'flex', flexDirection: 'column', gap: 20 },
-  chip:        { alignSelf: 'flex-start', fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--pkd)', background: 'var(--bgc)', border: '1px solid var(--pkb)', borderRadius: 6, padding: '2px 8px' },
-  empty:       { fontSize: 15, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif', margin: 0 },
-  continueBtn: { alignSelf: 'center', marginTop: 12, background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 10, padding: '13px 36px', fontSize: 15, fontWeight: 600, fontFamily: '"DM Sans",system-ui,sans-serif', opacity: 0.6, cursor: 'default' },
+  wrap:        { padding: '48px 32px', maxWidth: 640, margin: '0 auto', fontFamily: '"DM Sans",system-ui,sans-serif', display: 'flex', flexDirection: 'column', gap: 24 },
+  chip:        { alignSelf: 'flex-start', fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--pkd)', background: 'var(--bgc)', border: '1px solid var(--pkb)', borderRadius: 12, padding: '4px 8px' },
+  empty:       { fontSize: 14, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif', margin: 0 },
+  // Mirrors DisplayStepWrapper's S.btn.
+  continueBtn: { alignSelf: 'center', marginTop: 16, background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 24, padding: '16px 32px', fontSize: 14, fontWeight: 600, fontFamily: '"DM Sans",system-ui,sans-serif', opacity: 0.6, cursor: 'default' },
 }

@@ -52,18 +52,18 @@ export default function DisplayMarkdown({ text }) {
 }
 
 const M = {
-  wrap:  { fontSize: 17, color: 'var(--tx)', lineHeight: 1.65, fontFamily: '"DM Sans",system-ui,sans-serif', display: 'flex', flexDirection: 'column', gap: 14 },
-  h2:    { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 24, fontWeight: 400, color: 'var(--tx)', margin: '10px 0 0' },
-  h3:    { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 20, fontWeight: 400, color: 'var(--tx)', margin: '6px 0 0' },
-  h4:    { fontSize: 16, fontWeight: 700, color: 'var(--tx)', margin: '4px 0 0' },
+  wrap:  { fontSize: 16, color: 'var(--tx)', lineHeight: 1.65, fontFamily: '"DM Sans",system-ui,sans-serif', display: 'flex', flexDirection: 'column', gap: 16 },
+  h2:    { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 20, fontWeight: 400, color: 'var(--tx)', margin: '8px 0 0' },
+  h3:    { fontSize: 16, fontWeight: 600, color: 'var(--tx)', margin: '8px 0 0' },
+  h4:    { fontSize: 14, fontWeight: 600, color: 'var(--tx)', margin: '4px 0 0' },
   p:     { margin: 0 },
-  list:  { margin: 0, paddingLeft: 24, display: 'flex', flexDirection: 'column', gap: 6 },
+  list:  { margin: 0, paddingLeft: 24, display: 'flex', flexDirection: 'column', gap: 8 },
   li:    { margin: 0 },
   hr:    { border: 'none', borderTop: '1px solid var(--bd)', margin: '8px 0', width: '100%' },
-  quote: { margin: 0, padding: '10px 16px', borderLeft: '3px solid var(--pkb)', background: 'var(--bgp)', borderRadius: '0 8px 8px 0', color: 'var(--tx2)' },
-  code:  { fontFamily: '"Space Mono",monospace', fontSize: 14, background: 'var(--bgp)', border: '1px solid var(--bd)', borderRadius: 5, padding: '1px 5px' },
+  quote: { margin: 0, padding: '8px 16px', borderLeft: '2px solid var(--pkb)', background: 'var(--bgp)', borderRadius: '0 12px 12px 0', color: 'var(--tx2)' },
+  code:  { fontFamily: '"Space Mono",monospace', fontSize: 14, background: 'var(--bgp)', border: '1px solid var(--bd)', borderRadius: 12, padding: '0 8px' },
   link:  { color: 'var(--pkd)', textDecorationColor: 'var(--pkb)', textUnderlineOffset: 3 },
-  table: { borderCollapse: 'collapse', fontSize: 15 },
-  th:    { border: '1px solid var(--bd)', padding: '6px 12px', textAlign: 'left', background: 'var(--bgp)' },
-  td:    { border: '1px solid var(--bd)', padding: '6px 12px' },
+  table: { borderCollapse: 'collapse', fontSize: 14 },
+  th:    { border: '1px solid var(--bd)', padding: '8px 16px', textAlign: 'left', background: 'var(--bgp)' },
+  td:    { border: '1px solid var(--bd)', padding: '8px 16px' },
 }
