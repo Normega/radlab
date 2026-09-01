@@ -1,9 +1,11 @@
-// v1 — renders a display element (displays table) as a session step.
+// v2 — renders a display element (displays table) as a session step.
 // Blocks are filtered by condition (showIf vs the participant's assignments)
 // and {{variable}} placeholders interpolate from the session context:
 // assignments (slot keys) + step outputs (slider.*, vas.*, game.*).
+// Block text is markdown (DisplayMarkdown), interpolated before rendering.
 import { useQuery } from '@tanstack/react-query'
 import { supabase as globalSupabase } from '../../lib/supabase'
+import DisplayMarkdown from './DisplayMarkdown'
 
 /** Resolve 'game.aptitude_suite.avg_pct' against the context object. */
 function resolvePath(ctx, path) {
@@ -65,11 +67,7 @@ export default function DisplayStepWrapper({
     <div style={S.wrap}>
       {blocks.map((block, i) => {
         if (block.type !== 'text') return null // future block types render here
-        return (
-          <div key={i} style={S.textBlock}>
-            {interpolate(block.text, ctx)}
-          </div>
-        )
+        return <DisplayMarkdown key={i} text={interpolate(block.text, ctx)} />;
       })}
       {blocks.length === 0 && (
         <p style={{ ...S.textBlock, color: 'var(--tx3)' }}>
