@@ -147,19 +147,27 @@ function fmtNum(v, digits = 4) {
   return (v == null || Number.isNaN(v)) ? '' : Number(v).toFixed(digits);
 }
 
+// Integer formatter for device_packet_us. fmtNum would render that value as
+// "838000000000000.0000"; this blanks on NaN the same way pacer_radius does.
+function fmtInt(v) {
+  return (v == null || Number.isNaN(v)) ? '' : String(Math.trunc(v));
+}
+
 function buildAccelCsv(rows) {
-  const header = 'phase,trial,packet_timestamp,sample_index,x,y,z,pacer_radius';
+  const header = 'phase,trial,packet_timestamp,sample_index,x,y,z,pacer_radius,device_packet_us';
   const body   = rows.map(r =>
     [r.phase, r.trial, r.packetTimestamp, r.sampleIndex,
-     fmtNum(r.x), fmtNum(r.y), fmtNum(r.z), fmtNum(r.pacerRadius)].join(',')
+     fmtNum(r.x), fmtNum(r.y), fmtNum(r.z), fmtNum(r.pacerRadius),
+     fmtInt(r.devicePacketMicros)].join(',')
   ).join('\n');
   return `${header}\n${body}`;
 }
 
 function buildHRCsv(rows) {
-  const header = 'phase,trial,timestamp,heart_rate';
+  const header = 'phase,trial,timestamp,heart_rate,rr_intervals_1024,contact_status';
   const body   = rows.map(r =>
-    [r.phase, r.trial, r.timestamp, r.heartRate].join(',')
+    [r.phase, r.trial, r.timestamp, r.heartRate,
+     r.rrIntervals1024 ?? '', r.contactStatus ?? -1].join(',')
   ).join('\n');
   return `${header}\n${body}`;
 }

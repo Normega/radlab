@@ -22,8 +22,8 @@ export function useStreamingBackup() {
       const trials = await dir.getFileHandle(`${pfx}_trials.csv`, { create: true })
       const quest  = await dir.getFileHandle(`${pfx}_quest.csv`,  { create: true })
 
-      await _append(accel,  'phase,trial,packet_ts,sample_idx,x,y,z,pacer_radius\n')
-      await _append(hr,     'phase,trial,timestamp,heart_rate\n')
+      await _append(accel,  'phase,trial,packet_ts,sample_idx,x,y,z,pacer_radius,device_packet_us\n')
+      await _append(hr,     'phase,trial,timestamp,heart_rate,rr_intervals_1024,contact_status\n')
       await _append(trials,
         'phase,trial,condition,base_period_s,change_period_s,start_ms,end_ms,' +
         'peak_error_ms,bt_baseline_period_ms,bt_condition_period_ms,' +
@@ -46,6 +46,7 @@ export function useStreamingBackup() {
         r.phase, r.trial, r.packetTimestamp, r.sampleIndex,
         r.x.toFixed(4), r.y.toFixed(4), r.z.toFixed(4),
         isNaN(r.pacerRadius) ? '' : r.pacerRadius.toFixed(4),
+        isNaN(r.devicePacketMicros) ? '' : String(Math.trunc(r.devicePacketMicros)),
       ].join(',')
     ).join('\n') + '\n'
     await _append(handlesRef.current.accel, lines)
@@ -54,7 +55,8 @@ export function useStreamingBackup() {
   const flushHR = useCallback(async (rows) => {
     if (!handlesRef.current || !rows.length) return
     const lines = rows.map(r =>
-      [r.phase, r.trial, r.timestamp, r.heartRate].join(',')
+      [r.phase, r.trial, r.timestamp, r.heartRate,
+       r.rrIntervals1024 ?? '', r.contactStatus ?? -1].join(',')
     ).join('\n') + '\n'
     await _append(handlesRef.current.hr, lines)
   }, [])

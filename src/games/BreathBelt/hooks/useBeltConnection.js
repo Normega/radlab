@@ -110,6 +110,21 @@ export function useBeltConnection({ isSimMode = false } = {}) {
     const dv = e.target?.value
     if (!dv) return
 
+    // Bytes 1..8 are the sensor's own timestamp for the LAST sample in this
+    // packet, in nanoseconds on the Polar epoch (2000-01-01). Logged additively:
+    // unlike `timestamp` above it carries no browser scheduling jitter, which is
+    // measured at 35 ms SD / 74 ms p95 / 319 ms max in this study's data.
+    // Nothing downstream reads it yet, by design. See the README beside this
+    // patch in Summer2026_CompareBelts/docs/radlab_patches/.
+    // Nanoseconds overflow Number.MAX_SAFE_INTEGER (about 8e17 against 9.0e15),
+    // so divide as BigInt down to microseconds before converting to Number.
+    let devicePacketMicros = NaN
+    try {
+      if (dv.byteLength >= 9) {
+        devicePacketMicros = Number(dv.getBigUint64(1, true) / BigInt(1000))
+      }
+    } catch { /* logging must never break a running session */ }
+
     const step = Math.ceil(((dv.getInt8(9) + 1) * 8) / 8)
     const measurements = []
     let offset = 10
@@ -126,7 +141,8 @@ export function useBeltConnection({ isSimMode = false } = {}) {
     const pacerRadius = getPacerRadiusFnRef.current()
 
     measurements.forEach((s, idx) => {
-      const row = { phase, trial, packetTimestamp: timestamp, sampleIndex: idx, x: s[0], y: s[1], z: s[2], pacerRadius }
+      // devicePacketMicros is appended last so existing column order is unchanged.
+      const row = { phase, trial, packetTimestamp: timestamp, sampleIndex: idx, x: s[0], y: s[1], z: s[2], pacerRadius, devicePacketMicros }
       rawAccelRowsRef.current.push(row)
       pendingAccelRef.current.push(row)
     })
@@ -153,9 +169,43 @@ export function useBeltConnection({ isSimMode = false } = {}) {
     }
   }, [])
 
+  // Heart rate characteristic, GATT 0x2A37. The previous version read getInt8(1)
+  // and nothing else, which did two wrong things: the byte is UNSIGNED, so any
+  // rate above 127 bpm logged as negative; and the packet's RR intervals were
+  // discarded even though we were already subscribed and receiving them.
+  //
+  // `heartRate` keeps its name and position, so existing readers are unaffected.
+  // The two new fields are appended. rrIntervals1024 holds RAW 1/1024 s ticks,
+  // semicolon separated, which is lossless and contains no comma; convert with
+  // ms = ticks * 1000 / 1024. contactStatus: 0 or 1 not supported, 2 not
+  // detected, 3 detected.
   const hrHandlerRef = useRef((e) => {
-    const hr  = e.target?.value?.getInt8(1) ?? -1
-    const row = { phase: currentPhaseRef.current, trial: currentTrialRef.current, timestamp: Date.now(), heartRate: hr }
+    const dv  = e.target?.value
+    const row = {
+      phase: currentPhaseRef.current,
+      trial: currentTrialRef.current,
+      timestamp: Date.now(),
+      heartRate: -1,
+      rrIntervals1024: '',
+      contactStatus: -1,
+    }
+    try {
+      if (dv && dv.byteLength >= 2) {
+        const flags     = dv.getUint8(0)
+        const hr16      = (flags & 0x01) !== 0
+        const hasEnergy = (flags & 0x08) !== 0
+        const hasRR     = (flags & 0x10) !== 0
+        row.contactStatus = (flags >> 1) & 0x03
+        row.heartRate     = hr16 ? dv.getUint16(1, true) : dv.getUint8(1)
+        let off = hr16 ? 3 : 2
+        if (hasEnergy) off += 2
+        if (hasRR) {
+          const rr = []
+          for (; off + 1 < dv.byteLength; off += 2) rr.push(dv.getUint16(off, true))
+          row.rrIntervals1024 = rr.join(';')
+        }
+      }
+    } catch { /* logging must never break a running session */ }
     rawHRRowsRef.current.push(row)
     pendingHRRef.current.push(row)
   })
