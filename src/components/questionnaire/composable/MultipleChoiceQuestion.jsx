@@ -13,12 +13,41 @@ function inputIsValid(option, rawValue) {
   return true
 }
 
+/**
+ * Single-select (radio, the default) or, with `allow_multiple: true`,
+ * select-all-that-apply (checkboxes).
+ *
+ * Response shapes differ so the stored row is self-describing:
+ *   single   { option_id, value }
+ *   multiple [{ option_id, value }, ...]  — in the order the participant
+ *                                           selected, empty array = none yet
+ */
 export default function MultipleChoiceQuestion({ config, value = null, onChange }) {
-  const selectedId = value?.option_id ?? null
-  const selectedValue = value?.value ?? ''
+  const multiple = config.allow_multiple === true
+
+  const selections = multiple ? (Array.isArray(value) ? value : []) : null
+  const selectedId = multiple ? null : value?.option_id ?? null
+  const selectedValue = multiple ? null : value?.value ?? ''
+
+  function selectionFor(optionId) {
+    return selections?.find(s => s.option_id === optionId) ?? null
+  }
+
+  function hasInput(option) {
+    return option.response_type === 'text' || option.response_type === 'number'
+  }
 
   function select(option) {
-    if (option.response_type === 'text' || option.response_type === 'number') {
+    if (multiple) {
+      if (selectionFor(option.id)) {
+        onChange(selections.filter(s => s.option_id !== option.id))
+      } else {
+        onChange([...selections, { option_id: option.id, value: hasInput(option) ? '' : null }])
+      }
+      return
+    }
+
+    if (hasInput(option)) {
       onChange({
         option_id: option.id,
         value: selectedId === option.id ? selectedValue : '',
@@ -32,7 +61,11 @@ export default function MultipleChoiceQuestion({ config, value = null, onChange 
     const nextValue = option.response_type === 'number'
       ? (raw === '' ? '' : Number(raw))
       : raw
-    onChange({ option_id: option.id, value: nextValue })
+    if (multiple) {
+      onChange(selections.map(s => s.option_id === option.id ? { ...s, value: nextValue } : s))
+    } else {
+      onChange({ option_id: option.id, value: nextValue })
+    }
   }
 
   return (
@@ -41,10 +74,19 @@ export default function MultipleChoiceQuestion({ config, value = null, onChange 
         <RichText text={config.question} />
       </div>
 
-      <div className="cs-mc-list" role="radiogroup" aria-labelledby={`${config.id}-prompt`}>
+      {multiple && (
+        <p className="cs-mc-note">Select all that apply.</p>
+      )}
+
+      <div
+        className="cs-mc-list"
+        role={multiple ? 'group' : 'radiogroup'}
+        aria-labelledby={`${config.id}-prompt`}
+      >
         {(config.options ?? []).map(option => {
-          const selected = selectedId === option.id
-          const hasInput = option.response_type === 'text' || option.response_type === 'number'
+          const selection = multiple ? selectionFor(option.id) : null
+          const selected = multiple ? selection != null : selectedId === option.id
+          const conditionalValue = multiple ? selection?.value ?? '' : selectedValue
 
           return (
             <div
@@ -54,29 +96,31 @@ export default function MultipleChoiceQuestion({ config, value = null, onChange 
               <button
                 type="button"
                 className="cs-mc-option__button"
-                role="radio"
+                role={multiple ? 'checkbox' : 'radio'}
                 aria-checked={selected}
                 onClick={() => select(option)}
               >
-                <span className="cs-radio-dot" aria-hidden="true" />
+                {multiple
+                  ? <span className="cs-check-marker" aria-hidden="true" />
+                  : <span className="cs-radio-dot" aria-hidden="true" />}
                 <span className="cs-mc-option__label">
                   <RichText text={option.label} inline />
                 </span>
               </button>
 
-              {selected && hasInput && (
+              {selected && hasInput(option) && (
                 <div className="cs-mc-option__conditional">
                   {option.prefix ? <span>{option.prefix}</span> : null}
                   <input
                     autoFocus
                     type={option.response_type === 'number' ? 'number' : 'text'}
-                    value={selectedValue}
+                    value={conditionalValue}
                     placeholder={option.placeholder ?? ''}
                     min={option.min}
                     max={option.max}
                     step={option.step}
                     onChange={event => updateConditional(option, event.target.value)}
-                    aria-invalid={!inputIsValid(option, selectedValue)}
+                    aria-invalid={!inputIsValid(option, conditionalValue)}
                   />
                   {option.suffix ? <span>{option.suffix}</span> : null}
                 </div>

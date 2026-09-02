@@ -38,6 +38,16 @@ export default function LikertSliderQuestion({ config, value = null, onChange })
           ariaLabel={config.aria_label ?? config.question ?? 'Likert slider response'}
         />
         <div className="cs-likert-slider__labels" aria-hidden="true">
+          {/* Absolutely positioned labels contribute no height, so this
+              invisible in-flow copy is what makes the card grow with long
+              point labels instead of letting them spill out of the box. */}
+          <div className="cs-likert-slider__sizer">
+            {(config.labels ?? []).filter(l => l && l.label).map(l => (
+              <span key={l.value} className="cs-likert-slider__label">
+                {l.label}
+              </span>
+            ))}
+          </div>
           {(config.labels ?? []).filter(l => l && l.label).map(l => (
             <span
               key={l.value}

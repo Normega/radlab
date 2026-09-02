@@ -1,9 +1,24 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
+import SliderQuestion from '../../components/questionnaire/composable/SliderQuestion'
+import '../../components/questionnaire/composable/composableSurvey.css'
 
 function slugify(str) {
   return str.toLowerCase().trim().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')
+}
+
+// The anchors spec a row would carry (slider_scales.anchors,
+// 20260825_composable_instruments.sql). With no middle anchor this returns
+// null — the stored convention for "derive start/end from min_label/max_label",
+// which keeps rows identical to every slider authored before the field existed.
+function buildAnchors({ min, max, minLabel, maxLabel, midValue, midLabel }) {
+  if (!midLabel.trim()) return null
+  return [
+    { value: min, label: minLabel.trim() },
+    { value: midValue ?? Math.round((min + max) / 2), label: midLabel.trim() },
+    { value: max, label: maxLabel.trim() },
+  ]
 }
 
 export default function SliderCreatePage() {
@@ -16,7 +31,9 @@ export default function SliderCreatePage() {
   const [max,         setMax]         = useState(6)
   const [minLabel,    setMinLabel]    = useState('')
   const [maxLabel,    setMaxLabel]    = useState('')
-  const [previewVal,  setPreviewVal]  = useState(3)
+  const [midLabel,    setMidLabel]    = useState('')
+  const [midValue,    setMidValue]    = useState(null)   // null = auto midpoint
+  const [previewVal,  setPreviewVal]  = useState(null)
   const [saving,      setSaving]      = useState(false)
   const [error,       setError]       = useState(null)
 
@@ -25,23 +42,15 @@ export default function SliderCreatePage() {
     if (!slugTouched) setSlug(slugify(v))
   }
 
-  function handleMinChange(v) {
-    const n = Number(v)
-    setMin(n)
-    const mid = Math.round((n + max) / 2)
-    setPreviewVal(mid)
-  }
-
-  function handleMaxChange(v) {
-    const n = Number(v)
-    setMax(n)
-    const mid = Math.round((min + n) / 2)
-    setPreviewVal(mid)
-  }
+  const anchors = buildAnchors({ min, max, minLabel, maxLabel, midValue, midLabel })
+  const midInRange = !midLabel.trim()
+    || ((midValue ?? Math.round((min + max) / 2)) > min
+      && (midValue ?? Math.round((min + max) / 2)) < max)
 
   async function handleSave() {
     if (!prompt.trim() || !slug.trim() || !minLabel.trim() || !maxLabel.trim()) return
     if (min >= max) { setError('Min must be less than max.'); return }
+    if (!midInRange) { setError('The middle anchor position must fall between min and max.'); return }
     setSaving(true)
     setError(null)
     try {
@@ -53,17 +62,21 @@ export default function SliderCreatePage() {
         max,
         min_label: minLabel.trim(),
         max_label: maxLabel.trim(),
+        anchors,
         created_by: user.id,
       })
       if (err) throw new Error(err.message)
 
       // 'numeric_slider' since the composable-instruments split (2026-08-25) —
       // the picker and dispatcher treat it and legacy 'vas' rows identically.
+      const labelChain = anchors
+        ? anchors.map(a => a.label).join(' → ')
+        : `${minLabel.trim()} → ${maxLabel.trim()}`
       const { error: actErr } = await supabase.from('activities').insert({
         category:    'numeric_slider',
         subcategory: `slider_${slug.trim()}`,
         label:       `Slider – ${prompt.trim().slice(0, 60)}`,
-        description: `${minLabel.trim()} → ${maxLabel.trim()} (${min}–${max})`,
+        description: `${labelChain} (${min}–${max})`,
       })
       if (actErr) console.warn('activities insert:', actErr.message)
 
@@ -74,7 +87,8 @@ export default function SliderCreatePage() {
     }
   }
 
-  const canSave = prompt.trim() && slug.trim() && minLabel.trim() && maxLabel.trim() && min < max && !saving
+  const canSave = prompt.trim() && slug.trim() && minLabel.trim() && maxLabel.trim()
+    && min < max && midInRange && !saving
 
   return (
     <div>
@@ -107,7 +121,7 @@ export default function SliderCreatePage() {
               style={S.input}
               type="number"
               value={min}
-              onChange={e => handleMinChange(e.target.value)}
+              onChange={e => setMin(Number(e.target.value))}
             />
           </div>
           <div style={{ flex: 1 }}>
@@ -116,7 +130,7 @@ export default function SliderCreatePage() {
               style={S.input}
               type="number"
               value={max}
-              onChange={e => handleMaxChange(e.target.value)}
+              onChange={e => setMax(Number(e.target.value))}
             />
           </div>
         </div>
@@ -142,13 +156,39 @@ export default function SliderCreatePage() {
           </div>
         </div>
 
+        <div style={S.row2}>
+          <div style={{ flex: 2 }}>
+            <label style={S.label}>Middle anchor label</label>
+            <input
+              style={S.input}
+              value={midLabel}
+              onChange={e => setMidLabel(e.target.value)}
+              placeholder="Moderately (leave empty for no middle anchor)"
+            />
+          </div>
+          <div style={{ flex: 1 }}>
+            <label style={S.label}>At value</label>
+            <input
+              style={S.input}
+              type="number"
+              value={midValue ?? ''}
+              onChange={e => setMidValue(e.target.value === '' ? null : Number(e.target.value))}
+              placeholder={String(Math.round((min + max) / 2))}
+            />
+          </div>
+        </div>
+        <p style={S.hint}>Optional. Empty position defaults to the midpoint of the range.</p>
+
         <p style={{ ...S.label, marginTop: 20 }}>Preview</p>
+        <p style={S.hint}>The production component — exactly what a participant sees.</p>
         <SliderPreview
           prompt={prompt || 'Your prompt will appear here.'}
           min={min}
           max={max}
-          minLabel={minLabel || 'Min'}
-          maxLabel={maxLabel || 'Max'}
+          labels={anchors ?? [
+            { value: min, label: minLabel || 'Min' },
+            { value: max, label: maxLabel || 'Max' },
+          ]}
           value={previewVal}
           onChange={setPreviewVal}
         />
@@ -173,25 +213,25 @@ export default function SliderCreatePage() {
   )
 }
 
-export function SliderPreview({ prompt, min, max, minLabel, maxLabel, value, onChange }) {
+// Renders through the production SliderQuestion so the preview matches what a
+// participant gets (until 2026-09-02 this was a hand-rolled green range input
+// that predated the adopted numeric-slider template — Dana flagged the
+// mismatch). Also used by VasLibraryPage's slider preview modal.
+export function SliderPreview({ prompt, min, max, step = 1, labels, value, onChange }) {
   return (
-    <div style={SP.outer}>
-      <p style={SP.prompt}>{prompt}</p>
-      <div style={SP.sliderWrap}>
-        <input
-          type="range"
-          min={min}
-          max={max}
-          value={value}
-          onChange={e => onChange?.(Number(e.target.value))}
-          style={SP.slider}
-        />
-        <div style={SP.labels}>
-          <span style={SP.labelTxt}>{minLabel}</span>
-          <span style={SP.val}>{value}</span>
-          <span style={SP.labelTxt}>{maxLabel}</span>
-        </div>
-      </div>
+    <div className="cs-page" style={SP.stage}>
+      <SliderQuestion
+        config={{
+          id: 'slider_preview',
+          question: prompt,
+          min,
+          max,
+          step,
+          labels: labels ?? [],
+        }}
+        value={value}
+        onChange={onChange}
+      />
     </div>
   )
 }
@@ -211,11 +251,5 @@ const S = {
 }
 
 const SP = {
-  outer:     { border: '1px solid var(--bd)', borderRadius: 12, padding: '16px', background: '#fafafa' },
-  prompt:    { fontSize: 14, fontFamily: '"DM Sans",system-ui,sans-serif', color: 'var(--tx)', margin: '0 0 16px', lineHeight: 1.5 },
-  sliderWrap: { background: '#faf9f7', border: '1px solid #e8e5e0', borderRadius: 12, padding: '20px 20px 16px' },
-  slider:    { width: '100%', height: 8, accentColor: '#639922', cursor: 'pointer', marginBottom: 12, display: 'block' },
-  labels:    { display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, color: '#5f5e5a' },
-  labelTxt:  { fontFamily: '"DM Sans",system-ui,sans-serif' },
-  val:       { fontSize: 22, fontWeight: 600, color: '#639922', fontFamily: '"DM Sans",system-ui,sans-serif' },
+  stage: { background: 'var(--bg)', border: '1px solid var(--bd)', borderRadius: 12, padding: 16, marginTop: 8 },
 }

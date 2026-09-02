@@ -45,6 +45,17 @@ export default function SliderScale({
 
           {visibleLabels.length > 0 && (
             <div className="cs-slider-labels" aria-hidden="true">
+              {/* Absolutely positioned labels contribute no height, so this
+                  invisible in-flow copy is what makes the card grow with long
+                  anchor text instead of letting it spill out of the box. */}
+              <div className="cs-slider-labels__sizer">
+                {visibleLabels.map((label, index) => (
+                  <div key={`${label.value}-${index}`} className="cs-slider-label">
+                    <strong>{label.value}</strong>
+                    <span>{label.label}</span>
+                  </div>
+                ))}
+              </div>
               {visibleLabels.map((label, index) => (
                 <div
                   key={`${label.value}-${index}`}

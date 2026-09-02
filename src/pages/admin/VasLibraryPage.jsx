@@ -355,15 +355,17 @@ function SliderRow({ slider, onPreview }) {
 // ── SliderPreviewModal ────────────────────────────────────────────────────────
 
 function SliderPreviewModal({ slider }) {
-  const mid = Math.round((slider.min + slider.max) / 2)
-  const [val, setVal] = useState(mid)
+  const [val, setVal] = useState(null)
   return (
     <SliderPreview
       prompt={slider.prompt}
       min={slider.min}
       max={slider.max}
-      minLabel={slider.min_label}
-      maxLabel={slider.max_label}
+      step={slider.step ?? 1}
+      labels={slider.anchors ?? [
+        { value: slider.min, label: slider.min_label ?? '' },
+        { value: slider.max, label: slider.max_label ?? '' },
+      ]}
       value={val}
       onChange={setVal}
     />
