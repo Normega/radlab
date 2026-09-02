@@ -130,7 +130,7 @@ back to another course).
 |---|---|---|
 | Routes | `src/App.jsx` | nothing — all `/academic/:courseCode/*` routes are param-driven |
 | Path vocabulary | `src/academic/courseRoutes.js` | nothing per-class — but **any new staff/wiki URL segment must join `FIELD_GUIDE_SEGMENTS`** (see §5) |
-| Feature switches | `src/academic/courseFeatures.js` | only to turn something OFF (default is full-featured). `contributions: false` = participation-only tracking page (PSY309) |
+| Feature switches | `src/academic/courseFeatures.js` | only to turn something OFF (default is full-featured). `contributions: false` = participation-only tracking page; `gaps: false` = no gap board, no per-page gap boxes or flag control; `ingest: false` = no ingest portal or links, edit hint drops the ingest pitch. All three off for PSY309 (its guide is authored whole; direct /gaps and /ingest URLs bounce to the wiki index) |
 | Slide decks | `DECKS` in `src/academic/lecture-lounge/ClassSlides.jsx` | `{ dir, file, iconWeek }` for the course |
 | Week icons | `src/assets/week-icons/` | one file per week, named per §2 |
 

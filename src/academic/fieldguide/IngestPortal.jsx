@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useOutletContext } from 'react-router-dom'
+import { Link, Navigate, useOutletContext } from 'react-router-dom'
+import { courseFeatures } from '../courseFeatures'
 import { useWikiBase, useCoursePaths } from './wiki/useWikiBase'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
@@ -16,7 +17,7 @@ export default function IngestPortal() {
   // Course comes from the URL via the guard — the old internal picker
   // (useState(staffEnrollments[0])) could contradict the course in the
   // address bar. Switching course = navigating.
-  const { courseClient, session, course: urlCourse } = useOutletContext()
+  const { courseClient, session, course: urlCourse, courseCode } = useOutletContext()
   const courseId = urlCourse?.course_id
   const [file, setFile] = useState(null)
   // Native is the confirmed course default (2026-07-24 four-paper mode test:
@@ -163,6 +164,11 @@ export default function IngestPortal() {
       setBusy(false)
     }
   }
+
+  // Ingest is source-assembly apparatus; a course with courseFeatures
+  // ingest:false authors pages directly. Bounce direct URLs to the wiki
+  // index. After the hooks, so their order never varies.
+  if (courseCode && !courseFeatures(courseCode).ingest) return <Navigate to={paths.home} replace />
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '32px 16px' }}>

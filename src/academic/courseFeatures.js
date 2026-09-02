@@ -8,9 +8,12 @@
 const OVERRIDES = {
   // PSY309 uses the Field Guide as a read-only reference — no student
   // contribution pipeline — so its tracking page is participation-only.
-  psy309: { contributions: false },
+  // Gaps and ingest are PSY240 apparatus (a textbook assembled from sources,
+  // with declared unknowns for students to claim); PSY309's guide is
+  // authored whole, so those surfaces are off too.
+  psy309: { contributions: false, gaps: false, ingest: false },
 }
 
 export function courseFeatures(code) {
-  return { contributions: true, ...(OVERRIDES[String(code ?? '').trim().toLowerCase()] ?? {}) }
+  return { contributions: true, gaps: true, ingest: true, ...(OVERRIDES[String(code ?? '').trim().toLowerCase()] ?? {}) }
 }
