@@ -176,3 +176,12 @@ body.overview .notes { display:none !important; }
   #bar,#num,#help,#clock { display:none; }
   .hidden-until { visibility:visible; }
 }
+
+/* ---- break-slide QR ---- */
+/* Every break slide carries the check-in QR beside its questions, so nobody
+   has to retype the lounge URL mid-class. White card = quiet zone on the
+   dark break background. */
+section[data-kind="break"] .break-row { display:flex; gap:3.5vmin; align-items:center; }
+section[data-kind="break"] .break-row .qbox { flex:1; }
+.break-qr { flex:0 0 auto; background:#fff; padding:1.4vmin; border-radius:10px; }
+.break-qr img { display:block; width:22vmin; height:22vmin; }
