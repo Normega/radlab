@@ -128,6 +128,7 @@ export default function CourseHome({ role, superAdmin }) {
               <Link to={`${loungePath(code)}/screen`} style={S.staffBtn}>Screen</Link>
               <Link to={`${loungePath(code)}/slides`} style={S.staffBtn}>Slides</Link>
             </>}
+            <Link to={courseSubPath(code, 'tracking')} style={S.staffBtn}>Tracking</Link>
             <Link to={courseSubPath(code, 'submissions')} style={S.staffBtn}>Submissions</Link>
             <Link to={courseSubPath(code, 'reports')} style={S.staffBtn}>Reports</Link>
             <Link to={courseSubPath(code, 'roster')} style={S.staffBtn}>Roster</Link>

@@ -41,7 +41,7 @@ export const courseSubPath = (code, seg) => `/academic/${lc(code)}/${seg}`
 // surface.
 export const FIELD_GUIDE_SEGMENTS = new Set([
   'wiki', 'join', 'gaps', 'whats-new',
-  'ingest', 'review', 'submissions', 'corrections', 'roster', 'read', 'reports',
+  'ingest', 'review', 'submissions', 'corrections', 'roster', 'read', 'reports', 'tracking',
 ])
 
 // ── Term ordering ──────────────────────────────────────────────────────────
