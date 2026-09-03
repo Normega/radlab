@@ -130,10 +130,10 @@ export default async function handler(req, res) {
     // Nothing to draft from: the student submitted before source capture
     // existed, or no full text was ever found. Say so plainly — this is the
     // case where a TA must fall back to the student's text by hand.
-    await service.from('gap_claims').update({
-      integration_status: 'skipped',
-      integration_note: 'No source full text was captured for this claim.',
-    }).eq('id', claim_id)
+    await service.rpc('record_claim_integration', {
+      p_claim_id: claim_id, p_status: 'skipped',
+      p_note: 'No source full text was captured for this claim.',
+    })
     return res.status(422).json({ error: 'No source text captured for this claim — nothing to draft from.' })
   }
 
@@ -174,10 +174,10 @@ export default async function handler(req, res) {
     const parsed = JSON.parse(raw.slice(raw.indexOf('{'), raw.lastIndexOf('}') + 1))
 
     if (!parsed.draft?.trim()) {
-      await service.from('gap_claims').update({
-        integration_status: 'failed',
-        integration_note: parsed.note || 'The source does not address this gap.',
-      }).eq('id', claim_id)
+      await service.rpc('record_claim_integration', {
+        p_claim_id: claim_id, p_status: 'failed',
+        p_note: parsed.note || 'The source does not address this gap.',
+      })
       return res.status(200).json({ ok: false, reason: 'no-coverage', note: parsed.note })
     }
 
@@ -197,11 +197,10 @@ export default async function handler(req, res) {
       .select('id').single()
     if (verErr) throw new Error(verErr.message)
 
-    await service.from('gap_claims').update({
-      integration_status: 'drafted',
-      integration_note: parsed.note ?? null,
-      integration_version_id: version.id,
-    }).eq('id', claim_id)
+    await service.rpc('record_claim_integration', {
+      p_claim_id: claim_id, p_status: 'drafted',
+      p_note: parsed.note ?? null, p_version_id: version.id,
+    })
 
     return res.status(200).json({
       ok: true,
@@ -210,9 +209,9 @@ export default async function handler(req, res) {
       note: parsed.note ?? null,
     })
   } catch (err) {
-    await service.from('gap_claims').update({
-      integration_status: 'failed', integration_note: err.message,
-    }).eq('id', claim_id)
+    await service.rpc('record_claim_integration', {
+      p_claim_id: claim_id, p_status: 'failed', p_note: err.message,
+    })
     return res.status(500).json({ error: err.message })
   }
 }

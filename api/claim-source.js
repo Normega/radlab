@@ -196,12 +196,16 @@ export default async function handler(req, res) {
     }
 
     const truncated = text.length > MAX_CHARS
-    const { error: upErr } = await service.from('gap_claims').update({
-      source_kind: kind,
-      source_fulltext: text.slice(0, MAX_CHARS),
-      source_url_full: sourceUrl,
-      source_captured_at: new Date().toISOString(),
-    }).eq('id', claim_id)
+    // Through the RPC, not a direct update: gap_claims_guard rejects writes
+    // that carry no person identity, and the service key has none. The RPC
+    // sets radlab.claim_flow so the write lands in the guard's bookkeeping
+    // escape (20260903_claim_bookkeeping).
+    const { error: upErr } = await service.rpc('record_claim_source', {
+      p_claim_id: claim_id,
+      p_kind: kind,
+      p_fulltext: text.slice(0, MAX_CHARS),
+      p_url: sourceUrl,
+    })
     if (upErr) return res.status(500).json({ error: upErr.message })
 
     return res.status(200).json({
