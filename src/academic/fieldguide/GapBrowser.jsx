@@ -374,10 +374,16 @@ function ClaimForm({ claim, row: r, courseClient, reload, onRelease }) {
   }, [doi, courseClient, r.gap_id])
 
   const post = async (body) => {
+    // Never send `Bearer undefined`: a client whose session has not rehydrated
+    // yet would otherwise reach the server as an anonymous request and come
+    // back as a confusing "not your claim".
     const { data: { session } } = await courseClient.auth.getSession()
+    if (!session?.access_token) {
+      return { rsp: { ok: false }, json: { error: 'Your session has expired — reload the page and sign in again.' } }
+    }
     const rsp = await fetch('/api/claim-source', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
       body: JSON.stringify({ claim_id: claim.id, ...body }),
     })
     return { rsp, json: await rsp.json().catch(() => ({})) }

@@ -88,8 +88,10 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Server misconfigured: missing COURSE_SUPABASE_* or ANTHROPIC_API_KEY' })
   }
 
-  const jwt = (req.headers.authorization ?? '').replace(/^Bearer /, '')
-  if (!jwt) return res.status(401).json({ error: 'Sign in first' })
+  const jwt = (req.headers.authorization || '').replace(/^Bearer\s+/i, '')
+  if (!jwt || jwt === 'undefined' || jwt === 'null') {
+    return res.status(401).json({ error: 'Your session was not sent — reload the page and sign in again.' })
+  }
   const { claim_id } = req.body ?? {}
   if (!claim_id) return res.status(400).json({ error: 'Required: claim_id' })
 

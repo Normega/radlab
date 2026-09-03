@@ -99,8 +99,14 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Server misconfigured: missing COURSE_SUPABASE_* env vars' })
   }
 
-  const jwt = (req.headers.authorization ?? '').replace(/^Bearer /, '')
-  if (!jwt) return res.status(401).json({ error: 'Sign in first' })
+  // Match the tolerant form the other endpoints use, and reject the string
+  // "undefined" explicitly: a client that lost its session stringifies to
+  // `Bearer undefined`, which is non-empty and would otherwise sail past this
+  // check and fail later as an anonymous request.
+  const jwt = (req.headers.authorization || '').replace(/^Bearer\s+/i, '')
+  if (!jwt || jwt === 'undefined' || jwt === 'null') {
+    return res.status(401).json({ error: 'Your session was not sent — reload the page and sign in again.' })
+  }
 
   const { claim_id, doi, pdf_path } = req.body ?? {}
   if (!claim_id || (!doi && !pdf_path)) {
@@ -113,12 +119,23 @@ export default async function handler(req, res) {
   })
   const service = createClient(url, serviceKey, { auth: { persistSession: false } })
 
-  // Ownership: RLS on gap_claims already restricts the student to their own
-  // rows, so a row coming back through the USER client is proof enough.
-  const { data: claim, error: claimErr } = await userClient
-    .from('gap_claims').select('id, status').eq('id', claim_id).maybeSingle()
+  // Ownership, checked explicitly rather than by "did RLS let me see it".
+  // Resolving the person first separates the two failures that otherwise look
+  // identical: a token the server could not authenticate at all, and a real
+  // session asking after somebody else's claim.
+  const { data: personId, error: whoErr } = await userClient.rpc('current_person_id')
+  if (whoErr || !personId) {
+    return res.status(401).json({
+      error: 'Your sign-in could not be verified — reload the page and try again.',
+      detail: whoErr?.message ?? null,
+    })
+  }
+
+  const { data: claim, error: claimErr } = await service
+    .from('gap_claims').select('id, status, person_id').eq('id', claim_id).maybeSingle()
   if (claimErr) return res.status(500).json({ error: claimErr.message })
-  if (!claim) return res.status(403).json({ error: 'Not your claim' })
+  if (!claim) return res.status(404).json({ error: 'That claim no longer exists — reload the gap board.' })
+  if (claim.person_id !== personId) return res.status(403).json({ error: 'Not your claim' })
   if (claim.status === 'accepted') {
     return res.status(409).json({ error: 'This contribution has already been accepted.' })
   }
