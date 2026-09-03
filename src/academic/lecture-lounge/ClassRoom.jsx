@@ -169,6 +169,18 @@ export default function ClassRoom({ session }) {
     return () => { cancelled = true }
   }, [classInfo?.id, membership]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Discussion boards summary for the lobby card. Board presence is the
+  // feature switch: a class with no class_boards rows shows no card.
+  const [boardsInfo, setBoardsInfo] = useState(null)
+  useEffect(() => {
+    if (!classInfo || !membership) { setBoardsInfo(null); return }
+    let cancelled = false
+    supabase.rpc('get_class_boards', { p_class_id: classInfo.id }).then(({ data }) => {
+      if (!cancelled) setBoardsInfo(Array.isArray(data) && data.length ? data : null)
+    })
+    return () => { cancelled = true }
+  }, [classInfo?.id, membership]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Live updates via the class broadcast channel — remote pushes state,
   // screen/student are consumers only.
   useEffect(() => {
@@ -404,6 +416,15 @@ export default function ClassRoom({ session }) {
               <p style={S.fgEyebrow}>Lecture slides</p>
               <p style={S.fgMeta}>Review any week's deck — printing one gives a study handout →</p>
             </Link>
+
+            {boardsInfo && (
+              <Link to={`${loungePath(slug)}/boards`} style={S.fgCard}>
+                <p style={S.fgEyebrow}>Discussion boards</p>
+                <p style={S.fgMeta}>
+                  {boardsInfo.map((b) => `${b.title}: ${b.threads}`).join(' · ')} — ask anything, staff answer →
+                </p>
+              </Link>
+            )}
 
             {fieldGuideCard}
           </>

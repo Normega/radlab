@@ -97,6 +97,7 @@ const ClassConsole     = lazy(() => import('./academic/lecture-lounge/ClassConso
 const ClassRemote      = lazy(() => import('./academic/lecture-lounge/ClassRemote'))
 const ClassScreen      = lazy(() => import('./academic/lecture-lounge/ClassScreen'))
 const ClassSlides      = lazy(() => import('./academic/lecture-lounge/ClassSlides'))
+const ClassBoards      = lazy(() => import('./academic/lecture-lounge/ClassBoards'))
 const LectureLoungeAdminPage = lazy(() => import('./academic/lecture-lounge/LectureLoungeAdminPage'))
 const AcademicHome         = lazy(() => import('./academic/AcademicHome'))
 const CourseHome           = lazy(() => import('./academic/CourseHome'))
@@ -681,6 +682,19 @@ export default function App() {
                 <WeeklyWall session={session} />
               </AuthRoute>
             } />
+            {/* Discussion boards: student threads, staff-only answers (RLS
+                on board_replies is the enforcement; the page is just honest
+                about it). Same auth posture as the wall. */}
+            <Route path="/academic/:courseCode/lounge/boards" element={
+              <AuthRoute session={session}>
+                <ClassBoards session={session} />
+              </AuthRoute>
+            } />
+            <Route path="/academic/:courseCode/lounge/boards/:threadId" element={
+              <AuthRoute session={session}>
+                <ClassBoards session={session} />
+              </AuthRoute>
+            } />
             {/* Slides index is student-facing (2026-09-02): any signed-in
                 user; the lectures list itself is RLS-gated to class members,
                 and the decks are public static files regardless. */}
@@ -697,6 +711,7 @@ export default function App() {
             {/* Legacy lounge sub-paths: staff bookmarks and in-session links,
                 not auth landings — safe to redirect (unlike /class/:slug). */}
             <Route path="/class/:slug/wall/:checkinId" element={<LegacyLoungeRedirect sub="/wall" />} />
+            <Route path="/class/:slug/boards" element={<LegacyLoungeRedirect sub="/boards" />} />
             <Route path="/class/:slug/console" element={<LegacyLoungeRedirect sub="/console" />} />
             <Route path="/class/:slug/remote" element={<LegacyLoungeRedirect sub="/remote" />} />
             <Route path="/class/:slug/screen" element={<LegacyLoungeRedirect sub="/screen" />} />
