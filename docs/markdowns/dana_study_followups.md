@@ -19,9 +19,31 @@ Self-enrollment panel on the study admin page carrying the copyable link.
 **Nothing is publicly joinable until `allow_self_enrollment` is turned on for a
 study** — it defaults false, and that flag is the master switch.
 
-Not yet done: a real end-to-end walkthrough by a human (sign up, receive the
-mail, click through to session 1). Sessions cannot reach the site through the
-sandbox egress proxy, so Claude cannot do this.
+**Verified live (2026-09-03)**, against the TESTING AGAIN study with the flag
+temporarily on and a request row inserted directly so no mail was sent:
+
+- the confirmation click created exactly ONE enrollment, and a second click
+  returned the SAME session token rather than enrolling again;
+- `external_id` came out as `self-775ec213…` and the auth address and display
+  name (`Self-enrolled 775ec213`) carry no readable identifier, while
+  `contact_email` and `student_number` sit on the enrollment;
+- `consent_date` recorded the time consent was actually given, not the click;
+- the schedule materialised (3 rows for her 3 sessions), one active link, and
+  `get_session_by_token` resolved it to the 18-step baseline;
+- the request row's identifiers were cleared on success;
+- the flag being off refuses sign-up, and a nonexistent study gets the
+  identical refusal, so the endpoint does not reveal which studies exist.
+
+That pass also caught a real bug — `study_enrollments.external_source` had its
+own CHECK constraint enumerating only sona/prolific
+(`20260903_self_enrollment_source_value.sql` fixes it). The failure behaved
+correctly: the claim released, the payload stayed intact, and the same token
+worked on retry. All test data was removed afterwards and the flag reset.
+
+**Still not done: a human walkthrough of the two halves a browser owns** — the
+sign-up page itself, the delivered email, and the click through to session 1.
+Sessions cannot reach the site through the egress proxy, so someone has to do
+this before Dana recruits.
 
 Deliberately out of scope for now: **studies with a screener are refused** with
 a clear message rather than silently skipped. Anonymous screening would have to
