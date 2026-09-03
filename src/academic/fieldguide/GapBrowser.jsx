@@ -349,6 +349,13 @@ function ClaimForm({ claim, row: r, courseClient, reload, onRelease }) {
   const [text, setText] = useState(claim.submitted_text ?? '')
   const [lim, setLim] = useState(claim.limitation ?? '')
   const [doiFindings, setDoiFindings] = useState([])
+  // Source capture: the full text behind the DOI, fetched while the student
+  // still has the claim. Accepting later drafts the page section from THIS,
+  // not from the summary — so it has to be captured before the claim closes.
+  const [src, setSrc] = useState(claim.source_kind
+    ? { ok: true, kind: claim.source_kind, chars: null } : null)
+  const [srcBusy, setSrcBusy] = useState(false)
+  const [srcErr, setSrcErr] = useState(null)
   const [findings, setFindings] = useState(claim.precheck ?? [])
   const [msg, setMsg] = useState(null)
   const [busy, setBusy] = useState(false)
@@ -365,6 +372,40 @@ function ClaimForm({ claim, row: r, courseClient, reload, onRelease }) {
     }, 500)
     return () => clearTimeout(doiTimer.current)
   }, [doi, courseClient, r.gap_id])
+
+  const post = async (body) => {
+    const { data: { session } } = await courseClient.auth.getSession()
+    const rsp = await fetch('/api/claim-source', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
+      body: JSON.stringify({ claim_id: claim.id, ...body }),
+    })
+    return { rsp, json: await rsp.json().catch(() => ({})) }
+  }
+
+  const findFullText = async () => {
+    setSrcBusy(true); setSrcErr(null)
+    await save(true)
+    const { rsp, json } = await post({ doi: doi.trim() })
+    setSrcBusy(false)
+    if (!rsp.ok) { setSrc(null); setSrcErr(json.error ?? 'Could not fetch the full text.'); return }
+    setSrc(json)
+  }
+
+  const uploadPdf = async (file) => {
+    if (!file) return
+    setSrcBusy(true); setSrcErr(null)
+    await save(true)
+    const { data: personId } = await courseClient.rpc('current_person_id')
+    const path = `claims/${personId}/${claim.id}.pdf`
+    const { error: upErr } = await courseClient.storage.from('ingest-pdfs')
+      .upload(path, file, { upsert: true, contentType: 'application/pdf' })
+    if (upErr) { setSrcBusy(false); setSrcErr(upErr.message); return }
+    const { rsp, json } = await post({ pdf_path: path })
+    setSrcBusy(false)
+    if (!rsp.ok) { setSrc(null); setSrcErr(json.error ?? 'Could not read that PDF.'); return }
+    setSrc(json)
+  }
 
   const save = async (quiet = false) => {
     setBusy(true); if (!quiet) setMsg(null)
@@ -410,6 +451,36 @@ function ClaimForm({ claim, row: r, courseClient, reload, onRelease }) {
       <label style={S.fieldLabel}>URL <span style={S.dim}>(only if the source has no DOI)</span></label>
       <input value={url} onChange={e => setUrl(e.target.value)}
              placeholder="https://…" style={S.input} />
+
+      <label style={S.fieldLabel}>The full text <span style={S.dim}>(so your source can be read into the Guide)</span></label>
+      <div style={S.srcBox}>
+        {src?.ok ? (
+          <p style={{ ...S.sub, fontSize: 13.5, color: DIFF.green.colour, margin: 0 }}>
+            ✓ Full text captured{src.kind === 'oa' ? ' from the open-access copy' : ' from your upload'}
+            {src.chars ? ` — ${Math.round(src.chars / 1000)}k characters` : ''}.
+            {src.note ? ` ${src.note}` : ''}
+          </p>
+        ) : (
+          <>
+            <p style={{ ...S.sub, fontSize: 13.5, margin: '0 0 8px' }}>
+              We fetch the open-access copy from your DOI. If there isn’t one, upload the PDF —
+              it is read once and the file is not kept.
+            </p>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+              <button type="button" style={S.secondary} disabled={!doi.trim() || srcBusy}
+                      onClick={findFullText}>
+                {srcBusy ? 'Looking…' : 'Find the full text'}
+              </button>
+              <label style={{ ...S.secondary, cursor: 'pointer', opacity: srcBusy ? 0.6 : 1 }}>
+                Upload the PDF
+                <input type="file" accept="application/pdf" style={{ display: 'none' }} disabled={srcBusy}
+                       onChange={e => uploadPdf(e.target.files?.[0])} />
+              </label>
+            </div>
+          </>
+        )}
+        {srcErr && <p style={{ ...S.findingLine, color: SEV.warn, marginTop: 8 }}>⚠ {srcErr}</p>}
+      </div>
 
       <label style={S.fieldLabel}>
         What the source found <span style={{ ...S.dim, color: words > 0 && (words < 60 || words > 400) ? SEV.warn : 'var(--tx2)' }}>
@@ -493,6 +564,7 @@ const S = {
   srcItem: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.55, marginBottom: 3 },
 
   fieldLabel: { display: 'block', fontFamily: MONO, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx2)', margin: '12px 0 4px' },
+  srcBox: { border: '1px solid var(--bd)', borderRadius: 10, background: 'var(--bgc)', padding: '12px 14px' },
   input: { width: '100%', fontSize: 14, fontFamily: MONO, padding: '8px 12px', borderRadius: 8, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx)', boxSizing: 'border-box' },
   textarea: { width: '100%', fontSize: 14, lineHeight: 1.55, padding: '10px 12px', borderRadius: 8, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx)', boxSizing: 'border-box', resize: 'vertical' },
   findingLine: { fontSize: 14, margin: '5px 0 0', lineHeight: 1.5 },
