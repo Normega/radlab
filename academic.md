@@ -114,6 +114,17 @@ auth account. `enrollments` link person↔course with `role` (`student`/`ta`/`in
 `FieldGuideStaffRoute` + `staffCourses.resolveCourse` (a code that doesn't resolve never falls
 back to another course).
 
+### The contribution pipeline, end to end
+`claim_gap()` → student writes a summary **and captures the source**
+(`/api/claim-source`: open-access full text resolved from the DOI — every OA copy is tried, not
+just the publisher's, because publishers commonly answer a bot with a challenge page — or an
+uploaded PDF; only extracted text is cached, on `gap_claims.source_fulltext`) → `submit_claim()`
+→ precheck → staff accept in `/submissions` → **`/api/integrate-claim` drafts the page section
+from the SOURCE** (Sonnet; the student's summary is judged, not copied, and divergence is
+reported back on the claim) → the draft lands as a `pending` proposal in the same review queue
+ingest uses → `review_proposal()` publishes it. **Nothing auto-publishes.** Cached source text is
+purged once the claim resolves (`purge_claim_sources`).
+
 ### Wiki + contribution pipeline
 `wiki_pages` (versioned; `edit_page()` for edits), `page_gaps` (`status` is only
 `open`/`retired` — *availability* is computed from claims, don't touch status to "close" a gap),

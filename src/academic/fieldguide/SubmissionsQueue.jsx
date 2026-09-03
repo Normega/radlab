@@ -80,6 +80,30 @@ export default function SubmissionsQueue() {
   // would not fix it either: the reviewer would have to keep it in sync with
   // whichever row they were acting on. Both views feeding this now carry
   // course_id (20260831_submission_queue_course_id).
+  // Accepting is the trigger for drafting the page section FROM THE SOURCE
+  // (api/integrate-claim). It lands as a pending proposal in the review queue,
+  // never on the page — and it reports back whether the student's summary
+  // actually matches the paper, which is a misreading check a TA would
+  // otherwise have to do by reading the paper themselves.
+  const draft = useCallback(async (claimId) => {
+    try {
+      const rsp = await fetch('/api/integrate-claim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ claim_id: claimId }),
+      })
+      const out = await rsp.json().catch(() => ({}))
+      if (!rsp.ok) return ` · NOT DRAFTED (${out.error ?? rsp.status}) — add it to the page by hand`
+      if (!out.ok) return ` · not drafted: ${out.note ?? 'the source does not cover this gap'}`
+      const flag = out.divergence === 'diverges'
+        ? ' · ⚠ the student’s summary DIVERGES from the paper — read the note'
+        : ''
+      return ` · drafted into the review queue${flag}`
+    } catch (err) {
+      return ` · NOT DRAFTED (${err.message})`
+    }
+  }, [session])
+
   const notify = useCallback(async (claimId, courseId) => {
     if (!courseId) return ' · EMAIL NOT SENT (row has no course — reload the page)'
     try {
@@ -136,8 +160,9 @@ export default function SubmissionsQueue() {
     // Without this the send-back note reaches nobody: it lands on the gap
     // board, and no student refreshes a board on the off-chance.
     const mail = await notify(row.claim_id, row.course_id)
+    const drafted = status === 'accepted' ? await draft(row.claim_id) : ''
     setBusyId(null)
-    setNotice((status === 'accepted' ? `Accepted — ${row.page_slug}` : `Sent back — ${row.page_slug}`) + mail)
+    setNotice((status === 'accepted' ? `Accepted — ${row.page_slug}` : `Sent back — ${row.page_slug}`) + mail + drafted)
     load(); loadUntold()
   }
 
