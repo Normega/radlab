@@ -26,6 +26,8 @@ import Landing from './pages/Landing'
 const SessionEntry  = lazy(() => import('./pages/SessionEntry'))
 const BrandAssets   = lazy(() => import('./pages/BrandAssets'))
 const StudyJoin     = lazy(() => import('./pages/StudyJoin'))
+const StudySignup   = lazy(() => import('./pages/StudySignup'))
+const StudyVerify   = lazy(() => import('./pages/StudyVerify'))
 const PlatformPage  = lazy(() => import('./pages/PlatformPage'))
 const Login         = lazy(() => import('./pages/Login'))
 const Signup        = lazy(() => import('./pages/Signup'))
@@ -586,6 +588,13 @@ export default function App() {
 
           {/* External participant enrollment (SONA / Prolific) — no auth guard */}
           <Route path="/study/join" element={<StudyJoin />} />
+
+          {/* Public self-enrollment — consent, then identifiers, then a
+              confirmation email. Both unguarded: a prospective participant has
+              no account, and the emailed link commonly opens on a different
+              device from the one that filled the form. */}
+          <Route path="/study/signup" element={<StudySignup />} />
+          <Route path="/study/verify" element={<StudyVerify />} />
 
           {/* Standalone participant link — no nav or auth guard */}
           <Route path="/s/:token" element={<SessionEntry />} />

@@ -29,6 +29,8 @@ const EXACT = {
   '/lab/contact': 'Contact — RADlab',
   '/brand': 'Brand Assets — RADlab',
   '/study/join': 'Join a Study — RADlab',
+  '/study/signup': 'Sign Up for a Study — RADlab',
+  '/study/verify': 'Confirming Your Email — RADlab',
   '/keynote': 'Keynote — RADlab',
   '/talks': 'Talks — RADlab',
 }

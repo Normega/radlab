@@ -66,7 +66,7 @@ function useEnrollments(studyId) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('study_enrollments')
-        .select('id, profile_id, external_id, contact_email, enrolled_at, consent_date, status, notes, withdrawal_reason, withdrawal_note, profiles!profile_id(display_name)')
+        .select('id, profile_id, external_id, contact_email, student_number, enrolled_at, consent_date, status, notes, withdrawal_reason, withdrawal_note, profiles!profile_id(display_name)')
         .eq('study_id', studyId)
         .order('enrolled_at', { ascending: false })
       if (error) throw error
@@ -202,7 +202,7 @@ export default function EnrollmentPanel({ study }) {
           <table style={S.table}>
             <thead>
               <tr>
-                {['ID', 'Email', 'Enrolled', 'Consent', 'Status', 'Sessions'].map(h => (
+                {['ID', 'Email', 'Student #', 'Enrolled', 'Consent', 'Status', 'Sessions'].map(h => (
                   <th key={h} style={S.th}>{h}</th>
                 ))}
               </tr>
@@ -213,6 +213,7 @@ export default function EnrollmentPanel({ study }) {
                   <tr style={S.tr}>
                     <td style={S.td}><span style={S.mono}>{e.external_id || '—'}</span></td>
                     <td style={S.td}><span style={S.mono}>{e.contact_email || '—'}</span></td>
+                    <td style={S.td}><span style={S.mono}>{e.student_number || '—'}</span></td>
                     <td style={S.td}><span style={S.mono}>{fmtDate(e.enrolled_at)}</span></td>
                     <td style={S.td}><span style={S.mono}>{fmtDate(e.consent_date)}</span></td>
                     <td style={S.td}>

@@ -53,6 +53,17 @@ verify_jwt = true
 # Participant session links — the caller has no session yet, by definition.
 verify_jwt = false
 
+[functions.study-signup]
+# Public self-enrollment form. No caller JWT exists by definition, so the
+# weight is carried by the address cooldown, the enrollment_attempts IP
+# limiter, and the allow_self_enrollment flag on the study.
+verify_jwt = false
+
+[functions.study-signup-verify]
+# The emailed confirmation link. The click may land on a device with no
+# session at all — commonly a phone, when the form was filled on a laptop.
+verify_jwt = false
+
 # ── Participant provisioning, called server-side ───────────────────────────
 [functions.create_participant]
 verify_jwt = false

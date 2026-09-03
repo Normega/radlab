@@ -22,6 +22,7 @@ function useStudy(id) {
           allow_restart, reminders_enabled, reminder_interval_days, reminder_max,
           email_subject, email_body,
           allow_external_enrollment, external_enrollment_source, completion_redirect_url,
+          allow_self_enrollment,
           screener_id
         `)
         .eq('id', id)
@@ -853,6 +854,79 @@ function DebriefFormSection({ study, qc }) {
 
 const SITE_ROOT = import.meta.env.DEV ? window.location.origin : 'https://radlab.zone'
 
+// ── SelfEnrollmentPanel ───────────────────────────────────────────────────────
+// The public sign-up link, for recruiting outside SONA/Prolific — a course
+// announcement, a poster, an email. Separate from the panel below because it is
+// a different mechanism, not another `external_enrollment_source`: identity
+// comes from the participant (verified by email) rather than from a panel id in
+// the URL, and it deliberately leaves auto-enroll's gates untouched.
+//
+// The warning is the point of the copy: `/study/join` must never be posted
+// publicly, because its `id` parameter IS the participant identity and one
+// static link collapses every visitor into one shared account and one shared
+// session token.
+function SelfEnrollmentPanel({ study, qc }) {
+  const [saving, setSaving] = useState(false)
+  const [error,  setError]  = useState(null)
+  const [copied, setCopied] = useState(false)
+
+  if (!study) return null
+  const enabled = study.allow_self_enrollment ?? false
+  const link = `${SITE_ROOT}/study/signup?study_id=${study.id}`
+
+  async function toggle(val) {
+    setSaving(true); setError(null)
+    const { error } = await supabase
+      .from('studies').update({ allow_self_enrollment: val }).eq('id', study.id)
+    if (error) setError(error.message)
+    else qc.invalidateQueries({ queryKey: ['study-detail', study.id] })
+    setSaving(false)
+  }
+
+  return (
+    <div style={EE.card}>
+      <label style={EE.toggleRow}>
+        <input type="checkbox" checked={enabled}
+          onChange={e => toggle(e.target.checked)} disabled={saving} />
+        <span style={EE.toggleLabel}>Enable public sign-up link (U of T students)</span>
+        {saving && <span style={EE.saving}>Saving…</span>}
+      </label>
+      <p style={EE.hint}>
+        Anyone with the link reads the consent form, agrees, then gives their U of T email and
+        student number. They are enrolled only after clicking a confirmation link emailed to that
+        address, so a typo cannot create a participant. Addresses must end in utoronto.ca or
+        mail.utoronto.ca.
+      </p>
+
+      {enabled && (
+        <div style={EE.fieldGroup}>
+          <div style={EE.fieldLabel}>Sign-up link — safe to post publicly</div>
+          <div style={EE.urlRow}>
+            <input style={EE.urlInput} readOnly value={link} onFocus={e => e.target.select()} />
+            <button
+              style={{ ...S.btnPrimary, fontSize: 14, padding: '7px 14px' }}
+              onClick={() => {
+                navigator.clipboard.writeText(link)
+                setCopied(true); setTimeout(() => setCopied(false), 2000)
+              }}
+            >
+              {copied ? 'Copied' : 'Copy'}
+            </button>
+          </div>
+          <p style={EE.hint}>
+            This is the only link that is safe to post where many people will see it. Do <strong>not</strong>{' '}
+            post a SONA or Prolific join link publicly — those carry the participant’s identity in
+            the URL, so everyone who opened the same one would share a single account and a single
+            session.
+          </p>
+        </div>
+      )}
+
+      {error && <p style={{ ...EE.hint, color: 'var(--err-tx)' }}>{error}</p>}
+    </div>
+  )
+}
+
 function ExternalEnrollmentPanel({ study, qc }) {
   const [saving,       setSaving]       = useState(false)
   const [saveError,    setSaveError]    = useState(null)
@@ -913,6 +987,8 @@ function ExternalEnrollmentPanel({ study, qc }) {
   return (
     <div style={{ marginTop: 40 }}>
       <h2 style={S.sectionTitle}>External Enrollment</h2>
+
+      <SelfEnrollmentPanel study={study} qc={qc} />
 
       <div style={EE.card}>
         {/* Enable toggle */}

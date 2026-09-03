@@ -9,7 +9,26 @@ Status key: **done** · **in progress** · **specced** (decisions made, not buil
 
 ---
 
-## 1. Self-enrollment from a Quercus announcement — **specced**
+## 1. Self-enrollment from a Quercus announcement — **built 2026-09-03, needs a live walkthrough**
+
+Shipped: `/study/signup?study_id=…` (consent, then identifiers) and
+`/study/verify?token=…`, Edge Functions `study-signup` and
+`study-signup-verify`, migration `20260903_self_enrollment.sql`, and a
+Self-enrollment panel on the study admin page carrying the copyable link.
+
+**Nothing is publicly joinable until `allow_self_enrollment` is turned on for a
+study** — it defaults false, and that flag is the master switch.
+
+Not yet done: a real end-to-end walkthrough by a human (sign up, receive the
+mail, click through to session 1). Sessions cannot reach the site through the
+sandbox egress proxy, so Claude cannot do this.
+
+Deliberately out of scope for now: **studies with a screener are refused** with
+a clear message rather than silently skipped. Anonymous screening would have to
+run before any participant row exists and buffer to the request row; skipping it
+would enroll people the protocol excludes. Dana's study has no screener.
+
+### Original spec and decisions (kept for the record)
 
 Dana wants an announcement link that takes a student to the baseline survey and
 signs them up on the way in.
