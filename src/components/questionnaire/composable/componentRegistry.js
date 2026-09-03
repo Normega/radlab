@@ -63,6 +63,29 @@ export const DB_COMPONENT_TYPE = {
   hierarchy:       'hierarchical_belief',
 }
 
+// One selection ({ option_id, value }) against its option definition — shared
+// by single-select and allow_multiple multiple choice.
+function selectedOptionIsComplete(config, selection) {
+  const option = (config.options ?? []).find(item => item.id === selection.option_id)
+  if (!option) return false
+
+  if (option.response_type !== 'text' && option.response_type !== 'number') {
+    return true
+  }
+
+  const raw = String(selection.value ?? '').trim()
+  if (!raw) return false
+
+  if (option.response_type === 'number') {
+    const number = Number(raw)
+    if (!Number.isFinite(number)) return false
+    if (option.min != null && number < Number(option.min)) return false
+    if (option.max != null && number > Number(option.max)) return false
+  }
+
+  return true
+}
+
 export function responseIsComplete(config, value) {
   const type = config.type
   const required = config.required !== false
@@ -74,26 +97,15 @@ export function responseIsComplete(config, value) {
   }
 
   if (type === 'multiple_choice') {
+    if (config.allow_multiple === true) {
+      const selections = Array.isArray(value) ? value : []
+      if (selections.length === 0) return !required
+      return selections.every(selection =>
+        selectedOptionIsComplete(config, selection))
+    }
+
     if (!value?.option_id) return !required
-
-    const option = (config.options ?? []).find(item => item.id === value.option_id)
-    if (!option) return false
-
-    if (option.response_type !== 'text' && option.response_type !== 'number') {
-      return true
-    }
-
-    const raw = String(value.value ?? '').trim()
-    if (!raw) return false
-
-    if (option.response_type === 'number') {
-      const number = Number(raw)
-      if (!Number.isFinite(number)) return false
-      if (option.min != null && number < Number(option.min)) return false
-      if (option.max != null && number > Number(option.max)) return false
-    }
-
-    return true
+    return selectedOptionIsComplete(config, value)
   }
 
   if (type === 'open_text_list') {
@@ -125,6 +137,10 @@ export function responseIsComplete(config, value) {
 
 export function defaultResponseFor(config) {
   if (config.type === 'open_text_list') return []
+
+  if (config.type === 'multiple_choice' && config.allow_multiple === true) {
+    return []
+  }
 
   if (config.type === 'hierarchical_belief') {
     return (config.beliefs ?? []).map(belief => ({

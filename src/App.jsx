@@ -117,6 +117,7 @@ const LegacyFieldGuideRedirect = lazy(() => import('./academic/fieldguide/Legacy
 const CorrectionsFeed      = lazy(() => import('./academic/fieldguide/CorrectionsFeed'))
 const WhatsNew             = lazy(() => import('./academic/fieldguide/WhatsNew'))
 const RosterAdmin          = lazy(() => import('./academic/fieldguide/RosterAdmin'))
+const TrackingPage         = lazy(() => import('./academic/fieldguide/TrackingPage'))
 const ReadingQueue         = lazy(() => import('./academic/fieldguide/ReadingQueue'))
 const ReportsQueue         = lazy(() => import('./academic/fieldguide/ReportsQueue'))
 const FieldGuideJoin       = lazy(() => import('./academic/fieldguide/Join'))
@@ -680,11 +681,18 @@ export default function App() {
                 <WeeklyWall session={session} />
               </AuthRoute>
             } />
+            {/* Slides index is student-facing (2026-09-02): any signed-in
+                user; the lectures list itself is RLS-gated to class members,
+                and the decks are public static files regardless. */}
+            <Route path="/academic/:courseCode/lounge/slides" element={
+              <AuthRoute session={session}>
+                <ClassSlides />
+              </AuthRoute>
+            } />
             <Route element={<ClassAdminRoute session={session} />}>
               <Route path="/academic/:courseCode/lounge/console" element={<ClassConsole session={session} />} />
               <Route path="/academic/:courseCode/lounge/remote" element={<ClassRemote session={session} />} />
               <Route path="/academic/:courseCode/lounge/screen" element={<ClassScreen />} />
-              <Route path="/academic/:courseCode/lounge/slides" element={<ClassSlides />} />
             </Route>
             {/* Legacy lounge sub-paths: staff bookmarks and in-session links,
                 not auth landings — safe to redirect (unlike /class/:slug). */}
@@ -731,6 +739,8 @@ export default function App() {
                   hundred students and bulk-emails them, and RosterAdmin
                   refuses to resolve a course it wasn't explicitly given. */}
               <Route path="/academic/:courseCode/roster" element={<RosterAdmin />} />
+              {/* Per-student contribution pipeline + Lounge participation. */}
+              <Route path="/academic/:courseCode/tracking" element={<TrackingPage />} />
               {/* The pre-publish read, as a queue: risk-ordered pages, stamp
                   state, and a continue button. Stamping happens on the pages. */}
               <Route path="/academic/:courseCode/read" element={<ReadingQueue />} />

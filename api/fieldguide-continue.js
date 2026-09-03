@@ -66,10 +66,16 @@ export default async function handler(req, res) {
         })
         if (cuErr && !/already|exists/i.test(cuErr.message)) throw new Error(cuErr.message)
 
+        // Course-scoped redirect (phase 4): the matched roster row knows its
+        // course; legacy shim path only when that best-effort lookup fails.
+        const { data: courseCode } = await service.rpc('roster_course_code', { p_id: row.id })
         const origin = process.env.SITE_URL || 'https://radlab.zone'
+        const redirectTo = courseCode
+          ? `${origin}/academic/${String(courseCode).toLowerCase()}/wiki`
+          : `${origin}/academic/fieldguide/wiki`
         const { data: linkData, error: linkErr } = await service.auth.admin.generateLink({
           type: 'magiclink', email: row.email,
-          options: { redirectTo: `${origin}/academic/fieldguide/wiki` },
+          options: { redirectTo },
         })
         if (linkErr) throw new Error(linkErr.message)
         const link = linkData?.properties?.action_link

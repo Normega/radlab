@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useOutletContext } from 'react-router-dom'
+import { Link, Navigate, useOutletContext } from 'react-router-dom'
+import { courseFeatures } from '../courseFeatures'
 import { useWikiBase, useCoursePaths } from './wiki/useWikiBase'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
@@ -29,7 +30,7 @@ const wordCount = t => (t ?? '').trim().split(/\s+/).filter(Boolean).length
 
 export default function GapBrowser() {
   const paths = useCoursePaths()
-  const { courseClient } = useOutletContext()
+  const { courseClient, courseCode } = useOutletContext()
   const [rows, setRows] = useState(null)        // null = loading
   const [notice, setNotice] = useState(null)
   const [diff, setDiff] = useState('all')       // all | green | amber
@@ -111,6 +112,11 @@ export default function GapBrowser() {
         ?.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }))
   }, [])
+
+  // A course whose guide is authored whole (courseFeatures gaps:false) has no
+  // gap apparatus — bounce a direct /gaps URL to the wiki index rather than
+  // rendering an empty board. After the hooks, so their order never varies.
+  if (courseCode && !courseFeatures(courseCode).gaps) return <Navigate to={paths.home} replace />
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '32px 20px 80px' }}>

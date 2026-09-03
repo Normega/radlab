@@ -326,7 +326,7 @@ export default function ClassRoom({ session }) {
   const fieldGuideCard = classInfo.field_guide_url ? (
     <a href={hasFieldGuideSession ? `/academic/${slug}/wiki` : classInfo.field_guide_url} style={S.fgCard}>
       <p style={S.fgEyebrow}>Course textbook</p>
-      <p style={S.fgTitle}>The Field Guide to Abnormal Psychology</p>
+      <p style={S.fgTitle}>The Field Guide — your course textbook</p>
       <p style={S.fgMeta}>
         {hasFieldGuideSession
           ? 'You’re signed in — open the Field Guide →'
@@ -400,6 +400,11 @@ export default function ClassRoom({ session }) {
               </Link>
             )}
 
+            <Link to={`${loungePath(slug)}/slides`} style={S.fgCard}>
+              <p style={S.fgEyebrow}>Lecture slides</p>
+              <p style={S.fgMeta}>Review any week's deck — printing one gives a study handout →</p>
+            </Link>
+
             {fieldGuideCard}
           </>
         )}
@@ -437,7 +442,11 @@ function ClassAuthCard({ classInfo, slug }) {
     }
     const { error: err } = await supabase.auth.signUp({
       email, password,
-      options: { emailRedirectTo: `${window.location.origin}/class/${slug}` },
+      // Course-scoped landing (phase 4; both projects' redirect allow-lists
+      // confirmed to carry the https://radlab.zone/** wildcard, 2026-09-01).
+      // The old /class/:slug value lives on in already-sent emails, where the
+      // permanent alias route still catches it.
+      options: { emailRedirectTo: `${window.location.origin}${loungePath(slug)}` },
     })
     setBusy(false)
     if (err) { setError(err.message); return }

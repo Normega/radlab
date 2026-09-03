@@ -97,10 +97,10 @@ export default function ClassSlides() {
   return (
     <Shell title={cls.name}>
       <p style={S.sub}>
-        Lecture slides. Open one on the projector before class — <kbd style={S.kbd}>f</kbd> for
-        fullscreen, <kbd style={S.kbd}>n</kbd> for speaker notes, <kbd style={S.kbd}>o</kbd> to
-        jump around, <kbd style={S.kbd}>?</kbd> for the rest. Printing a deck gives you a
-        handout with the notes included.
+        Lecture slides — open any week to review it. <kbd style={S.kbd}>f</kbd> for
+        fullscreen, <kbd style={S.kbd}>o</kbd> to jump around, <kbd style={S.kbd}>?</kbd> for
+        the rest of the shortcuts. Printing a deck gives you a study handout with the
+        lecture notes included.
       </p>
 
       <div style={S.grid}>

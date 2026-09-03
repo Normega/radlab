@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useOutletContext } from 'react-router-dom'
 import { useWikiBase, useCoursePaths } from './useWikiBase'
 import { useWikiCourse } from './useWikiCourse'
+import { courseFeatures } from '../../courseFeatures'
 import { TIER_LABEL, TIER_HELP } from './tiers'
 import { chapterIcon } from './chapterIcons'
 import { weekIcon } from './weekIcons'
@@ -236,7 +237,9 @@ export default function WikiIndex() {
             : catalog.filter(c => bySlug.has(c.slug)).length + ' / ' + catalog.length}
           label="catalogue covered"
         />
-        <Stat n={contributed.length} label="contributed pages" />
+        {courseFeatures(course?.code).contributions && (
+          <Stat n={contributed.length} label="contributed pages" />
+        )}
       </div>
 
       <input
@@ -262,7 +265,7 @@ export default function WikiIndex() {
             </Link>
           ))}
           {!searching && results.length === 0 && (
-            <p style={S.sub}>Nothing matched. Try fewer words, or a disorder name.</p>
+            <p style={S.sub}>Nothing matched. Try fewer words, or a{weekAnchored ? ' page title' : ' disorder name'}.</p>
           )}
         </>
       ) : (
@@ -465,10 +468,11 @@ export default function WikiIndex() {
 
           {contributed.length > 0 && (
             <section style={{ marginTop: 34 }}>
-              <h2 style={S.h2Loose}>Contributed pages</h2>
+              <h2 style={S.h2Loose}>{weekAnchored ? 'Off-calendar pages' : 'Contributed pages'}</h2>
               <p style={S.sub}>
-                Pages built from papers rather than from the course catalogue — studies, concepts,
-                treatments and debates that hang off the disorder pages.
+                {weekAnchored
+                  ? 'Pages no course week claims — reference material that sits beside the weekly reading.'
+                  : 'Pages built from papers rather than from the course catalogue — studies, concepts, treatments and debates that hang off the disorder pages.'}
               </p>
               {CONTRIB_TYPES.map(([type, label]) => {
                 const rows = contributed.filter(p => p.type === type)
@@ -520,8 +524,12 @@ function Shell({ course, session, client, isStaff, courses, courseId, onSelectCo
                 <>
                   <Link to={paths.sub('review')} style={S.link}>Review queue</Link>
                   {' · '}
-                  <Link to={paths.sub('ingest')} style={S.link}>Ingest</Link>
-                  {' · '}
+                  {courseFeatures(course?.code).ingest && (
+                    <>
+                      <Link to={paths.sub('ingest')} style={S.link}>Ingest</Link>
+                      {' · '}
+                    </>
+                  )}
                 </>
               )}
               <button style={S.linkBtn} onClick={() => client.auth.signOut()}>Sign out</button>

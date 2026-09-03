@@ -4,6 +4,7 @@ import { WikiMarkdown } from './wikiMarkdown'
 import { splitFrontmatter, extractHeadings, splitSections } from './wikiText'
 import { useWikiBase, useCoursePaths } from './useWikiBase'
 import { useWikiCourse } from './useWikiCourse'
+import { courseFeatures } from '../../courseFeatures'
 import { useWideLayout } from './useWideLayout'
 import { TIER_LABEL, TIER_HELP } from './tiers'
 import { chapterIcon } from './chapterIcons'
@@ -38,6 +39,7 @@ export default function WikiPage() {
   const paths = useCoursePaths()
   const { courseClient, enrollments, isStaff } = useOutletContext()
   const { courseId, course } = useWikiCourse(enrollments)
+  const feats = courseFeatures(course?.code)
   const { slug } = useParams()
   const { hash } = useLocation()
   const wide = useWideLayout()
@@ -162,7 +164,7 @@ export default function WikiPage() {
     setAllowStructure(false)
     setSaveNotice(
       `Saved as v${data.current_version} · ${data.links_extracted} link${data.links_extracted === 1 ? '' : 's'}` +
-      ` · ${data.needs?.length ? `still needs: ${data.needs.join(', ')}` : 'no declared gaps'}`
+      (feats.gaps ? ` · ${data.needs?.length ? `still needs: ${data.needs.join(', ')}` : 'no declared gaps'}` : '')
     )
     setReloadKey(k => k + 1)
   }
@@ -398,9 +400,15 @@ export default function WikiPage() {
           />
           <p style={S.sub}>
             A correction changes <em>how</em> the page says something — typo, grammar, transcription
-            fidelity, structure. If it changes <em>what the page claims</em>, that needs a source:
-            ingest it instead. Gaps and links are re-derived on save: removing a{' '}
-            <code style={S.code}>&gt; **Needs research:**</code> line closes that gap.
+            fidelity, structure.
+            {feats.ingest ? <>
+              {' '}If it changes <em>what the page claims</em>, that needs a source:
+              ingest it instead. Gaps and links are re-derived on save: removing a{' '}
+              <code style={S.code}>&gt; **Needs research:**</code> line closes that gap.
+            </> : <>
+              {' '}If it changes <em>what the page claims</em>, say where the new claim comes
+              from in the note. Links are re-derived on save.
+            </>}
           </p>
           {saveNotice?.includes('NUMERIC SHIFT') && (
             <input
@@ -585,8 +593,10 @@ export default function WikiPage() {
                     <>
                       <WikiMarkdown content={s.markdown} pages={pages}
                                     lineOffset={s.startLine - 1} headingIds={headingIds} />
-                      <GapList gaps={gapsBySection.get(s.id)} section={s.id}
-                               isStaff={isStaff} onFlag={flagGap} />
+                      {feats.gaps && (
+                        <GapList gaps={gapsBySection.get(s.id)} section={s.id}
+                                 isStaff={isStaff} onFlag={flagGap} />
+                      )}
                     </>
                   )}
                 </div>
@@ -600,7 +610,7 @@ export default function WikiPage() {
               it doesn't know teaches something a confident one doesn't. The
               per-section asks render inline above; this box carries the rest,
               plus the flag control for a page-wide observation. */}
-          {(unanchoredGaps.length > 0 || isStaff) && (
+          {feats.gaps && (unanchoredGaps.length > 0 || isStaff) && (
             <section style={S.needsBox}>
               <h2 style={S.sectionH}>What this page still needs</h2>
               {gaps.length > 0 && (

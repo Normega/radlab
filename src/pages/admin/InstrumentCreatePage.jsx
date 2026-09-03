@@ -36,7 +36,7 @@ const TYPES = {
   'multiple-choice': {
     dbType: 'multiple_choice',
     title: 'Multiple choice',
-    lead: 'Single-select options. Any option can carry inline text or number entry.',
+    lead: 'Single-select options, or select-all-that-apply. Any option can carry inline text or number entry.',
     example: 'target_grade',
   },
   'open-list': {
@@ -237,7 +237,8 @@ function summarize(dbType, c) {
     case 'multiple_choice': {
       const opts = c.options ?? []
       const entry = opts.filter(o => o.response_type === 'text' || o.response_type === 'number').length
-      return `${opts.length} options${entry ? `, ${entry} with entry` : ''}`
+      const multi = c.allow_multiple === true ? ', select all that apply' : ''
+      return `${opts.length} options${multi}${entry ? `, ${entry} with entry` : ''}`
     }
     case 'open_list':
       return `Free-listed factors, each with a contribution slider · min ${c.minimum_required_responses ?? 1}`
@@ -362,6 +363,12 @@ function ChoiceEditor({ config, set }) {
   const commit = (o) => set({ options: o })
   const patchAt = (i, p) => commit(options.map((x, j) => j === i ? { ...x, ...p } : x))
   return (
+    <>
+    <label style={S.checkRow}>
+      <input type="checkbox" checked={config.allow_multiple === true}
+        onChange={e => set({ allow_multiple: e.target.checked })} />
+      <span style={S.checkText}>Allow selecting multiple options — checkboxes instead of radios, participants pick every option that applies</span>
+    </label>
     <RowList
       title="Options *"
       hint="At least two. An option set to text or number entry reveals an input beside its label."
@@ -403,6 +410,7 @@ function ChoiceEditor({ config, set }) {
         </div>
       ))}
     />
+    </>
   )
 }
 

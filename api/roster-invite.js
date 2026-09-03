@@ -93,7 +93,12 @@ export default async function handler(req, res) {
     .eq('course_id', course_id).eq('status', 'active').in('role', ['ta', 'instructor'])
   if (enrollErr) return res.status(500).json({ error: `Enrollment check failed: ${enrollErr.message}` })
   if (!staffRows?.length) return res.status(403).json({ error: 'No active TA/instructor enrollment for this course' })
-  const courseCode = staffRows[0]?.courses?.code ?? 'PSY240'
+  // Every staffRow above is filtered to the requested course_id, so the
+  // embedded code IS this course's code — but if the embed ever comes back
+  // empty, failing beats a silent 'PSY240' default that would stamp another
+  // course's invites with the wrong identity.
+  const courseCode = staffRows[0]?.courses?.code
+  if (!courseCode) return res.status(500).json({ error: 'Course code lookup failed for this course_id' })
 
   const service = createClient(url, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -117,8 +122,12 @@ export default async function handler(req, res) {
   const remaining = Math.max(0, (targets?.length ?? 0) - BATCH_CAP)
 
   const origin = process.env.SITE_URL || 'https://radlab.zone'
-  const redirectTo = `${origin}/academic/fieldguide/wiki`
-  const joinUrl = `${origin}/academic/fieldguide/join`
+  // Course-scoped since the /academic/:courseCode routes shipped (phase 4).
+  // Old emails carrying /academic/fieldguide/* keep working via the immortal
+  // legacy shims; only newly sent mail gets these.
+  const courseSlug = courseCode.toLowerCase()
+  const redirectTo = `${origin}/academic/${courseSlug}/wiki`
+  const joinUrl = `${origin}/academic/${courseSlug}/join`
   const fromEmail = process.env.FROM_EMAIL || 'PSY240 Field Guide <fieldguide@course.radlab.zone>'
 
   const sent = []

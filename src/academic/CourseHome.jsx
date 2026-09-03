@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { getCourseClient } from './courseClient'
 import { normalizeCourseCode, loungePath, joinPath, wikiBase, courseSubPath, pickNewestTerm } from './courseRoutes'
+import { courseFeatures } from './courseFeatures'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -25,6 +26,7 @@ const SERIF = '"DM Serif Display", Georgia, serif'
 export default function CourseHome({ role, superAdmin }) {
   const { courseCode } = useParams()
   const code = normalizeCourseCode(courseCode)
+  const feats = courseFeatures(code)
 
   const [cls, setCls] = useState(undefined)          // undefined=loading, null=not found
   const [course, setCourse] = useState(null)         // academic overlay {code,name,term} | null
@@ -104,11 +106,13 @@ export default function CourseHome({ role, superAdmin }) {
 
       <Link to={wikiBase(code)} style={S.card}>
         <h2 style={S.cardTitle}>Field Guide</h2>
-        <p style={S.sub}>The course reference wiki — read it, report errors, claim gaps.</p>
+        <p style={S.sub}>{feats.gaps
+          ? 'The course reference wiki — read it, report errors, claim gaps.'
+          : 'The course reference wiki — read it, search it, report errors.'}</p>
       </Link>
       {fgSession ? (
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
-          <Link to={courseSubPath(code, 'gaps')} style={S.staffBtn}>Gap board</Link>
+          {feats.gaps && <Link to={courseSubPath(code, 'gaps')} style={S.staffBtn}>Gap board</Link>}
           <Link to={courseSubPath(code, 'whats-new')} style={S.staffBtn}>What's new</Link>
         </div>
       ) : (
@@ -128,13 +132,14 @@ export default function CourseHome({ role, superAdmin }) {
               <Link to={`${loungePath(code)}/screen`} style={S.staffBtn}>Screen</Link>
               <Link to={`${loungePath(code)}/slides`} style={S.staffBtn}>Slides</Link>
             </>}
+            <Link to={courseSubPath(code, 'tracking')} style={S.staffBtn}>Tracking</Link>
             <Link to={courseSubPath(code, 'submissions')} style={S.staffBtn}>Submissions</Link>
             <Link to={courseSubPath(code, 'reports')} style={S.staffBtn}>Reports</Link>
             <Link to={courseSubPath(code, 'roster')} style={S.staffBtn}>Roster</Link>
             <Link to={courseSubPath(code, 'review')} style={S.staffBtn}>Review</Link>
             <Link to={courseSubPath(code, 'read')} style={S.staffBtn}>Reading queue</Link>
             <Link to={courseSubPath(code, 'corrections')} style={S.staffBtn}>Corrections</Link>
-            <Link to={courseSubPath(code, 'ingest')} style={S.staffBtn}>Ingest</Link>
+            {feats.ingest && <Link to={courseSubPath(code, 'ingest')} style={S.staffBtn}>Ingest</Link>}
           </div>
         </div>
       )}

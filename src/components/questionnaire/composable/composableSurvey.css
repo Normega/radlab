@@ -198,6 +198,22 @@
   top: 0;
   width: 22%;
   max-width: 165px;
+  overflow-wrap: break-word;
+}
+
+/* Invisible in-flow copy of the label row (see SliderScale.jsx): absolute
+   labels add no height, so without it long anchor text overflows the card. */
+.cs-slider-labels__sizer {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  overflow: hidden;
+  visibility: hidden;
+}
+
+.cs-slider-labels__sizer .cs-slider-label {
+  position: static;
+  flex: 0 0 auto;
 }
 
 .cs-slider-label strong {
@@ -261,10 +277,31 @@
 }
 
 /* Multiple choice */
+.cs-mc-note {
+  margin: -9px 0 14px;
+  color: var(--tx2);
+  font-size: var(--fs-body-sm);
+  line-height: 1.45;
+}
+
 .cs-mc-list {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+/* allow_multiple mode swaps the radio dot for the shared square check marker */
+.cs-mc-option__button .cs-check-marker {
+  flex: 0 0 21px;
+}
+
+.cs-mc-option.is-selected .cs-check-marker {
+  border-color: var(--pk);
+  background: var(--pk);
+}
+
+.cs-mc-option.is-selected .cs-check-marker::after {
+  color: #fff;
 }
 
 .cs-mc-option {
@@ -641,6 +678,27 @@
   width: 96px;
   transform: translateX(-50%);
   text-align: center;
+  overflow-wrap: break-word;
+}
+
+/* Invisible in-flow copy of the label row (see LikertSliderQuestion.jsx):
+   absolute labels add no height, so without it long point labels overflow
+   the card. */
+.cs-likert-slider__sizer {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  overflow: hidden;
+  visibility: hidden;
+}
+
+.cs-likert-slider__sizer .cs-likert-slider__label {
+  position: static;
+  transform: none;
+  flex: 0 0 auto;
+  /* The selected label renders at weight 600; sizing the hidden copies at the
+     same weight reserves the tallest wrap any label can reach. */
+  font-weight: 600;
 }
 
 .cs-likert-slider__label.is-selected {

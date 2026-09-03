@@ -59,8 +59,27 @@ export default async function handler(req, res) {
     .update(String(req.headers['x-forwarded-for'] ?? '').split(',')[0].trim())
     .digest('hex').slice(0, 16)
 
+  // Which course's join door was this? The course-scoped mounts
+  // (/academic/psy240/join) send their code; the immortal legacy door
+  // (lecture-slide QR codes) sends nothing.
+  const requestedCourse = String(req.body?.courseCode ?? '').trim().toUpperCase() || null
+
   // Via rpc: identity is not exposed to PostgREST (see roster-invite.js).
-  const { data: found } = await service.rpc('roster_find_by_key', { p_match_key: key })
+  // A course-scoped door tries ITS course's roster first, so a student on two
+  // rosters gets the course whose door they walked through. Falling back to
+  // the unscoped match is deliberate: a PSY309-only student scanning the
+  // PSY240 QR still gets signed in — to their own course, since everything
+  // downstream (email copy, Reply-To, redirect) derives from the matched
+  // row's course, not from the door.
+  let found = null
+  if (requestedCourse) {
+    ;({ data: found } = await service.rpc('roster_find_by_key_in_course', {
+      p_match_key: key, p_course_code: requestedCourse,
+    }))
+  }
+  if (!found || (Array.isArray(found) && !found.length)) {
+    ;({ data: found } = await service.rpc('roster_find_by_key', { p_match_key: key }))
+  }
   const row = Array.isArray(found) ? found[0] : found
 
   if (!row) {
@@ -85,19 +104,25 @@ export default async function handler(req, res) {
     })
     if (cuErr && !/already|exists/i.test(cuErr.message)) throw new Error(cuErr.message)
 
+    // Best-effort: a lookup failure costs the course-specific reply address
+    // and redirect, never the sign-in link the student is waiting on.
+    // Fetched BEFORE the link is minted (phase 4) because the redirect now
+    // targets the matched row's course-scoped wiki.
+    const { data: courseCode } = await service.rpc('roster_course_code', { p_id: row.id })
+
     const origin = process.env.SITE_URL || 'https://radlab.zone'
+    const redirectTo = courseCode
+      ? `${origin}/academic/${String(courseCode).toLowerCase()}/wiki`
+      : `${origin}/academic/fieldguide/wiki` // immortal shim resolves it
     const { data: linkData, error: linkErr } = await service.auth.admin.generateLink({
       type: 'magiclink', email: row.email,
-      options: { redirectTo: `${origin}/academic/fieldguide/wiki` },
+      options: { redirectTo },
     })
     if (linkErr) throw new Error(linkErr.message)
     const link = linkData?.properties?.action_link
     if (!link) throw new Error('no action_link')
 
     const fromEmail = process.env.FROM_EMAIL || 'PSY240 Field Guide <fieldguide@course.radlab.zone>'
-    // Best-effort: a lookup failure costs the course-specific reply address,
-    // never the sign-in link the student is waiting on.
-    const { data: courseCode } = await service.rpc('roster_course_code', { p_id: row.id })
     const first = row.full_name.split(' ')[0]
     const rsp = await fetch('https://api.resend.com/emails', {
       method: 'POST',

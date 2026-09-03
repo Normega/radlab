@@ -51,6 +51,8 @@ const MUST_NOT_DETECT = [
   '/academic/psy240/corrections',
   '/academic/psy240/read',
   '/academic/psy240/reports',
+  '/academic/psy240/tracking',
+  '/academic/psy309/tracking',
 ]
 
 check('main client detects where its own links land', () => {

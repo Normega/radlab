@@ -28,8 +28,16 @@ const COURSE_REPLY_TO = { psy240: 'psy240@radlab.zone', psy309: 'psy309@radlab.z
 const replyToFor = (code) =>
   COURSE_REPLY_TO[String(code ?? '').trim().toLowerCase()] ?? 'research@radlab.zone'
 
-function compose({ name, status, note, pageTitle, ask, origin, difficulty }) {
-  const board = `${origin}/academic/fieldguide/gaps`
+function compose({ name, status, note, pageTitle, ask, origin, difficulty, courseCode }) {
+  // Course-scoped links when the code is known; the legacy paths (which are
+  // immortal resolving shims) when it is not. Same rule for the signature —
+  // a generic sign-off beats claiming the wrong course's identity.
+  const base = courseCode
+    ? `${origin}/academic/${String(courseCode).toLowerCase()}`
+    : `${origin}/academic/fieldguide`
+  const board = `${base}/gaps`
+  const whatsNew = `${base}/whats-new`
+  const team = courseCode ? `${courseCode} course team` : 'the course team'
   const first = String(name).split(' ')[0]
 
   if (status === 'accepted') {
@@ -42,15 +50,15 @@ Your submission for ${pageTitle} has been accepted. It counts toward your three 
 
 The gap you filled: ${ask}
 
-You can see it, and everything else the class has added, at ${origin}/academic/fieldguide/whats-new
+You can see it, and everything else the class has added, at ${whatsNew}
 
-— PSY240 course team`,
+— ${team}`,
       html:
 `<p>Hi ${esc(first)},</p>
 <p>Your submission for <b>${esc(pageTitle)}</b> has been <b>accepted</b>. It counts toward your three required article contributions.</p>
 <p style="color:#555"><i>The gap you filled:</i> ${esc(ask)}</p>
-<p><a href="${esc(origin)}/academic/fieldguide/whats-new" style="display:inline-block;padding:10px 22px;border-radius:22px;background:#2e7d32;color:#fff;text-decoration:none;font-weight:600">See what the class has added</a></p>
-<p>— PSY240 course team</p>`,
+<p><a href="${esc(whatsNew)}" style="display:inline-block;padding:10px 22px;border-radius:22px;background:#2e7d32;color:#fff;text-decoration:none;font-weight:600">See what the class has added</a></p>
+<p>— ${esc(team)}</p>`,
     }
   }
 
@@ -70,14 +78,14 @@ The gap asks for: ${ask}
 
 Pick it up again at ${board}
 
-— PSY240 course team`,
+— ${team}`,
     html:
 `<p>Hi ${esc(first)},</p>
 <p>Your submission for <b>${esc(pageTitle)}</b> has been <b>sent back for another pass</b>. Your claim is still yours — nothing is lost, and the ${esc(difficulty)} slot is still held for you.</p>
 <p style="margin:14px 0;padding:12px 14px;border-left:3px solid #b8860b;background:#faf7f0"><b>What to change:</b><br>${esc(note || '(see the note on the gap board)')}</p>
 <p style="color:#555"><i>The gap asks for:</i> ${esc(ask)}</p>
 <p><a href="${esc(board)}" style="display:inline-block;padding:10px 22px;border-radius:22px;background:#d63384;color:#fff;text-decoration:none;font-weight:600">Pick it up again</a></p>
-<p>— PSY240 course team</p>`,
+<p>— ${esc(team)}</p>`,
   }
 }
 
@@ -133,7 +141,7 @@ export default async function handler(req, res) {
   const { subject, text, html } = compose({
     name: c.student_name, status: c.status, note: c.note,
     pageTitle: c.page_title ?? c.page_slug, ask: c.ask,
-    difficulty: c.difficulty, origin,
+    difficulty: c.difficulty, origin, courseCode: course?.code,
   })
 
   try {

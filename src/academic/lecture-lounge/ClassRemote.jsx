@@ -203,6 +203,21 @@ export default function ClassRemote({ session }) {
     loadCheckins(lecture.id)
   }
 
+  // Puts a mis-tapped or dry-run check-in back to 'planned'. Destructive on
+  // purpose: its responses and question-box entries are wiped, because the
+  // student-side already-responded guard keys on existing rows -- a reset
+  // that kept them would lock everyone out of the re-run. The deletes live
+  // in the reset_checkin RPC (SECURITY DEFINER, admin-checked) since clients
+  // deliberately have no DELETE policy on those tables.
+  async function handleReset(checkin) {
+    if (!window.confirm('Reset this check-in to planned? Any responses and questions it collected will be deleted.')) return
+    setActionError(null)
+    const { error } = await supabase.rpc('reset_checkin', { p_checkin_id: checkin.id })
+    if (error) { setActionError(error.message); return }
+    broadcast('dismissed', checkin.id)
+    loadCheckins(lecture.id)
+  }
+
   async function handleExtend(checkin) {
     await supabase.from('checkins').update({ auto_close_seconds: (checkin.auto_close_seconds ?? 0) + 60 }).eq('id', checkin.id)
     loadCheckins(lecture.id)
@@ -318,6 +333,9 @@ export default function ClassRemote({ session }) {
                         ? <span style={S.doneLabel}>Back in lobby</span>
                         : <button style={S.ghostBtn} onClick={() => handleDismiss(c)}>Back to lobby</button>}
                     </>
+                  )}
+                  {c.status !== 'planned' && (
+                    <button style={S.ghostBtn} onClick={() => handleReset(c)}>Reset</button>
                   )}
                 </div>
 
