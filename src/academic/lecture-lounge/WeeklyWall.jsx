@@ -162,6 +162,9 @@ export default function WeeklyWall({ session }) {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={S.responseText}>{r.text}</p>
                 <div style={S.responseMetaRow}>
+                  {r.staff && (
+                    <span style={S.staffBadge}>{r.staff === 'instructor' ? 'Instructor' : 'TA'}</span>
+                  )}
                   {r.mine && <span style={S.mineBadge}>you</span>}
                   {r.removed && <span style={S.removedBadge}>hidden from students</span>}
                   {wall.is_admin && (
@@ -230,6 +233,7 @@ const S = {
   responseText: { fontSize: 14.5, color: 'var(--tx)', lineHeight: 1.5, whiteSpace: 'pre-wrap', overflowWrap: 'break-word' },
   responseMetaRow: { display: 'flex', gap: 10, alignItems: 'center', marginTop: 6 },
   mineBadge: { fontFamily: MONO, fontSize: 12, color: 'var(--pk)' },
+  staffBadge: { fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--pkd)', background: 'var(--pkb)', borderRadius: 8, padding: '1px 8px' },
   removedBadge: { fontFamily: MONO, fontSize: 12, color: '#c04a4a' },
   error: { fontSize: 14, color: '#c04a4a', marginTop: 8 },
 }
