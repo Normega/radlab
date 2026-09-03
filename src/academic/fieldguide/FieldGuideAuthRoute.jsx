@@ -129,7 +129,8 @@ export default function FieldGuideAuthRoute({ roles, deniedTitle, deniedBody, pu
   const renderOutlet = (ctx) => {
     if (!courseCode) return <Outlet context={{ ...ctx, course: null, courseCode: null }} />
     const course = resolveEnrolledCourse(ctx.enrollments, courseCode)
-    if (!course) return <CourseDenied code={courseCode} enrollments={ctx.enrollments} />
+    if (!course) return <CourseDenied code={courseCode} enrollments={ctx.enrollments}
+                                      email={ctx.session?.user?.email} />
     return <Outlet context={{ ...ctx, course, courseCode }} />
   }
 
@@ -144,7 +145,15 @@ export default function FieldGuideAuthRoute({ roles, deniedTitle, deniedBody, pu
   if (!session) {
     if (publicAccess) {
       if (publicCourses === undefined) return <Shell><p style={S.sub}>Loading…</p></Shell>
-      if (publicCourses.length) {
+      // Serve the public reader only when the URL actually names a public
+      // course (or names none at all). Without this test, a signed-OUT
+      // visitor to a private course fell into the visitor branch and then hit
+      // CourseDenied — telling a student with no session that their "account
+      // has no access", and offering them a different course entirely. That
+      // is what PSY240 students saw on any device where they had not signed
+      // in yet, for as long as one public course existed (2026-09-03).
+      const publicMatch = !courseCode || !!resolveEnrolledCourse(asVisitors(publicCourses), courseCode)
+      if (publicCourses.length && publicMatch) {
         return renderOutlet({
           courseClient: client,
           session: null,
@@ -200,7 +209,7 @@ export default function FieldGuideAuthRoute({ roles, deniedTitle, deniedBody, pu
 
 // The URL names a course this caller cannot address. List the ones they can,
 // linking each to the SAME surface (segment) they were trying to reach.
-function CourseDenied({ code, enrollments }) {
+function CourseDenied({ code, enrollments, email }) {
   const seen = new Map()
   for (const e of enrollments ?? []) {
     const c = e?.courses?.code
@@ -213,10 +222,15 @@ function CourseDenied({ code, enrollments }) {
     <Shell>
       <h1 style={S.title}>No access to {code.toUpperCase()}</h1>
       <p style={S.sub}>
-        {options.length
-          ? 'This account has no access to that course. You can open:'
-          : 'This account has no course access at all.'}
+        {email
+          ? <>You are signed in as <b>{email}</b>, and that address is not on the {code.toUpperCase()} roster.
+              If you enrolled with a different U&nbsp;of&nbsp;T address, {' '}
+              <Link to={joinPath(code)} style={S.inlineLink}>request a sign-in link for {code.toUpperCase()}</Link>.</>
+          : 'This course is not open to visitors.'}
       </p>
+      {options.length > 0 && (
+        <p style={{ ...S.sub, marginTop: 10 }}>You can open:</p>
+      )}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 14 }}>
         {options.map(c => (
           <Link key={c.code} to={courseSubPath(c.code, segment)} style={S.primary}>
@@ -314,4 +328,5 @@ const S = {
   input: { fontSize: 16, padding: '10px 12px', borderRadius: 8, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx)' },
   primary: { fontSize: 15, fontWeight: 600, padding: '10px 12px', borderRadius: 24, border: 'none', background: 'var(--pk)', color: '#fff', cursor: 'pointer', textDecoration: 'none' },
   linkBtn: { marginTop: 14, fontSize: 14, color: 'var(--pk)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' },
+  inlineLink: { color: 'var(--pk)' },
 }
