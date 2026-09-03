@@ -343,11 +343,20 @@ function GapDetail({ row: r, courseClient, reload }) {
   )
 }
 
+// Unsaved work survives a remount, a refresh, or a mis-click, without waiting
+// for the student to press Save. Local only, per claim, and cleared the moment
+// the server has the text — so it can never be the stale copy that wins.
+const draftKey = (id) => `fg-draft-${id}`
+const readDraft = (id) => {
+  try { return JSON.parse(localStorage.getItem(draftKey(id)) ?? 'null') } catch { return null }
+}
+
 function ClaimForm({ claim, row: r, courseClient, reload, onRelease }) {
-  const [doi, setDoi] = useState(claim.source_doi ?? '')
-  const [url, setUrl] = useState(claim.source_url ?? '')
-  const [text, setText] = useState(claim.submitted_text ?? '')
-  const [lim, setLim] = useState(claim.limitation ?? '')
+  const saved = readDraft(claim.id)
+  const [doi, setDoi] = useState(saved?.doi ?? claim.source_doi ?? '')
+  const [url, setUrl] = useState(saved?.url ?? claim.source_url ?? '')
+  const [text, setText] = useState(saved?.text ?? claim.submitted_text ?? '')
+  const [lim, setLim] = useState(saved?.lim ?? claim.limitation ?? '')
   const [doiFindings, setDoiFindings] = useState([])
   // Source capture: the full text behind the DOI, fetched while the student
   // still has the claim. Accepting later drafts the page section from THIS,
@@ -360,6 +369,15 @@ function ClaimForm({ claim, row: r, courseClient, reload, onRelease }) {
   const [msg, setMsg] = useState(null)
   const [busy, setBusy] = useState(false)
   const doiTimer = useRef(null)
+
+  // Keep the local copy in step with the fields. Cheap, synchronous, and the
+  // only thing standing between a student and a lost paragraph if anything
+  // unmounts this form mid-write.
+  useEffect(() => {
+    try {
+      localStorage.setItem(draftKey(claim.id), JSON.stringify({ doi, url, text, lim }))
+    } catch { /* private mode, quota — the server draft is still the record */ }
+  }, [claim.id, doi, url, text, lim])
 
   // The immediate DOI check: debounced against the server the moment the field
   // changes, so redundancy is discovered before the writing starts.
@@ -421,6 +439,9 @@ function ClaimForm({ claim, row: r, courseClient, reload, onRelease }) {
       .eq('id', claim.id)
     setBusy(false)
     if (error) { setMsg(error.message); return false }
+    // The server is now the record; drop the local copy so it can never come
+    // back as a stale draft on the next visit.
+    try { localStorage.removeItem(draftKey(claim.id)) } catch { /* ignore */ }
     if (!quiet) setMsg('Draft saved.')
     return true
   }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { Link, Outlet, useParams } from 'react-router-dom'
 import { getCourseClient } from '../courseClient'
 import { normalizeCourseCode, resolveEnrolledCourse, courseSubPath, wikiBase, joinPath } from '../courseRoutes'
@@ -35,6 +35,9 @@ export default function FieldGuideAuthRoute({ roles, deniedTitle, deniedBody, pu
   const [clientErr, setClientErr] = useState(null)
   const [session, setSession] = useState(undefined)     // undefined = loading
   const [enrollments, setEnrollments] = useState(undefined) // undefined = loading
+  // Which user the access check was last run for; a token refresh for the
+  // same user must not re-run it (see onAuthStateChange below).
+  const lastUserId = useRef(undefined)
 
   useEffect(() => {
     let sub
@@ -44,7 +47,17 @@ export default function FieldGuideAuthRoute({ roles, deniedTitle, deniedBody, pu
         c.auth.getSession().then(({ data }) => setSession(data.session ?? null))
         sub = c.auth.onAuthStateChange((_e, s) => {
           setSession(s ?? null)
-          setEnrollments(undefined) // new session (or sign-out) → re-check access
+          // Re-check access only when the IDENTITY changes. supabase-js fires
+          // this on every token refresh — which happens when a tab regains
+          // focus — and clearing enrollments swaps the whole Outlet for
+          // "Checking access…", unmounting whatever the reader was doing.
+          // On the gap board that discarded a half-written contribution every
+          // time a student switched to the PDF they were citing (2026-09-03).
+          const uid = s?.user?.id ?? null
+          if (uid !== lastUserId.current) {
+            lastUserId.current = uid
+            setEnrollments(undefined)
+          }
         }).data.subscription
       })
       .catch(err => setClientErr(err.message))
