@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { normalizeCourseCode, pickNewestTerm } from '../../courseRoutes'
 
@@ -18,17 +19,27 @@ export function useWikiCourse(enrollments) {
   const navigate = useNavigate()
   const { pathname } = useLocation()
 
-  const courses = []
-  for (const e of enrollments ?? []) {
-    if (!courses.some(c => c.course_id === e.course_id)) {
-      courses.push({ course_id: e.course_id, role: e.role, ...e.courses })
+  // Memoized on identity, not convenience: `course` sits in consumers'
+  // effect dependency arrays (WikiIndex's loader), and rebuilding it every
+  // render turned those effects into an infinite refetch loop — new object →
+  // effect refires → setState → re-render → new object. At network speed
+  // that was ~1.5 requests/second per open tab, ~1.5M wiki_pages hits in the
+  // 24h before the 2026-09-03 fix. `enrollments` is upstream useState, so
+  // its identity is stable between auth changes.
+  const courses = useMemo(() => {
+    const out = []
+    for (const e of enrollments ?? []) {
+      if (!out.some(c => c.course_id === e.course_id)) {
+        out.push({ course_id: e.course_id, role: e.role, ...e.courses })
+      }
     }
-  }
+    return out
+  }, [enrollments])
 
   const want = normalizeCourseCode(courseCode)
-  const course = want
-    ? pickNewestTerm(courses.filter(c => String(c.code ?? '').toLowerCase() === want))
-    : null
+  const course = useMemo(
+    () => (want ? pickNewestTerm(courses.filter(c => String(c.code ?? '').toLowerCase() === want)) : null),
+    [courses, want])
   const courseId = course?.course_id ?? null
 
   const select = (id) => {

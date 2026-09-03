@@ -109,7 +109,10 @@ export default function WikiIndex() {
       }
     })()
     return () => { cancelled = true }
-  }, [courseClient, courseId, course, weekAnchored])
+  // courseId is derived from course, so the object itself adds nothing as
+  // a dependency — and an unstable identity here is how the refetch loop
+  // above started. Primitives only.
+  }, [courseClient, courseId, weekAnchored])
 
   // Postgres full-text over title + summary + content (the generated
   // search_vector column). websearch syntax so quoted phrases and -exclusions
