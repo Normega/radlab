@@ -76,7 +76,7 @@ export default async function handler(req, res) {
   ].filter(Boolean)
   if (missing.length) return res.status(500).json({ error: `Missing env: ${missing.join(', ')}` })
 
-  const { course_id, roster_ids, all } = req.body ?? {}
+  const { course_id, roster_ids, all, never_invited } = req.body ?? {}
   if (!course_id) return res.status(400).json({ error: 'course_id required' })
   if (!all && !(Array.isArray(roster_ids) && roster_ids.length)) {
     return res.status(400).json({ error: 'roster_ids or all:true required' })
@@ -117,6 +117,7 @@ export default async function handler(req, res) {
     p_all: !!all,
     p_cap: INVITE_LIFETIME_CAP,
     p_limit: BATCH_CAP + 1,
+    p_never_invited: !!never_invited,
   })
   if (tErr) return res.status(500).json({ error: `Roster read failed: ${tErr.message}` })
 

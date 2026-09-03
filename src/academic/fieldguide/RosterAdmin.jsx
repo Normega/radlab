@@ -427,9 +427,22 @@ export default function RosterAdmin() {
             </button>
           ))}
           <span style={{ flex: 1 }} />
-          <button style={S.primary} disabled={busy || !rows?.length}
-                  onClick={() => invite({ all: true }, 'Bulk invite')}>
-            {busy ? '…' : 'Invite all not-yet-enrolled'}
+          <button style={S.primary} disabled={busy || !(counts.added > 0)}
+                  onClick={() => invite({ all: true, never_invited: true }, 'Invite new')}>
+            {busy ? '…' : `Invite not-yet-invited (${counts.added ?? 0})`}
+          </button>
+          {/* Deliberately separate from the primary action: this one re-emails
+              people who already have an invite in their inbox, so it confirms
+              first and is never the default click. Fresh rows still go first
+              server-side, so it also sweeps up anyone the other button missed. */}
+          <button style={S.secondary} disabled={busy || !((counts.invited ?? 0) + (counts.bounced ?? 0) > 0)}
+                  onClick={() => {
+                    const n = (counts.invited ?? 0) + (counts.bounced ?? 0)
+                    if (window.confirm(`Re-send invites to ${n} already-invited or bounced student${n === 1 ? '' : 's'} (everyone un-enrolled gets at most one email per click)?`)) {
+                      invite({ all: true }, 'Re-invite')
+                    }
+                  }}>
+            Re-invite un-enrolled
           </button>
         </div>
 
