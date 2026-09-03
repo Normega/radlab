@@ -72,7 +72,8 @@ Static HTML, deliberately not React (website.md §29). One `<section>` per slide
 class="notes">` speaker notes; footer chrome is bare `#bar/#num/#clock/#help` (no wrappers —
 `slides.js` queries those ids). Copy `slides.css`/`slides.js` into the course dir; restyle via
 `--accent`, but leave `--do` as caution-orange (`.box.warn` shares it). Every deck carries the
-four check-in slides above, with the arrival question on-screen in a qbox.
+four check-in slides above, with the arrival question on-screen in a qbox and the class QR
+(`assets/<course>-qr.png`) beside the dashboard URL on the arrival and break slides.
 
 ### Week icons — `src/assets/week-icons/<course>.<week>.<name>.{svg,png,webp}`
 Globbed by filename; `<week>` here is the **calendar week**, mapped from lecture number by the
