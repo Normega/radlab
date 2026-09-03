@@ -26,6 +26,11 @@ The join key discipline, everywhere: **`classes.slug` (main) = lowercase of `cou
 main DB. Break this and CourseHome, TrackingPage, and the join funnel all silently lose half the
 course.
 
+**Header chrome**: Field Guide pages carry an avatar menu top-right (`AvatarMenu.jsx`) — the
+avatar itself comes from the MAIN project via a main-site session sharing the browser (initial
+fallback otherwise); the menu is course-flavored (Class dashboard / Gap board or Submissions /
+Account / Tour / Sign out).
+
 MCP access: `supabase` = main, `supabase-academic` = Field Guide. Anything applied via MCP is
 **live immediately** — there is no staging backend (website.md, *Live dev site*).
 
@@ -98,7 +103,9 @@ The class list as registrar facts: `full_name`, `email`, `student_number`, `stat
 never hand-assemble a real roster in SQL.
 
 ### `identity.people` + `enrollments`
-`people.auth_user_id` is **nullable** — a person can exist (and hold claims, for tests) with no
+`people.onboarded_at` stamps the first-sign-in tour (three role-branched cards on the wiki and
+submissions pages; `my_onboarding()`/`mark_onboarded()` RPCs; "Tour" in the avatar menu reopens
+it). `people.auth_user_id` is **nullable** — a person can exist (and hold claims, for tests) with no
 auth account. `enrollments` link person↔course with `role` (`student`/`ta`/`instructor`) and
 `status` (`active`/`inactive`).
 

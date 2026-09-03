@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link, useOutletContext } from 'react-router-dom'
+import { Link, useOutletContext, useParams } from 'react-router-dom'
+import AvatarMenu from './AvatarMenu'
+import Onboarding from './Onboarding'
 import { useCoursePaths } from './wiki/useWikiBase'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
@@ -37,6 +39,8 @@ export default function SubmissionsQueue() {
   // each decision's course from its own row. See notify() below.
   const { courseClient, session } = useOutletContext()
   const paths = useCoursePaths()
+  const { courseCode } = useParams()
+  const [tourOpen, setTourOpen] = useState(false)
   const [rows, setRows] = useState(null)      // null = loading
   const [openId, setOpenId] = useState(null)
   const [busyId, setBusyId] = useState(null)
@@ -152,7 +156,17 @@ export default function SubmissionsQueue() {
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '32px 20px 80px' }}>
       <div style={{ maxWidth: 940, margin: '0 auto' }}>
-        <p style={S.eyebrow}><Link to={paths.home} style={S.eyebrowLink}>Field Guide</Link></p>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+          <p style={S.eyebrow}><Link to={paths.home} style={S.eyebrowLink}>Field Guide</Link></p>
+          {session && (
+            <AvatarMenu client={courseClient} fgEmail={session.user.email}
+                        courseCode={courseCode} isStaff onTour={() => setTourOpen(true)} />
+          )}
+        </div>
+        {session && (
+          <Onboarding client={courseClient} courseCode={courseCode} isStaff
+                      tourOpen={tourOpen} onTourClose={() => setTourOpen(false)} />
+        )}
         <h1 style={S.title}>Student submissions</h1>
         <p style={S.sub}>
           Mechanical faults are caught before you read anything. What is left is the one question

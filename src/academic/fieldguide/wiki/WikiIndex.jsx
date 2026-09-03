@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useOutletContext } from 'react-router-dom'
 import { useWikiBase, useCoursePaths } from './useWikiBase'
 import { useWikiCourse } from './useWikiCourse'
+import AvatarMenu from '../AvatarMenu'
+import Onboarding from '../Onboarding'
 import { courseFeatures } from '../../courseFeatures'
 import { TIER_LABEL, TIER_HELP } from './tiers'
 import { chapterIcon } from './chapterIcons'
@@ -503,6 +505,7 @@ export default function WikiIndex() {
 
 function Shell({ course, session, client, isStaff, courses, courseId, onSelectCourse, children }) {
   const paths = useCoursePaths()
+  const [tourOpen, setTourOpen] = useState(false)
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '28px 16px 64px' }}>
       <div style={{ maxWidth: 980, margin: '0 auto' }}>
@@ -518,22 +521,8 @@ function Shell({ course, session, client, isStaff, courses, courseId, onSelectCo
             </div>
           )}
           {session && (
-            <div style={{ textAlign: 'right' }}>
-              <p style={{ ...S.sub, fontSize: 12 }}>{session.user.email}</p>
-              {isStaff && (
-                <>
-                  <Link to={paths.sub('review')} style={S.link}>Review queue</Link>
-                  {' · '}
-                  {courseFeatures(course?.code).ingest && (
-                    <>
-                      <Link to={paths.sub('ingest')} style={S.link}>Ingest</Link>
-                      {' · '}
-                    </>
-                  )}
-                </>
-              )}
-              <button style={S.linkBtn} onClick={() => client.auth.signOut()}>Sign out</button>
-            </div>
+            <AvatarMenu client={client} fgEmail={session.user.email}
+                        courseCode={course?.code} isStaff={isStaff} onTour={() => setTourOpen(true)} />
           )}
         </header>
 
@@ -558,6 +547,10 @@ function Shell({ course, session, client, isStaff, courses, courseId, onSelectCo
              target="_blank" rel="noreferrer">CC BY-NC-SA 4.0</a>
           {' '}· sources credited on every page.
         </p>
+        {session && (
+          <Onboarding client={client} courseCode={course?.code} isStaff={isStaff}
+                      tourOpen={tourOpen} onTourClose={() => setTourOpen(false)} />
+        )}
       </div>
     </div>
   )

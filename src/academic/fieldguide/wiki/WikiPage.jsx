@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useOutletContext, useParams, useLocation } from 'react-router-dom'
+import AvatarMenu from '../AvatarMenu'
 import { WikiMarkdown } from './wikiMarkdown'
 import { splitFrontmatter, extractHeadings, splitSections } from './wikiText'
 import { useWikiBase, useCoursePaths } from './useWikiBase'
@@ -37,8 +38,12 @@ const EMPTY = new Set()
 export default function WikiPage() {
   const WIKI_BASE = useWikiBase() // course-scoped; template usages unchanged
   const paths = useCoursePaths()
-  const { courseClient, enrollments, isStaff } = useOutletContext()
+  const { courseClient, session, enrollments, isStaff } = useOutletContext()
   const { courseId, course } = useWikiCourse(enrollments)
+  const accountMenu = session ? (
+    <AvatarMenu client={courseClient} fgEmail={session.user.email}
+                courseCode={course?.code} isStaff={isStaff} />
+  ) : null
   const feats = courseFeatures(course?.code)
   const { slug } = useParams()
   const { hash } = useLocation()
@@ -305,11 +310,11 @@ export default function WikiPage() {
     }
   }, [hash, page?.content, reveal])
 
-  if (page === undefined) return <Shell course={course}><p style={S.sub}>Loading…</p></Shell>
+  if (page === undefined) return <Shell course={course} menu={accountMenu}><p style={S.sub}>Loading…</p></Shell>
 
   if (page === null) {
     return (
-      <Shell course={course}>
+      <Shell course={course} menu={accountMenu}>
         <h1 style={S.title}>Not published yet</h1>
         <p style={S.sub}>
           There's no readable page at <code style={S.code}>{slug}</code>. Either it hasn't been
@@ -324,7 +329,7 @@ export default function WikiPage() {
   const related = relatedSlugs(meta)
 
   return (
-    <Shell course={course}>
+    <Shell course={course} menu={accountMenu}>
       <nav style={S.crumbs}>
         <Link to={WIKI_BASE} style={S.link}>All pages</Link>
         {catalog?.dsm_chapter_title && (
@@ -819,12 +824,15 @@ const G = {
   hint: { fontSize: 12, color: 'var(--tx2)', fontStyle: 'italic' },
 }
 
-function Shell({ course, children }) {
+function Shell({ course, menu, children }) {
   const paths = useCoursePaths()
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '28px 16px 64px' }}>
       <div style={{ maxWidth: 980, margin: '0 auto' }}>
-        <p style={S.eyebrow}><Link to={paths.home} style={S.eyebrowLink}>Field Guide</Link>{course?.code ? ` · ${course.code}` : ''}</p>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+          <p style={S.eyebrow}><Link to={paths.home} style={S.eyebrowLink}>Field Guide</Link>{course?.code ? ` · ${course.code}` : ''}</p>
+          {menu}
+        </div>
         {children}
       </div>
     </div>

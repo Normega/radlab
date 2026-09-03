@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, Navigate, useOutletContext } from 'react-router-dom'
+import AvatarMenu from './AvatarMenu'
 import { courseFeatures } from '../courseFeatures'
 import { useWikiBase, useCoursePaths } from './wiki/useWikiBase'
 
@@ -30,7 +31,7 @@ const wordCount = t => (t ?? '').trim().split(/\s+/).filter(Boolean).length
 
 export default function GapBrowser() {
   const paths = useCoursePaths()
-  const { courseClient, courseCode } = useOutletContext()
+  const { courseClient, courseCode, session, isStaff } = useOutletContext()
   const [rows, setRows] = useState(null)        // null = loading
   const [notice, setNotice] = useState(null)
   const [diff, setDiff] = useState('all')       // all | green | amber
@@ -121,7 +122,13 @@ export default function GapBrowser() {
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '32px 20px 80px' }}>
       <div style={{ maxWidth: 940, margin: '0 auto' }}>
-        <p style={S.eyebrow}><Link to={paths.home} style={S.eyebrowLink}>Field Guide</Link></p>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+          <p style={S.eyebrow}><Link to={paths.home} style={S.eyebrowLink}>Field Guide</Link></p>
+          {session && (
+            <AvatarMenu client={courseClient} fgEmail={session.user.email}
+                        courseCode={courseCode} isStaff={isStaff} />
+          )}
+        </div>
         <h1 style={S.title}>Research gaps</h1>
         <p style={S.sub}>
           Every gap below is a place the Field Guide names its own missing evidence. Your assignment
