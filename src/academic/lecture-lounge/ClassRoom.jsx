@@ -326,7 +326,7 @@ export default function ClassRoom({ session }) {
   const fieldGuideCard = classInfo.field_guide_url ? (
     <a href={hasFieldGuideSession ? `/academic/${slug}/wiki` : classInfo.field_guide_url} style={S.fgCard}>
       <p style={S.fgEyebrow}>Course textbook</p>
-      <p style={S.fgTitle}>The Field Guide to Abnormal Psychology</p>
+      <p style={S.fgTitle}>The Field Guide — your course textbook</p>
       <p style={S.fgMeta}>
         {hasFieldGuideSession
           ? 'You’re signed in — open the Field Guide →'
@@ -399,6 +399,11 @@ export default function ClassRoom({ session }) {
                 </p>
               </Link>
             )}
+
+            <Link to={`${loungePath(slug)}/slides`} style={S.fgCard}>
+              <p style={S.fgEyebrow}>Lecture slides</p>
+              <p style={S.fgMeta}>Review any week's deck — printing one gives a study handout →</p>
+            </Link>
 
             {fieldGuideCard}
           </>

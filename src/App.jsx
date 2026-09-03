@@ -681,11 +681,18 @@ export default function App() {
                 <WeeklyWall session={session} />
               </AuthRoute>
             } />
+            {/* Slides index is student-facing (2026-09-02): any signed-in
+                user; the lectures list itself is RLS-gated to class members,
+                and the decks are public static files regardless. */}
+            <Route path="/academic/:courseCode/lounge/slides" element={
+              <AuthRoute session={session}>
+                <ClassSlides />
+              </AuthRoute>
+            } />
             <Route element={<ClassAdminRoute session={session} />}>
               <Route path="/academic/:courseCode/lounge/console" element={<ClassConsole session={session} />} />
               <Route path="/academic/:courseCode/lounge/remote" element={<ClassRemote session={session} />} />
               <Route path="/academic/:courseCode/lounge/screen" element={<ClassScreen />} />
-              <Route path="/academic/:courseCode/lounge/slides" element={<ClassSlides />} />
             </Route>
             {/* Legacy lounge sub-paths: staff bookmarks and in-session links,
                 not auth landings — safe to redirect (unlike /class/:slug). */}
