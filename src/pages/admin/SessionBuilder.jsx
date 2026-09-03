@@ -11,11 +11,12 @@ import { CSS } from '@dnd-kit/utilities'
 import { supabase } from '../../lib/supabase'
 import { checkSequence, unmetMessage } from '../../lib/displayDeps'
 
-const CATEGORY_ORDER  = ['game', 'questionnaire', 'vas', 'display', 'likert_slider', 'numeric_slider', 'multiple_choice', 'open_list', 'hierarchy', 'assessment', 'video', 'form', 'physio', 'training', 'midpoint', 'assessment_leadin', 'daily_welcome', 'daily_farewell']
+const CATEGORY_ORDER  = ['game', 'questionnaire', 'vas', 'display', 'likert_slider', 'numeric_slider', 'multiple_choice', 'open_list', 'open_text', 'hierarchy', 'assessment', 'video', 'form', 'physio', 'training', 'midpoint', 'assessment_leadin', 'daily_welcome', 'daily_farewell']
 const CATEGORY_LABELS = {
   game: 'Games', questionnaire: 'Questionnaires', vas: 'VAS', display: 'Displays',
   likert_slider: 'Likert Sliders', numeric_slider: 'Numeric Sliders',
   multiple_choice: 'Multiple Choice', open_list: 'Open Text Lists',
+  open_text: 'Open Text Responses',
   hierarchy: 'Belief Hierarchies', assessment: 'Assessments',
   form: 'Forms', physio: 'Physio', training: 'Training Modules', midpoint: 'Midpoint',
   video: 'Videos', assessment_leadin: 'Assessment Lead-ins',
@@ -29,7 +30,7 @@ const CATEGORY_LABELS = {
 // Categories missing from a session's data simply don't render; unknown
 // categories fall into Steps.
 const PICKER_SECTIONS = [
-  { header: 'Instruments', cats: ['questionnaire', 'vas', 'display', 'likert_slider', 'numeric_slider', 'multiple_choice', 'open_list', 'hierarchy', 'assessment'] },
+  { header: 'Instruments', cats: ['questionnaire', 'vas', 'display', 'likert_slider', 'numeric_slider', 'multiple_choice', 'open_list', 'open_text', 'hierarchy', 'assessment'] },
   { header: 'Media',       cats: ['game', 'video'] },
   { header: 'Study steps', cats: ['form', 'physio', 'training', 'midpoint', 'assessment_leadin', 'daily_welcome', 'daily_farewell'] },
 ]
@@ -39,7 +40,7 @@ const PICKER_SECTIONS = [
 // seeds.sql). An empty one renders as a disabled "pending" row so the picker
 // hierarchy always matches the sidebar; the placeholder retires itself the
 // moment a real instrument of that category exists.
-const PENDING_CATEGORIES = ['likert_slider', 'multiple_choice', 'open_list', 'hierarchy']
+const PENDING_CATEGORIES = ['likert_slider', 'multiple_choice', 'open_list', 'open_text', 'hierarchy']
 
 // Display category for the picker: numeric sliders and assessment packages
 // are recategorized by the seeds migration, but rows created before it (or by

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import SurveyComponentRenderer from '../../components/questionnaire/composable/SurveyComponentRenderer'
@@ -45,6 +45,12 @@ const TYPES = {
     lead: 'Participant-generated entries, each with its own contribution slider.',
     example: 'outcome_factors',
   },
+  'open-text': {
+    dbType: 'open_text',
+    title: 'Open text response',
+    lead: 'A single free-text answer — one line for a short response, or a box for a paragraph.',
+    example: 'exam_reflection',
+  },
   'hierarchy': {
     dbType: 'hierarchy',
     title: 'Belief hierarchy',
@@ -73,10 +79,11 @@ function validateInstrument({ slug, label, componentType, config }) {
 }
 
 export default function InstrumentCreatePage() {
-  const { slug: typeSlug } = useParams()
+  const { slug: typeSlug, id: editId } = useParams()
   const navigate = useNavigate()
   const meta = TYPES[typeSlug]
   const componentType = meta ? DB_COMPONENT_TYPE[meta.dbType] : null
+  const isEdit = Boolean(editId)
 
   const [label,       setLabel]       = useState('')
   const [slug,        setSlug]        = useState('')
@@ -86,6 +93,32 @@ export default function InstrumentCreatePage() {
   const [previewVal,  setPreviewVal]  = useState(undefined)
   const [saving,      setSaving]      = useState(false)
   const [error,       setError]       = useState(null)
+  const [loading,     setLoading]     = useState(isEdit)
+  // Responses freeze the config: the answers already collected were given to
+  // the question as it was worded then, so silently re-wording it (or moving a
+  // scale point) would change what that data means. The label stays editable —
+  // it is only how the instrument reads in the library and the picker.
+  const [responseCount, setResponseCount] = useState(0)
+
+  useEffect(() => {
+    if (!isEdit) return
+    let cancelled = false
+    ;(async () => {
+      const [{ data, error: loadErr }, respRes] = await Promise.all([
+        supabase.from('composable_instruments').select('*').eq('id', editId).single(),
+        supabase.from('instrument_responses').select('id').eq('instrument_id', editId),
+      ])
+      if (cancelled) return
+      if (loadErr) { setError(loadErr.message); setLoading(false); return }
+      setLabel(data.label ?? '')
+      setSlug(data.slug ?? '')
+      setSlugTouched(true)
+      setConfig(data.config ?? {})
+      setResponseCount((respRes.data ?? []).length)
+      setLoading(false)
+    })()
+    return () => { cancelled = true }
+  }, [isEdit, editId])
 
   if (!meta) return (
     <div>
@@ -99,7 +132,8 @@ export default function InstrumentCreatePage() {
 
   const set = (patch) => setConfig(c => ({ ...c, ...patch }))
   const problems = validateInstrument({ slug, label, componentType, config })
-  const canSave = label.trim() && slug.trim() && problems.length === 0 && !saving
+  const configLocked = isEdit && responseCount > 0
+  const canSave = label.trim() && slug.trim() && problems.length === 0 && !saving && !loading
 
   function handleLabelChange(v) {
     setLabel(v)
@@ -113,6 +147,33 @@ export default function InstrumentCreatePage() {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       const cleanSlug = slug.trim()
+
+      if (isEdit) {
+        // The slug is never updated — it is the key a session step resolves,
+        // so changing it would strand every template already pointing at it.
+        const patch = configLocked
+          ? { label: label.trim() }
+          : { label: label.trim(), config }
+        const { error: updErr } = await supabase
+          .from('composable_instruments').update(patch).eq('id', editId)
+        if (updErr) throw new Error(updErr.message)
+
+        // Keep the picker's description in step with the edited definition.
+        const { error: actErr } = await supabase.from('activities')
+          .update({
+            label:       `${meta.title} – ${label.trim().slice(0, 60)}`,
+            description: summarize(meta.dbType, config),
+          })
+          .eq('category', meta.dbType).eq('subcategory', cleanSlug)
+        if (actErr) {
+          throw new Error(
+            `The instrument saved, but its session-builder entry did not update: ${actErr.message}`
+          )
+        }
+
+        navigate(`/admin/instruments/${typeSlug}`)
+        return
+      }
 
       const { error: insErr } = await supabase.from('composable_instruments').insert({
         slug: cleanSlug,
@@ -150,15 +211,35 @@ export default function InstrumentCreatePage() {
     }
   }
 
+  if (loading) return <p style={S.sub}>Loading instrument…</p>
+
   return (
     <div>
-      <h1 style={S.h1}>New {meta.title.toLowerCase()}</h1>
+      <h1 style={S.h1}>{isEdit ? `Edit ${meta.title.toLowerCase()}` : `New ${meta.title.toLowerCase()}`}</h1>
       <p style={S.sub}>{meta.lead}</p>
       <p style={S.sub}>
-        Saving adds it to the library on{' '}
-        <Link to={`/admin/instruments/${typeSlug}`} style={S.link}>{meta.title}</Link>{' '}
-        and to the session builder’s Instruments picker.
+        {isEdit ? (
+          <>Changes apply everywhere this instrument is used — every session template
+            pointing at <code>{slug}</code> renders the edited version from now on.</>
+        ) : (
+          <>Saving adds it to the library on{' '}
+            <Link to={`/admin/instruments/${typeSlug}`} style={S.link}>{meta.title}</Link>{' '}
+            and to the session builder’s Instruments picker.</>
+        )}
       </p>
+
+      {configLocked && (
+        <div style={S.problems}>
+          <p style={S.problemsTitle}>
+            {responseCount} response{responseCount === 1 ? '' : 's'} already collected — question locked
+          </p>
+          <p style={S.problem}>
+            Those answers were given to this question as it is worded now, so re-wording it (or
+            moving a scale point) would change what the collected data means. The name is still
+            editable. To ask a different question, create a new instrument.
+          </p>
+        </div>
+      )}
 
       <div style={S.columns}>
         <div style={S.form}>
@@ -167,21 +248,27 @@ export default function InstrumentCreatePage() {
               placeholder="Noticing frequency (weekly)" />
           </Field>
 
-          <Field label="Slug *" hint="The identifier a session step resolves. Cannot be changed later.">
-            <input style={S.input} value={slug}
+          <Field label="Slug *" hint={isEdit
+            ? 'The identifier session steps resolve. Fixed once created.'
+            : 'The identifier a session step resolves. Cannot be changed later.'}>
+            <input style={{ ...S.input, ...(isEdit ? S.inputLocked : null) }} value={slug}
+              readOnly={isEdit}
               onChange={e => { setSlug(slugify(e.target.value)); setSlugTouched(true) }}
               placeholder={meta.example} />
           </Field>
 
-          <Field label="Question *">
-            <textarea style={{ ...S.input, minHeight: 64, resize: 'vertical' }}
-              value={config.question ?? ''} onChange={e => set({ question: e.target.value })} />
-          </Field>
+          <fieldset style={S.fieldset} disabled={configLocked}>
+            <Field label="Question *">
+              <textarea style={{ ...S.input, minHeight: 64, resize: 'vertical' }}
+                value={config.question ?? ''} onChange={e => set({ question: e.target.value })} />
+            </Field>
 
-          {meta.dbType === 'likert_slider' && <LikertEditor config={config} set={set} />}
-          {meta.dbType === 'multiple_choice' && <ChoiceEditor config={config} set={set} />}
-          {meta.dbType === 'open_list' && <OpenListEditor config={config} set={set} />}
-          {meta.dbType === 'hierarchy' && <HierarchyEditor config={config} set={set} />}
+            {meta.dbType === 'likert_slider' && <LikertEditor config={config} set={set} />}
+            {meta.dbType === 'multiple_choice' && <ChoiceEditor config={config} set={set} />}
+            {meta.dbType === 'open_list' && <OpenListEditor config={config} set={set} />}
+            {meta.dbType === 'open_text' && <OpenTextEditor config={config} set={set} />}
+            {meta.dbType === 'hierarchy' && <HierarchyEditor config={config} set={set} />}
+          </fieldset>
 
           {problems.length > 0 && (
             <div style={S.problems}>
@@ -193,7 +280,7 @@ export default function InstrumentCreatePage() {
 
           <div style={S.actions}>
             <button style={{ ...S.saveBtn, opacity: canSave ? 1 : 0.45 }} onClick={handleSave} disabled={!canSave}>
-              {saving ? 'Saving…' : `Save ${meta.title.toLowerCase()}`}
+              {saving ? 'Saving…' : isEdit ? 'Save changes' : `Save ${meta.title.toLowerCase()}`}
             </button>
             <button style={S.cancelBtn} onClick={() => navigate(`/admin/instruments/${typeSlug}`)}>Cancel</button>
           </div>
@@ -242,6 +329,14 @@ function summarize(dbType, c) {
     }
     case 'open_list':
       return `Free-listed factors, each with a contribution slider · min ${c.minimum_required_responses ?? 1}`
+    case 'open_text': {
+      const shape = c.multiline === false ? 'Single-line answer' : 'Paragraph answer'
+      const caps = [
+        c.min_words != null ? `min ${c.min_words}` : null,
+        c.max_words != null ? `max ${c.max_words}` : null,
+      ].filter(Boolean).join(', ')
+      return `${shape}${caps ? ` · ${caps} words` : ''}`
+    }
     case 'hierarchy':
       return `${(c.beliefs ?? []).length}-level hierarchy with signed direction sliders`
     default:
@@ -439,6 +534,39 @@ function OpenListEditor({ config, set }) {
   )
 }
 
+function OpenTextEditor({ config, set }) {
+  const multiline = config.multiline !== false
+  return (
+    <>
+      <label style={S.checkRow}>
+        <input type="checkbox" checked={multiline}
+          onChange={e => set({ multiline: e.target.checked })} />
+        <span style={S.checkText}>Paragraph box — several lines, resizable. Uncheck for a single-line answer.</span>
+      </label>
+
+      <div style={S.row2}>
+        {multiline && (
+          <NumField label="Box height (rows)" value={config.rows} min={1}
+            onChange={v => set({ rows: v })} />
+        )}
+        <NumField label="Min words" value={config.min_words} min={1}
+          onChange={v => set({ min_words: v })} />
+        <NumField label="Max words" value={config.max_words} min={1}
+          onChange={v => set({ max_words: v })} />
+      </div>
+      <p style={{ ...S.hint, marginBottom: 16 }}>
+        Leave both word limits empty for no limit. A maximum stops typing at the cap and shows a
+        live counter; a minimum holds Submit until it is met.
+      </p>
+
+      <Field label="Placeholder" hint="Grey example text inside the empty box.">
+        <input style={S.input} value={config.placeholder ?? ''}
+          onChange={e => set({ placeholder: e.target.value })} />
+      </Field>
+    </>
+  )
+}
+
 function HierarchyEditor({ config, set }) {
   const beliefs = config.beliefs ?? []
   const commit = (b) => set({ beliefs: b })
@@ -507,6 +635,8 @@ const S = {
     borderRadius: 12, padding: '8px 16px', color: 'var(--tx)', background: 'var(--bgc)', boxSizing: 'border-box',
   },
   hint: { fontFamily: SANS, fontSize: 12, color: 'var(--tx2)', lineHeight: 1.5, margin: '4px 0 0' },
+  inputLocked: { background: 'var(--bg)', color: 'var(--tx2)', cursor: 'not-allowed' },
+  fieldset: { border: 'none', padding: 0, margin: 0, minWidth: 0 },
   row2: { display: 'flex', gap: 8, alignItems: 'flex-end', flexWrap: 'wrap' },
 
   itemRow:   { display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 },

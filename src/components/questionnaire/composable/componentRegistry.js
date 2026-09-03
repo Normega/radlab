@@ -9,7 +9,9 @@ import LikertSliderQuestion from './LikertSliderQuestion'
 import MultipleChoiceQuestion from './MultipleChoiceQuestion'
 import InformationBlock from './InformationBlock'
 import OpenTextListQuestion from './OpenTextListQuestion'
+import OpenTextQuestion from './OpenTextQuestion'
 import HierarchicalBeliefQuestion from './HierarchicalBeliefQuestion'
+import { countWords } from './textLimits'
 
 export const COMPONENT_TYPES = {
   likert: {
@@ -42,6 +44,11 @@ export const COMPONENT_TYPES = {
     component: OpenTextListQuestion,
     collectsResponse: true,
   },
+  open_text: {
+    label: 'Open text response',
+    component: OpenTextQuestion,
+    collectsResponse: true,
+  },
   hierarchical_belief: {
     label: 'Hierarchical belief selector',
     component: HierarchicalBeliefQuestion,
@@ -60,6 +67,7 @@ export const DB_COMPONENT_TYPE = {
   likert_slider:   'likert_slider',
   multiple_choice: 'multiple_choice',
   open_list:       'open_text_list',
+  open_text:       'open_text',
   hierarchy:       'hierarchical_belief',
 }
 
@@ -108,6 +116,15 @@ export function responseIsComplete(config, value) {
     return selectedOptionIsComplete(config, value)
   }
 
+  if (type === 'open_text') {
+    const text = String(value ?? '').trim()
+    if (!text) return !required
+    // A word floor is a real answer requirement, so it gates completion even
+    // on an optional question once the participant has started writing.
+    if (config.min_words != null && countWords(text) < config.min_words) return false
+    return true
+  }
+
   if (type === 'open_text_list') {
     const responses = Array.isArray(value) ? value : []
     const minimum = config.minimum_required_responses
@@ -137,6 +154,10 @@ export function responseIsComplete(config, value) {
 
 export function defaultResponseFor(config) {
   if (config.type === 'open_text_list') return []
+
+  // Empty string, not null: the component is a controlled text input, and the
+  // stored value is always the text as typed.
+  if (config.type === 'open_text') return ''
 
   if (config.type === 'multiple_choice' && config.allow_multiple === true) {
     return []
@@ -229,6 +250,19 @@ export function createDefaultComponent(type, id) {
         image_alt: '',
         image_caption: '',
         image_max_width: '680px',
+      }
+
+    case 'open_text':
+      return {
+        id,
+        type,
+        required: true,
+        question: 'Enter your open-text question here.',
+        multiline: true,
+        rows: 4,
+        placeholder: '',
+        max_words: null,
+        min_words: null,
       }
 
     case 'open_text_list':

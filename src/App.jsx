@@ -848,8 +848,9 @@ export default function App() {
               <Route path="/admin/displays/:id"        element={<DisplayEditorPage />} />
               <Route path="/admin/screeners"           element={<ScreenerLibraryPage />} />
               <Route path="/admin/instruments"         element={<InstrumentStylesPage />} />
-              {/* :slug/new before :slug so the create page wins the match */}
+              {/* :slug/new and :slug/edit/:id before :slug so they win the match */}
               <Route path="/admin/instruments/:slug/new" element={<InstrumentCreatePage />} />
+              <Route path="/admin/instruments/:slug/edit/:id" element={<InstrumentCreatePage />} />
               <Route path="/admin/instruments/:slug"   element={<AdoptedInstrumentPage />} />
               {/* Super-admin only — RPCs enforce server-side, page shows 'forbidden' otherwise */}
               <Route path="/admin/users"               element={<UserAdminPage />} />

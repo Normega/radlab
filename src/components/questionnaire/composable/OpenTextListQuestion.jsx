@@ -1,21 +1,10 @@
 import { useState } from 'react'
 import RichText from './RichText'
 import SliderScale from './SliderScale'
+import { countWords, clampWords } from './textLimits'
 
 let localIdCounter = 0
 const nextLocalId = () => `row-${Date.now()}-${localIdCounter++}`
-
-function countWords(text) {
-  const trimmed = String(text ?? '').trim()
-  return trimmed ? trimmed.split(/\s+/).length : 0
-}
-
-function clampWords(text, maxWords) {
-  if (maxWords == null) return text
-  const words = String(text ?? '').trimStart().split(/\s+/).filter(Boolean)
-  if (words.length <= maxWords) return text
-  return words.slice(0, maxWords).join(' ')
-}
 
 function buildRows(config, value) {
   const saved = Array.isArray(value) ? value : []

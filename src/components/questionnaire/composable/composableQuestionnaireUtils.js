@@ -168,6 +168,23 @@ export function validateComposableDefinition(definition) {
         }
       }
 
+      if (component.type === 'open_text') {
+        const min = component.min_words
+        const max = component.max_words
+        if (min != null && (!Number.isFinite(Number(min)) || Number(min) < 1)) {
+          errors.push(`${prefix}: minimum words must be at least 1, or empty for no minimum.`)
+        }
+        if (max != null && (!Number.isFinite(Number(max)) || Number(max) < 1)) {
+          errors.push(`${prefix}: maximum words must be at least 1, or empty for no maximum.`)
+        }
+        if (min != null && max != null && Number(min) > Number(max)) {
+          errors.push(`${prefix}: minimum words cannot exceed maximum words.`)
+        }
+        if (component.rows != null && (!Number.isFinite(Number(component.rows)) || Number(component.rows) < 1)) {
+          errors.push(`${prefix}: box height must be at least 1 row.`)
+        }
+      }
+
       if (component.type === 'open_text_list') {
         if ((component.initial_boxes ?? 3) < 1) {
           errors.push(`${prefix}: initial_boxes must be at least 1.`)

@@ -400,6 +400,50 @@
   color: var(--tx3);
 }
 
+/* Open text (single free-response box) */
+.cs-open-text-input {
+  width: 100%;
+  padding: 11px 13px;
+  border: 1.5px solid var(--bds);
+  border-radius: 9px;
+  background: var(--bgc);
+  color: var(--tx);
+  outline: none;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: var(--fs-body);
+  line-height: 1.55;
+  box-sizing: border-box;
+  resize: vertical;
+}
+
+.cs-open-text-input.is-single {
+  height: 44px;
+  resize: none;
+}
+
+.cs-open-text-input:focus {
+  border-color: var(--pk);
+  box-shadow: 0 0 0 3px rgba(240, 104, 164, 0.1);
+}
+
+.cs-open-text-input::placeholder {
+  color: var(--tx3);
+}
+
+.cs-open-text-meta {
+  margin-top: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cs-open-text-hint {
+  color: var(--tx3);
+  font-size: var(--fs-min);
+  line-height: 1.4;
+}
+
 /* Open list */
 .cs-open-list {
   display: flex;

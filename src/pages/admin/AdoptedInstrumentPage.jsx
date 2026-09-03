@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import VasRenderer from '../../components/vas/VasRenderer'
 import SurveyComponentRenderer from '../../components/questionnaire/composable/SurveyComponentRenderer'
@@ -74,6 +74,7 @@ const LikertSliderSample   = () => <InstrumentSample type="likert_slider" />
 const NumericSliderSample  = () => <DemoStage config={NUMERIC_SLIDER_DEMO} />
 const MultipleChoiceSample = () => <InstrumentSample type="multiple_choice" />
 const OpenListSample       = () => <InstrumentSample type="open_list" />
+const OpenTextSample       = () => <InstrumentSample type="open_text" />
 const HierarchySample      = () => <InstrumentSample type="hierarchy" />
 
 // One-line library row summary per composable type, from the stored config.
@@ -83,6 +84,14 @@ function instrumentMeta(r) {
     case 'likert_slider':   return `${(c.labels ?? []).length} points`
     case 'multiple_choice': return `${(c.options ?? []).length} options`
     case 'open_list':       return `min ${c.minimum_required_responses ?? 1} response${(c.minimum_required_responses ?? 1) === 1 ? '' : 's'}${c.max_words != null ? ` · ${c.max_words}-word cap` : ''}`
+    case 'open_text': {
+      const shape = c.multiline === false ? 'single line' : `${c.rows ?? 4}-row box`
+      const caps = [
+        c.min_words != null ? `min ${c.min_words}` : null,
+        c.max_words != null ? `max ${c.max_words}` : null,
+      ].filter(Boolean).join(', ')
+      return `${shape}${caps ? ` · ${caps} words` : ''}`
+    }
     case 'hierarchy':       return `${(c.beliefs ?? []).length} levels`
     default:                return r.type
   }
@@ -101,7 +110,68 @@ function composableLibrary(type, title, pageSlug, newLabel) {
     newLabel,
     row: r => ({ name: r.label, meta: instrumentMeta(r) }),
     preview: r => <DemoStage config={instrumentConfig(r)} />,
+    // Edit/delete, added 2026-09-03: the library was insert-only, so a
+    // correction meant authoring a new instrument and abandoning the old one.
+    // A single study build produced four generations of the same question
+    // (`x`, `new_x`, `newnew_x`, `tt2_x`), all of them live in the session
+    // builder's picker — clutter, but also a real chance of attaching the
+    // wrong version of a question to a session.
+    editLink: r => `/admin/instruments/${pageSlug}/edit/${r.id}`,
+    deletable: true,
   }
+}
+
+// Usage counts for one composable type, so the library can refuse a delete
+// that would break something rather than discovering it at the failure.
+//
+// Two independent reasons an instrument is undeletable:
+//   responses — `instrument_responses.instrument_id` is NOT NULL with no ON
+//     DELETE, so the delete fails at the database. It should also never
+//     succeed: the responses are the study's data.
+//   sessions  — the paired `activities` row is referenced by
+//     `session_template_nodes.activity_id` (also NO ACTION), and removing the
+//     instrument while a template still points at it strands that step: the
+//     step wrapper resolves the slug at runtime and would error the
+//     participant's session.
+function useInstrumentUsage(type, rows) {
+  const ids = rows.map(r => r.id)
+  const slugs = rows.map(r => r.slug)
+
+  return useQuery({
+    queryKey: ['instrument-usage', type, ids.length, slugs.join(',')],
+    enabled: ids.length > 0,
+    queryFn: async () => {
+      const [respRes, actRes] = await Promise.all([
+        supabase.from('instrument_responses').select('instrument_id').in('instrument_id', ids),
+        supabase.from('activities').select('id, subcategory').eq('category', type).in('subcategory', slugs),
+      ])
+      if (respRes.error) throw respRes.error
+      if (actRes.error) throw actRes.error
+
+      const responses = {}
+      for (const row of respRes.data ?? []) {
+        responses[row.instrument_id] = (responses[row.instrument_id] ?? 0) + 1
+      }
+
+      const activities = actRes.data ?? []
+      const slugByActivity = new Map(activities.map(a => [a.id, a.subcategory]))
+      const sessions = {}
+
+      if (activities.length) {
+        const { data: nodes, error } = await supabase
+          .from('session_template_nodes')
+          .select('activity_id')
+          .in('activity_id', activities.map(a => a.id))
+        if (error) throw error
+        for (const node of nodes ?? []) {
+          const slug = slugByActivity.get(node.activity_id)
+          if (slug) sessions[slug] = (sessions[slug] ?? 0) + 1
+        }
+      }
+
+      return { responses, sessions, activityIdBySlug: new Map(activities.map(a => [a.subcategory, a.id])) }
+    },
+  })
 }
 
 const CHIP = {
@@ -182,6 +252,15 @@ const PAGES = {
     note: 'The sample is the first open text list in the library, rendered by the production component — the exact step a participant gets. Use + New below to author another; add instances to sessions from the session builder’s Instruments picker.',
     library: composableLibrary('open_list', 'Existing open text lists', 'open-list', '+ New Open List'),
   },
+  'open-text': {
+    title: 'Open text response',
+    source: 'composable/OpenTextQuestion.jsx',
+    chips: [{ label: 'Added 2026-09-03', tone: 'green' }],
+    C: OpenTextSample,
+    blurb: 'A plain free-text answer: a single line for a short response, or a resizable box for a paragraph. Optional word floor and ceiling, with a live counter when a maximum is set. The open text LIST above it is a different instrument — that one collects several short factors and forces a contribution rating on each; this one is just the question and the participant’s words.',
+    note: 'The sample is the first open text response in the library, rendered by the production component — the exact step a participant gets. Use + New below to author another; add instances to sessions from the session builder’s Instruments picker.',
+    library: composableLibrary('open_text', 'Existing open text responses', 'open-text', '+ New Open Text'),
+  },
   'hierarchy': {
     title: 'Hierarchical belief question',
     source: 'composable/HierarchicalBeliefQuestion.jsx',
@@ -256,6 +335,7 @@ function LiveVasSample() {
 
 function Library({ cfg }) {
   const [open, setOpen] = useState(null)
+  const qc = useQueryClient()
   const { data = [], isLoading, error } = useQuery({
     // cfg.type in the key: composable types share one table, split by filter.
     queryKey: ['instrument-lib', cfg.table ?? 'static', cfg.type ?? null],
@@ -270,6 +350,7 @@ function Library({ cfg }) {
   })
   const rows = cfg.static ?? data
   const ready = cfg.static || (!isLoading && !error)
+  const { data: usage, error: usageError } = useInstrumentUsage(cfg.type, cfg.deletable ? rows : [])
 
   return (
     <div>
@@ -297,11 +378,30 @@ function Library({ cfg }) {
         const isOpen = open === r.id
         return (
           <div key={r.id}>
-            <button style={{ ...S.row, width: '100%', cursor: 'pointer', textAlign: 'left', border: isOpen ? '1px solid var(--pkbs)' : '1px solid var(--bd)' }}
-              onClick={() => setOpen(isOpen ? null : r.id)}>
-              {inner}
-              <span style={{ ...S.rowMeta, marginLeft: 'auto' }}>{isOpen ? 'Hide ▲' : 'View ▼'}</span>
-            </button>
+            <div style={{ ...S.row, border: isOpen ? '1px solid var(--pkbs)' : '1px solid var(--bd)' }}>
+              <button style={S.rowMain} onClick={() => setOpen(isOpen ? null : r.id)}>
+                {inner}
+              </button>
+              {cfg.editLink && (
+                <Link to={cfg.editLink(r)} style={S.editBtn}>Edit</Link>
+              )}
+              {cfg.deletable && (
+                <DeleteInstrumentButton
+                  row={r}
+                  type={cfg.type}
+                  usage={usage}
+                  usageError={usageError}
+                  onDeleted={() => {
+                    setOpen(o => (o === r.id ? null : o))
+                    qc.invalidateQueries({ queryKey: ['instrument-lib', cfg.table, cfg.type] })
+                    qc.invalidateQueries({ queryKey: ['instrument-usage', cfg.type] })
+                  }}
+                />
+              )}
+              <button style={S.viewToggle} onClick={() => setOpen(isOpen ? null : r.id)}>
+                {isOpen ? 'Hide ▲' : 'View ▼'}
+              </button>
+            </div>
             {isOpen && cfg.preview && (
               <div className="spec-stage" style={{ ...S.stage, margin: '0 0 12px' }}>{cfg.preview(r)}</div>
             )}
@@ -309,6 +409,78 @@ function Library({ cfg }) {
         )
       })}
     </div>
+  )
+}
+
+// ── DeleteInstrumentButton ────────────────────────────────────────────────────
+// Two-step inline confirm (the pattern VasLibraryPage established), gated on
+// the usage counts above.
+//
+// It deliberately does NOT copy one thing from VasLibraryPage: that page fires
+// the `activities` delete without checking its error, so when the activity is
+// referenced by a session template the delete fails silently and the library
+// row is removed anyway — leaving a picker entry pointing at a scale that no
+// longer exists. Here the activities delete is checked and aborts the whole
+// operation, and the instrument row is removed only after it succeeds.
+function DeleteInstrumentButton({ row, type, usage, usageError, onDeleted }) {
+  const [confirming, setConfirming] = useState(false)
+  const [error, setError] = useState(null)
+
+  const responses = usage?.responses?.[row.id] ?? 0
+  const sessions  = usage?.sessions?.[row.slug] ?? 0
+  const loading   = !usage && !usageError
+
+  // Without the usage counts there is no way to tell a safe delete from one
+  // that strands a live session step, so the button stays withheld rather
+  // than guessing.
+  if (usageError) return (
+    <span style={S.lockedMsg} title="Could not check where this instrument is used.">
+      Usage unknown
+    </span>
+  )
+
+  const del = useMutation({
+    mutationFn: async () => {
+      const { error: actErr } = await supabase
+        .from('activities').delete().eq('category', type).eq('subcategory', row.slug)
+      if (actErr) throw new Error(`its session-builder entry could not be removed (${actErr.message})`)
+
+      const { error: insErr } = await supabase
+        .from('composable_instruments').delete().eq('id', row.id)
+      if (insErr) throw new Error(insErr.message)
+    },
+    onSuccess: () => { setConfirming(false); onDeleted() },
+    onError: (e) => setError(e.message),
+  })
+
+  if (loading) return <span style={S.rowMeta}>…</span>
+
+  if (responses > 0) return (
+    <span style={S.lockedMsg} title="Deleting would destroy collected data.">
+      {responses} response{responses === 1 ? '' : 's'}
+    </span>
+  )
+
+  if (sessions > 0) return (
+    <span style={S.lockedMsg} title="Remove it from those session templates first.">
+      Used in {sessions} session{sessions === 1 ? '' : 's'}
+    </span>
+  )
+
+  if (error) return (
+    <span style={S.deleteErr} title={error}>Could not delete — {error}</span>
+  )
+
+  return confirming ? (
+    <>
+      <span style={S.rowMeta}>Delete?</span>
+      <button style={S.deleteConfirmBtn} onClick={() => del.mutate()} disabled={del.isPending}>
+        {del.isPending ? 'Deleting…' : 'Yes, delete'}
+      </button>
+      <button style={S.smallBtn} onClick={() => setConfirming(false)}>Cancel</button>
+    </>
+  ) : (
+    <button style={S.deleteBtn} onClick={() => setConfirming(true)}>Delete</button>
   )
 }
 
@@ -438,4 +610,37 @@ const S = {
   rowMeta: { fontFamily: SANS, fontSize: 12.5, color: 'var(--tx2)' },
   rowSlug: { fontFamily: MONO, fontSize: 12, color: 'var(--gy)' },
   muted:   { fontFamily: SANS, fontSize: 14, color: 'var(--tx2)', margin: '4px 0 0' },
+
+  // Row actions (edit / delete / preview toggle)
+  rowMain: {
+    display: 'flex', alignItems: 'baseline', gap: 14, flexWrap: 'wrap',
+    flex: '1 1 260px', minWidth: 0, background: 'none', border: 'none',
+    padding: 0, textAlign: 'left', cursor: 'pointer', font: 'inherit',
+  },
+  viewToggle: {
+    fontFamily: SANS, fontSize: 12.5, color: 'var(--tx2)', background: 'none',
+    border: 'none', cursor: 'pointer', padding: '2px 4px', whiteSpace: 'nowrap',
+  },
+  editBtn: {
+    fontFamily: SANS, fontSize: 12.5, fontWeight: 600, color: 'var(--pkd)',
+    background: 'none', border: '1px solid var(--pkbs)', borderRadius: 20,
+    padding: '3px 12px', textDecoration: 'none', whiteSpace: 'nowrap',
+  },
+  deleteBtn: {
+    fontFamily: SANS, fontSize: 12.5, color: 'var(--tx2)', background: 'none',
+    border: '1px solid var(--bd)', borderRadius: 20, padding: '3px 12px',
+    cursor: 'pointer', whiteSpace: 'nowrap',
+  },
+  deleteConfirmBtn: {
+    fontFamily: SANS, fontSize: 12.5, fontWeight: 600, color: '#fff',
+    background: '#c2334d', border: 'none', borderRadius: 20, padding: '4px 12px',
+    cursor: 'pointer', whiteSpace: 'nowrap',
+  },
+  smallBtn: {
+    fontFamily: SANS, fontSize: 12.5, color: 'var(--tx2)', background: 'none',
+    border: '1px solid var(--bd)', borderRadius: 20, padding: '3px 10px',
+    cursor: 'pointer', whiteSpace: 'nowrap',
+  },
+  lockedMsg: { fontFamily: SANS, fontSize: 12.5, color: 'var(--tx3)', whiteSpace: 'nowrap' },
+  deleteErr: { fontFamily: SANS, fontSize: 12.5, color: 'var(--err-tx)', maxWidth: 260 },
 }

@@ -176,7 +176,7 @@ export default function StepDispatcher({ node, enrollment, scheduleId, studyDay 
   // Standalone composable instruments (subcategory = composable_instruments
   // slug). Demo mode renders the real component with zero writes, like
   // questionnaires and VAS.
-  if (['likert_slider', 'multiple_choice', 'open_list', 'hierarchy'].includes(category)) {
+  if (['likert_slider', 'multiple_choice', 'open_list', 'open_text', 'hierarchy'].includes(category)) {
     return (
       <ComposableInstrumentStepWrapper
         subcategory={subcategory}

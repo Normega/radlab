@@ -31,6 +31,7 @@ const NAV_SECTIONS = [
       { to: '/admin/instruments/numeric-slider',  label: 'Numeric Sliders' },
       { to: '/admin/instruments/multiple-choice', label: 'Multiple Choice' },
       { to: '/admin/instruments/open-list',       label: 'Open Text Lists' },
+      { to: '/admin/instruments/open-text',       label: 'Open Text Responses' },
       { to: '/admin/instruments/hierarchy',       label: 'Belief Hierarchies' },
       { to: '/admin/instruments/assessments',     label: 'Assessments' },
     ],
