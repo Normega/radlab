@@ -1,4 +1,4 @@
-# PSY240 deck work — running to-do
+# PSY240 + PSY309 deck work — running to-do
 
 > Working list for the just-in-time lecture-prep strategy (started 2026-09-03). L1 and L2 have
 > had their full pass (content incorporation from 2025 decks + illustrations + evaluation
@@ -75,3 +75,34 @@ For each deck, roughly a week out:
   posting own response).
 - **Syllabus placeholders `[?1]`** (room, Quercus URL, TA names) still open in the draft —
   the L1 deck does not depend on them, but the syllabus must be finalized before Sept 9.
+
+---
+
+# PSY309 section (JIT pass done for L1–L2 on 2026-09-03)
+
+Context: the psy309 decks did NOT suffer the psy240 content cut — current decks match or
+exceed the 2025 PPTs (which were figure-heavy, text-light). The L1/L2 pass added: the
+missing **marking-scheme slide** (L1), collaboration-vs-plagiarism guidance (L1, from 2025),
+PsycINFO search-tips line (L1), the **three causation criteria** (L2, covariance/temporal
+precedence/internal validity — was in 2025, deferred nowhere), animal-research + misconduct
+name-checks in L2 notes, and **Question of the Week lines in every deck** (fill the actual
+question text per week — `TODO(QotW)` comments mark the spots; note psy309's QotW lives on
+the **Quercus discussion board**, not the dashboard wall). Syllabus of record:
+`I:\My Drive\Teaching\Psy309\2026\PSY309H5F_2026_Syllabus.html`.
+
+Remaining per-lecture candidates (run each ~a week out, 2025 dumps regenerate from
+`I:\My Drive\Teaching\Psy309\2025\Lectures\`):
+
+- **L3 (Exploring Measurement):** the 2025 `Psy309_Validity_and_Reliability.pptx` (22 slides)
+  maps to this week — check its figures for anything the current deck lacks; the
+  guess-the-correlation game (guessthecorrelation.com) is a proven engagement beat for the
+  correlation weeks (L3 or L6).
+- **Test-week mini-decks do not exist** (Oct 6 and Nov 17 are deck-less by design — students
+  test then leave; confirm nothing is needed beyond Quercus).
+- **L6 (Describing Data):** 2025's Lecture 5 was thin (21 slides, 554 words) — current deck
+  already exceeds it; illustration candidates only.
+- **L11/L12:** 2025 "Some Extra Fun Stuff" (37 slides) was never mapped into the current
+  course — skim it once for salvage before Nov 24.
+- **Easter egg parity:** psy240's syllabus egg is a fictional character; psy309's is an
+  inspiration picture (closes at L3). Both are deliberately unannounced in the decks —
+  keep it that way.
