@@ -132,6 +132,10 @@ purged once the claim resolves (`purge_claim_sources`).
 `note` set** — current state, not an event log). Claims are created through `claim_gap()`; the
 `gap_claims_guard()` trigger blocks direct writes unless
 `set_config('radlab.claim_flow','1',true)` is set (seeding/reset scripts only).
+**Server-side writes must go through an RPC that sets that flag** — the service key carries no
+person identity, so `current_person_id()` is null and the guard raises *'not your claim'* on a
+plain update. `record_claim_source()` and `record_claim_integration()` are those RPCs; the guard
+lets a change confined to bookkeeping columns through when the flag is set.
 
 ### RPCs a class relies on
 - `contribution_tracking(p_course_id)` — staff-only (checks `is_course_staff`), one JSON row per
