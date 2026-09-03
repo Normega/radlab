@@ -162,12 +162,14 @@ landing path needs adding there (dashboard, per project).
 ## 6. The URLs of a class
 
 Student-facing: `/academic/<code>` (course home — the one front door, unguarded),
-`/class/<slug>` = `/academic/<code>/lounge` (the Lounge), `/academic/<code>/join` (Field Guide
+`/class/<slug>` = `/academic/<code>/lounge` (the Lounge), `/lounge/slides` (deck index — any
+signed-in user; the lecture list under it is RLS-gated to class members, and the deck files in
+`public/<course>/` are world-readable statics either way), `/academic/<code>/join` (Field Guide
 sign-in), `/academic/<code>/wiki`, `/gaps`, `/whats-new`.
 
 Staff (academic-project auth): `/ingest`, `/review`, `/submissions`, `/corrections`, `/roster`,
 `/read`, `/reports`, `/tracking`. Lounge staff (main auth + class_admins): `/lounge/console`,
-`/remote`, `/screen`, `/slides`. Lab-wide: `/academic/admin`.
+`/remote`, `/screen`. Lab-wide: `/academic/admin`.
 
 The course home shows the staff grid to academic staff **or** main-site lab/superadmin, and links
 every surface above — it's the bookmark to give TAs.
