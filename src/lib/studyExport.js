@@ -21,6 +21,7 @@
 //    tables with only "own rows" policies come back empty for a lab member.)
 
 import { supabase } from './supabase'
+import { instrumentColumns } from './instrumentColumns'
 
 const PAGE = 1000
 const IN_CHUNK = 100
@@ -69,6 +70,12 @@ export const EXPORT_TABLES = [
   { table: 'pond_watch_results',       category: 'Games',         label: 'Pond Watch',                 strategy: 'study',    ownerSpace: 'profile',  ownerCol: 'user_id' },
   // Questionnaires
   { table: 'questionnaire_responses',  category: 'Questionnaires', label: 'Questionnaire Responses',   strategy: 'profile',  col: 'user_id' },
+  // Composable instruments (likert_slider / multiple_choice / open_list /
+  // open_text / hierarchy). Registered 2026-09-03 — the table shipped with the
+  // 2026-08-25 integration and was written to from day one, but appeared in no
+  // export registry, so every answer collected by the five standalone
+  // instrument types was unreadable through the Export tab.
+  { table: 'instrument_responses',     category: 'Instruments',   label: 'Instrument Responses',       strategy: 'profile',  col: 'user_id' },
   // Rating scales
   { table: 'vas_responses',            category: 'Rating scales', label: 'VAS Responses',              strategy: 'profile',  col: 'user_id' },
   // Screeners
@@ -163,7 +170,7 @@ function timepointToken(label, dayNumber) {
 }
 
 export async function resolveStudyContext(studyId) {
-  const [enrollments, gameSessions, lilParts, vasScales, schedule, sessions, studyRow, stepRows] = await Promise.all([
+  const [enrollments, gameSessions, lilParts, vasScales, instrumentDefs, schedule, sessions, studyRow, stepRows] = await Promise.all([
     pageAll((f, t) => supabase.from('study_enrollments')
       .select('profile_id, external_id, enrolled_at, consent_date, status, is_test')
       .eq('study_id', studyId).range(f, t)),
@@ -175,6 +182,14 @@ export async function resolveStudyContext(studyId) {
     // Reference lookup so vas_responses (which stores scale_id) can be reported
     // under human-readable slugs in the master. Small table; tolerate absence.
     supabase.from('vas_scales').select('id, slug').then(r => r.data ?? []).catch(() => []),
+    // Instrument definitions, needed for ONE thing the response cannot supply:
+    // a multi-select multiple choice records only the options that were CHOSEN,
+    // so without the option list an unselected option is indistinguishable from
+    // one that was never offered. With it, every option gets an explicit 0/1.
+    // Everything else is read off the response itself. Tolerate absence — the
+    // wide block degrades to selected-only columns rather than failing.
+    supabase.from('composable_instruments').select('slug, type, config')
+      .then(r => r.data ?? []).catch(() => []),
     // The schedule is what turns a rating into a STUDY DAY. Without it the
     // master can only count occurrences, which is what made the old _t<n>
     // columns drift apart (see vasWideByProfile).
@@ -285,6 +300,7 @@ export async function resolveStudyContext(studyId) {
     scheduleById:     new Map(schedule.map(r => [r.id, r])),
     slugTimepoints,
     vasScaleSlugById: new Map(vasScales.map(s => [s.id, s.slug])),
+    instrumentBySlug: new Map((instrumentDefs ?? []).map(i => [i.slug, i])),
   }
 }
 
@@ -645,6 +661,72 @@ function vasWideByProfile(vasRows, scaleSlugById, ctx) {
   return byProfile
 }
 
+// Wide composable-instrument block, keyed by profile_id.
+//
+// Timepoint naming follows the questionnaire block: `instrument_responses`
+// carries `schedule_id` from the day it was created, so the session is a
+// RECORDED fact and the column is named from it (`<slug>_<timepoint>`). A row
+// with no schedule link cannot be placed, so it falls back to an explicitly
+// non-committal `_x<n>` rather than a plausible-looking timepoint.
+//
+// Rows whose `schedule_id` belongs to another study are dropped — the table is
+// fetched by `user_id`, so a participant enrolled twice would otherwise carry
+// the other study's answers into this export.
+//
+// The five response shapes each flatten differently, and the shape is read from
+// the recorded `instrument_type` rather than sniffed from the value:
+//
+//   likert_slider  <slug>_<tp>                    the numeric value
+//   open_text      <slug>_<tp>                    the text as typed
+//   multiple_choice
+//     single       <slug>_<tp>                    chosen option id
+//                  <slug>_<tp>_value              inline text/number entry, if any
+//     multi        <slug>_<tp>_<option>           1/0 per option, from the
+//                                                 definition so unselected is a
+//                                                 real 0 and not a blank
+//                  <slug>_<tp>_selected           "a; b" for a readable summary
+//                  <slug>_<tp>_<option>_value     inline entry, if any
+//   open_list      <slug>_<tp>_<n>_factor         nth entry (index IS recorded —
+//                  <slug>_<tp>_<n>_contribution   the list is ordered)
+//                  <slug>_<tp>_count
+//   hierarchy      <slug>_<tp>_<belief>_changed   1/0, belief ids from the row
+//                  <slug>_<tp>_<belief>_direction signed slider, null if unchanged
+function instrumentWideByProfile(rows, ctx) {
+  const byProfile = {}
+  const occ = {}
+
+  // Time order, so both orderings below are deterministic rather than however
+  // the fetch happened to page. It decides two things: which answer survives
+  // when a participant re-enters the SAME session and answers again (the later
+  // one, which is their final answer for that timepoint — the 10s dedupe
+  // trigger only collapses double-submits, not a genuine return hours later),
+  // and what `_x<n>` counts for rows with no schedule to name.
+  const ordered = [...rows].sort(
+    (a, b) => new Date(a.responded_at ?? 0) - new Date(b.responded_at ?? 0)
+  )
+
+  for (const r of ordered) {
+    const pid = r.user_id
+    if (pid == null) continue
+
+    const sched = r.schedule_id ? ctx?.scheduleById?.get(r.schedule_id) : null
+    if (r.schedule_id && !sched) continue          // belongs to another study
+
+    const slug    = normalizeSlug(r.instrument_slug ?? 'unknown')
+    const session = sched ? ctx?.sessionById?.get(sched.study_session_id) : null
+    const key     = `${pid}::${slug}`
+    const n       = (occ[key] = (occ[key] ?? 0) + 1)
+    const tp      = session ? timepointToken(session.label, session.day_number) : `x${n}`
+    const prefix  = `${slug}_${tp}`
+
+    const out = (byProfile[pid] ??= {})
+    const def = ctx?.instrumentBySlug?.get(r.instrument_slug) ?? null
+    Object.assign(out, instrumentColumns(prefix, r.instrument_type, r.response, def))
+  }
+
+  return byProfile
+}
+
 // First row per participant for single-row participant-level tables.
 function firstRowByProfile(entry, rows, ctx, resultsByTableById) {
   const map = new Map()
@@ -686,6 +768,7 @@ export function buildMasterTable(context, resultsByTable) {
   const scr  = firstRowByProfile(entryOf('screener_results'),     resultsByTable.screener_results ?? [],     context, byId)
   const comp = firstRowByProfile(entryOf('participant_compensation'), resultsByTable.participant_compensation ?? [], context, byId)
   const qWide   = questionnaireWideByProfile(resultsByTable.questionnaire_responses ?? [], context)
+  const instWide = instrumentWideByProfile(resultsByTable.instrument_responses ?? [], context)
   const vasWide = vasWideByProfile(resultsByTable.vas_responses ?? [], context.vasScaleSlugById ?? new Map(), context)
 
   const built = context.enrollments.map(e => {
@@ -705,8 +788,9 @@ export function buildMasterTable(context, resultsByTable) {
     mergeEquityCensus(row,         eq.get(pid))
     mergeJsonResponses(row, 'ldem', ldem.get(pid))
     mergePrefixed(row, 'screener', scr.get(pid))
-    Object.assign(row, qWide[pid]   ?? {})
-    Object.assign(row, vasWide[pid] ?? {})
+    Object.assign(row, qWide[pid]    ?? {})
+    Object.assign(row, instWide[pid] ?? {})
+    Object.assign(row, vasWide[pid]  ?? {})
     mergePrefixed(row, 'comp',     comp.get(pid))
     for (const [table, m] of Object.entries(countByTable)) {
       row[`${table}_n`] = m.get(pid) ?? 0
@@ -755,6 +839,14 @@ function masterColumnRank(col) {
     const itemNum = Number(m[3])
     return [6, 0, m[1], tp * 1000 + (Number.isFinite(itemNum) ? itemNum : 999), 0]
   }
+
+  // Open-list entries: <slug>_<timepoint>_<n>_factor|contribution. The index is
+  // part of the name, so plain alphabetical puts _10_ before _2_ and reads as
+  // though the tenth entry came first. Sort the group numerically, factor
+  // before its own contribution.
+  m = col.match(/^(.+)_(\d+)_(factor|contribution)$/)
+  if (m) return [5, 0, m[1], Number(m[2]) * 2 + (m[3] === 'contribution' ? 1 : 0), 0]
+
   return [5, 0, col, 0, 0]
 }
 
