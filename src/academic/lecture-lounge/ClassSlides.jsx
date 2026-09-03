@@ -69,11 +69,17 @@ export default function ClassSlides() {
   // in it and every lecture looks available. Instead we read the first bytes
   // and look for the deck marker. Range keeps it to ~2KB per lecture where the
   // CDN honours it, and a server that ignores Range just sends more.
+  //
+  // cache: 'no-store' is load-bearing: without it Chrome stored the 206
+  // partial under the DECK's own URL, and the next click on that deck — a
+  // full navigation meeting a partial cache entry — could fail outright with
+  // "can't open page" until a reload or two replaced the entry (Norm,
+  // 2026-09-02). The probe must never write to the HTTP cache.
   useEffect(() => {
     if (!deck || !lectures.length) return
     let cancelled = false
     Promise.all(lectures.map(l =>
-      fetch(`${deck.dir}/${deck.file(l.number)}`, { headers: { Range: 'bytes=0-2047' } })
+      fetch(`${deck.dir}/${deck.file(l.number)}`, { headers: { Range: 'bytes=0-2047' }, cache: 'no-store' })
         .then(r => (r.ok ? r.text() : ''))
         .then(t => (t.includes('id="deck"') ? l.number : null))
         .catch(() => null)
