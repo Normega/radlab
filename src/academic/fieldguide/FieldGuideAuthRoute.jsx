@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, Outlet, useParams } from 'react-router-dom'
 import { getCourseClient } from '../courseClient'
-import { normalizeCourseCode, resolveEnrolledCourse, courseSubPath } from '../courseRoutes'
+import { normalizeCourseCode, resolveEnrolledCourse, courseSubPath, wikiBase, joinPath } from '../courseRoutes'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -229,6 +229,12 @@ function CourseDenied({ code, enrollments }) {
 }
 
 function CourseLogin({ client }) {
+  // Course-scoped confirmation landing when this login gate sits on a course
+  // route (phase 4; both projects' allow-lists confirmed to carry the /**
+  // wildcard, 2026-09-01). Legacy mounts keep the legacy target, whose shim
+  // resolves it.
+  const { courseCode } = useParams()
+  const confirmPath = courseCode ? wikiBase(courseCode) : WIKI_AFTER_CONFIRM
   const [mode, setMode] = useState('signin') // 'signin' | 'signup'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -248,7 +254,7 @@ function CourseLogin({ client }) {
       : await client.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: `${window.location.origin}${WIKI_AFTER_CONFIRM}` },
+          options: { emailRedirectTo: `${window.location.origin}${confirmPath}` },
         })
     setBusy(false)
     if (error) return setNotice(error.message)
@@ -283,7 +289,7 @@ function CourseLogin({ client }) {
           a password. */}
       <p style={{ ...S.sub, marginTop: 14 }}>
         <b>PSY240 student?</b> You don't need a password — get a sign-in link at{' '}
-        <a href="/academic/fieldguide/join" style={{ color: 'var(--pk)', textDecoration: 'none' }}>the join page</a>.
+        <a href={courseCode ? joinPath(courseCode) : '/academic/fieldguide/join'} style={{ color: 'var(--pk)', textDecoration: 'none' }}>the join page</a>.
       </p>
     </Shell>
   )

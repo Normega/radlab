@@ -437,7 +437,11 @@ function ClassAuthCard({ classInfo, slug }) {
     }
     const { error: err } = await supabase.auth.signUp({
       email, password,
-      options: { emailRedirectTo: `${window.location.origin}/class/${slug}` },
+      // Course-scoped landing (phase 4; both projects' redirect allow-lists
+      // confirmed to carry the https://radlab.zone/** wildcard, 2026-09-01).
+      // The old /class/:slug value lives on in already-sent emails, where the
+      // permanent alias route still catches it.
+      options: { emailRedirectTo: `${window.location.origin}${loungePath(slug)}` },
     })
     setBusy(false)
     if (err) { setError(err.message); return }

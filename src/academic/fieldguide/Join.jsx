@@ -34,7 +34,11 @@ export default function Join() {
       const rsp = await fetch('/api/roster-join', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        // courseCode scopes the roster match to this door's course when two
+        // rosters carry the same address; the server still falls back to the
+        // cross-course match, so a student at the "wrong" door gets their own
+        // course rather than a refusal.
+        body: JSON.stringify(code ? { email, courseCode: code.toUpperCase() } : { email }),
       })
       const body = await rsp.json().catch(() => ({}))
       if (rsp.status === 429) setState({ error: body.error })
