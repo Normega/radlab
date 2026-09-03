@@ -21,7 +21,7 @@ import { createClient } from '@supabase/supabase-js'
 
 export const maxDuration = 300
 
-const BATCH_CAP = 60
+const BATCH_CAP = 40
 const INVITE_LIFETIME_CAP = 10 // per row, for the staff-triggered path
 
 // The From address sits on course.radlab.zone, which has no MX, so a reply to
@@ -31,6 +31,8 @@ const INVITE_LIFETIME_CAP = 10 // per row, for the staff-triggered path
 const COURSE_REPLY_TO = { psy240: 'psy240@radlab.zone', psy309: 'psy309@radlab.zone' }
 const replyToFor = (code) =>
   COURSE_REPLY_TO[String(code ?? '').trim().toLowerCase()] ?? 'research@radlab.zone'
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
@@ -148,11 +150,18 @@ export default async function handler(req, res) {
       if (!link) throw new Error('generateLink returned no action_link')
 
       const { subject, text, html } = inviteEmail({ name: row.full_name.split(' ')[0], link, joinUrl, courseCode })
-      const rsp = await fetch('https://api.resend.com/emails', {
+      // Resend allows ~2 requests/sec; a 429 gets one spaced retry, and the
+      // paced loop below keeps the steady rate under the limit. The 2026-09-03
+      // PSY240 bulk run stalled here: after the first fast batch, every send
+      // was refused, no row advanced, and the client re-fetched the same
+      // targets forever.
+      const sendOnce = () => fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: { Authorization: `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ from: fromEmail, reply_to: replyToFor(courseCode), to: row.email, subject, text, html }),
       })
+      let rsp = await sendOnce()
+      if (rsp.status === 429) { await sleep(1500); rsp = await sendOnce() }
       if (!rsp.ok) throw new Error(`Resend ${rsp.status}: ${(await rsp.text()).slice(0, 200)}`)
 
       await service.rpc('roster_mark_invited', { p_id: row.id })
@@ -161,6 +170,7 @@ export default async function handler(req, res) {
     } catch (e) {
       failed.push({ email: row.email, error: e.message })
     }
+    await sleep(550)
   }
 
   return res.status(200).json({ sent: sent.length, failed, remaining })

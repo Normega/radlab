@@ -214,6 +214,13 @@ export default function RosterAdmin() {
         failures = failures.concat(out.failed ?? [])
         setNotice(`${label}: ${total} sent…`)
         if (!body.all || !out.remaining) break
+        // A batch that sent nothing will send nothing next time either
+        // (failed rows stay 'added' and come straight back as targets) —
+        // looping again just hammers the mailer. Stop and say why.
+        if (!out.sent) {
+          failures.push({ email: '(stopped)', error: `no progress — ${out.remaining} still to invite; fix the cause and click again` })
+          break
+        }
       }
     } catch (e) {
       failures.push({ email: '(network)', error: e.message })
