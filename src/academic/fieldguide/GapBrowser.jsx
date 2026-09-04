@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, Navigate, useOutletContext } from 'react-router-dom'
-import { normContext, contextAdds, highlightAsk } from './gapContext'
 import AvatarMenu from './AvatarMenu'
 import { courseFeatures } from '../courseFeatures'
 import { useWikiBase, useCoursePaths } from './wiki/useWikiBase'
@@ -56,7 +55,7 @@ export default function GapBrowser() {
       if (diff === 'green' && r.difficulty !== 'green') return false
       if (diff === 'amber' && r.difficulty !== 'amber') return false
       if (!needle) return true
-      return (r.ask + ' ' + (r.ask_context ?? '') + ' ' + r.slug + ' ' + (r.page_title ?? '')).toLowerCase().includes(needle)
+      return (r.ask + ' ' + r.slug + ' ' + (r.page_title ?? '')).toLowerCase().includes(needle)
     })
     const byLecture = new Map()
     for (const r of filtered) {
@@ -241,12 +240,6 @@ function GapRow({ row: r, expanded, onToggle, courseClient, reload }) {
           </span>
         </div>
         <p style={S.ask}>{r.ask}</p>
-        {contextAdds(r.ask_context, r.ask) && (
-          <p style={S.askContext}>
-            <span style={S.askContextLabel}>In the page:</span>{' '}
-            {highlightAsk(normContext(r.ask_context), r.ask)}
-          </p>
-        )}
       </button>
       {expanded && (
         <GapDetail row={r} courseClient={courseClient} reload={reload} />
@@ -603,8 +596,6 @@ const S = {
   badge: { fontFamily: MONO, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', padding: '2px 8px', borderRadius: 20, flexShrink: 0 },
   pageName: { fontFamily: MONO, fontSize: 14, color: 'var(--pk)', overflowWrap: 'anywhere' },
   capacity: { fontFamily: MONO, fontSize: 12, color: 'var(--tx2)', marginLeft: 'auto', flexShrink: 0 },
-  askContext: { fontSize: 13.5, color: 'var(--tx2)', lineHeight: 1.55, margin: '6px 0 0', paddingLeft: 10, borderLeft: '2px solid var(--bd)' },
-  askContextLabel: { fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--pk)' },
   ask: { fontSize: 14, color: 'var(--tx)', lineHeight: 1.55, margin: '7px 0 0' },
 
   colLabel: { fontFamily: MONO, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx2)', margin: '0 0 6px' },

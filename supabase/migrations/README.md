@@ -689,3 +689,4 @@ with nobody.
 | `20260903_claim_verdict.sql` | radlab-academic; applied 2026-09-03 via MCP `apply_migration`; integration_verdict column + guard/RPC/view updated so the badge reads a value, not prose |
 | `20260903_verdict_severity.sql` | radlab-academic; applied 2026-09-03 via MCP; verdict check gains 'minor' |
 | `20260903_gap_ask_context.sql` | radlab-academic; applied 2026-09-03 via MCP; page_gaps.ask_context backfilled (533/741), gap_board returns it |
+| `20260903_gap_ask_display.sql` | radlab-academic; applied 2026-09-03 via MCP; page_gaps.ask_display + gap_board returns coalesce(ask_display, ask) |
