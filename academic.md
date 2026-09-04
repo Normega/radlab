@@ -161,6 +161,23 @@ All route pages are `lazy()` imports (website.md, *Route code-splitting*); after
 
 ---
 
+### Crossing between the two projects
+
+A student signed in to one half is a stranger to the other, because the halves are different
+Supabase projects. Both directions are bridged rather than asking for a second signup, and both
+rest on the same argument: **holding a session on either side already proves control of the U of T
+mailbox**, which is the standard the other side's verification asks for.
+
+- `api/fieldguide-continue` — Lounge → Field Guide, spending a just-consumed verify token.
+- `api/lounge-continue` — Field Guide → Lounge. Verifies the academic JWT against the academic
+  project, requires an active enrollment, matches an existing main profile by verified U of T
+  address **before** creating anything (so a student who joined months ago under a personal address
+  keeps that account, avatar and participation), stamps `utoronto_verified_at`, joins the class,
+  and returns only a `hashed_token` for the browser to exchange with `verifyOtp`. No access token
+  is ever put in a response body or a URL.
+
+Both fail soft: a broken bridge shows the ordinary signup card, never a locked door.
+
 ## 5. The two auth doors — and the trap between them
 
 Each project sends its own magic links, and each lands on its own routes:
