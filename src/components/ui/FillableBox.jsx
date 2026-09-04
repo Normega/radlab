@@ -7,8 +7,14 @@
  *
  * Deviations from Figma, per repo guardrails (index.css --fs rules):
  *   - input text 16px, not 12px (iOS auto-zoom floor; --fs-body)
- *   - description 12px, not 10px (WCAG floor; --fs-min)
  *   - input min-height 40px, not 32px (≥44px touch target with border, Dev Spec §6.2)
+ *
+ * The description sits at Body/XS (--fs-hint, 10px) as the Figma always
+ * specified. It was held at 12px from 2026-07 to 2026-09-04 on the belief that
+ * WCAG set a 10px floor; it does not (Gerold), and Norm's ruling adopted
+ * Body/XS scoped to exactly this role. The scope is the constraint that
+ * matters: `description` elaborates, it never carries what the participant
+ * needs in order to answer — that belongs in `label`, which is 12px Space Mono.
  */
 export default function FillableBox({ label, description, id, style, inputStyle, ...inputProps }) {
   const inputId = id || (label ? `fb-${label.replace(/\W+/g, '-').toLowerCase()}` : undefined)
@@ -37,6 +43,6 @@ const S = {
   },
   desc: {
     fontFamily: '"DM Sans", system-ui, sans-serif', fontWeight: 400,
-    fontSize: 'var(--fs-min)', lineHeight: 1.5, color: 'var(--gy)',
+    fontSize: 'var(--fs-hint)', lineHeight: 1.5, color: 'var(--gy)',
   },
 }

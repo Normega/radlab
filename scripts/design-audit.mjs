@@ -25,7 +25,10 @@ const ROOT = fileURLToPath(new URL('..', import.meta.url))
 const SRC = join(ROOT, 'src')
 const BASELINE_PATH = join(ROOT, 'design-audit', 'baseline.json')
 
-const TYPE_SCALE = new Set([12, 14, 16, 20, 28, 36])
+// 10 = Body/XS, adopted 2026-09-04 for hint and caption text. The audit can
+// count it but cannot police its SCOPE (never for information needed to answer)
+// — that rule lives in review and in the FillableBox/brand docs.
+const TYPE_SCALE = new Set([10, 12, 14, 16, 20, 28, 36])
 const HERO_PX = 72 // Display/Hero — the one sanctioned off-scale style
 const RADII = new Set([0, 12, 24]) // plus 50%, which the px regexes never match
 const SPACE_SCALE = new Set([0, 4, 8, 16, 24, 32, 40, 48, 64])
@@ -52,7 +55,7 @@ const files = []
 function newCounts() {
   return {
     'font-size: off-scale 13px': 0,
-    'font-size: below 12px floor': 0,
+    'font-size: below 10px floor': 0,
     'font-size: other off-scale': 0,
     'font-size: on scale': 0,
     'radius: off-system': 0,
@@ -95,7 +98,7 @@ for (const file of files) {
       if (px === HERO_PX) continue // sanctioned Display/Hero
       if (TYPE_SCALE.has(px)) hit(scope, rel, 'font-size: on scale')
       else if (px === 13) hit(scope, rel, 'font-size: off-scale 13px')
-      else if (px < 12) hit(scope, rel, 'font-size: below 12px floor')
+      else if (px < 10) hit(scope, rel, 'font-size: below 10px floor')
       else hit(scope, rel, 'font-size: other off-scale')
     }
 
@@ -147,7 +150,7 @@ for (const cat of Object.keys(newCounts())) {
 }
 const onScale = scopes.site['font-size: on scale']
 const totalFs = onScale + scopes.site['font-size: off-scale 13px']
-  + scopes.site['font-size: below 12px floor'] + scopes.site['font-size: other off-scale']
+  + scopes.site['font-size: below 10px floor'] + scopes.site['font-size: other off-scale']
 console.log(`\ntype-scale compliance (site): ${onScale}/${totalFs} = ${Math.round((onScale / totalFs) * 100)}%`)
 
 if (mode === 'report') {

@@ -129,6 +129,7 @@ const TYPE_BLOCKS = [
       { name: 'Body/M',          px: 14, weight: 400, sample: 'example@email.com',               role: 'Values in key–value rows and field content' },
       { name: 'Body/S Emphasis', px: 12, weight: 600, sample: 'Rename',                          role: 'Inline links and checkbox labels' },
       { name: 'Body/S',          px: 12, weight: 400, sample: 'It takes one minute to reset.',   role: 'Helper and description text beneath headings' },
+      { name: 'Body/XS',         px: 10, weight: 400, sample: 'This is what appears on your profile.', role: 'Hint text under a field, captions, fine print — never information needed to answer' },
     ],
   },
   {
@@ -376,13 +377,22 @@ export default function BrandAssets() {
       <section className="lab-section">
         <h2 className="brand-heading">Type styles</h2>
         <p className="brand-section-note">
-          Named styles on the shared scale <strong>12 / 14 / 16 / 20 / 28 / 36 px</strong>,
-          150% line-height, 0% letter-spacing. <strong>12px is a hard floor</strong> (WCAG);
-          nothing participant-facing goes smaller. <code>Display/Hero</code> is the one
-          sanctioned exception to the scale &mdash; one per site. Samples render at true size.
-          Not adopted from the 2026-08 Figma expansion: <code>Heading/3</code> and{' '}
-          <code>Body/XL Emphasis</code> (24px is off-scale) and <code>Body/XS</code> (10px is
-          below the floor).
+          Named styles on the shared scale <strong>10 / 12 / 14 / 16 / 20 / 28 / 36 px</strong>,
+          150% line-height, 0% letter-spacing. <code>Display/Hero</code> is the one sanctioned
+          exception to the scale &mdash; one per site. Samples render at true size.
+          Not adopted from the Figma: <code>Heading/3</code> and <code>Body/XL Emphasis</code>{' '}
+          (24px is off-scale).
+        </p>
+        <p className="brand-section-note">
+          <strong>On the 10px step.</strong> This page asserted for months that
+          &ldquo;12px is a hard floor (WCAG)&rdquo;. That was wrong: WCAG 2.x sets no minimum
+          font size &mdash; it requires resize to 200% (1.4.4) and sufficient contrast (1.4.3),
+          which this palette meets (Gerold, 2026-09-04). <code>Body/XS</code> is therefore
+          adopted, with a scope rule that is now the real constraint:{' '}
+          <strong>10px carries hint text, captions and fine print, never information a
+          participant needs in order to answer.</strong> The requirement belongs in the field
+          label; the hint only elaborates. 12px (<code>--fs-min</code>) remains the floor for
+          everything else.
         </p>
 
         {TYPE_BLOCKS.map((block) => (
@@ -607,6 +617,16 @@ export default function BrandAssets() {
           (off the six-step scale), and opaque border aliases (borders stay translucent).
           Precedence is unchanged: where Figma and the written spec disagree, the written
           spec wins.
+        </Gap>
+
+        <Gap title="The 10px floor we invented — corrected 2026-09-04">
+          Four places in this codebase asserted that 12px was a <em>WCAG</em> minimum
+          (this page, <code>index.css</code>, <code>FillableBox</code>, website.md §9). No such
+          rule exists in WCAG 2.x. It was a house convention wearing a standard&rsquo;s name,
+          which made it un-arguable for months &mdash; nobody questions an accessibility
+          standard. <code>Body/XS</code> is now adopted for hint and caption text, the false
+          attribution is removed everywhere, and the real rule is stated as what it is: our
+          choice, scoped to roles where the text elaborates rather than instructs.
         </Gap>
 
         <Gap title="Type scale — 85% compliant and ratcheted">
