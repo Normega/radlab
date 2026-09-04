@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { Link, Outlet, useParams } from 'react-router-dom'
 import { getCourseClient } from '../courseClient'
 import { normalizeCourseCode, resolveEnrolledCourse, courseSubPath, wikiBase, joinPath } from '../courseRoutes'
+import Join from './Join'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -26,7 +27,7 @@ const WIKI_AFTER_CONFIRM = '/academic/fieldguide/wiki'
 // Role is a coarse gate only. What a reader actually sees is decided by RLS:
 // `members read published pages` vs `staff read all pages`, so the reader UI
 // is written once and the database draws the line.
-export default function FieldGuideAuthRoute({ roles, deniedTitle, deniedBody, publicAccess = false }) {
+export default function FieldGuideAuthRoute({ roles, deniedTitle, deniedBody, publicAccess = false, signedOutDoor = 'password' }) {
   // Course-scoped mounts (/academic/:courseCode/…) carry the course in the
   // URL; legacy /academic/fieldguide/* mounts don't (their shims resolve it).
   const { courseCode: courseCodeParam } = useParams()
@@ -176,6 +177,13 @@ export default function FieldGuideAuthRoute({ roles, deniedTitle, deniedBody, pu
         })
       }
     }
+    // Students have no password: their account is created by clicking an
+    // emailed link and they never set one. Sending them to the email+password
+    // form is a dead end — they type their address into a field that cannot
+    // help them, which is exactly what happened to the first student to try
+    // it (2026-09-04). Reader surfaces therefore open the door that emails a
+    // link; staff surfaces keep the password form.
+    if (signedOutDoor === 'join' && courseCode) return <Join />
     return <CourseLogin client={client} />
   }
   if (enrollments === undefined) {
@@ -298,6 +306,14 @@ function CourseLogin({ client }) {
       <p style={S.sub}>
         This is a separate account from the main radlab site — course members only.
       </p>
+      {/* Staff sign in with a password; students never set one. Without this
+          the page is a trap for anyone who arrived here by accident. */}
+      {courseCode && (
+        <p style={{ ...S.sub, marginTop: 10 }}>
+          <b>Student?</b> You don't need a password —{' '}
+          <Link to={joinPath(courseCode)} style={S.inlineLink}>get a sign-in link by email</Link>.
+        </p>
+      )}
       <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 16 }}>
         <input style={S.input} type="email" placeholder="Email" value={email}
           onChange={e => setEmail(e.target.value)} required />

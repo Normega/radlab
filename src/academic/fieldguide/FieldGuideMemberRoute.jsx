@@ -14,6 +14,7 @@ export default function FieldGuideMemberRoute() {
     <FieldGuideAuthRoute
       roles={MEMBER_ROLES}
       publicAccess
+      signedOutDoor="join"
       deniedTitle="Not enrolled"
       deniedBody={email =>
         `This account (${email}) has no active enrollment in a course that uses the Field Guide. ` +
