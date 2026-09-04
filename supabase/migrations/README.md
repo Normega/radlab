@@ -688,3 +688,4 @@ with nobody.
 | `20260903_claim_draft_in_review.sql` | radlab-academic; applied 2026-09-03 via MCP `apply_migration`; integration_draft column, guard + record_claim_integration updated, submission_review_queue exposes the comparison |
 | `20260903_claim_verdict.sql` | radlab-academic; applied 2026-09-03 via MCP `apply_migration`; integration_verdict column + guard/RPC/view updated so the badge reads a value, not prose |
 | `20260903_verdict_severity.sql` | radlab-academic; applied 2026-09-03 via MCP; verdict check gains 'minor' |
+| `20260903_gap_ask_context.sql` | radlab-academic; applied 2026-09-03 via MCP; page_gaps.ask_context backfilled (533/741), gap_board returns it |

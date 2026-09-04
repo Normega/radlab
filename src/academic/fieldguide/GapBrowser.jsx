@@ -23,6 +23,30 @@ const DIFF = {
 }
 const SEV = { block: '#c0392b', warn: '#b8860b' }
 
+// The ask is frequently a FRAGMENT: the detector splits a "Needs research:"
+// sentence on its semicolons, so tail pieces arrive as orphans like "and
+// Canadian diagnostic-delay data." — real text from the page, and meaningless
+// alone. ask_context is the whole line it came from, so the student reads the
+// fragment where it sits. Neither is authored; both are the page's own words.
+const normContext = (c) =>
+  String(c ?? '').replace(/^>\s*/gm, '').replace(/\*\*/g, '').replace(/\s+/g, ' ').trim()
+
+// The student's own piece, emphasised inside that line.
+function highlightAsk(context, ask) {
+  const needle = String(ask ?? '').trim().replace(/\s+/g, ' ')
+  const at = context.indexOf(needle)
+  if (at < 0 || !needle) return context
+  return (
+    <>
+      {context.slice(0, at)}
+      <mark style={{ background: 'rgba(214,51,132,.16)', color: 'inherit', padding: '0 2px', borderRadius: 3 }}>
+        {context.slice(at, at + needle.length)}
+      </mark>
+      {context.slice(at + needle.length)}
+    </>
+  )
+}
+
 const fmtDate = d => d
   ? new Date(`${d}T12:00:00`).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })
   : ''
@@ -55,7 +79,7 @@ export default function GapBrowser() {
       if (diff === 'green' && r.difficulty !== 'green') return false
       if (diff === 'amber' && r.difficulty !== 'amber') return false
       if (!needle) return true
-      return (r.ask + ' ' + r.slug + ' ' + (r.page_title ?? '')).toLowerCase().includes(needle)
+      return (r.ask + ' ' + (r.ask_context ?? '') + ' ' + r.slug + ' ' + (r.page_title ?? '')).toLowerCase().includes(needle)
     })
     const byLecture = new Map()
     for (const r of filtered) {
@@ -240,6 +264,12 @@ function GapRow({ row: r, expanded, onToggle, courseClient, reload }) {
           </span>
         </div>
         <p style={S.ask}>{r.ask}</p>
+        {r.ask_context && normContext(r.ask_context) !== r.ask.trim() && (
+          <p style={S.askContext}>
+            <span style={S.askContextLabel}>In the page:</span>{' '}
+            {highlightAsk(normContext(r.ask_context), r.ask)}
+          </p>
+        )}
       </button>
       {expanded && (
         <GapDetail row={r} courseClient={courseClient} reload={reload} />
@@ -596,6 +626,8 @@ const S = {
   badge: { fontFamily: MONO, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', padding: '2px 8px', borderRadius: 20, flexShrink: 0 },
   pageName: { fontFamily: MONO, fontSize: 14, color: 'var(--pk)', overflowWrap: 'anywhere' },
   capacity: { fontFamily: MONO, fontSize: 12, color: 'var(--tx2)', marginLeft: 'auto', flexShrink: 0 },
+  askContext: { fontSize: 13.5, color: 'var(--tx2)', lineHeight: 1.55, margin: '6px 0 0', paddingLeft: 10, borderLeft: '2px solid var(--bd)' },
+  askContextLabel: { fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--pk)' },
   ask: { fontSize: 14, color: 'var(--tx)', lineHeight: 1.55, margin: '7px 0 0' },
 
   colLabel: { fontFamily: MONO, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx2)', margin: '0 0 6px' },
