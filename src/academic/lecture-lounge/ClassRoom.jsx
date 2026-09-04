@@ -535,17 +535,32 @@ function ClassAuthCard({ classInfo, slug }) {
       // on success: stay busy — the session change re-renders the whole page
       return
     }
-    const { error: err } = await supabase.auth.signUp({
-      email, password,
-      // Course-scoped landing (phase 4; both projects' redirect allow-lists
-      // confirmed to carry the https://radlab.zone/** wildcard, 2026-09-01).
-      // The old /class/:slug value lives on in already-sent emails, where the
-      // permanent alias route still catches it.
-      options: { emailRedirectTo: `${window.location.origin}${loungePath(slug)}` },
-    })
-    setBusy(false)
-    if (err) { setError(err.message); return }
-    setConfirmSent(true)
+    // NOT supabase.auth.signUp: that flow's confirmation email links straight
+    // to /auth/v1/verify, which consumes the token on a plain GET — exactly
+    // what the university's mail scanner performs on every link it delivers.
+    // The endpoint mints the same confirmation token but mails a link to our
+    // own /class/confirm page, which is inert until a human presses it.
+    try {
+      const rsp = await fetch('/api/lounge-signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, slug }),
+      })
+      const out = await rsp.json().catch(() => ({}))
+      setBusy(false)
+      if (out.exists) {
+        // A confirmed account already lives at this address — signup must
+        // never become a password reset, so send them to the sign-in mode.
+        setMode('signin')
+        setError('This address already has an account — sign in with your password.')
+        return
+      }
+      if (!rsp.ok || !out.ok) { setError(out.error ?? 'Could not create the account — please try again.'); return }
+      setConfirmSent(true)
+    } catch {
+      setBusy(false)
+      setError('Could not reach the server — please try again.')
+    }
   }
 
   if (confirmSent) {
@@ -554,8 +569,13 @@ function ClassAuthCard({ classInfo, slug }) {
         <p style={S.eyebrow}>Lecture Lounge</p>
         <h1 style={S.title}>Check your email</h1>
         <p style={S.sub}>
-          We sent a confirmation link to <strong>{email}</strong>. Clicking it brings you
-          straight back here, signed in and ready to join {classInfo.name}.
+          We sent a confirmation link to <strong>{email}</strong>. Tap it, press the
+          button on the page it opens, and you'll land back here signed in and ready
+          to join {classInfo.name}.
+        </p>
+        <p style={{ ...S.sub, fontSize: 13 }}>
+          If the page says the link was already used, your account is confirmed —
+          just sign in here with your password.
         </p>
       </div>
     )

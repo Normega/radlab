@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { loungePath } from '../courseRoutes'
@@ -18,14 +18,23 @@ export default function ClassVerifyEmail() {
   const [result, setResult] = useState(() => (!token ? { error: 'not_found' } : undefined)) // undefined=loading
   // { url } = show the Continue button; 'sent' | 'already' = email fallback copy; null = nothing
   const [fieldGuide, setFieldGuide] = useState(null)
+  // 'ready' until the human presses the button. This page used to verify in
+  // an effect on mount — which meant any mail scanner that rendered the page
+  // consumed the single-use token on the student's behalf. Their own click
+  // then landed on a failure screen (for an address that WAS verified), and
+  // the side effects below fired unasked. Same rule as every other emailed
+  // link on the platform now: the human's press is what consumes the token.
+  // Never move this back into an effect.
+  const [started, setStarted] = useState(false)
 
-  useEffect(() => {
-    if (!token) return
-    // Verification now runs through /api/fieldguide-continue, which consumes
+  const verify = async () => {
+    if (!token || started) return
+    setStarted(true)
+    // Verification runs through /api/fieldguide-continue, which consumes
     // the same single-use token server-side and — when the verified address
     // matches the Field Guide roster — returns a ready magic link, so the
     // success screen can offer "Continue to the Field Guide" with no second
-    // email. The token click is the proof of address control either way.
+    // email. The token press is the proof of address control either way.
     ;(async () => {
       try {
         const r = await fetch('/api/fieldguide-continue', {
@@ -55,13 +64,23 @@ export default function ClassVerifyEmail() {
         }
       }
     })()
-  }, [token])
+  }
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={S.card}>
         <p style={S.eyebrow}>Lecture Lounge</p>
-        {result === undefined && <p style={S.sub}>Verifying…</p>}
+        {result === undefined && !started && (
+          <>
+            <h1 style={S.title}>Verify your email</h1>
+            <p style={S.sub}>
+              One press and it's done — this extra step is what keeps automated
+              mail scanners from using your link before you do.
+            </p>
+            <button style={S.verifyBtn} onClick={verify}>Verify my email</button>
+          </>
+        )}
+        {result === undefined && started && <p style={S.sub}>Verifying…</p>}
         {result?.ok && (
           <>
             <h1 style={S.title}>Email verified</h1>
@@ -99,8 +118,14 @@ export default function ClassVerifyEmail() {
         )}
         {result?.error === 'not_found' && (
           <>
-            <h1 style={S.title}>Invalid link</h1>
-            <p style={S.sub}>This verification link isn't valid. Double-check you copied the whole URL.</p>
+            <h1 style={S.title}>This link isn't valid any more.</h1>
+            <p style={S.sub}>
+              If you (or your mail app) pressed it before, your address is most
+              likely <strong>already verified</strong> — check your class page.
+              Otherwise, double-check you copied the whole URL, or send a fresh
+              link from the class page.
+            </p>
+            {slug && <Link to={loungePath(slug)} style={S.link}>Back to class →</Link>}
           </>
         )}
       </div>
@@ -114,6 +139,10 @@ const S = {
   title: { fontFamily: SERIF, fontSize: 26, color: 'var(--tx)', marginBottom: 8 },
   sub: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.5 },
   link: { display: 'inline-block', marginTop: 16, fontSize: 14, color: 'var(--pk)', fontWeight: 600, textDecoration: 'none' },
+  verifyBtn: {
+    width: '100%', marginTop: 14, padding: '13px 18px', borderRadius: 24, border: 'none',
+    background: 'var(--pk)', color: '#fff', fontSize: 15, fontWeight: 600, cursor: 'pointer',
+  },
   fgButton: {
     display: 'inline-block', marginTop: 12, padding: '11px 24px', borderRadius: 22,
     background: 'var(--pk)', color: '#fff', fontSize: 14, fontWeight: 600, textDecoration: 'none',

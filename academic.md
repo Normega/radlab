@@ -207,6 +207,15 @@ buttons. **Any new email carrying a sign-in link must assume the link is opened 
 first: the human's click has to be what consumes it.** Never auto-verify in an effect on that
 page — it reintroduces the whole bug.
 
+The inert-until-pressed doors that implement the rule: `/academic/:course/signin` (Field Guide
+sign-in, `SignInConfirm`), `/class/confirm` (Lounge signup confirmation, `ClassConfirmSignup` +
+`api/lounge-signup`), and `/class/verify` (U of T address verification, `ClassVerifyEmail` —
+button-gated since 2026-09-04; it used to verify in a mount effect, so JS-executing scanners
+verified on the student's behalf and fired its roster-join side effect unasked). Never route a
+student email through `supabase.auth.signUp`, `resetPasswordForEmail`, or
+`properties.action_link` — all of those produce links to `/auth/v1/verify`, which spends the
+token on a plain GET.
+
 The main client decides whether to consume an auth code by route
 (`src/lib/authDetectRoutes.js`). **A staff/wiki segment missing from `FIELD_GUIDE_SEGMENTS` in
 `courseRoutes.js` means the main client eats academic auth codes on that page** — the failure is

@@ -95,6 +95,7 @@ const Talks     = lazy(() => import('./pages/talks/Talks'))
 const ClassRoom        = lazy(() => import('./academic/lecture-lounge/ClassRoom'))
 const WeeklyWall       = lazy(() => import('./academic/lecture-lounge/WeeklyWall'))
 const ClassVerifyEmail = lazy(() => import('./academic/lecture-lounge/ClassVerifyEmail'))
+const ClassConfirmSignup = lazy(() => import('./academic/lecture-lounge/ClassConfirmSignup'))
 const ClassConsole     = lazy(() => import('./academic/lecture-lounge/ClassConsole'))
 const ClassRemote      = lazy(() => import('./academic/lecture-lounge/ClassRemote'))
 const ClassScreen      = lazy(() => import('./academic/lecture-lounge/ClassScreen'))
@@ -677,6 +678,9 @@ export default function App() {
 
           <Route element={<ErrorBoundary label="Academic"><Outlet /></ErrorBoundary>}>
             <Route path="/class/verify" element={<ClassVerifyEmail />} />
+            {/* Signup-confirmation door (api/lounge-signup emails point here).
+                Inert until pressed — see ClassConfirmSignup for why. */}
+            <Route path="/class/confirm" element={<ClassConfirmSignup />} />
             {/* LIVE ALIAS, FOREVER — not a redirect. /class/:slug is printed
                 on projector QR codes, embedded as PNG QRs in slide decks, and
                 is the emailRedirectTo of every sent signup confirmation. An
