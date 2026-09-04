@@ -85,6 +85,27 @@ export default function SubmissionsQueue() {
   // never on the page — and it reports back whether the student's summary
   // actually matches the paper, which is a misreading check a TA would
   // otherwise have to do by reading the paper themselves.
+  // The review-time comparison: read the paper, judge the student's summary
+  // against it, and keep the drafted section. Nothing is filed and nothing is
+  // decided — this exists so the TA sees the comparison BEFORE choosing.
+  const compare = useCallback(async (claimId) => {
+    setBusyId(claimId); setNotice(null)
+    try {
+      const rsp = await fetch('/api/integrate-claim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ claim_id: claimId, file: false }),
+      })
+      const out = await rsp.json().catch(() => ({}))
+      setBusyId(null)
+      if (!rsp.ok) return setNotice(out.error ?? `Comparison failed (${rsp.status})`)
+      if (!out.ok) return setNotice(out.note ?? 'The source does not cover this gap.')
+      load()
+    } catch (err) {
+      setBusyId(null); setNotice(err.message)
+    }
+  }, [session, load])
+
   const draft = useCallback(async (claimId) => {
     try {
       const rsp = await fetch('/api/integrate-claim', {
@@ -241,6 +262,8 @@ export default function SubmissionsQueue() {
 
             {g.items.map(row => {
               const open = openId === row.claim_id
+              const verdict = (row.integration_note ?? '').toLowerCase()
+              const diverges = row.integration_status === 'reviewed' && /diverge/.test(verdict)
               return (
                 <article key={row.claim_id} style={S.card}>
                   <button style={S.cardHead} onClick={() => setOpenId(open ? null : row.claim_id)}>
@@ -295,6 +318,53 @@ export default function SubmissionsQueue() {
                           <p style={S.colLabel}>What this source cannot tell us</p>
                           <p style={S.pre}>{row.limitation || '—'}</p>
                         </div>
+                      </div>
+
+                      {/* Against the source. The one question precheck cannot answer,
+                          answered BEFORE the decision rather than after it: does the
+                          summary say what the paper says? The drafted section is what
+                          would enter the Guide on accept, shown here so it is judged,
+                          not discovered afterwards. */}
+                      <div style={S.compareBox}>
+                        <div style={S.compareHead}>
+                          <p style={{ ...S.colLabel, margin: 0 }}>Against the source</p>
+                          {row.integration_status === 'reviewed' && (
+                            <span style={{ ...S.verdict,
+                              color: diverges ? SEV.block : '#2e7d32',
+                              borderColor: diverges ? SEV.block : '#2e7d32' }}>
+                              {diverges ? 'summary diverges' : 'summary matches'}
+                            </span>
+                          )}
+                          <button style={S.compareBtn}
+                                  disabled={busyId === row.claim_id || !row.has_source}
+                                  onClick={() => compare(row.claim_id)}>
+                            {busyId === row.claim_id ? 'reading the paper…'
+                              : row.integration_status === 'reviewed' ? 'Check again' : 'Compare with source'}
+                          </button>
+                        </div>
+
+                        {!row.has_source && (
+                          <p style={{ ...S.sub, fontSize: 13.5, margin: '8px 0 0' }}>
+                            No source text was captured for this submission, so it cannot be
+                            checked automatically — read the cited paper yourself.
+                          </p>
+                        )}
+
+                        {row.integration_note && (
+                          <p style={{ ...S.sub, fontSize: 14, margin: '10px 0 0',
+                                      color: diverges ? SEV.block : 'var(--tx)' }}>
+                            {row.integration_note}
+                          </p>
+                        )}
+
+                        {row.integration_draft && (
+                          <>
+                            <p style={{ ...S.colLabel, marginTop: 12 }}>
+                              Drafted from the paper — this is what accepting files for review
+                            </p>
+                            <p style={S.pre}>{row.integration_draft}</p>
+                          </>
+                        )}
                       </div>
 
                       <p style={{ ...S.metaLine, marginTop: 10 }}>
@@ -355,6 +425,16 @@ const S = {
   chev: { color: 'var(--tx2)', fontSize: 14 },
   badge: { fontFamily: MONO, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', padding: '2px 6px', borderRadius: 20 },
 
+  compareBox: { marginTop: 14, padding: '12px 14px', borderRadius: 10, background: 'var(--bg)', border: '1px solid var(--bd)' },
+  compareHead: { display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' },
+  compareBtn: {
+    marginLeft: 'auto', fontFamily: MONO, fontSize: 12, padding: '6px 13px', borderRadius: 16,
+    border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx)', cursor: 'pointer',
+  },
+  verdict: {
+    fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase',
+    padding: '3px 9px', borderRadius: 12, border: '1px solid',
+  },
   finding: { border: '1px solid', borderRadius: 8, padding: '7px 10px', marginBottom: 6, color: 'var(--tx)' },
 
   split: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 12 },
