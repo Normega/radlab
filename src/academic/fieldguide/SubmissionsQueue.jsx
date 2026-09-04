@@ -34,6 +34,13 @@ const ROUTES = [
 
 const SEV = { block: '#c0392b', warn: '#b8860b' }
 
+// An unrecorded verdict reads as unknown, never as agreement.
+const VERDICT = {
+  agrees:   { label: 'summary matches',  colour: '#2e7d32' },
+  diverges: { label: 'summary diverges', colour: '#c0392b' },
+  unclear:  { label: 'unclear',          colour: '#b8860b' },
+}
+
 export default function SubmissionsQueue() {
   // No staffEnrollments here on purpose: this queue spans courses and takes
   // each decision's course from its own row. See notify() below.
@@ -262,8 +269,11 @@ export default function SubmissionsQueue() {
 
             {g.items.map(row => {
               const open = openId === row.claim_id
-              const verdict = (row.integration_note ?? '').toLowerCase()
-              const diverges = row.integration_status === 'reviewed' && /diverge/.test(verdict)
+              // Read the stored verdict. This used to regex the note for the word
+              // "diverge", so a note that correctly described three contradictions
+              // without using that word rendered as "summary matches" — a check
+              // that fails towards reassurance is worse than no check.
+              const verdict = row.integration_verdict ?? null
               return (
                 <article key={row.claim_id} style={S.card}>
                   <button style={S.cardHead} onClick={() => setOpenId(open ? null : row.claim_id)}>
@@ -330,9 +340,9 @@ export default function SubmissionsQueue() {
                           <p style={{ ...S.colLabel, margin: 0 }}>Against the source</p>
                           {row.integration_status === 'reviewed' && (
                             <span style={{ ...S.verdict,
-                              color: diverges ? SEV.block : '#2e7d32',
-                              borderColor: diverges ? SEV.block : '#2e7d32' }}>
-                              {diverges ? 'summary diverges' : 'summary matches'}
+                              color: VERDICT[verdict]?.colour ?? 'var(--tx2)',
+                              borderColor: VERDICT[verdict]?.colour ?? 'var(--bd)' }}>
+                              {VERDICT[verdict]?.label ?? 'verdict not recorded'}
                             </span>
                           )}
                           <button style={S.compareBtn}
@@ -352,7 +362,7 @@ export default function SubmissionsQueue() {
 
                         {row.integration_note && (
                           <p style={{ ...S.sub, fontSize: 14, margin: '10px 0 0',
-                                      color: diverges ? SEV.block : 'var(--tx)' }}>
+                                      color: verdict === 'diverges' ? SEV.block : 'var(--tx)' }}>
                             {row.integration_note}
                           </p>
                         )}

@@ -73,8 +73,28 @@ House style:
   list. This is one section of a page, not a whole page.
 
 You are given a source paper, the gap the section must fill, and a student's
-summary of that paper. Draft the section from THE PAPER. The student's summary
-is not source material — it is a claim about the paper that you must judge.
+summary of that paper. You have two jobs, and the second matters as much as the
+first.
+
+1. Draft the section from THE PAPER. The student's summary is not source
+   material — it is a claim about the paper.
+
+2. Judge that claim. Set student_reading to "diverges" if the summary contains
+   ANY of these, however well written it is:
+     - a statement the paper contradicts (including reversals: saying more
+       where the paper says fewer, or increased where it says reduced);
+     - a claim the paper does not make, or attributes to others while
+       disputing;
+     - the wrong study type — e.g. crediting a review with experiments it only
+       cites, or critiquing a review for its "sample size" or missing control
+       group;
+     - a causal claim where the paper reports association, or states the chain
+       is untested;
+     - a treatment or mechanism conclusion the paper explicitly declines to
+       draw.
+   One such error is enough. "agrees" means the summary is faithful, not merely
+   plausible or fluent; use "unclear" only when the paper genuinely does not
+   settle the point. Fluent writing is not evidence of accurate reading.
 
 Never state anything the paper does not support. If the paper does not actually
 address the gap, say so in "note" and return an empty draft rather than
@@ -261,6 +281,7 @@ export default async function handler(req, res) {
       await service.rpc('record_claim_integration', {
         p_claim_id: claim_id, p_status: 'reviewed',
         p_note: parsed.note ?? null, p_draft: parsed.draft.trim(),
+        p_verdict: verdict,
       })
       return res.status(200).json({
         ok: true, filed: false, divergence: verdict,
@@ -276,6 +297,7 @@ export default async function handler(req, res) {
     await service.rpc('record_claim_integration', {
       p_claim_id: claim_id, p_status: 'drafted',
       p_note: parsed.note ?? null, p_version_id: version.id, p_draft: parsed.draft.trim(),
+      p_verdict: verdict,
     })
 
     return res.status(200).json({
