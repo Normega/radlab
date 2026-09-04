@@ -119,7 +119,7 @@ back to another course).
 (`/api/claim-source`: open-access full text resolved from the DOI — every OA copy is tried, not
 just the publisher's, because publishers commonly answer a bot with a challenge page — or an
 uploaded PDF; only extracted text is cached, on `gap_claims.source_fulltext`) → `submit_claim()`
-→ precheck → **staff press “Compare with source” in `/submissions`** (`/api/integrate-claim` with `file:false`: reads the paper, judges the student’s summary against it, stores the verdict and the drafted section on the claim — shown in the queue beside the student’s words, so the comparison informs the decision instead of following it) → staff accept → **the same endpoint files that draft** (Sonnet; the student's summary is judged, not copied, and divergence is
+→ precheck → **the source comparison runs on submission** (and can be re-run from `/submissions`) (`/api/integrate-claim` with `file:false`: reads the paper, judges the student’s summary against it, stores the verdict and the drafted section on the claim — shown in the queue beside the student’s words, so the comparison informs the decision instead of following it) → staff accept → **the same endpoint files that draft** (Sonnet; the student's summary is judged, not copied, and divergence is
 reported back on the claim) → the draft lands as a `pending` proposal in the same review queue
 ingest uses → `review_proposal()` publishes it. **Nothing auto-publishes.** Cached source text is
 purged once the claim resolves (`purge_claim_sources`).

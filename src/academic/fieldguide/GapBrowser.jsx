@@ -455,7 +455,19 @@ function ClaimForm({ claim, row: r, courseClient, reload, onRelease }) {
     if (error) return setMsg(error.message)
     setFindings(data.findings ?? [])
     if (!data.ok) return setMsg(data.message)
-    setMsg(null)
+
+    // Check the submission against the source it cites, now, so it arrives in
+    // the marking queue already compared instead of waiting on a reviewer to
+    // press a button. Deliberately not awaited before the student is released:
+    // their work is submitted either way, and a failed check must never read
+    // as a failed submission. Anything missed here is still checkable by hand
+    // from the queue.
+    setMsg('Submitted. Checking it against your source\u2026')
+    fetch('/api/integrate-claim', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${(await courseClient.auth.getSession()).data.session?.access_token}` },
+      body: JSON.stringify({ claim_id: claim.id, file: false }),
+    }).catch(() => {})
     reload()
   }
 

@@ -190,7 +190,7 @@ export default async function handler(req, res) {
 
   const { data: claim, error: claimErr } = await service
     .from('gap_claims')
-    .select('id, status, submitted_text, limitation, source_citation, source_fulltext, source_kind, gap_id, integration_draft, integration_note, integration_status')
+    .select('id, status, person_id, submitted_text, limitation, source_citation, source_fulltext, source_kind, gap_id, integration_draft, integration_note, integration_status')
     .eq('id', claim_id).maybeSingle()
   if (claimErr) return res.status(500).json({ error: claimErr.message })
   if (!claim) return res.status(404).json({ error: 'No such claim' })
@@ -202,7 +202,13 @@ export default async function handler(req, res) {
   const { data: staff } = await userClient
     .from('enrollments').select('role, status')
     .eq('course_id', gap.course_id).eq('status', 'active')
-  if (!staff?.some(e => e.role === 'ta' || e.role === 'instructor')) {
+  const isStaff = !!staff?.some(e => e.role === 'ta' || e.role === 'instructor')
+  // The comparison runs the moment a student submits, so their own submission
+  // reaches the queue already checked. That means the OWNER can trigger the
+  // review pass — for their own claim, review-only, and only while it is
+  // actually under review. Filing into the Guide stays staff-only.
+  const isOwner = claim.person_id === personId
+  if (!isStaff && !(isOwner && !file && claim.status === 'submitted')) {
     return res.status(403).json({ error: 'Staff of this course only' })
   }
 

@@ -24,6 +24,12 @@ const SERIF = '"DM Serif Display", Georgia, serif'
 //   light check — a green gap that passed. Confirm the number matches the source.
 //   full read   — everything else: does the source actually say this?
 // That last question is the only one precheck cannot answer, and it is the job.
+// Submissions not yet compared with their source are held in their own group
+// ABOVE the triage routes rather than hidden: a submission that vanishes from
+// the queue because a check failed is far worse than one that shows up
+// unchecked.
+const UNCHECKED = 'awaiting source check'
+
 const ROUTES = [
   ['BLOCKED',     'Blocked by precheck',  'No reading needed — send back with the findings.', '#c0392b'],
   ['warnings',    'Warnings',             'Read, focusing on what precheck flagged.',         '#b8860b'],
@@ -212,9 +218,24 @@ export default function SubmissionsQueue() {
     loadUntold()
   }
 
-  const grouped = ROUTES.map(([key, label, hint, colour]) => ({
-    key, label, hint, colour, items: (rows ?? []).filter(r => r.route === key),
-  })).filter(g => g.items.length > 0)
+  // Not yet compared with its source: shown FIRST and separately, so a
+  // reviewer never reads a submission believing it was checked when it was
+  // not. Held out of the triage routes rather than hidden — a submission that
+  // disappears because a check failed is worse than one that arrives
+  // unchecked.
+  const unchecked = (rows ?? []).filter(r => r.integration_status !== 'reviewed' && r.has_source)
+  const uncheckedIds = new Set(unchecked.map(r => r.claim_id))
+  const grouped = [
+    ...(unchecked.length ? [{
+      key: UNCHECKED, colour: 'var(--tx2)', label: 'Awaiting source check',
+      hint: 'Compare with the cited source before deciding — it usually runs on submission.',
+      items: unchecked,
+    }] : []),
+    ...ROUTES.map(([key, label, hint, colour]) => ({
+      key, label, hint, colour,
+      items: (rows ?? []).filter(r => r.route === key && !uncheckedIds.has(r.claim_id)),
+    })).filter(g => g.items.length > 0),
+  ]
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '32px 20px 80px' }}>
