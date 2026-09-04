@@ -37,6 +37,7 @@ const SEV = { block: '#c0392b', warn: '#b8860b' }
 // An unrecorded verdict reads as unknown, never as agreement.
 const VERDICT = {
   agrees:   { label: 'summary matches',  colour: '#2e7d32' },
+  minor:    { label: 'minor issues',     colour: '#b8860b' },
   diverges: { label: 'summary diverges', colour: '#c0392b' },
   unclear:  { label: 'unclear',          colour: '#b8860b' },
 }
