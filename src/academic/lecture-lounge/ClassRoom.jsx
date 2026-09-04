@@ -353,6 +353,7 @@ export default function ClassRoom({ session }) {
       <div style={S.wrap}>
         {!session ? (
           <>
+            <FieldGuideBridge slug={slug} />
             <ClassAuthCard classInfo={classInfo} slug={slug} />
             {fieldGuideCard}
           </>
@@ -442,6 +443,79 @@ export default function ClassRoom({ session }) {
 // follows the platform's confirm-email flow, but with emailRedirectTo set
 // back HERE, so the confirmation click lands the student on the class page
 // already signed in.
+// A student signed in to the Field Guide is not a stranger: Field Guide
+// access is only granted by clicking a token emailed to their roster address,
+// which is the same proof of mailbox control the Lounge's own verification
+// asks for. Rather than make them create a second account on a second
+// Supabase project, spend that proof — /api/lounge-continue mints a
+// main-project token for the same address and the browser exchanges it here.
+//
+// Reads the academic session straight from localStorage (both projects share
+// this origin, and ClassRoom already reads this key for the textbook card).
+// Absent or unreadable, this renders nothing and the ordinary signup card
+// below is exactly what it always was.
+function FieldGuideBridge({ slug }) {
+  const [fg, setFg] = useState(null)      // { token, email } | null
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    try {
+      const raw = JSON.parse(localStorage.getItem('radlab-academic-auth') ?? 'null')
+      const token = raw?.access_token
+      const email = raw?.user?.email
+      if (token && email) setFg({ token, email })
+    } catch { /* no usable Field Guide session — stay hidden */ }
+  }, [])
+
+  if (!fg) return null
+
+  const go = async () => {
+    setBusy(true); setError(null)
+    try {
+      const rsp = await fetch('/api/lounge-continue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fg_token: fg.token, slug }),
+      })
+      const out = await rsp.json().catch(() => ({}))
+      if (!rsp.ok || !out.token_hash) {
+        setBusy(false)
+        setError(out.error ?? 'Could not carry your sign-in across — use the form below.')
+        return
+      }
+      const { error: vErr } = await supabase.auth.verifyOtp({
+        token_hash: out.token_hash, type: out.type || 'magiclink',
+      })
+      if (vErr) {
+        setBusy(false)
+        setError(vErr.message)
+        return
+      }
+      // Session change re-renders this page as a joined member; a clean load
+      // is the surest way for every guard to see it.
+      window.location.assign(loungePath(slug))
+    } catch (err) {
+      setBusy(false)
+      setError(err.message)
+    }
+  }
+
+  return (
+    <div style={S.bridge}>
+      <p style={S.bridgeEyebrow}>Already signed in to the Field Guide</p>
+      <p style={S.bridgeEmail}>{fg.email}</p>
+      <p style={S.bridgeSub}>
+        Use the same account here — your check-ins and participation will be credited to it.
+      </p>
+      <button style={S.bridgeBtn} onClick={go} disabled={busy}>
+        {busy ? 'One moment…' : 'Continue to the class dashboard'}
+      </button>
+      {error && <p style={S.bridgeErr}>{error}</p>}
+    </div>
+  )
+}
+
 function ClassAuthCard({ classInfo, slug }) {
   const [mode, setMode] = useState('signup') // most first-time visitors are new students
   const [email, setEmail] = useState('')
@@ -526,6 +600,12 @@ function ClassAuthCard({ classInfo, slug }) {
 
 const S = {
   wrap: { maxWidth: 480, margin: '0 auto', padding: '40px 20px' },
+  bridge: { background: 'var(--bgc)', border: '1px solid var(--pk)', borderRadius: 16, padding: '22px 24px', textAlign: 'left', marginBottom: 16 },
+  bridgeEyebrow: { fontFamily: MONO, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--pk)' },
+  bridgeEmail: { fontSize: 16, fontWeight: 700, color: 'var(--tx)', margin: '4px 0 6px', overflowWrap: 'anywhere' },
+  bridgeSub: { fontSize: 13.5, color: 'var(--tx2)', lineHeight: 1.5, marginBottom: 12 },
+  bridgeBtn: { width: '100%', fontSize: 15, fontWeight: 600, padding: '12px 16px', borderRadius: 24, border: 'none', background: 'var(--pk)', color: '#fff', cursor: 'pointer' },
+  bridgeErr: { fontSize: 13, color: '#c0392b', marginTop: 10 },
   card: { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 16, padding: '32px 28px', textAlign: 'center' },
   eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)', marginBottom: 8 },
   title: { fontFamily: SERIF, fontSize: 28, color: 'var(--tx)', marginBottom: 8 },
