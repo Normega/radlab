@@ -31,6 +31,36 @@ export const config = { maxDuration: 120 }
 const MODEL = 'claude-sonnet-5'
 const MAX_SOURCE_CHARS = 55_000
 
+// Structured output as a tool call rather than "return JSON in your reply".
+// Parsing free text broke exactly as you would expect: a long draft ran past
+// max_tokens, the JSON ended mid-string, and JSON.parse surfaced "Unexpected
+// end of JSON input" to the reviewer. A tool call is schema-validated by the
+// API, so fences, prose preambles and raw newlines inside strings stop being
+// failure modes; only truncation remains, and that is now detected explicitly.
+const TOOL = {
+  name: 'file_section',
+  description: 'Return the drafted section and your judgement of the student summary.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      draft: {
+        type: 'string',
+        description: 'Markdown for the section body. Empty string if the paper does not address the gap.',
+      },
+      citation: { type: 'string', description: 'The formatted citation used.' },
+      student_reading: {
+        type: 'string', enum: ['agrees', 'diverges', 'unclear'],
+        description: "Whether the student's summary matches what the paper says.",
+      },
+      note: {
+        type: 'string',
+        description: 'One or two sentences for the TA: what was added, and where the summary departs from the paper if it does.',
+      },
+    },
+    required: ['draft', 'student_reading', 'note'],
+  },
+}
+
 const SYSTEM = `You write for the Field Guide, an undergraduate abnormal-psychology reference.
 
 House style:
@@ -69,13 +99,7 @@ ${citation ?? '(none recorded — cite by author and year from the source text)'
 ${source}
 
 ---
-Return ONLY a JSON object:
-{
-  "draft": "markdown for the section body, or \\"\\" if the paper does not address the gap",
-  "citation": "the formatted citation you used",
-  "student_reading": "agrees" | "diverges" | "unclear",
-  "note": "one or two sentences for the TA: what you added, and — if student_reading is not \\"agrees\\" — exactly where the student's summary departs from the paper"
-}`
+Call the file_section tool with your answer.`
 }
 
 // One place that turns a draft into a pending proposal, shared by the accept
@@ -197,8 +221,10 @@ export default async function handler(req, res) {
     const anthropic = new Anthropic()
     const msg = await anthropic.messages.create({
       model: MODEL,
-      max_tokens: 2000,
+      max_tokens: 4000,
       system: SYSTEM,
+      tools: [TOOL],
+      tool_choice: { type: 'tool', name: TOOL.name },
       messages: [{
         role: 'user',
         content: userPrompt({
@@ -213,8 +239,11 @@ export default async function handler(req, res) {
       }],
     })
 
-    const raw = msg.content.map(c => (c.type === 'text' ? c.text : '')).join('')
-    const parsed = JSON.parse(raw.slice(raw.indexOf('{'), raw.lastIndexOf('}') + 1))
+    if (msg.stop_reason === 'max_tokens') {
+      throw new Error('The draft ran past the length limit before it finished. Try again, or shorten the gap.')
+    }
+    const parsed = msg.content.find(c => c.type === 'tool_use')?.input
+    if (!parsed) throw new Error('The model returned no draft.')
 
     if (!parsed.draft?.trim()) {
       await service.rpc('record_claim_integration', {
