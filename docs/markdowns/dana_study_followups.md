@@ -272,7 +272,20 @@ browser, not the participant, so the first row must be `pending` for
 check_schedule to email it.
 
 **Dana's rows were repaired** by deleting the two stranded ones, which let the
-advance pass materialise them from her graph.
+advance pass materialise them from her graph. Verified end to end on the live
+cron: the 19:30 tick reported `advanced: 1` (zero on every prior tick) and both
+rows came back dated 2026-09-03 at 21:00 and 22:10 with `study_day = 1` — the
+materializeSchedule signature, where the legacy helper leaves it null. The 19:45
+tick reported `processed: 1` and Term Test 1 went to `link_sent` with a link and
+`attempts = 1`: the email actually sent.
+
+Term Test 2 is deferred, correctly. check_schedule step 2b holds a due row while
+the participant has an active link for a different row — one live session at a
+time — and that deferral is deliberately transient rather than a `blocked`
+suppression (a 2026-07-15 incident permanently stranded a real participant by
+treating it as terminal). So her three-sessions-in-one-day test sequences rather
+than firing at once, which is worth telling a researcher up front or it reads as
+a second bug.
 
 ### Two things this exposed about how she was testing
 
