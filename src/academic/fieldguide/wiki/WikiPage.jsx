@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useOutletContext, useParams, useLocation } from 'react-router-dom'
 import AvatarMenu from '../AvatarMenu'
+import { normContext, contextAdds, highlightAsk } from '../gapContext'
 import { WikiMarkdown } from './wikiMarkdown'
 import { splitFrontmatter, extractHeadings, splitSections } from './wikiText'
 import { useWikiBase, useCoursePaths } from './useWikiBase'
@@ -120,7 +121,7 @@ export default function WikiPage() {
           .select('criteria_url, dsm_chapter, dsm_chapter_title, tier, lecture')
           .eq('course_id', courseId).eq('slug', slug).maybeSingle(),
         courseClient.from('page_gaps')
-          .select('id, kind, section, ask, difficulty, capacity, status')
+          .select('id, kind, section, ask, ask_context, difficulty, capacity, status')
           .eq('page_id', row.id).eq('status', 'open'),
         courseClient.from('page_reviews')
           .select('version, verdict, reviewed_at')
@@ -769,6 +770,14 @@ function GapList({ gaps, section, isStaff, onFlag }) {
             <span style={{ ...G.rowText, opacity: g.difficulty === 'red' ? 0.65 : 1 }}>
               <span style={{ ...G.diffTag, color: d.colour }}>{d.label}</span>
               {' '}{g.ask}
+              {/* A gap cut from a longer "Needs research:" line reads as a
+                  fragment on its own; show the sentence it came from, with
+                  this piece marked, exactly as the gap board does. */}
+              {contextAdds(g.ask_context, g.ask) && (
+                <span style={G.context}>
+                  {highlightAsk(normContext(g.ask_context), g.ask)}
+                </span>
+              )}
             </span>
           </div>
         )
@@ -810,6 +819,8 @@ function GapList({ gaps, section, isStaff, onFlag }) {
 }
 
 const G = {
+  context: { display: 'block', marginTop: 4, fontSize: 12.5, color: 'var(--tx2)', lineHeight: 1.5,
+             paddingLeft: 8, borderLeft: '2px solid var(--bd)' },
   wrap: { margin: '10px 0 4px' },
   row: { display: 'flex', gap: 8, alignItems: 'baseline', padding: '5px 0' },
   dot: { flexShrink: 0, width: 8, height: 8, borderRadius: '50%', position: 'relative', top: -1 },

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, Navigate, useOutletContext } from 'react-router-dom'
+import { normContext, contextAdds, highlightAsk } from './gapContext'
 import AvatarMenu from './AvatarMenu'
 import { courseFeatures } from '../courseFeatures'
 import { useWikiBase, useCoursePaths } from './wiki/useWikiBase'
@@ -22,30 +23,6 @@ const DIFF = {
   red:   { colour: '#c0392b', label: 'red' },
 }
 const SEV = { block: '#c0392b', warn: '#b8860b' }
-
-// The ask is frequently a FRAGMENT: the detector splits a "Needs research:"
-// sentence on its semicolons, so tail pieces arrive as orphans like "and
-// Canadian diagnostic-delay data." — real text from the page, and meaningless
-// alone. ask_context is the whole line it came from, so the student reads the
-// fragment where it sits. Neither is authored; both are the page's own words.
-const normContext = (c) =>
-  String(c ?? '').replace(/^>\s*/gm, '').replace(/\*\*/g, '').replace(/\s+/g, ' ').trim()
-
-// The student's own piece, emphasised inside that line.
-function highlightAsk(context, ask) {
-  const needle = String(ask ?? '').trim().replace(/\s+/g, ' ')
-  const at = context.indexOf(needle)
-  if (at < 0 || !needle) return context
-  return (
-    <>
-      {context.slice(0, at)}
-      <mark style={{ background: 'rgba(214,51,132,.16)', color: 'inherit', padding: '0 2px', borderRadius: 3 }}>
-        {context.slice(at, at + needle.length)}
-      </mark>
-      {context.slice(at + needle.length)}
-    </>
-  )
-}
 
 const fmtDate = d => d
   ? new Date(`${d}T12:00:00`).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })
@@ -264,7 +241,7 @@ function GapRow({ row: r, expanded, onToggle, courseClient, reload }) {
           </span>
         </div>
         <p style={S.ask}>{r.ask}</p>
-        {r.ask_context && normContext(r.ask_context) !== r.ask.trim() && (
+        {contextAdds(r.ask_context, r.ask) && (
           <p style={S.askContext}>
             <span style={S.askContextLabel}>In the page:</span>{' '}
             {highlightAsk(normContext(r.ask_context), r.ask)}
