@@ -172,8 +172,17 @@ export default function SubmissionsQueue() {
   const decide = async (row, status) => {
     let note = null
     if (status === 'claimed') {
+      // Seed the box with the source comparison when it found a divergence.
+      // The reviewer has just read a precise account of where the summary
+      // departs from the paper; making them retype it is how specific feedback
+      // decays into "please revise". Editable and never automatic — it is a
+      // starting point, and the TA owns what the student actually receives.
+      const seed = row.integration_verdict === 'diverges' && row.integration_note
+        ? `Checked against the source you cited:\n\n${row.integration_note}\n\nPlease revise and resubmit.`
+        : ''
       note = window.prompt(
-        `Send "${row.page_slug}" back to ${row.student}?\n\nWhat should they fix? (shown to the student)`
+        `Send "${row.page_slug}" back to ${row.student}?\n\nWhat should they fix? (shown to the student)`,
+        seed
       )
       if (note == null) return
       if (!note.trim()) return setNotice('Send-back cancelled — a reason is required.')
