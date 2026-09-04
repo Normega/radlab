@@ -241,6 +241,68 @@ would matter the moment the builder in item 4 ships.
 
 ---
 
+## 7. Admin enrollment stranded participants in graph studies — **fixed 2026-09-04**
+
+Found by Dana's own protocol test: she enrolled herself, set three sessions an
+hour apart on one day, received the first email and nothing after it.
+
+**The mechanism.** Admin enrollment used the client-side `generateSchedule`,
+which dates only the FIRST row and leaves the rest null, expecting
+`advanceSchedule()` to fill each next date on completion. But `advanceSchedule`
+runs only from the admin session runner — a participant completing through
+their own link goes via `complete_session_by_token`, which advances nothing. So
+later rows stayed `pending` with a null `scheduled_date`, and `check_schedule`
+only fetches rows with `scheduled_date <= today`, which NULL never satisfies.
+
+**Why it was permanent, not merely delayed** (this was missed in the original
+report): `check_schedule`'s advance pass re-walks the graph and would have
+materialised those rows properly, but it skips any participant with an
+outstanding row — and a null-dated `pending` row counts as outstanding. The
+broken rows blocked the mechanism that would have repaired them.
+
+**The fix.** Admin enrollment now branches the way `auto-enroll` already does:
+graph study → new admin-only Edge Function `materialize_participant_schedule`,
+calling the same `_shared/materializeSchedule.ts`; no graph → the existing
+client-side `generateSchedule`, untouched. Both admin call sites are covered —
+`EnrollmentPanel` and `StudyDetail`'s add-by-email form, the latter missing
+from the original report.
+
+`unlockFirst` is deliberately NOT set (unlike auto-enroll): the RA is in the
+browser, not the participant, so the first row must be `pending` for
+check_schedule to email it.
+
+**Dana's rows were repaired** by deleting the two stranded ones, which let the
+advance pass materialise them from her graph.
+
+### Two things this exposed about how she was testing
+
+- **Admin enrollment pre-stamps `consent_date`**, so the in-session consent gate
+  never fires. She has never seen her own consent form as a participant sees it.
+- **Admin enrollment collects no email.** She received the first message only
+  because she enrolled her own lab account, which has a real auth address. A
+  participant enrolled the normal way (`P-001`) gets a synthetic
+  `@participants.radlab.zone` address and would have received *nothing*.
+
+So her test validated her protocol's content and almost nothing about the
+participant journey. In fairness the self-enrollment path did not exist when she
+tested — it shipped the same day.
+
+**Guidance for her**, and for anyone testing a study: use admin enrollment to
+check protocol content, but test the participant experience through the
+self-enrollment link. Her TESTING study is ready for that — consent form
+attached, debrief attached, no screener, graph present — needing only
+`allow_self_enrollment` turned on.
+
+### Known gap, deliberately left
+
+A NON-graph study with several sessions would still strand after the first row.
+No such study has participants (all three multi-session studies with
+enrollments have a design graph), and closing it means teaching
+`complete_session_by_token` to advance — shared code every SONA and Prolific
+participant runs through. Not worth modifying for a study shape nobody uses.
+
+---
+
 ## Smaller defects found along the way — **all fixed 2026-09-03**
 
 - **`QuestionnaireUpload` crashed on a valid composable upload.** Its success
