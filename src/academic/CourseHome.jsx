@@ -173,7 +173,7 @@ const S = {
   sub: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.55 },
   code: { fontFamily: MONO, fontSize: 12 },
   card: { display: 'block', background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 12, padding: '16px 16px', marginTop: 16, textDecoration: 'none' },
-  cardTitle: { fontFamily: SERIF, fontSize: 20, color: 'var(--tx)', marginBottom: 4 },
+  cardTitle: { fontFamily: SERIF, fontSize: 28, color: 'var(--tx)', marginBottom: 4 },
   staffGrid: { display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 },
   staffBtn: { fontFamily: MONO, fontSize: 12, padding: '8px 16px', borderRadius: 24, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx)', textDecoration: 'none' },
   backLink: { fontFamily: MONO, fontSize: 12, color: 'var(--pk)', textDecoration: 'none' },

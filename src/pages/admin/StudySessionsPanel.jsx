@@ -247,7 +247,7 @@ export default function StudySessionsPanel({ study, qc }) {
 
 const S = {
   sectionHeader:  { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
-  sectionTitle:   { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 20, fontWeight: 400, color: 'var(--tx)', margin: 0 },
+  sectionTitle:   { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 28, fontWeight: 400, color: 'var(--tx)', margin: 0 },
   btnPrimary:     { background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
   btnOutline:     { background: '#fff', color: 'var(--pk)', border: '1.5px solid var(--pk)', borderRadius: 8, padding: '7px 14px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
   btnSim:         { background: '#f4f0fb', color: '#6d28d9', border: '1.5px solid #c4b5fd', borderRadius: 8, padding: '7px 14px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },

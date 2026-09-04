@@ -374,7 +374,7 @@ const P = {
     boxShadow: '0 12px 32px rgba(74, 36, 55, 0.06)', padding: '20px 22px 22px',
   },
   pageQ: {
-    fontFamily: SERIF, fontSize: 20, fontWeight: 400, color: 'var(--tx)',
+    fontFamily: SERIF, fontSize: 28, fontWeight: 400, color: 'var(--tx)',
     lineHeight: 1.25, margin: '0 0 12px',
   },
   itemEyebrow: {

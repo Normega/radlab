@@ -313,7 +313,7 @@ function Screen({ title, children }) {
   return (
     <div className="flex flex-col items-center gap-6 px-6 py-12">
       {title && (
-        <h2 style={{ fontFamily: 'DM Serif Display', fontSize: 20, color: 'var(--tx)' }}>{title}</h2>
+        <h2 style={{ fontFamily: 'DM Serif Display', fontSize: 28, color: 'var(--tx)' }}>{title}</h2>
       )}
       {children}
     </div>

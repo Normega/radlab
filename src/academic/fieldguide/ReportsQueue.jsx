@@ -150,7 +150,7 @@ const S = {
   picker: { marginTop: 16, fontSize: 14, padding: '8px 8px', borderRadius: 12, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx)' },
   dim: { color: 'var(--tx2)', fontSize: 12, fontFamily: MONO },
   notice: { marginTop: 10, fontFamily: MONO, fontSize: 12.5, color: 'var(--pk)' },
-  h2: { fontFamily: SERIF, fontSize: 20, color: 'var(--tx)', margin: '22px 0 10px' },
+  h2: { fontFamily: SERIF, fontSize: 28, color: 'var(--tx)', margin: '22px 0 10px' },
   card: { padding: '12px 14px', borderRadius: 10, background: 'var(--bgc)', border: '1px solid var(--bd)', marginBottom: 10 },
   cardTop: { display: 'flex', gap: 10, alignItems: 'baseline', flexWrap: 'wrap' },
   kind: { fontFamily: MONO, fontSize: 12, letterSpacing: 0.5, textTransform: 'uppercase' },

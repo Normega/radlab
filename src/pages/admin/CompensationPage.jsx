@@ -144,7 +144,7 @@ const S = {
   errMsg:     { fontSize: 14, color: '#e04', background: '#fff0f0', border: '1px solid #fcc', borderRadius: 8, padding: '8px 14px', marginBottom: 16 },
   muted:      { fontSize: 14, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif' },
   empty:      { textAlign: 'center', padding: '60px 0' },
-  emptyTitle: { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 20, color: 'var(--tx)', margin: '0 0 8px' },
+  emptyTitle: { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 28, color: 'var(--tx)', margin: '0 0 8px' },
   emptyHint:  { fontSize: 14, color: 'var(--tx2)', margin: 0 },
   tableWrap:  { overflowX: 'auto', borderRadius: 10, border: '1px solid var(--bd)', background: '#fff' },
   table:      { width: '100%', borderCollapse: 'collapse' },

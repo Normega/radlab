@@ -457,7 +457,7 @@ const S = {
   link: { fontSize: 14, color: 'var(--pk)' },
   notice: { color: 'var(--pk)', marginTop: 14, fontFamily: MONO, fontSize: 14, lineHeight: 1.5 },
 
-  h2: { fontFamily: SERIF, fontSize: 20, margin: '30px 0 2px' },
+  h2: { fontFamily: SERIF, fontSize: 28, margin: '30px 0 2px' },
 
   card: { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 12, marginTop: 10 },
   cardHead: { width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, padding: '12px 14px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tx)' },

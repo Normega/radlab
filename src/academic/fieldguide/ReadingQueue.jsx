@@ -119,7 +119,7 @@ const S = {
   sub: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.6, maxWidth: '68ch' },
   picker: { marginTop: 16, fontSize: 14, padding: '8px 8px', borderRadius: 12, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx)' },
   dim: { color: 'var(--tx2)', fontWeight: 400, fontSize: 14 },
-  h2: { fontFamily: SERIF, fontSize: 20, color: 'var(--tx)', margin: '0 0 4px', display: 'flex', alignItems: 'baseline', gap: 10 },
+  h2: { fontFamily: SERIF, fontSize: 28, color: 'var(--tx)', margin: '0 0 4px', display: 'flex', alignItems: 'baseline', gap: 10 },
   count: { fontFamily: MONO, fontSize: 12, color: 'var(--tx2)' },
   progressBox: { marginTop: 18, padding: '16px 18px', borderRadius: 12, background: 'var(--bgc)', border: '1px solid var(--bd)' },
   progressBig: { fontSize: 16, fontWeight: 600, color: 'var(--tx)', margin: '0 0 10px' },

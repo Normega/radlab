@@ -174,6 +174,6 @@ const S = {
   // positioned img fills it, so the icon is always as tall as the card content.
   iconCell: { position: 'relative', width: 84, flexShrink: 0, margin: '-5px -7px -5px 0' },
   icon: { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', borderRadius: 12 },
-  cardTitle: { fontFamily: SERIF, fontSize: 20, color: 'var(--tx)', lineHeight: 1.25 },
+  cardTitle: { fontFamily: SERIF, fontSize: 28, color: 'var(--tx)', lineHeight: 1.25 },
   meta: { fontFamily: MONO, fontSize: 12, letterSpacing: .5, textTransform: 'uppercase', color: 'var(--tx2)' },
 }

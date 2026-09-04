@@ -325,7 +325,7 @@ const S = {
     overflow: 'hidden',
   },
   gameInfo:  { flex: 1, padding: '20px 22px', display: 'flex', flexDirection: 'column' },
-  gameTitle: { fontFamily: SERIF, fontWeight: 400, fontSize: 20, color: 'var(--tx)', margin: '0 0 8px' },
+  gameTitle: { fontFamily: SERIF, fontWeight: 400, fontSize: 28, color: 'var(--tx)', margin: '0 0 8px' },
   gameDesc:  { fontSize: 12, fontFamily: SANS, color: 'var(--tx2)', lineHeight: 1.5, margin: '0 0 14px', flex: 1 },
   gameMetaRow: { display: 'flex', gap: 24, paddingTop: 12, borderTop: '1px solid var(--bd)' },
   metaLabel: { fontFamily: MONO, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--gy)', margin: '0 0 2px' },

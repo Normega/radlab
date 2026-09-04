@@ -123,7 +123,7 @@ const S = {
   },
   gameName: {
     fontFamily: '"DM Serif Display",Georgia,serif',
-    fontSize: 20, fontWeight: 400,
+    fontSize: 28, fontWeight: 400,
     color: 'var(--tx)', margin: 0,
   },
   note: {

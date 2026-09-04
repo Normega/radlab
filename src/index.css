@@ -478,7 +478,7 @@ body {
 
 .brand-font-row__meta { display: flex; flex-direction: column; gap: 4px; }
 
-.brand-font-row__name { font-family: 'DM Serif Display', serif; font-size: 20px; color: var(--pk); text-decoration: none; }
+.brand-font-row__name { font-family: 'DM Serif Display', serif; font-size: 28px; color: var(--pk); text-decoration: none; }
 .brand-font-row__name:hover { text-decoration: underline; }
 
 .brand-font-row__detail { font-size: 12px; color: var(--tx2); font-family: 'DM Sans', system-ui, sans-serif; }

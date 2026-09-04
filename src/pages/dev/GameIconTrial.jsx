@@ -98,6 +98,6 @@ const S = {
   rowNote:   { fontSize: 12, color: 'var(--tx2)', lineHeight: 1.4 },
   sizes:     { display: 'flex', alignItems: 'center', gap: 20 },
   card:      { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 12, padding: 16, width: 150, display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-start' },
-  cardTitle: { fontFamily: '"DM Serif Display", Georgia, serif', fontSize: 20, color: 'var(--tx)', lineHeight: 1.2 },
+  cardTitle: { fontFamily: '"DM Serif Display", Georgia, serif', fontSize: 28, color: 'var(--tx)', lineHeight: 1.2 },
   cardTag:   { fontFamily: '"Space Mono", monospace', fontSize: 12, color: 'var(--tx2)', lineHeight: 1.4 },
 }

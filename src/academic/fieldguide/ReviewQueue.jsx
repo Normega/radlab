@@ -389,7 +389,7 @@ const S = {
   input: { fontSize: 15, padding: '8px 10px', borderRadius: 8, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx)' },
   notice: { ...{ fontSize: 14, lineHeight: 1.5 }, color: 'var(--pk)', marginTop: 14, fontFamily: MONO, fontSize: 14 },
 
-  h2: { fontFamily: SERIF, fontSize: 20, color: 'var(--tx)', margin: '30px 0 4px' },
+  h2: { fontFamily: SERIF, fontSize: 28, color: 'var(--tx)', margin: '30px 0 4px' },
 
   statRow: { display: 'flex', gap: 10, marginTop: 18, flexWrap: 'wrap' },
   stat: { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 12, padding: '12px 18px', display: 'flex', flexDirection: 'column', minWidth: 120 },

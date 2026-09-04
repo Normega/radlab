@@ -114,8 +114,7 @@ const TYPE_BLOCKS = [
     steps: [
       { name: 'Display/Hero', px: 72, weight: 400, sample: 'How sharp is your mind?', role: 'Homepage hero. One per site — the sanctioned exception to the scale' },
       { name: 'Heading/1',    px: 36, weight: 400, sample: 'Meet your Ripple',        role: 'Page titles and the RADlab wordmark' },
-      { name: 'Heading/2',    px: 28, weight: 400, sample: 'Still Water',             role: 'Serif focal text: game titles, auth headings, standout lines' },
-      { name: 'Heading/4',    px: 20, weight: 400, sample: 'Weekly reflection',       role: 'Card and inline titles' },
+      { name: 'Heading/2',    px: 28, weight: 400, sample: 'Still Water',             role: 'Serif focal text: card and panel titles, game titles, auth headings, dialog titles' },
     ],
   },
   {
@@ -381,7 +380,11 @@ export default function BrandAssets() {
           150% line-height, 0% letter-spacing. <code>Display/Hero</code> is the one sanctioned
           exception to the scale &mdash; one per site. Samples render at true size.
           Not adopted from the Figma: <code>Heading/3</code> and <code>Body/XL Emphasis</code>{' '}
-          (24px is off-scale).
+          (24px is off-scale). <code>Heading/4</code> (serif 20px) was <strong>deleted</strong> in
+          the 2026-09-02 guide; its 35 card, panel and dialog titles moved up to{' '}
+          <code>Heading/2</code> (Norm chose it from a live preview of the alternatives,
+          2026-09-04). 20px survives in the scale for <code>Label/XL</code> only &mdash; mono
+          eyebrows, not serif headings.
         </p>
         <p className="brand-section-note">
           <strong>On the 10px step.</strong> This page asserted for months that

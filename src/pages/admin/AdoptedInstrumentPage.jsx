@@ -592,7 +592,7 @@ const S = {
     display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
     gap: 12, flexWrap: 'wrap', marginBottom: 12, maxWidth: 860,
   },
-  libTitle: { fontFamily: SERIF, fontSize: 20, fontWeight: 400, color: 'var(--tx)', margin: 0 },
+  libTitle: { fontFamily: SERIF, fontSize: 28, fontWeight: 400, color: 'var(--tx)', margin: 0 },
   newBtn: {
     fontFamily: SANS, fontWeight: 600, fontSize: 14, padding: '6px 12px',
     background: 'var(--pk)', color: '#fff', borderRadius: 20, textDecoration: 'none',

@@ -124,5 +124,5 @@ const S = {
   sub: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.5 },
   code: { fontFamily: MONO, fontSize: 12 },
   card: { display: 'block', background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 12, padding: '16px 16px', marginTop: 16, textDecoration: 'none' },
-  cardTitle: { fontFamily: SERIF, fontSize: 20, color: 'var(--tx)', marginBottom: 4 },
+  cardTitle: { fontFamily: SERIF, fontSize: 28, color: 'var(--tx)', marginBottom: 4 },
 }

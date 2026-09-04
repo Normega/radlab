@@ -165,7 +165,7 @@ export default function QuestionnairePreview() {
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ fontFamily: 'DM Serif Display', fontSize: 20, color: 'var(--tx)', margin: 0 }}>
+              <h3 style={{ fontFamily: 'DM Serif Display', fontSize: 28, color: 'var(--tx)', margin: 0 }}>
                 Edit definition
               </h3>
               <button onClick={() => setShowEditor(false)} style={{ ...ghostBtn, border: 'none' }}>✕</button>

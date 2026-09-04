@@ -1140,7 +1140,7 @@ const S = {
   sub:           { fontSize: 14, color: 'var(--tx2)', margin: 0, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
   sep:           { color: 'var(--tx3)' },
   typePill:      { fontFamily: '"Space Mono",monospace', fontSize: 12, background: 'var(--pkb)', color: 'var(--pk)', borderRadius: 6, padding: '2px 7px' },
-  sectionTitle:  { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 20, fontWeight: 400, color: 'var(--tx)', margin: 0 },
+  sectionTitle:  { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 28, fontWeight: 400, color: 'var(--tx)', margin: 0 },
   muted:         { fontSize: 14, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif' },
   empty:         { textAlign: 'center', padding: '40px 0' },
   emptyText:     { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 18, color: 'var(--tx)', margin: '0 0 6px' },
@@ -1161,6 +1161,6 @@ const S = {
   btnPrimary:    { display: 'inline-block', background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
   overlay:       { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center' },
   dialog:        { background: '#fff', borderRadius: 14, padding: '28px 32px', maxWidth: 440, width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,0.18)' },
-  dialogTitle:   { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 20, fontWeight: 400, color: 'var(--tx)', margin: '0 0 10px' },
+  dialogTitle:   { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 28, fontWeight: 400, color: 'var(--tx)', margin: '0 0 10px' },
   formCard:      { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 10, padding: '16px 20px' },
 }

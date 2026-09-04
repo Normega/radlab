@@ -583,7 +583,7 @@ const S = {
 
   h2: { margin: '0 0 10px' },
   // Search-result headings still use loose text; only chapter headings are bands.
-  h2Loose: { fontFamily: SERIF, fontSize: 20, color: 'var(--tx)', margin: '24px 0 10px' },
+  h2Loose: { fontFamily: SERIF, fontSize: 28, color: 'var(--tx)', margin: '24px 0 10px' },
   chIcon: { flexShrink: 0, borderRadius: 9, objectFit: 'contain' },
   chNum: { fontFamily: MONO, fontSize: 12, color: 'var(--tx2)', border: '1px solid var(--bd)', borderRadius: 6, padding: '1px 6px' },
   chCount: { fontFamily: MONO, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx2)' },
@@ -609,7 +609,7 @@ const S = {
   // screen reader still hears a heading rather than only a control.
   band: { display: 'flex', alignItems: 'center', gap: 12, width: '100%', boxSizing: 'border-box', background: 'var(--bgc)', border: '1px solid var(--bds)', borderRadius: 12, padding: '7px 14px 7px 7px', textAlign: 'left', cursor: 'pointer', color: 'var(--tx)' },
   chTitles: { display: 'flex', alignItems: 'baseline', gap: 9, flexWrap: 'wrap', minWidth: 0 },
-  chTitle: { fontFamily: SERIF, fontSize: 20, lineHeight: 1.15 },
+  chTitle: { fontFamily: SERIF, fontSize: 28, lineHeight: 1.15 },
   caret: { flexShrink: 0, fontSize: 14, color: 'var(--pk)', marginLeft: 'auto', paddingLeft: 8, transition: 'transform .15s ease', display: 'inline-block' },
   typeLabel: { fontFamily: MONO, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx2)', margin: '0 0 6px' },
 

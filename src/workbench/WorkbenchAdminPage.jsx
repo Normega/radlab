@@ -578,7 +578,7 @@ const S = {
   },
   emptyTitle: {
     fontFamily: '"DM Serif Display",Georgia,serif',
-    fontSize: 20,
+    fontSize: 28,
     color: 'var(--tx)',
     margin: '0 0 8px',
   },

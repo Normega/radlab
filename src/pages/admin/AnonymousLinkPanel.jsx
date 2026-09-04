@@ -224,7 +224,7 @@ function fmtDate(ts) {
 }
 
 const S = {
-  sectionTitle:  { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 20, fontWeight: 400, color: 'var(--tx)', margin: '0 0 16px' },
+  sectionTitle:  { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 28, fontWeight: 400, color: 'var(--tx)', margin: '0 0 16px' },
   generateRow:   { display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 16 },
   generateCard:  { background: '#fff', border: '1px solid var(--bd)', borderRadius: 10, padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 10, flex: 1, minWidth: 220 },
   cardLabel:     { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' },

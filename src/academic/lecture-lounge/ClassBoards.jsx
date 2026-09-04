@@ -380,7 +380,7 @@ const S = {
     display: 'flex', gap: 12, alignItems: 'flex-start',
     background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 12, padding: '16px 18px',
   },
-  threadH1: { fontFamily: SERIF, fontSize: 20, color: 'var(--tx)', lineHeight: 1.3, margin: 0 },
+  threadH1: { fontFamily: SERIF, fontSize: 28, color: 'var(--tx)', lineHeight: 1.3, margin: 0 },
   threadBody: { fontSize: 14.5, color: 'var(--tx)', lineHeight: 1.55, whiteSpace: 'pre-wrap', overflowWrap: 'break-word', marginTop: 8 },
   replyCard: (removed) => ({
     display: 'flex', gap: 12, alignItems: 'flex-start', marginTop: 10, marginLeft: 22,

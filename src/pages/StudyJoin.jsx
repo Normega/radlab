@@ -76,7 +76,7 @@ const S = {
   card:         { maxWidth: 420, width: '90%', textAlign: 'center', padding: '48px 32px', background: '#fff', border: '1px solid var(--bd)', borderRadius: 16, boxShadow: '0 4px 24px rgba(0,0,0,0.06)' },
   spinner:      { width: 40, height: 40, border: '3px solid var(--bd)', borderTop: '3px solid var(--pk)', borderRadius: '50%', animation: '_spin 0.8s linear infinite', margin: '0 auto 24px' },
   loadingTitle: { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 22, color: 'var(--tx)', margin: '0 0 8px' },
-  errorTitle:   { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 20, color: 'var(--tx)', margin: '0 0 12px' },
+  errorTitle:   { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 28, color: 'var(--tx)', margin: '0 0 12px' },
   errorBody:    { fontSize: 14, color: '#b91c1c', fontFamily: '"DM Sans",system-ui,sans-serif', margin: '0 0 12px', lineHeight: 1.5 },
   hint:         { fontSize: 14, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif', margin: 0 },
 }
