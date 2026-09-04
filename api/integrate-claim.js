@@ -49,8 +49,8 @@ const TOOL = {
       },
       citation: { type: 'string', description: 'The formatted citation used.' },
       student_reading: {
-        type: 'string', enum: ['agrees', 'diverges', 'unclear'],
-        description: "Whether the student's summary matches what the paper says.",
+        type: 'string', enum: ['agrees', 'minor', 'diverges', 'unclear'],
+        description: "How faithful the student's summary is to the paper: 'agrees' faithful, 'minor' faithful in substance with an imprecision worth noting, 'diverges' would mislead a reader, 'unclear' the paper does not settle it.",
       },
       note: {
         type: 'string',
@@ -73,8 +73,42 @@ House style:
   list. This is one section of a page, not a whole page.
 
 You are given a source paper, the gap the section must fill, and a student's
-summary of that paper. Draft the section from THE PAPER. The student's summary
-is not source material — it is a claim about the paper that you must judge.
+summary of that paper. You have two jobs, and the second matters as much as the
+first.
+
+1. Draft the section from THE PAPER. The student's summary is not source
+   material — it is a claim about the paper.
+
+2. Judge that claim, and grade the judgement by SEVERITY. The verdict decides
+   what a marker does next, so it must separate "send this back" from "worth a
+   word in passing".
+
+   "diverges" — the summary would mislead somebody who read it instead of the
+   paper. Any one of these is enough:
+     - a statement the paper contradicts, including reversals (more where the
+       paper says fewer, increased where it says reduced);
+     - a finding or conclusion the paper does not reach, or explicitly
+       declines to draw — treatment efficacy, an established mechanism, a
+       settled cause;
+     - a causal claim where the paper reports association or calls the chain
+       untested;
+     - a critique that cannot apply to this kind of paper, such as faulting a
+       review for its sample size or missing control group;
+     - crediting the authors with primary data collection they did not do,
+       where the summary genuinely asserts they ran the studies.
+
+   "minor" — the substance is faithful and a reader would not be misled, but
+   something is imprecise: loose wording, a slightly overstated hedge, an
+   ambiguous attribution. Say what it is in the note. Do NOT use "diverges"
+   for a slip you would describe as minor.
+
+   "agrees" — faithful throughout. Fluency is not the test; accuracy is.
+
+   "unclear" — the paper genuinely does not settle the point at issue.
+
+   On attribution specifically: a review "draws on", "synthesises", "reports"
+   or "cites" evidence, and a summary saying so is CORRECT. Only treat it as an
+   error when the summary states the authors themselves ran the experiments.
 
 Never state anything the paper does not support. If the paper does not actually
 address the gap, say so in "note" and return an empty draft rather than
@@ -156,7 +190,7 @@ export default async function handler(req, res) {
 
   const { data: claim, error: claimErr } = await service
     .from('gap_claims')
-    .select('id, status, submitted_text, limitation, source_citation, source_fulltext, source_kind, gap_id, integration_draft, integration_note, integration_status')
+    .select('id, status, person_id, submitted_text, limitation, source_citation, source_fulltext, source_kind, gap_id, integration_draft, integration_note, integration_status')
     .eq('id', claim_id).maybeSingle()
   if (claimErr) return res.status(500).json({ error: claimErr.message })
   if (!claim) return res.status(404).json({ error: 'No such claim' })
@@ -168,7 +202,13 @@ export default async function handler(req, res) {
   const { data: staff } = await userClient
     .from('enrollments').select('role, status')
     .eq('course_id', gap.course_id).eq('status', 'active')
-  if (!staff?.some(e => e.role === 'ta' || e.role === 'instructor')) {
+  const isStaff = !!staff?.some(e => e.role === 'ta' || e.role === 'instructor')
+  // The comparison runs the moment a student submits, so their own submission
+  // reaches the queue already checked. That means the OWNER can trigger the
+  // review pass — for their own claim, review-only, and only while it is
+  // actually under review. Filing into the Guide stays staff-only.
+  const isOwner = claim.person_id === personId
+  if (!isStaff && !(isOwner && !file && claim.status === 'submitted')) {
     return res.status(403).json({ error: 'Staff of this course only' })
   }
 
@@ -261,6 +301,7 @@ export default async function handler(req, res) {
       await service.rpc('record_claim_integration', {
         p_claim_id: claim_id, p_status: 'reviewed',
         p_note: parsed.note ?? null, p_draft: parsed.draft.trim(),
+        p_verdict: verdict,
       })
       return res.status(200).json({
         ok: true, filed: false, divergence: verdict,
@@ -276,6 +317,7 @@ export default async function handler(req, res) {
     await service.rpc('record_claim_integration', {
       p_claim_id: claim_id, p_status: 'drafted',
       p_note: parsed.note ?? null, p_version_id: version.id, p_draft: parsed.draft.trim(),
+      p_verdict: verdict,
     })
 
     return res.status(200).json({

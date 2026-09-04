@@ -24,6 +24,12 @@ const SERIF = '"DM Serif Display", Georgia, serif'
 //   light check — a green gap that passed. Confirm the number matches the source.
 //   full read   — everything else: does the source actually say this?
 // That last question is the only one precheck cannot answer, and it is the job.
+// Submissions not yet compared with their source are held in their own group
+// ABOVE the triage routes rather than hidden: a submission that vanishes from
+// the queue because a check failed is far worse than one that shows up
+// unchecked.
+const UNCHECKED = 'awaiting source check'
+
 const ROUTES = [
   ['BLOCKED',     'Blocked by precheck',  'No reading needed — send back with the findings.', '#c0392b'],
   ['warnings',    'Warnings',             'Read, focusing on what precheck flagged.',         '#b8860b'],
@@ -33,6 +39,14 @@ const ROUTES = [
 ]
 
 const SEV = { block: '#c0392b', warn: '#b8860b' }
+
+// An unrecorded verdict reads as unknown, never as agreement.
+const VERDICT = {
+  agrees:   { label: 'summary matches',  colour: '#2e7d32' },
+  minor:    { label: 'minor issues',     colour: '#b8860b' },
+  diverges: { label: 'summary diverges', colour: '#c0392b' },
+  unclear:  { label: 'unclear',          colour: '#b8860b' },
+}
 
 export default function SubmissionsQueue() {
   // No staffEnrollments here on purpose: this queue spans courses and takes
@@ -165,8 +179,17 @@ export default function SubmissionsQueue() {
   const decide = async (row, status) => {
     let note = null
     if (status === 'claimed') {
+      // Seed the box with the source comparison when it found a divergence.
+      // The reviewer has just read a precise account of where the summary
+      // departs from the paper; making them retype it is how specific feedback
+      // decays into "please revise". Editable and never automatic — it is a
+      // starting point, and the TA owns what the student actually receives.
+      const seed = row.integration_verdict === 'diverges' && row.integration_note
+        ? `Checked against the source you cited:\n\n${row.integration_note}\n\nPlease revise and resubmit.`
+        : ''
       note = window.prompt(
-        `Send "${row.page_slug}" back to ${row.student}?\n\nWhat should they fix? (shown to the student)`
+        `Send "${row.page_slug}" back to ${row.student}?\n\nWhat should they fix? (shown to the student)`,
+        seed
       )
       if (note == null) return
       if (!note.trim()) return setNotice('Send-back cancelled — a reason is required.')
@@ -195,9 +218,24 @@ export default function SubmissionsQueue() {
     loadUntold()
   }
 
-  const grouped = ROUTES.map(([key, label, hint, colour]) => ({
-    key, label, hint, colour, items: (rows ?? []).filter(r => r.route === key),
-  })).filter(g => g.items.length > 0)
+  // Not yet compared with its source: shown FIRST and separately, so a
+  // reviewer never reads a submission believing it was checked when it was
+  // not. Held out of the triage routes rather than hidden — a submission that
+  // disappears because a check failed is worse than one that arrives
+  // unchecked.
+  const unchecked = (rows ?? []).filter(r => r.integration_status !== 'reviewed' && r.has_source)
+  const uncheckedIds = new Set(unchecked.map(r => r.claim_id))
+  const grouped = [
+    ...(unchecked.length ? [{
+      key: UNCHECKED, colour: 'var(--tx2)', label: 'Awaiting source check',
+      hint: 'Compare with the cited source before deciding — it usually runs on submission.',
+      items: unchecked,
+    }] : []),
+    ...ROUTES.map(([key, label, hint, colour]) => ({
+      key, label, hint, colour,
+      items: (rows ?? []).filter(r => r.route === key && !uncheckedIds.has(r.claim_id)),
+    })).filter(g => g.items.length > 0),
+  ]
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '32px 20px 80px' }}>
@@ -262,8 +300,11 @@ export default function SubmissionsQueue() {
 
             {g.items.map(row => {
               const open = openId === row.claim_id
-              const verdict = (row.integration_note ?? '').toLowerCase()
-              const diverges = row.integration_status === 'reviewed' && /diverge/.test(verdict)
+              // Read the stored verdict. This used to regex the note for the word
+              // "diverge", so a note that correctly described three contradictions
+              // without using that word rendered as "summary matches" — a check
+              // that fails towards reassurance is worse than no check.
+              const verdict = row.integration_verdict ?? null
               return (
                 <article key={row.claim_id} style={S.card}>
                   <button style={S.cardHead} onClick={() => setOpenId(open ? null : row.claim_id)}>
@@ -330,9 +371,9 @@ export default function SubmissionsQueue() {
                           <p style={{ ...S.colLabel, margin: 0 }}>Against the source</p>
                           {row.integration_status === 'reviewed' && (
                             <span style={{ ...S.verdict,
-                              color: diverges ? SEV.block : '#2e7d32',
-                              borderColor: diverges ? SEV.block : '#2e7d32' }}>
-                              {diverges ? 'summary diverges' : 'summary matches'}
+                              color: VERDICT[verdict]?.colour ?? 'var(--tx2)',
+                              borderColor: VERDICT[verdict]?.colour ?? 'var(--bd)' }}>
+                              {VERDICT[verdict]?.label ?? 'verdict not recorded'}
                             </span>
                           )}
                           <button style={S.compareBtn}
@@ -352,7 +393,7 @@ export default function SubmissionsQueue() {
 
                         {row.integration_note && (
                           <p style={{ ...S.sub, fontSize: 14, margin: '10px 0 0',
-                                      color: diverges ? SEV.block : 'var(--tx)' }}>
+                                      color: verdict === 'diverges' ? SEV.block : 'var(--tx)' }}>
                             {row.integration_note}
                           </p>
                         )}

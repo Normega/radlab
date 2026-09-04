@@ -40,7 +40,7 @@ export const courseSubPath = (code, seg) => `/academic/${lc(code)}/${seg}`
 // auth codes there. 'lounge' is intentionally absent — it is a main-project
 // surface.
 export const FIELD_GUIDE_SEGMENTS = new Set([
-  'wiki', 'join', 'gaps', 'whats-new',
+  'wiki', 'join', 'signin', 'gaps', 'whats-new',
   'ingest', 'review', 'submissions', 'corrections', 'roster', 'read', 'reports', 'tracking',
 ])
 

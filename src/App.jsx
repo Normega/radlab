@@ -124,6 +124,7 @@ const TrackingPage         = lazy(() => import('./academic/fieldguide/TrackingPa
 const ReadingQueue         = lazy(() => import('./academic/fieldguide/ReadingQueue'))
 const ReportsQueue         = lazy(() => import('./academic/fieldguide/ReportsQueue'))
 const FieldGuideJoin       = lazy(() => import('./academic/fieldguide/Join'))
+const SignInConfirm        = lazy(() => import('./academic/fieldguide/SignInConfirm'))
 
 // Workbench — shared Claude Code sessions. Its own partition again: own guards
 // (WorkbenchRoute / WorkbenchAdminRoute), own chrome (plain Nav, not AdminLayout),
@@ -788,6 +789,10 @@ export default function App() {
                 IMMORTAL: it is printed on lecture-slide QR codes and in every
                 invite email body, so it stays a live mount, never a shim. */}
             <Route path="/academic/:courseCode/join" element={<FieldGuideJoin />} />
+            {/* The sign-in confirmation door. Unguarded for the same reason as
+                /join: its whole audience is people with no session. It is inert
+                until clicked — see SignInConfirm for why that matters. */}
+            <Route path="/academic/:courseCode/signin" element={<SignInConfirm />} />
             <Route path="/academic/fieldguide/join" element={<FieldGuideJoin />} />
             {/* The wiki itself — same login, member-level gate. */}
             <Route element={<FieldGuideMemberRoute />}>

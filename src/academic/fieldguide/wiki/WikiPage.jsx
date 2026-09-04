@@ -120,7 +120,7 @@ export default function WikiPage() {
           .select('criteria_url, dsm_chapter, dsm_chapter_title, tier, lecture')
           .eq('course_id', courseId).eq('slug', slug).maybeSingle(),
         courseClient.from('page_gaps')
-          .select('id, kind, section, ask, difficulty, capacity, status')
+          .select('id, kind, section, ask, ask_display, difficulty, capacity, status')
           .eq('page_id', row.id).eq('status', 'open'),
         courseClient.from('page_reviews')
           .select('version, verdict, reviewed_at')
@@ -768,7 +768,11 @@ function GapList({ gaps, section, isStaff, onFlag }) {
             <span aria-hidden="true" style={{ ...G.dot, background: d.colour }} />
             <span style={{ ...G.rowText, opacity: g.difficulty === 'red' ? 0.65 : 1 }}>
               <span style={{ ...G.diffTag, color: d.colour }}>{d.label}</span>
-              {' '}{g.ask}
+              {/* ask is the gap's identity (md5 of it keys the row and
+                  survives re-detection); ask_display is the same ask written
+                  as a sentence that stands on its own. Readers get the
+                  sentence. */}
+              {' '}{g.ask_display?.trim() || g.ask}
             </span>
           </div>
         )

@@ -686,3 +686,8 @@ with nobody.
 | `20260903_claim_source.sql` | radlab-academic; applied 2026-09-03 via MCP `apply_migration`; gap_claims source/integration columns, student upload storage policy, purge_claim_sources |
 | `20260903_claim_bookkeeping.sql` | radlab-academic; applied 2026-09-03 via MCP `apply_migration`; guard bookkeeping escape + record_claim_source/record_claim_integration RPCs |
 | `20260903_claim_draft_in_review.sql` | radlab-academic; applied 2026-09-03 via MCP `apply_migration`; integration_draft column, guard + record_claim_integration updated, submission_review_queue exposes the comparison |
+| `20260903_claim_verdict.sql` | radlab-academic; applied 2026-09-03 via MCP `apply_migration`; integration_verdict column + guard/RPC/view updated so the badge reads a value, not prose |
+| `20260903_verdict_severity.sql` | radlab-academic; applied 2026-09-03 via MCP; verdict check gains 'minor' |
+| `20260903_gap_ask_context.sql` | radlab-academic; applied 2026-09-03 via MCP; page_gaps.ask_context backfilled (533/741), gap_board returns it |
+| `20260903_gap_ask_display.sql` | radlab-academic; applied 2026-09-03 via MCP; page_gaps.ask_display + gap_board returns coalesce(ask_display, ask) |
+| `20260903_gap_detector_lazy_continuation.sql` | radlab-academic; applied 2026-09-03 via MCP; populate_page_gaps reads whole blockquote blocks so wrapped annotation lines no longer truncate the ask. NOT re-run — ask is identity |

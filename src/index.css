@@ -16,8 +16,19 @@
   /*
     FONT SIZE GUARDRAILS — never go below --fs-min in any component.
     Space Mono reads small; prefer --fs-mono-sm or above for labels.
-    Type scale (Onboarding Redesign v1): 12 / 14 / 16 / 20 / 28 / 36 px only.
-      --fs-min:      12px  (absolute floor, WCAG)
+    Type scale (Onboarding Redesign v1): 12 / 14 / 16 / 20 / 28 / 36 px,
+    plus --fs-hint 10px for hint and caption text only (see below).
+      --fs-min:      12px  (house floor for anything a participant must READ
+                            TO ANSWER. Not a WCAG rule — WCAG 2.x sets no
+                            minimum font size; it requires resize-to-200%
+                            (1.4.4) and contrast (1.4.3), which this palette
+                            meets. We asserted "WCAG floor" for months and it
+                            was wrong — Gerold, 2026-09-04.)
+      --fs-hint:     10px  (Body/XS. Hint text under a field, captions, fine
+                            print. NEVER for information needed to answer
+                            correctly — the label above the field carries the
+                            requirement, the hint only elaborates. Norm's
+                            ruling 2026-09-04: adopted, but scoped.)
       --fs-mono-sm:  12px  (mono labels, chips, tags)
       --fs-mono-md:  14px  (DEPRECATED alias of --fs-body-sm; was 13px — off-scale.
                             Use --fs-body-sm in new code.)
@@ -27,6 +38,7 @@
                             Use --fs-body in new code.)
   */
   --fs-min:     0.75rem;
+  --fs-hint:    0.625rem;
   --fs-mono-sm: 0.75rem;
   --fs-mono-md: 0.875rem;
   --fs-body-sm: 0.875rem;

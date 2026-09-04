@@ -109,6 +109,13 @@ it). `people.auth_user_id` is **nullable** — a person can exist (and hold clai
 auth account. `enrollments` link person↔course with `role` (`student`/`ta`/`instructor`) and
 `status` (`active`/`inactive`).
 
+**The `identity` schema is not on PostgREST’s exposed-schema list** — that is where the PII lives — so
+`.schema('identity').from(...)` fails with *“Invalid schema”* from any client, service key included. Reach it
+through a `SECURITY DEFINER` RPC (`roster_invite_targets` is the pattern), or sidestep it: `enrollments` is in
+`public` and its RLS is `person_id = current_person_id()`, so reading it with the **student’s own JWT** answers
+“what is this person enrolled in” without a person-id lookup at all. Both `roster-invite` and `lounge-continue`
+hit this; in the second it was invisible, because the discarded error read to the student as a considered refusal.
+
 **Staff access = an active `ta` or `instructor` enrollment.** That single fact gates every
 `/academic/<code>/{ingest,review,submissions,corrections,roster,read,reports,tracking}` page via
 `FieldGuideStaffRoute` + `staffCourses.resolveCourse` (a code that doesn't resolve never falls
@@ -119,7 +126,7 @@ back to another course).
 (`/api/claim-source`: open-access full text resolved from the DOI — every OA copy is tried, not
 just the publisher's, because publishers commonly answer a bot with a challenge page — or an
 uploaded PDF; only extracted text is cached, on `gap_claims.source_fulltext`) → `submit_claim()`
-→ precheck → **staff press “Compare with source” in `/submissions`** (`/api/integrate-claim` with `file:false`: reads the paper, judges the student’s summary against it, stores the verdict and the drafted section on the claim — shown in the queue beside the student’s words, so the comparison informs the decision instead of following it) → staff accept → **the same endpoint files that draft** (Sonnet; the student's summary is judged, not copied, and divergence is
+→ precheck → **the source comparison runs on submission** (and can be re-run from `/submissions`) (`/api/integrate-claim` with `file:false`: reads the paper, judges the student’s summary against it, stores the verdict and the drafted section on the claim — shown in the queue beside the student’s words, so the comparison informs the decision instead of following it) → staff accept → **the same endpoint files that draft** (Sonnet; the student's summary is judged, not copied, and divergence is
 reported back on the claim) → the draft lands as a `pending` proposal in the same review queue
 ingest uses → `review_proposal()` publishes it. **Nothing auto-publishes.** Cached source text is
 purged once the claim resolves (`purge_claim_sources`).
@@ -161,6 +168,23 @@ All route pages are `lazy()` imports (website.md, *Route code-splitting*); after
 
 ---
 
+### Crossing between the two projects
+
+A student signed in to one half is a stranger to the other, because the halves are different
+Supabase projects. Both directions are bridged rather than asking for a second signup, and both
+rest on the same argument: **holding a session on either side already proves control of the U of T
+mailbox**, which is the standard the other side's verification asks for.
+
+- `api/fieldguide-continue` — Lounge → Field Guide, spending a just-consumed verify token.
+- `api/lounge-continue` — Field Guide → Lounge. Verifies the academic JWT against the academic
+  project, requires an active enrollment, matches an existing main profile by verified U of T
+  address **before** creating anything (so a student who joined months ago under a personal address
+  keeps that account, avatar and participation), stamps `utoronto_verified_at`, joins the class,
+  and returns only a `hashed_token` for the browser to exchange with `verifyOtp`. No access token
+  is ever put in a response body or a URL.
+
+Both fail soft: a broken bridge shows the ordinary signup card, never a locked door.
+
 ## 5. The two auth doors — and the trap between them
 
 Each project sends its own magic links, and each lands on its own routes:
@@ -168,6 +192,20 @@ Each project sends its own magic links, and each lands on its own routes:
 - **Main project** links land on `/class/<slug>` (signup confirmation — printed on QR codes,
   never move it) and `/academic/<code>/lounge*`.
 - **Academic project** links land on `/academic/<code>/join`, `/wiki`, and the staff segments.
+
+**Sign-in never hands a live token to a GET.** University mail runs Microsoft Defender Safe
+Links, which fetches every URL in every message; a Supabase magic link is single-use, so the
+scanner redeems it seconds after delivery and the student's own tap lands on a spent token.
+Confirmed 2026-09-04 on a real student: six sessions minted against her account, every one from
+an Azure IP with a rotating desktop user agent, none from her iPhone. The emailed link therefore points at
+**our own** `/academic/:courseCode/signin` page carrying `properties.hashed_token`, and that page is
+INERT until a human presses its button — a scanner's GET receives static HTML and spends
+nothing; only the click calls `verifyOtp({token_hash, type})`. Verified with a headless load: zero
+auth requests fire before the click. The same email also carries `properties.email_otp` as an
+independent second path, typed on the join door, which survives even a scanner that presses
+buttons. **Any new email carrying a sign-in link must assume the link is opened by a machine
+first: the human's click has to be what consumes it.** Never auto-verify in an effect on that
+page — it reintroduces the whole bug.
 
 The main client decides whether to consume an auth code by route
 (`src/lib/authDetectRoutes.js`). **A staff/wiki segment missing from `FIELD_GUIDE_SEGMENTS` in
