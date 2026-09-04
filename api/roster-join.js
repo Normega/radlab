@@ -137,7 +137,9 @@ export default async function handler(req, res) {
     if (linkErr) throw new Error(linkErr.message)
     const link = linkData?.properties?.action_link
     if (!link) throw new Error('no action_link')
-    // The six-digit code that accompanies the same link. It is the PRIMARY
+    // The numeric code that accompanies the same link (length is whatever the
+    // project's OTP setting mints — seven here, not the six the docs imply, so
+    // nothing downstream may assume six). It is the PRIMARY
     // path now: university mail runs Microsoft Defender Safe Links, which
     // fetches every URL in every message to scan it — and a Supabase magic
     // link is single-use, so the scanner redeems it seconds after delivery and

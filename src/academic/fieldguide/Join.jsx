@@ -60,18 +60,28 @@ export default function Join() {
   const verify = async (e) => {
     e.preventDefault()
     const token = otp.replace(/\D/g, '')
-    if (token.length < 6) return setOtpErr('Enter the six digits from the email.')
+    // Length is NOT assumed. The code is whatever the project's OTP setting
+    // mints — observed at seven digits here, not the six the docs imply — so
+    // requiring six rejected a valid code (2026-09-04).
+    if (token.length < 4) return setOtpErr('Enter the code from the email.')
     setBusy(true); setOtpErr(null)
     try {
       const client = await getCourseClient()
-      // generateLink({type:'magiclink'}) mints the code, so that is the type
-      // to verify against; 'email' is accepted by older projects, so try it
-      // rather than failing a student on a naming detail.
-      let { error } = await client.auth.verifyOtp({ email, token, type: 'magiclink' })
-      if (error) ({ error } = await client.auth.verifyOtp({ email, token, type: 'email' }))
+      // 'recovery' FIRST, and that is not a guess: for an existing confirmed
+      // user, generateLink({type:'magiclink'}) stores the token in the
+      // recovery slot — auth.one_time_tokens records it as recovery_token and
+      // recovery_sent_at is what moves. Verifying as 'magiclink' therefore
+      // never matched. The others stay as fallbacks for tokens minted by a
+      // different path (a brand-new user, or a future change here).
+      let error = null
+      for (const type of ['recovery', 'magiclink', 'email']) {
+        const r = await client.auth.verifyOtp({ email, token, type })
+        error = r.error
+        if (!error) break
+      }
       if (error) {
         setOtpErr(/expired|invalid/i.test(error.message)
-          ? 'That code was not accepted — it may have expired. Request a new one.'
+          ? 'That code was not accepted — it may have expired, or a newer code has replaced it. Request another and use the most recent email.'
           : error.message)
       } else {
         // The guard re-renders signed in; land them in the guide.
@@ -92,7 +102,7 @@ export default function Join() {
 
         {state === 'sent' ? (
           <div style={S.box}>
-            <p style={S.big}>Check your email for a six-digit code.</p>
+            <p style={S.big}>Check your email for a sign-in code.</p>
             <p style={S.sub}>
               Type it in below and you're signed in — no password, ever. The code lasts an hour.
               If nothing arrives within a few minutes, check spam, then request another.
@@ -103,9 +113,9 @@ export default function Join() {
                 onChange={e => setOtp(e.target.value)}
                 inputMode="numeric"
                 autoComplete="one-time-code"
-                placeholder="123456"
-                maxLength={7}
-                style={{ ...S.input, flex: '1 1 140px', fontFamily: 'monospace', fontSize: 22, letterSpacing: 5, textAlign: 'center' }}
+                placeholder="code from the email"
+                maxLength={12}
+                style={{ ...S.input, flex: '1 1 140px', fontFamily: 'monospace', fontSize: 20, letterSpacing: 3, textAlign: 'center' }}
               />
               <button type="submit"
                       style={{ ...S.primary, marginTop: 0, width: 'auto', flex: '0 0 auto', padding: '12px 24px' }}
