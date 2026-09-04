@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { createParticipantAccount } from '../../lib/createParticipantAccount'
-import { generateSchedule } from '../../lib/scheduleGenerator'
+import { buildEnrollmentSchedule } from '../../lib/enrollmentSchedule'
 
 // ── Simulate ──────────────────────────────────────────────────────────────────
 // Creates a throwaway enrollment + participant_schedule row for the first
@@ -132,7 +132,7 @@ export default function EnrollmentPanel({ study }) {
         .single()
       if (insertErr) throw insertErr
 
-      await generateSchedule(userId, study.id, new Date())
+      await buildEnrollmentSchedule(userId, study.id)
 
       return enrollment.id
     },

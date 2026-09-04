@@ -3,7 +3,8 @@ import { useState, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
-import { generateSchedule, issueLink } from '../../lib/scheduleGenerator'
+import { issueLink } from '../../lib/scheduleGenerator'
+import { buildEnrollmentSchedule } from '../../lib/enrollmentSchedule'
 import EnrollmentPanel   from '../../components/study/EnrollmentPanel'
 import StudySessionsPanel from './StudySessionsPanel'
 import AnonymousLinkPanel from './AnonymousLinkPanel'
@@ -256,7 +257,7 @@ function LongitudinalParticipantsPanel({ study, qc }) {
         throw insertErr
       }
 
-      await generateSchedule(profile.id, studyId, new Date())
+      await buildEnrollmentSchedule(profile.id, studyId)
       return profile.display_name || emailVal
     },
     onSuccess: (name) => {

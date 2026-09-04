@@ -74,3 +74,9 @@ verify_jwt = false
 # ── Called from the browser with a real user JWT ───────────────────────────
 [functions.send-class-verification-email]
 verify_jwt = true
+
+[functions.materialize_participant_schedule]
+# Admin-only: builds schedule rows for someone else, so unlike auto-enroll
+# (public by design) it must never be reachable unauthenticated. The gateway
+# checks the JWT and the function additionally requires role = 'lab'.
+verify_jwt = true
