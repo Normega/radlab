@@ -690,3 +690,4 @@ with nobody.
 | `20260903_verdict_severity.sql` | radlab-academic; applied 2026-09-03 via MCP; verdict check gains 'minor' |
 | `20260903_gap_ask_context.sql` | radlab-academic; applied 2026-09-03 via MCP; page_gaps.ask_context backfilled (533/741), gap_board returns it |
 | `20260903_gap_ask_display.sql` | radlab-academic; applied 2026-09-03 via MCP; page_gaps.ask_display + gap_board returns coalesce(ask_display, ask) |
+| `20260903_gap_detector_lazy_continuation.sql` | radlab-academic; applied 2026-09-03 via MCP; populate_page_gaps reads whole blockquote blocks so wrapped annotation lines no longer truncate the ask. NOT re-run — ask is identity |
