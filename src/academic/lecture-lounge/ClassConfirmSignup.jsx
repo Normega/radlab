@@ -98,11 +98,12 @@ export default function ClassConfirmSignup() {
 
         {state === 'spent' && (
           <>
-            <h1 style={S.title}>This link was already used.</h1>
+            <h1 style={S.title}>This link isn't valid any more.</h1>
             <p style={S.sub}>
-              That almost always means your account is <strong>already confirmed</strong> —
-              sometimes a mail scanner presses the button first. Nothing is lost:
-              sign in with the password you chose.
+              Two harmless reasons: your account is <strong>already confirmed</strong> (sometimes
+              a mail scanner presses the button first — nothing is lost, sign in with your
+              password), or you signed up more than once and this is an <strong>older
+              email</strong> — only the newest link works.
             </p>
             <Link to={backTo} style={S.btnLink}>Go to your class and sign in</Link>
           </>

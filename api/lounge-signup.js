@@ -79,17 +79,19 @@ export default async function handler(req, res) {
     const { data: cls } = await service.from('classes').select('id, name').eq('slug', slug).maybeSingle()
     if (!cls) return res.status(404).json({ error: `No class at /${slug}` })
 
-    const mint = () => service.auth.admin.generateLink({ type: 'signup', email, password })
-
-    let { data: linkData, error: linkErr } = await mint()
-
-    if (linkErr && /already|registered|exists/i.test(linkErr.message)) {
-      const user = await findUserByEmail(service, email)
-      if (!user) throw new Error(linkErr.message)
-      if (user.email_confirmed_at) {
-        // Not an error to the caller: the card switches to sign-in mode.
-        return res.status(200).json({ exists: true })
-      }
+    // Look the user up BEFORE minting — not in an error branch after it.
+    // Tested 2026-09-04: generateLink({type:'signup'}) on an existing
+    // UNCONFIRMED user does not error. It silently keeps the ORIGINAL
+    // password and replaces the token — so a student who re-submits the form
+    // with a corrected password would confirm fine and then be told
+    // "Invalid login credentials" forever. Lookup-first makes today's
+    // password always the one that works, and lets the cooldown engage.
+    const user = await findUserByEmail(service, email)
+    if (user?.email_confirmed_at) {
+      // Not an error to the caller: the card switches to sign-in mode.
+      return res.status(200).json({ exists: true })
+    }
+    if (user) {
       if (user.confirmation_sent_at
         && Date.now() - Date.parse(user.confirmation_sent_at) < RESEND_COOLDOWN_S * 1000) {
         return res.status(429).json({ error: 'A confirmation email was just sent — check your inbox (and spam) first.' })
@@ -98,8 +100,11 @@ export default async function handler(req, res) {
       // data. Recreate so the password they typed TODAY is the one that works.
       const { error: delErr } = await service.auth.admin.deleteUser(user.id)
       if (delErr) throw new Error(delErr.message)
-      ;({ data: linkData, error: linkErr } = await mint())
     }
+
+    const { data: linkData, error: linkErr } = await service.auth.admin.generateLink({
+      type: 'signup', email, password,
+    })
     if (linkErr) throw new Error(linkErr.message)
 
     const hashed = linkData?.properties?.hashed_token
