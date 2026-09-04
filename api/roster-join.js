@@ -55,9 +55,25 @@ export default async function handler(req, res) {
     auth: { persistSession: false, autoRefreshToken: false },
   })
 
-  const ipHash = createHash('sha256')
-    .update(String(req.headers['x-forwarded-for'] ?? '').split(',')[0].trim())
-    .digest('hex').slice(0, 16)
+  // Salted, because the IPv4 space is small enough to brute-force an unsalted
+  // hash straight back to an address — the same reasoning auto-enroll's hasher
+  // already carries, which this one was missing. The salt falls back to the
+  // service key (guaranteed present, checked above) so no new env var is
+  // needed; set ROSTER_IP_SALT to pin it independently of key rotation.
+  //
+  // Rows logged before 2026-09-03 hold short unsalted digests and will not
+  // group with new ones. That only affects eyeballing repeats in the staff
+  // triage list; nothing joins on this value.
+  const ipSalt = process.env.ROSTER_IP_SALT ?? serviceKey
+  const clientIp = String(
+    req.headers['x-forwarded-for']
+    ?? req.headers['cf-connecting-ip']
+    ?? req.headers['x-real-ip']
+    ?? ''
+  ).split(',')[0].trim()
+  const ipHash = clientIp
+    ? createHash('sha256').update(`${ipSalt}:${clientIp}`).digest('hex')
+    : null
 
   // Which course's join door was this? The course-scoped mounts
   // (/academic/psy240/join) send their code; the immortal legacy door

@@ -8,6 +8,23 @@ import { validateDefinition } from '../../components/questionnaire/questionnaire
 // /admin/questionnaires/new
 // Paste or file-upload a JSON definition, validate, preview structure, save.
 
+// The two definition shapes count different things. This summary line used to
+// read `parsed.items.length` unconditionally, so a COMPOSABLE definition — which
+// has `pages`, not `items` — threw on the success screen: the validator passed
+// it, and then rendering the "✓ Valid" panel crashed the page. That made the
+// only authoring path for multi-question pages look broken at the last step.
+function summarize(def) {
+  if (def.questionnaire_type === 'composable') {
+    const pages = def.pages ?? []
+    const components = pages.reduce((n, p) => n + (p.components?.length ?? 0), 0)
+    return `${pages.length} page${pages.length === 1 ? '' : 's'}`
+      + ` · ${components} component${components === 1 ? '' : 's'}`
+  }
+  const items = def.items?.length ?? 0
+  return `${items} item${items === 1 ? '' : 's'}`
+    + ` · auto_advance: ${def.auto_advance === false ? 'off' : 'on'}`
+}
+
 export default function QuestionnaireUpload() {
   const navigate     = useNavigate();
   const queryClient  = useQueryClient();
@@ -175,8 +192,7 @@ export default function QuestionnaireUpload() {
           </p>
           <p style={{ fontFamily: 'DM Sans', fontSize: 'var(--fs-body-sm)', color: 'var(--tx2)', margin: 0 }}>
             <strong>{parsed.name}</strong> · slug: {parsed.slug}
-            · type: {parsed.questionnaire_type ?? 'likert'} · {parsed.items.length} items
-            · auto_advance: {parsed.auto_advance === false ? 'off' : 'on'}
+            · type: {parsed.questionnaire_type ?? 'likert'} · {summarize(parsed)}
           </p>
         </div>
       )}

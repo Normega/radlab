@@ -188,6 +188,27 @@ function Section({ title, action, children }) {
 
 // ── Scale row ─────────────────────────────────────────────────────────────────
 
+// Remove the paired session-builder row, and STOP if it will not go.
+//
+// `session_template_nodes.activity_id` and `participant_activity_log.activity_id`
+// both reference `activities` with no ON DELETE behaviour, so this delete fails
+// whenever the item sits in a session template or has ever been delivered.
+// Until 2026-09-03 all three mutations below discarded that error and deleted
+// the library row anyway — leaving a picker entry pointing at a scale that no
+// longer exists, which a session would then fail on at runtime. Deleting the
+// library row is now conditional on this succeeding.
+async function deleteActivityRow(categories, subcategory) {
+  const { error } = await supabase
+    .from('activities').delete()
+    .in('category', categories).eq('subcategory', subcategory)
+  if (error) {
+    throw new Error(
+      `Its session-builder entry could not be removed, so nothing was deleted. `
+      + `This usually means a session template still uses it. (${error.message})`
+    )
+  }
+}
+
 function ScaleRow({ scale, packages, onPreview }) {
   const [confirming, setConfirming] = useState(false)
   const qc = useQueryClient()
@@ -198,8 +219,7 @@ function ScaleRow({ scale, packages, onPreview }) {
 
   const del = useMutation({
     mutationFn: async () => {
-      await supabase.from('activities').delete()
-        .eq('category', 'vas').eq('subcategory', `vas_${scale.slug}`)
+      await deleteActivityRow(['vas'], `vas_${scale.slug}`)
       const { error } = await supabase.from('vas_scales').delete().eq('id', scale.id)
       if (error) throw error
     },
@@ -237,6 +257,7 @@ function ScaleRow({ scale, packages, onPreview }) {
           )}
         </div>
       </div>
+      {del.isError && <p style={S.deleteErr}>{del.error.message}</p>}
     </div>
   )
 }
@@ -254,8 +275,7 @@ function PackageRow({ pkg, scales, onPreview }) {
   const del = useMutation({
     mutationFn: async () => {
       // 'assessment' after the 2026-08-25 seeds migration, 'vas' before it.
-      await supabase.from('activities').delete()
-        .in('category', ['vas', 'assessment']).eq('subcategory', `vas_pkg_${pkg.slug}`)
+      await deleteActivityRow(['vas', 'assessment'], `vas_pkg_${pkg.slug}`)
       const { error } = await supabase.from('vas_packages').delete().eq('id', pkg.id)
       if (error) throw error
     },
@@ -295,6 +315,7 @@ function PackageRow({ pkg, scales, onPreview }) {
           )}
         </div>
       </div>
+      {del.isError && <p style={S.deleteErr}>{del.error.message}</p>}
     </div>
   )
 }
@@ -308,8 +329,7 @@ function SliderRow({ slider, onPreview }) {
   const del = useMutation({
     mutationFn: async () => {
       // 'numeric_slider' after the 2026-08-25 seeds migration, 'vas' before it.
-      await supabase.from('activities').delete()
-        .in('category', ['vas', 'numeric_slider']).eq('subcategory', `slider_${slider.slug}`)
+      await deleteActivityRow(['vas', 'numeric_slider'], `slider_${slider.slug}`)
       const { error } = await supabase.from('slider_scales').delete().eq('id', slider.id)
       if (error) throw error
     },
@@ -348,6 +368,7 @@ function SliderRow({ slider, onPreview }) {
           )}
         </div>
       </div>
+      {del.isError && <p style={S.deleteErr}>{del.error.message}</p>}
     </div>
   )
 }
@@ -416,6 +437,7 @@ const S = {
   cancelBtn:      { background: 'none', border: '1px solid var(--bd)', borderRadius: 6, padding: '5px 10px', fontSize: 12, cursor: 'pointer', color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif' },
   confirmMsg:     { fontSize: 12, color: '#e04', fontFamily: '"DM Sans",system-ui,sans-serif' },
   lockedMsg:      { fontSize: 12, color: 'var(--tx3)', fontFamily: '"Space Mono",monospace' },
+  deleteErr:      { fontSize: 12.5, color: '#c0392b', fontFamily: '"DM Sans",system-ui,sans-serif', lineHeight: 1.5, margin: '8px 0 0' },
 
   overlay:   { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '32px 16px' },
   modalWrap: { position: 'relative', width: '100%', maxWidth: 720 },

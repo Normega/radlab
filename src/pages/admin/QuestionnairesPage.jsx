@@ -190,7 +190,14 @@ function AdvancedTab({ onPreview }) {
 }
 
 function QuestionnaireCard({ questionnaire, onPreview }) {
-  const itemCount = questionnaire.definition?.items?.length ?? '?';
+  // Composable definitions carry `pages`, not `items`, so counting only items
+  // reported every one of them as "? items". Optional chaining kept that from
+  // throwing (unlike the upload page's success screen) but it still said
+  // nothing true about the questionnaire.
+  const def = questionnaire.definition;
+  const countLabel = def?.questionnaire_type === 'composable'
+    ? `${(def.pages ?? []).reduce((n, p) => n + (p.components?.length ?? 0), 0)} questions`
+    : `${def?.items?.length ?? '?'} items`;
   const date = new Date(questionnaire.created_at).toLocaleDateString();
 
   return (
@@ -212,7 +219,7 @@ function QuestionnaireCard({ questionnaire, onPreview }) {
           {questionnaire.name}
         </p>
         <p style={{ fontFamily: 'Space Mono', fontSize: 'var(--fs-mono-sm)', color: 'var(--tx3)', margin: 0 }}>
-          {questionnaire.slug} · {itemCount} items · uploaded {date}
+          {questionnaire.slug} · {countLabel} · uploaded {date}
         </p>
       </div>
 

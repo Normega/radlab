@@ -241,21 +241,41 @@ would matter the moment the builder in item 4 ships.
 
 ---
 
-## Smaller defects found along the way
+## Smaller defects found along the way — **all fixed 2026-09-03**
 
-- **`QuestionnaireUpload` crashes on a valid composable upload.** Its success
-  summary reads `parsed.items.length`; a composable definition has `pages`, not
-  `items`, so a definition that passes validation throws on render. Same
-  assumption is optional-chained (and therefore harmless) in
-  `QuestionnairesPage`.
-- **`VasLibraryPage` deletes never check the `activities` error**, so a
-  constrained delete fails silently and still removes the library row, leaving a
-  picker entry pointing at a scale that no longer exists. The new instrument
-  delete does check it; the VAS page has not been fixed.
-- **RLS asymmetry**: `activities` write is `lab` only, while
-  `composable_instruments` is `lab` *or* `admin`. An admin-role user can create
-  an instrument but not its picker row, hitting the error branch in
-  `InstrumentCreatePage`.
-- **Roster join's IP hash is unsalted** (`api/roster-join.js`) where
-  `auto-enroll`'s is salted, with a comment explaining that the IPv4 space is
-  small enough to brute-force unsalted. Worth aligning.
+- **`QuestionnaireUpload` crashed on a valid composable upload.** Its success
+  summary read `parsed.items.length`; a composable definition has `pages`, not
+  `items`, so a definition that *passed* validation threw while rendering the
+  "✓ Valid" panel — making the only authoring path for multi-question pages look
+  broken at the last step. Now branches on the definition shape. Verified in a
+  harness driving the real component: composable reads "2 pages · 3 components",
+  legacy is unchanged at "2 items · auto_advance: on". `QuestionnairesPage` had
+  the same assumption optional-chained, so it never threw but reported every
+  composable questionnaire as "? items"; it now counts components.
+- **`VasLibraryPage` deletes never checked the `activities` error**, so a
+  constrained delete failed silently and removed the library row anyway, leaving
+  a picker entry pointing at a scale that no longer existed — which a session
+  would then fail on at runtime. All three mutations now go through one
+  `deleteActivityRow` helper that throws with a readable message, the library
+  row is deleted only if it succeeds, and the error is displayed (it was
+  previously thrown into a mutation nothing rendered).
+- **~~RLS asymmetry between `activities` and `composable_instruments`~~ — this
+  was mis-diagnosed.** `profiles.role` is CHECK-constrained to
+  `('lab','participant','public')`, so the `'admin'` in
+  `my_role() = ANY (ARRAY['lab','admin'])` can never match: the state described
+  (an admin who can create an instrument but not its picker row) cannot occur.
+  The platform's real elevated-privilege mechanism is `profiles.super_admin` via
+  `is_super_admin()`, which every comparable policy uses. The two outliers
+  (`composable_instruments`, `displays`) were rewritten to that shape — a no-op
+  today, since the single super admin already holds `role = 'lab'`, but the
+  policy no longer implies a permission model the database cannot express.
+  `activities` was deliberately **not** widened: doing so on the strength of a
+  dead branch would have added real dead code.
+- **Roster join's IP hash was unsalted** (`api/roster-join.js`) where
+  `auto-enroll`'s is salted with a comment noting the IPv4 space is small enough
+  to brute-force. Now salted (falling back to the service key, so no new env
+  var), reads the same three headers auto-enroll does, and stores `null` rather
+  than a hash of the empty string when there is no client IP — previously every
+  IP-less request shared one constant hash, which in the staff triage list looks
+  like a single prolific abuser. Rows logged before this hold short unsalted
+  digests and will not group with new ones; nothing joins on the value.
