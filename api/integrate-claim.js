@@ -31,6 +31,36 @@ export const config = { maxDuration: 120 }
 const MODEL = 'claude-sonnet-5'
 const MAX_SOURCE_CHARS = 55_000
 
+// Structured output as a tool call rather than "return JSON in your reply".
+// Parsing free text broke exactly as you would expect: a long draft ran past
+// max_tokens, the JSON ended mid-string, and JSON.parse surfaced "Unexpected
+// end of JSON input" to the reviewer. A tool call is schema-validated by the
+// API, so fences, prose preambles and raw newlines inside strings stop being
+// failure modes; only truncation remains, and that is now detected explicitly.
+const TOOL = {
+  name: 'file_section',
+  description: 'Return the drafted section and your judgement of the student summary.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      draft: {
+        type: 'string',
+        description: 'Markdown for the section body. Empty string if the paper does not address the gap.',
+      },
+      citation: { type: 'string', description: 'The formatted citation used.' },
+      student_reading: {
+        type: 'string', enum: ['agrees', 'diverges', 'unclear'],
+        description: "Whether the student's summary matches what the paper says.",
+      },
+      note: {
+        type: 'string',
+        description: 'One or two sentences for the TA: what was added, and where the summary departs from the paper if it does.',
+      },
+    },
+    required: ['draft', 'student_reading', 'note'],
+  },
+}
+
 const SYSTEM = `You write for the Field Guide, an undergraduate abnormal-psychology reference.
 
 House style:
@@ -69,13 +99,28 @@ ${citation ?? '(none recorded — cite by author and year from the source text)'
 ${source}
 
 ---
-Return ONLY a JSON object:
-{
-  "draft": "markdown for the section body, or \\"\\" if the paper does not address the gap",
-  "citation": "the formatted citation you used",
-  "student_reading": "agrees" | "diverges" | "unclear",
-  "note": "one or two sentences for the TA: what you added, and — if student_reading is not \\"agrees\\" — exactly where the student's summary departs from the paper"
-}`
+Call the file_section tool with your answer.`
+}
+
+// One place that turns a draft into a pending proposal, shared by the accept
+// path and the reuse path above.
+async function fileProposal({ service, gap, page, personId, draft, citation }) {
+  const heading = gap.section ? `## ${gap.section}\n\n` : ''
+  const { data: version, error } = await service
+    .from('wiki_page_versions')
+    .insert({
+      page_id: gap.page_id,
+      kind: 'proposed',
+      action: 'update',
+      title: page?.title ?? null,
+      content: `${heading}${String(draft).trim()}\n`,
+      created_by: personId,
+      review_status: 'pending',
+      note: `Student contribution · ${citation ?? 'source cited on the claim'}`,
+    })
+    .select('id').single()
+  if (error) throw new Error(error.message)
+  return version
 }
 
 export default async function handler(req, res) {
@@ -92,7 +137,11 @@ export default async function handler(req, res) {
   if (!jwt || jwt === 'undefined' || jwt === 'null') {
     return res.status(401).json({ error: 'Your session was not sent — reload the page and sign in again.' })
   }
-  const { claim_id } = req.body ?? {}
+  // file:false is the REVIEW pass — compare the summary against the paper and
+  // keep the draft on the claim without filing anything. file:true (accept)
+  // files it, reusing the draft review already produced rather than paying for
+  // a second identical call.
+  const { claim_id, file = true } = req.body ?? {}
   if (!claim_id) return res.status(400).json({ error: 'Required: claim_id' })
 
   const userClient = createClient(url, anonKey, {
@@ -107,7 +156,7 @@ export default async function handler(req, res) {
 
   const { data: claim, error: claimErr } = await service
     .from('gap_claims')
-    .select('id, status, submitted_text, limitation, source_citation, source_fulltext, source_kind, gap_id')
+    .select('id, status, submitted_text, limitation, source_citation, source_fulltext, source_kind, gap_id, integration_draft, integration_note, integration_status')
     .eq('id', claim_id).maybeSingle()
   if (claimErr) return res.status(500).json({ error: claimErr.message })
   if (!claim) return res.status(404).json({ error: 'No such claim' })
@@ -123,8 +172,8 @@ export default async function handler(req, res) {
     return res.status(403).json({ error: 'Staff of this course only' })
   }
 
-  if (claim.status !== 'accepted') {
-    return res.status(409).json({ error: 'Only an accepted contribution is drafted into the Guide.' })
+  if (file && claim.status !== 'accepted') {
+    return res.status(409).json({ error: 'Only an accepted contribution is filed into the Guide.' })
   }
   if (!claim.source_fulltext) {
     // Nothing to draft from: the student submitted before source capture
@@ -150,12 +199,32 @@ export default async function handler(req, res) {
     return text.match(re)?.[0]?.slice(0, 6000) ?? null
   })()
 
+  // Accepting something a TA already compared: file the draft as it stands.
+  if (file && claim.integration_draft && claim.integration_status === 'reviewed') {
+    try {
+      const version = await fileProposal({
+        service, gap, page, personId,
+        draft: claim.integration_draft, citation: claim.source_citation,
+      })
+      await service.rpc('record_claim_integration', {
+        p_claim_id: claim_id, p_status: 'drafted',
+        p_note: claim.integration_note ?? null, p_version_id: version.id,
+      })
+      return res.status(200).json({ ok: true, filed: true, reused: true,
+                                    version_id: version.id, note: claim.integration_note })
+    } catch (err) {
+      return res.status(500).json({ error: err.message })
+    }
+  }
+
   try {
     const anthropic = new Anthropic()
     const msg = await anthropic.messages.create({
       model: MODEL,
-      max_tokens: 2000,
+      max_tokens: 4000,
       system: SYSTEM,
+      tools: [TOOL],
+      tool_choice: { type: 'tool', name: TOOL.name },
       messages: [{
         role: 'user',
         content: userPrompt({
@@ -170,8 +239,11 @@ export default async function handler(req, res) {
       }],
     })
 
-    const raw = msg.content.map(c => (c.type === 'text' ? c.text : '')).join('')
-    const parsed = JSON.parse(raw.slice(raw.indexOf('{'), raw.lastIndexOf('}') + 1))
+    if (msg.stop_reason === 'max_tokens') {
+      throw new Error('The draft ran past the length limit before it finished. Try again, or shorten the gap.')
+    }
+    const parsed = msg.content.find(c => c.type === 'tool_use')?.input
+    if (!parsed) throw new Error('The model returned no draft.')
 
     if (!parsed.draft?.trim()) {
       await service.rpc('record_claim_integration', {
@@ -181,32 +253,34 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: false, reason: 'no-coverage', note: parsed.note })
     }
 
-    const heading = gap.section ? `## ${gap.section}\n\n` : ''
-    const { data: version, error: verErr } = await service
-      .from('wiki_page_versions')
-      .insert({
-        page_id: gap.page_id,
-        kind: 'proposed',
-        action: 'update',
-        title: page?.title ?? null,
-        content: `${heading}${parsed.draft.trim()}\n`,
-        created_by: personId,
-        review_status: 'pending',
-        note: `Student contribution · ${parsed.citation ?? claim.source_citation ?? 'source cited on the claim'}`,
+    const verdict = parsed.student_reading ?? 'unclear'
+
+    if (!file) {
+      // Review pass: keep the draft and the verdict on the claim so the queue
+      // shows them beside the student's own words, and so accepting is free.
+      await service.rpc('record_claim_integration', {
+        p_claim_id: claim_id, p_status: 'reviewed',
+        p_note: parsed.note ?? null, p_draft: parsed.draft.trim(),
       })
-      .select('id').single()
-    if (verErr) throw new Error(verErr.message)
+      return res.status(200).json({
+        ok: true, filed: false, divergence: verdict,
+        note: parsed.note ?? null, draft: parsed.draft.trim(),
+      })
+    }
+
+    const version = await fileProposal({
+      service, gap, page, personId,
+      draft: parsed.draft, citation: parsed.citation ?? claim.source_citation,
+    })
 
     await service.rpc('record_claim_integration', {
       p_claim_id: claim_id, p_status: 'drafted',
-      p_note: parsed.note ?? null, p_version_id: version.id,
+      p_note: parsed.note ?? null, p_version_id: version.id, p_draft: parsed.draft.trim(),
     })
 
     return res.status(200).json({
-      ok: true,
-      version_id: version.id,
-      divergence: parsed.student_reading ?? 'unclear',
-      note: parsed.note ?? null,
+      ok: true, filed: true, version_id: version.id,
+      divergence: verdict, note: parsed.note ?? null,
     })
   } catch (err) {
     await service.rpc('record_claim_integration', {

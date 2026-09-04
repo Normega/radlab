@@ -87,4 +87,26 @@ check('an unmatched code resolves to null, not another course', () => {
   assert.equal(resolveEnrolledCourse(undefined, 'psy240'), null)
 })
 
+// The signed-out routing rule, as data. FieldGuideAuthRoute serves the public
+// reader to a visitor with no session ONLY when the requested course is itself
+// public; otherwise the visitor must get the login form. Until 2026-09-03 the
+// test was merely "does any public course exist", so every signed-out visitor
+// to PSY240 was told their *account* had no access and offered PSY309 — a real
+// student hit this on her laptop while signed in on her phone.
+const asVisitors = (cs) => cs.map(c => ({
+  id: `public-${c.id}`, role: 'visitor', status: 'active', course_id: c.id,
+  courses: { code: c.code, name: c.name, term: c.term },
+}))
+const servesPublicReader = (publicCourses, courseCode) =>
+  !courseCode || !!resolveEnrolledCourse(asVisitors(publicCourses), courseCode)
+
+check('a signed-out visitor gets the reader only for a public course', () => {
+  const pub = [{ id: 'p309', code: 'PSY309', name: 'Research Methods', term: '2026F' }]
+  assert.equal(servesPublicReader(pub, 'psy309'), true)   // public course: read away
+  assert.equal(servesPublicReader(pub, 'psy240'), false)  // private: must sign in
+  assert.equal(servesPublicReader(pub, null), true)       // legacy no-param mount
+  assert.equal(servesPublicReader([], 'psy240'), false)   // nothing public at all
+  assert.equal(servesPublicReader([], null), true)
+})
+
 console.log(`courseRoutes: ${pass}/${pass} checks passed`)
