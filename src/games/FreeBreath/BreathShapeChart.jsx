@@ -57,12 +57,13 @@ export default function BreathShapeChart({ breaths, size = 300 }) {
 }
 
 // One small shape, same seconds-per-pixel as its siblings (pass the session's
-// shared scale so the row is comparable at a glance).
-export function MiniShape({ breath, maxDur, n }) {
+// shared scale so the row is comparable at a glance). `n` labels it; omit for
+// the unlabeled in-session stamps.
+export function MiniShape({ breath, maxDur, n, size = 76 }) {
   const s = 38 / maxDur
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-      <svg viewBox="-46 -46 92 92" width={76} height={76}>
+      <svg viewBox="-46 -46 92 92" width={size} height={size}>
         <line x1="0" y1="-42" x2="0" y2="42" stroke={AXIS} strokeWidth="1" />
         <line x1="-42" y1="0" x2="42" y2="0" stroke={AXIS} strokeWidth="1" />
         <polygon
@@ -73,7 +74,17 @@ export function MiniShape({ breath, maxDur, n }) {
           strokeLinejoin="round"
         />
       </svg>
-      <span style={{ fontFamily: MONO, fontSize: 10, color: 'var(--gy)' }}>{n}</span>
+      {n != null && <span style={{ fontFamily: MONO, fontSize: 10, color: 'var(--gy)' }}>{n}</span>}
     </div>
+  )
+}
+
+// An awaiting slot in the in-session stamp row — the axis cross with no shape.
+export function EmptyStamp({ size = 40 }) {
+  return (
+    <svg viewBox="-46 -46 92 92" width={size} height={size}>
+      <line x1="0" y1="-42" x2="0" y2="42" stroke={AXIS} strokeWidth="1" />
+      <line x1="-42" y1="0" x2="42" y2="0" stroke={AXIS} strokeWidth="1" />
+    </svg>
   )
 }

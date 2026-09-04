@@ -1,15 +1,21 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import GameIntro from '../shared/GameIntro'
 import PrimaryCTA from '../../components/ui/PrimaryCTA'
+import SyncAura from '../../components/SyncAura'
 import ContactAvatar from '../FirstContact/components/ContactAvatar'
-import BreathShapeChart, { MiniShape } from './BreathShapeChart'
+import BreathShapeChart, { MiniShape, EmptyStamp } from './BreathShapeChart'
 import { parseBreaths, meanBreath, maxDuration, MIN_HOLD_MS } from './breathShapes'
+import { createBreathAudio } from './breathAudio'
 
 // ── FreeBreath ──────────────────────────────────────────────────────────────
-// Come, See prototype — free breathing, no pacer. The player drives the face:
-// hold one control to breathe in, another to breathe out, hold nothing to be
-// still. Every hold and release is logged as a phase segment; Finish turns the
-// log into per-breath shapes (see breathShapes.js / BreathShapeChart.jsx).
+// Come, See prototype — free breathing, no pacer. The player breathes and the
+// face breathes with them: hold one control to breathe in, another to breathe
+// out, hold nothing and it rests (a faint idle sway — resting, not frozen).
+// Every hold and release is logged as a phase segment; each completed breath
+// stamps its four-duration shape into a row of eight waiting slots, and
+// Finish opens the full graph (see breathShapes.js / BreathShapeChart.jsx).
+// Breath-noise audio follows airflow (breathAudio.js); at the eighth breath a
+// gold aura blooms around the face — the session's quiet gift.
 //
 // Screens: INTRO → BREATHING → RESULTS. No auth, writes nothing — /dev route.
 //
@@ -21,6 +27,7 @@ import { parseBreaths, meanBreath, maxDuration, MIN_HOLD_MS } from './breathShap
 
 const AMBER = '#BA7517'   // inhale — matches First Contact's prompt colors
 const BLUE  = '#185FA5'   // exhale
+const GOLD  = '#ffb300'   // the eighth-breath aura (AURA_COLORS gold)
 const MONO  = '"Space Mono", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
 const SANS  = '"DM Sans", system-ui, sans-serif'
@@ -28,6 +35,8 @@ const SANS  = '"DM Sans", system-ui, sans-serif'
 const TAU_IN      = 1.6   // s — fullness time constant while inhaling
 const TAU_OUT     = 2.2   // s — while exhaling (empties a touch slower)
 const OUTER_SCALE = 0.22  // extra growth on top of the avatar's built-in 15%
+const SWAY_AMP    = 0.005 // idle sway: peak scale deviation while resting
+const SWAY_PERIOD = 4.5   // s
 
 const STATE_LABEL = { in: 'breathing in', out: 'breathing out', pause: 'still' }
 const STATE_COLOR = { in: AMBER, out: BLUE, pause: 'var(--gy)' }
@@ -38,13 +47,25 @@ const HINT_COPY = {
   in:  'Remember, hold down the button for the whole inhalation.',
   out: 'Remember, hold down the button for the whole exhalation.',
 }
+// First-breath guidance, shown only until each act has happened for real
+// (a sub-MIN_HOLD_MS tap does not advance it), and hidden while the player is
+// doing the thing it asks for.
+const GUIDE_COPY = {
+  in:  'Hold, and breathe in.',
+  out: 'And now — breathe out.',
+}
+
+const COARSE_INPUT = typeof window !== 'undefined' &&
+  !!window.matchMedia?.('(pointer: coarse)')?.matches
 
 export default function FreeBreath() {
-  const [screen, setScreen]         = useState('INTRO')
-  const [control, setControlState]  = useState('pause')
-  const [breathCount, setBreathCount] = useState(0)
-  const [breaths, setBreaths]       = useState([])
-  const [hint, setHint]             = useState(null)   // 'in' | 'out' | null
+  const [screen, setScreen]           = useState('INTRO')
+  const [control, setControlState]    = useState('pause')
+  const [liveBreaths, setLiveBreaths] = useState([])
+  const [breaths, setBreaths]         = useState([])
+  const [hint, setHint]               = useState(null)   // 'in' | 'out' | null
+  const [guide, setGuide]             = useState('in')   // 'in' | 'out' | null
+  const [giftStep, setGiftStep]       = useState(0)      // 0 off … 4 full aura
 
   const fullnessRef = useRef(0)        // 0 empty … 1 full
   const controlRef  = useRef('pause')
@@ -52,11 +73,14 @@ export default function FreeBreath() {
   const segsRef     = useRef([])       // closed segments {phase, t0, t1}
   const openSegRef  = useRef(null)     // {phase, t0}
   const startedRef  = useRef(false)    // recording begins at the first inhale
+  const guideRef    = useRef('in')
 
   const avatarControlRef = useRef(null)
   const outerRef         = useRef(null)
   const pressAtRef       = useRef({})    // kind → performance.now() at press
   const hintTimerRef     = useRef(null)
+  const audioRef         = useRef(null)
+  const giftStartedRef   = useRef(false)
 
   // ── Control changes → segment log ─────────────────────────────────────
   const applyControl = useCallback((next) => {
@@ -65,6 +89,7 @@ export default function FreeBreath() {
     controlRef.current = next
     setControlState(next)
 
+    let closed = null
     if (!startedRef.current) {
       // Nothing recorded until the first inhale — an exhale or pause with
       // empty lungs is animation, not data.
@@ -72,12 +97,24 @@ export default function FreeBreath() {
       startedRef.current = true
       openSegRef.current = { phase: 'in', t0: t }
     } else {
-      segsRef.current.push({ ...openSegRef.current, t1: t })
+      closed = { ...openSegRef.current, t1: t }
+      segsRef.current.push(closed)
       openSegRef.current = { phase: next, t0: t }
     }
 
+    // Guidance advances only on real holds, so a tap can't skip a step.
+    if (guideRef.current !== 'done' && closed && closed.t1 - closed.t0 >= MIN_HOLD_MS) {
+      if (closed.phase === 'in' && guideRef.current === 'in') {
+        guideRef.current = 'out'
+        setGuide('out')
+      } else if (closed.phase === 'out' && guideRef.current === 'out') {
+        guideRef.current = 'done'
+        setGuide(null)
+      }
+    }
+
     const all = [...segsRef.current, { ...openSegRef.current, t1: t }]
-    setBreathCount(parseBreaths(all).length)
+    setLiveBreaths(parseBreaths(all))
   }, [])
 
   const press = useCallback((kind) => {
@@ -136,28 +173,52 @@ export default function FreeBreath() {
     }
   }, [screen, press, release, releaseAll])
 
-  // ── Fullness integration + outer scale ────────────────────────────────
+  // ── Fullness integration, idle sway, outer scale, audio ───────────────
   useEffect(() => {
     if (screen !== 'BREATHING') return
     avatarControlRef.current?.resumeAnimation()
     let last = performance.now()
+    let swayW = 0            // 0 breathing … 1 resting, eased so sway fades in
     let raf = null
     function tick(now) {
       const dt = Math.min(0.1, (now - last) / 1000)
       last = now
       const c = controlRef.current
-      let f = fullnessRef.current
+      const f0 = fullnessRef.current
+      let f = f0
       if (c === 'in')  f += (1 - f) * (dt / TAU_IN)
       if (c === 'out') f += (0 - f) * (dt / TAU_OUT)
       fullnessRef.current = f
+
+      audioRef.current?.update(c, dt > 0 ? Math.abs(f - f0) / dt : 0)
+
+      swayW += ((c === 'pause' ? 1 : 0) - swayW) * Math.min(1, dt / 0.6)
+      const ph   = (now / 1000) * (2 * Math.PI / SWAY_PERIOD)
+      const sway = swayW * SWAY_AMP * Math.sin(ph)
+      const dy   = swayW * 1.2 * Math.sin(ph + Math.PI / 3)
       if (outerRef.current) {
-        outerRef.current.style.transform = `scale(${(1 + OUTER_SCALE * f).toFixed(4)})`
+        outerRef.current.style.transform =
+          `translateY(${dy.toFixed(2)}px) scale(${(1 + OUTER_SCALE * f + sway).toFixed(4)})`
       }
       raf = requestAnimationFrame(tick)
     }
     raf = requestAnimationFrame(tick)
     return () => { if (raf) cancelAnimationFrame(raf) }
   }, [screen])
+
+  // ── Eighth breath → the aura blooms in four slow steps ────────────────
+  useEffect(() => {
+    if (screen !== 'BREATHING' || liveBreaths.length < TARGET_BREATHS) return
+    if (giftStartedRef.current) return
+    giftStartedRef.current = true
+    const iv = setInterval(() => {
+      setGiftStep(s => {
+        if (s >= 4) { clearInterval(iv); return s }
+        return s + 1
+      })
+    }, 800)
+    return () => clearInterval(iv)
+  }, [screen, liveBreaths])
 
   // ContactAvatar computes fullness = (sin(phase·2π − π/2) + 1) / 2; invert
   // so the avatar's fullness equals ours exactly.
@@ -174,15 +235,24 @@ export default function FreeBreath() {
     heldRef.current    = []
     controlRef.current = 'pause'
     fullnessRef.current = 0
+    guideRef.current   = 'in'
+    giftStartedRef.current = false
     setControlState('pause')
-    setBreathCount(0)
+    setLiveBreaths([])
     setBreaths([])
+    setGuide('in')
+    setGiftStep(0)
     if (hintTimerRef.current) clearTimeout(hintTimerRef.current)
     setHint(null)
+    if (!audioRef.current) audioRef.current = createBreathAudio()
+    audioRef.current.start()
     setScreen('BREATHING')
   }
 
-  useEffect(() => () => { if (hintTimerRef.current) clearTimeout(hintTimerRef.current) }, [])
+  useEffect(() => () => {
+    if (hintTimerRef.current) clearTimeout(hintTimerRef.current)
+    audioRef.current?.dispose()
+  }, [])
 
   function finishSession() {
     const t = performance.now()
@@ -192,13 +262,25 @@ export default function FreeBreath() {
     const parsed = parseBreaths(all)
     if (parsed.length === 0) return
     heldRef.current = []
+    audioRef.current?.stop()
     setBreaths(parsed)
     setScreen('RESULTS')
   }
 
   // ── Render ────────────────────────────────────────────────────────────
-  const mean = meanBreath(breaths)
+  const mean   = meanBreath(breaths)
   const maxDur = maxDuration(breaths)
+
+  const breathCount = liveBreaths.length
+  const liveMax     = maxDuration(liveBreaths)
+  const slots       = Math.max(TARGET_BREATHS, breathCount)
+
+  // One line under the face: coaching first, then first-breath guidance —
+  // hidden while the player is already doing what it asks.
+  const lineKind = hint ?? (guide && guide !== control ? guide : null)
+  const lineText = hint ? HINT_COPY[hint] : lineKind ? GUIDE_COPY[lineKind] : ' '
+
+  const auraParams = giftStep > 0 ? { inset: giftStep, opacity: 0.1 * giftStep } : null
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
@@ -208,13 +290,17 @@ export default function FreeBreath() {
           <GameIntro
             eyebrow="RADlab · Come, See — prototype"
             title="Free breathing."
-            lead="No pacer this time. The face breathes only while you tell it to — you set the length of every in, every out, and every pause."
+            lead="No pacer this time. Breathe, and it breathes with you — you set the length of every in, every out, and every pause."
             steps={[
-              { title: 'Breathe in',  body: 'Hold I (or the amber button) for as long as your inhale lasts. The face fills.' },
-              { title: 'Breathe out', body: 'Hold O (or the blue button) for as long as your exhale lasts. The face empties.' },
+              { title: 'Breathe in',  body: COARSE_INPUT
+                  ? 'Hold the amber button for as long as your inhale lasts. The face fills.'
+                  : 'Hold I (or the amber button) for as long as your inhale lasts. The face fills.' },
+              { title: 'Breathe out', body: COARSE_INPUT
+                  ? 'Hold the blue button for as long as your exhale lasts. The face empties.'
+                  : 'Hold O (or the blue button) for as long as your exhale lasts. The face empties.' },
               { title: 'Rest',        body: 'Hold nothing between breaths. The pauses are part of the shape too.' },
             ]}
-            note="Take eight breaths, at your own pace. Every one is drawn as a shape at the end."
+            note="Take eight breaths, at your own pace. Every one is drawn as a shape at the end. Sound on, if you can."
             cta="Begin →"
             onStart={begin}
           />
@@ -223,40 +309,35 @@ export default function FreeBreath() {
         {screen === 'BREATHING' && (
           <>
             <div ref={outerRef} style={S.outerScale}>
-              <ContactAvatar
-                getPhase={getPhase}
-                isFirstContact={false}
-                controlRef={avatarControlRef}
-                size={220}
-              />
+              <SyncAura params={auraParams} color={GOLD} size={220}>
+                <ContactAvatar
+                  getPhase={getPhase}
+                  isFirstContact={false}
+                  controlRef={avatarControlRef}
+                  size={220}
+                />
+              </SyncAura>
             </div>
 
             <div style={{ ...S.stateLine, color: STATE_COLOR[control] }}>
               {STATE_LABEL[control]}
             </div>
 
-            <p style={{ ...S.hintLine, color: hint ? STATE_COLOR[hint] : 'transparent', opacity: hint ? 1 : 0 }}>
-              {hint ? HINT_COPY[hint] : ' '}
+            <p style={{ ...S.hintLine, color: lineKind ? STATE_COLOR[lineKind] : 'transparent', opacity: lineKind ? 1 : 0 }}>
+              {lineText}
             </p>
 
             <div style={S.holdRow}>
-              <HoldButton kind="in"  label="Inhale" hint="hold I" color={AMBER} active={control === 'in'}  onPress={press} onRelease={release} />
-              <HoldButton kind="out" label="Exhale" hint="hold O" color={BLUE}  active={control === 'out'} onPress={press} onRelease={release} />
+              <HoldButton kind="in"  label="Inhale" hint={COARSE_INPUT ? null : 'hold I'} color={AMBER} active={control === 'in'}  onPress={press} onRelease={release} />
+              <HoldButton kind="out" label="Exhale" hint={COARSE_INPUT ? null : 'hold O'} color={BLUE}  active={control === 'out'} onPress={press} onRelease={release} />
             </div>
 
-            <div style={S.dotRow}>
-              {Array.from({ length: TARGET_BREATHS }, (_, i) => (
-                <span key={i} style={{ ...S.dot, ...(i < breathCount ? S.dotDone : null) }} />
-              ))}
+            {/* Eight waiting slots; each completed breath stamps its shape in. */}
+            <div style={S.stampRow}>
+              {Array.from({ length: slots }, (_, i) => liveBreaths[i]
+                ? <MiniShape key={i} breath={liveBreaths[i]} maxDur={liveMax} size={40} />
+                : <EmptyStamp key={i} size={40} />)}
             </div>
-
-            <p style={S.countLine}>
-              {breathCount === 0
-                ? 'Eight breaths, at your own pace.'
-                : breathCount < TARGET_BREATHS
-                  ? `${breathCount} of ${TARGET_BREATHS} breaths.`
-                  : `${breathCount === TARGET_BREATHS ? 'Eight' : breathCount} breaths — finish when you are ready.`}
-            </p>
 
             <button
               style={{ ...S.finishBtn, ...(breathCount === 0 ? S.finishDisabled : null) }}
@@ -322,7 +403,7 @@ function HoldButton({ kind, label, hint, color, active, onPress, onRelease }) {
       onContextMenu={(e) => e.preventDefault()}
     >
       <span style={S.holdLabel}>{label}</span>
-      <span style={S.holdHint}>{hint}</span>
+      {hint && <span style={S.holdHint}>{hint}</span>}
     </button>
   )
 }
@@ -349,13 +430,6 @@ const S = {
   holdRow: {
     display: 'flex', gap: 16, width: '100%', maxWidth: 400, marginTop: 6,
   },
-
-  dotRow: { display: 'flex', gap: 8, marginTop: 2 },
-  dot: {
-    width: 9, height: 9, borderRadius: '50%',
-    border: '1.5px solid var(--pk)', opacity: 0.35, boxSizing: 'border-box',
-  },
-  dotDone: { background: 'var(--pk)', opacity: 1 },
   hold: {
     flex: 1, minHeight: 76, borderRadius: 16, borderWidth: 2, borderStyle: 'solid',
     display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
@@ -366,9 +440,9 @@ const S = {
   holdLabel: { fontFamily: SERIF, fontSize: 20, pointerEvents: 'none' },
   holdHint:  { fontFamily: MONO, fontSize: 10, letterSpacing: '0.10em', textTransform: 'uppercase', opacity: 0.75, pointerEvents: 'none' },
 
-  countLine: {
-    fontFamily: SANS, fontSize: 12, color: 'var(--tx2)', margin: 0,
-    textAlign: 'center', minHeight: 16,
+  stampRow: {
+    display: 'flex', flexWrap: 'wrap', justifyContent: 'center',
+    gap: 6, marginTop: 4, maxWidth: 400,
   },
 
   finishBtn: {
