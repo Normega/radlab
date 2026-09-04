@@ -135,8 +135,16 @@ export default async function handler(req, res) {
       options: { redirectTo },
     })
     if (linkErr) throw new Error(linkErr.message)
-    const link = linkData?.properties?.action_link
-    if (!link) throw new Error('no action_link')
+    // Deliberately NOT properties.action_link. That URL hits Supabase's
+    // /auth/v1/verify, which consumes the token on a plain GET — which is
+    // exactly what the university's mail scanner performs on every link it
+    // sees. The email points at our own confirmation page instead, carrying
+    // the token hash; that page does nothing until a human clicks.
+    const hashed = linkData?.properties?.hashed_token
+    const vtype = linkData?.properties?.verification_type || 'magiclink'
+    if (!hashed) throw new Error('no hashed_token')
+    const link = `${origin}/academic/${String(courseCode || 'psy240').toLowerCase()}/signin`
+      + `?t=${encodeURIComponent(hashed)}&ty=${encodeURIComponent(vtype)}`
     // The numeric code that accompanies the same link (length is whatever the
     // project's OTP setting mints — seven here, not the six the docs imply, so
     // nothing downstream may assume six). It is the PRIMARY
@@ -156,18 +164,23 @@ export default async function handler(req, res) {
       headers: { Authorization: `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         from: fromEmail, reply_to: replyToFor(courseCode), to: row.email,
-        subject: otp ? `Your Field Guide sign-in code: ${otp}` : 'Your Field Guide sign-in link',
-        text: otp
-          ? `Hi ${first},\n\nYour sign-in code for the course Field Guide is:\n\n    ${otp}\n\nType it into the page you just came from. The code lasts an hour.\n\nIf the page isn't open any more, this link will also work:\n${link}\n\nIf you didn't request this, you can ignore it.`
-          : `Hi ${first},\n\nHere is your sign-in link for the course Field Guide:\n${link}\n\nIf you didn't request this, you can ignore it.`,
-        html: otp
-          ? `<p>Hi ${first},</p>
-             <p style="font-size:15px">Your sign-in code is</p>
-             <p style="font-size:34px;font-weight:700;letter-spacing:6px;font-family:monospace;margin:6px 0 10px">${otp}</p>
-             <p style="font-size:14px;color:#444">Type it into the page you just came from. It lasts an hour.</p>
-             <p style="color:#666;font-size:13px;margin-top:18px">If that page isn't open any more, <a href="${link}">this link</a> will also sign you in — though on university mail it sometimes gets used up by the mail scanner before you can tap it, which is why the code is there.</p>
-             <p style="color:#666;font-size:13px">If you didn't request this, you can ignore it.</p>`
-          : `<p>Hi ${first},</p><p><a href="${link}" style="display:inline-block;padding:10px 22px;border-radius:22px;background:#d63384;color:#fff;text-decoration:none;font-weight:600">Sign in to the Field Guide</a></p><p style="color:#666;font-size:13px">If you didn't request this, you can ignore it.</p>`,
+        subject: 'Your Field Guide sign-in',
+        // Two independent ways in. The link is one tap and lands on a page
+        // that stays inert until pressed, so a mail scanner following it
+        // cannot spend the token. The code needs no link at all, so it
+        // survives even a scanner that presses buttons. Neither is a
+        // decoration: keep both.
+        text: `Hi ${first},\n\nTap to sign in to the course Field Guide:\n${link}\n\n`
+          + (otp ? `Or type this code into the page you came from: ${otp}\n\n` : '')
+          + `Either way lasts an hour. If you didn't request this, you can ignore it.`,
+        html: `<p>Hi ${first},</p>
+             <p><a href="${link}" style="display:inline-block;padding:12px 26px;border-radius:24px;background:#d63384;color:#fff;text-decoration:none;font-weight:600">Sign in to the Field Guide</a></p>
+             <p style="font-size:13px;color:#666">You'll be asked to press one more button — that's deliberate, and it's what stops the university's mail scanner from using your link up before you get to it.</p>`
+          + (otp
+              ? `<p style="font-size:14px;color:#444;margin-top:18px">Prefer to type it? Enter this code on the page you came from:</p>
+             <p style="font-size:28px;font-weight:700;letter-spacing:5px;font-family:monospace;margin:4px 0 0">${otp}</p>`
+              : '')
+          + `<p style="color:#666;font-size:13px;margin-top:18px">Either way lasts an hour. If you didn't request this, you can ignore it.</p>`,
       }),
     })
     if (!rsp.ok) throw new Error(`Resend ${rsp.status}`)

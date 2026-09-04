@@ -169,14 +169,19 @@ Each project sends its own magic links, and each lands on its own routes:
   never move it) and `/academic/<code>/lounge*`.
 - **Academic project** links land on `/academic/<code>/join`, `/wiki`, and the staff segments.
 
-**Sign-in is a typed six-digit code, not a link.** University mail runs Microsoft Defender Safe
+**Sign-in never hands a live token to a GET.** University mail runs Microsoft Defender Safe
 Links, which fetches every URL in every message; a Supabase magic link is single-use, so the
 scanner redeems it seconds after delivery and the student's own tap lands on a spent token.
 Confirmed 2026-09-04 on a real student: six sessions minted against her account, every one from
-an Azure IP with a rotating desktop user agent, none from her iPhone. `roster-join` therefore
-emails `generateLink`'s `email_otp` as the primary path and the join door verifies it with
-`verifyOtp`; the link still ships as a fallback for personal mailboxes. **Any new email that
-carries a sign-in link must assume the link will be opened by a machine first.**
+an Azure IP with a rotating desktop user agent, none from her iPhone. The emailed link therefore points at
+**our own** `/academic/:courseCode/signin` page carrying `properties.hashed_token`, and that page is
+INERT until a human presses its button — a scanner's GET receives static HTML and spends
+nothing; only the click calls `verifyOtp({token_hash, type})`. Verified with a headless load: zero
+auth requests fire before the click. The same email also carries `properties.email_otp` as an
+independent second path, typed on the join door, which survives even a scanner that presses
+buttons. **Any new email carrying a sign-in link must assume the link is opened by a machine
+first: the human's click has to be what consumes it.** Never auto-verify in an effect on that
+page — it reintroduces the whole bug.
 
 The main client decides whether to consume an auth code by route
 (`src/lib/authDetectRoutes.js`). **A staff/wiki segment missing from `FIELD_GUIDE_SEGMENTS` in

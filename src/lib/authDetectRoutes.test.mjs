@@ -52,6 +52,8 @@ const MUST_NOT_DETECT = [
   '/academic/psy240/read',
   '/academic/psy240/reports',
   '/academic/psy240/tracking',
+  '/academic/psy240/signin',
+  '/academic/psy309/signin',
   '/academic/psy309/tracking',
 ]
 

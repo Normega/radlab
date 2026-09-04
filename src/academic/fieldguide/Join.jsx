@@ -104,8 +104,9 @@ export default function Join() {
           <div style={S.box}>
             <p style={S.big}>Check your email for a sign-in code.</p>
             <p style={S.sub}>
-              Type it in below and you're signed in — no password, ever. The code lasts an hour.
-              If nothing arrives within a few minutes, check spam, then request another.
+              Tap the button in the email, or type the code from it below — either signs you in,
+              no password, ever. Both last an hour. If nothing arrives within a few minutes,
+              check spam, then request another.
             </p>
             <form onSubmit={verify} style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 14 }}>
               <input
@@ -125,8 +126,8 @@ export default function Join() {
             </form>
             {otpErr && <p style={{ ...S.sub, color: '#c0392b', marginTop: 8 }}>{otpErr}</p>}
             <p style={{ ...S.sub, fontSize: 13, marginTop: 12 }}>
-              The email also carries a link. On university mail the scanner sometimes opens it
-              before you can, which is why the code is the reliable way in.
+              The email also has a button you can just tap — either way works, so use whichever
+              is easier on the device you're holding.
             </p>
           </div>
         ) : state === 'unmatched' ? (
