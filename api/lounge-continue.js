@@ -44,10 +44,9 @@ export default async function handler(req, res) {
 
   const courseUrl = process.env.COURSE_SUPABASE_URL
   const courseAnon = process.env.COURSE_SUPABASE_ANON_KEY
-  const courseKey = process.env.COURSE_SUPABASE_SERVICE_KEY
   const mainUrl = process.env.VITE_SUPABASE_URL
   const mainKey = process.env.SUPABASE_SERVICE_KEY
-  if (!courseUrl || !courseAnon || !courseKey || !mainUrl || !mainKey) {
+  if (!courseUrl || !courseAnon || !mainUrl || !mainKey) {
     return res.status(500).json({ error: 'Server misconfigured for the Lounge bridge' })
   }
 
@@ -64,13 +63,21 @@ export default async function handler(req, res) {
 
     // 2. And are they actually enrolled in something? A Field Guide account
     //    with no enrollment gets no class membership out of this.
-    const course = createClient(courseUrl, courseKey, { auth: { persistSession: false } })
-    const { data: person } = await course.schema('identity').from('people')
-      .select('id').eq('auth_user_id', who.user.id).maybeSingle()
-    if (!person) return res.status(403).json({ error: 'No Field Guide enrollment' })
-    const { data: enrolled } = await course.from('enrollments')
-      .select('id').eq('person_id', person.id).eq('status', 'active').limit(1)
-    if (!enrolled?.length) return res.status(403).json({ error: 'No active enrollment' })
+    //
+    //    Read this as the STUDENT, not with the service key. `enrollments` has
+    //    an RLS policy of `person_id = current_person_id()`, so their own JWT
+    //    already scopes the answer to them — no person-id lookup needed, and no
+    //    way for this query to see anyone else. The service-key route would
+    //    have to resolve auth_user_id → identity.people first, and `identity`
+    //    is deliberately NOT on PostgREST's exposed-schema list (that is where
+    //    the PII lives), so `.schema('identity')` fails with "Invalid schema" —
+    //    the bug this endpoint shipped with, seen as a bogus 403.
+    const { data: enrolled, error: enrErr } = await asUser
+      .from('enrollments').select('id').eq('status', 'active').limit(1)
+    // Surface a read failure as a failure. Folding it into "no enrollment"
+    // is what disguised a schema error as a considered refusal.
+    if (enrErr) throw new Error(`enrollment read failed: ${enrErr.message}`)
+    if (!enrolled?.length) return res.status(403).json({ error: 'No active Field Guide enrollment' })
 
     // 3. The main project. Find the class first — no class, nothing to join.
     const main = createClient(mainUrl, mainKey, { auth: { persistSession: false } })

@@ -109,6 +109,13 @@ it). `people.auth_user_id` is **nullable** — a person can exist (and hold clai
 auth account. `enrollments` link person↔course with `role` (`student`/`ta`/`instructor`) and
 `status` (`active`/`inactive`).
 
+**The `identity` schema is not on PostgREST’s exposed-schema list** — that is where the PII lives — so
+`.schema('identity').from(...)` fails with *“Invalid schema”* from any client, service key included. Reach it
+through a `SECURITY DEFINER` RPC (`roster_invite_targets` is the pattern), or sidestep it: `enrollments` is in
+`public` and its RLS is `person_id = current_person_id()`, so reading it with the **student’s own JWT** answers
+“what is this person enrolled in” without a person-id lookup at all. Both `roster-invite` and `lounge-continue`
+hit this; in the second it was invisible, because the discarded error read to the student as a considered refusal.
+
 **Staff access = an active `ta` or `instructor` enrollment.** That single fact gates every
 `/academic/<code>/{ingest,review,submissions,corrections,roster,read,reports,tracking}` page via
 `FieldGuideStaffRoute` + `staffCourses.resolveCourse` (a code that doesn't resolve never falls
