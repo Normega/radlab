@@ -169,6 +169,15 @@ Each project sends its own magic links, and each lands on its own routes:
   never move it) and `/academic/<code>/lounge*`.
 - **Academic project** links land on `/academic/<code>/join`, `/wiki`, and the staff segments.
 
+**Sign-in is a typed six-digit code, not a link.** University mail runs Microsoft Defender Safe
+Links, which fetches every URL in every message; a Supabase magic link is single-use, so the
+scanner redeems it seconds after delivery and the student's own tap lands on a spent token.
+Confirmed 2026-09-04 on a real student: six sessions minted against her account, every one from
+an Azure IP with a rotating desktop user agent, none from her iPhone. `roster-join` therefore
+emails `generateLink`'s `email_otp` as the primary path and the join door verifies it with
+`verifyOtp`; the link still ships as a fallback for personal mailboxes. **Any new email that
+carries a sign-in link must assume the link will be opened by a machine first.**
+
 The main client decides whether to consume an auth code by route
 (`src/lib/authDetectRoutes.js`). **A staff/wiki segment missing from `FIELD_GUIDE_SEGMENTS` in
 `courseRoutes.js` means the main client eats academic auth codes on that page** — the failure is

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { getCourseClient } from '../courseClient'
 import { normalizeCourseCode, coursePath } from '../courseRoutes'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
@@ -25,6 +26,12 @@ export default function Join() {
   const [email, setEmail] = useState('')
   const [busy, setBusy] = useState(false)
   const [state, setState] = useState(null) // null | 'sent' | 'unmatched' | {error}
+  // The code path exists because university mail scanners follow every link in
+  // every message, and a magic link is single-use: by the time the student
+  // taps it, the scanner has spent it. A typed code cannot be consumed that
+  // way. The link still ships as a fallback for personal mailboxes.
+  const [otp, setOtp] = useState('')
+  const [otpErr, setOtpErr] = useState(null)
 
   const submit = async (e) => {
     e.preventDefault()
@@ -50,6 +57,33 @@ export default function Join() {
     setBusy(false)
   }
 
+  const verify = async (e) => {
+    e.preventDefault()
+    const token = otp.replace(/\D/g, '')
+    if (token.length < 6) return setOtpErr('Enter the six digits from the email.')
+    setBusy(true); setOtpErr(null)
+    try {
+      const client = await getCourseClient()
+      // generateLink({type:'magiclink'}) mints the code, so that is the type
+      // to verify against; 'email' is accepted by older projects, so try it
+      // rather than failing a student on a naming detail.
+      let { error } = await client.auth.verifyOtp({ email, token, type: 'magiclink' })
+      if (error) ({ error } = await client.auth.verifyOtp({ email, token, type: 'email' }))
+      if (error) {
+        setOtpErr(/expired|invalid/i.test(error.message)
+          ? 'That code was not accepted — it may have expired. Request a new one.'
+          : error.message)
+      } else {
+        // The guard re-renders signed in; land them in the guide.
+        window.location.assign(code ? `/academic/${code}/wiki` : '/academic/fieldguide/wiki')
+        return
+      }
+    } catch (err) {
+      setOtpErr(err.message)
+    }
+    setBusy(false)
+  }
+
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '48px 20px' }}>
       <div style={{ maxWidth: 480, margin: '0 auto' }}>
@@ -58,11 +92,31 @@ export default function Join() {
 
         {state === 'sent' ? (
           <div style={S.box}>
-            <p style={S.big}>Check your email.</p>
+            <p style={S.big}>Check your email for a six-digit code.</p>
             <p style={S.sub}>
-              A sign-in link is on its way to your U of T address. Click it and you'll land in the
-              guide, signed in — no password, ever. If it doesn't arrive within a few minutes, check
-              spam, then try again.
+              Type it in below and you're signed in — no password, ever. The code lasts an hour.
+              If nothing arrives within a few minutes, check spam, then request another.
+            </p>
+            <form onSubmit={verify} style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 14 }}>
+              <input
+                value={otp}
+                onChange={e => setOtp(e.target.value)}
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                placeholder="123456"
+                maxLength={7}
+                style={{ ...S.input, flex: '1 1 140px', fontFamily: 'monospace', fontSize: 22, letterSpacing: 5, textAlign: 'center' }}
+              />
+              <button type="submit"
+                      style={{ ...S.primary, marginTop: 0, width: 'auto', flex: '0 0 auto', padding: '12px 24px' }}
+                      disabled={busy}>
+                {busy ? 'Checking…' : 'Sign in'}
+              </button>
+            </form>
+            {otpErr && <p style={{ ...S.sub, color: '#c0392b', marginTop: 8 }}>{otpErr}</p>}
+            <p style={{ ...S.sub, fontSize: 13, marginTop: 12 }}>
+              The email also carries a link. On university mail the scanner sometimes opens it
+              before you can, which is why the code is the reliable way in.
             </p>
           </div>
         ) : state === 'unmatched' ? (

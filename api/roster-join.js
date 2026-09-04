@@ -137,6 +137,15 @@ export default async function handler(req, res) {
     if (linkErr) throw new Error(linkErr.message)
     const link = linkData?.properties?.action_link
     if (!link) throw new Error('no action_link')
+    // The six-digit code that accompanies the same link. It is the PRIMARY
+    // path now: university mail runs Microsoft Defender Safe Links, which
+    // fetches every URL in every message to scan it — and a Supabase magic
+    // link is single-use, so the scanner redeems it seconds after delivery and
+    // the student's own tap arrives at a spent token. Confirmed 2026-09-04:
+    // a student on an iPhone had six sessions minted against her account, all
+    // from Azure IPs with rotating desktop user agents, none from her phone.
+    // A scanner can follow a link; it cannot type a code into a form.
+    const otp = linkData?.properties?.email_otp ?? null
 
     const fromEmail = process.env.FROM_EMAIL || 'PSY240 Field Guide <fieldguide@course.radlab.zone>'
     const first = row.full_name.split(' ')[0]
@@ -145,9 +154,18 @@ export default async function handler(req, res) {
       headers: { Authorization: `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         from: fromEmail, reply_to: replyToFor(courseCode), to: row.email,
-        subject: 'Your Field Guide sign-in link',
-        text: `Hi ${first},\n\nHere is your sign-in link for the course Field Guide:\n${link}\n\nIf you didn't request this, you can ignore it.`,
-        html: `<p>Hi ${first},</p><p><a href="${link}" style="display:inline-block;padding:10px 22px;border-radius:22px;background:#d63384;color:#fff;text-decoration:none;font-weight:600">Sign in to the Field Guide</a></p><p style="color:#666;font-size:13px">If you didn't request this, you can ignore it.</p>`,
+        subject: otp ? `Your Field Guide sign-in code: ${otp}` : 'Your Field Guide sign-in link',
+        text: otp
+          ? `Hi ${first},\n\nYour sign-in code for the course Field Guide is:\n\n    ${otp}\n\nType it into the page you just came from. The code lasts an hour.\n\nIf the page isn't open any more, this link will also work:\n${link}\n\nIf you didn't request this, you can ignore it.`
+          : `Hi ${first},\n\nHere is your sign-in link for the course Field Guide:\n${link}\n\nIf you didn't request this, you can ignore it.`,
+        html: otp
+          ? `<p>Hi ${first},</p>
+             <p style="font-size:15px">Your sign-in code is</p>
+             <p style="font-size:34px;font-weight:700;letter-spacing:6px;font-family:monospace;margin:6px 0 10px">${otp}</p>
+             <p style="font-size:14px;color:#444">Type it into the page you just came from. It lasts an hour.</p>
+             <p style="color:#666;font-size:13px;margin-top:18px">If that page isn't open any more, <a href="${link}">this link</a> will also sign you in — though on university mail it sometimes gets used up by the mail scanner before you can tap it, which is why the code is there.</p>
+             <p style="color:#666;font-size:13px">If you didn't request this, you can ignore it.</p>`
+          : `<p>Hi ${first},</p><p><a href="${link}" style="display:inline-block;padding:10px 22px;border-radius:22px;background:#d63384;color:#fff;text-decoration:none;font-weight:600">Sign in to the Field Guide</a></p><p style="color:#666;font-size:13px">If you didn't request this, you can ignore it.</p>`,
       }),
     })
     if (!rsp.ok) throw new Error(`Resend ${rsp.status}`)
