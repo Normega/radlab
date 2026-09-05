@@ -165,7 +165,7 @@ export default function Join() {
         )}
 
         <p style={{ ...S.sub, marginTop: 26, fontSize: 14 }}>
-          Staff sign in with their password at <Link to={code ? coursePath(code) : '/academic/fieldguide'} style={S.link}>the Field Guide home</Link>.
+          Course staff: same door — enter your staff email above and the sign-in link comes to you.
         </p>
       </div>
     </div>

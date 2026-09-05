@@ -103,6 +103,24 @@ export default async function handler(req, res) {
   const row = Array.isArray(found) ? found[0] : found
 
   if (!row) {
+    // Not on any roster — but the roster is only where people START. Staff
+    // (TA/instructor) are never on one, and an enrolled student's roster row
+    // can be gone. Anyone with an active enrollment gets the same sign-in
+    // email; the door is one door (Norm, 2026-09-05 — he hit the old
+    // password form on /tracking). No cooldown on this path: it has no
+    // roster row to track one on, and its population is enrolled people.
+    const { data: enrolled } = await service.rpc('enrolled_person_by_key', { p_match_key: key })
+    const person = Array.isArray(enrolled) ? enrolled[0] : enrolled
+    if (person?.email) {
+      try {
+        await sendSignInEmail(service, resendKey, {
+          email: person.email, fullName: '', courseCode: person.course_code, next,
+        })
+        return res.status(200).json({ matched: true })
+      } catch (e) {
+        return res.status(500).json({ error: `Could not send the link: ${e.message}` })
+      }
+    }
     await service.rpc('roster_log_attempt', {
       p_submitted: raw, p_match_key: key, p_ip_hash: ipHash,
     })
@@ -119,23 +137,36 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { error: cuErr } = await service.auth.admin.createUser({
-      email: row.email, email_confirm: true,
-    })
-    if (cuErr && !/already|exists/i.test(cuErr.message)) throw new Error(cuErr.message)
-
     // Best-effort: a lookup failure costs the course-specific reply address
     // and redirect, never the sign-in link the student is waiting on.
     // Fetched BEFORE the link is minted (phase 4) because the redirect now
     // targets the matched row's course-scoped wiki.
     const { data: courseCode } = await service.rpc('roster_course_code', { p_id: row.id })
+    await sendSignInEmail(service, resendKey, {
+      email: row.email, fullName: row.full_name, courseCode, next,
+    })
+    await service.rpc('roster_mark_invited', { p_id: row.id })
+    return res.status(200).json({ matched: true })
+  } catch (e) {
+    return res.status(500).json({ error: `Could not send the link: ${e.message}` })
+  }
+}
+
+// The whole sign-in send, shared by the roster path and the enrolled-person
+// path so the two can never drift: create-if-missing, mint the token, build
+// the inert-door link, email it via Resend.
+async function sendSignInEmail(service, resendKey, { email, fullName, courseCode, next }) {
+    const { error: cuErr } = await service.auth.admin.createUser({
+      email, email_confirm: true,
+    })
+    if (cuErr && !/already|exists/i.test(cuErr.message)) throw new Error(cuErr.message)
 
     const origin = process.env.SITE_URL || 'https://radlab.zone'
     const redirectTo = courseCode
       ? `${origin}/academic/${String(courseCode).toLowerCase()}/wiki`
       : `${origin}/academic/fieldguide/wiki` // immortal shim resolves it
     const { data: linkData, error: linkErr } = await service.auth.admin.generateLink({
-      type: 'magiclink', email: row.email,
+      type: 'magiclink', email,
       options: { redirectTo },
     })
     if (linkErr) throw new Error(linkErr.message)
@@ -163,12 +194,13 @@ export default async function handler(req, res) {
     const otp = linkData?.properties?.email_otp ?? null
 
     const fromEmail = process.env.FROM_EMAIL || 'PSY240 Field Guide <fieldguide@course.radlab.zone>'
-    const first = row.full_name.split(' ')[0]
+    // Staff matches carry no roster name; "there" reads fine in a greeting.
+    const first = String(fullName ?? '').split(' ')[0] || 'there'
     const rsp = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { Authorization: `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: fromEmail, reply_to: replyToFor(courseCode), to: row.email,
+        from: fromEmail, reply_to: replyToFor(courseCode), to: email,
         subject: 'Your Field Guide sign-in',
         // Two independent ways in. The link is one tap and lands on a page
         // that stays inert until pressed, so a mail scanner following it
@@ -189,11 +221,4 @@ export default async function handler(req, res) {
       }),
     })
     if (!rsp.ok) throw new Error(`Resend ${rsp.status}`)
-
-    await service.rpc('roster_mark_invited', { p_id: row.id })
-
-    return res.status(200).json({ matched: true })
-  } catch (e) {
-    return res.status(500).json({ error: `Could not send the link: ${e.message}` })
-  }
 }

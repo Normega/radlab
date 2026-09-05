@@ -27,7 +27,7 @@ const WIKI_AFTER_CONFIRM = '/academic/fieldguide/wiki'
 // Role is a coarse gate only. What a reader actually sees is decided by RLS:
 // `members read published pages` vs `staff read all pages`, so the reader UI
 // is written once and the database draws the line.
-export default function FieldGuideAuthRoute({ roles, deniedTitle, deniedBody, publicAccess = false, signedOutDoor = 'password' }) {
+export default function FieldGuideAuthRoute({ roles, deniedTitle, deniedBody, publicAccess = false }) {
   // Course-scoped mounts (/academic/:courseCode/…) carry the course in the
   // URL; legacy /academic/fieldguide/* mounts don't (their shims resolve it).
   const { courseCode: courseCodeParam } = useParams()
@@ -177,14 +177,13 @@ export default function FieldGuideAuthRoute({ roles, deniedTitle, deniedBody, pu
         })
       }
     }
-    // Students have no password: their account is created by clicking an
-    // emailed link and they never set one. Sending them to the email+password
-    // form is a dead end — they type their address into a field that cannot
-    // help them, which is exactly what happened to the first student to try
-    // it (2026-09-04). Reader surfaces therefore open the door that emails a
-    // link; staff surfaces keep the password form.
-    if (signedOutDoor === 'join' && courseCode) return <Join />
-    return <CourseLogin client={client} />
+    // ONE door, no password, anywhere on academic (Norm, 2026-09-05 — he
+    // hit the old staff password form on /tracking). The email door now
+    // vouches for staff too: roster-join falls back to active enrollments
+    // (enrolled_person_by_key), so a TA or instructor typing their email
+    // gets the same scanner-proof sign-in link a rostered student gets.
+    // Never reintroduce a password form on this side of the platform.
+    return <Join />
   }
   if (enrollments === undefined) {
     return <Shell><p style={S.sub}>Checking access…</p></Shell>
@@ -263,80 +262,6 @@ function CourseDenied({ code, enrollments, email }) {
   )
 }
 
-function CourseLogin({ client }) {
-  // Course-scoped confirmation landing when this login gate sits on a course
-  // route (phase 4; both projects' allow-lists confirmed to carry the /**
-  // wildcard, 2026-09-01). Legacy mounts keep the legacy target, whose shim
-  // resolves it.
-  const { courseCode } = useParams()
-  const confirmPath = courseCode ? wikiBase(courseCode) : WIKI_AFTER_CONFIRM
-  const [mode, setMode] = useState('signin') // 'signin' | 'signup'
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [busy, setBusy] = useState(false)
-  const [notice, setNotice] = useState(null)
-
-  const submit = async (e) => {
-    e.preventDefault()
-    setBusy(true)
-    setNotice(null)
-    const { error, data } = mode === 'signin'
-      ? await client.auth.signInWithPassword({ email, password })
-      // Without an explicit emailRedirectTo the confirmation link falls back to
-      // the radlab-academic project's Site URL — which sent everyone to
-      // localhost. Note this only works if the URL is also on that project's
-      // redirect allow-list; Supabase silently falls back to Site URL if not.
-      : await client.auth.signUp({
-          email,
-          password,
-          options: { emailRedirectTo: `${window.location.origin}${confirmPath}` },
-        })
-    setBusy(false)
-    if (error) return setNotice(error.message)
-    // Signup with email confirmation enabled returns no session yet.
-    if (mode === 'signup' && !data.session) {
-      setNotice('Account created — check your email for a confirmation link. It will bring you back here signed in.')
-      setMode('signin')
-    }
-  }
-
-  return (
-    <Shell>
-      <h1 style={S.title}>{mode === 'signin' ? 'Sign in' : 'Create account'}</h1>
-      <p style={S.sub}>
-        This is a separate account from the main radlab site — course members only.
-      </p>
-      {/* Staff sign in with a password; students never set one. Without this
-          the page is a trap for anyone who arrived here by accident. */}
-      {courseCode && (
-        <p style={{ ...S.sub, marginTop: 10 }}>
-          <b>Student?</b> You don't need a password —{' '}
-          <Link to={joinPath(courseCode)} style={S.inlineLink}>get a sign-in link by email</Link>.
-        </p>
-      )}
-      <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 16 }}>
-        <input style={S.input} type="email" placeholder="Email" value={email}
-          onChange={e => setEmail(e.target.value)} required />
-        <input style={S.input} type="password" placeholder="Password" value={password}
-          onChange={e => setPassword(e.target.value)} required minLength={8} />
-        <button style={S.primary} type="submit" disabled={busy}>
-          {busy ? 'Working…' : mode === 'signin' ? 'Sign in' : 'Sign up'}
-        </button>
-      </form>
-      {notice && <p style={{ ...S.sub, color: 'var(--pk)', marginTop: 10 }}>{notice}</p>}
-      <button style={S.linkBtn} onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setNotice(null) }}>
-        {mode === 'signin' ? 'Invited but no account yet? Sign up' : 'Already registered? Sign in'}
-      </button>
-      {/* WP5: students never need this form at all — their whole flow is
-          email links. Point them at the join page before they try to invent
-          a password. */}
-      <p style={{ ...S.sub, marginTop: 14 }}>
-        <b>PSY240 student?</b> You don't need a password — get a sign-in link at{' '}
-        <a href={courseCode ? joinPath(courseCode) : '/academic/fieldguide/join'} style={{ color: 'var(--pk)', textDecoration: 'none' }}>the join page</a>.
-      </p>
-    </Shell>
-  )
-}
 
 function Shell({ children }) {
   return (

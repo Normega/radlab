@@ -692,3 +692,4 @@ with nobody.
 | `20260903_gap_ask_display.sql` | radlab-academic; applied 2026-09-03 via MCP; page_gaps.ask_display + gap_board returns coalesce(ask_display, ask) |
 | `20260903_gap_detector_lazy_continuation.sql` | radlab-academic; applied 2026-09-03 via MCP; populate_page_gaps reads whole blockquote blocks so wrapped annotation lines no longer truncate the ask. NOT re-run — ask is identity |
 | `20260905_class_avatar_bonus.sql` | main radlab; applied 2026-09-05 via MCP `apply_migration`; profiles.class_avatar_bonus_at + award_class_avatar_bonus() (one-time +200 for class members with an avatar); verified live under RLS as student2: no-avatar refusal → grant → once-only |
+| `20260905_enrolled_signin_lookup.sql` | radlab-academic; applied 2026-09-05 via MCP `apply_migration`; enrolled_person_by_key() — the email door's staff/enrolled fallback (service_role only) |
