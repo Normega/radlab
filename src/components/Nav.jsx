@@ -2,10 +2,10 @@ import { useState, useEffect, useRef } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
-import RippleAvatar from '../ripple/RippleAvatar'
 import { useAvatarConfig } from '../hooks/useAvatarConfig'
 import { useDisplayName } from '../hooks/useDisplayName'
 import ButtonNav from './ui/ButtonNav'
+import MenuAvatar from './ui/MenuAvatar'
 import PrimaryCTA from './ui/PrimaryCTA'
 import SecondaryCTA from './ui/SecondaryCTA'
 
@@ -28,6 +28,20 @@ import SecondaryCTA from './ui/SecondaryCTA'
  * behavior — provisional until a real mobile design exists).
  */
 
+function useClassLinks(userId) {
+  return useQuery({
+    queryKey: ['nav-classes', userId],
+    enabled: !!userId,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('class_members').select('classes(slug)').eq('user_id', userId)
+      return (data ?? [])
+        .map(r => r.classes?.slug).filter(Boolean).sort()
+        .map(slug => ({ to: `/academic/${slug}/lounge`, label: `${slug.toUpperCase()} Lecture Lounge` }))
+    },
+  })
+}
+
 function useProfile(userId) {
   return useQuery({
     queryKey: ['nav-profile', userId],
@@ -47,6 +61,7 @@ export default function Nav({ session }) {
 
   const { data: avatarData } = useAvatarConfig(userId)
   const { data: profile }    = useProfile(userId)
+  const { data: classLinks } = useClassLinks(userId)
   const isAdmin = profile?.role === 'lab' || profile?.super_admin === true
 
   // Same name the Dashboard greets you by — both read profiles.display_name
@@ -88,13 +103,8 @@ export default function Nav({ session }) {
   const avatarMenu = session && (
     <AccountMenu
       onSignOut={handleSignOut}
-      trigger={
-        avatarData ? (
-          <RippleAvatar skinColor={avatarData.skin_color} eyeColor={avatarData.eye_color} species={avatarData.species ?? 'human'} hairStyle={avatarData.hair_style ?? 'none'} hairColor={avatarData.hair_color ?? '#784421'} valence={0} arousal={0} size={40} />
-        ) : (
-          <div style={S.avatarInitial}>{initial}</div>
-        )
-      }
+      classLinks={classLinks}
+      trigger={<MenuAvatar avatarData={avatarData} initial={initial} />}
     />
   )
 
@@ -202,7 +212,7 @@ function MenuItem({ to, active = false, onClick, style, children }) {
   return <button type="button" role="menuitem" onClick={onClick} style={s} {...handlers}>{children}</button>
 }
 
-function AccountMenu({ onSignOut, trigger }) {
+function AccountMenu({ onSignOut, trigger, classLinks }) {
   const [open, setOpen] = useState(false)
   const wrapRef  = useRef(null)
   const { pathname } = useLocation()
@@ -241,6 +251,10 @@ function AccountMenu({ onSignOut, trigger }) {
         <div style={S.menu} role="menu">
           {/* Prefix match, not exact — /account has no sub-routes today, but
               stays active on any it grows (2026-08-13 review decision). */}
+          {(classLinks ?? []).map(({ to, label }) => (
+            <MenuItem key={to} to={to} active={pathname.startsWith(to)}>{label}</MenuItem>
+          ))}
+          {!!classLinks?.length && <div style={S.menuDivider} />}
           {MENU_ITEMS.map(({ to, label }) => (
             <MenuItem key={to} to={to} active={pathname.startsWith(to)}>{label}</MenuItem>
           ))}
@@ -286,8 +300,8 @@ const S = {
     gap: 6, padding: '10px 0 16px',
   },
   avatarRing: {
-    padding: 3, borderRadius: 24, flexShrink: 0,
-    border: '2px solid var(--pk)',
+    padding: 0, borderRadius: 24, flexShrink: 0,
+    border: 'none',
     background: 'transparent',
     display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
     textDecoration: 'none', cursor: 'pointer',
@@ -313,12 +327,4 @@ const S = {
   menuItemHover: { background: 'var(--bgp)' },
   menuDivider: { height: 1, background: 'var(--bd)', margin: '6px 4px' },
   menuSignOut: { color: 'var(--pkd)' },
-  avatarInitial: {
-    width: 40, height: 40, borderRadius: '50%',
-    background: 'var(--pk)',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    color: '#fff',
-    fontFamily: '"DM Serif Display", Georgia, serif',
-    fontSize: 15, fontWeight: 400,
-  },
 }

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useOutletContext } from 'react-router-dom'
+import { AcademicEyebrow } from '../AcademicChrome'
 import AvatarMenu from './AvatarMenu'
 import { useWikiCourse } from './wiki/useWikiCourse'
 import { useWikiBase, useCoursePaths } from './wiki/useWikiBase'
@@ -64,7 +65,7 @@ export default function WhatsNew() {
     <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '32px 20px 80px' }}>
       <div style={{ maxWidth: 780, margin: '0 auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-          <p style={S.eyebrow}><Link to={paths.home} style={S.eyebrowLink}>Field Guide</Link>{course?.code ? ` · ${course.code}` : ''}</p>
+          <AcademicEyebrow to={paths.home} courseCode={course?.code} />
           {session && (
             <AvatarMenu client={courseClient} fgEmail={session.user.email}
                         courseCode={course?.code} isStaff={isStaff} />

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useOutletContext, useParams, useLocation } from 'react-router-dom'
+import { AcademicEyebrow } from '../../AcademicChrome'
 import AvatarMenu from '../AvatarMenu'
 import { WikiMarkdown } from './wikiMarkdown'
 import { splitFrontmatter, extractHeadings, splitSections } from './wikiText'
@@ -834,7 +835,7 @@ function Shell({ course, menu, children }) {
     <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '28px 16px 64px' }}>
       <div style={{ maxWidth: 980, margin: '0 auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-          <p style={S.eyebrow}><Link to={paths.home} style={S.eyebrowLink}>Field Guide</Link>{course?.code ? ` · ${course.code}` : ''}</p>
+          <AcademicEyebrow to={paths.home} courseCode={course?.code} />
           {menu}
         </div>
         {children}

@@ -480,6 +480,17 @@ export default function BrandAssets() {
           </div>
         </div>
 
+        <p className="brand-subheading">Menu avatar</p>
+        <p className="brand-section-note">
+          The account-menu trigger, identical on the main site and every academic page
+          (<code>src/components/ui/MenuAvatar.jsx</code>): the user&rsquo;s 40px ripple avatar in a
+          <strong> 46px white circle</strong> with a 1px <code>--bd</code> border &mdash; no pink
+          ring (retired 2026-09-04), no other treatment. Signed in with no avatar yet: the
+          account&rsquo;s initial, Space&nbsp;Mono, <code>--pk</code>, same circle. The white circle
+          <strong> is</strong> the menu affordance &mdash; never use it as a bare profile link, and
+          never present an account menu behind anything else.
+        </p>
+
         <p className="brand-subheading">Strokes</p>
         <div>
           <div className="brand-stroke-row">

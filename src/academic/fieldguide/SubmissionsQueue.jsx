@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useOutletContext, useParams } from 'react-router-dom'
+import { AcademicEyebrow } from '../AcademicChrome'
 import AvatarMenu from './AvatarMenu'
 import Onboarding from './Onboarding'
 import { useCoursePaths } from './wiki/useWikiBase'
@@ -241,7 +242,7 @@ export default function SubmissionsQueue() {
     <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '32px 20px 80px' }}>
       <div style={{ maxWidth: 940, margin: '0 auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-          <p style={S.eyebrow}><Link to={paths.home} style={S.eyebrowLink}>Field Guide</Link></p>
+          <AcademicEyebrow to={paths.home} />
           {session && (
             <AvatarMenu client={courseClient} fgEmail={session.user.email}
                         courseCode={courseCode} isStaff onTour={() => setTourOpen(true)} />

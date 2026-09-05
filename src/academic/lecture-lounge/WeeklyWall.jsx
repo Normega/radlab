@@ -2,7 +2,8 @@ import { useEffect, useState, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { normalizeCourseCode, loungePath } from '../courseRoutes'
-import Nav from '../../components/Nav'
+import { AcademicShell } from '../AcademicChrome'
+import AvatarMenu from '../fieldguide/AvatarMenu'
 import RippleAvatar from '../../ripple/RippleAvatar'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
@@ -184,13 +185,16 @@ export default function WeeklyWall({ session }) {
 
 function Shell({ slug, session, children }) {
   return (
-    <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
-      <Nav session={session} />
+    <AcademicShell courseCode={slug} homeTo={loungePath(slug)}
+                   menu={session ? (
+                     <AvatarMenu email={session.user.email} courseCode={slug}
+                                 signOut={() => supabase.auth.signOut()} />
+                   ) : null}>
       <div style={S.wrap}>
         <Link to={loungePath(slug)} style={S.backLink}>← back to class</Link>
         {children}
       </div>
-    </div>
+    </AcademicShell>
   )
 }
 

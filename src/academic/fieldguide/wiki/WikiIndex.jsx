@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useOutletContext } from 'react-router-dom'
+import { AcademicEyebrow } from '../../AcademicChrome'
 import { useWikiBase, useCoursePaths } from './useWikiBase'
 import { useWikiCourse } from './useWikiCourse'
 import AvatarMenu from '../AvatarMenu'
@@ -514,7 +515,7 @@ function Shell({ course, session, client, isStaff, courses, courseId, onSelectCo
       <div style={{ maxWidth: 980, margin: '0 auto' }}>
         <header style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
           <div>
-            <p style={S.eyebrow}><Link to={paths.home} style={S.eyebrowLink}>Field Guide</Link></p>
+            <AcademicEyebrow to={paths.home} courseCode={course?.code} />
             <h1 style={S.title}>{course?.name ?? 'Course wiki'}</h1>
             {course && <p style={S.sub}>{course.code} · {course.term}</p>}
           </div>

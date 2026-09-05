@@ -7,15 +7,27 @@ import { Link } from 'react-router-dom'
 // There is no avatar system in the academic project, and there shouldn't be.
 import { supabase } from '../../lib/supabase'
 import { useAvatarConfig } from '../../hooks/useAvatarConfig'
-import RippleAvatar from '../../ripple/RippleAvatar'
+import MenuAvatar from '../../components/ui/MenuAvatar'
+import { courseFeatures } from '../courseFeatures'
 import { loungePath, courseSubPath } from '../courseRoutes'
 
 const MONO = '"Space Mono", "Courier New", monospace'
 
-// Top-right account chrome for Field Guide pages (student and staff).
-// Course-flavored menu, not a mirror of the main site's: "My Ripple" is a
-// research surface and would be a wrong turn from inside a course.
-export default function AvatarMenu({ client, fgEmail, courseCode, isStaff, onTour }) {
+// THE academic account menu — one list, both halves of the partition.
+//
+// Mounted on Field Guide pages (academic session; pass `client` so Sign out
+// ends that session) AND on Lecture Lounge pages (main session; pass `email`
+// and a `signOut` override). Same items either way — that sameness is the
+// point: students found two different menus behind the same avatar confusing
+// (Norm, 2026-09-04), so wherever you are in a course, this menu gets you
+// everywhere else.
+//
+// "My Ripple" is included by explicit decision (2026-09-04), reversing the
+// earlier "research surface, wrong turn from a course" stance: students DO
+// have ripples via check-ins, and hiding where their data lives is worse
+// than one extra item. It needs a main-site session, so it appears only when
+// one exists — before that, the Lounge join item is the door that creates it.
+export default function AvatarMenu({ client, fgEmail, email, courseCode, isStaff, onTour, signOut }) {
   const [open, setOpen] = useState(false)
   const [mainUserId, setMainUserId] = useState(null)
   const wrapRef = useRef(null)
@@ -37,49 +49,56 @@ export default function AvatarMenu({ client, fgEmail, courseCode, isStaff, onTou
     return () => document.removeEventListener('mousedown', onDoc)
   }, [open])
 
-  const initial = (fgEmail ?? '?').trim().charAt(0).toUpperCase()
+  const who = email ?? fgEmail
+  const initial = (who ?? '?').trim().charAt(0).toUpperCase()
+  const feats = courseFeatures(courseCode)
   const lounge = courseCode ? loungePath(courseCode) : '/academic'
   const sub = (seg) => (courseCode ? courseSubPath(courseCode, seg) : '/academic')
 
   const items = []
+  // Course places first — the two halves of the course, always both present.
+  items.push({ to: sub('wiki'), label: 'Field Guide' })
   if (mainUserId) {
-    items.push({ to: lounge, label: 'Class dashboard' })
+    items.push({ to: lounge, label: 'Lecture Lounge' })
   } else {
-    // No main-site session in this browser. The lounge join creates one, and
+    // No main-site session in this browser. The Lounge join creates one, and
     // with it the avatar — one door for both roles, labeled by what each
     // actually wants from it.
-    items.push({ to: lounge, label: isStaff ? 'Create your avatar' : 'Join the class dashboard' })
+    items.push({ to: lounge, label: isStaff ? 'Create your avatar' : 'Join the Lecture Lounge' })
   }
-  items.push(isStaff
-    ? { to: sub('submissions'), label: 'Submissions' }
-    : { to: sub('gaps'), label: 'Gap board' })
-  if (isStaff) items.push({ to: sub('review'), label: 'Review queue' })
+  if (isStaff) {
+    items.push({ to: sub('submissions'), label: 'Submissions' })
+    items.push({ to: sub('review'), label: 'Review queue' })
+    items.push({ to: sub('tracking'), label: 'Tracking' })
+    items.push({ to: sub('roster'), label: 'Roster' })
+  } else if (feats.gaps) {
+    items.push({ to: sub('gaps'), label: 'Gap board' })
+  }
+  // Then the account places.
+  if (mainUserId) items.push({ to: '/ripple', label: 'My Ripple' })
   if (mainUserId) items.push({ to: '/account', label: 'Account' })
   if (onTour) items.push({ onClick: () => { setOpen(false); onTour() }, label: 'Tour' })
+
+  const handleSignOut = () => {
+    if (signOut) return signOut()
+    return client?.auth.signOut()
+  }
 
   return (
     <div ref={wrapRef} style={S.wrap}>
       <button style={S.trigger} aria-label="Account menu" onClick={() => setOpen(o => !o)}>
-        {avatarData ? (
-          <RippleAvatar
-            skinColor={avatarData.skin_color} eyeColor={avatarData.eye_color}
-            species={avatarData.species ?? 'human'} hairStyle={avatarData.hair_style ?? 'none'}
-            hairColor={avatarData.hair_color ?? '#784421'} valence={0} arousal={0} size={36}
-          />
-        ) : (
-          <span style={S.initial}>{initial}</span>
-        )}
+        <MenuAvatar avatarData={avatarData} initial={initial} />
       </button>
       {open && (
         <div style={S.menu}>
-          <p style={S.who}>{fgEmail}</p>
+          <p style={S.who}>{who}</p>
           {items.map((it) => it.to
             ? <Link key={it.label} to={it.to} style={S.item} onClick={() => setOpen(false)}>{it.label}</Link>
             : <button key={it.label} style={{ ...S.item, ...S.itemBtn }} onClick={it.onClick}>{it.label}</button>
           )}
           <div style={S.divider} />
           <button style={{ ...S.item, ...S.itemBtn, color: 'var(--tx2)' }}
-                  onClick={() => client.auth.signOut()}>Sign out</button>
+                  onClick={handleSignOut}>Sign out</button>
         </div>
       )}
     </div>
@@ -90,12 +109,10 @@ const S = {
   wrap: { position: 'relative', flex: '0 0 auto' },
   trigger: {
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    width: 40, height: 40, borderRadius: '50%', border: '2px solid var(--bd)',
-    background: 'var(--bgc)', cursor: 'pointer', padding: 0, overflow: 'hidden',
+    border: 'none', background: 'none', cursor: 'pointer', padding: 0,
   },
-  initial: { fontFamily: MONO, fontSize: 16, fontWeight: 700, color: 'var(--pk)' },
   menu: {
-    position: 'absolute', right: 0, top: 46, zIndex: 60, minWidth: 210,
+    position: 'absolute', right: 0, top: 52, zIndex: 60, minWidth: 210,
     background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 12,
     boxShadow: '0 8px 28px rgba(42,33,48,.14)', padding: '8px 0', textAlign: 'left',
   },

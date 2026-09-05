@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useOutletContext } from 'react-router-dom'
+import { AcademicEyebrow } from '../AcademicChrome'
 import { useWikiBase, useCoursePaths } from './wiki/useWikiBase'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
@@ -31,7 +32,7 @@ export default function CorrectionsFeed() {
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '32px 20px 80px' }}>
       <div style={{ maxWidth: 940, margin: '0 auto' }}>
-        <p style={S.eyebrow}><Link to={paths.home} style={S.eyebrowLink}>Field Guide</Link></p>
+        <AcademicEyebrow to={paths.home} />
         <h1 style={S.title}>Corrections</h1>
         <p style={S.sub}>
           Every staff edit, newest first: who, what page, which version, and the required note saying

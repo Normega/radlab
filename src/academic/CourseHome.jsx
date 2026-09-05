@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { AcademicEyebrow } from './AcademicChrome'
 import { supabase } from '../lib/supabase'
 import { getCourseClient } from './courseClient'
 import { normalizeCourseCode, loungePath, joinPath, wikiBase, courseSubPath, pickNewestTerm } from './courseRoutes'
@@ -157,10 +158,7 @@ function Shell({ code, children }) {
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', justifyContent: 'center', padding: '48px 24px' }}>
       <div style={{ maxWidth: 560, width: '100%' }}>
-        <p style={S.eyebrow}>
-          <Link to="/academic" style={{ color: 'inherit', textDecoration: 'none' }}>radlab academic</Link>
-          {code ? ` · ${code}` : ''}
-        </p>
+        <AcademicEyebrow area="radlab academic" to="/academic" courseCode={code} />
         {children}
       </div>
     </div>

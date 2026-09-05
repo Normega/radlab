@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useOutletContext } from 'react-router-dom'
+import { AcademicEyebrow } from '../AcademicChrome'
 import { useWikiBase, useCoursePaths } from './wiki/useWikiBase'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
@@ -49,7 +50,7 @@ export default function ReadingQueue() {
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '32px 20px 80px' }}>
       <div style={{ maxWidth: 880, margin: '0 auto' }}>
-        <p style={S.eyebrow}><Link to={paths.home} style={S.eyebrowLink}>Field Guide</Link> · staff</p>
+        <AcademicEyebrow to={paths.home} suffix=" · staff" />
         <h1 style={S.title}>The reading queue</h1>
         <p style={S.sub}>
           Read in this order, stamp on the page (the bar under the title), and the stamp bar offers

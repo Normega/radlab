@@ -216,6 +216,16 @@ student email through `supabase.auth.signUp`, `resetPasswordForEmail`, or
 `properties.action_link` — all of those produce links to `/auth/v1/verify`, which spends the
 token on a plain GET.
 
+**Chrome**: every student-facing academic page mounts `src/academic/AcademicChrome.jsx`
+(`AcademicEyebrow` = logo + area eyebrow; `AcademicShell` wraps Lounge-side pages) and the shared
+account menu `src/academic/fieldguide/AvatarMenu.jsx` — one menu for both partitions (pass `client`
+on Field Guide pages so Sign out ends the academic session; pass `email` + `signOut` on Lounge pages
+for the main session). The trigger is the brand "Menu avatar" (`src/components/ui/MenuAvatar.jsx`).
+The main site's `<Nav>` belongs on NO student-facing academic page — the staff lecture tools
+(ClassConsole, ClassRemote, LectureLoungeAdminPage) are the deliberate exceptions. The student-facing
+name of the class surface is **Lecture Lounge** — never "class dashboard"; the slides, tours, menus,
+Quercus pages and syllabi all use it, so new copy must too.
+
 The main client decides whether to consume an auth code by route
 (`src/lib/authDetectRoutes.js`). **A staff/wiki segment missing from `FIELD_GUIDE_SEGMENTS` in
 `courseRoutes.js` means the main client eats academic auth codes on that page** — the failure is

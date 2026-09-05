@@ -3,7 +3,8 @@ import { useParams, Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { normalizeCourseCode, loungePath } from '../courseRoutes'
 import { useAvatarConfig } from '../../hooks/useAvatarConfig'
-import Nav from '../../components/Nav'
+import { AcademicShell } from '../AcademicChrome'
+import AvatarMenu from '../fieldguide/AvatarMenu'
 import CheckinRunner from './CheckinRunner'
 import ResultsView from './ResultsView'
 import AvatarWall from './AvatarWall'
@@ -275,19 +276,25 @@ export default function ClassRoom({ session }) {
     setVerifySent(true)
   }
 
+  // The same academic menu every academic page mounts; Sign out here ends
+  // the MAIN session (this half of the course runs on the main project).
+  const menuEl = session ? (
+    <AvatarMenu email={session.user.email} courseCode={slug}
+                signOut={() => supabase.auth.signOut()} />
+  ) : null
+
   if (session === undefined || classInfo === undefined || (session && classInfo && membership === undefined)) {
-    return <div style={{ background: 'var(--bg)', minHeight: '100vh' }}><Nav session={session} /></div>
+    return <AcademicShell courseCode={slug} homeTo={loungePath(slug)} menu={menuEl} />
   }
 
   if (classInfo === null) {
     return (
-      <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
-        <Nav session={session} />
+      <AcademicShell courseCode={slug} menu={menuEl}>
         <div style={S.wrap}>
           <p style={S.title}>Class not found</p>
           <p style={S.sub}>Double-check the link your instructor shared.</p>
         </div>
-      </div>
+      </AcademicShell>
     )
   }
 
@@ -348,8 +355,7 @@ export default function ClassRoom({ session }) {
   ) : null
 
   return (
-    <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
-      <Nav session={session} />
+    <AcademicShell courseCode={slug} homeTo={loungePath(slug)} menu={menuEl}>
       <div style={S.wrap}>
         {!session ? (
           <>
@@ -431,7 +437,7 @@ export default function ClassRoom({ session }) {
           </>
         )}
       </div>
-    </div>
+    </AcademicShell>
   )
 }
 
@@ -509,7 +515,7 @@ function FieldGuideBridge({ slug }) {
         Use the same account here — your check-ins and participation will be credited to it.
       </p>
       <button style={S.bridgeBtn} onClick={go} disabled={busy}>
-        {busy ? 'One moment…' : 'Continue to the class dashboard'}
+        {busy ? 'One moment…' : 'Continue to the Lecture Lounge'}
       </button>
       {error && <p style={S.bridgeErr}>{error}</p>}
     </div>
@@ -619,7 +625,7 @@ function ClassAuthCard({ classInfo, slug }) {
 }
 
 const S = {
-  wrap: { maxWidth: 480, margin: '0 auto', padding: '40px 20px' },
+  wrap: { maxWidth: 480, margin: '0 auto', padding: '10px 20px 40px' },
   bridge: { background: 'var(--bgc)', border: '1px solid var(--pk)', borderRadius: 16, padding: '22px 24px', textAlign: 'left', marginBottom: 16 },
   bridgeEyebrow: { fontFamily: MONO, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--pk)' },
   bridgeEmail: { fontSize: 16, fontWeight: 700, color: 'var(--tx)', margin: '4px 0 6px', overflowWrap: 'anywhere' },

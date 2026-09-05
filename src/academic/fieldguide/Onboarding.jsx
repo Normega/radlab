@@ -67,10 +67,10 @@ export default function Onboarding({ client, courseCode, isStaff, tourOpen, onTo
       kicker: 'One more thing',
       title: 'Make your avatar',
       body: <>
-        <p style={S.p}>The class dashboard gives you a site account with an avatar — it&rsquo;s how
+        <p style={S.p}>The Lecture Lounge gives you a site account with an avatar — it&rsquo;s how
         you&rsquo;ll appear on the class wall, and it makes the top-right corner here yours too.</p>
       </>,
-      cta: { to: lounge, label: 'Open the class dashboard →' },
+      cta: { to: lounge, label: 'Open the Lecture Lounge →' },
     },
   ] : [
     {
@@ -107,13 +107,13 @@ export default function Onboarding({ client, courseCode, isStaff, tourOpen, onTo
     },
     {
       kicker: 'Last step',
-      title: 'Connect your class dashboard',
+      title: 'Connect your Lecture Lounge',
       body: <>
-        <p style={S.p}>The dashboard is where lecture check-ins, the question of the week, and your
+        <p style={S.p}>The Lounge is where lecture check-ins, the question of the week, and your
         participation credit live — and where your <strong>avatar</strong> comes from. It takes a
         minute, and it&rsquo;s the same login you&rsquo;ll use in class every week.</p>
       </>,
-      cta: { to: lounge, label: 'Open the class dashboard →' },
+      cta: { to: lounge, label: 'Open the Lecture Lounge →' },
     },
   ]
 

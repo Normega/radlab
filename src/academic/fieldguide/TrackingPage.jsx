@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useOutletContext, useParams } from 'react-router-dom'
+import { AcademicEyebrow } from '../AcademicChrome'
 import { staffedCourses, resolveCourse } from './staffCourses.js'
 import { courseFeatures } from '../courseFeatures.js'
 import { supabase } from '../../lib/supabase'
@@ -224,7 +225,7 @@ function Frame({ children }) {
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '32px 16px 64px' }}>
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-        <p style={S.eyebrow}><Link to="/academic/fieldguide" style={S.eyebrowLink}>Field Guide</Link> · staff</p>
+        <AcademicEyebrow to="/academic/fieldguide" suffix=" · staff" />
         {children}
       </div>
     </div>

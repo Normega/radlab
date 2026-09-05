@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, Navigate, useOutletContext, useParams } from 'react-router-dom'
+import { AcademicEyebrow } from '../AcademicChrome'
 import { rosterPath, staffedCourses, resolveCourse } from './staffCourses.js'
 import { coursePath } from '../courseRoutes'
 
@@ -61,7 +62,7 @@ function Frame({ children }) {
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '32px 16px 64px' }}>
       <div style={{ maxWidth: 1060, margin: '0 auto' }}>
-        <p style={S.eyebrow}><Link to="/academic/fieldguide" style={S.eyebrowLink}>Field Guide</Link> · staff</p>
+        <AcademicEyebrow to="/academic/fieldguide" suffix=" · staff" />
         {children}
       </div>
     </div>
@@ -289,7 +290,7 @@ export default function RosterAdmin() {
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '32px 16px 64px' }}>
       <div style={{ maxWidth: 1060, margin: '0 auto' }}>
-        <p style={S.eyebrow}><Link to={coursePath(course.courses.code)} style={S.eyebrowLink}>Field Guide</Link> · staff</p>
+        <AcademicEyebrow to={coursePath(course.courses.code)} suffix=" · staff" />
         <h1 style={S.title}>Roster · {course.courses.code}</h1>
         {courses.length > 1 && (
           <p style={S.sub}>

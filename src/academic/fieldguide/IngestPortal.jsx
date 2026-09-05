@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, Navigate, useOutletContext } from 'react-router-dom'
+import { AcademicEyebrow } from '../AcademicChrome'
 import { courseFeatures } from '../courseFeatures'
 import { useWikiBase, useCoursePaths } from './wiki/useWikiBase'
 
@@ -175,7 +176,7 @@ export default function IngestPortal() {
       <div style={{ maxWidth: 860, margin: '0 auto' }}>
         <header style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
           <div>
-            <p style={S.eyebrow}><Link to={paths.home} style={S.eyebrowLink}>Field Guide</Link></p>
+            <AcademicEyebrow to={paths.home} />
             <h1 style={S.title}>Ingest portal</h1>
             {course && <p style={S.sub}>{course.code} · {course.name} ({course.term})</p>}
           </div>
