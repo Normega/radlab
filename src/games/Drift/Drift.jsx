@@ -157,7 +157,7 @@ function IntroScreen({ onStart }) {
       lead={<>Time dilates with emotional state.<br />This measures how you feel time — right now.</>}
       steps={[
         { title: 'Watch and listen', body: 'A soft tone marks the start. A face breathes while you wait. A second tone marks the end.' },
-        { title: 'Reproduce it', body: 'Press once to start. Press again when you feel the same duration has passed. Don\'t count seconds.' },
+        { title: 'Reproduce it', body: 'Press once to sound the start. Press again when you feel the same duration has passed. Don\'t count seconds.' },
         { title: 'Trust your felt sense', body: 'Your ratio — reproduced ÷ actual — reflects where your nervous system is right now.' },
       ]}
       onStart={onStart}
@@ -461,8 +461,12 @@ export default function Drift({ session }) {
 
   function handleReproduce() {
     if (!repStart) {
+      // Same tones as the target interval, so both intervals carry identical
+      // sensory markers — the press now sounds like the start it stands for.
+      playTone(220, 1.8)
       setRepStart(Date.now())
     } else {
+      playTone(370, 1.2)
       const dur      = Date.now() - repStart
       const ratio    = dur / trial.targetMs
       const absError = Math.abs(dur - trial.targetMs)
