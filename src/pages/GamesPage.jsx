@@ -211,23 +211,26 @@ function LockedCard({ game }) {
   )
 }
 
-// The icon sits opposite the badge rather than above the title, so it anchors
-// the card without pushing the copy down or competing with it for the first
-// line. `plate` stays on: the tinted disc is what makes the set read as a set
-// (see GameIcon.jsx), and it gives the mark an edge against the white card.
+// Two columns: all the copy in the first, the icon alone in the second. The
+// icon centres against the text block rather than pinning to the top, so it
+// stays put as descriptions run long and cards in a row end up different
+// heights. `plate` stays on: the tinted disc is what makes the set read as a
+// set (see GameIcon.jsx), and gives the mark an edge against the white card.
 function CardBody({ game }) {
   return (
     <>
-      <span style={S.cardHead}>
+      <span style={S.cardMain}>
         <span style={S.badge}>{game.badge}</span>
-        <GameIcon slug={game.slug} size={64} />
+        <h2 style={S.gameTitle}>{game.title}</h2>
+        <p style={S.gameDesc}>{game.desc}</p>
+        <div style={S.meta}>
+          <Stat label="Duration" value={game.duration ?? 'Open-ended'} />
+          <Stat label="Trials"   value={game.trials ?? '—'} />
+        </div>
       </span>
-      <h2 style={S.gameTitle}>{game.title}</h2>
-      <p style={S.gameDesc}>{game.desc}</p>
-      <div style={S.meta}>
-        <Stat label="Duration" value={game.duration ?? 'Open-ended'} />
-        <Stat label="Trials"   value={game.trials ?? '—'} />
-      </div>
+      <span style={S.cardIcon}>
+        <GameIcon slug={game.slug} size={72} />
+      </span>
     </>
   )
 }
@@ -308,12 +311,18 @@ const S = {
   // column instead of a track that overflows the viewport.
   grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 340px), 1fr))', gap: 16 },
 
+  // Row, not column: the copy column and the icon column. The hover and lock
+  // veils are position:absolute siblings, so they ignore this axis.
   card: {
     position: 'relative', overflow: 'hidden',
-    display: 'flex', flexDirection: 'column',
+    display: 'flex', flexDirection: 'row', alignItems: 'stretch', gap: 16,
     padding: 24, background: 'var(--bgc)',
     border: '1px solid var(--bd)', borderRadius: 12,
   },
+  // minWidth:0 or a long unbroken word in a description pushes the icon column
+  // out of the card instead of wrapping.
+  cardMain: { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' },
+  cardIcon: { flexShrink: 0, display: 'flex', alignItems: 'center' },
   cardLink: {
     textDecoration: 'none', color: 'inherit',
     transition: 'border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease',
@@ -325,14 +334,8 @@ const S = {
   },
   cardLocked: { background: 'var(--bgc)' },
 
-  // Badge left, icon right, both pinned to the top of the row so a two-line
-  // badge grows downward and leaves the icon where it is.
-  cardHead: {
-    display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
-    gap: 16, minHeight: 64,
-  },
   badge: {
-    fontFamily: MONO, fontSize: 12, letterSpacing: 0.5,
+    alignSelf: 'flex-start', fontFamily: MONO, fontSize: 12, letterSpacing: 0.5,
     textTransform: 'uppercase', padding: '5px 10px', borderRadius: 12,
     background: 'var(--bgp)', color: 'var(--pkd)',
   },
