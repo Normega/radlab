@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import GameIntro from '../shared/GameIntro'
+import { FreeBreathIcon } from '../shared/GameIcon'
 import PrimaryCTA from '../../components/ui/PrimaryCTA'
 import SyncAura from '../../components/SyncAura'
 import ContactAvatar from '../FirstContact/components/ContactAvatar'
@@ -293,6 +294,11 @@ export default function FreeBreath() {
             eyebrow="RADlab · Come, See — prototype"
             title="Free breathing."
             lead="No pacer this time. Breathe, and it breathes with you — you set the length of every in, every out, and every pause."
+            visual={
+              <div style={{ display: 'flex', justifyContent: 'center', margin: '0 0 20px' }}>
+                <FreeBreathIcon size={64} />
+              </div>
+            }
             steps={[
               { title: 'Breathe in',  body: COARSE_INPUT
                   ? 'Hold the amber button for as long as your inhale lasts. The face fills.'

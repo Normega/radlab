@@ -324,6 +324,33 @@ export function BreathGuardianIcon({ size = 48, plate = true }) {
   )
 }
 
+/* ── Free Breathing (prototype) ──────────────────────────────────────────────
+   The game's own result drawn as a mark: the four-duration breath shape, split
+   at its waist into the inhale half (amber, up) and the exhale half (blue,
+   down) — the exact colors of the two hold buttons — and deliberately lopsided
+   the way a real breath is (the exhale runs longer). Behind it, one pink ghost
+   breath, tilted: the overlaid-outlines reading from the session chart. The
+   wind is a white gust crossing exactly at the in/out boundary and ending in a
+   curl — breath leaving — with a fainter echo below. Gusts are secondary
+   strokes over a filled subject, the Pond Watch ripple precedent. */
+export function FreeBreathIcon({ size = 48, plate = true }) {
+  return (
+    <Frame size={size} plate={plate} label="Free Breathing">
+      <path d="M24 6.5 L38 25 L24 46 L9 25 Z" fill="#f068a4" opacity="0.16" transform="rotate(8 24 26)" />
+      <path d="M12 25 L24 11 L34 25 Z" fill="#c8862b" />
+      <path d="M12 25 L34 25 L24 43 Z" fill="#2a6cab" />
+      <path
+        d="M5.5 27.5 Q13 23.5 22 25.5 Q30 27.3 35.5 24 Q39.5 21.5 38 18.3 Q36.6 15.6 34 17.2"
+        stroke="#fff" strokeWidth="2.6" fill="none" strokeLinecap="round" opacity="0.92"
+      />
+      <path
+        d="M12 33.5 Q19 31.8 27 33.6"
+        stroke="#fff" strokeWidth="2.2" fill="none" strokeLinecap="round" opacity="0.5"
+      />
+    </Frame>
+  )
+}
+
 /**
  * Registry, in catalog order (src/data/games.js), so the adjacent-hue check
  * above is checked against the order players actually see.
@@ -343,6 +370,7 @@ export const GAME_ICONS = {
   // In development — not in GAMES, but /prototypes and /admin/games list them.
   owl_barn:        OwlBarnIcon,
   breath_guardian: BreathGuardianIcon,
+  free_breath:     FreeBreathIcon,
 }
 
 /** Dispatcher: <GameIcon slug="delve" size={60} />. Renders nothing if unknown. */
