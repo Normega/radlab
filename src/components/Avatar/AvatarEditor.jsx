@@ -290,6 +290,11 @@ export default function AvatarEditor({ session, setHasAvatar }) {
     uploadAvatarPng(pngRef.current?.querySelector('svg'), userId)
       .then(r => { if (!r.ok) console.warn('AvatarEditor: avatar png upload failed', r.error) })
     queryClient.invalidateQueries({ queryKey: ['avatar', userId] })
+    // Class members get a one-time 200-point avatar bonus (Norm, 2026-09-05).
+    // The server decides everything — membership, avatar-exists, once-only —
+    // so this is safe to fire for every user on every save. They land on
+    // /ripple next, where the points and the unlocks they just opened show.
+    supabase.rpc('award_class_avatar_bonus').then(() => {}, () => {})
     if (setHasAvatar) setHasAvatar(true)
     // → My Ripple, not /profile: since the 2026-07-30 IA rework the Ripple's
     // face and name live there, so that's where a just-saved avatar shows up.

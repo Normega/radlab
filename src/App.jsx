@@ -291,6 +291,13 @@ export default function App() {
   const [onboardingComplete,   setOnboardingComplete]   = useState(undefined)
   const [rippleNamed,          setRippleNamed]          = useState(undefined)
   const [neverCheckedIn,       setNeverCheckedIn]       = useState(undefined)
+  // Lecture Lounge membership. Class accounts skip the research onboarding
+  // for /ripple ONLY (Norm, 2026-09-05): avatar + name is their whole setup,
+  // no consent/demographics/reminders — those belong to research accounts,
+  // and collecting them from students muddies the teaching/research boundary.
+  // Every OTHER gated surface keeps plain needsWelcome, which is exactly the
+  // rule "want the main site? do the full onboarding".
+  const [isClassMember,        setIsClassMember]        = useState(undefined)
 
   async function checkRippleName(userId) {
     const { data } = await supabase.from('ripples').select('name').eq('user_id', userId).maybeSingle()
@@ -324,6 +331,11 @@ export default function App() {
     else setRippleNamed(true)
   }
 
+  async function checkClassMember(userId) {
+    const { data } = await supabase.from('class_members').select('id').eq('user_id', userId).limit(1)
+    setIsClassMember(!!data?.length)
+  }
+
   async function checkAvatar(userId) {
     const { data } = await supabase.from('avatars').select('id').eq('user_id', userId).maybeSingle()
     setHasAvatar(!!data)
@@ -333,14 +345,14 @@ export default function App() {
     supabase.auth.getSession().then(({ data }) => {
       const s = data.session ?? null
       setSession(s)
-      if (s) { fetchRole(s.user.id); checkAvatar(s.user.id); checkFirstCheckin(s.user.id) }
-      else   { setRole(null); setSuperAdmin(false); setHasAvatar(undefined); setFirstContactComplete(undefined); setStillWaterPlayed(undefined); setOnboardingComplete(undefined); setRippleNamed(undefined); setNeverCheckedIn(undefined) }
+      if (s) { fetchRole(s.user.id); checkAvatar(s.user.id); checkFirstCheckin(s.user.id); checkClassMember(s.user.id) }
+      else   { setRole(null); setSuperAdmin(false); setHasAvatar(undefined); setFirstContactComplete(undefined); setStillWaterPlayed(undefined); setOnboardingComplete(undefined); setRippleNamed(undefined); setNeverCheckedIn(undefined); setIsClassMember(undefined) }
     })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
       const sess = s ?? null
       setSession(sess)
-      if (sess) { fetchRole(sess.user.id); checkAvatar(sess.user.id); checkFirstCheckin(sess.user.id) }
-      else      { setRole(null); setSuperAdmin(false); setHasAvatar(undefined); setFirstContactComplete(undefined); setStillWaterPlayed(undefined); setOnboardingComplete(undefined); setRippleNamed(undefined); setNeverCheckedIn(undefined) }
+      if (sess) { fetchRole(sess.user.id); checkAvatar(sess.user.id); checkFirstCheckin(sess.user.id); checkClassMember(sess.user.id) }
+      else      { setRole(null); setSuperAdmin(false); setHasAvatar(undefined); setFirstContactComplete(undefined); setStillWaterPlayed(undefined); setOnboardingComplete(undefined); setRippleNamed(undefined); setNeverCheckedIn(undefined); setIsClassMember(undefined) }
     })
     return () => subscription.unsubscribe()
   }, [])
@@ -413,8 +425,13 @@ export default function App() {
             distinct from the /ripple/name migration beat below, which is an
             onboarding step, not a destination.
           */}
+          {/* Class members bypass the /welcome bounce on /ripple — undefined
+              while the membership check is in flight, so a student is never
+              briefly misrouted into the research onboarding. */}
           <Route path="/ripple" element={
-            <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome} needsRippleName={needsRippleName}>
+            <ProtectedRoute session={session} hasAvatar={hasAvatar}
+              needsWelcome={isClassMember === undefined ? (session ? undefined : needsWelcome) : (needsWelcome && !isClassMember)}
+              needsRippleName={isClassMember ? false : needsRippleName}>
               <MyRipplePage session={session} />
             </ProtectedRoute>
           } />

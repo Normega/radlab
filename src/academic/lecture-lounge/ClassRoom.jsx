@@ -106,6 +106,11 @@ export default function ClassRoom({ session }) {
     let cancelled = false
     supabase.from('class_members').select('id').eq('class_id', classInfo.id).eq('user_id', userId).maybeSingle().then(({ data }) => {
       if (!cancelled) setMembership(data ?? null)
+      // Backstop for the one-time class avatar bonus: members who made their
+      // avatar BEFORE the grant shipped (2026-09-05) never re-save, so the
+      // lounge visit itself claims it. Server-side once-only; a no-op for
+      // everyone who already has it or has no avatar yet.
+      if (data) supabase.rpc('award_class_avatar_bonus').then(() => {}, () => {})
     })
     return () => { cancelled = true }
   }, [classInfo, userId])

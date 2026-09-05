@@ -207,6 +207,16 @@ buttons. **Any new email carrying a sign-in link must assume the link is opened 
 first: the human's click has to be what consumes it.** Never auto-verify in an effect on that
 page — it reintroduces the whole bug.
 
+**Class accounts do the light setup, never the research onboarding.** A Lecture Lounge member's
+whole main-site setup is avatar + ripple name: `/ripple` bypasses the `/welcome` bounce for class
+members (checked via `class_members` in App.jsx), while every other main-site surface keeps its
+onboarding gate — that gate IS the rule "want the main site? do the full onboarding". Accounts stay
+`role='public'`; membership, not role, is the signal. Completing an avatar as a class member grants
+a one-time +200 points (`award_class_avatar_bonus()`, migration 20260905) so the My Ripple unlock
+ladder works on a student's ~5-points-a-week economy. Never send a student through consent,
+demographics, or reminder collection for class purposes — research consent belongs to research
+flows (the RCT consents its own participants).
+
 **The academic rule: one email door, never a password.** An FG-backed class's Lounge asks a
 signed-out student only for their U of T email (roster-join with `next:'lounge'`); the sign-in
 confirm page sees `n=lounge` and chains `/api/lounge-continue` on the same button press, minting
