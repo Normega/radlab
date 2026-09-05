@@ -217,7 +217,7 @@ ladder works on a student's ~5-points-a-week economy. Never send a student throu
 demographics, or reminder collection for class purposes — research consent belongs to research
 flows (the RCT consents its own participants).
 
-**The academic rule: one email door, never a password.** An FG-backed class's Lounge asks a
+**The academic rule: one email door, never a password — staff included.** Since 2026-09-05 the email door vouches for active enrollments too (`enrolled_person_by_key`), so TAs and instructors type the same email a student does; `CourseLogin` (the old staff password form) is deleted and must not return.  An FG-backed class's Lounge asks a
 signed-out student only for their U of T email (roster-join with `next:'lounge'`); the sign-in
 confirm page sees `n=lounge` and chains `/api/lounge-continue` on the same button press, minting
 both sessions at once. Password forms exist only behind the staff/existing-account link, and as
