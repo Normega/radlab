@@ -483,10 +483,14 @@ export default function BrandAssets() {
         <p className="brand-subheading">Menu avatar</p>
         <p className="brand-section-note">
           The account-menu trigger, identical on the main site and every academic page
-          (<code>src/components/ui/MenuAvatar.jsx</code>): the user&rsquo;s 40px ripple avatar in a
-          <strong> 46px white circle</strong> with a 1px <code>--bd</code> border &mdash; no pink
-          ring (retired 2026-09-04), no other treatment. Signed in with no avatar yet: the
-          account&rsquo;s initial, Space&nbsp;Mono, <code>--pk</code>, same circle. The white circle
+          (<code>src/components/ui/MenuAvatar.jsx</code>): the user&rsquo;s ripple avatar
+          <strong> filling a 46px circle</strong>, with <strong>no plate behind it</strong> &mdash;
+          no white disc (retired 2026-09-05), no pink ring (retired 2026-09-04), no other
+          treatment. The avatar is drawn at 68px and cropped back to 46 because RippleAvatar
+          letterboxes a 200&times;185 viewBox into a square, so a plain 46px render would leave
+          the head at ~29px in dead space. Signed in with no avatar yet: the account&rsquo;s
+          initial in Space&nbsp;Mono <code>--pkd</code> on a <code>--bgp</code> ground &mdash; a
+          bare letter has no silhouette, so the fallback alone keeps a plate. The avatar
           <strong> is</strong> the menu affordance &mdash; never use it as a bare profile link, and
           never present an account menu behind anything else.
         </p>
