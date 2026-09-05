@@ -207,6 +207,12 @@ buttons. **Any new email carrying a sign-in link must assume the link is opened 
 first: the human's click has to be what consumes it.** Never auto-verify in an effect on that
 page — it reintroduces the whole bug.
 
+**The academic rule: one email door, never a password.** An FG-backed class's Lounge asks a
+signed-out student only for their U of T email (roster-join with `next:'lounge'`); the sign-in
+confirm page sees `n=lounge` and chains `/api/lounge-continue` on the same button press, minting
+both sessions at once. Password forms exist only behind the staff/existing-account link, and as
+the default for classes with no Field Guide.
+
 The inert-until-pressed doors that implement the rule: `/academic/:course/signin` (Field Guide
 sign-in, `SignInConfirm`), `/class/confirm` (Lounge signup confirmation, `ClassConfirmSignup` +
 `api/lounge-signup`), and `/class/verify` (U of T address verification, `ClassVerifyEmail` —

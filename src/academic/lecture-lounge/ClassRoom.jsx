@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase'
 import { normalizeCourseCode, loungePath } from '../courseRoutes'
 import { useAvatarConfig } from '../../hooks/useAvatarConfig'
 import { AcademicShell } from '../AcademicChrome'
+import { getCourseClient } from '../courseClient'
 import AvatarMenu from '../fieldguide/AvatarMenu'
 import CheckinRunner from './CheckinRunner'
 import ResultsView from './ResultsView'
@@ -460,6 +461,27 @@ export default function ClassRoom({ session }) {
 // this origin, and ClassRoom already reads this key for the textbook card).
 // Absent or unreadable, this renders nothing and the ordinary signup card
 // below is exactly what it always was.
+// Exchange a Field Guide token for a main-project session and land in the
+// Lounge. Shared by the bridge card and the roster door's typed-code path.
+async function crossToLounge(fgToken, slug) {
+  const rsp = await fetch('/api/lounge-continue', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fg_token: fgToken, slug }),
+  })
+  const out = await rsp.json().catch(() => ({}))
+  if (!rsp.ok || !out.token_hash) {
+    throw new Error(out.error ?? 'Could not carry your sign-in across — try again.')
+  }
+  const { error } = await supabase.auth.verifyOtp({
+    token_hash: out.token_hash, type: out.type || 'magiclink',
+  })
+  if (error) throw new Error(error.message)
+  // Session change re-renders this page as a joined member; a clean load
+  // is the surest way for every guard to see it.
+  window.location.assign(loungePath(slug))
+}
+
 function FieldGuideBridge({ slug }) {
   const [fg, setFg] = useState(null)      // { token, email } | null
   const [busy, setBusy] = useState(false)
@@ -479,28 +501,7 @@ function FieldGuideBridge({ slug }) {
   const go = async () => {
     setBusy(true); setError(null)
     try {
-      const rsp = await fetch('/api/lounge-continue', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fg_token: fg.token, slug }),
-      })
-      const out = await rsp.json().catch(() => ({}))
-      if (!rsp.ok || !out.token_hash) {
-        setBusy(false)
-        setError(out.error ?? 'Could not carry your sign-in across — use the form below.')
-        return
-      }
-      const { error: vErr } = await supabase.auth.verifyOtp({
-        token_hash: out.token_hash, type: out.type || 'magiclink',
-      })
-      if (vErr) {
-        setBusy(false)
-        setError(vErr.message)
-        return
-      }
-      // Session change re-renders this page as a joined member; a clean load
-      // is the surest way for every guard to see it.
-      window.location.assign(loungePath(slug))
+      await crossToLounge(fg.token, slug)
     } catch (err) {
       setBusy(false)
       setError(err.message)
@@ -523,29 +524,84 @@ function FieldGuideBridge({ slug }) {
 }
 
 function ClassAuthCard({ classInfo, slug }) {
-  const [mode, setMode] = useState('signup') // most first-time visitors are new students
+  // The academic rule is one email door, no password, ever (Norm,
+  // 2026-09-04) — a password form here read as the main site leaking into
+  // the course. For a class with a Field Guide, the door IS the Field
+  // Guide's roster flow: enter your U of T email, tap the button in the
+  // email (or type the code), and the sign-in chains through
+  // /api/lounge-continue so one press yields both sessions. The password
+  // form survives only as "Staff or existing account?" — and as the default
+  // for classes with no Field Guide, where there is no roster to match.
+  const hasFieldGuide = !!classInfo.field_guide_url
+  const [mode, setMode] = useState(hasFieldGuide ? 'roster' : 'signup')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
-  const [confirmSent, setConfirmSent] = useState(false)
+  const [state, setState] = useState(null) // roster: null | 'sent' | 'unmatched'; signup: null | 'confirmSent'
+  const [otp, setOtp] = useState('')
 
-  async function submit(e) {
+  async function submitRoster(e) {
     e.preventDefault()
     if (busy) return
-    setBusy(true)
-    setError(null)
+    setBusy(true); setError(null)
+    try {
+      const rsp = await fetch('/api/roster-join', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, courseCode: slug.toUpperCase(), next: 'lounge' }),
+      })
+      const out = await rsp.json().catch(() => ({}))
+      setBusy(false)
+      if (rsp.status === 429 && out.matched) { setState('sent'); setError(out.error); return }
+      if (!rsp.ok) { setError(out.error ?? 'Something went wrong — try again.'); return }
+      setState(out.matched ? 'sent' : 'unmatched')
+    } catch {
+      setBusy(false)
+      setError('Could not reach the server — please try again.')
+    }
+  }
+
+  // The typed-code alternative to tapping the emailed button: verify against
+  // the ACADEMIC project (the code is a Field Guide sign-in), then cross the
+  // bridge for the main-project session — same chain the emailed link runs.
+  async function submitCode(e) {
+    e.preventDefault()
+    const token = otp.replace(/\D/g, '')
+    if (token.length < 6) return setError('Enter the digits from the email.')
+    setBusy(true); setError(null)
+    try {
+      const client = await getCourseClient()
+      let { data, error: vErr } = await client.auth.verifyOtp({ email, token, type: 'magiclink' })
+      if (vErr) ({ data, error: vErr } = await client.auth.verifyOtp({ email, token, type: 'email' }))
+      if (vErr || !data?.session) {
+        setBusy(false)
+        setError(/expired|invalid/i.test(vErr?.message ?? '')
+          ? 'That code was not accepted — it may have expired. Request a new one.'
+          : (vErr?.message ?? 'That code was not accepted.'))
+        return
+      }
+      await crossToLounge(data.session.access_token, slug)
+    } catch (err) {
+      setBusy(false)
+      setError(err.message)
+    }
+  }
+
+  async function submitPassword(e) {
+    e.preventDefault()
+    if (busy) return
+    setBusy(true); setError(null)
     if (mode === 'signin') {
       const { error: err } = await supabase.auth.signInWithPassword({ email, password })
       if (err) { setBusy(false); setError(err.message) }
       // on success: stay busy — the session change re-renders the whole page
       return
     }
-    // NOT supabase.auth.signUp: that flow's confirmation email links straight
-    // to /auth/v1/verify, which consumes the token on a plain GET — exactly
-    // what the university's mail scanner performs on every link it delivers.
-    // The endpoint mints the same confirmation token but mails a link to our
-    // own /class/confirm page, which is inert until a human presses it.
+    // Password signup — non-Field-Guide classes only. NOT supabase.auth.signUp:
+    // that flow's confirmation email links straight to /auth/v1/verify, which a
+    // mail scanner consumes on a plain GET. /api/lounge-signup mails a link to
+    // our own inert /class/confirm page instead.
     try {
       const rsp = await fetch('/api/lounge-signup', {
         method: 'POST',
@@ -555,21 +611,19 @@ function ClassAuthCard({ classInfo, slug }) {
       const out = await rsp.json().catch(() => ({}))
       setBusy(false)
       if (out.exists) {
-        // A confirmed account already lives at this address — signup must
-        // never become a password reset, so send them to the sign-in mode.
         setMode('signin')
         setError('This address already has an account — sign in with your password.')
         return
       }
       if (!rsp.ok || !out.ok) { setError(out.error ?? 'Could not create the account — please try again.'); return }
-      setConfirmSent(true)
+      setState('confirmSent')
     } catch {
       setBusy(false)
       setError('Could not reach the server — please try again.')
     }
   }
 
-  if (confirmSent) {
+  if (state === 'confirmSent') {
     return (
       <div style={S.card}>
         <p style={S.eyebrow}>Lecture Lounge</p>
@@ -587,6 +641,70 @@ function ClassAuthCard({ classInfo, slug }) {
     )
   }
 
+  if (mode === 'roster' && state === 'sent') {
+    return (
+      <div style={S.card}>
+        <p style={S.eyebrow}>Lecture Lounge</p>
+        <h1 style={S.title}>Check your email</h1>
+        <p style={S.sub}>
+          Tap the button in the email and you'll land back here, signed in and ready to
+          join — no password, ever. Or type the code from the email below.
+        </p>
+        <form onSubmit={submitCode} style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 14, justifyContent: 'center' }}>
+          <input
+            value={otp}
+            onChange={e => setOtp(e.target.value)}
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            placeholder="1234567"
+            maxLength={8}
+            style={{ ...S.authInput, flex: '1 1 150px', fontFamily: MONO, fontSize: 20, letterSpacing: 4, textAlign: 'center' }}
+          />
+          <button type="submit" style={{ ...S.primaryBtn, flex: '0 0 auto' }} disabled={busy}>
+            {busy ? 'Checking…' : 'Sign in'}
+          </button>
+        </form>
+        {error && <p style={S.error}>{error}</p>}
+        <p style={{ ...S.sub, fontSize: 13, marginTop: 12 }}>
+          Nothing after a few minutes? Check spam, then request another.
+        </p>
+      </div>
+    )
+  }
+
+  if (mode === 'roster') {
+    return (
+      <div style={S.card}>
+        <p style={S.eyebrow}>Lecture Lounge</p>
+        <h1 style={S.title}>{classInfo.name}</h1>
+        <p style={S.sub}>
+          Enter your U of T email and we'll send a sign-in link — no password, no
+          account setup. Same login as the Field Guide.
+        </p>
+        <form onSubmit={submitRoster} style={{ marginTop: 18 }}>
+          <input
+            type="email" placeholder="you@mail.utoronto.ca" value={email}
+            onChange={(e) => setEmail(e.target.value)} style={S.authInput} autoComplete="email"
+          />
+          {state === 'unmatched' && (
+            <p style={S.error}>
+              We couldn't match that address to the class list. Use your U of T email if
+              you didn't — otherwise tell your instructor and they'll sort it out.
+            </p>
+          )}
+          {error && state !== 'unmatched' && <p style={S.error}>{error}</p>}
+          <button type="submit" style={{ ...S.primaryBtn, width: '100%', marginTop: 12 }} disabled={busy || !email}>
+            {busy ? 'One moment…' : 'Email me a sign-in link'}
+          </button>
+        </form>
+        <p style={{ ...S.sub, marginTop: 14 }}>
+          Staff, or already have a radlab password?{' '}
+          <button style={S.authSwitch} onClick={() => { setMode('signin'); setError(null) }}>Sign in</button>
+        </p>
+      </div>
+    )
+  }
+
   return (
     <div style={S.card}>
       <p style={S.eyebrow}>Lecture Lounge</p>
@@ -594,11 +712,11 @@ function ClassAuthCard({ classInfo, slug }) {
       <p style={S.sub}>
         {mode === 'signup'
           ? 'Create your account to join the class — check-ins, polls, and the question of the week.'
-          : 'Sign in to join the class.'}
+          : 'Sign in with your radlab account password.'}
       </p>
-      <form onSubmit={submit} style={{ marginTop: 18 }}>
+      <form onSubmit={submitPassword} style={{ marginTop: 18 }}>
         <input
-          type="email" placeholder="you@mail.utoronto.ca" value={email}
+          type="email" placeholder={mode === 'signup' ? 'you@mail.utoronto.ca' : 'Email'} value={email}
           onChange={(e) => setEmail(e.target.value)} style={S.authInput} autoComplete="email"
         />
         <input
@@ -612,7 +730,12 @@ function ClassAuthCard({ classInfo, slug }) {
         </button>
       </form>
       <p style={{ ...S.sub, marginTop: 14 }}>
-        {mode === 'signup' ? (
+        {hasFieldGuide ? (
+          <>In this course as a student?{' '}
+            <button style={S.authSwitch} onClick={() => { setMode('roster'); setError(null); setState(null) }}>
+              Use your U of T email instead
+            </button></>
+        ) : mode === 'signup' ? (
           <>Already have a radlab account?{' '}
             <button style={S.authSwitch} onClick={() => { setMode('signin'); setError(null) }}>Sign in</button></>
         ) : (

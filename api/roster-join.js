@@ -79,6 +79,10 @@ export default async function handler(req, res) {
   // (/academic/psy240/join) send their code; the immortal legacy door
   // (lecture-slide QR codes) sends nothing.
   const requestedCourse = String(req.body?.courseCode ?? '').trim().toUpperCase() || null
+  // Where should the sign-in land the student? The Lounge's signed-out card
+  // sends next:'lounge' so its confirm page can chain straight through the
+  // bridge; anything else (or nothing) keeps the wiki destination.
+  const next = req.body?.next === 'lounge' ? 'lounge' : null
 
   // Via rpc: identity is not exposed to PostgREST (see roster-invite.js).
   // A course-scoped door tries ITS course's roster first, so a student on two
@@ -145,6 +149,7 @@ export default async function handler(req, res) {
     if (!hashed) throw new Error('no hashed_token')
     const link = `${origin}/academic/${String(courseCode || 'psy240').toLowerCase()}/signin`
       + `?t=${encodeURIComponent(hashed)}&ty=${encodeURIComponent(vtype)}`
+      + (next ? `&n=${next}` : '')
     // The numeric code that accompanies the same link (length is whatever the
     // project's OTP setting mints — seven here, not the six the docs imply, so
     // nothing downstream may assume six). It is the PRIMARY

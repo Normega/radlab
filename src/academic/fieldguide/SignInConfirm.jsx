@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { getCourseClient } from '../courseClient'
-import { normalizeCourseCode, joinPath, wikiBase } from '../courseRoutes'
+import { normalizeCourseCode, joinPath, wikiBase, loungePath } from '../courseRoutes'
+import { supabase as mainSupabase } from '../../lib/supabase'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -30,6 +31,10 @@ export default function SignInConfirm() {
   const [params] = useSearchParams()
   const tokenHash = params.get('t')
   const type = params.get('ty') || 'magiclink'
+  // n=lounge: this sign-in started at the Lecture Lounge's door, so the same
+  // button press should finish there — Field Guide session first, then the
+  // bridge mints the main-project session. One email, one press, both halves.
+  const next = params.get('n')
 
   const [state, setState] = useState(tokenHash ? 'ready' : 'no-token')
   const [detail, setDetail] = useState(null)
@@ -62,6 +67,26 @@ export default function SignInConfirm() {
         return
       }
       stripToken()
+      if (next === 'lounge' && code) {
+        // Chain the bridge: /api/lounge-continue verifies the fresh academic
+        // token and returns a main-project hash this browser exchanges
+        // itself. Any failure still lands on the Lounge — the bridge card
+        // there is the manual retry, so a broken chain is never a dead end.
+        try {
+          const { data: { session } } = await client.auth.getSession()
+          const rsp = await fetch('/api/lounge-continue', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fg_token: session?.access_token, slug: code }),
+          })
+          const out = await rsp.json().catch(() => ({}))
+          if (rsp.ok && out.token_hash) {
+            await mainSupabase.auth.verifyOtp({ token_hash: out.token_hash, type: out.type || 'magiclink' })
+          }
+        } catch { /* fall through to the Lounge either way */ }
+        window.location.assign(loungePath(code))
+        return
+      }
       // Full navigation, not a router push: the guards read the academic
       // session when they mount, and a clean load is the simplest way to be
       // certain they see it.
