@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 // Cross-partition imports, deliberately: the avatar lives on the MAIN
 // project, keyed to the main-site account. Both sessions share this origin's
@@ -12,6 +12,15 @@ import { courseFeatures } from '../courseFeatures'
 import { loungePath, courseSubPath } from '../courseRoutes'
 
 const MONO = '"Space Mono", "Courier New", monospace'
+
+// Auto-reconcile is attempted at most once per FG identity per page-load life
+// of the SPA — the menu remounts on every Field Guide navigation, and without
+// this a persistently-unbridgeable identity (e.g. a public reader with no
+// enrollment) would re-POST /api/lounge-continue on every page. A success
+// changes the session so it never retries anyway; this guards the failures.
+// Module-level so it survives remounts; a full reload clears it (deliberate —
+// a reload is a fair moment to try again). The manual button ignores it.
+const autoReconciled = new Set()
 
 // THE academic account menu — one list, both halves of the partition.
 //
@@ -35,34 +44,87 @@ const MONO = '"Space Mono", "Courier New", monospace'
 const normEmail = (e) =>
   String(e ?? '').trim().toLowerCase().replace(/@(mail\.|alum\.)?utoronto\.ca$/, '@utoronto.ca')
 
+// Does a main session (by its login + verified U of T email) belong to the
+// same human as the Field Guide address?
+function mainMatchesFg(fgEmail, identity) {
+  if (!identity) return false
+  const k = normEmail(fgEmail)
+  return k === normEmail(identity.email) || k === normEmail(identity.utoronto)
+}
+
 export default function AvatarMenu({ client, fgEmail, email, courseCode, isStaff, onTour, signOut }) {
   const [open, setOpen] = useState(false)
-  const [mainUserId, setMainUserId] = useState(null)
-  const [mainIdentity, setMainIdentity] = useState(null) // { email, utoronto } | null
+  const [mainUserId, setMainUserId] = useState(undefined) // undefined=loading, null=none
+  const [mainIdentity, setMainIdentity] = useState(null)  // { email, utoronto } | null
+  const [reconciling, setReconciling] = useState(false)
   const wrapRef = useRef(null)
+  const triedRef = useRef(false)
+
+  // Read whatever main session is live in this browser.
+  const loadMain = useCallback(async () => {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) { setMainUserId(null); setMainIdentity(null); return null }
+    const { data: prof } = await supabase.from('profiles')
+      .select('utoronto_email').eq('id', session.user.id).maybeSingle()
+    const ident = { email: session.user.email, utoronto: prof?.utoronto_email ?? null }
+    setMainUserId(session.user.id); setMainIdentity(ident)
+    return ident
+  }, [])
+
+  // Make the MAIN session match the Field Guide identity. This is the fix for
+  // the whole class of "wrong ripple / create-your-avatar even though it
+  // exists / ripple missing until I also open the Lounge" reports (Norm,
+  // 2026-09-05): the avatar is a main-project object, so signing into the
+  // Field Guide alone leaves the menu with no main session of YOURS to read.
+  // The bridge (/api/lounge-continue) mints a main session for the SAME
+  // person from the FG token — resolving the existing account by email, so no
+  // second identity is created — and verifyOtp installs it, replacing any
+  // wrong session that was there. No navigation: we only swap the session and
+  // re-read, so the correct ripple simply appears in place.
+  const reconcile = useCallback(async () => {
+    if (!client || !courseCode) return
+    setReconciling(true)
+    try {
+      const { data: { session: fg } } = await client.auth.getSession()
+      if (fg?.access_token) {
+        const rsp = await fetch('/api/lounge-continue', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fg_token: fg.access_token, slug: courseCode }),
+        })
+        const out = await rsp.json().catch(() => ({}))
+        if (rsp.ok && out.token_hash) {
+          await supabase.auth.verifyOtp({ token_hash: out.token_hash, type: out.type || 'magiclink' })
+          await loadMain()
+        }
+      }
+    } catch { /* leave the mismatch note to explain and offer a manual retry */ }
+    setReconciling(false)
+  }, [client, courseCode, loadMain])
 
   useEffect(() => {
     let cancelled = false
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    ;(async () => {
+      const ident = await loadMain()
       if (cancelled) return
-      setMainUserId(session?.user?.id ?? null)
-      if (!session) { setMainIdentity(null); return }
-      const { data: prof } = await supabase.from('profiles')
-        .select('utoronto_email').eq('id', session.user.id).maybeSingle()
-      if (!cancelled) setMainIdentity({ email: session.user.email, utoronto: prof?.utoronto_email ?? null })
-    }).catch(() => {})
+      // Only Field Guide mounts reconcile (fgEmail set). Lounge mounts pass
+      // `email` from the main session itself — already the right person.
+      if (!fgEmail || triedRef.current) return
+      if (mainMatchesFg(fgEmail, ident)) return
+      const key = normEmail(fgEmail)
+      if (autoReconciled.has(key)) { triedRef.current = true; return }
+      autoReconciled.add(key)
+      triedRef.current = true
+      await reconcile()
+    })()
     return () => { cancelled = true }
-  }, [])
+  }, [fgEmail, loadMain, reconcile])
 
-  // On Field Guide mounts (fgEmail set) the main session in this browser may
-  // belong to SOMEONE ELSE — Norm hit this 2026-09-05: an old test account's
-  // main session made the menu wear a stranger's ripple beside his own
-  // academic identity. Lounge mounts pass `email` from the main session
-  // itself, so there the question cannot arise.
-  const mismatch = !!(fgEmail && mainUserId && mainIdentity
-    && normEmail(fgEmail) !== normEmail(mainIdentity.email)
-    && normEmail(fgEmail) !== normEmail(mainIdentity.utoronto))
-  const linkedMainId = mismatch ? null : mainUserId
+  const sameMain = mainMatchesFg(fgEmail, mainIdentity)
+  // On a Lounge mount there is no fgEmail, so the main session is authoritative.
+  const linkedMainId = fgEmail ? (sameMain ? mainUserId : null) : mainUserId
+  // Show the "different account" note only if reconcile ran and could not fix
+  // it (e.g. no active enrollment for this identity) — never mid-attempt.
+  const mismatch = !!(fgEmail && !reconciling && triedRef.current && mainUserId && !sameMain)
 
   const { data: avatarData } = useAvatarConfig(linkedMainId)
 
@@ -124,14 +186,17 @@ export default function AvatarMenu({ client, fgEmail, email, courseCode, isStaff
             <>
               <p style={S.mismatch}>
                 The main site is signed in as <b>{mainIdentity.email}</b> — a different
-                account. Sign it out to link this one.
+                account. We couldn't switch it automatically{isStaff ? '' : ' (no Lounge membership on this address yet)'}.
               </p>
               <button style={{ ...S.item, ...S.itemBtn }}
-                      onClick={() => supabase.auth.signOut().then(() => setMainUserId(null), () => {})}>
-                Sign out of that account
+                      onClick={() => reconcile()}>
+                Switch to {fgEmail}
               </button>
               <div style={S.divider} />
             </>
+          )}
+          {reconciling && (
+            <><p style={S.mismatch}>Linking your account…</p><div style={S.divider} /></>
           )}
           {items.map((it) => it.to
             ? <Link key={it.label} to={it.to} style={S.item} onClick={() => setOpen(false)}>{it.label}</Link>
