@@ -13,7 +13,7 @@
  *   face_read        TRIAL_COUNT = 10                       (FaceRead.jsx:11)
  *   first_contact    MIN_CYCLES_BEFORE_COMPLETE = 4 × 4 s   (FirstContact/constants.js)
  *   ebb_flow         MIN_TRIALS_PER_SESSION = 10, 4 breaths × 4 s + 0.8 s ITI
- *   free_breath      TARGET_BREATHS = 8 self-paced breaths (FreeBreath.jsx); ~2 min at typical pace
+ *   kite             TARGET_BREATHS = 8 self-paced breaths (Kite.jsx); ~2 min at typical pace
  *   drift            TARGETS_MS = 6 intervals summing 60 s + reproductions
  *   pond_watch       TRIAL_COUNT = 60 × (~2 s ITI + 0.8 s + 0.65 s)
  *   farm_joy         3 rounds, 12 required selections of 24 veggies
@@ -102,11 +102,11 @@ export const GAMES = [
     unlock: { requires: 'first_contact', label: 'Contact' },
   },
   {
-    slug: 'free_breath',
-    title: 'Free Breathing',
-    to: '/games/free-breath',
+    slug: 'kite',
+    title: 'Kite',
+    to: '/games/kite',
     badge: 'Breath shapes',
-    desc: 'No pacer — hold to breathe in, hold to breathe out, at whatever pace is yours. Eight breaths, each drawn as a shape.',
+    desc: 'No pacer — hold to breathe in, hold to breathe out, at whatever pace is yours. Eight breaths, each flown as its own kite.',
     category: 'breath',
     bucket: 'quick',
     duration: '~2 min',

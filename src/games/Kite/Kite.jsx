@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Nav from '../../components/Nav'
 import GameIntro from '../shared/GameIntro'
-import { FreeBreathIcon } from '../shared/GameIcon'
+import { KiteIcon } from '../shared/GameIcon'
 import PrimaryCTA from '../../components/ui/PrimaryCTA'
 import SyncAura from '../../components/SyncAura'
 import ContactAvatar from '../FirstContact/components/ContactAvatar'
@@ -9,8 +9,9 @@ import BreathShapeChart, { MiniShape, EmptyStamp } from './BreathShapeChart'
 import { parseBreaths, meanBreath, maxDuration, MIN_HOLD_MS } from './breathShapes'
 import { createBreathAudio } from './breathAudio'
 
-// ── FreeBreath ──────────────────────────────────────────────────────────────
-// Come, See prototype — free breathing, no pacer. The player breathes and the
+// ── Kite ────────────────────────────────────────────────────────────────────
+// Come, See — free breathing, no pacer; named for the four-vertex breath
+// shape, a kite flown on the player's own wind. The player breathes and the
 // face breathes with them: hold one control to breathe in, another to breathe
 // out, hold nothing and it rests (a faint idle sway — resting, not frozen).
 // Every hold and release is logged as a phase segment; each completed breath
@@ -21,7 +22,7 @@ import { createBreathAudio } from './breathAudio'
 // (finishSession slices to TARGET_BREATHS); the button is only an early exit.
 // Breath-noise audio follows airflow (breathAudio.js).
 //
-// Screens: INTRO → BREATHING → RESULTS. On the catalog at /games/free-breath
+// Screens: INTRO → BREATHING → RESULTS. On the catalog at /games/kite
 // (auth'd like the rest); still writes nothing — session persistence is the
 // next tier and goes to main with its schema when it comes.
 //
@@ -67,7 +68,7 @@ const GUIDE_COPY = {
 const COARSE_INPUT = typeof window !== 'undefined' &&
   !!window.matchMedia?.('(pointer: coarse)')?.matches
 
-export default function FreeBreath({ session }) {
+export default function Kite({ session }) {
   const [screen, setScreen]           = useState('INTRO')
   const [control, setControlState]    = useState('pause')
   const [liveBreaths, setLiveBreaths] = useState([])
@@ -313,11 +314,11 @@ export default function FreeBreath({ session }) {
 
         {screen === 'INTRO' && (
           <GameIntro
-            title="Free breathing."
+            title="Kite."
             lead="No pacer this time. Breathe, and it breathes with you — you set the length of every in, every out, and every pause."
             visual={
               <div style={{ display: 'flex', justifyContent: 'center', margin: '0 0 20px' }}>
-                <FreeBreathIcon size={64} />
+                <KiteIcon size={64} />
               </div>
             }
             steps={[

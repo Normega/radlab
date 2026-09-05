@@ -71,7 +71,7 @@ const Mirror        = lazy(() => import('./games/Mirror/Mirror'))
 const BreathBeltDemo  = lazy(() => import('./games/BreathBelt/BreathBeltDemo'))
 const PacerOpenerDemo = lazy(() => import('./games/BreathBelt/PacerOpenerDemo'))
 const BreathLab        = lazy(() => import('./games/shared/breath/BreathLab'))
-const FreeBreath       = lazy(() => import('./games/FreeBreath/FreeBreath'))
+const Kite             = lazy(() => import('./games/Kite/Kite'))
 
 const VideoTest = lazy(() => import('./pages/dev/VideoTest'))
 const AudioTest = lazy(() => import('./pages/dev/AudioTest'))
@@ -563,11 +563,13 @@ export default function App() {
             </ProtectedRoute>
           } />
 
-          <Route path="/games/free-breath" element={
+          <Route path="/games/kite" element={
             <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome} needsRippleName={needsRippleName}>
-              <FreeBreath session={session} />
+              <Kite session={session} />
             </ProtectedRoute>
           } />
+          {/* Kite was briefly /games/free-breath on dev — forward anything bookmarked */}
+          <Route path="/games/free-breath" element={<Navigate to="/games/kite" replace />} />
 
           <Route path="/games/aptitude-suite" element={
             <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome} needsRippleName={needsRippleName}>
@@ -627,8 +629,8 @@ export default function App() {
           <Route path="/dev/sidelong-preview" element={<SidelongPreview />} />
           {/* Breath-signal instrumentation for biofeedback game dev; ?sim=1 for beltless */}
           <Route path="/dev/breath-lab" element={<BreathLab />} />
-          {/* Free Breathing graduated to the catalog (2026-09-04) — old dev URL forwards */}
-          <Route path="/dev/free-breath" element={<Navigate to="/games/free-breath" replace />} />
+          {/* Kite (né Free Breathing) graduated to the catalog (2026-09-04) — old dev URL forwards */}
+          <Route path="/dev/free-breath" element={<Navigate to="/games/kite" replace />} />
 
           {/* Conference demo — no auth, writes nothing; ?sim=1 for beltless rehearsal */}
           <Route path="/demo/breath-belt" element={<BreathBeltDemo />} />
