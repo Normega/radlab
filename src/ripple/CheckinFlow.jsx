@@ -746,6 +746,13 @@ export default function CheckinFlow({ session, context = 'manual', onComplete, o
 const S = {
   stepWrap:  { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, width: '100%', maxWidth: 520 },
   eyebrow:   { fontFamily: MONO, fontSize: 12, color: '#abadb0', letterSpacing: '0.12em', textTransform: 'uppercase', margin: '0 0 6px' },
+  // SANCTIONED EXCEPTION — do not sweep this to 28 with the headings.
+  // Serif 20 was Heading/4, deleted from the guide 2026-09-02, and every other
+  // site moved to Heading/2 28. This one is not a heading: it is the question a
+  // participant answers, centred in a 520px column with its own eyebrow above.
+  // At 28 the longer prompts run to three lines and the screen reads as raised
+  // voice. Kept at 20 on a side-by-side preview (Norm, 2026-09-04); the proper
+  // fix is a `question` role in the guide, not borrowing a heading style.
   ratingQ:   { fontFamily: SERIF, fontSize: 20, color: '#1c1c1e', fontWeight: 400, margin: 0 },
   faceCard:  { background: 'white', borderRadius: 18, padding: '12px 10px 10px', boxShadow: '0 2px 18px rgba(180,120,160,0.10)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 },
   btn:       { background: '#f068a4', color: 'white', border: 'none', borderRadius: 12, padding: 14, fontFamily: MONO, fontSize: 14, fontWeight: 700, letterSpacing: '0.05em', cursor: 'pointer', boxShadow: '0 4px 20px rgba(240,104,164,0.30)' },

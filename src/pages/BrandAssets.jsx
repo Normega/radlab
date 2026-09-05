@@ -387,6 +387,15 @@ export default function BrandAssets() {
           eyebrows, not serif headings.
         </p>
         <p className="brand-section-note">
+          <strong>One sanctioned exception.</strong> The daily check-in prompt
+          (<code>ripple/CheckinFlow</code>) keeps serif 20px. It is not a heading &mdash; it is
+          the question a participant answers, centred in a narrow column under its own eyebrow,
+          and at 28px the longer prompts run to three lines and the screen reads as a raised
+          voice. It is marked in the source so a future sweep does not &ldquo;correct&rdquo; it.
+          The real fix is a <code>question</code> role in the guide rather than a heading style
+          borrowed for text that asks something.
+        </p>
+        <p className="brand-section-note">
           <strong>On the 10px step.</strong> This page asserted for months that
           &ldquo;12px is a hard floor (WCAG)&rdquo;. That was wrong: WCAG 2.x sets no minimum
           font size &mdash; it requires resize to 200% (1.4.4) and sufficient contrast (1.4.3),
