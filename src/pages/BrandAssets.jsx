@@ -486,9 +486,11 @@ export default function BrandAssets() {
           (<code>src/components/ui/MenuAvatar.jsx</code>): the user&rsquo;s ripple avatar
           <strong> filling a 46px circle</strong>, with <strong>no plate behind it</strong> &mdash;
           no white disc (retired 2026-09-05), no pink ring (retired 2026-09-04), no other
-          treatment. The avatar is drawn at 68px and cropped back to 46 because RippleAvatar
+          treatment. The avatar is drawn at 57px and cropped back to 46 because RippleAvatar
           letterboxes a 200&times;185 viewBox into a square, so a plain 46px render would leave
-          the head at ~29px in dead space. Signed in with no avatar yet: the account&rsquo;s
+          the head at ~29px in dead space. 57 is a deliberate point on a trade: larger renders
+          grow the head but cut the hair, so it buys ~6px of crown clearance and keeps the head
+          at 34&ndash;39px depending on species. Signed in with no avatar yet: the account&rsquo;s
           initial in Space&nbsp;Mono <code>--pkd</code> on a <code>--bgp</code> ground &mdash; a
           bare letter has no silhouette, so the fallback alone keeps a plate. The avatar
           <strong> is</strong> the menu affordance &mdash; never use it as a bare profile link, and
