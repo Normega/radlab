@@ -187,8 +187,7 @@ function Shell({ slug, session, children }) {
   return (
     <AcademicShell courseCode={slug} homeTo={loungePath(slug)}
                    menu={session ? (
-                     <AvatarMenu email={session.user.email} courseCode={slug}
-                                 signOut={() => supabase.auth.signOut()} />
+                     <AvatarMenu email={session.user.email} courseCode={slug} />
                    ) : null}>
       <div style={S.wrap}>
         <Link to={loungePath(slug)} style={S.backLink}>← back to class</Link>

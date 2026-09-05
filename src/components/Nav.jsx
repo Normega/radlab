@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
+import { signOutEverywhere } from '../lib/signOutEverywhere'
 import { useAvatarConfig } from '../hooks/useAvatarConfig'
 import { useDisplayName } from '../hooks/useDisplayName'
 import ButtonNav from './ui/ButtonNav'
@@ -71,7 +72,7 @@ export default function Nav({ session }) {
 
   async function handleSignOut() {
     setOpen(false)
-    await supabase.auth.signOut()
+    await signOutEverywhere()
     navigate('/')
   }
 

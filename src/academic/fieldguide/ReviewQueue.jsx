@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useOutletContext } from 'react-router-dom'
 import { AcademicEyebrow } from '../AcademicChrome'
+import { signOutEverywhere } from '../../lib/signOutEverywhere'
 import { useWikiBase, useCoursePaths } from './wiki/useWikiBase'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
@@ -349,7 +350,7 @@ function Page({ course, session, client, children }) {
             <p style={{ ...S.sub, fontSize: 12 }}>{session.user.email}</p>
             <Link to={WIKI_BASE} style={S.link}>Wiki</Link>
             <Link to={paths.sub('ingest')} style={{ ...S.link, marginLeft: 10 }}>Ingest portal</Link>
-            <button style={{ ...S.linkBtn, marginLeft: 10 }} onClick={() => client.auth.signOut()}>Sign out</button>
+            <button style={{ ...S.linkBtn, marginLeft: 10 }} onClick={() => signOutEverywhere(client)}>Sign out</button>
           </div>
         </header>
 

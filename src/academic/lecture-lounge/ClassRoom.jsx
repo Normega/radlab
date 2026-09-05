@@ -285,8 +285,7 @@ export default function ClassRoom({ session }) {
   // The same academic menu every academic page mounts; Sign out here ends
   // the MAIN session (this half of the course runs on the main project).
   const menuEl = session ? (
-    <AvatarMenu email={session.user.email} courseCode={slug}
-                signOut={() => supabase.auth.signOut()} />
+    <AvatarMenu email={session.user.email} courseCode={slug} />
   ) : null
 
   if (session === undefined || classInfo === undefined || (session && classInfo && membership === undefined)) {

@@ -3,6 +3,7 @@ import { Link, Outlet, useParams } from 'react-router-dom'
 import { getCourseClient } from '../courseClient'
 import { normalizeCourseCode, resolveEnrolledCourse, courseSubPath, wikiBase, joinPath } from '../courseRoutes'
 import Join from './Join'
+import { signOutEverywhere } from '../../lib/signOutEverywhere'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -204,7 +205,7 @@ export default function FieldGuideAuthRoute({ roles, deniedTitle, deniedBody, pu
       <Shell>
         <h1 style={S.title}>{deniedTitle}</h1>
         <p style={S.sub}>{deniedBody(session.user.email)}</p>
-        <button style={S.linkBtn} onClick={() => client.auth.signOut()}>Sign out</button>
+        <button style={S.linkBtn} onClick={() => signOutEverywhere(client)}>Sign out</button>
       </Shell>
     )
   }

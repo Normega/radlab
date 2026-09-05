@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
+import { signOutEverywhere } from '../lib/signOutEverywhere'
 import Nav from '../components/Nav'
 import SiteFooter from '../components/SiteFooter'
 import EyebrowLabel from '../components/ui/EyebrowLabel'
@@ -417,7 +418,7 @@ function DeleteAccount({ email, role }) {
       return
     }
     // The auth user is gone; the local session is now a dead token.
-    await supabase.auth.signOut()
+    await signOutEverywhere()
     navigate('/', { replace: true })
   }
 

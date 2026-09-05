@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { signOutEverywhere } from '../lib/signOutEverywhere'
 import { useDisplayName } from '../hooks/useDisplayName'
 
 const NAV_SECTIONS = [
@@ -91,7 +92,7 @@ function Sidebar({ session, superAdmin, onClose }) {
   const { displayName } = useDisplayName(session?.user, 'Lab member')
 
   async function handleSignOut() {
-    await supabase.auth.signOut()
+    await signOutEverywhere()
     navigate('/')
   }
 

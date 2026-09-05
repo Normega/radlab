@@ -10,6 +10,7 @@ import { useAvatarConfig } from '../../hooks/useAvatarConfig'
 import MenuAvatar from '../../components/ui/MenuAvatar'
 import { courseFeatures } from '../courseFeatures'
 import { loungePath, courseSubPath } from '../courseRoutes'
+import { signOutEverywhere } from '../../lib/signOutEverywhere'
 
 const MONO = '"Space Mono", "Courier New", monospace'
 
@@ -169,10 +170,10 @@ export default function AvatarMenu({ client, fgEmail, email, courseCode, isStaff
   if (linkedMainId) items.push({ to: '/account', label: 'Account' })
   if (onTour) items.push({ onClick: () => { setOpen(false); onTour() }, label: 'Tour' })
 
-  const handleSignOut = () => {
-    if (signOut) return signOut()
-    return client?.auth.signOut()
-  }
+  // Both platforms, always — a linked sign-in deserves a linked sign-out.
+  // On Lounge mounts (no client prop) the helper finds any academic session
+  // in storage itself.
+  const handleSignOut = () => signOutEverywhere(client)
 
   return (
     <div ref={wrapRef} style={S.wrap}>

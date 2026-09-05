@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, Navigate, useOutletContext } from 'react-router-dom'
 import { AcademicEyebrow } from '../AcademicChrome'
 import { courseFeatures } from '../courseFeatures'
+import { signOutEverywhere } from '../../lib/signOutEverywhere'
 import { useWikiBase, useCoursePaths } from './wiki/useWikiBase'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
@@ -184,7 +185,7 @@ export default function IngestPortal() {
             <p style={{ ...S.sub, fontSize: 12 }}>{session.user.email}</p>
             <Link to={WIKI_BASE} style={{ fontSize: 14, color: 'var(--pk)' }}>Wiki</Link>
             <Link to={paths.sub('review')} style={{ fontSize: 14, color: 'var(--pk)', marginLeft: 10 }}>Review queue</Link>
-            <button style={{ ...S.linkBtn, marginLeft: 10 }} onClick={() => courseClient.auth.signOut()}>Sign out</button>
+            <button style={{ ...S.linkBtn, marginLeft: 10 }} onClick={() => signOutEverywhere(courseClient)}>Sign out</button>
           </div>
         </header>
 
