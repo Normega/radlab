@@ -15,8 +15,9 @@ import { createBreathAudio } from './breathAudio'
 // Every hold and release is logged as a phase segment; each completed breath
 // stamps its four-duration shape into a row of eight waiting slots. At the
 // eighth breath a gold aura blooms around the face — the session's quiet
-// gift — and the session then finishes itself into the full graph (see
-// breathShapes.js / BreathShapeChart.jsx); the button is only an early exit.
+// gift — and the session finishes itself: after a short rest automatically,
+// or the moment a ninth hold is released. The ninth breath is never graphed
+// (finishSession slices to TARGET_BREATHS); the button is only an early exit.
 // Breath-noise audio follows airflow (breathAudio.js).
 //
 // Screens: INTRO → BREATHING → RESULTS. No auth, writes nothing — /dev route.
@@ -86,6 +87,8 @@ export default function FreeBreath() {
   const hintTimerRef     = useRef(null)
   const audioRef         = useRef(null)
   const finishRef        = useRef(null)  // latest finishSession, for timers
+  const breathCountRef   = useRef(0)     // mirrors liveBreaths.length for handlers
+  const ninthHoldRef     = useRef(false) // a hold begun after the eighth breath
 
   // ── Control changes → segment log ─────────────────────────────────────
   const applyControl = useCallback((next) => {
@@ -119,10 +122,13 @@ export default function FreeBreath() {
     }
 
     const all = [...segsRef.current, { ...openSegRef.current, t1: t }]
-    setLiveBreaths(parseBreaths(all))
+    const parsed = parseBreaths(all)
+    breathCountRef.current = parsed.length
+    setLiveBreaths(parsed)
   }, [])
 
   const press = useCallback((kind) => {
+    if (breathCountRef.current >= TARGET_BREATHS) ninthHoldRef.current = true
     pressAtRef.current[kind] = performance.now()
     heldRef.current = [...heldRef.current.filter(k => k !== kind), kind]
     applyControl(kind)
@@ -134,6 +140,13 @@ export default function FreeBreath() {
     heldRef.current = heldRef.current.filter(k => k !== kind)
     const held = heldRef.current
     applyControl(held.length ? held[held.length - 1] : 'pause')
+
+    // A breath begun after the eighth ends the session at its first let-go;
+    // the ninth breath is never recorded (finishSession caps the graph).
+    if (ninthHoldRef.current) {
+      finishRef.current?.()
+      return
+    }
 
     const heldFor = performance.now() - (pressAtRef.current[kind] ?? 0)
     if (hintTimerRef.current) clearTimeout(hintTimerRef.current)
@@ -219,7 +232,11 @@ export default function FreeBreath() {
   useEffect(() => {
     if (!reachedTarget) return
     const iv = setInterval(() => setGiftStep(s => (s >= 4 ? s : s + 1)), 800)
-    const done = setTimeout(() => finishRef.current?.(), AUTO_FINISH_MS)
+    // If a ninth hold is in progress when the timer lands, defer to its
+    // release, which ends the session itself.
+    const done = setTimeout(() => {
+      if (heldRef.current.length === 0) finishRef.current?.()
+    }, AUTO_FINISH_MS)
     return () => { clearInterval(iv); clearTimeout(done) }
   }, [reachedTarget])
 
@@ -239,6 +256,8 @@ export default function FreeBreath() {
     controlRef.current = 'pause'
     fullnessRef.current = 0
     guideRef.current   = 'in'
+    breathCountRef.current = 0
+    ninthHoldRef.current   = false
     setControlState('pause')
     setLiveBreaths([])
     setBreaths([])
@@ -261,7 +280,7 @@ export default function FreeBreath() {
     const all = openSegRef.current
       ? [...segsRef.current, { ...openSegRef.current, t1: t }]
       : segsRef.current
-    const parsed = parseBreaths(all)
+    const parsed = parseBreaths(all).slice(0, TARGET_BREATHS)
     if (parsed.length === 0) return
     heldRef.current = []
     audioRef.current?.stop()
@@ -274,9 +293,8 @@ export default function FreeBreath() {
   const mean   = meanBreath(breaths)
   const maxDur = maxDuration(breaths)
 
-  const breathCount = liveBreaths.length
+  const breathCount = Math.min(liveBreaths.length, TARGET_BREATHS)
   const liveMax     = maxDuration(liveBreaths)
-  const slots       = Math.max(TARGET_BREATHS, breathCount)
 
   // One line under the face: coaching first, then first-breath guidance —
   // hidden while the player is already doing what it asks.
@@ -342,7 +360,7 @@ export default function FreeBreath() {
 
             {/* Eight waiting slots; each completed breath stamps its shape in. */}
             <div style={S.stampRow}>
-              {Array.from({ length: slots }, (_, i) => liveBreaths[i]
+              {Array.from({ length: TARGET_BREATHS }, (_, i) => liveBreaths[i]
                 ? <MiniShape key={i} breath={liveBreaths[i]} maxDur={liveMax} size={40} />
                 : <EmptyStamp key={i} size={40} />)}
             </div>
