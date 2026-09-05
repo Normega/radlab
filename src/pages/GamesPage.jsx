@@ -5,6 +5,7 @@ import SiteFooter from '../components/SiteFooter'
 import EyebrowLabel from '../components/ui/EyebrowLabel'
 import PrimaryCTA from '../components/ui/PrimaryCTA'
 import { supabase } from '../lib/supabase'
+import GameIcon from '../games/shared/GameIcon'
 import { GAMES, groupGames } from '../data/games'
 
 // ── GamesPage ─────────────────────────────────────────────────────────────
@@ -210,10 +211,17 @@ function LockedCard({ game }) {
   )
 }
 
+// The icon sits opposite the badge rather than above the title, so it anchors
+// the card without pushing the copy down or competing with it for the first
+// line. `plate` stays on: the tinted disc is what makes the set read as a set
+// (see GameIcon.jsx), and it gives the mark an edge against the white card.
 function CardBody({ game }) {
   return (
     <>
-      <span style={S.badge}>{game.badge}</span>
+      <span style={S.cardHead}>
+        <span style={S.badge}>{game.badge}</span>
+        <GameIcon slug={game.slug} size={64} />
+      </span>
       <h2 style={S.gameTitle}>{game.title}</h2>
       <p style={S.gameDesc}>{game.desc}</p>
       <div style={S.meta}>
@@ -317,12 +325,20 @@ const S = {
   },
   cardLocked: { background: 'var(--bgc)' },
 
+  // Badge left, icon right, both pinned to the top of the row so a two-line
+  // badge grows downward and leaves the icon where it is.
+  cardHead: {
+    display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
+    gap: 16, minHeight: 64,
+  },
   badge: {
-    alignSelf: 'flex-start', fontFamily: MONO, fontSize: 12, letterSpacing: 0.5,
+    fontFamily: MONO, fontSize: 12, letterSpacing: 0.5,
     textTransform: 'uppercase', padding: '5px 10px', borderRadius: 12,
     background: 'var(--bgp)', color: 'var(--pkd)',
   },
-  gameTitle: { fontFamily: SERIF, fontSize: 24, color: 'var(--tx)', margin: '14px 0 8px' },
+  // Heading/2 — the card-title role settled 2026-09-04. Was 24px, which the
+  // finalized guide does not carry.
+  gameTitle: { fontFamily: SERIF, fontSize: 28, color: 'var(--tx)', margin: '14px 0 8px' },
   gameDesc:  { fontFamily: SANS, fontSize: 14, lineHeight: 1.55, color: 'var(--tx2)', flex: 1 },
 
   meta: {
