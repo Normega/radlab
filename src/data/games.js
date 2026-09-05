@@ -191,6 +191,7 @@ export const GAMES = [
 export const DEV_GAMES = [
   { slug: 'owl_barn',        title: 'Owl Barn',        to: '/games/owl-barn',        inDevelopment: true },
   { slug: 'breath_guardian', title: 'Breath Guardian', to: '/games/breath-guardian', inDevelopment: true },
+  { slug: 'free_breath',     title: 'Free Breathing',  to: '/dev/free-breath',       inDevelopment: true },
 ]
 
 /** Look a game up by its slug (`ebb_flow`). Catalog first, then in-development. */
