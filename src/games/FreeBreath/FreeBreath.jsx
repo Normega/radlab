@@ -12,10 +12,11 @@ import { createBreathAudio } from './breathAudio'
 // face breathes with them: hold one control to breathe in, another to breathe
 // out, hold nothing and it rests (a faint idle sway — resting, not frozen).
 // Every hold and release is logged as a phase segment; each completed breath
-// stamps its four-duration shape into a row of eight waiting slots, and
-// Finish opens the full graph (see breathShapes.js / BreathShapeChart.jsx).
-// Breath-noise audio follows airflow (breathAudio.js); at the eighth breath a
-// gold aura blooms around the face — the session's quiet gift.
+// stamps its four-duration shape into a row of eight waiting slots. At the
+// eighth breath a gold aura blooms around the face — the session's quiet
+// gift — and the session then finishes itself into the full graph (see
+// breathShapes.js / BreathShapeChart.jsx); the button is only an early exit.
+// Breath-noise audio follows airflow (breathAudio.js).
 //
 // Screens: INTRO → BREATHING → RESULTS. No auth, writes nothing — /dev route.
 //
@@ -42,6 +43,9 @@ const STATE_LABEL = { in: 'breathing in', out: 'breathing out', pause: 'still' }
 const STATE_COLOR = { in: AMBER, out: BLUE, pause: 'var(--gy)' }
 
 const TARGET_BREATHS = 8
+// Eighth breath → aura blooms (4 × 800 ms), a beat to take it in, then the
+// session ends itself.
+const AUTO_FINISH_MS = 4500
 const HINT_MS = 3500
 const HINT_COPY = {
   in:  'Remember, hold down the button for the whole inhalation.',
@@ -80,7 +84,7 @@ export default function FreeBreath() {
   const pressAtRef       = useRef({})    // kind → performance.now() at press
   const hintTimerRef     = useRef(null)
   const audioRef         = useRef(null)
-  const giftStartedRef   = useRef(false)
+  const finishRef        = useRef(null)  // latest finishSession, for timers
 
   // ── Control changes → segment log ─────────────────────────────────────
   const applyControl = useCallback((next) => {
@@ -206,19 +210,17 @@ export default function FreeBreath() {
     return () => { if (raf) cancelAnimationFrame(raf) }
   }, [screen])
 
-  // ── Eighth breath → the aura blooms in four slow steps ────────────────
+  // ── Eighth breath → the aura blooms, then the session finishes itself ─
+  // Keyed on the reached-target *boolean*, not the breath list — liveBreaths
+  // is a fresh array on every control change, which would tear down the bloom
+  // interval and the auto-finish timer mid-flight.
+  const reachedTarget = screen === 'BREATHING' && liveBreaths.length >= TARGET_BREATHS
   useEffect(() => {
-    if (screen !== 'BREATHING' || liveBreaths.length < TARGET_BREATHS) return
-    if (giftStartedRef.current) return
-    giftStartedRef.current = true
-    const iv = setInterval(() => {
-      setGiftStep(s => {
-        if (s >= 4) { clearInterval(iv); return s }
-        return s + 1
-      })
-    }, 800)
-    return () => clearInterval(iv)
-  }, [screen, liveBreaths])
+    if (!reachedTarget) return
+    const iv = setInterval(() => setGiftStep(s => (s >= 4 ? s : s + 1)), 800)
+    const done = setTimeout(() => finishRef.current?.(), AUTO_FINISH_MS)
+    return () => { clearInterval(iv); clearTimeout(done) }
+  }, [reachedTarget])
 
   // ContactAvatar computes fullness = (sin(phase·2π − π/2) + 1) / 2; invert
   // so the avatar's fullness equals ours exactly.
@@ -236,7 +238,6 @@ export default function FreeBreath() {
     controlRef.current = 'pause'
     fullnessRef.current = 0
     guideRef.current   = 'in'
-    giftStartedRef.current = false
     setControlState('pause')
     setLiveBreaths([])
     setBreaths([])
@@ -266,6 +267,7 @@ export default function FreeBreath() {
     setBreaths(parsed)
     setScreen('RESULTS')
   }
+  finishRef.current = finishSession
 
   // ── Render ────────────────────────────────────────────────────────────
   const mean   = meanBreath(breaths)
@@ -339,12 +341,14 @@ export default function FreeBreath() {
                 : <EmptyStamp key={i} size={40} />)}
             </div>
 
+            <span style={S.countNum}>{breathCount} of {TARGET_BREATHS}</span>
+
             <button
               style={{ ...S.finishBtn, ...(breathCount === 0 ? S.finishDisabled : null) }}
               disabled={breathCount === 0}
               onClick={finishSession}
             >
-              Finish
+              Finish early
             </button>
           </>
         )}
@@ -443,6 +447,10 @@ const S = {
   stampRow: {
     display: 'flex', flexWrap: 'wrap', justifyContent: 'center',
     gap: 6, marginTop: 4, maxWidth: 400,
+  },
+  countNum: {
+    fontFamily: MONO, fontSize: 11, letterSpacing: '0.10em',
+    color: 'var(--gy)', userSelect: 'none',
   },
 
   finishBtn: {
