@@ -563,6 +563,12 @@ export default function App() {
             </ProtectedRoute>
           } />
 
+          <Route path="/games/free-breath" element={
+            <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome} needsRippleName={needsRippleName}>
+              <FreeBreath session={session} />
+            </ProtectedRoute>
+          } />
+
           <Route path="/games/aptitude-suite" element={
             <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome} needsRippleName={needsRippleName}>
               <AptitudeSuite session={session} />
@@ -621,8 +627,8 @@ export default function App() {
           <Route path="/dev/sidelong-preview" element={<SidelongPreview />} />
           {/* Breath-signal instrumentation for biofeedback game dev; ?sim=1 for beltless */}
           <Route path="/dev/breath-lab" element={<BreathLab />} />
-          {/* Free-breathing prototype — self-paced pacer + breath-shape graph; no auth, writes nothing */}
-          <Route path="/dev/free-breath" element={<FreeBreath />} />
+          {/* Free Breathing graduated to the catalog (2026-09-04) — old dev URL forwards */}
+          <Route path="/dev/free-breath" element={<Navigate to="/games/free-breath" replace />} />
 
           {/* Conference demo — no auth, writes nothing; ?sim=1 for beltless rehearsal */}
           <Route path="/demo/breath-belt" element={<BreathBeltDemo />} />

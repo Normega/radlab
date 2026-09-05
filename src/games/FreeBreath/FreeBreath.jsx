@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import Nav from '../../components/Nav'
 import GameIntro from '../shared/GameIntro'
 import { FreeBreathIcon } from '../shared/GameIcon'
 import PrimaryCTA from '../../components/ui/PrimaryCTA'
@@ -20,7 +21,9 @@ import { createBreathAudio } from './breathAudio'
 // (finishSession slices to TARGET_BREATHS); the button is only an early exit.
 // Breath-noise audio follows airflow (breathAudio.js).
 //
-// Screens: INTRO → BREATHING → RESULTS. No auth, writes nothing — /dev route.
+// Screens: INTRO → BREATHING → RESULTS. On the catalog at /games/free-breath
+// (auth'd like the rest); still writes nothing — session persistence is the
+// next tier and goes to main with its schema when it comes.
 //
 // The face is First Contact's ContactAvatar, unmodified. It expects a paced
 // 0–1 cycle phase and maps it through a sine to "breath fullness"; here the
@@ -64,7 +67,7 @@ const GUIDE_COPY = {
 const COARSE_INPUT = typeof window !== 'undefined' &&
   !!window.matchMedia?.('(pointer: coarse)')?.matches
 
-export default function FreeBreath() {
+export default function FreeBreath({ session }) {
   const [screen, setScreen]           = useState('INTRO')
   const [control, setControlState]    = useState('pause')
   const [liveBreaths, setLiveBreaths] = useState([])
@@ -305,11 +308,11 @@ export default function FreeBreath() {
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
+      <Nav session={session} />
       <div style={S.wrap}>
 
         {screen === 'INTRO' && (
           <GameIntro
-            eyebrow="RADlab · Come, See — prototype"
             title="Free breathing."
             lead="No pacer this time. Breathe, and it breathes with you — you set the length of every in, every out, and every pause."
             visual={
@@ -379,7 +382,7 @@ export default function FreeBreath() {
 
         {screen === 'RESULTS' && (
           <div style={S.results}>
-            <p style={S.eyebrow}>RADlab · Come, See — prototype</p>
+            <p style={S.eyebrow}>RADlab · Come, See</p>
             <h1 style={S.h1}>The shape of your breathing.</h1>
             <p style={S.lead}>
               {breaths.length} {breaths.length === 1 ? 'breath' : 'breaths'}. Each outline is one
@@ -439,7 +442,7 @@ function HoldButton({ kind, label, hint, color, active, onPress, onRelease }) {
 const S = {
   wrap: {
     display: 'flex', flexDirection: 'column', alignItems: 'center',
-    padding: '32px 24px', minHeight: '100vh', justifyContent: 'center', gap: 18,
+    padding: '32px 24px', minHeight: 'calc(100vh - 60px)', justifyContent: 'center', gap: 18,
   },
 
   outerScale: { willChange: 'transform' },
