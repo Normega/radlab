@@ -27,20 +27,44 @@ const MONO = '"Space Mono", "Courier New", monospace'
 // have ripples via check-ins, and hiding where their data lives is worse
 // than one extra item. It needs a main-site session, so it appears only when
 // one exists — before that, the Lounge join item is the door that creates it.
+// Same-person test across the two projects. A student's main account may
+// legitimately live on a personal address while the Field Guide uses their
+// U of T one — the verified utoronto_email is the bridge between them — so
+// "same person" means the academic address matches the main account's login
+// email OR its verified U of T email, normalized.
+const normEmail = (e) =>
+  String(e ?? '').trim().toLowerCase().replace(/@(mail\.|alum\.)?utoronto\.ca$/, '@utoronto.ca')
+
 export default function AvatarMenu({ client, fgEmail, email, courseCode, isStaff, onTour, signOut }) {
   const [open, setOpen] = useState(false)
   const [mainUserId, setMainUserId] = useState(null)
+  const [mainIdentity, setMainIdentity] = useState(null) // { email, utoronto } | null
   const wrapRef = useRef(null)
 
   useEffect(() => {
     let cancelled = false
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!cancelled) setMainUserId(session?.user?.id ?? null)
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (cancelled) return
+      setMainUserId(session?.user?.id ?? null)
+      if (!session) { setMainIdentity(null); return }
+      const { data: prof } = await supabase.from('profiles')
+        .select('utoronto_email').eq('id', session.user.id).maybeSingle()
+      if (!cancelled) setMainIdentity({ email: session.user.email, utoronto: prof?.utoronto_email ?? null })
     }).catch(() => {})
     return () => { cancelled = true }
   }, [])
 
-  const { data: avatarData } = useAvatarConfig(mainUserId)
+  // On Field Guide mounts (fgEmail set) the main session in this browser may
+  // belong to SOMEONE ELSE — Norm hit this 2026-09-05: an old test account's
+  // main session made the menu wear a stranger's ripple beside his own
+  // academic identity. Lounge mounts pass `email` from the main session
+  // itself, so there the question cannot arise.
+  const mismatch = !!(fgEmail && mainUserId && mainIdentity
+    && normEmail(fgEmail) !== normEmail(mainIdentity.email)
+    && normEmail(fgEmail) !== normEmail(mainIdentity.utoronto))
+  const linkedMainId = mismatch ? null : mainUserId
+
+  const { data: avatarData } = useAvatarConfig(linkedMainId)
 
   useEffect(() => {
     if (!open) return
@@ -58,8 +82,12 @@ export default function AvatarMenu({ client, fgEmail, email, courseCode, isStaff
   const items = []
   // Course places first — the two halves of the course, always both present.
   items.push({ to: sub('wiki'), label: 'Field Guide' })
-  if (mainUserId) {
+  if (linkedMainId) {
     items.push({ to: lounge, label: 'Lecture Lounge' })
+  } else if (mismatch) {
+    // Deliberately NOT the join item: joining while the wrong main session
+    // is live would build membership on the wrong account. Sign that one
+    // out first; the Lounge's bridge card then signs in the right person.
   } else {
     // No main-site session in this browser. The Lounge join creates one, and
     // with it the avatar — one door for both roles, labeled by what each
@@ -75,8 +103,8 @@ export default function AvatarMenu({ client, fgEmail, email, courseCode, isStaff
     items.push({ to: sub('gaps'), label: 'Gap board' })
   }
   // Then the account places.
-  if (mainUserId) items.push({ to: '/ripple', label: 'My Ripple' })
-  if (mainUserId) items.push({ to: '/account', label: 'Account' })
+  if (linkedMainId) items.push({ to: '/ripple', label: 'My Ripple' })
+  if (linkedMainId) items.push({ to: '/account', label: 'Account' })
   if (onTour) items.push({ onClick: () => { setOpen(false); onTour() }, label: 'Tour' })
 
   const handleSignOut = () => {
@@ -92,6 +120,19 @@ export default function AvatarMenu({ client, fgEmail, email, courseCode, isStaff
       {open && (
         <div style={S.menu}>
           <p style={S.who}>{who}</p>
+          {mismatch && (
+            <>
+              <p style={S.mismatch}>
+                The main site is signed in as <b>{mainIdentity.email}</b> — a different
+                account. Sign it out to link this one.
+              </p>
+              <button style={{ ...S.item, ...S.itemBtn }}
+                      onClick={() => supabase.auth.signOut().then(() => setMainUserId(null), () => {})}>
+                Sign out of that account
+              </button>
+              <div style={S.divider} />
+            </>
+          )}
           {items.map((it) => it.to
             ? <Link key={it.label} to={it.to} style={S.item} onClick={() => setOpen(false)}>{it.label}</Link>
             : <button key={it.label} style={{ ...S.item, ...S.itemBtn }} onClick={it.onClick}>{it.label}</button>
@@ -123,4 +164,5 @@ const S = {
   },
   itemBtn: { fontFamily: 'inherit' },
   divider: { borderTop: '1px solid var(--bd)', margin: '4px 0' },
+  mismatch: { fontSize: 12, color: 'var(--tx2)', lineHeight: 1.45, padding: '6px 14px 2px', overflowWrap: 'anywhere' },
 }
