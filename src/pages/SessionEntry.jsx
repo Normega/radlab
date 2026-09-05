@@ -12,6 +12,8 @@ import { useEffect, useState, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { createClient } from '@supabase/supabase-js'
 import StepDispatcher from '../components/study/StepDispatcher'
+import SessionStepBoundary from '../components/study/SessionStepBoundary'
+import { sessionStartRow, stepCrashRow } from '../components/study/sessionDiagnostics'
 import ScreenerPage from '../components/ScreenerPage'
 import ConsentGate from '../components/study/ConsentGate'
 import ContactEmailGate from '../components/study/ContactEmailGate'
@@ -58,6 +60,8 @@ export default function SessionEntry() {
   // it, whole questionnaires) got skipped. Reset is implicit: each real step has
   // a distinct, increasing index, and a session restart re-enters index 0.
   const completedIndexRef = useRef(-1)
+  // One session_start diagnostic per run, not one per re-render.
+  const diagnosedRef = useRef(false)
   // Isolated Supabase client — never modifies the global lab session.
   const sbRef = useRef(makeParticipantClient())
   const sb    = sbRef.current
@@ -87,6 +91,44 @@ export default function SessionEntry() {
     if (!nodes[currentIndex]) return
     stepEnteredAtRef.current = Date.now()
   }, [state, currentIndex, sessionData])
+
+  // One session_start diagnostic per run — the device baseline that makes a
+  // crash row interpretable (nothing else in the schema records a user agent).
+  // Fire-and-forget and guarded by a ref: it must never block the session, and
+  // a re-render must not write a second row.
+  useEffect(() => {
+    if (state !== 'running' || diagnosedRef.current) return
+    const row = sessionStartRow({
+      participantId: sessionData?.link?.participant_id,
+      studyId:       sessionData?.link?.study_id,
+      scheduleId:    sessionData?.schedule?.id ?? null,
+      nav: typeof navigator === 'undefined' ? null : navigator,
+      win: typeof window === 'undefined' ? null : window,
+    })
+    if (!row) return
+    diagnosedRef.current = true
+    sb.from('session_diagnostics').insert(row)
+      .then(({ error }) => { if (error) console.warn('session diagnostic failed:', error.message) })
+  }, [state, sessionData, sb])
+
+  // Records WHERE a step crashed. Same fire-and-forget contract: the boundary
+  // has already rendered by the time this runs, so a failure here costs a row,
+  // never the message the participant sees.
+  function logStepCrash(error) {
+    const row = stepCrashRow({
+      participantId: sessionData?.link?.participant_id,
+      studyId:       sessionData?.link?.study_id,
+      scheduleId:    sessionData?.schedule?.id ?? null,
+      stepIndex:     currentIndex,
+      node:          (sessionData?.nodes ?? [])[currentIndex],
+      error,
+      nav: typeof navigator === 'undefined' ? null : navigator,
+      win: typeof window === 'undefined' ? null : window,
+    })
+    if (!row) return
+    sb.from('session_diagnostics').insert(row)
+      .then(({ error: e }) => { if (e) console.warn('crash diagnostic failed:', e.message) })
+  }
 
   async function resolveToken() {
     // 1. Exchange link token for a participant Supabase session
@@ -529,7 +571,16 @@ export default function SessionEntry() {
         <div style={{ flex: 1, overflowY: 'auto' }}>
           {/* key: adjacent steps of the same category (e.g. two questionnaires)
               must not share a component instance — stale per-step state hangs
-              the flow (Zerin baseline PHQ-8 carry-forward → LMS-14). */}
+              the flow (Zerin baseline PHQ-8 carry-forward → LMS-14).
+              The boundary is keyed the same way so a crash is scoped to the step
+              that threw: it catches a step component failing on mount, which
+              previously unmounted the whole tree and left a blank page with
+              nothing recorded (2026-09-05). */}
+          <SessionStepBoundary
+            key={`b-${currentIndex}`}
+            onCrash={logStepCrash}
+            stepLabel={`step ${currentIndex + 1} of ${totalSteps}`}
+          >
           <StepDispatcher
             key={currentIndex}
             node={node}
@@ -545,6 +596,7 @@ export default function SessionEntry() {
             assignments={slotKeys.length > 0 ? assignments : null}
             stepOutputs={stepOutputs}
           />
+          </SessionStepBoundary>
         </div>
       </div>
     )

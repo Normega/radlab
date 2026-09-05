@@ -623,8 +623,15 @@ export default function App() {
           <Route path="/study/signup" element={<StudySignup />} />
           <Route path="/study/verify" element={<StudyVerify />} />
 
-          {/* Standalone participant link — no nav or auth guard */}
-          <Route path="/s/:token" element={<SessionEntry />} />
+          {/* Standalone participant link — no nav or auth guard.
+              Wrapped 2026-09-05: this route had no boundary while Ripple,
+              Workbench and Academic all did, so anything throwing here blanked
+              the page mid-session with nothing recorded. SessionStepBoundary
+              inside SessionEntry handles the step area (and logs where it
+              broke); this catches the rest — token exchange, consent, screener. */}
+          <Route element={<ErrorBoundary label="Session"><Outlet /></ErrorBoundary>}>
+            <Route path="/s/:token" element={<SessionEntry />} />
+          </Route>
 
           {/* Brand/press-kit page — logos, crests, palette, fonts. Not linked in nav, direct URL only. */}
           <Route path="/brand" element={<BrandAssets />} />
