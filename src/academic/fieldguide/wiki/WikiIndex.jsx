@@ -513,21 +513,25 @@ function Shell({ course, session, client, isStaff, courses, courseId, onSelectCo
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '28px 16px 64px' }}>
       <div style={{ maxWidth: 980, margin: '0 auto' }}>
-        <header style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-          <div>
+        <header>
+          {/* Eyebrow row first, menu pinned to its right — the standard
+              header shape every other academic page uses. The title must NOT
+              share a flex row with the menu: on a phone the wide title block
+              forced the avatar to wrap below-left, and its right-anchored
+              dropdown then opened off the screen edge (mobile bug,
+              2026-09-04). No flexWrap here, ever — wrapping is the bug. */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
             <AcademicEyebrow to={paths.home} courseCode={course?.code} />
-            <h1 style={S.title}>{course?.name ?? 'Course wiki'}</h1>
-            {course && <p style={S.sub}>{course.code} · {course.term}</p>}
-          </div>
-          {!session && (
-            <div style={{ textAlign: 'right' }}>
+            {!session && (
               <Link to={paths.sub('review')} style={S.link}>Staff sign in</Link>
-            </div>
-          )}
-          {session && (
-            <AvatarMenu client={client} fgEmail={session.user.email}
-                        courseCode={course?.code} isStaff={isStaff} onTour={() => setTourOpen(true)} />
-          )}
+            )}
+            {session && (
+              <AvatarMenu client={client} fgEmail={session.user.email}
+                          courseCode={course?.code} isStaff={isStaff} onTour={() => setTourOpen(true)} />
+            )}
+          </div>
+          <h1 style={S.title}>{course?.name ?? 'Course wiki'}</h1>
+          {course && <p style={S.sub}>{course.code} · {course.term}</p>}
         </header>
 
         {/* Course switcher — now navigation: onSelectCourse routes to the
