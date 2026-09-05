@@ -343,6 +343,8 @@ export default function ClassRoom({ session }) {
     try { return !!JSON.parse(localStorage.getItem('radlab-academic-auth'))?.access_token }
     catch { return false }
   })()
+  // Signed-out visitors only (they have no menu): signed-in states dropped
+  // this card 2026-09-04 — the academic menu's Field Guide item replaced it.
   const fieldGuideCard = classInfo.field_guide_url ? (
     <a href={hasFieldGuideSession ? `/academic/${slug}/wiki` : classInfo.field_guide_url} style={S.fgCard}>
       <p style={S.fgEyebrow}>Course textbook</p>
@@ -375,7 +377,6 @@ export default function ClassRoom({ session }) {
                 {joining ? 'Joining…' : 'Join class'}
               </button>
             </div>
-            {fieldGuideCard}
           </>
         ) : (
           <>
@@ -433,8 +434,6 @@ export default function ClassRoom({ session }) {
                 </p>
               </Link>
             )}
-
-            {fieldGuideCard}
           </>
         )}
       </div>
