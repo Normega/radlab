@@ -5,6 +5,7 @@ import SiteFooter from '../components/SiteFooter'
 import EyebrowLabel from '../components/ui/EyebrowLabel'
 import PrimaryCTA from '../components/ui/PrimaryCTA'
 import { supabase } from '../lib/supabase'
+import GameIcon from '../games/shared/GameIcon'
 import { GAMES, groupGames } from '../data/games'
 
 // ── GamesPage ─────────────────────────────────────────────────────────────
@@ -210,16 +211,26 @@ function LockedCard({ game }) {
   )
 }
 
+// Two columns: all the copy in the first, the icon alone in the second. The
+// icon centres against the text block rather than pinning to the top, so it
+// stays put as descriptions run long and cards in a row end up different
+// heights. `plate` stays on: the tinted disc is what makes the set read as a
+// set (see GameIcon.jsx), and gives the mark an edge against the white card.
 function CardBody({ game }) {
   return (
     <>
-      <span style={S.badge}>{game.badge}</span>
-      <h2 style={S.gameTitle}>{game.title}</h2>
-      <p style={S.gameDesc}>{game.desc}</p>
-      <div style={S.meta}>
-        <Stat label="Duration" value={game.duration ?? 'Open-ended'} />
-        <Stat label="Trials"   value={game.trials ?? '—'} />
-      </div>
+      <span style={S.cardMain}>
+        <span style={S.badge}>{game.badge}</span>
+        <h2 style={S.gameTitle}>{game.title}</h2>
+        <p style={S.gameDesc}>{game.desc}</p>
+        <div style={S.meta}>
+          <Stat label="Duration" value={game.duration ?? 'Open-ended'} />
+          <Stat label="Trials"   value={game.trials ?? '—'} />
+        </div>
+      </span>
+      <span style={S.cardIcon}>
+        <GameIcon slug={game.slug} size={72} />
+      </span>
     </>
   )
 }
@@ -300,12 +311,18 @@ const S = {
   // column instead of a track that overflows the viewport.
   grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 340px), 1fr))', gap: 16 },
 
+  // Row, not column: the copy column and the icon column. The hover and lock
+  // veils are position:absolute siblings, so they ignore this axis.
   card: {
     position: 'relative', overflow: 'hidden',
-    display: 'flex', flexDirection: 'column',
+    display: 'flex', flexDirection: 'row', alignItems: 'stretch', gap: 16,
     padding: 24, background: 'var(--bgc)',
     border: '1px solid var(--bd)', borderRadius: 12,
   },
+  // minWidth:0 or a long unbroken word in a description pushes the icon column
+  // out of the card instead of wrapping.
+  cardMain: { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' },
+  cardIcon: { flexShrink: 0, display: 'flex', alignItems: 'center' },
   cardLink: {
     textDecoration: 'none', color: 'inherit',
     transition: 'border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease',
@@ -322,7 +339,9 @@ const S = {
     textTransform: 'uppercase', padding: '5px 10px', borderRadius: 12,
     background: 'var(--bgp)', color: 'var(--pkd)',
   },
-  gameTitle: { fontFamily: SERIF, fontSize: 24, color: 'var(--tx)', margin: '14px 0 8px' },
+  // Heading/2 — the card-title role settled 2026-09-04. Was 24px, which the
+  // finalized guide does not carry.
+  gameTitle: { fontFamily: SERIF, fontSize: 28, color: 'var(--tx)', margin: '14px 0 8px' },
   gameDesc:  { fontFamily: SANS, fontSize: 14, lineHeight: 1.55, color: 'var(--tx2)', flex: 1 },
 
   meta: {
