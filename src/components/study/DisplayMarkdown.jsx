@@ -51,9 +51,13 @@ export default function DisplayMarkdown({ text }) {
   )
 }
 
+// Heading ladder: 28 serif / 16 sans-bold / 14 sans-bold over 16 body. h2 is
+// Heading/2 — a markdown h2 here is a document heading with body copy under it,
+// which is the role Heading/2 names. It sat at 20 until Heading/4 was deleted
+// from the guide (Norm chose 28 from a side-by-side preview, 2026-09-04).
 const M = {
   wrap:  { fontSize: 16, color: 'var(--tx)', lineHeight: 1.65, fontFamily: '"DM Sans",system-ui,sans-serif', display: 'flex', flexDirection: 'column', gap: 16 },
-  h2:    { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 20, fontWeight: 400, color: 'var(--tx)', margin: '8px 0 0' },
+  h2:    { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 28, fontWeight: 400, color: 'var(--tx)', margin: '8px 0 0' },
   h3:    { fontSize: 16, fontWeight: 600, color: 'var(--tx)', margin: '8px 0 0' },
   h4:    { fontSize: 14, fontWeight: 600, color: 'var(--tx)', margin: '4px 0 0' },
   p:     { margin: 0 },
