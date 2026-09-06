@@ -1,5 +1,5 @@
 import { useRef, useState, useCallback } from 'react'
-import { AnimatePresence } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import { veggieUrl } from '../data/veggies.js'
 import { CFG } from '../constants.js'
 

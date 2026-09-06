@@ -1,5 +1,6 @@
 import js from '@eslint/js'
 import globals from 'globals'
+import react from 'eslint-plugin-react'
 import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 import { defineConfig, globalIgnores } from 'eslint/config'
@@ -26,7 +27,16 @@ export default defineConfig([
         sourceType: 'module',
       },
     },
+    plugins: { react },
     rules: {
+      // Without this rule, an identifier referenced only from JSX looks unused
+      // to no-unused-vars. varsIgnorePattern's ^[A-Z_] shields capitalized
+      // component imports from that false positive, but lowercase JSX-only
+      // imports fall through: framer-motion's `motion` was "cleaned up" as
+      // provably dead in 792dda7 while <motion.div> appeared 16 times in the
+      // same file, and FarmJoy crashed at runtime from July 31 to Sept 6.
+      'react/jsx-uses-vars': 'error',
+
       // caughtErrorsIgnorePattern: `catch (_)` is the other half of the
       // best-effort-teardown idiom allowed by no-empty below — the binding is
       // named `_` precisely because it is never inspected.
