@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "prebuild": "node scripts/design-audit.mjs --warn",
+    "prebuild": "node scripts/design-audit.mjs --warn && node scripts/course-leak-audit.mjs",
     "slides:fit": "node scripts/slide-fit.mjs",
     "build": "vite build",
     "lint": "eslint .",

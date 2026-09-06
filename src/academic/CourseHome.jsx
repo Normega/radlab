@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase'
 import { getCourseClient } from './courseClient'
 import { normalizeCourseCode, loungePath, joinPath, wikiBase, courseSubPath, pickNewestTerm } from './courseRoutes'
 import { courseFeatures } from './courseFeatures'
+import AvatarMenu from './fieldguide/AvatarMenu'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -33,6 +34,17 @@ export default function CourseHome({ role, superAdmin }) {
   const [course, setCourse] = useState(null)         // academic overlay {code,name,term} | null
   const [myRole, setMyRole] = useState(null)         // academic enrollment role | null
   const [fgSession, setFgSession] = useState(false)
+  const [fg, setFg] = useState(null)            // { client, email } once an academic session is found
+  const [mainEmail, setMainEmail] = useState(null)
+
+  // The main-site session, for the avatar menu when there's no academic one.
+  useEffect(() => {
+    let cancelled = false
+    supabase.auth.getSession().then(({ data: { session: s } }) => {
+      if (!cancelled) setMainEmail(s?.user?.email ?? null)
+    })
+    return () => { cancelled = true }
+  }, [])
 
   useEffect(() => {
     if (!code) return // rendered as not-found below without any fetch
@@ -54,6 +66,7 @@ export default function CourseHome({ role, superAdmin }) {
       const { data: { session: s } } = await client.auth.getSession()
       if (cancelled || !s) return
       setFgSession(true)
+      setFg({ client, email: s.user.email })
       const { data: enr } = await client
         .from('enrollments').select('role, status, courses ( code, term )')
         .eq('status', 'active')
@@ -91,8 +104,18 @@ export default function CourseHome({ role, superAdmin }) {
     )
   }
 
+  // The avatar menu is always present once ANY session exists in this
+  // browser: academic-style when the Field Guide session is live (so staff
+  // items and reconciliation work), lounge-style off the main session
+  // otherwise. Signed out entirely -> no menu, the join card is the door.
+  const menu = fg
+    ? <AvatarMenu client={fg.client} fgEmail={fg.email} courseCode={code} isStaff={isStaff} />
+    : mainEmail
+      ? <AvatarMenu email={mainEmail} courseCode={code} isStaff={isStaff} />
+      : null
+
   return (
-    <Shell code={code}>
+    <Shell code={code} menu={menu}>
       <h1 style={S.title}>{display.title}</h1>
       <p style={S.sub}>
         {code.toUpperCase()}{display.term ? ` · ${display.term}` : ''}
@@ -125,18 +148,27 @@ export default function CourseHome({ role, superAdmin }) {
 
       {(isStaff || isLab) && (
         <div style={{ marginTop: 26 }}>
-          <p style={S.eyebrow}>staff</p>
+          {/* Grouped by when you reach for them: mid-lecture surfaces first,
+              then the desk work. Deliberately still visible on the page (not
+              only in the avatar menu) — burying every staff link in the
+              dropdown is how the instructor lost the roster (2026-09-05). */}
+          {cls && (
+            <>
+              <p style={S.eyebrow}>in the classroom</p>
+              <div style={S.staffGrid}>
+                <Link to={`${loungePath(code)}/console`} style={S.staffBtn}>Console</Link>
+                <Link to={`${loungePath(code)}/remote`} style={S.staffBtn}>Remote</Link>
+                <Link to={`${loungePath(code)}/screen`} style={S.staffBtn}>Screen</Link>
+                <Link to={`${loungePath(code)}/slides`} style={S.staffBtn}>Slides</Link>
+              </div>
+            </>
+          )}
+          <p style={{ ...S.eyebrow, marginTop: cls ? 18 : 0 }}>course admin</p>
           <div style={S.staffGrid}>
-            {cls && <>
-              <Link to={`${loungePath(code)}/console`} style={S.staffBtn}>Console</Link>
-              <Link to={`${loungePath(code)}/remote`} style={S.staffBtn}>Remote</Link>
-              <Link to={`${loungePath(code)}/screen`} style={S.staffBtn}>Screen</Link>
-              <Link to={`${loungePath(code)}/slides`} style={S.staffBtn}>Slides</Link>
-            </>}
+            <Link to={courseSubPath(code, 'roster')} style={S.staffBtn}>Roster</Link>
             <Link to={courseSubPath(code, 'tracking')} style={S.staffBtn}>Tracking</Link>
             <Link to={courseSubPath(code, 'submissions')} style={S.staffBtn}>Submissions</Link>
             <Link to={courseSubPath(code, 'reports')} style={S.staffBtn}>Reports</Link>
-            <Link to={courseSubPath(code, 'roster')} style={S.staffBtn}>Roster</Link>
             <Link to={courseSubPath(code, 'review')} style={S.staffBtn}>Review</Link>
             <Link to={courseSubPath(code, 'read')} style={S.staffBtn}>Reading queue</Link>
             <Link to={courseSubPath(code, 'corrections')} style={S.staffBtn}>Corrections</Link>
@@ -154,11 +186,16 @@ export default function CourseHome({ role, superAdmin }) {
   )
 }
 
-function Shell({ code, children }) {
+function Shell({ code, menu, children }) {
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', justifyContent: 'center', padding: '48px 24px' }}>
       <div style={{ maxWidth: 560, width: '100%' }}>
-        <AcademicEyebrow area="radlab academic" to="/academic" courseCode={code} />
+        {/* Same no-wrap discipline as the wiki header: the menu keeps its
+            top-right anchor at every width. */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+          <AcademicEyebrow area="radlab academic" to="/academic" courseCode={code} />
+          {menu}
+        </div>
         {children}
       </div>
     </div>

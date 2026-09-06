@@ -12,8 +12,13 @@ const OVERRIDES = {
   // with declared unknowns for students to claim); PSY309's guide is
   // authored whole, so those surfaces are off too.
   psy309: { contributions: false, gaps: false, ingest: false },
+  // PSY240's wiki index is catalogue-anchored (DSM chapters), not
+  // week-anchored — previously a hardcoded `code !== 'PSY240'` inside
+  // WikiIndex, which is exactly the kind of buried course conditional the
+  // course-leak audit now polices.
+  psy240: { weekIndex: false },
 }
 
 export function courseFeatures(code) {
-  return { contributions: true, gaps: true, ingest: true, ...(OVERRIDES[String(code ?? '').trim().toLowerCase()] ?? {}) }
+  return { contributions: true, gaps: true, ingest: true, weekIndex: true, ...(OVERRIDES[String(code ?? '').trim().toLowerCase()] ?? {}) }
 }

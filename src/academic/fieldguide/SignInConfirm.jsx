@@ -126,7 +126,7 @@ export default function SignInConfirm() {
               Sign-in links work once. This usually means you've already signed in on this
               device, or a newer email has replaced this one. Getting a fresh one takes a moment.
             </p>
-            <Link to={joinPath(code ?? 'psy240')} style={S.primaryLink}>Send me a new one</Link>
+            <Link to={(code ? joinPath(code) : '/academic/fieldguide/join')} style={S.primaryLink}>Send me a new one</Link>
           </>
         )}
 
@@ -137,7 +137,7 @@ export default function SignInConfirm() {
               It may have been cut short by your email app. Request a new one and open it from the
               email rather than copying the address by hand.
             </p>
-            <Link to={joinPath(code ?? 'psy240')} style={S.primaryLink}>Send me a new one</Link>
+            <Link to={(code ? joinPath(code) : '/academic/fieldguide/join')} style={S.primaryLink}>Send me a new one</Link>
           </>
         )}
 
@@ -145,7 +145,7 @@ export default function SignInConfirm() {
           <>
             <h1 style={S.title}>That didn't work</h1>
             <p style={S.sub}>{detail ?? 'Something went wrong signing you in.'}</p>
-            <Link to={joinPath(code ?? 'psy240')} style={S.primaryLink}>Try again</Link>
+            <Link to={(code ? joinPath(code) : '/academic/fieldguide/join')} style={S.primaryLink}>Try again</Link>
           </>
         )}
       </div>
