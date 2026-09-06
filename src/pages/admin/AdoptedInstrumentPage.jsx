@@ -430,15 +430,6 @@ function DeleteInstrumentButton({ row, type, usage, usageError, onDeleted }) {
   const sessions  = usage?.sessions?.[row.slug] ?? 0
   const loading   = !usage && !usageError
 
-  // Without the usage counts there is no way to tell a safe delete from one
-  // that strands a live session step, so the button stays withheld rather
-  // than guessing.
-  if (usageError) return (
-    <span style={S.lockedMsg} title="Could not check where this instrument is used.">
-      Usage unknown
-    </span>
-  )
-
   const del = useMutation({
     mutationFn: async () => {
       const { error: actErr } = await supabase
@@ -452,6 +443,15 @@ function DeleteInstrumentButton({ row, type, usage, usageError, onDeleted }) {
     onSuccess: () => { setConfirming(false); onDeleted() },
     onError: (e) => setError(e.message),
   })
+
+  // Without the usage counts there is no way to tell a safe delete from one
+  // that strands a live session step, so the button stays withheld rather
+  // than guessing.
+  if (usageError) return (
+    <span style={S.lockedMsg} title="Could not check where this instrument is used.">
+      Usage unknown
+    </span>
+  )
 
   if (loading) return <span style={S.rowMeta}>…</span>
 

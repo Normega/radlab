@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { Link, NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
-import { supabase } from '../lib/supabase'
 import { signOutEverywhere } from '../lib/signOutEverywhere'
 import { useDisplayName } from '../hooks/useDisplayName'
 

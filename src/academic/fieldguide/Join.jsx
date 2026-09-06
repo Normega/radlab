@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { getCourseClient } from '../courseClient'
-import { normalizeCourseCode, coursePath } from '../courseRoutes'
+import { normalizeCourseCode } from '../courseRoutes'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'

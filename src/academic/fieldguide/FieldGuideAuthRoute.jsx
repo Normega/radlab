@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { Link, Outlet, useParams } from 'react-router-dom'
 import { getCourseClient } from '../courseClient'
-import { normalizeCourseCode, resolveEnrolledCourse, courseSubPath, wikiBase, joinPath } from '../courseRoutes'
+import { normalizeCourseCode, resolveEnrolledCourse, courseSubPath, joinPath } from '../courseRoutes'
 import Join from './Join'
 import { signOutEverywhere } from '../../lib/signOutEverywhere'
 

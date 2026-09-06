@@ -31,8 +31,8 @@ const autoReconciled = new Set()
 // THE academic account menu — one list, both halves of the partition.
 //
 // Mounted on Field Guide pages (academic session; pass `client` so Sign out
-// ends that session) AND on Lecture Lounge pages (main session; pass `email`
-// and a `signOut` override). Same items either way — that sameness is the
+// ends that session) AND on Lecture Lounge pages (main session; pass
+// `email`). Same items either way — that sameness is the
 // point: students found two different menus behind the same avatar confusing
 // (Norm, 2026-09-04), so wherever you are in a course, this menu gets you
 // everywhere else.
@@ -58,7 +58,7 @@ function mainMatchesFg(fgEmail, identity) {
   return k === normEmail(identity.email) || k === normEmail(identity.utoronto)
 }
 
-export default function AvatarMenu({ client, fgEmail, email, courseCode, isStaff, onTour, signOut }) {
+export default function AvatarMenu({ client, fgEmail, email, courseCode, isStaff, onTour }) {
   const [open, setOpen] = useState(false)
   const [mainUserId, setMainUserId] = useState(undefined) // undefined=loading, null=none
   const [mainIdentity, setMainIdentity] = useState(null)  // { email, utoronto } | null
