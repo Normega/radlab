@@ -244,6 +244,36 @@ and look; do not stage past it.
 
 ---
 
+## Run `npm run lint` before every push — errors are build-fatal and they stack
+
+CI (`.github/workflows/ci.yml`) runs on every push to `main` and `dev`, and lint **errors** fail it
+(warnings do not). Lint locally before pushing; an unused import you left behind fails every other
+session's pushes too, not just yours.
+
+The stacking is the real hazard: once CI is red, nobody's push can go green, so each session stops
+reading the failure — and new errors hide behind old ones. Sep 3–6 2026, five errors from three
+different sessions accumulated this way and **every CI run failed for three days** (~30 straight red
+runs) before anyone investigated. Because lint is the first CI step, tests and the production build
+also never ran in that window. If CI is red and the errors aren't yours, fix them anyway — it is
+minutes of work and unblocks everyone.
+
+---
+
+## api/ holds at most 12 files — the Vercel function cap fails whole deployments
+
+Every `api/*.js` file is a Vercel serverless function, and the plan caps a deployment at **12**.
+The 13th does not degrade anything — it fails the entire deployment, Production and Preview alike,
+**while CI stays green** (the cap is Vercel's, not the build's). Discovered 2026-09-06:
+`api/summarize-checkin.js` landed as the 13th function and Vercel silently deployed nothing for the
+rest of the day — `main` kept advancing while radlab.zone served the morning's build.
+
+Before adding an `api/` file, count what's there (`ls api/`). At 12, either retire one (that day
+`api/health.js`, an unreferenced routing probe, was the retiree), fold the new endpoint into an
+existing function, or raise the plan — but decide, don't push and hope. A failed deployment shows
+up in GitHub's commit status (the ✗ next to the commit), not in Actions.
+
+---
+
 ## Live dev site — push to `dev`, promote to `main` on approval
 
 The platform has a web-facing staging site. `main` is production (`radlab.zone`, auto-deploys on every push); **`dev`** is a long-lived staging branch that Vercel builds as a preview deployment on every push — reachable anywhere at **`dev.radlab.zone`** once the domain is assigned (until then, via the deployment's `*-git-dev-*.vercel.app` URL in the Vercel dashboard). Vercel serves every preview deployment with `X-Robots-Tag: noindex`, so the dev site is world-reachable but never search-indexed — no robots.txt to maintain, nothing to drift.
