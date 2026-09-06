@@ -97,7 +97,6 @@ const WeeklyWall       = lazy(() => import('./academic/lecture-lounge/WeeklyWall
 const ClassVerifyEmail = lazy(() => import('./academic/lecture-lounge/ClassVerifyEmail'))
 const ClassConfirmSignup = lazy(() => import('./academic/lecture-lounge/ClassConfirmSignup'))
 const ClassConsole     = lazy(() => import('./academic/lecture-lounge/ClassConsole'))
-const ClassRemote      = lazy(() => import('./academic/lecture-lounge/ClassRemote'))
 const ClassScreen      = lazy(() => import('./academic/lecture-lounge/ClassScreen'))
 const ClassSlides      = lazy(() => import('./academic/lecture-lounge/ClassSlides'))
 const ClassBoards      = lazy(() => import('./academic/lecture-lounge/ClassBoards'))
@@ -263,6 +262,12 @@ function DashboardRoute({ session, hasAvatar, needsWelcome, needsRippleName, nev
 // Legacy /class/:slug/<sub> → /academic/:slug/lounge/<sub>. The slug IS the
 // lowercase course code by convention (classes.slug === lc(courses.code)), so
 // it can be interpolated straight into the course path.
+// The old phone remote URL — now the console's Run tab wearing a redirect.
+function RemoteToConsole() {
+  const { courseCode } = useParams()
+  return <Navigate to={`/academic/${courseCode}/lounge/console?tab=run`} replace />
+}
+
 function LegacyLoungeRedirect({ sub = '' }) {
   const { slug, checkinId } = useParams()
   const to = `${loungePath(slug)}${sub}${checkinId ? `/${checkinId}` : ''}`
@@ -751,7 +756,8 @@ export default function App() {
             } />
             <Route element={<ClassAdminRoute session={session} />}>
               <Route path="/academic/:courseCode/lounge/console" element={<ClassConsole session={session} />} />
-              <Route path="/academic/:courseCode/lounge/remote" element={<ClassRemote session={session} />} />
+              {/* /remote lives on as a redirect — the Run tab is the remote now. */}
+              <Route path="/academic/:courseCode/lounge/remote" element={<RemoteToConsole />} />
               <Route path="/academic/:courseCode/lounge/screen" element={<ClassScreen />} />
             </Route>
             {/* Legacy lounge sub-paths: staff bookmarks and in-session links,

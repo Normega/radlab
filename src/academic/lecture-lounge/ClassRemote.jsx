@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
-import Nav from '../../components/Nav'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -20,10 +19,16 @@ function nearestLecture(lectures) {
   return best
 }
 
-// Instructor's in-class control surface. Phone-first, one-thumb: open/close
-// a check-in, watch responses land live, ride out (or extend) an auto-close
-// countdown. Planning happens on the console — this is the live surface.
-export default function ClassRemote({ session }) {
+// The console's RUN tab — the in-class control surface. Phone-first,
+// one-thumb. Each check-in card shows ONE primary transport action for its
+// state — Play → Stop → Show class → Done — because mid-lecture the only
+// question is "what's next", not "which of five verbs" (Norm, 2026-09-06).
+// The two dangerous/rare actions live behind the ⋯ overflow: Reset (wipes
+// responses) and Reveal correct answers (quiz keys — NEVER on Exercise-A
+// style splits, which have no right answer).
+// Mounted inside ClassConsole; /lounge/remote redirects there, so old
+// bookmarks keep working.
+export default function ClassRemote() {
   // Resolved by ClassAdminRoute already (it needs the class to run the
   // admin check) — reusing it here instead of fetching it a second time.
   const classInfo = useOutletContext()
@@ -35,6 +40,7 @@ export default function ClassRemote({ session }) {
   const [connStatus, setConnStatus] = useState('connecting')
   const [actionError, setActionError] = useState(null)
   const [countdown, setCountdown] = useState(null)
+  const [menuFor, setMenuFor] = useState(null) // checkin id with the ⋯ overflow open
 
   const broadcastRef = useRef(null)
   const respondedSetsRef = useRef({})
@@ -273,11 +279,11 @@ export default function ClassRemote({ session }) {
   }, [])
 
   if (!classInfo || lecture === undefined) {
-    return <div style={{ background: 'var(--bg)', minHeight: '100vh' }}><Nav session={session} /></div>
+    return <p style={S.hint}>Loading…</p>
   }
 
   return (
-    <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
+    <div>
       <div style={S.header}>
         <div>
           <p style={S.eyebrow}>{classInfo.name}</p>
@@ -316,28 +322,40 @@ export default function ClassRemote({ session }) {
                 )}
 
                 <div style={S.btnRow}>
-                  {c.status === 'planned' && <button style={S.bigBtn} onClick={() => handleOpen(c)}>Open</button>}
+                  {/* One primary action per state — the transport. */}
+                  {c.status === 'planned' && <button style={S.bigBtn} onClick={() => handleOpen(c)}>▶ Play</button>}
                   {isOpen && (
                     <>
-                      <button style={S.bigBtn} onClick={() => handleClose(c)}>Close</button>
+                      <button style={S.bigBtn} onClick={() => handleClose(c)}>■ Stop</button>
                       {c.auto_close_seconds != null && <button style={S.ghostBtn} onClick={() => handleExtend(c)}>+60s</button>}
                     </>
                   )}
-                  {c.status === 'closed' && <button style={S.bigBtn} onClick={() => handleShowResults(c)}>Show results</button>}
+                  {c.status === 'closed' && <button style={S.bigBtn} onClick={() => handleShowResults(c)}>Show class</button>}
                   {c.status === 'results_ready' && (
-                    <>
-                      {hasQuiz && !c.quiz_revealed_at
-                        ? <button style={S.bigBtn} onClick={() => handleRevealQuiz(c)}>Reveal quiz answers</button>
-                        : <span style={S.doneLabel}>{hasQuiz ? 'Quiz answers revealed' : 'Results shown'}</span>}
-                      {c.dismissed_at
-                        ? <span style={S.doneLabel}>Back in lobby</span>
-                        : <button style={S.ghostBtn} onClick={() => handleDismiss(c)}>Back to lobby</button>}
-                    </>
+                    c.dismissed_at
+                      ? <span style={S.doneLabel}>Done — back in lobby</span>
+                      : <button style={S.bigBtn} onClick={() => handleDismiss(c)}>Done</button>
                   )}
                   {c.status !== 'planned' && (
-                    <button style={S.ghostBtn} onClick={() => handleReset(c)}>Reset</button>
+                    <button style={S.ghostBtn} aria-label="More actions"
+                            onClick={() => setMenuFor(menuFor === c.id ? null : c.id)}>⋯</button>
                   )}
                 </div>
+
+                {menuFor === c.id && c.status !== 'planned' && (
+                  <div style={S.overflowRow}>
+                    {/* Rare and sharp-edged, kept off the transport on purpose. */}
+                    {hasQuiz && c.status === 'results_ready' && !c.quiz_revealed_at && (
+                      <button style={S.dangerBtn} onClick={() => {
+                        if (window.confirm('Reveal the CORRECT ANSWERS on every student\u2019s device? Only for quizzes with a real key \u2014 never for split-the-room questions.')) {
+                          setMenuFor(null); handleRevealQuiz(c)
+                        }
+                      }}>Reveal correct answers</button>
+                    )}
+                    {hasQuiz && c.quiz_revealed_at && <span style={S.doneLabel}>Answers revealed</span>}
+                    <button style={S.dangerBtn} onClick={() => { setMenuFor(null); handleReset(c) }}>Reset (wipes responses)</button>
+                  </div>
+                )}
 
                 {collectsQuestions && (
                   <div style={S.questionsWrap}>
@@ -396,6 +414,8 @@ const S = {
     color: status === 'open' ? 'var(--pkd)' : status === 'results_ready' ? '#1a8a4a' : 'var(--tx3)',
   }),
   liveRow: { display: 'flex', justifyContent: 'space-between', marginBottom: 10, fontFamily: MONO, fontSize: 14 },
+  overflowRow: { display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10, paddingTop: 10, borderTop: '1px dashed var(--bd)' },
+  dangerBtn: { fontSize: 13, padding: '8px 12px', borderRadius: 10, border: '1px solid #f3b8b8', background: '#fdf5f5', color: '#a33', cursor: 'pointer' },
   counter: { color: 'var(--tx)' },
   countdown: { color: 'var(--pk)', fontWeight: 700 },
   btnRow: { display: 'flex', gap: 8 },

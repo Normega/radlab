@@ -156,8 +156,10 @@ export default function CourseHome({ role, superAdmin }) {
             <>
               <p style={S.eyebrow}>in the classroom</p>
               <div style={S.staffGrid}>
+                {/* Console holds Plan/Run/Review; the old Remote is its Run
+                    tab now (2026-09-06). Two surfaces here, not three:
+                    the thing you drive, and the thing on the wall. */}
                 <Link to={`${loungePath(code)}/console`} style={S.staffBtn}>Console</Link>
-                <Link to={`${loungePath(code)}/remote`} style={S.staffBtn}>Remote</Link>
                 <Link to={`${loungePath(code)}/screen`} style={S.staffBtn}>Screen</Link>
                 <Link to={`${loungePath(code)}/slides`} style={S.staffBtn}>Slides</Link>
               </div>

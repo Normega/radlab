@@ -1,17 +1,28 @@
 import { useState } from 'react'
-import { useOutletContext } from 'react-router-dom'
+import { useOutletContext, useSearchParams } from 'react-router-dom'
 import Nav from '../../components/Nav'
 import ConsoleLecturePlanner from './ConsoleLecturePlanner'
 import ConsoleParticipation from './ConsoleParticipation'
+import ClassRemote from './ClassRemote'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 
-// Desktop planning surface. classInfo comes from ClassAdminRoute's Outlet
-// context — it already resolved the class to run the admin check, so
-// there's no reason to fetch it a second time here.
+// The one instructor surface per class: Plan (build the run of show),
+// Run (drive it live — the former /remote, which now redirects here), and
+// Review (participation). The projector Screen stays its own URL because it
+// is a different physical machine, opened once and never touched.
+//
+// Default tab: Run on a phone (mid-lecture is the only reason to be here on
+// a phone), Plan on a desktop. ?tab= overrides both — the /remote redirect
+// arrives with ?tab=run so old bookmarks land exactly where they used to.
 export default function ClassConsole({ session }) {
   const classInfo = useOutletContext()
-  const [tab, setTab] = useState('planning')
+  const [params] = useSearchParams()
+  const [tab, setTab] = useState(() => {
+    const q = params.get('tab')
+    if (['planning', 'run', 'participation'].includes(q)) return q
+    return (typeof window !== 'undefined' && window.innerWidth < 700) ? 'run' : 'planning'
+  })
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
@@ -20,12 +31,13 @@ export default function ClassConsole({ session }) {
         {classInfo && (
           <>
             <div style={S.tabs}>
-              <button style={S.tab(tab === 'planning')} onClick={() => setTab('planning')}>Planning</button>
-              <button style={S.tab(tab === 'participation')} onClick={() => setTab('participation')}>Participation</button>
+              <button style={S.tab(tab === 'planning')} onClick={() => setTab('planning')}>Plan</button>
+              <button style={S.tab(tab === 'run')} onClick={() => setTab('run')}>Run</button>
+              <button style={S.tab(tab === 'participation')} onClick={() => setTab('participation')}>Review</button>
             </div>
-            {tab === 'planning'
-              ? <ConsoleLecturePlanner classInfo={classInfo} />
-              : <ConsoleParticipation classInfo={classInfo} />}
+            {tab === 'planning' && <ConsoleLecturePlanner classInfo={classInfo} />}
+            {tab === 'run' && <ClassRemote />}
+            {tab === 'participation' && <ConsoleParticipation classInfo={classInfo} />}
           </>
         )}
       </div>
@@ -34,7 +46,7 @@ export default function ClassConsole({ session }) {
 }
 
 const S = {
-  wrap: { maxWidth: 820, margin: '0 auto', padding: '40px 24px' },
+  wrap: { maxWidth: 820, margin: '0 auto', padding: '24px 16px 40px' },
   tabs: { display: 'flex', gap: 4, marginBottom: 24, borderBottom: '1px solid var(--bd)' },
   tab: (active) => ({
     padding: '10px 16px', border: 'none', background: 'none', cursor: 'pointer',
