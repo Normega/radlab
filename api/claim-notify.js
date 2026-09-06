@@ -25,6 +25,15 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({
 // codes fall back to the lab address rather than guessing a course — see
 // supabase/functions/_shared/replyTo.ts for the full rationale.
 const COURSE_REPLY_TO = { psy240: 'psy240@radlab.zone', psy309: 'psy309@radlab.zone' }
+// Course-branded From — see roster-join.js: env supplies the verified
+// address, the course supplies the display name.
+const fromFor = (courseCode) => {
+  const base = process.env.FROM_EMAIL || 'PSY240 Field Guide <fieldguide@course.radlab.zone>'
+  if (!courseCode) return base
+  const address = base.match(/<([^>]+)>/)?.[1] ?? base
+  return `${String(courseCode).toUpperCase()} Field Guide <${address}>`
+}
+
 const replyToFor = (code) =>
   COURSE_REPLY_TO[String(code ?? '').trim().toLowerCase()] ?? 'research@radlab.zone'
 
@@ -134,10 +143,10 @@ export default async function handler(req, res) {
   }
 
   const origin = process.env.SITE_URL || 'https://radlab.zone'
-  const fromEmail = process.env.FROM_EMAIL || 'PSY240 Field Guide <fieldguide@course.radlab.zone>'
-  // Best-effort: a lookup failure costs the course-specific reply address,
-  // never the decision message the student is owed.
+  // Best-effort: a lookup failure costs the course-specific reply address
+  // and sender name, never the decision message the student is owed.
   const { data: course } = await service.from('courses').select('code').eq('id', course_id).single()
+  const fromEmail = fromFor(course?.code)
   const { subject, text, html } = compose({
     name: c.student_name, status: c.status, note: c.note,
     pageTitle: c.page_title ?? c.page_slug, ask: c.ask,

@@ -28,6 +28,17 @@ const normalize = (e) =>
 // it hard-bounces. These apex addresses are real Workspace mailboxes. Unknown
 // codes fall back to the lab address rather than guessing a course — see
 // supabase/functions/_shared/replyTo.ts for the full rationale.
+// Course-branded From. The env var (or default) supplies the verified
+// sending ADDRESS; the display name comes from the course whose mail this
+// is, so a PSY309 sign-in never lands as "PSY240 Field Guide" (Norm,
+// 2026-09-05). No course resolved -> the env/default name stands.
+const fromFor = (courseCode) => {
+  const base = process.env.FROM_EMAIL || 'PSY240 Field Guide <fieldguide@course.radlab.zone>'
+  if (!courseCode) return base
+  const address = base.match(/<([^>]+)>/)?.[1] ?? base
+  return `${String(courseCode).toUpperCase()} Field Guide <${address}>`
+}
+
 const COURSE_REPLY_TO = { psy240: 'psy240@radlab.zone', psy309: 'psy309@radlab.zone' }
 const replyToFor = (code) =>
   COURSE_REPLY_TO[String(code ?? '').trim().toLowerCase()] ?? 'research@radlab.zone'
@@ -196,7 +207,7 @@ async function sendSignInEmail(service, resendKey, { email, fullName, courseCode
     // A scanner can follow a link; it cannot type a code into a form.
     const otp = linkData?.properties?.email_otp ?? null
 
-    const fromEmail = process.env.FROM_EMAIL || 'PSY240 Field Guide <fieldguide@course.radlab.zone>'
+    const fromEmail = fromFor(courseCode)
     // Staff matches carry no roster name; "there" reads fine in a greeting.
     const first = String(fullName ?? '').split(' ')[0] || 'there'
     const rsp = await fetch('https://api.resend.com/emails', {
@@ -204,7 +215,7 @@ async function sendSignInEmail(service, resendKey, { email, fullName, courseCode
       headers: { Authorization: `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         from: fromEmail, reply_to: replyToFor(courseCode), to: email,
-        subject: 'Your Field Guide sign-in',
+        subject: courseCode ? `Your ${String(courseCode).toUpperCase()} sign-in` : 'Your Field Guide sign-in',
         // Two independent ways in. The link is one tap and lands on a page
         // that stays inert until pressed, so a mail scanner following it
         // cannot spend the token. The code needs no link at all, so it
