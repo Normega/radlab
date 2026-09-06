@@ -1,0 +1,851 @@
+<h1>Liliana Study 3 — Analysis Plan (Consolidated Revision)</h1>
+
+<p><strong>Version:</strong> consolidated draft, revision 2, 6 September 2026. <strong>Supersedes:</strong> the
+&ldquo;Analysis Plan&rdquo; doc as of 25 August 2026. <strong>Status:</strong> for Liliana&rsquo;s
+review; not yet registered.</p>
+
+<p>This revision merges the 25 August plan with the design review
+(<em>liliana_study3_analysis_review.md</em>) and the reproducible design specification
+(<em>liliana_study3_design.md</em>). Nothing has been removed. Section tags mark what moved:
+<strong>[KEPT]</strong> unchanged, <strong>[CHANGED]</strong> revised with the reason stated,
+<strong>[NEW]</strong> added.</p>
+
+<p>Three structural changes are worth knowing before reading:</p>
+<ol>
+<li>Covariates, random effects, multiplicity and missing-data rules were repeated inside every
+hypothesis and had drifted apart. They are now stated <strong>once</strong> in §4 and referenced.
+Each hypothesis lists only what is specific to it.</li>
+<li>A <strong>derived-variables</strong> section (§3) now defines every computed quantity once,
+which settles an error where a within-person standardized variable was used as a between-group
+outcome.</li>
+<li>Exploratory aims are <strong>renumbered</strong>. The 25 August draft had two sections labelled
+E2 and a hypothesis labelled E5A under a heading marked E4.</li>
+</ol>
+
+<h2>0. What changed, and why</h2>
+
+<table>
+<tr><th>Item</th><th>Change</th><th>Why</th></tr>
+
+<tr><td>Momentary primary outcome</td><td><code>z(delta_stress)</code> &rarr; <strong>raw
+<code>delta_stress</code></strong>; Phase-1-parameterized z retained as sensitivity</td>
+<td>Within-person z-scoring forces every participant&rsquo;s mean to exactly 0, so a between-group
+test of it is a guaranteed null. See §3.</td></tr>
+
+<tr><td>Feedback&rarr;choice test</td><td>Moved from exploratory E2 to <strong>H3-MC</strong>,
+tested first within Aim 3</td><td>It is the manipulation check for Aim 3. Feedback can only affect
+Phase 2 outcomes by changing what is chosen; without it, a null on H3A&ndash;E cannot distinguish
+&ldquo;feedback doesn&rsquo;t help&rdquo; from &ldquo;the manipulation didn&rsquo;t take.&rdquo;</td></tr>
+
+<tr><td>Phase 2 intervention</td><td>Added as a covariate to all Aim 2 and Aim 3 models; crosstab
+reported</td><td>Choosers self-select their intervention; No-Choice participants receive a
+non-preferred one. Condition is therefore confounded with which intervention is practised.</td></tr>
+
+<tr><td>&ldquo;Choice&rdquo; framing</td><td>Corrected throughout</td><td>Choice is genuinely free
+&mdash; participants may select any intervention including their own rank-3. Preference-match is an
+empirical quantity, not a design guarantee.</td></tr>
+
+<tr><td>Session-level models</td><td>Pre-session stress added as a covariate</td><td><code>delta_stress</code>
+is bounded by pre-stress: a participant starting at 1 cannot show relief. In Phase 2, conditions
+differ between people, so this does not average out.</td></tr>
+
+<tr><td>Random effects</td><td>Random slopes specified, with a simplification ladder</td><td>H1D
+modelled intervention type with random intercepts only, which assumes every intervention affects
+everyone identically &mdash; the opposite of the study&rsquo;s premise and of E1.</td></tr>
+
+<tr><td>Session day</td><td>Within-phase index 1&ndash;12 with Phase as a separate factor</td>
+<td>The draft used &ldquo;13&ndash;24&rdquo; in Aims 2&ndash;3 and &ldquo;1&ndash;12&rdquo; in
+dataset 3. Within-phase indexing also makes the two phases directly comparable.</td></tr>
+
+<tr><td>Missing data</td><td>ITT primary, per-protocol sensitivity, stated explicitly</td>
+<td>Adherence is collected and listed in dataset 1 but was never used. The Phase 2 adherence rule
+was deliberately changed to a classification rather than a gate precisely to enable this.</td></tr>
+
+<tr><td>GAD-7 / PHQ-8 in H1B</td><td>Regression-to-the-mean confound named; binding-constraint split
+added</td><td>The sample is selected on these two instruments, so they will drift toward the mean
+under the null. Affects single-arm pre-post only, not Aims 2&ndash;3.</td></tr>
+
+<tr><td>Exploratory aims</td><td>Renumbered E1&ndash;E8; three added</td><td>Numbering collision;
+plus mechanism specificity, metric robustness, and order effects were untested.</td></tr>
+
+<tr><td><strong>Race coding</strong> [6 Sep]</td><td>Binary <em>person_of_colour</em>; moved into the
+default covariate set</td><td>The instrument is a ten-category nested multi-select that cannot enter a
+model as a factor at this N. One binary contrast costs a single degree of freedom and is
+interpretable; the full distribution is still reported descriptively.</td></tr>
+
+<tr><td><strong>Aims 2 and 3 model form</strong> [6 Sep]</td><td>Merged into one three-condition model
+with two orthogonal contrasts, C1 (choice) and C2 (feedback)</td><td>Removes the pooling decision, which
+previously assumed no feedback effect while Aim 3 tested for one; makes &ldquo;among choosers&rdquo;
+structural rather than a subsetting step; and improves power because every participant contributes to
+both contrasts.</td></tr>
+</table>
+
+<h2>1. Study design [CHANGED]</h2>
+
+<p>Two-phase randomized controlled trial, 31 nominal days, delivered online with one email-linked
+session per day.</p>
+
+<p><strong>Phase 1 (days 2&ndash;13).</strong> All participants rotate through three
+micro-interventions &mdash; Non-Reactivity, Reappraisal, and Self-Compassion &mdash; four
+consecutive exposures each. Block order is counterbalanced across participants using all six
+permutations, drawn at enrollment; order within a block is fixed.</p>
+
+<p><strong>Midpoint (days 14&ndash;16).</strong> Participants complete the assessment battery and
+rank all three interventions from #1 to #3. They are randomized to one of three conditions:</p>
+
+<table>
+<tr><th>Condition</th><th>Database label</th><th>What they see</th><th>Phase 2 intervention</th></tr>
+<tr><td>Choice + Feedback</td><td><code>feedback_choice</code></td><td>Personalized ranked summary of
+their own Phase 1 results</td><td>Free choice</td></tr>
+<tr><td>Choice</td><td><code>control_choice</code></td><td>Control display, no personal data</td>
+<td>Free choice</td></tr>
+<tr><td>No-Choice</td><td><code>control_assigned</code></td><td>Control display, identical to
+above</td><td>Assigned 50/50 between the two <strong>non-rank-1</strong> interventions</td></tr>
+</table>
+
+<p><strong>Phase 2 (days 17&ndash;28).</strong> Twelve daily sessions of the single intervention
+determined at the midpoint.</p>
+
+<p><strong>Final (days 29&ndash;31).</strong> Assessment battery and debrief.</p>
+
+<p><strong>Two corrections to the previous design summary.</strong> First, the third intervention is
+<em>Self-Compassion</em>, not Self-Appreciation. Second, and substantively: <strong>choice is free
+and independent of the stated ranking.</strong> Participants in both Choice conditions may select
+any of the three interventions, including their own rank-3, and this has been observed in testing.
+Describing Choice as &ldquo;preferred&rdquo; is therefore an assumption to be measured, not a design
+guarantee. Only No-Choice has a guaranteed relationship to preference &mdash; a guaranteed
+<em>non</em>-preferred one.</p>
+
+<p><strong>Calendar note.</strong> The assessment windows are catch windows, not waiting periods:
+Phase 2 begins the day after the midpoint is actually completed, so the study runs 29&ndash;31 days
+depending on the participant. Any calendar-indexed analysis must use the participant&rsquo;s real
+study day, not the nominal day number.</p>
+
+<h2>2. Outcomes [CHANGED]</h2>
+
+<p><strong>Primary.</strong> Perceived stress (BIPS) at the assessment level; raw
+<code>delta_stress</code> at the momentary level.</p>
+
+<p><strong>Secondary.</strong> Well-being (life satisfaction, SPANE-P, SPANE-N, PWB) and mental
+health (PHQ-8, GAD-7).</p>
+
+<p><strong>Cognitive-emotion mechanisms.</strong> Non-reactivity (MPoD-T); reappraisal (ERQ-CR,
+SRI-IP); self-compassion (SSCS-L).</p>
+
+<p><strong>Engagement.</strong> Self-reported effort (primary); objective engagement composite
+(secondary, see §4.7).</p>
+
+<p>Instrument details: BIPS 9 items 1&ndash;5 sum; GAD-7 7 items 0&ndash;3 sum; PHQ-8 8 items
+0&ndash;3 sum; SPANE 12 items 1&ndash;5 sum (P and N subscales of 6 each); PWB 8 items 1&ndash;7
+sum; MPoD-T 15 items 1&ndash;7 mean; ERQ-CR 6 items 1&ndash;7 mean; SRI-IP 7 items 1&ndash;5 mean
+(item 7 reversed); SSCS-L 18 items 1&ndash;5 mean. Life satisfaction is a <strong>single-item
+6-point scale</strong>, not a multi-item measure, and should be described as such.</p>
+
+<h2>3. Derived variables [NEW]</h2>
+
+<p>Every computed quantity is defined once here. The rule that follows from it matters more than any
+individual definition.</p>
+
+<table>
+<tr><th>Variable</th><th>Definition</th><th>Level</th><th>Used for</th></tr>
+<tr><td><code>delta_stress</code></td><td>pre-session stress &minus; post-session stress; integer,
+range &minus;5 to +5; positive = relief</td><td>Session</td><td><strong>All between-group tests</strong>
+(H1D, H2D, H3D)</td></tr>
+<tr><td><code>appraisal</code></td><td>mean(enjoyment, helpfulness); range 1&ndash;6</td><td>Session</td>
+<td>E1B label; descriptive</td></tr>
+<tr><td><code>z_delta_stress_P1</code></td><td><code>delta_stress</code> standardized within person
+across <strong>Phase 1 sessions only</strong></td><td>Session</td><td>Within-person ranking; E1
+label</td></tr>
+<tr><td><code>composite_P1</code></td><td>(<code>z_delta_stress_P1</code> + <code>z_appraisal_P1</code>) / 2</td>
+<td>Session</td><td>E1B label; E6 only</td></tr>
+<tr><td><code>delta_stress_rel_P1</code></td><td>Phase 2 <code>delta_stress</code> standardized using
+<strong>each participant&rsquo;s Phase 1 mean and SD</strong></td><td>Session (Phase 2)</td>
+<td>Sensitivity analysis for H2D, H3D</td></tr>
+<tr><td><code>data_best</code></td><td>Intervention with the highest mean Phase 1
+<code>delta_stress</code>; ties broken by mean helpfulness, then a seeded hash</td><td>Participant</td>
+<td>H3-MC, E1, E6</td></tr>
+<tr><td><code>congruent</code></td><td>Phase 2 intervention == <code>data_best</code> (yes/no)</td>
+<td>Participant</td><td>H3-MC</td></tr>
+<tr><td><code>preference_match</code></td><td>Phase 2 intervention == stated rank #1 (yes/no)</td>
+<td>Participant</td><td>H2 sensitivity, descriptive</td></tr>
+<tr><td><code>rank_gap</code></td><td>Mean <code>delta_stress</code> of rank-1 minus rank-2
+intervention</td><td>Participant</td><td>Moderator in E6</td></tr>
+</table>
+
+<p><strong>The rule: no within-person standardized variable is ever used as a between-group
+outcome.</strong> Standardizing within person forces each participant&rsquo;s mean to exactly zero,
+which removes precisely the between-person variance that Aims 2 and 3 test. A between-group
+comparison of such a variable is mathematically guaranteed to return null regardless of any real
+effect. <code>z_delta_stress_P1</code> and <code>composite_P1</code> exist to rank interventions
+<em>within</em> a person at the midpoint, and are confined to that role plus E1 and E6.</p>
+
+<p>Where standardization is wanted for Phase 2 comparability, use
+<code>delta_stress_rel_P1</code>, which expresses Phase 2 relief relative to that person&rsquo;s own
+Phase 1 baseline. It controls for individual differences in scale use while preserving between-person
+variance.</p>
+
+<h2>4. Analysis conventions [NEW]</h2>
+
+<p>These apply to every hypothesis unless a hypothesis overrides them explicitly.</p>
+
+<h3>4.1 Sample and exclusions</h3>
+<ul>
+<li>Test enrollments (<code>is_test = true</code>) are excluded from all analyses.</li>
+<li>Participants failing Phase 1 adherence (&lt;10 of 12 sessions) or not completing the midpoint
+within its window are withdrawn <strong>before</strong> the midpoint condition is drawn. This
+attrition therefore sits above the randomization step in the CONSORT diagram, and randomization
+balance holds only among those reaching the midpoint.</li>
+<li>Aim 1 analyses use all participants with the relevant timepoints. Aims 2 and 3 are necessarily
+conditioned on Phase 1 completion.</li>
+</ul>
+
+<h3>4.2 Missing data and analysis population</h3>
+<ul>
+<li><strong>Primary: intention-to-treat</strong> &mdash; all participants reaching Phase 2, analyzed
+by assigned condition, regardless of Phase 2 adherence.</li>
+<li><strong>Sensitivity: per-protocol</strong> &mdash; restricted to &ge;10 of 12 Phase 2 sessions.</li>
+<li>Mixed models retain partial cases under a missing-at-random assumption. MAR will be probed by
+testing whether missingness is predicted by condition or by prior-session stress; if it is,
+sensitivity analyses under alternative assumptions will be reported.</li>
+</ul>
+
+<h3>4.3 Covariates</h3>
+<p><strong>Default set (all assessment-level models):</strong> age; gender; person of colour;
+stressful life events (Student Stress Scale total). <strong>Extended set (sensitivity):</strong>
+adds household income.</p>
+
+<p><strong>[DECIDED 6 Sep 2026] Race and ethnicity are coded as a single binary variable,
+person_of_colour</strong>, scoring 1 for any respondent selecting an identity other than White and 0
+for a respondent selecting only White. The demographics instrument collects race and ethnicity as a
+multi-select over ten top-level categories with nested sub-options, which cannot enter a model as a
+factor at this sample size; collapsing to one binary contrast costs a single degree of freedom and
+is interpretable. Multi-select responses that include White alongside another identity score 1.
+Prefer-not-to-answer is coded <strong>missing</strong> rather than 0, so it does not silently join
+the White category.</p>
+
+<p>Because the collapse reduces race to one degree of freedom, it moves into the default covariate
+set. Household income stays in the extended set: it has nine levels including
+prefer-not-to-answer, and its coding is still open (§10). Gender coding also remains open (§10) —
+it is likewise a multi-select, over nine options plus free text.</p>
+
+<p>The default/extended split is deliberate. With roughly 100&ndash;200 participants, three
+conditions, a time factor and interactions, a long covariate list consumes more degrees of freedom
+than the design can afford.</p>
+
+<p><strong>Reporting note.</strong> The binary is an analytic simplification for statistical
+control, not a claim that the identities it collapses are interchangeable. The full multi-select
+distribution is reported descriptively in the sample-characteristics table, so nothing collected is
+hidden by the collapse.</p>
+
+<p><strong>Session-level models</strong> additionally include pre-session stress and sleep
+quality.</p>
+
+<p><strong>Aim 2 and Aim 3 models</strong> additionally include Phase 2 intervention (3 levels).</p>
+
+<h3>4.4 Random effects</h3>
+<p>Maximal justified structure, simplified in a fixed order on non-convergence.</p>
+<ul>
+<li><strong>Assessment-level models</strong> (2 timepoints): participant intercept.</li>
+<li><strong>Session-level models</strong>: participant intercept + random slope for session day.</li>
+<li><strong>H1D</strong> additionally: random slope for intervention type. Its variance component is
+itself a result &mdash; it estimates the extent to which different interventions suit different
+people, which is the study&rsquo;s central premise and the assumption E1 depends on.</li>
+<li><strong>Simplification ladder</strong>: remove correlations between random terms; then the
+day slope; then the intervention slope. The final fitted structure will be reported.</li>
+</ul>
+
+<h3>4.5 Multiplicity</h3>
+<p>Holm&ndash;Bonferroni within family. Holm is uniformly more powerful than Bonferroni at the same
+family-wise error rate. Note it is a <strong>step-down</strong> procedure and stops at the first
+failure &mdash; every test below that point is non-significant regardless of its own p-value, so
+family membership is a substantive decision.</p>
+
+<table>
+<tr><th>Family</th><th>Members</th><th>k</th></tr>
+<tr><td>Primary</td><td>BIPS</td><td>1 (uncorrected, single pre-registered primary)</td></tr>
+<tr><td>Well-being</td><td>life satisfaction, SPANE-P, SPANE-N, PWB</td><td>4</td></tr>
+<tr><td>Clinical</td><td>PHQ-8, GAD-7</td><td>2</td></tr>
+<tr><td>Mechanisms</td><td>MPoD-T, ERQ-CR, SRI-IP, SSCS-L</td><td>4 (or 3 &mdash; see §10)</td></tr>
+</table>
+
+<p>Families are defined <strong>within aim</strong>: the well-being family in Aim 1 is corrected
+separately from the well-being family in Aim 2. Exploratory analyses are reported uncorrected and
+labelled exploratory.</p>
+
+<h3>4.6 Time and session coding</h3>
+<ul>
+<li><strong>Assessment models:</strong> Time is a two-level factor. Aim 1 uses baseline &rarr;
+midpoint. Aims 2 and 3 use midpoint &rarr; final.</li>
+<li><strong>Session models:</strong> session index <strong>1&ndash;12 within phase</strong>, with
+Phase as a separate factor. This makes the Phase 1 and Phase 2 day effects directly comparable.</li>
+<li><strong>Calendar-indexed variables</strong> use the participant&rsquo;s real study day, since
+study length varies 29&ndash;31 days.</li>
+</ul>
+
+<h3>4.7 Objective engagement composite</h3>
+<p>Self-reported effort is the pre-registered engagement outcome, but having chosen one&rsquo;s
+intervention is exactly the sort of thing that biases self-report. The platform additionally records,
+per session: video watch percentage and completion; tab focus losses during video (count and
+duration); per-step time on task; session duration; and the presence and length of written
+reflections. A composite of these is pre-registered as a <strong>convergent secondary</strong>
+outcome wherever effort is tested (H2E, H3E). Composite construction will be fixed before unblinding
+and reported in full.</p>
+
+<h2>5. Aim 1 &mdash; Efficacy of the micro-interventions (Phase 1) [KEPT]</h2>
+
+<p><strong>Aim.</strong> To understand the efficacy of three brief micro-interventions (four days
+each) on perceived stress, well-being, and cognitive-emotional processes.</p>
+
+<p><strong>RQ1.</strong> Do three brief micro-interventions improve perceived stress and well-being
+from baseline to the end of Phase 1, and do participants improve within individual sessions?</p>
+
+<p><strong>Design caveat, to be stated in limitations.</strong> Aim 1 is single-arm pre-post: every
+participant receives active intervention in Phase 1 and the study contains no waitlist or
+no-treatment control. H1A&ndash;C are therefore confounded with the passage of time, repeated
+assessment, and regression to the mean. This does not affect Aims 2 and 3, which are between-group.</p>
+
+<h3>H1A. Perceived stress will decrease from baseline to the end of Phase 1.</h3>
+<ul>
+<li>Analysis: linear mixed model</li>
+<li>Outcome: BIPS</li>
+<li>Predictor: Time (0 = baseline, 1 = midpoint)</li>
+<li>Conventions: §4.3 default covariates, §4.4 assessment-level random effects</li>
+</ul>
+
+<h3>H1B. Well-being and mental health will improve from baseline to the end of Phase 1.</h3>
+<ul>
+<li>Analysis: linear mixed model, one per outcome</li>
+<li>Outcomes: life satisfaction, SPANE-P, SPANE-N, PWB; PHQ-8, GAD-7</li>
+<li>Predictor: Time (0 = baseline, 1 = midpoint)</li>
+<li>Correction: Holm within family (well-being 4; clinical 2)</li>
+</ul>
+
+<p><strong>[CHANGED] Regression-to-the-mean handling for PHQ-8 and GAD-7.</strong> These two
+instruments are administered in the screener, which runs immediately before the baseline battery as
+one continuous Day-1 session &mdash; so they are genuine baseline measurements, and re-administering
+two-week-recall instruments minutes later was correctly rejected. However, <strong>eligibility is
+defined on them</strong>: max(GAD-7, PHQ-8) &ge; 10, GAD-7 &le; 14, PHQ-8 &le; 19. Participants are
+therefore admitted partly because at least one score was high on the day measured, and those scores
+carry measurement error, so they will drift toward the mean at re-measurement even under zero
+intervention effect. Two additions:</p>
+<ul>
+<li>An expected-shift benchmark will be pre-registered, computed as approximately
+(1 &minus; r) &times; (baseline deviation from the population mean), using published short-interval
+test&ndash;retest reliability for each instrument. Observed change is reported against that
+benchmark rather than against zero.</li>
+<li><strong>Binding-constraint split.</strong> Eligibility is a disjunction &mdash; only one score
+need reach 10. A participant with GAD-7 = 12 and PHQ-8 = 4 was not selected on PHQ-8, and no
+regression to the mean is expected there. Analyses are therefore split by which instrument was the
+binding constraint: regression to the mean predicts shrinkage on the binding score only, whereas a
+genuine treatment effect should appear on both.</li>
+</ul>
+<p>Baseline distributions of both instruments are truncated at both ends by the eligibility rule and
+are non-normal by construction; residuals will be inspected rather than assumed.</p>
+
+<h3>H1C. Cognitive-emotion mechanisms will improve from baseline to the end of Phase 1.</h3>
+<ul>
+<li>Analysis: linear mixed model, one per outcome</li>
+<li>Outcomes: MPoD-T, ERQ-CR, SRI-IP, SSCS-L</li>
+<li>Predictor: Time (0 = baseline, 1 = midpoint)</li>
+<li>Correction: Holm within the mechanisms family</li>
+</ul>
+
+<h3>H1D. Participants will show within-session reductions in perceived stress.</h3>
+<ul>
+<li>Analysis: linear mixed model</li>
+<li>Outcome: <code>delta_stress</code></li>
+<li>Predictors: intervention type (3 levels); session day (1&ndash;12)</li>
+<li>Covariates: <strong>pre-session stress</strong>; sleep quality</li>
+<li>Random effects: participant intercept + random slope for session day + <strong>random slope for
+intervention type</strong></li>
+</ul>
+<p><strong>[CHANGED]</strong> Pre-session stress is added because <code>delta_stress</code> is
+mechanically bounded by it &mdash; a participant starting at 1 on a six-point scale cannot show
+relief. The random slope for intervention type is added because the intercept-only specification
+assumes each intervention affects everyone identically, which contradicts both the study&rsquo;s
+premise and E1. If a substantial share of sessions begin at the floor, an ordinal or censored
+alternative will be reported.</p>
+
+<h2>6. Aim 2 &mdash; Impact of choice (Phase 2) [CHANGED]</h2>
+
+<p><strong>Aim.</strong> To determine whether practising a chosen intervention improves outcomes
+relative to being assigned a non-preferred one.</p>
+
+<p><strong>RQ2.</strong> Does choosing one&rsquo;s intervention (with or without feedback) improve
+stress, well-being, mechanisms and engagement relative to being assigned a non-preferred one?</p>
+
+<p><strong>[DECIDED 6 Sep 2026] Aims 2 and 3 are estimated in a single model over all three
+conditions, using two pre-specified orthogonal contrasts.</strong> This replaces the two separate
+pooled two-group models in the 25 August draft. Same two questions, one model, no pooling decision,
+and better power because every participant contributes to both contrasts.</p>
+
+<table>
+<thead><tr><th>Contrast</th><th>No-Choice</th><th>Choice</th><th>Choice + Feedback</th><th>Estimates</th></tr></thead>
+<tbody>
+<tr><td>C1 &mdash; choice</td><td>&minus;2/3</td><td>+1/3</td><td>+1/3</td><td>mean(Choice, Choice+Feedback) &minus; No-Choice</td></tr>
+<tr><td>C2 &mdash; feedback</td><td>0</td><td>&minus;1/2</td><td>+1/2</td><td>Choice+Feedback &minus; Choice</td></tr>
+</tbody>
+</table>
+
+<p>The two are orthogonal: (&minus;2/3)(0) + (1/3)(&minus;1/2) + (1/3)(+1/2) = 0. The fractional
+weights make each coefficient read directly as a difference between group means rather than as an
+arbitrary contrast unit.</p>
+
+<p><strong>Model form</strong> for every assessment-level outcome:</p>
+
+<p>Outcome ~ (C1 + C2) &times; Time + covariates + (1 | participant)</p>
+
+<p><strong>Aim 2 is the C1 &times; Time interaction; Aim 3 is the C2 &times; Time interaction.</strong>
+The H2 and H3 hypothesis labels below are retained, and each now names which contrast tests it. Both
+are read from the same fitted model, so the two aims are no longer separate analyses over
+overlapping subsets.</p>
+
+<p>Three consequences worth stating explicitly:</p>
+<ul>
+<li><strong>&ldquo;Among choosers&rdquo; is now structural rather than a subsetting step.</strong>
+No-Choice carries weight 0 on C2, so the feedback contrast is by construction a comparison of the
+two choice conditions only. Aim 3 no longer requires restricting the sample, which was previously
+its own small source of analytic flexibility.</li>
+<li><strong>The pooling decision disappears.</strong> The 25 August draft pooled the two choice
+conditions for Aim 2, which assumed no feedback effect while Aim 3 tested for one. Orthogonal
+contrasts estimate both simultaneously without either assuming the other away.</li>
+<li><strong>Multiplicity is unchanged.</strong> Two contrasts on the same outcome are two tests, and
+the families in §4.5 apply to each contrast separately, exactly as they did to the two aims.</li>
+</ul>
+
+<p><strong>[CHANGED] One framing correction that the contrast coding does not fix.</strong>
+<em>C1 estimates choice and preference-match together, not choice alone.</em> No-Choice participants
+receive a non-rank-1 intervention by construction; choosers usually, though not always, receive one
+they wanted. The two differ on agency <em>and</em> on whether they got what they preferred. This is a
+property of the design, not of the model, so it must be described accordingly in the write-up.
+H2A-sens below is the partial remedy.</p>
+
+<h3>H2A. Choosers will show greater stress reduction than No-Choice participants.</h3>
+<ul>
+<li>Analysis: linear mixed model</li>
+<li>Outcome: BIPS</li>
+<li>Predictors: C1, C2, Time (0 = midpoint, 1 = final), and their interactions. <strong>Aim 2 is tested on C1 &times; Time.</strong></li>
+<li>Covariates: §4.3 default + <strong>Phase 2 intervention</strong></li>
+</ul>
+
+<h3>H2A-sens. [NEW] Restricted to participants practising a non-rank-1 intervention.</h3>
+<ul>
+<li>Same model as H2A, restricted to participants whose Phase 2 intervention was not their stated
+rank #1</li>
+<li>Purpose: holds preference-match roughly constant and isolates agency. Expected to be
+underpowered; reported as a pre-registered sensitivity analysis, not a confirmatory test.</li>
+</ul>
+<p>This contrast exists only because choice is genuinely free (§1). The number of choosers selecting
+a non-rank-1 intervention is itself an informative descriptive result and will be reported whether or
+not the sensitivity analysis is interpretable.</p>
+
+<h3>H2B. Choosers will show greater improvement in well-being and mental health.</h3>
+<ul>
+<li>Analysis: linear mixed model, one per outcome</li>
+<li>Outcomes: life satisfaction, SPANE-P, SPANE-N, PWB; PHQ-8, GAD-7</li>
+<li>Predictors: C1, C2, Time (0 = midpoint, 1 = final), and their interactions. <strong>Aim 2 is tested on C1 &times; Time.</strong></li>
+<li>Covariates: §4.3 default + Phase 2 intervention</li>
+<li>Correction: Holm within family (well-being 4; clinical 2)</li>
+</ul>
+<p>The regression-to-the-mean concern in H1B does not apply here: all conditions were selected by the
+same rule, so it operates equally in each and cancels in the interaction.</p>
+
+<h3>H2C. Choosers will show greater improvement in cognitive-emotional mechanisms.</h3>
+<ul>
+<li>Analysis: linear mixed model, one per outcome</li>
+<li>Outcomes: MPoD-T, ERQ-CR, SRI-IP, SSCS-L</li>
+<li>Predictors: C1, C2, Time (0 = midpoint, 1 = final), and their interactions. <strong>Aim 2 is tested on C1 &times; Time.</strong></li>
+<li>Covariates: §4.3 default + Phase 2 intervention</li>
+<li>Correction: Holm within the mechanisms family</li>
+</ul>
+
+<h3>H2D. Choosers will show larger within-session stress drops across Phase 2.</h3>
+<ul>
+<li>Analysis: linear mixed model</li>
+<li>Outcome: <code>delta_stress</code> (raw)</li>
+<li>Predictors: C1, C2; session day (1&ndash;12 within Phase 2). <strong>Aim 2 is tested on C1.</strong></li>
+<li>Covariates: pre-session stress; sleep quality; Phase 2 intervention</li>
+<li>Random effects: participant intercept + random slope for session day</li>
+<li>Sensitivity: repeated with <code>delta_stress_rel_P1</code></li>
+</ul>
+
+<h3>H2E. Choosers will report greater within-session engagement.</h3>
+<ul>
+<li>Analysis: linear mixed model</li>
+<li>Outcome: effort (primary); objective engagement composite (§4.7, convergent secondary)</li>
+<li>Predictors: C1, C2; session day (1&ndash;12 within Phase 2). <strong>Aim 2 is tested on C1.</strong></li>
+<li>Covariates: pre-session stress; sleep quality; Phase 2 intervention</li>
+</ul>
+
+<h2>7. Aim 3 &mdash; Impact of feedback (Phase 2) [CHANGED]</h2>
+
+<p><strong>Aim.</strong> To determine whether receiving personalized feedback before choosing
+improves outcomes relative to choosing without it, among participants who chose.</p>
+
+<p><strong>RQ3.</strong> Among choosers, does personalized feedback improve stress, well-being,
+mechanisms and engagement?</p>
+
+<p><strong>[DECIDED 6 Sep 2026]</strong> Aim 3 is the <strong>C2 &times; Time</strong> contrast in
+the single three-condition model defined in §6 &mdash; not a separate analysis on a restricted
+sample. Because No-Choice carries weight 0 on C2, &ldquo;among choosers&rdquo; is enforced by the
+contrast itself. The hypotheses below are therefore read from the same fitted models as Aim 2.</p>
+
+<p><strong>One exception.</strong> H3-MC is a logistic model on a binary participant-level outcome
+and genuinely is restricted to the two choice conditions &mdash; a participant with no choice has no
+choice to be congruent with. It is not part of the contrast model.</p>
+
+<h3>H3-MC. [MOVED FROM E2] Manipulation check &mdash; feedback will shift which intervention is chosen.</h3>
+<p>Participants who received feedback will be more likely to choose the intervention that reduced
+their stress most in Phase 1.</p>
+<ul>
+<li>Analysis: logistic regression (Fisher&rsquo;s exact if cell counts are small)</li>
+<li>Outcome: <code>congruent</code> &mdash; Phase 2 intervention equals <code>data_best</code>
+(yes/no)</li>
+<li>Predictor: Condition (Choice vs. Choice with Feedback)</li>
+</ul>
+<p><strong>This is tested and reported before H3A&ndash;E.</strong> Feedback can influence Phase 2
+outcomes only by changing what is chosen, so without it a null on H3A&ndash;E cannot distinguish
+&ldquo;feedback does not help&rdquo; from &ldquo;the manipulation did not take.&rdquo; The test is
+possible because <code>data_best</code> is computed and stored for <em>every</em> participant
+including those who never saw it &mdash; the design deliberately banks that counterfactual.</p>
+
+<p><strong>H3-MC2 (secondary).</strong> Feedback will shift the stated <em>ranking</em>, not only the
+selection. The feedback group ranks after seeing their data; the Choice group ranks without it. Rank
+concordance with <code>data_best</code> is compared across the two conditions.</p>
+
+<h3>H3A. Among choosers, those who received feedback will show greater stress reduction.</h3>
+<ul>
+<li>Analysis: linear mixed model</li>
+<li>Outcome: BIPS</li>
+<li>Predictors: C1, C2, Time (0 = midpoint, 1 = final), and their interactions. <strong>Aim 3 is
+tested on C2 &times; Time.</strong></li>
+<li>Covariates: §4.3 default + Phase 2 intervention</li>
+</ul>
+
+<h3>H3B. Among choosers, those who received feedback will show greater well-being and mental-health improvement.</h3>
+<ul>
+<li>Outcomes: life satisfaction, SPANE-P, SPANE-N, PWB; PHQ-8, GAD-7</li>
+<li>Predictors and covariates as H3A (tested on C2 &times; Time)</li>
+<li>Correction: Holm within family (well-being 4; clinical 2)</li>
+</ul>
+
+<h3>H3C. Among choosers, those who received feedback will show greater mechanism improvement.</h3>
+<ul>
+<li>Outcomes: MPoD-T, ERQ-CR, SRI-IP, SSCS-L</li>
+<li>Predictors and covariates as H3A (tested on C2 &times; Time)</li>
+<li>Correction: Holm within the mechanisms family</li>
+</ul>
+
+<h3>H3D. Among choosers, those who received feedback will show larger within-session stress drops.</h3>
+<ul>
+<li>Outcome: <code>delta_stress</code> (raw); sensitivity with <code>delta_stress_rel_P1</code></li>
+<li>Predictors: C1, C2; session day (1&ndash;12 within Phase 2). <strong>Aim 3 is tested on C2.</strong></li>
+<li>Covariates: pre-session stress; sleep quality; Phase 2 intervention</li>
+</ul>
+
+<h3>H3E. Among choosers, those who received feedback will show greater within-session engagement.</h3>
+<ul>
+<li>Outcome: effort (primary); objective engagement composite (convergent secondary)</li>
+<li>Predictors and covariates as H3D (tested on C2)</li>
+</ul>
+
+<h2>8. Exploratory aims [RENUMBERED]</h2>
+
+<p>All exploratory analyses are reported uncorrected and labelled exploratory.</p>
+
+<h3>E1. Machine-learning prediction of the best-fitting intervention [KEPT, with additions]</h3>
+<p>To determine whether baseline characteristics alone can predict which micro-intervention works
+best for a given participant.</p>
+
+<p><strong>E1A.</strong> Baseline characteristics predict which intervention produced the greatest
+within-session stress reduction.</p>
+<ul>
+<li>Analysis: supervised 3-class classification (e.g. random forest), <strong>nested</strong>
+cross-validation</li>
+<li>Label: intervention with highest mean Phase 1 <code>delta_stress</code></li>
+<li>Features: <strong>reduced pre-specified set</strong> (see below)</li>
+<li>Report: cross-validated accuracy and Cohen&rsquo;s &kappa;, against both chance (0.33)
+<strong>and the label-noise ceiling from E6</strong>; feature importance (SHAP or permutation)</li>
+</ul>
+
+<p><strong>E1B.</strong> The same pipeline with the label defined by <code>composite_P1</code>,
+compared against E1A to see which definition of &ldquo;best&rdquo; baseline traits recover more
+accurately.</p>
+
+<p><strong>[NEW] Three specification changes.</strong> The original feature list &mdash; baseline
+demographics plus twelve scales plus BFI-2 facets &mdash; is on the order of 40&ndash;60 predictors
+before demographic dummy coding, against perhaps 100&ndash;200 Phase 1 completers, predicting a
+three-class label that is itself substantially noisy. Accordingly: (i) a <strong>reduced feature
+set</strong> is pre-specified before unblinding; (ii) <strong>nested</strong> cross-validation is
+used so reported accuracy is not optimistically biased by tuning; and (iii) results are interpreted
+against the E6 ceiling. A null result is a likely outcome under these constraints and
+<strong>should not be read as evidence against personalized matching</strong> &mdash; it may simply
+reflect that the label is too noisy to learn from at this sample size.</p>
+
+<h3>E2. Efficacy differences by intervention type [KEPT, extended]</h3>
+<p>Whether the three micro-interventions produce comparable within-session stress reductions.</p>
+<ul>
+<li>Analysis: linear mixed model</li>
+<li>Outcome: <code>delta_stress</code></li>
+<li>Predictor: intervention type (3 levels)</li>
+<li>Covariates: pre-session stress; sleep quality; session day</li>
+<li>Random effects: participant intercept + random slope for intervention type</li>
+</ul>
+<p><strong>[NEW] Run in Phase 1 and Phase 2 separately.</strong> Phase 1 is the clean comparison
+&mdash; within-person and counterbalanced. Phase 2 is confounded with condition, since choosers
+self-select, but the comparison is still worth reporting because it bears directly on how much of any
+Aim 2 or Aim 3 effect is attributable to intervention efficacy rather than to choice or feedback. The
+condition &times; Phase 2 intervention crosstab is reported alongside.</p>
+
+<h3>E3. Intervention-specific mechanism change [NEW]</h3>
+<p>Each intervention targets a specific mechanism with a matched instrument: Non-Reactivity &rarr;
+MPoD-T (particularly its Non-Reactivity subscale); Reappraisal &rarr; ERQ-CR and SRI-IP;
+Self-Compassion &rarr; SSCS-L. Aims 1&ndash;3 test whether mechanisms improve in general; this tests
+whether practising intervention X specifically improves mechanism X.</p>
+<ul>
+<li>Analysis: linear mixed model, one per mechanism</li>
+<li>Outcome: mechanism score</li>
+<li>Predictors: Phase 2 intervention (3 levels); Time (midpoint, final); Intervention &times; Time</li>
+<li>Prediction: the interaction is carried by the matched intervention</li>
+<li>Secondary: repeated at subscale level (MPoD-T Non-Reactivity; SSCS-L facets)</li>
+</ul>
+<p>Phase 2 is the ideal setting &mdash; twelve consecutive days of a single intervention. This also
+provides the only manipulation check on the interventions themselves, which the plan otherwise
+lacks.</p>
+
+<h3>E4. Baseline-dependent outcomes [KEPT, respecified]</h3>
+<p>Whether participants who begin Phase 1 worse off improve more.</p>
+<ul>
+<li><strong>E4A</strong> stress: outcome BIPS at midpoint, predictor baseline BIPS</li>
+<li><strong>E4B</strong> well-being and mental health, each with its own baseline as predictor</li>
+<li><strong>E4C</strong> mechanisms, each with its own baseline as predictor</li>
+<li>Covariates: §4.3 default</li>
+<li>Correction: Holm within each family</li>
+</ul>
+<p><strong>[CHANGED] Regression-to-the-mean specification.</strong> As originally written these
+analyses are close to a direct test of regression to the mean: under pure measurement error, baseline
+is negatively correlated with change, and an ANCOVA coefficient below 1 <em>is</em> regression to the
+mean rather than evidence of differential response. A method built for the question &mdash; Oldham&rsquo;s
+method, or an explicitly reliability-corrected slope &mdash; will be used, and the expected result
+under the null stated in advance. <strong>For PHQ-8 and GAD-7 this compounds with the selection
+effect in H1B</strong>, and E4B for those two outcomes is reported as descriptive only.</p>
+
+<h3>E5. Trait negative emotionality as a moderator [REPAIRED]</h3>
+<p>Whether change over Phase 1 depends on trait negative emotionality (BFI-2-S Negative Emotionality
+domain, 6 items).</p>
+<ul>
+<li>Analysis: linear mixed model, one per outcome family</li>
+<li>Outcomes: BIPS; well-being set; mechanism set</li>
+<li>Predictors: Time; Negative Emotionality (continuous, centred); Time &times; Negative Emotionality</li>
+<li>Covariates: §4.3 default</li>
+</ul>
+<p><strong>Direction.</strong> The 25 August draft stated this as &ldquo;will experience greater
+improve more or less,&rdquo; which specifies no direction. A direction should be committed to before
+registration, or the aim explicitly labelled two-sided and exploratory. Recommended: two-sided and
+exploratory, since plausible arguments run both ways &mdash; higher negative emotionality means more
+room to improve, but also predicts poorer engagement.</p>
+
+<h3>E6. Robustness of the intervention-ranking metric [NEW]</h3>
+<p>To quantify how much the choice of quality metric, and the small number of sessions per
+intervention, affect which intervention is identified as a participant&rsquo;s best &mdash; and what
+that implies for the feedback manipulation and for E1.</p>
+
+<p><strong>Background.</strong> This was originally scoped as a pre-launch decision (&ldquo;metric
+bake-off&rdquo;) to choose between two metrics before recruiting. It is now exploratory, for three
+reasons: the shipped metric (mean <code>delta_stress</code>) is pre-specified in the methods document
+and is what participants are shown, so changing it after seeing data would alter the manipulation
+rather than merely the analysis; a pretest would not be powered to distinguish the metrics; and the
+midpoint snapshot already stores <strong>both</strong> composites for every participant in every
+condition, so the comparison is recoverable at full sample size afterwards.</p>
+
+<p><strong>E6A. Metric disagreement.</strong> The proportion of participants for whom the two
+metrics identify a different top intervention, with 95% CI; Kendall&rsquo;s &tau; between the two
+full rankings per participant; both stratified by whether any intervention was flagged as resting on
+fewer than two usable sessions.</p>
+
+<p>Because within-person z-scoring is a monotone transform, ranking by mean
+<code>z(delta_stress)</code> is <em>identical</em> to ranking by mean <code>delta_stress</code>. The
+composite metric is therefore not a different measure but the same one plus an appraisal term at
+equal weight, and the two disagree on a pair exactly when the standardized appraisal gap outweighs
+and opposes the standardized stress gap. For approximately bivariate-normal gaps with correlation
+&rho; and relative scale &lambda;:</p>
+
+<p style="text-align:center"><strong>P(disagree) = &frac12; &minus; arcsin(r)/&pi;,&nbsp;&nbsp;
+r = (1 + &rho;&lambda;) / &radic;(1 + 2&rho;&lambda; + &lambda;&sup2;)</strong></p>
+
+<table>
+<tr><th>&rho;</th><th>&lambda; = 0.5</th><th>&lambda; = 1.0</th></tr>
+<tr><td>0.0</td><td>15%</td><td>25%</td></tr>
+<tr><td>0.5</td><td>11%</td><td>17%</td></tr>
+<tr><td>0.8</td><td>7%</td><td>10%</td></tr>
+<tr><td>0.9</td><td>5%</td><td>7%</td></tr>
+</table>
+
+<p>(Closed form verified against a 400,000-draw simulation to three decimal places.) Even under a
+strong correlation between how much an intervention relieves stress and how much it is liked, roughly
+one participant in ten would be told a different intervention is their strongest under the
+alternative metric. E6A estimates &rho; and &lambda; from the observed data and reports the realised
+rate against this benchmark.</p>
+
+<p><strong>E6B. Ranking stability.</strong> Leave-one-session-out resampling within participant: the
+proportion whose top-ranked intervention changes when any single session is dropped, plus the
+observed within-person session-level SD of <code>delta_stress</code> and the observed
+between-intervention separation &mdash; the two quantities that determine stability. Reported against
+<code>rank_gap</code> and the low-data flag.</p>
+
+<p>Prior expectation, by simulation. With four sessions per intervention the standard error of an
+intervention mean is &sigma;/2:</p>
+
+<table>
+<tr><th>&sigma; (session-level)</th><th>True separation</th><th>P(identifies true best)</th>
+<th>P(dropping one session flips the top)</th></tr>
+<tr><td>1.0</td><td>0.25</td><td>55%</td><td>22%</td></tr>
+<tr><td>1.0</td><td>0.50</td><td>73%</td><td>17%</td></tr>
+<tr><td>1.5</td><td>0.25</td><td>48%</td><td>23%</td></tr>
+<tr><td>1.5</td><td>0.50</td><td>61%</td><td>20%</td></tr>
+<tr><td>2.0</td><td>0.50</td><td>55%</td><td>22%</td></tr>
+</table>
+
+<p>Chance is 33%. For plausible values on a six-point scale, the ranking recovers the genuinely best
+intervention roughly half to three-quarters of the time.</p>
+
+<p><strong>E6C. Label-noise ceiling for E1.</strong> The maximum attainable classification accuracy
+implied by the E6B instability estimate, against which E1A and E1B accuracy are reported. E1 predicts
+a label that is itself estimated with error; if the ranking recovers the true best intervention only
+about 60% of the time, no classifier can exceed roughly 60% accuracy against ground truth however
+good its features. Reporting E1 against a 33% chance baseline alone risks reading a null as
+&ldquo;baseline traits do not predict fit&rdquo; when the correct reading may be &ldquo;the label is
+too noisy to learn at this sample size.&rdquo;</p>
+
+<p><strong>Implication for Aim 3, stated as a limitation rather than tested.</strong> E6A and E6B
+together characterize how much of &ldquo;your strongest practice&rdquo; is signal. This does not
+threaten Aim 3&rsquo;s primary contrast &mdash; the manipulation is <em>receiving personalized
+feedback</em>, and the feedback is honestly the participant&rsquo;s own data whatever its precision.
+It does attenuate any mediational claim that feedback helped <em>because</em> participants chose a
+better-matched intervention, since that mediator is measured with substantial error.
+<strong><code>rank_gap</code> is therefore pre-registered as a moderator of the feedback effect:</strong>
+if feedback works through match quality, its effect should be larger for participants whose ranking
+was clear-cut.</p>
+
+<h3>E7. Order and recency effects in Phase 1 [NEW]</h3>
+<p>Phase 1 block order is counterbalanced across all six permutations and recorded, but was
+previously unanalyzed. Two questions:</p>
+<ul>
+<li><strong>E7A.</strong> Do outcomes differ by block position? Intervention practised first has
+twelve more days of elapsed time before the midpoint than the one practised last.</li>
+<li><strong>E7B.</strong> Is the most recently practised intervention over-represented at rank #1
+&mdash; in the stated preference ranking, in the computed <code>delta_stress</code> ranking, or in
+both? Tested against the uniform expectation implied by counterbalancing.</li>
+</ul>
+<p>E7B is a validity check on the feedback manipulation: if recency drives the ranking, then what is
+fed back is partly an artefact of order rather than of fit. Because order is randomized, this is
+cleanly testable.</p>
+
+<h3>E8. Objective engagement [NEW]</h3>
+<p>Descriptive and comparative analysis of the platform&rsquo;s objective engagement telemetry
+(§4.7): video watch percentage and completion, tab focus losses during video, per-step time on task,
+session duration, and written-reflection length. Reported by condition and by intervention, and
+correlated with self-reported effort to establish convergent validity of the effort item.</p>
+
+<h2>9. Data organization [CHANGED]</h2>
+
+<h3>Dataset 1 &mdash; participant level (one row per participant)</h3>
+<ol>
+<li>Participant ID</li>
+<li>Screening GAD-7 and PHQ-8 (continuous, as baseline values); <strong>[NEW]</strong> binding
+eligibility constraint (GAD-7 / PHQ-8 / both)</li>
+<li>Condition (No-Choice, Choice, Choice + Feedback)</li>
+<li>Phase 2 intervention (non-reactivity, reappraisal, self-compassion)</li>
+<li>Preference ranking (#1&ndash;#3, all three conditions)</li>
+<li><strong>[NEW]</strong> <code>data_best</code>; <code>congruent</code>;
+<code>preference_match</code>; <code>rank_gap</code>; low-data flag</li>
+<li>Demographics battery, including the derived binary <strong>person_of_colour</strong> (§4.3)</li>
+<li>Baseline covariates (Student Stress Scale total, BFI-2-S domains including Negative
+Emotionality)</li>
+<li>Adherence: sessions completed and criterion met, per phase</li>
+<li>Phase 1 <code>composite_P1</code>, <code>z_delta_stress_P1</code>, <code>z_appraisal_P1</code>
+&mdash; <strong>Phase 1 parameters only</strong> (§3)</li>
+<li><strong>[NEW]</strong> study duration in days; midpoint completion day; <code>is_test</code></li>
+</ol>
+
+<h3>Dataset 2 &mdash; assessment level (participant &times; timepoint)</h3>
+<ol>
+<li>Participant ID</li>
+<li>Timepoint (baseline, midpoint, final)</li>
+<li>BIPS (total and three subscales); PHQ-8; GAD-7; life satisfaction; SPANE-P, SPANE-N
+<strong>[NEW]</strong> SPANE-B; PWB; MPoD-T (total and three subscales); ERQ-CR; SRI-IP; SSCS-L
+(total and six facets)</li>
+</ol>
+<p>GAD-7 and PHQ-8 at the baseline timepoint are the screener administration (§5, H1B).</p>
+
+<h3>Dataset 3 &mdash; momentary level (participant &times; session)</h3>
+<ol>
+<li>Participant ID</li>
+<li>Phase (1 / 2); session index within phase (1&ndash;12); <strong>[NEW]</strong> real study day;
+completion timestamp</li>
+<li>Intervention delivered</li>
+<li>Sleep quality; pre-stress; post-stress; <code>delta_stress</code></li>
+<li>Enjoyment; helpfulness; <code>appraisal</code>; effort</li>
+<li><code>z_delta_stress_P1</code>; <code>z_appraisal_P1</code>; <code>composite_P1</code> &mdash;
+<strong>Phase 1 sessions only</strong></li>
+<li><strong>[NEW]</strong> <code>delta_stress_rel_P1</code> &mdash; Phase 2 sessions only,
+standardized on Phase 1 parameters</li>
+<li><strong>[NEW]</strong> engagement telemetry: video watch percentage, focus losses, time on task,
+session duration</li>
+</ol>
+<p><strong>Naming discipline.</strong> The Phase-1-standardized and Phase-1-parameterized variables
+must carry distinct names in every dataset, or the wrong one will be used silently in a between-group
+model (§3).</p>
+
+<h2>10. Open decisions</h2>
+
+<table>
+<tr><th>#</th><th>Decision</th><th>Recommendation</th><th>Blocks</th></tr>
+
+<tr><td>1</td><td><strong>Race coding &mdash; RESOLVED 6 Sep 2026.</strong> Collapsed to a binary
+<em>person_of_colour</em> (any non-White identity = 1; White only = 0; prefer-not-to-answer =
+missing). Now in the default covariate set (§4.3).</td><td>Closed.</td><td>&mdash;</td></tr>
+<tr><td>1b</td><td><strong>Gender and household income coding &mdash; still open.</strong> Gender is
+a multi-select over nine options plus free text; income has nine levels including
+prefer-not-to-answer.</td><td>Collapse gender to a small number of levels; treat income as ordinal
+with prefer-not-to-answer as its own level or as missing.</td><td>Every model carries gender;
+income only enters the extended sensitivity set</td></tr>
+
+<tr><td>2</td><td><strong>ERQ-CR and SRI-IP: combine or keep separate?</strong> (Liliana&rsquo;s open
+comment; she leans toward combining.)</td><td><strong>Keep separate.</strong> They use different
+response scales (1&ndash;7 vs. 1&ndash;5) and different frames &mdash; ERQ-CR is trait, SRI-IP is
+momentary. A 31-day intervention should move a state measure more readily than a trait one, so
+combining dilutes the more sensitive measure. The multiplicity saving from k=4 to k=3 is negligible.
+ERQ-CR is also the mechanism matched to the reappraisal arm in E3, so keeping it identifiable has
+value. If combined, standardize each first and verify they correlate in this sample.</td>
+<td>Mechanism family size; E3</td></tr>
+
+<tr><td>3</td><td><strong>Aim 2 model form &mdash; RESOLVED 6 Sep 2026.</strong> One model over all
+three conditions with two orthogonal contrasts: C1 (choice) and C2 (feedback). Aims 2 and 3 are
+now the C1 &times; Time and C2 &times; Time interactions in the same fitted model (§6).</td>
+<td>Closed.</td><td>&mdash;</td></tr>
+
+<tr><td>4</td><td><strong>Is the manipulation check confirmatory?</strong> H3-MC is currently
+promoted into Aim 3.</td><td>Yes &mdash; report it before H3A&ndash;E. It is not a hypothesis about
+the world so much as a precondition for interpreting the ones that follow.</td><td>Aim 3
+interpretation</td></tr>
+
+<tr><td>5</td><td><strong>E5 direction.</strong> Negative emotionality moderation is currently
+directionless.</td><td>Two-sided and explicitly exploratory.</td><td>E5</td></tr>
+
+<tr><td>6</td><td><strong>Objective engagement composite.</strong> Which telemetry, combined
+how?</td><td>Specify before unblinding; simplest defensible version is a z-averaged composite of
+watch percentage, inverse focus losses, and time on task.</td><td>H2E, H3E, E8</td></tr>
+
+<tr><td>7</td><td><strong>Target sample size.</strong> No power analysis exists yet.</td>
+<td>Next step once the hypothesis set above is settled. The binding constraints are the three-group
+Aim 2/3 contrasts and the Phase 1 completion rate, since Aims 2&ndash;3 are conditioned on it.</td>
+<td>Registration</td></tr>
+</table>
+
+<hr>
+
+<p><em>Prepared from the live study configuration, the platform&rsquo;s session templates and
+instrument definitions, the midpoint feedback specification, and the 25 August analysis plan.
+Companion documents: liliana_study3_design.md (reproducible design specification) and
+liliana_study3_analysis_review.md (full issue list with rationale).</em></p>

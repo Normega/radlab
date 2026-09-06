@@ -3389,6 +3389,14 @@ Training modules and display elements (§24a) are two parallel block-based conte
 
 > Added 2026-07-09. The canonical summary of the study design and the WP-L1…WP-L6 infrastructure.
 > Working spec with full per-package detail: `docs/markdowns/liliana_feedback_spec.md`.
+>
+> Analysis-side companions (added 2026-09-06):
+> `liliana_study3_design.md` — reproducible design spec compiled from the live study record;
+> `liliana_study3_analysis_review.md` — issue log against Liliana's analysis plan;
+> `liliana_study3_plan_consolidated.html` — the consolidated plan (rev 2), source for the shared
+> Google Doc. **WP-L6 is no longer a pre-launch metric bake-off** — it is exploratory aim E3/E6 in
+> that plan, because the snapshot already stores both composites for every participant, so the
+> comparison is recoverable at full N without changing the shipped metric.
 
 ### Study design
 
