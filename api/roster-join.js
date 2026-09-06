@@ -109,7 +109,10 @@ export default async function handler(req, res) {
     // email; the door is one door (Norm, 2026-09-05 — he hit the old
     // password form on /tracking). No cooldown on this path: it has no
     // roster row to track one on, and its population is enrolled people.
-    const { data: enrolled } = await service.rpc('enrolled_person_by_key', { p_match_key: key })
+    // p_course_code: the door's course wins when this person is enrolled in
+    // more than one — without it the RPC's alphabetical tiebreak sent
+    // PSY240-branded sign-ins from the PSY309 door (2026-09-05).
+    const { data: enrolled } = await service.rpc('enrolled_person_by_key', { p_match_key: key, p_course_code: requestedCourse })
     const person = Array.isArray(enrolled) ? enrolled[0] : enrolled
     if (person?.email) {
       try {
