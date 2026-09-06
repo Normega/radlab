@@ -41,6 +41,9 @@ export default function ClassRemote() {
   const [actionError, setActionError] = useState(null)
   const [countdown, setCountdown] = useState(null)
   const [menuFor, setMenuFor] = useState(null) // checkin id with the ⋯ overflow open
+  const [promptsFor, setPromptsFor] = useState(null)      // checkin id with responses expanded
+  const [promptRows, setPromptRows] = useState({})        // checkin id -> [{text, at}]
+  const [summarizingId, setSummarizingId] = useState(null)
 
   const broadcastRef = useRef(null)
   const respondedSetsRef = useRef({})
@@ -163,6 +166,14 @@ export default function ClassRemote() {
     broadcastRef.current?.send({ type: 'broadcast', event, payload: { checkin_id: checkinId } })
   }
 
+  async function loadPromptResponses(checkinId) {
+    const { data } = await supabase.from('checkin_responses')
+      .select('prompt_response, created_at').eq('checkin_id', checkinId)
+      .not('prompt_response', 'is', null).neq('prompt_response', '')
+      .order('created_at', { ascending: false }).limit(300)
+    setPromptRows((prev) => ({ ...prev, [checkinId]: (data ?? []).map(r => ({ text: r.prompt_response, at: r.created_at })) }))
+  }
+
   async function handleOpen(checkin) {
     setActionError(null)
     const conflict = checkins.find((c) => c.id !== checkin.id && ['staged', 'open'].includes(c.status))
@@ -179,6 +190,22 @@ export default function ClassRemote() {
     if (error) { setActionError(error.message); return }
     broadcast('closed', checkin.id)
     loadCheckins(lecture.id)
+  }
+
+  async function summarizePrompts(checkin) {
+    setSummarizingId(checkin.id)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      await Promise.race([
+        fetch('/api/summarize-checkin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token ?? ''}` },
+          body: JSON.stringify({ checkin_id: checkin.id }),
+        }),
+        new Promise((r) => setTimeout(r, 9000)),
+      ])
+    } catch { /* results still show; just without the themes panel */ }
+    setSummarizingId(null)
   }
 
   async function handleShowResults(checkin) {
@@ -330,7 +357,14 @@ export default function ClassRemote() {
                       {c.auto_close_seconds != null && <button style={S.ghostBtn} onClick={() => handleExtend(c)}>+60s</button>}
                     </>
                   )}
-                  {c.status === 'closed' && <button style={S.bigBtn} onClick={() => handleShowResults(c)}>Show class</button>}
+                  {c.status === 'closed' && (
+                    (c.config?.activities ?? []).includes('prompt')
+                      ? <button style={S.bigBtn} disabled={summarizingId === c.id}
+                                onClick={async () => { await summarizePrompts(c); handleShowResults(c) }}>
+                          {summarizingId === c.id ? 'Grouping responses…' : 'Show class'}
+                        </button>
+                      : <button style={S.bigBtn} onClick={() => handleShowResults(c)}>Show class</button>
+                  )}
                   {c.status === 'results_ready' && (
                     c.dismissed_at
                       ? <span style={S.doneLabel}>Done — back in lobby</span>
@@ -354,6 +388,29 @@ export default function ClassRemote() {
                     )}
                     {hasQuiz && c.quiz_revealed_at && <span style={S.doneLabel}>Answers revealed</span>}
                     <button style={S.dangerBtn} onClick={() => { setMenuFor(null); handleReset(c) }}>Reset (wipes responses)</button>
+                  </div>
+                )}
+
+                {(c.config?.activities ?? []).includes('prompt') && c.status !== 'planned' && (
+                  <div style={S.questionsWrap}>
+                    <button style={S.smallBtn} onClick={() => {
+                      if (promptsFor === c.id) { setPromptsFor(null); return }
+                      setPromptsFor(c.id); loadPromptResponses(c.id)
+                    }}>
+                      {promptsFor === c.id ? 'Hide responses' : `Read responses${promptRows[c.id] ? ` (${promptRows[c.id].length})` : ''}`}
+                    </button>
+                    {promptsFor === c.id && (
+                      <div style={{ marginTop: 8 }}>
+                        <button style={S.smallBtn} onClick={() => loadPromptResponses(c.id)}>↻ Refresh</button>
+                        {!(promptRows[c.id]?.length) ? (
+                          <p style={S.noQuestions}>No written responses yet.</p>
+                        ) : (
+                          promptRows[c.id].map((r, i) => (
+                            <p key={i} style={S.promptRow}>{r.text}</p>
+                          ))
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -415,6 +472,7 @@ const S = {
   }),
   liveRow: { display: 'flex', justifyContent: 'space-between', marginBottom: 10, fontFamily: MONO, fontSize: 14 },
   overflowRow: { display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10, paddingTop: 10, borderTop: '1px dashed var(--bd)' },
+  promptRow: { fontSize: 14, color: 'var(--tx)', lineHeight: 1.45, padding: '7px 10px', background: 'var(--bg)', borderRadius: 8, margin: '6px 0 0' },
   dangerBtn: { fontSize: 13, padding: '8px 12px', borderRadius: 10, border: '1px solid #f3b8b8', background: '#fdf5f5', color: '#a33', cursor: 'pointer' },
   counter: { color: 'var(--tx)' },
   countdown: { color: 'var(--pk)', fontWeight: 700 },

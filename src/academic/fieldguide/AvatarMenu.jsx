@@ -14,6 +14,11 @@ import { signOutEverywhere } from '../../lib/signOutEverywhere'
 
 const MONO = '"Space Mono", "Courier New", monospace'
 
+// Per-page-load caches for the staff checks below — the menu mounts on every
+// page, and these answers don't change mid-session.
+const acadStaffCache = new Map()   // courseCode -> boolean
+const classAdminCache = new Map()  // `${uid}:${courseCode}` -> boolean
+
 // Auto-reconcile is attempted at most once per FG identity per page-load life
 // of the SPA — the menu remounts on every Field Guide navigation, and without
 // this a persistently-unbridgeable identity (e.g. a public reader with no
@@ -120,6 +125,55 @@ export default function AvatarMenu({ client, fgEmail, email, courseCode, isStaff
     return () => { cancelled = true }
   }, [fgEmail, loadMain, reconcile])
 
+  // Academic staff standing. FG mounts pass isStaff; Lounge mounts don't,
+  // so detect it from the academic session when one exists — the point is
+  // that the SAME person sees the SAME menu on both halves (Norm,
+  // 2026-09-06: the Lounge menu was shorter than the Field Guide one).
+  const [acadStaffDetected, setAcadStaffDetected] = useState(false)
+  useEffect(() => {
+    if (isStaff !== undefined || !courseCode) return
+    if (acadStaffCache.has(courseCode)) { setAcadStaffDetected(acadStaffCache.get(courseCode)); return }
+    let cancelled = false
+    ;(async () => {
+      try {
+        if (!localStorage.getItem('radlab-academic-auth')) return
+        const { getCourseClient } = await import('../courseClient')
+        const c = await getCourseClient()
+        const { data } = await c.from('enrollments')
+          .select('role, courses!inner(code)').eq('status', 'active').in('role', ['ta', 'instructor'])
+        const yes = (data ?? []).some(e => String(e.courses?.code ?? '').toLowerCase() === String(courseCode).toLowerCase())
+        acadStaffCache.set(courseCode, yes)
+        if (!cancelled) setAcadStaffDetected(yes)
+      } catch { /* stay student-shaped */ }
+    })()
+    return () => { cancelled = true }
+  }, [isStaff, courseCode])
+  const acadStaff = isStaff ?? acadStaffDetected
+
+  // Classroom tools (Console/Screen/Slides) are gated by the MAIN project's
+  // class_admins — the same rule ClassAdminRoute enforces — so the menu
+  // never shows a door that would bounce.
+  const [canRunClassroom, setCanRunClassroom] = useState(false)
+  useEffect(() => {
+    if (!mainUserId || !courseCode) { setCanRunClassroom(false); return }
+    const key = `${mainUserId}:${courseCode}`
+    if (classAdminCache.has(key)) { setCanRunClassroom(classAdminCache.get(key)); return }
+    let cancelled = false
+    ;(async () => {
+      try {
+        const [{ data: prof }, { data: adm }] = await Promise.all([
+          supabase.from('profiles').select('role, super_admin').eq('id', mainUserId).single(),
+          supabase.from('class_admins').select('id, classes!inner(slug)').eq('user_id', mainUserId)
+            .eq('classes.slug', String(courseCode).toLowerCase()).limit(1),
+        ])
+        const yes = prof?.role === 'lab' || prof?.super_admin === true || !!adm?.length
+        classAdminCache.set(key, yes)
+        if (!cancelled) setCanRunClassroom(yes)
+      } catch { /* no classroom group */ }
+    })()
+    return () => { cancelled = true }
+  }, [mainUserId, courseCode])
+
   const sameMain = mainMatchesFg(fgEmail, mainIdentity)
   // On a Lounge mount there is no fgEmail, so the main session is authoritative.
   const linkedMainId = fgEmail ? (sameMain ? mainUserId : null) : mainUserId
@@ -155,21 +209,21 @@ export default function AvatarMenu({ client, fgEmail, email, courseCode, isStaff
     // No main-site session in this browser. The Lounge join creates one, and
     // with it the avatar — one door for both roles, labeled by what each
     // actually wants from it.
-    items.push({ to: lounge, label: isStaff ? 'Create your avatar' : 'Join the Lecture Lounge' })
+    items.push({ to: lounge, label: acadStaff ? 'Create your avatar' : 'Join the Lecture Lounge' })
   }
-  if (isStaff) {
-    // The course home is the hub with the full visible staff grid — Norm
-    // couldn't find the roster from the wiki (2026-09-05) because these
-    // items only live in this dropdown; give staff the room with the
-    // signposts too.
-    if (courseCode) items.push({ to: coursePath(courseCode), label: 'Course home' })
-    items.push({ to: sub('submissions'), label: 'Submissions' })
-    items.push({ to: sub('review'), label: 'Review queue' })
-    items.push({ to: sub('tracking'), label: 'Tracking' })
-    items.push({ to: sub('roster'), label: 'Roster' })
-  } else if (feats.gaps) {
-    items.push({ to: sub('gaps'), label: 'Gap board' })
+  if (!acadStaff && feats.gaps) items.push({ to: sub('gaps'), label: 'Gap board' })
+  // Mid-lecture surfaces get menu placement; desk-work admin lives on Course
+  // Home's visible grid instead (Norm, 2026-09-06: "in the classroom has to
+  // be more accessible than course admin" — the queue links left this menu
+  // the same day the grid landed on Course Home, so nothing is orphaned).
+  // Gated on the same rule as the console route, so no door here bounces.
+  if (canRunClassroom && courseCode) {
+    items.push({ header: 'In the classroom' })
+    items.push({ to: `${lounge}/console`, label: 'Console' })
+    items.push({ to: `${lounge}/screen`, label: 'Screen' })
+    items.push({ to: `${lounge}/slides`, label: 'Slides' })
   }
+  if (acadStaff && courseCode) items.push({ to: coursePath(courseCode), label: 'Course home' })
   // Then the account places.
   if (linkedMainId) items.push({ to: '/ripple', label: 'My Ripple' })
   if (linkedMainId) items.push({ to: '/account', label: 'Account' })
@@ -204,7 +258,9 @@ export default function AvatarMenu({ client, fgEmail, email, courseCode, isStaff
           {reconciling && (
             <><p style={S.mismatch}>Linking your account…</p><div style={S.divider} /></>
           )}
-          {items.map((it) => it.to
+          {items.map((it) => it.header
+            ? <p key={it.header} style={S.groupHeader}>{it.header}</p>
+            : it.to
             ? <Link key={it.label} to={it.to} style={S.item} onClick={() => setOpen(false)}>{it.label}</Link>
             : <button key={it.label} style={{ ...S.item, ...S.itemBtn }} onClick={it.onClick}>{it.label}</button>
           )}
@@ -235,5 +291,6 @@ const S = {
   },
   itemBtn: { fontFamily: 'inherit' },
   divider: { borderTop: '1px solid var(--bd)', margin: '4px 0' },
+  groupHeader: { fontFamily: MONO, fontSize: 10, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--tx3)', padding: '8px 14px 2px', borderTop: '1px solid var(--bd)', marginTop: 4 },
   mismatch: { fontSize: 12, color: 'var(--tx2)', lineHeight: 1.45, padding: '6px 14px 2px', overflowWrap: 'anywhere' },
 }

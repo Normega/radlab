@@ -229,16 +229,43 @@ function PacingBar({ counts }) {
   )
 }
 
+// What the room SAID — the AI-grouped themes of a prompt check-in's
+// free-text answers, written to checkins.results_summary by
+// api/summarize-checkin when the instructor presses "Show class". Aggregate
+// and anonymous by construction; members can read the checkin row already.
+function PromptThemes({ summary }) {
+  if (!summary?.themes?.length) return null
+  return (
+    <div style={S.section}>
+      <p style={S.subLabel}>What the room said · {summary.n} responses</p>
+      {summary.headline && <p style={S.themeHeadline}>{summary.headline}</p>}
+      {summary.themes.map((t, i) => (
+        <div key={i} style={S.themeRow}>
+          <div style={S.themeTop}>
+            <span style={S.themeLabel}>{t.label}</span>
+            <span style={S.themeShare}>~{t.share}%</span>
+          </div>
+          <p style={S.themeQuote}>“{t.quote}”</p>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 // Anonymized results via get_checkin_mood_results RPC — checkin_responses
 // itself grants no cross-member read, so this is the only way a student
 // sees the aggregate at all (own row flagged, others unlinked from identity).
 export default function ResultsView({ checkinId, session }) {
   const [results, setResults] = useState(undefined)
+  const [summary, setSummary] = useState(null)
 
   useEffect(() => {
     let cancelled = false
     supabase.rpc('get_checkin_mood_results', { p_checkin_id: checkinId }).then(({ data }) => {
       if (!cancelled) setResults(Array.isArray(data) ? data : [])
+    })
+    supabase.from('checkins').select('results_summary').eq('id', checkinId).maybeSingle().then(({ data }) => {
+      if (!cancelled) setSummary(data?.results_summary ?? null)
     })
     return () => { cancelled = true }
   }, [checkinId])
@@ -269,11 +296,13 @@ export default function ResultsView({ checkinId, session }) {
         </div>
       )}
 
+      <PromptThemes summary={summary} />
+
       <QuizResults checkinId={checkinId} />
 
       <QuestionsList checkinId={checkinId} session={session} />
 
-      {!moodPoints.length && !hasPacing && <p style={S.hint}>No results to show for this check-in.</p>}
+      {!moodPoints.length && !hasPacing && !summary?.themes?.length && <p style={S.hint}>No results to show for this check-in.</p>}
     </div>
   )
 }
@@ -288,6 +317,12 @@ const S = {
   legendSelf: { display: 'inline-block', width: 9, height: 9, borderRadius: '50%', background: 'var(--pk)', marginRight: 4 },
   legendOther: { display: 'inline-block', width: 9, height: 9, borderRadius: '50%', background: 'var(--gy)', marginRight: 4, marginLeft: 10 },
   subLabel: { fontFamily: MONO, fontSize: 12, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--tx3)', marginBottom: 10 },
+  themeHeadline: { fontSize: 15, color: 'var(--tx)', fontWeight: 600, margin: '0 0 10px', lineHeight: 1.4 },
+  themeRow: { textAlign: 'left', background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 10, padding: '10px 12px', marginBottom: 8, width: '100%' },
+  themeTop: { display: 'flex', justifyContent: 'space-between', gap: 8, marginBottom: 4 },
+  themeLabel: { fontSize: 14, fontWeight: 700, color: 'var(--tx)' },
+  themeShare: { fontFamily: MONO, fontSize: 12, color: 'var(--pk)' },
+  themeQuote: { fontSize: 13, color: 'var(--tx2)', fontStyle: 'italic', lineHeight: 1.45, margin: 0 },
   pacingWrap: { display: 'flex', gap: 10, alignItems: 'flex-end', justifyContent: 'center', position: 'relative', paddingBottom: 20 },
   pacingCol: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', width: 36, height: 70 },
   pacingFill: { width: '100%', background: 'var(--pk)', borderRadius: 4, minHeight: 2 },
