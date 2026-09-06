@@ -85,9 +85,10 @@ exceed the 2025 PPTs (which were figure-heavy, text-light). The L1/L2 pass added
 missing **marking-scheme slide** (L1), collaboration-vs-plagiarism guidance (L1, from 2025),
 PsycINFO search-tips line (L1), the **three causation criteria** (L2, covariance/temporal
 precedence/internal validity — was in 2025, deferred nowhere), animal-research + misconduct
-name-checks in L2 notes, and **Question of the Week lines in every deck** (fill the actual
-question text per week — `TODO(QotW)` comments mark the spots; note psy309's QotW lives on
-the **Quercus discussion board**, not the dashboard wall). Syllabus of record:
+name-checks in L2 notes, and **Question of the Week lines in every deck** (DONE 2026-09-05:
+psy309's QotW moved to the **Lecture Lounge wall**, same as psy240 — Norm's call, superseding
+the earlier Quercus plan. All ten questions are posed on each deck's closer AND pre-built as
+planned position-99 weekly check-ins; open each from the console before leaving the room). Syllabus of record:
 `I:\My Drive\Teaching\Psy309\2026\PSY309H5F_2026_Syllabus.html`.
 
 Remaining per-lecture candidates (run each ~a week out, 2025 dumps regenerate from
