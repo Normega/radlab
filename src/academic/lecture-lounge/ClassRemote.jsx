@@ -220,6 +220,11 @@ export default function ClassRemote() {
     setActionError(null)
     const { error } = await supabase.from('checkins').update({ quiz_revealed_at: new Date().toISOString() }).eq('id', checkin.id)
     if (error) { setActionError(error.message); return }
+    // The reveal was the ONLY transition without a broadcast — it leaned
+    // entirely on QuizResults' own postgres_changes channel, which joins
+    // late (only once results render) and misses a reveal tapped into its
+    // handshake gap (Norm, 2026-09-06).
+    broadcast('quiz_revealed', checkin.id)
     loadCheckins(lecture.id)
   }
 

@@ -166,7 +166,7 @@ function QuestionsList({ checkinId, session }) {
 // phone" into "this student's screen updates" without a page reload — see
 // 20260713_lecture_lounge_quiz.sql for why checkins (not a new broadcast
 // event) is the mechanism.
-function QuizResults({ checkinId }) {
+function QuizResults({ checkinId, revealNonce }) {
   const [data, setData] = useState(undefined)
 
   useEffect(() => {
@@ -179,9 +179,11 @@ function QuizResults({ checkinId }) {
     const ch = supabase
       .channel(`quiz-reveal-${checkinId}`)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'checkins', filter: `id=eq.${checkinId}` }, load)
-      .subscribe()
+      // Reload once actually joined: this channel mounts with the results
+      // view, and a reveal tapped during its handshake was lost for good.
+      .subscribe((status) => { if (status === 'SUBSCRIBED') load() })
     return () => { cancelled = true; supabase.removeChannel(ch) }
-  }, [checkinId])
+  }, [checkinId, revealNonce])
 
   if (!data?.items?.length) return null
 
@@ -255,7 +257,7 @@ function PromptThemes({ summary }) {
 // Anonymized results via get_checkin_mood_results RPC — checkin_responses
 // itself grants no cross-member read, so this is the only way a student
 // sees the aggregate at all (own row flagged, others unlinked from identity).
-export default function ResultsView({ checkinId, session }) {
+export default function ResultsView({ checkinId, session, revealNonce }) {
   const [results, setResults] = useState(undefined)
   const [summary, setSummary] = useState(null)
 
@@ -298,7 +300,7 @@ export default function ResultsView({ checkinId, session }) {
 
       <PromptThemes summary={summary} />
 
-      <QuizResults checkinId={checkinId} />
+      <QuizResults checkinId={checkinId} revealNonce={revealNonce} />
 
       <QuestionsList checkinId={checkinId} session={session} />
 
