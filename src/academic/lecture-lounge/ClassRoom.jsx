@@ -411,6 +411,17 @@ export default function ClassRoom({ session }) {
 
             {renderCheckinArea()}
 
+            {/* The 200-point avatar moment, surfaced where the break-1 slide
+                sends people. Only for members who have never opened the
+                editor (null = no avatars row; undefined = still loading). */}
+            {!avatarLoading && avatarConfig === null && (
+              <Link to="/ripple/avatar" style={S.avatarCard}>
+                <p style={S.fgEyebrow}>Your avatar</p>
+                <p style={S.fgTitle}>Make your avatar — 200 points are waiting</p>
+                <p style={S.fgMeta}>It's how you appear on the class wall. Takes a minute →</p>
+              </Link>
+            )}
+
             {weekly && (
               <Link to={`${loungePath(slug)}/wall/${weekly.id}`} style={S.weeklyCard}>
                 <p style={S.weeklyEyebrow}>Question of the week</p>
@@ -774,6 +785,10 @@ const S = {
     border: '1px solid var(--bds)', fontSize: 15, fontFamily: 'inherit', marginTop: 10,
   },
   authSwitch: { border: 'none', background: 'none', color: 'var(--pk)', cursor: 'pointer', fontSize: 'inherit', fontFamily: 'inherit', textDecoration: 'underline', padding: 0 },
+  avatarCard: {
+    display: 'block', background: 'var(--bgc)', border: '1px solid var(--pk)', borderRadius: 16,
+    padding: '18px 22px', textDecoration: 'none', marginBottom: 16,
+  },
   fgCard: {
     display: 'block', textDecoration: 'none', marginTop: 16, textAlign: 'left',
     background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 14, padding: '16px 20px',

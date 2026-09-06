@@ -142,6 +142,15 @@ export default function ClassScreen() {
       <div style={S.idlePulse} />
       <p style={S.eyebrow}>Lecture Lounge</p>
       <h1 style={S.idleTitle}>{classInfo.name}</h1>
+      {/* Arrival theatre: the room watching itself fill is the strongest
+          possible join nudge — social proof with a number on it. Presence
+          counts phones with the lounge open, which in minutes 0-10 of a
+          lecture IS the room. */}
+      <p style={S.roomCount}>
+        {presentAvatars.length > 0
+          ? `${presentAvatars.length} in the room`
+          : 'Scan in as you sit down'}
+      </p>
       <div style={S.wallWrap}><AvatarWall avatars={presentAvatars} size={64} maxWidth={700} /></div>
       <div style={S.qrRow}>
         <QRCode value={joinUrl} size={180} fgColor="#1c1c1e" bgColor="#FCF0F5" />
@@ -160,6 +169,7 @@ const S = {
   idleTitle: { fontFamily: SERIF, fontSize: 56, color: 'var(--tx)', marginBottom: 32, maxWidth: 900 },
   openTitle: { fontFamily: SERIF, fontSize: 48, color: 'var(--tx)', marginBottom: 12, maxWidth: 900 },
   counter: { fontFamily: MONO, fontSize: 28, color: 'var(--pkd)', marginBottom: 32 },
+  roomCount: { fontFamily: MONO, fontSize: 30, color: 'var(--pkd)', marginBottom: 20, letterSpacing: 1 },
   wallWrap: { maxWidth: 700, marginBottom: 32 },
   qrRow: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, background: '#fff', padding: 24, borderRadius: 20 },
   qrHint: { fontFamily: MONO, fontSize: 14, color: 'var(--tx2)' },
