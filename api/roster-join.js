@@ -192,7 +192,7 @@ async function sendSignInEmail(service, resendKey, { email, fullName, courseCode
     const hashed = linkData?.properties?.hashed_token
     const vtype = linkData?.properties?.verification_type || 'magiclink'
     if (!hashed) throw new Error('no hashed_token')
-    const link = `${origin}/academic/${String(courseCode || 'psy240').toLowerCase()}/signin`
+    const link = `${origin}/academic/${String(courseCode || 'fieldguide').toLowerCase()}/signin`
       + `?t=${encodeURIComponent(hashed)}&ty=${encodeURIComponent(vtype)}`
       + (next ? `&n=${next}` : '')
     // The numeric code that accompanies the same link (length is whatever the

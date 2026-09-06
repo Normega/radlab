@@ -23,7 +23,11 @@ const lc = (code) => String(code ?? '').trim().toLowerCase()
 // project.
 export const normalizeCourseCode = (param) => {
   const v = lc(param)
-  return v === '' ? null : v
+  // 'fieldguide' is the immortal course-neutral mount (printed QR codes, old
+  // emails), never a course — treating it as one made pages wear FIELDGUIDE
+  // as a course code, and inviting a fallback like `?? 'psy240'` is exactly
+  // how one course's chrome leaks onto another's.
+  return v === '' || v === 'fieldguide' ? null : v
 }
 
 // ── Path builders ──────────────────────────────────────────────────────────

@@ -52,7 +52,7 @@ export default function WikiIndex() {
   const WIKI_BASE = useWikiBase() // course-scoped; template usages unchanged
   const { courseClient, session, enrollments, isStaff } = useOutletContext()
   const { courseId, select, courses, course } = useWikiCourse(enrollments)
-  const weekAnchored = !!course && course.code !== 'PSY240'
+  const weekAnchored = !!course && courseFeatures(course.code).weekIndex
 
   const [pages, setPages] = useState(null)      // null = loading
   const [catalog, setCatalog] = useState([])
