@@ -212,6 +212,32 @@ export default function ClassRoom({ session }) {
     return () => { supabase.removeChannel(channel); channelRef.current = null }
   }, [classInfo?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // DB-authoritative safety net for state transitions. Broadcasts are
+  // fire-and-forget: a single dropped 'results_ready' left the student on the
+  // open check-in until they refreshed, while the instructor had already
+  // pressed Show results (Norm, 2026-09-06). A Postgres Changes subscription
+  // on the live check-in's OWN row replays the transition from the database
+  // even when its broadcast never arrives — the same mechanism ResultsView
+  // uses for the reveal, and reliable where broadcast is best-effort. Keyed
+  // on the id alone, so it re-subscribes per check-in, not per status change.
+  useEffect(() => {
+    const id = liveCheckin?.id
+    if (!id) return
+    const ch = supabase
+      .channel(`checkin-state-${id}`)
+      .on('postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'checkins', filter: `id=eq.${id}` },
+        ({ new: row }) => {
+          if (!row) return
+          if (row.dismissed_at) { setLiveCheckin(null); return }
+          setLiveCheckin((prev) => (prev?.id === row.id
+            ? { ...prev, status: row.status, config: row.config ?? prev.config }
+            : prev))
+        })
+      .subscribe()
+    return () => { supabase.removeChannel(ch) }
+  }, [liveCheckin?.id])
+
   // A broadcast only carries the checkin_id, not its config — fetch it once
   // if we don't already have it cached from the mount-time restore.
   useEffect(() => {
