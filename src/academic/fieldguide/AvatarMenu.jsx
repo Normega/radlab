@@ -9,7 +9,7 @@ import { supabase } from '../../lib/supabase'
 import { useAvatarConfig } from '../../hooks/useAvatarConfig'
 import MenuAvatar from '../../components/ui/MenuAvatar'
 import { courseFeatures } from '../courseFeatures'
-import { loungePath, courseSubPath } from '../courseRoutes'
+import { coursePath, loungePath, courseSubPath } from '../courseRoutes'
 import { signOutEverywhere } from '../../lib/signOutEverywhere'
 
 const MONO = '"Space Mono", "Courier New", monospace'
@@ -158,6 +158,11 @@ export default function AvatarMenu({ client, fgEmail, email, courseCode, isStaff
     items.push({ to: lounge, label: isStaff ? 'Create your avatar' : 'Join the Lecture Lounge' })
   }
   if (isStaff) {
+    // The course home is the hub with the full visible staff grid — Norm
+    // couldn't find the roster from the wiki (2026-09-05) because these
+    // items only live in this dropdown; give staff the room with the
+    // signposts too.
+    if (courseCode) items.push({ to: coursePath(courseCode), label: 'Course home' })
     items.push({ to: sub('submissions'), label: 'Submissions' })
     items.push({ to: sub('review'), label: 'Review queue' })
     items.push({ to: sub('tracking'), label: 'Tracking' })
