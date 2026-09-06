@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useOutletContext, useParams } from 'react-router-dom'
-import { AcademicEyebrow } from '../AcademicChrome'
+import { AcademicEyebrow, AcademicHeaderRow } from '../AcademicChrome'
+import AvatarMenu from './AvatarMenu'
 import { staffedCourses, resolveCourse } from './staffCourses.js'
 import { courseFeatures } from '../courseFeatures.js'
 import { supabase } from '../../lib/supabase'
@@ -32,7 +33,7 @@ const SERIF = '"DM Serif Display", Georgia, serif'
 const norm = (e) => String(e ?? '').trim().toLowerCase().replace(/@(mail\.|alum\.)?utoronto\.ca$/, '@utoronto.ca')
 
 export default function TrackingPage() {
-  const { courseClient, staffEnrollments } = useOutletContext()
+  const { courseClient, staffEnrollments, session, isStaff } = useOutletContext()
   const { courseCode } = useParams()
   const courses = useMemo(() => staffedCourses(staffEnrollments), [staffEnrollments])
   const course  = useMemo(() => resolveCourse(courses, courseCode), [courses, courseCode])
@@ -225,7 +226,9 @@ function Frame({ children }) {
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '32px 16px 64px' }}>
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-        <AcademicEyebrow to="/academic/fieldguide" suffix=" · staff" />
+        <AcademicHeaderRow menu={<AvatarMenu client={courseClient} fgEmail={session.user.email} courseCode={courseCode} isStaff={isStaff} />}>
+          <AcademicEyebrow to="/academic/fieldguide" suffix=" · staff" />
+        </AcademicHeaderRow>
         {children}
       </div>
     </div>

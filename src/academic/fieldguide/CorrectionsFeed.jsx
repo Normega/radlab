@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useOutletContext } from 'react-router-dom'
-import { AcademicEyebrow } from '../AcademicChrome'
+import { AcademicEyebrow, AcademicHeaderRow } from '../AcademicChrome'
+import AvatarMenu from './AvatarMenu'
 import { useWikiBase, useCoursePaths } from './wiki/useWikiBase'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
@@ -14,7 +15,7 @@ const SERIF = '"DM Serif Display", Georgia, serif'
 export default function CorrectionsFeed() {
   const WIKI_BASE = useWikiBase()
   const paths = useCoursePaths()
-  const { courseClient } = useOutletContext()
+  const { courseClient, session, courseCode, isStaff } = useOutletContext()
   const [rows, setRows] = useState(null)
   const [notice, setNotice] = useState(null)
 
@@ -32,7 +33,9 @@ export default function CorrectionsFeed() {
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '32px 20px 80px' }}>
       <div style={{ maxWidth: 940, margin: '0 auto' }}>
-        <AcademicEyebrow to={paths.home} />
+        <AcademicHeaderRow menu={<AvatarMenu client={courseClient} fgEmail={session.user.email} courseCode={courseCode} isStaff={isStaff} />}>
+          <AcademicEyebrow to={paths.home} />
+        </AcademicHeaderRow>
         <h1 style={S.title}>Corrections</h1>
         <p style={S.sub}>
           Every staff edit, newest first: who, what page, which version, and the required note saying

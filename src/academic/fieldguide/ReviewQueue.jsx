@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useOutletContext } from 'react-router-dom'
-import { AcademicEyebrow } from '../AcademicChrome'
+import { AcademicEyebrow, AcademicHeaderRow } from '../AcademicChrome'
+import AvatarMenu from './AvatarMenu'
 import { signOutEverywhere } from '../../lib/signOutEverywhere'
 import { useWikiBase, useCoursePaths } from './wiki/useWikiBase'
 
@@ -20,7 +21,7 @@ export default function ReviewQueue() {
   // (useState(staffEnrollments[0])) could contradict the course in the
   // address bar, which is exactly the wrong-course class of bug the
   // course-scoped routes exist to end. Switching course = navigating.
-  const { courseClient, session, course: urlCourse } = useOutletContext()
+  const { courseClient, session, course: urlCourse, courseCode, isStaff } = useOutletContext()
   const courseId = urlCourse?.course_id
   const WIKI_BASE = useWikiBase()
   const [rows, setRows] = useState(null)   // null = loading
@@ -342,7 +343,9 @@ function Page({ course, session, client, children }) {
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
         <header style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
           <div>
-            <AcademicEyebrow to={paths.home} />
+            <AcademicHeaderRow menu={<AvatarMenu client={courseClient} fgEmail={session.user.email} courseCode={courseCode} isStaff={isStaff} />}>
+              <AcademicEyebrow to={paths.home} />
+            </AcademicHeaderRow>
             <h1 style={S.title}>Review queue</h1>
             {course && <p style={S.sub}>{course.code} · {course.name} ({course.term})</p>}
           </div>

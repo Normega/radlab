@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, Navigate, useOutletContext, useParams } from 'react-router-dom'
-import { AcademicEyebrow } from '../AcademicChrome'
+import { AcademicEyebrow, AcademicHeaderRow } from '../AcademicChrome'
+import AvatarMenu from './AvatarMenu'
 import { rosterPath, staffedCourses, resolveCourse } from './staffCourses.js'
 import { coursePath } from '../courseRoutes'
 
@@ -59,10 +60,14 @@ const guessCol = (headers, patterns) => {
 // Page chrome for the two pre-roster states (choose a course / unknown course),
 // so they sit on the same background and rails as the roster itself.
 function Frame({ children }) {
+  // Rendered only inside the staff route, so the outlet context is present.
+  const { courseClient, session, courseCode, isStaff } = useOutletContext()
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '32px 16px 64px' }}>
       <div style={{ maxWidth: 1060, margin: '0 auto' }}>
-        <AcademicEyebrow to="/academic/fieldguide" suffix=" · staff" />
+        <AcademicHeaderRow menu={<AvatarMenu client={courseClient} fgEmail={session.user.email} courseCode={courseCode} isStaff={isStaff} />}>
+          <AcademicEyebrow to="/academic/fieldguide" suffix=" · staff" />
+        </AcademicHeaderRow>
         {children}
       </div>
     </div>
@@ -87,7 +92,7 @@ function CourseList({ courses }) {
 }
 
 export default function RosterAdmin() {
-  const { courseClient, staffEnrollments, session } = useOutletContext()
+  const { courseClient, staffEnrollments, session, isStaff } = useOutletContext()
   const { courseCode } = useParams()
 
   // Both resolved in staffCourses.js, where they are unit-tested. The rule
@@ -290,7 +295,9 @@ export default function RosterAdmin() {
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '32px 16px 64px' }}>
       <div style={{ maxWidth: 1060, margin: '0 auto' }}>
-        <AcademicEyebrow to={coursePath(course.courses.code)} suffix=" · staff" />
+        <AcademicHeaderRow menu={<AvatarMenu client={courseClient} fgEmail={session.user.email} courseCode={courseCode} isStaff={isStaff} />}>
+          <AcademicEyebrow to={coursePath(course.courses.code)} suffix=" · staff" />
+        </AcademicHeaderRow>
         <h1 style={S.title}>Roster · {course.courses.code}</h1>
         {courses.length > 1 && (
           <p style={S.sub}>

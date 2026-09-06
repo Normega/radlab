@@ -16,6 +16,18 @@ const MONO = '"Space Mono", "Courier New", monospace'
 // area eyebrow ("FIELD GUIDE · PSY240"), which links to the area's home.
 // Light-background logo per /brand: RADlab_Logo.svg is white-outline,
 // dark-bg only.
+// AcademicHeaderRow — eyebrow left, avatar menu top-right, never wrapping.
+// The same row WikiIndex and CourseHome hand-roll; staff pages mount it so
+// the menu is available everywhere (Norm, 2026-09-06: the roster had none).
+export function AcademicHeaderRow({ menu, children }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+      <div>{children}</div>
+      {menu}
+    </div>
+  )
+}
+
 export function AcademicEyebrow({ area = 'Field Guide', courseCode, to, suffix }) {
   return (
     <span style={S.row}>

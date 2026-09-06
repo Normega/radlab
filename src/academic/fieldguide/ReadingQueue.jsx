@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useOutletContext } from 'react-router-dom'
-import { AcademicEyebrow } from '../AcademicChrome'
+import { AcademicEyebrow, AcademicHeaderRow } from '../AcademicChrome'
+import AvatarMenu from './AvatarMenu'
 import { useWikiBase, useCoursePaths } from './wiki/useWikiBase'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
@@ -19,7 +20,7 @@ const BAND = {
 
 export default function ReadingQueue() {
   const WIKI_BASE = useWikiBase() // course-scoped; template usages unchanged
-  const { courseClient, course: urlCourse } = useOutletContext()
+  const { courseClient, session, course: urlCourse, courseCode, isStaff } = useOutletContext()
   const paths = useCoursePaths()
   // Course from the URL via the guard — the in-page picker is gone because
   // switching course is now navigation, and a picker could contradict the
@@ -50,7 +51,9 @@ export default function ReadingQueue() {
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '32px 20px 80px' }}>
       <div style={{ maxWidth: 880, margin: '0 auto' }}>
-        <AcademicEyebrow to={paths.home} suffix=" · staff" />
+        <AcademicHeaderRow menu={<AvatarMenu client={courseClient} fgEmail={session.user.email} courseCode={courseCode} isStaff={isStaff} />}>
+          <AcademicEyebrow to={paths.home} suffix=" · staff" />
+        </AcademicHeaderRow>
         <h1 style={S.title}>The reading queue</h1>
         <p style={S.sub}>
           Read in this order, stamp on the page (the bar under the title), and the stamp bar offers

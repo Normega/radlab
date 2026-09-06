@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, Navigate, useOutletContext } from 'react-router-dom'
-import { AcademicEyebrow } from '../AcademicChrome'
+import { AcademicEyebrow, AcademicHeaderRow } from '../AcademicChrome'
+import AvatarMenu from './AvatarMenu'
 import { courseFeatures } from '../courseFeatures'
 import { signOutEverywhere } from '../../lib/signOutEverywhere'
 import { useWikiBase, useCoursePaths } from './wiki/useWikiBase'
@@ -19,7 +20,7 @@ export default function IngestPortal() {
   // Course comes from the URL via the guard — the old internal picker
   // (useState(staffEnrollments[0])) could contradict the course in the
   // address bar. Switching course = navigating.
-  const { courseClient, session, course: urlCourse, courseCode } = useOutletContext()
+  const { courseClient, session, course: urlCourse, courseCode, isStaff } = useOutletContext()
   const courseId = urlCourse?.course_id
   const [file, setFile] = useState(null)
   // Native is the confirmed course default (2026-07-24 four-paper mode test:
@@ -177,7 +178,9 @@ export default function IngestPortal() {
       <div style={{ maxWidth: 860, margin: '0 auto' }}>
         <header style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
           <div>
-            <AcademicEyebrow to={paths.home} />
+            <AcademicHeaderRow menu={<AvatarMenu client={courseClient} fgEmail={session.user.email} courseCode={courseCode} isStaff={isStaff} />}>
+              <AcademicEyebrow to={paths.home} />
+            </AcademicHeaderRow>
             <h1 style={S.title}>Ingest portal</h1>
             {course && <p style={S.sub}>{course.code} · {course.name} ({course.term})</p>}
           </div>
