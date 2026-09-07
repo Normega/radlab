@@ -126,6 +126,27 @@ export default function ClassRemote() {
 
   const openCheckin = checkins.find((c) => c.status === 'open')
 
+  // SEED the counter from the table before trusting realtime. Without this
+  // the count started at 0 and only ever counted events that arrived while
+  // this tab was subscribed — so a reload mid-check-in, or one dropped
+  // event, showed "0 responded" over real responses (Norm, 2026-09-07).
+  // Class admins hold an RLS read on every response, so this is a plain
+  // query. Realtime then adds to the seeded set rather than being the only
+  // source of truth. ClassScreen already did this; the remote never did.
+  useEffect(() => {
+    if (!openCheckin) return
+    let cancelled = false
+    supabase.from('checkin_responses').select('profile_id').eq('checkin_id', openCheckin.id)
+      .then(({ data }) => {
+        if (cancelled || !data) return
+        const set = respondedSetsRef.current[openCheckin.id] ?? new Set()
+        for (const r of data) set.add(r.profile_id)
+        respondedSetsRef.current[openCheckin.id] = set
+        setResponseCounts((prev) => ({ ...prev, [openCheckin.id]: set.size }))
+      })
+    return () => { cancelled = true }
+  }, [openCheckin?.id])
+
   // Live response counter via Postgres Changes on checkin_responses (added
   // to the supabase_realtime publication in the WP1 migration).
   useEffect(() => {
@@ -167,6 +188,15 @@ export default function ClassRemote() {
   }
 
   async function loadPromptResponses(checkinId) {
+    // Re-seed the counter on the same trip — pressing Refresh must never
+    // leave the count disagreeing with the list below it.
+    supabase.from('checkin_responses').select('profile_id').eq('checkin_id', checkinId)
+      .then(({ data }) => {
+        if (!data) return
+        const set = new Set(data.map(r => r.profile_id))
+        respondedSetsRef.current[checkinId] = set
+        setResponseCounts((prev) => ({ ...prev, [checkinId]: set.size }))
+      })
     const { data } = await supabase.from('checkin_responses')
       .select('prompt_response, created_at').eq('checkin_id', checkinId)
       .not('prompt_response', 'is', null).neq('prompt_response', '')
