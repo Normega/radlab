@@ -10,19 +10,20 @@
   * { box-sizing:border-box; }
   body { margin:0; background:var(--ground); color:var(--ink);
          font-family:"Source Sans 3","Segoe UI",system-ui,sans-serif; line-height:1.5; }
-  main { max-width:720px; margin:0 auto; padding:40px 20px 80px; }
+  main { max-width:760px; margin:0 auto; padding:40px 20px 80px; }
   .kicker { font-family:"JetBrains Mono",ui-monospace,monospace; font-size:13px; letter-spacing:2px;
             text-transform:uppercase; color:var(--accent); margin:0 0 6px; }
   h1 { font-family:"Fraunces",Georgia,serif; font-weight:600; font-size:32px; margin:0 0 10px; }
-  .lead { color:var(--muted); font-size:17px; max-width:56ch; }
-  ol { padding-left:0; margin:28px 0 0; list-style:none; counter-reset:art; }
-  li { counter-increment:art; display:flex; gap:14px; align-items:baseline;
-       border-top:1px solid var(--line); padding:14px 4px; }
-  li::before { content:counter(art); font-family:"JetBrains Mono",ui-monospace,monospace;
-               font-weight:600; font-size:20px; color:var(--accent); min-width:34px; }
+  .lead { color:var(--muted); font-size:17px; max-width:60ch; }
+  section { border-top:1px solid var(--line); padding:12px 4px 10px; }
+  h2 { font-family:"JetBrains Mono",ui-monospace,monospace; font-size:15px; letter-spacing:1px;
+       text-transform:uppercase; color:var(--accent); margin:0 0 6px; }
+  section p { margin:4px 0; }
+  .pairtag { font-family:"JetBrains Mono",ui-monospace,monospace; font-size:12px; color:var(--muted);
+             letter-spacing:1px; text-transform:uppercase; margin-right:8px; }
   a { color:var(--ink); text-decoration:none; font-size:17px; font-weight:600; }
   a:hover { color:var(--accent); text-decoration:underline; }
-  .foot { margin-top:30px; font-size:14px; color:var(--muted); border-top:1px solid var(--line); padding-top:14px; }
+  .foot { margin-top:26px; font-size:14px; color:var(--muted); border-top:1px solid var(--line); padding-top:14px; }
   code { font-family:"JetBrains Mono",ui-monospace,monospace; font-size:13px; background:#EEF2F4; padding:1px 6px; border-radius:4px; }
 </style>
 </head>
@@ -30,20 +31,63 @@
 <main>
   <p class="kicker">PSY309 · Lecture 1 · Exercise B</p>
   <h1>Trace the Claim — your article</h1>
-  <p class="lead">Take the link with <strong>your team's number</strong>. Both pairs in a team
-     get the same article — work separately, compare at the debrief. Team 11: take article 1.</p>
-  <ol>
-    <li><a href="https://www.sciencedaily.com/releases/2026/09/260901010721.htm" target="_blank" rel="noopener">Mindfulness may lower blood pressure in just 8 weeks</a></li>
-    <li><a href="https://www.sciencedaily.com/releases/2026/08/260831015154.htm" target="_blank" rel="noopener">Money problems may age your brain faster</a></li>
-    <li><a href="https://www.sciencedaily.com/releases/2026/08/260830000016.htm" target="_blank" rel="noopener">HEPA air purifiers may boost brain function after just one month</a></li>
-    <li><a href="https://www.sciencedaily.com/releases/2026/08/260823094156.htm" target="_blank" rel="noopener">Too much or too little sleep may make your body age faster</a></li>
-    <li><a href="https://www.sciencedaily.com/releases/2026/09/260903064246.htm" target="_blank" rel="noopener">This lifestyle program improved cognition 55% more than basic health advice</a></li>
-    <li><a href="https://www.sciencedaily.com/releases/2026/08/260821012226.htm" target="_blank" rel="noopener">Multilingual people may have brains up to 13 years younger</a></li>
-    <li><a href="https://www.sciencedaily.com/releases/2026/09/260904000320.htm" target="_blank" rel="noopener">A longer exhale may push your brain toward bolder decisions</a></li>
-    <li><a href="https://www.sciencedaily.com/releases/2026/08/260815064803.htm" target="_blank" rel="noopener">Scientists tracked kids for 8 years — the screen time result was unexpected</a></li>
-    <li><a href="https://www.sciencedaily.com/releases/2026/08/260822015138.htm" target="_blank" rel="noopener">This common vitamin was linked to 13% better cognitive scores</a></li>
-    <li><a href="https://www.sciencedaily.com/releases/2026/08/260806050722.htm" target="_blank" rel="noopener">Scientists tracked 12 people in Antarctica for 10 months</a></li>
-  </ol>
+  <p class="lead">Find <strong>your team</strong>, split into two pairs, and each pair takes its own
+     article. Sort out A and B however you like — left of the aisle is A works fine.</p>
+    <section>
+      <h2>Team 1</h2>
+      <p><span class="pairtag">pair A</span> <a href="https://www.sciencedaily.com/releases/2026/09/260901010721.htm" target="_blank" rel="noopener">Mindfulness may lower blood pressure in just 8 weeks</a></p>
+      <p><span class="pairtag">pair B</span> <a href="https://www.sciencedaily.com/releases/2026/08/260831015154.htm" target="_blank" rel="noopener">Money problems may age your brain faster</a></p>
+    </section>
+    <section>
+      <h2>Team 2</h2>
+      <p><span class="pairtag">pair A</span> <a href="https://www.sciencedaily.com/releases/2026/08/260830000016.htm" target="_blank" rel="noopener">HEPA air purifiers may boost brain function after just one month</a></p>
+      <p><span class="pairtag">pair B</span> <a href="https://www.sciencedaily.com/releases/2026/08/260823094156.htm" target="_blank" rel="noopener">Too much or too little sleep may make your body age faster</a></p>
+    </section>
+    <section>
+      <h2>Team 3</h2>
+      <p><span class="pairtag">pair A</span> <a href="https://www.sciencedaily.com/releases/2026/09/260903064246.htm" target="_blank" rel="noopener">This lifestyle program improved cognition 55% more than basic health advice</a></p>
+      <p><span class="pairtag">pair B</span> <a href="https://www.sciencedaily.com/releases/2026/08/260821012226.htm" target="_blank" rel="noopener">Multilingual people may have brains up to 13 years younger</a></p>
+    </section>
+    <section>
+      <h2>Team 4</h2>
+      <p><span class="pairtag">pair A</span> <a href="https://www.sciencedaily.com/releases/2026/09/260904000320.htm" target="_blank" rel="noopener">A longer exhale may push your brain toward bolder decisions</a></p>
+      <p><span class="pairtag">pair B</span> <a href="https://www.sciencedaily.com/releases/2026/08/260815064803.htm" target="_blank" rel="noopener">Scientists tracked kids for 8 years — the screen time result was unexpected</a></p>
+    </section>
+    <section>
+      <h2>Team 5</h2>
+      <p><span class="pairtag">pair A</span> <a href="https://www.sciencedaily.com/releases/2026/08/260822015138.htm" target="_blank" rel="noopener">This common vitamin was linked to 13% better cognitive scores</a></p>
+      <p><span class="pairtag">pair B</span> <a href="https://www.sciencedaily.com/releases/2026/08/260806050722.htm" target="_blank" rel="noopener">Scientists tracked 12 people in Antarctica for 10 months</a></p>
+    </section>
+    <section>
+      <h2>Team 6</h2>
+      <p><span class="pairtag">pair A</span> <a href="https://www.sciencedaily.com/releases/2026/08/260831015150.htm" target="_blank" rel="noopener">ADHD may have a surprising creative advantage</a></p>
+      <p><span class="pairtag">pair B</span> <a href="https://www.sciencedaily.com/releases/2026/08/260828005213.htm" target="_blank" rel="noopener">Researchers followed 400,000 kids for 20 years and found a lasting pre-K advantage</a></p>
+    </section>
+    <section>
+      <h2>Team 7</h2>
+      <p><span class="pairtag">pair A</span> <a href="https://www.sciencedaily.com/releases/2026/08/260828005218.htm" target="_blank" rel="noopener">Your sleep may be hiding an early clue to Alzheimer's</a></p>
+      <p><span class="pairtag">pair B</span> <a href="https://www.sciencedaily.com/releases/2026/08/260815064833.htm" target="_blank" rel="noopener">A therapy that “rewrites” childhood memories can ease fear of failure</a></p>
+    </section>
+    <section>
+      <h2>Team 8</h2>
+      <p><span class="pairtag">pair A</span> <a href="https://www.sciencedaily.com/releases/2026/08/260808234953.htm" target="_blank" rel="noopener">Frequent cannabis users wake up with their “stress hormone” already elevated</a></p>
+      <p><span class="pairtag">pair B</span> <a href="https://www.sciencedaily.com/releases/2026/08/260807035151.htm" target="_blank" rel="noopener">Stress can scramble your brain's internal GPS</a></p>
+    </section>
+    <section>
+      <h2>Team 9</h2>
+      <p><span class="pairtag">pair A</span> <a href="https://www.sciencedaily.com/releases/2026/08/260806050709.htm" target="_blank" rel="noopener">Wearable ultrasound patch boosts REM sleep without drugs or surgery</a></p>
+      <p><span class="pairtag">pair B</span> <a href="https://www.sciencedaily.com/releases/2026/08/260804034624.htm" target="_blank" rel="noopener">Sitting up straight may improve your mood and decision-making</a></p>
+    </section>
+    <section>
+      <h2>Team 10</h2>
+      <p><span class="pairtag">pair A</span> <a href="https://www.sciencedaily.com/releases/2026/07/260729010705.htm" target="_blank" rel="noopener">A simple routine linked to less pain and depression</a></p>
+      <p><span class="pairtag">pair B</span> <a href="https://www.sciencedaily.com/releases/2026/07/260729010713.htm" target="_blank" rel="noopener">Your gut may help your brain decide what to remember</a></p>
+    </section>
+    <section>
+      <h2>Team 11</h2>
+      <p><span class="pairtag">pair A</span> <a href="https://www.sciencedaily.com/releases/2026/07/260727012125.htm" target="_blank" rel="noopener">Eating within 8 hours may help keep the aging brain sharp</a></p>
+      <p><span class="pairtag">pair B</span> <a href="https://www.sciencedaily.com/releases/2026/07/260721000822.htm" target="_blank" rel="noopener">Watching too much TV in midlife may shrink the brain</a></p>
+    </section>
   <p class="foot">Hit a paywall on the journal article? Go through <code>library.utoronto.ca</code> —
      you almost certainly have access. Submit your four findings through the Lecture Lounge check-in.</p>
 </main>
