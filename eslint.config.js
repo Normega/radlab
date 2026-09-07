@@ -10,7 +10,13 @@ export default defineConfig([
   // briefing docs. Nothing under src/ imports from it and it is not the Vite
   // publicDir, so it never reaches a bundle — linting it only produced noise
   // from code we do not ship or maintain.
-  globalIgnores(['dist', 'resources']),
+  // `.claude/worktrees/` holds full checkouts of this repo created by agent
+  // sessions. Flat config does not ignore dot-directories by default, so
+  // without this a local `npm run lint` lints every worktree as well as src/,
+  // reporting thousands of duplicate problems that CI never sees (CI has no
+  // worktrees). That gap makes the local run useless as a pre-push check —
+  // the signal CLAUDE.md asks for is drowned ~20:1 by copies of itself.
+  globalIgnores(['dist', 'resources', '.claude']),
   {
     files: ['**/*.{js,jsx}'],
     extends: [
