@@ -33,7 +33,7 @@ const SERIF = '"DM Serif Display", Georgia, serif'
 const norm = (e) => String(e ?? '').trim().toLowerCase().replace(/@(mail\.|alum\.)?utoronto\.ca$/, '@utoronto.ca')
 
 export default function TrackingPage() {
-  const { courseClient, staffEnrollments, session, isStaff } = useOutletContext()
+  const { courseClient, staffEnrollments } = useOutletContext()
   const { courseCode } = useParams()
   const courses = useMemo(() => staffedCourses(staffEnrollments), [staffEnrollments])
   const course  = useMemo(() => resolveCourse(courses, courseCode), [courses, courseCode])
@@ -223,6 +223,9 @@ export default function TrackingPage() {
 }
 
 function Frame({ children }) {
+  // Rendered only inside the staff route, so the outlet context is present.
+  const { courseClient, session, isStaff } = useOutletContext()
+  const { courseCode } = useParams()
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '32px 16px 64px' }}>
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>

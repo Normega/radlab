@@ -21,7 +21,7 @@ export default function ReviewQueue() {
   // (useState(staffEnrollments[0])) could contradict the course in the
   // address bar, which is exactly the wrong-course class of bug the
   // course-scoped routes exist to end. Switching course = navigating.
-  const { courseClient, session, course: urlCourse, courseCode, isStaff } = useOutletContext()
+  const { courseClient, session, course: urlCourse } = useOutletContext()
   const courseId = urlCourse?.course_id
   const WIKI_BASE = useWikiBase()
   const [rows, setRows] = useState(null)   // null = loading
@@ -336,6 +336,8 @@ function mergeDraft(row) {
 }
 
 function Page({ course, session, client, children }) {
+  // Rendered only inside the staff route, so the outlet context is present.
+  const { courseClient, courseCode, isStaff } = useOutletContext()
   const WIKI_BASE = useWikiBase()
   const paths = useCoursePaths()
   return (
