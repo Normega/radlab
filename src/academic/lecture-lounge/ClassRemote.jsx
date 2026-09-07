@@ -227,10 +227,10 @@ export default function ClassRemote() {
     try {
       const { data: { session } } = await supabase.auth.getSession()
       await Promise.race([
-        fetch('/api/summarize-checkin', {
+        fetch('/api/lounge-ai', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token ?? ''}` },
-          body: JSON.stringify({ checkin_id: checkin.id }),
+          body: JSON.stringify({ action: 'summarize', checkin_id: checkin.id }),
         }),
         new Promise((r) => setTimeout(r, 9000)),
       ])

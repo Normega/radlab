@@ -54,10 +54,10 @@ export default function RunOfShowProposal() {
     setBusy(true); setError(null); setResult(null)
     try {
       const { data: { session: s } } = await supabase.auth.getSession()
-      const rsp = await fetch('/api/propose-runofshow', {
+      const rsp = await fetch('/api/lounge-ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${s?.access_token ?? ''}` },
-        body: JSON.stringify({ slug, deck }),
+        body: JSON.stringify({ action: 'propose', slug, deck }),
       })
       const out = await rsp.json().catch(() => ({}))
       if (!rsp.ok) { setError(out.error ?? 'Could not generate a proposal.'); setBusy(false); return }

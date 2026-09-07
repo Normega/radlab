@@ -1,26 +1,50 @@
-import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@supabase/supabase-js'
+import Anthropic from '@anthropic-ai/sdk'
 
-// POST /api/propose-runofshow  { slug, deck }   (Authorization: main JWT)
-//   → { ok, deck, slides, proposal }
+// POST /api/lounge-ai  { action, ... }   (Authorization: main JWT)
 //
-// Study 5 prototype (DSI proposal, 2026-09-06): read an instructor's EXISTING
-// slide deck and propose where the check-ins go — position, kind, wording —
-// so adopting the Lecture Lounge becomes editing a proposal rather than
-// authoring one from nothing.
+// The Lecture Lounge's model-calling endpoint. TWO endpoints live here as one
+// function on purpose: api/ is capped at 12 Vercel functions (see CLAUDE.md —
+// the 13th breaks deployment while CI stays green, which is exactly how this
+// consolidation came about, 2026-09-07). Both actions are class-admin gated
+// and both call Claude, so they share the whole preamble anyway.
 //
-// READ-ONLY BY CONSTRUCTION. This endpoint writes nothing: no checkins row,
-// no config, no quiz key. It returns a proposal for a human to look at. That
-// is deliberate for the first outing — Norm's real L1 run of show is planned
-// and Wednesday is a live lecture, so a prototype must not be able to touch
-// it. A future version can offer per-item "add to planner" once the shape is
-// trusted.
+//   action: 'summarize' { checkin_id }
+//     → groups a prompt check-in's free-text answers into themes for the
+//       results screen. Writes checkins.results_summary. Fired when the
+//       instructor presses "Show class".
 //
-// The deck is fetched over HTTP from our own origin (decks are public static
-// files), which keeps this working identically on preview and production
-// without bundling the deck corpus into the function.
+//   action: 'propose'   { slug, deck }
+//     → reads an instructor's existing slide deck and proposes a run of show.
+//       WRITES NOTHING — a proposal for a human to look at (Study 5
+//       prototype). Norm's real run of show is live; a prototype must not be
+//       able to touch it.
 
-const TOOL = {
+const SUMMARIZE_TOOL = {
+  name: 'group_responses',
+  description: 'Group anonymous student responses into themes for a projector slide.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      headline: { type: 'string', description: 'One short sentence naming the dominant thread of the room, plain language.' },
+      themes: {
+        type: 'array', minItems: 2, maxItems: 4,
+        items: {
+          type: 'object',
+          properties: {
+            label: { type: 'string', description: 'Three-to-six-word theme name' },
+            share: { type: 'integer', description: 'Approximate percent of responses in this theme, integer 0-100' },
+            quote: { type: 'string', description: 'One SHORT representative quote, verbatim, no names, nothing identifying' },
+          },
+          required: ['label', 'share', 'quote'],
+        },
+      },
+    },
+    required: ['headline', 'themes'],
+  },
+}
+
+const PROPOSE_TOOL = {
   name: 'propose_run_of_show',
   description: 'Propose in-lecture check-ins for a slide deck.',
   input_schema: {
@@ -89,11 +113,25 @@ function outlineFromDeck(html) {
   })
 }
 
+// Shared gate: a valid main-project JWT belonging to a lab/super user or an
+// admin of the class in question.
+async function requireClassAdmin(service, req, classId) {
+  const jwt = String(req.headers.authorization ?? '').replace(/^Bearer\s+/i, '')
+  const { data: { user }, error } = await service.auth.getUser(jwt)
+  if (error || !user) return { error: 'Unauthorized', status: 401 }
+  const { data: prof } = await service.from('profiles').select('role, super_admin').eq('id', user.id).single()
+  if (prof?.role === 'lab' || prof?.super_admin === true) return { user }
+  const { data: adm } = await service.from('class_admins')
+    .select('id').eq('class_id', classId).eq('user_id', user.id).maybeSingle()
+  return adm ? { user } : { error: 'Not a class admin', status: 403 }
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' })
-  const slug = String(req.body?.slug ?? '').trim().toLowerCase()
-  const deck = String(req.body?.deck ?? '').trim()
-  if (!slug || !/^L\d{1,2}$/i.test(deck)) return res.status(400).json({ error: 'slug and deck (e.g. L1) required' })
+  const action = String(req.body?.action ?? '')
+  if (!['summarize', 'propose'].includes(action)) {
+    return res.status(400).json({ error: "action must be 'summarize' or 'propose'" })
+  }
 
   const url = process.env.VITE_SUPABASE_URL
   const serviceKey = process.env.SUPABASE_SERVICE_KEY
@@ -103,20 +141,56 @@ export default async function handler(req, res) {
   const service = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } })
 
   try {
-    // Same gate as the console route that will eventually host this.
-    const jwt = String(req.headers.authorization ?? '').replace(/^Bearer\s+/i, '')
-    const { data: { user }, error: uErr } = await service.auth.getUser(jwt)
-    if (uErr || !user) return res.status(401).json({ error: 'Unauthorized' })
+    // ── Group a prompt check-in's answers into themes ─────────────────────
+    if (action === 'summarize') {
+      const checkinId = String(req.body?.checkin_id ?? '')
+      if (!checkinId) return res.status(400).json({ error: 'checkin_id required' })
+
+      const { data: ck } = await service.from('checkins')
+        .select('id, config, lectures!inner(class_id)').eq('id', checkinId).maybeSingle()
+      if (!ck) return res.status(404).json({ error: 'No such check-in' })
+      const gate = await requireClassAdmin(service, req, ck.lectures.class_id)
+      if (gate.error) return res.status(gate.status).json({ error: gate.error })
+
+      const { data: rows } = await service.from('checkin_responses')
+        .select('prompt_response').eq('checkin_id', checkinId)
+        .not('prompt_response', 'is', null).neq('prompt_response', '')
+        .order('created_at', { ascending: false }).limit(400)
+      const texts = (rows ?? []).map(r => r.prompt_response.trim()).filter(Boolean)
+
+      if (texts.length < 3) {
+        await service.from('checkins').update({ results_summary: null }).eq('id', checkinId)
+        return res.status(200).json({ ok: true, summary: null, reason: `only ${texts.length} responses` })
+      }
+
+      const anthropic = new Anthropic()
+      const msg = await anthropic.messages.create({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 700,
+        tools: [SUMMARIZE_TOOL],
+        tool_choice: { type: 'tool', name: SUMMARIZE_TOOL.name },
+        messages: [{
+          role: 'user',
+          content: `These are anonymous in-lecture responses from university students to the prompt below. Group them into 2-4 themes for a projector slide the whole class will see.\n\nRules: theme labels in plain language; shares are rough percentages summing to ~100; each quote VERBATIM from a response, short, and skipped in favor of another if it contains a name, anything identifying, or anything inappropriate to project. Do not invent content that is not in the responses.\n\nPROMPT: ${ck.config?.prompt_text ?? ''}\n\nRESPONSES (${texts.length}):\n${texts.map((t, i) => `${i + 1}. ${t.slice(0, 300)}`).join('\n')}`,
+        }],
+      })
+      const call = msg.content.find(b => b.type === 'tool_use')
+      if (!call) throw new Error('model returned no grouping')
+      const summary = { ...call.input, n: texts.length, generated_at: new Date().toISOString() }
+      await service.from('checkins').update({ results_summary: summary }).eq('id', checkinId)
+      return res.status(200).json({ ok: true, summary })
+    }
+
+    // ── Propose a run of show from a deck (writes nothing) ────────────────
+    const slug = String(req.body?.slug ?? '').trim().toLowerCase()
+    const deck = String(req.body?.deck ?? '').trim()
+    if (!slug || !/^L\d{1,2}$/i.test(deck)) {
+      return res.status(400).json({ error: 'slug and deck (e.g. L1) required' })
+    }
     const { data: cls } = await service.from('classes').select('id, name').eq('slug', slug).maybeSingle()
     if (!cls) return res.status(404).json({ error: 'No such class' })
-    const { data: prof } = await service.from('profiles').select('role, super_admin').eq('id', user.id).single()
-    let allowed = prof?.role === 'lab' || prof?.super_admin === true
-    if (!allowed) {
-      const { data: adm } = await service.from('class_admins')
-        .select('id').eq('class_id', cls.id).eq('user_id', user.id).maybeSingle()
-      allowed = !!adm
-    }
-    if (!allowed) return res.status(403).json({ error: 'Not a class admin' })
+    const gate = await requireClassAdmin(service, req, cls.id)
+    if (gate.error) return res.status(gate.status).json({ error: gate.error })
 
     const origin = process.env.SITE_URL || `https://${req.headers.host}`
     const deckRsp = await fetch(`${origin}/${slug}/${deck.toUpperCase()}.html`)
@@ -128,8 +202,8 @@ export default async function handler(req, res) {
     const msg = await anthropic.messages.create({
       model: 'claude-sonnet-5',
       max_tokens: 4000,
-      tools: [TOOL],
-      tool_choice: { type: 'tool', name: TOOL.name },
+      tools: [PROPOSE_TOOL],
+      tool_choice: { type: 'tool', name: PROPOSE_TOOL.name },
       messages: [{
         role: 'user',
         content: `You are helping a university instructor instrument an existing lecture with live in-class check-ins. Below is the slide outline of one lecture, including the instructor's own presenter notes — those notes are the best evidence of what they are trying to do in the room.
@@ -159,7 +233,7 @@ ${outline.map(s => `--- Slide ${s.n}${s.kicker ? ` [${s.kicker}]` : ''}: ${s.tit
       deck: deck.toUpperCase(),
       slides: outline.length,
       proposal: call.input,
-      note: 'Nothing has been saved. This endpoint writes nothing.',
+      note: 'Nothing has been saved. This action writes nothing.',
     })
   } catch (err) {
     return res.status(500).json({ error: err.message })
