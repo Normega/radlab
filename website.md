@@ -3397,6 +3397,15 @@ Training modules and display elements (§24a) are two parallel block-based conte
 > Google Doc. **WP-L6 is no longer a pre-launch metric bake-off** — it is exploratory aim E3/E6 in
 > that plan, because the snapshot already stores both composites for every participant, so the
 > comparison is recoverable at full N without changing the shipped metric.
+> `liliana_study3_power_plan.md` — power analysis plan.
+>
+> **Finding worth knowing beyond Liliana's study** (power plan §1): in the Zerin study, the
+> platform's one completed longitudinal run with real participants, 12 of 17 enrollments completed
+> *zero* sessions — every one of them because they never crossed the consent / contact-email gate,
+> so they never entered the email stream (0.7 emails each, vs 66.6 for the 5 who did). Conditional
+> on onboarding, adherence was excellent (19–25 sessions of ~20–25). **Attrition on this platform
+> is an onboarding problem, not a retention problem**, and Day-1 conversion is therefore the
+> highest-leverage number for any longitudinal study here.
 
 ### Study design
 

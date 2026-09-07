@@ -382,14 +382,20 @@ and better power because every participant contributes to both contrasts.</p>
 <table>
 <thead><tr><th>Contrast</th><th>No-Choice</th><th>Choice</th><th>Choice + Feedback</th><th>Estimates</th></tr></thead>
 <tbody>
-<tr><td>C1 &mdash; choice</td><td>&minus;2/3</td><td>+1/3</td><td>+1/3</td><td>mean(Choice, Choice+Feedback) &minus; No-Choice</td></tr>
-<tr><td>C2 &mdash; feedback</td><td>0</td><td>&minus;1/2</td><td>+1/2</td><td>Choice+Feedback &minus; Choice</td></tr>
+<tr><td>C1 &mdash; choice</td><td>&minus;1</td><td>+1/2</td><td>+1/2</td><td>mean(Choice, Choice+Feedback) &minus; No-Choice</td></tr>
+<tr><td>C2 &mdash; feedback</td><td>0</td><td>&minus;1</td><td>+1</td><td>Choice+Feedback &minus; Choice</td></tr>
 </tbody>
 </table>
 
-<p>The two are orthogonal: (&minus;2/3)(0) + (1/3)(&minus;1/2) + (1/3)(+1/2) = 0. The fractional
-weights make each coefficient read directly as a difference between group means rather than as an
-arbitrary contrast unit.</p>
+<p>The two are orthogonal: (&minus;1)(0) + (1/2)(&minus;1) + (1/2)(+1) = 0.</p>
+
+<p><strong>Corrected 7 Sep 2026.</strong> Revision 2 published these as (&minus;2/3, +1/3, +1/3) and
+(0, &minus;1/2, +1/2). Those are orthogonal and give identical test statistics, p-values and power
+&mdash; contrast scaling cancels in the t-ratio &mdash; but the <em>coefficients</em> come out
+rescaled: C1 returned 2/3 of the intended group difference and C2 returned half of it. Since a
+pre-registration reports and interprets effect magnitudes, the weights above are the ones to use:
+they make each coefficient read directly as the difference between group means. Nothing else about
+the design or the analysis changes.</p>
 
 <p><strong>Model form</strong> for every assessment-level outcome:</p>
 
