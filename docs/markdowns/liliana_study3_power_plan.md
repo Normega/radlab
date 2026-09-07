@@ -3,9 +3,15 @@
 > Drafted 2026-09-07. Companion to `liliana_study3_plan_consolidated.html` (the analysis plan,
 > rev 2 + contrast correction) and `liliana_study3_design.md` (design spec).
 >
-> **Status: plan, not results.** Fixed inputs so far: recruitment ceiling ~150–250 (Norm,
-> 2026-09-06); effect sizes to be set as **smallest effect of interest** rather than from
-> literature or pilot estimates. Open inputs are listed in §5.
+> **Status: plan, not results.** Inputs now fixed: recruitment ceiling ~150–250 (Norm, 2026-09-06);
+> **SESOI closed 2026-09-07** — the BIPS standard error of measurement, primary threshold
+> 3.43 points (d = 0.569) from the measure's 1-month test–retest stability, with the
+> internal-consistency-based 2.18 points (d = 0.362) pre-registered as a secondary, more sensitive
+> bound (§2a). Tooling confirmed: R 4.6.0 with lme4/lmerTest/simr.
+>
+> **One input still gates the analysis: Day-1 onboarding conversion**, which needs to clear roughly
+> **32%** (§1, §2a). That is an empirical number and the August pretest is where it comes from.
+> Remaining inputs, all sweepable, are in §5.
 
 ---
 
@@ -34,10 +40,13 @@ Consequences for Liliana Study 3:
 
 - **Randomized N ≈ recruited × onboarding conversion.** Mid-study attrition is a second-order
   correction, not the main term.
-- At the observed ~29% conversion, recruiting 250 randomizes ~73 — at which point nothing in
-  Aims 2 or 3 is adequately powered, and even the manipulation check is marginal.
-- At ~70% conversion, recruiting 250 randomizes ~175 — which powers the manipulation check
-  comfortably and brings the choice contrast into a defensible range.
+- At the observed ~29% conversion, recruiting 250 randomizes ~73. Against the SESOI settled in
+  §2a that is *just* short of the ~79 the feedback contrast needs — workable, with no margin.
+- At ~50% conversion, recruiting 250 randomizes ~125, which clears both the feedback contrast and
+  the manipulation check with room to spare.
+
+**The threshold to clear is therefore ~32% onboarding conversion**, not the ~55% quoted before the
+SESOI was set (§2a).
 
 **So the highest-value action available before launch is improving the consent → contact-email
 funnel, not anything in the analysis plan.** That should be measured explicitly in the August
@@ -55,7 +64,7 @@ established rate. §5 lists it as the top input to pin down in the pretest.
 | Test | Contrast | Level | Verdict from scoping |
 |---|---|---|---|
 | H3-MC | Choice vs Choice+Feedback, congruence | Participant, binary | **Best powered.** ~59/group for a 40%→65% lift |
-| H2D / H3D | C1 / C2 on `delta_stress` | Session (12/person) | Repeated measures cut MDE to 0.52–0.80× the single-measure value |
+| H2D / H3D | C1 / C2 on `delta_stress` | Session (12/person) | Comparable precision to BIPS, not better (see below); its case is proximity to the manipulation |
 | H2A / H2B / H2C | C1 × Time | Assessment | Feasible for d ≈ 0.30, not for d ≈ 0.20 |
 | H3A / H3B / H3C | C2 × Time | Assessment | **Weakest.** ~515 randomized for d = 0.20 |
 | H1A–D | Time only | Both | Not binding — single-arm pre-post is well powered at any feasible N |
@@ -78,10 +87,18 @@ only two groups.
 
 ### The implication worth putting to Liliana
 
-**The feedback hypothesis is best tested behaviourally and at the session level, not via BIPS at
-final.** H3-MC asks whether feedback changed what people chose; that is both the mechanism and the
-best-powered test in the design. If Aim 3's distal outcomes stay primary at a feasible N, the study
-is pre-registering a test it is unlikely to pass regardless of whether the effect is real.
+**The feedback hypothesis is best tested behaviourally, not via BIPS at final.** H3-MC asks
+whether feedback changed what people chose; that is both the mechanism and the best-powered test in
+the design. If Aim 3's distal outcomes stay primary at a feasible N, the study is pre-registering a
+test it is unlikely to pass regardless of whether the effect is real.
+
+**Correction to an earlier claim (2026-09-07).** A previous draft asserted that the session-level
+outcomes are meaningfully better powered because of repeated measures. That was overstated. A
+12-session person mean has reliability ICC/(ICC + (1-ICC)/12) — 0.84 at ICC = 0.3, 0.89 at 0.4,
+0.92 at 0.5 — which is *comparable to* BIPS's alpha of .869, not dramatically better. The real
+argument for the session-level outcomes is that acute within-session relief is **closer to what the
+feedback manipulation could plausibly move** than month-scale perceived stress, not that it is more
+precisely measured.
 
 Three options, to decide before registration:
 
@@ -95,70 +112,92 @@ more to the thesis framing than the power does.
 
 ---
 
-## 2a. The SESOI, and why it is better news than §2 suggests
+## 2a. The SESOI — settled 2026-09-07
 
-**Set 2026-09-07 (Norm): the smallest score change worth acting on is 3–4 BIPS points, on the
-reasoning that a change below the standard error of measurement cannot be distinguished from
-measurement noise.**
+**Decision: the SESOI is the standard error of measurement of the BIPS. Primary threshold is the
+test–retest-based SEM (3.43 points, d = 0.569); the internal-consistency-based SEM (2.18 points,
+d = 0.362) is pre-registered alongside it as a secondary, more sensitive bound.**
 
-Two consequences, one of them convenient.
+### The psychometrics it rests on
 
-### The raw SD cancels
+From Lehman et al. Table 5 (BIPS total, baseline, N = 138 MS patients): M = 17.99, **SD = 6.02**,
+**Cronbach's alpha = .869**, **1-month stability r = .676**, 12-month stability r = .626.
 
-If the SESOI is set *at* the SEM, and SEM = SD·√(1 − α), then
+| Basis | SEM | d | MDC95 |
+|---|---|---|---|
+| Cronbach's alpha | 2.18 pts | 0.362 | 6.0 pts |
+| 1-month test–retest | **3.43 pts** | **0.569** | 9.5 pts |
 
-**SESOI in SD units = SEM / SD = √(1 − α)**
+Norm's independent estimate of "3 or 4 points" matches the test–retest-based SEM almost exactly,
+and confirms the intent was the SEM rather than the MDC.
 
-The raw standard deviation drops out. **We therefore do not need BIPS norms, or an estimate of its
-SD in this population, to set the power target** — only its reliability.
+### Why not the MDC
 
-| BIPS α | SESOI (d) |
-|---|---|
-| 0.75 | 0.500 |
-| 0.80 | 0.447 |
-| 0.85 | 0.387 |
-| 0.90 | 0.316 |
+MDC95 = 1.96 x sqrt(2) x SEM. **The sqrt(2) is there because it is the error of a difference between
+two measurements on one person.** For a between-arm group contrast that is the wrong error term
+entirely — the MDC answers "is *this person's* change real?", not "is the difference between arms
+meaningful?" So it is rejected as conceptually mismatched, not merely as too demanding. This is
+sharpened by the design being an **active control**: all three arms receive a real 12-day
+intervention and differ only in how it was selected, so an MDC-sized between-arm difference
+(d ~ 1.0–1.6) is not a plausible target.
 
-It also means **the 3-vs-4 ambiguity is immaterial.** Under the SEM reading, 3 points implies a
-sample SD of ~7.7 and 4 points implies ~10.3 (at α = .85); either way the standardized target is
-the same 0.387. What actually moves the target is BIPS's reliability in this sample, which will be
-estimated from the data rather than assumed. The registration should therefore state the SESOI in
-**raw points** and report the implied *d* once α is known.
+### What the SEM choice actually is
 
-*(If instead the intent is "3–4 raw points regardless of what the SEM turns out to be," then the SD
-does matter and we need it — flagged in §5.)*
+Stated plainly, because it will be asked in review: **the SEM carries the same category mismatch as
+the MDC, just milder.** It too is a within-person precision quantity being used as a between-group
+threshold; the true standard error of a group difference is SEM x sqrt(2/n), which is far smaller.
 
-### Randomized N required, at the SESOI
+What justifies it is not measurement theory but a value judgement: *a between-arm difference smaller
+than one person's measurement error is not worth acting on, however precisely it can be measured.*
+That is defensible and it is the position taken here. It should be written up as a convention, not
+presented as a derivation.
 
-| BIPS α | d | r=.70 C1 / C2 | r=.75 C1 / C2 | r=.80 C1 / C2 |
+### The tension this leaves, stated openly
+
+The active-control reasoning cuts both ways. If between-arm effects are small — published
+choice/autonomy effects sit around d ~ 0.15–0.30 — then a *more* sensitive threshold is wanted,
+which is the alpha-based SEM, and that is the expensive direction:
+
+| Threshold | d | C1 randomized | C2 randomized | Onboarding needed from 250 recruited |
 |---|---|---|---|---|
-| 0.80 | 0.447 | 90 / 120 | 77 / 103 | 64 / 85 |
-| 0.85 | 0.387 | 120 / 160 | 103 / 137 | 85 / 113 |
-| 0.90 | 0.316 | 180 / 240 | 155 / 206 | 127 / 170 |
+| Retest-based SEM (primary) | 0.569 | 59 | **79** | **~32%** |
+| alpha-based SEM (secondary) | 0.362 | 146 | **195** | ~78% |
 
-At a plausible α = .85 and r = .75, the binding requirement is **~137 randomized** (the C2 feedback
-contrast). That is a materially better outlook than §2's scoping, which was benchmarked against
-d = 0.20–0.30 — effect sizes the study now explicitly declines to chase.
+*(at r = .676; C2 binds)*
 
-**This is the correct move, and worth stating in the registration as deliberate.** Powering to a
-SESOI means the design is built to detect effects large enough to matter for a person, and to be
-uninformative about smaller ones. A null then reads as "no effect worth acting on," not "no effect."
+**Both thresholds sit above the plausible true effect**, so the assessment-level outcomes are
+likely to null under either. Buying the sensitive threshold costs 2.5x the sample and still does
+not reach d ~ 0.20–0.30, which is why the retest-based SEM is primary. Registering the alpha-based
+bound alongside it costs nothing and makes the "large effects or nothing" limitation legible
+rather than buried.
 
-One caveat to make explicit: **the SEM is a within-person precision quantity, and this is being used
-as a between-group threshold.** A group mean difference smaller than the SEM is still statistically
-detectable with enough participants — it is simply being declared not worth detecting. That is a
-clinical-significance stance rather than a statistical one, and it is defensible, but it should be
-named in the registration rather than left implicit.
+**The consequence to state in the registration:** on the assessment-level outcomes this study is
+powered for large effects only. A null there means *no effect worth acting on* — it does not rule
+out a real effect of the size the literature would predict.
 
-### What this makes the go/no-go number
+### Where Aim 3 is actually decided
 
-Combining with §1: at 250 recruited, hitting 137 randomized needs **~55% onboarding conversion**.
-At 200 recruited it needs ~69%. Against the ~29% observed in Zerin, that is the gap the pretest has
-to close.
+Given the above, **H3-MC should not be read as a subsidiary check.** It needs ~59 per choice group,
+is comfortably feasible at any realistic N, and is logically prior: if feedback does not change
+which intervention people choose, there is no mechanism by which it could change their outcomes.
+A study that answers H3-MC cleanly has learned something real even if every assessment outcome nulls.
 
-**So the single number to measure in the August pretest is onboarding conversion, and the threshold
-is roughly 55%.** Below it, the feedback contrast cannot reach its own stated SESOI at any feasible
-recruitment.
+### Three caveats
+
+1. **The SD does not need to transfer.** Since d = sqrt(1 - reliability), the MS-sample SD of 6.02
+   cancels out; only the reliability needs to travel, and alpha = .869 for a 9-item scale plausibly
+   does. In raw points, 3.43 assumes SD ~ 6 — if Liliana's screened sample runs tighter, the raw
+   threshold shrinks proportionally while d stays put.
+2. **Interval mismatch, in both directions.** Lehman's stability is over 4 weeks in participants
+   *not* receiving an intervention; Liliana's intervals are ~13–14 days. A shorter interval implies
+   higher r and hence a smaller SEM, so 3.43 is mildly conservative on interval — while being
+   mildly liberal in treating genuine one-month fluctuation in stress as measurement error.
+3. **Do not double-count r.** It enters both the SESOI (d = sqrt(1 - r)) and the ANCOVA efficiency
+   (1 - r^2). If both are driven by the same r, required n scales as (1 + r) and the two effects
+   largely offset. Fix r once, explicitly, rather than tuning it in two places.
+
+Note also that **r = .676 is lower than the .70–.80 swept in §2**, so those MDEs are slightly
+optimistic. Over a two-week interval r should land nearer .70–.75.
 
 ---
 
@@ -236,21 +275,20 @@ randomization, the ordinal floor, and the Holm families.
 | # | Input | Why it matters | Best source |
 |---|---|---|---|
 | 1 | **Onboarding conversion** | Dominates everything (§1) | Measure in the August pretest; treat as go/no-go |
-| 2 | ~~SESOI~~ — **SET 2026-09-07**: 3–4 BIPS points, at the SEM (§2a) | Sets the power target | Norm. Implied d = √(1−α); raw SD not needed |
-| 2b | **BIPS reliability (α) in this sample** — replaces the SD as the quantity that matters | Converts the SESOI to SD units; moves required N from ~85 to ~206 across α = .80–.90 | Estimate from the data; sweep meanwhile |
-| 2c | Confirm the SESOI is meant *at the SEM* rather than as a fixed 3–4 points | If fixed, the raw SD is needed after all (§2a) | Norm — one line |
+| 2 | ~~SESOI~~ — **CLOSED 2026-09-07**. Primary = retest-based SEM (3.43 pts, d = 0.569); secondary = alpha-based SEM (2.18 pts, d = 0.362). Anchored on Lehman Table 5 | Sets the power target | Closed |
+| 2b | BIPS reliability **in Liliana's sample** — alpha and the ~2-week stability | Confirms the imported values travel; both are estimable from the study's own data | Report alongside the result; sweep meanwhile |
 | 3 | Test–retest r for BIPS and the secondary outcomes over ~2 weeks | Sets ANCOVA efficiency; 0.70 vs 0.80 moves MDE ~15% | Published values, or Liliana's prior data |
 | 4 | Expected congruence rate in the Choice arm | H3-MC's baseline; chance is 33%, but people may pick well unaided | Assumption; sweep 0.33–0.50 |
 | 5 | Session-level ICC for `delta_stress` | Sets the repeated-measures gain | Sweep 0.2–0.6; refine from pretest |
 | 6 | Pre-stress distribution | Determines floor severity on `delta_stress` | Pretest; the screener selects for distress, so floor risk may be modest |
 | 7 | ~~R + `lme4` availability~~ — **CONFIRMED 2026-09-07**, R 4.6.0 with lme4/lmerTest/simr | Tooling (§3.3) | Closed |
 
-Items 3–6 and 2b can be swept rather than fixed. With the SESOI now set, **the one genuinely
-gating input is item 1, onboarding conversion** — and §2a gives it a concrete threshold of roughly
-55%. It is empirical, and the August pretest is where it comes from.
+Items 3–6 and 2b can be swept rather than fixed. With the SESOI closed, **the one genuinely gating
+input is item 1, onboarding conversion** — and §2a gives it a concrete threshold of roughly **32%**.
+It is empirical, and the August pretest is where it comes from.
 
-Item 2c is a one-line confirmation, not a blocker: under the SEM reading the 3-vs-4 ambiguity does
-not affect the target at all.
+Item 3 is now partly answered too: Lehman's 1-month stability of .676 is a better anchor for the
+ANCOVA efficiency than the .70–.80 previously swept.
 
 ---
 
