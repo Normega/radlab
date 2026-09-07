@@ -207,6 +207,13 @@ export default function ClassRoom({ session }) {
     // checkin," so this goes straight to null rather than through the
     // status-object shape the loop above builds.
     channel.on('broadcast', { event: 'dismissed' }, () => setLiveCheckin(null))
+    // Reveal is not a status — it re-renders the same results view with the
+    // answers marked, so it rides a nonce the results component reloads on.
+    channel.on('broadcast', { event: 'quiz_revealed' }, ({ payload }) => {
+      setLiveCheckin((prev) => (prev && prev.id === payload?.checkin_id
+        ? { ...prev, revealNonce: (prev.revealNonce ?? 0) + 1 }
+        : prev))
+    })
     channel.subscribe()
     channelRef.current = channel
     return () => { supabase.removeChannel(channel); channelRef.current = null }
@@ -231,7 +238,14 @@ export default function ClassRoom({ session }) {
           if (!row) return
           if (row.dismissed_at) { setLiveCheckin(null); return }
           setLiveCheckin((prev) => (prev?.id === row.id
-            ? { ...prev, status: row.status, config: row.config ?? prev.config }
+            ? {
+                ...prev,
+                status: row.status,
+                config: row.config ?? prev.config,
+                // Bumping on every post-reveal update is fine — the reload
+                // it triggers is idempotent and cheap.
+                revealNonce: row.quiz_revealed_at ? (prev.revealNonce ?? 0) + 1 : prev.revealNonce,
+              }
             : prev))
         })
       .subscribe()
@@ -343,7 +357,7 @@ export default function ClassRoom({ session }) {
       )
     }
     if (liveCheckin?.status === 'results_ready') {
-      return <div style={S.card}><ResultsView checkinId={liveCheckin.id} session={session} /></div>
+      return <div style={S.card}><ResultsView checkinId={liveCheckin.id} session={session} revealNonce={liveCheckin.revealNonce} /></div>
     }
     // idle (no live checkin), staged, closed, or already-responded-while-open
     return (

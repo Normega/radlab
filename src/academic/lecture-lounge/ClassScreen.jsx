@@ -61,6 +61,11 @@ export default function ClassScreen() {
         }))
       })
     }
+    channel.on('broadcast', { event: 'quiz_revealed' }, ({ payload }) => {
+      setLiveCheckin((prev) => (prev && prev.id === payload?.checkin_id
+        ? { ...prev, revealNonce: (prev.revealNonce ?? 0) + 1 }
+        : prev))
+    })
     channel.on('broadcast', { event: 'dismissed' }, () => {
       respondedSetRef.current = new Set()
       setResponseCount(0)
@@ -116,7 +121,7 @@ export default function ClassScreen() {
     return (
       <div style={S.stage}>
         <p style={S.eyebrow}>{classInfo.name}</p>
-        <div style={S.resultsScale}><ResultsView checkinId={liveCheckin.id} /></div>
+        <div style={S.resultsScale}><ResultsView checkinId={liveCheckin.id} revealNonce={liveCheckin.revealNonce} /></div>
       </div>
     )
   }
