@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useOutletContext, useParams, Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { AcademicShell } from '../AcademicChrome'
@@ -28,27 +28,50 @@ export default function RunOfShowProposal() {
   const [result, setResult] = useState(null)
   const [existing, setExisting] = useState([])
   const [session, setSession] = useState(null)
+  const [accepting, setAccepting] = useState(null)   // index being written
+  const [accepted, setAccepted] = useState({})       // index -> 'added' | error string
 
   useEffect(() => { supabase.auth.getSession().then(({ data }) => setSession(data.session)) }, [])
 
   // What is already planned for the lecture whose number matches this deck —
-  // the comparison is the whole point of the exercise.
-  useEffect(() => {
+  // the comparison is the whole point of the exercise, and it is also what
+  // tells each proposed item whether it is new or a duplicate.
+  const loadExisting = useCallback(async () => {
     if (!classInfo) return
     const n = Number(deck.replace(/\D/g, ''))
-    let cancelled = false
-    ;(async () => {
-      const { data: lectures } = await supabase
-        .from('lectures').select('id, number, title, checkins(position, kind, status, config)')
-        .eq('class_id', classInfo.id)
-      const lec = (lectures ?? []).find(l => Number(l.number) === n)
-        ?? (lectures ?? []).sort((a, b) => (a.number ?? 0) - (b.number ?? 0))[n - 1]
-      if (!cancelled) {
-        setExisting([...(lec?.checkins ?? [])].sort((a, b) => a.position - b.position))
-      }
-    })()
-    return () => { cancelled = true }
+    const { data: lectures } = await supabase
+      .from('lectures').select('id, number, title, checkins(position, kind, status, config)')
+      .eq('class_id', classInfo.id)
+    const lec = (lectures ?? []).find(l => Number(l.number) === n)
+      ?? (lectures ?? []).sort((a, b) => (a.number ?? 0) - (b.number ?? 0))[n - 1]
+    setExisting([...(lec?.checkins ?? [])].sort((a, b) => a.position - b.position))
   }, [classInfo?.id, deck]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => { loadExisting() }, [loadExisting])
+
+  const takenPositions = new Set(existing.filter(c => c.kind !== 'weekly').map(c => c.position))
+  const hasWeekly = existing.some(c => c.kind === 'weekly')
+
+  // The only write path on this page. Per item, refuses rather than
+  // overwrites (the server checks again), so a live run of show cannot be
+  // duplicated or edited from here.
+  async function accept(item, key) {
+    setAccepting(key)
+    try {
+      const { data: { session: sess } } = await supabase.auth.getSession()
+      const rsp = await fetch('/api/lounge-ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${sess?.access_token ?? ''}` },
+        body: JSON.stringify({ action: 'accept', slug, deck, item }),
+      })
+      const out = await rsp.json().catch(() => ({}))
+      setAccepted(prev => ({ ...prev, [key]: rsp.ok && out.ok ? 'added' : (out.error ?? 'could not add') }))
+      if (rsp.ok && out.ok) await loadExisting()
+    } catch (err) {
+      setAccepted(prev => ({ ...prev, [key]: err.message }))
+    }
+    setAccepting(null)
+  }
 
   async function generate() {
     setBusy(true); setError(null); setResult(null)
@@ -77,9 +100,10 @@ export default function RunOfShowProposal() {
         <p style={S.eyebrow}>Prototype · run of show from a deck</p>
         <h1 style={S.h1}>Instrument a lecture from its own slides</h1>
         <p style={S.sub}>
-          Reads the deck, proposes where the check-ins go and what they ask. <strong>Nothing is
-          saved</strong> — this page cannot change your planned check-ins. It exists to be
-          compared against what you built by hand.
+          Reads the deck and proposes where the check-ins go and what they ask, beside what is
+          already planned. Generating saves nothing; <strong>Add to planner</strong> creates one
+          check-in as <em>planned</em>. Nothing here can edit or delete an existing check-in — a
+          position that is already taken is refused, not overwritten.
         </p>
 
         <div style={S.controls}>
@@ -118,6 +142,19 @@ export default function RunOfShowProposal() {
                       </div>
                     ))}
                     <p style={S.why}>{it.rationale}</p>
+                    {takenPositions.has(it.position) ? (
+                      <p style={S.already}>already planned at #{it.position}</p>
+                    ) : accepted[i] === 'added' ? (
+                      <p style={S.added}>added to the planner</p>
+                    ) : (
+                      <>
+                        <button style={S.addBtn} disabled={accepting === i}
+                                onClick={() => accept(it, i)}>
+                          {accepting === i ? 'Adding…' : 'Add to planner'}
+                        </button>
+                        {accepted[i] && <p style={S.addErr}>{accepted[i]}</p>}
+                      </>
+                    )}
                   </div>
                 ))}
                 {result.proposal.weekly && (
@@ -125,6 +162,19 @@ export default function RunOfShowProposal() {
                     <div style={S.cardTop}><span style={S.pos}>wall</span><span style={S.acts}>Question of the week</span></div>
                     <p style={S.prompt}>“{result.proposal.weekly.prompt_text}”</p>
                     <p style={S.why}>{result.proposal.weekly.rationale}</p>
+                    {hasWeekly ? (
+                      <p style={S.already}>this lecture already has a weekly</p>
+                    ) : accepted.weekly === 'added' ? (
+                      <p style={S.added}>added to the planner</p>
+                    ) : (
+                      <>
+                        <button style={S.addBtn} disabled={accepting === 'weekly'}
+                                onClick={() => accept({ ...result.proposal.weekly, weekly: true }, 'weekly')}>
+                          {accepting === 'weekly' ? 'Adding…' : 'Add to planner'}
+                        </button>
+                        {accepted.weekly && <p style={S.addErr}>{accepted.weekly}</p>}
+                      </>
+                    )}
                   </div>
                 )}
               </>
@@ -181,4 +231,8 @@ const S = {
   quizO: { fontFamily: MONO, fontSize: 11.5, color: 'var(--tx2)', margin: 0 },
   noKey: { fontFamily: MONO, fontSize: 10.5, color: 'var(--pk)', margin: '2px 0 0' },
   why: { fontSize: 12.5, color: 'var(--tx2)', fontStyle: 'italic', lineHeight: 1.4, marginTop: 6 },
+  addBtn: { marginTop: 8, fontSize: 13, fontWeight: 600, padding: '7px 14px', borderRadius: 18, border: 'none', background: 'var(--pk)', color: '#fff', cursor: 'pointer' },
+  already: { fontFamily: MONO, fontSize: 11, color: 'var(--tx3)', marginTop: 8 },
+  added: { fontFamily: MONO, fontSize: 11, color: '#1a8a4a', marginTop: 8 },
+  addErr: { fontSize: 12, color: '#c04a4a', marginTop: 6 },
 }

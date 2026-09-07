@@ -19,6 +19,13 @@ import Anthropic from '@anthropic-ai/sdk'
 //       WRITES NOTHING — a proposal for a human to look at (Study 5
 //       prototype). Norm's real run of show is live; a prototype must not be
 //       able to touch it.
+//
+//   action: 'accept'    { slug, deck, item }
+//     → creates ONE proposed check-in as `planned`. The only write path from
+//       a proposal, and deliberately per-item: the instructor accepts what
+//       they want and ignores the rest. It refuses rather than overwrites —
+//       an occupied position, or an existing weekly, is reported back with
+//       nothing changed. Nothing here can modify or delete an existing row.
 
 const SUMMARIZE_TOOL = {
   name: 'group_responses',
@@ -73,6 +80,7 @@ const PROPOSE_TOOL = {
                   text: { type: 'string' },
                   options: { type: 'array', items: { type: 'string' }, minItems: 2, maxItems: 5 },
                   has_right_answer: { type: 'boolean', description: 'False for split-the-room questions where no option is correct.' },
+                  correct_index: { type: 'integer', description: 'Zero-based index of the correct option. Only meaningful when has_right_answer is true; omit otherwise.' },
                 },
                 required: ['text', 'options', 'has_right_answer'],
               },
@@ -129,8 +137,8 @@ async function requireClassAdmin(service, req, classId) {
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' })
   const action = String(req.body?.action ?? '')
-  if (!['summarize', 'propose'].includes(action)) {
-    return res.status(400).json({ error: "action must be 'summarize' or 'propose'" })
+  if (!['summarize', 'propose', 'accept'].includes(action)) {
+    return res.status(400).json({ error: "action must be 'summarize', 'propose' or 'accept'" })
   }
 
   const url = process.env.VITE_SUPABASE_URL
@@ -179,6 +187,83 @@ export default async function handler(req, res) {
       const summary = { ...call.input, n: texts.length, generated_at: new Date().toISOString() }
       await service.from('checkins').update({ results_summary: summary }).eq('id', checkinId)
       return res.status(200).json({ ok: true, summary })
+    }
+
+    // ── Accept ONE proposed check-in into the planner ─────────────────────
+    if (action === 'accept') {
+      const slug = String(req.body?.slug ?? '').trim().toLowerCase()
+      const deck = String(req.body?.deck ?? '').trim()
+      const item = req.body?.item
+      if (!slug || !/^L\d{1,2}$/i.test(deck) || !item) {
+        return res.status(400).json({ error: 'slug, deck and item required' })
+      }
+      const { data: cls } = await service.from('classes').select('id').eq('slug', slug).maybeSingle()
+      if (!cls) return res.status(404).json({ error: 'No such class' })
+      const gate = await requireClassAdmin(service, req, cls.id)
+      if (gate.error) return res.status(gate.status).json({ error: gate.error })
+
+      const number = Number(deck.replace(/\D/g, ''))
+      const { data: lec } = await service.from('lectures')
+        .select('id, number').eq('class_id', cls.id).eq('number', number).maybeSingle()
+      if (!lec) return res.status(404).json({ error: `No lecture numbered ${number} in this class` })
+
+      const { data: siblings } = await service.from('checkins')
+        .select('id, position, kind').eq('lecture_id', lec.id)
+
+      // Refuse, never overwrite. An occupied position or an existing weekly
+      // is reported back and left exactly as it was.
+      if (item.weekly) {
+        if ((siblings ?? []).some(c => c.kind === 'weekly')) {
+          return res.status(409).json({ error: 'This lecture already has a question of the week.' })
+        }
+        const { data: made, error } = await service.from('checkins').insert({
+          lecture_id: lec.id, kind: 'weekly', status: 'planned', position: 99,
+          config: { activities: ['prompt'], prompt_text: String(item.prompt_text ?? '') },
+        }).select('id').single()
+        if (error) throw new Error(error.message)
+        return res.status(200).json({ ok: true, created: made.id, kind: 'weekly' })
+      }
+
+      const position = Number(item.position)
+      if (!Number.isFinite(position)) return res.status(400).json({ error: 'item.position required' })
+      if ((siblings ?? []).some(c => c.position === position && c.kind !== 'weekly')) {
+        return res.status(409).json({ error: `Position ${position} is already taken — nothing changed.` })
+      }
+
+      const activities = (item.activities ?? []).filter(a =>
+        ['mood', 'pacing', 'prompt', 'quiz', 'question_box'].includes(a))
+      if (!activities.length) return res.status(400).json({ error: 'item.activities must name at least one activity' })
+
+      const config = { activities }
+      if (activities.includes('prompt')) config.prompt_text = String(item.prompt_text ?? '')
+      let answerKey = null
+      if (activities.includes('quiz')) {
+        const raw = (item.quiz_items ?? []).slice(0, 5)
+        const built = raw.map((q) => ({
+          id: `q_${crypto.randomUUID().replace(/-/g, '').slice(0, 8)}`,
+          text: String(q.text ?? ''),
+          options: (q.options ?? []).map(String).slice(0, 6),
+        }))
+        if (!built.length) return res.status(400).json({ error: 'a quiz check-in needs quiz_items' })
+        config.quiz_items = built
+        // Only a quiz that actually HAS a right answer gets a key. A
+        // split-the-room question must not acquire one by default: revealing
+        // a fabricated key in front of a lecture hall is the failure mode
+        // this whole feature is supposed to prevent.
+        const scored = raw
+          .map((q, i) => [built[i].id, q.has_right_answer ? Number(q.correct_index ?? 0) : null])
+          .filter((pair) => pair[1] !== null)
+        if (scored.length) answerKey = Object.fromEntries(scored)
+      }
+
+      const { data: made, error } = await service.from('checkins').insert({
+        lecture_id: lec.id, kind: 'live', status: 'planned', position, config,
+      }).select('id').single()
+      if (error) throw new Error(error.message)
+      if (answerKey) {
+        await service.from('checkin_quiz_keys').insert({ checkin_id: made.id, answer_key: answerKey })
+      }
+      return res.status(200).json({ ok: true, created: made.id, position, scored: !!answerKey })
     }
 
     // ── Propose a run of show from a deck (writes nothing) ────────────────
