@@ -98,6 +98,7 @@ const ClassVerifyEmail = lazy(() => import('./academic/lecture-lounge/ClassVerif
 const ClassConfirmSignup = lazy(() => import('./academic/lecture-lounge/ClassConfirmSignup'))
 const ClassConsole     = lazy(() => import('./academic/lecture-lounge/ClassConsole'))
 const ClassScreen      = lazy(() => import('./academic/lecture-lounge/ClassScreen'))
+const RunOfShowProposal = lazy(() => import('./academic/lecture-lounge/RunOfShowProposal'))
 const ClassSlides      = lazy(() => import('./academic/lecture-lounge/ClassSlides'))
 const ClassBoards      = lazy(() => import('./academic/lecture-lounge/ClassBoards'))
 const LectureLoungeAdminPage = lazy(() => import('./academic/lecture-lounge/LectureLoungeAdminPage'))
@@ -759,6 +760,9 @@ export default function App() {
               {/* /remote lives on as a redirect — the Run tab is the remote now. */}
               <Route path="/academic/:courseCode/lounge/remote" element={<RemoteToConsole />} />
               <Route path="/academic/:courseCode/lounge/screen" element={<ClassScreen />} />
+              {/* Study-5 prototype: proposes a run of show from a deck and
+                  saves nothing. Parallel to the console on purpose. */}
+              <Route path="/academic/:courseCode/lounge/propose" element={<RunOfShowProposal />} />
             </Route>
             {/* Legacy lounge sub-paths: staff bookmarks and in-session links,
                 not auth landings — safe to redirect (unlike /class/:slug). */}
