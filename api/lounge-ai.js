@@ -86,8 +86,20 @@ const PROPOSE_TOOL = {
               },
             },
             rationale: { type: 'string', description: 'One sentence: why here, why this form.' },
+            slide: {
+              type: 'object',
+              description: 'Copy for the slide that announces this check-in in the deck. Words only — the deck renders them.',
+              properties: {
+                kind: { type: 'string', enum: ['arrival', 'break', 'exercise'], description: 'arrival = the opening check-in; break = a timed break; exercise = an in-class activity.' },
+                kicker: { type: 'string', description: 'Small label above the heading, e.g. "Check in" or "Break 1 · ten minutes".' },
+                title: { type: 'string', description: 'The slide heading. Short.' },
+                lines: { type: 'array', items: { type: 'string' }, maxItems: 4, description: 'One to four short lines of on-screen instruction. No markup.' },
+                note: { type: 'string', description: 'Presenter note: what to do while this is up. Name the console position.' },
+              },
+              required: ['kind', 'kicker', 'title', 'lines', 'note'],
+            },
           },
-          required: ['after_slide', 'slide_title', 'position', 'activities', 'prompt_text', 'rationale'],
+          required: ['after_slide', 'slide_title', 'position', 'activities', 'prompt_text', 'rationale', 'slide'],
         },
       },
       weekly: {
@@ -300,6 +312,7 @@ Propose where the check-ins go. Principles:
 - Use 'quiz' for split-the-room commitment questions. If no option is truly correct — the point is the class split — set has_right_answer false and say so in the rationale.
 - Use 'question_box' where students would want to ask something anonymously; do not also ask a free-text prompt in the same check-in, since two open-ended asks in one check-in is a tax nobody pays twice.
 - Prompts must be answerable in one or two sentences on a phone, and must have no single right answer.
+For each check-in also write the slide copy that announces it in the deck: a kicker, a short heading, one to four lines of on-screen instruction, and a presenter note naming the console position. Match the register of the deck you are reading — these instructors write plainly and do not pad.
 - End with ONE weekly question for the class wall: a single line, forcing a stance, no correct answer, unanswerable without having met the lecture's ideas.
 
 Positions order the run of show: arrival 1, then ascending. Keep them under 99.
