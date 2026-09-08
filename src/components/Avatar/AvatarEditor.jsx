@@ -169,7 +169,10 @@ export default function AvatarEditor({ session, setHasAvatar }) {
   const [saved,        setSaved]        = useState(false)
   const [bump,         setBump]         = useState(0)
   const [speciesError, setSpeciesError] = useState(null)
-  const [auraEnabled,  setAuraEnabled]  = useState(true)
+  // Off by default: the aura is a 300-point unlock, and defaulting the
+  // toggle on meant every brand-new account saved an aura it never chose
+  // (55 of the first 74 Fall-2026 avatars, 2026-09-08).
+  const [auraEnabled,  setAuraEnabled]  = useState(false)
   const [auraColor,    setAuraColor]    = useState(AURA_COLORS[0])
   const [auraMaxInset, setAuraMaxInset] = useState(4)
   const [hairStyle,    setHairStyle]    = useState('none')
@@ -279,7 +282,7 @@ export default function AvatarEditor({ session, setHasAvatar }) {
   async function handleSave() {
     if (!userId || saving) return
     setSaving(true)
-    const aura = { enabled: auraEnabled, color: auraColor.value, maxInset: auraMaxInset }
+    const aura = { enabled: auraEnabled && auraFeatureUnlocked, color: auraColor.value, maxInset: auraMaxInset }
     const { error } = await supabase.from('avatars').upsert(
       { user_id: userId, skin_color: skin.hex, eye_color: eye.hex, species, aura, hair_style: hairStyle, hair_color: hairColor, updated_at: new Date().toISOString() },
       { onConflict: 'user_id' }
