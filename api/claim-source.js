@@ -165,7 +165,11 @@ export default async function handler(req, res) {
       const found = await findOpenAccess(doi)
       if (!found) {
         return res.status(404).json({
-          error: 'No open-access full text found for that DOI.',
+          // Named as the NORMAL next step, not a failure: paywalled papers
+          // and conference-abstract DOIs (e.g. 10.1093/sleepj/zsx050.645)
+          // legitimately have no OA copy, and the student holding the PDF is
+          // exactly who this path was built for.
+          error: 'No open-access copy found for that DOI — that happens with paywalled and conference-abstract papers. Upload the PDF below instead.',
           hint: 'upload',
         })
       }
