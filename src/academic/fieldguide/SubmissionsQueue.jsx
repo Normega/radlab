@@ -53,6 +53,12 @@ export default function SubmissionsQueue() {
   // No staffEnrollments here on purpose: this queue spans courses and takes
   // each decision's course from its own row. See notify() below.
   const { courseClient, session } = useOutletContext()
+
+  // TA review sections (2026-09-08): surname ranges per TA, stored in
+  // review_sections. The queue defaults a TA to their own third with an
+  // Everyone tab one tap away — a soft division of labour, never a wall.
+  const [sections, setSections] = useState([])
+  const [sectionTab, setSectionTab] = useState('mine') // 'mine' | 'all'
   const paths = useCoursePaths()
   const { courseCode } = useParams()
   const [tourOpen, setTourOpen] = useState(false)
@@ -72,6 +78,20 @@ export default function SubmissionsQueue() {
   }, [courseClient])
 
   useEffect(() => { load() }, [load])
+
+  useEffect(() => {
+    if (!session || !courseCode) return
+    let cancelled = false
+    ;(async () => {
+      const { data: course } = await courseClient.from('courses')
+        .select('id').ilike('code', courseCode).maybeSingle()
+      if (!course) return
+      const { data } = await courseClient.from('review_sections')
+        .select('ta_email, label, surname_from, surname_to').eq('course_id', course.id)
+      if (!cancelled) setSections(data ?? [])
+    })()
+    return () => { cancelled = true }
+  }, [session, courseCode, courseClient])
 
   // Decisions the student was never told about — a failed send leaves the
   // decision standing and the student waiting, with nothing on screen to say
@@ -224,7 +244,26 @@ export default function SubmissionsQueue() {
   // not. Held out of the triage routes rather than hidden — a submission that
   // disappears because a check failed is worse than one that arrives
   // unchecked.
-  const unchecked = (rows ?? []).filter(r => r.integration_status !== 'reviewed' && r.has_source)
+  const myEmail = (session?.user?.email ?? '').toLowerCase()
+  const mySection = sections.find(x => x.ta_email.toLowerCase() === myEmail) ?? null
+
+  // Which section does a row belong to? By the LAST word of the student's
+  // name. Rows we cannot classify (no name — the view falls back to the
+  // email) belong to EVERYONE's "mine": a submission must never be
+  // invisible to its reviewer.
+  const rowInSection = (row, sec) => {
+    const name = String(row.student ?? '').trim()
+    if (!name || name.includes('@') || !name.includes(' ')) return true
+    const surname = name.split(/\s+/).pop().toUpperCase()
+    const ch = surname.charAt(0)
+    return ch >= sec.surname_from.toUpperCase() && ch <= sec.surname_to.toUpperCase()
+  }
+
+  const sectionRows = (mySection && sectionTab === 'mine')
+    ? (rows ?? []).filter(r => rowInSection(r, mySection))
+    : (rows ?? [])
+
+  const unchecked = sectionRows.filter(r => r.integration_status !== 'reviewed' && r.has_source)
   const uncheckedIds = new Set(unchecked.map(r => r.claim_id))
   const grouped = [
     ...(unchecked.length ? [{
@@ -234,7 +273,7 @@ export default function SubmissionsQueue() {
     }] : []),
     ...ROUTES.map(([key, label, hint, colour]) => ({
       key, label, hint, colour,
-      items: (rows ?? []).filter(r => r.route === key && !uncheckedIds.has(r.claim_id)),
+      items: sectionRows.filter(r => r.route === key && !uncheckedIds.has(r.claim_id)),
     })).filter(g => g.items.length > 0),
   ]
 
@@ -258,6 +297,19 @@ export default function SubmissionsQueue() {
           precheck cannot answer: <strong>does the source actually say this?</strong>{' '}
           <Link to={paths.sub('review')} style={S.link}>Ingest proposals are reviewed separately →</Link>
         </p>
+        {mySection && (
+          <div style={S.sectionTabs}>
+            <button style={S.sectionTab(sectionTab === 'mine')} onClick={() => setSectionTab('mine')}>
+              My section · {mySection.label} · {(rows ?? []).filter(r => rowInSection(r, mySection)).length}
+            </button>
+            <button style={S.sectionTab(sectionTab === 'all')} onClick={() => setSectionTab('all')}>
+              Everyone · {(rows ?? []).length}
+            </button>
+            <span style={S.sectionHint}>
+              {sections.map(x => `${x.label} ${x.ta_email.split('@')[0].split('.')[0]}`).join(' · ')}
+            </span>
+          </div>
+        )}
 
         {rows === null && <p style={{ ...S.sub, marginTop: 20 }}>Loading…</p>}
 
@@ -487,4 +539,11 @@ const S = {
   primary: { fontSize: 14, fontWeight: 600, padding: '9px 16px', borderRadius: 24, border: 'none', background: 'var(--pk)', color: '#fff', cursor: 'pointer' },
   secondary: { fontSize: 14, fontWeight: 600, padding: '9px 16px', borderRadius: 24, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx)', cursor: 'pointer' },
   danger: { fontSize: 14, fontWeight: 600, padding: '9px 16px', borderRadius: 24, border: '1px solid rgba(192,57,43,.35)', background: 'none', color: '#c0392b', cursor: 'pointer' },
+  sectionTabs: { display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', margin: '14px 0 4px' },
+  sectionTab: (active) => ({
+    fontFamily: MONO, fontSize: 12, letterSpacing: 0.5, padding: '7px 14px', borderRadius: 18,
+    border: '1px solid ' + (active ? 'var(--pk)' : 'var(--bd)'), cursor: 'pointer',
+    background: active ? 'var(--pk)' : 'var(--bgc)', color: active ? '#fff' : 'var(--tx2)',
+  }),
+  sectionHint: { fontFamily: MONO, fontSize: 11, color: 'var(--tx3)' },
 }
