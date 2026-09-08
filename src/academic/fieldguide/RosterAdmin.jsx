@@ -106,6 +106,10 @@ export default function RosterAdmin() {
 
   const [rows, setRows] = useState(null)
   const [attempts, setAttempts] = useState([])
+  // Collapsed by default (Norm, 2026-09-08): during add/drop the attempts
+  // list can outgrow the screen and push the roster below the fold. The
+  // count in the header keeps it triaged without it being furniture.
+  const [attemptsOpen, setAttemptsOpen] = useState(false)
   const [filter, setFilter] = useState('all')
   const [notice, setNotice] = useState(null)
   const [busy, setBusy] = useState(false)
@@ -242,6 +246,23 @@ export default function RosterAdmin() {
   const setStatus = async (id, status) => {
     const { error } = await courseClient.rpc('roster_set_status', { p_id: id, p_status: status })
     if (error) return setNotice(error.message)
+    setReload(k => k + 1)
+  }
+
+  // One note for the sweep: after a fresh import has absorbed the real
+  // students, what's left is noise — clearing it row-by-row with a prompt
+  // each was the friction Norm hit.
+  const resolveAllAttempts = async () => {
+    const note = window.prompt(`Resolve all ${attempts.length} attempts with one note:`, 'triaged — roster re-imported')
+    if (note === null) return
+    setBusy(true)
+    for (const a of attempts) {
+      const { error } = await courseClient.rpc('roster_resolve_attempt', {
+        p_course_id: courseId, p_id: a.id, p_note: note || null,
+      })
+      if (error) { setNotice(error.message); break }
+    }
+    setBusy(false)
     setReload(k => k + 1)
   }
 
@@ -414,15 +435,27 @@ export default function RosterAdmin() {
         {/* ── Unmatched attempts ── */}
         {attempts.length > 0 && (
           <section style={{ ...S.panel, borderColor: '#b8860b' }}>
-            <h2 style={S.h2}>Unmatched join attempts ({attempts.length})</h2>
-            <p style={S.sub}>Someone used the join form with an address that isn't on the roster — usually a personal email, sometimes a late enrolment.</p>
-            {attempts.map(a => (
-              <div key={a.id} style={S.attemptRow}>
-                <span style={{ fontFamily: MONO, fontSize: 14 }}>{a.submitted}</span>
-                <span style={S.dim}>{new Date(a.submitted_at).toLocaleString()}</span>
-                <button style={S.tiny} onClick={() => resolveAttempt(a.id)}>Resolve</button>
-              </div>
-            ))}
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
+              <h2 style={{ ...S.h2, marginBottom: 0 }}>Unmatched join attempts ({attempts.length})</h2>
+              <button style={S.tiny} onClick={() => setAttemptsOpen(o => !o)}>
+                {attemptsOpen ? 'Collapse' : 'Show'}
+              </button>
+              {attemptsOpen && attempts.length > 1 && (
+                <button style={S.tiny} disabled={busy} onClick={resolveAllAttempts}>Resolve all</button>
+              )}
+            </div>
+            {attemptsOpen && (
+              <>
+                <p style={S.sub}>Someone used the join form with an address that isn't on the roster — usually a personal email, sometimes a late enrolment.</p>
+                {attempts.map(a => (
+                  <div key={a.id} style={S.attemptRow}>
+                    <span style={{ fontFamily: MONO, fontSize: 14 }}>{a.submitted}</span>
+                    <span style={S.dim}>{new Date(a.submitted_at).toLocaleString()}</span>
+                    <button style={S.tiny} onClick={() => resolveAttempt(a.id)}>Resolve</button>
+                  </div>
+                ))}
+              </>
+            )}
           </section>
         )}
 

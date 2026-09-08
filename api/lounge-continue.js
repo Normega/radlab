@@ -77,7 +77,16 @@ export default async function handler(req, res) {
     // Surface a read failure as a failure. Folding it into "no enrollment"
     // is what disguised a schema error as a considered refusal.
     if (enrErr) throw new Error(`enrollment read failed: ${enrErr.message}`)
-    if (!enrolled?.length) return res.status(403).json({ error: 'No active Field Guide enrollment' })
+    if (!enrolled?.length) {
+      // The token IS this student's proven academic session — the same
+      // mailbox proof enroll_from_roster() requires. If the roster knows
+      // them but their enrollment never completed (a transient failure on
+      // first visit stranded 31 students on L1 day, 2026-09-08), complete
+      // it here rather than refusing. Anyone the roster does not know is
+      // still refused exactly as before.
+      const { data: healed } = await asUser.rpc('enroll_from_roster')
+      if (!healed?.enrolled) return res.status(403).json({ error: 'No active Field Guide enrollment' })
+    }
 
     // 3. The main project. Find the class first — no class, nothing to join.
     const main = createClient(mainUrl, mainKey, { auth: { persistSession: false } })

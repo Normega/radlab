@@ -49,9 +49,23 @@ export default function CourseHome({ role, superAdmin }) {
   useEffect(() => {
     if (!code) return // rendered as not-found below without any fetch
     let cancelled = false
-    supabase.rpc('class_public_info', { p_slug: code })
-      .then(({ data }) => { if (!cancelled) setCls(data ?? null) })
-      .catch(() => { if (!cancelled) setCls(null) })
+    // Retry transient failures before concluding anything — see ClassRoom's
+    // note: an API blip must not read as "no such class".
+    let attempt = 0
+    const load = () => {
+      supabase.rpc('class_public_info', { p_slug: code })
+        .then(({ data, error }) => {
+          if (cancelled) return
+          if (error) {
+            if (attempt < 3) { attempt += 1; setTimeout(load, 1200 * attempt) }
+            else setCls(null) // academic overlay may still render the page
+            return
+          }
+          setCls(data ?? null)
+        })
+        .catch(() => { if (!cancelled && attempt < 3) { attempt += 1; setTimeout(load, 1200 * attempt) } else if (!cancelled) setCls(null) })
+    }
+    load()
     return () => { cancelled = true }
   }, [code])
 
