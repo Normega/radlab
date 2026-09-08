@@ -43,6 +43,7 @@ export default function ClassRoom({ session }) {
   const userId = session?.user?.id
 
   const [classInfo, setClassInfo] = useState(undefined) // undefined=loading, null=not found
+  const [classLookupFailed, setClassLookupFailed] = useState(false)
   const [membership, setMembership] = useState(undefined)
   // Verification is account-level (profiles), not per class-membership —
   // proving utoronto ownership once carries across every class you join.
@@ -81,9 +82,24 @@ export default function ClassRoom({ session }) {
     // visitors (the class-branded join card), and `classes` is readable by
     // authenticated only. class_public_info exposes exactly id/name/
     // field_guide_url for one slug, callable by anon.
-    supabase.rpc('class_public_info', { p_slug: slug }).then(({ data }) => {
-      if (!cancelled) setClassInfo(data ?? null)
-    })
+    // A transient API failure is NOT "no such class" — conflating them sent
+    // students who clicked a sign-in link during an API blip to a dead-end
+    // "Class not found" page (2026-09-08). Retry with backoff; only a CLEAN
+    // empty result means the class truly doesn't exist.
+    let attempt = 0
+    const load = () => {
+      supabase.rpc('class_public_info', { p_slug: slug }).then(({ data, error }) => {
+        if (cancelled) return
+        if (error) {
+          if (attempt < 4) { attempt += 1; setTimeout(load, 1200 * attempt) }
+          else setClassLookupFailed(true)
+          return
+        }
+        setClassLookupFailed(false)
+        setClassInfo(data ?? null)
+      })
+    }
+    load()
     return () => { cancelled = true }
   }, [slug])
 
@@ -370,6 +386,17 @@ export default function ClassRoom({ session }) {
     return <AcademicShell courseCode={slug} homeTo={loungePath(slug)} menu={menuEl} />
   }
 
+  if (classLookupFailed && classInfo === undefined) {
+    return (
+      <AcademicShell courseCode={slug} menu={menuEl}>
+        <div style={S.wrap}>
+          <p style={S.title}>Having trouble reaching the server</p>
+          <p style={S.sub}>Your link is fine — the connection hiccuped. Refresh to try again.</p>
+        </div>
+      </AcademicShell>
+    )
+  }
+
   if (classInfo === null) {
     return (
       <AcademicShell courseCode={slug} menu={menuEl}>
@@ -611,6 +638,9 @@ function FieldGuideBridge({ slug }) {
         {busy ? 'One moment…' : 'Continue to the Lecture Lounge'}
       </button>
       {error && <p style={S.bridgeErr}>{error}</p>}
+      <p style={{ ...S.bridgeSub, marginTop: 10 }}>
+        Just here for the Field Guide? <a href={`/academic/${slug}/wiki`} style={{ color: 'var(--pk)' }}>Open it instead →</a>
+      </p>
     </div>
   )
 }
