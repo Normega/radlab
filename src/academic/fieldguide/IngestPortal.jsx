@@ -3,6 +3,7 @@ import { Link, Navigate, useOutletContext } from 'react-router-dom'
 import { AcademicEyebrow, AcademicHeaderRow } from '../AcademicChrome'
 import AvatarMenu from './AvatarMenu'
 import { courseFeatures } from '../courseFeatures'
+import { cleanDoi } from '../doi'
 import { signOutEverywhere } from '../../lib/signOutEverywhere'
 import { useWikiBase, useCoursePaths } from './wiki/useWikiBase'
 
@@ -104,13 +105,13 @@ export default function IngestPortal() {
   // then abandons the form — acceptable, and it is the same path submit would
   // have used, so nothing is uploaded twice.
   const suggestCitation = async () => {
-    if (!courseId || (!file && !doiInput.trim())) return
+    if (!courseId || (!file && !cleanDoi(doiInput))) return
     setLooking(true)
     setNotice(null)
     setSuggestion(null)
     try {
       const body = { course_id: courseId }
-      if (doiInput.trim()) body.doi = doiInput.trim()
+      if (cleanDoi(doiInput)) body.doi = cleanDoi(doiInput)
       else body.pdf_path = await upload()
 
       const r = await fetch('/api/cite', {
@@ -205,7 +206,7 @@ export default function IngestPortal() {
           <div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
               <button type="button" style={S.secondary} onClick={suggestCitation}
-                      disabled={looking || (!file && !doiInput.trim())}>
+                      disabled={looking || (!file && !cleanDoi(doiInput))}>
                 {looking ? 'Looking up…' : 'Suggest citation'}
               </button>
               <input style={{ ...S.input, flex: '1 1 220px', minWidth: 0 }} type="text" value={doiInput}

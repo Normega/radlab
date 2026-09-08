@@ -4,6 +4,7 @@ import { AcademicEyebrow } from '../AcademicChrome'
 import AvatarMenu from './AvatarMenu'
 import { courseFeatures } from '../courseFeatures'
 import { useWikiBase, useCoursePaths } from './wiki/useWikiBase'
+import { cleanDoi } from '../doi'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -480,8 +481,8 @@ function ClaimForm({ claim, row: r, courseClient, reload, onRelease }) {
       <p style={S.colLabel}>Your submission · expires in {daysLeft(r.my_expires_at)} days</p>
 
       <label style={S.fieldLabel}>DOI <span style={S.dim}>(preferred — it is what the checks can verify)</span></label>
-      <input value={doi} onChange={e => setDoi(e.target.value)}
-             placeholder="10.xxxx/…" style={S.input} />
+      <input value={doi} onChange={e => setDoi(cleanDoi(e.target.value))}
+             placeholder="10.xxxx/… — or paste the whole doi.org link" style={S.input} />
       {doiFindings.map((f, i) => (
         <p key={i} style={{ ...S.findingLine, color: SEV[f.severity] }}>
           {f.severity === 'block' ? '✕' : '⚠'} {f.detail}

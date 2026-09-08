@@ -56,8 +56,19 @@ function rankUrls(urls) {
     })
 }
 
-async function findOpenAccess(doi) {
-  const d = encodeURIComponent(doi.trim().toLowerCase())
+// Accept the DOI however a student pasted it — journals display DOIs as
+// https://doi.org/10.x/… links, and asking 200 people to trim a URL prefix is
+// a losing battle (the client cleans on paste too; this is the belt for old
+// cached bundles and direct API callers).
+const cleanDoi = (v) => String(v ?? '')
+  .trim()
+  .replace(/^https?:\/\/(dx\.)?doi\.org\//i, '')
+  .replace(/^doi:\s*/i, '')
+  .trim()
+
+async function findOpenAccess(rawDoi) {
+  const doi = cleanDoi(rawDoi)
+  const d = encodeURIComponent(doi.toLowerCase())
   const urls = []
   let title = null
 
