@@ -115,6 +115,39 @@ export default function ClassRoom({ session }) {
     return () => { cancelled = true }
   }, [classInfo, userId])
 
+  // Poll backstop for the live state. Broadcasts are fire-and-forget and the
+  // per-checkin DB subscription only exists once a liveCheckin is known — a
+  // consumer sitting on the lobby when a check-in opens depends entirely on
+  // one broadcast frame arriving. Under L1's load some never did. Re-run the
+  // single-row restore query on an interval (visible tabs only); ~45
+  // students is ~2 req/s, nothing next to what it fixes.
+  useEffect(() => {
+    if (!classInfo) return
+    const tick = () => {
+      if (document.visibilityState !== 'visible') return
+      supabase
+        .from('checkins')
+        .select('id, status, config, lecture_id, lectures!inner(class_id)')
+        .eq('lectures.class_id', classInfo.id)
+        .neq('status', 'planned')
+        .neq('kind', 'weekly')
+        .is('dismissed_at', null)
+        .order('opened_at', { ascending: false, nullsFirst: false })
+        .limit(1)
+        .then(({ data }) => {
+          const row = data?.[0]
+          setLiveCheckin((prev) => {
+            if (!row) return null
+            if (prev?.id === row.id && prev?.status === row.status) return prev
+            return { id: row.id, status: row.status, config: row.config }
+          })
+        })
+    }
+    const h = setInterval(tick, 20000)
+    return () => clearInterval(h)
+  }, [classInfo?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+
   // Restore current check-in state from the DB on mount/reconnect — most
   // recently touched non-planned, non-dismissed checkin for this class.
   // Excluding dismissed ones matters: without it, a checkin left in
@@ -132,7 +165,12 @@ export default function ClassRoom({ session }) {
       .neq('status', 'planned')
       .neq('kind', 'weekly') // weekly walls live on their own page, never in the live flow
       .is('dismissed_at', null)
-      .order('created_at', { ascending: false })
+      // Most recently OPENED, not created: every check-in was pre-created in
+      // August, so created_at ordering picked an arbitrary row when two were
+      // simultaneously non-dismissed. In L1 that meant fresh page loads could
+      // restore Break 1's stale results instead of the open quiz — 'some
+      // people never saw the quiz come up' (2026-09-08).
+      .order('opened_at', { ascending: false, nullsFirst: false })
       .limit(1)
       .then(({ data }) => {
         if (cancelled) return
