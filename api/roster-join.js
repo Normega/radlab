@@ -135,6 +135,30 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: `Could not send the link: ${e.message}` })
       }
     }
+    // Third and last: an UNCONSUMED INVITE — a TA (or instructor) who has
+    // been allowlisted but has no account yet, so neither the roster nor an
+    // enrollment can vouch for them. Their account is created by
+    // sendSignInEmail's createUser, whose insert fires
+    // identity.handle_new_user(), which consumes the invite into the staff
+    // enrollment — the mechanism the retired password-signup form used to
+    // trigger. Without this branch, deleting that form (2026-09-05) left
+    // invited staff with no door at all; found when Norm asked to confirm
+    // his TAs could get in (2026-09-08).
+    const { data: invites } = await service.from('invites')
+      .select('email, consumed_at, courses:course_id(code)')
+      .is('consumed_at', null)
+    const inv = (invites ?? []).find(i => normalize(i.email) === key)
+    if (inv) {
+      try {
+        await sendSignInEmail(service, resendKey, {
+          email: inv.email, fullName: '', courseCode: inv.courses?.code, next,
+        })
+        return res.status(200).json({ matched: true })
+      } catch (e) {
+        return res.status(500).json({ error: `Could not send the link: ${e.message}` })
+      }
+    }
+
     await service.rpc('roster_log_attempt', {
       p_submitted: raw, p_match_key: key, p_ip_hash: ipHash,
     })
