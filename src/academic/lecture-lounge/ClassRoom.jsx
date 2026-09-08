@@ -602,16 +602,21 @@ async function crossToLounge(fgToken, slug) {
 }
 
 function FieldGuideBridge({ slug }) {
-  const [fg, setFg] = useState(null)      // { token, email } | null
+  const [fg, setFg] = useState(null)      // { email } | null
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
 
+  // localStorage only decides whether to SHOW the card (cheap, sync). The
+  // token in there is NOT what we send: access tokens expire in an hour, and
+  // handing the stored one to the bridge is exactly how a TA returning days
+  // after her last sign-in got "Field Guide session not recognised" over a
+  // perfectly healthy account (Maryam, 2026-09-08). The click obtains a
+  // FRESH token through the client, which silently refreshes.
   useEffect(() => {
     try {
       const raw = JSON.parse(localStorage.getItem('radlab-academic-auth') ?? 'null')
-      const token = raw?.access_token
       const email = raw?.user?.email
-      if (token && email) setFg({ token, email })
+      if (raw?.access_token && email) setFg({ email })
     } catch { /* no usable Field Guide session — stay hidden */ }
   }, [])
 
@@ -620,7 +625,16 @@ function FieldGuideBridge({ slug }) {
   const go = async () => {
     setBusy(true); setError(null)
     try {
-      await crossToLounge(fg.token, slug)
+      const client = await getCourseClient()
+      const { data: { session } } = await client.auth.getSession()
+      if (!session?.access_token) {
+        // Refresh failed — the sign-in is truly gone, not just stale.
+        setBusy(false)
+        setFg(null)
+        setError(null)
+        return
+      }
+      await crossToLounge(session.access_token, slug)
     } catch (err) {
       setBusy(false)
       setError(err.message)
