@@ -12,16 +12,17 @@ const MONO  = '"Space Mono", "Courier New", monospace'
 // Review (participation). The projector Screen stays its own URL because it
 // is a different physical machine, opened once and never touched.
 //
-// Default tab: Run on a phone (mid-lecture is the only reason to be here on
-// a phone), Plan on a desktop. ?tab= overrides both — the /remote redirect
-// arrives with ?tab=run so old bookmarks land exactly where they used to.
+// Default tab: Run, every device (Norm, 2026-09-09 — with term underway the
+// console's job is running the lecture; planning is the occasional visit).
+// ?tab= overrides — the /remote redirect arrives with ?tab=run, and
+// ?tab=planning deep-links the planner.
 export default function ClassConsole({ session }) {
   const classInfo = useOutletContext()
   const [params] = useSearchParams()
   const [tab, setTab] = useState(() => {
     const q = params.get('tab')
     if (['planning', 'run', 'participation'].includes(q)) return q
-    return (typeof window !== 'undefined' && window.innerWidth < 700) ? 'run' : 'planning'
+    return 'run'
   })
 
   return (
