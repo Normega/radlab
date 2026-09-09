@@ -2,6 +2,15 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <!-- Resolve + handshake both Supabase projects while the bundle is still
+         downloading. Measured 2026-09-08: a cold DNS lookup for the academic
+         host cost 5+ seconds on some resolvers; preconnect moves that work to
+         page-arrival time and runs it in parallel instead of blocking the
+         first query. -->
+    <link rel="preconnect" href="https://qajrlfqoicfcfhthsfay.supabase.co" crossorigin />
+    <link rel="preconnect" href="https://qldgwpneygvgcvexlduz.supabase.co" crossorigin />
+    <link rel="dns-prefetch" href="https://qajrlfqoicfcfhthsfay.supabase.co" />
+    <link rel="dns-prefetch" href="https://qldgwpneygvgcvexlduz.supabase.co" />
     <link rel="icon" type="image/svg+xml" href="/RADlab_Logo_light.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>RADlab — Regulatory & Affective Dynamics Lab</title>
