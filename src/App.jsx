@@ -94,6 +94,7 @@ const Talks     = lazy(() => import('./pages/talks/Talks'))
 // crash here can't blank the rest of the site.
 const ClassRoom        = lazy(() => import('./academic/lecture-lounge/ClassRoom'))
 const WeeklyWall       = lazy(() => import('./academic/lecture-lounge/WeeklyWall'))
+const WeeklyQuiz       = lazy(() => import('./academic/lecture-lounge/WeeklyQuiz'))
 const ClassVerifyEmail = lazy(() => import('./academic/lecture-lounge/ClassVerifyEmail'))
 const ClassConfirmSignup = lazy(() => import('./academic/lecture-lounge/ClassConfirmSignup'))
 const ClassConsole     = lazy(() => import('./academic/lecture-lounge/ClassConsole'))
@@ -734,6 +735,11 @@ export default function App() {
                 <WeeklyWall session={session} />
               </AuthRoute>
             } />
+            <Route path="/academic/:courseCode/lounge/quiz/:quizId" element={
+              <AuthRoute session={session}>
+                <WeeklyQuiz session={session} />
+              </AuthRoute>
+            } />
             {/* Discussion boards: student threads, staff-only answers (RLS
                 on board_replies is the enforcement; the page is just honest
                 about it). Same auth posture as the wall. */}
@@ -767,6 +773,7 @@ export default function App() {
             {/* Legacy lounge sub-paths: staff bookmarks and in-session links,
                 not auth landings — safe to redirect (unlike /class/:slug). */}
             <Route path="/class/:slug/wall/:checkinId" element={<LegacyLoungeRedirect sub="/wall" />} />
+            <Route path="/class/:slug/quiz/:checkinId" element={<LegacyLoungeRedirect sub="/quiz" />} />
             <Route path="/class/:slug/boards" element={<LegacyLoungeRedirect sub="/boards" />} />
             <Route path="/class/:slug/console" element={<LegacyLoungeRedirect sub="/console" />} />
             <Route path="/class/:slug/remote" element={<LegacyLoungeRedirect sub="/remote" />} />

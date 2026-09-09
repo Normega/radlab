@@ -233,6 +233,19 @@ export default function ClassRoom({ session }) {
     return () => { cancelled = true }
   }, [classInfo?.id, membership]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Weekly quiz card: the class's most relevant quiz + this student's
+  // progress, one RPC. Null (no quizzes for this class, or not a member)
+  // means no card — the quiz feature switches on per class by having rows.
+  const [quizCard, setQuizCard] = useState(null)
+  useEffect(() => {
+    if (!classInfo || !membership) return
+    let cancelled = false
+    supabase.rpc('get_lounge_quiz_card', { p_class_id: classInfo.id }).then(({ data }) => {
+      if (!cancelled) setQuizCard(data ?? null)
+    })
+    return () => { cancelled = true }
+  }, [classInfo?.id, membership]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Discussion boards summary for the lobby card. Board presence is the
   // feature switch: a class with no class_boards rows shows no card.
   const [boardsInfo, setBoardsInfo] = useState(null)
@@ -546,6 +559,8 @@ export default function ClassRoom({ session }) {
               </Link>
             )}
 
+            {quizCard && <QuizLobbyCard card={quizCard} slug={slug} />}
+
             <Link to={`${loungePath(slug)}/slides`} style={S.fgCard}>
               <p style={S.fgEyebrow}>Lecture slides</p>
               <p style={S.fgMeta}>Review any week's deck — printing one gives a study handout →</p>
@@ -604,6 +619,43 @@ async function crossToLounge(fgToken, slug) {
   // Session change re-renders this page as a joined member; a clean load
   // is the surest way for every guard to see it.
   window.location.assign(loungePath(slug))
+}
+
+// The weekly-quiz lobby card. Persistent like the QotW card: it always
+// shows the most relevant quiz and this student's standing on it, so
+// "did I do this week's quiz?" is answered from the lounge without a tap.
+function QuizLobbyCard({ card, slug }) {
+  const fmt = (d) => new Date(d).toLocaleDateString('en-CA', {
+    weekday: 'short', month: 'short', day: 'numeric', timeZone: 'America/Toronto',
+  })
+  const now = Date.now()
+  const notYetOpen = new Date(card.opens_at).getTime() > now
+  const due = new Date(card.due_at).getTime()
+  const grace = due + 7 * 86400_000
+  const closed = new Date(card.hard_close_at).getTime() < now
+  const completed = !!card.completed_at
+  const started = card.answered > 0
+
+  let meta
+  if (completed) meta = `Completed ✓ — review your answers →`
+  else if (notYetOpen) meta = `Opens ${fmt(card.opens_at)}`
+  else if (closed) meta = 'Closed'
+  else if (started) meta = `${card.answered} of ${card.total} answered — finish up →`
+  else if (now <= due) meta = `${card.total} questions · open book · full credit through ${fmt(card.due_at)} →`
+  else if (now <= grace) meta = `${card.total} questions · still full credit (grace week) →`
+  else meta = `${card.total} questions · late window (75%) until ${fmt(card.hard_close_at)} →`
+
+  const body = (
+    <>
+      <p style={S.weeklyEyebrow}>Weekly quiz{completed ? ' · done' : ''}</p>
+      <p style={S.weeklyPrompt}>{card.title}</p>
+      <p style={completed ? S.quizMetaDone : S.weeklyMeta}>{meta}</p>
+    </>
+  )
+  // Before opening (and after a hard close with nothing to review) there is
+  // nothing behind the link, so the card is honest and stays a plain box.
+  if (notYetOpen || (closed && !started)) return <div style={S.weeklyCard}>{body}</div>
+  return <Link to={`${loungePath(slug)}/quiz/${card.id}`} style={S.weeklyCard}>{body}</Link>
 }
 
 function FieldGuideBridge({ slug }) {
@@ -930,6 +982,7 @@ const S = {
   weeklyEyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)', marginBottom: 6 },
   weeklyPrompt: { fontFamily: SERIF, fontSize: 18, color: 'var(--tx)', lineHeight: 1.35, marginBottom: 6 },
   weeklyMeta: { fontFamily: MONO, fontSize: 12, color: 'var(--tx2)' },
+  quizMetaDone: { fontFamily: MONO, fontSize: 12, color: '#2e7d32' },
   banner: { background: 'var(--bgp)', border: '1px solid var(--pkb)', borderRadius: 12, padding: '14px 18px', marginBottom: 16 },
   bannerForm: {},
   bannerText: { fontSize: 14, color: 'var(--tx2)', marginBottom: 10 },
