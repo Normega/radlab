@@ -102,7 +102,10 @@ for (const [idx, level] of levels.entries()) {
   if (aborted) break
   await rampTo(level)
   await sleep(8000)                 // let subscriptions settle before measuring
-  await collect()                   // drain sign-in noise from the burst window
+  // Drain the ramp window so the burst measures only the burst — but keep its
+  // sign-in samples, which are the only place sign-in latency is observable.
+  const rampMetrics = await collect()
+  const signinSamples = rampMetrics.flatMap(x => x.samples.signin)
 
   // Open a scripted check-in, let the room answer, then close it. Rotating
   // positions keeps each level's burst on a check-in with no stale responses.
@@ -128,7 +131,7 @@ for (const [idx, level] of levels.entries()) {
 
   const row = {
     level, live,
-    signin95: pct(merge('signin'), 95),
+    signin95: pct([...signinSamples, ...merge('signin')], 95),
     fanout50: pct(merge('fanout'), 50),
     fanout95: pct(merge('fanout'), 95),
     write50: pct(merge('write'), 50),
@@ -155,8 +158,13 @@ for (const [idx, level] of levels.entries()) {
     for (const [k, v] of Object.entries(errs).slice(0, 3)) console.log(`        ${v}× ${k}`)
   }
 
-  // Reset so the next level starts from an empty check-in.
-  await admin.rpc('reset_checkin', { p_checkin_id: checkinId }).catch(() => {})
+  // Reset so the next level starts from an empty check-in. Deleting directly
+  // rather than via reset_checkin(): that RPC gates on the CALLER being a
+  // class admin, and a service key has no auth.uid() to check, so it refuses.
+  // The service role bypasses RLS, and the delete is scoped to this one
+  // synthetic check-in.
+  const { error: resetErr } = await admin.from('checkin_responses').delete().eq('checkin_id', checkinId)
+  if (resetErr) console.error(`  reset failed: ${resetErr.message}`)
   await admin.from('checkins').update({ status: 'planned', opened_at: null, closed_at: null }).eq('id', checkinId)
 
   if (liveWindow && idx < levels.length - 1) {
