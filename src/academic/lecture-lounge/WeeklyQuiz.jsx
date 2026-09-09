@@ -29,7 +29,11 @@ export default function WeeklyQuiz({ session }) {
   const [busyItem, setBusyItem] = useState(null)
   const [itemErrors, setItemErrors] = useState({})
   const [vsaDrafts, setVsaDrafts] = useState({})
-  const [confDismissed, setConfDismissed] = useState({})
+  // Items answered in THIS session hold their reveal behind the confidence
+  // tap (answer -> confidence -> reveal, so the rating is made before any
+  // feedback can contaminate it). Items loaded already-answered from a
+  // previous visit render fully revealed — they have seen it before.
+  const [confPending, setConfPending] = useState({})
 
   const fetchQuiz = useCallback(async () => {
     // .rpc() reports failure in `error`, it does not throw — check it.
@@ -50,8 +54,9 @@ export default function WeeklyQuiz({ session }) {
     })
     setBusyItem(null)
     if (error) { setItemErrors((e) => ({ ...e, [item.id]: error.message })); return }
-    // Merge the reveal locally instead of refetching everything — but do
-    // refetch on completion so the header flips from the server's record.
+    // Merge the reveal locally instead of refetching everything. The reveal
+    // stays hidden behind the confidence prompt for this item.
+    setConfPending((c) => ({ ...c, [item.id]: true }))
     setQuiz((q) => ({
       ...q,
       completed_at: data.completed_at ?? q.completed_at,
@@ -60,7 +65,7 @@ export default function WeeklyQuiz({ session }) {
   }
 
   async function setConfidence(itemId, level) {
-    setConfDismissed((c) => ({ ...c, [itemId]: true }))
+    setConfPending((c) => ({ ...c, [itemId]: false }))
     if (level === null) return // skipped — nothing to record
     const { error } = await supabase.rpc('set_weekly_quiz_confidence', {
       p_quiz_id: quizId, p_item_id: itemId, p_confidence: level,
@@ -146,7 +151,7 @@ export default function WeeklyQuiz({ session }) {
 
             {a && (
               <Reveal item={item} answer={a}
-                      showConfidence={a.confidence == null && !confDismissed[item.id]}
+                      awaitingConfidence={!!confPending[item.id]}
                       onConfidence={(level) => setConfidence(item.id, level)} />
             )}
           </div>
@@ -162,11 +167,32 @@ export default function WeeklyQuiz({ session }) {
   )
 }
 
-function Reveal({ item, answer, showConfidence, onConfidence }) {
+// Answer → confidence → reveal, in that order. The confidence rating is a
+// metacognitive judgment; showing ANY feedback first (even which option is
+// green) turns it into hindsight. So while confidence is pending, the item
+// shows only a neutral "locked in" echo of the student's own answer.
+function Reveal({ item, answer, awaitingConfidence, onConfidence }) {
   const r = answer.reveal ?? {}
   const myChoice = answer.response?.choice
   const hasKey = typeof r.correct_index === 'number'
   const gotIt = hasKey && myChoice === r.correct_index
+
+  if (awaitingConfidence) {
+    return (
+      <div style={S.reveal}>
+        <p style={S.vsaMine}>
+          Locked in: <strong>{item.options ? item.options[myChoice] : answer.response?.text}</strong>
+        </p>
+        <div style={S.confRow}>
+          <span style={S.confLabel}>Before you see the answer — how sure are you? (optional; builds your study list)</span>
+          <button style={S.confBtn} onClick={() => onConfidence(1)}>Guessing</button>
+          <button style={S.confBtn} onClick={() => onConfidence(2)}>Fairly sure</button>
+          <button style={S.confBtn} onClick={() => onConfidence(3)}>Certain</button>
+          <button style={S.confSkip} onClick={() => onConfidence(null)}>skip</button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div style={S.reveal}>
@@ -196,21 +222,8 @@ function Reveal({ item, answer, showConfidence, onConfidence }) {
           {gotIt ? 'You had it.' : 'No penalty — the attempt is the point.'}
         </p>
       )}
-
-      {showConfidence ? (
-        <div style={S.confRow}>
-          <span style={S.confLabel}>How sure were you? (optional — builds your study list)</span>
-          <button style={S.confBtn} onClick={() => onConfidence(1)}>Guessing</button>
-          <button style={S.confBtn} onClick={() => onConfidence(2)}>Fairly sure</button>
-          <button style={S.confBtn} onClick={() => onConfidence(3)}>Certain</button>
-          <button style={S.confSkip} onClick={() => onConfidence(null)}>skip</button>
-        </div>
-      ) : (
-        <>
-          <p style={S.rationale}>{r.rationale}</p>
-          {r.link && <Link to={r.link} style={S.link}>Read this in the Field Guide →</Link>}
-        </>
-      )}
+      <p style={S.rationale}>{r.rationale}</p>
+      {r.link && <Link to={r.link} style={S.link}>Read this in the Field Guide →</Link>}
     </div>
   )
 }
