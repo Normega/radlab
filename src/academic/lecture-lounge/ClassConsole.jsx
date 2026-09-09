@@ -16,7 +16,7 @@ const MONO  = '"Space Mono", "Courier New", monospace'
 // console's job is running the lecture; planning is the occasional visit).
 // ?tab= overrides — the /remote redirect arrives with ?tab=run, and
 // ?tab=planning deep-links the planner.
-export default function ClassConsole({ session }) {
+export default function ClassConsole({ session, superAdmin }) {
   const classInfo = useOutletContext()
   const [params] = useSearchParams()
   const [tab, setTab] = useState(() => {
@@ -37,7 +37,7 @@ export default function ClassConsole({ session }) {
               <button style={S.tab(tab === 'participation')} onClick={() => setTab('participation')}>Review</button>
             </div>
             {tab === 'planning' && <ConsoleLecturePlanner classInfo={classInfo} />}
-            {tab === 'run' && <ClassRemote />}
+            {tab === 'run' && <ClassRemote superAdmin={superAdmin} />}
             {tab === 'participation' && <ConsoleParticipation classInfo={classInfo} />}
           </>
         )}

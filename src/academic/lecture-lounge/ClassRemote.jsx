@@ -28,7 +28,7 @@ function nearestLecture(lectures) {
 // style splits, which have no right answer).
 // Mounted inside ClassConsole; /lounge/remote redirects there, so old
 // bookmarks keep working.
-export default function ClassRemote() {
+export default function ClassRemote({ superAdmin }) {
   // Resolved by ClassAdminRoute already (it needs the class to run the
   // admin check) — reusing it here instead of fetching it a second time.
   const classInfo = useOutletContext()
@@ -405,7 +405,11 @@ export default function ClassRemote() {
                       ? <span style={S.doneLabel}>Done — back in lobby</span>
                       : <button style={S.bigBtn} onClick={() => handleDismiss(c)}>Done</button>
                   )}
-                  {c.status !== 'planned' && (
+                  {/* Only offer ⋯ when it would hold something. Reset is
+                      super-admin-only and the reveal is quiz-only, so for a
+                      TA on a prompt check-in the menu is empty — and an
+                      overflow that opens onto nothing is its own small lie. */}
+                  {c.status !== 'planned' && (superAdmin || (hasQuiz && c.status === 'results_ready' && !c.quiz_revealed_at) || (hasQuiz && c.quiz_revealed_at)) && (
                     <button style={S.ghostBtn} aria-label="More actions"
                             onClick={() => setMenuFor(menuFor === c.id ? null : c.id)}>⋯</button>
                   )}
@@ -422,7 +426,14 @@ export default function ClassRemote() {
                       }}>Reveal correct answers</button>
                     )}
                     {hasQuiz && c.quiz_revealed_at && <span style={S.doneLabel}>Answers revealed</span>}
-                    <button style={S.dangerBtn} onClick={() => { setMenuFor(null); handleReset(c) }}>Reset (wipes responses)</button>
+                    {/* Super admins only, matching reset_checkin's guard. Wiping
+                        a whole room's answers belongs to one person, and a
+                        button that would refuse the presser is worse than no
+                        button (2026-09-09: six of seven lab members could see
+                        this and none of them could use it). */}
+                    {superAdmin && (
+                      <button style={S.dangerBtn} onClick={() => { setMenuFor(null); handleReset(c) }}>Reset (wipes responses)</button>
+                    )}
                   </div>
                 )}
 

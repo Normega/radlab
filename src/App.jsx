@@ -763,7 +763,7 @@ export default function App() {
               </AuthRoute>
             } />
             <Route element={<ClassAdminRoute session={session} />}>
-              <Route path="/academic/:courseCode/lounge/console" element={<ClassConsole session={session} />} />
+              <Route path="/academic/:courseCode/lounge/console" element={<ClassConsole session={session} superAdmin={superAdmin} />} />
               {/* /remote lives on as a redirect — the Run tab is the remote now. */}
               <Route path="/academic/:courseCode/lounge/remote" element={<RemoteToConsole />} />
               <Route path="/academic/:courseCode/lounge/screen" element={<ClassScreen />} />
