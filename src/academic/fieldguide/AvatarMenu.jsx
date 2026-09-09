@@ -199,6 +199,9 @@ export default function AvatarMenu({ client, fgEmail, email, courseCode, isStaff
   const items = []
   // Course places first — the two halves of the course, always both present.
   items.push({ to: sub('wiki'), label: 'Field Guide' })
+  // The week-planning view of the Guide, next to the Guide itself: "what do I
+  // read for this lecture" is the question students actually arrive with.
+  items.push({ to: sub('chapters'), label: 'Chapters by lecture' })
   if (linkedMainId) {
     items.push({ to: lounge, label: 'Lecture Lounge' })
   } else if (mismatch) {

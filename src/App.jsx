@@ -115,6 +115,7 @@ const SubmissionsQueue     = lazy(() => import('./academic/fieldguide/Submission
 // The wiki reader takes any active enrollment, not just staff — students read
 // through the same components, and RLS decides what comes back.
 const FieldGuideMemberRoute = lazy(() => import('./academic/fieldguide/FieldGuideMemberRoute'))
+const ChapterMap           = lazy(() => import('./academic/fieldguide/ChapterMap'))
 const WikiIndex            = lazy(() => import('./academic/fieldguide/wiki/WikiIndex'))
 const WikiPage             = lazy(() => import('./academic/fieldguide/wiki/WikiPage'))
 const GapBrowser           = lazy(() => import('./academic/fieldguide/GapBrowser'))
@@ -851,6 +852,11 @@ export default function App() {
             <Route element={<FieldGuideMemberRoute />}>
               <Route path="/academic/:courseCode/wiki" element={<WikiIndex />} />
               <Route path="/academic/:courseCode/wiki/:slug" element={<WikiPage />} />
+              {/* Which chapters belong to which lecture. A separate route
+                  rather than a weekIndex flip: a catalogue-anchored index is
+                  how you browse by topic, and this is the week-planning view
+                  of the same page_lectures mapping. */}
+              <Route path="/academic/:courseCode/chapters" element={<ChapterMap />} />
               {/* The gap browser: students plan their research assignment here.
                   Member-level on purpose — the board is part of reading the
                   guide, not part of submitting to it. */}

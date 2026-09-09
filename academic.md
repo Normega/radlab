@@ -261,7 +261,7 @@ Student-facing: `/academic/<code>` (course home — the one front door, unguarde
 `/class/<slug>` = `/academic/<code>/lounge` (the Lounge), `/lounge/slides` (deck index — any
 signed-in user; the lecture list under it is RLS-gated to class members, and the deck files in
 `public/<course>/` are world-readable statics either way), `/academic/<code>/join` (Field Guide
-sign-in), `/academic/<code>/wiki`, `/gaps`, `/whats-new`.
+sign-in), `/academic/<code>/wiki`, `/chapters` (which chapters belong to which lecture), `/gaps`, `/whats-new`.
 
 Staff (academic-project auth): `/ingest`, `/review`, `/submissions`, `/corrections`, `/roster`,
 `/read`, `/reports`, `/tracking`. Lounge staff (main auth + class_admins): `/lounge/console`,
