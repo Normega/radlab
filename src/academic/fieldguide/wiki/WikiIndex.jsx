@@ -532,6 +532,17 @@ function Shell({ course, session, client, isStaff, courses, courseId, onSelectCo
           </div>
           <h1 style={S.title}>{course?.name ?? 'Course wiki'}</h1>
           {course && <p style={S.sub}>{course.code} · {course.term}</p>}
+          {/* The week view of this index. On a catalogue-anchored course the
+              front page answers "where does this disorder live", and this is
+              the other question students arrive with — "what do I read for
+              Wednesday" — which otherwise only existed in the avatar menu. */}
+          {course && (
+            <p style={{ ...S.sub, marginTop: 8 }}>
+              <Link to={paths.sub('chapters')} style={S.link}>
+                Which chapters go with which lecture →
+              </Link>
+            </p>
+          )}
         </header>
 
         {/* Course switcher — now navigation: onSelectCourse routes to the
