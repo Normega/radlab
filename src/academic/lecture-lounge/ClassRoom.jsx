@@ -196,10 +196,12 @@ export default function ClassRoom({ session }) {
     return () => { cancelled = true }
   }, [classInfo?.id]) // eslint-disable-line react-hooks/exhaustive-deps -- only the id should re-trigger this, not every field on classInfo
 
-  // Question of the Week: the currently-open weekly check-in, if any, plus
-  // its wall summary (count + whether this student has answered) from the
-  // get_weekly_wall RPC. DB-driven, no broadcast involvement — a student
-  // opening the page from home mid-week sees the card with no live session.
+  // Question of the Week: the most recent weekly check-in — open OR closed —
+  // plus its wall summary (count + whether this student has answered) from
+  // the get_weekly_wall RPC. The card persists after close (the wall is
+  // archive-open to members) so the QotW never vanishes just because lecture
+  // machinery is running; an open weekly wins over a newer closed one.
+  // DB-driven, no broadcast involvement.
   const [weekly, setWeekly] = useState(null)
   useEffect(() => {
     if (!classInfo || !membership) return
@@ -207,14 +209,14 @@ export default function ClassRoom({ session }) {
     ;(async () => {
       const { data } = await supabase
         .from('checkins')
-        .select('id, config, lectures!inner(class_id)')
+        .select('id, status, config, lectures!inner(class_id)')
         .eq('lectures.class_id', classInfo.id)
         .eq('kind', 'weekly')
-        .eq('status', 'open')
+        .in('status', ['open', 'closed', 'results_ready'])
         .is('dismissed_at', null)
         .order('created_at', { ascending: false })
-        .limit(1)
-      const row = data?.[0]
+        .limit(5)
+      const row = (data ?? []).find(r => r.status === 'open') ?? data?.[0]
       if (cancelled || !row) { if (!cancelled) setWeekly(null); return }
       // rpc reports failure in `error`, not by throwing — a failed summary
       // still renders the card, just without count/answered detail.
@@ -222,6 +224,7 @@ export default function ClassRoom({ session }) {
       if (cancelled) return
       setWeekly({
         id: row.id,
+        open: row.status === 'open',
         prompt: row.config?.prompt_text ?? 'This week’s question',
         count: error ? null : wall?.count,
         answered: error ? false : !!(wall?.my_response && wall.my_response.trim()),
@@ -532,7 +535,9 @@ export default function ClassRoom({ session }) {
                 <p style={S.weeklyEyebrow}>Question of the week</p>
                 <p style={S.weeklyPrompt}>{weekly.prompt}</p>
                 <p style={S.weeklyMeta}>
-                  {weekly.answered
+                  {!weekly.open
+                    ? `Closed — see what the class said (${weekly.count ?? '…'}) →`
+                    : weekly.answered
                     ? `You've answered — see the wall (${weekly.count ?? '…'}) →`
                     : weekly.count
                     ? `${weekly.count} ${weekly.count === 1 ? 'answer' : 'answers'} on the wall — add yours →`
