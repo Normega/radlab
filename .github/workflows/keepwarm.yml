@@ -1,0 +1,39 @@
+# Keep the backends warm.
+#
+# Why (2026-09-08, "the site is slow"): the academic Supabase project's first
+# query after a quiet period measured 11.2s — the free-tier API layer scales
+# down when idle and wakes on demand. Students in a busy hour never see it;
+# an instructor visiting a few times a day eats the wake-up almost every
+# time. Pinging every 10 minutes keeps it warm around the clock.
+#
+# This repo is public, so Actions minutes are free. The pings are anon-key
+# reads of world-readable rows — nothing privileged lives here.
+#
+# The durable fix is upgrading the academic project off the free tier; this
+# workflow is the bridge (and remains harmless afterwards).
+
+name: keep-warm
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Ping academic Supabase (the one that sleeps)
+        run: |
+          curl -s -o /dev/null -w "academic REST %{http_code} in %{time_total}s\n" -m 30 \
+            "https://qldgwpneygvgcvexlduz.supabase.co/rest/v1/courses?select=code&is_public=eq.true" \
+            -H "apikey: sb_publishable_fl5t3V8U7u6IjoIFJaeV-Q_8Eq7PBuM"
+      - name: Ping main Supabase
+        run: |
+          curl -s -o /dev/null -w "main REST %{http_code} in %{time_total}s\n" -m 30 \
+            "https://qajrlfqoicfcfhthsfay.supabase.co/rest/v1/classes?select=slug&limit=1" \
+            -H "apikey: sb_publishable_sG1jw9_yLUSgv0mUxmJZsA_FiSUcjM0"
+      - name: Ping a Vercel function
+        run: |
+          curl -s -o /dev/null -w "api/ingest %{http_code} in %{time_total}s\n" -m 30 \
+            "https://radlab.zone/api/ingest"
