@@ -968,8 +968,13 @@ const S = {
     border: '1px solid var(--bds)', fontSize: 15, fontFamily: 'inherit', marginTop: 10,
   },
   authSwitch: { border: 'none', background: 'none', color: 'var(--pk)', cursor: 'pointer', fontSize: 'inherit', fontFamily: 'inherit', textDecoration: 'underline', padding: 0 },
+  // Every lobby card is white on the pink ground (Norm, 2026-09-09) — the
+  // weekly cards used to be pink-filled, which read as a different KIND of
+  // thing rather than as emphasis. Emphasis now lives in the border alone:
+  // solid pink for a one-time prompt, soft pink for this week's work, neutral
+  // for standing links. Same radius throughout so the column reads as one set.
   avatarCard: {
-    display: 'block', background: 'var(--bgc)', border: '1px solid var(--pk)', borderRadius: 16,
+    display: 'block', background: 'var(--bgc)', border: '1px solid var(--pk)', borderRadius: 14,
     padding: '18px 22px', textDecoration: 'none', marginBottom: 16,
   },
   fgCard: {
@@ -982,7 +987,7 @@ const S = {
   boardsHead: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)', margin: '28px 0 -4px' },
   weeklyCard: {
     display: 'block', textDecoration: 'none', marginTop: 16, textAlign: 'left',
-    background: 'var(--bgp)', border: '1px solid var(--pkb)', borderRadius: 14, padding: '16px 20px',
+    background: 'var(--bgc)', border: '1px solid var(--pkbs)', borderRadius: 14, padding: '16px 20px',
   },
   weeklyEyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)', marginBottom: 6 },
   weeklyPrompt: { fontFamily: SERIF, fontSize: 18, color: 'var(--tx)', lineHeight: 1.35, marginBottom: 6 },
