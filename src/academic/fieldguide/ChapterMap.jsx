@@ -130,7 +130,7 @@ export default function ChapterMap() {
         <h1 style={S.title}>Chapters by lecture</h1>
         <p style={S.sub}>
           What to read, and when. Every chapter listed here is a Field Guide page — click one to
-          read it, or click a lecture title to open that week's slides. Quizzes cover the chapters
+          read it, or click a lecture title to open that week's slides in a new tab. Quizzes cover the chapters
           for that week, so this is also the quiz study list.
         </p>
 
@@ -193,8 +193,12 @@ export default function ChapterMap() {
                           <div style={S.lectureLine}>
                             <span style={S.lectureNo}>L{m.lecture_no}</span>
                             {deck ? (
-                              <a href={`/${courseCode}/L${deck}.html`} style={S.lectureLink}>
-                                {m.title}
+                              // New tab, matching the slides index: this is a
+                              // reference table, and swallowing it to open a
+                              // deck loses the reader's place.
+                              <a href={`/${courseCode}/L${deck}.html`} target="_blank" rel="noreferrer"
+                                 style={S.lectureLink}>
+                                {m.title} <span style={S.slidesTag}>slides ↗</span>
                               </a>
                             ) : (
                               <span style={S.lectureTitle}>{m.title}</span>
@@ -288,7 +292,8 @@ const S = {
   rowNext: { background: 'var(--bgp)' },
   lectureLine: { display: 'flex', alignItems: 'baseline', gap: 9, flexWrap: 'wrap' },
   lectureNo: { fontFamily: MONO, fontSize: 11.5, color: 'var(--pk)', letterSpacing: 0.5 },
-  lectureLink: { fontFamily: SERIF, fontSize: 17.5, color: 'var(--tx)', textDecoration: 'none', borderBottom: '1px solid var(--pkb)' },
+  lectureLink: { fontFamily: SERIF, fontSize: 17.5, color: 'var(--pk)', textDecoration: 'none' },
+  slidesTag: { fontFamily: MONO, fontSize: 11, letterSpacing: 0.5, color: 'var(--tx3)', whiteSpace: 'nowrap' },
   lectureTitle: { fontFamily: SERIF, fontSize: 17.5, color: 'var(--tx)' },
   detail: { fontSize: 13, color: 'var(--tx3)', margin: '5px 0 0', lineHeight: 1.5 },
   breakTitle: { fontFamily: SERIF, fontSize: 16, color: 'var(--tx2)' },
