@@ -39,6 +39,24 @@ const TYPE_LABEL = {
   concept: '',
 }
 
+// Reading order inside a chapter: the overview that frames it, then the
+// pages the chapter is built on, then the concepts, treatments and debates
+// that hang off them. 'A' and 'B' are a review-budget distinction (see
+// tiers.js) rather than a reading one, so both sit in the same band.
+const TIER_ORDER = { overview: 0, A: 1, B: 1, foundation: 1, supporting: 2 }
+const TIER_RANK = (t) => TIER_ORDER[t] ?? 3
+
+// Sub-sections within a chapter. The overview leads with no heading of its
+// own — it IS the chapter's heading, effectively — and everything after it is
+// grouped by what kind of page it is, because "which are the disorders and
+// which are the treatments" is the question a student is actually asking of a
+// 25-entry chapter (Norm, 2026-09-10).
+const SUB_SECTIONS = [
+  ['concept', 'Concepts'],
+  ['treatment', 'Treatments'],
+  ['debate', 'Debates'],
+]
+
 // Field Guide index (WP2). Browse is organised by DSM-5-TR diagnostic class
 // because that is the course's content anchor (taxonomy §1) — not by page
 // type, which is an implementation detail of how a page got here.
@@ -145,11 +163,7 @@ export default function WikiIndex() {
     for (const ch of chapters) {
       const rows = catalog
         .filter(c => c.dsm_chapter === ch.number)
-        // overview first, then the disorders, then the supporting concepts
-        // and treatments folded in from what used to be "Contributed pages".
-        .sort((a, b) => (a.tier === 'overview' ? 0 : 1) - (b.tier === 'overview' ? 0 : 1)
-          || (a.tier === 'supporting' ? 1 : 0) - (b.tier === 'supporting' ? 1 : 0)
-          || a.title.localeCompare(b.title))
+        .sort((a, b) => TIER_RANK(a.tier) - TIER_RANK(b.tier) || a.title.localeCompare(b.title))
       if (!rows.length) continue
       groups.push({ ...ch, rows, readable: rows.filter(r => bySlug.has(r.slug)).length })
     }
@@ -427,7 +441,12 @@ export default function WikiIndex() {
                   <span aria-hidden="true" style={{ ...S.caret, transform: isFolded ? 'rotate(-90deg)' : 'none' }}>▾</span>
                 </button>
               </h2>
-              <div id={`chapter-${g.number}`} hidden={isFolded} style={isFolded ? undefined : S.grid}>
+              {/* The week-anchored index still drops cards straight in, so it
+                  keeps the grid here. The chapter index now emits headed
+                  bands, each carrying its own grid, so this container must
+                  NOT be one or the bands become grid cells. */}
+              <div id={`chapter-${g.number}`} hidden={isFolded}
+                   style={isFolded || !weekAnchored ? undefined : S.grid}>
                 {/* Week rows ARE pages — the shells double as the catalogue,
                     so "not written yet" is a page with no body rather than a
                     catalogue row with no page. */}
@@ -452,48 +471,70 @@ export default function WikiIndex() {
                     </Link>
                   )
                 })}
-                {!isFolded && !weekAnchored && g.rows.filter(row => showEmpty || bySlug.has(row.slug)).map(row => {
-                  const page = bySlug.get(row.slug)
-                  // A catalogue row with no readable page is shown, not
-                  // hidden: it is the course outline, so its holes are part of
-                  // the map. For a student that is also the contribution list.
-                  if (!page) {
-                    return (
-                      <span key={row.slug} style={{ ...S.card, ...S.cardEmpty }}
-                            title={TIER_HELP[row.tier]}>
-                        <span style={S.cardTitle}>{row.title}</span>
-                        <span style={S.cardMeta}>
-                          not written yet{TIER_LABEL[row.tier] ? ` · ${TIER_LABEL[row.tier]}` : ''}
-                        </span>
-                      </span>
-                    )
-                  }
-                  // Supporting entries are shaded: within a chapter they sit
-                  // after the disorders and carry less weight, and a student
-                  // scanning for "the disorders in this chapter" should be
-                  // able to see the difference without reading the meta line.
-                  // Shaded, not hidden or dimmed — they are examinable.
-                  const supporting = row.tier === 'supporting'
-                  return (
-                    <Link key={row.slug} to={`${WIKI_BASE}/${row.slug}`}
-                          style={supporting ? { ...S.card, ...S.cardSupporting } : S.card}
-                          title={TIER_HELP[row.tier]}>
-                      <span style={S.cardTitle}>{page.title}</span>
-                      <span style={S.cardMeta}>
-                        {page.status !== 'published' && <b style={{ color: 'var(--pk)' }}>draft · </b>}
-                        {page.needs?.length > 0
-                          ? `needs ${page.needs.length} section${page.needs.length === 1 ? '' : 's'}`
-                          : supporting
-                            // `||`, not `??`: TYPE_LABEL.concept is an empty
-                            // string on purpose (the week-anchored index does not
-                            // bother saying "concept"), and ?? would keep it, so
-                            // every concept card would carry a blank meta line.
-                            ? (TYPE_LABEL[page.type] || page.type || TIER_LABEL.supporting)
-                            : (TIER_LABEL[row.tier] ?? row.tier)}
-                      </span>
-                    </Link>
-                  )
-                })}
+                {!isFolded && !weekAnchored && (() => {
+                  const visible = g.rows.filter(row => showEmpty || bySlug.has(row.slug))
+                  const rank = (row) => TIER_RANK(row.tier)
+                  const overview   = visible.filter(r => rank(r) === 0)
+                  const core       = visible.filter(r => rank(r) === 1)
+                  const supporting = visible.filter(r => rank(r) >= 2)
+                  const typeOf = (row) => bySlug.get(row.slug)?.type ?? 'concept'
+                  const bands = [
+                    { key: '_overview', label: null, rows: overview },
+                    { key: '_core', label: 'Foundation', rows: core },
+                    ...SUB_SECTIONS.map(([type, label]) => ({
+                      key: type, label, rows: supporting.filter(r => typeOf(r) === type),
+                    })),
+                    // Anything with a type we did not anticipate still appears,
+                    // under an honest heading, rather than vanishing.
+                    { key: '_other', label: 'Also in this chapter',
+                      rows: supporting.filter(r => !SUB_SECTIONS.some(([t]) => t === typeOf(r))) },
+                  ].filter(b => b.rows.length)
+
+                  return bands.map(band => (
+                    <div key={band.key} style={band.label ? { marginTop: 14 } : undefined}>
+                      {band.label && <p style={S.typeLabel}>{band.label}</p>}
+                      <div style={S.grid}>
+                        {band.rows.map(row => {
+                          const page = bySlug.get(row.slug)
+                          // A catalogue row with no readable page is shown, not
+                          // hidden: it is the course outline, so its holes are
+                          // part of the map. For a student that is also the
+                          // contribution list.
+                          if (!page) {
+                            return (
+                              <span key={row.slug} style={{ ...S.card, ...S.cardEmpty }}
+                                    title={TIER_HELP[row.tier]}>
+                                <span style={S.cardTitle}>{row.title}</span>
+                                <span style={S.cardMeta}>
+                                  not written yet{TIER_LABEL[row.tier] ? ` · ${TIER_LABEL[row.tier]}` : ''}
+                                </span>
+                              </span>
+                            )
+                          }
+                          // Supporting entries are shaded: within a chapter they
+                          // carry less weight than the pages it is built on, and
+                          // a student scanning should see that without reading
+                          // the meta line. Shaded, not dimmed — they are
+                          // examinable, and the tooltip says so.
+                          const supportingRow = TIER_RANK(row.tier) >= 2
+                          return (
+                            <Link key={row.slug} to={`${WIKI_BASE}/${row.slug}`}
+                                  style={supportingRow ? { ...S.card, ...S.cardSupporting } : S.card}
+                                  title={TIER_HELP[row.tier]}>
+                              <span style={S.cardTitle}>{page.title}</span>
+                              <span style={S.cardMeta}>
+                                {page.status !== 'published' && <b style={{ color: 'var(--pk)' }}>draft · </b>}
+                                {page.needs?.length > 0
+                                  ? `needs ${page.needs.length} section${page.needs.length === 1 ? '' : 's'}`
+                                  : (TIER_LABEL[row.tier] ?? row.tier)}
+                              </span>
+                            </Link>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  ))
+                })()}
               </div>
             </section>
             )
