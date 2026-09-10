@@ -11,6 +11,10 @@
 export const TIER_LABEL = {
   A: 'central to the course',
   B: 'supporting page',
+  // Folded into a chapter from what used to be "Contributed pages": a
+  // concept, treatment or debate rather than a disorder. The index shows the
+  // page's own type instead of this wherever it can, which says more.
+  supporting: 'concept or method',
 }
 
 export const TIER_HELP = {
@@ -18,4 +22,5 @@ export const TIER_HELP = {
   B: 'Supporting page — a short orienting entry: description, a link to the official DSM-5-TR criteria, and pointers to related disorders. Shorter because of review time, not because it is off the syllabus.',
   overview: 'Topic overview — the concepts a lecture teaches as one block, shared across the disorders in this chapter.',
   foundation: 'Foundations — a non-disorder anchor: assessment, diagnosis, research methods, suicide, law or ethics.',
+  supporting: 'A concept, treatment or debate this chapter builds on — not a disorder in its own right, but examinable: the weekly quizzes draw on these too.',
 }

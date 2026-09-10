@@ -468,15 +468,28 @@ export default function WikiIndex() {
                       </span>
                     )
                   }
+                  // Supporting entries are shaded: within a chapter they sit
+                  // after the disorders and carry less weight, and a student
+                  // scanning for "the disorders in this chapter" should be
+                  // able to see the difference without reading the meta line.
+                  // Shaded, not hidden or dimmed — they are examinable.
+                  const supporting = row.tier === 'supporting'
                   return (
-                    <Link key={row.slug} to={`${WIKI_BASE}/${row.slug}`} style={S.card}
+                    <Link key={row.slug} to={`${WIKI_BASE}/${row.slug}`}
+                          style={supporting ? { ...S.card, ...S.cardSupporting } : S.card}
                           title={TIER_HELP[row.tier]}>
                       <span style={S.cardTitle}>{page.title}</span>
                       <span style={S.cardMeta}>
                         {page.status !== 'published' && <b style={{ color: 'var(--pk)' }}>draft · </b>}
                         {page.needs?.length > 0
                           ? `needs ${page.needs.length} section${page.needs.length === 1 ? '' : 's'}`
-                          : (TIER_LABEL[row.tier] ?? row.tier)}
+                          : supporting
+                            // `||`, not `??`: TYPE_LABEL.concept is an empty
+                            // string on purpose (the week-anchored index does not
+                            // bother saying "concept"), and ?? would keep it, so
+                            // every concept card would carry a blank meta line.
+                            ? (TYPE_LABEL[page.type] || page.type || TIER_LABEL.supporting)
+                            : (TIER_LABEL[row.tier] ?? row.tier)}
                       </span>
                     </Link>
                   )
@@ -653,6 +666,10 @@ const S = {
   grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 230px), 1fr))', gap: 10 },
   card: { display: 'flex', flexDirection: 'column', gap: 4, background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 10, padding: '11px 13px', textDecoration: 'none' },
   cardEmpty: { background: 'none', borderStyle: 'dashed' },
+  // A neutral grey rather than the pink ground: the ground is what an
+  // unwritten card shows through (cardEmpty), so reusing it here would
+  // make a supporting page read as "not written yet".
+  cardSupporting: { background: '#F4F2F4' },
   cardTitle: { fontSize: 15, color: 'var(--tx)', lineHeight: 1.3 },
   cardMeta: { fontFamily: MONO, fontSize: 12, letterSpacing: 0.5, textTransform: 'uppercase', color: 'var(--tx2)' },
 
