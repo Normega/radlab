@@ -166,7 +166,7 @@ export default function AvatarMenu({ client, fgEmail, email, courseCode, isStaff
           supabase.from('class_admins').select('id, classes!inner(slug)').eq('user_id', mainUserId)
             .eq('classes.slug', String(courseCode).toLowerCase()).limit(1),
         ])
-        const yes = prof?.role === 'lab' || prof?.super_admin === true || !!adm?.length
+        const yes = prof?.super_admin === true || !!adm?.length
         classAdminCache.set(key, yes)
         if (!cancelled) setCanRunClassroom(yes)
       } catch { /* no classroom group */ }

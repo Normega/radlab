@@ -20,7 +20,7 @@ const SERIF = '"DM Serif Display", Georgia, serif'
 //    enrollments when an academic session exists.
 // The two lists are merged by lowercase code — classes.slug and
 // courses.code are the same token by convention.
-export default function AcademicHome({ session, role, superAdmin }) {
+export default function AcademicHome({ session, superAdmin }) {
   const [byCode, setByCode] = useState(new Map()) // code -> {code, name, term, sources}
 
   const merge = (entries) => setByCode(prev => {
@@ -81,7 +81,9 @@ export default function AcademicHome({ session, role, superAdmin }) {
   }, [])
 
   const courses = [...byCode.values()].sort((a, b) => a.code.localeCompare(b.code))
-  const isLab = role === 'lab' || superAdmin
+  // /academic/admin is the every-class page (create, rename, delete, appoint
+  // instructors), so it answers to the super admin alone. profiles.role='lab'
+  // is RESEARCH staff and no longer opens anything academic (2026-09-10).
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
@@ -107,7 +109,7 @@ export default function AcademicHome({ session, role, superAdmin }) {
           </div>
         )}
 
-        {isLab && (
+        {superAdmin && (
           <Link to="/academic/admin" style={S.card}>
             <h2 style={S.cardTitle}>Academic admin</h2>
             <p style={S.sub}>Classes, instructors, QR codes, and the cross-course Field Guide tools.</p>

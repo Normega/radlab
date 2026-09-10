@@ -782,7 +782,7 @@ export default function App() {
             <Route path="/class/:slug/remote" element={<LegacyLoungeRedirect sub="/remote" />} />
             <Route path="/class/:slug/screen" element={<LegacyLoungeRedirect sub="/screen" />} />
             <Route path="/class/:slug/slides" element={<LegacyLoungeRedirect sub="/slides" />} />
-            <Route element={<LectureLoungeAdminRoute session={session} role={role} superAdmin={superAdmin} />}>
+            <Route element={<LectureLoungeAdminRoute session={session} superAdmin={superAdmin} />}>
               <Route path="/academic/admin" element={<LectureLoungeAdminPage session={session} />} />
             </Route>
             {/* Superseded admin URLs — staff bookmarks only. The oldest one
@@ -790,13 +790,13 @@ export default function App() {
                 all of these redirecting for at least two terms. */}
             <Route path="/academic/lecture-lounge/admin" element={<Navigate to="/academic/admin" replace />} />
             <Route path="/lecture-lounge/admin" element={<Navigate to="/academic/admin" replace />} />
-            <Route path="/academic" element={<AcademicHome session={session} role={role} superAdmin={superAdmin} />} />
+            <Route path="/academic" element={<AcademicHome session={session} superAdmin={superAdmin} />} />
             {/* The course home: one URL per course for students and staff
                 alike. Unguarded — it must render for a logged-out student
                 holding nothing but a QR scan. Static siblings (admin,
                 fieldguide, lecture-lounge) outrank the param by router
                 ranking, so they never collide with a course code. */}
-            <Route path="/academic/:courseCode" element={<CourseHome role={role} superAdmin={superAdmin} />} />
+            <Route path="/academic/:courseCode" element={<CourseHome superAdmin={superAdmin} />} />
             {/* Field Guide — auth against the radlab-academic project lives
                 inside FieldGuideStaffRoute (course login + staff enrollment
                 check), not the main-site session. Canonical routes carry the

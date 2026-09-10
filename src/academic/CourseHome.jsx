@@ -25,7 +25,7 @@ const SERIF = '"DM Serif Display", Georgia, serif'
 //
 // Unknown code in BOTH sources → an explicit "no such course" page, never a
 // fallback to some other course (the staffCourses/courseRoutes invariant).
-export default function CourseHome({ role, superAdmin }) {
+export default function CourseHome({ superAdmin }) {
   const { courseCode } = useParams()
   const code = normalizeCourseCode(courseCode)
   const feats = courseFeatures(code)
@@ -36,15 +36,32 @@ export default function CourseHome({ role, superAdmin }) {
   const [fgSession, setFgSession] = useState(false)
   const [fg, setFg] = useState(null)            // { client, email } once an academic session is found
   const [mainEmail, setMainEmail] = useState(null)
+  const [mainUserId, setMainUserId] = useState(null)
 
   // The main-site session, for the avatar menu when there's no academic one.
   useEffect(() => {
     let cancelled = false
     supabase.auth.getSession().then(({ data: { session: s } }) => {
-      if (!cancelled) setMainEmail(s?.user?.email ?? null)
+      if (cancelled) return
+      setMainEmail(s?.user?.email ?? null)
+      setMainUserId(s?.user?.id ?? null)
     })
     return () => { cancelled = true }
   }, [])
+
+  // Classroom tools are gated by the MAIN project's class_admins — the same
+  // rule ClassAdminRoute and the avatar menu enforce. profiles.role='lab' used
+  // to pass here too, which is how RESEARCH staff ended up holding the console
+  // for every course (2026-09-10); 'lab' now means nothing academic.
+  const [isClassAdmin, setIsClassAdmin] = useState(false)
+  useEffect(() => {
+    if (!mainUserId || !code) { setIsClassAdmin(false); return }
+    let cancelled = false
+    supabase.from('class_admins').select('id, classes!inner(slug)')
+      .eq('user_id', mainUserId).eq('classes.slug', code).limit(1)
+      .then(({ data }) => { if (!cancelled) setIsClassAdmin(!!data?.length) })
+    return () => { cancelled = true }
+  }, [mainUserId, code])
 
   useEffect(() => {
     if (!code) return // rendered as not-found below without any fetch
@@ -93,7 +110,14 @@ export default function CourseHome({ role, superAdmin }) {
   }, [code])
 
   const isStaff = myRole === 'ta' || myRole === 'instructor'
-  const isLab = role === 'lab' || superAdmin
+  // The two link groups below answer to DIFFERENT gates, and used to share one.
+  // Classroom surfaces are main-project class_admins (ClassAdminRoute); the
+  // course-admin surfaces are academic-project staff enrollment
+  // (FieldGuideStaffRoute). Sharing `isStaff || isLab` showed each group to
+  // people the other guard would bounce — a class admin got Roster and Review
+  // links that refused her, and research staff got both on every course.
+  const showClassroom  = !!cls && (isClassAdmin || superAdmin)
+  const showCourseAdmin = isStaff || superAdmin
   const known = cls || course
 
   const display = useMemo(() => ({
@@ -170,13 +194,13 @@ export default function CourseHome({ role, superAdmin }) {
         </Link>
       )}
 
-      {(isStaff || isLab) && (
+      {(showClassroom || showCourseAdmin) && (
         <div style={{ marginTop: 26 }}>
           {/* Grouped by when you reach for them: mid-lecture surfaces first,
               then the desk work. Deliberately still visible on the page (not
               only in the avatar menu) — burying every staff link in the
               dropdown is how the instructor lost the roster (2026-09-05). */}
-          {cls && (
+          {showClassroom && (
             <>
               <p style={S.eyebrow}>in the classroom</p>
               <div style={S.staffGrid}>
@@ -189,7 +213,9 @@ export default function CourseHome({ role, superAdmin }) {
               </div>
             </>
           )}
-          <p style={{ ...S.eyebrow, marginTop: cls ? 18 : 0 }}>course admin</p>
+          {showCourseAdmin && (
+            <>
+          <p style={{ ...S.eyebrow, marginTop: showClassroom ? 18 : 0 }}>course admin</p>
           <div style={S.staffGrid}>
             <Link to={courseSubPath(code, 'roster')} style={S.staffBtn}>Roster</Link>
             <Link to={courseSubPath(code, 'tracking')} style={S.staffBtn}>Tracking</Link>
@@ -203,10 +229,12 @@ export default function CourseHome({ role, superAdmin }) {
             <Link to={courseSubPath(code, 'corrections')} style={S.staffBtn}>Corrections</Link>
             {feats.ingest && <Link to={courseSubPath(code, 'ingest')} style={S.staffBtn}>Ingest</Link>}
           </div>
+            </>
+          )}
         </div>
       )}
 
-      {isLab && (
+      {superAdmin && (
         <p style={{ ...S.sub, marginTop: 22 }}>
           <Link to="/academic/admin" style={S.backLink}>Academic admin →</Link>
         </p>

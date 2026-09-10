@@ -6,14 +6,18 @@ import { normalizeCourseCode, loungePath } from '../courseRoutes'
 // Per-class admin gate for /academic/:courseCode/lounge/{console,remote,
 // screen,slides}. The URL carries the course code, which by convention IS the
 // class slug (classes.slug === lowercase(courses.code)).
-// Mirrors AdminRoute's shape but authorization is scoped to one class
-// (class_admins row) rather than the lab-wide profiles.role check —
-// lab/super_admin still passes too, matching the "classes: admins update"
-// RLS policy this gate is meant to reflect at the UI layer.
+// Mirrors AdminRoute's shape but authorization is scoped to one class (a
+// class_admins row), plus the super admin — matching the "classes: admins
+// update" RLS policy this gate reflects at the UI layer.
 //
-// Resolves class + profile role in parallel (profile doesn't depend on the
+// profiles.role='lab' used to pass here too. It is RADlab RESEARCH staff, not
+// course staff, and admitting it made every research assistant an admin of
+// every class — including one who was an enrolled student in one of them
+// (2026-09-10). Course staff live in class_admins; 'lab' means nothing here.
+//
+// Resolves class + profile in parallel (the profile doesn't depend on the
 // class at all), and only makes the class_admins round trip when the caller
-// isn't already a lab admin — for the common lab-admin case this settles in
+// isn't already a super admin — for that case this settles in
 // one round trip instead of two sequential ones. The resolved class is
 // passed down via Outlet context so console/remote/screen don't each repeat
 // the same "class by slug" fetch this route already did.
@@ -36,7 +40,7 @@ export default function ClassAdminRoute({ session }) {
       const cls = clsRes.data
       if (!cls) { setState({ status: 'not_found', cls: null }); return }
 
-      if (profileRes.data?.role === 'lab' || profileRes.data?.super_admin) {
+      if (profileRes.data?.super_admin) {
         setState({ status: 'authorized', cls })
         return
       }
