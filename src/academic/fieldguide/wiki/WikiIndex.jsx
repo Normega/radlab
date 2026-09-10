@@ -145,7 +145,10 @@ export default function WikiIndex() {
     for (const ch of chapters) {
       const rows = catalog
         .filter(c => c.dsm_chapter === ch.number)
+        // overview first, then the disorders, then the supporting concepts
+        // and treatments folded in from what used to be "Contributed pages".
         .sort((a, b) => (a.tier === 'overview' ? 0 : 1) - (b.tier === 'overview' ? 0 : 1)
+          || (a.tier === 'supporting' ? 1 : 0) - (b.tier === 'supporting' ? 1 : 0)
           || a.title.localeCompare(b.title))
       if (!rows.length) continue
       groups.push({ ...ch, rows, readable: rows.filter(r => bySlug.has(r.slug)).length })
@@ -204,6 +207,13 @@ export default function WikiIndex() {
     return (pages ?? []).filter(p => !catalogSlugs.has(p.slug))
   }, [weekAnchored, pages, pageLectures, catalogSlugs])
 
+  // Provenance records, not readings. The Bridley & Daffin module pages and
+  // the named study pages exist so a claim can cite where it came from;
+  // listing them beside the chapters invited students to try to read them.
+  const isSource = (p) => p.type === 'study' || String(p.slug).startsWith('fundamentals-psychological-disorders-module')
+  const foundationPages = useMemo(() => contributed.filter(p => !isSource(p)), [contributed])
+  const sourcePages = useMemo(() => contributed.filter(isSource), [contributed])
+
   // Folded chapters, keyed by DSM chapter number rather than by position, so
   // flipping "show unwritten entries" — which changes which groups appear —
   // doesn't fold a different chapter than the one that was clicked.
@@ -244,7 +254,7 @@ export default function WikiIndex() {
           label="catalogue covered"
         />
         {courseFeatures(course?.code).contributions && (
-          <Stat n={contributed.length} label="contributed pages" />
+          <Stat n={contributed.length} label={weekAnchored ? "off-calendar pages" : "foundations & sources"} />
         )}
       </div>
 
@@ -372,6 +382,43 @@ export default function WikiIndex() {
             </div>
           )}
 
+          {/* Foundations & methods, ABOVE the chapters. These are the framing
+              pages the whole course leans on — what "abnormal" means, the
+              learning-theory pages, research methods — and the quizzes examine
+              them. They used to sit BELOW the disorder chapters under a
+              heading reading "Contributed pages", which told students the
+              opposite (Ritma, 2026-09-10: "I don't see [them] cleanly under
+              the foundations chapter"). Nothing about the pages changed; the
+              index was lying about their status. */}
+          {!weekAnchored && foundationPages.length > 0 && (
+            <section style={{ marginTop: 18 }}>
+              <h2 style={S.h2Loose}>Foundations &amp; methods</h2>
+              <p style={S.sub}>
+                The concepts, treatments and debates the disorder chapters build on. Examinable —
+                the weekly quizzes draw on these as well as on the chapters.
+              </p>
+              {CONTRIB_TYPES.map(([type, label]) => {
+                const rows = foundationPages.filter(p => p.type === type)
+                if (!rows.length) return null
+                return (
+                  <div key={type} style={{ marginTop: 14 }}>
+                    <p style={S.typeLabel}>{label}</p>
+                    <div style={S.grid}>
+                      {rows.map(p => (
+                        <Link key={p.slug} to={`${WIKI_BASE}/${p.slug}`} style={S.card}>
+                          <span style={S.cardTitle}>{p.title}</span>
+                          <span style={S.cardMeta}>
+                            {p.status !== 'published' && <b style={{ color: 'var(--pk)' }}>draft</b>}
+                          </span>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
+            </section>
+          )}
+
           {view === 'list' && visibleGroups.map(g => {
             const isFolded = folded.has(g.number)
             return (
@@ -472,13 +519,11 @@ export default function WikiIndex() {
             )
           })}
 
-          {contributed.length > 0 && (
+          {weekAnchored && contributed.length > 0 && (
             <section style={{ marginTop: 34 }}>
-              <h2 style={S.h2Loose}>{weekAnchored ? 'Off-calendar pages' : 'Contributed pages'}</h2>
+              <h2 style={S.h2Loose}>Off-calendar pages</h2>
               <p style={S.sub}>
-                {weekAnchored
-                  ? 'Pages no course week claims — reference material that sits beside the weekly reading.'
-                  : 'Pages built from papers rather than from the course catalogue — studies, concepts, treatments and debates that hang off the disorder pages.'}
+                Pages no course week claims — reference material that sits beside the weekly reading.
               </p>
               {CONTRIB_TYPES.map(([type, label]) => {
                 const rows = contributed.filter(p => p.type === type)
@@ -499,6 +544,26 @@ export default function WikiIndex() {
                   </div>
                 )
               })}
+            </section>
+          )}
+
+          {/* Sources last, and named as sources: these are the papers and
+              textbook modules the pages were built FROM. Nobody should try to
+              read them as a chapter. */}
+          {!weekAnchored && sourcePages.length > 0 && (
+            <section style={{ marginTop: 34 }}>
+              <h2 style={S.h2Loose}>Sources</h2>
+              <p style={S.sub}>
+                Where the pages above came from — the textbook modules and papers each page cites.
+                Reference only: nothing here is assigned reading.
+              </p>
+              <div style={{ ...S.grid, marginTop: 14 }}>
+                {sourcePages.map(p => (
+                  <Link key={p.slug} to={`${WIKI_BASE}/${p.slug}`} style={S.card}>
+                    <span style={S.cardTitle}>{p.title}</span>
+                  </Link>
+                ))}
+              </div>
             </section>
           )}
         </>
