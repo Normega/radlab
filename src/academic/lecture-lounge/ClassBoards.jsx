@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { normalizeCourseCode, loungePath } from '../courseRoutes'
 import { AcademicShell } from '../AcademicChrome'
@@ -59,7 +59,10 @@ export default function ClassBoards({ session }) {
 }
 
 function BoardsView({ boards, slug, userId }) {
-  const [activeKey, setActiveKey] = useState('content')
+  // ?board=<key> so the lobby can link straight to one board rather than
+  // landing everyone on 'content' and making them find the other tab.
+  const [boardParams] = useSearchParams()
+  const [activeKey, setActiveKey] = useState(boardParams.get('board') || 'content')
   const board = boards.find((b) => b.key === activeKey) ?? boards[0]
 
   const [data, setData] = useState(undefined)

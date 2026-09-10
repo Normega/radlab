@@ -561,14 +561,22 @@ export default function ClassRoom({ session }) {
 
             {quizCard && <QuizLobbyCard card={quizCard} slug={slug} />}
 
-            {boardsInfo && (
-              <Link to={`${loungePath(slug)}/boards`} style={S.fgCard}>
-                <p style={S.fgEyebrow}>Discussion boards</p>
+            {/* One row per board rather than a card that hides them behind a
+                page (Norm, 2026-09-09). There are two, so listing them costs
+                nothing and removes a hop from asking a question — and the
+                unanswered count is the number that actually pulls someone in.
+                Participation belongs on this page; the boards page is now
+                just where a thread is read. */}
+            {boardsInfo?.map((b) => (
+              <Link key={b.key} to={`${loungePath(slug)}/boards?board=${b.key}`} style={S.fgCard}>
+                <p style={S.fgEyebrow}>{b.title}</p>
                 <p style={S.fgMeta}>
-                  {boardsInfo.map((b) => `${b.title}: ${b.threads}`).join(' · ')} — ask anything, staff answer →
+                  {b.threads === 0
+                    ? 'No questions yet — ask the first one →'
+                    : `${b.threads} ${b.threads === 1 ? 'question' : 'questions'}${b.unanswered ? ` · ${b.unanswered} unanswered` : ' · all answered'} →`}
                 </p>
               </Link>
-            )}
+            ))}
           </>
         )}
       </div>
