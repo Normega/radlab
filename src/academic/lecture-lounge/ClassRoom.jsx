@@ -561,11 +561,6 @@ export default function ClassRoom({ session }) {
 
             {quizCard && <QuizLobbyCard card={quizCard} slug={slug} />}
 
-            <Link to={`${loungePath(slug)}/slides`} style={S.fgCard}>
-              <p style={S.fgEyebrow}>Lecture slides</p>
-              <p style={S.fgMeta}>Review any week's deck — printing one gives a study handout →</p>
-            </Link>
-
             {boardsInfo && (
               <Link to={`${loungePath(slug)}/boards`} style={S.fgCard}>
                 <p style={S.fgEyebrow}>Discussion boards</p>

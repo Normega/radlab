@@ -138,7 +138,7 @@ export default function CourseHome({ role, superAdmin }) {
       {cls && (
         <Link to={loungePath(code)} style={S.card}>
           <h2 style={S.cardTitle}>Lecture Lounge</h2>
-          <p style={S.sub}>Live in-lecture check-ins, the weekly wall, and your class avatar. Open this during lecture.</p>
+          <p style={S.sub}>Where you take part: live check-ins, the weekly question, the quiz, the boards, and your class avatar. Open this during lecture.</p>
         </Link>
       )}
 
@@ -148,17 +148,22 @@ export default function CourseHome({ role, superAdmin }) {
           ? 'The course reference wiki — read it, report errors, claim gaps.'
           : 'The course reference wiki — read it, search it, report errors.'}</p>
       </Link>
-      {fgSession ? (
+      {/* The course index: the things you look up between classes. Doing
+          things -- check-ins, the weekly wall, the quiz, the boards -- lives
+          in the Lounge instead (Norm, 2026-09-09: "the lounge is where
+          participation happens, course home an index of everything else").
+          Each button is gated on the session its destination actually needs:
+          the Guide surfaces want the academic session, slides want the main
+          one, so none of them can bounce the person who pressed it. */}
+      {(fgSession || (mainEmail && cls)) && (
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
-          {/* Chapters first: "what do I read this week" is asked weekly, the
-              other two occasionally. This row is the course's front door
-              (Norm, 2026-09-09: "one central navigation page that people come
-              back to"), so the link lives here rather than inside the Guide. */}
-          <Link to={courseSubPath(code, 'chapters')} style={S.staffBtn}>Chapters by lecture</Link>
-          {feats.gaps && <Link to={courseSubPath(code, 'gaps')} style={S.staffBtn}>Gap board</Link>}
-          <Link to={courseSubPath(code, 'whats-new')} style={S.staffBtn}>What's new</Link>
+          {fgSession && <Link to={courseSubPath(code, 'chapters')} style={S.staffBtn}>Chapters by lecture</Link>}
+          {mainEmail && cls && <Link to={`${loungePath(code)}/slides`} style={S.staffBtn}>Lecture slides</Link>}
+          {fgSession && feats.gaps && <Link to={courseSubPath(code, 'gaps')} style={S.staffBtn}>Gap board</Link>}
+          {fgSession && <Link to={courseSubPath(code, 'whats-new')} style={S.staffBtn}>What's new</Link>}
         </div>
-      ) : (
+      )}
+      {!fgSession && (
         <Link to={joinPath(code)} style={S.card}>
           <h2 style={S.cardTitle}>Sign in to the Field Guide</h2>
           <p style={S.sub}>On the roster? Enter your U of T email and a sign-in link comes to your inbox.</p>
