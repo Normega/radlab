@@ -183,10 +183,13 @@ export default function CourseHome({ role, superAdmin }) {
           <div style={S.staffGrid}>
             <Link to={courseSubPath(code, 'roster')} style={S.staffBtn}>Roster</Link>
             <Link to={courseSubPath(code, 'tracking')} style={S.staffBtn}>Tracking</Link>
-            <Link to={courseSubPath(code, 'submissions')} style={S.staffBtn}>Submissions</Link>
-            <Link to={courseSubPath(code, 'reports')} style={S.staffBtn}>Reports</Link>
+            {/* Reports folded into the Student queue as a tab, and the
+                pre-publish Reading queue retired from view: 276 of 278 pages
+                are published and stamped, so it is finished work. Both routes
+                still resolve — see website.md for how to bring the reading
+                queue back for a new textbook. */}
+            <Link to={courseSubPath(code, 'submissions')} style={S.staffBtn}>Student queue</Link>
             <Link to={courseSubPath(code, 'review')} style={S.staffBtn}>Review</Link>
-            <Link to={courseSubPath(code, 'read')} style={S.staffBtn}>Reading queue</Link>
             <Link to={courseSubPath(code, 'corrections')} style={S.staffBtn}>Corrections</Link>
             {feats.ingest && <Link to={courseSubPath(code, 'ingest')} style={S.staffBtn}>Ingest</Link>}
           </div>

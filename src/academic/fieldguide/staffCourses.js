@@ -12,8 +12,9 @@
 // made PSY309's roster unreachable (whichever course sorted first was the only
 // one openable) and made the answer depend on Postgres row order.
 //
-// Note the queues are not all the same shape. ReadingQueue and ReportsQueue
-// each load ONE course's data, so a picker is the whole answer there.
+// Note the queues are not all the same shape. ReadingQueue, and the reports
+// panel now folded into the Student queue, each load ONE course's data, so a
+// picker is the whole answer there.
 // SubmissionsQueue deliberately spans courses (no course predicate; RLS scopes
 // it), so it takes the course from the row being acted on instead — see the
 // 20260831_submission_queue_course_id migration.

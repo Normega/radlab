@@ -125,7 +125,6 @@ const WhatsNew             = lazy(() => import('./academic/fieldguide/WhatsNew')
 const RosterAdmin          = lazy(() => import('./academic/fieldguide/RosterAdmin'))
 const TrackingPage         = lazy(() => import('./academic/fieldguide/TrackingPage'))
 const ReadingQueue         = lazy(() => import('./academic/fieldguide/ReadingQueue'))
-const ReportsQueue         = lazy(() => import('./academic/fieldguide/ReportsQueue'))
 const FieldGuideJoin       = lazy(() => import('./academic/fieldguide/Join'))
 const SignInConfirm        = lazy(() => import('./academic/fieldguide/SignInConfirm'))
 
@@ -269,6 +268,11 @@ function DashboardRoute({ session, hasAvatar, needsWelcome, needsRippleName, nev
 function RemoteToConsole() {
   const { courseCode } = useParams()
   return <Navigate to={`/academic/${courseCode}/lounge/console?tab=run`} replace />
+}
+
+function ReportsRedirect() {
+  const { courseCode } = useParams()
+  return <Navigate to={`/academic/${courseCode}/submissions?tab=reports`} replace />
 }
 
 function LegacyLoungeRedirect({ sub = '' }) {
@@ -823,8 +827,12 @@ export default function App() {
               {/* The pre-publish read, as a queue: risk-ordered pages, stamp
                   state, and a continue button. Stamping happens on the pages. */}
               <Route path="/academic/:courseCode/read" element={<ReadingQueue />} />
-              {/* Student error/contradiction reports, staff triage. */}
-              <Route path="/academic/:courseCode/reports" element={<ReportsQueue />} />
+              {/* Student error/contradiction reports are a TAB on the Student
+                  queue now, not a page of their own (2026-09-09): same
+                  audience, same gesture, and TAs were checking two inboxes.
+                  The URL stays alive because it is in the TA guide and in
+                  staff bookmarks. */}
+              <Route path="/academic/:courseCode/reports" element={<ReportsRedirect />} />
               {/* Legacy staff URLs. RosterAdmin keeps its own chooser (it
                   predates the course-scoped scheme and already resolves the
                   bare path safely); the rest go through the shim. */}

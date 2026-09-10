@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link, useOutletContext, useParams } from 'react-router-dom'
+import { Link, useOutletContext, useParams, useSearchParams } from 'react-router-dom'
 import { AcademicEyebrow } from '../AcademicChrome'
 import AvatarMenu from './AvatarMenu'
 import Onboarding from './Onboarding'
-import { useCoursePaths } from './wiki/useWikiBase'
+import ReportsPanel from './ReportsPanel'
+import { useCoursePaths, useWikiBase } from './wiki/useWikiBase'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -52,13 +53,32 @@ const VERDICT = {
 export default function SubmissionsQueue() {
   // No staffEnrollments here on purpose: this queue spans courses and takes
   // each decision's course from its own row. See notify() below.
-  const { courseClient, session } = useOutletContext()
+  const { courseClient, session, course: urlCourse } = useOutletContext()
+  const courseId = urlCourse?.course_id
 
   // TA review sections (2026-09-08): surname ranges per TA, stored in
   // review_sections. The queue defaults a TA to their own third with an
   // Everyone tab one tap away — a soft division of labour, never a wall.
   const [sections, setSections] = useState([])
   const [sectionTab, setSectionTab] = useState('mine') // 'mine' | 'all'
+
+  // Submissions and reports are one queue (2026-09-09): both are "a student
+  // sent you something, judge it and answer", for the same TAs. They were two
+  // routes and two buttons, so a TA had two inboxes to remember. ?tab=reports
+  // keeps the retired /reports URL working as a redirect.
+  const [params] = useSearchParams()
+  const [topTab, setTopTab] = useState(params.get('tab') === 'reports' ? 'reports' : 'submissions')
+  const [openReports, setOpenReports] = useState(null)
+  useEffect(() => {
+    if (!courseId) return
+    let live = true
+    courseClient.from('page_reports')
+      .select('id', { count: 'exact', head: true })
+      .eq('course_id', courseId).eq('status', 'open')
+      .then(({ count }) => { if (live) setOpenReports(count ?? 0) })
+    return () => { live = false }
+  }, [courseClient, courseId])
+  const WIKI_BASE = useWikiBase()
   const paths = useCoursePaths()
   const { courseCode } = useParams()
   const [tourOpen, setTourOpen] = useState(false)
@@ -291,7 +311,21 @@ export default function SubmissionsQueue() {
           <Onboarding client={courseClient} courseCode={courseCode} isStaff
                       tourOpen={tourOpen} onTourClose={() => setTourOpen(false)} />
         )}
-        <h1 style={S.title}>Student submissions</h1>
+        <h1 style={S.title}>Student queue</h1>
+        <div style={S.sectionTabs}>
+          <button style={S.sectionTab(topTab === 'submissions')} onClick={() => setTopTab('submissions')}>
+            Submissions{rows ? ` · ${rows.length}` : ''}
+          </button>
+          <button style={S.sectionTab(topTab === 'reports')} onClick={() => setTopTab('reports')}>
+            Reports{openReports != null ? ` · ${openReports}` : ''}
+          </button>
+        </div>
+
+        {topTab === 'reports' ? (
+          <ReportsPanel courseClient={courseClient} courseId={courseId}
+                        wikiBase={WIKI_BASE} onCountChange={setOpenReports} />
+        ) : (
+        <>
         <p style={S.sub}>
           Mechanical faults are caught before you read anything. What is left is the one question
           precheck cannot answer: <strong>does the source actually say this?</strong>{' '}
@@ -493,6 +527,8 @@ export default function SubmissionsQueue() {
         ))}
 
         {notice && <p style={S.notice}>{notice}</p>}
+        </>
+        )}
       </div>
     </div>
   )
