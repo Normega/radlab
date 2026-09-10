@@ -9,7 +9,7 @@ and computational reproducibility. Updated after each step. Companion to
 - **Source export**: `I:\Shared drives\Sandy\Study3\Data\PilotSandy Study 3_study_export.zip`
   (generated from `/admin/export`; 12 CSVs; 385 KB)
 - **Analysis environment**: R 4.6.0, Python 3.13 (pandas 2.3.3, numpy 2.3.5, scipy 1.16.3)
-- **Status**: Step 1 complete (data review). Steps 2–6 pending.
+- **Status**: Steps 1–13 complete. **Step 14 (2026-09-10) records a confirmatory-cohort data-collection failure that removes five of the seventeen confirmatory tests and alters five more — read it before using any state-rating variable.**
 
 > **Pilot firewall.** The pilot is used *only* to estimate nuisance parameters (variances,
 > zero rates, reliabilities, ICCs, distribution shapes, feasibility). No pilot analysis
@@ -49,6 +49,10 @@ Appendix B. The numbered index below is retained here as the audit trail, and is
 | D18 | Test accounts are excluded via the enrolment's `is_test` flag as criterion 0, ahead of every behavioural criterion. Enrolment status cannot identify them, because genuine participants withdraw too. Exports predating the column read as “none flagged” and remove nobody | 2026-08-19 |
 | D19 | The pilot/confirmatory boundary is the **enrolment date**, declared per run via `SANDY3_COHORT_START`, and a confirmatory run refuses to start without it. Nothing in the data separates the two cohorts — same study id, same Prolific id pattern, both real participants — and the pilot ran the pre-2026-08-11 instrument, so its percentiles are not on the same scale | 2026-08-19 |
 | D20 | The §5.5 positive control is **reported as registered but reinterpreted** for the Aptitude Suite: that task is designed to break the prediction–experience link it tests, so a low r is what a working manipulation produces. Three diagnostics fixed in advance separate a measurement fault from a successful manipulation, D1 (does the rating track the percentile actually shown) being the discriminating one. Amended before any confirmatory participant existed | 2026-08-20 |
+| D21 | H1B is refitted as `stress_T2 ~ stress_T1_z + trait_z * condition` — the registered structure, unmodified, on the affect measure that survived. The registered covariate (negative emotionality at T1) does not exist for the confirmatory cohort; stress T1 sits one step earlier (step 7 vs step 8), on the same side of both the score display and the framing, so it satisfies the positional requirement §5.1 actually states of the covariate | 2026-09-10, Norm |
+| D22 | The single-task reduced forms of H2A, H2B and H3A stay **confirmatory** rather than being demoted to exploratory. The lost observation cost precision, not identification: the critical terms are between-person trait coefficients, and D13 already anticipated a near-zero random-intercept variance, so the second occasion was contributing roughly a √2 efficiency gain | 2026-09-10, Norm |
+| D23 | The confirmatory family moves from **17 tests to 12**, and BH at q = .05 is applied across those 12. The five removed are H1B×2 (superseded by D21, which is reported as an amendment, not as the registered test), H3A×2 on negative emotionality, and H3B×1 on negative emotionality | 2026-09-10, Norm |
+| D24 | The 29 confirmatory ColourMax participants with no page switches are **excluded from H1C**, not read as maximal concentration (prereg §5.4 criterion 7, Appendix C2.4). A participant wrote in to say they had not understood there would be more than one image, and the data fit that reading rather than a strategy: 27 of the 29 coloured exactly one image and 2 coloured none, at a mean coverage of 14.7%, against 3.56 images and 48.8% among the 273 who navigated. Their allocation vector is (1,0,0,0,0), which puts the concentration index at its ceiling for a comprehension reason unrelated to perfectionism. Keyed on navigation, not on images coloured: the 6 participants who navigated, saw the other images and coloured only one are genuine concentrators and are retained. Scope as decided: the H1C confirmatory model | 2026-09-10, Norm |
 
 Build items B1–B3 were withdrawn or resolved (per D9, D10, D11). B4 (export field
 verification) completed 2026-08-06. B5 (Word Probe recalibration and redemption-score fix)
@@ -81,6 +85,14 @@ participant (max 1 session each), so no first-attempt rule is needed.
 
 ### 1.2 Where each preregistered variable actually lives
 
+> **Superseded in part by Step 14 (2026-09-10).** Everything below was verified on
+> 2026-08-11 against the N = 20 pilot and was true of it. It remains true of the 29
+> participants in the first confirmatory batch (2026-08-20). It is **not** true of the
+> 2026-08-26/27 batch, where the five slider instruments lost their earlier administrations
+> to a database defect; the counts in the table are pilot counts. The `vas_responses` rows
+> (stress, task satisfaction) are unaffected throughout. Do not read this table as a
+> statement about the analysis sample.
+
 Every variable named in prereg §4 is present in the export. Sourcing is **not** what the
 prereg assumed in three places (flagged ⚠).
 
@@ -90,7 +102,7 @@ prereg assumed in three places (flagged ⚠).
 | APS-R, BAT-Student, PANAS, RRQ, GSE, DASS-21, SCS-26 | `questionnaire_responses` | `questionnaire_slug`, `responses` jsonb | ✔ 20/20 each |
 | Stress (T0/T1/T2) | `vas_responses` | `scale_id=14f70c02…` (slug `stress`, emoji_6) | ✔ 3/participant |
 | Task satisfaction (×2) | `vas_responses` | `scale_id=667755b1…` (slug `task-satisfaction`) | ✔ 2/participant |
-| Negative / positive emotionality (T0/T1/T2) | `questionnaire_responses` ⚠ | slug `slider_negative_emotionality` / `_positive_` | ✔ 3/participant |
+| Negative / positive emotionality (T0/T1/T2) | `questionnaire_responses` ⚠ | slug `slider_negative_emotionality` / `_positive_` | ✔ 3/participant (**pilot and first confirmatory batch only — false for the 2026-08-26/27 batch, see Step 14**) |
 | Predicted efficacy (×2), post efficacy (×2), effort (×2) | `questionnaire_responses` ⚠ | corresponding `slider_*` slugs | ✔ 2/participant |
 | Aptitude subtask scores + percentiles, `avg_pct`, task switches | `aptitude_sessions` | `game IS NULL` | ✔ 20/20, no missing |
 | ColourMax coverage/precision per image, `avg_pct` | `aptitude_sessions` ⚠ | `game='color_max'`, `results` jsonb → `scores[]` | ✔ 20/20 |
@@ -1040,3 +1052,222 @@ the amendment.
 The interim gate at ~30 participants must be run in **default firewall mode**: it reports
 these gates as pass/fail while suppressing all 17 tests. Running it confirmatory would print
 the full family at n ≈ 30, which is not a permitted way to perform a data-quality check.
+
+---
+
+## Step 14 — A silent write loss in the confirmatory cohort (2026-09-10)
+
+Sandy asked why the five pre/post slider ratings showed one value each in the export instead
+of the two or three the protocol collects. They were collected. For most of the confirmatory
+cohort the earlier administrations were then destroyed by the platform at the moment the next
+one was written, with no error reaching the participant or any log. This step records what was
+lost, what it costs the registered analysis, and the four decisions taken in response (D21–D24).
+The preregistration is revised to match: a new §7 documents the failure, and Appendix C2
+records the amendments.
+
+The engineering account lives in `website.md` §28a and in
+`supabase/migrations/20260910_dedupe_by_step_index.sql`; it is not repeated here beyond what
+bears on the data.
+
+### 14.1 What happened
+
+`questionnaire_responses` carried a duplicate-submit guard that treated
+`(participant, instrument, session)` as the natural key of an administration, with no time
+window. The premise, stated in the migration that introduced it, was that "one session
+collects an instrument once."
+
+This study violates that premise by design. It asks negative and positive emotionality at
+three points of a single sitting, and predicted efficacy, experienced efficacy and effort at
+two — twelve slider administrations inside one session, all sharing one `schedule_id`. Every
+administration after the first was therefore read as a double-fire of the previous one: the
+guard overwrote the earlier row with the later answer and discarded the incoming insert.
+
+The first confirmatory batch escaped it for a reason that has nothing to do with having been
+checked. Until 2026-08-25 the slider save path did not record `schedule_id` at all, so slider
+writes fell into the guard's other branch, which only collapses submissions less than ten
+seconds apart. The 2026-08-25 platform release added `schedule_id` — a correct fix, closing a
+provenance gap — and in doing so moved every slider into the branch that collapses. The 29
+confirmatory participants enrolled on 2026-08-20 ran two days *after* the guard shipped and kept
+a full complement, which is the cleanest available demonstration that the guard alone was
+harmless and the combination was not.
+
+**This is the failure mode §5.6 of the preregistration names and certifies against.** That
+section defines silent write loss as "a completed step whose response never reaches the
+database" and reports that the pilot observed none — all 340 expected rating writes present.
+The certification was accurate for the pilot and was never re-run after the instrument changed
+on 2026-08-25. Strictly, each response did reach the database and was then overwritten by the
+next; the effect on the data is the same.
+
+### 14.2 Cohorts
+
+The pilot/confirmatory boundary is the enrolment date 2026-08-20 (D19; the boundary exercised in
+Step 10). The confirmatory cohort arrived in two batches on either side of the 2026-08-25
+release, and only the second is affected.
+
+| Cohort | Enrolled | Began | Completed | Slider data |
+|---|---|---|---|---|
+| Pilot, 2026-08-04/06 (excluded, prereg §3.1) | 22 | 21 | 20 | complete |
+| Confirmatory batch 1, 2026-08-20 | 32 | 29 | 29 | complete |
+| Confirmatory batch 2, 2026-08-26/27 | 298 | 283 | 263 | last administration only |
+| **Confirmatory total** | **330** | **312** | **292** | |
+
+### 14.3 What was lost
+
+Batch 2 only. "Answered" counts participants whose step log records them completing that step,
+so these are losses, not non-responses — every one of these ratings was given.
+
+| Rating | Timepoint (step) | Answered | Still in DB | **Lost** |
+|---|---|---|---|---|
+| Negative emotionality | T0 baseline (2) | 283 | 10 | **273** |
+| | T1 post-Aptitude (8) | 273 | 4 | **269** |
+| | T2 post-ColourMax (20) | 269 | 269 | 0 |
+| Positive emotionality | T0 baseline (3) | 283 | 10 | **273** |
+| | T1 post-Aptitude (9) | 273 | 4 | **269** |
+| | T2 post-ColourMax (21) | 269 | 269 | 0 |
+| Predicted efficacy | pre-Aptitude (4) | 283 | 10 | **273** |
+| | pre-ColourMax (15) | 273 | 273 | 0 |
+| Experienced efficacy | post-Aptitude (10) | 273 | 4 | **269** |
+| | post-ColourMax (22) | 269 | 269 | 0 |
+| Effort | post-Aptitude (6) | 273 | 4 | **269** |
+| | post-ColourMax (18) | 269 | 269 | 0 |
+
+**1,895 of 3,290 batch-2 slider values (58%).** The pattern is uniform rather than scattered:
+each participant retains exactly the last administration they reached, because each
+administration overwrote its predecessor in turn. The few holding an earlier value are
+participants who dropped out before the later step existed.
+
+**Not affected.** Stress and task satisfaction are `vas_responses` rows and that table carries
+no such guard: all three stress timepoints and both task-satisfaction ratings are present in
+every batch. The pilot and confirmatory batch 1 are complete on every instrument. The trait
+battery, the framing assignment, and all Aptitude Suite and ColourMax behavioural telemetry are
+untouched — none of them is a repeated within-session instrument.
+
+### 14.4 What the surviving value is
+
+For 269 of the 283 batch-2 participants the single stored slider value is the **post-ColourMax**
+reading — the end of the session, after both tasks, after feedback and after the framing. It is
+not a baseline and must never be modelled as one.
+
+Since the 2026-09-10 repair the export names it from the step that produced it
+(`slider_negative_emotionality_d1_s20_value`), so the timepoint is legible in the CSV rather than
+inferable. Any export of this study generated before the repair, including any copy already
+downloaded, has one unlabelled column per slider and should be discarded and regenerated.
+
+### 14.5 Effect on the registered analysis
+
+Of the seventeen confirmatory tests in prereg §5.3, seven are unaffected, five survive in reduced
+form, and five cannot be run on the confirmatory sample. Complete data for those five exist only
+for the 29 participants of batch 1, which cannot stand in for the registered tests: it is a tenth
+of the sample, selected by date.
+
+| Hypothesis | Tests | Status |
+|---|---|---|
+| H1A trait × condition → ColourMax effort | 2 | Intact |
+| H1B trait × condition → adjusted post-CM negative emotionality | 2 | **Removed** — the registered covariate does not exist for batch 2. Refitted on stress per D21, as an amendment |
+| H1C discrepancy × condition → allocation concentration | 1 | Intact (sample per D24) |
+| H2A discrepancy, rumination → effort | 2 | Reduced — ColourMax only |
+| H2B burnout → effort | 1 | Reduced — ColourMax only |
+| H2C three traits → Aptitude percentile SD | 3 | Intact |
+| H3A 2 predictors × 2 DVs | 4 | 2 reduced (stress), **2 removed** (negative emotionality) |
+| H3B time × discrepancy × 2 DVs | 2 | 1 intact (stress), **1 removed** (negative emotionality) |
+
+The asymmetry has a single cause: stress is a `vas_responses` instrument and negative
+emotionality is a `questionnaire_responses` slider. Every hypothesis stated over stress survives;
+its negative-emotionality twin does not.
+
+**H3B on stress is intact exactly as registered** — three timepoints, three observations per
+participant, no deviation of any kind. It was also the best-powered test in the family
+(detectable Δr = .16 at N = 250, §3.4), so the headline trajectory claim is unimpaired.
+
+Reduced-form specifications, per D22:
+
+- **H2A / H2B.** `effort ~ trait_z + task + (1 | id)` loses its Aptitude row and becomes
+  `effort_CM ~ trait_z`, ordinary least squares. The critical terms are unchanged.
+- **H3A.** `preDV ~ discrepancy_z + predicted_efficacy_z + task + condition + (1 | id)` loses
+  the Aptitude row, whose predicted-efficacy rating is gone, and becomes
+  `stress_T1 ~ discrepancy_z + predicted_efficacy_CM_z + condition`. Both critical terms remain
+  estimable. The two negative-emotionality tests have no fallback: T0 and T1 are both lost.
+
+### 14.6 Analysable sample and quality checks
+
+Every one of the 292 complete confirmatory sessions carries every variable each surviving test
+requires. Counts before prereg §5.4 criteria 2–6, which the pipeline applies:
+
+| Test | n |
+|---|---|
+| H1A (discrepancy; rumination) | 292; 292 |
+| H1B amended on stress, D21 (discrepancy; rumination) | 292; 292 |
+| H1C, after D24 | 262 — 29 excluded by D24, 1 by criterion 4 |
+| H2A (discrepancy; rumination), reduced | 292; 292 |
+| H2B, reduced | 292 |
+| H2C | 292 |
+| H3A stress, reduced | 292 |
+| H3B stress | 292 |
+| Positive control, ColourMax arm | 292 |
+
+Arms among complete sessions: 146 control / 146 redemption.
+
+N = 292 sits essentially at the registered N = 300 column of §3.4, so the power conclusions there
+stand approximately as registered: H2 and H3 well powered, the H1 interactions the marginal
+family. H1C at 262 falls between the N = 250 and N = 300 columns. The shortfall against 300 comes
+from recruitment, not from the write loss — the write loss removed variables, not participants.
+Recruitment closing below the §3.3 stopping rule of 300 valid sessions is a separate deviation,
+recorded at prereg §3.3.
+
+**Positive control.** The ColourMax arm — predicted (step 15) against experienced (step 22) — is
+complete, and per Appendix C1 that is the arm whose registered inference stands unchanged. The
+Aptitude arm needs both Aptitude-side ratings, which exist only for batch 1, and so does C1's
+diagnostic **D1**, which Step 13 identified as the load-bearing one. Both are computable on those
+29 participants only.
+
+### 14.7 Placing the stress and satisfaction rows
+
+The step backfill that accompanied the repair placed each rating on the step whose time window
+contained it. `vas_responses.responded_at` is stamped by the participant's device, so a
+participant with a skewed clock matched no window — the problem prereg §5.6 already describes.
+That left 20 batch-2 participants who had completed all three stress ratings with no step
+recorded, and the export gave them `_xstep` columns beside everyone else's `_s1/_s7/_s19`.
+
+They were placed by order instead: a participant's nth rating of a scale in a session belongs to
+the nth step presenting that scale. Applied only where the counts match exactly, no row in the
+group was already placed, and the implied clock offset is constant across the group — a wrong
+device clock is wrong by the same amount all session, so a constant offset corroborates the
+pairing. 95 rows were placed (stress: 19 participants, 56 rows; task satisfaction: 20
+participants, 39 rows), every group consistent to within 0.5 seconds, with offsets from −3,576 s
+(a clock an hour slow) to +505 s. Rows the rule cannot pair unambiguously are left unlabelled
+rather than guessed: after it ran, 3 of the 292 completers still have an unlabelled stress rating
+and 2 an unlabelled satisfaction rating (289 and 290 fully labelled). This affects export column naming only; the analysis pipeline matches
+ratings to steps itself. (`supabase/migrations/20260910_vas_step_index_order_backfill.sql`)
+
+### 14.8 Decisions
+
+Recorded in the decision index above and in prereg Appendix C2:
+
+- **D21** — H1B refitted as `stress_T2 ~ stress_T1_z + trait_z * condition`.
+- **D22** — the single-task reduced forms of H2A, H2B and H3A stay confirmatory.
+- **D23** — the confirmatory family is 12 tests, with BH across those 12. The amended H1B is
+  reported beside the family, as an amendment, rather than inside it.
+- **D24** — ColourMax participants who never navigated off the first image are excluded from H1C.
+
+### 14.9 Why it was not caught for a fortnight
+
+Recorded because the same three conditions would hide the next one.
+
+The failure is silent by construction: the guard runs as a `BEFORE INSERT` trigger returning
+NULL, which the client cannot distinguish from a successful write, so the participant saw an
+ordinary Submit and advanced. Nothing was logged anywhere.
+
+The data-shape verification in Step 1 was run once, on 2026-08-11, against the pilot, and never
+re-run after the 2026-08-25 release changed how these instruments save. D19 already recorded that
+the pilot ran a different instrument version — that the instrument had changed was known; the
+implication that Step 1's verification no longer covered it was not drawn.
+
+And nothing tested it. No automated check anywhere in the platform exercised a repeated
+within-session submission, so the guard's premise was never contradicted by anything except real
+participants. A regression test now covers it.
+
+The general lesson is one the platform's own data rules already state, and which this reproduced
+anyway: a verification is a statement about the build it was run against. **The instrument
+changing is what invalidates it, and re-running it is not optional.** For this study that means
+the Step 1 shape check is re-run against the live cohort before any further collection, not
+against the pilot.

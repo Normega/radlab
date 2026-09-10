@@ -692,7 +692,7 @@ function vasWideByProfile(vasRows, scaleSlugById, ctx) {
     const repeats = vasRepeats(ctx?.repeatedSubcats, rawSlug, r.package_slug)
     // Ordinal is only consulted when the step is unknown; counted per
     // participant/scale/day so the fallback markers stay distinct.
-    const k = `${pid} ${slug}${phase} ${sched.study_day}`
+    const k = `${pid}\u0000${slug}${phase}\u0000${sched.study_day}`
     const stepSuffix = administrationSuffix({
       repeats,
       stepIndex: r.step_index,
