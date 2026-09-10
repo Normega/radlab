@@ -34,7 +34,7 @@ export const ADVANCED_INSTRUMENTS = [
   {
     key: 'liliana_demographics',
     name: 'Liliana Study 3 Demographics',
-    description: 'The full demographic battery for Liliana Study 3 (7 sections, 23 questions): age, gender identity, trans identity, sexual orientation, race/ethnocultural identity, religion + religiosity, disability, and — the part no other instrument on the platform collects — Academic Life (student status, domestic/international, residence, living arrangement, campus, faculty, parental education) and Work & Finances (paid work hours, country of birth, primary language, household income, marital status, employment). Identity questions reuse the Equity Census option sets and wording verbatim, so the two cannot drift apart.',
+    description: 'The full demographic battery for Liliana Study 3 (8 sections, 27 questions): age, gender identity, trans identity, sexual orientation, race/ethnocultural identity, religion + religiosity, disability, and — the part no other instrument on the platform collects — Academic Life (student status, domestic/international, residence, living arrangement, campus, commute + one-way commute time, faculty, parental education), Work & Finances (paid work hours, country of birth, primary language, household income, marital status, employment) and Mental Health (current talk therapy, current psychiatric medication — the September 2026 ethics amendment). Identity questions reuse the Equity Census option sets and wording verbatim, so the two cannot drift apart.',
     source: 'src/components/study/LilianaDemographicsStep.jsx',
     table: 'liliana_demographics',
     previewable: true,
