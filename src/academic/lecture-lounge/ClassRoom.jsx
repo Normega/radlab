@@ -571,6 +571,12 @@ export default function ClassRoom({ session }) {
             {boardsInfo?.map((b) => (
               <Link key={b.key} to={`${loungePath(slug)}/boards?board=${b.key}`} style={S.fgCard}>
                 <p style={S.fgEyebrow}>{b.title}</p>
+                {/* The board's own blurb, in the same serif line the weekly
+                    cards use for their prompt — without it these rows were an
+                    eyebrow and a count, and a student had to open a board to
+                    learn which one their question belonged in. Editing the
+                    blurb in class_boards changes this copy; no deploy. */}
+                {b.blurb && <p style={S.fgTitle}>{b.blurb}</p>}
                 <p style={S.fgMeta}>
                   {b.threads === 0
                     ? 'No questions yet — ask the first one →'
