@@ -226,7 +226,10 @@ export default function AvatarMenu({ client, fgEmail, email, courseCode, isStaff
     items.push({ to: `${lounge}/screen`, label: 'Screen' })
     items.push({ to: `${lounge}/slides`, label: 'Slides' })
   }
-  if (acadStaff && courseCode) items.push({ to: coursePath(courseCode), label: 'Course home' })
+  // Everyone, not just staff (2026-09-09): Course home is now the course's
+  // central navigation page — chapters, gap board, what's new — so a
+  // student needs a named way back to it, not just the eyebrow.
+  if (courseCode) items.push({ to: coursePath(courseCode), label: 'Course home' })
   // Then the account places.
   if (linkedMainId) items.push({ to: '/ripple', label: 'My Ripple' })
   if (linkedMainId) items.push({ to: '/account', label: 'Account' })

@@ -150,6 +150,11 @@ export default function CourseHome({ role, superAdmin }) {
       </Link>
       {fgSession ? (
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
+          {/* Chapters first: "what do I read this week" is asked weekly, the
+              other two occasionally. This row is the course's front door
+              (Norm, 2026-09-09: "one central navigation page that people come
+              back to"), so the link lives here rather than inside the Guide. */}
+          <Link to={courseSubPath(code, 'chapters')} style={S.staffBtn}>Chapters by lecture</Link>
           {feats.gaps && <Link to={courseSubPath(code, 'gaps')} style={S.staffBtn}>Gap board</Link>}
           <Link to={courseSubPath(code, 'whats-new')} style={S.staffBtn}>What's new</Link>
         </div>
