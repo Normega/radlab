@@ -9,8 +9,14 @@
 // would tell a student they can skip material the exam covers.
 
 export const TIER_LABEL = {
-  A: 'central to the course',
-  B: 'supporting page',
+  // 'foundation', not 'central to the course' (Norm, 2026-09-10): every
+  // chapter now opens with a band headed Foundation, and the card meta should
+  // use the same word rather than a second vocabulary for the same idea. The
+  // A/B split survives underneath as a REVIEW-BUDGET distinction — see the
+  // note above — which is why both read 'foundation' to a student and differ
+  // only in how full the page is.
+  A: 'foundation',
+  B: 'foundation · short entry',
   // Folded into a chapter from what used to be "Contributed pages": a
   // concept, treatment or debate rather than a disorder. The index shows the
   // page's own type instead of this wherever it can, which says more.

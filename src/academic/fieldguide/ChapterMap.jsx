@@ -20,11 +20,20 @@ const SERIF = '"DM Serif Display", Georgia, serif'
 // reading week — a reading plan that silently omits the weeks with no reading
 // is how people miscount what is left.
 
-// Reading order inside a lecture: the orienting page first, then the concepts
-// it depends on, then the disorders, then what to do about them. Alphabetical
-// within a rank so the order is stable between renders.
+// Reading order inside a lecture. TIER leads: the foundation pages are the
+// ones to study first and the ones the quizzes lean on hardest, and until now
+// they sat unmarked among the supporting pages -- for Lecture 1, "What is
+// abnormal?" and "Historical traditions" were indistinguishable from twelve
+// concepts that hang off them (Norm, 2026-09-10). Type breaks ties within a
+// tier, and title within that, so the order is stable between renders.
+const TIER_RANK = { overview: 0, foundation: 1, A: 1, B: 2, supporting: 3 }
+const tierRank = (t) => TIER_RANK[t] ?? 4
 const TYPE_RANK = { overview: 0, concept: 1, disorder: 2, treatment: 3, debate: 4, study: 5 }
 const typeRank = (t) => TYPE_RANK[t] ?? 9
+
+// Provenance records, not readings -- the same exclusion the wiki index makes.
+const isSource = (p) => p.type === 'study' ||
+  String(p.slug).startsWith('fundamentals-psychological-disorders-module')
 
 const fmtDate = (d) => d
   ? new Date(`${d}T12:00:00`).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })
@@ -39,6 +48,7 @@ export default function ChapterMap() {
   const [meetings, setMeetings] = useState(null)  // null = loading
   const [pages, setPages] = useState([])
   const [links, setLinks] = useState([])
+  const [tiers, setTiers] = useState(new Map())   // slug -> catalogue tier
   const [expanded, setExpanded] = useState({})    // lecture_no -> bool
   const [error, setError] = useState(null)
 
@@ -46,7 +56,7 @@ export default function ChapterMap() {
     if (!courseId) return
     let cancelled = false
     ;(async () => {
-      const [ms, pl, pg] = await Promise.all([
+      const [ms, pl, pg, cat] = await Promise.all([
         courseClient.from('course_structure')
           .select('week_no, meeting_date, kind, lecture_no, title, detail')
           .eq('course_id', courseId).order('week_no'),
@@ -57,33 +67,38 @@ export default function ChapterMap() {
         courseClient.from('wiki_pages')
           .select('id, slug, title, type')
           .eq('course_id', courseId).eq('status', 'published'),
+        // The catalogue carries the tier; wiki_pages does not.
+        courseClient.from('disorders').select('slug, tier').eq('course_id', courseId),
       ])
       if (cancelled) return
-      const firstErr = ms.error ?? pl.error ?? pg.error
+      const firstErr = ms.error ?? pl.error ?? pg.error ?? cat.error
       if (firstErr) { setError(firstErr.message); setMeetings([]); return }
       setMeetings(ms.data ?? [])
       setLinks(pl.data ?? [])
       setPages(pg.data ?? [])
+      setTiers(new Map((cat.data ?? []).map(d => [d.slug, d.tier])))
     })()
     return () => { cancelled = true }
   }, [courseClient, courseId])
 
   // lecture_no -> the chapters for it, in reading order.
   const byLecture = useMemo(() => {
-    const bySlug = new Map((pages ?? []).map(p => [p.id, p]))
+    const byId = new Map((pages ?? []).map(p => [p.id, p]))
     const m = new Map()
     for (const l of links ?? []) {
-      const p = bySlug.get(l.page_id)
+      const p = byId.get(l.page_id)
       if (!p) continue // unpublished, or a page removed since the mapping ran
+      if (isSource(p)) continue // a citation, not a reading
       if (!m.has(l.lecture_no)) m.set(l.lecture_no, [])
-      m.get(l.lecture_no).push(p)
+      m.get(l.lecture_no).push({ ...p, tier: tiers.get(p.slug) })
     }
     for (const list of m.values()) {
-      list.sort((a, b) => typeRank(a.type) - typeRank(b.type) ||
+      list.sort((a, b) => tierRank(a.tier) - tierRank(b.tier) ||
+                          typeRank(a.type) - typeRank(b.type) ||
                           String(a.title).localeCompare(String(b.title)))
     }
     return m
-  }, [links, pages])
+  }, [links, pages, tiers])
 
   // Deck filenames count MEETINGS, not lectures: a term with a midterm week
   // has no deck for it, so every deck after that week is one ahead of its
@@ -208,14 +223,24 @@ export default function ChapterMap() {
 
                           {isOpen && (
                             <ul style={S.chapterList}>
-                              {chapters.map(p => (
+                              {/* Foundation entries carry the weight: they lead
+                                  the list, sit in full-strength text, and are
+                                  labelled. Everything after is the material that
+                                  hangs off them — still examinable, so muted
+                                  rather than hidden. */}
+                              {chapters.map(p => {
+                                const core = tierRank(p.tier) <= 1
+                                return (
                                 <li key={p.id} style={S.chapterItem}>
-                                  <Link to={`${WIKI_BASE}/${p.slug}`} style={S.chapterLink}>
+                                  <Link to={`${WIKI_BASE}/${p.slug}`}
+                                        style={core ? S.chapterLinkCore : S.chapterLink}>
                                     {p.title}
                                   </Link>
-                                  {p.type && <span style={S.typeTag}>{p.type}</span>}
+                                  {core
+                                    ? <span style={S.foundationTag}>foundation</span>
+                                    : p.type && <span style={S.typeTag}>{p.type}</span>}
                                 </li>
-                              ))}
+                              )})}
                               {chapters.length === 0 && (
                                 <li style={S.chapterItem}>
                                   <span style={S.muted}>No chapters mapped yet.</span>
@@ -300,7 +325,9 @@ const S = {
   breakDetail: { fontSize: 13, color: 'var(--tx3)' },
   chapterList: { listStyle: 'none', padding: 0, margin: '12px 0 2px', columnGap: 26, columns: '2 220px' },
   chapterItem: { breakInside: 'avoid', margin: '0 0 6px', lineHeight: 1.45 },
-  chapterLink: { color: 'var(--pk)', textDecoration: 'none', fontSize: 14 },
+  chapterLink: { color: 'var(--tx2)', textDecoration: 'none', fontSize: 14 },
+  chapterLinkCore: { color: 'var(--pk)', textDecoration: 'none', fontSize: 14.5, fontWeight: 600 },
+  foundationTag: { fontFamily: MONO, fontSize: 10.5, letterSpacing: 0.5, color: 'var(--pk)', marginLeft: 6 },
   typeTag: { fontFamily: MONO, fontSize: 10.5, color: 'var(--tx3)', marginLeft: 6 },
   muted: { fontSize: 13.5, color: 'var(--tx3)', fontStyle: 'italic' },
   expand: {
