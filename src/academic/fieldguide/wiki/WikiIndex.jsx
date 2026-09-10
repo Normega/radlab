@@ -159,8 +159,13 @@ export default function WikiIndex() {
       .filter(c => c.dsm_chapter == null)
       .sort((a, b) => a.title.localeCompare(b.title))
     if (foundations.length) {
+      // "Concepts and Methods", not "Foundations": these 82 pages are the
+      // course's own first chapter — what abnormality means, how it is
+      // assessed and researched, and the treatments and debates that cut
+      // across every disorder chapter. Named for what a student is looking
+      // for rather than for its position in the book.
       groups.unshift({
-        number: 0, title: 'Foundations', rows: foundations,
+        number: 0, title: 'Concepts and Methods', rows: foundations,
         readable: foundations.filter(r => bySlug.has(r.slug)).length,
       })
     }
@@ -211,7 +216,6 @@ export default function WikiIndex() {
   // the named study pages exist so a claim can cite where it came from;
   // listing them beside the chapters invited students to try to read them.
   const isSource = (p) => p.type === 'study' || String(p.slug).startsWith('fundamentals-psychological-disorders-module')
-  const foundationPages = useMemo(() => contributed.filter(p => !isSource(p)), [contributed])
   const sourcePages = useMemo(() => contributed.filter(isSource), [contributed])
 
   // Folded chapters, keyed by DSM chapter number rather than by position, so
@@ -380,43 +384,6 @@ export default function WikiIndex() {
                 </button>
               ))}
             </div>
-          )}
-
-          {/* Foundations & methods, ABOVE the chapters. These are the framing
-              pages the whole course leans on — what "abnormal" means, the
-              learning-theory pages, research methods — and the quizzes examine
-              them. They used to sit BELOW the disorder chapters under a
-              heading reading "Contributed pages", which told students the
-              opposite (Ritma, 2026-09-10: "I don't see [them] cleanly under
-              the foundations chapter"). Nothing about the pages changed; the
-              index was lying about their status. */}
-          {!weekAnchored && foundationPages.length > 0 && (
-            <section style={{ marginTop: 18 }}>
-              <h2 style={S.h2Loose}>Foundations &amp; methods</h2>
-              <p style={S.sub}>
-                The concepts, treatments and debates the disorder chapters build on. Examinable —
-                the weekly quizzes draw on these as well as on the chapters.
-              </p>
-              {CONTRIB_TYPES.map(([type, label]) => {
-                const rows = foundationPages.filter(p => p.type === type)
-                if (!rows.length) return null
-                return (
-                  <div key={type} style={{ marginTop: 14 }}>
-                    <p style={S.typeLabel}>{label}</p>
-                    <div style={S.grid}>
-                      {rows.map(p => (
-                        <Link key={p.slug} to={`${WIKI_BASE}/${p.slug}`} style={S.card}>
-                          <span style={S.cardTitle}>{p.title}</span>
-                          <span style={S.cardMeta}>
-                            {p.status !== 'published' && <b style={{ color: 'var(--pk)' }}>draft</b>}
-                          </span>
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                )
-              })}
-            </section>
           )}
 
           {view === 'list' && visibleGroups.map(g => {
