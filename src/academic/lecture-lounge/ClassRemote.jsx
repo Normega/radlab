@@ -38,6 +38,11 @@ export default function ClassRemote({ superAdmin }) {
   const [questionsByCheckin, setQuestionsByCheckin] = useState({})
   const [voteCounts, setVoteCounts] = useState({})
   const [connStatus, setConnStatus] = useState('connecting')
+  // { checkinId, message } — scoped to a card, because the banner used to
+  // render above the whole list: with six check-ins planned, the button you
+  // press is below the fold and the message appeared off-screen. It fired
+  // correctly into empty space, which reads exactly like a dead site (found
+  // during the 2026-09-09 load test, and plausibly part of what L1 felt like).
   const [actionError, setActionError] = useState(null)
   const [countdown, setCountdown] = useState(null)
   const [menuFor, setMenuFor] = useState(null) // checkin id with the ⋯ overflow open
@@ -204,12 +209,25 @@ export default function ClassRemote({ superAdmin }) {
     setPromptRows((prev) => ({ ...prev, [checkinId]: (data ?? []).map(r => ({ text: r.prompt_response, at: r.created_at })) }))
   }
 
+  // The database's own words are accurate and useless mid-lecture. Translate
+  // the ones that have an action attached; pass anything else through rather
+  // than swallowing information we did not anticipate.
+  function friendly(msg) {
+    const m = String(msg ?? '')
+    if (/already staged or open/i.test(m)) return 'Another check-in is still live — press Stop on it first. Only one can run at a time.'
+    if (/restricted to super admins/i.test(m)) return 'Reset is limited to the course owner — it deletes every response.'
+    if (/row-level security/i.test(m)) return 'The database refused that. Reload the page and try once more.'
+    if (/JWT|token is expired/i.test(m)) return 'Your session expired. Reload the page to sign back in.'
+    return m
+  }
+  const fail = (checkin, msg) => setActionError({ checkinId: checkin?.id ?? null, message: friendly(msg) })
+
   async function handleOpen(checkin) {
     setActionError(null)
     const conflict = checkins.find((c) => c.id !== checkin.id && ['staged', 'open'].includes(c.status))
-    if (conflict) { setActionError('Close the other live check-in first.'); return }
+    if (conflict) { fail(checkin, `“${conflict.config?.prompt_text?.slice(0, 40) ?? 'Another check-in'}” is still live — press Stop on it first.`); return }
     const { error } = await supabase.from('checkins').update({ status: 'open', opened_at: new Date().toISOString() }).eq('id', checkin.id)
-    if (error) { setActionError(error.message); return }
+    if (error) { fail(checkin, error.message); return }
     broadcast('open', checkin.id)
     loadCheckins(lecture.id)
   }
@@ -217,7 +235,7 @@ export default function ClassRemote({ superAdmin }) {
   async function handleClose(checkin) {
     setActionError(null)
     const { error } = await supabase.from('checkins').update({ status: 'closed', closed_at: new Date().toISOString() }).eq('id', checkin.id)
-    if (error) { setActionError(error.message); return }
+    if (error) { fail(checkin, error.message); return }
     broadcast('closed', checkin.id)
     loadCheckins(lecture.id)
   }
@@ -241,7 +259,7 @@ export default function ClassRemote({ superAdmin }) {
   async function handleShowResults(checkin) {
     setActionError(null)
     const { error } = await supabase.from('checkins').update({ status: 'results_ready' }).eq('id', checkin.id)
-    if (error) { setActionError(error.message); return }
+    if (error) { fail(checkin, error.message); return }
     broadcast('results_ready', checkin.id)
     loadCheckins(lecture.id)
   }
@@ -249,7 +267,7 @@ export default function ClassRemote({ superAdmin }) {
   async function handleRevealQuiz(checkin) {
     setActionError(null)
     const { error } = await supabase.from('checkins').update({ quiz_revealed_at: new Date().toISOString() }).eq('id', checkin.id)
-    if (error) { setActionError(error.message); return }
+    if (error) { fail(checkin, error.message); return }
     // The reveal was the ONLY transition without a broadcast — it leaned
     // entirely on QuizResults' own postgres_changes channel, which joins
     // late (only once results render) and misses a reveal tapped into its
@@ -266,7 +284,7 @@ export default function ClassRemote({ superAdmin }) {
   async function handleDismiss(checkin) {
     setActionError(null)
     const { error } = await supabase.from('checkins').update({ dismissed_at: new Date().toISOString() }).eq('id', checkin.id)
-    if (error) { setActionError(error.message); return }
+    if (error) { fail(checkin, error.message); return }
     broadcast('dismissed', checkin.id)
     loadCheckins(lecture.id)
   }
@@ -281,7 +299,7 @@ export default function ClassRemote({ superAdmin }) {
     if (!window.confirm('Reset this check-in to planned? Any responses and questions it collected will be deleted.')) return
     setActionError(null)
     const { error } = await supabase.rpc('reset_checkin', { p_checkin_id: checkin.id })
-    if (error) { setActionError(error.message); return }
+    if (error) { fail(checkin, error.message); return }
     broadcast('dismissed', checkin.id)
     loadCheckins(lecture.id)
   }
@@ -293,7 +311,7 @@ export default function ClassRemote({ superAdmin }) {
 
   async function handlePublishQuestion(question) {
     const { error } = await supabase.from('class_questions').update({ status: 'published' }).eq('id', question.id)
-    if (error) { setActionError(error.message); return }
+    if (error) { fail({ id: question.checkin_id }, error.message); return }
     setQuestionsByCheckin((prev) => ({
       ...prev,
       [question.checkin_id]: (prev[question.checkin_id] ?? []).map((q) => (q.id === question.id ? { ...q, status: 'published' } : q)),
@@ -302,7 +320,7 @@ export default function ClassRemote({ superAdmin }) {
 
   async function handleAnswerQuestion(question) {
     const { error } = await supabase.from('class_questions').update({ status: 'answered' }).eq('id', question.id)
-    if (error) { setActionError(error.message); return }
+    if (error) { fail({ id: question.checkin_id }, error.message); return }
     setQuestionsByCheckin((prev) => ({
       ...prev,
       [question.checkin_id]: (prev[question.checkin_id] ?? []).map((q) => (q.id === question.id ? { ...q, status: 'answered' } : q)),
@@ -355,7 +373,7 @@ export default function ClassRemote({ superAdmin }) {
       </div>
 
       <div style={S.wrap}>
-        {actionError && <p style={S.error}>{actionError}</p>}
+        {actionError && !actionError.checkinId && <p style={S.error}>{actionError.message}</p>}
 
         {!lecture ? (
           <p style={S.hint}>No lecture found near today's date. Plan one from the console.</p>
@@ -414,6 +432,12 @@ export default function ClassRemote({ superAdmin }) {
                             onClick={() => setMenuFor(menuFor === c.id ? null : c.id)}>⋯</button>
                   )}
                 </div>
+
+                {/* Right under the button that failed, where the instructor is
+                    already looking. */}
+                {actionError?.checkinId === c.id && (
+                  <p style={S.cardError}>{actionError.message}</p>
+                )}
 
                 {menuFor === c.id && c.status !== 'planned' && (
                   <div style={S.overflowRow}>
@@ -507,6 +531,7 @@ const S = {
   wrap: { maxWidth: 480, margin: '0 auto', padding: '12px 16px 40px' },
   hint: { fontSize: 14, color: 'var(--tx3)', textAlign: 'center', padding: '40px 20px' },
   error: { fontSize: 14, color: '#c04a4a', background: '#fdecec', border: '1px solid #f3b8b8', borderRadius: 10, padding: '10px 14px', marginBottom: 12 },
+  cardError: { fontSize: 13.5, color: '#c04a4a', background: '#fdecec', border: '1px solid #f3b8b8', borderRadius: 10, padding: '9px 13px', margin: '10px 0 0', lineHeight: 1.45 },
   card: { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 16, padding: '16px 18px', marginBottom: 12 },
   cardHeader: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, flexWrap: 'wrap' },
   pos: { fontFamily: MONO, fontSize: 12, color: 'var(--tx3)' },

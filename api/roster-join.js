@@ -234,7 +234,7 @@ async function sendSignInEmail(service, resendKey, { email, fullName, courseCode
     const fromEmail = fromFor(courseCode)
     // Staff matches carry no roster name; "there" reads fine in a greeting.
     const first = String(fullName ?? '').split(' ')[0] || 'there'
-    const rsp = await fetch('https://api.resend.com/emails', {
+    const rsp = await postWithRetry('https://api.resend.com/emails', {
       method: 'POST',
       headers: { Authorization: `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -259,4 +259,33 @@ async function sendSignInEmail(service, resendKey, { email, fullName, courseCode
       }),
     })
     if (!rsp.ok) throw new Error(`Resend ${rsp.status}`)
+}
+
+// Send with retry. A lecture's sign-in wave is ~200 students inside a couple
+// of minutes, which is a burst rate any provider may briefly refuse; without
+// this, ONE 429 or 5xx meant a student saw "Could not send the link" and had
+// to start over, in a room where they had already stopped listening to find
+// their phone. Retries only what is worth retrying — a 4xx that is not 429 is
+// our bug and will fail identically the second time.
+//
+// Jittered backoff, not fixed: 200 functions retrying in lockstep at exactly
+// 500ms would rebuild the burst they are backing off from.
+async function postWithRetry(url, init, attempts = 3) {
+  let last
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const rsp = await fetch(url, init)
+      if (rsp.ok) return rsp
+      last = rsp
+      const retryable = rsp.status === 429 || rsp.status >= 500
+      if (!retryable || i === attempts - 1) return rsp
+    } catch (e) {
+      // Network-level failure; the last attempt rethrows so the caller's
+      // catch still reports something true.
+      last = null
+      if (i === attempts - 1) throw e
+    }
+    await new Promise(r => setTimeout(r, (400 * 2 ** i) + Math.random() * 400))
+  }
+  return last
 }
