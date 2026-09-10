@@ -311,60 +311,58 @@ export default function App() {
   // rule "want the main site? do the full onboarding".
   const [isClassMember,        setIsClassMember]        = useState(undefined)
 
-  async function checkRippleName(userId) {
-    const { data } = await supabase.from('ripples').select('name').eq('user_id', userId).maybeSingle()
-    setRippleNamed(!!(data?.name))
-  }
-
-  // Dashboard-only gate (DashboardRoute) — see its comment for why "ever"
-  // and not "today".
-  async function checkFirstCheckin(userId) {
-    const { data } = await supabase.from('ripples').select('last_checkin_on').eq('user_id', userId).maybeSingle()
-    setNeverCheckedIn(!data?.last_checkin_on)
-  }
-
-  async function fetchRole(userId) {
-    const { data } = await supabase
-      .from('profiles')
-      .select('role, first_contact_complete, super_admin, onboarding_complete, still_water_sessions')
-      .eq('id', userId)
-      .single()
-    const r  = data?.role ?? 'public'
-    const oc = data?.onboarding_complete ?? false
+  // Everything App needs to know about the signed-in user, in ONE round trip:
+  // get_session_bootstrap() (supabase/migrations/20260910_session_bootstrap_rpc.sql).
+  //
+  // This was five separate reads — profiles, avatars, ripples for the name,
+  // ripples AGAIN for last_checkin_on, class_members — and they do not run only
+  // when someone signs in. auth-js re-runs _recoverAndRefresh() on every
+  // visibilitychange → visible and emits SIGNED_IN straight from storage, with
+  // no auth-server traffic at all, so every tab switch replayed all five. Over
+  // one two-hour lecture (2026-09-09) that came to 9,072 requests: 57% of every
+  // browser REST call the whole site made in that window, against 733 for the
+  // check-ins the lecture actually ran on.
+  //
+  // The RPC is SECURITY INVOKER, so the same RLS picks the same rows — we ask
+  // once instead of five times, not with more authority. The defaults below
+  // mirror the old ones exactly, including on failure: a null `data` from an
+  // RPC error lands on the same values the five separate failures produced.
+  async function loadUserState() {
+    const { data } = await supabase.rpc('get_session_bootstrap')
+    const r = data?.role ?? 'public'
     setRole(r)
-    setFirstContactComplete(data?.first_contact_complete ?? false)
-    setStillWaterPlayed((data?.still_water_sessions ?? 0) > 0)
     setSuperAdmin(!!data?.super_admin)
-    setOnboardingComplete(oc)
-    // Checked for ALL public users, not just onboarded ones (2026-07-30): the name
+    setOnboardingComplete(data?.onboarding_complete ?? false)
+    setFirstContactComplete(data?.first_contact_complete ?? false)
+    setStillWaterPlayed(!!data?.still_water_played)
+    setHasAvatar(!!data?.has_avatar)
+    // Dashboard-only gate (DashboardRoute) — see its comment for why "ever"
+    // and not "today".
+    setNeverCheckedIn(data?.never_checked_in ?? true)
+    setIsClassMember(!!data?.is_class_member)
+    // Read for ALL public users, not just onboarded ones (2026-07-30): the name
     // is what distinguishes a user part-way through the current /welcome flow from
-    // a legacy user who predates it — see needsWelcome.
-    if (r === 'public') checkRippleName(userId)
-    else setRippleNamed(true)
+    // a legacy user who predates it — see needsWelcome. Non-public roles never
+    // walk that flow, so they count as named without being asked.
+    setRippleNamed(r === 'public' ? !!data?.ripple_named : true)
   }
 
-  async function checkClassMember(userId) {
-    const { data } = await supabase.from('class_members').select('id').eq('user_id', userId).limit(1)
-    setIsClassMember(!!data?.length)
-  }
-
-  async function checkAvatar(userId) {
-    const { data } = await supabase.from('avatars').select('id').eq('user_id', userId).maybeSingle()
-    setHasAvatar(!!data)
+  function clearUserState() {
+    setRole(null); setSuperAdmin(false); setHasAvatar(undefined); setFirstContactComplete(undefined); setStillWaterPlayed(undefined); setOnboardingComplete(undefined); setRippleNamed(undefined); setNeverCheckedIn(undefined); setIsClassMember(undefined)
   }
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       const s = data.session ?? null
       setSession(s)
-      if (s) { fetchRole(s.user.id); checkAvatar(s.user.id); checkFirstCheckin(s.user.id); checkClassMember(s.user.id) }
-      else   { setRole(null); setSuperAdmin(false); setHasAvatar(undefined); setFirstContactComplete(undefined); setStillWaterPlayed(undefined); setOnboardingComplete(undefined); setRippleNamed(undefined); setNeverCheckedIn(undefined); setIsClassMember(undefined) }
+      if (s) loadUserState()
+      else   clearUserState()
     })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
       const sess = s ?? null
       setSession(sess)
-      if (sess) { fetchRole(sess.user.id); checkAvatar(sess.user.id); checkFirstCheckin(sess.user.id); checkClassMember(sess.user.id) }
-      else      { setRole(null); setSuperAdmin(false); setHasAvatar(undefined); setFirstContactComplete(undefined); setStillWaterPlayed(undefined); setOnboardingComplete(undefined); setRippleNamed(undefined); setNeverCheckedIn(undefined); setIsClassMember(undefined) }
+      if (sess) loadUserState()
+      else      clearUserState()
     })
     return () => subscription.unsubscribe()
   }, [])
