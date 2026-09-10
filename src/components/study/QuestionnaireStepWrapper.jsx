@@ -99,6 +99,11 @@ export default function QuestionnaireStepWrapper({ slug, enrollment, scheduleId,
           // correct for the screener, which runs pre-consent and is not a
           // scheduled session.
           schedule_id:        scheduleId ?? null,
+          // Which STEP of that session. A session may administer an instrument
+          // more than once, and schedule_id alone cannot tell those apart —
+          // which is exactly how Sandy Study 3 lost 1,895 slider responses to
+          // the dedupe trigger (20260910_dedupe_by_step_index.sql).
+          step_index:         stepIndex ?? null,
           responses,
           completed_at:       new Date().toISOString(),
         })

@@ -21,6 +21,7 @@
 //    tables with only "own rows" policies come back empty for a lab member.)
 
 import { supabase } from './supabase'
+import { repeatedSubcatsFromSteps, administrationSuffix, vasRepeats } from './responseColumns.js'
 import { instrumentColumns } from './instrumentColumns'
 
 const PAGE = 1000
@@ -206,7 +207,8 @@ export async function resolveStudyContext(studyId) {
     // the authority: it is written per delivered step and carries the study id,
     // so it states the study's activity list as a fact rather than a guess.
     pageAll((f, t) => supabase.from('participant_step_timings')
-      .select('category, subcategory').eq('study_id', studyId).range(f, t)).catch(() => []),
+      .select('category, subcategory, step_index, participant_schedule_id')
+      .eq('study_id', studyId).range(f, t)).catch(() => []),
   ])
 
   // Which assessment sessions administer which questionnaire, in day order.
@@ -283,10 +285,25 @@ export async function resolveStudyContext(studyId) {
     stepRows.filter(r => r.category === 'game' && r.subcategory).map(r => r.subcategory),
   )
 
+  // Instruments this study administers MORE THAN ONCE inside a single session.
+  //
+  // Those need a within-session coordinate in their column name, because
+  // schedule_id, study day and session label are all identical across the
+  // repeats — so every one of them resolves to the same column and the last
+  // written wins. That is how Sandy Study 3's three stress ratings arrived in
+  // the CSV as one value (the rows were all there; the export flattened them).
+  //
+  // Decided per STUDY, not per participant: the suffix is applied to everyone's
+  // columns for that instrument, including a participant who only reached the
+  // first administration. Deciding per participant is what makes columns drift
+  // apart between rows, which is the defect rule 3 exists to prevent.
+  const repeatedSubcats = repeatedSubcatsFromSteps(stepRows)
+
   return {
     studyId,
     hasStepLog: stepRows.length > 0,
     stepGameSlugs,
+    repeatedSubcats,
     enrollments,
     profileIds:     uniq(enrollments.map(e => e.profile_id)),
     externalIds:    uniq(enrollments.map(e => e.external_id)),
@@ -574,7 +591,13 @@ function dropDuplicateSubmissions(rows, keyOf, timeOf) {
 // timepoint they cannot be shown to belong to.
 function questionnaireWideByProfile(qRows, ctx) {
   const time = r => new Date(r.completed_at ?? 0).getTime()
-  const rows = dropDuplicateSubmissions(qRows, r => `${r.user_id}::${r.questionnaire_slug}`, time)
+  // The step is part of the identity of an administration: two answers to the
+  // same instrument at different steps of one session are not duplicates of
+  // each other, and collapsing them here would reproduce in the CSV exactly the
+  // loss that 20260910_dedupe_by_step_index.sql fixed in the database.
+  const rows = dropDuplicateSubmissions(
+    qRows, r => `${r.user_id}::${r.questionnaire_slug}::${r.step_index ?? ''}`, time,
+  )
   const byProfile = {}
   const occ = {}
   for (const r of rows) {
@@ -598,7 +621,18 @@ function questionnaireWideByProfile(qRows, ctx) {
       : (tps[n - 1] ?? `x${n}`)
     // Even a single-administration instrument names its timepoint, so a column
     // is self-describing without consulting the protocol.
-    const prefix = `${normalizeSlug(slug)}_${label}`
+    // An instrument administered more than once inside a session needs the step
+    // to tell the administrations apart — session label, day and schedule_id are
+    // identical across all of them, so without it they all name the same column
+    // and only the last survives. `_sN` is the recorded step position, which is
+    // the same protocol point for every participant; where no step was recorded
+    // the marker is explicitly non-committal rather than a plausible guess.
+    const stepSuffix = administrationSuffix({
+      repeats:   ctx?.repeatedSubcats?.has(slug) ?? false,
+      stepIndex: r.step_index,
+      ordinal:   n,
+    })
+    const prefix = `${normalizeSlug(slug)}_${label}${stepSuffix}`
     for (const [rawKey, val] of Object.entries(r.responses ?? {})) {
       const cleanKey = rawKey.replace(/^item_/, '')
       const m = cleanKey.match(/(\d+)$/)
@@ -631,18 +665,44 @@ function questionnaireWideByProfile(qRows, ctx) {
 function vasWideByProfile(vasRows, scaleSlugById, ctx) {
   const byProfile = {}
   const unscheduled = []
-  for (const r of vasRows) {
+  // Ordered so the fallback counter below numbers by time rather than by
+  // whatever order the rows came back in.
+  const scheduledRows = [...vasRows]
+    .sort((a, b) => new Date(a.responded_at ?? 0) - new Date(b.responded_at ?? 0))
+  const stepless = {}
+
+  for (const r of scheduledRows) {
     const pid = r.user_id
     if (pid == null) continue
     const sched = r.schedule_id ? ctx?.scheduleById?.get(r.schedule_id) : null
     if (r.schedule_id && !sched) continue          // belongs to another study
     if (!sched) { unscheduled.push(r); continue }  // pre-WP-L1 row, handled below
 
-    const slug  = normalizeSlug(scaleSlugById.get(r.scale_id) ?? r.scale_id ?? 'unknown')
+    const rawSlug = scaleSlugById.get(r.scale_id) ?? r.scale_id ?? 'unknown'
+    const slug  = normalizeSlug(rawSlug)
     const pkg   = String(r.package_slug ?? '')
     const phase = pkg.includes('pre') ? '_pre' : pkg.includes('post') ? '_post' : ''
+
+    // A scale asked more than once in one session (Sandy Study 3 asks stress at
+    // three points of a single sitting) has the SAME day, package and schedule
+    // on every rating, so day-naming alone put all three in one column and kept
+    // only the last. The step is the within-session coordinate that separates
+    // them, and it is a protocol position — every participant's step 19 is the
+    // same moment — not an occurrence count that drifts when someone drops out.
+    const repeats = vasRepeats(ctx?.repeatedSubcats, rawSlug, r.package_slug)
+    // Ordinal is only consulted when the step is unknown; counted per
+    // participant/scale/day so the fallback markers stay distinct.
+    const k = `${pid} ${slug}${phase} ${sched.study_day}`
+    const stepSuffix = administrationSuffix({
+      repeats,
+      stepIndex: r.step_index,
+      ordinal:   repeats && r.step_index == null
+        ? (stepless[k] = (stepless[k] ?? 0) + 1)
+        : null,
+    })
+
     if (!byProfile[pid]) byProfile[pid] = {}
-    byProfile[pid][`vas_${slug}${phase}_d${sched.study_day}`] = r.value
+    byProfile[pid][`vas_${slug}${phase}_d${sched.study_day}${stepSuffix}`] = r.value
   }
 
   // Legacy rows with no schedule link cannot be placed on a day. They keep

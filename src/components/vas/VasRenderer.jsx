@@ -9,6 +9,10 @@ import { supabase as globalSupabase } from '../../lib/supabase'
  *   userId         — uuid for vas_responses insert
  *   sessionId      — uuid | null
  *   scheduleId     — uuid | null — participant_schedule row (study sessions)
+ *   stepIndex      — int | null — position of the delivering step in the session.
+ *                    Required to tell apart a scale administered more than once
+ *                    per session (stress at pre / mid / post): schedule_id is
+ *                    identical across all of them.
  *   packageSlug    — string | null — vas_packages slug when delivered inside a package
  *   onComplete     — (value: number) => void
  *   previewMode    — bool — if true, skips DB write
@@ -21,6 +25,7 @@ export default function VasRenderer({
   userId,
   sessionId = null,
   scheduleId = null,
+  stepIndex = null,
   packageSlug = null,
   onComplete,
   previewMode = false,
@@ -49,6 +54,7 @@ export default function VasRenderer({
       scale_id:     scale.id,
       session_id:   sessionId ?? null,
       schedule_id:  scheduleId ?? null,
+      step_index:   stepIndex ?? null,
       package_slug: packageSlug ?? null,
       value:        selected,
     })

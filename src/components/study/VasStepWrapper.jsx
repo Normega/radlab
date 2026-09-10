@@ -138,6 +138,7 @@ export default function VasStepWrapper({
         scale={sliderScale}
         userId={demoMode ? null : userId}
         scheduleId={scheduleId}
+        stepIndex={stepIndex}
         db={db}
         onComplete={value => onComplete?.({ slider_slug: slug, value })}
       />
@@ -157,6 +158,7 @@ export default function VasStepWrapper({
         userId={userId}
         sessionId={null}
         scheduleId={scheduleId}
+        stepIndex={stepIndex}
         onComplete={value => onComplete?.({ scale_slug: slug, value })}
         previewMode={demoMode}
         partNumber={stepIndex != null ? stepIndex + 1 : null}
@@ -202,6 +204,7 @@ export default function VasStepWrapper({
         scale={currentItem.data}
         userId={demoMode ? null : userId}
         scheduleId={scheduleId}
+        stepIndex={stepIndex}
         db={db}
         partNumber={pkgIndex + 1}
         totalParts={pkgItems.length}
@@ -217,6 +220,7 @@ export default function VasStepWrapper({
       userId={userId}
       sessionId={null}
       scheduleId={scheduleId}
+      stepIndex={stepIndex}
       packageSlug={slug}
       onComplete={handlePkgItemComplete}
       previewMode={demoMode}
@@ -241,7 +245,7 @@ export default function VasStepWrapper({
 // also checked now: it used to be discarded, advancing the participant past a
 // silently lost response.
 
-function StudySliderBlock({ scale, userId, scheduleId = null, db, onComplete, partNumber, totalParts }) {
+function StudySliderBlock({ scale, userId, scheduleId = null, stepIndex = null, db, onComplete, partNumber, totalParts }) {
   const [value, setValue]         = useState(null)
   const [saveError, setSaveError] = useState(null)
   const { submit, busy } = useSubmitLock(scale.slug)
@@ -256,6 +260,10 @@ function StudySliderBlock({ scale, userId, scheduleId = null, db, onComplete, pa
           user_id:            userId,
           questionnaire_slug: `slider_${scale.slug}`,
           schedule_id:        scheduleId ?? null,
+          // Which STEP of that session. Sandy Study 3 asks these sliders three
+          // times in one session; without the step they all share a natural key
+          // and the dedupe trigger collapses them (20260910_dedupe_by_step_index).
+          step_index:         stepIndex ?? null,
           responses:          { value },
           completed_at:       new Date().toISOString(),
         })
