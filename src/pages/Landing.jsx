@@ -52,7 +52,12 @@ export default function Landing({ session }) {
         </div>
       </section>
 
-      {/* HUB CARDS — 1 col on mobile, 2 from md up */}
+      {/* HUB CARDS — 1 col on mobile, 2 from md up. Order is deliberate and
+          reads as three rows (Norm, 2026-09-10): what we make for participants
+          beside what we make for students; then the lab itself beside the
+          campus map; then the book on its own row. Reordering these cards
+          changes which pair a visitor sees together, which is the whole
+          point — they are not a list. */}
       <section style={S.hubSection} className="px-5 md:px-[52px]">
         <div className="grid grid-cols-1 md:grid-cols-2 w-full mx-auto" style={{ gap: 20, maxWidth: 1080 }}>
           <HubCard
@@ -65,13 +70,17 @@ export default function Landing({ session }) {
             internal
           />
           <HubCard
-            tag="Knowledge Translation"
-            title="UTMaps"
-            desc="An interactive wellbeing map for students at the University of Toronto Mississauga — finding the spaces that help."
-            chips={['Student Wellbeing', 'Campus']}
-            cta="Explore the map →"
-            href="http://www.utmap.org"
-            newTab
+            tag="Teaching"
+            title="Courses"
+            desc="Open course platforms for the classes we teach — a Field Guide the students write themselves, live in-lecture check-ins, and weekly quizzes that link straight back to the page they came from."
+            // No course codes here: they change every year, and the audit
+            // that polices them exists because a hardcoded code once sent
+            // one course's students another course's sign-in emails. The
+            // directory behind the link lists whatever is running.
+            chips={['Field Guide', 'Lecture Lounge', 'Weekly quizzes']}
+            cta="Open the courses →"
+            href="/academic"
+            internal
           />
           <HubCard
             tag="Our Lab"
@@ -81,6 +90,15 @@ export default function Landing({ session }) {
             cta="Visit the lab →"
             href="/lab/about"
             internal
+          />
+          <HubCard
+            tag="Knowledge Translation"
+            title="UTMaps"
+            desc="An interactive wellbeing map for students at the University of Toronto Mississauga — finding the spaces that help."
+            chips={['Student Wellbeing', 'Campus']}
+            cta="Explore the map →"
+            href="http://www.utmap.org"
+            newTab
           />
           <HubCard
             tag="Book"
