@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase'
 // Cross-partition import, deliberately: weekIcons is a pure asset registry
 // (a glob over src/assets/week-icons/) with no fieldguide behavior attached.
 import { weekIcon } from '../fieldguide/wiki/weekIcons'
+import AvatarMenu from '../fieldguide/AvatarMenu'
 import { normalizeCourseCode, loungePath } from '../courseRoutes'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
@@ -36,7 +37,7 @@ const DECKS = {
   },
 }
 
-export default function ClassSlides() {
+export default function ClassSlides({ session }) {
   const { courseCode, slug: slugParam } = useParams()
   const slug = normalizeCourseCode(courseCode ?? slugParam)
   const deck = DECKS[slug]
@@ -91,11 +92,11 @@ export default function ClassSlides() {
 
   const today = useMemo(() => new Date().toISOString().slice(0, 10), [])
 
-  if (cls === undefined) return <Shell><p style={S.sub}>Loading…</p></Shell>
-  if (!cls) return <Shell><p style={S.sub}>No class at /{slug}.</p></Shell>
+  if (cls === undefined) return <Shell slug={slug} session={session}><p style={S.sub}>Loading…</p></Shell>
+  if (!cls) return <Shell slug={slug} session={session}><p style={S.sub}>No class at /{slug}.</p></Shell>
 
   return (
-    <Shell title={cls.name}>
+    <Shell title={cls.name} slug={slug} session={session}>
       <p style={S.sub}>
         Lecture slides — open any week to review it. <kbd style={S.kbd}>f</kbd> for
         fullscreen, <kbd style={S.kbd}>o</kbd> to jump around, <kbd style={S.kbd}>?</kbd> for
@@ -146,11 +147,21 @@ export default function ClassSlides() {
   )
 }
 
-function Shell({ title, children }) {
+// The menu was missing here and nowhere else a student can land (Norm,
+// 2026-09-09): every other lounge page carries it, the console carries Nav,
+// and only ClassScreen deliberately has neither because it is projected to
+// the room. Without it this page was a dead end -- no way onward but the
+// browser's back button. The eyebrow doubles as the way back to the lobby.
+function Shell({ title, slug, session, children }) {
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '32px 16px 64px' }}>
       <div style={{ maxWidth: 900, margin: '0 auto' }}>
-        <p style={S.eyebrow}>Lecture Lounge</p>
+        <div style={S.headerRow}>
+          <Link to={slug ? loungePath(slug) : '/academic'} style={S.eyebrowLink}>
+            <span style={S.eyebrow}>← Lecture Lounge</span>
+          </Link>
+          {session && slug && <AvatarMenu email={session.user.email} courseCode={slug} />}
+        </div>
         <h1 style={S.h1}>{title ?? 'Slides'}</h1>
         {children}
       </div>
@@ -159,6 +170,8 @@ function Shell({ title, children }) {
 }
 
 const S = {
+  headerRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, minHeight: 34 },
+  eyebrowLink: { textDecoration: 'none' },
   eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)' },
   h1: { fontFamily: SERIF, fontSize: 28, color: 'var(--tx)', margin: '4px 0 8px' },
   sub: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.6, maxWidth: '74ch' },

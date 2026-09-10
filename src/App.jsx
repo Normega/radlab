@@ -763,7 +763,7 @@ export default function App() {
                 and the decks are public static files regardless. */}
             <Route path="/academic/:courseCode/lounge/slides" element={
               <AuthRoute session={session}>
-                <ClassSlides />
+                <ClassSlides session={session} />
               </AuthRoute>
             } />
             <Route element={<ClassAdminRoute session={session} />}>
