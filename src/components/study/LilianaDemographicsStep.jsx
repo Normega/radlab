@@ -1,7 +1,16 @@
 // ── Liliana Study 3 — full demographics ───────────────────────────────────────
 //
 // One instrument covering everything in Liliana's approved design
-// (`demographics-preview.html`, 18 June 2026): 7 sections, 23 questions.
+// (`demographics-preview.html`, 18 June 2026), plus the September 2026 ethics
+// amendment: 8 sections, 27 questions.
+//
+// AMENDMENT (2026-09-10). Ethics approved four additional baseline covariates:
+// commute to campus and one-way commute time (Academic Life), and a new Mental
+// Health section asking about current talk therapy and current psychiatric
+// medication. The medication item is a multi-select. No schema change was
+// needed — `liliana_demographics.responses` is a jsonb blob and the exporter
+// walks its keys generically, so the new fields appear as `ldem_*` columns on
+// their own.
 //
 // Why this exists rather than reusing an existing step: the platform had two
 // demographics instruments and neither matched the design. `DemographicsStep`
@@ -24,6 +33,14 @@
 // inconsistent with the rest of the instrument; PNA has been added to household
 // income and marital status, the two most sensitive of them. Disability yes/no
 // and employment follow the preview as designed. Flagged for Liliana.
+//
+// SECOND NOTE FOR REVIEW: the amendment's wording is "Prefer not to say", while
+// every inherited identity question reads "Prefer not to answer". The approved
+// amendment wording is used verbatim on the two mental health items, so one
+// instrument now carries both phrasings. They share the same stored value
+// (PNA), so nothing in analysis is affected — but if Liliana would rather the
+// participant see one phrase throughout, changing the two labels is a one-line
+// edit and does not touch the data. Flagged rather than silently normalised.
 
 import { useState, useEffect, useRef } from 'react'
 import { supabase as globalSupabase } from '../../lib/supabase'
@@ -82,6 +99,18 @@ const CAMPUS_OPTIONS = [
   { value: 'scarborough', label: 'Scarborough' },
 ]
 
+const COMMUTE_OPTIONS = [
+  { value: 'yes', label: 'Yes' },
+  { value: 'no',  label: 'No' },
+]
+
+const COMMUTE_TIME_OPTIONS = [
+  { value: 'lt_30', label: 'Under 30 minutes' },
+  { value: '30_60', label: '30\u201360 minutes' },
+  { value: '61_90', label: '61\u201390 minutes' },
+  { value: 'gt_90', label: 'Over 90 minutes' },
+]
+
 const FACULTY_OPTIONS = [
   { value: 'humanities_social', label: 'Humanities & Social Sciences' },
   { value: 'life_sciences',     label: 'Life Sciences' },
@@ -138,9 +167,32 @@ const JOB_TYPE_OPTIONS = [
   { value: 'full_time', label: 'Full time (more than 30 hours a week)' },
 ]
 
+// Mental health (2026-09 amendment). Both carry the amendment's own
+// "Prefer not to say" wording; see SECOND NOTE FOR REVIEW above.
+const THERAPY_OPTIONS = [
+  { value: 'yes', label: 'Yes' },
+  { value: 'no',  label: 'No' },
+  { value: PNA,   label: 'Prefer not to say' },
+]
+
+// `exclusive` on both "none" and PNA: toggleMulti clears every other choice
+// when either is picked, and drops them again when a drug class is picked
+// after. Without it a participant could submit "not taking any medication"
+// alongside two medications.
+const MED_OPTIONS = [
+  { value: 'none',            label: 'No, I am not currently taking any mental health medication', exclusive: true },
+  { value: 'antidepressant',  label: 'Antidepressant (e.g., SSRIs, SNRIs such as Prozac, Zoloft, Effexor)' },
+  { value: 'anti_anxiety',    label: 'Anti-anxiety medication (e.g., benzodiazepines such as Ativan, Xanax)' },
+  { value: 'mood_stabilizer', label: 'Mood stabilizer (e.g., lithium, Lamictal)' },
+  { value: 'antipsychotic',   label: 'Antipsychotic medication (e.g., Abilify, Seroquel)' },
+  { value: 'other',           label: 'Other (please specify)', specify: true },
+  { value: PNA,               label: 'Prefer not to say', exclusive: true },
+]
+
 const SECTIONS = [
   'About You', 'Gender & Orientation', 'Race & Ethnicity',
   'Religion & Spirituality', 'Disability', 'Academic Life', 'Work & Finances',
+  'Mental Health',
 ]
 
 // A question block. Declared outside the component body would lose access to
@@ -178,6 +230,8 @@ export default function LilianaDemographicsStep({
   const [residence, setResidence] = useState(null)
   const [living, setLiving] = useState(null)
   const [campus, setCampus] = useState(null)
+  const [commute, setCommute] = useState(null)
+  const [commuteTime, setCommuteTime] = useState(null)
   const [faculty, setFaculty] = useState(null)
   const [parentEdu, setParentEdu] = useState(null)
   const [workHours, setWorkHours] = useState(null)
@@ -187,6 +241,8 @@ export default function LilianaDemographicsStep({
   const [marital, setMarital] = useState(null)
   const [hasJob, setHasJob] = useState(null)
   const [jobType, setJobType] = useState(null)
+  const [therapy, setTherapy] = useState(null)
+  const [meds, setMeds] = useState([])
 
   const [specify, setSpecify] = useState({})
   const [saving, setSaving] = useState(false)
@@ -232,6 +288,10 @@ export default function LilianaDemographicsStep({
       living_arrangement:       living,
       living_arrangement_other: living === 'other' ? (specify.living ?? '') : null,
       campus,
+      commutes_to_campus: commute,
+      // Null unless they commute, so "does not commute" and "commutes, time
+      // unrecorded" cannot be confused in analysis.
+      commute_time_one_way: commute === 'yes' ? commuteTime : null,
       faculty,
       faculty_other: faculty === 'other' ? (specify.faculty ?? '') : null,
       parent_education:       parentEdu,
@@ -246,6 +306,11 @@ export default function LilianaDemographicsStep({
       // Only meaningful when they have one; null otherwise, so "not asked" and
       // "asked and skipped" stay distinguishable in the data.
       job_type:         hasJob === 'yes' ? jobType : null,
+
+      // Mental health (2026-09 amendment).
+      receiving_therapy:               therapy,
+      mental_health_medication:        meds,
+      mental_health_medication_other:  meds.includes('other') ? (specify.meds ?? '') : null,
     }
   }
 
@@ -265,9 +330,10 @@ export default function LilianaDemographicsStep({
     setRace([PNA]); setReligion([PNA]); setReligiosity('not_at_all')
     setDisability('no'); setStudentStatus('full_time'); setStudentOrigin('domestic')
     setResidence('no'); setLiving('roommates'); setCampus('mississauga')
+    setCommute('yes'); setCommuteTime('30_60')
     setFaculty('life_sciences'); setParentEdu(PNA); setWorkHours('0')
     setCountryBirth('Canada'); setEnglish('yes'); setIncome(PNA); setMarital(PNA)
-    setHasJob('no')
+    setHasJob('no'); setTherapy(PNA); setMeds([PNA])
     const t = setTimeout(async () => {
       if (!previewMode) {
         setSaving(true)
@@ -280,10 +346,13 @@ export default function LilianaDemographicsStep({
           disability: 'no', disability_types: [], disability_types_other: null,
           student_status: 'full_time', student_origin: 'domestic', uoft_residence: 'no',
           living_arrangement: 'roommates', living_arrangement_other: null,
-          campus: 'mississauga', faculty: 'life_sciences', faculty_other: null,
+          campus: 'mississauga', commutes_to_campus: 'yes', commute_time_one_way: '30_60',
+          faculty: 'life_sciences', faculty_other: null,
           parent_education: PNA, parent_education_other: null,
           paid_work_hours: '0', country_of_birth: 'Canada', english_primary: 'yes',
           household_income: PNA, marital_status: PNA, has_job: 'no', job_type: null,
+          receiving_therapy: PNA, mental_health_medication: [PNA],
+          mental_health_medication_other: null,
         })
         setSaving(false)
         if (dbErr) console.error('sim liliana demographics insert:', dbErr)
@@ -308,11 +377,16 @@ export default function LilianaDemographicsStep({
     disability !== null && (disability !== 'yes' || disabilityTypes.length > 0),
     studentStatus !== null && studentOrigin !== null && residence !== null
       && living !== null && openEnded(living, 'living')
-      && campus !== null && faculty !== null && openEnded(faculty, 'faculty')
+      && campus !== null
+      && commute !== null && (commute !== 'yes' || commuteTime !== null)
+      && faculty !== null && openEnded(faculty, 'faculty')
       && parentEdu !== null && openEnded(parentEdu, 'parent_edu'),
     workHours !== null && countryBirth.trim().length > 0 && english !== null
       && income !== null && marital !== null
       && hasJob !== null && (hasJob !== 'yes' || jobType !== null),
+    // Prefer-not-to-say is a selectable answer on both items, so it satisfies
+    // the gate; there is no way to advance without registering a choice.
+    therapy !== null && meds.length > 0 && (!meds.includes('other') || spec('meds')),
   ]
 
   const isLast = sec === SECTIONS.length - 1
@@ -494,7 +568,15 @@ export default function LilianaDemographicsStep({
           <Q n="14" label="What is your campus?">
             <ButtonRow options={CAMPUS_OPTIONS} value={campus} onChange={setCampus} />
           </Q>
-          <Q n="15" label="What faculty are you enrolled in?">
+          <Q n="15" label="Do you commute to campus?">
+            <ButtonRow options={COMMUTE_OPTIONS} value={commute} onChange={setCommute} />
+          </Q>
+          {commute === 'yes' && (
+            <Q n="16" label="On average, how long does your commute to campus take, one way?">
+              <ButtonRow options={COMMUTE_TIME_OPTIONS} value={commuteTime} onChange={setCommuteTime} />
+            </Q>
+          )}
+          <Q n="17" label="What faculty are you enrolled in?">
             <ButtonRow options={FACULTY_OPTIONS} value={faculty} onChange={setFaculty} />
             {faculty === 'other' && (
               <input
@@ -505,7 +587,7 @@ export default function LilianaDemographicsStep({
               />
             )}
           </Q>
-          <Q n="16" label="What is the highest level of formal education of your most highly educated parent or guardian?">
+          <Q n="18" label="What is the highest level of formal education of your most highly educated parent or guardian?">
             <CheckGroup
               options={PARENT_EDU_OPTIONS}
               selected={parentEdu ? [parentEdu] : []}
@@ -519,10 +601,10 @@ export default function LilianaDemographicsStep({
 
       {sec === 6 && (
         <>
-          <Q n="17" label="How many hours per week do you do paid work?">
+          <Q n="19" label="How many hours per week do you do paid work?">
             <ButtonRow options={WORK_HOURS_OPTIONS} value={workHours} onChange={setWorkHours} />
           </Q>
-          <Q n="18" label="What country were you born in?">
+          <Q n="20" label="What country were you born in?">
             <input
               style={S.input}
               placeholder="Please indicate the country"
@@ -530,23 +612,52 @@ export default function LilianaDemographicsStep({
               onChange={e => setCountryBirth(e.target.value)}
             />
           </Q>
-          <Q n="19" label="Is English your primary language?">
+          <Q n="21" label="Is English your primary language?">
             <ButtonRow options={ENGLISH_OPTIONS} value={english} onChange={setEnglish} />
           </Q>
-          <Q n="20" label="What is your average annual household income?">
+          <Q n="22" label="What is your average annual household income?">
             <ButtonRow options={INCOME_OPTIONS} value={income} onChange={setIncome} />
           </Q>
-          <Q n="21" label="What is your current marital status?">
+          <Q n="23" label="What is your current marital status?">
             <ButtonRow options={MARITAL_OPTIONS} value={marital} onChange={setMarital} />
           </Q>
-          <Q n="22" label="Do you currently have a job?">
+          <Q n="24" label="Do you currently have a job?">
             <ButtonRow options={HAS_JOB_OPTIONS} value={hasJob} onChange={setHasJob} />
           </Q>
           {hasJob === 'yes' && (
-            <Q n="23" label="Is your job:">
+            <Q n="25" label="Is your job:">
               <ButtonRow options={JOB_TYPE_OPTIONS} value={jobType} onChange={setJobType} />
             </Q>
           )}
+        </>
+      )}
+
+      {sec === 7 && (
+        <>
+          <p style={S.sub}>
+            These questions help us describe who took part and account for existing mental
+            health support in our analyses. They do not affect your participation in the
+            study, and both questions include a "Prefer not to say" option.
+          </p>
+          <Q
+            n="26"
+            label="Are you currently receiving talk-based therapy or counselling from a mental health professional?"
+          >
+            <ButtonRow options={THERAPY_OPTIONS} value={therapy} onChange={setTherapy} />
+          </Q>
+          <Q
+            n="27"
+            label="Are you currently taking any medication prescribed for mental health?"
+            instruction="Select all that apply."
+          >
+            <CheckGroup
+              options={MED_OPTIONS}
+              selected={meds}
+              onToggle={v => setMeds(s => toggleMulti(MED_OPTIONS, s, v))}
+              specifyText={specify.meds ?? ''}
+              onSpecify={t => setSpecifyText('meds', t)}
+            />
+          </Q>
         </>
       )}
 
