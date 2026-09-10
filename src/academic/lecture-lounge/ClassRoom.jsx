@@ -567,6 +567,7 @@ export default function ClassRoom({ session }) {
                 unanswered count is the number that actually pulls someone in.
                 Participation belongs on this page; the boards page is now
                 just where a thread is read. */}
+            {boardsInfo?.length > 0 && <p style={S.boardsHead}>Get help</p>}
             {boardsInfo?.map((b) => (
               <Link key={b.key} to={`${loungePath(slug)}/boards?board=${b.key}`} style={S.fgCard}>
                 <p style={S.fgEyebrow}>{b.title}</p>
@@ -978,6 +979,7 @@ const S = {
   fgEyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)', marginBottom: 6 },
   fgTitle: { fontFamily: SERIF, fontSize: 18, color: 'var(--tx)', lineHeight: 1.35, marginBottom: 6 },
   fgMeta: { fontFamily: MONO, fontSize: 12, color: 'var(--tx2)' },
+  boardsHead: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)', margin: '28px 0 -4px' },
   weeklyCard: {
     display: 'block', textDecoration: 'none', marginTop: 16, textAlign: 'left',
     background: 'var(--bgp)', border: '1px solid var(--pkb)', borderRadius: 14, padding: '16px 20px',
