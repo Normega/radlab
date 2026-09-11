@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 
 // ── StudySignup (/study/signup?study_id=…) ────────────────────────────────────
@@ -23,7 +24,23 @@ import { supabase } from '../lib/supabase'
 // participant holding a single shared session token, and that token is a
 // credential.
 
-const FN_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/study-signup`
+const FN_URL     = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/study-signup`
+const VERIFY_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/study-signup-verify`
+
+// Why a typed code exists at all: university Microsoft 365 mail runs Defender
+// Safe Links, which opens every emailed link in a real browser before the
+// student sees it. The emailed link goes to a page that is inert until pressed;
+// this code is the independent second path, typed here, that no scanner can
+// use because nobody typed it. Same pair of doors as the academic side's
+// sign-in. Either finishes signing up.
+const CODE_ERRORS = {
+  code_not_found: 'That code was not accepted — it may have expired, a newer code may have replaced it, or you may already be signed up. Request another and use the most recent email.',
+  code_locked:    'Too many incorrect codes. Request a new one below and use the most recent email.',
+  closed:         'This study is no longer accepting sign-ups.',
+  withdrawn:      'This account was withdrawn from the study and cannot rejoin. Please contact the study team.',
+  already_completed: 'You have already completed this study — thank you for taking part.',
+  link_expired:   'You are signed up, but the link to your current session has expired. A new one will be emailed when your next session is due.',
+}
 
 export default function StudySignup() {
   const [studyId,  setStudyId]  = useState(null)
@@ -36,6 +53,50 @@ export default function StudySignup() {
   const [busy,      setBusy]      = useState(false)
   const [sent,      setSent]      = useState(false)
   const [error,     setError]     = useState(null)
+
+  const navigate = useNavigate()
+  const [code,      setCode]      = useState('')
+  const [codeBusy,  setCodeBusy]  = useState(false)
+  const [codeError, setCodeError] = useState(null)
+  // Synchronous lock: setCodeBusy lands on re-render, so a fast double submit
+  // would otherwise send two claims for one code.
+  const codeLockRef = useRef(false)
+
+  async function submitCode(e) {
+    e.preventDefault()
+    const digits = code.replace(/\D/g, '')
+    if (digits.length !== 6) { setCodeError('Enter the six-digit code from the email.'); return }
+    if (codeLockRef.current) return
+    codeLockRef.current = true
+    setCodeBusy(true)
+    setCodeError(null)
+    try {
+      const res = await fetch(VERIFY_URL, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', apikey: import.meta.env.VITE_SUPABASE_ANON_KEY },
+        body:    JSON.stringify({ study_id: studyId, email: email.trim(), code: digits }),
+      })
+      const body = await res.json()
+      if (res.ok && body.token) {
+        navigate(`/s/${body.token}`, { replace: true })
+        return
+      }
+      if (body.error === 'wrong_code') {
+        const left = body.attempts_left
+        setCodeError(left > 0
+          ? `That code is not right. ${left} attempt${left === 1 ? '' : 's'} left before you will need a new one.`
+          : CODE_ERRORS.code_locked)
+      } else {
+        setCodeError(CODE_ERRORS[body.error] ?? 'Something went wrong. Please try again.')
+      }
+    } catch {
+      setCodeError('A network error occurred. Please check your connection and try again.')
+    } finally {
+      // Released only on failure — on success the page has navigated away.
+      codeLockRef.current = false
+      setCodeBusy(false)
+    }
+  }
 
   useEffect(() => {
     const id = new URLSearchParams(window.location.search).get('study_id')
@@ -83,12 +144,35 @@ export default function StudySignup() {
     <Shell>
       <h1 style={S.h1}>Check your email</h1>
       <p style={S.body}>
-        We have sent a confirmation link to <strong>{email.trim()}</strong>. Open it to finish
-        signing up and start the first session.
+        We have sent a confirmation code to <strong>{email.trim()}</strong>. Type it below, or press
+        the button in the email — either finishes signing up and takes you to your first session.
       </p>
-      <p style={S.body}>
-        The link expires in 24 hours. If it does not arrive within a few minutes, check your spam
-        folder. <strong>You are not signed up until you use it.</strong>
+
+      <form onSubmit={submitCode} style={S.codeForm}>
+        <label style={S.label} htmlFor="signup-code">Confirmation code</label>
+        <div style={S.codeRow}>
+          <input id="signup-code" style={{ ...S.input, ...S.codeInput }} type="text"
+            inputMode="numeric" autoComplete="one-time-code" maxLength={9} autoFocus
+            value={code} onChange={e => { setCode(e.target.value); setCodeError(null) }}
+            placeholder="123456" />
+          <button type="submit" style={{ ...S.codeSubmit, opacity: codeBusy ? 0.6 : 1 }} disabled={codeBusy}>
+            {codeBusy ? 'Checking…' : 'Confirm'}
+          </button>
+        </div>
+        {codeError && <p style={S.error}>{codeError}</p>}
+      </form>
+
+      <p style={S.finePrint}>
+        The code expires in 24 hours. If the email does not arrive within a few minutes, check your
+        spam folder. <strong>You are not signed up until you use the code or the button.</strong>
+      </p>
+      <p style={S.finePrint}>
+        No email?{' '}
+        <button type="button" style={S.linkBtn}
+          onClick={() => { setSent(false); setCode(''); setCodeError(null) }}>
+          Request a new code
+        </button>
+        {' '}— that replaces the earlier one.
       </p>
     </Shell>
   )
@@ -148,8 +232,8 @@ export default function StudySignup() {
             {busy ? 'Sending…' : 'Send my confirmation link'}
           </button>
           <p style={S.finePrint}>
-            We will email you a link to confirm this address. You are not signed up until you
-            open it.
+            We will email you a code and a link to confirm this address. You are not signed up
+            until you use one.
           </p>
         </form>
       ) : (
@@ -220,4 +304,11 @@ const S = {
   error:      { fontSize: 14, color: 'var(--err-tx)', background: 'var(--err-bg)', border: '1px solid var(--err-bd)', borderRadius: 9, padding: '9px 13px', margin: '16px 0 0', lineHeight: 1.5 },
   submit:     { marginTop: 22, background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 24, padding: '12px 26px', fontSize: 15, fontWeight: 600, fontFamily: SANS, cursor: 'pointer' },
   finePrint:  { fontSize: 12.5, color: 'var(--tx3)', lineHeight: 1.6, margin: '12px 0 0' },
+  codeForm:   { marginTop: 22, paddingTop: 20, borderTop: '1px solid var(--bd)' },
+  codeRow:    { display: 'flex', gap: 10, alignItems: 'stretch', flexWrap: 'wrap' },
+  // 16px+ so iOS Safari does not zoom the page on focus; letter-spaced so a
+  // six-digit code reads the way it is printed in the email.
+  codeInput:  { flex: '1 1 160px', fontSize: 22, letterSpacing: '0.3em', fontFamily: '"Space Mono", monospace', textAlign: 'center' },
+  codeSubmit: { background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 24, padding: '10px 26px', fontSize: 15, fontWeight: 600, fontFamily: SANS, cursor: 'pointer' },
+  linkBtn:    { background: 'none', border: 'none', padding: 0, color: 'var(--pk)', fontSize: 12.5, fontFamily: SANS, cursor: 'pointer', textDecoration: 'underline' },
 }

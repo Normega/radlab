@@ -45,6 +45,28 @@ sign-up page itself, the delivered email, and the click through to session 1.
 Sessions cannot reach the site through the egress proxy, so someone has to do
 this before Dana recruits.
 
+### Verification rebuilt to survive Microsoft's link scanner (2026-09-11)
+
+U of T mail runs Defender Safe Links, which opens every URL in a message in a
+real browser before the student sees it. `/study/verify` confirmed in a mount
+effect, so for a U of T address the *scanner* would have claimed the token,
+created the enrollment and opened session 1. The academic side hit the same bug
+on 2026-09-04 and settled on two independent doors (academic.md, "inert until
+pressed"); Norm asked for the same everywhere. Now:
+
+- `/study/verify` shows **Confirm and start** and makes no request until pressed
+  (ref lock; token stripped from the address bar once spent);
+- the email carries a **six-digit code**, typed on `/study/signup` after
+  submitting — either path enrolls;
+- the code is valid only with the study AND the address, locks after five wrong
+  guesses, is stored only as a salted hash, and a newer email supersedes older
+  ones (`20260911_signup_typed_code.sql`);
+- the code path never hands back an existing enrollment's session link — only
+  the token path may, because the token itself is the secret;
+- abandoned or superseded requests now have their email and student number
+  purged an hour after expiry (the 20260903 design always called for this;
+  Dana's two unconsumed CHM135 test requests from 2026-09-10 were holding PII).
+
 Deliberately out of scope for now: **studies with a screener are refused** with
 a clear message rather than silently skipped. Anonymous screening would have to
 run before any participant row exists and buffer to the request row; skipping it

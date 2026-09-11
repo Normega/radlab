@@ -37,6 +37,16 @@ export default function StudyVerify() {
   // fast double press would otherwise fire two claims for one token.
   const busyRef = useRef(false)
 
+  // Removes the token from the address bar once it can never be used again, so
+  // it does not linger in browser history or show in a screenshot — as the
+  // academic side's SignInConfirm does. The in-memory `token` above is
+  // unaffected. Kept on transient failures (server error, network) so a reload
+  // and a second press still work.
+  const stripToken = () => {
+    try { window.history.replaceState({}, '', window.location.pathname) } catch { /* ignore */ }
+  }
+  const SPENT = new Set(['not_found', 'expired', 'link_expired', 'closed', 'withdrawn', 'already_completed'])
+
   async function confirm() {
     if (busyRef.current || !token) return
     busyRef.current = true
@@ -49,9 +59,11 @@ export default function StudyVerify() {
       })
       const body = await res.json()
       if (res.ok && body.token) {
+        stripToken()
         navigate(`/s/${body.token}`, { replace: true })
         return
       }
+      if (SPENT.has(body.error)) stripToken()
       setState(body.error ?? 'unexpected')
     } catch {
       setState('network')
