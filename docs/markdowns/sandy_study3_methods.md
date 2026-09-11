@@ -20,7 +20,7 @@ and computational reproducibility. Updated after each step. Companion to
 
 ---
 
-## Decision index (D1–D24)
+## Decision index (D1–D29)
 
 The preregistration was cleaned of inline decision markup on 2026-08-11 so that it reads as
 a formal document; the decisions are absorbed into its prose and summarised in its
@@ -51,8 +51,13 @@ Appendix B. The numbered index below is retained here as the audit trail, and is
 | D20 | The §5.5 positive control is **reported as registered but reinterpreted** for the Aptitude Suite: that task is designed to break the prediction–experience link it tests, so a low r is what a working manipulation produces. Three diagnostics fixed in advance separate a measurement fault from a successful manipulation, D1 (does the rating track the percentile actually shown) being the discriminating one. Amended before any confirmatory participant existed | 2026-08-20 |
 | D21 | H1B is refitted as `stress_T2 ~ stress_T1_z + trait_z * condition` — the registered structure, unmodified, on the affect measure that survived. The registered covariate (negative emotionality at T1) does not exist for the confirmatory cohort; stress T1 sits one step earlier (step 7 vs step 8), on the same side of both the score display and the framing, so it satisfies the positional requirement §5.1 actually states of the covariate | 2026-09-10, Norm |
 | D22 | The single-task reduced forms of H2A, H2B and H3A stay **confirmatory** rather than being demoted to exploratory. The lost observation cost precision, not identification: the critical terms are between-person trait coefficients, and D13 already anticipated a near-zero random-intercept variance, so the second occasion was contributing roughly a √2 efficiency gain | 2026-09-10, Norm |
-| D23 | The confirmatory family moves from **17 tests to 12**, and BH at q = .05 is applied across those 12. The five removed are H1B×2 (superseded by D21, which is reported as an amendment, not as the registered test), H3A×2 on negative emotionality, and H3B×1 on negative emotionality | 2026-09-10, Norm |
-| D24 | The 29 confirmatory ColourMax participants with no page switches are **excluded from H1C**, not read as maximal concentration (prereg §5.4 criterion 7, Appendix C2.4). A participant wrote in to say they had not understood there would be more than one image, and the data fit that reading rather than a strategy: 27 of the 29 coloured exactly one image and 2 coloured none, at a mean coverage of 14.7%, against 3.56 images and 48.8% among the 273 who navigated. Their allocation vector is (1,0,0,0,0), which puts the concentration index at its ceiling for a comprehension reason unrelated to perfectionism. Keyed on navigation, not on images coloured: the 6 participants who navigated, saw the other images and coloured only one are genuine concentrators and are retained. Scope as decided: the H1C confirmatory model | 2026-09-10, Norm |
+| D23 | The confirmatory family moves from **17 tests to 12**, and BH at q = .05 is applied across those 12. The five removed are H1B×2 (superseded by D21, which is reported as an amendment, not as the registered test), H3A×2 on negative emotionality, and H3B×1 on negative emotionality (amended by D26: the refitted H1B joins the family, which is 14 tests) | 2026-09-10, Norm |
+| D24 | The 29 confirmatory ColourMax participants with no page switches are **excluded from H1C**, not read as maximal concentration (prereg §5.4 criterion 7, Appendix C2.4). A participant wrote in to say they had not understood there would be more than one image, and the data fit that reading rather than a strategy: 27 of the 29 coloured exactly one image and 2 coloured none, at a mean coverage of 14.7%, against 3.56 images and 48.8% among the 273 who navigated. Their allocation vector is (1,0,0,0,0), which puts the concentration index at its ceiling for a comprehension reason unrelated to perfectionism. Keyed on navigation, not on images coloured: the 6 participants who navigated, saw the other images and coloured only one are genuine concentrators and are retained. Scope as decided: the H1C confirmatory model (extended by D27 to every per-image ColourMax analysis) | 2026-09-10, Norm |
+| D25 | **No confirmatory model was fitted before the amendments** (confirmed by Norm for the study team). The 29 participants of the first confirmatory batch (2026-08-20) were recruited to confirm the study ran correctly end to end, not to test hypotheses. Recorded in prereg §7.7; the amended registration is filed on OSF before any confirmatory analysis | 2026-09-11, Norm |
+| D26 | The refitted H1B (D21) is a **confirmatory, a priori test** and joins the family, which becomes **14 tests** with BH at q = .05 across all 14. Supersedes D23's count of 12 and its "beside the family" placement | 2026-09-11, Norm |
+| D27 | The criterion-7 exclusion (D24) applies to **every analysis using per-image ColourMax data**: H1C primary, secondary and tertiary, and H2D. Planned exploratory analyses: those models refitted with the excluded participants included (E1), and the excluded participants' traits, above all discrepancy perfectionism, compared with everyone else's (E2). E3, non-navigation rate by framing arm, added in drafting because the exclusion rests on behaviour that follows randomization | 2026-09-11, Norm (E3 added in drafting) |
+| D28 | **Why recruitment stopped at 292.** The budget covered 300 paid sessions; eight participants who began without completing were compensated, as ethics requires, leaving budget for 292 complete sessions. A shortfall of eight is far inside the spacing of the power simulation grid (N = 250 / 300 / 400), and with the data-collection failure (Step 14) collection was stopped to assess findings rather than extended | 2026-09-11, Norm |
+| D29 | The five removed registered tests are fitted **exactly as registered on the 29 batch-1 participants**, beside the amended specifications on the same 29: exploratory, descriptive, and only **after** the confirmatory analysis is complete, to judge whether the conclusions might differ under the original analyses (E4) | 2026-09-11, Norm |
 
 Build items B1–B3 were withdrawn or resolved (per D9, D10, D11). B4 (export field
 verification) completed 2026-08-06. B5 (Word Probe recalibration and redemption-score fix)
@@ -1246,7 +1251,8 @@ Recorded in the decision index above and in prereg Appendix C2:
 - **D21** — H1B refitted as `stress_T2 ~ stress_T1_z + trait_z * condition`.
 - **D22** — the single-task reduced forms of H2A, H2B and H3A stay confirmatory.
 - **D23** — the confirmatory family is 12 tests, with BH across those 12. The amended H1B is
-  reported beside the family, as an amendment, rather than inside it.
+  reported beside the family, as an amendment, rather than inside it. *(Superseded in part by D26,
+  Step 15: the refitted H1B is confirmatory and the family is 14 tests.)*
 - **D24** — ColourMax participants who never navigated off the first image are excluded from H1C.
 
 ### 14.9 Why it was not caught for a fortnight
@@ -1271,3 +1277,34 @@ anyway: a verification is a statement about the build it was run against. **The 
 changing is what invalidates it, and re-running it is not optional.** For this study that means
 the Step 1 shape check is re-run against the live cohort before any further collection, not
 against the pilot.
+
+
+---
+
+## Step 15 — Amendment decisions finalised for filing (2026-09-11)
+
+Norm and Sandy reviewed the 2026-09-10 draft and settled its six open items. The preregistration
+(`docs/markdowns/sandy_study3_prereg.md`) was updated to match and is ready to file on OSF before any
+confirmatory analysis.
+
+| Open item | Decision | Recorded in the prereg |
+|---|---|---|
+| Model fitting before the amendments | None; batch 1 was a running check (D25) | §7.7, §7.1 |
+| Placement of the refitted H1B | Confirmatory, in the family: 14 tests (D26) | C2.1, C2.3, §5.3, §7.4, §7.5, A.2 |
+| Reach of the non-navigation exclusion | Every per-image ColourMax analysis; exploratory E1–E3 (D27) | §5.4, C2.4, C2.5, §5.7, A.3 |
+| Stopping at 292 | Budget, compensated non-completers, grid spacing, the failure (D28) | §3.3 |
+| The batch-1 subset | Exploratory E4, after the confirmatory analysis (D29) | C2.3, C2.5, §7.4, A.3 |
+| OSF filing | Filed before analysis | header, §7.7 |
+
+**One wording correction to what was agreed.** The stopping rationale was given as the power analysis
+having "a step size of N = 20–25". The registered simulation grid (Step 4; prereg §3.4) steps by 50:
+N = 150, 200, 250, 300, 400. The argument stands, and more strongly: a shortfall of eight is under a
+fifth of one grid step. The preregistration states the grid as registered.
+
+**One addition in drafting.** E3, non-navigation by framing arm, was not among the decisions. It is
+added because criterion 7 excludes participants on behaviour that occurs after the framing display, so
+a difference in its rate between arms would bias H1C; reporting it lets a reader check.
+
+**Analysis order, as now registered.** The 14 confirmatory tests under BH; the §5.5 quality checks (the
+ColourMax positive control on all complete sessions, the Aptitude arm and C1's D1 on batch 1 only); the
+exploratory analyses of §5.7 and C2.5 E1–E3; and only then E4.
