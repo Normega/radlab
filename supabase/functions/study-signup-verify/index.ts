@@ -226,6 +226,11 @@ Deno.serve(async (req) => {
           contact_email_set_at: new Date().toISOString(),
           student_number:       claim.student_number,
           consent_date:         claim.consented_at,
+          // Which consent: 'credit_only' keeps this participant out of every
+          // research export (20260911_credit_only_consent.sql). The re-signup
+          // branch above deliberately does not touch it — an existing
+          // enrollment keeps the answer it was created with.
+          consent_scope:        claim.consent_scope ?? null,
         })
         .select('id')
         .single()

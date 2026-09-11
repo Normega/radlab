@@ -421,6 +421,7 @@ function StudyExportSection() {
   const tables      = studyData?.tables ?? []
   const errors      = studyData?.errors ?? []
   const enrollments = studyData?.context?.enrollments ?? []
+  const creditOnly  = studyData?.context?.excludedCreditOnly ?? 0
   const skipped     = studyData?.skipped ?? []
   // Built together, so the integrity report describes exactly this master.
   const built = useMemo(
@@ -505,6 +506,15 @@ function StudyExportSection() {
             <p style={S.dim}>
               {enrollments.length} enrolled participant{enrollments.length !== 1 ? 's' : ''} · {tables.length} non-empty table{tables.length !== 1 ? 's' : ''}
             </p>
+            {/* The counts above and every file below already leave these people
+                out (studyExport.js / creditOnlyExport.js); this says so, so a
+                short participant count is never a mystery. */}
+            {creditOnly > 0 && (
+              <p style={S.dim}>
+                {creditOnly} credit-only participant{creditOnly !== 1 ? 's' : ''} excluded — they did
+                not consent to research use of their data.
+              </p>
+            )}
             {errors.length > 0 && (
               <p style={S.warn}>
                 ⚠ {errors.length} table{errors.length !== 1 ? 's' : ''} could not be read

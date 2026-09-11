@@ -6,8 +6,12 @@
 // study-signup-verify, when the emailed token comes back — so a typo costs one
 // dead request row rather than a ghost account with a materialised schedule.
 //
-// POST body: { study_id, email, student_number?, consented }
+// POST body: { study_id, email, student_number?, consented, consent_scope? }
 // Returns:   { ok: true } | { error }
+//
+// consent_scope is 'research' (the default when absent) or 'credit_only' — the
+// latter only for a study that offers it (studies.allow_credit_only_consent;
+// see 20260911_credit_only_consent.sql).
 //
 // The token is NEVER in the response. If it were, anything that could POST here
 // could "verify" an address it does not control, which is the whole point of
@@ -72,7 +76,7 @@ Deno.serve(async (req) => {
   if (req.method !== 'POST')    return json({ error: 'Method not allowed.' }, 405)
 
   try {
-    const { study_id, email, student_number, consented } = await req.json()
+    const { study_id, email, student_number, consented, consent_scope } = await req.json()
 
     if (!study_id || !email) {
       return json({ error: 'Enter your U of T email address.' }, 400)
@@ -101,6 +105,22 @@ Deno.serve(async (req) => {
     //    written without a consent timestamp to accompany them.
     if (info.consent_required && consented !== true) {
       return json({ error: 'Please read and agree to the consent form first.' }, 400)
+    }
+
+    //    WHICH consent travels with the timestamp (2026-09-11, CHM135). A
+    //    credit-only participant does every session but is left out of every
+    //    research export, so the answer is checked here, not trusted from the
+    //    page: a study that does not offer the choice must never collect it,
+    //    or someone would silently vanish from a dataset whose protocol has no
+    //    such exclusion. Absent means 'research' — what consent always meant.
+    const scope = consent_scope ?? 'research'
+    if (info.consent_required) {
+      if (scope !== 'research' && scope !== 'credit_only') {
+        return json({ error: 'Please choose one of the consent options.' }, 400)
+      }
+      if (scope === 'credit_only' && info.allow_credit_only_consent !== true) {
+        return json({ error: 'This study does not offer that consent option.' }, 400)
+      }
     }
 
     // 3. Address validation and normalisation both go through the DATABASE
@@ -189,6 +209,7 @@ Deno.serve(async (req) => {
         student_number:  student_number ? String(student_number).trim() : null,
         expires_at:      expiresAt,
         consented_at:    info.consent_required ? new Date().toISOString() : null,
+        consent_scope:   info.consent_required ? scope : null,
         ip_hash:         ipHash,
       })
       .select('id, token')

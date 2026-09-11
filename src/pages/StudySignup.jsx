@@ -42,12 +42,28 @@ const CODE_ERRORS = {
   link_expired:   'You are signed up, but the link to your current session has expired. A new one will be emailed when your next session is due.',
 }
 
+// The two answers a study with studies.allow_credit_only_consent offers
+// (20260911_credit_only_consent.sql; CHM135, whose consent form already describes
+// the second). Both are equal-weight bordered options on purpose: this is a
+// consent decision, so neither is styled as the suggested one — the usual
+// primary/grayer-secondary treatment for choice pairs would be a nudge here.
+// Choosing credit-only changes nothing about taking part; it keeps the
+// participant's data out of every research export.
+const CONSENT_CHOICES = [
+  { scope: 'research',    label: 'I have read the consent form and I agree to take part in this study.' },
+  { scope: 'credit_only', label: 'I wish to complete the surveys for course credit, but do not consent to have my data used in research.' },
+]
+
 export default function StudySignup() {
   const [studyId,  setStudyId]  = useState(null)
   const [info,     setInfo]     = useState(null)
   const [loadErr,  setLoadErr]  = useState(null)
 
-  const [consented, setConsented] = useState(false)
+  // null until the participant answers; 'research' or 'credit_only' after. A
+  // study without the credit-only option only ever sets 'research' (its single
+  // checkbox), which is what consent meant before the option existed.
+  const [scope,     setScope]     = useState(null)
+  const consented = scope !== null
   const [email,     setEmail]     = useState('')
   const [studentNo, setStudentNo] = useState('')
   const [busy,      setBusy]      = useState(false)
@@ -125,6 +141,7 @@ export default function StudySignup() {
           email:          email.trim(),
           student_number: studentNo.trim() || null,
           consented,
+          consent_scope:  scope ?? 'research',
         }),
       })
       const body = await res.json()
@@ -191,13 +208,29 @@ export default function StudySignup() {
       {info.consent_required && (
         <>
           <div style={S.consentBox} dangerouslySetInnerHTML={{ __html: info.consent_html }} />
-          <label style={S.checkRow}>
-            <input type="checkbox" checked={consented}
-              onChange={e => { setConsented(e.target.checked); setError(null) }} />
-            <span style={S.checkText}>
-              I have read the consent form and I agree to take part in this study.
-            </span>
-          </label>
+          {info.allow_credit_only_consent ? (
+            <div role="radiogroup" aria-label="Your consent choice" style={S.choiceGroup}>
+              {CONSENT_CHOICES.map(c => {
+                const on = scope === c.scope
+                return (
+                  <label key={c.scope} style={{ ...S.choice, ...(on ? S.choiceOn : null) }}>
+                    <input type="radio" name="consent-scope" value={c.scope} checked={on}
+                      style={S.choiceRadio}
+                      onChange={() => { setScope(c.scope); setError(null) }} />
+                    <span style={S.checkText}>{c.label}</span>
+                  </label>
+                )
+              })}
+            </div>
+          ) : (
+            <label style={S.checkRow}>
+              <input type="checkbox" checked={consented}
+                onChange={e => { setScope(e.target.checked ? 'research' : null); setError(null) }} />
+              <span style={S.checkText}>
+                I have read the consent form and I agree to take part in this study.
+              </span>
+            </label>
+          )}
         </>
       )}
 
@@ -237,7 +270,11 @@ export default function StudySignup() {
           </p>
         </form>
       ) : (
-        <p style={S.finePrint}>Agree to the consent form above to continue.</p>
+        <p style={S.finePrint}>
+          {info.allow_credit_only_consent
+            ? 'Choose one of the options above to continue.'
+            : 'Agree to the consent form above to continue.'}
+        </p>
       )}
     </Shell>
   )
@@ -292,6 +329,15 @@ const S = {
   },
   checkRow:  { display: 'flex', gap: 10, alignItems: 'flex-start', margin: '18px 0 4px', cursor: 'pointer' },
   checkText: { fontSize: 15, color: 'var(--tx)', lineHeight: 1.5 },
+  // Whole bordered box is the tap target (the <label> wraps the radio), so a
+  // phone user does not have to hit a 16px circle.
+  choiceGroup: { display: 'grid', gap: 8, margin: '16px 0 4px' },
+  choice:      {
+    display: 'flex', gap: 8, alignItems: 'flex-start', cursor: 'pointer',
+    border: '1.5px solid var(--bds)', borderRadius: 12, padding: 16, background: 'var(--bgc)',
+  },
+  choiceOn:    { borderColor: 'var(--pk)', background: 'var(--pkb)' },
+  choiceRadio: { width: 16, height: 16, margin: '4px 0 0', flexShrink: 0, accentColor: 'var(--pk)', cursor: 'pointer' },
 
   form:        { marginTop: 24, paddingTop: 22, borderTop: '1px solid var(--bd)' },
   sectionNote: { fontSize: 13.5, color: 'var(--tx2)', lineHeight: 1.6, margin: '0 0 18px' },
