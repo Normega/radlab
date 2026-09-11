@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase as globalSupabase } from '../../lib/supabase'
+import { useSubmitLock } from '../../lib/useSubmitLock'
 import { slotFromSendTime } from '../../lib/checkinSlot'
 
 // Zerin Langerian Mindfulness study — Attention-Control arm daily touchpoint.
@@ -57,7 +58,7 @@ export default function WellnessTipStep({
   const tip = CONTROL_TIPS[protocolDay]?.[effectiveSlot]
     ?? 'Take a brief moment for yourself before continuing.'
 
-  const [saving, setSaving] = useState(false)
+  const { submit: runSubmit, busy: saving } = useSubmitLock(scheduleId)
   const [error,  setError]  = useState(null)
 
   const studyId = enrollment?.studies?.id ?? enrollment?.study_id ?? null
@@ -71,28 +72,35 @@ export default function WellnessTipStep({
 
   async function acknowledge() {
     if (previewMode) { onComplete?.({ preview: true }); return }
-    setSaving(true)
     setError(null)
-    const { error: dbErr } = await db.from('zerin_daily_checkins').insert({
-      user_id:     userId,
-      study_id:    studyId,
-      external_id: enrollment?.external_id ?? null,
-      schedule_id: scheduleId,
-      study_day:   protocolDay,
-      slot,
-      arm:         'control',
-      rating:      null,
-      direction:   null,
-      reason:      null,
-      tip_text:    tip,
-    })
-    setSaving(false)
-    if (dbErr) {
+    // A ref lock rather than the old `saving` flag, which two taps in one tick
+    // both read as false. Released only on failure, so a failed save stays
+    // retryable; a repeat that gets past it anyway is collapsed in the database
+    // (20260910_zerin_checkin_pondwatch_submit_guard.sql).
+    let result
+    try {
+      result = await runSubmit(async () => {
+        const { error: dbErr } = await db.from('zerin_daily_checkins').insert({
+          user_id:     userId,
+          study_id:    studyId,
+          external_id: enrollment?.external_id ?? null,
+          schedule_id: scheduleId,
+          study_day:   protocolDay,
+          slot,
+          arm:         'control',
+          rating:      null,
+          direction:   null,
+          reason:      null,
+          tip_text:    tip,
+        })
+        if (dbErr) throw dbErr
+      })
+    } catch (dbErr) {
       setError('Could not save — please try again.')
       console.error('zerin_daily_checkins (control) insert:', dbErr)
       return
     }
-    onComplete?.({})
+    if (!result.skipped) onComplete?.({})
   }
 
   return (

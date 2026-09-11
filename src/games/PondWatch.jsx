@@ -310,6 +310,10 @@ export default function PondWatch({
   const timersRef       = useRef([])
   const startTimeRef    = useRef(null)
   const pausesRef       = useRef(0)         // off-screen pauses this session (data-quality flag)
+  // Study mode: the row waiting to be saved, and where saving it stands.
+  const pendingRowRef   = useRef(null)
+  const saveBusyRef     = useRef(false)
+  const [saveState, setSaveState] = useState('idle')   // 'idle' | 'saving' | 'saved' | 'error'
 
   // Keep phaseRef in sync
   useEffect(() => { phaseRef.current = phase }, [phase])
@@ -410,6 +414,35 @@ export default function PondWatch({
     })
   }, [after, startITI]) // eslint-disable-line
 
+  // Study mode only. The insert used to be fired and forgotten: a failed save
+  // logged a console warning while Continue stayed live, so the session
+  // advanced without a Pond Watch row and nobody could tell. Continue now
+  // waits for the save, and a failure offers a retry instead. A retry resends
+  // the identical row; if an earlier attempt did land and only its response
+  // was lost, the database collapses the repeat
+  // (20260910_zerin_checkin_pondwatch_submit_guard.sql).
+  const persistResults = useCallback(async () => {
+    const row = pendingRowRef.current
+    if (!row || saveBusyRef.current) return
+    saveBusyRef.current = true
+    setSaveState('saving')
+    const db = supabaseClient ?? globalSupabase
+    let error = null
+    try {
+      ({ error } = await db.from('pond_watch_results').insert(row))
+    } catch (err) {
+      error = err
+    }
+    saveBusyRef.current = false
+    if (error) {
+      console.error('pond_watch_results insert failed', error)
+      setSaveState('error')
+      return
+    }
+    pendingRowRef.current = null
+    setSaveState('saved')
+  }, [supabaseClient])
+
   const endSession = useCallback(() => {
     const endedAt = new Date().toISOString()
     const metrics = computeMetrics(resultsRef.current)
@@ -430,8 +463,7 @@ export default function PondWatch({
     // Continue before advancing the session (mirrors ColorMax). Standalone play
     // reports immediately and offers "Play again".
     if (studyMode && userId) {
-      const db = supabaseClient ?? globalSupabase
-      db.from('pond_watch_results').insert({
+      pendingRowRef.current = {
         user_id:            userId,
         study_id:           studyId,
         external_id:        externalId,
@@ -452,11 +484,12 @@ export default function PondWatch({
         n_trials:           metrics.nTrials,
         pauses:             pausesRef.current,
         trials:             resultsRef.current,
-      }).then(({ error }) => { if (error) console.warn('pond_watch_results insert failed', error) })
+      }
+      persistResults()
     } else if (onSessionComplete) {
       onSessionComplete(sessionData)
     }
-  }, [onSessionComplete, userId, studyId, studyMode, externalId, scheduleId, supabaseClient])
+  }, [onSessionComplete, userId, studyId, studyMode, externalId, scheduleId, persistResults])
 
   // Admin simulate run: skip play, report synthetic metrics so the flow advances.
   useEffect(() => {
@@ -531,6 +564,9 @@ export default function PondWatch({
   useEffect(() => () => clearTimers(), [clearTimers])
 
   // ─── RENDER ──────────────────────────────────────────────────────────────
+
+  // Outside a study session, or with no participant to save for, nothing is waited on.
+  const canContinue = !(studyMode && userId) || saveState === 'saved'
 
   const progress = phase === PHASE.RESULTS ? 1
     : resultsRef.current.length / CFG.TRIAL_COUNT
@@ -687,9 +723,22 @@ export default function PondWatch({
 
             <div style={S.actions}>
               {studyMode ? (
-                <button style={S.btnPrimary} onClick={() => onSessionComplete?.(results)}>
-                  Continue
-                </button>
+                saveState === 'error' ? (
+                  <>
+                    <p style={S.saveError}>Your results were not saved. Check your connection, then try again.</p>
+                    <button style={S.btnPrimary} onClick={persistResults}>
+                      Try again
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    style={{ ...S.btnPrimary, opacity: canContinue ? 1 : 0.5 }}
+                    disabled={!canContinue}
+                    onClick={() => onSessionComplete?.(results)}
+                  >
+                    {canContinue ? 'Continue' : 'Saving…'}
+                  </button>
+                )
               ) : (
                 <button style={S.btnPrimary} onClick={() => {
                   setPhase(PHASE.INSTRUCTIONS)
@@ -820,6 +869,16 @@ const S = {
     letterSpacing: 1,
     textAlign: 'center',
     margin: '20px 0 24px',
+  },
+  saveError: {
+    fontSize: 14,
+    color: '#e04',
+    background: 'var(--err-bg)',
+    border: '1px solid #fcc',
+    borderRadius: 8,
+    padding: '8px 14px',
+    margin: '0 0 12px',
+    textAlign: 'center',
   },
   btnPrimary: {
     width: '100%',
