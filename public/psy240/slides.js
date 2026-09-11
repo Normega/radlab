@@ -13,7 +13,7 @@
  *        ← ↑ PgUp          previous
  *        Home / End        first / last
  *        f                 fullscreen
- *        n                 speaker notes
+ *        n                 speaker notes (also controls whether they PRINT)
  *        o                 overview grid (click a slide to jump)
  *        t                 elapsed-time clock (starts on first press)
  *        ?                 keyboard help
@@ -27,6 +27,14 @@
   const num = document.getElementById('num')
   const clockEl = document.getElementById('clock')
   const help = document.getElementById('help')
+  // ?notes=1 opens straight into notes mode, so the instructor can bookmark a
+  // with-notes handout. Students printing the plain URL get the clean deck --
+  // notes follow this same class in @media print, so what you see is what
+  // prints, and the default is the one that cannot leak the script.
+  if (new URLSearchParams(location.search).get('notes') === '1') {
+    document.body.classList.add('notes-on')
+  }
+
   let i = 0
   let clockStart = null
 

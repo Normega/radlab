@@ -158,9 +158,20 @@ body.overview .notes { display:none !important; }
   h1 { font-size:24pt; } h2 { font-size:19pt; }
   p,li,td,th { font-size:12pt; max-width:none; }
   .kicker { font-size:9pt; }
-  .notes { display:block !important; position:static; background:#F4F6F8; color:#333; border-top:1px solid #bbb;
-    margin-top:1cm; padding:.6cm; font-size:10pt; max-height:none; }
-  .notes p { color:#333; }
+  /* Notes print ONLY when the deck is showing them (the `n` toggle, or
+     ?notes=1). Before 2026-09-11 they printed unconditionally, so a student
+     saving a PDF for revision got the presenter script: which slide to drop
+     if the room is slow, that Exercise A deliberately has no right answer,
+     which anecdote to tell. Safe by default, because the person most likely
+     to print a deck is a student and the cost of the wrong default falls
+     entirely on the teaching. */
+  .notes { display:none; }
+  body.notes-on .notes { display:block; position:static; background:#F4F6F8; color:#333;
+    border-top:1px solid #bbb; margin-top:1cm; padding:.6cm; font-size:10pt; max-height:none; }
+  body.notes-on .notes p { color:#333; }
+  /* The on-screen notes panel is fixed to the viewport; in print it must
+     flow with its slide or every page carries page one's notes. */
+  body.notes-on section { padding-bottom:2cm; }
   #bar,#num,#help,#clock { display:none; }
   .hidden-until { visibility:visible; }
 }

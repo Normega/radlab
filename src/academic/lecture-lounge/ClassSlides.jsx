@@ -100,8 +100,9 @@ export default function ClassSlides({ session }) {
       <p style={S.sub}>
         Lecture slides — open any week to review it. <kbd style={S.kbd}>f</kbd> for
         fullscreen, <kbd style={S.kbd}>o</kbd> to jump around, <kbd style={S.kbd}>?</kbd> for
-        the rest of the shortcuts. Printing a deck gives you a study handout with the
-        lecture notes included.
+        the rest of the shortcuts. To keep a copy, print the deck and choose
+        <strong> Save as PDF</strong> — you get every slide with the hidden points already
+        revealed, which is the version worth studying from.
       </p>
 
       <div style={S.grid}>
