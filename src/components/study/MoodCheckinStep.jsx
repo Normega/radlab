@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase as globalSupabase } from '../../lib/supabase'
+import { useSubmitLock } from '../../lib/useSubmitLock'
 import { slotFromSendTime, comparisonAnchor } from '../../lib/checkinSlot'
 
 // Zerin Langerian Mindfulness study — daily mood check-in.
@@ -41,7 +42,7 @@ export default function MoodCheckinStep({
   const [rating,    setRating]    = useState(null)
   const [direction, setDirection] = useState(null)
   const [reason,    setReason]    = useState('')
-  const [saving,    setSaving]    = useState(false)
+  const { submit: runSubmit, busy: saving } = useSubmitLock(scheduleId)
   const [error,     setError]     = useState(null)
 
   const studyId = enrollment?.studies?.id ?? enrollment?.study_id ?? null
@@ -61,28 +62,35 @@ export default function MoodCheckinStep({
 
   async function submit(r, d, why) {
     if (previewMode) { onComplete?.({ preview: true }); return }
-    setSaving(true)
     setError(null)
-    const { error: dbErr } = await db.from('zerin_daily_checkins').insert({
-      user_id:     userId,
-      study_id:    studyId,
-      external_id: enrollment?.external_id ?? null,
-      schedule_id: scheduleId,
-      study_day:   protocolDay,
-      slot,
-      arm,
-      rating:      r,
-      direction:   d,
-      reason:      reflective ? (why ?? '').trim() : null,
-      tip_text:    null,
-    })
-    setSaving(false)
-    if (dbErr) {
+    // A ref lock rather than the old `saving` flag, which two taps in one tick
+    // both read as false. Released only on failure, so a failed save stays
+    // retryable; a repeat that gets past it anyway is collapsed in the database
+    // (20260910_zerin_checkin_pondwatch_submit_guard.sql).
+    let result
+    try {
+      result = await runSubmit(async () => {
+        const { error: dbErr } = await db.from('zerin_daily_checkins').insert({
+          user_id:     userId,
+          study_id:    studyId,
+          external_id: enrollment?.external_id ?? null,
+          schedule_id: scheduleId,
+          study_day:   protocolDay,
+          slot,
+          arm,
+          rating:      r,
+          direction:   d,
+          reason:      reflective ? (why ?? '').trim() : null,
+          tip_text:    null,
+        })
+        if (dbErr) throw dbErr
+      })
+    } catch (dbErr) {
       setError('Could not save — please try again.')
       console.error('zerin_daily_checkins insert:', dbErr)
       return
     }
-    onComplete?.({})
+    if (!result.skipped) onComplete?.({})
   }
 
   function handleSubmit() {
