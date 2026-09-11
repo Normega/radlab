@@ -20,7 +20,7 @@ and computational reproducibility. Updated after each step. Companion to
 
 ---
 
-## Decision index (D1–D20)
+## Decision index (D1–D24)
 
 The preregistration was cleaned of inline decision markup on 2026-08-11 so that it reads as
 a formal document; the decisions are absorbed into its prose and summarised in its
