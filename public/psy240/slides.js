@@ -31,8 +31,20 @@
   // with-notes handout. Students printing the plain URL get the clean deck --
   // notes follow this same class in @media print, so what you see is what
   // prints, and the default is the one that cannot leak the script.
-  if (new URLSearchParams(location.search).get('notes') === '1') {
+  const params = new URLSearchParams(location.search)
+  if (params.get('notes') === '1') {
     document.body.classList.add('notes-on')
+  }
+
+  // ?print=1 opens the print dialog as soon as the deck is ready, so a "PDF"
+  // link elsewhere costs one click instead of four. Waiting for `load` (not
+  // DOMContentLoaded) matters: fonts and the figure images must be in before
+  // the browser paginates, or slides break across pages at the wrong points.
+  // No PDFs are committed to the repo on purpose -- the decks are edited
+  // several times a week, and a stored copy goes stale silently while the
+  // live deck never does.
+  if (params.get('print') === '1') {
+    window.addEventListener('load', () => setTimeout(() => window.print(), 400))
   }
 
   let i = 0
