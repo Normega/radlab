@@ -145,7 +145,7 @@ export default function ChapterMap() {
         <h1 style={S.title}>Chapters by lecture</h1>
         <p style={S.sub}>
           What to read, and when. Every chapter listed here is a Field Guide page — click one to
-          read it, or click a lecture title to open that week's slides in a new tab. Quizzes cover the chapters
+          read it, click a lecture title to open that week's slides, or <strong>PDF</strong> to save a copy — without the lecturer's notes. Quizzes cover the chapters
           for that week, so this is also the quiz study list.
         </p>
 
@@ -211,10 +211,23 @@ export default function ChapterMap() {
                               // New tab, matching the slides index: this is a
                               // reference table, and swallowing it to open a
                               // deck loses the reader's place.
-                              <a href={`/${courseCode}/L${deck}.html`} target="_blank" rel="noreferrer"
-                                 style={S.lectureLink}>
-                                {m.title} <span style={S.slidesTag}>slides ↗</span>
-                              </a>
+                              <>
+                                <a href={`/${courseCode}/L${deck}.html`} target="_blank" rel="noreferrer"
+                                   style={S.lectureLink}>
+                                  {m.title} <span style={S.slidesTag}>slides ↗</span>
+                                </a>
+                                {/* ?print=1 opens the deck and goes straight to the
+                                    print dialog, where "Save as PDF" is one more
+                                    click. No PDFs are stored: these decks change
+                                    several times a week and a saved copy would go
+                                    stale without saying so. Presenter notes stay
+                                    out — print follows the on-screen notes state. */}
+                                <a href={`/${courseCode}/L${deck}.html?print=1`}
+                                   target="_blank" rel="noreferrer" style={S.pdfTag}
+                                   title="Opens the deck and its print dialog — choose Save as PDF">
+                                  PDF
+                                </a>
+                              </>
                             ) : (
                               <span style={S.lectureTitle}>{m.title}</span>
                             )}
@@ -319,6 +332,9 @@ const S = {
   lectureNo: { fontFamily: MONO, fontSize: 11.5, color: 'var(--pk)', letterSpacing: 0.5 },
   lectureLink: { fontFamily: SERIF, fontSize: 17.5, color: 'var(--pk)', textDecoration: 'none' },
   slidesTag: { fontFamily: MONO, fontSize: 11, letterSpacing: 0.5, color: 'var(--tx3)', whiteSpace: 'nowrap' },
+  pdfTag: { fontFamily: MONO, fontSize: 10.5, letterSpacing: 0.5, color: 'var(--tx2)',
+            border: '1px solid var(--bds)', borderRadius: 10, padding: '1px 7px',
+            marginLeft: 8, textDecoration: 'none', whiteSpace: 'nowrap' },
   lectureTitle: { fontFamily: SERIF, fontSize: 17.5, color: 'var(--tx)' },
   detail: { fontSize: 13, color: 'var(--tx3)', margin: '5px 0 0', lineHeight: 1.5 },
   breakTitle: { fontFamily: SERIF, fontSize: 16, color: 'var(--tx2)' },
