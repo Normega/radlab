@@ -11,6 +11,7 @@ import { baselineTimeOfDay, materializeSchedule } from '../_shared/materializeSc
 import type { Graph } from '../_shared/materializeSchedule.ts'
 import { processAdherenceWithdrawal } from '../_shared/processAdherenceWithdrawal.ts'
 import { todayInLabTz } from '../_shared/labDate.ts'
+import { isPlaceholderExternalId } from '../_shared/externalIdGuard.ts'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -66,6 +67,17 @@ Deno.serve(async (req) => {
 
     if (!study_id || !external_id || !source) {
       return json({ error: 'Missing required fields: study_id, external_id, source.' }, 400)
+    }
+
+    // An unsubstituted platform placeholder is not an id. Accepting one put every
+    // participant who arrived that way into a single shared enrollment -- see
+    // _shared/externalIdGuard.ts. Checked before anything touches the database,
+    // so a misconfigured link creates nothing.
+    if (isPlaceholderExternalId(external_id)) {
+      console.warn('auto-enroll: refused placeholder external_id for study ' + study_id)
+      return json({
+        error: 'This study link is missing your participant ID. Please go back to the recruitment site and open the study from there. If this keeps happening, contact the study team.',
+      }, 400)
     }
 
     const admin = createClient(
