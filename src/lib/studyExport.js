@@ -22,6 +22,7 @@
 
 import { supabase } from './supabase'
 import { repeatedSubcatsFromSteps, administrationSuffix, vasRepeats } from './responseColumns.js'
+import { splitResubmissions, createRepeatNamer, putCell } from './exportIntegrity.js'
 import { instrumentColumns } from './instrumentColumns'
 
 const PAGE = 1000
@@ -507,21 +508,13 @@ function mergePrefixed(target, prefix, srcRow) {
 }
 
 // Equity-census answers live inside a `responses` jsonb (not top-level columns),
-// so they need flattening rather than mergePrefixed: arrays → "a; b", nested
-// objects → JSON, scalars pass through. This is the demographic intake online
-// studies use in place of the classic demographics step, so its fields belong in
-// the per-participant master row — not just a participation count.
-function mergeEquityCensus(target, srcRow) {
-  if (!srcRow?.responses) return
-  for (const [k, v] of Object.entries(srcRow.responses)) {
-    target[`eq_${k}`] = Array.isArray(v) ? v.join('; ')
-      : (v && typeof v === 'object') ? JSON.stringify(v)
-      : (v ?? '')
-  }
-}
+// so they are flattened by mergeJsonResponses under the `eq` prefix: arrays →
+// "a; b", nested objects → JSON, scalars pass through. This is the demographic
+// intake online studies use in place of the classic demographics step, so its
+// fields belong in the per-participant master row — not just a participation count.
 
 // Checklist questionnaire items store an object; export the weighted value.
-// Same flattening as mergeEquityCensus but under a caller-chosen prefix, for
+// The flattening the equity census (`eq`) uses, under a caller-chosen prefix, for
 // any instrument that stores its answers as a `responses` jsonb blob rather
 // than as top-level columns. Arrays join to "a; b" so a multi-select stays
 // readable in a spreadsheet; nested objects (e.g. race sub-specifications)
@@ -547,30 +540,41 @@ function normalizeSlug(slug) {
     .replace(/-/g, '')
 }
 
-// Near-simultaneous duplicate submissions of the same instrument. A double-fire
-// (double click, re-render, retried save) lands two rows seconds apart; left in,
-// each shifts the timepoint index of every LATER response for that participant,
-// so one stray click silently mislabels the rest of their record. Observed live:
-// a BFI-2-S submitted twice 643 ms apart made one participant look like they had
-// three baseline administrations. Keeps the LAST row of a burst — the most
-// complete, if the participant edited and resubmitted.
-const DUPLICATE_WINDOW_MS = 120_000
+// Duplicate submissions are no longer DROPPED here.
+//
+// This used to keep only the LAST row of any burst of the same instrument, with a
+// window of two minutes measured on participant clocks — which were off by up to
+// an hour in Sandy Study 3. A genuine re-answer inside that window vanished from
+// the master. Rows are now separated by `splitResubmissions` (exportIntegrity.js):
+// only provable copies are set aside — flagged `resubmission_of` by the database,
+// or identical legacy rows seconds apart with nothing collected in between — and
+// every one set aside is listed in `_export_integrity.csv`. A double-fire still
+// cannot shift a participant's later timepoints, because the copy is set aside
+// before occurrence counting.
 
-function dropDuplicateSubmissions(rows, keyOf, timeOf) {
-  const sorted = [...rows].sort((a, b) => timeOf(a) - timeOf(b))
-  const out = []
-  const lastIdxFor = new Map()
-  for (const r of sorted) {
-    const k = keyOf(r)
-    const prevIdx = lastIdxFor.get(k)
-    if (prevIdx != null && timeOf(r) - timeOf(out[prevIdx]) < DUPLICATE_WINDOW_MS) {
-      out[prevIdx] = r          // same burst → keep the later row
-    } else {
-      lastIdxFor.set(k, out.length)
-      out.push(r)
-    }
+// What the wide blocks share for one export: the repeat namer, and the record of
+// every copy omitted and every collision caught.
+function exportTools() {
+  return { namer: createRepeatNamer(), integrity: { omitted: [], collisions: [] } }
+}
+
+function noteOmitted(tools, table, rows, subjectOf) {
+  if (!tools) return
+  for (const r of rows) {
+    tools.integrity.omitted.push({
+      table,
+      row_id: r.id,
+      participant: subjectOf(r),
+      resubmission_of: r.resubmission_of ?? '(legacy row identical to the one before it, within 5 s)',
+    })
   }
-  return out
+}
+
+// A cell writer that never replaces an existing cell (CLAUDE.md rule 5).
+function cellWriter(tools, table, pid) {
+  return (target, column, value) => putCell(target, column, value, c => {
+    if (tools) tools.integrity.collisions.push({ table, participant: pid, ...c })
+  })
 }
 
 // Wide questionnaire block, keyed by profile_id → { <slug>_<timepoint>_<item> }.
@@ -586,18 +590,20 @@ function dropDuplicateSubmissions(rows, keyOf, timeOf) {
 // inferred from the study DESIGN: `ctx.slugTimepoints` lists, in day order, the
 // sessions that administer each instrument, and the nth response maps to the nth
 // such session. That is exact whenever a participant's responses are in protocol
-// order, which is why duplicates are dropped first. Responses beyond the designed
-// number of administrations fall back to `_x<n>` rather than inventing a
-// timepoint they cannot be shown to belong to.
-function questionnaireWideByProfile(qRows, ctx) {
-  const time = r => new Date(r.completed_at ?? 0).getTime()
-  // The step is part of the identity of an administration: two answers to the
-  // same instrument at different steps of one session are not duplicates of
-  // each other, and collapsing them here would reproduce in the CSV exactly the
-  // loss that 20260910_dedupe_by_step_index.sql fixed in the database.
-  const rows = dropDuplicateSubmissions(
-    qRows, r => `${r.user_id}::${r.questionnaire_slug}::${r.step_index ?? ''}`, time,
-  )
+// order, which is why provable copies are set aside first. Responses beyond the
+// designed number of administrations fall back to `_x<n>` rather than inventing a
+// timepoint they cannot be shown to belong to. A further response that still
+// names the same block is kept under `_r2` — never written over.
+function questionnaireWideByProfile(qRows, ctx, tools) {
+  // The step is part of the identity of a variable: two answers to the same
+  // instrument at different steps of one session are two variables.
+  const { kept: rows, omitted } = splitResubmissions(qRows, {
+    subjectOf: r => r.user_id,
+    keyOf:     r => `${r.questionnaire_slug}|${r.schedule_id ?? ''}|${r.step_index ?? ''}`,
+    payloadOf: r => JSON.stringify(r.responses ?? null),
+    timeOf:    r => new Date(r.received_at ?? r.completed_at ?? 0).getTime(),
+  })
+  noteOmitted(tools, 'questionnaire_responses', omitted, r => r.user_id)
   const byProfile = {}
   const occ = {}
   for (const r of rows) {
@@ -632,12 +638,16 @@ function questionnaireWideByProfile(qRows, ctx) {
       stepIndex: r.step_index,
       ordinal:   n,
     })
-    const prefix = `${normalizeSlug(slug)}_${label}${stepSuffix}`
+    const basePrefix = `${normalizeSlug(slug)}_${label}${stepSuffix}`
+    const prefix = tools
+      ? tools.namer.name(pid, basePrefix, { table: 'questionnaire_responses', row_id: r.id })
+      : basePrefix
+    const put = cellWriter(tools, 'questionnaire_responses', pid)
     for (const [rawKey, val] of Object.entries(r.responses ?? {})) {
       const cleanKey = rawKey.replace(/^item_/, '')
       const m = cleanKey.match(/(\d+)$/)
       const colName = m ? `${prefix}_${m[1]}` : `${prefix}_${cleanKey}`
-      byProfile[pid][colName] = responseScalar(val)
+      put(byProfile[pid], colName, responseScalar(val))
     }
   }
   return byProfile
@@ -662,13 +672,18 @@ function questionnaireWideByProfile(qRows, ctx) {
 // Rows whose `schedule_id` is not in this study are DROPPED: `vas_responses` is
 // fetched by user_id, so a participant enrolled in two studies would otherwise
 // have the other study's ratings merged into this export.
-function vasWideByProfile(vasRows, scaleSlugById, ctx) {
+function vasWideByProfile(vasRows, scaleSlugById, ctx, tools) {
   const byProfile = {}
   const unscheduled = []
-  // Ordered so the fallback counter below numbers by time rather than by
-  // whatever order the rows came back in.
-  const scheduledRows = [...vasRows]
-    .sort((a, b) => new Date(a.responded_at ?? 0) - new Date(b.responded_at ?? 0))
+  // Provable copies set aside. `kept` comes back in time order, so the fallback
+  // counter below numbers by time rather than by whatever order rows were fetched.
+  const { kept: scheduledRows, omitted } = splitResubmissions(vasRows, {
+    subjectOf: r => r.user_id,
+    keyOf:     r => `${r.scale_id}|${r.schedule_id ?? ''}|${r.step_index ?? ''}|${r.package_slug ?? ''}`,
+    payloadOf: r => String(r.value),
+    timeOf:    r => new Date(r.received_at ?? r.responded_at ?? 0).getTime(),
+  })
+  noteOmitted(tools, 'vas_responses', omitted, r => r.user_id)
   const stepless = {}
 
   for (const r of scheduledRows) {
@@ -702,21 +717,23 @@ function vasWideByProfile(vasRows, scaleSlugById, ctx) {
     })
 
     if (!byProfile[pid]) byProfile[pid] = {}
-    byProfile[pid][`vas_${slug}${phase}_d${sched.study_day}${stepSuffix}`] = r.value
+    const base = `vas_${slug}${phase}_d${sched.study_day}${stepSuffix}`
+    const col  = tools ? tools.namer.name(pid, base, { table: 'vas_responses', row_id: r.id }) : base
+    cellWriter(tools, 'vas_responses', pid)(byProfile[pid], col, r.value)
   }
 
   // Legacy rows with no schedule link cannot be placed on a day. They keep
   // occurrence numbering under an explicit `_unscheduled_` marker so they can
   // never be mistaken for day-indexed columns.
   const occ = {}
-  const byTime = unscheduled.sort((a, b) => new Date(a.responded_at ?? 0) - new Date(b.responded_at ?? 0))
+  const byTime = unscheduled
   for (const r of byTime) {
     const pid  = r.user_id
     const slug = normalizeSlug(scaleSlugById.get(r.scale_id) ?? r.scale_id ?? 'unknown')
     const key  = `${pid}::${slug}`
     const n    = (occ[key] = (occ[key] ?? 0) + 1)
     if (!byProfile[pid]) byProfile[pid] = {}
-    byProfile[pid][`vas_${slug}_unscheduled_${n}`] = r.value
+    cellWriter(tools, 'vas_responses', pid)(byProfile[pid], `vas_${slug}_unscheduled_${n}`, r.value)
   }
   return byProfile
 }
@@ -751,19 +768,21 @@ function vasWideByProfile(vasRows, scaleSlugById, ctx) {
 //                  <slug>_<tp>_count
 //   hierarchy      <slug>_<tp>_<belief>_changed   1/0, belief ids from the row
 //                  <slug>_<tp>_<belief>_direction signed slider, null if unchanged
-function instrumentWideByProfile(rows, ctx) {
+function instrumentWideByProfile(rows, ctx, tools) {
   const byProfile = {}
   const occ = {}
 
-  // Time order, so both orderings below are deterministic rather than however
-  // the fetch happened to page. It decides two things: which answer survives
-  // when a participant re-enters the SAME session and answers again (the later
-  // one, which is their final answer for that timepoint — the 10s dedupe
-  // trigger only collapses double-submits, not a genuine return hours later),
-  // and what `_x<n>` counts for rows with no schedule to name.
-  const ordered = [...rows].sort(
-    (a, b) => new Date(a.responded_at ?? 0) - new Date(b.responded_at ?? 0)
-  )
+  // Provable copies set aside; the rest in time order, which decides what `_x<n>`
+  // counts for rows with no schedule to name. A participant who re-enters the
+  // SAME session and answers again keeps BOTH answers: the later one lands under
+  // `_r2` instead of replacing the first.
+  const { kept: ordered, omitted } = splitResubmissions(rows, {
+    subjectOf: r => r.user_id,
+    keyOf:     r => `${r.instrument_id ?? r.instrument_slug}|${r.schedule_id ?? ''}|${r.step_index ?? ''}`,
+    payloadOf: r => JSON.stringify(r.response ?? null),
+    timeOf:    r => new Date(r.received_at ?? r.responded_at ?? 0).getTime(),
+  })
+  noteOmitted(tools, 'instrument_responses', omitted, r => r.user_id)
 
   for (const r of ordered) {
     const pid = r.user_id
@@ -777,31 +796,54 @@ function instrumentWideByProfile(rows, ctx) {
     const key     = `${pid}::${slug}`
     const n       = (occ[key] = (occ[key] ?? 0) + 1)
     const tp      = session ? timepointToken(session.label, session.day_number) : `x${n}`
-    const prefix  = `${slug}_${tp}`
+    const base    = `${slug}_${tp}`
+    const prefix  = tools ? tools.namer.name(pid, base, { table: 'instrument_responses', row_id: r.id }) : base
 
     const out = (byProfile[pid] ??= {})
     const def = ctx?.instrumentBySlug?.get(r.instrument_slug) ?? null
-    Object.assign(out, instrumentColumns(prefix, r.instrument_type, r.response, def))
+    const put = cellWriter(tools, 'instrument_responses', pid)
+    for (const [col, value] of Object.entries(instrumentColumns(prefix, r.instrument_type, r.response, def))) {
+      put(out, col, value)
+    }
   }
 
   return byProfile
 }
 
-// First row per participant for single-row participant-level tables.
-function firstRowByProfile(entry, rows, ctx, resultsByTableById) {
+// Every row per participant for the participant-level tables, earliest first.
+// These are "usually one row" tables — demographics, equity census, screener,
+// compensation — and the master used to broadcast only the FIRST, so a second
+// row (a retaken screener, a corrected census) never reached it. The first row
+// keeps the plain prefix; each later one gets `<prefix>_r<n>`. Database-flagged
+// copies are left out.
+function rowsByProfile(entry, rows, ctx, resultsByTableById) {
   const map = new Map()
-  for (const row of rows) {
+  const when = r => new Date(r.received_at ?? r.completed_at ?? r.screened_at ?? r.created_at ?? 0).getTime()
+  const ordered = rows
+    .filter(r => !r.resubmission_of)
+    .map((r, i) => ({ r, i }))
+    .sort((a, b) => (when(a.r) - when(b.r)) || (a.i - b.i))
+    .map(x => x.r)
+  for (const row of ordered) {
     const pid = rowOwnerProfileId(entry, row, ctx, resultsByTableById)
-    if (pid != null && !map.has(pid)) map.set(pid, row)
+    if (pid == null) continue
+    if (!map.has(pid)) map.set(pid, [])
+    map.get(pid).push(row)
   }
   return map
 }
 
 // Build the master: one row per enrolled participant.
-//  • participant-level single-row tables broadcast their columns (prefixed)
-//  • questionnaires spread wide (one column per item)
+//  • participant-level tables broadcast their columns (prefixed); a further row
+//    for the same participant is kept as `<prefix>_r2_*`, never dropped
+//  • questionnaires, instruments and ratings spread wide (one column per item)
 //  • every data table contributes a `<table>_n` participation count
-export function buildMasterTable(context, resultsByTable) {
+//
+// Nothing collected is lost on the way in. The only rows left out are provable
+// copies (exportIntegrity.js), and every omission, repeat and collision comes
+// back in `integrity`, for `_export_integrity.csv`.
+export function buildMasterWithIntegrity(context, resultsByTable) {
+  const tools = exportTools()
   const byId = {}
   for (const [table, rows] of Object.entries(resultsByTable)) {
     byId[table] = new Map(rows.map(r => [r.id, r]))
@@ -822,14 +864,16 @@ export function buildMasterTable(context, resultsByTable) {
     if (m.size) countByTable[entry.table] = m
   }
 
-  const dem  = firstRowByProfile(entryOf('demographics'),         resultsByTable.demographics ?? [],         context, byId)
-  const eq   = firstRowByProfile(entryOf('equity_census_responses'), resultsByTable.equity_census_responses ?? [], context, byId)
-  const ldem = firstRowByProfile(entryOf('liliana_demographics'), resultsByTable.liliana_demographics ?? [], context, byId)
-  const scr  = firstRowByProfile(entryOf('screener_results'),     resultsByTable.screener_results ?? [],     context, byId)
-  const comp = firstRowByProfile(entryOf('participant_compensation'), resultsByTable.participant_compensation ?? [], context, byId)
-  const qWide   = questionnaireWideByProfile(resultsByTable.questionnaire_responses ?? [], context)
-  const instWide = instrumentWideByProfile(resultsByTable.instrument_responses ?? [], context)
-  const vasWide = vasWideByProfile(resultsByTable.vas_responses ?? [], context.vasScaleSlugById ?? new Map(), context)
+  const dem  = rowsByProfile(entryOf('demographics'),         resultsByTable.demographics ?? [],         context, byId)
+  const eq   = rowsByProfile(entryOf('equity_census_responses'), resultsByTable.equity_census_responses ?? [], context, byId)
+  const ldem = rowsByProfile(entryOf('liliana_demographics'), resultsByTable.liliana_demographics ?? [], context, byId)
+  const scr  = rowsByProfile(entryOf('screener_results'),     resultsByTable.screener_results ?? [],     context, byId)
+  const comp = rowsByProfile(entryOf('participant_compensation'), resultsByTable.participant_compensation ?? [], context, byId)
+  noteOmitted(tools, 'screener_results',
+    (resultsByTable.screener_results ?? []).filter(r => r.resubmission_of), r => r.participant_id)
+  const qWide   = questionnaireWideByProfile(resultsByTable.questionnaire_responses ?? [], context, tools)
+  const instWide = instrumentWideByProfile(resultsByTable.instrument_responses ?? [], context, tools)
+  const vasWide = vasWideByProfile(resultsByTable.vas_responses ?? [], context.vasScaleSlugById ?? new Map(), context, tools)
 
   const built = context.enrollments.map(e => {
     const pid = e.profile_id
@@ -844,21 +888,71 @@ export function buildMasterTable(context, resultsByTable) {
       consent_date:   e.consent_date,
       status:         e.status,
     }
-    mergePrefixed(row, 'dem',      dem.get(pid))
-    mergeEquityCensus(row,         eq.get(pid))
-    mergeJsonResponses(row, 'ldem', ldem.get(pid))
-    mergePrefixed(row, 'screener', scr.get(pid))
-    Object.assign(row, qWide[pid]    ?? {})
-    Object.assign(row, instWide[pid] ?? {})
-    Object.assign(row, vasWide[pid]  ?? {})
-    mergePrefixed(row, 'comp',     comp.get(pid))
+    // Every row of a participant-level table: the first under the plain prefix,
+    // each further one under `<prefix>_r<n>`.
+    const each = (map, prefix, table, merge) => {
+      for (const src of map.get(pid) ?? []) {
+        merge(row, tools.namer.name(pid, prefix, { table, row_id: src.id }), src)
+      }
+    }
+    each(dem,  'dem',      'demographics',            mergePrefixed)
+    each(eq,   'eq',       'equity_census_responses', mergeJsonResponses)
+    each(ldem, 'ldem',     'liliana_demographics',    mergeJsonResponses)
+    each(scr,  'screener', 'screener_results',        mergePrefixed)
+    const put = cellWriter(tools, 'master', pid)
+    for (const block of [qWide[pid], instWide[pid], vasWide[pid]]) {
+      for (const [col, value] of Object.entries(block ?? {})) put(row, col, value)
+    }
+    each(comp, 'comp',     'participant_compensation', mergePrefixed)
     for (const [table, m] of Object.entries(countByTable)) {
       row[`${table}_n`] = m.get(pid) ?? 0
     }
     return row
   })
 
-  return orderMasterColumns(built)
+  return {
+    rows: orderMasterColumns(built),
+    integrity: { ...tools.integrity, repeats: tools.namer.repeats },
+  }
+}
+
+export function buildMasterTable(context, resultsByTable) {
+  return buildMasterWithIntegrity(context, resultsByTable).rows
+}
+
+// One row per finding, for `_export_integrity.csv`. An export with nothing to
+// report still says so, so the file's presence is itself proof the check ran.
+export function integrityRows(context, integrity) {
+  const ext = pid => context?.profileToExternal?.get(pid) ?? null
+  const out = []
+  for (const o of integrity?.omitted ?? []) {
+    out.push({
+      kind: 'omitted_copy', table: o.table,
+      participant_external_id: ext(o.participant), profile_id: o.participant, row_id: o.row_id,
+      detail: `Left out of the master as a copy of ${o.resubmission_of}. Still present in ${o.table}.csv.`,
+    })
+  }
+  for (const r of integrity?.repeats ?? []) {
+    out.push({
+      kind: 'repeat_kept', table: r.table ?? '',
+      participant_external_id: ext(r.scope), profile_id: r.scope, row_id: r.row_id ?? '',
+      detail: `A further response to ${r.base} was kept as ${r.name}.`,
+    })
+  }
+  for (const c of integrity?.collisions ?? []) {
+    out.push({
+      kind: 'column_collision', table: c.table,
+      participant_external_id: ext(c.participant), profile_id: c.participant, row_id: '',
+      detail: `Two values were named ${c.column}; the second was kept as ${c.written_as}.`,
+    })
+  }
+  if (!out.length) {
+    out.push({
+      kind: 'clean', table: '', participant_external_id: '', profile_id: '', row_id: '',
+      detail: 'Every collected response reached the master: no copies omitted, no repeats, no column collisions.',
+    })
+  }
+  return out
 }
 
 // ── Deterministic master column order ─────────────────────────────────────────
@@ -974,6 +1068,13 @@ const COLUMN_NOTES = [
 ]
 
 function describeColumn(col) {
+  // `_r<n>` marks a further response to the same variable, kept rather than
+  // written over (CLAUDE.md rule 5). Describe the variable, and say so.
+  const rep = col.match(/^(.*?)_r(\d+)(_.*)?$/)
+  if (rep && Number(rep[2]) >= 2) {
+    const base = describeColumn(rep[1] + (rep[3] ?? ''))
+    return `REPEAT #${rep[2]} — a further response to this variable from the same participant, kept rather than overwritten (see _export_integrity.csv).${base ? ' ' + base : ''}`
+  }
   for (const [re, note] of COLUMN_NOTES) if (re.test(col)) return note
   const m = col.match(/^([a-z0-9]+)_(screener|baseline|midpoint|final|x\d+)_(.+)$/)
   if (m) {
@@ -988,7 +1089,11 @@ function describeColumn(col) {
 }
 
 export function buildCodebook(context, resultsByTable, masterRows) {
-  const out = []
+  const out = [{
+    file: '_export_integrity.csv',
+    column: '(whole file)',
+    description: 'Proof that no collected response was dropped or overwritten on its way into the master: every provable copy left out (each still present in its table file), every further response kept under an _r<n> column, and any column collision caught. A single row of kind "clean" means none occurred.',
+  }]
   const cols = new Set()
   for (const r of masterRows) Object.keys(r).forEach(c => cols.add(c))
   for (const c of cols) {

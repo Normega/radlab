@@ -179,18 +179,21 @@ export default function ScreenerPage({ study, participant, supabaseClient, onPas
       answer: eligAnswers[i] ?? null,
     }))
     try {
-      await supabaseClient.from('screener_results').upsert(
-        {
-          participant_id: participant.id,
-          study_id:       study.id,
-          screened_at:    new Date().toISOString(),
-          phase1_passed:  phase1Passed,
-          phase2_passed:  phase1Passed ? phase2Passed : null,
-          phase2_outcome: phase1Passed ? phase2Outcome : null,
-          phase1_answers: phase1Answers,
-        },
-        { onConflict: 'participant_id,study_id' }
-      )
+      // Insert, never upsert: each screening attempt is its own row. The old
+      // upsert onto (participant_id, study_id) replaced an earlier attempt with a
+      // later one — CLAUDE.md participant-data rule 5. SessionEntry reads the
+      // latest attempt; a byte-identical double-fire is flagged by the database
+      // (`resubmission_of`), not dropped.
+      const { error } = await supabaseClient.from('screener_results').insert({
+        participant_id: participant.id,
+        study_id:       study.id,
+        screened_at:    new Date().toISOString(),
+        phase1_passed:  phase1Passed,
+        phase2_passed:  phase1Passed ? phase2Passed : null,
+        phase2_outcome: phase1Passed ? phase2Outcome : null,
+        phase1_answers: phase1Answers,
+      })
+      if (error) throw error
     } catch (err) {
       console.error('[Screener] save error:', err)
     } finally {

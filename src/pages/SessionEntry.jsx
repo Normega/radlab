@@ -190,11 +190,15 @@ export default function SessionEntry() {
 
     // Screener gate — runs before consent
     if (study.screener) {
+      // Latest attempt. Screener results are append-only (one row per attempt,
+      // CLAUDE.md rule 5), so `.maybeSingle()` alone would error on a second row.
       const { data: priorResult } = await sb
         .from('screener_results')
         .select('phase1_passed, phase2_passed')
         .eq('participant_id', link.participant_id)
         .eq('study_id', link.study_id)
+        .order('screened_at', { ascending: false })
+        .limit(1)
         .maybeSingle()
 
       const alreadyPassed = priorResult?.phase1_passed === true && priorResult?.phase2_passed === true

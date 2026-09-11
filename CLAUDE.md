@@ -90,7 +90,7 @@ participant-facing and `processAdherenceWithdrawal` emails them.
 
 ---
 
-## Participant data logging — four rules for every study
+## Participant data logging — five rules for every study
 
 These began as fixes to Liliana Study 3, but none of them is study-specific. Each was a
 *category* of defect that any study on the platform could reproduce, so they are policy.
@@ -120,10 +120,43 @@ back to something visibly non-committal (`_x2`, `_unscheduled_1`) rather than in
 plausible one. A confidently wrong label is worse than an obviously vague one: the export once
 emitted `gad7_final_*` for a participant whose final assessment was never sat.
 
+**5. A collected response is never overwritten or discarded — flag, don't drop.** Every
+submission is inserted as its own row. Nothing may `UPDATE` a response, upsert onto one, or
+return `NULL` from an insert trigger to swallow one. A double submission is only a byte-identical
+copy of the participant's *immediately preceding* submission, for the same variable, received
+within 5 s by the **server** clock (never the participant's — theirs were off by up to an hour).
+`note_response_trg` marks such a row `resubmission_of` and keeps it; the export omits only those
+rows from the master. Anything else — a different answer, a later re-entry, a repeat after any
+other variable was collected — is data: it gets its own row and, on export, its own `_r2` columns,
+listed in `_export_integrity.csv`. The response tables (`questionnaire_responses`,
+`vas_responses`, `instrument_responses`, `zerin_daily_checkins`, `pond_watch_results`,
+`intervention_responses`, `screener_results`) refuse `UPDATE` from participant-facing roles, and
+`src/lib/responsesAppendOnly.test.mjs` fails CI if code updates or upserts one or a migration
+reinstates a discarding trigger. **A new response table gets the same two triggers and an entry
+in that test's `RESPONSE_TABLES`.** Audit — must return no rows:
+
+```sql
+SELECT c.relname, t.tgname
+FROM pg_trigger t
+JOIN pg_class c ON c.oid = t.tgrelid
+JOIN pg_proc  p ON p.oid = t.tgfoid
+WHERE NOT t.tgisinternal
+  AND c.relnamespace = 'public'::regnamespace
+  AND (p.prosrc ~* 'return\s+null' OR p.prosrc ~* 'update\s+\S+\s+set')
+  AND c.relname IN ('questionnaire_responses','vas_responses','instrument_responses',
+                    'zerin_daily_checkins','pond_watch_results','intervention_responses',
+                    'screener_results');
+```
+
+Why it is a rule: on 2026-08-26/27 a duplicate-submit guard that overwrote the earlier row
+destroyed 1,895 of Sandy Study 3's slider ratings, silently, for a fortnight (website.md §28a).
+Rule 2 asked for a database guard; a guard that *drops* is how rule 2 caused the loss. The
+database half of rule 2 is now this flag.
+
 **The through-line:** every one of these was invisible in the app and only showed up in the
 exported data, months later, to the person trying to analyse it. Data-logging defects do not
 announce themselves — so prefer the recorded fact over the clever inference, and check new
-instruments against these four before a study recruits, not after.
+instruments against these five before a study recruits, not after.
 
 ---
 

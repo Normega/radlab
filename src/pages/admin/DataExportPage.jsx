@@ -4,7 +4,7 @@ import { supabase } from '../../lib/supabase'
 import { zipSync, strToU8 } from 'fflate'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import {
-  fetchStudyData, fetchParticipantData, buildMasterTable, hasPhysio, toCsv,
+  fetchStudyData, fetchParticipantData, buildMasterWithIntegrity, integrityRows, hasPhysio, toCsv,
   withParticipantKey, buildCodebook,
 } from '../../lib/studyExport'
 
@@ -422,10 +422,14 @@ function StudyExportSection() {
   const errors      = studyData?.errors ?? []
   const enrollments = studyData?.context?.enrollments ?? []
   const skipped     = studyData?.skipped ?? []
-  const master = useMemo(
-    () => (studyData ? buildMasterTable(studyData.context, studyData.resultsByTable) : []),
+  // Built together, so the integrity report describes exactly this master.
+  const built = useMemo(
+    () => (studyData
+      ? buildMasterWithIntegrity(studyData.context, studyData.resultsByTable)
+      : { rows: [], integrity: null }),
     [studyData],
   )
+  const master = built.rows
   const physioAvailable = studyData ? hasPhysio(studyData.resultsByTable) : false
 
   const grouped = CATEGORY_ORDER
@@ -444,6 +448,7 @@ function StudyExportSection() {
       const rbt  = studyData.resultsByTable
       const files = [
         { filename: '_participant_master.csv', content: toCsv(master) },
+        { filename: '_export_integrity.csv',   content: toCsv(integrityRows(ctx, built.integrity)) },
         { filename: '_codebook.csv',           content: toCsv(buildCodebook(ctx, rbt, master)) },
         ...tables.map(t => ({
           filename: `${t.table}.csv`,
