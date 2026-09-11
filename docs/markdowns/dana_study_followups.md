@@ -67,6 +67,20 @@ pressed"); Norm asked for the same everywhere. Now:
   purged an hour after expiry (the 20260903 design always called for this;
   Dana's two unconsumed CHM135 test requests from 2026-09-10 were holding PII).
 
+**Verified live 2026-09-11** (migration applied, both functions at v2), against
+the CHM135 TESTING (Copy) study with request rows inserted directly so no mail
+was sent: wrong code → 4 left; right code with another address, or in another
+study → not found; right code typed with spaces and a capitalised address →
+enrolled (3 schedule rows, 1 active link, `self-` id, identifiers and hash
+cleared from the request); same code again → not found. Five wrong guesses
+fired *in parallel* came back 4, 3, 2, 1, 0 — the lock serialised them — and
+the correct code afterwards → locked. The purge found nothing left to clear
+(Dana's 09-10 rows had already been cleared). All test rows and the test auth
+user deleted.
+
+Still owed: a human pass through the *screen* — the code box only appears after
+a real submission, which sends a real email.
+
 Deliberately out of scope for now: **studies with a screener are refused** with
 a clear message rather than silently skipped. Anonymous screening would have to
 run before any participant row exists and buffer to the request row; skipping it
