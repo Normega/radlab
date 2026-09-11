@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 // ── StudyVerify (/study/verify?token=…) ───────────────────────────────────────
@@ -7,42 +7,75 @@ import { useNavigate } from 'react-router-dom'
 // necessity: the click commonly happens on a phone while the sign-up form was
 // filled on a laptop, so this must never depend on an existing session.
 //
-// The click is the moment the enrollment is actually created — everything
-// before it was a request row. On success it hands straight off to /s/:token,
-// the ordinary participant session entry, so a student goes from the email to
-// their first question in one step.
+// THIS PAGE IS INERT UNTIL A HUMAN PRESSES THE BUTTON. It must stay that way.
+//
+// Until 2026-09-11 it verified in a mount effect. University Microsoft 365 mail
+// runs Defender Safe Links, which opens every URL in every message in a real,
+// JavaScript-executing browser to scan it. So the scanner — not the student —
+// would load this page, run the effect, consume the single-use token, create
+// the enrollment and schedule, and then follow the redirect into /s/:token and
+// start the participant's first session. The student's own tap still got in
+// (a spent token resolves to the enrollment it already produced), but every
+// session would have been opened and timed by a machine first.
+//
+// This path recruits U of T students only, by design — so it is the platform's
+// most exposed link to exactly that scanner. The academic side hit the same bug
+// on /class/verify and recorded the rule in academic.md: any email carrying a
+// sign-in link must assume it is opened by a machine first, so the human's
+// click has to be what consumes it. Never auto-verify in an effect here.
+//
+// On success it hands straight off to /s/:token, so a student still goes from
+// the email to their first question with a single press.
 
 const FN_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/study-signup-verify`
 
 export default function StudyVerify() {
   const navigate = useNavigate()
-  const [state, setState] = useState('working')
-  // StrictMode double-invokes effects in dev, and this POST consumes a
-  // single-use token — the second call would report `already`. One shot.
-  const firedRef = useRef(false)
+  const token = new URLSearchParams(window.location.search).get('token')
+  const [state, setState] = useState(token ? 'ready' : 'not_found')
+  // A synchronous lock, not a state flag: setState lands on re-render, so a
+  // fast double press would otherwise fire two claims for one token.
+  const busyRef = useRef(false)
 
-  useEffect(() => {
-    if (firedRef.current) return
-    firedRef.current = true
-
-    const token = new URLSearchParams(window.location.search).get('token')
-    if (!token) { setState('not_found'); return }
-
-    fetch(FN_URL, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json', apikey: import.meta.env.VITE_SUPABASE_ANON_KEY },
-      body:    JSON.stringify({ token }),
-    })
-      .then(r => r.json().then(body => ({ ok: r.ok, body })))
-      .then(({ ok, body }) => {
-        if (ok && body.token) {
-          navigate(`/s/${body.token}`, { replace: true })
-          return
-        }
-        setState(body.error ?? 'unexpected')
+  async function confirm() {
+    if (busyRef.current || !token) return
+    busyRef.current = true
+    setState('working')
+    try {
+      const res  = await fetch(FN_URL, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', apikey: import.meta.env.VITE_SUPABASE_ANON_KEY },
+        body:    JSON.stringify({ token }),
       })
-      .catch(() => setState('network'))
-  }, [navigate])
+      const body = await res.json()
+      if (res.ok && body.token) {
+        navigate(`/s/${body.token}`, { replace: true })
+        return
+      }
+      setState(body.error ?? 'unexpected')
+    } catch {
+      setState('network')
+    }
+    // Released only on failure. On success the page navigates away; releasing
+    // there would let a stray second press claim again.
+    busyRef.current = false
+  }
+
+  if (state === 'ready') return (
+    <Shell>
+      <h1 style={S.h1}>Confirm your email</h1>
+      <p style={S.body}>
+        Press the button below to finish signing up. It will take you straight to your
+        first session.
+      </p>
+      <button type="button" style={S.button} onClick={confirm}>
+        Confirm and start
+      </button>
+      <p style={S.finePrint}>
+        You are not signed up until you press this.
+      </p>
+    </Shell>
+  )
 
   if (state === 'working') return (
     <Shell>
@@ -109,5 +142,9 @@ const S = {
   body:  { fontSize: 15, color: 'var(--tx2)', lineHeight: 1.6, margin: 0 },
   finePrint: { fontSize: 12.5, color: 'var(--tx3)', lineHeight: 1.6, margin: '18px 0 0' },
   link:  { color: 'var(--pk)' },
+  button: {
+    marginTop: 22, background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 24,
+    padding: '12px 28px', fontSize: 15, fontWeight: 600, fontFamily: SANS, cursor: 'pointer',
+  },
   spinner: { width: 38, height: 38, border: '3px solid var(--bd)', borderTop: '3px solid var(--pk)', borderRadius: '50%', animation: '_spin 0.8s linear infinite', margin: '0 auto 22px' },
 }
