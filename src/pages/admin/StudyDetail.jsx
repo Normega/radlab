@@ -401,13 +401,28 @@ function ScheduleView({ studyId, participant, onBack, qc }) {
       // A human deliberately ended this one, so it is 'revoked' + admin_revoked
       // — distinct from a link the system superseded, which is just a miss.
       const { data: { user } } = await supabase.auth.getUser()
-      await supabase.from('participant_links').update({
+      const { error: linkErr } = await supabase.from('participant_links').update({
         status:       'revoked',
         ended_reason: 'admin_revoked',
         ended_at:     new Date().toISOString(),
         ended_by:     user?.id ?? null,
       }).eq('id', linkId)
-      await supabase.from('participant_schedule').update({ status: 'pending', link_id: null }).eq('id', scheduleId)
+      if (linkErr) throw linkErr
+      // Back to 'pending' so the scheduler sends a fresh link. The send
+      // counters must reset with it: check_schedule blocks any pending row
+      // whose attempts have reached studies.max_attempts (usually 1), so a
+      // row that had already been emailed once was permanently 'blocked' on
+      // the next tick instead of re-sent — Revoke silently ended the session.
+      // last_sent_at / final_notice_sent_at anchor the reminder cadence of the
+      // link that no longer exists, so they go too.
+      const { error: schedErr } = await supabase.from('participant_schedule').update({
+        status:               'pending',
+        link_id:              null,
+        attempts:             0,
+        last_sent_at:         null,
+        final_notice_sent_at: null,
+      }).eq('id', scheduleId)
+      if (schedErr) throw schedErr
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['participant-schedule', studyId, participant.profileId] }),
     onError: (e) => setActionError(e.message),
@@ -468,7 +483,13 @@ function ScheduleView({ studyId, participant, onBack, qc }) {
                         {canRevoke && (
                           <button
                             style={{ ...S.actionBtn, color: '#e04' }}
-                            onClick={() => revokeLink.mutate({ linkId: link.id, scheduleId: row.id })}
+                            disabled={revokeLink.isPending}
+                            onClick={() => {
+                              if (window.confirm(
+                                'Revoke this link? It stops working immediately. If the session is due, '
+                                + 'the participant is emailed a fresh link at the next scheduler run (within 15 minutes).'
+                              )) revokeLink.mutate({ linkId: link.id, scheduleId: row.id })
+                            }}
                           >
                             Revoke
                           </button>
