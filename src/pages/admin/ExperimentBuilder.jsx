@@ -282,6 +282,17 @@ function EditPanel({ nodeId, graph, sessionTemplates, isLocked, onChange, onRemo
   const node = graph.nodes.find(n => n.id === nodeId)
   if (!node) return null
 
+  // Only the ENTRY timepoint is pinned. validate() requires the graph to start
+  // with a timepoint at day_offset 0, so that one node's offset is fixed and it
+  // cannot be removed. Until 2026-09-11 the guard was `day_offset === 0`, which
+  // caught EVERY day-0 timepoint: setting any later timepoint to day 0 (or just
+  // clearing its field, since Number('') is 0) disabled the field for good and
+  // hid Remove node, leaving no way back in the UI. That stranded a live study
+  // whose four test sessions had all been set to day 0 during same-day testing.
+  // More than one thing on day 0 is legitimate — so the lock follows the entry,
+  // not the value.
+  const isEntry = entryNode(graph)?.id === nodeId
+
   function field(label, children) {
     return (
       <div style={P.fieldGroup}>
@@ -314,7 +325,7 @@ function EditPanel({ nodeId, graph, sessionTemplates, isLocked, onChange, onRemo
             <input
               type="number" min="0" style={P.input}
               value={node.day_offset ?? 0}
-              disabled={isLocked || node.day_offset === 0}
+              disabled={isLocked || isEntry}
               onChange={e => onChange(nodeId, { day_offset: Number(e.target.value) })}
             />
           )}
@@ -498,7 +509,7 @@ function EditPanel({ nodeId, graph, sessionTemplates, isLocked, onChange, onRemo
         )
       })()}
 
-      {!isLocked && node.day_offset !== 0 && (
+      {!isLocked && !isEntry && (
         <button
           style={P.removeBtn}
           onClick={() => onRemove(nodeId)}

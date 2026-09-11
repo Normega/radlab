@@ -5,8 +5,15 @@
 // land on a device with no session at all, which is the normal case when the
 // form was filled on a laptop and the mail opened on a phone.
 //
-// POST body: { token }
-// Returns:   { token: <session link token> } | { error }
+// POST body: { token }                      — the button on /study/verify
+//        or: { study_id, email, code }      — the code typed on /study/signup
+// Returns:   { token: <session link token> } | { error, attempts_left? }
+//
+// Two independent paths, as on the academic side's sign-in doors: university
+// mail scanners open every emailed link first, so the link lands on a page that
+// is inert until pressed, and the code is a second path no scanner can use
+// because nobody typed it. Both converge on the same claim and the same
+// enrollment code below.
 //
 // This deliberately does NOT extend auto-enroll. That function is live for
 // three studies and its gates are SONA/Prolific-shaped; branching it for a
@@ -61,21 +68,53 @@ Deno.serve(async (req) => {
   let claimedRequestId: string | null = null
 
   try {
-    const { token } = await req.json()
-    if (!token) return json({ error: 'not_found' }, 400)
+    const body = await req.json()
+    const byCode = body?.code != null
 
-    // 1. Claim the token. The UPDATE ... WHERE consumed_at IS NULL inside this
-    //    RPC is what makes a double-click impossible to turn into two
-    //    enrollments: two concurrent calls, one row updated.
-    const { data: claim, error: claimErr } = await admin
-      .rpc('claim_signup_request', { p_token: token })
-    if (claimErr) {
-      console.error('claim_signup_request failed:', claimErr.message)
-      return json({ error: 'unexpected' }, 500)
+    // 1. Claim. Both RPCs set consumed_at inside an UPDATE ... WHERE consumed_at
+    //    IS NULL, so a double-press — or a press and a typed code racing — cannot
+    //    become two enrollments: concurrent calls, one row updated.
+    let claim
+    if (byCode) {
+      const { study_id, email, code } = body
+      if (!study_id || !email || !String(code).trim()) return json({ error: 'code_not_found' }, 400)
+
+      const { data: matchKey } = await admin.rpc('normalize_uoft_email', { p_email: email })
+      if (!matchKey) return json({ error: 'code_not_found' }, 400)
+
+      const { data, error } = await admin.rpc('claim_signup_request_by_code', {
+        p_study_id: study_id, p_match_key: matchKey, p_code: String(code).replace(/\D/g, ''),
+      })
+      if (error) {
+        console.error('claim_signup_request_by_code failed:', error.message)
+        return json({ error: 'unexpected' }, 500)
+      }
+      claim = data
+
+      if (claim.status === 'wrong')  return json({ error: 'wrong_code', attempts_left: claim.attempts_left }, 400)
+      if (claim.status === 'locked') return json({ error: 'code_locked' }, 429)
+
+      // Deliberately NO "already enrolled? here is your link" fallback on this
+      // path. The RPC answers not_found BEFORE it checks the code, so resolving
+      // not_found to an enrollment by email would hand any student's session
+      // link to anyone who knows their address. The token path can do it safely
+      // only because its 32-byte token is itself the secret.
+      if (claim.status === 'not_found' || claim.status === 'already') {
+        return json({ error: 'code_not_found' }, 404)
+      }
+    } else {
+      const { token } = body ?? {}
+      if (!token) return json({ error: 'not_found' }, 400)
+      const { data, error } = await admin.rpc('claim_signup_request', { p_token: token })
+      if (error) {
+        console.error('claim_signup_request failed:', error.message)
+        return json({ error: 'unexpected' }, 500)
+      }
+      claim = data
+
+      if (claim.status === 'not_found') return json({ error: 'not_found' }, 404)
+      if (claim.status === 'expired')   return json({ error: 'expired' }, 410)
     }
-
-    if (claim.status === 'not_found') return json({ error: 'not_found' }, 404)
-    if (claim.status === 'expired')   return json({ error: 'expired' }, 410)
 
     // Already used — a refresh, or the link clicked twice. Hand back the
     // session link this request already produced rather than an error.

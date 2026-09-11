@@ -3,10 +3,16 @@
 // Separate from emailTemplate.ts (whose copy and "Begin session" CTA are for
 // participants who are already enrolled) and from classVerifyEmail.ts (Lecture
 // Lounge, a course rather than a study). Same visual shell as the latter.
+//
+// Carries TWO independent ways to finish, as the academic side's sign-in email
+// does: a button (to a confirm page that is inert until pressed) and a six-digit
+// code typed on the sign-up page. University mail scanners open every link
+// first, so neither path may depend on the link surviving a machine's visit.
 
 export function renderSelfEnrollEmail(vars: {
   study_name: string
   verify_url: string
+  code: string
   expires_hours: number
 }): { subject: string; html: string; text: string } {
   const subject = `Confirm your email to join ${vars.study_name}`
@@ -33,13 +39,16 @@ export function renderSelfEnrollEmail(vars: {
             <td style="background-color:#ffffff;border-radius:12px;padding:40px;box-shadow:0 1px 4px rgba(0,0,0,0.06);">
               <p style="margin:0 0 16px 0;font-size:15px;color:#1c1c1e;line-height:1.6;">You consented to take part in <strong>${vars.study_name}</strong>. Confirm this is your email address to finish signing up and start the first session.</p>
               <p style="margin:0 0 16px 0;font-size:15px;color:#1c1c1e;line-height:1.6;">Later sessions will be sent to this address, so it needs to be one you check.</p>
-              <table cellpadding="0" cellspacing="0" style="margin:32px 0 0 0;"><tr>
+              <p style="margin:24px 0 8px 0;font-size:13px;color:#6b6b70;">Your confirmation code — type it on the sign-up page:</p>
+              <p style="margin:0;font-family:'Courier New',Courier,monospace;font-size:32px;letter-spacing:8px;font-weight:700;color:#1c1c1e;">${vars.code}</p>
+              <p style="margin:24px 0 0 0;font-size:13px;color:#6b6b70;">Or press the button to confirm on this device:</p>
+              <table cellpadding="0" cellspacing="0" style="margin:12px 0 0 0;"><tr>
                 <td style="background-color:#f068a4;border-radius:8px;">
                   <a href="${vars.verify_url}" style="display:inline-block;padding:14px 32px;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:600;text-decoration:none;">Confirm and begin →</a>
                 </td>
               </tr></table>
               <p style="margin:16px 0 0 0;font-size:12px;color:#abadb0;">Or copy this link: <a href="${vars.verify_url}" style="color:#f068a4;word-break:break-all;">${vars.verify_url}</a></p>
-              <p style="margin:24px 0 0 0;font-size:12px;color:#abadb0;border-top:1px solid #f5f5f5;padding-top:16px;">This link expires in ${vars.expires_hours} hours and is personal to you — please don't share it. You are not signed up until you use it.</p>
+              <p style="margin:24px 0 0 0;font-size:12px;color:#abadb0;border-top:1px solid #f5f5f5;padding-top:16px;">The code and link expire in ${vars.expires_hours} hours and are personal to you — please don't share them. Either one finishes signing up; you are not signed up until you use one. Requesting another email replaces this one.</p>
             </td>
           </tr>
           <tr>
@@ -58,9 +67,11 @@ export function renderSelfEnrollEmail(vars: {
 
 Later sessions will be sent to this address, so it needs to be one you check.
 
-Confirm and begin: ${vars.verify_url}
+Your confirmation code (type it on the sign-up page): ${vars.code}
 
-This link expires in ${vars.expires_hours} hours. You are not signed up until you use it.
+Or confirm on this device: ${vars.verify_url}
+
+The code and link expire in ${vars.expires_hours} hours. Either one finishes signing up; you are not signed up until you use one. Requesting another email replaces this one.
 
 If this wasn't you, ignore this message — nothing has been created.`
 

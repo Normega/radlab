@@ -233,6 +233,25 @@ student email through `supabase.auth.signUp`, `resetPasswordForEmail`, or
 `properties.action_link` — all of those produce links to `/auth/v1/verify`, which spends the
 token on a plain GET.
 
+**The rule applies to the research side too, and one door there implements it.** Research
+self-enrollment (`/study/signup` → `/study/verify`, website.md) recruits U of T students only by
+design, so it is the platform's most exposed link to this scanner. Since 2026-09-11 it follows
+the same two-door pattern: `/study/verify` (`StudyVerify`) is inert until pressed, and the
+emailed six-digit code is typed on `/study/signup` as the independent second path. It verified
+in a mount effect for its first eight days — built the day before this rule existed. Because
+self-enrollment owns its token rather than using Supabase OTP, its brute-force protection is
+built in the database (`claim_signup_request_by_code`: code valid only with the study AND the
+address, five guesses then locked, salted hash, newer code supersedes older). One asymmetry to
+preserve: its token path may hand back an existing session link on a repeat press, because the
+32-byte token is itself the secret; its code path must never do so, because a "not found" there
+is answered before the code is checked and an email address is not a secret.
+
+Other research-side emailed links were checked 2026-09-11 and are already safe: session links
+(`/s/:token`) are spent only on *completing* the session, never on opening it; study unsubscribe
+hands off to `/withdraw/:token`, which peeks read-only on load and acts only on a button. Ripple
+reminder unsubscribes still act on load — deliberately, as they are reversible from the profile
+and are not study participation.
+
 **Chrome**: every student-facing academic page mounts `src/academic/AcademicChrome.jsx`
 (`AcademicEyebrow` = logo + area eyebrow; `AcademicShell` wraps Lounge-side pages) and the shared
 account menu `src/academic/fieldguide/AvatarMenu.jsx` — one menu for both partitions (pass `client`

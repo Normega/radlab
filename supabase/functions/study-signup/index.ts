@@ -32,6 +32,23 @@ function json(body: unknown, status = 200) {
 }
 
 const EXPIRES_HOURS = 24
+
+// A six-digit code the student can TYPE instead of clicking the emailed link.
+// University mail runs Defender Safe Links, which opens every link in a real
+// browser first; the confirm page is inert until pressed, and this code is the
+// independent second path — a scanner that presses buttons still cannot type a
+// code nobody typed. Same design as the academic side's sign-in doors.
+//
+// Rejection sampling rather than `% 1_000_000`, so every code is equally
+// likely. (The modulo bias would be negligible, but there is no reason to have
+// any in something whose whole value is being unguessable.)
+function sixDigitCode(): string {
+  const buf = new Uint32Array(1)
+  const limit = Math.floor(0x1_0000_0000 / 1_000_000) * 1_000_000
+  let n: number
+  do { crypto.getRandomValues(buf); n = buf[0] } while (n >= limit)
+  return String(n % 1_000_000).padStart(6, '0')
+}
 const COOLDOWN_S    = 120
 const RATE_MAX      = Number(Deno.env.get('ENROLL_RATE_MAX')      ?? '1')
 const RATE_WINDOW_S = Number(Deno.env.get('ENROLL_RATE_WINDOW_S') ?? '60')
@@ -148,6 +165,21 @@ Deno.serve(async (req) => {
     //    and verification resolves it to the existing enrollment — so this
     //    endpoint's response never reveals who is or is not in the study.
     const expiresAt = new Date(Date.now() + EXPIRES_HOURS * 60 * 60 * 1000).toISOString()
+
+    // Clear identifiers from requests that died without being completed — owed
+    // since self-enrollment shipped. Opportunistic, the way auto-enroll prunes
+    // enrollment_attempts, so no standing cron job is needed. Never blocks.
+    const { error: purgeErr } = await admin.rpc('purge_expired_signup_pii')
+    if (purgeErr) console.error('purge_expired_signup_pii failed:', purgeErr.message)
+
+    // Only the newest email for an address works: an older link or code is
+    // expired the moment a new one is requested. Runs AFTER the cooldown above,
+    // so a quick double-submit is refused rather than silently replacing the
+    // email already on its way.
+    const { error: superErr } = await admin
+      .rpc('supersede_signup_requests', { p_study_id: study_id, p_match_key: matchKey })
+    if (superErr) console.error('supersede_signup_requests failed:', superErr.message)
+
     const { data: request, error: reqErr } = await admin
       .from('study_signup_requests')
       .insert({
@@ -159,11 +191,21 @@ Deno.serve(async (req) => {
         consented_at:    info.consent_required ? new Date().toISOString() : null,
         ip_hash:         ipHash,
       })
-      .select('token')
+      .select('id, token')
       .single()
 
     if (reqErr || !request) {
       console.error('study_signup_requests insert failed:', reqErr?.message)
+      return json({ error: 'Could not start your sign-up. Please try again.' }, 500)
+    }
+
+    // Hashing happens in the database (salted with the request id), so the
+    // plaintext code exists only in this function's memory and in the email.
+    const code = sixDigitCode()
+    const { error: codeErr } = await admin
+      .rpc('set_signup_code', { p_request_id: request.id, p_code: code })
+    if (codeErr) {
+      console.error('set_signup_code failed:', codeErr.message)
       return json({ error: 'Could not start your sign-up. Please try again.' }, 500)
     }
 
@@ -175,6 +217,7 @@ Deno.serve(async (req) => {
     const { subject, html, text } = renderSelfEnrollEmail({
       study_name:    info.name,
       verify_url:    verifyUrl,
+      code,
       expires_hours: EXPIRES_HOURS,
     })
 

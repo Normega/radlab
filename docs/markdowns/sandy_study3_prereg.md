@@ -2,7 +2,7 @@
 
 **Study**: Sandy Study 3 · Regulatory and Affective Dynamics Lab, University of Toronto Mississauga
 **Format**: OSF Standard Preregistration
-**Version**: 2026-09-10 — revised after a data-collection failure in the confirmatory sample.
+**Version**: 2026-09-11 — amended after a data-collection failure in the confirmatory sample; filed before any confirmatory analysis.
 **Registered version**: 2026-08-11 (pilot-informed), which superseded the 2026-08-04 draft; see Appendix B.
 
 > **Read §7 before §5.** On 2026-08-26/27 a platform defect discarded most repeated slider
@@ -234,10 +234,17 @@ the questionnaire battery (approximately 11.5 minutes).
 tests are conducted; the stopping rule is a fixed valid-N count, evaluated on completed
 sessions only.
 
-> *Achieved sample, 2026-09-10 — see §7.5.* Recruitment closed at 292 complete sessions (146
+> *Achieved sample, 2026-09-11 — see §7.5.* Recruitment closed at 292 complete sessions (146
 > control, 146 redemption), below the stopping rule above, before the exclusions of §5.4
-> criteria 2–7 are applied. This is a deviation from §3.3, and is independent of the data loss
-> documented in §7.
+> criteria 2–7 are applied. This is a deviation from §3.3.
+>
+> **Why collection stopped at 292.** The recruitment budget covered 300 paid sessions. Eight
+> participants who began the study without completing it were compensated, as ethics requires,
+> which left budget for 292 complete sessions. A shortfall of eight (2.7% of the target) is far
+> smaller than the spacing of the power simulation grid (N = 250, 300, 400; §3.4), so for power
+> purposes the achieved sample is effectively at the registered target. Given that, and the data-collection failure
+> documented in §7, collection was stopped at this point rather than extended. The shortfall itself
+> is independent of that failure: the failure removed variables, not participants.
 
 ### 3.4 Sample size rationale
 
@@ -544,12 +551,13 @@ false-discovery-rate correction applied at q = .05 across the full family:
 | H3A | 4 | 2 predictors × 2 dependent variables |
 | H3B | 2 | time × discrepancy, for 2 dependent variables |
 
-> *Revised 2026-09-10 — see Appendix C2.3.* The confirmatory family is reduced to **12 tests**,
-> with the Benjamini–Hochberg correction applied at q = .05 across those 12:
+> *Revised 2026-09-11 — see Appendix C2.3.* The confirmatory family is **14 tests**, with the
+> Benjamini–Hochberg correction applied at q = .05 across all 14:
 >
 > | Hypothesis | Critical tests | Status |
 > |---|---|---|
 > | H1A | 2 | as registered |
+> | H1B | 2 | refitted on stress (C2.1) |
 > | H1C | 1 | as registered; sample per criterion 7 (C2.4) |
 > | H2A | 2 | reduced form (C2.2) |
 > | H2B | 1 | reduced form (C2.2) |
@@ -558,8 +566,7 @@ false-discovery-rate correction applied at q = .05 across the full family:
 > | H3B | 1 | stress only; as registered |
 >
 > Removing tests from a BH family makes each remaining test easier to pass, not harder. The
-> smaller family is declared here, with its reason, rather than applied without comment. The
-> amended H1B (C2.1) is reported beside this family, not inside it.
+> smaller family is declared here, with its reason, rather than applied without comment.
 
 Everything else — simple slopes, the Dirichlet omnibus and its components, secondary and
 tertiary models, subscale analyses, robustness refits, and §5.7 — is explicitly
@@ -592,11 +599,13 @@ them, because genuine participants withdraw too.
    dependent variable, or a ColourMax time reconstruction falling outside 290–320 seconds:
    excluded listwise from models requiring that variable.
 
-> *Added 2026-09-10 — see Appendix C2.4.*
+> *Added 2026-09-10; scope extended 2026-09-11 — see Appendix C2.4.*
 >
 > 7. **ColourMax non-navigation** — no page-transition events, meaning the participant never
->    moved off the first image: excluded from H1C. C2.4 gives the evidence that this reflects a
->    misunderstanding of the task rather than an allocation strategy.
+>    moved off the first image: excluded from every analysis that uses per-image ColourMax data —
+>    H1C (primary, secondary and tertiary models) and H2D — and retained in every other analysis.
+>    C2.4 gives the evidence that this reflects a misunderstanding of the task rather than an
+>    allocation strategy; C2.5 adds exploratory analyses with these participants included.
 
 No outliers are removed on the basis of extreme but legitimate values. As a prespecified
 robustness check, every confirmatory least-squares model is refitted with 3-MAD
@@ -689,6 +698,13 @@ Declared in advance, reported without correction, and not treated as confirmator
 - APS-R High Standards and Order subscales, SCS-26, DASS-21, GSE and PANAS as alternative
   predictors and covariates.
 
+> *Added 2026-09-11 — see Appendix C2.5.* Four further exploratory analyses, declared before any
+> confirmatory model was fitted: the per-image ColourMax analyses refitted with the participants
+> excluded by criterion 7 included; a comparison of those participants' traits with everyone
+> else's; the rate of non-navigation by framing arm; and, only after the confirmatory analysis is
+> complete, the five registered tests removed in C2.3 fitted as registered on the 29 participants
+> whose data can support them.
+
 ---
 
 ## 6. Other
@@ -716,7 +732,8 @@ log.
 
 The confirmatory cohort is bounded by enrolment date, from 2026-08-20 (§3.1). It arrived in two
 batches, on either side of a platform release on 2026-08-25, and only the second batch is
-affected.
+affected. The first batch was deliberately small: it was recruited to confirm that the study ran
+correctly end to end before full recruitment opened (§7.7).
 
 | Cohort | Enrolled | Began session | Completed | Slider ratings |
 |---|---|---|---|---|
@@ -782,7 +799,7 @@ all Aptitude Suite and ColourMax behavioural data.
 | Hypothesis | Registered tests | Status |
 |---|---|---|
 | H1A | 2 | Unaffected |
-| H1B | 2 | Cannot be run as registered: its covariate, T1 negative emotionality, was lost. Refitted on stress (C2.1) |
+| H1B | 2 | Cannot be run as registered: its covariate, T1 negative emotionality, was lost. Refitted on stress, and the refitted tests stay in the confirmatory family (C2.1) |
 | H1C | 1 | Unaffected; sample per new criterion 7 (C2.4) |
 | H2A | 2 | Reduced form, ColourMax effort only (C2.2) |
 | H2B | 1 | Reduced form, ColourMax effort only (C2.2) |
@@ -794,7 +811,8 @@ Seven of the seventeen tests are unaffected, five survive in reduced form, and f
 on the confirmatory sample. Every test stated over stress survives, because stress was not stored
 behind the guard; each negative-emotionality counterpart does not. Complete data for the five
 removed tests exist only for the 29 participants of batch 1 — a date-selected tenth of the sample
-that cannot stand in for the registered tests.
+that cannot stand in for the registered tests. They are examined as an exploratory check, after the
+confirmatory analysis is complete (C2.5, E4).
 
 Two further consequences. In §5.5, the Aptitude arm of the positive control and Appendix C1's
 diagnostic D1 are computable only on batch 1. In §5.7, the exploratory analyses that need a lost
@@ -816,11 +834,11 @@ Complete confirmatory sessions holding every variable the test requires, before 
 | H2C | 292 |
 | H3A, stress, reduced form | 292 |
 | H3B, stress | 292 |
-| H1B amended on stress (C2.1), beside the family | 292; 292 |
+| H1B refitted on stress (C2.1) | 292; 292 |
 | Positive control, ColourMax arm | 292 |
 
-H1C loses 29 participants to criterion 7 and 1 to criterion 4. Arms among the 292 complete
-sessions: 146 control, 146 redemption.
+H1C loses 29 participants to criterion 7 and 1 to criterion 4; the same 30 are excluded from H2D.
+Arms among the 292 complete sessions: 146 control, 146 redemption.
 
 The data loss removed variables, not participants. The shortfall against the N = 300 target of
 §3.3 comes from recruitment, and is recorded there. N = 292 lies close to the N = 300 column of
@@ -838,9 +856,10 @@ ratings were stored. And no automated test exercised a repeated administration w
 session.
 
 The platform was repaired on 2026-09-10, after data collection had closed. Each rating now records
-the step of the session that collected it. The guard identifies an administration by participant,
-instrument, session and step, so repeated administrations are kept while genuine double
-submissions are still absorbed. The step was reconstructed for existing ratings from the
+the step of the session that collected it, and every submission is kept as its own row: a double
+submission — a byte-identical copy of the participant's immediately preceding submission, received
+within five seconds by the server clock — is flagged rather than overwritten or discarded, and a
+stored rating can no longer be updated. The step was reconstructed for existing ratings from the
 platform's step log. The data export names each repeated administration by its step, so that the
 retained batch-2 rating is labelled as the post-ColourMax value it is. A regression test covers
 repeated administration. The repair prevents recurrence in future studies; it cannot restore what
@@ -848,11 +867,17 @@ was lost here.
 
 ### 7.7 Timing of this revision relative to the data
 
-This revision was made on 2026-09-10, after confirmatory data collection had closed and the data
-had been exported. The amendments in Appendix C2 were decided from counts of which variables exist
-in the collected data; no hypothesis-test estimate was computed in reaching them. **Whether any
-confirmatory model had been fitted before this date is to be confirmed by the study team, and
-recorded here, before this revision is filed with the registration.**
+This revision was drafted on 2026-09-10 and finalised on 2026-09-11, after confirmatory data
+collection had closed and the data had been exported. The amendments in Appendix C2 were decided
+from counts of which variables exist in the collected data, together with the descriptive counts of
+navigation and colouring reported in C2.4. No hypothesis-test estimate was computed in reaching
+them.
+
+**The study team confirms that no confirmatory model had been fitted, and no effect estimated for
+any registered hypothesis, at any point before these amendments were made.** The first 29
+confirmatory participants (batch 1, 2026-08-20) were recruited to confirm that the study was running
+correctly, not to test hypotheses. This amended registration is filed before any confirmatory
+analysis begins.
 
 ---
 
@@ -907,7 +932,7 @@ crit <- tibble::tribble(~test, ~p,
 crit <- crit %>% dplyr::mutate(p_bh = p.adjust(p, method = "BH"))
 ```
 
-### A.2 Amended confirmatory models (2026-09-10; Appendix C2)
+### A.2 Amended confirmatory models (2026-09-10, revised 2026-09-11; Appendix C2)
 
 The registered skeleton above is retained unchanged. The models to be fitted are:
 
@@ -915,29 +940,60 @@ The registered skeleton above is retained unchanged. The models to be fitted are
 ## Variables the amended models add (z-scored on the analysis sample, §5.2)
 df <- df %>% dplyr::mutate(pred_eff_CM_z = as.numeric(scale(pred_eff_CM)))
 
-## H1C sample: criterion 7 (C2.4) drops participants who never left the first image
+## Per-image ColourMax sample: criterion 7 (C2.4) drops participants who never left the first
+## image. It applies to H1C (primary, secondary, tertiary) and H2D.
 df_h1c <- df %>% dplyr::filter(cm_page_switches > 0)
 
-## The 12 confirmatory tests (C2.3)
-m_h1a_d <- lm(effort_post_CM ~ disc_z * condition_c, data = df)                        # 1
-m_h1a_r <- lm(effort_post_CM ~ rum_z  * condition_c, data = df)                        # 2
-m_h1c   <- lm(concentration ~ disc_z * condition_c, data = df_h1c)                     # 3
+## The 14 confirmatory tests (C2.3)
+m_h1a_d    <- lm(effort_post_CM ~ disc_z * condition_c, data = df)                          # 1
+m_h1a_r    <- lm(effort_post_CM ~ rum_z  * condition_c, data = df)                          # 2
+
+# H1B refitted on stress (C2.1)
+m_h1b_d_st <- lm(stress_T2 ~ scale(stress_T1) + disc_z * condition_c, data = df)            # 3
+m_h1b_r_st <- lm(stress_T2 ~ scale(stress_T1) + rum_z  * condition_c, data = df)            # 4
+
+m_h1c      <- lm(concentration ~ disc_z * condition_c, data = df_h1c)                       # 5
 
 # H2A / H2B, reduced form (C2.2): ColourMax effort, one row per participant
-m_h2a_d <- lm(effort_post_CM ~ disc_z, data = df)                                      # 4
-m_h2a_r <- lm(effort_post_CM ~ rum_z,  data = df)                                      # 5
-m_h2b   <- lm(effort_post_CM ~ burn_z, data = df)                                      # 6
-m_h2c   <- lm(apt_pct_sd ~ disc_z + rum_z + burn_z + mean_pct_z, data = df)            # 7-9
+m_h2a_d    <- lm(effort_post_CM ~ disc_z, data = df)                                        # 6
+m_h2a_r    <- lm(effort_post_CM ~ rum_z,  data = df)                                        # 7
+m_h2b      <- lm(effort_post_CM ~ burn_z, data = df)                                        # 8
+m_h2c      <- lm(apt_pct_sd ~ disc_z + rum_z + burn_z + mean_pct_z, data = df)              # 9-11
 
 # H3A, stress, reduced form (C2.2): the pre-ColourMax row
-m_h3a_s <- lm(stress_T1 ~ disc_z + pred_eff_CM_z + condition_c, data = df)             # 10-11
-m_h3b_s <- lmer(value ~ time_c * disc_z + condition_c + (1 | pid), data = long3_stress) # 12
+m_h3a_s    <- lm(stress_T1 ~ disc_z + pred_eff_CM_z + condition_c, data = df)               # 12-13
+m_h3b_s    <- lmer(value ~ time_c * disc_z + condition_c + (1 | pid), data = long3_stress)  # 14
 
-## Benjamini-Hochberg across the 12 critical p-values
+## Benjamini-Hochberg across the 14 critical p-values
+```
 
-## H1B amended on stress (C2.1): reported beside the family, BH across its own two tests
-m_h1b_d_st <- lm(stress_T2 ~ scale(stress_T1) + disc_z * condition_c, data = df)
-m_h1b_r_st <- lm(stress_T2 ~ scale(stress_T1) + rum_z  * condition_c, data = df)
+### A.3 Exploratory analyses added on 2026-09-11 (Appendix C2.5)
+
+Not in the confirmatory family; reported without correction, with 95% confidence intervals.
+
+```r
+df$non_navigator <- df$cm_page_switches == 0
+
+## E1. Per-image ColourMax analyses with the criterion-7 participants included
+m_h1c_all      <- lm(concentration ~ disc_z * condition_c, data = df)
+m_h1c_prec_all <- lm(precision_mean ~ disc_z * condition_c, data = df)
+# the Dirichlet model (H1C secondary) and H2D are refitted on `df` in the same way
+
+## E2. Did non-navigators differ in trait? Welch t-tests, Hedges' g with 95% CI
+for (trait in c("disc_perfectionism", "rumination", "burnout_core")) {
+  f <- as.formula(paste(trait, "~ non_navigator"))
+  print(t.test(f, data = df))
+  print(effectsize::hedges_g(f, data = df))
+}
+
+## E3. Non-navigation by framing arm: the exclusion follows randomization
+fisher.test(table(df$non_navigator, df$framing))
+
+## E4. Only after the confirmatory analysis: the five removed tests, as registered, on batch 1
+b1 <- df %>% dplyr::filter(batch == 1)          # the 29 participants of 2026-08-20
+m_h1b_d_reg_b1 <- lm(negative_affect_T2 ~ scale(negative_affect_T1) + disc_z * condition_c, data = b1)
+m_h1b_d_st_b1  <- lm(stress_T2 ~ scale(stress_T1) + disc_z * condition_c, data = b1)   # amended, same 29
+# likewise for rumination, and for H3A and H3B on negative emotionality as registered
 ```
 
 ---
@@ -1099,13 +1155,14 @@ keeps that a prediction rather than an explanation offered after the fact.
 
 ### C2. Amendments following the confirmatory-sample data loss
 
-**Date: 2026-09-10. Confirmatory data at the time of writing: collection closed (330 enrolled, 292
-complete sessions) and exported. §7.7 records what was and was not examined before these
-decisions.**
+**Dates: drafted 2026-09-10, finalised 2026-09-11. Confirmatory data at the time of writing:
+collection closed (330 enrolled, 292 complete sessions) and exported; no confirmatory model fitted
+(§7.7).**
 
-These four amendments respond to the loss documented in §7. Each is the smallest change that lets
-a registered hypothesis be tested on the data that exist. None adds a hypothesis, and each was
-decided from which variables exist, not from any result.
+C2.1–C2.4 respond to the loss documented in §7. Each is the smallest change that lets a registered
+hypothesis be tested on the data that exist. None adds a hypothesis, and each was decided from which
+variables exist, not from any result. C2.5 adds exploratory analyses that examine two of those
+decisions. All were settled before any confirmatory model was fitted (§7.7).
 
 #### C2.1 H1B is refitted on stress
 
@@ -1123,12 +1180,15 @@ baseline adjustment is made on the same measure as the outcome, as the registere
 Stress is the affect measure the registration already treats as co-equal with negative
 emotionality throughout H3.
 
-**What it is not.** It is not the registered H1B. Its outcome is stress, not negative emotionality,
-and a result bears on H1B's claim only by way of that substitution.
+**What it is not.** It is not the registered H1B model: its outcome is stress rather than negative
+emotionality, so a result bears on H1B's claim by way of that substitution, which is stated wherever
+an H1B result is reported.
 
-**Inference.** Reported beside the 12-test confirmatory family rather than inside it (C2.3), with
-the Benjamini–Hochberg correction applied across its own two tests, and labelled as an amendment
-made after data collection. As a stress model it receives the ordinal robustness refit of §5.2.
+**Inference.** Confirmatory. The two refitted tests are members of the 14-test family (C2.3) and
+share its Benjamini–Hochberg correction. H1B is a registered, a priori hypothesis; the refit keeps
+its registered structure and was specified before any confirmatory model was fitted (§7.7), so it is
+treated as a test of that hypothesis rather than as an exploratory analysis. As a stress model it
+receives the ordinal robustness refit of §5.2.
 
 #### C2.2 H2A, H2B and H3A in single-task reduced form, still confirmatory
 
@@ -1155,26 +1215,27 @@ two stacked rows are close to independent observations of the same between-perso
 one inflates the standard error by at most a factor of about √2 and changes nothing about what is
 estimated. The same holds for the between-person critical terms of H3A.
 
-#### C2.3 The confirmatory family is reduced from 17 tests to 12
+#### C2.3 The confirmatory family is reduced from 17 tests to 14
 
 Removed, because the ratings they require were lost:
 
-- H1B, both tests as registered, superseded by the amended models of C2.1, which are reported
-  beside the family;
+- H1B, both tests as registered, replaced in the family by the two refitted tests of C2.1;
 - H3A on negative emotionality, both critical terms;
 - H3B on negative emotionality.
 
-Retained: H1A (2), H1C (1), H2A (2), H2B (1), H2C (3), H3A on stress (2), H3B on stress (1). The
-Benjamini–Hochberg correction is applied at q = .05 across these 12, with the inference criteria of
-§5.3 otherwise unchanged. Removing tests from a BH family makes each remaining test easier to pass,
-not harder, so the smaller family is declared here, with its reason, rather than applied without
-comment. Complete data for the removed tests exist for the 29 batch-1 participants only, and are
-not used to fit them.
+The family: H1A (2), H1B refitted on stress (2), H1C (1), H2A (2), H2B (1), H2C (3), H3A on
+stress (2), H3B on stress (1) — 14 tests. The Benjamini–Hochberg correction is applied at q = .05
+across all 14, with the inference criteria of §5.3 otherwise unchanged. Removing tests from a BH
+family makes each remaining test easier to pass, not harder, so the smaller family is declared here,
+with its reason, rather than applied without comment. Complete data for the five removed tests exist
+for the 29 batch-1 participants only. They are used for no confirmatory test, and are examined after
+the confirmatory analysis as an exploratory check (C2.5, E4).
 
-#### C2.4 ColourMax participants who never left the first image are excluded from H1C
+#### C2.4 ColourMax participants who never left the first image are excluded from the per-image analyses
 
 **Rule** (new §5.4 criterion 7). A participant with no page-transition events in ColourMax — who
-never moved off the first of the five images — is excluded from H1C.
+never moved off the first of the five images — is excluded from the analyses that use per-image
+ColourMax data (Scope, below).
 
 **Why.** H1C's outcome is the concentration of time across five images, which presupposes that the
 participant knew there were five. One participant wrote to the study team to say they had not
@@ -1189,5 +1250,31 @@ concentrators.
 **Keyed on navigation, not on images coloured.** Six participants navigated, saw the other images,
 and chose to colour only one. Those are genuine concentrators and are retained.
 
-**Scope.** The H1C confirmatory model. Whether the same rule applies to the H1C secondary and
-tertiary models and to H2D, which use the same per-image data, is not yet decided.
+**Scope.** Every analysis that uses per-image ColourMax data: H1C (primary, secondary and tertiary
+models) and H2D. Participants excluded under this rule remain in every other analysis.
+
+**A post-randomization exclusion.** Non-navigation happens during ColourMax, after the framing
+display, so in principle its rate could differ between arms. That rate is reported by arm, and the
+excluded participants' data are analysed rather than set aside (C2.5, E1–E3).
+
+#### C2.5 Exploratory analyses added
+
+Declared on 2026-09-11, before any confirmatory model was fitted. Not in the confirmatory family;
+reported without multiplicity correction, as estimates with 95% confidence intervals.
+
+- **E1. The criterion-7 participants included.** H1C (primary, secondary and tertiary models) and
+  H2D refitted with the participants who never left the first image, as a sensitivity analysis to
+  the exclusion in C2.4.
+- **E2. Whether non-navigators differ in trait.** The criterion-7 participants compared with all
+  other complete sessions on discrepancy perfectionism — the question being whether staying on one
+  image reflected exceptionally high perfectionism rather than a misunderstanding of the task — and,
+  secondarily, on rumination and burnout: Welch t-tests with Hedges' g. The confirmatory H1C stands
+  as specified whatever E2 shows; E2 informs how the exclusion, and E1, are interpreted.
+- **E3. Non-navigation by framing arm.** A Fisher exact test of non-navigation against arm, because
+  the exclusion rests on behaviour that follows randomization (C2.4).
+- **E4. The registered tests, on the batch that can run them.** Only after the confirmatory analysis
+  is complete: the five tests removed in C2.3, fitted exactly as registered on the 29 batch-1
+  participants, beside the amended specifications fitted to the same 29, to judge whether there is
+  reason to suspect the conclusions would differ under the analyses as originally registered. With
+  n = 29 and a date-selected subsample, E4 is descriptive — estimates and intervals, with no claim of
+  significance and no bearing on the confirmatory results.
