@@ -856,9 +856,10 @@ ratings were stored. And no automated test exercised a repeated administration w
 session.
 
 The platform was repaired on 2026-09-10, after data collection had closed. Each rating now records
-the step of the session that collected it. The guard identifies an administration by participant,
-instrument, session and step, so repeated administrations are kept while genuine double
-submissions are still absorbed. The step was reconstructed for existing ratings from the
+the step of the session that collected it, and every submission is kept as its own row: a double
+submission — a byte-identical copy of the participant's immediately preceding submission, received
+within five seconds by the server clock — is flagged rather than overwritten or discarded, and a
+stored rating can no longer be updated. The step was reconstructed for existing ratings from the
 platform's step log. The data export names each repeated administration by its step, so that the
 retained batch-2 rating is labelled as the post-ColourMax value it is. A regression test covers
 repeated administration. The repair prevents recurrence in future studies; it cannot restore what
