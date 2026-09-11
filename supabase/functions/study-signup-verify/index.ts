@@ -194,11 +194,16 @@ Deno.serve(async (req) => {
           console.error('createUser failed:', createErr.message)
           return json({ error: 'unexpected' }, 500)
         }
-        const { data: { users }, error: listErr } = await admin.auth.admin.listUsers()
-        if (listErr) return json({ error: 'unexpected' }, 500)
-        const found = users.find(u => u.email === authEmail)
-        if (!found) return json({ error: 'unexpected' }, 500)
-        participantId = found.id
+        // Direct lookup, not listUsers(): that returns one page of 50 of ~850
+        // accounts, so a returning student's account was "not found" and every
+        // confirmation died here (Dana, 2026-09-10) — see
+        // 20260911_participant_auth_lookup.sql.
+        const { data: foundId, error: lookupErr } = await admin.rpc('auth_user_id_for_email', { p_email: authEmail })
+        if (lookupErr || !foundId) {
+          console.error('existing account lookup failed:', lookupErr?.message ?? 'no account for address')
+          return json({ error: 'unexpected' }, 500)
+        }
+        participantId = foundId as string
       } else {
         participantId = created.user.id
       }

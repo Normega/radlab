@@ -75,11 +75,13 @@ Deno.serve(async (req) => {
     if (createErr) {
       // If email already exists, look up the existing user instead of failing
       if (createErr.message?.includes('already been registered') || createErr.code === 'email_exists') {
-        const { data: { users }, error: listErr } = await adminClient.auth.admin.listUsers()
-        if (listErr) return json({ error: listErr.message }, 500)
-        const existing = users.find(u => u.email === email)
-        if (!existing) return json({ error: createErr.message }, 400)
-        userId = existing.id
+        // Direct lookup — listUsers() returns one page (50 of ~850 accounts),
+        // so an existing account past it was never found. See
+        // 20260911_participant_auth_lookup.sql.
+        const { data: foundId, error: lookupErr } = await adminClient.rpc('auth_user_id_for_email', { p_email: email })
+        if (lookupErr) return json({ error: lookupErr.message }, 500)
+        if (!foundId) return json({ error: createErr.message }, 400)
+        userId = foundId as string
       } else {
         return json({ error: createErr.message }, 400)
       }

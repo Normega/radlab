@@ -200,12 +200,17 @@ Deno.serve(async (req) => {
           createErr.message?.includes('already been registered') ||
           (createErr as { code?: string }).code === 'email_exists'
         ) {
-          // Look up the existing user by email.
-          const { data: { users }, error: listErr } = await admin.auth.admin.listUsers()
-          if (listErr) return json({ error: 'Failed to look up participant account.' }, 500)
-          const found = users.find(u => u.email === email)
-          if (!found) return json({ error: createErr.message }, 500)
-          participantId = found.id
+          // Look up the existing user by email — directly. listUsers() returns
+          // one page (50 of ~850 accounts), so a participant already holding an
+          // account from another study was "not found" and got a 500. See
+          // 20260911_participant_auth_lookup.sql.
+          const { data: foundId, error: lookupErr } = await admin.rpc('auth_user_id_for_email', { p_email: email })
+          if (lookupErr) {
+            console.error('existing account lookup failed:', lookupErr.message)
+            return json({ error: 'Failed to look up participant account.' }, 500)
+          }
+          if (!foundId) return json({ error: createErr.message }, 500)
+          participantId = foundId as string
         } else {
           return json({ error: createErr.message }, 500)
         }
