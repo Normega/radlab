@@ -14,6 +14,14 @@
 // `dayShift`) — early completion pulls the rest of the study in, late
 // completion pushes it out. Rows already materialized are never moved; the
 // shift only decides where the next unmaterialized segment lands.
+//
+// A timepoint can instead be pinned to a calendar date (`timing: 'fixed'`) —
+// the same day for every participant, e.g. the week a course releases grades.
+// Its date may be left to be determined (`fixed_date` null): its rows are
+// created 'awaiting_date', with no date, and nothing sends them until a lab
+// member sets the date (set_timepoint_date). A participant who enrols after a
+// fixed date has passed gets that timepoint as 'skipped' — they receive
+// whatever has not happened yet, never a session whose date is already gone.
 
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2'
 import { issueLink } from './issueLink.ts'
@@ -30,6 +38,12 @@ export interface GraphNode {
   type: 'timepoint' | 'session' | 'block' | 'randomize' | 'counterbalance' | 'adherence_check'
   day_offset?: number
   time_of_day?: string | null
+  // timepoint — 'relative' (default): day_offset days after enrolment.
+  // 'fixed': the calendar date in fixed_date for everyone; null = to be
+  // determined. day_offset is then only the nominal design day, kept so
+  // study_day and export column names stay identical across participants.
+  timing?: 'relative' | 'fixed'
+  fixed_date?: string | null
   session_template_id?: string
   link_expires_hours?: number
   label?: string
@@ -137,11 +151,16 @@ function daysBetween(from: string, to: string): number {
   )
 }
 
+// Statuses a fixed-date timepoint introduces (see the header comment).
+export const AWAITING_DATE = 'awaiting_date'
+export const SKIPPED = 'skipped'
+
 interface PlannedRow {
   nodeKey: string
-  scheduledDate: string
+  scheduledDate: string | null
   sendTime: string
   studyDay: number
+  status: 'pending' | typeof AWAITING_DATE | typeof SKIPPED
 }
 
 async function drawAssignment(
@@ -302,7 +321,9 @@ export async function materializeSchedule(
   // do NOT block — participants may miss daily sessions and still advance
   // (methods doc allows missed days; check_schedule marks dead rows 'missed').
   // A missed gate session, by contrast, never resolves the fork = withdrawal.
-  const ACTIONABLE = new Set(['pending', 'unlocked', 'link_sent'])
+  // 'awaiting_date' is actionable: the session is still to happen, so it holds
+  // a later fork and keeps the study from counting as complete.
+  const ACTIONABLE = new Set(['pending', 'unlocked', 'link_sent', AWAITING_DATE])
   let anyUpstreamActionable = false
   let lastSessionStatus: string | undefined
   let lastSessionNodeKey: string | undefined
@@ -316,7 +337,12 @@ export async function materializeSchedule(
   // against.
   let dayShift = 0
   let pendingGateOffset: number | null = null
-  const todayOffset = daysBetween(t0Date, todayInLabTz())
+  const today = todayInLabTz()
+  const todayOffset = daysBetween(t0Date, today)
+  // Set while walking under a fixed-date timepoint: its date (null = to be
+  // determined) and the nominal offset that date corresponds to, so a block's
+  // children still land on consecutive days from it.
+  let fixed: { date: string | null; baseOffset: number } | null = null
 
   function emit(nodeKey: string, offset: number, time: string) {
     // A session reached without an intervening timepoint continues the current
@@ -324,11 +350,21 @@ export async function materializeSchedule(
     pendingGateOffset = null
     const row = materialized.get(nodeKey)
     if (row === undefined) {
-      inserts.push({ nodeKey, scheduledDate: addDays(t0Date, offset), sendTime: time, studyDay: offset + 1 })
-      anyUpstreamActionable = true // just created this pass — actionable by definition
-      lastSessionStatus = undefined
-      lastSessionNodeKey = undefined
-    } else {
+      let scheduledDate: string | null = addDays(t0Date, offset)
+      let status: PlannedRow['status'] = 'pending'
+      if (fixed) {
+        scheduledDate = fixed.date ? addDays(fixed.date, offset - fixed.baseOffset) : null
+        status = scheduledDate === null ? AWAITING_DATE : scheduledDate < today ? SKIPPED : 'pending'
+      }
+      inserts.push({ nodeKey, scheduledDate, sendTime: time, studyDay: offset + 1, status })
+      if (status !== SKIPPED) {
+        anyUpstreamActionable = true // just created this pass — actionable by definition
+        lastSessionStatus = undefined
+        lastSessionNodeKey = undefined
+      }
+    } else if (row.status !== SKIPPED) {
+      // A skipped row is a session this participant was never offered: it
+      // neither holds anything upstream nor stands in for the last session.
       if (ACTIONABLE.has(row.status)) anyUpstreamActionable = true
       lastSessionStatus = row.status
       lastSessionNodeKey = nodeKey
@@ -376,7 +412,17 @@ export async function materializeSchedule(
     const node = nodeMap[cur]
     if (!node) break
 
-    if (node.type === 'timepoint') {
+    if (node.type === 'timepoint' && node.timing === 'fixed') {
+      // Pinned to the calendar, not to this participant: no shift is adopted
+      // from it or applied to it, and a pending gate is not consumed here.
+      const nominal = node.day_offset ?? 0
+      fixed = { date: node.fixed_date ?? null, baseOffset: nominal }
+      currentOffset = nominal
+      currentTime = node.time_of_day || baselineSendTime
+      cur = graph.edges.find((e) => e.from === cur)?.to ?? null
+
+    } else if (node.type === 'timepoint') {
+      fixed = null
       const nominal = node.day_offset ?? 0
       const anchorKey = firstSessionAfter(node.id)
       const anchorDate = anchorKey ? materialized.get(anchorKey)?.scheduledDate : null
@@ -530,6 +576,12 @@ export async function materializeSchedule(
 
   if (inserts.length === 0) return { inserted: 0, stoppedAt, withdrawal, completedStudy, adherenceShortfalls }
 
+  // Only a sendable row can be served to the participant in the browser. The
+  // builder requires the entry timepoint to be relative day 0, so this is the
+  // baseline in practice; the guard keeps a malformed graph from unlocking a
+  // session that is waiting for its date.
+  const unlockIndex = unlockFirst && inserts[0]?.status === 'pending' ? 0 : -1
+
   const insertRows = inserts.map((row, i) => {
     const session = sessionByNodeKey.get(row.nodeKey)
     if (!session) {
@@ -542,7 +594,7 @@ export async function materializeSchedule(
       scheduled_date: row.scheduledDate,
       send_time: row.sendTime,
       study_day: row.studyDay,
-      status: unlockFirst && i === 0 ? 'unlocked' : 'pending',
+      status: i === unlockIndex ? 'unlocked' : row.status,
       _linkExpiresHours: session.link_expires_hours,
     }
   })
@@ -552,7 +604,7 @@ export async function materializeSchedule(
     .insert(insertRows.map(({ _linkExpiresHours, ...rest }) => rest))
   if (insErr) throw insErr
 
-  if (unlockFirst) {
+  if (unlockIndex === 0) {
     // Insert order isn't guaranteed by Postgres, so look the unlocked row back
     // up by status rather than trusting array position — only the first
     // inserted row this call was 'unlocked', so there is exactly one match.

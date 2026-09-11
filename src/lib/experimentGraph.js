@@ -230,7 +230,65 @@ export function validate(graph) {
     errors.push(`Node "${c.nodeId}" is reached at different day offsets from different branches (offset ${c.offsets[0]} vs ${c.offsets[1]}) — align the timepoints on each path before this node.`)
   }
 
+  // Calendar-date timepoints (timing: 'fixed'). See materializeSchedule.ts.
+  const fixed = graph.nodes.filter(isFixedTimepoint)
+  if (baseline && isFixedTimepoint(baseline))
+    errors.push('The baseline timepoint is when a participant enrols, so it cannot be pinned to a calendar date.')
+  if (fixed.length > 0) {
+    // Forks and adherence gates resolve against each participant's own
+    // progress; a date shared by everyone does not compose with them, and
+    // set_timepoint_date walks a linear chain only. Refused rather than
+    // half-supported.
+    const structural = graph.nodes.find(n => ['randomize', 'counterbalance', 'adherence_check'].includes(n.type))
+    if (structural)
+      errors.push('Calendar-date timepoints cannot yet be combined with Randomize, Counterbalance or Adherence Check nodes.')
+  }
+  for (const n of fixed) {
+    if (n.fixed_date != null && !/^\d{4}-\d{2}-\d{2}$/.test(n.fixed_date))
+      errors.push(`Timepoint "${n.label || n.id}" has an invalid calendar date.`)
+    if (n.fixed_date == null)
+      warnings.push(`Timepoint "${n.label || n.id}" has no date yet. Its sessions wait, unsent, until a date is set on the study page.`)
+  }
+
   return { valid: errors.length === 0, errors, warnings }
+}
+
+// ─── Calendar-date timepoints ────────────────────────────────────────────────
+
+/** A timepoint pinned to one calendar date for every participant. */
+export function isFixedTimepoint(node) {
+  return node?.type === 'timepoint' && node.timing === 'fixed'
+}
+
+/**
+ * The sessions a timepoint schedules, each with its day offset from the
+ * timepoint's own date: sessions chained directly share the date, a block's
+ * children run on consecutive days, and the walk stops at the next timepoint.
+ * Mirrors both materializeSchedule's walk and set_timepoint_date
+ * (20260911_fixed_date_timepoints.sql) — keep the three in step.
+ */
+export function sessionsUnderTimepoint(graph, timepointId) {
+  const nodeMap = Object.fromEntries(graph.nodes.map(n => [n.id, n]))
+  const out = []
+  const seen = new Set()
+  let offset = 0
+  let at = graph.edges.find(e => e.from === timepointId)?.to ?? null
+  while (at && !seen.has(at)) {
+    seen.add(at)
+    const n = nodeMap[at]
+    if (!n || n.type === 'timepoint') break
+    if (n.type === 'session') {
+      out.push({ nodeKey: n.id, offset })
+    } else if (n.type === 'block') {
+      const children = (n.children ?? []).filter(cid => nodeMap[cid])
+      children.forEach((cid, i) => out.push({ nodeKey: cid, offset: offset + i }))
+      offset += children.length
+    } else {
+      break
+    }
+    at = graph.edges.find(e => e.from === at)?.to ?? null
+  }
+  return out
 }
 
 // ─── Mutators ────────────────────────────────────────────────────────────────

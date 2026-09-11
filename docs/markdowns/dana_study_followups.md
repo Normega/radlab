@@ -81,6 +81,31 @@ user deleted.
 Still owed: a human pass through the *screen* — the code box only appears after
 a real submission, which sends a real email.
 
+**Dana's 2026-09-10 test did not fail on email** (found 2026-09-11): both emails
+were delivered and clicked; every confirmation then died with a 500 because the
+function looked her existing account up in the first page (50 of 850) of auth
+users. Fixed for study-signup-verify, auto-enroll and create_participant
+(`20260911_participant_auth_lookup.sql`) and verified by enrolling one address
+in both TESTING studies.
+
+### Calendar dates and "to be determined" (built 2026-09-11)
+
+Norm's decisions: enrolment = baseline right away; a late enrollee gets baseline
+plus whatever has not happened yet, never a missed date; a date may move as long
+as it is still in the future; one date per study (the two courses are separate
+studies). Built as a `timing: 'fixed'` timepoint in the Experiment Builder (date
+or "To be determined") and a **Calendar dates** panel on the study page that sets,
+moves or clears the date after enrolment, with a confirmation naming the date and
+the participant count. Must be set in the builder **before the first enrolment**,
+because the builder locks then.
+
+### Credit-only consent (built 2026-09-11)
+
+Toggle under Consent Form on the study page ("Offer a credit-only option").
+Participants who choose it are marked "credit only" in the participant list and
+are excluded from every research export. **Turn it on for Academic Feedback
+Study (CHM135) only.**
+
 Deliberately out of scope for now: **studies with a screener are refused** with
 a clear message rather than silently skipped. Anonymous screening would have to
 run before any participant row exists and buffer to the request row; skipping it

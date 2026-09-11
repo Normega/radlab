@@ -480,12 +480,22 @@ Deno.serve(async (req) => {
       // re-walked — materializeSchedule is idempotent for schedule rows, but
       // a repeat "withdrawal detected" result would re-run
       // processAdherenceWithdrawal (and re-email) on every cron tick.
-      const byParticipantStudy = new Map<string, { statuses: string[]; minDate: string }>()
+      //
+      // minDate stands in for the enrollment date, so it is taken only over
+      // rows that are dated relative to it. Calendar-date timepoints
+      // (20260911_fixed_date_timepoints.sql) break both halves of that: an
+      // 'awaiting_date' row has no date — and one sorting first would leave
+      // minDate null, and materializeSchedule throwing on addDays(null) for
+      // that participant every tick — while a 'skipped' row carries a date
+      // from BEFORE the participant enrolled, which would drag t0 backwards
+      // and re-date everything after it.
+      const byParticipantStudy = new Map<string, { statuses: string[]; minDate: string | null }>()
       for (const r of allRows ?? []) {
         const key = `${r.participant_id}:${r.study_id}`
-        const entry = byParticipantStudy.get(key) ?? { statuses: [], minDate: r.scheduled_date }
+        const entry = byParticipantStudy.get(key) ?? { statuses: [], minDate: null }
         entry.statuses.push(r.status)
-        if (r.scheduled_date < entry.minDate) entry.minDate = r.scheduled_date
+        const datesT0 = r.scheduled_date != null && r.status !== 'skipped'
+        if (datesT0 && (entry.minDate === null || r.scheduled_date < entry.minDate)) entry.minDate = r.scheduled_date
         byParticipantStudy.set(key, entry)
       }
 
@@ -495,9 +505,12 @@ Deno.serve(async (req) => {
         // until below, so read it off the key here.
         if (inactiveSet.has(key.split(':')[1])) continue
 
-        const hasOutstanding = entry.statuses.some((s) => s === 'unlocked' || s === 'pending' || s === 'link_sent')
+        // 'awaiting_date' is outstanding: that session is still to come, so
+        // there is nothing to advance past until someone sets its date.
+        const hasOutstanding = entry.statuses.some((s) =>
+          s === 'unlocked' || s === 'pending' || s === 'link_sent' || s === 'awaiting_date')
         const hasCompleted = entry.statuses.some((s) => s === 'completed')
-        if (hasOutstanding || !hasCompleted) continue
+        if (hasOutstanding || !hasCompleted || entry.minDate === null) continue
 
         const [participantId, studyId] = key.split(':')
         const graph = graphByStudyId.get(studyId)

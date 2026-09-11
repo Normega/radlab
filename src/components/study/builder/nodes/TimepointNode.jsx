@@ -1,7 +1,9 @@
 import { Handle, Position } from '@xyflow/react'
 
 export default function TimepointNode({ data, selected }) {
-  const dayLabel = data.day_offset === 0 ? 'Day 1 (baseline)' : `Day ${data.day_offset + 1}`
+  const dayLabel = data.timing === 'fixed'
+    ? (data.fixed_date ? `Date ${data.fixed_date}` : 'Date to be determined')
+    : data.day_offset === 0 ? 'Day 1 (baseline)' : `Day ${data.day_offset + 1}`
   const timeLabel = data.time_of_day ?? 'inherit baseline'
 
   return (

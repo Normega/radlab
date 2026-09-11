@@ -8,6 +8,7 @@ import { buildEnrollmentSchedule } from '../../lib/enrollmentSchedule'
 import EnrollmentPanel   from '../../components/study/EnrollmentPanel'
 import StudySessionsPanel from './StudySessionsPanel'
 import AnonymousLinkPanel from './AnonymousLinkPanel'
+import CalendarDatesPanel from './CalendarDatesPanel'
 
 // ─── Data hooks ───────────────────────────────────────────────────────────────
 
@@ -23,7 +24,7 @@ function useStudy(id) {
           allow_restart, reminders_enabled, reminder_interval_days, reminder_max,
           email_subject, email_body,
           allow_external_enrollment, external_enrollment_source, completion_redirect_url,
-          allow_self_enrollment,
+          allow_self_enrollment, allow_credit_only_consent,
           screener_id
         `)
         .eq('id', id)
@@ -73,7 +74,7 @@ function useLongitudinalParticipants(studyId) {
     queryFn: async () => {
       const { data: enrollments, error } = await supabase
         .from('study_enrollments')
-        .select('id, profile_id, external_id, enrolled_at, consent_date, status, profiles!profile_id(id, display_name)')
+        .select('id, profile_id, external_id, enrolled_at, consent_date, consent_scope, status, profiles!profile_id(id, display_name)')
         .eq('study_id', studyId)
         .is('withdrawn_at', null)
         .order('enrolled_at', { ascending: true })
@@ -95,7 +96,9 @@ function useLongitudinalParticipants(studyId) {
       }
 
       return enrollments.map(e => {
-        const rows      = schedMap[e.profile_id] ?? []
+        // A 'skipped' row is a calendar date that passed before this person
+        // enrolled — never offered, so it is not part of their progress.
+        const rows      = (schedMap[e.profile_id] ?? []).filter(r => r.status !== 'skipped')
         const total     = rows.length
         const completed = rows.filter(r => r.status === 'completed').length
         const lastActive = rows.map(r => r.completed_at).filter(Boolean).sort().at(-1)
@@ -106,6 +109,7 @@ function useLongitudinalParticipants(studyId) {
           displayName:   e.profiles?.display_name || e.external_id || '—',
           enrolledAt:    e.enrolled_at,
           consentDate:   e.consent_date,
+          creditOnly:    e.consent_scope === 'credit_only',
           status:        e.status,
           total,
           completed,
@@ -185,6 +189,7 @@ export default function StudyDetail() {
       {mode === 'online_longitudinal' && (
         <>
           <EmailPrefsCard study={study} />
+          <CalendarDatesPanel study={study} />
           <LongitudinalParticipantsPanel study={study} qc={qc} />
           <ExternalEnrollmentPanel study={study} qc={qc} />
         </>
@@ -346,7 +351,12 @@ function LongitudinalParticipantsPanel({ study, qc }) {
                 <tr key={p.profileId} style={S.tr}>
                   <td style={S.td}><span style={S.pName}>{p.displayName}</span></td>
                   <td style={S.td}><span style={S.mono}>{fmtDate(p.enrolledAt)}</span></td>
-                  <td style={S.td}><span style={S.mono}>{fmtDate(p.consentDate)}</span></td>
+                  <td style={S.td}>
+                    <span style={S.mono}>{fmtDate(p.consentDate)}</span>
+                    {/* Takes part for course credit only: excluded from every
+                        research export (20260911_credit_only_consent.sql). */}
+                    {p.creditOnly && <span style={{ ...S.mono, display: 'block', color: 'var(--tx3)' }}>credit only</span>}
+                  </td>
                   <td style={S.td}>
                     {p.total > 0
                       ? <Chip>{p.completed} / {p.total} sessions</Chip>
@@ -465,7 +475,7 @@ function ScheduleView({ studyId, participant, onBack, qc }) {
                 return (
                   <tr key={row.id} style={S.tr}>
                     <td style={S.td}><span style={S.mono}>{label}</span></td>
-                    <td style={S.td}><span style={S.mono}>{row.scheduled_date ?? '—'}</span></td>
+                    <td style={S.td}><span style={S.mono}>{row.scheduled_date ?? (row.status === 'awaiting_date' ? 'to be determined' : '—')}</span></td>
                     <td style={S.td}><StatusBadge status={row.status} /></td>
                     <td style={S.td}><span style={S.mono}>{row.completed_at ? fmtDate(row.completed_at) : '—'}</span></td>
                     <td style={S.td}><span style={S.mono}>{row.attempts ?? 0}</span></td>
@@ -643,6 +653,16 @@ function ConsentFormSection({ study, qc }) {
     qc.invalidateQueries({ queryKey: ['study-detail', study.id] })
   }
 
+  // The second consent answer (20260911_credit_only_consent.sql). Off by
+  // default; the database refuses a credit-only answer for a study without it.
+  const [creditErr, setCreditErr] = useState(null)
+  async function toggleCreditOnly(val) {
+    setCreditErr(null)
+    const { error } = await supabase.from('studies').update({ allow_credit_only_consent: val }).eq('id', study.id)
+    if (error) setCreditErr(error.message)
+    qc.invalidateQueries({ queryKey: ['study-detail', study.id] })
+  }
+
   async function handleFileChange(e) {
     const file = e.target.files?.[0]
     if (!file) return
@@ -698,6 +718,28 @@ function ConsentFormSection({ study, qc }) {
           <span style={{ fontSize: 14, color: 'var(--tx2)' }}>Require consent before sessions</span>
         </label>
       </div>
+
+      {(study?.consent_required ?? true) && (
+        <div style={{ marginBottom: 16, maxWidth: 620 }}>
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer', userSelect: 'none' }}>
+            <input
+              type="checkbox"
+              style={{ marginTop: 3 }}
+              checked={study?.allow_credit_only_consent ?? false}
+              onChange={e => toggleCreditOnly(e.target.checked)}
+            />
+            <span style={{ fontSize: 14, color: 'var(--tx2)' }}>
+              Offer a credit-only option: “I wish to complete the surveys for course credit, but do not
+              consent to have my data used in research.”
+            </span>
+          </label>
+          <p style={{ fontSize: 12, color: 'var(--tx3)', margin: '4px 0 0 24px' }}>
+            Participants who choose it take every session as usual and are marked “credit only” below.
+            They and all of their data are left out of every research export.
+          </p>
+          {creditErr && <p style={S.errMsg}>{creditErr}</p>}
+        </div>
+      )}
 
       {form ? (
         <div style={S.formCard}>
@@ -1136,11 +1178,14 @@ function StatusBadge({ status }) {
     link_sent:  { bg: '#eff6ff', color: '#1d4ed8' },
     pending:    { bg: '#f4f4f5', color: '#52525b' },
     unlocked:   { bg: '#fef9c3', color: '#92400e' },
+    // Calendar-date timepoints (20260911_fixed_date_timepoints.sql)
+    awaiting_date: { bg: '#faf5ff', color: '#7e22ce' },
+    skipped:       { bg: '#fafafa', color: '#a1a1aa' },
   }
   const c = colors[status] ?? colors.pending
   return (
     <span style={{ fontFamily: '"Space Mono",monospace', fontSize: 12, borderRadius: 6, padding: '2px 7px', background: c.bg, color: c.color }}>
-      {status}
+      {status === 'awaiting_date' ? 'awaiting date' : status}
     </span>
   )
 }
