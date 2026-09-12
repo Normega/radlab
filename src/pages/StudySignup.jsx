@@ -262,7 +262,9 @@ export default function StudySignup() {
 
           <button type="submit" style={{ ...S.submit, opacity: canSubmit ? 1 : 0.45 }}
             disabled={!canSubmit}>
-            {busy ? 'Sending…' : 'Send my confirmation link'}
+            {/* The email carries both doors now (2026-09-11), so the button no
+                longer promises only a link. */}
+            {busy ? 'Sending…' : 'Send my confirmation code'}
           </button>
           <p style={S.finePrint}>
             We will email you a code and a link to confirm this address. You are not signed up
