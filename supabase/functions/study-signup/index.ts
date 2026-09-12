@@ -6,7 +6,9 @@
 // study-signup-verify, when the emailed token comes back — so a typo costs one
 // dead request row rather than a ghost account with a materialised schedule.
 //
-// POST body: { study_id, email, student_number?, consented, consent_scope? }
+// POST body: { study_id, email, student_number, consented, consent_scope? }
+//   student_number is required unless the study has turned
+//   require_student_number off.
 // Returns:   { ok: true } | { error }
 //
 // consent_scope is 'research' (the default when absent) or 'credit_only' — the
@@ -138,6 +140,28 @@ Deno.serve(async (req) => {
       }, 400)
     }
 
+    //    The student number, when the study requires it (the default since
+    //    20260912_require_student_number.sql). A course study credits by it, so
+    //    a sign-up without one is refused rather than stored: Norm, 2026-09-12,
+    //    "or else it won't be possible to assign credit". Checked HERE, before
+    //    the cooldown and before supersede_signup_requests below — an invalid
+    //    attempt must never expire a valid request already in the inbox. The
+    //    format rule is the database's (normalize_student_number), and a trigger
+    //    enforces it again on the insert, so this copy cannot drift from it.
+    let studentNumber: string | null = student_number ? String(student_number).trim() : null
+    if (info.require_student_number === true) {
+      const { data: cleaned, error: snErr } = await admin
+        .rpc('normalize_student_number', { p_value: student_number ?? null })
+      if (snErr) {
+        console.error('normalize_student_number failed:', snErr.message)
+        return json({ error: 'Could not start your sign-up. Please try again.' }, 500)
+      }
+      if (!cleaned) {
+        return json({ error: 'Enter your U of T student number — 9 or 10 digits, as on your TCard.' }, 400)
+      }
+      studentNumber = cleaned as string
+    }
+
     // 4. Cooldown, per ADDRESS: a live unconsumed request means a link is
     //    already sitting in that inbox. Checked before the IP limiter so the
     //    common "did it send?" double-submit gets the accurate message.
@@ -206,7 +230,7 @@ Deno.serve(async (req) => {
         study_id,
         email:           String(email).trim(),
         email_match_key: matchKey,
-        student_number:  student_number ? String(student_number).trim() : null,
+        student_number:  studentNumber,
         expires_at:      expiresAt,
         consented_at:    info.consent_required ? new Date().toISOString() : null,
         consent_scope:   info.consent_required ? scope : null,

@@ -139,7 +139,7 @@ export default function StudySignup() {
         body:    JSON.stringify({
           study_id:       studyId,
           email:          email.trim(),
-          student_number: studentNo.trim() || null,
+          student_number: studentNo.replace(/[\s-]/g, '') || null,
           consented,
           consent_scope:  scope ?? 'research',
         }),
@@ -195,7 +195,14 @@ export default function StudySignup() {
   )
 
   const emailLooksRight = /@(mail\.)?utoronto\.ca$/i.test(email.trim())
-  const canSubmit = consented && emailLooksRight && !busy
+  // Required unless the study turned it off (20260912_require_student_number).
+  // The server and a database trigger both enforce it; this only saves a
+  // round trip and says what is wrong before the student presses the button.
+  // Same rule as normalize_student_number: spaces and hyphens ignored, 9-10 digits.
+  const needsStudentNo  = info.require_student_number === true
+  const studentDigits   = studentNo.replace(/[\s-]/g, '')
+  const studentNoOk     = /^\d{9,10}$/.test(studentDigits)
+  const canSubmit = consented && emailLooksRight && (!needsStudentNo || studentNoOk) && !busy
 
   return (
     <Shell>
@@ -253,10 +260,21 @@ export default function StudySignup() {
             </p>
           )}
 
-          <label style={{ ...S.label, marginTop: 16 }} htmlFor="signup-student">Student number</label>
+          <label style={{ ...S.label, marginTop: 16 }} htmlFor="signup-student">
+            Student number{needsStudentNo ? ' *' : ''}
+          </label>
           <input id="signup-student" style={S.input} type="text" inputMode="numeric"
-            value={studentNo} onChange={e => setStudentNo(e.target.value)}
-            placeholder="1234567890" />
+            required={needsStudentNo} autoComplete="off"
+            value={studentNo} onChange={e => { setStudentNo(e.target.value); setError(null) }}
+            placeholder="1001234567" />
+          {needsStudentNo && studentNo.trim() && !studentNoOk && (
+            <p style={S.fieldHint}>
+              Your U of T student number is 9 or 10 digits — it is on your TCard and in ACORN.
+            </p>
+          )}
+          {needsStudentNo && !studentNo.trim() && (
+            <p style={S.fieldHint}>Needed so your participation can be credited.</p>
+          )}
 
           {error && <p style={S.error}>{error}</p>}
 

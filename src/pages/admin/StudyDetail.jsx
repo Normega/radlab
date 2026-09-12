@@ -24,7 +24,7 @@ function useStudy(id) {
           allow_restart, reminders_enabled, reminder_interval_days, reminder_max,
           email_subject, email_body,
           allow_external_enrollment, external_enrollment_source, completion_redirect_url,
-          allow_self_enrollment, allow_credit_only_consent,
+          allow_self_enrollment, allow_credit_only_consent, require_student_number,
           screener_id
         `)
         .eq('id', id)
@@ -74,7 +74,7 @@ function useLongitudinalParticipants(studyId) {
     queryFn: async () => {
       const { data: enrollments, error } = await supabase
         .from('study_enrollments')
-        .select('id, profile_id, external_id, enrolled_at, consent_date, consent_scope, status, profiles!profile_id(id, display_name)')
+        .select('id, profile_id, external_id, enrolled_at, consent_date, consent_scope, student_number, status, profiles!profile_id(id, display_name)')
         .eq('study_id', studyId)
         .is('withdrawn_at', null)
         .order('enrolled_at', { ascending: true })
@@ -110,6 +110,10 @@ function useLongitudinalParticipants(studyId) {
           enrolledAt:    e.enrolled_at,
           consentDate:   e.consent_date,
           creditOnly:    e.consent_scope === 'credit_only',
+          // Shown beside progress because it is how a course study assigns
+          // credit — and a lab-only screen is the right place for it. It is
+          // deliberately NOT in the research export (studyExport.js).
+          studentNumber: e.student_number ?? null,
           status:        e.status,
           total,
           completed,
@@ -341,7 +345,7 @@ function LongitudinalParticipantsPanel({ study, qc }) {
           <table style={S.table}>
             <thead>
               <tr>
-                {['Name', 'Enrolled', 'Consent', 'Progress', 'Last active', 'Actions'].map(h => (
+                {['Name', 'Student number', 'Enrolled', 'Consent', 'Progress', 'Last active', 'Actions'].map(h => (
                   <th key={h} style={S.th}>{h}</th>
                 ))}
               </tr>
@@ -350,6 +354,7 @@ function LongitudinalParticipantsPanel({ study, qc }) {
               {participants.map(p => (
                 <tr key={p.profileId} style={S.tr}>
                   <td style={S.td}><span style={S.pName}>{p.displayName}</span></td>
+                  <td style={S.td}><span style={S.mono}>{p.studentNumber ?? '—'}</span></td>
                   <td style={S.td}><span style={S.mono}>{fmtDate(p.enrolledAt)}</span></td>
                   <td style={S.td}>
                     <span style={S.mono}>{fmtDate(p.consentDate)}</span>
@@ -947,6 +952,15 @@ function SelfEnrollmentPanel({ study, qc }) {
     setSaving(false)
   }
 
+  async function setRequireStudentNo(val) {
+    setSaving(true); setError(null)
+    const { error } = await supabase
+      .from('studies').update({ require_student_number: val }).eq('id', study.id)
+    if (error) setError(error.message)
+    else qc.invalidateQueries({ queryKey: ['study-detail', study.id] })
+    setSaving(false)
+  }
+
   return (
     <div style={EE.card}>
       <label style={EE.toggleRow}>
@@ -957,10 +971,19 @@ function SelfEnrollmentPanel({ study, qc }) {
       </label>
       <p style={EE.hint}>
         Anyone with the link reads the consent form, agrees, then gives their U of T email and
-        student number. They are enrolled only after clicking a confirmation link emailed to that
-        address, so a typo cannot create a participant. Addresses must end in utoronto.ca or
+        student number. They are enrolled only after confirming with the code or link emailed to
+        that address, so a typo cannot create a participant. Addresses must end in utoronto.ca or
         mail.utoronto.ca.
       </p>
+
+      {/* On by default (20260912_require_student_number): a course study
+          assigns credit by student number, so a sign-up without one could
+          never be credited. The database enforces it, not just this page. */}
+      <label style={{ ...EE.toggleRow, marginTop: 14 }}>
+        <input type="checkbox" checked={study.require_student_number ?? true}
+          onChange={e => setRequireStudentNo(e.target.checked)} disabled={saving} />
+        <span style={EE.toggleLabel}>Require a student number (needed to assign course credit)</span>
+      </label>
 
       {enabled && (
         <div style={EE.fieldGroup}>
