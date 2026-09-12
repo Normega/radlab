@@ -389,8 +389,49 @@ function Library({ cfg }) {
             {r.slug && <code style={S.rowSlug}>{r.slug}</code>}
           </>
         )
+        // The actions belong to the ROW, not to whichever branch draws its body.
+        // They used to live only in the expandable branch, so the one config with
+        // an `itemLink` — the VAS library — returned above them and showed no
+        // Rename button at all, while every other type had one. Building them
+        // once here is what stops the two branches drifting apart again.
+        const actions = (
+          <>
+            {cfg.rename && (
+              <RenameInstrumentButton
+                row={r}
+                cfg={cfg.rename}
+                buttonStyle={S.editBtn}
+                onRenamed={() => {
+                  qc.invalidateQueries({ queryKey: ['instrument-lib', cfg.table, cfg.type ?? null] })
+                  qc.invalidateQueries({ queryKey: ['instrument-usage', cfg.type] })
+                }}
+              />
+            )}
+            {cfg.editLink && (
+              <Link to={cfg.editLink(r)} style={S.editBtn}>Edit</Link>
+            )}
+            {cfg.deletable && (
+              <DeleteInstrumentButton
+                row={r}
+                type={cfg.type}
+                usage={usage}
+                usageError={usageError}
+                onDeleted={() => {
+                  setOpen(o => (o === r.id ? null : o))
+                  qc.invalidateQueries({ queryKey: ['instrument-lib', cfg.table, cfg.type] })
+                  qc.invalidateQueries({ queryKey: ['instrument-usage', cfg.type] })
+                }}
+              />
+            )}
+          </>
+        )
+        // A row that navigates: the link is the row BODY, never the whole row —
+        // the actions are buttons and an <a> may not contain them.
         if (cfg.itemLink) return (
-          <Link key={r.id} to={cfg.itemLink(r)} style={{ ...S.row, textDecoration: 'none' }}>{inner}</Link>
+          <div key={r.id} style={S.row}>
+            <Link to={cfg.itemLink(r)} style={{ ...S.rowMain, textDecoration: 'none' }}>{inner}</Link>
+            {actions}
+          </div>
         )
         // Expandable in-place preview — click the row to view the instance.
         const isOpen = open === r.id
@@ -400,33 +441,7 @@ function Library({ cfg }) {
               <button style={S.rowMain} onClick={() => setOpen(isOpen ? null : r.id)}>
                 {inner}
               </button>
-              {cfg.rename && (
-                <RenameInstrumentButton
-                  row={r}
-                  cfg={cfg.rename}
-                  buttonStyle={S.editBtn}
-                  onRenamed={() => {
-                    qc.invalidateQueries({ queryKey: ['instrument-lib', cfg.table, cfg.type ?? null] })
-                    qc.invalidateQueries({ queryKey: ['instrument-usage', cfg.type] })
-                  }}
-                />
-              )}
-              {cfg.editLink && (
-                <Link to={cfg.editLink(r)} style={S.editBtn}>Edit</Link>
-              )}
-              {cfg.deletable && (
-                <DeleteInstrumentButton
-                  row={r}
-                  type={cfg.type}
-                  usage={usage}
-                  usageError={usageError}
-                  onDeleted={() => {
-                    setOpen(o => (o === r.id ? null : o))
-                    qc.invalidateQueries({ queryKey: ['instrument-lib', cfg.table, cfg.type] })
-                    qc.invalidateQueries({ queryKey: ['instrument-usage', cfg.type] })
-                  }}
-                />
-              )}
+              {actions}
               <button style={S.viewToggle} onClick={() => setOpen(isOpen ? null : r.id)}>
                 {isOpen ? 'Hide ▲' : 'View ▼'}
               </button>
