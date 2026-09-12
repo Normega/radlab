@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
+import { pickerLabel, pickerSubcategory, instrumentDisplayName, isRenameable } from '../../lib/instrumentRename'
 import VasRenderer from '../../components/vas/VasRenderer'
 import SurveyComponentRenderer from '../../components/questionnaire/composable/SurveyComponentRenderer'
 import { DB_COMPONENT_TYPE } from '../../components/questionnaire/composable/componentRegistry'
@@ -101,14 +102,18 @@ function instrumentMeta(r) {
 // authoring page added 2026-08-31 — until then these types had no create path
 // at all (their rows were seeded by migration), which is why only the numeric
 // slider, VAS and package libraries carried a "+ New" button.
-function composableLibrary(type, title, pageSlug, newLabel) {
+function composableLibrary(type, title, pageSlug, newLabel, typeTitle) {
   return {
     table: 'composable_instruments',
     type,
     title,
     newLink: `/admin/instruments/${pageSlug}/new`,
     newLabel,
-    row: r => ({ name: r.label, meta: instrumentMeta(r) }),
+    row: r => ({ name: instrumentDisplayName(r), meta: instrumentMeta(r) }),
+    // Rename in place, beside Edit: renaming is the common correction, and
+    // walking through the whole authoring form to change one word invited
+    // accidental edits to a question that already has answers against it.
+    rename: { kind: 'composable', table: 'composable_instruments', typeTitle, activityCategory: type },
     preview: r => <DemoStage config={instrumentConfig(r)} />,
     // Edit/delete, added 2026-09-03: the library was insert-only, so a
     // correction meant authoring a new instrument and abandoning the old one.
@@ -187,7 +192,7 @@ const PAGES = {
     C: LikertSliderSample,
     blurb: 'The discrete slider: stepped scale with point labels and no numeric readout — the label is the value. Dana’s track/thumb chrome combined with the platform’s no-default behavior (no thumb until the first touch).',
     note: 'The sample is the first Likert slider in the library, rendered by the production component — the exact step a participant gets. Use + New below to author another; add instances to sessions from the session builder’s Instruments picker.',
-    library: composableLibrary('likert_slider', 'Existing Likert sliders', 'likert-slider', '+ New Likert Slider'),
+    library: composableLibrary('likert_slider', 'Existing Likert sliders', 'likert-slider', '+ New Likert Slider', 'Likert slider'),
   },
   'numeric-slider': {
     title: 'Numeric slider',
@@ -199,8 +204,12 @@ const PAGES = {
     library: {
       table: 'slider_scales', title: 'Existing numeric sliders',
       newLink: '/admin/sliders/new', newLabel: '+ New Slider',
-      row: r => ({ name: r.prompt || r.slug, meta: `${r.min}–${r.max}${r.min_label ? ` · ${r.min_label} → ${r.max_label ?? ''}` : ''}` }),
+      // The name, when the slider has one (20260911_slider_scale_label.sql).
+      // Before that column existed every numeric slider read here as its whole
+      // question in underscores, because its slug is slugify(prompt).
+      row: r => ({ name: instrumentDisplayName(r), meta: `${r.min}–${r.max}${r.min_label ? ` · ${r.min_label} → ${r.max_label ?? ''}` : ''}` }),
       preview: r => <SliderPreview row={r} />,
+      rename: { kind: 'slider', table: 'slider_scales', typeTitle: 'Slider', activityCategory: 'numeric_slider' },
     },
   },
   'vas': {
@@ -241,7 +250,7 @@ const PAGES = {
     C: MultipleChoiceSample,
     blurb: 'Single-select multiple choice, where an option can be plain or carry inline text/number entry with prefix/suffix and bounds. Fills a real gap: the platform has never had a generic MC instrument.',
     note: 'The sample is the first multiple-choice instrument in the library, rendered by the production component — the exact step a participant gets. Use + New below to author another; add instances to sessions from the session builder’s Instruments picker.',
-    library: composableLibrary('multiple_choice', 'Existing multiple-choice questions', 'multiple-choice', '+ New Question'),
+    library: composableLibrary('multiple_choice', 'Existing multiple-choice questions', 'multiple-choice', '+ New Question', 'Multiple choice'),
   },
   'open-list': {
     title: 'Open text list + contribution ratings',
@@ -250,7 +259,7 @@ const PAGES = {
     C: OpenListSample,
     blurb: 'Participant-generated factors with a per-factor rating: typing text reveals a contribution slider beneath that row, filling the last row grows a new one, and entries are word-capped with a live counter.',
     note: 'The sample is the first open text list in the library, rendered by the production component — the exact step a participant gets. Use + New below to author another; add instances to sessions from the session builder’s Instruments picker.',
-    library: composableLibrary('open_list', 'Existing open text lists', 'open-list', '+ New Open List'),
+    library: composableLibrary('open_list', 'Existing open text lists', 'open-list', '+ New Open List', 'Open text list'),
   },
   'open-text': {
     title: 'Open text response',
@@ -259,7 +268,7 @@ const PAGES = {
     C: OpenTextSample,
     blurb: 'A plain free-text answer: a single line for a short response, or a resizable box for a paragraph. Optional word floor and ceiling, with a live counter when a maximum is set. The open text LIST above it is a different instrument — that one collects several short factors and forces a contribution rating on each; this one is just the question and the participant’s words.',
     note: 'The sample is the first open text response in the library, rendered by the production component — the exact step a participant gets. Use + New below to author another; add instances to sessions from the session builder’s Instruments picker.',
-    library: composableLibrary('open_text', 'Existing open text responses', 'open-text', '+ New Open Text'),
+    library: composableLibrary('open_text', 'Existing open text responses', 'open-text', '+ New Open Text', 'Open text response'),
   },
   'hierarchy': {
     title: 'Hierarchical belief question',
@@ -268,7 +277,7 @@ const PAGES = {
     C: HierarchySample,
     blurb: 'A belief hierarchy shown whole, indented by level. Participants select every level that changed; each selected level reveals a signed direction slider. Generalizes to any nested-construct rating.',
     note: 'The sample is the first belief hierarchy in the library, rendered by the production component — the exact step a participant gets. Use + New below to author another; add instances to sessions from the session builder’s Instruments picker.',
-    library: composableLibrary('hierarchy', 'Existing belief hierarchies', 'hierarchy', '+ New Hierarchy'),
+    library: composableLibrary('hierarchy', 'Existing belief hierarchies', 'hierarchy', '+ New Hierarchy', 'Belief hierarchy'),
   },
 }
 
@@ -382,6 +391,16 @@ function Library({ cfg }) {
               <button style={S.rowMain} onClick={() => setOpen(isOpen ? null : r.id)}>
                 {inner}
               </button>
+              {cfg.rename && (
+                <RenameInstrumentButton
+                  row={r}
+                  cfg={cfg.rename}
+                  onRenamed={() => {
+                    qc.invalidateQueries({ queryKey: ['instrument-lib', cfg.table, cfg.type ?? null] })
+                    qc.invalidateQueries({ queryKey: ['instrument-usage', cfg.type] })
+                  }}
+                />
+              )}
               {cfg.editLink && (
                 <Link to={cfg.editLink(r)} style={S.editBtn}>Edit</Link>
               )}
@@ -409,6 +428,76 @@ function Library({ cfg }) {
         )
       })}
     </div>
+  )
+}
+
+// ── RenameInstrumentButton ───────────────────────────────────────────────────
+// Changes what people read, and nothing else. The slug stays put: it is the key
+// a session step resolves and the value each response recorded, so it names the
+// export column for data already collected (src/lib/instrumentRename.js).
+//
+// Two writes, and the second is not optional: `activities.label` holds the copy
+// of the name the session builder's picker shows. If that write fails the whole
+// rename is reported as failed, because a library showing the new name over a
+// picker still showing the old one is the confusion this feature exists to end.
+function RenameInstrumentButton({ row, cfg, onRenamed }) {
+  const current = instrumentDisplayName(row)
+  const [editing, setEditing] = useState(false)
+  const [name, setName]       = useState(current)
+  const [error, setError]     = useState(null)
+
+  const rename = useMutation({
+    mutationFn: async (next) => {
+      const { error: updErr } = await supabase
+        .from(cfg.table).update({ label: next }).eq('id', row.id)
+      if (updErr) throw new Error(updErr.message)
+
+      const { error: actErr } = await supabase.from('activities')
+        .update({ label: pickerLabel(cfg.typeTitle, next) })
+        .eq('category', cfg.activityCategory)
+        .eq('subcategory', pickerSubcategory(cfg.kind, row.slug))
+      if (actErr) {
+        throw new Error(`The name saved, but the session builder's list did not update: ${actErr.message}`)
+      }
+    },
+    onSuccess: () => { setEditing(false); setError(null); onRenamed() },
+    onError: (e) => setError(e.message),
+  })
+
+  if (!editing) {
+    return (
+      <button
+        style={S.editBtn}
+        onClick={() => { setName(current); setError(null); setEditing(true) }}
+      >
+        Rename
+      </button>
+    )
+  }
+
+  return (
+    <span style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+      <input
+        autoFocus
+        style={S.renameInput}
+        value={name}
+        onChange={e => setName(e.target.value)}
+        onKeyDown={e => {
+          if (e.key === 'Enter' && isRenameable(current, name)) rename.mutate(name.trim())
+          if (e.key === 'Escape') { setEditing(false); setError(null) }
+        }}
+        aria-label="Instrument name"
+      />
+      <button
+        style={S.editBtn}
+        disabled={!isRenameable(current, name) || rename.isPending}
+        onClick={() => rename.mutate(name.trim())}
+      >
+        {rename.isPending ? 'Saving…' : 'Save'}
+      </button>
+      <button style={S.editBtn} onClick={() => { setEditing(false); setError(null) }}>Cancel</button>
+      {error && <span style={S.renameErr}>{error}</span>}
+    </span>
   )
 }
 
@@ -625,6 +714,16 @@ const S = {
     fontFamily: SANS, fontSize: 12.5, fontWeight: 600, color: 'var(--pkd)',
     background: 'none', border: '1px solid var(--pkbs)', borderRadius: 20,
     padding: '3px 12px', textDecoration: 'none', whiteSpace: 'nowrap',
+    cursor: 'pointer',
+  },
+  renameInput: {
+    fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 13,
+    border: '1px solid var(--pkbs)', borderRadius: 6, padding: '5px 8px',
+    color: 'var(--tx)', background: '#fff', minWidth: 220,
+  },
+  renameErr: {
+    fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 12, color: 'var(--err-tx, #b3261e)',
+    flexBasis: '100%',
   },
   deleteBtn: {
     fontFamily: SANS, fontSize: 12.5, color: 'var(--tx2)', background: 'none',

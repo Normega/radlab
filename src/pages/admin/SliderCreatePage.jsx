@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
+import { pickerLabel } from '../../lib/instrumentRename'
 import SliderQuestion from '../../components/questionnaire/composable/SliderQuestion'
 import '../../components/questionnaire/composable/composableSurvey.css'
 
@@ -24,6 +25,7 @@ function buildAnchors({ min, max, minLabel, maxLabel, midValue, midLabel }) {
 export default function SliderCreatePage() {
   const navigate = useNavigate()
 
+  const [name,        setName]        = useState('')
   const [prompt,      setPrompt]      = useState('')
   const [slug,        setSlug]        = useState('')
   const [slugTouched, setSlugTouched] = useState(false)
@@ -37,8 +39,15 @@ export default function SliderCreatePage() {
   const [saving,      setSaving]      = useState(false)
   const [error,       setError]       = useState(null)
 
-  function handlePromptChange(v) {
-    setPrompt(v)
+  // The slug follows the NAME, not the question. It used to follow the prompt,
+  // which is why every slider authored before 2026-09-11 is identified — in the
+  // library, in the session-builder picker and in the export's column names — by
+  // its entire question wording joined with underscores. Norm, building Dana's
+  // CHM135 sessions: "the numeric sliders have the complete question wording
+  // with underscores". A slug can never be changed once answers exist, so the
+  // fix is to stop generating ugly ones.
+  function handleNameChange(v) {
+    setName(v)
     if (!slugTouched) setSlug(slugify(v))
   }
 
@@ -48,7 +57,7 @@ export default function SliderCreatePage() {
       && (midValue ?? Math.round((min + max) / 2)) < max)
 
   async function handleSave() {
-    if (!prompt.trim() || !slug.trim() || !minLabel.trim() || !maxLabel.trim()) return
+    if (!name.trim() || !prompt.trim() || !slug.trim() || !minLabel.trim() || !maxLabel.trim()) return
     if (min >= max) { setError('Min must be less than max.'); return }
     if (!midInRange) { setError('The middle anchor position must fall between min and max.'); return }
     setSaving(true)
@@ -57,6 +66,7 @@ export default function SliderCreatePage() {
       const { data: { user } } = await supabase.auth.getUser()
       const { error: err } = await supabase.from('slider_scales').insert({
         slug:      slug.trim(),
+        label:     name.trim(),
         prompt:    prompt.trim(),
         min,
         max,
@@ -75,7 +85,7 @@ export default function SliderCreatePage() {
       const { error: actErr } = await supabase.from('activities').insert({
         category:    'numeric_slider',
         subcategory: `slider_${slug.trim()}`,
-        label:       `Slider – ${prompt.trim().slice(0, 60)}`,
+        label:       pickerLabel('Slider', name),
         description: `${labelChain} (${min}–${max})`,
       })
       if (actErr) console.warn('activities insert:', actErr.message)
@@ -87,7 +97,7 @@ export default function SliderCreatePage() {
     }
   }
 
-  const canSave = prompt.trim() && slug.trim() && minLabel.trim() && maxLabel.trim()
+  const canSave = name.trim() && prompt.trim() && slug.trim() && minLabel.trim() && maxLabel.trim()
     && min < max && midInRange && !saving
 
   return (
@@ -97,13 +107,23 @@ export default function SliderCreatePage() {
 
       <div style={S.form}>
 
-        <label style={S.label}>Prompt *</label>
+        <label style={S.label}>Name *</label>
+        <input
+          style={S.input}
+          value={name}
+          onChange={e => handleNameChange(e.target.value)}
+          placeholder="Task difficulty"
+        />
+        <p style={S.hint}>How it reads in the library and the session-builder picker. Rename it later from the library.</p>
+
+        <label style={{ ...S.label, marginTop: 14 }}>Prompt *</label>
         <input
           style={S.input}
           value={prompt}
-          onChange={e => handlePromptChange(e.target.value)}
+          onChange={e => setPrompt(e.target.value)}
           placeholder="Rate how difficult you find this task."
         />
+        <p style={S.hint}>The question the participant reads.</p>
 
         <label style={{ ...S.label, marginTop: 14 }}>Slug *</label>
         <input
@@ -112,7 +132,10 @@ export default function SliderCreatePage() {
           onChange={e => { setSlug(slugify(e.target.value)); setSlugTouched(true) }}
           placeholder="difficulty_rating"
         />
-        <p style={S.hint}>Auto-generated from prompt. Used as the identifier in module JSON.</p>
+        <p style={S.hint}>
+          Auto-generated from the name. The identifier a session step resolves, and the name this
+          slider’s answers carry into the data export — so it cannot be changed once anyone has answered.
+        </p>
 
         <div style={S.row2}>
           <div style={{ flex: 1 }}>
