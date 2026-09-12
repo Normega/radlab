@@ -90,7 +90,7 @@ export default function SliderCreatePage() {
       })
       if (actErr) console.warn('activities insert:', actErr.message)
 
-      navigate('/admin/vas')
+      navigate('/admin/instruments/numeric-slider')
     } catch (e) {
       setError(e.message)
       setSaving(false)
@@ -226,7 +226,7 @@ export default function SliderCreatePage() {
           >
             {saving ? 'Saving…' : 'Save Slider'}
           </button>
-          <button style={S.cancelBtn} onClick={() => navigate('/admin/vas')}>
+          <button style={S.cancelBtn} onClick={() => navigate('/admin/instruments/numeric-slider')}>
             Cancel
           </button>
         </div>

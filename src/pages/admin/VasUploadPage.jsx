@@ -148,7 +148,7 @@ export default function VasUploadPage() {
       })
       if (actErr) console.warn('activities insert:', actErr.message)
 
-      navigate('/admin/vas')
+      navigate('/admin/instruments/vas')
     } catch (e) {
       setUploadErr(e.message)
     } finally {
@@ -273,7 +273,7 @@ export default function VasUploadPage() {
             >
               {uploading ? 'Uploading…' : 'Upload Scale'}
             </button>
-            <button style={S.cancelBtn} onClick={() => navigate('/admin/vas')}>
+            <button style={S.cancelBtn} onClick={() => navigate('/admin/instruments/vas')}>
               Cancel
             </button>
           </div>

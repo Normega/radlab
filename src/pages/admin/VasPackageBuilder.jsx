@@ -112,7 +112,7 @@ export default function VasPackageBuilder() {
       })
       if (actErr) console.warn('activities insert:', actErr.message)
     },
-    onSuccess: () => navigate('/admin/vas'),
+    onSuccess: () => navigate('/admin/instruments/assessments'),
     onError:   e  => setError(e.message),
   })
 
@@ -211,7 +211,7 @@ export default function VasPackageBuilder() {
             >
               {save.isPending ? 'Creating…' : 'Create Package'}
             </button>
-            <button style={S.cancelBtn} onClick={() => navigate('/admin/vas')}>Cancel</button>
+            <button style={S.cancelBtn} onClick={() => navigate('/admin/instruments/assessments')}>Cancel</button>
           </div>
         </div>
 

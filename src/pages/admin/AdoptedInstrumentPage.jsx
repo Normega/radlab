@@ -224,7 +224,12 @@ const PAGES = {
       table: 'vas_scales', title: 'Existing VAS',
       newLink: '/admin/vas/new', newLabel: '+ New Scale',
       itemLink: r => `/admin/vas/${r.slug}`,
-      row: r => ({ name: r.question || r.slug, meta: r.scale_type ?? '' }),
+      // The name, when the scale has one (20260912_instrument_names_and_slug_lock.sql).
+      // Before that column existed a VAS read here as its whole question, and an
+      // un-named one still does — the fallback chain is why nothing changed for
+      // the eight scales that predate the column.
+      row: r => ({ name: instrumentDisplayName(r), meta: r.scale_type ?? '' }),
+      rename: { kind: 'vas', table: 'vas_scales', typeTitle: 'VAS' },
     },
   },
   'assessments': {
@@ -239,8 +244,11 @@ const PAGES = {
       // items is the mixed-content list; legacy VAS-only packages have only scale_ids.
       row: r => {
         const n = (r.items ?? r.scale_ids ?? []).length
-        return { name: r.name || r.slug, meta: `${n} item${n === 1 ? '' : 's'}` }
+        return { name: instrumentDisplayName(r), meta: `${n} item${n === 1 ? '' : 's'}` }
       },
+      // vas_packages keeps its name in `name`, not `label` — nameColumn() is what
+      // knows that, so the rename writes the column this table actually has.
+      rename: { kind: 'vas_pkg', table: 'vas_packages', typeTitle: 'VAS Bundle' },
       preview: r => <PackagePreview pkg={r} />,
     },
   },
