@@ -194,6 +194,35 @@ export interface MaterializeArgs {
   unlockFirst?: boolean
 }
 
+/**
+ * Whether the first row this call created can be handed straight to the
+ * participant. Exported so the rule can be tested without a database.
+ *
+ * `unlockFirst` exists so someone standing in the browser gets their entry
+ * session in the same response. But materializeSchedule also runs on RE-ENTRY,
+ * and if that click lands between finishing one session and the cron advance
+ * pass creating the next batch, the first row it inserts belongs to a LATER
+ * day. Unlocking that hands out a short-lived link for a session that is not
+ * due, and leaves the row 'unlocked' -- a status the due-row sender skips, so
+ * its scheduled email never goes out and the timepoint is lost in silence.
+ *
+ * Found live 2026-09-12: a Zerin participant re-opened their SONA link ten
+ * minutes after finishing baseline, was given a 4 h link to the NEXT morning's
+ * check-in, and it expired unseen overnight. The row could also have been
+ * answered 16 hours early, which for an EMA design is its own problem.
+ *
+ * Date-level, not time-level, on purpose: someone enrolling at 07:00 into a
+ * study whose baseline sends at 09:00 should still start immediately.
+ */
+export function canUnlockNow(
+  unlockFirst: boolean,
+  firstInsert: { status: string; scheduledDate: string } | undefined,
+  todayLabDate: string,
+): boolean {
+  if (!unlockFirst || !firstInsert) return false
+  return firstInsert.status === 'pending' && firstInsert.scheduledDate <= todayLabDate
+}
+
 export interface MaterializeResult {
   inserted: number
   stoppedAt: string | null
@@ -576,11 +605,12 @@ export async function materializeSchedule(
 
   if (inserts.length === 0) return { inserted: 0, stoppedAt, withdrawal, completedStudy, adherenceShortfalls }
 
-  // Only a sendable row can be served to the participant in the browser. The
-  // builder requires the entry timepoint to be relative day 0, so this is the
-  // baseline in practice; the guard keeps a malformed graph from unlocking a
-  // session that is waiting for its date.
-  const unlockIndex = unlockFirst && inserts[0]?.status === 'pending' ? 0 : -1
+  // Only a sendable row can be served to the participant in the browser: it
+  // must be 'pending' AND due today or earlier. The builder requires the entry
+  // timepoint to be relative day 0, so at enrollment this is the baseline; on
+  // re-entry it refuses to unlock a session belonging to a later day. See
+  // canUnlockNow.
+  const unlockIndex = canUnlockNow(unlockFirst, inserts[0], todayInLabTz()) ? 0 : -1
 
   const insertRows = inserts.map((row, i) => {
     const session = sessionByNodeKey.get(row.nodeKey)
