@@ -73,7 +73,7 @@ export default function DisplayEditorPage() {
   const { data: vasScales } = useQuery({
     queryKey: ['vas-picker'],
     queryFn: async () => {
-      const { data } = await supabase.from('vas_scales').select('slug, question').order('slug')
+      const { data } = await supabase.from('vas_scales').select('slug, label, question').order('slug')
       return data ?? []
     },
   })
