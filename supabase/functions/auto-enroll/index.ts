@@ -314,10 +314,22 @@ Deno.serve(async (req) => {
         .eq('participant_id', participantId)
         .eq('study_id', study_id)
         .eq('status', 'unlocked')
-        .single()
+        .maybeSingle()
 
-      if (unlockedErr || !unlockedSchedule?.link_id) {
+      if (unlockedErr) {
         return json({ error: 'Failed to issue a session link.' }, 500)
+      }
+
+      // Rows were created but none was unlocked: the next session is not due
+      // yet (canUnlockNow). That is the re-entry case -- someone who finished a
+      // session and came back through the recruitment link -- and it is not an
+      // error. The scheduler emails the session when its time comes; minting a
+      // link here would strand the row in 'unlocked' and lose it.
+      if (!unlockedSchedule?.link_id) {
+        return json(
+          { error: 'Your next session is not ready yet. We will email you a link when it is due.' },
+          409,
+        )
       }
 
       const { data: link, error: linkErr } = await admin

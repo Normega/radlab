@@ -164,8 +164,63 @@ Deno.serve(async (req) => {
       return json({ error: fetchErr.message }, 500)
     }
 
+    // 1c. Safety net: a due row that reached 'unlocked' without ever being
+    // emailed. The fetch above only looks at 'pending', so such a row is
+    // skipped on every tick and its timepoint is lost in silence. That happened
+    // on 2026-09-12: a Zerin participant re-opened their SONA link minutes
+    // after baseline, auto-enroll unlocked the NEXT morning's check-in with a
+    // 4 h link, and it expired overnight. materializeSchedule no longer unlocks
+    // a row that is not due -- that is the fix -- and this is the backstop,
+    // because either way the row is a participant's data.
+    //
+    // Deliberately narrow: only rows whose own link is gone, and only for
+    // participants who have given a contact email, i.e. who are past the
+    // consent and contact gates and already receive study mail. The ordinary
+    // 'unlocked' row is NOT this bug -- it is an entry session opened and
+    // abandoned by someone screened out or not yet consented, and they must
+    // never be emailed a fresh link.
+    let rescuedRows: Array<{
+      id: string
+      participant_id: string
+      study_id: string
+      scheduled_date: string
+      send_time: string
+      attempts: number | null
+    }> = []
+    {
+      const { data: strandedCandidates } = await db
+        .from('participant_schedule')
+        .select('id, participant_id, study_id, scheduled_date, send_time, attempts')
+        .eq('status', 'unlocked')
+        .lte('scheduled_date', todayStr)
+
+      const stranded = strandedCandidates ?? []
+      if (stranded.length > 0) {
+        const { data: liveLinks } = await db
+          .from('participant_links')
+          .select('schedule_id')
+          .eq('status', 'active')
+          .in('schedule_id', stranded.map((r) => r.id))
+        const hasLiveLink = new Set((liveLinks ?? []).map((l) => l.schedule_id))
+
+        const linkless = stranded.filter((r) => !hasLiveLink.has(r.id))
+        if (linkless.length > 0) {
+          const { data: contactable } = await db
+            .from('study_enrollments')
+            .select('profile_id, study_id')
+            .in('profile_id', [...new Set(linkless.map((r) => r.participant_id))])
+            .not('contact_email', 'is', null)
+          const contactSet = new Set((contactable ?? []).map((e) => `${e.profile_id}:${e.study_id}`))
+          rescuedRows = linkless.filter((r) => contactSet.has(`${r.participant_id}:${r.study_id}`))
+        }
+      }
+      if (rescuedRows.length > 0) {
+        console.warn(`check_schedule: rescuing ${rescuedRows.length} due row(s) stranded in 'unlocked' with no live link`)
+      }
+    }
+
     // 1b. Time cutoff + withdrawn filter.
-    const dueRows = (candidateRows ?? []).filter(
+    const dueRows = [...(candidateRows ?? []), ...rescuedRows].filter(
       (r) =>
         scheduleKey(r.scheduled_date, r.send_time) <= nowKey &&
         !withdrawnSet.has(`${r.participant_id}:${r.study_id}`) &&
@@ -577,7 +632,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    return json({ processed, suppressed, deferred, failed, missed, reminded, finalNotices, advanced, withdrawn, completed: completedStudies, adherenceShortfalls })
+    return json({ processed, suppressed, deferred, failed, missed, rescued: rescuedRows.length, reminded, finalNotices, advanced, withdrawn, completed: completedStudies, adherenceShortfalls })
 
   } catch (err) {
     console.error('check_schedule unexpected error:', err)
