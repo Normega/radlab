@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
+import { instrumentDisplayName } from '../../lib/instrumentRename'
 import VasRenderer from '../../components/vas/VasRenderer'
 
 function slugify(str) {
@@ -160,7 +161,8 @@ export default function VasPackageBuilder() {
                 return (
                   <ItemRow
                     key={scale.id}
-                    label={scale.slug}
+                    label={instrumentDisplayName(scale)}
+                    slug={scale.slug}
                     question={scale.question}
                     typeTag="VAS"
                     checked={checked}
@@ -185,7 +187,8 @@ export default function VasPackageBuilder() {
                 return (
                   <ItemRow
                     key={slider.id}
-                    label={slider.slug}
+                    label={instrumentDisplayName(slider)}
+                    slug={slider.slug}
                     question={slider.prompt}
                     typeTag="Slider"
                     checked={checked}
@@ -241,7 +244,7 @@ export default function VasPackageBuilder() {
                 {selectedWithData.map(item => (
                   <li key={itemKey(item)} style={S.previewItem}>
                     <span style={item.type === 'slider' ? { ...S.chip, ...S.chipSlider } : S.chip}>
-                      {item.type === 'slider' ? item.data.slug : item.data.slug}
+                      {instrumentDisplayName(item.data)}
                     </span>
                     <span style={S.typeTag(item.type)}>{item.type === 'slider' ? 'Slider' : 'VAS'}</span>
                     <span style={S.scaleQ}>
@@ -263,7 +266,11 @@ export default function VasPackageBuilder() {
 
 // ── ItemRow ───────────────────────────────────────────────────────────────────
 
-function ItemRow({ label, question, typeTag, checked, idx, total, onToggle, onUp, onDown }) {
+// `label` is the instrument's name and `slug` its machine key. Both are shown:
+// the name is what a researcher recognises, the slug is what the export column
+// will be called, and picking the wrong instrument is much easier when only one
+// of the two is visible.
+function ItemRow({ label, slug, question, typeTag, checked, idx, total, onToggle, onUp, onDown }) {
   return (
     <div style={S.scaleRow}>
       <label style={S.checkLabel}>
@@ -273,7 +280,8 @@ function ItemRow({ label, question, typeTag, checked, idx, total, onToggle, onUp
           onChange={onToggle}
           style={{ margin: '0 8px 0 0' }}
         />
-        <span style={typeTag === 'Slider' ? { ...S.chip, ...S.chipSlider } : S.chip}>{label}</span>
+        <span style={S.itemName}>{label}</span>
+        <span style={typeTag === 'Slider' ? { ...S.chip, ...S.chipSlider } : S.chip}>{slug}</span>
         <span style={S.typeTag(typeTag === 'Slider' ? 'slider' : 'vas')}>{typeTag}</span>
         <span style={S.scaleQ}>{question}</span>
       </label>
@@ -401,6 +409,7 @@ const S = {
     background: type === 'slider' ? '#eef4ff' : 'var(--bgp)',
     color:      type === 'slider' ? '#3b6db0' : 'var(--pkd)',
   }),
+  itemName:   { fontSize: 13.5, fontWeight: 600, color: 'var(--tx)', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
   scaleQ:     { fontSize: 12, color: 'var(--tx2)', fontFamily: '"DM Sans",system-ui,sans-serif', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
   reorder:    { display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 },
   orderBadge: { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', minWidth: 20, textAlign: 'center' },

@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { unzipSync } from 'fflate'
 import { supabase } from '../../lib/supabase'
+import { pickerLabel } from '../../lib/instrumentRename'
 import VasRenderer from '../../components/vas/VasRenderer'
 
 function slugToName(slug) {
@@ -123,6 +124,12 @@ export default function VasUploadPage() {
         .from('vas_scales')
         .insert({
           slug,
+          // The name this form has always asked for and, until
+          // 20260912_instrument_names_and_slug_lock.sql, always discarded: it
+          // built the slug and then vanished, so every scale in the library
+          // read as its slug. The slug still derives from it and still never
+          // changes afterwards — this only keeps the words the researcher typed.
+          label: scaleName.trim(),
           question: question.trim(),
           scale_type: 'emoji_6',
           anchors,
@@ -136,7 +143,7 @@ export default function VasUploadPage() {
       const { error: actErr } = await supabase.from('activities').insert({
         category:    'vas',
         subcategory: `vas_${slug}`,
-        label:       `VAS – ${scaleName.trim()}`,
+        label:       pickerLabel('VAS', scaleName),
         description: question.trim(),
       })
       if (actErr) console.warn('activities insert:', actErr.message)

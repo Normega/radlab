@@ -27,22 +27,47 @@ export function pickerLabel(typeTitle, name) {
   return `${typeTitle} – ${String(name ?? '').trim().slice(0, PICKER_NAME_MAX)}`
 }
 
-/**
- * The `activities.subcategory` an instrument's picker row is keyed by.
- * Composable instruments use the slug as-is; numeric sliders are registered
- * with a `slider_` prefix (SliderCreatePage has done this since they existed,
- * and StepDispatcher resolves them by that prefixed value), so a rename that
- * forgot it would silently update no picker row at all.
- */
-export function pickerSubcategory(kind, slug) {
-  return kind === 'slider' ? `slider_${slug}` : slug
+/** The prefix each instrument family's picker row is keyed by. */
+const PICKER_PREFIX = {
+  slider:     'slider_',
+  vas:        'vas_',
+  vas_pkg:    'vas_pkg_',
+  composable: '',
 }
 
-/** What the library and picker should call a row, whatever it carries. */
+/**
+ * The `activities.subcategory` an instrument's picker row is keyed by.
+ * Composable instruments use the slug as-is; the other three families are
+ * registered under a prefix (their create flows have done this since they
+ * existed, and StepDispatcher/VasStepWrapper resolve them by that prefixed
+ * value), so a rename that forgot it would silently update no picker row.
+ */
+export function pickerSubcategory(kind, slug) {
+  return `${PICKER_PREFIX[kind] ?? ''}${slug}`
+}
+
+/**
+ * The column that holds an instrument's name. Three of the four tables call it
+ * `label`; `vas_packages` has called its NOT NULL column `name` since it was
+ * created. Writing the wrong one is a silent no-op on a table where every
+ * column is nullable, so it is derived here rather than typed at each call.
+ */
+export function nameColumn(kind) {
+  return kind === 'vas_pkg' ? 'name' : 'label'
+}
+
+/**
+ * What the library and picker should call a row, whatever it carries.
+ *
+ * The fallback chain is why an un-named instrument still reads exactly as it
+ * did before its table grew a name column: no migration backfilled one, so most
+ * rows are still NULL and fall through to the question they have always shown.
+ */
 export function instrumentDisplayName(row) {
-  const name = (row?.label ?? '').trim()
-  if (name) return name
-  return (row?.prompt ?? '').trim() || row?.slug || 'Untitled'
+  const named = (row?.label ?? row?.name ?? '').trim()
+  if (named) return named
+  const asked = (row?.prompt ?? row?.question ?? '').trim()
+  return asked || row?.slug || 'Untitled'
 }
 
 /** A name that can be saved: non-empty, and actually different. */

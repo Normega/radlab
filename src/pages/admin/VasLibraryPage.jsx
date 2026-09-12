@@ -4,6 +4,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import VasRenderer from '../../components/vas/VasRenderer'
 import { SliderPreview } from './SliderCreatePage'
+import { instrumentDisplayName } from '../../lib/instrumentRename'
+import RenameInstrumentButton from '../../components/admin/RenameInstrumentButton'
 
 // ── Data hooks ────────────────────────────────────────────────────────────────
 
@@ -234,6 +236,7 @@ function ScaleRow({ scale, packages, onPreview }) {
   return (
     <div style={S.row}>
       <div style={S.rowMain}>
+        <span style={S.rowTitle}>{instrumentDisplayName(scale)}</span>
         <span style={S.chip}>{scale.slug}</span>
         <span style={S.badge}>{scale.scale_type}</span>
       </div>
@@ -242,6 +245,12 @@ function ScaleRow({ scale, packages, onPreview }) {
         <span style={S.metaText}>{date}</span>
         <div style={S.rowActions}>
           <button style={S.previewBtn} onClick={onPreview}>▶ Preview</button>
+          <RenameInstrumentButton
+            row={scale}
+            cfg={{ kind: 'vas', table: 'vas_scales', typeTitle: 'VAS' }}
+            buttonStyle={S.previewBtn}
+            onRenamed={() => qc.invalidateQueries({ queryKey: ['vas-scales'] })}
+          />
           {usedInPkg ? (
             <span style={S.lockedMsg}>Used in package</span>
           ) : confirming ? (
@@ -290,6 +299,7 @@ function PackageRow({ pkg, scales, onPreview }) {
   return (
     <div style={S.row}>
       <div style={S.rowMain}>
+        <span style={S.rowTitle}>{instrumentDisplayName(pkg)}</span>
         <span style={S.chip}>{pkg.slug}</span>
         <span style={S.badge}>{pkgScales.length} scale{pkgScales.length !== 1 ? 's' : ''}</span>
       </div>
@@ -302,6 +312,12 @@ function PackageRow({ pkg, scales, onPreview }) {
         <span style={S.metaText}>{date}</span>
         <div style={S.rowActions}>
           <button style={S.previewBtn} onClick={onPreview}>▶ Preview</button>
+          <RenameInstrumentButton
+            row={pkg}
+            cfg={{ kind: 'vas_pkg', table: 'vas_packages', typeTitle: 'VAS Bundle' }}
+            buttonStyle={S.previewBtn}
+            onRenamed={() => qc.invalidateQueries({ queryKey: ['vas-packages'] })}
+          />
           {confirming ? (
             <>
               <span style={S.confirmMsg}>Delete package?</span>
@@ -344,6 +360,7 @@ function SliderRow({ slider, onPreview }) {
   return (
     <div style={S.row}>
       <div style={S.rowMain}>
+        <span style={S.rowTitle}>{instrumentDisplayName(slider)}</span>
         <span style={S.chip}>{slider.slug}</span>
         <span style={S.badge}>{slider.min}–{slider.max}</span>
       </div>
@@ -355,6 +372,12 @@ function SliderRow({ slider, onPreview }) {
         <span style={S.metaText}>{date}</span>
         <div style={S.rowActions}>
           <button style={S.previewBtn} onClick={onPreview}>▶ Preview</button>
+          <RenameInstrumentButton
+            row={slider}
+            cfg={{ kind: 'slider', table: 'slider_scales', typeTitle: 'Slider' }}
+            buttonStyle={S.previewBtn}
+            onRenamed={() => qc.invalidateQueries({ queryKey: ['slider-scales'] })}
+          />
           {confirming ? (
             <>
               <span style={S.confirmMsg}>Delete slider?</span>
@@ -421,7 +444,8 @@ const S = {
   table:         { background: '#fff', border: '1px solid var(--bd)', borderRadius: 12, overflow: 'hidden' },
 
   row:      { padding: '14px 18px', borderBottom: '1px solid var(--bd)', display: 'flex', flexDirection: 'column', gap: 6 },
-  rowMain:  { display: 'flex', alignItems: 'center', gap: 8 },
+  rowMain:  { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
+  rowTitle: { fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 15, fontWeight: 600, color: 'var(--tx)' },
   rowQuestion: { fontSize: 14, color: 'var(--tx2)', margin: 0, fontFamily: '"DM Sans",system-ui,sans-serif' },
   rowMeta:  { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   rowActions: { display: 'flex', alignItems: 'center', gap: 8 },
