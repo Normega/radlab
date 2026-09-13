@@ -86,6 +86,7 @@ const SidelongPreview   = lazy(() => import('./pages/dev/SidelongPreview'))
 const Keynote   = lazy(() => import('./pages/keynote/Keynote'))
 const ToniJuly2026 = lazy(() => import('./pages/toni-july-2026/ToniJuly2026'))
 const AdobeAug2026 = lazy(() => import('./pages/adobe-aug-2026/AdobeAug2026'))
+const Cuny2026 = lazy(() => import('./pages/cuny-2026/Cuny2026'))
 const Talks     = lazy(() => import('./pages/talks/Talks'))
 
 // Academic partition (src/academic/) — Lecture Lounge lives here, the Field
@@ -689,6 +690,8 @@ export default function App() {
             <Route path="/toni-july-2026" element={<ToniJuly2026 />} />
             {/* Adobe L&D deck — sense foraging for growth, with two embedded room exercises */}
             <Route path="/adobe-aug-2026" element={<AdobeAug2026 />} />
+            {/* CUNY deck — imported from PowerPoint as pre-rendered click-step images */}
+            <Route path="/cuny-2026" element={<Cuny2026 />} />
           </Route>
 
           {/*
