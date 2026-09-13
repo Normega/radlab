@@ -71,8 +71,14 @@ async function addStudent(n) {
 // writes is not what a room does, and would measure a thundering herd that
 // never happens.
 async function respond(client, row) {
-  if (responded.has(row.id)) return
-  responded.add(row.id)
+  // Key on the OPENING, not the check-in: the ramp rotates through a small
+  // set of positions, so a check-in used at level 2 is reused at level 5.
+  // Keyed on id alone, every worker had already "responded" to it and the
+  // top levels silently produced zero writes -- the exact levels the test
+  // exists to measure (found live, 2026-09-09).
+  const fire = `${row.id}:${row.opened_at ?? ''}`
+  if (responded.has(fire)) return
+  responded.add(fire)
   await sleep(3000 + Math.random() * 25000)
 
   const activities = row?.config?.activities ?? []
