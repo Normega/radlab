@@ -183,6 +183,8 @@ export default function CourseHome({ superAdmin }) {
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
           {fgSession && <Link to={courseSubPath(code, 'chapters')} style={S.staffBtn}>Chapters by lecture</Link>}
           {mainEmail && cls && <Link to={`${loungePath(code)}/slides`} style={S.staffBtn}>Lecture slides</Link>}
+          {mainEmail && cls && <Link to={`${loungePath(code)}/questions`} style={S.staffBtn}>Questions of the week</Link>}
+          {mainEmail && cls && <Link to={`${loungePath(code)}/quizzes`} style={S.staffBtn}>Weekly quizzes</Link>}
           {fgSession && feats.gaps && <Link to={courseSubPath(code, 'gaps')} style={S.staffBtn}>Gap board</Link>}
           {fgSession && <Link to={courseSubPath(code, 'whats-new')} style={S.staffBtn}>What's new</Link>}
         </div>

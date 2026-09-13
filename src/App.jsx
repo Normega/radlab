@@ -95,6 +95,7 @@ const Talks     = lazy(() => import('./pages/talks/Talks'))
 const ClassRoom        = lazy(() => import('./academic/lecture-lounge/ClassRoom'))
 const WeeklyWall       = lazy(() => import('./academic/lecture-lounge/WeeklyWall'))
 const WeeklyQuiz       = lazy(() => import('./academic/lecture-lounge/WeeklyQuiz'))
+const WeeklyArchive    = lazy(() => import('./academic/lecture-lounge/WeeklyArchive'))
 const ClassVerifyEmail = lazy(() => import('./academic/lecture-lounge/ClassVerifyEmail'))
 const ClassConfirmSignup = lazy(() => import('./academic/lecture-lounge/ClassConfirmSignup'))
 const ClassConsole     = lazy(() => import('./academic/lecture-lounge/ClassConsole'))
@@ -741,6 +742,19 @@ export default function App() {
             <Route path="/academic/:courseCode/lounge/quiz/:quizId" element={
               <AuthRoute session={session}>
                 <WeeklyQuiz session={session} />
+              </AuthRoute>
+            } />
+            {/* The archives. Both lounge cards show one current item; these
+                are where a student finds the weeks they missed, which the
+                syllabus's grace week and 75% late tier promise them. */}
+            <Route path="/academic/:courseCode/lounge/questions" element={
+              <AuthRoute session={session}>
+                <WeeklyArchive session={session} mode="wall" />
+              </AuthRoute>
+            } />
+            <Route path="/academic/:courseCode/lounge/quizzes" element={
+              <AuthRoute session={session}>
+                <WeeklyArchive session={session} mode="quiz" />
               </AuthRoute>
             } />
             {/* Discussion boards: student threads, staff-only answers (RLS
