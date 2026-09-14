@@ -70,11 +70,15 @@ with `position` giving the in-lecture order. The PSY240 rhythm, which new classe
 
 `config` carries `{activities: [...], prompt_text}`; the open-ended question in `prompt_text`
 should match the question printed on the deck's corresponding slide. PSY309 (2026-09-07 on)
-numbers positions in deck order instead and, since 2026-09-14, seeds **no
-`auto_close_seconds`** — the instructor closes by hand — and no standing question-box row:
+numbers positions in deck order instead and, since 2026-09-14, seeds `auto_close_seconds`
+**only on the closer** (20 min — it hangs open as the room empties and submissions cut off
+server-side even if no console is there to flip the status; everything else the instructor
+closes by hand) and no standing question-box row:
 in-class anonymous questions ride the closer check-in's `question_box`, out-of-class ones the
 weekly QotW wall (`kind='weekly'`, which the remote's live queue excludes, so it stays open all
-week without blocking live check-ins).
+week without blocking live check-ins). A `prompt_text` on a check-in **without** a `prompt`
+activity renders as the question box's intro line (and labels the console card) — the closers
+use it for the "next week: …" sign-off.
 
 ### Slide decks — `public/<course>/L<n>.html`
 Static HTML, deliberately not React (website.md §29). One `<section>` per slide;
