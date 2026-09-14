@@ -213,6 +213,9 @@ const BUILT_COMPONENTS = [
   ['CredentialsBox',         'Login and signup form container'],
   ['NavigationIcon',         'Close · Back'],
   ['OnboardingNavigation',   'OnlyL · OnlyR · BothButtons'],
+  ['GameCard',               'Default · Hover · HoverGuest · Locked — games grid + About carousel (2026-09-14)'],
+  ['EditableName',           'Closed · Open — Ripple name and display name (2026-09-14)'],
+  ['LongRow',                'Value left · mono category right — Account Details, Progress Tracker (2026-09-14)'],
 ]
 
 // Designed in Figma, with no shared primitive in src/components/ui/ — each live
@@ -227,7 +230,6 @@ const UNBUILT_COMPONENTS = [
   ['Dropdown',        'No shared select anywhere in the app'],
   ['Question',        'SingleSelect · Scale — onboarding demographics'],
   ['InfoBox / InfoCard / BenefitCard / OnboardingInfo', 'Marketing and onboarding content cards'],
-  ['GameCard / GameCard(PlayNow) / GamesCarousel / GameImage', 'Games catalog surfaces'],
   ['RADLabLogo',      'Ships as an SVG asset, not a component'],
   ['Icon',            'Pattern · Pencil · Clock'],
 ]

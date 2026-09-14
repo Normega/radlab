@@ -120,7 +120,7 @@ const S = {
     transition: 'box-shadow 0.15s ease, transform 0.15s ease',
   },
   cardHover: {
-    boxShadow: '0 6px 20px rgba(240,104,164,0.14)',
+    boxShadow: 'var(--sh-hover)',
     transform: 'translateY(-2px)',
   },
 
@@ -149,14 +149,13 @@ const S = {
   hoverVeil: {
     position: 'absolute', inset: 0, display: 'flex',
     alignItems: 'center', justifyContent: 'center',
-    background: 'rgba(252,240,245,0.7)',
+    background: 'var(--ov-wash)',
     transition: 'opacity 0.15s ease', pointerEvents: 'none',
   },
   hoverPill: {
     fontFamily: SANS, fontWeight: 600, fontSize: 16,
     padding: '10px 20px', borderRadius: 24,
     background: 'var(--pk)', color: '#fff',
-    boxShadow: '0 4px 14px rgba(240,104,164,0.35)',
   },
 
   lockedBody: { display: 'flex', flexDirection: 'column', gap: 10, opacity: 0.5 },
@@ -164,7 +163,7 @@ const S = {
     position: 'absolute', inset: 0,
     display: 'flex', flexDirection: 'column',
     alignItems: 'center', justifyContent: 'center', gap: 12,
-    background: 'rgba(171,173,176,0.55)',
+    background: 'var(--ov-scrim)',
   },
   lockText: {
     fontFamily: MONO, fontSize: 20, letterSpacing: 0.5,
