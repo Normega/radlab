@@ -45,7 +45,7 @@ function PromptTap({ promptText, onSubmit }) {
   )
 }
 
-function QuestionBoxTap({ checkinId, userId, onSubmit }) {
+function QuestionBoxTap({ checkinId, userId, intro, onSubmit }) {
   const [value, setValue] = useState('')
   const [submitting, setSubmitting] = useState(false)
   async function handleSubmit() {
@@ -60,6 +60,7 @@ function QuestionBoxTap({ checkinId, userId, onSubmit }) {
     <div style={S.stepWrap}>
       <p style={S.eyebrow}>Question box</p>
       <h2 style={S.title}>Ask the instructor anything — anonymous, always</h2>
+      {intro && <p style={S.qbIntro}>{intro}</p>}
       <textarea
         value={value} onChange={(e) => setValue(e.target.value)}
         style={S.textarea} rows={4} placeholder="Optional — leave blank to skip"
@@ -173,7 +174,10 @@ export default function CheckinRunner({ checkinId, config, session, onComplete }
     case 'mood':         return <MoodTap onSubmit={handleStepSubmit} />
     case 'pacing':        return <PacingTap onSubmit={handleStepSubmit} />
     case 'prompt':         return <PromptTap promptText={config?.prompt_text} onSubmit={handleStepSubmit} />
-    case 'question_box':  return <QuestionBoxTap checkinId={checkinId} userId={session.user.id} onSubmit={handleStepSubmit} />
+    // prompt_text doubles as the question box's intro line when there is no
+    // prompt step to claim it (the closers) — with a prompt in the sequence
+    // it already appeared one step earlier, so repeating it would be noise.
+    case 'question_box':  return <QuestionBoxTap checkinId={checkinId} userId={session.user.id} intro={activities.includes('prompt') ? null : config?.prompt_text} onSubmit={handleStepSubmit} />
     case 'quiz':           return <QuizTap items={config?.quiz_items ?? []} onSubmit={handleStepSubmit} />
     default:
       return null // handled by the effect above
@@ -184,6 +188,7 @@ const S = {
   stepWrap: { display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '24px 20px', maxWidth: 380, margin: '0 auto' },
   eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)', marginBottom: 6 },
   title: { fontFamily: SERIF, fontSize: 22, color: 'var(--tx)', marginBottom: 20 },
+  qbIntro: { fontSize: 14.5, color: 'var(--tx2)', lineHeight: 1.5, margin: '-8px 0 16px', maxWidth: 340 },
   hint: { fontSize: 14, color: 'var(--tx3)' },
   errorText: { fontSize: 14, color: '#c04a4a', marginBottom: 12 },
   textarea: {

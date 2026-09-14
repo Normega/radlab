@@ -394,6 +394,12 @@ export default function ClassRemote({ superAdmin }) {
                   <span style={S.statusBadge(c.status)}>{c.status.replace('_', ' ')}</span>
                 </div>
 
+                {/* The card's identity mid-lecture is its question, not its
+                    activity types — without this the instructor is matching
+                    "#10 Prompt" against a memory of the run of show (Norm,
+                    2026-09-14). */}
+                {c.config?.prompt_text && <p style={S.promptText}>{c.config.prompt_text}</p>}
+
                 {isOpen && (
                   <div style={S.liveRow}>
                     <span style={S.counter}>{responseCounts[c.id] ?? 0} responded</span>
@@ -535,6 +541,7 @@ const S = {
   card: { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 16, padding: '16px 18px', marginBottom: 12 },
   cardHeader: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, flexWrap: 'wrap' },
   pos: { fontFamily: MONO, fontSize: 12, color: 'var(--tx3)' },
+  promptText: { fontSize: 13.5, color: 'var(--tx2)', lineHeight: 1.5, margin: '0 0 10px', whiteSpace: 'pre-wrap' },
   activities: { flex: 1, fontSize: 15, color: 'var(--tx)', fontWeight: 600 },
   statusBadge: (status) => ({
     fontFamily: MONO, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, padding: '3px 8px', borderRadius: 6,

@@ -194,11 +194,16 @@ Deno.serve(async (req) => {
           console.error('createUser failed:', createErr.message)
           return json({ error: 'unexpected' }, 500)
         }
-        const { data: { users }, error: listErr } = await admin.auth.admin.listUsers()
-        if (listErr) return json({ error: 'unexpected' }, 500)
-        const found = users.find(u => u.email === authEmail)
-        if (!found) return json({ error: 'unexpected' }, 500)
-        participantId = found.id
+        // Direct lookup, not listUsers(): that returns one page of 50 of ~850
+        // accounts, so a returning student's account was "not found" and every
+        // confirmation died here (Dana, 2026-09-10) — see
+        // 20260911_participant_auth_lookup.sql.
+        const { data: foundId, error: lookupErr } = await admin.rpc('auth_user_id_for_email', { p_email: authEmail })
+        if (lookupErr || !foundId) {
+          console.error('existing account lookup failed:', lookupErr?.message ?? 'no account for address')
+          return json({ error: 'unexpected' }, 500)
+        }
+        participantId = foundId as string
       } else {
         participantId = created.user.id
       }
@@ -221,6 +226,11 @@ Deno.serve(async (req) => {
           contact_email_set_at: new Date().toISOString(),
           student_number:       claim.student_number,
           consent_date:         claim.consented_at,
+          // Which consent: 'credit_only' keeps this participant out of every
+          // research export (20260911_credit_only_consent.sql). The re-signup
+          // branch above deliberately does not touch it — an existing
+          // enrollment keeps the answer it was created with.
+          consent_scope:        claim.consent_scope ?? null,
         })
         .select('id')
         .single()

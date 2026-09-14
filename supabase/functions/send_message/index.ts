@@ -91,6 +91,15 @@ Deno.serve(async (req) => {
       return json({ error: 'Schedule row not found' }, 400)
     }
 
+    // A session waiting for its calendar date, or one whose date passed before
+    // the participant enrolled, is never sent — whoever asks. The scheduler
+    // never selects these rows; this is the backstop for any other caller,
+    // since the rule is that an undated placeholder must not fire until a
+    // person sets its date (20260911_fixed_date_timepoints.sql).
+    if (row.status === 'awaiting_date' || row.status === 'skipped') {
+      return json({ error: `Schedule row is ${row.status}; not sendable` }, 409)
+    }
+
     // Link expiry from the compiled session slot. The label rides along for the
     // final notice, which names the session it's about ("your Midpoint
     // Assessment") — the same source renderTerminationEmail names it by.
@@ -124,11 +133,17 @@ Deno.serve(async (req) => {
     // schedule. Bounded by the protocol length (~30 rows), so it is ranked here
     // rather than pushed into a filter the ordering would have to be duplicated
     // in.
+    //
+    // Rows that were never handed to the participant do not take a slot:
+    // 'awaiting_date' has no date yet (and a null date sorts FIRST, which
+    // would push every number up by one), and 'skipped' is a calendar date
+    // that had passed before they enrolled (20260911_fixed_date_timepoints).
     const { data: ownRows } = await db
       .from('participant_schedule')
       .select('id, scheduled_date, send_time')
       .eq('participant_id', row.participant_id)
       .eq('study_id', row.study_id)
+      .not('status', 'in', '(awaiting_date,skipped)')
 
     const { data: allSessions } = await db
       .from('study_sessions')

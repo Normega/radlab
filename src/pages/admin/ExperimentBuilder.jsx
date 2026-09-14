@@ -321,7 +321,48 @@ function EditPanel({ nodeId, graph, sessionTemplates, isLocked, onChange, onRemo
 
       {node.type === 'timepoint' && (
         <>
-          {field('Day offset (0 = Day 1)',
+          {/* The entry timepoint IS enrolment, so it is always relative. A
+              later timepoint can be pinned to one calendar date for everyone
+              (a course's grade release), and that date can be left to be
+              determined: its sessions wait, unsent, until someone sets it on
+              the study page — which also works after participants enrol. */}
+          {!isEntry && field('Timing',
+            <select
+              style={P.input}
+              value={node.timing === 'fixed' ? 'fixed' : 'relative'}
+              disabled={isLocked}
+              onChange={e => onChange(nodeId, e.target.value === 'fixed'
+                ? { timing: 'fixed', fixed_date: node.fixed_date ?? null }
+                : { timing: 'relative', fixed_date: null })}
+            >
+              <option value="relative">Days after the participant enrols</option>
+              <option value="fixed">A calendar date (same for everyone)</option>
+            </select>
+          )}
+          {!isEntry && node.timing === 'fixed' && field('Calendar date',
+            <>
+              <input
+                type="date" style={P.input}
+                value={node.fixed_date ?? ''}
+                disabled={isLocked || node.fixed_date == null}
+                onChange={e => onChange(nodeId, { fixed_date: e.target.value || null })}
+              />
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6, fontSize: 13 }}>
+                <input
+                  type="checkbox"
+                  checked={node.fixed_date == null}
+                  disabled={isLocked}
+                  onChange={e => onChange(nodeId, {
+                    fixed_date: e.target.checked ? null : new Date().toLocaleDateString('en-CA'),
+                  })}
+                />
+                To be determined
+              </label>
+            </>
+          )}
+          {field(node.timing === 'fixed' && !isEntry
+            ? 'Design day (0 = Day 1) — orders sessions and names data columns'
+            : 'Day offset (0 = Day 1)',
             <input
               type="number" min="0" style={P.input}
               value={node.day_offset ?? 0}

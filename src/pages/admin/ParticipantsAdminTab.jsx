@@ -34,8 +34,13 @@ function useParticipantData() {
   })
 }
 
-function summarizeSchedule(rows) {
+function summarizeSchedule(allRows) {
+  // 'skipped' = a calendar date that passed before this person enrolled; never
+  // offered, so not counted. 'awaiting_date' is still to come but has no date,
+  // so it is reported on its own rather than as the current session.
+  const rows      = allRows.filter(r => r.status !== 'skipped')
   const total     = rows.length
+  const awaiting  = rows.filter(r => r.status === 'awaiting_date').length
   const completed = rows.filter(r => r.status === 'completed').length
   const missed    = rows.filter(r => r.status === 'missed').length
   const blocked   = rows.filter(r => r.status === 'blocked').length
@@ -43,7 +48,7 @@ function summarizeSchedule(rows) {
     .filter(r => ACTIONABLE.has(r.status))
     .sort((a, b) => (a.scheduled_date ?? '').localeCompare(b.scheduled_date ?? '') || (a.study_day ?? 0) - (b.study_day ?? 0))
   const current = actionable[0] ?? null
-  return { total, completed, missed, blocked, current }
+  return { total, completed, missed, blocked, awaiting, current }
 }
 
 export default function ParticipantsAdminTab() {
@@ -153,7 +158,7 @@ export default function ParticipantsAdminTab() {
                               </span>
                             ) : (
                               <span style={{ ...S.mono, color: p.total ? '#3b6d11' : 'var(--tx3)' }}>
-                                {p.total ? 'all sessions resolved' : 'no schedule'}
+                                {p.awaiting ? `${p.awaiting} waiting for a date` : p.total ? 'all sessions resolved' : 'no schedule'}
                               </span>
                             )}
                           </td>

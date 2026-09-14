@@ -6,8 +6,14 @@
 // study-signup-verify, when the emailed token comes back — so a typo costs one
 // dead request row rather than a ghost account with a materialised schedule.
 //
-// POST body: { study_id, email, student_number?, consented }
+// POST body: { study_id, email, student_number, consented, consent_scope? }
+//   student_number is required unless the study has turned
+//   require_student_number off.
 // Returns:   { ok: true } | { error }
+//
+// consent_scope is 'research' (the default when absent) or 'credit_only' — the
+// latter only for a study that offers it (studies.allow_credit_only_consent;
+// see 20260911_credit_only_consent.sql).
 //
 // The token is NEVER in the response. If it were, anything that could POST here
 // could "verify" an address it does not control, which is the whole point of
@@ -72,7 +78,7 @@ Deno.serve(async (req) => {
   if (req.method !== 'POST')    return json({ error: 'Method not allowed.' }, 405)
 
   try {
-    const { study_id, email, student_number, consented } = await req.json()
+    const { study_id, email, student_number, consented, consent_scope } = await req.json()
 
     if (!study_id || !email) {
       return json({ error: 'Enter your U of T email address.' }, 400)
@@ -103,6 +109,22 @@ Deno.serve(async (req) => {
       return json({ error: 'Please read and agree to the consent form first.' }, 400)
     }
 
+    //    WHICH consent travels with the timestamp (2026-09-11, CHM135). A
+    //    credit-only participant does every session but is left out of every
+    //    research export, so the answer is checked here, not trusted from the
+    //    page: a study that does not offer the choice must never collect it,
+    //    or someone would silently vanish from a dataset whose protocol has no
+    //    such exclusion. Absent means 'research' — what consent always meant.
+    const scope = consent_scope ?? 'research'
+    if (info.consent_required) {
+      if (scope !== 'research' && scope !== 'credit_only') {
+        return json({ error: 'Please choose one of the consent options.' }, 400)
+      }
+      if (scope === 'credit_only' && info.allow_credit_only_consent !== true) {
+        return json({ error: 'This study does not offer that consent option.' }, 400)
+      }
+    }
+
     // 3. Address validation and normalisation both go through the DATABASE
     //    functions rather than a second copy of the rule here. The academic
     //    side keeps the same regex in three places and they have to be kept in
@@ -116,6 +138,28 @@ Deno.serve(async (req) => {
       return json({
         error: 'Use your U of T email address — it should end in utoronto.ca or mail.utoronto.ca.',
       }, 400)
+    }
+
+    //    The student number, when the study requires it (the default since
+    //    20260912_require_student_number.sql). A course study credits by it, so
+    //    a sign-up without one is refused rather than stored: Norm, 2026-09-12,
+    //    "or else it won't be possible to assign credit". Checked HERE, before
+    //    the cooldown and before supersede_signup_requests below — an invalid
+    //    attempt must never expire a valid request already in the inbox. The
+    //    format rule is the database's (normalize_student_number), and a trigger
+    //    enforces it again on the insert, so this copy cannot drift from it.
+    let studentNumber: string | null = student_number ? String(student_number).trim() : null
+    if (info.require_student_number === true) {
+      const { data: cleaned, error: snErr } = await admin
+        .rpc('normalize_student_number', { p_value: student_number ?? null })
+      if (snErr) {
+        console.error('normalize_student_number failed:', snErr.message)
+        return json({ error: 'Could not start your sign-up. Please try again.' }, 500)
+      }
+      if (!cleaned) {
+        return json({ error: 'Enter your U of T student number — 9 or 10 digits, as on your TCard.' }, 400)
+      }
+      studentNumber = cleaned as string
     }
 
     // 4. Cooldown, per ADDRESS: a live unconsumed request means a link is
@@ -186,9 +230,10 @@ Deno.serve(async (req) => {
         study_id,
         email:           String(email).trim(),
         email_match_key: matchKey,
-        student_number:  student_number ? String(student_number).trim() : null,
+        student_number:  studentNumber,
         expires_at:      expiresAt,
         consented_at:    info.consent_required ? new Date().toISOString() : null,
+        consent_scope:   info.consent_required ? scope : null,
         ip_hash:         ipHash,
       })
       .select('id, token')
