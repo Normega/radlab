@@ -4,7 +4,8 @@ import { supabase } from '../lib/supabase'
 import Nav from '../components/Nav'
 import SiteFooter from '../components/SiteFooter'
 import EyebrowLabel from '../components/ui/EyebrowLabel'
-import PrimaryCTA from '../components/ui/PrimaryCTA'
+import EditableName from '../components/ui/EditableName'
+import LongRow from '../components/ui/LongRow'
 import RippleAvatar from '../ripple/RippleAvatar'
 import { useAvatarConfig } from '../hooks/useAvatarConfig'
 
@@ -37,9 +38,6 @@ export default function MyRipplePage({ session }) {
 
   const [ripple,       setRipple]       = useState(null)
   const [points,       setPoints]       = useState(null)
-  const [editing,      setEditing]      = useState(false)
-  const [nameInput,    setNameInput]    = useState('')
-  const [saving,       setSaving]       = useState(false)
   const [saveError,    setSaveError]    = useState(null)
 
   useEffect(() => {
@@ -74,21 +72,18 @@ export default function MyRipplePage({ session }) {
   // plain .update().eq('user_id', …) matches zero rows for anyone without a
   // `ripples` row (180 of 186 profiles had none when this was found on
   // 2026-07-30) and reports success anyway.
-  async function saveName() {
-    const name = nameInput.trim()
-    if (!name || name === ripple?.name) { setEditing(false); return }
-    setSaving(true)
+  async function saveName(name) {
+    if (!name || name === ripple?.name) return true
     const { error } = await supabase.from('ripples')
       .upsert({ user_id: userId, name }, { onConflict: 'user_id' })
     if (error) {
       console.error('ripples upsert:', error)
       setSaveError('Could not save that — please try again.')
-    } else {
-      setSaveError(null)
-      setRipple(r => ({ ...r, name }))
-      setEditing(false)
+      return false
     }
-    setSaving(false)
+    setSaveError(null)
+    setRipple(r => ({ ...r, name }))
+    return true
   }
 
   const skinColor = avatarData?.skin_color || '#FDBCB4'
@@ -113,31 +108,19 @@ export default function MyRipplePage({ session }) {
             size={160}
           />
           <div style={S.portraitSide}>
-            {editing ? (
-              <div style={S.nameRow}>
-                <input
-                  autoFocus
-                  value={nameInput}
-                  onChange={e => setNameInput(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter') saveName(); if (e.key === 'Escape') setEditing(false) }}
-                  style={S.nameInput}
-                  aria-label="Ripple name"
-                />
-                <button onClick={saveName} disabled={saving} style={S.btnSmall}>{saving ? '…' : 'Save'}</button>
-                <button onClick={() => setEditing(false)} style={S.btnGhost}>Cancel</button>
-              </div>
+            {/* Shared EditableName (Sept 14 handoff) — same control as the
+                display-name row on /account. Ripple-name type per the Figma
+                My Ripple screen: DM Sans 600/24. */}
+            {ripple ? (
+              <EditableName
+                name={ripple?.name ?? 'Unnamed'}
+                initialInput={ripple?.name ?? ''}
+                onSave={saveName}
+                ariaLabel="Ripple name"
+                nameStyle={S.rippleName}
+              />
             ) : (
-              <div style={S.nameRow}>
-                <span style={S.rippleName}>{ripple?.name ?? (ripple === null ? '…' : 'Unnamed')}</span>
-                {ripple && (
-                  <PrimaryCTA
-                    onClick={() => { setNameInput(ripple?.name ?? ''); setEditing(true) }}
-                    style={S.btnRename}
-                  >
-                    Rename
-                  </PrimaryCTA>
-                )}
-              </div>
+              <span style={S.rippleName}>…</span>
             )}
 
             <p style={S.portraitNote}>
@@ -177,27 +160,27 @@ export default function MyRipplePage({ session }) {
             <p style={S.progressNote}>All features unlocked!</p>
           )}
 
+          {/* LongRow (Sept 14 handoff): milestone value on the left with its
+              Unlocked tag, the points category on the right in mono. */}
           <div style={S.unlockList}>
             {UNLOCK_MILESTONES.map((m, i) => {
               const unlocked = (points ?? 0) >= m.pts
               return (
-                <div
+                <LongRow
                   key={m.pts}
                   style={{
-                    ...S.unlockRow,
                     opacity: unlocked ? 1 : 0.42,
                     borderBottom: i < UNLOCK_MILESTONES.length - 1 ? '1px solid var(--bd)' : 'none',
                   }}
-                >
-                  <span style={{ fontSize: 18 }}>{m.icon}</span>
-                  <div style={S.unlockInfo}>
-                    <span style={{ ...S.unlockLabel, color: unlocked ? 'var(--tx)' : 'var(--gy)' }}>
-                      {m.label}
-                    </span>
-                    {unlocked && <span style={S.unlockedTag}>Unlocked</span>}
-                  </div>
-                  <span style={S.unlockPts}>{m.pts} pts</span>
-                </div>
+                  left={
+                    <>
+                      <span style={{ fontSize: 18 }}>{m.icon}</span>
+                      <span style={{ color: unlocked ? 'var(--tx)' : 'var(--gy)' }}>{m.label}</span>
+                      {unlocked && <span style={S.unlockedTag}>Unlocked</span>}
+                    </>
+                  }
+                  category={`${m.pts} pts`}
+                />
               )
             })}
           </div>
@@ -232,24 +215,9 @@ const S = {
   portraitSide: { flex: '1 1 260px', display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'flex-start' },
   portraitNote: { fontFamily: SANS, fontSize: 14, color: 'var(--tx2)', lineHeight: 1.55, margin: 0 },
 
-  nameRow:    { display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' },
-  rippleName: { fontFamily: SERIF, fontSize: 26, color: 'var(--tx)' },
-  nameInput: {
-    fontFamily: SANS, fontSize: 16, padding: '8px 12px', minWidth: 0, width: 180,
-    borderRadius: 8, border: '1px solid var(--bds)', background: 'var(--bgc)', color: 'var(--tx)',
-  },
-  btnSmall: {
-    fontFamily: SANS, fontWeight: 600, fontSize: 14, padding: '8px 14px', borderRadius: 24,
-    background: 'var(--pk)', color: '#fff', border: 'none', cursor: 'pointer',
-  },
-  // Formal button, not a bare text link (policy, 2026-08-13): every option in
-  // a choice pair is a real button — the non-suggested one is just grayer.
-  btnGhost: {
-    fontFamily: SANS, fontWeight: 600, fontSize: 14, color: 'var(--tx2)',
-    background: 'var(--bgc)', border: '1px solid var(--bds)', borderRadius: 24,
-    cursor: 'pointer', padding: '8px 14px',
-  },
-  btnRename: { padding: '6px 14px', fontSize: 14, borderRadius: 20 },
+  // Ripple-name type per the Figma My Ripple screen (DM Sans 600/24) —
+  // passed into the shared EditableName as its nameStyle.
+  rippleName: { fontFamily: SANS, fontWeight: 600, fontSize: 24, color: 'var(--tx)' },
   editBtn: {
     display: 'inline-block', fontFamily: SANS, fontWeight: 600, fontSize: 14,
     padding: '10px 16px', borderRadius: 24,
@@ -269,14 +237,9 @@ const S = {
   progressNote:  { fontFamily: SANS, fontSize: 14, color: 'var(--tx2)', marginTop: 10 },
 
   unlockList:  { marginTop: 24, borderTop: '1px solid var(--bd)' },
-  unlockRow:   { display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0' },
-  unlockInfo:  { flex: 1, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' },
-  unlockLabel: { fontFamily: SANS, fontSize: 14 },
   unlockedTag: {
     fontFamily: MONO, fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.06em',
     color: 'var(--pkd)', background: 'var(--bgp)', padding: '2px 8px', borderRadius: 12,
   },
-  unlockPts: { fontFamily: MONO, fontSize: 12, color: 'var(--gy)' },
-
   error: { fontFamily: SANS, fontSize: 14, color: 'var(--err-tx)', margin: 0 },
 }

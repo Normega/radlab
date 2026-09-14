@@ -3,7 +3,8 @@ import SiteFooter from '../components/SiteFooter'
 import EyebrowLabel from '../components/ui/EyebrowLabel'
 import PrimaryCTA from '../components/ui/PrimaryCTA'
 import SecondaryCTA from '../components/ui/SecondaryCTA'
-import { gameBySlug, metaRows } from '../data/games'
+import GameCard from '../components/GameCard'
+import { gameBySlug } from '../data/games'
 
 // AboutPage (Guest/User) — Onboarding Redesign v1 Phase 5 (Figma 111:147 /
 // 170:514, from Norm's frame screenshots 2026-07-17; same layout both variants,
@@ -16,19 +17,13 @@ import { gameBySlug, metaRows } from '../data/games'
 // Sections removed vs the old page (designer's notes §4.1): Latest Session
 // stat panel, Leaderboard, "Who's This For?", numbered How-it-works steps —
 // "How it works" now scrolls to the What-is-this section.
-// Game illustrations are the live SVGs (real art, not Figma screenshots).
-//
-// The carousel's three games read their title/blurb/duration/trials from
-// `src/data/games.js` (2026-07-30). They used to be hard-coded here, which is
-// how this page and the games page ended up with different Pond Watch copy and
-// three different guesses at each game's length. Only the illustration and its
-// caption are local — those are marketing art with no place in the catalog.
+// Sept 14 2026 design-system handoff: the carousel shows the SAME GameCard
+// as /games (src/components/GameCard.jsx) — the bespoke marketing
+// illustrations and captions this page carried are retired with it — and it
+// shows for GUESTS ONLY. A signed-in user has the "Play now →" CTA; the
+// designer's call is they don't also need a peek at three games.
 
-const CAROUSEL = [
-  { slug: 'first_contact', caption: 'Breath sync',   art: <ContactIllustration /> },
-  { slug: 'pond_watch',    caption: 'Duck spotted!', art: <PondIllustration /> },
-  { slug: 'ebb_flow',      caption: 'Hold on inhale', art: <EbbFlowIllustration /> },
-]
+const CAROUSEL = ['first_contact', 'pond_watch', 'ebb_flow']
 
 export default function PlatformPage({ session }) {
   const playTarget = session ? '/games' : '/signup'
@@ -58,17 +53,22 @@ export default function PlatformPage({ session }) {
         </div>
       </section>
 
-      {/* GAMES CAROUSEL — pink band, horizontal scroll (mobile-friendly swipe) */}
-      <section style={S.band}>
-        <div style={S.inner}>
-          <EyebrowLabel variant="white" style={{ marginBottom: 20 }}>A peek at the games</EyebrowLabel>
-          <div style={S.carousel} className="games-carousel">
-            {CAROUSEL.map(({ slug, caption, art }) => (
-              <GameCard key={slug} game={gameBySlug(slug)} caption={caption}>{art}</GameCard>
-            ))}
+      {/* GAMES CAROUSEL — guests only (Sept 14 handoff); pink band,
+          horizontal scroll (mobile-friendly swipe) */}
+      {!session && (
+        <section style={S.band}>
+          <div style={S.inner}>
+            <EyebrowLabel variant="white" style={{ marginBottom: 20 }}>A peek at the games</EyebrowLabel>
+            <div style={S.carousel} className="games-carousel">
+              {CAROUSEL.map(slug => (
+                <div key={slug} style={S.carouselSlot}>
+                  <GameCard game={gameBySlug(slug)} isGuest />
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* WHAT IS THIS — white band; "How it works" scroll target */}
       <section id="what" style={{ ...S.band, background: 'var(--bgc)' }}>
@@ -142,34 +142,6 @@ export default function PlatformPage({ session }) {
 
 // ─── SUB-COMPONENTS ──────────────────────────────────────────────────────────
 
-// Carousel card: info left, tint illustration panel right (Figma GameCard).
-// Fixed-ish width so the row scrolls horizontally; ~85vw cap keeps the next
-// card peeking on phones (Dev Spec §6.3).
-// Title / blurb / duration / trials come from the games catalog; the
-// illustration and its caption are marketing art that only lives here.
-function GameCard({ game, caption, children }) {
-  return (
-    <div style={S.gameCard}>
-      <div style={S.gameInfo}>
-        <h2 style={S.gameTitle}>{game.title}</h2>
-        <p style={S.gameDesc}>{game.desc}</p>
-        <div style={S.gameMetaRow}>
-          {metaRows(game).map(([label, val]) => (
-            <div key={label}>
-              <p style={S.metaLabel}>{label}</p>
-              <p style={S.metaVal}>{val}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-      <div style={S.gameArt}>
-        {children}
-        <p style={S.gameCaption}>{caption}</p>
-      </div>
-    </div>
-  )
-}
-
 function InfoMini({ title, body }) {
   return (
     <div style={S.infoMini}>
@@ -216,82 +188,6 @@ function ClockIcon() {
   )
 }
 
-// ─── GAME ILLUSTRATIONS — live art (Figma cards used these as screenshots) ───
-
-function PondIllustration() {
-  return (
-    <svg width="130" height="120" viewBox="0 0 120 115" xmlns="http://www.w3.org/2000/svg">
-      <ellipse cx="60" cy="72" rx="48" ry="33" fill="#f5e0ee" opacity="0.55"/>
-      <ellipse cx="60" cy="72" rx="48" ry="33" fill="none" stroke="#f068a4" strokeWidth="0.8" opacity="0.28"/>
-      <ellipse cx="60" cy="70" rx="17" ry="10" fill="#f068a4" opacity="0.9"/>
-      <circle  cx="74" cy="62" r="8.5" fill="#f068a4" opacity="0.95"/>
-      <path    d="M82 62 L90 60 L82 66Z" fill="#c04a82"/>
-      <circle  cx="76" cy="60" r="1.6" fill="#1c1c1e"/>
-      <path    d="M53 68 Q60 63 70 68" fill="none" stroke="#c04a82" strokeWidth="0.9" opacity="0.65"/>
-      <ellipse cx="25" cy="85" rx="8"  ry="5"  fill="#abadb0" opacity="0.2"/>
-      <line    x1="18" y1="100" x2="18" y2="50" stroke="#abadb0" strokeWidth="1.3" opacity="0.35"/>
-      <ellipse cx="18" cy="50" rx="3"  ry="8"  fill="#abadb0" opacity="0.3"/>
-    </svg>
-  )
-}
-
-function ContactIllustration() {
-  return (
-    <svg width="130" height="120" viewBox="0 0 120 115" xmlns="http://www.w3.org/2000/svg">
-      {/* Sync rings */}
-      <circle cx="60" cy="54" r="44" fill="none" stroke="#f068a4" strokeWidth="0.8" opacity="0.18"/>
-      <circle cx="60" cy="54" r="34" fill="none" stroke="#f068a4" strokeWidth="0.9" opacity="0.28"/>
-      <circle cx="60" cy="54" r="24" fill="none" stroke="#f068a4" strokeWidth="1.0" opacity="0.42"/>
-      {/* Avatar head */}
-      <ellipse cx="60" cy="54" rx="18" ry="20" fill="#f068a4" opacity="0.92"/>
-      {/* Eyes */}
-      <ellipse cx="53.5" cy="51" rx="3" ry="3.2" fill="white" opacity="0.95"/>
-      <ellipse cx="66.5" cy="51" rx="3" ry="3.2" fill="white" opacity="0.95"/>
-      <ellipse cx="53.5" cy="52" rx="1.8" ry="1.8" fill="#1c1c1e"/>
-      <ellipse cx="66.5" cy="52" rx="1.8" ry="1.8" fill="#1c1c1e"/>
-      {/* Eyelids */}
-      <path d="M 50 49 Q 53.5 46.5 57 49" fill="#f068a4" opacity="0.85"/>
-      <path d="M 63 49 Q 66.5 46.5 70 49" fill="#f068a4" opacity="0.85"/>
-      {/* Smile */}
-      <path d="M 55 61 Q 60 65 65 61" fill="none" stroke="#c04a82" strokeWidth="1.3" strokeLinecap="round"/>
-      {/* Blush */}
-      <ellipse cx="47" cy="56" rx="5" ry="3" fill="#ff8fab" opacity="0.35"/>
-      <ellipse cx="73" cy="56" rx="5" ry="3" fill="#ff8fab" opacity="0.35"/>
-      {/* Breath arc below */}
-      <path d="M 20 95 Q 40 78 60 95 Q 80 112 100 95"
-            fill="none" stroke="#f068a4" strokeWidth="1.8" strokeLinecap="round" opacity="0.55"/>
-    </svg>
-  )
-}
-
-function EbbFlowIllustration() {
-  return (
-    <svg width="130" height="120" viewBox="0 0 120 115" xmlns="http://www.w3.org/2000/svg">
-      {/* Soft background pond shape */}
-      <ellipse cx="60" cy="82" rx="50" ry="26" fill="#f5e0ee" opacity="0.55"/>
-      <ellipse cx="60" cy="82" rx="50" ry="26" fill="none" stroke="#f068a4" strokeWidth="0.8" opacity="0.28"/>
-      {/* Breath sine wave */}
-      <path d="M 10 82 Q 25 56 40 82 Q 55 108 70 82 Q 85 56 110 82"
-            fill="none" stroke="#f068a4" strokeWidth="2.2" strokeLinecap="round" opacity="0.9"/>
-      {/* Avatar face */}
-      <ellipse cx="60" cy="34" rx="20" ry="22" fill="#f068a4" opacity="0.9"/>
-      {/* Eyes — half-lidded */}
-      <ellipse cx="53" cy="32" rx="3.5" ry="3" fill="white" opacity="0.95"/>
-      <ellipse cx="67" cy="32" rx="3.5" ry="3" fill="white" opacity="0.95"/>
-      <ellipse cx="53" cy="33" rx="2" ry="2" fill="#1c1c1e"/>
-      <ellipse cx="67" cy="33" rx="2" ry="2" fill="#1c1c1e"/>
-      {/* Eyelids (half-lidded) */}
-      <path d="M 49 30 Q 53 27 57 30" fill="#f068a4" opacity="0.85"/>
-      <path d="M 63 30 Q 67 27 71 30" fill="#f068a4" opacity="0.85"/>
-      {/* Gentle smile */}
-      <path d="M 55 41 Q 60 45 65 41" fill="none" stroke="#c04a82" strokeWidth="1.3" strokeLinecap="round"/>
-      {/* Blush dots */}
-      <ellipse cx="47" cy="37" rx="5" ry="3" fill="#ff8fab" opacity="0.35"/>
-      <ellipse cx="73" cy="37" rx="5" ry="3" fill="#ff8fab" opacity="0.35"/>
-    </svg>
-  )
-}
-
 // ─── STYLES ──────────────────────────────────────────────────────────────────
 
 const MONO  = '"Space Mono", "Courier New", monospace'
@@ -318,24 +214,12 @@ const S = {
     display: 'flex', gap: 20, overflowX: 'auto', paddingBottom: 8,
     scrollSnapType: 'x proximity', WebkitOverflowScrolling: 'touch',
   },
-  gameCard: {
-    display: 'flex', flexShrink: 0, scrollSnapAlign: 'start',
-    width: 'min(480px, 85vw)',
-    background: 'var(--bgc)', border: '1px solid var(--bgp)', borderRadius: 12,
-    overflow: 'hidden',
+  // Fixed-ish slot so the row scrolls horizontally; ~85vw cap keeps the next
+  // card peeking on phones (Dev Spec §6.3).
+  carouselSlot: {
+    flexShrink: 0, scrollSnapAlign: 'start',
+    width: 'min(480px, 85vw)', display: 'flex', flexDirection: 'column',
   },
-  gameInfo:  { flex: 1, padding: '20px 22px', display: 'flex', flexDirection: 'column' },
-  gameTitle: { fontFamily: SERIF, fontWeight: 400, fontSize: 28, color: 'var(--tx)', margin: '0 0 8px' },
-  gameDesc:  { fontSize: 12, fontFamily: SANS, color: 'var(--tx2)', lineHeight: 1.5, margin: '0 0 14px', flex: 1 },
-  gameMetaRow: { display: 'flex', gap: 24, paddingTop: 12, borderTop: '1px solid var(--bd)' },
-  metaLabel: { fontFamily: MONO, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--gy)', margin: '0 0 2px' },
-  metaVal:   { fontFamily: MONO, fontSize: 12, color: 'var(--tx)', margin: 0 },
-  gameArt: {
-    width: 160, flexShrink: 0, background: 'var(--bgp)',
-    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-    gap: 6, padding: '16px 10px',
-  },
-  gameCaption: { fontFamily: MONO, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--pkd)', margin: 0, textAlign: 'center' },
 
   whatCard: {
     background: 'var(--bgc)', border: '1px solid var(--bgp)', borderRadius: 12,

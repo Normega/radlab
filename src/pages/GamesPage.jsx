@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
 import Nav from '../components/Nav'
 import SiteFooter from '../components/SiteFooter'
 import EyebrowLabel from '../components/ui/EyebrowLabel'
 import PrimaryCTA from '../components/ui/PrimaryCTA'
 import { supabase } from '../lib/supabase'
-import GameIcon from '../games/shared/GameIcon'
-import { GAMES, groupGames } from '../data/games'
+import GameCard from '../components/GameCard'
+import { groupGames } from '../data/games'
 
 // ── GamesPage ─────────────────────────────────────────────────────────────
 // Revised games page (Figma node 4047:3653). Three states in one component:
@@ -45,16 +44,19 @@ export default function GamesPage({ session }) {
 
         <div style={S.headingRow}>
           <EyebrowLabel variant="white">Games</EyebrowLabel>
+          {/* Figma "SortBy" pill (Sept 14 handoff): uppercase mono label +
+              caret in a 24px-radius pill. A styled native <select> so
+              keyboard/screen-reader behavior stays stock. */}
           <label style={S.sortWrap}>
-            <span style={S.sortLabel}>Sort by</span>
             <select
               value={sortBy}
               onChange={e => setSortBy(e.target.value)}
               style={S.sortSelect}
               aria-label="Sort games by"
             >
-              {SORTS.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
+              {SORTS.map(s => <option key={s.id} value={s.id}>Sort by {s.label}</option>)}
             </select>
+            <span style={S.sortCaret} aria-hidden="true">▾</span>
           </label>
         </div>
 
@@ -163,99 +165,9 @@ function CheckinReminder({ userId }) {
   )
 }
 
-// ── GAME CARD ─────────────────────────────────────────────────────────────
-// The whole card is the click target — the Figma replaces the old PLAY NOW
-// footer with a hover-only "Play now →". Hover is desktop-only, so the label
-// is an affordance layered on top of a card that is already a link (and
-// already keyboard-focusable) rather than the only way in.
-
-function GameCard({ game, isGuest, locked }) {
-  const [hover, setHover] = useState(false)
-
-  if (locked) return <LockedCard game={game} />
-
-  const to    = isGuest ? '/signup' : game.to
-  const label = isGuest ? 'Sign up to play →' : 'Play now →'
-
-  return (
-    <Link
-      to={to}
-      style={{ ...S.card, ...S.cardLink, ...(hover ? S.cardHover : {}) }}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      onFocus={() => setHover(true)}
-      onBlur={() => setHover(false)}
-    >
-      <CardBody game={game} />
-      <span style={{ ...S.hoverVeil, opacity: hover ? 1 : 0 }} aria-hidden="true">
-        <span style={S.hoverPill}>{label}</span>
-      </span>
-    </Link>
-  )
-}
-
-function LockedCard({ game }) {
-  return (
-    <div
-      style={{ ...S.card, ...S.cardLocked }}
-      aria-label={`${game.title} — locked. Play ${game.unlock.label} to unlock.`}
-    >
-      <CardBody game={game} />
-      <div style={S.lockVeil}>
-        <LockIcon />
-        <p style={S.lockText}>
-          Play <strong style={S.lockGame}>{game.unlock.label}</strong> to unlock
-        </p>
-      </div>
-    </div>
-  )
-}
-
-// Two columns: all the copy in the first, the icon alone in the second. The
-// icon centres against the text block rather than pinning to the top, so it
-// stays put as descriptions run long and cards in a row end up different
-// heights. `plate` stays on: the tinted disc is what makes the set read as a
-// set (see GameIcon.jsx), and gives the mark an edge against the white card.
-function CardBody({ game }) {
-  return (
-    <>
-      <span style={S.cardMain}>
-        <span style={S.badge}>{game.badge}</span>
-        <h2 style={S.gameTitle}>{game.title}</h2>
-        <p style={S.gameDesc}>{game.desc}</p>
-        <div style={S.meta}>
-          <Stat label="Duration" value={game.duration ?? 'Open-ended'} />
-          <Stat label="Trials"   value={game.trials ?? '—'} />
-        </div>
-      </span>
-      <span style={S.cardIcon}>
-        <GameIcon slug={game.slug} size={72} />
-      </span>
-    </>
-  )
-}
-
-function Stat({ label, value }) {
-  return (
-    <div style={S.stat}>
-      <span style={S.statLabel}>{label}</span>
-      <span style={S.statValue}>{value}</span>
-    </div>
-  )
-}
-
-function LockIcon() {
-  return (
-    <svg width="34" height="34" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <rect x="4" y="10" width="16" height="11" rx="3" fill="var(--pk)" />
-      <path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="var(--pk)" strokeWidth="2.2" strokeLinecap="round" />
-      <circle cx="12" cy="15" r="1.6" fill="#fff" />
-      <rect x="11.2" y="15" width="1.6" height="3" rx="0.8" fill="#fff" />
-    </svg>
-  )
-}
-
 // ── STYLES ────────────────────────────────────────────────────────────────
+// The card itself is src/components/GameCard.jsx (shared with the About-page
+// carousel — Sept 14 2026 design-system handoff).
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -288,97 +200,36 @@ const S = {
     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
     gap: 16, flexWrap: 'wrap', marginBottom: 8,
   },
-  sortWrap:  { display: 'inline-flex', alignItems: 'center', gap: 10 },
-  sortLabel: { fontFamily: MONO, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx2)' },
+  // Figma SortBy: transparent pill, mono uppercase, caret. The caret is a
+  // separate span because a native <select>'s own arrow can't be styled.
+  sortWrap: {
+    position: 'relative', display: 'inline-flex', alignItems: 'center',
+    borderRadius: 24, cursor: 'pointer',
+  },
   sortSelect: {
-    fontFamily: MONO, fontSize: 14, color: 'var(--tx)',
-    background: 'transparent', border: 'none', borderBottom: '1px solid var(--bds)',
-    padding: '4px 2px', cursor: 'pointer',
+    appearance: 'none', WebkitAppearance: 'none',
+    fontFamily: MONO, fontSize: 14, textTransform: 'uppercase', color: 'var(--tx)',
+    background: 'transparent', border: 'none', borderRadius: 24,
+    padding: '8px 30px 8px 12px', cursor: 'pointer',
+  },
+  sortCaret: {
+    position: 'absolute', right: 12, pointerEvents: 'none',
+    fontSize: 12, color: 'var(--tx)',
   },
 
-  // ── section header ──
+  // ── section header ── (Figma CategoryLabel: pink-dark mono label, gray
+  // rule, muted semibold count)
   section:     { marginTop: 28 },
   sectionHead: { display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 },
   sectionLabel: {
-    fontFamily: MONO, fontSize: 12, letterSpacing: 1.5, textTransform: 'uppercase',
-    color: 'var(--pk)', whiteSpace: 'nowrap',
+    fontFamily: MONO, fontSize: 14, letterSpacing: 1, textTransform: 'uppercase',
+    color: 'var(--pkd)', whiteSpace: 'nowrap',
   },
-  rule:         { flex: 1, height: 1, background: 'var(--bd)' },
-  sectionCount: { fontFamily: MONO, fontSize: 12, color: 'var(--gy)', whiteSpace: 'nowrap' },
+  rule:         { flex: 1, height: 1, background: 'var(--tx2)', opacity: 0.4 },
+  sectionCount: { fontFamily: SANS, fontWeight: 600, fontSize: 16, color: 'var(--gy)', whiteSpace: 'nowrap' },
 
-  // ── grid + card ──
+  // ── grid ──
   // min() clamp so a phone narrower than the 340px track gets one full-width
   // column instead of a track that overflows the viewport.
   grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 340px), 1fr))', gap: 16 },
-
-  // Row, not column: the copy column and the icon column. The hover and lock
-  // veils are position:absolute siblings, so they ignore this axis.
-  card: {
-    position: 'relative', overflow: 'hidden',
-    display: 'flex', flexDirection: 'row', alignItems: 'stretch', gap: 16,
-    padding: 24, background: 'var(--bgc)',
-    border: '1px solid var(--bd)', borderRadius: 12,
-  },
-  // minWidth:0 or a long unbroken word in a description pushes the icon column
-  // out of the card instead of wrapping.
-  cardMain: { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' },
-  cardIcon: { flexShrink: 0, display: 'flex', alignItems: 'center' },
-  cardLink: {
-    textDecoration: 'none', color: 'inherit',
-    transition: 'border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease',
-  },
-  cardHover: {
-    borderColor: 'var(--pkbs)',
-    boxShadow: '0 6px 20px rgba(240,104,164,0.14)',
-    transform: 'translateY(-2px)',
-  },
-  cardLocked: { background: 'var(--bgc)' },
-
-  badge: {
-    alignSelf: 'flex-start', fontFamily: MONO, fontSize: 12, letterSpacing: 0.5,
-    textTransform: 'uppercase', padding: '5px 10px', borderRadius: 12,
-    background: 'var(--bgp)', color: 'var(--pkd)',
-  },
-  // Heading/2 — the card-title role settled 2026-09-04. Was 24px, which the
-  // finalized guide does not carry.
-  gameTitle: { fontFamily: SERIF, fontSize: 28, color: 'var(--tx)', margin: '14px 0 8px' },
-  gameDesc:  { fontFamily: SANS, fontSize: 14, lineHeight: 1.55, color: 'var(--tx2)', flex: 1 },
-
-  meta: {
-    display: 'flex', gap: 40, marginTop: 18, paddingTop: 14,
-    borderTop: '1px solid var(--bd)',
-  },
-  stat:      { display: 'flex', flexDirection: 'column', gap: 3 },
-  statLabel: { fontFamily: MONO, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--gy)' },
-  statValue: { fontFamily: MONO, fontSize: 14, color: 'var(--tx)' },
-
-  // ── hover affordance ──
-  hoverVeil: {
-    position: 'absolute', inset: 0, display: 'flex',
-    alignItems: 'center', justifyContent: 'center',
-    background: 'rgba(252,240,245,0.82)',
-    transition: 'opacity 0.15s ease', pointerEvents: 'none',
-  },
-  hoverPill: {
-    fontFamily: SANS, fontWeight: 600, fontSize: 16,
-    padding: '10px 20px', borderRadius: 24,
-    background: 'var(--pk)', color: '#fff',
-    boxShadow: '0 4px 14px rgba(240,104,164,0.35)',
-  },
-
-  // ── locked state ──
-  // Stacked column rather than the mock's centred text, which landed on top
-  // of the description.
-  lockVeil: {
-    position: 'absolute', inset: 0,
-    display: 'flex', flexDirection: 'column',
-    alignItems: 'center', justifyContent: 'center', gap: 12,
-    background: 'rgba(240,236,238,0.88)',
-  },
-  lockText: {
-    fontFamily: MONO, fontSize: 14, letterSpacing: 0.5,
-    textTransform: 'uppercase', color: 'var(--tx2)', textAlign: 'center',
-    padding: '0 16px',
-  },
-  lockGame: { color: 'var(--pkd)', fontWeight: 700 },
 }

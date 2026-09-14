@@ -6,7 +6,8 @@ import { signOutEverywhere } from '../lib/signOutEverywhere'
 import Nav from '../components/Nav'
 import SiteFooter from '../components/SiteFooter'
 import EyebrowLabel from '../components/ui/EyebrowLabel'
-import PrimaryCTA from '../components/ui/PrimaryCTA'
+import EditableName from '../components/ui/EditableName'
+import LongRow from '../components/ui/LongRow'
 import { useDisplayName } from '../hooks/useDisplayName'
 
 // ── AccountPage (/account) ────────────────────────────────────────────────
@@ -52,9 +53,6 @@ export default function AccountPage({ session }) {
   const userId      = user?.id
   const queryClient = useQueryClient()
 
-  const [editing,   setEditing]   = useState(false)
-  const [nameInput, setNameInput] = useState('')
-  const [saving,    setSaving]    = useState(false)
   const [saveError, setSaveError] = useState(null)
 
   // `displayName` is what to render (with fallbacks); `storedName` is the raw
@@ -115,10 +113,8 @@ export default function AccountPage({ session }) {
   // UPDATE, not upsert: profiles has no INSERT policy for `authenticated` (the
   // row comes from the signup trigger), and .update() matching zero rows
   // reports success — so .select() is what proves it landed.
-  async function saveName() {
-    const name = nameInput.trim()
-    if (!name || name === storedName) { setEditing(false); return }
-    setSaving(true)
+  async function saveName(name) {
+    if (!name || name === storedName) return true
 
     const { data: rows, error: dbErr } = await supabase.from('profiles')
       .update({ display_name: name }).eq('id', userId).select('display_name')
@@ -126,8 +122,7 @@ export default function AccountPage({ session }) {
     if (dbErr || !rows?.length) {
       console.error('profiles display_name update:', dbErr ?? 'no row matched')
       setSaveError('Could not save that — please try again.')
-      setSaving(false)
-      return
+      return false
     }
 
     queryClient.invalidateQueries({ queryKey: ['display-name', userId] })
@@ -136,8 +131,7 @@ export default function AccountPage({ session }) {
     if (authErr) console.error('auth updateUser display_name seed:', authErr)
 
     setSaveError(null)
-    setEditing(false)
-    setSaving(false)
+    return true
   }
 
   const memberSince = user?.created_at
@@ -152,39 +146,28 @@ export default function AccountPage({ session }) {
         <h1 style={S.title}>Account</h1>
 
         {/* ── Account details ───────────────────────────────────── */}
+        {/* LongRow (Sept 14 handoff): the VALUE leads each row, the category
+            sits right in uppercase mono — the reverse of the old label-left
+            layout, per the designer's standardization. */}
         <div style={S.secLabel}><EyebrowLabel variant="white">Account Details</EyebrowLabel></div>
         <div style={S.card}>
-          <div style={{ ...S.row, borderBottom: '1px solid var(--bd)' }}>
-            <span style={S.rowLabel}>Display Name</span>
-            {editing ? (
-              <div style={S.editRow}>
-                <input
-                  autoFocus
-                  value={nameInput}
-                  onChange={e => setNameInput(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter') saveName(); if (e.key === 'Escape') setEditing(false) }}
-                  style={S.nameInput}
-                  maxLength={60}
-                  aria-label="Your name"
-                />
-                <button onClick={saveName} disabled={saving} style={S.btnSmall}>{saving ? '…' : 'Save'}</button>
-                <button onClick={() => setEditing(false)} style={S.btnGhost}>Cancel</button>
-              </div>
-            ) : (
-              <div style={S.editRow}>
-                <span style={S.rowVal}>{displayName}</span>
-                <PrimaryCTA
-                  onClick={() => { setNameInput(storedName ?? displayName); setEditing(true); setSaveError(null) }}
-                  style={S.btnRename}
-                >
-                  Rename
-                </PrimaryCTA>
-              </div>
-            )}
-          </div>
-          <Row label="Email"        val={user?.email} />
-          <Row label="Account type" val={roleMeta.label} />
-          <Row label="Member since" val={memberSince} last />
+          <LongRow
+            style={{ borderBottom: '1px solid var(--bd)' }}
+            left={
+              <EditableName
+                name={displayName}
+                initialInput={storedName ?? displayName}
+                onSave={saveName}
+                ariaLabel="Your name"
+              />
+            }
+            category="Display Name"
+          />
+          <LongRow left={user?.email ?? '—'}   category="Email"
+                   style={{ borderBottom: '1px solid var(--bd)' }} />
+          <LongRow left={roleMeta.label}       category="Account type"
+                   style={{ borderBottom: '1px solid var(--bd)' }} />
+          <LongRow left={memberSince}          category="Member since" />
           {saveError && <p style={S.error}>{saveError}</p>}
         </div>
 
@@ -237,15 +220,6 @@ export default function AccountPage({ session }) {
       </div>
 
       <SiteFooter session={session} />
-    </div>
-  )
-}
-
-function Row({ label, val, mono = false, last = false }) {
-  return (
-    <div style={{ ...S.row, borderBottom: last ? 'none' : '1px solid var(--bd)' }}>
-      <span style={S.rowLabel}>{label}</span>
-      <span style={{ ...S.rowVal, ...(mono ? { fontFamily: MONO } : {}) }}>{val ?? '—'}</span>
     </div>
   )
 }
@@ -479,19 +453,6 @@ const S = {
     padding: 24, display: 'flex', flexDirection: 'column', gap: 14,
   },
 
-  row:      { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, padding: '12px 0' },
-  rowLabel: { fontFamily: MONO, fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--gy)' },
-  rowVal:   { fontFamily: SANS, fontSize: 14, color: 'var(--tx)', textAlign: 'right', wordBreak: 'break-word' },
-  editRow:  { display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', justifyContent: 'flex-end' },
-
-  nameInput: {
-    fontFamily: SANS, fontSize: 16, padding: '8px 12px', minWidth: 0, width: 180,
-    borderRadius: 8, border: '1px solid var(--bds)', background: 'var(--bgc)', color: 'var(--tx)',
-  },
-  btnSmall: {
-    fontFamily: SANS, fontWeight: 600, fontSize: 14, padding: '8px 14px', borderRadius: 24,
-    background: 'var(--pk)', color: '#fff', border: 'none', cursor: 'pointer',
-  },
   // Formal button, not a bare text link (policy, 2026-08-13): every option in
   // a choice pair is a real button — the non-suggested one is just grayer.
   btnGhost: {
@@ -499,7 +460,6 @@ const S = {
     background: 'var(--bgc)', border: '1px solid var(--bds)', borderRadius: 24,
     color: 'var(--tx2)', cursor: 'pointer', padding: '8px 14px',
   },
-  btnRename: { padding: '6px 14px', fontSize: 14, borderRadius: 20 },
 
   toggleRow:   { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16 },
   toggleTitle: { fontFamily: SANS, fontWeight: 600, fontSize: 16, color: 'var(--tx)', margin: 0 },
