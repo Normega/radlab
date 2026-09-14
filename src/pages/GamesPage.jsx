@@ -230,7 +230,7 @@ const S = {
     fontFamily: MONO, fontSize: 14, letterSpacing: 1, textTransform: 'uppercase',
     color: 'var(--pkd)', whiteSpace: 'nowrap',
   },
-  rule:         { flex: 1, height: 1, background: 'var(--tx2)', opacity: 0.4 },
+  rule:         { flex: 1, height: 1, background: 'var(--tx2)', opacity: 0.25 },
   sectionCount: { fontFamily: SANS, fontWeight: 600, fontSize: 16, color: 'var(--gy)', whiteSpace: 'nowrap' },
 
   // ── grid ──
