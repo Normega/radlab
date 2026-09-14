@@ -69,7 +69,12 @@ with `position` giving the in-lecture order. The PSY240 rhythm, which new classe
 | 90 | check-out | end |
 
 `config` carries `{activities: [...], prompt_text}`; the open-ended question in `prompt_text`
-should match the question printed on the deck's corresponding slide.
+should match the question printed on the deck's corresponding slide. PSY309 (2026-09-07 on)
+numbers positions in deck order instead and, since 2026-09-14, seeds **no
+`auto_close_seconds`** — the instructor closes by hand — and no standing question-box row:
+in-class anonymous questions ride the closer check-in's `question_box`, out-of-class ones the
+weekly QotW wall (`kind='weekly'`, which the remote's live queue excludes, so it stays open all
+week without blocking live check-ins).
 
 ### Slide decks — `public/<course>/L<n>.html`
 Static HTML, deliberately not React (website.md §29). One `<section>` per slide;
