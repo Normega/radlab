@@ -176,7 +176,12 @@ const SANS  = '"DM Sans", system-ui, sans-serif'
 const S = {
   // 1024 − 2×24 gutter = a 976px content column, so the two-up grid lands on
   // the Figma's 480px card width exactly.
-  wrap:  { maxWidth: 1024, margin: '0 auto', padding: '32px 24px 72px' },
+  // width:100% is load-bearing: the page root is a flex column, and margin
+  // '0 auto' on a flex item disables cross-axis stretch — without an explicit
+  // width the wrap shrinks to fit its content, and the two-column grid
+  // collapses to one the moment the cards' intrinsic width drops (which is
+  // exactly what the Sept 14 shorter descriptions did).
+  wrap:  { width: '100%', maxWidth: 1024, margin: '0 auto', padding: '32px 24px 72px' },
   title: { fontFamily: SERIF, fontSize: 'clamp(28px, 4vw, 36px)', color: 'var(--tx)', letterSpacing: -0.5, marginBottom: 28 },
 
   // ── check-in reminder ──
