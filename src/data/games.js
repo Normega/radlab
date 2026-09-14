@@ -24,6 +24,12 @@
  * `trials: null` renders as an em dash, not "N/A" — a card should not say
  * nothing twice.
  *
+ * DESCRIPTIONS ARE CAPPED AT TWO LINES on the card (designer rule, Sept 2026
+ * design-system handoff): GameCard locks its height, so a third line would be
+ * clipped by the card's line-clamp, mid-sentence. At the card's 12px DM Sans
+ * in its ~340px text column that means roughly 100 characters. Trim, don't
+ * clip.
+ *
  * NOT IN THIS CATALOG (Norm, 2026-08-13): **Owl Barn** and **Breath Guardian**
  * were pulled back to in-development — they need more work before participants
  * meet them. Their routes in `App.jsx` are still live and their tables still
@@ -106,7 +112,7 @@ export const GAMES = [
     title: 'Kite',
     to: '/games/kite',
     badge: 'Breath shapes',
-    desc: 'No pacer — hold to breathe in, hold to breathe out, at whatever pace is yours. Eight breaths, each flown as its own kite.',
+    desc: 'No pacer — hold to breathe in, hold to breathe out, at your own pace. Eight breaths, eight kites.',
     category: 'breath',
     bucket: 'quick',
     duration: '~2 min',
@@ -117,7 +123,7 @@ export const GAMES = [
     title: 'Drift',
     to: '/games/drift',
     badge: 'Time perception · Felt duration',
-    desc: 'A tone marks an interval. A face breathes while you wait. Then you reproduce the duration from felt sense alone.',
+    desc: 'A tone marks an interval. A face breathes while you wait. Then you recreate it by feel alone.',
     category: 'attention',
     bucket: 'medium',
     duration: '~3 min',
@@ -128,7 +134,7 @@ export const GAMES = [
     title: 'Pond Watch',
     to: '/games/pond-watch',
     badge: 'Go / No-Go · Reaction time',
-    desc: "A duck appears — hit spacebar. A heron glides past — don't you dare touch it. Sounds easy. Your brain will betray you.",
+    desc: "A duck appears — hit spacebar. A heron glides past — don't you dare. Your brain will betray you.",
     category: 'attention',
     bucket: 'medium',
     duration: '~4 min',
@@ -139,7 +145,7 @@ export const GAMES = [
     title: 'Delve',
     to: '/games/delve',
     badge: 'Attention · Sense foraging',
-    desc: "An image waits behind haze. Rest your attention in one place and it slowly comes clear; what you've seen fades back.",
+    desc: 'An image waits behind haze. Rest your attention in one place and it slowly comes clear.',
     category: 'attention',
     bucket: 'open',
     duration: null,
@@ -150,7 +156,7 @@ export const GAMES = [
     title: 'Tune',
     to: '/games/tune',
     badge: 'Attention · Sense foraging',
-    desc: 'A world of sound waits in a soft haze. Rest your attention near a voice and it clarifies as the rest softens back.',
+    desc: 'A world of sound waits in a soft haze. Rest near a voice and it clarifies as the rest softens.',
     category: 'attention',
     bucket: 'open',
     duration: null,
@@ -161,7 +167,7 @@ export const GAMES = [
     title: 'Alongside',
     to: '/games/alongside',
     badge: 'Attention · Sense foraging',
-    desc: 'A creature of light drifts through a night meadow. It cannot be caught — but it can be kept company, and it knows where the good places are.',
+    desc: "A creature of light drifts through a night meadow. It can't be caught — but it can be kept company.",
     category: 'attention',
     bucket: 'open',
     duration: null,
@@ -172,7 +178,7 @@ export const GAMES = [
     title: 'Sidelong',
     to: '/games/sidelong',
     badge: 'Attention · Sense foraging',
-    desc: 'A night sky where the faint stars are never where you point. Rest your gaze and they bloom beside it — look straight at one and it goes out.',
+    desc: 'A night sky where the faint stars are never where you point — look straight at one and it goes out.',
     category: 'attention',
     bucket: 'open',
     duration: null,
