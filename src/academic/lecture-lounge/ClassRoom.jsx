@@ -214,7 +214,14 @@ export default function ClassRoom({ session }) {
         .eq('kind', 'weekly')
         .in('status', ['open', 'closed', 'results_ready'])
         .is('dismissed_at', null)
-        .order('created_at', { ascending: false })
+        // opened_at, NOT created_at: past questions stay open on purpose so
+        // students can still answer them for participation (Norm,
+        // 2026-09-14), so several are live at once and the lobby must show
+        // the CURRENT one. created_at cannot tell them apart — a term's
+        // questions are loaded in one batch and share a created_at to the
+        // millisecond, so the card would have picked an arbitrary week as
+        // soon as a second one opened.
+        .order('opened_at', { ascending: false, nullsFirst: false })
         .limit(5)
       const row = (data ?? []).find(r => r.status === 'open') ?? data?.[0]
       if (cancelled || !row) { if (!cancelled) setWeekly(null); return }
