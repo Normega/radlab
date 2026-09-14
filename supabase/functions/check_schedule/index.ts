@@ -164,8 +164,76 @@ Deno.serve(async (req) => {
       return json({ error: fetchErr.message }, 500)
     }
 
+    // 1c. Safety net: a due row that reached 'unlocked' without ever being
+    // emailed. The fetch above only looks at 'pending', so such a row is
+    // skipped on every tick and its timepoint is lost in silence. That happened
+    // on 2026-09-12: a Zerin participant re-opened their SONA link minutes
+    // after baseline, auto-enroll unlocked the NEXT morning's check-in with a
+    // 4 h link, and it expired overnight. materializeSchedule no longer unlocks
+    // a row that is not due -- that is the fix -- and this is the backstop,
+    // because either way the row is a participant's data.
+    //
+    // Deliberately narrow: only rows whose own link is gone, and only for
+    // participants who have given a contact email, i.e. who are past the
+    // consent and contact gates and already receive study mail. The ordinary
+    // 'unlocked' row is NOT this bug -- it is an entry session opened and
+    // abandoned by someone screened out or not yet consented, and they must
+    // never be emailed a fresh link.
+    //
+    // And only rows that were NEVER SENT (attempts = 0, no last_sent_at). As
+    // first deployed on 2026-09-12 the backstop lacked this, and on 2026-09-14
+    // it picked up a check-in the participant had been emailed, opened --
+    // opening a link moves its row to 'unlocked' -- and then abandoned. Once
+    // that link expired the row looked stranded. The imminent-row check below
+    // happened to suppress it, leaving it 'blocked' where it should have been
+    // 'missed'; but an abandoned 20:00 check-in has no sibling within
+    // reminder_interval_hours (the next row is 09:00), so it would have been
+    // re-emailed with a fresh link hours after its window closed. A sent row
+    // that was never completed is a miss, and step 0b already handles misses.
+    let rescuedRows: Array<{
+      id: string
+      participant_id: string
+      study_id: string
+      scheduled_date: string
+      send_time: string
+      attempts: number | null
+    }> = []
+    {
+      const { data: strandedCandidates } = await db
+        .from('participant_schedule')
+        .select('id, participant_id, study_id, scheduled_date, send_time, attempts')
+        .eq('status', 'unlocked')
+        .eq('attempts', 0)
+        .is('last_sent_at', null)
+        .lte('scheduled_date', todayStr)
+
+      const stranded = strandedCandidates ?? []
+      if (stranded.length > 0) {
+        const { data: liveLinks } = await db
+          .from('participant_links')
+          .select('schedule_id')
+          .eq('status', 'active')
+          .in('schedule_id', stranded.map((r) => r.id))
+        const hasLiveLink = new Set((liveLinks ?? []).map((l) => l.schedule_id))
+
+        const linkless = stranded.filter((r) => !hasLiveLink.has(r.id))
+        if (linkless.length > 0) {
+          const { data: contactable } = await db
+            .from('study_enrollments')
+            .select('profile_id, study_id')
+            .in('profile_id', [...new Set(linkless.map((r) => r.participant_id))])
+            .not('contact_email', 'is', null)
+          const contactSet = new Set((contactable ?? []).map((e) => `${e.profile_id}:${e.study_id}`))
+          rescuedRows = linkless.filter((r) => contactSet.has(`${r.participant_id}:${r.study_id}`))
+        }
+      }
+      if (rescuedRows.length > 0) {
+        console.warn(`check_schedule: rescuing ${rescuedRows.length} due row(s) stranded in 'unlocked' with no live link`)
+      }
+    }
+
     // 1b. Time cutoff + withdrawn filter.
-    const dueRows = (candidateRows ?? []).filter(
+    const dueRows = [...(candidateRows ?? []), ...rescuedRows].filter(
       (r) =>
         scheduleKey(r.scheduled_date, r.send_time) <= nowKey &&
         !withdrawnSet.has(`${r.participant_id}:${r.study_id}`) &&
@@ -480,12 +548,22 @@ Deno.serve(async (req) => {
       // re-walked — materializeSchedule is idempotent for schedule rows, but
       // a repeat "withdrawal detected" result would re-run
       // processAdherenceWithdrawal (and re-email) on every cron tick.
-      const byParticipantStudy = new Map<string, { statuses: string[]; minDate: string }>()
+      //
+      // minDate stands in for the enrollment date, so it is taken only over
+      // rows that are dated relative to it. Calendar-date timepoints
+      // (20260911_fixed_date_timepoints.sql) break both halves of that: an
+      // 'awaiting_date' row has no date — and one sorting first would leave
+      // minDate null, and materializeSchedule throwing on addDays(null) for
+      // that participant every tick — while a 'skipped' row carries a date
+      // from BEFORE the participant enrolled, which would drag t0 backwards
+      // and re-date everything after it.
+      const byParticipantStudy = new Map<string, { statuses: string[]; minDate: string | null }>()
       for (const r of allRows ?? []) {
         const key = `${r.participant_id}:${r.study_id}`
-        const entry = byParticipantStudy.get(key) ?? { statuses: [], minDate: r.scheduled_date }
+        const entry = byParticipantStudy.get(key) ?? { statuses: [], minDate: null }
         entry.statuses.push(r.status)
-        if (r.scheduled_date < entry.minDate) entry.minDate = r.scheduled_date
+        const datesT0 = r.scheduled_date != null && r.status !== 'skipped'
+        if (datesT0 && (entry.minDate === null || r.scheduled_date < entry.minDate)) entry.minDate = r.scheduled_date
         byParticipantStudy.set(key, entry)
       }
 
@@ -495,9 +573,12 @@ Deno.serve(async (req) => {
         // until below, so read it off the key here.
         if (inactiveSet.has(key.split(':')[1])) continue
 
-        const hasOutstanding = entry.statuses.some((s) => s === 'unlocked' || s === 'pending' || s === 'link_sent')
+        // 'awaiting_date' is outstanding: that session is still to come, so
+        // there is nothing to advance past until someone sets its date.
+        const hasOutstanding = entry.statuses.some((s) =>
+          s === 'unlocked' || s === 'pending' || s === 'link_sent' || s === 'awaiting_date')
         const hasCompleted = entry.statuses.some((s) => s === 'completed')
-        if (hasOutstanding || !hasCompleted) continue
+        if (hasOutstanding || !hasCompleted || entry.minDate === null) continue
 
         const [participantId, studyId] = key.split(':')
         const graph = graphByStudyId.get(studyId)
@@ -564,7 +645,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    return json({ processed, suppressed, deferred, failed, missed, reminded, finalNotices, advanced, withdrawn, completed: completedStudies, adherenceShortfalls })
+    return json({ processed, suppressed, deferred, failed, missed, rescued: rescuedRows.length, reminded, finalNotices, advanced, withdrawn, completed: completedStudies, adherenceShortfalls })
 
   } catch (err) {
     console.error('check_schedule unexpected error:', err)

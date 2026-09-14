@@ -75,8 +75,10 @@ export default function WellnessTipStep({
     setError(null)
     // A ref lock rather than the old `saving` flag, which two taps in one tick
     // both read as false. Released only on failure, so a failed save stays
-    // retryable; a repeat that gets past it anyway is collapsed in the database
-    // (20260910_zerin_checkin_pondwatch_submit_guard.sql).
+    // retryable. A repeat that gets past it anyway is still stored: the
+    // database keeps every row and only flags a byte-identical copy arriving
+    // within 5 s as a resubmission (CLAUDE.md data-logging rule 5,
+    // 20260911_responses_never_overwrite.sql).
     let result
     try {
       result = await runSubmit(async () => {

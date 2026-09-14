@@ -18,13 +18,45 @@ import { useState, useEffect, useRef } from 'react'
 //   - ConsentPage.jsx (route `/study/:studyId/consent`) — admin preview
 //     links and consent-only re-entry, using the app's normal global client
 //     and an already-authenticated lab/admin session.
+//
+// Credit-only consent (2026-09-11, 20260911_credit_only_consent.sql): a study with
+// studies.allow_credit_only_consent offers two answers instead of one checkbox —
+// take part in the research, or complete the sessions for course credit without
+// research use of the data. The answer goes to record_consent as p_scope, and the
+// study export leaves credit-only participants out entirely.
+const CONSENT_CHOICES = [
+  { scope: 'research',    label: 'I have read this consent form in full and agree to participate in this study.' },
+  { scope: 'credit_only', label: 'I wish to complete the surveys for course credit, but do not consent to have my data used in research.' },
+]
+
 export default function ConsentGate({ studyId, participantId, supabaseClient, onComplete, prefetched = null }) {
   const [state,   setState]   = useState(STATES.LOADING)
   const [study,   setStudy]   = useState(null)
   const [form,    setForm]    = useState(null)
-  const [agreed,  setAgreed]  = useState(false)
+  // null until answered, then 'research' | 'credit_only'.
+  const [scope,   setScope]   = useState(null)
+  const [creditOption, setCreditOption] = useState(false)
   const [error,   setError]   = useState(null)
   const bodyRef                = useRef(null)
+  const agreed = scope !== null
+
+  // Whether this study offers the credit-only answer. Its own small read, not a
+  // column on the queries below and not a field on get_session_by_token, so that
+  // if it fails for any reason — the RLS/JWT timing described in load(), or a
+  // database that predates the column — the gate falls back to the single
+  // research checkbox it always had. Consent must never be blocked by this.
+  async function loadCreditOption() {
+    try {
+      const { data, error: ce } = await supabaseClient
+        .from('studies')
+        .select('allow_credit_only_consent')
+        .eq('id', studyId)
+        .maybeSingle()
+      return !ce && data?.allow_credit_only_consent === true
+    } catch {
+      return false
+    }
+  }
 
   useEffect(() => {
     if (!participantId) return
@@ -46,6 +78,7 @@ export default function ConsentGate({ studyId, participantId, supabaseClient, on
       if (prefetched.consentDate) { setState(STATES.ALREADY_CONSENTED); return }
       setStudy({ name: prefetched.studyName ?? null })
       setForm({ html_content: prefetched.consentHtml ?? '' })
+      setCreditOption(await loadCreditOption())
       setState(STATES.READY)
       return
     }
@@ -94,6 +127,7 @@ export default function ConsentGate({ studyId, participantId, supabaseClient, on
     }
 
     setForm(formData)
+    setCreditOption(await loadCreditOption())
     setState(STATES.READY)
   }
 
@@ -101,7 +135,13 @@ export default function ConsentGate({ studyId, participantId, supabaseClient, on
     if (!agreed || !form) return
     setState(STATES.SUBMITTING)
 
-    const { error: re } = await supabaseClient.rpc('record_consent', { p_study_id: studyId })
+    // A research answer sends only p_study_id: record_consent's p_scope defaults
+    // to 'research', so this is the exact call that has always worked and it
+    // keeps working against a database that has not yet gained the parameter.
+    const args = scope === 'credit_only'
+      ? { p_study_id: studyId, p_scope: 'credit_only' }
+      : { p_study_id: studyId }
+    const { error: re } = await supabaseClient.rpc('record_consent', args)
 
     if (re) {
       setError(re.message)
@@ -144,17 +184,40 @@ export default function ConsentGate({ studyId, participantId, supabaseClient, on
         />
       </div>
 
-      <label style={S.checkRow}>
-        <input
-          type="checkbox"
-          checked={agreed}
-          onChange={e => setAgreed(e.target.checked)}
-          style={{ width: 16, height: 16, accentColor: 'var(--pk)', cursor: 'pointer', flexShrink: 0 }}
-        />
-        <span style={S.checkLabel}>
-          I have read this consent form in full and agree to participate in this study.
-        </span>
-      </label>
+      {creditOption ? (
+        // Equal-weight bordered options, deliberately: neither consent answer is
+        // presented as the suggested one.
+        <div role="radiogroup" aria-label="Your consent choice" style={S.choiceGroup}>
+          {CONSENT_CHOICES.map(c => {
+            const on = scope === c.scope
+            return (
+              <label key={c.scope} style={{ ...S.choice, ...(on ? S.choiceOn : null) }}>
+                <input
+                  type="radio"
+                  name="consent-scope"
+                  value={c.scope}
+                  checked={on}
+                  onChange={() => setScope(c.scope)}
+                  style={S.choiceRadio}
+                />
+                <span style={S.checkLabel}>{c.label}</span>
+              </label>
+            )
+          })}
+        </div>
+      ) : (
+        <label style={S.checkRow}>
+          <input
+            type="checkbox"
+            checked={agreed}
+            onChange={e => setScope(e.target.checked ? 'research' : null)}
+            style={{ width: 16, height: 16, accentColor: 'var(--pk)', cursor: 'pointer', flexShrink: 0 }}
+          />
+          <span style={S.checkLabel}>
+            I have read this consent form in full and agree to participate in this study.
+          </span>
+        </label>
+      )}
 
       {error && <p style={S.errBox}>{error}</p>}
 
@@ -216,6 +279,17 @@ const S = {
     fontSize: 14, color: 'var(--tx)', lineHeight: 1.5,
     fontFamily: '"DM Sans", system-ui, sans-serif',
   },
+
+  // The <label> wraps the radio, so the whole bordered box is the tap target.
+  choiceGroup: { display: 'grid', gap: 8 },
+  choice: {
+    display: 'flex', alignItems: 'flex-start', gap: 8,
+    cursor: 'pointer', userSelect: 'none',
+    border: '1.5px solid var(--bds)', borderRadius: 12,
+    padding: 16, background: 'var(--bgc)',
+  },
+  choiceOn:    { borderColor: 'var(--pk)', background: 'var(--pkb)' },
+  choiceRadio: { width: 16, height: 16, margin: '4px 0 0', flexShrink: 0, accentColor: 'var(--pk)', cursor: 'pointer' },
 
   btn: {
     alignSelf: 'flex-start',
