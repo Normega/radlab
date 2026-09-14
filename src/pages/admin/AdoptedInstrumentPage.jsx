@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
+import { instrumentDisplayName } from '../../lib/instrumentRename'
+import RenameInstrumentButton from '../../components/admin/RenameInstrumentButton'
 import VasRenderer from '../../components/vas/VasRenderer'
 import SurveyComponentRenderer from '../../components/questionnaire/composable/SurveyComponentRenderer'
 import { DB_COMPONENT_TYPE } from '../../components/questionnaire/composable/componentRegistry'
@@ -101,14 +103,18 @@ function instrumentMeta(r) {
 // authoring page added 2026-08-31 — until then these types had no create path
 // at all (their rows were seeded by migration), which is why only the numeric
 // slider, VAS and package libraries carried a "+ New" button.
-function composableLibrary(type, title, pageSlug, newLabel) {
+function composableLibrary(type, title, pageSlug, newLabel, typeTitle) {
   return {
     table: 'composable_instruments',
     type,
     title,
     newLink: `/admin/instruments/${pageSlug}/new`,
     newLabel,
-    row: r => ({ name: r.label, meta: instrumentMeta(r) }),
+    row: r => ({ name: instrumentDisplayName(r), meta: instrumentMeta(r) }),
+    // Rename in place, beside Edit: renaming is the common correction, and
+    // walking through the whole authoring form to change one word invited
+    // accidental edits to a question that already has answers against it.
+    rename: { kind: 'composable', table: 'composable_instruments', typeTitle },
     preview: r => <DemoStage config={instrumentConfig(r)} />,
     // Edit/delete, added 2026-09-03: the library was insert-only, so a
     // correction meant authoring a new instrument and abandoning the old one.
@@ -187,7 +193,7 @@ const PAGES = {
     C: LikertSliderSample,
     blurb: 'The discrete slider: stepped scale with point labels and no numeric readout — the label is the value. Dana’s track/thumb chrome combined with the platform’s no-default behavior (no thumb until the first touch).',
     note: 'The sample is the first Likert slider in the library, rendered by the production component — the exact step a participant gets. Use + New below to author another; add instances to sessions from the session builder’s Instruments picker.',
-    library: composableLibrary('likert_slider', 'Existing Likert sliders', 'likert-slider', '+ New Likert Slider'),
+    library: composableLibrary('likert_slider', 'Existing Likert sliders', 'likert-slider', '+ New Likert Slider', 'Likert slider'),
   },
   'numeric-slider': {
     title: 'Numeric slider',
@@ -199,8 +205,12 @@ const PAGES = {
     library: {
       table: 'slider_scales', title: 'Existing numeric sliders',
       newLink: '/admin/sliders/new', newLabel: '+ New Slider',
-      row: r => ({ name: r.prompt || r.slug, meta: `${r.min}–${r.max}${r.min_label ? ` · ${r.min_label} → ${r.max_label ?? ''}` : ''}` }),
+      // The name, when the slider has one (20260911_slider_scale_label.sql).
+      // Before that column existed every numeric slider read here as its whole
+      // question in underscores, because its slug is slugify(prompt).
+      row: r => ({ name: instrumentDisplayName(r), meta: `${r.min}–${r.max}${r.min_label ? ` · ${r.min_label} → ${r.max_label ?? ''}` : ''}` }),
       preview: r => <SliderPreview row={r} />,
+      rename: { kind: 'slider', table: 'slider_scales', typeTitle: 'Slider' },
     },
   },
   'vas': {
@@ -214,7 +224,12 @@ const PAGES = {
       table: 'vas_scales', title: 'Existing VAS',
       newLink: '/admin/vas/new', newLabel: '+ New Scale',
       itemLink: r => `/admin/vas/${r.slug}`,
-      row: r => ({ name: r.question || r.slug, meta: r.scale_type ?? '' }),
+      // The name, when the scale has one (20260912_instrument_names_and_slug_lock.sql).
+      // Before that column existed a VAS read here as its whole question, and an
+      // un-named one still does — the fallback chain is why nothing changed for
+      // the eight scales that predate the column.
+      row: r => ({ name: instrumentDisplayName(r), meta: r.scale_type ?? '' }),
+      rename: { kind: 'vas', table: 'vas_scales', typeTitle: 'VAS' },
     },
   },
   'assessments': {
@@ -229,8 +244,11 @@ const PAGES = {
       // items is the mixed-content list; legacy VAS-only packages have only scale_ids.
       row: r => {
         const n = (r.items ?? r.scale_ids ?? []).length
-        return { name: r.name || r.slug, meta: `${n} item${n === 1 ? '' : 's'}` }
+        return { name: instrumentDisplayName(r), meta: `${n} item${n === 1 ? '' : 's'}` }
       },
+      // vas_packages keeps its name in `name`, not `label` — nameColumn() is what
+      // knows that, so the rename writes the column this table actually has.
+      rename: { kind: 'vas_pkg', table: 'vas_packages', typeTitle: 'VAS Bundle' },
       preview: r => <PackagePreview pkg={r} />,
     },
   },
@@ -241,7 +259,7 @@ const PAGES = {
     C: MultipleChoiceSample,
     blurb: 'Single-select multiple choice, where an option can be plain or carry inline text/number entry with prefix/suffix and bounds. Fills a real gap: the platform has never had a generic MC instrument.',
     note: 'The sample is the first multiple-choice instrument in the library, rendered by the production component — the exact step a participant gets. Use + New below to author another; add instances to sessions from the session builder’s Instruments picker.',
-    library: composableLibrary('multiple_choice', 'Existing multiple-choice questions', 'multiple-choice', '+ New Question'),
+    library: composableLibrary('multiple_choice', 'Existing multiple-choice questions', 'multiple-choice', '+ New Question', 'Multiple choice'),
   },
   'open-list': {
     title: 'Open text list + contribution ratings',
@@ -250,7 +268,7 @@ const PAGES = {
     C: OpenListSample,
     blurb: 'Participant-generated factors with a per-factor rating: typing text reveals a contribution slider beneath that row, filling the last row grows a new one, and entries are word-capped with a live counter.',
     note: 'The sample is the first open text list in the library, rendered by the production component — the exact step a participant gets. Use + New below to author another; add instances to sessions from the session builder’s Instruments picker.',
-    library: composableLibrary('open_list', 'Existing open text lists', 'open-list', '+ New Open List'),
+    library: composableLibrary('open_list', 'Existing open text lists', 'open-list', '+ New Open List', 'Open text list'),
   },
   'open-text': {
     title: 'Open text response',
@@ -259,7 +277,7 @@ const PAGES = {
     C: OpenTextSample,
     blurb: 'A plain free-text answer: a single line for a short response, or a resizable box for a paragraph. Optional word floor and ceiling, with a live counter when a maximum is set. The open text LIST above it is a different instrument — that one collects several short factors and forces a contribution rating on each; this one is just the question and the participant’s words.',
     note: 'The sample is the first open text response in the library, rendered by the production component — the exact step a participant gets. Use + New below to author another; add instances to sessions from the session builder’s Instruments picker.',
-    library: composableLibrary('open_text', 'Existing open text responses', 'open-text', '+ New Open Text'),
+    library: composableLibrary('open_text', 'Existing open text responses', 'open-text', '+ New Open Text', 'Open text response'),
   },
   'hierarchy': {
     title: 'Hierarchical belief question',
@@ -268,7 +286,7 @@ const PAGES = {
     C: HierarchySample,
     blurb: 'A belief hierarchy shown whole, indented by level. Participants select every level that changed; each selected level reveals a signed direction slider. Generalizes to any nested-construct rating.',
     note: 'The sample is the first belief hierarchy in the library, rendered by the production component — the exact step a participant gets. Use + New below to author another; add instances to sessions from the session builder’s Instruments picker.',
-    library: composableLibrary('hierarchy', 'Existing belief hierarchies', 'hierarchy', '+ New Hierarchy'),
+    library: composableLibrary('hierarchy', 'Existing belief hierarchies', 'hierarchy', '+ New Hierarchy', 'Belief hierarchy'),
   },
 }
 
@@ -371,8 +389,49 @@ function Library({ cfg }) {
             {r.slug && <code style={S.rowSlug}>{r.slug}</code>}
           </>
         )
+        // The actions belong to the ROW, not to whichever branch draws its body.
+        // They used to live only in the expandable branch, so the one config with
+        // an `itemLink` — the VAS library — returned above them and showed no
+        // Rename button at all, while every other type had one. Building them
+        // once here is what stops the two branches drifting apart again.
+        const actions = (
+          <>
+            {cfg.rename && (
+              <RenameInstrumentButton
+                row={r}
+                cfg={cfg.rename}
+                buttonStyle={S.editBtn}
+                onRenamed={() => {
+                  qc.invalidateQueries({ queryKey: ['instrument-lib', cfg.table, cfg.type ?? null] })
+                  qc.invalidateQueries({ queryKey: ['instrument-usage', cfg.type] })
+                }}
+              />
+            )}
+            {cfg.editLink && (
+              <Link to={cfg.editLink(r)} style={S.editBtn}>Edit</Link>
+            )}
+            {cfg.deletable && (
+              <DeleteInstrumentButton
+                row={r}
+                type={cfg.type}
+                usage={usage}
+                usageError={usageError}
+                onDeleted={() => {
+                  setOpen(o => (o === r.id ? null : o))
+                  qc.invalidateQueries({ queryKey: ['instrument-lib', cfg.table, cfg.type] })
+                  qc.invalidateQueries({ queryKey: ['instrument-usage', cfg.type] })
+                }}
+              />
+            )}
+          </>
+        )
+        // A row that navigates: the link is the row BODY, never the whole row —
+        // the actions are buttons and an <a> may not contain them.
         if (cfg.itemLink) return (
-          <Link key={r.id} to={cfg.itemLink(r)} style={{ ...S.row, textDecoration: 'none' }}>{inner}</Link>
+          <div key={r.id} style={S.row}>
+            <Link to={cfg.itemLink(r)} style={{ ...S.rowMain, textDecoration: 'none' }}>{inner}</Link>
+            {actions}
+          </div>
         )
         // Expandable in-place preview — click the row to view the instance.
         const isOpen = open === r.id
@@ -382,22 +441,7 @@ function Library({ cfg }) {
               <button style={S.rowMain} onClick={() => setOpen(isOpen ? null : r.id)}>
                 {inner}
               </button>
-              {cfg.editLink && (
-                <Link to={cfg.editLink(r)} style={S.editBtn}>Edit</Link>
-              )}
-              {cfg.deletable && (
-                <DeleteInstrumentButton
-                  row={r}
-                  type={cfg.type}
-                  usage={usage}
-                  usageError={usageError}
-                  onDeleted={() => {
-                    setOpen(o => (o === r.id ? null : o))
-                    qc.invalidateQueries({ queryKey: ['instrument-lib', cfg.table, cfg.type] })
-                    qc.invalidateQueries({ queryKey: ['instrument-usage', cfg.type] })
-                  }}
-                />
-              )}
+              {actions}
               <button style={S.viewToggle} onClick={() => setOpen(isOpen ? null : r.id)}>
                 {isOpen ? 'Hide ▲' : 'View ▼'}
               </button>
@@ -625,6 +669,7 @@ const S = {
     fontFamily: SANS, fontSize: 12.5, fontWeight: 600, color: 'var(--pkd)',
     background: 'none', border: '1px solid var(--pkbs)', borderRadius: 20,
     padding: '3px 12px', textDecoration: 'none', whiteSpace: 'nowrap',
+    cursor: 'pointer',
   },
   deleteBtn: {
     fontFamily: SANS, fontSize: 12.5, color: 'var(--tx2)', background: 'none',

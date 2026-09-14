@@ -5,6 +5,14 @@ import { Link } from 'react-router-dom'
 
 const TALKS = [
   {
+    to: '/cuny-2026',
+    kicker: 'CUNY · 2026',
+    title: 'Remapping the Mind',
+    sub: 'The hidden cost of stress and the surprising role of sensation in living a fulfilling life. Imported from PowerPoint, click builds intact.',
+    tags: ['Sense foraging', 'Meditation', 'Stress'],
+    accent: '#6768AB',
+  },
+  {
     to: '/adobe-aug-2026',
     kicker: 'Adobe L&D leaders · August 2026',
     title: 'Sense Foraging for Growth',

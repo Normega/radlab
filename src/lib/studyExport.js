@@ -19,11 +19,15 @@
 //    (Lab-read RLS for every table below is granted by
 //    supabase/migrations/20260723_export_lab_read_policies.sql — without it,
 //    tables with only "own rows" policies come back empty for a lab member.)
+//  • Credit-only consent — participants who did not consent to research use are
+//    removed from the context and from every fetched table, and the
+//    by-participant view refuses them (creditOnlyExport.js).
 
 import { supabase } from './supabase'
 import { repeatedSubcatsFromSteps, administrationSuffix, vasRepeats } from './responseColumns.js'
 import { splitResubmissions, createRepeatNamer, putCell } from './exportIntegrity.js'
 import { instrumentColumns } from './instrumentColumns'
+import { CREDIT_ONLY, partitionCreditOnly, scheduleIdsForEnrollments, dropExcludedRows } from './creditOnlyExport.js'
 
 const PAGE = 1000
 const IN_CHUNK = 100
@@ -171,10 +175,39 @@ function timepointToken(label, dayNumber) {
   return cleaned || `d${dayNumber ?? 0}`
 }
 
+// Schedule ids of credit-only enrollments in OTHER studies held by participants
+// this export keeps. Profile-scoped tables return a participant's rows from every
+// study, and a self-enrolled student keeps one account across course studies, so
+// without this their credit-only answers elsewhere would ride into this export
+// (creditOnlyExport.js, layer 3). Errors propagate: an export that cannot check
+// consent must not be produced.
+async function foreignCreditOnlyScheduleIds(studyId, profileIds) {
+  const pairs = []
+  for (let i = 0; i < profileIds.length; i += IN_CHUNK) {
+    const chunk = profileIds.slice(i, i + IN_CHUNK)
+    pairs.push(...await pageAll((f, t) => supabase.from('study_enrollments')
+      .select('profile_id, study_id').in('profile_id', chunk)
+      .eq('consent_scope', CREDIT_ONLY).neq('study_id', studyId).range(f, t)))
+  }
+  if (!pairs.length) return []
+  const studyIds = uniq(pairs.map(p => p.study_id))
+  const pids     = uniq(pairs.map(p => p.profile_id))
+  const rows = []
+  for (let i = 0; i < pids.length; i += IN_CHUNK) {
+    const chunk = pids.slice(i, i + IN_CHUNK)
+    rows.push(...await pageAll((f, t) => supabase.from('participant_schedule')
+      .select('id, participant_id, study_id').in('study_id', studyIds).in('participant_id', chunk).range(f, t)))
+  }
+  return scheduleIdsForEnrollments(pairs, rows)
+}
+
 export async function resolveStudyContext(studyId) {
-  const [enrollments, gameSessions, lilParts, vasScales, instrumentDefs, schedule, sessions, studyRow, stepRows] = await Promise.all([
+  const [allEnrollments, allGameSessions, allLilParts, vasScales, instrumentDefs, schedule, sessions, studyRow, allStepRows] = await Promise.all([
+    // consent_scope and id feed the credit-only exclusion below; no .catch here,
+    // deliberately — if consent cannot be read, the export must fail rather than
+    // go out unfiltered.
     pageAll((f, t) => supabase.from('study_enrollments')
-      .select('profile_id, external_id, enrolled_at, consent_date, status, is_test')
+      .select('id, profile_id, external_id, enrolled_at, consent_date, consent_scope, status, is_test')
       .eq('study_id', studyId).range(f, t)),
     pageAll((f, t) => supabase.from('game_sessions')
       .select('id, user_id').eq('study_id', studyId).range(f, t)),
@@ -208,9 +241,29 @@ export async function resolveStudyContext(studyId) {
     // the authority: it is written per delivered step and carries the study id,
     // so it states the study's activity list as a fact rather than a guess.
     pageAll((f, t) => supabase.from('participant_step_timings')
-      .select('category, subcategory, step_index, participant_schedule_id')
+      .select('category, subcategory, step_index, participant_schedule_id, participant_id')
       .eq('study_id', studyId).range(f, t)).catch(() => []),
   ])
+
+  // Credit-only consent (20260911_credit_only_consent.sql): participants who
+  // completed the sessions for course credit but did not consent to research use
+  // leave the export HERE, before a single id list is derived from the
+  // enrollments — so no fetch below asks for their rows, and the master and
+  // physio ZIP, which iterate `enrollments`, never list them. fetchStudyData
+  // then filters every table by row owner as well. See creditOnlyExport.js.
+  const foreignScheduleIds = await foreignCreditOnlyScheduleIds(
+    studyId,
+    uniq(allEnrollments.filter(e => e.consent_scope !== CREDIT_ONLY).map(e => e.profile_id)),
+  )
+  const consent = partitionCreditOnly({
+    enrollments:  allEnrollments,
+    gameSessions: allGameSessions,
+    lilParts:     allLilParts,
+    schedule,
+    stepRows:     allStepRows,
+    foreignScheduleIds,
+  })
+  const { enrollments, gameSessions, lilParts, stepRows } = consent
 
   // Which assessment sessions administer which questionnaire, in day order.
   // questionnaire_responses carries no session link (session_id is null on
@@ -306,6 +359,11 @@ export async function resolveStudyContext(studyId) {
     stepGameSlugs,
     repeatedSubcats,
     enrollments,
+    // How many enrollments were left out for credit-only consent, for the
+    // Export tab and the codebook to state; `consentExclusion` drives the
+    // per-row filter in fetchStudyData.
+    excludedCreditOnly: consent.excluded.count,
+    consentExclusion:   consent.excluded,
     profileIds:     uniq(enrollments.map(e => e.profile_id)),
     externalIds:    uniq(enrollments.map(e => e.external_id)),
     gameSessionIds: gameSessions.map(s => s.id),
@@ -369,7 +427,16 @@ export async function fetchStudyData(studyId, onProgress = () => {}) {
   async function run(entry) {
     onProgress(`Fetching ${entry.label}…`)
     try {
-      resultsByTable[entry.table] = await fetchTable(entry, context, resultsByTable)
+      const rows = await fetchTable(entry, context, resultsByTable)
+      // Credit-only participants' rows out of EVERY table, as each arrives. It
+      // has to happen here rather than after the loop: 'parent' tables fetch by
+      // their parent's row ids, so a parent must already be filtered when its
+      // children are requested. A throw (an entry whose rows cannot be
+      // attributed) lands in `errors` and the table is withheld, not shipped.
+      const keptParentIds = entry.strategy === 'parent'
+        ? new Set((resultsByTable[entry.parentTable] ?? []).map(r => r.id))
+        : undefined
+      resultsByTable[entry.table] = dropExcludedRows(ownerOf(entry), rows, context.consentExclusion, keptParentIds)
     } catch (e) {
       resultsByTable[entry.table] = []
       errors.push({ table: entry.table, message: e?.message ?? String(e) })
@@ -403,7 +470,38 @@ export function hasPhysio(resultsByTable) {
 // rendered five permanently-empty BreathBelt/in-person cards while silently
 // omitting everything they actually generated — equity census, VAS, games, step
 // timings, assignments, video, audio, compensation.
+//
+// A participant who chose credit-only consent in ANY study is refused outright
+// (2026-09-11). This view is deliberately study-agnostic — it returns every row
+// the person generated anywhere — and most profile-scoped tables record no study,
+// so a credit-only study's rows cannot be reliably carved out of it. Refusing is
+// the simplest rule that cannot leak. The cost: someone credit-only in one study
+// and research-consenting in another cannot be exported from here; their
+// research study's own Study-Level Export still includes them.
+async function assertNotCreditOnly(profileId, externalId) {
+  const lookups = []
+  if (profileId != null) {
+    lookups.push(supabase.from('study_enrollments').select('study_id')
+      .eq('profile_id', profileId).eq('consent_scope', CREDIT_ONLY).limit(1))
+  }
+  // Checked by external id too: the external-scoped tables (BreathBelt) are
+  // fetched by it, so it is an identity this view acts on.
+  if (externalId != null) {
+    lookups.push(supabase.from('study_enrollments').select('study_id')
+      .eq('external_id', externalId).eq('consent_scope', CREDIT_ONLY).limit(1))
+  }
+  for (const { data, error } of await Promise.all(lookups)) {
+    // Fail closed: a view that cannot confirm consent does not load.
+    if (error) throw new Error(`Could not check this participant's consent, so their data was not loaded (${error.message}).`)
+    if (data?.length) {
+      throw new Error(
+        'This participant chose credit-only consent: they completed the study for course credit but did not consent to research use of their data, so it cannot be exported.')
+    }
+  }
+}
+
 export async function fetchParticipantData(profileId, externalId, onProgress = () => {}) {
+  await assertNotCreditOnly(profileId, externalId)
   const [gameSessions, lilParts] = await Promise.all([
     profileId
       ? pageAll((f, t) => supabase.from('game_sessions')
@@ -1094,6 +1192,16 @@ export function buildCodebook(context, resultsByTable, masterRows) {
     column: '(whole file)',
     description: 'Proof that no collected response was dropped or overwritten on its way into the master: every provable copy left out (each still present in its table file), every further response kept under an _r<n> column, and any column collision caught. A single row of kind "clean" means none occurred.',
   }]
+  // Said in the file itself, so an analyst comparing the master's row count with
+  // the enrollment count months later is not left to guess why they differ.
+  const creditOnly = context?.excludedCreditOnly ?? 0
+  if (creditOnly > 0) {
+    out.push({
+      file: '(every file)',
+      column: '(whole export)',
+      description: `${creditOnly} enrolled participant${creditOnly !== 1 ? 's' : ''} chose credit-only consent — completed the study for course credit but did not consent to research use of their data. They and every row they generated are left out of every file in this export.`,
+    })
+  }
   const cols = new Set()
   for (const r of masterRows) Object.keys(r).forEach(c => cols.add(c))
   for (const c of cols) {
