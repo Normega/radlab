@@ -179,6 +179,17 @@ Deno.serve(async (req) => {
     // 'unlocked' row is NOT this bug -- it is an entry session opened and
     // abandoned by someone screened out or not yet consented, and they must
     // never be emailed a fresh link.
+    //
+    // And only rows that were NEVER SENT (attempts = 0, no last_sent_at). As
+    // first deployed on 2026-09-12 the backstop lacked this, and on 2026-09-14
+    // it picked up a check-in the participant had been emailed, opened --
+    // opening a link moves its row to 'unlocked' -- and then abandoned. Once
+    // that link expired the row looked stranded. The imminent-row check below
+    // happened to suppress it, leaving it 'blocked' where it should have been
+    // 'missed'; but an abandoned 20:00 check-in has no sibling within
+    // reminder_interval_hours (the next row is 09:00), so it would have been
+    // re-emailed with a fresh link hours after its window closed. A sent row
+    // that was never completed is a miss, and step 0b already handles misses.
     let rescuedRows: Array<{
       id: string
       participant_id: string
@@ -192,6 +203,8 @@ Deno.serve(async (req) => {
         .from('participant_schedule')
         .select('id, participant_id, study_id, scheduled_date, send_time, attempts')
         .eq('status', 'unlocked')
+        .eq('attempts', 0)
+        .is('last_sent_at', null)
         .lte('scheduled_date', todayStr)
 
       const stranded = strandedCandidates ?? []
