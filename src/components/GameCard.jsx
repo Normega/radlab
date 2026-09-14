@@ -52,7 +52,10 @@ function LockedCard({ game }) {
       style={S.card}
       aria-label={`${game.title} — locked. Play ${game.unlock.label} to unlock.`}
     >
-      <CardBody game={game} />
+      {/* Figma dims the locked card's own content to 50% under the 55% veil */}
+      <span style={S.lockedBody}>
+        <CardBody game={game} />
+      </span>
       <div style={S.lockVeil}>
         <LockIcon />
         <p style={S.lockText}>
@@ -102,11 +105,15 @@ const SERIF = '"DM Serif Display", Georgia, serif'
 const SANS  = '"DM Sans", system-ui, sans-serif'
 
 const S = {
+  // Figma's pink strokes are TRANSLUCENT, not solid: card border and badge
+  // border are 18% pink (--pkb), the separator 30% (--pkbs is the nearest
+  // token at 35%). The .fig reads as solid #F068A4 unless you look at the
+  // paint/node opacity channel.
   card: {
     position: 'relative', overflow: 'hidden',
     display: 'flex', flexDirection: 'column', gap: 10,
     padding: '24px 16px',
-    background: 'var(--bgc)', border: '1px solid var(--pk)', borderRadius: 12,
+    background: 'var(--bgc)', border: '1px solid var(--pkb)', borderRadius: 12,
   },
   cardLink: {
     textDecoration: 'none', color: 'inherit',
@@ -120,7 +127,7 @@ const S = {
   badge: {
     alignSelf: 'flex-start', fontFamily: MONO, fontSize: 12, letterSpacing: 0.5,
     textTransform: 'uppercase', padding: '4px 8px', borderRadius: 12,
-    background: 'var(--bgp)', border: '1px solid var(--pk)', color: 'var(--pkd)',
+    background: 'var(--bgp)', border: '1px solid var(--pkb)', color: 'var(--pkd)',
   },
 
   heading: { display: 'flex', alignItems: 'center', gap: 8 },
@@ -133,7 +140,7 @@ const S = {
 
   meta: {
     display: 'flex', gap: 40, marginTop: 4, paddingTop: 12,
-    borderTop: '1px solid var(--pk)',
+    borderTop: '1px solid var(--pkbs)',
   },
   stat:      { display: 'flex', flexDirection: 'column', gap: 3 },
   statLabel: { fontFamily: MONO, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx2)' },
@@ -142,7 +149,7 @@ const S = {
   hoverVeil: {
     position: 'absolute', inset: 0, display: 'flex',
     alignItems: 'center', justifyContent: 'center',
-    background: 'rgba(252,240,245,0.94)',
+    background: 'rgba(252,240,245,0.7)',
     transition: 'opacity 0.15s ease', pointerEvents: 'none',
   },
   hoverPill: {
@@ -152,11 +159,12 @@ const S = {
     boxShadow: '0 4px 14px rgba(240,104,164,0.35)',
   },
 
+  lockedBody: { display: 'flex', flexDirection: 'column', gap: 10, opacity: 0.5 },
   lockVeil: {
     position: 'absolute', inset: 0,
     display: 'flex', flexDirection: 'column',
     alignItems: 'center', justifyContent: 'center', gap: 12,
-    background: 'rgba(171,173,176,0.92)',
+    background: 'rgba(171,173,176,0.55)',
   },
   lockText: {
     fontFamily: MONO, fontSize: 20, letterSpacing: 0.5,
