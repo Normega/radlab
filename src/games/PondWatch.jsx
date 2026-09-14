@@ -418,9 +418,10 @@ export default function PondWatch({
   // logged a console warning while Continue stayed live, so the session
   // advanced without a Pond Watch row and nobody could tell. Continue now
   // waits for the save, and a failure offers a retry instead. A retry resends
-  // the identical row; if an earlier attempt did land and only its response
-  // was lost, the database collapses the repeat
-  // (20260910_zerin_checkin_pondwatch_submit_guard.sql).
+  // the identical row. If an earlier attempt did land and only its response
+  // was lost, both rows are kept: the database flags a byte-identical copy
+  // within 5 s as a resubmission and keeps a later one as data (CLAUDE.md
+  // data-logging rule 5, 20260911_responses_never_overwrite.sql).
   const persistResults = useCallback(async () => {
     const row = pendingRowRef.current
     if (!row || saveBusyRef.current) return

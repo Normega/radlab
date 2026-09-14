@@ -214,7 +214,14 @@ export default function ClassRoom({ session }) {
         .eq('kind', 'weekly')
         .in('status', ['open', 'closed', 'results_ready'])
         .is('dismissed_at', null)
-        .order('created_at', { ascending: false })
+        // opened_at, NOT created_at: past questions stay open on purpose so
+        // students can still answer them for participation (Norm,
+        // 2026-09-14), so several are live at once and the lobby must show
+        // the CURRENT one. created_at cannot tell them apart — a term's
+        // questions are loaded in one batch and share a created_at to the
+        // millisecond, so the card would have picked an arbitrary week as
+        // soon as a second one opened.
+        .order('opened_at', { ascending: false, nullsFirst: false })
         .limit(5)
       const row = (data ?? []).find(r => r.status === 'open') ?? data?.[0]
       if (cancelled || !row) { if (!cancelled) setWeekly(null); return }
@@ -543,18 +550,26 @@ export default function ClassRoom({ session }) {
               </Link>
             )}
 
+            {/* Leads to the archive, not to this one wall (Norm, 2026-09-13).
+                The question of the week is a graded participation stream, and
+                a card that only ever shows the current week hides every week a
+                student still owes -- which is most of the point of a stream
+                they can catch up on. The current question stays on the card so
+                nothing is lost in advertising it; it is the first tile on the
+                page, so answering costs one extra tap and finding what you
+                missed costs none. */}
             {weekly && (
-              <Link to={`${loungePath(slug)}/wall/${weekly.id}`} style={S.weeklyCard}>
+              <Link to={`${loungePath(slug)}/questions`} style={S.weeklyCard}>
                 <p style={S.weeklyEyebrow}>Question of the week</p>
                 <p style={S.weeklyPrompt}>{weekly.prompt}</p>
                 <p style={S.weeklyMeta}>
                   {!weekly.open
-                    ? `Closed — see what the class said (${weekly.count ?? '…'}) →`
+                    ? `Closed — read the wall, and earlier weeks →`
                     : weekly.answered
-                    ? `You've answered — see the wall (${weekly.count ?? '…'}) →`
+                    ? `You've answered — see the wall and earlier weeks →`
                     : weekly.count
-                    ? `${weekly.count} ${weekly.count === 1 ? 'answer' : 'answers'} on the wall — add yours →`
-                    : 'Be the first on the wall →'}
+                    ? `${weekly.count} ${weekly.count === 1 ? 'answer' : 'answers'} so far — add yours →`
+                    : 'Be the first to answer →'}
                 </p>
               </Link>
             )}
