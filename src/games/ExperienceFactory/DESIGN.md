@@ -197,6 +197,16 @@ The same moment of experience at three levels:
 6. Orb colors: Claude's pick (filament blue-white / rose-gold / verdigris).
 7. Launch: standalone /games route first; study wiring later.
 
-## Remaining question for Norm
+## Resolved (2026-09-15, second review)
 
-- Confirm dropping the crate-falls-on-the-floor animation from real rounds (it is per-trial error feedback, which v0.2 removes). Option: keep the floor drop in the practice block only, where per-trial feedback survives.
+- Floor drop: practice block only. Norm's rationale, kept here because it is the game's core stance: failure feedback during labelling practice might interfere with the receptive noticing mode the game is training. Real sort rounds and observe rounds give no per-trial feedback of any kind.
+
+## Implementation status
+
+Built 2026-09-15 on branch `claude/experience-factory-game-1riozm`:
+`constants.js` (item bank + levels), `ExperienceFactory.jsx` (game),
+route `/games/experience-factory` (lazy), catalog entry, migration
+`supabase/migrations/20260915_experience_factory.sql` (tables, RLS,
+append-only triggers), `experience_factory_trials` added to
+`responsesAppendOnly.test.mjs` RESPONSE_TABLES. Migration NOT yet applied
+to the live project. Study-flow wiring (GameStepWrapper) deferred by design.

@@ -185,6 +185,17 @@ export const GAMES = [
     trials: null,
   },
   {
+    slug: 'experience_factory',
+    title: 'Experience Factory',
+    to: '/games/experience-factory',
+    badge: 'Noticing · Thoughts, feelings, sensations',
+    desc: 'Objects of awareness ride a conveyor belt. Sort each one: thought, feeling, or sensation.',
+    category: 'emotion',
+    bucket: 'medium',
+    duration: '~5 min',
+    trials: 32,
+  },
+  {
     slug: 'farm_joy',
     title: 'Farm Joy',
     to: '/games/farm-joy',
