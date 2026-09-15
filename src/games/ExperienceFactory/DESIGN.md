@@ -27,7 +27,7 @@ Steampunk: brass, rivets, pressure gauges, warm Edison glow. Key elements:
 2. **Practice**: 6 items, belt paused at the gate until the player answers, explicit per-item teaching feedback. Practice is the only place with per-trial feedback.
 3. **Sort round A**: ~16 screen items, belt moving slowly.
 4. **Round report A**: targeted accuracy feedback (see Feedback rules).
-5. **Observe round A**: ~6 question-orb prompts, one every ~10 s.
+5. **Observe round A**: ~6 question-orb prompts, each arriving right after the previous rating and waiting at the gate (self-paced).
 6. **Sort round B**: ~16 screen items.
 7. **Round report B**.
 8. **Observe round B**: ~6 prompts.
@@ -35,13 +35,13 @@ Steampunk: brass, rivets, pressure gauges, warm Edison glow. Key elements:
 
 ## Difficulty lever (levels unlock sequentially)
 
-| Level | Working name | Screen item mix | Belt | Observe prompts |
-|---|---|---|---|---|
-| 1 | Apprentice | Modality-cued: thoughts as text, feelings as faces, sensations as colors/tones | Slow, pauses briefly at gate | every ~10 s |
-| 2 | Journeyman | All categories as text, unambiguous items | Medium, no pause | every ~8 s |
-| 3 | Machinist | Text items plus trap items | Fast; unsorted items drift past (logged as missed) | every ~6 s |
+| Level | Working name | Screen item mix | Belt |
+|---|---|---|---|
+| 1 | Apprentice | Modality-cued: thoughts as text, feelings as faces, sensations as colors/tones | Slow, pauses briefly at gate |
+| 2 | Journeyman | All categories as text, unambiguous items | Medium, no pause |
+| 3 | Machinist | Text items plus trap items | Fast; unsorted items drift past (logged as missed) |
 
-The accelerating observe prompts embody the assumption that something is always happening in awareness: the question is never "is anything there", only "what is it".
+Observe pacing (revised after playtest, 2026-09-15): the next question orb arrives immediately after each rating, same cadence as sort rounds, and waits at the gate; the participant self-paces by pressing when ready. The always-arriving orb embodies the assumption that something is always happening in awareness: the question is never "is anything there", only "what is it". (Earlier draft used fixed 10/8/6 s gaps between prompts; dropped because it made observe rounds feel much slower than sort rounds.)
 
 ## Feedback rules
 

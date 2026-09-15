@@ -178,24 +178,26 @@ export const INTRO_TRIPLET = [
 // travelMs: item's ride from belt edge to the sorting gate.
 // dwellMs:  time at the gate before an unanswered item drifts off (missed);
 //           null = the belt waits (level 1 only).
-// observeGapMs: pause between an observe response and the next question orb.
+// Observe rounds have no pacing knob: the next question orb arrives right
+// after each rating and waits at the gate, so the participant self-paces
+// (Norm, playtest 2026-09-15).
 
 export const LEVELS = [
   {
     level: 1, name: 'Apprentice',
-    travelMs: 1600, dwellMs: null, observeGapMs: 10000,
+    travelMs: 1600, dwellMs: null,
     mix: 'cued',      // thoughts text / feelings faces / sensations colors+tones
     practiceCount: 6, sortCount: 16, observeCount: 6,
   },
   {
     level: 2, name: 'Journeyman',
-    travelMs: 1200, dwellMs: 4000, observeGapMs: 8000,
+    travelMs: 1200, dwellMs: 4000,
     mix: 'text',      // all categories as text, tiers 1-2 content, no traps
     practiceCount: 4, sortCount: 16, observeCount: 6,
   },
   {
     level: 3, name: 'Machinist',
-    travelMs: 900, dwellMs: 2500, observeGapMs: 6000,
+    travelMs: 900, dwellMs: 2500,
     mix: 'traps',     // all text + tier-3 traps mixed in
     practiceCount: 4, sortCount: 16, observeCount: 6,
   },

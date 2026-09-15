@@ -679,13 +679,11 @@ export default function ExperienceFactory({
     const count = round.type === 'observe' ? round.count : round.items.length
     if (trialIdx + 1 < count) {
       setTrialIdx(i => i + 1)
-      if (round.type === 'observe') {
-        setItemState('idle')
-        later(() => beginTrial(), levelCfg.observeGapMs)
-      } else {
-        setItemState('idle')
-        later(() => beginTrial(), 420)
-      }
+      // Observe rounds keep the sort-round cadence (Norm, playtest 2026-09-15):
+      // the next question orb arrives right away and waits at the gate, so the
+      // participant self-paces by pressing when ready, not by waiting for orbs.
+      setItemState('idle')
+      later(() => beginTrial(), 420)
     } else {
       finishRound()
     }
@@ -831,8 +829,8 @@ export default function ExperienceFactory({
               <SortButtons enabled={itemState === 'gate'} onChoose={handleChoose} />
             )}
 
-            {round.type === 'observe' && itemState === 'idle' && (
-              <p style={S.hint}>the belt hums along… notice what is here in the meantime</p>
+            {round.type === 'observe' && itemState === 'gate' && (
+              <p style={S.hint}>take your time — sort it when you can name it</p>
             )}
           </div>
         )}
