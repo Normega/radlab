@@ -4,34 +4,57 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RADlab — prototypes</title>
+<!-- Static page: the SPA bundles these families via fontsource, but this file
+     is served outside the bundle, so it loads the same three from Google Fonts.
+     Tokens below mirror src/index.css :root / the /brand page — if a token
+     changes there, change it here. -->
+<link rel="icon" type="image/svg+xml" href="/RADlab_Logo_light.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600&family=DM+Serif+Display&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
-  :root{color-scheme:dark;}
-  html,body{margin:0;padding:0;min-height:100%;background:#0b0e18;color:#dde2f0;
-    font-family:Georgia,'Times New Roman',serif;}
+  :root{
+    color-scheme:light;
+    --bg:#FCF0F5; --bgc:#ffffff; --bgp:#FBEAF3;
+    --pk:#f068a4; --pkd:#c04a82;
+    --gy:#abadb0; --tx:#1c1c1e; --tx2:#6b6c70;
+    --bd:rgba(180,100,140,0.13); --bds:rgba(180,100,140,0.25);
+    --sh-hover:0 0 20px rgba(0,0,0,0.12);
+  }
+  html,body{margin:0;padding:0;min-height:100%;background:var(--bg);color:var(--tx);
+    font-family:'DM Sans',system-ui,sans-serif;font-size:16px;line-height:1.5;}
   .wrap{max-width:680px;margin:0 auto;padding:48px 24px 80px;}
-  h1{font-weight:normal;font-size:26px;letter-spacing:0.04em;margin:0 0 4px;}
-  .sub{color:#8a93b0;font-style:italic;font-size:15px;margin:0 0 40px;}
-  h2{font-weight:normal;font-size:20px;letter-spacing:0.03em;margin:0 0 4px;
-    padding-top:8px;}
-  .rule{border:0;border-top:1px solid rgba(255,255,255,0.09);margin:56px 0 40px;}
-  .secsub{color:#8a93b0;font-style:italic;font-size:14.5px;margin:0 0 28px;line-height:1.5;}
+  .eyebrow{font-family:'Space Mono',monospace;font-size:12px;letter-spacing:0.12em;
+    text-transform:uppercase;color:var(--gy);margin:0 0 8px;}
+  h1{font-family:'DM Serif Display',Georgia,serif;font-weight:400;font-size:28px;
+    line-height:1.2;margin:0 0 4px;}
+  .sub{color:var(--tx2);font-size:14px;margin:0 0 40px;}
+  h2{font-family:'DM Serif Display',Georgia,serif;font-weight:400;font-size:20px;
+    margin:0 0 4px;padding-top:8px;}
+  .rule{border:0;border-top:1px solid var(--bd);margin:48px 0 40px;}
+  .secsub{color:var(--tx2);font-size:14px;margin:0 0 24px;line-height:1.5;}
   a.card{display:block;text-decoration:none;color:inherit;
-    border:1px solid rgba(255,255,255,0.10);border-radius:12px;
-    padding:20px 22px;margin:0 0 18px;transition:border-color 0.25s ease, background 0.25s ease;
-    background:rgba(255,255,255,0.02);}
-  a.card:hover{border-color:rgba(255,255,255,0.28);background:rgba(255,255,255,0.045);}
-  .name{font-size:19px;margin:0 0 6px;}
-  .dyn{font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#7d87a8;
-    font-family:ui-monospace,monospace;margin-bottom:8px;}
-  .inv{color:#aab2c8;font-style:italic;font-size:14.5px;line-height:1.5;margin:0;}
-  .note{margin-top:44px;color:#5d6580;font-size:12.5px;line-height:1.6;font-style:italic;}
+    background:var(--bgc);border:1px solid var(--bd);border-radius:12px;
+    padding:16px 24px;margin:0 0 16px;
+    transition:border-color 0.25s ease, box-shadow 0.25s ease;}
+  a.card:hover{border-color:var(--bds);box-shadow:var(--sh-hover);}
+  .name{font-family:'DM Serif Display',Georgia,serif;font-size:20px;margin:0 0 4px;}
+  .dyn{font-family:'Space Mono',monospace;font-size:12px;letter-spacing:0.12em;
+    text-transform:uppercase;color:var(--gy);margin-bottom:8px;}
+  .inv{color:var(--tx2);font-size:14px;line-height:1.5;margin:0;}
+  .note{margin-top:40px;color:var(--gy);font-size:12px;line-height:1.6;}
+  .note code{font-family:'Space Mono',monospace;font-size:12px;color:var(--tx2);}
   .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:10px;vertical-align:1px;}
+  .home{font-family:'Space Mono',monospace;font-size:12px;letter-spacing:0.08em;
+    color:var(--pkd);text-decoration:none;}
+  .home:hover{text-decoration:underline;}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>RADlab — prototypes</h1>
-  <p class="sub">Work in progress. Nothing here is finished, and nothing here is scored.</p>
+  <p class="eyebrow">RADlab · Come, See</p>
+  <h1>Prototypes.</h1>
+  <p class="sub">Work in progress. Nothing here is finished, and nothing here is scored. <a class="home" href="/">← radlab.zone</a></p>
 
   <h2>Come, See — sketchbook</h2>
   <p class="secsub">Eight small experiences, each three to five minutes. Sound on, if you can. Nothing can be done wrong.</p>
@@ -97,9 +120,9 @@
 
   <h2>In development</h2>
   <p class="secsub">
-    Platform games pulled back off the catalog for more work (2026-08-13). These are
-    built on the site rather than here, so they open in the app and still record what
-    you do &mdash; they are simply not listed on <code>/games</code> until they are ready.
+    Platform games not yet on the catalog. These are built on the site rather than
+    here, so they open in the app and still record what you do &mdash; they are
+    simply not listed on <code style="font-family:'Space Mono',monospace;font-size:12px;">/games</code> until they are ready.
   </p>
 
   <a class="card" href="/games/owl-barn">
@@ -112,6 +135,12 @@
     <div class="dyn"><span class="dot" style="background:#8fb8d8"></span>breath regulation · boundaries</div>
     <div class="name">Breath Guardian</div>
     <p class="inv">Hold to breathe in and raise the shield; release to breathe out and welcome the world through.</p>
+  </a>
+
+  <a class="card" href="/games/experience-factory">
+    <div class="dyn"><span class="dot" style="background:#b08d57"></span>noticing · thoughts, feelings, sensations</div>
+    <div class="name">Experience Factory</div>
+    <p class="inv">Objects of awareness arrive on a conveyor belt. Sort each one: thought, feeling, or sensation.</p>
   </a>
 </div>
 </body>

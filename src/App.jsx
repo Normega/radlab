@@ -67,6 +67,7 @@ const AptitudeSuite = lazy(() => import('./games/AptitudeSuite/AptitudeSuite'))
 const WordMax       = lazy(() => import('./games/WordMax/WordMax'))
 const ColorMax      = lazy(() => import('./games/ColorMax/ColorMax'))
 const Ember         = lazy(() => import('./games/Ember/Ember'))
+const ExperienceFactory = lazy(() => import('./games/ExperienceFactory/ExperienceFactory'))
 const Mirror        = lazy(() => import('./games/Mirror/Mirror'))
 const BreathBeltDemo  = lazy(() => import('./games/BreathBelt/BreathBeltDemo'))
 const PacerOpenerDemo = lazy(() => import('./games/BreathBelt/PacerOpenerDemo'))
@@ -573,6 +574,12 @@ export default function App() {
           <Route path="/games/farm-joy" element={
             <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome} needsRippleName={needsRippleName}>
               <FarmJoy session={session} />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/games/experience-factory" element={
+            <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome} needsRippleName={needsRippleName}>
+              <ExperienceFactory session={session} />
             </ProtectedRoute>
           } />
 

@@ -25,6 +25,7 @@ const RESPONSE_TABLES = [
   'pond_watch_results',
   'intervention_responses',
   'screener_results',
+  'experience_factory_trials',
 ]
 
 let pass = 0, fail = 0
