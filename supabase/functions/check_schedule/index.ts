@@ -17,6 +17,8 @@ const CORS = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+import { fetchAllRows } from '../_shared/fetchAllRows.ts'
+
 const LAB_TIMEZONE = 'America/Toronto'
 
 function json(body: unknown, status = 200) {
@@ -539,10 +541,26 @@ Deno.serve(async (req) => {
     if (graphStudies && graphStudies.length > 0) {
       const graphStudyIds = graphStudies.map((s) => s.id)
 
-      const { data: allRows } = await db
-        .from('participant_schedule')
-        .select('participant_id, study_id, status, scheduled_date')
-        .in('study_id', graphStudyIds)
+      // Every row, not the first 1000. PostgREST caps each response at
+      // max-rows and truncates silently; this read was a single call until
+      // 2026-09-15, when the Zerin study's recruitment took Experiment Builder
+      // studies past 1,758 rows. ~760 were dropped on every tick, so the
+      // participants they belonged to were never walked here: nine finished
+      // baseline and were never randomised or given daily sessions, one for
+      // 17 hours, with no error. Ordered by id so paging is stable.
+      const allRows = await fetchAllRows<{
+        participant_id: string
+        study_id: string
+        status: string
+        scheduled_date: string | null
+      }>((from, to) =>
+        db
+          .from('participant_schedule')
+          .select('participant_id, study_id, status, scheduled_date')
+          .in('study_id', graphStudyIds)
+          .order('id', { ascending: true })
+          .range(from, to),
+      )
 
       // Participants already withdrawn (see withdrawnSet above) must not be
       // re-walked — materializeSchedule is idempotent for schedule rows, but
