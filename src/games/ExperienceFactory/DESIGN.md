@@ -1,10 +1,11 @@
-# Experience Factory: design draft v0.1
+# Experience Factory: design draft v0.2
 
 Status: draft for Norm's review. No code yet. 2026-09-15.
+v0.2 changes after Norm's review: no per-trial feedback in real rounds; end-of-round targeted accuracy report (hits and false alarms by category and tier); faces unlabeled; points awarded at ~10/min; orb colors fixed.
 
 ## Concept
 
-A sorting game that trains participants to identify objects of awareness as **thoughts**, **feelings**, or **sensations**. The screen is a steampunk factory floor representing the global workspace of conscious awareness. Items arrive on a conveyor belt and the player sorts each one with three brass buttons. A labeled crate drops over the item at the sorting gate, and the crate rides one of three belt spurs into a glowing orb (one per category). Wrong sorts (screen rounds only) miss the spur and the crate tumbles to the floor.
+A sorting game that trains participants to identify objects of awareness as **thoughts**, **feelings**, or **sensations**. The screen is a steampunk factory floor representing the global workspace of conscious awareness. Items arrive on a conveyor belt and the player sorts each one with three brass buttons. A labeled crate drops over the item at the sorting gate, and the crate rides one of three belt spurs into a glowing orb (one per category). During real rounds the crate always follows the chosen spur, right or wrong; correctness is reported only at the end of the round (see Feedback rules).
 
 After practice with on-screen items, rounds alternate with **observe rounds**: the belt runs empty, a question orb glides to the gate as a prompt, and the player sorts whatever is most prominent in their own experience right now. The same crate-drop feedback plays, so self-report feels identical to sorting, but nothing can ever fall on the floor.
 
@@ -16,19 +17,21 @@ Steampunk: brass, rivets, pressure gauges, warm Edison glow. Key elements:
 
 - **Conveyor belt** with a sorting gate center-stage, three spurs fanning to the right.
 - **Three sort buttons**: large brass push-buttons labeled Thought / Feeling / Sensation (also keyboard 1/2/3 or T/F/S on desktop).
-- **Three orbs** at spur ends, glowing brighter and larger as they fill. Thought = cool white/blue filament, Feeling = warm rose, Sensation = green/amber. (Colors open to change.)
+- **Three orbs** at spur ends, glowing brighter and larger as they fill. Decided: Thought = cool filament blue-white, Feeling = warm rose-gold, Sensation = verdigris green. All three read as lit brass fixtures against the factory palette.
 - **The difficulty lever**: a big brass lever with a pressure gauge, visible on the intro and summary screens. Higher settings unlock after completing the level below. Pulling it raises belt speed, switches the item mix to harder tiers, and accelerates observe-round prompts.
 - **Question orbs**: opalescent spheres with a stamped "?" that arrive during observe rounds as the prompt to sort one's current experience.
 
 ## Session structure (target ~5 minutes at level 1)
 
 1. **Intro** (GameIntro component): the factory metaphor, the three categories, one worked example triplet (see Matched triplets below).
-2. **Practice**: 6 items, belt paused at the gate until the player answers, explicit teaching feedback.
+2. **Practice**: 6 items, belt paused at the gate until the player answers, explicit per-item teaching feedback. Practice is the only place with per-trial feedback.
 3. **Sort round A**: ~16 screen items, belt moving slowly.
-4. **Observe round A**: ~6 question-orb prompts, one every ~10 s.
-5. **Sort round B**: ~16 screen items.
-6. **Observe round B**: ~6 prompts.
-7. **Summary**: the three orbs shown side by side, sized by counts, split by screen vs observe rounds; accuracy for screen rounds; lever unlock notice if earned.
+4. **Round report A**: targeted accuracy feedback (see Feedback rules).
+5. **Observe round A**: ~6 question-orb prompts, one every ~10 s.
+6. **Sort round B**: ~16 screen items.
+7. **Round report B**.
+8. **Observe round B**: ~6 prompts.
+9. **Summary**: the three orbs shown side by side, sized by counts, split by screen vs observe rounds; overall accuracy; points earned; lever unlock notice if earned.
 
 ## Difficulty lever (levels unlock sequentially)
 
@@ -42,8 +45,19 @@ The accelerating observe prompts embody the assumption that something is always 
 
 ## Feedback rules
 
-- **Screen rounds**: correct = crate rides the spur into the orb with a satisfying clunk and glow pulse. Incorrect = crate misses and tumbles to the floor; the item's canonical category flashes briefly. Trap items additionally show a one-line teaching note (see item bank).
-- **Observe rounds**: strictly non-evaluative. Every press produces a labeled crate that always reaches its orb. No accuracy, no floor, no scoring. Observe responses are still logged (category choice + response time), since the thought/feeling/sensation proportions are themselves interesting data.
+**No per-trial feedback in real rounds.** Every press sends the crate down the chosen spur into that orb, correct or not, so sort rounds and observe rounds play identically and errors are not corrected item by item. (Design note: this drops the original crate-falls-on-the-floor moment, which was per-trial error feedback. Flagged for Norm's confirmation; the floor animation could return as a practice-only effect.)
+
+**End-of-round report (screen rounds only).** After each sort round:
+
+- Compute accuracy by canonical category (3 cells) and by item tier (up to 3 cells), plus signal-detection style counts per category: hits (chose C when item was C) and false alarms (chose C when item was not C), so a bias toward one button is distinguishable from confusion between two categories.
+- Show targeted feedback for only the **1 or 2 lowest-accuracy cells**, not every mistake. A cell below the 33% chance rate is called out explicitly as systematic miscategorization (e.g. consistently sorting judgments as feelings) and gets a short teaching note with 1-2 example items from that round, drawn from the trap-item teaching notes where applicable.
+- Cells at or near ceiling get a one-line acknowledgment at most.
+
+**Observe rounds**: strictly non-evaluative, no accuracy concept at all. Responses are still logged (category choice + response time), since the thought/feeling/sensation proportions are themselves interesting data.
+
+## Points
+
+Completing a session awards points at ~10 points per minute played (so ~50 for a level 1 session), credited to `profiles` the same way Drift does. Rate based on actual play duration, capped so idling cannot farm points. (Separately, Norm wants all existing games, including Tune and Delve, to award ~10 points/min; that is a platform-wide change tracked outside this game's build.)
 
 ## Item bank draft
 
@@ -95,7 +109,7 @@ Comparisons and neutral:
 
 ### Feelings
 
-Tier 1 (faces): all 24 combinations from the existing affect system, `EXPRESSION_TABLE` 8 emotions (Alert, Excited, Good, Calm, Still, Sad, Bad, Tense) x 3 intensity zones (mild, moderate, strong), rendered with `AURenderer`. Unlabeled faces; the face itself is the stimulus.
+Tier 1 (faces): all 24 combinations from the existing affect system, `EXPRESSION_TABLE` 8 emotions (Alert, Excited, Good, Calm, Still, Sad, Bad, Tense) x 3 intensity zones (mild, moderate, strong), rendered with `AURenderer`. Faces are unlabeled (decided): the face itself is the stimulus.
 
 Tier 2 (text):
 1. joy
@@ -139,7 +153,7 @@ Tier 2 (text):
 15. an itch on the forearm
 16. a lump in the throat
 
-### Trap items (tier 3 only, each with a teaching note shown on a miss)
+### Trap items (tier 3 only; teaching notes appear in end-of-round reports and practice, never mid-round)
 
 | Item | Canonical | Teaching note |
 |---|---|---|
@@ -167,15 +181,22 @@ The same moment of experience at three levels:
 ## Data logging sketch (built to the five rules from day one)
 
 - `game_sessions` row with `game_name = 'experience_factory'`, standard start/end pattern.
-- New table `experience_factory_trials`: `id, session_id, user_id, schedule_id (nullable, ON DELETE SET NULL), level, round_index, round_type ('sort' | 'observe'), trial_index, item_id (null for observe), item_modality, canonical_category (null for observe), chosen_category (null if missed), correct (null for observe), rt_ms, belt_speed, created_at`.
+- New table `experience_factory_trials`: `id, session_id, user_id, schedule_id (nullable, ON DELETE SET NULL), level, round_index, round_type ('sort' | 'observe'), trial_index, item_id (null for observe), item_modality, item_tier (null for observe), canonical_category (null for observe), chosen_category (null if missed), correct (null for observe), rt_ms, belt_speed, created_at`. Hits and false alarms per category and tier are computable from these rows; the round reports compute them client-side from the same data.
+- New table `experience_factory_performance`: one session-summary row (accuracy overall, accuracy per category and tier, hit/false-alarm counts per category, observe-round category proportions, points awarded), following the Drift `_performance` pattern.
 - Append-only: the two standard triggers, an entry in `responsesAppendOnly.test.mjs` `RESPONSE_TABLES`, explicit RLS policies per CLAUDE.md, migration in `supabase/migrations/`.
 - Terminal submit guarded with `useSubmitLock` plus the database guard.
 - Launch: standalone `/games/experience-factory` route (lazy-loaded) and a `src/data/games.js` entry. Study-flow wiring (`GameStepWrapper`) deferred, but the component accepts the study prop contract from day one so wiring later is one map entry.
 
-## Open questions for Norm
+## Decisions log (2026-09-15)
 
-1. Item bank content: anything to veto, soften, or add? The negative self-judgments are deliberately mild-to-moderate; happy to adjust the ceiling.
-2. Should trap teaching notes also appear on *correct* trap sorts (reinforcement), or only on misses?
-3. Faces unlabeled (my default) or labeled with the emotion word?
-4. Points: award profile points like Drift does, or none like Tune?
-5. Orb colors per category: preferences?
+1. Name: Experience Factory, confirmed.
+2. Item bank: kept as drafted for now; revisit before any study use.
+3. Feedback: none mid-round. End-of-round targeted report on the 1-2 lowest-accuracy cells, hits and false alarms tracked by category and tier, below-chance (33%) cells called out as systematic.
+4. Faces: unlabeled.
+5. Points: yes, ~10/min. Platform-wide points for all games tracked as a separate task.
+6. Orb colors: Claude's pick (filament blue-white / rose-gold / verdigris).
+7. Launch: standalone /games route first; study wiring later.
+
+## Remaining question for Norm
+
+- Confirm dropping the crate-falls-on-the-floor animation from real rounds (it is per-trial error feedback, which v0.2 removes). Option: keep the floor drop in the practice block only, where per-trial feedback survives.
