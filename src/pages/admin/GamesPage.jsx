@@ -17,8 +17,9 @@ const GAMES = [
   // Routes are live and still record data, but these are deliberately absent
   // from src/data/games.js, so they appear on neither /games nor the About
   // carousel (Norm, 2026-08-13). Also linked from /prototypes/.
-  { name: 'Owl Barn',        slug: 'owl-barn',        badge: 'Hearing · Rhythm · Strategy',     public: false, dev: true },
-  { name: 'Breath Guardian', slug: 'breath-guardian', badge: 'Breath regulation · Boundaries',  public: false, dev: true },
+  { name: 'Owl Barn',           slug: 'owl-barn',           badge: 'Hearing · Rhythm · Strategy',                public: false, dev: true },
+  { name: 'Breath Guardian',    slug: 'breath-guardian',    badge: 'Breath regulation · Boundaries',             public: false, dev: true },
+  { name: 'Experience Factory', slug: 'experience-factory', badge: 'Noticing · Thoughts, feelings, sensations',  public: false, dev: true },
   // ── Study / researcher tools ───────────────────────────────────────────
   // `timed: true` = game has a session countdown; shows a Quick demo link
   // that launches it with the timer cut to 20s (?demo=1)

@@ -210,3 +210,8 @@ route `/games/experience-factory` (lazy), catalog entry, migration
 append-only triggers), `experience_factory_trials` added to
 `responsesAppendOnly.test.mjs` RESPONSE_TABLES. Migration NOT yet applied
 to the live project. Study-flow wiring (GameStepWrapper) deferred by design.
+
+Catalog status (Norm, 2026-09-15, after playtest): in development. Listed in
+DEV_GAMES and on /prototypes, not in the /games catalog, even on dev, so a
+dev-to-main promotion cannot accidentally publish it. Re-adding the GAMES
+entry in src/data/games.js is the release switch.

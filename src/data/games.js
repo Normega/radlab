@@ -185,17 +185,6 @@ export const GAMES = [
     trials: null,
   },
   {
-    slug: 'experience_factory',
-    title: 'Experience Factory',
-    to: '/games/experience-factory',
-    badge: 'Noticing · Thoughts, feelings, sensations',
-    desc: 'Objects of awareness ride a conveyor belt. Sort each one: thought, feeling, or sensation.',
-    category: 'emotion',
-    bucket: 'medium',
-    duration: '~5 min',
-    trials: 32,
-  },
-  {
     slug: 'farm_joy',
     title: 'Farm Joy',
     to: '/games/farm-joy',
@@ -218,8 +207,11 @@ export const GAMES = [
  * title to fill in. Without this the banner silently renders nothing.
  */
 export const DEV_GAMES = [
-  { slug: 'owl_barn',        title: 'Owl Barn',        to: '/games/owl-barn',        inDevelopment: true },
-  { slug: 'breath_guardian', title: 'Breath Guardian', to: '/games/breath-guardian', inDevelopment: true },
+  { slug: 'owl_barn',           title: 'Owl Barn',           to: '/games/owl-barn',           inDevelopment: true },
+  { slug: 'breath_guardian',    title: 'Breath Guardian',    to: '/games/breath-guardian',    inDevelopment: true },
+  // In-development games start here, not in GAMES, even on dev — a dev→main
+  // promotion must never accidentally publish one (Norm, 2026-09-15).
+  { slug: 'experience_factory', title: 'Experience Factory', to: '/games/experience-factory', inDevelopment: true },
 ]
 
 /** Look a game up by its slug (`ebb_flow`). Catalog first, then in-development. */
