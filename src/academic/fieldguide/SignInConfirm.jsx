@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { getCourseClient } from '../courseClient'
-import { normalizeCourseCode, joinPath, wikiBase, loungePath } from '../courseRoutes'
+import { normalizeCourseCode, joinPath, coursePath, loungePath } from '../courseRoutes'
 import { supabase as mainSupabase } from '../../lib/supabase'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
@@ -89,8 +89,10 @@ export default function SignInConfirm() {
       }
       // Full navigation, not a router push: the guards read the academic
       // session when they mount, and a clean load is the simplest way to be
-      // certain they see it.
-      window.location.assign(code ? wikiBase(code) : '/academic/fieldguide/wiki')
+      // certain they see it. Land on Course Home — the index of everything
+      // (chapters, slides, gap board, what's new) — not inside the wiki
+      // (Norm, 2026-09-16).
+      window.location.assign(code ? coursePath(code) : '/academic/fieldguide/wiki')
     } catch (err) {
       setDetail(err.message)
       setState('error')

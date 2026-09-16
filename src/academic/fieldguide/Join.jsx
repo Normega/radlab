@@ -84,8 +84,10 @@ export default function Join() {
           ? 'That code was not accepted — it may have expired, or a newer code has replaced it. Request another and use the most recent email.'
           : error.message)
       } else {
-        // The guard re-renders signed in; land them in the guide.
-        window.location.assign(code ? `/academic/${code}/wiki` : '/academic/fieldguide/wiki')
+        // The guard re-renders signed in; land them on Course Home, the
+        // index of everything (Norm, 2026-09-16). Legacy no-code path keeps
+        // the wiki, since there is no course home to build.
+        window.location.assign(code ? `/academic/${code}` : '/academic/fieldguide/wiki')
         return
       }
     } catch (err) {
