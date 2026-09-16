@@ -75,6 +75,43 @@ function useEnrollments(studyId) {
   })
 }
 
+// Latest screening attempt per participant, for the retake button and its
+// warning. One row per participant per attempt and well under PostgREST's
+// 1000-row cap for a single study; page it if a study ever outgrows that.
+function useLatestScreeners(studyId) {
+  return useQuery({
+    queryKey: ['screeners', studyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('screener_results')
+        .select('participant_id, phase1_passed, phase2_passed, phase2_outcome, phase1_answers, screened_at')
+        .eq('study_id', studyId)
+        .order('screened_at', { ascending: false })
+      if (error) throw error
+      const latest = new Map()
+      for (const r of data ?? []) if (!latest.has(r.participant_id)) latest.set(r.participant_id, r)
+      return latest
+    },
+  })
+}
+
+/**
+ * Why this participant was screened out — 'safety' for the two exclusions the
+ * REB approved to protect them (PHQ-8 above 9, or saying participation could
+ * cause them excessive distress), 'criteria' for everything else, null if they
+ * passed or have not been screened. The team may grant a retake either way;
+ * 'safety' only changes what the confirmation says.
+ */
+function screenOutKind(r) {
+  if (!r) return null
+  if (r.phase1_passed && r.phase2_passed) return null
+  if (r.phase2_outcome === 'fail_high') return 'safety'
+  const distress = (Array.isArray(r.phase1_answers) ? r.phase1_answers : [])
+    .find(a => a?.id === 'p1_distress')
+  if (distress?.answer === 'yes') return 'safety'
+  return 'criteria'
+}
+
 function useScheduleForEnrollment(studyId, profileId) {
   return useQuery({
     queryKey: ['enroll-schedule', studyId, profileId],
@@ -101,6 +138,8 @@ export default function EnrollmentPanel({ study }) {
   const [expanded,    setExpanded]    = useState(null) // enrollmentId with sessions visible
 
   const { data: enrollments = [], isLoading } = useEnrollments(study.id)
+  const { data: screeners = new Map() } = useLatestScreeners(study.id)
+  const [retakeLink, setRetakeLink] = useState(null)
 
   const enroll = useMutation({
     mutationFn: async () => {
@@ -146,6 +185,37 @@ export default function EnrollmentPanel({ study }) {
     onError: (e) => setEnrollError(e.message),
   })
 
+  // Re-opens the screener for one more attempt and hands back a fresh link —
+  // these participants hold no live one, and auto-enroll will not mint a link
+  // for an enrollment whose schedule already exists. The RA sends the link on.
+  const grantRetake = useMutation({
+    mutationFn: async (id) => {
+      const { data, error } = await supabase.rpc('grant_screener_retake', { p_enrollment_id: id })
+      if (error) throw error
+      return data
+    },
+    onSuccess: (data, id) => {
+      const row = enrollments.find(x => x.id === id)
+      setRetakeLink({
+        externalId: row?.external_id ?? '',
+        url:        `${window.location.origin}/s/${data.token}`,
+        expiresAt:  data.expires_at,
+      })
+      qc.invalidateQueries({ queryKey: ['enrollments', study.id] })
+      qc.invalidateQueries({ queryKey: ['screeners', study.id] })
+    },
+    onError: (err) => window.alert(`Could not grant a retake: ${err.message}`),
+  })
+
+  function confirmRetake(e) {
+    const kind = screenOutKind(screeners.get(e.profile_id))
+    const warning = kind === 'safety'
+      ? `${e.external_id} was screened out for a safety reason — a PHQ-8 above 9, or saying that taking part could cause them excessive distress. That exclusion is a protection, not a mis-click, and the screen they saw named the reason, so a second attempt is not an independent measurement.\n\nGrant a retake anyway?`
+      : `Allow ${e.external_id} one more screening attempt?`
+    if (!window.confirm(`${warning}\n\nBoth attempts are kept and appear separately in the export.`)) return
+    grantRetake.mutate(e.id)
+  }
+
   const withdraw = useMutation({
     mutationFn: async (id) => {
       const { error } = await supabase
@@ -165,6 +235,20 @@ export default function EnrollmentPanel({ study }) {
           {showForm ? 'Cancel' : 'Enroll New Participant'}
         </button>
       </div>
+
+      {retakeLink && (
+        <div style={S.enrollForm}>
+          <label style={S.fieldLabel}>Retake link for {retakeLink.externalId}</label>
+          <p style={S.muted}>
+            Send this to the participant. It re-opens the screener for one attempt and expires {fmtDate(retakeLink.expiresAt)}.
+          </p>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+            <span style={{ ...S.mono, flex: 1, wordBreak: 'break-all' }}>{retakeLink.url}</span>
+            <button style={S.actionBtn} onClick={() => navigator.clipboard?.writeText(retakeLink.url)}>Copy</button>
+            <button style={S.actionBtn} onClick={() => setRetakeLink(null)}>Dismiss</button>
+          </div>
+        </div>
+      )}
 
       {showForm && (
         <div style={S.enrollForm}>
@@ -232,6 +316,15 @@ export default function EnrollmentPanel({ study }) {
                             onClick={() => setExpanded(v => v === e.id ? null : e.id)}
                           >
                             {expanded === e.id ? 'Hide sessions ▲' : 'Sessions ▼'}
+                          </button>
+                        )}
+                        {e.status !== 'withdrawn' && screenOutKind(screeners.get(e.profile_id)) && (
+                          <button
+                            style={S.actionBtn}
+                            onClick={() => confirmRetake(e)}
+                            disabled={grantRetake.isPending}
+                          >
+                            Allow retake
                           </button>
                         )}
                         {e.status !== 'withdrawn' && (
