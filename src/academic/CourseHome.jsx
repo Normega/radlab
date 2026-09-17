@@ -186,6 +186,9 @@ export default function CourseHome({ superAdmin }) {
           {mainEmail && cls && <Link to={`${loungePath(code)}/questions`} style={S.staffBtn}>Questions of the week</Link>}
           {mainEmail && cls && <Link to={`${loungePath(code)}/quizzes`} style={S.staffBtn}>Weekly quizzes</Link>}
           {fgSession && feats.gaps && <Link to={courseSubPath(code, 'gaps')} style={S.staffBtn}>Gap board</Link>}
+          {/* Static how-to in public/<code>/ — same per-course-dir pattern as
+              the decks, so no course code is hard-coded here. */}
+          {fgSession && feats.gaps && <a href={`/${String(code).toLowerCase()}/gap-guide.html`} style={S.staffBtn}>How contributions work</a>}
           {fgSession && <Link to={courseSubPath(code, 'whats-new')} style={S.staffBtn}>What's new</Link>}
         </div>
       )}
