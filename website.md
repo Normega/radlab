@@ -7254,8 +7254,9 @@ psychology students".
 ### P7 — The Spellbook (PSY440, §29e)
 
 - [x] Published at `/spellbook/` (2026-09-17) — source in `tools/spellbook/`, output committed, `npm run spellbook:build` reproduces it, `/spellbook/` rewrite ahead of the SPA catch-all, sixth `HubCard` bottom-right on the front page. Build verified reproducible against the handoff hash before any edit; `verify_citations.py` clean; no `BAD ID`.
-- [ ] **Browser verification on `dev.radlab.zone`** — the five hash routes, the card, the logo in light and dark, and 390 px with no horizontal scroll. Not done: this machine has no Node and no browser, so nothing here was seen rendered.
-- [ ] **`npm run lint` and `npm run build`** — never run for this change; Node is not installed on Norm's machine, so CI on the `dev` push is the first real check.
+- [x] Live on `dev.radlab.zone` and checked over HTTP (2026-09-17): `/spellbook/` serves the book, not the SPA shell, byte-identical to the committed build (sha256 `29f5d1de…`, 4,626,104 b) — so Vite copies `public/` through verbatim and the rewrite beats the catch-all; `/spellbook` 307s to `/spellbook/`; `card-cover.webp` and both logo files 200. The card's strings are in the served entry bundle.
+- [ ] **Still unseen: anything visual.** No browser here, so the rendered card, the logo in light and dark, the five hash routes actually drawing, and 390 px with no horizontal scroll all need Norm's eyes before this is promoted to `main`.
+- [x] `npm run lint` and `npm run build` — green in CI on the `dev` push (run 35280144154, 46 s; only pre-existing warnings). Neither could be run locally: **Node is not installed on this machine**, so for frontend work here CI is the first real check and the `dev` push is how you get one.
 - [ ] Re-export `assets/card-cover.webp` with web fonts loaded — the committed one rendered with fallback faces, so the title is a plain serif instead of UnifrakturCook blackletter. Needs Playwright and network; see the tool README.
 - [ ] Wire `card-cover.webp` as the `og:image` on `/spellbook/` — the file is already in place, nothing references it yet, so a shared link previews blank.
 - [ ] Ask the eight authors whether they want their names on the About page linked to anything (consent covers publication; it did not ask about onward contact).
