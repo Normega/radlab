@@ -119,6 +119,7 @@ const SubmissionsQueue     = lazy(() => import('./academic/fieldguide/Submission
 // through the same components, and RLS decides what comes back.
 const FieldGuideMemberRoute = lazy(() => import('./academic/fieldguide/FieldGuideMemberRoute'))
 const ChapterMap           = lazy(() => import('./academic/fieldguide/ChapterMap'))
+const ContributionHowTo    = lazy(() => import('./academic/fieldguide/ContributionHowTo'))
 const WikiIndex            = lazy(() => import('./academic/fieldguide/wiki/WikiIndex'))
 const WikiPage             = lazy(() => import('./academic/fieldguide/wiki/WikiPage'))
 const GapBrowser           = lazy(() => import('./academic/fieldguide/GapBrowser'))
@@ -887,6 +888,9 @@ export default function App() {
                   how you browse by topic, and this is the week-planning view
                   of the same page_lectures mapping. */}
               <Route path="/academic/:courseCode/chapters" element={<ChapterMap />} />
+              {/* The student how-to for gap contributions — member-gated like
+                  the board it explains, with the avatar menu and a way home. */}
+              <Route path="/academic/:courseCode/how-to" element={<ContributionHowTo />} />
               {/* The gap browser: students plan their research assignment here.
                   Member-level on purpose — the board is part of reading the
                   guide, not part of submitting to it. */}
