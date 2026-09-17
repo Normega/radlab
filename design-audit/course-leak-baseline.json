@@ -17,7 +17,7 @@
   "src/academic/lecture-lounge/LectureLoungeAdminPage.jsx": 1,
   "src/components/routeTitle.test.mjs": 9,
   "src/lib/authDetectRoutes.js": 1,
-  "src/lib/authDetectRoutes.test.mjs": 24,
+  "src/lib/authDetectRoutes.test.mjs": 25,
   "api/claim-notify.js": 5,
   "api/claim-source.js": 2,
   "api/ingest.js": 2,
