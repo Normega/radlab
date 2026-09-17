@@ -7,6 +7,7 @@
     "dev": "vite",
     "prebuild": "node scripts/design-audit.mjs --warn && node scripts/course-leak-audit.mjs",
     "slides:fit": "node scripts/slide-fit.mjs",
+    "spellbook:build": "python3 tools/spellbook/build.py public/spellbook/index.html",
     "build": "vite build",
     "lint": "eslint .",
     "audit:design": "node scripts/design-audit.mjs",

@@ -55,9 +55,10 @@ export default function Landing({ session }) {
       {/* HUB CARDS — 1 col on mobile, 2 from md up. Order is deliberate and
           reads as three rows (Norm, 2026-09-10): what we make for participants
           beside what we make for students; then the lab itself beside the
-          campus map; then the book on its own row. Reordering these cards
-          changes which pair a visitor sees together, which is the whole
-          point — they are not a list. */}
+          campus map; then the two books — Norm's, and the one his students
+          wrote (2026-09-17). Reordering these cards changes which pair a
+          visitor sees together, which is the whole point — they are not a
+          list. */}
       <section style={S.hubSection} className="px-5 md:px-[52px]">
         <div className="grid grid-cols-1 md:grid-cols-2 w-full mx-auto" style={{ gap: 20, maxWidth: 1080 }}>
           <HubCard
@@ -107,6 +108,21 @@ export default function Landing({ session }) {
             cta="Read more →"
             href="https://www.betterineverysense.com"
             newTab
+          />
+          <HubCard
+            tag="Class Project"
+            title="The Spellbook"
+            // No course code in this copy, deliberately — same reason as the
+            // Courses card above, and course-leak-audit fails the build on one.
+            // The book's own About page names the course and the students.
+            desc="Eight evidence-based wellbeing spells, written and illustrated by fourth-year psychology students. Each one links to the research behind it."
+            chips={['8 Spells', 'Student-written', 'Evidence-linked']}
+            cta="Open the book →"
+            // Neither `internal` nor `newTab`: this must render a plain <a href>.
+            // /spellbook/ is a static file served from public/, outside the React
+            // app entirely — a router <Link> would navigate client-side and never
+            // ask the server for it, leaving the visitor on a blank route.
+            href="/spellbook/"
           />
         </div>
       </section>

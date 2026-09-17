@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The RADlab Spellbook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&family=DM+Serif+Display&family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&family=UnifrakturCook:wght@700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --rl-bg:#FCF0F5; --rl-soft:#FDF6FA; --rl-card:#ffffff; --rl-pink:#f068a4; --rl-pink-ink:#b8336f;
+  --rl-gray:#abadb0; --rl-ink:#1c1c1e; --rl-muted:#5d5a60; --rl-line:#efd9e4;
+  --g-leather:#2b1a16; --g-leather-2:#3d251e; --g-vellum:#ecdfc3; --g-vellum-2:#e0cfa9;
+  --g-gilt:#c9a45a; --g-gilt-dim:#8f7440; --g-ink:#2e2119; --g-oxblood:#6e2222;
+  --serif-rl:"DM Serif Display", Georgia, serif;
+  --sans:"DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --fell:"IM Fell English", "Iowan Old Style", Georgia, serif;
+  --fell-sc:"IM Fell English SC", "IM Fell English", Georgia, serif;
+  --black:"UnifrakturCook", "IM Fell English", Georgia, serif;
+  --fs-min:.75rem;
+  --radius-card:18px;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --rl-bg:#1b1519; --rl-soft:#221a1f; --rl-card:#261d23; --rl-pink:#f47fb3; --rl-pink-ink:#f59cc4;
+    --rl-gray:#8e8a90; --rl-ink:#f4ecf0; --rl-muted:#bcb2b8; --rl-line:#3a2c34;
+  }
+}
+:root[data-theme="dark"]{
+  --rl-bg:#1b1519; --rl-soft:#221a1f; --rl-card:#261d23; --rl-pink:#f47fb3; --rl-pink-ink:#f59cc4;
+  --rl-gray:#8e8a90; --rl-ink:#f4ecf0; --rl-muted:#bcb2b8; --rl-line:#3a2c34;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--rl-bg);color:var(--rl-ink);font-family:var(--sans);font-size:1.0625rem;line-height:1.6;-webkit-font-smoothing:antialiased}
+img{max-width:100%;display:block}
+a{color:var(--rl-pink-ink)}
+a:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid var(--rl-pink);outline-offset:3px;border-radius:6px}
+.wrap{max-width:1180px;margin:0 auto;padding:0 clamp(16px,4vw,40px)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ---------- RADlab chrome ---------- */
+.site-head{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--rl-bg) 88%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--rl-line)}
+.site-head .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:64px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--rl-ink)}
+.brand .logo-slot{display:block;flex:none;line-height:0}
+.brand .logo-slot img{height:1.5rem;width:auto;display:block}
+.brand small{font-size:.8rem;color:var(--rl-muted)}
+nav.main{display:flex;gap:4px;flex-wrap:wrap}
+nav.main a{font-size:.95rem;text-decoration:none;color:var(--rl-muted);padding:8px 14px;border-radius:999px}
+nav.main a[aria-current="page"]{background:var(--rl-card);color:var(--rl-ink);box-shadow:0 0 0 1px var(--rl-line)}
+nav.main a:hover{color:var(--rl-ink)}
+.site-foot{margin-top:72px;border-top:1px solid var(--rl-line);padding:28px 0 48px;color:var(--rl-muted);font-size:.9rem}
+.site-foot .wrap{display:grid;gap:12px;grid-template-columns:1fr auto}
+@media (max-width:720px){.site-foot .wrap{grid-template-columns:1fr}.brand small{display:none}}
+@media (max-width:480px){nav.main a{padding:6px 9px;font-size:.88rem}.site-head .wrap{gap:8px}}
+
+h1,h2,h3{font-family:var(--serif-rl);font-weight:400;line-height:1.15;margin:0}
+.lede{color:var(--rl-muted);max-width:60ch}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--rl-line);background:var(--rl-card);color:var(--rl-ink);border-radius:999px;padding:7px 14px;font:inherit;font-size:.92rem;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--rl-pink);border-color:var(--rl-pink);color:#fff}
+.btn{display:inline-flex;align-items:center;gap:8px;background:var(--rl-pink);color:#fff;text-decoration:none;border-radius:999px;padding:10px 18px;font-weight:500;border:0;font:inherit;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--rl-ink);box-shadow:inset 0 0 0 1px var(--rl-line)}
+.card{background:var(--rl-card);border-radius:var(--radius-card);box-shadow:0 0 0 1px var(--rl-line)}
+
+/* ---------- Grimoire (deliberately other) ---------- */
+.tome{
+  position:relative;color:var(--g-vellum);border-radius:10px 16px 16px 10px;padding:clamp(22px,4vw,48px);
+  background:
+    radial-gradient(120% 90% at 30% 20%,rgba(255,220,180,.07),transparent 60%),
+    radial-gradient(80% 80% at 80% 90%,rgba(0,0,0,.35),transparent 70%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .22 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"),
+    linear-gradient(160deg,var(--g-leather-2),var(--g-leather));
+  box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 30px 60px -30px rgba(40,10,20,.55),0 8px 18px -8px rgba(40,10,20,.35);
+}
+.tome::before{content:"";position:absolute;inset:10px;border:1px solid var(--g-gilt-dim);border-radius:6px 10px 10px 6px;pointer-events:none}
+.tome::after{content:"";position:absolute;inset:15px;border:2px solid var(--g-gilt);opacity:.55;border-radius:4px 8px 8px 4px;pointer-events:none}
+.tome .orn{position:absolute;width:34px;height:34px;color:var(--g-gilt);z-index:1;pointer-events:none}
+.tome .orn.tl{top:6px;left:6px}.tome .orn.tr{top:6px;right:6px;transform:scaleX(-1)}
+.tome .orn.bl{bottom:6px;left:6px;transform:scaleY(-1)}.tome .orn.br{bottom:6px;right:6px;transform:scale(-1,-1)}
+.tome > .inner{position:relative;z-index:2}
+.fell{font-family:var(--fell)}
+.gilt{color:var(--g-gilt)}
+
+/* Cover */
+.hero{padding:40px 0 8px;display:grid;justify-items:center;gap:22px;text-align:center}
+.cover{width:min(560px,100%);aspect-ratio:3/3.6;display:grid;place-items:center;text-align:center}
+.cover .inner{display:grid;gap:14px;justify-items:center;padding:0 12px}
+.cover .kicker{font-family:var(--fell-sc);letter-spacing:.14em;color:var(--g-gilt);font-size:clamp(.8rem,2.2vw,1rem)}
+.cover h1{font-family:var(--black);font-weight:700;font-size:clamp(2.6rem,10vw,5.2rem);line-height:.95;color:#f3e6c9;text-shadow:0 2px 0 rgba(0,0,0,.45),0 0 24px rgba(201,164,90,.25)}
+.cover .rule{width:60%;height:14px;color:var(--g-gilt)}
+.cover p{font-family:var(--fell);font-style:italic;font-size:clamp(1rem,2.6vw,1.2rem);color:#e6d6b4;max-width:30ch;margin:0}
+.cover .sigil{width:64px;height:64px;color:var(--g-gilt);opacity:.9}
+.hero .under{max-width:62ch;color:var(--rl-muted)}
+
+/* Index of spells */
+.needs{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:26px 0 30px}
+.needs .label{width:100%;text-align:center;font-family:var(--serif-rl);font-size:1.35rem;margin-bottom:4px}
+.index h2{font-family:var(--fell-sc);font-size:clamp(1.6rem,3.6vw,2.2rem);color:#f3e6c9;text-align:center;letter-spacing:.04em}
+.index .sub{text-align:center;font-family:var(--fell);font-style:italic;color:#cdbb95;margin:.25rem 0 1.6rem}
+.chapter{padding:18px 0 8px;border-top:1px solid rgba(201,164,90,.35)}
+.chapter:first-of-type{border-top:0}
+.chapter header{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;align-items:baseline;margin-bottom:10px}
+.chapter .num{font-family:var(--black);font-size:2rem;color:var(--g-gilt);grid-row:span 2;line-height:1}
+.chapter h3{font-family:var(--fell);font-size:1.45rem;color:#f3e6c9}
+.chapter .cb{font-family:var(--fell);font-style:italic;color:#bfae8a;font-size:1rem}
+.entries{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.entry a{display:grid;grid-template-columns:1fr auto;gap:2px 18px;padding:12px 12px;border-radius:8px;text-decoration:none;color:var(--g-vellum)}
+.entry a:hover,.entry a:focus-visible{background:rgba(201,164,90,.10)}
+.entry .t{font-family:var(--fell);font-size:1.25rem;color:#f6ebd2}
+.entry .by{font-family:var(--fell);font-style:italic;color:var(--g-gilt);white-space:nowrap}
+.entry .tag{grid-column:1/-1;font-size:.95rem;color:#cdbb95;font-family:var(--fell)}
+.entry[hidden]{display:none}
+.nomatch{font-family:var(--fell);font-style:italic;text-align:center;color:#cdbb95}
+@media (max-width:560px){.entry a{grid-template-columns:1fr}.entry .by{white-space:normal}}
+
+/* Spell view */
+.crumbs{margin:26px 0 14px;font-size:.92rem;color:var(--rl-muted)}
+.crumbs a{color:var(--rl-muted)}
+.spell-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(300px,1fr);gap:clamp(20px,3vw,40px);align-items:start}
+@media (max-width:900px){.spell-grid{grid-template-columns:1fr}}
+.reader{padding:clamp(18px,3vw,34px)}
+.stage{perspective:1400px}
+.vellum-mat{background:linear-gradient(180deg,var(--g-vellum),var(--g-vellum-2));padding:10px;border-radius:3px;box-shadow:0 0 0 1px #0006,0 12px 28px -10px #000a}
+.page{margin:0 auto;width:auto;transform-origin:left center}
+.page img{max-height:calc(70vh - 20px);width:auto;margin:0 auto;background:#d9c9a6}
+.page.turn{animation:turn .45s ease-out}
+.page.turn-back{animation:turnback .45s ease-out}
+@keyframes turn{from{transform:rotateY(-14deg);opacity:.2}to{transform:none;opacity:1}}
+@keyframes turnback{from{transform:rotateY(14deg);opacity:.2}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.page.turn,.page.turn-back{animation:none}html{scroll-behavior:auto}}
+.pager{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:16px;font-family:var(--fell)}
+.pager button{background:transparent;border:1px solid var(--g-gilt-dim);color:#f3e6c9;border-radius:999px;padding:8px 16px;font:inherit;font-family:var(--fell);font-size:1.05rem;cursor:pointer}
+.pager button:disabled{opacity:.35;cursor:default}
+.pager .count{color:var(--g-gilt);font-style:italic}
+.thumbs{display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap}
+.thumbs button{padding:0;border:2px solid transparent;border-radius:3px;background:none;cursor:pointer;width:44px;opacity:.6}
+.thumbs button[aria-current="true"]{border-color:var(--g-gilt);opacity:1}
+.thumbs img,.thumbs .mini{width:100%;height:58px;object-fit:cover;border-radius:2px;background:var(--g-vellum)}
+.remade{font-family:var(--fell);font-style:italic;color:#cdbb95;font-size:.95rem;text-align:center;margin:12px 0 0}
+
+.margin{padding:clamp(20px,2.6vw,30px);display:grid;gap:18px;position:sticky;top:84px}
+@media (max-width:900px){.margin{position:static}}
+.margin h1{font-size:clamp(1.8rem,3vw,2.3rem)}
+.margin .by{color:var(--rl-muted);margin-top:4px}
+.margin .tagline{font-size:1.08rem;margin:0}
+.facts{display:grid;gap:14px;margin:0}
+.facts dt{font-weight:700;font-size:.95rem}
+.facts dd{margin:2px 0 0;color:var(--rl-muted)}
+.facts ul{margin:4px 0 0;padding-left:1.1em}
+.caution{background:var(--rl-soft);border-left:3px solid var(--rl-pink);padding:12px 14px;border-radius:0 10px 10px 0;font-size:.95rem}
+.caution strong{display:block;margin-bottom:2px}
+.srch{font-family:var(--sans);font-weight:700;font-size:1rem;margin:0 0 8px}
+.srcs{list-style:none;margin:0;padding:0;display:grid;gap:8px;font-size:.93rem}
+.srcs li{display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:baseline}
+.srcs .tt{grid-column:1/-1;color:var(--rl-muted);font-size:.88rem;line-height:1.4}
+.srcs a.doi{font-size:.85rem;white-space:nowrap}
+.srcs .missing{color:var(--rl-muted);font-style:italic}
+details.tx{border-top:1px solid var(--rl-line);padding-top:12px}
+details.tx summary{cursor:pointer;font-weight:500}
+details.tx .body{white-space:pre-line;font-size:.95rem;color:var(--rl-ink);margin-top:10px;max-height:46vh;overflow:auto;padding-right:6px}
+.spell-nav{display:flex;justify-content:space-between;gap:12px;margin-top:28px;flex-wrap:wrap}
+.spell-nav a{text-decoration:none;color:var(--rl-ink);max-width:48%}
+.spell-nav small{display:block;color:var(--rl-muted)}
+.spell-nav .next{text-align:right;margin-left:auto}
+
+.zoom{display:block;padding:0;border:0;background:none;cursor:zoom-in;margin:0 auto}
+.hint{font-family:var(--fell);font-style:italic;color:#bfae8a;font-size:.9rem;text-align:center;margin:10px 0 0}
+dialog.lb{border:0;padding:0;background:#140c0a;max-width:100vw;max-height:100vh;width:100vw;height:100vh;color:#f3e6c9}
+dialog.lb::backdrop{background:#000c}
+dialog.lb .bar{position:sticky;top:0;display:flex;justify-content:flex-end;padding:10px;background:#140c0ae6}
+dialog.lb button{background:transparent;color:#f3e6c9;border:1px solid var(--g-gilt-dim);border-radius:999px;padding:8px 16px;font:inherit;cursor:pointer}
+dialog.lb img{width:min(1100px,100%);margin:0 auto 40px}
+/* Remade page (Abbey) */
+.mm{width:min(100%,calc((70vh - 20px) * .75));aspect-ratio:3/4;margin:0 auto;container-type:inline-size;color:#3a2a3d;
+  background:
+   radial-gradient(90% 70% at 20% 10%,rgba(255,255,255,.55),transparent 60%),
+   radial-gradient(70% 60% at 90% 95%,rgba(120,90,130,.18),transparent 70%),
+   url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.6' numOctaves='4'/><feColorMatrix values='0 0 0 0 .35  0 0 0 0 .3  0 0 0 0 .4  0 0 0 .12 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"),
+   linear-gradient(170deg,#ece6ee,#dcd3de);
+  font-family:var(--fell);overflow:hidden}
+.mm .in{position:relative;height:100%;padding:7cqi 8cqi;display:flex;flex-direction:column;gap:1.6cqi}
+.mm .in::before{content:"";position:absolute;inset:3cqi;border:.8cqi double #6d557788;pointer-events:none}
+.mm h2{font-family:var(--black);font-size:9cqi;color:#5b3f68;line-height:.95;text-align:center}
+.mm .st{font-style:italic;text-align:center;font-size:3.6cqi;margin-top:-1cqi}
+.mm h3{font-family:var(--fell-sc);font-size:4.2cqi;color:#5b3f68;border-bottom:.25cqi solid #6d557766;padding-bottom:.3cqi;margin-top:1.2cqi}
+.mm p,.mm li{font-size:3.05cqi;line-height:1.36;margin:0}
+.mm ul,.mm ol{margin:0;padding-left:4.2cqi}
+.mm .two{display:grid;grid-template-columns:1fr 1fr;gap:4cqi}
+.mm .ex{display:grid;gap:1cqi}
+.mm .ex p{padding-left:4cqi;text-indent:-4cqi}
+.mm .ex em{color:#5b3f68}
+.mm .sig{margin-top:auto;text-align:center;font-style:italic;font-size:3.2cqi;color:#5b3f68}
+.mini.mm-mini{background:linear-gradient(170deg,#ece6ee,#cfc4d3)}
+
+/* Evidence */
+.paper{display:grid;grid-template-columns:230px minmax(0,1fr);gap:40px;margin-top:26px;align-items:start}
+@media (max-width:900px){.paper{grid-template-columns:1fr}.toc{display:none}}
+.toc{position:sticky;top:84px;font-size:.9rem}
+.toc a{display:block;color:var(--rl-muted);text-decoration:none;padding:4px 0 4px 10px;border-left:2px solid var(--rl-line)}
+.toc a:hover{color:var(--rl-ink);border-color:var(--rl-pink)}
+.doc{padding:clamp(22px,4vw,56px)}
+.doc .meta{color:var(--rl-muted);margin:10px 0 20px}
+.doc h1{font-size:clamp(1.8rem,3.4vw,2.6rem);max-width:24ch}
+.doc .note{font-size:.9rem;color:var(--rl-muted);background:var(--rl-soft);border-radius:10px;padding:12px 14px;margin:0 0 28px}
+.doc .prose{max-width:68ch}
+.doc .prose h2{font-size:1.45rem;margin:2em 0 .5em}
+.doc .prose p{margin:0 0 1em}
+.doc a.cite{color:inherit;text-decoration:underline;text-decoration-color:var(--rl-pink);text-decoration-thickness:2px;text-underline-offset:3px}
+.refs{list-style:none;padding:0;margin:0;display:grid;gap:2px;font-size:.95rem}
+.refs li{padding:8px 10px 8px 2.2em;text-indent:-1.6em;border-radius:8px;overflow-wrap:anywhere}
+.refs li.flash{background:color-mix(in srgb,var(--rl-pink) 18%,transparent);transition:background 1.2s}
+.refs li .back{font-size:.82rem;margin-left:6px}
+.spellcard{display:flex;gap:14px;align-items:center;text-decoration:none;color:inherit;margin-bottom:24px}
+.spellcard img{width:56px;height:72px;object-fit:cover;border-radius:4px;box-shadow:0 0 0 1px var(--rl-line)}
+.spellcard span{font-size:.92rem;color:var(--rl-muted)}
+.spellcard b{display:block;font-family:var(--serif-rl);font-weight:400;font-size:1.15rem;color:var(--rl-ink)}
+
+.ev-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin:26px 0 48px}
+.ev-list a{display:grid;grid-template-columns:64px 1fr;gap:14px;padding:16px;text-decoration:none;color:inherit;align-items:start}
+.ev-list img,.ev-list .mini{width:64px;height:84px;object-fit:cover;border-radius:4px}
+.ev-list b{font-family:var(--serif-rl);font-weight:400;font-size:1.1rem;display:block;line-height:1.25}
+.ev-list span{display:block;margin-top:4px;font-size:.9rem;line-height:1.4;color:var(--rl-muted)}
+.bib{margin-top:10px}
+.bib li{text-indent:-1.6em;padding-left:1.6em}
+.bib .in{display:block;text-indent:0;margin-top:3px}
+.bib .in a{font-size:.8rem;text-decoration:none;border:1px solid var(--rl-line);border-radius:999px;padding:1px 8px;margin-right:4px;color:var(--rl-muted)}
+.page-head{margin:40px 0 8px;display:grid;gap:10px}
+.about{max-width:68ch}
+.about h2{font-size:1.5rem;margin:1.8em 0 .4em}
+.contribs{columns:2;padding-left:1.1em}
+@media (max-width:560px){.contribs{columns:1}}
+</style>
+</head>
+<body>
+<header class="site-head">
+  <div class="wrap">
+    <!-- The logo files are the React app's, served from its public/ root, so
+         this page and the rest of radlab.zone share one pair of assets (and one
+         browser cache entry for a visitor arriving from the front page).
+         <picture> fetches only the matching variant, which matters here: each
+         file is ~950 KB, being one embedded raster. The media query mirrors the
+         token blocks at the top of this stylesheet — note it cannot see the
+         [data-theme] escape hatch those blocks also honour, so if a runtime
+         theme toggle is ever added this has to become CSS show/hide instead.
+         The anchor's aria-label names the destination, so the img alt is empty
+         rather than announcing the lab twice. -->
+    <a class="brand" href="/" aria-label="radlab.zone home">
+      <picture class="logo-slot">
+        <source srcset="/RADlab_Logo.svg" media="(prefers-color-scheme: dark)">
+        <img src="/RADlab_Logo_light.svg" alt="" decoding="async">
+      </picture>
+      <small>Regulatory and Affective Dynamics Lab</small>
+    </a>
+    <nav class="main" aria-label="Main">
+      <a href="#/" data-nav="book">The Spellbook</a>
+      <a href="#/evidence" data-nav="evidence">Evidence</a>
+      <a href="#/about" data-nav="about">About</a>
+    </nav>
+  </div>
+</header>
+<main id="app" class="wrap" tabindex="-1"></main>
+<dialog class="lb" id="lb" aria-label="Enlarged page"><div class="bar"><button type="button" id="lbx">Close</button></div><img id="lbi" alt=""></dialog>
+<footer class="site-foot">
+  <div class="wrap">
+    <div>These practices support wellbeing; they are not a substitute for professional care. If you are in crisis in Canada, call or text 9-8-8, or contact local emergency services.</div>
+    <div>RADlab, University of Toronto Mississauga</div>
+  </div>
+</footer>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="orn" viewBox="0 0 34 34"><path d="M2 2h14M2 2v14M6 6c6 0 10 4 10 10M6 6c0 6 4 10 10 10M2 2l7 7" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="16" cy="16" r="1.8" fill="currentColor"/></symbol>
+  <symbol id="rule" viewBox="0 0 200 14"><path d="M0 7h82M118 7h82" stroke="currentColor"/><path d="M100 1l6 6-6 6-6-6z" fill="none" stroke="currentColor"/><circle cx="100" cy="7" r="1.6" fill="currentColor"/><circle cx="88" cy="7" r="1.2" fill="currentColor"/><circle cx="112" cy="7" r="1.2" fill="currentColor"/></symbol>
+  <symbol id="sigil" viewBox="0 0 64 64"><circle cx="32" cy="32" r="29" fill="none" stroke="currentColor"/><circle cx="32" cy="32" r="23" fill="none" stroke="currentColor" stroke-dasharray="2 3"/><path d="M36 14a18 18 0 1 0 0 36 14 14 0 1 1 0-36z" fill="currentColor" opacity=".9"/><path d="M20 30l2 2-2 2-2-2zM44 22l1.5 1.5L44 25l-1.5-1.5zM46 40l1.5 1.5L46 43l-1.5-1.5z" fill="currentColor"/></symbol>
+</svg>
+
+<script>
+window.SB = __DATA__;
+</script>
+<script>
+(() => {
+const {chapters, needs, spells, papers, images} = window.SB;
+const app = document.getElementById('app');
+const bySlug = Object.fromEntries(spells.map(s => [s.slug, s]));
+const refIndex = {};
+for (const [slug, blocks] of Object.entries(papers)) for (const b of blocks) if (b.type === 'ref') refIndex[b.id] = {...b, paper: slug};
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const orn = () => ['tl','tr','bl','br'].map(p => `<svg class="orn ${p}" aria-hidden="true"><use href="#orn"/></svg>`).join('');
+const tome = (inner, cls = '', tag = 'section', attrs = '') => `<${tag} class="tome ${cls}" ${attrs}>${orn()}<div class="inner">${inner}</div></${tag}>`;
+const thumbSrc = s => s.pages[0].img ? images[s.pages[0].img] : null;
+const thumb = (s, cls = '') => thumbSrc(s) ? `<img src="${thumbSrc(s)}" alt="" class="${cls}">` : `<div class="mini mm-mini ${cls}" aria-hidden="true"></div>`;
+let filter = null;
+
+function route() {
+  const h = decodeURIComponent(location.hash.replace(/^#/, '')) || '/';
+  const [path, query] = h.split('?');
+  const parts = path.split('/').filter(Boolean);
+  const q = new URLSearchParams(query || '');
+  document.querySelectorAll('nav.main a').forEach(a => a.removeAttribute('aria-current'));
+  const mark = k => document.querySelector(`[data-nav="${k}"]`)?.setAttribute('aria-current', 'page');
+  if (parts[0] === 'spell' && bySlug[parts[1]]) { mark('book'); renderSpell(bySlug[parts[1]], Math.max(0, (parseInt(parts[2]) || 1) - 1)); }
+  else if (parts[0] === 'evidence' && parts[1] && papers[parts[1]]) { mark('evidence'); renderPaper(parts[1], q.get('ref')); }
+  else if (parts[0] === 'evidence') { mark('evidence'); renderEvidenceIndex(); }
+  else if (parts[0] === 'about') { mark('about'); renderAbout(); }
+  else { mark('book'); renderHome(); }
+}
+
+/* ---------- Home ---------- */
+function renderHome() {
+  document.title = 'The RADlab Spellbook';
+  const idx = chapters.map(c => {
+    const list = spells.filter(s => s.chapter === c.id);
+    return `<div class="chapter" data-ch="${c.id}"><header><span class="num">${c.numeral}</span><h3>${esc(c.name)}</h3><span class="cb">${esc(c.blurb)}</span></header>
+      <ul class="entries">${list.map(s => `<li class="entry" data-needs="${s.needs.join(' ')}"><a href="#/spell/${s.slug}">
+        <span class="t">${esc(s.title)}</span><span class="by">${esc(s.author)}</span><span class="tag">${esc(s.tagline)}</span></a></li>`).join('')}</ul></div>`;
+  }).join('');
+  app.innerHTML = `
+    <section class="hero">
+      ${tome(`<span class="kicker">Being a compendium of</span>
+        <h1>The<br>Spellbook</h1>
+        <svg class="rule" aria-hidden="true"><use href="#rule"/></svg>
+        <p>eight charms for wellbeing, each bound to the evidence that gave it power</p>
+        <svg class="sigil" aria-hidden="true"><use href="#sigil"/></svg>`, 'cover', 'div')}
+      <p class="under">Written and illustrated by students in PSY440 at the University of Toronto Mississauga, Winter 2026. Every spell links to the research review behind it.</p>
+    </section>
+    <div class="needs" role="group" aria-labelledby="needs-l">
+      <span class="label" id="needs-l">What do you need tonight?</span>
+      ${Object.entries(needs).map(([k, v]) => `<button class="chip" data-need="${k}" aria-pressed="${filter === k}">${esc(v)}</button>`).join('')}
+    </div>
+    ${tome(`<h2>Index of Spells</h2><p class="sub">Turn to any page. Each spell stands alone.</p>${idx}<p class="nomatch" hidden>No spell answers that need yet.</p>`, 'index')}
+  `;
+  app.querySelectorAll('[data-need]').forEach(b => b.addEventListener('click', () => {
+    filter = filter === b.dataset.need ? null : b.dataset.need; applyFilter();
+  }));
+  applyFilter();
+}
+function applyFilter() {
+  app.querySelectorAll('[data-need]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.need === filter)));
+  let any = false;
+  app.querySelectorAll('.entry').forEach(e => { const show = !filter || e.dataset.needs.split(' ').includes(filter); e.hidden = !show; any ||= show; });
+  app.querySelectorAll('.chapter').forEach(c => c.hidden = ![...c.querySelectorAll('.entry')].some(e => !e.hidden));
+  const nm = app.querySelector('.nomatch'); if (nm) nm.hidden = any;
+}
+
+/* ---------- Spell ---------- */
+const MM = {
+  mm1: `<h2>The Metaphor Mirror</h2><p class="st">a spell of metaphorical reframing</p>
+    <h3>What it is</h3>
+    <p>Cognitive restructuring spots unhelpful thought patterns and corrects them. The metaphor version does the same work through imagery, turning a problem into something easier to hold, examine, and rethink, with less distress along the way.</p>
+    <h3>What it does</h3>
+    <p>In brief trials it eased distress, catastrophizing, and worry, and lifted insight, motivation, and self-efficacy. Metaphors stir imagination and several memory systems at once, so a new way of seeing is more likely to stick.</p>
+    <div class="two"><div><h3>Ingredients</h3><ul><li>Pen and paper</li><li>A comfortable spot</li><li>One problem weighing on you</li><li>About 30 minutes</li></ul></div>
+    <div><h3>When to cast</h3><ul><li>Once a week at first</li><li>When a worry keeps circling</li><li>When plain advice is not landing</li></ul></div></div>
+    <svg viewBox="0 0 120 150" style="width:16cqi;margin:auto auto 0;color:#5b3f68" aria-hidden="true"><ellipse cx="60" cy="52" rx="36" ry="44" fill="none" stroke="currentColor" stroke-width="3"/><ellipse cx="60" cy="52" rx="29" ry="37" fill="currentColor" opacity=".08"/><path d="M44 40q8-14 22-16" fill="none" stroke="currentColor" stroke-width="2" opacity=".6"/><path d="M55 96h10v34q0 8-5 12-5-4-5-12z" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="60" cy="6" r="3" fill="currentColor"/></svg>
+    <p class="sig" style="margin-top:1cqi">Turn the page to begin the ritual.</p>`,
+  mm2: `<h2>The Ritual</h2>
+    <h3>I. Name the problem</h3>
+    <p>Write a problem you are facing in a sentence or two. Rate your distress from 1 (not at all) to 10 (severe).</p>
+    <h3>II. Look into the mirror</h3>
+    <p>Picture this problem: <em>&ldquo;I have no motivation to do anything before I get the result of an important exam.&rdquo;</em> Rate each answer for insight and relief, 1 to 10.</p>
+    <div class="ex">
+      <p>(a) &ldquo;The test is so important that all you can do is wait for the result.&rdquo; <em>A restatement: it only repeats the problem.</em></p>
+      <p>(b) &ldquo;Live your life on your normal schedule so you won&rsquo;t feel confused.&rdquo; <em>A literal answer: some help.</em></p>
+      <p>(c) &ldquo;Life is like riding a bike; you must keep moving to keep your balance.&rdquo; <em>A metaphor: usually the most relief and insight.</em></p>
+    </div>
+    <h3>III. Cast your own</h3>
+    <p>Write a metaphor for your problem. If stuck, write a literal answer first, then recall a time that felt similar and borrow its shape. Rate your distress again.</p>
+    <h3>Afterwards</h3>
+    <p>Jot down new ideas or questions. Plan your next session; the effect grows with practice. If this spell does not suit you, others in this book may.</p>`
+};
+function pageHTML(p, s, i) {
+  if (p.html) return `<div class="mm" role="img" aria-label="${esc(p.alt)}"><div class="in">${MM[p.html]}</div></div>`;
+  return `<button class="zoom" type="button" aria-label="Enlarge this page"><img src="${images[p.img]}" alt="${esc(p.alt)}" width="1100"></button>`;
+}
+function srcItem(id) {
+  const r = refIndex[id]; if (!r) return '';
+  const doi = r.doi ? `<a class="doi" href="https://doi.org/${esc(r.doi)}" target="_blank" rel="noopener">Open source</a>` : '';
+  return `<li><a href="#/evidence/${r.paper}?ref=${r.id}">${esc(r.short)}</a>${doi}<span class="tt">${esc(r.title)}</span></li>`;
+}
+function renderSpell(s, pi) {
+  document.title = `${s.title} | The RADlab Spellbook`;
+  const ch = chapters.find(c => c.id === s.chapter);
+  const i = spells.indexOf(s), prev = spells[i - 1], next = spells[i + 1];
+  pi = Math.min(pi, s.pages.length - 1);
+  const fact = (k, v) => `<div><dt>${k}</dt><dd>${Array.isArray(v) ? `<ul>${v.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : esc(v)}</dd></div>`;
+  app.innerHTML = `
+    <p class="crumbs"><a href="#/">The Spellbook</a> / ${ch.numeral}. ${esc(ch.name)}</p>
+    <div class="spell-grid">
+      ${tome(`<div class="stage"><div class="vellum-mat"><div class="page" id="page"></div></div></div>
+        ${s.pages.some(p => p.img) ? '<p class="hint">Select the page to enlarge it.</p>' : ''}<div class="pager"><button id="pv" aria-label="Previous page">Turn back</button><span class="count" id="pc" aria-live="polite"></span><button id="nx" aria-label="Next page">Turn page</button></div>
+        ${s.pages.length > 1 ? `<div class="thumbs" role="group" aria-label="Pages">${s.pages.map((p, k) => `<button data-k="${k}" aria-label="Page ${k + 1}">${p.img ? `<img src="${images[p.img]}" alt="">` : '<div class="mini mm-mini"></div>'}</button>`).join('')}</div>` : ''}
+        ${s.remade ? `<p class="remade">Pages remade by RADlab from ${esc(s.author)}&rsquo;s original outline, for legibility.</p>` : ''}`, 'reader', 'section', 'aria-label="Spell pages"')}
+      <aside class="card margin" aria-label="About this spell">
+        <div><h1>${esc(s.title)}</h1><div class="by">by ${esc(s.author)}</div></div>
+        <p class="tagline">${esc(s.tagline)}</p>
+        <dl class="facts">${fact('Casting time', s.time)}${fact('Ingredients', s.ingredients)}${fact('When to cast', s.when)}</dl>
+        <div class="caution"><strong>Before you cast</strong>${esc(s.caution)}</div>
+        <div><a class="btn" href="#/evidence/${s.slug}">Read the evidence paper</a></div>
+        <div id="pgsrc"></div>
+        <details class="tx"><summary>Read this page as text</summary><div class="body" id="tx"></div></details>
+      </aside>
+    </div>
+    <nav class="spell-nav" aria-label="More spells">
+      ${prev ? `<a href="#/spell/${prev.slug}"><small>Previous spell</small>${esc(prev.title)}</a>` : '<span></span>'}
+      ${next ? `<a class="next" href="#/spell/${next.slug}"><small>Next spell</small>${esc(next.title)}</a>` : ''}
+    </nav>`;
+  let cur = -1;
+  const show = (k, dir) => {
+    if (k < 0 || k >= s.pages.length) return;
+    const p = s.pages[k], el = document.getElementById('page');
+    el.innerHTML = pageHTML(p, s, k);
+    const z = el.querySelector('.zoom');
+    if (z) z.onclick = () => { const lb = document.getElementById('lb'), im = document.getElementById('lbi'); im.src = images[p.img]; im.alt = p.alt; lb.showModal(); lb.scrollTop = 0; };
+    el.classList.remove('turn', 'turn-back'); void el.offsetWidth;
+    if (cur !== -1) el.classList.add(dir < 0 ? 'turn-back' : 'turn');
+    cur = k;
+    document.getElementById('pc').textContent = `Page ${k + 1} of ${s.pages.length}`;
+    document.getElementById('pv').disabled = k === 0;
+    document.getElementById('nx').disabled = k === s.pages.length - 1;
+    app.querySelectorAll('.thumbs button').forEach(b => b.setAttribute('aria-current', String(+b.dataset.k === k)));
+    document.getElementById('tx').textContent = p.transcript;
+    const ids = p.cites || [];
+    document.getElementById('pgsrc').innerHTML = (ids.length || p.uncited) ? `<h2 class="srch">Sources behind this page</h2>
+      <ul class="srcs">${ids.map(srcItem).join('')}${(p.uncited || []).map(u => `<li><span class="missing">${esc(u)}: cited on the page, not in the paper&rsquo;s reference list</span></li>`).join('')}</ul>` :
+      `<h2 class="srch">Key sources for this spell</h2><ul class="srcs">${s.sources.map(srcItem).join('')}</ul>`;
+    history.replaceState(null, '', `#/spell/${s.slug}/${k + 1}`);
+  };
+  document.getElementById('pv').onclick = () => show(cur - 1, -1);
+  document.getElementById('nx').onclick = () => show(cur + 1, 1);
+  app.querySelectorAll('.thumbs button').forEach(b => b.onclick = () => show(+b.dataset.k, +b.dataset.k - cur));
+  keyHandler = e => {
+    if (e.target.closest('input,textarea,summary') || document.getElementById('lb').open) return;
+    if (e.key === 'ArrowRight') show(cur + 1, 1);
+    if (e.key === 'ArrowLeft') show(cur - 1, -1);
+  };
+  show(pi, 0);
+}
+let keyHandler = null;
+document.addEventListener('keydown', e => { if (keyHandler && location.hash.startsWith('#/spell/')) keyHandler(e); });
+
+/* ---------- Evidence ---------- */
+function renderPaper(slug, focus) {
+  const s = bySlug[slug], blocks = papers[slug];
+  document.title = `Evidence: ${s.title} | The RADlab Spellbook`;
+  let body = '', inRefs = false, toc = [], n = 0;
+  for (const b of blocks) {
+    if (b.type === 'h') {
+      if (inRefs) body += '</ol>';
+      inRefs = /^references|^additional sources/i.test(b.text);
+      const id = `sec-${++n}`; toc.push([id, b.text]);
+      body += `<h2 id="${id}">${b.html}</h2>${inRefs ? '<ol class="refs">' : ''}`;
+    } else if (b.type === 'ref') {
+      if (!inRefs) { body += '<ol class="refs">'; inRefs = true; }
+      body += `<li id="${b.id}">${b.html}</li>`;
+    } else body += `<p>${b.html}</p>`;
+  }
+  if (inRefs) body += '</ol>';
+  app.innerHTML = `
+    <div class="paper">
+      <nav class="toc" aria-label="Sections">${toc.map(([id, t]) => `<a href="#" data-jump="${id}">${esc(t)}</a>`).join('')}</nav>
+      <article class="card doc">
+        <a class="spellcard" href="#/spell/${slug}">${thumb(s)}<span><b>${esc(s.title)}</b>Back to the spell</span></a>
+        <h1>${esc(s.paper)}</h1>
+        <p class="meta">${esc(s.author)}. PSY440: Special Topics in Abnormal Psychology, University of Toronto Mississauga, 2026.</p>
+        <p class="note">A student narrative review, shared with the author&rsquo;s permission. The text is reproduced from the submitted paper with light cleanup of layout only. Underlined citations jump to the reference list.</p>
+        <div class="prose">${body}</div>
+      </article>
+    </div>`;
+  const flash = id => { const el = document.getElementById(id); if (!el) return; el.scrollIntoView({block: 'center'}); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1600); };
+  app.querySelectorAll('a.cite').forEach(a => a.addEventListener('click', e => { e.preventDefault(); flash(a.getAttribute('href').slice(1)); }));
+  app.querySelectorAll('[data-jump]').forEach(a => a.addEventListener('click', e => { e.preventDefault(); document.getElementById(a.dataset.jump).scrollIntoView(); }));
+  if (focus) requestAnimationFrame(() => flash(focus)); else window.scrollTo(0, 0);
+}
+function renderEvidenceIndex() {
+  document.title = 'Evidence | The RADlab Spellbook';
+  const seen = new Map();
+  for (const r of Object.values(refIndex)) {
+    const key = r.doi ? r.doi.toLowerCase() : r.text.slice(0, 60).toLowerCase();
+    if (!seen.has(key)) seen.set(key, {r, in: new Set()});
+    seen.get(key).in.add(r.paper);
+  }
+  const all = [...seen.values()].sort((a, b) => a.r.text.localeCompare(b.r.text));
+  app.innerHTML = `
+    <div class="page-head"><h1>Appendix of Evidence</h1><p class="lede">Each spell grew from a student literature review. Read any paper in full, or browse every source across the book.</p></div>
+    <div class="ev-list">${spells.map(s => `<a class="card" href="#/evidence/${s.slug}">${thumb(s)}<div><b>${esc(s.paper)}</b><span>${esc(s.author)}, for ${esc(s.title)}</span></div></a>`).join('')}</div>
+    <section class="card doc"><h2>All sources</h2><p class="lede">${all.length} works, merged where two reviews cite the same paper.</p>
+      <ol class="refs bib">${all.map(x => `<li>${x.r.html}<span class="in">${[...x.in].map(p => `<a href="#/evidence/${p}?ref=${x.r.id}">${esc(bySlug[p].title)}</a>`).join('')}</span></li>`).join('')}</ol>
+    </section>`;
+  window.scrollTo(0, 0);
+}
+function renderAbout() {
+  document.title = 'About | The RADlab Spellbook';
+  app.innerHTML = `<article class="about">
+    <div class="page-head"><h1>About this book</h1></div>
+    <p class="lede">In PSY440, students reviewed the research on one everyday wellbeing practice, then turned what they found into a spell: a short, practical ritual anyone can try.</p>
+    <h2>How to use it</h2>
+    <p>Pick a spell by what you need, not by chapter. Read the page, try it a few times, and notice what changes. The margin beside each spell lists casting time, ingredients, and the sources behind that page. Every spell links to the full review, so you can judge the evidence yourself.</p>
+    <h2>A note on care</h2>
+    <p>These practices are meant to support wellbeing. They do not replace assessment or treatment. If a problem persists, gets worse, or feels unsafe, reach out to a health professional. In Canada, call or text 9-8-8 any time.</p>
+    <h2>Contributors</h2>
+    <ul class="contribs">${[...spells].sort((a, b) => a.author.localeCompare(b.author)).map(s => `<li>${esc(s.author)}, <a href="#/spell/${s.slug}">${esc(s.title)}</a></li>`).join('')}</ul>
+    <h2>Editorial notes</h2>
+    <p>Spell pages appear as the students designed them. One outline was redrawn for legibility and is marked on its page. Text versions of each page are transcriptions. Review papers are reproduced with layout cleanup only, with a small number of reference links corrected.</p>
+    <p>Compiled by the Regulatory and Affective Dynamics Lab, University of Toronto Mississauga. Course instructor: Professor Norman Farb.</p>
+  </article>`;
+  window.scrollTo(0, 0);
+}
+
+document.getElementById('lbx').onclick = () => document.getElementById('lb').close();
+document.getElementById('lb').addEventListener('click', e => { if (e.target.id === 'lbi' || e.target.id === 'lb') document.getElementById('lb').close(); });
+window.addEventListener('hashchange', () => { keyHandler = null; route(); if (!location.hash.includes('?ref=')) window.scrollTo(0, 0); });
+route();
+})();
+</script>
+</body>
+</html>
