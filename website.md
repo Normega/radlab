@@ -7063,6 +7063,27 @@ or `data/`, then rebuild.
   mismatch says "this is the students' object, not the lab's chrome" — don't
   "fix" it. Only the header and footer are RADlab.
 
+### Type — the display gothic, and why the numerals left it
+
+`--black` is the display gothic: the cover title and the Metaphor Mirror heading. It
+was **UnifrakturCook** until 2026-09-17 and is now **Grenze Gotisch**. A true Fraktur
+renders a lowercase `k` as a ligatured stroke pair with no clear ascender junction,
+which made the word "Spellbook" genuinely hard to read on its own cover. Grenze Gotisch
+keeps the gothic weight and texture but draws it on open modern skeletons.
+
+The chapter numerals moved off that token altogether, to `--fell-sc` (IM Fell English
+SC, already loaded). **No blackletter would have fixed them**: Fraktur builds `I`, `II`
+and `III` from near-identical decorated strokes, so the chapter number could not be
+counted at a glance whatever face was chosen. Only I–IV exist, so the cost of a
+non-gothic face there is four glyphs.
+
+Both faces are on Google Fonts, which the page already loads from; the swap is
+net-neutral on requests (UnifrakturCook out, Grenze Gotisch in) and the numerals cost
+nothing new. If either is ever changed again, re-check the cover at 390 px — the title
+is `clamp(2.6rem,10vw,5.2rem)` and a wider face will wrap differently.
+
+---
+
 ### Citation maintenance
 
 `crossref.py` → `qa/verify_citations.py` → rebuild. `verify_citations.py` prints a
@@ -7257,7 +7278,7 @@ psychology students".
 - [x] Live on `dev.radlab.zone` and checked over HTTP (2026-09-17): `/spellbook/` serves the book, not the SPA shell, byte-identical to the committed build (sha256 `29f5d1de…`, 4,626,104 b) — so Vite copies `public/` through verbatim and the rewrite beats the catch-all; `/spellbook` 307s to `/spellbook/`; `card-cover.webp` and both logo files 200. The card's strings are in the served entry bundle.
 - [ ] **Still unseen: anything visual.** No browser here, so the rendered card, the logo in light and dark, the five hash routes actually drawing, and 390 px with no horizontal scroll all need Norm's eyes before this is promoted to `main`.
 - [x] `npm run lint` and `npm run build` — green in CI on the `dev` push (run 35280144154, 46 s; only pre-existing warnings). Neither could be run locally: **Node is not installed on this machine**, so for frontend work here CI is the first real check and the `dev` push is how you get one.
-- [ ] Re-export `assets/card-cover.webp` with web fonts loaded — the committed one rendered with fallback faces, so the title is a plain serif instead of UnifrakturCook blackletter. Needs Playwright and network; see the tool README.
+- [ ] Re-export `assets/card-cover.webp` — now twice out of date: it rendered with fallback faces (plain serif, not the display gothic) **and** the cover face has since changed to Grenze Gotisch. Needs Playwright and network; see the tool README. Nothing references the file yet, so this is only owed if it becomes the `og:image`.
 - [ ] Wire `card-cover.webp` as the `og:image` on `/spellbook/` — the file is already in place, nothing references it yet, so a shared link previews blank.
 - [ ] Ask the eight authors whether they want their names on the About page linked to anything (consent covers publication; it did not ask about onward contact).
 

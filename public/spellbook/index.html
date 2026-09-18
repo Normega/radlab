@@ -6,7 +6,7 @@
 <title>The RADlab Spellbook</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&family=DM+Serif+Display&family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&family=UnifrakturCook:wght@700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&family=DM+Serif+Display&family=Grenze+Gotisch:wght@400;700&family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap" rel="stylesheet">
 <style>
 :root{
   --rl-bg:#FCF0F5; --rl-soft:#FDF6FA; --rl-card:#ffffff; --rl-pink:#f068a4; --rl-pink-ink:#b8336f;
@@ -17,7 +17,11 @@
   --sans:"DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   --fell:"IM Fell English", "Iowan Old Style", Georgia, serif;
   --fell-sc:"IM Fell English SC", "IM Fell English", Georgia, serif;
-  --black:"UnifrakturCook", "IM Fell English", Georgia, serif;
+  /* Display gothic. Was UnifrakturCook, a true Fraktur, until 2026-09-17: its
+     lowercase k was unreadable and its I/II/III are near-identical decorated
+     strokes. Grenze Gotisch keeps the gothic colour on open modern skeletons.
+     Roman numerals moved off this token entirely — see .chapter .num. */
+  --black:"Grenze Gotisch", "IM Fell English", Georgia, serif;
   --fs-min:.75rem;
   --radius-card:18px;
   color-scheme: light dark;
@@ -103,7 +107,10 @@ h1,h2,h3{font-family:var(--serif-rl);font-weight:400;line-height:1.15;margin:0}
 .chapter{padding:18px 0 8px;border-top:1px solid rgba(201,164,90,.35)}
 .chapter:first-of-type{border-top:0}
 .chapter header{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;align-items:baseline;margin-bottom:10px}
-.chapter .num{font-family:var(--black);font-size:2rem;color:var(--g-gilt);grid-row:span 2;line-height:1}
+/* Numerals take the small-caps face, not the display gothic: any blackletter
+   builds I/II/III from near-identical strokes, so the chapter number could not
+   be counted at a glance. Only I-IV exist. */
+.chapter .num{font-family:var(--fell-sc);font-size:2rem;color:var(--g-gilt);grid-row:span 2;line-height:1}
 .chapter h3{font-family:var(--fell);font-size:1.45rem;color:#f3e6c9}
 .chapter .cb{font-family:var(--fell);font-style:italic;color:#bfae8a;font-size:1rem}
 .entries{list-style:none;margin:0;padding:0;display:grid;gap:2px}
