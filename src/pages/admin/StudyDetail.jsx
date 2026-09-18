@@ -1065,7 +1065,8 @@ function ExternalEnrollmentPanel({ study, qc }) {
     setTimeout(() => setCopiedKey(null), 2000)
   }
 
-  const sonaLink    = `${SITE_ROOT}/study/join?study_id=${study.id}&id=%survey_code%`
+  // SONA substitutes only the upper-case token; a lower-case one arrives literally.
+  const sonaLink    = `${SITE_ROOT}/study/join?study_id=${study.id}&id=%SURVEY_CODE%`
   const prolificLink = `${SITE_ROOT}/study/join?study_id=${study.id}&PROLIFIC_PID={{%PROLIFIC_PID%}}&STUDY_ID={{%STUDY_ID%}}&SESSION_ID={{%SESSION_ID%}}`
 
   const showSona    = enabled && (source === 'sona'    || source === 'both')
