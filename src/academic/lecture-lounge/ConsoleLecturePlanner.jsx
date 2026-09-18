@@ -214,6 +214,7 @@ function CheckinForm({ initial, onSave, onCancel }) {
 function CheckinRow({ checkin, classSlug, superAdmin, onEdit, onDelete, onSetStatus }) {
   const activities = checkin.config?.activities ?? []
   const weekly = checkin.kind === 'weekly'
+  const answers = checkin.responseCount ?? 0
   return (
     <div style={S.checkinRow}>
       <span style={S.checkinPos}>#{checkin.position}</span>
@@ -243,7 +244,14 @@ function CheckinRow({ checkin, classSlug, superAdmin, onEdit, onDelete, onSetSta
         <a style={S.linkBtn} href={`${loungePath(classSlug)}/wall/${checkin.id}`} target="_blank" rel="noreferrer">Wall</a>
       )}
       <button style={S.linkBtn} onClick={onEdit}>Edit</button>
-      <button style={S.linkBtnDanger} onClick={onDelete}>Delete</button>
+      {/* Delete cascades to checkin_responses, so a row that has collected
+          answers cannot be deleted at all — not even by a super admin. The
+          count, not the role, decides. Clearing answers deliberately is what
+          Reset is for (super-admin only, on the Run tab); an emptied check-in
+          deletes normally. */}
+      {answers > 0
+        ? <span style={S.weeklyOpenNote}>{answers} {answers === 1 ? 'answer' : 'answers'} — kept</span>
+        : <button style={S.linkBtnDanger} onClick={onDelete}>Delete</button>}
     </div>
   )
 }
@@ -373,11 +381,22 @@ export default function ConsoleLecturePlanner({ classInfo, superAdmin }) {
       keysByCheckin = Object.fromEntries((keys ?? []).map((k) => [k.checkin_id, k.answer_key]))
     }
 
+    // What each check-in has collected. A check-in holding answers cannot be
+    // deleted (20260917_no_delete_answered_checkin.sql), so the row hides
+    // Delete rather than offering a tap the database will refuse. One RPC for
+    // the whole class: counts only, no response rows travel.
+    const { data: counts } = await supabase.rpc('checkin_answer_counts', { p_class_id: classInfo.id })
+    const answersByCheckin = Object.fromEntries((counts ?? []).map((r) => [r.checkin_id, (r.answers ?? 0) + (r.questions ?? 0)]))
+
     const grouped = {}
     for (const l of rows) {
       grouped[l.id] = [...(l.checkins ?? [])]
         .sort((a, b) => a.position - b.position)
-        .map((c) => (c.id in keysByCheckin ? { ...c, quizAnswerKey: keysByCheckin[c.id] } : c))
+        .map((c) => ({
+          ...c,
+          responseCount: answersByCheckin[c.id] ?? 0,
+          ...(c.id in keysByCheckin ? { quizAnswerKey: keysByCheckin[c.id] } : {}),
+        }))
     }
     setCheckinsByLecture(grouped)
   }
