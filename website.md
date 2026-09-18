@@ -7017,13 +7017,13 @@ Supabase project; until then the backup is well-verified but never once restored
 
 ## 29e. The Spellbook — a public wellbeing grimoire from PSY440 (2026-09-17)
 
-A static, self-contained site at **`/spellbook/`**, compiling eight student "spells"
+A static, self-contained site at **`/spellbook/`**, compiling nine student "spells"
 for wellbeing. Each spell is a few illustrated pages of practice, and each links to
 the evidence paper its author wrote behind it. Public, no sign-in, no tracking.
 
 **Purpose**: knowledge translation as coursework — students turn a literature they
 have read into something a stranger can actually use, and the book keeps the chain
-back to the research visible rather than asking to be trusted. All eight students
+back to the research visible rather than asking to be trusted. All nine students
 gave explicit consent to publish (2026-09-17).
 
 ### Where it lives
@@ -7311,7 +7311,7 @@ psychology students".
 - [x] Live on `dev.radlab.zone` and checked over HTTP (2026-09-17): `/spellbook/` serves the book, not the SPA shell, byte-identical to the committed build (sha256 `29f5d1de…`, 4,626,104 b) — so Vite copies `public/` through verbatim and the rewrite beats the catch-all; `/spellbook` 307s to `/spellbook/`; `card-cover.webp` and both logo files 200. The card's strings are in the served entry bundle.
 - [ ] **Still unseen: anything visual.** No browser here, so the rendered card, the logo in light and dark, the five hash routes actually drawing, and 390 px with no horizontal scroll all need Norm's eyes before this is promoted to `main`.
 - [x] `npm run lint` and `npm run build` — green in CI on the `dev` push (run 35280144154, 46 s; only pre-existing warnings). Neither could be run locally: **Node is not installed on this machine**, so for frontend work here CI is the first real check and the `dev` push is how you get one.
-- [ ] Re-export `assets/card-cover.webp` — now twice out of date: it rendered with fallback faces (plain serif, not the display gothic) **and** the cover face has since changed to Grenze Gotisch. Needs Playwright and network; see the tool README. Nothing references the file yet, so this is only owed if it becomes the `og:image`.
+- [ ] Re-export `assets/card-cover.webp` — now three ways out of date: it rendered with fallback faces (plain serif, not the display gothic), the cover face has since changed to Grenze Gotisch, and its subtitle still reads "eight charms". Needs Playwright and network; see the tool README. Nothing references the file yet, so this is only owed if it becomes the `og:image`.
 - [ ] Wire `card-cover.webp` as the `og:image` on `/spellbook/` — the file is already in place, nothing references it yet, so a shared link previews blank.
 - [ ] Ask the eight authors whether they want their names on the About page linked to anything (consent covers publication; it did not ask about onward contact).
 
