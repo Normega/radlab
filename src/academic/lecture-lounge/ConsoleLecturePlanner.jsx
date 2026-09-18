@@ -211,9 +211,10 @@ function CheckinForm({ initial, onSave, onCancel }) {
   )
 }
 
-function CheckinRow({ checkin, classSlug, onEdit, onDelete, onSetStatus }) {
+function CheckinRow({ checkin, classSlug, superAdmin, onEdit, onDelete, onSetStatus }) {
   const activities = checkin.config?.activities ?? []
   const weekly = checkin.kind === 'weekly'
+  const answers = checkin.responseCount ?? 0
   return (
     <div style={S.checkinRow}>
       <span style={S.checkinPos}>#{checkin.position}</span>
@@ -228,19 +229,34 @@ function CheckinRow({ checkin, classSlug, onEdit, onDelete, onSetStatus }) {
       {weekly && checkin.status !== 'open' && (
         <button style={S.linkBtn} onClick={() => onSetStatus(checkin.id, 'open')}>Open</button>
       )}
+      {/* A weekly wall stays open for the term, so Close is not an ordinary
+          control: the database refuses it for anyone but a super admin
+          (20260917_weekly_walls_stay_open.sql). Showing the button to a TA
+          would be a visible dead control -- the same mistake the Reset button
+          made before 20260909_reset_checkin_super_admin_only.sql -- so
+          everyone else gets the policy in words instead. */}
       {weekly && checkin.status === 'open' && (
-        <button style={S.linkBtn} onClick={() => onSetStatus(checkin.id, 'closed')}>Close</button>
+        superAdmin
+          ? <button style={S.linkBtn} onClick={() => onSetStatus(checkin.id, 'closed')}>Close</button>
+          : <span style={S.weeklyOpenNote}>open all term</span>
       )}
       {weekly && checkin.status !== 'planned' && (
         <a style={S.linkBtn} href={`${loungePath(classSlug)}/wall/${checkin.id}`} target="_blank" rel="noreferrer">Wall</a>
       )}
       <button style={S.linkBtn} onClick={onEdit}>Edit</button>
-      <button style={S.linkBtnDanger} onClick={onDelete}>Delete</button>
+      {/* Delete cascades to checkin_responses, so a row that has collected
+          answers cannot be deleted at all — not even by a super admin. The
+          count, not the role, decides. Clearing answers deliberately is what
+          Reset is for (super-admin only, on the Run tab); an emptied check-in
+          deletes normally. */}
+      {answers > 0
+        ? <span style={S.weeklyOpenNote}>{answers} {answers === 1 ? 'answer' : 'answers'} — kept</span>
+        : <button style={S.linkBtnDanger} onClick={onDelete}>Delete</button>}
     </div>
   )
 }
 
-function LectureCard({ lecture, checkins, classSlug, expanded, onToggle, onEditLecture, onDeleteLecture, onCreateCheckin, onUpdateCheckin, onDeleteCheckin, onSetCheckinStatus }) {
+function LectureCard({ lecture, checkins, classSlug, superAdmin, expanded, onToggle, onEditLecture, onDeleteLecture, onCreateCheckin, onUpdateCheckin, onDeleteCheckin, onSetCheckinStatus }) {
   const [editing, setEditing] = useState(false)
   const [editForm, setEditForm] = useState({ number: lecture.number ?? '', title: lecture.title ?? '', lecture_date: lecture.lecture_date ?? '' })
   const [creatingCheckin, setCreatingCheckin] = useState(false)
@@ -300,7 +316,7 @@ function LectureCard({ lecture, checkins, classSlug, expanded, onToggle, onEditL
               />
             ) : (
               <CheckinRow
-                key={c.id} checkin={c} classSlug={classSlug}
+                key={c.id} checkin={c} classSlug={classSlug} superAdmin={superAdmin}
                 onEdit={() => setEditingCheckinId(c.id)} onDelete={() => onDeleteCheckin(c.id)}
                 onSetStatus={onSetCheckinStatus}
               />
@@ -322,7 +338,7 @@ function LectureCard({ lecture, checkins, classSlug, expanded, onToggle, onEditL
   )
 }
 
-export default function ConsoleLecturePlanner({ classInfo }) {
+export default function ConsoleLecturePlanner({ classInfo, superAdmin }) {
   const [lectures, setLectures] = useState(undefined)
   const [checkinsByLecture, setCheckinsByLecture] = useState({})
   const [expandedId, setExpandedId] = useState(null)
@@ -365,11 +381,22 @@ export default function ConsoleLecturePlanner({ classInfo }) {
       keysByCheckin = Object.fromEntries((keys ?? []).map((k) => [k.checkin_id, k.answer_key]))
     }
 
+    // What each check-in has collected. A check-in holding answers cannot be
+    // deleted (20260917_no_delete_answered_checkin.sql), so the row hides
+    // Delete rather than offering a tap the database will refuse. One RPC for
+    // the whole class: counts only, no response rows travel.
+    const { data: counts } = await supabase.rpc('checkin_answer_counts', { p_class_id: classInfo.id })
+    const answersByCheckin = Object.fromEntries((counts ?? []).map((r) => [r.checkin_id, (r.answers ?? 0) + (r.questions ?? 0)]))
+
     const grouped = {}
     for (const l of rows) {
       grouped[l.id] = [...(l.checkins ?? [])]
         .sort((a, b) => a.position - b.position)
-        .map((c) => (c.id in keysByCheckin ? { ...c, quizAnswerKey: keysByCheckin[c.id] } : c))
+        .map((c) => ({
+          ...c,
+          responseCount: answersByCheckin[c.id] ?? 0,
+          ...(c.id in keysByCheckin ? { quizAnswerKey: keysByCheckin[c.id] } : {}),
+        }))
     }
     setCheckinsByLecture(grouped)
   }
@@ -460,7 +487,7 @@ export default function ConsoleLecturePlanner({ classInfo }) {
 
       {lectures.map((l) => (
         <LectureCard
-          key={l.id} lecture={l} checkins={checkinsByLecture[l.id]} classSlug={classInfo.slug}
+          key={l.id} lecture={l} checkins={checkinsByLecture[l.id]} classSlug={classInfo.slug} superAdmin={superAdmin}
           expanded={expandedId === l.id} onToggle={() => setExpandedId(expandedId === l.id ? null : l.id)}
           onEditLecture={editLecture} onDeleteLecture={deleteLecture}
           onCreateCheckin={createCheckin} onUpdateCheckin={updateCheckin} onDeleteCheckin={deleteCheckin}
@@ -513,6 +540,7 @@ const S = {
   autoCloseBadge: { fontFamily: MONO, fontSize: 12, color: 'var(--pkd)', background: 'var(--pkb)', padding: '2px 8px', borderRadius: 6 },
   statusBadge: { fontFamily: MONO, fontSize: 12, color: 'var(--tx3)', textTransform: 'uppercase' },
   weeklyBadge: { fontFamily: MONO, fontSize: 12, color: '#fff', background: 'var(--pk)', padding: '2px 8px', borderRadius: 6, textTransform: 'uppercase' },
+  weeklyOpenNote: { fontFamily: MONO, fontSize: 12, color: 'var(--tx3)' },
   weeklyToggle: { display: 'block', fontFamily: MONO, fontSize: 12, color: 'var(--tx2)', marginBottom: 10, cursor: 'pointer' },
   linkBtn: { background: 'none', border: 'none', color: 'var(--pk)', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', padding: 0 },
   linkBtnDanger: { background: 'none', border: 'none', color: '#c04a4a', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', padding: 0 },
