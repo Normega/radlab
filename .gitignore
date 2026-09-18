@@ -33,3 +33,7 @@ dist-ssr
 
 # Supabase CLI local state (project ref cache, written by `supabase functions deploy`)
 supabase/.temp/
+
+# Python bytecode (tools/spellbook build scripts)
+__pycache__/
+*.pyc
