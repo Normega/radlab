@@ -115,8 +115,8 @@ export default function Landing({ session }) {
             // No course code in this copy, deliberately — same reason as the
             // Courses card above, and course-leak-audit fails the build on one.
             // The book's own About page names the course and the students.
-            desc="Eight evidence-based wellbeing spells, written and illustrated by fourth-year psychology students. Each one links to the research behind it."
-            chips={['8 Spells', 'Student-written', 'Evidence-linked']}
+            desc="Nine evidence-based wellbeing spells, written and illustrated by fourth-year psychology students. Each one links to the research behind it."
+            chips={['9 Spells', 'Student-written', 'Evidence-linked']}
             cta="Open the book →"
             // Neither `internal` nor `newTab`: this must render a plain <a href>.
             // /spellbook/ is a static file served from public/, outside the React

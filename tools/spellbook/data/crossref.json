@@ -187,6 +187,23 @@
   "article": "",
   "type": "journal-article"
  },
+ "10.1007/s10902-018-0031-y": {
+  "ok": true,
+  "authors": [
+   [
+    "Russo-Netzer",
+    "Pninit"
+   ]
+  ],
+  "year": 2019,
+  "title": "Prioritizing Meaning as a Pathway to Meaning in Life and Well-Being",
+  "journal": "Journal of Happiness Studies",
+  "volume": "20",
+  "issue": "6",
+  "page": "1863-1891",
+  "article": "",
+  "type": "journal-article"
+ },
  "10.1007/s10942-007-0070-5": {
   "ok": true,
   "authors": [
@@ -352,6 +369,48 @@
   "article": "",
   "type": "journal-article"
  },
+ "10.1007/s40617-018-0252-x": {
+  "ok": true,
+  "authors": [
+   [
+    "Paliliunas",
+    "Dana"
+   ],
+   [
+    "Belisle",
+    "Jordan"
+   ],
+   [
+    "Dixon",
+    "Mark R."
+   ]
+  ],
+  "year": 2018,
+  "title": "A Randomized Control Trial to Evaluate the Use of Acceptance and Commitment Therapy (ACT) to Increase Academic Performance and Psychological Flexibility in Graduate Students",
+  "journal": "Behavior Analysis in Practice",
+  "volume": "11",
+  "issue": "3",
+  "page": "241-253",
+  "article": "",
+  "type": "journal-article"
+ },
+ "10.1007/s40617-021-00589-1": {
+  "ok": true,
+  "authors": [
+   [
+    "Berkout",
+    "Olga V."
+   ]
+  ],
+  "year": 2022,
+  "title": "Working With Values: An Overview of Approaches and Considerations in Implementation",
+  "journal": "Behavior Analysis in Practice",
+  "volume": "15",
+  "issue": "1",
+  "page": "104-114",
+  "article": "",
+  "type": "journal-article"
+ },
  "10.1007/s40750-017-0061-4": {
   "ok": true,
   "authors": [
@@ -483,6 +542,80 @@
   "issue": "",
   "page": "105125",
   "article": "105125",
+  "type": "journal-article"
+ },
+ "10.1016/j.brat.2017.01.013": {
+  "ok": true,
+  "authors": [
+   [
+    "Gloster",
+    "Andrew T."
+   ],
+   [
+    "Klotsche",
+    "Jens"
+   ],
+   [
+    "Ciarrochi",
+    "Joseph"
+   ],
+   [
+    "Eifert",
+    "Georg"
+   ],
+   [
+    "Sonntag",
+    "Rainer"
+   ],
+   [
+    "Wittchen",
+    "Hans-Ulrich"
+   ],
+   [
+    "Hoyer",
+    "Jürgen"
+   ]
+  ],
+  "year": 2017,
+  "title": "Increasing valued behaviors precedes reduction in suffering: Findings from a randomized controlled trial using ACT",
+  "journal": "Behaviour Research and Therapy",
+  "volume": "91",
+  "issue": "",
+  "page": "64-71",
+  "article": "",
+  "type": "journal-article"
+ },
+ "10.1016/j.brat.2020.103557": {
+  "ok": true,
+  "authors": [
+   [
+    "Levin",
+    "Michael E."
+   ],
+   [
+    "Krafft",
+    "Jennifer"
+   ],
+   [
+    "Hicks",
+    "Elizabeth T."
+   ],
+   [
+    "Pierce",
+    "Benjamin"
+   ],
+   [
+    "Twohig",
+    "Michael P."
+   ]
+  ],
+  "year": 2020,
+  "title": "A randomized dismantling trial of the open and engaged components of acceptance and commitment therapy in an online intervention for distressed college students",
+  "journal": "Behaviour Research and Therapy",
+  "volume": "126",
+  "issue": "",
+  "page": "103557",
+  "article": "103557",
   "type": "journal-article"
  },
  "10.1016/j.concog.2017.04.008": {
@@ -933,6 +1066,27 @@
   "article": "",
   "type": "journal-article"
  },
+ "10.1016/j.paid.2020.110248": {
+  "ok": true,
+  "authors": [
+   [
+    "Russo-Netzer",
+    "Pninit"
+   ],
+   [
+    "Shoshani",
+    "Anat"
+   ]
+  ],
+  "year": 2020,
+  "title": "Authentic inner compass, well-being, and prioritization of positivity and meaning among adolescents",
+  "journal": "Personality and Individual Differences",
+  "volume": "167",
+  "issue": "",
+  "page": "110248",
+  "article": "110248",
+  "type": "journal-article"
+ },
  "10.1016/j.pnpbp.2019.109676": {
   "ok": true,
   "authors": [
@@ -1152,6 +1306,35 @@
   "article": "",
   "type": "journal-article"
  },
+ "10.1037/pspp0000157": {
+  "ok": true,
+  "authors": [
+   [
+    "Ford",
+    "Brett Q."
+   ],
+   [
+    "Lam",
+    "Phoebe"
+   ],
+   [
+    "John",
+    "Oliver P."
+   ],
+   [
+    "Mauss",
+    "Iris B."
+   ]
+  ],
+  "year": 2018,
+  "title": "The psychological health benefits of accepting negative emotions and thoughts: Laboratory, diary, and longitudinal evidence.",
+  "journal": "Journal of Personality and Social Psychology",
+  "volume": "115",
+  "issue": "6",
+  "page": "1075-1092",
+  "article": "",
+  "type": "journal-article"
+ },
  "10.1037/xge0000374": {
   "ok": true,
   "authors": [
@@ -1359,6 +1542,35 @@
   "volume": "43",
   "issue": "4",
   "page": "511-518",
+  "article": "",
+  "type": "journal-article"
+ },
+ "10.1080/07448481.2013.843533": {
+  "ok": true,
+  "authors": [
+   [
+    "Levin",
+    "Michael E."
+   ],
+   [
+    "Pistorello",
+    "Jacqueline"
+   ],
+   [
+    "Seeley",
+    "John R."
+   ],
+   [
+    "Hayes",
+    "Steven C."
+   ]
+  ],
+  "year": 2014,
+  "title": "Feasibility of a Prototype Web-Based Acceptance and Commitment Therapy Prevention Program for College Students",
+  "journal": "Journal of American College Health",
+  "volume": "62",
+  "issue": "1",
+  "page": "20-30",
   "article": "",
   "type": "journal-article"
  },
@@ -2504,6 +2716,39 @@
   "article": "v10i24e48355",
   "type": "journal-article"
  },
+ "10.2196/50664": {
+  "ok": true,
+  "authors": [
+   [
+    "Wang",
+    "Difan"
+   ],
+   [
+    "Lin",
+    "Bingyan"
+   ],
+   [
+    "Zhang",
+    "Shuangxi"
+   ],
+   [
+    "Xu",
+    "Wei"
+   ],
+   [
+    "Liu",
+    "Xinying"
+   ]
+  ],
+  "year": 2024,
+  "title": "Effectiveness of an Internet-Based Self-Help Acceptance and Commitment Therapy Program on Medical Students’ Mental Well-Being: Follow-Up Randomized Controlled Trial",
+  "journal": "Journal of Medical Internet Research",
+  "volume": "26",
+  "issue": "",
+  "page": "e50664",
+  "article": "",
+  "type": "journal-article"
+ },
  "10.2196/66131": {
   "ok": true,
   "authors": [
@@ -2753,6 +2998,27 @@
   "issue": "",
   "page": "",
   "article": "1337318",
+  "type": "journal-article"
+ },
+ "10.3389/fpsyg.2024.1375237": {
+  "ok": true,
+  "authors": [
+   [
+    "Russo-Netzer",
+    "Pninit"
+   ],
+   [
+    "Atad",
+    "Ofer Israel"
+   ]
+  ],
+  "year": 2024,
+  "title": "Activating values intervention: an integrative pathway to well-being",
+  "journal": "Frontiers in Psychology",
+  "volume": "15",
+  "issue": "",
+  "page": "",
+  "article": "1375237",
   "type": "journal-article"
  },
  "10.3389/fpsyt.2024.1517533": {

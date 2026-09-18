@@ -26,7 +26,8 @@ It is generated. Edit `template.html` (shell, CSS, app JS), `spells.py`
 - No evidence grading or star ratings. The book links to the research; it does
   not rank it.
 - The crisis footer stays on every page.
-- All eight students consented to publication (2026-09-17).
+- All nine students consented to publication (eight 2026-09-17, Noor Chaudhry
+  2026-09-18).
 
 ## Citation maintenance
 
@@ -44,13 +45,20 @@ page-level sources, cited on the page rather than in a sentence:
 | `restored-spirits` | Dean 2021, Hamburg 2014, Hill 2007, Lambert 2006, Utter 2017 |
 | `metaphor-mirror` | Hu 2018, Wenzel 2017 |
 | `nap-spell` | Dennison 2017, Liu 2019, Tamaki 2020 |
-| all others | none |
+| all others (incl. `living-your-values`) | none |
 
 `build.py` printing any `BAD ID` line means a page cites an id no reference
 carries — fix before committing the output.
 
-Crossref was last checked 2026-09-17: 90 of 91 DOIs resolve. Ng et al. 2019 is a
-DataCite DOI and is expected to fail that check.
+Crossref was last checked 2026-09-18: 100 of 101 DOIs resolve. Ng et al. 2019 is
+a DataCite DOI and is expected to fail that check.
+
+`crossref.py` is also the arbiter when a paper's own in-text year and reference
+list disagree. That happened once, on import: Noor's text cited Berkout as 2022
+and her reference list said 2021. Crossref shows online-first 2021, print 2022,
+and the volume and issue she cited (15(1)) belong to the print year — so her
+prose was right and the reference was wrong. Check the DOI before assuming the
+prose is the error; online-first dates make this a common trap.
 
 ## `archive/` — do not rerun
 
