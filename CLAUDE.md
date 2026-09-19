@@ -292,18 +292,54 @@ minutes of work and unblocks everyone.
 
 ---
 
-## api/ holds at most 12 files — the Vercel function cap fails whole deployments
+## api/ and the Vercel function cap — breaching it fails the deployment, silently
 
-Every `api/*.js` file is a Vercel serverless function, and the plan caps a deployment at **12**.
-The 13th does not degrade anything — it fails the entire deployment, Production and Preview alike,
-**while CI stays green** (the cap is Vercel's, not the build's). Discovered 2026-09-06:
-`api/summarize-checkin.js` landed as the 13th function and Vercel silently deployed nothing for the
-rest of the day — `main` kept advancing while radlab.zone served the morning's build.
+Every `api/*.js` file is a Vercel serverless function, and exceeding the plan's per-deployment cap
+does not degrade anything — it fails the **entire** deployment, Production and Preview alike,
+**while CI stays green** (the cap is Vercel's, not the build's). A failed deployment surfaces only
+in GitHub's commit status (the ✗ beside the commit), never in Actions, which is how it goes unseen.
 
-Before adding an `api/` file, count what's there (`ls api/`). At 12, either retire one (that day
-`api/health.js`, an unreferenced routing probe, was the retiree), fold the new endpoint into an
-existing function, or raise the plan — but decide, don't push and hope. A failed deployment shows
-up in GitHub's commit status (the ✗ next to the commit), not in Actions.
+**The hard limit of 12 was the Hobby plan's and no longer applies.** The account moved to Pro on
+2026-09-19 — needed to host senseforaging.com, since Hobby is non-commercial only and that site
+sells a course — which lifts the cap well clear of the 12 files `api/` currently holds. Two things
+still matter:
+
+- **Pro's limits attach to the team.** A project left in a personal scope keeps the Hobby cap even
+  while the team is paid. If a deployment ever fails on function count, check the project's scope
+  before you start counting files.
+- **Don't treat the ceiling as gone.** Count what's there (`ls api/`) before adding several at
+  once, and prefer folding a small endpoint into an existing function over adding a file.
+
+### Background
+
+Discovered 2026-09-06, while still on Hobby: `api/summarize-checkin.js` landed as the 13th function
+and Vercel silently deployed nothing for the rest of the day — `main` kept advancing while
+radlab.zone served the morning's build. The retiree that day was `api/health.js`, an unreferenced
+routing probe. The cap has moved; the silence has not.
+
+---
+
+## The SPA rewrite in `vercel.json` skips assets — keep it that way
+
+The catch-all rewrite sends app paths to `index.html` but **excludes any path ending in a known
+asset extension, and `/api/`**. Do not "simplify" it back to `/(.*)`.
+
+Vercel applies rewrites *after* the filesystem check, so an unqualified catch-all also swallows a
+**missing** file and serves `index.html` with a **200**. The browser gets HTML where it expected a
+JS module; the route renders blank with a console MIME error; **CI is green and the deployment
+reports success**. With 40+ lazy-loaded route chunks, one bad upload blanks a route and nothing
+tells you. That is the failure that hid two broken deploys on senseforaging.com.
+
+**When you add a static file type** the site serves (a new font format, a video, a `.json` data
+file), add its extension to the list in `vercel.json`. Forgetting restores the old silent-200
+behaviour for that one type — it breaks nothing, so this is a papercut, not a trap.
+
+**When you add a top-level static tree** under `public/`, nothing is needed: the rule keys on
+extension, not directory, precisely so new trees need no maintenance.
+
+Full rationale, including why it is an extension allowlist rather than "anything with a dot":
+website.md §11a. Changing this file warrants re-running that section's verification — compile the
+`source` with `path-to-regexp` and match it against `dist/` and the route list in `App.jsx`.
 
 ---
 

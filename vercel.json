@@ -8,6 +8,6 @@
   ],
   "rewrites": [
     { "source": "/spellbook/", "destination": "/spellbook/index.html" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/((?!api/)(?!.*\\.(?:js|mjs|css|map|json|html|xml|txt|csv|pdf|png|jpg|jpeg|gif|svg|webp|avif|ico|woff|woff2|ttf|otf|eot|mp3|mp4|webm|wav|ogg|zip)$).*)", "destination": "/index.html" }
   ]
 }
