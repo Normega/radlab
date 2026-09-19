@@ -319,6 +319,30 @@ routing probe. The cap has moved; the silence has not.
 
 ---
 
+## The SPA rewrite in `vercel.json` skips assets — keep it that way
+
+The catch-all rewrite sends app paths to `index.html` but **excludes any path ending in a known
+asset extension, and `/api/`**. Do not "simplify" it back to `/(.*)`.
+
+Vercel applies rewrites *after* the filesystem check, so an unqualified catch-all also swallows a
+**missing** file and serves `index.html` with a **200**. The browser gets HTML where it expected a
+JS module; the route renders blank with a console MIME error; **CI is green and the deployment
+reports success**. With 40+ lazy-loaded route chunks, one bad upload blanks a route and nothing
+tells you. That is the failure that hid two broken deploys on senseforaging.com.
+
+**When you add a static file type** the site serves (a new font format, a video, a `.json` data
+file), add its extension to the list in `vercel.json`. Forgetting restores the old silent-200
+behaviour for that one type — it breaks nothing, so this is a papercut, not a trap.
+
+**When you add a top-level static tree** under `public/`, nothing is needed: the rule keys on
+extension, not directory, precisely so new trees need no maintenance.
+
+Full rationale, including why it is an extension allowlist rather than "anything with a dot":
+website.md §11a. Changing this file warrants re-running that section's verification — compile the
+`source` with `path-to-regexp` and match it against `dist/` and the route list in `App.jsx`.
+
+---
+
 ## Live dev site — push to `dev`, promote to `main` on approval
 
 The platform has a web-facing staging site. `main` is production (`radlab.zone`, auto-deploys on every push); **`dev`** is a long-lived staging branch that Vercel builds as a preview deployment on every push — reachable anywhere at **`dev.radlab.zone`** once the domain is assigned (until then, via the deployment's `*-git-dev-*.vercel.app` URL in the Vercel dashboard). Vercel serves every preview deployment with `X-Robots-Tag: noindex`, so the dev site is world-reachable but never search-indexed — no robots.txt to maintain, nothing to drift.
