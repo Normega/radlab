@@ -6,7 +6,19 @@
 
 // Mechanic (matches the handoff spec + Delve's dwell model)
 export const DWELL_VELOCITY = 55        // px/s below which the pointer counts as dwelling
-export const INFLUENCE_RADIUS = 172     // px
+// Influence radius. Anchors are placed at viewport *fractions*, so on a phone the
+// same fractional gaps are a third of their desktop size while a fixed pixel
+// radius is not — 172px there reaches two or three voices at once and there is no
+// way to rest on just one. Scale it with the smaller viewport dimension (Patch
+// does the same with its tap radius) and cap it at the long-standing desktop
+// value so large screens behave exactly as before.
+export const INFLUENCE_RADIUS_FRACTION = 0.20   // of min(viewport width, height)
+export const INFLUENCE_RADIUS_MAX = 172         // px, the previous fixed value
+export const INFLUENCE_RADIUS_MIN = 64          // px, floor for very small screens
+export const influenceRadius = (W, H) => Math.max(
+  INFLUENCE_RADIUS_MIN,
+  Math.min(INFLUENCE_RADIUS_MAX, Math.min(W, H) * INFLUENCE_RADIUS_FRACTION),
+)
 export const GROWTH_RATE = 0.9          // clarity/sec while dwelling in range
 export const DECAY_RATE  = 0.5          // clarity/sec otherwise
 export const FREQ_MUFFLED = 520         // lowpass Hz at clarity 0 (resting haze brightness)

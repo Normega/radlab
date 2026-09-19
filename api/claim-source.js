@@ -29,7 +29,39 @@ export const config = { maxDuration: 60 }
 const MAX_CHARS = 60_000
 const UA = 'radlab-fieldguide/1.0 (mailto:psy240@radlab.zone)'
 
-const clean = (t) => String(t ?? '').replace(/\r/g, '').replace(/\n{3,}/g, '\n\n').trim()
+// Characters that cannot survive the trip into Postgres.
+//
+// A glyph unpdf cannot map comes out as a NUL, and a NUL cannot exist inside a
+// Postgres text value: JSON.stringify sends it as a unicode escape, PostgREST
+// hands that to Postgres, and record_claim_source dies with "unsupported
+// Unicode escape sequence" -- which the student sees raw, on an upload that
+// otherwise looked fine (Nataliya, 2026-09-18: nine of them in a
+// ketamine-versus-ECT trial, the first standing in for a symbol in "a
+// non-inferiority margin of _ 0.1"). An unpaired surrogate is rejected by the
+// same mechanism.
+//
+// Deliberately codepoint arithmetic rather than a regex character class: a
+// class naming control characters is what no-control-regex forbids, and
+// unicode escapes bound for a source file have been decoded into real control
+// bytes on the way in here before now. for..of yields whole code points, so a
+// valid surrogate PAIR arrives as one character above 0xFFFF and survives,
+// while a lone surrogate arrives inside 0xD800-0xDFFF and is replaced.
+//
+// A space, not deletion: the words either side of a dropped glyph have to stay
+// separate words, or the text the model reads back quietly gains a wrong one.
+function stripUnstorable(s) {
+  let out = ''
+  for (const ch of s) {
+    const c = ch.codePointAt(0)
+    const keep = c === 9 || c === 10 || (c >= 32 && (c < 0xD800 || c > 0xDFFF))
+    out += keep ? ch : ' '
+  }
+  return out
+}
+
+const clean = (t) => stripUnstorable(String(t ?? '').replace(/\r/g, ''))
+  .replace(/\n{3,}/g, '\n\n')
+  .trim()
 
 async function fetchJson(url) {
   const r = await fetch(url, { headers: { 'User-Agent': UA, Accept: 'application/json' } })
