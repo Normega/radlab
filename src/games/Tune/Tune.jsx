@@ -5,7 +5,7 @@ import GameIntro from '../shared/GameIntro'
 import { supabase } from '../../lib/supabase'
 import { dbWrite } from '../../lib/dbWrite'
 import {
-  DWELL_VELOCITY, INFLUENCE_RADIUS, GROWTH_RATE, DECAY_RATE,
+  DWELL_VELOCITY, influenceRadius, INFLUENCE_RADIUS_MAX, GROWTH_RATE, DECAY_RATE,
   FREQ_MUFFLED, DUCK_DEPTH, DUCK_FLOOR, AUDIO_BUCKET, audioPath, SCENES,
 } from './constants'
 
@@ -346,10 +346,11 @@ export default function Tune({ session }) {
     }
 
     // ── Pointer / dwell ────────────────────────────────────────────────────────
-    let W = 0, H = 0, DPR = 1
+    let W = 0, H = 0, DPR = 1, R = INFLUENCE_RADIUS_MAX
     function resize() {
       DPR = Math.min(2, window.devicePixelRatio || 1)
       W = window.innerWidth; H = window.innerHeight
+      R = influenceRadius(W, H)
       canvas.width = W * DPR; canvas.height = H * DPR
       canvas.style.width = W + 'px'; canvas.style.height = H + 'px'
       g.setTransform(DPR, 0, 0, DPR, 0, 0)
@@ -416,7 +417,7 @@ export default function Tune({ session }) {
         let A = 0
         current.voices.forEach(voice => {
           const ax = voice.x * W, ay = voice.y * H
-          const inRange = Math.hypot(px - ax, py - ay) < INFLUENCE_RADIUS
+          const inRange = Math.hypot(px - ax, py - ay) < R
           if (dwelling && inRange) voice.clarity = Math.min(1, voice.clarity + GROWTH_RATE * dt)
           else voice.clarity = Math.max(0, voice.clarity - DECAY_RATE * dt)
           if (voice.clarity > A) A = voice.clarity
@@ -431,7 +432,7 @@ export default function Tune({ session }) {
         })
       }
       if (active) {
-        g.beginPath(); g.arc(px, py, INFLUENCE_RADIUS, 0, 7); g.strokeStyle = 'rgba(255,255,255,.05)'; g.lineWidth = 1; g.stroke()
+        g.beginPath(); g.arc(px, py, R, 0, 7); g.strokeStyle = 'rgba(255,255,255,.05)'; g.lineWidth = 1; g.stroke()
         g.beginPath(); g.arc(px, py, dwelling ? 9 : 6, 0, 7); g.fillStyle = dwelling ? acc : 'rgba(255,255,255,.5)'; g.fill()
       }
       rafId = requestAnimationFrame(frame)
