@@ -60,6 +60,7 @@ export default function SubmissionsQueue() {
   // review_sections. The queue defaults a TA to their own third with an
   // Everyone tab one tap away — a soft division of labour, never a wall.
   const [sections, setSections] = useState([])
+  const [sectionSummary, setSectionSummary] = useState([])
   const [sectionTab, setSectionTab] = useState('mine') // 'mine' | 'all'
 
   // Submissions and reports are one queue (2026-09-09): both are "a student
@@ -109,6 +110,14 @@ export default function SubmissionsQueue() {
       const { data } = await courseClient.from('review_sections')
         .select('ta_email, label, surname_from, surname_to').eq('course_id', course.id)
       if (!cancelled) setSections(data ?? [])
+      // Who owes what, for whoever is NOT one of the sectioned TAs — the
+      // instructor, whose own email is in no band, previously saw the queue
+      // undifferentiated with no way to tell whose third was backing up
+      // (Norm, 2026-09-21). Counts only; the banding needs student names,
+      // which live in a schema the browser cannot reach.
+      const { data: sum } = await courseClient
+        .rpc('submission_sections_summary', { p_course_id: course.id })
+      if (!cancelled) setSectionSummary(sum ?? [])
     })()
     return () => { cancelled = true }
   }, [session, courseCode, courseClient])
@@ -331,6 +340,33 @@ export default function SubmissionsQueue() {
           precheck cannot answer: <strong>does the source actually say this?</strong>{' '}
           <Link to={paths.sub('review')} style={S.link}>Ingest proposals are reviewed separately →</Link>
         </p>
+        {/* The oversight view: shown to staff who are in no section — the
+            instructor — since a TA already has their own tabs below. A section
+            that is quietly backing up is the thing worth seeing first, so
+            "waiting over 48h" sits beside the pending count rather than
+            behind it. */}
+        {!mySection && sectionSummary.length > 0 && topTab === 'submissions' && (
+          <div style={S.summaryStrip}>
+            {sectionSummary.map((s) => (
+              <div key={s.ta_email} style={S.summaryCard}>
+                <p style={S.summaryWho}>
+                  {s.label} · {s.ta_email.split('@')[0].split('.')[0]}
+                </p>
+                <p style={S.summaryNums}>
+                  <span style={S.summaryPending}>{s.pending}</span> waiting
+                  {s.over_48h > 0 && <span style={S.summaryStale}> · {s.over_48h} over 48h</span>}
+                </p>
+                <p style={S.summaryDone}>{s.addressed} addressed</p>
+              </div>
+            ))}
+            <div style={S.summaryCard}>
+              <p style={S.summaryWho}>Queue total</p>
+              <p style={S.summaryNums}><span style={S.summaryPending}>{(rows ?? []).length}</span> waiting</p>
+              <p style={S.summaryDone}>a submission in no band shows to everyone</p>
+            </div>
+          </div>
+        )}
+
         {mySection && (
           <div style={S.sectionTabs}>
             <button style={S.sectionTab(sectionTab === 'mine')} onClick={() => setSectionTab('mine')}>
@@ -582,4 +618,11 @@ const S = {
     background: active ? 'var(--pk)' : 'var(--bgc)', color: active ? '#fff' : 'var(--tx2)',
   }),
   sectionHint: { fontFamily: MONO, fontSize: 11, color: 'var(--tx3)' },
+  summaryStrip: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 170px), 1fr))', gap: 10, margin: '16px 0 4px' },
+  summaryCard: { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 10, padding: '10px 12px' },
+  summaryWho: { fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx3)', margin: 0 },
+  summaryNums: { fontSize: 14, color: 'var(--tx)', margin: '5px 0 0' },
+  summaryPending: { fontSize: 22, fontWeight: 700, fontVariantNumeric: 'tabular-nums' },
+  summaryStale: { color: '#c0392b', fontSize: 13 },
+  summaryDone: { fontSize: 12.5, color: 'var(--tx2)', margin: '3px 0 0' },
 }

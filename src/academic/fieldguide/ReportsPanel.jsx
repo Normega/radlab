@@ -90,8 +90,8 @@ export default function ReportsPanel({ courseClient, courseId, wikiBase, onCount
     <>
       <p style={S.sub}>
         Errors and contradictions students found while reading. <b>Fixed</b> = you applied it via
-        Edit page on the wiki page itself; <b>Convert</b> = a verified contradiction becomes an
-        amber gap the student can claim (their submission counts toward the three);
+        Edit page on the wiki page itself; <b>Convert</b> = a verified report becomes an
+        amber gap anyone can claim (the submission counts toward the three);
         <b> Dismiss</b> always carries a note, because silence teaches students not to report.
       </p>
       {notice && <p style={S.notice}>{notice}</p>}
@@ -116,9 +116,15 @@ export default function ReportsPanel({ courseClient, courseId, wikiBase, onCount
           {r.citation && <p style={S.citation}>Source: {r.citation}</p>}
           <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
             <button style={S.btn} disabled={busy} onClick={() => resolve(r, 'fixed')}>Fixed</button>
-            {r.kind === 'contradiction' && (
-              <button style={S.btnPk} disabled={busy} onClick={() => convert(r)}>Convert to gap</button>
-            )}
+            {/* Convert used to be offered only on reports filed as
+                'contradiction'. The first real report of the term was filed as
+                an 'error' and was the best argument for a gap anyone had made:
+                a student showed that a cause the page gives (the Black Death)
+                postdates most of the period it is said to explain. The kind is
+                the STUDENT's description of what they found; whether it is
+                worth researching is the reviewer's judgement, and the gate put
+                those two in the wrong order (Norm, 2026-09-21). */}
+            <button style={S.btnPk} disabled={busy} onClick={() => convert(r)}>Convert to gap</button>
             <button style={S.btn} disabled={busy} onClick={() => resolve(r, 'dismissed')}>Dismiss</button>
           </div>
         </div>

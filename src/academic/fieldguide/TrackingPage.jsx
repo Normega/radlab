@@ -43,6 +43,24 @@ export default function TrackingPage() {
   const [rows, setRows] = useState(undefined)
   const [err, setErr] = useState(null)
   const [lounge, setLounge] = useState(null)   // {byEmail, byUser, members, lectureCount} | 'unavailable'
+  const [credits, setCredits] = useState(new Map())  // person_id -> {credits, last_note, last_at}
+  const [creditTick, setCreditTick] = useState(0)    // bump to refetch after awarding
+
+  // Awarding is a prompt rather than a form: it happens once in a while, from
+  // this table, while looking at the student it is for. The note is required
+  // by the RPC and shown to nobody but staff for now.
+  const award = async (row) => {
+    const note = window.prompt(
+      `Exceptional participation for ${row.full_name || row.email}\n\nWhat is it for? (recorded with your name)`,
+      ''
+    )
+    if (note == null) return
+    const { error } = await courseClient.rpc('award_participation_credit', {
+      p_course_id: courseId, p_person_id: row.person_id, p_note: note,
+    })
+    if (error) { setErr(error.message); return }
+    setCreditTick((k) => k + 1)
+  }
 
   useEffect(() => {
     if (!courseId) return
@@ -53,8 +71,16 @@ export default function TrackingPage() {
       if (error) { setErr(error.message); setRows(null); return }
       setRows(data ?? [])
     })
+    // Exceptional participation — instructor-awarded credit for what the
+    // pipeline cannot count (the first verified error report, say). Its own
+    // fetch rather than a field on contribution_tracking, so awarding one
+    // never risks the column every student is graded from. A failure here
+    // leaves the column empty and the rest of the page intact.
+    courseClient.rpc('participation_credits_summary', { p_course_id: courseId }).then(({ data }) => {
+      if (!cancelled) setCredits(new Map((data ?? []).map((c) => [c.person_id, c])))
+    })
     return () => { cancelled = true }
-  }, [courseClient, courseId])
+  }, [courseClient, courseId, creditTick])
 
   useEffect(() => {
     if (!course) return
@@ -125,13 +151,18 @@ export default function TrackingPage() {
   function exportCsv() {
     const head = ['name', 'email', 'roster_status',
       ...(feats.contributions ? ['open_claims', 'awaiting_review', 'sent_back', 'approved'] : []),
-      'lounge_checkins', 'lounge_lectures']
+      'lounge_checkins', 'lounge_lectures', 'exceptional', 'exceptional_note']
     const lines = [head.join(',')]
+    const csv = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`
     for (const r of display) {
+      const credit = r.person_id ? credits.get(r.person_id) : null
       lines.push([
-        `"${(r.full_name ?? '').replace(/"/g, '""')}"`, r.email ?? '', r.status ?? '',
+        csv(r.full_name), r.email ?? '', r.status ?? '',
         ...(feats.contributions ? [r.open_claims, r.pending, r.sent_back, r.approved] : []),
         r.checkins ?? '', r.lectures ?? '',
+        // The reason travels with the count: a bare number in a grade
+        // spreadsheet is not something anyone can defend in December.
+        credit?.credits ?? '', csv(credit?.last_note ?? ''),
       ].join(','))
     }
     const url = URL.createObjectURL(new Blob([lines.join('\n')], { type: 'text/csv' }))
@@ -193,6 +224,7 @@ export default function TrackingPage() {
                   </>}
                   <th style={S.thNum}>Check-ins</th>
                   <th style={S.thNum}>Lectures{lounge?.lectureCount ? ` /${lounge.lectureCount}` : ''}</th>
+                  <th style={S.thNum} title="Instructor-awarded credit for participation the pipeline does not count">Exceptional</th>
                 </tr>
               </thead>
               <tbody>
@@ -211,6 +243,20 @@ export default function TrackingPage() {
                     </>}
                     <td style={S.tdNum}>{lounge?.byEmail ? (r.checkins || '') : '—'}</td>
                     <td style={S.tdNum}>{lounge?.byEmail ? (r.lectures || '') : '—'}</td>
+                    {/* The award needs a person_id, which only the Field Guide
+                        rows carry — a Lounge-only row is someone with no
+                        enrollment to attach a credit to. */}
+                    <td style={S.tdNum}>
+                      {r.person_id ? (
+                        <button
+                          style={credits.get(r.person_id) ? S.creditOn : S.creditOff}
+                          title={credits.get(r.person_id)?.last_note ?? 'Award exceptional participation'}
+                          onClick={() => award(r)}
+                        >
+                          {credits.get(r.person_id) ? `★ ${credits.get(r.person_id).credits}` : '+'}
+                        </button>
+                      ) : '—'}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -239,6 +285,8 @@ function Frame({ children }) {
 }
 
 const S = {
+  creditOff: { fontFamily: MONO, fontSize: 13, lineHeight: 1, padding: '3px 8px', borderRadius: 12, border: '1px solid var(--bd)', background: 'none', color: 'var(--tx3)', cursor: 'pointer' },
+  creditOn: { fontFamily: MONO, fontSize: 13, lineHeight: 1, padding: '3px 8px', borderRadius: 12, border: '1px solid #b8860b', background: 'none', color: '#b8860b', cursor: 'pointer', fontWeight: 700 },
   eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)', marginBottom: 10 },
   eyebrowLink: { color: 'var(--pk)', textDecoration: 'none' },
   title: { fontFamily: SERIF, fontSize: 30, color: 'var(--tx)', marginBottom: 8 },
