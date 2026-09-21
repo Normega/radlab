@@ -23,7 +23,22 @@
   <h1>Open the Lecture Lounge</h1>
   <div class="qr-row"><p class="url" style="font-family:'JetBrains Mono',monospace;font-size:3.4vmin;color:var(--accent);font-weight:600">radlab.zone/class/psy309</p><div class="break-qr"><img src="./assets/psy309-qr.png" alt="QR code linking to radlab.zone/class/psy309"></div></div>
   <p class="lead">Practical 1 is marked — feedback on Quercus. Two things the class did well, one thing to fix.</p>
-  <aside class="notes"><p>Check-in position 1. Be specific in the Practical 1 feedback: name the two most common strengths and the single most common problem (usually: describing a review article as if it were empirical, or no APA formatting). Three minutes, no more.</p></aside>
+  <p class="small">The check-in asks: <em>what&#8217;s one thing from last week that&#8217;s still sitting unresolved for you?</em> One line is fine — or &#8220;nothing, ready to go.&#8221;</p>
+  <aside class="notes"><p>Check-in position 1. Be specific in the Practical 1 feedback: name the two most common strengths and the single most common problem (usually: describing a review article as if it were empirical, or no APA formatting). Three minutes, no more.</p><p>Then advance: the next slide answers last week's question box.</p></aside>
+</section>
+
+<section class="dense">
+  <p class="kicker">From last week&#8217;s question box</p>
+  <h1>You asked — three answers</h1>
+  <ul>
+    <li><strong>&#8220;What&#8217;s the difference between statistical, internal and external validity — and how is internal different from construct?&#8221;</strong><br>
+      <span class="hidden-until"><em>Construct</em> is about the variables: did you measure what you say you measured? The other three are about the result: <em>statistical</em> — how strong and precise is it; <em>internal</em> — could anything else explain it; <em>external</em> — who and where does it hold for?</span></li>
+    <li><strong>&#8220;When does it make sense to trade external validity for internal?&#8221;</strong><br>
+      <span class="hidden-until">Whenever the question is &#8220;can X cause Y at all?&#8221; First show the effect exists, under control; then take it into the world. And &#8220;external&#8221; means the population <em>you</em> care about: studying one specific community, that community is the target.</span></li>
+    <li><strong>&#8220;In causal claims, aren&#8217;t strength and effect size the same thing?&#8221;</strong><br>
+      <span class="hidden-until">Yes: <em>effect size</em> is the name for strength. For an association it&#8217;s usually <em>r</em>; for an experiment it&#8217;s the size of the difference between conditions. Same question, different ruler.</span></li>
+  </ul>
+  <aside class="notes"><p>Seven entries came in at L2's closer. Two more to answer live: "I'd appreciate a review of reliability and validity" — that is today, the whole lecture. And "could you make a quiz for us to prepare for the midterm?" — Test 1 is Oct 6; say whatever you're offering (there are no PSY309 weekly quizzes in the Lounge, so it isn't there).</p></aside>
 </section>
 
 <section data-kind="divider">
@@ -107,7 +122,8 @@
     <p><strong>The bestiary:</strong> leading · double-barrelled · negated (or doubly) · vague quantifier · jargon · loaded framing · broken response scale</p>
     <p class="small">The item should look <em>reasonable to a participant</em> and still corrupt the data. Merely rude doesn't count.</p>
   </div>
-  <aside class="notes"><p>Check-in position 5. Expect the funniest items to also be the most precisely diagnosed — that's not a coincidence, and it's why writing bad items beats critiquing published ones.</p></aside>
+  <p class="small"><strong>Submit in the Lounge:</strong> for each item you received — the disease, and the repaired item.</p>
+  <aside class="notes"><p>Check-in position 5 — open it at the start of the swap round, so teams have the diagnoses in hand when they submit; it stays open until you Stop it. Expect the funniest items to also be the most precisely diagnosed — that's not a coincidence, and it's why writing bad items beats critiquing published ones.</p></aside>
 </section>
 
 <section data-kind="break">
@@ -146,7 +162,7 @@
   <p class="url" style="font-family:'JetBrains Mono',monospace;font-size:3.4vmin;color:var(--do);font-weight:600">radlab.zone/class/psy309</p>
   <p class="lead">Answer honestly. There are no right answers here — literally; this check-in has no answer key.</p>
   <p class="small">While you answer, I'm exporting the results so we can analyse them in five minutes.</p>
-  <aside class="notes"><p>Open check-in position 15 (7-item quiz, 7-minute countdown). <strong>Never press reveal.</strong> While they answer, run the export SQL from L3_class_scale.md and upload the CSV as class_scale.csv to the cloud R project.</p></aside>
+  <aside class="notes"><p>Open check-in position 15 (the 7-item scale). No countdown — watch the response counter and Stop it when it plateaus, about five minutes. <strong>Never press reveal.</strong> Then run the export SQL from L3_class_scale.md (it filters on position 15 — corrected 2026-09-21; the old position-3 version returns nothing) and upload the CSV as class_scale.csv to the cloud R project.</p></aside>
 </section>
 
 <section data-kind="activity">
@@ -168,23 +184,24 @@
         <p class="small">If the export misbehaves, the script picks up a stand-in file automatically. Same story, different numbers.</p>
       </div>
       <p class="small hidden-until"><strong>Two before me</strong> — ask your neighbours first. TAs are circulating.</p>
+      <p class="small"><strong>Submit in the Lounge:</strong> alpha for all seven · the two items you&#8217;d drop, and why · alpha without them · what high alpha does <em>not</em> tell you.</p>
     </div>
   </div>
-  <aside class="notes"><p>20 minutes on the script. Don't preview the finding — let the item-total correlations do the talking.</p></aside>
+  <aside class="notes"><p>20 minutes on the script. Open check-in position 20 (the team submission) about ten minutes in, once most have reached step 4. Don't preview the finding — let the item-total correlations do the talking.</p></aside>
 </section>
 
 <section>
   <h1>What did you find?</h1>
   <ul>
-    <li class="hidden-until"><strong>Alpha across all seven:</strong> around .70. Published value for this scale: <strong>≈.87.</strong> Why is ours worse?</li>
-    <li class="hidden-until"><strong>Item–total correlations:</strong> two items near zero, the rest .6–.7.</li>
-    <li class="hidden-until"><strong>Drop those two:</strong> alpha jumps to <strong>≈.88</strong>. Right onto the published value.</li>
+    <li class="hidden-until"><strong>Alpha across all seven</strong> — what did you get? Published value for this scale: <strong>≈.87.</strong> Why is ours worse?</li>
+    <li class="hidden-until"><strong>Item–total correlations</strong> — which two items stood apart from the rest?</li>
+    <li class="hidden-until"><strong>Drop those two</strong> — where did alpha land? Compare it with the published .87.</li>
   </ul>
   <div class="box warn hidden-until">
     <p><strong>The reveal.</strong> Items 4 and 6 — "I usually get enough sleep" and "I enjoy cold weather" — were never part of the scale. Readable, answerable, sensible-looking items measuring something else.</p>
     <p class="big" style="font-size:3vmin">The reliability statistics found them without being told.</p>
   </div>
-  <aside class="notes"><p>Reveal one line at a time. The moment students realize two items were planted is the moment internal consistency stops being a formula.</p></aside>
+  <aside class="notes"><p>Reveal one line at a time and take the numbers from the room — the slide no longer asserts values, because the live class data won't match any pre-written figure. For reference, the fallback file gives α = .68 (all seven), item–totals .59–.68 for the five real items vs .03 and −.21 for the ringers, and α = .88 with them dropped. The moment students realize two items were planted is the moment internal consistency stops being a formula.</p></aside>
 </section>
 
 <section>
