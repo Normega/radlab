@@ -329,6 +329,11 @@ export async function materializeSchedule(
     }
   }
 
+  // Whether this participant has completed ANY session. A missed gating
+  // assessment withdraws only someone who has actually started -- see the
+  // randomize branch below.
+  const completedAny = [...materialized.values()].some((r) => r.status === 'completed')
+
   const { data: assignmentRows, error: assignErr } = await db
     .from('participant_assignments')
     .select('node_id, value')
@@ -525,7 +530,19 @@ export async function materializeSchedule(
         // withdrawal + termination email (Norm, 2026-07-15) instead of the
         // old silent stall. Other non-completed states (e.g. 'blocked')
         // still stall so an admin can intervene.
-        if (lastSessionStatus === 'missed') {
+        //
+        // Only for someone who has completed at least one session. When the
+        // gate IS the entry session and nothing was ever completed, a missed
+        // gate means "never began", not "fell out of the protocol": in the
+        // Zerin study the baseline gates the randomisation, so every student
+        // who signed up and did not start within the 72 h baseline link was
+        // being withdrawn -- on the spot, the moment they came back through
+        // the SONA link (auto-enroll re-walks the graph). Eight were, one of
+        // whom had never answered a question (2026-09-21). They now stall
+        // instead, and auto-enroll reopens their entry session. Liliana's
+        // midpoint rule is unchanged: nobody reaches it without completing
+        // sessions.
+        if (lastSessionStatus === 'missed' && completedAny) {
           const gateLabel = lastSessionNodeKey ? nodeMap[lastSessionNodeKey]?.label : undefined
           withdrawal = { kind: 'missed_assessment', nodeId: node.id, gateLabel }
         }

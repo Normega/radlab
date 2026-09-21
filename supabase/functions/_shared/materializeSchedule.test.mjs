@@ -318,6 +318,21 @@ function plan(db) {
   })
 }
 
+// 5b. ...but only for someone who has started. With the gate missed and no
+//     session ever completed -- the Zerin shape, where a student signs up,
+//     never opens the baseline, and its link lapses -- it is "never began",
+//     not "fell out": no withdrawal, just the stall, until they come back and
+//     auto-enroll reopens their entry session (2026-09-21).
+{
+  const t0 = addDays(labToday(), -16)
+  const neverStarted = throughMidpoint(t0, null, 'missed')
+    .map((r) => ({ ...r, status: 'missed', completed_at: null }))
+  const { db, result } = await run(t0, neverStarted)
+
+  assert.equal(db.inserted.length, 0, 'still nothing materializes past the missed gate')
+  assert.equal(result.withdrawal, null, 'no completed session, so no withdrawal')
+}
+
 // 6. Enrollment (nothing materialized): baseline + all of Phase 1 on the
 //    nominal calendar, with no pull-forward anywhere near it.
 {
@@ -416,4 +431,4 @@ function throughPhase2(t0, done) {
   assert.equal(plan(db).length, 1)
 }
 
-console.log('materializeSchedule: 11/11 calendar + adherence checks passed')
+console.log('materializeSchedule: 12/12 calendar + adherence checks passed')

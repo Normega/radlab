@@ -12,6 +12,7 @@ import type { Graph } from '../_shared/materializeSchedule.ts'
 import { processAdherenceWithdrawal } from '../_shared/processAdherenceWithdrawal.ts'
 import { todayInLabTz } from '../_shared/labDate.ts'
 import { isPlaceholderExternalId } from '../_shared/externalIdGuard.ts'
+import { issueLink } from '../_shared/issueLink.ts'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -302,6 +303,46 @@ Deno.serve(async (req) => {
           .maybeSingle()
 
         if (activeLink) return json({ token: activeLink.token })
+
+        // A late starter: signed up, never completed a session, and let the
+        // entry session's link lapse. Nothing will ever email them -- the
+        // entry session is handed out here, never sent -- so "a new link will
+        // be sent" is a dead end. Reopen the entry session with a fresh link.
+        // Found 2026-09-21: a Zerin student signed up on the 17th, came back on
+        // the 21st having answered nothing, and was withdrawn by the missed-
+        // gate rule (now fixed in materializeSchedule).
+        //
+        // Someone who was screened out gets a link too, and lands on
+        // SessionEntry's "not the right fit" screen: the screener gate reads
+        // their failed attempt, not the link, so this can never hand them a
+        // second screening. That stays a staff decision (grant_screener_retake).
+        const { data: ownRows } = await admin
+          .from('participant_schedule')
+          .select('id, status, study_session_id, completed_at')
+          .eq('participant_id', participantId)
+          .eq('study_id', study_id)
+          .order('scheduled_date', { ascending: true })
+          .order('send_time', { ascending: true })
+        const rows = ownRows ?? []
+        const startedAny = rows.some((r) => r.status === 'completed')
+        const entry = rows.find((r) => r.completed_at == null)
+
+        if (!startedAny && entry) {
+          const { data: entrySession } = await admin
+            .from('study_sessions')
+            .select('link_expires_hours')
+            .eq('id', entry.study_session_id)
+            .maybeSingle()
+          await admin.from('participant_schedule').update({ status: 'unlocked' }).eq('id', entry.id)
+          const link = await issueLink(admin, {
+            scheduleId: entry.id,
+            participantId,
+            studyId: study_id,
+            linkExpiresHours: entrySession?.link_expires_hours ?? 72,
+          })
+          return json({ token: link.token })
+        }
+
         return json(
           { error: 'Your session link has expired. A new link will be sent when your next session is due.' },
           409,
