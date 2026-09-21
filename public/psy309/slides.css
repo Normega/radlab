@@ -203,3 +203,5 @@ section[data-kind="break"] .break-row .qbox { flex:1; }
 .qr-row { display:flex; gap:4vmin; align-items:center; }
 .qr-row .url { flex:1; margin:0; }
 .qr-row .break-qr img { width:18vmin; height:18vmin; }
+.qr-row.qr-compact .break-qr { padding:1vmin; }
+.qr-row.qr-compact .break-qr img { width:13vmin; height:13vmin; }

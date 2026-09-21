@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
+import { quizResponsesCsv } from './quizCsv'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -49,6 +50,7 @@ export default function ClassRemote({ superAdmin }) {
   const [promptsFor, setPromptsFor] = useState(null)      // checkin id with responses expanded
   const [promptRows, setPromptRows] = useState({})        // checkin id -> [{text, at}]
   const [summarizingId, setSummarizingId] = useState(null)
+  const [exportingId, setExportingId] = useState(null)
 
   const broadcastRef = useRef(null)
   const respondedSetsRef = useRef({})
@@ -254,6 +256,26 @@ export default function ClassRemote({ superAdmin }) {
       ])
     } catch { /* results still show; just without the themes panel */ }
     setSummarizingId(null)
+  }
+
+  async function exportQuizCsv(checkin) {
+    setActionError(null)
+    setExportingId(checkin.id)
+    try {
+      const { data, error } = await supabase.from('checkin_responses')
+        .select('quiz_answers').eq('checkin_id', checkin.id).not('quiz_answers', 'is', null)
+      if (error) { fail(checkin, error.message); return }
+      if (!data?.length) { fail(checkin, 'No quiz responses to download yet.'); return }
+      const csv = quizResponsesCsv(checkin.config?.quiz_items ?? [], data.map((r) => r.quiz_answers))
+      const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
+      const a = document.createElement('a')
+      a.href = url
+      a.download = checkin.config?.export_filename || `lecture${lecture?.number ?? ''}-checkin${checkin.position}.csv`
+      document.body.appendChild(a); a.click(); a.remove()
+      setTimeout(() => URL.revokeObjectURL(url), 1000)
+    } finally {
+      setExportingId(null)
+    }
   }
 
   async function handleShowResults(checkin) {
@@ -490,6 +512,15 @@ export default function ClassRemote({ superAdmin }) {
                   </div>
                 )}
 
+                {hasQuiz && c.status !== 'planned' && (
+                  <div style={S.questionsWrap}>
+                    <button style={S.smallBtn} disabled={exportingId === c.id} onClick={() => exportQuizCsv(c)}>
+                      {exportingId === c.id ? 'Preparing…' : `⬇ Download responses (CSV)`}
+                    </button>
+                    <p style={S.exportNote}>Anonymous — no names, rows shuffled.</p>
+                  </div>
+                )}
+
                 {collectsQuestions && (
                   <div style={S.questionsWrap}>
                     <p style={S.questionsLabel}>Questions {questions.length > 0 && `(${questions.length})`}</p>
@@ -567,6 +598,7 @@ const S = {
   questionsWrap: { marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--bd)' },
   questionsLabel: { fontFamily: MONO, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx3)', marginBottom: 8 },
   noQuestions: { fontSize: 14, color: 'var(--tx3)' },
+  exportNote: { fontSize: 12.5, color: 'var(--tx3)', margin: '6px 0 0' },
   questionRow: { background: 'var(--bg)', borderRadius: 10, padding: '10px 12px', marginBottom: 8 },
   questionTextRow: { display: 'flex', justifyContent: 'space-between', gap: 10, marginBottom: 8 },
   questionText: { fontSize: 14, color: 'var(--tx)', lineHeight: 1.4 },
