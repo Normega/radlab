@@ -21,6 +21,9 @@ const SERIF = '"DM Serif Display", Georgia, serif'
 //              counts toward the required three articles.
 //   Dismiss  — with a note, because silence teaches students not to report.
 export default function ReportsPanel({ courseClient, courseId, wikiBase, onCountChange }) {
+  // The board lives beside the wiki under the same course prefix; derived
+  // rather than passed so this panel keeps its single-prop interface.
+  const gapsBase = String(wikiBase ?? '').replace(/\/wiki$/, '/gaps')
   const [rows, setRows] = useState(null)
   const [showResolved, setShowResolved] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -31,7 +34,7 @@ export default function ReportsPanel({ courseClient, courseId, wikiBase, onCount
     if (!courseId) return
     let live = true
     courseClient.from('page_reports')
-      .select('id, kind, section, body, citation, status, resolution, created_at, wiki_pages ( slug, title )')
+      .select('id, kind, section, body, citation, status, resolution, gap_id, created_at, wiki_pages ( slug, title )')
       .eq('course_id', courseId)
       .order('created_at', { ascending: false })
       .limit(200)
@@ -133,14 +136,28 @@ export default function ReportsPanel({ courseClient, courseId, wikiBase, onCount
       <button style={S.toggle} onClick={() => setShowResolved(v => !v)}>
         {showResolved ? 'Hide' : 'Show'} resolved ({resolved.length})
       </button>
+      {/* A resolved report used to render its page as plain text and never
+          mention the gap it had just created — so the card went dead at
+          exactly the moment you need it, which is after converting, when the
+          page still has to be corrected (Norm, 2026-09-21: "it doesn't
+          contain links"). Both destinations are links now. */}
       {showResolved && resolved.map(r => (
         <div key={r.id} style={{ ...S.card, opacity: 0.65 }}>
           <div style={S.cardTop}>
             <span style={S.kind}>{r.status}</span>
-            {r.wiki_pages && <span style={S.dim}>{r.wiki_pages.title}</span>}
+            {r.wiki_pages && (
+              <Link to={`${wikiBase}/${r.wiki_pages.slug}${r.section ? `#${r.section}` : ''}`} style={S.pageLink}>
+                {r.wiki_pages.title}{r.section ? ` · ${r.section}` : ''}
+              </Link>
+            )}
           </div>
           <p style={S.body}>{r.body.slice(0, 160)}{r.body.length > 160 ? '…' : ''}</p>
           {r.resolution && <p style={S.citation}>→ {r.resolution}</p>}
+          {r.gap_id && (
+            <p style={S.citation}>
+              <Link to={`${gapsBase}?gap=${r.gap_id}`} style={S.pageLink}>See the gap on the board ↗</Link>
+            </p>
+          )}
         </div>
       ))}
     </>
