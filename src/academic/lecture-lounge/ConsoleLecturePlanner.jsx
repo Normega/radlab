@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { loungePath } from '../courseRoutes'
+import CheckinPreview from './CheckinPreview'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -211,7 +212,7 @@ function CheckinForm({ initial, onSave, onCancel }) {
   )
 }
 
-function CheckinRow({ checkin, classSlug, superAdmin, onEdit, onDelete, onSetStatus }) {
+function CheckinRow({ checkin, classSlug, superAdmin, onPreview, onEdit, onDelete, onSetStatus }) {
   const activities = checkin.config?.activities ?? []
   const weekly = checkin.kind === 'weekly'
   const answers = checkin.responseCount ?? 0
@@ -243,6 +244,7 @@ function CheckinRow({ checkin, classSlug, superAdmin, onEdit, onDelete, onSetSta
       {weekly && checkin.status !== 'planned' && (
         <a style={S.linkBtn} href={`${loungePath(classSlug)}/wall/${checkin.id}`} target="_blank" rel="noreferrer">Wall</a>
       )}
+      <button style={S.linkBtn} onClick={onPreview}>Preview</button>
       <button style={S.linkBtn} onClick={onEdit}>Edit</button>
       {/* Delete cascades to checkin_responses, so a row that has collected
           answers cannot be deleted at all — not even by a super admin. The
@@ -256,7 +258,7 @@ function CheckinRow({ checkin, classSlug, superAdmin, onEdit, onDelete, onSetSta
   )
 }
 
-function LectureCard({ lecture, checkins, classSlug, superAdmin, expanded, onToggle, onEditLecture, onDeleteLecture, onCreateCheckin, onUpdateCheckin, onDeleteCheckin, onSetCheckinStatus }) {
+function LectureCard({ lecture, checkins, classSlug, superAdmin, expanded, onToggle, onEditLecture, onDeleteLecture, onCreateCheckin, onUpdateCheckin, onDeleteCheckin, onSetCheckinStatus, onPreviewCheckin }) {
   const [editing, setEditing] = useState(false)
   const [editForm, setEditForm] = useState({ number: lecture.number ?? '', title: lecture.title ?? '', lecture_date: lecture.lecture_date ?? '' })
   const [creatingCheckin, setCreatingCheckin] = useState(false)
@@ -317,6 +319,7 @@ function LectureCard({ lecture, checkins, classSlug, superAdmin, expanded, onTog
             ) : (
               <CheckinRow
                 key={c.id} checkin={c} classSlug={classSlug} superAdmin={superAdmin}
+                onPreview={() => onPreviewCheckin(c)}
                 onEdit={() => setEditingCheckinId(c.id)} onDelete={() => onDeleteCheckin(c.id)}
                 onSetStatus={onSetCheckinStatus}
               />
@@ -345,6 +348,7 @@ export default function ConsoleLecturePlanner({ classInfo, superAdmin }) {
   const [creatingLecture, setCreatingLecture] = useState(false)
   const [newLecture, setNewLecture] = useState({ number: '', title: '', lecture_date: '' })
   const [errorMsg, setErrorMsg] = useState(null)
+  const [previewing, setPreviewing] = useState(null)  // the check-in open in the preview, if any
 
   // Every mutation goes through this so an RLS denial or any other DB error
   // surfaces to the instructor instead of failing silently (see CLAUDE.md's
@@ -478,6 +482,8 @@ export default function ConsoleLecturePlanner({ classInfo, superAdmin }) {
         <h1 style={S.title}>{classInfo.name}</h1>
       </div>
 
+      {previewing && <CheckinPreview checkin={previewing} onClose={() => setPreviewing(null)} />}
+
       {errorMsg && (
         <div style={S.errorBanner}>
           {errorMsg}
@@ -492,6 +498,7 @@ export default function ConsoleLecturePlanner({ classInfo, superAdmin }) {
           onEditLecture={editLecture} onDeleteLecture={deleteLecture}
           onCreateCheckin={createCheckin} onUpdateCheckin={updateCheckin} onDeleteCheckin={deleteCheckin}
           onSetCheckinStatus={setCheckinStatus}
+          onPreviewCheckin={setPreviewing}
         />
       ))}
 

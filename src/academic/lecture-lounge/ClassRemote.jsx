@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { quizResponsesCsv } from './quizCsv'
+import CheckinPreview from './CheckinPreview'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -47,6 +48,7 @@ export default function ClassRemote({ superAdmin }) {
   const [actionError, setActionError] = useState(null)
   const [countdown, setCountdown] = useState(null)
   const [menuFor, setMenuFor] = useState(null) // checkin id with the ⋯ overflow open
+  const [previewing, setPreviewing] = useState(null) // check-in open in the preview, if any
   const [promptsFor, setPromptsFor] = useState(null)      // checkin id with responses expanded
   const [promptRows, setPromptRows] = useState({})        // checkin id -> [{text, at}]
   const [summarizingId, setSummarizingId] = useState(null)
@@ -432,6 +434,10 @@ export default function ClassRemote({ superAdmin }) {
                 <div style={S.btnRow}>
                   {/* One primary action per state — the transport. */}
                   {c.status === 'planned' && <button style={S.bigBtn} onClick={() => handleOpen(c)}>▶ Play</button>}
+                  {/* Beside Play, where the doubt arises: see it as a student
+                      will, without releasing it. Planned only — once a check-in
+                      is live the room is the preview. */}
+                  {c.status === 'planned' && <button style={S.ghostBtn} onClick={() => setPreviewing(c)}>Preview</button>}
                   {isOpen && (
                     <>
                       <button style={S.bigBtn} onClick={() => handleClose(c)}>■ Stop</button>
@@ -553,6 +559,7 @@ export default function ClassRemote({ superAdmin }) {
           })
         )}
       </div>
+      {previewing && <CheckinPreview checkin={previewing} onClose={() => setPreviewing(null)} />}
     </div>
   )
 }

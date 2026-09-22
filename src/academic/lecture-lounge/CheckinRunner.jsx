@@ -45,12 +45,14 @@ function PromptTap({ promptText, onSubmit }) {
   )
 }
 
-function QuestionBoxTap({ checkinId, userId, intro, onSubmit }) {
+function QuestionBoxTap({ checkinId, userId, intro, onSubmit, preview }) {
   const [value, setValue] = useState('')
   const [submitting, setSubmitting] = useState(false)
   async function handleSubmit() {
     setSubmitting(true)
-    if (value.trim()) {
+    // A preview must never write: this step inserts the moment it is pressed,
+    // not at the end, so it needs its own guard as well as submitFinal's.
+    if (value.trim() && !preview) {
       await supabase.from('class_questions').insert({ checkin_id: checkinId, profile_id: userId, question_text: value.trim() })
     }
     setSubmitting(false)
@@ -101,18 +103,91 @@ function QuizTap({ items, onSubmit }) {
   )
 }
 
+// The end of a preview: where a student's answer would have been saved. For a
+// quiz this is the point of the whole exercise — each pick is graded against
+// the saved key, and an item with NO key is called out, because that is the
+// failure "Reveal correct answers" would otherwise discover in front of the
+// room.
+function PreviewSummary({ config, result, answerKey, onRestart }) {
+  const items = config?.quiz_items ?? []
+  const picks = result.quiz_answers ?? {}
+  const keyed = answerKey ?? {}
+  const unkeyed = items.filter((q) => !(q.id in keyed))
+  const agree = items.filter((q) => q.id in keyed && picks[q.id] === keyed[q.id]).length
+
+  return (
+    <div style={{ ...S.stepWrap, alignItems: 'stretch', textAlign: 'left' }}>
+      <p style={{ ...S.eyebrow, textAlign: 'center' }}>End of the check-in</p>
+      <h2 style={{ ...S.title, textAlign: 'center', marginBottom: 8 }}>This is where it would save</h2>
+      <p style={{ ...S.hint, textAlign: 'center', marginBottom: 18 }}>
+        Preview only — nothing was sent, and no points were awarded.
+      </p>
+
+      {items.length > 0 && (
+        <div style={S.pvBlock}>
+          <p style={S.pvHead}>
+            Quiz key check · {answerKey ? `your picks match the key on ${agree} of ${items.length}` : 'loading the key…'}
+          </p>
+          {answerKey && unkeyed.length > 0 && (
+            <p style={S.pvWarn}>⚠ {unkeyed.length} item{unkeyed.length === 1 ? ' has' : 's have'} no answer key saved. Reveal would show nothing for {unkeyed.length === 1 ? 'it' : 'them'}.</p>
+          )}
+          {items.map((q, i) => {
+            const pick = picks[q.id]
+            const key = keyed[q.id]
+            const hasKey = q.id in keyed
+            const match = hasKey && pick === key
+            return (
+              <div key={q.id} style={S.pvItem}>
+                <p style={S.pvStem}>{i + 1}. {q.text.length > 110 ? `${q.text.slice(0, 110)}…` : q.text}</p>
+                <p style={S.pvLine}>You picked: <strong>{pick != null ? q.options[pick] : '—'}</strong></p>
+                <p style={{ ...S.pvLine, color: !hasKey ? '#b8860b' : match ? '#2e7d32' : '#c04a4a' }}>
+                  {!hasKey ? '⚠ No key saved' : <>Key says: <strong>{q.options[key]}</strong>{match ? ' ✓' : ' ✗'}</>}
+                </p>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {result.prompt_response != null && (
+        <div style={S.pvBlock}>
+          <p style={S.pvHead}>Prompt answer</p>
+          <p style={S.pvLine}>{result.prompt_response.trim() || '(left blank)'}</p>
+        </div>
+      )}
+      {result.pacing != null && (
+        <div style={S.pvBlock}><p style={S.pvHead}>Pacing</p><p style={S.pvLine}>{result.pacing} of 5</p></div>
+      )}
+
+      {onRestart && <button style={{ ...S.primaryBtn, alignSelf: 'center', marginTop: 8 }} onClick={onRestart}>Run it again</button>}
+    </div>
+  )
+}
+
 // Renders the config activity sequence one step at a time, phone-first.
 // Draft answers persist in component state across steps; a single upsert
 // writes the full checkin_responses row on the final step (re-submit while
 // the checkin is still open just updates it, per the unique constraint).
-export default function CheckinRunner({ checkinId, config, session, onComplete }) {
+//
+// preview — { answerKey, onRestart } — runs the same steps an instructor's
+// students will see, but writes nothing: the final upsert, the points award
+// and the question-box insert are all skipped, and the end screen shows what
+// WOULD have been recorded, grading quiz picks against the saved key. Built so
+// a check-in can be seen as students see it without pressing Play (Norm,
+// 2026-09-22) — and above all so a quiz key can be checked before it is live:
+// a first-lecture in-class quiz had marked all four cases "Disorder", including
+// the three the deck uses as counterexamples, and nothing short of answering
+// it would have shown that.
+export default function CheckinRunner({ checkinId, config, session, onComplete, preview }) {
   const activities = config?.activities ?? []
   const [stepIndex, setStepIndex] = useState(0)
   const [draft, setDraft] = useState({})
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState(null)
+  const [previewResult, setPreviewResult] = useState(null)
 
   async function submitFinal(finalDraft) {
+    if (preview) { setPreviewResult(finalDraft); return }
     setSubmitting(true)
     setError(null)
     const mood = finalDraft.emotionId !== undefined || finalDraft.neutral
@@ -159,6 +234,11 @@ export default function CheckinRunner({ checkinId, config, session, onComplete }
     }
   }, [current]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  if (previewResult) {
+    return <PreviewSummary config={config} result={previewResult}
+                           answerKey={preview?.answerKey} onRestart={preview?.onRestart} />
+  }
+
   if (submitting) return <div style={S.stepWrap}><p style={S.hint}>Saving…</p></div>
 
   if (error) {
@@ -177,7 +257,7 @@ export default function CheckinRunner({ checkinId, config, session, onComplete }
     // prompt_text doubles as the question box's intro line when there is no
     // prompt step to claim it (the closers) — with a prompt in the sequence
     // it already appeared one step earlier, so repeating it would be noise.
-    case 'question_box':  return <QuestionBoxTap checkinId={checkinId} userId={session.user.id} intro={activities.includes('prompt') ? null : config?.prompt_text} onSubmit={handleStepSubmit} />
+    case 'question_box':  return <QuestionBoxTap checkinId={checkinId} userId={session?.user?.id} intro={activities.includes('prompt') ? null : config?.prompt_text} onSubmit={handleStepSubmit} preview={!!preview} />
     case 'quiz':           return <QuizTap items={config?.quiz_items ?? []} onSubmit={handleStepSubmit} />
     default:
       return null // handled by the effect above
@@ -207,6 +287,12 @@ const S = {
     cursor: 'pointer', fontFamily: 'inherit',
   }),
   pacingLabels: { display: 'flex', justifyContent: 'space-between', width: '100%', maxWidth: 280, fontSize: 12, color: 'var(--tx3)' },
+  pvBlock: { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 12, padding: '12px 14px', marginBottom: 12 },
+  pvHead: { fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx3)', margin: '0 0 8px' },
+  pvWarn: { fontSize: 13.5, color: '#b8860b', margin: '0 0 10px', lineHeight: 1.45 },
+  pvItem: { borderTop: '1px solid var(--bd)', padding: '8px 0' },
+  pvStem: { fontSize: 13.5, color: 'var(--tx2)', margin: '0 0 4px', lineHeight: 1.4 },
+  pvLine: { fontSize: 14, color: 'var(--tx)', margin: '2px 0', lineHeight: 1.45 },
   quizQuestion: { width: '100%', textAlign: 'left', marginBottom: 20 },
   quizQuestionText: { fontSize: 15, color: 'var(--tx)', fontWeight: 600, marginBottom: 10 },
   quizOptionLabel: (active) => ({
