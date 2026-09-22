@@ -509,7 +509,7 @@
   <aside class="notes"><p>The second small-print point is the one that surprises people: publication bias is usually taught as "makes treatments look better than they are", and here it made one look worse.</p></aside>
 </section>
 
-<section data-kind="activity">
+<section class="tight" data-kind="activity">
   <p class="kicker">Exercise B · 15 minutes · pairs</p>
   <h1>Spot the limitation</h1>
   <p class="big">Three claims. For each: what is the biggest threat to believing it?</p>
@@ -522,7 +522,10 @@
   <div class="qr-row"><p class="url" style="font-family:'JetBrains Mono',monospace;font-size:3vmin;color:var(--accent);font-weight:600">radlab.zone/class/psy240</p><div class="break-qr"><img src="./assets/psy240-qr.png" alt="QR code linking to radlab.zone/class/psy240"></div></div>
   <p class="hidden-until"><strong>Item 3, named:</strong> a correlation licenses no direction. Poverty could drive disorder; disorder could drive income down; a third factor could drive both. <strong>Correlation is where a causal question starts — never where it ends.</strong></p>
   <div class="svgwrap hidden-until">
-    <svg viewBox="0 0 660 150" role="img" aria-labelledby="dir-t dir-d">
+    <!-- Capped below the .tight default: this slide carries the exercise, its
+         three claims, the named answer AND this figure, and the stage hides
+         whatever does not fit. -->
+    <svg viewBox="0 0 660 150" style="max-height:19vh" role="img" aria-labelledby="dir-t dir-d">
       <title id="dir-t">Three causal readings of one correlation</title>
       <desc id="dir-d">A correlates with B three ways: A causes B, B causes A, or a third variable C causes both.</desc>
       <defs><marker id="da" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#8B2E5C"/></marker></defs>

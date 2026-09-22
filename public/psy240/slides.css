@@ -116,6 +116,24 @@ td.margin { background:var(--accent-soft); font-weight:700; }
 .svgwrap svg .emoji { font-family:"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji","Segoe UI Symbol",sans-serif; }
 @media print { .svgwrap svg { max-height:11cm; } }
 
+/* ---- tight: a slide carrying more than the default scale allows ----
+   #deck hides overflow, so a slide that outgrows the viewport loses its
+   bottom silently — you only find out when the last line is missing from the
+   projection (Norm, 2026-09-22, on L3's opening slide). This trims the type
+   about a tenth and takes the air out of the boxes and the figure, which
+   buys roughly two lines without dropping below the size the back row can
+   read. Use it on the slide that needs it, never deck-wide: the default
+   sizes ARE the readable sizes, and this is a concession to one crowded
+   slide rather than a house style. If a slide needs more than this, it is
+   two slides. */
+section.tight .kicker { margin-bottom:.9vmin; }
+section.tight h1 { font-size:4.3vmin; margin-bottom:1.2vmin; }
+section.tight p, section.tight li { font-size:2.35vmin; line-height:1.38; margin-bottom:.9vmin; }
+section.tight .small { font-size:1.9vmin; }
+section.tight .box { padding:1.3vmin 2vmin; }
+section.tight .svgwrap { margin:.4vmin 0; }
+section.tight .svgwrap svg { max-height:30vh; }
+
 /* ---- figure / image ---- */
 img.fig { max-width:100%; max-height:56vh; object-fit:contain; border-radius:6px; }
 figcaption { font-size:1.9vmin; color:var(--muted); margin-top:1vmin; }
@@ -191,3 +209,13 @@ section[data-kind="break"] .break-row .qbox { flex:1; }
 .qr-row { display:flex; gap:4vmin; align-items:center; }
 .qr-row .url { flex:1; margin:0; }
 .qr-row .break-qr img { width:18vmin; height:18vmin; }
+
+/* An exercise slide already carries its instructions, so the QR there is a
+   reminder rather than the arrival scan target, and the full 18vmin block
+   costs ~20vmin of height — enough to push a full slide off the bottom of a
+   stage that hides its overflow. Smaller, still scannable across a lecture
+   hall at this projection size. */
+section[data-kind="activity"] .qr-row { gap:3vmin; }
+section[data-kind="activity"] .qr-row .break-qr { padding:1vmin; }
+section[data-kind="activity"] .qr-row .break-qr img { width:12vmin; height:12vmin; }
+section[data-kind="activity"] .qr-row .url { font-size:2.4vmin !important; }
