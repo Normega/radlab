@@ -12,6 +12,8 @@ import { TIER_LABEL, TIER_HELP } from './tiers'
 import { chapterIcon } from './chapterIcons'
 import { weekIcon } from './weekIcons'
 import ReportIssue from './ReportIssue'
+import NeighbourGraph from './NeighbourGraph'
+import { rankNeighbours } from './readingGraph'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -73,6 +75,14 @@ export default function WikiPage() {
   // and the bar simply doesn't render, same pattern as the staff tiles on the
   // home page.
   const [review, setReview] = useState(null)
+  // Lecture membership for every page in the course (page_id -> Set of
+  // lecture_no): the crumb reads this page's entry, the neighbourhood graph
+  // ranks same-lecture neighbours up.
+  const [lecturesOf, setLecturesOf] = useState(new Map())
+  // The reader's own visit counts (page_visits, RLS: own rows only). null =
+  // not tracked — signed out, or a reader of a public course — and the graph
+  // then draws every neighbour neutral and says nothing about history.
+  const [myVisits, setMyVisits] = useState(null)
 
   // Staff editing
   const [editing, setEditing] = useState(false)
@@ -110,9 +120,9 @@ export default function WikiPage() {
       // honest basis for colouring a wikilink: a link to a page that exists
       // but is still a draft is, for a student, a link to nothing readable.
       const [{ data: all }, { data: back }, { data: out }, { data: prov }, { data: cat }, { data: gp }, { data: rev }, { data: pls }, { data: cal }] = await Promise.all([
-        courseClient.from('wiki_pages').select('slug, title, type, status').eq('course_id', courseId),
+        courseClient.from('wiki_pages').select('id, slug, title, type, status').eq('course_id', courseId),
         courseClient.from('wiki_links')
-          .select('id, source:wiki_pages!wiki_links_source_page_id_fkey!inner(slug, title, type, status)')
+          .select('id, source:wiki_pages!wiki_links_source_page_id_fkey!inner(id, slug, title, type, status)')
           .eq('target_page_id', row.id),
         courseClient.from('wiki_links').select('target_slug, target_page_id').eq('source_page_id', row.id),
         courseClient.from('wiki_page_provenance').select('sources, source_count, has_unverified_source')
@@ -126,12 +136,18 @@ export default function WikiPage() {
         courseClient.from('page_reviews')
           .select('version, verdict, reviewed_at')
           .eq('page_id', row.id).order('reviewed_at', { ascending: false }).limit(1).maybeSingle(),
-        courseClient.from('page_lectures').select('lecture_no').eq('page_id', row.id),
+        courseClient.from('page_lectures').select('page_id, lecture_no').eq('course_id', courseId),
         courseClient.from('course_structure')
           .select('week_no, lecture_no, title')
           .eq('course_id', courseId).eq('kind', 'lecture'),
       ])
       if (cancelled) return
+      const lecs = new Map()
+      for (const l of pls ?? []) {
+        if (!lecs.has(l.page_id)) lecs.set(l.page_id, new Set())
+        lecs.get(l.page_id).add(l.lecture_no)
+      }
+      setLecturesOf(lecs)
       setPages(new Map((all ?? []).map(p => [p.slug, p])))
       setBacklinks((back ?? []).map(b => b.source).filter(Boolean)
         .sort((a, b) => a.title.localeCompare(b.title)))
@@ -140,7 +156,7 @@ export default function WikiPage() {
       setCatalog(cat ?? null)
       setGaps(gp ?? [])
       setReview(rev ?? null)
-      setLectureCrumbs((pls ?? [])
+      setLectureCrumbs((pls ?? []).filter(l => l.page_id === row.id)
         .map(l => (cal ?? []).find(m => m.lecture_no === l.lecture_no))
         .filter(Boolean)
         .sort((a, b) => a.week_no - b.week_no))
@@ -151,6 +167,32 @@ export default function WikiPage() {
     // table of contents, gap list and link graph all reflect the edit rather
     // than the client patching its own copy and drifting from the database.
   }, [courseClient, courseId, slug, reloadKey])
+
+  // Count this visit and load the reader's own history. Its own effect, keyed
+  // on the page and the user rather than the session object: auth-js hands out
+  // a fresh session on every tab focus, and a staff save's reloadKey refetch is
+  // not a second reading. The server debounces reloads anyway (30 min); this
+  // just avoids asking. Any error — including the table not existing yet —
+  // leaves myVisits null, which is the "not tracked" rendering, not a failure.
+  const uid = session?.user?.id
+  const pageId = page?.id
+  useEffect(() => {
+    if (!uid || !pageId || !courseId) return
+    let cancelled = false
+    ;(async () => {
+      const [{ data: n, error: e1 }, { data: rows, error: e2 }] = await Promise.all([
+        courseClient.rpc('record_page_visit', { p_page_id: pageId }),
+        courseClient.from('page_visits').select('page_id, visits').eq('course_id', courseId),
+      ])
+      if (cancelled) return
+      if (e1 || e2) return setMyVisits(null)
+      const m = new Map((rows ?? []).map(r => [r.page_id, r.visits]))
+      // The read can land before the upsert commits; the RPC's own count wins.
+      if (n > 0) m.set(pageId, n)
+      setMyVisits(m)
+    })()
+    return () => { cancelled = true }
+  }, [courseClient, courseId, pageId, uid])
 
   const save = async () => {
     setSaving(true)
@@ -191,6 +233,17 @@ export default function WikiPage() {
   const toc = useMemo(() => extractHeadings(body), [body])
   const sections = useMemo(() => splitSections(body, toc), [body, toc])
   const headingIds = useMemo(() => new Map(toc.map(h => [h.line, h.id])), [toc])
+
+  // One hop around this page, ranked, for the neighbourhood graph.
+  const neighbours = useMemo(() => pageId ? rankNeighbours({
+    selfId: pageId,
+    pagesBySlug: pages,
+    outIds: outbound.map(l => l.target_page_id).filter(Boolean),
+    inIds: backlinks.map(b => b.id),
+    relatedSlugs: relatedSlugs(meta),
+    lecturesOf,
+    visits: myVisits ?? new Map(),
+  }) : [], [pageId, pages, outbound, backlinks, meta, lecturesOf, myVisits])
 
   // Which `##` section contains each anchor, so a link to a `###` inside a
   // folded section can open the section before scrolling to it.
@@ -533,6 +586,11 @@ export default function WikiPage() {
                 {h.text}
               </a>
             ))}
+            {neighbours.length > 0 && (
+              <a href="#connections" style={{ ...S.tocLink, marginTop: 6, color: 'var(--pk)' }}>
+                How this page connects
+              </a>
+            )}
           </aside>
         )}
 
@@ -640,6 +698,9 @@ export default function WikiPage() {
               member; staff triage lands on /academic/fieldguide/reports. */}
           <ReportIssue courseClient={courseClient} pageId={page.id}
                        sections={collapsible.map(s => ({ id: s.id, title: s.title }))} />
+
+          <NeighbourGraph title={page.title} neighbours={neighbours} base={WIKI_BASE}
+                          tracked={myVisits !== null} selfVisits={myVisits?.get(page.id) ?? 0} />
 
           {related.length > 0 && (
             <section style={S.section}>
