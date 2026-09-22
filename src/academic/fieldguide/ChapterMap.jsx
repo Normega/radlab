@@ -3,6 +3,8 @@ import { Link, useOutletContext } from 'react-router-dom'
 import { AcademicEyebrow } from '../AcademicChrome'
 import AvatarMenu from './AvatarMenu'
 import { useWikiBase, useCoursePaths } from './wiki/useWikiBase'
+import { VisitDot } from './wiki/NeighbourGraph'
+import { isSourcePage, visitBand } from './wiki/readingGraph'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -32,8 +34,7 @@ const TYPE_RANK = { overview: 0, concept: 1, disorder: 2, treatment: 3, debate: 
 const typeRank = (t) => TYPE_RANK[t] ?? 9
 
 // Provenance records, not readings -- the same exclusion the wiki index makes.
-const isSource = (p) => p.type === 'study' ||
-  String(p.slug).startsWith('fundamentals-psychological-disorders-module')
+const isSource = isSourcePage
 
 const fmtDate = (d) => d
   ? new Date(`${d}T12:00:00`).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })
@@ -51,6 +52,13 @@ export default function ChapterMap() {
   const [tiers, setTiers] = useState(new Map())   // slug -> catalogue tier
   const [expanded, setExpanded] = useState({})    // lecture_no -> bool
   const [error, setError] = useState(null)
+  // The reader's own visit counts, page_id -> visits (page_visits: RLS limits
+  // every read to the reader's own rows; staff have no view of anyone else's).
+  // null = not tracked (signed out, or the table isn't reachable) and every
+  // "My reading" element simply doesn't render.
+  const [visits, setVisits] = useState(null)
+  const [visitsTick, setVisitsTick] = useState(0)
+  const uid = session?.user?.id
 
   useEffect(() => {
     if (!courseId) return
@@ -80,6 +88,23 @@ export default function ChapterMap() {
     })()
     return () => { cancelled = true }
   }, [courseClient, courseId])
+
+  useEffect(() => {
+    if (!courseId || !uid) return
+    let cancelled = false
+    courseClient.from('page_visits').select('page_id, visits').eq('course_id', courseId)
+      .then(({ data, error: e }) => {
+        if (cancelled) return
+        setVisits(e ? null : new Map((data ?? []).map(r => [r.page_id, r.visits])))
+      })
+    return () => { cancelled = true }
+  }, [courseClient, courseId, uid, visitsTick])
+
+  const clearHistory = async () => {
+    if (!window.confirm('Clear your Field Guide reading history for this course? This cannot be undone.')) return
+    await courseClient.from('page_visits').delete().eq('course_id', courseId)
+    setVisitsTick(t => t + 1)
+  }
 
   // lecture_no -> the chapters for it, in reading order.
   const byLecture = useMemo(() => {
@@ -131,6 +156,31 @@ export default function ChapterMap() {
 
   const today = new Date().toISOString().slice(0, 10)
 
+  // "My reading": the whole-term picture, and the two lists worth acting on —
+  // what you keep returning to, and what from lectures already given you have
+  // not opened at all. Foundation pages lead the second list for the same
+  // reason they lead each lecture: they are the ones the quizzes lean on.
+  const reading = useMemo(() => {
+    if (!visits) return null
+    const seen = new Map()
+    const pastUnopened = []
+    for (const m of meetings ?? []) {
+      if (m.kind !== 'lecture' || m.lecture_no == null) continue
+      const past = m.meeting_date && m.meeting_date < today
+      for (const p of byLecture.get(m.lecture_no) ?? []) {
+        if (seen.has(p.id)) continue
+        seen.set(p.id, p)
+        if (past && !visits.get(p.id)) pastUnopened.push({ ...p, lecture_no: m.lecture_no })
+      }
+    }
+    pastUnopened.sort((a, b) => tierRank(a.tier) - tierRank(b.tier) || a.lecture_no - b.lecture_no)
+    const all = [...seen.values()]
+    const opened = all.filter(p => visits.get(p.id))
+    const most = [...opened].sort((a, b) => visits.get(b.id) - visits.get(a.id) ||
+                                           String(a.title).localeCompare(String(b.title))).slice(0, 5)
+    return { total: all.length, opened: opened.length, most, pastUnopened }
+  }, [visits, meetings, byLecture, today])
+
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '32px 20px 80px' }}>
       <div style={{ maxWidth: 940, margin: '0 auto' }}>
@@ -155,6 +205,68 @@ export default function ChapterMap() {
           <p style={S.error}>Couldn't load the course map: {error}</p>
         ) : (
           <>
+            {reading && reading.total > 0 && (
+              <section style={S.reading}>
+                <div style={S.readingHead}>
+                  <h2 style={S.readingTitle}>My reading</h2>
+                  <span style={S.count}>
+                    opened {reading.opened} of {reading.total} chapters · only you can see this
+                  </span>
+                </div>
+                <div style={S.meter} aria-hidden="true">
+                  <div style={{ ...S.meterFill, width: `${(100 * reading.opened) / reading.total}%` }} />
+                </div>
+                <div style={S.readingCols}>
+                  <div>
+                    <p style={S.readingLabel}>Not opened yet, from lectures already given</p>
+                    {reading.pastUnopened.length === 0
+                      ? <p style={S.muted}>Nothing: every chapter from past lectures has been opened at least once.</p>
+                      : (
+                        <ul style={S.readingList}>
+                          {reading.pastUnopened.slice(0, 6).map(p => (
+                            <li key={p.id} style={S.readingItem}>
+                              <VisitDot band="none" size={12} />
+                              <Link to={`${WIKI_BASE}/${p.slug}`}
+                                    style={tierRank(p.tier) <= 1 ? S.chapterLinkCore : S.chapterLink}>{p.title}</Link>
+                              <span style={S.typeTag}>L{p.lecture_no}</span>
+                            </li>
+                          ))}
+                          {reading.pastUnopened.length > 6 && (
+                            <li style={S.muted}>+{reading.pastUnopened.length - 6} more: open a lecture below to see them all</li>
+                          )}
+                        </ul>
+                      )}
+                  </div>
+                  <div>
+                    <p style={S.readingLabel}>Most opened</p>
+                    {reading.most.length === 0
+                      ? <p style={S.muted}>Nothing yet. Pages you open will show up here.</p>
+                      : (
+                        <ul style={S.readingList}>
+                          {reading.most.map(p => (
+                            <li key={p.id} style={S.readingItem}>
+                              <VisitDot band={visitBand(visits.get(p.id))} size={12} />
+                              <Link to={`${WIKI_BASE}/${p.slug}`} style={S.chapterLink}>{p.title}</Link>
+                              <span style={S.typeTag}>×{visits.get(p.id)}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                  </div>
+                </div>
+                <div style={S.readingFoot}>
+                  <span style={S.keyRow}>
+                    <span style={S.keyItem}><VisitDot band="none" size={12} /> not opened</span>
+                    <span style={S.keyItem}><VisitDot band="some" size={12} /> once or twice</span>
+                    <span style={S.keyItem}><VisitDot band="often" size={12} /> 3+ times</span>
+                  </span>
+                  {reading.opened > 0 && (
+                    <button style={S.clearBtn} onClick={clearHistory}>Clear my history</button>
+                  )}
+                </div>
+              </section>
+            )}
+
             <div style={S.toolbar}>
               <span style={S.count}>
                 {lectureRows.length} lectures · {totalChapters} chapters
@@ -234,6 +346,26 @@ export default function ChapterMap() {
                           </div>
                           {m.detail && <p style={S.detail}>{m.detail}</p>}
 
+                          {/* One square per chapter, filled by how often you
+                              have opened it: the week's reading at a glance,
+                              visible without expanding the row. */}
+                          {visits && chapters.length > 0 && (
+                            <div style={S.strip}>
+                              {chapters.map(p => {
+                                const n = visits.get(p.id) ?? 0
+                                return (
+                                  <Link key={p.id} to={`${WIKI_BASE}/${p.slug}`}
+                                        title={`${p.title}: ${n ? `opened ${n === 1 ? 'once' : `${n} times`}` : 'not opened yet'}`}
+                                        aria-label={p.title}
+                                        style={{ ...S.square, ...SQUARE[visitBand(n)] }} />
+                                )
+                              })}
+                              <span style={S.stripCount}>
+                                {chapters.filter(p => visits.get(p.id)).length}/{chapters.length} opened
+                              </span>
+                            </div>
+                          )}
+
                           {isOpen && (
                             <ul style={S.chapterList}>
                               {/* Foundation entries carry the weight: they lead
@@ -245,6 +377,7 @@ export default function ChapterMap() {
                                 const core = tierRank(p.tier) <= 1
                                 return (
                                 <li key={p.id} style={S.chapterItem}>
+                                  {visits && <><VisitDot band={visitBand(visits.get(p.id))} size={12} />{' '}</>}
                                   <Link to={`${WIKI_BASE}/${p.slug}`}
                                         style={core ? S.chapterLinkCore : S.chapterLink}>
                                     {p.title}
@@ -290,7 +423,30 @@ export default function ChapterMap() {
   )
 }
 
+// The same three bands as the graph's dots, drawn as squares.
+const SQUARE = {
+  none:  { background: 'var(--bg)', border: '1px dashed var(--tx3)' },
+  some:  { background: 'color-mix(in srgb, var(--pk) 35%, transparent)', border: '1px solid var(--pk)' },
+  often: { background: 'var(--pk)', border: '1px solid var(--pk)' },
+}
+
 const S = {
+  reading: { marginTop: 22, padding: '16px 18px', background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 14 },
+  readingHead: { display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' },
+  readingTitle: { fontFamily: SERIF, fontSize: 20, color: 'var(--tx)', margin: 0, fontWeight: 400 },
+  meter: { height: 6, borderRadius: 3, background: 'var(--bd)', margin: '10px 0 14px', overflow: 'hidden' },
+  meterFill: { height: '100%', background: 'var(--pk)', borderRadius: 3 },
+  readingCols: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '6px 26px' },
+  readingLabel: { fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx3)', margin: '0 0 6px' },
+  readingList: { listStyle: 'none', padding: 0, margin: 0 },
+  readingItem: { display: 'flex', alignItems: 'center', gap: 6, margin: '0 0 5px', lineHeight: 1.45 },
+  readingFoot: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', marginTop: 10 },
+  keyItem: { display: 'inline-flex', alignItems: 'center', gap: 5 },
+  keyRow: { display: 'flex', gap: 12, flexWrap: 'wrap', whiteSpace: 'nowrap', fontFamily: MONO, fontSize: 11, color: 'var(--tx2)' },
+  clearBtn: { fontFamily: MONO, fontSize: 11, padding: '4px 10px', borderRadius: 14, border: '1px solid var(--bds)', background: 'transparent', color: 'var(--tx3)', cursor: 'pointer' },
+  strip: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 3, marginTop: 8 },
+  square: { display: 'inline-block', width: 11, height: 11, borderRadius: 2, boxSizing: 'border-box' },
+  stripCount: { fontFamily: MONO, fontSize: 11, color: 'var(--tx3)', marginLeft: 6 },
   title: { fontFamily: SERIF, fontSize: 30, color: 'var(--tx)', margin: '18px 0 8px' },
   sub: { fontSize: 14.5, color: 'var(--tx2)', lineHeight: 1.6, maxWidth: 680 },
   error: { fontSize: 14, color: '#c0392b', marginTop: 16 },
