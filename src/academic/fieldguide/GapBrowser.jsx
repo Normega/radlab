@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link, Navigate, useOutletContext } from 'react-router-dom'
+import { Link, Navigate, useOutletContext, useSearchParams } from 'react-router-dom'
 import { AcademicEyebrow } from '../AcademicChrome'
 import AvatarMenu from './AvatarMenu'
 import { courseFeatures } from '../courseFeatures'
@@ -115,6 +115,25 @@ export default function GapBrowser() {
         ?.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }))
   }, [])
+
+  // ?gap=<id> — arrive at one gap rather than at the board. Converting a
+  // student report creates a gap whose only address was "somewhere on the
+  // board"; the resolved report card now links straight here. Runs once the
+  // rows exist, then clears the param so a later collapse is not undone by a
+  // refresh. Same reveal() the "Your claims" strip uses.
+  const [searchParams, setSearchParams] = useSearchParams()
+  const wantedGap = searchParams.get('gap')
+  const jumped = useRef(null)
+  useEffect(() => {
+    if (!wantedGap || !rows?.length || jumped.current === wantedGap) return
+    const row = rows.find(r => r.gap_id === wantedGap)
+    if (!row) return
+    jumped.current = wantedGap
+    reveal(row)
+    const next = new URLSearchParams(searchParams)
+    next.delete('gap')
+    setSearchParams(next, { replace: true })
+  }, [wantedGap, rows, reveal, searchParams, setSearchParams])
 
   // A course whose guide is authored whole (courseFeatures gaps:false) has no
   // gap apparatus — bounce a direct /gaps URL to the wiki index rather than
