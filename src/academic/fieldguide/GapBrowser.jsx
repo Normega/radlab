@@ -5,6 +5,7 @@ import AvatarMenu from './AvatarMenu'
 import { courseFeatures } from '../courseFeatures'
 import { useWikiBase, useCoursePaths } from './wiki/useWikiBase'
 import { cleanDoi } from '../doi'
+import { DIFF, SEV, CONTRIBUTION_SLOTS, draftKey, readDraft } from './contributions'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -18,12 +19,7 @@ const SERIF = '"DM Serif Display", Georgia, serif'
 // The one UX rule that is genuinely client-side: check_doi fires the moment a
 // DOI is pasted, because discovering your source is redundant must cost a
 // paste, not 150 written words.
-const DIFF = {
-  green: { colour: '#2e7d32', label: 'green' },
-  amber: { colour: '#b8860b', label: 'amber' },
-  red:   { colour: '#c0392b', label: 'red' },
-}
-const SEV = { block: '#c0392b', warn: '#b8860b' }
+const [GREEN_DUE, AMBER1_DUE, AMBER2_DUE] = CONTRIBUTION_SLOTS.map(x => x.due)
 
 const fmtDate = d => d
   ? new Date(`${d}T12:00:00`).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })
@@ -156,9 +152,9 @@ export default function GapBrowser() {
           fills them: claim a gap, find a peer-reviewed source that answers the ask, report what it
           found — and what it <em>cannot</em> tell us. Start with a{' '}
           <strong style={{ color: DIFF.green.colour }}>green</strong> gap
-          (due <strong>Oct 7</strong> — claim from <em>any</em> lecture, not just material covered so
-          far); ambers unlock once your green is submitted and are due <strong>Nov 11</strong> and{' '}
-          <strong>Nov 27</strong>. Claims expire after <strong>14 days</strong> if unsubmitted.{' '}
+          (due <strong>{GREEN_DUE}</strong> — claim from <em>any</em> lecture, not just material covered so
+          far); ambers unlock once your green is submitted and are due <strong>{AMBER1_DUE}</strong> and{' '}
+          <strong>{AMBER2_DUE}</strong>. Claims expire after <strong>14 days</strong> if unsubmitted.{' '}
           <span style={{ color: DIFF.red.colour }}>Red</span> gaps are staff-written — clinical or
           legal content — and shown so the map is complete.
         </p>
@@ -185,7 +181,16 @@ export default function GapBrowser() {
                 </span>
               </button>
             ))}
+            <Link to={paths.sub('contributions')} style={S.allLink}>See everything you've submitted →</Link>
           </div>
+        )}
+        {/* The strip only lists claims on open gaps; released, expired and
+            closed-gap work lives on the contributions page, so its door shows
+            even when the strip is empty. */}
+        {mine.length === 0 && session && rows !== null && (
+          <p style={{ margin: '14px 0 4px' }}>
+            <Link to={paths.sub('contributions')} style={S.allLink}>See everything you've submitted →</Link>
+          </p>
         )}
 
         <div style={S.controls}>
@@ -364,14 +369,7 @@ function GapDetail({ row: r, courseClient, reload }) {
   )
 }
 
-// Unsaved work survives a remount, a refresh, or a mis-click, without waiting
-// for the student to press Save. Local only, per claim, and cleared the moment
-// the server has the text — so it can never be the stale copy that wins.
-const draftKey = (id) => `fg-draft-${id}`
-const readDraft = (id) => {
-  try { return JSON.parse(localStorage.getItem(draftKey(id)) ?? 'null') } catch { return null }
-}
-
+// Drafts autosave to localStorage (draftKey/readDraft in ./contributions).
 function ClaimForm({ claim, row: r, courseClient, reload, onRelease }) {
   const saved = readDraft(claim.id)
   const [doi, setDoi] = useState(saved?.doi ?? claim.source_doi ?? '')
@@ -599,6 +597,7 @@ const S = {
 
   gapActive: { borderColor: 'var(--pk)', boxShadow: '0 0 0 1px var(--pk)' },
   mineStrip: { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 12, padding: '10px 14px', margin: '14px 0 4px' },
+  allLink: { display: 'inline-block', fontFamily: MONO, fontSize: 12, color: 'var(--pk)', marginTop: 6 },
   mineRow: { width: '100%', display: 'flex', gap: 10, alignItems: 'baseline', padding: '5px 0', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' },
 
   controls: { display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', margin: '14px 0 6px' },

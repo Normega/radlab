@@ -120,6 +120,7 @@ const SubmissionsQueue     = lazy(() => import('./academic/fieldguide/Submission
 const FieldGuideMemberRoute = lazy(() => import('./academic/fieldguide/FieldGuideMemberRoute'))
 const ChapterMap           = lazy(() => import('./academic/fieldguide/ChapterMap'))
 const ContributionHowTo    = lazy(() => import('./academic/fieldguide/ContributionHowTo'))
+const MyContributions      = lazy(() => import('./academic/fieldguide/MyContributions'))
 const WikiIndex            = lazy(() => import('./academic/fieldguide/wiki/WikiIndex'))
 const WikiPage             = lazy(() => import('./academic/fieldguide/wiki/WikiPage'))
 const GapBrowser           = lazy(() => import('./academic/fieldguide/GapBrowser'))
@@ -891,6 +892,9 @@ export default function App() {
               {/* The student how-to for gap contributions — member-gated like
                   the board it explains, with the avatar menu and a way home. */}
               <Route path="/academic/:courseCode/how-to" element={<ContributionHowTo />} />
+              {/* The student's own claims, every status, with their text —
+                  the record the gap board's open-gaps-only strip cannot be. */}
+              <Route path="/academic/:courseCode/contributions" element={<MyContributions />} />
               {/* The gap browser: students plan their research assignment here.
                   Member-level on purpose — the board is part of reading the
                   guide, not part of submitting to it. */}

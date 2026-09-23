@@ -45,6 +45,7 @@ const MUST_NOT_DETECT = [
   '/academic/psy240/gaps',
   '/academic/psy240/whats-new',
   '/academic/psy240/how-to',
+  '/academic/psy240/contributions',
   '/academic/psy309/roster',
   '/academic/psy240/ingest',
   '/academic/psy240/review',

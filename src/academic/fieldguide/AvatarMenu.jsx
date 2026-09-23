@@ -215,6 +215,8 @@ export default function AvatarMenu({ client, fgEmail, email, courseCode, isStaff
     items.push({ to: lounge, label: acadStaff ? 'Create your avatar' : 'Join the Lecture Lounge' })
   }
   if (!acadStaff && feats.gaps) items.push({ to: sub('gaps'), label: 'Gap board' })
+  // Next to the board: what you have submitted and where each piece stands.
+  if (!acadStaff && feats.gaps) items.push({ to: sub('contributions'), label: 'Your contributions' })
   // Mid-lecture surfaces get menu placement; desk-work admin lives on Course
   // Home's visible grid instead (Norm, 2026-09-06: "in the classroom has to
   // be more accessible than course admin" — the queue links left this menu
