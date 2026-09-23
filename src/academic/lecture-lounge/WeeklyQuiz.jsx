@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { normalizeCourseCode, loungePath } from '../courseRoutes'
+import { courseFeatures } from '../courseFeatures'
 import { AcademicShell } from '../AcademicChrome'
 import AvatarMenu from '../fieldguide/AvatarMenu'
 
@@ -22,6 +23,7 @@ const SERIF = '"DM Serif Display", Georgia, serif'
 export default function WeeklyQuiz({ session }) {
   const { courseCode, slug: slugParam, quizId } = useParams()
   const slug = normalizeCourseCode(courseCode ?? slugParam)
+  const graded = courseFeatures(slug).quizGraded
 
   const [quiz, setQuiz] = useState(undefined)   // undefined = loading, null = unavailable
   const [quizError, setQuizError] = useState(null)
@@ -96,13 +98,15 @@ export default function WeeklyQuiz({ session }) {
 
   return (
     <Shell slug={slug} session={session}>
-      <p style={S.eyebrow}>Weekly quiz · week {quiz.week_no}</p>
+      <p style={S.eyebrow}>{graded ? `Weekly quiz · week ${quiz.week_no}` : 'Practice quiz'}</p>
       <h1 style={S.title}>{quiz.title}</h1>
       <p style={S.sub}>
-        Open book — you're graded on <strong>completing</strong> this, not on your score.
-        Each answer shows you the correct one, why, and where in the Field Guide it lives.
+        {graded
+          ? <>Open book — you're graded on <strong>completing</strong> this, not on your score.</>
+          : <>Practice for the test — <strong>not graded</strong>, and your answers are only for you.</>}
+        {' '}Each answer shows you the correct one, why, and where in the Field Guide it lives.
       </p>
-      <p style={S.deadline}>{deadlineLine(quiz)}</p>
+      <p style={S.deadline}>{graded ? deadlineLine(quiz) : practiceLine(quiz)}</p>
 
       <div style={completed ? S.doneBanner : S.progressBanner}>
         {completed
@@ -239,6 +243,13 @@ function deadlineLine(quiz) {
   if (now <= grace) return `Still full credit (the automatic grace week) through ${fmtDateMs(grace)}.`
   if (now <= close) return `Late window — 75% credit until ${fmtDate(quiz.hard_close_at)}.`
   return 'This quiz has closed.'
+}
+
+// Ungraded courses (courseFeatures quizGraded: false) have no tiers to explain.
+function practiceLine(quiz) {
+  return Date.now() <= new Date(quiz.hard_close_at).getTime()
+    ? `Open until ${fmtDate(quiz.hard_close_at)}.`
+    : 'This quiz has closed — your answers stay here to review.'
 }
 
 const fmtDate = (d) => new Date(d).toLocaleDateString('en-CA', {

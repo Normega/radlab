@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { normalizeCourseCode, loungePath } from '../courseRoutes'
+import { courseFeatures } from '../courseFeatures'
 import { useAvatarConfig } from '../../hooks/useAvatarConfig'
 import { AcademicShell } from '../AcademicChrome'
 import { getCourseClient } from '../courseClient'
@@ -666,13 +667,14 @@ function QuizLobbyCard({ card, slug }) {
   else if (notYetOpen) meta = `Opens ${fmt(card.opens_at)}`
   else if (closed) meta = 'Closed'
   else if (started) meta = `${card.answered} of ${card.total} answered — finish up →`
+  else if (!courseFeatures(slug).quizGraded) meta = `${card.total} questions · practice, not graded · open until ${fmt(card.hard_close_at)} →`
   else if (now <= due) meta = `${card.total} questions · open book · full credit through ${fmt(card.due_at)} →`
   else if (now <= grace) meta = `${card.total} questions · still full credit (grace week) →`
   else meta = `${card.total} questions · late window (75%) until ${fmt(card.hard_close_at)} →`
 
   const body = (
     <>
-      <p style={S.weeklyEyebrow}>Weekly quiz{completed ? ' · done' : ''}</p>
+      <p style={S.weeklyEyebrow}>{courseFeatures(slug).quizGraded ? 'Weekly quiz' : 'Practice quiz'}{completed ? ' · done' : ''}</p>
       <p style={S.weeklyPrompt}>{card.title}</p>
       <p style={completed ? S.quizMetaDone : S.weeklyMeta}>{meta}</p>
     </>

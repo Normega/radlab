@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { normalizeCourseCode, loungePath } from '../courseRoutes'
+import { courseFeatures } from '../courseFeatures'
 import { AcademicShell } from '../AcademicChrome'
 import AvatarMenu from '../fieldguide/AvatarMenu'
 
@@ -25,6 +26,7 @@ export default function WeeklyArchive({ session, mode }) {
   const { courseCode, slug: slugParam } = useParams()
   const slug = normalizeCourseCode(courseCode ?? slugParam)
   const isQuiz = mode === 'quiz'
+  const graded = courseFeatures(slug).quizGraded
 
   const [rows, setRows] = useState(undefined)   // undefined = loading
   const [error, setError] = useState(null)
@@ -45,8 +47,10 @@ export default function WeeklyArchive({ session, mode }) {
     return () => { cancelled = true }
   }, [slug, isQuiz])
 
-  const title = isQuiz ? 'Weekly quizzes' : 'Questions of the week'
-  const blurb = isQuiz
+  const title = isQuiz ? (graded ? 'Weekly quizzes' : 'Practice quizzes') : 'Questions of the week'
+  const blurb = isQuiz && !graded
+    ? 'Every practice quiz that has opened. They are not graded — they are there to rehearse for the term test, and each stays open until the test.'
+    : isQuiz
     ? 'Every quiz that has opened. They stay answerable long after their due date — full credit for a further week, then 75% until the midterm — so a week you missed is still worth doing.'
     : 'Every question the class has been asked. Answer one and you see the whole class’s wall; earlier weeks stay open to read even after they close.'
 
@@ -70,7 +74,7 @@ export default function WeeklyArchive({ session, mode }) {
         )}
 
         <div style={S.grid}>
-          {(rows ?? []).map(r => (isQuiz ? <QuizTile key={r.id} q={r} slug={slug} />
+          {(rows ?? []).map(r => (isQuiz ? <QuizTile key={r.id} q={r} slug={slug} graded={graded} />
                                          : <WallTile key={r.id} w={r} slug={slug} />))}
         </div>
       </div>
@@ -78,7 +82,7 @@ export default function WeeklyArchive({ session, mode }) {
   )
 }
 
-function QuizTile({ q, slug }) {
+function QuizTile({ q, slug, graded }) {
   const now = Date.now()
   const due = new Date(q.due_at).getTime()
   const grace = due + 7 * 86400_000
@@ -89,6 +93,7 @@ function QuizTile({ q, slug }) {
   let status, tone
   if (done) { status = `Completed ${fmt(q.completed_at)}`; tone = S.done }
   else if (now > close) { status = 'Closed'; tone = S.shut }
+  else if (!graded) { status = `Practice · open until ${fmt(q.hard_close_at)}`; tone = S.live }
   else if (now <= due) { status = `Due ${fmt(q.due_at)}`; tone = S.live }
   else if (now <= grace) { status = `Grace week — still full credit until ${fmtMs(grace)}`; tone = S.live }
   else { status = `Late — 75% credit until ${fmt(q.hard_close_at)}`; tone = S.late }
