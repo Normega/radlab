@@ -115,7 +115,11 @@ export default function ChapterMap() {
       if (!p) continue // unpublished, or a page removed since the mapping ran
       if (isSource(p)) continue // a citation, not a reading
       if (!m.has(l.lecture_no)) m.set(l.lecture_no, [])
-      m.get(l.lecture_no).push({ ...p, tier: tiers.get(p.slug) })
+      // A course with no catalogue (no `disorders` rows) marks its
+      // foundation pages by page TYPE instead, so fall back to that — else
+      // they lose the lead position, the tag, and first place in "My
+      // reading"'s not-opened list.
+      m.get(l.lecture_no).push({ ...p, tier: tiers.get(p.slug) ?? (p.type === 'foundation' ? 'foundation' : undefined) })
     }
     for (const list of m.values()) {
       list.sort((a, b) => tierRank(a.tier) - tierRank(b.tier) ||

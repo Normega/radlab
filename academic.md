@@ -316,7 +316,10 @@ Ordered so nothing references a thing that doesn't exist yet:
 6. **Academic**: roster CSV through RosterAdmin; invites from there, not by hand.
 7. **Verify like the ingest test** (see §8): a seeded fake student through join → claim → submit
    → send-back → approve, and the tracking page showing it, *before* real students arrive.
-8. Syllabus/QR artifacts print `/class/<slug>` and `/academic/<code>` only — those two URLs are
+8. **Reading graph readiness** (neighbourhood graph + "My reading"): run the readiness query in
+   website.md §29a, *Rolling the reading graph out to another course*. Every published page needs
+   links and a `page_lectures` row, and every lecture needs a `meeting_date`.
+9. Syllabus/QR artifacts print `/class/<slug>` and `/academic/<code>` only — those two URLs are
    forever.
 
 Frontend goes to `dev` first; anything touching either Supabase project ships with its frontend
