@@ -11,7 +11,11 @@ const OVERRIDES = {
   // Gaps and ingest are PSY240 apparatus (a textbook assembled from sources,
   // with declared unknowns for students to claim); PSY309's guide is
   // authored whole, so those surfaces are off too.
-  psy309: { contributions: false, gaps: false, ingest: false },
+  //
+  // Its weekly quizzes are ungraded practice for the term tests (the
+  // syllabus gives quizzes no weight), so every credit/grace/late-tier line
+  // the runner, lobby card and archive show a graded course must stay off.
+  psy309: { contributions: false, gaps: false, ingest: false, quizGraded: false },
   // PSY240's wiki index is catalogue-anchored (DSM chapters), not
   // week-anchored — previously a hardcoded `code !== 'PSY240'` inside
   // WikiIndex, which is exactly the kind of buried course conditional the
@@ -20,5 +24,5 @@ const OVERRIDES = {
 }
 
 export function courseFeatures(code) {
-  return { contributions: true, gaps: true, ingest: true, weekIndex: true, ...(OVERRIDES[String(code ?? '').trim().toLowerCase()] ?? {}) }
+  return { contributions: true, gaps: true, ingest: true, weekIndex: true, quizGraded: true, ...(OVERRIDES[String(code ?? '').trim().toLowerCase()] ?? {}) }
 }

@@ -4,12 +4,14 @@ import Nav from '../../components/Nav'
 import ConsoleLecturePlanner from './ConsoleLecturePlanner'
 import ConsoleParticipation from './ConsoleParticipation'
 import ClassRemote from './ClassRemote'
+import ConsoleQuizzes from './ConsoleQuizzes'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 
 // The one instructor surface per class: Plan (build the run of show),
 // Run (drive it live — the former /remote, which now redirects here), and
-// Review (participation). The projector Screen stays its own URL because it
+// Review (participation), and Quizzes (preview every quiz and test as a
+// student meets it, or as an answer key). The projector Screen stays its own URL because it
 // is a different physical machine, opened once and never touched.
 //
 // Default tab: Run, every device (Norm, 2026-09-09 — with term underway the
@@ -21,7 +23,7 @@ export default function ClassConsole({ session, superAdmin }) {
   const [params] = useSearchParams()
   const [tab, setTab] = useState(() => {
     const q = params.get('tab')
-    if (['planning', 'run', 'participation'].includes(q)) return q
+    if (['planning', 'run', 'participation', 'quizzes'].includes(q)) return q
     return 'run'
   })
 
@@ -31,14 +33,16 @@ export default function ClassConsole({ session, superAdmin }) {
       <div style={S.wrap}>
         {classInfo && (
           <>
-            <div style={S.tabs}>
+            <div style={S.tabs} className="no-print">
               <button style={S.tab(tab === 'planning')} onClick={() => setTab('planning')}>Plan</button>
               <button style={S.tab(tab === 'run')} onClick={() => setTab('run')}>Run</button>
               <button style={S.tab(tab === 'participation')} onClick={() => setTab('participation')}>Review</button>
+              <button style={S.tab(tab === 'quizzes')} onClick={() => setTab('quizzes')}>Quizzes</button>
             </div>
             {tab === 'planning' && <ConsoleLecturePlanner classInfo={classInfo} superAdmin={superAdmin} />}
             {tab === 'run' && <ClassRemote superAdmin={superAdmin} />}
             {tab === 'participation' && <ConsoleParticipation classInfo={classInfo} />}
+            {tab === 'quizzes' && <ConsoleQuizzes classInfo={classInfo} />}
           </>
         )}
       </div>

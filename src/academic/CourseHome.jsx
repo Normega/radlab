@@ -184,7 +184,7 @@ export default function CourseHome({ superAdmin }) {
           {fgSession && <Link to={courseSubPath(code, 'chapters')} style={S.staffBtn}>Chapters by lecture</Link>}
           {mainEmail && cls && <Link to={`${loungePath(code)}/slides`} style={S.staffBtn}>Lecture slides</Link>}
           {mainEmail && cls && <Link to={`${loungePath(code)}/questions`} style={S.staffBtn}>Questions of the week</Link>}
-          {mainEmail && cls && <Link to={`${loungePath(code)}/quizzes`} style={S.staffBtn}>Weekly quizzes</Link>}
+          {mainEmail && cls && <Link to={`${loungePath(code)}/quizzes`} style={S.staffBtn}>{feats.quizGraded ? 'Weekly quizzes' : 'Practice quizzes'}</Link>}
           {fgSession && feats.gaps && <Link to={courseSubPath(code, 'gaps')} style={S.staffBtn}>Gap board</Link>}
           {fgSession && feats.gaps && <Link to={courseSubPath(code, 'how-to')} style={S.staffBtn}>How contributions work</Link>}
           {fgSession && <Link to={courseSubPath(code, 'whats-new')} style={S.staffBtn}>What's new</Link>}
