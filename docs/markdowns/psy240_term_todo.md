@@ -116,7 +116,14 @@ clear the exclusion in the YAML header.
 - [x] L4: content pass, 24 → 35 sections, promoted (2026-09-22)
 - [ ] L4: Part one now carries 11 content slides before Break 1. If it runs long, move adjustment
   and prolonged grief (slides 11–12) after the break.
-- [ ] L5–L12 content passes: in progress 2026-09-22 (see per-lecture notes below as they land)
+- [x] L5–L12 content passes, on dev for review (2026-09-22): L5 20→31 · L7 25→35 · L8 18→30 ·
+  L9 20→31 · L10 17→30 · L11 17→30 · L12 20→31. All fit at three screen shapes. Promote after
+  Norm's review; per-lecture follow-ups below.
+- [ ] Every lecture from L5 on has an exercise with **no quiz check-in built**, and every closer has
+  a `TODO(QotW)`. The QotW rows exist as `planned`; reconcile each deck's closer with its row.
+- [ ] **RCT dates disagree across decks**: L7 "practice through November 17", L10 "post window
+  Nov 18–24" and "day 28", L11 "post-questionnaire window closed yesterday (Nov 24)", syllabus
+  "~Nov 18". Fix one schedule and make every deck match it.
 - [ ] 2025 engagement material not usable until the Guide carries it: the Swissair volunteers table,
   the Air Transat amygdala study, *The Three Faces of Eve*, the Doug BDD video.
 - [ ] Deck numbering: `L7.html`–`L12.html` call themselves "L6"–"L11" in their titles and kickers
@@ -137,3 +144,210 @@ clear the exclusion in the YAML header.
 
 (Filled in from each deck's content pass: check-ins to seed, QotW text, exercises needing a quiz
 check-in, Guide issues found.)
+
+### L5 — Mood Disorders and Suicide (Oct 7)
+
+Content pass 2026-09-22: 20 → 31 sections (branch `psy240/l5-content-pass`). Every tested L5 fact
+now has a slide.
+- [ ] **HIGH — Exercise A "Six people" (slide 14) needs its quiz check-in**: six EMQ-style vignettes.
+  They must be invented. Pool EMQ MT-L5-EMQ-01 covers the same six-disorder differential, so don't
+  reuse or paraphrase its stems. Only 1/20/40/99 exist today.
+- [ ] Closer (slide 31): `TODO(QotW)` for week 5.
+- [ ] Slide 4 "How the midterm is built" is optional; keep or cut. Before saying it aloud, confirm
+  whether stepped vignettes allow going back (the item README says no back-navigation). Note the L5
+  pool has no stepped vignette, although the README plans one.
+- [ ] Support slide: "UTM Health & Counselling: Davis Building, room 1123" isn't on the Guide's
+  support page (it gives 905-828-5255 only). Verify the room, or use the phone number.
+- [ ] Guide `suicide-and-self-harm` front-matter says `lecture: 6`; it's taught in L5.
+- [ ] Guide `mood-disorders` § Contested is stale (it quotes the bipolar pages at their old lengths);
+  § Epidemiology says the source gives no MDD prevalence, but `major-depressive-disorder` gives ~7%.
+- [ ] Guide `bipolar-i-disorder` and `bipolar-ii-disorder` front-matter is malformed YAML (`needs:
+  [contested]` followed by list items; `sources:` key missing).
+- [ ] Guide: suicide-attempt rates in bipolar differ (bipolar-i ~1/3 lifetime vs suicide-and-self-harm
+  25–50%). Compatible, but align them.
+- [ ] Gaps: green — "asking about suicide does not increase ideation" (`suicide-and-self-harm`);
+  seasonal and peripartum specifiers plus light therapy (`major-depressive-disorder`). Amber — PMDD
+  epidemiology/etiology/treatment/medicalization critique (all empty); cyclothymic etiology and
+  treatment (empty); NSSI and Canadian data (`suicide-and-self-harm`); DMDD prevalence.
+- [ ] Item rationales that go beyond the Guide: QZ-5-002 (why a fourth symptom is required for
+  irritable-only mood) and QZ-5-005 ("premenstrual exacerbation of another disorder"). Tighten the
+  rationale, or add the fact to the page before Quiz 5 is served.
+
+### L7 — Sex, Gender, and Paraphilic Disorders (Oct 21; deck calls itself L6)
+
+Content pass 2026-09-22: 25 → 35 sections (branch `psy240/l6-content-pass`).
+- [ ] Check-ins exist 1/20/40/99. No exercise needs a quiz check-in (one activity only, because the
+  RCT segment takes the last 45 minutes).
+- [ ] Closer: `TODO(QotW)`. Draft or confirm week 7's question.
+- [ ] Slide 30 says RCT practice runs "through November 17"; the syllabus says data collection ends
+  ~Nov 18. Reconcile.
+- [ ] Guide `exhibitionistic-disorder`: Course says onset before 18 while Etiology quotes Karpman's
+  early-to-mid twenties; "much less common in women" sits beside a 2:1 survey ratio.
+- [ ] Guide `ejaculation-and-orgasmic-disorders`: the antidepressant headline "30% to 73%" conflicts
+  with its own table (from 3.9%). Say it's the across-study range.
+- [ ] Gaps: green — behavioural treatment of premature ejaculation (stop–start, squeeze); amber —
+  ICD-11 gender incongruence; flibanserin approval / responsive-desire model; a frotteuristic
+  disorder page; psychological treatment of fetishistic/voyeuristic disorder.
+- [ ] Guide front-matter tags these pages `lecture: 7` (the database number), not the deck's 6.
+- [ ] Item pool (when written) must avoid: Masters & Johnson as the triphasic model (it's Kaplan's),
+  squeeze/SSRIs for premature ejaculation (not in the Guide), and the flagged voyeurism 12%/4%,
+  "67% of divorces" and Goerling & Wolfe passages.
+- [ ] Corrected an existing slide: the desire → arousal → orgasm cycle is Kaplan's, not Masters
+  and Johnson's.
+
+### L8 — Eating and Sleep-Wake Disorders (Nov 4; deck calls itself L7)
+
+Content pass 2026-09-22: 18 → 30 sections (branch `psy240/l7-content-pass`).
+- [ ] The "Triage night" exercise (slide 29) needs its quiz check-in: four cases, one question each.
+  Only 1/20/40/99 exist.
+- [ ] Closer: `TODO(QotW)` for week 8.
+- [ ] Removed unsupported deck claims: CBT-E as first line for adults and fluoxetine for bulimia (no
+  Guide page supports either); CBT-I "beats medication long-term" (the Guide lists comparative trials
+  as a gap). If Norm wants CBT-E taught, open it as an amber gap first.
+- [ ] Guide `feeding-and-eating-disorders` § Epidemiology: "anorexia and bulimia ~10:1 female to
+  male" vs anorexia's own 0.3–0.4% vs 0.1% (~3–4:1). Wrong.
+- [ ] Guide `binge-eating-disorder`: Hudson's "three times more common than anorexia and bulimia"
+  doesn't reconcile with its prevalence figures; "2–3× higher in women" vs the overview's "closer to
+  even"; Treatment says antidepressants aren't supported while Contested says fluoxetine beat placebo.
+- [ ] Guide `insomnia-disorder`: "spending more waking time in bed" reads as advice (CBT-I restricts
+  time in bed); duration is 1 month (Roth) in one place and 3 months in Contested.
+- [ ] Guide `parasomnias`: lists restless legs as a parasomnia (DSM-5-TR classes it separately).
+- [ ] Guide front-matter: all eating and sleep pages still say `lecture: 6`.
+- [ ] Gaps: green — anorexia DSM criteria and subtypes; insomnia disorder prevalence; OSA prevalence
+  and the hypopnea definition; nightmare disorder. Amber — narcolepsy medication (sodium oxybate,
+  modafinil); refeeding syndrome; CBT-E.
+- [ ] Item pool (when written) must avoid: the 10:1 ratio, Hudson's 3×, insomnia duration, restless
+  legs as a parasomnia.
+
+### L9 — Substance Use and Impulse Control (Nov 11; deck calls itself L8)
+
+Content pass 2026-09-22: 20 → 31 sections (branch `psy240/l8-content-pass`). Flags for this chapter
+come from the `page_audits` table (verdicts 2026-08-22). That table is the authoritative flag store
+for pages without an item pool.
+- [ ] The "Draw the line" exercise (slide 30) needs its four-case quiz check-in. Only 1/20/40/99 exist.
+- [ ] Closer: `TODO(QotW)` for week 9.
+- [ ] Part one now runs 11 content slides, so re-plan the 11:00 pause (it now falls around slides 21–22).
+- [ ] **Two provenance flags the deck still leans on**: `substance-use-disorder` § Contested (Volkow
+  & Blanco 2023 undeclared; behind the remission-rates slide) and
+  `substance-related-and-addictive-disorders` § Harm reduction (Kerr et al. 2017 undeclared; behind
+  the Insite slide). Declare the sources before Nov 11, or soften those slides.
+- [ ] Guide flags to fix:
+  - `alcohol-use-disorder` / `substance-withdrawal`: 8% vs 15% withdrawal incidence; CIWA-Ar "ten
+    items" lists nine
+  - `opioid-use-disorder`: death and hospitalisation counts disagree; fentanyl 56% vs analogues 60%
+  - naloxone described as a maintenance antagonist (confused with naltrexone) on
+    `opioid-use-disorder`, `agonist-and-antagonist-medications` and `aversion-therapy`
+  - `sedative-hypnotic-anxiolytic-related-disorders`: the lipophilicity rule its own diazepam example
+    contradicts
+  - `substance-intoxication`: the Istanbul "largest block" sentence
+  - `cannabis-related-disorders`: "highest prevalence" superlative
+  - `tobacco-use-disorder`: NNT 11–56 vs its own table's ~12–46
+  - `gambling-disorder`: 30.2% suicide attempts; "social problems" as protective
+  - `intermittent-explosive-disorder`: "up to three months"; the Psychology Today "highly effective"
+    claim
+  - `disruptive-impulse-control-and-conduct-disorders`: "medication does not treat any disorder"
+  - `kleptomania` / `pyromania`: "the other impulse-control diagnosis"
+  - `conduct-disorder`: "15 symptoms" but lists 14
+  - `stimulant-use-disorder`: malformed front-matter
+  - `substance-use-disorder` § Opponent-process: added after the audit, never audited
+- [ ] Gaps: amber — FASD (`alcohol-use-disorder`); Canadian cannabis data after 2018; current and
+  Canadian gambling prevalence; kleptomania treatment. Green — Canadian smoking prevalence;
+  naltrexone and acamprosate for alcohol.
+- [ ] Optional extra slides the Guide supports: HPPD/psychedelic harms; inhalants (sudden sniffing death).
+- [ ] 2025 "RCT Debrief" material belongs in the Dec 2 deck (see L12 notes).
+
+### L10 — Neurodevelopmental and Neurocognitive Disorders (Nov 18; deck calls itself L9)
+
+Content pass 2026-09-22: 17 → 30 sections (branch `psy240/l9-content-pass`).
+- [ ] The exercise "Six charts, one axis" (slide 29, six cases aged 4–84) needs its quiz check-in.
+  Key it on fluctuating vs steady course and "who noticed, and when", **not** on the vascular
+  staircase (the Guide doesn't support it). Only 1/20/40/99 exist.
+- [ ] Closer: `TODO(QotW)` for week 10.
+- [ ] Slide 2 says "Today is day 28". If Oct 21 is day 1, Nov 18 is day 29. The post window
+  "Nov 18–24" appears only in the deck; reconcile it with the RCT schedule (see L7/L11 notes).
+- [ ] Corrected existing slides where the deck outran the Guide:
+  - the autism rise was explained as "broadened criteria"; the Guide leaves it open
+  - ADHD "onset before 12"
+  - Fragile X as "the commonest inherited cause"
+  - Lewy bodies as the "third most common dementia"
+  - an Alberta Sexual Sterilization Act note (it's in no Guide page)
+  Consider softening slide 19's title too ("the pathology arrives before the symptoms").
+- [ ] Guide `neurocognitive-disorders` § Epidemiology and the Alzheimer's front-matter: Alzheimer's is
+  32% of over-85s while all-cause dementia is ~30% at 85 (a subset larger than its whole). §
+  Treatment says there's "no treatment guidance at all for delirium", but `delirium` now has the HELP
+  prevention evidence.
+- [ ] Guide: the vascular "stepwise course" appears only in Contested, as an unsupported textbook
+  contrast.
+- [ ] Guide metadata: this chapter's pages say `lecture: 10`; `tic-disorders` says `lecture: 3`
+  (probably intentional, since the L3 midterm pool tests it).
+- [ ] Gaps: amber — eugenics and institutionalisation history (Alberta Act, Canadian source) and FASD
+  (`intellectual-developmental-disorder`); the ascertainment-vs-incidence prevalence debate and the
+  neurodiversity critique of ABA (`autism-spectrum-disorder`); reversion rates
+  (`mild-neurocognitive-disorder`); Lewy body prevalence and rank. Green — structured phonics
+  (`specific-learning-disorder`); tau/TDP-43 (`frontotemporal-neurocognitive-disorder`).
+- [ ] Item pool (when written) must avoid: the vascular stepwise signature as a discriminator, a
+  Lewy prevalence rank, a DSM ADHD onset age, any cause for the autism trend.
+
+### L11 — Personality Disorders, Clinical Psychology and the Law (Nov 25; deck calls itself L10)
+
+Content pass 2026-09-22: 17 → 30 sections (branch `psy240/l10-content-pass`).
+- [ ] Check-ins: 1/20/40/99 exist. The disposition-hearing exercise (slide 22) needs its Review Board
+  vignette and a response check-in. Optionally, turn "Must, may, or no duty?" (slide 28, a room
+  vote) into a second, quiz-style check-in.
+- [ ] Closer: `TODO(QotW)` for week 11.
+- [ ] The deck says the "post-questionnaire window closed yesterday" (Nov 24); the syllabus puts the
+  end of data collection ~Nov 18. Reconcile it with the RCT schedule (and L7's "through November 17").
+- [ ] Corrected an existing slide: Canada has no Tarasoff-style duty. *Smith v. Jones* is a
+  permission to disclose. The new slide 21 teaches this. Norm, check the Ontario law slides (Form 1,
+  Box A/B, CYFSA s.125 reporting, Starson, Gladue). They're sourced to `law-and-ethics`, but law
+  deserves a human read.
+- [ ] Guide: `antisocial-personality-disorder` and `narcissistic-personality-disorder` both claim
+  "the chapter's largest" prevalence discrepancy; `schizotypal`'s is wider than both.
+- [ ] Guide `law-and-ethics`: the Canadian-law "Needs research" block still lists Form 1 as missing
+  (it's covered); Form 1 is described twice, inconsistently ("mental illness" vs "mental disorder";
+  detention from arrival vs from Form 42).
+- [ ] Guide `histrionic-personality-disorder` § Treatment: the goal "identify their dependency and
+  become more self-reliant" reads like dependent PD's. Check it against the source.
+- [ ] Guide `categorical-vs-dimensional-personality-models`: schizoid 4.9% vs 3.1% "reverses rank
+  order" is unclear.
+- [ ] Gaps: amber — Canadian fitness to stand trial (`law-and-ethics`, US standard only); Canadian
+  insanity/NCRMD content on `insanity-defense-standards`; outcome evidence for Gladue/restorative
+  justice. Green/amber — Canadian deinstitutionalisation timeline. Green — psychopathy vs ASPD.
+- [ ] Item pool (when written) must avoid: the "largest discrepancy" claims, the histrionic treatment
+  goal, and any Canadian fitness-to-stand-trial fact.
+
+### L12 — Psychosis and Schizophrenia (Dec 2; deck calls itself L11)
+
+Content pass 2026-09-22: 20 → 31 sections (branch `psy240/l11-content-pass`).
+- [ ] Check-ins: 1/20/40/99 exist. The deck notes still mention a check-out at position 90 on the
+  "Thank you" slide, but check-outs were retired ("no check-outs, QR on every closer"). Fix the
+  note, or seed one.
+- [ ] Closer: `TODO(QotW)` for the final week's question. The closer is titled "in four dates" but
+  doesn't list four.
+- [ ] Slide 26 placeholder "[Results land here on the night]": fill in the real RCT figures the
+  weekend before. Adapt the 2025 "RCT Initial Results" slides (Day, Day×PrePost, Group×Day, "which
+  worked best?") once the data is in.
+- [ ] 2025 had a "Case Study Assignment" (a different Rachel); the syllabus has none this year.
+  Confirm it's dropped.
+- [ ] Before Break 1 now runs ~16 content slides (~75 min). If it's long, move slide 15 or 17 after
+  the break.
+- [ ] Typo in Break 2's notes: "Septembers-you".
+- [ ] Guide `brief-psychotic-disorder` § Prognosis: "60% vs 4.8%" remission vs "three of four
+  remitted"; "5 / 19.4%" should be 19.2% (5 of 26).
+- [ ] Guide `psychosis-and-the-schizophrenia-spectrum` § Epidemiology: says brief psychotic disorder
+  "remains unwritten". The page exists, so the note is stale.
+- [ ] Guide `positive-and-negative-symptoms`: "six are listed" but it lists five (repeated on the
+  Module 12 page).
+- [ ] Guide `antipsychotic-medications`: "Thorazine and chlorpromazine" listed as two drugs (they're
+  the same drug).
+- [ ] Guide `delusional-disorder` § Contested: schizophrenia lifetime prevalence 0.48–1% vs 0.3–0.7%
+  everywhere else.
+- [ ] Guide `rachel-integrative-case`: "three question sets" but there are four.
+- [ ] Gaps: amber — `schizophrenia` § Etiology prenatal/infection risk and the cannabis–onset link;
+  `antipsychotic-medications` clozapine/treatment resistance and metabolic effects;
+  `schizoaffective-disorder` and `schizophreniform-disorder` Etiology and Treatment (both empty);
+  `expressed-emotion` measurement and cross-cultural variation. Green — the deleted DSM subtypes
+  (`schizophrenia` § Contested); jumping-to-conclusions and aberrant salience (`delusions`).
+- [ ] Item pool (when written) must avoid: the brief-psychotic remission percentages, 0.48–1%, and
+  "six negative symptoms".
+- [ ] Attenuated psychosis syndrome has no Guide page, so it has no slide.
