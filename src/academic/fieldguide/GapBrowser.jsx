@@ -5,7 +5,7 @@ import AvatarMenu from './AvatarMenu'
 import { courseFeatures } from '../courseFeatures'
 import { useWikiBase, useCoursePaths } from './wiki/useWikiBase'
 import { cleanDoi } from '../doi'
-import { DIFF, SEV, CONTRIBUTION_SLOTS, draftKey, readDraft } from './contributions'
+import { DIFF, SEV, CONTRIBUTION_SLOTS, draftKey, readDraft, reviewerNote } from './contributions'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -567,9 +567,9 @@ function ClaimForm({ claim, row: r, courseClient, reload, onRelease }) {
         </ul>
       )}
 
-      {claim.note && (
-        <p style={{ ...S.sub, fontSize: 14, marginTop: 10 }}>
-          <strong>Reviewer note:</strong> {claim.note}
+      {reviewerNote(claim) && (
+        <p style={{ ...S.sub, fontSize: 14, marginTop: 10, whiteSpace: 'pre-wrap' }}>
+          <strong>Reviewer note:</strong> {reviewerNote(claim)}
         </p>
       )}
 

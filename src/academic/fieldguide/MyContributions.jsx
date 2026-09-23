@@ -4,7 +4,7 @@ import { AcademicEyebrow } from '../AcademicChrome'
 import AvatarMenu from './AvatarMenu'
 import { courseFeatures } from '../courseFeatures'
 import { useWikiBase, useCoursePaths } from './wiki/useWikiBase'
-import { DIFF, SEV, CONTRIBUTION_SLOTS, readDraft } from './contributions'
+import { DIFF, SEV, CONTRIBUTION_SLOTS, readDraft, reviewerNote } from './contributions'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -28,17 +28,6 @@ const fmtDayTime = ts => ts
 const daysLeft = ts => ts ? Math.max(0, Math.ceil((new Date(ts) - Date.now()) / 86400000)) : null
 const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`
 const has = v => typeof v === 'string' ? v.trim() !== '' : v != null
-
-// expire_claims() appends " · expired YYYY-MM-DD (14-day claim TTL)" to note
-// (or writes only that). It is the system's bookkeeping, not a reviewer's
-// words, so it is stripped — and a note counts as feedback only when a TA
-// decision is recorded.
-const SYSTEM_NOTE = /(?:\s*·\s*)?expired \d{4}-\d{2}-\d{2} \(14-day claim TTL\)/g
-const reviewerNote = (r) => {
-  if (!r.decided_at) return null
-  const n = String(r.note ?? '').replace(SYSTEM_NOTE, '').trim()
-  return n || null
-}
 
 // Slot ranking for the tracker. Expired and released claims are absent on
 // purpose: they don't count toward a slot.

@@ -17,6 +17,17 @@ export const CONTRIBUTION_SLOTS = [
   { key: 'amber2', tier: 'amber', label: 'Amber 2', due: 'Nov 27' },
 ]
 
+// expire_claims() appends " · expired YYYY-MM-DD (14-day claim TTL)" to note
+// (or writes only that). It is the system's bookkeeping, not a reviewer's
+// words, so it is stripped — and a note counts as feedback only when a TA
+// decision is recorded.
+const SYSTEM_NOTE = /(?:\s*·\s*)?expired \d{4}-\d{2}-\d{2} \(14-day claim TTL\)/g
+export const reviewerNote = (claim) => {
+  if (!claim?.decided_at) return null
+  const n = String(claim.note ?? '').replace(SYSTEM_NOTE, '').trim()
+  return n || null
+}
+
 // Unsaved work survives a remount, a refresh, or a mis-click, without waiting
 // for the student to press Save. Local only, per claim, and cleared the moment
 // the server has the text — so it can never be the stale copy that wins.
