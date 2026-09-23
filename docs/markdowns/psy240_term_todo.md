@@ -133,6 +133,14 @@ clear the exclusion in the YAML header.
 
 ## Platform
 
+- [ ] **Device clock skew breaks sign-in silently.** Danny Khan's Windows laptop (2026-09-23): each
+  sign-in fired ~35 token refreshes in 4 s (one per ~80 ms) until the server rate-limited it (429).
+  The client then made anonymous requests, `profiles.utoronto_verified_at` came back 406, and he
+  was sent back to verify. His iPhone was fine all day. The signature is a laptop clock more than
+  an hour off, so every fresh token looks expired. Fix: detect skew (compare `Date.now()` with the
+  response `Date` header or the token's `iat`) and show "your device clock is off — turn on 'Set
+  time automatically'" instead of looping; also cap the refresh retry. Find affected students:
+  count `POST | 429` on `grant_type=refresh_token` in edge_logs.
 - [ ] WeeklyWall: a friendly message when an insert is refused, instead of the raw RLS error.
 - [ ] `get_session_bootstrap` anonymous-call log noise.
 - [ ] `enroll_from_roster` permission-denied blips in the logs.
