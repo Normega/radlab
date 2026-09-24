@@ -129,16 +129,30 @@ function ownerOf(entry) {
 
 // ── Low-level fetch helpers ───────────────────────────────────────────────────
 
+// Every page is ordered by `id`. Without an ORDER BY, Postgres promises no row
+// order between two queries, so consecutive .range() pages can overlap and skip:
+// the Sandy Study 3 export of 2026-09-24 carried the right total of 51,456
+// aptitude_events rows, of which 3,102 were duplicates standing in for 3,102
+// real rows that never arrived -- 16 participants' whole Aptitude Suite logs.
+// Every table this module pages has an `id` column (checked 2026-09-24).
 async function pageAll(makeQuery) {
   let from = 0
   const out = []
   for (;;) {
-    const { data, error } = await makeQuery(from, from + PAGE - 1)
+    const { data, error } = await makeQuery(from, from + PAGE - 1).order('id', { ascending: true })
     if (error) throw error
     if (!data || data.length === 0) break
     out.push(...data)
     if (data.length < PAGE) break
     from += PAGE
+  }
+  // Backstop: an export that repeats a row has necessarily dropped another.
+  // Refuse it rather than hand an analyst a file that looks complete.
+  if (out.length && out.every(r => r.id != null)) {
+    const n = new Set(out.map(r => r.id)).size
+    if (n !== out.length) {
+      throw new Error(`Paged fetch returned ${out.length - n} duplicate row(s); the result is incomplete`)
+    }
   }
   return out
 }
