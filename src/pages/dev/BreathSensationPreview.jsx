@@ -22,7 +22,7 @@ const MODULE = {
     text: 'Today’s practice takes about two minutes. Find a quiet spot where you can sit comfortably, then press Next.',
   },
   steps: [
-    { type: 'breath_practice', key: 'breath_sensation', label: 'Breath sensation' },
+    { type: 'breath_practice', key: 'breath_sensation', label: 'Breath sensation', voice_base: '/audio/breath-sensation/' },
   ],
   lead_out: {
     owl: 'owl_love',

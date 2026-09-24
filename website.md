@@ -3295,8 +3295,21 @@ takes. Every duration and line of copy can be overridden from the step JSON.
 Timed stages advance only while the page is visible; time away is recorded, not discarded. Next is
 gated on finishing, like video (open in demo mode). Saves one `intervention_responses` row,
 `block_type = 'breath_practice'`: `{completed, anchor, breaths_marked, holds_ms: [[start,end],…],
-mean_inhale_ms, natural_seconds, hidden_ms}`. The holds are the participant's own marked in-breaths,
-which the video version never recorded.
+mean_inhale_ms, natural_seconds, hidden_ms, voice_available, voice_off_ms}`. The holds are the
+participant's own marked in-breaths, which the video version never recorded.
+
+**Voice-over (2026-09-24).** A step with `voice_base: "/audio/breath-sensation/"` speaks every
+caption plus a "Breathe in" / "and out" cue on each paced breath; the paced breaths wait for their
+spoken instruction to finish. Clips are synthetic, rendered locally by
+`scripts/tts/breath_sensation.py` (Kokoro-82M via `kokoro-onnx`, voice `af_heart`, speed 0.88,
+loudness-normalised mono MP3, 10 clips / ~300 KB in `public/audio/breath-sensation/`) from
+`src/components/study/breathPracticeScript.json`, which is also where the component takes its copy.
+`manifest.json` records each clip's exact text, and `useBreathVoice` plays a clip only when that
+text matches the caption on screen, so an edited script with stale audio goes silent rather than
+speaking words the participant cannot see. Web Audio, created inside the Begin tap (one gesture
+unlocks every clip on phones), suspended with the timers when the page is hidden. A Voice on/off
+toggle stops playback; time spent muted is recorded. Measured: clips fire on schedule, practice
+117 s with an instant anchor choice.
 
 ### Owl assets
 

@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
+import SCRIPT from './breathPracticeScript.json'
+import useBreathVoice from './useBreathVoice'
 
 // ── BreathPracticeBlock ───────────────────────────────────────────────────────
 //
@@ -19,7 +21,13 @@ import { useState, useEffect, useRef } from 'react'
 // time spent away is recorded (`hidden_ms`) rather than silently discarded.
 //
 // Every duration and line of copy can be overridden from the step JSON; the
-// defaults below are the Day 1 script.
+// defaults below are the Day 1 script (breathPracticeScript.json).
+//
+// Voice-over: a step with `voice_base` (e.g. "/audio/breath-sensation/") speaks
+// each caption, rendered ahead of time by scripts/tts/breath_sensation.py from
+// the same script file. The paced breaths wait for their spoken instruction to
+// finish, then each in- and out-breath is cued aloud. Participants can turn the
+// voice off; time spent with it off is recorded (`voice_off_ms`).
 
 const DEFAULTS = {
   settle_seconds:  8,
@@ -28,23 +36,13 @@ const DEFAULTS = {
   exhale_seconds:  6,
   natural_seconds: 60,
   expand_seconds:  12,
-  intro_text:
-    'This practice takes about two minutes. Sit or lie somewhere comfortable. Keep your eyes open with a soft, relaxed gaze.',
-  settle_text:
-    'Settle in. Let your body be supported by whatever is beneath you.',
-  paced_text:
-    'Take three long, slow, deep breaths — in through your nose, out through your nose or mouth. Follow the figure.',
-  anchor_prompt:
-    'Find somewhere you can feel your breath right now — a place that feels safe and comfortable. Tap it.',
-  natural_cues: [
-    'Let your breath find its own natural rhythm. If it helps, touch and hold while you breathe in, and let go as you breathe out.',
-    'Notice how the in-breath differs from the out-breath — perhaps cool as it enters, warm as it leaves.',
-    'If a sound or a thought pulls you away, simply notice it, and come back to the breath. Nothing to change.',
-  ],
-  expand_text:
-    'Now let your attention widen — to your whole body, and then to the room around you.',
-  done_text:
-    'When you’re ready, come back fully alert and awake.',
+  intro_text:    SCRIPT.intro,
+  settle_text:   SCRIPT.settle,
+  paced_text:    SCRIPT.paced,
+  anchor_prompt: SCRIPT.anchor,
+  natural_cues:  [SCRIPT.natural_1, SCRIPT.natural_2, SCRIPT.natural_3],
+  expand_text:   SCRIPT.expand,
+  done_text:     SCRIPT.done,
 }
 
 // Script names four places the breath can be felt. `centers` are SVG coords.
@@ -79,7 +77,7 @@ export default function BreathPracticeBlock({ step, demoMode = false, onComplete
   const [anchor,  setAnchor]  = useState(null)
   const [holding, setHolding] = useState(false)
   // Per-frame snapshot of the loop's refs — render reads this, never the refs.
-  const [view, setView] = useState({ level: 0, e: 0, doneTimed: 0 })
+  const [view, setView] = useState({ level: 0, e: 0, doneTimed: 0, waiting: false })
 
   // Everything the loop touches lives in refs, so the loop never goes stale.
   const stageRef    = useRef('intro')
@@ -91,12 +89,32 @@ export default function BreathPracticeBlock({ step, demoMode = false, onComplete
   const hiddenMs    = useRef(0)
   const lastTs      = useRef(null)
   const completed   = useRef(false)
+  const phaseRef    = useRef(-1)     // paced: last in/out phase cued aloud
+  const voiceOffMs  = useRef(0)
+
+  const voice = useBreathVoice(cfg.voice_base)
+  // The text each clip must match to be played. A clip whose manifest text no
+  // longer matches the caption stays silent rather than saying something else.
+  const clipText = {
+    settle: cfg.settle_text, paced: cfg.paced_text, anchor: cfg.anchor_prompt,
+    natural_1: cfg.natural_cues[0], natural_2: cfg.natural_cues[1], natural_3: cfg.natural_cues[2],
+    expand: cfg.expand_text, done: cfg.done_text, cue_in: SCRIPT.cue_in, cue_out: SCRIPT.cue_out,
+  }
+  const say = key => voice.play(key, clipText[key])
+  const sayRef = useRef(say)
+  useEffect(() => { sayRef.current = say })
 
   function goto(next) {
     if (durations[stageRef.current] != null) doneTimed.current += durations[stageRef.current]
     stageRef.current = next
     elapsedRef.current = 0
+    phaseRef.current = -1
     setStage(next)
+    // From the Begin tap this runs inside the user gesture, which is what
+    // lets a phone start audio at all.
+    if (next === 'settle') voice.unlock()
+    if (next === 'natural') sayRef.current('natural_1')
+    else if (clipText[next]) sayRef.current(next)
   }
 
   // ── Holding (natural stage only) ───────────────────────────────────────────
@@ -127,21 +145,34 @@ export default function BreathPracticeBlock({ step, demoMode = false, onComplete
 
       const s = stageRef.current
       const dur = durations[s]
-      if (dur != null) {
+      if (dur != null && voice.offRef.current) voiceOffMs.current += dt * 1000
+      // The paced breaths wait for their spoken instruction to finish.
+      const waiting = s === 'paced' && voice.speaking('paced')
+      if (dur != null && !waiting) {
         elapsedRef.current += dt
         if (elapsedRef.current >= dur) {
           if (s === 'natural' && holdingRef.current) endHold()
           goto(NEXT[s])
+          // The rest of this frame belongs to the stage just left; running it
+          // would, e.g., cue a paced "Breathe in" over the new stage's voice.
+          return
         }
       }
 
       // Breath level for the figure
       const e = elapsedRef.current
-      if (s === 'paced') {
+      if (s === 'paced' && waiting) {
+        levelRef.current += (0.12 - levelRef.current) * (1 - Math.exp(-dt / 1.0))
+      } else if (s === 'paced') {
         const t = e % cycle
         levelRef.current = t < cfg.inhale_seconds
           ? ease(t / cfg.inhale_seconds)
           : 1 - ease((t - cfg.inhale_seconds) / cfg.exhale_seconds)
+        const phase = Math.floor(e / cycle) * 2 + (t < cfg.inhale_seconds ? 0 : 1)
+        if (phase !== phaseRef.current) {
+          phaseRef.current = phase
+          sayRef.current(phase % 2 === 0 ? 'cue_in' : 'cue_out')
+        }
       } else if (s === 'natural') {
         // Follows the participant: rise while held, settle when released.
         const target = holdingRef.current ? 1 : 0
@@ -154,7 +185,7 @@ export default function BreathPracticeBlock({ step, demoMode = false, onComplete
       } else {
         levelRef.current += (0.15 - levelRef.current) * (1 - Math.exp(-dt / 1.0))
       }
-      setView({ level: levelRef.current, e: elapsedRef.current, doneTimed: doneTimed.current })
+      setView({ level: levelRef.current, e: elapsedRef.current, doneTimed: doneTimed.current, waiting })
     }
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
@@ -174,6 +205,8 @@ export default function BreathPracticeBlock({ step, demoMode = false, onComplete
       mean_inhale_ms:   inhaleMs.length ? Math.round(inhaleMs.reduce((a, b) => a + b, 0) / inhaleMs.length) : null,
       natural_seconds:  cfg.natural_seconds,
       hidden_ms:        Math.round(hiddenMs.current),
+      voice_available:  voice.available,
+      voice_off_ms:     voice.available ? Math.round(voiceOffMs.current) : null,
     })
   }, [stage]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -187,11 +220,18 @@ export default function BreathPracticeBlock({ step, demoMode = false, onComplete
   }, [stage])
 
   // ── Derived view state ─────────────────────────────────────────────────────
-  const { level, e } = view
+  const { level, e, waiting } = view
   const dur   = durations[stage]
+  const cueIdx = stage === 'natural'
+    ? Math.min(cfg.natural_cues.length - 1, Math.floor(e / (dur / cfg.natural_cues.length)))
+    : 0
+
+  useEffect(() => {
+    if (stage === 'natural' && cueIdx > 0) sayRef.current(`natural_${cueIdx + 1}`)
+  }, [stage, cueIdx])
 
   let breathingIn = false
-  if (stage === 'paced') breathingIn = (e % cycle) < cfg.inhale_seconds
+  if (stage === 'paced') breathingIn = !waiting && (e % cycle) < cfg.inhale_seconds
   if (stage === 'natural') breathingIn = holding
   const tint = stage === 'paced' || stage === 'natural'
     ? (breathingIn ? COOL : WARM)
@@ -200,18 +240,21 @@ export default function BreathPracticeBlock({ step, demoMode = false, onComplete
   let caption = null
   let sub     = null
   switch (stage) {
-    case 'intro':  caption = cfg.intro_text; break
+    case 'intro':
+      caption = cfg.intro_text
+      if (voice.available) sub = 'Sound on if you can — a voice will guide you.'
+      break
     case 'settle': caption = cfg.settle_text; break
     case 'paced': {
       const n = Math.min(cfg.paced_breaths, Math.floor(e / cycle) + 1)
       caption = cfg.paced_text
-      sub = `${breathingIn ? 'Breathe in…' : '…and out'}   ·   ${n} of ${cfg.paced_breaths}`
+      sub = waiting ? null : `${breathingIn ? 'Breathe in…' : '…and out'}   ·   ${n} of ${cfg.paced_breaths}`
       break
     }
     case 'anchor': caption = cfg.anchor_prompt; break
     case 'natural': {
       const cues = cfg.natural_cues
-      caption = cues[Math.min(cues.length - 1, Math.floor(e / (dur / cues.length)))]
+      caption = cues[cueIdx]
       sub = holding ? 'Breathing in…' : 'Touch and hold to breathe in'
       break
     }
@@ -225,7 +268,14 @@ export default function BreathPracticeBlock({ step, demoMode = false, onComplete
 
   return (
     <div style={S.wrap}>
-      {step.label && <p style={S.label}>{step.label}</p>}
+      <div style={S.topRow}>
+        <p style={S.label}>{step.label ?? ''}</p>
+        {voice.available && (
+          <button type="button" style={S.voiceBtn} onClick={voice.toggle} aria-pressed={!voice.off}>
+            {voice.off ? 'Voice off' : 'Voice on'}
+          </button>
+        )}
+      </div>
 
       <p key={caption} style={S.caption}>{caption}</p>
 
@@ -378,7 +428,12 @@ const FONT = '"DM Sans", system-ui, sans-serif'
 
 const S = {
   wrap:    { fontFamily: FONT, userSelect: 'none', WebkitUserSelect: 'none' },
-  label:   { fontSize: 12, fontWeight: 600, color: 'var(--tx2)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 10 },
+  topRow:  { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, minHeight: 28 },
+  label:   { fontSize: 12, fontWeight: 600, color: 'var(--tx2)', textTransform: 'uppercase', letterSpacing: '0.04em', margin: 0 },
+  voiceBtn: {
+    fontFamily: FONT, fontSize: 12, fontWeight: 600, padding: '4px 10px', borderRadius: 6,
+    border: '1.5px solid var(--bds)', background: '#fff', color: 'var(--tx2)', cursor: 'pointer',
+  },
   caption: {
     fontSize: 15, lineHeight: 1.65, color: 'var(--tx)', textAlign: 'center',
     minHeight: 74, margin: '0 auto 8px', maxWidth: 460,
