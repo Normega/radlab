@@ -5,6 +5,14 @@ import { Link } from 'react-router-dom'
 
 const TALKS = [
   {
+    to: '/bpmh-sep-2026',
+    kicker: 'Buddhism, Psychology & Mental Health · September 2026',
+    title: 'Two Ways of Being a Self',
+    sub: 'A two-hour interactive lecture: papañca, narrative vs experiential self, MBCT. Room Toggle exercise plus phone sense-foraging activities by QR, no login.',
+    tags: ['Sense foraging', 'Buddhist psychology', 'Mental health'],
+    accent: '#4A90D9',
+  },
+  {
     to: '/cuny-2026',
     kicker: 'CUNY · 2026',
     title: 'Remapping the Mind',
