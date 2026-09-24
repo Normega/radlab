@@ -45,6 +45,10 @@ export default function SessionEntry() {
   // { scheduled_date, send_time } | null — next upcoming session, shown on the
   // expired-link screen so a closed window isn't a dead end.
   const [nextSession,    setNextSession]    = useState(null)
+  // True when this participant's next session in this study has no date yet
+  // (status 'awaiting_date' — a calendar-date timepoint left to be determined).
+  // Only then can the finish screens say anything concrete about "what next".
+  const [awaitingDate,   setAwaitingDate]   = useState(false)
   // { url, source } | null — set when the study has a completion redirect URL;
   // source is 'sona' | 'prolific' | null and only names the platform in copy.
   const [redirectInfo,   setRedirectInfo]   = useState(null)
@@ -168,6 +172,13 @@ export default function SessionEntry() {
     // valid"; 'expired' carries next_session for the soft-landing copy.
     if (data.error === 'expired' || data.error === 'completed') {
       setNextSession(data.next_session ?? null)
+      // No dated next session: check whether one is waiting for its date. The
+      // RPC's error payload carries no study id, so it is read off the link.
+      if (!data.next_session?.scheduled_date) {
+        const { data: own } = await sb
+          .from('participant_links').select('study_id').eq('token', token).maybeSingle()
+        setAwaitingDate(await hasAwaitingDate(sb, own?.study_id))
+      }
       setState(data.error)
       return
     }
@@ -178,6 +189,7 @@ export default function SessionEntry() {
 
     if (link.status === 'revoked')              { setState('revoked');   return }
     if (link.status === 'used' || link.status === 'completed') {
+      setAwaitingDate(await hasAwaitingDate(sb, link.study_id))
       setState('completed')
       return
     }
@@ -417,6 +429,9 @@ export default function SessionEntry() {
       setCurrentIndex(i => i + 1)
     } else {
       const { data: completion } = await sb.rpc('complete_session_by_token', { p_token: token })
+      if (!completion?.next_contact) {
+        setAwaitingDate(await hasAwaitingDate(sb, sessionData?.link?.study_id))
+      }
       const redirectUrl = sessionData?.study?.completion_redirect_url
       if (redirectUrl) {
         setCompletionInfo(completion ?? null)
@@ -458,15 +473,15 @@ export default function SessionEntry() {
   }
 
   if (state === 'completed') {
-    return <FullScreen><StatusCard>{completedMessage(nextSession)}</StatusCard></FullScreen>
+    return <FullScreen><StatusCard>{completedMessage(nextSession, awaitingDate)}</StatusCard></FullScreen>
   }
 
   if (state === 'session_complete') {
-    return <FullScreen><StatusCard>{completionMessage(completionInfo)}</StatusCard></FullScreen>
+    return <FullScreen><StatusCard>{completionMessage(completionInfo, awaitingDate)}</StatusCard></FullScreen>
   }
 
   if (state === 'expired') {
-    return <FullScreen><StatusCard>{expiredMessage(nextSession)}</StatusCard></FullScreen>
+    return <FullScreen><StatusCard>{expiredMessage(nextSession, awaitingDate)}</StatusCard></FullScreen>
   }
 
   if (state === 'too_early') {
@@ -658,14 +673,48 @@ function formatSendTime(timeStr) {
   return `${h12}:${String(m || 0).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`
 }
 
+// The next session exists but has no date yet: a calendar-date timepoint left
+// "to be determined" (20260911_fixed_date_timepoints.sql), whose email goes out
+// when a lab member sets the date. Before this, a participant who finished
+// their baseline was told to "contact your researcher" if they heard nothing —
+// and CHM135 students did exactly that, one of them unsure her answers had
+// been recorded at all (2026-09-22/23).
+//
+// Worded for the only studies that use undated timepoints — Dana's CHM135 and
+// PHL245, whose later surveys follow each term test once grades are returned
+// (Norm, 2026-09-24). A future study that leaves a date open for a different
+// reason needs this made per-study rather than reworded here.
+const AWAITING_DATE_NEXT =
+  "Your responses have been saved, and there's nothing more you need to do for now. " +
+  "Your next survey will be emailed to you after you receive your grade on the course's term test."
+
+// Whether this participant has a session in this study waiting for its date.
+// Participants can read their own schedule rows ("own read" RLS). Any failure
+// reads as false, which leaves the existing copy in place — this only ever
+// makes a message more specific, never blocks one.
+async function hasAwaitingDate(sb, studyId) {
+  if (!studyId) return false
+  try {
+    const { data, error } = await sb
+      .from('participant_schedule').select('id')
+      .eq('study_id', studyId).eq('status', 'awaiting_date').limit(1)
+    return !error && (data?.length ?? 0) > 0
+  } catch {
+    return false
+  }
+}
+
 // Completion copy from complete_session_by_token's { next_contact, has_more }:
 // a concrete date/time for the next interaction — from a materialized schedule
 // row, or (next_contact.estimated) derived from the study design when the next
 // segment hasn't materialized yet (fork gate). A study-complete line at the end
 // of the graph, a soft "watch your email" line only if even the design can't
 // name a date, and the old generic text for legacy no-graph studies.
-function completionMessage(info) {
+function completionMessage(info, awaitingDate = false) {
   const generic = 'You have completed this session. Thank you!'
+  if (awaitingDate && !info?.next_contact?.scheduled_date) {
+    return `Thank you — this session is complete! ${AWAITING_DATE_NEXT}`
+  }
   if (!info) return generic
 
   const next = info.next_contact
@@ -713,8 +762,8 @@ function completionMessage(info) {
 // deciding whether to keep going should not be told otherwise. Same constraint
 // as MISSED_INTRO in supabase/functions/_shared/emailTemplate.ts; keep the two
 // in step.
-function expiredMessage(next) {
-  return `This session's window has closed — that's completely okay. Missing the occasional session is normal, and there's nothing to make up. Just do your best to catch the ones you can. ${nextSessionSentence(next)}`
+function expiredMessage(next, awaitingDate = false) {
+  return `This session's window has closed — that's completely okay. Missing the occasional session is normal, and there's nothing to make up. Just do your best to catch the ones you can. ${nextSessionSentence(next, awaitingDate)}`
 }
 
 // Copy for a link whose session was already COMPLETED, from
@@ -723,15 +772,16 @@ function expiredMessage(next) {
 // expiry window, and before the RPC checked completion first, these
 // participants were told they'd missed a session they had actually done —
 // the worst possible message to send the most diligent people in the study.
-function completedMessage(next) {
-  return `You've already completed this session — thank you! ${nextSessionSentence(next)}`
+function completedMessage(next, awaitingDate = false) {
+  return `You've already completed this session — thank you! ${nextSessionSentence(next, awaitingDate)}`
 }
 
 // Shared tail naming the next session, so the completed and expired screens
 // can't drift apart. Null next: study finished, participant withdrawn, or the
 // next segment is behind a fork gate that hasn't resolved — stay soft and
 // don't promise a session we can't name.
-function nextSessionSentence(next) {
+function nextSessionSentence(next, awaitingDate = false) {
+  if (!next?.scheduled_date && awaitingDate) return AWAITING_DATE_NEXT
   if (!next?.scheduled_date) {
     return "If you're expecting another session and don't hear from us, please contact your researcher."
   }
