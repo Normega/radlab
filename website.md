@@ -3277,6 +3277,27 @@ manual `UPDATE participant_schedule SET status='pending'`.
 The response payload gained a `superseded` counter alongside `deferred`, so the split between
 "held behind a gate" and "took over from a stale link" is visible per tick.
 
+### Interactive breath practice (`breath_practice`) — short-form prototype
+
+**Added 2026-09-24, on `dev` only; not yet in any study.** A step type that replaces the guided
+video of `non-reactivity-phase1-day1` with a ~2-minute interactive version of the same script, the
+first piece of a planned short-form Liliana study (3-minute daily sessions, with a fourth
+sense-foraging arm). `src/components/study/BreathPracticeBlock.jsx`; preview at
+`/dev/breath-sensation-preview` (`?demo=1` adds per-stage skip buttons).
+
+One screen, seven stages: intro (Begin) → settle 8 s → three paced breaths (4 s in / 6 s out; a
+torso silhouette fills cool on the in-breath, warm on the out) → **anchor** (participant taps
+nostrils / shoulders / chest / belly) → natural rhythm 60 s (touch-and-hold while breathing in; the
+figure and the chosen anchor follow the participant, and the three script cues rotate) → widen to
+body and room 12 s → done. Measured 111 s of practice end to end, plus however long the anchor choice
+takes. Every duration and line of copy can be overridden from the step JSON.
+
+Timed stages advance only while the page is visible; time away is recorded, not discarded. Next is
+gated on finishing, like video (open in demo mode). Saves one `intervention_responses` row,
+`block_type = 'breath_practice'`: `{completed, anchor, breaths_marked, holds_ms: [[start,end],…],
+mean_inhale_ms, natural_seconds, hidden_ms}`. The holds are the participant's own marked in-breaths,
+which the video version never recorded.
+
 ### Owl assets
 
 10 transparent PNGs stored at `public/assets/owls/{key}.png`. Valid keys:

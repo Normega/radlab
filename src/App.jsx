@@ -82,6 +82,7 @@ const GameIconTrial = lazy(() => import('./pages/dev/GameIconTrial'))
 const OnboardingPreview = lazy(() => import('./pages/dev/OnboardingPreview'))
 const InsightsPreview   = lazy(() => import('./pages/dev/InsightsPreview'))
 const BodyDiagramPreview = lazy(() => import('./pages/dev/BodyDiagramPreview'))
+const BreathSensationPreview = lazy(() => import('./pages/dev/BreathSensationPreview'))
 const AlongsidePreview  = lazy(() => import('./pages/dev/AlongsidePreview'))
 const SidelongPreview   = lazy(() => import('./pages/dev/SidelongPreview'))
 const Keynote   = lazy(() => import('./pages/keynote/Keynote'))
@@ -670,6 +671,7 @@ export default function App() {
           {/* Dashboard Insights widget with synthetic data (?state=rich|sparse|empty) */}
           <Route path="/dev/insights-preview" element={<InsightsPreview />} />
           <Route path="/dev/body-diagram-preview" element={<BodyDiagramPreview />} />
+          <Route path="/dev/breath-sensation-preview" element={<BreathSensationPreview />} />
           <Route path="/dev/alongside-preview" element={<AlongsidePreview />} />
           <Route path="/dev/sidelong-preview" element={<SidelongPreview />} />
           {/* Breath-signal instrumentation for biofeedback game dev; ?sim=1 for beltless */}

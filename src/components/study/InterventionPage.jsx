@@ -3,6 +3,7 @@ import { supabase as globalSupabase } from '../../lib/supabase'
 import { dbWrite } from '../../lib/dbWrite'
 import StudyVideoPlayer from '../video/StudyVideoPlayer'
 import NoDefaultSlider from './NoDefaultSlider'
+import BreathPracticeBlock from './BreathPracticeBlock'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -131,6 +132,9 @@ export default function InterventionPage({
   // quality_explorer
   const [qualityState, setQualityState] = useState({})  // {stepIdx: {quality, slider_value, sliderMoved, description}}
 
+  // breath_practice: the block's own summary, present once the practice finished
+  const [breathResults, setBreathResults] = useState({})  // {stepIdx: {anchor, holds_ms, …}}
+
   // ── show_if resolution ────────────────────────────────────────────────────
   // Conditions name a step by its authored `key`, not its position, so
   // inserting or reordering steps in a module definition can't silently
@@ -247,6 +251,10 @@ export default function InterventionPage({
         setNextEnabled(!!(qs?.sliderMoved && (qs?.description ?? '').trim()))
         break
       }
+      case 'breath_practice':
+        // Like video: gated on finishing, except in an admin demo.
+        setNextEnabled(!!demoMode || !!breathResults[s._stepIndex])
+        break
       default:
         setNextEnabled(true)
     }
@@ -414,6 +422,15 @@ export default function InterventionPage({
           })
           break
         }
+
+        case 'breath_practice':
+          // Reached un-finished only via demo mode, which has no participant
+          // and so never saves; recorded as-is rather than assumed complete.
+          await supabase.from('intervention_responses').insert({
+            ...base,
+            response_text: JSON.stringify(breathResults[idx] ?? { completed: false }),
+          })
+          break
 
         default:
           break
@@ -633,6 +650,18 @@ export default function InterventionPage({
                   setNextEnabled(allFilled)
                   return { ...prev, [current._stepIndex]: next }
                 })
+              }}
+            />
+          )}
+
+          {current.type === 'breath_practice' && (
+            <BreathPracticeBlock
+              key={current._stepIndex}
+              step={current}
+              demoMode={demoMode}
+              onComplete={result => {
+                setBreathResults(prev => ({ ...prev, [current._stepIndex]: result }))
+                setNextEnabled(true)
               }}
             />
           )}
