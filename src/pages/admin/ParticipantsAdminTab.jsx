@@ -96,7 +96,8 @@ export default function ParticipantsAdminTab() {
     if (err || res?.error || res?.success === false) {
       setReminder(prev => ({ ...prev, [scheduleId]: err?.message ?? res?.error ?? 'send failed' }))
     } else if (res?.suppressed) {
-      setReminder(prev => ({ ...prev, [scheduleId]: 'suppressed (opted out)' }))
+      const why = res.reason === 'no_recipient_email' ? 'no email on file' : 'opted out'
+      setReminder(prev => ({ ...prev, [scheduleId]: `suppressed (${why})` }))
     } else {
       setReminder(prev => ({ ...prev, [scheduleId]: 'sent' }))
     }
