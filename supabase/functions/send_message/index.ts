@@ -199,8 +199,22 @@ Deno.serve(async (req) => {
       }
     }
 
+    // 4b. Resolve the recipient BEFORE issuing a link. A row with no deliverable
+    // address must not mint a link it can never send: the new active link would
+    // defer the participant's other rows (check_schedule 2b) for nothing. It is
+    // reported as suppressed, not failed: the row stays 'pending' after a failed
+    // send (see step 11) and would otherwise be retried on every tick, forever.
+    // check_schedule blocks a suppressed row and logs the reason.
+    const to = isTest ? test_override_email : participantEmail
+    if (!to) {
+      if (!isTest) return json({ suppressed: true, reason: 'no_recipient_email' })
+      await logMessage(db, row.participant_id, 'failed', isTest, null)
+      return json({ success: false, error: 'No recipient email found for participant' })
+    }
+
     // 5. Resolve or create participant link
     let token: string | null = null
+    let issuedNewLink = false
     let linkExpiresAt: string | null = null
 
     if (row.link_id) {
@@ -228,7 +242,7 @@ Deno.serve(async (req) => {
         linkExpiresHours: expiresHours,
       })
       token = link.token
-      await db.from('participant_schedule').update({ status: 'link_sent' }).eq('id', row.id)
+      issuedNewLink = true
     }
 
     const siteUrl = Deno.env.get('SITE_URL') ?? 'https://radlab.zone'
@@ -317,12 +331,6 @@ Deno.serve(async (req) => {
     }
 
     // 8. Send via Resend
-    const to = isTest ? test_override_email : participantEmail
-    if (!to) {
-      await logMessage(db, row.participant_id, 'failed', isTest, null)
-      return json({ success: false, error: 'No recipient email found for participant' })
-    }
-
     const resend    = new Resend(Deno.env.get('RESEND_API_KEY'))
     const fromEmail = Deno.env.get('FROM_EMAIL') ?? 'research@radlab.zone'
 
@@ -349,6 +357,22 @@ Deno.serve(async (req) => {
     if (sendErr) {
       console.error('Resend error:', sendErr)
       return json({ success: false, error: sendErr.message })
+    }
+
+    // 11. Only now is the row 'link_sent'. This used to happen at link issue,
+    // before the send: a Resend error then left the row 'link_sent' with
+    // attempts=0 and last_sent_at NULL, so it was never retried (the scheduler
+    // reads only 'pending'), never reminded (the reminder pass needs
+    // last_sent_at), and step 0b marked it 'missed' the next day. On a gating
+    // session that miss can trigger adherence withdrawal for a participant who
+    // was never emailed. A failed send now leaves the row 'pending' with its
+    // link, and the next tick retries with the same token.
+    if (issuedNewLink || row.status === 'pending') {
+      const { error: statusErr } = await db
+        .from('participant_schedule')
+        .update({ status: 'link_sent' })
+        .eq('id', row.id)
+      if (statusErr) console.error(`link_sent update failed for row ${row.id}:`, statusErr.message)
     }
 
     return json({ success: true, message_id: sendData?.id, recipient: to })
