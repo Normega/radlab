@@ -212,7 +212,13 @@ function CheckinForm({ initial, onSave, onCancel }) {
   )
 }
 
-function CheckinRow({ checkin, classSlug, superAdmin, onPreview, onEdit, onDelete, onSetStatus }) {
+// '2026-09-29' -> 'Tue Sep 29'. Parsed as a local date so the day never slips.
+function fmtOpens(isoDate) {
+  const [y, m, d] = isoDate.split('-').map(Number)
+  return new Date(y, m - 1, d).toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' })
+}
+
+function CheckinRow({ checkin, lectureDate, classSlug, onPreview, onEdit, onDelete, onSetStatus }) {
   const activities = checkin.config?.activities ?? []
   const weekly = checkin.kind === 'weekly'
   const answers = checkin.responseCount ?? 0
@@ -227,20 +233,20 @@ function CheckinRow({ checkin, classSlug, superAdmin, onPreview, onEdit, onDelet
       </span>
       {checkin.auto_close_seconds != null && <span style={S.autoCloseBadge}>{checkin.auto_close_seconds}s auto-close</span>}
       <span style={S.statusBadge}>{checkin.status}</span>
-      {weekly && checkin.status !== 'open' && (
-        <button style={S.linkBtn} onClick={() => onSetStatus(checkin.id, 'open')}>Open</button>
+      {/* Weekly walls run themselves (20260924_weekly_walls_run_themselves.sql):
+          qotw_tick opens each one at noon Toronto time on its lecture date and
+          closes them all at the class's walls_close_at. There is no Close here
+          for anyone -- the database refuses it from every app session, super
+          admin included, after a planner Close shut a wall the morning of its lecture.
+          Opening early stays available; it is harmless. */}
+      {weekly && checkin.status === 'planned' && (
+        <>
+          <span style={S.weeklyOpenNote}>{lectureDate ? `opens ${fmtOpens(lectureDate)}, noon` : 'set a lecture date to schedule'}</span>
+          <button style={S.linkBtn} onClick={() => onSetStatus(checkin.id, 'open')}>Open now</button>
+        </>
       )}
-      {/* A weekly wall stays open for the term, so Close is not an ordinary
-          control: the database refuses it for anyone but a super admin
-          (20260917_weekly_walls_stay_open.sql). Showing the button to a TA
-          would be a visible dead control -- the same mistake the Reset button
-          made before 20260909_reset_checkin_super_admin_only.sql -- so
-          everyone else gets the policy in words instead. */}
-      {weekly && checkin.status === 'open' && (
-        superAdmin
-          ? <button style={S.linkBtn} onClick={() => onSetStatus(checkin.id, 'closed')}>Close</button>
-          : <span style={S.weeklyOpenNote}>open all term</span>
-      )}
+      {weekly && checkin.status === 'open' && <span style={S.weeklyOpenNote}>open all term</span>}
+      {weekly && checkin.status === 'closed' && <span style={S.weeklyOpenNote}>term over</span>}
       {weekly && checkin.status !== 'planned' && (
         <a style={S.linkBtn} href={`${loungePath(classSlug)}/wall/${checkin.id}`} target="_blank" rel="noreferrer">Wall</a>
       )}
@@ -258,7 +264,7 @@ function CheckinRow({ checkin, classSlug, superAdmin, onPreview, onEdit, onDelet
   )
 }
 
-function LectureCard({ lecture, checkins, classSlug, superAdmin, expanded, onToggle, onEditLecture, onDeleteLecture, onCreateCheckin, onUpdateCheckin, onDeleteCheckin, onSetCheckinStatus, onPreviewCheckin }) {
+function LectureCard({ lecture, checkins, classSlug, expanded, onToggle, onEditLecture, onDeleteLecture, onCreateCheckin, onUpdateCheckin, onDeleteCheckin, onSetCheckinStatus, onPreviewCheckin }) {
   const [editing, setEditing] = useState(false)
   const [editForm, setEditForm] = useState({ number: lecture.number ?? '', title: lecture.title ?? '', lecture_date: lecture.lecture_date ?? '' })
   const [creatingCheckin, setCreatingCheckin] = useState(false)
@@ -318,7 +324,7 @@ function LectureCard({ lecture, checkins, classSlug, superAdmin, expanded, onTog
               />
             ) : (
               <CheckinRow
-                key={c.id} checkin={c} classSlug={classSlug} superAdmin={superAdmin}
+                key={c.id} checkin={c} lectureDate={lecture.lecture_date} classSlug={classSlug}
                 onPreview={() => onPreviewCheckin(c)}
                 onEdit={() => setEditingCheckinId(c.id)} onDelete={() => onDeleteCheckin(c.id)}
                 onSetStatus={onSetCheckinStatus}
@@ -341,7 +347,7 @@ function LectureCard({ lecture, checkins, classSlug, superAdmin, expanded, onTog
   )
 }
 
-export default function ConsoleLecturePlanner({ classInfo, superAdmin }) {
+export default function ConsoleLecturePlanner({ classInfo }) {
   const [lectures, setLectures] = useState(undefined)
   const [checkinsByLecture, setCheckinsByLecture] = useState({})
   const [expandedId, setExpandedId] = useState(null)
@@ -493,7 +499,7 @@ export default function ConsoleLecturePlanner({ classInfo, superAdmin }) {
 
       {lectures.map((l) => (
         <LectureCard
-          key={l.id} lecture={l} checkins={checkinsByLecture[l.id]} classSlug={classInfo.slug} superAdmin={superAdmin}
+          key={l.id} lecture={l} checkins={checkinsByLecture[l.id]} classSlug={classInfo.slug}
           expanded={expandedId === l.id} onToggle={() => setExpandedId(expandedId === l.id ? null : l.id)}
           onEditLecture={editLecture} onDeleteLecture={deleteLecture}
           onCreateCheckin={createCheckin} onUpdateCheckin={updateCheckin} onDeleteCheckin={deleteCheckin}
