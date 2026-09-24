@@ -4,6 +4,7 @@
 //                 (Farb 2007): STORY blocks (narrative self-focus prompts) and
 //                 SENSE blocks (experiential focus on one sensory anchor).
 //                 A soft tone marks each switch; show-of-hands polls after.
+//   ForageRoom  — check in, 60 s of rotating sensory prompts, check back, poll.
 //   BreakTimer  — a countdown for the mid-lecture break.
 //   QrPanel     — a projector QR code to a public page (phones, no login).
 //
@@ -180,6 +181,106 @@ export function ToggleRoom() {
         )}
       </div>
       <p style={X.corner}>Enter = begin / next · Space = next slide</p>
+    </div>
+  )
+}
+
+// ── ForageRoom ──────────────────────────────────────────────────────────────
+// Check in → 60 s forage with rotating sensory prompts → check back → poll.
+
+const FORAGE_MS = 60000
+const FORAGE_PROMPTS = [
+  'Find three different sounds in the room.',
+  'Where does your body touch the seat? Feel the pressure.',
+  'Find the brightest point of light you can see.',
+  'What temperature is the air on your hands?',
+  'One more sound, the quietest one you can find.',
+]
+
+export function ForageRoom() {
+  const [act, setAct] = useState('START')   // START → CHECKIN → FORAGE → CHECKBACK → POLL
+  const [left, setLeft] = useState(FORAGE_MS)
+  const timer = useRef(null)
+  const end = useRef(0)
+  useExerciseLock(act === 'FORAGE')
+
+  const stopTimer = () => { clearInterval(timer.current); timer.current = null }
+  useEffect(() => stopTimer, [])
+
+  const forage = useCallback(() => {
+    stopTimer(); setAct('FORAGE'); tone(523)
+    end.current = performance.now() + FORAGE_MS
+    setLeft(FORAGE_MS)
+    timer.current = setInterval(() => {
+      const rem = end.current - performance.now()
+      if (rem > 0) { setLeft(rem); return }
+      stopTimer(); tone(392, 1.6); setAct('CHECKBACK')
+    }, 200)
+  }, [])
+  const doReset = useCallback(() => { stopTimer(); setAct('START') }, [])
+
+  useEffect(() => {
+    function onKey(e) {
+      if (e.key !== 'Enter') return
+      e.preventDefault()
+      if (act === 'START') setAct('CHECKIN')
+      else if (act === 'CHECKIN') forage()
+      else if (act === 'CHECKBACK') setAct('POLL')
+      else if (act === 'POLL') doReset()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [act, forage, doReset])
+
+  const pi = Math.min(FORAGE_PROMPTS.length - 1, Math.floor((FORAGE_MS - left) / (FORAGE_MS / FORAGE_PROMPTS.length)))
+
+  return (
+    <div style={{ ...X.stage, background: act === 'FORAGE' ? `${SENSE}10` : 'transparent', borderRadius: 24, transition: 'background 1.2s ease' }} onClick={e => e.stopPropagation()}>
+      <div style={X.overlay}>
+        {act === 'START' && (
+          <>
+            <h2 style={X.title}>Forage together</h2>
+            <p style={X.sub}>One minute, no phones. Check in, forage, check back.</p>
+            <Btn onClick={() => setAct('CHECKIN')}>Begin</Btn>
+          </>
+        )}
+        {act === 'CHECKIN' && (
+          <>
+            <p style={X.mono}>1 · check in</p>
+            <h2 style={X.title}>One word for how you are, right now.</h2>
+            <p style={X.sub}>Keep it to yourself. Honest, not ideal.</p>
+            <Btn onClick={forage}>Start foraging</Btn>
+          </>
+        )}
+        {act === 'FORAGE' && (
+          <>
+            <p style={{ ...X.mono, color: SENSE }}>2 · forage · {fmt(Math.ceil(left / 1000))}</p>
+            <h2 style={{ ...X.title, fontSize: 'clamp(30px, 5vw, 56px)', color: SENSE }}>{FORAGE_PROMPTS[pi]}</h2>
+            <p style={X.sub}>Not to relax. To notice.</p>
+            <div style={X.track}>
+              <div style={{ ...X.fill, background: SENSE, width: `${100 - (left / FORAGE_MS) * 100}%` }} />
+            </div>
+            <Btn ghost onClick={doReset}>Stop</Btn>
+          </>
+        )}
+        {act === 'CHECKBACK' && (
+          <>
+            <p style={X.mono}>3 · check back</p>
+            <h2 style={X.title}>One word again. Did it change?</h2>
+            <Btn onClick={() => setAct('POLL')}>Show of hands →</Btn>
+          </>
+        )}
+        {act === 'POLL' && (
+          <>
+            <p style={X.mono}>show of hands</p>
+            <h2 style={X.title}>Did your word change?</h2>
+            <div style={X.optRow}>{['Yes', 'A little', 'No'].map(o => <span key={o} style={X.opt}>{o}</span>)}</div>
+            <p style={X.sub}>Either answer is information. The second look is where change gets registered.</p>
+            <Btn ghost onClick={doReset}>Again</Btn>
+          </>
+        )}
+      </div>
+      <p style={X.corner}>Enter = next step · Space = next slide</p>
     </div>
   )
 }
