@@ -707,6 +707,12 @@ function questionnaireWideByProfile(qRows, ctx, tools) {
   for (const r of rows) {
     const pid = r.user_id
     if (pid == null) continue
+    // A row naming a schedule outside this study was collected by another
+    // study. Skip it before it is counted, or it takes this study's nth
+    // timepoint label and shifts every later administration by one. Same
+    // guard as the VAS and instrument blocks.
+    const sched = r.schedule_id ? ctx?.scheduleById?.get(r.schedule_id) : null
+    if (r.schedule_id && ctx?.scheduleById && !sched) continue
     if (!byProfile[pid]) byProfile[pid] = {}
     const slug = r.questionnaire_slug
     const key  = `${pid}::${slug}`
@@ -717,7 +723,6 @@ function questionnaireWideByProfile(qRows, ctx, tools) {
     // read off the session rather than guessed from protocol order. Inference
     // only covers rows predating that column, and rows that legitimately have
     // no session — screener responses, which run pre-consent.
-    const sched   = r.schedule_id ? ctx?.scheduleById?.get(r.schedule_id) : null
     const session = sched ? ctx?.sessionById?.get(sched.study_session_id) : null
     const tps  = ctx?.slugTimepoints?.get(slug) ?? []
     const label = session
