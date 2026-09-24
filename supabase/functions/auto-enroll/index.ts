@@ -4,15 +4,24 @@
 // Uses the service role key internally.
 //
 // POST body: { study_id, external_id, source: 'sona'|'prolific', prolific_study_id?, prolific_session_id? }
-// Returns:   { token } | { error }
+// Returns:   { token } | { error } | { error, exclusion: { can_email } } (409, see findExclusionConflict)
+//
+// With action: 'send_exclusion_withdraw_link' and the same three fields, emails
+// the withdrawal link for the study that blocked the join instead.
+// Returns { status: 'sent' | 'already_sent' } | { error }.
 
-import { createClient } from 'npm:@supabase/supabase-js@2'
+import { createClient, SupabaseClient } from 'npm:@supabase/supabase-js@2'
 import { baselineTimeOfDay, materializeSchedule } from '../_shared/materializeSchedule.ts'
 import type { Graph } from '../_shared/materializeSchedule.ts'
 import { processAdherenceWithdrawal } from '../_shared/processAdherenceWithdrawal.ts'
 import { todayInLabTz } from '../_shared/labDate.ts'
 import { isPlaceholderExternalId } from '../_shared/externalIdGuard.ts'
 import { issueLink } from '../_shared/issueLink.ts'
+import { getOrCreateUnsubscribeToken } from '../_shared/unsubscribeToken.ts'
+import { resolveParticipantEmail } from '../_shared/participantEmail.ts'
+import { renderExclusionWithdrawEmail } from '../_shared/exclusionWithdrawEmail.ts'
+import { RESEARCH_REPLY_TO } from '../_shared/replyTo.ts'
+import { Resend } from 'npm:resend'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -25,6 +34,94 @@ function json(body: unknown, status = 200) {
     headers: { ...CORS, 'Content-Type': 'application/json' },
   })
 }
+
+// ── Exclusion groups ──────────────────────────────────────────────────────────
+// Studies sharing a non-null studies.exclusion_group must not run concurrently
+// for one participant (20260924_study_exclusion_group.sql). Found 2026-09-24: a
+// SONA participant joined Zerin and Liliana Study 3 24 minutes apart, and the
+// first study's open link starved the second of three days of sessions.
+//
+// The same SONA id is the same person across studies, so the enrollment rows
+// are matched on external_id + external_source -- no account lookup needed.
+//
+// Only ACTIVE participation blocks: consented, enrolled/in_progress, not
+// screened out on the latest attempt, and with a session still to come. A screen-out stays 'enrolled' on purpose
+// (the staff retake route needs it), so a status-only check would turn away
+// exactly the people who failed one study's screener and are eligible for the
+// other -- which on 2026-09-24 was every one of the 12 people in both studies.
+
+interface ExclusionConflict {
+  profileId: string
+  studyId: string
+  studyName: string
+}
+
+async function findExclusionConflict(
+  admin: SupabaseClient,
+  study: { id: string; exclusion_group: string | null },
+  externalId: string,
+  source: string,
+): Promise<ExclusionConflict | null> {
+  if (!study.exclusion_group) return null
+
+  const { data: rows, error } = await admin
+    .from('study_enrollments')
+    .select('profile_id, study_id, studies!inner(name, active, exclusion_group)')
+    .eq('external_id', externalId)
+    .eq('external_source', source)
+    .neq('study_id', study.id)
+    .in('status', ['enrolled', 'in_progress'])
+    .not('consent_date', 'is', null)
+    .eq('studies.exclusion_group', study.exclusion_group)
+    .eq('studies.active', true)
+
+  // Fail open, like the rate limiter: a lookup error must never stand between
+  // a participant and a study.
+  if (error) {
+    console.error('auto-enroll: exclusion lookup failed -- allowing through:', error.message)
+    return null
+  }
+
+  for (const r of rows ?? []) {
+    if (!r.profile_id) continue
+    const { data: latest } = await admin
+      .from('screener_results')
+      .select('phase1_passed, phase2_passed')
+      .eq('participant_id', r.profile_id)
+      .eq('study_id', r.study_id)
+      .is('resubmission_of', null)
+      .order('screened_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    if (latest && (latest.phase1_passed === false || latest.phase2_passed === false)) continue
+
+    // Nothing left to sit means nothing to run concurrently with. Enrollment
+    // status alone overstates this: on 2026-09-24 four Zerin participants from
+    // July were still 'enrolled' with no session left to send.
+    const { count: open } = await admin
+      .from('participant_schedule')
+      .select('id', { count: 'exact', head: true })
+      .eq('participant_id', r.profile_id)
+      .eq('study_id', r.study_id)
+      .in('status', ['pending', 'link_sent', 'unlocked'])
+    if (!open) continue
+
+    const st = r.studies as unknown as { name: string }
+    return { profileId: r.profile_id, studyId: r.study_id, studyName: st.name }
+  }
+  return null
+}
+
+// Participant-facing refusal. Deliberately does not name the other study: the
+// SONA id arrives on the URL, so this response goes to whoever typed it. The
+// study is named in the email, which only reaches the participant's own inbox.
+const EXCLUSION_MESSAGE =
+  "You're currently taking part in another of our multi-week studies. These run one at a time, " +
+  'so to join this one you first need to withdraw from the other.'
+
+// At most one withdrawal-link email per participant per window, so the button
+// cannot be used to flood someone's inbox by typing their SONA id.
+const EXCLUSION_EMAIL_WINDOW_MIN = 10
 
 // ── Rate limiting ─────────────────────────────────────────────────────────────
 // `enrollment_attempts` was created for this in 20260617_external_enrollment.sql
@@ -63,7 +160,7 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
 
   try {
-    const { study_id, external_id, source, prolific_study_id, prolific_session_id } =
+    const { study_id, external_id, source, prolific_study_id, prolific_session_id, action } =
       await req.json()
 
     if (!study_id || !external_id || !source) {
@@ -89,7 +186,7 @@ Deno.serve(async (req) => {
     // 1. Verify the study exists and permits external enrollment from this source.
     const { data: study, error: studyErr } = await admin
       .from('studies')
-      .select('id, active, allow_external_enrollment, external_enrollment_source, design_graph')
+      .select('id, active, allow_external_enrollment, external_enrollment_source, design_graph, exclusion_group')
       .eq('id', study_id)
       .single()
 
@@ -111,6 +208,65 @@ Deno.serve(async (req) => {
     const src: string = study.external_enrollment_source
     if (src !== 'both' && src !== source) {
       return json({ error: 'This study does not accept enrollments from this platform.' }, 403)
+    }
+
+    // 1b. Withdrawal-link request from the exclusion refusal page. Recomputes the
+    //     conflict server-side, so it can only ever send the link for the study
+    //     that actually blocked this join, and only to that enrollment's own
+    //     contact email.
+    if (action === 'send_exclusion_withdraw_link') {
+      const conflict = await findExclusionConflict(admin, study, external_id, source)
+      if (!conflict) {
+        return json({ error: 'There is nothing to withdraw from. Please go back to SONA and open the study again.' }, 409)
+      }
+
+      const since = new Date(Date.now() - EXCLUSION_EMAIL_WINDOW_MIN * 60 * 1000).toISOString()
+      const { count: recent } = await admin
+        .from('message_log')
+        .select('id', { count: 'exact', head: true })
+        .eq('participant_id', conflict.profileId)
+        .eq('kind', 'exclusion_withdraw_link')
+        .eq('status', 'sent')
+        .gte('sent_at', since)
+      if ((recent ?? 0) > 0) return json({ status: 'already_sent' })
+
+      const to = await resolveParticipantEmail(admin, conflict.profileId, conflict.studyId)
+      if (!to) {
+        return json({ error: `We don't have an email address on file for you. Please write to ${RESEARCH_REPLY_TO} with your SONA ID.` }, 422)
+      }
+
+      const token   = await getOrCreateUnsubscribeToken(admin, conflict.profileId, conflict.studyId)
+      const siteUrl = Deno.env.get('SITE_URL') ?? 'https://radlab.zone'
+      const mail    = renderExclusionWithdrawEmail({
+        current_study_name: conflict.studyName,
+        withdraw_url:       `${siteUrl}/withdraw/${token}`,
+        contact_email:      RESEARCH_REPLY_TO,
+      })
+
+      const resend = new Resend(Deno.env.get('RESEND_API_KEY')!)
+      const { error: sendErr } = await resend.emails.send({
+        from:    Deno.env.get('FROM_EMAIL') ?? 'RADlab <research@radlab.zone>',
+        to,
+        replyTo: RESEARCH_REPLY_TO,
+        subject: mail.subject,
+        html:    mail.html,
+        text:    mail.text,
+      })
+
+      await admin.from('message_log').insert({
+        participant_id: conflict.profileId,
+        sent_at:        new Date().toISOString(),
+        channel:        'email',
+        status:         sendErr ? 'failed' : 'sent',
+        kind:           'exclusion_withdraw_link',
+        is_test:        false,
+      })
+
+      if (sendErr) {
+        console.error('auto-enroll: exclusion withdraw email failed:', sendErr.message)
+        return json({ error: `We couldn't send the email. Please write to ${RESEARCH_REPLY_TO} with your SONA ID.` }, 502)
+      }
+      return json({ status: 'sent' })
     }
 
     // 2. Check for an existing enrollment to support re-entry.
@@ -150,6 +306,16 @@ Deno.serve(async (req) => {
 
       // Existing enrollment but link expired — fall through to create a new link.
     } else {
+      // 2a. Exclusion group — NEW enrollments only. Checked before the rate
+      //     limiter and before anything is created, so a refused participant
+      //     leaves no account, enrollment or schedule behind. Someone already
+      //     enrolled here (the branch above) is never turned away by it.
+      const conflict = await findExclusionConflict(admin, study, external_id, source)
+      if (conflict) {
+        console.log(`auto-enroll: refused ${source} ${external_id} for study ${study_id}: active in ${conflict.studyId}`)
+        return json({ error: EXCLUSION_MESSAGE, exclusion: { can_email: true } }, 409)
+      }
+
       // 2b. Rate limit — NEW accounts only (see the note by hashClientIp). Every
       //     check is fail-open: a limiter that errors must never stand between a
       //     real participant and their study.
