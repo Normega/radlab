@@ -39,7 +39,7 @@ export default function ClassConsole({ session, superAdmin }) {
               <button style={S.tab(tab === 'participation')} onClick={() => setTab('participation')}>Review</button>
               <button style={S.tab(tab === 'quizzes')} onClick={() => setTab('quizzes')}>Quizzes</button>
             </div>
-            {tab === 'planning' && <ConsoleLecturePlanner classInfo={classInfo} superAdmin={superAdmin} />}
+            {tab === 'planning' && <ConsoleLecturePlanner classInfo={classInfo} />}
             {tab === 'run' && <ClassRemote superAdmin={superAdmin} />}
             {tab === 'participation' && <ConsoleParticipation classInfo={classInfo} />}
             {tab === 'quizzes' && <ConsoleQuizzes classInfo={classInfo} />}
