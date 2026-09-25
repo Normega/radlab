@@ -4,7 +4,8 @@
 // ← back, N speaker notes, Minimal / Reading density). Interactive pieces
 // need no login and write nothing: whole-room exercises on the projector
 // (BreathCheck, ToggleRoom, ForageRoom, BreakTimer) and phone activities by QR
-// (/prototypes/toggle.html plus the sense-foraging prototypes).
+// (/prototypes/toggle.html plus the real games at /try/delve, /try/kite,
+// /try/face-read, which run logged-out and record nothing).
 // Speaker notes carry the timings for the two-hour run. Figures are reused from
 // the CUNY deck's rendered slides in public/cuny-2026/.
 import { useState, useEffect, useCallback } from 'react'
@@ -240,8 +241,8 @@ const SLIDES = [
             ['0:27', 'Toggle', 'Switching modes on purpose: as a room, on your phone, with your hands'],
             ['0:48', 'Break', '10 minutes'],
             ['0:58', 'When the story takes over', 'Sensory shutdown, relapse, decentering, and the longer path'],
-            ['1:21', 'Sense foraging', 'Foraging together, then three receptive practices on your phone'],
-            ['1:46', 'Balance', 'Too far either way, three pitfalls, and a check for your own practice'],
+            ['1:21', 'Sense foraging', 'Foraging together, then three RADlab games on your phone'],
+            ['1:46', 'Balance', 'Too far either way, three pitfalls, a practice check, radlab.zone'],
           ].map(([t, h, s]) => (
             <div key={t} style={{ ...K.agendaRow, ...(h === 'Break' ? { opacity: 0.6 } : {}) }}>
               <span style={K.agendaT}>{t}</span>
@@ -745,27 +746,31 @@ const SLIDES = [
     ),
   },
 
-  // 22 — Grasping backfires
+  // 22 — Three games, three modes
   {
     time: '1:30',
-    note: 'The design logic of the phone activities. Ordinary apps run a task loop: see, want, act, get. Each of these worlds breaks one link, so that grasping makes things worse and receptivity makes them better. That is taṇhā (craving) made mechanical: you cannot get these by reaching for them. Tell them to notice what happens when they try harder.',
+    note: 'Set up the phone block. These are the lab’s own games from radlab.zone, opened without an account: nothing is saved, and all three run silently. They were chosen to pull in different directions. Delve rewards resting: the haze only clears where attention stays still, and fast scanning reveals nothing (craving, taṇhā, made mechanical). Kite has no pacer: you breathe at your own pace and the face breathes with you, so there is nothing to keep up with. Face Read is the opposite: a judging task, name the feeling and its strength, and it is scored. Ask them to notice which mode each one pulls them into.',
     render: (d) => (
       <Frame wide kicker="Design logic">
-        <H2>Worlds where grasping backfires</H2>
-        <div style={K.twoCol}>
-          <div style={K.col}>
-            <div style={K.colHead(STORY)}>Task mode</div>
-            <Bullets items={['see → want → act → get', 'Effort pays. Faster is better.', 'The loop most apps are built on.']} />
-          </div>
-          <div style={K.col}>
-            <div style={K.colHead(SENSE)}>Receptive mode</div>
-            <Bullets items={['Hurry smears it. Staring puts it out.', 'Slowing down lets it arrive.', 'Craving (taṇhā), made mechanical.']} />
-          </div>
+        <H2>Three games, three pulls</H2>
+        <div style={K.steps}>
+          {[
+            ['Delve', SENSE, 'Rest your attention and the image clears. Scan fast and nothing comes.', 'Sense · receptive'],
+            ['Kite', '#9a7fc0', 'No pacer. Breathe at your own pace; the face breathes with you.', 'Sense · the body'],
+            ['Face Read', STORY, 'Name the feeling and how strong it is. Scored.', 'Story · judging'],
+          ].map(([t, c, sub, tag]) => (
+            <div key={t} style={{ ...K.step, borderColor: `${c}66` }}>
+              <div style={{ ...K.stepN, color: c }}>{tag}</div>
+              <div style={{ ...K.stepT, color: c }}>{t}</div>
+              <div style={K.stepS}>{sub}</div>
+            </div>
+          ))}
         </div>
-        <Lead>As you play, notice what happens when you try harder.</Lead>
+        <Lead>As you play, notice which mode each one pulls you into, and what happens when you try harder.</Lead>
         <Detail density={d}>
-          Each prototype breaks one link of the see → want → act → get chain. Nothing is scored and every world
-          reaches an ending whatever you do, so there is nothing to win.
+          All three are live RADlab games, here opened without an account: nothing is recorded, no sound. Delve’s
+          reveal only happens below a pointer speed threshold; Kite logs your own breath shape over eight breaths;
+          Face Read scores emotion recognition on a valence and arousal wheel.
         </Detail>
       </Frame>
     ),
@@ -774,25 +779,25 @@ const SLIDES = [
   // 23 — Phone stations
   {
     time: '1:32',
-    note: 'About 10 minutes. Everyone picks one, plays for 4 to 5 minutes, then swaps with a neighbour who picked a different one if time allows. Headphones help for Thaw and Sidelong, both have quiet sound. Thaw: rub a fogged window, slowly. Sidelong: faint stars show only beside where you look (true of the real eye: rods peak off the fovea). Soften: press and hold to soften your gaze, and hidden figures appear in the landscape. Walk the room; watch for fast rubbing and staring, and ask what they notice.',
+    note: 'About 10 minutes. Everyone picks one, plays for about 4 minutes, then tries a second. Suggest pairing a Sense game with Face Read so they feel the contrast. Delve: rest a finger in one spot and wait; tap “finish” when done. Kite: hold one button to breathe in, the other to breathe out; eight breaths, then you see your breath shapes. Face Read: 10 faces, tap the wheel. Walk the room; watch for fast swiping in Delve and ask what they notice.',
     render: () => (
       <Frame wide kicker="On your phone · 10 min">
-        <H2>Pick one. Go slowly.</H2>
+        <H2>Pick one, then try a second.</H2>
         <div style={K.qrRow}>
           <div style={K.station}>
-            <QrPanel path="/prototypes/thaw.html" label="Thaw" size={200} />
-            <p style={K.stationS}>A fogged window at dusk. Rub gently; hurry smears it.</p>
+            <QrPanel path="/try/delve" label="Delve" size={200} />
+            <p style={K.stationS}>An image waits behind haze. Rest your attention in one place and it comes clear.</p>
           </div>
           <div style={K.station}>
-            <QrPanel path="/prototypes/sidelong.html" label="Sidelong" tone={STORY} size={200} />
-            <p style={K.stationS}>Faint stars appear only beside where you look. Look straight and they go out.</p>
+            <QrPanel path="/try/kite" label="Kite" tone="#9a7fc0" size={200} />
+            <p style={K.stationS}>Hold to breathe in, hold to breathe out. Eight breaths, eight kites.</p>
           </div>
           <div style={K.station}>
-            <QrPanel path="/prototypes/soften.html" label="Soften" tone="#9a7fc0" size={200} />
-            <p style={K.stationS}>Press and hold to soften your gaze. What hides in the valley?</p>
+            <QrPanel path="/try/face-read" label="Face Read" tone={STORY} size={200} />
+            <p style={K.stationS}>A face moves into an expression. Name the feeling, and how strong it is.</p>
           </div>
         </div>
-        <Cite>no login · nothing scored · headphones welcome</Cite>
+        <Cite>no login · nothing saved · no sound needed</Cite>
       </Frame>
     ),
   },
@@ -800,14 +805,14 @@ const SLIDES = [
   // 24 — Debrief foraging
   {
     time: '1:42',
-    note: 'Pairs 3 minutes, then a few answers. Look for the moment people describe trying harder and it getting worse, then easing off and something appearing. That is the second arrow in miniature: effort aimed at the result instead of the contact. Ask whether anyone felt a pull to “win” and what that was like.',
+    note: 'Pairs 3 minutes, then a few answers. Look for the contrast: Delve got worse with effort and better with stillness; Face Read invited judging and often a pull to score well. That pull is the story mode switching on. Kite sits between: some people breathe naturally, others start performing their breath for the face. Ask whether anyone felt a pull to “win” and what that was like.',
     render: () => (
       <Frame wide kicker="Debrief">
         <H2>What happened when you tried harder?</H2>
         <Talk who="Pairs" mins={3} items={[
-          'Was there a moment you reached for it and it slipped away?',
-          'What did you have to let go of for it to arrive?',
-          'Where did the story show up: “am I doing this right?”',
+          'In Delve, did reaching for the image make it slip away?',
+          'Did Face Read feel different from the other two? Where did the story show up?',
+          'In Kite, were you breathing, or performing your breathing?',
         ]} />
         <Lead>Receptivity is a skill, and like decentering it can be practised.</Lead>
       </Frame>
@@ -925,20 +930,48 @@ const SLIDES = [
     ),
   },
 
+  // 26c — radlab.zone pitch
+  {
+    time: '1:57',
+    note: 'The pitch. Everything today came from radlab.zone, and all of it stays open. Come, See is the game platform: psychophysics experiments built as games, including the three they just played; a free account saves their history and unlocks the rest of the catalogue. They can also take part in the lab’s studies from there. The lab site has the people, publications and research behind today’s figures, and the book is where the sense-foraging practices live in full.',
+    render: () => (
+      <Frame wide kicker="Keep going">
+        <h1 style={K.title}>radlab.zone</h1>
+        <Lead>Rigorous experiments designed to feel like play. Everything you tried today lives there.</Lead>
+        <div style={K.steps}>
+          {[
+            ['Come, See', SENSE, 'The game platform: Delve, Kite, Face Read and more. A free account keeps your history.'],
+            ['Take part', '#9a7fc0', 'Join the lab’s studies on sensing, emotion and regulation.'],
+            ['The lab', STORY, 'People, publications, and the research behind today’s figures.'],
+          ].map(([t, c, sub]) => (
+            <div key={t} style={{ ...K.step, borderColor: `${c}66` }}>
+              <div style={{ ...K.stepT, color: c }}>{t}</div>
+              <div style={K.stepS}>{sub}</div>
+            </div>
+          ))}
+        </div>
+        <div style={K.qrRow}>
+          <QrPanel path="/" label="radlab.zone" size={170} />
+          <QrPanel path="/games" label="All the games" tone={STORY} size={170} />
+        </div>
+      </Frame>
+    ),
+  },
+
   // 27 — Thanks and questions
   {
-    time: '1:58',
+    time: '1:59',
     render: () => (
       <Frame wide>
         <h1 style={K.title}>Thank you</h1>
         <p style={K.subtitle}>norman.farb@utoronto.ca</p>
         <div style={K.qrRow}>
           <QrPanel path="/prototypes/toggle.html" label="Toggle" size={140} />
-          <QrPanel path="/prototypes/" label="All the practices" tone={STORY} size={140} />
+          <QrPanel path="/games" label="All the games" tone={STORY} size={140} />
         </div>
         <Bullets items={[
           'Farb & Segal, Better in Every Sense (2024): the sense-foraging practices in full',
-          'radlab.zone: the lab, the studies, and the practices you tried today',
+          'radlab.zone: the lab, the studies, and the games you tried today',
         ]} />
         <Cite>Regulatory & Affective Dynamics Lab · University of Toronto Mississauga</Cite>
       </Frame>

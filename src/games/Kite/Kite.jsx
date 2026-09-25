@@ -68,7 +68,8 @@ const GUIDE_COPY = {
 const COARSE_INPUT = typeof window !== 'undefined' &&
   !!window.matchMedia?.('(pointer: coarse)')?.matches
 
-export default function Kite({ session }) {
+// `silent` skips the breath-noise audio (classroom use: /try/kite).
+export default function Kite({ session, silent = false }) {
   const [screen, setScreen]           = useState('INTRO')
   const [control, setControlState]    = useState('pause')
   const [liveBreaths, setLiveBreaths] = useState([])
@@ -269,8 +270,10 @@ export default function Kite({ session }) {
     setGiftStep(0)
     if (hintTimerRef.current) clearTimeout(hintTimerRef.current)
     setHint(null)
-    if (!audioRef.current) audioRef.current = createBreathAudio()
-    audioRef.current.start()
+    if (!silent) {
+      if (!audioRef.current) audioRef.current = createBreathAudio()
+      audioRef.current.start()
+    }
     setScreen('BREATHING')
   }
 
