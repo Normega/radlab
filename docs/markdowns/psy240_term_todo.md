@@ -133,6 +133,15 @@ clear the exclusion in the YAML header.
 
 ## Platform
 
+- [ ] **The sign-in email cap is lifetime, and it's already being hit.** `api/roster-join.js`
+  refuses a roster row after `LIFETIME_SEND_CAP = 50` sends ("Send limit reached for this address
+  — contact the course team"), a figure chosen to "cover a whole term". Ritma Shahid hit it on
+  2026-09-24, three weeks in; her count was reset by hand on 2026-09-25 (noted on her roster
+  row). The next-highest student is at 28; most are under 10. An abuse guard doesn't need to be
+  lifetime: switch to a rolling window (e.g. 10 per 24 h, on top of the 120 s cooldown), and make
+  the refusal message say when it lifts. Separately, find out why she needed 50. Her Mac session
+  was alive while she was locked out, so it's likely another device or browser that never keeps its
+  session (cookies cleared on exit, private mode, or a mail scanner consuming links).
 - [ ] **Device clock skew breaks sign-in silently.** Danny Khan's Windows laptop (2026-09-23): each
   sign-in fired ~35 token refreshes in 4 s (one per ~80 ms) until the server rate-limited it (429).
   The client then made anonymous requests, `profiles.utoronto_verified_at` came back 406, and he
