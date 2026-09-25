@@ -9,6 +9,7 @@ import EnrollmentPanel   from '../../components/study/EnrollmentPanel'
 import StudySessionsPanel from './StudySessionsPanel'
 import AnonymousLinkPanel from './AnonymousLinkPanel'
 import CalendarDatesPanel from './CalendarDatesPanel'
+import { fetchAllRows } from '../../lib/fetchAllRows'
 
 // ─── Data hooks ───────────────────────────────────────────────────────────────
 
@@ -72,22 +73,26 @@ function useLongitudinalParticipants(studyId) {
     queryKey: ['longitudinal-participants', studyId],
     enabled: !!studyId,
     queryFn: async () => {
-      const { data: enrollments, error } = await supabase
+      // Both reads paged (fetchAllRows.js): CHM135 passed 1,000 enrolments, and
+      // the capped read listed only the first 1,000 of its 1,237 students. The
+      // schedule used to be filtered by `.in(every participant id)` — at that
+      // size a request URL tens of kilobytes long — so it is read for the whole
+      // study and matched here instead.
+      const enrollments = (await fetchAllRows(() => supabase
         .from('study_enrollments')
         .select('id, profile_id, external_id, enrolled_at, consent_date, consent_scope, student_number, status, profiles!profile_id(id, display_name)')
         .eq('study_id', studyId)
-        .is('withdrawn_at', null)
-        .order('enrolled_at', { ascending: true })
-      if (error) throw error
+        .is('withdrawn_at', null)))
+        .sort((a, b) => String(a.enrolled_at).localeCompare(String(b.enrolled_at)))
 
-      const profileIds = (enrollments ?? []).map(e => e.profile_id).filter(Boolean)
-      if (!profileIds.length) return []
+      const profileIds = new Set(enrollments.map(e => e.profile_id).filter(Boolean))
+      if (!profileIds.size) return []
 
-      const { data: schedule } = await supabase
+      const schedule = (await fetchAllRows(() => supabase
         .from('participant_schedule')
         .select('id, participant_id, study_session_id, status, completed_at')
-        .eq('study_id', studyId)
-        .in('participant_id', profileIds)
+        .eq('study_id', studyId)))
+        .filter(r => profileIds.has(r.participant_id))
 
       const schedMap = {}
       for (const row of (schedule ?? [])) {

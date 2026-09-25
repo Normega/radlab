@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
+import { fetchAllRows } from '../../lib/fetchAllRows'
 
 // ── ParticipantsAdminTab ──────────────────────────────────────────────────────
 // The "Participants" tab of /admin/users: every study enrollment, nested in
@@ -18,18 +19,18 @@ function useParticipantData() {
   return useQuery({
     queryKey: ['admin-participants'],
     queryFn: async () => {
-      const [{ data: enrollments, error: e1 }, { data: schedule, error: e2 }] = await Promise.all([
-        supabase
+      // Platform-wide reads, so both are paged (fetchAllRows.js) — each is well
+      // past the 1,000-row cap now that CHM135 is recruiting.
+      const [enrollments, schedule] = await Promise.all([
+        fetchAllRows(() => supabase
           .from('study_enrollments')
-          .select('id, study_id, profile_id, external_id, external_source, enrolled_at, status, email_reminders, studies(id, name), profiles!study_enrollments_profile_id_fkey(display_name)')
-          .order('enrolled_at', { ascending: false }),
-        supabase
+          .select('id, study_id, profile_id, external_id, external_source, enrolled_at, status, email_reminders, studies(id, name), profiles!study_enrollments_profile_id_fkey(display_name)')),
+        fetchAllRows(() => supabase
           .from('participant_schedule')
-          .select('id, participant_id, study_id, status, scheduled_date, send_time, study_day, study_sessions(label, node_key)'),
+          .select('id, participant_id, study_id, status, scheduled_date, send_time, study_day, study_sessions(label, node_key)')),
       ])
-      if (e1) throw e1
-      if (e2) throw e2
-      return { enrollments: enrollments ?? [], schedule: schedule ?? [] }
+      enrollments.sort((a, b) => String(b.enrolled_at).localeCompare(String(a.enrolled_at)))
+      return { enrollments, schedule }
     },
   })
 }

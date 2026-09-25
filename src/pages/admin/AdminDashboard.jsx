@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
+import { fetchAllRows } from '../../lib/fetchAllRows'
 
 function useSummary() {
   return useQuery({
@@ -9,12 +10,10 @@ function useSummary() {
       const [sessions, studies, enrollments, compensation] = await Promise.all([
         supabase.from('session_templates').select('id', { count: 'exact', head: true }),
         supabase.from('studies').select('id', { count: 'exact', head: true }).eq('active', true),
-        supabase.from('study_enrollments').select('study_id', { count: 'exact', head: false })
-          .eq('status', 'enrolled')
-          .then(({ data }) => {
-            const unique = new Set((data ?? []).map(r => r.study_id))
-            return { count: unique.size }
-          }),
+        // Paged: distinct studies over a capped read undercounts once enrolments
+        // pass 1,000 (fetchAllRows.js).
+        fetchAllRows(() => supabase.from('study_enrollments').select('id, study_id').eq('status', 'enrolled'))
+          .then(rows => ({ count: new Set(rows.map(r => r.study_id)).size })),
         supabase.from('participant_compensation').select('id', { count: 'exact', head: true }),
       ])
       return {
