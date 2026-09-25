@@ -682,6 +682,18 @@ export default function App() {
 
           {/* Conference demo — no auth, writes nothing; ?sim=1 for beltless rehearsal */}
           <Route path="/demo/breath-belt" element={<BreathBeltDemo />} />
+          {/*
+            Classroom "try" routes: the real games, logged-out, for lecture
+            audiences who have no account. Mounted with session={null}, so
+            every Supabase write in them is skipped (each is guarded on
+            userId) and nothing is recorded, even for a logged-in visitor.
+            Kite runs silent. Linked from the /bpmh-sep-2026 deck by QR.
+          */}
+          <Route element={<ErrorBoundary label="Try"><Outlet /></ErrorBoundary>}>
+            <Route path="/try/delve" element={<Delve session={null} />} />
+            <Route path="/try/kite" element={<Kite session={null} silent />} />
+            <Route path="/try/face-read" element={<FaceRead session={null} />} />
+          </Route>
           {/* Keynote opener — whole-room pacer, no device, no data */}
           <Route path="/demo/pacer-opener" element={<PacerOpenerDemo />} />
           {/* Ember — breath biofeedback campfire; ?sim=1 for beltless rehearsal */}
