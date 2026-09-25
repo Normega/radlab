@@ -10,7 +10,7 @@ import { createClient, SupabaseClient } from 'npm:@supabase/supabase-js@2'
 import { materializeSchedule, baselineTimeOfDay } from '../_shared/materializeSchedule.ts'
 import type { Graph } from '../_shared/materializeSchedule.ts'
 import { processAdherenceWithdrawal } from '../_shared/processAdherenceWithdrawal.ts'
-import { criticalSessionKind, reminderAction } from '../_shared/criticalSession.ts'
+import { criticalSessionKind, reminderAction, isPhaseGate } from '../_shared/criticalSession.ts'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -246,6 +246,16 @@ Deno.serve(async (req) => {
     let suppressed = 0
     let failed = 0
     let deferred = 0
+    let superseded = 0
+
+    // Design graphs, fetched once and used by the send pass (2b, to decide
+    // whether an outstanding link belongs to a phase gate), the reminder pass
+    // (3b, to decide which sessions are critical) and the advance pass (4).
+    const { data: graphStudies } = await db
+      .from('studies')
+      .select('id, design_graph')
+      .not('design_graph', 'is', null)
+    const graphByStudyId = new Map((graphStudies ?? []).map((s) => [s.id, s.design_graph as Graph]))
 
     // Steps 2-3 only apply when something is actually due to send — the
     // advance pass (step 4) below must still run every tick regardless,
@@ -277,24 +287,84 @@ Deno.serve(async (req) => {
           continue
         }
 
-        // 2b. Active link check — participant already has an active link for
-        // a different row. This is TRANSIENT (step 0 expires the stale link
-        // on a later tick), so defer: leave the row 'pending' and retry next
-        // tick. It must NOT suppressRow — 'blocked' is permanent, and a
-        // missed day's link is routinely still nominally 'active' at the
-        // instant the next day's 06:00 row is processed (confirmed live
-        // 2026-07-15: a real dry-run participant's day-3 session was
-        // permanently blocked this way and never emailed).
-        const { data: activeLink } = await db
+        // 2b. Outstanding link check — the participant already holds an active
+        // link for a DIFFERENT row of this study.
+        //
+        // The rule (2026-09-08): a due survey SUPERSEDES an outstanding link
+        // unless that link belongs to a PHASE GATE. Schedules are the
+        // authority on when a survey should arrive; a link's expiry window is
+        // only how long that survey stays open. Deferring to the window
+        // inverted that — a 120 h link silently withheld every survey due in
+        // the next 120 h, because step 0 only expires a link once
+        // expires_at < now(). One hour's spacing behind a five-day window meant
+        // nothing sent for five days.
+        //
+        // Superseding is already implemented and already safe: issueLink()
+        // closes prior active links for the same participant+study with
+        // ended_reason='superseded'. The bug was never that the mechanism was
+        // missing — it was that this guard `continue`d before step 3 could
+        // ever reach it. The guard that detected the conflict short-circuited
+        // the code that resolves it.
+        //
+        // A phase gate still blocks, because there the design means "complete
+        // this before anything downstream": superseding a randomize or
+        // adherence_check gate would resolve it against a session the
+        // participant never got to sit. See isPhaseGate().
+        //
+        // Two further faults fixed here:
+        //   - the lookup was not scoped by study_id (issueLink's supersede is),
+        //     so an active link in study A blocked sends in study B;
+        //   - .maybeSingle() ERRORS when a participant holds two active links
+        //     and returns data:null, silently skipping the guard altogether.
+        //     The one_active_link_per_participant unique index was dropped in
+        //     20260602 and never recreated, so that state is reachable.
+        const { data: activeLinks } = await db
           .from('participant_links')
           .select('id, schedule_id')
           .eq('participant_id', row.participant_id)
+          .eq('study_id', row.study_id)
           .eq('status', 'active')
-          .maybeSingle()
 
-        if (activeLink && activeLink.schedule_id !== row.id) {
-          deferred++
-          continue
+        const blockingLinks = (activeLinks ?? []).filter((l) => l.schedule_id !== row.id)
+
+        if (blockingLinks.length > 0) {
+          const graph = graphByStudyId.get(row.study_id)
+          let gateHolding = false
+
+          // Only a graph study can have a phase gate. A legacy/hand-built
+          // schedule has no graph, so nothing there is a gate and the due row
+          // supersedes — which is the behaviour those studies want anyway.
+          if (graph) {
+            const { data: blockingRows } = await db
+              .from('participant_schedule')
+              .select('id, study_session_id')
+              .in('id', blockingLinks.map((l) => l.schedule_id))
+
+            const blockingSessionIds = [...new Set(
+              (blockingRows ?? []).map((r) => r.study_session_id).filter(Boolean),
+            )]
+
+            if (blockingSessionIds.length > 0) {
+              const { data: blockingSessions } = await db
+                .from('study_sessions')
+                .select('id, node_key')
+                .in('id', blockingSessionIds)
+
+              gateHolding = (blockingSessions ?? []).some(
+                (s) => s.node_key && isPhaseGate(graph, s.node_key),
+              )
+            }
+          }
+
+          if (gateHolding) {
+            // Non-terminal on purpose: 'blocked' is permanent and a gate is
+            // routinely completed later. Retry next tick.
+            deferred++
+            continue
+          }
+
+          superseded++
+          // fall through to step 3 — issueLink() closes the stale link
         }
 
         // 2c. New link imminent check — LATE rows only: a backlogged row
@@ -313,10 +383,14 @@ Deno.serve(async (req) => {
           const { date: cutoffDate, time: cutoffTime } = formatInTimeZone(cutoffInstant, LAB_TIMEZONE)
           const cutoffKey = scheduleKey(cutoffDate, cutoffTime)
 
+          // Scoped by study, like 2b: another study's upcoming row does not
+          // replace this one, and blocking this row for it would lose a
+          // session nobody will ever resend (2026-09-24, participant 18919).
           const { data: candidates } = await db
             .from('participant_schedule')
             .select('id, scheduled_date, send_time')
             .eq('participant_id', row.participant_id)
+            .eq('study_id', row.study_id)
             .eq('status', 'pending')
             .neq('id', row.id)
             .lte('scheduled_date', cutoffDate)
@@ -367,14 +441,6 @@ Deno.serve(async (req) => {
         }
       }
     }
-
-    // Design graphs, fetched once and used by both the reminder pass (3b, to
-    // decide which sessions are critical) and the advance pass (4).
-    const { data: graphStudies } = await db
-      .from('studies')
-      .select('id, design_graph')
-      .not('design_graph', 'is', null)
-    const graphByStudyId = new Map((graphStudies ?? []).map((s) => [s.id, s.design_graph as Graph]))
 
     // 3b. Reminders: re-send rows that were sent but not completed while
     // their link is still ACTIVE (an expired link is never re-emailed here —
@@ -663,7 +729,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    return json({ processed, suppressed, deferred, failed, missed, rescued: rescuedRows.length, reminded, finalNotices, advanced, withdrawn, completed: completedStudies, adherenceShortfalls })
+    return json({ processed, suppressed, deferred, superseded, failed, missed, rescued: rescuedRows.length, reminded, finalNotices, advanced, withdrawn, completed: completedStudies, adherenceShortfalls })
 
   } catch (err) {
     console.error('check_schedule unexpected error:', err)
