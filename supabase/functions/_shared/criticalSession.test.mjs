@@ -9,7 +9,7 @@
 //   node --experimental-strip-types supabase/functions/_shared/criticalSession.test.mjs
 // Either way there is no build step.
 import assert from 'node:assert'
-import { criticalSessionKind, reminderAction } from './criticalSession.ts'
+import { criticalSessionKind, reminderAction, isPhaseGate } from './criticalSession.ts'
 
 // ─── Fixtures ────────────────────────────────────────────────────────────────
 
@@ -261,6 +261,20 @@ function midpoint({ atHours, lastSentHours, alreadySent = false, kind = 'gate', 
     'reminder',
     'unknown expiry degrades to plain cadence',
   )
+}
+
+// ─── isPhaseGate: which outstanding link may a due survey NOT supersede ─────
+// Single hop, and adherence_check counts as a gate (unlike gatesFork).
+{
+  const g = lilianaGraph()
+  assert.strictEqual(isPhaseGate(g, 's_mid'), true, 'the session right before a randomize is a gate')
+  assert.strictEqual(isPhaseGate(g, 's_p2_nr_1'), true, 'the session right before an adherence_check is a gate')
+  assert.strictEqual(isPhaseGate(g, 's_baseline'), false, 'baseline leads to a timepoint: a daily due after it supersedes its link')
+  assert.strictEqual(isPhaseGate(g, 's_final'), false, 'nothing follows the final assessment')
+  assert.strictEqual(isPhaseGate(g, 'no_such_node'), false, 'an unknown node is not a gate')
+  const z = zerinGraph()
+  assert.strictEqual(isPhaseGate(z, 's_baseline'), true, "Zerin's baseline gates its fork")
+  assert.strictEqual(isPhaseGate(z, 's_ctrl_d1_am'), false, 'an EMA check-in never holds the next one back')
 }
 
 console.log('criticalSession: all assertions passed')

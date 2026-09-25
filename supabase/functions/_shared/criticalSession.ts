@@ -97,6 +97,34 @@ function gatesFork(graph: Graph, sessionId: string): boolean {
 }
 
 /**
+ * True when this session gates a new phase — i.e. the design intends it to be
+ * COMPLETED before anything downstream is issued.
+ *
+ * Deliberately stricter than `gatesFork`, and not a synonym for it. `gatesFork`
+ * treats `adherence_check` as transparent because it answers a different
+ * question ("does a final notice belong on this link?"), where only the
+ * randomize matters. Here an `adherence_check` IS a phase boundary: it can
+ * withdraw the participant (`on_fail: 'withdraw'`), so letting a later survey
+ * supersede its link would resolve the check against a session the participant
+ * never got the chance to sit.
+ *
+ * Used by check_schedule step 2b to decide whether a due row may supersede an
+ * outstanding link or must wait behind it. Anything that is NOT a phase gate
+ * supersedes on time; see the comment there for why that is the safe default.
+ *
+ * Single hop, deliberately. Only the session IMMEDIATELY upstream of the gate
+ * node gates it — the same rule gatesFork encodes. Walking further would make
+ * every session anywhere upstream of a randomize a gate, which would restore
+ * the very blocking this change exists to remove.
+ */
+export function isPhaseGate(graph: Graph, sessionId: string): boolean {
+  const next = graph.edges.find((e) => e.from === sessionId)?.to ?? null
+  if (!next) return false
+  const type = graph.nodes.find((n) => n.id === next)?.type
+  return type === 'randomize' || type === 'adherence_check'
+}
+
+/**
  * True when nothing follows this session — completing it ends the study.
  *
  * A missing outgoing edge is NOT sufficient: sessions inside a block or a
