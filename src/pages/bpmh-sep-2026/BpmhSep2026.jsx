@@ -15,13 +15,24 @@ import { ToggleRoom, BreakTimer, QrPanel, ForageRoom } from './exercises'
 
 export default function BpmhSep2026() {
   const [i, setI] = useState(0)
+  const [step, setStep] = useState(0)   // click-builds within a slide (slide.steps)
   const [density, setDensity] = useState(() => {
     try { return localStorage.getItem('bpmhDensity') || 'minimal' } catch { return 'minimal' }
   })
   const [showNotes, setShowNotes] = useState(false)
 
   const total = SLIDES.length
-  const go = useCallback((d) => setI(v => Math.min(total - 1, Math.max(0, v + d))), [total])
+  // Advance through a slide's builds first, then to the next slide. Going back
+  // onto a built slide lands on its last build, as PowerPoint does.
+  const go = useCallback((d) => {
+    const n = SLIDES[i].steps || 1
+    if (d > 0 && step < n - 1) { setStep(step + 1); return }
+    if (d < 0 && step > 0) { setStep(step - 1); return }
+    const ni = Math.min(total - 1, Math.max(0, i + d))
+    if (ni === i) return
+    setI(ni)
+    setStep(d < 0 ? (SLIDES[ni].steps || 1) - 1 : 0)
+  }, [i, step, total])
   const setDens = useCallback((d) => {
     setDensity(d)
     try { localStorage.setItem('bpmhDensity', d) } catch { /* ignore */ }
@@ -34,8 +45,8 @@ export default function BpmhSep2026() {
       if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); go(1) }
       else if (e.key === 'ArrowLeft' || e.key === 'PageUp')                { e.preventDefault(); go(-1) }
       else if (e.key === 'n' || e.key === 'N')                             { setShowNotes(s => !s) }
-      else if (e.key === 'Home')                                          { setI(0) }
-      else if (e.key === 'End')                                           { setI(total - 1) }
+      else if (e.key === 'Home')                                          { setI(0); setStep(0) }
+      else if (e.key === 'End')                                           { setI(total - 1); setStep(0) }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -58,7 +69,7 @@ export default function BpmhSep2026() {
         </button>
       </div>
 
-      <div style={K.slideArea}>{slide.render(density)}</div>
+      <div style={K.slideArea}>{slide.render(density, step)}</div>
 
       <div style={K.bottom} onClick={e => e.stopPropagation()}>
         <button onClick={() => go(-1)} style={{ ...K.navArrow, visibility: i === 0 ? 'hidden' : 'visible' }} aria-label="Previous">‹</button>
@@ -550,9 +561,69 @@ const SLIDES = [
     ),
   },
 
-  // 16 — The brake on sensing (Emotion 2010, figure from CUNY)
+  // 16a — The experiment: sad vs neutral film clips in the scanner
   {
     time: '0:59',
+    note: 'Set up the experiment before any brain data. People lie in the fMRI scanner and watch short film clips. Neutral: HGTV crafts and gardening segments. Sad: scenes from The Champ and Terms of Endearment. Same people, same scanner; only the emotional content changes, so the comparison is sad minus neutral. Sample: 36 adults from the community, “worried well” (mild symptoms, BDI 10–20); 20 had just completed MBSR, 16 were on the waitlist. The question: what does the brain do differently when sadness arrives?',
+    render: () => (
+      <Frame wide kicker="The experiment">
+        <H2>Sad vs neutral film clips, in the scanner</H2>
+        <div style={K.expRow}>
+          <img src="/bpmh-sep-2026/scanner.webp" alt="A participant in an fMRI scanner" style={{ ...K.figImg, maxHeight: '30vh', maxWidth: '34%' }} />
+          <div style={K.clipCol}>
+            <div style={K.colHead(STORY)}>Neutral clips</div>
+            <img src="/bpmh-sep-2026/clips-neutral.webp" alt="HGTV crafts and gardening segments" style={{ ...K.figImg, maxHeight: '18vh' }} />
+            <div style={K.stationS}>HGTV: crafts & gardening</div>
+          </div>
+          <div style={K.vs}>vs.</div>
+          <div style={K.clipCol}>
+            <div style={K.colHead(SENSE)}>Sad clips</div>
+            <img src="/bpmh-sep-2026/clips-sad.webp" alt="Scenes from The Champ and Terms of Endearment" style={{ ...K.figImg, maxHeight: '18vh' }} />
+            <div style={K.stationS}>The Champ · Terms of Endearment</div>
+          </div>
+        </div>
+        <Lead>Same people, same scanner. Only the emotion changes, so we compare sad against neutral.</Lead>
+        <div style={K.pills}>
+          <span style={K.pill('#6b6c70')}>N = 36 community adults</span>
+          <span style={K.pill('#6b6c70')}>mild symptoms (BDI 10–20)</span>
+          <span style={K.pill('#6b6c70')}>20 after MBSR · 16 waitlist</span>
+        </div>
+        <Cite>Farb et al., Emotion (2010)</Cite>
+      </Frame>
+    ),
+  },
+
+  // 16b — What sadness does: default mode up (build 1), sensation down (build 2)
+  {
+    time: '1:01',
+    steps: 2,
+    note: 'Two builds. Click 1: the default mode network. Sad minus neutral: mPFC and PCC come up, the story network turning on. Everyone showed this, and on its own it did not relate to depression. Click 2: the other side of the same contrast. Neutral minus sad: somatosensory cortex (S1/S2), insula and lateral prefrontal cortex go quiet. Sadness does not only add story; it switches sensation down. The next slide shows which of the two tracks depression.',
+    render: (d, step) => (
+      <Frame wide kicker="What sadness does in the brain">
+        <H2>{step === 0 ? 'The story network turns up' : 'The story turns up. The senses turn down.'}</H2>
+        <div style={K.figRow}>
+          <figure style={{ ...K.fig, maxWidth: '44%' }}>
+            <img src="/bpmh-sep-2026/dmn-up-2010.webp" alt="Default mode network up for sad vs neutral: mPFC and PCC" style={{ ...K.darkFig, maxHeight: '50vh' }} />
+            <figcaption style={{ ...K.stationS, color: STORY, fontWeight: 600 }}>Default mode ↑ · mPFC, PCC</figcaption>
+          </figure>
+          <figure style={{ ...K.fig, maxWidth: '44%', opacity: step >= 1 ? 1 : 0, transition: 'opacity .5s ease' }} aria-hidden={step < 1}>
+            <img src="/bpmh-sep-2026/sensory-down-2010.webp" alt="Sensory regions down for sad vs neutral: S1/S2, insula, LPFC" style={{ ...K.darkFig, maxHeight: '50vh' }} />
+            <figcaption style={{ ...K.stationS, color: SENSE, fontWeight: 600 }}>Sensation ↓ · S1/S2, insula, LPFC</figcaption>
+          </figure>
+        </div>
+        <Detail density={d}>
+          Farb et al., Emotion 2010: sad vs neutral film clips. Sad &gt; neutral engaged medial prefrontal and posterior
+          cingulate cortex; sad &lt; neutral showed reduced activity in somatosensory cortex, insula and lateral
+          prefrontal cortex.
+        </Detail>
+        <Cite>Farb et al., Emotion (2010)</Cite>
+      </Frame>
+    ),
+  },
+
+  // 16 — The brake on sensing (Emotion 2010, figure from CUNY)
+  {
+    time: '1:03',
     note: 'The film-clip study (figure from the CUNY deck). Sad clips (The Champ, Terms of Endearment) vs neutral HGTV clips. Sample: community “worried well” (BDI 10–20), MBSR completers (n = 20) vs waitlist (n = 16); not a patient sample. Sadness raised midline default-mode activity in everyone, and that rise was unrelated to depression. What tracked depression was the other side: insula, S1/S2 and LPFC shut down, r = −.47 with BDI. The MBSR group did not inhibit sensation to the same degree. From the chapter draft: sadness had become “a type of expectation, concept, or thing, rather than a living, embodied experience.” That is rumination: papañca without new contact.',
     render: (d) => (
       <Frame wide kicker="Affective neuroscience">
@@ -570,9 +641,49 @@ const SLIDES = [
     ),
   },
 
+  // 16c — Study design bridge: the MBCT vs CT trial with fMRI
+  {
+    time: '1:05',
+    note: 'Bridge to the clinical data. The same film-clip challenge, now inside a randomized trial with people who had recovered from depression. 85 recently remitted adults (1 to 10 past episodes, average 4; average age 37.5) were scanned before and after 8 weeks of group treatment, randomized to MBCT or cognitive therapy with a wellbeing focus (CT-WF), 2 hours a week. Then 2 years of follow-up, with phone screening every two months to catch any return of depression. The fMRI sample sits inside the full trial of 156. The question: does the sensory shutdown we just saw predict who gets depressed again?',
+    render: (d) => (
+      <Frame wide kicker="The clinical study">
+        <H2>Does switching sensation off predict relapse?</H2>
+        <div style={K.path}>
+          {[
+            ['Screening', 'recently remitted'],
+            ['fMRI 1', 'film clips'],
+            ['8 weeks', 'MBCT or CT-WF · 2 h/week, groups'],
+            ['fMRI 2', 'film clips again'],
+            ['2 years', 'phone check every 2 months'],
+          ].map(([t, sub], k, arr) => (
+            <div key={t} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <div style={{ ...K.chainStep, borderColor: k === 2 ? `${SENSE}88` : 'var(--bd)', minWidth: 120 }}>
+                <div style={{ ...K.modeTitle, fontSize: 'clamp(16px,2vw,22px)', color: k === 2 ? SENSE : 'var(--tx)' }}>{t}</div>
+                <div style={K.modeSub}>{sub}</div>
+              </div>
+              {k < arr.length - 1 && <span style={{ ...K.modeArrow, fontSize: 22 }}>→</span>}
+            </div>
+          ))}
+        </div>
+        <div style={K.pills}>
+          <span style={K.pill('#6b6c70')}>N = 85 scanned twice</span>
+          <span style={K.pill('#6b6c70')}>1–10 past episodes (M = 4)</span>
+          <span style={K.pill('#6b6c70')}>age M = 37.5</span>
+          <span style={K.pill('#6b6c70')}>inside a trial of N = 156</span>
+        </div>
+        <Lead>Same sad and neutral clips, now in people who had recovered from depression. Who got depressed again?</Lead>
+        <Detail density={d}>
+          Randomized to Mindfulness-Based Cognitive Therapy or Cognitive Therapy with a wellbeing focus. Relapse was
+          monitored by bi-monthly phone screening over 2 years. Full RCT: Farb et al., JCCP 2018; Segal et al., JCCP 2019.
+        </Detail>
+        <Cite>Farb et al., Neuroimage: Clinical 2022 · Segal et al., JCCP 2019</Cite>
+      </Frame>
+    ),
+  },
+
   // 16b — Inhibition predicts relapse (Neuroimage: Clinical 2022, figure from CUNY)
   {
-    time: '1:03',
+    time: '1:07',
     note: 'Same film-clip challenge, now in 85 people recently recovered from depression, scanned before and after 8 weeks of MBCT or CT, then followed for 2 years. Somatosensory inhibition scaled with past episodes and residual symptoms, and predicted who relapsed. Median split: 16 of 43 below-median relapsed vs 2 of 42 above-median. The figure prints HR .039 [.01, .14], which does not match the 5.97 [2.3–15.3] in the 2017–19 talks (different coding or model?), so the slide quotes neither; check the paper before citing a number aloud. The classification numbers (88% accuracy) are within-sample only, so do not present them as a clinical test.',
     render: (d) => (
       <Frame wide kicker="Clinical neuroscience">
@@ -591,7 +702,7 @@ const SLIDES = [
 
   // 17 — Doing and being (MBCT)
   {
-    time: '1:06',
+    time: '1:09',
     note: 'MBCT (Segal, Williams & Teasdale, 2002) built its model on exactly this contrast: a “doing” mode that works on the gap between how things are and how they should be (useful for tasks, disastrous when applied to mood), and a “being” mode that allows experience to be as it is. Note the same two-mode structure appears three times now: papañca vs contact, narrative vs experiential, doing vs being. Ask: are these the same distinction? What is lost in treating them as one?',
     render: (d) => (
       <Frame wide kicker="Clinical translation · MBCT">
@@ -622,7 +733,7 @@ const SLIDES = [
 
   // 18 — Decentering and relapse (Segal 2019, figures from CUNY)
   {
-    time: '1:09',
+    time: '1:11',
     note: 'Full RCT, N = 156, MBCT vs cognitive therapy with a wellbeing focus (CT-WF). Key correction to the usual story: both arms protected about equally (relapse about 22% vs 21%). Decentering grew in both, so it is a shared mechanism, not an MBCT-only one. People with high decentering growth stayed well more often (about 80% vs 63% relapse-free at 2 years). Practice: course practice predicted follow-up practice (.31), follow-up practice predicted decentering (.42), decentering predicted less relapse (−.22); practice had no direct path to relapse (.02). Practice works through the skill. Link to Toggle: every tap on Story is one rep.',
     render: (d) => (
       <Frame wide kicker="Evidence">
@@ -646,7 +757,7 @@ const SLIDES = [
 
   // 18b — The Visuddhimagga progression as decentering (from BuddhistStudies 2019)
   {
-    time: '1:13',
+    time: '1:14',
     note: 'From the 2019 Buddhist Studies talk. The insight stages as Mahasi Sayadaw teaches them from the Visuddhimagga, read as a trajectory that decentering research only captures the first steps of. Sensory attention, then labelling what arises, then awareness of the labelling, then insight into change, then deep insight. Clinical programmes mostly stop at step 2 or 3. Ask: is that a problem, or a feature, for a clinical intervention?',
     render: (d) => (
       <Frame wide kicker="Buddhist psychology · a trajectory">
@@ -680,7 +791,7 @@ const SLIDES = [
 
   // 19 — Is mindfulness Buddhist? (discussion)
   {
-    time: '1:16',
+    time: '1:17',
     note: 'Discussion, 4 minutes in small groups. This is the program’s home question, so let them run with it. Points to surface if they do not: sati in the canon is closer to “remembering” or keeping something in mind (Bodhi 2011) than to “non-judgemental awareness”; clinical mindfulness drops ethics and the goal of liberation; the McMindfulness critique (Purser 2019) says it can adapt people to harmful conditions instead of changing them. Counterpoint: MBCT never claimed to be Buddhism; it claims a transferable attentional skill.',
     render: (d) => (
       <Frame wide kicker="Discussion">
@@ -1073,6 +1184,10 @@ const K = {
   pathCoef: { fontFamily: '"Space Mono",monospace', fontSize: 14, fontWeight: 700, color: 'var(--tx)' },
   pathLine: { width: 50, borderTop: '2.5px solid #e0a800' },
   pathNote: { flexBasis: '100%', textAlign: 'center', fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', marginTop: 4 },
+  darkFig: { maxWidth: '100%', objectFit: 'contain', borderRadius: 14, background: '#1f1f24', boxShadow: '0 4px 20px rgba(0,0,0,0.12)' },
+  expRow: { display: 'flex', gap: 22, alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', width: '100%' },
+  clipCol: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 },
+  vs: { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 'clamp(24px,3vw,36px)', color: 'var(--tx3)' },
   fig: { margin: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, maxWidth: '100%' },
   figImg: { maxWidth: '100%', objectFit: 'contain', borderRadius: 12, border: '1px solid var(--bd)', background: '#fff', boxShadow: '0 4px 20px rgba(0,0,0,0.05)' },
   figRow: { display: 'flex', gap: 18, justifyContent: 'center', alignItems: 'flex-start', flexWrap: 'wrap', width: '100%' },

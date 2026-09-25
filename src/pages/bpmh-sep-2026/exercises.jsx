@@ -328,10 +328,13 @@ export function BreakTimer({ minutes = 10 }) {
 
 // ── QrPanel ─────────────────────────────────────────────────────────────────
 
-// Points at the current origin, so the same deck works on dev and production.
+// Always production: students must never land on dev.radlab.zone, even when
+// the deck itself is being presented or reviewed from dev. Consequence: a page
+// a QR points at must be on main before the talk.
+const QR_ORIGIN = 'https://radlab.zone'
 export function QrPanel({ path, label, tone: accent = '#f068a4', size = 200 }) {
-  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://radlab.zone'
-  const host = typeof window !== 'undefined' ? window.location.host : 'radlab.zone'
+  const origin = QR_ORIGIN
+  const host = 'radlab.zone'
   return (
     <div style={X.qr} onClick={e => e.stopPropagation()}>
       <div style={{ background: '#fff', padding: 12, borderRadius: 14, border: `2px solid ${accent}55` }}>
