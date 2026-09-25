@@ -190,6 +190,19 @@ into one shared enrollment helper is a good follow-up, not launch work.
 
 ---
 
+## Live-study decisions (recruiting since 2026-09-16)
+
+- **Dana's own account is a test account** in both live studies (`is_test = true`,
+  `20260925_dana_test_enrollments.sql`). It joined both while she tested; exports
+  label it in the master's `is_test` column. Don't "rediscover" it in an audit.
+- **PHL245 does not require a student number, on purpose.** No credit is awarded
+  in PHL245, so the number isn't needed (Norm, 2026-09-25). `require_student_number`
+  is false there and should stay false. CHM135 requires it (credit).
+- **Still open:** the Term Test dates (nothing sends until set on the study page);
+  whether the first or last pass counts for students who restarted the baseline
+  (88 of 1,209 by 2026-09-25); and whether to let returning students resume
+  instead of restart.
+
 ## 2. Open text component — **done** (2026-09-03, commit `1c089d8`)
 
 New composable `open_text` type, single-line or paragraph via a `multiline`
