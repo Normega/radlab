@@ -7,7 +7,8 @@
 // (/prototypes/toggle.html plus the real games at /try/delve, /try/kite,
 // /try/face-read, which run logged-out and record nothing).
 // Speaker notes carry the timings for the two-hour run. Figures are reused from
-// the CUNY deck's rendered slides in public/cuny-2026/.
+// the CUNY deck, cropped and cleaned into public/bpmh-sep-2026/ (seesaw GIF
+// still from public/cuny-2026/).
 import { useState, useEffect, useCallback } from 'react'
 import { BreathCheck } from '../adobe-aug-2026/exercises'
 import { ToggleRoom, BreakTimer, QrPanel, ForageRoom } from './exercises'
@@ -125,6 +126,23 @@ function Fig({ src, alt, h = '50vh', caption }) {
       <img src={src} alt={alt || ''} style={{ ...K.figImg, maxHeight: h }} />
       {caption && <figcaption style={K.cite}>{caption}</figcaption>}
     </figure>
+  )
+}
+
+// Segal et al. 2019 path model, drawn natively (was a purple-background slide).
+function PracticePath() {
+  const box = (t) => <div style={K.pathBox}>{t}</div>
+  const arrow = (coef, dashed) => (
+    <div style={K.pathArrow}>
+      <span style={{ ...K.pathCoef, ...(dashed ? { color: 'var(--tx3)' } : {}) }}>{coef}</span>
+      <span style={{ ...K.pathLine, borderTopStyle: dashed ? 'dashed' : 'solid' }} />
+    </div>
+  )
+  return (
+    <div style={K.path}>
+      {box('Course practice')}{arrow('.31*')}{box('Follow-up practice')}{arrow('.42*')}{box('Decentering')}{arrow('−.22*')}{box('Relapse')}
+      <div style={K.pathNote}>direct path, follow-up practice → relapse: .02 (n.s.)</div>
+    </div>
   )
 }
 
@@ -364,7 +382,15 @@ const SLIDES = [
     render: (d) => (
       <Frame wide kicker="Neuroscience">
         <H2>Two self-networks, one brain</H2>
-        <Fig src="/cuny-2026/s23_2.webp" alt="Modes of Reference: midline prior-knowledge network vs lateral current-sensation network" h="48vh" />
+        <div style={K.fig}>
+          <img src="/bpmh-sep-2026/modes-2007-brains.webp" alt="Midline network (PCC, DMPFC) vs lateral network (IPL/S2, insula, LPFC)" style={{ ...K.figImg, maxHeight: '30vh', border: 'none', boxShadow: 'none', background: 'transparent' }} />
+          <div style={K.modeCaps}>
+            <span style={{ color: STORY }}>Prior knowledge</span>
+            <span style={{ color: '#2e8b57' }}>Experience</span>
+            <span style={{ color: SENSE }}>Current sensation</span>
+          </div>
+          <img src="/bpmh-sep-2026/modes-2007-curves.webp" alt="Experience as a blend of prior knowledge and current sensation" style={{ ...K.figImg, maxHeight: '16vh' }} />
+        </div>
         <div style={K.pills}>
           <span style={K.pill(STORY)}>Story: prior knowledge · PCC, dmPFC</span>
           <span style={K.pill(SENSE)}>Sense: current sensation · insula, S2, LPFC</span>
@@ -532,7 +558,7 @@ const SLIDES = [
       <Frame wide kicker="Affective neuroscience">
         <H2>Low mood puts a brake on sensing</H2>
         <Brake />
-        <Fig src="/cuny-2026/s15_2.webp" alt="Sadness leads to sensory inhibition; insula reactivity vs depression" h="40vh" />
+        <Fig src="/bpmh-sep-2026/insula-bdi-2010.webp" alt="Insula reactivity to sad clips falls as depression scores rise" h="38vh" />
         <Lead>The story rose in everyone. What tracked depression was sensation switching off (r = −.47).</Lead>
         <Detail density={d}>
           Farb et al., Emotion 2010 (N = 36; MBSR n = 20, waitlist n = 16; BDI 10–20): sad vs neutral film clips raised
@@ -547,15 +573,16 @@ const SLIDES = [
   // 16b — Inhibition predicts relapse (Neuroimage: Clinical 2022, figure from CUNY)
   {
     time: '1:03',
-    note: 'Same film-clip challenge, now in 85 people recently recovered from depression, scanned before and after 8 weeks of MBCT or CT, then followed for 2 years. Somatosensory inhibition scaled with past episodes and residual symptoms, and predicted who relapsed. Median split: 16 of 43 below-median relapsed vs 2 of 42 above-median. Hazard ratio in the 2017–19 talks: 5.97 [2.3–15.3]. The classification numbers (88% accuracy) are within-sample only, so do not present them as a clinical test.',
+    note: 'Same film-clip challenge, now in 85 people recently recovered from depression, scanned before and after 8 weeks of MBCT or CT, then followed for 2 years. Somatosensory inhibition scaled with past episodes and residual symptoms, and predicted who relapsed. Median split: 16 of 43 below-median relapsed vs 2 of 42 above-median. The figure prints HR .039 [.01, .14], which does not match the 5.97 [2.3–15.3] in the 2017–19 talks (different coding or model?), so the slide quotes neither; check the paper before citing a number aloud. The classification numbers (88% accuracy) are within-sample only, so do not present them as a clinical test.',
     render: (d) => (
       <Frame wide kicker="Clinical neuroscience">
         <H2>Switching sensation off predicts relapse</H2>
-        <Fig src="/cuny-2026/s18_3.webp" alt="Somatosensory inhibition predicts relapse; survival curves by reactivity" h="50vh" />
+        <Fig src="/bpmh-sep-2026/relapse-2022.webp" alt="Somatosensory inhibition predicts relapse: maps, boxplots, survival curves" h="46vh" />
         <Lead>Of those with the most sensory shutdown, 16 of 43 relapsed within two years. Of the rest, 2 of 42.</Lead>
         <Detail density={d}>
           Farb et al., Neuroimage: Clinical 2022: N = 85 recently remitted adults × 2 scans (pre/post MBCT or CT-WF).
-          Greater somatosensory inhibition to sad clips predicted time to relapse (hazard ≈ 6×). Within-sample only.
+          Greater somatosensory inhibition to sad clips predicted time to relapse (hazard ratio as shown on the
+          figure). Classification figures in the notes are within-sample only.
         </Detail>
         <Cite>Farb et al., Neuroimage: Clinical (2022)</Cite>
       </Frame>
@@ -600,10 +627,8 @@ const SLIDES = [
     render: (d) => (
       <Frame wide kicker="Evidence">
         <H2>Decentering: seeing a thought as an event</H2>
-        <div style={K.figRow}>
-          <Fig src="/cuny-2026/s35_0.webp" alt="Decentering growth is protective: survival curves" h="36vh" />
-          <Fig src="/cuny-2026/s36_3.webp" alt="Practice predicts decentering, decentering predicts relapse" h="36vh" />
-        </div>
+        <Fig src="/bpmh-sep-2026/decentering-2019.webp" alt="Factor scores over 24 months; relapse-free survival by decentering growth" h="30vh" />
+        <PracticePath />
         <Bullets items={[
           'MBCT and cognitive therapy protected about equally. Decentering grew in both.',
           'Practice after the course built decentering; decentering, not practice itself, predicted staying well.',
@@ -694,7 +719,7 @@ const SLIDES = [
     render: (d) => (
       <Frame wide kicker="Buddhist psychology meets prediction">
         <H2>Sensation as an agent of change</H2>
-        <Fig src="/cuny-2026/s21_3.webp" alt="Prior knowledge vs current sensation; surprise drives regulation" h="46vh" />
+        <Fig src="/bpmh-sep-2026/prediction.webp" alt="Prior knowledge vs current sensation; surprise drives regulatory motivation" h="44vh" />
         <Sutta source="Satipaṭṭhāna Sutta, MN 10">If the breath is long, notice that the breath is long. If the breath is short, notice that the breath is short.</Sutta>
         <Detail density={d}>
           The breath instruction asks for a report of what is, not what is expected. When current sensation disagrees
@@ -826,7 +851,18 @@ const SLIDES = [
     render: (d) => (
       <Frame wide kicker="Too far the other way">
         <H2>What is actually protective about sensation?</H2>
-        <Fig src="/cuny-2026/s29_3.webp" alt="Rumination and sensory inhibition; cessation; flourishing?" h="46vh" />
+        <div style={K.figRow}>
+          {[
+            ['garden-rumination', 'Rumination & sensory inhibition', STORY],
+            ['garden-cessation', 'Cessation of rumination & inhibition', '#8a6d3b'],
+            ['garden-flourishing', 'Flourishing?', '#2e8b57'],
+          ].map(([f, cap, c]) => (
+            <figure key={f} style={{ ...K.fig, maxWidth: 'min(30%, 340px)' }}>
+              <img src={`/bpmh-sep-2026/${f}.webp`} alt={cap} style={{ ...K.figImg, maxHeight: '34vh', width: '100%' }} />
+              <figcaption style={{ ...K.stationS, color: c, fontWeight: 600 }}>{cap}</figcaption>
+            </figure>
+          ))}
+        </div>
         <Lead>Clearing out the story is not the same as flourishing.</Lead>
         <Detail density={d}>
           Recovery is not only about disrupting habit. Habits carry order and structure; freedom without them tips toward
@@ -1030,6 +1066,13 @@ const K = {
   brake: { display: 'flex', gap: 14, alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', width: '100%' },
   brakeStep: { flex: '1 1 220px', maxWidth: 300, background: '#fff', border: '1.5px solid', borderRadius: 16, padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: 4 },
 
+  modeCaps: { display: 'flex', justifyContent: 'space-around', width: '100%', fontSize: 'clamp(15px,1.9vw,21px)', fontWeight: 600 },
+  path: { display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: 4, width: '100%' },
+  pathBox: { background: '#ffcf40', color: '#2a2a2e', fontWeight: 700, borderRadius: 12, padding: '8px 14px', fontSize: 'clamp(13px,1.6vw,18px)' },
+  pathArrow: { display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 58 },
+  pathCoef: { fontFamily: '"Space Mono",monospace', fontSize: 14, fontWeight: 700, color: 'var(--tx)' },
+  pathLine: { width: 50, borderTop: '2.5px solid #e0a800' },
+  pathNote: { flexBasis: '100%', textAlign: 'center', fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', marginTop: 4 },
   fig: { margin: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, maxWidth: '100%' },
   figImg: { maxWidth: '100%', objectFit: 'contain', borderRadius: 12, border: '1px solid var(--bd)', background: '#fff', boxShadow: '0 4px 20px rgba(0,0,0,0.05)' },
   figRow: { display: 'flex', gap: 18, justifyContent: 'center', alignItems: 'flex-start', flexWrap: 'wrap', width: '100%' },
