@@ -42,6 +42,8 @@ const ROUTES = [
 
 const SEV = { block: '#c0392b', warn: '#b8860b' }
 
+const shortDate = iso => new Date(iso).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })
+
 // An unrecorded verdict reads as unknown, never as agreement.
 const VERDICT = {
   agrees:   { label: 'summary matches',  colour: '#2e7d32' },
@@ -432,7 +434,10 @@ export default function SubmissionsQueue() {
                 <article key={row.claim_id} style={S.card}>
                   <button style={S.cardHead} onClick={() => setOpenId(open ? null : row.claim_id)}>
                     <span style={{ textAlign: 'left', minWidth: 0 }}>
-                      <span style={S.slug}>{row.page_slug}{row.section ? ` › ${row.section}` : ''}</span>
+                      <span style={S.slug}>
+                        {row.page_slug}{row.section ? ` › ${row.section}` : ''}
+                        {row.previously_sent_back && <span style={S.resubTag}>resubmission</span>}
+                      </span>
                       <span style={S.metaLine}>
                         {row.student} · {row.difficulty}
                         {row.tier ? ` · tier ${row.tier}` : ''}
@@ -452,6 +457,24 @@ export default function SubmissionsQueue() {
                           Open {row.page_slug}{row.section ? ` › ${row.section}` : ''} in the wiki ↗
                         </a>
                       </p>
+
+                      {/* A resubmission, with the one note the student was given. The
+                          send-back's note and date stay on the claim when the student
+                          resubmits (20260925_resubmission_clears_stale_check), so the
+                          reviewer can check the revision against what was asked for.
+                          Sends-back before 2026-09-21 have a note but no date. */}
+                      {row.previously_sent_back && (
+                        <div style={S.resubBox}>
+                          <p style={{ ...S.colLabel, margin: 0 }}>
+                            Resubmission · sent back
+                            {row.previous_decided_at ? ` ${shortDate(row.previous_decided_at)}` : ''}
+                            {row.previous_reviewer ? ` by ${row.previous_reviewer}` : ''}
+                          </p>
+                          <p style={{ ...S.sub, fontSize: 14, margin: '6px 0 0', whiteSpace: 'pre-wrap' }}>
+                            {row.previous_note ?? 'No note was recorded with the send-back.'}
+                          </p>
+                        </div>
+                      )}
 
                       <p style={S.colLabel}>The ask</p>
                       <p style={{ ...S.sub, marginTop: 0 }}>{row.ask}</p>
@@ -588,6 +611,11 @@ const S = {
   cardHead: { width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, padding: '12px 14px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tx)' },
   slug: { display: 'block', fontFamily: MONO, fontSize: 14, color: 'var(--tx)', overflowWrap: 'anywhere' },
   metaLine: { display: 'block', fontSize: 12, color: 'var(--tx2)', marginTop: 2 },
+  resubTag: {
+    marginLeft: 8, fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase',
+    padding: '1px 7px', borderRadius: 20, border: '1px solid var(--pk)', color: 'var(--pk)', verticalAlign: 'middle',
+  },
+  resubBox: { margin: '0 0 14px', padding: '10px 12px', borderRadius: 10, background: 'var(--bg)', borderLeft: '3px solid var(--pk)' },
   chev: { color: 'var(--tx2)', fontSize: 14 },
   badge: { fontFamily: MONO, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', padding: '2px 6px', borderRadius: 20 },
 
