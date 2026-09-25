@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
+import { fetchAllRows } from '../../lib/fetchAllRows'
 import { isFixedTimepoint, sessionsUnderTimepoint } from '../../lib/experimentGraph'
 
 // ── CalendarDatesPanel ───────────────────────────────────────────────────────
@@ -45,11 +46,13 @@ function useCalendarTimepoints(studyId) {
       const fixed = (graph?.nodes ?? []).filter(isFixedTimepoint)
       if (!fixed.length) return []
 
-      const { data: rows, error: rowsErr } = await supabase
+      // Paged: CHM135 alone has ~3,700 schedule rows, and a capped read made
+      // these counts wrong. (The confirmation's participant count comes from
+      // set_timepoint_date's dry run, in the database, so it was never affected.)
+      const rows = await fetchAllRows(() => supabase
         .from('participant_schedule')
-        .select('status, attempts, link_id, completed_at, study_sessions(node_key)')
-        .eq('study_id', studyId)
-      if (rowsErr) throw rowsErr
+        .select('id, status, attempts, link_id, completed_at, study_sessions(node_key)')
+        .eq('study_id', studyId))
 
       return fixed.map(tp => {
         const keys = new Set(sessionsUnderTimepoint(graph, tp.id).map(s => s.nodeKey))

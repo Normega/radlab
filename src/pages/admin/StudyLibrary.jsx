@@ -2,18 +2,21 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
+import { fetchAllRows } from '../../lib/fetchAllRows'
 
 function useStudies() {
   return useQuery({
     queryKey: ['studies-list'],
     queryFn: async () => {
-      const [studiesRes, enrollmentsRes] = await Promise.all([
+      // Every enrolment on the platform, paged: one capped read here showed
+      // CHM135 as 416 enrolled out of 1,237 (fetchAllRows.js).
+      const [studiesRes, enrollments] = await Promise.all([
         supabase.from('studies').select('id, name, created_at, delivery_mode').order('created_at', { ascending: false }),
-        supabase.from('study_enrollments').select('study_id').neq('status', 'withdrawn'),
+        fetchAllRows(() => supabase.from('study_enrollments').select('id, study_id').neq('status', 'withdrawn')),
       ])
       if (studiesRes.error) throw studiesRes.error
 
-      const enrollCount = (enrollmentsRes.data ?? []).reduce((acc, e) => {
+      const enrollCount = enrollments.reduce((acc, e) => {
         acc[e.study_id] = (acc[e.study_id] ?? 0) + 1
         return acc
       }, {})
