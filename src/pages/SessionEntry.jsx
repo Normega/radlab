@@ -64,6 +64,9 @@ export default function SessionEntry() {
   // it, whole questionnaires) got skipped. Reset is implicit: each real step has
   // a distinct, increasing index, and a session restart re-enters index 0.
   const completedIndexRef = useRef(-1)
+  // The in-flight or settled complete_session_by_token call, shared so the
+  // early call (on reaching a closing step) and the final one never both run.
+  const completionRef = useRef(null)
   // One session_start diagnostic per run, not one per re-render.
   const diagnosedRef = useRef(false)
   // Isolated Supabase client — never modifies the global lab session.
@@ -349,6 +352,25 @@ export default function SessionEntry() {
     return (s === 'sona' || s === 'prolific') ? s : null
   }
 
+  // complete_session_by_token, once per page, retried on failure. A settled
+  // failure is cleared so the next call (the participant's retry) tries again.
+  function recordCompletion() {
+    if (!completionRef.current) {
+      completionRef.current = (async () => {
+        let last = null
+        for (const delayMs of [0, 1000, 3000]) {
+          if (delayMs) await new Promise(r => setTimeout(r, delayMs))
+          last = await sb.rpc('complete_session_by_token', { p_token: token })
+          if (!last.error) return last
+        }
+        console.error('complete_session_by_token failed:', last?.error?.message)
+        completionRef.current = null
+        return last
+      })()
+    }
+    return completionRef.current
+  }
+
   async function handleStepComplete(result) {
     // Ignore a repeat completion for the step we're already advancing past — a
     // double-fired onComplete must not double-advance (which skips the next
@@ -427,20 +449,41 @@ export default function SessionEntry() {
     const nodes = sessionData?.nodes ?? []
     if (currentIndex < nodes.length - 1) {
       setCurrentIndex(i => i + 1)
+      // A closing step (the daily farewell) collects nothing, so the session is
+      // complete the moment it appears. Waiting for its button lost sessions:
+      // it opens "That's it for today… Your responses have been saved", puts
+      // the button below a list of support resources, and participants closed
+      // the tab there. Three Liliana 3 sessions with every rating saved were
+      // marked missed that way (2026-09-22/23), one participant down to 2/4.
+      const nextIndex = currentIndex + 1
+      if (nextIndex === nodes.length - 1 && isClosingStep(nodes[nextIndex])) {
+        recordCompletion()
+      }
     } else {
-      const { data: completion } = await sb.rpc('complete_session_by_token', { p_token: token })
-      if (!completion?.next_contact) {
-        setAwaitingDate(await hasAwaitingDate(sb, sessionData?.link?.study_id))
-      }
-      const redirectUrl = sessionData?.study?.completion_redirect_url
-      if (redirectUrl) {
-        setCompletionInfo(completion ?? null)
-        setRedirectInfo({ url: redirectUrl, source: await resolveExternalSource() })
-        setState('redirecting')
-      } else {
-        setCompletionInfo(completion ?? null)
-        setState('session_complete')
-      }
+      await finishSession()
+    }
+  }
+
+  async function finishSession() {
+    const { data: completion, error: completionErr } = await recordCompletion()
+    if (completionErr) {
+      // Never show "complete" for a session the server did not record -- that
+      // is how a failed call used to pass as success. The answers are saved;
+      // only the completion mark is missing, and the retry button re-sends it.
+      setState('completion_failed')
+      return
+    }
+    if (!completion?.next_contact) {
+      setAwaitingDate(await hasAwaitingDate(sb, sessionData?.link?.study_id))
+    }
+    const redirectUrl = sessionData?.study?.completion_redirect_url
+    if (redirectUrl) {
+      setCompletionInfo(completion ?? null)
+      setRedirectInfo({ url: redirectUrl, source: await resolveExternalSource() })
+      setState('redirecting')
+    } else {
+      setCompletionInfo(completion ?? null)
+      setState('session_complete')
     }
   }
 
@@ -474,6 +517,29 @@ export default function SessionEntry() {
 
   if (state === 'completed') {
     return <FullScreen><StatusCard>{completedMessage(nextSession, awaitingDate)}</StatusCard></FullScreen>
+  }
+
+  if (state === 'completion_failed') {
+    return (
+      <FullScreen>
+        <div style={{ textAlign: 'center' }}>
+          <StatusCard>
+            Your answers are saved, but we couldn't record that this session is finished.
+            Please check your connection and try again.
+          </StatusCard>
+          <button
+            onClick={() => { setState('finishing'); finishSession() }}
+            style={{ marginTop: 20, padding: '12px 24px', borderRadius: 8, border: '1px solid var(--pk)', background: '#fff', color: 'var(--pk)', fontSize: 15, fontWeight: 600, fontFamily: '"DM Sans",system-ui,sans-serif', cursor: 'pointer' }}
+          >
+            Try again
+          </button>
+        </div>
+      </FullScreen>
+    )
+  }
+
+  if (state === 'finishing') {
+    return <FullScreen><StatusCard>Finishing up…</StatusCard></FullScreen>
   }
 
   if (state === 'session_complete') {
@@ -798,4 +864,11 @@ function nextSessionSentence(next, awaitingDate = false) {
   const dateLabel = nextDay.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })
   const when = days === 1 ? `tomorrow (${dateLabel})` : `in ${days} days (${dateLabel})`
   return `Your next session opens ${when}${time ? ` at ${time}` : ''} — we'll email you a link when it does.`
+}
+
+// A step that only closes the session -- it collects nothing, so reaching it
+// means everything has been answered. See the early recordCompletion() call.
+function isClosingStep(node) {
+  const activity = node?.activity ?? node?.activities ?? {}
+  return activity.category === 'daily_farewell'
 }
