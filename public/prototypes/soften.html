@@ -19,10 +19,11 @@
     position:fixed;top:8px;right:8px;z-index:10;display:none;
     background:rgba(20,14,28,0.9);border:1px solid rgba(255,255,255,0.15);
     border-radius:8px;padding:10px 14px;font-family:ui-monospace,monospace;font-size:11px;
-    color:#e2d6ca;min-width:230px;
+    color:#e2d6ca;min-width:230px;max-height:calc(100vh - 40px);overflow-y:auto;
   }
   #tune label{display:block;margin:6px 0 2px;}
   #tune input{width:100%;}
+  #tune .sep{margin:10px 0 2px;border-top:1px solid rgba(255,255,255,0.12);}
   #hint{
     position:fixed;bottom:6px;right:10px;z-index:6;
     font-family:ui-monospace,monospace;font-size:10px;color:rgba(255,255,255,0.18);
@@ -41,6 +42,13 @@
   <label>settle time (s) <span id="v_settle"></span></label><input type="range" id="s_settle" min="1" max="8" step="0.25">
   <label>night soft floor <span id="v_floor"></span></label><input type="range" id="s_floor" min="0" max="1" step="0.05">
   <label>dusk length (s) <span id="v_dusk"></span></label><input type="range" id="s_dusk" min="60" max="400" step="10">
+  <div class="sep"></div>
+  <label>wind (scene u/s) <span id="v_wind"></span></label><input type="range" id="s_wind" min="5" max="120" step="1">
+  <label>gap between animals (s) <span id="v_gap"></span></label><input type="range" id="s_gap" min="4" max="45" step="1">
+  <label>animals at once (max) <span id="v_maxa"></span></label><input type="range" id="s_maxa" min="1" max="5" step="1">
+  <label>animal strength <span id="v_str"></span></label><input type="range" id="s_str" min="0.1" max="1" step="0.02">
+  <label>cloud texture <span id="v_tex"></span></label><input type="range" id="s_tex" min="0" max="2" step="0.05">
+  <label>soft blur (scene u) <span id="v_blur"></span></label><input type="range" id="s_blur" min="3" max="20" step="0.5">
 </div>
 <script>
 'use strict';
@@ -54,21 +62,30 @@
    like letting the eyelids droop. Press and hold, and the scene
    runs together; scan hard and it stays a list of objects.
 
+   The valley holds still; the sky does not. Wind carries clouds
+   across it all evening, and some of them are animals — a whale,
+   a rabbit, an elephant, a dragon — each one a low-frequency
+   shape inside an ordinary billowy cloud. In sharp view they are
+   cloud texture; soften, and whoever is passing right now shows.
+   They come and go on the wind whether or not anyone looks, so
+   a soft gaze keeps meeting someone new, and a hard one never
+   misses anything it was owed.
+
    Two honesties anchor it. Scotopic vision is genuinely
    low-acuity, so as night falls the world softens itself for
    everyone — what the player practiced is what the dark does
    anyway. And a found figure stays found: once you have seen
    the face in the hillside you cannot unsee it, which is true
    of real hybrid images, so recognition is the one thing that
-   survives sharpening. That is the interdependence loop again:
-   what softness found remains usable under the hardest gaze.
+   survives sharpening. A cloud found stays seen until the wind
+   takes it out of the valley.
 
-   Nothing is scored. Dusk deepens, birds settle, the moon rises
-   whether or not you attend. A player who never touches the
-   screen still gets the night's own reveal.
+   Nothing is scored, counted, or listed. Dusk deepens, birds
+   cross, the moon rises whether or not you attend.
    ============================================================ */
 
 const REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const QS = new URLSearchParams(location.search);
 
 const P = {
   tauUp:     1.9,    // s: softness arrives slowly — eyelids drooping, not a toggle
@@ -78,7 +95,33 @@ const P = {
   softSee:   0.55,   // softness above which figures can settle
   nightFloor:0.55,   // how soft the world becomes on its own at full night
   duskT:     230,    // s to full night
-  duration:  300,    // s: past this, the dark reveals whatever was never found
+  duration:  300,    // s: past this, the dark reveals whatever in the land was never found
+
+  // ── the drifting sky ──
+  wind:       36,    // scene units/s for a cloud at depth 1 (~70 s to cross a desktop sky)
+  gust:       0.28,  // fractional slow variation in the wind (two incommensurate sines)
+  animalGap:  12,    // s mean gap between animal arrivals (jittered ±40%)
+  decoyGap:   10,    // s mean gap between plain clouds
+  maxAnimals: 4,     // animal clouds in the sky at once
+  maxDecoys:  3,     // plain clouds in the sky at once
+  zMin: 0.72, zMax: 1.18, // depth: far clouds are smaller, slower and lower
+  cloudBottom: 585,  // scene y an animal's belly stays above (the ridge line is ~600–700)
+  clearX: 40,        // scene units of sky kept between two clouds sharing a band
+  narrowBoost: 0.7,  // how much bigger clouds get on narrow (portrait) views
+  // the hiding: how strong the low-frequency animal is in the sharp pixels,
+  // and how much high-frequency cloud texture is laid across it
+  plateRes:   44,    // plate pixels per 100 design units — THE low-pass on the animal itself
+  plateBlur:  1,     // extra [1,2,1] smoothing passes on the plate's edge
+  animalStr:  0.36,  // alpha of the animal mass in the sharp sprite
+  decoyCore:  0.8,   // plain clouds' cores, relative to animalStr (so cores aren't a tell)
+  bodyAlpha:  0.24,  // the faint fill of the cumulus envelope the animal lives inside
+  bodyTone:   [58, 46, 82],    // its colour; darker than the sky cancels the texture's lit tops
+  envelope:   0.12,  // how far (in animal widths) the envelope dilates past the animal
+  texture:    1.5,   // multiplier on lobe/rim/crevice/grain density
+  texContrast: 1.4,  // multiplier on every texture element's alpha — the HF mask's strength
+  shade:      1.3,   // weight of the lobes' shaded undersides (balances their lit tops)
+  blurScene:  10.5,    // soft view: first downsample step in SCENE units (x2 overall), so
+                     // what survives softening is the same on a phone as on a monitor
 };
 
 // ── canvas ──────────────────────────────────────────────────────────────────
@@ -92,17 +135,20 @@ const SC_W = 2000, SC_H = 1250;
 let sk = 1, offX = 0, offY = 0;
 function sx(x){ return x * sk + offX; }
 function sy(y){ return y * sk + offY; }
+function visBounds(){ return { xL: -offX / sk, xR: (W - offX) / sk, yT: -offY / sk }; }
 
-// Two bakes of the same valley: one with all its high-frequency detail, one
-// with the detail blurred away and the figure masses gently emphasised. The
-// whole mechanic is a crossfade between them — defocus is whole-field, so a
-// single global alpha does it, and the per-frame cost is two full-screen
-// draws rather than a live blur.
-const sharpC = document.createElement('canvas'); const sctx = sharpC.getContext('2d');
-const softC  = document.createElement('canvas'); const fctx = softC.getContext('2d');
-const tmpC   = document.createElement('canvas');
+// Layers. The sky gradient and the land are static bakes; clouds are
+// sprites that move between them (behind the ridges). Every frame the SHARP
+// composite is drawn, and the soft view is a blur OF THAT FRAME — computed
+// live by a two-step downsample, so the rule still holds with things moving:
+// softening only ever removes detail from pixels already on screen, it never
+// adds an overlay.
+const skyC  = document.createElement('canvas'); const kctx = skyC.getContext('2d');
+const landC = document.createElement('canvas'); const lctx = landC.getContext('2d');
+const blurA = document.createElement('canvas'); const bactx = blurA.getContext('2d');
+const blurB = document.createElement('canvas'); const bbctx = blurB.getContext('2d');
 
-let groundGrad = null, vignetteGrad = null;
+let vignetteGrad = null;
 
 function resize(){
   DPR = Math.min(window.devicePixelRatio || 1, 1.75);
@@ -122,6 +168,7 @@ function resize(){
   offY = SC_H * sk < H ? H * 0.58 - 830 * sk : (H - SC_H * sk) / 2;
 
   buildScene();
+  for (const cl of CLOUDS) bakeCloud(cl);
 
   vignetteGrad = ctx.createRadialGradient(W/2, H/2, Math.min(W,H)*0.42, W/2, H/2, Math.max(W,H)*0.80);
   vignetteGrad.addColorStop(0, 'rgba(10,8,16,0)');
@@ -130,50 +177,284 @@ function resize(){
   DBG.resizes++;
 }
 
-// ── the figures ─────────────────────────────────────────────────────────────
+// ── the land figures ────────────────────────────────────────────────────────
 // Each is a cluster of soft masses that IS part of the landscape: the ridge
-// is the giant, the cloudbank is the whale. In the sharp bake the same masses
+// is the giant, the hedgerow is the hare. In the sharp bake the same masses
 // are present but broken — detail drawn across their boundaries so the eye
-// parses trees and billows, not the gestalt. In the soft bake the detail is
-// gone and the masses get a nudge of contrast, and the shape assembles.
-// `night` marks the one figure that exists only in stars.
+// parses trees and leaves, not the gestalt. Blurred, the detail is gone and
+// the shape assembles. `night` marks the one figure that exists only in stars.
+// (The sky's figures are not listed here: they arrive on the wind — below.)
 const FIGS = [
   { key: 'giant', name: 'the sleeping giant', cx: 1430, cy: 700, r: 300, found: false, prog: 0, revealed: 0 },
-  { key: 'whale', name: 'the whale',          cx: 560,  cy: 300, r: 250, found: false, prog: 0, revealed: 0 },
   { key: 'hare',  name: 'the hare',           cx: 545,  cy: 690, r: 190, found: false, prog: 0, revealed: 0 },
   { key: 'fox',   name: 'the fox',            cx: 1360, cy: 1030, r: 210, found: false, prog: 0, revealed: 0 },
   { key: 'heron', name: 'the heron',          cx: 980,  cy: 205, r: 230, found: false, prog: 0, revealed: 0, night: true },
 ];
 
+// Deterministic scatter for detail passes — the valley must not reshuffle on
+// resize, or it reads as a different place.
+let seed = 20260815;
+function srnd(a, b){
+  seed = (seed * 1664525 + 1013904223) >>> 0;
+  return a + (seed / 4294967296) * (b - a);
+}
+// Independent seeded streams for the sky (one per cloud, one for the weather)
+function mulberry32(a){
+  return function(){
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+const SKY_SEED = (parseInt(QS.get('seed'), 10) || ((Math.random() * 2147483647) | 0)) >>> 0;
+const wr = mulberry32(SKY_SEED);          // the weather: what comes, when, where
+const wrand = (a, b) => a + wr() * (b - a);
+
+// ── the sky's animals ───────────────────────────────────────────────────────
+// Authored as chunky parametric silhouettes — ellipses, polygons and tapered
+// limbs in a 100-unit-wide design box, facing the way the wind blows. They
+// are rasterised crisp and then DOWNSAMPLED to a plate a few dozen pixels
+// wide: that downsample is what guarantees each animal is low-frequency only
+// (a leg too thin to survive the plate would not survive the soft gaze
+// either, so it is not drawn at all). Plates are smoothly upscaled into the
+// clouds, exactly as an imported image is (see plateFromImage).
+const SHP = {
+  e(c, x, y, rx, ry, rot = 0){ c.beginPath(); c.ellipse(x, y, rx, ry, rot, 0, 6.2832); c.fill(); },
+  p(c, pts){ c.beginPath(); c.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) c.lineTo(pts[i][0], pts[i][1]); c.closePath(); c.fill(); },
+  // a tapered limb along a polyline: stamped discs, width w0 → w1
+  l(c, pts, w0, w1 = w0){
+    const seg = []; let total = 0;
+    for (let i = 1; i < pts.length; i++){ const d = Math.hypot(pts[i][0] - pts[i-1][0], pts[i][1] - pts[i-1][1]); seg.push(d); total += d; }
+    const n = Math.max(2, Math.ceil(total / 0.4));
+    let si = 0, acc = 0;
+    for (let k = 0; k <= n; k++){
+      const s = total * k / n;
+      while (si < seg.length - 1 && acc + seg[si] < s){ acc += seg[si]; si++; }
+      const f = seg[si] > 0 ? (s - acc) / seg[si] : 0;
+      const a = pts[si], b = pts[si + 1];
+      const x = a[0] + (b[0] - a[0]) * f, y = a[1] + (b[1] - a[1]) * f;
+      const r = (w0 + (w1 - w0) * (s / total)) / 2;
+      c.beginPath(); c.arc(x, y, r, 0, 6.2832); c.fill();
+    }
+  },
+  // let the sky through (eyes, the turtle's flat underside)
+  cut(c, fn, a = 1){ c.save(); c.globalCompositeOperation = 'destination-out'; c.globalAlpha = a; fn(); c.restore(); },
+};
+const { e: E, p: PG, l: LB } = SHP;
+
+// w: width in scene units at depth 1. h: design-box height (width is 100).
+const SPECIES = [
+  { key: 'whale', name: 'a whale', w: 540, h: 48, draw(c){
+      E(c, 50, 27, 36, 15, -0.04);
+      E(c, 76, 25, 21, 15);
+      LB(c, [[22, 29], [10, 22], [6, 13]], 14, 5);
+      E(c, 1, 8, 7, 2.8, 0.78); E(c, 11, 8, 7, 2.8, -0.78);
+      E(c, 57, 40, 11, 4, 0.45);
+  }},
+  { key: 'rabbit', name: 'a rabbit', w: 330, h: 80, draw(c){
+      E(c, 40, 58, 26, 19); E(c, 30, 60, 18, 17);
+      E(c, 64, 41, 13, 11); E(c, 74, 44, 5, 4);
+      LB(c, [[59, 33], [54, 17], [51, 3]], 8, 5);
+      LB(c, [[67, 32], [69, 17], [73, 3]], 8, 5);
+      E(c, 12, 54, 6, 6);
+      E(c, 60, 75, 9, 4);
+  }},
+  { key: 'elephant', name: 'an elephant', w: 470, h: 72, draw(c){
+      E(c, 44, 32, 30, 19);
+      E(c, 76, 26, 14, 14);
+      E(c, 68, 30, 11, 16, 0.1);
+      LB(c, [[86, 30], [92, 44], [91, 58], [97, 64]], 9, 4);
+      LB(c, [[22, 44], [22, 69]], 11, 10); LB(c, [[33, 46], [33, 69]], 9, 8);
+      LB(c, [[58, 46], [58, 69]], 9, 8); LB(c, [[68, 44], [69, 69]], 11, 10);
+      LB(c, [[15, 28], [9, 40], [8, 46]], 3, 2);
+  }},
+  { key: 'fish', name: 'a fish', w: 400, h: 52, draw(c){
+      E(c, 56, 26, 31, 17);
+      PG(c, [[32, 26], [5, 7], [12, 26], [5, 45]]);
+      PG(c, [[45, 11], [57, 0], [69, 12]]);
+      PG(c, [[53, 40], [60, 51], [67, 39]]);
+  }},
+  { key: 'bird', name: 'a bird', w: 420, h: 60, draw(c){
+      E(c, 50, 44, 22, 7, -0.08);
+      E(c, 74, 40, 7.5, 6.5);
+      PG(c, [[79, 37], [90, 41], [79, 44]]);
+      PG(c, [[31, 42], [13, 35], [15, 52], [31, 47]]);
+      LB(c, [[44, 42], [36, 26], [22, 14], [9, 9]], 11, 3);
+      LB(c, [[55, 41], [61, 24], [73, 10], [88, 3]], 12, 3);
+  }},
+  { key: 'turtle', name: 'a turtle', w: 420, h: 50, draw(c){
+      E(c, 46, 36, 31, 25);
+      SHP.cut(c, () => c.fillRect(-20, 37, 140, 40));
+      E(c, 46, 37, 32, 5);
+      LB(c, [[70, 37], [83, 33]], 11, 10); E(c, 89, 32, 10, 8);
+      LB(c, [[63, 39], [77, 52]], 12, 6); LB(c, [[30, 39], [16, 52]], 12, 6);
+      LB(c, [[15, 37], [6, 40]], 5, 2);
+  }},
+  { key: 'fox', name: 'a fox', w: 480, h: 54, draw(c){
+      E(c, 50, 28, 25, 13, -0.06); E(c, 69, 25, 12, 12);
+      E(c, 81, 18, 10, 9);
+      PG(c, [[85, 13], [99, 21], [85, 26]]);
+      PG(c, [[72, 14], [73, -1], [81, 10]]); PG(c, [[80, 11], [86, -2], [89, 12]]);
+      LB(c, [[68, 34], [82, 43], [92, 43]], 9, 5); LB(c, [[62, 36], [70, 50]], 8, 5);
+      LB(c, [[36, 34], [23, 43], [12, 47]], 10, 5); LB(c, [[43, 36], [38, 51]], 8, 5);
+      LB(c, [[30, 24], [17, 17], [5, 21]], 15, 17); E(c, 3, 23, 9, 8.5);
+  }},
+  { key: 'horse', name: 'a horse', w: 420, h: 84, draw(c){
+      E(c, 46, 42, 26, 13); E(c, 66, 40, 10, 12);
+      LB(c, [[65, 37], [73, 22], [77, 14]], 14, 10);
+      LB(c, [[77, 13], [94, 25]], 10, 6);
+      PG(c, [[73, 9], [75, 0], [80, 8]]);
+      LB(c, [[28, 50], [27, 65], [28, 82]], 7, 5); LB(c, [[37, 52], [39, 66], [37, 82]], 6, 5);
+      LB(c, [[61, 52], [63, 66], [63, 82]], 6, 5); LB(c, [[69, 50], [72, 66], [72, 82]], 7, 5);
+      LB(c, [[21, 38], [12, 47], [10, 66]], 8, 5);
+  }},
+  { key: 'snail', name: 'a snail', w: 380, h: 58, draw(c){
+      E(c, 52, 50, 43, 6.5);
+      E(c, 40, 29, 24, 23);
+      SHP.cut(c, () => { c.lineWidth = 4.5; c.beginPath(); c.arc(41, 29, 11, 0.6, 5.6); c.stroke(); }, 0.55);
+      LB(c, [[78, 48], [86, 33]], 10, 8);
+      LB(c, [[84, 34], [80, 17]], 4.5, 4); E(c, 80, 16, 3.5, 3.5);
+      LB(c, [[89, 34], [95, 18]], 4.5, 4); E(c, 95, 17, 3.5, 3.5);
+  }},
+  { key: 'cat', name: 'a cat', w: 300, h: 92, draw(c){
+      E(c, 42, 64, 22, 26); E(c, 54, 56, 12, 18);
+      E(c, 58, 29, 14, 12); E(c, 70, 33, 6, 5);
+      PG(c, [[46, 23], [47, 6], [56, 17]]); PG(c, [[60, 17], [69, 6], [71, 23]]);
+      LB(c, [[24, 84], [9, 82], [4, 68], [10, 56], [8, 46]], 8, 7);
+      E(c, 58, 90, 9, 3.5);
+  }},
+  { key: 'bear', name: 'a bear', w: 450, h: 60, draw(c){
+      E(c, 44, 30, 29, 16); E(c, 36, 19, 16, 10);
+      E(c, 80, 27, 13, 11); E(c, 93, 31, 7, 5.5);
+      E(c, 75, 15, 5.5, 5.5);
+      LB(c, [[20, 38], [20, 58]], 13, 12);
+      LB(c, [[64, 38], [66, 58]], 13, 12);
+      E(c, 14, 26, 4, 3);
+  }},
+  { key: 'dolphin', name: 'a dolphin', w: 460, h: 58, draw(c){
+      LB(c, [[9, 45], [21, 30], [38, 19]], 4, 13);
+      LB(c, [[38, 19], [58, 15], [76, 21]], 13, 10);
+      LB(c, [[76, 21], [86, 27], [97, 32]], 10, 3.5);
+      PG(c, [[40, 15], [45, 0], [55, 14]]);
+      LB(c, [[58, 23], [61, 35]], 7, 2.5);
+      PG(c, [[11, 45], [0, 36], [5, 46], [2, 57]]);
+  }},
+  { key: 'owl', name: 'an owl', w: 270, h: 100, draw(c){
+      E(c, 50, 62, 24, 31);
+      E(c, 50, 28, 22, 18);
+      PG(c, [[30, 19], [28, 1], [41, 12]]); PG(c, [[59, 12], [72, 1], [70, 19]]);
+      E(c, 27, 62, 6, 21, 0.15); E(c, 73, 62, 6, 21, -0.15);
+      E(c, 42, 93, 6, 3); E(c, 58, 93, 6, 3);
+      SHP.cut(c, () => { c.beginPath(); c.arc(41, 29, 6.5, 0, 6.2832); c.arc(59, 29, 6.5, 0, 6.2832); c.fill(); }, 0.7);
+  }},
+  { key: 'dragon', name: 'a dragon', w: 480, h: 76, draw(c){
+      E(c, 46, 47, 20, 11, -0.1);
+      LB(c, [[60, 42], [70, 27], [74, 19]], 11, 8);
+      E(c, 80, 17, 8.5, 6.5); PG(c, [[84, 12], [99, 17], [84, 22]]);
+      PG(c, [[75, 13], [70, 1], [79, 10]]);
+      PG(c, [[40, 42], [28, 3], [40, 15], [48, 1], [57, 15], [66, 4], [63, 40]]);
+      LB(c, [[28, 51], [16, 61], [6, 57], [2, 45]], 10, 3);
+      PG(c, [[-1, 47], [-3, 34], [7, 42]]);
+      LB(c, [[36, 55], [34, 72]], 8, 5); LB(c, [[56, 54], [58, 72]], 8, 5);
+  }},
+  { key: 'giraffe', name: 'a giraffe', w: 300, h: 110, draw(c){
+      E(c, 36, 62, 23, 12, -0.08);
+      LB(c, [[50, 57], [62, 33], [72, 12]], 12, 8);
+      LB(c, [[70, 10], [89, 17]], 10, 6);
+      LB(c, [[69, 9], [68, 0]], 4, 4); LB(c, [[74, 9], [76, 0]], 4, 4);
+      LB(c, [[20, 67], [18, 109]], 7, 6); LB(c, [[29, 69], [31, 109]], 7, 6);
+      LB(c, [[48, 67], [48, 109]], 7, 6); LB(c, [[54, 65], [58, 109]], 7, 6);
+      LB(c, [[14, 59], [7, 78]], 4, 3);
+  }},
+  { key: 'sheep', name: 'a sheep', w: 400, h: 64, draw(c){
+      E(c, 42, 30, 28, 18); E(c, 22, 25, 11, 11); E(c, 33, 14, 11, 10);
+      E(c, 49, 12, 12, 10); E(c, 62, 18, 10, 9); E(c, 19, 38, 10, 10); E(c, 63, 38, 10, 9);
+      E(c, 82, 31, 10, 14, 0.5); E(c, 77, 19, 8, 4, -0.5);
+      LB(c, [[27, 44], [27, 63]], 9, 8); LB(c, [[40, 46], [40, 63]], 8, 7);
+      LB(c, [[53, 46], [53, 63]], 8, 7); LB(c, [[63, 44], [65, 63]], 9, 8);
+  }},
+];
+
+// Plate tone: every animal is cloud-white mass, authored or imported.
+const LIGHT = [238, 228, 232];
+
+// alpha grid + interior points, for laying texture over the cloud later
+function finishPlate(tiny, pw, ph, aspect){
+  let alpha = null; const inner = [];
+  try {
+    const d = tiny.getContext('2d').getImageData(0, 0, tiny.width, tiny.height).data;
+    alpha = new Float32Array(tiny.width * tiny.height);
+    for (let i = 0; i < alpha.length; i++){
+      alpha[i] = d[i * 4 + 3] / 255;
+      if (alpha[i] > 0.55) inner.push([((i % tiny.width) + 0.5) / tiny.width, (((i / tiny.width) | 0) + 0.5) / tiny.height]);
+    }
+  } catch (_) { alpha = null; }
+  return { c: tiny, tw: tiny.width, th: tiny.height, pw, ph, aspect, alpha, inner };
+}
+
+function plateFromSilhouette(draw, h){
+  const M = 10;                                 // design-unit margin round the box
+  const bw = 100 + 2 * M, bh = h + 2 * M, RS = 2;
+  const big = document.createElement('canvas');
+  big.width = Math.round(bw * RS); big.height = Math.round(bh * RS);
+  const b = big.getContext('2d');
+  b.setTransform(RS, 0, 0, RS, M * RS, M * RS);
+  b.fillStyle = '#fff'; b.strokeStyle = '#fff';
+  draw(b);
+  // two-step reduction so the plate is a true area average, not a point sample
+  const tw = Math.max(4, Math.round(bw * P.plateRes / 100)), th = Math.max(4, Math.round(bh * P.plateRes / 100));
+  const mid = document.createElement('canvas'); mid.width = tw * 3; mid.height = th * 3;
+  const m = mid.getContext('2d'); m.imageSmoothingEnabled = true; m.imageSmoothingQuality = 'high';
+  m.drawImage(big, 0, 0, mid.width, mid.height);
+  const tiny = document.createElement('canvas'); tiny.width = tw; tiny.height = th;
+  const t = tiny.getContext('2d'); t.imageSmoothingEnabled = true; t.imageSmoothingQuality = 'high';
+  t.drawImage(mid, 0, 0, tw, th);
+  try {
+    const id = t.getImageData(0, 0, tw, th), d = id.data;
+    // soften the plate's own edge a little further ([1,2,1] passes on alpha),
+    // so even the sharp view never shows the animal as a clean outline
+    let a = new Float32Array(tw * th);
+    for (let i = 0; i < a.length; i++) a[i] = d[i * 4 + 3];
+    for (let pass = 0; pass < P.plateBlur; pass++){
+      const b2 = new Float32Array(a.length);
+      for (let y = 0; y < th; y++) for (let x = 0; x < tw; x++){
+        const i = y * tw + x;
+        b2[i] = (2 * a[i] + (x > 0 ? a[i - 1] : 0) + (x < tw - 1 ? a[i + 1] : 0)) / 4;
+      }
+      for (let y = 0; y < th; y++) for (let x = 0; x < tw; x++){
+        const i = y * tw + x;
+        a[i] = (2 * b2[i] + (y > 0 ? b2[i - tw] : 0) + (y < th - 1 ? b2[i + tw] : 0)) / 4;
+      }
+    }
+    for (let i = 0; i < a.length; i++){ d[i * 4] = LIGHT[0]; d[i * 4 + 1] = LIGHT[1]; d[i * 4 + 2] = LIGHT[2]; d[i * 4 + 3] = Math.round(a[i]); }
+    t.putImageData(id, 0, 0);
+  } catch (_) { /* never tainted: drawn here */ }
+  return finishPlate(tiny, bw / 100, bh / 100, h / 100);
+}
+
 // ── an imported low-frequency figure ────────────────────────────────────────
 // Any image from anywhere — an AI generator, a photo, a sketch — can become a
 // hidden figure: downsampled to a few dozen pixels it IS a low-frequency
-// image (its high frequencies are gone by construction), and smoothly
-// upscaled into the sky it hides under the same detail and grain as the
-// authored figures. Baked into the SHARP scene before the blur, so the
-// honesty property holds: softening reveals it, never adds it.
+// image (its high frequencies are gone by construction). It joins the sky's
+// procession as one more cloud animal, baked into the SHARP cloud before any
+// blur, so the honesty property holds: softening reveals it, never adds it.
 // Dev mode: drag-and-drop an image onto the page. Script: __soften.embedImage(src, opts).
-let LF_PLATE = null;   // tiny feathered canvas
-let LF_OPTS  = null;   // { cx, cy, w, h, strength, name } in scene units
-
-function setLFImage(img, opts = {}){
-  const w = opts.w ?? 620;
-  const h = w * (img.height / img.width);
-  // downsample hard — this is the step that guarantees low-frequency-only
+function plateFromImage(img, opts = {}){
   const tiny = document.createElement('canvas');
-  const tw = 48, th = Math.max(8, Math.round(tw * (h / w)));
+  const tw = 48, th = Math.max(8, Math.round(tw * (img.height / img.width)));
   tiny.width = tw; tiny.height = th;
   const tc = tiny.getContext('2d');
   tc.imageSmoothingEnabled = true; tc.imageSmoothingQuality = 'high';
   tc.drawImage(img, 0, 0, tw, th);
 
-  // Translate the image into the valley's own language. Imprinting raw
+  // Translate the image into the sky's own language. Imprinting raw
   // luminance carried the image's BACKGROUND too — a uniform pale frame that
   // read as a rectangular slab in the sky. So: estimate the background as the
   // mean border luminance, then keep only DEVIATION from it — transparent
   // where the image matches its own ground, dark mass where darker, light
-  // mass where lighter, in the same two tones as the authored figures. Any
-  // picture on a plain ground becomes a figure and nothing else.
+  // mass where lighter. Any picture on a plain ground becomes a figure and
+  // nothing else.
   try {
     const id = tc.getImageData(0, 0, tw, th);
     const d = id.data;
@@ -182,14 +463,14 @@ function setLFImage(img, opts = {}){
     for (let x = 0; x < tw; x++){ sum += lum(4 * x) + lum(4 * ((th - 1) * tw + x)); n += 2; }
     for (let y = 0; y < th; y++){ sum += lum(4 * y * tw) + lum(4 * (y * tw + tw - 1)); n += 2; }
     const bg = sum / n;
-    // imported figures live in the sky, so they speak cloud: shaded gray
-    // where the image is darker than its own ground, cloud-white where
-    // lighter — the duck is a cloud that happens to be a duck, not a shadow
-    const DARK = opts.dark ?? [152, 144, 166], LIGHT = opts.light ?? [238, 228, 232];
+    // In the sky every deviation becomes cloud: a figure darker than its
+    // ground and one lighter than it both read as mass (two tones inside one
+    // cloud muddied the silhouette once it sat in the texture).
+    const DK = opts.dark ?? LIGHT, LT = opts.light ?? LIGHT;
     for (let i = 0; i < d.length; i += 4){
       const dev = lum(i) - bg;
-      const k = Math.min(1, Math.abs(dev) / 0.45);
-      const col = dev < 0 ? DARK : LIGHT;
+      const k = Math.min(1, Math.abs(dev) / 0.3);
+      const col = dev < 0 ? DK : LT;
       d[i] = col[0]; d[i + 1] = col[1]; d[i + 2] = col[2];
       d[i + 3] = Math.round(d[i + 3] * (k * k * (3 - 2 * k)));
     }
@@ -201,49 +482,415 @@ function setLFImage(img, opts = {}){
   const fy = tc.createLinearGradient(0, 0, 0, th);
   for (const g of [fx, fy]){
     g.addColorStop(0, 'rgba(0,0,0,1)');
-    g.addColorStop(0.18, 'rgba(0,0,0,0)');
-    g.addColorStop(0.82, 'rgba(0,0,0,0)');
+    g.addColorStop(0.1, 'rgba(0,0,0,0)');
+    g.addColorStop(0.9, 'rgba(0,0,0,0)');
     g.addColorStop(1, 'rgba(0,0,0,1)');
   }
   tc.globalCompositeOperation = 'destination-out';
   tc.fillStyle = fx; tc.fillRect(0, 0, tw, th);
   tc.fillStyle = fy; tc.fillRect(0, 0, tw, th);
   tc.globalCompositeOperation = 'source-over';
+  const asp = th / tw;
+  return finishPlate(tiny, 1, asp, asp * 0.8);
+}
 
-  LF_PLATE = tiny;
-  LF_OPTS = {
-    cx: opts.cx ?? 1450, cy: opts.cy ?? 250, w, h,
-    strength: opts.strength ?? 0.34,
-    name: opts.name ?? 'the visitor',
+function buildPlates(){
+  for (const sp of SPECIES) if (sp.draw) sp.plate = plateFromSilhouette(c => sp.draw(c), sp.h);
+}
+
+// A plain cloud's core: a few random lobes through the same plate pipeline,
+// so plain clouds and animal clouds are made of identical stuff and the
+// sharp view carries no tell for which is which.
+function decoyPlate(s){
+  const r = mulberry32(s ^ 0x5bd1e995);
+  const h = 30 + r() * 26;
+  const lobes = [];
+  const n = 3 + ((r() * 4) | 0);
+  for (let i = 0; i < n; i++) lobes.push([12 + r() * 76, h * 0.25 + r() * h * 0.55, 11 + r() * 20, 7 + r() * 11, (r() - 0.5) * 0.7]);
+  return plateFromSilhouette(c => { for (const L of lobes) E(c, L[0], L[1], L[2], L[3], L[4]); }, h);
+}
+
+// ── clouds ──────────────────────────────────────────────────────────────────
+const CLOUDS = [];
+let cloudSeq = 0;
+
+// normalised geometry (units of the cloud's design width w): the lumpy
+// cumulus body the core sits in — partly over the animal, partly spilling
+// past it, so the cloud's own outline is never the animal's outline
+function plateAlphaN(pl, dx, dy){   // silhouette alpha at a normalised offset
+  if (!pl.alpha) return 0;
+  const u = dx / pl.pw + 0.5, v = dy / pl.ph + 0.5;
+  if (u < 0 || u >= 1 || v < 0 || v >= 1) return 0;
+  return pl.alpha[((v * pl.th) | 0) * pl.tw + ((u * pl.tw) | 0)];
+}
+function cloudShape(plate, s, kind){
+  const r = mulberry32(s);
+  const puffs = [];
+  const ha = plate.aspect / 2;
+  // The envelope: lumps on a jittered grid over the animal DILATED by
+  // P.envelope — so they fill the gaps between legs, ears and tail and spill
+  // past its extremities. The envelope is cloud-shaped, and it is THIS
+  // outline, lumpy and textured, that a sharp gaze reads as "a cloud"; the
+  // animal inside it is carried only by the faint low-frequency core.
+  const D = P.envelope * (kind === 'animal' ? 1 : 0.6);
+  const near = (x, y) => {
+    if (plateAlphaN(plate, x, y) > 0.3) return true;
+    for (let k = 0; k < 12; k++){
+      const a = k * 0.5236;
+      for (const f of [0.5, 1]) if (plateAlphaN(plate, x + Math.cos(a) * D * f, y + Math.sin(a) * D * f) > 0.3) return true;
+    }
+    return false;
   };
-  // the imported figure is findable like the authored ones
-  let f = FIGS.find(f => f.key === 'visitor');
-  if (!f){ f = { key: 'visitor', found: false, prog: 0, revealed: 0 }; FIGS.splice(4, 0, f); }
-  f.name = LF_OPTS.name;
-  f.cx = LF_OPTS.cx; f.cy = LF_OPTS.cy;
-  f.r = Math.max(w, h) * 0.42;
-  f.found = false; f.prog = 0; f.revealed = 0;
-  buildScene();
+  const G = 0.075;
+  for (let gy = -ha - D; gy <= ha + D; gy += G){
+    for (let gx = -0.5 - D; gx <= 0.5 + D; gx += G){
+      const x = gx + (r() - 0.5) * G * 0.8, y = gy + (r() - 0.5) * G * 0.8;
+      if (near(x, y)) puffs.push([x, y, 0.045 + r() * 0.05]);
+    }
+  }
+  let ex = 0.5 + 0.03, ey = ha + 0.03;
+  for (const [dx, dy, rad] of puffs){ ex = Math.max(ex, Math.abs(dx) + rad); ey = Math.max(ey, Math.abs(dy) + rad); }
+  return { puffs, ex, ey };
 }
 
-function drawLFPlate(c, strength){
-  if (!LF_PLATE || !LF_OPTS) return;
-  c.save();
-  // the plate already carries the figure tones and its own alpha — plain
-  // draw, like any authored mass
-  c.globalAlpha = strength;
+// what a cloud IS (plate, envelope) is independent of how far away it is, so
+// placement attempts at different depths share one of these
+function cloudKind(kind, sp){
+  const s = (SKY_SEED + (++cloudSeq) * 7919) >>> 0;
+  const plate = kind === 'animal' ? sp.plate : decoyPlate(s);
+  return { kind, sp, s, plate, shape: cloudShape(plate, s, kind), w0: kind === 'animal' ? sp.w : 300 + mulberry32(s ^ 77)() * 200 };
+}
+function makeCloud(kind, sp, z, pre){
+  const k = pre || cloudKind(kind, sp);
+  const s = k.s, plate = k.plate, shape = k.shape;
+  // a portrait phone sees only ~1250 units of sky but a lot of it vertically:
+  // clouds grow a little there so the animals keep enough pixels to resolve
+  const vb = visBounds();
+  const boost = clamp(1 + (1700 - (vb.xR - vb.xL)) / 1000 * P.narrowBoost, 1, 1 + 0.45 * P.narrowBoost);
+  const w = k.w0 * z * boost;
+  return {
+    id: ++cloudSeq, kind, sp: sp || null, name: sp ? sp.name : null, plate, shape, seed: s, z, w,
+    cx: 0, cy: 0, ex: shape.ex * w + 10, ey: shape.ey * w + 10, r: Math.max(w, w * plate.aspect) * 0.42,
+    prog: 0, found: false, sprite: null, baking: null,
+  };
+}
+
+// The sprite: the SHARP cloud, baked once at the current scale. Body, then the
+// animal at full final strength, then high-frequency texture laid UNIFORMLY
+// over the whole cloud — never traced along the animal's edge, because detail
+// that follows an outline draws the outline.
+// A generator, so a cloud arriving from off-screen can be baked a few
+// milliseconds per frame while it is still out of view (a big one is ~25 ms
+// on a desktop — a visible hitch if done at once); bakeCloud() runs it whole.
+function bakeCloud(cl){ const it = bakeSteps(cl); while (!it.next().done); cl.baking = null; }
+function bakeSome(budgetMs){
+  const t0 = performance.now();
+  for (const cl of CLOUDS){
+    while (cl.baking){
+      if (cl.baking.next().done) cl.baking = null;
+      if (performance.now() - t0 > budgetMs) return;
+    }
+  }
+}
+function* bakeSteps(cl){
+  const q = sk * DPR, w = cl.w, pl = cl.plate;
+  const hx = cl.ex, hy = cl.ey;
+  const cw = Math.max(2, Math.ceil(2 * hx * q)), ch = Math.max(2, Math.ceil(2 * hy * q));
+  const cvs = cl.sprite || document.createElement('canvas');
+  cvs.width = cw; cvs.height = ch;
+  const c = cvs.getContext('2d');
+  c.setTransform(q, 0, 0, q, cw / 2, ch / 2);
+  const r = mulberry32(cl.seed + 7);
+  const rr = (a, b) => a + r() * (b - a);
+
+  // 1. the cumulus body — lumps with a crisp rim and low contrast. Drawn as
+  // one layer (max, not sum) so overlaps don't stack into brighter blobs
+  // that would compete with the animal under the blur.
+  const bodyC = document.createElement('canvas'); bodyC.width = cw; bodyC.height = ch;
+  const bc = bodyC.getContext('2d');
+  bc.setTransform(q, 0, 0, q, cw / 2, ch / 2);
+  bc.fillStyle = `rgb(${P.bodyTone.join(',')})`;
+  for (const [dx, dy, rad] of cl.shape.puffs){
+    bc.beginPath(); bc.arc(dx * w, dy * w, rad * w, 0, 6.2832); bc.fill();
+  }
+  c.save(); c.setTransform(1, 0, 0, 1, 0, 0);
+  c.globalAlpha = P.bodyAlpha; c.drawImage(bodyC, 0, 0); c.restore();
+
+  // 2. the core — the animal (or a plain lobe), smoothly upscaled from its plate
+  c.globalAlpha = clamp(P.animalStr * (cl.kind === 'animal' ? (cl.sp.str || 1) : P.decoyCore), 0, 1);
   c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
-  c.drawImage(LF_PLATE, LF_OPTS.cx - LF_OPTS.w / 2, LF_OPTS.cy - LF_OPTS.h / 2, LF_OPTS.w, LF_OPTS.h);
+  c.drawImage(pl.c, -pl.pw * w / 2, -pl.ph * w / 2, pl.pw * w, pl.ph * w);
   c.globalAlpha = 1;
-  c.restore();
+  cl.sprite = cvs;
+  yield;
+
+  // 3. texture — laid UNIFORMLY over the whole envelope (body and animal
+  // alike), never traced along the animal's edge, because detail that follows
+  // an outline draws the outline. Everything here is smaller than the soft
+  // blur, so under softening it averages into the body's plain tone.
+  // Sampled only where there is cloud (a scallop over bare sky reads as a
+  // floating bracket), from a coarse coverage grid so sampling is O(1).
+  const G = 4;                                   // scene units per grid cell
+  const gw = Math.ceil(2 * hx / G), gh = Math.ceil(2 * hy / G);
+  const mC = document.createElement('canvas'); mC.width = gw; mC.height = gh;
+  const mc = mC.getContext('2d', { willReadFrequently: true });
+  mc.setTransform(1 / G, 0, 0, 1 / G, hx / G, hy / G);
+  mc.fillStyle = '#000';
+  for (const [dx, dy, rad] of cl.shape.puffs){ mc.beginPath(); mc.arc(dx * w, dy * w, rad * w, 0, 6.2832); mc.fill(); }
+  const md = mc.getImageData(0, 0, gw, gh).data;
+  const cells = [], wts = [];
+  let area = 0;
+  for (let j = 0; j < gh; j++) for (let i = 0; i < gw; i++){
+    const x = -hx + (i + 0.5) * G, y = -hy + (j + 0.5) * G;
+    const wt = md[(j * gw + i) * 4 + 3] > 127 ? 1 : plateAlphaN(pl, x / w, y / w);
+    if (wt > 0.02){ cells.push(i, j); wts.push(wt); area += wt; }
+  }
+  const nCells = wts.length;
+  const sample = () => {
+    if (!nCells) return null;
+    for (let k = 0; k < 8; k++){
+      const ci = (r() * nCells) | 0;
+      if (r() < wts[ci]) return [-hx + (cells[2 * ci] + r()) * G, -hy + (cells[2 * ci + 1] + r()) * G];
+    }
+    return null;
+  };
+  // density per area of cloud, so a big envelope is as busy as a small one
+  const dens = P.texture * area * G * G / 10000;
+  const K = a => Math.min(1, a * P.texContrast);
+  c.lineCap = 'round';
+
+  // cauliflower lobes: a lit cap fading down into a shaded underside — the
+  // cumulus grammar, at a scale the blur erases. Lit top and shaded bottom
+  // in near balance, so a lobe is contrast without being extra brightness.
+  // Pre-rendered stamps (three tone balances), drawn scaled.
+  const stamps = [0, 0.5, 1].map(f => {
+    const sc = document.createElement('canvas'); sc.width = sc.height = 24;
+    const g2 = sc.getContext('2d');
+    const gr = g2.createLinearGradient(0, 0, 0, 24);
+    gr.addColorStop(0, `rgba(252,238,236,${K(0.16 + 0.14 * f)})`);
+    gr.addColorStop(0.45, 'rgba(252,238,236,0)');
+    gr.addColorStop(0.6, 'rgba(38,26,58,0)');
+    gr.addColorStop(1, `rgba(38,26,58,${K((0.4 + 0.18 * (1 - f)) * P.shade)})`);
+    g2.fillStyle = gr; g2.beginPath(); g2.arc(12, 12, 12, 0, 6.2832); g2.fill();
+    return sc;
+  });
+  yield;
+  const nL = Math.round(240 * dens);
+  for (let i = 0; i < nL; i++){
+    if (i % 400 === 399) yield;
+    const pt = sample(); if (!pt) continue;
+    const R = rr(2.2, 5.5);
+    c.drawImage(stamps[(r() * 3) | 0], pt[0] - R, pt[1] - R, 2 * R, 2 * R);
+  }
+  yield;
+  // bright rims along the tops of lobes (batched by strength)
+  const nS = Math.round(40 * dens);
+  for (let b = 0; b < 3; b++){
+    c.lineWidth = 1 + 0.3 * b;
+    c.strokeStyle = `rgba(250,232,228,${K(0.3 + 0.12 * b)})`;
+    c.beginPath();
+    for (let i = 0; i < nS / 3; i++){
+      const pt = sample(); if (!pt) continue;
+      const R = rr(3, 7), a0 = Math.PI * rr(1.05, 1.25), a1 = Math.PI * rr(1.75, 1.95);
+      c.moveTo(pt[0] + Math.cos(a0) * R, pt[1] + Math.sin(a0) * R);
+      c.arc(pt[0], pt[1], R, a0, a1);
+    }
+    c.stroke();
+  }
+  yield;
+  // shadowed crevices and a few long ridges that cut clean across whatever
+  // lies underneath — gestalt breakers, the cloud's own structure
+  const nV = Math.round(9 * dens);
+  for (let b = 0; b < 2; b++){
+    c.lineWidth = 1.3 + 0.7 * b;
+    c.strokeStyle = `rgba(44,32,64,${K(0.22 + 0.12 * b)})`;
+    c.beginPath();
+    for (let i = 0; i < nV / 2; i++){
+      const pt = sample(); if (!pt) continue;
+      const [x, y] = pt, L = rr(9, 22), a0 = rr(-0.6, 0.6);
+      const x2 = x + Math.cos(a0) * L, y2 = y + Math.sin(a0) * L;
+      c.moveTo(x, y); c.quadraticCurveTo((x + x2) / 2 + rr(-4, 4), (y + y2) / 2 + rr(2, 5), x2, y2);
+    }
+    c.stroke();
+  }
+  const nR = Math.round(0.8 * dens);
+  c.lineWidth = 1.8;
+  c.strokeStyle = `rgba(244,222,220,${K(0.28)})`;
+  c.beginPath();
+  for (let i = 0; i < nR; i++){
+    const pt = sample(); if (!pt) continue;
+    const R = rr(40, 80), a0 = Math.PI * rr(1.2, 1.35), a1 = Math.PI * rr(1.65, 1.8);
+    c.moveTo(pt[0] + Math.cos(a0) * R, pt[1] + R + Math.sin(a0) * R);
+    c.arc(pt[0], pt[1] + R, R, a0, a1);
+  }
+  c.stroke();
+  // grain, paired light and dark so it averages to nothing under the blur
+  const nG = Math.round(280 * dens);
+  for (let b = 0; b < 6; b++){
+    yield;
+    const light = b < 3, lv = b % 3;
+    c.fillStyle = light ? `rgba(250,238,238,${K(0.07 + 0.05 * lv)})` : `rgba(20,14,34,${K(0.08 + 0.05 * lv)})`;
+    c.beginPath();
+    for (let i = 0; i < nG / 6; i++){
+      const pt = sample(); if (!pt) continue;
+      c.rect(pt[0], pt[1], rr(1.3, 2.8), rr(1.3, 2.8));
+    }
+    c.fill();
+  }
 }
 
-// Deterministic scatter for detail passes — the valley must not reshuffle on
-// resize, or it reads as a different place.
-let seed = 20260815;
-function srnd(a, b){
-  seed = (seed * 1664525 + 1013904223) >>> 0;
-  return a + (seed / 4294967296) * (b - a);
+// ── the weather: who comes, when, where ─────────────────────────────────────
+// Animals come from a shuffled deck, so every one passes before any repeats.
+let deck = [], lastSp = null;
+function peekSpecies(){
+  if (!deck.length){
+    deck = SPECIES.filter(s => s.plate);
+    for (let i = deck.length - 1; i > 0; i--){ const j = (wr() * (i + 1)) | 0; [deck[i], deck[j]] = [deck[j], deck[i]]; }
+    if (deck.length > 1 && deck[deck.length - 1] === lastSp) [deck[0], deck[deck.length - 1]] = [deck[deck.length - 1], deck[0]];
+  }
+  return deck[deck.length - 1];
+}
+
+// Two clouds may share a band of sky only if they will never meet while
+// both are in view. Every cloud moves at wind × depth, so in "wind distance"
+// u their relative motion is fixed and the check is exact whatever the gusts do.
+function laneFree(c, vb){
+  for (const o of CLOUDS){
+    if (Math.abs(o.cy - c.cy) >= (o.ey + c.ey) * 0.82) continue;
+    const U = Math.min((vb.xR + o.ex - o.cx) / o.z, (vb.xR + c.ex - c.cx) / c.z);
+    const need = (o.ex + c.ex) * 0.88 + P.clearX;
+    for (let u = 0; u <= U + 10; u += 10){
+      if (Math.abs((o.cx + o.z * u) - (c.cx + c.z * u)) < need) return false;
+    }
+  }
+  return true;
+}
+
+// Depth sets everything at once, as it would under a real cloud deck: far
+// clouds are smaller, slower, and sit lower toward the horizon.
+function trySpawn(kind, inView, spOverride){
+  const vb = visBounds();
+  const sp = kind === 'animal' ? (spOverride || peekSpecies()) : null;
+  if (kind === 'animal' && !sp) return null;
+  const pre = cloudKind(kind, sp);
+  for (let tries = 0; tries < 24; tries++){
+    const z = wrand(P.zMin, P.zMax);
+    const cl = makeCloud(kind, sp, z, pre);
+    const bottom = kind === 'animal' ? P.cloudBottom : P.cloudBottom + 30;
+    const yLow = bottom - cl.shape.ey * cl.w * 0.8;
+    const yHigh = Math.max(vb.yT + cl.ey + 20, -520 + cl.ey);
+    const t = clamp((z - P.zMin) / (P.zMax - P.zMin) + wrand(-0.35, 0.35), 0, 1);
+    cl.cy = yHigh < yLow ? yLow + (yHigh - yLow) * t : yLow;
+    cl.cx = inView ? wrand(vb.xL + cl.ex * 0.6, vb.xR - cl.ex * 0.6) : vb.xL - cl.ex - 40;
+    if (!laneFree(cl, vb)) continue;
+    if (kind === 'animal' && !spOverride){ deck.pop(); lastSp = sp; }
+    // in view (the opening sky) it must exist now; arriving from off-screen
+    // it bakes a slice per frame while still out of sight
+    if (inView) bakeCloud(cl); else cl.baking = bakeSteps(cl);
+    CLOUDS.push(cl);
+    CLOUDS.sort((a, b) => a.z - b.z);   // far first, near drawn over
+    EV.push({ t: +simT.toFixed(2), e: 'arrive', kind, name: cl.name, z: +z.toFixed(2) });
+    return cl;
+  }
+  return null;
+}
+
+let windU = 0, windNow = 0;
+let nextAnimalAt = 4, nextDecoyAt = 3;
+function windAt(t){
+  return P.wind * (REDUCED ? 0.5 : 1) *
+    (1 + P.gust * (0.62 * Math.sin(t * 0.047 + 0.8) + 0.38 * Math.sin(t * 0.113 + 2.1)));
+}
+
+// the opening sky is not empty: someone is already halfway across
+function seedSky(){
+  trySpawn('animal', true);
+  for (let i = 0; i < 3; i++) trySpawn('decoy', true);
+}
+
+// ── the rest of the sky: cirrus and birds ──────────────────────────────────
+// Both are high-frequency only — thin streaks, specks — so they belong to the
+// sharp view and melt out of the soft one: the hard gaze gets its own sky.
+const CIRRUS = [];
+(function(){
+  const r = mulberry32(4242);
+  for (let i = 0; i < 11; i++) CIRRUS.push({ x0: r() * 3200, f: r(), len: 120 + r() * 260, a: 0.05 + r() * 0.09, bend: (r() - 0.5) * 24, k: 0.25 + r() * 0.15 });
+})();
+let FLOCK = null, nextFlockAt = 22;
+
+function advanceSky(dt){
+  bakeSome(4);
+  windNow = windAt(simT);
+  const du = windNow * dt;
+  windU += du;
+  const vb = visBounds();
+  for (let i = CLOUDS.length - 1; i >= 0; i--){
+    const cl = CLOUDS[i];
+    cl.cx += du * cl.z;
+    if (cl.cx - cl.ex > vb.xR + 30){
+      cl.gone = true;
+      if (nameShow === cl) nameShow = null;
+      CLOUDS.splice(i, 1);
+    }
+  }
+  const nA = CLOUDS.filter(c => c.kind === 'animal').length;
+  const nD = CLOUDS.length - nA;
+  if (simT >= nextAnimalAt){
+    const ok = nA < P.maxAnimals && trySpawn('animal', false);
+    nextAnimalAt = simT + (ok ? P.animalGap * wrand(0.6, 1.4) : 2);
+  }
+  if (simT >= nextDecoyAt){
+    const ok = nD < P.maxDecoys && trySpawn('decoy', false);
+    nextDecoyAt = simT + (ok ? P.decoyGap * wrand(0.6, 1.4) : 2.5);
+  }
+
+  // a flock now and then, faster than the wind, either way across
+  if (!FLOCK && simT >= nextFlockAt && nightness < 0.7){
+    const dir = wr() < 0.6 ? 1 : -1;
+    const n = 4 + ((wr() * 6) | 0);
+    const birds = [];
+    for (let i = 0; i < n; i++) birds.push({ dx: -dir * (i * wrand(14, 26)), dy: (i % 2 ? 1 : -1) * i * wrand(4, 9), ph: wrand(0, 6.28), rate: wrand(7, 10) });
+    FLOCK = { dir, x: dir > 0 ? vb.xL - 40 : vb.xR + 40, y: wrand(Math.max(vb.yT + 60, -300), 470), v: wrand(70, 105), birds };
+  }
+  if (FLOCK){
+    FLOCK.x += FLOCK.dir * FLOCK.v * dt;
+    FLOCK.y += Math.sin(simT * 0.4) * 4 * dt;
+    for (const b of FLOCK.birds) b.ph += b.rate * dt;
+    const tail = FLOCK.x + FLOCK.birds[FLOCK.birds.length - 1].dx;
+    if ((FLOCK.dir > 0 && tail > vb.xR + 60) || (FLOCK.dir < 0 && tail < vb.xL - 60)){
+      FLOCK = null; nextFlockAt = simT + wrand(35, 75);
+    }
+  }
+}
+
+function drawSkyLife(c){
+  const vb = visBounds();
+  // cirrus, drifting slower than the cumulus (higher up)
+  const span = (vb.xR - vb.xL) + 900;
+  const yTop = Math.max(vb.yT + 30, -560), yBot = 380;
+  c.lineCap = 'round';
+  for (const s of CIRRUS){
+    const x = vb.xL - 450 + (((s.x0 + windU * s.k) % span) + span) % span;
+    const y = yTop + (yBot - yTop) * s.f;
+    c.strokeStyle = `rgba(236,210,214,${s.a})`;
+    c.lineWidth = 1.5;
+    c.beginPath(); c.moveTo(x, y); c.quadraticCurveTo(x + s.len * 0.5, y + s.bend, x + s.len, y + s.bend * 0.3); c.stroke();
+    c.lineWidth = 1;
+    c.beginPath(); c.moveTo(x + s.len * 0.15, y + 5); c.quadraticCurveTo(x + s.len * 0.55, y + s.bend + 5, x + s.len * 0.85, y + s.bend * 0.3 + 6); c.stroke();
+  }
+  if (FLOCK){
+    c.strokeStyle = 'rgba(30,24,40,0.8)';
+    c.lineWidth = 1.7;
+    for (const b of FLOCK.birds){
+      const x = FLOCK.x + b.dx, y = FLOCK.y + b.dy;
+      const f = REDUCED ? 0.4 : Math.sin(b.ph);
+      const s = 6.5, lift = s * (0.15 + 0.55 * f);
+      c.beginPath();
+      c.moveTo(x - s, y - lift); c.quadraticCurveTo(x - s * 0.45, y - lift * 0.2 - 1.5, x, y);
+      c.quadraticCurveTo(x + s * 0.45, y - lift * 0.2 - 1.5, x + s, y - lift);
+      c.stroke();
+    }
+  }
 }
 
 // ── scene bake ──────────────────────────────────────────────────────────────
@@ -263,52 +910,38 @@ function ridgeY(x){
   return y;
 }
 
-function paintBase(c){
+function paintSky(c){
   // dusk sky, baked at mid-violet; the per-frame grade carries it gold→night
   const sky = c.createLinearGradient(0, 0, 0, SC_H * 0.75);
   sky.addColorStop(0, '#2c2a4e');
   sky.addColorStop(0.55, '#5c4668');
   sky.addColorStop(1, '#a06a6a');
   c.fillStyle = sky;
-  c.fillRect(0, -3000, SC_W, 3000 + SC_H);   // sky continues above the authored frame
+  c.fillRect(-3000, -3000, SC_W + 6000, 6000 + SC_H);   // sky continues past the authored frame
+}
 
+function paintLand(c){
   // far ridge, plain — depth for the giant to sleep against
   c.fillStyle = '#4a4162';
-  c.beginPath(); c.moveTo(0, 700);
-  for (let x = 0; x <= SC_W; x += 12)
+  c.beginPath(); c.moveTo(-3000, 700);
+  for (let x = -3000; x <= SC_W + 3000; x += 12)
     c.lineTo(x, 640 + Math.sin(x * 0.0027 + 0.7) * 42 + Math.sin(x * 0.0009) * 30);
-  c.lineTo(SC_W, SC_H + 3000); c.lineTo(0, SC_H + 3000); c.closePath(); c.fill();
+  c.lineTo(SC_W + 3000, SC_H + 3000); c.lineTo(-3000, SC_H + 3000); c.closePath(); c.fill();
 
   // the near ridge — which is also the giant
   c.fillStyle = '#38314e';
-  c.beginPath(); c.moveTo(0, ridgeY(0));
-  for (let x = 0; x <= SC_W; x += 8) c.lineTo(x, ridgeY(x));
-  c.lineTo(SC_W, SC_H + 3000); c.lineTo(0, SC_H + 3000); c.closePath(); c.fill();
+  c.beginPath(); c.moveTo(-3000, ridgeY(-3000));
+  for (let x = -3000; x <= SC_W + 3000; x += 8) c.lineTo(x, ridgeY(x));
+  c.lineTo(SC_W + 3000, SC_H + 3000); c.lineTo(-3000, SC_H + 3000); c.closePath(); c.fill();
 
   // meadow below the ridge
   const mg = c.createLinearGradient(0, 830, 0, SC_H);
   mg.addColorStop(0, '#2e3140');
   mg.addColorStop(1, '#20242f');
   c.fillStyle = mg;
-  c.beginPath(); c.moveTo(0, ridgeY(0) + 4);
-  for (let x = 0; x <= SC_W; x += 8) c.lineTo(x, ridgeY(x) + 4);
-  c.lineTo(SC_W, SC_H + 3000); c.lineTo(0, SC_H + 3000); c.closePath(); c.fill();
-
-  // cloudbank — which is also the whale (body, fluke, flipper as three
-  // masses; decoy clouds around it so the sky is not only whale)
-  function puff(x, y, r, a){
-    const g = c.createRadialGradient(x, y, r * 0.15, x, y, r);
-    g.addColorStop(0, `rgba(196,168,178,${a})`);
-    g.addColorStop(1, 'rgba(196,168,178,0)');
-    c.fillStyle = g;
-    c.beginPath(); c.arc(x, y, r, 0, 6.284); c.fill();
-  }
-  puff(520, 300, 150, 0.5); puff(650, 320, 120, 0.45);            // whale body
-  puff(400, 270, 95, 0.42);                                        // head
-  puff(760, 250, 62, 0.4); puff(810, 210, 52, 0.42);               // fluke, raised
-  puff(560, 380, 55, 0.35);                                        // flipper
-  puff(1150, 180, 90, 0.3); puff(1650, 240, 110, 0.28);            // decoys
-  puff(230, 150, 80, 0.26); puff(940, 120, 70, 0.24);
+  c.beginPath(); c.moveTo(-3000, ridgeY(-3000) + 4);
+  for (let x = -3000; x <= SC_W + 3000; x += 8) c.lineTo(x, ridgeY(x) + 4);
+  c.lineTo(SC_W + 3000, SC_H + 3000); c.lineTo(-3000, SC_H + 3000); c.closePath(); c.fill();
 
   // hedgerow — which is also the hare (two ear lumps and an arched back)
   function blob(x, y, rx, ry, col){
@@ -355,25 +988,6 @@ function paintDetail(c){
     c.fillRect(x - 1.5, y - h * 0.16, 3, h * 0.2);
   }
 
-  // cloud billow edges — bright scallops cutting across the whale's outline.
-  // Sampled AROUND the puff masses, never in open sky: a scallop with no
-  // cloud under it reads as a floating bracket, which the first bake proved.
-  const PUFFS = [
-    [520, 300, 150], [650, 320, 120], [400, 270, 95], [760, 250, 62],
-    [810, 210, 52], [560, 380, 55], [1150, 180, 90], [1650, 240, 110],
-    [230, 150, 80], [940, 120, 70],
-  ];
-  c.strokeStyle = 'rgba(232,204,196,0.45)';
-  c.lineWidth = 3;
-  for (let i = 0; i < 46; i++){
-    const p = PUFFS[(srnd(0, PUFFS.length)) | 0];
-    const a0 = srnd(0, 6.28);
-    const x = p[0] + Math.cos(a0) * p[2] * srnd(0.15, 0.7);
-    const y = p[1] + Math.sin(a0) * p[2] * srnd(0.15, 0.55);
-    const r = srnd(12, 34);
-    c.beginPath(); c.arc(x, y, r, Math.PI * srnd(0.9, 1.15), Math.PI * srnd(1.75, 2.0)); c.stroke();
-  }
-
   // hedge leaf scribble — dense, and clustered ON the hedge masses so the
   // blobs read as foliage; sparse arcs over bare ground read as doodles
   const HEDGES = [
@@ -416,23 +1030,13 @@ function paintDetail(c){
     c.beginPath(); c.arc(x, y - srnd(14, 26), srnd(1.5, 3), 0, 6.284); c.fill();
   }
 
-  // settling birds — specks near the clouds
-  c.fillStyle = 'rgba(30,26,40,0.8)';
-  for (let i = 0; i < 9; i++){
-    const x = srnd(200, 1700), y = srnd(120, 420);
-    c.beginPath();
-    c.arc(x, y, 2.4, Math.PI * 1.1, Math.PI * 1.9);
-    c.arc(x + 5, y, 2.4, Math.PI * 1.1, Math.PI * 1.9);
-    c.stroke();
-  }
-
-  // fine grain over the whole scene — the high-frequency mask that lets a
-  // full-strength low-frequency figure sit unnoticed in the sharp view (film
-  // grain is the classic HF masker in hybrid-image work). Paired light/dark
-  // speckle averages to nothing under the blur, so it costs the soft view
-  // nothing at all.
+  // fine grain over the whole scene, sky included — the high-frequency mask
+  // that lets a full-strength low-frequency figure sit unnoticed in the sharp
+  // view (film grain is the classic HF masker in hybrid-image work). It sits
+  // still while the clouds move under it, as a lens's would. Paired
+  // light/dark speckle averages to nothing under the blur.
   for (let i = 0; i < 5200; i++){
-    const x = srnd(0, SC_W), y = srnd(0, SC_H);
+    const x = srnd(0, SC_W), y = srnd(-400, SC_H);
     const light = srnd(0, 1) < 0.5;
     c.fillStyle = light
       ? `rgba(232,222,228,${srnd(0.03, 0.09)})`
@@ -441,87 +1045,54 @@ function paintDetail(c){
   }
 }
 
-// The figure masses again, softly emphasised — drawn only into the soft bake
-// (and reused per frame for found-figure persistence). `a` scales contrast.
-function paintFigureEmphasis(c, scale, a){
-  c.save();
-  if (scale !== 1) c.scale(scale, scale);
-
-  function mass(x, y, rx, ry, rot, dark, k){
-    const g = c.createRadialGradient(x, y, Math.min(rx, ry) * 0.2, x, y, Math.max(rx, ry));
-    const col = dark ? '20,18,30' : '226,204,206';
-    g.addColorStop(0, `rgba(${col},${k * a})`);
-    g.addColorStop(1, `rgba(${col},0)`);
-    c.fillStyle = g;
-    c.save(); c.translate(x, y); c.rotate(rot); c.scale(rx / Math.max(rx, ry), ry / Math.max(rx, ry));
-    c.beginPath(); c.arc(0, 0, Math.max(rx, ry), 0, 6.284); c.fill();
-    c.restore();
-  }
-
-  // whale: one connected body, light against the dusk
-  mass(560, 310, 240, 90, 0.05, false, 0.30);
-  mass(395, 280, 90, 62, -0.1, false, 0.26);
-  mass(788, 228, 62, 48, 0.5, false, 0.30);
-  mass(566, 385, 55, 26, 0.3, false, 0.22);
+// The land figures' masses, drawn into the SHARP land bake at full final
+// strength (and reused per frame, faintly, for found-figure persistence).
+const LAND_MASSES = {
   // the giant: brow shadow, the long line of the face, a settled chest
-  mass(1215, 745, 120, 55, 0.05, true, 0.34);
-  mass(1435, 690, 70, 46, 0.1, true, 0.30);
-  mass(1610, 760, 130, 50, 0.06, true, 0.30);
-  mass(1865, 800, 200, 70, 0.02, true, 0.26);
+  giant: [[1215,745,120,55,0.05,true,0.34],[1435,690,70,46,0.1,true,0.30],[1610,760,130,50,0.06,true,0.30],[1865,800,200,70,0.02,true,0.26]],
   // hare: ears joined to the arch of the back
-  mass(470, 685, 70, 110, -0.12, true, 0.32);
-  mass(560, 755, 170, 70, 0.05, true, 0.28);
+  hare:  [[470,685,70,110,-0.12,true,0.32],[560,755,170,70,0.05,true,0.28]],
   // fox: body and tail one warm curl
-  mass(1360, 1035, 190, 85, -0.18, true, 0.34);
-  mass(1255, 1100, 120, 40, 0.28, true, 0.30);
-
+  fox:   [[1360,1035,190,85,-0.18,true,0.34],[1255,1100,120,40,0.28,true,0.30]],
+};
+function paintMass(c, x, y, rx, ry, rot, dark, k){
+  const g = c.createRadialGradient(x, y, Math.min(rx, ry) * 0.2, x, y, Math.max(rx, ry));
+  const col = dark ? '20,18,30' : '226,204,206';
+  g.addColorStop(0, `rgba(${col},${k})`);
+  g.addColorStop(1, `rgba(${col},0)`);
+  c.fillStyle = g;
+  c.save(); c.translate(x, y); c.rotate(rot); c.scale(rx / Math.max(rx, ry), ry / Math.max(rx, ry));
+  c.beginPath(); c.arc(0, 0, Math.max(rx, ry), 0, 6.284); c.fill();
   c.restore();
 }
-
-// A cheap, dependency-free blur: downsample and re-upscale. Bilinear smoothing
-// does the rounding; two passes make it gaussian-ish. Chosen over ctx.filter
-// so the bake behaves identically in every browser and in headless playtests.
-const tmpC2 = document.createElement('canvas');
-function blurInto(dst, src, k){
-  const dw = Math.max(1, Math.round(src.width / k));
-  const dh = Math.max(1, Math.round(src.height / k));
-  tmpC.width = dw; tmpC.height = dh;
-  const t = tmpC.getContext('2d');
-  t.imageSmoothingEnabled = true; t.imageSmoothingQuality = 'high';
-  t.drawImage(src, 0, 0, dw, dh);
-  tmpC2.width = Math.max(1, Math.round(dw / 2)); tmpC2.height = Math.max(1, Math.round(dh / 2));
-  const t2 = tmpC2.getContext('2d');
-  t2.imageSmoothingEnabled = true; t2.imageSmoothingQuality = 'high';
-  t2.drawImage(tmpC, 0, 0, tmpC2.width, tmpC2.height);
-  const d = dst.getContext('2d');
-  d.imageSmoothingEnabled = true; d.imageSmoothingQuality = 'high';
-  d.clearRect(0, 0, dst.width, dst.height);
-  d.drawImage(tmpC2, 0, 0, dst.width, dst.height);
+function paintFigureEmphasis(c, a){
+  for (const key in LAND_MASSES) for (const m of LAND_MASSES[key]) paintMass(c, m[0], m[1], m[2], m[3], m[4], m[5], m[6] * a);
+}
+function paintFigureMassOne(c, f, a){
+  const parts = LAND_MASSES[f.key];
+  if (!parts) return;
+  for (const m of parts) paintMass(c, m[0], m[1], m[2], m[3], m[4], m[5], 0.3 * a);
 }
 
 function buildScene(){
-  sharpC.width = Math.max(1, Math.round(W * DPR)); sharpC.height = Math.max(1, Math.round(H * DPR));
-  softC.width = sharpC.width; softC.height = sharpC.height;
+  for (const cvs of [skyC, landC]){ cvs.width = Math.max(1, Math.round(W * DPR)); cvs.height = Math.max(1, Math.round(H * DPR)); }
 
-  sctx.setTransform(DPR * sk, 0, 0, DPR * sk, DPR * offX, DPR * offY);
-  paintBase(sctx);
-  // The figures go into the SHARP bake at full, final strength — they are in
-  // the pixels the whole time. The first build drew them faint here and then
-  // re-drew them boosted onto the soft bake, which made the reveal a fade-in
-  // of content the sharp image never contained: an overlay arriving, not a
-  // thing that was there all along. A true hybrid image adds nothing on
-  // blur — softening only ever REMOVES. So the low-frequency figure hides
-  // behind two honest mechanisms instead: gestalt camouflage (its masses ARE
-  // ridge, cloud, hedge, shadow — parsed as landscape) and high-frequency
-  // masking (detail and grain drawn across its boundaries).
-  paintFigureEmphasis(sctx, 1, 0.85);
-  drawLFPlate(sctx, LF_OPTS ? LF_OPTS.strength : 0);
-  paintDetail(sctx);
-  sctx.setTransform(1, 0, 0, 1, 0, 0);
+  kctx.setTransform(DPR * sk, 0, 0, DPR * sk, DPR * offX, DPR * offY);
+  paintSky(kctx);
+  kctx.setTransform(1, 0, 0, 1, 0, 0);
 
-  // soft bake = a blur of the sharp bake, and nothing else. Every pixel of
-  // the reveal is derived from pixels the player was already looking at.
-  blurInto(softC, sharpC, 9);
+  // The land figures go into the SHARP bake at full, final strength — they are
+  // in the pixels the whole time. A true hybrid image adds nothing on blur —
+  // softening only ever REMOVES. So the low-frequency figure hides behind two
+  // honest mechanisms instead: gestalt camouflage (its masses ARE ridge,
+  // hedge, shadow — parsed as landscape) and high-frequency masking (detail
+  // and grain drawn across its boundaries). The clouds do the same in the sky.
+  lctx.clearRect(0, 0, landC.width, landC.height);
+  lctx.setTransform(DPR * sk, 0, 0, DPR * sk, DPR * offX, DPR * offY);
+  paintLand(lctx);
+  paintFigureEmphasis(lctx, 0.85);
+  paintDetail(lctx);
+  lctx.setTransform(1, 0, 0, 1, 0, 0);
 }
 
 // ── stars (night only) ──────────────────────────────────────────────────────
@@ -553,6 +1124,7 @@ let holding = false, pointerHere = false;
 let rawSpeed = 0, smoothSpeed = 0, lastGx = 0, lastGy = 0;
 let soft = 0;                 // the held softness
 let S = 0;                    // effective softness (held, minus strain, or the night's own)
+let S_PIN = null;             // debug: pin S for deterministic renders
 let heldFor = 0;
 
 cv.addEventListener('pointerdown', e => {
@@ -578,7 +1150,8 @@ let softSum = 0, heldSum = 0, sampleT = 0;
 let nameShow = null, nameAlpha = 0, nameT = 0;
 let nextBird = 6;
 const EV = [];
-const DBG = { frames: 0, resizes: 0 };
+const DBG = { frames: 0, resizes: 0, blurs: 0 };
+const SEEN = new Set();       // debug/summary only — never shown
 
 function advance(dt){
   simT += dt;
@@ -596,45 +1169,57 @@ function advance(dt){
 
   // softness: held softness ramps slowly and collapses under strain; the
   // night contributes its own floor, because scotopic vision is genuinely
-  // low-acuity — what the player practices is what the dark does anyway
+  // low-acuity — what the player practices is what the dark does anyway.
+  // Strain is measured on raw gaze speed, but a gaze drifting along with a
+  // cloud moves at a walking pace (~30 px/s) — well inside the ceiling.
   const strain = clamp(smoothSpeed / P.strainMax, 0, 1);
   const wantSoft = holding ? (1 - strain * 0.8) : 0;
   const tau = wantSoft > soft ? P.tauUp : P.tauDown;
   soft += (wantSoft - soft) * Math.min(1, dt / tau);
   S = Math.max(soft, nightness * P.nightFloor);
+  if (S_PIN !== null) S = S_PIN;
 
   if (holding) heldFor += dt; else heldFor = 0;
   softSum += S * dt; heldSum += (holding ? 1 : 0) * dt; sampleT += dt;
 
+  advanceSky(dt);
+
   // settling: a figure held in soft view assembles; a found figure stays
-  // found (once seen, it cannot be unseen — true of real hybrid images)
+  // found (once seen, it cannot be unseen — true of real hybrid images).
+  // Sky animals settle the same way, while they pass.
   let gazeFig = null;
-  for (const f of FIGS){
+  const settle = (f, visible) => {
     const d = Math.hypot(sx(f.cx) - gx, sy(f.cy) - gy);
     const near = d < Math.max(f.r * sk, 90);   // floor: a figure is never smaller than a thumb
-    const visible = f.night ? nightness > 0.5 : true;
     if (near && visible) gazeFig = gazeFig || f;
-    if (f.found) continue;
+    if (f.found) return;
     if (near && visible && S > P.softSee){
       f.prog = Math.min(1, f.prog + dt / P.settleT);
       if (f.prog >= 1){
         f.found = true;
+        if (f.sp) SEEN.add(f.sp.key);
         EV.push({ t: +simT.toFixed(2), e: 'found', name: f.name });
         settleChord();
       }
     } else {
       f.prog = Math.max(0, f.prog - dt * 0.12);
     }
-  }
+  };
+  for (let i = CLOUDS.length - 1; i >= 0; i--) if (CLOUDS[i].kind === 'animal') settle(CLOUDS[i], true);
+  for (const f of FIGS) settle(f, f.night ? nightness > 0.5 : true);
 
   // the name of what is being seen, softly, once it is a thing to see
   if (gazeFig && gazeFig.found && S > 0.35){
+    if (nameShow !== gazeFig) nameT = 0;
     nameShow = gazeFig; nameT += dt;
   } else { nameT = 0; nameShow = S > 0.35 ? nameShow : null; }
+  if (nameShow && nameShow.gone) nameShow = null;
   nameAlpha += (((nameShow && nameT > 0.6) ? 1 : 0) - nameAlpha) * Math.min(1, dt / 0.8);
 
-  // past the arc, the dark reveals whatever was never found — staggered, one
-  // figure at a time, so the ending is a slow gift rather than a flourish
+  // past the arc, the dark reveals whatever in the land was never found —
+  // staggered, one figure at a time, so the ending is a slow gift rather than
+  // a flourish. (The sky needs no such gift: the night's own softness is
+  // already showing whoever drifts over.)
   if (simT > P.duration){
     FIGS.forEach((f, i) => {
       if (!f.found && simT > P.duration + 8 * i){
@@ -654,26 +1239,67 @@ function advance(dt){
 
 // ── render ──────────────────────────────────────────────────────────────────
 let warmGrad = null, warmGradH = 0;
+
+// the soft view: a two-step downsample of the sharp frame just drawn, then
+// one smooth upscale back over it at alpha S. Bilinear smoothing does the
+// rounding; two steps make it gaussian-ish. Chosen over ctx.filter so it
+// behaves identically in every browser and in headless playtests.
+function softPass(){
+  const k = Math.max(2, P.blurScene * sk * DPR);
+  const aw = Math.max(1, Math.round(cv.width / k)), ah = Math.max(1, Math.round(cv.height / k));
+  const bw = Math.max(1, Math.round(aw / 2)),       bh = Math.max(1, Math.round(ah / 2));
+  if (blurA.width !== aw || blurA.height !== ah){ blurA.width = aw; blurA.height = ah; }
+  if (blurB.width !== bw || blurB.height !== bh){ blurB.width = bw; blurB.height = bh; }
+  bactx.imageSmoothingEnabled = true; bactx.imageSmoothingQuality = 'high';
+  bbctx.imageSmoothingEnabled = true; bbctx.imageSmoothingQuality = 'high';
+  bactx.drawImage(cv, 0, 0, aw, ah);
+  bbctx.drawImage(blurA, 0, 0, bw, bh);
+  ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+  ctx.globalAlpha = S;
+  ctx.drawImage(blurB, 0, 0, W, H);
+  ctx.globalAlpha = 1;
+  DBG.blurs++;
+}
+
+function drawCloud(c, cl){
+  const s = cl.sprite; if (!s || cl.baking) return;
+  const w = s.width / DPR, h = s.height / DPR;
+  c.drawImage(s, sx(cl.cx) - w / 2, sy(cl.cy) - h / 2, w, h);
+}
+
 function render(){
   DBG.frames++;
-  // the two bakes, crossfaded by softness — the entire mechanic in two draws
-  ctx.drawImage(sharpC, 0, 0, W, H);
-  if (S > 0.005){
-    ctx.globalAlpha = S;
-    ctx.drawImage(softC, 0, 0, W, H);
-    ctx.globalAlpha = 1;
-  }
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
 
-  // found figures persist at any sharpness; night-revealed ones arrive dim
+  // the sharp frame: sky, the moving sky, then the land in front of it
+  ctx.drawImage(skyC, 0, 0, W, H);
+  ctx.save();
+  ctx.setTransform(DPR * sk, 0, 0, DPR * sk, DPR * offX, DPR * offY);
+  drawSkyLife(ctx);
+  ctx.restore();
+  for (const cl of CLOUDS) drawCloud(ctx, cl);
+  ctx.drawImage(landC, 0, 0, W, H);
+
+  // and the soft view of exactly that frame, crossfaded by softness
+  if (S > 0.005) softPass();
+
+  // found figures persist at any sharpness; night-revealed ones arrive dim.
+  // A found cloud keeps its animal visible until the wind takes it away.
   ctx.save();
   ctx.setTransform(DPR * sk, 0, 0, DPR * sk, DPR * offX, DPR * offY);
   for (const f of FIGS){
     if (f.night) continue;
     const a = Math.max(f.found ? 0.5 : 0, f.revealed * 0.4) * (1 - S * 0.55);
-    if (a > 0.01){
-      if (f.key === 'visitor') drawLFPlate(ctx, 0.5 * a);
-      else paintFigureMassOne(ctx, f, a);
-    }
+    if (a > 0.01) paintFigureMassOne(ctx, f, a);
+  }
+  for (const cl of CLOUDS){
+    if (!cl.found) continue;
+    const a = 0.5 * (1 - S * 0.55);
+    const pl = cl.plate, w = cl.w;
+    ctx.globalAlpha = 0.5 * a;
+    ctx.drawImage(pl.c, cl.cx - pl.pw * w / 2, cl.cy - pl.ph * w / 2, pl.pw * w, pl.ph * w);
+    ctx.globalAlpha = 1;
   }
   ctx.restore();
 
@@ -698,7 +1324,7 @@ function render(){
 
   // stars arrive with the dark; the heron's are brighter as it is found
   if (nightness > 0.25){
-    const heronF = FIGS[4];
+    const heronF = FIGS.find(f => f.key === 'heron');
     const skyA = (nightness - 0.25) / 0.75;
     ctx.globalCompositeOperation = 'lighter';
     for (const st of STARS){
@@ -768,32 +1394,12 @@ function render(){
   ctx.fillRect(0, 0, W, H);
 }
 
-// one figure's masses, for persistence — same geometry as the emphasis pass
-function paintFigureMassOne(c, f, a){
-  const parts = {
-    whale: [[560,310,240,90,0.05,false],[395,280,90,62,-0.1,false],[788,228,62,48,0.5,false],[566,385,55,26,0.3,false]],
-    giant: [[1215,745,120,55,0.05,true],[1435,690,70,46,0.1,true],[1610,760,130,50,0.06,true],[1865,800,200,70,0.02,true]],
-    hare:  [[470,685,70,110,-0.12,true],[560,755,170,70,0.05,true]],
-    fox:   [[1360,1035,190,85,-0.18,true],[1255,1100,120,40,0.28,true]],
-  }[f.key];
-  if (!parts) return;
-  for (const [x, y, rx, ry, rot, dark] of parts){
-    const g = c.createRadialGradient(x, y, Math.min(rx, ry) * 0.2, x, y, Math.max(rx, ry));
-    const col = dark ? '20,18,30' : '226,204,206';
-    g.addColorStop(0, `rgba(${col},${0.3 * a})`);
-    g.addColorStop(1, `rgba(${col},0)`);
-    c.fillStyle = g;
-    c.save(); c.translate(x, y); c.rotate(rot); c.scale(rx / Math.max(rx, ry), ry / Math.max(rx, ry));
-    c.beginPath(); c.arc(0, 0, Math.max(rx, ry), 0, 6.284); c.fill();
-    c.restore();
-  }
-}
-
 // ── copy (placeholder — pending Norm's voice pass) ──────────────────────────
 const introEl = document.getElementById('intro');
 const LINES = [
   { t: 1.5, out: 10,  s: 'Evening comes on. Nothing here needs looking at hard.' },
   { t: 15,  out: 26,  s: 'Press and hold, and let your eyes half-close. The shapes will run together.' },
+  { t: 44,  out: 56,  s: 'The wind keeps bringing clouds over the valley. Let them be whatever they are.' },
   { t: 336, out: 352, s: 'They were in the hills all day.' },
 ];
 let lineIdx = 0, lineOut = 0;
@@ -814,8 +1420,9 @@ function sayings(){
 // ── audio ───────────────────────────────────────────────────────────────────
 // The Sidelong grammar: quiet, filter not fader, nothing beating, nothing
 // gated and high. Softness opens the lowpass — as the eyes let go, the ear
-// admits more — and the birds settle as the gold drains.
-let AC = null, master = null, padLP = null, chimeBus = null, started = false;
+// admits more — the air rises and falls with the wind, and the birds settle
+// as the gold drains.
+let AC = null, master = null, padLP = null, chimeBus = null, airG = null, started = false;
 function startAudio(){
   if (started) return; started = true;
   try {
@@ -845,8 +1452,8 @@ function startAudio(){
     for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
     const noise = AC.createBufferSource(); noise.buffer = buf; noise.loop = true;
     const bp = AC.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 420; bp.Q.value = 0.5;
-    const ng = AC.createGain(); ng.gain.value = 0.028;
-    noise.connect(bp); bp.connect(ng); ng.connect(master); noise.start();
+    airG = AC.createGain(); airG.gain.value = 0.028;
+    noise.connect(bp); bp.connect(airG); airG.connect(master); noise.start();
 
     chimeBus = AC.createGain(); chimeBus.gain.value = 0.5; chimeBus.connect(master);
   } catch (_) { AC = null; }
@@ -855,6 +1462,7 @@ function startAudio(){
 function updateAudio(){
   if (!AC || !padLP) return;
   padLP.frequency.setTargetAtTime(280 + 1150 * S, AC.currentTime, 1.4);
+  if (airG) airG.gain.setTargetAtTime(0.028 * clamp(windNow / Math.max(1, P.wind), 0.5, 1.6), AC.currentTime, 2.5);
 }
 
 const PENT = [392.0, 440.0, 523.25, 587.33, 659.25, 784.0];
@@ -895,16 +1503,16 @@ function clamp(v, a, b){ return v < a ? a : (v > b ? b : v); }
 // ── loop ────────────────────────────────────────────────────────────────────
 let prev = performance.now();
 let lastFrameAt = performance.now();
+let frozen = false;           // debug: stop the rAF clock for deterministic renders
 function frame(now){
   const dt = Math.min(0.05, (now - prev) / 1000);
   prev = now;
-  advance(dt);
-  render();
+  if (!frozen){ advance(dt); render(); }
   lastFrameAt = now;
   requestAnimationFrame(frame);
 }
 setInterval(() => {
-  if (performance.now() - lastFrameAt > 500){
+  if (!frozen && performance.now() - lastFrameAt > 500){
     prev = performance.now() - 16;
     frame(performance.now());
   }
@@ -915,11 +1523,12 @@ const panel = document.getElementById('tune');
 window.addEventListener('keydown', e => {
   if (e.key === 't') panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
 });
-function bind(id, key, fmt){
+function rebakeAll(){ for (const cl of CLOUDS) bakeCloud(cl); }
+function bind(id, key, fmt, after){
   const s = document.getElementById('s_' + id), v = document.getElementById('v_' + id);
   s.value = P[key];
   v.textContent = fmt(P[key]);
-  s.addEventListener('input', () => { P[key] = parseFloat(s.value); v.textContent = fmt(P[key]); });
+  s.addEventListener('input', () => { P[key] = parseFloat(s.value); v.textContent = fmt(P[key]); if (after) after(); });
 }
 bind('up',     'tauUp',      x => x.toFixed(1));
 bind('down',   'tauDown',    x => x.toFixed(2));
@@ -927,11 +1536,17 @@ bind('strain', 'strainMax',  x => x | 0);
 bind('settle', 'settleT',    x => x.toFixed(2));
 bind('floor',  'nightFloor', x => x.toFixed(2));
 bind('dusk',   'duskT',      x => x | 0);
+bind('wind',   'wind',       x => x | 0);
+bind('gap',    'animalGap',  x => x | 0);
+bind('maxa',   'maxAnimals', x => x | 0);
+bind('str',    'animalStr',  x => x.toFixed(2), rebakeAll);
+bind('tex',    'texture',    x => x.toFixed(2), rebakeAll);
+bind('blur',   'blurScene',  x => x.toFixed(1));
 
 // ── debug API for playtesting ───────────────────────────────────────────────
 // Sim state accrues from dt only, so step() is a true synchronous clock.
 window.__soften = {
-  P, EV, DBG,
+  P, EV, DBG, SPECIES,
   get t(){ return simT; },
   get S(){ return S; },
   get soft(){ return soft; },
@@ -939,29 +1554,71 @@ window.__soften = {
   get smoothSpeed(){ return smoothSpeed; },
   get holding(){ return holding; },
   get gaze(){ return [gx | 0, gy | 0]; },
+  get wind(){ return +windNow.toFixed(2); },
+  get seed(){ return SKY_SEED; },
+  get view(){ return { sk, DPR, offX, offY, W, H, ...visBounds() }; },
   get figures(){ return FIGS.map(f => ({ key: f.key, name: f.name, prog: +f.prog.toFixed(3), found: f.found, revealed: +f.revealed.toFixed(3) })); },
+  get clouds(){
+    return CLOUDS.map(c => ({ id: c.id, kind: c.kind, name: c.name, z: +c.z.toFixed(2), x: c.cx | 0, y: c.cy | 0,
+      ex: c.ex | 0, ey: c.ey | 0, screen: [sx(c.cx) | 0, sy(c.cy) | 0], prog: +c.prog.toFixed(3), found: c.found }));
+  },
   get summary(){
     return {
       durationS: +simT.toFixed(1),
       meanSoft: +(sampleT > 0 ? softSum / sampleT : 0).toFixed(3),
       heldFrac: +(sampleT > 0 ? heldSum / sampleT : 0).toFixed(3),
-      found: FIGS.filter(f => f.found).map(f => f.name),
+      found: FIGS.filter(f => f.found).map(f => f.name).concat(EV.filter(e => e.e === 'found' && /^an? /.test(e.name)).map(e => e.name)),
+      skySpeciesSeen: [...SEEN],
+      animalsArrived: EV.filter(e => e.e === 'arrive' && e.kind === 'animal').map(e => e.name),
       revealedByNight: FIGS.filter(f => !f.found && f.revealed >= 1).map(f => f.name),
     };
   },
-  // screen position of a figure's centre, for aiming synthetic gazes
-  figAt(key){ const f = FIGS.find(f => f.key === key); return f ? { x: sx(f.cx) | 0, y: sy(f.cy) | 0, r: (f.r * sk) | 0 } : null; },
-  // hide any image in the sky as a low-frequency figure (data URI or URL).
-  // opts: { cx, cy, w, strength, name } in scene units.
-  embedImage(src, opts){
+  // screen position of a figure's centre (land figure key, or a cloud id)
+  figAt(key){
+    const f = FIGS.find(f => f.key === key) || CLOUDS.find(c => c.id === key || (c.sp && c.sp.key === key));
+    return f ? { x: sx(f.cx) | 0, y: sy(f.cy) | 0, r: (f.r * sk) | 0 } : null;
+  },
+  // hide any image in the sky as a low-frequency cloud animal (data URI or
+  // URL). It joins the procession next. opts: { w, name, key } (w in scene units).
+  embedImage(src, opts = {}){
     return new Promise((resolve, reject) => {
       const img = new Image();
       img.crossOrigin = 'anonymous';
-      img.onload = () => { setLFImage(img, opts); resolve({ ok: true, figure: LF_OPTS.name, at: [LF_OPTS.cx, LF_OPTS.cy] }); };
+      img.onload = () => {
+        const key = opts.key || 'visitor';
+        let sp = SPECIES.find(s => s.key === key);
+        if (!sp){ sp = { key }; SPECIES.push(sp); }
+        sp.name = opts.name || 'a visitor';
+        sp.w = opts.w || 460;
+        sp.str = opts.str || 1.6;   // an image plate is feathered and two-toned, so it needs a lift
+        sp.plate = plateFromImage(img, opts);
+        if (opts.next !== false){
+          deck = deck.filter(s => s !== sp); deck.push(sp);
+          nextAnimalAt = Math.min(nextAnimalAt, simT + 1);
+        }
+        resolve({ ok: true, figure: sp.name });
+      };
       img.onerror = reject;
       img.src = src;
     });
   },
+  // the sky, by hand — for screenshots and playtests
+  clearSky(){ CLOUDS.length = 0; FLOCK = null; nextAnimalAt = nextDecoyAt = nextFlockAt = 1e9; return true; },
+  resumeWeather(){ nextAnimalAt = simT + 1; nextDecoyAt = simT + 1; nextFlockAt = simT + 20; return true; },
+  place(key, o = {}){
+    const vb = visBounds();
+    const sp = key === 'decoy' ? null : SPECIES.find(s => s.key === key);
+    if (key !== 'decoy' && !(sp && sp.plate)) return null;
+    const cl = makeCloud(sp ? 'animal' : 'decoy', sp, o.z ?? 1);
+    cl.cx = o.x ?? (vb.xL + vb.xR) / 2;
+    cl.cy = o.y ?? Math.min(P.cloudBottom - cl.ey, (vb.yT + 600) / 2);
+    bakeCloud(cl); CLOUDS.push(cl); CLOUDS.sort((a, b) => a.z - b.z);
+    render();
+    return { id: cl.id, x: cl.cx | 0, y: cl.cy | 0, screen: [sx(cl.cx) | 0, sy(cl.cy) | 0], ex: cl.ex | 0, ey: cl.ey | 0 };
+  },
+  pinS(v){ S_PIN = v; if (v !== null) S = v; render(); return S; },
+  freeze(on = true){ frozen = on; return frozen; },
+  render(){ render(); return true; },
   // synthetic input through the real handlers' state
   look(x, y){ pointerHere = true; gTX = x; gTY = y; return [x, y]; },
   press(){ holding = true; return true; },
@@ -1002,31 +1659,33 @@ window.__soften = {
 if (!/dev/.test(location.search)){
   document.getElementById('hint').style.display = 'none';
 } else {
-  // dev affordance: drop any image onto the page and it becomes the hidden
-  // figure — iterate on generated images without touching the code
-  document.getElementById('hint').innerHTML = 't&nbsp;·&nbsp;tuning&nbsp;&nbsp;·&nbsp;&nbsp;drop an image to hide it';
+  // dev affordance: drop any image onto the page and it becomes the next
+  // cloud animal — iterate on generated images without touching the code
+  document.getElementById('hint').innerHTML = 't&nbsp;·&nbsp;tuning&nbsp;&nbsp;·&nbsp;&nbsp;drop an image to send it over';
   window.addEventListener('dragover', e => e.preventDefault());
   window.addEventListener('drop', e => {
     e.preventDefault();
     const file = e.dataTransfer.files && e.dataTransfer.files[0];
     if (!file || !/^image\//.test(file.type)) return;
     const rd = new FileReader();
-    rd.onload = () => window.__soften.embedImage(rd.result);
+    rd.onload = () => window.__soften.embedImage(rd.result, { name: 'a visitor', key: 'visitor' });
     rd.readAsDataURL(file);
   });
 }
+buildPlates();
 resize();
+seedSky();
 gx = gTX = lastGx = W / 2;
 gy = gTY = lastGy = H / 2;
 window.addEventListener('resize', resize);
 requestAnimationFrame(frame);
 
-// The default imported figure: Pond Watch's duck, swimming in the clouds —
+// The first imported figure: Pond Watch's duck, swimming in the clouds —
 // painted grayscale, downsampled to 48x30 (that downsample IS what makes it
 // a low-frequency image), and inlined so the file stays self-contained. It
-// hides in the sky like everything else; a dropped image replaces it.
+// joins the deck like any authored animal; a dropped image joins beside it.
 const DUCK_LF = 'data:image/png;base64,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';
-window.__soften.embedImage(DUCK_LF, { name: 'the duck', cx: 1430, cy: 240, w: 660, strength: 0.68 });
+window.__soften.embedImage(DUCK_LF, { name: 'a duck', key: 'duck', w: 480, next: false });
 </script>
 </body>
 </html>
