@@ -36,6 +36,12 @@ verify_jwt = false
 [functions.auto-enroll]
 verify_jwt = false
 
+[functions.buddy_send]
+# Accountability Buddy. Cron presents an sb_secret_ key (not a JWT); the
+# /admin/buddy test buttons present a super-admin JWT. The function checks
+# both itself, so the gateway must let the request through.
+verify_jwt = false
+
 # ── Called from unauthenticated public links ───────────────────────────────
 [functions.handle_unsubscribe]
 verify_jwt = false
