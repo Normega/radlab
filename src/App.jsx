@@ -40,6 +40,7 @@ const MyRipplePage   = lazy(() => import('./pages/MyRipplePage'))
 const AvatarEditor   = lazy(() => import('./components/Avatar/AvatarEditor'))
 const Unsubscribe    = lazy(() => import('./pages/Unsubscribe'))
 const Withdraw       = lazy(() => import('./pages/Withdraw'))
+const BuddyCheckin   = lazy(() => import('./pages/BuddyCheckin'))
 const ConsentPage    = lazy(() => import('./pages/ConsentPage'))
 const Verified       = lazy(() => import('./pages/Verified'))
 
@@ -933,6 +934,9 @@ export default function App() {
 
           {/* Formal study withdrawal (from lapsed session emails) — no auth or layout */}
           <Route path="/withdraw/:token" element={<Withdraw />} />
+
+          {/* Accountability Buddy daily check-in (emailed link) — no auth or layout, not linked anywhere */}
+          <Route path="/buddy/:token" element={<BuddyCheckin />} />
 
           {/* Admin section — role-gated */}
           <Route element={<AdminRoute session={session} role={role} superAdmin={superAdmin} />}>

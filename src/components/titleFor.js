@@ -58,6 +58,9 @@ const PREFIX = [
   ['/ripple', 'My Ripple — RADlab'],
   ['/study/', 'Study — RADlab'],
   ['/s/', 'Session — RADlab'],
+  // Accountability Buddy: deliberately bare — unlinked, private, and the tab
+  // should not announce the lab or the tool to anyone looking over a shoulder.
+  ['/buddy/', 'Check-in'],
 ]
 
 // Course-scoped academic routes: /academic/:courseCode(/:segment/…). The
