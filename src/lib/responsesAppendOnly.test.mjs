@@ -26,6 +26,12 @@ const RESPONSE_TABLES = [
   'intervention_responses',
   'screener_results',
   'experience_factory_trials',
+  // Accountability Buddy (20260926_accountability_buddy.sql). Guarded by
+  // forbid_response_overwrite_trg only: unique (student_id, set_on) and unique
+  // goal_id make a resubmission impossible to insert, so there is nothing for
+  // note_response_trg to flag.
+  'buddy_goals',
+  'buddy_outcomes',
 ]
 
 let pass = 0, fail = 0
