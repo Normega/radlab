@@ -31,6 +31,7 @@
 <canvas id="c"></canvas>
 <div id="intro">Something is moving through the meadow.<br>Hold to walk. There is no hurry.</div>
 <div id="hint">t&nbsp;·&nbsp;tuning</div>
+<script>/* tuning hint shows only with ?dev; t still opens the panel */ if(!/[?&]dev/.test(location.search)) document.getElementById('hint').style.display='none';</script>
 <div id="tune">
   <label>companion band near (px) <span id="v_near"></span></label><input type="range" id="s_near" min="40" max="180" step="5">
   <label>companion band far (px) <span id="v_far"></span></label><input type="range" id="s_far" min="200" max="500" step="10">

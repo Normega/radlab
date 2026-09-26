@@ -31,6 +31,7 @@
 <canvas id="c"></canvas>
 <div id="intro">The pods are ripe. The wind is patient.</div>
 <div id="hint">t&nbsp;·&nbsp;tuning</div>
+<script>/* tuning hint shows only with ?dev; t still opens the panel */ if(!/[?&]dev/.test(location.search)) document.getElementById('hint').style.display='none';</script>
 <div id="tune">
   <label>wind base (px/s) <span id="v_wind"></span></label><input type="range" id="s_wind" min="10" max="120" step="2">
   <label>gust strength <span id="v_gust"></span></label><input type="range" id="s_gust" min="0" max="2" step="0.05">

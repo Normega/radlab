@@ -53,10 +53,10 @@ function IntroScreen({ onStart }) {
         },
         {
           title: 'Walk beside it instead',
-          body: 'Stay near, at its pace, and something settles between you. Listen for it: your two notes drift into tune when you have it.',
+          body: 'Stay near, at its pace, and something settles between you. Listen for it: your two notes drift into tune as you walk together.',
         },
       ]}
-      note={<>Sound on, if you can — most of what tells you how you are doing is in it. Take about five minutes, or leave whenever you like.</>}
+      note={<>Sound on, if you can — most of what happens is in it. Take about five minutes, or leave whenever you like.</>}
       onStart={onStart}
     />
   )

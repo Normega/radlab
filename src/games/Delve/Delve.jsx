@@ -108,11 +108,13 @@ function IntroScreen({ onStart }) {
   return (
     <GameIntro
       title="Delve."
-      lead={<>An image waits behind haze.<br />This is a practice in letting attention settle — not in finding anything.</>}
+      lead={<>An image waits behind haze.<br />A practice in letting attention settle somewhere.</>}
       steps={[
-        { title: 'Rest, don’t search', body: 'Let your cursor settle somewhere — or rest a finger on the screen. Held still, that spot slowly comes clear.' },
-        { title: 'Movement reveals nothing', body: 'Quick scanning keeps the haze in place. There is no correct place to look.' },
-        { title: 'Nothing to complete', body: 'What you’ve seen drifts back to haze after a while. Stay as long as you like — a quiet finish button waits in the corner.' },
+        // Copy matches the senseforaging.com Delve: say what to do, give
+        // attention questions with no right answer, and count wandering as data.
+        { title: 'Let it rest somewhere', body: 'Settle your cursor on one spot — or rest a finger on the screen. Held still, that spot slowly comes clear. Anywhere counts.' },
+        { title: 'Things to notice', body: 'What arrives first — an edge, a colour, a shape? Does the clearing spread outward from your finger, or surface all at once? When you move on, what happens to what you left?' },
+        { title: 'Where your eye goes to rest', body: 'When your attention wanders, notice where it lands — that’s worth as much as the dwelling. Stay as long as you like; a quiet finish button waits in the corner.' },
       ]}
       onStart={onStart}
     />
@@ -120,10 +122,12 @@ function IntroScreen({ onStart }) {
 }
 
 function SummaryScreen({ summary, onPlay }) {
-  const { durationMs, avgDwellMs, episodeCount } = summary
+  // Dwell time is still recorded (performance.delve_avg_dwell_ms) but never
+  // shown: a number on this screen becomes a score by the second session.
+  const { durationMs, avgDwellMs } = summary
   const dwellLine = avgDwellMs != null
-    ? `Your attention settled ${episodeCount === 1 ? 'once' : `${episodeCount} times`}, resting for ${(avgDwellMs / 1000).toFixed(1)}s at a time on average.`
-    : 'Movement kept the haze in place this time — nothing wrong with that.'
+    ? 'Your attention came to rest here and there, and parts of the image came clear.'
+    : 'Your attention kept moving this time — that’s its own way of looking.'
 
   return (
     <div style={{ maxWidth: 400, textAlign: 'center', padding: '0 16px', width: '100%' }}>

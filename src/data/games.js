@@ -134,7 +134,7 @@ export const GAMES = [
     title: 'Pond Watch',
     to: '/games/pond-watch',
     badge: 'Go / No-Go · Reaction time',
-    desc: "A duck appears — hit spacebar. A heron glides past — don't you dare. Your brain will betray you.",
+    desc: 'A duck means press; anything else, let it pass. Fast, narrow watching — a skill of its own.',
     category: 'attention',
     bucket: 'medium',
     duration: '~4 min',

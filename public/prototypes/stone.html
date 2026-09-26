@@ -29,8 +29,9 @@
 </head>
 <body>
 <canvas id="c"></canvas>
-<div id="intro">You are a stone in a stream.<br>The afternoon is long. Things will come.</div>
+<div id="intro">You are a stone in a stream.<br>The afternoon is long. Things will come.<br>Press and hold near whatever arrives, and stay.</div>
 <div id="hint">t&nbsp;·&nbsp;tuning</div>
+<script>/* tuning hint shows only with ?dev; t still opens the panel */ if(!/[?&]dev/.test(location.search)) document.getElementById('hint').style.display='none';</script>
 <div id="tune">
   <label>visitor interval (s) <span id="v_visit"></span></label><input type="range" id="s_visit" min="6" max="40" step="1">
   <label>attend radius (px) <span id="v_att"></span></label><input type="range" id="s_att" min="40" max="200" step="5">
@@ -798,7 +799,7 @@ resize();seedStars();
 window.addEventListener('resize',resize);
 const intro=document.getElementById('intro');
 setTimeout(()=>{intro.style.opacity=1;},600);
-setTimeout(()=>{intro.style.opacity=0;},7000);
+setTimeout(()=>{intro.style.opacity=0;},10000);
 requestAnimationFrame(frame);
 </script>
 </body>
