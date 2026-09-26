@@ -8,7 +8,8 @@ import defaultBg from './assets/default-background.jpg'
 import {
   DWELL_VELOCITY_PX_S, REVEAL_RADIUS, GROWTH_RATE, DECAY_RATE,
   CELL, DPR_MAX, HAZE_FILTER, HAZE_BG, PARCHMENT,
-  PROMPT_IN_MS, PROMPT_OUT_MS,
+  RING_DIAMETER, RING_OPEN_S, RING_CLOSE_S, CLEAR_AT,
+  LINE_HOLD_MS, LINE_GAP_MS, RESTLESS_S, QUESTION_AT_S,
 } from './constants'
 
 /* ── SQL (applied 2026-07-22, supabase/migrations/20260722_delve.sql) ─────────
@@ -31,6 +32,20 @@ ALTER TABLE performance
 
 const REDUCED_MOTION = typeof window !== 'undefined'
   && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+const COARSE_INPUT = typeof window !== 'undefined'
+  && !!window.matchMedia?.('(pointer: coarse)')?.matches
+
+// Each shown at most once, in response to what the player does (see
+// updateGuidance). Lowercase, like the rest of the stage text. Say what to do;
+// never a goal.
+const LINES = {
+  start:    COARSE_INPUT ? 'rest a finger anywhere' : 'let the pointer stop anywhere',
+  cleared:  'that’s the picture, underneath. there’s more of it.',
+  wander:   'wander wherever you like. nothing to find, nothing to finish.',
+  restless: 'let it stop somewhere for a moment',
+  q1:       'what arrives first — an edge, a colour, a shape?',
+  q2:       'when you move on, what happens to what you left?',
+}
 
 // ─── SUPABASE ─────────────────────────────────────────────────────────────────
 
@@ -108,7 +123,7 @@ function IntroScreen({ onStart }) {
   return (
     <GameIntro
       title="Delve."
-      lead={<>An image waits behind haze.<br />A practice in letting attention settle somewhere.</>}
+      lead={<>A picture to wander. Wherever you rest, it clears.<br />Nothing to find or finish.</>}
       steps={[
         // Copy matches the senseforaging.com Delve: say what to do, give
         // attention questions with no right answer, and count wandering as data.
@@ -147,7 +162,6 @@ function SummaryScreen({ summary, onPlay }) {
 
 export default function Delve({ session }) {
   const [phase, setPhase]       = useState('intro')   // intro | delve | summary
-  const [promptOn, setPromptOn] = useState(false)
   const [summary, setSummary]   = useState(null)
 
   const sessionIdRef  = useRef(null)
@@ -158,6 +172,8 @@ export default function Delve({ session }) {
   const stageRef      = useRef(null)
   const canvasRef     = useRef(null)
   const glowRef       = useRef(null)
+  const ringRef       = useRef(null)
+  const lineRef       = useRef(null)
 
   const userId = session?.user?.id ?? null
 
@@ -190,14 +206,6 @@ export default function Delve({ session }) {
     setPhase('summary')
   }
 
-  // Prompt fade in/out
-  useEffect(() => {
-    if (phase !== 'delve') return
-    const t1 = setTimeout(() => setPromptOn(true), PROMPT_IN_MS)
-    const t2 = setTimeout(() => setPromptOn(false), PROMPT_OUT_MS)
-    return () => { clearTimeout(t1); clearTimeout(t2); setPromptOn(false) }
-  }, [phase])
-
   // ─── Canvas engine — faithful port of dwell_to_reveal_prototype.html ────────
   // Everything per-frame lives in this closure; zero React state in the loop.
   useEffect(() => {
@@ -205,6 +213,8 @@ export default function Delve({ session }) {
     const stage  = stageRef.current
     const canvas = canvasRef.current
     const glow   = glowRef.current
+    const ring   = ringRef.current
+    const lineEl = lineRef.current
     if (!stage || !canvas) return
 
     const ctx = canvas.getContext('2d')
@@ -285,6 +295,10 @@ export default function Delve({ session }) {
         glow.style.left = e.clientX + 'px'
         glow.style.top = e.clientY + 'px'
       }
+      if (ring) {
+        ring.style.left = e.clientX + 'px'
+        ring.style.top = e.clientY + 'px'
+      }
     }
     function onPointerDown(e) {
       stage.setPointerCapture(e.pointerId)
@@ -300,6 +314,7 @@ export default function Delve({ session }) {
     function deactivate() {
       pointerActive = false
       if (glow) glow.style.opacity = '0'
+      if (ring) ring.style.opacity = '0'
     }
     stage.addEventListener('pointerdown', onPointerDown)
     stage.addEventListener('pointermove', onPointerMove)
@@ -355,6 +370,70 @@ export default function Delve({ session }) {
       }
     }
 
+    // ── Guidance: the stillness ring and the one-time lines ──
+    // The ring is the rule made visible: it opens while the pointer is still
+    // and closes when it moves, so the player learns that stopping does
+    // something before anything has visibly cleared.
+    let stillness = 0
+    // Lines queue and show one at a time, each at most once. DOM only, no
+    // React state, like the glow.
+    const said = new Set()
+    const queue = []
+    let lineUntil = 0, nextLineAt = 0
+    function say(key) {
+      if (said.has(key)) return
+      said.add(key)
+      queue.push(LINES[key])
+    }
+    let elapsed = 0            // s on the stage; dt is capped, so hidden time barely counts
+    let restlessS = 0          // pointer active and moving, since the last clearing
+    let firstClear = null      // where the first clearing happened
+    let clearedHere = false    // this rest has already counted as a clearing
+    const startTimer = setTimeout(() => say('start'), 500)
+
+    function updateGuidance(now, dt, dwelling) {
+      elapsed += dt
+
+      stillness += dwelling ? dt / RING_OPEN_S : -dt / RING_CLOSE_S
+      stillness = Math.max(0, Math.min(1, stillness))
+      const gx = Math.min(cols - 1, Math.max(0, Math.round(px / CELL)))
+      const gy = Math.min(rows - 1, Math.max(0, Math.round(py / CELL)))
+      const vHere = revealMap[gy * cols + gx]
+      if (ring) {
+        const e = stillness * stillness * (3 - 2 * stillness)   // smoothstep
+        // once the patch has cleared, the ring steps back and lets the image be
+        const alpha = pointerActive ? (0.18 + 0.4 * e) * (1 - 0.55 * vHere) : 0
+        ring.style.opacity = alpha.toFixed(3)
+        ring.style.transform = `translate(-50%, -50%) scale(${(0.18 + 0.82 * e).toFixed(3)})`
+      }
+
+      if (dwelling && vHere > CLEAR_AT && !clearedHere) {
+        clearedHere = true
+        restlessS = 0
+        if (!firstClear) { firstClear = { x: px, y: py }; say('cleared') }
+        else if (Math.hypot(px - firstClear.x, py - firstClear.y) > RING_DIAMETER * 1.5) say('wander')
+      }
+      if (!dwelling) clearedHere = false
+      // judged on the smoothed stillness, not the raw per-frame velocity:
+      // a frame with no pointer event reads as "still" even mid-sweep
+      if (pointerActive && stillness < 0.35) restlessS += dt
+      if (restlessS > RESTLESS_S) say('restless')
+      if (elapsed > QUESTION_AT_S[0]) say('q1')
+      if (elapsed > QUESTION_AT_S[1]) say('q2')
+
+      if (!lineEl) return
+      if (lineUntil && now > lineUntil) {
+        lineEl.style.opacity = '0'
+        lineUntil = 0
+        nextLineAt = now + LINE_GAP_MS
+      }
+      if (!lineUntil && queue.length && now > nextLineAt) {
+        lineEl.textContent = queue.shift()
+        lineEl.style.opacity = '0.72'
+        lineUntil = now + LINE_HOLD_MS
+      }
+    }
+
     let lastFrameT = performance.now()
     let rafId = 0
 
@@ -402,12 +481,15 @@ export default function Delve({ session }) {
       ctx.drawImage(hazeCanvas, 0, 0, W, H)
       ctx.drawImage(revealedCanvas, 0, 0, W, H)
 
+      updateGuidance(now, dt, dwelling)
+
       rafId = requestAnimationFrame(tick)
     }
     rafId = requestAnimationFrame(tick)
 
     return () => {
       cancelAnimationFrame(rafId)
+      clearTimeout(startTimer)
       window.removeEventListener('resize', resize)
       document.removeEventListener('visibilitychange', onVisibility)
       stage.removeEventListener('pointerdown', onPointerDown)
@@ -431,7 +513,8 @@ export default function Delve({ session }) {
         <div ref={stageRef} style={{ position: 'absolute', inset: 0, touchAction: 'none', cursor: 'none' }}>
           <canvas ref={canvasRef} style={{ display: 'block', width: '100%', height: '100%' }} />
         </div>
-        <div style={{ ...S.prompt, opacity: promptOn ? 0.65 : 0 }}>let your attention rest here</div>
+        <div ref={lineRef} style={S.prompt} />
+        <div ref={ringRef} style={S.ring} />
         <div ref={glowRef} style={S.glow} />
         <button style={S.finishBtn} onClick={finish}>finish</button>
       </div>
@@ -460,11 +543,19 @@ const S = {
   btnOutline: { background: 'white', color: '#f068a4', border: '1.5px solid #f068a4', borderRadius: 12, padding: 11, fontFamily: 'DM Sans,sans-serif', fontSize: 13, fontWeight: 600, cursor: 'pointer' },
 
   prompt: {
-    position: 'fixed', top: '12%', left: '50%', transform: 'translateX(-50%)',
+    position: 'fixed', bottom: '13%', left: '50%', transform: 'translateX(-50%)',
+    opacity: 0, padding: '0 20px', boxSizing: 'border-box', lineHeight: 1.6,
     color: PARCHMENT, fontSize: '0.85rem', letterSpacing: '0.14em', textTransform: 'lowercase',
     pointerEvents: 'none', textAlign: 'center', width: '100%',
     textShadow: '0 1px 12px rgba(0,0,0,0.6)',
     transition: REDUCED_MOTION ? 'none' : 'opacity 2.4s ease',
+  },
+  ring: {
+    position: 'fixed', left: '50%', top: '50%',
+    width: RING_DIAMETER, height: RING_DIAMETER, borderRadius: '50%',
+    border: '1px solid rgba(240,230,216,0.95)',
+    boxShadow: '0 0 14px rgba(0,0,0,0.25), inset 0 0 14px rgba(0,0,0,0.12)',
+    transform: 'translate(-50%, -50%) scale(0.18)', pointerEvents: 'none', opacity: 0, zIndex: 4,
   },
   glow: {
     position: 'fixed', width: 14, height: 14, borderRadius: '50%',
