@@ -24,13 +24,16 @@ import {
 
 // Owls perch along the high beam every ~1100 plate px, so a phone's narrower view (about 860 px of
 // plate in portrait) nearly always has one in it - the owls carry the visual hoot cue. Facing alternates.
-const PERCH_Y = { c1: 282, c2: 268 }
+// Owls perch on the lower crossbeam (c1) and the stall-front tops (c2): at the 1.4x size chosen
+// 2026-09-27 an owl on the high beam would lose the top of its head to the plate edge, and lower
+// down they loom over the mouse. Heights are the beam tops from the Blender camera geometry.
+const PERCH_Y = { c1: 872, c2: 838 }
 const perchesFor = (cor, width) => {
   const out = []
-  for (let x = 700, i = 0; x < width - 400; x += 1100, i++) out.push({ x, y: PERCH_Y[cor], s: i % 2 ? -1 : 1 })
+  for (let x = 540, i = 0; x < width - 400; x += 1100, i++) out.push({ x, y: PERCH_Y[cor], s: i % 2 ? -1 : 1 })
   return out
 }
-const OWL_DRAW_H = 250          // owl height on the plate
+const OWL_DRAW_H = 350          // owl height on the plate (1.4x, chosen 2026-09-27: they should loom)
 const MOUSE_DRAW_W = 150        // crouched mouse width on the plate, tail included
 const MOVE_MS_PER_STEP = 480
 const SWOOP_DIVE = 0.5, SWOOP_CARRY = 0.7, SWOOP_DROP = 0.25, SWOOP_BACK = 0.6
@@ -295,9 +298,10 @@ export function createOwlBarn(canvas, opts) {
     if (showVisualHoot) {
       S.glow = lerp(S.glow || 0, hooting ? 1 : 0, 1 - Math.exp(-dt * (hooting ? 6 : 3)))
       if (S.glow > 0.01) {
-        const g = ctx.createLinearGradient(0, 0, 0, 700)
-        g.addColorStop(0, `rgba(122,40,0,${0.42 * S.glow * (0.85 + 0.15 * Math.sin(t * 5))})`); g.addColorStop(1, 'rgba(122,40,0,0)')
-        ctx.fillStyle = g; ctx.fillRect(cam.x, 0, vw, 700)
+        const g = ctx.createLinearGradient(0, 300, 0, 1100)
+        const ga = 0.42 * S.glow * (0.85 + 0.15 * Math.sin(t * 5))
+        g.addColorStop(0, 'rgba(122,40,0,0)'); g.addColorStop(0.5, `rgba(122,40,0,${ga})`); g.addColorStop(1, 'rgba(122,40,0,0)')
+        ctx.fillStyle = g; ctx.fillRect(cam.x, 300, vw, 800)
       }
     }
 

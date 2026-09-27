@@ -2545,7 +2545,7 @@ The Night Safari is a six-exhibit game from the April 2026 specs in `I:\Shared d
 1. The corridors are built in Blender (5.2.1 portable, driven over the Blender MCP) from Poly Haven CC0 assets. They are rendered as tall, wide plates: phones in portrait show floor to rafters, and landscape shows the same plate wider.
 2. Each plate is painted in the inked night style by `gpt-image-2` in independent 1024×1536 tiles (`paint-corridor.py`), joined by a cross-fade in the overlap.
 3. Props are painted one at a time on a transparent background, so the game places them from `scene.json`.
-4. Characters are cut-out drawings: the owl is a headless body plus neutral, blink, hoot and glare heads on a neck pivot, with a separate swoop drawing. The mouse is seven key poses.
+4. Characters are cut-out drawings: the owl is a headless body plus neutral, blink, hoot and glare heads on a neck pivot, with a separate swoop drawing. The mouse is seven key poses. **The owl was redesigned the same day** at Norm's request ("the owl has to look way scarier"): a dark great horned owl with burning amber eyes, chosen from three candidates. It is drawn 1.4× larger and perches on the lower crossbeam (c1) and the stall-front tops (c2), where it looms over the mouse and stays fully in frame.
 
 Every generated image is recorded in `ComeSee/Safari/art/generated/ledger.jsonl` with its prompt, inputs and licence (spend cap 400). `export-owlbarn-assets.py` builds the bundled assets: 34 files, 2.3 MB, fetched only on the game's route.
 

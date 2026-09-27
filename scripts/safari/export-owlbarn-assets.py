@@ -20,7 +20,9 @@ OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'src'
 OUT = os.path.normpath(OUT)
 os.makedirs(OUT, exist_ok=True)
 
-OWL_H = 440          # exported owl height in px (displayed ~300 plate px, sharp up to DPR 2)
+OWL_H = 520          # exported owl height in px (displayed ~350 plate px, sharp up to DPR 2)
+OWL = 'owlA'         # which owl rig: owlA = the horned menace chosen 2026-09-27 (the first, cuter owl was 'owl')
+OWL_MASTER = 'owl_scary_A_horned'
 MOUSE_W = 320        # exported width of the mouse master pose, tail included
 NECK_FEATHER = 40
 
@@ -63,12 +65,14 @@ for cor in ('c1', 'c2'):
     scene[cor] = {'width': plate.width, 'height': plate.height, 'props': props}
 
 # ── owl rig ──────────────────────────────────────────────────────────────────
-master = newest('char_owl_master')
+master = newest(OWL_MASTER)
 alpha = np.asarray(master.getchannel('A')) > 40
-rows = [(alpha[y].sum(), y) for y in range(620, 900)]
+ys_m = np.where(alpha.any(1))[0]
+lo, hi = int(ys_m[0] + (ys_m[-1] - ys_m[0]) * 0.30), int(ys_m[0] + (ys_m[-1] - ys_m[0]) * 0.50)
+rows = [(alpha[y].sum(), y) for y in range(lo, hi)]   # narrowest row between face ruff and body
 neck = min(rows)[1]
-body = newest('owl_body_headless')
-heads = {k: newest('owl_head_' + k) for k in ('neutral', 'blink', 'hoot', 'glare')}
+body = newest(OWL + '_body_headless')
+heads = {k: newest(OWL + '_head_' + k) for k in ('neutral', 'blink', 'hoot', 'glare')}
 
 ys = np.where(np.asarray(body.getchannel('A')).any(1))[0]
 feet_y = int(ys[-1])
@@ -98,21 +102,21 @@ rig = {'height': OWL_H, 'pivot': [0, round((neck - feet_y) * scale, 1)], 'body':
 for k, im in heads.items():
     rig['heads'][k] = part(cut_head(im), f'owl_head_{k}.webp')
 
-# eye centres (for the glow in the rafters): the two largest dark blobs in the neutral head's face band
+# eye centres (for the hoot glow): the two largest bright amber blobs in the neutral head's face band
 nh = np.asarray(heads['neutral']).astype(np.int32)
-lum = (nh[..., 0] * 3 + nh[..., 1] * 6 + nh[..., 2]) // 10
-dark = (lum < 55) & (nh[..., 3] > 200)
-band = np.zeros_like(dark); band[250:neck - 60, 150:874] = True
-pts = np.argwhere(dark & band)
+r, g, b, al = nh[..., 0], nh[..., 1], nh[..., 2], nh[..., 3]
+amber = (r > 190) & (g > 90) & (g < 215) & (b < 110) & (al > 200)
+band = np.zeros_like(amber); band[int(ys_m[0]):neck, 150:874] = True
+pts = np.argwhere(amber & band)
 eyes = []
 for side in (pts[pts[:, 1] < 512], pts[pts[:, 1] >= 512]):
     if len(side):
         cy, cx = side.mean(0)
-        r = np.sqrt(len(side) / np.pi)
-        eyes.append({'x': round((cx - 512) * scale, 1), 'y': round((cy - feet_y) * scale, 1), 'r': round(r * scale, 1)})
+        rr = np.sqrt(len(side) / np.pi)
+        eyes.append({'x': round(float(cx - 512) * scale, 1), 'y': round(float(cy - feet_y) * scale, 1), 'r': round(float(rr) * scale, 1)})
 rig['eyes'] = eyes
 
-sw = clean_alpha(newest('owl_swoop'))
+sw = clean_alpha(newest(OWL + '_swoop'))
 bb = sw.getchannel('A').getbbox(); c = sw.crop(bb)
 sws = OWL_H * 1.05 / c.height
 save_webp(c.resize((round(c.width * sws), round(c.height * sws)), Image.LANCZOS), 'owl_swoop.webp')
