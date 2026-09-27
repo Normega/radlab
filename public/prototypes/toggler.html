@@ -1,0 +1,1340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Toggler</title>
+<style>
+  html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#0e0b1a;
+    -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;
+    -webkit-tap-highlight-color:transparent;overscroll-behavior:none;}
+  canvas{display:block;touch-action:none;}
+  #cap{
+    position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top) + 14px);
+    width:min(560px, calc(100vw - 200px));text-align:center;pointer-events:none;z-index:5;
+    font-family:Georgia,'Times New Roman',serif;font-style:italic;
+    color:rgba(246,238,226,0.9);font-size:clamp(14px,2.2vw,19px);line-height:1.45;
+    text-shadow:0 1px 10px rgba(0,0,0,0.8);opacity:0;transition:opacity 1.4s ease;
+  }
+  .btn{
+    position:fixed;z-index:7;border-radius:50%;border:1.5px solid rgba(255,255,255,0.28);
+    background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.85);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;
+    font-family:ui-monospace,Menlo,monospace;padding:0;cursor:pointer;
+    transition:background 0.15s ease, border-color 0.4s ease, box-shadow 0.6s ease, opacity 0.6s ease;
+  }
+  .btn .ic{font-size:26px;line-height:1;pointer-events:none;}
+  .btn .lb{font-size:10px;letter-spacing:0.12em;text-transform:uppercase;margin-top:4px;opacity:0.7;pointer-events:none;}
+  .btn.down{background:rgba(255,255,255,0.22);}
+  #bA{left:calc(env(safe-area-inset-left) + 14px);bottom:calc(env(safe-area-inset-bottom) + 14px);width:var(--big);height:var(--big);}
+  #bB{right:calc(env(safe-area-inset-right) + 14px);bottom:calc(env(safe-area-inset-bottom) + 14px);width:var(--big);height:var(--big);}
+  #bT{right:calc(env(safe-area-inset-right) + 14px + (var(--big) - var(--small)) / 2);
+      bottom:calc(env(safe-area-inset-bottom) + 14px + var(--big) + 18px);width:var(--small);height:var(--small);}
+  #bT .ic{font-size:22px;}
+  :root{--big:78px;--small:52px;}
+  @media (pointer:fine){ :root{--big:66px;--small:46px;} }
+  body.rec #bA{border-color:rgba(232,160,72,0.75);}
+  body.rec #bB{border-color:rgba(90,150,225,0.8);}
+  body.rec #bA.down{background:rgba(232,160,72,0.4);}
+  body.rec #bB.down{background:rgba(90,150,225,0.42);}
+  #bT.glow{border-color:rgba(255,236,190,0.6);box-shadow:0 0 14px rgba(255,230,170,0.25);}
+  #bT.call{border-color:rgba(255,236,190,0.95);animation:call 1.8s ease-in-out infinite;}
+  @keyframes call{0%,100%{box-shadow:0 0 6px rgba(255,230,170,0.2);}50%{box-shadow:0 0 26px rgba(255,230,170,0.75);}}
+  .btn.off{opacity:0.25;}
+  #bT.nope{animation:nope 0.35s ease;}
+  @keyframes nope{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+  #legend{
+    position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 8px);
+    z-index:6;font-family:ui-monospace,Menlo,monospace;font-size:11px;color:rgba(255,255,255,0.32);
+    pointer-events:none;white-space:nowrap;
+  }
+  @media (pointer:coarse){ #legend{display:none;} }
+  #rotate{
+    position:fixed;inset:0;z-index:20;display:none;flex-direction:column;align-items:center;justify-content:center;
+    background:#0e0b1a;color:#e8e0d4;font-family:Georgia,serif;font-style:italic;text-align:center;padding:24px;gap:18px;
+  }
+  #rotate .ph{font-size:46px;font-style:normal;animation:tilt 2.6s ease-in-out infinite;}
+  @keyframes tilt{0%,30%{transform:rotate(0)}60%,100%{transform:rotate(-90deg)}}
+  #rotate button,#again{
+    font-family:Georgia,serif;font-style:italic;font-size:15px;color:#e8e0d4;background:transparent;
+    border:1px solid rgba(255,255,255,0.3);border-radius:22px;padding:9px 22px;cursor:pointer;
+  }
+  #again{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 64px);transform:translateX(-50%);z-index:8;display:none;}
+  #tune{
+    position:fixed;top:8px;left:8px;z-index:10;display:none;
+    background:rgba(16,12,28,0.93);border:1px solid rgba(255,255,255,0.15);
+    border-radius:8px;padding:10px 14px;font-family:ui-monospace,monospace;font-size:11px;
+    color:#e2d6ca;width:250px;max-height:calc(100vh - 40px);overflow-y:auto;
+    -webkit-user-select:text;user-select:text;
+  }
+  #tune label{display:block;margin:6px 0 2px;}
+  #tune input[type=range]{width:100%;}
+  #tune input[type=text]{width:90px;background:#221a34;color:#e2d6ca;border:1px solid #443a5c;font:inherit;padding:1px 4px;}
+  #tune .sep{margin:10px 0 4px;border-top:1px solid rgba(255,255,255,0.12);}
+  #tune button{font:inherit;background:#2a2140;color:#e2d6ca;border:1px solid #4a3f66;border-radius:4px;margin:2px 2px 0 0;padding:2px 6px;cursor:pointer;}
+  #tune pre{white-space:pre-wrap;margin:6px 0 0;color:#bfb2a4;}
+  #hint{position:fixed;top:6px;right:10px;z-index:6;font-family:ui-monospace,monospace;font-size:10px;color:rgba(255,255,255,0.16);pointer-events:none;}
+  @media (pointer:coarse){ #hint{display:none;} }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="cap"></div>
+<button class="btn" id="bA"><span class="ic"></span><span class="lb"></span></button>
+<button class="btn" id="bB"><span class="ic"></span><span class="lb"></span></button>
+<button class="btn" id="bT"><span class="ic">◐</span><span class="lb"></span></button>
+<div id="legend"></div>
+<div id="hint">t · tuning</div>
+<button id="again">again</button>
+<div id="rotate">
+  <div class="ph">▯</div>
+  <div>Toggler plays sideways.<br>Turn your phone, if you can.</div>
+  <button id="upright">play upright anyway</button>
+</div>
+<div id="tune">
+  <b>Toggler · tuning</b>
+  <label>match tolerance, L1 <span id="v_tol"></span></label><input type="range" id="s_tol" min="0.05" max="0.45" step="0.01">
+  <label>shortest breath that counts (s) <span id="v_minB"></span></label><input type="range" id="s_minB" min="2" max="14" step="0.5">
+  <label>matches to absorb <span id="v_need"></span></label><input type="range" id="s_need" min="1" max="8" step="1">
+  <label>pacer fade per match <span id="v_pf"></span></label><input type="range" id="s_pf" min="0" max="0.5" step="0.02">
+  <label>pacer floor <span id="v_pfl"></span></label><input type="range" id="s_pfl" min="0" max="0.6" step="0.02">
+  <label>close in bottom pause at (× target) <span id="v_acf"></span></label><input type="range" id="s_acf" min="0.3" max="1.5" step="0.05">
+  <label>walk speed <span id="v_walk"></span></label><input type="range" id="s_walk" min="40" max="220" step="5">
+  <div class="sep"></div>
+  shapes, seconds in-top-out-bottom<br>
+  <label>earth <input type="text" id="sh_earth"></label>
+  <label>fire &nbsp;<input type="text" id="sh_fire"></label>
+  <label>air &nbsp;&nbsp;<input type="text" id="sh_air"></label>
+  <label>water <input type="text" id="sh_water"></label>
+  <div class="sep"></div>
+  <button id="d_next">next room</button><button id="d_restart">restart</button><br>
+  carry: <button data-give="earth">earth</button><button data-give="fire">fire</button><button data-give="air">air</button><button data-give="water">water</button><button data-give="">none</button><br>
+  <button id="d_cross">cross-match check</button>
+  <pre id="d_out"></pre>
+  <div class="sep"></div>
+  <pre id="d_live"></pre>
+</div>
+<script>
+'use strict';
+/* ============================================================
+   TOGGLER: a sense-foraging platformer about switching modes.
+   Mechanics prototype (grey-box). Design: docs/markdowns/toggler_design.md
+
+   A person languishing at their desk closes their eyes and dreams a
+   corridor built from their bedroom. Elemental barriers block the way.
+   Two buttons walk and jump (DOING); the same two buttons breathe in
+   and out (RECEPTIVE); a third toggles between the modes. In receptive
+   mode the barrier shows the shape of its breath as a faint kite, a
+   four-vertex figure (in up, top pause right, out down, bottom pause
+   left; vertex distance = share of the breath). Four breaths that match
+   the shape absorb the element, and the player carries it until another
+   replaces it. Nothing can die or fail; impassable means the figure
+   teeters at the edge.
+
+   Breath parsing is Kite's (src/games/Kite/breathShapes.js), copied
+   verbatim below apart from recording each breath's start time. Keep the
+   two in step. Matching is on proportions, so the player keeps their
+   own tempo.
+
+   Every sim quantity accrues from dt, so window.__toggler.step() is a
+   true synchronous clock for headless playtests.
+   ============================================================ */
+
+// ── parameters ──────────────────────────────────────────────────────────────
+const P = {
+  tol: 0.22,          // L1 distance between proportion vectors that still counts as a match
+  minBreath: 6,       // s. A shorter breath never counts, so the shape can't be tapped out
+  need: 4,            // matching breaths to absorb
+  pacerFade: 0.22,    // the element's own pacer dims this much per match…
+  pacerFloor: 0.14,   // …down to this
+  autoCloseFrac: 0.8, // a matching breath closes once its bottom pause reaches this × the target's
+  walk: 95,           // px/s
+  jumpV: 470,         // apex ≈ 79 px: enough for a 44 px step, never a 125 px ledge
+  gravity: 1400,
+  floatMul: 0.7,      // walking speed while floating over a pit
+  updraftV: 115,
+  kiteR: 64,          // longest target vertex, logical px
+};
+
+const ELEM = {
+  earth: { shape: [4, 4, 4, 4], col: '#c89a60', glow: '#f3cf94', dim: '#5b4533' },
+  fire:  { shape: [6, 2, 3, 1], col: '#ff8a3d', glow: '#ffd28c', dim: '#5a2c1c' },
+  air:   { shape: [3, 1, 7, 1], col: '#bfe4ff', glow: '#f0fbff', dim: '#3e5566' },
+  water: { shape: [5, 0, 5, 0], col: '#4aa6ff', glow: '#b3dcff', dim: '#1f3d62' },
+};
+const EL_NAMES = Object.keys(ELEM);
+
+const W0 = 640, H0 = 360, FLOOR = 300, CEIL = 40;
+const COARSE = !!window.matchMedia?.('(pointer: coarse)')?.matches;
+const DEV = /[?&]dev\b/.test(location.search);
+
+// ── Kite's breath parser (copied from src/games/Kite/breathShapes.js) ───────
+const MERGE_GAP_MS = 300;
+const MIN_HOLD_MS = 300;
+function coalesce(segments){
+  const out = [];
+  for (const s of segments){
+    const prev = out[out.length - 1], prev2 = out[out.length - 2];
+    if (prev && prev.phase === s.phase){ prev.t1 = s.t1; continue; }
+    if (s.phase !== 'pause' && prev && prev2 && prev.phase === 'pause' &&
+        prev.t1 - prev.t0 < MERGE_GAP_MS && prev2.phase === s.phase){
+      out.pop(); prev2.t1 = s.t1; continue;
+    }
+    out.push({ ...s });
+  }
+  return out;
+}
+function demoteShortHolds(segments){
+  return segments.map(s => s.phase !== 'pause' && s.t1 - s.t0 < MIN_HOLD_MS ? { ...s, phase: 'pause' } : s);
+}
+function normalizeSegments(segments){ return coalesce(demoteShortHolds(coalesce(segments))); }
+// As Kite's parseBreaths, plus: each breath carries t0 (its first inhale's
+// start, a stable identity across re-parses), and an inhale not yet followed
+// by an exhale is returned as `partial` for live drawing instead of dropped.
+function parseBreathsT(segments){
+  const breaths = [];
+  let cur = null;
+  for (const s of normalizeSegments(segments)){
+    const dur = (s.t1 - s.t0) / 1000;
+    if (dur <= 0) continue;
+    if (s.phase === 'in'){
+      if (cur && cur.seenOut){ breaths.push(cur); cur = null; }
+      if (!cur) cur = { inh: 0, hold: 0, exh: 0, rest: 0, seenOut: false, t0: s.t0 };
+      cur.inh += dur;
+    } else if (s.phase === 'out'){
+      if (!cur) continue;
+      cur.seenOut = true; cur.exh += dur;
+    } else {
+      if (!cur) continue;
+      if (cur.seenOut) cur.rest += dur; else cur.hold += dur;
+    }
+  }
+  let partial = null;
+  if (cur){ if (cur.seenOut) breaths.push(cur); else partial = cur; }
+  return { breaths, partial };
+}
+
+// ── matching ────────────────────────────────────────────────────────────────
+const vec = b => [b.inh, b.hold, b.exh, b.rest];
+const total = v => v[0] + v[1] + v[2] + v[3];
+function props(v){ const t = total(v) || 1; return v.map(x => x / t); }
+function l1(a, b){ return Math.abs(a[0]-b[0]) + Math.abs(a[1]-b[1]) + Math.abs(a[2]-b[2]) + Math.abs(a[3]-b[3]); }
+function judge(v, el){
+  const tp = props(ELEM[el].shape), bp = props(v), d = l1(bp, tp), T = total(v);
+  return { d, T, bp, matched: T >= P.minBreath && d <= P.tol };
+}
+
+// ── rooms ───────────────────────────────────────────────────────────────────
+// Logical room is 640×360; floor top at y=300. Obstacles:
+//   wall  (earth) solid unless carrying earth
+//   veil  (fire)  cobwebs + flame; solid unless carrying fire (and then it burns away)
+//   pit   (air)   a gap with spikes; the figure won't step off unless carrying air, then floats
+//   pipe  (water) a low block with a floor-level opening; carrying water, the figure flows through
+function floorRect(x0, x1){ return { x: x0, y: FLOOR, w: x1 - x0, h: 70 }; }
+function makeRooms(){
+  return [
+    { kind: 'bedroom' },
+    { kind: 'dream', name: 'hall', solids: [floorRect(-120, 760), { x: 300, y: 256, w: 80, h: 44, deco: 'books' }], obs: [] },
+    { kind: 'dream', name: 'earth', solids: [floorRect(-120, 760)],
+      obs: [{ el: 'earth', type: 'wall', x: 400, y: CEIL, w: 56, h: FLOOR - CEIL }] },
+    { kind: 'dream', name: 'fire', solids: [floorRect(-120, 760)],
+      obs: [{ el: 'fire', type: 'veil', x: 392, y: CEIL, w: 48, h: FLOOR - CEIL }] },
+    { kind: 'dream', name: 'air', solids: [floorRect(-120, 250), floorRect(470, 760)],
+      // hidden route: carrying air, a jump inside the rising dust over the pit
+      // lifts you to a shelf you could never otherwise reach
+      platforms: [{ x: 282, y: 175, w: 278 }],
+      updraft: { x: 300, w: 44, top: 175 },
+      find: { x: 462, y: 175, taken: false },
+      obs: [{ el: 'air', type: 'pit', x: 250, y: FLOOR, w: 220, h: 60 }] },
+    { kind: 'dream', name: 'water', solids: [floorRect(-120, 760)],
+      obs: [{ el: 'water', type: 'pipe', x: 300, y: CEIL, w: 180, h: 262 - CEIL }] },
+    { kind: 'dream', name: 'last', solids: [floorRect(-120, 760)], door: 596,
+      obs: [{ el: 'earth', type: 'wall', x: 190, y: CEIL, w: 50, h: FLOOR - CEIL },
+            { el: 'water', type: 'pipe', x: 372, y: CEIL, w: 150, h: 262 - CEIL }] },
+    { kind: 'wake' },
+  ];
+}
+
+// ── state ───────────────────────────────────────────────────────────────────
+let G;
+function freshState(){
+  const rooms = makeRooms();
+  for (const r of rooms) for (const o of (r.obs || [])) Object.assign(o, { matches: 0, passed: false, hint: 0, burn: 0 });
+  return {
+    simT: 0, rooms, room: 0, mode: 'doing', carried: null, carriedAt: -9,
+    pl: { x: 300, y: FLOOR, vx: 0, vy: 0, ground: true, lift: false, walkPh: 0, teeter: 0, liquid: 0, blocked: null, float: false, recFade: 0 },
+    held: [],           // doing-mode keys held, 'A' | 'B'
+    rec: null,          // receptive session
+    fullness: 0,        // 0 empty … 1 full; drives the seated figure's chest
+    stamps: [], parts: [], script: [],
+    fade: 0, fadeTo: 0, transition: null,
+    bed: { lines: 0, acts: 0, typeT: -9, sipT: -9, sleepT: -1, enterT: 0 },
+    wakeT: -1, said: new Set(), capUntil: 0,
+    everTeetered: false, everAbsorbed: false, findTaken: false,
+    log: { toggles: 0, doingS: 0, receptiveS: 0, el: {}, finishedS: null, find: false },
+  };
+}
+G = freshState();
+const room = () => G.rooms[G.room];
+
+// ── canvas + layout ─────────────────────────────────────────────────────────
+const cv = document.getElementById('c');
+const ctx = cv.getContext('2d');
+let DPR = 1, W = 0, H = 0, sk = 1, offX = 0, offY = 0, portraitOK = false;
+function layout(){
+  DPR = Math.min(2, window.devicePixelRatio || 1);
+  W = window.innerWidth; H = window.innerHeight;
+  cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+  cv.style.width = W + 'px'; cv.style.height = H + 'px';
+  const portrait = H > W;
+  document.getElementById('rotate').style.display = (COARSE && portrait && !portraitOK) ? 'flex' : 'none';
+  if (portrait){
+    // Game Boy fallback: room across the top, buttons in the space below
+    sk = W / W0; offX = 0; offY = Math.max(40, (H - H0 * sk) * 0.28);
+  } else {
+    sk = Math.min(W / W0, H / H0); offX = (W - W0 * sk) / 2; offY = (H - H0 * sk) / 2;
+  }
+}
+window.addEventListener('resize', layout);
+document.getElementById('upright').onclick = () => { portraitOK = true; layout(); };
+layout();
+
+// ── captions ────────────────────────────────────────────────────────────────
+const capEl = document.getElementById('cap');
+function caption(text, holdS = 6){ capEl.textContent = text; capEl.style.opacity = 1; G.capUntil = G.simT + holdS; }
+function once(key, text, holdS){ if (G.said.has(key)) return; G.said.add(key); caption(text, holdS); }
+const K = COARSE
+  ? { walk: 'Hold the left button to walk; the right one jumps.', breathe: 'Hold the left button while you breathe in, the right one while you breathe out. Let go for the pauses.' }
+  : { walk: 'Hold J (or →) to walk. K (or ↑) jumps.', breathe: 'Hold J (or ↑) while you breathe in, K (or ↓) while you breathe out. Let go for the pauses.' };
+
+// ── buttons ─────────────────────────────────────────────────────────────────
+const bA = document.getElementById('bA'), bB = document.getElementById('bB'), bT = document.getElementById('bT');
+let btnMode = '';
+function setBtn(b, ic, lb){ b.querySelector('.ic').textContent = ic; b.querySelector('.lb').textContent = lb; }
+function updateButtons(){
+  const kind = room().kind;
+  const m = kind === 'dream' ? G.mode : kind;
+  if (m === btnMode) return;
+  btnMode = m;
+  document.body.classList.toggle('rec', m === 'receptive');
+  const lg = document.getElementById('legend');
+  if (m === 'receptive'){ setBtn(bA, '▲', 'in'); setBtn(bB, '▼', 'out'); setBtn(bT, '◐', 'do');
+    lg.textContent = 'J / ↑  breathe in   ·   K / ↓  breathe out   ·   space  back to doing'; }
+  else if (m === 'doing'){ setBtn(bA, '▶', 'walk'); setBtn(bB, '⤒', 'jump'); setBtn(bT, '◐', 'be');
+    lg.textContent = 'J / →  walk   ·   K / ↑  jump   ·   space  stop and receive'; }
+  else { setBtn(bA, '⌨', 'type'); setBtn(bB, '☕', 'sip'); setBtn(bT, '◐', m === 'bedroom' ? 'rest' : '');
+    lg.textContent = m === 'bedroom' ? 'J  type   ·   K  sip   ·   space  close your eyes' : ''; }
+}
+function bindBtn(el, kind){
+  el.addEventListener('pointerdown', e => { e.preventDefault(); el.setPointerCapture?.(e.pointerId); el.classList.add('down'); kind === 'T' ? toggle() : press(kind); });
+  const up = e => { if (!el.classList.contains('down')) return; el.classList.remove('down'); if (kind !== 'T') release(kind); };
+  el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up); el.addEventListener('lostpointercapture', up);
+  el.addEventListener('contextmenu', e => e.preventDefault());
+}
+bindBtn(bA, 'A'); bindBtn(bB, 'B'); bindBtn(bT, 'T');
+// iOS: a long press must never become a callout, magnifier or scroll
+for (const b of [bA, bB, bT]) b.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
+document.addEventListener('contextmenu', e => e.preventDefault());
+
+// ── keyboard ────────────────────────────────────────────────────────────────
+const heldCodes = new Map(); // code → kind, fixed at keydown so a mode change mid-hold releases the right thing
+function kindOf(code){
+  if (code === 'KeyJ' || code === 'KeyZ') return 'A';
+  if (code === 'KeyK' || code === 'KeyX') return 'B';
+  const rec = G.mode === 'receptive' && room().kind === 'dream';
+  if (rec){ if (code === 'ArrowUp' || code === 'KeyI') return 'A'; if (code === 'ArrowDown' || code === 'KeyO') return 'B'; }
+  else { if (code === 'ArrowRight' || code === 'KeyD') return 'A'; if (code === 'ArrowUp' || code === 'KeyW') return 'B'; }
+  return null;
+}
+window.addEventListener('keydown', e => {
+  if (e.target && e.target.tagName === 'INPUT') return;
+  if (e.key === 't'){ const p = document.getElementById('tune'); p.style.display = p.style.display === 'block' ? 'none' : 'block'; return; }
+  if (e.code === 'Space' || e.code === 'Enter'){ e.preventDefault(); if (!e.repeat) toggle(); return; }
+  const k = kindOf(e.code);
+  if (!k) return;
+  e.preventDefault();
+  if (e.repeat || heldCodes.has(e.code)) return;
+  heldCodes.set(e.code, k);
+  (k === 'A' ? bA : bB).classList.add('down');
+  press(k);
+});
+window.addEventListener('keyup', e => {
+  const k = heldCodes.get(e.code);
+  if (!k) return;
+  heldCodes.delete(e.code);
+  if (![...heldCodes.values()].includes(k)) (k === 'A' ? bA : bB).classList.remove('down');
+  release(k);
+});
+function releaseEverything(){
+  heldCodes.clear();
+  for (const b of [bA, bB, bT]) b.classList.remove('down');
+  G.held = [];
+  if (G.rec){ G.rec.held = []; applyControl('pause'); }
+}
+window.addEventListener('blur', releaseEverything);
+document.addEventListener('visibilitychange', () => { if (document.hidden) releaseEverything(); });
+
+// ── input semantics ─────────────────────────────────────────────────────────
+function press(k){
+  const r = room();
+  if (G.transition) return;
+  if (r.kind === 'bedroom' || r.kind === 'wake'){ bedAct(k); return; }
+  if (G.mode === 'receptive'){
+    const kind = k === 'A' ? 'in' : 'out';
+    G.rec.held = [...G.rec.held.filter(x => x !== kind), kind];
+    applyControl(kind);
+    return;
+  }
+  if (!G.held.includes(k)) G.held.push(k);
+  if (k === 'B') jump();
+}
+function release(k){
+  if (G.mode === 'receptive' && G.rec && room().kind === 'dream'){
+    const kind = k === 'A' ? 'in' : 'out';
+    G.rec.held = G.rec.held.filter(x => x !== kind);
+    applyControl(G.rec.held.length ? G.rec.held[G.rec.held.length - 1] : 'pause');
+    return;
+  }
+  G.held = G.held.filter(x => x !== k);
+}
+// Buttons physically down right now (pointer or key), whatever the mode.
+function heldKinds(){ return ['A', 'B'].filter(k => (k === 'A' ? bA : bB).classList.contains('down')); }
+function refuse(){ bT.classList.remove('nope'); void bT.offsetWidth; bT.classList.add('nope'); }
+function toggle(){
+  const r = room();
+  if (G.transition) return;
+  if (r.kind === 'bedroom'){ if (G.bed.sleepT < 0){ G.bed.sleepT = G.simT; G.log.toggles++; bT.classList.remove('call', 'glow'); } return; }
+  if (r.kind !== 'dream') return;
+  const p = G.pl;
+  if (G.mode === 'doing'){
+    if (!p.ground || p.liquid > 0.05){ refuse(); return; }    // settle first: no receiving mid-air or mid-pipe
+    for (const o of r.obs) if (overlapsOb(o)){ refuse(); return; }   // not from inside a wall
+    G.log.toggles++;
+    const still = heldKinds();
+    G.mode = 'receptive'; G.held = []; p.vx = 0; p.teeter = 0;
+    G.rec = { segs: [], open: null, started: false, held: [], control: 'pause', scored: new Set(),
+              target: findTarget(), enterT: G.simT, totals: [] };
+    bT.classList.remove('call');
+    const t = G.rec.target;
+    if (t && G.carried !== t.el) once('breathe', K.breathe, 9);
+    for (const k of still) press(k);                   // the thumb already down begins an inhale
+  } else {
+    G.log.toggles++;
+    evaluate(true);
+    G.mode = 'doing'; G.rec = null;
+    G.held = heldKinds();                              // …and a thumb still on A walks on
+    bT.classList.remove('call');
+  }
+}
+
+// ── receptive: control log → breaths → matches ──────────────────────────────
+function nowMs(){ return G.simT * 1000; }
+function applyControl(next){
+  const R = G.rec;
+  if (!R || next === R.control) return;
+  const t = nowMs();
+  R.control = next;
+  if (!R.started){
+    if (next !== 'in') return;             // nothing recorded until the first inhale
+    R.started = true; R.open = { phase: 'in', t0: t };
+  } else {
+    R.segs.push({ ...R.open, t1: t });
+    R.open = { phase: next, t0: t };
+  }
+  evaluate(false);
+}
+function parseNow(){
+  const R = G.rec;
+  const all = R.open ? [...R.segs, { ...R.open, t1: nowMs() }] : R.segs;
+  return parseBreathsT(all);
+}
+// A breath is final when the next inhale has begun (Kite's rule), when the
+// player toggles out, or when a breath that already matches has rested long
+// enough at the bottom, so the fourth breath lands without starting a fifth.
+function evaluate(final){
+  const R = G.rec;
+  if (!R || !R.started) return;
+  const { breaths } = parseNow();
+  const t = R.target && G.carried !== R.target.el ? R.target : null;
+  breaths.forEach((b, i) => {
+    if (R.scored.has(b.t0)) return;
+    const last = i === breaths.length - 1;
+    let close = !last || final;
+    if (!close && t && R.control === 'pause'){
+      const tp = props(ELEM[t.el].shape);
+      const v = vec(b);
+      if (props(v)[3] >= tp[3] * P.autoCloseFrac && judge(v, t.el).matched) close = true;
+    }
+    if (close){ R.scored.add(b.t0); score(b, t); }
+  });
+}
+function elog(el){ return G.log.el[el] || (G.log.el[el] = { breaths: 0, matched: 0, receptiveS: 0, absorbedAfterS: null, lastD: [] }); }
+function score(b, t){
+  const R = G.rec, v = vec(b);
+  R.totals.push(total(v));
+  if (!t || G.carried === t.el){ G.stamps.push({ v, matched: false, el: null, born: G.simT }); return; }
+  const j = judge(v, t.el), L = elog(t.el);
+  L.breaths++; L.lastD.push(+j.d.toFixed(3)); if (L.lastD.length > 12) L.lastD.shift();
+  G.stamps.push({ v, matched: j.matched, el: t.el, born: G.simT, d: j.d });
+  if (j.matched){
+    L.matched++;
+    t.matches++;
+    burst(G.pl.x, G.pl.y - 40, ELEM[t.el].glow, 10, 40);
+    if (t.matches >= P.need) absorb(t);
+  }
+}
+function absorb(t){
+  G.carried = t.el; G.carriedAt = G.simT;
+  const L = elog(t.el);
+  if (L.absorbedAfterS == null) L.absorbedAfterS = +L.receptiveS.toFixed(1);
+  burst(G.pl.x, G.pl.y - 36, ELEM[t.el].col, 40, 90);
+  bT.classList.add('call');
+  if (!G.everAbsorbed){ G.everAbsorbed = true; caption('It stays with you now. Toggle back to doing (◐) and walk on.', 8); }
+}
+function findTarget(){
+  const r = room(), p = G.pl;
+  let best = null;
+  for (const o of r.obs){ if (o.passed || o.x + o.w < p.x) continue; if (!best || o.x < best.x) best = o; }
+  return best;
+}
+
+// ── pacer: an element's own breath, as a 0..1 lung and a current phase ──────
+function lungOf(el, t){
+  const s = ELEM[el].shape, T = total(s) || 1;
+  let u = ((t % T) + T) % T;
+  if (u < s[0]) return { lung: 0.5 - 0.5 * Math.cos(Math.PI * u / s[0]), ph: 0 };
+  u -= s[0];
+  if (u < s[1]) return { lung: 1, ph: 1 };
+  u -= s[1];
+  if (u < s[2]) return { lung: 0.5 + 0.5 * Math.cos(Math.PI * u / s[2]), ph: 2 };
+  return { lung: 0, ph: 3 };
+}
+
+// ── doing: physics ──────────────────────────────────────────────────────────
+const HW = 10;
+function plH(){ return 80 - 66 * G.pl.liquid; }
+function overlapsOb(o){ const p = G.pl; return p.x + HW > o.x && p.x - HW < o.x + o.w && o.type !== 'pit'; }
+function solidsNow(){
+  const r = room(), out = [];
+  for (const s of r.solids) out.push(s);
+  for (const o of r.obs){
+    if (o.type === 'wall' && G.carried !== 'earth') out.push({ x: o.x, y: o.y, w: o.w, h: o.h, ob: o });
+    if (o.type === 'veil' && G.carried !== 'fire') out.push({ x: o.x, y: o.y, w: o.w, h: o.h, ob: o });
+    if (o.type === 'pipe') out.push({ x: o.x, y: o.y, w: o.w, h: o.h, ob: o });
+    if (o.type === 'pit' && G.carried === 'air') out.push({ x: o.x, y: FLOOR, w: o.w, h: 1, float: true });
+  }
+  return out;
+}
+function jump(){
+  const p = G.pl;
+  if (G.mode !== 'doing' || !p.ground || p.liquid > 0.05) return;
+  p.vy = -P.jumpV; p.ground = false;
+}
+function physics(dt){
+  const p = G.pl, r = room();
+  const walking = G.held.includes('A');
+  let target = walking ? P.walk : 0;
+  if (p.float) target *= P.floatMul;
+  p.vx += (target - p.vx) * Math.min(1, dt * 14);
+
+  // liquid: carrying water near a pipe, the figure runs down into a rivulet
+  let wantLiquid = 0;
+  if (G.carried === 'water') for (const o of r.obs) if (o.type === 'pipe' && p.x + HW > o.x - 34 && p.x - HW < o.x + o.w + 2) wantLiquid = 1;
+  if (wantLiquid > p.liquid) p.liquid = Math.min(1, p.liquid + dt * 2.4);
+  else if (wantLiquid < p.liquid){
+    // re-forming needs headroom
+    const nh = 80 - 66 * Math.max(0, p.liquid - dt * 2.4);
+    let clear = true;
+    for (const s of solidsNow()) if (p.x + HW > s.x && p.x - HW < s.x + s.w && p.y - nh < s.y + s.h && p.y > s.y + 0.5) clear = false;
+    if (clear) p.liquid = Math.max(0, p.liquid - dt * 2.4);
+  }
+
+  // updraft: carrying air, a jump inside the column is taken up to the high shelf
+  const u = r.updraft;
+  const inCol = u && G.carried === 'air' && p.x > u.x && p.x < u.x + u.w;
+  if (G.carried !== 'air') p.lift = false;
+  else if (inCol && p.vy < -1) p.lift = true;      // a jump inside the column is taken up…
+  const inDraft = u && p.lift && p.y > u.top - 0.5; // …and kept, even drifting out of it, until the shelf
+  if (inDraft) p.vy = -P.updraftV; else p.vy += P.gravity * dt;
+  const h = plH();
+  const S = solidsNow();
+
+  // horizontal
+  let nx = p.x + p.vx * dt;
+  p.blocked = null;
+  for (const s of S){
+    if (s.float) continue;
+    if (p.y - h < s.y + s.h && p.y > s.y + 0.5 && nx + HW > s.x && p.x + HW <= s.x + 0.5){ nx = s.x - HW; p.blocked = s.ob || null; }
+  }
+  for (const o of r.obs){
+    // the pit's edge: the figure won't step off unless carrying air (the shelf above is another matter)
+    if (o.type === 'pit' && G.carried !== 'air' && p.y > 190 && nx > o.x - 3 && p.x <= o.x - 3 + 0.5){ nx = o.x - 3; p.blocked = o; }
+  }
+  nx = Math.max(HW + 2, nx);
+  p.x = nx;
+
+  // vertical
+  let ny = p.y + p.vy * dt;
+  p.ground = false;
+  for (const s of S){
+    if (!(p.x + HW > s.x && p.x - HW < s.x + s.w)) continue;
+    if (p.vy >= 0 && p.y <= s.y + 0.5 && ny >= s.y){ ny = s.y; p.vy = 0; p.ground = true; }
+    else if (p.vy < 0 && p.y - h >= s.y + s.h - 0.5 && ny - h < s.y + s.h){ ny = s.y + s.h + h; p.vy = 0; }
+  }
+  for (const pf of (r.platforms || [])){
+    if (!(p.x + HW > pf.x && p.x - HW < pf.x + pf.w)) continue;
+    if (p.vy >= 0 && p.y <= pf.y + 0.5 && ny >= pf.y){ ny = pf.y; p.vy = 0; p.ground = true; }
+  }
+  if (inDraft && ny <= u.top){ ny = u.top; p.vy = 0; p.ground = true; if (!inCol) p.lift = false; }
+  if (p.ground && !inDraft) p.lift = false;
+  if (ny > 420){ ny = FLOOR; p.x = 40; p.vy = 0; }      // safety net: never lost
+  p.y = ny;
+
+  p.float = G.carried === 'air' && r.obs.some(o => o.type === 'pit' && p.x > o.x && p.x < o.x + o.w) && Math.abs(p.y - FLOOR) < 1;
+  if (inDraft) p.float = true;
+
+  // teeter: pressing on toward something you don't carry
+  const stuck = walking && p.ground && p.blocked && p.blocked.el !== G.carried;
+  p.teeter = stuck ? Math.min(1, p.teeter + dt * 4) : Math.max(0, p.teeter - dt * 3);
+  if (stuck){
+    p.blocked.hint = Math.min(1, p.blocked.hint + dt * 3);
+    if (!G.everTeetered && p.teeter > 0.6){
+      G.everTeetered = true; bT.classList.add('call');
+      caption('Something here won’t let you by. Stop (◐), and watch how it breathes.', 9);
+    }
+  }
+  if (Math.abs(p.vx) > 5 && p.ground) p.walkPh += dt * Math.abs(p.vx) / 11;
+
+  // passing
+  for (const o of r.obs){
+    if (!o.passed && p.x - HW > o.x + o.w){ o.passed = true; }
+    if (o.type === 'veil' && G.carried === 'fire' && p.x + 70 > o.x){
+      const was = o.burn; o.burn = Math.min(1, o.burn + dt * 1.2);
+      if (o.burn < 1 && Math.random() < 0.6) burst(o.x + Math.random() * o.w, CEIL + Math.random() * (FLOOR - CEIL), '#ffb060', 1, 30);
+      if (was === 0) burst(o.x + o.w / 2, FLOOR - 40, '#ffcf80', 20, 70);
+    }
+  }
+  // the find on the high shelf: no announcement; it follows as a mote
+  if (r.find && !r.find.taken && Math.abs(p.x - r.find.x) < 16 && Math.abs(p.y - r.find.y) < 30){
+    r.find.taken = true; G.findTaken = true; G.log.find = true;
+    burst(r.find.x, r.find.y - 10, '#eaf8ff', 16, 40);
+  }
+  // exits
+  if (r.door && p.x > r.door){ startTransition('wake'); return; }
+  if (!r.door && p.x > W0 - 2) startTransition('next');
+}
+
+// ── transitions ─────────────────────────────────────────────────────────────
+function startTransition(kind){
+  if (G.transition) return;
+  G.transition = { kind, t: 0, dur: kind === 'wake' ? 2.2 : kind === 'sleep' ? 2.4 : 0.35 };
+}
+function goRoom(i){
+  // a thumb still resting on walk keeps walking through the doorway
+  G.room = i;
+  G.mode = 'doing'; G.rec = null;
+  const p = G.pl;
+  Object.assign(p, { x: 100, y: FLOOR, vx: 0, vy: 0, ground: true, lift: false, teeter: 0, liquid: 0, float: false });
+  G.stamps = []; G.parts = [];
+  const r = room();
+  if (r.name === 'hall') once('walk', K.walk, 8);
+  if (r.kind === 'wake'){ G.wakeT = G.simT; G.log.finishedS = +G.simT.toFixed(1); }
+  btnMode = '';
+}
+function stepTransition(dt){
+  const T = G.transition;
+  if (!T) return;
+  T.t += dt;
+  const half = T.dur / 2;
+  if (T.t < half) G.fade = T.t / half;
+  else {
+    if (!T.swapped){
+      T.swapped = true;
+      if (T.kind === 'next') goRoom(G.room + 1);
+      else if (T.kind === 'sleep') goRoom(1);
+      else if (T.kind === 'wake') goRoom(G.rooms.length - 1);
+    }
+    G.fade = Math.max(0, 1 - (T.t - half) / half);
+  }
+  if (T.t >= T.dur){ G.fade = 0; G.transition = null; }
+}
+
+// ── bedroom ─────────────────────────────────────────────────────────────────
+function bedAct(k){
+  const b = G.bed;
+  if (room().kind === 'wake'){ if (k === 'A') b.typeT = G.simT; else b.sipT = G.simT; return; }
+  if (b.sleepT >= 0) return;
+  b.acts++;
+  if (k === 'A'){ b.typeT = G.simT; b.lines++; if (b.lines > 5) b.lines = 0; }
+  else b.sipT = G.simT;
+  if (b.acts === 3) caption('Same as yesterday.', 5);
+  if (b.acts === 7) callRest();
+}
+function callRest(){ if (G.said.has('rest')) return; G.said.add('rest'); caption('You could close your eyes for a moment. (◐)', 10); bT.classList.add('call'); }
+function bedroomStep(){
+  const b = G.bed, age = G.simT - b.enterT;
+  if (age > 0.8) once('desk', 'Another evening at the desk.', 5);
+  if (age > 3 && b.sleepT < 0) bT.classList.add('glow');
+  if (age > 24 && b.sleepT < 0) callRest();
+  if (b.sleepT >= 0 && G.simT - b.sleepT > 1.1 && !G.transition) startTransition('sleep');
+}
+function wakeStep(){
+  const a = G.simT - G.wakeT;
+  if (a > 1.4) once('w1', 'The same room.', 4);
+  if (a > 6) once('w2', 'The same day — almost.', 6);
+  document.getElementById('again').style.display = a > 10 ? 'block' : 'none';
+}
+
+// ── particles ───────────────────────────────────────────────────────────────
+function burst(x, y, col, n, spd){
+  for (let i = 0; i < n; i++){
+    const a = Math.random() * Math.PI * 2, s = spd * (0.3 + Math.random() * 0.7);
+    G.parts.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 10, life: 0, max: 0.7 + Math.random() * 0.9, col, r: 1 + Math.random() * 1.8 });
+  }
+}
+
+// ── the clock ───────────────────────────────────────────────────────────────
+function advance(dt){
+  G.simT += dt;
+  while (G.script.length && G.script[0].at <= G.simT + 1e-9) G.script.shift().fn();
+  const r = room();
+  stepTransition(dt);
+  if (r.kind === 'bedroom') bedroomStep();
+  else if (r.kind === 'wake') wakeStep();
+  else if (!G.transition || G.transition.t < G.transition.dur / 2){
+    if (G.mode === 'doing'){ physics(dt); G.log.doingS += dt; }
+    else {
+      G.log.receptiveS += dt;
+      const t = G.rec.target;
+      if (t) elog(t.el).receptiveS += dt;
+      evaluate(false);
+    }
+  }
+  const p = G.pl;
+  p.recFade += ((G.mode === 'receptive' && r.kind === 'dream' ? 1 : 0) - p.recFade) * Math.min(1, dt * 3);
+  // chest: same time constants as Kite
+  const c = G.rec ? G.rec.control : 'pause';
+  if (c === 'in') G.fullness += (1 - G.fullness) * (1 - Math.exp(-dt / 1.6));
+  else if (c === 'out') G.fullness += (0 - G.fullness) * (1 - Math.exp(-dt / 2.2));
+  for (const o of (r.obs || [])) o.hint = Math.max(0, o.hint - dt * 0.5);
+  for (const q of G.parts){ q.life += dt; q.x += q.vx * dt; q.y += q.vy * dt; q.vx *= 0.97; q.vy = q.vy * 0.97 - 6 * dt; }
+  G.parts = G.parts.filter(q => q.life < q.max);
+  G.stamps = G.stamps.filter(s => G.simT - s.born < 2.2);
+  if (G.simT > G.capUntil) capEl.style.opacity = 0;
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// RENDER
+// ════════════════════════════════════════════════════════════════════════════
+function clamp(v, a, b){ return v < a ? a : v > b ? b : v; }
+function hex(c){
+  if (c[0] !== '#') return c.match(/[\d.]+/g).slice(0, 3).map(Number);   // rgb() from an earlier mix
+  const n = parseInt(c.slice(1), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255];
+}
+function mix(a, b, t){ const A = hex(a), B = hex(b); return 'rgb(' + A.map((x, i) => Math.round(x + (B[i] - x) * t)).join(',') + ')'; }
+function rgba(c, a){ const A = hex(c); return 'rgba(' + A[0] + ',' + A[1] + ',' + A[2] + ',' + a.toFixed(3) + ')'; }
+function xMin(){ return -offX / sk; }
+function xMax(){ return (W - offX) / sk; }
+
+function render(){
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = '#0e0b1a'; ctx.fillRect(0, 0, cv.width, cv.height);
+  ctx.setTransform(DPR * sk, 0, 0, DPR * sk, DPR * offX, DPR * offY);
+  const r = room();
+  if (r.kind === 'bedroom' || r.kind === 'wake') drawBedroom(r.kind === 'wake');
+  else drawDream(r);
+  if (G.fade > 0){ ctx.fillStyle = 'rgba(8,6,16,' + G.fade.toFixed(3) + ')'; ctx.fillRect(xMin(), -40, xMax() - xMin(), H0 + 80); }
+  updateButtons();
+}
+
+// ── the dream corridor: the bedroom made strange ────────────────────────────
+function drawDream(r){
+  const x0 = xMin(), x1 = xMax(), t = G.simT;
+  const g = ctx.createLinearGradient(0, 0, 0, H0);
+  g.addColorStop(0, '#1a1531'); g.addColorStop(1, '#2c2349');
+  ctx.fillStyle = g; ctx.fillRect(x0, 0, x1 - x0, H0);
+  // bookshelves for pillars, spines catching the lamplight
+  for (let bx = Math.floor(x0 / 160) * 160 + 40; bx < x1; bx += 160){
+    ctx.fillStyle = '#231c3d'; ctx.fillRect(bx, CEIL, 46, FLOOR - CEIL);
+    for (let sy = CEIL + 20; sy < FLOOR - 10; sy += 38){
+      ctx.fillStyle = '#2e2650'; ctx.fillRect(bx, sy + 30, 46, 4);
+      let sx = bx + 3, k = (bx * 7 + sy) | 0;
+      while (sx < bx + 42){ k = (k * 1103515245 + 12345) & 0x7fffffff; const w = 3 + k % 5, hh = 18 + k % 11;
+        ctx.fillStyle = ['#3a2f5c', '#43345e', '#352a52', '#4a3a60'][k % 4]; ctx.fillRect(sx, sy + 30 - hh, w, hh); sx += w + 1; }
+    }
+  }
+  // desk-lamp sconces become torchlight
+  for (let lx = Math.floor(x0 / 320) * 320 + 200; lx < x1; lx += 320){
+    const fl = 0.85 + 0.15 * Math.sin(t * 7.3 + lx) * Math.sin(t * 3.1 + lx * 0.3);
+    const rg = ctx.createRadialGradient(lx, 118, 2, lx, 118, 120);
+    rg.addColorStop(0, 'rgba(255,200,130,' + (0.2 * fl).toFixed(3) + ')'); rg.addColorStop(1, 'rgba(255,200,130,0)');
+    ctx.fillStyle = rg; ctx.fillRect(lx - 120, 0, 240, 260);
+    ctx.fillStyle = '#6a5a48'; ctx.fillRect(lx - 1.5, 118, 3, 26);
+    ctx.fillStyle = '#e8c890'; ctx.beginPath(); ctx.moveTo(lx - 9, 118); ctx.lineTo(lx + 9, 118); ctx.lineTo(lx + 5, 106); ctx.lineTo(lx - 5, 106); ctx.fill();
+  }
+  // ceiling: the underside of a desk
+  ctx.fillStyle = '#120e22'; ctx.fillRect(x0, 0, x1 - x0, CEIL);
+  ctx.fillStyle = '#2a2240'; ctx.fillRect(x0, CEIL - 4, x1 - x0, 4);
+  // floor: drawer fronts
+  for (const s of r.solids){
+    if (s.y === FLOOR){
+      ctx.fillStyle = '#3b2d2a'; ctx.fillRect(s.x, s.y, s.w, s.h);
+      ctx.fillStyle = '#4e3b34'; ctx.fillRect(s.x, s.y, s.w, 3);
+      ctx.strokeStyle = 'rgba(0,0,0,0.25)'; ctx.lineWidth = 1;
+      for (let dx = Math.ceil(s.x / 80) * 80; dx < s.x + s.w; dx += 80){
+        ctx.strokeRect(dx + 4, s.y + 12, 72, 30);
+        ctx.fillStyle = '#8a7658'; ctx.fillRect(dx + 34, s.y + 25, 12, 3);
+      }
+    } else if (s.deco === 'books'){
+      const cols = ['#6b4a3a', '#4a5a6b', '#5b4a6b', '#6b5a3a'];
+      let yy = s.y + s.h;
+      for (let i = 0; yy > s.y; i++){ const hh = 11; ctx.fillStyle = cols[i % 4]; ctx.fillRect(s.x + (i % 2) * 3 - 1, yy - hh, s.w - 2, hh - 1); yy -= hh; }
+    }
+  }
+  if (r.platforms) for (const pf of r.platforms){
+    ctx.fillStyle = '#4a3a33'; ctx.fillRect(pf.x, pf.y, pf.w, 10);
+    ctx.fillStyle = '#5d4a40'; ctx.fillRect(pf.x, pf.y, pf.w, 2);
+    ctx.fillStyle = '#2b2138'; ctx.fillRect(pf.x + 10, pf.y + 10, 6, 14); ctx.fillRect(pf.x + pf.w - 16, pf.y + 10, 6, 14);
+  }
+  if (r.updraft && G.carried === 'air'){
+    const u = r.updraft;
+    for (let i = 0; i < 14; i++){
+      const yy = FLOOR - ((t * 60 + i * 37) % (FLOOR - u.top + 20));
+      const xx = u.x + u.w / 2 + Math.sin(t * 2 + i * 1.7) * u.w * 0.4;
+      ctx.fillStyle = 'rgba(220,240,255,' + (0.25 + 0.2 * Math.sin(i + t)).toFixed(3) + ')';
+      ctx.fillRect(xx, yy, 1.6, 1.6);
+    }
+  }
+  if (r.find && !r.find.taken){
+    const f = r.find, bob = Math.sin(t * 2) * 2;
+    drawFeather(f.x, f.y - 12 + bob, 0.5 + 0.2 * Math.sin(t * 3));
+  }
+  if (r.door){
+    const dg = ctx.createLinearGradient(r.door, 0, r.door + 44, 0);
+    dg.addColorStop(0, 'rgba(255,236,200,0.0)'); dg.addColorStop(1, 'rgba(255,236,200,0.55)');
+    ctx.fillStyle = dg; ctx.fillRect(r.door, 150, 44, 150);
+    ctx.strokeStyle = 'rgba(255,236,200,0.5)'; ctx.strokeRect(r.door + 6, 150, 38, 150);
+  }
+
+  const rec = G.mode === 'receptive' && G.rec;
+  const target = rec ? G.rec.target : null;
+  for (const o of r.obs) if (o !== target) drawObstacle(o, false);
+  const fd = G.pl.recFade;
+  if (target) drawObstacle(target, false);
+  if (fd <= 0.01) drawPlayer();
+  drawParts();
+
+  // receptive: the world dims; the element and the figure stay lit
+  if (fd > 0.01){
+    ctx.fillStyle = 'rgba(6,4,14,' + (0.58 * fd).toFixed(3) + ')';
+    ctx.fillRect(x0, 0, x1 - x0, H0);
+    if (target) drawObstacle(target, true);
+    drawPlayer();
+    if (rec) drawReceptive();
+  }
+  // doing-mode hint: a barrier you pressed against shows its shape, once, faintly
+  if (!rec) for (const o of r.obs) if (o.hint > 0.02 && o.el !== G.carried){
+    const { lung } = lungOf(o.el, t);
+    drawKite(props(ELEM[o.el].shape), kiteX(o), 128, scaleFor(o.el), o.el, 0.45 * o.hint, lung);
+  }
+}
+
+function drawFeather(x, y, glow){
+  ctx.save(); ctx.translate(x, y); ctx.rotate(-0.5);
+  const rg = ctx.createRadialGradient(0, 0, 1, 0, 0, 16);
+  rg.addColorStop(0, 'rgba(234,248,255,' + (0.35 * glow).toFixed(3) + ')'); rg.addColorStop(1, 'rgba(234,248,255,0)');
+  ctx.fillStyle = rg; ctx.fillRect(-16, -16, 32, 32);
+  ctx.fillStyle = '#eef6ff'; ctx.beginPath(); ctx.ellipse(0, 0, 3.2, 9, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#9fb4c8'; ctx.lineWidth = 0.8; ctx.beginPath(); ctx.moveTo(0, -9); ctx.lineTo(0, 12); ctx.stroke();
+  ctx.restore();
+}
+
+// ── obstacles ───────────────────────────────────────────────────────────────
+function drawObstacle(o, lit){
+  const E = ELEM[o.el], t = G.simT;
+  const { lung } = lungOf(o.el, t - (G.rec ? G.rec.enterT : 0));
+  const pulse = lit ? 0.35 + 0.65 * lung : 0.12 + 0.18 * lung + 0.5 * o.hint;
+  const carrying = G.carried === o.el;
+  ctx.save();
+  if (o.type === 'wall'){
+    const near = carrying && Math.abs(G.pl.x - (o.x + o.w / 2)) < o.w;
+    ctx.globalAlpha = carrying ? (near ? 0.42 : 0.7) : 1;
+    ctx.fillStyle = E.dim;
+    ctx.beginPath(); ctx.moveTo(o.x + 4, o.y);
+    for (let yy = o.y; yy <= o.y + o.h; yy += 20) ctx.lineTo(o.x + (yy * 13 % 9) - 2, yy);
+    for (let yy = o.y + o.h; yy >= o.y; yy -= 20) ctx.lineTo(o.x + o.w + (yy * 7 % 8) - 3, yy);
+    ctx.closePath(); ctx.fill();
+    for (let i = 0, yy = o.y + 10; yy < o.y + o.h; yy += 17, i++){
+      ctx.strokeStyle = rgba(i % 2 ? E.col : E.glow, 0.1 + 0.45 * pulse * (i % 3 === 0 ? 1 : 0.55));
+      ctx.lineWidth = 2 + (i % 3);
+      ctx.beginPath(); ctx.moveTo(o.x, yy); ctx.bezierCurveTo(o.x + o.w * 0.3, yy - 4, o.x + o.w * 0.7, yy + 5, o.x + o.w, yy + 1); ctx.stroke();
+    }
+    if (near) for (let i = 0; i < 20; i++){ ctx.fillStyle = rgba(E.glow, 0.4); ctx.fillRect(o.x + ((i * 37 + t * 20) % o.w), o.y + ((i * 91) % o.h), 2, 2); }
+  } else if (o.type === 'veil'){
+    const b = o.burn;
+    ctx.globalAlpha = 1 - b;
+    ctx.strokeStyle = 'rgba(214,214,226,0.4)'; ctx.lineWidth = 0.8;
+    const cx = o.x + o.w / 2;
+    for (let i = 0; i <= 8; i++){ ctx.beginPath(); ctx.moveTo(cx, o.y); ctx.lineTo(o.x - 14 + i * (o.w + 28) / 8, o.y + o.h); ctx.stroke(); }
+    for (let yy = o.y + 26; yy < o.y + o.h; yy += 24){
+      ctx.beginPath();
+      const spread = (yy - o.y) / o.h * (o.w / 2 + 14);
+      ctx.moveTo(cx - spread, yy); ctx.quadraticCurveTo(cx, yy + 7, cx + spread, yy); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+    // flame along the base, breathing with the element
+    const fh = (18 + 52 * pulse) * (1 - 0.8 * b);
+    for (let i = 0; i < 7; i++){
+      const fx = o.x - 6 + i * (o.w + 12) / 6;
+      const f = fh * (0.6 + 0.4 * Math.sin(t * 9 + i * 2.1)) * (0.7 + 0.3 * Math.sin(t * 5.3 + i));
+      const fg = ctx.createLinearGradient(0, FLOOR, 0, FLOOR - f);
+      fg.addColorStop(0, rgba(E.col, 0.9)); fg.addColorStop(1, rgba(E.glow, 0));
+      ctx.fillStyle = fg;
+      ctx.beginPath(); ctx.moveTo(fx - 7, FLOOR); ctx.quadraticCurveTo(fx - 4, FLOOR - f * 0.6, fx + Math.sin(t * 6 + i) * 3, FLOOR - f); ctx.quadraticCurveTo(fx + 4, FLOOR - f * 0.6, fx + 7, FLOOR); ctx.fill();
+    }
+    const rg = ctx.createRadialGradient(cx, FLOOR - 20, 4, cx, FLOOR - 20, 90);
+    rg.addColorStop(0, rgba(E.col, 0.18 * pulse + 0.05)); rg.addColorStop(1, rgba(E.col, 0));
+    ctx.fillStyle = rg; ctx.fillRect(cx - 90, FLOOR - 110, 180, 120);
+  } else if (o.type === 'pit'){
+    ctx.fillStyle = '#07050d'; ctx.fillRect(o.x, FLOOR, o.w, H0 - FLOOR + 20);
+    ctx.fillStyle = '#5b5670';
+    for (let sx = o.x + 4; sx < o.x + o.w - 4; sx += 13){ ctx.beginPath(); ctx.moveTo(sx, 352); ctx.lineTo(sx + 6, 334); ctx.lineTo(sx + 12, 352); ctx.fill(); }
+    // air moving over the gap
+    for (let i = 0; i < 18; i++){
+      const xx = o.x + ((i * 53 + t * 30 * (1 + (i % 3))) % o.w);
+      const yy = FLOOR - 6 - (i % 5) * 9 - 10 * Math.sin(t + i);
+      ctx.fillStyle = rgba(E.glow, (0.08 + 0.3 * pulse) * (carrying ? 1.4 : 1));
+      ctx.fillRect(xx, yy, 1.5, 1.5);
+    }
+    ctx.fillStyle = '#4e3b34'; ctx.fillRect(o.x - 3, FLOOR, 3, 8); ctx.fillRect(o.x + o.w, FLOOR, 3, 8);
+  } else if (o.type === 'pipe'){
+    ctx.fillStyle = '#342a4a'; ctx.fillRect(o.x, o.y, o.w, o.h);
+    ctx.strokeStyle = 'rgba(0,0,0,0.3)'; ctx.lineWidth = 1;
+    for (let yy = o.y + 10; yy < o.y + o.h - 30; yy += 44){ ctx.strokeRect(o.x + 8, yy, o.w - 16, 36); ctx.fillStyle = '#8a7658'; ctx.fillRect(o.x + o.w / 2 - 7, yy + 16, 14, 3); }
+    // the pipe: the one opening, at the floor
+    const py = o.y + o.h;
+    ctx.fillStyle = '#0a0814'; ctx.fillRect(o.x - 6, py, o.w + 12, FLOOR - py);
+    ctx.fillStyle = '#6b6a80'; ctx.fillRect(o.x - 8, py - 3, o.w + 16, 4);
+    ctx.fillStyle = rgba(E.col, 0.18 + 0.5 * pulse);
+    ctx.fillRect(o.x - 6, FLOOR - 4, o.w + 12, 3);
+    for (let i = 0; i < 4; i++){
+      const dx = o.x + 20 + i * (o.w - 40) / 3, ph = (t * 0.8 + i * 0.37) % 1;
+      ctx.fillStyle = rgba(E.glow, 0.5 * (1 - ph)); ctx.beginPath(); ctx.arc(dx, py + 2 + ph * (FLOOR - py - 6), 1.4, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+
+// ── kites ───────────────────────────────────────────────────────────────────
+function scaleFor(el){ return P.kiteR / Math.max(...props(ELEM[el].shape)); }
+// In open air before the barrier (a pit is itself open air), clear of the thumbs at the corners.
+function kiteX(o){ return clamp(o.type === 'pit' ? o.x + o.w / 2 : o.x - 80, 190, 450); }
+const KITE_MIN = 0.035; // a zero-length pause still draws a sliver, so water reads as a drop, not a line
+function kitePts(pv, S){
+  const f = x => Math.max(KITE_MIN, x) * S;
+  return [[0, -f(pv[0])], [f(pv[1]), 0], [0, f(pv[2])], [-f(pv[3]), 0]];
+}
+function perim(pts, n){
+  const out = [], L = [];
+  let tot = 0;
+  for (let i = 0; i < 4; i++){ const a = pts[i], b = pts[(i + 1) % 4]; const l = Math.hypot(b[0] - a[0], b[1] - a[1]); L.push(l); tot += l; }
+  for (let k = 0; k < n; k++){
+    let d = k / n * tot, i = 0;
+    while (d > L[i] && i < 3){ d -= L[i]; i++; }
+    const a = pts[i], b = pts[(i + 1) % 4], u = L[i] ? d / L[i] : 0;
+    out.push([a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u]);
+  }
+  return out;
+}
+// The element's own kite, drawn in its own material; scale follows the lung.
+function drawKite(pv, cx, cy, S, el, alpha, lung, activePh = -1){
+  if (alpha < 0.01) return;
+  const E = ELEM[el], t = G.simT;
+  const sc = 0.62 + 0.38 * lung;
+  const pts = kitePts(pv, S * sc);
+  ctx.save(); ctx.translate(cx, cy);
+  const rg = ctx.createRadialGradient(0, 0, 2, 0, 0, S * 0.9);
+  rg.addColorStop(0, rgba(E.col, 0.12 * alpha * (0.4 + lung))); rg.addColorStop(1, rgba(E.col, 0));
+  ctx.fillStyle = rg; ctx.fillRect(-S, -S, 2 * S, 2 * S);
+  if (el === 'earth'){
+    ctx.strokeStyle = rgba(E.col, 0.7 * alpha); ctx.lineWidth = 3; ctx.setLineDash([7, 4]);
+    ctx.beginPath(); pts.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.closePath(); ctx.stroke(); ctx.setLineDash([]);
+    for (const p of perim(pts, 20)){ ctx.fillStyle = rgba(E.glow, 0.55 * alpha); ctx.fillRect(p[0] - 1.5, p[1] - 1.5, 3, 3); }
+  } else if (el === 'fire'){
+    const q = perim(pts, 48);
+    ctx.strokeStyle = rgba(E.col, 0.75 * alpha); ctx.lineWidth = 2;
+    ctx.beginPath();
+    q.forEach((p, i) => { const j = Math.sin(t * 13 + i * 1.9) * 2.2; i ? ctx.lineTo(p[0] + j, p[1] - Math.abs(j)) : ctx.moveTo(p[0] + j, p[1]); });
+    ctx.closePath(); ctx.stroke();
+    q.forEach((p, i) => { if (i % 4) return; const f = 4 + 3 * Math.sin(t * 9 + i); ctx.fillStyle = rgba(E.glow, 0.5 * alpha); ctx.beginPath(); ctx.moveTo(p[0] - 2, p[1]); ctx.lineTo(p[0], p[1] - f); ctx.lineTo(p[0] + 2, p[1]); ctx.fill(); });
+  } else if (el === 'air'){
+    const q = perim(pts, 64);
+    q.forEach((p, i) => { const k = (i + t * 12) % 64; const a = 0.25 + 0.55 * Math.abs(Math.sin(k * 0.3)); ctx.fillStyle = rgba(E.glow, a * alpha); ctx.beginPath(); ctx.arc(p[0], p[1], 1.4, 0, Math.PI * 2); ctx.fill(); });
+  } else {
+    ctx.strokeStyle = rgba(E.col, 0.7 * alpha); ctx.lineWidth = 2.5; ctx.lineJoin = 'round';
+    ctx.beginPath(); pts.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.closePath(); ctx.stroke();
+    for (const p of perim(pts, 10)){ const ph = (t * 0.6) % 1; ctx.fillStyle = rgba(E.glow, 0.6 * alpha * (1 - ph)); ctx.beginPath(); ctx.arc(p[0], p[1] + ph * 8, 1.6, 0, Math.PI * 2); ctx.fill(); }
+  }
+  if (activePh >= 0){
+    const p = pts[activePh];
+    ctx.fillStyle = rgba(E.glow, 0.9 * alpha); ctx.beginPath(); ctx.arc(p[0], p[1], 3.2, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.restore();
+}
+function strokeShape(pts, cx, cy, col, a, w){
+  ctx.save(); ctx.translate(cx, cy);
+  ctx.strokeStyle = rgba(col, a); ctx.lineWidth = w; ctx.lineJoin = 'round';
+  ctx.beginPath(); pts.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.closePath(); ctx.stroke();
+  ctx.restore();
+}
+
+// ── receptive overlay: the element's kite, the player's own, the stamps ─────
+const MINE = '#fff1d6';
+function drawReceptive(){
+  const R = G.rec, t = R.target, fd = G.pl.recFade;
+  const el = t ? t.el : null;
+  const cx = t ? kiteX(t) : clamp(G.pl.x, 190, 450), cy = 128;
+  const S = el ? scaleFor(el) : P.kiteR / 0.5;
+  const owned = el && G.carried === el;
+  if (el){
+    const { lung, ph } = lungOf(el, G.simT - R.enterT);
+    const pacer = owned ? 0.8 : Math.max(P.pacerFloor, 1 - t.matches * P.pacerFade);
+    drawKite(props(ELEM[el].shape), cx, cy, S, el, fd * pacer, owned ? 0.8 : lung, owned ? -1 : ph);
+    // four motes: gathered matches, carried as they grow
+    for (let i = 0; i < P.need; i++){
+      const a = -Math.PI / 2 + (i + 0.5) * (Math.PI * 2 / P.need) + G.simT * 0.3;
+      const on = owned || i < t.matches;
+      const mx = G.pl.x + Math.cos(a) * 22, my = G.pl.y - 48 + Math.sin(a) * 9;
+      ctx.fillStyle = on ? rgba(ELEM[el].glow, 0.9 * fd) : 'rgba(255,255,255,' + (0.14 * fd).toFixed(3) + ')';
+      ctx.beginPath(); ctx.arc(mx, my, on ? 2.4 : 1.6, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+  // stamps: a finished breath either settles into the element's shape or lets go
+  for (const s of G.stamps){
+    const age = G.simT - s.born, pv = props(s.v);
+    if (s.matched && s.el){
+      const u = clamp(age / 0.8, 0, 1), tp = props(ELEM[s.el].shape);
+      const mid = pv.map((x, i) => x + (tp[i] - x) * u);
+      strokeShape(kitePts(mid, S), cx, cy, ELEM[s.el].glow, 0.9 * (1 - clamp((age - 0.8) / 1.2, 0, 1)) * fd, 2.4);
+    } else {
+      strokeShape(kitePts(pv, S), cx, cy + age * 10, MINE, 0.5 * (1 - age / 2.2) * fd, 1.4);
+    }
+  }
+  // the breath in progress, drawn live against the player's own recent tempo
+  if (!R.started) return;
+  const { breaths, partial } = parseNow();
+  let live = partial;
+  if (!live && breaths.length){ const b = breaths[breaths.length - 1]; if (!R.scored.has(b.t0)) live = b; }
+  if (!live) return;
+  const recent = R.totals.slice(-3);
+  const Tref = recent.length ? recent.reduce((a, b) => a + b, 0) / recent.length : (el ? total(ELEM[el].shape) : 12);
+  const pv = vec(live).map(x => x / Tref);
+  strokeShape(kitePts(pv, S), cx, cy, MINE, 0.85 * fd, 2);
+}
+
+// ── particles ───────────────────────────────────────────────────────────────
+function drawParts(){
+  for (const q of G.parts){
+    ctx.fillStyle = rgba(q.col, 0.8 * (1 - q.life / q.max));
+    ctx.beginPath(); ctx.arc(q.x, q.y, q.r, 0, Math.PI * 2); ctx.fill();
+  }
+}
+
+// ── the figure ──────────────────────────────────────────────────────────────
+// Stand-in for the Blender acrobat. Head = the player's avatar colours
+// (defaults here; the app will read the avatars row).
+const AV = { skin: '#F5CBA7', eye: '#4A90D9', hair: '#3b2a20', tunic: '#e9dfcc', legs: '#6f6390' };
+function limb(x, y, a, len){ return [x + Math.sin(a) * len, y + Math.cos(a) * len]; }
+function seg(a, b, w, col){ ctx.strokeStyle = col; ctx.lineWidth = w; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); }
+function tintOf(c){
+  if (!G.carried) return c;
+  const age = G.simT - G.carriedAt;
+  return mix(c, ELEM[G.carried].col, clamp(age / 1.2, 0, 1) * 0.32);
+}
+function drawPlayer(){
+  const p = G.pl, t = G.simT;
+  const tunic = tintOf(AV.tunic), legs = tintOf(AV.legs);
+  if (G.carried){
+    const rg = ctx.createRadialGradient(p.x, p.y - 40, 4, p.x, p.y - 40, 48);
+    rg.addColorStop(0, rgba(ELEM[G.carried].col, 0.16)); rg.addColorStop(1, rgba(ELEM[G.carried].col, 0));
+    ctx.fillStyle = rg; ctx.fillRect(p.x - 48, p.y - 90, 96, 96);
+  }
+  if (p.liquid > 0.02){
+    // running down into a rivulet
+    const L = p.liquid;
+    ctx.globalAlpha = L;
+    ctx.fillStyle = rgba(ELEM.water.col, 0.85);
+    ctx.beginPath(); ctx.ellipse(p.x, p.y - 6, 12 + 8 * L, 6, 0, 0, Math.PI * 2); ctx.fill();
+    for (let i = 0; i < 5; i++){ ctx.fillStyle = rgba(ELEM.water.glow, 0.7); ctx.beginPath(); ctx.arc(p.x - 14 + ((i * 9 + t * 40) % 28), p.y - 9 + Math.sin(t * 8 + i) * 2, 1.4, 0, Math.PI * 2); ctx.fill(); }
+    ctx.globalAlpha = 1;
+    if (L > 0.95) return;
+    ctx.globalAlpha = 1 - L;
+  }
+  const seated = p.recFade > 0.5;
+  if (seated) drawSeated(p.x, p.y, tunic, legs);
+  else drawProfile(p, tunic, legs, t);
+  ctx.globalAlpha = 1;
+}
+function drawProfile(p, tunic, legs, t){
+  const air = !p.ground && !p.float;
+  const bob = p.float ? Math.sin(t * 2.4) * 3 - 4 : 0;
+  ctx.save();
+  ctx.translate(p.x, p.y + bob);
+  // teeter: lean over the edge and back, arms wheeling
+  const lean = p.teeter * (0.16 + 0.1 * Math.sin(t * 8));
+  ctx.rotate(lean);
+  const hip = [0, -36], sh = [2, -58];
+  const ph = p.walkPh, moving = Math.abs(p.vx) > 5 && p.ground;
+  for (const k of [0, 1]){
+    const s = k ? Math.PI : 0;
+    let a = moving ? Math.sin(ph + s) * 0.5 : (k ? -0.06 : 0.06), bend = moving ? Math.max(0, Math.sin(ph + s + 1.6)) * 0.8 : 0;
+    if (air){ a = k ? -0.35 : 0.5; bend = 0.9; }
+    if (p.float){ a = k ? -0.1 : 0.15; bend = 0.25; }
+    const knee = limb(hip[0], hip[1], a, 19), foot = limb(knee[0], knee[1], a - bend, 18);
+    seg(hip, knee, 6, k ? mix(legs, '#000000', 0.25) : legs); seg(knee, foot, 5, k ? mix(legs, '#000000', 0.25) : legs);
+  }
+  seg(hip, sh, 10, tunic);
+  for (const k of [0, 1]){
+    const s = k ? 0 : Math.PI;
+    let a = moving ? Math.sin(ph + s) * 0.45 : 0.08;
+    if (p.teeter > 0.05) a = t * 11 + k * Math.PI;           // windmilling
+    if (air) a = k ? 2.6 : 2.2;
+    if (p.float) a = k ? 1.3 : 1.1;
+    const el = limb(sh[0], sh[1], a, 14), hand = limb(el[0], el[1], a - 0.4, 13);
+    seg(sh, el, 4.5, k ? tunic : mix(tunic, '#000000', 0.2)); seg(el, hand, 4, AV.skin);
+  }
+  // head in profile: skin, hair, one eye
+  const hx = 4, hy = -69;
+  ctx.fillStyle = AV.skin; ctx.beginPath(); ctx.arc(hx, hy, 10, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = AV.hair; ctx.beginPath(); ctx.arc(hx - 1, hy - 1, 10.4, Math.PI * 0.95, Math.PI * 2.05); ctx.fill();
+  ctx.beginPath(); ctx.arc(hx - 5, hy + 1, 5.5, Math.PI * 0.5, Math.PI * 1.5); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(hx + 6, hy + 1, 2, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = AV.eye; ctx.beginPath(); ctx.arc(hx + 6.6, hy + 1.2, 1.1, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+// Receptive: the figure turns to face us and sits. This is where the app
+// composites the real BaseAvatar face.
+function drawSeated(x, y, tunic, legs){
+  const f = G.fullness;
+  ctx.save(); ctx.translate(x, y);
+  ctx.fillStyle = legs;
+  ctx.beginPath(); ctx.ellipse(-9, -6, 13, 5.5, 0.15, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(9, -6, 13, 5.5, -0.15, 0, Math.PI * 2); ctx.fill();
+  const cw = 10 + 2.5 * f, top = -40 - 2 * f;
+  ctx.fillStyle = tunic;
+  ctx.beginPath(); ctx.moveTo(-9, -8); ctx.lineTo(-cw, top + 4); ctx.quadraticCurveTo(0, top - 3, cw, top + 4); ctx.lineTo(9, -8); ctx.closePath(); ctx.fill();
+  seg([-cw + 1, top + 6], [-15, -14], 4.5, tunic); seg([-15, -14], [-12, -8], 4, AV.skin);
+  seg([cw - 1, top + 6], [15, -14], 4.5, tunic); seg([15, -14], [12, -8], 4, AV.skin);
+  // BaseAvatar stand-in: round head, calm half-lidded eyes
+  const hy = top - 12;
+  ctx.fillStyle = AV.skin; ctx.beginPath(); ctx.ellipse(0, hy, 11, 11.6, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = AV.hair; ctx.beginPath(); ctx.arc(0, hy - 1, 11.6, Math.PI * 1.02, Math.PI * 1.98); ctx.fill();
+  for (const sx of [-4.2, 4.2]){
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(sx, hy + 1, 2.8, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = AV.eye; ctx.beginPath(); ctx.arc(sx, hy + 1.6, 1.6, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = AV.skin; ctx.beginPath(); ctx.moveTo(sx - 3, hy - 0.2); ctx.quadraticCurveTo(sx, hy + 1.2, sx + 3, hy - 0.2); ctx.arc(sx, hy + 1, 3, -0.4, Math.PI + 0.4, true); ctx.fill();
+  }
+  ctx.fillStyle = rgba('#FF8FAB', 0.3); ctx.beginPath(); ctx.arc(-6.5, hy + 5, 2.2, 0, Math.PI * 2); ctx.arc(6.5, hy + 5, 2.2, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = mix(AV.skin, '#000000', 0.35); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(-3, hy + 7); ctx.quadraticCurveTo(0, hy + 7.8, 3, hy + 7); ctx.stroke();
+  ctx.restore();
+}
+
+// ── bedroom (opening and waking) ────────────────────────────────────────────
+function drawBedroom(wake){
+  const t = G.simT, b = G.bed, x0 = xMin(), x1 = xMax();
+  const warm = wake ? clamp((t - G.wakeT) / 3, 0, 1) : 0;
+  const sleepU = b.sleepT >= 0 ? clamp((t - b.sleepT) / 1.1, 0, 1) : 0;
+  ctx.fillStyle = mix('#3a3e4a', '#7a6552', warm); ctx.fillRect(x0, 0, x1 - x0, FLOOR);
+  ctx.fillStyle = mix('#2c2a30', '#5a4336', warm); ctx.fillRect(x0, FLOOR, x1 - x0, 80);
+  ctx.fillStyle = mix('#33323a', '#6a5040', warm); ctx.fillRect(x0, FLOOR, x1 - x0, 4);
+  // window: air's source. Night outside; morning, and open, if the feather came back
+  const open = wake && G.findTaken;
+  ctx.fillStyle = mix('#1a2233', '#f4d9a8', warm); ctx.fillRect(80, 70, 110, 110);
+  ctx.strokeStyle = mix('#555a66', '#a08870', warm); ctx.lineWidth = 5; ctx.strokeRect(80, 70, 110, 110);
+  if (open){
+    ctx.fillStyle = 'rgba(255,245,220,0.35)'; ctx.beginPath(); ctx.moveTo(135, 72); ctx.lineTo(118, 80); ctx.lineTo(118, 172); ctx.lineTo(135, 178); ctx.fill();
+    const sway = Math.sin(t * 1.3) * 8;
+    ctx.fillStyle = '#c8a888'; ctx.beginPath(); ctx.moveTo(190, 64); ctx.quadraticCurveTo(200 + sway, 130, 186 + sway * 1.4, 190); ctx.lineTo(204, 190); ctx.lineTo(206, 64); ctx.fill();
+  } else {
+    ctx.beginPath(); ctx.moveTo(135, 70); ctx.lineTo(135, 180); ctx.stroke();
+    ctx.fillStyle = mix('#4a4450', '#c8a888', warm); ctx.fillRect(190, 64, 14, 126);
+  }
+  // clock
+  ctx.strokeStyle = mix('#6a6a74', '#8a7060', warm); ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(270, 90, 14, 0, Math.PI * 2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(270, 90); ctx.lineTo(270, 80); ctx.moveTo(270, 90); ctx.lineTo(277, 93); ctx.stroke();
+  // desk
+  ctx.fillStyle = mix('#4a4038', '#7a5a40', warm); ctx.fillRect(330, 228, 200, 8);
+  ctx.fillRect(338, 236, 7, 64); ctx.fillRect(515, 236, 7, 64);
+  ctx.fillStyle = mix('#3e362f', '#6a4c36', warm); ctx.fillRect(440, 236, 75, 40);
+  // monitor + the same lines as yesterday
+  ctx.fillStyle = '#1c1c22'; ctx.fillRect(388, 150, 84, 58); ctx.fillRect(426, 208, 8, 14); ctx.fillRect(412, 222, 36, 6);
+  ctx.fillStyle = wake ? '#3a3a30' : '#28303a'; ctx.fillRect(392, 154, 76, 50);
+  const typing = t - b.typeT < 0.35;
+  for (let i = 0; i < b.lines; i++){ ctx.fillStyle = 'rgba(200,215,230,0.55)'; ctx.fillRect(397, 160 + i * 8, 30 + ((i * 17) % 36), 3); }
+  ctx.fillStyle = '#26262c'; ctx.fillRect(396, 224, 50, 4);
+  // lamp: fire's source
+  const lampGlow = wake ? 0.3 + 0.1 * warm : 0.08;
+  const lg = ctx.createRadialGradient(505, 200, 2, 505, 200, 90);
+  lg.addColorStop(0, 'rgba(255,210,140,' + lampGlow.toFixed(3) + ')'); lg.addColorStop(1, 'rgba(255,210,140,0)');
+  ctx.fillStyle = lg; ctx.fillRect(415, 110, 180, 180);
+  ctx.strokeStyle = '#6a625a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(505, 228); ctx.lineTo(495, 196); ctx.lineTo(510, 178); ctx.stroke();
+  ctx.fillStyle = wake ? '#e8c890' : '#7a7266'; ctx.beginPath(); ctx.moveTo(500, 176); ctx.lineTo(524, 176); ctx.lineTo(518, 162); ctx.lineTo(506, 162); ctx.fill();
+  // glass of water: water's source
+  const sip = clamp(1 - Math.abs((t - b.sipT) - 0.6) / 0.6, 0, 1);
+  const gx = 360 - sip * 18, gy = 212 - sip * 30;
+  ctx.fillStyle = 'rgba(200,220,240,0.25)'; ctx.fillRect(gx, gy, 10, 16);
+  ctx.fillStyle = wake ? 'rgba(90,170,255,0.6)' : 'rgba(110,140,170,0.45)'; ctx.fillRect(gx + 1, gy + 6, 8, 9);
+  // plant: earth's source. It has a new leaf in the morning
+  ctx.fillStyle = mix('#5a4a40', '#8a5a3a', warm); ctx.beginPath(); ctx.moveTo(560, 300); ctx.lineTo(556, 272); ctx.lineTo(588, 272); ctx.lineTo(584, 300); ctx.fill();
+  const leaf = (x, y, a, s, c) => { ctx.save(); ctx.translate(x, y); ctx.rotate(a); ctx.fillStyle = c; ctx.beginPath(); ctx.ellipse(0, -s, s * 0.35, s, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore(); };
+  const lc = mix('#4a5a48', '#5a9a50', warm);
+  leaf(572, 272, -0.6, 14, lc); leaf(572, 272, 0.1, 18, lc); leaf(572, 272, 0.7, 13, lc);
+  if (wake){ const g = clamp((t - G.wakeT - 2) / 3, 0, 1); leaf(572, 272, -0.15, 12 * g, '#8fd070'); }
+  // chair and the person at the desk
+  ctx.fillStyle = mix('#3a3438', '#5a4438', warm); ctx.fillRect(290, 240, 34, 6); ctx.fillRect(292, 180, 5, 64); ctx.fillRect(298, 246, 5, 54); ctx.fillRect(318, 246, 5, 54);
+  drawAtDesk(312, 244, typing, sip, sleepU, wake ? clamp((t - G.wakeT) / 2, 0, 1) : 1);
+}
+function drawAtDesk(x, y, typing, sip, sleepU, eyesOpen){
+  const t = G.simT;
+  ctx.save(); ctx.translate(x, y);
+  const nod = sleepU * 0.5;
+  seg([0, 0], [22, 0], 6, AV.legs); seg([22, 0], [24, 48], 5, AV.legs);
+  ctx.save(); ctx.rotate(nod * 0.3);
+  seg([0, 0], [4, -26], 10, AV.tunic);
+  const tap = typing ? Math.sin(t * 40) * 1.5 : 0;
+  if (sip > 0.02) { seg([5, -24], [22, -12], 4.5, AV.tunic); seg([22, -12], [30 + 10 * (1 - sip), -24 - 10 * sip], 4, AV.skin); }
+  else { seg([5, -24], [30, -12], 4.5, AV.tunic); seg([30, -12], [60 - sleepU * 20, -16 + tap], 4, AV.skin); }
+  seg([3, -24], [26, -9], 4.5, mix(AV.tunic, '#000000', 0.2)); seg([26, -9], [56 - sleepU * 20, -14 - tap], 4, AV.skin);
+  const hx = 7, hy = -37;
+  ctx.save(); ctx.translate(hx, hy); ctx.rotate(nod * 0.8 - sip * 0.3);
+  ctx.fillStyle = AV.skin; ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = AV.hair; ctx.beginPath(); ctx.arc(-1, -1, 10.4, Math.PI * 0.95, Math.PI * 2.05); ctx.fill();
+  ctx.beginPath(); ctx.arc(-5, 1, 5.5, Math.PI * 0.5, Math.PI * 1.5); ctx.fill();
+  const open = (1 - sleepU) * eyesOpen;
+  if (open > 0.15){ ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.ellipse(6, 1, 2, 2 * open, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = AV.eye; ctx.beginPath(); ctx.arc(6.6, 1.2, 1.1 * open, 0, Math.PI * 2); ctx.fill(); }
+  else { ctx.strokeStyle = mix(AV.skin, '#000000', 0.4); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(4, 1.5); ctx.quadraticCurveTo(6, 2.5, 8, 1.5); ctx.stroke(); }
+  ctx.restore(); ctx.restore(); ctx.restore();
+}
+
+// ── loop ────────────────────────────────────────────────────────────────────
+let prev = performance.now(), lastFrameAt = performance.now(), frozen = false;
+function frame(now){
+  const dt = Math.min(0.05, (now - prev) / 1000);
+  prev = now;
+  if (!frozen){ advance(dt); render(); }
+  lastFrameAt = now;
+  requestAnimationFrame(frame);
+}
+// Fallback tick for when rAF stalls. It must not call frame(), which would
+// queue a second rAF chain every time it fired (the loop then multiplied).
+setInterval(() => {
+  const now = performance.now();
+  if (!frozen && now - lastFrameAt > 500){ advance(Math.min(0.05, (now - prev) / 1000)); render(); prev = now; lastFrameAt = now; }
+}, 250);
+requestAnimationFrame(frame);
+document.getElementById('again').onclick = () => { restart(); };
+function restart(){
+  G = freshState(); btnMode = ''; releaseEverything();
+  for (const b of [bT]) b.classList.remove('call', 'glow');
+  document.getElementById('again').style.display = 'none'; capEl.style.opacity = 0;
+}
+
+// ── tuning panel ────────────────────────────────────────────────────────────
+const panel = document.getElementById('tune');
+if (DEV) panel.style.display = 'block';
+function bind(id, key, fmt){
+  const s = document.getElementById('s_' + id), v = document.getElementById('v_' + id);
+  s.value = P[key]; v.textContent = fmt(P[key]);
+  s.addEventListener('input', () => { P[key] = parseFloat(s.value); v.textContent = fmt(P[key]); });
+}
+bind('tol', 'tol', x => x.toFixed(2));
+bind('minB', 'minBreath', x => x.toFixed(1));
+bind('need', 'need', x => x | 0);
+bind('pf', 'pacerFade', x => x.toFixed(2));
+bind('pfl', 'pacerFloor', x => x.toFixed(2));
+bind('acf', 'autoCloseFrac', x => x.toFixed(2));
+bind('walk', 'walk', x => x | 0);
+for (const el of EL_NAMES){
+  const inp = document.getElementById('sh_' + el);
+  inp.value = ELEM[el].shape.join('-');
+  inp.addEventListener('change', () => {
+    const v = inp.value.split(/[-,\s]+/).map(Number);
+    if (v.length === 4 && v.every(x => x >= 0) && total(v) > 0) ELEM[el].shape = v; else inp.value = ELEM[el].shape.join('-');
+  });
+}
+document.getElementById('d_next').onclick = () => { if (G.room < G.rooms.length - 1) goRoom(G.room + 1); };
+document.getElementById('d_restart').onclick = restart;
+for (const b of document.querySelectorAll('[data-give]')) b.onclick = () => { G.carried = b.dataset.give || null; G.carriedAt = G.simT; };
+document.getElementById('d_cross').onclick = () => {
+  const M = crossMatch();
+  let s = 'rows: breathed · cols: target\n       ' + EL_NAMES.map(n => n.slice(0, 5).padStart(6)).join('') + '\n';
+  for (const a of EL_NAMES) s += a.padEnd(7) + EL_NAMES.map(b => (M[a][b] * 100).toFixed(0).padStart(5) + '%').join('') + '\n';
+  document.getElementById('d_out').textContent = s + '(±20% jitter per phase, tempo ×0.75–1.35)';
+};
+setInterval(() => {
+  if (panel.style.display !== 'block') return;
+  const R = G.rec, t = R && R.target;
+  const L = t ? G.log.el[t.el] : null;
+  document.getElementById('d_live').textContent =
+    'room ' + G.room + ' ' + (room().name || room().kind) + ' · ' + G.mode + '\ncarrying ' + (G.carried || '—') +
+    (t ? '\ntarget ' + t.el + ' · matches ' + t.matches + '/' + P.need : '') +
+    (L && L.lastD.length ? '\nrecent L1: ' + L.lastD.slice(-5).join(' ') : '') +
+    '\ntoggles ' + G.log.toggles + ' · doing ' + G.log.doingS.toFixed(0) + 's · receptive ' + G.log.receptiveS.toFixed(0) + 's';
+}, 300);
+
+// ── debug API for playtesting ───────────────────────────────────────────────
+function mulberry32(a){ return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function crossMatch(n = 4000, sd = 0.2, seed = 7){
+  const rnd = mulberry32(seed);
+  const gauss = () => { let u = 0, v = 0; while (!u) u = rnd(); while (!v) v = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+  const M = {};
+  for (const a of EL_NAMES){
+    M[a] = {};
+    const samples = [];
+    for (let i = 0; i < n; i++){
+      const tempo = 0.75 + rnd() * 0.6;
+      // a zero-length phase still gets the ~0–0.4 s a real thumb-switch takes
+      samples.push(ELEM[a].shape.map(s => s > 0 ? Math.max(0, s * tempo * (1 + sd * gauss())) : Math.abs(gauss()) * 0.2));
+    }
+    for (const b of EL_NAMES) M[a][b] = samples.filter(v => judge(v, b).matched).length / n;
+  }
+  return M;
+}
+window.__toggler = {
+  P, ELEM, crossMatch, judge,
+  get G(){ return G; },
+  get state(){
+    const p = G.pl, t = G.rec && G.rec.target;
+    return { t: +G.simT.toFixed(3), room: G.room, name: room().name || room().kind, mode: G.mode, carried: G.carried,
+      x: +p.x.toFixed(1), y: +p.y.toFixed(1), ground: p.ground, teeter: +p.teeter.toFixed(2), liquid: +p.liquid.toFixed(2), float: p.float,
+      target: t ? { el: t.el, matches: t.matches } : null, fade: +G.fade.toFixed(2), transition: !!G.transition,
+      obs: (room().obs || []).map(o => ({ el: o.el, type: o.type, passed: o.passed, matches: o.matches })) };
+  },
+  get log(){ return JSON.parse(JSON.stringify(G.log)); },
+  press, release, toggle, goRoom, restart,
+  give(el){ G.carried = el || null; G.carriedAt = G.simT; },
+  step(n = 1, dt = 1 / 60){ for (let i = 0; i < n; i++) advance(dt); render(); return G.simT; },
+  run(sec, dt = 1 / 60){ return this.step(Math.round(sec / dt), dt); },
+  freeze(v = true){ frozen = v; },
+  // Script breaths through the real input path: sec = [in, top, out, bottom] seconds.
+  breathe(sec = [4, 4, 4, 4], n = 4, jitter = 0, seed = 3){
+    const rnd = mulberry32(seed);
+    let at = G.simT + 0.05;
+    const q = (dt, fn) => { G.script.push({ at, fn }); at += dt; };
+    for (let i = 0; i < n; i++){
+      const d = sec.map(s => Math.max(0, s * (1 + jitter * (rnd() * 2 - 1))));
+      q(d[0], () => press('A'));
+      if (d[1] > 0){ q(0, () => release('A')); q(d[1], () => {}); q(d[2], () => press('B')); }
+      else { q(0, () => press('B')); q(d[2], () => release('A')); }
+      q(d[3], () => release('B'));
+    }
+    G.script.sort((a, b) => a.at - b.at);
+    return +(at - G.simT).toFixed(2);
+  },
+};
+</script>
+</body>
+</html>
