@@ -35,6 +35,8 @@ export function createAlongside(cv) {
     bondGrow: 0.028,  // per second in the companion band at matched pace
     playerSpd: 150,   // px/s
     wispSpd: 78,      // creature baseline drift px/s
+    comfortR: 165,    // it keeps this much room around you on its own
+    approachMist: 25, // px/s you must be closing on it for "too close" to dissolve it
   };
 
   const WORLD={w:2600,h:1800};
@@ -383,6 +385,19 @@ export function createAlongside(cv) {
   function pickWanderTarget(){
     return [WORLD.w*(0.15+Math.random()*0.7), WORLD.h*(0.15+Math.random()*0.7)];
   }
+  // Its own sense of your space: inside comfortR it drifts away from you and
+  // slides round you rather than through, so its path never runs into you and
+  // the only way to get too close is to come at it. Returns a velocity to add.
+  function personalSpace(w,d){
+    if(d>=P.comfortR||w.state==='settle'||meadowBloom>0) return [0,0];
+    const ux=d>0?(w.x-player.x)/d:1, uy=d>0?(w.y-player.y)/d:0;
+    const s=clamp((P.comfortR-d)/(P.comfortR-P.nearR),0,1);
+    // slide round on whichever side it is already heading, so it curves past
+    // instead of stopping and reversing
+    const side=(w.vx*-uy+w.vy*ux)>=0?1:-1;
+    const away=s*P.wispSpd*2, round=s*P.wispSpd*0.9;
+    return [ux*away-uy*side*round, uy*away+ux*side*round];
+  }
   function wispUpdate(t,dt){
     const w=wisp;
     if(w.state==='gone') return;
@@ -398,11 +413,16 @@ export function createAlongside(cv) {
       return;
     }
     const d=Math.hypot(player.x-w.x,player.y-w.y);
+    const push=personalSpace(w,d);
 
     // too close — it dissolves. Not a punishment; simply how it is. But it
     // reforms within sight (screen-scaled), and never while settled: a settled
     // creature that lets you walk right up is the final statement of trust.
-    if(d<P.nearR&&meadowBloom===0&&w.state!=='settle'){
+    // Only when YOU close the gap, though. It keeps its own distance (see
+    // personalSpace), so if it ends up near a player who is still or moving
+    // away, that was its doing, and it sidesteps instead of taking fright.
+    const approach=d>0?(player.vx*(w.x-player.x)+player.vy*(w.y-player.y))/d:0;  // px/s, + = toward it
+    if(d<P.nearR&&approach>P.approachMist&&meadowBloom===0&&w.state!=='settle'){
       w.mist=2.6; STATS.mists++;
       const a=Math.random()*Math.PI*2;
       const R=Math.min(W,H)*0.38;
@@ -427,8 +447,8 @@ export function createAlongside(cv) {
     if(w.mothT>0){
       w.mothT-=dt;
       const a=t*3.1;
-      w.vx+= (Math.cos(a)*90-w.vx)*dt*3;
-      w.vy+= (Math.sin(a*1.3)*70-w.vy)*dt*3;
+      w.vx+= (Math.cos(a)*90+push[0]-w.vx)*dt*3;
+      w.vy+= (Math.sin(a*1.3)*70+push[1]-w.vy)*dt*3;
       w.x+=w.vx*dt; w.y+=w.vy*dt;
       return;
     }
@@ -438,6 +458,7 @@ export function createAlongside(cv) {
     if(w.look>0){
       w.look-=dt;
       w.vx*=Math.pow(0.05,dt); w.vy*=Math.pow(0.05,dt);
+      w.vx+=push[0]*dt*2.5; w.vy+=push[1]*dt*2.5;
       w.x+=w.vx*dt;w.y+=w.vy*dt;
       return;
     }
@@ -483,8 +504,13 @@ export function createAlongside(cv) {
       const l=Math.hypot(dx,dy)||1;
       // meander: a sideways breathing drift laid over the heading
       const mx=Math.sin(t*0.6+1)*30, my=Math.cos(t*0.47)*30;
-      w.vx+=((dx/l*spd+mx)-w.vx)*dt*1.6;
-      w.vy+=((dy/l*spd+my)-w.vy)*dt*1.6;
+      w.vx+=((dx/l*spd+mx+push[0])-w.vx)*dt*1.6;
+      w.vy+=((dy/l*spd+my+push[1])-w.vy)*dt*1.6;
+      // and gives way quickly: the smoothing above alone lets it drift ~60px
+      // into your space before it turns
+      w.vx+=push[0]*dt*3; w.vy+=push[1]*dt*3;
+    } else {
+      w.vx+=(push[0]-w.vx)*dt*1.6; w.vy+=(push[1]-w.vy)*dt*1.6;
     }
     w.x+=w.vx*dt; w.y+=w.vy*dt;
     w.spd=Math.hypot(w.vx,w.vy);
