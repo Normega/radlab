@@ -405,18 +405,26 @@ window.addEventListener('pointercancel',()=>{pointer.down=false;});
 function pickWanderTarget(){
   return [WORLD.w*(0.15+Math.random()*0.7), WORLD.h*(0.15+Math.random()*0.7)];
 }
-// Its own sense of your space: inside comfortR it drifts away from you and
-// slides round you rather than through, so its path never runs into you and
-// the only way to get too close is to come at it. Returns a velocity to add.
-function personalSpace(w,d){
-  if(d>=P.comfortR||w.state==='settle'||meadowBloom>0) return [0,0];
-  const ux=d>0?(w.x-player.x)/d:1, uy=d>0?(w.y-player.y)/d:0;
+// Its own sense of your space. Inside comfortR it will not close in on you:
+// whatever part of its motion points at you is turned sideways, so its path
+// curves past instead of running into you. It does NOT push away: walking
+// beside it must leave its pace alone, because matching that pace is what
+// builds the bond (a flee here, 2026-09-26, made it outrun every companion
+// and the tour never began). Only at the very edge does it ease outward.
+function giveWay(w,d,dt){
+  if(d>=P.comfortR||d<=0||w.state==='settle'||meadowBloom>0) return;
+  const ux=(w.x-player.x)/d, uy=(w.y-player.y)/d;      // you -> it
   const s=clamp((P.comfortR-d)/(P.comfortR-P.nearR),0,1);
-  // slide round on whichever side it is already heading, so it curves past
-  // instead of stopping and reversing
-  const side=(w.vx*-uy+w.vy*ux)>=0?1:-1;
-  const away=s*P.wispSpd*2, round=s*P.wispSpd*0.9;
-  return [ux*away-uy*side*round, uy*away+ux*side*round];
+  const inward=-(w.vx*ux+w.vy*uy);                      // its speed toward you
+  if(inward>0){
+    // turn on whichever side it is already heading
+    const side=(w.vx*-uy+w.vy*ux)>=0?1:-1;
+    const k=Math.min(1,s*dt*8);
+    w.vx+=(ux-uy*side)*inward*k;
+    w.vy+=(uy+ux*side)*inward*k;
+  }
+  const edge=P.nearR*1.25;
+  if(d<edge){ const e=(edge-d)/(edge-P.nearR); w.vx+=ux*e*60*dt; w.vy+=uy*e*60*dt; }
 }
 function wispUpdate(t,dt){
   const w=wisp;
@@ -433,14 +441,13 @@ function wispUpdate(t,dt){
     return;
   }
   const d=Math.hypot(player.x-w.x,player.y-w.y);
-  const push=personalSpace(w,d);
 
   // too close — it dissolves. Not a punishment; simply how it is. But it
   // reforms within sight (screen-scaled), and never while settled: a settled
   // creature that lets you walk right up is the final statement of trust.
-  // Only when YOU close the gap, though. It keeps its own distance (see
-  // personalSpace), so if it ends up near a player who is still or moving
-  // away, that was its doing, and it sidesteps instead of taking fright.
+  // Only when YOU close the gap, though. It will not close in on you (see
+  // giveWay), so if it ends up near a player who is still or moving away,
+  // that was its doing, and it sidesteps instead of taking fright.
   const approach=d>0?(player.vx*(w.x-player.x)+player.vy*(w.y-player.y))/d:0;  // px/s, + = toward it
   if(d<P.nearR&&approach>P.approachMist&&meadowBloom===0&&w.state!=='settle'){
     w.mist=2.6;
@@ -467,8 +474,9 @@ function wispUpdate(t,dt){
   if(w.mothT>0){
     w.mothT-=dt;
     const a=t*3.1;
-    w.vx+= (Math.cos(a)*90+push[0]-w.vx)*dt*3;
-    w.vy+= (Math.sin(a*1.3)*70+push[1]-w.vy)*dt*3;
+    w.vx+= (Math.cos(a)*90-w.vx)*dt*3;
+    w.vy+= (Math.sin(a*1.3)*70-w.vy)*dt*3;
+    giveWay(w,d,dt);
     w.x+=w.vx*dt; w.y+=w.vy*dt;
     return;
   }
@@ -478,7 +486,7 @@ function wispUpdate(t,dt){
   if(w.look>0){
     w.look-=dt;
     w.vx*=Math.pow(0.05,dt); w.vy*=Math.pow(0.05,dt);
-    w.vx+=push[0]*dt*2.5; w.vy+=push[1]*dt*2.5;
+    giveWay(w,d,dt);
     w.x+=w.vx*dt;w.y+=w.vy*dt;
     return;
   }
@@ -524,14 +532,10 @@ function wispUpdate(t,dt){
     const l=Math.hypot(dx,dy)||1;
     // meander: a sideways breathing drift laid over the heading
     const mx=Math.sin(t*0.6+1)*30, my=Math.cos(t*0.47)*30;
-    w.vx+=((dx/l*spd+mx+push[0])-w.vx)*dt*1.6;
-    w.vy+=((dy/l*spd+my+push[1])-w.vy)*dt*1.6;
-    // and gives way quickly: the smoothing above alone lets it drift ~60px
-    // into your space before it turns
-    w.vx+=push[0]*dt*3; w.vy+=push[1]*dt*3;
-  } else {
-    w.vx+=(push[0]-w.vx)*dt*1.6; w.vy+=(push[1]-w.vy)*dt*1.6;
+    w.vx+=((dx/l*spd+mx)-w.vx)*dt*1.6;
+    w.vy+=((dy/l*spd+my)-w.vy)*dt*1.6;
   }
+  giveWay(w,d,dt);
   w.x+=w.vx*dt; w.y+=w.vy*dt;
   w.spd=Math.hypot(w.vx,w.vy);
 }
