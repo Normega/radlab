@@ -133,7 +133,7 @@ clear the exclusion in the YAML header.
 
 ## Platform
 
-- [ ] **The sign-in email cap is lifetime, and it's already being hit.** `api/roster-join.js`
+- [x] (2026-09-26 — now 1 per 120 s and 10 per rolling 24 h on all three send paths, `20260926_signin_send_window.sql`; the refusal says when it lifts. Still open: why she needed 50.) **The sign-in email cap is lifetime, and it's already being hit.** `api/roster-join.js`
   refuses a roster row after `LIFETIME_SEND_CAP = 50` sends ("Send limit reached for this address
   — contact the course team"), a figure chosen to "cover a whole term". Ritma Shahid hit it on
   2026-09-24, three weeks in; her count was reset by hand on 2026-09-25 (noted on her roster
