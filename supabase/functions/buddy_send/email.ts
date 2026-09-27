@@ -22,6 +22,12 @@ export type BuddyEmailVars = {
 const esc = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 
+// Every quote is shown in quote marks (Norm, 2026-09-27). Most stored quotes
+// already carry their own ("Make it so."), and some hold two (#54), so marks
+// are added only to text that does not already open with one — the originals
+// such as "Training arc: in progress." — never doubled.
+export const quoted = (s: string) => (/^["“]/.test(s.trim()) ? s : `"${s}"`)
+
 const P = 'margin:0 0 16px 0;font-size:15px;color:#1c1c1e;line-height:1.6;'
 
 export function renderBuddyEmail(v: BuddyEmailVars): { subject: string; html: string; text: string } {
@@ -60,11 +66,12 @@ export function renderBuddyEmail(v: BuddyEmailVars): { subject: string; html: st
   // Quote of the day: always BELOW the button, never above it.
   let quoteHtml = ''
   if (v.quote) {
+    const q = quoted(v.quote.quote)
     const src = v.quote.source ? ` (${v.quote.source})` : ''
     const tag = v.quote.tag ? ` ${v.quote.tag}` : ''
-    quoteHtml = `<p style="margin:20px 0 0 0;font-size:12px;color:#6b6c70;line-height:1.5;font-style:italic;">`
-      + `<em>${esc(v.quote.quote)}</em>${esc(src)}.${esc(tag)}</p>`
-    text.push(`${v.quote.quote}${src}.${tag}`)
+    quoteHtml = `<p style="margin:20px 0 0 0;font-size:14px;color:#6b6c70;line-height:1.5;font-style:italic;">`
+      + `<em>${esc(q)}</em>${esc(src)}.${esc(tag)}</p>`
+    text.push(`${q}${src}.${tag}`)
   }
 
   let meetingHtml = ''

@@ -121,3 +121,16 @@ test('email: celebration, no meeting, test prefix, escaping', () => {
   assert.doesNotMatch(e.html, /Next meeting/)
   assert.ok(e.html.indexOf('Milestone complete') < e.html.indexOf('Morning, John'), 'celebration opens the email')
 })
+
+test('email: every quote is in quote marks, never doubled, at 14px', () => {
+  const unquoted = renderBuddyEmail({ ...base, quote: { quote: 'Training arc: in progress. Montage music not included.', source: 'Every shonen', tag: null } })
+  assert.match(unquoted.html, /<em>&quot;Training arc: in progress\. Montage music not included\.&quot;<\/em> \(Every shonen\)\./)
+  assert.match(unquoted.text, /^"Training arc: in progress\. Montage music not included\." \(Every shonen\)\.$/m)
+  assert.match(unquoted.html, /font-size:14px;color:#6b6c70/)
+
+  const already = renderBuddyEmail(base)   // '"Make it so."'
+  assert.match(already.html, /<em>&quot;Make it so\.&quot;<\/em>/)
+  assert.doesNotMatch(already.text, /""/)
+  const two = renderBuddyEmail({ ...base, quote: { quote: '"What is my purpose?" "You pass butter."', source: 'Butter Robot', tag: null } })
+  assert.match(two.text, /^"What is my purpose\?" "You pass butter\." \(Butter Robot\)\.$/m)
+})
