@@ -59,7 +59,7 @@ export default function ClassVerifyEmail() {
           }).then(async (r) => {
             const body = await r.json().catch(() => ({}))
             if (r.ok && body.matched) setFieldGuide('sent')
-            else if (r.status === 429 && body.matched) setFieldGuide('already')
+            else if (r.status === 429 && body.matched && !body.limit) setFieldGuide('already')
           }).catch(() => {})
         }
       }

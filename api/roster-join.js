@@ -10,16 +10,67 @@
 // real failure is a personal address, and silence would strand them.
 //
 // This is an unauthenticated endpoint that triggers email sends, so it is
-// deliberately stingy: per-address cooldown, lifetime send cap per roster
-// row, a truthful matched/unmatched answer only for plausible U of T
-// addresses (anything else gets the same "couldn't match" path), and an IP
-// hash on unmatched attempts so abuse is visible to staff.
+// deliberately stingy: every path that sends an email passes the per-address
+// limit in signin_send_claim() (one per 120 s, ten per rolling 24 h), a
+// truthful matched/unmatched answer only for plausible U of T addresses
+// (anything else gets the same "couldn't match" path), and an IP hash on
+// unmatched attempts so abuse is visible to staff.
+//
+// The limit used to be a LIFETIME cap of 50 sends per roster row, on the
+// roster path only. It locked a student out three weeks into term
+// (2026-09-25), while the enrolled and invite paths had no limit at all.
+// Migration 20260926_signin_send_window.sql has the full account.
 
 import { createClient } from '@supabase/supabase-js'
 import { createHash } from 'node:crypto'
 
-const COOLDOWN_S = 120
-const LIFETIME_SEND_CAP = 50 // covers a whole term of sign-ins
+// "3:40 pm" today, "tomorrow at 3:40 pm", or "Sep 28 at 3:40 pm", in the
+// course's time zone — the refusal says exactly when to come back.
+const TZ = 'America/Toronto'
+const whenIs = (iso) => {
+  const t = new Date(iso)
+  if (Number.isNaN(t.getTime())) return 'later today'
+  const day = (d) => d.toLocaleDateString('en-CA', { timeZone: TZ })
+  const time = t.toLocaleTimeString('en-US', { timeZone: TZ, hour: 'numeric', minute: '2-digit' }).toLowerCase()
+  const now = new Date()
+  if (day(t) === day(now)) return time
+  if (day(t) === day(new Date(now.getTime() + 86400000))) return `tomorrow at ${time}`
+  return `${t.toLocaleDateString('en-CA', { timeZone: TZ, month: 'short', day: 'numeric' })} at ${time}`
+}
+
+// Claim one send against the address's limit. Fails OPEN on a database error:
+// this guard exists to stop abuse, and a lookup failure must not be the thing
+// that keeps a student out of their textbook.
+async function claimSend(service, key, path) {
+  const { data, error } = await service.rpc('signin_send_claim', { p_match_key: key, p_path: path })
+  if (error || !data) return { ok: true, claimId: null }
+  return data.ok ? { ok: true, claimId: data.claim_id } : data
+}
+
+// The email failed after the slot was claimed: return it, so an outage at the
+// mail provider does not spend the student's allowance.
+async function releaseSend(service, claimId) {
+  if (claimId == null) return
+  await service.rpc('signin_send_release', { p_claim_id: claimId })
+}
+
+// 429 with matched:true either way. `limit` separates "you've used the day's
+// allowance" from "one was just sent", which the Lounge card renders
+// differently (it must not claim an email was sent when none was).
+function refuse(res, gate) {
+  if (gate.reason === 'window') {
+    return res.status(429).json({
+      matched: true, limit: true, retryAt: gate.retry_at,
+      error: `You've asked for ${gate.cap ?? 10} sign-in emails in the last 24 hours, which is the limit. `
+        + `You can ask for another from ${whenIs(gate.retry_at)}. `
+        + 'The code in your most recent email works for an hour after it arrived.',
+    })
+  }
+  return res.status(429).json({
+    matched: true, retryAt: gate.retry_at,
+    error: 'A link was just sent — check your inbox (and spam), then try again in a couple of minutes.',
+  })
+}
 
 const normalize = (e) =>
   String(e ?? '').trim().toLowerCase().replace(/@(mail\.|alum\.)?utoronto\.ca$/, '@utoronto.ca')
@@ -126,12 +177,15 @@ export default async function handler(req, res) {
     const { data: enrolled } = await service.rpc('enrolled_person_by_key', { p_match_key: key, p_course_code: requestedCourse })
     const person = Array.isArray(enrolled) ? enrolled[0] : enrolled
     if (person?.email) {
+      const gate = await claimSend(service, key, 'enrolled')
+      if (!gate.ok) return refuse(res, gate)
       try {
         await sendSignInEmail(service, resendKey, {
           email: person.email, fullName: '', courseCode: person.course_code, next,
         })
         return res.status(200).json({ matched: true })
       } catch (e) {
+        await releaseSend(service, gate.claimId)
         return res.status(500).json({ error: `Could not send the link: ${e.message}` })
       }
     }
@@ -149,12 +203,15 @@ export default async function handler(req, res) {
       .is('consumed_at', null)
     const inv = (invites ?? []).find(i => normalize(i.email) === key)
     if (inv) {
+      const gate = await claimSend(service, key, 'invite')
+      if (!gate.ok) return refuse(res, gate)
       try {
         await sendSignInEmail(service, resendKey, {
           email: inv.email, fullName: '', courseCode: inv.courses?.code, next,
         })
         return res.status(200).json({ matched: true })
       } catch (e) {
+        await releaseSend(service, gate.claimId)
         return res.status(500).json({ error: `Could not send the link: ${e.message}` })
       }
     }
@@ -165,14 +222,10 @@ export default async function handler(req, res) {
     return res.status(200).json({ matched: false })
   }
 
-  // Cooldown + lifetime cap. 429 tells the join page to say "already sent —
-  // check your inbox" rather than implying failure.
-  if (row.last_invited_at && (Date.now() - Date.parse(row.last_invited_at)) < COOLDOWN_S * 1000) {
-    return res.status(429).json({ matched: true, error: 'A link was just sent — check your inbox (and spam), then try again in a couple of minutes.' })
-  }
-  if (row.invite_count >= LIFETIME_SEND_CAP) {
-    return res.status(429).json({ matched: true, error: 'Send limit reached for this address — contact the course team.' })
-  }
+  // The limit is the same one the other two paths pass. invite_count and
+  // last_invited_at on the roster row stay as staff-facing history only.
+  const gate = await claimSend(service, key, 'roster')
+  if (!gate.ok) return refuse(res, gate)
 
   try {
     // Best-effort: a lookup failure costs the course-specific reply address
@@ -186,6 +239,7 @@ export default async function handler(req, res) {
     await service.rpc('roster_mark_invited', { p_id: row.id })
     return res.status(200).json({ matched: true })
   } catch (e) {
+    await releaseSend(service, gate.claimId)
     return res.status(500).json({ error: `Could not send the link: ${e.message}` })
   }
 }

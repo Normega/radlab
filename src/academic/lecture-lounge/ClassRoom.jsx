@@ -773,7 +773,10 @@ function ClassAuthCard({ classInfo, slug }) {
       })
       const out = await rsp.json().catch(() => ({}))
       setBusy(false)
-      if (rsp.status === 429 && out.matched) { setState('sent'); setError(out.error); return }
+      // A cooldown 429 means an email really did just go out, so the card
+      // moves on to "sent"; a daily-limit 429 (out.limit) sent nothing, so it
+      // stays on the form with the message saying when to come back.
+      if (rsp.status === 429 && out.matched && !out.limit) { setState('sent'); setError(out.error); return }
       if (!rsp.ok) { setError(out.error ?? 'Something went wrong — try again.'); return }
       setState(out.matched ? 'sent' : 'unmatched')
     } catch {
