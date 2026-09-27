@@ -33,6 +33,8 @@ const EXACT = {
   '/study/verify': 'Confirming Your Email — RADlab',
   '/keynote': 'Keynote — RADlab',
   '/talks': 'Talks — RADlab',
+  '/safari': 'Night Safari — RADlab',
+  '/safari/owl-barn': 'The Owl Barn — Night Safari',
 }
 
 const GAMES = {

@@ -73,6 +73,8 @@ export const EXPORT_TABLES = [
   { table: 'aptitude_sessions',        category: 'Games',         label: 'Aptitude / ColorMax — Sessions', strategy: 'profile', col: 'user_id', games: ['aptitude_suite', 'color_max'] },
   { table: 'aptitude_events',          category: 'Games',         label: 'Aptitude / ColorMax — Events',   strategy: 'parent', parentTable: 'aptitude_sessions',        parentCol: 'session_id' },
   { table: 'breath_guardian_sessions', category: 'Games',         label: 'Breath Guardian — Sessions', strategy: 'session' },
+  { table: 'safari_exhibit_sessions',  category: 'Games',         label: 'Night Safari — Exhibit sessions', strategy: 'session' },
+  { table: 'safari_pause_events',      category: 'Games',         label: 'Night Safari — Pauses',      strategy: 'session' },
   { table: 'pond_watch_results',       category: 'Games',         label: 'Pond Watch',                 strategy: 'study',    ownerSpace: 'profile',  ownerCol: 'user_id' },
   // Questionnaires
   { table: 'questionnaire_responses',  category: 'Questionnaires', label: 'Questionnaire Responses',   strategy: 'profile',  col: 'user_id' },
