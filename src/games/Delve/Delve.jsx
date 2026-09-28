@@ -505,9 +505,13 @@ export default function Delve({ session }) {
 
   // ─── Render ─────────────────────────────────────────────────────────────────
 
+  // The two roots carry different keys so React never reuses a stage node for
+  // the light screens: the line element's text is written directly (no React
+  // state), and a reused node carried the first guidance line onto the
+  // summary screen.
   if (phase === 'delve') {
     return (
-      <div style={{ position: 'fixed', inset: 0, background: HAZE_BG, zIndex: 50, userSelect: 'none', WebkitUserSelect: 'none' }}>
+      <div key="stage" style={{ position: 'fixed', inset: 0, background: HAZE_BG, zIndex: 50, userSelect: 'none', WebkitUserSelect: 'none' }}>
         {/* Stage owns the pointer listeners; overlays are siblings so taps on
             them never trigger stage pointer capture (prototype structure) */}
         <div ref={stageRef} style={{ position: 'absolute', inset: 0, touchAction: 'none', cursor: 'none' }}>
@@ -522,7 +526,7 @@ export default function Delve({ session }) {
   }
 
   return (
-    <div style={{ background: '#FCF0F5', minHeight: '100vh' }}>
+    <div key="screens" style={{ background: '#FCF0F5', minHeight: '100vh' }}>
       <Nav session={session} />
       <div style={{ minHeight: 'calc(100vh - 57px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 16px', userSelect: 'none' }}>
         {phase === 'intro' && <IntroScreen onStart={startGame} />}
