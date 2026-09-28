@@ -3367,7 +3367,9 @@ same delivery in both arms, no headphones, and no synthetic-voice vs human-narra
 
 `GuidedTextBlock.jsx` (+ pacing helpers in `guidedText.js`): one large line at a time, paced by
 length (2.2 words/s + 2.5 s, 4–16 s) or an explicit `seconds`; `{ quiet: N, text }` is a quiet
-stretch, shown dimmed with a slow pulse and ending on a soft tone so closed eyes know to look back.
+stretch, shown dimmed and ending on a soft tone so closed eyes know to look back. A slow pink
+pulse sits at the foot of the screen for the whole practice (outside the per-line element, so a
+new line never restarts it; frozen while paused).
 Intro screen with Begin (the tap that unlocks audio on phones); `autostart` skips it for short
 pieces inside a longer exercise. Pause/Resume. Time only advances while visible and unpaused;
 `hidden_ms` and `paused_ms` are recorded in the `intervention_responses` row. Next is gated on

@@ -23,9 +23,11 @@ import { lineSeconds } from './guidedText'
 //                           // longer exercise, after an earlier tap has already
 //                           // unlocked audio (see the Five Senses day)
 //
-// A quiet stretch shows its text dimmed with a slow pulse, and ends with a soft
-// tone, so a participant whose eyes are closed knows to look back. Lines do not
-// sound a tone: the eyes are on them already.
+// A slow pink pulse sits at the foot of the screen for the whole practice (it
+// lives outside the per-line element, so a new line never restarts it, and it
+// freezes while paused). A quiet stretch shows its text dimmed and ends with a
+// soft tone, so a participant whose eyes are closed knows to look back. Lines
+// do not sound a tone: the eyes are on them already.
 //
 // Time only advances while the page is visible and not paused. Time away and
 // time paused are both recorded (`hidden_ms`, `paused_ms`) rather than folded
@@ -152,11 +154,14 @@ export default function GuidedTextBlock({ step, demoMode = false, onComplete }) 
 
         {phase === 'run' && line && (
           <div key={view.idx} style={S.lineWrap}>
-            {quiet && <div style={S.pulse} aria-hidden />}
             <p style={quiet ? S.quietText : S.lineText}>{line.text ?? ''}</p>
             {quiet && <p style={S.quietNote}>quiet · {quietLeft}s</p>}
             {paused && <p style={S.quietNote}>paused</p>}
           </div>
+        )}
+
+        {phase === 'run' && (
+          <div style={{ ...S.pulse, animationPlayState: paused ? 'paused' : 'running' }} aria-hidden />
         )}
 
         {phase === 'done' && (
@@ -194,8 +199,9 @@ const S = {
     border: '1.5px solid var(--bds)', background: '#fff', color: 'var(--tx2)', cursor: 'pointer',
   },
   stage: {
+    position: 'relative',
     minHeight: 300, display: 'flex', alignItems: 'center', justifyContent: 'center',
-    padding: '24px 8px', borderRadius: 14, background: 'var(--bgp)',
+    padding: '24px 8px 56px', borderRadius: 14, background: 'var(--bgp)',
   },
   introText: { fontSize: 17, lineHeight: 1.6, color: 'var(--tx)', maxWidth: 440, margin: '0 auto 12px' },
   introNote: { fontSize: 14, lineHeight: 1.6, color: 'var(--tx2)', maxWidth: 440, margin: '0 auto 20px' },
@@ -205,10 +211,11 @@ const S = {
   },
   lineWrap:  { textAlign: 'center', maxWidth: 480, animation: 'gtFade 1.2s ease' },
   lineText:  { fontSize: 22, lineHeight: 1.5, color: 'var(--tx)', margin: 0, fontWeight: 500 },
-  quietText: { fontSize: 18, lineHeight: 1.5, color: 'var(--tx2)', margin: '14px 0 0' },
+  quietText: { fontSize: 18, lineHeight: 1.5, color: 'var(--tx2)', margin: 0 },
   quietNote: { fontSize: 12, color: 'var(--gy)', margin: '12px 0 0', letterSpacing: '0.04em' },
   pulse: {
-    width: 14, height: 14, borderRadius: '50%', background: 'var(--pk)', margin: '0 auto',
+    position: 'absolute', bottom: 26, left: '50%', marginLeft: -7,
+    width: 14, height: 14, borderRadius: '50%', background: 'var(--pk)',
     animation: 'gtPulse 5s ease-in-out infinite',
   },
   track: { height: 4, background: 'var(--bd)', borderRadius: 2, overflow: 'hidden', marginTop: 16 },
