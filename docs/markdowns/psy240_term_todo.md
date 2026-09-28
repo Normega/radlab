@@ -56,6 +56,34 @@ Guide freezes before the final Dec 8.
   spot-the-limitation). Use no real pool item as an example.
 - [ ] Late tier: all first-half quizzes hard-close Oct 14 13:00Z. Announce it in L4 and L5.
 
+## Class RCT: traditional mindfulness vs Sense Foraging (onboarding Oct 14, practice Oct 21–Nov 17)
+
+Decided 2026-09-28: pedagogical, not research. Students experience an RCT and write the reflection;
+minimal data (stress and mood); Norm hears informally which course they preferred. Two arms: Liliana's
+Study 3 **non-reactivity** arm delivered as text (her scripts, her wording, copies under `classrct-nr-*`;
+her running study untouched) vs **Sense Foraging** (senseforaging.com as the screen, radlab as the
+engine: enrolment, randomisation, ratings, export). Compassion and reappraisal arms only if time allows.
+
+- [x] Text player `guided_text` (one line at a time; quiet stretches end on a tone; pause; time away
+  recorded). Non-reactivity days 1–7 built; review at `dev.radlab.zone/dev/class-rct?day=N`
+  (`&demo=1` for skip buttons). 2026-09-28.
+- [ ] Norm reviews days 1–7 on the dev site (pacing, the eyes-closed wording, Five Senses flow).
+- [ ] Days 8–28: Leaves on Stream, See Hear Feel, Mountain, Lighthouse, Sensory Detective, Pause
+  Before Reacting, Mindfulness of an Object, Guided Body Scan to guided_text; Sensory Scientist and
+  Graduation copy over (already written exercises); "again" days reuse modules. Calendar in
+  `src/data/classRct/nonreactivity.js`.
+- [ ] Minimal measures: one stress + mood slider bundle, before and after every session, same in
+  both arms; the same short stress/mood check on days 1, 14, 28; shared day-28 experience items
+  (enjoyment, helpful, would continue, one open "what stood out").
+- [ ] Study config: self-enrolment with student number, credit-only consent (keeps it out of research
+  exports), two-arm randomise, 28 daily timepoints from Oct 21. **Anyone with an active Liliana
+  Study 3 enrolment is assigned to Sense Foraging, not randomised** (protects her study).
+- [ ] Withdrawal: a student can withdraw at any time without the adherence-withdrawal emails
+  Liliana's study sends; the reflection is still expected. Opt-outs were due before the midterm.
+- [ ] Sense Foraging arm: radlab session → that day's senseforaging.com practice → back to radlab
+  for the after ratings. Design the handoff.
+- [ ] End-to-end run on the dev site with a fake student (days 1–3, 28) before Oct 14.
+
 ## Field Guide — flagged findings awaiting correction
 
 These are excluded from the item pools and must not be taught as stated. Fix the page, then

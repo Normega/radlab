@@ -86,6 +86,7 @@ const OnboardingPreview = lazy(() => import('./pages/dev/OnboardingPreview'))
 const InsightsPreview   = lazy(() => import('./pages/dev/InsightsPreview'))
 const BodyDiagramPreview = lazy(() => import('./pages/dev/BodyDiagramPreview'))
 const BreathSensationPreview = lazy(() => import('./pages/dev/BreathSensationPreview'))
+const ClassRctPreview = lazy(() => import('./pages/dev/ClassRctPreview'))
 const AlongsidePreview  = lazy(() => import('./pages/dev/AlongsidePreview'))
 const SidelongPreview   = lazy(() => import('./pages/dev/SidelongPreview'))
 const OwlBarnPreview    = lazy(() => import('./pages/dev/OwlBarnPreview'))
@@ -686,6 +687,7 @@ export default function App() {
           <Route path="/dev/insights-preview" element={<InsightsPreview />} />
           <Route path="/dev/body-diagram-preview" element={<BodyDiagramPreview />} />
           <Route path="/dev/breath-sensation-preview" element={<BreathSensationPreview />} />
+          <Route path="/dev/class-rct" element={<ClassRctPreview />} />
           <Route path="/dev/alongside-preview" element={<AlongsidePreview />} />
           <Route path="/dev/sidelong-preview" element={<SidelongPreview />} />
           <Route path="/dev/owl-barn-preview" element={<OwlBarnPreview />} />

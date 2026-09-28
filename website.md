@@ -3356,6 +3356,35 @@ manual `UPDATE participant_schedule SET status='pending'`.
 The response payload gained a `superseded` counter alongside `deferred`, so the split between
 "held behind a gate" and "took over from a stale link" is visible per tick.
 
+### Guided text (`guided_text`) and the PSY240 class RCT's non-reactivity arm (2026-09-28)
+
+**Status: on `dev`, days 1–7 of 28 built, not in any study yet.** PSY240's in-class RCT
+(onboarding Oct 14, practice Oct 21–Nov 17, debrief Dec 2) compares a traditional mindfulness
+course with Sense Foraging. It is pedagogical: students take part, then write an RCT reflection;
+data are minimal (stress and mood). The traditional arm is Liliana's Study 3 non-reactivity arm,
+**copied** under `classrct-nr-*` module ids so her running study is untouched, and delivered as text:
+same delivery in both arms, no headphones, and no synthetic-voice vs human-narrator confound.
+
+`GuidedTextBlock.jsx` (+ pacing helpers in `guidedText.js`): one large line at a time, paced by
+length (2.2 words/s + 2.5 s, 4–16 s) or an explicit `seconds`; `{ quiet: N, text }` is a quiet
+stretch, shown dimmed with a slow pulse and ending on a soft tone so closed eyes know to look back.
+Intro screen with Begin (the tap that unlocks audio on phones); `autostart` skips it for short
+pieces inside a longer exercise. Pause/Resume. Time only advances while visible and unpaused;
+`hidden_ms` and `paused_ms` are recorded in the `intervention_responses` row. Next is gated on
+finishing (open in demo mode). Modules may now set `day_label` to replace the "Phase N · Day N"
+header — the class RCT is one 28-day calendar, not Liliana's two phases.
+
+Content: `src/data/classRct/nonreactivity.js`, from Liliana's "Non-Reactivity" script doc, her
+wording kept except "allow your eyes to close" → "in the quiet stretches you can close your eyes".
+Day 1 is the breathing figure (`breath_practice`, 150 s at the student's own rhythm, no voice);
+Five Senses keeps her write-down steps with each audio clip replaced by an autostarting piece.
+Practices run 3.5–5.7 min, near their videos. The 28-day calendar spreads her 16 sessions: new
+practices first, then "again" days, ending on Graduation. Review surface
+`/dev/class-rct?day=N` (`&demo=1`). Verified: all seven days walk through to Complete Practice
+without errors; real-time run confirmed line pacing (34-word line held at the 16 s cap), Pause
+freezing the clock for 12 s, and the quiet stretch's closing tone at exactly its planned time
+net of the pause. Course to-do: `docs/markdowns/psy240_term_todo.md` → "Class RCT".
+
 ### Interactive breath practice (`breath_practice`) — short-form prototype
 
 **Added 2026-09-24, on `dev` only; not yet in any study.** A step type that replaces the guided

@@ -5,6 +5,7 @@ import { useSubmitLock } from '../../lib/useSubmitLock'
 import StudyVideoPlayer from '../video/StudyVideoPlayer'
 import NoDefaultSlider from './NoDefaultSlider'
 import BreathPracticeBlock from './BreathPracticeBlock'
+import GuidedTextBlock from './GuidedTextBlock'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -142,6 +143,9 @@ export default function InterventionPage({
   // breath_practice: the block's own summary, present once the practice finished
   const [breathResults, setBreathResults] = useState({})  // {stepIdx: {anchor, holds_ms, …}}
 
+  // guided_text: the block's summary, present once the last line has run
+  const [guidedResults, setGuidedResults] = useState({})  // {stepIdx: {seconds, hidden_ms, paused_ms}}
+
   // ── show_if resolution ────────────────────────────────────────────────────
   // Conditions name a step by its authored `key`, not its position, so
   // inserting or reordering steps in a module definition can't silently
@@ -261,6 +265,9 @@ export default function InterventionPage({
       case 'breath_practice':
         // Like video: gated on finishing, except in an admin demo.
         setNextEnabled(!!demoMode || !!breathResults[s._stepIndex])
+        break
+      case 'guided_text':
+        setNextEnabled(!!demoMode || !!guidedResults[s._stepIndex])
         break
       default:
         setNextEnabled(true)
@@ -456,6 +463,13 @@ export default function InterventionPage({
           })
           break
 
+        case 'guided_text':
+          await supabase.from('intervention_responses').insert({
+            ...base,
+            response_text: JSON.stringify(guidedResults[idx] ?? { completed: false }),
+          })
+          break
+
         default:
           break
       }
@@ -490,7 +504,9 @@ export default function InterventionPage({
             <div style={S.badgeDot} />
             {CONDITION_LABELS[module.condition] ?? module.condition}
           </div>
-          <div style={S.dayNumber}>Phase {phaseLabel} · Day {module.lesson}</div>
+          {/* day_label lets a module outside Liliana's two-phase design (the
+              class RCT's 28-day calendar) name its own day. */}
+          <div style={S.dayNumber}>{module.day_label ?? `Phase ${phaseLabel} · Day ${module.lesson}`}</div>
           <div style={S.dayTitle}>{module.title}</div>
           {module.subtitle && <div style={S.daySubtitle}>{module.subtitle}</div>}
         </div>
@@ -683,6 +699,18 @@ export default function InterventionPage({
               demoMode={demoMode}
               onComplete={result => {
                 setBreathResults(prev => ({ ...prev, [current._stepIndex]: result }))
+                setNextEnabled(true)
+              }}
+            />
+          )}
+
+          {current.type === 'guided_text' && (
+            <GuidedTextBlock
+              key={current._stepIndex}
+              step={current}
+              demoMode={demoMode}
+              onComplete={result => {
+                setGuidedResults(prev => ({ ...prev, [current._stepIndex]: result }))
                 setNextEnabled(true)
               }}
             />
