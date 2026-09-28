@@ -1895,8 +1895,10 @@ const S = {
     fontSize: 14, fontWeight: 600, color: 'var(--tx)', background: '#fff',
     cursor: 'pointer', fontFamily: FONT,
   },
+  // Full `border`, not `borderColor`: mixing the shorthand with a longhand makes
+  // React drop the colour wrongly when a chip is deselected.
   qualityBtnActive: {
-    background: 'var(--bgp)', borderColor: 'var(--pk)', color: 'var(--pkd)', fontWeight: 600,
+    background: 'var(--bgp)', border: '1.5px solid var(--pk)', color: 'var(--pkd)', fontWeight: 600,
   },
   qualityPanel: {
     background: 'var(--bg)', border: '1px solid var(--bd)',

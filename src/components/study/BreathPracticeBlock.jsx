@@ -447,7 +447,7 @@ const S = {
     fontFamily: FONT, fontSize: 14, fontWeight: 600, padding: '8px 14px', borderRadius: 8,
     border: '1.5px solid var(--bds)', background: '#fff', color: 'var(--tx2)', cursor: 'pointer',
   },
-  anchorBtnOn: { borderColor: 'var(--pk)', color: 'var(--tx)', background: 'var(--bgp)' },
+  anchorBtnOn: { border: '1.5px solid var(--pk)', color: 'var(--tx)', background: 'var(--bgp)' },
   primaryBtn: {
     fontFamily: FONT, fontSize: 14, fontWeight: 600, padding: '10px 22px', borderRadius: 8,
     border: '1.5px solid var(--tx)', background: 'var(--tx)', color: '#fff', cursor: 'pointer',

@@ -72,6 +72,13 @@ engine: enrolment, randomisation, ratings, export). Compassion and reappraisal a
   Graduation copied from Study 3 as written, eleven "again" days. All 28 walk through on the dev site.
   Lead-in "about N minutes" is computed from content. 2026-09-28.
 - [ ] Norm reviews days 8–28 on the dev site.
+- [x] **Stress-mindset (reappraisal) arm converted too** (Norm, 2026-09-28): Liliana's 16 modules copied
+  verbatim under `classrct-ra-*`, her 11 videos rewritten as guided-text lessons at reading pace (3 words/s).
+  Again days re-run the worksheet (not the lesson) with this week's situation. Preview switches arm:
+  `dev.radlab.zone/dev/class-rct?arm=sm&day=N`. All 28 walk through.
+- [ ] Decide the RCT's arms: non-reactivity vs Sense Foraging as planned, or add stress mindset as a
+  third arm (splits the class three ways).
+- [ ] Norm reviews the stress-mindset lessons on the dev site.
 - [ ] Minimal measures: one stress + mood slider bundle, before and after every session, same in
   both arms; the same short stress/mood check on days 1, 14, 28; shared day-28 experience items
   (enjoyment, helpful, would continue, one open "what stood out").

@@ -23,35 +23,15 @@
 // Lead-in lengths ("about N minutes") are computed from the content, never typed,
 // so editing a script cannot leave a stale estimate behind.
 
-import { practiceSeconds } from '../../components/study/guidedText'
+import { aboutMinutes, pad } from './shared'
 
 const OWL_IN  = 'owl_nonreactivity'
 const OWL_OUT = 'owl_love'
 const LEAD_OUT = 'You’ve finished today’s practice. Press Next for your closing check-in.'
 
-// Rough time for a step, in seconds. Guided text is exact (its own pacing);
-// the rest are generous estimates of reading and typing time.
-const stepSeconds = st => {
-  switch (st.type) {
-    case 'guided_text':     return practiceSeconds(st)
-    case 'breath_practice': return 8 + 3 * 10 + (st.natural_seconds ?? 60) + 12 + 15
-    case 'prompt_response': return st.required === false ? 20 : 50
-    case 'multi_response':  return 10 * (st.count ?? 1)
-    case 'quality_explorer': return 60
-    case 'timer':           return (st.duration_seconds ?? 30) + 10
-    case 'text':            return 20
-    case 'closing':         return 15
-    default:                return 10
-  }
-}
-export const moduleMinutes = steps =>
-  Math.max(1, Math.round(steps.reduce((a, st) => a + stepSeconds(st), 0) / 60))
-
-const pad = d => String(d).padStart(2, '0')
 
 // `lead` replaces the default lead-in sentence; "about N minutes" is always added.
 const base = (day, title, subtitle, steps, { lead, ...extra } = {}) => {
-  const minutes = moduleMinutes(steps)
   return {
     module_id: `classrct-nr-d${pad(day)}`,
     condition: 'non_reactivity',
@@ -62,7 +42,7 @@ const base = (day, title, subtitle, steps, { lead, ...extra } = {}) => {
     subtitle,
     lead_in: {
       owl: OWL_IN,
-      text: `${lead ?? 'Find a spot where you can sit comfortably.'} About ${minutes} minutes. Press Next when you’re ready.`,
+      text: `${lead ?? 'Find a spot where you can sit comfortably.'} ${aboutMinutes(steps)}. Press Next when you’re ready.`,
     },
     steps,
     lead_out: { owl: OWL_OUT, text: LEAD_OUT },
@@ -78,7 +58,7 @@ const again = (day, from) => ({
   day_label: `Day ${day} · again`,
   lead_in: {
     owl: OWL_IN,
-    text: `Today you return to a practice from ${from.day_label}: ${from.title}. About ${moduleMinutes(from.steps)} minutes. Press Next when you’re ready.`,
+    text: `Today you return to a practice from ${from.day_label}: ${from.title}. ${aboutMinutes(from.steps)}. Press Next when you’re ready.`,
   },
 })
 

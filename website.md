@@ -3358,7 +3358,7 @@ The response payload gained a `superseded` counter alongside `deferred`, so the 
 
 ### Guided text (`guided_text`) and the PSY240 class RCT's non-reactivity arm (2026-09-28)
 
-**Status: on `dev`, all 28 days built, not in any study yet.** PSY240's in-class RCT
+**Status: on `dev`, all 28 days of both text arms (non-reactivity, stress mindset) built, not in any study yet.** PSY240's in-class RCT
 (onboarding Oct 14, practice Oct 21–Nov 17, debrief Dec 2) compares a traditional mindfulness
 course with Sense Foraging. It is pedagogical: students take part, then write an RCT reflection;
 data are minimal (stress and mood). The traditional arm is Liliana's Study 3 non-reactivity arm,
@@ -3397,6 +3397,27 @@ and the quiet stretch's closing tone at exactly its planned time net of the paus
   like "h" and "n". Optional boxes now let Next through blank and say "Optional" in the box.
 - `TimerBlock` reported completion from inside a state updater (setState during render; React
   warned on every Sensory Scientist timer). It now reports from an effect, once.
+- The quality chips (Sensory Scientist) mixed a `border` shorthand with a `borderColor` longhand,
+  which React warns can leave a deselected chip the wrong colour; the active style now sets the full
+  `border`. Same fix to the breath practice's anchor buttons.
+
+**The stress-mindset (reappraisal) arm, converted the same way (2026-09-28).**
+`src/data/classRct/reappraisal.js`. Unlike the non-reactivity file it holds Liliana's 16 Study 3
+reappraisal modules **verbatim** (`SOURCE`, exported from `intervention_modules`), and derives the
+course from them, so the copy can be checked against her study line by line. Only her eleven
+training videos change: each becomes a guided-text lesson (`LESSONS`) written from her "Reappraisal"
+script doc in her wording, at reading pace (`wps: 3`; guided_text steps may now set their own
+words-per-second, default 2.2 for meditations). The only other wording changes are in `REWORD`
+("a short training video" → "a short lesson", "According to the video" → "According to today's
+lesson"). Again days differ by design: re-reading a lesson is not practice, so an again day drops
+the lesson, names the day that taught it, and re-runs the worksheet with this week's situation; only
+worksheets built on the student's own situation repeat (thought record, cognitive distortions,
+catastrophizing, trigger map, early warning signals, demands/resources, values, "because I care"),
+never the fixed-scenario days. Days run 2–9 min (again days shortest). Shared helpers for both arms
+live in `src/data/classRct/shared.js` (`moduleMinutes`, `aboutMinutes`, which now budget the
+trigger map, body diagram and thought-record widgets realistically). The preview switches arm:
+`/dev/class-rct?arm=sm&day=N`. Verified: all 56 days (both arms) walk through to Complete Practice
+with no console errors.
 
 ### Interactive breath practice (`breath_practice`) — short-form prototype
 

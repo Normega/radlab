@@ -51,7 +51,7 @@ function tone(freq = 528, decay = 1.8) {
 
 export default function GuidedTextBlock({ step, demoMode = false, onComplete }) {
   const lines = step.lines ?? []
-  const durs  = lines.map(lineSeconds)
+  const durs  = lines.map(l => lineSeconds(l, step.wps))
   const total = durs.reduce((a, b) => a + b, 0)
   const mins  = Math.max(1, Math.round(total / 60))
 
