@@ -139,6 +139,16 @@ const EXCLUSION_EMAIL_WINDOW_MIN = 10
 const RATE_MAX      = Number(Deno.env.get('ENROLL_RATE_MAX')      ?? '1')
 const RATE_WINDOW_S = Number(Deno.env.get('ENROLL_RATE_WINDOW_S') ?? '60')
 
+// Re-entry lookups (2026-09-28). The same-id path above is harmless to the
+// participant but not to anyone else: it hands back the enrollment's live link,
+// so walking short numeric SONA ids against a join URL collected other
+// people's sessions. Every lookup, hit or miss, now counts. The cap is loose
+// on purpose: a campus network puts many students behind one address, and a
+// real participant reloads their own link a handful of times at most. At the
+// default it still slows a prober to about two ids a minute per address.
+const LOOKUP_MAX      = Number(Deno.env.get('ENROLL_LOOKUP_MAX')      ?? '20')
+const LOOKUP_WINDOW_S = Number(Deno.env.get('ENROLL_LOOKUP_WINDOW_S') ?? '600')
+
 /** SHA-256 of salt+IP: enough to recognise a repeat visitor without storing
  *  anyone's address. Salted because the IPv4 space is small enough to brute
  *  force an unsalted hash. Set ENROLL_IP_SALT to pin it; otherwise the service
@@ -269,6 +279,33 @@ Deno.serve(async (req) => {
       return json({ status: 'sent' })
     }
 
+    // 1d. Lookup rate limit (see LOOKUP_MAX). Before the enrollment lookup, so
+    //     a hit and a miss are indistinguishable once limited. Fail-open.
+    const ipHash = await hashClientIp(req)
+    if (ipHash) {
+      const since = new Date(Date.now() - LOOKUP_WINDOW_S * 1000).toISOString()
+      const { count, error: lookupErr } = await admin
+        .from('enrollment_attempts')
+        .select('id', { count: 'exact', head: true })
+        .eq('study_id', study_id)
+        .eq('ip_hash', ipHash)
+        .eq('kind', 'lookup')
+        .gte('attempted_at', since)
+      if (lookupErr) {
+        console.error('enrollment_attempts lookup count failed — allowing through:', lookupErr.message)
+      } else if ((count ?? 0) >= LOOKUP_MAX) {
+        console.warn(`auto-enroll lookup limited: study ${study_id}, ${count} lookups in ${LOOKUP_WINDOW_S}s`)
+        return json({
+          error: 'Too many attempts from this connection. Please wait a few minutes and try again.',
+        }, 429)
+      } else {
+        const { error: insErr } = await admin
+          .from('enrollment_attempts')
+          .insert({ study_id, ip_hash: ipHash, kind: 'lookup' })
+        if (insErr) console.error('enrollment_attempts lookup insert failed:', insErr.message)
+      }
+    }
+
     // 2. Check for an existing enrollment to support re-entry.
     const { data: existing } = await admin
       .from('study_enrollments')
@@ -319,7 +356,6 @@ Deno.serve(async (req) => {
       // 2b. Rate limit — NEW accounts only (see the note by hashClientIp). Every
       //     check is fail-open: a limiter that errors must never stand between a
       //     real participant and their study.
-      const ipHash = await hashClientIp(req)
       if (ipHash) {
         const since = new Date(Date.now() - RATE_WINDOW_S * 1000).toISOString()
         const { count, error: rateErr } = await admin
@@ -327,6 +363,7 @@ Deno.serve(async (req) => {
           .select('id', { count: 'exact', head: true })
           .eq('study_id', study_id)
           .eq('ip_hash', ipHash)
+          .eq('kind', 'new_account')
           .gte('attempted_at', since)
 
         if (rateErr) {
@@ -340,7 +377,7 @@ Deno.serve(async (req) => {
 
         const { error: attemptErr } = await admin
           .from('enrollment_attempts')
-          .insert({ study_id, ip_hash: ipHash })
+          .insert({ study_id, ip_hash: ipHash, kind: 'new_account' })
         if (attemptErr) console.error('enrollment_attempts insert failed:', attemptErr.message)
 
         // Keep the ledger from growing forever — nothing reads past the window.
