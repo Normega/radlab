@@ -104,26 +104,38 @@ Deno.serve(async (req) => {
     // window spanning several days) are protected until step 0 expires it.
     let missed = 0
     {
-      const { data: staleRows } = await db
-        .from('participant_schedule')
-        .select('id')
-        .in('status', ['link_sent', 'unlocked'])
-        .lt('scheduled_date', todayStr)
-
-      if (staleRows && staleRows.length > 0) {
-        const staleIds = staleRows.map((r) => r.id)
-        const { data: activeForStale } = await db
-          .from('participant_links')
-          .select('schedule_id')
-          .eq('status', 'active')
-          .in('schedule_id', staleIds)
-
-        const protectedIds = new Set((activeForStale ?? []).map((l) => l.schedule_id))
-        const deadIds = staleIds.filter((id) => !protectedIds.has(id))
-        if (deadIds.length > 0) {
-          await db.from('participant_schedule').update({ status: 'missed' }).in('id', deadIds)
-          missed = deadIds.length
+      // Every read here is paged and error-checked (2026-09-28). The
+      // protecting lookup matters most: if it failed or came back short, rows
+      // whose link is still live were marked 'missed' -- a session the
+      // participant could still open, closed under them, and on a gate a
+      // possible adherence withdrawal. On any error nothing is marked.
+      try {
+        const staleRows = await fetchAllRows<{ id: string }>((from, to) =>
+          db.from('participant_schedule')
+            .select('id')
+            .in('status', ['link_sent', 'unlocked'])
+            .lt('scheduled_date', todayStr)
+            .order('id', { ascending: true })
+            .range(from, to),
+        )
+        if (staleRows.length > 0) {
+          const staleIds = staleRows.map((r) => r.id)
+          const activeForStale = await selectInChunks<{ schedule_id: string }>(staleIds, (ids) =>
+            db.from('participant_links')
+              .select('schedule_id')
+              .eq('status', 'active')
+              .in('schedule_id', ids),
+          )
+          const protectedIds = new Set(activeForStale.map((l) => l.schedule_id))
+          const deadIds = staleIds.filter((id) => !protectedIds.has(id))
+          for (const ids of chunk(deadIds)) {
+            const { error } = await db.from('participant_schedule').update({ status: 'missed' }).in('id', ids)
+            if (error) throw new Error(error.message)
+            missed += ids.length
+          }
         }
+      } catch (e) {
+        console.error('check_schedule 0b skipped (nothing marked missed):', e instanceof Error ? e.message : e)
       }
     }
 
@@ -131,10 +143,15 @@ Deno.serve(async (req) => {
     // "Withdraw" action) — fetched once and honored by every pass below:
     // due-row sends (1b), reminders (3b), and the advance pass (4). None of
     // these checked withdrawal at all before 2026-07-15.
-    const { data: withdrawnEnrollments } = await db
-      .from('study_enrollments')
-      .select('profile_id, study_id')
-      .eq('status', 'withdrawn')
+    // Paged, and an error ends the tick: sending on a partial list would email
+    // people who have withdrawn. (A failed read used to count as "nobody".)
+    const withdrawnEnrollments = await fetchAllRows<{ profile_id: string; study_id: string }>((from, to) =>
+      db.from('study_enrollments')
+        .select('profile_id, study_id')
+        .eq('status', 'withdrawn')
+        .order('id', { ascending: true })
+        .range(from, to),
+    )
     const withdrawnSet = new Set(
       (withdrawnEnrollments ?? []).map((w) => `${w.profile_id}:${w.study_id}`),
     )
@@ -155,15 +172,27 @@ Deno.serve(async (req) => {
     // 1. Fetch pending rows scheduled today or earlier (date-only filter; the
     // send_time cutoff is applied below since Postgres can't compare it
     // against "now" without knowing which rows are for today).
-    const { data: candidateRows, error: fetchErr } = await db
-      .from('participant_schedule')
-      .select('id, participant_id, study_id, scheduled_date, send_time, attempts')
-      .eq('status', 'pending')
-      .lte('scheduled_date', todayStr)
-
-    if (fetchErr) {
-      console.error('Failed to fetch due rows:', fetchErr.message)
-      return json({ error: fetchErr.message }, 500)
+    // Every row, not the first 1000 (2026-09-28). Pending rows of withdrawn
+    // enrollments and inactive studies are filtered out below but never
+    // closed, so this set only grows; past the PostgREST cap the rows dropped
+    // were arbitrary, and genuine due sessions went unsent with no error.
+    let candidateRows: Array<{
+      id: string; participant_id: string; study_id: string
+      scheduled_date: string; send_time: string; attempts: number | null
+    }>
+    try {
+      candidateRows = await fetchAllRows((from, to) =>
+        db.from('participant_schedule')
+          .select('id, participant_id, study_id, scheduled_date, send_time, attempts')
+          .eq('status', 'pending')
+          .lte('scheduled_date', todayStr)
+          .order('id', { ascending: true })
+          .range(from, to),
+      )
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      console.error('Failed to fetch due rows:', msg)
+      return json({ error: msg }, 500)
     }
 
     // 1c. Safety net: a due row that reached 'unlocked' without ever being
@@ -470,23 +499,44 @@ Deno.serve(async (req) => {
     let reminded = 0
     let finalNotices = 0
     {
-      const { data: activeLinkRows } = await db
-        .from('participant_links')
-        .select('schedule_id, expires_at')
-        .eq('status', 'active')
+      // Paged and chunked (2026-09-28). Both reads were single calls with
+      // their errors ignored: past 1000 active links, or an .in() list too
+      // long for the URL, every reminder and final notice stopped silently.
+      // A failed read now skips this pass for the tick, loudly.
+      let activeLinkRows: Array<{ schedule_id: string; expires_at: string | null }> = []
+      try {
+        activeLinkRows = await fetchAllRows((from, to) =>
+          db.from('participant_links')
+            .select('schedule_id, expires_at')
+            .eq('status', 'active')
+            .order('id', { ascending: true })
+            .range(from, to),
+        )
+      } catch (e) {
+        console.error('check_schedule reminders skipped: active links unreadable:', e instanceof Error ? e.message : e)
+      }
 
       const expiresByScheduleId = new Map(
-        (activeLinkRows ?? []).map((l) => [l.schedule_id, l.expires_at as string | null]),
+        activeLinkRows.map((l) => [l.schedule_id, l.expires_at as string | null]),
       )
       const activeIds = [...expiresByScheduleId.keys()]
       if (activeIds.length > 0) {
-        const { data: remRows } = await db
-          .from('participant_schedule')
-          .select('id, participant_id, study_id, study_session_id, attempts, last_sent_at, final_notice_sent_at')
-          .in('id', activeIds)
-          .in('status', ['link_sent', 'unlocked'])
-          .is('completed_at', null)
-          .not('last_sent_at', 'is', null)
+        let remRows: Array<{
+          id: string; participant_id: string; study_id: string; study_session_id: string | null
+          attempts: number | null; last_sent_at: string | null; final_notice_sent_at: string | null
+        }> = []
+        try {
+          remRows = await selectInChunks(activeIds, (ids) =>
+            db.from('participant_schedule')
+              .select('id, participant_id, study_id, study_session_id, attempts, last_sent_at, final_notice_sent_at')
+              .in('id', ids)
+              .in('status', ['link_sent', 'unlocked'])
+              .is('completed_at', null)
+              .not('last_sent_at', 'is', null),
+          )
+        } catch (e) {
+          console.error('check_schedule reminders skipped: schedule rows unreadable:', e instanceof Error ? e.message : e)
+        }
 
         if (remRows && remRows.length > 0) {
           const remStudyIds = [...new Set(remRows.map((r) => r.study_id))]
@@ -739,6 +789,32 @@ Deno.serve(async (req) => {
 })
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+// Id lists go in the URL, so a long .in() fails outright; 200 uuids is ~7.5 KB.
+const IN_CHUNK = 200
+
+function chunk<T>(items: T[], size = IN_CHUNK): T[][] {
+  const out: T[][] = []
+  for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size))
+  return out
+}
+
+/** Run an .in() query over `ids` in chunks, concatenating the rows. Throws on
+ *  any chunk's error, so a caller can never mistake a failed read for "none".
+ *  Each chunk is at most IN_CHUNK ids, and every query this serves returns at
+ *  most one row per id, so no chunk can reach the 1000-row response cap. */
+async function selectInChunks<T>(
+  ids: string[],
+  query: (ids: string[]) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>,
+): Promise<T[]> {
+  const rows: T[] = []
+  for (const part of chunk(ids)) {
+    const { data, error } = await query(part)
+    if (error) throw new Error(error.message)
+    rows.push(...(data ?? []))
+  }
+  return rows
+}
 
 async function suppressRow(db: SupabaseClient, rowId: string, participantId: string, reason: string) {
   const [logRes, schedRes] = await Promise.all([
