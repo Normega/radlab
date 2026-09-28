@@ -51,6 +51,29 @@ const SUMMARIZE_TOOL = {
   },
 }
 
+// Structured outputs (which 'propose' uses on Sonnet 5.5 — it rejects forced
+// tool use) accept a narrower JSON Schema than tool input did: every object
+// needs additionalProperties:false, and minItems above 1, maxItems,
+// minLength/maxLength, pattern and numeric bounds are not accepted. Rather than
+// lose those limits, move each into the field's description, where the model
+// still reads it. One schema stays the source of truth for both forms.
+const MOVED = ['minItems', 'maxItems', 'minLength', 'maxLength', 'pattern', 'minimum', 'maximum', 'multipleOf']
+function toStructuredSchema(node) {
+  if (Array.isArray(node)) return node.map(toStructuredSchema)
+  if (!node || typeof node !== 'object') return node
+  const out = {}
+  const limits = []
+  for (const [k, v] of Object.entries(node)) {
+    if (MOVED.includes(k) && !(k === 'minItems' && (v === 0 || v === 1))) limits.push(`${k} ${v}`)
+    else out[k] = (k === 'properties')
+      ? Object.fromEntries(Object.entries(v).map(([pk, pv]) => [pk, toStructuredSchema(pv)]))
+      : toStructuredSchema(v)
+  }
+  if (out.type === 'object') out.additionalProperties = false
+  if (limits.length) out.description = `${out.description ? `${out.description} ` : ''}(${limits.join(', ')})`
+  return out
+}
+
 const PROPOSE_TOOL = {
   name: 'propose_run_of_show',
   description: 'Propose in-lecture check-ins for a slide deck.',
@@ -297,10 +320,16 @@ export default async function handler(req, res) {
 
     const anthropic = new Anthropic()
     const msg = await anthropic.messages.create({
-      model: 'claude-sonnet-5',
-      max_tokens: 4000,
-      tools: [PROPOSE_TOOL],
-      tool_choice: { type: 'tool', name: PROPOSE_TOOL.name },
+      // Sonnet 5.5 since 2026-09-28: no forced tool use, so the proposal is a
+      // structured output; it thinks by default, and thinking shares
+      // max_tokens, so the ceiling rises and effort is set. Medium — an
+      // instructor is waiting on this one.
+      model: 'claude-sonnet-5-5',
+      max_tokens: 12000,
+      output_config: {
+        effort: 'medium',
+        format: { type: 'json_schema', schema: toStructuredSchema(PROPOSE_TOOL.input_schema) },
+      },
       messages: [{
         role: 'user',
         content: `You are helping a university instructor instrument an existing lecture with live in-class check-ins. Below is the slide outline of one lecture, including the instructor's own presenter notes — those notes are the best evidence of what they are trying to do in the room.
@@ -323,14 +352,20 @@ DECK: ${deck.toUpperCase()} (${outline.length} slides)
 ${outline.map(s => `--- Slide ${s.n}${s.kicker ? ` [${s.kicker}]` : ''}: ${s.title}\n${s.body}${s.notes ? `\nPRESENTER NOTES: ${s.notes}` : ''}`).join('\n')}`,
       }],
     })
-    const call = msg.content.find(b => b.type === 'tool_use')
-    if (!call) throw new Error('model returned no proposal')
+    if (msg.stop_reason === 'refusal') {
+      throw new Error(`The model declined this deck (${msg.stop_details?.category ?? 'no category given'})`)
+    }
+    if (msg.stop_reason === 'max_tokens') throw new Error('The proposal ran past the length limit before it finished')
+    const text = msg.content.filter(b => b.type === 'text').map(b => b.text).join('')
+    let proposal = null
+    try { proposal = text ? JSON.parse(text) : null } catch { proposal = null }
+    if (!proposal) throw new Error('model returned no proposal')
 
     return res.status(200).json({
       ok: true,
       deck: deck.toUpperCase(),
       slides: outline.length,
-      proposal: call.input,
+      proposal,
       note: 'Nothing has been saved. This action writes nothing.',
     })
   } catch (err) {
