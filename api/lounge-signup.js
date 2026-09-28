@@ -17,6 +17,10 @@ import { createClient } from '@supabase/supabase-js'
 // student signs in with the password they chose and loses nothing. The
 // confirm page says as much when it meets an already-spent token.
 //
+// The password sent here is provisional. The confirm page sets the password
+// again after verification (ClassConfirmSignup.jsx), so an address signed up
+// by someone else with their own password never ends up with that password.
+//
 // Existing accounts: a CONFIRMED account is never touched — the caller is
 // told to sign in instead (mailbox proof happened once already; re-running
 // signup must not become a password reset). An UNCONFIRMED account holds
@@ -123,14 +127,14 @@ export default async function handler(req, res) {
         from: fromEmail, reply_to: replyToFor(slug), to: email,
         subject: `Confirm your account — ${cls.name}`,
         text: `Almost there!\n\nTap to confirm your account for ${cls.name}:\n${link}\n\n`
-          + `You'll be asked to press one more button — that's deliberate; it keeps `
+          + `You'll be asked to enter your password and press one more button — that's deliberate; it keeps `
           + `automated mail scanners from using the link before you do.\n\n`
           + `If the page says the link was already used, your account is confirmed — `
           + `just sign in with your password.\n\n`
           + `If you didn't create this account, you can ignore this email.`,
         html: `<p>Almost there!</p>
              <p><a href="${link}" style="display:inline-block;padding:12px 26px;border-radius:24px;background:#d63384;color:#fff;text-decoration:none;font-weight:600">Confirm your account</a></p>
-             <p style="font-size:13px;color:#666">You'll be asked to press one more button — that's deliberate; it keeps automated mail scanners from using the link before you do.</p>
+             <p style="font-size:13px;color:#666">You'll be asked to enter your password and press one more button — that's deliberate; it keeps automated mail scanners from using the link before you do.</p>
              <p style="font-size:13px;color:#666">If the page says the link was already used, your account is confirmed — just sign in with your password.</p>
              <p style="font-size:13px;color:#666;margin-top:18px">If you didn't create this account, you can ignore this email.</p>`,
       }),

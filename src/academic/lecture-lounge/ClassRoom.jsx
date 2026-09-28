@@ -852,9 +852,9 @@ function ClassAuthCard({ classInfo, slug }) {
         <p style={S.eyebrow}>Lecture Lounge</p>
         <h1 style={S.title}>Check your email</h1>
         <p style={S.sub}>
-          We sent a confirmation link to <strong>{email}</strong>. Tap it, press the
-          button on the page it opens, and you'll land back here signed in and ready
-          to join {classInfo.name}.
+          We sent a confirmation link to <strong>{email}</strong>. Tap it, enter your
+          password on the page it opens and press the button, and you'll land back
+          here signed in and ready to join {classInfo.name}.
         </p>
         <p style={{ ...S.sub, fontSize: 13 }}>
           If the page says the link was already used, your account is confirmed —
