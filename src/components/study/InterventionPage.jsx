@@ -197,7 +197,11 @@ export default function InterventionPage({
         setNextEnabled(false)
         break
       case 'prompt_response':
-        setNextEnabled((responses[s._stepIndex] ?? '').length > 0)
+        // `required: false` makes a box optional. It was authored into modules
+        // from the start ("Optional: what shifted?", Graduation's "any
+        // additional comments?") but read by nothing until 2026-09-28, so those
+        // optional boxes demanded an answer like every other.
+        setNextEnabled(s.required === false || (responses[s._stepIndex] ?? '').length > 0)
         break
       case 'slider':
         // A slider that has not been moved has no response — an untouched
@@ -276,9 +280,9 @@ export default function InterventionPage({
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
-  const handleResponseChange = useCallback((stepIndex, text) => {
+  const handleResponseChange = useCallback((stepIndex, text, optional = false) => {
     setResponses(prev => ({ ...prev, [stepIndex]: text }))
-    setNextEnabled(text.length > 0)
+    setNextEnabled(optional || text.length > 0)
   }, [])
 
   const handleVideoComplete = useCallback(() => setNextEnabled(true), [])
@@ -551,7 +555,7 @@ export default function InterventionPage({
             <PromptResponseBlock
               step={current}
               value={responses[current._stepIndex] ?? ''}
-              onChange={text => handleResponseChange(current._stepIndex, text)}
+              onChange={text => handleResponseChange(current._stepIndex, text, current.required === false)}
             />
           )}
 
@@ -895,7 +899,7 @@ function PromptResponseBlock({ step, value, onChange }) {
         rows={rows}
         value={value}
         onChange={e => onChange(e.target.value)}
-        placeholder="Type your response here…"
+        placeholder={step.required === false ? 'Optional — leave blank if nothing comes to mind…' : 'Type your response here…'}
         style={S.textarea}
       />
     </div>
@@ -994,23 +998,24 @@ function MultiResponseBlock({ step, values, onChange }) {
 function TimerBlock({ step, onComplete }) {
   const total    = step.duration_seconds ?? 30
   const [rem, setRem] = useState(total)
-  const [done, setDone] = useState(false)
+  const done = rem === 0
   const intervalRef = useRef(null)
+  const firedRef = useRef(false)
 
   useEffect(() => {
-    intervalRef.current = setInterval(() => {
-      setRem(r => {
-        if (r <= 1) {
-          clearInterval(intervalRef.current)
-          setDone(true)
-          onComplete()
-          return 0
-        }
-        return r - 1
-      })
-    }, 1000)
+    intervalRef.current = setInterval(() => setRem(r => Math.max(0, r - 1)), 1000)
     return () => clearInterval(intervalRef.current)
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Completion is reported from an effect, not from inside the state updater:
+  // calling the parent's setState there is a setState-during-render (React
+  // warned on every Sensory Scientist timer).
+  useEffect(() => {
+    if (!done || firedRef.current) return
+    firedRef.current = true
+    clearInterval(intervalRef.current)
+    onComplete()
+  }, [done]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const mins = String(Math.floor(rem / 60)).padStart(1, '0')
   const secs = String(rem % 60).padStart(2, '0')

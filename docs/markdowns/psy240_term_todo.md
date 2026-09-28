@@ -67,11 +67,11 @@ engine: enrolment, randomisation, ratings, export). Compassion and reappraisal a
 - [x] Text player `guided_text` (one line at a time; quiet stretches end on a tone; pause; time away
   recorded). Non-reactivity days 1–7 built; review at `dev.radlab.zone/dev/class-rct?day=N`
   (`&demo=1` for skip buttons). 2026-09-28.
-- [ ] Norm reviews days 1–7 on the dev site (pacing, the eyes-closed wording, Five Senses flow).
-- [ ] Days 8–28: Leaves on Stream, See Hear Feel, Mountain, Lighthouse, Sensory Detective, Pause
-  Before Reacting, Mindfulness of an Object, Guided Body Scan to guided_text; Sensory Scientist and
-  Graduation copy over (already written exercises); "again" days reuse modules. Calendar in
-  `src/data/classRct/nonreactivity.js`.
+- [x] Norm reviewed days 1–7: format approved; asked for the pink pulse throughout (done). 2026-09-28.
+- [x] Days 8–28 built: eight more scripts as guided text, Sensory Scientist / Pause Before Reacting /
+  Graduation copied from Study 3 as written, eleven "again" days. All 28 walk through on the dev site.
+  Lead-in "about N minutes" is computed from content. 2026-09-28.
+- [ ] Norm reviews days 8–28 on the dev site.
 - [ ] Minimal measures: one stress + mood slider bundle, before and after every session, same in
   both arms; the same short stress/mood check on days 1, 14, 28; shared day-28 experience items
   (enjoyment, helpful, would continue, one open "what stood out").

@@ -3358,7 +3358,7 @@ The response payload gained a `superseded` counter alongside `deferred`, so the 
 
 ### Guided text (`guided_text`) and the PSY240 class RCT's non-reactivity arm (2026-09-28)
 
-**Status: on `dev`, days 1–7 of 28 built, not in any study yet.** PSY240's in-class RCT
+**Status: on `dev`, all 28 days built, not in any study yet.** PSY240's in-class RCT
 (onboarding Oct 14, practice Oct 21–Nov 17, debrief Dec 2) compares a traditional mindfulness
 course with Sense Foraging. It is pedagogical: students take part, then write an RCT reflection;
 data are minimal (stress and mood). The traditional arm is Liliana's Study 3 non-reactivity arm,
@@ -3381,11 +3381,22 @@ wording kept except "allow your eyes to close" → "in the quiet stretches you c
 Day 1 is the breathing figure (`breath_practice`, 150 s at the student's own rhythm, no voice);
 Five Senses keeps her write-down steps with each audio clip replaced by an autostarting piece.
 Practices run 3.5–5.7 min, near their videos. The 28-day calendar spreads her 16 sessions: new
-practices first, then "again" days, ending on Graduation. Review surface
-`/dev/class-rct?day=N` (`&demo=1`). Verified: all seven days walk through to Complete Practice
-without errors; real-time run confirmed line pacing (34-word line held at the 16 s cap), Pause
-freezing the clock for 12 s, and the quiet stretch's closing tone at exactly its planned time
-net of the pause. Course to-do: `docs/markdowns/psy240_term_todo.md` → "Class RCT".
+practices first, then eleven "again" days (`again(day, module)`: same steps, own id and lead-in),
+ending on Graduation. Sensory Scientist, Pause Before Reacting and Graduation are copied from
+Study 3 as written (Graduation's `show_if` branch included). Lead-ins say "about N minutes"
+computed from the content (`moduleMinutes`), never typed. Review surface `/dev/class-rct?day=N`
+(`&demo=1`). Verified: all 28 days walk through to Complete Practice without errors; real-time
+run confirmed line pacing (34-word line held at the 16 s cap), Pause freezing the clock for 12 s,
+and the quiet stretch's closing tone at exactly its planned time net of the pause. Course to-do:
+`docs/markdowns/psy240_term_todo.md` → "Class RCT".
+
+**Two renderer fixes found on the way, both affecting Liliana's live Study 3 once promoted:**
+- `prompt_response` now honours `required: false`. The key was authored into four live boxes
+  (Sensory Scientist's "Optional: what shifted?" and all three arms' Graduation "any additional
+  comments?") but read by nothing, so each demanded an answer; some Study 3 rows there hold filler
+  like "h" and "n". Optional boxes now let Next through blank and say "Optional" in the box.
+- `TimerBlock` reported completion from inside a state updater (setState during render; React
+  warned on every Sensory Scientist timer). It now reports from an effect, once.
 
 ### Interactive breath practice (`breath_practice`) — short-form prototype
 
