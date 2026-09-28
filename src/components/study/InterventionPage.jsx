@@ -464,7 +464,10 @@ export default function InterventionPage({
           break
 
         case 'guided_text':
-          await supabase.from('intervention_responses').insert({
+          // Through insertResponse like every other case: a bare insert()
+          // drops its error, so a failed save would advance the participant
+          // with nothing recorded (CLAUDE.md, participant data rule 2).
+          await insertResponse({
             ...base,
             response_text: JSON.stringify(guidedResults[idx] ?? { completed: false }),
           })
