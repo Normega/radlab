@@ -162,7 +162,7 @@ clear the exclusion in the YAML header.
 ## Platform
 
 - [ ] **Haiku 4.5 may retire from Oct 15.** Anthropic lists `claude-haiku-4-5` as retiring "not sooner than October 15, 2026". It runs `api/lounge-ai.js` `summarize`, the "Show class" theme grouping used in every lecture. No newer Haiku exists (2026-09-28). Before Oct 15, move it to `claude-sonnet-5-5` on the same structured-output pattern as `propose`, or confirm the date has moved.
-- [ ] Sonnet 5.5 migration of `integrate-claim` and lounge-ai `propose` is on dev (2026-09-28, `402887c`). Before promoting, run "Compare with source" on one submission and one run-of-show proposal on dev.radlab.zone (the Anthropic key is Vercel-only, so neither has made a real call yet).
+- [x] (2026-09-28 — verified live on dev by Norm and promoted) Sonnet 5.5 migration of `integrate-claim` and lounge-ai `propose` is on dev (2026-09-28, `402887c`). Before promoting, run "Compare with source" on one submission and one run-of-show proposal on dev.radlab.zone (the Anthropic key is Vercel-only, so neither has made a real call yet).
 - [x] (2026-09-26 — now 1 per 120 s and 10 per rolling 24 h on all three send paths, `20260926_signin_send_window.sql`; the refusal says when it lifts. Still open: why she needed 50.) **The sign-in email cap is lifetime, and it's already being hit.** `api/roster-join.js`
   refuses a roster row after `LIFETIME_SEND_CAP = 50` sends ("Send limit reached for this address
   — contact the course team"), a figure chosen to "cover a whole term". Ritma Shahid hit it on
