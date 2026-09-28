@@ -26,6 +26,75 @@
   <aside class="notes"><p>Check-in position 1. Say the test logistics now AND at the end — anxiety in week 4 is mostly about not knowing the format.</p></aside>
 </section>
 
+<section class="dense">
+  <p class="kicker">From last week&#8217;s breaks</p>
+  <h1>You asked — the measurement ladder</h1>
+  <ul>
+    <li><strong>&#8220;Isn&#8217;t ordinal a kind of categorical?&#8221;</strong><br>
+      <span class="hidden-until">Close: both sort people into categories. Ordinal adds one thing, <em>order</em>. Each rung up the ladder adds one guarantee: <strong>categorical</strong> (names) → <strong>ordinal</strong> (+ order) → <strong>interval</strong> (+ equal spacing) → <strong>ratio</strong> (+ a true zero).</span></li>
+    <li><strong>&#8220;What&#8217;s a true zero, and why does ratio need it?&#8221;</strong><br>
+      <span class="hidden-until">Zero has to mean <em>none of the thing</em>. Zero errors is no errors, so 8 errors is twice 4. Zero °C is not &#8220;no temperature&#8221;, so 20 °C is not twice as hot as 10 °C. No true zero, no &#8220;twice as much&#8221;.</span></li>
+    <li><strong>&#8220;How can a Likert scale be treated as continuous?&#8221;</strong><br>
+      <span class="hidden-until">One 1–7 item is ordinal: nobody promised that 5→6 equals 6→7. <em>Average several items</em> and the score can take many values, and each item&#8217;s quirks partly cancel. It behaves much more like a quantity. That&#8217;s a convention with a reason, not a law, so in Practical 2 you <em>say</em> you&#8217;re using it.</span></li>
+  </ul>
+  <aside class="notes"><p>Taken from the L3 break check-ins: scales of measurement and the Likert question were the most common "didn't click" answers, ahead of R. Reveal one answer at a time. The ladder line is the one to leave on the board; the Likert answer sets up the Practical 2 slides that follow.</p></aside>
+</section>
+
+<section class="dense">
+  <p class="kicker">Last week&#8217;s Exercise B, finished</p>
+  <h1>Your data, finally</h1>
+  <div class="cols">
+    <div>
+      <table>
+        <tr><th>Item</th><th>r with the rest</th></tr>
+        <tr><td>1 · life close to ideal</td><td>.75</td></tr>
+        <tr><td>2 · conditions excellent</td><td>.53</td></tr>
+        <tr><td>3 · satisfied with my life</td><td>.84</td></tr>
+        <tr><td><strong>4 · I usually get enough sleep</strong></td><td><strong>.40</strong></td></tr>
+        <tr><td>5 · gotten the important things</td><td>.52</td></tr>
+        <tr><td><strong>6 · I enjoy cold weather</strong></td><td><strong>.24</strong></td></tr>
+        <tr><td>7 · would change almost nothing</td><td>.66</td></tr>
+      </table>
+      <p class="small">n = 38 · corrected item–total correlations</p>
+    </div>
+    <div>
+      <p><strong>α, all seven items: .80</strong><br><strong>α, without 4 and 6: .86</strong><br>(published value: .87)</p>
+      <div class="box warn hidden-until"><p><strong>.80 looks fine — with two impostors inside.</strong> Alpha doesn&#8217;t prove the items measure one thing. The item–total column is where the impostors show.</p></div>
+      <div class="box hidden-until"><p><strong>Sleep at .40 isn&#8217;t noise:</strong> satisfied people do sleep better. <em>Correlating</em> with a construct isn&#8217;t <em>being</em> it. Whether an item belongs is judged against your conceptual definition — content validity.</p></div>
+    </div>
+  </div>
+  <aside class="notes"><p>Computed 2026-09-28 from the 38 complete responses to L3 check-in position 15 (0-indexed answers +1; alpha by the variance formula; item–total r against the sum of the other six). The class mean on the five real items was 4.51 of 7. Last week's script predicted alpha near .70 with the ringers in; this class came out at .80, which is the better lesson: a respectable alpha with two foreign items inside. It also answers the break question "how does alpha measure internal consistency?": items that measure one thing rise and fall together across people; alpha summarizes that agreement (boosted by the number of items), and the item–total column shows which items don't go along. The student who got negative numbers in R most likely ran the fallback file, where the cold-weather item correlates −.21 with the rest.</p></aside>
+</section>
+
+<section class="dense" data-kind="activity">
+  <p class="kicker">Practical 2 · worked example</p>
+  <h1>The scale you took last week</h1>
+  <table>
+    <tr><th>Practical 2 asks for</th><th>Satisfaction With Life Scale (Diener et al., 1985)</th></tr>
+    <tr><td>Construct + <strong>conceptual definition</strong></td><td>Life satisfaction: a person&#8217;s global judgment of their life as a whole, <em>by their own standards</em>. Not happiness, not mood.</td></tr>
+    <tr><td><strong>Operationalization</strong></td><td>5 items, 1–7 agreement, averaged</td></tr>
+    <tr><td><strong>Reliability evidence</strong></td><td>α = .87; two-month test–retest r = .82</td></tr>
+    <tr><td><strong>Validity evidence</strong></td><td>Look for the pattern: converges with other well-being measures and with ratings by people who know you; lower in clinical groups (known-groups)</td></tr>
+    <tr><td><strong>Scale type</strong> and what it permits</td><td>Averaged multi-item score, treated as interval <em>by convention</em>, and you say so</td></tr>
+    <tr><td><strong>Three claims</strong> it can serve</td><td>Frequency: <em>our class averages 4.5 of 7</em>. Association: <em>satisfaction with sleep</em>. Causal: <em>does gratitude journaling raise it?</em></td></tr>
+  </table>
+  <aside class="notes"><p>Walk the rows top to bottom; each row is a heading students can reuse. The published figures are from Diener, Emmons, Larsen &amp; Griffin (1985); the validity pattern is summarized in Pavot &amp; Diener (1993). The definition row does the most work: "by their own standards" is why the items ask about <em>your</em> ideal, and it is what content validity is judged against. The frequency example uses the class's own mean (4.51).</p></aside>
+</section>
+
+<section class="dense" data-kind="activity">
+  <p class="kicker">Practical 2 · before you submit</p>
+  <h1>Five traps, and a check-in</h1>
+  <ol>
+    <li><strong>A synonym is not a definition.</strong> &#8220;Stress is feeling stressed&#8221; defines nothing. Say what it is, what it isn&#8217;t, and where its edges are.</li>
+    <li><strong>Every alpha has an owner.</strong> Say whose sample it came from. A scale validated on adults over 40 makes a promise about adults over 40.</li>
+    <li><strong>Reliability isn&#8217;t validity.</strong> You need evidence under <em>both</em> headings. &#8220;α = .91&#8221; alone is half an argument.</li>
+    <li><strong>Name the scale type.</strong> If you&#8217;ll average items, say you&#8217;re treating the score as interval, and why.</li>
+    <li><strong>Can&#8217;t find the numbers? That&#8217;s a finding.</strong> Say so in your reflection; it&#8217;s the honest version of the skill.</li>
+  </ol>
+  <div class="qr-row"><p class="small">Check in now: your construct, your scale, and one reliability number you&#8217;ve found (or &#8220;can&#8217;t find one&#8221;). <strong>radlab.zone/class/psy309</strong></p><div class="break-qr"><img src="./assets/psy309-qr.png" alt="QR code linking to radlab.zone/class/psy309"></div></div>
+  <aside class="notes"><p>Check-in position 2 (prompt). While it fills, scan the Read-responses list for the three patterns worth a sentence out loud: a construct with no scale yet, a scale named with no numbers, and a measure that is a single item. TAs can follow up on the rest before Friday from the console card. The Quercus assignment page is authoritative for the rubric; these five are the recurring losses.</p></aside>
+</section>
+
 <section data-kind="divider">
   <p class="kicker">Part one</p>
   <h1>Two things that travel together</h1>
@@ -136,7 +205,7 @@
   <p class="big">Six real correlations. For each: what third variable could produce this, without either causing the other?</p>
   <p class="small">Teams propose; class votes on the most plausible.</p>
   <div class="qr-row"><p class="url" style="font-family:'JetBrains Mono',monospace;font-size:3vmin;color:var(--accent);font-weight:600">radlab.zone/class/psy309</p><div class="break-qr"><img src="./assets/psy309-qr.png" alt="QR code linking to radlab.zone/class/psy309"></div></div>
-  <aside class="notes"><p>Check-in position 15. Do NOT warn them that two of the six have no third variable at all. That discovery is the exercise.</p></aside>
+  <aside class="notes"><p>Check-in position 10. Do NOT warn them that two of the six have no third variable at all. That discovery is the exercise.</p></aside>
 </section>
 
 <section class="dense">
@@ -164,7 +233,7 @@ B &lt;- 0.65 * C + sqrt(1 - 0.65^2) * rnorm(n)
 # There is NO arrow from A to B. You just built it.</pre>
   <p class="small">Open <code>L4_confound.R</code> in the cloud project.</p>
   <div class="qr-row qr-compact"><p class="url" style="font-family:'JetBrains Mono',monospace;font-size:3vmin;color:var(--accent);font-weight:600">radlab.zone/class/psy309</p><div class="break-qr"><img src="./assets/psy309-qr.png" alt="QR code linking to radlab.zone/class/psy309"></div></div>
-  <aside class="notes"><p>Check-in position 20. Expected: r(A,B) ≈ .40, p &lt; .001. Then lm(B ~ A + C) and A's estimate collapses to ~0, non-significant. Both on the fallback slide if the cloud misbehaves.</p></aside>
+  <aside class="notes"><p>Check-in position 15. Expected: r(A,B) ≈ .40, p &lt; .001. Then lm(B ~ A + C) and A's estimate collapses to ~0, non-significant. Both on the fallback slide if the cloud misbehaves.</p></aside>
 </section>
 
 <section>
@@ -191,7 +260,7 @@ B &lt;- 0.65 * C + sqrt(1 - 0.65^2) * rnorm(n)
   </div>
   <div class="break-qr"><img src="./assets/psy309-qr.png" alt="QR code linking to radlab.zone/class/psy309"></div>
   </div>
-  <aside class="notes"><p>Check-in position 30.</p></aside>
+  <aside class="notes"><p>Check-in position 20.</p></aside>
 </section>
 
 <section data-kind="divider">
@@ -295,7 +364,7 @@ B &lt;- 0.65 * C + sqrt(1 - 0.65^2) * rnorm(n)
     </div>
   </div>
   <div class="qr-row"><p class="url" style="font-family:'JetBrains Mono',monospace;font-size:3vmin;color:var(--accent);font-weight:600">radlab.zone/class/psy309</p><div class="break-qr"><img src="./assets/psy309-qr.png" alt="QR code linking to radlab.zone/class/psy309"></div></div>
-  <aside class="notes"><p>Check-in position 10 (question box) — take test questions live for ten minutes. The Field Guide weeks 1–4 are the study guide; say that explicitly.</p></aside>
+  <aside class="notes"><p>Check-in position 25 (question box) — take test questions live for ten minutes. The Field Guide weeks 1–4 are the study guide; say that explicitly.</p></aside>
 </section>
 
 <section data-kind="break">
@@ -309,7 +378,7 @@ B &lt;- 0.65 * C + sqrt(1 - 0.65^2) * rnorm(n)
   </div>
   <div class="break-qr"><img src="./assets/psy309-qr.png" alt="QR code linking to radlab.zone/class/psy309"></div>
   </div>
-  <aside class="notes"><p>Check-in position 25.</p></aside>
+  <aside class="notes"><p>Check-in position 30.</p></aside>
 </section>
 
 </div>
