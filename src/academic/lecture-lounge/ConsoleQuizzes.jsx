@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
+import Md from './Md'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -211,46 +212,6 @@ function ItemCard({ item, n, total, mode }) {
       {item.meta.missingKey && <p style={S.warn}>No key stored for this item — students will get no reveal.</p>}
     </div>
   )
-}
-
-// Just enough markdown for item text: paragraphs, **bold**, and pipe tables
-// (the short-answer scenarios carry data tables). Built as React elements,
-// never innerHTML.
-function Md({ text, style }) {
-  const blocks = String(text ?? '').split(/\n\s*\n/).map((b) => b.trim()).filter(Boolean)
-  const out = []
-  let rows = []
-  const flush = () => {
-    if (!rows.length) return
-    const [head, ...body] = rows
-    out.push(
-      <table key={`t${out.length}`} style={S.table}>
-        <thead><tr>{head.map((c, i) => <th key={i} style={S.th}>{inline(c)}</th>)}</tr></thead>
-        <tbody>{body.map((r, ri) => <tr key={ri}>{r.map((c, i) => <td key={i} style={S.td}>{inline(c)}</td>)}</tr>)}</tbody>
-      </table>,
-    )
-    rows = []
-  }
-  for (const b of blocks) {
-    // A folded YAML table arrives one row per block; a literal one, one block.
-    const lines = b.split('\n').map((l) => l.trim())
-    if (lines.every((l) => /^\|.*\|$/.test(l))) {
-      for (const l of lines) {
-        if (/^\|[\s:|-]+\|$/.test(l)) continue
-        rows.push(l.slice(1, -1).split('|').map((c) => c.trim()))
-      }
-      continue
-    }
-    flush()
-    out.push(<p key={`p${out.length}`} style={{ margin: '0 0 8px' }}>{inline(b)}</p>)
-  }
-  flush()
-  return <div style={style}>{out}</div>
-}
-
-function inline(s) {
-  return s.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
-    part.startsWith('**') && part.endsWith('**') ? <strong key={i}>{part.slice(2, -2)}</strong> : part)
 }
 
 // ---------------------------------------------------------------- helpers
