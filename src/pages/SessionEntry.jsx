@@ -169,6 +169,14 @@ export default function SessionEntry() {
 
     if (authResult.error === 'not_found') { setState('not_found'); return }
     if (authResult.error === 'revoked')   { setState('revoked');   return }
+    // Expired or finished links no longer get a session (sign_in_with_link,
+    // 2026-09-28); the function answers the soft-landing questions itself.
+    if (authResult.error === 'expired' || authResult.error === 'completed') {
+      setNextSession(authResult.next_session ?? null)
+      setAwaitingDate(!!authResult.awaiting_date)
+      setState(authResult.error)
+      return
+    }
     if (authResult.error)                 { setState('not_found'); return }
 
     // 2. Set session on the isolated client only — never touches the global lab session
