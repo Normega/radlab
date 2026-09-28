@@ -192,7 +192,8 @@ Proposal, 2026-09-27 — not yet agreed.
    pacer fade), `step()`-based debug API for headless numeric playtests.
 2. **Test corridor**: toggle intro room → earth → fire → air → water → a final room needing two
    elements in sequence.
-3. **Art, in parallel** once the tile grid and character height are fixed.
+3. **Art, in parallel** once the tile grid and character height are fixed. Plan and pipeline
+   spike: `passage_art_plan.md`.
 4. **Promote** to `src/games/Passage/` (lazy route, `GameIntro`, `/dev/passage-preview`), to `dev`.
 
 ## Open questions
