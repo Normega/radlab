@@ -37,8 +37,8 @@ export default function SessionEntry() {
   const [consentStudyId, setConsentStudyId] = useState(null)
   const [screenerSpec,   setScreenerSpec]   = useState(null) // { screener, participantId, studyId }
   // Session context for display steps: outputs of completed steps, keyed
-  // by element type then slug (see src/lib/elementOutputs.js). In-memory only —
-  // a mid-session reload restarts the flow, so outputs rebuild as steps redo.
+  // by element type then slug (see src/lib/elementOutputs.js). Saved with the
+  // step position (see writeProgress), so a mid-session reload resumes both.
   const [stepOutputs,    setStepOutputs]    = useState({})
   // { next_contact: {scheduled_date, send_time}|null, has_more: bool|null }
   const [completionInfo, setCompletionInfo] = useState(null)
@@ -88,6 +88,19 @@ export default function SessionEntry() {
   })
 
   useEffect(() => { resolveToken() }, [token])
+
+  // Remember how far this link got, so a refresh (or a phone discarding the
+  // tab) resumes at the current step instead of step 1. Restarting used to
+  // re-administer every completed instrument, which the export then carried
+  // as spurious _r2 repeats, and re-ran every game. Only reached steps are
+  // stored: each index is written after the previous step's own save succeeded.
+  useEffect(() => {
+    if (state !== 'running' || !sessionData) return
+    writeProgress(token, sessionData.nodes, currentIndex, stepOutputs)
+  }, [state, sessionData, currentIndex, stepOutputs, token])
+  useEffect(() => {
+    if (state === 'session_complete' || state === 'redirecting') clearProgress(token)
+  }, [state, token])
 
   // Stamp when each step becomes visible, so handleStepComplete can record how
   // long it was on screen. Fires on entry to step 0 (state → running) and on
@@ -282,6 +295,15 @@ export default function SessionEntry() {
   async function startStepFlow(data) {
     // Consent confirmed (or not required) — flush any buffered screener responses
     await flushScreenerDraft(data.link.participant_id, data.link.study_id)
+    const resumed = readProgress(token, data.nodes)
+    if (resumed) {
+      setCurrentIndex(resumed.index)
+      setStepOutputs(resumed.outputs)
+      // Resumed on the farewell: the advance that would have recorded the
+      // completion may not have finished before the reload, so record it now.
+      const nodes = data.nodes ?? []
+      if (resumed.index === nodes.length - 1 && isClosingStep(nodes[resumed.index])) recordCompletion()
+    }
     setSessionData(data)
     setState('running')
   }
@@ -303,6 +325,13 @@ export default function SessionEntry() {
     let draft
     try { draft = JSON.parse(raw) } catch { sessionStorage.removeItem(draftKey); return }
     sessionStorage.removeItem(draftKey) // remove before inserting to prevent double-flush on retry
+    // Only answers that actually saved may be carried forward. A failed insert
+    // used to be logged and then carried anyway: the in-session node skipped
+    // the instrument and the baseline measure existed nowhere. A failed one is
+    // now simply not carried, so the in-session node asks it again and the
+    // answer is still collected. (Not re-queued for a later flush as well:
+    // that would record it twice.)
+    const saved = []
     for (const q of draft.questionnaires ?? []) {
       const { error } = await sb.from('questionnaire_responses').insert({
         user_id:            participantId,
@@ -311,6 +340,7 @@ export default function SessionEntry() {
         completed_at:       draft.completedAt,
       })
       if (error) console.warn('[Screener] flush error for', q.slug, error.message)
+      else saved.push(q)
     }
     // Carry-forward: the row(s) above ARE the baseline measure. Mark these slugs
     // so the matching in-session questionnaire node auto-skips instead of asking
@@ -319,7 +349,7 @@ export default function SessionEntry() {
     // session but dies when the tab closes, so a later session opened in a fresh
     // tab (e.g. the post-study PHQ-8) re-administers normally.
     if (draft.carryForward) {
-      const slugs = (draft.questionnaires ?? []).map(q => q.slug)
+      const slugs = saved.map(q => q.slug)
       if (slugs.length) {
         sessionStorage.setItem(
           `screener_carried_${studyId}_${participantId}`,
@@ -871,4 +901,31 @@ function nextSessionSentence(next, awaitingDate = false) {
 function isClosingStep(node) {
   const activity = node?.activity ?? node?.activities ?? {}
   return activity.category === 'daily_farewell'
+}
+
+// ── Resume after refresh ────────────────────────────────────────────────────
+// Per link token, in sessionStorage: survives a reload of the same tab, never
+// leaks into another tab or another participant's link. Stored with the node
+// count, so a protocol that changed underneath (or a corrupt entry) is ignored
+// and the session simply starts from the top as it always did.
+const progressKey = token => `session_progress_${token}`
+
+function readProgress(token, nodes) {
+  try {
+    const p = JSON.parse(sessionStorage.getItem(progressKey(token)) || 'null')
+    const n = Array.isArray(nodes) ? nodes.length : 0
+    if (!p || p.n !== n || !Number.isInteger(p.index) || p.index <= 0 || p.index >= n) return null
+    return { index: p.index, outputs: (p.outputs && typeof p.outputs === 'object') ? p.outputs : {} }
+  } catch { return null }
+}
+
+function writeProgress(token, nodes, index, outputs) {
+  try {
+    const n = Array.isArray(nodes) ? nodes.length : 0
+    sessionStorage.setItem(progressKey(token), JSON.stringify({ n, index, outputs }))
+  } catch { /* storage full or blocked: resume is a convenience, not a guard */ }
+}
+
+function clearProgress(token) {
+  try { sessionStorage.removeItem(progressKey(token)) } catch { /* ignore */ }
 }

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase as globalSupabase } from '../../lib/supabase'
 import { dbWrite } from '../../lib/dbWrite'
+import { useSubmitLock } from '../../lib/useSubmitLock'
 import StudyVideoPlayer from '../video/StudyVideoPlayer'
 import NoDefaultSlider from './NoDefaultSlider'
 import BreathPracticeBlock from './BreathPracticeBlock'
@@ -89,7 +90,13 @@ export default function InterventionPage({
   // Core navigation state
   const [screenIndex, setScreenIndex] = useState(0)
   const [nextEnabled, setNextEnabled] = useState(() => initialNextEnabled(screens[0], demoMode))
-  const [saving,      setSaving]      = useState(false)
+  const [saveError,   setSaveError]   = useState(null)
+  // Ref lock keyed by screen (CLAUDE.md rule 2): a `saving` state flag let two
+  // taps in one tick both insert. Rekeying on the next screen releases it.
+  const { submit, busy: saving } = useSubmitLock(screenIndex)
+  // Screens whose block already saved. If the day's completion stamp fails
+  // after the last block saved, the retry must not insert that block again.
+  const savedScreensRef = useRef(new Set())
 
   // ── Per-block state (keyed by _stepIndex) ──────────────────────────────────
 
@@ -269,23 +276,41 @@ export default function InterventionPage({
 
   const handleVideoComplete = useCallback(() => setNextEnabled(true), [])
 
+  // Every write here used to ignore its result: supabase-js returns errors
+  // rather than throwing, so a failed insert advanced the participant and the
+  // answer was lost. Now a failure keeps them on this screen with a retry.
   async function handleNext() {
     if (!nextEnabled || saving) return
-    if (participantId) await saveCurrentBlock()
-    if (isLast) {
-      if (dayDataId) {
-        await dbWrite(
-          supabase.from('liliana_day_data')
-            .update({ completed_at: new Date().toISOString() })
-            .eq('id', dayDataId)
-            .select('id'),
-          'liliana_day_data.completed_at', { expectRows: true },
-        )
+    setSaveError(null)
+    await submit(async () => {
+      if (participantId && !savedScreensRef.current.has(screenIndex)) {
+        await saveCurrentBlock()
+        savedScreensRef.current.add(screenIndex)
       }
-      onComplete()
-    } else {
-      setScreenIndex(nextVisibleIndex(screenIndex))
-    }
+      if (isLast) {
+        if (dayDataId) {
+          const res = await dbWrite(
+            supabase.from('liliana_day_data')
+              .update({ completed_at: new Date().toISOString() })
+              .eq('id', dayDataId)
+              .select('id'),
+            'liliana_day_data.completed_at', { expectRows: true },
+          )
+          if (!res.ok) throw res.error ?? new Error('the day could not be marked complete')
+        }
+        onComplete()
+      } else {
+        setScreenIndex(nextVisibleIndex(screenIndex))
+      }
+    }).catch(err => {
+      console.error('intervention save:', err)
+      setSaveError(err?.message ?? 'unknown error')
+    })
+  }
+
+  async function insertResponse(row) {
+    const { error } = await supabase.from('intervention_responses').insert(row)
+    if (error) throw error
   }
 
   async function saveCurrentBlock() {
@@ -305,11 +330,10 @@ export default function InterventionPage({
       block_type:     s.type,
     }
 
-    setSaving(true)
-    try {
+    {
       switch (s.type) {
         case 'prompt_response':
-          await supabase.from('intervention_responses').insert({
+          await insertResponse({
             ...base,
             response_text: responses[idx] ?? '',
           })
@@ -322,7 +346,7 @@ export default function InterventionPage({
           // midpoint is indistinguishable from a real response, and on the
           // day-7 pre/post pair two of them read as "reappraisal changed
           // nothing".
-          await supabase.from('intervention_responses').insert({
+          await insertResponse({
             ...base,
             response_text: JSON.stringify({ value: sliderValues[idx] ?? null }),
           })
@@ -330,7 +354,7 @@ export default function InterventionPage({
         }
 
         case 'audio':
-          await supabase.from('intervention_responses').insert({
+          await insertResponse({
             ...base,
             response_text: JSON.stringify({ completed: true }),
           })
@@ -338,7 +362,7 @@ export default function InterventionPage({
 
         case 'multi_response': {
           const vals = multiResponses[idx] ?? Array(s.count).fill('')
-          await supabase.from('intervention_responses').insert({
+          await insertResponse({
             ...base,
             response_text: JSON.stringify({ responses: vals }),
           })
@@ -346,7 +370,7 @@ export default function InterventionPage({
         }
 
         case 'timer':
-          await supabase.from('intervention_responses').insert({
+          await insertResponse({
             ...base,
             response_text: JSON.stringify({ completed: true, duration_seconds: s.duration_seconds }),
           })
@@ -354,7 +378,7 @@ export default function InterventionPage({
 
         case 'training_response': {
           const sel = trainingSelected[idx] ?? {}
-          await supabase.from('intervention_responses').insert({
+          await insertResponse({
             ...base,
             response_text: JSON.stringify(sel),
           })
@@ -362,14 +386,14 @@ export default function InterventionPage({
         }
 
         case 'training_response_multi':
-          await supabase.from('intervention_responses').insert({
+          await insertResponse({
             ...base,
             response_text: JSON.stringify({ selected: trainingMultiSel[idx] ?? [] }),
           })
           break
 
         case 'word_select':
-          await supabase.from('intervention_responses').insert({
+          await insertResponse({
             ...base,
             response_text: JSON.stringify({ selected: wordSelected[idx] ?? [] }),
           })
@@ -377,7 +401,7 @@ export default function InterventionPage({
 
         case 'thought_rating': {
           const ratings = thoughtRatings[idx] ?? []
-          await supabase.from('intervention_responses').insert({
+          await insertResponse({
             ...base,
             response_text: JSON.stringify({ ratings }),
           })
@@ -385,7 +409,7 @@ export default function InterventionPage({
         }
 
         case 'thought_choice':
-          await supabase.from('intervention_responses').insert({
+          await insertResponse({
             ...base,
             response_text: JSON.stringify({ selected: thoughtChoice[idx] ?? '' }),
           })
@@ -394,7 +418,7 @@ export default function InterventionPage({
         case 'trigger_map': {
           const vals = triggerValues[idx] ?? {}
           const clean = Object.fromEntries(Object.entries(vals).filter(([, v]) => v.trim()))
-          await supabase.from('intervention_responses').insert({
+          await insertResponse({
             ...base,
             response_text: JSON.stringify(clean),
           })
@@ -403,7 +427,7 @@ export default function InterventionPage({
 
         case 'body_diagram': {
           const vals = bodyValues[idx] ?? {}
-          await supabase.from('intervention_responses').insert({
+          await insertResponse({
             ...base,
             response_text: JSON.stringify(vals),
           })
@@ -412,7 +436,7 @@ export default function InterventionPage({
 
         case 'quality_explorer': {
           const qs = qualityState[idx] ?? {}
-          await supabase.from('intervention_responses').insert({
+          await insertResponse({
             ...base,
             response_text: JSON.stringify({
               quality:      qs.quality,
@@ -426,7 +450,7 @@ export default function InterventionPage({
         case 'breath_practice':
           // Reached un-finished only via demo mode, which has no participant
           // and so never saves; recorded as-is rather than assumed complete.
-          await supabase.from('intervention_responses').insert({
+          await insertResponse({
             ...base,
             response_text: JSON.stringify(breathResults[idx] ?? { completed: false }),
           })
@@ -435,8 +459,6 @@ export default function InterventionPage({
         default:
           break
       }
-    } finally {
-      setSaving(false)
     }
   }
 
@@ -679,6 +701,11 @@ export default function InterventionPage({
         </div>
 
         {/* Footer */}
+        {saveError && (
+          <p role="alert" style={S.errMsg}>
+            Your answer could not be saved ({saveError}). Please check your connection and try again.
+          </p>
+        )}
         <div style={S.footer}>
           <button
             onClick={handleNext}
@@ -1442,6 +1469,7 @@ function QualityExplorerBlock({ step, state, onChange }) {
 const FONT = '"DM Sans", system-ui, sans-serif'
 
 const S = {
+  errMsg: { fontSize: 14, color: 'var(--err-tx)', background: 'var(--err-bg)', border: '1px solid var(--err-bd)', borderRadius: 8, padding: '8px 14px', margin: '0 0 12px' },
   bg: {
     background: 'var(--bgp)',
     minHeight: '100%',

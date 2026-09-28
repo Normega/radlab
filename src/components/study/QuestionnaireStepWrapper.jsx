@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { supabase as globalSupabase } from '../../lib/supabase'
 import QuestionnaireRenderer from '../questionnaire/QuestionnaireRenderer'
 import { useSubmitLock } from '../../lib/useSubmitLock'
+import SaveRetryBanner from './SaveRetryBanner'
 
 export default function QuestionnaireStepWrapper({ slug, enrollment, scheduleId, stepIndex, totalSteps, onComplete, supabaseClient, isSimMode = false, demoMode = false }) {
   // In a participant session the caller passes the participant-authenticated
@@ -64,7 +65,12 @@ export default function QuestionnaireStepWrapper({ slug, enrollment, scheduleId,
   // Keyed by slug: one wrapper instance can be handed a second questionnaire
   // without remounting, and a lock still held from the first would swallow
   // the second's submit AND its onComplete, hanging the session outright.
-  const { submit } = useSubmitLock(slug)
+  const { submit, busy } = useSubmitLock(slug)
+  // The renderer fires onComplete once per mount and cannot be re-armed, so a
+  // failed save keeps its payload here and the retry re-sends it directly.
+  // Before this, the error only reached the console: the participant's last tap
+  // did nothing, forever, and a reload restarted the whole session.
+  const [failed, setFailed] = useState(null) // { result, message }
 
   if (carried) return <div style={S.loading}>Loading…</div>
 
@@ -89,6 +95,7 @@ export default function QuestionnaireStepWrapper({ slug, enrollment, scheduleId,
   // which the export then read as two separate baseline administrations.
   async function handleComplete(result) {
     const { responses } = result
+    setFailed(null)
     const { skipped } = await submit(async () => {
       if (!demoMode) {
         const { error } = await db.from('questionnaire_responses').insert({
@@ -115,19 +122,25 @@ export default function QuestionnaireStepWrapper({ slug, enrollment, scheduleId,
       onComplete({ responses_count: Object.keys(responses).length })
     }).catch(err => {
       console.error('questionnaire_responses insert:', err)
+      setFailed({ result, message: err?.message ?? null })
       return { skipped: false }
     })
     if (skipped) console.warn('questionnaire submit ignored — already submitted:', slug)
   }
 
   return (
-    <QuestionnaireRenderer
-      questionnaire={q.definition}
-      partNumber={stepIndex + 1}
-      totalParts={totalSteps}
-      onComplete={handleComplete}
-      isSimMode={isSimMode}
-    />
+    <>
+      <QuestionnaireRenderer
+        questionnaire={q.definition}
+        partNumber={stepIndex + 1}
+        totalParts={totalSteps}
+        onComplete={handleComplete}
+        isSimMode={isSimMode}
+      />
+      {failed && (
+        <SaveRetryBanner message={failed.message} busy={busy} onRetry={() => handleComplete(failed.result)} />
+      )}
+    </>
   )
 }
 

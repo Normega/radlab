@@ -484,7 +484,10 @@ export default function ExperienceFactory({
 
   function saveTrial({ roundType, roundNumber, trialIndex, item, chosenCat, correct, rtMs }) {
     if (!sessionIdRef.current) return
-    db.from('experience_factory_trials').insert({
+    // Through dbWrite, not a bare insert whose result was discarded: a failed
+    // trial write is now retried once when transient, and reported when not.
+    // Still not awaited: a mid-round save must never stall the belt.
+    dbWrite(db.from('experience_factory_trials').insert({
       session_id: sessionIdRef.current,
       user_id: userId,
       schedule_id: scheduleId,
@@ -500,7 +503,7 @@ export default function ExperienceFactory({
       correct,
       rt_ms: rtMs,
       belt_speed: levelCfg.travelMs,
-    }).then(() => {})
+    }), 'experience_factory_trials')
   }
 
   async function saveSessionComplete(finalSummary) {

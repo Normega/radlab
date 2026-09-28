@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { supabase as globalSupabase } from '../../lib/supabase'
+import { useSubmitLock } from '../../lib/useSubmitLock'
 
 /**
  * Participant-facing VAS scale renderer.
@@ -35,7 +36,11 @@ export default function VasRenderer({
 }) {
   const [selected, setSelected] = useState(null)
   const [hovered,  setHovered]  = useState(null)
-  const [saving,   setSaving]   = useState(false)
+  const [saveError, setSaveError] = useState(null)
+  // A ref lock, not a `saving` state flag (CLAUDE.md rule 2): the flag only
+  // lands on re-render, so two taps in one tick both inserted. Keyed so an
+  // instance reused for the next scale in a package is not silenced.
+  const { submit, busy: saving } = useSubmitLock(`${scale?.id}|${stepIndex}|${packageSlug}`)
 
   if (!scale) return null
 
@@ -47,20 +52,26 @@ export default function VasRenderer({
       onComplete?.(selected)
       return
     }
-    setSaving(true)
+    setSaveError(null)
     const db = supabaseClient ?? globalSupabase
-    const { error } = await db.from('vas_responses').insert({
-      user_id:      userId,
-      scale_id:     scale.id,
-      session_id:   sessionId ?? null,
-      schedule_id:  scheduleId ?? null,
-      step_index:   stepIndex ?? null,
-      package_slug: packageSlug ?? null,
-      value:        selected,
+    await submit(async () => {
+      const { error } = await db.from('vas_responses').insert({
+        user_id:      userId,
+        scale_id:     scale.id,
+        session_id:   sessionId ?? null,
+        schedule_id:  scheduleId ?? null,
+        step_index:   stepIndex ?? null,
+        package_slug: packageSlug ?? null,
+        value:        selected,
+      })
+      // Thrown so the lock releases and the participant can retry. This used
+      // to log and advance anyway, so a failed insert lost the rating silently.
+      if (error) throw error
+      onComplete?.(selected)
+    }).catch(err => {
+      console.error('vas_responses insert:', err)
+      setSaveError(err?.message ?? 'unknown error')
     })
-    if (error) console.error('vas_responses insert:', error)
-    setSaving(false)
-    onComplete?.(selected)
   }
 
   const eyebrow = (partNumber != null && totalParts != null)
@@ -104,6 +115,12 @@ export default function VasRenderer({
           })}
         </div>
 
+        {saveError && (
+          <p role="alert" style={S.errMsg}>
+            Your rating could not be saved ({saveError}). Please check your connection and try again.
+          </p>
+        )}
+
         <button
           style={{
             ...S.continueBtn,
@@ -122,6 +139,7 @@ export default function VasRenderer({
 }
 
 const S = {
+  errMsg: { fontSize: 14, color: 'var(--err-tx)', background: 'var(--err-bg)', border: '1px solid var(--err-bd)', borderRadius: 8, padding: '8px 14px', margin: '0 0 16px' },
   wrap: {
     display: 'flex', justifyContent: 'center',
     padding: '40px 16px', minHeight: '100vh',
@@ -131,7 +149,8 @@ const S = {
     background: '#fff',
     border: '1px solid var(--bd)',
     borderRadius: 16,
-    padding: '36px 32px',
+    // Side padding shrinks on phones so six anchors fit a 360 px screen.
+    padding: '36px clamp(16px, 5vw, 32px)',
     maxWidth: 680, width: '100%',
   },
   eyebrow: {
@@ -148,21 +167,23 @@ const S = {
   },
   grid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(6, 1fr)',
-    gap: 8,
+    // minmax(0, 1fr): plain 1fr will not shrink below the 52 px emoji, which
+    // pushed the grid past the screen edge on phones.
+    gridTemplateColumns: 'repeat(6, minmax(0, 1fr))',
+    gap: 'clamp(2px, 1.5vw, 8px)',
     marginBottom: 28,
   },
   cell: {
     display: 'flex', flexDirection: 'column',
     alignItems: 'center', gap: 6,
-    padding: '12px 4px',
+    padding: '12px 2px',
     borderRadius: 10,
     position: 'relative',
     cursor: 'pointer',
     transition: 'background 0.15s, border-color 0.15s',
   },
   emoji: {
-    width: 52, height: 52, objectFit: 'contain',
+    width: '100%', maxWidth: 52, height: 'auto', aspectRatio: '1 / 1', objectFit: 'contain',
     transition: 'transform 0.15s',
     display: 'block',
   },
