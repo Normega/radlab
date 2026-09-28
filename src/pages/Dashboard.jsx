@@ -476,7 +476,7 @@ function DelveCard({ userId }) {
   useEffect(() => {
     if (!userId) return
     supabase.from('game_sessions')
-      .select('started_at, performance(delve_duration_ms, delve_avg_dwell_ms)')
+      .select('started_at, performance(delve_duration_ms)')
       .eq('user_id', userId)
       .eq('game_name', 'delve')
       .not('ended_at', 'is', null)
@@ -489,7 +489,6 @@ function DelveCard({ userId }) {
   }, [userId])
   const hasData = rows && rows.length > 0
   const last = rows?.[rows.length - 1]
-  const dwells = (rows ?? []).map(r => r.delve_avg_dwell_ms).filter(v => v != null).map(v => v / 1000)
   const fmtMin = ms => {
     if (ms == null) return null
     const s = Math.round(ms / 1000)
@@ -507,9 +506,8 @@ function DelveCard({ userId }) {
             <StatCluster stats={[
               { label: 'sessions', value: rows.length },
               { label: 'last time', value: fmtMin(last.delve_duration_ms) },
-              { label: 'avg dwell', value: last.delve_avg_dwell_ms != null ? `${(last.delve_avg_dwell_ms / 1000).toFixed(1)}s` : null },
             ]} />
-            {dwells.length > 0 && <MiniSparkline values={dwells} color="#8a7f66" label="AVG DWELL (S)" />}
+            {/* Dwell time is recorded but not shown: a trend line of it reads as a score. */}
           </>
         )}
       </div>

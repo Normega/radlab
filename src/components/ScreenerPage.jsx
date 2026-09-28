@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { evaluateScreenerPhase2 } from '../lib/screenerUtils'
 import QuestionnaireRenderer from './questionnaire/QuestionnaireRenderer'
+import SaveRetryBanner from './study/SaveRetryBanner'
 
 // ── ScreenerPage ───────────────────────────────────────────────────────────────
 //
@@ -61,6 +62,10 @@ export default function ScreenerPage({ study, participant, supabaseClient, onPas
   const [q2Index,       setQ2Index]       = useState(0)    // which phase-2 questionnaire is showing
   const [outcome,       setOutcome]       = useState(null)
   const [saving,        setSaving]        = useState(false)
+  // { args, message } of a result that failed to save. Shown with a retry;
+  // Continue waits for it. An unsaved result used to pass silently: a failed
+  // participant then had no attempt on record and could simply screen again.
+  const [saveFailed,    setSaveFailed]    = useState(null)
 
   // Phase-2 responses accumulate here (keyed by slug) so each questionnaire's
   // onComplete closure reads a stable ref across phase-transition renders.
@@ -173,6 +178,7 @@ export default function ScreenerPage({ study, participant, supabaseClient, onPas
   async function saveResult(phase1Passed, phase2Passed, phase2Outcome) {
     if (previewMode) return
     setSaving(true)
+    setSaveFailed(null)
     const phase1Answers = phase1Items.map((item, i) => ({
       id:     item.id ?? String(i),
       text:   item.text,
@@ -196,6 +202,7 @@ export default function ScreenerPage({ study, participant, supabaseClient, onPas
       if (error) throw error
     } catch (err) {
       console.error('[Screener] save error:', err)
+      setSaveFailed({ args: [phase1Passed, phase2Passed, phase2Outcome], message: err?.message ?? null })
     } finally {
       setSaving(false)
     }
@@ -383,9 +390,12 @@ export default function ScreenerPage({ study, participant, supabaseClient, onPas
             ))}
           </div>
         )}
+        {saveFailed && (
+          <SaveRetryBanner message={saveFailed.message} busy={saving} onRetry={() => saveResult(...saveFailed.args)} />
+        )}
         {showContinue && (
           <div style={S.footer}>
-            <button onClick={onPass} disabled={saving} style={S.btnProceed}>
+            <button onClick={onPass} disabled={saving || !!saveFailed} style={S.btnProceed}>
               Continue to Consent Form ›
             </button>
           </div>

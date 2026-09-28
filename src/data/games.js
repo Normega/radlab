@@ -134,7 +134,7 @@ export const GAMES = [
     title: 'Pond Watch',
     to: '/games/pond-watch',
     badge: 'Go / No-Go · Reaction time',
-    desc: "A duck appears — hit spacebar. A heron glides past — don't you dare. Your brain will betray you.",
+    desc: 'A duck means press; anything else, let it pass. Fast, narrow watching — a skill of its own.',
     category: 'attention',
     bucket: 'medium',
     duration: '~4 min',
@@ -207,7 +207,7 @@ export const GAMES = [
  * title to fill in. Without this the banner silently renders nothing.
  */
 export const DEV_GAMES = [
-  { slug: 'owl_barn',           title: 'Owl Barn',           to: '/games/owl-barn',           inDevelopment: true },
+  { slug: 'owl_barn',           title: 'Owl Barn',           to: '/safari/owl-barn',          inDevelopment: true },
   { slug: 'breath_guardian',    title: 'Breath Guardian',    to: '/games/breath-guardian',    inDevelopment: true },
   // In-development games start here, not in GAMES, even on dev — a dev→main
   // promotion must never accidentally publish one (Norm, 2026-09-15).

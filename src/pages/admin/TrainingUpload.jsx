@@ -11,7 +11,7 @@ const VALID_STEP_TYPES = [
   'video', 'audio', 'text', 'prompt_response', 'closing', 'slider',
   'multi_response', 'timer', 'training_response', 'training_response_multi',
   'word_select', 'thought_rating', 'thought_choice', 'trigger_map',
-  'body_diagram', 'quality_explorer',
+  'body_diagram', 'quality_explorer', 'breath_practice',
 ]
 const VALID_OWL_KEYS   = [
   'owl_waving','owl_excited','owl_nonreactivity','owl_reappraisal',
@@ -125,6 +125,7 @@ const STEP_TYPE_COLORS = {
   trigger_map:            { bg: '#fef2f2', color: '#991b1b' },
   body_diagram:           { bg: '#f7f7ff', color: '#3730a3' },
   quality_explorer:       { bg: '#f0fdf4', color: '#065f46' },
+  breath_practice:        { bg: '#eef6fc', color: '#1e5f8c' },
 }
 
 // ── TrainingUpload ────────────────────────────────────────────────────────────

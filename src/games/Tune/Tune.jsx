@@ -62,11 +62,12 @@ function IntroScreen({ onStart }) {
   return (
     <GameIntro
       title="Tune."
-      lead={<>A world of sound waits in a soft haze.<br />This is a practice in letting attention settle — listening, not searching.</>}
+      lead={<>A world of sound waits in a soft haze.<br />A practice in letting your listening settle somewhere.</>}
       steps={[
-        { title: 'Rest, don’t hunt', body: 'Let your cursor settle near a glowing point — or rest a finger on the screen. Held still, that sound clarifies and steps forward.' },
-        { title: 'The rest softens back', body: 'As one voice comes clear, the others recede around it. Drift on and the whole mix returns.' },
-        { title: 'Nothing to complete', body: 'Wander between scenes if you like. Stay as long as you please — a quiet finish button waits in the corner. Headphones help.' },
+        // Copy matches the senseforaging.com Tune.
+        { title: 'Let it rest somewhere', body: 'Settle your cursor near a glowing point — or rest a finger on the screen. Held still, that sound clarifies and steps forward. Any voice counts.' },
+        { title: 'Things to notice', body: 'What happens to the other voices as one comes forward? Does it arrive gradually, or all at once? Is there something in the mix you hadn’t heard until it stepped up?' },
+        { title: 'Where your ear goes to rest', body: 'When your listening wanders, notice what pulls it — that’s worth as much as the dwelling. Wander between scenes if you like; a quiet finish button waits in the corner. Headphones help.' },
       ]}
       onStart={onStart}
     />
@@ -74,10 +75,11 @@ function IntroScreen({ onStart }) {
 }
 
 function SummaryScreen({ summary, onPlay }) {
-  const { durationMs, avgDwellMs, episodeCount, scenesVisited } = summary
+  // Dwell time is still recorded (performance.tune_avg_dwell_ms) but never shown.
+  const { durationMs, avgDwellMs, scenesVisited } = summary
   const dwellLine = avgDwellMs != null
-    ? `Your attention settled ${episodeCount === 1 ? 'once' : `${episodeCount} times`}, resting for ${(avgDwellMs / 1000).toFixed(1)}s at a time on average.`
-    : 'Movement kept the haze in place this time — nothing wrong with that.'
+    ? 'Your listening came to rest here and there, and voices stepped forward.'
+    : 'Your listening kept moving this time — that’s its own way of hearing.'
   const sceneLine = scenesVisited > 1 ? ` You wandered through ${scenesVisited} scenes.` : ''
 
   return (

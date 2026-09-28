@@ -197,10 +197,19 @@ export function createSidelong(cv) {
     'the Spilled Cup', 'the Long Walk', 'the Heron', 'the Bent Nail',
     'the Ferryman', 'the Two Sisters', 'the Sleeping Dog', 'the Well',
     'the Kite', 'the Fox', 'the Lamp', 'the Old Road',
+    'the Open Gate', 'the Mended Net', 'the Little Boat', 'the Bell',
+    'the Weaver', 'the Salt Road', 'the Sparrow', 'the Sleeping Hare',
   ];
 
   function seedConstellations(){
     consts = [];
+    // Names are dealt from a fresh shuffle each session, so the first figure
+    // is not always the same one.
+    const names = NAMES.slice();
+    for (let i = names.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i + 1));
+      [names[i], names[j]] = [names[j], names[i]];
+    }
     const used = new Set();
     for (const [fx, fy] of SEEDS){
       const cx = SKY_W * fx, cy = SKY_H * fy;
@@ -239,7 +248,7 @@ export function createSidelong(cv) {
       }
       consts.push({
         idx: chain, linked: 0, link: false,
-        name: NAMES[consts.length % NAMES.length], named: false,
+        name: names[consts.length % names.length], named: false,
       });
     }
   }

@@ -25,11 +25,11 @@ export default function GameIntroPreview() {
         <Case label="Default — Delve">
           <GameIntro
             title="Delve."
-            lead={<>An image waits behind haze.<br />This is a practice in letting attention settle — not in finding anything.</>}
+            lead={<>An image waits behind haze.<br />A practice in letting attention settle somewhere.</>}
             steps={[
-              { title: 'Rest, don’t search', body: 'Let your cursor settle somewhere — or rest a finger on the screen. Held still, that spot slowly comes clear.' },
-              { title: 'Movement reveals nothing', body: 'Quick scanning keeps the haze in place. There is no correct place to look.' },
-              { title: 'Nothing to complete', body: 'What you’ve seen drifts back to haze after a while. Stay as long as you like — a quiet finish button waits in the corner.' },
+              { title: 'Let it rest somewhere', body: 'Settle your cursor on one spot — or rest a finger on the screen. Held still, that spot slowly comes clear. Anywhere counts.' },
+              { title: 'Things to notice', body: 'What arrives first — an edge, a colour, a shape? Does the clearing spread outward from your finger, or surface all at once? When you move on, what happens to what you left?' },
+              { title: 'Where your eye goes to rest', body: 'When your attention wanders, notice where it lands — that’s worth as much as the dwelling. Stay as long as you like; a quiet finish button waits in the corner.' },
             ]}
             onStart={() => {}}
           />
@@ -44,7 +44,7 @@ export default function GameIntroPreview() {
               { title: 'It cannot be caught', body: 'Go straight at the light and it scatters into mist and gathers again further off.' },
               { title: 'Walk beside it instead', body: 'Stay near, at its pace, and something settles between you.' },
             ]}
-            note="Sound on, if you can — most of what tells you how you are doing is in it."
+            note="Sound on, if you can — most of what happens is in it."
             onStart={() => {}}
           />
         </Case>

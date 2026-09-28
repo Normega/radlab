@@ -35,6 +35,8 @@ export function createAlongside(cv) {
     bondGrow: 0.028,  // per second in the companion band at matched pace
     playerSpd: 150,   // px/s
     wispSpd: 78,      // creature baseline drift px/s
+    comfortR: 165,    // it keeps this much room around you on its own
+    approachMist: 25, // px/s you must be closing on it for "too close" to dissolve it
   };
 
   const WORLD={w:2600,h:1800};
@@ -383,6 +385,27 @@ export function createAlongside(cv) {
   function pickWanderTarget(){
     return [WORLD.w*(0.15+Math.random()*0.7), WORLD.h*(0.15+Math.random()*0.7)];
   }
+  // Its own sense of your space. Inside comfortR it will not close in on you:
+  // whatever part of its motion points at you is turned sideways, so its path
+  // curves past instead of running into you. It does NOT push away: walking
+  // beside it must leave its pace alone, because matching that pace is what
+  // builds the bond (a flee here, 2026-09-26, made it outrun every companion
+  // and the tour never began). Only at the very edge does it ease outward.
+  function giveWay(w,d,dt){
+    if(d>=P.comfortR||d<=0||w.state==='settle'||meadowBloom>0) return;
+    const ux=(w.x-player.x)/d, uy=(w.y-player.y)/d;      // you -> it
+    const s=clamp((P.comfortR-d)/(P.comfortR-P.nearR),0,1);
+    const inward=-(w.vx*ux+w.vy*uy);                      // its speed toward you
+    if(inward>0){
+      // turn on whichever side it is already heading
+      const side=(w.vx*-uy+w.vy*ux)>=0?1:-1;
+      const k=Math.min(1,s*dt*8);
+      w.vx+=(ux-uy*side)*inward*k;
+      w.vy+=(uy+ux*side)*inward*k;
+    }
+    const edge=P.nearR*1.25;
+    if(d<edge){ const e=(edge-d)/(edge-P.nearR); w.vx+=ux*e*60*dt; w.vy+=uy*e*60*dt; }
+  }
   function wispUpdate(t,dt){
     const w=wisp;
     if(w.state==='gone') return;
@@ -402,7 +425,11 @@ export function createAlongside(cv) {
     // too close — it dissolves. Not a punishment; simply how it is. But it
     // reforms within sight (screen-scaled), and never while settled: a settled
     // creature that lets you walk right up is the final statement of trust.
-    if(d<P.nearR&&meadowBloom===0&&w.state!=='settle'){
+    // Only when YOU close the gap, though. It will not close in on you (see
+    // giveWay), so if it ends up near a player who is still or moving away,
+    // that was its doing, and it sidesteps instead of taking fright.
+    const approach=d>0?(player.vx*(w.x-player.x)+player.vy*(w.y-player.y))/d:0;  // px/s, + = toward it
+    if(d<P.nearR&&approach>P.approachMist&&meadowBloom===0&&w.state!=='settle'){
       w.mist=2.6; STATS.mists++;
       const a=Math.random()*Math.PI*2;
       const R=Math.min(W,H)*0.38;
@@ -429,6 +456,7 @@ export function createAlongside(cv) {
       const a=t*3.1;
       w.vx+= (Math.cos(a)*90-w.vx)*dt*3;
       w.vy+= (Math.sin(a*1.3)*70-w.vy)*dt*3;
+      giveWay(w,d,dt);
       w.x+=w.vx*dt; w.y+=w.vy*dt;
       return;
     }
@@ -438,6 +466,7 @@ export function createAlongside(cv) {
     if(w.look>0){
       w.look-=dt;
       w.vx*=Math.pow(0.05,dt); w.vy*=Math.pow(0.05,dt);
+      giveWay(w,d,dt);
       w.x+=w.vx*dt;w.y+=w.vy*dt;
       return;
     }
@@ -486,6 +515,7 @@ export function createAlongside(cv) {
       w.vx+=((dx/l*spd+mx)-w.vx)*dt*1.6;
       w.vy+=((dy/l*spd+my)-w.vy)*dt*1.6;
     }
+    giveWay(w,d,dt);
     w.x+=w.vx*dt; w.y+=w.vy*dt;
     w.spd=Math.hypot(w.vx,w.vy);
   }

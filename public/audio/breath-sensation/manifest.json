@@ -1,0 +1,47 @@
+{
+  "engine": "kokoro-v1.0 (kokoro-onnx)",
+  "voice": "af_heart",
+  "speed": 0.88,
+  "clips": {
+    "settle": {
+      "text": "Settle in. Let your body be supported by whatever is beneath you.",
+      "seconds": 3.99
+    },
+    "paced": {
+      "text": "Take three long, slow, deep breaths — in through your nose, out through your nose or mouth. Follow the figure.",
+      "seconds": 6.53
+    },
+    "cue_in": {
+      "text": "Breathe in",
+      "seconds": 1.09
+    },
+    "cue_out": {
+      "text": "and out",
+      "seconds": 0.85
+    },
+    "anchor": {
+      "text": "Find somewhere you can feel your breath right now — a place that feels safe and comfortable. Tap it.",
+      "seconds": 5.97
+    },
+    "natural_1": {
+      "text": "Let your breath find its own natural rhythm. If it helps, touch and hold while you breathe in, and let go as you breathe out.",
+      "seconds": 7.49
+    },
+    "natural_2": {
+      "text": "Notice how the in-breath differs from the out-breath — perhaps cool as it enters, warm as it leaves.",
+      "seconds": 6.29
+    },
+    "natural_3": {
+      "text": "If a sound or a thought pulls you away, simply notice it, and come back to the breath. Nothing to change.",
+      "seconds": 6.66
+    },
+    "expand": {
+      "text": "Now let your attention widen — to your whole body, and then to the room around you.",
+      "seconds": 4.82
+    },
+    "done": {
+      "text": "When you’re ready, come back fully alert and awake.",
+      "seconds": 2.75
+    }
+  }
+}

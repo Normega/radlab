@@ -32,8 +32,9 @@
 </head>
 <body>
 <canvas id="c"></canvas>
-<div id="intro">Evening. The glass has fogged over.</div>
+<div id="intro">Evening. The glass has fogged over.<br>Rub it, slowly.</div>
 <div id="hint">t&nbsp;·&nbsp;tuning</div>
+<script>/* tuning hint shows only with ?dev; t still opens the panel */ if(!/[?&]dev/.test(location.search)) document.getElementById('hint').style.display='none';</script>
 <div id="tune">
   <label>refog rate <span id="v_refog"></span></label><input type="range" id="s_refog" min="0" max="0.02" step="0.0005">
   <label>gentle speed max (px/s) <span id="v_gentle"></span></label><input type="range" id="s_gentle" min="100" max="900" step="10">
@@ -752,7 +753,7 @@ seedStars();
 window.addEventListener('resize',resize);
 const intro=document.getElementById('intro');
 setTimeout(()=>{intro.style.opacity=1;},600);
-setTimeout(()=>{intro.style.opacity=0;},6500);
+setTimeout(()=>{intro.style.opacity=0;},9000);
 requestAnimationFrame(frame);
 </script>
 </body>

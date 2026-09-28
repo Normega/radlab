@@ -54,8 +54,8 @@ const TARGET_BREATHS = 8
 const AUTO_FINISH_MS = 4500
 const HINT_MS = 3500
 const HINT_COPY = {
-  in:  'Remember, hold down the button for the whole inhalation.',
-  out: 'Remember, hold down the button for the whole exhalation.',
+  in:  'Hold for the whole in-breath; let go as it turns.',
+  out: 'Hold for the whole out-breath; let go as it turns.',
 }
 // First-breath guidance, shown only until each act has happened for real
 // (a sub-MIN_HOLD_MS tap does not advance it), and hidden while the player is

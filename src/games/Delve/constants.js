@@ -14,5 +14,15 @@ export const HAZE_FILTER = 'blur(46px) saturate(65%) brightness(0.6)'
 export const HAZE_BG     = '#1b1726'
 export const PARCHMENT   = '#f0e6d8'
 
-export const PROMPT_IN_MS  = 500   // "let your attention rest here" fade-in
-export const PROMPT_OUT_MS = 5200  // and fade-out
+// In-world guidance (2026-09-26). Players did not know what to do: moving the
+// pointer normally reveals nothing, and nothing said to move on once something
+// cleared. So the game teaches itself: a ring at the pointer opens while it is
+// still, and one-time lines respond to what the player actually does.
+export const RING_DIAMETER   = 150    // px at full stillness, about the visibly cleared patch
+export const RING_OPEN_S     = 1.4    // stillness needed for the ring to open fully
+export const RING_CLOSE_S    = 0.3    // and how fast it closes on movement
+export const CLEAR_AT        = 0.55   // reveal value under the pointer that counts as "cleared"
+export const LINE_HOLD_MS    = 5500   // a line stays up this long...
+export const LINE_GAP_MS     = 2800   // ...and the next waits this long after it fades
+export const RESTLESS_S      = 15     // moving without a clearing this long -> one gentle nudge
+export const QUESTION_AT_S   = [60, 120] // noticing questions, by time spent on the stage

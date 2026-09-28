@@ -34,6 +34,7 @@
 <canvas id="c"></canvas>
 <div id="intro"></div>
 <div id="hint">t&nbsp;·&nbsp;tuning</div>
+<script>/* tuning hint shows only with ?dev; t still opens the panel */ if(!/[?&]dev/.test(location.search)) document.getElementById('hint').style.display='none';</script>
 <div id="tune">
   <label>fovea radius (px) <span id="v_fov"></span></label><input type="range" id="s_fov" min="60" max="320" step="10">
   <label>company band outer (px) <span id="v_band"></span></label><input type="range" id="s_band" min="300" max="1000" step="20">
