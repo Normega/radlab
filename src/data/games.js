@@ -207,7 +207,7 @@ export const GAMES = [
  * title to fill in. Without this the banner silently renders nothing.
  */
 export const DEV_GAMES = [
-  { slug: 'owl_barn',           title: 'Owl Barn',           to: '/games/owl-barn',           inDevelopment: true },
+  { slug: 'owl_barn',           title: 'Owl Barn',           to: '/safari/owl-barn',          inDevelopment: true },
   { slug: 'breath_guardian',    title: 'Breath Guardian',    to: '/games/breath-guardian',    inDevelopment: true },
   // In-development games start here, not in GAMES, even on dev — a dev→main
   // promotion must never accidentally publish one (Norm, 2026-09-15).

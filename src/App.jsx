@@ -51,7 +51,9 @@ const RippleName       = lazy(() => import('./ripple/RippleName'))
 const CheckinFlow      = lazy(() => import('./ripple/CheckinFlow'))
 
 const PondWatch     = lazy(() => import('./games/PondWatch'))
-const OwlBarn       = lazy(() => import('./games/OwlBarn'))
+// Night Safari — its own partition: separate chunks, own ErrorBoundary (see the routes below).
+const SafariHub     = lazy(() => import('./games/Safari/SafariHub'))
+const SafariOwlBarn = lazy(() => import('./games/Safari/owlbarn/OwlBarn'))
 const EbbAndFlow    = lazy(() => import('./games/EbbAndFlow/EbbAndFlow'))
 const FirstContact  = lazy(() => import('./games/FirstContact/FirstContact'))
 const StillWater    = lazy(() => import('./games/StillWater/StillWater'))
@@ -86,6 +88,7 @@ const BodyDiagramPreview = lazy(() => import('./pages/dev/BodyDiagramPreview'))
 const BreathSensationPreview = lazy(() => import('./pages/dev/BreathSensationPreview'))
 const AlongsidePreview  = lazy(() => import('./pages/dev/AlongsidePreview'))
 const SidelongPreview   = lazy(() => import('./pages/dev/SidelongPreview'))
+const OwlBarnPreview    = lazy(() => import('./pages/dev/OwlBarnPreview'))
 const Keynote   = lazy(() => import('./pages/keynote/Keynote'))
 const ToniJuly2026 = lazy(() => import('./pages/toni-july-2026/ToniJuly2026'))
 const AdobeAug2026 = lazy(() => import('./pages/adobe-aug-2026/AdobeAug2026'))
@@ -525,12 +528,21 @@ export default function App() {
             </ProtectedRoute>
           } />
 
-          <Route path="/games/owl-barn" element={
-            <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome} needsRippleName={needsRippleName}>
-              <Nav session={session} />
-              <OwlBarn userId={session?.user?.id} studyId={null} />
-            </ProtectedRoute>
-          } />
+          {/* Night Safari (docs/markdowns/safari_build_plan.md). The old Owl Barn URL
+              redirects: the admin games page and the prototypes index still link it. */}
+          <Route path="/games/owl-barn" element={<Navigate to="/safari/owl-barn" replace />} />
+          <Route element={<ErrorBoundary label="Night Safari"><Outlet /></ErrorBoundary>}>
+            <Route path="/safari" element={
+              <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome} needsRippleName={needsRippleName}>
+                <SafariHub />
+              </ProtectedRoute>
+            } />
+            <Route path="/safari/owl-barn" element={
+              <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome} needsRippleName={needsRippleName}>
+                <SafariOwlBarn session={session} />
+              </ProtectedRoute>
+            } />
+          </Route>
 
           <Route path="/games/still-water" element={
             <ProtectedRoute session={session} hasAvatar={hasAvatar} needsWelcome={needsWelcome} needsRippleName={needsRippleName}>
@@ -676,6 +688,7 @@ export default function App() {
           <Route path="/dev/breath-sensation-preview" element={<BreathSensationPreview />} />
           <Route path="/dev/alongside-preview" element={<AlongsidePreview />} />
           <Route path="/dev/sidelong-preview" element={<SidelongPreview />} />
+          <Route path="/dev/owl-barn-preview" element={<OwlBarnPreview />} />
           {/* Breath-signal instrumentation for biofeedback game dev; ?sim=1 for beltless */}
           <Route path="/dev/breath-lab" element={<BreathLab />} />
           {/* Kite (né Free Breathing) graduated to the catalog (2026-09-04) — old dev URL forwards */}

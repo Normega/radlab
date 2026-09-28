@@ -1,0 +1,365 @@
+{
+ "version": 1,
+ "c1": {
+  "width": 6752,
+  "height": 1536,
+  "props": [
+   {
+    "spot": 1,
+    "id": "P01_hay_bunch",
+    "kind": "prop",
+    "file": "c1_P01_hay_bunch.webp",
+    "box": [
+     0,
+     1138,
+     1157,
+     1361
+    ]
+   },
+   {
+    "spot": 2,
+    "id": "P02_boot",
+    "kind": "prop",
+    "file": "c1_P02_boot.webp",
+    "box": [
+     337,
+     1080,
+     719,
+     1380
+    ]
+   },
+   {
+    "spot": 3,
+    "id": "P03_bucket",
+    "kind": "prop",
+    "file": "c1_P03_bucket.webp",
+    "box": [
+     1516,
+     1064,
+     2075,
+     1358
+    ]
+   },
+   {
+    "spot": 4,
+    "id": "P04_rope",
+    "kind": "prop",
+    "file": "c1_P04_rope.webp",
+    "box": [
+     2200,
+     1275,
+     2520,
+     1357
+    ]
+   },
+   {
+    "spot": 5,
+    "id": "P05_hay_bale",
+    "kind": "prop",
+    "file": "c1_P05_hay_bale.webp",
+    "box": [
+     2495,
+     884,
+     3426,
+     1359
+    ]
+   },
+   {
+    "spot": 6,
+    "id": "P06_pot",
+    "kind": "prop",
+    "file": "c1_P06_pot.webp",
+    "box": [
+     3406,
+     1057,
+     3843,
+     1360
+    ]
+   },
+   {
+    "spot": 7,
+    "id": "P07_lantern",
+    "kind": "prop",
+    "file": "c1_P07_lantern.webp",
+    "box": [
+     4122,
+     955,
+     4423,
+     1354
+    ]
+   },
+   {
+    "spot": 8,
+    "id": "P08_crate",
+    "kind": "prop",
+    "file": "c1_P08_crate.webp",
+    "box": [
+     4382,
+     1013,
+     5378,
+     1363
+    ]
+   },
+   {
+    "spot": 9,
+    "id": "P09_burlap",
+    "kind": "prop",
+    "file": "c1_P09_burlap.webp",
+    "box": [
+     5086,
+     1134,
+     6018,
+     1354
+    ]
+   },
+   {
+    "spot": 10,
+    "id": "P10_door",
+    "kind": "architecture",
+    "anchor": [
+     4793,
+     1306
+    ]
+   }
+  ]
+ },
+ "c2": {
+  "width": 7808,
+  "height": 1536,
+  "props": [
+   {
+    "spot": 11,
+    "id": "P11_barrel",
+    "kind": "prop",
+    "file": "c2_P11_barrel.webp",
+    "box": [
+     0,
+     570,
+     1300,
+     1363
+    ]
+   },
+   {
+    "spot": 12,
+    "id": "P12_stool",
+    "kind": "prop",
+    "file": "c2_P12_stool.webp",
+    "box": [
+     656,
+     1190,
+     1355,
+     1339
+    ]
+   },
+   {
+    "spot": 13,
+    "id": "P13_basket",
+    "kind": "prop",
+    "file": "c2_P13_basket.webp",
+    "box": [
+     1578,
+     1246,
+     2207,
+     1356
+    ]
+   },
+   {
+    "spot": 14,
+    "id": "P14_broom",
+    "kind": "prop",
+    "file": "c2_P14_broom.webp",
+    "box": [
+     2316,
+     1276,
+     3394,
+     1363
+    ]
+   },
+   {
+    "spot": 15,
+    "id": "P15_toolchest",
+    "kind": "prop",
+    "file": "c2_P15_toolchest.webp",
+    "box": [
+     2961,
+     879,
+     3616,
+     1363
+    ]
+   },
+   {
+    "spot": 16,
+    "id": "P16_ladder",
+    "kind": "prop",
+    "file": "c2_P16_ladder.webp",
+    "box": [
+     3623,
+     149,
+     4457,
+     1371
+    ]
+   },
+   {
+    "spot": 17,
+    "id": "P17_handtruck",
+    "kind": "prop",
+    "file": "c2_P17_handtruck.webp",
+    "box": [
+     4265,
+     421,
+     4771,
+     1341
+    ]
+   },
+   {
+    "spot": 18,
+    "id": "P18_trough",
+    "kind": "prop",
+    "file": "c2_P18_trough.webp",
+    "box": [
+     4931,
+     977,
+     6038,
+     1361
+    ]
+   },
+   {
+    "spot": 19,
+    "id": "P19_hay_bale",
+    "kind": "prop",
+    "file": "c2_P19_hay_bale.webp",
+    "box": [
+     5376,
+     883,
+     7399,
+     1358
+    ]
+   },
+   {
+    "spot": 20,
+    "id": "P20_exit",
+    "kind": "architecture",
+    "anchor": [
+     5510,
+     1305
+    ]
+   }
+  ]
+ },
+ "owl": {
+  "height": 520,
+  "pivot": [
+   0,
+   -362.9
+  ],
+  "body": {
+   "file": "owl_body.webp",
+   "x": -179.3,
+   "y": -453.5,
+   "w": 360,
+   "h": 440
+  },
+  "heads": {
+   "neutral": {
+    "file": "owl_head_neutral.webp",
+    "x": -116.7,
+    "y": -528.1,
+    "w": 256,
+    "h": 175
+   },
+   "blink": {
+    "file": "owl_head_blink.webp",
+    "x": -115.7,
+    "y": -527.8,
+    "w": 250,
+    "h": 174
+   },
+   "hoot": {
+    "file": "owl_head_hoot.webp",
+    "x": -114.3,
+    "y": -526.0,
+    "w": 253,
+    "h": 173
+   },
+   "glare": {
+    "file": "owl_head_glare.webp",
+    "x": -112.1,
+    "y": -528.1,
+    "w": 243,
+    "h": 175
+   }
+  },
+  "eyes": [
+   {
+    "x": -44.6,
+    "y": -433.7,
+    "r": 23.3
+   },
+   {
+    "x": 71.9,
+    "y": -425.5,
+    "r": 25.4
+   }
+  ],
+  "swoop": {
+   "file": "owl_swoop.webp",
+   "w": 835,
+   "h": 546,
+   "grip": [
+    668,
+    519
+   ]
+  }
+ },
+ "mouse": {
+  "crouch": {
+   "file": "mouse_crouch.webp",
+   "w": 320,
+   "h": 170,
+   "x": -320,
+   "y": -170
+  },
+  "peek": {
+   "file": "mouse_peek.webp",
+   "w": 302,
+   "h": 283,
+   "x": -302,
+   "y": -283
+  },
+  "run_a": {
+   "file": "mouse_run_a.webp",
+   "w": 333,
+   "h": 115,
+   "x": -333,
+   "y": -115
+  },
+  "run_b": {
+   "file": "mouse_run_b.webp",
+   "w": 327,
+   "h": 139,
+   "x": -327,
+   "y": -139
+  },
+  "freeze": {
+   "file": "mouse_freeze.webp",
+   "w": 329,
+   "h": 108,
+   "x": -329,
+   "y": -108
+  },
+  "dizzy": {
+   "file": "mouse_dizzy.webp",
+   "w": 302,
+   "h": 219,
+   "x": -302,
+   "y": -219
+  },
+  "cheer": {
+   "file": "mouse_cheer.webp",
+   "w": 315,
+   "h": 287,
+   "x": -315,
+   "y": -287
+  }
+ }
+}
