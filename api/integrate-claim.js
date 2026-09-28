@@ -28,37 +28,43 @@ import Anthropic from '@anthropic-ai/sdk'
 
 export const config = { maxDuration: 120 }
 
-const MODEL = 'claude-sonnet-5'
+// Sonnet 5.5 since 2026-09-28. Three things changed with it, all below: it
+// rejects forced tool use (tool_choice 'tool'/'any' is a 400), so the answer
+// now comes back as a structured output instead of a forced tool call; it
+// thinks by default and the thinking counts against max_tokens, so effort is
+// explicit and the ceiling is higher; and a refusal arrives as a 200 whose
+// text is not the schema, so it is checked before parsing.
+const MODEL = 'claude-sonnet-5-5'
 const MAX_SOURCE_CHARS = 55_000
 
-// Structured output as a tool call rather than "return JSON in your reply".
-// Parsing free text broke exactly as you would expect: a long draft ran past
+// Schema-constrained output rather than "return JSON in your reply". Parsing
+// free text broke exactly as you would expect: a long draft ran past
 // max_tokens, the JSON ended mid-string, and JSON.parse surfaced "Unexpected
-// end of JSON input" to the reviewer. A tool call is schema-validated by the
-// API, so fences, prose preambles and raw newlines inside strings stop being
-// failure modes; only truncation remains, and that is now detected explicitly.
-const TOOL = {
-  name: 'file_section',
-  description: 'Return the drafted section and your judgement of the student summary.',
-  input_schema: {
-    type: 'object',
-    properties: {
-      draft: {
-        type: 'string',
-        description: 'Markdown for the section body. Empty string if the paper does not address the gap.',
-      },
-      citation: { type: 'string', description: 'The formatted citation used.' },
-      student_reading: {
-        type: 'string', enum: ['agrees', 'minor', 'diverges', 'unclear'],
-        description: "How faithful the student's summary is to the paper: 'agrees' faithful, 'minor' faithful in substance with an imprecision worth noting, 'diverges' would mislead a reader, 'unclear' the paper does not settle it.",
-      },
-      note: {
-        type: 'string',
-        description: 'One or two sentences for the TA: what was added, and where the summary departs from the paper if it does.',
-      },
+// end of JSON input" to the reviewer. Structured outputs are decoded against
+// the schema by the API (as the forced tool call was before), so fences, prose
+// preambles and raw newlines inside strings are not failure modes; only
+// truncation and refusal remain, and both are detected explicitly.
+// Structured outputs require additionalProperties:false on every object; every
+// field is required, so "not given" is an empty string, never an absence.
+const SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  properties: {
+    draft: {
+      type: 'string',
+      description: 'Markdown for the section body. Empty string if the paper does not address the gap.',
     },
-    required: ['draft', 'student_reading', 'note'],
+    citation: { type: 'string', description: 'The formatted citation used, or an empty string.' },
+    student_reading: {
+      type: 'string', enum: ['agrees', 'minor', 'diverges', 'unclear'],
+      description: "How faithful the student's summary is to the paper: 'agrees' faithful, 'minor' faithful in substance with an imprecision worth noting, 'diverges' would mislead a reader, 'unclear' the paper does not settle it.",
+    },
+    note: {
+      type: 'string',
+      description: 'One or two sentences for the TA: what was added, and where the summary departs from the paper if it does.',
+    },
   },
+  required: ['draft', 'citation', 'student_reading', 'note'],
 }
 
 const SYSTEM = `You write for the Field Guide, an undergraduate abnormal-psychology reference.
@@ -261,10 +267,15 @@ export default async function handler(req, res) {
     const anthropic = new Anthropic()
     const msg = await anthropic.messages.create({
       model: MODEL,
-      max_tokens: 4000,
+      // Thinking shares this ceiling on Sonnet 5.5. The section itself needs
+      // well under 4000 (two to four paragraphs plus a note); 12000 leaves room
+      // for the reasoning without letting a runaway response outlast the 120 s
+      // function.
+      max_tokens: 12000,
+      // Judging a student's reading of a paper is the half of this job that
+      // benefits from thinking; medium keeps it inside the function budget.
+      output_config: { effort: 'medium', format: { type: 'json_schema', schema: SCHEMA } },
       system: SYSTEM,
-      tools: [TOOL],
-      tool_choice: { type: 'tool', name: TOOL.name },
       messages: [{
         role: 'user',
         content: userPrompt({
@@ -279,10 +290,16 @@ export default async function handler(req, res) {
       }],
     })
 
+    if (msg.stop_reason === 'refusal') {
+      throw new Error(`The model declined this source (${msg.stop_details?.category ?? 'no category given'}). Review it by hand.`)
+    }
     if (msg.stop_reason === 'max_tokens') {
       throw new Error('The draft ran past the length limit before it finished. Try again, or shorten the gap.')
     }
-    const parsed = msg.content.find(c => c.type === 'tool_use')?.input
+    // The JSON arrives in the text block; thinking blocks come first and are skipped.
+    const text = msg.content.filter(c => c.type === 'text').map(c => c.text).join('')
+    let parsed = null
+    try { parsed = text ? JSON.parse(text) : null } catch { parsed = null }
     if (!parsed) throw new Error('The model returned no draft.')
 
     if (!parsed.draft?.trim()) {
@@ -311,7 +328,7 @@ export default async function handler(req, res) {
 
     const version = await fileProposal({
       service, gap, page, personId,
-      draft: parsed.draft, citation: parsed.citation ?? claim.source_citation,
+      draft: parsed.draft, citation: parsed.citation || claim.source_citation,
     })
 
     await service.rpc('record_claim_integration', {
