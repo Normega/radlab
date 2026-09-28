@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>Toggler</title>
+<title>Passage</title>
 <style>
   html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#0e0b1a;
     -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;
@@ -90,11 +90,11 @@
 <button id="again">again</button>
 <div id="rotate">
   <div class="ph">▯</div>
-  <div>Toggler plays sideways.<br>Turn your phone, if you can.</div>
+  <div>Passage plays sideways.<br>Turn your phone, if you can.</div>
   <button id="upright">play upright anyway</button>
 </div>
 <div id="tune">
-  <b>Toggler · tuning</b>
+  <b>Passage · tuning</b>
   <label>match tolerance, L1 <span id="v_tol"></span></label><input type="range" id="s_tol" min="0.05" max="0.45" step="0.01">
   <label>shortest breath that counts (s) <span id="v_minB"></span></label><input type="range" id="s_minB" min="2" max="14" step="0.5">
   <label>matches to absorb <span id="v_need"></span></label><input type="range" id="s_need" min="1" max="8" step="1">
@@ -119,8 +119,9 @@
 <script>
 'use strict';
 /* ============================================================
-   TOGGLER: a sense-foraging platformer about switching modes.
-   Mechanics prototype (grey-box). Design: docs/markdowns/toggler_design.md
+   PASSAGE: a sense-foraging platformer about switching modes.
+   (Working name was Toggler, until 2026-09-28.)
+   Mechanics prototype (grey-box). Design: docs/markdowns/passage_design.md
 
    A person languishing at their desk closes their eyes and dreams a
    corridor built from their bedroom. Elemental barriers block the way.
@@ -138,7 +139,7 @@
    two in step. Matching is on proportions, so the player keeps their
    own tempo.
 
-   Every sim quantity accrues from dt, so window.__toggler.step() is a
+   Every sim quantity accrues from dt, so window.__passage.step() is a
    true synchronous clock for headless playtests.
    ============================================================ */
 
@@ -1303,7 +1304,7 @@ function crossMatch(n = 4000, sd = 0.2, seed = 7){
   }
   return M;
 }
-window.__toggler = {
+window.__passage = {
   P, ELEM, crossMatch, judge,
   get G(){ return G; },
   get state(){

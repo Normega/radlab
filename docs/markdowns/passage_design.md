@@ -1,7 +1,10 @@
-# Toggler — design spec (working name)
+# Passage — design spec
+
+> Renamed from **Toggler** 2026-09-28: a passage is a corridor, a crossing through, and breath
+> passing in and out. (A separate sketchbook piece, *Toggle*, is unrelated.)
 
 > Started 2026-09-27 with Norm. Status: **grey-box mechanics prototype built** at
-> `public/prototypes/toggler.html` (live at `/prototypes/toggler.html` once on a deployed branch;
+> `public/prototypes/passage.html` (live at `/prototypes/passage.html` once on a deployed branch;
 > `?dev` or `t` for the tuning panel). Awaiting Norm's first playtest on a phone. Update this file as
 > decisions land.
 
@@ -10,7 +13,7 @@
 - **Implemented as specced**, plus the one addition the numbers forced: Kite only finalizes a breath
   when the next inhale begins, so a breath that already matches also closes once its bottom pause
   reaches `autoCloseFrac` (0.8) × the target's. The fourth breath then absorbs without a fifth inhale.
-- **Measured separation** (`__toggler.crossMatch()`, ±20% jitter per phase, tempo ×0.75–1.35):
+- **Measured separation** (`__passage.crossMatch()`, ±20% jitter per phase, tempo ×0.75–1.35):
   own-shape breaths match 82% (water) to 92% (air); off-target breaths ≤0.9% (water read as air
   is the worst). No single breath can count for two elements (pairs 0.50 apart, tolerance 0.22).
 - **Hidden route**: the updraft is *inside* the air pit, entered by jumping while floating. It could
@@ -177,13 +180,13 @@ Proposal, 2026-09-27 — not yet agreed.
 
 ## Build order
 
-1. **Mechanics prototype** — `public/prototypes/toggler.html` (sketchbook pattern, §29b): grey
+1. **Mechanics prototype** — `public/prototypes/passage.html` (sketchbook pattern, §29b): grey
    boxes, procedural element kites, tuning panel (shape ratios, tolerance, minimum breath length,
    pacer fade), `step()`-based debug API for headless numeric playtests.
 2. **Test corridor**: toggle intro room → earth → fire → air → water → a final room needing two
    elements in sequence.
 3. **Art, in parallel** once the tile grid and character height are fixed.
-4. **Promote** to `src/games/Toggler/` (lazy route, `GameIntro`, `/dev/toggler-preview`), to `dev`.
+4. **Promote** to `src/games/Passage/` (lazy route, `GameIntro`, `/dev/passage-preview`), to `dev`.
 
 ## Open questions
 
