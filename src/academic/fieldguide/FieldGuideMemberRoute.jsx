@@ -1,7 +1,10 @@
 import FieldGuideAuthRoute from './FieldGuideAuthRoute'
 
 // Module-level for stable identity — see the note in FieldGuideStaffRoute.
-const MEMBER_ROLES = ['student', 'ta', 'instructor']
+// 'observer' reads along (e.g. Facilitated Study Group staff) and is a member
+// for reading purposes exactly like a student; the database keeps them out of
+// tracking and claiming. Leaving it off this list locks them out of the Guide.
+const MEMBER_ROLES = ['student', 'ta', 'instructor', 'observer']
 
 // Guard for the wiki reader. Any active enrollment passes; what that person
 // can actually read is decided by RLS, not here — students match

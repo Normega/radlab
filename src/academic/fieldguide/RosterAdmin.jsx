@@ -141,11 +141,13 @@ export default function RosterAdmin() {
   const counts = useMemo(() => {
     const c = { all: rows?.length ?? 0 }
     for (const r of rows ?? []) c[r.status] = (c[r.status] ?? 0) + 1
+    c.observer = (rows ?? []).filter(r => r.role === 'observer').length
     return c
   }, [rows])
 
   const visible = useMemo(
-    () => (rows ?? []).filter(r => filter === 'all' || r.status === filter),
+    () => (rows ?? []).filter(r => filter === 'all'
+      || (filter === 'observer' ? r.role === 'observer' : r.status === filter)),
     [rows, filter],
   )
 
@@ -242,6 +244,20 @@ export default function RosterAdmin() {
     )
     setReload(k => k + 1)
   }, [courseId, session])
+
+  // Observers (e.g. Facilitated Study Group staff) read the Guide but are not
+  // students: they are left out of tracking and its CSV, never listed as
+  // absent from an upload, and cannot claim gaps. The switch carries to the
+  // enrollment when there is one.
+  const setRole = async (row, role) => {
+    const verb = role === 'observer'
+      ? `Make ${row.full_name} an observer? They keep reading access, drop out of tracking and grading, and can't claim gaps.`
+      : `Make ${row.full_name} a student again? They return to tracking and can claim gaps.`
+    if (!window.confirm(verb)) return
+    const { error } = await courseClient.rpc('roster_set_role', { p_id: row.id, p_role: role })
+    if (error) return setNotice(error.message)
+    setReload(k => k + 1)
+  }
 
   const setStatus = async (id, status) => {
     const { error } = await courseClient.rpc('roster_set_status', { p_id: id, p_status: status })
@@ -461,9 +477,9 @@ export default function RosterAdmin() {
 
         {/* ── Status bar + bulk actions ── */}
         <div style={S.bar}>
-          {['all', 'added', 'invited', 'enrolled', 'bounced', 'dropped'].map(s => (
+          {['all', 'added', 'invited', 'enrolled', 'bounced', 'dropped', 'observer'].map(s => (
             <button key={s} onClick={() => setFilter(s)}
-                    style={{ ...S.chip, ...(filter === s ? S.chipOn : null), color: s === 'all' ? 'var(--tx)' : STATUS_COLOUR[s] }}>
+                    style={{ ...S.chip, ...(filter === s ? S.chipOn : null), color: s === 'all' ? 'var(--tx)' : (STATUS_COLOUR[s] ?? 'var(--tx2)') }}>
               {s} {counts[s] ?? 0}
             </button>
           ))}
@@ -499,7 +515,10 @@ export default function RosterAdmin() {
             <tbody>
               {visible.map(r => (
                 <tr key={r.id}>
-                  <td style={S.td}>{r.full_name}</td>
+                  <td style={S.td}>
+                    {r.full_name}
+                    {r.role === 'observer' && <span style={S.observerTag}>observer</span>}
+                  </td>
                   <td style={{ ...S.td, fontFamily: MONO, fontSize: 12.5 }}>{r.email}</td>
                   <td style={{ ...S.td, fontFamily: MONO, fontSize: 12.5 }}>{r.student_number ?? '—'}</td>
                   <td style={{ ...S.td, color: STATUS_COLOUR[r.status], fontWeight: 600 }}>{r.status}</td>
@@ -513,6 +532,9 @@ export default function RosterAdmin() {
                     {r.status !== 'dropped'
                       ? <button style={S.tiny} disabled={busy} onClick={() => setStatus(r.id, 'dropped')}>drop</button>
                       : <button style={S.tiny} disabled={busy} onClick={() => setStatus(r.id, 'added')}>restore</button>}
+                    {r.role === 'observer'
+                      ? <button style={S.tiny} disabled={busy} onClick={() => setRole(r, 'student')}>make student</button>
+                      : <button style={S.tiny} disabled={busy} onClick={() => setRole(r, 'observer')}>make observer</button>}
                   </td>
                 </tr>
               ))}
@@ -543,6 +565,7 @@ const S = {
   table: { width: '100%', borderCollapse: 'collapse', fontSize: 14 },
   th: { textAlign: 'left', fontFamily: MONO, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx2)', padding: '8px 10px', borderBottom: '1px solid var(--bd)' },
   td: { padding: '8px 10px', borderBottom: '1px solid var(--bd)', color: 'var(--tx)' },
+  observerTag: { marginLeft: 8, fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', padding: '1px 8px', borderRadius: 10, border: '1px solid var(--bd)', color: 'var(--tx2)' },
   tiny: { fontFamily: MONO, fontSize: 12, padding: '3px 10px', marginRight: 6, borderRadius: 12, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx2)', cursor: 'pointer' },
   attemptRow: { display: 'flex', gap: 14, alignItems: 'center', padding: '6px 0', borderBottom: '1px dotted var(--bd)' },
   reconHead: { fontFamily: MONO, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx)', margin: '0 0 8px' },

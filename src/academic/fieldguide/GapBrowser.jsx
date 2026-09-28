@@ -283,6 +283,11 @@ function GapDetail({ row: r, courseClient, reload }) {
   const red = r.difficulty === 'red'
   const isMine = Boolean(r.my_status)
   const editable = r.my_status === 'claimed'
+  // Observers read every gap but claim_gap() refuses them, so the button is
+  // replaced by a line saying so rather than offered and then refused.
+  const { enrollments, courseCode } = useOutletContext()
+  const observer = (enrollments ?? []).some(e => e.role === 'observer'
+    && String(e.courses?.code ?? '').toLowerCase() === String(courseCode ?? '').toLowerCase())
 
   useEffect(() => {
     let live = true
@@ -336,12 +341,17 @@ function GapDetail({ row: r, courseClient, reload }) {
         </ul>
       )}
 
-      {!isMine && !red && r.remaining > 0 && (
+      {observer && !red && (
+        <p style={{ ...S.sub, fontSize: 14 }}>
+          You're an observer in this course: you can read every gap, and claims are for enrolled students.
+        </p>
+      )}
+      {!observer && !isMine && !red && r.remaining > 0 && (
         <button style={S.primary} disabled={busy} onClick={doClaim}>
           {busy ? 'Working…' : 'Claim this gap'}
         </button>
       )}
-      {!isMine && !red && r.remaining === 0 && (
+      {!observer && !isMine && !red && r.remaining === 0 && (
         <p style={{ ...S.sub, fontSize: 14 }}>Fully claimed — slots reopen if a claim expires.</p>
       )}
       {red && (
