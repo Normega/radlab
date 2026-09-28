@@ -41,9 +41,15 @@ import { waitUntil } from '@vercel/functions'
 // 'extracted' mode for large papers.
 export const maxDuration = 300
 
-const MODEL = 'claude-opus-5'
+// Opus 5.5 since 2026-09-28 (Norm's call when it shipped; Opus 5 became a
+// legacy model). The request below already met every Opus 5.5 requirement —
+// adaptive thinking, explicit effort, no sampling parameters, no prefill, no
+// forced tool choice (which 5.5 rejects; ingest returns JSON text, not a tool
+// call) — so the ID is the only change. Opus 5.5 is also cheaper per token
+// ($4/$20 per MTok against Opus 5's $5/$25).
+const MODEL = 'claude-opus-5-5'
 
-// Where a refusal retries. Claude Opus 5 runs elevated cybersecurity and
+// Where a refusal retries. Claude Opus 5 ran elevated cybersecurity and
 // bio safety classifiers, and a declined request comes back as a normal 200
 // with stop_reason 'refusal' rather than an error. Benign adjacent material can
 // trip them — and this course is unusually full of it: suicide and self-harm,
@@ -513,18 +519,21 @@ async function runIngest(service, jobId, { pdf_path, pdf_mode, course_id, person
         max_tokens: 32000,
         thinking: { type: 'adaptive' },
         // Effort is the real lever on runtime, and it is not a quality
-        // tradeoff at this end of the scale: Opus 5 is unusually strong at
+        // tradeoff at this end of the scale: Opus 5 was unusually strong at
         // medium. Module 07 spent 27020 output tokens to produce ~14100 tokens
         // of actual page content — roughly half the run, and half the 298
-        // seconds, was thinking. Default effort is `high`; medium buys back
-        // most of that.
+        // seconds, was thinking. Opus 5's default effort was `high`; medium
+        // bought back most of that. Opus 5.5's default IS medium, but it stays
+        // explicit so a future model's different default can't change the
+        // runtime budget silently. Those timings were measured on Opus 5 —
+        // re-baseline them on the first few 5.5 jobs (ingest_jobs keeps the
+        // token counts; created_at → completed_at gives the seconds). The row
+        // does not record the model, so jobs after 2026-09-28 are the 5.5 set.
         //
-        // Thinking stays ON deliberately. Disabling it is the obvious-looking
-        // saving and is a trap here: with thinking disabled Opus 5 can leak
-        // `<thinking>` tags into the visible response, and this pipeline
-        // JSON.parses that response. A leaked tag fails the parse, fires the
-        // retry, and doubles the runtime — the exact failure we are budgeting
-        // against.
+        // Thinking stays ON — on Opus 5.5 it cannot be switched off at all
+        // (`disabled` is a 400). The old reason still holds for the fallback:
+        // with thinking disabled Opus 5 could leak `<thinking>` tags into the
+        // visible response, and this pipeline JSON.parses that response.
         output_config: { effort: 'medium' },
         system: source_type === 'reference' ? SYSTEM_PROMPT_REFERENCE : SYSTEM_PROMPT,
         messages: [{
