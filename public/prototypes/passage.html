@@ -269,7 +269,7 @@ function freshState(){
     held: [],           // doing-mode keys held, 'A' | 'B'
     rec: null,          // receptive session
     fullness: 0,        // 0 empty … 1 full; drives the seated figure's chest
-    stamps: [], parts: [], script: [],
+    stamps: [], parts: [], streams: [], script: [], absorbFx: null, prevCarried: null, emitDebt: 0,
     fade: 0, fadeTo: 0, transition: null,
     bed: { lines: 0, acts: 0, typeT: -9, sipT: -9, sleepT: -1, enterT: 0 },
     wakeT: -1, said: new Set(), capUntil: 0,
@@ -482,15 +482,21 @@ function score(b, t){
   if (j.matched){
     L.matched++;
     t.matches++;
-    burst(G.pl.x, G.pl.y - 40, ELEM[t.el].glow, 10, 40);
     if (t.matches >= P.need) absorb(t);
+    else stream(t, 14, 0.4);
   }
 }
 function absorb(t){
+  if (G.carried && G.carried !== t.el) burst(G.pl.x, G.pl.y - 40, ELEM[G.carried].col, 26, 70);   // the old element lets go
+  G.prevCarried = G.carried;
   G.carried = t.el; G.carriedAt = G.simT;
+  G.absorbFx = { el: t.el, t0: G.simT };
+  stream(t, 64, 0.35);
+  const el = t.el;
+  G.script.push({ at: G.simT + FX_FLASH, fn: () => burst(G.pl.x, G.pl.y - 40, ELEM[el].glow, 36, 110) });
+  G.script.sort((a, b) => a.at - b.at);
   const L = elog(t.el);
   if (L.absorbedAfterS == null) L.absorbedAfterS = +L.receptiveS.toFixed(1);
-  burst(G.pl.x, G.pl.y - 36, ELEM[t.el].col, 40, 90);
   bT.classList.add('call');
   if (!G.everAbsorbed){ G.everAbsorbed = true; caption('It stays with you now. Toggle back to doing (◐) and walk on.', 8); }
 }
@@ -633,6 +639,7 @@ function startTransition(kind){
   G.transition = { kind, t: 0, dur: kind === 'wake' ? 2.2 : kind === 'sleep' ? 2.4 : 0.35 };
 }
 function goRoom(i){
+  G.streams = [];
   // a thumb still resting on walk keeps walking through the doorway
   G.room = i;
   G.mode = 'doing'; G.rec = null;
@@ -696,6 +703,24 @@ function burst(x, y, col, n, spd){
   }
 }
 
+// A carried element sheds itself as you go: embers rise, drops fall, dust
+// settles, motes stream behind. More while walking.
+function emitFromFigure(dt){
+  const el = G.carried, p = G.pl;
+  if (!el || room().kind !== 'dream' || G.simT - G.carriedAt < FX_FLASH + FX_FLOOD || p.liquid > 0.5) return;
+  const moving = Math.abs(p.vx) > 5;
+  G.emitDebt += dt * (moving ? 16 : 7);
+  const E = ELEM[el], seated = p.recFade > 0.5;
+  while (G.emitDebt >= 1){
+    G.emitDebt -= 1;
+    const hy = p.y - (seated ? 54 : 69);
+    if (el === 'fire') G.parts.push({ x: p.x + (Math.random() - 0.5) * 14, y: hy - 8, vx: (Math.random() - 0.5) * 16 - (moving ? 30 : 0), vy: -20 - Math.random() * 25, g: -30, life: 0, max: 0.8 + Math.random() * 0.7, col: Math.random() < 0.5 ? E.col : E.glow, r: 1 + Math.random() * 1.2 });
+    else if (el === 'water') G.parts.push({ x: p.x + (Math.random() - 0.5) * 18, y: p.y - 10 - Math.random() * 50, vx: -(moving ? 20 : 0), vy: 10, g: 320, life: 0, max: 0.5 + Math.random() * 0.3, col: E.glow, r: 1.1 });
+    else if (el === 'air') G.parts.push({ x: p.x - 10 - Math.random() * 10, y: p.y - 20 - Math.random() * 50, vx: -30 - Math.random() * 30, vy: (Math.random() - 0.5) * 10, g: -4, life: 0, max: 0.9 + Math.random() * 0.6, col: E.glow, r: 1 + Math.random() * 0.8 });
+    else G.parts.push({ x: p.x + (Math.random() - 0.5) * 16, y: p.y - 2, vx: (Math.random() - 0.5) * 30 - (moving ? 25 : 0), vy: -8 - Math.random() * 10, g: 60, life: 0, max: 0.6 + Math.random() * 0.5, col: Math.random() < 0.6 ? E.col : E.dim, r: 1.2 + Math.random() * 1.3 });
+  }
+}
+
 // ── the clock ───────────────────────────────────────────────────────────────
 function advance(dt){
   G.simT += dt;
@@ -720,7 +745,9 @@ function advance(dt){
   if (c === 'in') G.fullness += (1 - G.fullness) * (1 - Math.exp(-dt / 1.6));
   else if (c === 'out') G.fullness += (0 - G.fullness) * (1 - Math.exp(-dt / 2.2));
   for (const o of (r.obs || [])) o.hint = Math.max(0, o.hint - dt * 0.5);
-  for (const q of G.parts){ q.life += dt; q.x += q.vx * dt; q.y += q.vy * dt; q.vx *= 0.97; q.vy = q.vy * 0.97 - 6 * dt; }
+  emitFromFigure(dt);
+  for (const q of G.parts){ q.life += dt; q.x += q.vx * dt; q.y += q.vy * dt; q.vx *= 0.97; q.vy = q.vy * 0.97 + (q.g ?? -6) * dt; }
+  G.streams = G.streams.filter(s => G.simT < s.t0 + s.dur);
   G.parts = G.parts.filter(q => q.life < q.max);
   G.stamps = G.stamps.filter(s => G.simT - s.born < 2.2);
   if (G.simT > G.capUntil) capEl.style.opacity = 0;
@@ -835,6 +862,7 @@ function drawDream(r){
     drawPlayer();
     if (rec) drawReceptive();
   }
+  drawStreams();
   // doing-mode hint: a barrier you pressed against shows its shape, once, faintly
   if (!rec) for (const o of r.obs) if (o.hint > 0.02 && o.el !== G.carried){
     const { lung } = lungOf(o.el, t);
@@ -1049,18 +1077,49 @@ function drawParts(){
 const AV = { skin: '#F5CBA7', eye: '#4A90D9', hair: '#3b2a20', tunic: '#e9dfcc', legs: '#6f6390' };
 function limb(x, y, a, len){ return [x + Math.sin(a) * len, y + Math.cos(a) * len]; }
 function seg(a, b, w, col){ ctx.strokeStyle = col; ctx.lineWidth = w; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); }
-function tintOf(c){
-  if (!G.carried) return c;
-  const age = G.simT - G.carriedAt;
-  return mix(c, ELEM[G.carried].col, clamp(age / 1.2, 0, 1) * 0.32);
+// What each element turns the figure into. Deliberately overt: the carried
+// element should read from across the room.
+const ALT = {
+  earth: { tunic: '#b98a55', legs: '#6b4a2e', skin: '#d2aa80', hair: '#4a3522', eye: '#3a2a1a', glow: '#f3cf94' },
+  fire:  { tunic: '#ff9446', legs: '#b8401e', skin: '#ffc49a', hair: '#ff5a1e', eye: '#7a1e00', glow: '#ffd28c' },
+  air:   { tunic: '#eef9ff', legs: '#a4cdec', skin: '#e8f4fb', hair: '#c4e2f6', eye: '#4a8ac0', glow: '#f0fbff' },
+  water: { tunic: '#6cc0ff', legs: '#2a6cb8', skin: '#aedcf8', hair: '#1f4f94', eye: '#0e3a70', glow: '#b3dcff' },
+};
+const PAL_KEYS = ['tunic', 'legs', 'skin', 'hair', 'eye'];
+function palOf(el){
+  const out = {};
+  for (const k of PAL_KEYS) out[k] = el ? ALT[el][k] : AV[k];
+  return out;
 }
+function palMix(a, b, u){ const out = {}; for (const k of PAL_KEYS) out[k] = mix(a[k], b[k], u); return out; }
+// Absorption timeline (s after the fourth match): motes stream in 0–0.9,
+// flash at 0.9, colour floods up from the feet 0.9–1.8.
+const FX_FLASH = 0.9, FX_FLOOD = 0.9;
+function chestY(p){ return p.y - (p.recFade > 0.5 ? 32 : 42); }
 function drawPlayer(){
   const p = G.pl, t = G.simT;
-  const tunic = tintOf(AV.tunic), legs = tintOf(AV.legs);
-  if (G.carried){
-    const rg = ctx.createRadialGradient(p.x, p.y - 40, 4, p.x, p.y - 40, 48);
-    rg.addColorStop(0, rgba(ELEM[G.carried].col, 0.16)); rg.addColorStop(1, rgba(ELEM[G.carried].col, 0));
-    ctx.fillStyle = rg; ctx.fillRect(p.x - 48, p.y - 90, 96, 96);
+  const age = G.carried ? t - G.carriedAt : 99;
+  const flood = G.carried ? clamp((age - FX_FLASH) / FX_FLOOD, 0, 1) : 0;
+  // What the figure wears underneath: before the flood completes, whatever
+  // it had (the previous element, or its own colours); after, the element.
+  // During the flood, keep the part-way tint the matches had already built, so
+  // nothing snaps back before the new colour rises.
+  let under = palOf(null);
+  if (G.carried) under = flood >= 1 ? palOf(G.carried) : palMix(palOf(G.prevCarried), palOf(G.carried), 0.12 + 0.13 * (P.need - 1));
+  // Each match takes the figure part of the way toward the incoming element.
+  const R = G.rec, tg = R && R.target;
+  const gathering = tg && G.carried !== tg.el && tg.matches > 0 && (!G.carried || flood >= 1);
+  if (gathering) under = palMix(under, palOf(tg.el), 0.12 + 0.13 * tg.matches);
+  const flooding = G.carried && flood > 0 && flood < 1;
+  const altered = G.carried && flood >= 1 && !gathering;
+
+  // the aura breathes the carried element's own rhythm
+  if (G.carried && flood > 0){
+    const { lung } = lungOf(G.carried, t), E = ELEM[G.carried];
+    const rr = 40 + 16 * lung, cy = chestY(p);
+    const rg = ctx.createRadialGradient(p.x, cy, 3, p.x, cy, rr);
+    rg.addColorStop(0, rgba(E.glow, (0.22 + 0.16 * lung) * flood)); rg.addColorStop(0.55, rgba(E.col, 0.14 * flood)); rg.addColorStop(1, rgba(E.col, 0));
+    ctx.fillStyle = rg; ctx.fillRect(p.x - rr, cy - rr, rr * 2, rr * 2);
   }
   if (p.liquid > 0.02){
     // running down into a rivulet
@@ -1074,11 +1133,120 @@ function drawPlayer(){
     ctx.globalAlpha = 1 - L;
   }
   const seated = p.recFade > 0.5;
-  if (seated) drawSeated(p.x, p.y, tunic, legs);
-  else drawProfile(p, tunic, legs, t);
+  const baseA = ctx.globalAlpha;
+  const fig = pal => seated ? drawSeated(p.x, p.y, pal) : drawProfile(p, pal, t);
+  const glowOn = el => { ctx.shadowColor = rgba(ALT[el].glow, 0.9); ctx.shadowBlur = 7 * DPR * sk; };
+
+  if (altered){
+    ctx.save(); glowOn(G.carried);
+    if (G.carried === 'air') ctx.globalAlpha = baseA * 0.82;
+    fig(under);
+    ctx.restore();
+    drawElementFx(G.carried, p, seated, t);
+  } else {
+    fig(under);
+    if (flooding){
+      // the new colour rises from the feet; a bright seam marks the tide line
+      const top = p.y - 96, line = p.y + 4 - (p.y + 4 - top) * flood;
+      ctx.save();
+      ctx.beginPath(); ctx.rect(p.x - 60, line, 120, p.y + 20 - line); ctx.clip();
+      glowOn(G.carried);
+      fig(palOf(G.carried));
+      ctx.restore();
+      ctx.fillStyle = rgba(ALT[G.carried].glow, 0.85 * (1 - flood));
+      ctx.fillRect(p.x - 20, line - 1.5, 40, 3);
+    }
+  }
   ctx.globalAlpha = 1;
+  drawAbsorbFlash(p, t);
 }
-function drawProfile(p, tunic, legs, t){
+// Per-element marks on an altered figure (continuous particles come from emitFromFigure).
+function drawElementFx(el, p, seated, t){
+  const bob = !seated && p.float ? Math.sin(t * 2.4) * 3 - 4 : 0;
+  const hx = p.x + (seated ? 0 : 4), hy = p.y - (seated ? 54 : 69) + bob;
+  const E = ELEM[el];
+  if (el === 'fire'){
+    // the head burns without burning
+    for (let i = 0; i < 4; i++){
+      const fx = hx - 7 + i * 4.6, f = 9 + 6 * Math.sin(t * 11 + i * 1.7) + 3 * Math.sin(t * 17 + i);
+      const g = ctx.createLinearGradient(0, hy - 6, 0, hy - 6 - f);
+      g.addColorStop(0, rgba(E.col, 0.95)); g.addColorStop(1, rgba(E.glow, 0));
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.moveTo(fx - 3, hy - 6); ctx.quadraticCurveTo(fx - 1, hy - 6 - f * 0.6, fx + Math.sin(t * 9 + i) * 2, hy - 6 - f); ctx.quadraticCurveTo(fx + 2, hy - 6 - f * 0.6, fx + 3, hy - 6); ctx.fill();
+    }
+  } else if (el === 'water'){
+    // ripples at the feet, a glassy highlight on the head
+    ctx.strokeStyle = rgba(E.glow, 0.5); ctx.lineWidth = 1;
+    for (let k = 0; k < 2; k++){
+      const u = (t * 0.7 + k * 0.5) % 1;
+      ctx.globalAlpha = 1 - u;
+      ctx.beginPath(); ctx.ellipse(p.x, p.y, 8 + 22 * u, 2 + 4 * u, 0, 0, Math.PI * 2); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = 'rgba(255,255,255,0.55)'; ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.moveTo(hx - 5, hy - 4); ctx.quadraticCurveTo(hx - 7, hy + 1, hx - 5, hy + 5); ctx.stroke();
+  } else if (el === 'air'){
+    // streamlines wheeling round the body
+    const cy = chestY(p) + bob;
+    ctx.lineWidth = 1.4;
+    for (let k = 0; k < 3; k++){
+      const a0 = t * 2.2 + k * 2.1;
+      ctx.strokeStyle = rgba(E.glow, 0.55 - k * 0.12);
+      ctx.beginPath(); ctx.ellipse(p.x, cy - 10 + k * 12, 22 - k * 3, 6, 0, a0, a0 + 2.2); ctx.stroke();
+    }
+  } else {
+    // earth: stone flecks set into the body, and a weight of dust at the feet
+    const bx = p.x + (seated ? 0 : 1), by = p.y - (seated ? 26 : 48);
+    for (const [dx, dy] of [[-3, -6], [2, -1], [-1, 5], [3, 8], [-4, 11], [1, -9]]){
+      ctx.fillStyle = rgba(E.glow, 0.7); ctx.fillRect(bx + dx - 1.2, by + dy - 1.2, 2.4, 2.4);
+    }
+    ctx.fillStyle = rgba(E.col, 0.28); ctx.beginPath(); ctx.ellipse(p.x, p.y + 1, 16, 3, 0, 0, Math.PI * 2); ctx.fill();
+  }
+}
+// The moment of absorption: a white flash at the chest and two rings going out.
+function drawAbsorbFlash(p, t){
+  const A = G.absorbFx;
+  if (!A) return;
+  const u = (t - A.t0 - FX_FLASH) / 0.7;
+  if (u < 0 || u > 1) return;
+  const cy = chestY(p), E = ELEM[A.el];
+  ctx.strokeStyle = rgba(E.glow, 0.9 * (1 - u)); ctx.lineWidth = 3 * (1 - u) + 1;
+  ctx.beginPath(); ctx.arc(p.x, cy, 10 + 110 * u, 0, Math.PI * 2); ctx.stroke();
+  ctx.strokeStyle = rgba(E.col, 0.6 * (1 - u)); ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(p.x, cy, 6 + 70 * u * u, 0, Math.PI * 2); ctx.stroke();
+  const fg = ctx.createRadialGradient(p.x, cy, 1, p.x, cy, 46);
+  fg.addColorStop(0, 'rgba(255,255,255,' + (0.85 * (1 - u) * (1 - u)).toFixed(3) + ')'); fg.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = fg; ctx.fillRect(p.x - 46, cy - 46, 92, 92);
+}
+// Motes flowing out of the barrier (and its kite) into the figure's chest:
+// a trickle on each match, a flood on the fourth.
+function stream(t, n, spread){
+  const p = G.pl, E = ELEM[t.el];
+  const kx = kiteX(t), q24 = perim(kitePts(props(E.shape), scaleFor(t.el)), 24);
+  for (let i = 0; i < n; i++){
+    let x0, y0;
+    if (i % 3 === 0){ const q = q24[(Math.random() * 24) | 0]; x0 = kx + q[0]; y0 = 128 + q[1]; }
+    else if (t.type === 'pit'){ x0 = t.x + Math.random() * t.w; y0 = FLOOR - 4 - Math.random() * 40; }
+    else { const y1 = Math.max(CEIL + 10, t.y), y2 = Math.min(FLOOR, t.y + t.h); x0 = t.x + Math.random() * t.w; y0 = y1 + Math.random() * (y2 - y1); }
+    G.streams.push({ x0, y0, cx: (x0 + p.x) / 2 + (Math.random() - 0.5) * 80, cy: Math.min(y0, p.y - 60) - 30 - Math.random() * 50,
+      t0: G.simT + Math.random() * spread, dur: 0.55 + Math.random() * 0.35, col: Math.random() < 0.5 ? E.col : E.glow, r: 1.3 + Math.random() * 1.4 });
+  }
+}
+function drawStreams(){
+  const p = G.pl, tx = p.x, ty = chestY(p);
+  for (const s of G.streams){
+    const u = (G.simT - s.t0) / s.dur;
+    if (u < 0 || u > 1) continue;
+    for (let k = 0; k < 4; k++){
+      const v = clamp(u - k * 0.04, 0, 1), e = v * v * (3 - 2 * v), w = 1 - e;
+      const x = w * w * s.x0 + 2 * w * e * s.cx + e * e * tx, y = w * w * s.y0 + 2 * w * e * s.cy + e * e * ty;
+      ctx.fillStyle = rgba(s.col, (0.95 - k * 0.22) * Math.min(1, u * 4));
+      ctx.beginPath(); ctx.arc(x, y, s.r * (1 - k * 0.18), 0, Math.PI * 2); ctx.fill();
+    }
+  }
+}
+function drawProfile(p, pal, t){
+  const tunic = pal.tunic, legs = pal.legs;
   const air = !p.ground && !p.float;
   const bob = p.float ? Math.sin(t * 2.4) * 3 - 4 : 0;
   ctx.save();
@@ -1104,20 +1272,21 @@ function drawProfile(p, tunic, legs, t){
     if (air) a = k ? 2.6 : 2.2;
     if (p.float) a = k ? 1.3 : 1.1;
     const el = limb(sh[0], sh[1], a, 14), hand = limb(el[0], el[1], a - 0.4, 13);
-    seg(sh, el, 4.5, k ? tunic : mix(tunic, '#000000', 0.2)); seg(el, hand, 4, AV.skin);
+    seg(sh, el, 4.5, k ? tunic : mix(tunic, '#000000', 0.2)); seg(el, hand, 4, pal.skin);
   }
   // head in profile: skin, hair, one eye
   const hx = 4, hy = -69;
-  ctx.fillStyle = AV.skin; ctx.beginPath(); ctx.arc(hx, hy, 10, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = AV.hair; ctx.beginPath(); ctx.arc(hx - 1, hy - 1, 10.4, Math.PI * 0.95, Math.PI * 2.05); ctx.fill();
+  ctx.fillStyle = pal.skin; ctx.beginPath(); ctx.arc(hx, hy, 10, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = pal.hair; ctx.beginPath(); ctx.arc(hx - 1, hy - 1, 10.4, Math.PI * 0.95, Math.PI * 2.05); ctx.fill();
   ctx.beginPath(); ctx.arc(hx - 5, hy + 1, 5.5, Math.PI * 0.5, Math.PI * 1.5); ctx.fill();
   ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(hx + 6, hy + 1, 2, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = AV.eye; ctx.beginPath(); ctx.arc(hx + 6.6, hy + 1.2, 1.1, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = pal.eye; ctx.beginPath(); ctx.arc(hx + 6.6, hy + 1.2, 1.1, 0, Math.PI * 2); ctx.fill();
   ctx.restore();
 }
 // Receptive: the figure turns to face us and sits. This is where the app
 // composites the real BaseAvatar face.
-function drawSeated(x, y, tunic, legs){
+function drawSeated(x, y, pal){
+  const tunic = pal.tunic, legs = pal.legs;
   const f = G.fullness;
   ctx.save(); ctx.translate(x, y);
   ctx.fillStyle = legs;
@@ -1126,19 +1295,19 @@ function drawSeated(x, y, tunic, legs){
   const cw = 10 + 2.5 * f, top = -40 - 2 * f;
   ctx.fillStyle = tunic;
   ctx.beginPath(); ctx.moveTo(-9, -8); ctx.lineTo(-cw, top + 4); ctx.quadraticCurveTo(0, top - 3, cw, top + 4); ctx.lineTo(9, -8); ctx.closePath(); ctx.fill();
-  seg([-cw + 1, top + 6], [-15, -14], 4.5, tunic); seg([-15, -14], [-12, -8], 4, AV.skin);
-  seg([cw - 1, top + 6], [15, -14], 4.5, tunic); seg([15, -14], [12, -8], 4, AV.skin);
+  seg([-cw + 1, top + 6], [-15, -14], 4.5, tunic); seg([-15, -14], [-12, -8], 4, pal.skin);
+  seg([cw - 1, top + 6], [15, -14], 4.5, tunic); seg([15, -14], [12, -8], 4, pal.skin);
   // BaseAvatar stand-in: round head, calm half-lidded eyes
   const hy = top - 12;
-  ctx.fillStyle = AV.skin; ctx.beginPath(); ctx.ellipse(0, hy, 11, 11.6, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = AV.hair; ctx.beginPath(); ctx.arc(0, hy - 1, 11.6, Math.PI * 1.02, Math.PI * 1.98); ctx.fill();
+  ctx.fillStyle = pal.skin; ctx.beginPath(); ctx.ellipse(0, hy, 11, 11.6, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = pal.hair; ctx.beginPath(); ctx.arc(0, hy - 1, 11.6, Math.PI * 1.02, Math.PI * 1.98); ctx.fill();
   for (const sx of [-4.2, 4.2]){
     ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(sx, hy + 1, 2.8, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = AV.eye; ctx.beginPath(); ctx.arc(sx, hy + 1.6, 1.6, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = AV.skin; ctx.beginPath(); ctx.moveTo(sx - 3, hy - 0.2); ctx.quadraticCurveTo(sx, hy + 1.2, sx + 3, hy - 0.2); ctx.arc(sx, hy + 1, 3, -0.4, Math.PI + 0.4, true); ctx.fill();
+    ctx.fillStyle = pal.eye; ctx.beginPath(); ctx.arc(sx, hy + 1.6, 1.6, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = pal.skin; ctx.beginPath(); ctx.moveTo(sx - 3, hy - 0.2); ctx.quadraticCurveTo(sx, hy + 1.2, sx + 3, hy - 0.2); ctx.arc(sx, hy + 1, 3, -0.4, Math.PI + 0.4, true); ctx.fill();
   }
   ctx.fillStyle = rgba('#FF8FAB', 0.3); ctx.beginPath(); ctx.arc(-6.5, hy + 5, 2.2, 0, Math.PI * 2); ctx.arc(6.5, hy + 5, 2.2, 0, Math.PI * 2); ctx.fill();
-  ctx.strokeStyle = mix(AV.skin, '#000000', 0.35); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(-3, hy + 7); ctx.quadraticCurveTo(0, hy + 7.8, 3, hy + 7); ctx.stroke();
+  ctx.strokeStyle = mix(pal.skin, '#000000', 0.35); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(-3, hy + 7); ctx.quadraticCurveTo(0, hy + 7.8, 3, hy + 7); ctx.stroke();
   ctx.restore();
 }
 

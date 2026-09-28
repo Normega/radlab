@@ -23,6 +23,13 @@
   walking; a thumb held through the toggle being dropped (it now carries over, so an A held while
   toggling starts an inhale, and an A held while toggling back walks on); the toggle now shakes
   when refused (mid-air, mid-pipe, inside a wall); spawn at x=100, clear of the left thumb.
+- **Absorbing is overt (2026-09-28, Norm's first-play note):** the figure tints part of the way with
+  each match. On the fourth, motes stream out of the barrier and its kite into the chest, a white
+  flash and two rings go out, and the element's colour floods up from the feet. The altered figure
+  is fully recoloured, glows with an aura that breathes the element's own rhythm, and carries
+  per-element marks: fire burns at the head and sheds embers, water drips and ripples, air is
+  translucent with circling streamlines, and earth is flecked with stone and kicks up dust. When
+  one element replaces another, the old colour bursts off first.
 - **Not in the prototype**: sound, data logging, the real avatar (colours are stand-ins), Blender art.
 
 A Sense Foraging platformer about **toggling between doing and receiving**. Side-view, flip-screen
