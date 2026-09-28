@@ -103,6 +103,7 @@ const Talks     = lazy(() => import('./pages/talks/Talks'))
 const ClassRoom        = lazy(() => import('./academic/lecture-lounge/ClassRoom'))
 const WeeklyWall       = lazy(() => import('./academic/lecture-lounge/WeeklyWall'))
 const WeeklyQuiz       = lazy(() => import('./academic/lecture-lounge/WeeklyQuiz'))
+const ClassTest        = lazy(() => import('./academic/lecture-lounge/ClassTest'))
 const WeeklyArchive    = lazy(() => import('./academic/lecture-lounge/WeeklyArchive'))
 const ClassVerifyEmail = lazy(() => import('./academic/lecture-lounge/ClassVerifyEmail'))
 const ClassConfirmSignup = lazy(() => import('./academic/lecture-lounge/ClassConfirmSignup'))
@@ -785,6 +786,13 @@ export default function App() {
             <Route path="/academic/:courseCode/lounge/quiz/:quizId" element={
               <AuthRoute session={session}>
                 <WeeklyQuiz session={session} />
+              </AuthRoute>
+            } />
+            {/* Timed class tests (20260928_class_tests.sql). The server gates
+                everything: membership, open status, access code, the clock. */}
+            <Route path="/academic/:courseCode/lounge/test/:testId" element={
+              <AuthRoute session={session}>
+                <ClassTest session={session} />
               </AuthRoute>
             } />
             {/* The archives. Both lounge cards show one current item; these

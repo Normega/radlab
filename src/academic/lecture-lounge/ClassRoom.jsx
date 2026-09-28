@@ -254,6 +254,21 @@ export default function ClassRoom({ session }) {
     return () => { cancelled = true }
   }, [classInfo?.id, membership]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // An OPEN class test gets the top of the lobby: on test day this is how
+  // students in the room (and in the AccessAbility room) find it. Null
+  // whenever no test is open, so the card simply isn't there otherwise.
+  const [testCard, setTestCard] = useState(null)
+  useEffect(() => {
+    if (!classInfo || !membership) return
+    let cancelled = false
+    const load = () => supabase.rpc('get_lounge_test_card', { p_class_id: classInfo.id }).then(({ data }) => {
+      if (!cancelled) setTestCard(data ?? null)
+    })
+    load()
+    const t = setInterval(load, 20000)   // the test opens at 9:15 while students are already on this page
+    return () => { cancelled = true; clearInterval(t) }
+  }, [classInfo?.id, membership]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Discussion boards summary for the lobby card. Board presence is the
   // feature switch: a class with no class_boards rows shows no card.
   const [boardsInfo, setBoardsInfo] = useState(null)
@@ -575,6 +590,13 @@ export default function ClassRoom({ session }) {
               </Link>
             )}
 
+            {testCard && (
+              <Link to={`${loungePath(slug)}/test/${testCard.id}`} style={S.testCard}>
+                <p style={S.testEyebrow}>{testCard.submitted ? 'Test submitted' : testCard.started ? 'Test in progress' : 'Test open now'}</p>
+                <p style={S.testTitle}>{testCard.title}</p>
+                <p style={S.testMeta}>{testCard.submitted ? 'Your answers are in. Nothing more to do.' : testCard.started ? 'Tap to return to your test →' : 'Tap to begin →'}</p>
+              </Link>
+            )}
             {quizCard && <QuizLobbyCard card={quizCard} slug={slug} />}
 
             {/* One row per board rather than a card that hides them behind a
@@ -971,6 +993,10 @@ function ClassAuthCard({ classInfo, slug }) {
 }
 
 const S = {
+  testCard: { display: 'block', textDecoration: 'none', background: '#1f5c8b', color: '#fff', borderRadius: 14, padding: '16px 18px', margin: '0 0 14px' },
+  testEyebrow: { fontFamily: MONO, fontSize: 11.5, letterSpacing: 1.5, textTransform: 'uppercase', margin: '0 0 4px', opacity: 0.85 },
+  testTitle: { fontSize: 20, fontWeight: 700, margin: '0 0 4px' },
+  testMeta: { fontSize: 14, margin: 0, opacity: 0.95 },
   wrap: { maxWidth: 480, margin: '0 auto', padding: '10px 20px 40px' },
   bridge: { background: 'var(--bgc)', border: '1px solid var(--pk)', borderRadius: 16, padding: '22px 24px', textAlign: 'left', marginBottom: 16 },
   bridgeEyebrow: { fontFamily: MONO, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--pk)' },

@@ -5,6 +5,7 @@ import ConsoleLecturePlanner from './ConsoleLecturePlanner'
 import ConsoleParticipation from './ConsoleParticipation'
 import ClassRemote from './ClassRemote'
 import ConsoleQuizzes from './ConsoleQuizzes'
+import ConsoleTest from './ConsoleTest'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 
@@ -23,7 +24,7 @@ export default function ClassConsole({ session, superAdmin }) {
   const [params] = useSearchParams()
   const [tab, setTab] = useState(() => {
     const q = params.get('tab')
-    if (['planning', 'run', 'participation', 'quizzes'].includes(q)) return q
+    if (['planning', 'run', 'participation', 'quizzes', 'test'].includes(q)) return q
     return 'run'
   })
 
@@ -38,11 +39,13 @@ export default function ClassConsole({ session, superAdmin }) {
               <button style={S.tab(tab === 'run')} onClick={() => setTab('run')}>Run</button>
               <button style={S.tab(tab === 'participation')} onClick={() => setTab('participation')}>Review</button>
               <button style={S.tab(tab === 'quizzes')} onClick={() => setTab('quizzes')}>Quizzes</button>
+              <button style={S.tab(tab === 'test')} className="no-print" onClick={() => setTab('test')}>Test</button>
             </div>
             {tab === 'planning' && <ConsoleLecturePlanner classInfo={classInfo} />}
             {tab === 'run' && <ClassRemote superAdmin={superAdmin} />}
             {tab === 'participation' && <ConsoleParticipation classInfo={classInfo} />}
             {tab === 'quizzes' && <ConsoleQuizzes classInfo={classInfo} />}
+            {tab === 'test' && <ConsoleTest classInfo={classInfo} />}
           </>
         )}
       </div>
