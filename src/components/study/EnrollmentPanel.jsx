@@ -155,7 +155,12 @@ export default function EnrollmentPanel({ study }) {
       const { userId, error: createErr } = await createParticipantAccount(pid, study.id)
       if (createErr) throw createErr
 
+      // consent_date stays null when the study has a consent form, so the
+      // session runner shows it before step 1. Stamping it here skipped the
+      // form for every in-lab participant (Breath Belt, 2026-09-29), the same
+      // defect create_anonymous_participant once had.
       const now = new Date().toISOString()
+      const needsConsent = !!(study.consent_required && study.active_consent_form_id)
       const { data: enrollment, error: insertErr } = await supabase
         .from('study_enrollments')
         .insert({
@@ -164,7 +169,7 @@ export default function EnrollmentPanel({ study }) {
           external_id: pid,
           enrolled_by: user.id,
           enrolled_at: now,
-          consent_date: now,
+          consent_date: needsConsent ? null : now,
           status:      'enrolled',
         })
         .select('id')
