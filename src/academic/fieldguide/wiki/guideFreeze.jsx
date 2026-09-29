@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 
 // Guide freeze (20260929_guide_freeze.sql). During a freeze window students
 // read the snapshot taken at its start — the text they are examined on —
@@ -39,15 +39,33 @@ export function useGuideFreeze(courseClient, courseId) {
   return state
 }
 
+// Staff "see what students see": ONE switch for the whole Guide, not per page.
+// It started as local state on the page reader, so the index and the feeds
+// showed a staff banner with nothing to press (Norm, 2026-09-29). Kept for the
+// tab (sessionStorage) so moving between pages doesn't drop it.
+const PREVIEW_KEY = 'fg-freeze-preview'
+const listeners = new Set()
+let previewOn = (() => { try { return sessionStorage.getItem(PREVIEW_KEY) === '1' } catch { return false } })()
+const setPreview = (on) => {
+  previewOn = on
+  try { on ? sessionStorage.setItem(PREVIEW_KEY, '1') : sessionStorage.removeItem(PREVIEW_KEY) } catch { /* private mode */ }
+  listeners.forEach(fn => fn())
+}
+const subscribe = (fn) => { listeners.add(fn); return () => listeners.delete(fn) }
+export const useFreezePreview = () => [
+  useSyncExternalStore(subscribe, () => previewOn, () => false),
+  setPreview,
+]
+
 // Which table a reader should read. Students read the snapshot while a freeze
-// is open; staff read live unless they have asked to see what students see.
+// is open; staff read live unless they have switched to the student view.
 export const pageTable = (freeze, isStaff, staffPreview = false) =>
   freeze?.active && (!isStaff || staffPreview) ? 'wiki_page_snapshots' : 'wiki_pages'
 
 // Only items from before the freeze began, for student-facing change feeds —
 // a feed of edits students cannot see yet would be a feed of broken promises.
-export const beforeFreeze = (freeze, isStaff, at) =>
-  !freeze?.active || isStaff || !at || new Date(at) < new Date(freeze.starts_at)
+export const beforeFreeze = (freeze, isStaff, at, staffPreview = false) =>
+  !freeze?.active || (isStaff && !staffPreview) || !at || new Date(at) < new Date(freeze.starts_at)
 
 const TZ = 'America/Toronto'
 export const freezeDate = (ts, withTime = false) => ts
@@ -59,9 +77,10 @@ export const freezeDate = (ts, withTime = false) => ts
 
 // The freeze line at the top of a reader page. Nothing renders outside a
 // freeze. Students are told which edition they are reading and when it
-// updates; staff are told that students cannot see their changes yet, and can
-// switch to the student view.
-export function FreezeBanner({ freeze, isStaff, preview, onTogglePreview }) {
+// updates; staff are told students cannot see their changes yet, and get the
+// switch to the student view on every page that shows the banner.
+export function FreezeBanner({ freeze, isStaff }) {
+  const [preview, setPreviewOn] = useFreezePreview()
   if (!freeze?.active) return null
   const reopen = freezeDate(freeze.ends_at)
   const since = freezeDate(freeze.starts_at, true)
@@ -71,12 +90,10 @@ export function FreezeBanner({ freeze, isStaff, preview, onTogglePreview }) {
         <>
           <strong>{freeze.label}.</strong> Students are reading the Guide as it stood on {since};
           anything you publish now reaches them on {reopen}.
-          {onTogglePreview && (
-            <button type="button" style={S.btn} onClick={onTogglePreview}>
-              {preview ? 'Back to the live page' : 'See what students see'}
-            </button>
-          )}
-          {preview && <div style={S.note}>You are viewing the frozen edition.</div>}
+          <button type="button" style={S.btn} onClick={() => setPreviewOn(!preview)}>
+            {preview ? 'Back to the live Guide' : 'See what students see'}
+          </button>
+          {preview && <div style={S.note}>You are viewing the frozen edition, as students do. Editing is off until you switch back.</div>}
         </>
       ) : (
         <>

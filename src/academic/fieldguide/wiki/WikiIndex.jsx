@@ -3,7 +3,7 @@ import { Link, useOutletContext } from 'react-router-dom'
 import { AcademicEyebrow } from '../../AcademicChrome'
 import { useWikiBase, useCoursePaths } from './useWikiBase'
 import { useWikiCourse } from './useWikiCourse'
-import { useGuideFreeze, pageTable, FreezeBanner } from './guideFreeze'
+import { useGuideFreeze, useFreezePreview, pageTable, FreezeBanner } from './guideFreeze'
 import AvatarMenu from '../AvatarMenu'
 import Onboarding from '../Onboarding'
 import { courseFeatures } from '../../courseFeatures'
@@ -72,7 +72,8 @@ export default function WikiIndex() {
   const { courseClient, session, enrollments, isStaff } = useOutletContext()
   const { courseId, select, courses, course } = useWikiCourse(enrollments)
   const freeze = useGuideFreeze(courseClient, courseId)
-  const table = pageTable(freeze, isStaff)
+  const [freezePreview] = useFreezePreview()
+  const table = pageTable(freeze, isStaff, freezePreview)
   const weekAnchored = !!course && courseFeatures(course.code).weekIndex
 
   const [pages, setPages] = useState(null)      // null = loading

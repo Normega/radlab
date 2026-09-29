@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useGuideFreeze, pageTable } from './wiki/guideFreeze'
+import { useGuideFreeze, useFreezePreview, pageTable, FreezeBanner } from './wiki/guideFreeze'
 import { Link, useOutletContext } from 'react-router-dom'
 import { AcademicEyebrow } from '../AcademicChrome'
 import AvatarMenu from './AvatarMenu'
@@ -47,7 +47,8 @@ export default function ChapterMap() {
   const { courseClient, courseCode, session, isStaff, course: urlCourse } = useOutletContext()
   const courseId = urlCourse?.course_id
   const freeze = useGuideFreeze(courseClient, courseId)
-  const table = pageTable(freeze, isStaff)
+  const [freezePreview] = useFreezePreview()
+  const table = pageTable(freeze, isStaff, freezePreview)
 
   const [meetings, setMeetings] = useState(null)  // null = loading
   const [pages, setPages] = useState([])
@@ -199,6 +200,7 @@ export default function ChapterMap() {
           )}
         </div>
 
+        <FreezeBanner freeze={freeze} isStaff={isStaff} />
         <h1 style={S.title}>Chapters by lecture</h1>
         <p style={S.sub}>
           What to read, and when. Every chapter listed here is a Field Guide page — click one to

@@ -4,7 +4,7 @@ import { AcademicEyebrow } from '../AcademicChrome'
 import AvatarMenu from './AvatarMenu'
 import { useWikiCourse } from './wiki/useWikiCourse'
 import { useWikiBase, useCoursePaths } from './wiki/useWikiBase'
-import { useGuideFreeze, beforeFreeze, FreezeBanner } from './wiki/guideFreeze'
+import { useGuideFreeze, useFreezePreview, beforeFreeze, FreezeBanner } from './wiki/guideFreeze'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -31,6 +31,7 @@ export default function WhatsNew() {
   const { courseClient, session, enrollments, isStaff } = useOutletContext()
   const { courseId, course } = useWikiCourse(enrollments)
   const freeze = useGuideFreeze(courseClient, courseId)
+  const [freezePreview] = useFreezePreview()
   const [rows, setRows] = useState(null)
 
   useEffect(() => {
@@ -38,9 +39,9 @@ export default function WhatsNew() {
     let live = true
     if (freeze === undefined) return
     courseClient.rpc('whats_new', { p_course_id: courseId })
-      .then(({ data }) => { if (live) setRows((data ?? []).filter(r => beforeFreeze(freeze, isStaff, r.landed_at))) })
+      .then(({ data }) => { if (live) setRows((data ?? []).filter(r => beforeFreeze(freeze, isStaff, r.landed_at, freezePreview))) })
     return () => { live = false }
-  }, [courseClient, courseId, freeze, isStaff])
+  }, [courseClient, courseId, freeze, isStaff, freezePreview])
 
   // Grouped by ISO week, newest first. The rpc already sorts; this just cuts
   // the list where the week changes so the term reads as a timeline.

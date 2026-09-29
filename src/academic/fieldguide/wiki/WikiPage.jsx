@@ -14,7 +14,7 @@ import { weekIcon } from './weekIcons'
 import ReportIssue from './ReportIssue'
 import NeighbourGraph from './NeighbourGraph'
 import { rankNeighbours } from './readingGraph'
-import { useGuideFreeze, pageTable, FreezeBanner, freezeDate } from './guideFreeze'
+import { useGuideFreeze, useFreezePreview, pageTable, FreezeBanner, freezeDate } from './guideFreeze'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -47,7 +47,7 @@ export default function WikiPage() {
   // During a Guide freeze a student reads the snapshot; staff read live and
   // can switch to the student view (guideFreeze.jsx).
   const freeze = useGuideFreeze(courseClient, courseId)
-  const [freezePreview, setFreezePreview] = useState(false)
+  const [freezePreview] = useFreezePreview()
   const table = pageTable(freeze, isStaff, freezePreview)
   const accountMenu = session ? (
     <AvatarMenu client={courseClient} fgEmail={session.user.email}
@@ -377,8 +377,7 @@ export default function WikiPage() {
   if (page === null) {
     return (
       <Shell course={course} menu={accountMenu}>
-        <FreezeBanner freeze={freeze} isStaff={isStaff} preview={freezePreview}
-                      onTogglePreview={isStaff ? () => setFreezePreview(p => !p) : null} />
+        <FreezeBanner freeze={freeze} isStaff={isStaff} />
         <h1 style={S.title}>Not published yet</h1>
         <p style={S.sub}>
           {freeze?.active && table === 'wiki_page_snapshots'
@@ -396,8 +395,7 @@ export default function WikiPage() {
 
   return (
     <Shell course={course} menu={accountMenu}>
-      <FreezeBanner freeze={freeze} isStaff={isStaff} preview={freezePreview}
-                    onTogglePreview={isStaff ? () => { setEditing(false); setFreezePreview(p => !p) } : null} />
+      <FreezeBanner freeze={freeze} isStaff={isStaff} />
       <nav style={S.crumbs}>
         <Link to={WIKI_BASE} style={S.link}>All pages</Link>
         {catalog?.dsm_chapter_title && (
@@ -456,7 +454,7 @@ export default function WikiPage() {
           the staff check lives inside edit_page(). The previous body is kept as
           an accepted version by the existing snapshot trigger, which is why
           this can be a plain textarea rather than a guarded ceremony. */}
-      {isStaff && editing && (
+      {isStaff && editing && !freezePreview && (
         <section style={S.editBox}>
           <p style={S.colLabel}>Editing {page.slug} · markdown, frontmatter included</p>
           <textarea
