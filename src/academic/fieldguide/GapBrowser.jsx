@@ -5,7 +5,7 @@ import AvatarMenu from './AvatarMenu'
 import { courseFeatures } from '../courseFeatures'
 import { useWikiBase, useCoursePaths } from './wiki/useWikiBase'
 import { cleanDoi } from '../doi'
-import { DIFF, SEV, CONTRIBUTION_SLOTS, draftKey, readDraft, reviewerNote } from './contributions'
+import { DIFF, SEV, CONTRIBUTION_SLOTS, WORDS, draftKey, readDraft, reviewerNote } from './contributions'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -502,6 +502,7 @@ function ClaimForm({ claim, row: r, courseClient, reload, onRelease }) {
 
   const words = wordCount(text)
   const limWords = wordCount(lim)
+  const total = words + limWords
 
   return (
     <div style={{ marginTop: 14 }}>
@@ -551,18 +552,23 @@ function ClaimForm({ claim, row: r, courseClient, reload, onRelease }) {
       </div>
 
       <label style={S.fieldLabel}>
-        What the source found <span style={{ ...S.dim, color: words > 0 && (words < 60 || words > 400) ? SEV.warn : 'var(--tx2)' }}>
-          — {words} words (60–400, aim ~150)</span>
+        What the source found <span style={{ ...S.dim, color: words > 0 && (words < WORDS.foundMin || words > WORDS.foundMax) ? SEV.warn : 'var(--tx2)' }}>
+          — {words} words ({WORDS.foundMin}–{WORDS.foundMax}, aim ~{WORDS.foundAim})</span>
       </label>
       <textarea value={text} onChange={e => setText(e.target.value)} rows={7} style={S.textarea}
                 placeholder="Report what the study found, in your own words, with the numbers that matter. Answer the ask; do not advise." />
 
       <label style={S.fieldLabel}>
         What this source cannot tell us <span style={{ ...S.dim, color: lim && limWords < 8 ? SEV.warn : 'var(--tx2)' }}>
-          — the point of the exercise</span>
+          — {limWords} words (aim ~{WORDS.limAim}) · the point of the exercise</span>
       </label>
       <textarea value={lim} onChange={e => setLim(e.target.value)} rows={3} style={S.textarea}
                 placeholder="Design limits, sample limits, what question remains open." />
+      {/* The syllabus's 250–500 is both boxes together; saying so here is
+          what stops the "which one do I follow?" question. */}
+      <p style={{ ...S.dim, marginTop: 6, color: total > 0 && (total < WORDS.totalMin || total > WORDS.totalMax) ? SEV.warn : 'var(--tx2)' }}>
+        Together: {total} words — the syllabus's {WORDS.totalMin}–{WORDS.totalMax} counts both boxes.
+      </p>
 
       {findings.length > 0 && (
         <ul style={{ listStyle: 'none', padding: 0, margin: '10px 0 0' }}>
