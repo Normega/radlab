@@ -3,6 +3,7 @@ import { Link, useOutletContext } from 'react-router-dom'
 import { AcademicEyebrow } from '../../AcademicChrome'
 import { useWikiBase, useCoursePaths } from './useWikiBase'
 import { useWikiCourse } from './useWikiCourse'
+import { useGuideFreeze, pageTable, FreezeBanner } from './guideFreeze'
 import AvatarMenu from '../AvatarMenu'
 import Onboarding from '../Onboarding'
 import { courseFeatures } from '../../courseFeatures'
@@ -70,6 +71,8 @@ export default function WikiIndex() {
   const WIKI_BASE = useWikiBase() // course-scoped; template usages unchanged
   const { courseClient, session, enrollments, isStaff } = useOutletContext()
   const { courseId, select, courses, course } = useWikiCourse(enrollments)
+  const freeze = useGuideFreeze(courseClient, courseId)
+  const table = pageTable(freeze, isStaff)
   const weekAnchored = !!course && courseFeatures(course.code).weekIndex
 
   const [pages, setPages] = useState(null)      // null = loading
@@ -87,12 +90,12 @@ export default function WikiIndex() {
   const [showEmpty, setShowEmpty] = useState(isStaff)
 
   useEffect(() => {
-    if (!courseId || !course) return
+    if (!courseId || !course || freeze === undefined) return
     let cancelled = false
     ;(async () => {
       if (weekAnchored) {
         const [{ data: p }, { data: pl }, { data: cs }, { data: sh }] = await Promise.all([
-          courseClient.from('wiki_pages')
+          courseClient.from(table)
             .select('id, slug, title, type, summary, status, needs')
             .eq('course_id', courseId).order('title'),
           courseClient.from('page_lectures')
@@ -103,7 +106,7 @@ export default function WikiIndex() {
           // A shell is a catalogue slug awaiting its first draft. Staff see it
           // as "not written yet"; a member's RLS never returns drafts at all,
           // so for students this set is simply empty.
-          courseClient.from('wiki_pages')
+          courseClient.from(table)
             .select('slug').eq('course_id', courseId).is('content', null),
         ])
         if (cancelled) return
@@ -114,7 +117,7 @@ export default function WikiIndex() {
         setCatalog([]); setChapters([])
       } else {
         const [{ data: p }, { data: g }, { data: ch }] = await Promise.all([
-          courseClient.from('wiki_pages')
+          courseClient.from(table)
             .select('slug, title, type, summary, status, needs')
             .eq('course_id', courseId).order('title'),
           courseClient.from('wiki_gap_report').select('*').eq('course_id', courseId),
@@ -131,7 +134,7 @@ export default function WikiIndex() {
   // courseId is derived from course, so the object itself adds nothing as
   // a dependency — and an unstable identity here is how the refetch loop
   // above started. Primitives only.
-  }, [courseClient, courseId, weekAnchored])
+  }, [courseClient, courseId, weekAnchored, table, freeze])
 
   // Postgres full-text over title + summary + content (the generated
   // search_vector column). websearch syntax so quoted phrases and -exclusions
@@ -139,14 +142,14 @@ export default function WikiIndex() {
   const runSearch = useCallback(async (term) => {
     if (!term.trim()) return setResults(null)
     setSearching(true)
-    const { data } = await courseClient.from('wiki_pages')
+    const { data } = await courseClient.from(table)
       .select('slug, title, type, summary, status')
       .eq('course_id', courseId)
       .textSearch('search_vector', term, { type: 'websearch' })
       .limit(40)
     setSearching(false)
     setResults(data ?? [])
-  }, [courseClient, courseId])
+  }, [courseClient, courseId, table])
 
   useEffect(() => {
     const t = setTimeout(() => runSearch(q), 250)
@@ -263,6 +266,7 @@ export default function WikiIndex() {
   return (
     <Shell course={course} session={session} client={courseClient} isStaff={isStaff}
            courses={courses} courseId={courseId} onSelectCourse={select}>
+      <FreezeBanner freeze={freeze} isStaff={isStaff} />
       <div style={S.statRow}>
         <Stat n={pages.length} label={isStaff ? 'pages you can read' : 'pages'} accent />
         <Stat

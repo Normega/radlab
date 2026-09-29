@@ -14,6 +14,7 @@ import { weekIcon } from './weekIcons'
 import ReportIssue from './ReportIssue'
 import NeighbourGraph from './NeighbourGraph'
 import { rankNeighbours } from './readingGraph'
+import { useGuideFreeze, pageTable, FreezeBanner, freezeDate } from './guideFreeze'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -43,6 +44,11 @@ export default function WikiPage() {
   const paths = useCoursePaths()
   const { courseClient, session, enrollments, isStaff } = useOutletContext()
   const { courseId, course } = useWikiCourse(enrollments)
+  // During a Guide freeze a student reads the snapshot; staff read live and
+  // can switch to the student view (guideFreeze.jsx).
+  const freeze = useGuideFreeze(courseClient, courseId)
+  const [freezePreview, setFreezePreview] = useState(false)
+  const table = pageTable(freeze, isStaff, freezePreview)
   const accountMenu = session ? (
     <AvatarMenu client={courseClient} fgEmail={session.user.email}
                 courseCode={course?.code} isStaff={isStaff} />
@@ -104,12 +110,14 @@ export default function WikiPage() {
   const page = loaded.slug === slug ? loaded.row : undefined
 
   useEffect(() => {
-    if (!courseId || !slug) return
+    // Wait for the freeze answer: reading the live table first and then
+    // swapping would flash post-freeze text at a student.
+    if (!courseId || !slug || freeze === undefined) return
     let cancelled = false
 
     ;(async () => {
       const { data: row } = await courseClient
-        .from('wiki_pages')
+        .from(table)
         .select('id, slug, type, title, summary, content, status, current_version, updated_at, published_at, needs')
         .eq('course_id', courseId).eq('slug', slug).maybeSingle()
       if (cancelled) return
@@ -120,7 +128,7 @@ export default function WikiPage() {
       // honest basis for colouring a wikilink: a link to a page that exists
       // but is still a draft is, for a student, a link to nothing readable.
       const [{ data: all }, { data: back }, { data: out }, { data: prov }, { data: cat }, { data: gp }, { data: rev }, { data: pls }, { data: cal }] = await Promise.all([
-        courseClient.from('wiki_pages').select('id, slug, title, type, status').eq('course_id', courseId),
+        courseClient.from(table).select('id, slug, title, type, status').eq('course_id', courseId),
         courseClient.from('wiki_links')
           .select('id, source:wiki_pages!wiki_links_source_page_id_fkey!inner(id, slug, title, type, status)')
           .eq('target_page_id', row.id),
@@ -166,7 +174,7 @@ export default function WikiPage() {
     // reloadKey re-runs the whole fetch after a save, so the rendered body,
     // table of contents, gap list and link graph all reflect the edit rather
     // than the client patching its own copy and drifting from the database.
-  }, [courseClient, courseId, slug, reloadKey])
+  }, [courseClient, courseId, slug, reloadKey, table, freeze])
 
   // Count this visit and load the reader's own history. Its own effect, keyed
   // on the page and the user rather than the session object: auth-js hands out
@@ -369,10 +377,14 @@ export default function WikiPage() {
   if (page === null) {
     return (
       <Shell course={course} menu={accountMenu}>
+        <FreezeBanner freeze={freeze} isStaff={isStaff} preview={freezePreview}
+                      onTogglePreview={isStaff ? () => setFreezePreview(p => !p) : null} />
         <h1 style={S.title}>Not published yet</h1>
         <p style={S.sub}>
-          There's no readable page at <code style={S.code}>{slug}</code>. Either it hasn't been
-          written yet, or it's still a draft awaiting review.
+          {freeze?.active && table === 'wiki_page_snapshots'
+            ? <>There's no page at <code style={S.code}>{slug}</code> in the edition frozen on {freezeDate(freeze.starts_at)}. If it was added since, it appears on {freezeDate(freeze.ends_at)}.</>
+            : <>There's no readable page at <code style={S.code}>{slug}</code>. Either it hasn't been
+          written yet, or it's still a draft awaiting review.</>}
         </p>
         <p style={{ marginTop: 14 }}><Link to={WIKI_BASE} style={S.link}>← All pages</Link></p>
       </Shell>
@@ -384,6 +396,8 @@ export default function WikiPage() {
 
   return (
     <Shell course={course} menu={accountMenu}>
+      <FreezeBanner freeze={freeze} isStaff={isStaff} preview={freezePreview}
+                    onTogglePreview={isStaff ? () => { setEditing(false); setFreezePreview(p => !p) } : null} />
       <nav style={S.crumbs}>
         <Link to={WIKI_BASE} style={S.link}>All pages</Link>
         {catalog?.dsm_chapter_title && (
@@ -402,7 +416,7 @@ export default function WikiPage() {
 
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
         <h1 style={{ ...S.title, flex: '1 1 auto' }}>{page.title}</h1>
-        {isStaff && !editing && page.content && (
+        {isStaff && !editing && !freezePreview && page.content && (
           <button style={S.editBtn} onClick={() => { setDraft(page.content); setNote(''); setEditing(true) }}>
             Edit page
           </button>

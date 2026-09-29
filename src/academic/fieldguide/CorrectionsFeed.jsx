@@ -3,6 +3,7 @@ import { Link, useOutletContext } from 'react-router-dom'
 import { AcademicEyebrow, AcademicHeaderRow } from '../AcademicChrome'
 import AvatarMenu from './AvatarMenu'
 import { useWikiBase, useCoursePaths } from './wiki/useWikiBase'
+import { useGuideFreeze, beforeFreeze, FreezeBanner } from './wiki/guideFreeze'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -15,7 +16,10 @@ const SERIF = '"DM Serif Display", Georgia, serif'
 export default function CorrectionsFeed() {
   const WIKI_BASE = useWikiBase()
   const paths = useCoursePaths()
-  const { courseClient, session, courseCode, isStaff } = useOutletContext()
+  const { courseClient, session, courseCode, isStaff, course } = useOutletContext()
+  // Corrections made during a Guide freeze are not on the pages students can
+  // read yet, so a student's feed stops at the freeze (guideFreeze.jsx).
+  const freeze = useGuideFreeze(courseClient, course?.course_id)
   const [rows, setRows] = useState(null)
   const [notice, setNotice] = useState(null)
 
@@ -36,6 +40,7 @@ export default function CorrectionsFeed() {
         <AcademicHeaderRow menu={<AvatarMenu client={courseClient} fgEmail={session.user.email} courseCode={courseCode} isStaff={isStaff} />}>
           <AcademicEyebrow to={paths.home} />
         </AcademicHeaderRow>
+        <FreezeBanner freeze={freeze} isStaff={isStaff} />
         <h1 style={S.title}>Corrections</h1>
         <p style={S.sub}>
           Every staff edit, newest first: who, what page, which version, and the required note saying
@@ -48,7 +53,7 @@ export default function CorrectionsFeed() {
           <p style={{ ...S.sub, marginTop: 24 }}>No corrections recorded yet.</p>
         )}
 
-        {rows?.map(r => (
+        {rows?.filter(r => beforeFreeze(freeze, isStaff, r.created_at)).map(r => (
           <article key={r.version_id} style={S.card}>
             <div style={S.head}>
               <Link to={`${WIKI_BASE}/${r.slug}`} style={S.slug}>{r.slug}</Link>
