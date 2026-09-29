@@ -57,17 +57,17 @@ async function releaseSend(service, claimId) {
 // 429 with matched:true either way. `limit` separates "you've used the day's
 // allowance" from "one was just sent", which the Lounge card renders
 // differently (it must not claim an email was sent when none was).
-function refuse(res, gate) {
+function refuse(res, gate, sentTo) {
   if (gate.reason === 'window') {
     return res.status(429).json({
-      matched: true, limit: true, retryAt: gate.retry_at,
+      matched: true, limit: true, retryAt: gate.retry_at, sentTo,
       error: `You've asked for ${gate.cap ?? 10} sign-in emails in the last 24 hours, which is the limit. `
         + `You can ask for another from ${whenIs(gate.retry_at)}. `
         + 'The code in your most recent email works for an hour after it arrived.',
     })
   }
   return res.status(429).json({
-    matched: true, retryAt: gate.retry_at,
+    matched: true, retryAt: gate.retry_at, sentTo,
     error: 'A link was just sent — check your inbox (and spam), then try again in a couple of minutes.',
   })
 }
@@ -224,8 +224,16 @@ export default async function handler(req, res) {
 
   // The limit is the same one the other two paths pass. invite_count and
   // last_invited_at on the roster row stay as staff-facing history only.
-  const gate = await claimSend(service, key, 'roster')
-  if (!gate.ok) return refuse(res, gate)
+  // A UTORid alias (obiorahc@mail.utoronto.ca) matches the roster row whose
+  // address is the name form (charlesmary.obiorah@…): U of T delivers both to
+  // one inbox, so the email still goes to the roster address. The limit is
+  // keyed on that address, so the two spellings share one allowance, and
+  // `sentTo` tells the page which address to verify a typed code against —
+  // the account is under the roster address, not the one typed.
+  const rowKey = normalize(row.email)
+  const sentTo = rowKey === key ? undefined : row.email
+  const gate = await claimSend(service, rowKey, 'roster')
+  if (!gate.ok) return refuse(res, gate, sentTo)
 
   try {
     // Best-effort: a lookup failure costs the course-specific reply address
@@ -237,7 +245,7 @@ export default async function handler(req, res) {
       email: row.email, fullName: row.full_name, courseCode, next,
     })
     await service.rpc('roster_mark_invited', { p_id: row.id })
-    return res.status(200).json({ matched: true })
+    return res.status(200).json({ matched: true, sentTo })
   } catch (e) {
     await releaseSend(service, gate.claimId)
     return res.status(500).json({ error: `Could not send the link: ${e.message}` })

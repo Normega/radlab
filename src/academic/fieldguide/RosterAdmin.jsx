@@ -117,7 +117,7 @@ export default function RosterAdmin() {
 
   // CSV import state
   const [csv, setCsv] = useState(null)       // { headers, data }
-  const [map, setMap] = useState({ name: '', email: '', num: '' })
+  const [map, setMap] = useState({ name: '', email: '', num: '', utorid: '' })
   // Reconcile diff from the last import: { absent: [...], returned: [...] }.
   // Lives only until applied or dismissed — it describes ONE upload, and going
   // stale is worse than going away (roster_bulk_status still guards a stale
@@ -161,6 +161,7 @@ export default function RosterAdmin() {
       name:  guessCol(headers, ['name']),
       email: guessCol(headers, ['email', 'e-mail']),
       num:   guessCol(headers, ['student', 'number', 'id']),
+      utorid: guessCol(headers, ['utorid']),
     })
   }
 
@@ -171,6 +172,8 @@ export default function RosterAdmin() {
       full_name: r[map.name] ?? '',
       email: r[map.email] ?? '',
       student_number: map.num === '' ? null : (r[map.num] ?? null),
+      // Lets a student sign in with the UTORid alias of their address.
+      utorid: map.utorid === '' ? null : (r[map.utorid] ?? null),
     }))
     const { data, error } = await courseClient.rpc('roster_upsert', {
       p_course_id: courseId, p_rows: payload,
@@ -364,7 +367,7 @@ export default function RosterAdmin() {
             <>
               <p style={S.sub}>{csv.data.length} data rows. Which column is which?</p>
               <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', margin: '8px 0' }}>
-                {[['name', 'Full name'], ['email', 'Email'], ['num', 'Student number (optional)']].map(([k, label]) => (
+                {[['name', 'Full name'], ['email', 'Email'], ['num', 'Student number (optional)'], ['utorid', 'UTORid (optional)']].map(([k, label]) => (
                   <label key={k} style={S.sub}>
                     {label}{' '}
                     <select style={S.select} value={map[k]}
