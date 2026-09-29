@@ -3,6 +3,7 @@ import { AcademicEyebrow } from '../AcademicChrome'
 import AvatarMenu from './AvatarMenu'
 import { useCoursePaths } from './wiki/useWikiBase'
 import { loungePath } from '../courseRoutes'
+import { WORDS } from './contributions'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -101,13 +102,18 @@ export default function ContributionHowTo() {
           <li style={S.li}>
             <b>Write two things.</b>
             <ul style={S.ul}>
-              <li style={S.li}><b>What the source found</b> (60–400 words, aim ~150): report what the
+              <li style={S.li}><b>What the source found</b> ({WORDS.foundMin}–{WORDS.foundMax} words, aim ~{WORDS.foundAim}): report what the
                 study actually found, in your own words, <i>with the numbers that matter</i>.
                 Answer the ask; do not advise.</li>
-              <li style={S.li}><b>What this source cannot tell us</b> — design limits, sample limits,
+              <li style={S.li}><b>What this source cannot tell us</b> (aim ~{WORDS.limAim} words) — design limits, sample limits,
                 what question stays open. <b>This box is the point of the exercise</b>, and the
                 skill your work is marked on.</li>
             </ul>
+            <b>Length:</b> the syllabus's "{WORDS.totalMin}–{WORDS.totalMax} words" is both boxes
+            together, not the first box alone. The form shows the combined count as you type.<br />
+            <b>Citations:</b> no formatted reference is needed — the DOI (or URL) is the citation,
+            and the reference is generated from it. If you name a study in your text, use APA
+            author–date, e.g. (Kilpatrick et al., 2013).<br />
             Your draft autosaves in your browser and there's a Save draft button — nothing is
             lost if you close the tab.
           </li>

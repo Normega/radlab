@@ -17,6 +17,19 @@ export const CONTRIBUTION_SLOTS = [
   { key: 'amber2', tier: 'amber', label: 'Amber 2', due: 'Nov 27' },
 ]
 
+// Word targets. The syllabus asks for "roughly 250–500 words" per contribution;
+// the form has two boxes, and a student asked (2026-09-29) which one that
+// meant. It is both together: the finding box on its own is 60–400 (the
+// precheck blocks under 60 and warns over 400 — those numbers live in
+// precheck_submission() and must change with it), aiming at ~150, and the
+// limitation box carries the rest. Submissions to date had a median of 157 +
+// 92 = 263 words, so this describes what students were already doing.
+export const WORDS = {
+  foundMin: 60, foundMax: 400, foundAim: 150,
+  limAim: 100,
+  totalMin: 250, totalMax: 500,
+}
+
 // expire_claims() appends " · expired YYYY-MM-DD (14-day claim TTL)" to note
 // (or writes only that). It is the system's bookkeeping, not a reviewer's
 // words, so it is stripped — and a note counts as feedback only when a TA
