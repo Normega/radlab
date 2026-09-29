@@ -32,6 +32,9 @@ export default function Join() {
   // way. The link still ships as a fallback for personal mailboxes.
   const [otp, setOtp] = useState('')
   const [otpErr, setOtpErr] = useState(null)
+  // A UTORid address matches the roster under its name address; the email and
+  // the account are there, so a typed code verifies against it.
+  const [sentTo, setSentTo] = useState(null)
 
   const submit = async (e) => {
     e.preventDefault()
@@ -48,6 +51,7 @@ export default function Join() {
         body: JSON.stringify(code ? { email, courseCode: code.toUpperCase() } : { email }),
       })
       const body = await rsp.json().catch(() => ({}))
+      setSentTo(body.sentTo ?? null)
       if (rsp.status === 429) setState({ error: body.error })
       else if (!rsp.ok) setState({ error: body.error ?? `Something went wrong (${rsp.status})` })
       else setState(body.matched ? 'sent' : 'unmatched')
@@ -75,7 +79,7 @@ export default function Join() {
       // different path (a brand-new user, or a future change here).
       let error = null
       for (const type of ['recovery', 'magiclink', 'email']) {
-        const r = await client.auth.verifyOtp({ email, token, type })
+        const r = await client.auth.verifyOtp({ email: sentTo || email, token, type })
         error = r.error
         if (!error) break
       }
@@ -110,6 +114,7 @@ export default function Join() {
               no password, ever. Both last an hour. If nothing arrives within a few minutes,
               check spam, then request another.
             </p>
+            {sentTo && <p style={S.sub}>It went to <strong>{sentTo}</strong> — the same U of T inbox as the address you typed.</p>}
             <form onSubmit={verify} style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 14 }}>
               <input
                 value={otp}

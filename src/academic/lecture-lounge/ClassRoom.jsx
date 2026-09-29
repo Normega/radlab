@@ -782,6 +782,9 @@ function ClassAuthCard({ classInfo, slug }) {
   const [error, setError] = useState(null)
   const [state, setState] = useState(null) // roster: null | 'sent' | 'unmatched'; signup: null | 'confirmSent'
   const [otp, setOtp] = useState('')
+  // Set when a UTORid address matched a roster row under its name address:
+  // the email went there, and the typed code verifies against that account.
+  const [sentTo, setSentTo] = useState(null)
 
   async function submitRoster(e) {
     e.preventDefault()
@@ -795,6 +798,7 @@ function ClassAuthCard({ classInfo, slug }) {
       })
       const out = await rsp.json().catch(() => ({}))
       setBusy(false)
+      setSentTo(out.sentTo ?? null)
       // A cooldown 429 means an email really did just go out, so the card
       // moves on to "sent"; a daily-limit 429 (out.limit) sent nothing, so it
       // stays on the form with the message saying when to come back.
@@ -817,8 +821,13 @@ function ClassAuthCard({ classInfo, slug }) {
     setBusy(true); setError(null)
     try {
       const client = await getCourseClient()
-      let { data, error: vErr } = await client.auth.verifyOtp({ email, token, type: 'magiclink' })
-      if (vErr) ({ data, error: vErr } = await client.auth.verifyOtp({ email, token, type: 'email' }))
+      // 'recovery' first: generateLink({type:'magiclink'}) stores an existing
+      // user's token in the recovery slot (see fieldguide/Join.jsx).
+      let data = null, vErr = null
+      for (const type of ['recovery', 'magiclink', 'email']) {
+        ;({ data, error: vErr } = await client.auth.verifyOtp({ email: sentTo || email, token, type }))
+        if (!vErr) break
+      }
       if (vErr || !data?.session) {
         setBusy(false)
         setError(/expired|invalid/i.test(vErr?.message ?? '')
@@ -895,6 +904,7 @@ function ClassAuthCard({ classInfo, slug }) {
           Tap the button in the email and you'll land back here, signed in and ready to
           join — no password, ever. Or type the code from the email below.
         </p>
+        {sentTo && <p style={S.sub}>It went to <strong>{sentTo}</strong> — the same U of T inbox as the address you typed.</p>}
         <form onSubmit={submitCode} style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 14, justifyContent: 'center' }}>
           <input
             value={otp}
