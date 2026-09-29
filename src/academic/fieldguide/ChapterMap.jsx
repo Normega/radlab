@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useGuideFreeze, pageTable } from './wiki/guideFreeze'
 import { Link, useOutletContext } from 'react-router-dom'
 import { AcademicEyebrow } from '../AcademicChrome'
 import AvatarMenu from './AvatarMenu'
@@ -45,6 +46,8 @@ export default function ChapterMap() {
   const paths = useCoursePaths()
   const { courseClient, courseCode, session, isStaff, course: urlCourse } = useOutletContext()
   const courseId = urlCourse?.course_id
+  const freeze = useGuideFreeze(courseClient, courseId)
+  const table = pageTable(freeze, isStaff)
 
   const [meetings, setMeetings] = useState(null)  // null = loading
   const [pages, setPages] = useState([])
@@ -61,7 +64,7 @@ export default function ChapterMap() {
   const uid = session?.user?.id
 
   useEffect(() => {
-    if (!courseId) return
+    if (!courseId || freeze === undefined) return
     let cancelled = false
     ;(async () => {
       const [ms, pl, pg, cat] = await Promise.all([
@@ -72,7 +75,7 @@ export default function ChapterMap() {
           .select('lecture_no, page_id').eq('course_id', courseId),
         // Published only: an unpublished page is not a reading, and linking one
         // hands students a 404 for work that is still in the review queue.
-        courseClient.from('wiki_pages')
+        courseClient.from(table)
           .select('id, slug, title, type')
           .eq('course_id', courseId).eq('status', 'published'),
         // The catalogue carries the tier; wiki_pages does not.
@@ -87,7 +90,7 @@ export default function ChapterMap() {
       setTiers(new Map((cat.data ?? []).map(d => [d.slug, d.tier])))
     })()
     return () => { cancelled = true }
-  }, [courseClient, courseId])
+  }, [courseClient, courseId, table, freeze])
 
   useEffect(() => {
     if (!courseId || !uid) return
