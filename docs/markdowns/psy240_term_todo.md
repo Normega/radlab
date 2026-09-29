@@ -190,7 +190,7 @@ clear the exclusion in the YAML header.
 - [ ] WeeklyWall: a friendly message when an insert is refused, instead of the raw RLS error.
 - [ ] `get_session_bootstrap` anonymous-call log noise.
 - [ ] `enroll_from_roster` permission-denied blips in the logs.
-- [ ] Syllabus says contributions are 250–500 words; the submission form allows 60–400. Reconcile.
+- [x] (2026-09-29 — 250–500 is both boxes together; the form now shows the combined count and the how-to says so) Syllabus says contributions are 250–500 words; the submission form allows 60–400. Reconcile.
 - [ ] Deep links: check the Reports tab shows page and gap links for every resolved report, not just
   Lucas's.
 
