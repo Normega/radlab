@@ -65,13 +65,14 @@ export default function ClassRctPreview() {
               key={c.day}
               type="button"
               onClick={() => pick(c.day)}
-              title={`${c.title}${c.again ? ` (again, from day ${c.again})` : ''}${built ? '' : ' — not built yet'}`}
+              title={`${c.title}${c.again ? ` (again, from day ${c.again})` : ''}${c.choice ? ' (the student picks one of three)' : ''}${built ? '' : ' — not built yet'}`}
               style={{
                 width: 38, height: 34, borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer',
                 border: `1.5px solid ${on ? 'var(--tx)' : 'var(--bds)'}`,
                 background: on ? 'var(--tx)' : built ? '#fff' : 'transparent',
                 color: on ? '#fff' : built ? 'var(--tx)' : 'var(--gy)',
-                fontStyle: c.again ? 'italic' : 'normal',
+                fontStyle: c.again || c.choice ? 'italic' : 'normal',
+                textDecoration: c.choice ? 'underline dotted' : 'none',
               }}
             >
               {c.day}

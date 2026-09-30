@@ -3419,6 +3419,34 @@ trigger map, body diagram and thought-record widgets realistically). The preview
 `/dev/class-rct?arm=sm&day=N`. Verified: all 56 days (both arms) walk through to Complete Practice
 with no console errors.
 
+**Five-minute sessions and repeats that stay fresh (2026-09-29).** Norm set the whole check-in
+(ratings + practice) at under five minutes, and judged direct repetition would go stale.
+- *Length.* Non-reactivity ships `cap()`'d: reading pace 2.6 words/s, her settling opener shortened
+  from Day 4 (Days 1–3 teach it whole), and `fitLines()` (shared.js) keeping fewer, longer quiet
+  stretches (min 12 s; a dropped stretch keeps its words as a line), never cutting her teaching
+  lines. Slideshows now 2:06–3:08; practice under 4 min on 24/28 days. Stress mindset: Day 1 and
+  Day 3 lessons trimmed, Day 3's second scenario and both arms' four Graduation follow-ups after
+  "Yes" dropped (`DROP` in reappraisal.js). Its worksheet days still run 4:30–5:40 by estimate
+  (≈50 s per written answer), as do non-reactivity's written days (6, 14, 19, 28).
+- *Repeats.* Never reruns. Weeks 1–2: a condensed version with more quiet (non-reactivity) or the
+  worksheet without its lesson (stress mindset). Week 3: opens on the most stressful moment since
+  the last session (non-reactivity asks for it, `key: 'recent'`, and aims the condensed practice at
+  it; stress mindset frames the worksheet with it). Week 4: the student picks one of three earlier
+  practices/worksheets, built as a `training_response` (`key: 'pick'`) with each option's steps
+  behind `show_if` — no new renderer, and unchosen options save nothing. `moduleSeconds` counts
+  only the longest branch per key, so lead-in minutes stay honest on choice days.
+- *Own words back.* New step type `show_back` (`ShowBackBlock.jsx`, formatting in `showBack.js`):
+  fetches the participant's latest `intervention_responses` row for a given module_id +
+  response_index through their own client (RLS "own rows"), and formats every saved shape (plain
+  text, `selected`, `responses`, body diagram, trigger map). Nothing is asserted without a row: an
+  item with none is left out, and if none has one the screen says there is nothing to show back.
+  Admin preview shows a placeholder. Non-reactivity shows Day 2's labelling reflection (Day 7),
+  Day 14's "I observed…" (Days 15, 18) and Day 19's "When I notice…, I will…" plan (Days 20–27);
+  stress mindset shows the thought chosen, alternative response, catastrophe, resources, values,
+  triggers or body map from the day the worksheet was first done. Every item's target was checked
+  programmatically to be an earlier, answer-bearing step; the query and formatter were run against
+  real Study 3 rows of each shape.
+
 ### Interactive breath practice (`breath_practice`) — short-form prototype
 
 **Added 2026-09-24, on `dev` only; not yet in any study.** A step type that replaces the guided

@@ -6,6 +6,7 @@ import StudyVideoPlayer from '../video/StudyVideoPlayer'
 import NoDefaultSlider from './NoDefaultSlider'
 import BreathPracticeBlock from './BreathPracticeBlock'
 import GuidedTextBlock from './GuidedTextBlock'
+import ShowBackBlock from './ShowBackBlock'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -28,7 +29,7 @@ const SESSION_STEPS = [
 // because an untouched handle is a non-response, not a choice of whatever value
 // it happens to rest on. This set short-circuits ahead of the switch, so
 // listing a type here silently makes its case below dead code.
-const ALWAYS_ENABLED = new Set(['lead_in', 'lead_out', 'text', 'closing'])
+const ALWAYS_ENABLED = new Set(['lead_in', 'lead_out', 'text', 'closing', 'show_back'])
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -709,6 +710,10 @@ export default function InterventionPage({
                 setNextEnabled(true)
               }}
             />
+          )}
+
+          {current.type === 'show_back' && (
+            <ShowBackBlock key={current._stepIndex} step={current} participantId={participantId} db={supabase} />
           )}
 
           {current.type === 'guided_text' && (

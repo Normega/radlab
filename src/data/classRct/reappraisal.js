@@ -10,11 +10,9 @@
 // only other wording changes, all because there is no longer a video, are in
 // REWORD. Her modules are untouched; these are copies under classrct-ra-* ids.
 //
-// "Again" days differ from the non-reactivity arm's: re-reading a lesson is not
-// practice, re-doing the worksheet with this week's situation is. So an again
-// day drops the lesson, says which day taught it, and re-runs the exercise.
-// Only worksheets built on the student's own situation are repeated; the
-// fixed-scenario days (threat vs challenge, which battle to fight) are not.
+// Trimmed for a five-minute session (2026-09-29): the Day 1 and Day 3 lessons,
+// Day 3's second scenario, and Graduation's four follow-ups after "Yes" (see
+// LESSONS and DROP). Repeat days are described at "Repeats that stay fresh".
 
 import { aboutMinutes, pad } from './shared'
 
@@ -1124,7 +1122,9 @@ const SOURCE = {
 }
 
 // ── The eleven video scripts, as guided text ──────────────────────────────────
-// Strings are lines; { quiet: N } is a short pause.
+// Strings are lines; { quiet: N } is a short pause. Days 1 and 3 were trimmed
+// on 2026-09-29 to keep the session near five minutes (her research-review
+// and distress-can-turn-to-eustress passages); every other lesson is whole.
 const LESSONS = {
   "reappraisal-phase1-day1": {
     "label": "The science of stress",
@@ -1133,7 +1133,6 @@ const LESSONS = {
       "Stress is often seen as something bad, but it can also be helpful!",
       "First, a trip back in time. Stress, if you think about it, is designed to help us.",
       "When a saber-toothed tiger attacked us in prehistoric times, neurochemicals were released into our body to prepare us to either fight off the tiger or to run away.",
-      "This increased our chances for survival and our ability to pass on our genes to the next generation.",
       "And this positive aspect of stress is still valuable to us today, even if you don’t work with saber-tooth tigers.",
       "Moderate levels of stress get you moving toward your goals and help you marshal the resources to get something done.",
       "As stress increases, your performance continues to increase, at least up to a point.",
@@ -1143,19 +1142,12 @@ const LESSONS = {
       "When you feel overwhelmed or threatened, your stress system can’t tell the difference between physical threats, such as a saber-tooth tiger that may attack…",
       "…and social threats, such as a long list of urgent assignments or an upcoming exam.",
       "Our bodies end up going into short-term emergency mode, a system that was never designed to keep running over the long term.",
-      "Historically, we either escaped or we didn’t. Yet today, we can keep triggering this short-term stress system.",
       "When the demands of a situation start to feel greater than the resources you have to handle it, and the sources of stress persist despite our best efforts, stress can become overwhelming.",
       "Instead of helping you focus, it can leave you feeling stuck, exhausted, or discouraged. We call this distress!",
       "So what is the stress response actually designed to do? Is it an outdated system that is no longer as useful to us?",
-      {
-        "quiet": 8
-      },
-      "Let’s review the research into the benefits of stress.",
-      "We hear a lot about how stress can decrease your cognitive performance. But there is scientific research that the opposite is true as well.",
       "For example, subjects’ memory and performance on standard cognitive tests actually increase when they are told to put their hands into ice water, a rather stressful activity.",
       "Other studies show benefits to your immune system when under stress.",
       "When a group of patients was purposely stressed before going into knee surgery, they recovered at twice the rate of a control group not primed with stress.",
-      "This makes sense from a historical perspective. If you get attacked by a saber-tooth tiger, that’s the time you want your immune system working at its optimal level.",
       "So stress is not simply good or bad. Often, it is a signal that something important is happening, and that the body is preparing to respond.",
       "How we interpret that stress can shape whether it feels more helpful or more harmful.",
       "By changing our mindset about stress, we can train ourselves to utilize our stress to find new, higher levels of performance, health, and well-being."
@@ -1185,12 +1177,6 @@ const LESSONS = {
       "People can experience eustress when they feel confident in their ability to solve a problem or cope with a situation.",
       "For example, they may feel stressed about an exam but know that they have prepared enough to be able to do it. Afterward, they might feel a sense of accomplishment or pride.",
       "In comparison, distress can occur when a person feels unable to cope or out of their depth. For example, if a person has not studied for a forthcoming exam, they may feel anxious or panicked.",
-      "However, distress is not inherently damaging.",
-      "In some cases, people who initially feel distressed in a situation may become motivated to address a problem, transforming distress into eustress and leading to better outcomes in the future.",
-      "Their experience of stress can change over time.",
-      "A person who is not prepared for an exam might create a study plan so that they can perform better next time.",
-      "Or they might feel distressed before the exam, but then realize that they are more capable than they had believed. Their feelings might change from distress to eustress!",
-      "Let’s take a common example.",
       "Imagine you have an important exam coming up. Your heart starts racing. Your body feels tense.",
       "That same physical response can be interpreted in two different ways.",
       "If you see it as a threat, you might think: “I’m not ready. I’m going to fail.” This interpretation can increase anxiety and make it harder to focus.",
@@ -1198,13 +1184,8 @@ const LESSONS = {
       "When you interpret a stressful event as a challenge, you are more likely to experience eustress: stress that feels motivating and manageable.",
       "When the same situation is interpreted as a threat, you are more likely to experience distress: stress that feels overwhelming or discouraging.",
       "The key point is: your body reacts the same way, but your interpretation changes your experience.",
-      {
-        "quiet": 6
-      },
       "Research shows that when people feel they have the resources to handle a situation, such as enough preparation, support, or skills, stress is more likely to feel like a challenge.",
       "But when the situation feels bigger than the resources available, stress can feel overwhelming and turn into distress.",
-      "This is why the same situation can feel very different depending on the person, or even for the same person at different times.",
-      "Importantly, stress itself is not always harmful.",
       "In the short term, stress can actually improve attention, energy, and performance, especially when it’s seen as something manageable.",
       "But when stress becomes too intense or lasts too long, it can start to feel exhausting and harder to cope with.",
       "So the goal isn’t to eliminate stress. It’s to begin noticing how we interpret it."
@@ -1380,12 +1361,23 @@ const lessonStep = id => {
   }
 }
 
+// Steps of hers left out of the class version, by source index, with why.
+const DROP = {
+  // Threat vs Challenge: one scenario instead of two (2026-09-29, five-minute session).
+  'reappraisal-phase1-day3': [5, 6, 7],
+  // Graduation: the four follow-ups after "Yes" (when / where / barrier / overcome),
+  // dropped 2026-09-29 to keep the session near five minutes.
+  'reappraisal-phase2-day12': [7, 8, 9, 10],
+}
+
 // A day built from one of her modules: the video becomes its lesson, every
 // other step is hers, reworded only where it named the video.
 const build = (day, srcId) => {
   const src = SOURCE[srcId]
-  const steps = src.steps.map(s =>
-    s.type === 'video' ? lessonStep(srcId)
+  const drop = new Set(DROP[srcId] ?? [])
+  const steps = src.steps
+    .filter((_, i) => !drop.has(i))
+    .map(s => s.type === 'video' ? lessonStep(srcId)
       : s.type === 'prompt_response' ? { ...s, prompt: reword(s.prompt) }
         : s)
   return {
@@ -1397,31 +1389,6 @@ const build = (day, srcId) => {
     lead_in: { ...src.lead_in, text: `${reword(src.lead_in.text).trim()} ${aboutMinutes(steps)}.` },
     steps,
     lead_out: { ...src.lead_out, owl: OWL_OUT, text: LEAD_OUT },
-  }
-}
-
-// An again day: the exercise without the lesson, introduced by where it was taught.
-const again = (day, from) => {
-  const steps = [
-    {
-      type: 'text',
-      content: [{
-        tag: 'p',
-        text: `On ${from.day_label} you learned about “${from.title}.” Today, practise it again with something from this week: the same situation as before, or a new one.`,
-      }],
-    },
-    ...from.steps.filter(s => s.type !== 'guided_text'),
-  ]
-  return {
-    ...from,
-    module_id: `classrct-ra-d${pad(day)}`,
-    lesson: day,
-    day_label: `Day ${day} · again`,
-    lead_in: {
-      ...from.lead_in,
-      text: `Today you return to an exercise from ${from.day_label}: ${from.title}. ${aboutMinutes(steps)}. Press Next when you’re ready.`,
-    },
-    steps,
   }
 }
 
@@ -1442,17 +1409,101 @@ const d17 = build(17, 'reappraisal-phase2-day10')  // Is Every Battle Worth Figh
 const d19 = build(19, 'reappraisal-phase2-day11')  // Ready for Next Time
 const d28 = build(28, 'reappraisal-phase2-day12')  // Graduation Day!
 
+// ── Repeats that stay fresh ───────────────────────────────────────────────────
+// Norm, 2026-09-29, against direct repetition going stale. A repeat never
+// re-reads the lesson (that is not practice); it re-runs the worksheet, and:
+//   - shows the student's own words from the first time (show_back);
+//   - from week 3, works on the most stressful moment of the past day or two;
+//   - in week 4, lets the student choose among three worksheets.
+// Only worksheets built on the student's own situation repeat, never the
+// fixed-scenario days. Indices below are positions in the built module, which
+// match her source (the lesson replaces the video in place).
+const BACK = {
+  2:  [{ index: 0, label: 'What was stressing you' }],
+  4:  [{ index: 2, label: 'I am stressed about this because I care about…' }],
+  8:  [{ index: 1, label: 'Your triggers' }],
+  9:  [{ index: 1, label: 'How stress shows up for you' }],
+  10: [{ index: 5, label: 'The thought you chose' }, { index: 6, label: 'Your alternative response' }],
+  11: [{ index: 4, label: 'The thought you chose' }, { index: 5, label: 'The distortion you saw in it' }],
+  13: [{ index: 1, label: 'Your catastrophe' }, { index: 6, label: 'How you would cope' }],
+  14: [{ index: 3, label: 'Your resources' }, { index: 4, label: 'Your alternative response' }],
+  16: [{ index: 2, label: 'Your values' }],
+}
+const FIRST = { 2: d02, 4: d04, 8: d08, 9: d09, 10: d10, 11: d11, 13: d13, 14: d14, 16: d16 }
+const BLURB = {
+  2: 'Notice how stress shows up: body, emotions, behaviour',
+  4: 'Find what you care about behind the stress',
+  8: 'Map what tends to trigger your stress',
+  9: 'How stress shows up for you, on the body map',
+  10: 'Catch an automatic thought, and answer it',
+  11: 'Name the distortion in an automatic thought',
+  13: 'Reality-check a catastrophe',
+  14: 'Weigh the demands against your resources',
+  16: 'Reconnect with the values behind the stress',
+}
+
+const showBack = first => ({
+  type: 'show_back',
+  heading: `On Day ${first} you wrote`,
+  items: BACK[first].map(it => ({ module_id: `classrct-ra-d${pad(first)}`, ...it })),
+  follow: 'Is that still what comes up, or something else?',
+})
+const exercise = first => FIRST[first].steps.filter(s => s.type !== 'guided_text')
+const frame = (text) => ({ type: 'text', content: [{ tag: 'p', text }] })
+const RECENT_FRAME = 'Today, work with the most stressful moment from the past day or two.'
+
+const repeatBase = (day, title, subtitle, steps, lead, label = `Day ${day} · again`) => {
+  const src = Object.values(FIRST)[0]
+  return {
+    ...src,
+    module_id: `classrct-ra-d${pad(day)}`,
+    lesson: day,
+    day_label: label,
+    title,
+    subtitle,
+    lead_in: { ...src.lead_in, text: `${lead} ${aboutMinutes(steps)}. Press Next when you’re ready.` },
+    steps,
+  }
+}
+
+// Weeks 1–2: the same situation or a new one. Weeks 3–4: a recent moment.
+const again = (day, first, recent) => repeatBase(day, FIRST[first].title, FIRST[first].subtitle, [
+  frame(recent
+    ? `${RECENT_FRAME} You first did this exercise on Day ${first}.`
+    : `On Day ${first} you learned about “${FIRST[first].title}.” Today, practise it again with something from this week: the same situation as before, or a new one.`),
+  showBack(first),
+  ...exercise(first),
+], `Today you return to an exercise from Day ${first}: ${FIRST[first].title}.`)
+
+// Week 4: pick one of three worksheets, each with its own show-back.
+const choice = (day, firsts) => repeatBase(day, 'Your choice', 'Choose today’s exercise', [
+  frame(RECENT_FRAME),
+  {
+    type: 'training_response',
+    key: 'pick',
+    prompt: 'Which exercise would you like today?',
+    options: firsts.map(f => ({ label: FIRST[f].title, description: BLURB[f] })),
+  },
+  ...firsts.flatMap(f => [showBack(f), ...exercise(f)].map(s => ({ ...s, show_if: { key: 'pick', equals: FIRST[f].title } }))),
+], 'Today you choose which exercise to return to, with a recent stressful moment.', `Day ${day}`)
+
 export const MODULES = {
-  1: d01, 2: d02, 3: d03, 4: d04, 5: d05, 6: d06, 7: again(7, d02),
-  8: d08, 9: d09, 10: d10, 11: d11, 12: again(12, d10), 13: d13, 14: d14,
-  15: again(15, d04), 16: d16, 17: d17, 18: again(18, d11), 19: d19, 20: again(20, d13), 21: again(21, d14),
-  22: again(22, d08), 23: again(23, d16), 24: again(24, d10), 25: again(25, d09), 26: again(26, d11), 27: again(27, d14),
+  1: d01, 2: d02, 3: d03, 4: d04, 5: d05, 6: d06, 7: again(7, 2),
+  8: d08, 9: d09, 10: d10, 11: d11, 12: again(12, 10), 13: d13, 14: d14,
+  15: again(15, 4, true), 16: d16, 17: d17, 18: again(18, 11, true), 19: d19, 20: again(20, 13, true), 21: again(21, 14, true),
+  22: choice(22, [10, 14, 8]),
+  23: choice(23, [11, 16, 4]),
+  24: choice(24, [13, 10, 9]),
+  25: choice(25, [14, 11, 16]),
+  26: choice(26, [2, 13, 10]),
+  27: choice(27, [14, 4, 11]),
   28: d28,
 }
 
-// Same shape as the non-reactivity CALENDAR, for the preview's day picker.
+const AGAIN_OF = { 7: 2, 12: 10, 15: 4, 18: 11, 20: 13, 21: 14 }
 export const CALENDAR = Object.entries(MODULES).map(([day, m]) => ({
   day: Number(day),
   title: m.title,
-  again: m.day_label.endsWith('again') ? Number(Object.entries(MODULES).find(([, x]) => x !== m && x.title === m.title && !x.day_label.endsWith('again'))?.[0]) : undefined,
+  again: AGAIN_OF[day],
+  choice: m.title === 'Your choice' || undefined,
 }))

@@ -79,6 +79,13 @@ engine: enrolment, randomisation, ratings, export). Compassion and reappraisal a
 - [ ] Decide the RCT's arms: non-reactivity vs Sense Foraging as planned, or add stress mindset as a
   third arm (splits the class three ways).
 - [ ] Norm reviews the stress-mindset lessons on the dev site.
+- [x] Five-minute sessions + fresh repeats (Norm, 2026-09-29): non-reactivity slideshows capped near 3 min;
+  stress-mindset Day 1/3 lessons and Day 3's second scenario trimmed; Graduation follow-ups dropped in
+  both arms. Repeats: condensed (weeks 1–2), aimed at the most stressful recent moment (week 3), student's
+  choice of three (week 4), with their own earlier words shown back (`show_back`). 2026-09-29.
+- [ ] Still over ~4 min of practice by estimate: the written-exercise days (non-reactivity 6, 14, 19, 28;
+  stress mindset's worksheet days at 4:30–5:40). Decide: accept, make some write-ins optional, or trim
+  (e.g. Five Senses' 15 write-downs).
 - [ ] Minimal measures: one stress + mood slider bundle, before and after every session, same in
   both arms; the same short stress/mood check on days 1, 14, 28; shared day-28 experience items
   (enjoyment, helpful, would continue, one open "what stood out").

@@ -16,14 +16,17 @@
 // under classrct-nr-* ids, and Study 3 keeps running as it is.
 //
 // The 28-day calendar spreads her 16 sessions over the Sense Foraging course's
-// 28 days: new practices first, then "again" days that repeat earlier ones,
-// ending on Graduation. Every day is built; "again" days reuse the practice they
-// name, with their own id and lead-in.
+// 28 days: new practices first, then repeats, ending on Graduation. Repeats are
+// never reruns (see "Repeats that stay fresh" below): a condensed version with
+// more quiet; from week 3 aimed at the student's most stressful recent moment
+// with their own earlier words shown back; in week 4 the student picks one of
+// three. Everything ships cap()'d to about three minutes of slideshow so the
+// whole check-in stays near five.
 //
 // Lead-in lengths ("about N minutes") are computed from the content, never typed,
 // so editing a script cannot leave a stale estimate behind.
 
-import { aboutMinutes, pad } from './shared'
+import { aboutMinutes, fitLines, pad } from './shared'
 
 const OWL_IN  = 'owl_nonreactivity'
 const OWL_OUT = 'owl_love'
@@ -50,31 +53,19 @@ const base = (day, title, subtitle, steps, { lead, ...extra } = {}) => {
   }
 }
 
-// An "again" day: the same practice, its own id and a lead-in that says so.
-const again = (day, from) => ({
-  ...from,
-  module_id: `classrct-nr-d${pad(day)}`,
-  lesson: day,
-  day_label: `Day ${day} · again`,
-  lead_in: {
-    owl: OWL_IN,
-    text: `Today you return to a practice from ${from.day_label}: ${from.title}. ${aboutMinutes(from.steps)}. Press Next when you’re ready.`,
-  },
-})
-
 const q = (quiet, text) => (text ? { quiet, text } : { quiet })
 
 // ── Day 1 · Breath Sensation ──────────────────────────────────────────────────
-// The interactive breathing figure (breath_practice), lengthened to about the
-// video's 3.8 minutes: 150 s at the student's own rhythm instead of 60.
+// The interactive breathing figure (breath_practice): 120 s at the student's
+// own rhythm (150 s until 2026-09-29, trimmed for the five-minute session).
 const d01 = base(1, 'Breath Sensation', 'Stabilizing attention', [
   {
     type: 'breath_practice',
     key: 'breath_sensation',
     label: 'Breath sensation',
-    natural_seconds: 150,
+    natural_seconds: 120,
     intro_text:
-      'This practice takes about four minutes. Sit or lie somewhere comfortable. Keep your eyes open with a soft, relaxed gaze.',
+      'This practice takes about three minutes. Sit or lie somewhere comfortable. Keep your eyes open with a soft, relaxed gaze.',
   },
 ])
 
@@ -694,7 +685,9 @@ const d19 = base(19, 'Pause Before Reacting', 'Preparing for a Future Stressor',
 ], { lead: 'Today’s practice is a written exercise. You’ll reflect on a recurring stressful situation and build a simple plan for pausing before you react.' })
 
 // ── Day 28 · Graduation Day! ──────────────────────────────────────────────────
-// Copied from non-reactivity-phase2-day12, show_if branching included. The
+// Copied from non-reactivity-phase2-day12, minus its four follow-ups after
+// "Yes" (when / where / barrier / overcome), dropped 2026-09-29 to keep the
+// session near five minutes; the likelihood slider still branches on Yes. The
 // class's shared end-of-course questions (the same in both arms) are added when
 // the study is configured, not here.
 const WILL = { key: 'will_practice', equals: 'Yes' }
@@ -711,10 +704,6 @@ const d28 = base(28, 'Graduation Day!', 'Reflection & Intention Setting', [
     min_label: 'Rarely', max_label: 'Almost always',
     point_labels: ['Rarely', 'Occasionally', 'Sometimes', 'Often', 'Very often', 'Almost always'],
   },
-  { type: 'prompt_response', size: 'short', show_if: WILL, prompt: 'When will you practice? How often?', example: null, example_label: null },
-  { type: 'prompt_response', size: 'short', show_if: WILL, prompt: 'Where will you practice?', example: null, example_label: null },
-  { type: 'prompt_response', size: 'short', show_if: WILL, prompt: 'What\'s the biggest barrier you anticipate to practicing?', example: null, example_label: null },
-  { type: 'prompt_response', size: 'short', show_if: WILL, prompt: 'How can you overcome this barrier?', example: null, example_label: null },
   { type: 'prompt_response', size: 'short', required: false, prompt: 'Do you have any additional comments about your experience with these exercises?', example: null, example_label: null },
   {
     type: 'closing',
@@ -729,55 +718,271 @@ const d28 = base(28, 'Graduation Day!', 'Reflection & Intention Setting', [
   },
 ], { lead: 'It’s Graduation Day! Congratulations on reaching the final day of this program. You did it! Today, you will take a few minutes to reflect on your experience with these practices.' })
 
-// ── "Again" days ──────────────────────────────────────────────────────────────
-const d07 = again(7, d02)
-const d12 = again(12, d04)
-const d15 = again(15, d08)
-const d18 = again(18, d09)
-const d20 = again(20, d10)
-const d21 = again(21, d13)
-const d22 = again(22, d01)
-const d23 = again(23, d03)
-const d24 = again(24, d11)
-const d25 = again(25, d16)
-const d26 = again(26, d05)
-const d27 = again(27, d04)
+// ── Fitting the five-minute session ───────────────────────────────────────────
+// Norm, 2026-09-29: the whole check-in (ratings + practice) should stay under
+// five minutes, so a practice's slideshow is capped near three. The full
+// scripts above stay as written; what ships is cap()'d: a slightly brisker
+// reading pace, her settling opener shortened from Day 4 on (Days 1–3 teach
+// it in full), and fewer, longer quiet stretches (fitLines, in shared.js).
+// Her teaching lines are never cut.
+const NR_WPS = 2.6
+const CAP_S  = 180
+const SHORT_SETTLE = [
+  { text: 'Settle in with a soft gaze; in the quiet stretches, you can let your eyes close.' },
+  { text: 'Take a few slow breaths, then let the breath find its own rhythm.' },
+  q(6),
+]
+// [from, count]: which of a script's lines are the generic settling opener.
+const settle = (lines, [from, count]) => [...lines.slice(0, from), ...SHORT_SETTLE, ...lines.slice(from + count)]
+
+const cap = (m, settleAt = null, seconds = CAP_S) => {
+  const steps = m.steps.map(st => st.type !== 'guided_text' ? st : {
+    ...st,
+    wps: NR_WPS,
+    lines: fitLines(settleAt ? settle(st.lines, settleAt) : st.lines, seconds, NR_WPS),
+  })
+  return { ...m, steps, lead_in: { ...m.lead_in, text: m.lead_in.text.replace(/About \d+ minutes?/, aboutMinutes(steps)) } }
+}
+
+// ── Repeats that stay fresh ───────────────────────────────────────────────────
+// Norm, 2026-09-29, against direct repetition going stale:
+//   1. fewer words each time: a repeat is a condensed version of the practice
+//      (her key lines, shortened), with more room for quiet;
+//   2. weeks 3–4 open on the most stressful moment since the last session, and
+//      the practice is aimed at it;
+//   3. show the student's own words back (show_back reads their earlier answer);
+//   4. week 4 lets them choose among three earlier practices.
+
+const RECENT = {
+  type: 'prompt_response',
+  key: 'recent',
+  size: 'single_line',
+  prompt: 'Before today’s practice: what’s been the most stressful moment since your last session? A few words is enough.',
+  example: 'the group project call · a message I haven’t answered · tomorrow’s quiz',
+  example_label: 'For example:',
+}
+const PLAN_BACK = {
+  type: 'show_back',
+  heading: 'Your plan from Day 19',
+  items: [{ module_id: 'classrct-nr-d19', index: 7, label: 'When I notice…, I will… before reacting' }],
+  follow: 'Keep it in mind as you practise today.',
+}
+const OBSERVED_BACK = {
+  type: 'show_back',
+  heading: 'On Day 14 you wrote',
+  items: [{ module_id: 'classrct-nr-d14', index: 8, label: 'I observed… without trying to change it' }],
+  follow: 'Today, bring the same curiosity to the moment you named.',
+}
+const gt = (label, lines, close) => ({ type: 'guided_text', label, wps: NR_WPS, lines, close })
+const FEWER = 'with fewer words today. You know this one.'
+
+// Weeks 1–2: fewer words.
+const F_LABELING = gt('Breath awareness and labelling', [
+  { text: `Breath awareness and labelling, ${FEWER}` },
+  { text: 'Settle in with a soft gaze, and let the breath find its own rhythm.' },
+  q(25, 'The breath.'),
+  { text: 'When a thought comes, label it once, “thinking,” and return to the breath.' },
+  q(45, 'The breath. “Thinking,” when a thought comes.'),
+  { text: 'Notice that thoughts come and go on their own. You are able to observe them.' },
+  q(35, 'Coming home to the breath.'),
+], 'When you’re ready, come back fully alert and awake.')
+
+const F_3MBS = gt('Three-minute breathing space', [
+  { text: `The three-minute breathing space, ${FEWER}` },
+  { text: 'Settle in with a soft gaze. A few slow breaths.' },
+  { text: 'Bring to mind something that is causing you some stress right now. Something manageable: a 3 out of 10, not an 8 or a 9.' },
+  { text: 'First, notice what is here: thoughts, as mental events. Feelings: tension, unease, pressure.' },
+  q(25, 'Noticing what’s here.'),
+  { text: 'Second, gather your attention onto the breath, moment by moment.' },
+  q(35, 'The breath as an anchor.'),
+  { text: 'Third, widen your awareness to the whole body, holding everything that is here.' },
+  q(35, 'Breathing with the whole body.'),
+], 'Take this sense of awareness with you as you continue with the rest of your day.')
+
+// Weeks 3–4: fewer words, aimed at the moment the student just named.
+const A = {
+  breath: {
+    type: 'breath_practice',
+    key: 'breath_sensation',
+    label: 'Breath sensation',
+    natural_seconds: 90,
+    intro_text: 'Breath sensation, with fewer words today. About three minutes. Keep your eyes open with a soft, relaxed gaze.',
+    natural_cues: [
+      'Let your breath find its own natural rhythm. If it helps, touch and hold while you breathe in, and let go as you breathe out.',
+      'If the moment you named comes to mind, simply notice it, and come back to the breath.',
+      'Nothing to change. Just breathing.',
+    ],
+  },
+  leaves: gt('Leaves on a stream', [
+    { text: `Leaves on a stream, ${FEWER}` },
+    { text: 'Settle in, a few slow breaths, and picture the stream: leaves floating on the surface of the water.' },
+    { text: 'Bring to mind the moment you named. As thoughts about it come, place each one on a leaf, and let it float by.' },
+    q(40, 'Thoughts on leaves, floating by.'),
+    { text: 'If a leaf gets stuck, allow it to hang around until it’s ready to float by. If the thought comes up again, watch it float by another time.' },
+    q(40, 'Leaves, floating by.'),
+    { text: 'If your mind says “This isn’t working,” place that on a leaf too.' },
+    q(25),
+  ], 'When you feel ready, continue with the rest of your day.'),
+  seeHearFeel: gt('See, Hear, Feel', [
+    { text: `See, Hear, Feel, ${FEWER}` },
+    { text: 'Sit upright, alert yet restful. Soften the shoulders; relax the jaw.' },
+    { text: 'Bring to mind the moment you named, and notice what shows up: an image, inner talk, a feeling, a sensation.' },
+    { text: 'Label what stands out: See… Hear… or Feel.' },
+    q(40, 'See… Hear… Feel…'),
+    { text: 'Stay with it for a few seconds. Does it fade… stay… or shift? When something else draws your attention, turn toward it and label it.' },
+    q(45, 'See… Hear… Feel…'),
+  ], 'May you carry this awareness with a sense of ease and kindness.'),
+  mountain: gt('Mountain meditation', [
+    { text: `The mountain, ${FEWER}` },
+    { text: 'Settle in, a few slow breaths, and let the image of your mountain form: massive, solid, unmoving.' },
+    q(20, 'The mountain.'),
+    { text: 'Now let the moment you named be the weather: clouds, wind, a storm passing over the mountain.' },
+    { text: 'The mountain is visited by storms. Through it all, it remains its essential self.' },
+    q(40, 'The mountain sits.'),
+    { text: 'With each breath, you become more like the mountain: grounded and still, while the weather changes.' },
+    q(35),
+  ], 'When you feel ready, continue with the rest of your day.'),
+  detective: gt('Sensory detective', [
+    { text: `The sensory detective, ${FEWER}` },
+    { text: 'Settle in, a few slow breaths.' },
+    { text: 'Bring to mind the moment you named, and find where it shows up in your body.' },
+    { text: 'Investigate that sensation with curiosity. Is it steady, or does it change? Sharp, or soft? Moving, or still?' },
+    q(35, 'Investigating.'),
+    { text: 'Now notice any thought or feeling that comes with it. Words, or images? Tight, or spacious?' },
+    q(30),
+    { text: 'No solving. No judging. No pushing away. Just observing.' },
+    q(25),
+  ], 'Take one more slow breath in… and out. When you feel ready, continue with the rest of your day.'),
+  opening: gt('Hand opening', [
+    { text: `The hand opening, ${FEWER}` },
+    { text: 'Settle in, a few slow breaths. Gently close your hands into a loose fist.' },
+    { text: 'Bring to mind the moment you named. What is it like to hold it? Harder or softer? More or less open?' },
+    q(20, 'Holding.'),
+    { text: 'When a thought about it comes, acknowledge it. Then slowly open your hands, creating space for it.' },
+    q(30, 'Hands open. Allowing.'),
+    { text: 'When your attention returns to the breath, close your hands again. Notice the difference between holding and releasing.' },
+    q(40, 'Closing on the breath. Opening when a thought appears.'),
+  ], 'When you are ready, take one final breath and continue with the rest of your day.'),
+  lighthouse: gt('Lighthouse meditation', [
+    { text: `The lighthouse, ${FEWER}` },
+    { text: 'Settle in, a few slow breaths.' },
+    { text: 'Let the moment you named be the storm: wind, waves rising and falling around a small boat.' },
+    q(20),
+    { text: 'In the distance, a steady light: a lighthouse on solid ground. A part of you that can remain steady, simply observing.' },
+    q(35, 'The waves rise and fall. The lighthouse continues to shine.'),
+    { text: 'Thoughts may come. Emotions may rise like waves. The lighthouse stays grounded and strong.' },
+    q(30, 'Stable. Steady.'),
+  ], 'Take one more slow breath in… and out. And carry this sense of inner steadiness with you as you continue your day.'),
+  object: gt('Mindfulness of an object', [
+    { text: 'Mindfulness of an object, with fewer words today. Have a small, neutral object in your hands.' },
+    { text: 'Take a slow breath. In the quiet stretch, close your eyes and notice its weight, its temperature, its texture.' },
+    q(30, 'Touch.'),
+    { text: 'If the moment you named pulls you away, notice the pull. Pause, and return to the object.' },
+    { text: 'Now look at it as if for the very first time: its shape, color, edges, small details.' },
+    q(30, 'Looking.'),
+    { text: 'Each return is a small moment of responding with awareness, rather than reacting automatically.' },
+    q(20),
+  ], 'Carry this practice with you, remembering that when an experience arises, you can pause, observe, and respond with awareness rather than react automatically.'),
+  bodyScan: gt('Body scan', [
+    { text: 'The body scan, with fewer words today. Treat each instruction as an invitation.' },
+    { text: 'Settle in, a few slow breaths.' },
+    { text: 'Bring to mind the moment you named. Where does it show up in your body? If nothing stands out, begin at your feet.' },
+    { text: 'Notice what is there, without judging, without trying to change it. Let the breath travel there, and soften on the out-breath.' },
+    q(35, 'Breathing with this place.'),
+    { text: 'Now let your attention move through the body: legs, stomach, hands, shoulders, jaw. Letting each soften.' },
+    q(35),
+    { text: 'Expand your awareness to include your whole body, sitting or lying here.' },
+    q(20),
+  ], 'When you feel ready, continue with the rest of your day.'),
+  breathingSpace: gt('Three-minute breathing space', [
+    { text: 'The three-minute breathing space, with the moment you named.' },
+    { text: 'Settle in, a few slow breaths.' },
+    { text: 'First, what is here? Thoughts about the moment, as mental events. Feelings: tension, unease, pressure. Simply acknowledge them.' },
+    q(25, 'Noticing what’s here.'),
+    { text: 'Second, gather your attention onto the breath, moment by moment.' },
+    q(35, 'The breath as an anchor.'),
+    { text: 'Third, widen to the whole body, including any tension or bracing that belongs to the moment.' },
+    q(35, 'Breathing with the whole body.'),
+  ], 'Take this sense of awareness with you as you continue with the rest of your day.'),
+}
+const TITLES = {
+  breath: 'Breath Sensation', leaves: 'Leaves on Stream', seeHearFeel: 'See, Hear, Feel Practice',
+  mountain: 'Mountain Meditation', detective: 'Sensory Detective', opening: 'Opening Awareness',
+  lighthouse: 'Lighthouse Meditation', object: 'Mindfulness of an Object', bodyScan: 'Body Scan',
+  breathingSpace: 'Three-Minute Breathing Space',
+}
+const FIRST_DAY = { breath: 1, leaves: 8, seeHearFeel: 9, mountain: 10, detective: 13, opening: 3, lighthouse: 11, object: 16, bodyScan: 5, breathingSpace: 4 }
+const BLURB = {
+  breath: 'The breathing figure, at your own rhythm',
+  leaves: 'Thoughts about it, floating by on leaves',
+  seeHearFeel: 'Label what shows up: see, hear, or feel',
+  mountain: 'Sit like a mountain while the weather passes',
+  detective: 'Investigate where it shows up in the body',
+  opening: 'Holding and releasing, with your hands',
+  lighthouse: 'A steady light while the storm moves around it',
+  object: 'An object in your hands; return when pulled away',
+  bodyScan: 'Where it shows up in the body, then the whole body',
+  breathingSpace: 'Notice, gather on the breath, widen',
+}
+
+// A repeat day. `back` is an optional show_back shown first.
+const repeatDay = (day, title, subtitle, steps, lead) =>
+  base(day, title, subtitle, steps, { lead, day_label: `Day ${day} · again` })
+
+// Weeks 3–4: the moment → (their own words) → the aimed practice.
+const aimedDay = (day, key, back) => repeatDay(day, TITLES[key], 'With a recent stressful moment',
+  [RECENT, ...(back ? [back] : []), A[key]],
+  `Today you return to a practice from Day ${FIRST_DAY[key]}, aimed at a recent stressful moment.`)
+
+// Week 4: the moment → their plan → choose one of three practices.
+const choiceDay = (day, keys) => base(day, 'Your choice', 'Choose today’s practice', [
+  RECENT,
+  PLAN_BACK,
+  {
+    type: 'training_response',
+    key: 'pick',
+    prompt: 'Which practice would you like today?',
+    options: keys.map(k => ({ label: TITLES[k], description: BLURB[k] })),
+  },
+  ...keys.map(k => ({ ...A[k], show_if: { key: 'pick', equals: TITLES[k] } })),
+], { lead: 'Today you choose which practice to return to, aimed at a recent stressful moment.' })
+
+const d07 = repeatDay(7, 'Breath Sensation with Labeling', 'Meta-awareness; Non-judgemental awareness', [
+  {
+    type: 'show_back',
+    heading: 'On Day 2 you wrote',
+    items: [{ module_id: 'classrct-nr-d02', index: 1, label: 'Did labeling change how thoughts or emotions felt?' }],
+    follow: 'Notice whether it is the same today.',
+  },
+  F_LABELING,
+  LABELING_REFLECTION,
+], 'Today you return to a practice from Day 2, with fewer words.')
+const d12 = repeatDay(12, 'Three-Minute Breathing Space', 'Application to a Current Stressor', [F_3MBS],
+  'Today you return to a practice from Day 4, with fewer words.')
+const d15 = aimedDay(15, 'leaves', OBSERVED_BACK)
+const d18 = aimedDay(18, 'seeHearFeel', OBSERVED_BACK)
+const d20 = aimedDay(20, 'mountain', PLAN_BACK)
+const d21 = aimedDay(21, 'detective', PLAN_BACK)
+const d22 = choiceDay(22, ['breath', 'leaves', 'bodyScan'])
+const d23 = choiceDay(23, ['opening', 'mountain', 'seeHearFeel'])
+const d24 = choiceDay(24, ['lighthouse', 'object', 'detective'])
+const d25 = choiceDay(25, ['breathingSpace', 'leaves', 'mountain'])
+const d26 = choiceDay(26, ['bodyScan', 'lighthouse', 'opening'])
+const d27 = choiceDay(27, ['breathingSpace', 'detective', 'seeHearFeel'])
 
 export const MODULES = {
-  1: d01, 2: d02, 3: d03, 4: d04, 5: d05, 6: d06, 7: d07,
-  8: d08, 9: d09, 10: d10, 11: d11, 12: d12, 13: d13, 14: d14,
-  15: d15, 16: d16, 17: d17, 18: d18, 19: d19, 20: d20, 21: d21,
+  1: d01, 2: cap(d02), 3: cap(d03), 4: cap(d04, [1, 4]), 5: cap(d05, [2, 4]), 6: cap(d06, null, 40), 7: d07,
+  8: cap(d08, [1, 4]), 9: cap(d09), 10: cap(d10, [1, 4]), 11: cap(d11, [2, 4]), 12: d12, 13: cap(d13, [3, 4]), 14: d14,
+  15: d15, 16: cap(d16), 17: cap(d17, [2, 3]), 18: d18, 19: d19, 20: d20, 21: d21,
   22: d22, 23: d23, 24: d24, 25: d25, 26: d26, 27: d27, 28: d28,
 }
 
-// The whole 28 days. `again` names the day whose practice repeats.
-export const CALENDAR = [
-  { day: 1,  title: 'Breath Sensation' },
-  { day: 2,  title: 'Breath Sensation with Labeling' },
-  { day: 3,  title: 'Opening Awareness' },
-  { day: 4,  title: 'Three-Minute Breathing Space' },
-  { day: 5,  title: 'Body Scan' },
-  { day: 6,  title: 'The Five Senses Exercise' },
-  { day: 7,  title: 'Breath Sensation with Labeling', again: 2 },
-  { day: 8,  title: 'Leaves on Stream' },
-  { day: 9,  title: 'See, Hear, Feel Practice' },
-  { day: 10, title: 'Mountain Meditation' },
-  { day: 11, title: 'Lighthouse Meditation' },
-  { day: 12, title: 'Three-Minute Breathing Space', again: 4 },
-  { day: 13, title: 'Sensory Detective' },
-  { day: 14, title: 'Become a Sensory Scientist!' },
-  { day: 15, title: 'Leaves on Stream', again: 8 },
-  { day: 16, title: 'Mindfulness of an Object' },
-  { day: 17, title: 'Guided Body Scan: exploring discomfort' },
-  { day: 18, title: 'See, Hear, Feel Practice', again: 9 },
-  { day: 19, title: 'Pause Before Reacting' },
-  { day: 20, title: 'Mountain Meditation', again: 10 },
-  { day: 21, title: 'Sensory Detective', again: 13 },
-  { day: 22, title: 'Breath Sensation', again: 1 },
-  { day: 23, title: 'Opening Awareness', again: 3 },
-  { day: 24, title: 'Lighthouse Meditation', again: 11 },
-  { day: 25, title: 'Mindfulness of an Object', again: 16 },
-  { day: 26, title: 'Body Scan', again: 5 },
-  { day: 27, title: 'Three-Minute Breathing Space', again: 4 },
-  { day: 28, title: 'Graduation Day!' },
-]
+// The whole 28 days, for the preview's day picker. `again` names the day a
+// repeat returns to; `choice` marks a week-4 day where the student picks.
+const AGAIN_OF = { 7: 2, 12: 4, 15: 8, 18: 9, 20: 10, 21: 13 }
+export const CALENDAR = Object.entries(MODULES).map(([day, m]) => ({
+  day: Number(day),
+  title: m.title,
+  again: AGAIN_OF[day],
+  choice: m.title === 'Your choice' || undefined,
+}))

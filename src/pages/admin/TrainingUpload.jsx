@@ -11,7 +11,7 @@ const VALID_STEP_TYPES = [
   'video', 'audio', 'text', 'prompt_response', 'closing', 'slider',
   'multi_response', 'timer', 'training_response', 'training_response_multi',
   'word_select', 'thought_rating', 'thought_choice', 'trigger_map',
-  'body_diagram', 'quality_explorer', 'breath_practice', 'guided_text',
+  'body_diagram', 'quality_explorer', 'breath_practice', 'guided_text', 'show_back',
 ]
 const VALID_OWL_KEYS   = [
   'owl_waving','owl_excited','owl_nonreactivity','owl_reappraisal',
@@ -99,6 +99,8 @@ function validateModule(def) {
           if (l.quiet == null && !l.text) errors.push(`steps[${i}].lines[${j}] needs text or quiet`)
         })
       }
+      if (step.type === 'show_back' && (!Array.isArray(step.items) || step.items.some(it => !it.module_id || it.index == null)))
+        errors.push(`steps[${i}] (show_back) needs items with module_id and index`)
       if (step.type === 'quality_explorer') {
         if (!Array.isArray(step.qualities) || step.qualities.length === 0)
           errors.push(`steps[${i}] (quality_explorer) missing qualities array`)
@@ -134,6 +136,7 @@ const STEP_TYPE_COLORS = {
   quality_explorer:       { bg: '#f0fdf4', color: '#065f46' },
   breath_practice:        { bg: '#eef6fc', color: '#1e5f8c' },
   guided_text:            { bg: '#fdf2f7', color: '#9d174d' },
+  show_back:              { bg: '#fdf2f7', color: '#831843' },
 }
 
 // ── TrainingUpload ────────────────────────────────────────────────────────────
