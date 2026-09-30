@@ -589,6 +589,16 @@ export async function materializeSchedule(
         stoppedAt = node.id
         break
       }
+      // Never started: the same rule as the missed-gate branch above. With no
+      // session completed, a count of zero means "never began", not "fell
+      // short" -- stall, don't withdraw. Without this, a screened-out
+      // participant (every row 'blocked', none actionable) walked straight to
+      // Liliana's Phase 1 check whenever they re-opened their SONA link, and
+      // auto-enroll withdrew them at 0/12: six between 2026-09-26 and 09-28.
+      if (!completedAny) {
+        stoppedAt = node.id
+        break
+      }
       const minRequired = node.min_required ?? 10
       const ofTotal = node.of_total ?? 12
       const phase = node.phase ?? 'phase1'
