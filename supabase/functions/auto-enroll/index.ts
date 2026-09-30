@@ -519,6 +519,18 @@ Deno.serve(async (req) => {
         // SessionEntry's "not the right fit" screen: the screener gate reads
         // their failed attempt, not the link, so this can never hand them a
         // second screening. That stays a staff decision (grant_screener_retake).
+        //
+        // Before reopening, a participant who has not consented restarts at
+        // day 1: restart_unstarted_schedule shifts their calendar so the entry
+        // session is today, instead of re-entering mid-Phase-1 with the days
+        // they never had already counted as missed (20260930). It is a no-op
+        // for anyone who has consented or completed a session.
+        const { error: restartErr } = await admin.rpc('restart_unstarted_schedule', {
+          p_participant: participantId,
+          p_study: study_id,
+        })
+        if (restartErr) console.error('restart_unstarted_schedule failed:', restartErr.message)
+
         const { data: ownRows } = await admin
           .from('participant_schedule')
           .select('id, status, study_session_id, completed_at')
@@ -536,7 +548,12 @@ Deno.serve(async (req) => {
             .select('link_expires_hours')
             .eq('id', entry.study_session_id)
             .maybeSingle()
-          await admin.from('participant_schedule').update({ status: 'unlocked' }).eq('id', entry.id)
+          // A screen-out's entry row is 'blocked' and stays so: the link only
+          // shows them "not the right fit", and un-blocking would make the row
+          // one the scheduler may act on.
+          if (entry.status !== 'blocked') {
+            await admin.from('participant_schedule').update({ status: 'unlocked' }).eq('id', entry.id)
+          }
           const link = await issueLink(admin, {
             scheduleId: entry.id,
             participantId,

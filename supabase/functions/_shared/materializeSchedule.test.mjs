@@ -333,6 +333,24 @@ function plan(db) {
   assert.equal(result.withdrawal, null, 'no completed session, so no withdrawal')
 }
 
+// 5c. The adherence check follows the same rule. A screened-out participant has
+//     every row 'blocked' (screen_out_trg), so nothing upstream is actionable
+//     and the walk reaches the Phase 1 check with 0 completed. That is "never
+//     began": stall, no withdrawal (six Liliana 3 screen-outs, 2026-09-26..28).
+{
+  const t0 = addDays(labToday(), -10)
+  const screenedOut = [row('s_base', t0, 'blocked')]
+  let offset = 1
+  for (const p of PRACTICES) {
+    for (const i of [1, 2, 3, 4]) screenedOut.push(row(`s_p1_${p}${i}`, addDays(t0, offset++), 'blocked'))
+  }
+  const { db, result } = await run(t0, screenedOut, { phaseDays: { phase1: 0 } })
+
+  assert.equal(result.withdrawal, null, 'nothing completed, so the adherence check does not withdraw')
+  assert.equal(result.stoppedAt, 'ac_p1', 'the walk stalls at the check')
+  assert.equal(db.inserted.length, 0)
+}
+
 // 6. Enrollment (nothing materialized): baseline + all of Phase 1 on the
 //    nominal calendar, with no pull-forward anywhere near it.
 {
