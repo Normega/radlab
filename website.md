@@ -3446,6 +3446,18 @@ with no console errors.
   triggers or body map from the day the worksheet was first done. Every item's target was checked
   programmatically to be an earlier, answer-bearing step; the query and formatter were run against
   real Study 3 rows of each shape.
+- *The light rule (2026-09-30).* Norm: a light experience, no more than five minutes a day — the
+  same commitment as the Sense Foraging exercises. `lightStep`/`lighten` (shared.js) make every
+  written answer a one-line box with the hint "A sentence is enough…" (`prompt_response` gained an
+  optional `placeholder`, read by the renderer). Further trims: Five Senses one write-down per sense
+  with each sense condensed to her key lines plus a 12 s pause; Sensory Scientist without "where do
+  you notice it most strongly" and a 20 s watch; Graduation (both arms) without "stood out most"
+  and the intention question; stress-mindset lessons for Days 1, 3, 10 and 11 shortened again (cut
+  lines are examples and framing), two automatic thoughts instead of three. `fitLines` now only
+  ever shrinks quiet stretches (it had stretched a short script's pauses up to the cap). A repeat's
+  worksheet no longer says "using the example above" when there is no lesson above it. Every day
+  is now ≤ 4:00 of practice by estimate (non-reactivity 2:15–3:50, stress mindset 1:25–3:57),
+  leaving about a minute for the before/after ratings; all 56 days walk through without errors.
 
 ### Interactive breath practice (`breath_practice`) — short-form prototype
 

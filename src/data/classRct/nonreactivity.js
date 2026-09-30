@@ -26,7 +26,7 @@
 // Lead-in lengths ("about N minutes") are computed from the content, never typed,
 // so editing a script cannot leave a stale estimate behind.
 
-import { aboutMinutes, fitLines, pad } from './shared'
+import { aboutMinutes, fitLines, lighten, pad } from './shared'
 
 const OWL_IN  = 'owl_nonreactivity'
 const OWL_OUT = 'owl_love'
@@ -223,8 +223,10 @@ const d05 = base(5, 'Body Scan', 'Stabilizing Attention', [
 ])
 
 // ── Day 6 · The Five Senses Exercise ──────────────────────────────────────────
-// Her structure unchanged (written intro, then each sense and its write-down);
-// the five audio clips become short guided pieces that start on their own.
+// Her structure (written intro, then each sense and its write-down), with the
+// five audio clips as short guided pieces that start on their own. One
+// write-down per sense rather than her 3-2-5-1-4, and each sense's guidance
+// condensed to her key lines plus a 12 s pause (2026-09-30, five-minute day).
 const sense = (label, lines) => ({
   type: 'guided_text', label, autostart: true, lines, close: 'Now write down what you noticed.',
 })
@@ -242,45 +244,31 @@ const d06 = base(6, 'The Five Senses Exercise', 'Stabilizing Attention', [
     ],
   },
   sense('Hearing', [
-    { text: 'Begin to notice all of the sounds around you.' },
-    { text: 'Try not to judge the sounds, just notice them. They are not good or bad, they just simply exist.' },
-    { text: 'Some sounds may come from inside your body, like breathing or subtle movements.' },
-    { text: 'Other sounds may come from nearby or from farther away, such as voices, traffic, or distant activity.' },
-    q(20, 'Listening.'),
-    { text: 'You may begin to notice subtle sounds you did not hear before. Can you hear them now?' },
-    q(10),
+    { text: 'Begin to notice all of the sounds around you: inside your body, nearby, and farther away.' },
+    { text: 'Try not to judge the sounds. They are not good or bad, they just simply exist.' },
+    q(12, 'Listening.'),
   ]),
-  { type: 'multi_response', size: 'single_line', count: 3, min_required: 3, prompt: 'Take a moment and write down 3 things I can hear:' },
+  { type: 'multi_response', size: 'single_line', count: 1, min_required: 1, prompt: 'Take a moment and write down 1 thing I can hear:' },
   sense('Smell', [
-    { text: 'Now shift your attention to notice the smells of your environment.' },
-    { text: 'Maybe you smell food. You might notice the smell of trees or plants if you are outside, or the smell of books or paper.' },
-    { text: 'Closing your eyes may help sharpen your attention to smell. Simply notice whatever scent is present.' },
-    q(20, 'Smelling.'),
+    { text: 'Now shift your attention to notice the smells of your environment. Closing your eyes may help.' },
+    q(12, 'Smelling.'),
   ]),
-  { type: 'multi_response', size: 'single_line', count: 2, min_required: 2, prompt: 'Take a moment and write down 2 things I can smell:' },
+  { type: 'multi_response', size: 'single_line', count: 1, min_required: 1, prompt: 'Take a moment and write down 1 thing I can smell:' },
   sense('Sight', [
-    { text: 'Now bring your attention to what you can see around you.' },
-    { text: 'Observe your surroundings and notice the colors, shapes, and textures.' },
-    { text: 'Look closely and see if you can notice small details that may have gone unnoticed before.' },
-    q(20, 'Looking.'),
+    { text: 'Now bring your attention to what you can see: colors, shapes, textures, small details that may have gone unnoticed before.' },
+    q(12, 'Looking.'),
   ]),
-  { type: 'multi_response', size: 'single_line', count: 5, min_required: 5, prompt: 'Take a moment and write down 5 things I can see:' },
+  { type: 'multi_response', size: 'single_line', count: 1, min_required: 1, prompt: 'Take a moment and write down 1 thing I can see:' },
   sense('Taste', [
-    { text: 'Now bring awareness to your sense of taste.' },
-    { text: 'Even if you do not have food in your mouth, you may notice subtle tastes. Perhaps an aftertaste from a recent drink or meal.' },
-    { text: 'You can also notice your tongue in your mouth, your saliva, or the taste of your breath as you exhale.' },
-    { text: 'If it helps, gently run your tongue along your teeth or the inside of your cheeks.' },
-    q(15, 'Tasting.'),
+    { text: 'Now bring awareness to taste: an aftertaste, your tongue in your mouth, the taste of your breath as you exhale.' },
+    q(12, 'Tasting.'),
   ]),
   { type: 'multi_response', size: 'single_line', count: 1, min_required: 1, prompt: 'Take a moment and write down 1 thing I can taste:' },
   sense('Touch', [
-    { text: 'Finally, bring attention to the sensations of touch.' },
-    { text: 'The sensations of skin contact with your chair, your clothing, and your feet on the floor.' },
-    { text: 'The pressure between your feet and the floor, or your body and the chair.' },
-    { text: 'You may also explore textures by touching objects around you, such as your desk or items nearby.' },
-    q(20, 'Touching.'),
+    { text: 'Finally, the sensations of touch: your chair, your clothing, your feet on the floor, textures within reach.' },
+    q(12, 'Touching.'),
   ]),
-  { type: 'multi_response', size: 'single_line', count: 4, min_required: 4, prompt: 'Take a moment and write down 4 things I can touch:' },
+  { type: 'multi_response', size: 'single_line', count: 1, min_required: 1, prompt: 'Take a moment and write down 1 thing I can touch:' },
 ])
 
 // ── Day 8 · Leaves on Stream ──────────────────────────────────────────────────
@@ -488,7 +476,8 @@ const d13 = base(13, 'Sensory Detective', 'Curiosity', [
 
 // ── Day 14 · Become a Sensory Scientist! ──────────────────────────────────────
 // Already a written exercise: copied from non-reactivity-phase2-day8 as it runs
-// in Study 3.
+// in Study 3, less "Where do you notice it most strongly?" and with a 20 s watch
+// instead of 30 (2026-09-30, five-minute day).
 const d14 = base(14, 'Become a Sensory Scientist!', 'Curiosity', [
   {
     type: 'prompt_response',
@@ -504,7 +493,6 @@ const d14 = base(14, 'Become a Sensory Scientist!', 'Curiosity', [
       { tag: 'p', text: 'Now gently bring your attention to this experience. If comfortable, you may close your eyes. Observe it closely, like a scientist examining a sample. You are only noticing qualities, not explaining the experience.' },
     ],
   },
-  { type: 'prompt_response', size: 'single_line', prompt: 'Where do you notice it most strongly?', example: null, example_label: null },
   {
     type: 'quality_explorer',
     instruction: 'Please explore the qualities below by clicking on them. Each time you click, a different slider will appear for that quality. When you find one that helps you to describe your experience, rate your experience using the slider. You will then be asked to describe that quality in your own words.',
@@ -536,8 +524,8 @@ const d14 = base(14, 'Become a Sensory Scientist!', 'Curiosity', [
   {
     type: 'timer',
     heading: 'Step 4: Watch for Change',
-    instruction: 'Observe the experience quietly for 30 seconds. Simply watch. Then check the option that best fits what you noticed.',
-    duration_seconds: 30,
+    instruction: 'Observe the experience quietly for 20 seconds. Simply watch. Then check the option that best fits what you noticed.',
+    duration_seconds: 20,
   },
   { type: 'training_response', prompt: 'Did the experience change?', options: ['No', 'Slight', 'Noticeable'] },
   { type: 'prompt_response', size: 'short', prompt: 'Optional: What shifted (if anything)?', required: false, example: null, example_label: null },
@@ -687,16 +675,16 @@ const d19 = base(19, 'Pause Before Reacting', 'Preparing for a Future Stressor',
 // ── Day 28 · Graduation Day! ──────────────────────────────────────────────────
 // Copied from non-reactivity-phase2-day12, minus its four follow-ups after
 // "Yes" (when / where / barrier / overcome), dropped 2026-09-29 to keep the
-// session near five minutes; the likelihood slider still branches on Yes. The
+// session near five minutes; the likelihood slider still branches on Yes. Also
+// without "which practices stood out most" (it overlaps "most helpful") and the
+// intention-setting question (2026-09-30). The
 // class's shared end-of-course questions (the same in both arms) are added when
 // the study is configured, not here.
 const WILL = { key: 'will_practice', equals: 'Yes' }
 const d28 = base(28, 'Graduation Day!', 'Reflection & Intention Setting', [
-  { type: 'prompt_response', size: 'short', prompt: 'Which mindfulness skills or practices stood out most to you during these exercises?', example: null, example_label: null },
   { type: 'prompt_response', size: 'short', prompt: 'Which practices or skills felt most helpful for you? Why?', example: null, example_label: null },
   { type: 'prompt_response', size: 'short', prompt: 'Were there any exercises that felt less helpful or more difficult to engage with?', example: null, example_label: null },
   { type: 'prompt_response', size: 'short', prompt: 'Did any of these practices change how you relate to your thoughts, emotions, or body sensations?', example: null, example_label: null },
-  { type: 'prompt_response', size: 'short', prompt: 'Are there situations in your daily life where stress or strong emotions tend to arise in predictable ways? If so, what intention could you set for yourself in those moments?', example: null, example_label: null },
   { type: 'training_response', key: 'will_practice', prompt: 'Do you think you will use any of these practices in your everyday life?', options: ['Yes', 'No'] },
   {
     type: 'slider', min: 1, max: 6, show_if: WILL,
@@ -970,12 +958,13 @@ const d25 = choiceDay(25, ['breathingSpace', 'leaves', 'mountain'])
 const d26 = choiceDay(26, ['bodyScan', 'lighthouse', 'opening'])
 const d27 = choiceDay(27, ['breathingSpace', 'detective', 'seeHearFeel'])
 
-export const MODULES = {
+const BUILT = {
   1: d01, 2: cap(d02), 3: cap(d03), 4: cap(d04, [1, 4]), 5: cap(d05, [2, 4]), 6: cap(d06, null, 40), 7: d07,
   8: cap(d08, [1, 4]), 9: cap(d09), 10: cap(d10, [1, 4]), 11: cap(d11, [2, 4]), 12: d12, 13: cap(d13, [3, 4]), 14: d14,
   15: d15, 16: cap(d16), 17: cap(d17, [2, 3]), 18: d18, 19: d19, 20: d20, 21: d21,
   22: d22, 23: d23, 24: d24, 25: d25, 26: d26, 27: d27, 28: d28,
 }
+export const MODULES = Object.fromEntries(Object.entries(BUILT).map(([d, m]) => [d, lighten(m)]))
 
 // The whole 28 days, for the preview's day picker. `again` names the day a
 // repeat returns to; `choice` marks a week-4 day where the student picks.

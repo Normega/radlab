@@ -54,6 +54,22 @@ export const aboutMinutes = steps => {
 
 export const pad = d => String(d).padStart(2, '0')
 
+// The light rule (Norm, 2026-09-30: no more than five minutes a day, the same
+// commitment as the Sense Foraging exercises). Every written answer is a single
+// line — a sentence is enough — rather than a paragraph box. Optional boxes keep
+// their own hint.
+const LIGHT_HINT = 'A sentence is enough…'
+export const lightStep = st =>
+  st.type === 'prompt_response' && st.required !== false && st.size !== 'single_line'
+    ? { ...st, size: 'single_line', placeholder: LIGHT_HINT }
+    : st
+
+// Apply the light rule to a whole module and restate its length in the lead-in.
+export const lighten = m => {
+  const steps = m.steps.map(lightStep)
+  return { ...m, steps, lead_in: { ...m.lead_in, text: m.lead_in.text.replace(/About \d+ minutes?/, aboutMinutes(steps)) } }
+}
+
 // Fit a script to a time cap by trimming its quiet stretches, never its words.
 // Keeps the few longest quiet stretches (fewer, longer silences rather than
 // many short ones: every quiet stretch ends on a tone, and a few seconds is too
@@ -70,9 +86,11 @@ export function fitLines(lines, capSeconds, wps) {
   const kept = quiets.slice(0, k)
   const keep = new Set(kept.map(x => x.i))
   const keptTotal = kept.reduce((a, x) => a + x.l.quiet, 0) || 1
+  // Only ever shrink: a script already inside the cap keeps its own pauses.
+  const scale = Math.min(1, room / keptTotal)
   return lines.flatMap((l, i) => {
     if (l.quiet == null) return [l]
-    if (keep.has(i)) return [{ ...l, quiet: Math.max(MIN_QUIET, Math.round((l.quiet * room) / keptTotal)) }]
+    if (keep.has(i)) return [{ ...l, quiet: Math.max(MIN_QUIET, Math.round(l.quiet * scale)) }]
     return l.text ? [asLine(l)] : []
   })
 }

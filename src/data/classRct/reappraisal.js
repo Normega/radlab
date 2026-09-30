@@ -14,7 +14,7 @@
 // Day 3's second scenario, and Graduation's four follow-ups after "Yes" (see
 // LESSONS and DROP). Repeat days are described at "Repeats that stay fresh".
 
-import { aboutMinutes, pad } from './shared'
+import { aboutMinutes, lightStep, pad } from './shared'
 
 const OWL_OUT  = 'owl_love'
 const LEAD_OUT = 'You’ve finished today’s practice. Press Next for your closing check-in.'
@@ -1122,9 +1122,10 @@ const SOURCE = {
 }
 
 // ── The eleven video scripts, as guided text ──────────────────────────────────
-// Strings are lines; { quiet: N } is a short pause. Days 1 and 3 were trimmed
-// on 2026-09-29 to keep the session near five minutes (her research-review
-// and distress-can-turn-to-eustress passages); every other lesson is whole.
+// Strings are lines; { quiet: N } is a short pause. Trimmed for the five-minute
+// day: Days 1 and 3 on 2026-09-29 and again on 2026-09-30, the thought-record
+// and distortions lessons (Days 10, 11) on 2026-09-30. Cut lines were
+// examples and framing; each lesson's teaching points remain.
 const LESSONS = {
   "reappraisal-phase1-day1": {
     "label": "The science of stress",
@@ -1133,20 +1134,15 @@ const LESSONS = {
       "Stress is often seen as something bad, but it can also be helpful!",
       "First, a trip back in time. Stress, if you think about it, is designed to help us.",
       "When a saber-toothed tiger attacked us in prehistoric times, neurochemicals were released into our body to prepare us to either fight off the tiger or to run away.",
-      "And this positive aspect of stress is still valuable to us today, even if you don’t work with saber-tooth tigers.",
       "Moderate levels of stress get you moving toward your goals and help you marshal the resources to get something done.",
-      "As stress increases, your performance continues to increase, at least up to a point.",
       "We see this in top athletes preparing for competition, neurosurgeons going into the operating room, and performers going on stage.",
       "Their stress primes them to be at their best. We call this eustress!",
-      "But this response is non-specific.",
       "When you feel overwhelmed or threatened, your stress system can’t tell the difference between physical threats, such as a saber-tooth tiger that may attack…",
       "…and social threats, such as a long list of urgent assignments or an upcoming exam.",
-      "Our bodies end up going into short-term emergency mode, a system that was never designed to keep running over the long term.",
       "When the demands of a situation start to feel greater than the resources you have to handle it, and the sources of stress persist despite our best efforts, stress can become overwhelming.",
       "Instead of helping you focus, it can leave you feeling stuck, exhausted, or discouraged. We call this distress!",
       "So what is the stress response actually designed to do? Is it an outdated system that is no longer as useful to us?",
       "For example, subjects’ memory and performance on standard cognitive tests actually increase when they are told to put their hands into ice water, a rather stressful activity.",
-      "Other studies show benefits to your immune system when under stress.",
       "When a group of patients was purposely stressed before going into knee surgery, they recovered at twice the rate of a control group not primed with stress.",
       "So stress is not simply good or bad. Often, it is a signal that something important is happening, and that the body is preparing to respond.",
       "How we interpret that stress can shape whether it feels more helpful or more harmful.",
@@ -1174,9 +1170,6 @@ const LESSONS = {
       "There are two different ways of experiencing stress: distress and eustress.",
       "At one end of the spectrum is distress, which involves negative feelings and is often a difficult experience. At the other end is eustress, which is challenging but rewarding.",
       "So what determines whether stress feels overwhelming… or helpful? It often comes down to how we interpret the situation.",
-      "People can experience eustress when they feel confident in their ability to solve a problem or cope with a situation.",
-      "For example, they may feel stressed about an exam but know that they have prepared enough to be able to do it. Afterward, they might feel a sense of accomplishment or pride.",
-      "In comparison, distress can occur when a person feels unable to cope or out of their depth. For example, if a person has not studied for a forthcoming exam, they may feel anxious or panicked.",
       "Imagine you have an important exam coming up. Your heart starts racing. Your body feels tense.",
       "That same physical response can be interpreted in two different ways.",
       "If you see it as a threat, you might think: “I’m not ready. I’m going to fail.” This interpretation can increase anxiety and make it harder to focus.",
@@ -1184,8 +1177,6 @@ const LESSONS = {
       "When you interpret a stressful event as a challenge, you are more likely to experience eustress: stress that feels motivating and manageable.",
       "When the same situation is interpreted as a threat, you are more likely to experience distress: stress that feels overwhelming or discouraging.",
       "The key point is: your body reacts the same way, but your interpretation changes your experience.",
-      "Research shows that when people feel they have the resources to handle a situation, such as enough preparation, support, or skills, stress is more likely to feel like a challenge.",
-      "But when the situation feels bigger than the resources available, stress can feel overwhelming and turn into distress.",
       "In the short term, stress can actually improve attention, energy, and performance, especially when it’s seen as something manageable.",
       "But when stress becomes too intense or lasts too long, it can start to feel exhausting and harder to cope with.",
       "So the goal isn’t to eliminate stress. It’s to begin noticing how we interpret it."
@@ -1248,20 +1239,15 @@ const LESSONS = {
     "close": "By learning to notice them, you can begin to understand your emotional reactions more clearly and respond to them in a more helpful way.",
     "lines": [
       "If you’ve been paying attention to your emotions, you may have noticed something interesting.",
-      "Sometimes, your feelings seem predictable. But other times, they can feel confusing: showing up suddenly, feeling too strong, or not quite fitting the situation.",
       "So what’s going on? The key to understanding emotions is recognizing the thoughts behind them.",
       "Throughout the day, your mind is constantly generating thoughts. These are called automatic thoughts: the thoughts that quickly and automatically come to mind, often without you even noticing them.",
       "For example, you might think: “I’m going to fail this.” “No one is interested in what I’m saying.” “I’m not good enough.”",
-      "Most of the time, we are not aware that these thoughts are happening. Instead, we notice the emotion first, like anxiety, frustration, or sadness.",
       "But in many cases, it is these automatic thoughts that shape how we feel, not just the situation itself.",
       "Here’s an example. Imagine two students receive the same feedback on an assignment. Most of the feedback is positive, but there are a few areas for improvement.",
       "One student might focus on the negative comments and think: “I’m not doing well. This is bad.” As a result, they feel discouraged or anxious.",
       "Another student might think: “I did well overall, and I can improve in these areas.” They may feel more motivated and confident.",
       "The situation is the same, but the automatic thoughts are different, and so are the emotional responses.",
-      "This happens because our minds are constantly interpreting what’s going on around us.",
-      "Sometimes, we focus on certain details and assign meaning to them that may not fully reflect the situation. Over time, these automatic thoughts can strongly influence our emotions and behavior.",
-      "The important takeaway is that it is not always the situation itself that determines how we feel; it is how we interpret it.",
-      "The good news is that these thoughts are not fixed."
+      "The important takeaway is that it is not always the situation itself that determines how we feel; it is how we interpret it."
     ]
   },
   "reappraisal-phase2-day6": {
@@ -1269,19 +1255,13 @@ const LESSONS = {
     "close": "Now that you’ve learned how to identify cognitive distortions, you can begin to notice them in your own thinking.",
     "lines": [
       "Now that you have spent some time observing your thoughts, you may have noticed some patterns in the types of thoughts that seem to come up again and again.",
-      "We all develop mental habits over time.",
-      "Some of these mental habits can lead us to consistently interpret situations in unhelpful ways, or in ways inconsistent with the facts of a situation. We all do this at times, usually without noticing it.",
       "It can be helpful to begin to identify these “cognitive distortions” when they occur.",
-      "For example, have you ever known someone who always responds to an idea with something like, “Well, that won’t work, and here’s why…”?",
-      "No matter what you suggest, they seem to focus only on what could go wrong, never on what might go right. You may have had thoughts like this yourself.",
       "We do this because our brains rely on mental shortcuts: quick ways of making sense of situations without using too much energy. Most of the time, these shortcuts are helpful.",
-      "For example, when you’re at the grocery store choosing apples, you might think: “Bruised apple = bad. Smooth apple = good.” This kind of quick thinking works well in simple situations.",
       "But when we apply these shortcuts too rigidly to more complex situations, they can become cognitive distortions. Let’s look at a few common examples.",
       "Negative filtering: focusing only on negative details while minimizing positive ones. “My professor gave me positive feedback, but she was probably just being nice.”",
       "Mind reading or fortune telling: assuming we know what others think, or predicting negative outcomes without evidence. “I’m going to fail.” “They think I’m not good enough.”",
       "Catastrophizing: imagining the worst possible outcome, and believing we wouldn’t be able to handle it. “If this goes wrong, everything will fall apart.”",
       "All-or-nothing thinking: seeing things in extremes, with no middle ground. “If I don’t do perfectly, I’ve failed.”",
-      "When we get caught in these patterns, our thinking can become rigid, like seeing the world through a very narrow lens.",
       "But in reality, there are often many different ways of interpreting the same situation."
     ]
   },
@@ -1345,6 +1325,8 @@ const LESSONS = {
 const REWORD = [
   ['a short training video', 'a short lesson'],
   ['According to the video,', 'According to today’s lesson,'],
+  // two automatic thoughts rather than three (2026-09-30, five-minute day)
+  ['You may list up to 3.', 'You may list up to 2.'],
   [' Please find a quiet spot to watch and participate fully before clicking Next.', ''],
   [' Please find a quiet spot to watch and participate before clicking Next.', ''],
 ]
@@ -1368,18 +1350,21 @@ const DROP = {
   // Graduation: the four follow-ups after "Yes" (when / where / barrier / overcome),
   // dropped 2026-09-29 to keep the session near five minutes.
   'reappraisal-phase2-day12': [7, 8, 9, 10],
+  // …and "stood out most" (overlaps "most helpful") and the intention question (2026-09-30).
+  'reappraisal-phase2-day12#more': [0, 4],
 }
 
 // A day built from one of her modules: the video becomes its lesson, every
 // other step is hers, reworded only where it named the video.
 const build = (day, srcId) => {
   const src = SOURCE[srcId]
-  const drop = new Set(DROP[srcId] ?? [])
+  const drop = new Set([...(DROP[srcId] ?? []), ...(DROP[`${srcId}#more`] ?? [])])
   const steps = src.steps
     .filter((_, i) => !drop.has(i))
     .map(s => s.type === 'video' ? lessonStep(srcId)
-      : s.type === 'prompt_response' ? { ...s, prompt: reword(s.prompt) }
-        : s)
+      : s.type === 'prompt_response' ? lightStep({ ...s, prompt: reword(s.prompt) })
+        : s.type === 'multi_response' && s.count === 3 ? { ...s, count: 2, prompt: reword(s.prompt) }
+          : s)
   return {
     ...src,
     module_id: `classrct-ra-d${pad(day)}`,
@@ -1448,7 +1433,12 @@ const showBack = first => ({
   items: BACK[first].map(it => ({ module_id: `classrct-ra-d${pad(first)}`, ...it })),
   follow: 'Is that still what comes up, or something else?',
 })
-const exercise = first => FIRST[first].steps.filter(s => s.type !== 'guided_text')
+// A repeat has no lesson, so a prompt that points back at the lesson's worked
+// example ("Using the example above as a guide") would point at nothing.
+const noLesson = s => s.type === 'prompt_response'
+  ? { ...s, prompt: s.prompt.replace(/^Now it.s your turn! Using the example above as a guide, w/, 'W') }
+  : s
+const exercise = first => FIRST[first].steps.filter(s => s.type !== 'guided_text').map(noLesson)
 const frame = (text) => ({ type: 'text', content: [{ tag: 'p', text }] })
 const RECENT_FRAME = 'Today, work with the most stressful moment from the past day or two.'
 

@@ -904,7 +904,7 @@ function PromptResponseBlock({ step, value, onChange }) {
         rows={rows}
         value={value}
         onChange={e => onChange(e.target.value)}
-        placeholder={step.required === false ? 'Optional — leave blank if nothing comes to mind…' : 'Type your response here…'}
+        placeholder={step.placeholder ?? (step.required === false ? 'Optional — leave blank if nothing comes to mind…' : 'Type your response here…')}
         style={S.textarea}
       />
     </div>
