@@ -85,6 +85,11 @@ async function lookupCrossref(doi) {
   }
 }
 
+function pdfPathAllowed(path, courseId, personId) {
+  if (typeof path !== 'string' || path.startsWith('/') || path.split('/').some(s => s === '..' || s === '.' || s === '')) return false
+  return path.startsWith(`${courseId}/`) || path.startsWith(`claims/${personId}/`)
+}
+
 export default async function handler(req, res) {
   const url = process.env.COURSE_SUPABASE_URL
   const anonKey = process.env.COURSE_SUPABASE_ANON_KEY
@@ -116,9 +121,18 @@ export default async function handler(req, res) {
   if (!personId) return res.status(401).json({ error: 'Invalid session or unknown user' })
 
   const { data: enrollments } = await userClient
-    .from('enrollments').select('id').eq('course_id', course_id).eq('status', 'active')
+    .from('enrollments').select('id')
+    .eq('course_id', course_id).eq('person_id', personId).eq('status', 'active')
   if (!enrollments?.length) {
     return res.status(403).json({ error: 'No active enrollment for this course' })
+  }
+
+  // The PDF is read with the service key, so the path is checked first: it must
+  // be in this course's folder (staff ingest uploads) or the caller's own claim
+  // folder. Without this, any enrolled user could have the server read any
+  // object in the bucket, another course's included.
+  if (pdf_path && !pdfPathAllowed(pdf_path, course_id, personId)) {
+    return res.status(403).json({ error: 'That file is not in this course' })
   }
 
   try {

@@ -34,13 +34,19 @@ Deno.serve(async (req) => {
       { auth: { persistSession: false } },
     )
 
+    // Every read and the write below are error-checked (2026-10-01). A failed
+    // read used to look like "not found" or "not required", and a failed write
+    // still returned success, so the page said "unsubscribed" while reminders
+    // kept coming.
+
     // 2. Look up the token
-    const { data: tokenRow } = await db
+    const { data: tokenRow, error: tokenErr } = await db
       .from('participant_unsubscribe_tokens')
       .select('id, participant_id, study_id')
       .eq('token', token)
       .maybeSingle()
 
+    if (tokenErr) throw new Error(`token lookup failed: ${tokenErr.message}`)
     if (!tokenRow) {
       return json({ error: 'invalid_token' }, 404)
     }
@@ -48,13 +54,14 @@ Deno.serve(async (req) => {
     const { participant_id, study_id } = tokenRow
 
     // 3. Fetch current enrollment record
-    const { data: enrollment } = await db
+    const { data: enrollment, error: enrErr } = await db
       .from('study_enrollments')
       .select('id, email_reminders')
       .eq('study_id', study_id)
       .eq('profile_id', participant_id)
       .maybeSingle()
 
+    if (enrErr) throw new Error(`enrollment lookup failed: ${enrErr.message}`)
     if (!enrollment) {
       return json({ error: 'enrollment_not_found' }, 404)
     }
@@ -64,21 +71,27 @@ Deno.serve(async (req) => {
     }
 
     // 4. Check if messaging is required for this study
-    const { data: study } = await db
+    const { data: study, error: studyErr } = await db
       .from('studies')
       .select('messaging_required')
       .eq('id', study_id)
       .single()
 
+    if (studyErr) throw new Error(`study lookup failed: ${studyErr.message}`)
+
     if (study?.messaging_required === true) {
       return json({ status: 'blocked', reason: 'messaging_required' })
     }
 
-    // 5. Set email_reminders = false
-    await db
+    // 5. Set email_reminders = false -- and confirm a row actually changed
+    const { data: updated, error: updErr } = await db
       .from('study_enrollments')
       .update({ email_reminders: false, email_unsubscribed_at: new Date().toISOString() })
       .eq('id', enrollment.id)
+      .select('id')
+
+    if (updErr) throw new Error(`unsubscribe update failed: ${updErr.message}`)
+    if (!updated?.length) throw new Error('unsubscribe update changed no rows')
 
     // 6. Record used_at for audit (token stays valid — unsubscribe is idempotent)
     await db

@@ -188,6 +188,13 @@ export default async function handler(req, res) {
 
     if (pdf_path) {
       kind = 'upload'
+      // Read with the service key, so only the one path this claim's upload can
+      // have is accepted (GapBrowser writes claims/<person>/<claim>.pdf, and the
+      // storage policy confines a student to their own folder). Anything else
+      // would let a student have the server read any object in the bucket.
+      if (pdf_path !== `claims/${personId}/${claim_id}.pdf`) {
+        return res.status(403).json({ error: 'That upload does not belong to this claim.' })
+      }
       const { data: file, error: dlErr } = await service.storage.from('ingest-pdfs').download(pdf_path)
       if (dlErr) return res.status(400).json({ error: `Could not read the upload: ${dlErr.message}` })
       text = await pdfToText(await file.arrayBuffer()).catch(() => null)
