@@ -18,6 +18,11 @@ const SERIF = '"DM Serif Display", Georgia, serif'
 //
 // Preview mode (staff, from the console) renders the same screens from the
 // staff preview RPC with a local clock and saves nothing.
+//
+// Up to three sections, each shown only if the test has items in it: multiple
+// choice (extended-matching cases arrive together, their option list in a fixed
+// order), short typed answers (one or two words, marked automatically: 20261001
+// migration), and written short answers (parts A-E, graded by staff).
 export default function ClassTest({ session, preview = false, testId: testIdProp, onExit }) {
   const { courseCode, slug: slugParam, testId: testIdParam } = useParams()
   const slug = normalizeCourseCode(courseCode ?? slugParam)
@@ -25,7 +30,7 @@ export default function ClassTest({ session, preview = false, testId: testIdProp
 
   const [test, setTest] = useState(undefined)      // undefined = loading, null = unavailable
   const [loadError, setLoadError] = useState(null)
-  const [answers, setAnswers] = useState({})       // item_id -> {choice} | {parts}
+  const [answers, setAnswers] = useState({})       // item_id -> {choice} | {text} | {parts}
   const [saveState, setSaveState] = useState({})   // item_id -> 'saving' | 'saved' | 'error'
   const [tab, setTab] = useState('mc')
   const [offsetMs, setOffsetMs] = useState(0)      // server clock minus local clock
@@ -54,6 +59,7 @@ export default function ClassTest({ session, preview = false, testId: testIdProp
       const startedAt = new Date()
       setTest({
         ...data, status: 'open', extra_minutes: 0, preview: true,
+        sections: [...new Set(data.items.map((i) => i.section))],
         items: data.items.map((i) => ({ item_id: i.item_id, section: i.section, answer: i.answer, ...i.content })),
         attempt: { started_at: startedAt.toISOString(),
                    deadline: new Date(startedAt.getTime() + data.duration_minutes * 60000).toISOString() },
@@ -136,16 +142,18 @@ export default function ClassTest({ session, preview = false, testId: testIdProp
   }, [timeUp]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const items = useMemo(() => test?.items ?? [], [test])
-  const mcItems = items.filter((i) => i.section === 'mc')
-  const saItems = items.filter((i) => i.section === 'sa')
   const isAnswered = (i) => {
     const a = answers[i.item_id]
     if (!a) return false
     if (i.section === 'mc') return typeof a.choice === 'number'
+    if (i.section === 'vsa') return Boolean(String(a.text ?? '').trim())
     return Object.values(a.parts ?? {}).some((t) => String(t).trim())
   }
-  const mcDone = mcItems.filter(isAnswered).length
-  const saDone = saItems.filter(isAnswered).length
+  // the sections this test actually has, in the order students meet them
+  const sections = SECTIONS
+    .map((s) => ({ ...s, items: items.filter((i) => i.section === s.key) }))
+    .filter((s) => s.items.length)
+    .map((s) => ({ ...s, done: s.items.filter(isAnswered).length }))
 
   // ---------------------------------------------------------------- render
   const shell = (children) => preview ? (
@@ -198,7 +206,7 @@ export default function ClassTest({ session, preview = false, testId: testIdProp
           <>
             <ul style={S.facts}>
               <li><strong>{minutes} minutes</strong>{test.extra_minutes ? ` (including your ${test.extra_minutes} extra minutes)` : ''}. The timer starts when you press Start and keeps running if you close the page.</li>
-              <li><strong>{test.item_count} questions</strong>: multiple choice, then short answer. You can move between them and change answers until you submit.</li>
+              <li><strong>{test.item_count} questions</strong>{sectionList(test.sections)}. You can move between them and change answers until you submit.</li>
               <li>Every answer saves automatically. At the end of your time the test submits itself.</li>
               <li>One attempt. Closed book.</li>
             </ul>
@@ -231,7 +239,11 @@ export default function ClassTest({ session, preview = false, testId: testIdProp
   const unsaved = Object.values(saveState).some((s) => s === 'saving' || s === 'error')
   const errored = Object.values(saveState).some((s) => s === 'error')
   const low = remainingMs != null && remainingMs < 5 * 60000
-  const shown = tab === 'mc' ? mcItems : saItems
+  const current = sections.find((s) => s.key === tab) ?? sections[0]
+  const shown = current?.items ?? []
+  const at = sections.indexOf(current)
+  const go = (s) => { setTab(s.key); window.scrollTo(0, 0) }
+  const missing = sections.some((s) => s.done < s.items.length)
 
   return shell(
     <>
@@ -242,13 +254,19 @@ export default function ClassTest({ session, preview = false, testId: testIdProp
       </div>
 
       <div style={S.tabs}>
-        <button style={S.tabBtn(tab === 'mc')} onClick={() => setTab('mc')}>Multiple choice · {mcDone}/{mcItems.length}</button>
-        <button style={S.tabBtn(tab === 'sa')} onClick={() => setTab('sa')}>Short answer · {saDone}/{saItems.length}</button>
+        {sections.map((s) => (
+          <button key={s.key} style={S.tabBtn(s === current)} onClick={() => setTab(s.key)}>{s.tab} · {s.done}/{s.items.length}</button>
+        ))}
       </div>
+      {current?.key === 'vsa' && (
+        <p style={S.sub}>Type the exact term: one or two words, as the question says. Spelling is not marked. If you half-remember it, write your best attempt.</p>
+      )}
 
       {shown.map((item, idx) => (
         <div key={item.item_id} style={S.card} id={`q-${item.item_id}`}>
-          <p style={S.qNo}>{tab === 'mc' ? `Question ${idx + 1} of ${mcItems.length}` : `Short answer ${idx + 1} of ${saItems.length} · 5 marks`}
+          <p style={S.qNo}>{item.section === 'mc' ? `Question ${idx + 1} of ${shown.length}`
+            : item.section === 'vsa' ? `Short typed ${idx + 1} of ${shown.length} · 1 mark`
+            : `Short answer ${idx + 1} of ${shown.length} · ${item.parts.length} marks`}
             {saveState[item.item_id] === 'saved' && <span style={S.savedTag}> · saved</span>}</p>
           <Md text={item.stem} style={S.stem} />
           {item.section === 'mc' ? (
@@ -259,11 +277,20 @@ export default function ClassTest({ session, preview = false, testId: testIdProp
                 return (
                   <button key={i} role="radio" aria-checked={picked} style={S.option(picked, isKey)}
                           onClick={() => answer(item.item_id, { choice: i })}>
-                    <span style={S.letter}>{'ABCDE'[i]}</span>{opt}
+                    <span style={S.letter}>{'ABCDEFGHIJ'[i]}</span>{opt}
                   </button>
                 )
               })}
             </div>
+          ) : item.section === 'vsa' ? (
+            <>
+              <input style={S.typed} value={answers[item.item_id]?.text ?? ''} maxLength={300}
+                autoComplete="off" autoCorrect="off" autoCapitalize="none" spellCheck={false}
+                aria-label={`Answer to short typed question ${idx + 1}`} placeholder="Your answer"
+                onChange={(e) => answer(item.item_id, { text: e.target.value }, 1200)}
+                onBlur={() => { if (pending.current[item.item_id]) { clearTimeout(timers.current[item.item_id]); save(item.item_id) } }} />
+              {showKey && <p style={S.model}>Accepted: {(item.answer?.accepted ?? []).join(' · ')}</p>}
+            </>
           ) : (
             item.parts.map((p) => {
               const text = answers[item.item_id]?.parts?.[p.label] ?? ''
@@ -284,9 +311,8 @@ export default function ClassTest({ session, preview = false, testId: testIdProp
       ))}
 
       <div style={S.footer}>
-        {tab === 'mc'
-          ? <button style={S.secondaryBtn} onClick={() => { setTab('sa'); window.scrollTo(0, 0) }}>Go to the short answers →</button>
-          : <button style={S.secondaryBtn} onClick={() => { setTab('mc'); window.scrollTo(0, 0) }}>← Back to multiple choice</button>}
+        {at > 0 ? <button style={S.secondaryBtn} onClick={() => go(sections[at - 1])}>← Back to {sections[at - 1].tab.toLowerCase()}</button> : <span />}
+        {at < sections.length - 1 && <button style={S.secondaryBtn} onClick={() => go(sections[at + 1])}>Go to {sections[at + 1].tab.toLowerCase()} →</button>}
         <button style={S.primaryBtn} onClick={() => setConfirming(true)}>Submit test</button>
       </div>
 
@@ -295,9 +321,10 @@ export default function ClassTest({ session, preview = false, testId: testIdProp
           <div style={S.dialog}>
             <h2 style={S.dialogTitle}>Submit your test?</h2>
             <p style={S.sub}>
-              You have answered <strong>{mcDone} of {mcItems.length}</strong> multiple-choice and{' '}
-              <strong>{saDone} of {saItems.length}</strong> short-answer questions.
-              {mcDone < mcItems.length || saDone < saItems.length ? ' Unanswered questions will score zero.' : ''} After you submit you can't change anything.
+              You have answered {sections.map((s, i) => (
+                <span key={s.key}>{i === 0 ? '' : i === sections.length - 1 ? ' and ' : ', '}<strong>{s.done} of {s.items.length}</strong> {s.noun}</span>
+              ))} questions.
+              {missing ? ' Unanswered questions will score zero.' : ''} After you submit you can't change anything.
             </p>
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
               <button style={S.secondaryBtn} onClick={() => setConfirming(false)}>Keep working</button>
@@ -318,6 +345,18 @@ export default function ClassTest({ session, preview = false, testId: testIdProp
       )}
     </>,
   )
+}
+
+const SECTIONS = [
+  { key: 'mc', tab: 'Multiple choice', noun: 'multiple-choice', list: 'multiple choice' },
+  { key: 'vsa', tab: 'Short typed', noun: 'short typed', list: 'short typed answers' },
+  { key: 'sa', tab: 'Short answer', noun: 'short-answer', list: 'short answer' },
+]
+
+// ": multiple choice, then short answer", named from the sections the test has.
+function sectionList(present) {
+  const names = SECTIONS.filter((s) => present?.includes(s.key)).map((s) => s.list)
+  return names.length ? `: ${names.join(', then ')}` : ''
 }
 
 function fmtRemaining(ms) {
@@ -365,6 +404,7 @@ const S = {
   letter: { fontFamily: MONO, fontWeight: 700, color: 'var(--tx3)', minWidth: 16 },
   part: { margin: '14px 0 0', paddingTop: 10, borderTop: '1px dashed var(--bd)' },
   partPrompt: { fontSize: 15, color: 'var(--tx)', lineHeight: 1.5 },
+  typed: { width: '100%', maxWidth: 420, boxSizing: 'border-box', padding: '11px 12px', borderRadius: 10, border: '1px solid var(--bds)', fontFamily: 'inherit', fontSize: 16, marginTop: 4 },
   textarea: { width: '100%', boxSizing: 'border-box', padding: 10, borderRadius: 10, border: '1px solid var(--bds)', fontFamily: 'inherit', fontSize: 15, lineHeight: 1.5, marginTop: 6, resize: 'vertical' },
   model: { fontSize: 14, color: 'var(--tx)', lineHeight: 1.5, background: '#2e7d320d', borderLeft: '3px solid #2e7d32', padding: '8px 12px', borderRadius: '0 8px 8px 0', marginTop: 6 },
   footer: { display: 'flex', justifyContent: 'space-between', gap: 10, marginTop: 18, flexWrap: 'wrap' },
