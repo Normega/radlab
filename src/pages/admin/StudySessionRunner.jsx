@@ -6,8 +6,9 @@ import { supabase } from '../../lib/supabase'
 import { advanceSchedule } from '../../lib/scheduleGenerator'
 import StepDispatcher from '../../components/study/StepDispatcher'
 import { PhysioProvider } from '../../components/study/PhysioContext'
+import ConsentGate from '../../components/study/ConsentGate'
 
-const PHASE = { LOADING: 'LOADING', RUNNING: 'RUNNING', SAVING: 'SAVING', COMPLETE: 'COMPLETE' }
+const PHASE = { LOADING: 'LOADING', CONSENT: 'CONSENT', RUNNING: 'RUNNING', SAVING: 'SAVING', COMPLETE: 'COMPLETE' }
 
 // Uploaded questionnaires are referenced via questionnaire_id and have no
 // activities row. StepDispatcher keys off activity.category/subcategory, so
@@ -54,9 +55,9 @@ export default function StudySessionRunner() {
       const { data, error } = await supabase
         .from('study_enrollments')
         .select(`
-          id, profile_id, external_id, status,
+          id, profile_id, external_id, status, consent_date,
           studies!study_id(
-            id, name,
+            id, name, consent_required, active_consent_form_id,
             study_debrief_forms:active_debrief_form_id(html_content)
           )
         `)
@@ -106,10 +107,44 @@ export default function StudySessionRunner() {
 
   const isLoading = enrollLoading || nodesLoading
 
+  // In-lab participants consent here, on the lab computer, before step 1.
+  // EnrollmentPanel leaves consent_date null for a study with a consent form.
+  const needsConsent = !!(
+    enrollment?.studies?.consent_required &&
+    enrollment?.studies?.active_consent_form_id &&
+    !enrollment?.consent_date
+  )
+  const firstPhase = nodes.length > 0 ? PHASE.RUNNING : PHASE.COMPLETE
+
+  // Only ever leaves LOADING: a background refetch of the enrollment (which
+  // flips needsConsent once consent is recorded) must not reset a running session.
   useEffect(() => {
-    if (!isLoading && nodes.length > 0) setPhase(PHASE.RUNNING)
-    else if (!isLoading && nodes.length === 0) setPhase(PHASE.COMPLETE)
-  }, [isLoading, nodes.length])
+    if (isLoading) return
+    setPhase(p => p === PHASE.LOADING ? (needsConsent ? PHASE.CONSENT : firstPhase) : p)
+  }, [isLoading, needsConsent, firstPhase])
+
+  // The RA is signed in, not the participant, so record_consent (auth.uid())
+  // cannot be used; write the participant's own enrollment. The first answer
+  // stands, as in record_consent: only a row with no consent yet is updated.
+  async function recordConsent(scope) {
+    const { data, error } = await supabase
+      .from('study_enrollments')
+      .update({ consent_date: new Date().toISOString(), consent_scope: scope })
+      .eq('id', enrollmentId)
+      .is('consent_date', null)
+      .select('id')
+    if (error) return { error }
+    if (data?.length) return { error: null }
+    // No row updated: either consent was already on record, or RLS refused silently.
+    const { data: row } = await supabase
+      .from('study_enrollments')
+      .select('consent_date')
+      .eq('id', enrollmentId)
+      .maybeSingle()
+    return row?.consent_date
+      ? { error: null }
+      : { error: new Error('Consent could not be saved. Please ask the researcher.') }
+  }
 
   const advanceStep = useMutation({
     mutationFn: async () => {
@@ -175,6 +210,16 @@ export default function StudySessionRunner() {
       {(isLoading || phase === PHASE.LOADING) ? (
         <div style={S.fullScreen}>
           <p style={S.loadingText}>Loading session…</p>
+        </div>
+      ) : phase === PHASE.CONSENT ? (
+        <div style={S.fullScreen}>
+          <ConsentGate
+            studyId={studyId}
+            participantId={enrollment.profile_id}
+            supabaseClient={supabase}
+            recordConsent={recordConsent}
+            onComplete={() => setPhase(firstPhase)}
+          />
         </div>
       ) : phase === PHASE.COMPLETE ? (
         <div style={S.fullScreen}>

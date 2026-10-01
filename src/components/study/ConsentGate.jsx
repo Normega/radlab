@@ -18,6 +18,10 @@ import { useState, useEffect, useRef } from 'react'
 //   - ConsentPage.jsx (route `/study/:studyId/consent`) — admin preview
 //     links and consent-only re-entry, using the app's normal global client
 //     and an already-authenticated lab/admin session.
+//   - StudySessionRunner.jsx (in-lab sessions, e.g. Breath Belt). The RA is
+//     signed in, not the participant, so record_consent (keyed on auth.uid())
+//     would look for the RA's own enrollment. That caller passes
+//     `recordConsent` to write the participant's enrollment instead.
 //
 // Credit-only consent (2026-09-11, 20260911_credit_only_consent.sql): a study with
 // studies.allow_credit_only_consent offers two answers instead of one checkbox —
@@ -29,7 +33,7 @@ const CONSENT_CHOICES = [
   { scope: 'credit_only', label: 'I wish to complete the surveys for course credit, but do not consent to have my data used in research.' },
 ]
 
-export default function ConsentGate({ studyId, participantId, supabaseClient, onComplete, prefetched = null }) {
+export default function ConsentGate({ studyId, participantId, supabaseClient, onComplete, prefetched = null, recordConsent = null }) {
   const [state,   setState]   = useState(STATES.LOADING)
   const [study,   setStudy]   = useState(null)
   const [form,    setForm]    = useState(null)
@@ -141,7 +145,9 @@ export default function ConsentGate({ studyId, participantId, supabaseClient, on
     const args = scope === 'credit_only'
       ? { p_study_id: studyId, p_scope: 'credit_only' }
       : { p_study_id: studyId }
-    const { error: re } = await supabaseClient.rpc('record_consent', args)
+    const { error: re } = recordConsent
+      ? await recordConsent(scope)
+      : await supabaseClient.rpc('record_consent', args)
 
     if (re) {
       setError(re.message)
