@@ -67,7 +67,7 @@ export async function processAdherenceWithdrawal(
     .eq('study_id', studyId)
   if (lpErr) console.error('processAdherenceWithdrawal: failed to set liliana_participants.dropped_out:', lpErr.message)
 
-  const { data: study } = await db.from('studies').select('name').eq('id', studyId).single()
+  const { data: study } = await db.from('studies').select('name, reply_to_email, compensation_kind').eq('id', studyId).single()
   const { data: profile } = await db.from('profiles').select('display_name').eq('id', participantId).single()
   const firstName = (profile?.display_name ?? '').split(' ')[0] || 'Participant'
 
@@ -90,13 +90,14 @@ export async function processAdherenceWithdrawal(
     gate_label: withdrawal.gateLabel,
     min_required: withdrawal.minRequired ?? null,
     of_total: withdrawal.ofTotal ?? null,
+    compensation: study?.compensation_kind === 'pay' ? 'pay' : 'credit',
   })
 
   const resend = new Resend(Deno.env.get('RESEND_API_KEY'))
   const fromEmail = Deno.env.get('FROM_EMAIL') ?? 'research@radlab.zone'
 
   const { error: sendErr } = await resend.emails.send({
-    from: fromEmail, replyTo: RESEARCH_REPLY_TO, to, subject, html, text,
+    from: fromEmail, replyTo: study?.reply_to_email || RESEARCH_REPLY_TO, to, subject, html, text,
   })
 
   await logTerminationMessage(db, participantId, sendErr ? 'failed' : 'sent', isTest)

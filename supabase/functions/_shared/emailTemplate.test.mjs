@@ -9,7 +9,7 @@
 //   node --experimental-strip-types supabase/functions/_shared/emailTemplate.test.mjs
 import assert from 'node:assert'
 import { test } from 'node:test'
-import { renderEmail } from './emailTemplate.ts'
+import { renderEmail, renderTerminationEmail } from './emailTemplate.ts'
 
 const BASE = {
   first_name: 'Ada',
@@ -115,4 +115,24 @@ test('plain send leaks neither placeholder nor withdraw copy', () => {
   assert.ok(!html.includes('{{withdraw_html}}'))
   assert.ok(!html.includes('withdraw'))
   assert.ok(!text.includes('withdraw'))
+})
+
+// ── Compensation wording (studies.compensation_kind) ──────────────────────────
+// A paid participant (Liliana Study 3 — Paid, 2026-10-01) is paid, not credited.
+// The default must stay credit: every SONA study relies on it.
+test('final notice and termination say credit by default and paid for a paid study', () => {
+  const credit = renderEmail({ ...BASE, final_notice: 'gate', session_label: 'Midpoint Assessment' })
+  const pay    = renderEmail({ ...BASE, final_notice: 'gate', session_label: 'Midpoint Assessment', compensation: 'pay' })
+  assert.ok(credit.text.includes('still receive credit'))
+  assert.ok(pay.text.includes('still be paid'))
+  assert.ok(!pay.text.includes('credit'))
+
+  const terminal = renderEmail({ ...BASE, final_notice: 'terminal', compensation: 'pay' })
+  assert.ok(terminal.text.includes("You'd still be paid for everything"))
+
+  const tCredit = renderTerminationEmail({ first_name: 'Ada', study_name: 'S', min_required: 10, of_total: 12 })
+  const tPay    = renderTerminationEmail({ first_name: 'Ada', study_name: 'S', min_required: 10, of_total: 12, compensation: 'pay' })
+  assert.ok(tCredit.text.includes('we will award credit for the time you spent'))
+  assert.ok(tPay.text.includes('we will pay you for the time you spent'))
+  assert.ok(!tPay.text.includes('credit'))
 })

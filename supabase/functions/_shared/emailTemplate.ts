@@ -32,6 +32,9 @@ export function renderEmail(vars: {
   // criticalSession.ts). Its value names which consequence is true, so the
   // copy can only ever state one the code will actually apply.
   final_notice?: 'gate' | 'terminal' | 'window' | null
+  // How the study compensates (studies.compensation_kind): only the final
+  // notice's "you'd still receive credit" clause depends on it. Absent = credit.
+  compensation?: 'credit' | 'pay' | null
   // final_notice only — the session's own label ("Midpoint Assessment"), same
   // source the missed_assessment termination email names it by.
   session_label?: string | null
@@ -93,7 +96,7 @@ export function renderEmail(vars: {
     ? MISSED_INTRO_LOW_RATE
     : MISSED_INTRO
   const intro = vars.final_notice
-    ? finalNoticeIntro(vars.final_notice, vars.session_label, vars.expires_hours)
+    ? finalNoticeIntro(vars.final_notice, vars.session_label, vars.expires_hours, vars.compensation ?? 'credit')
     : vars.is_reminder ? REMINDER_INTRO
     : vars.lapsed ? LAPSED_INTRO
     : vars.after_missed ? missedIntro : null
@@ -179,7 +182,13 @@ export function renderTerminationEmail(vars: {
   // must state the rule that was applied, so these are now passed in.
   min_required?: number | null
   of_total?: number | null
+  // studies.compensation_kind. A paid participant is paid, not credited, for the
+  // time they spent (Liliana Study 3 — Paid, 2026-10-01). Absent = credit.
+  compensation?: 'credit' | 'pay' | null
 }): { subject: string; html: string; text: string } {
+  const award = vars.compensation === 'pay'
+    ? 'we will pay you for the time you spent'
+    : 'we will award credit for the time you spent'
   // Omit the parenthetical entirely rather than assert a threshold we weren't
   // given — a wrong number here is worse than no number.
   const threshold = vars.min_required == null
@@ -189,8 +198,8 @@ export function renderTerminationEmail(vars: {
       : ` (we noted that at least ${vars.min_required} of ${vars.of_total} sessions are needed)`
 
   const middle = vars.variant === 'missed_assessment'
-    ? `Unfortunately, you didn't complete the ${vars.gate_label ?? 'scheduled assessment'} within its scheduled window, we will award credit for the time you spent, but your participation in the study is now complete.`
-    : `Unfortunately, you didn't complete the minimum required sessions for this phase of the study${threshold}, we will award credit for the time you spent, but your participation in the study is now complete.`
+    ? `Unfortunately, you didn't complete the ${vars.gate_label ?? 'scheduled assessment'} within its scheduled window, ${award}, but your participation in the study is now complete.`
+    : `Unfortunately, you didn't complete the minimum required sessions for this phase of the study${threshold}, ${award}, but your participation in the study is now complete.`
 
   const bodyText = `Hi ${vars.first_name},
 
@@ -295,17 +304,19 @@ function finalNoticeIntro(
   kind: 'gate' | 'terminal' | 'window',
   sessionLabel: string | null | undefined,
   hoursLeft: number,
+  compensation: 'credit' | 'pay' = 'credit',
 ): string {
+  const stillGet = compensation === 'pay' ? 'still be paid' : 'still receive credit'
   // "your Midpoint Assessment" when the graph names it, "this session" when it
   // doesn't — never a guessed name.
   const what = sessionLabel ? `your ${sessionLabel}` : 'this session'
   const when = `about ${hoursLeft} hour${hoursLeft === 1 ? '' : 's'}`
 
   if (kind === 'gate') {
-    return `This is the final reminder for ${what}, and it's the one session in the study you can't skip. Your link closes in ${when}. Everything in the rest of the study is built on your answers here, so if this window closes without it, your participation ends at this point — you'd still receive credit for the sessions you've already completed, but there would be no further ones. There's still time, and the original details are below.`
+    return `This is the final reminder for ${what}, and it's the one session in the study you can't skip. Your link closes in ${when}. Everything in the rest of the study is built on your answers here, so if this window closes without it, your participation ends at this point — you'd ${stillGet} for the sessions you've already completed, but there would be no further ones. There's still time, and the original details are below.`
   }
   if (kind === 'terminal') {
-    return `This is the final reminder for ${what} — the last session of the study. Your link closes in ${when}, and it can't be reopened once it does. If the window closes without it, the study finishes without your final answers. You'd still receive credit for everything you've completed. There's still time, and the original details are below.`
+    return `This is the final reminder for ${what} — the last session of the study. Your link closes in ${when}, and it can't be reopened once it does. If the window closes without it, the study finishes without your final answers. You'd ${stillGet} for everything you've completed. There's still time, and the original details are below.`
   }
   return `This is the final reminder for ${what}. Your link closes in ${when}, and it can't be reopened once it does. There's still time, and the original details are below.`
 }

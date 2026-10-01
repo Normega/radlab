@@ -8,12 +8,13 @@
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
+import LilianaPaymentTable from './LilianaPaymentTable'
 
 function useStudy(id) {
   return useQuery({
     queryKey: ['liliana-credit-study', id],
     queryFn: async () => {
-      const { data, error } = await supabase.from('studies').select('id, name').eq('id', id).single()
+      const { data, error } = await supabase.from('studies').select('id, name, compensation_kind').eq('id', id).single()
       if (error) throw error
       return data
     },
@@ -62,19 +63,30 @@ export default function LilianaCreditPage() {
   const { data: rows = [], isLoading, error } = useCreditReport(id)
 
   if (loadingStudy) return <p style={S.muted}>Loading…</p>
+  // A paid recruitment route (Liliana Study 3 — Paid): same earned time, in dollars.
+  const paid = study?.compensation_kind === 'pay'
 
   return (
     <div>
       <div style={S.header}>
         <div>
           <Link to={`/admin/studies/${id}`} style={S.backLink}>← {study?.name ?? 'Study'}</Link>
-          <h1 style={S.h1}>SONA Credit Report</h1>
+          <h1 style={S.h1}>{paid ? 'Payment Report' : 'SONA Credit Report'}</h1>
+          {paid ? (
+            <p style={S.sub}>
+              Earned time as in the credit report (30 min baseline, 20 min midpoint, 25 min final, 4 min
+              per daily session, rounded up to the nearest half hour, capped at 3 hours) at $18/hour.
+              Payment is due by Interac e-transfer within about 5 business days of completion or
+              withdrawal. Mark each transfer once it is sent.
+            </p>
+          ) : (
           <p style={S.sub}>
             Computed from completed sessions — 30 min baseline, 20 min midpoint, 25 min final, 4 min per
             daily session, rounded up to the nearest half hour, capped at 3 hours. This is a manual-award
             worksheet only; nothing here is submitted to SONA. Enter the amount shown into SONA's
             researcher interface directly.
           </p>
+          )}
         </div>
         {rows.length > 0 && (
           <button style={S.csvBtn} onClick={() => downloadCSV(rows)}>Export CSV</button>
@@ -90,6 +102,8 @@ export default function LilianaCreditPage() {
           <p style={S.emptyTitle}>No participants yet.</p>
           <p style={S.emptyHint}>This report populates once participants enroll and complete sessions.</p>
         </div>
+      ) : paid ? (
+        <LilianaPaymentTable studyId={id} rows={rows} />
       ) : (
         <div style={S.tableWrap}>
           <table style={S.table}>

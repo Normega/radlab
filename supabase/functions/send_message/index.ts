@@ -160,7 +160,7 @@ Deno.serve(async (req) => {
     // Per-study custom email subject/body (nullable — null uses default template).
     const { data: study } = await db
       .from('studies')
-      .select('email_subject, email_body')
+      .select('email_subject, email_body, reply_to_email, compensation_kind')
       .eq('id', row.study_id)
       .single()
 
@@ -320,6 +320,7 @@ Deno.serve(async (req) => {
       lapsed,
       withdraw_url:    withdrawUrl,
       final_notice:    final_notice ?? null,
+      compensation:    study?.compensation_kind === 'pay' ? 'pay' : 'credit',
       session_label:   sessionLabel,
       progress,
     })
@@ -338,7 +339,8 @@ Deno.serve(async (req) => {
       from: fromEmail,
       // camelCase: the SDK maps replyTo -> reply_to on the wire and drops
       // unrecognised keys silently. See _shared/replyTo.ts.
-      replyTo: RESEARCH_REPLY_TO,
+      // Per study when set (Liliana Study 3 -> Liliana, 2026-10-01).
+      replyTo: study?.reply_to_email || RESEARCH_REPLY_TO,
       to,
       subject,
       html,

@@ -57,14 +57,15 @@ redeploy.** Current consumers —
 
 | shared module | functions to redeploy |
 |---|---|
-| `materializeSchedule.ts` | `check_schedule`, `auto-enroll` |
+| `materializeSchedule.ts` | `check_schedule`, `auto-enroll`, `open-join`, `materialize_participant_schedule` |
 | `processAdherenceWithdrawal.ts` | `check_schedule`, `auto-enroll` |
-| `labDate.ts` | `check_schedule`, `auto-enroll`, `create_anonymous_participant` |
-| `issueLink.ts` | `check_schedule`, `auto-enroll`, `send_message` |
+| `labDate.ts` | `check_schedule`, `auto-enroll`, `create_anonymous_participant`, `open-join` |
+| `issueLink.ts` | `check_schedule`, `auto-enroll`, `send_message`, `open-join` |
 | `emailTemplate.ts`, `participantEmail.ts` | `check_schedule`, `auto-enroll`, `send_message` |
 | `unsubscribeToken.ts` | `send_message` |
 | `rippleUnsubscribeToken.ts` | `ripple_reminder` |
 | `classVerifyEmail.ts` | `send-class-verification-email` |
+| `openJoinEmail.ts` | `open-join` |
 
 Transitive, not just direct: `processAdherenceWithdrawal` pulls in
 `emailTemplate`/`participantEmail`/`materializeSchedule`, and
