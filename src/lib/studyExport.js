@@ -163,7 +163,7 @@ async function fetchByStudy(table, studyId) {
   return pageAll((f, t) => supabase.from(table).select('*').eq('study_id', studyId).range(f, t))
 }
 
-async function fetchByIn(table, col, ids) {
+export async function fetchByIn(table, col, ids) {
   if (!ids.length) return []
   const out = []
   for (let i = 0; i < ids.length; i += IN_CHUNK) {
@@ -217,6 +217,14 @@ async function foreignCreditOnlyScheduleIds(studyId, profileIds) {
   return scheduleIdsForEnrollments(pairs, rows)
 }
 
+// A read the export cannot be correct without. A failure stops the export with
+// a message naming what could not be read, rather than reading as empty.
+function required(what, promise) {
+  return promise.catch((e) => {
+    throw new Error(`Could not read ${what}, so the export was not produced (${e?.message ?? e}).`)
+  })
+}
+
 export async function resolveStudyContext(studyId) {
   const [allEnrollments, allGameSessions, allLilParts, vasScales, instrumentDefs, schedule, sessions, studyRow, allStepRows] = await Promise.all([
     // consent_scope and id feed the credit-only exclusion below; no .catch here,
@@ -244,21 +252,28 @@ export async function resolveStudyContext(studyId) {
     // The schedule is what turns a rating into a STUDY DAY. Without it the
     // master can only count occurrences, which is what made the old _t<n>
     // columns drift apart (see vasWideByProfile).
-    pageAll((f, t) => supabase.from('participant_schedule')
+    //
+    // Required, like consent — no .catch. A failed read is not an empty
+    // schedule: every scheduled VAS and instrument row would look foreign and
+    // be dropped, questionnaires would fall back to inferred labels, and
+    // _export_integrity.csv would still read clean.
+    required('the participant schedule', pageAll((f, t) => supabase.from('participant_schedule')
       .select('id, participant_id, study_day, study_session_id')
-      .eq('study_id', studyId).range(f, t)).catch(() => []),
-    pageAll((f, t) => supabase.from('study_sessions')
+      .eq('study_id', studyId).range(f, t))),
+    required("the study's sessions", pageAll((f, t) => supabase.from('study_sessions')
       .select('id, label, day_number, session_template_id')
-      .eq('study_id', studyId).range(f, t)).catch(() => []),
+      .eq('study_id', studyId).range(f, t))),
     // The screener administers questionnaires too, BEFORE any session exists.
     supabase.from('studies').select('screener_id, screener').eq('id', studyId).maybeSingle()
       .then(r => r.data ?? null).catch(() => null),
     // What this study actually put in front of participants. The step log is
     // the authority: it is written per delivered step and carries the study id,
     // so it states the study's activity list as a fact rather than a guess.
-    pageAll((f, t) => supabase.from('participant_step_timings')
+    // Required: it decides which instruments repeat within a session, so a
+    // silently empty log would rename those instruments' columns.
+    required('the step log', pageAll((f, t) => supabase.from('participant_step_timings')
       .select('category, subcategory, step_index, participant_schedule_id, participant_id')
-      .eq('study_id', studyId).range(f, t)).catch(() => []),
+      .eq('study_id', studyId).range(f, t))),
   ])
 
   // Credit-only consent (20260911_credit_only_consent.sql): participants who
@@ -1242,6 +1257,8 @@ export function buildCodebook(context, resultsByTable, masterRows) {
 
 // ── CSV ───────────────────────────────────────────────────────────────────────
 
+const NUMERIC = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/
+
 export function toCsv(rows) {
   if (!rows.length) return ''
   const colSet = new Set()
@@ -1249,8 +1266,13 @@ export function toCsv(rows) {
   const cols = [...colSet]
   const escape = v => {
     if (v == null) return ''
-    const s = typeof v === 'object' ? JSON.stringify(v) : String(v)
-    return /[,"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
+    let s = typeof v === 'object' ? JSON.stringify(v) : String(v)
+    // Formula injection: an open-text answer beginning = + - @ (or a tab/CR)
+    // runs as a formula when the file is opened in Excel or Sheets. Prefix it
+    // with ' so it reads as text. Numbers are exempt — a negative rating is
+    // data, not a formula, and must stay numeric for R and pandas.
+    if (typeof v !== 'number' && /^[=+\-@\t\r]/.test(s) && !NUMERIC.test(s)) s = `'${s}`
+    return /[,"\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
   }
   return [cols.join(','), ...rows.map(r => cols.map(c => escape(r[c])).join(','))].join('\n')
 }
