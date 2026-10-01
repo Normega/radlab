@@ -1,12 +1,14 @@
-// ISCR 2026 — "What You Miss Won't Move You", an 8-minute talk on the BCAT
-// paper (Farb, Logie-Hagen & Amir Pour). The room does two BCAT trials in the
-// first minute (TwoTrials), and every later slide calls back to their hands.
+// ISCR 2026 — "What You Miss Won't Move You", a Zoom flash talk (6 min + 2 min
+// Q&A) on the BCAT paper (Farb, Logie-Hagen & Amir Pour). The audience does two
+// BCAT trials in the first minute (TwoTrials) and answers in the Zoom chat;
+// later slides call back to those answers.
 // Same shell as /keynote and /adobe-aug-2026: click / → / Space advance,
-// ← back, N toggles speaker notes (the script, with a cumulative target time
-// per slide), Minimal / Reading density. The faint clock in the bottom bar
-// starts on the first advance off the title; T hides it.
+// ← back, Minimal / Reading density. Because the deck is screen-shared, notes
+// and the clock live in a separate PRESENTER WINDOW (P): current note, target
+// time, elapsed clock, next slide. Keys pressed in that window drive the deck.
+// N (in-page notes) and T (in-page clock) still exist but are seen by the audience.
 // Run of show, fallbacks and Q&A prep: I:\My Drive\Talks\2026 ISCR 2026\ISCR2026_RunOfShow.md
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import TwoTrials, { PaceTraces } from './TwoTrials'
 
 export default function Iscr2026() {
@@ -15,9 +17,11 @@ export default function Iscr2026() {
     try { return localStorage.getItem('iscrDensity') || 'minimal' } catch { return 'minimal' }
   })
   const [showNotes, setShowNotes] = useState(false)
-  const [showClock, setShowClock] = useState(true)
+  const [showClock, setShowClock] = useState(false)
   const [startedAt, setStartedAt] = useState(null)
   const [now, setNow] = useState(() => Date.now())
+  const [presOpen, setPresOpen] = useState(false)
+  const presRef = useRef(null)
 
   const total = SLIDES.length
   const go = useCallback((d) => setI(v => Math.min(total - 1, Math.max(0, v + d))), [total])
@@ -42,6 +46,30 @@ export default function Iscr2026() {
     const im = new Image(); im.src = '/iscr-2026/fig-gating-s5.png'
   }, [])
 
+  // Presenter window: a same-origin popup we write into directly. Its keys are
+  // re-dispatched on this window, so the deck (and the breathing exercise) can
+  // be driven from it without moving focus back to the shared window.
+  const openPresenter = useCallback(() => {
+    let w = presRef.current
+    if (!w || w.closed) {
+      w = window.open('', 'iscr-presenter', 'width=620,height=560')
+      if (!w) return
+      w.document.title = 'Presenter · ISCR 2026'
+      const st = w.document.createElement('style')
+      st.textContent = PRESENTER_CSS
+      w.document.head.appendChild(st)
+      w.addEventListener('keydown', e => {
+        if ([' ', 'ArrowRight', 'ArrowLeft', 'PageDown', 'PageUp'].includes(e.key)) e.preventDefault()
+        if (e.key === 'p' || e.key === 'P') return
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: e.key }))
+      })
+      w.addEventListener('beforeunload', () => { presRef.current = null; setPresOpen(false) })
+      presRef.current = w
+    }
+    w.focus()
+    setPresOpen(true)
+  }, [])
+
   useEffect(() => {
     function onKey(e) {
       const forward = e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown'
@@ -51,12 +79,31 @@ export default function Iscr2026() {
       else if (e.key === 'ArrowLeft' || e.key === 'PageUp')    { e.preventDefault(); go(-1) }
       else if (e.key === 'n' || e.key === 'N')                 { setShowNotes(s => !s) }
       else if (e.key === 't' || e.key === 'T')                 { setShowClock(s => !s) }
+      else if (e.key === 'p' || e.key === 'P')                 { openPresenter() }
       else if (e.key === 'Home')                               { setI(0) }
       else if (e.key === 'End')                                { setI(total - 1) }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [go, step, total])
+  }, [go, step, total, openPresenter])
+
+  // Repaint the presenter window whenever the slide or the clock moves.
+  useEffect(() => {
+    const w = presRef.current
+    if (!presOpen || !w) return
+    if (w.closed) return
+    const cur = SLIDES[i], nxt = SLIDES[i + 1]
+    const late = startedAt !== null && elapsed > cur.by * 1000 + 15000
+    w.document.body.innerHTML = `
+      <div class="top">
+        <span class="n">${i + 1} / ${SLIDES.length}</span>
+        <span class="clock${late ? ' late' : ''}">${fmt(elapsed)}</span>
+        <span class="aim">finish by ${fmt(cur.by * 1000)}</span>
+      </div>
+      <div class="note">${esc(cur.note || '')}</div>
+      <div class="next">${nxt ? `Next · ${esc(nxt.label)}` : 'Last slide'}</div>
+      <div class="keys">→ / Space next · ← back · R resets the breathing demo · this window is not shared</div>`
+  }, [presOpen, i, elapsed, startedAt])
 
   const slide = SLIDES[i]
 
@@ -70,8 +117,8 @@ export default function Iscr2026() {
             </button>
           ))}
         </div>
-        <button onClick={() => setShowNotes(s => !s)} style={{ ...K.notesBtn, ...(showNotes ? K.toggleOn : {}) }} title="Speaker notes (N)">
-          Notes
+        <button onClick={openPresenter} style={{ ...K.notesBtn, ...(presOpen ? K.toggleOn : {}) }} title="Presenter window with notes and clock (P)">
+          Presenter
         </button>
       </div>
 
@@ -88,8 +135,6 @@ export default function Iscr2026() {
         )}
       </div>
 
-      {i === 0 && <div style={K.clickHint}>click anywhere to advance · N for notes</div>}
-
       {showNotes && slide.note && (
         <div style={K.noteOverlay} onClick={e => e.stopPropagation()}>
           <span style={K.noteLabel}>Speaker note · finish by {fmt(slide.by * 1000)}</span>
@@ -99,6 +144,22 @@ export default function Iscr2026() {
     </div>
   )
 }
+
+function esc(t) {
+  return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+
+const PRESENTER_CSS = `
+  body { margin: 0; padding: 22px 26px; background: #1c1c1e; color: #f2f2f4; font-family: system-ui, "Segoe UI", sans-serif; }
+  .top { display: flex; align-items: baseline; gap: 18px; font-family: Consolas, monospace; }
+  .n { color: #9a9b9f; font-size: 15px; }
+  .clock { font-size: 44px; font-weight: 700; color: #f2f2f4; }
+  .clock.late { color: #ff6b6b; }
+  .aim { color: #ff9ec9; font-size: 16px; }
+  .note { margin-top: 18px; font-size: 21px; line-height: 1.5; }
+  .next { margin-top: 22px; color: #9a9b9f; font-size: 15px; border-top: 1px solid #3a3a3e; padding-top: 12px; }
+  .keys { margin-top: 10px; color: #6b6c70; font-size: 12px; font-family: Consolas, monospace; }
+`
 
 function fmt(ms) {
   const s = Math.max(0, Math.round(ms / 1000))
@@ -196,8 +257,9 @@ function Stat({ big, label, sub, color = 'var(--tx)' }) {
 const SLIDES = [
   // 1 — Title (up while you are introduced)
   {
+    label: 'Title',
     by: 0,
-    note: 'Up during the chair’s introduction. Say nothing about the title. First words, as you click: “Before I tell you anything, I’d like you to do something with me.”',
+    note: 'Shared before the chair introduces you (Zoom: share this browser window, F11 for full screen). Say nothing about the title. First words, as you click: “Before I tell you anything, I’d like you to do something with me.”',
     render: () => (
       <Frame>
         <div style={K.crests}>
@@ -216,9 +278,10 @@ const SLIDES = [
 
   // 2 — The room does two BCAT trials
   {
+    label: 'Breathing demo',
     by: 75,
     exercise: true,
-    note: 'Clicker drives everything here; nothing to explain first. ① Begin. ~24 s: say nothing while it runs. ② “Hands up if the pace changed.” Glance, say a rough share out loud (“about a third”). Don’t reveal. ③ “Once more.” ~14 s. ④ “And this time?” (expect most hands). ⑤ “Last one, and this is the one I care about: which one stirred you up more? Hands for the first… the second… no difference.” ⑥ Reveal: “Your breathing did the same thing twice. What differed was whether you noticed.” If many caught trial 1: “This room is unusually good at this. You meditate. In the lab, gradual changes this size are mostly missed.” R resets if you start early.',
+    note: 'Nothing to explain first. ① Begin. ~24 s: say nothing while it runs. ② “In the chat: F if it got faster, S if slower, = if it stayed the same.” Give it five seconds, then read the split out loud (“mostly equals signs, a few Fs”). Don’t reveal. ③ “Once more.” ~14 s. ④ “And this time? Same codes.” ⑤ “Last one, the one I care about: which trial stirred you up more? Type 1 or 2, or 0 for no difference.” ⑥ Reveal: “Your breathing did the same thing twice. What differed was whether you noticed.” If many caught trial 1: “This audience is unusually good at this. You meditate. In the lab, gradual changes this size are mostly missed.” R resets if you start early.',
     render: () => (
       <Frame wide>
         <TwoTrials />
@@ -226,15 +289,15 @@ const SLIDES = [
     ),
   },
 
-  // 3 — The question, as three bets
+  // 3 — The question
   {
-    by: 135,
-    note: '“That’s an old question in emotion science: does a bodily change have to be noticed to be felt?” Point at each blue line: A says a missed change still moves you, in proportion to its size. B says it lifts arousal a bit but carries no size. C, the James–Lange position, says noticing is the feeling. “Hands for A… B… C.” (10 s, keep it moving.) “The reason nobody settled this: bigger changes are both easier to notice and more arousing, so detection and magnitude always travel together.”',
+    label: 'Three positions',
+    by: 105,
+    note: '“That’s an old question in emotion science: does a bodily change have to be noticed to be felt?” One clause per card. A: a missed change still moves you, in proportion. B: it lifts arousal but carries no size. C, James and Lange: noticing is the feeling. “It was never settled, because bigger changes are both easier to notice and more arousing.”',
     render: (d) => (
       <Frame wide kicker="Does a bodily change have to be noticed to be felt?">
         <Predictions />
         <Legend />
-        <Lead>Place your bet: A, B or C?</Lead>
         <Detail density={d}>
           Until now these could not be told apart, because larger physiological changes are both more
           noticeable and more arousing. Detection and magnitude were confounded in every paradigm.
@@ -245,7 +308,8 @@ const SLIDES = [
 
   // 4 — The BCAT: what you just did
   {
-    by: 180,
+    label: 'What you just did (BCAT)',
+    by: 140,
     note: '“You’ve just done our task, the Breath Change Awareness Task.” Point to the two traces: same final pace, different onset. “Gradual onset hides a change; abrupt onset reveals it. A staircase finds each person’s threshold, so we get noticed and missed trials at the same size of change, in the same person.” Five studies, 787 people; the last preregistered, with a respiration belt.',
     render: (d) => (
       <Frame wide kicker="What you just did · the Breath Change Awareness Task">
@@ -266,8 +330,9 @@ const SLIDES = [
 
   // 5 — The result
   {
-    by: 255,
-    note: '“Left is faster breathing. Gold, when people noticed: the bigger the change, the more aroused they felt. Blue, the same changes missed: flat.” Then the right panel: “That difference appears in all five studies.” Then the line that matters: “Missed changes produced no more arousal than no change at all. Bayes factors favour the null, 9 to 30 to 1.” Callback: “The answer is C. And look at your hands: most of you picked the second trial.”',
+    label: 'Result',
+    by: 210,
+    note: '“Left is faster breathing. Gold, when people noticed: the bigger the change, the more aroused they felt. Blue, the same changes missed: flat.” Right panel: “That difference appears in all five studies.” Then: “Missed changes produced no more arousal than no change at all. Bayes factors favour the null, 9 to 30 to 1. And the belt shows their breathing really did change on the missed trials.” Callback: “The answer is C. And look back at the chat: most of you typed 2.”',
     render: (d) => (
       <Frame wide kicker="Result">
         <H2>Noticed changes move us. Missed ones don’t.</H2>
@@ -279,39 +344,21 @@ const SLIDES = [
         </div>
         <Detail density={d}>
           On detected trials arousal scaled with change magnitude; on missed trials it did not, and missed-change
-          trials did not differ from no-change trials (BF₀₁ = 8.7, 20.7, 9.6, 29.6). This is the constitutive prediction.
+          trials did not differ from no-change trials (BF₀₁ = 8.7, 20.7, 9.6, 29.6). Study 5 belt recordings: breathing
+          moved in the cued direction on 88.9% of missed and 91.0% of detected trials. This is the constitutive prediction.
         </Detail>
       </Frame>
     ),
   },
 
-  // 6 — Their bodies did change
+  // 6 — MAIA: confidence, not sensitivity
   {
-    by: 300,
-    note: 'Pre-empt the two obvious objections in one breath each. “Maybe people who missed just didn’t breathe faster? The belt says they did, 89% of missed trials in the cued direction, 91% of noticed ones.” “Maybe abrupt changes are just startling? Onset only affected arousal through whether it was noticed; the evidence is 58 to 1 against a direct path.” If time: “And in Study 3 we ran Dutton and Aron’s shaky bridge: undetected arousal didn’t make faces look more attractive. Detected arousal did.”',
-    render: (d) => (
-      <Frame kicker="Two objections">
-        <H2>The body changed. The feeling didn’t.</H2>
-        <div style={K.stats}>
-          <Stat big="88.9%" label="of missed trials: belt shows breathing moved the cued way" sub="vs 91.0% of noticed trials · 63 ms apart in breath length" color={BLUE} />
-          <Stat big="58 : 1" label="against abrupt onset arousing you directly" sub="onset → noticing → arousal; no direct path" color={GOLD} />
-        </div>
-        <Detail density={d}>
-          Study 5 belt recordings (N = 171 usable). Test-block Bayesian mediation, Studies 4–5: salience affected
-          arousal only through detection (BF₀₁ = 57.8 for the direct path). Study 3 misattribution: the breathing →
-          arousal → attractiveness path ran on detected trials only.
-        </Detail>
-      </Frame>
-    ),
-  },
-
-  // 7 — MAIA: confidence, not sensitivity
-  {
-    by: 375,
-    note: 'Third show of hands, to this audience specifically: “Hands up if you’d say you notice subtle changes in your breathing.” (Expect many. Smile.) “That’s close to an item on the MAIA, the questionnaire our field uses most for body awareness. Across all five studies, MAIA predicted how confident people were in their judgements, but not how small a change they could detect.” Land it kindly: “It measures a habit of attending to and trusting the body, not better sensors. And on our account, that habit is exactly what decides which changes get noticed.”',
+    label: 'MAIA',
+    by: 270,
+    note: 'To this audience specifically: “Many of you would say you notice subtle changes in your breathing.” Beat. “That’s close to an item on the MAIA, the questionnaire our field uses most for body awareness. Across all five studies, MAIA predicted how confident people were in their judgements, but not how small a change they could detect.” Land it kindly: “It measures a habit of attending to and trusting the body, not better sensors. And on our account, that habit is exactly what decides which changes get noticed.”',
     render: (d) => (
       <Frame kicker="Self-reported body awareness (MAIA)">
-        <H2>Who here notices subtle changes in their breathing?</H2>
+        <H2>“I notice changes in my breathing”</H2>
         <div style={K.stats}>
           <Stat big="r = .26" label="MAIA → confidence in your judgement" sub="5 of 5 studies · [.20, .32]" color="var(--pkd)" />
           <Stat big="r = .07" label="MAIA → smallest change you can detect" sub="0 of 4 studies · BF₀₁ 2.5–5.5" color="#8a8b8f" />
@@ -325,10 +372,11 @@ const SLIDES = [
     ),
   },
 
-  // 8 — Why it matters for contemplative science
+  // 7 — Why it matters for contemplative science
   {
-    by: 450,
-    note: '“If feeling waits on noticing, then emotional life partly reflects detection habits: which signals we notice, and how much we trust them.” Two examples, one line each: panic (the signals are noticed, and caught up in catastrophe; interoceptive exposure works because noticed signals can update belief) and savouring (bringing mild pleasant states across the threshold). Then to this room: “Contemplative practice may work less by changing the body than by changing what crosses the threshold. That’s testable, and the BCAT gives us the instrument.”',
+    label: 'Detection habits',
+    by: 335,
+    note: '“If feeling waits on noticing, then emotional life partly reflects detection habits: which signals we notice, and how much we trust them.” One line each: panic (signals noticed and caught up in catastrophe; exposure works because noticed signals can update belief) and savouring (bringing mild pleasant states across the threshold). Then: “Contemplative practice may work less by changing the body than by changing what crosses the threshold. That’s testable, and the BCAT gives us the instrument.”',
     render: (d) => (
       <Frame kicker="For contemplative science">
         <H2>Emotion follows detection habits</H2>
@@ -346,10 +394,11 @@ const SLIDES = [
     ),
   },
 
-  // 9 — Close
+  // 8 — Close
   {
-    by: 480,
-    note: 'Slow down. “In your first trial your body changed and your feelings didn’t follow, because you didn’t notice. What you miss won’t move you, and what you practise noticing will.” Thank co-authors Kyle Logie-Hagen and Rose Amir Pour, and NSERC. Stop.',
+    label: 'Close',
+    by: 360,
+    note: 'Slow down. “In your first trial your body changed and your feelings didn’t follow, because you didn’t notice. What you miss won’t move you, and what you practise noticing will.” Thank co-authors Kyle Logie-Hagen and Rose Amir Pour, and NSERC. “Happy to take questions.” Stop.',
     render: () => (
       <Frame>
         <h1 style={K.title}>What you miss won’t move you.</h1>

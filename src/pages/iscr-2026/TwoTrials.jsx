@@ -5,7 +5,7 @@
 //
 // Both end at exactly the same pace (BASE_MS → TARGET_MS). Trial A comes first
 // so the room is naive to it; most people should miss the creep and catch the
-// jump. That splits the room into hits and misses on the same bodily change —
+// jump. Answers come in by Zoom chat, as the codes shown on screen. That splits the room into hits and misses on the same bodily change —
 // the paper's design, done live — and the third poll asks which trial felt more
 // activating.
 //
@@ -137,13 +137,13 @@ export default function TwoTrials() {
         )}
 
         {act === 'ASK_A' && (
-          <Ask n="1" q="Did the pace change?" opts={['Faster', 'Slower', 'Same']} onNext={forward} next="Once more →" />
+          <Ask n="1" q="Did the pace change?" opts={[['Faster', 'F'], ['Slower', 'S'], ['Same', '=']]} onNext={forward} next="Once more →" />
         )}
         {act === 'ASK_B' && (
-          <Ask n="2" q="And this time?" opts={['Faster', 'Slower', 'Same']} onNext={forward} next="Next →" />
+          <Ask n="2" q="And this time?" opts={[['Faster', 'F'], ['Slower', 'S'], ['Same', '=']]} onNext={forward} next="Next →" />
         )}
         {act === 'ASK_FELT' && (
-          <Ask n="3" q="Which one stirred you up more?" opts={['The first', 'The second', 'No difference']} onNext={forward} next="Reveal →" />
+          <Ask n="3" q="Which one stirred you up more?" opts={[['The first', '1'], ['The second', '2'], ['No difference', '0']]} onNext={forward} next="Reveal →" />
         )}
 
         {act === 'REVEAL' && (
@@ -166,9 +166,11 @@ export default function TwoTrials() {
 function Ask({ n, q, opts, onNext, next }) {
   return (
     <>
-      <p style={X.mono}>{n} of 3 · show of hands</p>
+      <p style={X.mono}>{n} of 3 · type your answer in the chat</p>
       <h2 style={X.title}>{q}</h2>
-      <div style={X.optRow}>{opts.map(o => <span key={o} style={X.opt}>{o}</span>)}</div>
+      <div style={X.optRow}>{opts.map(([label, code]) => (
+        <span key={code} style={X.opt}><span style={X.code}>{code}</span>{label}</span>
+      ))}</div>
       <Btn onClick={onNext}>{next}</Btn>
     </>
   )
@@ -242,6 +244,7 @@ const X = {
   mono:  { fontFamily: '"Space Mono",monospace', fontSize: 13, letterSpacing: '0.1em', color: 'var(--tx3)', textTransform: 'uppercase', margin: 0 },
   optRow:{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center' },
   opt:   { fontSize: 'clamp(18px, 2.6vw, 30px)', fontWeight: 600, color: 'var(--pk)', background: '#fff', border: '1.5px solid var(--pkb, #f6c6dd)', borderRadius: 14, padding: '12px 26px' },
+  code:  { display: 'inline-grid', placeItems: 'center', minWidth: 38, height: 38, marginRight: 12, borderRadius: 10, background: 'var(--pk)', color: '#fff', fontFamily: '"Space Mono",monospace', fontSize: '0.85em' },
   btn:   { marginTop: 6, borderRadius: 14, padding: '14px 40px', fontSize: 'clamp(16px, 2vw, 20px)', fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', background: 'var(--pk)', color: '#fff', border: 'none' },
   corner:{ position: 'absolute', bottom: 0, right: 0, background: 'none', border: 'none', cursor: 'pointer', fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', opacity: 0.5 },
 }
