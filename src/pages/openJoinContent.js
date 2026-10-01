@@ -24,6 +24,7 @@ export const OPEN_JOIN_CONTENT = {
           'First, a short set of questions to check whether the study is a good fit for you.',
           'The study runs for about a month, entirely online: a first session of about 30 minutes, a short daily exercise of about 4 minutes (a link is emailed to you each morning), and longer check-ins at the middle (about 20 minutes) and end (about 25 minutes).',
           'Under 3 hours in total, spread across the month.',
+          'To continue past the first 12 days, you need to complete at least 10 of the 12 daily sessions and the midpoint check-in (open for 3 days). If you don’t, your participation ends there and you are paid for what you completed.',
         ],
       },
       {
