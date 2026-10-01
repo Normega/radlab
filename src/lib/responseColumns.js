@@ -25,16 +25,24 @@
 // including someone who only ever reached the first administration. Deciding it
 // per participant is what makes one person's `vas_stress_d1` mean a different
 // moment from another's.
+//
+// Counts DISTINCT steps, not rows. A session re-entered after a refresh logs the
+// same step again; counting rows marked that instrument "repeated" and renamed
+// every participant's columns for it (gad7_midpoint_1 -> gad7_midpoint_s3_1).
+// A row with no step_index cannot be shown to be the same step, so each one
+// counts on its own.
 export function repeatedSubcatsFromSteps(stepRows) {
   const perSessionInstance = new Map()
   for (const r of stepRows ?? []) {
     if (!r?.subcategory || !r?.participant_schedule_id) continue
     const k = `${r.participant_schedule_id}\u0000${r.subcategory}`
-    perSessionInstance.set(k, (perSessionInstance.get(k) ?? 0) + 1)
+    let steps = perSessionInstance.get(k)
+    if (!steps) perSessionInstance.set(k, steps = new Set())
+    steps.add(r.step_index ?? Symbol('unknown step'))
   }
   const out = new Set()
-  for (const [k, n] of perSessionInstance) {
-    if (n > 1) out.add(k.slice(k.indexOf('\u0000') + 1))
+  for (const [k, steps] of perSessionInstance) {
+    if (steps.size > 1) out.add(k.slice(k.indexOf('\u0000') + 1))
   }
   return out
 }
