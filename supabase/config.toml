@@ -70,6 +70,12 @@ verify_jwt = false
 # session at all — commonly a phone, when the form was filled on a laptop.
 verify_jwt = false
 
+[functions.open-join]
+# Public QR / poster onboarding (/join/:slug). Anonymous until the screener is
+# passed; the weight is carried by the one-attempt-per-device record, the
+# per-IP ceiling, the @mail.utoronto.ca rule and one sign-up per address.
+verify_jwt = false
+
 # ── Participant provisioning, called server-side ───────────────────────────
 [functions.create_participant]
 verify_jwt = false

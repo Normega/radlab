@@ -17,6 +17,7 @@ import { sessionStartRow, stepCrashRow } from '../components/study/sessionDiagno
 import ScreenerPage from '../components/ScreenerPage'
 import ConsentGate from '../components/study/ConsentGate'
 import ContactEmailGate from '../components/study/ContactEmailGate'
+import OpenEmailGate from '../components/study/OpenEmailGate'
 import CompletionRedirectScreen from '../components/study/CompletionRedirectScreen'
 import { useAssignments } from '../hooks/useAssignment'
 
@@ -279,6 +280,14 @@ export default function SessionEntry() {
   async function proceedAfterScreener(data) {
     const { schedule, study, enrollment } = data
     fullDataRef.current = data // needed by handleConsentComplete if the consent gate fires below
+    // Open recruitment (posters / ads, via /join/:slug): the email comes after
+    // a passed screener and BEFORE consent, and the session does not continue
+    // in this browser -- the entry link is emailed to the address given, which
+    // is how the address is shown to be real. Consent happens from that link.
+    if (data.enrollment?.external_source === 'open' && !data.enrollment?.contact_email) {
+      setState('needs_open_email')
+      return
+    }
     if (study.consent_required && study.active_consent_form_id && !enrollment?.consent_date) {
       setConsentStudyId(schedule.study_id)
       setState('needs_consent')
@@ -645,6 +654,14 @@ export default function SessionEntry() {
           }}
           onComplete={handleConsentComplete}
         />
+      </div>
+    )
+  }
+
+  if (state === 'needs_open_email') {
+    return (
+      <div style={{ minHeight: '100vh', background: 'var(--bg, #FCF0F5)', display: 'flex', justifyContent: 'center' }}>
+        <OpenEmailGate token={token} />
       </div>
     )
   }
