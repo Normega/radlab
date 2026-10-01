@@ -5,6 +5,14 @@ import { Link } from 'react-router-dom'
 
 const TALKS = [
   {
+    to: '/iscr-2026',
+    kicker: 'ISCR · 2026 · 8-minute talk',
+    title: 'What You Miss Won’t Move You',
+    sub: 'Awareness as the bridge between body and feeling. The room runs two BCAT trials (gradual, then abrupt) in the first minute.',
+    tags: ['Interoception', 'BCAT', 'Contemplative science'],
+    accent: '#f068a4',
+  },
+  {
     to: '/bpmh-sep-2026',
     kicker: 'Buddhism, Psychology & Mental Health · September 2026',
     title: 'Two Ways of Being a Self',

@@ -92,6 +92,7 @@ const OwlBarnPreview    = lazy(() => import('./pages/dev/OwlBarnPreview'))
 const Keynote   = lazy(() => import('./pages/keynote/Keynote'))
 const ToniJuly2026 = lazy(() => import('./pages/toni-july-2026/ToniJuly2026'))
 const AdobeAug2026 = lazy(() => import('./pages/adobe-aug-2026/AdobeAug2026'))
+const Iscr2026 = lazy(() => import('./pages/iscr-2026/Iscr2026'))
 const Cuny2026 = lazy(() => import('./pages/cuny-2026/Cuny2026'))
 const BpmhSep2026 = lazy(() => import('./pages/bpmh-sep-2026/BpmhSep2026'))
 const Talks     = lazy(() => import('./pages/talks/Talks'))
@@ -733,6 +734,8 @@ export default function App() {
             <Route path="/cuny-2026" element={<Cuny2026 />} />
             {/* BPMH guest lecture — two-hour interactive deck; phone activities are public /prototypes/ pages */}
             <Route path="/bpmh-sep-2026" element={<BpmhSep2026 />} />
+            {/* ISCR 2026 — 8-minute BCAT talk; the room runs two trials in the first minute */}
+            <Route path="/iscr-2026" element={<Iscr2026 />} />
           </Route>
 
           {/*
