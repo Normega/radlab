@@ -1,9 +1,12 @@
 // ISCR 2026 opener — two BCAT trials run on the whole room (no device, no data).
 //
-//   Trial A  gradual: 2 baseline breaths, then the pace creeps up over 5 breaths
-//   Trial B  abrupt:  2 baseline breaths, then 2 breaths at the new pace
+// Both follow the BCAT trial structure: 4 breaths.
+//   Trial A  gradual: the change is amortized evenly across breaths 2, 3 and 4
+//   Trial B  abrupt:  the whole change lands between breaths 2 and 3
 //
-// Both end at exactly the same pace (BASE_MS → TARGET_MS). Trial A comes first
+// Both therefore last the same time (2 × BASE_MS + 2 × TARGET_MS = 13.6 s) and end
+// at exactly the same pace (BASE_MS → TARGET_MS), so the reveal's two pace
+// traces line up end to end and differ only in how the change arrived. Trial A comes first
 // so the room is naive to it; most people should miss the creep and catch the
 // jump. Answers come in by Zoom chat, as the codes shown on screen. That splits the room into hits and misses on the same bodily change —
 // the paper's design, done live — and the third poll asks which trial felt more
@@ -20,24 +23,15 @@ import { useBreathCycle } from '../../games/EbbAndFlow/useBreathCycle'
 // ── Timing ──────────────────────────────────────────────────────────────────
 // Baseline is the Study 4/5 rate (15/min). Target is 30% shorter breaths, the
 // same size as the ISARP opener's change. Study 5 mean 75%-correct thresholds
-// for speeding up were −.32 (abrupt) and −.38 (gradual), so −.30 delivered
-// gradually over 5 breaths should sit below most people's threshold, and the
-// abrupt version near or above it for a room that has just been asked.
+// for speeding up were −.32 (abrupt) and −.38 (gradual) on this same 4-breath
+// structure, so −.30 delivered gradually should sit below most people's
+// threshold, and the abrupt version near it for a room that has just been asked.
 const BASE_MS   = 4000
 const TARGET_MS = 2800
-const RAMP_BREATHS = 5
-const BASE_BREATHS = 2
-const JUMP_BREATHS = 2
+const STEP_MS = (TARGET_MS - BASE_MS) / 3
 
-const RATIO = Math.pow(TARGET_MS / BASE_MS, 1 / RAMP_BREATHS)
-const TRIAL_A = [
-  ...Array(BASE_BREATHS).fill(BASE_MS),
-  ...Array.from({ length: RAMP_BREATHS }, (_, k) => Math.round(BASE_MS * Math.pow(RATIO, k + 1))),
-]
-const TRIAL_B = [
-  ...Array(BASE_BREATHS).fill(BASE_MS),
-  ...Array(JUMP_BREATHS).fill(TARGET_MS),
-]
+const TRIAL_A = [BASE_MS, BASE_MS + STEP_MS, BASE_MS + 2 * STEP_MS, TARGET_MS]   // 4.0 3.6 3.2 2.8
+const TRIAL_B = [BASE_MS, BASE_MS, TARGET_MS, TARGET_MS]                         // 4.0 4.0 2.8 2.8
 
 const CIRCLE_MIN = 0.42
 const CIRCLE_MAX = 1.0

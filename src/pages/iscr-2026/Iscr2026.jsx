@@ -279,9 +279,9 @@ const SLIDES = [
   // 2 — The room does two BCAT trials
   {
     label: 'Breathing demo',
-    by: 75,
+    by: 65,
     exercise: true,
-    note: 'Nothing to explain first. ① Begin. ~24 s: say nothing while it runs. ② “In the chat: F if it got faster, S if slower, = if it stayed the same.” Give it five seconds, then read the split out loud (“mostly equals signs, a few Fs”). Don’t reveal. ③ “Once more.” ~14 s. ④ “And this time? Same codes.” ⑤ “Last one, the one I care about: which trial stirred you up more? Type 1 or 2, or 0 for no difference.” ⑥ Reveal: “Your breathing did the same thing twice. What differed was whether you noticed.” If many caught trial 1: “This audience is unusually good at this. You meditate. In the lab, gradual changes this size are mostly missed.” R resets if you start early.',
+    note: 'Nothing to explain first. ① Begin. ~14 s: say nothing while it runs. ② “In the chat: F if it got faster, S if slower, = if it stayed the same.” Give it five seconds, then read the split out loud (“mostly equals signs, a few Fs”). Don’t reveal. ③ “Once more.” ~14 s. ④ “And this time? Same codes.” ⑤ “Last one, the one I care about: which trial stirred you up more? Type 1 or 2, or 0 for no difference.” ⑥ Reveal: “Your breathing did the same thing twice. What differed was whether you noticed.” If many caught trial 1: “This audience is unusually good at this. You meditate. In the lab, gradual changes this size are mostly missed.” R resets if you start early.',
     render: () => (
       <Frame wide>
         <TwoTrials />
@@ -292,7 +292,7 @@ const SLIDES = [
   // 3 — The question
   {
     label: 'Three positions',
-    by: 105,
+    by: 100,
     note: '“That’s an old question in emotion science: does a bodily change have to be noticed to be felt?” One clause per card. A: a missed change still moves you, in proportion. B: it lifts arousal but carries no size. C, James and Lange: noticing is the feeling. “It was never settled, because bigger changes are both easier to notice and more arousing.”',
     render: (d) => (
       <Frame wide kicker="Does a bodily change have to be noticed to be felt?">
