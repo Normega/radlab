@@ -210,6 +210,12 @@ export default function ScreenerPage({ study, participant, supabaseClient, onPas
 
   // ── Outcome content ────────────────────────────────────────────────────────
 
+  // Every not-eligible card says so in plain words, whatever its lab-authored
+  // heading and body. The supportive copy alone ("It sounds like you may be going
+  // through a particularly difficult time") left a screened-out student believing
+  // she had qualified (Liliana Study 3, 2026-10-01).
+  const NOT_ELIGIBLE = 'This means you won’t be able to take part in this study.'
+
   function getOutcomeContent() {
     const resources = screener?.resources ?? []
     if (outcome === 'fail_phase1') {
@@ -218,6 +224,7 @@ export default function ScreenerPage({ study, participant, supabaseClient, onPas
         cardStyle: { background: '#faf6ed', border: '1.5px solid #e8d5a3' },
         icon: '⚠️',
         heading: fm.heading ?? 'Thank you for your interest — this study may not be the right fit for you at this time.',
+        notice:  NOT_ELIGIBLE,
         body:    fm.body    ?? 'Based on your responses, you do not meet the eligibility criteria for this study.',
         showResources: true, showContinue: false, resources,
       }
@@ -246,6 +253,7 @@ export default function ScreenerPage({ study, participant, supabaseClient, onPas
         cardStyle: { background: '#faf6ed', border: '1.5px solid #e8d5a3' },
         icon: '🌿',
         heading: o.heading ?? 'You appear to be coping well with everyday demands.',
+        notice:  NOT_ELIGIBLE,
         body:    o.body    ?? 'This study is designed for people experiencing a moderate level of emotional distress, and your responses suggest that may not apply to you right now.',
         showResources: true, showContinue: false, resources,
       }
@@ -256,6 +264,7 @@ export default function ScreenerPage({ study, participant, supabaseClient, onPas
         cardStyle: { background: RED_BG, border: '1.5px solid var(--err-bd)' },
         icon: '💙',
         heading: o.heading ?? 'It sounds like you may be going through a particularly difficult time.',
+        notice:  NOT_ELIGIBLE,
         body:    o.body    ?? 'We want to make sure you have the right level of support. Because this study is not a substitute for professional mental health care, we are not able to enroll participants who are currently experiencing high levels of distress.',
         showResources: true, showContinue: false, resources,
       }
@@ -357,8 +366,11 @@ export default function ScreenerPage({ study, participant, supabaseClient, onPas
         })}
         {eligResult === 'pass' && (
           <div style={{ ...S.statusBanner, background: 'var(--bgp)', border: '1px solid var(--pkbs)', color: 'var(--pkd)' }}>
-            <strong>✓ &nbsp;You appear to meet the eligibility criteria.</strong><br />
-            You will now complete a brief questionnaire about your emotional well-being. This helps us ensure the study is the right fit for you at this time.
+            {/* Not "you are eligible": the questionnaire that follows still
+                decides eligibility. Saying so here told a screened-out student
+                she had qualified (Liliana Study 3, 2026-10-01). */}
+            <strong>Thank you — one more step.</strong><br />
+            Next is a short questionnaire about how you’ve been feeling lately. Your answers decide whether this study is a good fit for you right now.
           </div>
         )}
       </div>
@@ -366,12 +378,13 @@ export default function ScreenerPage({ study, participant, supabaseClient, onPas
   }
 
   function renderOutcome() {
-    const { cardStyle, icon, heading, body, showResources, showContinue, resources } = getOutcomeContent()
+    const { cardStyle, icon, heading, notice, body, showResources, showContinue, resources } = getOutcomeContent()
     return (
       <div style={S.content}>
         <div style={{ ...S.outcomeCard, ...cardStyle }}>
           <div style={S.outcomeIcon}>{icon}</div>
           <div style={S.outcomeHeading}>{heading}</div>
+          {notice && <div style={S.outcomeNotice}>{notice}</div>}
           {/* Outcome bodies accept the same lab-authored HTML as the description
               steps and info boxes above (bold, <br>). Definitions come from
               migrations, never from participants, so the trust model is identical.
@@ -508,6 +521,7 @@ const S = {
   outcomeIcon:     { fontSize: 36, textAlign: 'center', marginBottom: 14 },
   outcomeHeading:  { fontFamily: '"DM Serif Display", Georgia, serif', fontSize: 19, fontWeight: 400, color: 'var(--tx, #1c1c1e)', lineHeight: 1.4, marginBottom: 12 },
   outcomeBody:     { fontSize: 14, lineHeight: 1.75, color: 'var(--tx)' },
+  outcomeNotice:   { fontSize: 15, fontWeight: 600, lineHeight: 1.6, color: 'var(--tx)', marginBottom: 10 },
   resourcesHeading:{ fontFamily: '"Space Mono", monospace', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--tx2)', marginBottom: 10 },
   resourceItem:    { display: 'flex', flexDirection: 'column', padding: '10px 12px', border: '1px solid var(--bds)', borderRadius: 8, marginBottom: 6, background: '#fff' },
   resourceName:    { fontSize: 14, fontWeight: 600, color: 'var(--tx, #1c1c1e)' },

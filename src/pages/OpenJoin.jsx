@@ -79,7 +79,7 @@ export default function OpenJoin() {
         <div style={S.card}>
           <h1 style={S.title}>Thank you for your interest</h1>
           <p style={S.body}>
-            Based on your earlier answers, this study is not the right fit for you at this time.
+            Based on your answers to the eligibility questions, you won’t be able to take part in this study.
             If you have questions, please contact <a href={`mailto:${content.contact}`} style={S.link}>{content.contact}</a>.
           </p>
         </div>
