@@ -11,6 +11,11 @@ interface Props {
   videoId?:          string
   scheduleId?:       string
   requiredWatchPct?: number   // 0–1, default 0.9
+  // Complete only when the video plays to its end ('ended'), never at a watch
+  // percentage. Participant-facing steps use this: at 90% the Continue button
+  // appeared with the video still running (Norm, 2026-10-01). Forward seeking is
+  // already snapped back, so the end cannot be skipped to.
+  requireEnd?:       boolean
   onComplete?:       (sessionId: string) => void
   preview?:          boolean  // skips all DB writes; for admin preview use only
   supabaseClient?:   typeof supabase | null  // participant-session client; falls back to global
@@ -36,6 +41,7 @@ export default function StudyVideoPlayer({
   videoId,
   scheduleId,
   requiredWatchPct = 0.9,
+  requireEnd = false,
   onComplete,
   preview = false,
   supabaseClient = null,
@@ -154,14 +160,14 @@ export default function StudyVideoPlayer({
       timeDisplayRef.current.textContent = `${fmtTime(ct)} / ${fmtTime(vid.duration)}`
     }
 
-    // Check threshold
-    if (!completedRef.current) {
+    // Check threshold (not when the video must play to the end; see requireEnd)
+    if (!completedRef.current && !requireEnd) {
       const watchedPct = watchedSecondsRef.current.size / (vid.duration || 1)
       if (watchedPct >= requiredWatchPct) {
         triggerComplete()
       }
     }
-  }, [requiredWatchPct, triggerComplete])
+  }, [requiredWatchPct, requireEnd, triggerComplete])
 
   // ── Video events ──────────────────────────────────────────────────────────────
   const handlePlay = useCallback(() => {

@@ -7,7 +7,7 @@ import StudyVideoPlayer from '../video/StudyVideoPlayer'
  * Mounts inside StepDispatcher for steps with category === 'video'.
  * subcategory = video_library.id. Plays the video through StudyVideoPlayer
  * with full participant tracking (participant_video_sessions + events +
- * complete_video_session); Continue unlocks at 90% watched.
+ * complete_video_session); Continue unlocks when the video ends.
  *
  * demoMode / missing participant context → StudyVideoPlayer preview (no DB
  * writes), same gate behavior.
@@ -60,13 +60,13 @@ export default function VideoStepWrapper({
         participantId={participantId ?? undefined}
         videoId={video.id}
         scheduleId={scheduleId ?? undefined}
-        requiredWatchPct={0.9}
+        requireEnd
         preview={preview}
         supabaseClient={db}
         onComplete={(sid) => { setDone(true); if (sid) setSessionId(sid) }}
       />
       {!done && (
-        <p style={S.note}>Continue will unlock once the video has been watched.</p>
+        <p style={S.note}>Continue will unlock when the video finishes.</p>
       )}
       <button
         style={{ ...S.btn, ...(done ? {} : S.btnOff) }}

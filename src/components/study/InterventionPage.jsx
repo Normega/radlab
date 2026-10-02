@@ -789,12 +789,12 @@ function VideoBlock({ step, demoMode, onComplete, db = globalSupabase }) {
       <StudyVideoPlayer
         storagePath={`liliana/${step.video_id}`}
         preview
-        requiredWatchPct={0.9}
+        requireEnd
         onComplete={onComplete}
         supabaseClient={db}
       />
       {!demoMode && (
-        <p style={S.videoNote}>Next will unlock once the video has been watched.</p>
+        <p style={S.videoNote}>Next will unlock when the video finishes.</p>
       )}
     </div>
   )

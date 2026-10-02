@@ -37,7 +37,8 @@ export function renderOpenJoinEmail(vars: {
             <td style="background-color:#ffffff;border-radius:12px;padding:40px;box-shadow:0 1px 4px rgba(0,0,0,0.06);">
               <p style="margin:0 0 16px 0;font-size:15px;color:#1c1c1e;line-height:1.6;">Thank you for your interest in <strong>${vars.study_title}</strong>. You're eligible to take part.</p>
               <p style="margin:0 0 16px 0;font-size:15px;color:#1c1c1e;line-height:1.6;">The link below opens the consent form. If you agree to take part, it continues straight into the first session (about 30 minutes). After that, each day's short session arrives at this address by email.</p>
-              <table cellpadding="0" cellspacing="0" style="margin:24px 0 0 0;"><tr>
+              <p style="margin:20px 0 0 0;font-size:17px;font-weight:700;color:#1c1c1e;line-height:1.5;">Please set aside about 30 minutes before you open this link.</p>
+              <table cellpadding="0" cellspacing="0" style="margin:16px 0 0 0;"><tr>
                 <td style="background-color:#f068a4;border-radius:8px;">
                   <a href="${vars.link_url}" style="display:inline-block;padding:14px 32px;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:600;text-decoration:none;">Read the consent form and begin →</a>
                 </td>
@@ -61,6 +62,8 @@ export function renderOpenJoinEmail(vars: {
   const text = `Thank you for your interest in ${vars.study_title}. You're eligible to take part.
 
 The link below opens the consent form. If you agree to take part, it continues straight into the first session (about 30 minutes). After that, each day's short session arrives at this address by email.
+
+PLEASE SET ASIDE ABOUT 30 MINUTES BEFORE YOU OPEN THIS LINK.
 
 Read the consent form and begin: ${vars.link_url}
 
