@@ -3117,7 +3117,9 @@ Used by the VideoLibrary preview modal and the Training module demo modal.
 
 ### Completion overlay timing (fixed 2026-07-16)
 
-Watch *credit* and the *completion overlay* are decoupled. At `requiredWatchPct` (0.9 in both `VideoBlock` and `VideoStepWrapper`) the player fires the `complete_video_session` RPC and `onComplete` — consumers use that only to enable their Next/Continue button, so participants get credit without interruption. The full-screen "Video complete" overlay and the play-button disable are keyed to the `<video>` element's real `ended` event. (Previously both fired at the credit threshold, blacking out the last ~10% of every video mid-playback.) Focus-loss handling resumes playback on return so long as the video hasn't `ended`, even after credit is earned.
+**Superseded 2026-10-01: every media player now waits for the end.** `StudyVideoPlayer` defaults to `requireEnd`, so `complete_video_session` and `onComplete` (and with them Next/Continue) fire only on the real `ended` event; Norm found Continue enabled with the video still running. `requiredWatchPct` applies only if a caller passes `requireEnd={false}`, and none does. The history below is kept for context.
+
+Watch *credit* and the *completion overlay* were decoupled. At `requiredWatchPct` (0.9 in both `VideoBlock` and `VideoStepWrapper`) the player fired the `complete_video_session` RPC and `onComplete` — consumers used that only to enable their Next/Continue button, so participants got credit without interruption. The full-screen "Video complete" overlay and the play-button disable are keyed to the `<video>` element's real `ended` event. (Previously both fired at the credit threshold, blacking out the last ~10% of every video mid-playback.) Focus-loss handling resumes playback on return so long as the video hasn't `ended`, even after credit is earned.
 
 ### `participant_video_sessions` FK bug (found live, 2026-07-15)
 
@@ -3125,7 +3127,7 @@ Watch *credit* and the *completion overlay* are decoupled. At `requiredWatchPct`
 
 ### Post-video dwell tracking (`advanced_at`, added 2026-07-18)
 
-`participant_video_sessions` records `started_at` (player mount), `completed_at` (fires at `requiredWatchPct` **or** the real `ended` event), `seconds_watched` (count of *unique* integer-second buckets actually played — real content, not wall-clock), `watch_pct`, and focus telemetry (`focus_loss_count` + `total_focus_loss_seconds`, since the player pauses on tab blur/hide and blocks forward seeking). What it did **not** have was any measure of how long the participant sat on the screen *after* the video ended before advancing — the key signal for "started it, walked away, let it run out." Step advancement in `SessionEntry` is client-only (`setCurrentIndex`, no DB write), and the video is often a template's final step (e.g. Liliana's Baseline Introduction Video), so there was no next-step timestamp to derive dwell from either.
+`participant_video_sessions` records `started_at` (player mount), `completed_at` (the real `ended` event since 2026-10-01; previously `requiredWatchPct` **or** `ended`), `seconds_watched` (count of *unique* integer-second buckets actually played — real content, not wall-clock), `watch_pct`, and focus telemetry (`focus_loss_count` + `total_focus_loss_seconds`, since the player pauses on tab blur/hide and blocks forward seeking). What it did **not** have was any measure of how long the participant sat on the screen *after* the video ended before advancing — the key signal for "started it, walked away, let it run out." Step advancement in `SessionEntry` is client-only (`setCurrentIndex`, no DB write), and the video is often a template's final step (e.g. Liliana's Baseline Introduction Video), so there was no next-step timestamp to derive dwell from either.
 
 `advanced_at timestamptz` closes it. `VideoStepWrapper` captures the sessionId from `StudyVideoPlayer.onComplete(sessionId)` and, when the participant clicks **Continue** off the video screen, fires the `mark_video_advanced(p_session_id)` RPC (fire-and-forget — never blocks advancing; skipped in preview). The RPC is SECURITY DEFINER and idempotent (`WHERE advanced_at IS NULL`, so only the first click stamps) because participants have **no UPDATE policy** on the table (INSERT + SELECT only) — a direct update would be silently blocked by RLS, same reason `complete_video_session` is an RPC.
 
@@ -3602,7 +3604,8 @@ Welcome ✓ → Check-in ✓ → **Practice** (active) → Check-in (upcoming) �
 | Type | Gate |
 |---|---|
 | `lead_in`, `lead_out`, `text`, `closing` | Always enabled |
-| `video` | Disabled until 90% of video watched (`StudyVideoPlayer.onComplete`) |
+| `video` | Disabled until the video ends (`StudyVideoPlayer.onComplete`, `requireEnd`; was 90% watched until 2026-10-01) |
+| `audio` | Disabled until the audio ends (`onEnded`); playback speed held at 1x and forward seeking blocked (was 90% listened until 2026-10-01) |
 | `prompt_response` | Disabled until ≥ 1 character entered |
 
 In `demoMode` (admin preview), the video gate is lifted — Next is enabled immediately.
