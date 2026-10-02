@@ -627,7 +627,7 @@ export default function SessionEntry() {
     return (
       <FullScreen>
         <StatusCard>
-          Thank you for your interest. Based on a previous eligibility check, this study is not the right fit for you at this time. Please reach out to the research team if you have any questions.
+          Thank you for your interest. Based on your answers to the eligibility questions, you won’t be able to take part in this study. Please reach out to the research team if you have any questions.
         </StatusCard>
       </FullScreen>
     )
