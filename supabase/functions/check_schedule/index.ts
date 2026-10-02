@@ -18,8 +18,16 @@ const CORS = {
 }
 
 import { fetchAllRows } from '../_shared/fetchAllRows.ts'
+import { withRateLimitRetry } from '../_shared/rateLimitRetry.ts'
 
 const LAB_TIMEZONE = 'America/Toronto'
+
+// How long into a run check_schedule may keep waiting out send_message rate
+// limits (see _shared/rateLimitRetry.ts). Set to fit the 150 s wall clock of
+// the free plan with room for the passes after the sends; on a paid plan
+// (400 s) it can safely go to ~300 s. Past it, a rate-limited row is left for
+// the next tick, as before.
+const SEND_RETRY_BUDGET_MS = 110_000
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -70,6 +78,21 @@ Deno.serve(async (req) => {
     })
 
     const now = new Date()
+    const sendDeadline = now.getTime() + SEND_RETRY_BUDGET_MS
+    let rateLimitWaits = 0
+
+    // Every call to send_message goes through here. A RateLimitError is waited
+    // out while the budget lasts; anything else, or running out of budget,
+    // reaches the caller's catch exactly as before.
+    const postSendMessage = (payload: Record<string, unknown>) =>
+      withRateLimitRetry(() => fetch(`${supabaseUrl}/functions/v1/send_message`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${serviceKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      }), { deadline: sendDeadline, sleep: (ms) => { rateLimitWaits++; return new Promise((r) => setTimeout(r, ms)) } })
     const { date: todayStr, time: nowTime } = formatInTimeZone(now, LAB_TIMEZONE)
     const nowKey = scheduleKey(todayStr, nowTime)
 
@@ -438,14 +461,7 @@ Deno.serve(async (req) => {
 
         // 3. Not suppressed — send the message
         try {
-          const sendRes = await fetch(`${supabaseUrl}/functions/v1/send_message`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${serviceKey}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ schedule_id: row.id }),
-          })
+          const sendRes = await postSendMessage({ schedule_id: row.id })
 
           const sendBody = await sendRes.json()
 
@@ -587,14 +603,7 @@ Deno.serve(async (req) => {
             // which is why this branch sits ahead of them.
             if (action === 'final_notice') {
               try {
-                const sendRes = await fetch(`${supabaseUrl}/functions/v1/send_message`, {
-                  method: 'POST',
-                  headers: {
-                    'Authorization': `Bearer ${serviceKey}`,
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify({ schedule_id: row.id, final_notice: noticeKind }),
-                })
+                const sendRes = await postSendMessage({ schedule_id: row.id, final_notice: noticeKind })
                 const sendBody = await sendRes.json()
                 if (sendBody?.success) {
                   await db
@@ -620,14 +629,7 @@ Deno.serve(async (req) => {
             if (study.reminder_max != null && remindersSent >= study.reminder_max) continue
 
             try {
-              const sendRes = await fetch(`${supabaseUrl}/functions/v1/send_message`, {
-                method: 'POST',
-                headers: {
-                  'Authorization': `Bearer ${serviceKey}`,
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ schedule_id: row.id, is_reminder: true }),
-              })
+              const sendRes = await postSendMessage({ schedule_id: row.id, is_reminder: true })
               const sendBody = await sendRes.json()
               if (sendBody?.success) {
                 await db
@@ -779,7 +781,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    return json({ processed, suppressed, deferred, superseded, failed, missed, rescued: rescuedRows.length, reminded, finalNotices, advanced, withdrawn, completed: completedStudies, adherenceShortfalls })
+    return json({ processed, suppressed, deferred, superseded, failed, missed, rescued: rescuedRows.length, reminded, finalNotices, advanced, withdrawn, completed: completedStudies, adherenceShortfalls, rateLimitWaits })
 
   } catch (err) {
     console.error('check_schedule unexpected error:', err)
