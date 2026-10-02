@@ -93,6 +93,8 @@ const P = {
   tauDown:   0.4,    // s: and sharpness snaps back, because opening your eyes is fast
   strainMax: 220,    // px/s smoothed gaze speed: hunting while holding breaks the squint
   settleT:   2.8,    // s a figure must be held in soft view to settle
+  touchLift: 90,     // css px the eye sits above a fingertip, so the thumb does not cover the cloud
+  touchReach:1.35,   // and its catch is this much wider on touch
   softSee:   0.55,   // softness above which figures can settle
   nightFloor:0.55,   // how soft the world becomes on its own at full night
   duskT:     230,    // s to full night
@@ -1128,15 +1130,27 @@ let S = 0;                    // effective softness (held, minus strain, or the 
 let S_PIN = null;             // debug: pin S for deterministic renders
 let heldFor = 0;
 
+// On touch the finger sits on the very cloud being softened, so the eye is
+// carried a thumb's height above the fingertip (the text-loupe convention),
+// and its catch is a little wider. The ring is drawn there, so it shows where
+// the eye is rather than hiding under the thumb; the player still chooses
+// which cloud by holding beneath it. (Nearest-the-centre was the alternative:
+// it frees the thumb completely but takes away the choosing.)
+let touchInput = false;
+function aim(e){
+  touchInput = e.pointerType === 'touch';
+  gTX = e.clientX;
+  gTY = touchInput ? Math.max(8, e.clientY - P.touchLift) : e.clientY;
+}
 cv.addEventListener('pointerdown', e => {
   holding = true; pointerHere = true;
-  gTX = e.clientX; gTY = e.clientY;
+  aim(e);
   try { cv.setPointerCapture(e.pointerId); } catch (_) {}
   startAudio();
 });
 cv.addEventListener('pointermove', e => {
   pointerHere = true;
-  gTX = e.clientX; gTY = e.clientY;
+  aim(e);
 });
 function release(){ holding = false; }
 cv.addEventListener('pointerup', release);
@@ -1188,11 +1202,12 @@ function advance(dt){
   // settling: a figure held in soft view assembles; a found figure stays
   // found (once seen, it cannot be unseen — true of real hybrid images).
   // Sky animals settle the same way, while they pass.
-  let gazeFig = null;
+  let gazeFig = null, gazeD = Infinity;   // the nearest, now the catch can overlap two
   const settle = (f, visible) => {
     const d = Math.hypot(sx(f.cx) - gx, sy(f.cy) - gy);
-    const near = d < Math.max(f.r * sk, 90);   // floor: a figure is never smaller than a thumb
-    if (near && visible) gazeFig = gazeFig || f;
+    const reach = touchInput ? P.touchReach : 1;
+    const near = d < Math.max(f.r * sk, 90) * reach;   // floor: a figure is never smaller than a thumb
+    if (near && visible && d < gazeD){ gazeFig = f; gazeD = d; }
     if (f.found) return;
     if (near && visible && S > P.softSee){
       f.prog = Math.min(1, f.prog + dt / P.settleT);
@@ -1398,10 +1413,11 @@ function render(){
 // ── copy (placeholder — pending Norm's voice pass) ──────────────────────────
 const introEl = document.getElementById('intro');
 const LINES = [
-  { t: 1.5, out: 10,  s: 'Evening comes on. Nothing here needs looking at hard.' },
+  { t: 1.5, out: 10,  s: 'Evening comes on. Let your eyes rest on the valley.' },
   { t: 15,  out: 26,  s: 'Press and hold, and let your eyes half-close. The shapes will run together.' },
   { t: 44,  out: 56,  s: 'The wind keeps bringing clouds over the valley. Let them be whatever they are.' },
   { t: 336, out: 352, s: 'They were in the hills all day.' },
+  { t: 356, out: 372, s: 'Let go, and the valley sharpens. Both ways of looking are yours.' },
 ];
 let lineIdx = 0, lineOut = 0;
 function sayings(){
