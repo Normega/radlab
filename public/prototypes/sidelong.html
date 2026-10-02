@@ -181,10 +181,24 @@ const moonGlow = document.createElement('canvas');
 })();
 
 let stars = [];        // { r, th, size, hue, bright, vis, seen, seenFor, claimed, tw }
-let consts = [];       // { idx:[], linked, link, chimed }
+let consts = [];       // { idx:[], edges:[[i,j]], linked, link, name, named }
 let skyAngle = 0;
 
 function rnd(a, b){ return a + Math.random() * (b - a); }
+
+function makeStar(sx, sy, bright){
+  const dx = sx - POLE.x, dy = sy - POLE.y;
+  return {
+    r: Math.hypot(dx, dy),
+    th: Math.atan2(dy, dx),
+    size: bright ? rnd(1.5, 3.1) : rnd(0.65, 1.75),
+    hue: Math.random() < 0.72 ? 0 : (Math.random() < 0.5 ? 1 : -1),  // 0 white, 1 warm, -1 blue
+    bright,
+    vis: bright ? 0.8 : 0,
+    seen: false, seenFor: 0, claimed: false,
+    tw: Math.random() * 6.283, twRate: rnd(0.6, 2.1),
+  };
+}
 
 function seedSky(){
   stars = [];
@@ -195,23 +209,13 @@ function seedSky(){
   const N_FAINT = 1570, N_BRIGHT = 124;
 
   function place(bright){
-    const sx = rnd(-M, SKY_W + M), sy = rnd(-M, SKY_H + M);
-    const dx = sx - POLE.x, dy = sy - POLE.y;
-    stars.push({
-      r: Math.hypot(dx, dy),
-      th: Math.atan2(dy, dx),
-      size: bright ? rnd(1.5, 3.1) : rnd(0.65, 1.75),
-      hue: Math.random() < 0.72 ? 0 : (Math.random() < 0.5 ? 1 : -1),  // 0 white, 1 warm, -1 blue
-      bright,
-      vis: bright ? 0.8 : 0,
-      seen: false, seenFor: 0, claimed: false,
-      tw: Math.random() * 6.283, twRate: rnd(0.6, 2.1),
-    });
+    stars.push(makeStar(rnd(-M, SKY_W + M), rnd(-M, SKY_H + M), bright));
   }
   for (let i = 0; i < N_BRIGHT; i++) place(true);
   for (let i = 0; i < N_FAINT;  i++) place(false);
 
   seedConstellations();
+  dealRare();
 }
 
 // Figures across the sky. One sits close enough to the moon that it can only
@@ -232,64 +236,123 @@ const SEEDS = [
 // interdependence loop: what receptivity found becomes usable afterwards,
 // retrospectively, never advertised. It is also what the second half of the
 // session is made of — more figures alone left t=134 onward flat.
-const NAMES = [
-  'the Spilled Cup', 'the Long Walk', 'the Heron', 'the Bent Nail',
-  'the Ferryman', 'the Two Sisters', 'the Sleeping Dog', 'the Well',
-  'the Kite', 'the Fox', 'the Lamp', 'the Old Road',
-  'the Open Gate', 'the Mended Net', 'the Little Boat', 'the Bell',
-  'the Weaver', 'the Salt Road', 'the Sparrow', 'the Sleeping Hare',
+//
+// Each figure is authored line art that looks like its name: points in a
+// unit box (y down) and the edges that join them. Faint stars are snapped
+// onto the points, so the name is something you can check against the
+// shape. (Until 2026-10 these were nearest-neighbour chains of whatever
+// stars sat near a seed, wearing names that had nothing to do with them.)
+// A point left out of every edge still belongs to the figure — the bell's
+// clapper, the well's bucket, the lamp's flame — and must be found like the
+// rest. Fourteen figures, twelve places: each night deals twelve.
+const FIGURES = [
+  { name: 'the Heron',
+    pts: [[0.98,-0.74],[0.52,-0.86],[0.26,-0.62],[0.40,-0.30],[0.22,-0.04],[-0.78,0.06],[-0.08,0.30],[-0.02,0.96]],
+    edges: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,4],[6,7]] },
+  { name: 'the Kite',
+    pts: [[0.00,-1.00],[0.50,-0.35],[0.00,0.32],[-0.50,-0.35],[0.18,0.66],[-0.06,0.98]],
+    edges: [[0,1],[1,2],[2,3],[3,0],[0,2],[2,4],[4,5]] },
+  { name: 'the Fox',
+    pts: [[-0.62,-0.92],[-0.22,-0.42],[0.22,-0.42],[0.62,-0.92],[0.72,0.00],[0.00,0.88],[-0.72,0.00]],
+    edges: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,0]] },
+  { name: 'the Bell',
+    pts: [[0.00,-1.00],[0.32,-0.74],[0.38,-0.08],[0.78,0.52],[-0.78,0.52],[-0.38,-0.08],[-0.32,-0.74],[0.00,0.92]],
+    edges: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,0]] },
+  { name: 'the Little Boat',
+    pts: [[-1.00,0.32],[-0.55,0.72],[0.55,0.72],[1.00,0.32],[0.00,0.32],[0.00,-0.95],[0.62,0.18]],
+    edges: [[0,1],[1,2],[2,3],[0,4],[4,3],[4,5],[5,6],[6,4]] },
+  { name: 'the Spilled Cup',
+    pts: [[0.35,-0.50],[0.35,0.50],[-0.60,0.32],[-0.60,-0.32],[-0.40,-0.74],[0.05,-0.78],[0.70,0.72],[1.00,0.66]],
+    edges: [[0,3],[3,2],[2,1],[3,4],[4,5],[5,0],[1,6],[6,7]] },
+  { name: 'the Well',
+    pts: [[-0.70,0.95],[0.70,0.95],[0.70,0.55],[-0.70,0.55],[-0.70,-0.35],[0.00,-0.95],[0.70,-0.35],[0.00,0.18]],
+    edges: [[0,1],[1,2],[2,3],[3,0],[3,4],[2,6],[4,5],[5,6],[5,7]] },
+  { name: 'the Lamp',
+    pts: [[0.00,-1.00],[-0.30,-0.60],[0.30,-0.60],[0.50,0.04],[0.30,0.62],[-0.30,0.62],[-0.50,0.04],[0.00,0.02]],
+    edges: [[0,1],[0,2],[1,2],[2,3],[3,4],[4,5],[5,6],[6,1]] },
+  { name: 'the Open Gate',
+    pts: [[-0.90,0.82],[-0.90,-0.62],[0.90,0.82],[0.90,-0.62],[-0.28,-0.34],[-0.28,0.66]],
+    edges: [[0,1],[2,3],[1,4],[4,5],[5,0],[0,4]] },
+  { name: 'the Sleeping Hare',
+    pts: [[0.95,0.25],[0.62,-0.12],[-0.22,-0.52],[-0.55,-0.20],[-0.95,0.15],[-0.50,0.50],[0.60,0.50]],
+    edges: [[0,1],[1,2],[1,3],[3,4],[4,5],[5,6],[6,0]] },
+  { name: 'the Bent Nail',
+    pts: [[-0.48,-0.95],[0.00,-0.90],[0.48,-0.95],[0.00,0.15],[0.62,0.62]],
+    edges: [[0,1],[1,2],[1,3],[3,4]] },
+  { name: 'the Sparrow',
+    pts: [[1.00,-0.42],[0.62,-0.66],[0.30,-0.38],[-0.30,-0.22],[-1.00,0.00],[-0.35,0.30],[0.45,0.18],[0.05,0.85]],
+    edges: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,0],[5,7],[6,7]] },
+  { name: 'the Ferryman',
+    pts: [[-0.95,0.36],[-0.58,0.66],[0.58,0.66],[0.95,0.36],[0.20,0.36],[0.20,-0.50],[-0.18,-0.90],[0.62,0.98]],
+    edges: [[0,1],[1,2],[2,3],[0,4],[4,3],[4,5],[6,7]] },
+  { name: 'the Long Walk',
+    pts: [[-0.92,0.90],[-0.60,0.55],[-0.26,0.62],[0.04,0.20],[0.36,0.26],[0.62,-0.22],[0.92,-0.16]],
+    edges: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6]] },
 ];
+
+function shuffle(a){
+  for (let i = a.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
 
 function seedConstellations(){
   consts = [];
-  // Names are dealt from a fresh shuffle each session, so the first figure
-  // is not always the same one.
-  const names = NAMES.slice();
-  for (let i = names.length - 1; i > 0; i--){
-    const j = Math.floor(Math.random() * (i + 1));
-    [names[i], names[j]] = [names[j], names[i]];
-  }
+  // dealt from a fresh shuffle each night: which figures appear, and where
+  const deck = shuffle(FIGURES.slice());
   const used = new Set();
-  for (const [fx, fy] of SEEDS){
+  SEEDS.forEach(([fx, fy], n) => {
+    const fig = deck[n % deck.length];
     const cx = SKY_W * fx, cy = SKY_H * fy;
-    // gather faint, unclaimed stars near the seed, nearest first
-    const pool = [];
-    for (let i = 0; i < stars.length; i++){
-      const s = stars[i];
-      if (s.bright || used.has(i)) continue;
-      const d = Math.hypot(starSkyX(s) - cx, starSkyY(s) - cy);
-      // Compact enough to read as a figure. A wider gather (420) made each
-      // one sprawl across most of the frame in long straight segments — a
-      // wireframe rather than a shape you could recognise again.
-      if (d < 230) pool.push([d, i]);
-    }
-    pool.sort((a, b) => a[0] - b[0]);
-    // spread the picks through the pool rather than taking the tightest clump
-    const want = Math.floor(rnd(5, 7.99));
-    const stride = Math.max(1, Math.floor(pool.length / want));
-    const take = [];
-    for (let k = 0; k < pool.length && take.length < want; k += stride) take.push(pool[k]);
-    if (take.length < 5) continue;
-
-    // chain them nearest-neighbour so the figure draws as a path, not a fan
-    let idx = take.map(p => p[1]);
-    idx.forEach(i => used.add(i));
-    const chain = [idx.shift()];
-    while (idx.length){
-      const last = stars[chain[chain.length - 1]];
-      let best = 0, bestD = Infinity;
-      for (let j = 0; j < idx.length; j++){
-        const s = stars[idx[j]];
-        const d = Math.hypot(starSkyX(s) - starSkyX(last), starSkyY(s) - starSkyY(last));
-        if (d < bestD){ bestD = d; best = j; }
+    // Each instance is turned, sized and sometimes mirrored, but kept near
+    // upright: a heron on its back is not a heron. The sky's own turning
+    // (~25° over a session) adds the rest.
+    const scale = rnd(140, 185);
+    const rot = rnd(-0.35, 0.35), cr = Math.cos(rot), sr = Math.sin(rot);
+    const flip = Math.random() < 0.5 ? -1 : 1;
+    const idx = fig.pts.map(([px, py]) => {
+      const ux = px * flip * scale, uy = py * scale;
+      const tx = cx + ux * cr - uy * sr, ty = cy + ux * sr + uy * cr;
+      // snap the nearest free faint star onto the point, so density stays
+      // what it was; mint one only if the sky there is bare
+      let best = -1, bd = 170;
+      for (let i = 0; i < stars.length; i++){
+        const s = stars[i];
+        if (s.bright || used.has(i)) continue;
+        const d = Math.hypot(starSkyX(s) - tx, starSkyY(s) - ty);
+        if (d < bd){ bd = d; best = i; }
       }
-      chain.push(idx.splice(best, 1)[0]);
-    }
-    consts.push({
-      idx: chain, linked: 0, link: false,
-      name: names[consts.length % names.length], named: false,
+      if (best < 0){ stars.push(makeStar(tx, ty, false)); best = stars.length - 1; }
+      used.add(best);
+      const s = stars[best];
+      s.r = Math.hypot(tx - POLE.x, ty - POLE.y);
+      s.th = Math.atan2(ty - POLE.y, tx - POLE.x);
+      s.size = Math.max(s.size, 1.05);   // a figure's stars are never the faintest of all
+      return best;
     });
-  }
+    consts.push({
+      idx, edges: fig.edges.map(([a, b]) => [idx[a], idx[b]]),
+      linked: 0, link: false, name: fig.name, named: false,
+    });
+  });
+}
+
+// ── rare things in the sky ──────────────────────────────────────────────────
+// One or two a night, dealt from a shuffled deck, never announced and never
+// counted. Unlike the meteors (every half-minute or so), these are the kind
+// of thing you mention afterwards — and only if you happened to be resting
+// the right way when they came.
+const RARE_KINDS = { satellite: 46, fireball: 3.4, owlMoon: 4.2 };   // kind: seconds
+let rare = [];
+function dealRare(){
+  const deck = shuffle(Object.keys(RARE_KINDS));
+  const slots = Math.random() < 0.5 ? [rnd(70, 230)] : [rnd(55, 130), rnd(165, 250)];
+  rare = slots.map((at, i) => ({
+    kind: deck[i], at, dur: RARE_KINDS[deck[i]],
+    dir: Math.random() < 0.5 ? 1 : -1, a: Math.random(), b: Math.random(), fired: false, cued: false,
+  }));
 }
 
 // has any of this figure's stars risen into view?
@@ -632,6 +695,15 @@ function advance(dt){
   nextOwl -= dt;
   if (nextOwl <= 0){ nextOwl = rnd(26, 62); owl(); }
 
+  // the rare things: an owl is heard a moment before it crosses the moon
+  for (const r of rare){
+    if (r.kind === 'owlMoon' && !r.cued && simT > r.at - 2.5){ r.cued = true; owl(); }
+    if (!r.fired && simT >= r.at){
+      r.fired = true;
+      EV.push({ t: +simT.toFixed(2), e: 'rare', kind: r.kind });
+    }
+  }
+
   chimeGate = Math.max(0, chimeGate - dt);
   updateAudio();
   sayings();
@@ -660,7 +732,7 @@ function render(){
   // constellation lines, under the stars
   for (const c of consts){
     if (c.linked <= 0) continue;
-    const n = c.idx.length;
+    const n = c.edges.length;
     // Barely there until read. At 0.15 flat, a sky with nine linked figures
     // was a wireframe web; the figures should be a thing you half-see until
     // you attend to one, at which point that one comes forward.
@@ -668,12 +740,11 @@ function render(){
     ctx.strokeStyle = `rgba(150,178,236,${0.085 * c.linked * lit})`;
     ctx.lineWidth = 1;
     ctx.beginPath();
-    for (let j = 0; j < n - 1; j++){
-      const a = stars[c.idx[j]], b = stars[c.idx[j + 1]];
-      const k = clamp(c.linked * (n - 1) - j, 0, 1);
+    // edges draw in one after another as the figure links
+    for (let j = 0; j < n; j++){
+      const a = stars[c.edges[j][0]], b = stars[c.edges[j][1]];
+      const k = clamp(c.linked * n - j, 0, 1);
       if (k <= 0) break;
-      // guard: never draw a segment long enough to read as a stray ruled line
-      if (Math.hypot(b.x - a.x, b.y - a.y) > 300) continue;
       ctx.moveTo(a.x, a.y);
       ctx.lineTo(a.x + (b.x - a.x) * k, a.y + (b.y - a.y) * k);
     }
@@ -712,10 +783,40 @@ function render(){
     ctx.beginPath(); ctx.moveTo(m.x, m.y); ctx.lineTo(tx, ty); ctx.stroke();
   }
 
+  // a satellite: steady, unhurried, never twinkling — and partway across it
+  // slips into the earth's shadow and is simply gone. A fireball: slow,
+  // green-white, far longer than any meteor.
+  for (const r of rare){
+    const u = (simT - r.at) / r.dur;
+    if (u < 0 || u > 1) continue;
+    if (r.kind === 'satellite'){
+      const x = r.dir > 0 ? -20 + (W + 40) * u : W + 20 - (W + 40) * u;
+      const y0 = H * (0.10 + 0.32 * r.a), y1 = H * (0.06 + 0.32 * r.b);
+      const fade = smooth01(u / 0.06) * (1 - smooth01((u - (0.62 + 0.25 * r.b)) / 0.05));
+      ctx.globalAlpha = 0.6 * fade;
+      ctx.drawImage(sprite, x - 5, y0 + (y1 - y0) * u - 5, 10, 10);
+    } else if (r.kind === 'fireball'){
+      const vx = -r.dir * 170, vy = 120;
+      const x = W * (0.30 + 0.45 * r.a) + vx * u * r.dur, y = H * (0.04 + 0.10 * r.b) + vy * u * r.dur;
+      const flare = Math.sin(Math.PI * Math.pow(u, 0.7));
+      const tx = x - vx * 1.4, ty = y - vy * 1.4;
+      const lg = ctx.createLinearGradient(x, y, tx, ty);
+      lg.addColorStop(0, `rgba(226,255,232,${0.9 * flare})`);
+      lg.addColorStop(0.25, `rgba(200,236,255,${0.35 * flare})`);
+      lg.addColorStop(1, 'rgba(200,236,255,0)');
+      ctx.strokeStyle = lg; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(tx, ty); ctx.stroke();
+      ctx.globalAlpha = flare;
+      ctx.drawImage(sprite, x - 9, y - 9, 18, 18);
+    }
+  }
+  ctx.globalAlpha = 1;
+
   // the moon — the easy thing to look at, and the only soft place to sit.
   // Leaves the context on source-over: its maria are darker than the sky and
   // would brighten rather than darken under additive blending.
   drawMoon();
+  drawOwlOverMoon();
 
   // horizon, and first light in the finale
   if (firstLight > 0){
@@ -744,6 +845,26 @@ function render(){
   // vignette
   ctx.fillStyle = vignetteGrad;
   ctx.fillRect(0, 0, W, H);
+}
+
+// once, an owl across the face of the moon
+function drawOwlOverMoon(){
+  for (const r of rare){
+    if (r.kind !== 'owlMoon') continue;
+    const u = (simT - r.at) / r.dur;
+    if (u < 0 || u > 1) continue;
+    const x = moonX() + r.dir * (u - 0.5) * 360;
+    const y = moonY() - 6 + Math.sin(u * Math.PI * 2) * 8 + (u - 0.5) * 30 * (r.a - 0.5);
+    const flap = REDUCED ? 0 : Math.sin(simT * 9) * 0.6;
+    ctx.save(); ctx.translate(x, y); ctx.scale(r.dir, 1);
+    ctx.fillStyle = 'rgba(4,6,12,0.94)';
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 12, 4.6, 0, 0, 6.284);
+    ctx.moveTo(0, 0); ctx.quadraticCurveTo(-15, -7 - 8 * flap, -28, -2 - 13 * flap); ctx.quadraticCurveTo(-13, 4, 0, 2);
+    ctx.moveTo(0, 0); ctx.quadraticCurveTo(15, -7 - 8 * flap, 28, -2 - 13 * flap); ctx.quadraticCurveTo(13, 4, 0, 2);
+    ctx.fill();
+    ctx.restore();
+  }
 }
 
 function drawMoon(){
@@ -943,6 +1064,9 @@ window.__sidelong = {
     };
   },
   get named(){ return consts.filter(c => c.named).map(c => c.name); },
+  // tonight's deal: which figures sit where, and the rare things to come
+  get figureList(){ return consts.map(c => ({ name: c.name, stars: c.idx.length, onScreen: onScreen(c), link: c.link })); },
+  get rare(){ return rare.map(r => ({ kind: r.kind, at: +r.at.toFixed(1), fired: r.fired })); },
   // screen position of a claimed star belonging to a linked, unread figure
   aClaimedStar(){
     for (const c of consts){
