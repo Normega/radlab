@@ -235,7 +235,34 @@ export interface MaterializeResult {
   // actionable and the final session completed — i.e. the participant has
   // finished the whole study. The caller marks the enrollment 'completed'.
   completedStudy: boolean
+  // True when this walk's insert lost a race to a concurrent walk for the same
+  // participant (see isConcurrentWalkConflict). Nothing was inserted by THIS
+  // call -- `inserted` is 0, so every caller already treats it as a re-entry --
+  // but the rows exist, written by the other walk.
+  concurrentWalk?: boolean
 }
+
+// The partial unique index that makes a graph slot single
+// (20261002_one_graph_row_per_session_slot.sql).
+export const GRAPH_SLOT_INDEX = 'participant_schedule_one_graph_row_per_slot'
+
+/**
+ * Did an insert fail because another walk for the same participant already
+ * wrote these rows? Two walks can run at once -- found 2026-09-24, when one
+ * participant's SONA link loaded twice 0.4 s apart and both auto-enroll calls
+ * read "nothing materialized" and both inserted, doubling 13 sessions. Only the
+ * graph-slot index counts: any other constraint failure is a real error.
+ */
+export function isConcurrentWalkConflict(err: { code?: string; message?: string } | null | undefined): boolean {
+  return !!err && err.code === '23505' && String(err.message ?? '').includes(GRAPH_SLOT_INDEX)
+}
+
+// How long a losing walk that meant to unlock the entry row waits for the
+// winner to issue that row's link (the winner inserts first, then issues the
+// link a few hundred ms later). Without the wait, auto-enroll's re-entry branch
+// would find no live link and issue a second one, superseding the winner's.
+const CONCURRENT_LINK_WAIT_MS = 4000
+const CONCURRENT_LINK_POLL_MS = 250
 
 /**
  * Count of this participant's completed daily training sessions in the given
@@ -659,6 +686,31 @@ export async function materializeSchedule(
   const { error: insErr } = await db
     .from('participant_schedule')
     .insert(insertRows.map(({ _linkExpiresHours, ...rest }) => rest))
+  if (insErr && isConcurrentWalkConflict(insErr)) {
+    // Another walk for this participant got there first. The insert is one
+    // statement, so none of this call's rows were written; the winner's were.
+    // If this walk would have unlocked the entry row, the winner did too:
+    // wait briefly for its link so the caller hands back that link rather
+    // than minting a competing one.
+    if (unlockIndex === 0) {
+      const until = Date.now() + CONCURRENT_LINK_WAIT_MS
+      for (;;) {
+        const { data: rows } = await db
+          .from('participant_schedule')
+          .select('status, link_id')
+          .eq('participant_id', participantId)
+          .eq('study_id', studyId)
+          .eq('status', 'unlocked')
+        if ((rows ?? []).some((r: { status: string; link_id: string | null }) => r.status === 'unlocked' && r.link_id)) break
+        if (Date.now() >= until) {
+          console.warn(`materializeSchedule: concurrent walk for ${participantId} issued no entry link within ${CONCURRENT_LINK_WAIT_MS} ms`)
+          break
+        }
+        await new Promise((r) => setTimeout(r, CONCURRENT_LINK_POLL_MS))
+      }
+    }
+    return { inserted: 0, stoppedAt, withdrawal, completedStudy, adherenceShortfalls, concurrentWalk: true }
+  }
   if (insErr) throw insErr
 
   if (unlockIndex === 0) {
