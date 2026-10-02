@@ -183,6 +183,7 @@ const ScreenerLibraryPage  = lazy(() => import('./pages/admin/ScreenerLibraryPag
 const ExperimentBuilder    = lazy(() => import('./pages/admin/ExperimentBuilder'))
 const StudyBalancePage     = lazy(() => import('./pages/admin/StudyBalancePage'))
 const LilianaCreditPage    = lazy(() => import('./pages/admin/LilianaCreditPage'))
+const StudyReportsPage = lazy(() => import('./pages/admin/StudyReportsPage'))
 const DisplaysPage         = lazy(() => import('./pages/admin/DisplaysPage'))
 const DisplayEditorPage    = lazy(() => import('./pages/admin/DisplayEditorPage'))
 const UserAdminPage        = lazy(() => import('./pages/admin/UserAdminPage'))
@@ -983,6 +984,7 @@ export default function App() {
               <Route path="/admin/studies/:id/design"    element={<ExperimentBuilder />} />
               <Route path="/admin/studies/:id/balance"   element={<StudyBalancePage />} />
               <Route path="/admin/studies/:id/liliana-credit" element={<LilianaCreditPage />} />
+              <Route path="/admin/studies/:id/reports"   element={<StudyReportsPage />} />
               <Route path="/admin/studies/:id"           element={<StudyDetail />} />
               <Route path="/admin/questionnaires"        element={<QuestionnairesPage />} />
               <Route path="/admin/questionnaires/new"    element={<QuestionnaireUpload />} />
