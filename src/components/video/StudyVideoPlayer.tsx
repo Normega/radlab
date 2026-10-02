@@ -12,9 +12,10 @@ interface Props {
   scheduleId?:       string
   requiredWatchPct?: number   // 0–1, default 0.9
   // Complete only when the video plays to its end ('ended'), never at a watch
-  // percentage. Participant-facing steps use this: at 90% the Continue button
-  // appeared with the video still running (Norm, 2026-10-01). Forward seeking is
-  // already snapped back, so the end cannot be skipped to.
+  // percentage. The default since 2026-10-01: at 90% the Continue button
+  // appeared with the video still running, and every media player now waits for
+  // the end (Norm). Forward seeking is already snapped back, so the end cannot
+  // be skipped to. Pass false to restore the requiredWatchPct threshold.
   requireEnd?:       boolean
   onComplete?:       (sessionId: string) => void
   preview?:          boolean  // skips all DB writes; for admin preview use only
@@ -41,7 +42,7 @@ export default function StudyVideoPlayer({
   videoId,
   scheduleId,
   requiredWatchPct = 0.9,
-  requireEnd = false,
+  requireEnd = true,
   onComplete,
   preview = false,
   supabaseClient = null,

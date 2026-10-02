@@ -827,10 +827,20 @@ function AudioBlock({ step, onComplete, db = globalSupabase }) {
     const pct = el.currentTime / el.duration
     if (el.currentTime > maxListened.current) maxListened.current = el.currentTime
     setProgress(pct)
-    if (pct >= 0.9 && !complete) {
-      setComplete(true)
-      onComplete()
-    }
+  }
+
+  // Completion on 'ended' only: every media player waits for the end
+  // (Norm, 2026-10-01; it unlocked at 90% before).
+  function handleEnded() {
+    if (complete) return
+    setComplete(true)
+    onComplete()
+  }
+
+  // The native controls offer a speed menu in most browsers; playing at 2x
+  // would reach 'ended' in half the time. Hold playback at normal speed.
+  function handleRateChange(e) {
+    if (e.target.playbackRate !== 1) e.target.playbackRate = 1
   }
 
   function handleSeeking(e) {
@@ -855,6 +865,9 @@ function AudioBlock({ step, onComplete, db = globalSupabase }) {
           controls
           onTimeUpdate={handleTimeUpdate}
           onSeeking={handleSeeking}
+          onEnded={handleEnded}
+          onRateChange={handleRateChange}
+          controlsList="noplaybackrate nodownload"
           style={{ width: '100%', outline: 'none' }}
         />
         <div style={S.audioProgressRow}>
@@ -866,7 +879,7 @@ function AudioBlock({ step, onComplete, db = globalSupabase }) {
           </span>
         </div>
       </div>
-      {!complete && <p style={S.audioNote}>Next will unlock after listening to 90% of the audio.</p>}
+      {!complete && <p style={S.audioNote}>Next will unlock when the audio finishes.</p>}
     </div>
   )
 }

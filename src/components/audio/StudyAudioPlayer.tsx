@@ -143,14 +143,10 @@ export default function StudyAudioPlayer({ audioId, onComplete, preview = false 
       remainingRef.current.textContent = `-${fmtTime(Math.max(0, aud.duration - ct))}`
     }
 
-    // Completion check
-    if (!completedRef.current) {
-      const listenedPct = listenedSecsRef.current.size / (aud.duration || 1)
-      if (listenedPct >= requiredPctRef.current) {
-        triggerComplete()
-      }
-    }
-  }, [triggerComplete])
+    // Completion is on 'ended' only (handleEnded): every media player waits for
+    // the end (Norm, 2026-10-01). required_listen_pct is still read and the
+    // listened share is still recorded, but no longer unlocks anything early.
+  }, [])
 
   // ── Audio events ──────────────────────────────────────────────────────────
   const handlePlay = useCallback(() => {
