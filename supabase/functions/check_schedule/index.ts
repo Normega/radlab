@@ -23,11 +23,13 @@ import { withRateLimitRetry } from '../_shared/rateLimitRetry.ts'
 const LAB_TIMEZONE = 'America/Toronto'
 
 // How long into a run check_schedule may keep waiting out send_message rate
-// limits (see _shared/rateLimitRetry.ts). Set to fit the 150 s wall clock of
-// the free plan with room for the passes after the sends; on a paid plan
-// (400 s) it can safely go to ~300 s. Past it, a rate-limited row is left for
-// the next tick, as before.
-const SEND_RETRY_BUDGET_MS = 110_000
+// limits (see _shared/rateLimitRetry.ts). The project is on the Pro plan, whose
+// Edge Function wall clock is 400 s; 300 s leaves 100 s for the reminder and
+// advance passes after the sends. Each ~30 s wait buys ~30 more sends, so this
+// covers a peak of roughly 150 rows in one run. Past it, a rate-limited row is
+// left for the next tick, as before. (110 s, the free plan's fit, from
+// 2026-10-02 until the plan was confirmed the same day.)
+const SEND_RETRY_BUDGET_MS = 300_000
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
