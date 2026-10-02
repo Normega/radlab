@@ -9,7 +9,7 @@
 //   node --experimental-strip-types supabase/functions/_shared/materializeSchedule.test.mjs
 // Either way there is no build step.
 import assert from 'node:assert'
-import { materializeSchedule } from './materializeSchedule.ts'
+import { materializeSchedule, isConcurrentWalkConflict, GRAPH_SLOT_INDEX } from './materializeSchedule.ts'
 
 // ─── Fixtures ────────────────────────────────────────────────────────────────
 
@@ -112,14 +112,18 @@ const SESSION_ROWS = SESSION_NODES.map((n) => ({
 // reads (filters are no-ops — every fixture holds one participant), a
 // recording insert, and draw_assignment via rpc.
 
-function makeDb({ schedule = [], assignments = [], draws = {}, phaseDays = { phase1: 12, phase2: 11 } }) {
+// `insertError` makes every insert fail with that error (nothing recorded), and
+// `scheduleAfterInsert` is what participant_schedule reads return once an
+// insert has been attempted -- together, a concurrent walk that won the race.
+function makeDb({ schedule = [], assignments = [], draws = {}, phaseDays = { phase1: 12, phase2: 11 }, insertError = null, scheduleAfterInsert = null }) {
   const inserted = []
+  let insertAttempted = false
 
-  const result = (data) => {
+  const result = (data, error = null) => {
     const b = {
       select: () => b, eq: () => b, in: () => b, not: () => b, is: () => b,
       maybeSingle: () => b, single: () => b, order: () => b,
-      then: (onOk, onErr) => Promise.resolve({ data, error: null }).then(onOk, onErr),
+      then: (onOk, onErr) => Promise.resolve({ data, error }).then(onOk, onErr),
     }
     return b
   }
@@ -132,7 +136,7 @@ function makeDb({ schedule = [], assignments = [], draws = {}, phaseDays = { pha
 
   const tables = {
     study_sessions: () => SESSION_ROWS,
-    participant_schedule: () => schedule,
+    participant_schedule: () => (insertAttempted && scheduleAfterInsert ? scheduleAfterInsert : schedule),
     participant_assignments: () => assignments,
     liliana_participants: () => ({ id: 'lp1' }),
     liliana_day_data: () => modules.map((m) => ({ module_id: m.module_id })),
@@ -144,7 +148,12 @@ function makeDb({ schedule = [], assignments = [], draws = {}, phaseDays = { pha
     from(table) {
       return {
         select: () => result(tables[table] ? tables[table]() : []),
-        insert: (rows) => { inserted.push(...rows); return result(null) },
+        insert: (rows) => {
+          insertAttempted = true
+          if (insertError) return result(null, insertError)
+          inserted.push(...rows)
+          return result(null)
+        },
         update: () => result(null),
       }
     },
@@ -182,7 +191,7 @@ function throughMidpoint(t0, midDate, midStatus = 'completed') {
 }
 
 async function run(t0, schedule, opts = {}) {
-  const { graph = GRAPH, ...dbOpts } = opts
+  const { graph = GRAPH, unlockFirst = false, ...dbOpts } = opts
   const db = makeDb({ schedule, draws: DRAWS, ...dbOpts })
   const result = await materializeSchedule(db, {
     participantId: 'p1',
@@ -190,6 +199,7 @@ async function run(t0, schedule, opts = {}) {
     graph,
     t0Date: t0,
     baselineSendTime: '06:00',
+    unlockFirst,
   })
   return { db, result }
 }
@@ -449,4 +459,47 @@ function throughPhase2(t0, done) {
   assert.equal(plan(db).length, 1)
 }
 
-console.log('materializeSchedule: 12/12 calendar + adherence checks passed')
+// 10. Two walks at once (2026-09-24: a SONA link loaded twice, 13 sessions
+//     doubled). With the graph-slot index the loser's insert is refused; it
+//     must come back as a re-entry, not an error, having written nothing.
+const SLOT_CONFLICT = {
+  code: '23505',
+  message: `duplicate key value violates unique constraint "${GRAPH_SLOT_INDEX}"`,
+}
+{
+  const t0 = labToday()
+  const { db, result } = await run(t0, [], { insertError: SLOT_CONFLICT })
+  assert.equal(result.inserted, 0, 'the losing walk reports nothing inserted')
+  assert.equal(result.concurrentWalk, true)
+  assert.equal(db.inserted.length, 0)
+}
+
+// 11. A losing walk that meant to unlock the entry row waits for the winner's
+//     link and returns once it exists, so the caller hands back that link.
+{
+  const t0 = labToday()
+  const winnerRows = [{ ...row('s_base', t0, 'unlocked'), link_id: 'link_from_winner' }]
+  const started = Date.now()
+  const { result } = await run(t0, [], {
+    insertError: SLOT_CONFLICT, scheduleAfterInsert: winnerRows, unlockFirst: true,
+  })
+  assert.equal(result.inserted, 0)
+  assert.equal(result.concurrentWalk, true)
+  assert.ok(Date.now() - started < 1000, "the winner's link was already there; no waiting")
+}
+
+// 12. Any other insert failure is still an error -- including a unique
+//     violation on some other constraint.
+{
+  const t0 = labToday()
+  for (const err of [
+    { code: '23505', message: 'duplicate key value violates unique constraint "something_else"' },
+    { code: '42501', message: 'permission denied' },
+  ]) {
+    await assert.rejects(run(t0, [], { insertError: err }), (e) => e === err)
+  }
+  assert.equal(isConcurrentWalkConflict(SLOT_CONFLICT), true)
+  assert.equal(isConcurrentWalkConflict(null), false)
+}
+
+console.log('materializeSchedule: 15/15 calendar + adherence + concurrency checks passed')
