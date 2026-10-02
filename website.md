@@ -3358,6 +3358,109 @@ manual `UPDATE participant_schedule SET status='pending'`.
 The response payload gained a `superseded` counter alongside `deferred`, so the split between
 "held behind a gate" and "took over from a stale link" is visible per tick.
 
+### Guided text (`guided_text`) and the PSY240 class RCT's non-reactivity arm (2026-09-28)
+
+**Status: on `dev`, all 28 days of both text arms (non-reactivity, stress mindset) built, not in any study yet.** PSY240's in-class RCT
+(onboarding Oct 14, practice Oct 21–Nov 17, debrief Dec 2) compares a traditional mindfulness
+course with Sense Foraging. It is pedagogical: students take part, then write an RCT reflection;
+data are minimal (stress and mood). The traditional arm is Liliana's Study 3 non-reactivity arm,
+**copied** under `classrct-nr-*` module ids so her running study is untouched, and delivered as text:
+same delivery in both arms, no headphones, and no synthetic-voice vs human-narrator confound.
+
+`GuidedTextBlock.jsx` (+ pacing helpers in `guidedText.js`): one large line at a time, paced by
+length (2.2 words/s + 2.5 s, 4–16 s) or an explicit `seconds`; `{ quiet: N, text }` is a quiet
+stretch, shown dimmed and ending on a soft tone so closed eyes know to look back. A slow pink
+pulse sits at the foot of the screen for the whole practice (outside the per-line element, so a
+new line never restarts it; frozen while paused).
+Intro screen with Begin (the tap that unlocks audio on phones); `autostart` skips it for short
+pieces inside a longer exercise. Pause/Resume. Time only advances while visible and unpaused;
+`hidden_ms` and `paused_ms` are recorded in the `intervention_responses` row. Next is gated on
+finishing (open in demo mode). Modules may now set `day_label` to replace the "Phase N · Day N"
+header — the class RCT is one 28-day calendar, not Liliana's two phases.
+
+Content: `src/data/classRct/nonreactivity.js`, from Liliana's "Non-Reactivity" script doc, her
+wording kept except "allow your eyes to close" → "in the quiet stretches you can close your eyes".
+Day 1 is the breathing figure (`breath_practice`, 150 s at the student's own rhythm, no voice);
+Five Senses keeps her write-down steps with each audio clip replaced by an autostarting piece.
+Practices run 3.5–5.7 min, near their videos. The 28-day calendar spreads her 16 sessions: new
+practices first, then eleven "again" days (`again(day, module)`: same steps, own id and lead-in),
+ending on Graduation. Sensory Scientist, Pause Before Reacting and Graduation are copied from
+Study 3 as written (Graduation's `show_if` branch included). Lead-ins say "about N minutes"
+computed from the content (`moduleMinutes`), never typed. Review surface `/dev/class-rct?day=N`
+(`&demo=1`). Verified: all 28 days walk through to Complete Practice without errors; real-time
+run confirmed line pacing (34-word line held at the 16 s cap), Pause freezing the clock for 12 s,
+and the quiet stretch's closing tone at exactly its planned time net of the pause. Course to-do:
+`docs/markdowns/psy240_term_todo.md` → "Class RCT".
+
+**Two renderer fixes found on the way, both affecting Liliana's live Study 3 once promoted:**
+- `prompt_response` now honours `required: false`. The key was authored into four live boxes
+  (Sensory Scientist's "Optional: what shifted?" and all three arms' Graduation "any additional
+  comments?") but read by nothing, so each demanded an answer; some Study 3 rows there hold filler
+  like "h" and "n". Optional boxes now let Next through blank and say "Optional" in the box.
+- `TimerBlock` reported completion from inside a state updater (setState during render; React
+  warned on every Sensory Scientist timer). It now reports from an effect, once.
+- The quality chips (Sensory Scientist) mixed a `border` shorthand with a `borderColor` longhand,
+  which React warns can leave a deselected chip the wrong colour; the active style now sets the full
+  `border`. Same fix to the breath practice's anchor buttons.
+
+**The stress-mindset (reappraisal) arm, converted the same way (2026-09-28).**
+`src/data/classRct/reappraisal.js`. Unlike the non-reactivity file it holds Liliana's 16 Study 3
+reappraisal modules **verbatim** (`SOURCE`, exported from `intervention_modules`), and derives the
+course from them, so the copy can be checked against her study line by line. Only her eleven
+training videos change: each becomes a guided-text lesson (`LESSONS`) written from her "Reappraisal"
+script doc in her wording, at reading pace (`wps: 3`; guided_text steps may now set their own
+words-per-second, default 2.2 for meditations). The only other wording changes are in `REWORD`
+("a short training video" → "a short lesson", "According to the video" → "According to today's
+lesson"). Again days differ by design: re-reading a lesson is not practice, so an again day drops
+the lesson, names the day that taught it, and re-runs the worksheet with this week's situation; only
+worksheets built on the student's own situation repeat (thought record, cognitive distortions,
+catastrophizing, trigger map, early warning signals, demands/resources, values, "because I care"),
+never the fixed-scenario days. Days run 2–9 min (again days shortest). Shared helpers for both arms
+live in `src/data/classRct/shared.js` (`moduleMinutes`, `aboutMinutes`, which now budget the
+trigger map, body diagram and thought-record widgets realistically). The preview switches arm:
+`/dev/class-rct?arm=sm&day=N`. Verified: all 56 days (both arms) walk through to Complete Practice
+with no console errors.
+
+**Five-minute sessions and repeats that stay fresh (2026-09-29).** Norm set the whole check-in
+(ratings + practice) at under five minutes, and judged direct repetition would go stale.
+- *Length.* Non-reactivity ships `cap()`'d: reading pace 2.6 words/s, her settling opener shortened
+  from Day 4 (Days 1–3 teach it whole), and `fitLines()` (shared.js) keeping fewer, longer quiet
+  stretches (min 12 s; a dropped stretch keeps its words as a line), never cutting her teaching
+  lines. Slideshows now 2:06–3:08; practice under 4 min on 24/28 days. Stress mindset: Day 1 and
+  Day 3 lessons trimmed, Day 3's second scenario and both arms' four Graduation follow-ups after
+  "Yes" dropped (`DROP` in reappraisal.js). Its worksheet days still run 4:30–5:40 by estimate
+  (≈50 s per written answer), as do non-reactivity's written days (6, 14, 19, 28).
+- *Repeats.* Never reruns. Weeks 1–2: a condensed version with more quiet (non-reactivity) or the
+  worksheet without its lesson (stress mindset). Week 3: opens on the most stressful moment since
+  the last session (non-reactivity asks for it, `key: 'recent'`, and aims the condensed practice at
+  it; stress mindset frames the worksheet with it). Week 4: the student picks one of three earlier
+  practices/worksheets, built as a `training_response` (`key: 'pick'`) with each option's steps
+  behind `show_if` — no new renderer, and unchosen options save nothing. `moduleSeconds` counts
+  only the longest branch per key, so lead-in minutes stay honest on choice days.
+- *Own words back.* New step type `show_back` (`ShowBackBlock.jsx`, formatting in `showBack.js`):
+  fetches the participant's latest `intervention_responses` row for a given module_id +
+  response_index through their own client (RLS "own rows"), and formats every saved shape (plain
+  text, `selected`, `responses`, body diagram, trigger map). Nothing is asserted without a row: an
+  item with none is left out, and if none has one the screen says there is nothing to show back.
+  Admin preview shows a placeholder. Non-reactivity shows Day 2's labelling reflection (Day 7),
+  Day 14's "I observed…" (Days 15, 18) and Day 19's "When I notice…, I will…" plan (Days 20–27);
+  stress mindset shows the thought chosen, alternative response, catastrophe, resources, values,
+  triggers or body map from the day the worksheet was first done. Every item's target was checked
+  programmatically to be an earlier, answer-bearing step; the query and formatter were run against
+  real Study 3 rows of each shape.
+- *The light rule (2026-09-30).* Norm: a light experience, no more than five minutes a day — the
+  same commitment as the Sense Foraging exercises. `lightStep`/`lighten` (shared.js) make every
+  written answer a one-line box with the hint "A sentence is enough…" (`prompt_response` gained an
+  optional `placeholder`, read by the renderer). Further trims: Five Senses one write-down per sense
+  with each sense condensed to her key lines plus a 12 s pause; Sensory Scientist without "where do
+  you notice it most strongly" and a 20 s watch; Graduation (both arms) without "stood out most"
+  and the intention question; stress-mindset lessons for Days 1, 3, 10 and 11 shortened again (cut
+  lines are examples and framing), two automatic thoughts instead of three. `fitLines` now only
+  ever shrinks quiet stretches (it had stretched a short script's pauses up to the cap). A repeat's
+  worksheet no longer says "using the example above" when there is no lesson above it. Every day
+  is now ≤ 4:00 of practice by estimate (non-reactivity 2:15–3:50, stress mindset 1:25–3:57),
+  leaving about a minute for the before/after ratings; all 56 days walk through without errors.
+
 ### Interactive breath practice (`breath_practice`) — short-form prototype
 
 **Added 2026-09-24, on `dev` only; not yet in any study.** A step type that replaces the guided

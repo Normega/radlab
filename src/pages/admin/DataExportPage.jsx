@@ -5,7 +5,7 @@ import { zipSync, strToU8 } from 'fflate'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import {
   fetchStudyData, fetchParticipantData, buildMasterWithIntegrity, integrityRows, hasPhysio, toCsv,
-  withParticipantKey, buildCodebook,
+  withParticipantKey, buildCodebook, fetchByIn,
 } from '../../lib/studyExport'
 
 // ── CSV helpers ──────────────────────────────────────────────────────────────
@@ -128,17 +128,18 @@ function useStudyData(studyId) {
 
 // ── Physio zip builder ────────────────────────────────────────────────────────
 
+// Returns { files, skipped }: `skipped` names every file that could not be
+// downloaded, so the status line can say so instead of a bare "Done".
 async function buildPhysioZipFiles(enrollments, onProgress) {
-  const externalIds = enrollments.map(e => e.external_id)
-  const { data: sessions } = await supabase
-    .from('belt_sessions')
-    .select('participant_external_id, user_id, session_id, session_number, storage_path, created_at')
-    .in('participant_external_id', externalIds)
-    .order('created_at', { ascending: true })
+  const externalIds = [...new Set(enrollments.map(e => e.external_id).filter(Boolean))]
+  // Paged and chunked (fetchByIn), and a failed read throws: a single .in()
+  // over every participant hit the 1000-row cap and URL limits, and its error
+  // was ignored, so a failure exported an empty ZIP marked "Done".
+  const sessions = await fetchByIn('belt_sessions', 'participant_external_id', externalIds)
 
   // Group by participant → session_number, then sort for a/b/c disambiguation
   const byParticipant = {}
-  for (const s of sessions ?? []) {
+  for (const s of sessions) {
     const pid = s.participant_external_id
     if (!byParticipant[pid]) byParticipant[pid] = {}
     const n = s.session_number ?? 1
@@ -165,6 +166,7 @@ async function buildPhysioZipFiles(enrollments, onProgress) {
   }
 
   const files = []
+  const skipped = []
   let done = 0
   for (const entry of toFetch) {
     onProgress(`Downloading ${entry.accelFilename} (${done + 1}/${toFetch.length})…`)
@@ -173,11 +175,13 @@ async function buildPhysioZipFiles(enrollments, onProgress) {
       supabase.storage.from('belt-sessions').download(entry.hrPath),
     ])
     if (accelRes.data) files.push({ filename: entry.accelFilename, content: await accelRes.data.text() })
+    else skipped.push(entry.accelFilename)
     if (hrRes.data)    files.push({ filename: entry.hrFilename,    content: await hrRes.data.text() })
+    else skipped.push(entry.hrFilename)
     done++
   }
 
-  return files
+  return { files, skipped }
 }
 
 // ── Session label helper (shared between physio builder and BeltPhysioSection) ─
@@ -336,7 +340,7 @@ function BeltPhysioSection({ externalId }) {
 // ── Study-level export section ────────────────────────────────────────────────
 
 const CATEGORY_ORDER = [
-  'Sessions', 'Games', 'Questionnaires', 'Rating scales', 'Screeners',
+  'Sessions', 'Games', 'Questionnaires', 'Rating scales', 'Instruments', 'Screeners',
   'Demographics', 'Physio', 'Video', 'Audio', 'Forms', 'Timing',
   'Assignments', 'Training',
 ]
@@ -470,10 +474,13 @@ function StudyExportSection() {
     setPhysioBusy(true)
     setStatus('Fetching physio files…')
     try {
-      const files = await buildPhysioZipFiles(enrollments, msg => setStatus(msg))
+      const { files, skipped } = await buildPhysioZipFiles(enrollments, msg => setStatus(msg))
+      if (skipped.length) console.warn('Physio export: could not download', skipped)
       setStatus('Building zip…')
       downloadZip(`${studyName}_physio_export.zip`, files)
-      setStatus('Done — physio files exported.')
+      setStatus(skipped.length
+        ? `Done with gaps — ${files.length} file${files.length !== 1 ? 's' : ''} exported; ${skipped.length} could not be downloaded and are NOT in the ZIP: ${skipped.join(', ')}`
+        : `Done — ${files.length} physio file${files.length !== 1 ? 's' : ''} exported.`)
     } catch (e) {
       setStatus(`Error: ${e.message}`)
     } finally {

@@ -392,6 +392,12 @@ function ClaimForm({ claim, row: r, courseClient, reload, onRelease }) {
   // not from the summary — so it has to be captured before the claim closes.
   const [src, setSrc] = useState(claim.source_kind
     ? { ok: true, kind: claim.source_kind, chars: null } : null)
+  // The DOI the captured text belongs to. A student sent back for a better paper
+  // changes the DOI, but the old paper's text would otherwise stay captured with
+  // no way to replace it, and the check and the Guide would read the old paper
+  // (Emma McComish, 2026-10-01).
+  const [srcDoi, setSrcDoi] = useState(claim.source_kind ? (claim.source_doi ?? '') : null)
+  const sourceStale = Boolean(src?.ok && srcDoi && doi.trim() && doi.trim() !== srcDoi)
   const [srcBusy, setSrcBusy] = useState(false)
   const [srcErr, setSrcErr] = useState(null)
   const [findings, setFindings] = useState(claim.precheck ?? [])
@@ -442,7 +448,7 @@ function ClaimForm({ claim, row: r, courseClient, reload, onRelease }) {
     const { rsp, json } = await post({ doi: doi.trim() })
     setSrcBusy(false)
     if (!rsp.ok) { setSrc(null); setSrcErr(json.error ?? 'Could not fetch the full text.'); return }
-    setSrc(json)
+    setSrc(json); setSrcDoi(doi.trim())
   }
 
   const uploadPdf = async (file) => {
@@ -457,7 +463,7 @@ function ClaimForm({ claim, row: r, courseClient, reload, onRelease }) {
     const { rsp, json } = await post({ pdf_path: path })
     setSrcBusy(false)
     if (!rsp.ok) { setSrc(null); setSrcErr(json.error ?? 'Could not read that PDF.'); return }
-    setSrc(json)
+    setSrc(json); setSrcDoi(doi.trim())
   }
 
   const save = async (quiet = false) => {
@@ -477,6 +483,9 @@ function ClaimForm({ claim, row: r, courseClient, reload, onRelease }) {
 
   const submit = async () => {
     setMsg(null)
+    if (sourceStale) {
+      return setMsg('The full text captured is from your earlier paper. Use “Replace with a different paper” to capture the new one before you submit.')
+    }
     if (!(await save(true))) return
     setBusy(true)
     const { data, error } = await courseClient.rpc('submit_claim', { p_claim_id: claim.id })
@@ -524,11 +533,19 @@ function ClaimForm({ claim, row: r, courseClient, reload, onRelease }) {
       <label style={S.fieldLabel}>The full text <span style={S.dim}>(so your source can be read into the Guide)</span></label>
       <div style={S.srcBox}>
         {src?.ok ? (
-          <p style={{ ...S.sub, fontSize: 13.5, color: DIFF.green.colour, margin: 0 }}>
-            ✓ Full text captured{src.kind === 'oa' ? ' from the open-access copy' : ' from your upload'}
-            {src.chars ? ` — ${Math.round(src.chars / 1000)}k characters` : ''}.
-            {src.note ? ` ${src.note}` : ''}
-          </p>
+          <>
+            <p style={{ ...S.sub, fontSize: 13.5, color: sourceStale ? SEV.warn : DIFF.green.colour, margin: 0 }}>
+              {sourceStale
+                ? '⚠ The full text captured is from your earlier paper, not the DOI above.'
+                : <>✓ Full text captured{src.kind === 'oa' ? ' from the open-access copy' : ' from your upload'}
+                  {src.chars ? ` — ${Math.round(src.chars / 1000)}k characters` : ''}.
+                  {src.note ? ` ${src.note}` : ''}</>}
+            </p>
+            <button type="button" style={{ ...S.secondary, marginTop: 8 }} disabled={srcBusy}
+                    onClick={() => { setSrc(null); setSrcErr(null) }}>
+              Replace with a different paper
+            </button>
+          </>
         ) : (
           <>
             <p style={{ ...S.sub, fontSize: 13.5, margin: '0 0 8px' }}>

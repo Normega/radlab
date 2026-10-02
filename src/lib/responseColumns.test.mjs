@@ -71,6 +71,26 @@ check('steps with no schedule link are ignored',
     { participant_schedule_id: null, subcategory: 'vas_stress', step_index: 7 },
   ]).size === 0)
 
+// A session re-entered after a refresh logs the same step a second time. That is
+// one administration, not two — counting rows here renamed every participant's
+// columns for the instrument (gad7_midpoint_1 -> gad7_midpoint_s3_1).
+check('the same step logged twice in one session (a re-entry) is NOT a repeat',
+  !repeatedSubcatsFromSteps([
+    { participant_schedule_id: 'sch1', subcategory: 'gad7', step_index: 3 },
+    { participant_schedule_id: 'sch1', subcategory: 'gad7', step_index: 3 },
+  ]).has('gad7'))
+check('two different steps in one session ARE a repeat',
+  repeatedSubcatsFromSteps([
+    { participant_schedule_id: 'sch1', subcategory: 'gad7', step_index: 3 },
+    { participant_schedule_id: 'sch1', subcategory: 'gad7', step_index: 9 },
+  ]).has('gad7'))
+check('a re-entry on top of a genuine repeat is still a repeat',
+  repeatedSubcatsFromSteps([
+    { participant_schedule_id: 'sch1', subcategory: 'vas_stress', step_index: 1 },
+    { participant_schedule_id: 'sch1', subcategory: 'vas_stress', step_index: 1 },
+    { participant_schedule_id: 'sch1', subcategory: 'vas_stress', step_index: 7 },
+  ]).has('vas_stress'))
+
 check('an empty or absent step log yields nothing', repeatedSubcatsFromSteps([]).size === 0)
 check('an absent step log does not throw',          repeatedSubcatsFromSteps(undefined).size === 0)
 

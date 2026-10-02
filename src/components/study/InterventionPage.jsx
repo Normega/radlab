@@ -5,6 +5,8 @@ import { useSubmitLock } from '../../lib/useSubmitLock'
 import StudyVideoPlayer from '../video/StudyVideoPlayer'
 import NoDefaultSlider from './NoDefaultSlider'
 import BreathPracticeBlock from './BreathPracticeBlock'
+import GuidedTextBlock from './GuidedTextBlock'
+import ShowBackBlock from './ShowBackBlock'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -27,7 +29,7 @@ const SESSION_STEPS = [
 // because an untouched handle is a non-response, not a choice of whatever value
 // it happens to rest on. This set short-circuits ahead of the switch, so
 // listing a type here silently makes its case below dead code.
-const ALWAYS_ENABLED = new Set(['lead_in', 'lead_out', 'text', 'closing'])
+const ALWAYS_ENABLED = new Set(['lead_in', 'lead_out', 'text', 'closing', 'show_back'])
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -142,6 +144,9 @@ export default function InterventionPage({
   // breath_practice: the block's own summary, present once the practice finished
   const [breathResults, setBreathResults] = useState({})  // {stepIdx: {anchor, holds_ms, …}}
 
+  // guided_text: the block's summary, present once the last line has run
+  const [guidedResults, setGuidedResults] = useState({})  // {stepIdx: {seconds, hidden_ms, paused_ms}}
+
   // ── show_if resolution ────────────────────────────────────────────────────
   // Conditions name a step by its authored `key`, not its position, so
   // inserting or reordering steps in a module definition can't silently
@@ -193,7 +198,11 @@ export default function InterventionPage({
         setNextEnabled(false)
         break
       case 'prompt_response':
-        setNextEnabled((responses[s._stepIndex] ?? '').length > 0)
+        // `required: false` makes a box optional. It was authored into modules
+        // from the start ("Optional: what shifted?", Graduation's "any
+        // additional comments?") but read by nothing until 2026-09-28, so those
+        // optional boxes demanded an answer like every other.
+        setNextEnabled(s.required === false || (responses[s._stepIndex] ?? '').length > 0)
         break
       case 'slider':
         // A slider that has not been moved has no response — an untouched
@@ -262,6 +271,9 @@ export default function InterventionPage({
         // Like video: gated on finishing, except in an admin demo.
         setNextEnabled(!!demoMode || !!breathResults[s._stepIndex])
         break
+      case 'guided_text':
+        setNextEnabled(!!demoMode || !!guidedResults[s._stepIndex])
+        break
       default:
         setNextEnabled(true)
     }
@@ -269,9 +281,9 @@ export default function InterventionPage({
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
-  const handleResponseChange = useCallback((stepIndex, text) => {
+  const handleResponseChange = useCallback((stepIndex, text, optional = false) => {
     setResponses(prev => ({ ...prev, [stepIndex]: text }))
-    setNextEnabled(text.length > 0)
+    setNextEnabled(optional || text.length > 0)
   }, [])
 
   const handleVideoComplete = useCallback(() => setNextEnabled(true), [])
@@ -456,6 +468,16 @@ export default function InterventionPage({
           })
           break
 
+        case 'guided_text':
+          // Through insertResponse like every other case: a bare insert()
+          // drops its error, so a failed save would advance the participant
+          // with nothing recorded (CLAUDE.md, participant data rule 2).
+          await insertResponse({
+            ...base,
+            response_text: JSON.stringify(guidedResults[idx] ?? { completed: false }),
+          })
+          break
+
         default:
           break
       }
@@ -490,7 +512,9 @@ export default function InterventionPage({
             <div style={S.badgeDot} />
             {CONDITION_LABELS[module.condition] ?? module.condition}
           </div>
-          <div style={S.dayNumber}>Phase {phaseLabel} · Day {module.lesson}</div>
+          {/* day_label lets a module outside Liliana's two-phase design (the
+              class RCT's 28-day calendar) name its own day. */}
+          <div style={S.dayNumber}>{module.day_label ?? `Phase ${phaseLabel} · Day ${module.lesson}`}</div>
           <div style={S.dayTitle}>{module.title}</div>
           {module.subtitle && <div style={S.daySubtitle}>{module.subtitle}</div>}
         </div>
@@ -532,7 +556,7 @@ export default function InterventionPage({
             <PromptResponseBlock
               step={current}
               value={responses[current._stepIndex] ?? ''}
-              onChange={text => handleResponseChange(current._stepIndex, text)}
+              onChange={text => handleResponseChange(current._stepIndex, text, current.required === false)}
             />
           )}
 
@@ -683,6 +707,22 @@ export default function InterventionPage({
               demoMode={demoMode}
               onComplete={result => {
                 setBreathResults(prev => ({ ...prev, [current._stepIndex]: result }))
+                setNextEnabled(true)
+              }}
+            />
+          )}
+
+          {current.type === 'show_back' && (
+            <ShowBackBlock key={current._stepIndex} step={current} participantId={participantId} db={supabase} />
+          )}
+
+          {current.type === 'guided_text' && (
+            <GuidedTextBlock
+              key={current._stepIndex}
+              step={current}
+              demoMode={demoMode}
+              onComplete={result => {
+                setGuidedResults(prev => ({ ...prev, [current._stepIndex]: result }))
                 setNextEnabled(true)
               }}
             />
@@ -864,7 +904,7 @@ function PromptResponseBlock({ step, value, onChange }) {
         rows={rows}
         value={value}
         onChange={e => onChange(e.target.value)}
-        placeholder="Type your response here…"
+        placeholder={step.placeholder ?? (step.required === false ? 'Optional — leave blank if nothing comes to mind…' : 'Type your response here…')}
         style={S.textarea}
       />
     </div>
@@ -963,23 +1003,24 @@ function MultiResponseBlock({ step, values, onChange }) {
 function TimerBlock({ step, onComplete }) {
   const total    = step.duration_seconds ?? 30
   const [rem, setRem] = useState(total)
-  const [done, setDone] = useState(false)
+  const done = rem === 0
   const intervalRef = useRef(null)
+  const firedRef = useRef(false)
 
   useEffect(() => {
-    intervalRef.current = setInterval(() => {
-      setRem(r => {
-        if (r <= 1) {
-          clearInterval(intervalRef.current)
-          setDone(true)
-          onComplete()
-          return 0
-        }
-        return r - 1
-      })
-    }, 1000)
+    intervalRef.current = setInterval(() => setRem(r => Math.max(0, r - 1)), 1000)
     return () => clearInterval(intervalRef.current)
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Completion is reported from an effect, not from inside the state updater:
+  // calling the parent's setState there is a setState-during-render (React
+  // warned on every Sensory Scientist timer).
+  useEffect(() => {
+    if (!done || firedRef.current) return
+    firedRef.current = true
+    clearInterval(intervalRef.current)
+    onComplete()
+  }, [done]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const mins = String(Math.floor(rem / 60)).padStart(1, '0')
   const secs = String(rem % 60).padStart(2, '0')
@@ -1859,8 +1900,10 @@ const S = {
     fontSize: 14, fontWeight: 600, color: 'var(--tx)', background: '#fff',
     cursor: 'pointer', fontFamily: FONT,
   },
+  // Full `border`, not `borderColor`: mixing the shorthand with a longhand makes
+  // React drop the colour wrongly when a chip is deselected.
   qualityBtnActive: {
-    background: 'var(--bgp)', borderColor: 'var(--pk)', color: 'var(--pkd)', fontWeight: 600,
+    background: 'var(--bgp)', border: '1.5px solid var(--pk)', color: 'var(--pkd)', fontWeight: 600,
   },
   qualityPanel: {
     background: 'var(--bg)', border: '1px solid var(--bd)',

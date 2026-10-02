@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
+import { dbWrite } from '../../lib/dbWrite'
 import { advanceSchedule } from '../../lib/scheduleGenerator'
 import StepDispatcher from '../../components/study/StepDispatcher'
 import { PhysioProvider } from '../../components/study/PhysioContext'
@@ -152,23 +153,39 @@ export default function StudySessionRunner() {
       const isDone  = newStep >= nodes.length
 
       if (isDone && scheduleRow?.id) {
+        // Both writes are checked: an RLS denial or a zero-row update used to
+        // show COMPLETE with nothing saved. A failure throws, so the RA sees a
+        // retry instead of the complete screen.
         const now = new Date().toISOString()
-        await supabase
-          .from('participant_schedule')
-          .update({ status: 'completed', completed_at: now })
-          .eq('id', scheduleRow.id)
+        const sched = await dbWrite(
+          supabase
+            .from('participant_schedule')
+            .update({ status: 'completed', completed_at: now })
+            .eq('id', scheduleRow.id)
+            .select('id'),
+          'participant_schedule.completed (admin runner)',
+          { expectRows: true },
+        )
+        if (!sched.ok) throw new Error('The session could not be marked complete.')
 
         // Mark enrollment in-progress or completed
-        const { data: allRows } = await supabase
+        const { data: allRows, error: rowsErr } = await supabase
           .from('participant_schedule')
           .select('id, status')
           .eq('participant_id', enrollment.profile_id)
           .eq('study_id', studyId)
-        const allDone = allRows?.every(r => r.status === 'completed')
-        await supabase
-          .from('study_enrollments')
-          .update({ status: allDone ? 'completed' : 'in_progress' })
-          .eq('id', enrollmentId)
+        if (rowsErr) throw new Error("The participant's schedule could not be read.")
+        const allDone = allRows.every(r => r.status === 'completed')
+        const enr = await dbWrite(
+          supabase
+            .from('study_enrollments')
+            .update({ status: allDone ? 'completed' : 'in_progress' })
+            .eq('id', enrollmentId)
+            .select('id'),
+          'study_enrollments.status (admin runner)',
+          { expectRows: true },
+        )
+        if (!enr.ok) throw new Error("The participant's enrollment status could not be updated.")
 
         if (!allDone) {
           await advanceSchedule(enrollment.profile_id, studyId, scheduleRow.id)
@@ -238,7 +255,20 @@ export default function StudySessionRunner() {
         </div>
       ) : phase === PHASE.SAVING ? (
         <div style={S.fullScreen}>
-          <p style={S.loadingText}>Saving…</p>
+          {advanceStep.isError ? (
+            <div style={S.completeBox}>
+              <h1 style={S.completeTitle}>Not saved yet</h1>
+              <p style={S.completeBody}>
+                {advanceStep.error?.message} The participant's answers are recorded; only the
+                session's completion is missing. Check the connection and try again.
+              </p>
+              <button style={S.btnPrimary} onClick={() => advanceStep.mutate()}>
+                Try again
+              </button>
+            </div>
+          ) : (
+            <p style={S.loadingText}>Saving…</p>
+          )}
         </div>
       ) : (
         <div style={S.fullScreen}>

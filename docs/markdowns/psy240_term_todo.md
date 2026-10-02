@@ -56,6 +56,51 @@ Guide freezes before the final Dec 8.
   spot-the-limitation). Use no real pool item as an example.
 - [ ] Late tier: all first-half quizzes hard-close Oct 14 13:00Z. Announce it in L4 and L5.
 
+## Class RCT: traditional mindfulness vs Sense Foraging (onboarding Oct 14, practice Oct 21–Nov 17)
+
+Decided 2026-09-28: pedagogical, not research. Students experience an RCT and write the reflection;
+minimal data (stress and mood); Norm hears informally which course they preferred. Two arms: Liliana's
+Study 3 **non-reactivity** arm delivered as text (her scripts, her wording, copies under `classrct-nr-*`;
+her running study untouched) vs **Sense Foraging** (senseforaging.com as the screen, radlab as the
+engine: enrolment, randomisation, ratings, export). Compassion and reappraisal arms only if time allows.
+
+- [x] Text player `guided_text` (one line at a time; quiet stretches end on a tone; pause; time away
+  recorded). Non-reactivity days 1–7 built; review at `dev.radlab.zone/dev/class-rct?day=N`
+  (`&demo=1` for skip buttons). 2026-09-28.
+- [x] Norm reviewed days 1–7: format approved; asked for the pink pulse throughout (done). 2026-09-28.
+- [x] Days 8–28 built: eight more scripts as guided text, Sensory Scientist / Pause Before Reacting /
+  Graduation copied from Study 3 as written, eleven "again" days. All 28 walk through on the dev site.
+  Lead-in "about N minutes" is computed from content. 2026-09-28.
+- [ ] Norm reviews days 8–28 on the dev site.
+- [x] **Stress-mindset (reappraisal) arm converted too** (Norm, 2026-09-28): Liliana's 16 modules copied
+  verbatim under `classrct-ra-*`, her 11 videos rewritten as guided-text lessons at reading pace (3 words/s).
+  Again days re-run the worksheet (not the lesson) with this week's situation. Preview switches arm:
+  `dev.radlab.zone/dev/class-rct?arm=sm&day=N`. All 28 walk through.
+- [ ] Decide the RCT's arms: non-reactivity vs Sense Foraging as planned, or add stress mindset as a
+  third arm (splits the class three ways).
+- [ ] Norm reviews the stress-mindset lessons on the dev site.
+- [x] Five-minute sessions + fresh repeats (Norm, 2026-09-29): non-reactivity slideshows capped near 3 min;
+  stress-mindset Day 1/3 lessons and Day 3's second scenario trimmed; Graduation follow-ups dropped in
+  both arms. Repeats: condensed (weeks 1–2), aimed at the most stressful recent moment (week 3), student's
+  choice of three (week 4), with their own earlier words shown back (`show_back`). 2026-09-29.
+- [x] Trimmed so every day is ≤ 4 min of practice by estimate (Norm, 2026-09-30: "a 'light' experience,
+  no more than 5 min per day", the same commitment as the Sense Foraging exercises). Every written
+  answer is one line ("A sentence is enough…"); Five Senses one write-down per sense with condensed
+  guidance and real pauses; Sensory Scientist without "where most strongly", 20 s watch; Graduation
+  (both arms) two fewer reflections; stress-mindset Day 1/3/10/11 lessons shortened, two automatic
+  thoughts instead of three. Now non-reactivity 2:15–3:50, stress mindset 1:25–3:57. 2026-09-30.
+- [ ] Minimal measures: one stress + mood slider bundle, before and after every session, same in
+  both arms; the same short stress/mood check on days 1, 14, 28; shared day-28 experience items
+  (enjoyment, helpful, would continue, one open "what stood out").
+- [ ] Study config: self-enrolment with student number, credit-only consent (keeps it out of research
+  exports), two-arm randomise, 28 daily timepoints from Oct 21. **Anyone with an active Liliana
+  Study 3 enrolment is assigned to Sense Foraging, not randomised** (protects her study).
+- [ ] Withdrawal: a student can withdraw at any time without the adherence-withdrawal emails
+  Liliana's study sends; the reflection is still expected. Opt-outs were due before the midterm.
+- [ ] Sense Foraging arm: radlab session → that day's senseforaging.com practice → back to radlab
+  for the after ratings. Design the handoff.
+- [ ] End-to-end run on the dev site with a fake student (days 1–3, 28) before Oct 14.
+
 ## Field Guide — flagged findings awaiting correction
 
 These are excluded from the item pools and must not be taught as stated. Fix the page, then
@@ -133,6 +178,8 @@ clear the exclusion in the YAML header.
 
 ## Platform
 
+- [ ] **Haiku 4.5 may retire from Oct 15.** Anthropic lists `claude-haiku-4-5` as retiring "not sooner than October 15, 2026". It runs `api/lounge-ai.js` `summarize`, the "Show class" theme grouping used in every lecture. No newer Haiku exists (2026-09-28). Before Oct 15, move it to `claude-sonnet-5-5` on the same structured-output pattern as `propose`, or confirm the date has moved.
+- [x] (2026-09-28 — verified live on dev by Norm and promoted) Sonnet 5.5 migration of `integrate-claim` and lounge-ai `propose` is on dev (2026-09-28, `402887c`). Before promoting, run "Compare with source" on one submission and one run-of-show proposal on dev.radlab.zone (the Anthropic key is Vercel-only, so neither has made a real call yet).
 - [x] (2026-09-26 — now 1 per 120 s and 10 per rolling 24 h on all three send paths, `20260926_signin_send_window.sql`; the refusal says when it lifts. Still open: why she needed 50.) **The sign-in email cap is lifetime, and it's already being hit.** `api/roster-join.js`
   refuses a roster row after `LIFETIME_SEND_CAP = 50` sends ("Send limit reached for this address
   — contact the course team"), a figure chosen to "cover a whole term". Ritma Shahid hit it on
@@ -153,7 +200,7 @@ clear the exclusion in the YAML header.
 - [ ] WeeklyWall: a friendly message when an insert is refused, instead of the raw RLS error.
 - [ ] `get_session_bootstrap` anonymous-call log noise.
 - [ ] `enroll_from_roster` permission-denied blips in the logs.
-- [ ] Syllabus says contributions are 250–500 words; the submission form allows 60–400. Reconcile.
+- [x] (2026-09-29 — 250–500 is both boxes together; the form now shows the combined count and the how-to says so) Syllabus says contributions are 250–500 words; the submission form allows 60–400. Reconcile.
 - [ ] Deep links: check the Reports tab shows page and gap links for every resolved report, not just
   Lucas's.
 
