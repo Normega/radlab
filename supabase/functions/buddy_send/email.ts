@@ -69,8 +69,10 @@ export function renderBuddyEmail(v: BuddyEmailVars): { subject: string; html: st
     const q = quoted(v.quote.quote)
     const src = v.quote.source ? ` (${v.quote.source})` : ''
     const tag = v.quote.tag ? ` ${v.quote.tag}` : ''
+    // The quote itself bold and in body colour so it is noticed (Norm,
+    // 2026-10-02); source and punchline stay regular grey beside it.
     quoteHtml = `<p style="margin:20px 0 0 0;font-size:14px;color:#6b6c70;line-height:1.5;font-style:italic;">`
-      + `<em>${esc(q)}</em>${esc(src)}.${esc(tag)}</p>`
+      + `<strong style="color:#1c1c1e;font-weight:700;"><em>${esc(q)}</em></strong>${esc(src)}.${esc(tag)}</p>`
     text.push(`${q}${src}.${tag}`)
   }
 
