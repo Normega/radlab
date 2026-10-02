@@ -175,9 +175,14 @@ export default function StudyDetail() {
             {fmtDate(study?.created_at)}
           </p>
         </div>
-        <Link to={`/admin/studies/${id}/edit`} style={{ ...S.btnPrimary, textDecoration: 'none', fontSize: 14, padding: '7px 14px' }}>
-          Edit Study
-        </Link>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Link to={`/admin/studies/${id}/reports`} style={{ ...S.btnPrimary, textDecoration: 'none', fontSize: 14, padding: '7px 14px', background: '#fff', color: 'var(--tx)', border: '1px solid var(--bd)' }}>
+            Reports
+          </Link>
+          <Link to={`/admin/studies/${id}/edit`} style={{ ...S.btnPrimary, textDecoration: 'none', fontSize: 14, padding: '7px 14px' }}>
+            Edit Study
+          </Link>
+        </div>
       </div>
 
       {/* Sessions — all study types */}
