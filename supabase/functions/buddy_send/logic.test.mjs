@@ -122,9 +122,9 @@ test('email: celebration, no meeting, test prefix, escaping', () => {
   assert.ok(e.html.indexOf('Milestone complete') < e.html.indexOf('Morning, John'), 'celebration opens the email')
 })
 
-test('email: every quote is in quote marks, never doubled, at 14px', () => {
+test('email: every quote is bold, in quote marks, never doubled, at 14px', () => {
   const unquoted = renderBuddyEmail({ ...base, quote: { quote: 'Training arc: in progress. Montage music not included.', source: 'Every shonen', tag: null } })
-  assert.match(unquoted.html, /<em>&quot;Training arc: in progress\. Montage music not included\.&quot;<\/em> \(Every shonen\)\./)
+  assert.match(unquoted.html, /<strong style="color:#1c1c1e;font-weight:700;"><em>&quot;Training arc: in progress\. Montage music not included\.&quot;<\/em><\/strong> \(Every shonen\)\./)
   assert.match(unquoted.text, /^"Training arc: in progress\. Montage music not included\." \(Every shonen\)\.$/m)
   assert.match(unquoted.html, /font-size:14px;color:#6b6c70/)
 
