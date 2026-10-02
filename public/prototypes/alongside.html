@@ -58,6 +58,7 @@ const P = {
   wispSpd: 78,      // creature baseline drift px/s
   comfortR: 165,    // it keeps this much room around you on its own
   approachMist: 25, // px/s you must be closing on it for "too close" to dissolve it
+  beckonMax: 8,     // s it waits, turned to you, when it first starts to lead
 };
 
 const WORLD={w:2600,h:1800};
@@ -467,8 +468,23 @@ function wispUpdate(t,dt){
     const next=sites.findIndex(s=>s.lit<0.5&&!s.visited);
     w.tourIdx=w.tourIdx<0?(next<0?0:next):w.tourIdx;
     w.target=null;
+    // The one change of phase a player could otherwise miss: it stops, turns
+    // to you, then leans toward where it means to go, and sets off once you
+    // move. Nothing is written; the pause is the signal.
+    w.beckon=P.beckonMax; w.beckonT=0;
   }
   if(w.state==='lead'&&bond<0.18){ w.state='wander'; w.target=null; }
+
+  if(w.beckon>0){
+    w.beckon-=dt; w.beckonT+=dt;
+    w.vx*=Math.pow(0.05,dt); w.vy*=Math.pow(0.05,dt);
+    giveWay(w,d,dt);
+    w.x+=w.vx*dt; w.y+=w.vy*dt;
+    w.spd=Math.hypot(w.vx,w.vy);
+    // after it has turned to you and pointed the way, your moving is the go
+    if(w.beckonT>2.4&&player.spd>30) w.beckon=0;
+    return;
+  }
 
   // meaningless play: sometimes it chases a moth in a loop
   if(w.mothT>0){
@@ -1094,6 +1110,20 @@ function drawWisp(t){
     const px=x+Math.cos(p.a+t*0.7)*r, py=y+Math.sin(p.a+t*0.7)*r*0.8;
     ctx.fillStyle=`rgba(200,224,255,${(0.35+0.25*Math.sin(t*2+p.ph))*alpha})`;
     ctx.beginPath();ctx.arc(px,py,1.5,0,7);ctx.fill();
+  }
+  // starting to lead: it turns to you, then leans toward the first place
+  if(w.beckon>0){
+    const site=sites[Math.min(w.tourIdx,sites.length-1)];
+    const toYou=w.beckonT<1.4;
+    const tx=toYou?player.x:(site?site.x:player.x), ty=toYou?player.y:(site?site.y:player.y);
+    const dx=tx-w.x,dy=ty-w.y;const l=Math.hypot(dx,dy)||1;
+    const fade=Math.min(1,w.beckon*0.8);
+    const n=toYou?1:3;
+    for(let i=0;i<n;i++){
+      const k=10+i*9+(toYou?0:Math.sin(t*3-i)*2);
+      ctx.fillStyle=`rgba(210,232,255,${(0.32-i*0.08)*fade})`;
+      ctx.beginPath();ctx.arc(x+dx/l*k,y+dy/l*k,2.2-i*0.4,0,7);ctx.fill();
+    }
   }
   // when it looks at you, the glow leans your way — barely
   if(w.look>0){
