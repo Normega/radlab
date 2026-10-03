@@ -225,18 +225,61 @@ body {
 
 .contact-block__body { font-size: 0.875rem; line-height: 1.75; color: #555; margin: 0; }
 
-.contact-block__actions { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 0.25rem; }
-
-.contact-cta {
-  font-family: 'Space Mono', monospace;
-  font-size: 0.75rem;
-  letter-spacing: 0.06em;
-  color: var(--pk);
-  text-decoration: none;
-  text-transform: uppercase;
-  transition: opacity 0.15s;
+.contact-list {
+  font-size: var(--fs-body-sm);
+  line-height: 1.75;
+  color: var(--tx2);
+  margin: var(--sp-8) 0 0;
+  padding-left: var(--sp-24);
+  list-style: disc;
 }
-.contact-cta:hover { opacity: 0.7; }
+
+.contact-note { color: var(--tx2); }
+
+/* Pitch form (2026-10-03) */
+.contact-form { gap: var(--sp-16); }
+.contact-form__row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-16); }
+@media (max-width: 600px) { .contact-form__row { grid-template-columns: 1fr; } }
+.contact-form__field { display: flex; flex-direction: column; gap: var(--sp-4); }
+.contact-form__label { font-size: var(--fs-body-sm); font-weight: 600; color: var(--tx); }
+.contact-form__input {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: var(--fs-body);
+  color: var(--tx);
+  background: var(--bgc);
+  border: 1px solid var(--bds);
+  border-radius: 12px;
+  padding: var(--sp-8) var(--sp-16);
+  width: 100%;
+  box-sizing: border-box;
+}
+.contact-form__input:focus { outline: 2px solid var(--pkbs); border-color: var(--pk); }
+.contact-form__textarea { resize: vertical; line-height: 1.5; }
+.contact-form__privacy { font-size: var(--fs-mono-sm); line-height: 1.6; color: var(--tx2); margin: 0; }
+.contact-form__error {
+  font-size: var(--fs-body-sm);
+  color: var(--err-tx);
+  background: var(--err-bg);
+  border: 1px solid var(--err-bd);
+  border-radius: 12px;
+  padding: var(--sp-8) var(--sp-16);
+  margin: 0;
+}
+.contact-form__submit {
+  background: var(--pk);
+  color: var(--bgc);
+  border: none;
+  border-radius: 24px;
+  padding: var(--sp-8) var(--sp-24);
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: var(--fs-body-sm);
+  cursor: pointer;
+}
+.contact-form__submit:hover:not(:disabled) { background: var(--pkd); }
+.contact-form__submit:disabled { opacity: 0.6; cursor: default; }
+/* Honeypot: off-screen rather than display:none, which some bots skip. */
+.contact-form__hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
 
 /* ── /brand — design system + brand assets (hidden, unlinked) ───────────────
    This page documents the design system, so it must itself obey it: every
