@@ -1,6 +1,7 @@
 import { NUM_SETS } from '../constants';
+import SaveRetryBanner from '../../../components/study/SaveRetryBanner';
 
-export default function SessionComplete({ results, totalScore, timedOut, saving, saveError, onPlayAgain, onSessionComplete }) {
+export default function SessionComplete({ results, totalScore, timedOut, saving, saveError, onPlayAgain, onSessionComplete, onRetry }) {
   const setsCompleted = results.filter(r => r.word).length;
   const completed     = setsCompleted === NUM_SETS;
 
@@ -52,11 +53,13 @@ export default function SessionComplete({ results, totalScore, timedOut, saving,
         </div>
 
         {saving && <p style={S.saving}>Saving…</p>}
-        {saveError && <p style={S.err}>{saveError}</p>}
+        {saveError && onRetry && <SaveRetryBanner message={saveError} busy={saving} onRetry={onRetry} />}
 
         {onSessionComplete ? (
-          <button style={S.btn} onClick={onSessionComplete} disabled={saving}>
-            {saving ? 'Saving…' : 'Continue'}
+          // Study mode advances on its own once the session has saved; there is
+          // nothing to continue to before then.
+          <button style={S.btn} disabled>
+            {saving ? 'Saving…' : saveError ? 'Not saved yet' : 'Continue'}
           </button>
         ) : (
           <button style={S.btn} onClick={onPlayAgain} disabled={saving}>

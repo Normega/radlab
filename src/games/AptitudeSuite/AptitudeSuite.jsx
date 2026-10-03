@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
+import SaveRetryBanner from '../../components/study/SaveRetryBanner';
 import { supabase as globalSupabase } from '../../lib/supabase';
 import { DEMO_SECS, isDemoMode } from '../../lib/demoMode';
 import { useSessionTimer } from './hooks/useSessionTimer';
@@ -25,6 +26,14 @@ export default function AptitudeSuite({
 
   const [phase, setPhase] = useState('instructions'); // 'instructions' | 'active' | 'complete'
   const [saving, setSaving] = useState(false);
+  // A failed save never advances the study and never strands the participant:
+  // the error is shown with a retry (SaveRetryBanner). Before 2026-10-03 a
+  // failed session insert let the 10-minute game run with nothing recorded,
+  // and a failed final update still called onSessionComplete.
+  const [beginError, setBeginError] = useState(null);
+  const [saveError, setSaveError] = useState(null);
+  const beginLock = useRef(false);
+  const finalScoresRef = useRef(null);
 
   const sessionIdRef    = useRef(null);
   const sessionStartRef = useRef(null);
@@ -62,11 +71,12 @@ export default function AptitudeSuite({
       })
       .select('id')
       .single();
-    if (error) { console.error('aptitude_sessions insert failed', error); return; }
+    if (error) { console.error('aptitude_sessions insert failed', error); return error; }
     sessionIdRef.current = data.id;
     // Anchors the event timeline at elapsed_ms 0, so focus segments can be
     // closed against a known start the way ColourMax's page segments are.
     logEvent('aptitude_suite', 'session_start', null, null, null);
+    return null;
   }
 
   function logEvent(task, event_type, value, scoreAtTime, pctAtTime) {
@@ -85,10 +95,12 @@ export default function AptitudeSuite({
     });
   }
 
+  // Returns null on success, or the error. onSessionComplete runs only once the
+  // results are saved.
   async function finaliseSession(anagramScore, anagramPct, fluencyScore, fluencyPct, wordprobeScore, wordprobePct) {
     const avg = (anagramPct + fluencyPct + wordprobePct) / 3;
     if (sessionIdRef.current) {
-      const { error } = await db
+      const { data: updated, error } = await db
         .from('aptitude_sessions')
         .update({
           session_end: new Date().toISOString(),
@@ -101,8 +113,12 @@ export default function AptitudeSuite({
           avg_pct: avg.toFixed(2),
           task_switch_count: taskSwitchCount.current,
         })
-        .eq('id', sessionIdRef.current);
-      if (error) console.error('aptitude_sessions update failed', error);
+        .eq('id', sessionIdRef.current)
+        .select('id');
+      if (error || !updated?.length) {
+        console.error('aptitude_sessions update failed', error ?? 'no row updated');
+        return error ?? new Error('results not saved');
+      }
     }
     onSessionComplete?.({
       anagram_score:    anagramScore,
@@ -114,6 +130,7 @@ export default function AptitudeSuite({
       avg_pct:          +avg.toFixed(2),
       task_switch_count: taskSwitchCount.current,
     });
+    return null;
   }
 
   // ── Timer ─────────────────────────────────────────────────────────────────
@@ -122,17 +139,20 @@ export default function AptitudeSuite({
     // Closes the final focus segment. Logged before finalise so the timeline is
     // complete even if the session update later fails.
     logEvent('aptitude_suite', 'game_end', null, null, null);
-    setSaving(true);
     const { anagram: a, fluency: f, wordProbe: w } = scoresRef.current;
-    finaliseSession(
-      a.score, a.percentile,
-      f.score, f.percentile,
-      w.score, w.percentile,
-    ).finally(() => {
-      setSaving(false);
-      setPhase('complete');
-    });
-  }, []);
+    // Frozen at expiry, so a retry saves exactly what the participant scored.
+    finalScoresRef.current = [a.score, a.percentile, f.score, f.percentile, w.score, w.percentile];
+    saveResults();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function saveResults() {
+    setSaving(true);
+    setSaveError(null);
+    const error = await finaliseSession(...finalScoresRef.current);
+    setSaving(false);
+    if (error) setSaveError(error);
+    setPhase('complete');
+  }
 
   // Admin quick-demo (?demo=1) shortens the session; never honored in studies
   const demo  = !studyMode && !studyId && !isSimMode && isDemoMode();
@@ -144,7 +164,17 @@ export default function AptitudeSuite({
   // ── Begin ─────────────────────────────────────────────────────────────────
 
   async function handleBegin() {
-    await createSessionRow();
+    // A ref, not state: a double click must not create two session rows.
+    if (beginLock.current) return;
+    beginLock.current = true;
+    setBeginError(null);
+    const error = await createSessionRow();
+    if (error) {
+      // Nothing would be recorded, so the game does not start.
+      beginLock.current = false;
+      setBeginError(error);
+      return;
+    }
     timer.start();
     setPhase('active');
   }
@@ -252,14 +282,17 @@ export default function AptitudeSuite({
 
   if (phase === 'complete') {
     return (
-      <SessionComplete
-        anagramScore={anagram.score}    anagramPct={anagram.percentile}
-        fluencyScore={fluency.score}    fluencyPct={fluency.percentile}
-        categoryLabel={fluency.categoryLabel}
-        wordprobeScore={wordProbe.score} wordprobePct={wordProbe.percentile}
-        taskSwitchCount={taskSwitchCount.current}
-        submitted={!saving}
-      />
+      <>
+        <SessionComplete
+          anagramScore={anagram.score}    anagramPct={anagram.percentile}
+          fluencyScore={fluency.score}    fluencyPct={fluency.percentile}
+          categoryLabel={fluency.categoryLabel}
+          wordprobeScore={wordProbe.score} wordprobePct={wordProbe.percentile}
+          taskSwitchCount={taskSwitchCount.current}
+          submitted={!saving && !saveError}
+        />
+        {saveError && <SaveRetryBanner message={saveError.message} busy={saving} onRetry={saveResults} />}
+      </>
     );
   }
 
@@ -365,6 +398,7 @@ export default function AptitudeSuite({
           >
             Begin
           </button>
+          {beginError && <SaveRetryBanner message={beginError.message} onRetry={handleBegin} />}
         </div>
       </div>
     );

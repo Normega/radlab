@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase'
 import { DEMO_SECS, isDemoMode } from '../../lib/demoMode'
 import { COLORS, W, H, drawPage } from './drawings'
 import { COVERAGE_MIDPOINT, COVERAGE_K, PRECISION_MIDPOINT, PRECISION_K, logisticPercentile } from './constants'
+import SaveRetryBanner from '../../components/study/SaveRetryBanner'
 import './ColorMax.css'
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -92,7 +93,7 @@ function mmss(secs) {
 }
 
 // ── ColorMax ───────────────────────────────────────────────────────────────
-export default function ColorMax({ session, studyMode = false, userId: userIdProp = null, onSessionComplete = null, supabaseClient: supabaseClientProp = null }) {
+export default function ColorMax({ session, studyMode = false, userId: userIdProp = null, onSessionComplete = null, supabaseClient: supabaseClientProp = null, studyId = null, isSimMode = false }) {
   const db = supabaseClientProp ?? supabase
   // Admin quick-demo (?demo=1) shortens the session; never honored in studies
   const totalSecs = !studyMode && isDemoMode() ? DEMO_SECS : TOTAL_SECS
@@ -104,6 +105,13 @@ export default function ColorMax({ session, studyMode = false, userId: userIdPro
   const [page,     setPageSt]   = useState(0)
   const [saving,   setSaving]   = useState(false)
   const [starting, setStarting] = useState(false)
+  // A failed save never advances the study and never strands the participant
+  // (SaveRetryBanner). Before 2026-10-03 a failed session insert let the game
+  // run with nothing recorded, and a failed final update still offered Continue.
+  const [startError, setStartError] = useState(null)
+  const [saveError,  setSaveError]  = useState(null)
+  const startLock = useRef(false)   // a ref, not state: a double click must not start two sessions
+  const endedRef  = useRef(false)   // the countdown and an early end must not both finalise
 
   // ── Refs mirroring mutable state (for use inside event handlers) ─────────
   const toolRef    = useRef('thin')
@@ -291,18 +299,30 @@ export default function ColorMax({ session, studyMode = false, userId: userIdPro
   // ── Game lifecycle ────────────────────────────────────────────────────────
 
   async function handleStart() {
+    if (startLock.current) return
+    startLock.current = true
     setStarting(true)
+    setStartError(null)
     const uid = userIdProp ?? session?.user?.id ?? null
     const now = new Date().toISOString()
     sessionStartRef.current = Date.now()
 
+    // study_id and is_test, as AptitudeSuite records them: without them a
+    // study play-through was indistinguishable from free play in the export.
     const { data, error } = await db
       .from('aptitude_sessions')
-      .insert({ user_id: uid, game: 'color_max', session_start: now })
+      .insert({ user_id: uid, game: 'color_max', session_start: now, study_id: studyId, is_test: !!isSimMode })
       .select('id')
       .single()
-    if (error) console.warn('aptitude_sessions insert failed', error)
-    else sessionIdRef.current = data.id
+    if (error) {
+      // Nothing would be recorded, so the game does not start.
+      console.warn('aptitude_sessions insert failed', error)
+      startLock.current = false
+      setStarting(false)
+      setStartError(error)
+      return
+    }
+    sessionIdRef.current = data.id
 
     // Start countdown
     secsLeftRef.current = totalSecs
@@ -323,6 +343,8 @@ export default function ColorMax({ session, studyMode = false, userId: userIdPro
 
   async function handleEnd() {
     clearInterval(timerRef.current)
+    if (endedRef.current) return
+    endedRef.current = true
 
     // Finalize any in-progress stroke
     if (painting.current) pressEnd()
@@ -365,16 +387,27 @@ export default function ColorMax({ session, studyMode = false, userId: userIdPro
     await flushStrokes()
     logEvent('game_end', JSON.stringify({ imagesAttempted, avgCoverage }))
 
-    if (sessionIdRef.current) {
-      const { error } = await db
-        .from('aptitude_sessions')
-        .update({ session_end: new Date().toISOString(), results, avg_pct: avgPct })
-        .eq('id', sessionIdRef.current)
-      if (error) console.warn('aptitude_sessions update failed', error)
-    }
-
-    setSaving(false)
+    await saveResults()
     setPhase('complete')
+  }
+
+  // The final update, retryable. Continue is offered only once it has saved.
+  async function saveResults() {
+    setSaving(true)
+    setSaveError(null)
+    const results = resultsRef.current
+    if (sessionIdRef.current && results) {
+      const { data: updated, error } = await db
+        .from('aptitude_sessions')
+        .update({ session_end: new Date().toISOString(), results, avg_pct: results.avgPct })
+        .eq('id', sessionIdRef.current)
+        .select('id')
+      if (error || !updated?.length) {
+        console.warn('aptitude_sessions update failed', error ?? 'no row updated')
+        setSaveError(error ?? new Error('results not saved'))
+      }
+    }
+    setSaving(false)
   }
 
   // ── Effects ───────────────────────────────────────────────────────────────
@@ -462,6 +495,7 @@ export default function ColorMax({ session, studyMode = false, userId: userIdPro
             >
               {starting ? 'Starting…' : `Start — ${mmss(totalSecs)}`}
             </button>
+            {startError && <SaveRetryBanner message={startError.message} busy={starting} onRetry={handleStart} />}
           </div>
         )}
 
@@ -600,8 +634,9 @@ export default function ColorMax({ session, studyMode = false, userId: userIdPro
                 })}
               </div>
 
+              {saveError && <SaveRetryBanner message={saveError.message} busy={saving} onRetry={saveResults} />}
               {onSessionComplete && (
-                <button className="cm-start-btn" onClick={() => onSessionComplete({ avg_coverage: r.avgCoverage, avg_precision: r.avgPrecision, avg_pct: r.avgPct, images_attempted: r.imagesAttempted, total_secs: r.totalSecs })}>
+                <button className="cm-start-btn" disabled={saving || !!saveError} onClick={() => onSessionComplete({ avg_coverage: r.avgCoverage, avg_precision: r.avgPrecision, avg_pct: r.avgPct, images_attempted: r.imagesAttempted, total_secs: r.totalSecs })}>
                   Continue
                 </button>
               )}

@@ -52,6 +52,7 @@ export default function WordMax({ studyMode = false, userId: userIdProp = null, 
   const [timedOut,    setTimedOut]    = useState(false);
   const [saving,      setSaving]      = useState(false);
   const [saveError,   setSaveError]   = useState(null);
+  const pendingSaveRef = useRef(null);
   const [checking,    setChecking]    = useState(false);
 
   // Tracks ms spent on the current set (for dwell_ms)
@@ -201,36 +202,45 @@ export default function WordMax({ studyMode = false, userId: userIdProp = null, 
 
     const db = supabaseClientProp ?? supabase;
 
-    setSaving(true);
-
-    const doInsert = (uid) => {
-      db.from('word_max_sessions').insert({
-        user_id:        uid,
+    // Frozen here so a retry sends exactly this session.
+    pendingSaveRef.current = {
+      db,
+      row: {
         completed:      setsCompleted === NUM_SETS,
         timed_out:      timedOut,
         total_score:    totalScore,
         sets_completed: setsCompleted,
         duration_ms:    elapsedMs,
         set_results:    results,
-      }).then(({ error: dbErr }) => {
-        setSaving(false);
-        if (dbErr) {
-          setSaveError('Could not save session — data is safe locally.');
-        } else if (onSessionComplete) {
-          onSessionComplete({ total_score: totalScore, sets_completed: setsCompleted, duration_ms: elapsedMs });
-        }
-      });
+      },
+      result: { total_score: totalScore, sets_completed: setsCompleted, duration_ms: elapsedMs },
     };
-
-    if (userIdProp) {
-      doInsert(userIdProp);
-    } else {
-      supabase.auth.getUser().then(({ data: { user } }) => {
-        if (!user) { setSaving(false); return; }
-        doInsert(user.id);
-      });
-    }
+    saveSession();
   }, [screen]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Save the finished session; in study mode advance only once it has saved.
+  // A failure is shown with a retry. (Before 2026-10-03 it said the data was
+  // "safe locally", which it never was, and Continue advanced anyway.)
+  async function saveSession() {
+    const pendingSave = pendingSaveRef.current;
+    if (!pendingSave) return;
+    setSaving(true);
+    setSaveError(null);
+    let uid = userIdProp;
+    if (!uid) {
+      const { data: { user } } = await supabase.auth.getUser();
+      uid = user?.id ?? null;
+    }
+    if (!uid) { setSaving(false); return; } // signed out: free play, nothing to save
+    const { error: dbErr } = await pendingSave.db.from('word_max_sessions').insert({ user_id: uid, ...pendingSave.row });
+    setSaving(false);
+    if (dbErr) {
+      setSaveError(dbErr.message || 'not saved');
+      return;
+    }
+    pendingSaveRef.current = null;
+    onSessionComplete?.(pendingSave.result);
+  }
 
   // ── Computed display values ─────────────────────────────────────────────────
 
@@ -251,6 +261,7 @@ export default function WordMax({ studyMode = false, userId: userIdProp = null, 
         saveError={saveError}
         onPlayAgain={() => setScreen(SCREEN.INTRO)}
         onSessionComplete={onSessionComplete}
+        onRetry={saveSession}
       />
     );
   }

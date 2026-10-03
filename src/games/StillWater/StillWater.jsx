@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import SaveRetryBanner from '../../components/study/SaveRetryBanner'
 import { useAvatarConfig } from '../../hooks/useAvatarConfig'
 import { Link, useSearchParams } from 'react-router-dom'
 import Nav from '../../components/Nav'
@@ -30,7 +31,10 @@ async function saveResult({ db, userId, externalId, studyId, p1Sel, p2Sel, compo
     ambivalence_y:          f(composite.ambY),
     ambivalence_mag:        f(composite.ambMag),
   })
-  if (error) console.warn('StillWater insert:', error)
+  if (error) {
+    console.warn('StillWater insert:', error)
+    return error
+  }
 
   if (userId) {
     const { data: profile } = await db
@@ -42,6 +46,7 @@ async function saveResult({ db, userId, externalId, studyId, p1Sel, p2Sel, compo
       'profiles.still_water_progress', { expectRows: true },
     )
   }
+  return null
 }
 
 // ─── INTRO ────────────────────────────────────────────────────────────────────
@@ -192,7 +197,7 @@ function RatingScreen({ phase, activeIds, labels, onConfirm, skinColor, eyeColor
 
 // ─── REVEAL SCREEN ────────────────────────────────────────────────────────────
 
-function RevealScreen({ composite, phase1Sel, phase2Sel, animProgress, onReset, onDone, skinColor, eyeColor, hairStyle = 'none', hairColor = '#784421' }) {
+function RevealScreen({ composite, phase1Sel, phase2Sel, animProgress, onReset, onDone, doneDisabled = false, skinColor, eyeColor, hairStyle = 'none', hairColor = '#784421' }) {
   const { cx, cy, label, mag, sectorId, zone } = composite
   const p  = animProgress
   const em = sectorId >= 0 ? EMOTIONS[sectorId] : null
@@ -241,7 +246,7 @@ function RevealScreen({ composite, phase1Sel, phase2Sel, animProgress, onReset, 
         <div style={{ display: 'flex', gap: 10, width: '100%', maxWidth: 308 }}>
           {!onDone && <button style={{ ...S.btnOutline, flex: 1 }} onClick={onReset}>Again</button>}
           {onDone
-            ? <button style={{ ...S.btnPrimary, flex: 1 }} onClick={onDone}>Continue →</button>
+            ? <button style={{ ...S.btnPrimary, flex: 1, ...(doneDisabled ? { opacity: 0.5, cursor: 'default' } : {}) }} disabled={doneDisabled} onClick={onDone}>Continue →</button>
             : <Link to="/games" style={{ ...S.btnPrimary, flex: 1, textAlign: 'center', textDecoration: 'none' }}>Games →</Link>
           }
         </div>
@@ -319,11 +324,20 @@ export default function StillWater({
     return { cx, cy, mag, label, sectorId, zone, ambX, ambY, ambMag }
   }, [p1Sel, p2Sel])
 
-  // Save on reveal start
+  // Save on reveal start. In a study, Continue waits for the save: before
+  // 2026-10-03 a failed insert was only logged and Continue advanced anyway,
+  // losing the response. A failure is shown with a retry.
+  const [saveState, setSaveState] = useState(null) // null | 'saving' | 'saved' | Error
+  const doSave = useCallback(async () => {
+    setSaveState('saving')
+    const error = await saveResult({ db, userId, externalId, studyId, p1Sel, p2Sel, composite })
+    setSaveState(error ?? 'saved')
+  }, [db, userId, externalId, studyId, p1Sel, p2Sel, composite])
   useEffect(() => {
     if (phase !== 'reveal' || !composite || !p1Sel || !p2Sel) return
-    saveResult({ db, userId, externalId, studyId, p1Sel, p2Sel, composite })
+    doSave()
   }, [phase]) // eslint-disable-line react-hooks/exhaustive-deps
+  const saveFailed = saveState instanceof Error || (saveState && typeof saveState === 'object')
 
   // Reveal animation: 0.6s pause → 1s ease-out cubic
   useEffect(() => {
@@ -363,8 +377,12 @@ export default function StillWater({
       {phase === 'reveal' && composite && (
         <RevealScreen composite={composite} phase1Sel={p1Sel} phase2Sel={p2Sel}
           animProgress={anim} onReset={handleReset}
-          onDone={studyMode && onSessionComplete ? onSessionComplete : null}
+          onDone={studyMode && onSessionComplete ? () => onSessionComplete({}) : null}
+          doneDisabled={saveState !== 'saved'}
           skinColor={skinColor} eyeColor={eyeColor} hairStyle={hairStyle} hairColor={hairColor} />
+      )}
+      {phase === 'reveal' && studyMode && saveFailed && (
+        <SaveRetryBanner message={saveState.message} busy={saveState === 'saving'} onRetry={doSave} />
       )}
     </div>
   )

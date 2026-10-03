@@ -35,10 +35,14 @@ export default function TrainingStepWrapper({
   const [dayDataId,      setDayDataId]      = useState(null)
   const [studyDay,       setStudyDay]       = useState(1)
   const [error,          setError]          = useState(null)
+  const [setupError,     setSetupError]     = useState(null)
+  const [ready,          setReady]          = useState(false)  // participant + day rows exist
+  const [attempt,        setAttempt]        = useState(0)
 
   useEffect(() => {
     if (isSimMode) {
       setTrainingModule(SIM_MODULE)
+      setReady(true)
       return
     }
     if (!moduleId) return
@@ -58,7 +62,17 @@ export default function TrainingStepWrapper({
 
       // Demo mode: module renders via InterventionPage demoMode (video gates
       // lifted, no participant/day rows, no response saves) — stop here.
-      if (demoMode) return
+      if (demoMode) { setReady(true); return }
+
+      // From here every step must succeed before the module is shown. Before
+      // 2026-10-03 a failure here returned quietly and the module rendered
+      // anyway with no participant: every answer was skipped, the session
+      // completed, and no intervention_responses row existed. Now the
+      // participant sees the failure and a retry instead.
+      const fail = (what, err) => {
+        console.error(`training setup: ${what}`, err)
+        setSetupError(err?.message || what)
+      }
 
       // Ensure the liliana_participants row exists (self-created on first
       // training contact) and derive the day from the schedule row — the
@@ -68,7 +82,7 @@ export default function TrainingStepWrapper({
         p_schedule_id: scheduleId ?? null,
       })
 
-      if (lpErr || !lp?.participant_id) return  // no participant context — nothing saved
+      if (lpErr || !lp?.participant_id) { fail('participant record', lpErr); return }
 
       const pid      = lp.participant_id
       const day      = lp.study_day
@@ -83,12 +97,14 @@ export default function TrainingStepWrapper({
       // re-openers get the existing row and preserve the original started_at.
       let dayRow = null
 
-      const { data: existing } = await supabase
+      const readDay = () => supabase
         .from('liliana_day_data')
         .select('id, module_id')
         .eq('participant_id', pid)
         .eq('study_day', day)
         .maybeSingle()
+      const { data: existing, error: existingErr } = await readDay()
+      if (existingErr) { fail('day record', existingErr); return }
 
       if (existing) {
         dayRow = existing
@@ -104,7 +120,7 @@ export default function TrainingStepWrapper({
           )
         }
       } else {
-        const { data: inserted } = await supabase
+        const { data: inserted, error: insErr } = await supabase
           .from('liliana_day_data')
           .insert({
             participant_id: pid,
@@ -115,14 +131,25 @@ export default function TrainingStepWrapper({
           })
           .select('id')
           .single()
-        dayRow = inserted
+        if (insErr?.code === '23505') {
+          // Created a moment ago by another tab or a remount: use that row.
+          const { data: raced, error: racedErr } = await readDay()
+          if (racedErr || !raced) { fail('day record', racedErr); return }
+          dayRow = raced
+        } else if (insErr || !inserted) {
+          fail('day record', insErr); return
+        } else {
+          dayRow = inserted
+        }
       }
 
-      if (dayRow) setDayDataId(dayRow.id)
+      setDayDataId(dayRow.id)
+      setReady(true)
     }
 
+    setSetupError(null)
     load()
-  }, [moduleId, enrollment?.profile_id, isSimMode])
+  }, [moduleId, enrollment?.profile_id, isSimMode, attempt])
 
   if (error) {
     return (
@@ -132,7 +159,20 @@ export default function TrainingStepWrapper({
     )
   }
 
-  if (!trainingModule) {
+  if (setupError) {
+    return (
+      <div style={S.error}>
+        <p style={{ margin: '0 0 16px' }}>
+          Today&rsquo;s practice couldn&rsquo;t be set up ({setupError}). Please check your connection and try again.
+        </p>
+        <button type="button" className="cs-primary-button" onClick={() => setAttempt((n) => n + 1)}>
+          Try again
+        </button>
+      </div>
+    )
+  }
+
+  if (!trainingModule || !ready) {
     return <div style={S.loading}>Loading training…</div>
   }
 
