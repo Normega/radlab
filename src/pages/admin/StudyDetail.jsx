@@ -10,6 +10,7 @@ import StudySessionsPanel from './StudySessionsPanel'
 import AnonymousLinkPanel from './AnonymousLinkPanel'
 import CalendarDatesPanel from './CalendarDatesPanel'
 import { fetchAllRows } from '../../lib/fetchAllRows'
+import { dbWrite } from '../../lib/dbWrite'
 
 // ─── Data hooks ───────────────────────────────────────────────────────────────
 
@@ -260,7 +261,11 @@ function LongitudinalParticipantsPanel({ study, qc }) {
         .eq('id', userId)
         .single()
 
+      // consent_date stays null when the study has a consent form, so the
+      // participant is shown it before their first session -- the fix
+      // EnrollmentPanel got on 2026-09-29, which this path never received.
       const now = new Date().toISOString()
+      const needsConsent = !!(study.consent_required && study.active_consent_form_id)
       const { error: insertErr } = await supabase
         .from('study_enrollments')
         .insert({
@@ -268,7 +273,7 @@ function LongitudinalParticipantsPanel({ study, qc }) {
           profile_id:   profile.id,
           external_id:  emailVal.trim().toLowerCase(),
           enrolled_at:  now,
-          consent_date: now,
+          consent_date: needsConsent ? null : now,
           status:       'enrolled',
         })
       if (insertErr) {
@@ -289,15 +294,36 @@ function LongitudinalParticipantsPanel({ study, qc }) {
     onError: (e) => { setAddError(e.message); setAddSuccess(null) },
   })
 
+  // The same withdrawal handle_withdraw performs, without its email: before
+  // 2026-10-03 this set only status, so the participant's live link kept
+  // working, withdrawn_at stayed null (the list below filters on it, so the row
+  // never visibly changed), and a failure was silent. The scheduler already
+  // skips withdrawn enrollments, so schedule rows are left as they are.
   const withdraw = useMutation({
-    mutationFn: async (enrollmentId) => {
-      const { error } = await supabase
-        .from('study_enrollments')
-        .update({ status: 'withdrawn' })
-        .eq('id', enrollmentId)
-      if (error) throw error
+    mutationFn: async ({ enrollmentId, profileId }) => {
+      const reason = 'Withdrawn by the research team.'
+      const enr = await dbWrite(
+        supabase.from('study_enrollments')
+          .update({ status: 'withdrawn', withdrawal_reason: reason, withdrawn_at: new Date().toISOString() })
+          .eq('id', enrollmentId)
+          .select('id'),
+        'study_enrollments.withdraw (admin)', { expectRows: true },
+      )
+      if (!enr.ok) throw new Error(enr.error?.message ?? 'The withdrawal was not saved.')
+      const { error: linkErr } = await supabase.from('participant_links')
+        .update({ status: 'revoked', ended_reason: 'withdrawn', ended_at: new Date().toISOString() })
+        .eq('study_id', studyId)
+        .eq('participant_id', profileId)
+        .eq('status', 'active')
+      if (linkErr) throw new Error(`Withdrawn, but their session link is still active: ${linkErr.message}`)
+      // Liliana-specific mirror, as handle_withdraw does; matches nothing elsewhere.
+      await supabase.from('liliana_participants')
+        .update({ dropped_out: true, dropout_reason: reason })
+        .eq('profile_id', profileId)
+        .eq('study_id', studyId)
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['longitudinal-participants', studyId] }),
+    onError: (e) => window.alert(e.message),
   })
 
   if (selectedPid) {
@@ -389,7 +415,7 @@ function LongitudinalParticipantsPanel({ study, qc }) {
                       </button>
                       <button
                         style={{ ...S.actionBtn, color: '#e04' }}
-                        onClick={() => { if (window.confirm(`Withdraw ${p.displayName}?`)) withdraw.mutate(p.enrollmentId) }}
+                        onClick={() => { if (window.confirm(`Withdraw ${p.displayName}?`)) withdraw.mutate({ enrollmentId: p.enrollmentId, profileId: p.profileId }) }}
                       >
                         Withdraw
                       </button>

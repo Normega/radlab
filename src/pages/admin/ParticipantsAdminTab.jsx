@@ -15,6 +15,18 @@ import { fetchAllRows } from '../../lib/fetchAllRows'
 
 const ACTIONABLE = new Set(['unlocked', 'link_sent', 'pending'])
 
+// Why no reminder may be sent, or null. A withdrawn person's schedule rows are
+// never closed, so they still have a "current session" -- and before
+// 2026-10-03 this tab offered to email them a fresh link, as it did for a
+// study switched off with studies.active = false. send_message refuses both
+// now too; this keeps the button from being offered at all.
+function reminderBlocked(participant, study) {
+  if (participant.status === 'withdrawn') return 'withdrawn'
+  if (participant.status === 'completed') return 'completed'
+  if (!study.active) return 'study inactive'
+  return null
+}
+
 function useParticipantData() {
   return useQuery({
     queryKey: ['admin-participants'],
@@ -24,7 +36,7 @@ function useParticipantData() {
       const [enrollments, schedule] = await Promise.all([
         fetchAllRows(() => supabase
           .from('study_enrollments')
-          .select('id, study_id, profile_id, external_id, external_source, enrolled_at, status, email_reminders, studies(id, name), profiles!study_enrollments_profile_id_fkey(display_name)')),
+          .select('id, study_id, profile_id, external_id, external_source, enrolled_at, status, email_reminders, studies(id, name, active), profiles!study_enrollments_profile_id_fkey(display_name)')),
         fetchAllRows(() => supabase
           .from('participant_schedule')
           .select('id, participant_id, study_id, status, scheduled_date, send_time, study_day, study_sessions(label, node_key)')),
@@ -68,7 +80,7 @@ export default function ParticipantsAdminTab() {
     const byStudy = new Map()
     for (const en of data.enrollments) {
       const sid = en.study_id
-      if (!byStudy.has(sid)) byStudy.set(sid, { id: sid, name: en.studies?.name ?? '(unnamed study)', participants: [] })
+      if (!byStudy.has(sid)) byStudy.set(sid, { id: sid, name: en.studies?.name ?? '(unnamed study)', active: en.studies?.active !== false, participants: [] })
       const rows = scheduleByKey.get(`${en.profile_id}:${sid}`) ?? []
       byStudy.get(sid).participants.push({ ...en, ...summarizeSchedule(rows) })
     }
@@ -84,8 +96,12 @@ export default function ParticipantsAdminTab() {
     setCollapsed(next)
   }
 
-  async function sendReminder(row) {
+  async function sendReminder(row, participant) {
     const scheduleId = row.id
+    // One click emails a real person a session link, so say who and what.
+    const who = participant.external_id ?? participant.profiles?.display_name ?? 'this participant'
+    const what = row.study_sessions?.label ?? `day ${row.study_day}`
+    if (!window.confirm(`Email ${who} a link to "${what}"?`)) return
     setReminder(prev => ({ ...prev, [scheduleId]: 'sending' }))
     // Frame as a reminder only when the link has actually been sent already;
     // if the current row was never emailed (pending/unlocked), this button is
@@ -97,7 +113,7 @@ export default function ParticipantsAdminTab() {
     if (err || res?.error || res?.success === false) {
       setReminder(prev => ({ ...prev, [scheduleId]: err?.message ?? res?.error ?? 'send failed' }))
     } else if (res?.suppressed) {
-      const why = res.reason === 'no_recipient_email' ? 'no email on file' : 'opted out'
+      const why = { no_recipient_email: 'no email on file', withdrawn: 'withdrawn', study_inactive: 'study inactive' }[res.reason] ?? 'opted out'
       setReminder(prev => ({ ...prev, [scheduleId]: `suppressed (${why})` }))
     } else {
       setReminder(prev => ({ ...prev, [scheduleId]: 'sent' }))
@@ -166,12 +182,14 @@ export default function ParticipantsAdminTab() {
                           </td>
                           <td style={S.td}>
                             <div style={S.actions}>
-                              {p.current && (
+                              {p.current && reminderBlocked(p, study) ? (
+                                <span style={{ ...S.mono, color: 'var(--gy)' }}>{reminderBlocked(p, study)}</span>
+                              ) : p.current && (
                                 remState === 'sending' ? <span style={S.mono}>sending…</span>
                                 : remState === 'sent' ? <span style={{ ...S.mono, color: '#3b6d11' }}>sent ✓</span>
                                 : remState ? <span style={{ ...S.mono, color: '#e04' }} title={remState}>{remState}</span>
                                 : (
-                                  <button style={S.actionBtn} onClick={() => sendReminder(p.current)}>
+                                  <button style={S.actionBtn} onClick={() => sendReminder(p.current, p)}>
                                     Send reminder
                                   </button>
                                 )
