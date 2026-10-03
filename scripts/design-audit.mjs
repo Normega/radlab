@@ -41,7 +41,13 @@ const TOKEN_HEXES = new Set([
 const HEX_EXEMPT = new Set(['pages/BrandAssets.jsx'])
 // Content, not UI: game artwork (2026-08-12 ruling), avatar colour palettes,
 // one-off talk-deck graphics. Reported but never ratcheted.
-const SANCTIONED_DIRS = ['games/', 'components/Avatar/', 'pages/toni-july-2026/', 'pages/keynote/', 'pages/adobe-aug-2026/']
+const SANCTIONED_DIRS = ['games/', 'components/Avatar/', 'pages/keynote/']
+// Talk decks live in one directory per talk, named for the event and year
+// (pages/iscr-2026/, pages/bpmh-sep-2026/ ...). Matched by shape so a new deck
+// is content from its first commit: three decks added after the 2026-09-03
+// baseline were counted as site drift (~150 hits) only because nobody had
+// remembered to list them here.
+const TALK_DECK_DIR = /^pages\/[a-z0-9-]+-\d{4}\//
 
 const files = []
 ;(function walk(dir) {
@@ -81,7 +87,7 @@ const SPACE_RE = /(?:\b(?:padding|margin|gap|row-gap|column-gap)(?:-(?:top|right
 
 for (const file of files) {
   const rel = relative(SRC, file).replaceAll('\\', '/')
-  const scope = SANCTIONED_DIRS.some((d) => rel.startsWith(d)) ? 'sanctioned' : 'site'
+  const scope = SANCTIONED_DIRS.some((d) => rel.startsWith(d)) || TALK_DECK_DIR.test(rel) ? 'sanctioned' : 'site'
   const text = readFileSync(file, 'utf8')
   const lines = text.split('\n')
 

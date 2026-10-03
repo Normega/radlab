@@ -292,6 +292,25 @@ minutes of work and unblocks everyone.
 
 ---
 
+## The /brand drift ratchet runs in CI — new drift fails the build
+
+`npm run audit:design:check` (`scripts/design-audit.mjs`) counts off-system type sizes, radii, hex
+colours and spacing against `design-audit/baseline.json`. Counts may go down, never up. CI runs it
+after lint (since 2026-10-03), so run it locally before pushing UI work.
+
+When it fails: use the tokens and steps on `/brand` (`src/pages/BrandAssets.jsx`) instead of a
+literal — `var(--pk)` not `#F068A4`, 12/14/16 not 13/15, radius 24 for anything clickable and 12 for
+containers, spacing 4/8/16/24/32/40/48/64. Only for a genuinely sanctioned exception, run
+`npm run audit:design:update` and say why in the commit. When you remove drift, run `:update` too,
+so the lower count locks in.
+
+Talk decks (`src/pages/<event>-<year>/`) and game artwork are content and are not counted.
+
+Why it is enforced: the ratchet was set on 2026-09-03 but ran nowhere, so it failed unseen for a
+month — off-scale type sizes went from 253 to 490, mostly in new Lecture Lounge and Field Guide files.
+
+---
+
 ## api/ and the Vercel function cap — breaching it fails the deployment, silently
 
 Every `api/*.js` file is a Vercel serverless function, and exceeding the plan's per-deployment cap

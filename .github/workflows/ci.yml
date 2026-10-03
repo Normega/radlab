@@ -53,6 +53,14 @@ jobs:
       - name: Lint (errors fail the build; warnings do not)
         run: npm run lint
 
+      # The /brand drift ratchet (scripts/design-audit.mjs). Counts may fall,
+      # never rise. It existed from 2026-09-03 but ran nowhere, so for a month
+      # it failed unseen while off-scale type nearly doubled; re-baselined and
+      # wired in here 2026-10-03. New drift fails the build -- fix it, or for a
+      # sanctioned exception update design-audit/baseline.json deliberately.
+      - name: Design drift ratchet
+        run: npm run audit:design:check
+
       - name: Tests
         run: npm test
         env:
