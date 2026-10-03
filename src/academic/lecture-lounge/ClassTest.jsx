@@ -6,6 +6,7 @@ import { normalizeCourseCode, loungePath } from '../courseRoutes'
 import { AcademicShell } from '../AcademicChrome'
 import AvatarMenu from '../fieldguide/AvatarMenu'
 import Md from './Md'
+import { createSaveChain } from './saveChain'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -40,10 +41,15 @@ export default function ClassTest({ session, preview = false, testId: testIdProp
   const [startError, setStartError] = useState(null)
   const [confirming, setConfirming] = useState(false)
   const [showKey, setShowKey] = useState(false)
+  const [submitError, setSubmitError] = useState(null)
   const start = useSubmitLock('start')
-  const finish = useSubmitLock('submit')
+  // Keyed to the attempt's submitted state: a staff reopen clears submitted_at,
+  // and the lock held by the earlier successful submit must not survive it.
+  const finish = useSubmitLock(`submit:${test?.attempt?.submitted_at ?? 'open'}`)
   const pending = useRef({})                       // item_id -> latest unsaved response
   const timers = useRef({})
+  const chain = useRef(null)                       // one save at a time per item (saveChain.js)
+  if (chain.current === null) chain.current = createSaveChain()
 
   const adopt = useCallback((data) => {
     if (data?.server_now) setOffsetMs(new Date(data.server_now).getTime() - Date.now())
@@ -93,25 +99,46 @@ export default function ClassTest({ session, preview = false, testId: testIdProp
   const deadlineMs = test?.attempt ? new Date(test.attempt.deadline).getTime() : null
   const remainingMs = deadlineMs == null ? null : deadlineMs - (now + offsetMs)
 
-  // ---- saving: MC immediately, short answers debounced; failures retry
-  const save = useCallback(async (itemId) => {
+  // ---- saving: MC immediately, short answers debounced; failures retry.
+  //
+  // save() resolves true once the item's latest answer is on the server, false
+  // if it is not. Saves of one item run one at a time, each sending the latest
+  // answer: the server keeps the last write, so two overlapping requests (tap B,
+  // then C 300 ms later) could commit out of order and grade B while C showed
+  // as saved. Submit waits on the result: it used to submit anyway after a
+  // failed save, losing that answer while the page said everything was saved.
+  const saveOnce = useCallback(async (itemId) => {
     const response = pending.current[itemId]
-    if (!response || preview) { if (preview) setSaveState((s) => ({ ...s, [itemId]: 'saved' })); return }
+    if (!response) return true
+    if (preview) { delete pending.current[itemId]; setSaveState((s) => ({ ...s, [itemId]: 'saved' })); return true }
     setSaveState((s) => ({ ...s, [itemId]: 'saving' }))
     const { data, error } = await supabase.rpc('save_class_test_answer',
       { p_test_id: testId, p_item_id: itemId, p_response: response })
     if (error) {
       setSaveState((s) => ({ ...s, [itemId]: 'error' }))
-      if (/submitted|Time is up/i.test(error.message)) { load(); return }
+      if (/submitted|Time is up/i.test(error.message)) { load(); return false }
       clearTimeout(timers.current[itemId])
-      timers.current[itemId] = setTimeout(() => save(itemId), 4000)   // network blip: try again
-      return
+      timers.current[itemId] = setTimeout(() => saveRef.current(itemId), 4000)   // network blip: try again
+      return false
     }
     if (pending.current[itemId] === response) delete pending.current[itemId]
-    setSaveState((s) => ({ ...s, [itemId]: 'saved' }))
+    setSaveState((s) => ({ ...s, [itemId]: pending.current[itemId] ? 'saving' : 'saved' }))
     setOffsetMs(new Date(data.server_now).getTime() - Date.now())
     setTest((prev) => ({ ...prev, attempt: { ...prev.attempt, deadline: data.deadline } }))
+    // Changed again while this request was out: the next save in the chain
+    // (queued by that change) sends it.
+    return !pending.current[itemId] || pending.current[itemId] === response
   }, [load, preview, testId])
+
+  const save = useCallback((itemId) => chain.current.run(itemId, () => saveOnce(itemId)), [saveOnce])
+  const saveRef = useRef(save)
+  useEffect(() => { saveRef.current = save }, [save])
+
+  // Every unsaved answer, saved now. True only if all of them reached the server.
+  const saveAll = useCallback(async () => {
+    const results = await Promise.all(Object.keys(pending.current).map((id) => save(id)))
+    return results.every(Boolean) && Object.keys(pending.current).length === 0
+  }, [save])
 
   const answer = (itemId, response, debounceMs = 0) => {
     setAnswers((a) => ({ ...a, [itemId]: response }))
@@ -134,11 +161,21 @@ export default function ClassTest({ session, preview = false, testId: testIdProp
     if (!timeUp) return
     if (preview) { setTest((p) => ({ ...p, attempt: { ...p.attempt, submitted_at: new Date().toISOString() } })); return }
     finish.submit(async () => {
-      await Promise.all(Object.keys(pending.current).map((id) => save(id)))
+      // A staff extension can land between the 30 s pings: ask the server for
+      // the current deadline first, and carry on if time was added.
+      const { data: ping } = await supabase.rpc('ping_class_test', { p_test_id: testId })
+      if (ping && !ping.submitted_at && new Date(ping.deadline).getTime() > new Date(ping.server_now).getTime()) {
+        setOffsetMs(new Date(ping.server_now).getTime() - Date.now())
+        setTest((p) => ({ ...p, attempt: ping }))
+        throw new Error('extended')   // releases the lock for the new deadline
+      }
+      // Time is up either way: save what can be saved, then submit (the server
+      // finalizes at the deadline regardless).
+      await saveAll()
       const { data, error } = await supabase.rpc('submit_class_test', { p_test_id: testId })
       if (error) throw error
       setTest((p) => ({ ...p, attempt: data, items: null }))
-    }).catch(() => load())
+    }).catch((e) => { if (e?.message !== 'extended') load() })
   }, [timeUp]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const items = useMemo(() => test?.items ?? [], [test])
@@ -326,17 +363,27 @@ export default function ClassTest({ session, preview = false, testId: testIdProp
               ))} questions.
               {missing ? ' Unanswered questions will score zero.' : ''} After you submit you can't change anything.
             </p>
+            {submitError && (
+              <p role="alert" style={{ margin: '0 0 16px', padding: '8px 16px', borderRadius: 12, fontSize: 14,
+                background: 'var(--err-bg)', border: '1px solid var(--err-bd)', color: 'var(--err-tx)' }}>
+                {submitError}
+              </p>
+            )}
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-              <button style={S.secondaryBtn} onClick={() => setConfirming(false)}>Keep working</button>
+              <button style={S.secondaryBtn} onClick={() => { setConfirming(false); setSubmitError(null) }}>Keep working</button>
               <button style={S.primaryBtn} disabled={finish.busy}
                 onClick={() => finish.submit(async () => {
+                  setSubmitError(null)
                   if (preview) { setTest((p) => ({ ...p, attempt: { ...p.attempt, submitted_at: new Date().toISOString() } })); return }
-                  await Promise.all(Object.keys(pending.current).map((id) => save(id)))
+                  // Never submit over an answer that is not on the server.
+                  if (!(await saveAll())) {
+                    throw new Error("Some answers haven't saved yet, so the test was not submitted. Check your connection and press Submit again.")
+                  }
                   const { data, error } = await supabase.rpc('submit_class_test', { p_test_id: testId })
                   if (error) throw error
                   setConfirming(false)
                   setTest((p) => ({ ...p, attempt: data, items: null }))
-                }).catch(() => {})}>
+                }).catch((e) => setSubmitError(e?.message ?? 'The test could not be submitted. Press Submit again.'))}>
                 {finish.busy ? 'Submitting…' : 'Submit'}
               </button>
             </div>
