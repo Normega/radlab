@@ -160,7 +160,7 @@ Deno.serve(async (req) => {
     // Per-study custom email subject/body (nullable — null uses default template).
     const { data: study } = await db
       .from('studies')
-      .select('email_subject, email_body, reply_to_email, compensation_kind')
+      .select('email_subject, email_body, reply_to_email, compensation_kind, active')
       .eq('id', row.study_id)
       .single()
 
@@ -187,12 +187,26 @@ Deno.serve(async (req) => {
     // participant consents at /s/{token}, so requiring consent would block
     // all first sends. No enrollment row => treat as opted in.
     if (!isTest) {
-      const { data: enrollment } = await db
+      const { data: enrollment, error: enrollmentErr } = await db
         .from('study_enrollments')
-        .select('email_reminders')
+        .select('email_reminders, status')
         .eq('study_id', row.study_id)
         .eq('profile_id', row.participant_id)
         .maybeSingle()
+      // A failed read must not count as "opted in" for someone who withdrew.
+      if (enrollmentErr) return json({ error: `enrollment lookup failed: ${enrollmentErr.message}` }, 500)
+
+      // Never email a withdrawn participant, or anyone in a study that has been
+      // switched off (studies.active = false). check_schedule already filters
+      // both; the admin Participants tab's "Send reminder" did not, and a
+      // withdrawn person's schedule rows are never closed, so it offered them
+      // a fresh link (found 2026-10-03). Enforced here so no caller can.
+      if (enrollment?.status === 'withdrawn') {
+        return json({ suppressed: true, reason: 'withdrawn' })
+      }
+      if (study?.active === false) {
+        return json({ suppressed: true, reason: 'study_inactive' })
+      }
 
       if (enrollment?.email_reminders === false) {
         return json({ suppressed: true, reason: 'consent_not_given' })
