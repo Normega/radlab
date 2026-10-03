@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { evaluateScreenerPhase2 } from '../lib/screenerUtils'
 import QuestionnaireRenderer from './questionnaire/QuestionnaireRenderer'
 import SaveRetryBanner from './study/SaveRetryBanner'
+import { writeScreenerDraft } from '../lib/screenerDraft'
 
 // ── ScreenerPage ───────────────────────────────────────────────────────────────
 //
@@ -154,22 +155,18 @@ export default function ScreenerPage({ study, participant, supabaseClient, onPas
     await saveResult(true, result === 'pass', result)
 
     if (result === 'pass' && !previewMode) {
-      try {
-        sessionStorage.setItem(
-          `screener_draft_${study.id}_${participant.id}`,
-          JSON.stringify({
-            completedAt: new Date().toISOString(),
-            // When the screener opts into carry-forward, the matching in-session
-            // questionnaire node skips re-administering these (SessionEntry
-            // flushes the answers, then drops a screener_carried_* marker the
-            // node reads). Avoids two back-to-back PHQ-8s in one sitting.
-            carryForward: !!screener?.phase2?.carry_forward,
-            questionnaires: phase2Slugs.map(slug => ({ slug, responses: responsesBySlug[slug] })),
-          })
-        )
-      } catch (e) {
-        console.warn('[Screener] sessionStorage write failed:', e)
-      }
+      // Held on this device until consent (see src/lib/screenerDraft.js for why
+      // it is in localStorage too: open recruitment consents in a new tab).
+      const written = writeScreenerDraft(study.id, participant.id, {
+        completedAt: new Date().toISOString(),
+        // When the screener opts into carry-forward, the matching in-session
+        // questionnaire node skips re-administering these (SessionEntry
+        // flushes the answers, then drops a screener_carried_* marker the
+        // node reads). Avoids two back-to-back PHQ-8s in one sitting.
+        carryForward: !!screener?.phase2?.carry_forward,
+        questionnaires: phase2Slugs.map(slug => ({ slug, responses: responsesBySlug[slug] })),
+      })
+      if (!written) console.warn('[Screener] draft could not be stored on this device')
     }
   }
 

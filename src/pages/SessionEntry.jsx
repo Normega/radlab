@@ -20,6 +20,7 @@ import ContactEmailGate from '../components/study/ContactEmailGate'
 import OpenEmailGate from '../components/study/OpenEmailGate'
 import CompletionRedirectScreen from '../components/study/CompletionRedirectScreen'
 import { useAssignments } from '../hooks/useAssignment'
+import { takeScreenerDraft } from '../lib/screenerDraft'
 
 // Dedicated client for participant sessions — never touches the shared lab/public client.
 function makeParticipantClient() {
@@ -336,12 +337,11 @@ export default function SessionEntry() {
   // Write screener questionnaire answers buffered pre-consent into questionnaire_responses.
   // Called only after consent is confirmed. If no draft exists, this is a no-op.
   async function flushScreenerDraft(participantId, studyId) {
-    const draftKey = `screener_draft_${studyId}_${participantId}`
-    const raw = sessionStorage.getItem(draftKey)
-    if (!raw) return
-    let draft
-    try { draft = JSON.parse(raw) } catch { sessionStorage.removeItem(draftKey); return }
-    sessionStorage.removeItem(draftKey) // remove before inserting to prevent double-flush on retry
+    // Taken from sessionStorage or localStorage (the open-recruitment route
+    // consents in a new tab) and removed from both before inserting, so a
+    // retry can never flush it twice. See src/lib/screenerDraft.js.
+    const draft = takeScreenerDraft(studyId, participantId)
+    if (!draft) return
     // Only answers that actually saved may be carried forward. A failed insert
     // used to be logged and then carried anyway: the in-session node skipped
     // the instrument and the baseline measure existed nowhere. A failed one is
