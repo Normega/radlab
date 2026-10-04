@@ -29,6 +29,9 @@ export default function UiKit() {
   // in every variant at /dev/ui-kit" untrue wherever anyone could look.
   const [ripple, setRipple] = useState('Puddles')
   const sampleGame = GAMES[0]
+  // The locked state names the game that unlocks it, so it needs a game that
+  // has an unlock rule (Still Water has none: rendering it locked crashed this page).
+  const lockedGame = GAMES.find((g) => g.unlock) ?? sampleGame
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
@@ -109,7 +112,7 @@ export default function UiKit() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16, width: '100%' }}>
               <GameCard game={sampleGame} />
               <GameCard game={sampleGame} isGuest />
-              <GameCard game={sampleGame} locked />
+              <GameCard game={lockedGame} locked />
             </div>
           )}
         </Section>

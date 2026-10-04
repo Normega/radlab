@@ -50,7 +50,7 @@ function LockedCard({ game }) {
   return (
     <div
       style={S.card}
-      aria-label={`${game.title} — locked. Play ${game.unlock.label} to unlock.`}
+      aria-label={`${game.title} — locked. Play ${game.unlock?.label ?? 'another game'} to unlock.`}
     >
       {/* Figma dims the locked card's own content to 50% under the 55% veil */}
       <span style={S.lockedBody}>
@@ -59,7 +59,7 @@ function LockedCard({ game }) {
       <div style={S.lockVeil}>
         <LockIcon />
         <p style={S.lockText}>
-          Play <strong style={S.lockGame}>{game.unlock.label}</strong> to unlock
+          Play <strong style={S.lockGame}>{game.unlock?.label ?? 'another game'}</strong> to unlock
         </p>
       </div>
     </div>
