@@ -5,10 +5,11 @@ import { Link } from 'react-router-dom'
  * Variants: BgPink (default), BgWhite; Inactive is derived from `disabled`.
  * Radius 24px = clickable-button rule (Dev Spec §1.3). DM Sans 600/16 (body/600/16).
  *
- * Renders a <Link> when `to` is given, otherwise a <button>.
+ * Renders a <Link> when `to` is given, an <a> opening in a new tab when
+ * `href` is given (another site), otherwise a <button>.
  * Disabled style is Figma's grayscale Inactive (gate ruling: brief guardrail #5).
  */
-export default function PrimaryCTA({ to, onClick, disabled = false, variant = 'pink', type = 'button', style, children, ...rest }) {
+export default function PrimaryCTA({ to, href, onClick, disabled = false, variant = 'pink', type = 'button', style, children, ...rest }) {
   const s = {
     ...S.base,
     ...(disabled ? S.inactive : variant === 'white' ? S.white : S.pink),
@@ -16,6 +17,9 @@ export default function PrimaryCTA({ to, onClick, disabled = false, variant = 'p
   }
   if (to && !disabled) {
     return <Link to={to} style={s} {...rest}>{children}</Link>
+  }
+  if (href && !disabled) {
+    return <a href={href} target="_blank" rel="noopener noreferrer" style={s} {...rest}>{children}</a>
   }
   return (
     <button type={type} onClick={onClick} disabled={disabled} style={s} {...rest}>

@@ -109,6 +109,9 @@ for (const file of files) {
     }
 
     for (const m of line.matchAll(RADIUS_RE)) {
+      // 50% is on-system (avatars and dots). The pattern stops at the number,
+      // so without this check every '50%' was counted as an off-system radius.
+      if (line[m.index + m[0].length] === '%') continue
       const px = parseFloat(m[1])
       if (!m[2] && /border-radius/.test(m[0])) continue
       if (px >= 999) continue // pill shorthand — reads as fully-rounded, same family as 50%
