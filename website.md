@@ -775,10 +775,11 @@ shared `ui/` primitives with the standard `Nav` and `SiteFooter`.
   card's copy now describes what UTMaps holds; it had promised "an interactive wellbeing map … finding
   the spaces that help", which the project never was.
 - **`utmap.org`** is registered at **Namecheap**. `vercel.json` redirects every path on `utmap.org` and
-  `www.utmap.org` to `https://radlab.zone/utmaps` (host-matched, non-permanent while it is being
-  tested; make it `permanent` once confirmed). It takes effect once both hostnames are added to the
-  radlab.zone Vercel project and Namecheap's DNS points at Vercel; until then the domain still serves
-  the old Google Sites page.
+  `www.utmap.org` to `https://radlab.zone/utmaps` (host-matched, permanent since 2026-10-04: the
+  page lives at one address, and utmap.org is the short link for posters). Live since 2026-10-04:
+  Namecheap DNS points at Vercel, and Vercel forwards the apex to `www`. Note `/:path*` does **not**
+  match the bare `/` on Vercel, so each host also has an explicit `/` rule; without it the root served
+  the SPA while its scripts were redirected, which blanked the page.
 - Shipped with it: `PrimaryCTA` / `SecondaryCTA` accept `href` for links to other sites (new tab), and
   the design audit stops counting `50%` radii as off-system (it read the 50 and ignored the %), which
   took the radius count from 726 to 681.
