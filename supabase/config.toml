@@ -42,6 +42,11 @@ verify_jwt = false
 # both itself, so the gateway must let the request through.
 verify_jwt = false
 
+[functions.notify_pitch]
+# Called by api/pitch.js with the Vercel secret key (sb_secret_, not a JWT).
+# The function's own check is that the presented key can read the pitch row.
+verify_jwt = false
+
 # ── Called from unauthenticated public links ───────────────────────────────
 [functions.handle_unsubscribe]
 verify_jwt = false
