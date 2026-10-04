@@ -8,6 +8,7 @@ import RouteTitle       from './components/RouteTitle'
 import AuraFilterDef     from './components/AuraFilterDef'
 import AdminRoute        from './components/AdminRoute'
 import TalksRoute        from './components/TalksRoute'
+import SuperAdminRoute   from './components/SuperAdminRoute'
 import ClassAdminRoute   from './academic/lecture-lounge/ClassAdminRoute'
 import LectureLoungeAdminRoute from './academic/lecture-lounge/LectureLoungeAdminRoute'
 import WorkbenchRoute    from './workbench/WorkbenchRoute'
@@ -682,8 +683,11 @@ export default function App() {
           {/* Dev-only test harness — component guards with import.meta.env.DEV */}
           <Route path="/dev/video-test" element={<VideoTest />} />
           <Route path="/dev/audio-test" element={<AudioTest />} />
-          {/* Phase 2 primitive gallery (Onboarding Redesign v1) */}
-          <Route path="/dev/ui-kit" element={<UiKit />} />
+          {/* Every shared primitive in every variant -- the live reference /brand
+              points to. Super admin only (2026-10-04), on the live site too. */}
+          <Route element={<SuperAdminRoute session={session} superAdmin={superAdmin} />}>
+            <Route path="/dev/ui-kit" element={<UiKit />} />
+          </Route>
           {/* Every game's instruction screen in one place (the games are auth-gated) */}
           <Route path="/dev/game-intros" element={<GameIntroPreview />} />
           <Route path="/dev/game-icons" element={<GameIconTrial />} />

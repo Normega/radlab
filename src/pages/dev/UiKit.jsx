@@ -8,22 +8,33 @@ import Checkbox from '../../components/ui/Checkbox'
 import NavigationIcon from '../../components/ui/NavigationIcon'
 import OnboardingNavigation from '../../components/ui/OnboardingNavigation'
 import Nav from '../../components/Nav'
+import CredentialsBox from '../../components/ui/CredentialsBox'
+import EditableName from '../../components/ui/EditableName'
+import LongRow from '../../components/ui/LongRow'
+import MenuAvatar from '../../components/ui/MenuAvatar'
+import GameCard from '../../components/GameCard'
+import { GAMES } from '../../data/games'
 
 /**
- * Dev-only preview of the Onboarding Redesign v1 primitives (Phase 2).
- * Route: /dev/ui-kit — guards with import.meta.env.DEV like VideoTest.
+ * Every shared component in src/components/ui/ (and GameCard) in its
+ * variants, with sample props -- the live reference /brand points to.
+ * Route: /dev/ui-kit, super admin only (SuperAdminRoute in App.jsx).
  */
 export default function UiKit() {
   const [checked, setChecked] = useState(false)
   const [name, setName] = useState('')
 
-  if (!import.meta.env.DEV) return <div style={{ padding: 40 }}>Dev only.</div>
+  // Reached only through SuperAdminRoute (App.jsx), so it now works on the live
+  // site for its one user. It was dev-build only, which made /brand's "rendered
+  // in every variant at /dev/ui-kit" untrue wherever anyone could look.
+  const [ripple, setRipple] = useState('Puddles')
+  const sampleGame = GAMES[0]
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
       <Nav session={null} />
       <div style={S.page}>
-        <h1 style={S.h1}>UI Kit — Phase 2 primitives</h1>
+        <h1 style={S.h1}>UI kit — every shared component</h1>
 
         <Section title="Button/PrimaryCTA (BgPink · BgWhite · Inactive)">
           <PrimaryCTA onClick={() => {}}>Join free</PrimaryCTA>
@@ -75,6 +86,39 @@ export default function UiKit() {
             <OnboardingNavigation onPrevious={() => {}} onNext={() => {}} />
             <OnboardingNavigation onNext={() => {}} nextDisabled nextLabel="Agree &amp; continue" />
             <OnboardingNavigation onPrevious={() => {}} />
+          </div>
+        </Section>
+
+        <Section title="EditableName (closed · open on Rename)">
+          <EditableName name={ripple} ariaLabel="Ripple name" onSave={async (n) => { setRipple(n); return true }} />
+        </Section>
+
+        <Section title="LongRow (value left · category right)">
+          <div style={{ width: '100%', maxWidth: 480, display: 'grid', gap: 8 }}>
+            <LongRow left="norm@example.com" category="Email" />
+            <LongRow left="Puddles" category="Ripple name" />
+          </div>
+        </Section>
+
+        <Section title="MenuAvatar (no avatar yet: initial fallback)">
+          <MenuAvatar avatarData={null} initial="N" />
+        </Section>
+
+        <Section title="GameCard (default · guest · locked)">
+          {sampleGame && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16, width: '100%' }}>
+              <GameCard game={sampleGame} />
+              <GameCard game={sampleGame} isGuest />
+              <GameCard game={sampleGame} locked />
+            </div>
+          )}
+        </Section>
+
+        <Section title="CredentialsBox (login and sign-up container)">
+          <div style={{ width: '100%' }}>
+            <CredentialsBox title="Welcome back" tagline="Log in to keep your streak going." exit={false}>
+              <FillableBox label="Email" placeholder="you@example.com" value="" onChange={() => {}} />
+            </CredentialsBox>
           </div>
         </Section>
       </div>
