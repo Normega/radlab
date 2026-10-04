@@ -11,7 +11,7 @@ import { Link } from 'react-router-dom'
 export default function SiteFooter({ session, style }) {
   const links = [
     { to: session ? '/dashboard' : '/platform', label: 'Come, See' },
-    { href: 'http://www.utmap.org', label: 'UTMaps' },
+    { to: '/utmaps', label: 'UTMaps' },
     { to: '/lab/about', label: 'People & Research' },
     { href: 'https://www.betterineverysense.com', label: 'Book' },
   ]
@@ -30,7 +30,7 @@ export default function SiteFooter({ session, style }) {
 
 function FooterLink({ to, href, label }) {
   const [hov, setHov] = useState(false)
-  const style = { ...S.link, color: hov ? 'var(--pkd)' : 'var(--gy)' }
+  const style = { ...S.link, color: hov ? 'var(--pkd)' : 'var(--tx2)' }
   const hover = { onMouseEnter: () => setHov(true), onMouseLeave: () => setHov(false) }
   return to
     ? <Link to={to} style={style} {...hover}>{label}</Link>

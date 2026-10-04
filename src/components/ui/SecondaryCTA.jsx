@@ -3,12 +3,16 @@ import { Link } from 'react-router-dom'
 /**
  * Button/SecondaryCTA — Onboarding Redesign v1 primitive (Figma node 132:479).
  * Outline pill: 1px text-secondary border, text-secondary label, 24px radius.
- * Renders a <Link> when `to` is given, otherwise a <button>.
+ * Renders a <Link> when `to` is given, an <a> opening in a new tab when
+ * `href` is given (another site), otherwise a <button>.
  */
-export default function SecondaryCTA({ to, onClick, type = 'button', style, children, ...rest }) {
+export default function SecondaryCTA({ to, href, onClick, type = 'button', style, children, ...rest }) {
   const s = { ...S.base, ...style }
   if (to) {
     return <Link to={to} style={s} {...rest}>{children}</Link>
+  }
+  if (href) {
+    return <a href={href} target="_blank" rel="noopener noreferrer" style={s} {...rest}>{children}</a>
   }
   return (
     <button type={type} onClick={onClick} style={s} {...rest}>

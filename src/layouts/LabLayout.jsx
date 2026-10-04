@@ -3,7 +3,7 @@ import { NavLink, Outlet, Link } from 'react-router-dom'
 // Mirrors the Landing hub cards — same four destinations, same names.
 const FOOTER_LINKS = [
   { to: '/platform', label: 'Come, See' },
-  { href: 'http://www.utmap.org', label: 'UTMaps' },
+  { to: '/utmaps', label: 'UTMaps' },
   { to: '/lab/about', label: 'People & Research' },
   { href: 'https://www.betterineverysense.com', label: 'Book' },
 ]
