@@ -534,5 +534,5 @@ const S = {
   slotDelete:     { background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tx3)', fontSize: 14, padding: '26px 4px 0', flexShrink: 0 },
   slotDepWarn:    { display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12, color: '#9a6b1f', background: '#fdf6ec', border: '1px solid #f0d9b0', borderRadius: 8, padding: '10px 14px', fontFamily: '"DM Sans",system-ui,sans-serif', lineHeight: 1.5 },
   addSlotBtn:     { alignSelf: 'flex-start', fontSize: 14, color: 'var(--pkd)', background: '#fff', border: '1px dashed var(--pkb)', borderRadius: 8, padding: '7px 14px', cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
-  btnPrimary:     { display: 'inline-block', background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
+  btnPrimary:     { display: 'inline-block', background: 'var(--pkd)', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
 }

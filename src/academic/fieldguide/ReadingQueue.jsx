@@ -117,7 +117,7 @@ export default function ReadingQueue() {
 }
 
 const S = {
-  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)' },
+  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pkd)' },
   eyebrowLink: { color: 'inherit', textDecoration: 'none' },
   title: { fontFamily: SERIF, fontSize: 28, color: 'var(--tx)', margin: '2px 0 8px' },
   sub: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.6, maxWidth: '68ch' },
@@ -129,7 +129,7 @@ const S = {
   progressBig: { fontSize: 16, fontWeight: 600, color: 'var(--tx)', margin: '0 0 10px' },
   barOuter: { height: 8, borderRadius: 4, background: 'var(--bd)', overflow: 'hidden' },
   barInner: { height: '100%', background: '#2e7d32', transition: 'width .3s ease' },
-  primary: { display: 'inline-block', marginTop: 14, fontSize: 14, fontWeight: 600, padding: '9px 18px', borderRadius: 22, background: 'var(--pk)', color: '#fff', textDecoration: 'none' },
+  primary: { display: 'inline-block', marginTop: 14, fontSize: 14, fontWeight: 600, padding: '9px 18px', borderRadius: 22, background: 'var(--pkd)', color: '#fff', textDecoration: 'none' },
   row: { display: 'flex', alignItems: 'baseline', gap: 10, padding: '6px 4px', borderBottom: '1px dotted var(--bd)', textDecoration: 'none' },
   dot: { flexShrink: 0, width: 9, height: 9, borderRadius: '50%', position: 'relative', top: -1 },
   rowTitle: { fontSize: 14.5, color: 'var(--tx)', flex: '1 1 auto' },

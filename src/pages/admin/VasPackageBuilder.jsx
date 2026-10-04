@@ -356,7 +356,7 @@ function SliderPreview({ scale, partNumber, totalParts, onComplete }) {
                       fontSize: 14, color: touched ? 'var(--tx2)' : '#b0ada8' }}>
           <span>{scale.min_label}</span>
           {touched
-            ? <span style={{ fontSize: 24, fontWeight: 600, color: 'var(--pk)' }}>{value}</span>
+            ? <span style={{ fontSize: 24, fontWeight: 600, color: 'var(--pkd)' }}>{value}</span>
             : <span style={{ fontSize: 24, color: '#c0bdb8' }}>—</span>}
           <span>{scale.max_label}</span>
         </div>
@@ -364,7 +364,7 @@ function SliderPreview({ scale, partNumber, totalParts, onComplete }) {
       <button
         onClick={() => touched && onComplete(value)}
         disabled={!touched}
-        style={{ background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 10,
+        style={{ background: 'var(--pkd)', color: '#fff', border: 'none', borderRadius: 10,
                  padding: '11px 28px', fontSize: 14, fontWeight: 600, cursor: touched ? 'pointer' : 'not-allowed',
                  opacity: touched ? 1 : 0.4, fontFamily: '"DM Sans",system-ui,sans-serif' }}
       >
@@ -395,7 +395,7 @@ const S = {
 
   scaleRow:   { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '7px 0', borderBottom: '1px solid var(--bd)' },
   checkLabel: { display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', flex: 1, minWidth: 0 },
-  chip:       { fontFamily: '"Space Mono",monospace', fontSize: 12, background: 'var(--bgp)', color: 'var(--pk)', border: '1px solid var(--pkb)', borderRadius: 4, padding: '2px 6px', flexShrink: 0 },
+  chip:       { fontFamily: '"Space Mono",monospace', fontSize: 12, background: 'var(--bgp)', color: 'var(--pkd)', border: '1px solid var(--pkb)', borderRadius: 4, padding: '2px 6px', flexShrink: 0 },
   chipSlider: { background: '#eef4ff', color: '#3b6db0', borderColor: 'rgba(59,109,176,0.25)' },
   typeTag:    (type) => ({
     fontFamily: '"Space Mono",monospace',
@@ -415,13 +415,13 @@ const S = {
   orderBadge: { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', minWidth: 20, textAlign: 'center' },
   arrowBtn:   { background: 'none', border: '1px solid var(--bd)', borderRadius: 4, width: 22, height: 22, fontSize: 12, cursor: 'pointer', color: 'var(--tx2)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 },
 
-  saveBtn:   { background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 9, padding: '10px 22px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
+  saveBtn:   { background: 'var(--pkd)', color: '#fff', border: 'none', borderRadius: 9, padding: '10px 22px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
   cancelBtn: { background: 'none', border: '1px solid var(--bd)', borderRadius: 9, padding: '10px 16px', fontSize: 14, cursor: 'pointer', color: 'var(--tx2)', fontFamily: '"DM Sans",system-ui,sans-serif' },
 
   previewSummary:   { display: 'flex', flexDirection: 'column', gap: 10 },
   previewCount:     { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', margin: 0 },
   previewList:      { margin: '0 0 12px', paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 6 },
   previewItem:      { display: 'flex', alignItems: 'center', gap: 6, listStyle: 'decimal' },
-  startPreviewBtn:  { background: 'none', border: '1px solid var(--pk)', borderRadius: 8, padding: '8px 16px', fontSize: 14, cursor: 'pointer', color: 'var(--pk)', fontFamily: '"DM Sans",system-ui,sans-serif', alignSelf: 'flex-start' },
+  startPreviewBtn:  { background: 'none', border: '1px solid var(--pk)', borderRadius: 8, padding: '8px 16px', fontSize: 14, cursor: 'pointer', color: 'var(--pkd)', fontFamily: '"DM Sans",system-ui,sans-serif', alignSelf: 'flex-start' },
   resetPreviewBtn:  { background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif', margin: '8px 0 0' },
 }

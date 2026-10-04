@@ -81,7 +81,7 @@ const S = {
     height: 52,
     margin: '0 auto 18px',
     borderRadius: '50%',
-    background: 'var(--pk)',
+    background: 'var(--pkd)',
     color: '#fff',
     fontSize: 26,
     lineHeight: '52px',
@@ -106,7 +106,7 @@ const S = {
     margin: '0 0 26px',
   },
   btn: {
-    background: 'var(--pk)',
+    background: 'var(--pkd)',
     color: '#fff',
     border: 'none',
     borderRadius: 10,

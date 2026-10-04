@@ -468,7 +468,7 @@ export default function WikiIndex() {
                     <Link key={row.slug} to={`${WIKI_BASE}/${row.slug}`} style={S.card}>
                       <span style={S.cardTitle}>{row.title}</span>
                       <span style={S.cardMeta}>
-                        {row.status !== 'published' && <b style={{ color: 'var(--pk)' }}>draft · </b>}
+                        {row.status !== 'published' && <b style={{ color: 'var(--pkd)' }}>draft · </b>}
                         {row.needs?.length > 0
                           ? `needs ${row.needs.length} section${row.needs.length === 1 ? '' : 's'}`
                           : (TYPE_LABEL[row.type] ?? row.type)}
@@ -528,7 +528,7 @@ export default function WikiIndex() {
                                   title={TIER_HELP[row.tier]}>
                               <span style={S.cardTitle}>{page.title}</span>
                               <span style={S.cardMeta}>
-                                {page.status !== 'published' && <b style={{ color: 'var(--pk)' }}>draft · </b>}
+                                {page.status !== 'published' && <b style={{ color: 'var(--pkd)' }}>draft · </b>}
                                 {page.needs?.length > 0
                                   ? `needs ${page.needs.length} section${page.needs.length === 1 ? '' : 's'}`
                                   : (TIER_LABEL[row.tier] ?? row.tier)}
@@ -562,7 +562,7 @@ export default function WikiIndex() {
                         <Link key={p.slug} to={`${WIKI_BASE}/${p.slug}`} style={S.card}>
                           <span style={S.cardTitle}>{p.title}</span>
                           <span style={S.cardMeta}>
-                            {p.status !== 'published' && <b style={{ color: 'var(--pk)' }}>draft</b>}
+                            {p.status !== 'published' && <b style={{ color: 'var(--pkd)' }}>draft</b>}
                           </span>
                         </Link>
                       ))}
@@ -657,18 +657,18 @@ function Shell({ course, session, client, isStaff, courses, courseId, onSelectCo
 
 const Stat = ({ n, label, accent }) => (
   <div style={S.stat}>
-    <span style={{ ...S.statN, color: accent ? 'var(--pk)' : 'var(--tx)' }}>{n}</span>
+    <span style={{ ...S.statN, color: accent ? 'var(--pkd)' : 'var(--tx)' }}>{n}</span>
     <span style={S.statL}>{label}</span>
   </div>
 )
 
 const S = {
-  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)' },
+  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pkd)' },
   eyebrowLink: { color: 'inherit', textDecoration: 'none' },
   title: { fontFamily: SERIF, fontSize: 30, color: 'var(--tx)', margin: '2px 0 4px' },
   sub: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.55 },
-  link: { fontSize: 14, color: 'var(--pk)', textDecoration: 'none' },
-  linkBtn: { fontSize: 14, color: 'var(--pk)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0 },
+  link: { fontSize: 14, color: 'var(--pkd)', textDecoration: 'none' },
+  linkBtn: { fontSize: 14, color: 'var(--pkd)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0 },
 
   statRow: { display: 'flex', gap: 10, marginTop: 18, flexWrap: 'wrap' },
   stat: { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 12, padding: '12px 18px', display: 'flex', flexDirection: 'column', minWidth: 130 },
@@ -689,7 +689,7 @@ const S = {
   controlRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap' },
   seg: { display: 'inline-flex', border: '1px solid var(--bd)', borderRadius: 16, overflow: 'hidden', background: 'var(--bgc)' },
   segBtn: { fontFamily: MONO, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', padding: '6px 14px', border: 'none', background: 'none', color: 'var(--tx2)', cursor: 'pointer' },
-  segBtnOn: { background: 'var(--pk)', color: '#fff' },
+  segBtnOn: { background: 'var(--pkd)', color: '#fff' },
   chGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 178px), 1fr))', gap: 12, marginTop: 4 },
   chCard: { position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 8, background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 14, padding: '16px 12px 14px', cursor: 'pointer', color: 'inherit', font: 'inherit' },
   chCardEmpty: { opacity: 0.55, borderStyle: 'dashed' },
@@ -706,7 +706,7 @@ const S = {
   band: { display: 'flex', alignItems: 'center', gap: 12, width: '100%', boxSizing: 'border-box', background: 'var(--bgc)', border: '1px solid var(--bds)', borderRadius: 12, padding: '7px 14px 7px 7px', textAlign: 'left', cursor: 'pointer', color: 'var(--tx)' },
   chTitles: { display: 'flex', alignItems: 'baseline', gap: 9, flexWrap: 'wrap', minWidth: 0 },
   chTitle: { fontFamily: SERIF, fontSize: 28, lineHeight: 1.15 },
-  caret: { flexShrink: 0, fontSize: 14, color: 'var(--pk)', marginLeft: 'auto', paddingLeft: 8, transition: 'transform .15s ease', display: 'inline-block' },
+  caret: { flexShrink: 0, fontSize: 14, color: 'var(--pkd)', marginLeft: 'auto', paddingLeft: 8, transition: 'transform .15s ease', display: 'inline-block' },
   typeLabel: { fontFamily: MONO, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx2)', margin: '0 0 6px' },
 
   grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 230px), 1fr))', gap: 10 },

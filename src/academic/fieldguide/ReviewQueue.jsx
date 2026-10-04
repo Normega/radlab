@@ -215,7 +215,7 @@ export default function ReviewQueue() {
                     <p style={S.colLabel}>
                       {isDelta ? 'Merged (current + addendum) — edit before accepting'
                         : isReplace ? 'Proposed replacement — overwrites the current body'
-                        : 'Proposed'} {dirty && <span style={{ color: 'var(--pk)' }}>· edited</span>}
+                        : 'Proposed'} {dirty && <span style={{ color: 'var(--pkd)' }}>· edited</span>}
                     </p>
                     <textarea
                       style={{ ...S.pre, width: '100%', minHeight: 320, resize: 'vertical' }}
@@ -274,7 +274,7 @@ export default function ReviewQueue() {
                         will usually have several — that's the wiki saying what
                         to read next, not a defect. */}
                     {page.gap_count > 0 && (
-                      <><br /><span style={{ color: 'var(--pk)' }}>
+                      <><br /><span style={{ color: 'var(--pkd)' }}>
                         needs: {page.needs.join(', ')}
                       </span></>
                     )}
@@ -367,7 +367,7 @@ function Page({ course, session, client, children }) {
 
 const Stat = ({ n, label, accent }) => (
   <div style={S.stat}>
-    <span style={{ ...S.statN, color: accent ? 'var(--pk)' : 'var(--tx)' }}>{n}</span>
+    <span style={{ ...S.statN, color: accent ? 'var(--pkd)' : 'var(--tx)' }}>{n}</span>
     <span style={S.statL}>{label}</span>
   </div>
 )
@@ -380,21 +380,21 @@ const Badge = ({ kind, children }) => {
     <span style={{
       ...S.badge,
       background: accent ? 'rgba(214,51,132,.12)' : 'rgba(0,0,0,.05)',
-      color: accent ? 'var(--pk)' : 'var(--tx2)',
+      color: accent ? 'var(--pkd)' : 'var(--tx2)',
     }}>{children}</span>
   )
 }
 
 const S = {
-  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)' },
+  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pkd)' },
   eyebrowLink: { color: 'inherit', textDecoration: 'none' },
   title: { fontFamily: SERIF, fontSize: 28, color: 'var(--tx)', margin: '2px 0 4px' },
   sub: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.5 },
   dim: { color: 'var(--tx2)', fontWeight: 400 },
-  link: { fontSize: 14, color: 'var(--pk)' },
-  linkBtn: { fontSize: 14, color: 'var(--pk)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0 },
+  link: { fontSize: 14, color: 'var(--pkd)' },
+  linkBtn: { fontSize: 14, color: 'var(--pkd)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0 },
   input: { fontSize: 15, padding: '8px 10px', borderRadius: 8, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx)' },
-  notice: { ...{ fontSize: 14, lineHeight: 1.5 }, color: 'var(--pk)', marginTop: 14, fontFamily: MONO, fontSize: 14 },
+  notice: { ...{ fontSize: 14, lineHeight: 1.5 }, color: 'var(--pkd)', marginTop: 14, fontFamily: MONO, fontSize: 14 },
 
   h2: { fontFamily: SERIF, fontSize: 28, color: 'var(--tx)', margin: '30px 0 4px' },
 
@@ -417,7 +417,7 @@ const S = {
   pre: { fontFamily: MONO, fontSize: 12, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', background: 'var(--bg)', border: '1px solid var(--bd)', borderRadius: 8, padding: 12, maxHeight: 420, overflowY: 'auto', color: 'var(--tx)', margin: 0 },
 
   actions: { display: 'flex', gap: 10, marginTop: 14, flexWrap: 'wrap', alignItems: 'center' },
-  primary: { fontSize: 14, fontWeight: 600, padding: '9px 16px', borderRadius: 24, border: 'none', background: 'var(--pk)', color: '#fff', cursor: 'pointer' },
+  primary: { fontSize: 14, fontWeight: 600, padding: '9px 16px', borderRadius: 24, border: 'none', background: 'var(--pkd)', color: '#fff', cursor: 'pointer' },
   secondary: { fontSize: 14, fontWeight: 600, padding: '9px 16px', borderRadius: 24, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx)', cursor: 'pointer' },
   danger: { fontSize: 14, fontWeight: 600, padding: '9px 16px', borderRadius: 24, border: '1px solid rgba(192,57,43,.35)', background: 'none', color: '#c0392b', cursor: 'pointer' },
 }

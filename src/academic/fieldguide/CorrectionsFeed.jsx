@@ -73,15 +73,15 @@ export default function CorrectionsFeed() {
 }
 
 const S = {
-  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)' },
+  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pkd)' },
   eyebrowLink: { color: 'inherit', textDecoration: 'none' },
   title: { fontFamily: SERIF, fontSize: 28, color: 'var(--tx)', margin: '2px 0 4px' },
   sub: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.6, maxWidth: 680 },
-  notice: { color: 'var(--pk)', marginTop: 14, fontFamily: MONO, fontSize: 14 },
+  notice: { color: 'var(--pkd)', marginTop: 14, fontFamily: MONO, fontSize: 14 },
 
   card: { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 10, padding: '10px 14px', marginTop: 10 },
   head: { display: 'flex', gap: 10, alignItems: 'baseline', flexWrap: 'wrap' },
-  slug: { fontFamily: MONO, fontSize: 14, color: 'var(--pk)', textDecoration: 'none' },
+  slug: { fontFamily: MONO, fontSize: 14, color: 'var(--pkd)', textDecoration: 'none' },
   meta: { fontFamily: MONO, fontSize: 12, color: 'var(--tx2)', marginLeft: 'auto' },
   note: { fontSize: 14, color: 'var(--tx)', lineHeight: 1.55, margin: '6px 0 0', whiteSpace: 'pre-wrap' },
 }

@@ -60,7 +60,7 @@ const S = {
   },
   icon: {
     width: 56, height: 56, borderRadius: '50%',
-    background: 'var(--pk)', color: '#fff',
+    background: 'var(--pkd)', color: '#fff',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     fontSize: 24, fontWeight: 700, fontFamily: MONO,
     boxShadow: '0 4px 20px rgba(240,104,164,0.35)',
@@ -76,7 +76,7 @@ const S = {
   btn: {
     marginTop: 8,
     padding: '12px 28px', borderRadius: 12,
-    background: 'var(--pk)', color: '#fff', border: 'none',
+    background: 'var(--pkd)', color: '#fff', border: 'none',
     fontFamily: MONO, fontSize: 14, fontWeight: 700, letterSpacing: '0.05em',
     cursor: 'pointer', boxShadow: '0 4px 20px rgba(240,104,164,0.30)',
   },

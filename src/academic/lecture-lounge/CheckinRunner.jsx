@@ -266,7 +266,7 @@ export default function CheckinRunner({ checkinId, config, session, onComplete, 
 
 const S = {
   stepWrap: { display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '24px 20px', maxWidth: 380, margin: '0 auto' },
-  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)', marginBottom: 6 },
+  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pkd)', marginBottom: 6 },
   title: { fontFamily: SERIF, fontSize: 22, color: 'var(--tx)', marginBottom: 20 },
   qbIntro: { fontSize: 14.5, color: 'var(--tx2)', lineHeight: 1.5, margin: '-8px 0 16px', maxWidth: 340 },
   hint: { fontSize: 14, color: 'var(--tx3)' },
@@ -276,14 +276,14 @@ const S = {
     fontSize: 15, fontFamily: 'inherit', resize: 'vertical', marginBottom: 16, boxSizing: 'border-box',
   },
   primaryBtn: {
-    padding: '12px 28px', borderRadius: 10, border: 'none', background: 'var(--pk)',
+    padding: '12px 28px', borderRadius: 10, border: 'none', background: 'var(--pkd)',
     color: '#fff', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
   },
   pacingRow: { display: 'flex', gap: 10, marginBottom: 10 },
   pacingBtn: (active) => ({
     width: 52, height: 52, borderRadius: '50%', fontSize: 17, fontWeight: 600,
     border: `2px solid ${active ? 'var(--pk)' : 'var(--bds)'}`,
-    background: active ? 'var(--pk)' : 'var(--bgc)', color: active ? '#fff' : 'var(--tx)',
+    background: active ? 'var(--pkd)' : 'var(--bgc)', color: active ? '#fff' : 'var(--tx)',
     cursor: 'pointer', fontFamily: 'inherit',
   }),
   pacingLabels: { display: 'flex', justifyContent: 'space-between', width: '100%', maxWidth: 280, fontSize: 12, color: 'var(--tx3)' },

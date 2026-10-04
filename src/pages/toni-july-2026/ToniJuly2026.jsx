@@ -139,7 +139,7 @@ const SLIDES = [
           />
           <div style={K.titleText}>
             <div style={{ ...K.crests, marginBottom: 10 }}>
-              <img src="/RADlab_Logo_light.svg" alt="RADlab" style={{ height: 48 }} onError={e => { e.currentTarget.style.display = 'none' }} />
+              <img src="/RADlab_Logo.svg" alt="RADlab" style={{ height: 48 }} onError={e => { e.currentTarget.style.display = 'none' }} />
               <img src="/UofT_Logo.svg" alt="University of Toronto" style={{ height: 48 }} onError={e => { e.currentTarget.style.display = 'none' }} />
             </div>
             <h1 style={{ ...K.title, textAlign: 'left' }}>From DICOMs to denoised fMRI</h1>
@@ -977,7 +977,7 @@ const SLIDES = [
         </div>
         <div style={{ height: 8 }} />
         <div style={K.crests}>
-          <img src="/RADlab_Logo_light.svg" alt="RADlab" style={{ height: 46 }} onError={e => { e.currentTarget.style.display = 'none' }} />
+          <img src="/RADlab_Logo.svg" alt="RADlab" style={{ height: 46 }} onError={e => { e.currentTarget.style.display = 'none' }} />
           <img src="/UofT_Logo.svg" alt="University of Toronto" style={{ height: 46 }} onError={e => { e.currentTarget.style.display = 'none' }} />
         </div>
       </Frame>

@@ -105,7 +105,7 @@ export default function ReportsPanel({ courseClient, courseId, wikiBase, onCount
        open.map(r => (
         <div key={r.id} style={S.card}>
           <div style={S.cardTop}>
-            <span style={{ ...S.kind, color: r.kind === 'contradiction' ? 'var(--pk)' : '#b8860b' }}>
+            <span style={{ ...S.kind, color: r.kind === 'contradiction' ? 'var(--pkd)' : '#b8860b' }}>
               {r.kind}
             </span>
             {r.wiki_pages && (
@@ -167,7 +167,7 @@ export default function ReportsPanel({ courseClient, courseId, wikiBase, onCount
 const S = {
   sub: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.6, maxWidth: '68ch' },
   dim: { color: 'var(--tx2)', fontSize: 12, fontFamily: MONO },
-  notice: { marginTop: 10, fontFamily: MONO, fontSize: 12.5, color: 'var(--pk)' },
+  notice: { marginTop: 10, fontFamily: MONO, fontSize: 12.5, color: 'var(--pkd)' },
   h2: { fontFamily: SERIF, fontSize: 24, color: 'var(--tx)', margin: '22px 0 10px' },
   card: { padding: '12px 14px', borderRadius: 10, background: 'var(--bgc)', border: '1px solid var(--bd)', marginBottom: 10 },
   cardTop: { display: 'flex', gap: 10, alignItems: 'baseline', flexWrap: 'wrap' },
@@ -176,6 +176,6 @@ const S = {
   body: { fontSize: 13.5, color: 'var(--tx)', lineHeight: 1.5, margin: '8px 0 0' },
   citation: { fontSize: 12.5, color: 'var(--tx2)', fontFamily: MONO, margin: '6px 0 0' },
   btn: { fontSize: 12.5, fontWeight: 600, padding: '5px 13px', borderRadius: 16, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx)', cursor: 'pointer' },
-  btnPk: { fontSize: 12.5, fontWeight: 600, padding: '5px 13px', borderRadius: 16, border: 'none', background: 'var(--pk)', color: '#fff', cursor: 'pointer' },
+  btnPk: { fontSize: 12.5, fontWeight: 600, padding: '5px 13px', borderRadius: 16, border: 'none', background: 'var(--pkd)', color: '#fff', cursor: 'pointer' },
   toggle: { marginTop: 16, fontFamily: MONO, fontSize: 12, padding: '6px 14px', borderRadius: 16, border: '1px solid var(--bd)', background: 'none', color: 'var(--tx2)', cursor: 'pointer' },
 }

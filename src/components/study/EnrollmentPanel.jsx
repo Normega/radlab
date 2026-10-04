@@ -427,7 +427,7 @@ function fmtDate(ts) {
 const S = {
   sectionHeader:   { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
   sectionTitle:    { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 28, fontWeight: 400, color: 'var(--tx)', margin: 0 },
-  btnPrimary:      { display: 'inline-block', background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
+  btnPrimary:      { display: 'inline-block', background: 'var(--pkd)', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
   enrollForm:      { display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16, background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 10, padding: '16px 20px' },
   fieldLabel:      { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' },
   input:           { fontSize: 14, fontFamily: '"DM Sans",system-ui,sans-serif', border: '1px solid var(--bd)', borderRadius: 8, padding: '8px 12px', color: 'var(--tx)', background: '#fff', minWidth: 160 },
@@ -443,9 +443,9 @@ const S = {
   mono:            { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx2)' },
   withdrawalNote:  { marginTop: 4, fontSize: 12, fontStyle: 'italic', color: 'var(--tx3)', maxWidth: 220 },
   actions:         { display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' },
-  actionBtn:       { background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: 'var(--pk)', padding: 0, fontFamily: '"DM Sans",system-ui,sans-serif', fontWeight: 600 },
+  actionBtn:       { background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: 'var(--pkd)', padding: 0, fontFamily: '"DM Sans",system-ui,sans-serif', fontWeight: 600 },
   sessionChip:     { display: 'flex', alignItems: 'center', gap: 7, background: '#fff', border: '1px solid var(--bd)', borderRadius: 8, padding: '6px 10px' },
   sessionChipLabel:{ fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx2)' },
-  runBtn:          { background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 6, padding: '3px 9px', fontSize: 12, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', fontWeight: 600 },
+  runBtn:          { background: 'var(--pkd)', color: '#fff', border: 'none', borderRadius: 6, padding: '3px 9px', fontSize: 12, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', fontWeight: 600 },
   doneLabel:       { fontFamily: '"Space Mono",monospace', fontSize: 12, color: '#15803d' },
 }

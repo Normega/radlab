@@ -73,7 +73,7 @@ export default function AvatarPngBackfill() {
           </p>
           <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
             <button disabled={running || missing === 0} onClick={() => run(true)} style={B}>Backfill missing ({missing})</button>
-            <button disabled={running} onClick={() => run(false)} style={{ ...B, background: 'var(--bgc)', color: 'var(--pk)', border: '1px solid var(--pkbs)' }}>Re-render all ({rows.length})</button>
+            <button disabled={running} onClick={() => run(false)} style={{ ...B, background: 'var(--bgc)', color: 'var(--pkd)', border: '1px solid var(--pkbs)' }}>Re-render all ({rows.length})</button>
             {running && <button onClick={() => { cancelRef.current = true }} style={{ ...B, background: 'var(--gy)' }}>Cancel</button>}
           </div>
           {/* Live stage — visible so you can watch it work; the raster reads from here */}
@@ -94,5 +94,5 @@ export default function AvatarPngBackfill() {
 
 const B = {
   padding: '10px 18px', borderRadius: 8, border: 'none', cursor: 'pointer',
-  background: 'var(--pk)', color: '#fff', fontWeight: 600, fontSize: 14,
+  background: 'var(--pkd)', color: '#fff', fontWeight: 600, fontSize: 14,
 }

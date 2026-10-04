@@ -167,11 +167,11 @@ export default function ClassConfirmSignup() {
 const S = {
   page: { background: 'var(--bg)', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 },
   card: { background: 'var(--bgc)', borderRadius: 16, padding: '34px 30px', maxWidth: 420, width: '100%', textAlign: 'center', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' },
-  eyebrow: { fontFamily: MONO, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)', marginBottom: 10 },
+  eyebrow: { fontFamily: MONO, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pkd)', marginBottom: 10 },
   title: { fontFamily: SERIF, fontSize: 26, color: 'var(--tx)', margin: '0 0 10px' },
   sub: { fontSize: 14.5, color: 'var(--tx2)', lineHeight: 1.55, margin: '0 0 14px' },
   input: { width: '100%', boxSizing: 'border-box', fontSize: 16, padding: '12px 14px', borderRadius: 10, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx)', margin: '0 0 12px' },
   err: { fontSize: 13.5, color: 'var(--err-tx)', lineHeight: 1.5, margin: '0 0 12px' },
-  btn: { width: '100%', fontSize: 16, fontWeight: 600, padding: '14px 18px', borderRadius: 26, border: 'none', background: 'var(--pk)', color: '#fff', cursor: 'pointer' },
-  btnLink: { display: 'inline-block', fontSize: 15, fontWeight: 600, padding: '12px 24px', borderRadius: 24, background: 'var(--pk)', color: '#fff', textDecoration: 'none' },
+  btn: { width: '100%', fontSize: 16, fontWeight: 600, padding: '14px 18px', borderRadius: 26, border: 'none', background: 'var(--pkd)', color: '#fff', cursor: 'pointer' },
+  btnLink: { display: 'inline-block', fontSize: 15, fontWeight: 600, padding: '12px 24px', borderRadius: 24, background: 'var(--pkd)', color: '#fff', textDecoration: 'none' },
 }

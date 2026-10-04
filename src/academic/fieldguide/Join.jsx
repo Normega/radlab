@@ -180,14 +180,14 @@ export default function Join() {
 }
 
 const S = {
-  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)' },
+  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pkd)' },
   title: { fontFamily: SERIF, fontSize: 32, color: 'var(--tx)', margin: '6px 0 10px' },
   sub: { fontSize: 15, color: 'var(--tx2)', lineHeight: 1.6 },
   big: { fontFamily: SERIF, fontSize: 28, color: 'var(--tx)', margin: '0 0 8px' },
   box: { marginTop: 18, padding: '18px 20px', borderRadius: 12, background: 'var(--bgc)', border: '1px solid var(--bd)' },
   input: { width: '100%', boxSizing: 'border-box', fontSize: 16, padding: '12px 14px', borderRadius: 10, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx)' },
-  primary: { marginTop: 12, width: '100%', fontSize: 15, fontWeight: 600, padding: '12px 16px', borderRadius: 24, border: 'none', background: 'var(--pk)', color: '#fff', cursor: 'pointer' },
+  primary: { marginTop: 12, width: '100%', fontSize: 15, fontWeight: 600, padding: '12px 16px', borderRadius: 24, border: 'none', background: 'var(--pkd)', color: '#fff', cursor: 'pointer' },
   primaryOff: { marginTop: 12, width: '100%', fontSize: 15, fontWeight: 600, padding: '12px 16px', borderRadius: 24, border: 'none', background: 'var(--bd)', color: 'var(--tx2)', cursor: 'not-allowed' },
-  err: { marginTop: 12, fontSize: 14, color: 'var(--pk)' },
-  link: { color: 'var(--pk)', textDecoration: 'none' },
+  err: { marginTop: 12, fontSize: 14, color: 'var(--pkd)' },
+  link: { color: 'var(--pkd)', textDecoration: 'none' },
 }

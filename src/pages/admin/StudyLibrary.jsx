@@ -193,7 +193,7 @@ export default function StudyLibrary() {
 
 function DeliveryBadge({ mode }) {
   const map = {
-    in_person:          { label: 'in-person',     bg: '#fdf2f8', color: 'var(--pk)' },
+    in_person:          { label: 'in-person',     bg: '#fdf2f8', color: 'var(--pkd)' },
     online_single:      { label: 'single session', bg: '#f0f4ff', color: '#5b7be8' },
     online_longitudinal:{ label: 'longitudinal',   bg: '#f0fdf4', color: '#15803d' },
   }
@@ -206,7 +206,7 @@ function DeliveryBadge({ mode }) {
 }
 
 function Chip({ children }) {
-  return <span style={{ fontFamily: '"Space Mono",monospace', fontSize: 12, background: 'var(--pkb)', color: 'var(--pk)', borderRadius: 6, padding: '2px 7px' }}>{children}</span>
+  return <span style={{ fontFamily: '"Space Mono",monospace', fontSize: 12, background: 'var(--pkb)', color: 'var(--pkd)', borderRadius: 6, padding: '2px 7px' }}>{children}</span>
 }
 
 function fmtDate(ts) {
@@ -223,7 +223,7 @@ const S = {
   proto: { fontSize: 14, color: 'var(--tx2)', fontFamily: '"DM Sans",system-ui,sans-serif' },
   pct: { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx)' },
   archivedBadge: { display: 'inline-block', marginLeft: 8, fontFamily: '"Space Mono",monospace', fontSize: 12, background: '#f4f4f5', color: 'var(--tx3)', borderRadius: 6, padding: '2px 6px' },
-  inPersonBadge: { display: 'inline-block', marginLeft: 8, fontFamily: '"Space Mono",monospace', fontSize: 12, background: '#fdf2f8', color: 'var(--pk)', borderRadius: 6, padding: '2px 6px' },
+  inPersonBadge: { display: 'inline-block', marginLeft: 8, fontFamily: '"Space Mono",monospace', fontSize: 12, background: '#fdf2f8', color: 'var(--pkd)', borderRadius: 6, padding: '2px 6px' },
   empty: { textAlign: 'center', padding: '48px 0' },
   emptyText: { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 28, color: 'var(--tx)', margin: '0 0 8px' },
   emptyHint: { fontSize: 14, color: 'var(--tx2)', margin: '0 0 24px' },
@@ -235,7 +235,7 @@ const S = {
   actions: { display: 'flex', gap: 10, alignItems: 'center' },
   actionBtn: { background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: 'var(--tx2)', padding: 0, textDecoration: 'none', fontFamily: '"DM Sans",system-ui,sans-serif' },
   deleteBtn: { background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: '#c0392b', padding: 0, fontFamily: '"DM Sans",system-ui,sans-serif' },
-  btnPrimary: { display: 'inline-block', background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer', textDecoration: 'none', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
+  btnPrimary: { display: 'inline-block', background: 'var(--pkd)', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer', textDecoration: 'none', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
   overlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 },
   dialog: { background: '#fff', borderRadius: 14, padding: '28px 32px', maxWidth: 420, width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.18)' },
   dialogTitle: { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 28, fontWeight: 400, color: 'var(--tx)', margin: '0 0 12px' },

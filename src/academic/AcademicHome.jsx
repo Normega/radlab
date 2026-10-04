@@ -121,7 +121,7 @@ export default function AcademicHome({ session, superAdmin }) {
 }
 
 const S = {
-  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)' },
+  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pkd)' },
   title: { fontFamily: SERIF, fontSize: 36, color: 'var(--tx)', margin: '2px 0 6px' },
   sub: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.5 },
   code: { fontFamily: MONO, fontSize: 12 },

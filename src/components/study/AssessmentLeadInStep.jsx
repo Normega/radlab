@@ -94,7 +94,7 @@ const M = {
   badgeRow: { padding: '20px 24px 0' },
   badge: {
     display: 'inline-block',
-    background: 'var(--bgp)', color: 'var(--pk)', border: '1px solid var(--pkbs)',
+    background: 'var(--bgp)', color: 'var(--pkd)', border: '1px solid var(--pkbs)',
     borderRadius: 999, fontSize: 12, fontWeight: 600,
     letterSpacing: '0.05em', textTransform: 'uppercase', padding: '4px 12px',
     fontFamily: '"DM Sans", system-ui, sans-serif',

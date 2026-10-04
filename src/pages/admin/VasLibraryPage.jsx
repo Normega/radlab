@@ -440,7 +440,7 @@ const S = {
   section:       { marginBottom: 40 },
   sectionHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
   sectionTitle:  { fontFamily: '"Space Mono",monospace', fontSize: 12, fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 },
-  newBtn:        { background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', textDecoration: 'none', display: 'inline-block' },
+  newBtn:        { background: 'var(--pkd)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', textDecoration: 'none', display: 'inline-block' },
   table:         { background: '#fff', border: '1px solid var(--bd)', borderRadius: 12, overflow: 'hidden' },
 
   row:      { padding: '14px 18px', borderBottom: '1px solid var(--bd)', display: 'flex', flexDirection: 'column', gap: 6 },
@@ -451,7 +451,7 @@ const S = {
   rowActions: { display: 'flex', alignItems: 'center', gap: 8 },
   metaText: { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)' },
 
-  chip:      { fontFamily: '"Space Mono",monospace', fontSize: 12, background: 'var(--bgp)', color: 'var(--pk)', border: '1px solid var(--pkb)', borderRadius: 5, padding: '2px 7px' },
+  chip:      { fontFamily: '"Space Mono",monospace', fontSize: 12, background: 'var(--bgp)', color: 'var(--pkd)', border: '1px solid var(--pkb)', borderRadius: 5, padding: '2px 7px' },
   scaleChip: { fontFamily: '"Space Mono",monospace', fontSize: 12, background: 'var(--bg)', color: 'var(--tx3)', border: '1px solid var(--bd)', borderRadius: 4, padding: '1px 6px' },
   badge:     { fontFamily: '"Space Mono",monospace', fontSize: 12, background: 'var(--bg)', color: 'var(--tx3)', border: '1px solid var(--bd)', borderRadius: 4, padding: '2px 6px' },
 

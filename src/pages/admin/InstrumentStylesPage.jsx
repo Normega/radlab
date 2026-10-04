@@ -391,7 +391,7 @@ function Spec({ title, file, notes, tall = false, children, proposed = null, pro
         </div>
         {proposed && (
           <div style={{ flex: '1 1 420px', minWidth: 0 }}>
-            <p style={{ ...S.stageCaption, color: 'var(--pk)' }}>{proposedCaption}</p>
+            <p style={{ ...S.stageCaption, color: 'var(--pkd)' }}>{proposedCaption}</p>
             <div className="spec-stage" style={{ ...S.stage, ...(tall ? S.stageTall : {}), borderColor: 'var(--pkbs)' }}>{proposed}</div>
           </div>
         )}
@@ -445,5 +445,5 @@ const S = {
   footer:     { marginTop: 44, paddingTop: 20, borderTop: '1px solid var(--bd)' },
   footerHead: { fontFamily: SANS, fontWeight: 600, fontSize: 14, color: 'var(--tx)', margin: '0 0 8px' },
   footerList: { fontFamily: SANS, fontSize: 14, color: 'var(--tx2)', lineHeight: 1.8, margin: 0, paddingLeft: 20 },
-  link:       { color: 'var(--pk)' },
+  link:       { color: 'var(--pkd)' },
 }

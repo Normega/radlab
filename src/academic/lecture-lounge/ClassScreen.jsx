@@ -207,7 +207,7 @@ const S = {
     minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column',
     alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '40px 20px', position: 'relative',
   },
-  eyebrow: { fontFamily: MONO, fontSize: 18, letterSpacing: 3, textTransform: 'uppercase', color: 'var(--pk)', marginBottom: 16 },
+  eyebrow: { fontFamily: MONO, fontSize: 18, letterSpacing: 3, textTransform: 'uppercase', color: 'var(--pkd)', marginBottom: 16 },
   idleTitle: { fontFamily: SERIF, fontSize: 56, color: 'var(--tx)', marginBottom: 32, maxWidth: 900 },
   openTitle: { fontFamily: SERIF, fontSize: 48, color: 'var(--tx)', marginBottom: 12, maxWidth: 900 },
   counter: { fontFamily: MONO, fontSize: 28, color: 'var(--pkd)', marginBottom: 32 },

@@ -566,7 +566,7 @@ export default function ClassRemote({ superAdmin }) {
 
 const S = {
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '20px 20px 8px', gap: 12 },
-  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--pk)', marginBottom: 4 },
+  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--pkd)', marginBottom: 4 },
   h1: { fontFamily: SERIF, fontSize: 22, color: 'var(--tx)' },
   connBadge: (status) => ({
     fontFamily: MONO, fontSize: 12, padding: '4px 10px', borderRadius: 20, whiteSpace: 'nowrap',
@@ -591,10 +591,10 @@ const S = {
   promptRow: { fontSize: 14, color: 'var(--tx)', lineHeight: 1.45, padding: '7px 10px', background: 'var(--bg)', borderRadius: 8, margin: '6px 0 0' },
   dangerBtn: { fontSize: 13, padding: '8px 12px', borderRadius: 10, border: '1px solid #f3b8b8', background: '#fdf5f5', color: '#a33', cursor: 'pointer' },
   counter: { color: 'var(--tx)' },
-  countdown: { color: 'var(--pk)', fontWeight: 700 },
+  countdown: { color: 'var(--pkd)', fontWeight: 700 },
   btnRow: { display: 'flex', gap: 8 },
   bigBtn: {
-    flex: 1, padding: '14px 0', borderRadius: 12, border: 'none', background: 'var(--pk)',
+    flex: 1, padding: '14px 0', borderRadius: 12, border: 'none', background: 'var(--pkd)',
     color: '#fff', fontSize: 16, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
   },
   ghostBtn: {
@@ -612,7 +612,7 @@ const S = {
   voteCount: { fontFamily: MONO, fontSize: 12, color: 'var(--pkd)', whiteSpace: 'nowrap' },
   questionActions: { display: 'flex' },
   smallBtn: {
-    padding: '7px 14px', borderRadius: 8, border: 'none', background: 'var(--pk)',
+    padding: '7px 14px', borderRadius: 8, border: 'none', background: 'var(--pkd)',
     color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
   },
   answeredLabel: { fontFamily: MONO, fontSize: 12, color: 'var(--tx3)' },

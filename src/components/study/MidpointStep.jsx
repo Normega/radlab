@@ -578,7 +578,7 @@ const M = {
     display: 'flex', alignItems: 'center', gap: 10, fontSize: 14,
     color: 'var(--tx)', marginBottom: 6, fontFamily: '"DM Sans", system-ui, sans-serif',
   },
-  resultNum: { fontWeight: 600, color: 'var(--pk)', minWidth: 24 },
+  resultNum: { fontWeight: 600, color: 'var(--pkd)', minWidth: 24 },
 
   // ── assignment screen (Liliana's assignment previews) ──
   hero: {
@@ -588,7 +588,7 @@ const M = {
   heroOwl:     { width: 96, height: 96, objectFit: 'contain', marginBottom: 8 },
   heroEyebrow: {
     fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em',
-    color: 'var(--pk)', fontFamily: '"DM Sans", system-ui, sans-serif',
+    color: 'var(--pkd)', fontFamily: '"DM Sans", system-ui, sans-serif',
   },
   heroSub:   { fontSize: 14, color: 'var(--tx2)', marginTop: 2, fontFamily: '"DM Sans", system-ui, sans-serif' },
   heroTitle: { fontSize: 24, fontWeight: 600, color: 'var(--tx)', marginTop: 6, fontFamily: '"DM Sans", system-ui, sans-serif' },

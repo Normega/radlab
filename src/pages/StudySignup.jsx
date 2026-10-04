@@ -368,13 +368,13 @@ const S = {
   },
   fieldHint:  { fontSize: 12.5, color: 'var(--tx2)', margin: '6px 0 0', lineHeight: 1.5 },
   error:      { fontSize: 14, color: 'var(--err-tx)', background: 'var(--err-bg)', border: '1px solid var(--err-bd)', borderRadius: 9, padding: '9px 13px', margin: '16px 0 0', lineHeight: 1.5 },
-  submit:     { marginTop: 22, background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 24, padding: '12px 26px', fontSize: 15, fontWeight: 600, fontFamily: SANS, cursor: 'pointer' },
+  submit:     { marginTop: 22, background: 'var(--pkd)', color: '#fff', border: 'none', borderRadius: 24, padding: '12px 26px', fontSize: 15, fontWeight: 600, fontFamily: SANS, cursor: 'pointer' },
   finePrint:  { fontSize: 12.5, color: 'var(--tx3)', lineHeight: 1.6, margin: '12px 0 0' },
   codeForm:   { marginTop: 22, paddingTop: 20, borderTop: '1px solid var(--bd)' },
   codeRow:    { display: 'flex', gap: 10, alignItems: 'stretch', flexWrap: 'wrap' },
   // 16px+ so iOS Safari does not zoom the page on focus; letter-spaced so a
   // six-digit code reads the way it is printed in the email.
   codeInput:  { flex: '1 1 160px', fontSize: 22, letterSpacing: '0.3em', fontFamily: '"Space Mono", monospace', textAlign: 'center' },
-  codeSubmit: { background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 24, padding: '10px 26px', fontSize: 15, fontWeight: 600, fontFamily: SANS, cursor: 'pointer' },
-  linkBtn:    { background: 'none', border: 'none', padding: 0, color: 'var(--pk)', fontSize: 12.5, fontFamily: SANS, cursor: 'pointer', textDecoration: 'underline' },
+  codeSubmit: { background: 'var(--pkd)', color: '#fff', border: 'none', borderRadius: 24, padding: '10px 26px', fontSize: 15, fontWeight: 600, fontFamily: SANS, cursor: 'pointer' },
+  linkBtn:    { background: 'none', border: 'none', padding: 0, color: 'var(--pkd)', fontSize: 12.5, fontFamily: SANS, cursor: 'pointer', textDecoration: 'underline' },
 }

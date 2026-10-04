@@ -229,6 +229,6 @@ const S = {
   tdLast: { textAlign: 'left', padding: '9px 12px', verticalAlign: 'top', color: 'var(--tx)' },
   good: { borderLeft: '3px solid #2e7d32', padding: '2px 0 2px 14px', margin: '12px 0' },
   bad: { borderLeft: '3px solid #c0392b', padding: '2px 0 2px 14px', margin: '12px 0' },
-  link: { color: 'var(--pk)' },
+  link: { color: 'var(--pkd)' },
   foot: { marginTop: 40, fontSize: 13.5, color: 'var(--tx2)', borderTop: '1px solid var(--bd)', paddingTop: 14 },
 }

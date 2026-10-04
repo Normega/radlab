@@ -97,7 +97,7 @@ function SpeciesChip({ sp, active, locked, onSelect }) {
       }}
     >
       <span style={{ fontSize: 18, lineHeight: 1 }}>{sp.emoji}</span>
-      <span style={{ fontFamily: MONO, fontSize: 9, color: active ? 'var(--pk)' : 'var(--tx3)', letterSpacing: '0.04em' }}>
+      <span style={{ fontFamily: MONO, fontSize: 9, color: active ? 'var(--pkd)' : 'var(--tx3)', letterSpacing: '0.04em' }}>
         {sp.label}
       </span>
       {locked && (
@@ -126,7 +126,7 @@ function AuraColorChip({ color, active, onSelect }) {
       }}
     >
       <div style={{ width: 20, height: 20, borderRadius: '50%', background: color.value, border: '1px solid rgba(0,0,0,0.15)' }} />
-      <span style={{ fontFamily: MONO, fontSize: 9, color: active ? 'var(--pk)' : 'var(--tx3)', letterSpacing: '0.04em' }}>
+      <span style={{ fontFamily: MONO, fontSize: 9, color: active ? 'var(--pkd)' : 'var(--tx3)', letterSpacing: '0.04em' }}>
         {color.label}
       </span>
     </button>
@@ -144,7 +144,7 @@ function StyleChip({ label, active, onClick }) {
         border: active ? '1.5px solid var(--pk)' : '1.5px solid var(--bds)',
         background: active ? 'var(--bgp)' : 'transparent',
         fontFamily: MONO, fontSize: 9, letterSpacing: '0.04em',
-        color: active ? 'var(--pk)' : 'var(--tx3)',
+        color: active ? 'var(--pkd)' : 'var(--tx3)',
         cursor: 'pointer', flexShrink: 0,
         transition: 'border-color 0.14s, background 0.14s, color 0.14s',
       }}
@@ -441,7 +441,7 @@ export default function AvatarEditor({ session, setHasAvatar }) {
                       style={{
                         fontFamily: MONO, fontSize: 9, letterSpacing: '0.06em',
                         padding: '2px 8px', borderRadius: 6, cursor: 'pointer',
-                        background: auraEnabled ? 'var(--pk)' : 'var(--bg)',
+                        background: auraEnabled ? 'var(--pkd)' : 'var(--bg)',
                         color: auraEnabled ? '#fff' : 'var(--tx3)',
                         border: `1px solid ${auraEnabled ? 'var(--pk)' : 'var(--bds)'}`,
                         transition: 'all 0.14s',
@@ -472,7 +472,7 @@ export default function AvatarEditor({ session, setHasAvatar }) {
                         />
                         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                           {[1, 2, 3, 4].map(v => (
-                            <span key={v} style={{ fontFamily: MONO, fontSize: 9, color: v === auraMaxInset ? 'var(--pk)' : 'var(--tx3)' }}>
+                            <span key={v} style={{ fontFamily: MONO, fontSize: 9, color: v === auraMaxInset ? 'var(--pkd)' : 'var(--tx3)' }}>
                               {v}
                             </span>
                           ))}
@@ -542,7 +542,7 @@ export default function AvatarEditor({ session, setHasAvatar }) {
               disabled={saving}
               style={{
                 ...S.saveBtn,
-                background: saved ? '#52B788' : 'var(--pk)',
+                background: saved ? '#52B788' : 'var(--pkd)',
                 boxShadow: saved
                   ? '0 4px 20px rgba(82,183,136,0.35)'
                   : '0 4px 20px rgba(240,104,164,0.35)',
@@ -575,7 +575,7 @@ export default function AvatarEditor({ session, setHasAvatar }) {
 const S = {
   wrap:       { maxWidth: 900, margin: '0 auto', padding: '48px 24px' },
   header:     { textAlign: 'center', marginBottom: 40 },
-  eyebrow:    { fontFamily: MONO, fontSize: 12, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--pk)', margin: '0 0 8px' },
+  eyebrow:    { fontFamily: MONO, fontSize: 12, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--pkd)', margin: '0 0 8px' },
   title:      { fontFamily: SERIF, fontSize: 'clamp(28px, 5vw, 42px)', color: 'var(--tx)', margin: '0 0 10px', letterSpacing: '-0.5px', lineHeight: 1.1 },
   sub:        { color: 'var(--tx2)', fontSize: 15, margin: 0, maxWidth: 400, marginInline: 'auto', lineHeight: 1.55 },
   layout:     { display: 'flex', gap: 24, alignItems: 'flex-start', flexWrap: 'wrap' },
@@ -587,7 +587,7 @@ const S = {
     display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
   },
   lockedCard:      { background: 'var(--bgc)', borderRadius: 18, padding: '14px 16px', width: 220, boxShadow: '0 3px 14px rgba(240,104,164,0.10)' },
-  lockedLabel:     { fontFamily: MONO, fontSize: 12, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--pk)', margin: '0 0 10px' },
+  lockedLabel:     { fontFamily: MONO, fontSize: 12, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--pkd)', margin: '0 0 10px' },
   lockedRow:       { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7, opacity: 0.55 },
   lockedItemLabel: { fontSize: 12, color: 'var(--tx)', flex: 1 },
   lockedPts:       { fontFamily: MONO, fontSize: 12, color: 'var(--tx3)', background: 'var(--bg)', borderRadius: 6, padding: '1px 6px' },
@@ -599,7 +599,7 @@ const S = {
   panel:        { background: 'var(--bgc)', borderRadius: 24, padding: '22px 24px', boxShadow: '0 4px 24px rgba(240,104,164,0.10)', marginBottom: 16 },
   panelHeader:  { display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 12 },
   panelLabel:   { fontFamily: MONO, fontSize: 12, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--tx3)' },
-  paletteBadge: { fontFamily: MONO, fontSize: 9, color: 'var(--pk)', background: 'var(--bgp)', borderRadius: 6, padding: '2px 7px', letterSpacing: '0.04em' },
+  paletteBadge: { fontFamily: MONO, fontSize: 9, color: 'var(--pkd)', background: 'var(--bgp)', borderRadius: 6, padding: '2px 7px', letterSpacing: '0.04em' },
   swatchRow:    { display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' },
   selectedNote: { marginTop: 12, marginBottom: 0, fontSize: 12, color: 'var(--tx3)', fontStyle: 'italic' },
   saveBtn: {

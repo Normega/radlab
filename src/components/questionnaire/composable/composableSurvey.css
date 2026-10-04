@@ -620,7 +620,7 @@
 .cs-primary-button {
   border: none;
   border-radius: 24px;
-  background: var(--pk);
+  background: var(--pkd);
   color: #fff;
   padding: 11px 24px;
 }

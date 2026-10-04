@@ -494,8 +494,8 @@ const S = {
   },
   rowNext: { background: 'var(--bgp)' },
   lectureLine: { display: 'flex', alignItems: 'baseline', gap: 9, flexWrap: 'wrap' },
-  lectureNo: { fontFamily: MONO, fontSize: 11.5, color: 'var(--pk)', letterSpacing: 0.5 },
-  lectureLink: { fontFamily: SERIF, fontSize: 17.5, color: 'var(--pk)', textDecoration: 'none' },
+  lectureNo: { fontFamily: MONO, fontSize: 11.5, color: 'var(--pkd)', letterSpacing: 0.5 },
+  lectureLink: { fontFamily: SERIF, fontSize: 17.5, color: 'var(--pkd)', textDecoration: 'none' },
   slidesTag: { fontFamily: MONO, fontSize: 11, letterSpacing: 0.5, color: 'var(--tx3)', whiteSpace: 'nowrap' },
   pdfTag: { fontFamily: MONO, fontSize: 10.5, letterSpacing: 0.5, color: 'var(--tx2)',
             border: '1px solid var(--bds)', borderRadius: 10, padding: '1px 7px',
@@ -507,8 +507,8 @@ const S = {
   chapterList: { listStyle: 'none', padding: 0, margin: '12px 0 2px', columnGap: 26, columns: '2 220px' },
   chapterItem: { breakInside: 'avoid', margin: '0 0 6px', lineHeight: 1.45 },
   chapterLink: { color: 'var(--tx2)', textDecoration: 'none', fontSize: 14 },
-  chapterLinkCore: { color: 'var(--pk)', textDecoration: 'none', fontSize: 14.5, fontWeight: 600 },
-  foundationTag: { fontFamily: MONO, fontSize: 10.5, letterSpacing: 0.5, color: 'var(--pk)', marginLeft: 6 },
+  chapterLinkCore: { color: 'var(--pkd)', textDecoration: 'none', fontSize: 14.5, fontWeight: 600 },
+  foundationTag: { fontFamily: MONO, fontSize: 10.5, letterSpacing: 0.5, color: 'var(--pkd)', marginLeft: 6 },
   typeTag: { fontFamily: MONO, fontSize: 10.5, color: 'var(--tx3)', marginLeft: 6 },
   muted: { fontSize: 13.5, color: 'var(--tx3)', fontStyle: 'italic' },
   expand: {
@@ -517,5 +517,5 @@ const S = {
     cursor: 'pointer', whiteSpace: 'nowrap',
   },
   foot: { fontSize: 13.5, color: 'var(--tx3)', lineHeight: 1.6, marginTop: 16 },
-  link: { color: 'var(--pk)' },
+  link: { color: 'var(--pkd)' },
 }

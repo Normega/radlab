@@ -95,7 +95,7 @@ const S = {
   wordmark: {
     fontFamily: '"DM Serif Display", Georgia, serif',
     fontSize: 18,
-    color: '#f068a4',
+    color: 'var(--pkd)',
     margin: '0 0 28px',
     fontWeight: 400,
   },

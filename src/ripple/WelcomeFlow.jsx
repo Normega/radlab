@@ -511,7 +511,7 @@ export default function WelcomeFlow({ session, onComplete, devInitialStep }) {
                     disabled={demographicsDone}
                     style={{
                       ...S.ladderBtn,
-                      background:  sesLadder === n ? 'var(--pk)' : 'var(--bgc)',
+                      background:  sesLadder === n ? 'var(--pkd)' : 'var(--bgc)',
                       borderColor: sesLadder === n ? 'var(--pk)' : 'var(--bds)',
                       color:       sesLadder === n ? '#fff'      : 'var(--tx)',
                     }}
@@ -566,7 +566,7 @@ export default function WelcomeFlow({ session, onComplete, devInitialStep }) {
                           onClick={() => setReminderFreq(val)}
                           style={{
                             ...S.pillBtn,
-                            background:  reminderFreq === val ? 'var(--pk)' : 'var(--bg)',
+                            background:  reminderFreq === val ? 'var(--pkd)' : 'var(--bg)',
                             borderColor: reminderFreq === val ? 'var(--pk)' : 'var(--bgp)',
                             color:       reminderFreq === val ? '#fff'      : 'var(--tx)',
                           }}
@@ -586,7 +586,7 @@ export default function WelcomeFlow({ session, onComplete, devInitialStep }) {
                           onClick={() => setReminderTime(val)}
                           style={{
                             ...S.pillBtn,
-                            background:  reminderTime === val ? 'var(--pk)' : 'var(--bg)',
+                            background:  reminderTime === val ? 'var(--pkd)' : 'var(--bg)',
                             borderColor: reminderTime === val ? 'var(--pk)' : 'var(--bgp)',
                             color:       reminderTime === val ? '#fff'      : 'var(--tx)',
                           }}
@@ -735,7 +735,7 @@ const S = {
   genBtn: {
     width: 40, height: 40, borderRadius: 24, flexShrink: 0, // clickable → 24px rule
     border: '1px solid var(--bgp)', background: 'var(--bgp)',
-    color: 'var(--pk)', fontSize: 18, cursor: 'pointer',
+    color: 'var(--pkd)', fontSize: 18, cursor: 'pointer',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
   },
 

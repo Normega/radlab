@@ -115,7 +115,7 @@ function TimeFilter({ value, onChange }) {
             <button
               key={w.id}
               onClick={() => { onChange(w.id); setOpen(false) }}
-              style={{ ...S.filterItem, color: w.id === value ? 'var(--pk)' : 'var(--tx2)' }}
+              style={{ ...S.filterItem, color: w.id === value ? 'var(--pkd)' : 'var(--tx2)' }}
             >
               {w.label}
             </button>
@@ -154,7 +154,7 @@ function Picker({ options, value, onChange }) {
             <button
               key={o.id}
               onClick={() => { onChange(o.id); setOpen(false) }}
-              style={{ ...S.filterItem, color: o.id === value ? 'var(--pk)' : 'var(--tx2)' }}
+              style={{ ...S.filterItem, color: o.id === value ? 'var(--pkd)' : 'var(--tx2)' }}
             >
               {o.label}
             </button>
@@ -491,7 +491,7 @@ const S = {
   empty:      { textAlign: 'center', padding: '38px 20px' },
   emptyTitle: { fontFamily: SERIF, fontSize: 21, color: 'var(--tx)', margin: '0 0 8px' },
   emptySub:   { fontFamily: SANS, fontSize: 14, color: 'var(--tx2)', maxWidth: 420, margin: '0 auto 16px', lineHeight: 1.6 },
-  emptyCta:   { fontFamily: MONO, fontSize: 12, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--pk)', textDecoration: 'none' },
+  emptyCta:   { fontFamily: MONO, fontSize: 12, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--pkd)', textDecoration: 'none' },
 
   muted: { fontFamily: SANS, fontSize: 14, color: 'var(--tx3)', margin: 0, lineHeight: 1.6 },
 }

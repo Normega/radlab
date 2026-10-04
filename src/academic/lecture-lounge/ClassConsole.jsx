@@ -59,7 +59,7 @@ const S = {
   tab: (active) => ({
     padding: '10px 16px', border: 'none', background: 'none', cursor: 'pointer',
     fontFamily: MONO, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase',
-    color: active ? 'var(--pk)' : 'var(--tx3)',
+    color: active ? 'var(--pkd)' : 'var(--tx3)',
     borderBottom: active ? '2px solid var(--pk)' : '2px solid transparent',
     marginBottom: -1,
   }),

@@ -193,7 +193,7 @@ function FolderTab({ label, count, active, onClick }) {
     >
       {label}
       <span style={{
-        background: active ? 'var(--pk)' : 'var(--bg)',
+        background: active ? 'var(--pkd)' : 'var(--bg)',
         color: active ? '#fff' : 'var(--tx3)',
         borderRadius: 10, padding: '1px 7px',
         fontSize: 12, fontFamily: 'Space Mono',
@@ -326,7 +326,7 @@ const S = {
     color: 'var(--tx3)', margin: 0,
   },
   primaryBtn: {
-    background: 'var(--pk)', color: '#fff', border: 'none',
+    background: 'var(--pkd)', color: '#fff', border: 'none',
     borderRadius: 10, padding: '10px 20px',
     fontFamily: 'DM Sans', fontSize: 14, fontWeight: 600,
     cursor: 'pointer', whiteSpace: 'nowrap',

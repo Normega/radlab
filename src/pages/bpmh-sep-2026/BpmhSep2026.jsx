@@ -242,7 +242,7 @@ const SLIDES = [
     render: () => (
       <Frame wide>
         <div style={K.crests}>
-          <img src="/RADlab_Logo_light.svg" alt="RADlab" style={{ height: 48 }} onError={e => { e.currentTarget.style.display = 'none' }} />
+          <img src="/RADlab_Logo.svg" alt="RADlab" style={{ height: 48 }} onError={e => { e.currentTarget.style.display = 'none' }} />
           <img src="/UofT_Logo.svg" alt="University of Toronto" style={{ height: 48 }} onError={e => { e.currentTarget.style.display = 'none' }} />
         </div>
         <h1 style={K.title}>Two Ways of Being a Self</h1>

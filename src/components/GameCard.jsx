@@ -155,7 +155,7 @@ const S = {
   hoverPill: {
     fontFamily: SANS, fontWeight: 600, fontSize: 16,
     padding: '10px 20px', borderRadius: 24,
-    background: 'var(--pk)', color: '#fff',
+    background: 'var(--pkd)', color: '#fff',
   },
 
   lockedBody: { display: 'flex', flexDirection: 'column', gap: 10, opacity: 0.5 },

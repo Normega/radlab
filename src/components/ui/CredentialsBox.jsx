@@ -42,7 +42,7 @@ const S = {
     background: 'var(--bgc)', border: '1px solid var(--bgp)', borderRadius: 12,
     padding: 16, width: '100%', maxWidth: 314, boxSizing: 'border-box',
   },
-  exit: { color: 'var(--pk)', margin: '-6px 0 0 -6px' },
+  exit: { color: 'var(--pkd)', margin: '-6px 0 0 -6px' },
   content: {
     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
     padding: '0 16px 8px',

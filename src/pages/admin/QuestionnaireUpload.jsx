@@ -187,7 +187,7 @@ export default function QuestionnaireUpload() {
             borderRadius: 10, padding: '12px 16px', margin: '12px 0',
           }}
         >
-          <p style={{ fontFamily: 'Space Mono', fontSize: 'var(--fs-mono-sm)', color: 'var(--pk)', margin: '0 0 4px' }}>
+          <p style={{ fontFamily: 'Space Mono', fontSize: 'var(--fs-mono-sm)', color: 'var(--pkd)', margin: '0 0 4px' }}>
             ✓ Valid
           </p>
           <p style={{ fontFamily: 'DM Sans', fontSize: 'var(--fs-body-sm)', color: 'var(--tx2)', margin: 0 }}>
@@ -212,7 +212,7 @@ export default function QuestionnaireUpload() {
           onClick={() => save.mutate()}
           disabled={!isReady || save.isPending}
           style={{
-            background: isReady ? 'var(--pk)' : 'var(--bd)',
+            background: isReady ? 'var(--pkd)' : 'var(--bd)',
             color: isReady ? '#fff' : 'var(--tx3)',
             border: 'none', borderRadius: 10,
             padding: '12px 28px', cursor: isReady ? 'pointer' : 'default',

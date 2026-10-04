@@ -98,7 +98,7 @@ function Sidebar({ session, superAdmin, onClose }) {
   return (
     <div style={S.sidebar}>
       <Link to="/" style={S.logoLink} onClick={onClose}>
-        <img src="/RADlab_Logo_light.svg" alt="RADlab" style={S.logo} />
+        <img src="/RADlab_Logo.svg" alt="RADlab" style={S.logo} />
       </Link>
 
       <nav style={S.nav}>
@@ -233,7 +233,7 @@ const S = {
     color: 'var(--tx2)', textDecoration: 'none',
   },
   navActive: {
-    background: 'var(--pkb)', color: 'var(--pk)',
+    background: 'var(--pkb)', color: 'var(--pkd)',
   },
   bottom: {
     marginTop: 'auto', padding: '20px',

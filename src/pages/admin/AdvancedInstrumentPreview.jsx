@@ -100,7 +100,7 @@ export default function AdvancedInstrumentPreview() {
           <button
             onClick={reset}
             style={{
-              background: 'var(--pk)', color: '#fff', border: 'none',
+              background: 'var(--pkd)', color: '#fff', border: 'none',
               borderRadius: 10, padding: '10px 24px', cursor: 'pointer',
               fontFamily: 'DM Sans', fontSize: 'var(--fs-body-sm)', fontWeight: 600,
             }}

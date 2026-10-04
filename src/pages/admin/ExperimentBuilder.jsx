@@ -218,7 +218,7 @@ function graphToRfEdges(graph) {
       targetHandle: toTimepoint ? 't' : 'l',
       type:         'smoothstep',
       style:        { stroke: toTimepoint ? 'var(--pkb, rgba(240,104,164,0.35))' : 'var(--bd, rgba(180,100,140,0.20))', strokeWidth: 2 },
-      markerEnd:    { type: 'arrowclosed', color: toTimepoint ? 'var(--pk, #f068a4)' : 'var(--gy, #abadb0)' },
+      markerEnd:    { type: 'arrowclosed', color: toTimepoint ? 'var(--pk, var(--pkd))' : 'var(--gy, #abadb0)' },
     }
   })
 
@@ -242,7 +242,7 @@ function graphToRfEdges(graph) {
     targetHandle: 'l',
     type:         'smoothstep',
     style:        { stroke: 'var(--pk, #f068a4)', strokeWidth: 1.5, strokeDasharray: '4 3' },
-    markerEnd:    { type: 'arrowclosed', color: 'var(--pk, #f068a4)' },
+    markerEnd:    { type: 'arrowclosed', color: 'var(--pk, var(--pkd))' },
   }))
 
   return [...structural, ...containmentEdges]
@@ -569,7 +569,7 @@ const P = {
   label:      { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.05em' },
   input:      { fontSize: 14, fontFamily: '"DM Sans",system-ui,sans-serif', border: '1px solid var(--bd)', borderRadius: 7, padding: '6px 10px', color: 'var(--tx)', background: '#fff', width: '100%', boxSizing: 'border-box' },
   removeBtn:  { marginTop: 8, background: 'none', border: '1px solid #fcc', borderRadius: 7, padding: '6px 12px', fontSize: 14, color: '#e04', cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
-  demoBtn:    { marginTop: 4, background: 'var(--bgp)', border: '1px solid var(--pkb)', borderRadius: 7, padding: '6px 12px', fontSize: 14, color: 'var(--pk)', cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
+  demoBtn:    { marginTop: 4, background: 'var(--bgp)', border: '1px solid var(--pkb)', borderRadius: 7, padding: '6px 12px', fontSize: 14, color: 'var(--pkd)', cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
@@ -1041,10 +1041,10 @@ const S = {
   contactBtn:  { background: '#fff', border: '1px solid var(--bd)', borderRadius: 8, padding: '7px 14px', fontSize: 14, color: 'var(--tx2)', cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
   balanceLink: { background: '#fff', border: '1px solid var(--bd)', borderRadius: 8, padding: '7px 14px', fontSize: 14, color: 'var(--tx2)', textDecoration: 'none', fontFamily: '"DM Sans",system-ui,sans-serif' },
   savedBadge:  { fontFamily: '"Space Mono",monospace', fontSize: 12, color: '#2d9e5f', background: '#f0faf4', border: '1px solid #a8e6c3', borderRadius: 6, padding: '3px 8px' },
-  btnPrimary:  { background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
+  btnPrimary:  { background: 'var(--pkd)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
   saveError:   { background: '#fff0f0', border: '1px solid #fcc', borderRadius: 8, padding: '8px 14px', fontSize: 14, color: '#e04', marginBottom: 8, flexShrink: 0 },
   errorList:   { background: '#fff8f0', border: '1px solid #fde', borderRadius: 8, padding: '8px 14px', marginBottom: 8, flexShrink: 0 },
-  errorItem:   { fontSize: 14, color: '#c04a82', fontFamily: '"DM Sans",system-ui,sans-serif', lineHeight: 1.6 },
+  errorItem:   { fontSize: 14, color: 'var(--pkd)', fontFamily: '"DM Sans",system-ui,sans-serif', lineHeight: 1.6 },
   toolbar:     { display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0', borderTop: '1px solid var(--bd)', borderBottom: '1px solid var(--bd)', flexShrink: 0 },
   toolbarLabel:{ fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.05em', marginRight: 4 },
   toolBtn:     { background: '#fff', border: '1px solid var(--bd)', borderRadius: 7, padding: '5px 12px', fontSize: 14, color: 'var(--tx2)', cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },

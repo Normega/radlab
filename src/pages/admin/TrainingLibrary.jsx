@@ -256,7 +256,7 @@ const S = {
   sub: { fontFamily: 'DM Sans', fontSize: 14, color: 'var(--tx3)', margin: 0 },
   meta: { fontFamily: 'Space Mono', fontSize: 12, color: 'var(--tx3)', margin: 0 },
   primaryBtn: {
-    background: 'var(--pk)', color: '#fff', border: 'none',
+    background: 'var(--pkd)', color: '#fff', border: 'none',
     borderRadius: 10, padding: '10px 20px',
     fontFamily: 'DM Sans', fontSize: 14, fontWeight: 600,
     cursor: 'pointer', whiteSpace: 'nowrap',
@@ -299,7 +299,7 @@ const S = {
     borderRadius: 8, padding: '5px 6px',
   },
   lessonPhase: {
-    fontFamily: 'Space Mono', fontSize: 12, color: 'var(--pk)',
+    fontFamily: 'Space Mono', fontSize: 12, color: 'var(--pkd)',
     textTransform: 'uppercase', letterSpacing: '0.04em',
   },
   lessonDay: {

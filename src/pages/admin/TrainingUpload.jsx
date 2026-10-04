@@ -509,7 +509,7 @@ function ModulePreview({ module }) {
   const steps = module.steps ?? []
   return (
     <div style={S.previewBox}>
-      <p style={{ fontFamily: 'Space Mono', fontSize: 12, color: 'var(--pk)', margin: '0 0 10px' }}>
+      <p style={{ fontFamily: 'Space Mono', fontSize: 12, color: 'var(--pkd)', margin: '0 0 10px' }}>
         ✓ Valid module
       </p>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 20px', marginBottom: 12 }}>
@@ -558,7 +558,7 @@ const S = {
   textarea: { width: '100%', minHeight: 260, boxSizing: 'border-box', fontFamily: 'Space Mono', fontSize: 12, color: 'var(--tx)', background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 12, padding: 16, resize: 'vertical', lineHeight: 1.6, outline: 'none' },
   errorBox: { background: '#fff5f0', border: '1px solid #e67e22', borderRadius: 10, padding: '12px 16px', margin: '12px 0' },
   previewBox: { background: 'var(--bgp)', border: '1px solid var(--pkb)', borderRadius: 10, padding: '14px 16px', margin: '12px 0' },
-  primaryBtn: { background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 10, padding: '12px 28px', fontFamily: 'DM Sans', fontSize: 14, fontWeight: 600 },
+  primaryBtn: { background: 'var(--pkd)', color: '#fff', border: 'none', borderRadius: 10, padding: '12px 28px', fontFamily: 'DM Sans', fontSize: 14, fontWeight: 600 },
   overrideBtn: { background: 'transparent', border: '1px solid #c09000', borderRadius: 7, padding: '5px 12px', cursor: 'pointer', fontFamily: 'DM Sans', fontSize: 12, color: '#8b6000' },
 }
 

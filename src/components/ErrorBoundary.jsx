@@ -39,8 +39,8 @@ export default class ErrorBoundary extends Component {
 
 const S = {
   card: { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 16, padding: '40px 32px', textAlign: 'center', maxWidth: 400 },
-  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)', marginBottom: 8 },
+  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pkd)', marginBottom: 8 },
   title: { fontFamily: SERIF, fontSize: 24, color: 'var(--tx)', marginBottom: 8 },
   sub: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.5, marginBottom: 20 },
-  btn: { padding: '10px 24px', borderRadius: 10, border: 'none', background: 'var(--pk)', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' },
+  btn: { padding: '10px 24px', borderRadius: 10, border: 'none', background: 'var(--pkd)', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' },
 }

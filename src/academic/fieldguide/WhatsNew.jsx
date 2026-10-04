@@ -141,7 +141,7 @@ export default function WhatsNew() {
 }
 
 const S = {
-  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)' },
+  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pkd)' },
   eyebrowLink: { color: 'inherit', textDecoration: 'none' },
   title: { fontFamily: SERIF, fontSize: 30, color: 'var(--tx)', margin: '4px 0 8px', lineHeight: 1.15 },
   sub: { fontSize: 14.5, color: 'var(--tx2)', lineHeight: 1.6, maxWidth: '62ch' },

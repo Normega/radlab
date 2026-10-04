@@ -214,6 +214,6 @@ const S = {
   legendGap: { marginLeft: 6 },
   item: { display: 'inline-flex', alignItems: 'center', gap: 5 },
   note: { fontSize: 13.5, color: 'var(--tx2)', lineHeight: 1.55, margin: '8px 0 0' },
-  nudgeLabel: { fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--pk)' },
-  link: { color: 'var(--pk)', textDecoration: 'none' },
+  nudgeLabel: { fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--pkd)' },
+  link: { color: 'var(--pkd)', textDecoration: 'none' },
 }

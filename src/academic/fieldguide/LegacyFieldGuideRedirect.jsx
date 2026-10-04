@@ -88,7 +88,7 @@ function Shell({ children }) {
 
 const S = {
   card: { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 16, padding: '40px 32px', textAlign: 'center', maxWidth: 420, width: '100%' },
-  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)', marginBottom: 8 },
+  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pkd)', marginBottom: 8 },
   title: { fontFamily: SERIF, fontSize: 26, color: 'var(--tx)', marginBottom: 8 },
   sub: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.5 },
   choice: { display: 'flex', flexDirection: 'column', gap: 2, fontFamily: MONO, fontSize: 15, fontWeight: 600, color: 'var(--tx)', textDecoration: 'none', padding: '12px 16px', borderRadius: 12, background: 'var(--bg)', border: '1px solid var(--bd)' },

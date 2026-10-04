@@ -576,7 +576,7 @@ export default function SessionEntry() {
           </StatusCard>
           <button
             onClick={() => { setState('finishing'); finishSession() }}
-            style={{ marginTop: 20, padding: '12px 24px', borderRadius: 8, border: '1px solid var(--pk)', background: '#fff', color: 'var(--pk)', fontSize: 15, fontWeight: 600, fontFamily: '"DM Sans",system-ui,sans-serif', cursor: 'pointer' }}
+            style={{ marginTop: 20, padding: '12px 24px', borderRadius: 8, border: '1px solid var(--pk)', background: '#fff', color: 'var(--pkd)', fontSize: 15, fontWeight: 600, fontFamily: '"DM Sans",system-ui,sans-serif', cursor: 'pointer' }}
           >
             Try again
           </button>

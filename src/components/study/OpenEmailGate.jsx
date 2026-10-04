@@ -112,6 +112,6 @@ const S = {
   label: { display: 'block', fontFamily: FONT, fontSize: 14, fontWeight: 600, color: 'var(--tx)', margin: '0 0 14px' },
   input: { display: 'block', width: '100%', boxSizing: 'border-box', marginTop: 6, padding: '11px 12px', fontSize: 16, fontFamily: FONT, border: '1px solid var(--bd)', borderRadius: 8, background: '#fff' },
   hint:  { fontFamily: FONT, fontSize: 13, color: '#8a5568', margin: '-8px 0 14px' },
-  btn:   { marginTop: 6, padding: '13px 26px', borderRadius: 8, border: '1px solid var(--pk)', background: 'var(--pk)', color: '#fff', fontSize: 16, fontWeight: 600, fontFamily: FONT, cursor: 'pointer' },
+  btn:   { marginTop: 6, padding: '13px 26px', borderRadius: 8, border: '1px solid var(--pk)', background: 'var(--pkd)', color: '#fff', fontSize: 16, fontWeight: 600, fontFamily: FONT, cursor: 'pointer' },
   error: { fontFamily: FONT, fontSize: 14, color: '#b91c1c', margin: '12px 0 0', lineHeight: 1.5 },
 }

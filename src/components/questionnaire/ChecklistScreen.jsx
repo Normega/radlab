@@ -64,7 +64,7 @@ export default function ChecklistScreen({ items, responses, onChange }) {
                   height:         20,
                   borderRadius:   5,
                   border:         `2px solid ${checked ? 'var(--pk)' : 'var(--gy)'}`,
-                  background:     checked ? 'var(--pk)' : 'transparent',
+                  background:     checked ? 'var(--pkd)' : 'transparent',
                   flexShrink:     0,
                   display:        'flex',
                   alignItems:     'center',

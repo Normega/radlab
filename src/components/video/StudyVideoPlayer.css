@@ -55,7 +55,7 @@
 }
 
 .svp-error-msg {
-  color: var(--pk);
+  color: var(--pkd);
   font-size: 0.9rem;
 }
 
@@ -124,7 +124,7 @@
 }
 
 .svp-play-btn:hover {
-  color: var(--pk, #f068a4);
+  color: var(--pk, var(--pkd));
 }
 
 .svp-play-btn svg {

@@ -30,7 +30,7 @@ export default function ScaleChangeScreen({ slide, onContinue }) {
         style={{
           fontFamily:    'Space Mono',
           fontSize:      'var(--fs-mono-sm)',
-          color:         'var(--pk)',
+          color:         'var(--pkd)',
           background:    'var(--pkb)',
           border:        '1px solid var(--pkbs)',
           borderRadius:  20,
@@ -89,7 +89,7 @@ export default function ScaleChangeScreen({ slide, onContinue }) {
                 style={{
                   fontFamily:  'Space Mono',
                   fontSize:    'var(--fs-mono-sm)',
-                  color:       'var(--pk)',
+                  color:       'var(--pkd)',
                   minWidth:    20,
                   textAlign:   'right',
                 }}
@@ -113,7 +113,7 @@ export default function ScaleChangeScreen({ slide, onContinue }) {
       <button
         onClick={onContinue}
         style={{
-          background:   'var(--pk)',
+          background:   'var(--pkd)',
           color:        '#fff',
           border:       'none',
           borderRadius: 14,

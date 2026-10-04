@@ -133,7 +133,7 @@ const S = {
   errorTitle:   { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 28, color: 'var(--tx)', margin: '0 0 12px' },
   errorBody:    { fontSize: 14, color: '#b91c1c', fontFamily: '"DM Sans",system-ui,sans-serif', margin: '0 0 12px', lineHeight: 1.5 },
   body:         { fontSize: 15, color: 'var(--tx)', fontFamily: '"DM Sans",system-ui,sans-serif', margin: '0 0 16px', lineHeight: 1.6 },
-  primaryBtn:   { margin: '8px 0 20px', padding: '12px 24px', borderRadius: 8, border: '1px solid var(--pk)', background: '#fff', color: 'var(--pk)', fontSize: 15, fontWeight: 600, fontFamily: '"DM Sans",system-ui,sans-serif', cursor: 'pointer' },
+  primaryBtn:   { margin: '8px 0 20px', padding: '12px 24px', borderRadius: 8, border: '1px solid var(--pk)', background: '#fff', color: 'var(--pkd)', fontSize: 15, fontWeight: 600, fontFamily: '"DM Sans",system-ui,sans-serif', cursor: 'pointer' },
   hint:         { fontSize: 14, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif', margin: 0, lineHeight: 1.5 },
-  link:         { color: 'var(--pk)' },
+  link:         { color: 'var(--pkd)' },
 }

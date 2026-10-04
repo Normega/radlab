@@ -135,16 +135,16 @@ export default function ClassVerifyEmail() {
 
 const S = {
   card: { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 16, padding: '40px 32px', textAlign: 'center', maxWidth: 400 },
-  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)', marginBottom: 8 },
+  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pkd)', marginBottom: 8 },
   title: { fontFamily: SERIF, fontSize: 26, color: 'var(--tx)', marginBottom: 8 },
   sub: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.5 },
-  link: { display: 'inline-block', marginTop: 16, fontSize: 14, color: 'var(--pk)', fontWeight: 600, textDecoration: 'none' },
+  link: { display: 'inline-block', marginTop: 16, fontSize: 14, color: 'var(--pkd)', fontWeight: 600, textDecoration: 'none' },
   verifyBtn: {
     width: '100%', marginTop: 14, padding: '13px 18px', borderRadius: 24, border: 'none',
-    background: 'var(--pk)', color: '#fff', fontSize: 15, fontWeight: 600, cursor: 'pointer',
+    background: 'var(--pkd)', color: '#fff', fontSize: 15, fontWeight: 600, cursor: 'pointer',
   },
   fgButton: {
     display: 'inline-block', marginTop: 12, padding: '11px 24px', borderRadius: 22,
-    background: 'var(--pk)', color: '#fff', fontSize: 14, fontWeight: 600, textDecoration: 'none',
+    background: 'var(--pkd)', color: '#fff', fontSize: 14, fontWeight: 600, textDecoration: 'none',
   },
 }

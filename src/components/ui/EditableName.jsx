@@ -81,7 +81,7 @@ const S = {
   // Figma's Closed state draws Rename as the outline pill in primary pink.
   rename: {
     padding: '6px 14px', fontSize: 14,
-    borderColor: 'var(--pk)', color: 'var(--pk)',
+    borderColor: 'var(--pk)', color: 'var(--pkd)',
   },
   input: {
     fontFamily: '"DM Sans", system-ui, sans-serif', fontSize: 14,

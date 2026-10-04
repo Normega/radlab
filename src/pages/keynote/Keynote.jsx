@@ -174,7 +174,7 @@ const SLIDES = [
     render: () => (
       <Frame>
         <div style={K.crests}>
-          <img src="/RADlab_Logo_light.svg" alt="RADlab" style={{ height: 60 }} />
+          <img src="/RADlab_Logo.svg" alt="RADlab" style={{ height: 60 }} />
           <img src="/UofT_Logo.svg" alt="University of Toronto" style={{ height: 60 }} />
         </div>
         <h1 style={K.title}>What You Miss Won’t Move You</h1>
@@ -630,7 +630,7 @@ const SLIDES = [
         <Lead>Questions</Lead>
         <div style={{ height: 12 }} />
         <div style={K.crests}>
-          <img src="/RADlab_Logo_light.svg" alt="RADlab" style={{ height: 48 }} />
+          <img src="/RADlab_Logo.svg" alt="RADlab" style={{ height: 48 }} />
           <img src="/UofT_Logo.svg" alt="University of Toronto" style={{ height: 48 }} />
         </div>
       </Frame>
@@ -650,7 +650,7 @@ const FIGURE_PRELOAD = [
   '/keynote/fig-eneuro-4b.png',
   '/keynote/fig-ejn-accuracy.png',
   '/keynote/fig-brainsci-training.png',
-  '/RADlab_Logo_light.svg',
+  '/RADlab_Logo.svg',
   '/UofT_Logo.svg',
 ]
 

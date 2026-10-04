@@ -150,7 +150,7 @@ export default function MyRipplePage({ session }) {
                 <div style={{ ...S.progressFill, width: `${progressPct}%` }} />
               </div>
               <p style={S.progressNote}>
-                <span style={{ fontFamily: MONO, color: 'var(--pk)' }}>{nextMilestone.pts - (points ?? 0)} pts</span>
+                <span style={{ fontFamily: MONO, color: 'var(--pkd)' }}>{nextMilestone.pts - (points ?? 0)} pts</span>
                 {' until '}
                 <strong>{nextMilestone.icon} {nextMilestone.label}</strong>
                 {' unlocks'}
@@ -206,7 +206,7 @@ const S = {
   // width:100% matters: flex-column parent + margin '0 auto' means the wrap
   // otherwise shrinks to its content's width (see GamesPage.jsx S.wrap).
   wrap:    { width: '100%', maxWidth: 720, margin: '0 auto', padding: '40px 24px 72px' },
-  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)', marginBottom: 8 },
+  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pkd)', marginBottom: 8 },
   title:   { fontFamily: SERIF, fontSize: 'clamp(28px, 4vw, 36px)', color: 'var(--tx)', letterSpacing: -0.5, marginBottom: 28 },
 
   portraitCard: {
@@ -229,7 +229,7 @@ const S = {
   secLabel: { marginBottom: 14 },
   card: { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 12, padding: 24 },
   cardFoot:  { fontFamily: SANS, fontSize: 14, color: 'var(--tx2)', margin: '18px 0 0', paddingTop: 16, borderTop: '1px solid var(--bd)' },
-  inlineLink:{ color: 'var(--pk)' },
+  inlineLink:{ color: 'var(--pkd)' },
 
   pointsRow:  { display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 14 },
   pointsNum:  { fontFamily: MONO, fontSize: 36, color: 'var(--tx)' },

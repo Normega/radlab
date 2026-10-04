@@ -158,9 +158,9 @@ export default function SignInConfirm() {
 const S = {
   page: { background: 'var(--bg)', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px 20px' },
   card: { maxWidth: 460, width: '100%', background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 16, padding: '32px 28px', textAlign: 'center' },
-  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)', marginBottom: 10 },
+  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pkd)', marginBottom: 10 },
   title: { fontFamily: SERIF, fontSize: 26, color: 'var(--tx)', marginBottom: 8, lineHeight: 1.2 },
   sub: { fontSize: 14.5, color: 'var(--tx2)', lineHeight: 1.6, marginBottom: 18 },
-  primary: { width: '100%', fontSize: 16, fontWeight: 600, padding: '14px 16px', borderRadius: 26, border: 'none', background: 'var(--pk)', color: '#fff', cursor: 'pointer' },
-  primaryLink: { display: 'inline-block', fontSize: 15, fontWeight: 600, padding: '12px 22px', borderRadius: 24, background: 'var(--pk)', color: '#fff', textDecoration: 'none' },
+  primary: { width: '100%', fontSize: 16, fontWeight: 600, padding: '14px 16px', borderRadius: 26, border: 'none', background: 'var(--pkd)', color: '#fff', cursor: 'pointer' },
+  primaryLink: { display: 'inline-block', fontSize: 15, fontWeight: 600, padding: '12px 22px', borderRadius: 24, background: 'var(--pkd)', color: '#fff', textDecoration: 'none' },
 }

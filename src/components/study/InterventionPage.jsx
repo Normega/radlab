@@ -495,7 +495,7 @@ export default function InterventionPage({
           <div style={{ display: 'flex' }}>
             {SESSION_STEPS.map((step, i) => (
               <div key={i} style={S.stepCol}>
-                <span style={{ ...S.stepLabel, color: step.state === 'done' ? 'var(--pk)' : step.state === 'active' ? 'var(--tx)' : 'var(--gy)' }}>
+                <span style={{ ...S.stepLabel, color: step.state === 'done' ? 'var(--pkd)' : step.state === 'active' ? 'var(--tx)' : 'var(--gy)' }}>
                   {step.label}
                 </span>
                 <div style={{ ...S.stepTrack, background: step.state === 'done' ? 'var(--pk)' : step.state === 'active' ? 'var(--tx)' : '#ddd' }}>
@@ -874,7 +874,7 @@ function AudioBlock({ step, onComplete, db = globalSupabase }) {
           <div style={S.audioProgressTrack}>
             <div style={{ ...S.audioProgressFill, width: `${pct}%`, background: complete ? 'var(--pk)' : 'var(--tx)' }} />
           </div>
-          <span style={{ ...S.audioProgressLabel, color: complete ? 'var(--pk)' : 'var(--tx2)' }}>
+          <span style={{ ...S.audioProgressLabel, color: complete ? 'var(--pkd)' : 'var(--tx2)' }}>
             {complete ? '✓ Complete' : `${pct}% listened`}
           </span>
         </div>
@@ -1043,7 +1043,7 @@ function TimerBlock({ step, onComplete }) {
     <div style={S.timerWrap}>
       {step.heading     && <h3 style={S.textH3}>{step.heading}</h3>}
       {step.instruction && <p  style={S.textP}>{step.instruction}</p>}
-      <div style={{ ...S.timerDisplay, color: done ? 'var(--pk)' : 'var(--tx)' }}>
+      <div style={{ ...S.timerDisplay, color: done ? 'var(--pkd)' : 'var(--tx)' }}>
         {mins}:{secs}
       </div>
       <p style={S.timerSublabel}>
@@ -1201,7 +1201,7 @@ function ThoughtRatingBlock({ step, thoughts, ratings, movedMap, onRatingChange 
           <div key={i} style={S.thoughtSliderRow}>
             <div style={S.thoughtSliderLabel}>
               <span>"{thought}"</span>
-              <span style={{ color: 'var(--pk)' }}>{moved ? val : '—'}</span>
+              <span style={{ color: 'var(--pkd)' }}>{moved ? val : '—'}</span>
             </div>
             <input
               type="range"
@@ -1492,7 +1492,7 @@ function QualityExplorerBlock({ step, state, onChange }) {
           />
           <div style={S.sliderLabels}>
             <span style={{ fontSize: 12, color: 'var(--tx2)' }}>{activeQuality.min_label}</span>
-            <span style={{ ...S.sliderVal, color: sliderMoved ? 'var(--pk)' : 'var(--gy)' }}>{sliderValue}</span>
+            <span style={{ ...S.sliderVal, color: sliderMoved ? 'var(--pkd)' : 'var(--gy)' }}>{sliderValue}</span>
             <span style={{ fontSize: 12, color: 'var(--tx2)' }}>{activeQuality.max_label}</span>
           </div>
 
@@ -1746,7 +1746,7 @@ const S = {
     fontFamily: FONT,
   },
   sliderVal: {
-    fontSize: 22, fontWeight: 600, color: 'var(--pk)', fontFamily: FONT,
+    fontSize: 22, fontWeight: 600, color: 'var(--pkd)', fontFamily: FONT,
   },
   sliderEnds: {
     display: 'flex', justifyContent: 'space-between',
@@ -1891,7 +1891,7 @@ const S = {
     transition: 'transform 0.2s',
   },
   triggerArrowOpen: {
-    transform: 'rotate(90deg)', color: 'var(--pk)',
+    transform: 'rotate(90deg)', color: 'var(--pkd)',
   },
   triggerBody: {
     padding: '10px 14px', borderTop: '1px solid var(--bd)',

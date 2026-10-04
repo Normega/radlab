@@ -155,7 +155,7 @@ const S = {
   },
   eyebrow: {
     fontFamily: '"Space Mono",monospace',
-    fontSize: 12, color: 'var(--pk)',
+    fontSize: 12, color: 'var(--pkd)',
     textTransform: 'uppercase', letterSpacing: '0.08em',
     margin: '0 0 16px',
   },
@@ -202,7 +202,7 @@ const S = {
   },
   continueBtn: {
     width: '100%',
-    background: 'var(--pk)', color: '#fff',
+    background: 'var(--pkd)', color: '#fff',
     border: 'none', borderRadius: 10,
     padding: '13px', fontSize: 15, fontWeight: 600,
     fontFamily: '"DM Sans",system-ui,sans-serif',

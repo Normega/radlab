@@ -128,7 +128,7 @@ const S = {
   meta:    { display: 'flex', gap: 32, background: '#fff', border: '1px solid var(--bd)', borderRadius: 10, padding: '16px 20px', marginBottom: 16 },
 
   actions:          { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 },
-  previewBtn:       { background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 18px', fontSize: 14, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
+  previewBtn:       { background: 'var(--pkd)', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 18px', fontSize: 14, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
   deleteBtn:        { background: 'none', border: '1px solid var(--bd)', borderRadius: 8, padding: '9px 14px', fontSize: 14, cursor: 'pointer', color: '#e04', fontFamily: '"DM Sans",system-ui,sans-serif' },
   deleteConfirmBtn: { background: '#e04', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 14px', fontSize: 14, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
   cancelBtn:        { background: 'none', border: '1px solid var(--bd)', borderRadius: 8, padding: '9px 14px', fontSize: 14, cursor: 'pointer', color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif' },
@@ -137,7 +137,7 @@ const S = {
   anchorGrid:  { display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 12 },
   anchorCard:  { background: '#fff', border: '1px solid var(--bd)', borderRadius: 10, padding: '16px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 },
   anchorImg:   { width: 64, height: 64, objectFit: 'contain' },
-  anchorVal:   { fontFamily: '"Space Mono",monospace', fontSize: 14, color: 'var(--pk)', fontWeight: 700 },
+  anchorVal:   { fontFamily: '"Space Mono",monospace', fontSize: 14, color: 'var(--pkd)', fontWeight: 700 },
   anchorLabel: { fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 12, color: 'var(--tx2)', textAlign: 'center', lineHeight: 1.3 },
 
   overlay:   { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '32px 16px' },

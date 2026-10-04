@@ -116,7 +116,7 @@ export default function Nav({ session }) {
           <div className="h-8 md:h-10" style={{ display: 'flex', alignItems: 'center' }}>
             <img src="/RADlab_Logo.svg" style={{ height: '100%', display: 'block' }} alt="RADlab logo" />
           </div>
-          <span style={S.wordmark}>RAD<b style={{ color: 'var(--pk)', fontWeight: 400 }}>lab</b></span>
+          <span style={S.wordmark}>RAD<b style={{ color: 'var(--pkd)', fontWeight: 400 }}>lab</b></span>
         </Link>
 
         {/* Desktop: full pill nav */}

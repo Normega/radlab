@@ -330,11 +330,11 @@ function Shell({ slug, session, title, children }) {
 
 const S = {
   wrap: { maxWidth: 720, margin: '0 auto', padding: '28px 16px 70px' },
-  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)', marginBottom: 6 },
-  eyebrowLink: { color: 'var(--pk)', textDecoration: 'none' },
+  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pkd)', marginBottom: 6 },
+  eyebrowLink: { color: 'var(--pkd)', textDecoration: 'none' },
   h1: { fontFamily: SERIF, fontSize: 26, color: 'var(--tx)', margin: '0 0 14px' },
   sub: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.6 },
-  link: { color: 'var(--pk)', textDecoration: 'none' },
+  link: { color: 'var(--pkd)', textDecoration: 'none' },
   error: { fontSize: 13, color: '#c04a4a', marginTop: 8 },
 
   tabRow: { display: 'flex', gap: 8, marginTop: 4 },
@@ -349,7 +349,7 @@ const S = {
 
   primaryBtn: {
     fontFamily: MONO, fontSize: 13, padding: '9px 16px', borderRadius: 10, cursor: 'pointer',
-    border: '1px solid var(--pk)', background: 'var(--pk)', color: '#fff',
+    border: '1px solid var(--pk)', background: 'var(--pkd)', color: '#fff',
   },
   ghostBtn: {
     fontFamily: MONO, fontSize: 13, padding: '9px 16px', borderRadius: 10, cursor: 'pointer',
@@ -369,16 +369,16 @@ const S = {
     borderRadius: 12, padding: '12px 14px', opacity: removed ? 0.55 : 1,
   }),
   threadTitle: { fontSize: 15, color: 'var(--tx)', lineHeight: 1.4, overflowWrap: 'break-word' },
-  pin: { fontFamily: MONO, fontSize: 11, color: 'var(--pk)', textTransform: 'uppercase', letterSpacing: 1 },
+  pin: { fontFamily: MONO, fontSize: 11, color: 'var(--pkd)', textTransform: 'uppercase', letterSpacing: 1 },
   metaRow: { display: 'flex', gap: 10, alignItems: 'center', marginTop: 6, flexWrap: 'wrap' },
   metaText: { fontFamily: MONO, fontSize: 12, color: 'var(--tx3)' },
   answeredChip: { fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: '#1a8a4a', background: '#e5f7ee', borderRadius: 8, padding: '1px 8px' },
   openChip: { fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: '#b8760f', background: '#fdf2e5', borderRadius: 8, padding: '1px 8px' },
   staffBadge: { fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--pkd)', background: 'var(--pkb)', borderRadius: 8, padding: '1px 8px' },
-  mineBadge: { fontFamily: MONO, fontSize: 12, color: 'var(--pk)' },
+  mineBadge: { fontFamily: MONO, fontSize: 12, color: 'var(--pkd)' },
   removedBadge: { fontFamily: MONO, fontSize: 12, color: '#c04a4a' },
   closedBadge: { fontFamily: MONO, fontSize: 12, color: 'var(--tx3)' },
-  linkBtn: { fontFamily: MONO, fontSize: 12, color: 'var(--pk)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 },
+  linkBtn: { fontFamily: MONO, fontSize: 12, color: 'var(--pkd)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 },
   linkBtnDanger: { fontFamily: MONO, fontSize: 12, color: '#c04a4a', background: 'none', border: 'none', cursor: 'pointer', padding: 0 },
 
   backRow: { marginBottom: 12 },

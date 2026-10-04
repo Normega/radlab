@@ -252,7 +252,7 @@ export default function AudioUpload() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 20 }}>
 
         <label style={S.fieldWrap}>
-          <span style={S.label}>Title <span style={{ color: 'var(--pk)' }}>*</span></span>
+          <span style={S.label}>Title <span style={{ color: 'var(--pkd)' }}>*</span></span>
           <input
             type="text" value={title} onChange={e => setTitle(e.target.value)}
             placeholder="Untitled audio" style={S.input}
@@ -418,7 +418,7 @@ const S = {
     fontFamily: 'DM Sans', fontSize: 14, color: '#8b4513',
   },
   primaryBtn: {
-    background: 'var(--pk)', color: '#fff', border: 'none',
+    background: 'var(--pkd)', color: '#fff', border: 'none',
     borderRadius: 10, padding: '12px 28px',
     fontFamily: 'DM Sans', fontSize: 14, fontWeight: 600,
   },

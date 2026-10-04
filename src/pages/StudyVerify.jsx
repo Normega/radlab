@@ -153,9 +153,9 @@ const S = {
   h1:    { fontFamily: SERIF, fontSize: 24, fontWeight: 400, color: 'var(--tx)', margin: '0 0 12px', lineHeight: 1.3 },
   body:  { fontSize: 15, color: 'var(--tx2)', lineHeight: 1.6, margin: 0 },
   finePrint: { fontSize: 12.5, color: 'var(--tx3)', lineHeight: 1.6, margin: '18px 0 0' },
-  link:  { color: 'var(--pk)' },
+  link:  { color: 'var(--pkd)' },
   button: {
-    marginTop: 22, background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 24,
+    marginTop: 22, background: 'var(--pkd)', color: '#fff', border: 'none', borderRadius: 24,
     padding: '12px 28px', fontSize: 15, fontWeight: 600, fontFamily: SANS, cursor: 'pointer',
   },
   spinner: { width: 38, height: 38, border: '3px solid var(--bd)', borderTop: '3px solid var(--pk)', borderRadius: '50%', animation: '_spin 0.8s linear infinite', margin: '0 auto 22px' },

@@ -303,7 +303,7 @@ const CARD = {
   chip: { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.05em' },
   title:{ fontSize: 18, fontWeight: 600, color: 'var(--tx)', margin: '10px 0 8px' },
   sub:  { fontSize: 13.5, color: 'var(--tx2)', lineHeight: 1.55, margin: '0 0 20px' },
-  btn:  { background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 10, padding: '11px 28px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' },
+  btn:  { background: 'var(--pkd)', color: '#fff', border: 'none', borderRadius: 10, padding: '11px 28px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' },
 }
 
 const ERR = { padding: 40, textAlign: 'center', color: '#e04', fontFamily: '"DM Sans",system-ui,sans-serif' }

@@ -122,7 +122,7 @@ const S = {
   doneTitle: { fontSize: 20, fontWeight: 600, color: 'var(--tx)', margin: '0 0 8px' },
   doneSub: { fontSize: 14, color: 'var(--tx2)', margin: '0 0 24px' },
   restartBtn: {
-    background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 10,
+    background: 'var(--pkd)', color: '#fff', border: 'none', borderRadius: 10,
     padding: '11px 26px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'DM Sans',
   },
 }

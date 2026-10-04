@@ -550,17 +550,17 @@ export default function RosterAdmin() {
 }
 
 const S = {
-  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)' },
+  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pkd)' },
   eyebrowLink: { color: 'inherit', textDecoration: 'none' },
   title: { fontFamily: SERIF, fontSize: 28, color: 'var(--tx)', margin: '2px 0 6px' },
   sub: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.6, maxWidth: 720 },
   dim: { color: 'var(--tx2)', fontSize: 12 },
   code: { fontFamily: MONO, fontSize: 12.5 },
-  notice: { marginTop: 12, fontFamily: MONO, fontSize: 14, color: 'var(--pk)', lineHeight: 1.5 },
+  notice: { marginTop: 12, fontFamily: MONO, fontSize: 14, color: 'var(--pkd)', lineHeight: 1.5 },
   h2: { fontFamily: SERIF, fontSize: 19, color: 'var(--tx)', margin: '0 0 8px' },
   panel: { marginTop: 18, padding: '16px 18px', borderRadius: 12, background: 'var(--bgc)', border: '1px solid var(--bd)' },
   select: { fontSize: 14, padding: '5px 8px', borderRadius: 8, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx)' },
-  primary: { fontSize: 13.5, fontWeight: 600, padding: '8px 16px', borderRadius: 20, border: 'none', background: 'var(--pk)', color: '#fff', cursor: 'pointer' },
+  primary: { fontSize: 13.5, fontWeight: 600, padding: '8px 16px', borderRadius: 20, border: 'none', background: 'var(--pkd)', color: '#fff', cursor: 'pointer' },
   secondary: { fontSize: 13.5, fontWeight: 600, padding: '8px 16px', borderRadius: 20, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx)', cursor: 'pointer' },
   bar: { display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', margin: '22px 0 10px' },
   chip: { fontFamily: MONO, fontSize: 12, padding: '5px 12px', borderRadius: 16, border: '1px solid var(--bd)', background: 'var(--bgc)', cursor: 'pointer' },
@@ -585,5 +585,5 @@ const S = {
     background: 'var(--bgc)', border: '1px solid var(--bd)',
   },
   courseBtnSub: { fontFamily: 'inherit', fontSize: 12, fontWeight: 400, color: 'var(--tx2)' },
-  switchLink: { fontFamily: MONO, fontSize: 12, color: 'var(--pk)', textDecoration: 'none', marginRight: 16 },
+  switchLink: { fontFamily: MONO, fontSize: 12, color: 'var(--pkd)', textDecoration: 'none', marginRight: 16 },
 }

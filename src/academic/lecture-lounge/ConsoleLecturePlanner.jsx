@@ -526,7 +526,7 @@ export default function ConsoleLecturePlanner({ classInfo }) {
 const S = {
   loading: { padding: 40, color: 'var(--tx2)', fontSize: 14 },
   header: { marginBottom: 24 },
-  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)', marginBottom: 6 },
+  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pkd)', marginBottom: 6 },
   title: { fontFamily: SERIF, fontSize: 32, color: 'var(--tx)' },
   errorBanner: {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
@@ -537,7 +537,7 @@ const S = {
 
   lectureCard: { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 12, marginBottom: 12, overflow: 'hidden' },
   lectureHeader: { display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', cursor: 'pointer' },
-  lectureNum: { fontFamily: MONO, fontSize: 14, color: 'var(--pk)', minWidth: 28 },
+  lectureNum: { fontFamily: MONO, fontSize: 14, color: 'var(--pkd)', minWidth: 28 },
   lectureTitle: { flex: 1, fontSize: 15, color: 'var(--tx)', fontWeight: 600 },
   lectureDate: { fontFamily: MONO, fontSize: 12, color: 'var(--tx3)' },
   chevron: { color: 'var(--tx3)' },
@@ -552,10 +552,10 @@ const S = {
   checkinSummary: { flex: 1, fontSize: 14, color: 'var(--tx)' },
   autoCloseBadge: { fontFamily: MONO, fontSize: 12, color: 'var(--pkd)', background: 'var(--pkb)', padding: '2px 8px', borderRadius: 6 },
   statusBadge: { fontFamily: MONO, fontSize: 12, color: 'var(--tx3)', textTransform: 'uppercase' },
-  weeklyBadge: { fontFamily: MONO, fontSize: 12, color: '#fff', background: 'var(--pk)', padding: '2px 8px', borderRadius: 6, textTransform: 'uppercase' },
+  weeklyBadge: { fontFamily: MONO, fontSize: 12, color: '#fff', background: 'var(--pkd)', padding: '2px 8px', borderRadius: 6, textTransform: 'uppercase' },
   weeklyOpenNote: { fontFamily: MONO, fontSize: 12, color: 'var(--tx3)' },
   weeklyToggle: { display: 'block', fontFamily: MONO, fontSize: 12, color: 'var(--tx2)', marginBottom: 10, cursor: 'pointer' },
-  linkBtn: { background: 'none', border: 'none', color: 'var(--pk)', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', padding: 0 },
+  linkBtn: { background: 'none', border: 'none', color: 'var(--pkd)', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', padding: 0 },
   linkBtnDanger: { background: 'none', border: 'none', color: '#c04a4a', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', padding: 0 },
 
   checkinForm: { background: 'var(--bg)', borderRadius: 10, padding: 14, marginBottom: 8 },
@@ -581,7 +581,7 @@ const S = {
   orderBtn: { border: '1px solid var(--bds)', background: 'var(--bgc)', borderRadius: 5, width: 22, height: 22, cursor: 'pointer', fontSize: 12 },
 
   formBtnRow: { display: 'flex', gap: 8, marginTop: 12 },
-  primaryBtnSm: { padding: '7px 16px', borderRadius: 8, border: 'none', background: 'var(--pk)', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' },
+  primaryBtnSm: { padding: '7px 16px', borderRadius: 8, border: 'none', background: 'var(--pkd)', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' },
   ghostBtnSm: { padding: '7px 16px', borderRadius: 8, border: '1px solid var(--bds)', background: 'none', color: 'var(--tx2)', fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' },
-  addBtn: { padding: '10px 16px', borderRadius: 8, border: '1px dashed var(--bds)', background: 'none', color: 'var(--pk)', fontSize: 14, cursor: 'pointer', fontFamily: 'inherit', width: '100%', marginTop: 4 },
+  addBtn: { padding: '10px 16px', borderRadius: 8, border: '1px dashed var(--bds)', background: 'none', color: 'var(--pkd)', fontSize: 14, cursor: 'pointer', fontFamily: 'inherit', width: '100%', marginTop: 4 },
 }

@@ -408,7 +408,7 @@ function RevealStep({ composite, p1Sel, p2Sel, rippleName, rewardData, skinColor
         <button
           style={{
             ...S.btn, width: 308,
-            background:  saveDone ? '#f068a4' : '#E8D0E0',
+            background:  saveDone ? 'var(--pkd)' : '#E8D0E0',
             boxShadow:   saveDone ? '0 4px 20px rgba(240,104,164,0.30)' : 'none',
             cursor:      saveDone ? 'pointer' : 'default',
             transition:  'background 0.3s, box-shadow 0.3s',
@@ -454,7 +454,7 @@ function MicroIntentionStep({ onConfirm, onSkip }) {
           return (
             <button key={p} onClick={() => handlePick(p)} style={{
               ...S.pillBtn,
-              background:   active ? '#f068a4' : 'white',
+              background:   active ? 'var(--pkd)' : 'white',
               color:        active ? 'white' : '#1c1c1e',
               borderColor:  active ? '#f068a4' : '#E8D0E0',
             }}>
@@ -755,7 +755,7 @@ const S = {
   // fix is a `question` role in the guide, not borrowing a heading style.
   ratingQ:   { fontFamily: SERIF, fontSize: 20, color: '#1c1c1e', fontWeight: 400, margin: 0 },
   faceCard:  { background: 'white', borderRadius: 18, padding: '12px 10px 10px', boxShadow: '0 2px 18px rgba(180,120,160,0.10)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 },
-  btn:       { background: '#f068a4', color: 'white', border: 'none', borderRadius: 12, padding: 14, fontFamily: MONO, fontSize: 14, fontWeight: 700, letterSpacing: '0.05em', cursor: 'pointer', boxShadow: '0 4px 20px rgba(240,104,164,0.30)' },
+  btn:       { background: 'var(--pkd)', color: 'white', border: 'none', borderRadius: 12, padding: 14, fontFamily: MONO, fontSize: 14, fontWeight: 700, letterSpacing: '0.05em', cursor: 'pointer', boxShadow: '0 4px 20px rgba(240,104,164,0.30)' },
   optionBtn: {
     background: 'white', border: '1.5px solid #E8D0E0', borderRadius: 12, padding: '12px 24px',
     fontFamily: SANS, fontSize: 15, color: '#1c1c1e', cursor: 'pointer', width: '100%',

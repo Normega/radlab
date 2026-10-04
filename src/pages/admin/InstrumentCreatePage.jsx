@@ -617,7 +617,7 @@ const SANS  = '"DM Sans", system-ui, sans-serif'
 const S = {
   h1:  { fontFamily: SERIF, fontSize: 28, fontWeight: 400, color: 'var(--tx)', margin: '0 0 8px' },
   sub: { fontFamily: SANS, fontSize: 14, color: 'var(--tx2)', lineHeight: 1.6, margin: '0 0 8px', maxWidth: 680 },
-  link: { color: 'var(--pk)' },
+  link: { color: 'var(--pkd)' },
 
   columns: { display: 'flex', gap: 24, alignItems: 'flex-start', flexWrap: 'wrap', marginTop: 24 },
   form: {
@@ -666,7 +666,7 @@ const S = {
 
   actions: { display: 'flex', gap: 8, marginTop: 24 },
   saveBtn: {
-    background: 'var(--pk)', color: 'var(--bgc)', border: 'none', borderRadius: 24,
+    background: 'var(--pkd)', color: 'var(--bgc)', border: 'none', borderRadius: 24,
     padding: '8px 24px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: SANS,
   },
   cancelBtn: {

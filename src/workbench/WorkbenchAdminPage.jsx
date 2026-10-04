@@ -469,7 +469,7 @@ const S = {
     cursor: 'pointer',
   },
   chipOn: {
-    background: 'var(--pk)',
+    background: 'var(--pkd)',
     borderColor: 'var(--pk)',
     color: '#fff',
     fontWeight: 600,

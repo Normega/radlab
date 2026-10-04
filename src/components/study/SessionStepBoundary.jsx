@@ -74,7 +74,7 @@ const S = {
     maxWidth: 480, margin: '0 auto', padding: '48px 32px', textAlign: 'center',
     display: 'flex', flexDirection: 'column', gap: 16, fontFamily: SANS,
   },
-  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)', margin: 0 },
+  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pkd)', margin: 0 },
   title:   { fontFamily: SERIF, fontSize: 28, fontWeight: 400, color: 'var(--tx)', margin: 0 },
   body:    { fontSize: 16, lineHeight: 1.6, color: 'var(--tx2)', margin: 0 },
   detail:  { fontFamily: MONO, fontSize: 12, color: 'var(--gy)', margin: 0 },

@@ -187,8 +187,8 @@ export default function IngestPortal() {
           </div>
           <div style={{ textAlign: 'right' }}>
             <p style={{ ...S.sub, fontSize: 12 }}>{session.user.email}</p>
-            <Link to={WIKI_BASE} style={{ fontSize: 14, color: 'var(--pk)' }}>Wiki</Link>
-            <Link to={paths.sub('review')} style={{ fontSize: 14, color: 'var(--pk)', marginLeft: 10 }}>Review queue</Link>
+            <Link to={WIKI_BASE} style={{ fontSize: 14, color: 'var(--pkd)' }}>Wiki</Link>
+            <Link to={paths.sub('review')} style={{ fontSize: 14, color: 'var(--pkd)', marginLeft: 10 }}>Review queue</Link>
             <button style={{ ...S.linkBtn, marginLeft: 10 }} onClick={() => signOutEverywhere(courseClient)}>Sign out</button>
           </div>
         </header>
@@ -235,7 +235,7 @@ export default function IngestPortal() {
                   Resolved title: <b>{suggestion.title}</b> — check this is the document you uploaded.
                 </p>
               )}
-              {suggestion.note && <p style={{ ...S.sub, fontSize: 12, color: 'var(--pk)' }}>{suggestion.note}</p>}
+              {suggestion.note && <p style={{ ...S.sub, fontSize: 12, color: 'var(--pkd)' }}>{suggestion.note}</p>}
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
                 <button type="button" style={S.primary}
                         onClick={() => { setCitation(suggestion.citation); setSuggestion(null) }}>
@@ -320,7 +320,7 @@ export default function IngestPortal() {
           <button style={{ ...S.primary, opacity: (!file || busy || !citation.trim() || (sourceType === 'reference' && !targetSlug)) ? 0.5 : 1 }} type="submit" disabled={!file || busy || !citation.trim() || (sourceType === 'reference' && !targetSlug)}>
             {busy ? 'Uploading…' : 'Upload & ingest'}
           </button>
-          {notice && <p style={{ ...S.sub, color: 'var(--pk)' }}>{notice}</p>}
+          {notice && <p style={{ ...S.sub, color: 'var(--pkd)' }}>{notice}</p>}
         </form>
 
         <h2 style={{ ...S.title, fontSize: 20, marginTop: 32 }}>Jobs</h2>
@@ -390,18 +390,18 @@ function ResultView({ result }) {
 function statusStyle(status) {
   if (status === 'done') return { color: '#27ae60' }
   if (status === 'failed') return { color: '#c0392b' }
-  return { color: 'var(--pk)' }
+  return { color: 'var(--pkd)' }
 }
 
 const S = {
-  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)' },
+  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pkd)' },
   eyebrowLink: { color: 'inherit', textDecoration: 'none' },
   title: { fontFamily: SERIF, fontSize: 28, color: 'var(--tx)', margin: '2px 0 4px' },
   sub: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.5 },
   card: { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 16, padding: 20, marginTop: 20, display: 'flex', flexDirection: 'column', gap: 14 },
   input: { fontSize: 15, padding: '8px 10px', borderRadius: 8, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx)' },
-  primary: { fontSize: 15, fontWeight: 600, padding: '10px 16px', borderRadius: 24, border: 'none', background: 'var(--pk)', color: '#fff', cursor: 'pointer', alignSelf: 'flex-start' },
-  linkBtn: { fontSize: 14, color: 'var(--pk)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0 },
+  primary: { fontSize: 15, fontWeight: 600, padding: '10px 16px', borderRadius: 24, border: 'none', background: 'var(--pkd)', color: '#fff', cursor: 'pointer', alignSelf: 'flex-start' },
+  linkBtn: { fontSize: 14, color: 'var(--pkd)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0 },
   secondary: { fontSize: 14, fontWeight: 600, padding: '9px 14px', borderRadius: 24, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx)', cursor: 'pointer', flexShrink: 0 },
   suggestBox: { padding: '12px 14px', borderRadius: 10, background: 'var(--bgc)', border: '1px solid var(--bd)' },
   colLabel: { fontFamily: MONO, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx2)', margin: '0 0 6px' },

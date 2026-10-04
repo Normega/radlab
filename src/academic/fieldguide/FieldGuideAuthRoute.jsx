@@ -277,11 +277,11 @@ function Shell({ children }) {
 
 const S = {
   card: { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 16, padding: '40px 32px', textAlign: 'center', maxWidth: 420, width: '100%' },
-  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)', marginBottom: 8 },
+  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pkd)', marginBottom: 8 },
   title: { fontFamily: SERIF, fontSize: 26, color: 'var(--tx)', marginBottom: 8 },
   sub: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.5 },
   input: { fontSize: 16, padding: '10px 12px', borderRadius: 8, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx)' },
-  primary: { fontSize: 15, fontWeight: 600, padding: '10px 12px', borderRadius: 24, border: 'none', background: 'var(--pk)', color: '#fff', cursor: 'pointer', textDecoration: 'none' },
-  linkBtn: { marginTop: 14, fontSize: 14, color: 'var(--pk)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' },
-  inlineLink: { color: 'var(--pk)' },
+  primary: { fontSize: 15, fontWeight: 600, padding: '10px 12px', borderRadius: 24, border: 'none', background: 'var(--pkd)', color: '#fff', cursor: 'pointer', textDecoration: 'none' },
+  linkBtn: { marginTop: 14, fontSize: 14, color: 'var(--pkd)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' },
+  inlineLink: { color: 'var(--pkd)' },
 }

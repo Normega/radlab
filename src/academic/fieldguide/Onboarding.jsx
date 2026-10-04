@@ -162,12 +162,12 @@ const S = {
     position: 'absolute', top: 10, right: 14, border: 'none', background: 'none',
     fontSize: 22, color: 'var(--tx2)', cursor: 'pointer', lineHeight: 1,
   },
-  kicker: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)', marginBottom: 6 },
+  kicker: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pkd)', marginBottom: 6 },
   title: { fontFamily: SERIF, fontSize: 26, color: 'var(--tx)', marginBottom: 10, lineHeight: 1.2 },
   p: { fontSize: 14.5, color: 'var(--tx)', lineHeight: 1.6, marginBottom: 10 },
   cta: {
     display: 'inline-block', margin: '2px 0 8px', padding: '9px 18px', borderRadius: 22,
-    background: 'var(--pk)', color: '#fff', fontSize: 14, fontWeight: 600, textDecoration: 'none',
+    background: 'var(--pkd)', color: '#fff', fontSize: 14, fontWeight: 600, textDecoration: 'none',
   },
   footer: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 12 },
   dots: { display: 'flex', gap: 6 },
@@ -178,6 +178,6 @@ const S = {
   },
   nextBtn: {
     fontFamily: MONO, fontSize: 12, padding: '7px 16px', borderRadius: 18,
-    border: 'none', background: 'var(--pk)', color: '#fff', cursor: 'pointer', fontWeight: 700,
+    border: 'none', background: 'var(--pkd)', color: '#fff', cursor: 'pointer', fontWeight: 700,
   },
 }

@@ -240,6 +240,6 @@ const C = {
   field:        { display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif' },
   input:        { fontSize: 14, fontFamily: '"DM Sans",system-ui,sans-serif', border: '1px solid var(--bd)', borderRadius: 8, padding: '6px 10px', color: 'var(--tx)', background: '#fff' },
   confirm:      { marginTop: 14, padding: '12px 14px', background: 'var(--bgp)', border: '1px solid var(--pkb)', borderRadius: 10 },
-  btnPrimary:   { background: 'var(--pk)', color: '#fff', border: '1px solid var(--pk)', borderRadius: 8, padding: '7px 14px', fontSize: 14, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
+  btnPrimary:   { background: 'var(--pkd)', color: '#fff', border: '1px solid var(--pk)', borderRadius: 8, padding: '7px 14px', fontSize: 14, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
   btnSecondary: { background: '#fff', color: 'var(--tx2)', border: '1px solid var(--bd)', borderRadius: 8, padding: '7px 14px', fontSize: 14, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
 }

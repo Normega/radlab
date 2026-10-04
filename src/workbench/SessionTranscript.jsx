@@ -201,7 +201,7 @@ const S = {
     gap: 8,
     flexWrap: 'wrap',
   },
-  toolGear: { color: 'var(--pk)', fontSize: 'var(--fs-mono-sm)' },
+  toolGear: { color: 'var(--pkd)', fontSize: 'var(--fs-mono-sm)' },
   toolName: {
     fontFamily: '"Space Mono",monospace',
     fontSize: 'var(--fs-mono-sm)',

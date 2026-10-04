@@ -332,7 +332,7 @@ function Btn({ onClick, disabled, secondary, children }) {
         color:      disabled ? 'var(--tx3)' : 'var(--pkd)',
         border:     `1px solid ${disabled ? 'var(--bd)' : 'var(--pkbs)'}` }
     : { ...base,
-        background: disabled ? 'var(--bd)' : 'var(--pk)',
+        background: disabled ? 'var(--bd)' : 'var(--pkd)',
         color:      disabled ? 'var(--tx3)' : '#fff' }
   return <button onClick={onClick} disabled={disabled} style={style}>{children}</button>
 }

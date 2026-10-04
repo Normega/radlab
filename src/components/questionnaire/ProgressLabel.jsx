@@ -32,7 +32,7 @@ export default function ProgressLabel({
             style={{
               fontFamily:  'Space Mono',
               fontSize:    'var(--fs-mono-sm)',
-              color:       'var(--pk)',
+              color:       'var(--pkd)',
               whiteSpace:  'nowrap',
             }}
           >

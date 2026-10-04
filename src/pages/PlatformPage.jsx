@@ -37,7 +37,7 @@ export default function PlatformPage({ session }) {
         <div style={{ ...S.inner, textAlign: 'center' }}>
           <p style={S.heroEyebrow}>Regulatory &amp; Affective Dynamics Lab · U of T Mississauga</p>
           <h1 style={S.h1}>
-            Your mind, <em style={{ color: 'var(--pk)', fontStyle: 'normal' }}>reflected</em>
+            Your mind, <em style={{ color: 'var(--pkd)', fontStyle: 'normal' }}>reflected</em>
           </h1>
           <p style={S.heroSub}>
             RADlab turns real psychological research into short, interactive check-ins.
@@ -198,7 +198,7 @@ const S = {
   inner: { maxWidth: 1200, margin: '0 auto' },
   band:  { padding: '52px 24px' },
 
-  heroEyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)', marginBottom: 16 },
+  heroEyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pkd)', marginBottom: 16 },
   h1: {
     // Large Hero — sanctioned exception to the 6-step type scale
     // (Dev Spec §1.2 caveat: per-screen CSS wins for the About hero).
@@ -244,7 +244,7 @@ const S = {
   benefitBody:  { fontSize: 14, fontFamily: SANS, color: 'var(--tx2)', lineHeight: 1.55, margin: 0 },
 
   banner: {
-    background: 'var(--pk)', borderRadius: 12, textAlign: 'center',
+    background: 'var(--pkd)', borderRadius: 12, textAlign: 'center',
     padding: 'clamp(32px, 5vw, 56px) 24px',
     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
   },

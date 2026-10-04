@@ -530,7 +530,7 @@ export default function WikiPage() {
           <span style={S.stampState}>
             {review
               ? review.version < page.current_version
-                ? <>stamped <b>{review.verdict}</b> at v{review.version} — <b style={{ color: 'var(--pk)' }}>stale</b>, page is now v{page.current_version}</>
+                ? <>stamped <b>{review.verdict}</b> at v{review.version} — <b style={{ color: 'var(--pkd)' }}>stale</b>, page is now v{page.current_version}</>
                 : <>stamped <b>{review.verdict}</b> at v{review.version} · {new Date(review.reviewed_at).toLocaleDateString()}</>
               : 'not yet reviewed'}
           </span>
@@ -599,7 +599,7 @@ export default function WikiPage() {
               </a>
             ))}
             {neighbours.length > 0 && (
-              <a href="#connections" style={{ ...S.tocLink, marginTop: 6, color: 'var(--pk)' }}>
+              <a href="#connections" style={{ ...S.tocLink, marginTop: 6, color: 'var(--pkd)' }}>
                 How this page connects
               </a>
             )}
@@ -756,7 +756,7 @@ export default function WikiPage() {
                 ))}
               </ul>
               {isStaff && provenance.has_unverified_source && (
-                <p style={{ ...S.sub, color: 'var(--pk)', marginTop: 8 }}>
+                <p style={{ ...S.sub, color: 'var(--pkd)', marginTop: 8 }}>
                   One source is recorded as UNVERIFIED — it fell back to a filename and wants a real citation.
                 </p>
               )}
@@ -880,7 +880,7 @@ function GapList({ gaps, section, isStaff, onFlag }) {
               <span style={G.hint}>a little more — the ask is the whole brief</span>
             )}
           </div>
-          {err && <p style={{ ...G.hint, color: 'var(--pk)' }}>{err}</p>}
+          {err && <p style={{ ...G.hint, color: 'var(--pkd)' }}>{err}</p>}
         </div>
       )}
     </div>
@@ -897,7 +897,7 @@ const G = {
   form: { marginTop: 8, display: 'flex', flexDirection: 'column', gap: 8 },
   askInput: { width: '100%', boxSizing: 'border-box', minHeight: 64, resize: 'vertical', fontSize: 13.5, lineHeight: 1.5, padding: '8px 10px', borderRadius: 8, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx)' },
   diffSelect: { fontSize: 14, padding: '6px 8px', borderRadius: 8, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx)' },
-  flagGo: { fontSize: 14, fontWeight: 600, padding: '6px 14px', borderRadius: 18, border: 'none', background: 'var(--pk)', color: '#fff', cursor: 'pointer' },
+  flagGo: { fontSize: 14, fontWeight: 600, padding: '6px 14px', borderRadius: 18, border: 'none', background: 'var(--pkd)', color: '#fff', cursor: 'pointer' },
   flagCancel: { fontSize: 14, padding: '6px 12px', borderRadius: 18, border: '1px solid var(--bd)', background: 'none', color: 'var(--tx2)', cursor: 'pointer' },
   hint: { fontSize: 12, color: 'var(--tx2)', fontStyle: 'italic' },
 }
@@ -918,7 +918,7 @@ function Shell({ course, menu, children }) {
 }
 
 const S = {
-  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)' },
+  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pkd)' },
   eyebrowLink: { color: 'inherit', textDecoration: 'none' },
   crumbIcon: { verticalAlign: 'middle', borderRadius: 8, border: '1px solid var(--bd)', background: '#fff', objectFit: 'contain', marginRight: 5 },
   crumbs: { fontSize: 14, color: 'var(--tx2)', margin: '10px 0 6px' },
@@ -927,15 +927,15 @@ const S = {
   summary: { fontSize: 17, color: 'var(--tx2)', lineHeight: 1.6, margin: '12px 0 0', maxWidth: '62ch' },
 
   prevalence: { display: 'flex', gap: 10, alignItems: 'baseline', flexWrap: 'wrap', margin: '14px 0 0', padding: '10px 14px', borderRadius: 10, background: 'var(--bgc)', border: '1px solid var(--bd)', maxWidth: '62ch' },
-  prevalenceLabel: { flex: '0 0 auto', fontFamily: MONO, fontSize: 12, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--pk)', textDecoration: 'none' },
+  prevalenceLabel: { flex: '0 0 auto', fontFamily: MONO, fontSize: 12, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--pkd)', textDecoration: 'none' },
   prevalenceText: { flex: '1 1 200px', fontSize: 14, color: 'var(--tx)', lineHeight: 1.5 },
 
   sub: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.55 },
   dim: { color: 'var(--tx2)', fontSize: 14 },
-  link: { color: 'var(--pk)', textDecoration: 'none' },
+  link: { color: 'var(--pkd)', textDecoration: 'none' },
   code: { fontFamily: MONO, fontSize: 14 },
 
-  publishBtn: { fontFamily: MONO, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', padding: '4px 12px', borderRadius: 14, border: 'none', background: 'var(--pk)', color: '#fff', cursor: 'pointer' },
+  publishBtn: { fontFamily: MONO, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', padding: '4px 12px', borderRadius: 14, border: 'none', background: 'var(--pkd)', color: '#fff', cursor: 'pointer' },
   licenseFoot: { fontSize: 12, color: 'var(--tx2)', marginTop: 40, borderTop: '1px solid var(--bd)', paddingTop: 12 },
   draftBanner: { marginTop: 14, padding: '10px 12px', borderRadius: 8, background: 'rgba(214,51,132,.07)', border: '1px solid rgba(214,51,132,.28)', fontSize: 14, color: 'var(--tx)' },
 
@@ -943,11 +943,11 @@ const S = {
   stampState: { fontFamily: MONO, fontSize: 12, color: 'var(--tx2)', flex: '0 0 auto' },
   stampNote: { flex: '1 1 220px', fontSize: 14, padding: '6px 10px', borderRadius: 8, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx)' },
   stampBtn: { fontSize: 12.5, fontWeight: 600, padding: '6px 13px', borderRadius: 18, border: 'none', background: '#2e7d32', color: '#fff', cursor: 'pointer', whiteSpace: 'nowrap' },
-  stampNext: { fontSize: 14, fontWeight: 600, color: 'var(--pk)', textDecoration: 'none', whiteSpace: 'nowrap' },
+  stampNext: { fontSize: 14, fontWeight: 600, color: 'var(--pkd)', textDecoration: 'none', whiteSpace: 'nowrap' },
   stampBtnOff: { fontSize: 12.5, fontWeight: 600, padding: '6px 13px', borderRadius: 18, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx2)', cursor: 'pointer', whiteSpace: 'nowrap' },
 
   criteria: { display: 'block', marginTop: 16, padding: '14px 16px', borderRadius: 12, background: 'var(--bgc)', border: '1px solid var(--bd)', textDecoration: 'none' },
-  criteriaLabel: { display: 'block', fontFamily: MONO, fontSize: 12, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--pk)' },
+  criteriaLabel: { display: 'block', fontFamily: MONO, fontSize: 12, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--pkd)' },
   criteriaText: { display: 'block', fontSize: 15, color: 'var(--tx)', marginTop: 4 },
   criteriaNote: { display: 'block', fontSize: 12, color: 'var(--tx2)', marginTop: 4 },
 
@@ -960,7 +960,7 @@ const S = {
   // is what takes the click, so the heading stays a heading to a screen reader.
   foldHeadingWrap: { margin: 0, scrollMarginTop: 20 },
   foldHeading: { display: 'flex', alignItems: 'baseline', gap: 8, width: '100%', textAlign: 'left', padding: '14px 0 6px', border: 'none', background: 'none', cursor: 'pointer', fontFamily: SERIF, fontSize: 23, lineHeight: 1.2, color: 'var(--tx)' },
-  caret: { flexShrink: 0, fontSize: 14, color: 'var(--pk)', transition: 'transform .15s ease', display: 'inline-block' },
+  caret: { flexShrink: 0, fontSize: 14, color: 'var(--pkd)', transition: 'transform .15s ease', display: 'inline-block' },
 
   toc: { position: 'sticky', top: 16, alignSelf: 'start', borderLeft: '2px solid var(--bd)', paddingLeft: 12 },
   tocLabel: { fontFamily: MONO, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx2)', margin: '0 0 6px' },
@@ -975,8 +975,8 @@ const S = {
   colLabel: { fontFamily: MONO, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx2)', margin: '0 0 8px' },
   editArea: { width: '100%', boxSizing: 'border-box', minHeight: 420, resize: 'vertical', fontFamily: MONO, fontSize: 12.5, lineHeight: 1.55, padding: 12, borderRadius: 8, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx)' },
   noteInput: { width: '100%', boxSizing: 'border-box', marginTop: 10, fontSize: 14, padding: '9px 11px', borderRadius: 8, border: '1px solid var(--bd)', background: 'var(--bg)', color: 'var(--tx)' },
-  saveNotice: { marginTop: 12, fontFamily: MONO, fontSize: 14, color: 'var(--pk)', lineHeight: 1.5 },
-  primary: { fontSize: 14, fontWeight: 600, padding: '9px 16px', borderRadius: 24, border: 'none', background: 'var(--pk)', color: '#fff', cursor: 'pointer' },
+  saveNotice: { marginTop: 12, fontFamily: MONO, fontSize: 14, color: 'var(--pkd)', lineHeight: 1.5 },
+  primary: { fontSize: 14, fontWeight: 600, padding: '9px 16px', borderRadius: 24, border: 'none', background: 'var(--pkd)', color: '#fff', cursor: 'pointer' },
   // Disabled twin of `primary`. Buttons carry inline styles here, so `:disabled`
   // in a stylesheet would never reach them — the greyed state has to be a style
   // object the render picks, and `cursor: not-allowed` is what makes it read as

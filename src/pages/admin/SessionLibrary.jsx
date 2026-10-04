@@ -244,7 +244,7 @@ export default function SessionLibrary() {
                             <td style={S.td}><span style={S.mono}>{fmtDate(s.created_at)}</span></td>
                             <td style={S.td}>
                               <div style={S.actions}>
-                                <button style={{ ...S.actionBtn, color: 'var(--pk)' }} onClick={() => setDemoSession(s)}>▶ Demo</button>
+                                <button style={{ ...S.actionBtn, color: 'var(--pkd)' }} onClick={() => setDemoSession(s)}>▶ Demo</button>
                                 <Link to={`/admin/sessions/${s.id}`} style={S.actionBtn}>Edit</Link>
                                 <select
                                   style={S.moveSelect}
@@ -319,7 +319,7 @@ export default function SessionLibrary() {
 }
 
 function Chip({ children }) {
-  return <span style={{ fontFamily: '"Space Mono",monospace', fontSize: 12, background: 'var(--pkb)', color: 'var(--pk)', borderRadius: 6, padding: '2px 7px' }}>{children}</span>
+  return <span style={{ fontFamily: '"Space Mono",monospace', fontSize: 12, background: 'var(--pkb)', color: 'var(--pkd)', borderRadius: 6, padding: '2px 7px' }}>{children}</span>
 }
 
 function fmtDate(ts) {
@@ -349,8 +349,8 @@ const S = {
   td:        { padding: '12px 16px', verticalAlign: 'middle' },
   actions:   { display: 'flex', gap: 10, alignItems: 'center' },
   actionBtn: { background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: 'var(--tx2)', padding: 0, textDecoration: 'none', fontFamily: '"DM Sans",system-ui,sans-serif' },
-  moveSelect:{ fontSize: 14, color: 'var(--pk)', background: 'var(--bgp)', border: '1px solid var(--pkb)', borderRadius: 6, padding: '2px 6px', cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
-  btnPrimary:{ display: 'inline-block', background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer', textDecoration: 'none', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
+  moveSelect:{ fontSize: 14, color: 'var(--pkd)', background: 'var(--bgp)', border: '1px solid var(--pkb)', borderRadius: 6, padding: '2px 6px', cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
+  btnPrimary:{ display: 'inline-block', background: 'var(--pkd)', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer', textDecoration: 'none', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
   btnGhost:  { background: 'none', border: '1px solid var(--bds)', borderRadius: 8, padding: '8px 18px', fontSize: 14, cursor: 'pointer', color: 'var(--tx2)', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
   btnDanger: { background: '#e04', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 18px', fontSize: 14, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
   overlay:   { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' },

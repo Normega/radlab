@@ -120,7 +120,7 @@ const S = {
     fontSize: '0.75rem',
     letterSpacing: '0.08em',
     textTransform: 'uppercase',
-    color: '#f068a4',
+    color: 'var(--pkd)',
     margin: '0 0 0.75rem',
   },
   h1: {
@@ -269,7 +269,7 @@ const S = {
   pressEmail: {
     fontFamily: '"Space Mono", monospace',
     fontSize: '0.875rem',
-    color: '#f068a4',
+    color: 'var(--pkd)',
     textDecoration: 'none',
     borderBottom: '1px solid rgba(240,104,164,0.35)',
     paddingBottom: 2,

@@ -116,7 +116,7 @@ export default function MoodCheckinStep({
               style={{
                 ...S.ratingBtn,
                 borderColor: rating === n ? 'var(--pk)' : 'var(--bd)',
-                background:  rating === n ? 'var(--pk)' : '#fff',
+                background:  rating === n ? 'var(--pkd)' : '#fff',
                 color:       rating === n ? '#fff' : 'var(--tx)',
               }}
             >
@@ -140,7 +140,7 @@ export default function MoodCheckinStep({
                 ...S.dirBtn,
                 borderColor: direction === d.value ? 'var(--pk)' : 'var(--bd)',
                 background:  direction === d.value ? 'var(--bg)' : '#fff',
-                color:       direction === d.value ? 'var(--pk)' : 'var(--tx)',
+                color:       direction === d.value ? 'var(--pkd)' : 'var(--tx)',
                 fontWeight:  direction === d.value ? 600 : 400,
               }}
             >
@@ -191,5 +191,5 @@ const S = {
   reasonWrap:{ marginTop: 22 },
   textarea:  { width: '100%', boxSizing: 'border-box', fontSize: 15, fontFamily: '"DM Sans",system-ui,sans-serif', border: '1px solid var(--bd)', borderRadius: 8, padding: '10px 14px', color: 'var(--tx)', background: '#fff', resize: 'vertical', lineHeight: 1.5 },
   errMsg:    { fontSize: 14, color: '#e04', background: 'var(--err-bg)', border: '1px solid #fcc', borderRadius: 8, padding: '8px 14px', margin: '16px 0 0' },
-  btn:       { display: 'block', width: '100%', background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 9, padding: '13px 20px', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', marginTop: 24 },
+  btn:       { display: 'block', width: '100%', background: 'var(--pkd)', color: '#fff', border: 'none', borderRadius: 9, padding: '13px 20px', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', marginTop: 24 },
 }

@@ -25,7 +25,7 @@ export default function LabLayout() {
           <div style={{ height: 32, display: 'flex', alignItems: 'center' }}>
             <img src="/RADlab_Logo.svg" style={{ height: '100%', display: 'block' }} alt="RADlab logo" />
           </div>
-          <span style={S.wordmark}>RAD<b style={{ color: '#f068a4', fontWeight: 400 }}>lab</b></span>
+          <span style={S.wordmark}>RAD<b style={{ color: 'var(--pkd)', fontWeight: 400 }}>lab</b></span>
         </Link>
         <div style={S.links}>
           {NAV_LINKS.map(({ to, label }) => (
@@ -84,7 +84,7 @@ const S = {
     whiteSpace: 'nowrap',
   },
   linkActive: {
-    color: '#f068a4',
+    color: 'var(--pkd)',
     borderBottom: '2px solid #f068a4',
   },
   footerLinks: {

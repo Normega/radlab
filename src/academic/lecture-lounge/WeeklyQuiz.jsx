@@ -274,10 +274,10 @@ function Shell({ slug, session, children }) {
 const S = {
   wrap: { maxWidth: 560, margin: '0 auto', padding: '32px 20px 60px' },
   backLink: { fontFamily: MONO, fontSize: 12, color: 'var(--tx2)', textDecoration: 'none', display: 'inline-block', marginBottom: 18 },
-  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)', marginBottom: 8 },
+  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pkd)', marginBottom: 8 },
   title: { fontFamily: SERIF, fontSize: 26, color: 'var(--tx)', marginBottom: 8, lineHeight: 1.25 },
   sub: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.5 },
-  deadline: { fontFamily: MONO, fontSize: 12, color: 'var(--pk)', margin: '10px 0 0' },
+  deadline: { fontFamily: MONO, fontSize: 12, color: 'var(--pkd)', margin: '10px 0 0' },
   progressBanner: {
     fontFamily: MONO, fontSize: 12, color: 'var(--tx2)', background: 'var(--bgc)',
     border: '1px solid var(--bd)', borderRadius: 10, padding: '8px 14px', margin: '16px 0',
@@ -302,7 +302,7 @@ const S = {
     color: isCorrect || isMine ? 'var(--tx)' : 'var(--tx3)',
   }),
   tag: { fontFamily: MONO, fontSize: 11, color: '#2e7d32' },
-  tagDim: { fontFamily: MONO, fontSize: 11, color: 'var(--pk)' },
+  tagDim: { fontFamily: MONO, fontSize: 11, color: 'var(--pkd)' },
   vsaRow: { display: 'flex', gap: 8 },
   vsaInput: {
     flex: 1, padding: '10px 12px', borderRadius: 10, border: '1px solid var(--bds)',
@@ -311,7 +311,7 @@ const S = {
   vsaMine: { fontSize: 14, color: 'var(--tx2)', marginBottom: 6 },
   vsaModel: { fontSize: 14, color: 'var(--tx)' },
   primaryBtn: {
-    padding: '10px 18px', borderRadius: 10, border: 'none', background: 'var(--pk)',
+    padding: '10px 18px', borderRadius: 10, border: 'none', background: 'var(--pkd)',
     color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
   },
   reveal: { marginTop: 4 },
@@ -325,6 +325,6 @@ const S = {
   },
   confSkip: { border: 'none', background: 'none', color: 'var(--tx3)', fontSize: 12.5, cursor: 'pointer', fontFamily: MONO },
   rationale: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.55, margin: '12px 0 6px' },
-  link: { color: 'var(--pk)', fontSize: 14 },
+  link: { color: 'var(--pkd)', fontSize: 14 },
   error: { color: '#c04a4a', fontSize: 13, marginTop: 8 },
 }

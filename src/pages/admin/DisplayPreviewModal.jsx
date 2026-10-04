@@ -62,5 +62,5 @@ const M = {
   chip:        { alignSelf: 'flex-start', fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--pkd)', background: 'var(--bgc)', border: '1px solid var(--pkb)', borderRadius: 12, padding: '4px 8px' },
   empty:       { fontSize: 14, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif', margin: 0 },
   // Mirrors DisplayStepWrapper's S.btn.
-  continueBtn: { alignSelf: 'center', marginTop: 16, background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 24, padding: '16px 32px', fontSize: 14, fontWeight: 600, fontFamily: '"DM Sans",system-ui,sans-serif', opacity: 0.6, cursor: 'default' },
+  continueBtn: { alignSelf: 'center', marginTop: 16, background: 'var(--pkd)', color: '#fff', border: 'none', borderRadius: 24, padding: '16px 32px', fontSize: 14, fontWeight: 600, fontFamily: '"DM Sans",system-ui,sans-serif', opacity: 0.6, cursor: 'default' },
 }

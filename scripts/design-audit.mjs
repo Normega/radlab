@@ -32,9 +32,9 @@ const TYPE_SCALE = new Set([10, 12, 14, 16, 20, 28, 36])
 const HERO_PX = 72 // Display/Hero — the one sanctioned off-scale style
 const RADII = new Set([0, 12, 24]) // plus 50%, which the px regexes never match
 const SPACE_SCALE = new Set([0, 4, 8, 16, 24, 32, 40, 48, 64])
-// The eleven primitives plus legacy #A8A9AD (pre-merge --tx3, still a token value in old code)
+// The twelve primitives (pink/700 #BA417A since 2026-10-04, pink/800 added) plus legacy #A8A9AD (pre-merge --tx3, still a token value in old code)
 const TOKEN_HEXES = new Set([
-  '#FCF0F5', '#FBEAF3', '#F068A4', '#C04A82', '#FFFFFF', '#ABADB0', '#6B6C70',
+  '#FCF0F5', '#FBEAF3', '#F068A4', '#BA417A', '#A3396B', '#FFFFFF', '#ABADB0', '#6B6C70',
   '#1C1C1E', '#FCEBEB', '#F09595', '#A32D2D', '#A8A9AD',
 ])
 // Files whose hex literals are the point, not drift

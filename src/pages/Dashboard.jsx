@@ -886,7 +886,7 @@ const SERIF = '"DM Serif Display", Georgia, serif'
 const S = {
   wrap:    { maxWidth: 1100, margin: '0 auto', padding: '48px 32px' },
   header:  { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 48, flexWrap: 'wrap', gap: 20 },
-  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)', marginBottom: 8 },
+  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pkd)', marginBottom: 8 },
   title:   { fontFamily: SERIF, fontSize: 42, color: 'var(--tx)', letterSpacing: -1, marginBottom: 6 },
   sub:     { fontSize: 15, color: 'var(--tx2)' },
   accountBadge: { background: 'var(--bgc)', border: '1px solid var(--bds)', borderRadius: 12, padding: '14px 18px', textAlign: 'right' },
@@ -909,7 +909,7 @@ const S = {
   gameBadgeMuted: { background: 'var(--bg)', color: 'var(--tx3)', border: '1px solid var(--bd)' },
   gameTitle: { fontFamily: SERIF, fontSize: 24, color: 'var(--tx)', marginBottom: 8 },
   gameDesc:  { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.6 },
-  gameStatus: { padding: '12px 24px', background: 'var(--bgp)', borderTop: '1px solid var(--pkb)', fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)' },
+  gameStatus: { padding: '12px 24px', background: 'var(--bgp)', borderTop: '1px solid var(--pkb)', fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pkd)' },
   gameStatusMuted: { background: 'var(--bg)', borderColor: 'var(--bd)', color: 'var(--tx3)' },
   statsPlaceholder: { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 16, padding: '40px 32px', textAlign: 'center' },
   placeholderTitle: { fontFamily: SERIF, fontSize: 22, color: 'var(--tx)', marginBottom: 8 },

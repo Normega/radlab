@@ -86,10 +86,10 @@ export default function InsightsPreview() {
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
         <p style={{ fontFamily: '"Space Mono", monospace', fontSize: 12, color: 'var(--tx3)', marginBottom: 16 }}>
           /dev/insights-preview · state={state} · window={window} · {rows.length} synthetic check-ins ·{' '}
-          <a href="?state=rich" style={{ color: 'var(--pk)' }}>rich</a>{' · '}
-          <a href="?state=sparse" style={{ color: 'var(--pk)' }}>sparse</a>{' · '}
-          <a href="?state=empty" style={{ color: 'var(--pk)' }}>empty</a>{' · '}
-          <a href="?state=rich&window=year" style={{ color: 'var(--pk)' }}>year</a>
+          <a href="?state=rich" style={{ color: 'var(--pkd)' }}>rich</a>{' · '}
+          <a href="?state=sparse" style={{ color: 'var(--pkd)' }}>sparse</a>{' · '}
+          <a href="?state=empty" style={{ color: 'var(--pkd)' }}>empty</a>{' · '}
+          <a href="?state=rich&window=year" style={{ color: 'var(--pkd)' }}>year</a>
         </p>
         {/* Ripple portrait left of the check-in info, as it sits on the dashboard.
             One per mood sector, so every face the lookup can produce is visible

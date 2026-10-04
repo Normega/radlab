@@ -22,7 +22,7 @@ export default function Landing({ session }) {
           <div className="h-8 md:h-10" style={{ display: 'flex', alignItems: 'center' }}>
             <img src="/RADlab_Logo.svg" style={{ height: '100%', display: 'block' }} alt="RADlab logo" />
           </div>
-          <span style={S.wordmark}>RAD<b style={{ color: 'var(--pk)', fontWeight: 400 }}>lab</b></span>
+          <span style={S.wordmark}>RAD<b style={{ color: 'var(--pkd)', fontWeight: 400 }}>lab</b></span>
         </Link>
         <a href="https://www.utoronto.ca/" target="_blank" rel="noopener noreferrer" style={S.uoftLink}>
           <img src="/UofT_Logo.svg" style={{ height: 42, width: 'auto', display: 'block' }} alt="University of Toronto" />
@@ -40,7 +40,7 @@ export default function Landing({ session }) {
           <img src="/RADlab_Logo.svg" alt="" aria-hidden="true" className="h-16 md:h-20" style={S.heroLogo} />
           <h1 style={S.h1}>
             Regulatory &amp; Affective<br />
-            <em style={{ fontStyle: 'italic', color: 'var(--pk)' }}>Dynamics</em>
+            <em style={{ fontStyle: 'italic', color: 'var(--pkd)' }}>Dynamics</em>
           </h1>
         </div>
         <p style={S.sub} className="mx-auto">
@@ -163,7 +163,7 @@ function HubCard({ tag, title, desc, chips, cta, href, internal, newTab }) {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      <span style={{ ...S.cardTag,   color: hovered ? '#f4a8cb' : 'var(--pk)' }}>{tag}</span>
+      <span style={{ ...S.cardTag,   color: hovered ? '#f4a8cb' : 'var(--pkd)' }}>{tag}</span>
       <h2  style={{ ...S.cardTitle, color: hovered ? '#fff'    : 'var(--tx)' }}>{title}</h2>
       <p   style={{ ...S.cardDesc,  color: hovered ? 'rgba(255,255,255,0.48)' : 'var(--gy)' }}>{desc}</p>
       {chips?.length > 0 && (
@@ -172,12 +172,12 @@ function HubCard({ tag, title, desc, chips, cta, href, internal, newTab }) {
             <span key={c} style={{
               ...S.chip,
               background: hovered ? 'rgba(240,104,164,0.15)' : 'var(--bgp)',
-              color:      hovered ? '#f4a8cb' : 'var(--pk)',
+              color:      hovered ? '#f4a8cb' : 'var(--pkd)',
             }}>{c}</span>
           ))}
         </div>
       )}
-      <p style={{ ...S.cardCta, color: hovered ? '#f4a8cb' : 'var(--pk)' }}>{cta}</p>
+      <p style={{ ...S.cardCta, color: hovered ? '#f4a8cb' : 'var(--pkd)' }}>{cta}</p>
     </El>
   )
 }
@@ -207,12 +207,12 @@ const S = {
   // Horizontal padding lives in responsive classNames (px-5 md:px-[52px]) —
   // vertical padding must stay longhand or the inline shorthand zeroes the class px
   hero:      { paddingTop: 60, paddingBottom: 40, maxWidth: 1080, marginInline: 'auto', width: '100%', position: 'relative', zIndex: 1 }, /* content column centers in the viewport */
-  eyebrow:   { fontFamily: MONO, fontSize: '0.875rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--pk)', marginBottom: 20 },
-  eyebrowLink: { color: 'var(--pk)', textDecoration: 'none', borderBottom: '1px solid rgba(240,104,164,0.35)' },
+  eyebrow:   { fontFamily: MONO, fontSize: '0.875rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--pkd)', marginBottom: 20 },
+  eyebrowLink: { color: 'var(--pkd)', textDecoration: 'none', borderBottom: '1px solid rgba(240,104,164,0.35)' },
   heroBrand: {},
   heroLogo:  { flexShrink: 0, display: 'block', width: 'auto' },
   h1:        { fontFamily: SERIF, fontSize: 'clamp(2.1rem, 8.5vw, 4rem)', lineHeight: 1.08, color: 'var(--tx)', margin: 0 },
-  sub:       { fontSize: '1rem', color: 'var(--gy)', lineHeight: 1.7, maxWidth: 500, fontWeight: 400 },
+  sub:       { fontSize: '1rem', color: 'var(--tx2)', lineHeight: 1.7, maxWidth: 500, fontWeight: 400 },
 
   hubSection: { paddingTop: 40, paddingBottom: 90, position: 'relative', zIndex: 1 },
 

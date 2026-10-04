@@ -76,11 +76,11 @@ const S = {
   form: { display: 'flex', flexDirection: 'column', gap: 16, width: '100%', paddingTop: 8 },
   ctaRow: { display: 'flex', justifyContent: 'center', paddingTop: 8 },
   forgotRow: { display: 'flex', justifyContent: 'flex-end', marginTop: 4 },
-  forgotLink: { fontSize: 12, color: 'var(--pk)', textDecoration: 'none', fontWeight: 600 },
+  forgotLink: { fontSize: 12, color: 'var(--pkd)', textDecoration: 'none', fontWeight: 600 },
   errorBox: {
     background: 'var(--err-bg)', border: '1px solid var(--err-bd)', borderRadius: 12,
     padding: '10px 14px', fontSize: 14, color: 'var(--err-tx)', width: '100%', boxSizing: 'border-box',
   },
   footer: { textAlign: 'center', fontSize: 12, fontWeight: 600, color: 'var(--tx2)', margin: '8px 0 0' },
-  footerLink: { color: 'var(--pk)', textDecoration: 'none', fontWeight: 600 },
+  footerLink: { color: 'var(--pkd)', textDecoration: 'none', fontWeight: 600 },
 }

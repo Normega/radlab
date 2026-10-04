@@ -99,7 +99,7 @@ export default function InstructionScreen({ questionnaire, onBegin }) {
       <button
         onClick={onBegin}
         style={{
-          background:   'var(--pk)',
+          background:   'var(--pkd)',
           color:        '#fff',
           border:       'none',
           borderRadius: 14,

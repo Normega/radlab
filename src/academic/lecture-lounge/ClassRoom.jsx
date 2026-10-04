@@ -759,7 +759,7 @@ function FieldGuideBridge({ slug }) {
       </button>
       {error && <p style={S.bridgeErr}>{error}</p>}
       <p style={{ ...S.bridgeSub, marginTop: 10 }}>
-        Just here for the Field Guide? <a href={`/academic/${slug}/wiki`} style={{ color: 'var(--pk)' }}>Open it instead →</a>
+        Just here for the Field Guide? <a href={`/academic/${slug}/wiki`} style={{ color: 'var(--pkd)' }}>Open it instead →</a>
       </p>
     </div>
   )
@@ -1009,27 +1009,27 @@ const S = {
   testMeta: { fontSize: 14, margin: 0, opacity: 0.95 },
   wrap: { maxWidth: 480, margin: '0 auto', padding: '10px 20px 40px' },
   bridge: { background: 'var(--bgc)', border: '1px solid var(--pk)', borderRadius: 16, padding: '22px 24px', textAlign: 'left', marginBottom: 16 },
-  bridgeEyebrow: { fontFamily: MONO, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--pk)' },
+  bridgeEyebrow: { fontFamily: MONO, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--pkd)' },
   bridgeEmail: { fontSize: 16, fontWeight: 700, color: 'var(--tx)', margin: '4px 0 6px', overflowWrap: 'anywhere' },
   bridgeSub: { fontSize: 13.5, color: 'var(--tx2)', lineHeight: 1.5, marginBottom: 12 },
-  bridgeBtn: { width: '100%', fontSize: 15, fontWeight: 600, padding: '12px 16px', borderRadius: 24, border: 'none', background: 'var(--pk)', color: '#fff', cursor: 'pointer' },
+  bridgeBtn: { width: '100%', fontSize: 15, fontWeight: 600, padding: '12px 16px', borderRadius: 24, border: 'none', background: 'var(--pkd)', color: '#fff', cursor: 'pointer' },
   bridgeErr: { fontSize: 13, color: '#c0392b', marginTop: 10 },
   card: { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 16, padding: '32px 28px', textAlign: 'center' },
-  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)', marginBottom: 8 },
+  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pkd)', marginBottom: 8 },
   title: { fontFamily: SERIF, fontSize: 28, color: 'var(--tx)', marginBottom: 8 },
   sub: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.5 },
   wallWrap: { marginTop: 24 },
   error: { fontSize: 14, color: '#c04a4a', marginTop: 8 },
   primaryBtn: {
     marginTop: 20, padding: '12px 28px', borderRadius: 10, border: 'none',
-    background: 'var(--pk)', color: '#fff', fontSize: 15, fontWeight: 600,
+    background: 'var(--pkd)', color: '#fff', fontSize: 15, fontWeight: 600,
     cursor: 'pointer', fontFamily: 'inherit',
   },
   authInput: {
     width: '100%', boxSizing: 'border-box', padding: '11px 14px', borderRadius: 10,
     border: '1px solid var(--bds)', fontSize: 15, fontFamily: 'inherit', marginTop: 10,
   },
-  authSwitch: { border: 'none', background: 'none', color: 'var(--pk)', cursor: 'pointer', fontSize: 'inherit', fontFamily: 'inherit', textDecoration: 'underline', padding: 0 },
+  authSwitch: { border: 'none', background: 'none', color: 'var(--pkd)', cursor: 'pointer', fontSize: 'inherit', fontFamily: 'inherit', textDecoration: 'underline', padding: 0 },
   // Every lobby card is white on the pink ground (Norm, 2026-09-09) — the
   // weekly cards used to be pink-filled, which read as a different KIND of
   // thing rather than as emphasis. Emphasis now lives in the border alone:
@@ -1043,15 +1043,15 @@ const S = {
     display: 'block', textDecoration: 'none', marginTop: 16, textAlign: 'left',
     background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 14, padding: '16px 20px',
   },
-  fgEyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)', marginBottom: 6 },
+  fgEyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pkd)', marginBottom: 6 },
   fgTitle: { fontFamily: SERIF, fontSize: 18, color: 'var(--tx)', lineHeight: 1.35, marginBottom: 6 },
   fgMeta: { fontFamily: MONO, fontSize: 12, color: 'var(--tx2)' },
-  boardsHead: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)', margin: '28px 0 -4px' },
+  boardsHead: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pkd)', margin: '28px 0 -4px' },
   weeklyCard: {
     display: 'block', textDecoration: 'none', marginTop: 16, textAlign: 'left',
     background: 'var(--bgc)', border: '1px solid var(--pkbs)', borderRadius: 14, padding: '16px 20px',
   },
-  weeklyEyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)', marginBottom: 6 },
+  weeklyEyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pkd)', marginBottom: 6 },
   weeklyPrompt: { fontFamily: SERIF, fontSize: 18, color: 'var(--tx)', lineHeight: 1.35, marginBottom: 6 },
   weeklyMeta: { fontFamily: MONO, fontSize: 12, color: 'var(--tx2)' },
   quizMetaDone: { fontFamily: MONO, fontSize: 12, color: '#2e7d32' },
@@ -1064,7 +1064,7 @@ const S = {
     fontSize: 14, fontFamily: 'inherit',
   },
   bannerBtn: {
-    padding: '9px 18px', borderRadius: 8, border: 'none', background: 'var(--pk)',
+    padding: '9px 18px', borderRadius: 8, border: 'none', background: 'var(--pkd)',
     color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
   },
 }

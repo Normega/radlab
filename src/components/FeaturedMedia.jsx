@@ -27,7 +27,7 @@ function Tile({ item }) {
         : <span style={S.logoFallback} aria-hidden="true">{item.outlet.slice(0, 1)}</span>
       }
       <span style={S.body}>
-        <span style={{ ...S.outlet, color: hov ? 'var(--pk)' : 'var(--gy)' }}>{item.outlet}</span>
+        <span style={{ ...S.outlet, color: hov ? 'var(--pkd)' : 'var(--gy)' }}>{item.outlet}</span>
         <span style={S.title}>{item.title}</span>
       </span>
     </a>
@@ -61,7 +61,7 @@ const S = {
   },
   eyebrow: {
     fontFamily: MONO, fontSize: '0.75rem', letterSpacing: '0.13em',
-    textTransform: 'uppercase', fontWeight: 700, color: 'var(--pk)', margin: 0,
+    textTransform: 'uppercase', fontWeight: 700, color: 'var(--pkd)', margin: 0,
   },
   all: {
     fontFamily: MONO, fontSize: '0.75rem', letterSpacing: '0.1em',
@@ -85,7 +85,7 @@ const S = {
   logoFallback: {
     width: 52, height: 52, flexShrink: 0, borderRadius: 10,
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    background: 'var(--bgp)', color: 'var(--pk)', fontFamily: MONO, fontSize: '1.1rem',
+    background: 'var(--bgp)', color: 'var(--pkd)', fontFamily: MONO, fontSize: '1.1rem',
   },
   body: { display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 },
   outlet: {

@@ -33,7 +33,7 @@ const S = {
     textDecoration: 'none', cursor: 'pointer',
     transition: 'background 0.15s ease, color 0.15s ease',
   },
-  pink:     { background: 'var(--pk)',  color: '#fff' },
-  white:    { background: 'var(--bgc)', color: 'var(--pk)' },
+  pink:     { background: 'var(--pkd)',  color: '#fff' },
+  white:    { background: 'var(--bgc)', color: 'var(--pkd)' },
   inactive: { background: 'var(--gy)',  color: '#fff', cursor: 'default' },
 }

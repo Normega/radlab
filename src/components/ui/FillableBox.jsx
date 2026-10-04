@@ -43,6 +43,6 @@ const S = {
   },
   desc: {
     fontFamily: '"DM Sans", system-ui, sans-serif', fontWeight: 400,
-    fontSize: 'var(--fs-hint)', lineHeight: 1.5, color: 'var(--gy)',
+    fontSize: 'var(--fs-hint)', lineHeight: 1.5, color: 'var(--tx2)',
   },
 }

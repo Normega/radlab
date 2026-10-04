@@ -283,7 +283,7 @@ const S = {
     padding: '8px 14px 10px', fontSize: 14, color: 'var(--tx2)', cursor: 'pointer',
     fontFamily: '"DM Sans",system-ui,sans-serif',
   },
-  tabBtnActive: { color: 'var(--pk)', borderBottom: '2px solid var(--pk)', fontWeight: 600 },
+  tabBtnActive: { color: 'var(--pkd)', borderBottom: '2px solid var(--pk)', fontWeight: 600 },
 
   search: {
     width: '100%', maxWidth: 420, padding: '10px 14px', borderRadius: 10,

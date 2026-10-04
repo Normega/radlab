@@ -228,7 +228,7 @@ const S = {
   generateRow:   { display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 16 },
   generateCard:  { background: '#fff', border: '1px solid var(--bd)', borderRadius: 10, padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 10, flex: 1, minWidth: 220 },
   cardLabel:     { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' },
-  btnPrimary:    { background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
+  btnPrimary:    { background: 'var(--pkd)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
   input:         { fontSize: 14, fontFamily: '"DM Sans",system-ui,sans-serif', border: '1px solid var(--bd)', borderRadius: 7, padding: '7px 10px', color: 'var(--tx)', background: '#fff', minWidth: 90 },
   errMsg:        { fontSize: 14, color: '#e04', background: '#fff0f0', border: '1px solid #fcc', borderRadius: 8, padding: '8px 14px', marginBottom: 12 },
   muted:         { fontSize: 14, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif' },
@@ -240,6 +240,6 @@ const S = {
   tr:            { borderBottom: '1px solid var(--bd)' },
   td:            { padding: '11px 14px', verticalAlign: 'middle', fontSize: 14, color: 'var(--tx)', fontFamily: '"DM Sans",system-ui,sans-serif' },
   mono:          { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx2)' },
-  copyBtn:       { background: 'none', border: '1px solid var(--bd)', borderRadius: 6, padding: '3px 8px', fontSize: 12, cursor: 'pointer', color: 'var(--pk)', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
+  copyBtn:       { background: 'none', border: '1px solid var(--bd)', borderRadius: 6, padding: '3px 8px', fontSize: 12, cursor: 'pointer', color: 'var(--pkd)', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
   revokeBtn:     { background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--tx3)', padding: 0, fontFamily: '"DM Sans",system-ui,sans-serif' },
 }

@@ -430,6 +430,6 @@ const S = {
   mdHint:     { fontSize: 12, color: 'var(--tx3)', fontFamily: '"Space Mono",monospace', margin: 0, flex: 1, minWidth: 220 },
   previewBtn: { fontSize: 14, color: 'var(--pkd)', background: '#fff', border: '1px solid var(--pkb)', borderRadius: 24, padding: '4px 16px', cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
   previewBox: { background: '#fff', border: '1px solid var(--bd)', borderRadius: 12, padding: '16px 16px' },
-  btnPrimary: { display: 'inline-block', background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
+  btnPrimary: { display: 'inline-block', background: 'var(--pkd)', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
   btnSecondary:{ display: 'inline-block', background: '#fff', color: 'var(--pkd)', border: '1px solid var(--pkb)', borderRadius: 9, padding: '9px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
 }

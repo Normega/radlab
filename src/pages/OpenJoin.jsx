@@ -128,8 +128,8 @@ const S = {
   ul:      { margin: 0, paddingLeft: 20 },
   li:      { fontFamily: FONT, fontSize: 15, color: 'var(--tx)', lineHeight: 1.6, margin: '0 0 6px' },
   body:    { fontFamily: FONT, fontSize: 15, color: 'var(--tx)', lineHeight: 1.6, margin: 0 },
-  btn:     { marginTop: 10, padding: '13px 26px', borderRadius: 8, border: '1px solid var(--pk)', background: 'var(--pk)', color: '#fff', fontSize: 16, fontWeight: 600, fontFamily: FONT, cursor: 'pointer' },
+  btn:     { marginTop: 10, padding: '13px 26px', borderRadius: 8, border: '1px solid var(--pk)', background: 'var(--pkd)', color: '#fff', fontSize: 16, fontWeight: 600, fontFamily: FONT, cursor: 'pointer' },
   error:   { fontFamily: FONT, fontSize: 14, color: '#b91c1c', margin: '12px 0 0', lineHeight: 1.5 },
   contact: { fontFamily: FONT, fontSize: 14, color: 'var(--tx3)', margin: '22px 0 0', lineHeight: 1.5 },
-  link:    { color: 'var(--pk)' },
+  link:    { color: 'var(--pkd)' },
 }

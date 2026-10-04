@@ -263,7 +263,7 @@ const SLIDES = [
     render: () => (
       <Frame>
         <div style={K.crests}>
-          <img src="/RADlab_Logo_light.svg" alt="RADlab" style={{ height: 56 }} />
+          <img src="/RADlab_Logo.svg" alt="RADlab" style={{ height: 56 }} />
           <img src="/UofT_Logo.svg" alt="University of Toronto" style={{ height: 56 }} />
         </div>
         <h1 style={K.title}>What You Miss Won’t Move You</h1>
@@ -407,7 +407,7 @@ const SLIDES = [
         <p style={K.author}>Kyle Logie-Hagen · Rose Amir Pour</p>
         <Cite>Materials, data and analysis code on OSF · NSERC Discovery RGPIN-2015-05901</Cite>
         <div style={K.crests}>
-          <img src="/RADlab_Logo_light.svg" alt="RADlab" style={{ height: 44 }} />
+          <img src="/RADlab_Logo.svg" alt="RADlab" style={{ height: 44 }} />
           <img src="/UofT_Logo.svg" alt="University of Toronto" style={{ height: 44 }} />
         </div>
       </Frame>

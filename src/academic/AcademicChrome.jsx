@@ -14,8 +14,7 @@ const MONO = '"Space Mono", "Courier New", monospace'
 // AcademicEyebrow — the top-left identity: small RADlab logo (link to the
 // main site — the "way home" anchor Norm asked for on every page) beside the
 // area eyebrow ("FIELD GUIDE · PSY240"), which links to the area's home.
-// Light-background logo per /brand: RADlab_Logo.svg is white-outline,
-// dark-bg only.
+// The one RADlab logo, on every surface (Norm, 2026-10-04).
 // AcademicHeaderRow — eyebrow left, avatar menu top-right, never wrapping.
 // The same row WikiIndex and CourseHome hand-roll; staff pages mount it so
 // the menu is available everywhere (Norm, 2026-09-06: the roster had none).
@@ -32,7 +31,7 @@ export function AcademicEyebrow({ area = 'Field Guide', courseCode, to, suffix }
   return (
     <span style={S.row}>
       <Link to="/" aria-label="RADlab home" style={S.logoLink}>
-        <img src="/RADlab_Logo_light.svg" alt="RADlab" style={S.logo} />
+        <img src="/RADlab_Logo.svg" alt="RADlab" style={S.logo} />
       </Link>
       <p style={S.eyebrow}>
         {to ? <Link to={to} style={S.eyebrowLink}>{area}</Link> : area}
@@ -67,7 +66,7 @@ const S = {
   row: { display: 'inline-flex', alignItems: 'center', gap: 10, minHeight: 46 },
   logoLink: { display: 'inline-flex', alignItems: 'center' },
   logo: { height: 24, display: 'block' },
-  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)', margin: 0 },
+  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pkd)', margin: 0 },
   eyebrowLink: { color: 'inherit', textDecoration: 'none' },
   bar: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 14 },
 }

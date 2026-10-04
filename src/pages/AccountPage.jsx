@@ -259,7 +259,7 @@ function ChipRow({ options, value, onChange }) {
             aria-pressed={active}
             style={{
               ...S.chip,
-              background: active ? 'var(--pk)' : 'var(--bgp)',
+              background: active ? 'var(--pkd)' : 'var(--bgp)',
               color:      active ? '#fff'      : 'var(--tx2)',
               borderColor: active ? 'var(--pk)' : 'var(--bd)',
             }}
@@ -498,7 +498,7 @@ const S = {
   btnPrimary: {
     alignSelf: 'flex-start', fontFamily: SANS, fontWeight: 600, fontSize: 16,
     padding: '10px 16px', borderRadius: 24, border: 'none',
-    background: 'var(--pk)', color: '#fff', cursor: 'pointer',
+    background: 'var(--pkd)', color: '#fff', cursor: 'pointer',
   },
   btnDanger: {
     alignSelf: 'flex-start', fontFamily: SANS, fontWeight: 600, fontSize: 16,

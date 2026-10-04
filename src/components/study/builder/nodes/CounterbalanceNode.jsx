@@ -47,7 +47,7 @@ const S = {
   chip: {
     fontFamily: '"Space Mono", monospace',
     fontSize: 12,
-    color: 'var(--pkd, #c04a82)',
+    color: 'var(--pkd, #ba417a)',
     textTransform: 'uppercase',
     letterSpacing: '0.06em',
     marginBottom: 6,

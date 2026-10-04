@@ -436,7 +436,7 @@ const S = {
   codeLabel: { display: 'flex', flexDirection: 'column', gap: 3, fontFamily: MONO, fontSize: 11, color: 'var(--tx3)' },
   codeInput: { padding: '8px 10px', borderRadius: 8, border: '1px solid var(--bds)', fontFamily: MONO, fontSize: 15, width: 140 },
   btn: { padding: '8px 12px', borderRadius: 8, border: '1px solid var(--bds)', background: 'var(--bgc)', color: 'var(--tx)', fontSize: 13.5, cursor: 'pointer', fontFamily: 'inherit' },
-  primaryBtn: { padding: '8px 14px', borderRadius: 8, border: 'none', background: 'var(--pk)', color: '#fff', fontSize: 13.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' },
+  primaryBtn: { padding: '8px 14px', borderRadius: 8, border: 'none', background: 'var(--pkd)', color: '#fff', fontSize: 13.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' },
   dangerBtn: { padding: '8px 12px', borderRadius: 8, border: '1px solid #c04a4a', background: 'var(--bgc)', color: '#c04a4a', fontSize: 13.5, cursor: 'pointer', fontFamily: 'inherit' },
   counts: { display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', margin: '0 0 10px' },
   countPill: (k) => ({ fontFamily: MONO, fontSize: 12, padding: '3px 8px', borderRadius: 6, background: 'var(--bgc)', border: '1px solid var(--bd)',

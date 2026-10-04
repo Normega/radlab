@@ -61,7 +61,7 @@ export default function MoodTap({ onSubmit }) {
 
 const S = {
   wrap: { display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '8px 16px' },
-  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)', marginBottom: 6 },
+  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pkd)', marginBottom: 6 },
   title: { fontFamily: SERIF, fontSize: 22, color: 'var(--tx)', marginBottom: 16, maxWidth: 300 },
   wheelWrap: { touchAction: 'manipulation' },
   hint: { fontSize: 12, color: 'var(--tx3)', marginTop: 12 },

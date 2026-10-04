@@ -121,6 +121,6 @@ const S = {
   tr:    { borderBottom: '1px solid var(--bd)' },
   td:    { padding: '11px 16px', verticalAlign: 'middle', fontSize: 14, fontFamily: '"DM Sans",system-ui,sans-serif', color: 'var(--tx)' },
   mono:  { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx2)' },
-  btn:   { padding: '6px 12px', borderRadius: 7, border: '1px solid var(--pk)', background: '#fff', color: 'var(--pk)', fontSize: 13, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: '"DM Sans",system-ui,sans-serif' },
+  btn:   { padding: '6px 12px', borderRadius: 7, border: '1px solid var(--pk)', background: '#fff', color: 'var(--pkd)', fontSize: 13, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: '"DM Sans",system-ui,sans-serif' },
   err:   { fontSize: 14, color: '#e04', background: '#fff0f0', border: '1px solid #fcc', borderRadius: 8, padding: '8px 14px', marginBottom: 16 },
 }

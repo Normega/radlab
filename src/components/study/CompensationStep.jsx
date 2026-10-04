@@ -173,5 +173,5 @@ const S = {
   input:      { fontSize: 15, fontFamily: '"DM Sans",system-ui,sans-serif', border: '1px solid var(--bd)', borderRadius: 8, padding: '10px 14px', color: 'var(--tx)', background: '#fff', width: '100%', boxSizing: 'border-box' },
   infoNote:   { fontSize: 14, color: 'var(--tx2)', fontFamily: '"DM Sans",system-ui,sans-serif', margin: '6px 0 0', lineHeight: 1.55 },
   errMsg:     { fontSize: 14, color: '#e04', background: 'var(--err-bg)', border: '1px solid #fcc', borderRadius: 8, padding: '8px 14px', marginBottom: 12 },
-  btn:        { display: 'block', width: '100%', background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 9, padding: '12px 20px', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', marginTop: 4 },
+  btn:        { display: 'block', width: '100%', background: 'var(--pkd)', color: '#fff', border: 'none', borderRadius: 9, padding: '12px 20px', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', marginTop: 4 },
 }

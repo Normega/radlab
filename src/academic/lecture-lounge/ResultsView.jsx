@@ -311,7 +311,7 @@ export default function ResultsView({ checkinId, session, revealNonce }) {
 
 const S = {
   wrap: { display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '24px 20px', maxWidth: 380, margin: '0 auto' },
-  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)', marginBottom: 6 },
+  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pkd)', marginBottom: 6 },
   title: { fontFamily: SERIF, fontSize: 22, color: 'var(--tx)', marginBottom: 16 },
   hint: { fontSize: 14, color: 'var(--tx3)' },
   section: { marginBottom: 20 },
@@ -323,7 +323,7 @@ const S = {
   themeRow: { textAlign: 'left', background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 10, padding: '10px 12px', marginBottom: 8, width: '100%' },
   themeTop: { display: 'flex', justifyContent: 'space-between', gap: 8, marginBottom: 4 },
   themeLabel: { fontSize: 14, fontWeight: 700, color: 'var(--tx)' },
-  themeShare: { fontFamily: MONO, fontSize: 12, color: 'var(--pk)' },
+  themeShare: { fontFamily: MONO, fontSize: 12, color: 'var(--pkd)' },
   themeQuote: { fontSize: 13, color: 'var(--tx2)', fontStyle: 'italic', lineHeight: 1.45, margin: 0 },
   pacingWrap: { display: 'flex', gap: 10, alignItems: 'flex-end', justifyContent: 'center', position: 'relative', paddingBottom: 20 },
   pacingCol: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', width: 36, height: 70 },

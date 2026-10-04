@@ -768,7 +768,7 @@ const S = {
     cursor: 'pointer', transition: 'all 0.12s',
   },
   optBtnSel: {
-    background: 'var(--pkb)', color: 'var(--pk)',
+    background: 'var(--pkb)', color: 'var(--pkd)',
     border: '1px solid var(--pk)', fontWeight: 600,
   },
 
@@ -781,7 +781,7 @@ const S = {
 
   submitBtn: {
     alignSelf: 'flex-start',
-    background: 'var(--pk)', color: '#fff', border: 'none',
+    background: 'var(--pkd)', color: '#fff', border: 'none',
     borderRadius: 10, padding: '13px 32px',
     fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 16, fontWeight: 600,
     transition: 'opacity 0.15s',

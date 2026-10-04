@@ -83,7 +83,7 @@ const S = {
   },
   btn: {
     alignSelf: 'flex-start',
-    background: 'var(--pk)',
+    background: 'var(--pkd)',
     color: '#fff',
     border: 'none',
     borderRadius: 10,

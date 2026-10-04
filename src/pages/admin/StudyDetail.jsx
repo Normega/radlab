@@ -635,7 +635,7 @@ function ScreenerSection({ study, qc }) {
             <div>
               <div style={{ fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Active screener</div>
               <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--tx)', fontFamily: '"DM Sans",system-ui,sans-serif' }}>{attached.name}</div>
-              <div style={{ fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--pk)', marginTop: 2 }}>{attached.slug}</div>
+              <div style={{ fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--pkd)', marginTop: 2 }}>{attached.slug}</div>
             </div>
             <button
               style={{ ...S.actionBtn, color: '#c0392b', opacity: saving ? 0.5 : 1 }}
@@ -1226,7 +1226,7 @@ const EE = {
   linkRow:     { display: 'flex', alignItems: 'center', gap: 10 },
   linkLabel:   { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', width: 56, flexShrink: 0 },
   linkInput:   { flex: 1, fontSize: 12, fontFamily: '"Space Mono",monospace', border: '1px solid var(--bd)', borderRadius: 7, padding: '6px 10px', color: 'var(--tx2)', background: 'var(--bgc)', cursor: 'text' },
-  copyBtn:     { background: 'none', border: '1px solid var(--bd)', borderRadius: 6, padding: '5px 10px', fontSize: 12, cursor: 'pointer', color: 'var(--pk)', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
+  copyBtn:     { background: 'none', border: '1px solid var(--bd)', borderRadius: 6, padding: '5px 10px', fontSize: 12, cursor: 'pointer', color: 'var(--pkd)', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
 }
 
 // ─── Small components ─────────────────────────────────────────────────────────
@@ -1251,7 +1251,7 @@ function StatusBadge({ status }) {
 }
 
 function Chip({ children }) {
-  return <span style={{ fontFamily: '"Space Mono",monospace', fontSize: 12, background: 'var(--pkb)', color: 'var(--pk)', borderRadius: 6, padding: '2px 7px' }}>{children}</span>
+  return <span style={{ fontFamily: '"Space Mono",monospace', fontSize: 12, background: 'var(--pkb)', color: 'var(--pkd)', borderRadius: 6, padding: '2px 7px' }}>{children}</span>
 }
 
 function fmtDate(ts) {
@@ -1265,7 +1265,7 @@ const S = {
   h1:            { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 26, fontWeight: 400, color: 'var(--tx)', margin: '0 0 6px' },
   sub:           { fontSize: 14, color: 'var(--tx2)', margin: 0, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
   sep:           { color: 'var(--tx3)' },
-  typePill:      { fontFamily: '"Space Mono",monospace', fontSize: 12, background: 'var(--pkb)', color: 'var(--pk)', borderRadius: 6, padding: '2px 7px' },
+  typePill:      { fontFamily: '"Space Mono",monospace', fontSize: 12, background: 'var(--pkb)', color: 'var(--pkd)', borderRadius: 6, padding: '2px 7px' },
   sectionTitle:  { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 28, fontWeight: 400, color: 'var(--tx)', margin: 0 },
   muted:         { fontSize: 14, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif' },
   empty:         { textAlign: 'center', padding: '40px 0' },
@@ -1284,7 +1284,7 @@ const S = {
   mono:          { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)' },
   actions:       { display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' },
   actionBtn:     { background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: 'var(--tx2)', padding: 0, fontFamily: '"DM Sans",system-ui,sans-serif' },
-  btnPrimary:    { display: 'inline-block', background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
+  btnPrimary:    { display: 'inline-block', background: 'var(--pkd)', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
   overlay:       { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center' },
   dialog:        { background: '#fff', borderRadius: 14, padding: '28px 32px', maxWidth: 440, width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,0.18)' },
   dialogTitle:   { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 28, fontWeight: 400, color: 'var(--tx)', margin: '0 0 10px' },

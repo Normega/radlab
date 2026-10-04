@@ -299,7 +299,7 @@ const S = {
   form: { background: '#fff', border: '1px solid var(--bd)', borderRadius: 12, padding: '24px 22px' },
   formHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
   formMeta: { display: 'flex', alignItems: 'center', gap: 10, margin: 0 },
-  chip:     { fontFamily: '"Space Mono",monospace', fontSize: 12, background: 'var(--bgp)', color: 'var(--pk)', border: '1px solid var(--pkb)', borderRadius: 5, padding: '2px 7px' },
+  chip:     { fontFamily: '"Space Mono",monospace', fontSize: 12, background: 'var(--bgp)', color: 'var(--pkd)', border: '1px solid var(--pkb)', borderRadius: 5, padding: '2px 7px' },
   metaText: { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)' },
   resetBtn: { background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif' },
 
@@ -318,6 +318,6 @@ const S = {
   errMsg:    { fontSize: 14, color: '#e04', background: '#fff0f0', border: '1px solid #fcc', borderRadius: 8, padding: '8px 14px', margin: '12px 0' },
 
   actions:   { display: 'flex', gap: 10, marginTop: 8 },
-  uploadBtn: { background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 9, padding: '10px 22px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
+  uploadBtn: { background: 'var(--pkd)', color: '#fff', border: 'none', borderRadius: 9, padding: '10px 22px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
   cancelBtn: { background: 'none', border: '1px solid var(--bd)', borderRadius: 9, padding: '10px 16px', fontSize: 14, cursor: 'pointer', color: 'var(--tx2)', fontFamily: '"DM Sans",system-ui,sans-serif' },
 }

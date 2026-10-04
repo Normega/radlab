@@ -315,7 +315,7 @@ function LegacyQuestionnaireRenderer({
             disabled={!canNext}
             style={{
               pointerEvents:  'auto',
-              background:     canNext ? 'var(--pk)' : 'var(--bd)',
+              background:     canNext ? 'var(--pkd)' : 'var(--bd)',
               color:          canNext ? '#fff' : 'var(--tx3)',
               border:         'none',
               borderRadius:   12,

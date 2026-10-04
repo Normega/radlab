@@ -84,7 +84,7 @@ export default function DisplayStepWrapper({
 const S = {
   wrap:      { padding: '48px 32px', maxWidth: 640, margin: '0 auto', fontFamily: '"DM Sans",system-ui,sans-serif', display: 'flex', flexDirection: 'column', gap: 24 },
   textBlock: { fontSize: 16, color: 'var(--tx)', lineHeight: 1.65, whiteSpace: 'pre-wrap', margin: 0 },
-  btn:       { alignSelf: 'center', marginTop: 16, background: 'var(--pk)', color: '#fff', border: 'none', borderRadius: 24, padding: '16px 32px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
+  btn:       { alignSelf: 'center', marginTop: 16, background: 'var(--pkd)', color: '#fff', border: 'none', borderRadius: 24, padding: '16px 32px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif' },
   loading:   { padding: 40, textAlign: 'center', fontFamily: '"DM Sans",system-ui,sans-serif', color: 'var(--tx2)', fontSize: 14 },
   err:       { padding: 40, textAlign: 'center', fontFamily: '"DM Sans",system-ui,sans-serif', color: 'var(--err-tx)', fontSize: 14 },
   mono:      { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)' },

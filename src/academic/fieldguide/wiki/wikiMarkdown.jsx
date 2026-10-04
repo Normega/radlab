@@ -143,8 +143,8 @@ const M = {
   list: { margin: '0 0 12px', paddingLeft: 22 },
   li: { margin: '0 0 6px' },
   hr: { border: 'none', borderTop: '1px solid var(--bd)', margin: '24px 0' },
-  link: { color: 'var(--pk)', textDecoration: 'none', borderBottom: '1px solid rgba(214,51,132,.35)' },
-  extLink: { color: 'var(--pk)', textDecoration: 'underline' },
+  link: { color: 'var(--pkd)', textDecoration: 'none', borderBottom: '1px solid rgba(214,51,132,.35)' },
+  extLink: { color: 'var(--pkd)', textDecoration: 'underline' },
   // Unresolved links stay visible but unclickable — a wiki that hides its own
   // holes can't be used to find them, and finding them is WP6's assignment list.
   redLink: { color: 'var(--tx2)', borderBottom: '1px dotted var(--tx2)', cursor: 'help' },

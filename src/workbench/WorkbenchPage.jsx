@@ -223,7 +223,7 @@ const S = {
   },
   project: { color: 'var(--tx2)' },
   branch: { color: 'var(--pkd)' },
-  liveDot: { color: 'var(--pk)' },
+  liveDot: { color: 'var(--pkd)' },
 
   detail: { minWidth: 0 },
   detailHead: { marginBottom: 16 },

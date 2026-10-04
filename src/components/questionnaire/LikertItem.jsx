@@ -137,7 +137,7 @@ export default function LikertItem({ item, labels, selectedValue, onSelect, auto
                   <span style={{
                     fontFamily: 'Space Mono',
                     fontSize:   'var(--fs-mono-sm)',
-                    color:      active ? 'var(--pk)' : 'var(--tx2)',
+                    color:      active ? 'var(--pkd)' : 'var(--tx2)',
                     transition: `color ${ANIM_MS}ms ease`,
                   }}>
                     {opt.value}

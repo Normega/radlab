@@ -110,7 +110,7 @@ const S = {
   },
   eyebrow: {
     fontFamily: MONO, fontSize: 12, letterSpacing: '0.12em',
-    textTransform: 'uppercase', color: 'var(--pk)', margin: 0,
+    textTransform: 'uppercase', color: 'var(--pkd)', margin: 0,
   },
   title: {
     fontFamily: SERIF, fontSize: 'clamp(26px, 4vw, 36px)',
@@ -131,12 +131,12 @@ const S = {
   genBtn: {
     width: 44, height: 44, borderRadius: 12, flexShrink: 0,
     border: '1.5px solid var(--bd)', background: 'var(--bgp)',
-    color: 'var(--pk)', fontSize: 18, cursor: 'pointer',
+    color: 'var(--pkd)', fontSize: 18, cursor: 'pointer',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
   },
   btn: {
     padding: '13px 32px', borderRadius: 12,
-    background: 'var(--pk)', color: '#fff', border: 'none',
+    background: 'var(--pkd)', color: '#fff', border: 'none',
     fontFamily: MONO, fontSize: 14, fontWeight: 700, letterSpacing: '0.05em',
     cursor: 'pointer', boxShadow: '0 4px 20px rgba(240,104,164,0.35)',
     transition: 'opacity 0.15s',

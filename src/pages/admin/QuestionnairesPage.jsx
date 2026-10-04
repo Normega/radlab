@@ -43,7 +43,7 @@ export default function QuestionnairesPage() {
           <button
             onClick={() => navigate('/admin/questionnaires/new')}
             style={{
-              background: 'var(--pk)', color: '#fff', border: 'none',
+              background: 'var(--pkd)', color: '#fff', border: 'none',
               borderRadius: 10, padding: '10px 20px',
               fontFamily: 'DM Sans', fontSize: 'var(--fs-body-sm)', fontWeight: 600,
               cursor: 'pointer',
@@ -68,7 +68,7 @@ export default function QuestionnairesPage() {
               padding: '8px 14px 10px',
               fontFamily: 'DM Sans', fontSize: 'var(--fs-body-sm)',
               fontWeight: tab === t.id ? 700 : 500,
-              color: tab === t.id ? 'var(--pk)' : 'var(--tx2)',
+              color: tab === t.id ? 'var(--pkd)' : 'var(--tx2)',
               borderBottom: tab === t.id ? '2px solid var(--pk)' : '2px solid transparent',
               marginBottom: -1,
             }}

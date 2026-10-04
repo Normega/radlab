@@ -30,7 +30,7 @@ export default function SiteFooter({ session, style }) {
 
 function FooterLink({ to, href, label }) {
   const [hov, setHov] = useState(false)
-  const style = { ...S.link, color: hov ? 'var(--pk)' : 'var(--gy)' }
+  const style = { ...S.link, color: hov ? 'var(--pkd)' : 'var(--gy)' }
   const hover = { onMouseEnter: () => setHov(true), onMouseLeave: () => setHov(false) }
   return to
     ? <Link to={to} style={style} {...hover}>{label}</Link>

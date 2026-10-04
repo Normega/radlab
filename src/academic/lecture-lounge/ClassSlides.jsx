@@ -173,10 +173,10 @@ function Shell({ title, slug, session, children }) {
 const S = {
   headerRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, minHeight: 34 },
   eyebrowLink: { textDecoration: 'none' },
-  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)' },
+  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pkd)' },
   h1: { fontFamily: SERIF, fontSize: 28, color: 'var(--tx)', margin: '4px 0 8px' },
   sub: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.6, maxWidth: '74ch' },
-  link: { color: 'var(--pk)', textDecoration: 'none' },
+  link: { color: 'var(--pkd)', textDecoration: 'none' },
   kbd: { fontFamily: MONO, fontSize: 12, background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 12, padding: '0 4px' },
   grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 250px), 1fr))', gap: 12, marginTop: 20 },
   card: { display: 'flex', flexDirection: 'row', alignItems: 'stretch', gap: 16, background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 12, padding: '16px 16px', textDecoration: 'none', position: 'relative' },

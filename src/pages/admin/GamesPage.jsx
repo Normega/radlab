@@ -141,7 +141,7 @@ const S = {
     display: 'block', padding: '10px 18px', flex: 1,
     fontFamily: '"Space Mono",monospace', fontSize: 12,
     letterSpacing: '0.1em', textTransform: 'uppercase',
-    color: 'var(--pk)', textDecoration: 'none',
+    color: 'var(--pkd)', textDecoration: 'none',
   },
   demoLink: {
     display: 'block', padding: '10px 18px',

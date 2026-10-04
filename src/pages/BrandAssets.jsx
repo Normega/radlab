@@ -33,7 +33,8 @@ const PRIMITIVES = [
   { name: 'pink/50',     hex: '#FCF0F5', token: '--bg' },
   { name: 'pink/100',    hex: '#FBEAF3', token: '--bgp' },
   { name: 'pink/500',    hex: '#F068A4', token: '--pk' },
-  { name: 'pink/700',    hex: '#C04A82', token: '--pkd' },
+  { name: 'pink/700',    hex: '#BA417A', token: '--pkd' },
+  { name: 'pink/800',    hex: '#A3396B', token: '--pkdd' },
   { name: 'neutral/0',   hex: '#FFFFFF', token: '--bgc' },
   { name: 'neutral/400', hex: '#ABADB0', token: '--gy' },
   { name: 'neutral/600', hex: '#6B6C70', token: '--tx2' },
@@ -59,9 +60,9 @@ const SEMANTIC_GROUPS = [
     items: [
       { name: 'Main',        alias: 'neutral/900', css: '#1C1C1E', token: '--tx',     use: 'Headings and body copy' },
       { name: 'Secondary',   alias: 'neutral/600', css: '#6B6C70', token: '--tx2',    use: 'Supporting copy' },
-      { name: 'Muted',       alias: 'neutral/400', css: '#ABADB0', token: '--gy',     use: 'Placeholders, disabled text' },
-      { name: 'Accent',      alias: 'pink/700',    css: '#C04A82', token: '--pkd',    use: 'Links, text on pink grounds' },
-      { name: 'Accent Soft', alias: 'pink/500',    css: '#F068A4', token: '--pk',     use: 'Decorative accent text' },
+      { name: 'Muted',       alias: 'neutral/400', css: '#ABADB0', token: '--gy',     use: 'Placeholders and disabled text only. Never text people need to read (2.0–2.3 : 1)' },
+      { name: 'Accent',      alias: 'pink/700',    css: '#BA417A', token: '--pkd',    use: 'Links, pink labels, any pink text people read (4.6 : 1 on Base, 5.1 on white)' },
+      { name: 'Accent Soft', alias: 'pink/500',    css: '#F068A4', token: '--pk',     use: 'Not for text. Fills, borders, dots and bars only (2.6 : 1 on Base)' },
       { name: 'On Action',   alias: 'neutral/0',   css: '#FFFFFF', token: '--bgc',    use: 'Text on filled CTAs' },
       { name: 'Error',       alias: 'red/700',     css: '#A32D2D', token: '--err-tx', use: 'Error message text' },
     ],
@@ -69,8 +70,8 @@ const SEMANTIC_GROUPS = [
   {
     group: 'Action',
     items: [
-      { name: 'Default',  alias: 'pink/500',    css: '#F068A4', token: '--pk',  use: 'CTA fill, active accents' },
-      { name: 'Emphasis', alias: 'pink/700',    css: '#C04A82', token: '--pkd', use: 'Hover and pressed states' },
+      { name: 'Default',  alias: 'pink/700',    css: '#BA417A', token: '--pkd',  use: 'CTA fill, selected options (white label 5.1 : 1)' },
+      { name: 'Emphasis', alias: 'pink/800',    css: '#A3396B', token: '--pkdd', use: 'Hover and pressed states' },
       { name: 'Disabled', alias: 'neutral/400', css: '#ABADB0', token: '--gy',  use: 'Inactive controls' },
     ],
   },
@@ -78,7 +79,7 @@ const SEMANTIC_GROUPS = [
     group: 'Icon',
     items: [
       { name: 'Default',   alias: 'neutral/600', css: '#6B6C70', token: '--tx2', use: 'Standard icons' },
-      { name: 'Accent',    alias: 'pink/700',    css: '#C04A82', token: '--pkd', use: 'Active or highlighted icons' },
+      { name: 'Accent',    alias: 'pink/700',    css: '#BA417A', token: '--pkd', use: 'Active or highlighted icons' },
       { name: 'On Action', alias: 'neutral/0',   css: '#FFFFFF', token: '--bgc', use: 'Icons on filled CTAs' },
     ],
   },
@@ -161,13 +162,16 @@ const BREAKPOINTS = [
   { range: '< 768',      gutter: '16',   note: 'Single column throughout. Nav collapses to a menu.' },
 ]
 
+// One logo, everywhere (Norm, 2026-10-04). RADlab_Logo_light.svg, a variant
+// with the white shape drawn near-black, is no longer offered; the file stays
+// in public/ only so links already shared outside keep working.
 const LOGOS = [
-  { file: '/RADlab_Logo.svg',       label: 'RADlab logo — dark background',  note: 'White outline. Use only on dark backgrounds.', bg: '#1C1C1E' },
-  { file: '/RADlab_Logo_light.svg', label: 'RADlab logo — light background', note: 'Default for the UI. Use this everywhere unless the background is dark.', bg: '#FFFFFF' },
+  { file: '/RADlab_Logo.svg', label: 'RADlab logo', note: 'The one RADlab logo. Use it on every surface: the pink ground, white, and dark backgrounds alike.', bg: 'var(--bg)' },
+  { file: '/RADlab_Logo.svg', label: 'RADlab logo — on white', note: 'The same file on a white ground.', bg: '#FFFFFF' },
 ]
 
 const CRESTS = [
-  { file: '/RADlab_Logo_light.svg', label: 'RADlab crest', bg: '#FFFFFF' },
+  { file: '/RADlab_Logo.svg', label: 'RADlab crest', bg: '#FFFFFF' },
   { file: '/UofT_Logo.svg', label: 'University of Toronto crest', bg: '#FFFFFF' },
 ]
 
@@ -368,9 +372,23 @@ export default function BrandAssets() {
         <p className="brand-section-note" style={{ marginTop: 20 }}>
           <strong>Deprecated:</strong> <code>--tx3</code> was a near-duplicate muted grey
           (<code>#A8A9AD</code>). It now resolves to <code>#ABADB0</code> and is an alias of
-          text-muted &mdash; use <code>--gy</code> in new code. <strong>Still missing:</strong>{' '}
+          text-muted &mdash; use <code>--tx2</code> for text people read, <code>--gy</code> only for
+          placeholders and disabled states. <strong>Still missing:</strong>{' '}
           success and warning semantics &mdash; error is the only status set, which is why
           admin status colours are currently invented per surface.
+        </p>
+
+        <p className="brand-subheading">Contrast &mdash; which colours text may use</p>
+        <p className="brand-section-note">
+          Text people read meets WCAG AA: 4.5 : 1, or 3 : 1 at 24px and above.{' '}
+          <strong>Text uses <code>--tx</code>, <code>--tx2</code> or <code>--pkd</code>.</strong>{' '}
+          <code>--pk</code> (2.6 : 1 on Base) and <code>--gy</code> (2.0 on Base, 2.3 on white) never
+          carry text people need; they are for fills, borders, dots, placeholders and disabled states.
+          Filled buttons are <code>--pkd</code> with a white label (5.1 : 1) and hover to{' '}
+          <code>--pkdd</code>. Decided 2026-10-04 (Norm): until then this page claimed the palette
+          passed, while white on <code>--pk</code> &mdash; every primary button &mdash; measured 2.9 : 1.
+          Pink/700 moved from <code>#C04A82</code> (4.2 on Base, just short) to{' '}
+          <code>#BA417A</code> at the same time.
         </p>
       </section>
 
@@ -400,8 +418,8 @@ export default function BrandAssets() {
         <p className="brand-section-note">
           <strong>On the 10px step.</strong> This page asserted for months that
           &ldquo;12px is a hard floor (WCAG)&rdquo;. That was wrong: WCAG 2.x sets no minimum
-          font size &mdash; it requires resize to 200% (1.4.4) and sufficient contrast (1.4.3),
-          which this palette meets (Gerold, 2026-09-04). <code>Body/XS</code> is therefore
+          font size &mdash; it requires resize to 200% (1.4.4) and sufficient contrast (1.4.3)
+          (Gerold, 2026-09-04). <code>Body/XS</code> is therefore
           adopted, with a scope rule that is now the real constraint:{' '}
           <strong>10px carries hint text, captions and fine print, never information a
           participant needs in order to answer.</strong> The requirement belongs in the field
@@ -717,7 +735,7 @@ export default function BrandAssets() {
           Never redraw the mark &mdash; always use one of these files.
         </p>
         <div className="brand-asset-grid">
-          {LOGOS.map((l) => <AssetCard key={l.file} {...l} />)}
+          {LOGOS.map((l) => <AssetCard key={l.label} {...l} />)}
         </div>
       </section>
 

@@ -597,13 +597,13 @@ const S = {
   untoldBox: { border: '1px solid #c0392b', borderRadius: 12, padding: '12px 16px', margin: '18px 0' },
   untoldRow: { display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', padding: '5px 0', borderBottom: '1px dotted var(--bd)' },
   resendBtn: { marginLeft: 'auto', fontFamily: MONO, fontSize: 12, padding: '4px 12px', borderRadius: 14, border: '1px solid #c0392b', background: 'none', color: '#c0392b', cursor: 'pointer' },
-  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)' },
+  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pkd)' },
   eyebrowLink: { color: 'inherit', textDecoration: 'none' },
   title: { fontFamily: SERIF, fontSize: 28, color: 'var(--tx)', margin: '2px 0 4px' },
   sub: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.5 },
   dim: { color: 'var(--tx2)', fontWeight: 400 },
-  link: { fontSize: 14, color: 'var(--pk)' },
-  notice: { color: 'var(--pk)', marginTop: 14, fontFamily: MONO, fontSize: 14, lineHeight: 1.5 },
+  link: { fontSize: 14, color: 'var(--pkd)' },
+  notice: { color: 'var(--pkd)', marginTop: 14, fontFamily: MONO, fontSize: 14, lineHeight: 1.5 },
 
   h2: { fontFamily: SERIF, fontSize: 28, margin: '30px 0 2px' },
 
@@ -613,7 +613,7 @@ const S = {
   metaLine: { display: 'block', fontSize: 12, color: 'var(--tx2)', marginTop: 2 },
   resubTag: {
     marginLeft: 8, fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase',
-    padding: '1px 7px', borderRadius: 20, border: '1px solid var(--pk)', color: 'var(--pk)', verticalAlign: 'middle',
+    padding: '1px 7px', borderRadius: 20, border: '1px solid var(--pk)', color: 'var(--pkd)', verticalAlign: 'middle',
   },
   resubBox: { margin: '0 0 14px', padding: '10px 12px', borderRadius: 10, background: 'var(--bg)', borderLeft: '3px solid var(--pk)' },
   chev: { color: 'var(--tx2)', fontSize: 14 },
@@ -636,14 +636,14 @@ const S = {
   pre: { fontFamily: MONO, fontSize: 12, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', background: 'var(--bg)', border: '1px solid var(--bd)', borderRadius: 8, padding: 12, maxHeight: 340, overflowY: 'auto', color: 'var(--tx)', margin: 0 },
 
   actions: { display: 'flex', gap: 10, marginTop: 14, flexWrap: 'wrap', alignItems: 'center' },
-  primary: { fontSize: 14, fontWeight: 600, padding: '9px 16px', borderRadius: 24, border: 'none', background: 'var(--pk)', color: '#fff', cursor: 'pointer' },
+  primary: { fontSize: 14, fontWeight: 600, padding: '9px 16px', borderRadius: 24, border: 'none', background: 'var(--pkd)', color: '#fff', cursor: 'pointer' },
   secondary: { fontSize: 14, fontWeight: 600, padding: '9px 16px', borderRadius: 24, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx)', cursor: 'pointer' },
   danger: { fontSize: 14, fontWeight: 600, padding: '9px 16px', borderRadius: 24, border: '1px solid rgba(192,57,43,.35)', background: 'none', color: '#c0392b', cursor: 'pointer' },
   sectionTabs: { display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', margin: '14px 0 4px' },
   sectionTab: (active) => ({
     fontFamily: MONO, fontSize: 12, letterSpacing: 0.5, padding: '7px 14px', borderRadius: 18,
     border: '1px solid ' + (active ? 'var(--pk)' : 'var(--bd)'), cursor: 'pointer',
-    background: active ? 'var(--pk)' : 'var(--bgc)', color: active ? '#fff' : 'var(--tx2)',
+    background: active ? 'var(--pkd)' : 'var(--bgc)', color: active ? '#fff' : 'var(--tx2)',
   }),
   sectionHint: { fontFamily: MONO, fontSize: 11, color: 'var(--tx3)' },
   summaryStrip: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 170px), 1fr))', gap: 10, margin: '16px 0 4px' },

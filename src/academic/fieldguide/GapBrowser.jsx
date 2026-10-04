@@ -620,22 +620,22 @@ function ClaimForm({ claim, row: r, courseClient, reload, onRelease }) {
 }
 
 const S = {
-  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pk)' },
+  eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pkd)' },
   eyebrowLink: { color: 'inherit', textDecoration: 'none' },
   title: { fontFamily: SERIF, fontSize: 28, color: 'var(--tx)', margin: '2px 0 4px' },
   sub: { fontSize: 14, color: 'var(--tx2)', lineHeight: 1.6 },
   dim: { color: 'var(--tx2)', fontWeight: 400, fontSize: 12, textTransform: 'none', letterSpacing: 0 },
-  link: { fontSize: 14, color: 'var(--pk)' },
-  notice: { color: 'var(--pk)', marginTop: 10, fontFamily: MONO, fontSize: 14 },
+  link: { fontSize: 14, color: 'var(--pkd)' },
+  notice: { color: 'var(--pkd)', marginTop: 10, fontFamily: MONO, fontSize: 14 },
 
   gapActive: { borderColor: 'var(--pk)', boxShadow: '0 0 0 1px var(--pk)' },
   mineStrip: { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 12, padding: '10px 14px', margin: '14px 0 4px' },
-  allLink: { display: 'inline-block', fontFamily: MONO, fontSize: 12, color: 'var(--pk)', marginTop: 6 },
+  allLink: { display: 'inline-block', fontFamily: MONO, fontSize: 12, color: 'var(--pkd)', marginTop: 6 },
   mineRow: { width: '100%', display: 'flex', gap: 10, alignItems: 'baseline', padding: '5px 0', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' },
 
   controls: { display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', margin: '14px 0 6px' },
   pill: { fontFamily: MONO, fontSize: 12, padding: '6px 14px', borderRadius: 20, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx2)', cursor: 'pointer', textTransform: 'uppercase', letterSpacing: 1 },
-  pillOn: { borderColor: 'var(--pk)', color: 'var(--pk)' },
+  pillOn: { borderColor: 'var(--pk)', color: 'var(--pkd)' },
   search: { flex: '1 1 200px', minWidth: 160, fontSize: 14, padding: '7px 12px', borderRadius: 20, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx)' },
 
   lectureHead: { width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, padding: '14px 2px 6px', background: 'none', border: 'none', borderBottom: '1px solid var(--bd)', cursor: 'pointer', marginTop: 18 },
@@ -647,7 +647,7 @@ const S = {
   gapHead: { width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: '10px 14px', textAlign: 'left' },
   gapTop: { display: 'flex', gap: 10, alignItems: 'baseline', flexWrap: 'wrap' },
   badge: { fontFamily: MONO, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', padding: '2px 8px', borderRadius: 20, flexShrink: 0 },
-  pageName: { fontFamily: MONO, fontSize: 14, color: 'var(--pk)', overflowWrap: 'anywhere' },
+  pageName: { fontFamily: MONO, fontSize: 14, color: 'var(--pkd)', overflowWrap: 'anywhere' },
   capacity: { fontFamily: MONO, fontSize: 12, color: 'var(--tx2)', marginLeft: 'auto', flexShrink: 0 },
   ask: { fontSize: 14, color: 'var(--tx)', lineHeight: 1.55, margin: '7px 0 0' },
 
@@ -663,7 +663,7 @@ const S = {
   findingCard: { border: '1px solid', borderRadius: 8, padding: '7px 10px', marginBottom: 6, color: 'var(--tx)' },
 
   actions: { display: 'flex', gap: 10, marginTop: 14, flexWrap: 'wrap', alignItems: 'center' },
-  primary: { fontSize: 14, fontWeight: 600, padding: '9px 16px', borderRadius: 24, border: 'none', background: 'var(--pk)', color: '#fff', cursor: 'pointer' },
+  primary: { fontSize: 14, fontWeight: 600, padding: '9px 16px', borderRadius: 24, border: 'none', background: 'var(--pkd)', color: '#fff', cursor: 'pointer' },
   secondary: { fontSize: 14, fontWeight: 600, padding: '9px 16px', borderRadius: 24, border: '1px solid var(--bd)', background: 'var(--bgc)', color: 'var(--tx)', cursor: 'pointer' },
   danger: { fontSize: 14, fontWeight: 600, padding: '9px 16px', borderRadius: 24, border: '1px solid rgba(192,57,43,.35)', background: 'none', color: '#c0392b', cursor: 'pointer' },
 }

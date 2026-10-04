@@ -23,7 +23,7 @@ function renderApa(apa) {
     } else {
       const url = match[2].replace(/[.)]+$/, '')
       const trail = match[2].slice(url.length)
-      parts.push(<a key={i++} href={url} target="_blank" rel="noreferrer" style={{ color: '#f068a4', textDecoration: 'none' }}>{url}</a>)
+      parts.push(<a key={i++} href={url} target="_blank" rel="noreferrer" style={{ color: 'var(--pkd)', textDecoration: 'none' }}>{url}</a>)
       if (trail) parts.push(trail)
     }
     last = match.index + match[0].length

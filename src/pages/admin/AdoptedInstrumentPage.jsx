@@ -625,7 +625,7 @@ const S = {
   },
   blurb:      { fontFamily: SANS, fontSize: 14, color: 'var(--tx)', lineHeight: 1.6, margin: '0 0 10px', maxWidth: 680 },
   statusNote: { fontFamily: SANS, fontSize: 14, color: 'var(--tx2)', lineHeight: 1.6, margin: '0 0 18px', maxWidth: 680 },
-  link:       { color: 'var(--pk)', fontFamily: SANS, fontSize: 14 },
+  link:       { color: 'var(--pkd)', fontFamily: SANS, fontSize: 14 },
   stage: {
     background: 'var(--bg)', border: '1px solid var(--bd)', borderRadius: 12,
     overflow: 'hidden', position: 'relative', maxWidth: 860,
@@ -639,7 +639,7 @@ const S = {
   libTitle: { fontFamily: SERIF, fontSize: 28, fontWeight: 400, color: 'var(--tx)', margin: 0 },
   newBtn: {
     fontFamily: SANS, fontWeight: 600, fontSize: 14, padding: '6px 12px',
-    background: 'var(--pk)', color: '#fff', borderRadius: 20, textDecoration: 'none',
+    background: 'var(--pkd)', color: '#fff', borderRadius: 20, textDecoration: 'none',
   },
   row: {
     display: 'flex', alignItems: 'baseline', gap: 14, flexWrap: 'wrap',

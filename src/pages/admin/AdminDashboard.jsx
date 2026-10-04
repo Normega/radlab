@@ -120,15 +120,15 @@ const S = {
   },
   count: {
     fontFamily: '"DM Serif Display",Georgia,serif',
-    fontSize: 40, color: 'var(--pk)', lineHeight: 1,
+    fontSize: 40, color: 'var(--pkd)', lineHeight: 1,
   },
   empty: { fontSize: 14, color: 'var(--tx2)', margin: 0, lineHeight: 1.5 },
   arrow: {
     position: 'absolute', bottom: 18, right: 20,
-    fontSize: 16, color: 'var(--pk)',
+    fontSize: 16, color: 'var(--pkd)',
   },
   externalLink: {
-    display: 'inline-block', marginTop: 28, fontSize: 14, color: 'var(--pk)',
+    display: 'inline-block', marginTop: 28, fontSize: 14, color: 'var(--pkd)',
     fontWeight: 600, textDecoration: 'none',
   },
 }

@@ -139,7 +139,7 @@ export default function QuestionnairePreview() {
           disabled={toggleLock.isPending}
           style={{
             ...ghostBtn,
-            color:   q.locked ? 'var(--pk)' : 'var(--tx2)',
+            color:   q.locked ? 'var(--pkd)' : 'var(--tx2)',
             border:  `1px solid ${q.locked ? 'var(--pkbs)' : 'var(--bd)'}`,
           }}
         >
@@ -190,7 +190,7 @@ export default function QuestionnairePreview() {
                 onClick={() => saveEdit.mutate()}
                 disabled={saveEdit.isPending}
                 style={{
-                  background: 'var(--pk)', color: '#fff', border: 'none',
+                  background: 'var(--pkd)', color: '#fff', border: 'none',
                   borderRadius: 10, padding: '10px 24px', cursor: 'pointer',
                   fontFamily: 'DM Sans', fontSize: 'var(--fs-body-sm)', fontWeight: 600,
                 }}

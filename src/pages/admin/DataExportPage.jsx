@@ -815,7 +815,7 @@ const S = {
   sectionTitle:  { fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 15, fontWeight: 600, color: 'var(--tx)' },
   sectionCount:  { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)' },
   csvBtn: {
-    background: 'var(--pkb)', color: 'var(--pk)',
+    background: 'var(--pkb)', color: 'var(--pkd)',
     border: '1px solid var(--pk)', borderRadius: 8,
     padding: '6px 14px', cursor: 'pointer',
     fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 14, fontWeight: 600,

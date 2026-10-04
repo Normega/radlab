@@ -12,7 +12,7 @@ export default {
         surface:          '#FFFFFF',
         tint:             '#FBEAF3',
         primary:          '#F068A4',
-        'primary-dark':   '#C04A82',
+        'primary-dark':   '#BA417A',
         'text-main':      '#1C1C1E',
         'text-secondary': '#6B6C70',
         'text-muted':     '#ABADB0',
@@ -22,7 +22,7 @@ export default {
         'error-text':   '#A32D2D',
         // ── Legacy aliases (pre-redesign) — same values, kept for existing call sites ──
         pk:  '#f068a4',
-        pkd: '#c04a82',
+        pkd: '#ba417a',
         gy:  '#abadb0',
       },
       borderRadius: {
