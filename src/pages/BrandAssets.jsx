@@ -11,10 +11,12 @@ import { useState } from 'react'
  * all of those places.
  *
  * The 2026-08-26 adoption took the Figma expansion's additions (semantic colour layer,
- * named type styles, spacing scale, effects, layout containers) but kept four settled
- * rulings where the Figma conflicted: the 12px type floor (no Body/XS 10px), the
- * 12/24/50% radii rule (no radius/sm 8px), the six-step type scale (no 24px steps),
- * and the translucent rgba border tokens (no opaque border aliases). See the
+ * named type styles, spacing scale, effects, layout containers) but kept three settled
+ * rulings where the Figma conflicted: the 12/24/50% radii rule (no radius/sm 8px),
+ * the type scale (no 24px steps), and the translucent rgba border tokens (no opaque
+ * border aliases). Body/XS 10px was declined too, then adopted 2026-09-04 for hint
+ * text, captions and fine print only (Norm, 2026-10-04: avoid it where possible),
+ * which makes the scale seven steps: 10 / 12 / 14 / 16 / 20 / 28 / 36. See the
  * "Implementation status" section below and docs/markdowns/brand_enforcement_plan.md.
  *
  * The "Implementation status" section is deliberately honest about what the live
@@ -97,15 +99,15 @@ const SEMANTIC_GROUPS = [
 const BORDER_TOKENS = [
   { token: '--bd',     value: 'rgba(180, 100, 140, 0.13)', label: 'Border — default',     use: 'Default card and panel border' },
   { token: '--bds',    value: 'rgba(180, 100, 140, 0.25)', label: 'Border — strong',      use: 'Emphasised dividers, menus' },
-  { token: '--pkb',    value: 'rgba(240, 104, 164, 0.18)', label: 'Border — pink subtle', use: 'Tinted panels, avatar rings' },
-  { token: '--pkbs',   value: 'rgba(240, 104, 164, 0.35)', label: 'Border — pink strong', use: 'Outline buttons, active edges' },
+  { token: '--pkb',    value: 'rgba(240, 104, 164, 0.18)', label: 'Border — pink subtle', use: 'Tinted panels and chips' },
+  { token: '--pkbs',   value: 'rgba(240, 104, 164, 0.35)', label: 'Border — pink strong', use: 'Active edges, focus rings' },
   { token: '--err-bd', value: '#F09595',                   label: 'Border — error',       use: 'Error box border (opaque, red/300)' },
 ]
 
-// Named type styles (2026-08-26 expansion), constrained to the six-step scale
-// 12 / 14 / 16 / 20 / 28 / 36 — plus Display/Hero, the one sanctioned exception.
-// Not adopted from the Figma: Heading/3 24, Body/XL Emphasis 24 (off-scale),
-// Body/XS 10 (below the 12px floor).
+// Named type styles (2026-08-26 expansion), constrained to the seven-step scale
+// 10 / 12 / 14 / 16 / 20 / 28 / 36 — plus Display/Hero, the one sanctioned exception.
+// Not adopted from the Figma: Heading/3 24, Body/XL Emphasis 24 (off-scale).
+// Body/XS 10 was adopted 2026-09-04, scoped to hints, captions and fine print.
 const TYPE_BLOCKS = [
   {
     family: 'DM Serif Display',
@@ -129,7 +131,7 @@ const TYPE_BLOCKS = [
       { name: 'Body/M',          px: 14, weight: 400, sample: 'example@email.com',               role: 'Values in key–value rows and field content' },
       { name: 'Body/S Emphasis', px: 12, weight: 600, sample: 'Rename',                          role: 'Inline links and checkbox labels' },
       { name: 'Body/S',          px: 12, weight: 400, sample: 'It takes one minute to reset.',   role: 'Helper and description text beneath headings' },
-      { name: 'Body/XS',         px: 10, weight: 400, sample: 'This is what appears on your profile.', role: 'Hint text under a field, captions, fine print — never information needed to answer' },
+      { name: 'Body/XS',         px: 10, weight: 400, sample: 'This is what appears on your profile.', role: 'Hint text under a field, captions, fine print only — avoid where possible, and never for information needed to answer' },
     ],
   },
   {
@@ -217,7 +219,8 @@ const BUILT_COMPONENTS = [
   ['CredentialsBox',         'Login and signup form container'],
   ['NavigationIcon',         'Close · Back'],
   ['OnboardingNavigation',   'OnlyL · OnlyR · BothButtons'],
-  ['GameCard',               'Default · Hover · HoverGuest · Locked — games grid + About carousel (2026-09-14)'],
+  ['GameCard',               'Default · Hover · HoverGuest · Locked — games grid + About carousel (2026-09-14). Lives in src/components/, not ui/'],
+  ['MenuAvatar',             'Account-menu trigger: avatar in a 46px circle, initial fallback (see Menu avatar, under Shape)'],
   ['EditableName',           'Closed · Open — Ripple name and display name (2026-09-14)'],
   ['LongRow',                'Value left · mono category right — Account Details, Progress Tracker (2026-09-14)'],
 ]
@@ -421,10 +424,12 @@ export default function BrandAssets() {
           font size &mdash; it requires resize to 200% (1.4.4) and sufficient contrast (1.4.3)
           (Gerold, 2026-09-04). <code>Body/XS</code> is therefore
           adopted, with a scope rule that is now the real constraint:{' '}
-          <strong>10px carries hint text, captions and fine print, never information a
-          participant needs in order to answer.</strong> The requirement belongs in the field
-          label; the hint only elaborates. 12px (<code>--fs-min</code>) remains the floor for
-          everything else.
+          <strong>10px carries hint text, captions and fine print only, never information a
+          participant needs in order to answer &mdash; and is avoided where 12px fits</strong>{' '}
+          (Norm, 2026-10-04). The requirement belongs in the field label; the hint only
+          elaborates. 12px (<code>--fs-min</code>) remains the floor for everything else. Small
+          text still has to pass contrast, so hints use <code>--tx2</code> (5.2 : 1), never{' '}
+          <code>--gy</code>.
         </p>
 
         {TYPE_BLOCKS.map((block) => (
@@ -621,7 +626,8 @@ export default function BrandAssets() {
         <h2 className="brand-heading">Components</h2>
         <p className="brand-section-note">
           Shared primitives live in <code>src/components/ui/</code> and are rendered in every
-          variant at <code>/dev/ui-kit</code>. The second list is designed in Figma but has no
+          variant at <code>/dev/ui-kit</code> (super admin only, on the live site as well as
+          locally). The second list is designed in Figma but has no
           shared implementation, so each live instance is hand-styled &mdash; the main route by
           which new drift enters. The 2026-08 Figma expansion redesigned these across eight
           component sections with revised Account, Games and Dashboard screens; build-out order
@@ -648,22 +654,25 @@ export default function BrandAssets() {
         <h2 className="brand-heading">Implementation status</h2>
         <p className="brand-section-note">
           What the system specifies is above; what the codebase actually does is below.
-          Drift measured 2026-08-31 by <code>npm run audit:design</code>{' '}
-          (<code>scripts/design-audit.mjs</code>, 374 files), which now also runs as a ratchet:
-          <code> audit:design:check</code> fails any change that pushes a count above the
-          committed <code>design-audit/baseline.json</code>. Sanctioned content — game artwork,
-          avatar colour palettes, talk-deck graphics — is reported but never ratcheted. The
+          Drift measured 2026-10-04 by <code>npm run audit:design</code>{' '}
+          (<code>scripts/design-audit.mjs</code>), which runs as a ratchet in CI:{' '}
+          <code>audit:design:check</code> fails any push that raises a count above the
+          committed <code>design-audit/baseline.json</code>. It was set on 2026-09-03 but ran
+          nowhere until 2026-10-03, and failed unseen for that month; it was re-baselined at the
+          counts below when CI took it on. Sanctioned content — game artwork, avatar colour
+          palettes, talk decks — is reported but never ratcheted. The
           2026-08-12 hand-run audit remains in <code>design-audit/</code>; its counts used
           different exclusions and are not 1:1 comparable.
         </p>
 
-        <Gap title="The 2026-08-26 expansion — adopted with four exclusions">
+        <Gap title="The 2026-08-26 expansion — adopted with three exclusions">
           The expanded Figma system (&ldquo;RADLAB Official Design System&rdquo;) contributed
           the semantic colour layer, named type styles, the spacing scale, effects and layout
-          containers. Four of its proposals conflicted with settled rulings and were declined
-          (Norm, 2026-08-26): <code>Body/XS</code> at 10px (below the 12px floor),{' '}
-          <code>radius/sm</code> at 8px (radius encodes clickability), 24px type steps
-          (off the six-step scale), and opaque border aliases (borders stay translucent).
+          containers. Three of its proposals conflicted with settled rulings and were declined
+          (Norm, 2026-08-26): <code>radius/sm</code> at 8px (radius encodes clickability), 24px
+          type steps (off the scale), and opaque border aliases (borders stay translucent). A
+          fourth, <code>Body/XS</code> at 10px, was declined at the time and adopted on
+          2026-09-04 for hints, captions and fine print (below).
           Precedence is unchanged: where Figma and the written spec disagree, the written
           spec wins.
         </Gap>
@@ -678,21 +687,20 @@ export default function BrandAssets() {
           choice, scoped to roles where the text elaborates rather than instructs.
         </Gap>
 
-        <Gap title="Type scale — 85% compliant and ratcheted">
-          Of 1,701 font-size declarations in ratcheted scope, 1,444 land on the six steps.
-          The 13&nbsp;&rarr;&nbsp;14 migration completed 2026-08-27 (324 replacements) and the
-          sub-12px cleanup completed 2026-08-30 (332 replacements): both counts are now{' '}
-          <strong>zero</strong>, locked by the ratchet. What remains is 257 declarations at
-          other off-scale sizes (15/17/18/22px and rem equivalents) &mdash; the last and least
-          mechanical slice, since some sit mid-hierarchy and need a judgment call between the
-          neighbouring steps.
+        <Gap title="Type scale — 77% compliant and ratcheted">
+          Of 2,202 font-size declarations in ratcheted scope, 1,694 land on the seven steps.
+          The 13&nbsp;&rarr;&nbsp;14 migration (2026-08-27) and the sub-12px cleanup
+          (2026-08-30) had both reached zero, but with no ratchet running, 38 new 13px sizes
+          and about 200 other off-scale sizes arrived in September &mdash; mostly in new
+          Lecture Lounge and Field Guide screens. 470 off-scale declarations remain
+          (15/17/18/22px and rem equivalents). Compliance was 85% on 2026-08-31.
         </Gap>
 
         <Gap title="Colour — token layer sound, literals not cleaned up">
-          187 occurrences hard-code a token value instead of referencing it &mdash; cosmetic
-          rather than visible drift. 540 hexes are genuinely off-palette; the single worst
-          file is admin&rsquo;s TrainingUpload (68), and the bulk are admin status tints
-          awaiting success and warning semantics.
+          145 occurrences hard-code a token value instead of referencing it &mdash; cosmetic
+          rather than visible drift. 645 hexes are genuinely off-palette, the bulk of them
+          admin and Lecture Lounge status tints awaiting success and warning semantics; the
+          single worst file is admin&rsquo;s TrainingUpload.
         </Gap>
 
         <Gap title="Weights — fully migrated">
@@ -723,8 +731,8 @@ export default function BrandAssets() {
         <Gap title="Precedence — the written spec is authoritative">
           Where the Figma and the written spec disagree, <strong>the written spec wins</strong>{' '}
           (Norm, 2026-08-12; reaffirmed 2026-08-26). Per-screen CSS still wins over both where a
-          screen deliberately differs &mdash; the About page&rsquo;s Large Hero was the standing
-          example, now formalised as <code>Display/Hero</code>.
+          screen deliberately differs &mdash; the homepage hero was the standing example, now
+          formalised as <code>Display/Hero</code> (72px on wide screens since 2026-10-04).
         </Gap>
       </section>
 

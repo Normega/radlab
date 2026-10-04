@@ -299,6 +299,6 @@ const S = {
   },
   itemBtn: { fontFamily: 'inherit' },
   divider: { borderTop: '1px solid var(--bd)', margin: '4px 0' },
-  groupHeader: { fontFamily: MONO, fontSize: 10, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--tx3)', padding: '8px 14px 2px', borderTop: '1px solid var(--bd)', marginTop: 4 },
+  groupHeader: { fontFamily: MONO, fontSize: 12, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--tx3)', padding: '8px 14px 2px', borderTop: '1px solid var(--bd)', marginTop: 4 },
   mismatch: { fontSize: 12, color: 'var(--tx2)', lineHeight: 1.45, padding: '6px 14px 2px', overflowWrap: 'anywhere' },
 }

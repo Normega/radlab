@@ -223,7 +223,7 @@ const S = {
   cardTop: { display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 4 },
   pos: { fontFamily: MONO, fontSize: 11, color: 'var(--pkd)', fontWeight: 700 },
   acts: { fontSize: 13.5, fontWeight: 600, color: 'var(--tx)' },
-  status: { fontFamily: MONO, fontSize: 10, textTransform: 'uppercase', color: 'var(--tx3)' },
+  status: { fontFamily: MONO, fontSize: 12, textTransform: 'uppercase', color: 'var(--tx3)' },
   after: { fontFamily: MONO, fontSize: 11, color: 'var(--tx3)', margin: '0 0 6px' },
   prompt: { fontSize: 14, color: 'var(--tx)', lineHeight: 1.45, margin: '4px 0' },
   quiz: { borderLeft: '2px solid var(--bd)', paddingLeft: 10, margin: '8px 0' },

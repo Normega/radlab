@@ -211,7 +211,7 @@ const S = {
   eyebrowLink: { color: 'var(--pkd)', textDecoration: 'none', borderBottom: '1px solid rgba(240,104,164,0.35)' },
   heroBrand: {},
   heroLogo:  { flexShrink: 0, display: 'block', width: 'auto' },
-  h1:        { fontFamily: SERIF, fontSize: 'clamp(2.1rem, 8.5vw, 4rem)', lineHeight: 1.08, color: 'var(--tx)', margin: 0 },
+  h1:        { fontFamily: SERIF, fontSize: 'clamp(2.1rem, 8.5vw, 4.5rem)', lineHeight: 1.08, color: 'var(--tx)', margin: 0 },
   sub:       { fontSize: '1rem', color: 'var(--tx2)', lineHeight: 1.7, maxWidth: 500, fontWeight: 400 },
 
   hubSection: { paddingTop: 40, paddingBottom: 90, position: 'relative', zIndex: 1 },

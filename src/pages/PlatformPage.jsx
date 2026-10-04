@@ -195,7 +195,7 @@ const SERIF = '"DM Serif Display", Georgia, serif'
 const SANS  = '"DM Sans", system-ui, sans-serif'
 
 const S = {
-  inner: { maxWidth: 1200, margin: '0 auto' },
+  inner: { maxWidth: 'var(--container-lg)', margin: '0 auto' },
   band:  { padding: '52px 24px' },
 
   heroEyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pkd)', marginBottom: 16 },

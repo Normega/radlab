@@ -547,7 +547,7 @@ function PondWatchCard({ userId }) {
         {!hasData ? (
           <p style={S.gameDesc}>{rows === null ? 'Loading…' : 'Watch a pond. Hit spacebar when a duck surfaces. Withhold for everything else. Measures reaction time, sensitivity (d′), and response bias.'}</p>
         ) : (
-          <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: 24, alignItems: 'center', flexWrap: 'wrap' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 28px', flexShrink: 0 }}>
               {[
                 { label: "d′",           value: last.d_prime?.toFixed(2) },
@@ -884,7 +884,7 @@ const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
 
 const S = {
-  wrap:    { maxWidth: 1100, margin: '0 auto', padding: '48px 32px' },
+  wrap:    { maxWidth: 'var(--container-lg)', margin: '0 auto', padding: '48px 32px' },
   header:  { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 48, flexWrap: 'wrap', gap: 20 },
   eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pkd)', marginBottom: 8 },
   title:   { fontFamily: SERIF, fontSize: 42, color: 'var(--tx)', letterSpacing: -1, marginBottom: 6 },

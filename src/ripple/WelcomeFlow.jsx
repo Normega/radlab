@@ -676,7 +676,7 @@ const SANS  = '"DM Sans", system-ui, sans-serif'
 const S = {
   page: { background: 'var(--bg)', minHeight: '100vh' },
   wrap: {
-    maxWidth: 840, margin: '0 auto', padding: '40px 24px 80px',
+    maxWidth: 'var(--container-sm)', margin: '0 auto', padding: '40px 24px 80px',
     display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 16,
   },
   title: {

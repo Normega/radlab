@@ -181,7 +181,7 @@ const S = {
   // width the wrap shrinks to fit its content, and the two-column grid
   // collapses to one the moment the cards' intrinsic width drops (which is
   // exactly what the Sept 14 shorter descriptions did).
-  wrap:  { width: '100%', maxWidth: 1024, margin: '0 auto', padding: '32px 24px 72px' },
+  wrap:  { width: '100%', maxWidth: 'var(--container-lg)', margin: '0 auto', padding: '32px 24px 72px' },
   title: { fontFamily: SERIF, fontSize: 'clamp(28px, 4vw, 36px)', color: 'var(--tx)', letterSpacing: -0.5, marginBottom: 28 },
 
   // ── check-in reminder ──

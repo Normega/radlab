@@ -21,14 +21,17 @@
       --fs-min:      12px  (house floor for anything a participant must READ
                             TO ANSWER. Not a WCAG rule — WCAG 2.x sets no
                             minimum font size; it requires resize-to-200%
-                            (1.4.4) and contrast (1.4.3), which this palette
-                            meets. We asserted "WCAG floor" for months and it
-                            was wrong — Gerold, 2026-09-04.)
+                            (1.4.4) and contrast (1.4.3). We asserted "WCAG
+                            floor" for months and it was wrong — Gerold,
+                            2026-09-04. Contrast is the real constraint: text
+                            uses --tx / --tx2 / --pkd, never --gy or --pk.)
       --fs-hint:     10px  (Body/XS. Hint text under a field, captions, fine
                             print. NEVER for information needed to answer
                             correctly — the label above the field carries the
                             requirement, the hint only elaborates. Norm's
-                            ruling 2026-09-04: adopted, but scoped.)
+                            ruling 2026-09-04: adopted, but scoped; and
+                            2026-10-04: avoid it where 12px fits. Colour
+                            --tx2, never --gy.)
       --fs-mono-sm:  12px  (mono labels, chips, tags)
       --fs-mono-md:  14px  (DEPRECATED alias of --fs-body-sm; was 13px — off-scale.
                             Use --fs-body-sm in new code.)
