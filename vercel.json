@@ -5,10 +5,10 @@
   },
   "redirects": [
     { "source": "/spellbook", "destination": "/spellbook/", "permanent": false },
-    { "source": "/", "has": [{ "type": "host", "value": "utmap.org" }], "destination": "https://radlab.zone/utmaps", "permanent": false },
-    { "source": "/", "has": [{ "type": "host", "value": "www.utmap.org" }], "destination": "https://radlab.zone/utmaps", "permanent": false },
-    { "source": "/:path*", "has": [{ "type": "host", "value": "utmap.org" }], "destination": "https://radlab.zone/utmaps", "permanent": false },
-    { "source": "/:path*", "has": [{ "type": "host", "value": "www.utmap.org" }], "destination": "https://radlab.zone/utmaps", "permanent": false }
+    { "source": "/", "has": [{ "type": "host", "value": "utmap.org" }], "destination": "https://radlab.zone/utmaps", "permanent": true },
+    { "source": "/", "has": [{ "type": "host", "value": "www.utmap.org" }], "destination": "https://radlab.zone/utmaps", "permanent": true },
+    { "source": "/:path*", "has": [{ "type": "host", "value": "utmap.org" }], "destination": "https://radlab.zone/utmaps", "permanent": true },
+    { "source": "/:path*", "has": [{ "type": "host", "value": "www.utmap.org" }], "destination": "https://radlab.zone/utmaps", "permanent": true }
   ],
   "rewrites": [
     { "source": "/spellbook/", "destination": "/spellbook/index.html" },
