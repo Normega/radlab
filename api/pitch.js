@@ -7,8 +7,13 @@
 // salted IP hash may submit RATE_LIMIT pitches per rolling 24 h.
 //
 // The row is the record; the email is a convenience. Once the insert
-// succeeds the submitter gets 200 even if Resend fails, so a mail outage never
-// loses a pitch or asks someone to submit twice.
+// succeeds the submitter gets 200 even if the email fails, so a mail outage
+// never loses a pitch or asks someone to submit twice.
+//
+// The email is sent by the notify_pitch Edge Function, not from here: research
+// mail goes out on the Supabase RESEND_API_KEY, and the Vercel key the other
+// api/ functions use only sends as course.radlab.zone (pitch emails sent with
+// it never arrived, 2026-10-04). See supabase/functions/notify_pitch.
 //
 // lab_pitches has no insert policy for anon/authenticated
 // (20261003_lab_pitches.sql): this endpoint, holding the service key, is the
@@ -20,12 +25,7 @@ import { createHash } from 'node:crypto'
 const RATE_LIMIT = 3
 const RATE_WINDOW_MS = 24 * 60 * 60 * 1000
 
-// research@mail.radlab.zone is a verified Resend sender (and on the UofT
-// allowlist); the apex research@ is a Workspace mailbox, which is where pitches
-// should land but which Resend cannot send as.
-const FROM = 'RADlab <research@mail.radlab.zone>'
-const TO = 'research@radlab.zone'
-
+// notify_pitch keeps a copy of these labels for the email.
 export const ROLES = { undergrad: 'Undergraduate', grad: 'Graduate student', postdoc: 'Postdoc', other: 'Other' }
 
 const LIMITS = { name: 120, email: 254, build_what: 3000, values_fit: 3000, portfolio_url: 500 }
@@ -57,28 +57,6 @@ export function validatePitch(body) {
   if (v.portfolio_url.length > LIMITS.portfolio_url) return { ok: false, error: 'That link is too long.' }
 
   return { ok: true, value: v }
-}
-
-const esc = (s) => String(s)
-  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-  .replace(/"/g, '&quot;').replace(/'/g, '&#39;')
-
-function emailBody(p) {
-  const rows = [
-    ['Name', p.name],
-    ['Email', p.email],
-    ['Role', ROLES[p.role]],
-    ['What do you want to build, and for whom?', p.build_what],
-    ['How does it connect to breath, body awareness, or the lab\'s values?', p.values_fit],
-    ['Something they made', p.portfolio_url],
-  ]
-  const text = rows.map(([k, val]) => `${k}\n${val}`).join('\n\n')
-    + '\n\nReply to this email to answer the applicant directly.'
-  const html = rows.map(([k, val]) =>
-    `<p style="margin:0 0 4px;font-weight:600">${esc(k)}</p>`
-    + `<p style="margin:0 0 16px;white-space:pre-wrap">${esc(val)}</p>`).join('')
-    + '<p style="color:#6b6c70;font-size:14px">Reply to this email to answer the applicant directly.</p>'
-  return { text, html }
 }
 
 export default async function handler(req, res) {
@@ -130,33 +108,25 @@ export default async function handler(req, res) {
     }
   }
 
-  const { error: insertError } = await service.from('lab_pitches').insert({ ...p, ip_hash: ipHash })
+  const { data: row, error: insertError } = await service
+    .from('lab_pitches')
+    .insert({ ...p, ip_hash: ipHash })
+    .select('id')
+    .single()
   if (insertError) {
     console.error('pitch: insert failed', insertError.message)
     return res.status(500).json({ error: 'Your pitch could not be saved. Please try again, or email research@radlab.zone.' })
   }
 
-  const resendKey = process.env.RESEND_API_KEY
-  if (!resendKey) {
-    console.error('pitch: RESEND_API_KEY missing; row saved, no email sent')
-  } else {
-    try {
-      const { text, html } = emailBody(p)
-      const rsp = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
-        // Raw REST, so snake_case reply_to (website.md §11: the SDK's
-        // camelCase replyTo is silently dropped here).
-        body: JSON.stringify({
-          from: FROM, to: TO, reply_to: p.email,
-          subject: `Lab pitch: ${p.name} (${ROLES[p.role]})`,
-          text, html,
-        }),
-      })
-      if (!rsp.ok) console.error('pitch: Resend', rsp.status, await rsp.text().catch(() => ''))
-    } catch (e) {
-      console.error('pitch: Resend threw', e?.message)
+  // Email via the research path. Any failure is logged only: the pitch is saved.
+  try {
+    const { error: notifyError } = await service.functions.invoke('notify_pitch', { body: { pitch_id: row.id } })
+    if (notifyError) {
+      const detail = await notifyError.context?.text?.().catch(() => '')
+      console.error('pitch: notify_pitch failed', row.id, notifyError.message, detail ?? '')
     }
+  } catch (e) {
+    console.error('pitch: notify_pitch threw', row.id, e?.message)
   }
 
   return res.status(200).json({ ok: true })
