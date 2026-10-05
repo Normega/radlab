@@ -149,6 +149,7 @@ export default function ClassRoom({ session }) {
         .neq('status', 'planned')
         .neq('kind', 'weekly')
         .is('dismissed_at', null)
+        .gte('lectures.lecture_date', torontoToday())
         .order('opened_at', { ascending: false, nullsFirst: false })
         .limit(1)
         .then(({ data }) => {
@@ -182,6 +183,11 @@ export default function ClassRoom({ session }) {
       .neq('status', 'planned')
       .neq('kind', 'weekly') // weekly walls live on their own page, never in the live flow
       .is('dismissed_at', null)
+      // A check-in belongs to its lecture day. Once that day has passed it
+      // leaves the lobby whether or not anyone dismissed it: the console
+      // shows only the current week, so last week's results could not be
+      // dismissed from it and stayed on screen for days (2026-10-05).
+      .gte('lectures.lecture_date', torontoToday())
       // Most recently OPENED, not created: every check-in was pre-created in
       // August, so created_at ordering picked an arbitrary row when two were
       // simultaneously non-dismissed. In L1 that meant fresh page loads could
@@ -763,6 +769,12 @@ function FieldGuideBridge({ slug }) {
       </p>
     </div>
   )
+}
+
+// The course's calendar date ('YYYY-MM-DD'), in Toronto rather than the
+// device's zone, to compare against lectures.lecture_date.
+function torontoToday() {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'America/Toronto' })
 }
 
 function ClassAuthCard({ classInfo, slug }) {
