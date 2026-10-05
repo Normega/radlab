@@ -19,6 +19,10 @@ with L_k = log period of breath k. After any pause (probe, inter-trial) the
 reference re-anchors to the first breath back and no transient is counted for
 that breath — the observer knows the stream restarted.
 
+Round 2 generalises this to two evidence channels with separate gains
+(drive = vL*uL + vT*uT), so a participant can weight total change and
+breath-to-breath change in any proportion; see channels() below.
+
 The likelihood propagates the accumulator density on a grid (the same
 discrete-time dynamics the simulator uses), so it is exact up to grid
 resolution and handles time-varying evidence (ramps) natively — which the
@@ -35,7 +39,10 @@ REFRACT = 1.0        # s after a press before accumulation restarts
 NGRID = 50           # accumulator grid cells
 TAU_R = 10.0         # breaths, reference time constant for LEVEL / LEAKY
 H0 = 1.0 / (600.0 / DT)   # contaminant hazard per step: one random press per 10 min
-SIGMA_BREATH = 0.06  # log-period breath-to-breath variability while paced (true breathing)
+SIGMA_BREATH = 0.04  # log-period breath-to-breath variability while paced (true breathing).
+                     # Round 1 used 0.06; at that level even an ideal breath-to-breath detector can
+                     # barely reach 50% detection of a 20% step at 0.3 FA/min, so a transient
+                     # observer's gain could not be calibrated (it ran off to a plateau).
 SIGMA_MEAS = 0.02    # belt measurement error on log period (what the analyst sees)
 
 LEVEL, LEAKY, TRANSIENT = 0, 1, 2
@@ -190,9 +197,20 @@ def loglik(step_breath, u, cross, v, delta, a, lam):
     return ll
 
 
+# ── two-channel drive ───────────────────────────────────────────────────────
+# Every observer is a special case of one accumulator driven by two evidence
+# channels with their own gains:
+#     drive_k = vL * uL_k + vT * uT_k        (uL = LEVEL evidence, uT = TRANSIENT)
+# level: vT = 0; transient: vL = 0; mixed: both > 0; any of them with or without a leak.
+# simulate()/loglik() take the drive as `u` with v = 1.
+def channels(L, pause_before, base_log):
+    return (evidence(L, pause_before, LEVEL, base_log, TAU_R),
+            evidence(L, pause_before, TRANSIENT, base_log, TAU_R))
+
+
 # ── Monte Carlo psychometrics (calibration, per-participant m50) ────────────
 @njit(cache=True)
-def mc_step(model, v, delta, a, lam, mag, n_trials, n_pre, n_post, base_s, seed):
+def mc_step(vL, vT, delta, a, lam, mag, n_trials, n_pre, n_post, base_s, seed):
     """Steps from a settled baseline. Returns (hit rate within n_post breaths, stable FA per minute).
     Direction alternates trial by trial (half faster, half slower)."""
     np.random.seed(seed)
@@ -210,16 +228,18 @@ def mc_step(model, v, delta, a, lam, mag, n_trials, n_pre, n_post, base_s, seed)
         for k in range(n_b):
             per = base_log if k < n_pre else math.log(base_s * (1.0 + d * mag))
             L[k] = per + SIGMA_BREATH * np.random.randn()
-        u = evidence(L, pb, model, base_log, TAU_R)
+        uL = evidence(L, pb, LEVEL, base_log, TAU_R)
+        uT = evidence(L, pb, TRANSIENT, base_log, TAU_R)
         x = x0
         off_until = -1
         hit = False
         s = 0
         for k in range(n_b):
             nst = steps_per_breath if k < n_pre else int(round(base_s * (1.0 + d * mag) / DT))
+            drv = vL * uL[k] + vT * uT[k]
             for _ in range(nst):
                 if s >= off_until:
-                    x += (v * u[k] - delta - lam * x) * DT + sq * np.random.randn()
+                    x += (drv - delta - lam * x) * DT + sq * np.random.randn()
                     if x < 0.0:
                         x = -x
                     if x >= a:
@@ -239,7 +259,7 @@ def mc_step(model, v, delta, a, lam, mag, n_trials, n_pre, n_post, base_s, seed)
 
 
 def stable_evidence_mean(model, n=200_000, seed=3):
-    """E[u] during steady pacing — the noise floor a participant's criterion sits above."""
+    """E[u] during steady pacing for one channel (LEVEL or TRANSIENT) — the noise floor."""
     rng = np.random.default_rng(seed)
     L = math.log(4.0) + SIGMA_BREATH * rng.standard_normal(n)
     pb = np.zeros(n, np.bool_)
@@ -247,15 +267,15 @@ def stable_evidence_mean(model, n=200_000, seed=3):
     return float(u[100:].mean())
 
 
-def find_m50(model, v, delta, a, lam, base_s=4.0, n_post=5, n_trials=600, seed=1):
-    """Magnitude giving 50% hits within n_post breaths (bisection in log m)."""
+def find_m50(vL, vT, delta, a, lam, base_s=4.0, n_post=5, n_trials=600, seed=1):
+    """Step magnitude giving 50% hits within n_post breaths (bisection in log m)."""
     lo, hi = math.log(0.01), math.log(0.8)
-    p_hi, _ = mc_step(model, v, delta, a, lam, 0.8, n_trials, 4, n_post, base_s, seed)
+    p_hi, _ = mc_step(vL, vT, delta, a, lam, 0.8, n_trials, 4, n_post, base_s, seed)
     if p_hi < 0.5:
         return 0.8
     for _ in range(14):
         mid = 0.5 * (lo + hi)
-        p, _ = mc_step(model, v, delta, a, lam, math.exp(mid), n_trials, 4, n_post, base_s, seed)
+        p, _ = mc_step(vL, vT, delta, a, lam, math.exp(mid), n_trials, 4, n_post, base_s, seed)
         if p < 0.5:
             lo = mid
         else:

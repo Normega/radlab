@@ -74,6 +74,24 @@ test('ramp periods grow monotonically away from baseline', () => {
   }
 })
 
+test('roving_mixed interleaves steps and ramps that reach the same new rate', () => {
+  const s = buildSchedule('roving_mixed', { seed: 8 })
+  const steps = s.events.filter(e => e.type === 'step')
+  const ramps = s.events.filter(e => e.type === 'ramp')
+  assert.ok(steps.length > 10 && ramps.length > 10, `${steps.length} steps, ${ramps.length} ramps`)
+  for (const e of ramps) {
+    const first = s.breaths[e.onsetBreath].periodMs
+    const last = s.breaths[e.onsetBreath + e.rampBreaths - 1].periodMs
+    assert.ok(Math.abs(last - e.toPeriodMs) <= 1, `ramp ends at ${last}, expected ${e.toPeriodMs}`)
+    // first ramp breath carries only 1/n of the change (log scale)
+    const frac = Math.log(first / e.fromPeriodMs) / Math.log(e.toPeriodMs / e.fromPeriodMs)
+    assert.ok(Math.abs(frac - 1 / e.rampBreaths) < 0.02, `first-breath fraction ${frac}`)
+  }
+  // magnitudes come from the same distribution for both kinds of change
+  const med = (xs) => xs.map(e => e.mag).sort((a, b) => a - b)[xs.length >> 1]
+  assert.ok(Math.abs(Math.log(med(steps) / med(ramps))) < 0.5)
+})
+
 test('roving yields more changes per minute than the brief design', () => {
   const r = scheduleYield(buildSchedule('roving', { seed: 1 }))
   const b = scheduleYield(buildSchedule('brief', { seed: 1 }))

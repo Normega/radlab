@@ -26,8 +26,11 @@
 //   ramp        — fixed-length trials, rate ramps from a random breath to the
 //                 end of the trial whatever the response; null trials
 //   roving_ramp — roving for most of the session, then a ramp block
+//   roving_mixed — roving, but each change is randomly a step or a ramp of the
+//                 same total size (the ramp then holds the new rate); Study 1's
+//                 salience manipulation inside one stream, no blocks
 
-export const DESIGNS = ['brief', 'roving', 'trials', 'ramp', 'roving_ramp']
+export const DESIGNS = ['brief', 'roving', 'trials', 'ramp', 'roving_ramp', 'roving_mixed']
 
 export const DEFAULTS = {
   minutes:          40,      // task time budget, pauses included
@@ -71,6 +74,11 @@ export const DEFAULTS = {
 
   // roving_ramp
   rampFrac: 0.25,
+
+  // roving_mixed
+  mixedRampShare:   0.5,   // share of changes delivered as ramps
+  mixedRampBreaths: 6,     // breaths a ramp takes to reach the new rate
+  mixedHoldBreaths: 3,     // window continues this many breaths after a ramp completes
 }
 
 // ── seeded RNG ──────────────────────────────────────────────────────────────
@@ -276,6 +284,41 @@ function runRamp(s, o, rng, endMs) {
   }
 }
 
+function runRovingMixed(s, o, rng, endMs) {
+  let P = o.basePeriodMs
+  for (let k = 0; k < o.leadInBreaths; k++) s.addBreath(P, 'lead')
+  for (;;) {
+    const nGap = o.minGapBreaths + rng.geometric(o.extraGapMean)
+    const rel = rng.logUniform(o.relMagMin, o.relMagMax)
+    const { dir, mag, newPeriod } = chooseStep(s, o, rng, P, rel * o.m50Hat, true)
+    const isRamp = rng.u() < o.mixedRampShare
+    const nWin = isRamp ? o.mixedRampBreaths + o.mixedHoldBreaths : o.rovingWindowBreaths
+    const worst = nGap * P + nWin * Math.max(P, newPeriod) + o.probeMs + 3 * newPeriod
+    if (s.t + worst > endMs) break
+    for (let k = 0; k < nGap; k++) s.addBreath(P, 'stable')
+
+    const onsetBreath = s.breaths.length
+    const onsetMs = s.t
+    if (isRamp) {
+      // geometric interpolation: equal proportional change per breath, ending exactly on newPeriod
+      const n = o.mixedRampBreaths
+      for (let k = 1; k <= n; k++) s.addBreath(P * Math.pow(newPeriod / P, k / n), 'ramp')
+      for (let k = 0; k < o.mixedHoldBreaths; k++) s.addBreath(newPeriod, 'window')
+    } else {
+      for (let k = 0; k < nWin; k++) s.addBreath(newPeriod, 'window')
+    }
+    s.pushEvent({ type: isRamp ? 'ramp' : 'step', onsetMs, onsetBreath, windowEndMs: s.t, dir, mag, relMag: rel,
+                  fromPeriodMs: Math.round(P), toPeriodMs: Math.round(newPeriod),
+                  ...(isRamp ? { rampBreaths: o.mixedRampBreaths } : {}) })
+    P = newPeriod
+    if (rng.u() < o.probeP) {
+      s.addPause(o.probeMs, 'probe')
+      const nRe = pickReentrain(o, rng)
+      for (let k = 0; k < nRe; k++) s.addBreath(P, 'reentrain')
+    }
+  }
+}
+
 // ── public API ──────────────────────────────────────────────────────────────
 export function buildSchedule(design, options = {}) {
   if (!DESIGNS.includes(design)) throw new Error(`unknown design: ${design}`)
@@ -292,6 +335,7 @@ export function buildSchedule(design, options = {}) {
     runRoving(s, o, rng, totalMs * (1 - o.rampFrac))
     runRamp(s, o, rng, totalMs)
   }
+  if (design === 'roving_mixed') runRovingMixed(s, o, rng, totalMs)
 
   return {
     design,

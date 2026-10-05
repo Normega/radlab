@@ -394,6 +394,38 @@ one easier. Belt error (2% per period) roughly halves the transient observer's f
 
 ---
 
+## 6c. Round 2 — the best overall accumulation model, with coding as an individual difference (running 2026-10-05)
+
+**Question (Norm, 2026-10-05).** The central aim is the best overall model of how breath-change
+evidence accumulates. The secondary aim is individual differences in *what* is accumulated:
+breath-to-breath change vs total change from baseline.
+
+**What changed from round 1**
+- **Two-channel observers.** Every observer is one accumulator fed by total change (gain vL) and
+  breath-to-breath change (gain vT), with or without a leak. The generating observers are
+  `level`, `leaky`, `transient`, `mixed` and `mixed_leaky`, all 5 also fitted to every session.
+  Mixed observers vary in their breath-to-breath share s ~ Beta(2, 2).
+- **New metrics:**
+  - does the summed-AIC winner across the group match the generator?
+  - per-person model choice;
+  - r(true s, recovered s).
+- **Designs:**
+  - `roving_ramp` (25% ramps, block at the end);
+  - `roving_ramp50` (50%);
+  - `ramp`;
+  - **`roving_mixed`** (new): each change in a roving stream is randomly a step or a 6-breath ramp
+    of the same total size. That is Study 1's salience manipulation within one stream, with no
+    blocks.
+- **Calibration fix.** Paced breath noise is now log-SD .04, down from .06, and calibration takes the
+  lowest gain that reaches the target. At .06 the transient observer was uncalibratable (its gain
+  ran off to a plateau), so round-1 transient numbers carry that caveat. See the sim README
+  *Checks done*.
+
+**Queued after it:** σ_meas = 0 on the best two designs, to show what a better belt would buy.
+Results go in `scripts/bcat_ddm_sim/results_round2/summary.md`, with conclusions written here.
+
+---
+
 ## 7. Decisions (append with dates)
 
 *(none yet — waiting on §5)*
@@ -416,4 +448,5 @@ one easier. Belt error (2% per period) roughly halves the transient observer's f
   Committed to `dev` 2026-10-05.
 - **2026-10-05** — Norm reframed the central question: the **best overall model of how breath-change
   evidence accumulates**, with breath-to-breath vs total-change coding as an individual difference.
-  Wrote the Google Doc snapshot (link at top).
+  Wrote the Google Doc snapshot (link at top). Built round 2 (§6c): two-channel observers,
+  `roving_mixed` design, first-crossing calibration, `--resume`; launched the N = 30 run.
