@@ -293,6 +293,10 @@ export default function UtMapsFindings({ session }) {
 //   dashed: identity (peer = own); blue: measured fit peer = 1.96 + 0.342 × self
 //   orange dot: where the two cross, at 2.98
 // Rescale both lines together and recompute the crossing if this ever changes.
+// The end annotations are free to move (2026-10-05: Norm asked that they clear
+// the lines): the left pair sits above the blue line, the right pair below it,
+// each at least 25px clear of both lines, and the pointer arrows start at the
+// labels and end where they always did.
 function PeerChart() {
   return (
     <svg viewBox="0 0 460 350" role="img" style={S.svg}
@@ -321,7 +325,7 @@ function PeerChart() {
 
       {/* identity line */}
       <line x1="70" y1="300" x2="420" y2="30" style={{ stroke: 'var(--tx2)', strokeWidth: 1.5, strokeDasharray: '5 4' }} />
-      <text x="398" y="46" fontSize="11" textAnchor="end" style={{ fontFamily: '"DM Sans", system-ui, sans-serif', fill: 'var(--tx2)' }}>same as themselves</text>
+      <text x="380" y="46" fontSize="11" textAnchor="end" style={{ fontFamily: '"DM Sans", system-ui, sans-serif', fill: 'var(--tx2)' }}>same as themselves</text>
 
       {/* fitted line: peer = 1.96 + 0.342 x self */}
       <line x1="70" y1="212" x2="420" y2="120" style={{ stroke: 'var(--utm-fit)', strokeWidth: 3, strokeLinecap: 'round' }} />
@@ -330,15 +334,15 @@ function PeerChart() {
       <circle cx="244" cy="166" r="4.5" style={{ fill: 'var(--utm-cross)' }} />
 
       <g style={{ fontFamily: '"DM Sans", system-ui, sans-serif', fill: 'var(--tx)' }}>
-        <text x="86" y="196" fontSize="11.5">sees peers as worse off</text>
-        <text x="86" y="211" fontSize="11.5" style={{ fill: 'var(--tx2)' }}>than themselves</text>
-        <text x="404" y="140" fontSize="11.5" textAnchor="end">sees peers as better off</text>
-        <text x="404" y="155" fontSize="11.5" textAnchor="end" style={{ fill: 'var(--tx2)' }}>than themselves</text>
+        <text x="86" y="140" fontSize="11.5">sees peers as worse off</text>
+        <text x="86" y="155" fontSize="11.5" style={{ fill: 'var(--tx2)' }}>than themselves</text>
+        <text x="404" y="200" fontSize="11.5" textAnchor="end">sees peers as better off</text>
+        <text x="404" y="215" fontSize="11.5" textAnchor="end" style={{ fill: 'var(--tx2)' }}>than themselves</text>
       </g>
 
       <g style={{ stroke: 'var(--utm-fit)', fill: 'none', strokeWidth: 1.2 }}>
-        <path d="M80,190 L74,214" markerEnd="url(#utm-ar)" />
-        <path d="M410,146 L416,124" markerEnd="url(#utm-ar)" />
+        <path d="M80,162 L74,214" markerEnd="url(#utm-ar)" />
+        <path d="M410,186 L416,124" markerEnd="url(#utm-ar)" />
       </g>
     </svg>
   )
