@@ -1,0 +1,337 @@
+// ── BCAT-DDM pacer schedules ───────────────────────────────────────────────
+//
+// Pure, React-free and node-testable (imports use explicit `.js`, like
+// emberMechanics.js). One source of truth for *what the pacer does when*: the
+// task will drive its pacer clock from these schedules, and the power
+// simulation (scripts/bcat_ddm_sim/) consumes the very same output, so a design
+// that is simulated is the design that runs.
+//
+// Everything is in absolute milliseconds from stream start, precomputed — no
+// per-breath timers — so a 40 min stream cannot drift. Every change starts at
+// an inhale onset (= a breath start), where a period switch is invisible in
+// the pacer's position.
+//
+// Magnitudes are proportional changes in breath *period* (the paper's
+// convention, delta = TotalChange − 1): slower = P·(1 + m), faster = P·(1 − m).
+// They are passed relative to the participant's 50%-detection magnitude
+// (`m50Hat`, the Quest pre-run's estimate), so one design spec serves everyone.
+//
+// Designs (docs/markdowns/bcat_ddm_plan.md §6a):
+//   brief       — the handoff as written: steps from a fixed baseline, 4 fixed
+//                 levels, long response window, return to baseline + re-entrain
+//   roving      — steps whose new rate becomes the baseline (no returns),
+//                 continuous magnitudes, short window, hazard-based onsets
+//   trials      — fixed-length trials, step at a random breath, null trials,
+//                 pacer pause between trials
+//   ramp        — fixed-length trials, rate ramps from a random breath to the
+//                 end of the trial whatever the response; null trials
+//   roving_ramp — roving for most of the session, then a ramp block
+
+export const DESIGNS = ['brief', 'roving', 'trials', 'ramp', 'roving_ramp']
+
+export const DEFAULTS = {
+  minutes:          40,      // task time budget, pauses included
+  basePeriodMs:     4000,
+  m50Hat:           0.20,    // participant's estimated 50%-detection magnitude
+  seed:             1,
+  minRatio:         0.55,    // pacer period bounds, as ratios of basePeriodMs
+  maxRatio:         1.8,
+  leadInBreaths:    3,
+  probeP:           1 / 3,   // share of windows followed by an arousal probe
+  probeMs:          5000,    // probe pause (pacer stopped)
+  reentrainBreaths: [2, 3],  // after a probe / return, inclusive range
+
+  // brief
+  briefWindowBreaths: 10,
+  briefLevels:        [0.7, 1.0, 1.4, 1.9],   // × m50Hat ≈ 25/50/75/90% points
+  briefLevelWeights:  [0.15, 0.30, 0.30, 0.25],
+  gapMinS:            30,
+  gapMaxS:            60,
+  gapMode:            'after',  // 'after' re-entrainment | 'onset' (onset-to-onset)
+
+  // roving
+  rovingWindowBreaths: 5,
+  minGapBreaths:       2,
+  extraGapMean:        3,       // geometric extra breaths, mean
+  relMagMin:           0.5,     // × m50Hat, log-uniform
+  relMagMax:           2.2,
+
+  // trials
+  trialBreaths:    8,
+  trialOnsetMin:   2,           // breaths before onset, inclusive range
+  trialOnsetMax:   5,
+  nullP:           0.25,
+  itiMs:           3000,
+
+  // ramp
+  rampTrialBreaths: 10,
+  rampOnsetMin:     2,
+  rampOnsetMax:     3,
+  rampRates:        [0.25, 0.5], // × m50Hat per breath
+
+  // roving_ramp
+  rampFrac: 0.25,
+}
+
+// ── seeded RNG ──────────────────────────────────────────────────────────────
+export function mulberry32(seed) {
+  let a = seed >>> 0
+  return function rand() {
+    a = (a + 0x6D2B79F5) >>> 0
+    let t = a
+    t = Math.imul(t ^ (t >>> 15), t | 1)
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
+
+function makeRng(seed) {
+  const r = mulberry32(seed)
+  return {
+    u: r,
+    uniform: (lo, hi) => lo + (hi - lo) * r(),
+    int: (lo, hi) => lo + Math.floor(r() * (hi - lo + 1)),          // inclusive
+    logUniform: (lo, hi) => Math.exp(Math.log(lo) + (Math.log(hi) - Math.log(lo)) * r()),
+    sign: () => (r() < 0.5 ? -1 : 1),
+    geometric: (mean) => {                                          // support 0,1,2,…
+      if (mean <= 0) return 0
+      const p = 1 / (1 + mean)
+      return Math.floor(Math.log(1 - r()) / Math.log(1 - p))
+    },
+    weighted: (weights) => {
+      const total = weights.reduce((s, w) => s + w, 0)
+      let x = r() * total
+      for (let i = 0; i < weights.length; i++) { x -= weights[i]; if (x < 0) return i }
+      return weights.length - 1
+    },
+  }
+}
+
+// ── builder ─────────────────────────────────────────────────────────────────
+function createBuilder(o) {
+  const s = {
+    t: 0,
+    breaths: [],   // { i, startMs, periodMs, tag }
+    pauses: [],    // { startMs, endMs, kind, beforeBreath }
+    events: [],    // see pushEvent
+  }
+  const lo = o.basePeriodMs * o.minRatio
+  const hi = o.basePeriodMs * o.maxRatio
+  s.clamp = (p) => Math.min(hi, Math.max(lo, p))
+  s.addBreath = (periodMs, tag) => {
+    const i = s.breaths.length
+    s.breaths.push({ i, startMs: Math.round(s.t), periodMs: Math.round(periodMs), tag })
+    s.t += Math.round(periodMs)
+    return i
+  }
+  s.addPause = (ms, kind) => {
+    s.pauses.push({ startMs: Math.round(s.t), endMs: Math.round(s.t + ms), kind, beforeBreath: s.breaths.length })
+    s.t += ms
+  }
+  s.pushEvent = (e) => { s.events.push({ id: s.events.length, ...e }); return e }
+  return s
+}
+
+const changed = (p, dir, mag) => p * (1 + dir * mag)
+
+// A step from period P, magnitude `mag` (proportional), direction chosen at
+// random but steered back toward basePeriodMs when near the bounds. Returns
+// { dir, mag, newPeriod } with the magnitude shrunk if both directions would
+// leave the bounds.
+function chooseStep(s, o, rng, P, mag, meanRevert) {
+  let dir = rng.sign()
+  if (meanRevert) {
+    // P(slower) falls from 1 → 0 as log(P/base) goes from the low bound to the high one
+    const x = Math.log(P / o.basePeriodMs)
+    const span = x >= 0 ? Math.log(o.maxRatio) : -Math.log(o.minRatio)
+    const pSlower = 0.5 - 0.5 * Math.max(-1, Math.min(1, x / span))
+    dir = rng.u() < pSlower ? 1 : -1
+  }
+  const fits = (d) => {
+    const q = changed(P, d, mag)
+    return q >= o.basePeriodMs * o.minRatio && q <= o.basePeriodMs * o.maxRatio
+  }
+  if (!fits(dir)) dir = -dir
+  if (!fits(dir)) {
+    // shrink until it fits on the side with more room
+    dir = P < o.basePeriodMs ? 1 : -1
+    while (mag > 0.01 && !fits(dir)) mag *= 0.9
+  }
+  return { dir, mag, newPeriod: changed(P, dir, mag) }
+}
+
+function pickReentrain(o, rng) {
+  const [a, b] = o.reentrainBreaths
+  return rng.int(a, b)
+}
+
+// ── designs ─────────────────────────────────────────────────────────────────
+function runBrief(s, o, rng, endMs) {
+  const B = o.basePeriodMs
+  for (let k = 0; k < o.leadInBreaths; k++) s.addBreath(B, 'lead')
+  const W = o.briefWindowBreaths
+  let lastOnsetMs = -Infinity
+  for (;;) {
+    let gapMs = rng.uniform(o.gapMinS, o.gapMaxS) * 1000
+    if (o.gapMode === 'onset') gapMs = Math.max(0, gapMs - (s.t - lastOnsetMs))
+    const level = rng.weighted(o.briefLevelWeights)
+    const mag = o.briefLevels[level] * o.m50Hat
+    const { dir, mag: m, newPeriod } = chooseStep(s, o, rng, B, mag, false)
+    const worst = gapMs + W * Math.max(B, newPeriod) + o.probeMs + 4 * B
+    if (s.t + worst > endMs) break
+    const nGap = Math.ceil(gapMs / B)
+    for (let k = 0; k < nGap; k++) s.addBreath(B, 'stable')
+
+    const onsetBreath = s.breaths.length
+    const onsetMs = s.t
+    lastOnsetMs = onsetMs
+    for (let k = 0; k < W; k++) s.addBreath(newPeriod, 'window')
+    s.pushEvent({ type: 'step', onsetMs, onsetBreath, windowEndMs: s.t, dir, mag: m,
+                  level, fromPeriodMs: B, toPeriodMs: Math.round(newPeriod) })
+    if (rng.u() < o.probeP) s.addPause(o.probeMs, 'probe')
+
+    const retBreath = s.breaths.length
+    const retMs = s.t
+    const nRe = pickReentrain(o, rng)
+    for (let k = 0; k < nRe; k++) s.addBreath(B, 'reentrain')
+    s.pushEvent({ type: 'return', onsetMs: retMs, onsetBreath: retBreath, windowEndMs: s.t,
+                  dir: -dir, mag: Math.abs(B / newPeriod - 1), fromPeriodMs: Math.round(newPeriod), toPeriodMs: B })
+  }
+}
+
+function runRoving(s, o, rng, endMs) {
+  let P = o.basePeriodMs
+  if (s.breaths.length === 0) for (let k = 0; k < o.leadInBreaths; k++) s.addBreath(P, 'lead')
+  const W = o.rovingWindowBreaths
+  for (;;) {
+    const nGap = o.minGapBreaths + rng.geometric(o.extraGapMean)
+    const rel = rng.logUniform(o.relMagMin, o.relMagMax)
+    const { dir, mag, newPeriod } = chooseStep(s, o, rng, P, rel * o.m50Hat, true)
+    const worst = nGap * P + W * newPeriod + o.probeMs + 3 * newPeriod
+    if (s.t + worst > endMs) break
+    for (let k = 0; k < nGap; k++) s.addBreath(P, 'stable')
+
+    const onsetBreath = s.breaths.length
+    const onsetMs = s.t
+    for (let k = 0; k < W; k++) s.addBreath(newPeriod, 'window')
+    s.pushEvent({ type: 'step', onsetMs, onsetBreath, windowEndMs: s.t, dir, mag, relMag: rel,
+                  fromPeriodMs: Math.round(P), toPeriodMs: Math.round(newPeriod) })
+    P = newPeriod
+    if (rng.u() < o.probeP) {
+      s.addPause(o.probeMs, 'probe')
+      const nRe = pickReentrain(o, rng)
+      for (let k = 0; k < nRe; k++) s.addBreath(P, 'reentrain')
+    }
+  }
+}
+
+function runTrials(s, o, rng, endMs) {
+  const B = o.basePeriodMs
+  for (;;) {
+    const n = o.trialBreaths
+    const onsetIdx = rng.int(o.trialOnsetMin, o.trialOnsetMax)
+    const isNull = rng.u() < o.nullP
+    const rel = rng.logUniform(o.relMagMin, o.relMagMax)
+    const { dir, mag, newPeriod } = chooseStep(s, o, rng, B, rel * o.m50Hat, false)
+    const worst = o.itiMs + n * Math.max(B, newPeriod) + o.probeMs
+    if (s.t + worst > endMs) break
+    s.addPause(o.itiMs, 'iti')
+    for (let k = 0; k < onsetIdx; k++) s.addBreath(B, 'pre')
+    const onsetBreath = s.breaths.length
+    const onsetMs = s.t
+    for (let k = onsetIdx; k < n; k++) s.addBreath(isNull ? B : newPeriod, isNull ? 'null' : 'window')
+    s.pushEvent(isNull
+      ? { type: 'null', onsetMs, onsetBreath, windowEndMs: s.t, dir: 0, mag: 0, fromPeriodMs: B, toPeriodMs: B }
+      : { type: 'step', onsetMs, onsetBreath, windowEndMs: s.t, dir, mag, relMag: rel,
+          fromPeriodMs: B, toPeriodMs: Math.round(newPeriod) })
+    if (rng.u() < o.probeP) s.addPause(o.probeMs, 'probe')
+  }
+}
+
+function runRamp(s, o, rng, endMs) {
+  const B = o.basePeriodMs
+  for (;;) {
+    const n = o.rampTrialBreaths
+    const onsetIdx = rng.int(o.rampOnsetMin, o.rampOnsetMax)
+    const isNull = rng.u() < o.nullP
+    const rateIdx = rng.int(0, o.rampRates.length - 1)
+    const rate = o.rampRates[rateIdx] * o.m50Hat
+    const dir = rng.sign()
+    const nRamp = n - onsetIdx
+    const periods = []
+    for (let k = 1; k <= nRamp; k++) periods.push(isNull ? B : s.clamp(changed(B, dir, rate * k)))
+    const worst = o.itiMs + onsetIdx * B + periods.reduce((a, b) => a + b, 0) + o.probeMs
+    if (s.t + worst > endMs) break
+    s.addPause(o.itiMs, 'iti')
+    for (let k = 0; k < onsetIdx; k++) s.addBreath(B, 'pre')
+    const onsetBreath = s.breaths.length
+    const onsetMs = s.t
+    for (const p of periods) s.addBreath(p, isNull ? 'null' : 'ramp')
+    const finalPeriod = periods[periods.length - 1]
+    s.pushEvent(isNull
+      ? { type: 'null', onsetMs, onsetBreath, windowEndMs: s.t, dir: 0, mag: 0, fromPeriodMs: B, toPeriodMs: B }
+      : { type: 'ramp', onsetMs, onsetBreath, windowEndMs: s.t, dir, rate, rateIdx,
+          mag: Math.abs(finalPeriod / B - 1), fromPeriodMs: B, toPeriodMs: Math.round(finalPeriod) })
+    if (rng.u() < o.probeP) s.addPause(o.probeMs, 'probe')
+  }
+}
+
+// ── public API ──────────────────────────────────────────────────────────────
+export function buildSchedule(design, options = {}) {
+  if (!DESIGNS.includes(design)) throw new Error(`unknown design: ${design}`)
+  const o = { ...DEFAULTS, ...options }
+  const rng = makeRng(o.seed)
+  const s = createBuilder(o)
+  const totalMs = o.minutes * 60_000
+
+  if (design === 'brief')  runBrief(s, o, rng, totalMs)
+  if (design === 'roving') runRoving(s, o, rng, totalMs)
+  if (design === 'trials') runTrials(s, o, rng, totalMs)
+  if (design === 'ramp')   runRamp(s, o, rng, totalMs)
+  if (design === 'roving_ramp') {
+    runRoving(s, o, rng, totalMs * (1 - o.rampFrac))
+    runRamp(s, o, rng, totalMs)
+  }
+
+  return {
+    design,
+    options: o,
+    durationMs: Math.round(s.t),
+    breaths: s.breaths,
+    pauses: s.pauses,
+    events: s.events,
+  }
+}
+
+// Summary counts — what a design yields per session, before any responding.
+export function scheduleYield(schedule) {
+  const count = (type) => schedule.events.filter(e => e.type === type).length
+  const pausedMs = schedule.pauses.reduce((a, p) => a + (p.endMs - p.startMs), 0)
+  return {
+    design: schedule.design,
+    minutes: schedule.durationMs / 60_000,
+    breaths: schedule.breaths.length,
+    steps: count('step'),
+    ramps: count('ramp'),
+    nulls: count('null'),
+    returns: count('return'),
+    changesPerMin: (count('step') + count('ramp')) / (schedule.durationMs / 60_000),
+    pausedShare: pausedMs / schedule.durationMs,
+  }
+}
+
+// Pacer clock: phase in [0,1) (0 = inhale start) and breath index at time t,
+// looked up from the schedule. Returns null during pauses and after the end.
+export function pacerAt(schedule, tMs) {
+  const b = schedule.breaths
+  let lo = 0, hi = b.length - 1
+  if (hi < 0 || tMs < b[0].startMs) return null
+  while (lo < hi) {
+    const mid = (lo + hi + 1) >> 1
+    if (b[mid].startMs <= tMs) lo = mid; else hi = mid - 1
+  }
+  const br = b[lo]
+  const into = tMs - br.startMs
+  if (into >= br.periodMs) return null
+  return { breath: lo, phase: into / br.periodMs, periodMs: br.periodMs }
+}
