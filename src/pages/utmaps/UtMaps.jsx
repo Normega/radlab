@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import Nav from '../../components/Nav'
 import SiteFooter from '../../components/SiteFooter'
 import EyebrowLabel from '../../components/ui/EyebrowLabel'
@@ -58,7 +59,7 @@ const YEARS = [
 const ROUTE = [
   { year: '2023–24', title: 'UTM Student Wellbeing', sub: 'Defining wellbeing, happiness, self-care', href: '#y2324' },
   { year: '2024–25', title: 'The UTM Student Wellbeing Survey 2024', sub: 'Social life, social media, academic stress', href: '#y2425' },
-  { year: '2025–26', title: 'The Wellness Cafe', sub: 'An interactive Wellness Drink Bar', href: '#cafe', now: true },
+  { year: '2025–26', title: 'Two years compared, and the Wellness Cafe', sub: 'What the 2024 and 2025 surveys show', href: '#findings', now: true },
 ]
 
 // Maya Alves's knowledge-translation series, in episode order.
@@ -86,13 +87,31 @@ export default function UtMaps({ session }) {
               student wellbeing, this year’s Wellness Cafe, and short videos on the science of getting unstuck.
             </p>
             <div style={S.ctas}>
-              <PrimaryCTA href={CAFE.desktop}>Visit the 2026 Wellness Cafe ↗</PrimaryCTA>
-              <SecondaryCTA onClick={() => document.getElementById('maps')?.scrollIntoView({ behavior: 'smooth' })}>
-                See the survey maps
-              </SecondaryCTA>
+              <PrimaryCTA to="/utmaps/findings">Read the survey findings</PrimaryCTA>
+              <SecondaryCTA href={CAFE.desktop}>Visit the 2026 Wellness Cafe ↗</SecondaryCTA>
             </div>
           </div>
           <RouteMap />
+        </div>
+      </section>
+
+      {/* ── survey findings (2024 vs 2025) ───────────────────────────────
+           The full summary lives at /utmaps/findings with its "not peer
+           reviewed" notice. No figures here: the handoff keeps every number
+           beside its caveats, so this panel only points to the page. */}
+      <section id="findings" style={S.band}>
+        <div style={S.container}>
+          <Link to="/utmaps/findings" style={S.findings} className="grid grid-cols-1 md:grid-cols-[1fr_auto] items-center gap-6">
+            <div style={S.stack8}>
+              <span style={S.label}>Survey findings · 2024 and 2025 · Not peer reviewed</span>
+              <h2 style={S.h2}>What students report, and what they think everyone else is going through</h2>
+              <p style={S.body}>
+                Two surveys, a year apart, at the same campus. Distress is high and did not change. What students
+                believe about each other turns out to have very little to do with how they are themselves.
+              </p>
+            </div>
+            <span style={S.findingsGo}>Read the summary →</span>
+          </Link>
         </div>
       </section>
 
@@ -309,6 +328,9 @@ const S = {
   stopTitle: { fontFamily: SANS, fontWeight: 600, fontSize: 16, lineHeight: 1.4, color: 'var(--tx)' },
 
   feature: { background: 'var(--bgp)', borderRadius: 12, padding: 32 },
+  // The whole panel is the link, so it takes the clickable radius.
+  findings: { display: 'grid', background: 'var(--bgc)', border: '1px solid var(--pkbs)', borderRadius: 24, padding: 32, textDecoration: 'none', color: 'inherit' },
+  findingsGo: { fontFamily: SANS, fontWeight: 600, fontSize: 16, color: 'var(--pkd)', whiteSpace: 'nowrap' },
   cafe: { width: '100%', height: 'auto', display: 'block', borderRadius: 12, border: '1px solid var(--bd)' },
 
   card: { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 12, padding: 24, display: 'grid', gap: 16, alignContent: 'start' },
