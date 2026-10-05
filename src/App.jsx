@@ -32,6 +32,7 @@ const StudySignup   = lazy(() => import('./pages/StudySignup'))
 const StudyVerify   = lazy(() => import('./pages/StudyVerify'))
 const PlatformPage  = lazy(() => import('./pages/PlatformPage'))
 const UtMaps        = lazy(() => import('./pages/utmaps/UtMaps'))
+const UtMapsFindings = lazy(() => import('./pages/utmaps/UtMapsFindings'))
 const Login         = lazy(() => import('./pages/Login'))
 const Signup        = lazy(() => import('./pages/Signup'))
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
@@ -423,6 +424,8 @@ export default function App() {
           <Route path="/platform" element={<PlatformPage session={session} />} />
           {/* UTMaps, the UTM Wellness Maps Project (was a Google Sites page at utmap.org) */}
           <Route path="/utmaps" element={<UtMaps session={session} />} />
+          {/* Plain-language summary of the UTMAP manuscript (under review; labelled not peer reviewed) */}
+          <Route path="/utmaps/findings" element={<UtMapsFindings session={session} />} />
           <Route path="/login"  element={<PublicOnlyRoute session={session} role={role}><Login /></PublicOnlyRoute>} />
           <Route path="/signup" element={<PublicOnlyRoute session={session} role={role}><Signup /></PublicOnlyRoute>} />
           <Route path="/forgot-password" element={<PublicOnlyRoute session={session} role={role}><ForgotPassword /></PublicOnlyRoute>} />
