@@ -394,7 +394,7 @@ one easier. Belt error (2% per period) roughly halves the transient observer's f
 
 ---
 
-## 6c. Round 2 — the best overall accumulation model, with coding as an individual difference (running 2026-10-05)
+## 6c. Round 2 — the best overall accumulation model, with coding as an individual difference (2026-10-05/06)
 
 **Question (Norm, 2026-10-05).** The central aim is the best overall model of how breath-change
 evidence accumulates. The secondary aim is individual differences in *what* is accumulated:
@@ -421,8 +421,84 @@ breath-to-breath change vs total change from baseline.
   ran off to a plateau), so round-1 transient numbers carry that caveat. See the sim README
   *Checks done*.
 
-**Queued after it:** σ_meas = 0 on the best two designs, to show what a better belt would buy.
-Results go in `scripts/bcat_ddm_sim/results_round2/summary.md`, with conclusions written here.
+**Measurement check:** σ_meas = 0 on the best two designs, to show what a better belt would buy.
+
+### Round-2 results (600 sessions, 98% of fits converged; completed 2026-10-06)
+
+Full tables: `scripts/bcat_ddm_sim/results_round2/summary.md`. Perfect-measurement rerun:
+`results_round2_nomeas/summary.md` (same participants and schedules, σ_meas = 0).
+
+| | ramp | roving_ramp (25%) | roving_ramp50 | roving_mixed |
+|---|---|---|---|---|
+| hits / session | 28 | 28 | 28 | 23 |
+| ramp hit rate: level / transient observer | .83 / .50 | .84 / .44 | .81 / .47 | .57 / .40 |
+| group winner correct: level, transient, mixed | ✓ ✓ ✓ | ✓ ✓ ✓ | ✓ ✓ ✓ | ✓ ✓ ✓ |
+| group winner correct: leaky, mixed_leaky | ✗ ✗ | ✗ ✗ | ✗ ✗ (Δ5) | ✗ ✗ |
+| per-person model recovery (mean) | .51 | .56 | **.57** | .49 |
+| r(true s, recovered s): mixed / mixed_leaky | .90 / .74 | **.96 / .86** | .93 / .80 | .91 / .83 |
+| r(δ): mixed observer | .76 | **.80** | .72 | .69 |
+
+**Conclusions**
+1. **The coding question is answerable, for the group and per person, in every design.** The
+   summed-AIC winner is the true model for level, transient and mixed observers by 26–53 AIC.
+   The breath-to-breath share s is recovered at r = .90–.97 (median error ≈ .05).
+2. **A ≈3 s leak is not identifiable, even at group level.**
+   - The leak-free version always wins.
+   - 37–60% of true leaks are estimated at the floor.
+   - r(λ) ≈ 0, and r(δ) collapses to ≈ 0 whenever a leak is present, because leak and criterion
+     trade off. See §6d for designs that separate them.
+3. **Best design: roving + ramp block.** The 25% version is best for s and δ; 50% ties it on
+   per-person model choice. The interleaved `roving_mixed` design is worse: equal-size ramps are
+   detected only 40–57% of the time, so it yields fewer hits.
+4. **A better belt buys almost nothing now.** With σ_meas = 0, every recovery figure moves by
+   ≤ .05. The round-1 "belt error halves the transient gain" finding was produced by round 1's
+   miscalibration, not by the belt.
+
+---
+
+## 6d. Leak vs no leak — what it means and how to separate it (brainstorm 2026-10-05)
+
+**Why the current designs can't see it.** In this model, three things discard evidence:
+- **criterion δ:** a *fixed amount* per second;
+- **leak λ:** a *fixed fraction* per second;
+- **reference adaptation τ_R:** shrinks the input itself as the new rate becomes normal.
+
+Under steady evidence, all three just raise the effective threshold, so steps and ramps can't tell
+them apart. Also, the simulated leak (≈3 s) is shorter than one breath (4 s), so the "leaky"
+observer was really judging single breaths. A leak worth testing is probably 10–60 s.
+
+**Concrete reading:**
+- **No leak:** a running tally. A slight, persistent change is eventually noticed, and when it is
+  depends on total accumulated deviation (size × duration).
+- **Leak:** only recent evidence counts. Below a magnitude floor, a slow drift is *never* noticed,
+  however long it lasts. The integration window is 1/λ.
+
+**Why it matters:**
+- whether gradual bodily change (rising breathlessness, slow hyperventilation) can reach awareness
+  at all. Poor perception of gradual bronchoconstriction is a known risk factor in near-fatal
+  asthma;
+- the paper's gating claim: under a leak, a whole class of slow changes stays unconscious while
+  still able to move arousal;
+- training (e.g. mindfulness) might lengthen the window rather than raise sensitivity. That is a
+  different mechanism, so it needs to be separable.
+
+**Designs that separate leak from criterion (to simulate next):**
+1. **Pulse–gap–pulse ("double blips").** Two brief 1–2-breath excursions, each below threshold,
+   at gaps of 0–8 breaths, at 2 sizes. The decisive pattern is the size × gap interaction:
+   - criterion drain: big pulses survive long gaps, small ones don't;
+   - leak: the same proportion is lost whatever the size.
+2. **Blip trains with reverse correlation**, like the Poisson-clicks task (Brunton, Botvinick &
+   Brody 2013). Single-breath blips arrive at random times, and we average the evidence history
+   before each press. The kernel shape is the integration window: flat = perfect, exponential
+   = leaky, with time constant 1/λ. This can also be computed from natural breath variability
+   before false alarms in any design, at no extra cost.
+3. **Duration-threshold (temporal summation) with alternating-direction bouts**, so the
+   reference does not adapt. Threshold vs bout length either keeps falling (perfect) or plateaus
+   at the critical duration 1/λ (leaky).
+
+**Caveat:** the leak may not be a fixed trait. Integration windows adapt to how long signals
+usually last (Ossmy et al. 2013; Glaze, Kable & Gold 2015). The design's own timing could set
+participants' leak, so blip timing and change durations should vary within a session.
 
 ---
 
@@ -450,3 +526,7 @@ Results go in `scripts/bcat_ddm_sim/results_round2/summary.md`, with conclusions
   evidence accumulates**, with breath-to-breath vs total-change coding as an individual difference.
   Wrote the Google Doc snapshot (link at top). Built round 2 (§6c): two-channel observers,
   `roving_mixed` design, first-crossing calibration, `--resume`; launched the N = 30 run.
+  Google Doc revision went out as a TEMP doc (no Docs editor); Norm copied it into the original.
+- **2026-10-06** — Round 2 complete (two time-limit/memory stops, resumed with `--resume`) plus
+  the σ_meas = 0 rerun. Results and conclusions in §6c; leak brainstorm in §6d. Next candidate:
+  simulate the blip designs (§6d) against leaks of 5–60 s.
