@@ -225,6 +225,7 @@ export default function ClassTest({ session, preview = false, testId: testIdProp
           <strong>{fmtTime(test.attempt.submitted_at)}</strong>. Every answer you gave was saved as you went.
           You can close this page.
         </p>
+        {!preview && <Results testId={test.id} />}
         {!preview && <Link to={loungePath(slug)} style={S.link}>Back to the class →</Link>}
       </div>,
     )
@@ -391,6 +392,42 @@ export default function ClassTest({ session, preview = false, testId: testIdProp
         </div>
       )}
     </>,
+  )
+}
+
+// Released results (get_class_test_results, 20261006_grade_o_matic.sql): the total,
+// then each short answer with what the student wrote, the mark and the feedback per
+// part. Shown only after staff release; MC items and keys are never sent back.
+function Results({ testId }) {
+  const [r, setR] = useState(null)
+  useEffect(() => {
+    supabase.rpc('get_class_test_results', { p_test_id: testId }).then(({ data }) => setR(data ?? { released: false }))
+  }, [testId])
+  if (!r?.released) return null
+  const saMarks = r.sa.flatMap((q) => q.parts.map((p) => (p.score == null ? 0 : Number(p.score))))
+  const saOf = r.sa.reduce((n, q) => n + q.parts.length, 0)
+  const total = r.mc_correct + r.vsa_correct + saMarks.reduce((a, b) => a + b, 0)
+  const outOf = r.mc_count + r.vsa_count + saOf
+  const fmt = (v) => (v == null ? '–' : Number(v) === 0.5 ? '½' : String(Number(v)))
+  return (
+    <div style={{ ...S.card, textAlign: 'left', marginTop: 24 }}>
+      <p style={S.eyebrow}>Your results</p>
+      <h2 style={{ ...S.title, fontSize: 28 }}>{fmt(total)} / {outOf}</h2>
+      <p style={S.sub}>Multiple choice {r.mc_correct}/{r.mc_count}{r.vsa_count ? ` · short typed ${r.vsa_correct}/${r.vsa_count}` : ''}
+        {saOf ? ` · short answer ${fmt(saMarks.reduce((a, b) => a + b, 0))}/${saOf}` : ''}</p>
+      {r.sa.map((q, n) => (
+        <div key={q.item_id} style={S.part}>
+          <p style={S.qNo}>Short answer {n + 1}</p>
+          {q.parts.map((p) => (
+            <div key={p.label} style={{ margin: '0 0 16px' }}>
+              <p style={S.partPrompt}><b>{p.label}.</b> {p.prompt}</p>
+              <p style={{ ...S.sub, whiteSpace: 'pre-wrap', margin: '4px 0' }}>{p.answer?.trim() || 'No answer.'}</p>
+              <p style={S.model}><b>{fmt(p.score)}/1</b>{p.feedback ? ` · ${p.feedback}` : ''}</p>
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
   )
 }
 

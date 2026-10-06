@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import ClassTest from './ClassTest'
 import Md from './Md'
+import GradeOMatic from './GradeOMatic'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -12,7 +13,7 @@ const SERIF = '"DM Serif Display", Georgia, serif'
 // deadline, submitted, answered, last seen. Staff open/close the test with an
 // access code, set extra time (it extends a live attempt immediately), extend,
 // reopen or force-submit an attempt, preview the whole test, grade the short
-// answers blind, review the auto-marked short typed answers, and export one CSV
+// answers in the Grade-o-matic (GradeOMatic.jsx), review the auto-marked short typed answers, and export one CSV
 // for Quercus.
 export default function ConsoleTest({ classInfo }) {
   const [tests, setTests] = useState(undefined)
@@ -80,7 +81,7 @@ export default function ConsoleTest({ classInfo }) {
     return <ClassTest preview testId={t.id} onExit={() => setView('roster')} />
   }
   if (view === 'grading') {
-    return <Grading testId={t.id} onExit={() => setView('roster')} />
+    return <GradeOMatic testId={t.id} onExit={() => setView('roster')} />
   }
   if (view === 'typed') {
     return <TypedReview testId={t.id} onExit={() => { setView('roster'); refresh() }} />
@@ -127,7 +128,7 @@ export default function ConsoleTest({ classInfo }) {
         <span style={{ flex: 1 }} />
         <button style={S.btn} onClick={() => setView('preview')}>Preview the test</button>
         {vsaCount > 0 && <button style={S.btn} onClick={() => setView('typed')}>Review typed answers</button>}
-        {saCount > 0 && <button style={S.btn} onClick={() => setView('grading')}>Grade short answers</button>}
+        {saCount > 0 && <button style={S.btn} onClick={() => setView('grading')}>Grade-o-matic ⚙️</button>}
         <button style={S.btn} onClick={() => exportCsv(t, rows)}>Export CSV</button>
       </div>
 
@@ -224,75 +225,6 @@ function ExtraCell({ row, testId, onSaved }) {
         <button style={S.mini} onClick={save}>Save</button>
         <button style={S.mini} onClick={() => setEditing(false)}>Cancel</button>
       </div>
-    </div>
-  )
-}
-
-// Blind short-answer grading: one question at a time, responses by sequence
-// number, the model answer beside each part, 0 / ½ / 1 per part.
-function Grading({ testId, onExit }) {
-  const [g, setG] = useState(null)
-  const [itemIdx, setItemIdx] = useState(0)
-  const load = useCallback(() => {
-    supabase.rpc('get_class_test_grading', { p_test_id: testId }).then(({ data, error }) => {
-      if (error) { alert(error.message); return }
-      setG(data)
-    })
-  }, [testId])
-  useEffect(() => { load() }, [load])
-  if (!g) return <p style={S.hint}>Loading responses…</p>
-  const item = g.items[itemIdx]
-  if (!item) return <p style={S.hint}>No short-answer items. <button style={S.btn} onClick={onExit}>Back</button></p>
-  const attempts = g.attempts.filter((a) => a.submitted)
-  const setScore = async (a, part, score) => {
-    const { error } = await supabase.rpc('set_class_test_grade', { p_attempt_id: a.attempt_id, p_item_id: item.item_id, p_part: part, p_score: score })
-    if (error) { alert(error.message); return }
-    setG((prev) => ({ ...prev, attempts: prev.attempts.map((x) => x.attempt_id !== a.attempt_id ? x
-      : { ...x, grades: { ...x.grades, [`${item.item_id}|${part}`]: score } }) }))
-  }
-  const parts = item.content.parts
-  const graded = attempts.filter((a) => parts.every((p) => a.grades[`${item.item_id}|${p.label}`] != null)).length
-  return (
-    <div>
-      <div style={S.controls}>
-        <button style={S.btn} onClick={onExit}>← Back to the roster</button>
-        {g.items.map((it, i) => (
-          <button key={it.item_id} style={i === itemIdx ? S.primaryBtn : S.btn} onClick={() => setItemIdx(i)}>SA {i + 1}</button>
-        ))}
-        <span style={S.sub}>{graded}/{attempts.length} fully graded · graded blind by response number</span>
-      </div>
-      <details style={S.card} open>
-        <summary style={S.name}>The question and the model answers</summary>
-        <Md text={item.content.stem} style={S.stem} />
-        {parts.map((p) => (
-          <div key={p.label} style={S.part}>
-            <Md text={`**${p.label}.** ${p.prompt}`} style={S.stem} />
-            <Md text={item.answer.parts.find((m) => m.label === p.label)?.model_answer} style={S.model} />
-          </div>
-        ))}
-      </details>
-      {attempts.map((a) => (
-        <div key={a.attempt_id} style={S.card}>
-          <p style={S.qNo}>Response #{a.seq}</p>
-          {parts.map((p) => {
-            const text = a.answers?.[item.item_id]?.parts?.[p.label] ?? ''
-            const score = a.grades[`${item.item_id}|${p.label}`]
-            return (
-              <div key={p.label} style={S.gradeRow}>
-                <div style={{ flex: 1 }}>
-                  <span style={S.partLabel}>{p.label}.</span>{' '}
-                  {text.trim() ? <span style={S.response}>{text}</span> : <em style={S.email}>no answer</em>}
-                </div>
-                <div style={S.scoreBtns}>
-                  {[0, 0.5, 1].map((v) => (
-                    <button key={v} style={S.scoreBtn(score === v)} onClick={() => setScore(a, p.label, score === v ? null : v)}>{v === 0.5 ? '½' : v}</button>
-                  ))}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      ))}
     </div>
   )
 }
