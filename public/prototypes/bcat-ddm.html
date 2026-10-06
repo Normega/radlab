@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="robots" content="noindex">
+<title>Breath change stream</title>
+<link rel="icon" type="image/svg+xml" href="/RADlab_Logo.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600&family=DM+Serif+Display&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  /*
+    BCAT-DDM PROTOTYPE: continuous breath-change detection.
+    One unbroken pacing stream. The pacer's rate changes now and then (steps,
+    ramps, or one-breath "blips", depending on the design); the participant
+    presses as soon as they notice a change. Arousal probes pause the stream.
+    The pacer is driven by the SAME schedule generator the design simulations
+    use (bcat-ddm-schedule.js, a byte-identical copy of
+    src/games/BcatDdm/schedule.js; a test fails if they drift).
+    No login, no network calls, nothing stored: the log lives in this tab and
+    can be downloaded at the end. Plan: docs/markdowns/bcat_ddm_plan.md.
+    Headless API: window.__bcat (add ?test to drive the clock by hand).
+  */
+  :root{
+    --bg:#FCF0F5; --bgc:#ffffff; --pk:#f068a4; --pkd:#ba417a; --pkdd:#a3396b; --pkl:#fde8f2;
+    --tx:#1c1c1e; --tx2:#6b6c70; --tx3:#abadb0; --bd:rgba(180,100,140,0.13); --bds:rgba(180,100,140,0.25);
+    --step:#4A90D9; --ramp:#8a6fd1; --blip:#e0973a; --null:#9aa0a6;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;background:var(--bg);color:var(--tx);
+    font-family:"DM Sans",system-ui,sans-serif;-webkit-tap-highlight-color:transparent;}
+  body{overflow:hidden;}
+  .screen{position:fixed;inset:0;display:none;flex-direction:column;}
+  .screen.on{display:flex;}
+  .pad{padding:32px 24px 48px;max-width:600px;margin:0 auto;width:100%;overflow-y:auto;height:100%;}
+  .kicker{font-family:"Space Mono",monospace;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--pkd);}
+  h1{font-family:"DM Serif Display",Georgia,serif;font-weight:400;font-size:40px;margin:8px 0 16px;line-height:1.05;}
+  h2{font-family:"DM Serif Display",Georgia,serif;font-weight:400;font-size:28px;margin:8px 0 8px;line-height:1.1;}
+  h3{font-family:"DM Serif Display",Georgia,serif;font-weight:400;font-size:20px;margin:24px 0 8px;}
+  p{font-size:16px;line-height:1.5;color:var(--tx2);margin:0 0 16px;}
+  .label{font-size:14px;color:var(--tx);font-weight:600;margin:16px 0 8px;}
+  .opts{display:flex;gap:8px;flex-wrap:wrap;}
+  .opts button{border:1.5px solid var(--bds);background:var(--bgc);border-radius:24px;padding:8px 16px;font:inherit;font-size:14px;color:var(--tx2);cursor:pointer;}
+  .opts button.sel{border-color:var(--pkd);color:#fff;background:var(--pkd);}
+  .hint{font-size:12px;color:var(--tx2);margin:8px 0 0;line-height:1.5;}
+  .go{display:block;width:100%;border:none;border-radius:24px;padding:16px;font:inherit;font-size:16px;font-weight:600;background:var(--pkd);color:#fff;margin-top:24px;cursor:pointer;}
+  .go:hover{background:var(--pkdd);}
+  .go:disabled{background:var(--tx3);cursor:default;}
+  .ghost{background:var(--bgc);color:var(--pkd);border:1.5px solid var(--pkd);}
+  .ghost:hover{background:var(--pkl);}
+  .small{font-family:"Space Mono",monospace;font-size:12px;color:var(--tx2);letter-spacing:.04em;line-height:1.6;}
+  a.home{font-family:"Space Mono",monospace;font-size:12px;color:var(--pkd);text-decoration:none;}
+
+  /* stream */
+  #run{background:var(--bgc);}
+  .top{display:flex;justify-content:space-between;align-items:center;padding:16px;font-family:"Space Mono",monospace;font-size:12px;color:var(--tx2);}
+  .top button{border:1px solid var(--bd);background:var(--bgc);border-radius:24px;padding:4px 16px;font:inherit;font-size:12px;color:var(--tx2);cursor:pointer;}
+  .progress{height:2px;background:var(--pkl);} .progress i{display:block;height:100%;width:0;background:var(--pk);}
+  .stage{flex:1;position:relative;}
+  #pacer{position:absolute;inset:0;width:100%;height:100%;}
+  .cue{position:absolute;left:0;right:0;bottom:16px;text-align:center;font-family:"Space Mono",monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--tx2);}
+  .resp{display:flex;gap:8px;padding:16px;}
+  .resp button{flex:1;border:none;border-radius:24px;padding:24px 16px;font:inherit;font-size:16px;font-weight:600;cursor:pointer;
+    touch-action:manipulation;user-select:none;-webkit-user-select:none;transition:transform .08s ease, background .2s ease;}
+  .resp button:active{transform:scale(.98);}
+  #bMaybe{background:var(--pkl);color:var(--pkd);}
+  #bSure,#bOne{background:var(--pkd);color:#fff;}
+  .resp .k{display:block;font-family:"Space Mono",monospace;font-size:12px;font-weight:400;opacity:.75;margin-top:4px;}
+
+  /* probe overlay */
+  .probe{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(252,240,245,.94);}
+  .probe.on{display:flex;}
+  .card{background:var(--bgc);border:1px solid var(--bd);border-radius:12px;padding:24px;width:min(480px,92vw);}
+  .q{font-family:"DM Serif Display",Georgia,serif;font-size:22px;margin:0 0 16px;}
+  .scale{margin:0 0 24px;}
+  .scale input[type=range]{width:100%;accent-color:var(--pk);}
+  .scale input.untouched::-webkit-slider-thumb{opacity:0;}
+  .scale input.untouched::-moz-range-thumb{opacity:0;}
+  .ends{display:flex;justify-content:space-between;font-size:14px;color:var(--tx2);}
+
+  /* results */
+  #tl{width:100%;height:200px;background:var(--bgc);border:1px solid var(--bd);border-radius:12px;display:block;}
+  .legend{display:flex;flex-wrap:wrap;gap:16px;font-size:12px;color:var(--tx2);margin:8px 0 16px;}
+  .legend i{display:inline-block;width:12px;height:12px;border-radius:4px;margin-right:4px;vertical-align:-1px;}
+  .stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0;}
+  .stat{background:var(--bgc);border:1px solid var(--bd);border-radius:12px;padding:12px 16px;}
+  .stat b{display:block;font-family:"DM Serif Display",Georgia,serif;font-weight:400;font-size:28px;}
+  .stat span{font-size:12px;color:var(--tx2);}
+  table{border-collapse:collapse;width:100%;font-size:14px;margin:8px 0 16px;background:var(--bgc);}
+  th,td{text-align:left;padding:4px 8px;border-bottom:1px solid var(--bd);}
+  th{font-weight:600;color:var(--tx2);font-size:12px;}
+  .dl{display:flex;gap:8px;flex-wrap:wrap;}
+  .dl button{flex:1;}
+</style>
+</head>
+<body>
+
+<!-- 1. Setup -->
+<section class="screen on" id="setup">
+  <div class="pad">
+    <div class="kicker">RADlab · research task prototype</div>
+    <h1>Breath change stream</h1>
+    <p>A circle breathes in and out. Now and then its pace changes. Press as soon as you notice a change. That is the whole task.</p>
+    <p>This page is a prototype of the BCAT-DDM task: one continuous pacing stream, built for modelling how evidence that the breath has changed builds up into noticing. The options below are the designs from the simulations.</p>
+
+    <div class="label">Design</div>
+    <div class="opts" id="oDesign">
+      <button data-v="roving_ramp" class="sel">Roving + ramp block</button>
+      <button data-v="roving_mixed">Steps and ramps mixed</button>
+      <button data-v="double_blip">Double blips</button>
+      <button data-v="blip_train">Blip train</button>
+      <button data-v="blip_combo">Blips, both kinds</button>
+      <button data-v="double_bump">Smooth bumps</button>
+      <button data-v="roving_ramp_bump">Roving + bumps + ramps</button>
+      <button data-v="brief">Original draft</button>
+    </div>
+    <p class="hint" id="designHint"></p>
+
+    <div class="label">Length</div>
+    <div class="opts" id="oMin">
+      <button data-v="3">3 min</button>
+      <button data-v="6" class="sel">6 min</button>
+      <button data-v="12">12 min</button>
+      <button data-v="40">40 min</button>
+    </div>
+
+    <div class="label">Condition</div>
+    <div class="opts" id="oCond">
+      <button data-v="follow" class="sel">Follow: breathe with it</button>
+      <button data-v="watch">Watch: breathe freely</button>
+    </div>
+
+    <div class="label">Size of changes</div>
+    <div class="opts" id="oM50">
+      <button data-v="0.12">Subtle</button>
+      <button data-v="0.2" class="sel">Medium</button>
+      <button data-v="0.3">Obvious</button>
+    </div>
+    <p class="hint">Stands in for the person's own 50% detection point, which the Quest pre-run would measure. Changes are drawn around it.</p>
+
+    <div class="label">Response</div>
+    <div class="opts" id="oResp">
+      <button data-v="two" class="sel">Two buttons: maybe / sure</button>
+      <button data-v="one">One button</button>
+    </div>
+
+    <button class="go" id="toInstr">Continue</button>
+    <p class="small" style="margin-top:16px">No login. Nothing leaves this browser. The log can be downloaded at the end. <a class="home" href="/prototypes/">← prototypes</a></p>
+  </div>
+</section>
+
+<!-- 2. Instructions -->
+<section class="screen" id="instr">
+  <div class="pad">
+    <div class="kicker">Before you start</div>
+    <h2 id="instrHead">Breathe with the circle.</h2>
+    <p id="instrBody"></p>
+    <p id="instrResp"></p>
+    <p>Sometimes the circle will stop and ask how you feel. Answer, and it will pick up again.</p>
+    <button class="go" id="toStart">I'm ready</button>
+  </div>
+</section>
+
+<!-- 3. Stream -->
+<section class="screen" id="run">
+  <div class="top"><span id="clock">0:00</span><span id="condTag"></span><button id="done">finish</button></div>
+  <div class="progress"><i id="prog"></i></div>
+  <div class="stage" id="stage">
+    <canvas id="pacer"></canvas>
+    <div class="cue" id="cue"></div>
+    <div class="probe" id="probe">
+      <div class="card">
+        <div id="probeItems"></div>
+        <button class="go" id="probeGo" disabled>Continue</button>
+      </div>
+    </div>
+  </div>
+  <div class="resp" id="resp"></div>
+</section>
+
+<!-- 4. Results -->
+<section class="screen" id="res">
+  <div class="pad">
+    <div class="kicker">Session record · researcher view</div>
+    <h2 id="resHead">Here is the stream you just did.</h2>
+    <p>A participant would not see this. It shows the pacer's breath period over the session, where the changes were, and where you pressed.</p>
+    <canvas id="tl"></canvas>
+    <div class="legend">
+      <span><i style="background:var(--step)"></i>step</span><span><i style="background:var(--ramp)"></i>ramp</span>
+      <span><i style="background:var(--blip)"></i>blip</span><span><i style="background:#3aa58c"></i>bump</span><span><i style="background:var(--null)"></i>no change (null)</span>
+      <span><i style="background:var(--pk)"></i>press: sure</span><span><i style="background:#f6b6d2"></i>press: maybe</span>
+    </div>
+    <div class="stats" id="stats"></div>
+    <h3>By kind of change</h3>
+    <table id="byType"></table>
+    <h3>How you felt</h3>
+    <table id="probes"></table>
+    <h3>Data</h3>
+    <p>The full log (every pacer breath, change, press and probe, in milliseconds of stream time and wall time) and a one-row-per-change table ready for model fitting.</p>
+    <div class="dl">
+      <button class="go ghost" id="dlJson">Download log (JSON)</button>
+      <button class="go ghost" id="dlCsv">Download changes (CSV)</button>
+    </div>
+    <button class="go" id="again">Run another</button>
+  </div>
+</section>
+
+<script type="module">
+import { buildSchedule, pacerAt, DEFAULTS } from './bcat-ddm-schedule.js';
+
+const $ = (id) => document.getElementById(id);
+const show = (id) => document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id));
+const params = new URLSearchParams(location.search);
+const TEST = params.has('test');            // drive the clock by hand through __bcat.step()
+
+const DESIGN_HINTS = {
+  roving_ramp: 'Steps whose new pace becomes the baseline, then a block of gradual ramps in the last quarter. The design the simulations favour for telling what kind of change people use.',
+  roving_mixed: 'Each change is randomly a step or a gradual ramp of the same size, all in one stream.',
+  double_blip: 'One-breath changes ("blips"), alone or in pairs separated by 0 to 8 normal breaths. Probes how long a hint of change is held. In the simulations it measured less than roving + ramp; kept here to try.',
+  blip_train: 'Small one-breath blips at random moments. Probes how evidence from scattered hints adds up. In the simulations it measured less than roving + ramp; kept here to try.',
+  blip_combo: 'Double blips for the first half, a blip train for the second.',
+  double_bump: 'Smooth bumps: the pace eases away and back over 3 or 4 breaths, alone or in pairs separated by 0 to 8 normal breaths. The gentle counterpart of the blip, with no sudden breath-to-breath jump.',
+  roving_ramp_bump: 'Roving steps, then a block of smooth bumps, then a block of gradual ramps.',
+  brief: 'The handoff as first drafted: steps from a fixed pace at four sizes, a long wait, then a return to the starting pace.',
+};
+
+// ── setup ───────────────────────────────────────────────────────────────────
+const cfg = {
+  design: params.get('design') || 'roving_ramp',
+  minutes: +(params.get('min') || 6),
+  cond: params.get('cond') || 'follow',
+  m50: +(params.get('m50') || 0.2),
+  resp: params.get('resp') || 'two',
+  seed: +(params.get('seed') || (Date.now() % 1e9)),
+};
+function pick(groupId, key, cast = (v) => v){
+  const g = $(groupId);
+  g.querySelectorAll('button').forEach(b => b.classList.toggle('sel', String(cast(b.dataset.v)) === String(cfg[key])));
+  g.addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    g.querySelectorAll('button').forEach(x => x.classList.toggle('sel', x === b));
+    cfg[key] = cast(b.dataset.v);
+    if (key === 'design') $('designHint').textContent = DESIGN_HINTS[cfg.design];
+  });
+}
+pick('oDesign', 'design'); pick('oMin', 'minutes', Number); pick('oCond', 'cond');
+pick('oM50', 'm50', Number); pick('oResp', 'resp');
+$('designHint').textContent = DESIGN_HINTS[cfg.design];
+
+$('toInstr').addEventListener('click', () => {
+  const follow = cfg.cond === 'follow';
+  $('instrHead').textContent = follow ? 'Breathe with the circle.' : 'Watch the circle.';
+  $('instrBody').textContent = follow
+    ? 'Breathe in as it grows and out as it shrinks, gently, in time with it. Its pace will change now and then, sometimes all at once, sometimes gradually, sometimes for a single breath.'
+    : 'Breathe however is comfortable for you; you do not need to follow it. Its pace will change now and then, sometimes all at once, sometimes gradually, sometimes for a single breath.';
+  $('instrResp').textContent = cfg.resp === 'two'
+    ? 'When you notice a change, press "Maybe" if you think something changed, or "Sure" if you are certain (keys J and K, or the buttons). Press as soon as you notice. There is no need to wait until you are sure.'
+    : 'When you notice a change, press the button (or the space bar) straight away.';
+  show('instr');
+});
+$('toStart').addEventListener('click', () => start());
+
+// ── session state ───────────────────────────────────────────────────────────
+let S = null;           // live session
+const ALERT_EVERY_MS = 4 * 60_000;
+
+function start(){
+  const opts = { minutes: cfg.minutes, m50Hat: cfg.m50, seed: cfg.seed,
+                 blipSizes: [0.5, 0.8], blipTrainRelMin: 0.4, blipTrainRelMax: 0.9 };
+  const schedule = buildSchedule(cfg.design, opts);
+  S = {
+    cfg: { ...cfg }, schedule, startedISO: new Date().toISOString(),
+    streamMs: 0, wall0: performance.now(), state: 'stream',
+    pauseIdx: 0, eventIdx: 0, lastBreath: -1, lastPressWall: -1e9, lastAlertStream: 0,
+    log: [], presses: [], probes: [], flash: 0, pendingProbe: null,
+  };
+  log('start', { design: cfg.design, minutes: cfg.minutes, condition: cfg.cond, m50Hat: cfg.m50,
+                 response_mode: cfg.resp, seed: cfg.seed, durationMs: schedule.durationMs });
+  buildResponseButtons();
+  $('condTag').textContent = cfg.cond === 'follow' ? 'follow' : 'watch';
+  show('run');
+  sizeCanvas();
+  openProbe(['alertness'], 'start');      // alertness before the stream begins
+  if (!TEST) requestAnimationFrame(frame);
+}
+
+const wallNow = () => performance.now() - S.wall0;
+function log(type, extra = {}){
+  S.log.push({ type, stream_ms: Math.round(S.streamMs), wall_ms: Math.round(wallNow()), ...extra });
+}
+
+// ── clock ───────────────────────────────────────────────────────────────────
+let lastT = null;
+function frame(t){
+  if (!S || S.state === 'done') return;
+  if (lastT == null) lastT = t;
+  const dt = Math.min(t - lastT, 100);    // a dropped frame never jumps the pacer
+  lastT = t;
+  advance(dt);
+  draw();
+  requestAnimationFrame(frame);
+}
+
+function advance(dt){
+  if (S.state !== 'stream') return;
+  const sch = S.schedule;
+  let next = S.streamMs + dt;
+  // stop at the next pause: the stream clock waits while a probe is open
+  const p = sch.pauses[S.pauseIdx];
+  if (p && next >= p.startMs){
+    next = p.startMs;
+    S.streamMs = next;
+    tickStream();
+    const kinds = ['arousal'];
+    if (S.streamMs - S.lastAlertStream >= ALERT_EVERY_MS) kinds.push('alertness');
+    log('pause_start', { kind: p.kind, scheduled_ms: p.endMs - p.startMs });
+    openProbe(p.kind === 'probe' ? kinds : [], p.kind);
+    return;
+  }
+  S.streamMs = next;
+  tickStream();
+  if (S.streamMs >= sch.durationMs) endStream();
+}
+
+function tickStream(){
+  const sch = S.schedule;
+  const pa = pacerAt(sch, S.streamMs);
+  if (pa && pa.breath !== S.lastBreath){
+    S.lastBreath = pa.breath;
+    const b = sch.breaths[pa.breath];
+    log('breath', { i: b.i, period_ms: b.periodMs, tag: b.tag, scheduled_ms: b.startMs });
+  }
+  while (S.eventIdx < sch.events.length && sch.events[S.eventIdx].onsetMs <= S.streamMs){
+    const e = sch.events[S.eventIdx++];
+    log('change_onset', { event_id: e.id, kind: e.type, scheduled_ms: e.onsetMs, mag: e.mag, dir: e.dir,
+                          gap: e.gap ?? null, from_ms: e.fromPeriodMs, to_ms: e.toPeriodMs });
+  }
+  const left = Math.max(0, sch.durationMs - S.streamMs) / 1000;
+  $('clock').textContent = `${Math.floor(left / 60)}:${String(Math.floor(left % 60)).padStart(2, '0')}`;
+  $('prog').style.width = (100 * S.streamMs / sch.durationMs) + '%';
+}
+
+// ── responses ───────────────────────────────────────────────────────────────
+function buildResponseButtons(){
+  const r = $('resp');
+  r.innerHTML = cfg.resp === 'two'
+    ? '<button id="bMaybe">Maybe<span class="k">J</span></button><button id="bSure">Sure<span class="k">K</span></button>'
+    : '<button id="bOne">Something changed<span class="k">space</span></button>';
+  if (cfg.resp === 'two'){
+    $('bMaybe').addEventListener('pointerdown', (e) => { e.preventDefault(); press('maybe'); });
+    $('bSure').addEventListener('pointerdown', (e) => { e.preventDefault(); press('sure'); });
+  } else {
+    $('bOne').addEventListener('pointerdown', (e) => { e.preventDefault(); press('sure'); });
+  }
+}
+function press(confidence){
+  if (!S || S.state !== 'stream') return;
+  const w = wallNow();
+  if (w - S.lastPressWall < 300) return;          // a bounce, not a second press
+  S.lastPressWall = w;
+  const pa = pacerAt(S.schedule, S.streamMs);
+  const rec = { stream_ms: Math.round(S.streamMs), wall_ms: Math.round(w), confidence,
+                breath: pa ? pa.breath : S.lastBreath, phase: pa ? +pa.phase.toFixed(3) : null };
+  S.presses.push(rec);
+  log('press', rec);
+  S.flash = 1;
+  if (navigator.vibrate) navigator.vibrate(10);
+}
+document.addEventListener('keydown', (e) => {
+  if (!S || S.state !== 'stream' || e.repeat) return;
+  if (cfg.resp === 'two'){
+    if (e.key === 'j' || e.key === 'J') press('maybe');
+    if (e.key === 'k' || e.key === 'K') press('sure');
+  } else if (e.code === 'Space'){ e.preventDefault(); press('sure'); }
+});
+
+// ── probes ──────────────────────────────────────────────────────────────────
+const SCALES = {
+  arousal:   { q: 'How do you feel right now?', lo: 'calm', hi: 'activated' },
+  alertness: { q: 'How alert do you feel?', lo: 'tired', hi: 'alert' },
+};
+function openProbe(kinds, reason){
+  S.state = 'probe';
+  if (!kinds.length){ closeProbe(); return; }
+  S.pendingProbe = { kinds, reason, shownWall: wallNow(), values: {} };
+  if (kinds.includes('alertness')) S.lastAlertStream = S.streamMs;
+  $('probeItems').innerHTML = kinds.map(k => `
+    <div class="scale"><div class="q">${SCALES[k].q}</div>
+      <input type="range" min="0" max="100" value="50" class="untouched" data-k="${k}">
+      <div class="ends"><span>${SCALES[k].lo}</span><span>${SCALES[k].hi}</span></div></div>`).join('');
+  $('probeGo').disabled = true;
+  $('probeItems').querySelectorAll('input').forEach(inp => inp.addEventListener('input', () => {
+    inp.classList.remove('untouched');
+    S.pendingProbe.values[inp.dataset.k] = +inp.value;
+    $('probeGo').disabled = Object.keys(S.pendingProbe.values).length < kinds.length;
+  }));
+  log('probe_shown', { scales: kinds, reason });
+  $('probe').classList.add('on');
+}
+function closeProbe(){
+  const sch = S.schedule;
+  if (S.pendingProbe){
+    const rt = wallNow() - S.pendingProbe.shownWall;
+    for (const [k, v] of Object.entries(S.pendingProbe.values)){
+      const rec = { scale: k, value: v, rt_ms: Math.round(rt), reason: S.pendingProbe.reason, stream_ms: Math.round(S.streamMs) };
+      S.probes.push(rec);
+      log('probe_response', rec);
+    }
+    S.pendingProbe = null;
+  }
+  $('probe').classList.remove('on');
+  if (S.ending){ finish(); return; }
+  // leave the pause: jump the stream clock to its scheduled end
+  const p = sch.pauses[S.pauseIdx];
+  if (p && Math.abs(S.streamMs - p.startMs) < 1){
+    S.streamMs = p.endMs;
+    S.pauseIdx++;
+    log('pause_end', { kind: p.kind });
+  }
+  S.state = 'stream';
+  lastT = null;
+}
+$('probeGo').addEventListener('click', closeProbe);
+
+function endStream(){
+  log('stream_end');
+  S.ending = true;
+  openProbe(['alertness', 'arousal'], 'end');
+}
+$('done').addEventListener('click', () => { if (S && S.state === 'stream'){ log('stopped_early'); endStream(); } });
+document.addEventListener('visibilitychange', () => {
+  if (!S || S.state === 'done') return;
+  log(document.hidden ? 'hidden' : 'visible');
+  lastT = null;                         // the stream clock does not run while the tab is hidden
+});
+
+// ── drawing ─────────────────────────────────────────────────────────────────
+const cv = $('pacer'); const ctx = cv.getContext('2d');
+function sizeCanvas(){
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  const r = $('stage').getBoundingClientRect();
+  cv.width = r.width * dpr; cv.height = r.height * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+addEventListener('resize', () => { if (S) sizeCanvas(); });
+
+function draw(){
+  const r = $('stage').getBoundingClientRect();
+  const w = r.width, h = r.height;
+  ctx.clearRect(0, 0, w, h);
+  const pa = S.state === 'stream' ? pacerAt(S.schedule, S.streamMs) : null;
+  // same easing as the platform pacer (useBreathCycle.getBT): 0 at exhale end, 1 at inhale peak
+  const bT = pa ? (Math.sin(pa.phase * 2 * Math.PI - Math.PI / 2) + 1) / 2 : 0;
+  const m = Math.min(w, h);
+  const rad = m * (0.16 + 0.22 * bT);
+  const cx = w / 2, cy = h / 2;
+  const g = ctx.createRadialGradient(cx, cy, rad * 0.2, cx, cy, rad);
+  g.addColorStop(0, 'rgba(240,104,164,0.30)'); g.addColorStop(1, 'rgba(240,104,164,0.10)');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(cx, cy, rad, 0, Math.PI * 2); ctx.fill();
+  ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(192,74,130,0.55)'; ctx.stroke();
+  if (S.flash > 0){                     // a press acknowledged, nothing more: no right or wrong
+    ctx.lineWidth = 3; ctx.strokeStyle = `rgba(240,104,164,${S.flash * 0.6})`;
+    ctx.beginPath(); ctx.arc(cx, cy, rad + 12 + (1 - S.flash) * 16, 0, Math.PI * 2); ctx.stroke();
+    S.flash = Math.max(0, S.flash - 0.05);
+  }
+  $('cue').textContent = !pa ? '' : (pa.phase < 0.5 ? 'in' : 'out');
+}
+
+// ── results ─────────────────────────────────────────────────────────────────
+const GRACE_MS = 1000;   // presses up to 1 s after a window closes still count for it (motor time)
+function analyse(){
+  const sch = S.schedule;
+  const breaths = sch.breaths;
+  const scored = sch.events.filter(e => e.type !== 'return');
+  const used = new Set();
+  const rows = scored.map(e => {
+    const p = S.presses.find(p => p.stream_ms >= e.onsetMs && p.stream_ms <= e.windowEndMs + GRACE_MS && !used.has(p));
+    if (p) used.add(p);
+    let rtBreaths = null;
+    if (p && p.breath >= 0) rtBreaths = +(p.breath - e.onsetBreath + (p.phase ?? 0)).toFixed(2);
+    return { event_id: e.id, kind: e.type, onset_s: +(e.onsetMs / 1000).toFixed(3), window_end_s: +(e.windowEndMs / 1000).toFixed(3),
+             mag: +e.mag.toFixed(4), dir: e.dir, gap: e.gap ?? '', size: e.sizeIdx ?? '',
+             from_period_ms: e.fromPeriodMs, to_period_ms: e.toPeriodMs,
+             responded: p ? 1 : 0, rt_s: p ? +((p.stream_ms - e.onsetMs) / 1000).toFixed(3) : '',
+             rt_breaths: rtBreaths ?? '', confidence: p ? p.confidence : '' };
+  });
+  const other = S.presses.filter(p => !used.has(p));
+  return { rows, other };
+}
+
+function finish(){
+  S.state = 'done';
+  log('end');
+  const { rows, other } = analyse();
+  S.analysis = { rows, other };
+  const changes = rows.filter(r => r.kind !== 'null');
+  const hits = changes.filter(r => r.responded);
+  const rts = hits.map(r => r.rt_breaths).filter(v => v !== '').sort((a, b) => a - b);
+  const med = rts.length ? rts[Math.floor(rts.length / 2)] : null;
+  const streamMin = S.streamMs / 60000;
+  $('resHead').textContent = `${hits.length} of ${changes.length} changes noticed.`;
+  $('stats').innerHTML = [
+    [changes.length, 'changes in the stream'],
+    [hits.length, 'noticed (pressed in time)'],
+    [med == null ? '–' : `${med}`, 'median breaths to notice'],
+    [`${other.length}`, `other presses (${(other.length / Math.max(streamMin, 0.01)).toFixed(1)}/min)`],
+  ].map(([v, l]) => `<div class="stat"><b>${v}</b><span>${l}</span></div>`).join('');
+
+  const kinds = [...new Set(rows.map(r => r.kind))];
+  const label = { step: 'Step', ramp: 'Ramp', blip_single: 'Single blip', blip_pair: 'Blip pair', blip: 'Train blip',
+                  bump_single: 'Single bump', bump_pair: 'Bump pair', bump: 'Train bump', null: 'No change' };
+  $('byType').innerHTML = '<tr><th>Kind</th><th>Shown</th><th>Pressed</th><th>Median breaths</th></tr>' + kinds.map(k => {
+    const rr = rows.filter(r => r.kind === k), hh = rr.filter(r => r.responded);
+    const b = hh.map(r => r.rt_breaths).filter(v => v !== '').sort((a, c) => a - c);
+    return `<tr><td>${label[k] || k}</td><td>${rr.length}</td><td>${hh.length}</td><td>${b.length ? b[Math.floor(b.length / 2)] : '–'}</td></tr>`;
+  }).join('');
+  $('probes').innerHTML = '<tr><th>When</th><th>Scale</th><th>Value (0–100)</th></tr>' + S.probes.map(p =>
+    `<tr><td>${p.reason === 'probe' ? (p.stream_ms / 60000).toFixed(1) + ' min' : p.reason}</td><td>${p.scale}</td><td>${p.value}</td></tr>`).join('');
+  show('res');
+  requestAnimationFrame(drawTimeline);
+}
+
+function drawTimeline(){
+  const c = $('tl'); const dpr = Math.min(devicePixelRatio || 1, 2);
+  const w = c.clientWidth, h = c.clientHeight;
+  c.width = w * dpr; c.height = h * dpr;
+  const x = c.getContext('2d'); x.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const sch = S.schedule, T = Math.max(S.streamMs, 1);
+  const B = DEFAULTS.basePeriodMs, lo = B * 0.5, hi = B * 1.9;
+  const X = (ms) => 8 + (w - 16) * ms / T;
+  const Y = (p) => 24 + (h - 40) * (1 - (p - lo) / (hi - lo));
+  const col = { step: '#4A90D9', ramp: '#8a6fd1', blip_single: '#e0973a', blip_pair: '#e0973a', blip: '#e0973a',
+                bump_single: '#3aa58c', bump_pair: '#3aa58c', bump: '#3aa58c', null: '#9aa0a6' };
+  for (const e of sch.events){
+    if (e.onsetMs > T || e.type === 'return') continue;
+    x.fillStyle = (col[e.type] || '#999') + '30';
+    x.fillRect(X(e.onsetMs), 16, Math.max(2, X(Math.min(e.windowEndMs, T)) - X(e.onsetMs)), h - 24);
+  }
+  x.strokeStyle = 'rgba(28,28,30,0.6)'; x.lineWidth = 1.2; x.beginPath();
+  for (const b of sch.breaths){
+    if (b.startMs > T) break;
+    x.moveTo(X(b.startMs), Y(b.periodMs)); x.lineTo(X(Math.min(b.startMs + b.periodMs, T)), Y(b.periodMs));
+  }
+  x.stroke();
+  for (const p of S.presses){
+    x.fillStyle = p.confidence === 'sure' ? '#f068a4' : '#f6b6d2';
+    x.fillRect(X(p.stream_ms) - 1.5, 4, 3, 12);
+  }
+  x.fillStyle = '#6b6c70'; x.font = '11px Space Mono, monospace';
+  x.fillText('breath period', 10, h - 6);
+  x.fillText(`${(T / 60000).toFixed(1)} min`, w - 60, h - 6);
+}
+
+function download(name, text, type){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], { type }));
+  a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+const stamp = () => S.startedISO.replace(/[:.]/g, '-');
+$('dlJson').addEventListener('click', () => download(`bcat-ddm_${S.cfg.design}_${stamp()}.json`,
+  JSON.stringify({ app: 'bcat-ddm-prototype', version: 1, config: S.cfg, startedISO: S.startedISO,
+                   schedule: S.schedule, log: S.log, presses: S.presses, probes: S.probes,
+                   changes: S.analysis.rows }, null, 1), 'application/json'));
+$('dlCsv').addEventListener('click', () => {
+  const rows = S.analysis.rows;
+  const cols = Object.keys(rows[0] || { event_id: 0 });
+  const csv = [cols.join(','), ...rows.map(r => cols.map(c => r[c]).join(','))].join('\n');
+  download(`bcat-ddm_changes_${S.cfg.design}_${stamp()}.csv`, csv, 'text/csv');
+});
+$('again').addEventListener('click', () => { S = null; lastT = null; show('setup'); });
+
+// ── headless API (agent playtests): ?test disables the animation clock ──────
+window.__bcat = {
+  get state(){ return S && S.state; },
+  get session(){ return S; },
+  configure(o){ Object.assign(cfg, o); },
+  start(){ start(); },
+  step(ms, dt = 16){ for (let t = 0; t < ms && S && S.state === 'stream'; t += dt) advance(dt); if (S && S.state !== 'done') draw(); },
+  press(conf = 'sure'){ S.lastPressWall = -1e9; press(conf); },
+  answer(value = 50){
+    if (!S || !S.pendingProbe) return false;
+    for (const k of S.pendingProbe.kinds) S.pendingProbe.values[k] = value;
+    closeProbe(); return true;
+  },
+  finish(){ if (S.state === 'stream') endStream(); },
+  analysis(){ return S && S.analysis; },
+};
+</script>
+</body>
+</html>
