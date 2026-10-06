@@ -8,6 +8,7 @@ import RouteTitle       from './components/RouteTitle'
 import AuraFilterDef     from './components/AuraFilterDef'
 import AdminRoute        from './components/AdminRoute'
 import TalksRoute        from './components/TalksRoute'
+import BreathEvidenceRoute from './components/BreathEvidenceRoute'
 import SuperAdminRoute   from './components/SuperAdminRoute'
 import ClassAdminRoute   from './academic/lecture-lounge/ClassAdminRoute'
 import LectureLoungeAdminRoute from './academic/lecture-lounge/LectureLoungeAdminRoute'
@@ -101,6 +102,7 @@ const Iscr2026 = lazy(() => import('./pages/iscr-2026/Iscr2026'))
 const Cuny2026 = lazy(() => import('./pages/cuny-2026/Cuny2026'))
 const BpmhSep2026 = lazy(() => import('./pages/bpmh-sep-2026/BpmhSep2026'))
 const Talks     = lazy(() => import('./pages/talks/Talks'))
+const BreathEvidence = lazy(() => import('./pages/breathevidence/BreathEvidence'))
 
 // Academic partition (src/academic/) — Lecture Lounge lives here, the Field
 // Guide ingest portal joins it. Separate chunk group from research admin and
@@ -752,6 +754,14 @@ export default function App() {
             <Route path="/bpmh-sep-2026" element={<BpmhSep2026 />} />
             {/* ISCR 2026 — 8-minute BCAT talk; the room runs two trials in the first minute */}
             <Route path="/iscr-2026" element={<Iscr2026 />} />
+          </Route>
+
+          {/*
+            BCAT-DDM planning page, shared with a student. Lab/admin roles plus a
+            guest list of account ids in BreathEvidenceRoute (UX gate, like Talks).
+          */}
+          <Route element={<BreathEvidenceRoute session={session} role={role} superAdmin={superAdmin} />}>
+            <Route path="/breathevidence" element={<BreathEvidence />} />
           </Route>
 
           {/*

@@ -10,6 +10,8 @@
 > **Shareable write-up (Google Doc, for Nansi and the lab):**
 > [BCAT-DDM: design status and decisions](https://docs.google.com/document/d/1g4111SODzbDdzlvrnmzYpil9ONMNDieQX04CjGio_C8/edit)
 > (Nansi folder, created 2026-10-05). It is a snapshot; this file stays the plan of record.
+> **Planning page for Nansi:** `radlab.zone/breathevidence` (content in
+> `src/pages/breathevidence/content.js`). When a decision lands in §7, update it there too.
 > **Created:** 2026-10-01 (handoff steps 1–3: inventory + proposed plan). **No task code written yet.**
 
 ---
@@ -669,3 +671,6 @@ alternative if ramps prove unpleasant or too noticeable in piloting.
   alone; a bump block inside a roving session is about as good as a ramp block. The design search
   ends at roving steps + a slow-evidence block. The prototype gained "Smooth bumps" and
   "Roving + bumps + ramps".
+- **2026-10-06** — Prototype moved to `main` on its own (live at radlab.zone/prototypes/bcat-ddm.html).
+  Built `/breathevidence`, a planning page for Nansi (lab roles + a guest list with her two accounts),
+  on `dev` for review.
