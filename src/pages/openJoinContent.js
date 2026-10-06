@@ -3,6 +3,56 @@
 // its REB approval: payment, eligibility, time commitment, contact.
 
 export const OPEN_JOIN_CONTENT = {
+  // UTMAP 2026, the third wave of the UTM campus wellbeing survey. Recruited at
+  // a table on campus, so unlike `habits` this is a walk-up audience reading on
+  // a phone in a concourse: the copy is short and the sections are the four
+  // things someone decides on while standing up.
+  //
+  // PILOT. The study row is active = false and its consent form carries a pilot
+  // banner. Both change only when the protocol is approved. Until then this
+  // page is reachable but the open-join function will refuse to start a session,
+  // which is the intended behaviour, not a bug.
+  utmaps: {
+    eyebrow:     'RAD Lab \u00b7 University of Toronto Mississauga',
+    title:       'How are UTM students really doing?',
+    lead:        'We have asked this every year since 2023. Last year most students told us things were getting worse. We want to know whether they are right.',
+    contactName: 'Dr. Norman Farb',
+    contact:     'norman.farb@utoronto.ca',
+    sections: [
+      {
+        heading: 'Who can take part',
+        points: [
+          'Current or recent University of Toronto Mississauga undergraduates, aged 17 or over.',
+          'One sign-up per person.',
+          'There is nothing to screen for. Taking part does not depend on how you are doing.',
+        ],
+      },
+      {
+        heading: 'What\u2019s involved',
+        points: [
+          'One questionnaire, about 8 minutes, on your own phone or a tablet at our table.',
+          'Questions about your mood and wellbeing, your sources of stress, your physical and mental health, how you spend your time, and what you think other UTM students are going through.',
+          'Every question is optional and you can stop at any point.',
+          'Afterwards we ask for an email address. That is only so we can send one short follow-up of about two minutes a week later, which is also optional. You do not have to give an address.',
+        ],
+      },
+      {
+        heading: 'What you get',
+        points: [
+          'Pick a stress-relieving item from our table when you are done. You get it even if you start and decide to stop.',
+          'If you want, we will email you the results when we publish them.',
+        ],
+      },
+      {
+        heading: 'Your privacy',
+        points: [
+          'Your answers carry no name. An email address is the only identifying thing we ever collect, and only if you choose the follow-up or ask for the results.',
+          'Email addresses are stored separately from answers and deleted within 60 days.',
+          'Nobody reads your answers as they arrive, and no answer leads to anyone contacting you.',
+        ],
+      },
+    ],
+  },
   habits: {
     eyebrow:     'RAD Lab · University of Toronto',
     title:       'Can small daily habits help with stress and mood?',
