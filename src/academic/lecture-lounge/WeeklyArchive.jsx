@@ -85,8 +85,8 @@ export default function WeeklyArchive({ session, mode }) {
 function QuizTile({ q, slug, graded }) {
   const now = Date.now()
   const due = new Date(q.due_at).getTime()
-  const grace = due + 7 * 86400_000
   const close = new Date(q.hard_close_at).getTime()
+  const grace = Math.min(due + 7 * 86400_000, close)   // a quiz closing early has no full grace week
   const done = !!q.completed_at
 
   // The state a student needs is "can I still get full marks", not a date.
