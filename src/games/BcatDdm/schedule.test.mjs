@@ -2,7 +2,16 @@
 // Run: node --test src/games/BcatDdm/schedule.test.mjs
 import { test } from 'node:test'
 import assert from 'node:assert'
+import { readFileSync } from 'node:fs'
 import { DESIGNS, DEFAULTS, buildSchedule, scheduleYield, pacerAt } from './schedule.js'
+
+// The /prototypes/bcat-ddm.html page imports a published copy (static files can't reach src/).
+// It must stay byte-identical, or the prototype runs a different design from the one simulated.
+test('public/prototypes/bcat-ddm-schedule.js is an exact copy of this module', () => {
+  const src = readFileSync(new URL('./schedule.js', import.meta.url), 'utf8')
+  const pub = readFileSync(new URL('../../../public/prototypes/bcat-ddm-schedule.js', import.meta.url), 'utf8')
+  assert.equal(pub, src, 'run: cp src/games/BcatDdm/schedule.js public/prototypes/bcat-ddm-schedule.js')
+})
 
 const lo = DEFAULTS.basePeriodMs * DEFAULTS.minRatio
 const hi = DEFAULTS.basePeriodMs * DEFAULTS.maxRatio
@@ -90,6 +99,47 @@ test('roving_mixed interleaves steps and ramps that reach the same new rate', ()
   // magnitudes come from the same distribution for both kinds of change
   const med = (xs) => xs.map(e => e.mag).sort((a, b) => a - b)[xs.length >> 1]
   assert.ok(Math.abs(Math.log(med(steps) / med(ramps))) < 0.5)
+})
+
+test('double_blip: blips are single breaths, pairs separated by the stated gap, rate never roves', () => {
+  const s = buildSchedule('double_blip', { seed: 12 })
+  const B = DEFAULTS.basePeriodMs
+  const pairs = s.events.filter(e => e.type === 'blip_pair')
+  const singles = s.events.filter(e => e.type === 'blip_single')
+  assert.ok(pairs.length > 20 && singles.length > 3, `${pairs.length} pairs, ${singles.length} singles`)
+  for (const e of [...pairs, ...singles]) {
+    const i = e.onsetBreath
+    assert.equal(s.breaths[i].periodMs, e.toPeriodMs)
+    assert.equal(s.breaths[i + 1].periodMs === B || e.gap === 0, true)
+    if (e.type === 'blip_pair') {
+      for (let k = 1; k <= e.gap; k++) assert.equal(s.breaths[i + k].periodMs, B, `gap breath ${k}`)
+      assert.equal(s.breaths[i + e.gap + 1].periodMs, e.toPeriodMs, 'second blip')
+      assert.equal(s.breaths[i + e.gap + 2].periodMs, B, 'back to base after the pair')
+    }
+  }
+  // every breath that is not a blip runs at the base rate
+  for (const b of s.breaths) if (b.tag !== 'dblip') assert.equal(b.periodMs, B)
+  // all gaps and both sizes occur
+  assert.deepEqual([...new Set(pairs.map(e => e.gap))].sort((a, b) => a - b), DEFAULTS.blipGaps)
+  assert.deepEqual([...new Set(pairs.map(e => e.sizeIdx))].sort(), [0, 1])
+})
+
+test('blip_train: random single-breath blips at about the stated rate, never two in a row', () => {
+  const s = buildSchedule('blip_train', { seed: 13 })
+  const tags = s.breaths.map(b => b.tag)
+  for (let i = 1; i < tags.length; i++) assert.ok(!(tags[i] === 'tblip' && tags[i - 1] === 'tblip'), `consecutive blips at ${i}`)
+  const rate = tags.filter(t => t === 'tblip').length / tags.length
+  // P(blip) = p on breaths that may carry one (those after a non-blip): p / (1 + p) overall
+  const expected = DEFAULTS.blipTrainP / (1 + DEFAULTS.blipTrainP)
+  assert.ok(Math.abs(rate - expected) < 0.03, `blip rate ${rate.toFixed(3)} vs ${expected.toFixed(3)}`)
+})
+
+test('blip_combo: double blips first, then a blip train', () => {
+  const s = buildSchedule('blip_combo', { seed: 14 })
+  const firstT = s.breaths.findIndex(b => b.tag === 'tblip')
+  const lastD = s.breaths.map(b => b.tag).lastIndexOf('dblip')
+  assert.ok(firstT > 0 && lastD > 0 && lastD < firstT)
+  assert.ok(s.breaths[lastD].startMs < 0.55 * DEFAULTS.minutes * 60_000)
 })
 
 test('roving yields more changes per minute than the brief design', () => {

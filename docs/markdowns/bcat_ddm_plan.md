@@ -502,6 +502,34 @@ participants' leak, so blip timing and change durations should vary within a ses
 
 ---
 
+## 6e. Round 3 — memory span and blip designs (running 2026-10-06)
+
+**Finding while setting it up.** The round-2 "leak is unidentifiable" result was partly built in.
+Every observer had boundary a = 3, so meeting Study 1's false-alarm target required a strong
+criterion. That criterion drains the accumulator in about 3 s, which makes any 5–60 s leak
+irrelevant.
+- **Calibration check:** a = 6 and a = 10 also meet the targets. Their criteria drain in ~17 s and
+  ~150 s.
+- **So:** how long evidence is held is an unknown property of participants, not something Study 1
+  fixes. Measuring it is the real version of the leak question.
+
+**What round 3 runs:**
+- **Designs** (built in `schedule.js`):
+  - `double_blip`: single blips and pairs at gaps 0/1/2/4/8 breaths, two sizes;
+  - `blip_train`: random small blips, p = .15 per breath, never two in a row;
+  - `blip_combo`: 20 + 20 min;
+  - `roving_ramp` as the reference.
+- **Observers:** four memory populations, `mem_short` (~1.5 s half-life), `mem_medium` (~8 s),
+  `mem_long` (~60 s), and `mem_long_leaky` (leak half-life 3.5–40 s, criterion set per person).
+  Details in the sim README.
+- **Questions:**
+  1. Does each design recover each person's evidence half-life?
+  2. Can it tell criterion drain (fixed amount) from leak (fixed fraction) at group and person
+     level?
+  3. What does the blip-train kernel look like for each population?
+
+---
+
 ## 7. Decisions (append with dates)
 
 *(none yet — waiting on §5)*

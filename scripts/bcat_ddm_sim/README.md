@@ -15,6 +15,34 @@ the plan doc for the context. This file covers how to run the simulation and wha
 | `run_power.py` | Calibrates the population, samples participants, simulates sessions, fits all models, writes the results folder |
 | `results/` | Round 1 (2026-10-01): 3 observers × 5 designs. Produced by the round-1 version of `run_power.py` (commit 78cd642) |
 | `results_round2/` | Round 2 (2026-10-05): 5 observers × 4 designs, two-channel models |
+| `results_round2_nomeas/` | Round 2 rerun of the two ramp-block designs with perfect belt measurement |
+| `results_round3/` | Round 3 (2026-10-06): memory span. 4 memory populations × 4 designs incl. the blip designs |
+
+### Round 3: memory span and blips
+
+Study 1's targets (50% detection of a 20% step, 0.3 false alarms/min) are met equally well by a low
+boundary with a strong criterion and by a high boundary with a weak one. The first observer forgets
+in about 3 s; the second holds evidence for minutes. **How long evidence is held is therefore a free
+property the task has to measure.**
+
+**Observer populations** (all mixed coding, share s ~ Beta(2, 2)):
+- `mem_short`: a = 3, criterion drain, evidence half-life about 1.5 s.
+- `mem_medium`: a = 6, about 8 s.
+- `mem_long`: a = 10, about 60 s.
+- `mem_long_leaky`: a = 10, with forgetting through a leak drawn per person, log-uniform over
+  5–60 s time constants. Each person's criterion is set so they keep their own false-alarm rate
+  (0.3/min, log-SD .4). A single shared criterion would leave weak-leak people in constant false
+  alarms.
+
+**Memory metric.** Evidence half-life: ln 2/λ with a leak, a/2c without (c = criterion beyond
+normal breathing noise).
+
+**Designs:** `roving_ramp` (reference), `double_blip`, `blip_train`, `blip_combo` (20 + 20 min).
+Blips are one-breath departures from the base rate. Sizes are set in `BLIP_OPTIONS` (double:
+0.5 and 0.8 × m50; train: 0.4–0.9 × m50), so a single blip is usually missed. The summary adds:
+- pair detection by gap × size (the double-blip signature);
+- recovery of each person's memory half-life;
+- the press-triggered blip kernel from blip trains.
 
 ## Run
 
