@@ -233,13 +233,20 @@ function Reveal({ item, answer, awaitingConfidence, onConfidence }) {
 }
 
 // Tier line, straight from the syllabus: full credit to the deadline, one
-// grace week (automatic, no email), then 75% until the hard close.
+// grace week (automatic, no email), then 75% until the hard close. A quiz that
+// closes before its grace week would end (Quiz 5, closing at the midterm the
+// morning after its deadline) must not promise the week: the grace runs only to
+// the close, and there is no late window.
 function deadlineLine(quiz) {
   const now = Date.now()
   const due = new Date(quiz.due_at).getTime()
-  const grace = due + 7 * 86400_000
   const close = new Date(quiz.hard_close_at).getTime()
-  if (now <= due) return `Full credit through ${fmtDate(quiz.due_at)} — and a further week after that, automatically.`
+  const grace = Math.min(due + 7 * 86400_000, close)
+  if (now <= due) {
+    return grace < due + 7 * 86400_000
+      ? `Full credit through ${fmtDate(quiz.due_at)} — and still full credit after that, until it closes ${fmtDate(quiz.hard_close_at)}.`
+      : `Full credit through ${fmtDate(quiz.due_at)} — and a further week after that, automatically.`
+  }
   if (now <= grace) return `Still full credit (the automatic grace week) through ${fmtDateMs(grace)}.`
   if (now <= close) return `Late window — 75% credit until ${fmtDate(quiz.hard_close_at)}.`
   return 'This quiz has closed.'
