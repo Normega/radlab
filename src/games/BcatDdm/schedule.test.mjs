@@ -3,7 +3,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert'
 import { readFileSync } from 'node:fs'
-import { DESIGNS, DEFAULTS, buildSchedule, scheduleYield, pacerAt } from './schedule.js'
+import { DESIGNS, DEFAULTS, buildSchedule, scheduleYield, pacerAt, bumpProfile } from './schedule.js'
 
 // The /prototypes/bcat-ddm.html page imports a published copy (static files can't reach src/).
 // It must stay byte-identical, or the prototype runs a different design from the one simulated.
@@ -140,6 +140,48 @@ test('blip_combo: double blips first, then a blip train', () => {
   const lastD = s.breaths.map(b => b.tag).lastIndexOf('dblip')
   assert.ok(firstT > 0 && lastD > 0 && lastD < firstT)
   assert.ok(s.breaths[lastD].startMs < 0.55 * DEFAULTS.minutes * 60_000)
+})
+
+test('bumpProfile: smooth, symmetric, peak 1, no breath-to-breath jump above ~0.55 of the peak', () => {
+  for (const n of [3, 4]) {
+    const w = bumpProfile(n)
+    assert.equal(w.length, n)
+    assert.ok(Math.abs(Math.max(...w) - 1) < 0.1)
+    for (let i = 0; i < n; i++) assert.ok(Math.abs(w[i] - w[n - 1 - i]) < 1e-9)
+    const steps = [w[0], ...w.slice(1).map((x, i) => Math.abs(x - w[i])), w[n - 1]]
+    assert.ok(Math.max(...steps) <= 0.56, `n=${n} max step ${Math.max(...steps)}`)
+  }
+})
+
+test('double_bump: bumps rise and return, pairs separated by the stated gap, rate otherwise at base', () => {
+  const s = buildSchedule('double_bump', { seed: 21 })
+  const B = DEFAULTS.basePeriodMs
+  const pairs = s.events.filter(e => e.type === 'bump_pair')
+  assert.ok(pairs.length > 15, `${pairs.length} pairs`)
+  for (const e of pairs) {
+    const i = e.onsetBreath, w = e.width
+    for (let k = 0; k < w; k++) assert.notEqual(s.breaths[i + k].periodMs, B, 'bump breath')
+    for (let k = 0; k < e.gap; k++) assert.equal(s.breaths[i + w + k].periodMs, B, 'gap breath')
+    assert.equal(s.breaths[i + 2 * w + e.gap].periodMs, B, 'back to base after the pair')
+  }
+  for (const b of s.breaths) if (b.tag !== 'dbump') assert.equal(b.periodMs, B)
+  assert.deepEqual([...new Set(pairs.map(e => e.gap))].sort((a, b) => a - b), DEFAULTS.bumpGaps)
+  assert.deepEqual([...new Set(pairs.map(e => e.width))].sort(), DEFAULTS.bumpWidths)
+})
+
+test('roving_bump / roving_ramp_bump: blocks in order, a pause before the bump block', () => {
+  for (const d of ['roving_bump', 'roving_ramp_bump']) {
+    const s = buildSchedule(d, { seed: 22 })
+    const types = s.events.map(e => e.type)
+    const firstBump = types.findIndex(t => t.startsWith('bump'))
+    assert.ok(firstBump > 0 && types.slice(0, firstBump).every(t => t === 'step'), d)
+    if (d === 'roving_ramp_bump') {
+      const firstRamp = types.indexOf('ramp')
+      assert.ok(firstRamp > firstBump && types.slice(firstRamp).every(t => t === 'ramp' || t === 'null'), d)
+    }
+    const bumpOnset = s.events[firstBump].onsetBreath
+    assert.ok(s.pauses.some(p => p.beforeBreath <= bumpOnset && p.beforeBreath > s.events[firstBump - 1].onsetBreath), `${d}: pause before bumps`)
+  }
 })
 
 test('roving yields more changes per minute than the brief design', () => {

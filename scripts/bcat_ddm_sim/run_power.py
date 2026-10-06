@@ -56,9 +56,14 @@ DESIGN_VARIANTS = {
     'double_blip':   ('double_blip', {}),
     'blip_train':    ('blip_train', {}),
     'blip_combo':    ('blip_combo', {}),
+    'double_bump':      ('double_bump', {}),
+    'bump_train':       ('bump_train', {}),
+    'roving_bump':      ('roving_bump', {}),
+    'roving_ramp_bump': ('roving_ramp_bump', {}),
 }
 ROUND2_DESIGNS = ['roving_ramp', 'roving_ramp50', 'roving_mixed', 'ramp']
 ROUND3_DESIGNS = ['roving_ramp', 'double_blip', 'blip_train', 'blip_combo']
+ROUND4_DESIGNS = ['double_bump', 'bump_train', 'roving_bump', 'roving_ramp_bump']
 # Blip sizes tuned so a single blip is usually missed (~20% small, ~45% large) by a typical observer
 BLIP_OPTIONS = {'blipSizes': [0.5, 0.8], 'blipTrainRelMin': 0.4, 'blipTrainRelMax': 0.9}
 
@@ -250,14 +255,16 @@ def score(schedule, cross, breath_start_s, step_breath):
     events = sorted(schedule['events'], key=lambda e: e['onsetMs'])
     used = set()
     out = {'n_step': 0, 'n_ramp': 0, 'n_null': 0, 'n_return': 0, 'n_blip_single': 0, 'n_blip_pair': 0, 'n_blip': 0,
+           'n_bump_single': 0, 'n_bump_pair': 0, 'n_bump': 0,
            'hit_step': 0, 'hit_ramp': 0, 'hit_blip_single': 0, 'hit_blip_pair': 0, 'hit_blip': 0,
+           'hit_bump_single': 0, 'hit_bump_pair': 0, 'hit_bump': 0,
            'null_fa': 0, 'return_press': 0, 'late': 0, 'stable_fa': 0, 'extra': 0}
     rts_breaths = []
     ramp_mag_at_detect = []
     pair_n, pair_hit = {}, {}
     for e in events:
         out['n_' + e['type']] += 1
-        if e['type'] == 'blip_pair':
+        if e['type'] in ('blip_pair', 'bump_pair'):
             key = f"g{e['gap']}_s{e['sizeIdx']}"
             pair_n[key] = pair_n.get(key, 0) + 1
             pair_hit.setdefault(key, 0)
@@ -275,13 +282,13 @@ def score(schedule, cross, breath_start_s, step_breath):
                 out['stable_fa'] += 1
             continue
         typ = hit_event['type']
-        if typ in ('step', 'ramp', 'blip_single', 'blip_pair', 'blip'):
+        if typ in ('step', 'ramp', 'blip_single', 'blip_pair', 'blip', 'bump_single', 'bump_pair', 'bump'):
             if hit_event['id'] in used:
                 out['extra'] += 1
                 continue
             used.add(hit_event['id'])
             out['hit_' + typ] += 1
-            if typ == 'blip_pair':
+            if typ in ('blip_pair', 'bump_pair'):
                 pair_hit[f"g{hit_event['gap']}_s{hit_event['sizeIdx']}"] += 1
             b = step_breath[min(s, len(step_breath) - 1)]
             if b >= 0:
@@ -310,6 +317,8 @@ def score(schedule, cross, breath_start_s, step_breath):
         'hit_rate_ramp': out['hit_ramp'] / out['n_ramp'] if out['n_ramp'] else np.nan,
         'hit_rate_blip_single': out['hit_blip_single'] / out['n_blip_single'] if out['n_blip_single'] else np.nan,
         'hit_rate_blip_pair': out['hit_blip_pair'] / out['n_blip_pair'] if out['n_blip_pair'] else np.nan,
+        'hit_rate_bump_single': out['hit_bump_single'] / out['n_bump_single'] if out['n_bump_single'] else np.nan,
+        'hit_rate_bump_pair': out['hit_bump_pair'] / out['n_bump_pair'] if out['n_bump_pair'] else np.nan,
         'stable_fa_per_min': out['stable_fa'] / stable_min,
         'settled_min': stable_min,
         'median_rt_breaths': float(np.median(rts_breaths)) if rts_breaths else np.nan,
@@ -431,6 +440,7 @@ def _init_worker(sched_path, pops):
 
 
 KERNEL_LAGS = 12
+TRAIN_TAGS = ('tblip', 'tbump')
 
 
 def blip_kernel(schedule, cross, step_breath):
@@ -441,17 +451,17 @@ def blip_kernel(schedule, cross, step_breath):
     n = 0
     for st in np.flatnonzero(cross):
         b = step_breath[min(st, len(step_breath) - 1)]
-        if b < KERNEL_LAGS or not any(t == 'tblip' for t in tags[b - KERNEL_LAGS:b + 1]):
+        if b < KERNEL_LAGS or not any(t in TRAIN_TAGS for t in tags[b - KERNEL_LAGS:b + 1]):
             continue
         # only presses inside the train block (a train blip within the last 30 breaths)
-        if not any(t == 'tblip' for t in tags[max(0, b - 30):b + 1]):
+        if not any(t in TRAIN_TAGS for t in tags[max(0, b - 30):b + 1]):
             continue
         n += 1
         for lag in range(KERNEL_LAGS + 1):
-            counts[lag] += tags[b - lag] == 'tblip'
-    in_train = [i for i, t in enumerate(tags) if t in ('tblip',)]
-    base = len(in_train) / max(1, sum(1 for i, t in enumerate(tags) if t in ('tblip', 'stable', 'reentrain')
-                                      and any(tt == 'tblip' for tt in tags[max(0, i - 30):i + 30])))
+            counts[lag] += tags[b - lag] in TRAIN_TAGS
+    in_train = [i for i, t in enumerate(tags) if t in TRAIN_TAGS]
+    base = len(in_train) / max(1, sum(1 for i, t in enumerate(tags) if t in TRAIN_TAGS + ('stable', 'reentrain')
+                                      and any(tt in TRAIN_TAGS for tt in tags[max(0, i - 30):i + 30])))
     return n, counts, base
 
 
@@ -526,12 +536,14 @@ def summarize(datasets, fits, out_dir, meta):
 
     L += ['## 1. Yield per session (mean over participants and observers)', '']
     cols = ['n_step', 'n_ramp', 'n_null', 'n_blip_single', 'n_blip_pair', 'n_blip', 'hit', 'hit_rate_step',
-            'hit_rate_ramp', 'hit_rate_blip_single', 'hit_rate_blip_pair', 'late', 'stable_fa_per_min',
+            'hit_rate_ramp', 'hit_rate_blip_single', 'hit_rate_blip_pair', 'n_bump_single', 'n_bump_pair', 'n_bump',
+            'hit_rate_bump_single', 'hit_rate_bump_pair', 'late', 'stable_fa_per_min',
             'median_rt_breaths']
     cols = [c for c in cols if c in datasets and datasets[c].notna().any() and (datasets[c] != 0).any()]
     L += [md(datasets.groupby('design')[cols].mean().reindex(designs)), '']
     for col, label in (('hit_rate_ramp', 'Ramp hit rate'), ('hit_rate_blip_single', 'Single-blip hit rate'),
-                       ('hit_rate_blip_pair', 'Blip-pair hit rate')):
+                       ('hit_rate_blip_pair', 'Blip-pair hit rate'), ('hit_rate_bump_single', 'Single-bump hit rate'),
+                       ('hit_rate_bump_pair', 'Bump-pair hit rate')):
         if col in datasets and datasets[col].notna().any():
             piv_hr = datasets.pivot_table(index='design', columns='gen', values=col)
             L += [f'{label} by observer:', '', md(piv_hr.reindex([d for d in designs if d in piv_hr.index])
@@ -550,7 +562,7 @@ def summarize(datasets, fits, out_dir, meta):
                 if len(r) > 3:
                     rows.append(r)
         if rows:
-            L += ['Blip-pair hit rate by gap (normal breaths between the blips) and blip size, by observer. '
+            L += ['Pair hit rate (blip or bump pairs) by gap (normal breaths between the two) and size, by observer. '
                   'The double-blip signature: does detection fall with the gap, and differently by size?', '',
                   md(pd.DataFrame(rows).set_index(['design', 'gen', 'size'])), '']
 

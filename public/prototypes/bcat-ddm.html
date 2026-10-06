@@ -111,6 +111,8 @@
       <button data-v="double_blip">Double blips</button>
       <button data-v="blip_train">Blip train</button>
       <button data-v="blip_combo">Blips, both kinds</button>
+      <button data-v="double_bump">Smooth bumps</button>
+      <button data-v="roving_ramp_bump">Roving + bumps + ramps</button>
       <button data-v="brief">Original draft</button>
     </div>
     <p class="hint" id="designHint"></p>
@@ -186,7 +188,7 @@
     <canvas id="tl"></canvas>
     <div class="legend">
       <span><i style="background:var(--step)"></i>step</span><span><i style="background:var(--ramp)"></i>ramp</span>
-      <span><i style="background:var(--blip)"></i>blip</span><span><i style="background:var(--null)"></i>no change (null)</span>
+      <span><i style="background:var(--blip)"></i>blip</span><span><i style="background:#3aa58c"></i>bump</span><span><i style="background:var(--null)"></i>no change (null)</span>
       <span><i style="background:var(--pk)"></i>press: sure</span><span><i style="background:#f6b6d2"></i>press: maybe</span>
     </div>
     <div class="stats" id="stats"></div>
@@ -218,6 +220,8 @@ const DESIGN_HINTS = {
   double_blip: 'One-breath changes ("blips"), alone or in pairs separated by 0 to 8 normal breaths. Probes how long a hint of change is held. In the simulations it measured less than roving + ramp; kept here to try.',
   blip_train: 'Small one-breath blips at random moments. Probes how evidence from scattered hints adds up. In the simulations it measured less than roving + ramp; kept here to try.',
   blip_combo: 'Double blips for the first half, a blip train for the second.',
+  double_bump: 'Smooth bumps: the pace eases away and back over 3 or 4 breaths, alone or in pairs separated by 0 to 8 normal breaths. The gentle counterpart of the blip, with no sudden breath-to-breath jump.',
+  roving_ramp_bump: 'Roving steps, then a block of smooth bumps, then a block of gradual ramps.',
   brief: 'The handoff as first drafted: steps from a fixed pace at four sizes, a long wait, then a return to the starting pace.',
 };
 
@@ -505,7 +509,8 @@ function finish(){
   ].map(([v, l]) => `<div class="stat"><b>${v}</b><span>${l}</span></div>`).join('');
 
   const kinds = [...new Set(rows.map(r => r.kind))];
-  const label = { step: 'Step', ramp: 'Ramp', blip_single: 'Single blip', blip_pair: 'Blip pair', blip: 'Train blip', null: 'No change' };
+  const label = { step: 'Step', ramp: 'Ramp', blip_single: 'Single blip', blip_pair: 'Blip pair', blip: 'Train blip',
+                  bump_single: 'Single bump', bump_pair: 'Bump pair', bump: 'Train bump', null: 'No change' };
   $('byType').innerHTML = '<tr><th>Kind</th><th>Shown</th><th>Pressed</th><th>Median breaths</th></tr>' + kinds.map(k => {
     const rr = rows.filter(r => r.kind === k), hh = rr.filter(r => r.responded);
     const b = hh.map(r => r.rt_breaths).filter(v => v !== '').sort((a, c) => a - c);
@@ -526,7 +531,8 @@ function drawTimeline(){
   const B = DEFAULTS.basePeriodMs, lo = B * 0.5, hi = B * 1.9;
   const X = (ms) => 8 + (w - 16) * ms / T;
   const Y = (p) => 24 + (h - 40) * (1 - (p - lo) / (hi - lo));
-  const col = { step: '#4A90D9', ramp: '#8a6fd1', blip_single: '#e0973a', blip_pair: '#e0973a', blip: '#e0973a', null: '#9aa0a6' };
+  const col = { step: '#4A90D9', ramp: '#8a6fd1', blip_single: '#e0973a', blip_pair: '#e0973a', blip: '#e0973a',
+                bump_single: '#3aa58c', bump_pair: '#3aa58c', bump: '#3aa58c', null: '#9aa0a6' };
   for (const e of sch.events){
     if (e.onsetMs > T || e.type === 'return') continue;
     x.fillStyle = (col[e.type] || '#999') + '30';

@@ -9,7 +9,7 @@ the plan doc for the context. This file covers how to run the simulation and wha
 
 | File | Role |
 |---|---|
-| `src/games/BcatDdm/schedule.js` | **The pacer schedules**: the same generator the task will use. Designs: `brief`, `roving`, `trials`, `ramp`, `roving_ramp`, `roving_mixed`. Tests: `node --test src/games/BcatDdm/schedule.test.mjs` |
+| `src/games/BcatDdm/schedule.js` | **The pacer schedules**: the same generator the task will use. Designs: `brief`, `roving`, `trials`, `ramp`, `roving_ramp`, `roving_mixed`, `double_blip`, `blip_train`, `blip_combo`, `double_bump`, `bump_train`, `roving_bump`, `roving_ramp_bump`. Tests: `node --test src/games/BcatDdm/schedule.test.mjs` |
 | `make_schedules.mjs` | Batch CLI: spec JSON in, schedules JSON out (called by `run_power.py`) |
 | `model.py` | Evidence channels, simulator, exact grid likelihood, Monte Carlo psychometrics (numba) |
 | `run_power.py` | Calibrates the population, samples participants, simulates sessions, fits all models, writes the results folder |
@@ -17,6 +17,7 @@ the plan doc for the context. This file covers how to run the simulation and wha
 | `results_round2/` | Round 2 (2026-10-05): 5 observers × 4 designs, two-channel models |
 | `results_round2_nomeas/` | Round 2 rerun of the two ramp-block designs with perfect belt measurement |
 | `results_round3/` | Round 3 (2026-10-06): memory span. 4 memory populations × 4 designs incl. the blip designs |
+| `results_round4/` | Round 4 (2026-10-06): smooth 3–4-breath bumps (double, train, roving + bump block, roving + bump + ramp), same people as round 3; `roving_ramp` reference rows copied from round 3 |
 
 ### Round 3: memory span and blips
 

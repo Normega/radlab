@@ -43,8 +43,17 @@
 //                 history is the integration kernel (cf. Brunton et al. 2013).
 //   blip_combo  — double_blip for the first half, blip_train for the second
 
+//
+// Bump designs are the smooth counterpart: the pace rises to a peak and returns over 3-4
+// breaths (raised cosine), giving total-change evidence without sharp breath-to-breath jumps.
+//   double_bump      — single bumps and pairs at gaps of 0/2/4/8 normal breaths, two sizes
+//   bump_train       — bumps at random times
+//   roving_bump      — roving, then a double-bump block (last quarter)
+//   roving_ramp_bump — roving, then a double-bump block, then a ramp block
+
 export const DESIGNS = ['brief', 'roving', 'trials', 'ramp', 'roving_ramp', 'roving_mixed',
-                        'double_blip', 'blip_train', 'blip_combo']
+                        'double_blip', 'blip_train', 'blip_combo',
+                        'double_bump', 'bump_train', 'roving_bump', 'roving_ramp_bump']
 
 export const DEFAULTS = {
   minutes:          40,      // task time budget, pauses included
@@ -110,6 +119,19 @@ export const DEFAULTS = {
 
   // blip_combo
   blipComboSplit:    0.5,                // share of the session in double_blip (first)
+
+  // bumps: a smooth excursion and return over bumpWidths breaths (raised-cosine profile),
+  // so it carries total-change evidence without the sharp breath-to-breath changes of a blip
+  bumpWidths:        [3, 4],             // breaths per bump, drawn per bump
+  bumpSizes:         [0.6, 1.0],         // × m50Hat, PEAK proportional change (double_bump); single bumps ~15-50% detected
+  bumpGaps:          [0, 2, 4, 8],       // normal breaths between the two bumps of a pair
+  bumpSingleP:       0.2,
+  bumpTrainP:        0.1,                // per-slot probability a bump starts (bump_train)
+  bumpTrainRelMin:   0.5,                // × m50Hat, log-uniform peak sizes (bump_train)
+  bumpTrainRelMax:   1.1,
+  rovingBumpFrac:    0.25,               // roving_bump: share of the session in the double-bump block (last)
+  rrbBumpFrac:       0.2,                // roving_ramp_bump: double-bump block share (middle)
+  rrbRampFrac:       0.2,                // roving_ramp_bump: ramp block share (last)
 }
 
 // ── seeded RNG ──────────────────────────────────────────────────────────────
@@ -418,6 +440,86 @@ function runBlipTrain(s, o, rng, endMs) {
   }
 }
 
+// Raised-cosine bump profile: weight of breath k (1..n) in an n-breath bump. Peaks at 1 in the
+// middle (n = 3 → .5, 1, .5; n = 4 → .35, .90, .90, .35), so each breath differs from the last by
+// at most about half the peak change.
+export function bumpProfile(n) {
+  return Array.from({ length: n }, (_, i) => Math.sin(Math.PI * (i + 1) / (n + 1)) ** 2)
+}
+
+function addBump(s, o, P, dir, peak, n, tag) {
+  for (const w of bumpProfile(n)) s.addBreath(s.clamp(changed(P, dir, peak * w)), tag)
+}
+
+function runDoubleBump(s, o, rng, endMs) {
+  const B = o.basePeriodMs
+  if (s.breaths.length === 0) for (let k = 0; k < o.leadInBreaths; k++) s.addBreath(B, 'lead')
+  // after a roving block the rate may not be at base: pause, so the return is not itself a change
+  else if (s.breaths[s.breaths.length - 1].periodMs !== B) s.addPause(o.itiMs, 'iti')
+  for (;;) {
+    const nSettle = o.blipSettleMin + rng.geometric(o.blipSettleExtra)
+    const single = rng.u() < o.bumpSingleP
+    const gap = single ? null : o.bumpGaps[rng.int(0, o.bumpGaps.length - 1)]
+    const sizeIdx = rng.int(0, o.bumpSizes.length - 1)
+    const peak = Math.min(o.bumpSizes[sizeIdx] * o.m50Hat, 0.42)
+    const width = o.bumpWidths[rng.int(0, o.bumpWidths.length - 1)]
+    const dir = rng.sign()
+    const nProbe = single ? width : 2 * width + gap
+    const worst = (nSettle + nProbe + o.blipTailBreaths) * B * (1 + peak) + o.probeMs + 3 * B
+    if (s.t + worst > endMs) break
+    for (let k = 0; k < nSettle; k++) s.addBreath(B, 'stable')
+
+    const onsetBreath = s.breaths.length
+    const onsetMs = s.t
+    addBump(s, o, B, dir, peak, width, 'dbump')
+    if (!single) {
+      for (let k = 0; k < gap; k++) s.addBreath(B, 'gap')
+      addBump(s, o, B, dir, peak, width, 'dbump')
+    }
+    for (let k = 0; k < o.blipTailBreaths; k++) s.addBreath(B, 'tail')
+    s.pushEvent({ type: single ? 'bump_single' : 'bump_pair', onsetMs, onsetBreath, windowEndMs: s.t,
+                  dir, mag: peak, sizeIdx, gap, width,
+                  fromPeriodMs: B, toPeriodMs: Math.round(changed(B, dir, peak)) })
+    if (rng.u() < o.probeP) {
+      s.addPause(o.probeMs, 'probe')
+      const nRe = pickReentrain(o, rng)
+      for (let k = 0; k < nRe; k++) s.addBreath(B, 'reentrain')
+    }
+  }
+}
+
+function runBumpTrain(s, o, rng, endMs) {
+  const B = o.basePeriodMs
+  if (s.breaths.length === 0) for (let k = 0; k < o.leadInBreaths; k++) s.addBreath(B, 'lead')
+  let sinceProbe = 0
+  for (;;) {
+    if (s.t + 6 * B + o.probeMs > endMs) break
+    if (rng.u() < o.bumpTrainP) {
+      const rel = rng.logUniform(o.bumpTrainRelMin, o.bumpTrainRelMax)
+      const peak = Math.min(rel * o.m50Hat, 0.42)
+      const width = o.bumpWidths[rng.int(0, o.bumpWidths.length - 1)]
+      const dir = rng.sign()
+      const onsetBreath = s.breaths.length
+      const onsetMs = s.t
+      addBump(s, o, B, dir, peak, width, 'tbump')
+      s.pushEvent({ type: 'bump', onsetMs, onsetBreath, windowEndMs: s.t + 3 * B, dir, mag: peak, relMag: rel,
+                    width, fromPeriodMs: B, toPeriodMs: Math.round(changed(B, dir, peak)) })
+      sinceProbe += width
+      s.addBreath(B, 'stable')        // at least one normal breath between bumps
+    } else {
+      s.addBreath(B, 'stable')
+    }
+    if (++sinceProbe >= o.blipTrainProbeEvery) {
+      sinceProbe = 0
+      if (rng.u() < o.probeP) {
+        s.addPause(o.probeMs, 'probe')
+        const nRe = pickReentrain(o, rng)
+        for (let k = 0; k < nRe; k++) s.addBreath(B, 'reentrain')
+      }
+    }
+  }
+}
+
 // ── public API ──────────────────────────────────────────────────────────────
 export function buildSchedule(design, options = {}) {
   if (!DESIGNS.includes(design)) throw new Error(`unknown design: ${design}`)
@@ -440,6 +542,17 @@ export function buildSchedule(design, options = {}) {
   if (design === 'blip_combo') {
     runDoubleBlip(s, o, rng, totalMs * o.blipComboSplit)
     runBlipTrain(s, o, rng, totalMs)
+  }
+  if (design === 'double_bump') runDoubleBump(s, o, rng, totalMs)
+  if (design === 'bump_train') runBumpTrain(s, o, rng, totalMs)
+  if (design === 'roving_bump') {
+    runRoving(s, o, rng, totalMs * (1 - o.rovingBumpFrac))
+    runDoubleBump(s, o, rng, totalMs)
+  }
+  if (design === 'roving_ramp_bump') {
+    runRoving(s, o, rng, totalMs * (1 - o.rrbBumpFrac - o.rrbRampFrac))
+    runDoubleBump(s, o, rng, totalMs * (1 - o.rrbRampFrac))
+    runRamp(s, o, rng, totalMs)
   }
 
   return {

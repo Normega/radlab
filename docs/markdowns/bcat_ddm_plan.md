@@ -574,6 +574,65 @@ the prototype for demonstration only.
 
 ---
 
+## 6f. Round 4 — smooth bumps (2026-10-06)
+
+**Question.** Does a gentler probe help where blips failed? A **bump** eases the pace away and back
+over 3–4 breaths (raised cosine: ½, 1, ½ of the peak for 3 breaths). It carries total-change
+evidence without sharp breath-to-breath jumps.
+- **Designs:** `double_bump` (singles + pairs at gaps 0/2/4/8, two sizes), `bump_train`,
+  `roving_bump` (roving + a 10 min bump block), `roving_ramp_bump` (roving + bump block + ramp
+  block, 8 min each).
+- **Sizes:** peaks of 0.6 and 1.0 × m50 (trains 0.5–1.1), so a single bump is detected ~35–45% of
+  the time.
+- **People:** the same four memory populations and the same 30 simulated people per population as
+  round 3 (verified identical), so `roving_ramp` from round 3 is a person-for-person reference.
+  Tables: `results_round4/summary.md`.
+
+| | roving_ramp (ref) | double_bump | bump_train | roving_bump | roving_ramp_bump |
+|---|---|---|---|---|---|
+| per-person model recovery | **.64** | .27 | .22 | .59 | .62 |
+| breath-to-breath share s, ρ (pooled) | .87 | .65 | .49 | **.88** | .84 |
+| leak found at group level (ΔAIC) | ✓ 29 | ✗ | ✗ | ✓ 6 | ✓ **30** |
+| leak per person: picked / ρ(λ) | .40 / .37 | .20 / −.01 | .20 / −.01 | .37 / **.46** | **.40** / .45 |
+| memory half-life ranked across 1.5–77 s (ρ) | .78–.82 | .76–.77 | .69–.70 | **.81–.85** | .75–.77 |
+| degenerate fits | 10% | 17% | 18% | **8%** | 9% |
+
+**Conclusions**
+1. **Bumps are the better probe of the two, but alone they still lose badly.** They beat blips
+   (double-bump vs double-blip: share s .65 vs .56; memory .77 vs .71), but a bump-only or
+   bump-train session recovers less than a third as many correct models as roving + ramp. They
+   don't find the leak, and their fits collapse more often.
+2. **Inside a roving session, a bump block is about as good as a ramp block.** It is slightly
+   better for memory span and λ (ρ .46 vs .37), and weaker for the group leak test (ΔAIC 6 vs 29).
+   All differences are within the noise of N = 30 (≈ ±.1).
+3. **Adding bumps to roving + ramp gains nothing.** `roving_ramp_bump` matches roving + ramp on
+   every row, because the time the bumps take comes out of the steps and ramps.
+4. **The double-bump gap pattern still doesn't separate memory mechanisms.** Pair detection
+   changes little with gap and inconsistently by population, and the bump-train kernel looks the
+   same in all four populations, as it did for blips.
+
+**Where the design search ends up.** Across rounds 1–4 the tested space covers:
+- steps from a fixed baseline and roving steps;
+- fixed trials;
+- ramps alone and as a block;
+- interleaved steps/ramps;
+- blips (single, pair, train);
+- bumps (single, pair, train);
+- their combinations.
+
+The efficient design is **a roving step stream plus a block of slow evidence**, with ramps and
+bumps interchangeable within noise. That design recovers:
+- each person's breath-to-breath share (ρ ≈ .87);
+- the best model per person about 60% of the time;
+- a long-memory leak at group level;
+- memory span across a wide range of people (ρ ≈ .8), but not finely within a narrow range
+  (ρ ≈ .4–.6).
+
+Recommendation unchanged: **roving + ramp block**, with roving + bump block as an equivalent
+alternative if ramps prove unpleasant or too noticeable in piloting.
+
+---
+
 ## 7. Decisions (append with dates)
 
 *(none yet — waiting on §5)*
@@ -606,3 +665,7 @@ the prototype for demonstration only.
   `dev`, live on dev.radlab.zone; promotion to `main` awaits Norm). Round 3 done (§6e): blips lose
   to roving + ramp on every measure; with long memory, a leak is detectable at group level, but
   only with roving + ramp. Summaries switched to Spearman after finding ~10% degenerate fits.
+- **2026-10-06** — Round 4, smooth bumps (§6f). Bumps beat blips but lose to roving + ramp when
+  alone; a bump block inside a roving session is about as good as a ramp block. The design search
+  ends at roving steps + a slow-evidence block. The prototype gained "Smooth bumps" and
+  "Roving + bumps + ramps".
