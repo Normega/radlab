@@ -213,14 +213,14 @@ check-in, Guide issues found.)
 
 Content pass 2026-09-22: 20 → 31 sections (branch `psy240/l5-content-pass`). Every tested L5 fact
 now has a slide.
-- [ ] **HIGH — Exercise A "Six people" (slide 14) needs its quiz check-in**: six EMQ-style vignettes.
+- [x] (2026-10-06: six new vignettes on three slides, check-in #15 keyed; plus #5 warm-up of L4's never-played four, a marking-model slide, and #35 L5 short typed before Break 2) **HIGH — Exercise A "Six people" (slide 14) needs its quiz check-in**: six EMQ-style vignettes.
   They must be invented. Pool EMQ MT-L5-EMQ-01 covers the same six-disorder differential, so don't
   reuse or paraphrase its stems. Only 1/20/40/99 exist today.
-- [ ] Closer (slide 31): `TODO(QotW)` for week 5.
-- [ ] Slide 4 "How the midterm is built" is optional; keep or cut. Before saying it aloud, confirm
+- [x] Closer: `TODO(QotW)` for week 5 — row exists ("One manic episode is enough..."); closer now says it opens at noon. (2026-10-06)
+- [x] (2026-10-06: kept, rewritten to the built form — 33 MC / 12 matching / 5 short typed, no stepped cases; slide 3 no longer promises a personalised sample) Slide 4 "How the midterm is built" is optional; keep or cut. Before saying it aloud, confirm
   whether stepped vignettes allow going back (the item README says no back-navigation). Note the L5
   pool has no stepped vignette, although the README plans one.
-- [ ] Support slide: "UTM Health & Counselling: Davis Building, room 1123" isn't on the Guide's
+- [x] (2026-10-06: room dropped, phone 905-828-5255 from the Guide) Support slide: "UTM Health & Counselling: Davis Building, room 1123" isn't on the Guide's
   support page (it gives 905-828-5255 only). Verify the room, or use the phone number.
 - [ ] Guide `suicide-and-self-harm` front-matter says `lecture: 6`; it's taught in L5.
 - [ ] Guide `mood-disorders` § Contested is stale (it quotes the bipolar pages at their old lengths);
