@@ -95,11 +95,11 @@ export default function Landing({ session }) {
           <HubCard
             tag="Knowledge Translation"
             title="UTMaps"
-            desc="An interactive wellbeing map for students at the University of Toronto Mississauga — finding the spaces that help."
-            chips={['Student Wellbeing', 'Campus']}
-            cta="Explore the map →"
-            href="http://www.utmap.org"
-            newTab
+            desc="Wellness information by the UTM community, for the UTM community: three years of student wellbeing survey maps, this year's Wellness Cafe, and short videos on getting unstuck."
+            chips={['Survey maps', 'Wellness Cafe', 'Videos']}
+            cta="Explore UTMaps →"
+            href="/utmaps"
+            internal
           />
           <HubCard
             tag="Book"

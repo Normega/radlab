@@ -17,6 +17,11 @@ const SERIF = '"DM Serif Display", Georgia, serif'
 // Content mirrors the L2 walkthrough slides and the live claim flow: if the
 // form's rules change (word counts, claim limits, TTL), change this page in
 // the same commit.
+//
+// The FAQ at the foot collects the questions students actually emailed
+// (Norm, 2026-10-04): one source or two, the listed sources vs a new one,
+// DOI vs URL, replacing a paper, expired claims — plus how to use the site
+// to study for the midterm and exam. Add to it when a new one recurs.
 export default function ContributionHowTo() {
   const paths = useCoursePaths()
   const { courseClient, courseCode, session, isStaff } = useOutletContext()
@@ -37,6 +42,10 @@ export default function ContributionHowTo() {
           Your Field Guide contributions are 20% of the course: over the term you research and
           write <strong>three short pieces of the textbook</strong>. This page is the whole
           process, start to finish. Ten minutes now saves you an hour in October.
+        </p>
+        <p style={S.subSmall}>
+          Have a specific question? <a href="#faq" style={S.link}>Common questions</a>, including
+          how to use the Guide to study for the midterm and exam.
         </p>
 
         <h2 style={S.h2}>The idea</h2>
@@ -195,6 +204,147 @@ export default function ContributionHowTo() {
             claim just runs out your 14 days.</li>
         </ul>
 
+
+        <h2 id="faq" style={S.h2}>Common questions</h2>
+        <p style={S.subSmall}>Tap a question to open it.</p>
+
+        <h3 style={S.h3}>Contributions</h3>
+        <Faq q="Do I summarize the sources listed on the gap, or find my own?">
+          <p style={S.p}>
+            <b>Find your own.</b> The sources shown on a gap are the ones the Guide page{' '}
+            <i>already cites</i>. They are there so you don't bring back a paper the page already
+            has. Your job is to find one <b>new</b>, real source (usually a peer-reviewed paper)
+            that answers the gap's question, and report what it found and what it can't tell us.
+          </p>
+        </Faq>
+        <Faq q="Do I paste my writing into the Guide?">
+          <p style={S.p}>
+            No. You submit it on the gap, and a TA reviews it. If it's accepted, staff draft the
+            published section from <i>your paper itself</i>, and your name goes in the page's
+            history. Your summary is the evidence that you read and understood the paper.
+          </p>
+        </Faq>
+        <Faq q="Can I use two sources?">
+          <p style={S.p}>
+            No: one contribution, one source. The form reads that one paper, checks your summary
+            against it, and the published section is drafted from it, so a second paper would be
+            invisible to all three. If no single paper answers everything the gap asks, pick the
+            one that comes closest and say what it doesn't cover in <b>What this source cannot
+            tell us</b>. A source that answers part of the question, with its limits stated
+            plainly, is a good contribution. Your other paper may fit a different gap.
+          </p>
+        </Faq>
+        <Faq q="What is a DOI, and where do I find it?">
+          <p style={S.p}>
+            A DOI is a paper's permanent ID. It starts with <b>10.</b> (for example,{' '}
+            <code style={S.code}>10.1016/j.jad.2021.01.045</code>) and is printed on the paper's
+            first page and on its journal web page. Paste it into the DOI box, either the bare DOI
+            or the whole <code style={S.code}>doi.org/…</code> link. The form tells you straight
+            away if that paper is already cited on the page.
+          </p>
+        </Faq>
+        <Faq q="DOI or URL: which box do I use?">
+          <p style={S.p}>
+            Use the <b>DOI</b> whenever the source has one: it's what lets the system find and
+            check the paper. Use the <b>URL</b> box only for a source with no DOI, such as a
+            government or Statistics Canada report. Don't fill in both for different sources.
+          </p>
+        </Faq>
+        <Faq q="“Find the full text” didn't work. Now what?">
+          <p style={S.p}>
+            It only finds papers with a free, open-access copy. If yours is behind a paywall, get
+            the PDF through the U of T library and press <b>Upload the PDF</b>. The PDF is read
+            once and the file isn't kept. A scanned PDF with no selectable text can't be read;
+            choose a different copy or a different paper.
+          </p>
+        </Faq>
+        <Faq q="I was sent back for a better paper. How do I change my source?">
+          <p style={S.p}>
+            Open your claim on the gap board, put the new paper's DOI in the DOI box, then press{' '}
+            <b>Replace with a different paper</b> in the full-text box and capture the new one
+            (Find the full text, or Upload the PDF). The form won't let you submit while the text
+            it holds is from your old paper.
+          </p>
+        </Faq>
+        <Faq q="How long should it be?">
+          <p style={S.p}>
+            {WORDS.totalMin}–{WORDS.totalMax} words for the <b>two boxes together</b> (aim for
+            about {WORDS.foundAim} on what the source found and {WORDS.limAim} on what it can't
+            tell us). The form shows the combined count as you type. No formatted reference list
+            is needed: the DOI or URL is the citation.
+          </p>
+        </Faq>
+        <Faq q="My contribution was sent back. Is that a penalty?">
+          <p style={S.p}>
+            No. It's feedback. Read the reviewer's note on your claim (it's also on{' '}
+            <Link to={paths.sub('contributions')} style={S.link}>Your contributions</Link>), revise,
+            and resubmit: same gap, same claim. Each time a contribution is sent back you get at
+            least 14 days from that point to revise it, and there is no limit on rounds.
+          </p>
+        </Faq>
+        <Faq q="My claim expired before I submitted. Can I get it back?">
+          <p style={S.p}>
+            If the gap still has a free slot, claim it again from the gap board: your draft comes
+            back with it. If it's full, email your instructor before the deadline. Claims last 14
+            days so that unworked gaps go back to the class, which is why claiming late in a
+            deadline's window is risky.
+          </p>
+        </Faq>
+        <Faq q="Where can I see everything I've submitted?">
+          <p style={S.p}>
+            <Link to={paths.sub('contributions')} style={S.link}>Your contributions</Link> lists
+            every claim with its status, the reviewer's note, and the text you submitted.
+          </p>
+        </Faq>
+
+        <h3 style={S.h3}>Studying for the midterm and exam</h3>
+        <Faq q="How do I find the readings for each lecture?">
+          <p style={S.p}>
+            Open <Link to={paths.sub('chapters')} style={S.link}>Chapters by lecture</Link>. Each
+            lecture lists the Guide pages that go with it, in reading order. Pages marked{' '}
+            <b>foundation</b> come first: read those before the supporting pages, because the
+            quizzes and tests lean on them hardest.
+          </p>
+        </Faq>
+        <Faq q="What's on the midterm, and how should I prepare?">
+          <p style={S.p}>
+            The midterm (<b>Oct 14</b>) covers Lectures 1–5: <b>50 questions, 10 from each
+            lecture</b>, made up of 33 multiple choice, 12 extended matching (several cases that
+            share one list of diagnoses) and 5 short typed answers (one or two words; spelling is
+            not marked). The questions are drawn from the lectures and their Guide pages. A good
+            plan, lecture by lecture:
+          </p>
+          <ul style={S.ul}>
+            <li style={S.li}>Go back through the{' '}
+              <Link to={`${loungePath(courseCode)}/slides`} style={S.link}>lecture slides</Link>{' '}
+              and note every term, distinction and number that's on a slide.</li>
+            <li style={S.li}>Read that lecture's foundation pages in{' '}
+              <Link to={paths.sub('chapters')} style={S.link}>Chapters by lecture</Link>, then the
+              supporting pages for anything you couldn't explain from the slides.</li>
+            <li style={S.li}>Go back over your{' '}
+              <Link to={`${loungePath(courseCode)}/quizzes`} style={S.link}>weekly quizzes</Link>:
+              your answers stay there to review, and each one has a <b>Read this in the Field
+              Guide</b> link. Where you missed one, read that section, not just the answer.</li>
+            <li style={S.li}>For the short typed questions, practise saying each key term
+              from memory, without the options in front of you.</li>
+          </ul>
+        </Faq>
+        <Faq q="Why does the Guide say it's frozen?">
+          <p style={S.p}>
+            From Oct 1 to Oct 15 every student sees the same fixed version of the Guide, so
+            nobody studies from text that changes the week before the midterm. Contributions are
+            still being reviewed and accepted in that time; they appear once the freeze ends,
+            the day after the midterm.
+          </p>
+        </Faq>
+        <Faq q="What about the final exam?">
+          <p style={S.p}>
+            The same approach works: slides, then that lecture's foundation pages, then a review
+            of the weekly quizzes. The exam's format and coverage will be announced in lecture and on
+            Course Home ahead of time.
+          </p>
+        </Faq>
+
         <p style={S.foot}>
           Questions → the <Link to={`${loungePath(courseCode)}/boards`} style={S.link}>discussion boards</Link>,
           where your TAs answer.
@@ -214,6 +364,17 @@ function Badge({ kind, children }) {
   )
 }
 
+// One question: a native disclosure, so it works without JavaScript state and
+// is keyboard- and screen-reader-accessible for free.
+function Faq({ q, children }) {
+  return (
+    <details style={S.faq}>
+      <summary style={S.faqQ}>{q}</summary>
+      <div style={S.faqA}>{children}</div>
+    </details>
+  )
+}
+
 const S = {
   h1: { fontFamily: SERIF, fontSize: 30, lineHeight: 1.2, color: 'var(--tx)', margin: '18px 0 10px' },
   h2: { fontFamily: SERIF, fontSize: 22, color: 'var(--tx)', margin: '34px 0 10px' },
@@ -230,5 +391,10 @@ const S = {
   good: { borderLeft: '3px solid #2e7d32', padding: '2px 0 2px 14px', margin: '12px 0' },
   bad: { borderLeft: '3px solid #c0392b', padding: '2px 0 2px 14px', margin: '12px 0' },
   link: { color: 'var(--pkd)' },
+  h3: { fontFamily: MONO, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx2)', margin: '24px 0 8px' },
+  faq: { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 12, padding: '8px 16px', margin: '8px 0' },
+  faqQ: { cursor: 'pointer', fontSize: 16, fontWeight: 600, color: 'var(--tx)', lineHeight: 1.5, padding: '4px 0' },
+  faqA: { padding: '4px 0 8px' },
+  code: { fontFamily: MONO, fontSize: 14 },
   foot: { marginTop: 40, fontSize: 13.5, color: 'var(--tx2)', borderTop: '1px solid var(--bd)', paddingTop: 14 },
 }
