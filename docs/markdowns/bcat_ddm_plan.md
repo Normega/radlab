@@ -502,7 +502,7 @@ participants' leak, so blip timing and change durations should vary within a ses
 
 ---
 
-## 6e. Round 3 — memory span and blip designs (running 2026-10-06)
+## 6e. Round 3 — memory span and blip designs (2026-10-06)
 
 **Finding while setting it up.** The round-2 "leak is unidentifiable" result was partly built in.
 Every observer had boundary a = 3, so meeting Study 1's false-alarm target required a strong
@@ -527,6 +527,50 @@ irrelevant.
   2. Can it tell criterion drain (fixed amount) from leak (fixed fraction) at group and person
      level?
   3. What does the blip-train kernel look like for each population?
+
+### Round-3 results (480 sessions, 98% converged)
+
+Full tables: `scripts/bcat_ddm_sim/results_round3/summary.md`. From round 3 on, all correlations
+are Spearman (see *Fitting robustness* below).
+
+| | roving_ramp | double_blip | blip_train | blip_combo |
+|---|---|---|---|---|
+| per-person model recovery (mean over 4 populations) | **.64** | .26 | .31 | .27 |
+| breath-to-breath share s, ρ (pooled) | **.87** | .56 | .54 | .58 |
+| leak found at group level (long-memory leaky population) | **✓ ΔAIC 29** | ✗ | ✗ | ✗ |
+| leak per person: picked / ρ(λ) | **.40 / .37** | .17 / .10 | .17 / .41 | .13 / .15 |
+| evidence half-life, ρ within a population | **.33–.57** | .20–.52 | −.30–.35 | .06–.56 |
+| evidence half-life, ρ pooled over the 1.5–77 s range | **.78** | .71 | .73 | .71 |
+
+**Conclusions**
+1. **Blips do not earn their place. Roving + ramp beats every blip design on every row.** At sizes
+   small enough to be usually missed, a one-breath blip is mostly breath-to-breath evidence (a
+   change out and a change back) with little total-change evidence, so it carries little
+   information.
+   - **The double-blip "signature" is confounded by coding.** Pair detection rises with the gap in
+     *all four* populations (gap 0 lowest), because adjacent blips form a 2-breath excursion with
+     only two transients, while separated blips give four. That pattern measures coding, not
+     memory.
+   - **The kernel doesn't separate the populations.** It peaks at lags 0–2 breaths and is flat by
+     lag 4 in every one.
+2. **With long memory, a leak is detectable at group level, and only with roving + ramp.** The
+   group comparison picks the leaky model by 29 AIC. Per person, 40% of leaky participants are
+   identified, with ρ(λ) = .37. Round 2's "leak never identifiable" came from every observer having
+   a 3 s memory.
+3. **Memory span works as an individual difference only across a wide range.** Across the four
+   populations (1.5–77 s half-lives), roving + ramp ranks people at ρ = .78. Within one population
+   it manages ρ ≈ .35–.55. A study whose participants differ by a factor of ~2 in memory could not
+   rank them reliably from one 40 min session.
+4. **Fitting robustness:** 10–14% of fits collapse to a degenerate "presses are random" solution
+   (criterion and boundary at their bounds), mostly for low-sensitivity people and wrong models.
+   One such point turned a Pearson r of .65 into −.16, so summaries now use Spearman. The real
+   analysis should be hierarchical, which prevents this collapse.
+
+**Recommendation:** keep **roving + ramp** as the design. Drop blip blocks. If memory span becomes a
+priority, the levers are a second session and hierarchical fitting, not blips. A possible untested
+alternative is a smooth 3–4-breath "bump" (up and back down gradually), which would deliver
+total-change evidence without large breath-to-breath transients. Blip designs stay selectable in
+the prototype for demonstration only.
 
 ---
 
@@ -558,3 +602,7 @@ irrelevant.
 - **2026-10-06** — Round 2 complete (two time-limit/memory stops, resumed with `--resume`) plus
   the σ_meas = 0 rerun. Results and conclusions in §6c; leak brainstorm in §6d. Next candidate:
   simulate the blip designs (§6d) against leaks of 5–60 s.
+- **2026-10-06** — Built the participant prototype at `/prototypes/bcat-ddm.html` (pushed to
+  `dev`, live on dev.radlab.zone; promotion to `main` awaits Norm). Round 3 done (§6e): blips lose
+  to roving + ramp on every measure; with long memory, a leak is detectable at group level, but
+  only with roving + ramp. Summaries switched to Spearman after finding ~10% degenerate fits.

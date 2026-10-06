@@ -502,11 +502,16 @@ def md(df):
 
 
 def _r(x, y):
+    """Spearman rank correlation (from round 3). About 10% of fits collapse to a degenerate
+    'presses are random' solution (criterion and boundary at their bounds), and one such point
+    can swing a Pearson r from .8 to below zero. The round 1-2 summaries used Pearson."""
     x, y = np.asarray(x, float), np.asarray(y, float)
     ok = np.isfinite(x) & np.isfinite(y)
     if ok.sum() < 3 or np.std(x[ok]) == 0 or np.std(y[ok]) == 0:
         return np.nan
-    return float(np.corrcoef(x[ok], y[ok])[0, 1])
+    rx = pd.Series(x[ok]).rank().to_numpy()
+    ry = pd.Series(y[ok]).rank().to_numpy()
+    return float(np.corrcoef(rx, ry)[0, 1])
 
 
 def summarize(datasets, fits, out_dir, meta):
@@ -646,6 +651,12 @@ def summarize(datasets, fits, out_dir, meta):
                 r[f'lag{lag}'] = float(q[f'kernel_{lag}'].sum() / n / base) if base > 0 else np.nan
             rows.append(r)
         L += [md(pd.DataFrame(rows).set_index(['design', 'gen'])), '']
+
+    deg = fits.assign(degenerate=(fits.a > 14.9) | (fits.delta > 29.9)).groupby('design').degenerate.mean()
+    L += ['## 8. Degenerate fits', '',
+          'Share of fits (all models) that collapsed to the bounds (a = 15 or δ = 30: presses treated as '
+          'random). Correlations in this summary are Spearman rank correlations so these do not dominate.', '',
+          md(deg.reindex(designs)), '']
 
     text = '\n'.join(L) + '\n'
     with open(os.path.join(out_dir, 'summary.md'), 'w', encoding='utf-8', newline='\n') as f:
