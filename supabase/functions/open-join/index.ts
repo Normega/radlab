@@ -8,7 +8,7 @@
 // The order is the point (Norm, 2026-10-01): nothing identifying is collected
 // from anyone the screener turns away.
 //
-//   action 'start'        { slug, src?, device_id? } -> { token } | { status: 'screened_out' } | { error }
+//   action 'start'        { slug, src?, test?, device_id? } -> { token } | { status: 'screened_out' } | { error }
 //       An anonymous account + enrollment (external_source 'open') + schedule,
 //       and a link to the entry session. SessionEntry runs the screener there.
 //   action 'submit_email' { token, email }           -> { status: 'sent' | 'already_sent' } | { error }
@@ -162,6 +162,19 @@ Deno.serve(async (req) => {
     if (action === 'start') {
       const slug = typeof body.slug === 'string' ? body.slug.trim().toLowerCase() : ''
       const src  = typeof body.src === 'string' ? body.src.trim().slice(0, 40) : null
+      // ?test=1 on the join link marks the enrolment as staff testing. It sets
+      // study_enrollments.is_test, which the exporter already puts in its lead
+      // columns and documents as "EXCLUDE these rows from analysis", and which
+      // the reports page already filters behind an include-tests toggle. Using
+      // that column rather than inventing a flag means every tool that already
+      // honours it keeps working with no further change.
+      //
+      // Guessable by design: a participant who added ?test=1 would only get
+      // their own data excluded, which is a nuisance rather than a risk. The
+      // failure that matters runs the other way -- a tester who forgets the
+      // flag -- and the fix for that is the admin UI, where is_test can be set
+      // afterwards.
+      const isTest = body.test === true || body.test === '1'
       const deviceId = typeof body.device_id === 'string' ? body.device_id.trim().slice(0, 100) : ''
       if (!slug) return json({ error: 'This link is incomplete. Please scan the QR code again.' }, 400)
 
@@ -249,6 +262,7 @@ Deno.serve(async (req) => {
         external_id:     externalId,
         external_source: 'open',
         external_meta:   src ? { src } : {},
+        is_test:         isTest,
       }).select('id').single()
       if (enrollErr || !enrollment) {
         console.error('open-join: enrollment insert failed:', enrollErr?.message)

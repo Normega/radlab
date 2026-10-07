@@ -40,12 +40,15 @@ export default function OpenJoin() {
   async function start() {
     setBusy(true)
     setError(null)
-    const src = new URLSearchParams(window.location.search).get('src')
+    const params = new URLSearchParams(window.location.search)
+    const src = params.get('src')
+    // ?test=1 marks this as a staff run; see open-join, which sets is_test.
+    const test = params.get('test') === '1'
     try {
       const r = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/open-join`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json', apikey: import.meta.env.VITE_SUPABASE_ANON_KEY },
-        body:    JSON.stringify({ action: 'start', slug, src, device_id: deviceId() }),
+        body:    JSON.stringify({ action: 'start', slug, src, test, device_id: deviceId() }),
       })
       const data = await r.json()
       if (data.token) {
@@ -73,6 +76,8 @@ export default function OpenJoin() {
     )
   }
 
+  const isTestRun = new URLSearchParams(window.location.search).get('test') === '1'
+
   if (screenedOut) {
     return (
       <div style={S.page}>
@@ -90,6 +95,12 @@ export default function OpenJoin() {
   return (
     <div style={S.page}>
       <div style={S.card}>
+        {isTestRun && (
+          <p style={S.testBanner}>
+            Test run. This sign-up will be marked as staff testing and excluded
+            from the results.
+          </p>
+        )}
         <p style={S.eyebrow}>{content.eyebrow}</p>
         <h1 style={S.title}>{content.title}</h1>
         <p style={S.lead}>{content.lead}</p>
@@ -133,6 +144,7 @@ const S = {
   body:    { fontFamily: FONT, fontSize: 15, color: 'var(--tx)', lineHeight: 1.6, margin: 0 },
   btn:     { marginTop: 10, padding: '13px 26px', borderRadius: 8, border: '1px solid var(--pk)', background: 'var(--pkd)', color: '#fff', fontSize: 16, fontWeight: 600, fontFamily: FONT, cursor: 'pointer' },
   error:   { fontFamily: FONT, fontSize: 14, color: '#b91c1c', margin: '12px 0 0', lineHeight: 1.5 },
+  testBanner: { fontFamily: FONT, fontSize: 14, fontWeight: 700, color: 'var(--tx)', background: 'var(--bg)', border: '1px solid var(--bd)', borderRadius: 12, padding: 16, margin: '0 0 16px', lineHeight: 1.5 },
   contact: { fontFamily: FONT, fontSize: 14, color: 'var(--tx3)', margin: '22px 0 0', lineHeight: 1.5 },
   link:    { color: 'var(--pkd)' },
 }
