@@ -104,7 +104,10 @@ export default function OpenJoin() {
         ))}
 
         <button style={S.btn} onClick={start} disabled={busy}>
-          {busy ? 'Starting…' : 'Check if I’m eligible'}
+          {/* Studies with a screener ask people to check eligibility; studies
+              without one must not, or the button promises a hurdle that does
+              not exist. Default keeps the screener wording. */}
+          {busy ? 'Starting…' : (content.cta ?? 'Check if I’m eligible')}
         </button>
         {error && <p style={S.error}>{error}</p>}
 

@@ -16,6 +16,9 @@ export const OPEN_JOIN_CONTENT = {
     eyebrow:     'RAD Lab \u00b7 University of Toronto Mississauga',
     title:       'How are UTM students really doing?',
     lead:        'We have asked this every year since 2023. Last year most students told us things were getting worse. We want to know whether they are right.',
+    // No screener on this study, so the button must not imply one. The
+    // sections above promise there is nothing to screen for.
+    cta:         'Start the survey',
     contactName: 'Dr. Norman Farb',
     contact:     'norman.farb@utoronto.ca',
     sections: [
