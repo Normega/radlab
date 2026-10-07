@@ -2,7 +2,8 @@
 // Called by check_schedule (cron) or directly for test sends from the admin UI.
 //
 // POST body: { schedule_id: string, test_override_email?: string,
-//              is_reminder?: boolean, final_notice?: 'gate'|'terminal'|'window' }
+//              is_reminder?: boolean, final_notice?: 'gate'|'terminal'|'window',
+//              hold_resend?: boolean }
 // When test_override_email is provided this is a test send — consent is skipped,
 // recipient is the override address, subject is prefixed with [TEST].
 // When is_reminder is true (reminder resends from check_schedule) the copy is
@@ -14,6 +15,14 @@
 // short, non-punitive acknowledgment — or, at MAX_ACK_STREAK+ consecutive
 // misses, a get-back-on-track note with a formal-withdrawal offer (see
 // missedSessionState below).
+// hold_resend is check_schedule's daily re-send of a hold session (a baseline
+// nobody has completed yet): its link is issued parallel (see issueLink) and the
+// copy says the session is still waiting rather than inviting to a new one.
+//
+// HARD GATES: every send asks schedule_row_block_reason() first (see CLAUDE.md
+// "Hard gates"). That database function is the only place that decides whether
+// a session may reach a participant; nothing here or in any caller may send
+// around it.
 
 import { createClient, SupabaseClient } from 'npm:@supabase/supabase-js@2'
 import { Resend } from 'npm:resend'
@@ -66,7 +75,7 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json().catch(() => ({}))
-    const { schedule_id, test_override_email, is_reminder, final_notice } = body
+    const { schedule_id, test_override_email, is_reminder, final_notice, hold_resend } = body
 
     // 1. Validate input
     if (!schedule_id) {
@@ -83,7 +92,7 @@ Deno.serve(async (req) => {
     // 2. Fetch the schedule row
     const { data: row, error: rowErr } = await db
       .from('participant_schedule')
-      .select('id, participant_id, study_id, study_session_id, scheduled_date, send_time, study_day, link_id, status, attempts')
+      .select('id, participant_id, study_id, study_session_id, scheduled_date, send_time, study_day, link_id, status, attempts, hold_resends, resend_note')
       .eq('id', schedule_id)
       .single()
 
@@ -211,6 +220,16 @@ Deno.serve(async (req) => {
       if (enrollment?.email_reminders === false) {
         return json({ suppressed: true, reason: 'consent_not_given' })
       }
+
+      // The hard gates (20261007_hard_gates.sql): screened out, no consent
+      // past the entry session, an earlier gate session (baseline, midpoint)
+      // not completed, enrollment full. Decided in the database so that every
+      // caller -- the scheduler, the admin "Send reminder", anything added
+      // later -- gets the same answer. A failed check sends nothing.
+      const { data: blockReason, error: gateErr } = await db
+        .rpc('schedule_row_block_reason', { p_schedule_id: row.id })
+      if (gateErr) return json({ error: `gate check failed: ${gateErr.message}` }, 500)
+      if (blockReason) return json({ suppressed: true, reason: blockReason })
     }
 
     // 4b. Resolve the recipient BEFORE issuing a link. A row with no deliverable
@@ -254,6 +273,7 @@ Deno.serve(async (req) => {
         participantId: row.participant_id,
         studyId: row.study_id,
         linkExpiresHours: expiresHours,
+        parallel: !!hold_resend,
       })
       token = link.token
       issuedNewLink = true
@@ -337,6 +357,11 @@ Deno.serve(async (req) => {
       compensation:    study?.compensation_kind === 'pay' ? 'pay' : 'credit',
       session_label:   sessionLabel,
       progress,
+      // A catch-up for someone already past this session gets the apology;
+      // any other re-send of a held session says it is still waiting.
+      baseline_hold:   row.resend_note === 'baseline_catchup' ? 'catchup'
+        : (hold_resend || (row.hold_resends ?? 0) > 0) ? 'repeat'
+        : null,
     })
 
     // Warn if any template variables remain unresolved after substitution

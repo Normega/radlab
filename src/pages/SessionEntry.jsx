@@ -38,6 +38,7 @@ export default function SessionEntry() {
   const [currentIndex,   setCurrentIndex]   = useState(0)
   const [consentStudyId, setConsentStudyId] = useState(null)
   const [screenerSpec,   setScreenerSpec]   = useState(null) // { screener, participantId, studyId }
+  const [gateReason,     setGateReason]     = useState(null) // session_entry_block's reason
   // Session context for display steps: outputs of completed steps, keyed
   // by element type then slug (see src/lib/elementOutputs.js). Saved with the
   // step position (see writeProgress), so a mid-session reload resumes both.
@@ -225,6 +226,16 @@ export default function SessionEntry() {
       setState('too_early')
       return
     }
+
+    // Hard gates (CLAUDE.md "Hard gates"): the same database decision
+    // send_message applies before every email -- withdrawn, screened out,
+    // enrollment full, no consent past the entry session, an earlier gate
+    // session (baseline, midpoint) not completed. Fails closed: if the check
+    // cannot run, the session does not open.
+    const { data: blockReason, error: gateErr } = await sb.rpc('session_entry_block', { p_token: token })
+    if (gateErr) { setState('gate_error'); return }
+    if (blockReason === 'screened_out') { setState('screener_blocked'); return }
+    if (blockReason) { setGateReason(blockReason); setState('gate_closed'); return }
 
     // Screener gate — runs before consent
     if (study.screener) {
@@ -623,6 +634,10 @@ export default function SessionEntry() {
     )
   }
 
+  if (state === 'gate_closed' || state === 'gate_error') {
+    return <FullScreen><StatusCard>{gateClosedMessage(state === 'gate_error' ? 'error' : gateReason)}</StatusCard></FullScreen>
+  }
+
   if (state === 'screener_blocked') {
     return (
       <FullScreen>
@@ -831,6 +846,25 @@ async function hasAwaitingDate(sb, studyId) {
 // segment hasn't materialized yet (fork gate). A study-complete line at the end
 // of the graph, a soft "watch your email" line only if even the design can't
 // name a date, and the old generic text for legacy no-graph studies.
+// What a participant sees when a hard gate keeps a session closed. Reasons are
+// session_entry_block's (20261007_hard_gates.sql); 'screened_out' has its own
+// screen above. The enrollment-full wording is Norm's.
+function gateClosedMessage(reason) {
+  switch (reason) {
+    case 'enrollment_full':
+      return 'Sorry, but study enrollment is now full, thanks for your interest!'
+    case 'withdrawn':
+      return 'You have withdrawn from this study, so this session is no longer available. Please contact the research team if you have any questions.'
+    case 'study_inactive':
+      return 'This study is no longer running. Thank you for your interest.'
+    case 'no_consent':
+    case 'gate_incomplete':
+      return 'This session isn’t open yet: an earlier part of the study needs to be completed first. Please use the most recent link we emailed you, or contact the research team.'
+    default:
+      return 'We couldn’t open this session just now. Please try the link again in a few minutes, or contact the research team.'
+  }
+}
+
 function completionMessage(info, awaitingDate = false) {
   const generic = 'You have completed this session. Thank you!'
   if (awaitingDate && !info?.next_contact?.scheduled_date) {

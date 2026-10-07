@@ -419,6 +419,22 @@ function EditPanel({ nodeId, graph, sessionTemplates, isLocked, onChange, onRemo
               <option value="off">Never send</option>
             </select>
           )}
+          {/* Hold: nothing after this session is scheduled until it is
+              completed, and it is re-sent daily until then (or until the
+              participant withdraws). For an entry assessment such as a
+              baseline, so nobody reaches the intervention without it. A hard
+              gate -- see CLAUDE.md "Hard gates". */}
+          {field('Hold the study until completed',
+            <select
+              style={P.input}
+              value={node.hold ? 'on' : 'off'}
+              disabled={isLocked}
+              onChange={e => onChange(nodeId, { hold: e.target.value === 'on' ? true : undefined })}
+            >
+              <option value="off">No</option>
+              <option value="on">Yes — re-send daily until completed</option>
+            </select>
+          )}
           {node.session_template_id && (
             <button
               style={P.demoBtn}

@@ -316,6 +316,23 @@ Deno.serve(async (req) => {
         return json({ error: 'Please complete the eligibility questions first.' }, 409)
       }
 
+      // Hard gates (CLAUDE.md "Hard gates"): this step emails a session link
+      // outside send_message, so it asks the same question first. In practice
+      // that is the enrollment cap -- a sign-up after the study filled is told
+      // so here rather than emailed a link that would only say it.
+      const { data: blockReason, error: gateErr } = await db
+        .rpc('schedule_row_block_reason', { p_schedule_id: link.schedule_id })
+      if (gateErr) {
+        console.error('open-join: gate check failed:', gateErr.message)
+        return json({ error: 'Something went wrong. Please try again in a few minutes.' }, 500)
+      }
+      if (blockReason === 'enrollment_full') {
+        return json({ error: 'Sorry, but study enrollment is now full, thanks for your interest!' }, 409)
+      }
+      if (blockReason) {
+        return json({ error: 'This study is not available to you at the moment. Please contact the research team if you have any questions.' }, 409)
+      }
+
       if (!STUDENT_EMAIL.test(email) || email.length > 254) {
         return json({ error: 'Please enter your U of T student email address — it ends in @mail.utoronto.ca.' }, 422)
       }

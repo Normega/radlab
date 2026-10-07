@@ -50,6 +50,11 @@ export interface GraphNode {
   // session — tri-state override for the deadline-anchored "last chance"
   // reminder (see criticalSession.ts). Undefined derives from graph position.
   final_notice?: boolean
+  // session — the study stops here until this session is completed: nothing
+  // after it is materialized, the next segment starts the day after it is
+  // completed (like a randomize fork's gate), and check_schedule re-sends it
+  // daily instead of marking it missed. See HOLD SESSIONS in the walk below.
+  hold?: boolean
   children?: string[] // block
   arms?: RandomizeArm[] // randomize
   block_ids?: string[] // counterbalance
@@ -516,6 +521,41 @@ export async function materializeSchedule(
       currentOffset = nominal - dayShift
       currentTime = node.time_of_day || baselineSendTime
       cur = graph.edges.find((e) => e.from === cur)?.to ?? null
+
+    } else if (node.type === 'session' && node.hold) {
+      // HOLD SESSIONS (2026-10-07, Liliana Study 3's baseline). Without a hold,
+      // the first segment after the entry session was materialized at
+      // enrollment, so a participant who never did baseline was emailed Phase 1
+      // anyway: 27 were mid-intervention with no baseline when this was found.
+      // A hold stops the walk until the session is completed; the following
+      // timepoint then starts the day after completion, exactly as a segment
+      // behind a randomize fork's gate does.
+      const before = anyUpstreamActionable
+      emit(node.id, currentOffset, currentTime)
+      const held = materialized.get(node.id)
+      const next = graph.edges.find((e) => e.from === node.id)?.to ?? null
+      const nextNode = next ? nodeMap[next] : undefined
+      const downstreamKey = !nextNode ? null
+        : nextNode.type === 'timepoint' ? firstSessionAfter(nextNode.id)
+        : nextNode.type === 'session' ? nextNode.id
+        : null
+      const downstreamMaterialized = !!downstreamKey && materialized.has(downstreamKey)
+
+      if (held?.status === 'completed') {
+        if (held.completedAt) {
+          pendingGateOffset = Math.max(0, daysBetween(t0Date, labDateOf(held.completedAt)))
+        }
+      } else if (downstreamMaterialized) {
+        // Materialized before holds existed: the participant is already past
+        // this point. Walk on, and do not let the outstanding held session
+        // stall the checks and forks downstream of it -- it is being caught
+        // up alongside the sessions that followed, not in front of them.
+        anyUpstreamActionable = before
+      } else {
+        stoppedAt = node.id
+        break
+      }
+      cur = next
 
     } else if (node.type === 'session') {
       emit(node.id, currentOffset, currentTime)

@@ -44,6 +44,11 @@ export function renderEmail(vars: {
   // stays true for studies with and without an adherence_check. Also selects
   // which missed-session lead-in is used (see LOW_RATE_PCT).
   progress?: { completed: number; total: number; pct: number } | null
+  // A held session (a baseline not yet completed) being re-sent by
+  // check_schedule. 'catchup': the participant was already let past it before
+  // holds existed, so the copy apologises; 'repeat': the daily re-send that
+  // keeps going until they complete it or withdraw. Replaces the custom subject.
+  baseline_hold?: 'catchup' | 'repeat' | null
 }): { subject: string; html: string; text: string } {
   // {{study_day}} resolves to the integer, or "your study" for single-shot rows.
   // {{study_day_of_total}} adds the " of N" suffix when a total is known, so a
@@ -68,8 +73,9 @@ export function renderEmail(vars: {
   }
 
   // Subject
-  let subject = vars.custom_subject
-    ? resolve(vars.custom_subject)
+  let subject = vars.baseline_hold === 'catchup' ? 'We still need your baseline survey'
+    : vars.baseline_hold === 'repeat' ? 'Your baseline survey is still waiting'
+    : vars.custom_subject ? resolve(vars.custom_subject)
     : 'Your RADlab session is ready'
   // Reminder resends prefix the subject so it's distinguishable in the inbox
   // from the original send (whose copy it otherwise reuses verbatim). The final
@@ -97,6 +103,8 @@ export function renderEmail(vars: {
     : MISSED_INTRO
   const intro = vars.final_notice
     ? finalNoticeIntro(vars.final_notice, vars.session_label, vars.expires_hours, vars.compensation ?? 'credit')
+    : vars.baseline_hold === 'catchup' ? BASELINE_CATCHUP_INTRO
+    : vars.baseline_hold === 'repeat' ? BASELINE_REPEAT_INTRO
     : vars.is_reminder ? REMINDER_INTRO
     : vars.lapsed ? LAPSED_INTRO
     : vars.after_missed ? missedIntro : null
@@ -111,7 +119,7 @@ export function renderEmail(vars: {
   // Suppressed on the final notice: that email is about one deadline and one
   // action, and a completion percentage beside a "this is your last chance"
   // paragraph reads as a verdict on the participant rather than context.
-  const progressLine = !vars.final_notice && (vars.is_reminder || vars.after_missed || vars.lapsed) && vars.progress
+  const progressLine = !vars.final_notice && !vars.baseline_hold && (vars.is_reminder || vars.after_missed || vars.lapsed) && vars.progress
     ? progressSentence(vars.progress)
     : null
 
@@ -274,6 +282,13 @@ const TERMINATION_HTML_WRAPPER = `<!DOCTYPE html>
 // Prepended to the body on a reminder resend (see renderEmail). Kept generic so
 // it flows regardless of how the original/custom body opens, and so it never
 // contradicts the per-study copy that follows.
+
+// Held-session re-sends (see renderEmail's baseline_hold). The catch-up wording
+// is Norm's (2026-10-07), for the participants who reached Phase 1 without a
+// baseline before the hold existed; their daily sessions are not paused.
+const BASELINE_CATCHUP_INTRO = `Our apologies — we didn't get your baseline data yet, and we need it to complete the study. Please take a few minutes to complete your baseline survey using the link below. Your daily sessions continue as usual.`
+
+const BASELINE_REPEAT_INTRO = `Your baseline survey is still waiting for you. The daily part of the study begins the day after you complete it, so please take a few minutes to do it using the link below.`
 
 const REMINDER_INTRO = `Just a friendly reminder — it looks like you haven't completed this session yet, and your personal link is still active, so there's still time. The original details are below.`
 

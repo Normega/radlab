@@ -502,4 +502,63 @@ const SLOT_CONFLICT = {
   assert.equal(isConcurrentWalkConflict(null), false)
 }
 
-console.log('materializeSchedule: 15/15 calendar + adherence + concurrency checks passed')
+// ─── Hold sessions (20261007_hard_gates.sql) ─────────────────────────────────
+// Liliana's baseline marked `hold`: nothing after it is scheduled until it is
+// completed, and the next segment starts the day after completion.
+
+const HOLD_GRAPH = {
+  ...GRAPH,
+  nodes: GRAPH.nodes.map((n) => (n.id === 's_base' ? { ...n, hold: true } : n)),
+}
+
+// 13. At enrollment only the held baseline is scheduled -- no Phase 1 rows for
+//     someone who has not done it (27 such participants were mid-intervention
+//     when this was found).
+{
+  const t0 = labToday()
+  const { db, result } = await run(t0, [], { graph: HOLD_GRAPH })
+  const rows = plan(db)
+  assert.equal(rows.length, 1, 'only the baseline')
+  assert.equal(rows[0].nodeKey, 's_base')
+  assert.equal(result.stoppedAt, 's_base', 'the walk stops at the hold')
+  assert.equal(result.withdrawal, null)
+}
+
+// 14. Baseline completed three days late: Phase 1 starts the day after, not on
+//     its nominal day (which is already past), and runs its full 12 days.
+{
+  const t0 = addDays(labToday(), -3)
+  const schedule = [row('s_base', t0, 'completed', completedAt(labToday()))]
+  const { db, result } = await run(t0, schedule, { graph: HOLD_GRAPH })
+  const p1 = plan(db)
+  assert.equal(p1.length, 12, 'all of Phase 1 materializes once baseline is done')
+  assert.equal(p1[0].nodeKey, 's_p1_nr1')
+  assert.equal(p1[0].date, addDays(labToday(), 1), 'Phase 1 day 1 is the day after baseline')
+  assert.equal(p1[0].studyDay, 5)
+  assert.equal(p1[11].date, addDays(labToday(), 12))
+  assert.equal(result.stoppedAt, 'ac_p1')
+}
+
+// 15. Scheduled before holds existed (a baseline catch-up): Phase 1 is already
+//     materialized and done, the baseline is still open. The walk passes the
+//     hold, and the open baseline does not stall the Phase 1 check and the
+//     midpoint behind it.
+{
+  const t0 = addDays(labToday(), -13) // today is study day 14
+  const schedule = [row('s_base', t0, 'link_sent')]
+  let offset = 1
+  for (const p of PRACTICES) {
+    for (const i of [1, 2, 3, 4]) {
+      schedule.push(row(`s_p1_${p}${i}`, addDays(t0, offset), 'completed', completedAt(addDays(t0, offset))))
+      offset++
+    }
+  }
+  const { db, result } = await run(t0, schedule, { graph: HOLD_GRAPH })
+  const next = plan(db)
+  assert.equal(next.length, 1, 'the midpoint, and nothing re-inserted')
+  assert.equal(next[0].nodeKey, 's_mid')
+  assert.equal(next[0].date, addDays(t0, 13))
+  assert.equal(result.withdrawal, null)
+}
+
+console.log('materializeSchedule: 18/18 calendar + adherence + concurrency + hold checks passed')
