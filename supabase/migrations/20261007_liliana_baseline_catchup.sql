@@ -18,7 +18,8 @@
 
 -- ─── 1. Catch-up: already in Phase 1 without a baseline ──────────────────────
 -- "Already in Phase 1" = completed any later session, or left data in one
--- (two people opened a practice and stopped part-way). 29 at writing.
+-- (two of them had only opened a practice and stopped part-way). 27 when
+-- applied.
 WITH base AS (
   SELECT ps.id, ps.participant_id, ps.study_id
     FROM participant_schedule ps

@@ -11,8 +11,7 @@
 --     people who never consented held scheduled Phase 1 sessions, and those
 --     with a deliverable address were being emailed them;
 --   * the baseline gated nothing: Phase 1 was materialized at enrollment, so
---     29 participants were doing the intervention with no baseline (27 with
---     completed practice sessions, 2 more part-way into one).
+--     27 participants were doing the intervention with no baseline.
 -- Norm (2026-10-07): "these need to be hard gates -- other code cannot
 -- override a hard gate". See CLAUDE.md "Hard gates".
 --
@@ -40,7 +39,7 @@
 --
 -- The one exception is recorded in the data, not written into code: a hold row
 -- with resend_note = 'baseline_catchup' does not hold back the sessions after
--- it. That marks the 29 participants who were let into Phase 1 without a
+-- it. That marks the 27 participants who were let into Phase 1 without a
 -- baseline before this existed; Norm chose to keep their daily sessions going
 -- and send them the baseline as a catch-up (20261007_liliana_baseline_catchup.sql).
 --

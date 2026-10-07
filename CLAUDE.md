@@ -25,12 +25,12 @@ A *gate* is any condition a participant must meet before a session may reach the
 1. **Never send, link or open a session around the gate.** Don't add a "force" flag, a test bypass in production code, or a caller that skips the check because it "already knows". A new path that delivers a session asks `schedule_row_block_reason` first.
 2. **Fail closed.** If the check errors or can't run, nothing is sent and nothing opens. A failed read never counts as "allowed".
 3. **A new gate goes into the function, not into a caller.** Add the condition to `schedule_row_block_reason` (a new migration), its reason to `gateClosedMessage` in `SessionEntry.jsx`, and its reason to `supabase/functions/hardGates.test.mjs`.
-4. **Exceptions are data, never code.** If Norm decides specific participants pass a gate, record it on their rows in a migration that names his decision. Today the only one is `participant_schedule.resend_note = 'baseline_catchup'` (29 Liliana participants let into Phase 1 before the baseline hold existed). Never add an `if` in a caller.
+4. **Exceptions are data, never code.** If Norm decides specific participants pass a gate, record it on their rows in a migration that names his decision. Today the only one is `participant_schedule.resend_note = 'baseline_catchup'` (27 Liliana participants let into Phase 1 before the baseline hold existed). Never add an `if` in a caller.
 5. **The materializer schedules; the gate decides.** Not scheduling rows past a gate (`hold`, fork gates, adherence checks) is a courtesy that keeps schedules tidy. It is not the enforcement, and a scheduled row is never permission to send.
 
 `supabase/functions/hardGates.test.mjs` fails CI if a session-link sender stops asking, asks after building the link, or if a gate disappears from the function.
 
-**Why (2026-10-07, Liliana Study 3).** Each gate lived in whichever code happened to be sending, and every path that forgot one leaked: screened-out students had been emailed three study links a day since 2026-09-26; 96 people who never consented had Phase 1 scheduled; and 29 were doing the intervention with no baseline because nothing held Phase 1 back. Nothing errored. It surfaced in a recruitment report.
+**Why (2026-10-07, Liliana Study 3).** Each gate lived in whichever code happened to be sending, and every path that forgot one leaked: screened-out students had been emailed three study links a day since 2026-09-26; 96 people who never consented had Phase 1 scheduled; and 27 were doing the intervention with no baseline because nothing held Phase 1 back. Nothing errored. It surfaced in a recruitment report.
 
 ---
 

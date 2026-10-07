@@ -8,7 +8,7 @@
 // place, the database function schedule_row_block_reason(). Until 2026-10-07
 // each gate lived in whichever code happened to be sending, and every path
 // that forgot one leaked: screened-out students were emailed daily study links,
-// unconsented sign-ups were scheduled into Phase 1, and 29 people started the
+// unconsented sign-ups were scheduled into Phase 1, and 27 people started the
 // intervention with no baseline. This test fails CI if a path that emails or
 // opens a session stops asking.
 
