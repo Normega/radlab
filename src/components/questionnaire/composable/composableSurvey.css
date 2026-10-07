@@ -122,6 +122,7 @@
 .cs-likert-grid {
   display: grid;
   gap: 10px;
+  grid-template-columns: repeat(var(--cs-likert-columns, 5), minmax(0, 1fr));
 }
 
 .cs-likert-option {
@@ -770,11 +771,23 @@
     width: min(100% - 28px, 1040px);
   }
 
-  .cs-likert-grid {
-    grid-template-columns: none;
-    grid-auto-columns: 96px;
-    overflow-x: auto;
-    padding-bottom: 8px;
+  /* Scales of five or more points cannot show a readable label in the width a
+     phone leaves per column: seven points on a 390px screen is about 44px each,
+     which is narrower than the word "Strongly". Those stack to one option per
+     full-width row, which is what the legacy one-item-per-screen renderer has
+     always done and what works on a phone. Four-point scales stay in a row,
+     where each option still gets about 80px. */
+  .cs-likert-grid--wide {
+    grid-template-columns: 1fr;
+  }
+
+  .cs-likert-grid--wide .cs-likert-option {
+    min-height: 0;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 12px;
+    padding: 12px 14px;
+    text-align: left;
   }
 
   .cs-slider-scale__row,
