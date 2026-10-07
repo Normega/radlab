@@ -328,7 +328,7 @@ Deno.serve(async (req) => {
 
       const { data: study } = await db
         .from('studies')
-        .select('id, name, public_title, reply_to_email, exclusion_group, screener')
+        .select('id, name, public_title, reply_to_email, exclusion_group, screener, open_join_slug')
         .eq('id', link.study_id)
         .single()
 
@@ -443,6 +443,7 @@ Deno.serve(async (req) => {
         link_url:      `${siteUrl}/s/${fresh.token}`,
         expires_hours: hours,
         contact_email: replyTo,
+        slug:          study?.open_join_slug,
       })
       const resend = new Resend(Deno.env.get('RESEND_API_KEY')!)
       const { error: sendErr } = await resend.emails.send({

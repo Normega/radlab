@@ -102,12 +102,12 @@ export default function CompletionTokenStep({
       <p style={S.eyebrow}>All done</p>
       <h1 style={S.title}>Show this screen to the researcher</h1>
       <p style={S.sub}>
-        Thank you for taking part. Show the words below to pick something from
-        the table.
+        Thank you for taking part. Show your completion code to the researcher
+        to pick something from the table.
       </p>
 
       <div style={S.card}>
-        <p style={S.tokenLabel}>Today&rsquo;s word</p>
+        <p style={S.tokenLabel}>Your completion code</p>
         <p style={S.token}>
           {token.colour} {token.creature}
         </p>
