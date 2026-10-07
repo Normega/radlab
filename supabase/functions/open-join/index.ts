@@ -12,7 +12,8 @@
 //       An anonymous account + enrollment (external_source 'open') + schedule,
 //       and a link to the entry session. SessionEntry runs the screener there.
 //   action 'submit_email' { token, email }           -> { status: 'sent' | 'already_sent' } | { error }
-//       Only after a passed screener. Accepts @mail.utoronto.ca only (students;
+//       Only after a passed screener, on studies that have one. Accepts
+//       @mail.utoronto.ca only (students;
 //       keeps out scams and spam), one sign-up per address per study family,
 //       not while active in an excluded study. Emails the entry link to that
 //       address and retires the in-browser one, so continuing REQUIRES the
@@ -311,9 +312,23 @@ Deno.serve(async (req) => {
         return json({ error: 'This page has expired. Please scan the QR code again.' }, 410)
       }
 
-      const state = await screenerState(db, link.participant_id, link.study_id)
-      if (state !== 'passed') {
-        return json({ error: 'Please complete the eligibility questions first.' }, 409)
+      const { data: study } = await db
+        .from('studies')
+        .select('id, name, public_title, reply_to_email, exclusion_group, screener')
+        .eq('id', link.study_id)
+        .single()
+
+      // Only studies that HAVE a screener can require one to be passed. This
+      // used to be unconditional, so a screener-free study refused every
+      // address with "Please complete the eligibility questions first" — an
+      // instruction nobody could follow, because there are no questions to
+      // complete. screenerState returns 'none' there, never 'passed', so the
+      // gate could not be cleared by any means.
+      if (study?.screener) {
+        const state = await screenerState(db, link.participant_id, link.study_id)
+        if (state !== 'passed') {
+          return json({ error: 'Please complete the eligibility questions first.' }, 409)
+        }
       }
 
       // Hard gates (CLAUDE.md "Hard gates"): this step emails a session link
@@ -336,12 +351,6 @@ Deno.serve(async (req) => {
       if (!STUDENT_EMAIL.test(email) || email.length > 254) {
         return json({ error: 'Please enter your U of T student email address — it ends in @mail.utoronto.ca.' }, 422)
       }
-
-      const { data: study } = await db
-        .from('studies')
-        .select('id, name, public_title, reply_to_email, exclusion_group')
-        .eq('id', link.study_id)
-        .single()
 
       // One sign-up per address per study family (this study and its SONA
       // original), whatever the earlier enrollment's status.
