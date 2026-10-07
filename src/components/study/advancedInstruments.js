@@ -50,6 +50,15 @@ export const ADVANCED_INSTRUMENTS = [
     load: () => import('./LilianaDemographicsStep'),
   },
   {
+    key: 'completion_token',
+    name: 'Completion Token (word of the day)',
+    description: 'Final session step: a two-word token the participant shows to claim their prize. Everyone sees the same words on a given day and different words tomorrow, so staff learn it once and can check at a glance, while yesterday\u2019s screenshot shows the wrong words. Derived purely from the calendar date in America/Toronto, so no server round trip and no stored data. Open this preview to see today\u2019s token, which is what staff should be checking against. A speed bump, not security: within one day a screenshot can be passed on, which is an acceptable trade for a stress toy.',
+    source: 'src/components/study/CompletionTokenStep.jsx',
+    table: null,
+    previewable: true,
+    load: () => import('./CompletionTokenStep'),
+  },
+  {
     key: 'compensation',
     name: 'Compensation Form',
     description: 'End-of-session compensation election: e-transfer email or SONA credit ID. Submissions are reviewed at /admin/compensation.',
