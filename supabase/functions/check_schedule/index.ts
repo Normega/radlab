@@ -121,49 +121,6 @@ Deno.serve(async (req) => {
       .not('expires_at', 'is', null)
       .lt('expires_at', now.toISOString())
 
-    // 0b. Terminal-ize dead rows: sent/issued rows scheduled before today with
-    // no remaining active link can never be completed — mark them 'missed' so
-    // they stop blocking the fork advance pass (participants may miss daily
-    // sessions and still advance; a missed fork-gating assessment simply never
-    // resolves the fork). Rows with a still-active link (e.g. a 72h assessment
-    // window spanning several days) are protected until step 0 expires it.
-    let missed = 0
-    {
-      // Every read here is paged and error-checked (2026-09-28). The
-      // protecting lookup matters most: if it failed or came back short, rows
-      // whose link is still live were marked 'missed' -- a session the
-      // participant could still open, closed under them, and on a gate a
-      // possible adherence withdrawal. On any error nothing is marked.
-      try {
-        const staleRows = await fetchAllRows<{ id: string }>((from, to) =>
-          db.from('participant_schedule')
-            .select('id')
-            .in('status', ['link_sent', 'unlocked'])
-            .lt('scheduled_date', todayStr)
-            .order('id', { ascending: true })
-            .range(from, to),
-        )
-        if (staleRows.length > 0) {
-          const staleIds = staleRows.map((r) => r.id)
-          const activeForStale = await selectInChunks<{ schedule_id: string }>(staleIds, (ids) =>
-            db.from('participant_links')
-              .select('schedule_id')
-              .eq('status', 'active')
-              .in('schedule_id', ids),
-          )
-          const protectedIds = new Set(activeForStale.map((l) => l.schedule_id))
-          const deadIds = staleIds.filter((id) => !protectedIds.has(id))
-          for (const ids of chunk(deadIds)) {
-            const { error } = await db.from('participant_schedule').update({ status: 'missed' }).in('id', ids)
-            if (error) throw new Error(error.message)
-            missed += ids.length
-          }
-        }
-      } catch (e) {
-        console.error('check_schedule 0b skipped (nothing marked missed):', e instanceof Error ? e.message : e)
-      }
-    }
-
     // 0c. Withdrawn enrollments (adherence termination, or the manual admin
     // "Withdraw" action) — fetched once and honored by every pass below:
     // due-row sends (1b), reminders (3b), and the advance pass (4). None of
@@ -193,6 +150,129 @@ Deno.serve(async (req) => {
       .select('id')
       .eq('active', false)
     const inactiveSet = new Set((inactiveStudies ?? []).map((s) => s.id))
+
+    // Design graphs, fetched once and used by the hold pass (0b/0e, to find
+    // hold sessions), the send pass (2b, to decide whether an outstanding link
+    // belongs to a phase gate), the reminder pass (3b, to decide which sessions
+    // are critical) and the advance pass (4).
+    const { data: graphStudies } = await db
+      .from('studies')
+      .select('id, design_graph')
+      .not('design_graph', 'is', null)
+    const graphByStudyId = new Map((graphStudies ?? []).map((s) => [s.id, s.design_graph as Graph]))
+
+    // Hold sessions (materializeSchedule's `hold`): the study_sessions ids of
+    // every session node marked hold in a graph. 0b re-sends these instead of
+    // marking them missed.
+    const holdSessionIds = new Set<string>()
+    for (const [studyId, graph] of graphByStudyId) {
+      const keys = (graph?.nodes ?? []).filter((n) => n.type === 'session' && n.hold).map((n) => n.id)
+      if (keys.length === 0) continue
+      const { data, error } = await db
+        .from('study_sessions')
+        .select('id')
+        .eq('study_id', studyId)
+        .in('node_key', keys)
+      if (error) {
+        // Without the ids a dead hold row would be marked missed, which the
+        // hold exists to prevent -- end the tick and retry on the next.
+        return json({ error: `hold session lookup failed: ${error.message}` }, 500)
+      }
+      for (const r of data ?? []) holdSessionIds.add(r.id)
+    }
+
+    // 0b. Terminal-ize dead rows: sent/issued rows scheduled before today with
+    // no remaining active link can never be completed — mark them 'missed' so
+    // they stop blocking the fork advance pass (participants may miss daily
+    // sessions and still advance; a missed fork-gating assessment simply never
+    // resolves the fork). Rows with a still-active link (e.g. a 72h assessment
+    // window spanning several days) are protected until step 0 expires it.
+    let suppressed = 0
+    let failed = 0
+    let missed = 0
+    const holdDue: Array<{ id: string; participant_id: string; study_id: string; attempts: number | null; hold_resends: number | null }> = []
+    {
+      // Every read here is paged and error-checked (2026-09-28). The
+      // protecting lookup matters most: if it failed or came back short, rows
+      // whose link is still live were marked 'missed' -- a session the
+      // participant could still open, closed under them, and on a gate a
+      // possible adherence withdrawal. On any error nothing is marked.
+      try {
+        const staleRows = await fetchAllRows<{
+          id: string; participant_id: string; study_id: string; study_session_id: string | null
+          attempts: number | null; hold_resends: number | null
+        }>((from, to) =>
+          db.from('participant_schedule')
+            .select('id, participant_id, study_id, study_session_id, attempts, hold_resends')
+            .in('status', ['link_sent', 'unlocked'])
+            .lt('scheduled_date', todayStr)
+            .order('id', { ascending: true })
+            .range(from, to),
+        )
+        if (staleRows.length > 0) {
+          const staleIds = staleRows.map((r) => r.id)
+          const activeForStale = await selectInChunks<{ schedule_id: string }>(staleIds, (ids) =>
+            db.from('participant_links')
+              .select('schedule_id')
+              .eq('status', 'active')
+              .in('schedule_id', ids),
+          )
+          const protectedIds = new Set(activeForStale.map((l) => l.schedule_id))
+          // A dead HOLD row is not missed: the study waits on it, so it is
+          // re-sent (0e) every day until it is completed or the participant
+          // withdraws. Withdrawn participants and inactive studies fall through
+          // to 'missed' like any other row.
+          const isHold = (r: typeof staleRows[number]) =>
+            !!r.study_session_id && holdSessionIds.has(r.study_session_id) &&
+            !withdrawnSet.has(`${r.participant_id}:${r.study_id}`) && !inactiveSet.has(r.study_id)
+          const dead = staleRows.filter((r) => !protectedIds.has(r.id))
+          holdDue.push(...dead.filter(isHold))
+          const deadIds = dead.filter((r) => !isHold(r)).map((r) => r.id)
+          for (const ids of chunk(deadIds)) {
+            const { error } = await db.from('participant_schedule').update({ status: 'missed' }).in('id', ids)
+            if (error) throw new Error(error.message)
+            missed += ids.length
+          }
+        }
+      } catch (e) {
+        console.error('check_schedule 0b skipped (nothing marked missed):', e instanceof Error ? e.message : e)
+      }
+    }
+
+    // 0e. Hold re-sends: one email a day for a hold session (a baseline) whose
+    // link has lapsed uncompleted. send_message applies the hard gates, so a
+    // participant who was screened out, has no deliverable address, or is
+    // turned away by a full enrollment is suppressed and the row blocked; a
+    // failed send leaves the row as it is and the next tick retries. The link
+    // is parallel (see issueLink): a catch-up must not close today's session.
+    let holdResent = 0
+    for (const row of holdDue) {
+      try {
+        const sendRes = await postSendMessage({ schedule_id: row.id, hold_resend: true })
+        const sendBody = await sendRes.json()
+        if (sendBody?.suppressed) {
+          await suppressRow(db, row.id, row.participant_id, sendBody.reason ?? 'suppressed')
+          suppressed++
+        } else if (sendBody?.success) {
+          await db
+            .from('participant_schedule')
+            .update({
+              status: 'link_sent',
+              attempts: (row.attempts ?? 0) + 1,
+              last_sent_at: now.toISOString(),
+              hold_resends: (row.hold_resends ?? 0) + 1,
+            })
+            .eq('id', row.id)
+          holdResent++
+        } else {
+          console.error(`hold re-send failed for row ${row.id}:`, sendBody?.error)
+          failed++
+        }
+      } catch (holdErr) {
+        console.error(`hold re-send fetch error for row ${row.id}:`, holdErr)
+        failed++
+      }
+    }
 
     // 1. Fetch pending rows scheduled today or earlier (date-only filter; the
     // send_time cutoff is applied below since Postgres can't compare it
@@ -297,19 +377,8 @@ Deno.serve(async (req) => {
     )
 
     let processed = 0
-    let suppressed = 0
-    let failed = 0
     let deferred = 0
     let superseded = 0
-
-    // Design graphs, fetched once and used by the send pass (2b, to decide
-    // whether an outstanding link belongs to a phase gate), the reminder pass
-    // (3b, to decide which sessions are critical) and the advance pass (4).
-    const { data: graphStudies } = await db
-      .from('studies')
-      .select('id, design_graph')
-      .not('design_graph', 'is', null)
-    const graphByStudyId = new Map((graphStudies ?? []).map((s) => [s.id, s.design_graph as Graph]))
 
     // Steps 2-3 only apply when something is actually due to send — the
     // advance pass (step 4) below must still run every tick regardless,
@@ -374,12 +443,14 @@ Deno.serve(async (req) => {
         //     20260602 and never recreated, so that state is reachable.
         const { data: activeLinks } = await db
           .from('participant_links')
-          .select('id, schedule_id')
+          .select('id, schedule_id, parallel')
           .eq('participant_id', row.participant_id)
           .eq('study_id', row.study_id)
           .eq('status', 'active')
 
-        const blockingLinks = (activeLinks ?? []).filter((l) => l.schedule_id !== row.id)
+        // A parallel link (a hold session's catch-up) neither blocks nor is
+        // superseded by a routine send -- see issueLink.
+        const blockingLinks = (activeLinks ?? []).filter((l) => l.schedule_id !== row.id && !l.parallel)
 
         if (blockingLinks.length > 0) {
           const graph = graphByStudyId.get(row.study_id)
@@ -542,11 +613,12 @@ Deno.serve(async (req) => {
         let remRows: Array<{
           id: string; participant_id: string; study_id: string; study_session_id: string | null
           attempts: number | null; last_sent_at: string | null; final_notice_sent_at: string | null
+          hold_resends: number | null
         }> = []
         try {
           remRows = await selectInChunks(activeIds, (ids) =>
             db.from('participant_schedule')
-              .select('id, participant_id, study_id, study_session_id, attempts, last_sent_at, final_notice_sent_at')
+              .select('id, participant_id, study_id, study_session_id, attempts, last_sent_at, final_notice_sent_at, hold_resends')
               .in('id', ids)
               .in('status', ['link_sent', 'unlocked'])
               .is('completed_at', null)
@@ -625,7 +697,9 @@ Deno.serve(async (req) => {
             }
 
             // Ordinary cadence reminder — the attempt caps apply here and only
-            // here.
+            // here. Not on a hold session being re-sent daily: the re-send IS
+            // the day's reminder (one email a day until it is completed).
+            if ((row.hold_resends ?? 0) > 0) continue
             if ((row.attempts ?? 0) >= (study.max_attempts ?? 1)) continue
             const remindersSent = Math.max(0, (row.attempts ?? 0) - 1)
             if (study.reminder_max != null && remindersSent >= study.reminder_max) continue
@@ -783,7 +857,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    return json({ processed, suppressed, deferred, superseded, failed, missed, rescued: rescuedRows.length, reminded, finalNotices, advanced, withdrawn, completed: completedStudies, adherenceShortfalls, rateLimitWaits })
+    return json({ processed, holdResent, suppressed, deferred, superseded, failed, missed, rescued: rescuedRows.length, reminded, finalNotices, advanced, withdrawn, completed: completedStudies, adherenceShortfalls, rateLimitWaits })
 
   } catch (err) {
     console.error('check_schedule unexpected error:', err)

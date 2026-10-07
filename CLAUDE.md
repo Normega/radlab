@@ -1,5 +1,39 @@
 # RADlab — Claude Code guidance
 
+## Hard gates — no code may open a gate the database has closed
+
+**This is the platform's strongest rule. It outranks convenience, deadlines and "just this once".**
+
+A *gate* is any condition a participant must meet before a session may reach them. The gates are:
+
+| Reason | Closed when |
+|---|---|
+| `study_inactive` | `studies.active = false` |
+| `withdrawn` | the enrollment is withdrawn |
+| `screened_out` | their latest screener attempt failed and no newer retake was granted |
+| `no_consent` | consent is required, not given, and this is not the entry session (where consent is taken) |
+| `enrollment_full` | `studies.baseline_cap` completed entry sessions reached, and they have not completed theirs |
+| `gate_incomplete` | an earlier *gate session* is not completed: a session marked `hold` (Liliana's baseline) or one leading straight into a randomize fork (Liliana's midpoint) |
+
+**One decision, in one place.** `schedule_row_block_reason(schedule_id)` (in `supabase/migrations/20261007_hard_gates.sql`) is the only thing that decides whether a session may be sent or opened. It returns NULL (open) or the reason it is closed. Everything that delivers a session asks it, and none of them has its own copy of a gate:
+
+- `send_message` asks before it mints a link or sends anything, so the scheduler, reminders, hold re-sends and the admin "Send reminder" button all get the same answer.
+- `SessionEntry` asks `session_entry_block(token)`, the participant-facing form, before the screener, consent form or any step renders.
+- Any other code that emails a session link (today, `open-join`'s sign-up email) asks before building the link.
+
+**Rules.**
+1. **Never send, link or open a session around the gate.** Don't add a "force" flag, a test bypass in production code, or a caller that skips the check because it "already knows". A new path that delivers a session asks `schedule_row_block_reason` first.
+2. **Fail closed.** If the check errors or can't run, nothing is sent and nothing opens. A failed read never counts as "allowed".
+3. **A new gate goes into the function, not into a caller.** Add the condition to `schedule_row_block_reason` (a new migration), its reason to `gateClosedMessage` in `SessionEntry.jsx`, and its reason to `supabase/functions/hardGates.test.mjs`.
+4. **Exceptions are data, never code.** If Norm decides specific participants pass a gate, record it on their rows in a migration that names his decision. Today the only one is `participant_schedule.resend_note = 'baseline_catchup'` (29 Liliana participants let into Phase 1 before the baseline hold existed). Never add an `if` in a caller.
+5. **The materializer schedules; the gate decides.** Not scheduling rows past a gate (`hold`, fork gates, adherence checks) is a courtesy that keeps schedules tidy. It is not the enforcement, and a scheduled row is never permission to send.
+
+`supabase/functions/hardGates.test.mjs` fails CI if a session-link sender stops asking, asks after building the link, or if a gate disappears from the function.
+
+**Why (2026-10-07, Liliana Study 3).** Each gate lived in whichever code happened to be sending, and every path that forgot one leaked: screened-out students had been emailed three study links a day since 2026-09-26; 96 people who never consented had Phase 1 scheduled; and 29 were doing the intervention with no baseline because nothing held Phase 1 back. Nothing errored. It surfaced in a recruitment report.
+
+---
+
 ## RLS policy pattern for game tables
 
 Every table that game code writes to must have explicit RLS policies for the `authenticated` role. RLS is enabled on all tables by default — **a table with RLS enabled but no matching policy silently blocks all operations**, with no error surfaced to the client.

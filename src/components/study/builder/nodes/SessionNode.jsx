@@ -29,6 +29,7 @@ export default function SessionNode({ data, selected }) {
           Last-chance reminder: {data.final_notice ? 'always' : 'never'}
         </div>
       )}
+      {data.hold && <div style={S.meta}>Holds the study until completed</div>}
 
       {data.isLocked && <div style={S.lockBadge}>locked</div>}
     </div>

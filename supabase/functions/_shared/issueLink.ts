@@ -9,6 +9,12 @@ export interface IssueLinkArgs {
   participantId: string
   studyId: string
   linkExpiresHours?: number | null
+  // A parallel link lives alongside the participant's routine links: issuing
+  // it supersedes nothing, and no later issue supersedes it. Used only for a
+  // hold session being caught up after the sessions that followed it were
+  // already scheduled (check_schedule's hold re-send) -- the one case where a
+  // participant legitimately has two sessions open at once.
+  parallel?: boolean
 }
 
 /**
@@ -18,7 +24,7 @@ export interface IssueLinkArgs {
  */
 export async function issueLink(
   db: SupabaseClient,
-  { scheduleId, participantId, studyId, linkExpiresHours }: IssueLinkArgs,
+  { scheduleId, participantId, studyId, linkExpiresHours, parallel = false }: IssueLinkArgs,
 ): Promise<{ id: string; token: string }> {
   // 'expired', not 'revoked'. When this fires, the link it closes is the
   // previous session's, still inside its window and unused — the participant
@@ -32,16 +38,21 @@ export async function issueLink(
   // participant's live link in another study they are concurrently enrolled
   // in. No one has hit that yet (0 participants currently hold active links in
   // 2+ studies) but 1 participant is already enrolled in two.
-  await db
-    .from('participant_links')
-    .update({
-      status: 'expired',
-      ended_reason: 'superseded',
-      ended_at: new Date().toISOString(),
-    })
-    .eq('participant_id', participantId)
-    .eq('study_id', studyId)
-    .eq('status', 'active')
+  //
+  // Parallel links are left alone either way (see IssueLinkArgs.parallel).
+  if (!parallel) {
+    await db
+      .from('participant_links')
+      .update({
+        status: 'expired',
+        ended_reason: 'superseded',
+        ended_at: new Date().toISOString(),
+      })
+      .eq('participant_id', participantId)
+      .eq('study_id', studyId)
+      .eq('status', 'active')
+      .eq('parallel', false)
+  }
 
   const expiresAt = new Date()
   expiresAt.setHours(expiresAt.getHours() + (linkExpiresHours ?? 48))
@@ -54,6 +65,7 @@ export async function issueLink(
       study_id: studyId,
       expires_at: expiresAt.toISOString(),
       status: 'active',
+      parallel,
     })
     .select('id, token')
     .single()
