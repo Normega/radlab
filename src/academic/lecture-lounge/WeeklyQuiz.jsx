@@ -116,12 +116,16 @@ export default function WeeklyQuiz({ session }) {
 
       {items.map((item, idx) => {
         const a = answers[item.id]
+        // A question skipped on a quiz that is now closed for the whole class: the
+        // server sends its reveal (20261007_weekly_quiz_closed_reveal.sql), so the
+        // review shows the answer instead of buttons that can no longer save.
+        const skipped = !a && quiz.closed_keys?.[item.id]
         return (
           <div key={item.id} style={S.itemCard}>
             <p style={S.itemNo}>{idx + 1} of {items.length}{item.format === 'vsa' ? ' · short answer' : ''}</p>
             <p style={S.stem}>{item.stem}</p>
 
-            {!a && item.options && (
+            {!a && !skipped && item.options && (
               <div style={S.optionCol}>
                 {item.options.map((opt, i) => (
                   <button key={i} style={S.optionBtn} disabled={busyItem === item.id}
@@ -132,7 +136,7 @@ export default function WeeklyQuiz({ session }) {
               </div>
             )}
 
-            {!a && !item.options && (
+            {!a && !skipped && !item.options && (
               <form style={S.vsaRow} onSubmit={(e) => {
                 e.preventDefault()
                 const text = (vsaDrafts[item.id] ?? '').trim()
@@ -158,6 +162,7 @@ export default function WeeklyQuiz({ session }) {
                       awaitingConfidence={!!confPending[item.id]}
                       onConfidence={(level) => setConfidence(item.id, level)} />
             )}
+            {skipped && <Reveal item={item} answer={{ response: null, reveal: skipped }} skipped />}
           </div>
         )
       })}
@@ -175,7 +180,7 @@ export default function WeeklyQuiz({ session }) {
 // metacognitive judgment; showing ANY feedback first (even which option is
 // green) turns it into hindsight. So while confidence is pending, the item
 // shows only a neutral "locked in" echo of the student's own answer.
-function Reveal({ item, answer, awaitingConfidence, onConfidence }) {
+function Reveal({ item, answer, awaitingConfidence, onConfidence, skipped = false }) {
   const r = answer.reveal ?? {}
   const myChoice = answer.response?.choice
   const hasKey = typeof r.correct_index === 'number'
@@ -215,13 +220,14 @@ function Reveal({ item, answer, awaitingConfidence, onConfidence }) {
           })}
         </div>
       )}
+      {skipped && <p style={S.notGotIt}>You didn't answer this one before the quiz closed. Here is the answer.</p>}
       {!item.options && (
         <>
-          <p style={S.vsaMine}>Yours: {answer.response?.text}</p>
+          {!skipped && <p style={S.vsaMine}>Yours: {answer.response?.text}</p>}
           <p style={S.vsaModel}>Model answer: <strong>{r.answer_text}</strong></p>
         </>
       )}
-      {item.options && (
+      {item.options && !skipped && (
         <p style={gotIt ? S.gotIt : S.notGotIt}>
           {gotIt ? 'You had it.' : 'No penalty — the attempt is the point.'}
         </p>
