@@ -10,12 +10,15 @@ export default function LikertQuestion({ config, value = null, onChange }) {
       </div>
 
       <div
-        className="cs-likert-grid"
+        className={scale.length >= 5 ? 'cs-likert-grid cs-likert-grid--wide' : 'cs-likert-grid'}
         role="radiogroup"
         aria-labelledby={`${config.id}-prompt`}
-        style={{
-          gridTemplateColumns: `repeat(${Math.max(1, scale.length)}, minmax(0, 1fr))`,
-        }}
+        /* Column count travels as a custom property rather than as an inline
+           grid-template-columns, so the narrow-screen rule in
+           composableSurvey.css can still override it. Setting the property
+           inline and reading it in the stylesheet keeps one source of truth for
+           the count while leaving the layout to CSS. */
+        style={{ '--cs-likert-columns': Math.max(1, scale.length) }}
       >
         {scale.map(option => {
           const selected = value === option.value

@@ -4,6 +4,7 @@ import DebriefStep              from './DebriefStep'
 import DemographicsStep         from './DemographicsStep'
 import EquityCensusStep         from './EquityCensusStep'
 import LilianaDemographicsStep from './LilianaDemographicsStep'
+import StudentDemographicsStep from './StudentDemographicsStep'
 import CompensationStep         from './CompensationStep'
 import MoodCheckinStep          from './MoodCheckinStep'
 import WellnessTipStep          from './WellnessTipStep'
@@ -73,6 +74,9 @@ export default function StepDispatcher({ node, enrollment, scheduleId, studyDay 
     }
     if (subcategory === 'liliana_demographics') {
       return <LilianaDemographicsStep enrollment={enrollment} scheduleId={scheduleId} onComplete={onComplete} supabaseClient={supabaseClient} isSimMode={isSimMode} />
+    }
+    if (subcategory === 'student_demographics') {
+      return <StudentDemographicsStep enrollment={enrollment} scheduleId={scheduleId} onComplete={onComplete} supabaseClient={supabaseClient} isSimMode={isSimMode} />
     }
     if (subcategory === 'compensation') {
       return <CompensationStep enrollment={enrollment} onComplete={onComplete} supabaseClient={supabaseClient} isSimMode={isSimMode} />
