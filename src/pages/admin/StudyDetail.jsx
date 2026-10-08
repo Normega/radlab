@@ -26,7 +26,7 @@ function useStudy(id) {
           allow_restart, reminders_enabled, reminder_interval_days, reminder_max,
           email_subject, email_body,
           allow_external_enrollment, external_enrollment_source, completion_redirect_url,
-          allow_self_enrollment, allow_credit_only_consent, require_student_number,
+          allow_self_enrollment, allow_credit_only_consent, offer_repository_consent, require_student_number,
           screener_id
         `)
         .eq('id', id)
@@ -704,6 +704,15 @@ function ConsentFormSection({ study, qc }) {
     qc.invalidateQueries({ queryKey: ['study-detail', study.id] })
   }
 
+  // The separate, optional deposit consent (20261008_repository_consent.sql).
+  const [repoErr, setRepoErr] = useState(null)
+  async function toggleRepositoryConsent(val) {
+    setRepoErr(null)
+    const { error } = await supabase.from('studies').update({ offer_repository_consent: val }).eq('id', study.id)
+    if (error) setRepoErr(error.message)
+    qc.invalidateQueries({ queryKey: ['study-detail', study.id] })
+  }
+
   async function handleFileChange(e) {
     const file = e.target.files?.[0]
     if (!file) return
@@ -779,6 +788,24 @@ function ConsentFormSection({ study, qc }) {
             They and all of their data are left out of every research export.
           </p>
           {creditErr && <p style={S.errMsg}>{creditErr}</p>}
+
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer', userSelect: 'none', marginTop: 16 }}>
+            <input
+              type="checkbox"
+              style={{ marginTop: 3 }}
+              checked={study?.offer_repository_consent ?? false}
+              onChange={e => toggleRepositoryConsent(e.target.checked)}
+            />
+            <span style={{ fontSize: 14, color: 'var(--tx2)' }}>
+              Ask separate, optional consent to deposit de-identified data in the U of T Dataverse (Borealis).
+            </span>
+          </label>
+          <p style={{ fontSize: 12, color: 'var(--tx3)', margin: '4px 0 0 24px' }}>
+            Asked after the participation answer, with Yes and No equally weighted. The answer is in
+            the export as <code>repository_consent</code>; deposit only rows marked TRUE. The consent
+            form must describe the deposit.
+          </p>
+          {repoErr && <p style={S.errMsg}>{repoErr}</p>}
         </div>
       )}
 

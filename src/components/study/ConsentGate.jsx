@@ -28,6 +28,18 @@ import { useState, useEffect, useRef } from 'react'
 // take part in the research, or complete the sessions for course credit without
 // research use of the data. The answer goes to record_consent as p_scope, and the
 // study export leaves credit-only participants out entirely.
+// Repository consent (20261008_repository_consent.sql): a study with
+// studies.offer_repository_consent asks a SEPARATE, optional question after the
+// participation answer: may de-identified data be deposited in the U of T
+// Dataverse (Borealis)? The consent form itself explains the deposit; these
+// labels only record the decision. "No" takes part exactly as "Yes" does. An
+// explicit answer is required so that a blank never has to be interpreted, and
+// only an explicit yes is ever deposited.
+const REPOSITORY_CHOICES = [
+  { value: true,  label: "Yes, I consent to my de-identified data being deposited in the University of Toronto's Dataverse (Borealis), as described above." },
+  { value: false, label: 'No, I do not consent to this.' },
+]
+
 const CONSENT_CHOICES = [
   { scope: 'research',    label: 'I have read this consent form in full and agree to participate in this study.' },
   { scope: 'credit_only', label: 'I wish to complete the surveys for course credit, but do not consent to have my data used in research.' },
@@ -40,26 +52,46 @@ export default function ConsentGate({ studyId, participantId, supabaseClient, on
   // null until answered, then 'research' | 'credit_only'.
   const [scope,   setScope]   = useState(null)
   const [creditOption, setCreditOption] = useState(false)
+  const [repoOffered, setRepoOffered] = useState(false)
+  // null until answered, then true | false. Only asked when repoOffered.
+  const [repoChoice, setRepoChoice] = useState(null)
   const [error,   setError]   = useState(null)
   const bodyRef                = useRef(null)
   const agreed = scope !== null
+  // The deposit question applies only to research consent; credit-only
+  // participants allow no research use, so it is not asked of them.
+  const asksRepo = repoOffered && scope === 'research'
+  const ready = agreed && (!asksRepo || repoChoice !== null)
 
   // Whether this study offers the credit-only answer. Its own small read, not a
   // column on the queries below and not a field on get_session_by_token, so that
   // if it fails for any reason — the RLS/JWT timing described in load(), or a
   // database that predates the column — the gate falls back to the single
   // research checkbox it always had. Consent must never be blocked by this.
-  async function loadCreditOption() {
+  // The repository question shares this read and its fallback: if the read
+  // fails, the question is not shown, consent still goes through, and the
+  // participant is recorded as not asked, which is never deposited.
+  async function loadConsentOptions() {
     try {
       const { data, error: ce } = await supabaseClient
         .from('studies')
-        .select('allow_credit_only_consent')
+        .select('allow_credit_only_consent, offer_repository_consent')
         .eq('id', studyId)
         .maybeSingle()
-      return !ce && data?.allow_credit_only_consent === true
+      if (ce) return { credit: false, repository: false }
+      return {
+        credit:     data?.allow_credit_only_consent === true,
+        repository: data?.offer_repository_consent === true,
+      }
     } catch {
-      return false
+      return { credit: false, repository: false }
     }
+  }
+
+  async function applyConsentOptions() {
+    const opts = await loadConsentOptions()
+    setCreditOption(opts.credit)
+    setRepoOffered(opts.repository)
   }
 
   useEffect(() => {
@@ -82,7 +114,7 @@ export default function ConsentGate({ studyId, participantId, supabaseClient, on
       if (prefetched.consentDate) { setState(STATES.ALREADY_CONSENTED); return }
       setStudy({ name: prefetched.studyName ?? null })
       setForm({ html_content: prefetched.consentHtml ?? '' })
-      setCreditOption(await loadCreditOption())
+      await applyConsentOptions()
       setState(STATES.READY)
       return
     }
@@ -131,20 +163,23 @@ export default function ConsentGate({ studyId, participantId, supabaseClient, on
     }
 
     setForm(formData)
-    setCreditOption(await loadCreditOption())
+    await applyConsentOptions()
     setState(STATES.READY)
   }
 
   async function handleSubmit() {
-    if (!agreed || !form) return
+    if (!ready || !form) return
     setState(STATES.SUBMITTING)
 
     // A research answer sends only p_study_id: record_consent's p_scope defaults
     // to 'research', so this is the exact call that has always worked and it
     // keeps working against a database that has not yet gained the parameter.
+    // The repository answer is sent only when the question was asked, so every
+    // study without it makes exactly the call it always made.
     const args = scope === 'credit_only'
       ? { p_study_id: studyId, p_scope: 'credit_only' }
       : { p_study_id: studyId }
+    if (asksRepo) args.p_repository_consent = repoChoice
     const { error: re } = recordConsent
       ? await recordConsent(scope)
       : await supabaseClient.rpc('record_consent', args)
@@ -225,12 +260,39 @@ export default function ConsentGate({ studyId, participantId, supabaseClient, on
         </label>
       )}
 
+      {asksRepo && (
+        <div style={S.repoBlock}>
+          <p style={S.repoTitle}>Future use of your data (optional)</p>
+          <p style={S.repoNote}>
+            This is a separate decision. It does not affect your participation above.
+          </p>
+          <div role="radiogroup" aria-label="Future use of your data" style={S.choiceGroup}>
+            {REPOSITORY_CHOICES.map(c => {
+              const on = repoChoice === c.value
+              return (
+                <label key={String(c.value)} style={{ ...S.choice, ...(on ? S.choiceOn : null) }}>
+                  <input
+                    type="radio"
+                    name="repository-consent"
+                    value={String(c.value)}
+                    checked={on}
+                    onChange={() => setRepoChoice(c.value)}
+                    style={S.choiceRadio}
+                  />
+                  <span style={S.checkLabel}>{c.label}</span>
+                </label>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       {error && <p style={S.errBox}>{error}</p>}
 
       <button
-        style={{ ...S.btn, opacity: (!agreed || state === STATES.SUBMITTING) ? 0.5 : 1 }}
+        style={{ ...S.btn, opacity: (!ready || state === STATES.SUBMITTING) ? 0.5 : 1 }}
         onClick={handleSubmit}
-        disabled={!agreed || state === STATES.SUBMITTING}
+        disabled={!ready || state === STATES.SUBMITTING}
       >
         {state === STATES.SUBMITTING ? 'Saving…' : 'Confirm consent & continue →'}
       </button>
@@ -296,6 +358,9 @@ const S = {
   },
   choiceOn:    { borderColor: 'var(--pk)', background: 'var(--pkb)' },
   choiceRadio: { width: 16, height: 16, margin: '4px 0 0', flexShrink: 0, accentColor: 'var(--pk)', cursor: 'pointer' },
+  repoBlock:   { display: 'flex', flexDirection: 'column', gap: 8 },
+  repoTitle:   { fontSize: 16, fontWeight: 600, color: 'var(--tx)', margin: 0, fontFamily: '"DM Sans", system-ui, sans-serif' },
+  repoNote:    { fontSize: 14, color: 'var(--tx2)', margin: 0, fontFamily: '"DM Sans", system-ui, sans-serif' },
 
   btn: {
     alignSelf: 'flex-start',

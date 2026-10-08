@@ -231,7 +231,7 @@ export async function resolveStudyContext(studyId) {
     // deliberately — if consent cannot be read, the export must fail rather than
     // go out unfiltered.
     pageAll((f, t) => supabase.from('study_enrollments')
-      .select('id, profile_id, external_id, enrolled_at, consent_date, consent_scope, status, is_test')
+      .select('id, profile_id, external_id, enrolled_at, consent_date, consent_scope, repository_consent, status, is_test')
       .eq('study_id', studyId).range(f, t)),
     pageAll((f, t) => supabase.from('game_sessions')
       .select('id, user_id').eq('study_id', studyId).range(f, t)),
@@ -1020,6 +1020,9 @@ export function buildMasterWithIntegrity(context, resultsByTable) {
       is_test:        e.is_test ?? false,
       enrolled_at:    e.enrolled_at,
       consent_date:   e.consent_date,
+      // The separate deposit consent (20261008_repository_consent.sql). Only
+      // TRUE may go to the repository; blank means never asked.
+      repository_consent: e.repository_consent ?? null,
       status:         e.status,
     }
     // Every row of a participant-level table: the first under the plain prefix,
@@ -1104,7 +1107,7 @@ export function integrityRows(context, integrity) {
 const TIMEPOINT_ORDER = { screener: 0, baseline: 1, midpoint: 2, final: 3 }
 
 function masterColumnRank(col) {
-  const lead = ['participant_external_id', 'profile_id', 'is_test', 'enrolled_at', 'consent_date', 'status']
+  const lead = ['participant_external_id', 'profile_id', 'is_test', 'enrolled_at', 'consent_date', 'repository_consent', 'status']
   const i = lead.indexOf(col)
   if (i !== -1) return [0, i, '', 0, 0]
   if (col.endsWith('_n'))            return [9, 0, col, 0, 0]
@@ -1189,6 +1192,7 @@ const COLUMN_NOTES = [
   [/^is_test$/,                 'TRUE = account created for testing, not recruitment. Its data is fabricated or exercised by staff. EXCLUDE these rows from analysis — filtering on `status` will not catch them, because real participants withdraw too.'],
   [/^enrolled_at$/,             'Timestamp the participant was enrolled in this study.'],
   [/^consent_date$/,            'Timestamp consent was recorded. Blank = consent not yet given.'],
+  [/^repository_consent$/,      'Separate optional consent to deposit de-identified data in the U of T Dataverse (Borealis). TRUE = agreed; FALSE = declined; blank = not asked. Deposit ONLY rows that are TRUE.'],
   [/^status$/,                  'Enrollment status: enrolled | withdrawn.'],
   [/^dem_/,                     'Demographics item (age, gender, racialized, ses_ladder).'],
   [/^screener_/,                'Eligibility screener outcome and answers.'],
