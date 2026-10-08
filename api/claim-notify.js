@@ -37,7 +37,14 @@ const fromFor = (courseCode) => {
 const replyToFor = (code) =>
   COURSE_REPLY_TO[String(code ?? '').trim().toLowerCase()] ?? 'research@radlab.zone'
 
-function compose({ name, status, note, pageTitle, ask, origin, difficulty, courseCode }) {
+// "Wednesday, October 21 at 11:59 p.m." in Toronto time -- the deadline a sent-back
+// student is given (expires_at; at least 14 days from the send-back).
+const fmtDeadline = (iso) => new Date(iso).toLocaleString('en-CA', {
+  timeZone: 'America/Toronto', weekday: 'long', month: 'long', day: 'numeric',
+  hour: 'numeric', minute: '2-digit',
+})
+
+function compose({ name, status, note, pageTitle, ask, origin, difficulty, courseCode, expiresAt }) {
   // Course-scoped links when the code is known; the legacy paths (which are
   // immortal resolving shims) when it is not. Same rule for the signature —
   // a generic sign-off beats claiming the wrong course's identity.
@@ -78,7 +85,9 @@ You can see it, and everything else the class has added, at ${whatsNew}
     text:
 `Hi ${first},
 
-Your submission for ${pageTitle} has been sent back for another pass. Your claim is still yours — nothing is lost, and the ${difficulty} slot is still held for you.
+Your submission for ${pageTitle} has been sent back for another pass. Your claim is still yours — nothing is lost, and the ${difficulty} slot is still held for you.${expiresAt ? `
+
+Revise and resubmit by ${fmtDeadline(expiresAt)} (Toronto time). You have at least 14 days from today, and a resubmission by then is not late.` : ''}
 
 What to change:
 ${note || '(see the note on the gap board)'}
@@ -90,7 +99,8 @@ Pick it up again at ${board}
 — ${team}`,
     html:
 `<p>Hi ${esc(first)},</p>
-<p>Your submission for <b>${esc(pageTitle)}</b> has been <b>sent back for another pass</b>. Your claim is still yours — nothing is lost, and the ${esc(difficulty)} slot is still held for you.</p>
+<p>Your submission for <b>${esc(pageTitle)}</b> has been <b>sent back for another pass</b>. Your claim is still yours — nothing is lost, and the ${esc(difficulty)} slot is still held for you.</p>${expiresAt ? `
+<p><b>Revise and resubmit by ${esc(fmtDeadline(expiresAt))}</b> (Toronto time). You have at least 14 days from today, and a resubmission by then is not late.</p>` : ''}
 <p style="margin:14px 0;padding:12px 14px;border-left:3px solid #b8860b;background:#faf7f0"><b>What to change:</b><br>${esc(note || '(see the note on the gap board)')}</p>
 <p style="color:#555"><i>The gap asks for:</i> ${esc(ask)}</p>
 <p><a href="${esc(board)}" style="display:inline-block;padding:10px 22px;border-radius:22px;background:#d63384;color:#fff;text-decoration:none;font-weight:600">Pick it up again</a></p>
@@ -147,10 +157,17 @@ export default async function handler(req, res) {
   // and sender name, never the decision message the student is owed.
   const { data: course } = await service.from('courses').select('code').eq('id', course_id).single()
   const fromEmail = fromFor(course?.code)
+  // The resubmission deadline, for a send-back. Read here rather than added to
+  // claim_notification_payload so no migration is needed; best-effort like the
+  // course lookup -- without it the mail simply omits the date line.
+  const { data: claimRow } = c.status === 'claimed'
+    ? await service.from('gap_claims').select('expires_at').eq('id', claim_id).maybeSingle()
+    : { data: null }
   const { subject, text, html } = compose({
     name: c.student_name, status: c.status, note: c.note,
     pageTitle: c.page_title ?? c.page_slug, ask: c.ask,
     difficulty: c.difficulty, origin, courseCode: course?.code,
+    expiresAt: claimRow?.expires_at ?? null,
   })
 
   try {
