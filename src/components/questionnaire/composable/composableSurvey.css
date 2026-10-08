@@ -837,3 +837,33 @@
     width: 100% !important;
   }
 }
+
+/* Prefer not to answer: an explicit opt-out under a required scale item, styled
+   as a quiet text button so it is not read as one more point on the scale. */
+.cs-pna {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.cs-pna__button {
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--tx2);
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  padding: 4px 8px;
+}
+
+.cs-pna__button:hover {
+  color: var(--tx);
+  border-color: var(--bds);
+}
+
+.cs-pna__button.is-selected {
+  color: var(--tx);
+  border-color: var(--pk);
+  background: var(--bgp);
+}

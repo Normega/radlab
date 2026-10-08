@@ -1,4 +1,5 @@
 import RichText from './RichText'
+import PreferNotToAnswer, { PNA } from './PreferNotToAnswer'
 
 export default function LikertQuestion({ config, value = null, onChange }) {
   const scale = Array.isArray(config.scale) ? config.scale : []
@@ -39,6 +40,10 @@ export default function LikertQuestion({ config, value = null, onChange }) {
           )
         })}
       </div>
+
+      {config.allow_pna === true && (
+        <PreferNotToAnswer selected={value === PNA} onChange={onChange} />
+      )}
     </section>
   )
 }

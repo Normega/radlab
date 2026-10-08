@@ -62,6 +62,10 @@ import {
   DISABILITY_DEF, DISABILITY_TYPE_OPTIONS, RACE_OPTIONS, RELIGION_OPTIONS,
   PARENT_EDU_OPTIONS, toggleMulti, CheckGroup, ButtonRow, RaceGroup,
 } from './EquityCensusStep'
+// The survey's own page shell, so this step looks like every other page of a
+// composable questionnaire rather than an imitation of one. Using the classes,
+// not copied values, means a change to the survey's look reaches this step too.
+import '../questionnaire/composable/composableSurvey.css'
 
 // ── Option sets the census does not carry ────────────────────────────────────
 
@@ -216,15 +220,26 @@ const SECTIONS = [
   'Mental Health',
 ]
 
+// One question per card, as on every composable page. `n` is still accepted, so
+// the call sites read in order, but no longer printed: the survey's other pages
+// do not number their questions, and a number here made this block look like a
+// separate instrument.
+// eslint-disable-next-line no-unused-vars
 function Q({ n, label, instruction, def, children }) {
   return (
-    <div style={S.q}>
-      <div style={S.qLabel}><span style={S.qNum}>{n}</span>{label}</div>
+    <section className="cs-question-card">
+      <div className="cs-question-prompt">{label}</div>
       {instruction && <div style={S.instruction}>{instruction}</div>}
       {def && <div style={S.def}>{def}</div>}
       {children}
-    </div>
+    </section>
   )
+}
+
+// Section introductions, shown in the section's title card.
+const SECTION_INTRO = {
+  0: 'These questions help us understand the variety of people who take part in this study. All responses are confidential.',
+  7: 'These questions help us describe who took part and account for existing mental health support in our analyses. They do not affect your participation in the study, and every question includes a "Prefer not to say" option.',
 }
 
 export default function StudentDemographicsStep({
@@ -454,22 +469,21 @@ export default function StudentDemographicsStep({
   }
 
   return (
-    <div style={S.wrap}>
-      <div style={S.progressTrack}>
-        <div style={{ ...S.progressFill, width: `${((sec + 1) / SECTIONS.length) * 100}%` }} />
+    <div className="cs-player">
+      <div className="cs-progress">
+        <span>Demographics</span>
+        <span>Section {sec + 1} of {SECTIONS.length}</span>
       </div>
-      <div style={S.topRow}>
-        <span style={S.badge}>Demographics</span>
-        <span style={S.counter}>Section {sec + 1} of {SECTIONS.length}</span>
-      </div>
-      <h1 style={S.title}>{SECTIONS[sec]}</h1>
+
+      <main className="cs-player__content">
+      <div className="cs-page">
+      <section className="cs-question-card cs-information-block">
+        <div className="cs-information-title">{SECTIONS[sec]}</div>
+        {SECTION_INTRO[sec] && <div className="cs-information-body">{SECTION_INTRO[sec]}</div>}
+      </section>
 
       {sec === 0 && (
         <>
-          <p style={S.sub}>
-            These questions help us understand the variety of people who take part in this
-            study. All responses are confidential.
-          </p>
           <Q n="1" label="How old are you?">
             <ButtonRow options={AGE_OPTIONS} value={age} onChange={setAge} />
             {age === 'other' && (
@@ -683,11 +697,6 @@ export default function StudentDemographicsStep({
 
       {sec === 7 && (
         <>
-          <p style={S.sub}>
-            These questions help us describe who took part and account for existing mental
-            health support in our analyses. They do not affect your participation in the
-            study, and every question includes a "Prefer not to say" option.
-          </p>
           {/* Both time frames, adjacent and in order, so the pair reads as one
               deliberate question about change rather than as a repeat. */}
           <Q
@@ -719,23 +728,27 @@ export default function StudentDemographicsStep({
       )}
 
       {error && <div style={S.error}>{error}</div>}
+      </div>
+      </main>
 
-      <div style={S.footer}>
-        {sec > 0 && (
+      <div className="cs-navigation">
+        {sec > 0 ? (
           <button
-            style={S.back}
+            type="button"
+            className="cs-secondary-button"
             onClick={() => { setSec(s => s - 1); window.scrollTo?.(0, 0) }}
             disabled={saving}
           >
-            Back
+            ← Back
           </button>
-        )}
+        ) : <span />}
         <button
-          style={{ ...S.next, ...(sectionValid[sec] ? {} : S.nextDisabled) }}
+          type="button"
+          className="cs-primary-button"
           onClick={handleNext}
           disabled={!sectionValid[sec] || saving}
         >
-          {saving ? 'Saving…' : isLast ? 'Submit' : 'Next'}
+          {saving ? 'Saving…' : isLast ? 'Finish' : 'Next →'}
         </button>
       </div>
     </div>
@@ -743,23 +756,8 @@ export default function StudentDemographicsStep({
 }
 
 const S = {
-  wrap: { maxWidth: 640, margin: '0 auto', padding: '0 16px 40px', fontFamily: "'DM Sans', system-ui, sans-serif" },
-  progressTrack: { height: 3, background: 'var(--bd)', borderRadius: 999, marginBottom: 14 },
-  progressFill:  { height: '100%', background: 'var(--pk)', borderRadius: 999, transition: 'width 0.3s' },
-  topRow:  { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-  badge:   { fontFamily: "'Space Mono', monospace", fontSize: 12, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--tx2)' },
-  counter: { fontSize: 12, color: 'var(--gy)' },
-  title:   { fontFamily: "'DM Serif Display', serif", fontSize: 28, fontWeight: 400, color: 'var(--tx)', margin: '0 0 8px' },
-  sub:     { fontSize: 14, lineHeight: 1.6, color: 'var(--tx2)', margin: '0 0 24px' },
-  q:       { marginBottom: 28 },
-  qLabel:  { fontSize: 16, fontWeight: 600, color: 'var(--tx)', lineHeight: 1.5, marginBottom: 6 },
-  qNum:    { fontFamily: "'Space Mono', monospace", fontSize: 12, color: 'var(--gy)', marginRight: 8 },
   instruction: { fontSize: 14, color: 'var(--tx2)', fontStyle: 'italic', marginBottom: 10 },
   def:     { fontSize: 12, lineHeight: 1.55, color: 'var(--tx2)', background: 'var(--bg)', borderRadius: 12, padding: 12, marginBottom: 10 },
   input:   { width: '100%', border: '1px solid var(--bd)', borderRadius: 12, padding: '8px 16px', fontSize: 14, fontFamily: 'inherit', color: 'var(--tx)', marginTop: 8 },
   error:   { background: 'var(--err-bg)', border: '1px solid var(--err-bd)', color: 'var(--err-tx)', borderRadius: 12, padding: 12, fontSize: 14, marginBottom: 16 },
-  footer:  { display: 'flex', gap: 10, marginTop: 8 },
-  back:    { flex: 1, border: '1px solid var(--bd)', background: 'transparent', color: 'var(--tx2)', borderRadius: 24, padding: '16px 24px', fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' },
-  next:    { flex: 2, border: 'none', background: 'var(--tx)', color: '#fff', borderRadius: 24, padding: '16px 24px', fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' },
-  nextDisabled: { opacity: 0.35, cursor: 'not-allowed' },
 }

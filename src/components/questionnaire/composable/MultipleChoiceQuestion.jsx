@@ -42,7 +42,15 @@ export default function MultipleChoiceQuestion({ config, value = null, onChange 
       if (selectionFor(option.id)) {
         onChange(selections.filter(s => s.option_id !== option.id))
       } else {
-        onChange([...selections, { option_id: option.id, value: hasInput(option) ? '' : null }])
+        const entry = { option_id: option.id, value: hasInput(option) ? '' : null }
+        // An option marked `exclusive` ("Prefer not to answer", "None of these")
+        // cannot be combined with anything: choosing it clears the rest, and
+        // choosing anything else clears it. Opt-in per option, so existing
+        // instruments, which set no such flag, behave exactly as before.
+        const exclusiveIds = new Set((config.options ?? []).filter(o => o.exclusive).map(o => o.id))
+        onChange(option.exclusive
+          ? [entry]
+          : [...selections.filter(s => !exclusiveIds.has(s.option_id)), entry])
       }
       return
     }
