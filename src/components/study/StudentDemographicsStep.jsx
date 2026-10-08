@@ -534,7 +534,11 @@ export default function StudentDemographicsStep({
           <RaceGroup
             options={RACE_OPTIONS}
             selected={race}
-            onToggle={v => setRace(s => toggleMulti(RACE_OPTIONS, s, v))}
+            // RaceGroup manages parent/child selection itself and takes the
+            // setter, not a toggle callback. Passing onToggle (which it never
+            // reads) left every click calling an undefined setSelected, so
+            // nothing could be selected and the section could not be passed.
+            setSelected={setRace}
             specify={specify}
             onSpecify={setSpecifyText}
           />
