@@ -289,7 +289,7 @@ export default function AptitudeSuite({
           categoryLabel={fluency.categoryLabel}
           wordprobeScore={wordProbe.score} wordprobePct={wordProbe.percentile}
           taskSwitchCount={taskSwitchCount.current}
-          submitted={!saving && !saveError}
+          saveStatus={db.isPreviewClient ? 'preview' : saving ? 'saving' : saveError ? 'failed' : 'saved'}
         />
         {saveError && <SaveRetryBanner message={saveError.message} busy={saving} onRetry={saveResults} />}
       </>

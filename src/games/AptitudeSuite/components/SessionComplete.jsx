@@ -1,11 +1,20 @@
 import PercentileGauge from './PercentileGauge';
 import GlobalAverage from './GlobalAverage';
 
+// What the line under the heading says. It used to claim "saved" whatever had
+// happened, and showed "Saving…" only once saving had finished (2026-10-08).
+const STATUS_TEXT = {
+  saving:  'Saving your results…',
+  saved:   'Your results have been saved.',
+  failed:  'Your results haven’t been saved yet.',
+  preview: 'This was a preview, so nothing was saved.',
+};
+
 export default function SessionComplete({
   anagramScore, anagramPct,
   fluencyScore, fluencyPct, categoryLabel,
   wordprobeScore, wordprobePct,
-  submitted,
+  saveStatus,
 }) {
 
   return (
@@ -34,7 +43,7 @@ export default function SessionComplete({
         marginBottom: '2rem',
         textAlign: 'center',
       }}>
-        Your results have been saved.
+        {STATUS_TEXT[saveStatus]}
       </p>
 
       <div style={{ marginBottom: '2rem' }}>
@@ -84,16 +93,6 @@ export default function SessionComplete({
           </div>
         ))}
       </div>
-
-      {submitted && (
-        <p style={{
-          fontFamily: "'DM Sans', sans-serif",
-          fontSize: '13px',
-          color: 'var(--tx3)',
-        }}>
-          Saving…
-        </p>
-      )}
     </div>
   );
 }

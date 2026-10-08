@@ -44,10 +44,18 @@ const NAV_SECTIONS = [
       { to: '/admin/audio',           label: 'Audio'          },
     ],
   },
+  // Tasks (Norm, 2026-10-08): the Task Library — preview and share the game
+  // tasks the session builder offers — sits directly above Training.
+  {
+    header: 'Tasks',
+    items: [
+      { to: '/admin/tasks',           label: 'Task Library'   },
+      { to: '/admin/training',        label: 'Training'       },
+    ],
+  },
   {
     header: null,
     items: [
-      { to: '/admin/training',        label: 'Training'       },
       { to: '/admin/compensation',    label: 'Compensation'   },
       { to: '/admin/export',          label: 'Export'         },
       // Outside /admin — the Workbench is its own partition, open to any

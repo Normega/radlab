@@ -46,6 +46,7 @@ const AvatarEditor   = lazy(() => import('./components/Avatar/AvatarEditor'))
 const Unsubscribe    = lazy(() => import('./pages/Unsubscribe'))
 const Withdraw       = lazy(() => import('./pages/Withdraw'))
 const BuddyCheckin   = lazy(() => import('./pages/BuddyCheckin'))
+const TaskPreview    = lazy(() => import('./pages/TaskPreview'))
 const ConsentPage    = lazy(() => import('./pages/ConsentPage'))
 const Verified       = lazy(() => import('./pages/Verified'))
 
@@ -175,6 +176,7 @@ const DataExportPage       = lazy(() => import('./pages/admin/DataExportPage'))
 const CompensationPage     = lazy(() => import('./pages/admin/CompensationPage'))
 const VideoLibrary         = lazy(() => import('./pages/admin/VideoLibrary'))
 const VideoUpload          = lazy(() => import('./pages/admin/VideoUpload'))
+const TaskLibrary          = lazy(() => import('./pages/admin/TaskLibrary'))
 const TrainingLibrary      = lazy(() => import('./pages/admin/TrainingLibrary'))
 const TrainingUpload       = lazy(() => import('./pages/admin/TrainingUpload'))
 const AudioAdmin    = lazy(() => import('./pages/admin/AudioAdmin'))
@@ -990,10 +992,15 @@ export default function App() {
           {/* Accountability Buddy daily check-in (emailed link) — no auth or layout, not linked anywhere */}
           <Route path="/buddy/:token" element={<BuddyCheckin />} />
 
+          {/* Task preview share link (issued from /admin/tasks) — no auth or layout; nothing is saved. §25a */}
+          <Route path="/preview/:token" element={<TaskPreview />} />
+
           {/* Admin section — role-gated */}
           <Route element={<AdminRoute session={session} role={role} superAdmin={superAdmin} />}>
             {/* Full-screen session runner — no admin chrome */}
             <Route path="/admin/studies/:id/session/:enrollmentId/:studySessionId" element={<StudySessionRunner />} />
+            {/* The lab's own no-save task preview — what a share link's recipient sees */}
+            <Route path="/admin/tasks/preview/:slug" element={<TaskPreview />} />
 
             <Route element={<AdminLayout session={session} superAdmin={superAdmin} />}>
               <Route path="/admin"                  element={<AdminDashboard />} />
@@ -1017,6 +1024,7 @@ export default function App() {
               <Route path="/admin/videos/new"           element={<VideoUpload />} />
               <Route path="/admin/audio"                element={<AudioAdmin />} />
               <Route path="/admin/audio/new"            element={<AudioUpload />} />
+              <Route path="/admin/tasks"                element={<TaskLibrary />} />
               <Route path="/admin/training"             element={<TrainingLibrary />} />
               <Route path="/admin/training/new"         element={<TrainingUpload />} />
               <Route path="/admin/compensation"         element={<CompensationPage />} />

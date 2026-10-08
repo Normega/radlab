@@ -62,6 +62,7 @@ const PREFIX = [
   ['/ripple', 'My Ripple — RADlab'],
   ['/study/', 'Study — RADlab'],
   ['/s/', 'Session — RADlab'],
+  ['/preview/', 'Task preview — RADlab'],
   // Accountability Buddy: deliberately bare — unlinked, private, and the tab
   // should not announce the lab or the tool to anyone looking over a shoulder.
   ['/buddy/', 'Check-in'],
