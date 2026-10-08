@@ -842,7 +842,9 @@
    as a quiet text button so it is not read as one more point on the scale. */
 .cs-pna {
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
+  gap: 8px;
   margin-top: 8px;
 }
 

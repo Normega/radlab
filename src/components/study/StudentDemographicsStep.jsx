@@ -26,6 +26,12 @@
 //          deliberate rather than looking like the same question twice.
 //   SPLIT  Faculty separates Humanities from Social Sciences. UTMAP 2025 asked
 //          them separately, and merged they cannot be matched back.
+//   PNA    Every question can be declined, as the UTMAP 2026 consent form
+//          promises: a "Prefer not to answer" option on each, stored as the
+//          census code PNA ('prefer_not_to_answer') like the census items.
+//          Fourteen single-select questions inherited from the Liliana
+//          instrument had none, nor did country of birth. Derived fields carry
+//          PNA through rather than inventing an answer (see buildResponses).
 //   MULTI  Faculty is select-all-that-apply, as UTMAP 2025's program question
 //          was, so a double major is not forced to pick one. `faculty` is
 //          stored as an array; liliana_demographics stores a single string.
@@ -68,6 +74,7 @@ import {
 // The survey's own page shell, so this step looks like every other page of a
 // composable questionnaire rather than an imitation of one. Using the classes,
 // not copied values, means a change to the survey's look reaches this step too.
+import PreferNotToAnswer from '../questionnaire/composable/PreferNotToAnswer'
 import '../questionnaire/composable/composableSurvey.css'
 
 // ── Option sets the census does not carry ────────────────────────────────────
@@ -75,6 +82,7 @@ import '../questionnaire/composable/composableSurvey.css'
 const AGE_OPTIONS = [
   ...Array.from({ length: 9 }, (_, i) => ({ value: String(17 + i), label: String(17 + i) })),
   { value: 'other', label: 'Other (please specify)', specify: true },
+  { value: PNA, label: 'Prefer not to answer' },
 ]
 
 // Wording matches UTMAP 2025 exactly so the two waves can be pooled.
@@ -84,6 +92,7 @@ const YEAR_OPTIONS = [
   { value: '3', label: 'Third-year' },
   { value: '4', label: 'Fourth-year' },
   { value: '5plus', label: 'Fifth-year or higher' },
+  { value: PNA, label: 'Prefer not to answer' },
 ]
 
 const RELIGIOSITY_OPTIONS = [
@@ -91,21 +100,25 @@ const RELIGIOSITY_OPTIONS = [
   { value: 'fairly',     label: 'Fairly religious' },
   { value: 'not_too',    label: 'Not too religious' },
   { value: 'not_at_all', label: 'Not at all religious' },
+  { value: PNA, label: 'Prefer not to answer' },
 ]
 
 const DISABILITY_OPTIONS = [
   { value: 'yes', label: 'Yes' },
   { value: 'no',  label: 'No' },
+  { value: PNA, label: 'Prefer not to answer' },
 ]
 
 const STUDENT_STATUS_OPTIONS = [
   { value: 'part_time', label: 'Part-time' },
   { value: 'full_time', label: 'Full-time' },
+  { value: PNA, label: 'Prefer not to answer' },
 ]
 
 const STUDENT_ORIGIN_OPTIONS = [
   { value: 'domestic',      label: 'Domestic' },
   { value: 'international', label: 'International' },
+  { value: PNA, label: 'Prefer not to answer' },
 ]
 
 // Residence and living arrangement, merged. The first option replaces the old
@@ -119,23 +132,27 @@ const LIVING_OPTIONS = [
   { value: 'family',         label: 'Off campus, with other family' },
   { value: 'partner',        label: 'Off campus, with a partner' },
   { value: 'other',          label: 'Other (please specify)', specify: true },
+  { value: PNA, label: 'Prefer not to answer' },
 ]
 
 // Asked only when the respondent does not live alone, so 1 is not an option.
 const HOUSEHOLD_SIZE_OPTIONS = [
   ...Array.from({ length: 6 }, (_, i) => ({ value: String(i + 2), label: String(i + 2) })),
   { value: '8plus', label: '8 or more' },
+  { value: PNA, label: 'Prefer not to answer' },
 ]
 
 const CAMPUS_OPTIONS = [
   { value: 'st_george',   label: 'St. George' },
   { value: 'mississauga', label: 'Mississauga' },
   { value: 'scarborough', label: 'Scarborough' },
+  { value: PNA, label: 'Prefer not to answer' },
 ]
 
 const COMMUTE_OPTIONS = [
   { value: 'yes', label: 'Yes' },
   { value: 'no',  label: 'No' },
+  { value: PNA, label: 'Prefer not to answer' },
 ]
 
 const COMMUTE_TIME_OPTIONS = [
@@ -143,6 +160,7 @@ const COMMUTE_TIME_OPTIONS = [
   { value: '30_60', label: '30–60 minutes' },
   { value: '61_90', label: '61–90 minutes' },
   { value: 'gt_90', label: 'Over 90 minutes' },
+  { value: PNA, label: 'Prefer not to answer' },
 ]
 
 // Humanities and Social Sciences are separate here. They were one option in the
@@ -158,7 +176,7 @@ const FACULTY_OPTIONS = [
   { value: 'kinesiology',      label: 'Kinesiology & Physical Education' },
   { value: 'music_arch',       label: 'Music and Architecture' },
   { value: 'other',            label: 'Other (please specify)', specify: true },
-  { value: PNA,                label: 'Prefer not to say', exclusive: true },
+  { value: PNA,                label: 'Prefer not to answer', exclusive: true },
 ]
 
 // The zero option carries the job-status meaning now that the separate "do you
@@ -170,16 +188,19 @@ const WORK_HOURS_OPTIONS = [
   { value: '11_15',   label: '11-15 hours' },
   { value: '16_20',   label: '16-20 hours' },
   { value: '20_plus', label: '20+ hours' },
+  { value: PNA, label: 'Prefer not to answer' },
 ]
 
 const JOB_TYPE_OPTIONS = [
   { value: 'part_time', label: 'Part time (30 hours or less per week)' },
   { value: 'full_time', label: 'Full time (more than 30 hours a week)' },
+  { value: PNA, label: 'Prefer not to answer' },
 ]
 
 const ENGLISH_OPTIONS = [
   { value: 'yes', label: 'Yes' },
   { value: 'no',  label: 'No' },
+  { value: PNA, label: 'Prefer not to answer' },
 ]
 
 const INCOME_OPTIONS = [
@@ -276,6 +297,7 @@ export default function StudentDemographicsStep({
   const [workHours, setWorkHours] = useState(null)
   const [jobType, setJobType] = useState(null)
   const [countryBirth, setCountryBirth] = useState('')
+  const [countryPna, setCountryPna] = useState(false)
   const [english, setEnglish] = useState(null)
   const [income, setIncome] = useState(null)
   const [marital, setMarital] = useState(null)
@@ -300,7 +322,8 @@ export default function StudentDemographicsStep({
   function buildResponses() {
     const ageNum = age === 'other' ? Number(specify.age) : Number(age)
     return {
-      age: Number.isFinite(ageNum) ? ageNum : null,
+      // PNA is kept as itself: a declined age is an answer, not a blank.
+      age: age === PNA ? PNA : (Number.isFinite(ageNum) ? ageNum : null),
       age_other: age === 'other' ? (specify.age ?? '') : null,
       year_of_study: year,
 
@@ -333,7 +356,9 @@ export default function StudentDemographicsStep({
       // Merged question, written back in both shapes. `uoft_residence` keeps the
       // Liliana key so the two tables pool without a translation step, and
       // `living_arrangement` keeps its own vocabulary.
-      uoft_residence:           inResidence ? 'yes' : (living === null ? null : 'no'),
+      uoft_residence:           living === null ? null
+        : living === PNA ? PNA
+        : (inResidence ? 'yes' : 'no'),
       living_arrangement:       living,
       living_arrangement_other: living === 'other' ? (specify.living ?? '') : null,
 
@@ -356,12 +381,15 @@ export default function StudentDemographicsStep({
       // Both derived from hours now that the separate job question is gone.
       // Everyone below the top band is part time by the 30-hour definition, so
       // only the top band is asked.
-      has_job:  workHours === null ? null : (workHours === '0' ? 'no' : 'yes'),
-      job_type: workHours === null || workHours === '0'
-        ? null
+      // Declining the hours question declines both, rather than reading as a job.
+      has_job:  workHours === null ? null
+        : workHours === PNA ? PNA
+        : (workHours === '0' ? 'no' : 'yes'),
+      job_type: workHours === null || workHours === '0' ? null
+        : workHours === PNA ? PNA
         : (asksJobType ? jobType : 'part_time'),
 
-      country_of_birth: countryBirth.trim() || null,
+      country_of_birth: countryPna ? PNA : (countryBirth.trim() || null),
       english_primary:  english,
       household_income: income,
       marital_status:   marital,
@@ -442,7 +470,7 @@ export default function StudentDemographicsStep({
       && faculty.length > 0 && (!faculty.includes('other') || spec('faculty'))
       && parentEdu !== null && openEnded(parentEdu, 'parent_edu'),
     workHours !== null && (!asksJobType || jobType !== null)
-      && countryBirth.trim().length > 0 && english !== null
+      && (countryPna || countryBirth.trim().length > 0) && english !== null
       && income !== null && marital !== null,
     therapy12mo !== null && therapy !== null
       && meds.length > 0 && (!meds.includes('other') || spec('meds')),
@@ -682,7 +710,14 @@ export default function StudentDemographicsStep({
               style={S.input}
               placeholder="Country"
               value={countryBirth}
-              onChange={e => setCountryBirth(e.target.value)}
+              // Typing an answer withdraws the opt-out, as moving a slider does.
+              onChange={e => { setCountryBirth(e.target.value); setCountryPna(false) }}
+            />
+            <PreferNotToAnswer
+              selected={countryPna}
+              // The button reports its own code; only on/off matters here, and
+              // the census PNA code is what gets stored.
+              onChange={v => { setCountryPna(v !== null); if (v !== null) setCountryBirth('') }}
             />
           </Q>
           <Q n="23" label="Is English your primary language?">
