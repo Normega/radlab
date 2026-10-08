@@ -26,15 +26,17 @@ export const MILESTONES = [
   { when: 'Mon Oct 12', what: 'Smoke test with fake participants in every arm; fix list', status: 'next' },
   { when: 'Mon–Tue', what: 'Norm previews every day of every arm', status: 'next' },
   { when: 'Tue Oct 13', what: 'Fixes, freeze, onboarding slide with the join QR', status: 'next' },
-  { when: 'Wed Oct 14', what: 'Onboarding in class: consent, baseline, randomization, first session', status: 'next' },
-  { when: 'Oct 15 or 21', what: 'Day 1 (decision D1)', status: 'next' },
+  { when: 'Wed Oct 14', what: '10:55 join email; Norm guides the class through consent and baseline; Quercus announcement after class', status: 'next' },
+  { when: 'Thu–Fri Oct 15–16', what: 'Baseline reminder, then last call (baseline closes Fri night; late joiners still welcome)', status: 'next' },
+  { when: 'Sat Oct 17', what: 'Day 1 for everyone', status: 'next' },
   { when: 'Nov 4', what: 'In-class adherence check-in', status: 'next' },
-  { when: 'Nov 11 or 17', what: 'Day 28 → post survey (one-week window) → debrief', status: 'next' },
-  { when: 'Dec 2', what: 'In-class results: Day × Pre/Post × Arm', status: 'next' },
+  { when: 'Fri Nov 13', what: 'Day 28', status: 'next' },
+  { when: 'Nov 14–16', what: 'Post assessment (3 days)', status: 'next' },
+  { when: 'Wed Nov 18', what: 'Debrief, reflections and the class’s results', status: 'next' },
 ]
 
 export const DECISIONS = [
-  { id: 'D1', q: 'Day 1: Oct 15 (day 28 = Nov 11) or Oct 21 (day 28 = Nov 17)?', suggest: 'Oct 15, the day after onboarding.', status: 'open' },
+  { id: 'D1', q: 'The schedule', decided: 'Join email Oct 14 10:55; baseline reminders Oct 15 and 16; day 1 Sat Oct 17 for everyone; day 28 Nov 13; post Nov 14–16; debrief Nov 18. Fixed window (missed days count, the count moves on). Baseline is a hard gate; late finishers join on the calendar’s current day.', status: 'decided' },
   { id: 'D2', q: 'Sense Foraging’s dose: a light version (3-minute practice, radlab’s sliders instead of its own check-ins) to match the controls?', suggest: 'Yes.', status: 'open' },
   { id: 'D3', q: 'Delivery: Sense Foraging inside the radlab daily session (embedded, hands back when done), or a link out with “I’ve done it”?', suggest: 'Embedded; the link is the fallback.', status: 'open' },
   { id: 'D4', q: 'Which Sense Foraging questionnaire: sf-pool-5 (34 items, 7-point) or the REB-approved v1.2 (32 items, 1–6)?', suggest: 'Pool 5.', status: 'open' },
@@ -60,6 +62,9 @@ export const CHECKLIST = [
     { what: 'Post: Sense Foraging questionnaire + wellbeing + enjoyed / helped / would continue / what stood out', status: 'next' },
   ] },
   { group: 'Build on radlab.zone', items: [
+    { what: 'Scheduler: a fixed calendar start (day 1 = Oct 17 whenever baseline was done; late joiners anchored to the calendar)', status: 'next' },
+    { what: 'Baseline reminders that count missed days, until done', status: 'next' },
+    { what: 'Load test: 250 fake students through consent and baseline', status: 'next' },
     { what: 'Load classrct-nr-d01…d28 and classrct-ra-d01…d28 into intervention_modules', status: 'next' },
     { what: 'A sense_foraging step type in radlab sessions', status: 'next' },
     { what: 'Session templates: pre, post, 84 daily (generated)', status: 'next' },
@@ -67,7 +72,8 @@ export const CHECKLIST = [
     { what: 'Smoke test with fake participants; remove them before launch', status: 'next' },
   ] },
   { group: 'Class', items: [
-    { what: 'Onboarding slide: what happens, the join QR, “bring the device you’ll practise on”', status: 'next' },
+    { what: 'Onboarding slide: what happens, the join QR, “your first practice arrives Saturday”', status: 'next' },
+    { what: 'Quercus announcement after class (drafted: forms/quercus_announcement_oct14.md)', status: 'now' },
     { what: 'Nov 4 adherence check-in', status: 'next' },
     { what: 'Dec 2 results deck (adapt the 2025 “RCT Initial Results” slides)', status: 'next' },
   ] },
