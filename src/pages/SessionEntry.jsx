@@ -37,6 +37,8 @@ export default function SessionEntry() {
   const [sessionData,    setSessionData]    = useState(null)
   const [currentIndex,   setCurrentIndex]   = useState(0)
   const [consentStudyId, setConsentStudyId] = useState(null)
+  // The email gate in its optional form (open_email_after_consent studies).
+  const [contactEmailOptional, setContactEmailOptional] = useState(false)
   const [screenerSpec,   setScreenerSpec]   = useState(null) // { screener, participantId, studyId }
   const [gateReason,     setGateReason]     = useState(null) // session_entry_block's reason
   // Session context for display steps: outputs of completed steps, keyed
@@ -296,7 +298,13 @@ export default function SessionEntry() {
     // a passed screener and BEFORE consent, and the session does not continue
     // in this browser -- the entry link is emailed to the address given, which
     // is how the address is shown to be real. Consent happens from that link.
-    if (data.enrollment?.external_source === 'open' && !data.enrollment?.contact_email) {
+    //
+    // Unless the study sets open_email_after_consent
+    // (20261008_open_email_after_consent.sql): then consent comes first and the
+    // address is asked, optionally, in this browser afterwards (see
+    // proceedAfterConsent). UTMAP 2026 does this; Liliana's study does not.
+    if (data.enrollment?.external_source === 'open' && !data.enrollment?.contact_email
+        && !study.open_email_after_consent) {
       setState('needs_open_email')
       return
     }
@@ -310,6 +318,18 @@ export default function SessionEntry() {
 
   async function proceedAfterConsent(data) {
     const { study, enrollment } = data
+    // Optional email after consent (open_email_after_consent). Asked once per
+    // link: a participant who declines is not asked again on a reload, and one
+    // who gives an address has contact_email set and is not asked either.
+    if (study.open_email_after_consent) {
+      if (enrollment?.external_source && !enrollment?.contact_email && !emailDeclined(token)) {
+        setContactEmailOptional(true)
+        setState('needs_contact_email')
+        return
+      }
+      await startStepFlow(data)
+      return
+    }
     // Contact-email gate: external (SONA/Prolific) enrollments carry a
     // synthetic, undeliverable auth email — for multi-day studies, no daily
     // link or reminder can ever reach them until they give a real address.
@@ -342,6 +362,11 @@ export default function SessionEntry() {
   }
 
   async function handleContactEmailComplete() {
+    await startStepFlow(fullDataRef.current)
+  }
+
+  async function handleContactEmailSkip() {
+    markEmailDeclined(token)
     await startStepFlow(fullDataRef.current)
   }
 
@@ -690,6 +715,8 @@ export default function SessionEntry() {
           studyId={fullDataRef.current?.link?.study_id}
           supabaseClient={sb}
           onComplete={handleContactEmailComplete}
+          optional={contactEmailOptional}
+          onSkip={handleContactEmailSkip}
         />
       </div>
     )
@@ -987,4 +1014,17 @@ function writeProgress(token, nodes, index, outputs) {
 
 function clearProgress(token) {
   try { sessionStorage.removeItem(progressKey(token)) } catch { /* ignore */ }
+}
+
+// An optional email that was declined, per link token, so a reload does not ask
+// again. sessionStorage, like resume: if it is unavailable the participant is
+// simply asked once more, which is harmless.
+const emailDeclinedKey = token => `email_declined_${token}`
+
+function emailDeclined(token) {
+  try { return sessionStorage.getItem(emailDeclinedKey(token)) === '1' } catch { return false }
+}
+
+function markEmailDeclined(token) {
+  try { sessionStorage.setItem(emailDeclinedKey(token), '1') } catch { /* ignore */ }
 }

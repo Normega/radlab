@@ -15,7 +15,14 @@ import { useState } from 'react'
 // Reusable by design, like ConsentGate: takes its Supabase client as a prop
 // rather than importing a global one, because the real call site uses
 // SessionEntry's isolated, non-persisted participant client.
-export default function ContactEmailGate({ studyId, studyName, supabaseClient, onComplete }) {
+//
+// OPTIONAL FORM (`optional` + `onSkip`): for studies with
+// studies.open_email_after_consent (20261008_open_email_after_consent.sql),
+// where the consent form promises that an address is optional. Same storage,
+// different copy, and a "Continue without an email" button that calls onSkip
+// and stores nothing. The copy stays study-neutral and points back to the
+// consent form, which is where each study states what the address is for.
+export default function ContactEmailGate({ studyId, studyName, supabaseClient, onComplete, optional = false, onSkip }) {
   const [email,      setEmail]      = useState('')
   const [confirm,    setConfirm]    = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -48,16 +55,32 @@ export default function ContactEmailGate({ studyId, studyName, supabaseClient, o
   return (
     <div style={S.wrap}>
       {studyName && <p style={S.eyebrow}>{studyName}</p>}
-      <h1 style={S.title}>Where should we send your session links?</h1>
-      <p style={S.body}>
-        This study runs over multiple days. Each day, we'll email you a link to
-        that day's session — without an email address, we have no way to reach
-        you and you won't be able to continue in the study.
-      </p>
-      <p style={S.bodyMuted}>
-        Your address is used only to send study session links and reminders.
-        Every email includes an unsubscribe link.
-      </p>
+      {optional ? (
+        <>
+          <h1 style={S.title}>Would you like to give an email address?</h1>
+          <p style={S.body}>
+            This is optional. You can take part fully without one.
+          </p>
+          <p style={S.bodyMuted}>
+            We use it only for what the consent form describes, such as a short
+            follow-up or sending you the results, and it is never stored with your
+            answers. Every email includes an unsubscribe link.
+          </p>
+        </>
+      ) : (
+        <>
+          <h1 style={S.title}>Where should we send your session links?</h1>
+          <p style={S.body}>
+            This study runs over multiple days. Each day, we'll email you a link to
+            that day's session — without an email address, we have no way to reach
+            you and you won't be able to continue in the study.
+          </p>
+          <p style={S.bodyMuted}>
+            Your address is used only to send study session links and reminders.
+            Every email includes an unsubscribe link.
+          </p>
+        </>
+      )}
 
       <div style={S.fieldCol}>
         <label style={S.fieldLabel} htmlFor="contact-email">Email address</label>
@@ -91,13 +114,20 @@ export default function ContactEmailGate({ studyId, studyName, supabaseClient, o
 
       {error && <p style={S.errBox}>{error}</p>}
 
-      <button
-        style={{ ...S.btn, opacity: canSubmit ? 1 : 0.5 }}
-        onClick={handleSubmit}
-        disabled={!canSubmit}
-      >
-        {submitting ? 'Saving…' : 'Save & continue →'}
-      </button>
+      <div style={S.btnRow}>
+        <button
+          style={{ ...S.btn, opacity: canSubmit ? 1 : 0.5 }}
+          onClick={handleSubmit}
+          disabled={!canSubmit}
+        >
+          {submitting ? 'Saving…' : 'Save & continue →'}
+        </button>
+        {optional && onSkip && (
+          <button style={S.skipBtn} onClick={onSkip} disabled={submitting}>
+            Continue without an email
+          </button>
+        )}
+      </div>
     </div>
   )
 }
@@ -136,6 +166,12 @@ const S = {
   },
   fieldWarn: { fontSize: 12, color: '#b45309', margin: 0, fontFamily: SANS },
 
+  btnRow: { display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'center' },
+  skipBtn: {
+    padding: '8px 16px', borderRadius: 12,
+    background: 'transparent', color: 'var(--tx2)', border: '1px solid var(--bds)',
+    fontFamily: SANS, fontSize: 14, cursor: 'pointer',
+  },
   btn: {
     alignSelf: 'flex-start',
     padding: '13px 32px', borderRadius: 12,
