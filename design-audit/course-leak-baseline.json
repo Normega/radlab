@@ -18,6 +18,8 @@
   "src/components/routeTitle.test.mjs": 9,
   "src/lib/authDetectRoutes.js": 1,
   "src/lib/authDetectRoutes.test.mjs": 26,
+  "src/pages/psy240trial/content.js": 3,
+  "src/pages/psy240trial/Psy240Trial.jsx": 2,
   "api/claim-notify.js": 5,
   "api/claim-source.js": 2,
   "api/ingest.js": 2,

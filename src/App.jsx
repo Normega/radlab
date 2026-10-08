@@ -9,6 +9,7 @@ import AuraFilterDef     from './components/AuraFilterDef'
 import AdminRoute        from './components/AdminRoute'
 import TalksRoute        from './components/TalksRoute'
 import BreathEvidenceRoute from './components/BreathEvidenceRoute'
+import LabOnlyRoute from './components/LabOnlyRoute'
 import SuperAdminRoute   from './components/SuperAdminRoute'
 import ClassAdminRoute   from './academic/lecture-lounge/ClassAdminRoute'
 import LectureLoungeAdminRoute from './academic/lecture-lounge/LectureLoungeAdminRoute'
@@ -104,6 +105,7 @@ const Cuny2026 = lazy(() => import('./pages/cuny-2026/Cuny2026'))
 const BpmhSep2026 = lazy(() => import('./pages/bpmh-sep-2026/BpmhSep2026'))
 const Talks     = lazy(() => import('./pages/talks/Talks'))
 const BreathEvidence = lazy(() => import('./pages/breathevidence/BreathEvidence'))
+const Psy240Trial = lazy(() => import('./pages/psy240trial/Psy240Trial'))
 
 // Academic partition (src/academic/) — Lecture Lounge lives here, the Field
 // Guide ingest portal joins it. Separate chunk group from research admin and
@@ -764,6 +766,11 @@ export default function App() {
           */}
           <Route element={<BreathEvidenceRoute session={session} role={role} superAdmin={superAdmin} />}>
             <Route path="/breathevidence" element={<BreathEvidence />} />
+          </Route>
+
+          {/* The teaching trial's launch tracker (Oct 2026): lab only. */}
+          <Route element={<LabOnlyRoute session={session} role={role} superAdmin={superAdmin} kicker="Teaching trial · launch tracker" />}>
+            <Route path="/psy240trial" element={<Psy240Trial />} />
           </Route>
 
           {/*
