@@ -26,6 +26,9 @@
 //          deliberate rather than looking like the same question twice.
 //   SPLIT  Faculty separates Humanities from Social Sciences. UTMAP 2025 asked
 //          them separately, and merged they cannot be matched back.
+//   MULTI  Faculty is select-all-that-apply, as UTMAP 2025's program question
+//          was, so a double major is not forced to pick one. `faculty` is
+//          stored as an array; liliana_demographics stores a single string.
 //   MERGED "Do you live in a UofT residence?" and "What is your current living
 //          arrangement?" into one question. They overlapped, and the merged
 //          version also reproduces UTMAP 2025's entire three-deep branch
@@ -155,6 +158,7 @@ const FACULTY_OPTIONS = [
   { value: 'kinesiology',      label: 'Kinesiology & Physical Education' },
   { value: 'music_arch',       label: 'Music and Architecture' },
   { value: 'other',            label: 'Other (please specify)', specify: true },
+  { value: PNA,                label: 'Prefer not to say', exclusive: true },
 ]
 
 // The zero option carries the job-status meaning now that the separate "do you
@@ -267,7 +271,7 @@ export default function StudentDemographicsStep({
   const [campus, setCampus] = useState(null)
   const [commute, setCommute] = useState(null)
   const [commuteTime, setCommuteTime] = useState(null)
-  const [faculty, setFaculty] = useState(null)
+  const [faculty, setFaculty] = useState([])
   const [parentEdu, setParentEdu] = useState(null)
   const [workHours, setWorkHours] = useState(null)
   const [jobType, setJobType] = useState(null)
@@ -344,7 +348,7 @@ export default function StudentDemographicsStep({
       commute_time_one_way: (!inResidence && commute === 'yes') ? commuteTime : null,
 
       faculty,
-      faculty_other: faculty === 'other' ? (specify.faculty ?? '') : null,
+      faculty_other: faculty.includes('other') ? (specify.faculty ?? '') : null,
       parent_education:       parentEdu,
       parent_education_other: parentEdu === 'not_listed' ? (specify.parent_edu ?? '') : null,
 
@@ -386,7 +390,7 @@ export default function StudentDemographicsStep({
     setDisability('no'); setStudentStatus('full_time'); setStudentOrigin('domestic')
     setLiving('roommates'); setHouseholdSize('3'); setCampus('mississauga')
     setCommute('yes'); setCommuteTime('30_60')
-    setFaculty('life_sciences'); setParentEdu(PNA); setWorkHours('0')
+    setFaculty(['life_sciences']); setParentEdu(PNA); setWorkHours('0')
     setCountryBirth('Canada'); setEnglish('yes'); setIncome(PNA); setMarital(PNA)
     setTherapy12mo(PNA); setTherapy(PNA); setMeds([PNA])
     const t = setTimeout(async () => {
@@ -403,7 +407,7 @@ export default function StudentDemographicsStep({
           uoft_residence: 'no', living_arrangement: 'roommates',
           living_arrangement_other: null, household_size: '3',
           campus: 'mississauga', commutes_to_campus: 'yes', commute_time_one_way: '30_60',
-          faculty: 'life_sciences', faculty_other: null,
+          faculty: ['life_sciences'], faculty_other: null,
           parent_education: PNA, parent_education_other: null,
           paid_work_hours: '0', has_job: 'no', job_type: null,
           country_of_birth: 'Canada', english_primary: 'yes',
@@ -435,7 +439,7 @@ export default function StudentDemographicsStep({
       && (livesAlone || householdSize !== null)
       && campus !== null
       && (!asksCommute || (commute !== null && (commute !== 'yes' || commuteTime !== null)))
-      && faculty !== null && openEnded(faculty, 'faculty')
+      && faculty.length > 0 && (!faculty.includes('other') || spec('faculty'))
       && parentEdu !== null && openEnded(parentEdu, 'parent_edu'),
     workHours !== null && (!asksJobType || jobType !== null)
       && countryBirth.trim().length > 0 && english !== null
@@ -640,16 +644,14 @@ export default function StudentDemographicsStep({
               <ButtonRow options={COMMUTE_TIME_OPTIONS} value={commuteTime} onChange={setCommuteTime} />
             </Q>
           )}
-          <Q n="18" label="What faculty are you enrolled in?">
-            <ButtonRow options={FACULTY_OPTIONS} value={faculty} onChange={setFaculty} />
-            {faculty === 'other' && (
-              <input
-                style={S.input}
-                placeholder="Please specify"
-                value={specify.faculty ?? ''}
-                onChange={e => setSpecifyText('faculty', e.target.value)}
-              />
-            )}
+          <Q n="18" label="What faculty are you enrolled in?" instruction="Select all that apply.">
+            <CheckGroup
+              options={FACULTY_OPTIONS}
+              selected={faculty}
+              onToggle={v => setFaculty(s => toggleMulti(FACULTY_OPTIONS, s, v))}
+              specifyText={specify.faculty ?? ''}
+              onSpecify={t => setSpecifyText('faculty', t)}
+            />
           </Q>
           <Q n="19" label="What is the highest level of formal education of your most highly educated parent or guardian?">
             <ButtonRow options={PARENT_EDU_OPTIONS} value={parentEdu} onChange={setParentEdu} />
