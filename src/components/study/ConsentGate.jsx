@@ -36,7 +36,7 @@ import { useState, useEffect, useRef } from 'react'
 // explicit answer is required so that a blank never has to be interpreted, and
 // only an explicit yes is ever deposited.
 const REPOSITORY_CHOICES = [
-  { value: true,  label: "Yes, I consent to my de-identified data being deposited in the University of Toronto's Dataverse (Borealis), as described above." },
+  { value: true,  label: "Yes, I consent to my de-identified data being permanently deposited in the University of Toronto's Dataverse (Borealis), as described above." },
   { value: false, label: 'No, I do not consent to this.' },
 ]
 
