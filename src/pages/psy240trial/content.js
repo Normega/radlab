@@ -9,11 +9,11 @@ export const REPO = 'https://github.com/Normega/psy240internal2026'
 
 export const SUMMARY = [
   'A teaching trial, not research: PSY240 students consent, complete a baseline survey, are randomized to one of three 28-day arms, repeat the wellbeing measures after day 28, and are debriefed. The class sees its own aggregate results on Dec 2. Data are never shared or published.',
-  'Every arm is about five minutes a day: a stress and a mood slider, a practice of at most four minutes, the sliders again. Good enough, not polished.',
+  'Every arm is about five minutes a day: stress and mood on six faces, a practice of about three minutes, the same two ratings again, and one line inviting the practice into the rest of the day. Good enough, not polished.',
 ]
 
 export const ARMS = [
-  { name: 'Sense Foraging', what: 'The Sense Foraging Foundations calendar, in a light version (a 3-minute practice) run inside the radlab session.', state: 'Course live; the light, embedded version is to build.', preview: 'https://senseforaging.com/preview/session?day=', days: 28 },
+  { name: 'Sense Foraging', what: 'The Sense Foraging Foundations calendar, in a light version: the same practice each day, run for 3 minutes, inside the radlab session, ending with a one-line Quest.', state: 'Course live; the light, embedded version is to build.', preview: 'https://senseforaging.com/preview/session?day=', days: 28 },
   { name: 'Nonreactivity', what: 'Liliana Study 3’s non-reactivity program re-cut as text: breath, body scan, five senses, decentering; repeats that never run unchanged; a choice on days 22–27; Graduation on day 28.', state: 'All 28 days written and rendering; not yet loaded into the database.', preview: '/dev/class-rct?arm=nr&day=', days: 28 },
   { name: 'Stress mindset', what: 'Liliana Study 3’s reappraisal program (Crum’s acknowledge, welcome, utilize) re-cut as text, with the same calendar shape.', state: 'All 28 days written and rendering; not yet loaded into the database.', preview: '/dev/class-rct?arm=sm&day=', days: 28 },
 ]
@@ -37,7 +37,7 @@ export const MILESTONES = [
 
 export const DECISIONS = [
   { id: 'D1', q: 'The schedule', decided: 'Join email Oct 14 10:55; baseline reminders Oct 15 and 16; day 1 Sat Oct 17 for everyone; day 28 Nov 13; post Nov 14–16; debrief Nov 18. Fixed window (missed days count, the count moves on). Baseline is a hard gate; late finishers join on the calendar’s current day.', status: 'decided' },
-  { id: 'D2', q: 'Sense Foraging’s dose: a light version (3-minute practice, radlab’s sliders instead of its own check-ins) to match the controls?', suggest: 'Yes.', status: 'open' },
+  { id: 'D2', q: 'The dose, matched', decided: 'Every arm: stress and mood on six faces, before and after. Sense Foraging runs 3 minutes of practice (the day’s own practice, cut short; no wheel or hand) and ends with a one-line Quest, with no follow-up. The controls end with a matching line inviting that day’s practice into the rest of the day.', status: 'decided' },
   { id: 'D3', q: 'Delivery: Sense Foraging inside the radlab daily session (embedded, hands back when done), or a link out with “I’ve done it”?', suggest: 'Embedded; the link is the fallback.', status: 'open' },
   { id: 'D4', q: 'Which Sense Foraging questionnaire: sf-pool-5 (34 items, 7-point) or the REB-approved v1.2 (32 items, 1–6)?', suggest: 'Pool 5.', status: 'open' },
   { id: 'D5', q: 'Wellbeing set pre and post: SPANE (2 weeks), Flourishing, life satisfaction, PHQ-4, self-rated health?', suggest: 'Yes, ending with campus resources; the instructor sees aggregates only (PHQ-4 in identifiable students).', status: 'open' },
@@ -51,14 +51,15 @@ export const CHECKLIST = [
     { what: 'Nonreactivity: 28 days written (src/data/classRct/nonreactivity.js)', status: 'done' },
     { what: 'Stress mindset: 28 days written (src/data/classRct/reappraisal.js)', status: 'done' },
     { what: 'Norm’s review of nonreactivity days 8–28 and the stress-mindset lessons', status: 'next' },
-    { what: 'Sense Foraging light version, embeddable, hands back when done', status: 'next' },
+    { what: 'Sense Foraging light version: 3-minute practice, no wheel or hand, a one-line Quest; embeddable, hands back when done', status: 'next' },
+    { what: 'Controls: a one-line “for the rest of today” invitation on all 56 days, from that day’s practice', status: 'next' },
     { what: 'Consent form (teaching wording, continuing consent, alternative for decliners)', status: 'next' },
     { what: 'Debrief form, and campus resources after the surveys', status: 'next' },
   ] },
   { group: 'Surveys', items: [
     { what: 'Pre: demographics → Sense Foraging questionnaire → SPANE → Flourishing → life satisfaction → PHQ-4 → self-rated health', status: 'next' },
     { what: 'New questionnaire psy240-life-satisfaction (the one item, not the UTMAP bundle)', status: 'next' },
-    { what: 'Daily stress and mood sliders, before and after', status: 'next' },
+    { what: 'Daily stress (Study 3’s item) and mood (new, six faces), before and after', status: 'next' },
     { what: 'Post: Sense Foraging questionnaire + wellbeing + enjoyed / helped / would continue / what stood out', status: 'next' },
   ] },
   { group: 'Build on radlab.zone', items: [
