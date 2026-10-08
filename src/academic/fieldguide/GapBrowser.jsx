@@ -25,6 +25,14 @@ const fmtDate = d => d
   ? new Date(`${d}T12:00:00`).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })
   : ''
 const daysLeft = ts => ts ? Math.max(0, Math.ceil((new Date(ts) - Date.now()) / 86400000)) : null
+// A claim past its expiry but not yet released by the cleanup still reads
+// 'claimed' on the board. Without this the form stayed editable and only
+// Submit refused it -- a student wrote a whole contribution into an expired
+// claim (Giulia, 2026-10-08).
+const claimExpired = r => r.my_status === 'claimed' && r.my_expires_at && new Date(r.my_expires_at) <= Date.now()
+const fmtWhen = ts => new Date(ts).toLocaleString('en-CA', {
+  timeZone: 'America/Toronto', weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
+})
 const wordCount = t => (t ?? '').trim().split(/\s+/).filter(Boolean).length
 
 export default function GapBrowser() {
@@ -175,9 +183,11 @@ export default function GapBrowser() {
                 </span>
                 <span style={{ fontFamily: MONO, fontSize: 14, color: 'var(--tx)' }}>{r.slug}</span>
                 <span style={{ fontFamily: MONO, fontSize: 12, color: 'var(--tx2)', marginLeft: 'auto' }}>
-                  {r.my_status === 'claimed'
-                    ? `draft — ${daysLeft(r.my_expires_at)} days left`
-                    : r.my_status}
+                  {claimExpired(r)
+                    ? 'expired — claim again'
+                    : r.my_status === 'claimed'
+                      ? `draft — ${daysLeft(r.my_expires_at)} days left`
+                      : r.my_status}
                 </span>
               </button>
             ))}
@@ -282,7 +292,8 @@ function GapDetail({ row: r, courseClient, reload }) {
   const [busy, setBusy] = useState(false)
   const red = r.difficulty === 'red'
   const isMine = Boolean(r.my_status)
-  const editable = r.my_status === 'claimed'
+  const expired = claimExpired(r)
+  const editable = r.my_status === 'claimed' && !expired
   // Observers read every gap but claim_gap() refuses them, so the button is
   // replaced by a line saying so rather than offered and then refused.
   const { enrollments, courseCode } = useOutletContext()
@@ -360,6 +371,23 @@ function GapDetail({ row: r, courseClient, reload }) {
         </p>
       )}
 
+      {isMine && expired && (
+        <div style={S.expiredBox}>
+          <p style={{ ...S.sub, fontSize: 14, margin: 0 }}>
+            <b>Your claim expired on {fmtWhen(r.my_expires_at)}.</b> Your draft is saved, but an expired
+            claim can't be submitted.
+          </p>
+          {r.remaining > 0 ? (
+            <button style={{ ...S.primary, marginTop: 8 }} disabled={busy} onClick={doClaim}>
+              {busy ? 'Working…' : 'Claim it again'}
+            </button>
+          ) : (
+            <p style={{ ...S.sub, fontSize: 14, margin: '8px 0 0' }}>
+              Every slot on this gap has been taken since. Your draft is still saved: email your instructor.
+            </p>
+          )}
+        </div>
+      )}
       {isMine && claim && editable && (
         <ClaimForm claim={claim} row={r} courseClient={courseClient}
                    reload={reload} onRelease={doRelease} />
@@ -515,7 +543,13 @@ function ClaimForm({ claim, row: r, courseClient, reload, onRelease }) {
 
   return (
     <div style={{ marginTop: 14 }}>
-      <p style={S.colLabel}>Your submission · expires in {daysLeft(r.my_expires_at)} days</p>
+      <p style={S.colLabel}>Your submission · claim expires {fmtWhen(r.my_expires_at)}</p>
+      {daysLeft(r.my_expires_at) <= 3 && (
+        <p style={S.expiringSoon}>
+          {daysLeft(r.my_expires_at) <= 1 ? 'Less than a day left' : `${daysLeft(r.my_expires_at)} days left`}:
+          submit before then. An expired claim can't be submitted.
+        </p>
+      )}
 
       <label style={S.fieldLabel}>DOI <span style={S.dim}>(preferred — it is what the checks can verify)</span></label>
       <input value={doi} onChange={e => setDoi(cleanDoi(e.target.value))}
@@ -620,6 +654,8 @@ function ClaimForm({ claim, row: r, courseClient, reload, onRelease }) {
 }
 
 const S = {
+  expiredBox: { border: '1px solid var(--bd)', borderLeft: '3px solid var(--pk)', borderRadius: 12, padding: '8px 16px', margin: '8px 0 0' },
+  expiringSoon: { fontSize: 14, color: 'var(--pkd)', fontWeight: 600, margin: '0 0 8px' },
   eyebrow: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pkd)' },
   eyebrowLink: { color: 'inherit', textDecoration: 'none' },
   title: { fontFamily: SERIF, fontSize: 28, color: 'var(--tx)', margin: '2px 0 4px' },
