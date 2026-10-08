@@ -38,7 +38,11 @@ const TOKEN_HEXES = new Set([
   '#1C1C1E', '#FCEBEB', '#F09595', '#A32D2D', '#A8A9AD',
 ])
 // Files whose hex literals are the point, not drift
-const HEX_EXEMPT = new Set(['pages/BrandAssets.jsx'])
+// SmileFace.jsx is illustration: the yellow Qualtrics smiley that UTMAP's
+// life-satisfaction items reproduce (2026-10-07). Its colours are the picture,
+// not interface, and no design token is yellow. Only that file is exempt; the
+// question type around it uses tokens.
+const HEX_EXEMPT = new Set(['pages/BrandAssets.jsx', 'components/questionnaire/composable/SmileFace.jsx'])
 // Content, not UI: game artwork (2026-08-12 ruling), avatar colour palettes,
 // one-off talk-deck graphics. Reported but never ratcheted.
 const SANCTIONED_DIRS = ['games/', 'components/Avatar/', 'pages/keynote/']

@@ -6,6 +6,7 @@
 import LikertQuestion from './LikertQuestion'
 import SliderQuestion from './SliderQuestion'
 import LikertSliderQuestion from './LikertSliderQuestion'
+import GraphicSliderQuestion from './GraphicSliderQuestion'
 import MultipleChoiceQuestion from './MultipleChoiceQuestion'
 import InformationBlock from './InformationBlock'
 import OpenTextListQuestion from './OpenTextListQuestion'
@@ -27,6 +28,14 @@ export const COMPONENT_TYPES = {
   likert_slider: {
     label: 'Likert slider',
     component: LikertSliderQuestion,
+    collectsResponse: true,
+  },
+  // RADlab: the Qualtrics "Smile" graphic slider, 1 = very sad face to 5 = very
+  // happy face, for UTMAP's single-item life satisfaction. A new type, so no
+  // existing question changes.
+  graphic_slider: {
+    label: 'Graphic slider (face)',
+    component: GraphicSliderQuestion,
     collectsResponse: true,
   },
   multiple_choice: {
@@ -100,7 +109,7 @@ export function responseIsComplete(config, value) {
 
   if (type === 'information') return true
 
-  if (type === 'likert' || type === 'slider' || type === 'likert_slider') {
+  if (type === 'likert' || type === 'slider' || type === 'likert_slider' || type === 'graphic_slider') {
     return !required || value != null
   }
 

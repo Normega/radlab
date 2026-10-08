@@ -867,3 +867,10 @@
   border-color: var(--pk);
   background: var(--bgp);
 }
+
+/* Graphic slider: the face sits centred above its slider. */
+.cs-graphic-face {
+  display: flex;
+  justify-content: center;
+  margin: 8px 0 16px;
+}
