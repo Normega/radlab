@@ -701,7 +701,7 @@ export default function SessionEntry() {
   if (state === 'needs_open_email') {
     return (
       <div style={{ minHeight: '100vh', background: 'var(--bg, #FCF0F5)', display: 'flex', justifyContent: 'center' }}>
-        <OpenEmailGate token={token} />
+        <OpenEmailGate token={token} studyId={fullDataRef.current?.link?.study_id} supabaseClient={sb} />
       </div>
     )
   }
