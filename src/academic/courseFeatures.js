@@ -15,7 +15,22 @@ const OVERRIDES = {
   // Its weekly quizzes are ungraded practice for the term tests (the
   // syllabus gives quizzes no weight), so every credit/grace/late-tier line
   // the runner, lobby card and archive show a graded course must stay off.
-  psy309: { contributions: false, gaps: false, ingest: false, quizGraded: false },
+  //
+  // extensionItems: what the staff Extensions page offers in its "For" list
+  // (keys must be in deadline_extensions_item_check; 2026-10-09 syllabus dates).
+  // A course without one gets the default list built in ExtensionsPage.
+  psy309: {
+    contributions: false, gaps: false, ingest: false, quizGraded: false,
+    extensionItems: [
+      ['term_test_1', 'Term Test 1 (Oct 6)'],
+      ['term_test_2', 'Term Test 2 (Nov 17)'],
+      ['practical', 'Practical assignment (say which in Detail)'],
+      ['poster', 'Research poster and recording (Nov 30)'],
+      ['peer_review', 'Poster peer review (Dec 4)'],
+      ['final_paper', 'Final paper (Dec 8)'],
+      ['other', 'Other'],
+    ],
+  },
   // PSY240's wiki index is catalogue-anchored (DSM chapters), not
   // week-anchored — previously a hardcoded `code !== 'PSY240'` inside
   // WikiIndex, which is exactly the kind of buried course conditional the
@@ -24,5 +39,5 @@ const OVERRIDES = {
 }
 
 export function courseFeatures(code) {
-  return { contributions: true, gaps: true, ingest: true, weekIndex: true, quizGraded: true, ...(OVERRIDES[String(code ?? '').trim().toLowerCase()] ?? {}) }
+  return { contributions: true, gaps: true, ingest: true, weekIndex: true, quizGraded: true, extensionItems: null, ...(OVERRIDES[String(code ?? '').trim().toLowerCase()] ?? {}) }
 }
