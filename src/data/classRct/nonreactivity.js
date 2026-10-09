@@ -27,6 +27,7 @@
 // so editing a script cannot leave a stale estimate behind.
 
 import { aboutMinutes, fitLines, lighten, pad } from './shared'
+import { forTrial } from './trial'
 
 const OWL_IN  = 'owl_nonreactivity'
 const OWL_OUT = 'owl_love'
@@ -964,7 +965,7 @@ const BUILT = {
   15: d15, 16: cap(d16), 17: cap(d17, [2, 3]), 18: d18, 19: d19, 20: d20, 21: d21,
   22: d22, 23: d23, 24: d24, 25: d25, 26: d26, 27: d27, 28: d28,
 }
-export const MODULES = Object.fromEntries(Object.entries(BUILT).map(([d, m]) => [d, lighten(m)]))
+export const MODULES = Object.fromEntries(Object.entries(BUILT).map(([d, m]) => [d, forTrial(lighten(m), 'nr', Number(d))]))
 
 // The whole 28 days, for the preview's day picker. `again` names the day a
 // repeat returns to; `choice` marks a week-4 day where the student picks.

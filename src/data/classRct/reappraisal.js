@@ -15,6 +15,7 @@
 // LESSONS and DROP). Repeat days are described at "Repeats that stay fresh".
 
 import { aboutMinutes, lightStep, pad } from './shared'
+import { forTrial } from './trial'
 
 const OWL_OUT  = 'owl_love'
 const LEAD_OUT = 'You’ve finished today’s practice. Press Next for your closing check-in.'
@@ -1477,7 +1478,7 @@ const choice = (day, firsts) => repeatBase(day, 'Your choice', 'Choose today’s
   ...firsts.flatMap(f => [showBack(f), ...exercise(f)].map(s => ({ ...s, show_if: { key: 'pick', equals: FIRST[f].title } }))),
 ], 'Today you choose which exercise to return to, with a recent stressful moment.', `Day ${day}`)
 
-export const MODULES = {
+const BUILT = {
   1: d01, 2: d02, 3: d03, 4: d04, 5: d05, 6: d06, 7: again(7, 2),
   8: d08, 9: d09, 10: d10, 11: d11, 12: again(12, 10), 13: d13, 14: d14,
   15: again(15, 4, true), 16: d16, 17: d17, 18: again(18, 11, true), 19: d19, 20: again(20, 13, true), 21: again(21, 14, true),
@@ -1489,6 +1490,7 @@ export const MODULES = {
   27: choice(27, [14, 4, 11]),
   28: d28,
 }
+export const MODULES = Object.fromEntries(Object.entries(BUILT).map(([d, m]) => [d, forTrial(m, 'sm', Number(d))]))
 
 const AGAIN_OF = { 7: 2, 12: 10, 15: 4, 18: 11, 20: 13, 21: 14 }
 export const CALENDAR = Object.entries(MODULES).map(([day, m]) => ({

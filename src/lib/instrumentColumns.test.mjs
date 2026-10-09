@@ -115,5 +115,15 @@ check('hyphens are stripped from ids',
   'q_baseline_optiona' in instrumentColumns('q_baseline', 'multiple_choice',
     [{ option_id: 'option-a' }], { config: { options: [{ id: 'option-a' }] } }))
 
+// ── 8. An embedded practice (Sense Foraging's light days, 2026-10-08) ─────────
+{
+  const done = instrumentColumns('sf_d7', 'embedded_practice', { day: 7, completed: true, practice: 'taste', practice_ms: 183400, quiet: false, via: 'frame' })
+  check('a reported finish is completed = 1, with minutes from the practice time',
+    done.sf_d7_completed === 1 && done.sf_d7_minutes === 3.06 && done.sf_d7_practice === 'taste' && done.sf_d7_quiet === 0 && done.sf_d7_selfreport === 0)
+  const self = instrumentColumns('sf_d8', 'embedded_practice', { day: 8, completed: null, self_reported: true, via: 'tab' })
+  check('a self-report is never written down as a reported finish',
+    self.sf_d8_completed === null && self.sf_d8_selfreport === 1 && self.sf_d8_minutes === null && self.sf_d8_via === 'tab')
+}
+
 console.log(`instrumentColumns: ${pass} passed, ${fail} failed`)
 if (fail) process.exit(1)

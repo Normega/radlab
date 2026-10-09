@@ -86,6 +86,20 @@ export function instrumentColumns(prefix, type, response, def = null) {
       return out
     }
 
+    case 'embedded_practice': {
+      // A practice run in a frame (EmbeddedPracticeStep). `completed` is 1 only
+      // when the page itself reported finishing; a self-report from the
+      // link-out fallback leaves it blank and says so in `_selfreport`.
+      const r = response ?? {}
+      out[`${prefix}_completed`]  = r.completed === true ? 1 : r.completed === false ? 0 : null
+      out[`${prefix}_selfreport`] = r.self_reported ? 1 : 0
+      out[`${prefix}_practice`]   = r.practice ?? null
+      out[`${prefix}_minutes`]    = Number.isFinite(r.practice_ms) ? Math.round(r.practice_ms / 600) / 100 : null
+      out[`${prefix}_quiet`]      = r.quiet == null ? null : r.quiet ? 1 : 0
+      out[`${prefix}_via`]        = r.via ?? null
+      return out
+    }
+
     default:
       // An unregistered type must still export its data — JSON beats dropping
       // the answer on the floor.

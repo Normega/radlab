@@ -13,6 +13,7 @@ import QuestionnaireStepWrapper from './QuestionnaireStepWrapper'
 import GameStepWrapper          from './GameStepWrapper'
 import PhysioSetupStep          from './PhysioSetupStep'
 import TrainingStepWrapper      from './TrainingStepWrapper'
+import EmbeddedPracticeStep     from './EmbeddedPracticeStep'
 import VasStepWrapper          from './VasStepWrapper'
 import ComposableInstrumentStepWrapper from './ComposableInstrumentStepWrapper'
 import MidpointStep            from './MidpointStep'
@@ -152,6 +153,23 @@ export default function StepDispatcher({ node, enrollment, scheduleId, studyDay 
         node={node}
         enrollment={enrollment}
         scheduleId={scheduleId}
+        onComplete={onComplete}
+        supabaseClient={supabaseClient}
+        isSimMode={isSimMode}
+        demoMode={demoMode}
+      />
+    )
+  }
+
+  // A practice hosted elsewhere, run in a frame (Sense Foraging's light days).
+  if (category === 'embedded_practice') {
+    return (
+      <EmbeddedPracticeStep
+        subcategory={subcategory}
+        enrollment={enrollment}
+        scheduleId={scheduleId}
+        studyDay={studyDay}
+        stepIndex={stepIndex}
         onComplete={onComplete}
         supabaseClient={supabaseClient}
         isSimMode={isSimMode}

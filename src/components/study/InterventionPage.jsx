@@ -37,7 +37,7 @@ function buildScreens(module) {
   return [
     { type: 'lead_in',  owl: module.lead_in.owl,  text: module.lead_in.text  },
     ...module.steps.map((s, i) => ({ ...s, _stepIndex: i })),
-    { type: 'lead_out', owl: module.lead_out.owl, text: module.lead_out.text },
+    { type: 'lead_out', owl: module.lead_out.owl, text: module.lead_out.text, invite: module.lead_out.invite },
   ]
 }
 
@@ -510,7 +510,7 @@ export default function InterventionPage({
         <div style={S.header}>
           <div style={S.practiceBadge}>
             <div style={S.badgeDot} />
-            {CONDITION_LABELS[module.condition] ?? module.condition}
+            {module.badge ?? CONDITION_LABELS[module.condition] ?? module.condition}
           </div>
           {/* day_label lets a module outside Liliana's two-phase design (the
               class RCT's 28-day calendar) name its own day. */}
@@ -533,7 +533,7 @@ export default function InterventionPage({
         {/* Content */}
         <div style={S.content}>
           {(current.type === 'lead_in' || current.type === 'lead_out') && (
-            <OwlScreen owl={current.owl} text={current.text} />
+            <OwlScreen owl={current.owl} text={current.text} invite={current.invite} />
           )}
 
           {current.type === 'video' && (
@@ -769,13 +769,23 @@ export default function InterventionPage({
 
 // ── OwlScreen ─────────────────────────────────────────────────────────────────
 
-export function OwlScreen({ owl, text }) {
+// invite: an optional line carrying the day's practice into the rest of the
+// day (the class trial's lead-out, Oct 2026), shown above the closing words.
+export function OwlScreen({ owl, text, invite }) {
   // Support both bare key ("owl_happy") and filename ("Owl_graduation.png")
   const src = owl.endsWith('.png') ? `/assets/owls/${owl}` : `/assets/owls/${owl}.png`
   return (
     <div style={S.owlScreen}>
       <img src={src} alt="" style={S.owlImg} />
-      <div style={S.speechBubble}>{text}</div>
+      <div style={S.speechBubble}>
+        {invite && (
+          <p style={S.invite}>
+            <span style={S.inviteLabel}>For the rest of today</span>
+            {invite}
+          </p>
+        )}
+        {text}
+      </div>
     </div>
   )
 }
@@ -1617,6 +1627,8 @@ const S = {
     fontSize: 14, lineHeight: 1.7, color: 'var(--tx)',
     flex: 1,
   },
+  invite: { margin: '0 0 16px', fontSize: 16, lineHeight: 1.5, color: 'var(--tx)' },
+  inviteLabel: { display: 'block', fontSize: 12, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--pkd)', marginBottom: 4 },
 
   // ── Content area
   content: {
