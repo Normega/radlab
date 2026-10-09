@@ -48,6 +48,7 @@ const Unsubscribe    = lazy(() => import('./pages/Unsubscribe'))
 const Withdraw       = lazy(() => import('./pages/Withdraw'))
 const BuddyCheckin   = lazy(() => import('./pages/BuddyCheckin'))
 const TaskPreview    = lazy(() => import('./pages/TaskPreview'))
+const PublicDisplay  = lazy(() => import('./pages/PublicDisplay'))
 const ConsentPage    = lazy(() => import('./pages/ConsentPage'))
 const Verified       = lazy(() => import('./pages/Verified'))
 
@@ -1001,6 +1002,9 @@ export default function App() {
 
           {/* Task preview share link (issued from /admin/tasks) — no auth or layout; nothing is saved. §25a */}
           <Route path="/preview/:token" element={<TaskPreview />} />
+
+          {/* A display published for anyone (displays.public), e.g. a study's support list linked from its emails — no auth or layout. §24a */}
+          <Route path="/resources/:slug" element={<PublicDisplay />} />
 
           {/* Admin section — role-gated */}
           <Route element={<AdminRoute session={session} role={role} superAdmin={superAdmin} />}>
