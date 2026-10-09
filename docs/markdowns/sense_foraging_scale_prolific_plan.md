@@ -8,6 +8,18 @@ Plan written 2026-10-08. **Nothing has been built yet.** The plan rests on three
 
 Read §1 (decisions) before writing code. Several choices change what gets built.
 
+**Build status, 2026-10-09** (newest first):
+- **On `dev` (`66bd6c7`), CI green.** Not yet on `main`:
+  - **P1 interleave** (`src/lib/interleaveOrder.js`);
+  - **P3 `show_if`** (`src/lib/composableVisibility.js`);
+  - multiple choice now honours `allow_pna`. It had been accepted and silently ignored, so 5 background questions could not be declined.
+  - Live `sf-background` / `sf-sfs` definitions updated and verified byte-identical to `scripts/sense_foraging/study1/*.json` (canonical-jsonb md5).
+  - Until `dev` is promoted, radlab.zone renders them without branching or the multiple-choice decline. **Test Study 1 on dev.radlab.zone.**
+- **P4 decline: no new code needed.** The PSY240 trial session shipped "No thanks" (`studies.decline_message`, `decline_consent()`, applied live; ConsentGate on `dev`). Study 1's message tells people to return the submission on Prolific.
+- **Attention checks renamed** `sfs_attn_check` / `maia_attn_check`. The export names a column by an item's trailing digits, so `_attn_1` would have exported as `_1` ("item 1").
+- **Next:** P5 (identity table + de-identification + `?test=1`), then P6 (posting column).
+- **Open decision (D6 follow-on):** Prolific keeps exact start/finish times. To make "cannot be re-identified, even under court order" true, de-identification should also coarsen our timestamps (e.g. to the date). Norm to decide.
+
 ---
 
 ## 0. What the approved protocol asks for
