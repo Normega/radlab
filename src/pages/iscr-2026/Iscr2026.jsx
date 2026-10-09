@@ -93,7 +93,7 @@ export default function Iscr2026() {
       else if (e.key === 'n' || e.key === 'N')                 { setShowNotes(s => !s) }
       else if (e.key === 't' || e.key === 'T')                 { setShowClock(s => !s) }
       else if (e.key === 'p' || e.key === 'P')                 { openPresenter() }
-      else if (e.key === 'Home')                               { setI(0) }
+      else if (e.key === 'Home')                               { setI(0); setStartedAt(null); setBonus(null) }
       else if (e.key === 'End')                                { setI(total - 1) }
     }
     window.addEventListener('keydown', onKey)
@@ -129,7 +129,7 @@ export default function Iscr2026() {
       </div>
       <div class="note">${esc(cur.note || '')}</div>
       <div class="next">${nxt ? `Next · ${esc(nxt.label)}` : 'Last slide'}</div>
-      <div class="keys">→ / Space next · ← back · R resets the breathing demo · B bonus index, 1–${BONUS.length} a bonus slide · this window is not shared</div>
+      <div class="keys">→ / Space next · ← back · R resets the breathing demo · S skips it to the reveal · Home restarts (clock too) · B bonus index, 1–${BONUS.length} a bonus slide · this window is not shared</div>
       ${bonusList}`
   }, [presOpen, i, elapsed, startedAt, bonus])
 
@@ -146,12 +146,15 @@ export default function Iscr2026() {
             </button>
           ))}
         </div>
+        <button onClick={() => setBonus(b => (b === null ? 0 : null))} style={{ ...K.notesBtn, ...(bonus !== null ? K.toggleOn : {}) }} title="Bonus slides for Q&A (B); Esc returns">
+          {bonus === null ? 'Bonus' : 'Back to talk'}
+        </button>
         <button onClick={openPresenter} style={{ ...K.notesBtn, ...(presOpen ? K.toggleOn : {}) }} title="Presenter window with notes and clock (P)">
           Presenter
         </button>
       </div>
 
-      <div style={K.slideArea}>{shown.render(density)}</div>
+      <div style={K.slideArea}>{shown.render(density, setBonus)}</div>
 
       <div style={K.bottom} onClick={e => e.stopPropagation()}>
         {bonus === null ? (<>
@@ -335,7 +338,7 @@ const SLIDES = [
     label: 'Breathing demo',
     by: 85,
     exercise: true,
-    note: 'Nothing to explain first. ① Begin. ~14 s: say nothing while it runs. ② “In the chat: F if it got faster, S if slower, = if it stayed the same.” Give it five seconds, then read the split out loud (“mostly equals signs, a few Fs”). Don’t reveal. ③ “Once more.” ~14 s. ④ “And this time? Same codes.” ⑤ “Last one, the one I care about: which trial stirred you up more? Type 1 or 2, or 0 for no difference.” ⑥ Reveal: “Your breathing did the same thing twice. What differed was whether you noticed.” If many caught trial 1: “This audience is unusually good at this. You meditate. In the lab, gradual changes this size are mostly missed.” R resets if you start early.',
+    note: 'Nothing to explain first. ① Begin. ~14 s: say nothing while it runs. ② “In the chat: F if it got faster, S if slower, = if it stayed the same.” Give it five seconds, then read the split out loud (“mostly equals signs, a few Fs”). Don’t reveal. ③ “Once more.” ~14 s. ④ “And this time? Same codes.” ⑤ “Last one, the one I care about: which trial stirred you up more? Type 1 or 2, or 0 for no difference.” ⑥ Reveal: “Your breathing did the same thing twice. What differed was whether you noticed.” If many caught trial 1: “This audience is unusually good at this. You meditate. In the lab, gradual changes this size are mostly missed.” R resets if you start early; S skips straight to the reveal (rehearsal, replay, or short on time).',
     render: () => (
       <Frame wide>
         <TwoTrials />
@@ -622,12 +625,12 @@ const BONUS = [
 
 const BONUS_INDEX = {
   note: 'Bonus index. Press the number for the question asked; Esc returns to the slide you left. ← → step through the bonus slides.',
-  render: () => (
+  render: (_d, openBonus) => (
     <Frame wide kicker="Bonus slides">
       <H2>Questions</H2>
       <div style={K.bonusGrid}>
         {BONUS.map((b, k) => (
-          <div key={k} style={K.bonusCard}><span style={{ ...K.predK, flexShrink: 0 }}>{k + 1}</span><span>{b.q}</span></div>
+          <button key={k} type="button" style={K.bonusCard} onClick={e => { e.stopPropagation(); openBonus(k + 1) }}><span style={{ ...K.predK, flexShrink: 0 }}>{k + 1}</span><span>{b.q}</span></button>
         ))}
       </div>
     </Frame>
@@ -677,7 +680,7 @@ const K = {
   quote: { fontFamily: '"DM Serif Display",Georgia,serif', fontStyle: 'italic', fontSize: 'clamp(18px, 2.2vw, 24px)', color: 'var(--tx)', margin: 0, maxWidth: 820, lineHeight: 1.4 },
   quoteSrc: { display: 'block', fontFamily: '"Space Mono",monospace', fontStyle: 'normal', fontSize: 16, color: 'var(--tx2)', marginTop: 6 },
   bonusGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 14, width: '100%', maxWidth: 1000 },
-  bonusCard: { display: 'flex', alignItems: 'center', gap: 14, background: '#fff', border: '1px solid var(--bd)', borderRadius: 14, padding: '14px 18px', textAlign: 'left', fontSize: 'clamp(16px, 1.8vw, 19px)', color: 'var(--tx)' },
+  bonusCard: { display: 'flex', alignItems: 'center', gap: 14, background: '#fff', border: '1px solid var(--bd)', borderRadius: 14, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', padding: '14px 18px', textAlign: 'left', fontSize: 'clamp(16px, 1.8vw, 19px)', color: 'var(--tx)' },
   fig: { maxWidth: '100%', maxHeight: '40vh', objectFit: 'contain', borderRadius: 8, background: '#fff' },
   figCap: { fontFamily: '"Space Mono",monospace', fontSize: 16, color: 'var(--tx2)', margin: '-8px 0 0' },
   stats: { display: 'flex', gap: 22, flexWrap: 'wrap', justifyContent: 'center', width: '100%' },
