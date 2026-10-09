@@ -39,7 +39,7 @@ export const DECISIONS = [
   { id: 'D1', q: 'The schedule', decided: 'Join email Oct 14 10:55; baseline reminders Oct 15 and 16; day 1 Sat Oct 17 for everyone; day 28 Nov 13; post Nov 14–16; debrief Nov 18. Fixed window (missed days count, the count moves on). Baseline is a hard gate; late finishers join on the calendar’s current day.', status: 'decided' },
   { id: 'D2', q: 'The dose, matched', decided: 'Every arm: stress and mood on six faces, before and after. Sense Foraging runs 3 minutes of practice (the day’s own practice, cut short; no wheel or hand) and ends with a one-line Quest, with no follow-up. The controls end with a matching line inviting that day’s practice into the rest of the day.', status: 'decided' },
   { id: 'D3', q: 'Delivery', decided: 'Embedded: every arm runs the same way, one radlab link a day. Sense Foraging’s practice runs full-screen inside the radlab session and hands back when done (finished, and how long it ran); an “open in a new tab” link inside the step is the fallback. No senseforaging.com account.', status: 'decided' },
-  { id: 'D4', q: 'Which Sense Foraging questionnaire: sf-pool-5 (34 items, 7-point) or the REB-approved v1.2 (32 items, 1–6)?', suggest: 'Pool 5.', status: 'open' },
+  { id: 'D4', q: 'The arms’ own measures', decided: 'One measure allied with each arm: Sense Foraging, sf-pool-5 (34 items); Nonreactivity, the MPoD-t (15 items, with a nonreactivity facet; a copy, since Study 3 uses the original); Stress mindset, Crum’s Stress Mindset Measure (8 items). The wellbeing scales are the arm-neutral outcomes.', status: 'decided' },
   { id: 'D5', q: 'Wellbeing set pre and post: SPANE (2 weeks), Flourishing, life satisfaction, PHQ-4, self-rated health?', suggest: 'Yes, ending with campus resources; the instructor sees aggregates only (PHQ-4 in identifiable students).', status: 'open' },
   { id: 'D6', q: 'Randomization 1:1:1, with Liliana Study 3 participants assigned to Sense Foraging?', suggest: 'Keep (decided Sep 28).', status: 'open' },
   { id: 'D7', q: 'What do students who decline do for the reflection assignment?', suggest: 'An alternative (e.g., a published RCT to reflect on), named in the consent form.', status: 'open' },
@@ -57,10 +57,11 @@ export const CHECKLIST = [
     { what: 'Debrief form, and campus resources after the surveys', status: 'next' },
   ] },
   { group: 'Surveys', items: [
-    { what: 'Pre: demographics → Sense Foraging questionnaire → SPANE → Flourishing → life satisfaction → PHQ-4 → self-rated health', status: 'next' },
+    { what: 'Pre: demographics → the three arms’ measures (sf-pool-5, MPoD-t, SMM) → SPANE → Flourishing → life satisfaction → PHQ-4 → self-rated health (about 17 minutes)', status: 'next' },
+    { what: 'New questionnaires psy240-mpod-t (copy of mpod-t, neutral instructions) and smm-8 (Crum 2013; 0–4, items 1, 3, 5, 7 reversed)', status: 'next' },
     { what: 'New questionnaire psy240-life-satisfaction (the one item, not the UTMAP bundle)', status: 'next' },
     { what: 'Daily stress (Study 3’s item) and mood (new, six faces), before and after', status: 'next' },
-    { what: 'Post: Sense Foraging questionnaire + wellbeing + enjoyed / helped / would continue / what stood out', status: 'next' },
+    { what: 'Post: the three arms’ measures + wellbeing + enjoyed / helped / would continue / what stood out', status: 'next' },
   ] },
   { group: 'Build on radlab.zone', items: [
     { what: 'Scheduler: a fixed calendar start (day 1 = Oct 17 whenever baseline was done; late joiners anchored to the calendar)', status: 'next' },
