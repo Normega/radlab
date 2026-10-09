@@ -148,6 +148,7 @@ const CorrectionsFeed      = lazy(() => import('./academic/fieldguide/Correction
 const WhatsNew             = lazy(() => import('./academic/fieldguide/WhatsNew'))
 const RosterAdmin          = lazy(() => import('./academic/fieldguide/RosterAdmin'))
 const TrackingPage         = lazy(() => import('./academic/fieldguide/TrackingPage'))
+const ExtensionsPage       = lazy(() => import('./academic/fieldguide/ExtensionsPage'))
 const ReadingQueue         = lazy(() => import('./academic/fieldguide/ReadingQueue'))
 const FieldGuideJoin       = lazy(() => import('./academic/fieldguide/Join'))
 const SignInConfirm        = lazy(() => import('./academic/fieldguide/SignInConfirm'))
@@ -926,6 +927,9 @@ export default function App() {
               <Route path="/academic/:courseCode/roster" element={<RosterAdmin />} />
               {/* Per-student contribution pipeline + Lounge participation. */}
               <Route path="/academic/:courseCode/tracking" element={<TrackingPage />} />
+              {/* Every deadline extension the course grants: the record staff
+                  consult when marking (20261009_deadline_extensions.sql). */}
+              <Route path="/academic/:courseCode/extensions" element={<ExtensionsPage />} />
               {/* The pre-publish read, as a queue: risk-ordered pages, stamp
                   state, and a continue button. Stamping happens on the pages. */}
               <Route path="/academic/:courseCode/read" element={<ReadingQueue />} />

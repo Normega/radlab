@@ -223,6 +223,7 @@ export default function CourseHome({ superAdmin }) {
           <div style={S.staffGrid}>
             <Link to={courseSubPath(code, 'roster')} style={S.staffBtn}>Roster</Link>
             <Link to={courseSubPath(code, 'tracking')} style={S.staffBtn}>Tracking</Link>
+            <Link to={courseSubPath(code, 'extensions')} style={S.staffBtn}>Extensions</Link>
             {/* Reports folded into the Student queue as a tab, and the
                 pre-publish Reading queue retired from view: 276 of 278 pages
                 are published and stamped, so it is finished work. Both routes
