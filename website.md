@@ -3682,6 +3682,13 @@ before consent; `open_join_ip_max_per_hour 400`). Consent titled "Consent: our c
 - Deployed from main (160c8e5) on 2026-10-09: `send_message` v39, `open-join` v9, `verify_jwt` unchanged (false).
   Scheduler coverage for this shape: `materializeScheduleFixedArms.test.mjs` (hold, fork, calendar
   arms, a late joiner's skipped days, a pre-written assignment used without a draw).
+- **Smoke test, 2026-10-09** (a test participant through /join/classtrial with Norm's address): join,
+  email step, consent, the 10-step baseline and the scheduler's fork all work (28 Sense Foraging days
+  on Oct 17–Nov 13, final survey Nov 14). It found three things, fixed: the completion screen said
+  "next session tomorrow" on a fixed calendar (`complete_session_by_token`,
+  `20261009_completion_estimate_fixed_calendar.sql`); the wellbeing questionnaires showed UTMAP's
+  internal titles (trial copies, `20261009_class_trial_wellbeing_titles.sql`); and the open-join email
+  step showed Liliana's paid-study wording to every study (`OpenEmailGate` now per study, on `dev`).
 
 ### Interactive breath practice (`breath_practice`) — short-form prototype
 
