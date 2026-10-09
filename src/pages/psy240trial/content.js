@@ -13,9 +13,9 @@ export const SUMMARY = [
 ]
 
 export const ARMS = [
-  { name: 'Sense Foraging', what: 'The Sense Foraging Foundations calendar, in a light version: the same practice each day, run for 3 minutes, inside the radlab session, ending with a one-line Quest.', state: 'Course live; the light, embedded version is to build.', preview: 'https://senseforaging.com/preview/session?day=', days: 28 },
-  { name: 'Nonreactivity', what: 'Liliana Study 3’s non-reactivity program re-cut as text: breath, body scan, five senses, decentering; repeats that never run unchanged; a choice on days 22–27; Graduation on day 28.', state: 'All 28 days written and rendering; not yet loaded into the database.', preview: '/dev/class-rct?arm=nr&day=', days: 28 },
-  { name: 'Stress mindset', what: 'Liliana Study 3’s reappraisal program (Crum’s acknowledge, welcome, utilize) re-cut as text, with the same calendar shape.', state: 'All 28 days written and rendering; not yet loaded into the database.', preview: '/dev/class-rct?arm=sm&day=', days: 28 },
+  { name: 'Sense Foraging', what: 'The Sense Foraging Foundations calendar, in a light version: the same practice each day, run for 3 minutes, inside the radlab session, ending with a one-line Quest.', state: 'Light version built (senseforaging.com/embed/day/N); the radlab step that runs it is on main. The preview below is the light day itself.', preview: 'https://senseforaging.com/embed/day/', days: 28 },
+  { name: 'Nonreactivity', what: 'Liliana Study 3’s non-reactivity program re-cut as text: breath, body scan, five senses, decentering; repeats that never run unchanged; a choice on days 22–27; Graduation on day 28.', state: 'All 28 days loaded (classrct-nr-d01…d28), each ending with a “for the rest of today” line; arm name hidden.', preview: '/dev/class-rct?arm=nr&day=', days: 28 },
+  { name: 'Stress mindset', what: 'Liliana Study 3’s reappraisal program (Crum’s acknowledge, welcome, utilize) re-cut as text, with the same calendar shape.', state: 'All 28 days loaded (classrct-ra-d01…d28), each ending with a “for the rest of today” line; arm name hidden.', preview: '/dev/class-rct?arm=sm&day=', days: 28 },
 ]
 
 export const MILESTONES = [
@@ -51,26 +51,27 @@ export const CHECKLIST = [
     { what: 'Nonreactivity: 28 days written (src/data/classRct/nonreactivity.js)', status: 'done' },
     { what: 'Stress mindset: 28 days written (src/data/classRct/reappraisal.js)', status: 'done' },
     { what: 'Norm’s review of nonreactivity days 8–28 and the stress-mindset lessons', status: 'next' },
-    { what: 'Sense Foraging light version: 3-minute practice, no wheel or hand, a one-line Quest; embeddable, hands back when done', status: 'next' },
-    { what: 'Controls: a one-line “for the rest of today” invitation on all 56 days, from that day’s practice', status: 'next' },
-    { what: 'Consent form (teaching wording, continuing consent, the alternative assignment)', status: 'next' },
+    { what: 'Sense Foraging light version: 3-minute practice, no wheel or hand, a one-line Quest; embeddable, hands back when done (senseforaging.com/embed/day/N)', status: 'done' },
+    { what: 'Controls: a one-line “for the rest of today” invitation on all 56 days, from that day’s practice (written; Norm to review in the preview)', status: 'done' },
+    { what: 'Consent form (teaching wording, continuing consent, the alternative assignment): drafted, forms/consent.md, for Norm', status: 'now' },
     { what: 'Alternative assignment drafted (forms/alternative_assignment.md); due date and Quercus assignment to set', status: 'now' },
     { what: 'Opt-out list from Norm, marked in the roster so the join email skips them', status: 'next' },
-    { what: 'Debrief form', status: 'next' },
+    { what: 'Debrief form: drafted, forms/debrief.md, for Norm', status: 'now' },
     { what: 'Support resources: drafted from UTMAP’s sheet (forms/support_resources.md); shown at the end of each survey, on withdrawal, in the debrief; Support link in every trial email. Inherits UTMAP’s phone sign-off', status: 'now' },
   ] },
   { group: 'Surveys', items: [
     { what: 'Pre: demographics → the three arms’ measures (sf-pool-5, MPoD-t, SMM) → SPANE → Flourishing → life satisfaction → PHQ-4 → self-rated health (about 17 minutes)', status: 'next' },
-    { what: 'New questionnaires psy240-mpod-t (copy of mpod-t, neutral instructions) and smm-8 (Crum 2013; 0–4, items 1, 3, 5, 7 reversed)', status: 'next' },
-    { what: 'Daily stress (Study 3’s item) and mood (new, six faces), before and after', status: 'next' },
+    { what: 'New questionnaires psy240-mpod-t (copy of mpod-t, neutral instructions) and smm-8 (Crum 2013; 0–4, items 1, 3, 5, 7 reversed)', status: 'done' },
+    { what: 'Daily stress (Study 3’s item) and mood (new, six faces), before and after: packages class_trial_pre_ratings / _post_ratings', status: 'done' },
     { what: 'Post: the three arms’ measures + wellbeing + enjoyed / helped / would continue / what stood out', status: 'next' },
   ] },
   { group: 'Build on radlab.zone', items: [
     { what: 'Scheduler: a fixed calendar start (day 1 = Oct 17 whenever baseline was done; late joiners anchored to the calendar)', status: 'next' },
     { what: 'Baseline reminders that count missed days, until done', status: 'next' },
     { what: 'Load test: 250 fake students through consent and baseline', status: 'next' },
-    { what: 'Load classrct-nr-d01…d28 and classrct-ra-d01…d28 into intervention_modules', status: 'next' },
-    { what: 'A sense_foraging step type in radlab sessions', status: 'next' },
+    { what: 'Load classrct-nr-d01…d28 and classrct-ra-d01…d28 into intervention_modules', status: 'done' },
+    { what: 'A step that runs Sense Foraging in the session (embedded_practice), saved per day with the practice time', status: 'done' },
+    { what: 'Found on the way: training records are now per study, so a control-arm student who also joins Study 3 cannot mix the two', status: 'done' },
     { what: 'Session templates: pre, post, 84 daily (generated)', status: 'next' },
     { what: 'Study: open join link, consent, randomization (blocks of three; Study 3 → Sense Foraging by email, outside the blocks, flagged), 28-day schedule, daily reminder, withdrawal without adherence emails, debrief', status: 'next' },
     { what: 'Emails and consent name no arm (“today’s practice”); arms revealed at the debrief', status: 'next' },
