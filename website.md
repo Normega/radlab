@@ -3647,6 +3647,10 @@ life-satisfaction faces) beside Study 3's `stress`; packages `class_trial_pre_ra
 `psy240-mpod-t` (a copy, items identical, neutral instructions; `mpod-t` is live in Study 3 and
 untouched); and the Stress Mindset Measure as `smm-8` (Crum, Salovey & Achor 2013; 0-4, items 1, 3,
 5, 7 reversed).
+Students see a questionnaire's `definition.name`, so the trial's arm measures carry neutral titles
+(`20261008_class_trial_neutral_titles.sql`): `psy240-sf-pool-5` (a copy of `sf-pool-5`) shows "Paying
+attention", `psy240-mpod-t` "Thoughts and feelings", `smm-8` "Views about stress"; the admin names are
+unchanged.
 
 ### Interactive breath practice (`breath_practice`) — short-form prototype
 
