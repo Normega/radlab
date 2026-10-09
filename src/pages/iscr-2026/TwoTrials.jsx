@@ -15,7 +15,8 @@
 // Clicker-friendly: → / Space / PageDown / Enter drive the exercise from START
 // to REVEAL (a presentation clicker sends these, not Enter alone). While it owns
 // those keys it sets data-exercise-active on <body>, which the deck honours;
-// at REVEAL it lets go, so the next click moves to the next slide. R resets.
+// at REVEAL it lets go, so the next click moves to the next slide. R resets;
+// S skips straight to the reveal (a rehearsal, a replay, or a room short on time).
 // Clicks inside never reach the deck's click-to-advance.
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useBreathCycle } from '../../games/EbbAndFlow/useBreathCycle'
@@ -97,17 +98,20 @@ export default function TwoTrials() {
   }, [act, runTrial])
 
   const doReset = useCallback(() => { seq.current++; stopAnim(); setAct('START') }, [stopAnim])
+  // Abandons any trial in progress (seq bump stops its breath loop) and shows the reveal.
+  const doSkip = useCallback(() => { seq.current++; stopAnim(); setAct('REVEAL') }, [stopAnim])
 
   useEffect(() => {
     function onKey(e) {
       if (e.key === 'r' || e.key === 'R') { doReset(); return }
+      if (e.key === 's' || e.key === 'S') { doSkip(); return }
       if (act === 'REVEAL' || !FORWARD.includes(e.key)) return
       e.preventDefault()
       forward()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [act, forward, doReset])
+  }, [act, forward, doReset, doSkip])
 
   const running = act === 'RUN_A' || act === 'RUN_B'
 
@@ -152,7 +156,10 @@ export default function TwoTrials() {
         )}
       </div>
 
-      <button onClick={doReset} style={X.corner} aria-label="Reset exercise">reset (R)</button>
+      <div style={X.corner}>
+        <button onClick={doSkip} style={X.cornerBtn} aria-label="Skip to the reveal">skip (S)</button>
+        <button onClick={doReset} style={X.cornerBtn} aria-label="Reset exercise">reset (R)</button>
+      </div>
     </div>
   )
 }
@@ -240,5 +247,6 @@ const X = {
   opt:   { fontSize: 'clamp(18px, 2.6vw, 30px)', fontWeight: 600, color: 'var(--pk)', background: '#fff', border: '1.5px solid var(--pkb, #f6c6dd)', borderRadius: 14, padding: '12px 26px' },
   code:  { display: 'inline-grid', placeItems: 'center', minWidth: 38, height: 38, marginRight: 12, borderRadius: 10, background: 'var(--pk)', color: '#fff', fontFamily: '"Space Mono",monospace', fontSize: '0.85em' },
   btn:   { marginTop: 6, borderRadius: 14, padding: '14px 40px', fontSize: 'clamp(16px, 2vw, 20px)', fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', background: 'var(--pk)', color: '#fff', border: 'none' },
-  corner:{ position: 'absolute', bottom: 0, right: 0, background: 'none', border: 'none', cursor: 'pointer', fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', opacity: 0.5 },
+  corner:{ position: 'absolute', bottom: 0, right: 0, display: 'flex', gap: 12 },
+  cornerBtn: { background: 'none', border: 'none', cursor: 'pointer', fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)', opacity: 0.5 },
 }
