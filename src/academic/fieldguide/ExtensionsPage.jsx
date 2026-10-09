@@ -5,6 +5,7 @@ import AvatarMenu from './AvatarMenu'
 import { staffedCourses, resolveCourse } from './staffCourses.js'
 import { CONTRIBUTION_SLOTS } from './contributions'
 import { courseSubPath } from '../courseRoutes'
+import { courseFeatures } from '../courseFeatures.js'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -19,7 +20,10 @@ const SERIF = '"DM Serif Display", Georgia, serif'
 // extended on the claim; extra time on a test is set in the Lecture Lounge's
 // Test tab. Staff marking a late contribution look here.
 
-export const ITEMS = [
+// The default "For" list (Field Guide contributions, quizzes, midterm, final).
+// A course with other assessments supplies its own in courseFeatures.js
+// (extensionItems); either way every key must be in deadline_extensions_item_check.
+export const DEFAULT_ITEMS = [
   ['contribution_1', `Contribution 1 (green, due ${CONTRIBUTION_SLOTS[0].due})`],
   ['contribution_2', `Contribution 2 (amber, due ${CONTRIBUTION_SLOTS[1].due})`],
   ['contribution_3', `Contribution 3 (amber, due ${CONTRIBUTION_SLOTS[2].due})`],
@@ -28,7 +32,12 @@ export const ITEMS = [
   ['final_exam', 'Final exam'],
   ['other', 'Other'],
 ]
-const ITEM_LABEL = Object.fromEntries(ITEMS)
+// Every label any course uses, so a row always displays, whichever list made it.
+const OTHER_LABELS = [
+  ['term_test_1', 'Term Test 1'], ['term_test_2', 'Term Test 2'], ['practical', 'Practical assignment'],
+  ['poster', 'Research poster and recording'], ['peer_review', 'Poster peer review'], ['final_paper', 'Final paper'],
+]
+const ITEM_LABEL = Object.fromEntries([...OTHER_LABELS, ...DEFAULT_ITEMS])
 const BASES = [['accessibility', 'AccessAbility'], ['scr', 'SCR'], ['instructor', 'Instructor'], ['other', 'Other']]
 const BASIS_LABEL = Object.fromEntries(BASES)
 const STATUSES = ['approved', 'pending', 'declined']
@@ -45,7 +54,7 @@ const toLocalInput = (iso) => {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
-const EMPTY = { id: null, roster_id: '', item: 'contribution_1', item_detail: '', new_due: '', basis: 'accessibility', status: 'approved', note: '' }
+const blankForm = (items) => ({ id: null, roster_id: '', item: items[0][0], item_detail: '', new_due: '', basis: 'accessibility', status: 'approved', note: '' })
 
 export default function ExtensionsPage() {
   const { courseClient, staffEnrollments } = useOutletContext()
@@ -53,11 +62,13 @@ export default function ExtensionsPage() {
   const courses = useMemo(() => staffedCourses(staffEnrollments), [staffEnrollments])
   const course = useMemo(() => resolveCourse(courses, courseCode), [courses, courseCode])
   const courseId = course?.course_id
+  const ITEMS = courseFeatures(courseCode).extensionItems ?? DEFAULT_ITEMS
+  const EMPTY = blankForm(ITEMS)
 
   const [rows, setRows] = useState(undefined)
   const [roster, setRoster] = useState([])
   const [err, setErr] = useState(null)
-  const [form, setForm] = useState(EMPTY)
+  const [form, setForm] = useState(() => blankForm(courseFeatures(courseCode).extensionItems ?? DEFAULT_ITEMS))
   const [studentQuery, setStudentQuery] = useState('')
   const [busy, setBusy] = useState(false)
   const [filterItem, setFilterItem] = useState('')
@@ -169,7 +180,7 @@ export default function ExtensionsPage() {
               {ITEMS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
             </select>
           </label>
-          <label style={S.field}>Detail <span style={S.dim}>(e.g. Quiz 4)</span>
+          <label style={S.field}>Detail <span style={S.dim}>(e.g. Quiz 4, Practical 3)</span>
             <input style={S.input} value={form.item_detail} onChange={(e) => setForm((f) => ({ ...f, item_detail: e.target.value }))} />
           </label>
           <label style={S.field}>New due date
