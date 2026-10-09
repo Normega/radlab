@@ -7,6 +7,8 @@
 // and the clock live in a separate PRESENTER WINDOW (P): current note, target
 // time, elapsed clock, next slide. Keys pressed in that window drive the deck.
 // N (in-page notes) and T (in-page clock) still exist but are seen by the audience.
+// Bonus slides for Q&A sit outside the main sequence: B opens their index, 1–8 jump
+// straight to one, ← → step through them, Esc returns to the slide you left.
 // Run of show, fallbacks and Q&A prep: I:\My Drive\Talks\2026 ISCR 2026\ISCR2026_RunOfShow.md
 import { useState, useEffect, useCallback, useRef } from 'react'
 import TwoTrials, { PaceTraces } from './TwoTrials'
@@ -21,6 +23,8 @@ export default function Iscr2026() {
   const [startedAt, setStartedAt] = useState(null)
   const [now, setNow] = useState(() => Date.now())
   const [presOpen, setPresOpen] = useState(false)
+  // null = main deck; 0 = bonus index; 1..BONUS.length = that bonus slide.
+  const [bonus, setBonus] = useState(null)
   const presRef = useRef(null)
 
   const total = SLIDES.length
@@ -43,7 +47,7 @@ export default function Iscr2026() {
   const elapsed = startedAt === null ? 0 : Math.max(0, now - startedAt)
 
   useEffect(() => {
-    const im = new Image(); im.src = '/iscr-2026/fig-gating-s5.png'
+    for (const src of ['/iscr-2026/fig-gating-s5.png', ...BONUS_FIGS]) { const im = new Image(); im.src = src }
   }, [])
 
   // Presenter window: a same-origin popup we write into directly. Its keys are
@@ -73,6 +77,15 @@ export default function Iscr2026() {
   useEffect(() => {
     function onKey(e) {
       const forward = e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown'
+      const back = e.key === 'ArrowLeft' || e.key === 'PageUp'
+      if (e.key === 'b' || e.key === 'B') { setBonus(b => (b === null ? 0 : null)); return }
+      if (/^[1-9]$/.test(e.key) && Number(e.key) <= BONUS.length) { setBonus(Number(e.key)); return }
+      if (e.key === 'Escape') { setBonus(null); return }
+      if (bonus !== null) {
+        if (forward)   { e.preventDefault(); setBonus(b => Math.min(BONUS.length, b + 1)) }
+        else if (back) { e.preventDefault(); setBonus(b => Math.max(0, b - 1)) }
+        return
+      }
       // The exercise owns the forward keys until its reveal.
       if (forward && document.body.dataset.exerciseActive) return
       if (forward)                                             { e.preventDefault(); step(1) }
@@ -85,13 +98,27 @@ export default function Iscr2026() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [go, step, total, openPresenter])
+  }, [go, step, total, openPresenter, bonus])
 
   // Repaint the presenter window whenever the slide or the clock moves.
   useEffect(() => {
     const w = presRef.current
     if (!presOpen || !w) return
     if (w.closed) return
+    const bonusList = `<div class="bonus">${BONUS.map((b, k) =>
+      `<span${bonus === k + 1 ? ' class="on"' : ''}><b>${k + 1}</b> ${esc(b.q)}</span>`).join('')}</div>`
+    if (bonus !== null) {
+      const cur = bonus === 0 ? BONUS_INDEX : BONUS[bonus - 1]
+      w.document.body.innerHTML = `
+        <div class="top">
+          <span class="n">${bonus === 0 ? 'Bonus index' : `Bonus ${bonus} / ${BONUS.length}`}</span>
+          <span class="clock">${fmt(elapsed)}</span>
+          <span class="aim">Esc returns to slide ${i + 1}</span>
+        </div>
+        <div class="note">${esc(cur.note || '')}</div>
+        ${bonusList}`
+      return
+    }
     const cur = SLIDES[i], nxt = SLIDES[i + 1]
     const late = startedAt !== null && elapsed > cur.by * 1000 + 15000
     w.document.body.innerHTML = `
@@ -102,13 +129,15 @@ export default function Iscr2026() {
       </div>
       <div class="note">${esc(cur.note || '')}</div>
       <div class="next">${nxt ? `Next · ${esc(nxt.label)}` : 'Last slide'}</div>
-      <div class="keys">→ / Space next · ← back · R resets the breathing demo · this window is not shared</div>`
-  }, [presOpen, i, elapsed, startedAt])
+      <div class="keys">→ / Space next · ← back · R resets the breathing demo · B bonus index, 1–${BONUS.length} a bonus slide · this window is not shared</div>
+      ${bonusList}`
+  }, [presOpen, i, elapsed, startedAt, bonus])
 
   const slide = SLIDES[i]
+  const shown = bonus === null ? slide : bonus === 0 ? BONUS_INDEX : BONUS[bonus - 1]
 
   return (
-    <div style={K.stage} data-iscr onClick={() => { if (!slide.exercise) step(1) }}>
+    <div style={K.stage} data-iscr onClick={() => { if (bonus === null && !slide.exercise) step(1) }}>
       <div style={K.controls} onClick={e => e.stopPropagation()}>
         <div style={K.toggle}>
           {['minimal', 'reading'].map(d => (
@@ -122,12 +151,16 @@ export default function Iscr2026() {
         </button>
       </div>
 
-      <div style={K.slideArea}>{slide.render(density)}</div>
+      <div style={K.slideArea}>{shown.render(density)}</div>
 
       <div style={K.bottom} onClick={e => e.stopPropagation()}>
-        <button onClick={() => go(-1)} style={{ ...K.navArrow, visibility: i === 0 ? 'hidden' : 'visible' }} aria-label="Previous">‹</button>
-        <span style={K.counter}>{i + 1} / {total}</span>
-        <button onClick={() => step(1)} style={{ ...K.navArrow, visibility: i === total - 1 ? 'hidden' : 'visible' }} aria-label="Next">›</button>
+        {bonus === null ? (<>
+          <button onClick={() => go(-1)} style={{ ...K.navArrow, visibility: i === 0 ? 'hidden' : 'visible' }} aria-label="Previous">‹</button>
+          <span style={K.counter}>{i + 1} / {total}</span>
+          <button onClick={() => step(1)} style={{ ...K.navArrow, visibility: i === total - 1 ? 'hidden' : 'visible' }} aria-label="Next">›</button>
+        </>) : (
+          <span style={K.counter}>{bonus === 0 ? 'Bonus' : `Bonus ${bonus} / ${BONUS.length}`}</span>
+        )}
         {showClock && startedAt !== null && (
           <span style={{ ...K.counter, marginLeft: 8, color: elapsed > slide.by * 1000 + 15000 ? '#d0443e' : 'var(--tx3)' }}>
             {fmt(elapsed)} · aim {fmt(slide.by * 1000)}
@@ -135,10 +168,10 @@ export default function Iscr2026() {
         )}
       </div>
 
-      {showNotes && slide.note && (
+      {showNotes && shown.note && (
         <div style={K.noteOverlay} onClick={e => e.stopPropagation()}>
-          <span style={K.noteLabel}>Speaker note · finish by {fmt(slide.by * 1000)}</span>
-          <div style={K.noteBody}>{slide.note}</div>
+          <span style={K.noteLabel}>{bonus === null ? `Speaker note · finish by ${fmt(slide.by * 1000)}` : 'Bonus · speaker note'}</span>
+          <div style={K.noteBody}>{shown.note}</div>
         </div>
       )}
     </div>
@@ -159,6 +192,9 @@ const PRESENTER_CSS = `
   .note { margin-top: 18px; font-size: 21px; line-height: 1.5; }
   .next { margin-top: 22px; color: #9a9b9f; font-size: 15px; border-top: 1px solid #3a3a3e; padding-top: 12px; }
   .keys { margin-top: 10px; color: #6b6c70; font-size: 12px; font-family: Consolas, monospace; }
+  .bonus { margin-top: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; font-size: 13px; color: #9a9b9f; }
+  .bonus b { color: #ff9ec9; margin-right: 6px; font-family: Consolas, monospace; }
+  .bonus .on { color: #f2f2f4; }
 `
 
 function fmt(ms) {
@@ -433,6 +469,170 @@ const SLIDES = [
   },
 ]
 
+
+// ── Bonus slides (Q&A only) ─────────────────────────────────────────────────
+// Reached with B (index) or 1–8, never by clicking forward from the close.
+// Every figure and number here is already in this deck's Reading text or in
+// the /keynote deck; nothing new is asserted.
+
+function Figs({ items }) {
+  return (
+    <div style={K.figRow}>
+      {items.map(f => <img key={f.src} src={f.src} alt={f.alt} style={K.figHalf} />)}
+    </div>
+  )
+}
+
+const BONUS_FIGS = [
+  '/keynote/fig-staircase.png', '/keynote/fig-detection-curve.png',
+  '/keynote/fig-eneuro-3.png', '/keynote/fig-eneuro-4a.png',
+  '/keynote/fig-ejn-accuracy.png', '/keynote/fig-brainsci-training.png',
+]
+
+const BONUS = [
+  {
+    q: 'Did breathing really change on missed trials?',
+    note: '“Yes, and we checked trial by trial.” Study 5’s belt shows breathing moved the cued way on 88.9% of missed trials and 91.0% of noticed ones, 63 ms apart in breath length. “So a miss is not a change that never happened. What separated hit from miss was whether it was noticed.”',
+    render: () => (
+      <Frame kicker="Bonus · Study 5 respiration belt">
+        <H2>The body changed on missed trials too</H2>
+        <div style={K.stats}>
+          <Stat big="88.9%" label="of missed trials: breathing moved the cued way" sub="respiration belt, Study 5" color={BLUE} />
+          <Stat big="91.0%" label="of noticed trials: breathing moved the cued way" sub="63 ms apart in breath length" color={GOLD} />
+        </div>
+        <Lead>A miss is not a change that never happened. What separated a hit from a miss was whether it was noticed.</Lead>
+      </Frame>
+    ),
+  },
+  {
+    q: 'Isn’t a missed change just a weaker response?',
+    note: '“That’s the Moderate account: missed changes still lift arousal, just without scaling. If so, missed trials should sit above no-change trials. They didn’t, and the Bayes factors favour no difference in all four studies that had a no-change baseline.”',
+    render: () => (
+      <Frame wide kicker="Bonus · missed versus no change">
+        <H2>Missed changes look like no change at all</H2>
+        <Bullets items={[
+          'A, Constructivist: missed changes should still move arousal in proportion. They did not.',
+          'B, Moderate: missed changes should still lift arousal. They did not.',
+          'C, Constitutive: missed changes do nothing. They matched no-change trials.',
+        ]} />
+        <div style={K.stats}>
+          <Stat big="9–30 : 1" label="evidence that a missed change = no change" sub="BF₀₁ 8.7, 20.7, 9.6, 29.6 · four studies" color={BLUE} />
+        </div>
+      </Frame>
+    ),
+  },
+  {
+    q: 'How did you set the size of the change?',
+    note: '“An adaptive staircase. It converges on the smallest change each person can detect, so hits and misses happen at the same magnitudes.” Left: one staircase. Right: detection rises with the size of the change in every study. Studies 1A–2 use a single staircase; 4–5 cross salience with direction.',
+    render: () => (
+      <Frame wide kicker="Bonus · finding each person’s threshold">
+        <H2>A staircase sets the change at each person’s threshold</H2>
+        <Figs items={[
+          { src: '/keynote/fig-staircase.png', alt: 'Staircase level across trials converging on a threshold' },
+          { src: '/keynote/fig-detection-curve.png', alt: 'Detection accuracy rising with the size of the breathing change, all five studies' },
+        ]} />
+        <Bullets items={[
+          'Studies 1A–2 use one staircase; Studies 4–5 cross salience (high or low) with direction (faster or slower).',
+          'Detection rises with the size of the change in every study.',
+        ]} />
+      </Frame>
+    ),
+  },
+  {
+    q: 'Is the MAIA effect just self-esteem?',
+    note: '“We checked. The confidence link survived controlling for self-esteem and trait self-doubt. And MAIA was unrelated to heartbeat-counting accuracy too (r = −.08), so it isn’t tracking sensing on a second task either.” The quoted item is MAIA item 4.',
+    render: () => (
+      <Frame kicker="Bonus · self-reported body awareness">
+        <H2>Confidence, not sensitivity, and not just self-esteem</H2>
+        <p style={K.quote}>“I notice changes in my breathing, such as whether it slows down or speeds up.” <span style={K.quoteSrc}>MAIA item 4</span></p>
+        <Bullets items={[
+          'MAIA predicted confidence (r = .26, 5 of 5 studies), not the smallest change detected (r = .07).',
+          'The confidence link survived controlling for self-esteem and trait self-doubt.',
+          'MAIA was also unrelated to heartbeat-counting accuracy in Study 5 (r = −.08).',
+        ]} />
+      </Frame>
+    ),
+  },
+  {
+    q: 'What about meditators?',
+    note: '“Honest answer: we haven’t tested them yet, and this audience is exactly why we want to.” Then the three limits, briefly. “Practitioners versus novices is the next study, and because the BCAT separates sensitivity from confidence, it can say which one practice changes.” Do not claim a result.',
+    render: () => (
+      <Frame kicker="Bonus · limits and next steps">
+        <H2>What we don’t know yet</H2>
+        <Bullets items={[
+          'Samples were mostly undergraduates. Practitioners versus novices is the next test.',
+          'Arousal was self-reported. Autonomic measures on hit and miss trials come next.',
+          'Individual thresholds were only moderately reliable (ICC .24–.59 with 10-trial staircases).',
+        ]} />
+      </Frame>
+    ),
+  },
+  {
+    q: 'Where does this happen in the brain?',
+    note: 'Flag first: “This is a separate fMRI paradigm, sustained attention to the breath, not the BCAT (Farb, Zuo & Price, 2023, eNeuro).” Left: breath attention deactivates prefrontal, somatomotor and temporoparietal cortex relative to a visual target. Right: higher MAIA predicts less deactivation in the ACC. “Read it as convergent mechanism, not the same task.”',
+    render: () => (
+      <Frame wide kicker="Bonus · a separate fMRI paradigm (Farb, Zuo & Price, 2023)">
+        <H2>Breath attention quiets cortex; awareness spares the ACC</H2>
+        <Figs items={[
+          { src: '/keynote/fig-eneuro-3.png', alt: 'Whole-brain deactivation during breath attention versus visual attention' },
+          { src: '/keynote/fig-eneuro-4a.png', alt: 'ACC activity by self-reported interoceptive awareness (MAIA)' },
+        ]} />
+        <Bullets items={[
+          'Attending to the breath deactivates prefrontal, somatomotor and temporoparietal cortex.',
+          'Higher MAIA scores predict less deactivation in the ACC.',
+          'Sustained breath attention, not the BCAT: convergent mechanism, not the same task.',
+        ]} />
+      </Frame>
+    ),
+  },
+  {
+    q: 'Can noticing be trained?',
+    note: 'Same caveat: these test sustained breath attention, not rate-change detection. Left (Zuo, Price & Farb, 2023, EJN): a classifier separates interoceptive from exteroceptive attention at 73–85%, holding two months later. Right (Price, Sevinc & Farb, 2023, Brain Sciences): Mindful Awareness in Body-oriented Therapy (MABT) reduces the deactivation and increases ACC–somatomotor and DAN–insula connectivity, tracking gains in self-reported awareness.',
+    render: () => (
+      <Frame wide kicker="Bonus · decodable and trainable">
+        <H2>Breath attention is decodable, and it changes with training</H2>
+        <Figs items={[
+          { src: '/keynote/fig-ejn-accuracy.png', alt: 'Classifier accuracy for interoceptive versus exteroceptive attention' },
+          { src: '/keynote/fig-brainsci-training.png', alt: 'Connectivity increase after body-awareness training' },
+        ]} />
+        <Bullets items={[
+          'A classifier separates breath from visual attention at 73–85%, holding two months later.',
+          'MABT training increases ACC–somatomotor and DAN–insula connectivity, tracking self-reported awareness.',
+        ]} />
+      </Frame>
+    ),
+  },
+  {
+    q: 'What does this mean clinically?',
+    note: '“If feeling waits on detection, there is a third lever besides changing the body or changing appraisal: changing what gets noticed and how much it is trusted.” Panic: catastrophic reading of detected signals. Interoceptive exposure changes the habit, not the sensitivity. And since MAIA tracks confidence rather than acuity, confidence in what you notice is a target in its own right.',
+    render: () => (
+      <Frame kicker="Bonus · clinical implications">
+        <H2>A third lever: what gets noticed, and how it is trusted</H2>
+        <Bullets items={[
+          'Panic: catastrophic interpretation of detected signals.',
+          'Interoceptive exposure changes the habit, not the sensitivity.',
+          'Body awareness tracks confidence, not acuity, so confidence in what you notice is its own target.',
+        ]} />
+        <Lead>Alongside changing the body and changing appraisal, change what crosses the threshold.</Lead>
+      </Frame>
+    ),
+  },
+]
+
+const BONUS_INDEX = {
+  note: 'Bonus index. Press the number for the question asked; Esc returns to the slide you left. ← → step through the bonus slides.',
+  render: () => (
+    <Frame wide kicker="Bonus slides">
+      <H2>Questions</H2>
+      <div style={K.bonusGrid}>
+        {BONUS.map((b, k) => (
+          <div key={k} style={K.bonusCard}><span style={{ ...K.predK, flexShrink: 0 }}>{k + 1}</span><span>{b.q}</span></div>
+        ))}
+      </div>
+    </Frame>
+  ),
+}
+
 // ── Styles ──────────────────────────────────────────────────────────────────
 
 const K = {
@@ -471,6 +671,12 @@ const K = {
   predWho: { fontFamily: '"Space Mono",monospace', fontSize: 16, color: 'var(--tx2)' },
   legend: { display: 'flex', gap: 26, flexWrap: 'wrap', justifyContent: 'center', fontSize: 'clamp(16px, 1.6vw, 18px)', color: 'var(--tx2)' },
 
+  figRow: { display: 'flex', gap: 24, justifyContent: 'center', alignItems: 'center', width: '100%' },
+  figHalf: { flex: '1 1 0', minWidth: 0, maxWidth: '50%', maxHeight: '44vh', objectFit: 'contain', borderRadius: 8, background: '#fff' },
+  quote: { fontFamily: '"DM Serif Display",Georgia,serif', fontStyle: 'italic', fontSize: 'clamp(18px, 2.2vw, 24px)', color: 'var(--tx)', margin: 0, maxWidth: 820, lineHeight: 1.4 },
+  quoteSrc: { display: 'block', fontFamily: '"Space Mono",monospace', fontStyle: 'normal', fontSize: 16, color: 'var(--tx2)', marginTop: 6 },
+  bonusGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 14, width: '100%', maxWidth: 1000 },
+  bonusCard: { display: 'flex', alignItems: 'center', gap: 14, background: '#fff', border: '1px solid var(--bd)', borderRadius: 14, padding: '14px 18px', textAlign: 'left', fontSize: 'clamp(16px, 1.8vw, 19px)', color: 'var(--tx)' },
   fig: { maxWidth: '100%', maxHeight: '40vh', objectFit: 'contain', borderRadius: 8, background: '#fff' },
   figCap: { fontFamily: '"Space Mono",monospace', fontSize: 16, color: 'var(--tx2)', margin: '-8px 0 0' },
   stats: { display: 'flex', gap: 22, flexWrap: 'wrap', justifyContent: 'center', width: '100%' },
