@@ -36,13 +36,13 @@ export const MILESTONES = [
 ]
 
 export const DECISIONS = [
-  { id: 'D1', q: 'The schedule', decided: 'Join email Oct 14 10:55; baseline reminders Oct 15 and 16; day 1 Sat Oct 17 for everyone; day 28 Nov 13; post Nov 14–16; debrief Nov 18. Fixed window (missed days count, the count moves on). Baseline is a hard gate; late finishers join on the calendar’s current day.', status: 'decided' },
+  { id: 'D1', q: 'The schedule', decided: 'Join email Oct 14 10:55; baseline reminders Oct 15 and 16; day 1 Sat Oct 17 for everyone; day 28 Nov 13; post Nov 14–16; debrief Nov 18. Fixed window (missed days count, the count moves on): each day’s email at 7 am, open until 6 am, one 7 pm reminder if not done. Baseline is a hard gate; late finishers join on the calendar’s current day, with baseline reminders daily to Oct 23, then every three days to Nov 6. Answers deleted by Jan 31, 2027.', status: 'decided' },
   { id: 'D2', q: 'The dose, matched', decided: 'Every arm: stress and mood on six faces, before and after. Sense Foraging runs 3 minutes of practice (the day’s own practice, cut short; no wheel or hand) and ends with a one-line Quest, with no follow-up. The controls end with a matching line inviting that day’s practice into the rest of the day.', status: 'decided' },
   { id: 'D3', q: 'Delivery', decided: 'Embedded: every arm runs the same way, one radlab link a day. Sense Foraging’s practice runs full-screen inside the radlab session and hands back when done (finished, and how long it ran); an “open in a new tab” link inside the step is the fallback. No senseforaging.com account.', status: 'decided' },
   { id: 'D4', q: 'The arms’ own measures', decided: 'One measure allied with each arm: Sense Foraging, sf-pool-5 (34 items); Nonreactivity, the MPoD-t (15 items, with a nonreactivity facet; a copy, since Study 3 uses the original); Stress mindset, Crum’s Stress Mindset Measure (8 items). The wellbeing scales are the arm-neutral outcomes.', status: 'decided' },
   { id: 'D5', q: 'The wellbeing set', decided: 'SPANE (2 weeks), Flourishing, life satisfaction (Study 3’s six-face item, reused), PHQ-4, self-rated health, pre and post. Everyone sees the support resources (UTMAP 2026’s sheet) at the end of each survey, on withdrawal and in the debrief, with a Support link in every trial email. Nobody reads individual rows; the export is de-identified first.', status: 'decided' },
   { id: 'D6', q: 'Randomization', decided: '1:1:1 in shuffled blocks of three (radlab’s own draw), at the moment baseline is submitted. Study 3 students (9 today, matched by email) go to Sense Foraging outside the blocks, flagged, so Nov 18 can show results with and without them. Arm names stay out of the emails and consent; arms and hypotheses revealed at the debrief.', status: 'decided' },
-  { id: 'D7', q: 'Students who decline or withdraw', decided: 'Participation credit moves, at the same weight, to an alternative: a 2.5–3 page proposal for a daily practice to improve students’ mental health (thesis and argument, no citations). Its prompts ask why students might not take a practice up, never why the writer chose not to. Everyone writes the RCT reflection. Due date to set.', status: 'decided' },
+  { id: 'D7', q: 'Students who decline or withdraw', decided: 'Participation credit moves, at the same weight, to an alternative: a 2.5–3 page proposal for a daily practice to improve students’ mental health (thesis and argument, no citations). Its prompts ask why students might not take a practice up, never why the writer chose not to. Everyone writes the RCT reflection. Due Mon Nov 16, when the trial ends.', status: 'decided' },
   { id: 'D8', q: 'Credit', decided: 'Participation earns credit; opting out or withdrawing transfers it to the alternative, so stopping never costs marks. Proposed: credit for taking part (consent, baseline, not withdrawn), not for days completed.', status: 'decided' },
 ]
 
@@ -54,8 +54,8 @@ export const CHECKLIST = [
     { what: 'Sense Foraging light version: 3-minute practice, no wheel or hand, a one-line Quest; embeddable, hands back when done (senseforaging.com/embed/day/N)', status: 'done' },
     { what: 'Controls: a one-line “for the rest of today” invitation on all 56 days, from that day’s practice (written; Norm to review in the preview)', status: 'done' },
     { what: 'Consent form (teaching wording, continuing consent, the alternative assignment): drafted, forms/consent.md, for Norm', status: 'now' },
-    { what: 'Alternative assignment drafted (forms/alternative_assignment.md); due date and Quercus assignment to set', status: 'now' },
-    { what: 'Opt-out list from Norm, marked in the roster so the join email skips them', status: 'next' },
+    { what: 'Alternative assignment drafted (forms/alternative_assignment.md), due Mon Nov 16; Quercus assignment to set up', status: 'now' },
+    { what: 'Opt-outs: none yet (Oct 8); any that arrive are marked in the roster so the join email skips them', status: 'next' },
     { what: 'Debrief form: drafted, forms/debrief.md, for Norm', status: 'now' },
     { what: 'Support resources: drafted from UTMAP’s sheet (forms/support_resources.md); shown at the end of each survey, on withdrawal, in the debrief; Support link in every trial email. Inherits UTMAP’s phone sign-off', status: 'now' },
   ] },
