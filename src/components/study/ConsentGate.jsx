@@ -55,6 +55,12 @@ export default function ConsentGate({ studyId, participantId, supabaseClient, on
   const [repoOffered, setRepoOffered] = useState(false)
   // null until answered, then true | false. Only asked when repoOffered.
   const [repoChoice, setRepoChoice] = useState(null)
+  // Per-study heading and decline (20261009_consent_title_and_decline.sql).
+  // declineMessage set = a "No thanks" is offered; declining asks once more
+  // ('confirm'), then withdraws the enrollment and shows the message ('done').
+  const [consentTitle, setConsentTitle] = useState(null)
+  const [declineMessage, setDeclineMessage] = useState(null)
+  const [decline, setDecline] = useState(null)   // null | 'confirm' | 'busy' | 'done'
   const [error,   setError]   = useState(null)
   const bodyRef                = useRef(null)
   const agreed = scope !== null
@@ -75,16 +81,18 @@ export default function ConsentGate({ studyId, participantId, supabaseClient, on
     try {
       const { data, error: ce } = await supabaseClient
         .from('studies')
-        .select('allow_credit_only_consent, offer_repository_consent')
+        .select('allow_credit_only_consent, offer_repository_consent, consent_title, decline_message')
         .eq('id', studyId)
         .maybeSingle()
-      if (ce) return { credit: false, repository: false }
+      if (ce) return { credit: false, repository: false, title: null, decline: null }
       return {
         credit:     data?.allow_credit_only_consent === true,
         repository: data?.offer_repository_consent === true,
+        title:      data?.consent_title || null,
+        decline:    data?.decline_message || null,
       }
     } catch {
-      return { credit: false, repository: false }
+      return { credit: false, repository: false, title: null, decline: null }
     }
   }
 
@@ -92,6 +100,23 @@ export default function ConsentGate({ studyId, participantId, supabaseClient, on
     const opts = await loadConsentOptions()
     setCreditOption(opts.credit)
     setRepoOffered(opts.repository)
+    setConsentTitle(opts.title)
+    setDeclineMessage(opts.decline)
+  }
+
+  // The participant says no: withdraws their own enrollment before consent, so
+  // nothing more is sent (a held entry session would otherwise be re-sent daily).
+  async function confirmDecline() {
+    setDecline('busy')
+    setError(null)
+    const { data, error: de } = await supabaseClient.rpc('decline_consent', { p_study_id: studyId })
+    if (de || data?.error) {
+      setError(`That didn’t go through (${de?.message ?? data?.error}). Please try again, or write to the address in the form.`)
+      setDecline('confirm')
+      return
+    }
+    setDeclineMessage(data?.message ?? declineMessage)
+    setDecline('done')
   }
 
   useEffect(() => {
@@ -201,6 +226,15 @@ export default function ConsentGate({ studyId, participantId, supabaseClient, on
     return <p style={S.errBox}>{error}</p>
   }
 
+  if (decline === 'done') {
+    return (
+      <div style={S.wrap}>
+        <h1 style={S.title}>Thank you</h1>
+        <p style={S.body}>{declineMessage}</p>
+      </div>
+    )
+  }
+
   if (state === STATES.ALREADY_CONSENTED) {
     return (
       <div style={S.wrap}>
@@ -215,7 +249,7 @@ export default function ConsentGate({ studyId, participantId, supabaseClient, on
   return (
     <div style={S.wrap}>
       {study?.name && <p style={S.eyebrow}>{study.name}</p>}
-      <h1 style={S.title}>Research Consent Form</h1>
+      <h1 style={S.title}>{consentTitle ?? 'Research Consent Form'}</h1>
 
       <div ref={bodyRef} style={S.formBox}>
         <div
@@ -289,13 +323,30 @@ export default function ConsentGate({ studyId, participantId, supabaseClient, on
 
       {error && <p style={S.errBox}>{error}</p>}
 
-      <button
-        style={{ ...S.btn, opacity: (!ready || state === STATES.SUBMITTING) ? 0.5 : 1 }}
-        onClick={handleSubmit}
-        disabled={!ready || state === STATES.SUBMITTING}
-      >
-        {state === STATES.SUBMITTING ? 'Saving…' : 'Confirm consent & continue →'}
-      </button>
+      {decline === 'confirm' || decline === 'busy' ? (
+        <div style={S.declineBox}>
+          <p style={S.body}>You won’t take part, and you won’t get any more emails about it. You don’t need to give a reason.</p>
+          <div style={S.btnRow}>
+            <button style={S.btnQuiet} onClick={() => setDecline(null)} disabled={decline === 'busy'}>← Back</button>
+            <button style={{ ...S.btnQuiet, ...S.btnQuietStrong }} onClick={confirmDecline} disabled={decline === 'busy'}>
+              {decline === 'busy' ? 'Saving…' : 'Yes, I won’t take part'}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div style={S.btnRow}>
+          <button
+            style={{ ...S.btn, opacity: (!ready || state === STATES.SUBMITTING) ? 0.5 : 1 }}
+            onClick={handleSubmit}
+            disabled={!ready || state === STATES.SUBMITTING}
+          >
+            {state === STATES.SUBMITTING ? 'Saving…' : 'Confirm consent & continue →'}
+          </button>
+          {declineMessage && state !== STATES.SUBMITTING && (
+            <button style={S.btnQuiet} onClick={() => setDecline('confirm')}>No thanks</button>
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -371,6 +422,16 @@ const S = {
     transition: 'opacity 0.15s',
   },
 
+  // "No thanks" is a real bordered button, grayer than the suggested one
+  // (formal buttons policy): a choice, not a buried link.
+  btnRow: { display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'center' },
+  btnQuiet: {
+    padding: '16px 24px', borderRadius: 24, background: 'transparent',
+    color: 'var(--tx2)', border: '1px solid var(--bds)', fontFamily: MONO, fontSize: 14,
+    cursor: 'pointer',
+  },
+  btnQuietStrong: { color: 'var(--tx)', borderColor: 'var(--tx2)' },
+  declineBox: { display: 'flex', flexDirection: 'column', gap: 16, padding: 16, border: '1px solid var(--bds)', borderRadius: 12 },
   muted: { fontSize: 14, color: 'var(--tx3)', margin: 0 },
   errBox: {
     fontSize: 14, color: '#e04', background: 'var(--err-bg)',

@@ -56,6 +56,49 @@ export const OPEN_JOIN_CONTENT = {
       },
     ],
   },
+  // The Fall 2026 class trial, a teaching exercise rather than research:
+  // students meet it in class after the midterm, with this page behind the QR
+  // code and the course announcement. The three arms are deliberately not named
+  // (they are revealed at the debrief). Every fact matches the consent form in
+  // the trial's private repo (forms/consent.md).
+  classtrial: {
+    eyebrow:     'RAD Lab \u00b7 University of Toronto Mississauga',
+    title:       'Our class trial: three daily practices for stress',
+    lead:        'A small randomized controlled trial our class runs together, so you experience an RCT from the inside before we analyse one. A learning exercise, not research.',
+    cta:         'Start',
+    contactName: 'the teaching team',
+    contact:     'psy240@radlab.zone',
+    sections: [
+      {
+        heading: 'What\u2019s involved',
+        points: [
+          'Now: the consent form and a baseline survey, 15 to 20 minutes.',
+          'From Saturday, October 17 to Friday, November 13: one email a day at 7 am with that day\u2019s practice, about five minutes. You\u2019ll be in one of three groups, chosen at random.',
+          'November 14 to 16: a final survey, about 13 minutes. The results, and which group was which, in class on November 18.',
+        ],
+      },
+      {
+        heading: 'Your email',
+        points: [
+          'Use your U of T student email address (ending in @mail.utoronto.ca). Your link and the daily practices go there.',
+          'One sign-up per person.',
+        ],
+      },
+      {
+        heading: 'Your choice',
+        points: [
+          'Taking part earns the participation credit. If you\u2019d rather not, or you stop at any point, the credit moves to a short written alternative. You don\u2019t need to give a reason.',
+        ],
+      },
+      {
+        heading: 'Your answers',
+        points: [
+          'Seen only as class summaries, never individually, and deleted by January 31, 2027.',
+          'Nobody reads your answers as they arrive, and no answer leads to anyone contacting you.',
+        ],
+      },
+    ],
+  },
   habits: {
     eyebrow:     'RAD Lab · University of Toronto',
     title:       'Can small daily habits help with stress and mood?',

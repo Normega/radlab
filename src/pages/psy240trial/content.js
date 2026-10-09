@@ -3,7 +3,7 @@
 // private repo Normega/psy240internal2026; keep the two in step when either changes.
 // Status values: 'done' | 'now' | 'next' | 'blocked'.
 
-export const UPDATED = 'Oct 8, 2026'
+export const UPDATED = 'Oct 9, 2026'
 export const ONBOARDING = '2026-10-14T10:30:00-04:00'   // Wed Oct 14, after the midterm, IB 120
 export const REPO = 'https://github.com/Normega/psy240internal2026'
 
@@ -20,9 +20,9 @@ export const ARMS = [
 
 export const MILESTONES = [
   { when: 'Thu Oct 8', what: 'Plan, private repo, this tracker; decisions D1–D8 settled with Norm', status: 'done' },
-  { when: 'Fri Oct 9', what: 'Controls loaded (56 modules); Sense Foraging light + embedded step; consent and debrief drafted', status: 'now' },
-  { when: 'Sat Oct 10', what: 'Pre and post surveys; daily templates for 3 arms × 28 days', status: 'next' },
-  { when: 'Sun Oct 11', what: 'The study: join link, consent, randomization, schedule, reminders, withdrawal, debrief', status: 'next' },
+  { when: 'Fri Oct 9', what: 'Controls loaded (56 modules); Sense Foraging light + embedded step; consent and debrief drafted', status: 'done' },
+  { when: 'Sat Oct 10', what: 'Pre and post surveys; daily templates for 3 arms × 28 days (done early, Oct 8)', status: 'done' },
+  { when: 'Sun Oct 11', what: 'The study: join link, consent, randomization, schedule, reminders, withdrawal, debrief (built early, Oct 9; switched off until launch)', status: 'done' },
   { when: 'Mon Oct 12', what: 'Smoke test with fake participants in every arm; fix list', status: 'next' },
   { when: 'Mon–Tue', what: 'Norm previews every day of every arm', status: 'next' },
   { when: 'Tue Oct 13', what: 'Fixes, freeze, onboarding slide with the join QR', status: 'next' },
@@ -66,14 +66,17 @@ export const CHECKLIST = [
     { what: 'Post: the three arms’ measures + wellbeing + enjoyed / helped / would continue / what stood out', status: 'next' },
   ] },
   { group: 'Build on radlab.zone', items: [
-    { what: 'Scheduler: a fixed calendar start (day 1 = Oct 17 whenever baseline was done; late joiners anchored to the calendar)', status: 'next' },
-    { what: 'Baseline reminders that count missed days, until done', status: 'next' },
+    { what: 'Fixed calendar: no scheduler change needed (fixed-date timepoints; checked with the scheduler’s own code)', status: 'done' },
+    { what: 'Baseline re-sends say how many days have been missed; every 3 days after Oct 23; stop Nov 6', status: 'done' },
     { what: 'Load test: 250 fake students through consent and baseline', status: 'next' },
     { what: 'Load classrct-nr-d01…d28 and classrct-ra-d01…d28 into intervention_modules', status: 'done' },
     { what: 'A step that runs Sense Foraging in the session (embedded_practice), saved per day with the practice time', status: 'done' },
     { what: 'Found on the way: training records are now per study, so a control-arm student who also joins Study 3 cannot mix the two', status: 'done' },
-    { what: 'Session templates: pre, post, 84 daily (generated)', status: 'next' },
-    { what: 'Study: open join link, consent, randomization (blocks of three; Study 3 → Sense Foraging by email, outside the blocks, flagged), 28-day schedule, daily reminder, withdrawal without adherence emails, debrief', status: 'next' },
+    { what: 'Session templates: baseline, one Sense Foraging day, 56 control days, final survey', status: 'done' },
+    { what: 'Study built, switched off: /join/classtrial, consent with “No thanks”, baseline hold, 1:1:1 fork, Study 3 → Sense Foraging by email, the Oct 17 calendar, one reminder, no adherence emails, debrief', status: 'done' },
+    { what: 'The join email: radlab cannot email a roster (decision with Norm)', status: 'blocked' },
+    { what: 'Launch job: study on at 10:25 Oct 14 (after the smoke test)', status: 'next' },
+    { what: 'Promote dev → main: this tracker and the public support page (Norm’s approval)', status: 'next' },
     { what: 'Emails and consent name no arm (“today’s practice”); arms revealed at the debrief', status: 'next' },
     { what: 'Smoke test with fake participants; remove them before launch', status: 'next' },
   ] },

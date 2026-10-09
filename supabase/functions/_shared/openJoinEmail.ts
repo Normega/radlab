@@ -45,6 +45,17 @@ const COPY_BY_SLUG: Record<string, Copy> = {
   },
 }
 
+COPY_BY_SLUG.classtrial = {
+  // The PSY240 class trial (Oct 2026): a teaching exercise, not research, so
+  // nothing about eligibility or payment. The baseline is the gate to the daily
+  // practice, which starts on a fixed date for everyone.
+  intro: (t) => `Thank you for joining <strong>${t}</strong>.`,
+  body: 'The link below opens the consent form. If you agree to take part, it continues straight into the baseline survey. After that, each day\'s practice arrives at this address at 7 am, from Saturday, October 17.',
+  emphasis: 'The baseline takes 15 to 20 minutes.',
+  after: 'Taking part is your choice, and so is stopping, at any time: the link at the bottom of any email stops them.',
+  button: 'Read the consent form and begin →',
+}
+
 const stripTags = (h: string) => h.replace(/<[^>]+>/g, '')
 
 export function renderOpenJoinEmail(vars: {
